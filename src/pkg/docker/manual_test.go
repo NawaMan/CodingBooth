@@ -433,7 +433,7 @@ CMD ["echo", "Hello from test image!"]
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(ctx, "build",
+	err := docker.DockerBuild(ctx,
 		"-t", "test-example:latest",
 		"-f", dockerfilePath,
 		tmpDir,

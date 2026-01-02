@@ -54,7 +54,7 @@ CMD ["echo", "Hello from color demo!"]
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println()
 
-	err := docker.Docker(ctx, "build",
+	err := docker.DockerBuild(ctx,
 		"-t", "color-manual-test:latest",
 		"-f", dockerfilePath,
 		tmpDir,
