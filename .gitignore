@@ -96,3 +96,5 @@ env/
 # Poetry virtualenvs inside `__pypackages__`
 __pypackages__/
 
+
+workspace/workspace

@@ -1,14 +1,14 @@
 #!/bin/bash
 
-# Interactive Docker Demo Runner
-# This script runs the standalone interactive demo that supports real TTY
+# Interactive Docker Manual Test Runner
+# This script runs the standalone interactive manual test that supports real TTY
 
 set -euo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 
 echo "═══════════════════════════════════════════════════════════"
-echo "Docker Interactive Shell Demo"
+echo "Docker Interactive Shell Manual Test"
 echo "═══════════════════════════════════════════════════════════"
 echo
 echo "This demo will:"
@@ -21,4 +21,5 @@ echo "Press Enter to start..."
 read
 
 cd "$SCRIPT_DIR"
-go run ./src/cmd/docker-interactive-demo/main.go
+go run ./src/cmd/docker-interactive-manual-test/main.go
+

@@ -11,71 +11,122 @@ import (
 )
 
 // Docker executes a docker command with the given subcommand and arguments.
-// It respects the AppContext's Dryrun and Verbose settings.
-//
-// The function automatically handles TTY-related flags (-i, -t, -it):
-//   - If stdin/stdout are not connected to a TTY, these flags are automatically removed
-//   - This allows code to unconditionally use -it flags; they'll work in terminals
-//     but won't cause errors in non-TTY environments (tests, CI/CD, etc.)
 func Docker(ctx appctx.AppContext, subcommand string, args ...string) error {
-	// Build command arguments
-	cmdArgs := make([]string, 0, len(args)+1)
+	cmdArgs := make([]string, 0, len(args)+2) // +2 for potential -i and -t flags
 	cmdArgs = append(cmdArgs, subcommand)
 
-	// Filter out TTY-related flags if no TTY is available
-	hasTTY := HasInteractiveTTY()
+	// - Always add -i (interactive, keeps stdin open)
+	// - Add -t only when we have a TTY (allocates a pseudo-TTY)
+	// - Filter out any user-provided TTY flags from args (we manage them above)
+	if subcommand == "run" {
+		cmdArgs = append(cmdArgs, "-i")
+		if HasInteractiveTTY() {
+			cmdArgs = append(cmdArgs, "-t")
+		}
+	}
+
+	// For build commands, add --progress=auto to allow colored output
+	// when running in a TTY, or plain output when running through go test
+	if subcommand == "build" {
+		// Check if --progress is already specified
+		hasProgress := false
+		for _, arg := range args {
+			if strings.HasPrefix(arg, "--progress") {
+				hasProgress = true
+				break
+			}
+		}
+		if !hasProgress {
+			cmdArgs = append(cmdArgs, "--progress=auto")
+		}
+	}
+
+	cmdArgs = append(cmdArgs, filterTTYFlags(args)...)
+
+	if ctx.Dryrun() || ctx.Verbose() {
+		PrintCmd("docker", cmdArgs...)
+	}
+
+	if ctx.Dryrun() {
+		return nil
+	}
+
+	cmd := exec.Command("docker", cmdArgs...)
+
+	// Set environment for Windows path compatibility and color output
+	env := append(os.Environ(), "MSYS_NO_PATHCONV=1")
+
+	// Force color output for Docker commands
+	// This ensures colored output is preserved even when running through go test
+	env = append(env, "FORCE_COLOR=1")
+
+	// Docker BuildKit uses BUILDKIT_COLORS to control colored output
+	env = append(env, "BUILDKIT_COLORS=run=green:warning=yellow:error=red:cancel=cyan")
+
+	// Ensure TERM is set for color support (if not already set)
+	hasTermSet := false
+	for _, e := range env {
+		if strings.HasPrefix(e, "TERM=") {
+			hasTermSet = true
+			break
+		}
+	}
+	if !hasTermSet {
+		env = append(env, "TERM=xterm-256color")
+	}
+
+	cmd.Env = env
+
+	// Forward stdout and stderr
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+
+	// Run and propagate exit status
+	if err := cmd.Run(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return fmt.Errorf("docker %s failed with exit code %d", subcommand, exitErr.ExitCode())
+		}
+		return fmt.Errorf("docker %s failed: %w", subcommand, err)
+	}
+
+	return nil
+}
+
+// filterTTYFlags removes user-provided TTY-related flags from args.
+// We manage TTY flags explicitly in the Docker function, so we strip any that
+// the user might have passed to avoid conflicts.
+// It intelligently distinguishes between:
+//   - Standalone -i, -it, -t (TTY flags) - always removed
+//   - -t <value> (e.g., docker build -t imagename) - always kept
+func filterTTYFlags(args []string) []string {
+	result := make([]string, 0, len(args))
+
 	for i := 0; i < len(args); i++ {
 		arg := args[i]
 
-		// Skip standalone -i, -t, -it flags if no TTY
-		// But keep -t when it's followed by a value (like -t imagename for docker build)
-		if !hasTTY && (arg == "-i" || arg == "-it") {
+		// Skip standalone -i, -it flags (always TTY-related)
+		if arg == "-i" || arg == "-it" {
 			continue
 		}
 
-		// For -t, check if next arg exists and doesn't start with -
-		// If it does, this is -t <value>, not the TTY flag
-		if !hasTTY && arg == "-t" {
+		// For -t, check if it's followed by a value
+		if arg == "-t" {
 			// Check if there's a next argument and it doesn't look like a flag
 			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
-				// This is -t <value>, keep both
-				cmdArgs = append(cmdArgs, arg)
+				// This is -t <value> (e.g., docker build -t imagename), keep both
+				result = append(result, arg)
 				i++
-				cmdArgs = append(cmdArgs, args[i])
+				result = append(result, args[i])
 				continue
 			}
 			// This is standalone -t (TTY flag), skip it
 			continue
 		}
 
-		cmdArgs = append(cmdArgs, arg)
+		// Keep all other arguments
+		result = append(result, arg)
 	}
 
-	// Print if verbose OR dry-run
-	if ctx.Dryrun() || ctx.Verbose() {
-		PrintCmd("docker", cmdArgs...)
-	}
-
-	// Execute unless dry-run
-	if !ctx.Dryrun() {
-		cmd := exec.Command("docker", cmdArgs...)
-
-		// Set environment for Windows path compatibility
-		cmd.Env = append(os.Environ(), "MSYS_NO_PATHCONV=1")
-
-		// Forward stdout and stderr
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		cmd.Stdin = os.Stdin
-
-		// Run and propagate exit status
-		if err := cmd.Run(); err != nil {
-			if exitErr, ok := err.(*exec.ExitError); ok {
-				return fmt.Errorf("docker %s failed with exit code %d", subcommand, exitErr.ExitCode())
-			}
-			return fmt.Errorf("docker %s failed: %w", subcommand, err)
-		}
-	}
-
-	return nil
+	return result
 }

@@ -6,7 +6,7 @@ set -euo pipefail
 APP_NAME="workspace"
 SRC_DIR="./src/cmd"
 OUTPUT_DIR="./bin"
-VERSION=$(grep 'const version' src/cmd/main.go | sed 's/.*"\(.*\)"/\1/')
+VERSION=$(grep 'const version' src/cmd/workspace/main.go | sed 's/.*\"\(.*\)\"/\1/')
 
 echo "🔨 Building ${APP_NAME} v${VERSION}"
 echo "=================================="
@@ -46,7 +46,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     # Build
     echo -n "   Building ${GOOS}/${GOARCH}... "
     
-    if GOOS=$GOOS GOARCH=$GOARCH go build -o "$OUTPUT_PATH" "$SRC_DIR/main.go" 2>/dev/null; then
+    if GOOS=$GOOS GOARCH=$GOARCH go build -o "$OUTPUT_PATH" "$SRC_DIR/workspace" 2>/dev/null; then
         SIZE=$(du -h "$OUTPUT_PATH" | cut -f1)
         echo "✅ (${SIZE})"
         BUILD_COUNT=$((BUILD_COUNT + 1))

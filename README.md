@@ -302,6 +302,13 @@ container
 
 **Result:** seamless dev environment, no permission headaches.
 
+---
+
+> 📝 **Technical Note:**  
+> WorkSpace uses the Docker CLI (`docker` command) rather than Docker client libraries.  
+> This keeps the codebase simple, portable, and easier to maintain while ensuring compatibility across platforms.
+
+
 
 ## workspace.sh Manual
 

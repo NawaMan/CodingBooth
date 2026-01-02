@@ -345,7 +345,7 @@ func TestManual_interactiveShell(t *testing.T) {
 	fmt.Println("   So this example will always show no TTY")
 	fmt.Println()
 	fmt.Println("✅ To see REAL interactive mode with -it working:")
-	fmt.Println("   Run: go run ./src/cmd/docker-interactive-demo/main.go")
+	fmt.Println("   Run: go run ./src/cmd/docker-interactive-manual-test/main.go")
 	fmt.Println()
 	fmt.Println("Current TTY status:")
 	fmt.Printf("  • HasInteractiveTTY: %v\n", docker.HasInteractiveTTY())
