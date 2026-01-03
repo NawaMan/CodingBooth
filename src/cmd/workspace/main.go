@@ -172,6 +172,17 @@ func runWorkspace() {
 	fmt.Printf("  Variant: %s\n", ctx.Variant())
 	fmt.Printf("  Daemon: %v\n", ctx.Daemon())
 	fmt.Printf("  Verbose: %v\n", ctx.Verbose())
+	fmt.Printf("  WorkspacePort: %s\n", ctx.WorkspacePort())
+	fmt.Printf("  ContainerName: %s\n", ctx.ContainerName())
+	if ctx.BuildArgs().Length() > 0 {
+		fmt.Printf("  BuildArgs: %v\n", ctx.BuildArgs().Slice())
+	}
+	if ctx.RunArgs().Length() > 0 {
+		fmt.Printf("  RunArgs: %v\n", ctx.RunArgs().Slice())
+	}
+	if ctx.Cmds().Length() > 0 {
+		fmt.Printf("  Cmds: %v\n", ctx.Cmds().Slice())
+	}
 
 	fmt.Println("✅ AppContext initialized successfully")
 	os.Exit(0)
@@ -197,6 +208,12 @@ func initializeAppContext() appctx.AppContext {
 		os.Exit(1)
 	}
 
+	// Parse command-line arguments (overrides config)
+	if err := parseArgs(os.Args[1:], builder); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
 	return builder.Build()
 }
 
@@ -216,6 +233,126 @@ func loadConfig(configFile string, builder *appctx.AppContextBuilder) error {
 
 	// Convert TOML-decoded slices to AppendableList instances
 	builder.ApplySlicesToLists()
+
+	return nil
+}
+
+// parseArgs parses command-line arguments and applies them to the builder.
+// This matches the behavior of workspace.sh ParseArgs function.
+func parseArgs(args []string, builder *appctx.AppContextBuilder) error {
+	parsingCmds := false
+	i := 0
+
+	for i < len(args) {
+		arg := args[i]
+
+		// After --, everything is a command
+		if parsingCmds {
+			builder.Cmds.Append(arg)
+			i++
+			continue
+		}
+
+		switch arg {
+		// Boolean flags
+		case "--dryrun":
+			builder.Dryrun = true
+			i++
+		case "--verbose":
+			builder.Verbose = true
+			i++
+		case "--pull":
+			builder.DoPull = true
+			i++
+		case "--daemon":
+			builder.Daemon = true
+			i++
+		case "--keep-alive":
+			builder.Keepalive = true
+			i++
+		case "--dind":
+			builder.Dind = true
+			i++
+		case "--silence-build":
+			builder.SilenceBuild = true
+			i++
+
+		// Value flags
+		case "--config":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--config requires a path")
+			}
+			builder.ConfigFile = args[i+1]
+			i += 2
+		case "--workspace":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--workspace requires a path")
+			}
+			builder.WorkspacePath = args[i+1]
+			i += 2
+		case "--image":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--image requires a value")
+			}
+			builder.ImageName = args[i+1]
+			i += 2
+		case "--variant":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--variant requires a value")
+			}
+			builder.Variant = args[i+1]
+			i += 2
+		case "--version":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--version requires a value")
+			}
+			builder.Version = args[i+1]
+			i += 2
+		case "--dockerfile":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--dockerfile requires a path")
+			}
+			builder.DockerFile = args[i+1]
+			i += 2
+		case "--name":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--name requires a value")
+			}
+			builder.ContainerName = args[i+1]
+			i += 2
+		case "--port":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--port requires a value")
+			}
+			builder.WorkspacePort = args[i+1]
+			i += 2
+		case "--env-file":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--env-file requires a path")
+			}
+			builder.ContainerEnvFile = args[i+1]
+			i += 2
+
+		// Build args (special handling - adds to list)
+		case "--build-arg":
+			if i+1 >= len(args) {
+				return fmt.Errorf("--build-arg requires a value")
+			}
+			builder.BuildArgs.Append("--build-arg", args[i+1])
+			i += 2
+
+		// Command separator
+		case "--":
+			parsingCmds = true
+			i++
+
+		// Unknown flags or run args
+		default:
+			// Unknown arguments go to RUN_ARGS
+			builder.RunArgs.Append(arg)
+			i++
+		}
+	}
 
 	return nil
 }

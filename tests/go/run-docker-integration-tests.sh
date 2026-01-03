@@ -28,7 +28,7 @@ show_banner() {
     echo -e "${CYAN}"
     echo "╔═══════════════════════════════════════════════════════════╗"
     echo "║                                                           ║"
-    echo "║          Docker Package - Integration Tests Runner            ║"
+    echo "║         Docker Package - Integration Tests Runner         ║"
     echo "║                                                           ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
