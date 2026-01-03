@@ -19,9 +19,9 @@ A list of upcoming ideas, improvements, and future goals for the workspace launc
 - [X] Deprecate one of `KDE` or `LXQt` to reduce maintenance complexity.
 - [ ] Improve container startup speed — some setup tasks run too early (in `STARTUP`).
 - [ ] See if we can sync the setup with GitHub action (just seen it recently that it exists)
-- [ ] Install https://github.com/davidbrochart/jpterm - for all variants
-- [ ] Install yazi CLI file browser - for all variants.
-- [ ] Change to use JJava instead of IJava
+- [ ] Install jpterm - for all variants. https://github.com/davidbrochart/jpterm
+- [ ] Install yazi CLI file browser - for all variants. https://lindevs.com/install-yazi-on-ubuntu
+- [ ] Change to use JJava instead of IJava. https://github.com/dflib/jjava
 - 
 
 ---

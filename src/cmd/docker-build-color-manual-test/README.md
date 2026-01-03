@@ -4,7 +4,7 @@ This manual test shows Docker's native colored build output when running directl
 
 ## Files
 
-- **[run-docker-build-color-manual-test.sh](file:///home/nawa/dev/git/WorkSpace/tests/go/run-docker-build-color-manual-test.sh)** - Shell script to run the manual test
+- **[run-docker-build-color-manual-test.sh](file:///home/nawa/dev/git/WorkSpace/tests/go/run-docker-build-color-manual-test.sh)** - Shell script to run the integration test
 - **[main.go](file:///home/nawa/dev/git/WorkSpace/src/cmd/docker-build-color-manual-test/main.go)** - Go program that builds a Docker image
 
 ## Usage
@@ -22,7 +22,7 @@ go run ./src/cmd/docker-build-color-manual-test/main.go
 
 ## What You'll See
 
-When running this manual test in a terminal (not through `go test`), you should see:
+When running this integration test in a terminal (not through `go test`), you should see:
 
 - **Colored progress bars** - Blue/green progress indicators
 - **Colored build steps** - Different colors for different stages
@@ -31,7 +31,7 @@ When running this manual test in a terminal (not through `go test`), you should 
 
 ## Why This Works
 
-Unlike the test examples that run through `go test`, this manual test:
+Unlike the test examples that run through `go test`, this integration test:
 
 1. Runs directly in your terminal (has a real TTY)
 2. Uses `--progress=auto` which detects the TTY and enables colors

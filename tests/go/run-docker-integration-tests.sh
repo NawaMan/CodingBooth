@@ -28,7 +28,7 @@ show_banner() {
     echo -e "${CYAN}"
     echo "╔═══════════════════════════════════════════════════════════╗"
     echo "║                                                           ║"
-    echo "║          Docker Package - Manual Tests Runner            ║"
+    echo "║          Docker Package - Integration Tests Runner            ║"
     echo "║                                                           ║"
     echo "╚═══════════════════════════════════════════════════════════╝"
     echo -e "${NC}"
@@ -58,24 +58,24 @@ show_usage() {
 get_test_info() {
     local test_num="$1"
     case $test_num in
-        1) echo "TestManual_pullHelloWorld|Pull hello-world Image" ;;
-        2) echo "TestManual_runHelloWorld|Run hello-world Container" ;;
-        3) echo "TestManual_runAlpineEcho|Run Echo Command in Alpine" ;;
-        4) echo "TestManual_runAlpineWithEnv|Run Alpine with Environment Variable" ;;
-        5) echo "TestManual_imageInspect|Inspect Docker Image" ;;
-        6) echo "TestManual_listContainers|List All Containers" ;;
-        7) echo "TestManual_networkOperations|Network Operations (Create/Inspect/Remove)" ;;
-        8) echo "TestManual_complexCommand|Complex Docker Command" ;;
-        9) echo "TestManual_interactiveShell|Interactive Shell with -it Flags (TTY Detection Demo)" ;;
-        10) echo "TestManual_buildImage|Build Docker Image" ;;
-        11) echo "TestManual_runDaemon|Run Container in Daemon Mode" ;;
-        12) echo "TestManual_stopContainer|Stop Running Container" ;;
+        1) echo "TestIntegration_pullHelloWorld|Pull hello-world Image" ;;
+        2) echo "TestIntegration_runHelloWorld|Run hello-world Container" ;;
+        3) echo "TestIntegration_runAlpineEcho|Run Echo Command in Alpine" ;;
+        4) echo "TestIntegration_runAlpineWithEnv|Run Alpine with Environment Variable" ;;
+        5) echo "TestIntegration_imageInspect|Inspect Docker Image" ;;
+        6) echo "TestIntegration_listContainers|List All Containers" ;;
+        7) echo "TestIntegration_networkOperations|Network Operations (Create/Inspect/Remove)" ;;
+        8) echo "TestIntegration_complexCommand|Complex Docker Command" ;;
+        9) echo "TestIntegration_interactiveShell|Interactive Shell with -it Flags (TTY Detection Demo)" ;;
+        10) echo "TestIntegration_buildImage|Build Docker Image" ;;
+        11) echo "TestIntegration_runDaemon|Run Container in Daemon Mode" ;;
+        12) echo "TestIntegration_stopContainer|Stop Running Container" ;;
         *) echo "|Invalid test number" ;;
     esac
 }
 
 show_menu() {
-    echo -e "${BLUE}Available Manual Tests:${NC}"
+    echo -e "${BLUE}Available Integration Tests:${NC}"
     echo
     echo "  1) Pull hello-world Image"
     echo "  2) Run hello-world Container"
@@ -126,40 +126,40 @@ run_all_examples() {
     echo -e "${CYAN}Running all examples in sequence...${NC}"
     echo
     
-    run_example "TestManual_pullHelloWorld" "1"
+    run_example "TestIntegration_pullHelloWorld" "1"
     read -p "Press Enter to continue to next example..."
     
-    run_example "TestManual_runHelloWorld" "2"
+    run_example "TestIntegration_runHelloWorld" "2"
     read -p "Press Enter to continue to next example..."
     
-    run_example "TestManual_runAlpineEcho" "3"
+    run_example "TestIntegration_runAlpineEcho" "3"
     read -p "Press Enter to continue to next example..."
     
-    run_example "TestManual_runAlpineWithEnv" "4"
+    run_example "TestIntegration_runAlpineWithEnv" "4"
     read -p "Press Enter to continue to next example..."
     
-    run_example "TestManual_imageInspect" "5"
+    run_example "TestIntegration_imageInspect" "5"
     read -p "Press Enter to continue to next example..."
     
-    run_example "TestManual_listContainers" "6"
+    run_example "TestIntegration_listContainers" "6"
     read -p "Press Enter to continue to next example..."
     
-    run_example "TestManual_networkOperations" "7"
+    run_example "TestIntegration_networkOperations" "7"
     read -p "Press Enter to continue to next example..."
     
-    run_example "TestManual_complexCommand" "8"
+    run_example "TestIntegration_complexCommand" "8"
     read -p "Press Enter to continue to next example..."
     
-    run_example "TestManual_interactiveShell" "9"
+    run_example "TestIntegration_interactiveShell" "9"
     read -p "Press Enter to continue to next example..."
     
-    run_example "TestManual_buildImage" "10"
+    run_example "TestIntegration_buildImage" "10"
     read -p "Press Enter to continue to next example..."
     
-    run_example "TestManual_runDaemon" "11"
+    run_example "TestIntegration_runDaemon" "11"
     read -p "Press Enter to continue to next example..."
     
-    run_example "TestManual_stopContainer" "12"
+    run_example "TestIntegration_stopContainer" "12"
     
     echo -e "${GREEN}✅ All examples completed!${NC}"
 }
@@ -171,18 +171,18 @@ run_all_examples_auto() {
     local failed_count=0
     local total_count=12
     
-    run_example "TestManual_pullHelloWorld" "1" || ((failed_count++))
-    run_example "TestManual_runHelloWorld" "2" || ((failed_count++))
-    run_example "TestManual_runAlpineEcho" "3" || ((failed_count++))
-    run_example "TestManual_runAlpineWithEnv" "4" || ((failed_count++))
-    run_example "TestManual_imageInspect" "5" || ((failed_count++))
-    run_example "TestManual_listContainers" "6" || ((failed_count++))
-    run_example "TestManual_networkOperations" "7" || ((failed_count++))
-    run_example "TestManual_complexCommand" "8" || ((failed_count++))
-    run_example "TestManual_interactiveShell" "9" || ((failed_count++))
-    run_example "TestManual_buildImage" "10" || ((failed_count++))
-    run_example "TestManual_runDaemon" "11" || ((failed_count++))
-    run_example "TestManual_stopContainer" "12" || ((failed_count++))
+    run_example "TestIntegration_pullHelloWorld" "1" || ((failed_count++))
+    run_example "TestIntegration_runHelloWorld" "2" || ((failed_count++))
+    run_example "TestIntegration_runAlpineEcho" "3" || ((failed_count++))
+    run_example "TestIntegration_runAlpineWithEnv" "4" || ((failed_count++))
+    run_example "TestIntegration_imageInspect" "5" || ((failed_count++))
+    run_example "TestIntegration_listContainers" "6" || ((failed_count++))
+    run_example "TestIntegration_networkOperations" "7" || ((failed_count++))
+    run_example "TestIntegration_complexCommand" "8" || ((failed_count++))
+    run_example "TestIntegration_interactiveShell" "9" || ((failed_count++))
+    run_example "TestIntegration_buildImage" "10" || ((failed_count++))
+    run_example "TestIntegration_runDaemon" "11" || ((failed_count++))
+    run_example "TestIntegration_stopContainer" "12" || ((failed_count++))
     
     echo
     echo -e "${CYAN}═══════════════════════════════════════════════════════════${NC}"
@@ -291,51 +291,51 @@ main() {
         
         case $choice in
             1)
-                run_example "TestManual_pullHelloWorld" "1"
+                run_example "TestIntegration_pullHelloWorld" "1"
                 read -p "Press Enter to return to menu..."
                 ;;
             2)
-                run_example "TestManual_runHelloWorld" "2"
+                run_example "TestIntegration_runHelloWorld" "2"
                 read -p "Press Enter to return to menu..."
                 ;;
             3)
-                run_example "TestManual_runAlpineEcho" "3"
+                run_example "TestIntegration_runAlpineEcho" "3"
                 read -p "Press Enter to return to menu..."
                 ;;
             4)
-                run_example "TestManual_runAlpineWithEnv" "4"
+                run_example "TestIntegration_runAlpineWithEnv" "4"
                 read -p "Press Enter to return to menu..."
                 ;;
             5)
-                run_example "TestManual_imageInspect" "5"
+                run_example "TestIntegration_imageInspect" "5"
                 read -p "Press Enter to return to menu..."
                 ;;
             6)
-                run_example "TestManual_listContainers" "6"
+                run_example "TestIntegration_listContainers" "6"
                 read -p "Press Enter to return to menu..."
                 ;;
             7)
-                run_example "TestManual_networkOperations" "7"
+                run_example "TestIntegration_networkOperations" "7"
                 read -p "Press Enter to return to menu..."
                 ;;
             8)
-                run_example "TestManual_complexCommand" "8"
+                run_example "TestIntegration_complexCommand" "8"
                 read -p "Press Enter to return to menu..."
                 ;;
             9)
-                run_example "TestManual_interactiveShell" "9"
+                run_example "TestIntegration_interactiveShell" "9"
                 read -p "Press Enter to return to menu..."
                 ;;
             10)
-                run_example "TestManual_buildImage" "10"
+                run_example "TestIntegration_buildImage" "10"
                 read -p "Press Enter to return to menu..."
                 ;;
             11)
-                run_example "TestManual_runDaemon" "11"
+                run_example "TestIntegration_runDaemon" "11"
                 read -p "Press Enter to return to menu..."
                 ;;
             12)
-                run_example "TestManual_stopContainer" "12"
+                run_example "TestIntegration_stopContainer" "12"
                 read -p "Press Enter to return to menu..."
                 ;;
             a|A)

@@ -9,9 +9,9 @@ import (
 	"github.com/nawaman/workspace/src/pkg/docker"
 )
 
-// TestManual_pullHelloWorld demonstrates pulling the hello-world image.
+// TestIntegration_pullHelloWorld demonstrates pulling the hello-world image.
 // This will actually pull the image from Docker Hub.
-func TestManual_pullHelloWorld(t *testing.T) {
+func TestIntegration_pullHelloWorld(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 1: Pull hello-world Image")
 	fmt.Println("═══════════════════════════════════════════════════════════")
@@ -44,9 +44,9 @@ func TestManual_pullHelloWorld(t *testing.T) {
 	fmt.Println("Pull completed successfully")
 }
 
-// TestManual_runHelloWorld demonstrates running the hello-world container.
+// TestIntegration_runHelloWorld demonstrates running the hello-world container.
 // This will actually run the container and show its output.
-func TestManual_runHelloWorld(t *testing.T) {
+func TestIntegration_runHelloWorld(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 2: Run hello-world Container")
 	fmt.Println("═══════════════════════════════════════════════════════════")
@@ -80,9 +80,9 @@ func TestManual_runHelloWorld(t *testing.T) {
 	fmt.Println("Container executed successfully")
 }
 
-// TestManual_runAlpineEcho demonstrates running a simple command in alpine.
+// TestIntegration_runAlpineEcho demonstrates running a simple command in alpine.
 // This will actually run the echo command in an alpine container.
-func TestManual_runAlpineEcho(t *testing.T) {
+func TestIntegration_runAlpineEcho(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 3: Run Echo Command in Alpine")
 	fmt.Println("═══════════════════════════════════════════════════════════")
@@ -115,9 +115,9 @@ func TestManual_runAlpineEcho(t *testing.T) {
 	fmt.Println("Command executed successfully")
 }
 
-// TestManual_runAlpineWithEnv demonstrates running alpine with environment variables.
+// TestIntegration_runAlpineWithEnv demonstrates running alpine with environment variables.
 // This will actually run the command with the environment variable set.
-func TestManual_runAlpineWithEnv(t *testing.T) {
+func TestIntegration_runAlpineWithEnv(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 4: Run Alpine with Environment Variable")
 	fmt.Println("═══════════════════════════════════════════════════════════")
@@ -155,9 +155,9 @@ func TestManual_runAlpineWithEnv(t *testing.T) {
 	fmt.Println("Command executed successfully")
 }
 
-// TestManual_imageInspect demonstrates inspecting a docker image.
+// TestIntegration_imageInspect demonstrates inspecting a docker image.
 // This will actually inspect the hello-world image (must exist locally).
-func TestManual_imageInspect(t *testing.T) {
+func TestIntegration_imageInspect(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 5: Inspect Docker Image")
 	fmt.Println("═══════════════════════════════════════════════════════════")
@@ -192,9 +192,9 @@ func TestManual_imageInspect(t *testing.T) {
 	fmt.Println("Inspect completed successfully")
 }
 
-// TestManual_listContainers demonstrates listing docker containers.
+// TestIntegration_listContainers demonstrates listing docker containers.
 // This will actually list all containers on your system.
-func TestManual_listContainers(t *testing.T) {
+func TestIntegration_listContainers(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 6: List All Containers")
 	fmt.Println("═══════════════════════════════════════════════════════════")
@@ -226,9 +226,9 @@ func TestManual_listContainers(t *testing.T) {
 	fmt.Println("List completed successfully")
 }
 
-// TestManual_networkOperations demonstrates docker network operations.
+// TestIntegration_networkOperations demonstrates docker network operations.
 // This will actually create, inspect, and remove a test network.
-func TestManual_networkOperations(t *testing.T) {
+func TestIntegration_networkOperations(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 7: Network Operations")
 	fmt.Println("═══════════════════════════════════════════════════════════")
@@ -282,9 +282,9 @@ func TestManual_networkOperations(t *testing.T) {
 	fmt.Println("Network operations completed successfully")
 }
 
-// TestManual_complexCommand demonstrates a complex docker run command.
+// TestIntegration_complexCommand demonstrates a complex docker run command.
 // This shows all argument types: flags, environment variables, volumes, etc.
-func TestManual_complexCommand(t *testing.T) {
+func TestIntegration_complexCommand(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 8: Complex Docker Command")
 	fmt.Println("═══════════════════════════════════════════════════════════")
@@ -327,10 +327,10 @@ func TestManual_complexCommand(t *testing.T) {
 	fmt.Println("Complex command executed successfully")
 }
 
-// TestManual_interactiveShell demonstrates using -it flags for interactive shell.
+// TestIntegration_interactiveShell demonstrates using -it flags for interactive shell.
 // This shows TTY detection in action - the -it flags will be automatically
 // filtered when running through go test, but will work when run in a terminal.
-func TestManual_interactiveShell(t *testing.T) {
+func TestIntegration_interactiveShell(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 9: Interactive Shell with -it Flags")
 	fmt.Println("═══════════════════════════════════════════════════════════")
@@ -392,9 +392,9 @@ func TestManual_interactiveShell(t *testing.T) {
 	fmt.Println("Note: The -it flags were automatically handled based on TTY availability!")
 }
 
-// TestManual_buildImage demonstrates building a Docker image from a Dockerfile.
+// TestIntegration_buildImage demonstrates building a Docker image from a Dockerfile.
 // This will actually build an image using the test Dockerfile.
-func TestManual_buildImage(t *testing.T) {
+func TestIntegration_buildImage(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 10: Build Docker Image")
 	fmt.Println("═══════════════════════════════════════════════════════════")
@@ -448,9 +448,9 @@ CMD ["echo", "Hello from test image!"]
 	fmt.Println("Build completed successfully")
 }
 
-// TestManual_runDaemon demonstrates running a container in daemon mode.
+// TestIntegration_runDaemon demonstrates running a container in daemon mode.
 // This will start a container in the background and then stop it.
-func TestManual_runDaemon(t *testing.T) {
+func TestIntegration_runDaemon(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 11: Run Container in Daemon Mode")
 	fmt.Println("═══════════════════════════════════════════════════════════")
@@ -500,9 +500,9 @@ func TestManual_runDaemon(t *testing.T) {
 	fmt.Println("Daemon mode example completed successfully")
 }
 
-// TestManual_stopContainer demonstrates stopping a running container.
+// TestIntegration_stopContainer demonstrates stopping a running container.
 // This will start a container and then stop it.
-func TestManual_stopContainer(t *testing.T) {
+func TestIntegration_stopContainer(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 12: Stop Running Container")
 	fmt.Println("═══════════════════════════════════════════════════════════")

@@ -23,7 +23,7 @@ go run ./src/cmd/docker-interactive-manual-test/main.go
 
 ## Why This Exists
 
-Unlike `go test` which captures output and prevents TTY detection, this manual test runs directly in your terminal, allowing you to:
+Unlike `go test` which captures output and prevents TTY detection, this integration test runs directly in your terminal, allowing you to:
 
 1. See actual TTY status (stdin, stdout detection)
 2. Get an interactive shell with `-it` flags
