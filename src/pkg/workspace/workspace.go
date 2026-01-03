@@ -3,10 +3,13 @@ package workspace
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/nawaman/workspace/src/pkg/appctx"
 	"github.com/nawaman/workspace/src/pkg/docker"
+	"github.com/nawaman/workspace/src/pkg/ilist"
+	"golang.org/x/term"
 )
 
 type Workspace struct {
@@ -18,15 +21,90 @@ func NewWorkspace(ctx appctx.AppContext) *Workspace {
 	return &Workspace{ctx: ctx}
 }
 
+// PrepareCommonArgs prepares common Docker run arguments and returns updated AppContext.
+func PrepareCommonArgs(ctx appctx.AppContext, runMode string) appctx.AppContext {
+	builder := ctx.ToBuilder()
+
+	builder.AppendCommonArg("--name", ctx.ContainerName())
+	builder.AppendCommonArg("-e", "HOST_UID="+ctx.HostUID())
+	builder.AppendCommonArg("-e", "HOST_GID="+ctx.HostGID())
+	builder.AppendCommonArg("-v", ctx.WorkspacePath()+":/home/coder/workspace")
+	builder.AppendCommonArg("-w", "/home/coder/workspace")
+	builder.AppendCommonArg("-p", ctx.HostPort()+":10000")
+
+	// Metadata
+	builder.AppendCommonArg("-e", "WS_SETUPS_DIR="+ctx.SetupsDir())
+	builder.AppendCommonArg("-e", "WS_CONTAINER_NAME="+ctx.ContainerName())
+	builder.AppendCommonArg("-e", fmt.Sprintf("WS_DAEMON=%t", ctx.Daemon()))
+	builder.AppendCommonArg("-e", "WS_HOST_PORT="+ctx.HostPort())
+	builder.AppendCommonArg("-e", "WS_IMAGE_NAME="+ctx.ImageName())
+	builder.AppendCommonArg("-e", "WS_RUNMODE="+runMode)
+	builder.AppendCommonArg("-e", "WS_VARIANT_TAG="+ctx.Variant())
+	builder.AppendCommonArg("-e", fmt.Sprintf("WS_VERBOSE=%t", ctx.Verbose()))
+	builder.AppendCommonArg("-e", "WS_VERSION_TAG="+ctx.Version())
+	builder.AppendCommonArg("-e", "WS_WORKSPACE_PATH="+ctx.WorkspacePath())
+	builder.AppendCommonArg("-e", "WS_WORKSPACE_PORT="+ctx.WorkspacePort())
+	builder.AppendCommonArg("-e", fmt.Sprintf("WS_HAS_NOTEBOOK=%t", ctx.HasNotebook()))
+	builder.AppendCommonArg("-e", fmt.Sprintf("WS_HAS_VSCODE=%t", ctx.HasVscode()))
+	builder.AppendCommonArg("-e", fmt.Sprintf("WS_HAS_DESKTOP=%t", ctx.HasDesktop()))
+
+	if !ctx.DoPull() {
+		builder.AppendCommonArg("--pull=never")
+	}
+
+	return builder.Build()
+}
+
+// PrepareKeepAliveArgs prepares keep-alive arguments and returns updated AppContext.
+func PrepareKeepAliveArgs(ctx appctx.AppContext) appctx.AppContext {
+	builder := ctx.ToBuilder()
+
+	builder.KeepaliveArgs = ilist.NewAppendableList[string]()
+	if !ctx.Keepalive() {
+		builder.KeepaliveArgs.Append("--rm")
+	}
+
+	return builder.Build()
+}
+
+// PrepareTtyArgs prepares TTY arguments and returns updated AppContext.
+func PrepareTtyArgs(ctx appctx.AppContext) appctx.AppContext {
+	builder := ctx.ToBuilder()
+
+	builder.TtyArgs = ilist.NewAppendableList[string]()
+
+	// Default: interactive only
+	builder.TtyArgs.Append("-i")
+
+	// If both stdin (fd 0) and stdout (fd 1) are terminals, use interactive + TTY
+	if term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd())) {
+		builder.TtyArgs = ilist.NewAppendableList[string]()
+		builder.TtyArgs.Append("-it")
+	}
+
+	return builder.Build()
+}
+
 // Run executes the workspace based on the run mode determined from the context.
 func (workspace *Workspace) Run() error {
+	// Prepare arguments that don't depend on run mode
+	ctx := workspace.ctx
+	ctx = PrepareKeepAliveArgs(ctx)
+	ctx = PrepareTtyArgs(ctx)
+
 	// Determine run mode
 	runMode := "COMMAND"
-	if workspace.ctx.Daemon() {
+	if ctx.Daemon() {
 		runMode = "DAEMON"
-	} else if workspace.ctx.Cmds().Length() == 0 {
+	} else if ctx.Cmds().Length() == 0 {
 		runMode = "FOREGROUND"
 	}
+
+	// Prepare common args with run mode
+	ctx = PrepareCommonArgs(ctx, runMode)
+
+	// Update workspace context with prepared arguments
+	workspace.ctx = ctx
 
 	// Execute based on run mode
 	switch runMode {
