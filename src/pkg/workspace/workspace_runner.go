@@ -25,6 +25,8 @@ func NewWorkspaceRunner(ctx appctx.AppContext) *WorkspaceRunner {
 func (runner *WorkspaceRunner) Run() error {
 	// Prepare arguments and determine run mode (matching workspace.sh order)
 	ctx := runner.ctx
+	ctx = PortDetermination(ctx)
+	ctx = ShowDebugBanner(ctx)
 	ctx = SetupDind(ctx)
 	ctx = PrepareRunMode(ctx)
 	ctx = PrepareCommonArgs(ctx)
