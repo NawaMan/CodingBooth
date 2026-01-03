@@ -25,6 +25,7 @@ func NewWorkspaceRunner(ctx appctx.AppContext) *WorkspaceRunner {
 func (runner *WorkspaceRunner) Run() error {
 	// Prepare arguments and determine run mode (matching workspace.sh order)
 	ctx := runner.ctx
+	ctx = EnsureDockerImage(ctx)
 	ctx = ApplyEnvFile(ctx)
 	ctx = PortDetermination(ctx)
 	ctx = ShowDebugBanner(ctx)
