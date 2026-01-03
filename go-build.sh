@@ -28,6 +28,24 @@ declare -a PLATFORMS=(
 echo "📦 Building for multiple platforms..."
 echo ""
 
+# First, build for the current platform and place in project root
+echo "🏠 Building local executable for current platform..."
+LOCAL_OUTPUT="./workspace"
+if [[ "$(uname -s)" == "MINGW"* ]] || [[ "$(uname -s)" == "CYGWIN"* ]] || [[ "$(uname -s)" == "MSYS"* ]]; then
+    LOCAL_OUTPUT="./workspace.exe"
+fi
+
+if go build -o "$LOCAL_OUTPUT" "$SRC_DIR/workspace" 2>/dev/null; then
+    LOCAL_SIZE=$(du -h "$LOCAL_OUTPUT" | cut -f1)
+    echo "   ✅ Built: $LOCAL_OUTPUT (${LOCAL_SIZE})"
+else
+    echo "   ❌ FAILED to build local executable"
+fi
+echo ""
+
+echo "🌍 Building for all platforms..."
+echo ""
+
 BUILD_COUNT=0
 FAILED_COUNT=0
 

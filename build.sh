@@ -108,7 +108,7 @@ BuildVariant() {
   local no_cache="$4"
 
   local tags_arg=()
-  local context_dir="workspace/${variant}"
+  local context_dir="variants/${variant}"
   local docker_file="${context_dir}/Dockerfile"
 
   tags_arg+=( -t "${IMAGE_NAME}:${variant}-${version}" )
