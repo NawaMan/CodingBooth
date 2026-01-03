@@ -1,0 +1,19 @@
+# ws-config.toml - Workspace Configuration Example
+# This file demonstrates TOML-based configuration for the workspace tool
+
+# Workspace settings
+Variant = "codeserver"
+Version = "latest"
+
+# Container settings
+WorkspacePort = "8080"
+
+# Runtime flags
+Daemon = true
+Verbose = false
+
+# Additional docker run arguments
+RunArgs = ["-v", "/data:/data", "-e", "CUSTOM_VAR=value"]
+
+# Build arguments (for local builds)
+BuildArgs = ["--build-arg", "NODE_VERSION=20"]

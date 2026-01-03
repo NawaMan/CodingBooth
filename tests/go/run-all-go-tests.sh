@@ -43,13 +43,19 @@ echo ""
 
 cd "$SCRIPT_DIR"
 
+# Run Docker integration tests
+echo "----------------------------------------"
+echo "Running Docker Integration Tests"
+echo "----------------------------------------"
+echo ""
+
 total_suites=$((total_suites + 1))
-if ./run-docker-manual-tests.sh --all-auto; then
+if ./run-docker-integration-tests.sh --all-auto; then
     echo ""
-    echo "✓ Docker manual tests passed!"
+    echo "✓ Docker integration tests passed!"
 else
     failed=1
-    failed_suites+=("docker manual tests")
+    failed_suites+=("docker integration tests")
 fi
 echo ""
 

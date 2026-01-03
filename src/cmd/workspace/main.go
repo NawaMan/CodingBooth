@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/nawaman/workspace/src/pkg/appctx"
 )
 
@@ -168,6 +169,9 @@ func runWorkspace() {
 	fmt.Printf("  HostUID: %s\n", ctx.HostUID())
 	fmt.Printf("  HostGID: %s\n", ctx.HostGID())
 	fmt.Printf("  Timezone: %s\n", ctx.Timezone())
+	fmt.Printf("  Variant: %s\n", ctx.Variant())
+	fmt.Printf("  Daemon: %v\n", ctx.Daemon())
+	fmt.Printf("  Verbose: %v\n", ctx.Verbose())
 
 	fmt.Println("✅ AppContext initialized successfully")
 	os.Exit(0)
@@ -182,11 +186,38 @@ func initializeAppContext() appctx.AppContext {
 	builder.LibDir = filepath.Join(builder.ScriptDir, "libs")
 	builder.WorkspacePath = getCurrentPath()
 	builder.ProjectName = getProjectName(builder.WorkspacePath)
-	builder.ConfigFile = "./ws--config.sh"
+	builder.ConfigFile = "./ws-config.toml"
 	builder.HostUID = getHostUID()
 	builder.HostGID = getHostGID()
 	builder.Timezone = detectTimezone()
+
+	// Load config file (overrides defaults)
+	if err := loadConfig(builder.ConfigFile, builder); err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading config: %v\n", err)
+		os.Exit(1)
+	}
+
 	return builder.Build()
+}
+
+// loadConfig loads TOML configuration from the specified file into the builder.
+// If the file doesn't exist, this is not an error (config is optional).
+func loadConfig(configFile string, builder *appctx.AppContextBuilder) error {
+	// Check if config file exists
+	if _, err := os.Stat(configFile); os.IsNotExist(err) {
+		// Config file is optional
+		return nil
+	}
+
+	// Decode TOML file into builder
+	if _, err := toml.DecodeFile(configFile, builder); err != nil {
+		return fmt.Errorf("failed to parse config file %s: %w", configFile, err)
+	}
+
+	// Convert TOML-decoded slices to AppendableList instances
+	builder.ApplySlicesToLists()
+
+	return nil
 }
 
 // getCurrentPath returns the current working directory, handling MSYS/Git Bash on Windows

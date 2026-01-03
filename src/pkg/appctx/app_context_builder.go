@@ -3,69 +3,78 @@ package appctx
 import "github.com/nawaman/workspace/src/pkg/ilist"
 
 // AppContextBuilder is a mutable builder for constructing AppContext instances.
-// All fields are public for direct access.
+// All fields are public for direct access and can be loaded from TOML configuration.
 type AppContextBuilder struct {
 	// Version & Paths
-	WsVersion     string
-	ScriptName    string
-	ScriptDir     string
-	LibDir        string
-	PrebuildRepo  string
-	SetupsDir     string
-	WorkspacePath string
-	ProjectName   string
+	WsVersion     string `toml:"WsVersion,omitempty"`
+	ScriptName    string `toml:"ScriptName,omitempty"`
+	ScriptDir     string `toml:"ScriptDir,omitempty"`
+	LibDir        string `toml:"LibDir,omitempty"`
+	PrebuildRepo  string `toml:"PrebuildRepo,omitempty"`
+	SetupsDir     string `toml:"SetupsDir,omitempty"`
+	WorkspacePath string `toml:"WorkspacePath,omitempty"`
+	ProjectName   string `toml:"ProjectName,omitempty"`
 
 	// User & Environment
-	HostUID  string
-	HostGID  string
-	Timezone string
+	HostUID  string `toml:"HostUID,omitempty"`
+	HostGID  string `toml:"HostGID,omitempty"`
+	Timezone string `toml:"Timezone,omitempty"`
 
 	// Flags
-	Dryrun         bool
-	Verbose        bool
-	Keepalive      bool
-	SilenceBuild   bool
-	Daemon         bool
-	DoPull         bool
-	LocalBuild     bool
-	SetConfigFile  bool
-	HasNotebook    bool
-	HasVscode      bool
-	HasDesktop     bool
-	Dind           bool
-	CreatedDindNet bool
+	Dryrun         bool `toml:"Dryrun,omitempty"`
+	Verbose        bool `toml:"Verbose,omitempty"`
+	Keepalive      bool `toml:"Keepalive,omitempty"`
+	SilenceBuild   bool `toml:"SilenceBuild,omitempty"`
+	Daemon         bool `toml:"Daemon,omitempty"`
+	DoPull         bool `toml:"DoPull,omitempty"`
+	LocalBuild     bool `toml:"LocalBuild,omitempty"`
+	SetConfigFile  bool `toml:"SetConfigFile,omitempty"`
+	HasNotebook    bool `toml:"HasNotebook,omitempty"`
+	HasVscode      bool `toml:"HasVscode,omitempty"`
+	HasDesktop     bool `toml:"HasDesktop,omitempty"`
+	Dind           bool `toml:"Dind,omitempty"`
+	CreatedDindNet bool `toml:"CreatedDindNet,omitempty"`
 
 	// Image Configuration
-	DockerFile string
-	ImageName  string
-	ImageMode  string
-	Variant    string
-	Version    string
+	DockerFile string `toml:"DockerFile,omitempty"`
+	ImageName  string `toml:"ImageName,omitempty"`
+	ImageMode  string `toml:"ImageMode,omitempty"`
+	Variant    string `toml:"Variant,omitempty"`
+	Version    string `toml:"Version,omitempty"`
 
 	// Container Configuration
-	ContainerName    string
-	WorkspacePort    string
-	HostPort         string
-	PortGenerated    bool
-	ContainerEnvFile string
-	ConfigFile       string
-	FileNotUsed      string
+	ContainerName    string `toml:"ContainerName,omitempty"`
+	WorkspacePort    string `toml:"WorkspacePort,omitempty"`
+	HostPort         string `toml:"HostPort,omitempty"`
+	PortGenerated    bool   `toml:"PortGenerated,omitempty"`
+	ContainerEnvFile string `toml:"ContainerEnvFile,omitempty"`
+	ConfigFile       string `toml:"ConfigFile,omitempty"`
+	FileNotUsed      string `toml:"FileNotUsed,omitempty"`
 
 	// Docker-in-Docker
-	DindNet   string
-	DindName  string
-	DockerBin string
+	DindNet   string `toml:"DindNet,omitempty"`
+	DindName  string `toml:"DindName,omitempty"`
+	DockerBin string `toml:"DockerBin,omitempty"`
 
 	// Runtime State
-	RunMode string
+	RunMode string `toml:"RunMode,omitempty"`
 
 	// Argument Lists (mutable builders)
-	CommonArgs    *ilist.AppendableList[string]
-	BuildArgs     *ilist.AppendableList[string]
-	RunArgs       *ilist.AppendableList[string]
-	Cmds          *ilist.AppendableList[string]
-	KeepaliveArgs *ilist.AppendableList[string]
-	TtyArgs       *ilist.AppendableList[string]
+	// Note: These are pointers, so TOML will decode into []string and we'll convert
+	CommonArgs    *ilist.AppendableList[string] `toml:"-"` // Handled specially
+	BuildArgs     *ilist.AppendableList[string] `toml:"-"` // Handled specially
+	RunArgs       *ilist.AppendableList[string] `toml:"-"` // Handled specially
+	Cmds          *ilist.AppendableList[string] `toml:"-"` // Handled specially
+	KeepaliveArgs *ilist.AppendableList[string] `toml:"-"` // Handled specially
+	TtyArgs       *ilist.AppendableList[string] `toml:"-"` // Handled specially
+
+	// TOML-friendly array fields (temporary storage during decode)
+	CommonArgsSlice    []string `toml:"CommonArgs,omitempty"`
+	BuildArgsSlice     []string `toml:"BuildArgs,omitempty"`
+	RunArgsSlice       []string `toml:"RunArgs,omitempty"`
+	CmdsSlice          []string `toml:"Cmds,omitempty"`
+	KeepaliveArgsSlice []string `toml:"KeepaliveArgs,omitempty"`
+	TtyArgsSlice       []string `toml:"TtyArgs,omitempty"`
 }
 
 // NewAppContextBuilder creates a new AppContextBuilder with defaults matching workspace.sh initialization.
@@ -194,4 +203,27 @@ func (builder *AppContextBuilder) AppendRunArg(args ...string) {
 // AppendCmd adds commands to the cmds builder.
 func (builder *AppContextBuilder) AppendCmd(cmds ...string) {
 	builder.Cmds.Append(cmds...)
+}
+
+// ApplySlicesToLists converts the TOML-decoded slice fields into AppendableList instances.
+// This should be called after TOML decoding to populate the list fields from config.
+func (builder *AppContextBuilder) ApplySlicesToLists() {
+	if builder.CommonArgsSlice != nil {
+		builder.CommonArgs.Append(builder.CommonArgsSlice...)
+	}
+	if builder.BuildArgsSlice != nil {
+		builder.BuildArgs.Append(builder.BuildArgsSlice...)
+	}
+	if builder.RunArgsSlice != nil {
+		builder.RunArgs.Append(builder.RunArgsSlice...)
+	}
+	if builder.CmdsSlice != nil {
+		builder.Cmds.Append(builder.CmdsSlice...)
+	}
+	if builder.KeepaliveArgsSlice != nil {
+		builder.KeepaliveArgs.Append(builder.KeepaliveArgsSlice...)
+	}
+	if builder.TtyArgsSlice != nil {
+		builder.TtyArgs.Append(builder.TtyArgsSlice...)
+	}
 }
