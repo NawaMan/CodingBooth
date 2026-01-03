@@ -805,9 +805,9 @@ func TestWorkspace_Run_DaemonMode(t *testing.T) {
 	builder.Cmds.Append("echo test")
 
 	ctx := builder.Build()
-	main := NewWorkspaceMain(ctx)
+	runner := NewWorkspaceRunner(ctx)
 
-	err := main.Run()
+	err := runner.Run()
 
 	writer.Close()
 	os.Stdout = oldStdout
@@ -847,9 +847,9 @@ func TestWorkspace_Run_ForegroundMode(t *testing.T) {
 	// No commands - should trigger foreground mode
 
 	ctx := builder.Build()
-	main := NewWorkspaceMain(ctx)
+	runner := NewWorkspaceRunner(ctx)
 
-	err := main.Run()
+	err := runner.Run()
 
 	writer.Close()
 	os.Stdout = oldStdout
@@ -888,9 +888,9 @@ func TestWorkspace_Run_CommandMode(t *testing.T) {
 	builder.Cmds.Append("echo hello", "ls -la")
 
 	ctx := builder.Build()
-	main := NewWorkspaceMain(ctx)
+	runner := NewWorkspaceRunner(ctx)
 
-	err := main.Run()
+	err := runner.Run()
 
 	writer.Close()
 	os.Stdout = oldStdout

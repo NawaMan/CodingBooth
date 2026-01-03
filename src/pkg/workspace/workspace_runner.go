@@ -10,21 +10,21 @@ import (
 	"golang.org/x/term"
 )
 
-// WorkspaceMain is the main entry point for workspace operations.
+// WorkspaceRunner handles the "run" command for workspace operations.
 // It orchestrates the preparation of AppContext and execution of the workspace.
-type WorkspaceMain struct {
+type WorkspaceRunner struct {
 	ctx appctx.AppContext
 }
 
-// NewWorkspaceMain creates a new WorkspaceMain with the given AppContext.
-func NewWorkspaceMain(ctx appctx.AppContext) *WorkspaceMain {
-	return &WorkspaceMain{ctx: ctx}
+// NewWorkspaceRunner creates a new WorkspaceRunner with the given AppContext.
+func NewWorkspaceRunner(ctx appctx.AppContext) *WorkspaceRunner {
+	return &WorkspaceRunner{ctx: ctx}
 }
 
 // Run is the main entry point that prepares the context and executes the workspace.
-func (main *WorkspaceMain) Run() error {
+func (runner *WorkspaceRunner) Run() error {
 	// Prepare arguments and determine run mode (matching workspace.sh order)
-	ctx := main.ctx
+	ctx := runner.ctx
 	ctx = SetupDind(ctx)
 	ctx = PrepareRunMode(ctx)
 	ctx = PrepareCommonArgs(ctx)
