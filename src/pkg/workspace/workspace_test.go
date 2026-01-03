@@ -641,6 +641,7 @@ func TestWorkspace_runAsDaemon_WithKeepalive(t *testing.T) {
 		t.Errorf("Did not expect --rm message when keepalive=true, got: %q", output)
 	}
 }
+
 // TestWorkspace_runAsForeground_DryrunMode verifies foreground mode command construction.
 func TestWorkspace_runAsForeground_DryrunMode(t *testing.T) {
 	// Capture stdout
@@ -785,6 +786,7 @@ func TestWorkspace_runAsForeground_WithDind(t *testing.T) {
 		t.Errorf("Expected DinD network name in rm command, got: %q", output)
 	}
 }
+
 // TestWorkspace_Run_DaemonMode verifies Run delegates to runAsDaemon when daemon flag is set.
 func TestWorkspace_Run_DaemonMode(t *testing.T) {
 	oldStdout := os.Stdout
@@ -803,9 +805,9 @@ func TestWorkspace_Run_DaemonMode(t *testing.T) {
 	builder.Cmds.Append("echo test")
 
 	ctx := builder.Build()
-	ws := NewWorkspace(ctx)
+	main := NewWorkspaceMain(ctx)
 
-	err := ws.Run()
+	err := main.Run()
 
 	writer.Close()
 	os.Stdout = oldStdout
@@ -845,9 +847,9 @@ func TestWorkspace_Run_ForegroundMode(t *testing.T) {
 	// No commands - should trigger foreground mode
 
 	ctx := builder.Build()
-	ws := NewWorkspace(ctx)
+	main := NewWorkspaceMain(ctx)
 
-	err := ws.Run()
+	err := main.Run()
 
 	writer.Close()
 	os.Stdout = oldStdout
@@ -886,9 +888,9 @@ func TestWorkspace_Run_CommandMode(t *testing.T) {
 	builder.Cmds.Append("echo hello", "ls -la")
 
 	ctx := builder.Build()
-	ws := NewWorkspace(ctx)
+	main := NewWorkspaceMain(ctx)
 
-	err := ws.Run()
+	err := main.Run()
 
 	writer.Close()
 	os.Stdout = oldStdout
