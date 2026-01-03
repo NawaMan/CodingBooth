@@ -785,3 +785,132 @@ func TestWorkspace_runAsForeground_WithDind(t *testing.T) {
 		t.Errorf("Expected DinD network name in rm command, got: %q", output)
 	}
 }
+// TestWorkspace_Run_DaemonMode verifies Run delegates to runAsDaemon when daemon flag is set.
+func TestWorkspace_Run_DaemonMode(t *testing.T) {
+	oldStdout := os.Stdout
+	reader, writer, _ := os.Pipe()
+	os.Stdout = writer
+
+	builder := appctx.NewAppContextBuilder("0.11.0")
+	builder.Dryrun = true
+	builder.Verbose = true
+	builder.Daemon = true
+	builder.Timezone = "UTC"
+	builder.ImageName = "alpine:latest"
+	builder.ScriptName = "workspace.sh"
+	builder.HostPort = "10000"
+	builder.ContainerName = "test-container"
+	builder.Cmds.Append("echo test")
+
+	ctx := builder.Build()
+	ws := NewWorkspace(ctx)
+
+	err := ws.Run()
+
+	writer.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	io.Copy(&buf, reader)
+	output := buf.String()
+
+	if err != nil {
+		t.Errorf("Run() in daemon mode returned error: %v", err)
+	}
+
+	// Should see daemon mode message
+	if !strings.Contains(output, "📦 Running workspace in daemon mode.") {
+		t.Errorf("Expected daemon mode message, got: %q", output)
+	}
+
+	// Should have -d flag
+	if !strings.Contains(output, "-d") {
+		t.Errorf("Expected '-d' flag for daemon mode, got: %q", output)
+	}
+}
+
+// TestWorkspace_Run_ForegroundMode verifies Run delegates to runAsForeground when no commands.
+func TestWorkspace_Run_ForegroundMode(t *testing.T) {
+	oldStdout := os.Stdout
+	reader, writer, _ := os.Pipe()
+	os.Stdout = writer
+
+	builder := appctx.NewAppContextBuilder("0.11.0")
+	builder.Dryrun = true
+	builder.Verbose = true
+	builder.Daemon = false
+	builder.Timezone = "UTC"
+	builder.ImageName = "alpine:latest"
+	builder.ScriptName = "workspace.sh"
+	// No commands - should trigger foreground mode
+
+	ctx := builder.Build()
+	ws := NewWorkspace(ctx)
+
+	err := ws.Run()
+
+	writer.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	io.Copy(&buf, reader)
+	output := buf.String()
+
+	if err != nil {
+		t.Errorf("Run() in foreground mode returned error: %v", err)
+	}
+
+	// Should see foreground mode message
+	if !strings.Contains(output, "📦 Running workspace in foreground.") {
+		t.Errorf("Expected foreground mode message, got: %q", output)
+	}
+
+	// Should NOT have -d flag
+	if strings.Contains(output, " -d ") {
+		t.Errorf("Did not expect '-d' flag in foreground mode, got: %q", output)
+	}
+}
+
+// TestWorkspace_Run_CommandMode verifies Run delegates to runAsCommand when commands are provided.
+func TestWorkspace_Run_CommandMode(t *testing.T) {
+	oldStdout := os.Stdout
+	reader, writer, _ := os.Pipe()
+	os.Stdout = writer
+
+	builder := appctx.NewAppContextBuilder("0.11.0")
+	builder.Dryrun = true
+	builder.Verbose = true
+	builder.Daemon = false
+	builder.Timezone = "UTC"
+	builder.ImageName = "alpine:latest"
+	builder.Cmds.Append("echo hello", "ls -la")
+
+	ctx := builder.Build()
+	ws := NewWorkspace(ctx)
+
+	err := ws.Run()
+
+	writer.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	io.Copy(&buf, reader)
+	output := buf.String()
+
+	if err != nil {
+		t.Errorf("Run() in command mode returned error: %v", err)
+	}
+
+	// Should have bash -lc wrapper (command mode)
+	if !strings.Contains(output, "bash") {
+		t.Errorf("Expected 'bash' in command mode, got: %q", output)
+	}
+	if !strings.Contains(output, "-lc") {
+		t.Errorf("Expected '-lc' in command mode, got: %q", output)
+	}
+
+	// Should NOT have -d flag
+	if strings.Contains(output, " -d ") {
+		t.Errorf("Did not expect '-d' flag in command mode, got: %q", output)
+	}
+}

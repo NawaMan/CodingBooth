@@ -18,6 +18,27 @@ func NewWorkspace(ctx appctx.AppContext) *Workspace {
 	return &Workspace{ctx: ctx}
 }
 
+// Run executes the workspace based on the run mode determined from the context.
+func (workspace *Workspace) Run() error {
+	// Determine run mode
+	runMode := "COMMAND"
+	if workspace.ctx.Daemon() {
+		runMode = "DAEMON"
+	} else if workspace.ctx.Cmds().Length() == 0 {
+		runMode = "FOREGROUND"
+	}
+
+	// Execute based on run mode
+	switch runMode {
+	case "DAEMON":
+		return workspace.runAsDaemon()
+	case "FOREGROUND":
+		return workspace.runAsForeground()
+	default:
+		return workspace.runAsCommand()
+	}
+}
+
 // runAsCommand executes a docker run command with user-specified commands in foreground mode.
 func (workspace *Workspace) runAsCommand() error {
 	userCmds := strings.Join(workspace.ctx.Cmds().Slice(), " ")
@@ -93,6 +114,7 @@ func (workspace *Workspace) runAsDaemon() error {
 
 	return err
 }
+
 // runAsForeground executes a docker run command in foreground mode.
 func (workspace *Workspace) runAsForeground() error {
 	fmt.Println("📦 Running workspace in foreground.")
