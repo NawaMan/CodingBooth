@@ -98,3 +98,9 @@ __pypackages__/
 
 
 workspace/workspace
+
+bin/
+
+workspace.sh
+
+workspace
