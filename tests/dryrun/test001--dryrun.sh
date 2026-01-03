@@ -17,7 +17,7 @@ strip_ansi() { sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g'; }
 
 export TIMEZONE="America/Toronto"
 
-ACTUAL=$(../../workspace.sh --variant base --dryrun | strip_ansi)
+ACTUAL=$(../../workspace --variant base --dryrun | strip_ansi)
 
 HERE="$CURRENT_PATH"
 VERSION="$(cat ../../version.txt)"

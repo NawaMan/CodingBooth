@@ -11,6 +11,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/workspace"
 )
 
 // version is set at build time via -ldflags "-X main.version=$(cat version.txt)"
@@ -155,36 +156,17 @@ EXAMPLES:
 func runWorkspace() {
 	ctx := initializeAppContext()
 
-	// TODO: Load config file
-	// TODO: Parse arguments
-	// TODO: Execute workspace pipeline
+	// Execute workspace pipeline
+	ctx = workspace.PortDetermination(ctx)
 
-	// Temporary: show what we've initialized (always show for now)
-	fmt.Printf("Initialized AppContext:\n")
-	fmt.Printf("  WsVersion: %s\n", ctx.WsVersion())
-	fmt.Printf("  ScriptName: %s\n", ctx.ScriptName())
-	fmt.Printf("  ScriptDir: %s\n", ctx.ScriptDir())
-	fmt.Printf("  WorkspacePath: %s\n", ctx.WorkspacePath())
-	fmt.Printf("  ProjectName: %s\n", ctx.ProjectName())
-	fmt.Printf("  HostUID: %s\n", ctx.HostUID())
-	fmt.Printf("  HostGID: %s\n", ctx.HostGID())
-	fmt.Printf("  Timezone: %s\n", ctx.Timezone())
-	fmt.Printf("  Variant: %s\n", ctx.Variant())
-	fmt.Printf("  Daemon: %v\n", ctx.Daemon())
-	fmt.Printf("  Verbose: %v\n", ctx.Verbose())
-	fmt.Printf("  WorkspacePort: %s\n", ctx.WorkspacePort())
-	fmt.Printf("  ContainerName: %s\n", ctx.ContainerName())
-	if ctx.BuildArgs().Length() > 0 {
-		fmt.Printf("  BuildArgs: %v\n", ctx.BuildArgs().Slice())
-	}
-	if ctx.RunArgs().Length() > 0 {
-		fmt.Printf("  RunArgs: %v\n", ctx.RunArgs().Slice())
-	}
-	if ctx.Cmds().Length() > 0 {
-		fmt.Printf("  Cmds: %v\n", ctx.Cmds().Slice())
-	}
+	// TODO: Continue with remaining pipeline steps
+	// - ShowDebugBanner
+	// - SetupDind
+	// - PrepareCommonArgs
+	// - PrepareKeepAliveArgs
+	// - PrepareTtyArgs
+	// - RunAsDaemon / RunAsForeground / RunAsCommand
 
-	fmt.Println("✅ AppContext initialized successfully")
 	os.Exit(0)
 }
 
