@@ -3,9 +3,17 @@ package main
 import (
 	"fmt"
 	"os"
+	"os/exec"
+	"path/filepath"
+	"runtime"
+	"strings"
+	"time"
+
+	"github.com/nawaman/workspace/src/pkg/appctx"
 )
 
-const version = "0.11.0"
+// version is set at build time via -ldflags "-X main.version=$(cat version.txt)"
+var version = "dev" // fallback if not set at build time
 
 func main() {
 	// Check for commands
@@ -144,7 +152,168 @@ EXAMPLES:
 }
 
 func runWorkspace() {
-	fmt.Println("🚧 Run command not yet implemented")
-	fmt.Println("This will execute the workspace runner pipeline")
+	ctx := initializeAppContext()
+
+	// TODO: Load config file
+	// TODO: Parse arguments
+	// TODO: Execute workspace pipeline
+
+	// Temporary: show what we've initialized (always show for now)
+	fmt.Printf("Initialized AppContext:\n")
+	fmt.Printf("  WsVersion: %s\n", ctx.WsVersion())
+	fmt.Printf("  ScriptName: %s\n", ctx.ScriptName())
+	fmt.Printf("  ScriptDir: %s\n", ctx.ScriptDir())
+	fmt.Printf("  WorkspacePath: %s\n", ctx.WorkspacePath())
+	fmt.Printf("  ProjectName: %s\n", ctx.ProjectName())
+	fmt.Printf("  HostUID: %s\n", ctx.HostUID())
+	fmt.Printf("  HostGID: %s\n", ctx.HostGID())
+	fmt.Printf("  Timezone: %s\n", ctx.Timezone())
+
+	fmt.Println("✅ AppContext initialized successfully")
 	os.Exit(0)
+}
+
+// initializeAppContext creates an AppContext with default values matching workspace.sh Main()
+func initializeAppContext() appctx.AppContext {
+	builder := appctx.NewAppContextBuilder(version)
+
+	builder.ScriptName = getScriptName()
+	builder.ScriptDir = getScriptDir()
+	builder.LibDir = filepath.Join(builder.ScriptDir, "libs")
+	builder.WorkspacePath = getCurrentPath()
+	builder.ProjectName = getProjectName(builder.WorkspacePath)
+	builder.ConfigFile = "./ws--config.sh"
+	builder.HostUID = getHostUID()
+	builder.HostGID = getHostGID()
+	builder.Timezone = detectTimezone()
+	return builder.Build()
+}
+
+// getCurrentPath returns the current working directory, handling MSYS/Git Bash on Windows
+func getCurrentPath() string {
+	cwd, err := os.Getwd()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting current directory: %v\n", err)
+		os.Exit(1)
+	}
+
+	if runtime.GOOS == "windows" {
+		return cwd
+	}
+
+	return cwd
+}
+
+// getScriptName returns the base name of the executable
+func getScriptName() string {
+	if len(os.Args) > 0 {
+		return filepath.Base(os.Args[0])
+	}
+	return "workspace"
+}
+
+// getScriptDir returns the directory containing the executable
+func getScriptDir() string {
+	if len(os.Args) == 0 {
+		return "."
+	}
+
+	exePath := os.Args[0]
+
+	// Get absolute path
+	absPath, err := filepath.Abs(exePath)
+	if err != nil {
+		return filepath.Dir(exePath)
+	}
+
+	// Resolve symlinks
+	realPath, err := filepath.EvalSymlinks(absPath)
+	if err != nil {
+		return filepath.Dir(absPath)
+	}
+
+	return filepath.Dir(realPath)
+}
+
+// getProjectName extracts a sanitized project name from the workspace path
+func getProjectName(workspacePath string) string {
+	// Get the base name of the path
+	baseName := filepath.Base(workspacePath)
+
+	// Sanitize: replace non-alphanumeric characters with underscores
+	// This matches the workspace.sh project_name function behavior
+	var result strings.Builder
+	for _, ch := range baseName {
+		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') {
+			result.WriteRune(ch)
+		} else {
+			result.WriteRune('_')
+		}
+	}
+
+	sanitized := result.String()
+	if sanitized == "" {
+		return "workspace"
+	}
+
+	return sanitized
+}
+
+// getHostUID returns the current user's UID as a string
+func getHostUID() string {
+	if runtime.GOOS == "windows" {
+		// Windows doesn't have UIDs, return a default
+		return "1000"
+	}
+
+	// Use id -u command
+	cmd := exec.Command("id", "-u")
+	output, err := cmd.Output()
+	if err != nil {
+		return "1000" // fallback
+	}
+
+	return strings.TrimSpace(string(output))
+}
+
+// getHostGID returns the current user's GID as a string
+func getHostGID() string {
+	if runtime.GOOS == "windows" {
+		// Windows doesn't have GIDs, return a default
+		return "1000"
+	}
+
+	// Use id -g command
+	cmd := exec.Command("id", "-g")
+	output, err := cmd.Output()
+	if err != nil {
+		return "1000" // fallback
+	}
+
+	return strings.TrimSpace(string(output))
+}
+
+// detectTimezone detects the system timezone
+func detectTimezone() string {
+	// Try to get timezone from environment
+	if tz := os.Getenv("TZ"); tz != "" {
+		return tz
+	}
+
+	// Use Go's time package to detect local timezone
+	now := time.Now()
+	zone, _ := now.Zone()
+
+	// If we can get the IANA timezone name, use it
+	if loc := now.Location(); loc != nil && loc.String() != "Local" {
+		return loc.String()
+	}
+
+	// Fallback to zone abbreviation (e.g., "EST", "PST")
+	if zone != "" {
+		return zone
+	}
+
+	// Ultimate fallback
+	return "UTC"
 }

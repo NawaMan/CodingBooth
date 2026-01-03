@@ -6,7 +6,15 @@ set -euo pipefail
 APP_NAME="workspace"
 SRC_DIR="./src/cmd"
 OUTPUT_DIR="./bin"
-VERSION=$(grep 'const version' src/cmd/workspace/main.go | sed 's/.*\"\(.*\)\"/\1/')
+VERSION_FILE="version.txt"
+
+# Read version from version.txt
+if [[ -f "$VERSION_FILE" ]]; then
+    VERSION=$(tr -d ' \t\n\r' < "$VERSION_FILE")
+else
+    echo "❌ Error: $VERSION_FILE not found"
+    exit 1
+fi
 
 echo "🔨 Building ${APP_NAME} v${VERSION}"
 echo "=================================="
@@ -35,7 +43,7 @@ if [[ "$(uname -s)" == "MINGW"* ]] || [[ "$(uname -s)" == "CYGWIN"* ]] || [[ "$(
     LOCAL_OUTPUT="./workspace.exe"
 fi
 
-if go build -o "$LOCAL_OUTPUT" "$SRC_DIR/workspace" 2>/dev/null; then
+if go build -ldflags "-X main.version=${VERSION}" -o "$LOCAL_OUTPUT" "$SRC_DIR/workspace" 2>/dev/null; then
     LOCAL_SIZE=$(du -h "$LOCAL_OUTPUT" | cut -f1)
     echo "   ✅ Built: $LOCAL_OUTPUT (${LOCAL_SIZE})"
 else
@@ -64,7 +72,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     # Build
     echo -n "   Building ${GOOS}/${GOARCH}... "
     
-    if GOOS=$GOOS GOARCH=$GOARCH go build -o "$OUTPUT_PATH" "$SRC_DIR/workspace" 2>/dev/null; then
+    if GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "-X main.version=${VERSION}" -o "$OUTPUT_PATH" "$SRC_DIR/workspace" 2>/dev/null; then
         SIZE=$(du -h "$OUTPUT_PATH" | cut -f1)
         echo "✅ (${SIZE})"
         BUILD_COUNT=$((BUILD_COUNT + 1))
