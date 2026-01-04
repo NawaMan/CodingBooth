@@ -6,16 +6,14 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-
-	"github.com/nawaman/workspace/src/pkg/appctx"
 )
 
 // DockerBuild executes a docker build command with optional silent mode.
 // When SilenceBuild is enabled, it captures stderr and only displays it on failure.
-func DockerBuild(ctx appctx.AppContext, args ...string) error {
+func DockerBuild(dryrun bool, verbose bool, silenceBuild bool, args ...string) error {
 	// If not in silent mode, just call Docker build normally
-	if !ctx.SilenceBuild() {
-		return Docker(ctx, "build", args...)
+	if !silenceBuild {
+		return Docker(dryrun, verbose, "build", args...)
 	}
 
 	// Silent mode: capture stderr and only show on failure
@@ -23,11 +21,11 @@ func DockerBuild(ctx appctx.AppContext, args ...string) error {
 	cmdArgs = append(cmdArgs, "build")
 	cmdArgs = append(cmdArgs, args...)
 
-	if ctx.Dryrun() || ctx.Verbose() {
+	if dryrun || verbose {
 		PrintCmd("docker", cmdArgs...)
 	}
 
-	if ctx.Dryrun() {
+	if dryrun {
 		return nil
 	}
 

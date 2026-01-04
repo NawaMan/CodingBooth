@@ -14,7 +14,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nawaman/workspace/src/pkg/appctx"
 	"github.com/nawaman/workspace/src/pkg/docker"
 )
 
@@ -45,17 +44,16 @@ func main() {
 	}
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	// Use -it flags - they'll be preserved if TTY is available
-	err := docker.Docker(ctx, "run",
+	err := docker.Docker(dryrun, verbose, "run",
 		"-it",  // Interactive + TTY (auto-filtered if no TTY)
 		"--rm", // Remove after exit
 		"alpine:latest",

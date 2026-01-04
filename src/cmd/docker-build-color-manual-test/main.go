@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nawaman/workspace/src/pkg/appctx"
 	"github.com/nawaman/workspace/src/pkg/docker"
 )
 
@@ -24,11 +23,10 @@ func main() {
 	fmt.Println("  • Layer caching information")
 	fmt.Println()
 
-	// Create app context
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
+	silenceBuild := false
 
 	// Create a simple Dockerfile content
 	dockerfile := `FROM alpine:latest
@@ -54,7 +52,7 @@ CMD ["echo", "Hello from color demo!"]
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println()
 
-	err := docker.DockerBuild(ctx,
+	err := docker.DockerBuild(dryrun, verbose, silenceBuild,
 		"-t", "color-manual-test:latest",
 		"-f", dockerfilePath,
 		tmpDir,

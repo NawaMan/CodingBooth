@@ -5,13 +5,12 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nawaman/workspace/src/pkg/appctx"
 	"github.com/nawaman/workspace/src/pkg/docker"
 )
 
 // TestIntegration_pullHelloWorld demonstrates pulling the hello-world image.
 // This will actually pull the image from Docker Hub.
-func TestIntegration_pullHelloWorld(t *testing.T) {
+func TestIntegration_PullHelloWorld(t *testing.T) {
 	fmt.Println("═══════════════════════════════════════════════════════════")
 	fmt.Println("Example 1: Pull hello-world Image")
 	fmt.Println("═══════════════════════════════════════════════════════════")
@@ -25,15 +24,14 @@ func TestIntegration_pullHelloWorld(t *testing.T) {
 	fmt.Println("  • Image digest and status")
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false // Actually execute
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false // Actually execute
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(ctx, "pull", "hello-world:latest")
+	err := docker.Docker(dryrun, verbose, "pull", "hello-world:latest")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -61,15 +59,14 @@ func TestIntegration_runHelloWorld(t *testing.T) {
 	fmt.Println("  • Explanation of what Docker did")
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(ctx, "run", "--rm", "hello-world:latest")
+	err := docker.Docker(dryrun, verbose, "run", "--rm", "hello-world:latest")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -96,15 +93,14 @@ func TestIntegration_runAlpineEcho(t *testing.T) {
 	fmt.Println("  • Hello from Alpine!")
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(ctx, "run", "--rm", "alpine:latest", "echo", "Hello from Alpine!")
+	err := docker.Docker(dryrun, verbose, "run", "--rm", "alpine:latest", "echo", "Hello from Alpine!")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -131,15 +127,14 @@ func TestIntegration_runAlpineWithEnv(t *testing.T) {
 	fmt.Println("  • test value")
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(ctx, "run",
+	err := docker.Docker(dryrun, verbose, "run",
 		"--rm",
 		"-e", "MY_VAR=test value",
 		"alpine:latest",
@@ -173,15 +168,14 @@ func TestIntegration_imageInspect(t *testing.T) {
 	fmt.Println("Note: Run Example 1 first if image doesn't exist locally")
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(ctx, "image", "inspect", "hello-world:latest")
+	err := docker.Docker(dryrun, verbose, "image", "inspect", "hello-world:latest")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -207,15 +201,14 @@ func TestIntegration_listContainers(t *testing.T) {
 	fmt.Println("  • Table of containers (may be empty if none exist)")
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(ctx, "ps", "-a")
+	err := docker.Docker(dryrun, verbose, "ps", "-a")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -244,17 +237,16 @@ func TestIntegration_networkOperations(t *testing.T) {
 	fmt.Println("  • Network name on removal")
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
 
 	networkName := "test-network"
 
 	// Create network
 	fmt.Println("Creating network...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(ctx, "network", "create", networkName)
+	err := docker.Docker(dryrun, verbose, "network", "create", networkName)
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -263,7 +255,7 @@ func TestIntegration_networkOperations(t *testing.T) {
 	// Inspect network
 	fmt.Println("\nInspecting network...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(ctx, "network", "inspect", networkName)
+	err = docker.Docker(dryrun, verbose, "network", "inspect", networkName)
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Inspect failed: %v", err)
@@ -272,7 +264,7 @@ func TestIntegration_networkOperations(t *testing.T) {
 	// Remove network
 	fmt.Println("\nRemoving network...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(ctx, "network", "rm", networkName)
+	err = docker.Docker(dryrun, verbose, "network", "rm", networkName)
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Remove failed: %v", err)
@@ -298,15 +290,14 @@ func TestIntegration_complexCommand(t *testing.T) {
 	fmt.Println("  • Hello from Alpine!")
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(ctx, "run",
+	err := docker.Docker(dryrun, verbose, "run",
 		"--rm",                     // Remove after exit
 		"--name", "test-container", // Container name
 		"-e", "ENV_VAR=value with spaces", // Environment variable
@@ -363,17 +354,16 @@ func TestIntegration_interactiveShell(t *testing.T) {
 	}
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	// Use -it flags unconditionally - they'll be auto-filtered if no TTY
-	err := docker.Docker(ctx, "run",
+	err := docker.Docker(dryrun, verbose, "run",
 		"-it",  // Interactive + TTY (auto-filtered if no TTY)
 		"--rm", // Remove after exit
 		"alpine:latest",
@@ -409,10 +399,10 @@ func TestIntegration_buildImage(t *testing.T) {
 	fmt.Println("  • Successfully tagged message")
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
+	silenceBuild := false
 
 	// Create a simple Dockerfile content
 	dockerfile := `FROM alpine:latest
@@ -433,7 +423,7 @@ CMD ["echo", "Hello from test image!"]
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.DockerBuild(ctx,
+	err := docker.DockerBuild(dryrun, verbose, silenceBuild,
 		"-t", "test-example:latest",
 		"-f", dockerfilePath,
 		tmpDir,
@@ -465,17 +455,16 @@ func TestIntegration_runDaemon(t *testing.T) {
 	fmt.Println("  • Container name on stop")
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
 
 	containerName := "test-daemon-example"
 
 	// Start in daemon mode
 	fmt.Println("Starting container in daemon mode...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(ctx, "run",
+	err := docker.Docker(dryrun, verbose, "run",
 		"-d",
 		"--name", containerName,
 		"--rm",
@@ -490,7 +479,7 @@ func TestIntegration_runDaemon(t *testing.T) {
 	// Stop the container
 	fmt.Println("\nStopping daemon container...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(ctx, "stop", containerName)
+	err = docker.Docker(dryrun, verbose, "stop", containerName)
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Stop failed: %v", err)
@@ -517,17 +506,19 @@ func TestIntegration_stopContainer(t *testing.T) {
 	fmt.Println("  • Container name on stop")
 	fmt.Println()
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
 
 	containerName := "test-stop-example"
+
+	// Cleanup potential leftover from previous failed runs
+	docker.Docker(false, false, "rm", "-f", containerName)
 
 	// Start container
 	fmt.Println("Starting container...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(ctx, "run",
+	err := docker.Docker(dryrun, verbose, "run",
 		"-d",
 		"--name", containerName,
 		"alpine:latest",
@@ -541,7 +532,7 @@ func TestIntegration_stopContainer(t *testing.T) {
 	// Stop container
 	fmt.Println("\nStopping container...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(ctx, "stop", containerName)
+	err = docker.Docker(dryrun, verbose, "stop", containerName)
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Stop failed: %v", err)
@@ -550,7 +541,7 @@ func TestIntegration_stopContainer(t *testing.T) {
 	// Remove container (cleanup)
 	fmt.Println("\nRemoving container...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(ctx, "rm", containerName)
+	err = docker.Docker(dryrun, verbose, "rm", containerName)
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Remove failed: %v", err)

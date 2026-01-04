@@ -6,12 +6,10 @@ import (
 	"os"
 	"os/exec"
 	"strings"
-
-	"github.com/nawaman/workspace/src/pkg/appctx"
 )
 
 // Docker executes a docker command with the given subcommand and arguments.
-func Docker(ctx appctx.AppContext, subcommand string, args ...string) error {
+func Docker(dryrun bool, verbose bool, subcommand string, args ...string) error {
 	cmdArgs := make([]string, 0, len(args)+2) // +2 for potential -i and -t flags
 	cmdArgs = append(cmdArgs, subcommand)
 
@@ -43,11 +41,11 @@ func Docker(ctx appctx.AppContext, subcommand string, args ...string) error {
 
 	cmdArgs = append(cmdArgs, filterTTYFlags(args)...)
 
-	if ctx.Dryrun() || ctx.Verbose() {
+	if dryrun || verbose {
 		PrintCmd("docker", cmdArgs...)
 	}
 
-	if ctx.Dryrun() {
+	if dryrun {
 		return nil
 	}
 

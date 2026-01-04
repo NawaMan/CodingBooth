@@ -6,8 +6,6 @@ import (
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/nawaman/workspace/src/pkg/appctx"
 )
 
 // TestDocker_DryrunMode verifies no execution in dryrun mode.
@@ -18,13 +16,12 @@ func TestDocker_DryrunMode(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with dryrun enabled
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = false
-	ctx := builder.Build()
+	// Define options
+	dryrun := true
+	verbose := false
 
 	// Run docker command (should not execute, just print)
-	err := Docker(ctx, "version", "--format", "{{.Server.Version}}")
+	err := Docker(dryrun, verbose, "version", "--format", "{{.Server.Version}}")
 
 	// Restore stdout
 	writer.Close()
@@ -57,13 +54,12 @@ func TestDocker_VerboseMode(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with verbose enabled
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = false
-	builder.Verbose = true
-	ctx := builder.Build()
+	// Define options
+	dryrun := false
+	verbose := true
 
 	// Run docker command
-	err := Docker(ctx, "version", "--format", "{{.Server.Version}}")
+	err := Docker(dryrun, verbose, "version", "--format", "{{.Server.Version}}")
 
 	// Restore stdout
 	writer.Close()
@@ -89,13 +85,12 @@ func TestDocker_VerboseMode(t *testing.T) {
 // TestDocker_Success verifies successful execution.
 func TestDocker_Success(t *testing.T) {
 	// Create context with no verbose/dryrun
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = false
-	builder.Verbose = false
-	ctx := builder.Build()
+	// Define options
+	dryrun := false
+	verbose := false
 
 	// Run docker version (should succeed if docker is installed)
-	err := Docker(ctx, "version", "--format", "{{.Server.Version}}")
+	err := Docker(dryrun, verbose, "version", "--format", "{{.Server.Version}}")
 
 	if err != nil {
 		t.Logf("Docker version failed (docker may not be installed): %v", err)
@@ -106,13 +101,12 @@ func TestDocker_Success(t *testing.T) {
 // TestDocker_Failure verifies error propagation.
 func TestDocker_Failure(t *testing.T) {
 	// Create context
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = false
-	builder.Verbose = false
-	ctx := builder.Build()
+	// Define options
+	dryrun := false
+	verbose := false
 
 	// Run invalid docker command (should fail)
-	err := Docker(ctx, "invalid-subcommand-that-does-not-exist")
+	err := Docker(dryrun, verbose, "invalid-subcommand-that-does-not-exist")
 
 	// Verify error is returned
 	if err == nil {
@@ -134,13 +128,12 @@ func TestDocker_QuietMode(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with no verbose/dryrun
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = false
-	builder.Verbose = false
-	ctx := builder.Build()
+	// Define options
+	dryrun := false
+	verbose := false
 
 	// Run docker command
-	Docker(ctx, "version", "--format", "{{.Server.Version}}")
+	Docker(dryrun, verbose, "version", "--format", "{{.Server.Version}}")
 
 	// Restore stdout
 	writer.Close()

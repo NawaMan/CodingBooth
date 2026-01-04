@@ -4,20 +4,17 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nawaman/workspace/src/pkg/appctx"
 	"github.com/nawaman/workspace/src/pkg/docker"
 )
 
 // TestDockerBuild_Silent tests DockerBuild with SilenceBuild enabled.
 // This test will actually build a Docker image but suppress build output unless it fails.
 func TestDockerBuild_Silent(t *testing.T) {
-	t.Skip("Manual test - requires Docker and creates an image")
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = false
-	builder.Dryrun = false
-	builder.SilenceBuild = true
-	ctx := builder.Build()
+	// Define options
+	verbose := false
+	dryrun := false
+	silenceBuild := true
 
 	// Create a simple test Dockerfile
 	dockerfile := `FROM alpine:latest
@@ -32,7 +29,7 @@ CMD ["echo", "Hello"]
 	}
 
 	// Build with silent mode - should not show progress
-	err := docker.DockerBuild(ctx,
+	err := docker.DockerBuild(dryrun, verbose, silenceBuild,
 		"-t", "test-silent:latest",
 		"-f", dockerfilePath,
 		tmpDir,
@@ -47,13 +44,11 @@ CMD ["echo", "Hello"]
 
 // TestDockerBuild_Normal tests DockerBuild with SilenceBuild disabled.
 func TestDockerBuild_Normal(t *testing.T) {
-	t.Skip("Manual test - requires Docker and creates an image")
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = false
-	builder.SilenceBuild = false
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := false
+	silenceBuild := false
 
 	// Create a simple test Dockerfile
 	dockerfile := `FROM alpine:latest
@@ -68,7 +63,7 @@ CMD ["echo", "Hello"]
 	}
 
 	// Build with normal mode - should show progress
-	err := docker.DockerBuild(ctx,
+	err := docker.DockerBuild(dryrun, verbose, silenceBuild,
 		"-t", "test-normal:latest",
 		"-f", dockerfilePath,
 		tmpDir,
@@ -83,14 +78,13 @@ CMD ["echo", "Hello"]
 
 // TestDockerBuild_Dryrun tests DockerBuild in dryrun mode.
 func TestDockerBuild_Dryrun(t *testing.T) {
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Verbose = true
-	builder.Dryrun = true
-	builder.SilenceBuild = true
-	ctx := builder.Build()
+	// Define options
+	verbose := true
+	dryrun := true
+	silenceBuild := true
 
 	// Dryrun should not execute anything
-	err := docker.DockerBuild(ctx, "-t", "test:latest", ".")
+	err := docker.DockerBuild(dryrun, verbose, silenceBuild, "-t", "test:latest", ".")
 
 	if err != nil {
 		t.Fatalf("Dryrun should not fail: %v", err)

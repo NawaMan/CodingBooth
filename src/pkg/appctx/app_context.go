@@ -106,6 +106,18 @@ type AppContext struct {
 	ttyArgs       ilist.List[string]
 }
 
+// NewAppContextBuilder creates a new AppContextBuilder with all mutable lists initialized.
+func NewAppContextBuilder() *AppContextBuilder {
+	return &AppContextBuilder{
+		CommonArgs:    ilist.NewAppendableList[string](),
+		BuildArgs:     ilist.NewAppendableList[string](),
+		RunArgs:       ilist.NewAppendableList[string](),
+		Cmds:          ilist.NewAppendableList[string](),
+		KeepaliveArgs: ilist.NewAppendableList[string](),
+		TtyArgs:       ilist.NewAppendableList[string](),
+	}
+}
+
 // NewAppContext creates a new immutable AppContext with defaults matching workspace.sh initialization.
 func NewAppContext(builder *AppContextBuilder) AppContext {
 	return AppContext{
