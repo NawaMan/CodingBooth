@@ -4,53 +4,70 @@
 // Use ToBuilder() and Build() to convert between them.
 package appctx
 
-import "github.com/nawaman/workspace/src/pkg/ilist"
+import (
+	"fmt"
+	"strings"
+
+	"github.com/nawaman/workspace/src/pkg/ilist"
+)
 
 type AppConfig struct {
 
+	// --------------------
 	// General configuration
-	ConfigFile    string `toml:"ConfigFile,omitempty"`
-	WorkspacePath string `toml:"WorkspacePath,omitempty"`
+	// --------------------
+	ConfigFile    string `toml:"ConfigFile,omitempty"    envconfig:"CONFIG_FILE" default:"./ws--config.toml"`
+	WorkspacePath string `toml:"WorkspacePath,omitempty" envconfig:"WORKSPACE_PATH"`
 
+	// --------------------
 	// Flags
-	Dryrun       bool `toml:"Dryrun,omitempty"`
-	Verbose      bool `toml:"Verbose,omitempty"`
-	Keepalive    bool `toml:"Keepalive,omitempty"`
-	SilenceBuild bool `toml:"SilenceBuild,omitempty"`
-	Daemon       bool `toml:"Daemon,omitempty"`
-	DoPull       bool `toml:"DoPull,omitempty"`
-	Dind         bool `toml:"Dind,omitempty"`
+	// --------------------
+	Dryrun       bool `toml:"Dryrun,omitempty"       envconfig:"DRYRUN" default:"false"`
+	Verbose      bool `toml:"Verbose,omitempty"      envconfig:"VERBOSE" default:"false"`
+	Keepalive    bool `toml:"Keepalive,omitempty"    envconfig:"KEEPALIVE" default:"false"`
+	SilenceBuild bool `toml:"SilenceBuild,omitempty" envconfig:"SILENCE_BUILD" default:"false"`
+	Daemon       bool `toml:"Daemon,omitempty"       envconfig:"DAEMON" default:"false"`
+	DoPull       bool `toml:"DoPull,omitempty"       envconfig:"DO_PULL" default:"false"`
+	Dind         bool `toml:"Dind,omitempty"         envconfig:"DIND" default:"false"`
 
-	// Image Configuration
-	DockerFile string `toml:"DockerFile,omitempty"`
-	ImageName  string `toml:"ImageName,omitempty"`
-	Variant    string `toml:"Variant,omitempty"`
-	Version    string `toml:"Version,omitempty"`
+	// --------------------
+	// Image configuration
+	// --------------------
+	DockerFile string `toml:"DockerFile,omitempty"   envconfig:"DOCKER_FILE"`
+	ImageName  string `toml:"ImageName,omitempty"    envconfig:"IMAGE_NAME"`
+	Variant    string `toml:"Variant,omitempty"      envconfig:"VARIANT" default:"default"`
+	Version    string `toml:"Version,omitempty"      envconfig:"VERSION" default:"latest"`
 
+	// --------------------
 	// Runtime values
-	ProjectName string `toml:"ProjectName,omitempty"`
-	HostUID     string `toml:"HostUID,omitempty"`
-	HostGID     string `toml:"HostGID,omitempty"`
-	Timezone    string `toml:"Timezone,omitempty"`
+	// --------------------
+	ProjectName string `toml:"ProjectName,omitempty" envconfig:"PROJECT_NAME"`
+	HostUID     string `toml:"HostUID,omitempty"     envconfig:"HOST_UID"`
+	HostGID     string `toml:"HostGID,omitempty"     envconfig:"HOST_GID"`
+	Timezone    string `toml:"Timezone,omitempty"    envconfig:"TIMEZONE"`
 
-	// Container Configuration
-	ContainerName    string `toml:"ContainerName,omitempty"`
-	WorkspacePort    string `toml:"WorkspacePort,omitempty"`
-	HostPort         string `toml:"HostPort,omitempty"`
-	ContainerEnvFile string `toml:"ContainerEnvFile,omitempty"`
+	// --------------------
+	// Container configuration
+	// --------------------
+	ContainerName    string `toml:"ContainerName,omitempty"    envconfig:"CONTAINER_NAME"`
+	WorkspacePort    string `toml:"WorkspacePort,omitempty"    envconfig:"WORKSPACE_PORT" default:"NEXT"`
+	HostPort         string `toml:"HostPort,omitempty"         envconfig:"HOST_PORT"`
+	ContainerEnvFile string `toml:"ContainerEnvFile,omitempty" envconfig:"CONTAINER_ENV_FILE"`
 
+	// --------------------
 	// Docker-in-Docker
-	DindNet   string `toml:"DindNet,omitempty"`
-	DindName  string `toml:"DindName,omitempty"`
-	DockerBin string `toml:"DockerBin,omitempty"`
+	// --------------------
+	DindNet   string `toml:"DindNet,omitempty"    envconfig:"DIND_NET"`
+	DindName  string `toml:"DindName,omitempty"   envconfig:"DIND_NAME"`
+	DockerBin string `toml:"DockerBin,omitempty"  envconfig:"DOCKER_BIN"`
 
-	// TOML-friendly array fields (temporary storage during decode)
-	CommonArgsSlice    []string `toml:"CommonArgs,omitempty"`
-	BuildArgsSlice     []string `toml:"BuildArgs,omitempty"`
-	RunArgsSlice       []string `toml:"RunArgs,omitempty"`
-	CmdsSlice          []string `toml:"Cmds,omitempty"`
-	KeepaliveArgsSlice []string `toml:"KeepaliveArgs,omitempty"`
-	TtyArgsSlice       []string `toml:"TtyArgs,omitempty"`
+	// --------------------
+	// TOML-friendly array fields
+	// --------------------
+	CommonArgsSlice []string `toml:"CommonArgs,omitempty"`
+	BuildArgsSlice  []string `toml:"BuildArgs,omitempty"`
+	RunArgsSlice    []string `toml:"RunArgs,omitempty"`
+	CmdsSlice       []string `toml:"Cmds,omitempty"`
 }
 
 // AppContextBuilder is a mutable builder for constructing AppContext instances.
@@ -106,18 +123,6 @@ type AppContext struct {
 	ttyArgs       ilist.List[string]
 }
 
-// NewAppContextBuilder creates a new AppContextBuilder with all mutable lists initialized.
-func NewAppContextBuilder() *AppContextBuilder {
-	return &AppContextBuilder{
-		CommonArgs:    ilist.NewAppendableList[string](),
-		BuildArgs:     ilist.NewAppendableList[string](),
-		RunArgs:       ilist.NewAppendableList[string](),
-		Cmds:          ilist.NewAppendableList[string](),
-		KeepaliveArgs: ilist.NewAppendableList[string](),
-		TtyArgs:       ilist.NewAppendableList[string](),
-	}
-}
-
 // NewAppContext creates a new immutable AppContext with defaults matching workspace.sh initialization.
 func NewAppContext(builder *AppContextBuilder) AppContext {
 	return AppContext{
@@ -139,8 +144,6 @@ func cloneAppConfig(config *AppConfig) *AppConfig {
 	copy.BuildArgsSlice = append([]string(nil), config.BuildArgsSlice...)
 	copy.RunArgsSlice = append([]string(nil), config.RunArgsSlice...)
 	copy.CmdsSlice = append([]string(nil), config.CmdsSlice...)
-	copy.KeepaliveArgsSlice = append([]string(nil), config.KeepaliveArgsSlice...)
-	copy.TtyArgsSlice = append([]string(nil), config.TtyArgsSlice...)
 
 	return &copy
 }
@@ -161,6 +164,7 @@ func cloneAppContextBuilder(builder *AppContextBuilder) *AppContextBuilder {
 	return &copy
 }
 
+// Clone the content of the appendable list.
 func cloneAppendableList(list *ilist.AppendableList[string]) *ilist.AppendableList[string] {
 	if list == nil {
 		return ilist.NewAppendableList[string]()
@@ -168,6 +172,7 @@ func cloneAppendableList(list *ilist.AppendableList[string]) *ilist.AppendableLi
 	return list.Clone()
 }
 
+// Clone the content of the appendable list.
 func cloneAppendableListToList(list *ilist.AppendableList[string]) ilist.List[string] {
 	if list == nil {
 		return ilist.NewList[string]()
@@ -183,6 +188,20 @@ func (b *AppContextBuilder) Build() AppContext {
 }
 
 //== AppContext ==
+
+func formatList[TYPE any](str *strings.Builder, name string, list ilist.List[TYPE], indent string) {
+	str.WriteString(indent)
+	str.WriteString(name)
+	str.WriteString(": [\n")
+
+	list.Range(func(_ int, v TYPE) bool {
+		fmt.Fprintf(str, "%s  %v\n", indent, v)
+		return true
+	})
+
+	str.WriteString(indent)
+	str.WriteString("]\n")
+}
 
 // constant
 func (ctx AppContext) PrebuildRepo() string { return ctx.values.PrebuildRepo }
@@ -266,4 +285,85 @@ func (ctx AppContext) ToBuilder() *AppContextBuilder {
 	b.TtyArgs = ctx.ttyArgs.ToBuilder()
 
 	return b
+}
+
+// String returns a string representation of the app context.
+func (ctx AppContext) String() string {
+	var str strings.Builder
+
+	str.WriteString("==| AppContext |==================================================\n")
+
+	fmt.Fprintf(&str, "# Constants ---------------------\n")
+	fmt.Fprintf(&str, "    PrebuildRepo:     %q\n", ctx.PrebuildRepo())
+	fmt.Fprintf(&str, "    WsVersion:        %q\n", ctx.WsVersion())
+	fmt.Fprintf(&str, "    SetupsDir:        %q\n", ctx.SetupsDir())
+
+	fmt.Fprintf(&str, "# Script Runtime ----------------\n")
+	fmt.Fprintf(&str, "    ScriptName:       %q\n", ctx.ScriptName())
+	fmt.Fprintf(&str, "    ScriptDir:        %q\n", ctx.ScriptDir())
+	fmt.Fprintf(&str, "    LibDir:           %q\n", ctx.LibDir())
+
+	fmt.Fprintf(&str, "# Variant -----------------------\n")
+	fmt.Fprintf(&str, "    HasNotebook:      %t\n", ctx.HasNotebook())
+	fmt.Fprintf(&str, "    HasVscode:        %t\n", ctx.HasVscode())
+	fmt.Fprintf(&str, "    HasDesktop:       %t\n", ctx.HasDesktop())
+
+	fmt.Fprintf(&str, "# DinD --------------------------\n")
+	fmt.Fprintf(&str, "    CreatedDindNet:   %t\n", ctx.CreatedDindNet())
+
+	fmt.Fprintf(&str, "# Image -------------------------\n")
+	fmt.Fprintf(&str, "    RunMode:          %q\n", ctx.RunMode())
+	fmt.Fprintf(&str, "    LocalBuild:       %t\n", ctx.LocalBuild())
+	fmt.Fprintf(&str, "    ImageMode:        %q\n", ctx.ImageMode())
+
+	fmt.Fprintf(&str, "# Port --------------------------\n")
+	fmt.Fprintf(&str, "    PortGenerated:    %t\n", ctx.PortGenerated())
+
+	fmt.Fprintf(&str, "# General configuration ---------\n")
+	fmt.Fprintf(&str, "    ConfigFile:       %q\n", ctx.ConfigFile())
+	fmt.Fprintf(&str, "    WorkspacePath:    %q\n", ctx.WorkspacePath())
+
+	fmt.Fprintf(&str, "# Flags -------------------------\n")
+	fmt.Fprintf(&str, "    Dryrun:           %t\n", ctx.Dryrun())
+	fmt.Fprintf(&str, "    Verbose:          %t\n", ctx.Verbose())
+	fmt.Fprintf(&str, "    Keepalive:        %t\n", ctx.Keepalive())
+	fmt.Fprintf(&str, "    SilenceBuild:     %t\n", ctx.SilenceBuild())
+	fmt.Fprintf(&str, "    Daemon:           %t\n", ctx.Daemon())
+	fmt.Fprintf(&str, "    DoPull:           %t\n", ctx.DoPull())
+	fmt.Fprintf(&str, "    Dind:             %t\n", ctx.Dind())
+
+	fmt.Fprintf(&str, "# Image Configuration -----------\n")
+	fmt.Fprintf(&str, "    DockerFile:       %q\n", ctx.DockerFile())
+	fmt.Fprintf(&str, "    ImageName:        %q\n", ctx.ImageName())
+	fmt.Fprintf(&str, "    Variant:          %q\n", ctx.Variant())
+	fmt.Fprintf(&str, "    Version:          %q\n", ctx.Version())
+
+	fmt.Fprintf(&str, "# Runtime values ----------------\n")
+	fmt.Fprintf(&str, "    ProjectName:      %q\n", ctx.ProjectName())
+	fmt.Fprintf(&str, "    HostUID:          %q\n", ctx.HostUID())
+	fmt.Fprintf(&str, "    HostGID:          %q\n", ctx.HostGID())
+	fmt.Fprintf(&str, "    Timezone:         %q\n", ctx.Timezone())
+
+	fmt.Fprintf(&str, "# Container Configuration -------\n")
+	fmt.Fprintf(&str, "    ContainerName:    %q\n", ctx.ContainerName())
+	fmt.Fprintf(&str, "    WorkspacePort:    %q\n", ctx.WorkspacePort())
+	fmt.Fprintf(&str, "    HostPort:         %q\n", ctx.HostPort())
+	fmt.Fprintf(&str, "    ContainerEnvFile: %q\n", ctx.ContainerEnvFile())
+
+	fmt.Fprintf(&str, "# Docker-in-Docker --------------\n")
+	fmt.Fprintf(&str, "    DindNet:          %q\n", ctx.DindNet())
+	fmt.Fprintf(&str, "    DindName:         %q\n", ctx.DindName())
+	fmt.Fprintf(&str, "    DockerBin:        %q\n", ctx.DockerBin())
+
+	fmt.Fprintf(&str, "# Lists (Immutable) -------------\n")
+	formatList(&str, "CommonArgs", ctx.CommonArgs(), "    ")
+	formatList(&str, "BuildArgs", ctx.BuildArgs(), "    ")
+	formatList(&str, "RunArgs", ctx.RunArgs(), "    ")
+	formatList(&str, "Cmds", ctx.Cmds(), "    ")
+	formatList(&str, "KeepaliveArgs", ctx.KeepaliveArgs(), "    ")
+	formatList(&str, "TtyArgs", ctx.TtyArgs(), "    ")
+
+	str.WriteString("==================================================================\n")
+
+	return str.String()
 }

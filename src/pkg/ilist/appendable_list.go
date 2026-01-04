@@ -1,5 +1,7 @@
 package ilist
 
+import "fmt"
+
 type AppendableList[TYPE any] struct {
 	elements []TYPE
 }
@@ -19,62 +21,67 @@ func NewAppendableListFrom[TYPE any](elements ...TYPE) *AppendableList[TYPE] {
 	return &AppendableList[TYPE]{elements: copied}
 }
 
+// String returns a string representation of the list.
+func (thisList AppendableList[TYPE]) String() string {
+	return fmt.Sprintf("%v", thisList.elements)
+}
+
 // Append adds one or more elements to the end of the list.
-func (thisBuilder *AppendableList[TYPE]) Append(values ...TYPE) {
-	thisBuilder.elements = append(thisBuilder.elements, values...)
+func (thisList *AppendableList[TYPE]) Append(values ...TYPE) {
+	thisList.elements = append(thisList.elements, values...)
 }
 
 // ExtendBySlice appends all elements from the given slice.
-func (thisBuilder *AppendableList[TYPE]) ExtendBySlice(slice []TYPE) {
+func (thisList *AppendableList[TYPE]) ExtendBySlice(slice []TYPE) {
 	if len(slice) == 0 {
 		return
 	}
 	copied := make([]TYPE, len(slice))
 	copy(copied, slice)
-	thisBuilder.elements = append(thisBuilder.elements, copied...)
+	thisList.elements = append(thisList.elements, copied...)
 }
 
 // ExtendByList appends all elements from the given List.
-func (thisBuilder *AppendableList[TYPE]) ExtendByList(list List[TYPE]) {
+func (thisList *AppendableList[TYPE]) ExtendByList(list List[TYPE]) {
 	if list.Length() == 0 {
 		return
 	}
 	copied := make([]TYPE, len(list.elements))
 	copy(copied, list.elements)
-	thisBuilder.elements = append(thisBuilder.elements, copied...)
+	thisList.elements = append(thisList.elements, copied...)
 }
 
 // Length returns the number of elements in the list.
-func (thisBuilder *AppendableList[TYPE]) Length() int {
-	return len(thisBuilder.elements)
+func (thisList *AppendableList[TYPE]) Length() int {
+	return len(thisList.elements)
 }
 
 // Slice returns a copy of the current elements as a slice.
-func (thisBuilder *AppendableList[TYPE]) Slice() []TYPE {
-	if len(thisBuilder.elements) == 0 {
+func (thisList *AppendableList[TYPE]) Slice() []TYPE {
+	if len(thisList.elements) == 0 {
 		return nil
 	}
-	copied := make([]TYPE, len(thisBuilder.elements))
-	copy(copied, thisBuilder.elements)
+	copied := make([]TYPE, len(thisList.elements))
+	copy(copied, thisList.elements)
 	return copied
 }
 
 // Snapshot creates an immutable List with a copy of the current elements.
-func (thisBuilder *AppendableList[TYPE]) Snapshot() List[TYPE] {
-	if len(thisBuilder.elements) == 0 {
+func (thisList *AppendableList[TYPE]) Snapshot() List[TYPE] {
+	if len(thisList.elements) == 0 {
 		return List[TYPE]{elements: nil}
 	}
-	copied := make([]TYPE, len(thisBuilder.elements))
-	copy(copied, thisBuilder.elements)
+	copied := make([]TYPE, len(thisList.elements))
+	copy(copied, thisList.elements)
 	return List[TYPE]{elements: copied}
 }
 
 // Clone creates a copy of this AppendableList.
-func (thisBuilder *AppendableList[TYPE]) Clone() *AppendableList[TYPE] {
-	if len(thisBuilder.elements) == 0 {
+func (thisList *AppendableList[TYPE]) Clone() *AppendableList[TYPE] {
+	if len(thisList.elements) == 0 {
 		return &AppendableList[TYPE]{elements: nil}
 	}
-	copied := make([]TYPE, len(thisBuilder.elements))
-	copy(copied, thisBuilder.elements)
+	copied := make([]TYPE, len(thisList.elements))
+	copy(copied, thisList.elements)
 	return &AppendableList[TYPE]{elements: copied}
 }

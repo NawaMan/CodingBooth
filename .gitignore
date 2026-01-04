@@ -97,10 +97,8 @@ env/
 __pypackages__/
 
 
-workspace/workspace
-
 bin/
-
 workspace.sh
 
-workspace
+/workspace
+!/workspace/

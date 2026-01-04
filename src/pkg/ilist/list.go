@@ -8,6 +8,8 @@
 // For reference types (pointers, slices, maps), only references are copied.
 package ilist
 
+import "fmt"
+
 type List[TYPE any] struct {
 	elements []TYPE
 }
@@ -31,6 +33,11 @@ func NewListFromSlice[TYPE any](slice []TYPE) List[TYPE] {
 	copied := make([]TYPE, len(slice))
 	copy(copied, slice)
 	return List[TYPE]{elements: copied}
+}
+
+// String returns a string representation of the list.
+func (thisList List[TYPE]) String() string {
+	return fmt.Sprintf("%v", thisList.elements)
 }
 
 // Length returns the number of elements in the list.
