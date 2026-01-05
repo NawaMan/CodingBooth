@@ -1,12 +1,16 @@
 #!/bin/bash
 
 # Go test runner script
-# Runs all Go tests in the workspace
+# Runs all Go tests in the workspace (Unit + Integration + Docker)
 
 set -e  # Exit on first failure
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+LOG_FILE="$SCRIPT_DIR/run-all-go-tests.log"
+
+# Redirect output to log file and stdout
+exec > >(tee -i "$LOG_FILE") 2>&1
 
 failed=0
 failed_suites=()
@@ -17,40 +21,33 @@ echo "Running All Go Tests"
 echo "========================================"
 echo ""
 
-# Run all Go tests with verbose output
-echo "----------------------------------------"
-echo "Running: go test -v ./..."
-echo "----------------------------------------"
-echo ""
+cd "$SCRIPT_DIR"
 
-cd "$WORKSPACE_ROOT"
-
+# 1. Run Go Unit Tests
 total_suites=$((total_suites + 1))
-if go test -v ./...; then
+if ./run-go-unit-tests.sh; then
     echo ""
-    echo "✓ Go unit tests passed!"
 else
     failed=1
     failed_suites+=("go unit tests")
 fi
 echo ""
 
-# Run Docker manual tests
-echo "----------------------------------------"
-echo "Running Docker Manual Tests"
-echo "----------------------------------------"
-echo ""
-
-cd "$SCRIPT_DIR"
-
-# Run Docker integration tests
-echo "----------------------------------------"
-echo "Running Docker Integration Tests"
-echo "----------------------------------------"
-echo ""
-
+# 2. Run Go Integration Tests
 total_suites=$((total_suites + 1))
-if ./run-docker-integration-tests.sh --all-auto; then
+if ./run-go-integration-tests.sh; then
+    echo ""
+else
+    failed=1
+    failed_suites+=("go integration tests")
+fi
+echo ""
+
+# 3. Run Docker Integration Tests
+total_suites=$((total_suites + 1))
+# Note: run-docker-tests.sh might need to be called from correct dir or generic way
+# Assuming it works as called before but using SCRIPT_DIR current dir
+if ./run-docker-tests.sh --all-auto; then
     echo ""
     echo "✓ Docker integration tests passed!"
 else

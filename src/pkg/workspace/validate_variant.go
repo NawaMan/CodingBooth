@@ -33,7 +33,7 @@ func ValidateVariant(ctx appctx.AppContext) appctx.AppContext {
 		os.Exit(1)
 	}
 
-	builder.Variant = variant
+	builder.Config.Variant = variant
 
 	// Step 2: Set HAS_* flags based on variant
 	switch {

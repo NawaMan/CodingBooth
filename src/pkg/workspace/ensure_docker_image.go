@@ -14,14 +14,14 @@ func EnsureDockerImage(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
 
 	// Step 1: Determine image mode
-	if ctx.ImageName() != "" {
+	if ctx.Image() != "" {
 		// IMAGE_NAME is explicitly set
 		builder.ImageMode = "EXISTING"
 		builder.LocalBuild = false
 	} else {
 		// Normalize DOCKER_FILE
 		dockerFile := normalizeDockerFile(ctx)
-		builder.DockerFile = dockerFile
+		builder.Config.Dockerfile = dockerFile
 
 		if dockerFile != "" {
 			// Validate it's a file
@@ -39,14 +39,14 @@ func EnsureDockerImage(ctx appctx.AppContext) appctx.AppContext {
 
 	// Step 2: Construct image name if not set
 	ctx = builder.Build()
-	if ctx.ImageName() == "" {
+	if ctx.Image() == "" {
 		builder = ctx.ToBuilder()
 		if ctx.ImageMode() == "LOCAL-BUILD" {
-			builder.ImageName = fmt.Sprintf("workspace-local:%s-%s-%s",
+			builder.Config.Image = fmt.Sprintf("workspace-local:%s-%s-%s",
 				ctx.ProjectName(), ctx.Variant(), ctx.Version())
 		} else {
 			// PREBUILT
-			builder.ImageName = fmt.Sprintf("%s:%s-%s",
+			builder.Config.Image = fmt.Sprintf("%s:%s-%s",
 				ctx.PrebuildRepo(), ctx.Variant(), ctx.Version())
 		}
 		ctx = builder.Build()
@@ -70,7 +70,7 @@ func EnsureDockerImage(ctx appctx.AppContext) appctx.AppContext {
 
 // normalizeDockerFile normalizes the DOCKER_FILE path.
 func normalizeDockerFile(ctx appctx.AppContext) string {
-	dockerFile := ctx.DockerFile()
+	dockerFile := ctx.Dockerfile()
 
 	// If DOCKER_FILE is set
 	if dockerFile != "" {
@@ -83,9 +83,9 @@ func normalizeDockerFile(ctx appctx.AppContext) string {
 	}
 
 	// If DOCKER_FILE is unset, check workspace for ws--Dockerfile
-	if ctx.WorkspacePath() != "" {
-		wsDockerfile := filepath.Join(ctx.WorkspacePath(), "ws--Dockerfile")
-		if isDir(ctx.WorkspacePath()) && isFile(wsDockerfile) {
+	if ctx.Workspace() != "" {
+		wsDockerfile := filepath.Join(ctx.Workspace(), "ws--Dockerfile")
+		if isDir(ctx.Workspace()) && isFile(wsDockerfile) {
 			return wsDockerfile
 		}
 	}
@@ -97,19 +97,19 @@ func normalizeDockerFile(ctx appctx.AppContext) string {
 func buildLocalImage(ctx appctx.AppContext) {
 	if !ctx.SilenceBuild() {
 		fmt.Fprintf(os.Stderr, "Info: building local image '%s' from '%s'...\n",
-			ctx.ImageName(), ctx.DockerFile())
+			ctx.Image(), ctx.Dockerfile())
 	}
 
 	if ctx.Verbose() {
 		fmt.Println()
-		fmt.Printf("Build local image: %s\n", ctx.ImageName())
+		fmt.Printf("Build local image: %s\n", ctx.Image())
 		fmt.Printf("  - SILENCE_BUILD: %t\n", ctx.SilenceBuild())
 	}
 
 	// Build arguments
 	args := []string{
-		"-f", ctx.DockerFile(),
-		"-t", ctx.ImageName(),
+		"-f", ctx.Dockerfile(),
+		"-t", ctx.Image(),
 		"--build-arg", fmt.Sprintf("WS_VARIANT_TAG=%s", ctx.Variant()),
 		"--build-arg", fmt.Sprintf("WS_VERSION_TAG=%s", ctx.Version()),
 		"--build-arg", fmt.Sprintf("WS_SETUPS_DIR=%s", ctx.SetupsDir()),
@@ -122,10 +122,10 @@ func buildLocalImage(ctx appctx.AppContext) {
 	args = append(args, ctx.BuildArgs().Slice()...)
 
 	// Add context path
-	args = append(args, ctx.WorkspacePath())
+	args = append(args, ctx.Workspace())
 
 	// Build the image
-	err := docker.DockerBuild(ctx, args...)
+	err := docker.DockerBuild(ctx.Dryrun(), ctx.Verbose(), ctx.SilenceBuild(), args...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: failed to build image\n")
 		os.Exit(1)
@@ -134,9 +134,9 @@ func buildLocalImage(ctx appctx.AppContext) {
 
 // pullImageIfNeeded pulls the Docker image if needed.
 func pullImageIfNeeded(ctx appctx.AppContext) {
-	imageName := ctx.ImageName()
+	imageName := ctx.Image()
 
-	if ctx.DoPull() {
+	if ctx.Pull() {
 		// Always pull when --pull is set
 		if !ctx.SilenceBuild() {
 			fmt.Fprintf(os.Stderr, "Info: pulling image '%s' (forced by --pull)...\n", imageName)
@@ -145,7 +145,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 			fmt.Printf("Pulling image (forced): %s\n", imageName)
 		}
 
-		err := docker.Docker(ctx, "pull", imageName)
+		err := docker.Docker(ctx.Dryrun(), ctx.Verbose(), "pull", imageName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: failed to pull '%s'\n", imageName)
 			os.Exit(1)
@@ -156,7 +156,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 		}
 	} else if !ctx.Dryrun() {
 		// Check if image exists locally
-		err := docker.Docker(ctx, "image", "inspect", imageName)
+		err := docker.Docker(ctx.Dryrun(), ctx.Verbose(), "image", "inspect", imageName)
 		if err != nil {
 			// Image not found locally, pull it
 			fmt.Fprintf(os.Stderr, "Info: pulling image '%s' (not found locally)...\n", imageName)
@@ -164,7 +164,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 				fmt.Printf("Image not found locally. Pulling: %s\n", imageName)
 			}
 
-			err = docker.Docker(ctx, "pull", imageName)
+			err = docker.Docker(ctx.Dryrun(), ctx.Verbose(), "pull", imageName)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: failed to pull '%s'\n", imageName)
 				os.Exit(1)
@@ -183,9 +183,9 @@ func validateImageExists(ctx appctx.AppContext) {
 		return
 	}
 
-	err := docker.Docker(ctx, "image", "inspect", ctx.ImageName())
+	err := docker.Docker(ctx.Dryrun(), ctx.Verbose(), "image", "inspect", ctx.Image())
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error: image '%s' not available locally.\n", ctx.ImageName())
+		fmt.Fprintf(os.Stderr, "Error: image '%s' not available locally.\n", ctx.Image())
 		fmt.Fprintln(os.Stderr, "       Use '--pull' if you want to force pulling it.")
 		os.Exit(1)
 	}

@@ -3,11 +3,8 @@ package workspace
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/nawaman/workspace/src/pkg/appctx"
-	"github.com/nawaman/workspace/src/pkg/ilist"
-	"golang.org/x/term"
 )
 
 // WorkspaceRunner handles the "run" command for workspace operations.
@@ -33,8 +30,6 @@ func (runner *WorkspaceRunner) Run() error {
 	ctx = SetupDind(ctx)
 	ctx = PrepareRunMode(ctx)
 	ctx = PrepareCommonArgs(ctx)
-	ctx = PrepareKeepAliveArgs(ctx)
-	ctx = PrepareTtyArgs(ctx)
 
 	// Create workspace with prepared context and run
 	workspace := NewWorkspace(ctx)
@@ -60,61 +55,31 @@ func PrepareRunMode(ctx appctx.AppContext) appctx.AppContext {
 func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
 
-	builder.AppendCommonArg("--name", ctx.ContainerName())
-	builder.AppendCommonArg("-e", "HOST_UID="+ctx.HostUID())
-	builder.AppendCommonArg("-e", "HOST_GID="+ctx.HostGID())
-	builder.AppendCommonArg("-v", ctx.WorkspacePath()+":/home/coder/workspace")
-	builder.AppendCommonArg("-w", "/home/coder/workspace")
-	builder.AppendCommonArg("-p", ctx.HostPort()+":10000")
+	builder.CommonArgs.Append("--name", ctx.Name())
+	builder.CommonArgs.Append("-e", "HOST_UID="+ctx.HostUID())
+	builder.CommonArgs.Append("-e", "HOST_GID="+ctx.HostGID())
+	builder.CommonArgs.Append("-v", ctx.Workspace()+":/home/coder/workspace")
+	builder.CommonArgs.Append("-w", "/home/coder/workspace")
+	builder.CommonArgs.Append("-p", ctx.Port()+":10000")
 
 	// Metadata
-	builder.AppendCommonArg("-e", "WS_SETUPS_DIR="+ctx.SetupsDir())
-	builder.AppendCommonArg("-e", "WS_CONTAINER_NAME="+ctx.ContainerName())
-	builder.AppendCommonArg("-e", fmt.Sprintf("WS_DAEMON=%t", ctx.Daemon()))
-	builder.AppendCommonArg("-e", "WS_HOST_PORT="+ctx.HostPort())
-	builder.AppendCommonArg("-e", "WS_IMAGE_NAME="+ctx.ImageName())
-	builder.AppendCommonArg("-e", "WS_RUNMODE="+ctx.RunMode())
-	builder.AppendCommonArg("-e", "WS_VARIANT_TAG="+ctx.Variant())
-	builder.AppendCommonArg("-e", fmt.Sprintf("WS_VERBOSE=%t", ctx.Verbose()))
-	builder.AppendCommonArg("-e", "WS_VERSION_TAG="+ctx.Version())
-	builder.AppendCommonArg("-e", "WS_WORKSPACE_PATH="+ctx.WorkspacePath())
-	builder.AppendCommonArg("-e", "WS_WORKSPACE_PORT="+ctx.WorkspacePort())
-	builder.AppendCommonArg("-e", fmt.Sprintf("WS_HAS_NOTEBOOK=%t", ctx.HasNotebook()))
-	builder.AppendCommonArg("-e", fmt.Sprintf("WS_HAS_VSCODE=%t", ctx.HasVscode()))
-	builder.AppendCommonArg("-e", fmt.Sprintf("WS_HAS_DESKTOP=%t", ctx.HasDesktop()))
+	builder.CommonArgs.Append("-e", "WS_SETUPS_DIR="+ctx.SetupsDir())
+	builder.CommonArgs.Append("-e", "WS_CONTAINER_NAME="+ctx.Name())
+	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_DAEMON=%t", ctx.Daemon()))
+	builder.CommonArgs.Append("-e", "WS_HOST_PORT="+ctx.Port())
+	builder.CommonArgs.Append("-e", "WS_IMAGE_NAME="+ctx.Image())
+	builder.CommonArgs.Append("-e", "WS_RUNMODE="+ctx.RunMode())
+	builder.CommonArgs.Append("-e", "WS_VARIANT_TAG="+ctx.Variant())
+	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_VERBOSE=%t", ctx.Verbose()))
+	builder.CommonArgs.Append("-e", "WS_VERSION_TAG="+ctx.Version())
+	builder.CommonArgs.Append("-e", "WS_WORKSPACE_PATH="+ctx.Workspace())
+	builder.CommonArgs.Append("-e", "WS_WORKSPACE_PORT="+ctx.Port())
+	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_HAS_NOTEBOOK=%t", ctx.HasNotebook()))
+	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_HAS_VSCODE=%t", ctx.HasVscode()))
+	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_HAS_DESKTOP=%t", ctx.HasDesktop()))
 
-	if !ctx.DoPull() {
-		builder.AppendCommonArg("--pull=never")
-	}
-
-	return builder.Build()
-}
-
-// PrepareKeepAliveArgs prepares keep-alive arguments and returns updated AppContext.
-func PrepareKeepAliveArgs(ctx appctx.AppContext) appctx.AppContext {
-	builder := ctx.ToBuilder()
-
-	builder.KeepaliveArgs = ilist.NewAppendableList[string]()
-	if !ctx.Keepalive() {
-		builder.KeepaliveArgs.Append("--rm")
-	}
-
-	return builder.Build()
-}
-
-// PrepareTtyArgs prepares TTY arguments and returns updated AppContext.
-func PrepareTtyArgs(ctx appctx.AppContext) appctx.AppContext {
-	builder := ctx.ToBuilder()
-
-	builder.TtyArgs = ilist.NewAppendableList[string]()
-
-	// Default: interactive only
-	builder.TtyArgs.Append("-i")
-
-	// If both stdin (fd 0) and stdout (fd 1) are terminals, use interactive + TTY
-	if term.IsTerminal(int(os.Stdin.Fd())) && term.IsTerminal(int(os.Stdout.Fd())) {
-		builder.TtyArgs = ilist.NewAppendableList[string]()
-		builder.TtyArgs.Append("-it")
+	if !ctx.Pull() {
+		builder.CommonArgs.Append("--pull=never")
 	}
 
 	return builder.Build()
@@ -130,10 +95,8 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
 
 	// Set up unique network and sidecar names
-	dindNet := fmt.Sprintf("%s-%s-net", ctx.ContainerName(), ctx.HostPort())
-	dindName := fmt.Sprintf("%s-%s-dind", ctx.ContainerName(), ctx.HostPort())
-	builder.DindNet = dindNet
-	builder.DindName = dindName
+	dindNet := getDindNet(ctx)
+	dindName := getDindName(ctx)
 
 	// Create network if it doesn't exist
 	createdNet := createDindNetwork(ctx, dindNet)
@@ -149,8 +112,8 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 	builder.RunArgs = stripNetworkFlags(ctx.RunArgs())
 
 	// Add DinD network and DOCKER_HOST to COMMON_ARGS
-	builder.AppendCommonArg("--network", dindNet)
-	builder.AppendCommonArg("-e", fmt.Sprintf("DOCKER_HOST=tcp://%s:2375", dindName))
+	builder.CommonArgs.Append("--network", dindNet)
+	builder.CommonArgs.Append("-e", fmt.Sprintf("DOCKER_HOST=tcp://%s:2375", dindName))
 
 	return builder.Build()
 }

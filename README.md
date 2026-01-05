@@ -25,28 +25,28 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
 - [Customization](#customization)
 - [Guarantees & Limits](#guarantees-limits)
 - [How It Works](#how-it-works)
-- [workspace.sh Manual](#workspace-sh-manual)
+- [`workspace` Manual](#workspace-sh-manual)
 - [Setup Implementation Notes](#setup-implementation-notes)
 - [Community & Feedback](#community-feedback)
 
 ## Quick Try
 
-1. Ensure you have docker and can run bash (for Windows you will need GitBash or WSL).
+1. Ensure you have Docker installed and running.
 2. Clone this repo.
 3. cd into it and cd further into `examples/go-example` or any other example in that folder.
-4. Run : `../../workspace.sh`
+4. Run : `../../workspace`
 5. Wait for a few minutes (may be more for the first run) and visit `http://localhost:10000`
 6. Select your IDE and start coding! (note: your code will be in `/home/coder/workspace` folder).
 
 ![Select IDE](DesktopRun.png)
 
 ### Optional
-7. Inspect `ws--Dockerfile` and `ws-config.sh` inside `examples/go-example` and
+7. Inspect `ws--Dockerfile` and `ws--config.toml` inside `examples/go-example` and
     see if you can figure out what they are.
 8. Try other [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples) or different [variants](https://github.com/NawaMan/WorkSpace/tree/latest?tab=readme-ov-file#available-variants).
 9. Try on your own project,
-  1. Download [`workspace.sh`](https://github.com/NawaMan/WorkSpace/releases/download/latest/workspace.sh) and put in your project folder.
-  2. Create `ws--Dockerfile` and `ws-config.sh` -- Take inspire from the existing [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples).
+  1. Download [`workspace`](https://github.com/NawaMan/WorkSpace/releases/download/latest/workspace) and put in your project folder.
+  2. Create `ws--Dockerfile` and `ws--config.toml` -- Take inspire from the existing [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples).
 
 ## Installation
 
@@ -81,7 +81,7 @@ That means every file you create or modify inside the container is **owned by yo
 - **Seamless file access** – Create, edit, and delete files inside the container, then use them on the host with no permission issues.  
 - **Team-friendly** – Each developer uses their own UID and GID mapping — no more “root-owned” repositories.  
 - **Project isolation** – Keep toolchains and dependencies inside the container while working directly in your project folder.  
-- **Portable configuration** – `ws--config.sh` travel with your repository, ensuring consistent setups across machines.
+- **Portable configuration** – `ws--config.toml` travel with your repository, ensuring consistent setups across machines.
 
 
 ## Variants
@@ -131,10 +131,10 @@ For desktop variants (`desktop-xfce`, `desktop-kde`), you can customize the scre
 
 **Example (command line):**
 ```bash
-./workspace.sh --variant desktop-xfce -e GEOMETRY=1920x1080
+./workspace --variant desktop-xfce -e GEOMETRY=1920x1080
 ```
 
-**Example (in `ws--config.sh`):**
+**Example (in `ws--config.toml`):**
 ```bash
 RUN_ARGS+=(-e GEOMETRY=1920x1080)
 ```
@@ -176,9 +176,9 @@ http://localhost:10000/vnc.html?autoconnect=1&host=localhost&port=10000&path=web
 
 > 💡 **Tip:** You can override the variant at runtime using:
 > ```bash
-> ./workspace.sh --variant codeserver
+> ./workspace --variant codeserver
 > ```
-> Or set it permanently in your configuration file (`ws--config.sh`).
+> Or set it permanently in your configuration file (`ws--config.toml`).
 
 
 ## Built-in Tools
@@ -219,11 +219,11 @@ These essentials are preinstalled so you can start working immediately — no ex
 ## Quick Examples
 
 ```shell
-./workspace.sh -- make test
+./workspace -- make test
 ```
 
 ```shell
-./workspace.sh -- 'read -r -p "Press Enter to continue..."'
+./workspace -- 'read -r -p "Press Enter to continue..."'
 ```
 
 More examples : https://github.com/NawaMan/WorkSpace/tree/main/examples
@@ -233,11 +233,12 @@ More examples : https://github.com/NawaMan/WorkSpace/tree/main/examples
 
 You can tailor how WorkSpace runs by adjusting configuration files or using runtime flags:
 
-- **`ws--config.sh`** – Defines the image name, variant, UID/GID overrides, and default ports.  
+- **`ws--config.toml`** – Defines the image name, variant, UID/GID overrides, and default ports.  
 - **Runtime flags** – Options such as `--variant`, `--name`, `--pull`, `--dryrun`, and others can override defaults at launch.
 
 > 💡 **Tip:** Configuration precedence follows this order:  
 > **CLI flags → config file → environment variables → built-in defaults.**
+> **Bootstrap note:** `--workspace` and `--config` are evaluated early (CLI first pass or defaults) and are not overridden by environment variables/TOML configuration file.
 
 ---
 
@@ -266,7 +267,7 @@ host                                 # your machine
   |    ├── workspace/                # workspace wrapper script
   |    ├── .workspace                # workspace internal folder
   |    |    ├── tools                # workspace tools folder
-  |    |        └── workspace.sh     # workspace runner script
+  |    |        └── workspace        # workspace runner script
   |    ├── ...                       # other project files
   ...
 
@@ -277,7 +278,7 @@ container
   |    |    |   ├── workspace             # workspace wrapper script
   |    |    |   ├── .workspace            # workspace internal folder
   |    |    |   |    ├── tools            # workspace tools folder
-  |    |    |   |    └── workspace.sh     # workspace runner script
+  |    |    |   |    └── workspace        # workspace runner script
   |    |    ├── ...                       # other project files
   |    ├── ...                            # other home files
   ├── etc/
@@ -310,7 +311,7 @@ container
 
 
 
-## workspace.sh Manual
+## workspace Manual
 
 ### Feature List
 
@@ -323,11 +324,14 @@ container
 
 **Overrides**
 - **Environment variables:** `IMAGE_NAME`, `IMAGE_REPO`, `IMAGE_TAG`, `VARIANT`, `VERSION`  
-- **Configuration file:** `ws--config.sh`  
+- **Configuration file:** `ws--config.toml`  
 - **CLI options:** `--variant`, `--version`, `--image`, `--dockerfile`
 
 **Precedence**
 Command-line arguments → config file → environment variables → built-in defaults
+
+> **Bootstrap note:** `--workspace` and `--config` are resolved from CLI (first pass) or defaults, and are not overridden by the config file or environment variables.
+
 
 **Derived Values**
 - `IMAGE_NAME` = `IMAGE_REPO:IMAGE_TAG`  
@@ -346,7 +350,7 @@ Command-line arguments → config file → environment variables → built-in de
 
 **Overrides**
 - **Environment variable:** `CONTAINER_NAME`  
-- **Configuration file:** `ws--config.sh`  
+- **Configuration file:** `ws--config.toml`  
 - **CLI option:** `--name <name>`
 
 ---
@@ -360,24 +364,24 @@ Command-line arguments → config file → environment variables → built-in de
 WorkSpace supports several configuration files that control how containers are built and launched.  
 These files let you define defaults, environment variables, and runtime parameters without cluttering your CLI commands.
 
-#### **Launcher Config (`ws--config.sh`)**
-- Sourced automatically **before** command-line arguments are parsed.  
+#### **Launcher Config (`ws--config.toml`)**
+- Loaded after bootstrap flags are determined (`--workspace`, `--config`) and before full CLI parsing.  
 - Defines default values for image selection, user mapping, and runtime behavior.  
 - Typical keys include:  
   `IMAGE_NAME`, `IMAGE_REPO`, `IMAGE_TAG`, `VARIANT`, `VERSION`,  
   `CONTAINER_NAME`, `HOST_UID`, `HOST_GID`, `WORKSPACE_PORT`, `DIND`, and others.
 
 ##### **Custom Argument Arrays**
-You can define three special arrays in `ws--config.sh` to customize how the launcher interacts with Docker:
+You can define three special arrays in `ws--config.toml` to customize how the launcher interacts with Docker:
 
-- **`ARGS`** – Adds command-line arguments directly to `workspace.sh`.  
+- **`ARGS`** – Adds command-line arguments directly to `workspace`.  
   Useful for predefining commonly used options (e.g., extra ports or mounts).  
   ```bash
   ARGS+=("--variant" "ide-codeserver")
   ARGS+=("--port"    "8080:8080")
   ```
 
-These behave exactly like command-line flags passed to workspace.sh.
+These behave exactly like command-line flags passed to workspace.
 
 - BUILD_ARGS – Adds extra options to the docker build command.
   For example, disable caching or pass build-time variables:
@@ -401,7 +405,7 @@ These behave exactly like command-line flags passed to workspace.sh.
 
 > 🧩 Summary:
 > Configuration layers allow customization at two levels:
-> Build+Image: ws--config.sh (persistent project defaults)
+> Build+Image: ws--config.toml (persistent project defaults)
 > Container Environment: .env (runtime secrets and environment variables)
 > Together, they give you full control over build, run, and launcher behavior.
 
@@ -434,7 +438,7 @@ WorkSpace supports multiple run modes to fit different workflows — from one-of
 - Executes a specific command inside the container and then exits.
 - Commands are run under a login shell for a consistent environment:
   ```bash
-  ./workspace.sh -- echo "Hello from container"
+  ./workspace -- echo "Hello from container"
   ```
 - Useful for automation, scripting, or CI/CD pipelines.
   
@@ -467,7 +471,7 @@ Meaning:
 **Overrides**
 - You can customize the exposed port via:
   - Environment variable: WORKSPACE_PORT
-  - Configuration file: ws--config.sh
+  - Configuration file: ws--config.toml
   - CLI flag: --port <number>
 - The value can be a fixed number (8080), NEXT (to find the next available port), or RANDOM (to assign a random open port).
 
@@ -485,7 +489,7 @@ WorkSpace manages Docker image retrieval intelligently to balance performance an
 **Forced Pull**
 - Use the `--pull` flag to explicitly fetch the latest image version, even if a local copy exists:
   ```bash
-  ./workspace.sh --pull
+  ./workspace --pull
   ```
 > 💡 Tip:
 > Use --pull periodically to ensure your local environment stays in sync with the latest base image, especially when sharing configurations across teams.
@@ -497,7 +501,7 @@ The **dry-run** mode allows you to preview exactly what WorkSpace will execute �
 
 **Usage**
 ```bash
-./workspace.sh --dryrun
+./workspace --dryrun
 ```
 
 **Behavior**
@@ -545,9 +549,9 @@ Displays detailed usage information, supported flags, and configuration notes.
 
 **Usage**
 ```bash
-./workspace.sh --help
+./workspace --help
 # or
-./workspace.sh -h
+./workspace -h
 ```
 
 **Behavior**
@@ -575,9 +579,9 @@ This feature is useful for CI/CD pipelines, containerized builds, or development
   ```bash
   DIND=true
   ```
-  in your ws--config.sh file or by passing:
+  in your ws--config.toml file or by passing:
   ```bash
-  ./workspace.sh --dind
+  ./workspace --dind
   ```
 - Default behavior (DIND=false) disables Docker access inside the container.
   

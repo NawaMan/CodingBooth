@@ -14,7 +14,7 @@ import (
 // Returns true if the network was created, false if it already existed.
 func createDindNetwork(ctx appctx.AppContext, networkName string) bool {
 	// Check if network already exists
-	err := docker.Docker(ctx, "network", "inspect", networkName)
+	err := docker.Docker(ctx.Dryrun(), ctx.Verbose(), "network", "inspect", networkName)
 	if err == nil {
 		// Network already exists
 		return false
@@ -25,7 +25,7 @@ func createDindNetwork(ctx appctx.AppContext, networkName string) bool {
 		fmt.Printf("Creating network: %s\n", networkName)
 	}
 
-	err = docker.Docker(ctx, "network", "create", networkName)
+	err = docker.Docker(ctx.Dryrun(), ctx.Verbose(), "network", "create", networkName)
 	if err != nil {
 		fmt.Printf("Warning: failed to create network %s: %v\n", networkName, err)
 		return false
@@ -37,7 +37,7 @@ func createDindNetwork(ctx appctx.AppContext, networkName string) bool {
 // startDindSidecar starts the DinD sidecar container if not already running.
 func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string) {
 	// Check if sidecar is already running
-	err := docker.Docker(ctx, "ps", "--filter", fmt.Sprintf("name=^/%s$", dindName), "--format", "{{.Names}}")
+	err := docker.Docker(ctx.Dryrun(), ctx.Verbose(), "ps", "--filter", fmt.Sprintf("name=^/%s$", dindName), "--format", "{{.Names}}")
 	if err == nil {
 		// Container is running
 		if ctx.Verbose() {
@@ -76,7 +76,7 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string) {
 		}
 	}
 
-	err = docker.Docker(ctx, args[0], args[1:]...)
+	err = docker.Docker(ctx.Dryrun(), ctx.Verbose(), args[0], args[1:]...)
 	if err != nil {
 		fmt.Printf("Warning: failed to start DinD sidecar: %v\n", err)
 	}
@@ -103,7 +103,7 @@ func waitForDindReady(ctx appctx.AppContext, dindName, dindNet string) {
 	maxAttempts := 40
 	for i := 0; i < maxAttempts; i++ {
 		// Try to connect to DinD daemon
-		err := docker.Docker(ctx, "run", "--rm", "--network", dindNet, "docker:cli",
+		err := docker.Docker(ctx.Dryrun(), ctx.Verbose(), "run", "--rm", "--network", dindNet, "docker:cli",
 			"-H", fmt.Sprintf("tcp://%s:2375", dindName), "version")
 
 		if err == nil {

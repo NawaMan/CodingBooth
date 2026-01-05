@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/nawaman/workspace/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/nillable"
 )
 
 func TestAppContext_RoundTrip(t *testing.T) {
@@ -11,9 +12,9 @@ func TestAppContext_RoundTrip(t *testing.T) {
 		PrebuildRepo: "repo",
 		WsVersion:    "1.0.0",
 		Config: AppConfig{
-			Dryrun:    true,
-			Verbose:   true,
-			ImageName: "test-image",
+			Dryrun:  nillable.NewNillableBool(true),
+			Verbose: nillable.NewNillableBool(true),
+			Image:   "test-image",
 		},
 		CommonArgs: ilist.NewAppendableList[string](),
 	}
@@ -27,8 +28,8 @@ func TestAppContext_RoundTrip(t *testing.T) {
 	if !ctx.Dryrun() {
 		t.Fatalf("Dryrun mismatch")
 	}
-	if ctx.ImageName() != "test-image" {
-		t.Fatalf("ImageName mismatch")
+	if ctx.Image() != "test-image" {
+		t.Fatalf("Image mismatch")
 	}
 
 	got := ctx.CommonArgs().Slice()
@@ -81,40 +82,36 @@ func TestAppContext_Immutability(t *testing.T) {
 func TestAppContext_ConfigValues(t *testing.T) {
 	builder := &AppContextBuilder{
 		Config: AppConfig{
-			ConfigFile:       "conf",
-			WorkspacePath:    "path",
-			Dryrun:           true,
-			Verbose:          true,
-			Keepalive:        true,
-			SilenceBuild:     true,
-			Daemon:           true,
-			DoPull:           true,
-			Dind:             true,
-			DockerFile:       "dockerfile",
-			ImageName:        "image",
-			Variant:          "variant",
-			Version:          "version",
-			ProjectName:      "project",
-			HostUID:          "uid",
-			HostGID:          "gid",
-			Timezone:         "tz",
-			ContainerName:    "container",
-			WorkspacePort:    "8080",
-			HostPort:         "9090",
-			ContainerEnvFile: "env",
-			DindNet:          "net",
-			DindName:         "dind",
-			DockerBin:        "docker",
+			Config:       nillable.NewNillableString("conf"),
+			Workspace:    nillable.NewNillableString("path"),
+			Dryrun:       nillable.NewNillableBool(true),
+			Verbose:      nillable.NewNillableBool(true),
+			KeepAlive:    true,
+			SilenceBuild: true,
+			Daemon:       true,
+			Pull:         true,
+			Dind:         true,
+			Dockerfile:   "dockerfile",
+			Image:        "image",
+			Variant:      "variant",
+			Version:      "version",
+			ProjectName:  "project",
+			HostUID:      "uid",
+			HostGID:      "gid",
+			Timezone:     "tz",
+			Name:         "container",
+			Port:         "8080",
+			EnvFile:      "env",
 		},
 	}
 
 	ctx := NewAppContext(builder)
 
 	if ctx.ConfigFile() != "conf" {
-		t.Error("ConfigFile mismatch")
+		t.Error("Config mismatch")
 	}
-	if ctx.WorkspacePath() != "path" {
-		t.Error("WorkspacePath mismatch")
+	if ctx.Workspace() != "path" {
+		t.Error("Workspace mismatch")
 	}
 	if !ctx.Dryrun() {
 		t.Error("Dryrun mismatch")
@@ -122,7 +119,7 @@ func TestAppContext_ConfigValues(t *testing.T) {
 	if !ctx.Verbose() {
 		t.Error("Verbose mismatch")
 	}
-	if !ctx.Keepalive() {
+	if !ctx.KeepAlive() {
 		t.Error("Keepalive mismatch")
 	}
 	if !ctx.SilenceBuild() {
@@ -131,16 +128,16 @@ func TestAppContext_ConfigValues(t *testing.T) {
 	if !ctx.Daemon() {
 		t.Error("Daemon mismatch")
 	}
-	if !ctx.DoPull() {
-		t.Error("DoPull mismatch")
+	if !ctx.Pull() {
+		t.Error("Pull mismatch")
 	}
 	if !ctx.Dind() {
 		t.Error("Dind mismatch")
 	}
-	if ctx.DockerFile() != "dockerfile" {
+	if ctx.Dockerfile() != "dockerfile" {
 		t.Error("DockerFile mismatch")
 	}
-	if ctx.ImageName() != "image" {
+	if ctx.Image() != "image" {
 		t.Error("ImageName mismatch")
 	}
 	if ctx.Variant() != "variant" {
@@ -161,26 +158,14 @@ func TestAppContext_ConfigValues(t *testing.T) {
 	if ctx.Timezone() != "tz" {
 		t.Error("Timezone mismatch")
 	}
-	if ctx.ContainerName() != "container" {
-		t.Error("ContainerName mismatch")
+	if ctx.Name() != "container" {
+		t.Error("Name mismatch")
 	}
-	if ctx.WorkspacePort() != "8080" {
-		t.Error("WorkspacePort mismatch")
+	if ctx.Port() != "8080" {
+		t.Error("Port mismatch")
 	}
-	if ctx.HostPort() != "9090" {
-		t.Error("HostPort mismatch")
-	}
-	if ctx.ContainerEnvFile() != "env" {
-		t.Error("ContainerEnvFile mismatch")
-	}
-	if ctx.DindNet() != "net" {
-		t.Error("DindNet mismatch")
-	}
-	if ctx.DindName() != "dind" {
-		t.Error("DindName mismatch")
-	}
-	if ctx.DockerBin() != "docker" {
-		t.Error("DockerBin mismatch")
+	if ctx.EnvFile() != "env" {
+		t.Error("EnvFile mismatch")
 	}
 }
 
@@ -250,19 +235,15 @@ func TestAppContext_DerivedValues(t *testing.T) {
 
 func TestAppContext_Lists(t *testing.T) {
 	builder := &AppContextBuilder{
-		CommonArgs:    ilist.NewAppendableList[string](),
-		BuildArgs:     ilist.NewAppendableList[string](),
-		RunArgs:       ilist.NewAppendableList[string](),
-		Cmds:          ilist.NewAppendableList[string](),
-		KeepaliveArgs: ilist.NewAppendableList[string](),
-		TtyArgs:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
 	}
 	builder.CommonArgs.Append("common")
 	builder.BuildArgs.Append("build")
 	builder.RunArgs.Append("run")
 	builder.Cmds.Append("cmd")
-	builder.KeepaliveArgs.Append("keepalive")
-	builder.TtyArgs.Append("tty")
 
 	ctx := NewAppContext(builder)
 
@@ -277,12 +258,6 @@ func TestAppContext_Lists(t *testing.T) {
 	}
 	if ctx.Cmds().At(0) != "cmd" {
 		t.Error("Cmds mismatch")
-	}
-	if ctx.KeepaliveArgs().At(0) != "keepalive" {
-		t.Error("KeepaliveArgs mismatch")
-	}
-	if ctx.TtyArgs().At(0) != "tty" {
-		t.Error("TtyArgs mismatch")
 	}
 }
 
@@ -301,12 +276,6 @@ func TestAppContextBuilder_NilListsSafeguard(t *testing.T) {
 	if ctx.Cmds().Length() != 0 {
 		t.Fatal("Cmds should be empty")
 	}
-	if ctx.KeepaliveArgs().Length() != 0 {
-		t.Fatal("KeepaliveArgs should be empty")
-	}
-	if ctx.TtyArgs().Length() != 0 {
-		t.Fatal("TtyArgs should be empty")
-	}
 
 	b2 := ctx.ToBuilder()
 	if b2.CommonArgs.Length() != 0 {
@@ -320,12 +289,6 @@ func TestAppContextBuilder_NilListsSafeguard(t *testing.T) {
 	}
 	if b2.Cmds.Length() != 0 {
 		t.Fatal("b2 Cmds should be empty")
-	}
-	if b2.KeepaliveArgs.Length() != 0 {
-		t.Fatal("b2 KeepaliveArgs should be empty")
-	}
-	if b2.TtyArgs.Length() != 0 {
-		t.Fatal("b2 TtyArgs should be empty")
 	}
 }
 

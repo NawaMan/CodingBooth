@@ -11,23 +11,23 @@ import (
 func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
 
-	containerEnvFile := ctx.ContainerEnvFile()
+	containerEnvFile := ctx.EnvFile()
 
 	// If not set, default to <workspace>/.env when it exists
 	if containerEnvFile == "" {
-		candidate := ctx.WorkspacePath() + "/.env"
+		candidate := ctx.Workspace() + "/.env"
 		if candidate == "" {
 			candidate = "./.env"
 		}
 
 		if fileExists(candidate) {
 			containerEnvFile = candidate
-			builder.ContainerEnvFile = candidate
+			builder.Config.EnvFile = candidate
 		}
 	}
 
 	// Respect the "not used" token
-	if containerEnvFile != "" && containerEnvFile == ctx.FileNotUsed() {
+	if containerEnvFile != "" && containerEnvFile == "-" {
 		if ctx.Verbose() {
 			fmt.Println("Skipping --env-file (explicitly disabled).")
 		}
@@ -41,7 +41,7 @@ func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 			os.Exit(1)
 		}
 
-		builder.AppendCommonArg("--env-file", containerEnvFile)
+		builder.CommonArgs.Append("--env-file", containerEnvFile)
 		if ctx.Verbose() {
 			fmt.Printf("Using env-file: %s\n", containerEnvFile)
 		}

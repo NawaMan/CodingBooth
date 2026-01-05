@@ -8,7 +8,9 @@
 // For reference types (pointers, slices, maps), only references are copied.
 package ilist
 
-import "fmt"
+import (
+	"fmt"
+)
 
 type List[TYPE any] struct {
 	elements []TYPE
@@ -76,6 +78,14 @@ func (thisList List[TYPE]) Range(fn func(index int, value TYPE) bool) {
 			break
 		}
 	}
+}
+
+func (thisList List[T]) Clone() List[T] {
+	if thisList.elements == nil {
+		return List[T]{elements: nil}
+	}
+	cp := append([]T(nil), thisList.elements...)
+	return List[T]{elements: cp}
 }
 
 // ToBuilder creates a new AppendableList with a copy of this List's elements.

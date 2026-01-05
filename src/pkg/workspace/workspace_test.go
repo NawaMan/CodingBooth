@@ -8,6 +8,8 @@ import (
 	"testing"
 
 	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/nillable"
 )
 
 // TestWorkspace_runAsCommand_DryrunMode verifies command construction in dryrun mode.
@@ -18,15 +20,19 @@ func TestWorkspace_runAsCommand_DryrunMode(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with dryrun enabled
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Timezone = "America/New_York"
-	builder.ImageName = "test-image:latest"
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Timezone = "America/New_York"
+	builder.Config.Image = "test-image:latest"
 
 	// Set up argument lists
-	builder.TtyArgs.Append("-it")
-	builder.KeepaliveArgs.Append("--rm")
 	builder.CommonArgs.Append("--name", "test-container")
 	builder.RunArgs.Append("-e", "TEST_VAR=value")
 	builder.Cmds.Append("echo 'Hello'", "ls -la")
@@ -112,15 +118,22 @@ func TestWorkspace_runAsCommand_WithDind(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with DinD enabled
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Dind = true
+	// Create context with DinD enabled
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Dind = true
 	builder.CreatedDindNet = true
-	builder.DindName = "test-dind-sidecar"
-	builder.DindNet = "test-dind-network"
-	builder.Timezone = "UTC"
-	builder.ImageName = "alpine:latest"
+	builder.Config.Name = "test-container"
+	builder.Config.Port = "10000"
+	builder.Config.Timezone = "UTC"
+	builder.Config.Image = "alpine:latest"
 	builder.Cmds.Append("echo test")
 
 	ctx := builder.Build()
@@ -152,7 +165,7 @@ func TestWorkspace_runAsCommand_WithDind(t *testing.T) {
 	if !strings.Contains(output, "docker stop") {
 		t.Errorf("Expected 'docker stop' for DinD cleanup, got: %q", output)
 	}
-	if !strings.Contains(output, "test-dind-sidecar") {
+	if !strings.Contains(output, "test-container-10000-dind") {
 		t.Errorf("Expected DinD sidecar name in stop command, got: %q", output)
 	}
 
@@ -160,7 +173,7 @@ func TestWorkspace_runAsCommand_WithDind(t *testing.T) {
 	if !strings.Contains(output, "docker network rm") {
 		t.Errorf("Expected 'docker network rm' for DinD cleanup, got: %q", output)
 	}
-	if !strings.Contains(output, "test-dind-network") {
+	if !strings.Contains(output, "test-container-10000-net") {
 		t.Errorf("Expected DinD network name in rm command, got: %q", output)
 	}
 }
@@ -173,15 +186,21 @@ func TestWorkspace_runAsCommand_WithDindNoNetwork(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with DinD enabled but CreatedDindNet=false
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Dind = true
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Dind = true
 	builder.CreatedDindNet = false // Network was not created by us
-	builder.DindName = "test-dind-sidecar"
-	builder.DindNet = "test-dind-network"
-	builder.Timezone = "UTC"
-	builder.ImageName = "alpine:latest"
+	builder.Config.Name = "test-container"
+	builder.Config.Port = "10000"
+	builder.Config.Timezone = "UTC"
+	builder.Config.Image = "alpine:latest"
 	builder.Cmds.Append("echo test")
 
 	ctx := builder.Build()
@@ -228,12 +247,19 @@ func TestWorkspace_runAsCommand_WithoutDind(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with DinD disabled
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Dind = false
-	builder.Timezone = "UTC"
-	builder.ImageName = "alpine:latest"
+	// Create context with DinD disabled
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Dind = false
+	builder.Config.Timezone = "UTC"
+	builder.Config.Image = "alpine:latest"
 	builder.Cmds.Append("echo test")
 
 	ctx := builder.Build()
@@ -286,11 +312,18 @@ func TestWorkspace_runAsCommand_EmptyCommands(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with no commands
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Timezone = "UTC"
-	builder.ImageName = "alpine:latest"
+	// Create context with no commands
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Timezone = "UTC"
+	builder.Config.Image = "alpine:latest"
 	// Don't add any commands to builder.Cmds
 
 	ctx := builder.Build()
@@ -330,14 +363,19 @@ func TestWorkspace_runAsCommand_ArgumentOrder(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with all argument types
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Timezone = "UTC"
-	builder.ImageName = "test-image:v1"
+	// Create context with all argument types
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Timezone = "UTC"
+	builder.Config.Image = "test-image:v1"
 
-	builder.TtyArgs.Append("-it")
-	builder.KeepaliveArgs.Append("--rm")
 	builder.CommonArgs.Append("--name", "container1")
 	builder.RunArgs.Append("-p", "8080:80")
 	builder.Cmds.Append("echo hello")
@@ -390,17 +428,21 @@ func TestWorkspace_runAsDaemon_DryrunMode(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with dryrun enabled
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Timezone = "America/New_York"
-	builder.ImageName = "test-image:latest"
-	builder.ScriptName = "workspace.sh"
-	builder.HostPort = "10000"
-	builder.ContainerName = "test-container"
-
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Timezone = "America/New_York"
+	builder.Config.Image = "test-image:latest"
+	builder.Config.Name = "test-container"
+	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
 	// Set up argument lists
-	builder.KeepaliveArgs.Append("--rm")
 	builder.CommonArgs.Append("--name", "test-container")
 	builder.RunArgs.Append("-e", "TEST_VAR=value")
 	builder.Cmds.Append("echo 'Hello'", "ls -la")
@@ -487,17 +529,24 @@ func TestWorkspace_runAsDaemon_WithDind(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with DinD enabled
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Dind = true
-	builder.DindName = "test-dind-sidecar"
-	builder.DindNet = "test-dind-network"
-	builder.Timezone = "UTC"
-	builder.ImageName = "alpine:latest"
+	// Create context with DinD enabled
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Dind = true
+	builder.Config.Name = "test-container"
+	builder.Config.Port = "10000"
+
+	// DindName/DindNet derived from name/port
+	builder.Config.Timezone = "UTC"
+	builder.Config.Image = "alpine:latest"
 	builder.ScriptName = "workspace.sh"
-	builder.HostPort = "10000"
-	builder.ContainerName = "test-container"
 	builder.Cmds.Append("echo test")
 
 	ctx := builder.Build()
@@ -526,10 +575,10 @@ func TestWorkspace_runAsDaemon_WithDind(t *testing.T) {
 	}
 
 	// Verify DinD informational message (no cleanup in daemon mode)
-	if !strings.Contains(output, "🔧 DinD sidecar running: test-dind-sidecar") {
+	if !strings.Contains(output, "🔧 DinD sidecar running: test-container-10000-dind") {
 		t.Errorf("Expected DinD sidecar message, got: %q", output)
 	}
-	if !strings.Contains(output, "docker stop test-dind-sidecar && docker network rm test-dind-network") {
+	if !strings.Contains(output, "docker stop test-container-10000-dind && docker network rm test-container-10000-net") {
 		t.Errorf("Expected DinD stop instructions, got: %q", output)
 	}
 }
@@ -542,14 +591,21 @@ func TestWorkspace_runAsDaemon_NoCommands(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with no commands
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Timezone = "UTC"
-	builder.ImageName = "alpine:latest"
+	// Create context with no commands
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Timezone = "UTC"
+	builder.Config.Image = "alpine:latest"
 	builder.ScriptName = "workspace.sh"
-	builder.HostPort = "10000"
-	builder.ContainerName = "test-container"
+	builder.Config.Port = "10000"
+	builder.Config.Name = "test-container"
 	// Don't add any commands
 
 	ctx := builder.Build()
@@ -606,15 +662,22 @@ func TestWorkspace_runAsDaemon_WithKeepalive(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with keepalive enabled
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Keepalive = true
-	builder.Timezone = "UTC"
-	builder.ImageName = "alpine:latest"
+	// Create context with keepalive enabled
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.KeepAlive = true
+	builder.Config.Timezone = "UTC"
+	builder.Config.Image = "alpine:latest"
 	builder.ScriptName = "workspace.sh"
-	builder.HostPort = "10000"
-	builder.ContainerName = "test-container"
+	builder.Config.Port = "10000"
+	builder.Config.Name = "test-container"
 
 	ctx := builder.Build()
 	ws := NewWorkspace(ctx)
@@ -650,16 +713,22 @@ func TestWorkspace_runAsForeground_DryrunMode(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with dryrun enabled
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Timezone = "America/New_York"
-	builder.ImageName = "test-image:latest"
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Timezone = "America/New_York"
+	builder.Config.Image = "test-image:latest"
+	builder.Config.Name = "test-container"
+	builder.Config.Port = "10000"
 	builder.ScriptName = "workspace.sh"
 
 	// Set up argument lists
-	builder.TtyArgs.Append("-it")
-	builder.KeepaliveArgs.Append("--rm")
 	builder.CommonArgs.Append("--name", "test-container")
 	builder.RunArgs.Append("-e", "TEST_VAR=value")
 
@@ -734,15 +803,21 @@ func TestWorkspace_runAsForeground_WithDind(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with DinD enabled
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Dind = true
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Dind = true
 	builder.CreatedDindNet = true
-	builder.DindName = "test-dind-sidecar"
-	builder.DindNet = "test-dind-network"
-	builder.Timezone = "UTC"
-	builder.ImageName = "alpine:latest"
+	builder.Config.Name = "test-container"
+	builder.Config.Port = "10000"
+	builder.Config.Timezone = "UTC"
+	builder.Config.Image = "alpine:latest"
 	builder.ScriptName = "workspace.sh"
 
 	ctx := builder.Build()
@@ -774,7 +849,7 @@ func TestWorkspace_runAsForeground_WithDind(t *testing.T) {
 	if !strings.Contains(output, "docker stop") {
 		t.Errorf("Expected 'docker stop' for DinD cleanup, got: %q", output)
 	}
-	if !strings.Contains(output, "test-dind-sidecar") {
+	if !strings.Contains(output, "test-container-10000-dind") {
 		t.Errorf("Expected DinD sidecar name in stop command, got: %q", output)
 	}
 
@@ -782,7 +857,7 @@ func TestWorkspace_runAsForeground_WithDind(t *testing.T) {
 	if !strings.Contains(output, "docker network rm") {
 		t.Errorf("Expected 'docker network rm' for DinD cleanup, got: %q", output)
 	}
-	if !strings.Contains(output, "test-dind-network") {
+	if !strings.Contains(output, "test-container-10000-net") {
 		t.Errorf("Expected DinD network name in rm command, got: %q", output)
 	}
 }
@@ -793,15 +868,25 @@ func TestWorkspace_Run_DaemonMode(t *testing.T) {
 	reader, writer, _ := os.Pipe()
 	os.Stdout = writer
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Daemon = true
-	builder.Timezone = "UTC"
-	builder.ImageName = "alpine:latest"
+	// Create context with daemon enabled
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Daemon = true
+	builder.Config.Timezone = "UTC"
+	builder.Config.Image = "alpine:latest"
+	builder.Config.Variant = "base"
+	builder.Config.Port = "10000"
+	builder.Config.Name = "test-container"
 	builder.ScriptName = "workspace.sh"
-	builder.HostPort = "10000"
-	builder.ContainerName = "test-container"
+	builder.Config.Port = "10000"
+	builder.Config.Name = "test-container"
 	builder.Cmds.Append("echo test")
 
 	ctx := builder.Build()
@@ -837,12 +922,21 @@ func TestWorkspace_Run_ForegroundMode(t *testing.T) {
 	reader, writer, _ := os.Pipe()
 	os.Stdout = writer
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Daemon = false
-	builder.Timezone = "UTC"
-	builder.ImageName = "alpine:latest"
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Daemon = false
+	builder.Config.Timezone = "UTC"
+	builder.Config.Variant = "base"
+	builder.Config.Port = "10000"
+	builder.Config.Name = "test-container"
+	builder.Config.Image = "alpine:latest"
 	builder.ScriptName = "workspace.sh"
 	// No commands - should trigger foreground mode
 
@@ -879,12 +973,21 @@ func TestWorkspace_Run_CommandMode(t *testing.T) {
 	reader, writer, _ := os.Pipe()
 	os.Stdout = writer
 
-	builder := appctx.NewAppContextBuilder("0.11.0")
-	builder.Dryrun = true
-	builder.Verbose = true
-	builder.Daemon = false
-	builder.Timezone = "UTC"
-	builder.ImageName = "alpine:latest"
+	builder := &appctx.AppContextBuilder{
+		WsVersion:  "0.11.0",
+		CommonArgs: ilist.NewAppendableList[string](),
+		BuildArgs:  ilist.NewAppendableList[string](),
+		RunArgs:    ilist.NewAppendableList[string](),
+		Cmds:       ilist.NewAppendableList[string](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Daemon = false
+	builder.Config.Timezone = "UTC"
+	builder.Config.Variant = "base"
+	builder.Config.Port = "10000"
+	builder.Config.Name = "test-container"
+	builder.Config.Image = "alpine:latest"
 	builder.Cmds.Append("echo hello", "ls -la")
 
 	ctx := builder.Build()

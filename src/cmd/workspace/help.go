@@ -3,45 +3,47 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 func showHelp() {
 	scriptName := "workspace"
-	if len(os.Args) > 0 {
-		scriptName = os.Args[0]
+	if len(os.Args) > 0 && os.Args[0] != "" {
+		scriptName = filepath.Base(os.Args[0])
 	}
 
 	fmt.Printf(`%s — launch a Docker-based development workspace
 
 USAGE:
-  %s <action> [options]
-  %s [run options] [--] [command ...]
+  %s version                              (print the workspace version)
+  %s help                                 (show this help and exit)
+  %s run [options] [--] [command ...]     (run the workspace)
+  %s [options] [--] [command ...]         (default action: run)
 
-ACTIONS:
-  version                Print the workspace version
-  help                   Show this help and exit
-  run                    Run the workspace (default if no action given)
-
-GENERAL:
-  --verbose              Print extra debugging information
-  --dryrun               Print docker commands without executing them
-  --pull                 Always pull the image, even if it exists locally
-                         (default behavior is to check if the image exists
-                          locally and pull it only if it is missing)
-  --daemon               Run the workspace container in the background
-  --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST
-  --keep-alive           Do not remove the container when stopped
-  --skip-main            Do not run Main; load functions only (for testing)
-  --config <file>        Load defaults from a config shell file (default: ./ws--config.sh)
+BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and config file):
   --workspace <path>     Host workspace path to mount at /home/coder/workspace
+                         (default: current directory)
+  --config <file>        Path to the config file to load
+                         (default: <workspace>/ws--config.toml)
+
+CONFIG PRECEDENCE:
+  options (CLI) > config file (TOML) > environment (ENV) > defaults
+  NOTE: --workspace and --config are bootstrap options and are taken only from
+        CLI (first pass) or defaults.
+
+GENERAL RUN OPTIONS:
+  --dryrun               Print docker commands without executing them
+  --verbose              Print extra debugging information
 
 IMAGE SELECTION (precedence: --image > --dockerfile > prebuilt):
-  --image <name>         Use an existing local or remote image (e.g. repo/name:tag)
-                         The script will check if the image exists locally and
-                         pull it only if it is missing (unless --pull is used).
-  --dockerfile <path>    Build locally from Dockerfile (file or directory)
+  --dockerfile <path>    Build locally from a Dockerfile (file or directory)
                          If a directory is provided, it must contain ws--Dockerfile.
-  --variant <name>       Prebuilt variant:
+  --image <name>         Use an existing local or remote image (e.g. repo/name:tag)
+                         The script checks if the image exists locally and pulls it
+                         only if it is missing (unless --pull is used).
+  --pull                 Always pull the image, even if it exists locally
+                         (default: pull only if the image is missing)
+  --variant <name>       Prebuilt variant (examples):
                            container | ide-notebook | ide-codeserver
                            desktop-xfce | desktop-kde
                          Aliases:
@@ -62,10 +64,15 @@ RUNTIME OPTIONS:
   --env-file <file>      Provide an --env-file to docker run
                          Use 'none' to disable auto-detection of <workspace>/.env
 
+CONTAINER MODE:
+  --daemon               Run the workspace container in the background
+  --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST
+  --keep-alive           Do not remove the container when stopped
+
 COMMANDS:
-  All arguments after '--' are executed *inside* the container instead of
-  starting the default workspace service. Example:
-    %s -- -- bash -lc "echo hi"
+  All arguments after '--' are executed *inside* the container instead of starting
+  the default workspace service. Example:
+    %s -- bash -lc "echo hi"
 
 NOTES:
   - Default image behavior:
@@ -97,5 +104,17 @@ EXAMPLES:
 
   # Disable automatic .env usage
   %s --env-file none --variant notebook
-`, scriptName, scriptName, scriptName, scriptName, scriptName, scriptName, scriptName, scriptName, scriptName)
+`,
+		scriptName,
+		scriptName,
+		scriptName,
+		scriptName,
+		scriptName,
+		scriptName,
+		scriptName,
+		scriptName,
+		scriptName,
+		scriptName,
+		scriptName,
+	)
 }

@@ -11,6 +11,10 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+LOG_FILE="$(dirname "$0")/run-docker-tests.log"
+
+# Redirect output to log file and stdout
+exec > >(tee -i "$LOG_FILE") 2>&1
 
 # Check if docker is available
 if ! command -v docker &> /dev/null; then

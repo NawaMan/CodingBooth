@@ -15,7 +15,7 @@ import (
 func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
 
-	workspacePort := ctx.WorkspacePort()
+	workspacePort := ctx.Port()
 	upperPort := strings.ToUpper(workspacePort)
 	portGenerated := false
 	var hostPort string
@@ -52,7 +52,7 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 		portGenerated = false
 	}
 
-	builder.HostPort = hostPort
+	builder.Config.Port = hostPort
 	builder.PortGenerated = portGenerated
 
 	if (portGenerated || ctx.Verbose()) && ctx.Cmds().Length() == 0 {

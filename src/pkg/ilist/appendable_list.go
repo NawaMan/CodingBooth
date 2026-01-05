@@ -85,3 +85,11 @@ func (thisList *AppendableList[TYPE]) Clone() *AppendableList[TYPE] {
 	copy(copied, thisList.elements)
 	return &AppendableList[TYPE]{elements: copied}
 }
+
+// ToList returns an immutable List snapshot from this mutable list, handling nil receiver.
+func (thisList *AppendableList[TYPE]) ToList() List[TYPE] {
+	if thisList == nil {
+		return NewList[TYPE]()
+	}
+	return thisList.Snapshot()
+}
