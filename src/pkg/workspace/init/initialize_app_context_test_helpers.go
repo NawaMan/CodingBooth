@@ -189,7 +189,7 @@ func RunInitializeAppContext(test *testing.T, input TestInput) TestOutcome {
 	}
 
 	// Run
-	ctx := InitializeAppContext(input)
+	ctx := InitializeAppContext("latest", input)
 
 	// Best-effort snapshot (bootstrap workspace/config inferred)
 	final := appctx.AppConfig{}

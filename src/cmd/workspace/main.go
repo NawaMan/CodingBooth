@@ -5,6 +5,8 @@ import (
 	"os"
 )
 
+var version = "dev"
+
 func main() {
 	// Check for commands
 	if len(os.Args) > 1 {
@@ -12,26 +14,27 @@ func main() {
 
 		switch command {
 		case "version":
-			showVersion()
+			showVersion(version)
 			return
 		case "--help", "-h", "help":
-			showHelp()
+			showHelp(version)
 			return
 		case "run":
-			runWorkspace()
+			runWorkspace(version)
 			return
 		default:
 			// If it starts with --, treat as run with options
 			if len(command) > 0 && command[0] == '-' {
-				runWorkspace()
+				runWorkspace(version)
 				return
 			}
 			fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
 			fmt.Fprintln(os.Stderr, "Use 'workspace help' for usage information")
 			os.Exit(1)
+			return
 		}
 	}
 
 	// No arguments: run workspace
-	runWorkspace()
+	runWorkspace(version)
 }

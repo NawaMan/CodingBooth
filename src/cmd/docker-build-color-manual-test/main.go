@@ -24,9 +24,11 @@ func main() {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false
-	silenceBuild := false
+	flags := docker.DockerFlags{
+		Dryrun:  false,
+		Verbose: true,
+		Silent:  false,
+	}
 
 	// Create a simple Dockerfile content
 	dockerfile := `FROM alpine:latest
@@ -52,7 +54,7 @@ CMD ["echo", "Hello from color demo!"]
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println()
 
-	err := docker.DockerBuild(dryrun, verbose, silenceBuild,
+	err := docker.DockerBuild(flags,
 		"-t", "color-manual-test:latest",
 		"-f", dockerfilePath,
 		tmpDir,

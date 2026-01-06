@@ -10,10 +10,10 @@ import (
 
 // DockerBuild executes a docker build command with optional silent mode.
 // When SilenceBuild is enabled, it captures stderr and only displays it on failure.
-func DockerBuild(dryrun bool, verbose bool, silenceBuild bool, args ...string) error {
+func DockerBuild(flags DockerFlags, args ...string) error {
 	// If not in silent mode, just call Docker build normally
-	if !silenceBuild {
-		return Docker(dryrun, verbose, "build", args...)
+	if !flags.Silent {
+		return Docker(flags, "build", args...)
 	}
 
 	// Silent mode: capture stderr and only show on failure
@@ -21,11 +21,11 @@ func DockerBuild(dryrun bool, verbose bool, silenceBuild bool, args ...string) e
 	cmdArgs = append(cmdArgs, "build")
 	cmdArgs = append(cmdArgs, args...)
 
-	if dryrun || verbose {
+	if flags.Dryrun || flags.Verbose {
 		PrintCmd("docker", cmdArgs...)
 	}
 
-	if dryrun {
+	if flags.Dryrun {
 		return nil
 	}
 

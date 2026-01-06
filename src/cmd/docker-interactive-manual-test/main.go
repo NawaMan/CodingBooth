@@ -47,13 +47,19 @@ func main() {
 	// Define options
 	verbose := true
 	dryrun := false
+	silent := false
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	// Use -it flags - they'll be preserved if TTY is available
-	err := docker.Docker(dryrun, verbose, "run",
+	flags := docker.DockerFlags{
+		Dryrun:  dryrun,
+		Verbose: verbose,
+		Silent:  silent,
+	}
+	err := docker.Docker(flags, "run",
 		"-it",  // Interactive + TTY (auto-filtered if no TTY)
 		"--rm", // Remove after exit
 		"alpine:latest",

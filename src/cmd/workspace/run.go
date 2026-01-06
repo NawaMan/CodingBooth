@@ -8,9 +8,10 @@ import (
 	wsinit "github.com/nawaman/workspace/src/pkg/workspace/init"
 )
 
-func runWorkspace() {
-	context := wsinit.InitializeAppContext(wsinit.DefaultInitializeAppContextBoundary{})
+func runWorkspace(version string) {
+	context := wsinit.InitializeAppContext(version, wsinit.DefaultInitializeAppContextBoundary{})
 	context = workspace.ValidateVariant(context)
+	context = workspace.EnsureDockerImage(context)
 
 	fmt.Printf("%+v\n", context)
 

@@ -6,13 +6,13 @@ import (
 	"path/filepath"
 )
 
-func showHelp() {
+func showHelp(version string) {
 	scriptName := "workspace"
 	if len(os.Args) > 0 && os.Args[0] != "" {
 		scriptName = filepath.Base(os.Args[0])
 	}
 
-	fmt.Printf(`%s — launch a Docker-based development workspace
+	fmt.Printf(`%s — launch a Docker-based development workspace (version %s)
 
 USAGE:
   %s version                              (print the workspace version)
@@ -106,6 +106,7 @@ EXAMPLES:
   %s --env-file none --variant notebook
 `,
 		scriptName,
+		version,
 		scriptName,
 		scriptName,
 		scriptName,

@@ -2,10 +2,7 @@ package main
 
 import "fmt"
 
-// version is set at build time via -ldflags "-X main.version=$(cat version.txt)"
-var version = "dev" // fallback if not set at build time
-
-func showVersion() {
+func showVersion(version string) {
 	banner := `__      __       _    ___                   
 \ \    / /__ _ _| |__/ __|_ __  __ _ __ ___ 
  \ \/\/ / _ \ '_| / /\__ \ '_ \/ _` + "`" + ` / _/ -_)

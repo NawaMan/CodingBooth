@@ -36,8 +36,12 @@ func (workspace *Workspace) Run(runMode string) error {
 
 // runAsCommand executes a docker run command with user-specified commands in foreground mode.
 func (workspace *Workspace) runAsCommand() error {
-	dryrun := workspace.ctx.Dryrun()
-	verbose := workspace.ctx.Verbose()
+	flags := docker.DockerFlags{
+		Dryrun:  workspace.ctx.Dryrun(),
+		Verbose: workspace.ctx.Verbose(),
+		Silent:  false,
+	}
+
 	ttyArgs := prepareTtyArgs()
 	keepAliveArgs := prepareKeepAliveArgs(workspace.ctx.KeepAlive())
 	userCmds := strings.Join(workspace.ctx.Cmds().Slice(), " ")
@@ -52,15 +56,16 @@ func (workspace *Workspace) runAsCommand() error {
 	args = append(args, "bash", "-lc", userCmds)
 
 	// Execute the docker run command
-	err := docker.Docker(dryrun, verbose, "run", args...)
+	err := docker.Docker(flags, "run", args...)
 
 	// Cleanup DinD resources if enabled
 	if workspace.ctx.Dind() {
+		flags.Silent = true
 		dindName := getDindName(workspace.ctx)
 		dindNet := getDindNet(workspace.ctx)
-		_ = docker.Docker(dryrun, verbose, "stop", dindName)
+		_ = docker.Docker(flags, "stop", dindName)
 		if workspace.ctx.CreatedDindNet() {
-			_ = docker.Docker(dryrun, verbose, "network", "rm", dindNet)
+			_ = docker.Docker(flags, "network", "rm", dindNet)
 		}
 	}
 
@@ -69,8 +74,12 @@ func (workspace *Workspace) runAsCommand() error {
 
 // runAsDaemon executes a docker run command in daemon mode (background).
 func (workspace *Workspace) runAsDaemon() error {
-	dryrun := workspace.ctx.Dryrun()
-	verbose := workspace.ctx.Verbose()
+	flags := docker.DockerFlags{
+		Dryrun:  workspace.ctx.Dryrun(),
+		Verbose: workspace.ctx.Verbose(),
+		Silent:  false,
+	}
+
 	keepAliveArgs := prepareKeepAliveArgs(workspace.ctx.KeepAlive())
 	userCmds := make([]string, 0, 64)
 
@@ -111,7 +120,7 @@ func (workspace *Workspace) runAsDaemon() error {
 	args = append(args, userCmds...)
 
 	// Execute the docker run command
-	err := docker.Docker(dryrun, verbose, "run", args...)
+	err := docker.Docker(flags, "run", args...)
 
 	// If DinD is enabled in daemon mode, inform user how to stop it
 	if workspace.ctx.Dind() {
@@ -126,8 +135,12 @@ func (workspace *Workspace) runAsDaemon() error {
 
 // runAsForeground executes a docker run command in foreground mode.
 func (workspace *Workspace) runAsForeground() error {
-	verbose := workspace.ctx.Verbose()
-	dryrun := workspace.ctx.Dryrun()
+	flags := docker.DockerFlags{
+		Dryrun:  workspace.ctx.Dryrun(),
+		Verbose: workspace.ctx.Verbose(),
+		Silent:  false,
+	}
+
 	ttyArgs := prepareTtyArgs()
 	keepAliveArgs := prepareKeepAliveArgs(workspace.ctx.KeepAlive())
 
@@ -150,15 +163,16 @@ func (workspace *Workspace) runAsForeground() error {
 	args = append(args, workspace.ctx.Image())
 
 	// Execute the docker run command
-	err := docker.Docker(dryrun, verbose, "run", args...)
+	err := docker.Docker(flags, "run", args...)
 
 	// Cleanup DinD resources if enabled
 	if workspace.ctx.Dind() {
 		dindName := getDindName(workspace.ctx)
 		dindNet := getDindNet(workspace.ctx)
-		_ = docker.Docker(dryrun, verbose, "stop", dindName)
+		flags.Silent = true
+		_ = docker.Docker(flags, "stop", dindName)
 		if workspace.ctx.CreatedDindNet() {
-			_ = docker.Docker(dryrun, verbose, "network", "rm", dindNet)
+			_ = docker.Docker(flags, "network", "rm", dindNet)
 		}
 	}
 

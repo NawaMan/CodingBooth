@@ -12,9 +12,11 @@ import (
 func TestDockerBuild_Silent(t *testing.T) {
 
 	// Define options
-	verbose := false
-	dryrun := false
-	silenceBuild := true
+	flags := docker.DockerFlags{
+		Dryrun:  false,
+		Verbose: false,
+		Silent:  true,
+	}
 
 	// Create a simple test Dockerfile
 	dockerfile := `FROM alpine:latest
@@ -29,7 +31,7 @@ CMD ["echo", "Hello"]
 	}
 
 	// Build with silent mode - should not show progress
-	err := docker.DockerBuild(dryrun, verbose, silenceBuild,
+	err := docker.DockerBuild(flags,
 		"-t", "test-silent:latest",
 		"-f", dockerfilePath,
 		tmpDir,
@@ -46,9 +48,11 @@ CMD ["echo", "Hello"]
 func TestDockerBuild_Normal(t *testing.T) {
 
 	// Define options
-	verbose := true
-	dryrun := false
-	silenceBuild := false
+	flags := docker.DockerFlags{
+		Dryrun:  false,
+		Verbose: true,
+		Silent:  false,
+	}
 
 	// Create a simple test Dockerfile
 	dockerfile := `FROM alpine:latest
@@ -63,7 +67,7 @@ CMD ["echo", "Hello"]
 	}
 
 	// Build with normal mode - should show progress
-	err := docker.DockerBuild(dryrun, verbose, silenceBuild,
+	err := docker.DockerBuild(flags,
 		"-t", "test-normal:latest",
 		"-f", dockerfilePath,
 		tmpDir,
@@ -79,12 +83,14 @@ CMD ["echo", "Hello"]
 // TestDockerBuild_Dryrun tests DockerBuild in dryrun mode.
 func TestDockerBuild_Dryrun(t *testing.T) {
 	// Define options
-	verbose := true
-	dryrun := true
-	silenceBuild := true
+	flags := docker.DockerFlags{
+		Dryrun:  true,
+		Verbose: true,
+		Silent:  true,
+	}
 
 	// Dryrun should not execute anything
-	err := docker.DockerBuild(dryrun, verbose, silenceBuild, "-t", "test:latest", ".")
+	err := docker.DockerBuild(flags, "-t", "test:latest", ".")
 
 	if err != nil {
 		t.Fatalf("Dryrun should not fail: %v", err)

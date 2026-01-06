@@ -12,7 +12,7 @@ import (
 )
 
 // InitializeAppContext creates an AppContext with default values matching workspace.sh Main()
-func InitializeAppContext(boundary InitializeAppContextBoundary) appctx.AppContext {
+func InitializeAppContext(version string, boundary InitializeAppContextBoundary) appctx.AppContext {
 	// Initialize config and context
 	config := appctx.AppConfig{}
 	context := appctx.AppContextBuilder{
@@ -22,6 +22,9 @@ func InitializeAppContext(boundary InitializeAppContextBoundary) appctx.AppConte
 	args := boundary.ArgList()
 
 	// Set default values and effective constants
+	context.PrebuildRepo = "nawaman/workspace"
+	context.WsVersion = version
+	context.SetupsDir = "/opt/workspace/setups"
 	context.ScriptName = getScriptName(args)
 	context.ScriptDir = getScriptDir(args)
 	context.Config.HostUID = boundary.GetHostUID()

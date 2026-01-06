@@ -3,13 +3,21 @@ package docker
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"strings"
 )
 
+type DockerFlags struct {
+	Dryrun  bool
+	Verbose bool
+	Silent  bool
+}
+
 // Docker executes a docker command with the given subcommand and arguments.
-func Docker(dryrun bool, verbose bool, subcommand string, args ...string) error {
+// If silent is true, suppresses all stdout/stderr from the docker process.
+func Docker(flags DockerFlags, subcommand string, args ...string) error {
 	cmdArgs := make([]string, 0, len(args)+2) // +2 for potential -i and -t flags
 	cmdArgs = append(cmdArgs, subcommand)
 
@@ -23,10 +31,8 @@ func Docker(dryrun bool, verbose bool, subcommand string, args ...string) error 
 		}
 	}
 
-	// For build commands, add --progress=auto to allow colored output
-	// when running in a TTY, or plain output when running through go test
+	// For build commands, add --progress=auto
 	if subcommand == "build" {
-		// Check if --progress is already specified
 		hasProgress := false
 		for _, arg := range args {
 			if strings.HasPrefix(arg, "--progress") {
@@ -41,11 +47,13 @@ func Docker(dryrun bool, verbose bool, subcommand string, args ...string) error 
 
 	cmdArgs = append(cmdArgs, filterTTYFlags(args)...)
 
-	if dryrun || verbose {
+	// Preserve current behavior: print the command for dry-run or verbose,
+	// even if silent is true (matches "contract" of showing what would run).
+	if flags.Dryrun || flags.Verbose {
 		PrintCmd("docker", cmdArgs...)
 	}
 
-	if dryrun {
+	if flags.Dryrun {
 		return nil
 	}
 
@@ -53,12 +61,7 @@ func Docker(dryrun bool, verbose bool, subcommand string, args ...string) error 
 
 	// Set environment for Windows path compatibility and color output
 	env := append(os.Environ(), "MSYS_NO_PATHCONV=1")
-
-	// Force color output for Docker commands
-	// This ensures colored output is preserved even when running through go test
 	env = append(env, "FORCE_COLOR=1")
-
-	// Docker BuildKit uses BUILDKIT_COLORS to control colored output
 	env = append(env, "BUILDKIT_COLORS=run=green:warning=yellow:error=red:cancel=cyan")
 
 	// Ensure TERM is set for color support (if not already set)
@@ -75,10 +78,17 @@ func Docker(dryrun bool, verbose bool, subcommand string, args ...string) error 
 
 	cmd.Env = env
 
-	// Forward stdout and stderr
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	// stdin: keep existing behavior (so docker can read input when needed)
 	cmd.Stdin = os.Stdin
+
+	// stdout/stderr: silence if requested
+	if flags.Silent {
+		cmd.Stdout = io.Discard
+		cmd.Stderr = io.Discard
+	} else {
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+	}
 
 	// Run and propagate exit status
 	if err := cmd.Run(); err != nil {

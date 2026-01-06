@@ -17,11 +17,14 @@ func TestDocker_DryrunMode(t *testing.T) {
 
 	// Create context with dryrun enabled
 	// Define options
-	dryrun := true
-	verbose := false
+	flags := DockerFlags{
+		Dryrun:  true,
+		Verbose: false,
+		Silent:  true,
+	}
 
 	// Run docker command (should not execute, just print)
-	err := Docker(dryrun, verbose, "version", "--format", "{{.Server.Version}}")
+	err := Docker(flags, "version", "--format", "{{.Server.Version}}")
 
 	// Restore stdout
 	writer.Close()
@@ -55,11 +58,14 @@ func TestDocker_VerboseMode(t *testing.T) {
 
 	// Create context with verbose enabled
 	// Define options
-	dryrun := false
-	verbose := true
+	flags := DockerFlags{
+		Dryrun:  false,
+		Verbose: true,
+		Silent:  false,
+	}
 
 	// Run docker command
-	err := Docker(dryrun, verbose, "version", "--format", "{{.Server.Version}}")
+	err := Docker(flags, "version", "--format", "{{.Server.Version}}")
 
 	// Restore stdout
 	writer.Close()
@@ -86,11 +92,14 @@ func TestDocker_VerboseMode(t *testing.T) {
 func TestDocker_Success(t *testing.T) {
 	// Create context with no verbose/dryrun
 	// Define options
-	dryrun := false
-	verbose := false
+	flags := DockerFlags{
+		Dryrun:  false,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	// Run docker version (should succeed if docker is installed)
-	err := Docker(dryrun, verbose, "version", "--format", "{{.Server.Version}}")
+	err := Docker(flags, "version", "--format", "{{.Server.Version}}")
 
 	if err != nil {
 		t.Logf("Docker version failed (docker may not be installed): %v", err)
@@ -102,11 +111,14 @@ func TestDocker_Success(t *testing.T) {
 func TestDocker_Failure(t *testing.T) {
 	// Create context
 	// Define options
-	dryrun := false
-	verbose := false
+	flags := DockerFlags{
+		Dryrun:  false,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	// Run invalid docker command (should fail)
-	err := Docker(dryrun, verbose, "invalid-subcommand-that-does-not-exist")
+	err := Docker(flags, "invalid-subcommand-that-does-not-exist")
 
 	// Verify error is returned
 	if err == nil {
@@ -129,11 +141,14 @@ func TestDocker_QuietMode(t *testing.T) {
 
 	// Create context with no verbose/dryrun
 	// Define options
-	dryrun := false
-	verbose := false
+	flags := DockerFlags{
+		Dryrun:  false,
+		Verbose: false,
+		Silent:  true,
+	}
 
 	// Run docker command
-	Docker(dryrun, verbose, "version", "--format", "{{.Server.Version}}")
+	Docker(flags, "version", "--format", "{{.Server.Version}}")
 
 	// Restore stdout
 	writer.Close()

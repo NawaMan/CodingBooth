@@ -39,6 +39,7 @@ func EnsureDockerImage(ctx appctx.AppContext) appctx.AppContext {
 
 	// Step 2: Construct image name if not set
 	ctx = builder.Build()
+
 	if ctx.Image() == "" {
 		builder = ctx.ToBuilder()
 		if ctx.ImageMode() == "LOCAL-BUILD" {
@@ -125,7 +126,12 @@ func buildLocalImage(ctx appctx.AppContext) {
 	args = append(args, ctx.Workspace())
 
 	// Build the image
-	err := docker.DockerBuild(ctx.Dryrun(), ctx.Verbose(), ctx.SilenceBuild(), args...)
+	flags := docker.DockerFlags{
+		Dryrun:  ctx.Dryrun(),
+		Verbose: ctx.Verbose(),
+		Silent:  ctx.SilenceBuild(),
+	}
+	err := docker.DockerBuild(flags, args...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: failed to build image\n")
 		os.Exit(1)
@@ -145,7 +151,12 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 			fmt.Printf("Pulling image (forced): %s\n", imageName)
 		}
 
-		err := docker.Docker(ctx.Dryrun(), ctx.Verbose(), "pull", imageName)
+		flags := docker.DockerFlags{
+			Dryrun:  ctx.Dryrun(),
+			Verbose: ctx.Verbose(),
+			Silent:  false,
+		}
+		err := docker.Docker(flags, "pull", imageName)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: failed to pull '%s'\n", imageName)
 			os.Exit(1)
@@ -156,7 +167,12 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 		}
 	} else if !ctx.Dryrun() {
 		// Check if image exists locally
-		err := docker.Docker(ctx.Dryrun(), ctx.Verbose(), "image", "inspect", imageName)
+		flags := docker.DockerFlags{
+			Dryrun:  ctx.Dryrun(),
+			Verbose: ctx.Verbose(),
+			Silent:  true,
+		}
+		err := docker.Docker(flags, "image", "inspect", "--format", "{{.Id}}", imageName)
 		if err != nil {
 			// Image not found locally, pull it
 			fmt.Fprintf(os.Stderr, "Info: pulling image '%s' (not found locally)...\n", imageName)
@@ -164,7 +180,12 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 				fmt.Printf("Image not found locally. Pulling: %s\n", imageName)
 			}
 
-			err = docker.Docker(ctx.Dryrun(), ctx.Verbose(), "pull", imageName)
+			flags := docker.DockerFlags{
+				Dryrun:  ctx.Dryrun(),
+				Verbose: ctx.Verbose(),
+				Silent:  false,
+			}
+			err = docker.Docker(flags, "pull", imageName)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: failed to pull '%s'\n", imageName)
 				os.Exit(1)
@@ -183,7 +204,12 @@ func validateImageExists(ctx appctx.AppContext) {
 		return
 	}
 
-	err := docker.Docker(ctx.Dryrun(), ctx.Verbose(), "image", "inspect", ctx.Image())
+	flags := docker.DockerFlags{
+		Dryrun:  ctx.Dryrun(),
+		Verbose: ctx.Verbose(),
+		Silent:  true,
+	}
+	err := docker.Docker(flags, "image", "inspect", ctx.Image())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: image '%s' not available locally.\n", ctx.Image())
 		fmt.Fprintln(os.Stderr, "       Use '--pull' if you want to force pulling it.")

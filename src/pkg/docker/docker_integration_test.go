@@ -25,13 +25,16 @@ func TestIntegration_PullHelloWorld(t *testing.T) {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false // Actually execute
+	flags := docker.DockerFlags{
+		Dryrun:  true,
+		Verbose: true,
+		Silent:  false,
+	}
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(dryrun, verbose, "pull", "hello-world:latest")
+	err := docker.Docker(flags, "pull", "hello-world:latest")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -60,13 +63,16 @@ func TestIntegration_runHelloWorld(t *testing.T) {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false
+	flags := docker.DockerFlags{
+		Dryrun:  true,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(dryrun, verbose, "run", "--rm", "hello-world:latest")
+	err := docker.Docker(flags, "run", "--rm", "hello-world:latest")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -94,13 +100,16 @@ func TestIntegration_runAlpineEcho(t *testing.T) {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false
+	flags := docker.DockerFlags{
+		Dryrun:  true,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(dryrun, verbose, "run", "--rm", "alpine:latest", "echo", "Hello from Alpine!")
+	err := docker.Docker(flags, "run", "--rm", "alpine:latest", "echo", "Hello from Alpine!")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -128,13 +137,16 @@ func TestIntegration_runAlpineWithEnv(t *testing.T) {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false
+	flags := docker.DockerFlags{
+		Dryrun:  true,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(dryrun, verbose, "run",
+	err := docker.Docker(flags, "run",
 		"--rm",
 		"-e", "MY_VAR=test value",
 		"alpine:latest",
@@ -169,13 +181,16 @@ func TestIntegration_imageInspect(t *testing.T) {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false
+	flags := docker.DockerFlags{
+		Dryrun:  true,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(dryrun, verbose, "image", "inspect", "hello-world:latest")
+	err := docker.Docker(flags, "image", "inspect", "hello-world:latest")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -202,13 +217,16 @@ func TestIntegration_listContainers(t *testing.T) {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false
+	flags := docker.DockerFlags{
+		Dryrun:  true,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(dryrun, verbose, "ps", "-a")
+	err := docker.Docker(flags, "ps", "-a")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -238,15 +256,19 @@ func TestIntegration_networkOperations(t *testing.T) {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false
+	flags := docker.DockerFlags{
+		Dryrun:  true,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	networkName := "test-network"
 
 	// Create network
+	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Creating network...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(dryrun, verbose, "network", "create", networkName)
+	err := docker.Docker(flags, "network", "create", networkName)
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -255,7 +277,7 @@ func TestIntegration_networkOperations(t *testing.T) {
 	// Inspect network
 	fmt.Println("\nInspecting network...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(dryrun, verbose, "network", "inspect", networkName)
+	err = docker.Docker(flags, "network", "inspect", networkName)
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Inspect failed: %v", err)
@@ -264,7 +286,7 @@ func TestIntegration_networkOperations(t *testing.T) {
 	// Remove network
 	fmt.Println("\nRemoving network...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(dryrun, verbose, "network", "rm", networkName)
+	err = docker.Docker(flags, "network", "rm", networkName)
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Remove failed: %v", err)
@@ -291,13 +313,16 @@ func TestIntegration_complexCommand(t *testing.T) {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false
+	flags := docker.DockerFlags{
+		Dryrun:  true,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(dryrun, verbose, "run",
+	err := docker.Docker(flags, "run",
 		"--rm",                     // Remove after exit
 		"--name", "test-container", // Container name
 		"-e", "ENV_VAR=value with spaces", // Environment variable
@@ -355,15 +380,18 @@ func TestIntegration_interactiveShell(t *testing.T) {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false
+	flags := docker.DockerFlags{
+		Dryrun:  true,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	// Use -it flags unconditionally - they'll be auto-filtered if no TTY
-	err := docker.Docker(dryrun, verbose, "run",
+	err := docker.Docker(flags, "run",
 		"-it",  // Interactive + TTY (auto-filtered if no TTY)
 		"--rm", // Remove after exit
 		"alpine:latest",
@@ -400,9 +428,11 @@ func TestIntegration_buildImage(t *testing.T) {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false
-	silenceBuild := false
+	flags := docker.DockerFlags{
+		Dryrun:  true,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	// Create a simple Dockerfile content
 	dockerfile := `FROM alpine:latest
@@ -423,11 +453,7 @@ CMD ["echo", "Hello from test image!"]
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.DockerBuild(dryrun, verbose, silenceBuild,
-		"-t", "test-example:latest",
-		"-f", dockerfilePath,
-		tmpDir,
-	)
+	err := docker.DockerBuild(flags, "-t", "test-example:latest", "-f", dockerfilePath, tmpDir)
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -456,15 +482,18 @@ func TestIntegration_runDaemon(t *testing.T) {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false
+	flags := docker.DockerFlags{
+		Dryrun:  true,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	containerName := "test-daemon-example"
 
 	// Start in daemon mode
 	fmt.Println("Starting container in daemon mode...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(dryrun, verbose, "run",
+	err := docker.Docker(flags, "run",
 		"-d",
 		"--name", containerName,
 		"--rm",
@@ -479,7 +508,7 @@ func TestIntegration_runDaemon(t *testing.T) {
 	// Stop the container
 	fmt.Println("\nStopping daemon container...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(dryrun, verbose, "stop", containerName)
+	err = docker.Docker(flags, "stop", containerName)
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Stop failed: %v", err)
@@ -507,18 +536,23 @@ func TestIntegration_stopContainer(t *testing.T) {
 	fmt.Println()
 
 	// Define options
-	verbose := true
-	dryrun := false
+	flags := docker.DockerFlags{
+		Dryrun:  false,
+		Verbose: false,
+		Silent:  false,
+	}
 
 	containerName := "test-stop-example"
 
 	// Cleanup potential leftover from previous failed runs
-	docker.Docker(false, false, "rm", "-f", containerName)
+	cleanupFlags := flags
+	cleanupFlags.Silent = true
+	docker.Docker(cleanupFlags, "rm", "-f", containerName)
 
 	// Start container
 	fmt.Println("Starting container...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(dryrun, verbose, "run",
+	err := docker.Docker(flags, "run",
 		"-d",
 		"--name", containerName,
 		"alpine:latest",
@@ -532,7 +566,7 @@ func TestIntegration_stopContainer(t *testing.T) {
 	// Stop container
 	fmt.Println("\nStopping container...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(dryrun, verbose, "stop", containerName)
+	err = docker.Docker(flags, "stop", containerName)
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Stop failed: %v", err)
@@ -541,7 +575,7 @@ func TestIntegration_stopContainer(t *testing.T) {
 	// Remove container (cleanup)
 	fmt.Println("\nRemoving container...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(dryrun, verbose, "rm", containerName)
+	err = docker.Docker(flags, "rm", containerName)
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Remove failed: %v", err)
