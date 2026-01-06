@@ -200,3 +200,37 @@ func getDindName(ctx appctx.AppContext) string {
 func getDindNet(ctx appctx.AppContext) string {
 	return ctx.Name() + "-" + ctx.Port() + "-net"
 }
+
+// PrepareCommonArgs prepares common Docker run arguments and returns updated AppContext.
+func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
+	builder := ctx.ToBuilder()
+
+	builder.CommonArgs.Append("--name", ctx.Name())
+	builder.CommonArgs.Append("-e", "HOST_UID="+ctx.HostUID())
+	builder.CommonArgs.Append("-e", "HOST_GID="+ctx.HostGID())
+	builder.CommonArgs.Append("-v", ctx.Workspace()+":/home/coder/workspace")
+	builder.CommonArgs.Append("-w", "/home/coder/workspace")
+	builder.CommonArgs.Append("-p", ctx.Port()+":10000")
+
+	// Metadata
+	builder.CommonArgs.Append("-e", "WS_SETUPS_DIR="+ctx.SetupsDir())
+	builder.CommonArgs.Append("-e", "WS_CONTAINER_NAME="+ctx.Name())
+	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_DAEMON=%t", ctx.Daemon()))
+	builder.CommonArgs.Append("-e", "WS_HOST_PORT="+ctx.Port())
+	builder.CommonArgs.Append("-e", "WS_IMAGE_NAME="+ctx.Image())
+	builder.CommonArgs.Append("-e", "WS_RUNMODE="+ctx.RunMode())
+	builder.CommonArgs.Append("-e", "WS_VARIANT_TAG="+ctx.Variant())
+	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_VERBOSE=%t", ctx.Verbose()))
+	builder.CommonArgs.Append("-e", "WS_VERSION_TAG="+ctx.Version())
+	builder.CommonArgs.Append("-e", "WS_WORKSPACE_PATH="+ctx.Workspace())
+	builder.CommonArgs.Append("-e", "WS_WORKSPACE_PORT="+ctx.Port())
+	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_HAS_NOTEBOOK=%t", ctx.HasNotebook()))
+	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_HAS_VSCODE=%t", ctx.HasVscode()))
+	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_HAS_DESKTOP=%t", ctx.HasDesktop()))
+
+	if !ctx.Pull() {
+		builder.CommonArgs.Append("--pull=never")
+	}
+
+	return builder.Build()
+}

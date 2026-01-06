@@ -10,21 +10,16 @@ import (
 
 func runWorkspace(version string) {
 	context := wsinit.InitializeAppContext(version, wsinit.DefaultInitializeAppContextBoundary{})
-	context = workspace.ValidateVariant(context)
-	context = workspace.EnsureDockerImage(context)
-
 	fmt.Printf("%+v\n", context)
 
-	// Execute workspace pipeline
-	// ctx = workspace.PortDetermination(ctx)
+	runner := workspace.NewWorkspaceRunner(context)
+	err := runner.Run()
+	if err != nil {
+		fmt.Println("❌ Workspace failed with error:", err)
+		os.Exit(1)
+		return
+	}
 
-	// TODO: Continue with remaining pipeline steps
-	// - ShowDebugBanner
-	// - SetupDind
-	// - PrepareCommonArgs
-	// - PrepareKeepAliveArgs
-	// - PrepareTtyArgs
-	// - RunAsDaemon / RunAsForeground / RunAsCommand
-
+	fmt.Println("✅ Workspace completed successfully!")
 	os.Exit(0)
 }
