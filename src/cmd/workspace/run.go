@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/nawaman/workspace/src/pkg/workspace"
 	wsinit "github.com/nawaman/workspace/src/pkg/workspace/init"
 )
 
 func runWorkspace() {
 	context := wsinit.InitializeAppContext(wsinit.DefaultInitializeAppContextBoundary{})
+	context = workspace.ValidateVariant(context)
 
 	fmt.Printf("%+v\n", context)
 
