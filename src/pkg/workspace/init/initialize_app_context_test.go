@@ -111,7 +111,8 @@ func TestReadVerboseDryrunConfigFileAndWorkspace(t *testing.T) {
 		Args: args,
 	}
 
-	readVerboseDryrunConfigFileAndWorkspace(testInput, &context)
+	configExplicitlySet := false
+	readVerboseDryrunConfigFileAndWorkspace(testInput, &context, &configExplicitlySet)
 
 	if !context.Config.Verbose.ValueOr(false) {
 		t.Error("Expected Verbose to be true")
@@ -124,6 +125,9 @@ func TestReadVerboseDryrunConfigFileAndWorkspace(t *testing.T) {
 	}
 	if context.Config.Workspace.ValueOr("") != "/my/ws" {
 		t.Errorf("Expected Workspace to be '/my/ws', got %q", context.Config.Workspace.ValueOr(""))
+	}
+	if !configExplicitlySet {
+		t.Error("Expected configExplicitlySet to be true when --config is provided")
 	}
 }
 

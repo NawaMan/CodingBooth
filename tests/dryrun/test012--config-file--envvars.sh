@@ -81,30 +81,18 @@ fi
 cat > test--.env <<EOF
 EOF
 
-cat > test--config.sh <<EOF
-CONTAINER_ENV_FILE=test--.env
-CONTAINER_NAME=test-container
-DAEMON=true
-DIND=true
-DO_PULL=true
-DOCKER_FILE=test--config.sh
-DRYRUN=true
-HOST_PORT=10005
-IMAGE_MODE=EXISTING
-IMAGE_NAME=test/workspace:codeserver-$VERSION
-KEEPALIVE=true
-LOCAL_BUILD=true
-PORT_GENERATED=true
-PREBUILD_REPO=nawaman/workspace
-SCRIPT_DIR=..
-SCRIPT_NAME=ws.sh
-VARIANT=codeserver
-VERSION=$VERSION
-WORKSPACE_PATH=$HERE
-WORKSPACE_PORT=10005
-WS_VERSION=$VERSION
+cat > test--config.toml <<EOF
+daemon = true
+dind = true
+dockerfile = "test--config.sh"
+env-file = "test--.env"
+image = "test/workspace:codeserver-$VERSION"
+keep-alive = true
+name = "test-container"
+port = "10005"
+pull = true
+variant = "codeserver"
 EOF
-
 
 
 ACTUAL=$(../../workspace --verbose --dryrun --config test--config.toml | grep -E '^[A-Z_]+:' | sort)
@@ -130,12 +118,12 @@ LOCAL_BUILD:    false
 PORT_GENERATED: false
 PREBUILD_REPO:  nawaman/workspace
 RUN_ARGS:   
-SCRIPT_DIR:     ..
-SCRIPT_NAME:    ws.sh
+SCRIPT_DIR:     $(realpath "$HERE/../..")
+SCRIPT_NAME:    workspace
 VARIANT:        ide-codeserver
 VERSION:        ${VERSION}
 WORKSPACE_PATH: $HERE
-WORKSPACE_PORT: 10005
+WORKSPACE_PORT: 10000
 WS_VERSION:     ${VERSION}"
 
 if diff -u <(echo "$EXPECT") <(echo "$ACTUAL"); then

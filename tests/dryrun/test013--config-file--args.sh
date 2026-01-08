@@ -93,7 +93,7 @@ pull = true
 variant = "codeserver"
 verbose = true
 version = "$VERSION"
-run-args = ["-p", "10005"]
+run-args = "-p;10005"
 EOF
 
 

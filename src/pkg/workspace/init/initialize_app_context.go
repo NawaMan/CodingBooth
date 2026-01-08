@@ -33,7 +33,8 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	context.Config.Timezone = boundary.DetectTimezone()
 
 	// First pass to read important flags and value: --dryrun, --verbose, --config
-	readVerboseDryrunConfigFileAndWorkspace(boundary, &context)
+	configExplicitlySet := false
+	readVerboseDryrunConfigFileAndWorkspace(boundary, &context, &configExplicitlySet)
 
 	// Set additional values that is derived from other values
 	context.LibDir = filepath.Join(context.ScriptDir, "libs")
@@ -46,7 +47,7 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	}
 
 	readFromEnvVars(boundary, &context)
-	readFromToml(boundary, &context)
+	readFromToml(boundary, &context, configExplicitlySet)
 	readFromArgs(boundary, &context, ilist.NewListFromSlice(args.Slice()[1:]))
 
 	if context.Config.ProjectName == "" {
@@ -320,7 +321,8 @@ func readFromEnvVars(boundary InitializeAppContextBoundary, context *appctx.AppC
 
 // readFromToml reads configuration from a TOML file and populates the config (overriding existing values).
 // It preserves verbose, dryrun, workspace, and config.
-func readFromToml(boundary InitializeAppContextBoundary, context *appctx.AppContextBuilder) {
+// If configExplicitlySet is true, the config file must exist. Otherwise, it's optional.
+func readFromToml(boundary InitializeAppContextBoundary, context *appctx.AppContextBuilder, configExplicitlySet bool) {
 	if !context.Config.Config.IsSet() {
 		return
 	}
@@ -328,7 +330,12 @@ func readFromToml(boundary InitializeAppContextBoundary, context *appctx.AppCont
 	runPreserveWorkspaceAndConfig(context, func() {
 		cfgFile := context.Config.Config.ValueOrPanic()
 		if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
-			panic(fmt.Errorf("config file %s does not exist", cfgFile))
+			// Only panic if the config file was explicitly set by the user
+			if configExplicitlySet {
+				panic(fmt.Errorf("config file %s does not exist", cfgFile))
+			}
+			// If it's the default config file, just skip reading it
+			return
 		}
 		if err := appctx.ReadFromToml(cfgFile, &context.Config); err != nil {
 			panic(fmt.Errorf("failed to read toml config: %w", err))
@@ -338,7 +345,8 @@ func readFromToml(boundary InitializeAppContextBoundary, context *appctx.AppCont
 
 // readVerboseDryrunConfigFileAndWorkspace parses arguments looking for config file and verbosity settings.
 // This allows loading configuration before full argument parsing.
-func readVerboseDryrunConfigFileAndWorkspace(boundary InitializeAppContextBoundary, context *appctx.AppContextBuilder) {
+// It sets configExplicitlySet to true if --config was provided by the user.
+func readVerboseDryrunConfigFileAndWorkspace(boundary InitializeAppContextBoundary, context *appctx.AppContextBuilder, configExplicitlySet *bool) {
 	args := boundary.ArgList()
 	for i := 0; i < args.Length(); {
 		arg := args.At(i)
@@ -348,7 +356,14 @@ func readVerboseDryrunConfigFileAndWorkspace(boundary InitializeAppContextBounda
 			if err != nil {
 				panic(fmt.Errorf("error parsing --config: %w", err))
 			}
+			// Resolve relative paths to absolute paths
+			if !filepath.IsAbs(value) {
+				if absPath, err := filepath.Abs(value); err == nil {
+					value = absPath
+				}
+			}
 			context.Config.Config = nillable.NewNillableString(value)
+			*configExplicitlySet = true
 			i += 2
 
 		case "--workspace":
