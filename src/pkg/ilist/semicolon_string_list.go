@@ -29,3 +29,13 @@ func (s *SemicolonStringList) Decode(value string) error {
 func (s *SemicolonStringList) Clone() SemicolonStringList {
 	return SemicolonStringList{List: s.List.Clone()}
 }
+
+// UnmarshalTOML implements the toml.Unmarshaler interface.
+// This allows TOML to decode a string value into a SemicolonStringList.
+func (s *SemicolonStringList) UnmarshalTOML(data interface{}) error {
+	str, ok := data.(string)
+	if !ok {
+		return nil // Let TOML handle type errors
+	}
+	return s.Decode(str)
+}

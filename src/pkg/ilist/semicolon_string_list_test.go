@@ -62,3 +62,45 @@ func TestSemicolonStringList_Clone(t *testing.T) {
 		t.Errorf("Cloned list affected by original modification: got %q", v)
 	}
 }
+
+func TestSemicolonStringList_UnmarshalTOML(t *testing.T) {
+	tests := []struct {
+		name     string
+		input    interface{}
+		expected []string
+		wantErr  bool
+	}{
+		{"String", "-p;10005", []string{"-p", "10005"}, false},
+		{"EmptyString", "", []string{}, false},
+		{"SingleValue", "value", []string{"value"}, false},
+		{"MultipleValues", "a;b;c", []string{"a", "b", "c"}, false},
+		{"WithSpaces", " a ; b ; c ", []string{"a", "b", "c"}, false},
+		{"NonString", 123, nil, false}, // Should return nil (let TOML handle type errors)
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var list SemicolonStringList
+			err := list.UnmarshalTOML(tt.input)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("UnmarshalTOML() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.expected == nil {
+				return // Skip validation for non-string inputs
+			}
+
+			if list.Length() != len(tt.expected) {
+				t.Errorf("Length() = %d, want %d", list.Length(), len(tt.expected))
+			}
+
+			for i, want := range tt.expected {
+				if got, _ := list.Get(i); got != want {
+					t.Errorf("Get(%d) = %q, want %q", i, got, want)
+				}
+			}
+		})
+	}
+}

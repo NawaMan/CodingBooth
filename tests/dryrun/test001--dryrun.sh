@@ -32,7 +32,6 @@ EXPECT="\
 ============================================================
 
 📦 Running workspace in foreground.
-👉 Visit 'http://localhost:10000'
 👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.
 👉 To open an interactive shell instead: 'workspace -- bash'
 

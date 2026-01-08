@@ -103,7 +103,7 @@ ACTUAL=$(../../workspace --config test--config.toml | grep -E '^[A-Z_]+:' | sort
 EXPECT="\
 BUILD_ARGS: 
 CMDS:       
-CONFIG_FILE:    test--config.toml (set: true)
+CONFIG_FILE:    $HERE/test--config.toml
 CONTAINER_ENV_FILE: test--.env
 CONTAINER_NAME: test-container
 DAEMON:         true
@@ -120,7 +120,7 @@ KEEPALIVE:      true
 LOCAL_BUILD:    true
 PORT_GENERATED: true
 PREBUILD_REPO:  nawaman/workspace
-RUN_ARGS:    "-p" "10005"
+RUN_ARGS:    \"-p\" \"10005\"
 SCRIPT_DIR:     $(realpath "$HERE/../..")
 SCRIPT_NAME:    workspace
 VARIANT:        ide-codeserver
