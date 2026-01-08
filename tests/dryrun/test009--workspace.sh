@@ -18,8 +18,8 @@ WORKSPACE=".."
 
 export TIMEZONE="America/Toronto"
 
-ACTUAL=$(../../workspace --verbose --dryrun --workspace ${WORKSPACE} --variant base -- sleep 1)
-ACTUAL=$(printf "%s\n" "$ACTUAL" | tail -n 1)
+ACTUAL=$(../../workspace --dryrun --workspace ${WORKSPACE} --variant base -- sleep 1)
+ACTUAL=$(printf "%s\n" "$ACTUAL")
 
 VERSION="$(cat ../../version.txt)"
 
@@ -29,23 +29,23 @@ docker \\
     run \\
     -i \\
     --rm \\
-    --name dryrun \\
+    --name tests \\
     -e 'HOST_UID=${HOST_UID}' \\
     -e 'HOST_GID=${HOST_GID}' \\
     -v ${WORKSPACE}:/home/coder/workspace \\
     -w /home/coder/workspace \\
     -p 10000:10000 \\
     -e 'WS_SETUPS_DIR=/opt/workspace/setups' \\
-    -e 'WS_CONTAINER_NAME=dryrun' \\
+    -e 'WS_CONTAINER_NAME=tests' \\
     -e 'WS_DAEMON=false' \\
     -e 'WS_HOST_PORT=10000' \\
     -e 'WS_IMAGE_NAME=nawaman/workspace:base-${VERSION}' \\
     -e 'WS_RUNMODE=COMMAND' \\
     -e 'WS_VARIANT_TAG=base' \\
-    -e 'WS_VERBOSE=true' \\
+    -e 'WS_VERBOSE=false' \\
     -e 'WS_VERSION_TAG=${VERSION}' \\
     -e 'WS_WORKSPACE_PATH=..' \\
-    -e 'WS_WORKSPACE_PORT=NEXT' \\
+    -e 'WS_WORKSPACE_PORT=10000' \\
     -e 'WS_HAS_NOTEBOOK=false' \\
     -e 'WS_HAS_VSCODE=false' \\
     -e 'WS_HAS_DESKTOP=false' \\

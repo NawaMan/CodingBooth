@@ -92,6 +92,11 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 
 // getProjectName extracts a sanitized project name from the workspace path
 func getProjectName(workspacePath string) string {
+	// Resolve to absolute path to handle relative paths like ".."
+	if absPath, err := filepath.Abs(workspacePath); err == nil {
+		workspacePath = absPath
+	}
+
 	// Get the base name of the path
 	baseName := filepath.Base(workspacePath)
 
@@ -323,7 +328,7 @@ func readFromToml(boundary InitializeAppContextBoundary, context *appctx.AppCont
 	runPreserveWorkspaceAndConfig(context, func() {
 		cfgFile := context.Config.Config.ValueOrPanic()
 		if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
-			return
+			panic(fmt.Errorf("config file %s does not exist", cfgFile))
 		}
 		if err := appctx.ReadFromToml(cfgFile, &context.Config); err != nil {
 			panic(fmt.Errorf("failed to read toml config: %w", err))

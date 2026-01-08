@@ -42,8 +42,8 @@ for entry in "${VARIANTS[@]}"; do
   WANT_VARIANT="${entry%%:*}"
   GOT_VARIANT="${entry#*:}"
 
-  ACTUAL=$(../../workspace --verbose --dryrun --variant "${WANT_VARIANT}" -- sleep 1)
-  ACTUAL=$(printf "%s\n" "$ACTUAL" | tail -n 1)
+  ACTUAL=$(../../workspace --dryrun --variant "${WANT_VARIANT}" -- sleep 1)
+  ACTUAL=$(printf "%s\n" "$ACTUAL")
 
   case "${GOT_VARIANT}" in
     base)           HAS_NOTEBOOK=false ; HAS_VSCODE=false ; HAS_DESKTOP=false ;;
@@ -72,10 +72,10 @@ docker \\
     -e 'WS_IMAGE_NAME=nawaman/workspace:${GOT_VARIANT}-${VERSION}' \\
     -e 'WS_RUNMODE=COMMAND' \\
     -e 'WS_VARIANT_TAG=${GOT_VARIANT}' \\
-    -e 'WS_VERBOSE=true' \\
+    -e 'WS_VERBOSE=false' \\
     -e 'WS_VERSION_TAG=${VERSION}' \\
     -e 'WS_WORKSPACE_PATH=${HERE}' \\
-    -e 'WS_WORKSPACE_PORT=NEXT' \\
+    -e 'WS_WORKSPACE_PORT=10000' \\
     -e 'WS_HAS_NOTEBOOK=${HAS_NOTEBOOK}' \\
     -e 'WS_HAS_VSCODE=${HAS_VSCODE}' \\
     -e 'WS_HAS_DESKTOP=${HAS_DESKTOP}' \\

@@ -22,10 +22,10 @@ VERSION="$(cat ../../version.txt)"
 
 EXPECT="\
 📦 Running workspace in daemon mode.
-👉 Stop with 'workspace -- exit'. The container will be removed (--rm) when stop.
+👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.
 👉 Visit 'http://localhost:10000'
 👉 To open an interactive shell instead: workspace -- bash
-👉 To stop the running contaienr:
+👉 To stop the running container:
 
       docker stop dryrun
 
@@ -34,6 +34,7 @@ EXPECT="\
 
 docker \\
     run \\
+    -i \\
     -d \\
     --rm \\
     --name dryrun \\
@@ -52,7 +53,7 @@ docker \\
     -e 'WS_VERBOSE=false' \\
     -e 'WS_VERSION_TAG=${VERSION}' \\
     -e 'WS_WORKSPACE_PATH=${HERE}' \\
-    -e 'WS_WORKSPACE_PORT=NEXT' \\
+    -e 'WS_WORKSPACE_PORT=10000' \\
     -e 'WS_HAS_NOTEBOOK=false' \\
     -e 'WS_HAS_VSCODE=false' \\
     -e 'WS_HAS_DESKTOP=false' \\

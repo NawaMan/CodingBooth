@@ -2,6 +2,7 @@ package init
 
 import (
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"github.com/nawaman/workspace/src/pkg/appctx"
@@ -9,6 +10,22 @@ import (
 )
 
 func TestGetProjectName(t *testing.T) {
+	// Calculate expected name for current directory (for Empty case)
+	cwd, _ := filepath.Abs(".")
+	cwdBase := filepath.Base(cwd)
+	var result strings.Builder
+	for _, ch := range cwdBase {
+		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') {
+			result.WriteRune(ch)
+		} else {
+			result.WriteRune('_')
+		}
+	}
+	cwdSanitized := result.String()
+	if cwdSanitized == "" {
+		cwdSanitized = "workspace"
+	}
+
 	tests := []struct {
 		name     string
 		path     string
@@ -17,7 +34,7 @@ func TestGetProjectName(t *testing.T) {
 		{"Simple", "/path/to/myproject", "myproject"},
 		{"WithSpaces", "/path/to/my project", "my_project"},
 		{"WithSpecialChars", "/path/to/my-project@v1", "my_project_v1"},
-		{"Empty", "", "_"},
+		{"Empty", "", cwdSanitized},
 		{"Root", "/", "_"}, // Base returns / or similar, sanitize replaces non-alnum
 	}
 
@@ -179,4 +196,35 @@ func TestGetScriptDir(t *testing.T) {
 			t.Error("getScriptDir returned empty string")
 		}
 	})
+}
+
+func TestGetProjectName_ResolvesRelativePaths(t *testing.T) {
+	abs, err := filepath.Abs("..")
+	if err != nil {
+		t.Fatalf("Failed to resolve absolute path for ..: %v", err)
+	}
+	baseName := filepath.Base(abs)
+
+	// helper to sanitize
+	sanitize := func(s string) string {
+		var result strings.Builder
+		for _, ch := range s {
+			if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') {
+				result.WriteRune(ch)
+			} else {
+				result.WriteRune('_')
+			}
+		}
+		if result.String() == "" {
+			return "workspace"
+		}
+		return result.String()
+	}
+
+	expected := sanitize(baseName)
+	got := getProjectName("..")
+
+	if got != expected {
+		t.Errorf("getProjectName(\"..\") = %q, want %q (processed from %q)", got, expected, abs)
+	}
 }

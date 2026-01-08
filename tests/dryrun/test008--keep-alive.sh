@@ -15,8 +15,8 @@ fi
 
 export TIMEZONE="America/Toronto"
 
-ACTUAL=$(../../workspace --verbose --dryrun --keep-alive --variant base -- sleep 1)
-ACTUAL=$(printf "%s\n" "$ACTUAL" | tail -n 1)
+ACTUAL=$(../../workspace --dryrun --keep-alive --variant base -- sleep 1)
+ACTUAL=$(printf "%s\n" "$ACTUAL")
 
 HERE="$CURRENT_PATH"
 VERSION="$(cat ../../version.txt)"
@@ -39,10 +39,10 @@ docker \\
     -e 'WS_IMAGE_NAME=nawaman/workspace:base-${VERSION}' \\
     -e 'WS_RUNMODE=COMMAND' \\
     -e 'WS_VARIANT_TAG=base' \\
-    -e 'WS_VERBOSE=true' \\
+    -e 'WS_VERBOSE=false' \\
     -e 'WS_VERSION_TAG=${VERSION}' \\
     -e 'WS_WORKSPACE_PATH=${HERE}' \\
-    -e 'WS_WORKSPACE_PORT=NEXT' \\
+    -e 'WS_WORKSPACE_PORT=10000' \\
     -e 'WS_HAS_NOTEBOOK=false' \\
     -e 'WS_HAS_VSCODE=false' \\
     -e 'WS_HAS_DESKTOP=false' \\

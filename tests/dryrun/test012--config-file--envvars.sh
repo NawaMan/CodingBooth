@@ -107,12 +107,12 @@ EOF
 
 
 
-ACTUAL=$(../../workspace --verbose --dryrun --config test--config.sh | grep -E '^[A-Z_]+:' | sort)
+ACTUAL=$(../../workspace --verbose --dryrun --config test--config.toml | grep -E '^[A-Z_]+:' | sort)
 
 EXPECT="\
 BUILD_ARGS: 
 CMDS:       
-CONFIG_FILE:    ${HERE}/test--config.sh
+CONFIG_FILE:    ${HERE}/test--config.toml
 CONTAINER_ENV_FILE: test--.env
 CONTAINER_NAME: test-container
 DAEMON:         true
