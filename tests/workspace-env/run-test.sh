@@ -11,7 +11,7 @@ source ../common--source.sh
 
 # ---- Config -------------------------------------------------------------------
 # Path to your workspace launcher script. Override via env if needed.
-WS_SCRIPT="${WS_SCRIPT:-../../workspace.sh}"
+WS_SCRIPT="${WS_SCRIPT:-../../workspace}"
 # Canonicalize to absolute path before we cd/pushd anywhere
 if command -v readlink >/dev/null 2>&1; then
   WS_SCRIPT="$(readlink -f "$WS_SCRIPT")"

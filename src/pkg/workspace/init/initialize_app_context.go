@@ -11,7 +11,7 @@ import (
 	"github.com/nawaman/workspace/src/pkg/nillable"
 )
 
-// InitializeAppContext creates an AppContext with default values matching workspace.sh Main()
+// InitializeAppContext creates an AppContext with default values matching workspace Main()
 func InitializeAppContext(version string, boundary InitializeAppContextBoundary) appctx.AppContext {
 	// Initialize config and context
 	config := appctx.AppConfig{}
@@ -27,6 +27,7 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	context.SetupsDir = "/opt/workspace/setups"
 	context.ScriptName = getScriptName(args)
 	context.ScriptDir = getScriptDir(args)
+	context.Version = context.Config.Version.ValueOr(context.WsVersion)
 	context.Config.HostUID = boundary.GetHostUID()
 	context.Config.HostGID = boundary.GetHostGID()
 	context.Config.Timezone = boundary.DetectTimezone()
@@ -49,14 +50,42 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	readFromArgs(boundary, &context, ilist.NewListFromSlice(args.Slice()[1:]))
 
 	if context.Config.ProjectName == "" {
-		context.Config.ProjectName = getProjectName(context.Config.Workspace.ValueOr(""))
+		context.Config.ProjectName = getProjectName(context.Config.Workspace.ValueOr("."))
+	}
+	if context.Config.Name == "" {
+		context.Config.Name = context.Config.ProjectName
 	}
 
 	// Sync list fields from Config to Builder
-	context.Cmds = ilist.NewAppendableListFrom(context.Config.Cmds.Slice()...)
-	context.RunArgs = ilist.NewAppendableListFrom(context.Config.RunArgs.Slice()...)
-	context.CommonArgs = ilist.NewAppendableListFrom(context.Config.CommonArgs.Slice()...)
-	context.BuildArgs = ilist.NewAppendableListFrom(context.Config.BuildArgs.Slice()...)
+	// We wrap the flat string list from Config into a single group in the nested list structure
+
+	if len(context.Config.Cmds.Slice()) > 0 {
+		var group ilist.List[string] = ilist.NewListFromSlice(context.Config.Cmds.Slice())
+		context.Cmds = ilist.NewAppendableListFrom(group)
+	} else {
+		context.Cmds = ilist.NewAppendableList[ilist.List[string]]()
+	}
+
+	if len(context.Config.RunArgs.Slice()) > 0 {
+		var group ilist.List[string] = ilist.NewListFromSlice(context.Config.RunArgs.Slice())
+		context.RunArgs = ilist.NewAppendableListFrom(group)
+	} else {
+		context.RunArgs = ilist.NewAppendableList[ilist.List[string]]()
+	}
+
+	if len(context.Config.CommonArgs.Slice()) > 0 {
+		var group ilist.List[string] = ilist.NewListFromSlice(context.Config.CommonArgs.Slice())
+		context.CommonArgs = ilist.NewAppendableListFrom(group)
+	} else {
+		context.CommonArgs = ilist.NewAppendableList[ilist.List[string]]()
+	}
+
+	if len(context.Config.BuildArgs.Slice()) > 0 {
+		var group ilist.List[string] = ilist.NewListFromSlice(context.Config.BuildArgs.Slice())
+		context.BuildArgs = ilist.NewAppendableListFrom(group)
+	} else {
+		context.BuildArgs = ilist.NewAppendableList[ilist.List[string]]()
+	}
 
 	return context.Build()
 }
@@ -67,7 +96,7 @@ func getProjectName(workspacePath string) string {
 	baseName := filepath.Base(workspacePath)
 
 	// Sanitize: replace non-alphanumeric characters with underscores
-	// This matches the workspace.sh project_name function behavior
+	// This matches the workspace project_name function behavior
 	var result strings.Builder
 	for _, ch := range baseName {
 		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') {
@@ -145,6 +174,16 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 
 		switch arg {
 
+		// Skipped -- already processed
+		case "--config":
+			i += 2
+		case "--workspace":
+			i += 2
+		case "--verbose":
+			i++
+		case "--dryrun":
+			i++
+
 		// Simple flags
 		case "--daemon":
 			cfg.Daemon = true
@@ -188,7 +227,7 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			if err != nil {
 				return err
 			}
-			cfg.Version = v
+			cfg.Version = nillable.NewNillableString(v)
 			i += 2
 
 		case "--dockerfile":

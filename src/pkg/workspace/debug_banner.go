@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // ShowDebugBanner prints debug information if verbose mode is enabled.
@@ -37,17 +38,17 @@ func ShowDebugBanner(ctx appctx.AppContext) appctx.AppContext {
 	fmt.Printf("HOST_UID:       %s\n", ctx.HostUID())
 	fmt.Printf("HOST_GID:       %s\n", ctx.HostGID())
 	fmt.Printf("WORKSPACE_PATH: %s\n", ctx.Workspace())
-	fmt.Printf("WORKSPACE_PORT: %s\n", ctx.Port())
-	fmt.Printf("HOST_PORT:      %s\n", ctx.Port())
+	fmt.Printf("WORKSPACE_PORT: %d\n", ctx.PortNumber())
+	fmt.Printf("HOST_PORT:      %d\n", 10000)
 	fmt.Printf("PORT_GENERATED: %t\n", ctx.PortGenerated())
 	fmt.Println()
 	fmt.Printf("DIND:           %t\n", ctx.Dind())
 	fmt.Println()
 	fmt.Printf("CONTAINER_ENV_FILE: %s\n", ctx.EnvFile())
 	fmt.Println()
-	fmt.Printf("BUILD_ARGS: %s\n", argsToString(ctx.BuildArgs().Slice()))
-	fmt.Printf("RUN_ARGS:   %s\n", argsToString(ctx.RunArgs().Slice()))
-	fmt.Printf("CMDS:       %s\n", argsToString(ctx.Cmds().Slice()))
+	fmt.Printf("BUILD_ARGS: %s\n", listOfArgsToString(ctx.BuildArgs()))
+	fmt.Printf("RUN_ARGS:   %s\n", listOfArgsToString(ctx.RunArgs()))
+	fmt.Printf("CMDS:       %s\n", listOfArgsToString(ctx.Cmds()))
 	fmt.Println()
 
 	// Warning if BUILD_ARGS provided but no build is being performed
@@ -57,6 +58,20 @@ func ShowDebugBanner(ctx appctx.AppContext) appctx.AppContext {
 	}
 
 	return ctx
+}
+
+// listOfArgsToString converts a list of arguments to a string representation.
+func listOfArgsToString(list ilist.List[ilist.List[string]]) string {
+	if list.Length() == 0 {
+		return ""
+	}
+
+	var result strings.Builder
+	for _, args := range list.Slice() {
+		result.WriteString(argsToString(args.Slice()))
+	}
+
+	return result.String()
 }
 
 // argsToString converts a slice of arguments to a string representation.

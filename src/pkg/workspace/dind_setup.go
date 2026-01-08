@@ -19,7 +19,7 @@ func createDindNetwork(ctx appctx.AppContext, networkName string) bool {
 		Verbose: ctx.Verbose(),
 		Silent:  true,
 	}
-	err := docker.Docker(flags, "network", "inspect", networkName)
+	err := docker.Docker(flags, "network", ilist.NewList(ilist.NewList("inspect", networkName)))
 	if err == nil {
 		// Network already exists
 		return false
@@ -31,7 +31,7 @@ func createDindNetwork(ctx appctx.AppContext, networkName string) bool {
 	}
 
 	flags.Silent = false
-	err = docker.Docker(flags, "network", "create", networkName)
+	err = docker.Docker(flags, "network", ilist.NewList(ilist.NewList("create", networkName)))
 	if err != nil {
 		fmt.Printf("Warning: failed to create network %s: %v\n", networkName, err)
 		return false
@@ -48,7 +48,7 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string) {
 		Verbose: ctx.Verbose(),
 		Silent:  true,
 	}
-	err := docker.Docker(flags, "ps", "--filter", fmt.Sprintf("name=^/%s$", dindName), "--format", "{{.Names}}")
+	err := docker.Docker(flags, "ps", ilist.NewList(ilist.NewList("--filter", fmt.Sprintf("name=^/%s$", dindName), "--format", "{{.Names}}")))
 	if err == nil {
 		// Container is running
 		if ctx.Verbose() {
@@ -88,7 +88,7 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string) {
 	}
 
 	flags.Silent = false
-	err = docker.Docker(flags, args[0], args[1:]...)
+	err = docker.Docker(flags, args[0], ilist.NewList(ilist.NewListFromSlice(args[1:])))
 	if err != nil {
 		fmt.Printf("Warning: failed to start DinD sidecar: %v\n", err)
 	}
@@ -120,8 +120,8 @@ func waitForDindReady(ctx appctx.AppContext, dindName, dindNet string) {
 			Verbose: ctx.Verbose(),
 			Silent:  true,
 		}
-		err := docker.Docker(flags, "run", "--rm", "--network", dindNet, "docker:cli",
-			"-H", fmt.Sprintf("tcp://%s:2375", dindName), "version")
+		err := docker.Docker(flags, "run", ilist.NewList(ilist.NewList("--rm", "--network", dindNet, "docker:cli",
+			"-H", fmt.Sprintf("tcp://%s:2375", dindName), "version")))
 
 		if err == nil {
 			// DinD is ready
@@ -135,8 +135,8 @@ func waitForDindReady(ctx appctx.AppContext, dindName, dindNet string) {
 }
 
 // stripNetworkFlags removes --network and --net flags from the argument list.
-func stripNetworkFlags(runArgs ilist.List[string]) *ilist.AppendableList[string] {
-	result := ilist.NewAppendableList[string]()
+func stripNetworkFlags(runArgs ilist.List[ilist.List[string]]) *ilist.AppendableList[ilist.List[string]] {
+	result := ilist.NewAppendableList[ilist.List[string]]()
 	args := runArgs.Slice()
 
 	skipNext := false
@@ -147,13 +147,13 @@ func stripNetworkFlags(runArgs ilist.List[string]) *ilist.AppendableList[string]
 		}
 
 		// Check for --network or --net (with value in next arg)
-		if arg == "--network" || arg == "--net" {
+		if arg.At(0) == "--network" || arg.At(0) == "--net" {
 			skipNext = true
 			continue
 		}
 
 		// Check for --network=value or --net=value
-		if strings.HasPrefix(arg, "--network=") || strings.HasPrefix(arg, "--net=") {
+		if strings.HasPrefix(arg.At(0), "--network=") || strings.HasPrefix(arg.At(0), "--net=") {
 			continue
 		}
 

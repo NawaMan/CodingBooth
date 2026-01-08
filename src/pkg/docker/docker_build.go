@@ -6,23 +6,35 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // DockerBuild executes a docker build command with optional silent mode.
 // When SilenceBuild is enabled, it captures stderr and only displays it on failure.
-func DockerBuild(flags DockerFlags, args ...string) error {
+func DockerBuild(flags DockerFlags, args ilist.List[ilist.List[string]]) error {
 	// If not in silent mode, just call Docker build normally
 	if !flags.Silent {
-		return Docker(flags, "build", args...)
+		return Docker(flags, "build", args)
 	}
 
 	// Silent mode: capture stderr and only show on failure
-	cmdArgs := make([]string, 0, len(args)+1)
+	cmdArgs := make([]string, 0, 64)
 	cmdArgs = append(cmdArgs, "build")
-	cmdArgs = append(cmdArgs, args...)
+
+	args.Range(func(_ int, group ilist.List[string]) bool {
+		cmdArgs = append(cmdArgs, group.Slice()...)
+		return true
+	})
 
 	if flags.Dryrun || flags.Verbose {
-		PrintCmd("docker", cmdArgs...)
+		var printingArgs [][]string
+		printingArgs = append(printingArgs, []string{"build"})
+		args.Range(func(_ int, group ilist.List[string]) bool {
+			printingArgs = append(printingArgs, group.Slice())
+			return true
+		})
+		printCmd("docker", printingArgs...)
 	}
 
 	if flags.Dryrun {

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/nawaman/workspace/src/pkg/docker"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 func main() {
@@ -54,11 +55,11 @@ CMD ["echo", "Hello from color demo!"]
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println()
 
-	err := docker.DockerBuild(flags,
+	err := docker.DockerBuild(flags, ilist.NewList(ilist.NewList(
 		"-t", "color-manual-test:latest",
 		"-f", dockerfilePath,
 		tmpDir,
-	)
+	)))
 
 	fmt.Println()
 	fmt.Println("───────────────────────────────────────────────────────────")

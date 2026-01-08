@@ -25,7 +25,7 @@ func TestApplyEnvFile_Default(t *testing.T) {
 	}
 
 	builder := &appctx.AppContextBuilder{
-		CommonArgs: ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 	}
 	// Mock Workspace path by assuming the function uses builder.Config or we can set it somehow?
 	// ApplyEnvFile uses ctx.Workspace() which usually comes from Config.Workspace or calculated.
@@ -51,7 +51,7 @@ func TestApplyEnvFile_Default(t *testing.T) {
 
 	// Verify
 	// It should have added --env-file ./.env to CommonArgs
-	args := newCtx.CommonArgs().Slice()
+	args := flattenArgs(newCtx.CommonArgs())
 	found := false
 	for i, arg := range args {
 		if arg == "--env-file" && i+1 < len(args) {
@@ -80,14 +80,14 @@ func TestApplyEnvFile_Explicit(t *testing.T) {
 	}
 
 	builder := &appctx.AppContextBuilder{
-		CommonArgs: ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.EnvFile = myEnv // Explicitly set
 
 	ctx := builder.Build()
 	newCtx := ApplyEnvFile(ctx)
 
-	args := newCtx.CommonArgs().Slice()
+	args := flattenArgs(newCtx.CommonArgs())
 	found := false
 	for i, arg := range args {
 		if arg == "--env-file" && i+1 < len(args) {
@@ -104,7 +104,7 @@ func TestApplyEnvFile_Explicit(t *testing.T) {
 
 func TestApplyEnvFile_Disabled(t *testing.T) {
 	builder := &appctx.AppContextBuilder{
-		CommonArgs: ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.EnvFile = "-" // Explicitly disabled
 	builder.Config.Verbose = nillable.NewNillableBool(true)
@@ -112,7 +112,7 @@ func TestApplyEnvFile_Disabled(t *testing.T) {
 	ctx := builder.Build()
 	newCtx := ApplyEnvFile(ctx)
 
-	args := newCtx.CommonArgs().Slice()
+	args := flattenArgs(newCtx.CommonArgs())
 	for _, arg := range args {
 		if arg == "--env-file" {
 			t.Errorf("Expected NO --env-file arg when disabled, got args: %v", args)

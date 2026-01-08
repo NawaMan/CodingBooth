@@ -13,22 +13,23 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     CURRENT_PATH="$(pwd -W)"
 fi
 
-# The workspace is set to be non default
-WORKSPACE=".."
+ACTUAL=$(../../workspace --verbose --dryrun --pull --variant base -- tree -C)
+ACTUAL=$(printf "%s\n" "$ACTUAL" | head -n 3)
 
-ACTUAL=$(../../workspace.sh --skip-main)
-ACTUAL=$(printf "%s\n" "$ACTUAL" | tail -n 1)
-
+HERE="$CURRENT_PATH"
 VERSION="$(cat ../../version.txt)"
 
-# Notice that there is not `-rm`
 EXPECT="\
-"
+ARGS:  \"--verbose\" \"--dryrun\" \"--pull\" \"--variant\" \"base\" \"--\" \"tree\" \"-C\"
+Pulling image (forced): nawaman/workspace:base-${VERSION}
+docker \\
+    pull \\
+    nawaman/workspace:base-${VERSION}"
 
 if diff -u <(echo "$EXPECT") <(echo "$ACTUAL"); then
-  print_test_result "true" "$0" "1" "Skip main output matches expected"
+  print_test_result "true" "$0" "1" "Pull output matches expected"
 else
-  print_test_result "false" "$0" "1" "Skip main output matches expected"
+  print_test_result "false" "$0" "1" "Pull output matches expected"
   echo "-------------------------------------------------------------------------------"
   echo "Expected: "
   echo "$EXPECT"

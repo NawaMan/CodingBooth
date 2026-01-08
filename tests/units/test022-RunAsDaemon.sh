@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Source workspace.sh to get the RunAsDaemon function
+# Source workspace to get the RunAsDaemon function
 export SKIP_MAIN=true
-source ../../workspace.sh
+source ../../workspace
 source ../common--source.sh
 
 # Test counter
@@ -51,7 +51,7 @@ run_test() {
   DRYRUN="${TEST_DRYRUN:-false}"
   CONTAINER_NAME="${TEST_CONTAINER_NAME:-test-container}"
   HOST_PORT="${TEST_HOST_PORT:-10000}"
-  SCRIPT_NAME="${TEST_SCRIPT_NAME:-workspace.sh}"
+  SCRIPT_NAME="${TEST_SCRIPT_NAME:-workspace}"
   
   # Call RunAsDaemon and capture output
   RunAsDaemon > "$OUTPUT_FILE" 2>&1

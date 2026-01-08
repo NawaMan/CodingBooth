@@ -12,7 +12,7 @@ trap cleanup EXIT  # run cleanup on script exit (success or error)
 cleanup
 DATE=$(date)
 echo $DATE > in-host.txt
-./workspace.sh --variant "$VARIANT" -- echo $DATE '>' in-workspace.txt
+./workspace --variant "$VARIANT" -- echo $DATE '>' in-workspace.txt
 
 if diff -u in-workspace.txt in-host.txt; then
   echo "✅ Files match"

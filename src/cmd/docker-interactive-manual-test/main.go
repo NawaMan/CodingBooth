@@ -15,6 +15,7 @@ import (
 	"os"
 
 	"github.com/nawaman/workspace/src/pkg/docker"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 func main() {
@@ -59,12 +60,12 @@ func main() {
 		Verbose: verbose,
 		Silent:  silent,
 	}
-	err := docker.Docker(flags, "run",
+	err := docker.Docker(flags, "run", ilist.NewList(ilist.NewList(
 		"-it",  // Interactive + TTY (auto-filtered if no TTY)
 		"--rm", // Remove after exit
 		"alpine:latest",
 		"sh", // Start shell (interactive if -it is preserved)
-	)
+	)))
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println()

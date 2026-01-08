@@ -1,7 +1,7 @@
 #########################################################################################
 ## Workspace Launcher Configuration (ws--config.sh)                                    ##
 ##                                                                                     ##
-## This file customizes how `workspace.sh` starts the container.                       ##
+## This file customizes how `workspace` starts the container.                          ##
 ## It is sourced automatically if present.                                             ##
 ##                                                                                     ##
 ## Location / precedence (highest → lowest):                                           ##

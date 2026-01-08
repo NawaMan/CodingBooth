@@ -1,6 +1,6 @@
 #!/bin/bash
 
-../../workspace.sh --variant base -- '
+../../workspace --variant base -- '
 jbang --quiet - <<EOF one "two 2"
 import java.nio.file.*;
 import java.util.Arrays;

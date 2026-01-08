@@ -1,6 +1,9 @@
 package appctx
 
 import (
+	"fmt"
+	"strings"
+
 	"github.com/BurntSushi/toml"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/nawaman/workspace/src/pkg/ilist"
@@ -12,10 +15,11 @@ type AppConfig struct {
 	// --------------------
 	// General configuration
 	// --------------------
-	Dryrun    nillable.NillableBool   `toml:"dryrun,omitempty"    envconfig:"WS_DRYRUN" default:"false"`
-	Verbose   nillable.NillableBool   `toml:"verbose,omitempty"   envconfig:"WS_VERBOSE" default:"false"`
-	Config    nillable.NillableString `toml:"config,omitempty"    envconfig:"WS_CONFIG" default:"./ws--config.toml"`
+	Dryrun    nillable.NillableBool   `toml:"dryrun,omitempty"    envconfig:"WS_DRYRUN"`
+	Verbose   nillable.NillableBool   `toml:"verbose,omitempty"   envconfig:"WS_VERBOSE"`
+	Config    nillable.NillableString `toml:"config,omitempty"    envconfig:"WS_CONFIG"`
 	Workspace nillable.NillableString `toml:"workspace,omitempty" envconfig:"WS_WORKSPACE"`
+	Version   nillable.NillableString `toml:"version,omitempty"   envconfig:"WS_VERSION"`
 
 	// --------------------
 	// Flags
@@ -32,7 +36,6 @@ type AppConfig struct {
 	Dockerfile string `toml:"dockerfile,omitempty" envconfig:"WS_DOCKERFILE"`
 	Image      string `toml:"image,omitempty"      envconfig:"WS_IMAGE"`
 	Variant    string `toml:"variant,omitempty"    envconfig:"WS_VARIANT" default:"default"`
-	Version    string `toml:"version,omitempty"    envconfig:"WS_VERSION" default:"latest"`
 
 	// --------------------
 	// Runtime values
@@ -81,4 +84,51 @@ func ReadFromToml(path string, config *AppConfig) error {
 		return err
 	}
 	return nil
+}
+
+// String returns a string representation of the app config.
+func (config AppConfig) String() string {
+	var str strings.Builder
+
+	str.WriteString("==| AppConfig |==================================================\n")
+
+	fmt.Fprintf(&str, "# General configuration ---------\n")
+	fmt.Fprintf(&str, "    Dryrun:           %v\n", config.Dryrun)
+	fmt.Fprintf(&str, "    Verbose:          %v\n", config.Verbose)
+	fmt.Fprintf(&str, "    Config:           %v\n", config.Config)
+	fmt.Fprintf(&str, "    Workspace:        %v\n", config.Workspace)
+	fmt.Fprintf(&str, "    Version:          %q\n", config.Version)
+
+	fmt.Fprintf(&str, "# Flags -------------------------\n")
+	fmt.Fprintf(&str, "    KeepAlive:        %t\n", config.KeepAlive)
+	fmt.Fprintf(&str, "    SilenceBuild:     %t\n", config.SilenceBuild)
+	fmt.Fprintf(&str, "    Daemon:           %t\n", config.Daemon)
+	fmt.Fprintf(&str, "    Pull:             %t\n", config.Pull)
+	fmt.Fprintf(&str, "    Dind:             %t\n", config.Dind)
+
+	fmt.Fprintf(&str, "# Image Configuration -----------\n")
+	fmt.Fprintf(&str, "    Dockerfile:       %q\n", config.Dockerfile)
+	fmt.Fprintf(&str, "    Image:            %q\n", config.Image)
+	fmt.Fprintf(&str, "    Variant:          %q\n", config.Variant)
+
+	fmt.Fprintf(&str, "# Runtime values ----------------\n")
+	fmt.Fprintf(&str, "    ProjectName:      %q\n", config.ProjectName)
+	fmt.Fprintf(&str, "    HostUID:          %q\n", config.HostUID)
+	fmt.Fprintf(&str, "    HostGID:          %q\n", config.HostGID)
+	fmt.Fprintf(&str, "    Timezone:         %q\n", config.Timezone)
+
+	fmt.Fprintf(&str, "# Container Configuration -------\n")
+	fmt.Fprintf(&str, "    Name:             %q\n", config.Name)
+	fmt.Fprintf(&str, "    Port:             %q\n", config.Port)
+	fmt.Fprintf(&str, "    EnvFile:          %q\n", config.EnvFile)
+
+	fmt.Fprintf(&str, "# TOML-friendly array fields ----\n")
+	formatList(&str, "CommonArgs", config.CommonArgs.List, "    ")
+	formatList(&str, "BuildArgs", config.BuildArgs.List, "    ")
+	formatList(&str, "RunArgs", config.RunArgs.List, "    ")
+	formatList(&str, "Cmds", config.Cmds.List, "    ")
+
+	str.WriteString("==================================================================\n")
+
+	return str.String()
 }

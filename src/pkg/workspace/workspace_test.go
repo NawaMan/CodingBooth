@@ -22,10 +22,10 @@ func TestWorkspace_runAsCommand_DryrunMode(t *testing.T) {
 	// Create context with dryrun enabled
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
@@ -33,9 +33,9 @@ func TestWorkspace_runAsCommand_DryrunMode(t *testing.T) {
 	builder.Config.Image = "test-image:latest"
 
 	// Set up argument lists
-	builder.CommonArgs.Append("--name", "test-container")
-	builder.RunArgs.Append("-e", "TEST_VAR=value")
-	builder.Cmds.Append("echo 'Hello'", "ls -la")
+	builder.CommonArgs.Append(ilist.NewList("--name", "test-container"))
+	builder.RunArgs.Append(ilist.NewList("-e", "TEST_VAR=value"))
+	builder.Cmds.Append(ilist.NewList("echo", "Hello"), ilist.NewList("ls", "-la"))
 
 	ctx := builder.Build()
 	ws := NewWorkspace(ctx)
@@ -50,7 +50,7 @@ func TestWorkspace_runAsCommand_DryrunMode(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	// Verify no error in dryrun mode
 	if err != nil {
@@ -121,10 +121,10 @@ func TestWorkspace_runAsCommand_WithDind(t *testing.T) {
 	// Create context with DinD enabled
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
@@ -132,9 +132,10 @@ func TestWorkspace_runAsCommand_WithDind(t *testing.T) {
 	builder.CreatedDindNet = true
 	builder.Config.Name = "test-container"
 	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
 	builder.Config.Timezone = "UTC"
 	builder.Config.Image = "alpine:latest"
-	builder.Cmds.Append("echo test")
+	builder.Cmds.Append(ilist.NewList("echo", "test"))
 
 	ctx := builder.Build()
 	ws := NewWorkspace(ctx)
@@ -149,7 +150,7 @@ func TestWorkspace_runAsCommand_WithDind(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	// Verify no error in dryrun mode
 	if err != nil {
@@ -188,10 +189,10 @@ func TestWorkspace_runAsCommand_WithDindNoNetwork(t *testing.T) {
 	// Create context with DinD enabled but CreatedDindNet=false
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
@@ -199,9 +200,10 @@ func TestWorkspace_runAsCommand_WithDindNoNetwork(t *testing.T) {
 	builder.CreatedDindNet = false // Network was not created by us
 	builder.Config.Name = "test-container"
 	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
 	builder.Config.Timezone = "UTC"
 	builder.Config.Image = "alpine:latest"
-	builder.Cmds.Append("echo test")
+	builder.Cmds.Append(ilist.NewList("echo", "test"))
 
 	ctx := builder.Build()
 	ws := NewWorkspace(ctx)
@@ -216,7 +218,7 @@ func TestWorkspace_runAsCommand_WithDindNoNetwork(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	// Verify no error in dryrun mode
 	if err != nil {
@@ -250,17 +252,17 @@ func TestWorkspace_runAsCommand_WithoutDind(t *testing.T) {
 	// Create context with DinD disabled
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
 	builder.Config.Dind = false
 	builder.Config.Timezone = "UTC"
 	builder.Config.Image = "alpine:latest"
-	builder.Cmds.Append("echo test")
+	builder.Cmds.Append(ilist.NewList("echo", "test"))
 
 	ctx := builder.Build()
 	ws := NewWorkspace(ctx)
@@ -275,7 +277,7 @@ func TestWorkspace_runAsCommand_WithoutDind(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	// Verify no error in dryrun mode
 	if err != nil {
@@ -315,10 +317,10 @@ func TestWorkspace_runAsCommand_EmptyCommands(t *testing.T) {
 	// Create context with no commands
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
@@ -339,7 +341,7 @@ func TestWorkspace_runAsCommand_EmptyCommands(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	// Verify no error in dryrun mode
 	if err != nil {
@@ -366,19 +368,19 @@ func TestWorkspace_runAsCommand_ArgumentOrder(t *testing.T) {
 	// Create context with all argument types
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
 	builder.Config.Timezone = "UTC"
 	builder.Config.Image = "test-image:v1"
 
-	builder.CommonArgs.Append("--name", "container1")
-	builder.RunArgs.Append("-p", "8080:80")
-	builder.Cmds.Append("echo hello")
+	builder.CommonArgs.Append(ilist.NewList("--name", "container1"))
+	builder.RunArgs.Append(ilist.NewList("-p", "8080:80"))
+	builder.Cmds.Append(ilist.NewList("echo", "hello"))
 
 	ctx := builder.Build()
 	ws := NewWorkspace(ctx)
@@ -393,7 +395,7 @@ func TestWorkspace_runAsCommand_ArgumentOrder(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	// Verify no error
 	if err != nil {
@@ -430,10 +432,10 @@ func TestWorkspace_runAsDaemon_DryrunMode(t *testing.T) {
 	// Create context with dryrun enabled
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
@@ -442,10 +444,11 @@ func TestWorkspace_runAsDaemon_DryrunMode(t *testing.T) {
 	builder.Config.Name = "test-container"
 	builder.Config.Port = "10000"
 	builder.PortNumber = 10000
+	builder.PortNumber = 10000
 	// Set up argument lists
-	builder.CommonArgs.Append("--name", "test-container")
-	builder.RunArgs.Append("-e", "TEST_VAR=value")
-	builder.Cmds.Append("echo 'Hello'", "ls -la")
+	builder.CommonArgs.Append(ilist.NewList("--name", "test-container"))
+	builder.RunArgs.Append(ilist.NewList("-e", "TEST_VAR=value"))
+	builder.Cmds.Append(ilist.NewList("echo", "Hello"), ilist.NewList("ls", "-la"))
 
 	ctx := builder.Build()
 	ws := NewWorkspace(ctx)
@@ -460,7 +463,7 @@ func TestWorkspace_runAsDaemon_DryrunMode(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	// Verify no error in dryrun mode
 	if err != nil {
@@ -532,22 +535,23 @@ func TestWorkspace_runAsDaemon_WithDind(t *testing.T) {
 	// Create context with DinD enabled
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
 	builder.Config.Dind = true
 	builder.Config.Name = "test-container"
 	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
 
 	// DindName/DindNet derived from name/port
 	builder.Config.Timezone = "UTC"
 	builder.Config.Image = "alpine:latest"
-	builder.ScriptName = "workspace.sh"
-	builder.Cmds.Append("echo test")
+	builder.ScriptName = "workspace"
+	builder.Cmds.Append(ilist.NewList("echo", "test"))
 
 	ctx := builder.Build()
 	ws := NewWorkspace(ctx)
@@ -562,7 +566,7 @@ func TestWorkspace_runAsDaemon_WithDind(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	// Verify no error in dryrun mode
 	if err != nil {
@@ -594,17 +598,18 @@ func TestWorkspace_runAsDaemon_NoCommands(t *testing.T) {
 	// Create context with no commands
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
 	builder.Config.Timezone = "UTC"
 	builder.Config.Image = "alpine:latest"
-	builder.ScriptName = "workspace.sh"
+	builder.ScriptName = "workspace"
 	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
 	builder.Config.Name = "test-container"
 	// Don't add any commands
 
@@ -621,7 +626,7 @@ func TestWorkspace_runAsDaemon_NoCommands(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	// Verify no error in dryrun mode
 	if err != nil {
@@ -639,7 +644,7 @@ func TestWorkspace_runAsDaemon_NoCommands(t *testing.T) {
 	}
 
 	// Should NOT have bash -lc when no commands
-	// The word "bash" appears in the help message "workspace.sh -- bash"
+	// The word "bash" appears in the help message "workspace -- bash"
 	// but should not appear as a command argument after the image name
 	// Check that the docker command doesn't have bash after the image name
 	lines := strings.Split(output, "\n")
@@ -665,18 +670,19 @@ func TestWorkspace_runAsDaemon_WithKeepalive(t *testing.T) {
 	// Create context with keepalive enabled
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
 	builder.Config.KeepAlive = true
 	builder.Config.Timezone = "UTC"
 	builder.Config.Image = "alpine:latest"
-	builder.ScriptName = "workspace.sh"
+	builder.ScriptName = "workspace"
 	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
 	builder.Config.Name = "test-container"
 
 	ctx := builder.Build()
@@ -692,7 +698,7 @@ func TestWorkspace_runAsDaemon_WithKeepalive(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	// Verify no error
 	if err != nil {
@@ -715,10 +721,10 @@ func TestWorkspace_runAsForeground_DryrunMode(t *testing.T) {
 	// Create context with dryrun enabled
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
@@ -726,11 +732,12 @@ func TestWorkspace_runAsForeground_DryrunMode(t *testing.T) {
 	builder.Config.Image = "test-image:latest"
 	builder.Config.Name = "test-container"
 	builder.Config.Port = "10000"
-	builder.ScriptName = "workspace.sh"
+	builder.PortNumber = 10000
+	builder.ScriptName = "workspace"
 
 	// Set up argument lists
-	builder.CommonArgs.Append("--name", "test-container")
-	builder.RunArgs.Append("-e", "TEST_VAR=value")
+	builder.CommonArgs.Append(ilist.NewList("--name", "test-container"))
+	builder.RunArgs.Append(ilist.NewList("-e", "TEST_VAR=value"))
 
 	ctx := builder.Build()
 	ws := NewWorkspace(ctx)
@@ -745,7 +752,7 @@ func TestWorkspace_runAsForeground_DryrunMode(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	// Verify no error in dryrun mode
 	if err != nil {
@@ -805,10 +812,10 @@ func TestWorkspace_runAsForeground_WithDind(t *testing.T) {
 	// Create context with DinD enabled
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
@@ -816,9 +823,10 @@ func TestWorkspace_runAsForeground_WithDind(t *testing.T) {
 	builder.CreatedDindNet = true
 	builder.Config.Name = "test-container"
 	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
 	builder.Config.Timezone = "UTC"
 	builder.Config.Image = "alpine:latest"
-	builder.ScriptName = "workspace.sh"
+	builder.ScriptName = "workspace"
 
 	ctx := builder.Build()
 	ws := NewWorkspace(ctx)
@@ -833,7 +841,7 @@ func TestWorkspace_runAsForeground_WithDind(t *testing.T) {
 	// Read captured output
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	// Verify no error in dryrun mode
 	if err != nil {
@@ -871,10 +879,10 @@ func TestWorkspace_Run_DaemonMode(t *testing.T) {
 	// Create context with daemon enabled
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
@@ -883,11 +891,13 @@ func TestWorkspace_Run_DaemonMode(t *testing.T) {
 	builder.Config.Image = "alpine:latest"
 	builder.Config.Variant = "base"
 	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
 	builder.Config.Name = "test-container"
-	builder.ScriptName = "workspace.sh"
+	builder.ScriptName = "workspace"
 	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
 	builder.Config.Name = "test-container"
-	builder.Cmds.Append("echo test")
+	builder.Cmds.Append(ilist.NewList("echo", "test"))
 
 	ctx := builder.Build()
 	runner := NewWorkspaceRunner(ctx)
@@ -899,7 +909,7 @@ func TestWorkspace_Run_DaemonMode(t *testing.T) {
 
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	if err != nil {
 		t.Errorf("Run() in daemon mode returned error: %v", err)
@@ -924,10 +934,10 @@ func TestWorkspace_Run_ForegroundMode(t *testing.T) {
 
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
@@ -935,9 +945,10 @@ func TestWorkspace_Run_ForegroundMode(t *testing.T) {
 	builder.Config.Timezone = "UTC"
 	builder.Config.Variant = "base"
 	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
 	builder.Config.Name = "test-container"
 	builder.Config.Image = "alpine:latest"
-	builder.ScriptName = "workspace.sh"
+	builder.ScriptName = "workspace"
 	// No commands - should trigger foreground mode
 
 	ctx := builder.Build()
@@ -950,7 +961,7 @@ func TestWorkspace_Run_ForegroundMode(t *testing.T) {
 
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	if err != nil {
 		t.Errorf("Run() in foreground mode returned error: %v", err)
@@ -975,10 +986,10 @@ func TestWorkspace_Run_CommandMode(t *testing.T) {
 
 	builder := &appctx.AppContextBuilder{
 		WsVersion:  "0.11.0",
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
 	builder.Config.Dryrun = nillable.NewNillableBool(true)
 	builder.Config.Verbose = nillable.NewNillableBool(true)
@@ -986,9 +997,10 @@ func TestWorkspace_Run_CommandMode(t *testing.T) {
 	builder.Config.Timezone = "UTC"
 	builder.Config.Variant = "base"
 	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
 	builder.Config.Name = "test-container"
 	builder.Config.Image = "alpine:latest"
-	builder.Cmds.Append("echo hello", "ls -la")
+	builder.Cmds.Append(ilist.NewList("echo", "hello"), ilist.NewList("ls", "-la"))
 
 	ctx := builder.Build()
 	runner := NewWorkspaceRunner(ctx)
@@ -1000,7 +1012,7 @@ func TestWorkspace_Run_CommandMode(t *testing.T) {
 
 	var buf bytes.Buffer
 	io.Copy(&buf, reader)
-	output := buf.String()
+	output := normalizeOutput(buf.String())
 
 	if err != nil {
 		t.Errorf("Run() in command mode returned error: %v", err)
@@ -1018,4 +1030,8 @@ func TestWorkspace_Run_CommandMode(t *testing.T) {
 	if strings.Contains(output, " -d ") {
 		t.Errorf("Did not expect '-d' flag in command mode, got: %q", output)
 	}
+}
+
+func normalizeOutput(s string) string {
+	return strings.ReplaceAll(s, " \\\n    ", " ")
 }

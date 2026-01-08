@@ -1,0 +1,12 @@
+daemon = true
+dind = true
+dockerfile = "test--config.toml"
+dryrun = true
+env-file = "test--.env"
+keep-alive = true
+name = "test-container"
+pull = true
+variant = "codeserver"
+verbose = true
+version = "0.11.0"
+run-args = ["-p", "10005"]

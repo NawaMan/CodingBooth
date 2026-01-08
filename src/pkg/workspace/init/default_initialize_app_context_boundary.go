@@ -19,10 +19,16 @@ func (DefaultInitializeAppContextBoundary) ArgList() ilist.List[string] {
 }
 
 func (DefaultInitializeAppContextBoundary) PopulateAppConfigFromEnvVars(config *appctx.AppConfig) error {
-	return envconfig.Process("", config)
+	envconfig.Process("", config)
+	return nil
 }
 
 func (DefaultInitializeAppContextBoundary) DetectTimezone() string {
+	// Try to get timezone from environment
+	if tz := os.Getenv("TIMEZONE"); tz != "" {
+		return tz
+	}
+
 	// Try to get timezone from environment
 	if tz := os.Getenv("TZ"); tz != "" {
 		return tz

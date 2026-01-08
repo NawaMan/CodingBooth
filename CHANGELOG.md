@@ -54,7 +54,7 @@ This file contains a list of changes for each released version.
 - Local image builds now work properly.
 - Introduced a unified build script (`build.sh`).
   - Added the `--no-cache` option.
-- Refactored `workspace.sh`:
+- Refactored `workspace`:
   - Modularized into clear functions and procedures.
   - First experimental implementation of **Docker-in-Docker (DinD)** via a sidecar container (attempted to isolate from the host — ultimately not fully successful).
   - Simplified configuration structure.

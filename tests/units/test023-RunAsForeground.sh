@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Source workspace.sh to get the RunAsForeground function
+# Source workspace to get the RunAsForeground function
 export SKIP_MAIN=true
-source ../../workspace.sh
+source ../../workspace
 source ../common--source.sh
 
 # Test counter
@@ -45,7 +45,7 @@ run_test() {
   DIND_NAME="${TEST_DIND_NAME:-dind-container}"
   DIND_NET="${TEST_DIND_NET:-dind-network}"
   CREATED_DIND_NET="${TEST_CREATED_DIND_NET:-false}"
-  SCRIPT_NAME="${TEST_SCRIPT_NAME:-workspace.sh}"
+  SCRIPT_NAME="${TEST_SCRIPT_NAME:-workspace}"
   
   # Call RunAsForeground and capture output
   RunAsForeground > "$OUTPUT_FILE" 2>&1

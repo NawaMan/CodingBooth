@@ -4,10 +4,12 @@ package workspace
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/nawaman/workspace/src/pkg/appctx"
 	"github.com/nawaman/workspace/src/pkg/docker"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 	"golang.org/x/term"
 )
 
@@ -44,28 +46,36 @@ func (workspace *Workspace) runAsCommand() error {
 
 	ttyArgs := prepareTtyArgs()
 	keepAliveArgs := prepareKeepAliveArgs(workspace.ctx.KeepAlive())
-	userCmds := strings.Join(workspace.ctx.Cmds().Slice(), " ")
+	userCmds := strings.Join(flattenArgs(workspace.ctx.Cmds()), " ")
 
-	args := make([]string, 0, 64)
-	args = append(args, ttyArgs...)
-	args = append(args, keepAliveArgs...)
-	args = append(args, workspace.ctx.CommonArgs().Slice()...)
-	args = append(args, workspace.ctx.RunArgs().Slice()...)
-	args = append(args, "-e", "TZ="+workspace.ctx.Timezone())
-	args = append(args, workspace.ctx.Image())
-	args = append(args, "bash", "-lc", userCmds)
+	args := ilist.NewList[ilist.List[string]]()
+	if len(ttyArgs) > 0 {
+		args = args.ExtendByLists(ilist.NewListFromSlice([]ilist.List[string]{ilist.NewListFromSlice(ttyArgs)}))
+	}
+	if len(keepAliveArgs) > 0 {
+		args = args.ExtendByLists(ilist.NewListFromSlice([]ilist.List[string]{ilist.NewListFromSlice(keepAliveArgs)}))
+	}
+	args = args.ExtendByLists(workspace.ctx.CommonArgs())
+	args = args.ExtendByLists(workspace.ctx.RunArgs())
+	args = args.ExtendByLists(
+		ilist.NewListFromSlice([]ilist.List[string]{
+			ilist.NewList("-e", "TZ="+workspace.ctx.Timezone()),
+			ilist.NewList(workspace.ctx.Image()),
+			ilist.NewList("bash", "-lc", userCmds),
+		}),
+	)
 
 	// Execute the docker run command
-	err := docker.Docker(flags, "run", args...)
+	err := docker.Docker(flags, "run", args)
 
 	// Cleanup DinD resources if enabled
 	if workspace.ctx.Dind() {
 		flags.Silent = true
 		dindName := getDindName(workspace.ctx)
 		dindNet := getDindNet(workspace.ctx)
-		_ = docker.Docker(flags, "stop", dindName)
+		_ = docker.Docker(flags, "stop", ilist.NewList(ilist.NewList(dindName)))
 		if workspace.ctx.CreatedDindNet() {
-			_ = docker.Docker(flags, "network", "rm", dindNet)
+			_ = docker.Docker(flags, "network", ilist.NewList(ilist.NewList("rm", dindNet)))
 		}
 	}
 
@@ -85,7 +95,7 @@ func (workspace *Workspace) runAsDaemon() error {
 
 	if workspace.ctx.Cmds().Length() > 0 {
 		userCmds = append(userCmds, "bash", "-lc")
-		userCmds = append(userCmds, workspace.ctx.Cmds().Slice()...)
+		userCmds = append(userCmds, flattenArgs(workspace.ctx.Cmds())...)
 	}
 
 	fmt.Println("📦 Running workspace in daemon mode.")
@@ -110,17 +120,26 @@ func (workspace *Workspace) runAsDaemon() error {
 		fmt.Println()
 	}
 
-	args := make([]string, 0, 64)
-	args = append(args, "-d")
-	args = append(args, keepAliveArgs...)
-	args = append(args, workspace.ctx.CommonArgs().Slice()...)
-	args = append(args, workspace.ctx.RunArgs().Slice()...)
-	args = append(args, "-e", "TZ="+workspace.ctx.Timezone())
-	args = append(args, workspace.ctx.Image())
-	args = append(args, userCmds...)
+	args := ilist.NewList[ilist.List[string]]()
+	args = args.ExtendByLists(ilist.NewList(ilist.NewList("-d")))
+	if len(keepAliveArgs) > 0 {
+		args = args.ExtendByLists(ilist.NewList(ilist.NewListFromSlice(keepAliveArgs)))
+	}
+
+	args = args.ExtendByLists(workspace.ctx.CommonArgs())
+	args = args.ExtendByLists(workspace.ctx.RunArgs())
+
+	extraArgs := []ilist.List[string]{
+		ilist.NewList("-e", "TZ="+workspace.ctx.Timezone()),
+		ilist.NewList(workspace.ctx.Image()),
+	}
+	if len(userCmds) > 0 {
+		extraArgs = append(extraArgs, ilist.NewListFromSlice(userCmds))
+	}
+	args = args.ExtendByLists(ilist.NewListFromSlice(extraArgs))
 
 	// Execute the docker run command
-	err := docker.Docker(flags, "run", args...)
+	err := docker.Docker(flags, "run", args)
 
 	// If DinD is enabled in daemon mode, inform user how to stop it
 	if workspace.ctx.Dind() {
@@ -145,7 +164,6 @@ func (workspace *Workspace) runAsForeground() error {
 	keepAliveArgs := prepareKeepAliveArgs(workspace.ctx.KeepAlive())
 
 	fmt.Println("📦 Running workspace in foreground.")
-	fmt.Printf("👉 Visit 'http://localhost:%d'\n", workspace.ctx.PortNumber())
 	if workspace.ctx.KeepAlive() {
 		fmt.Println("👉 Stop with Ctrl+C. The container will be kept (no --rm).")
 	} else {
@@ -154,25 +172,33 @@ func (workspace *Workspace) runAsForeground() error {
 	fmt.Printf("👉 To open an interactive shell instead: '%s -- bash'\n", workspace.ctx.ScriptName())
 	fmt.Println()
 
-	args := make([]string, 0, 64)
-	args = append(args, ttyArgs...)
-	args = append(args, keepAliveArgs...)
-	args = append(args, workspace.ctx.CommonArgs().Slice()...)
-	args = append(args, workspace.ctx.RunArgs().Slice()...)
-	args = append(args, "-e", "TZ="+workspace.ctx.Timezone())
-	args = append(args, workspace.ctx.Image())
+	args := ilist.NewList[ilist.List[string]]()
+	if len(ttyArgs) > 0 {
+		args = args.ExtendByLists(ilist.NewList(ilist.NewListFromSlice(ttyArgs)))
+	}
+	if len(keepAliveArgs) > 0 {
+		args = args.ExtendByLists(ilist.NewList(ilist.NewListFromSlice(keepAliveArgs)))
+	}
+
+	args = args.ExtendByLists(workspace.ctx.CommonArgs())
+	args = args.ExtendByLists(workspace.ctx.RunArgs())
+
+	args = args.ExtendByLists(ilist.NewList(
+		ilist.NewList("-e", "TZ="+workspace.ctx.Timezone()),
+		ilist.NewList(workspace.ctx.Image()),
+	))
 
 	// Execute the docker run command
-	err := docker.Docker(flags, "run", args...)
+	err := docker.Docker(flags, "run", args)
 
 	// Cleanup DinD resources if enabled
 	if workspace.ctx.Dind() {
 		dindName := getDindName(workspace.ctx)
 		dindNet := getDindNet(workspace.ctx)
 		flags.Silent = true
-		_ = docker.Docker(flags, "stop", dindName)
+		_ = docker.Docker(flags, "stop", ilist.NewList(ilist.NewList(dindName)))
 		if workspace.ctx.CreatedDindNet() {
-			_ = docker.Docker(flags, "network", "rm", dindNet)
+			_ = docker.Docker(flags, "network", ilist.NewList(ilist.NewList("rm", dindNet)))
 		}
 	}
 
@@ -194,43 +220,57 @@ func prepareKeepAliveArgs(keepAlive bool) []string {
 }
 
 func getDindName(ctx appctx.AppContext) string {
-	return ctx.Name() + "-" + ctx.Port() + "-dind"
+	return ctx.Name() + "-" + strconv.Itoa(ctx.PortNumber()) + "-dind"
 }
 
 func getDindNet(ctx appctx.AppContext) string {
-	return ctx.Name() + "-" + ctx.Port() + "-net"
+	return ctx.Name() + "-" + strconv.Itoa(ctx.PortNumber()) + "-net"
 }
 
 // PrepareCommonArgs prepares common Docker run arguments and returns updated AppContext.
 func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
 
-	builder.CommonArgs.Append("--name", ctx.Name())
-	builder.CommonArgs.Append("-e", "HOST_UID="+ctx.HostUID())
-	builder.CommonArgs.Append("-e", "HOST_GID="+ctx.HostGID())
-	builder.CommonArgs.Append("-v", ctx.Workspace()+":/home/coder/workspace")
-	builder.CommonArgs.Append("-w", "/home/coder/workspace")
-	builder.CommonArgs.Append("-p", ctx.Port()+":10000")
+	containerName := ctx.Name()
+	if containerName == "" {
+		containerName = ctx.ProjectName()
+	}
+
+	builder.CommonArgs.Append(ilist.NewList[string]("--name", containerName))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_UID="+ctx.HostUID()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_GID="+ctx.HostGID()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-v", ctx.Workspace()+":/home/coder/workspace"))
+	builder.CommonArgs.Append(ilist.NewList[string]("-w", "/home/coder/workspace"))
+	builder.CommonArgs.Append(ilist.NewList[string]("-p", fmt.Sprintf("%d:10000", ctx.PortNumber())))
 
 	// Metadata
-	builder.CommonArgs.Append("-e", "WS_SETUPS_DIR="+ctx.SetupsDir())
-	builder.CommonArgs.Append("-e", "WS_CONTAINER_NAME="+ctx.Name())
-	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_DAEMON=%t", ctx.Daemon()))
-	builder.CommonArgs.Append("-e", "WS_HOST_PORT="+ctx.Port())
-	builder.CommonArgs.Append("-e", "WS_IMAGE_NAME="+ctx.Image())
-	builder.CommonArgs.Append("-e", "WS_RUNMODE="+ctx.RunMode())
-	builder.CommonArgs.Append("-e", "WS_VARIANT_TAG="+ctx.Variant())
-	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_VERBOSE=%t", ctx.Verbose()))
-	builder.CommonArgs.Append("-e", "WS_VERSION_TAG="+ctx.Version())
-	builder.CommonArgs.Append("-e", "WS_WORKSPACE_PATH="+ctx.Workspace())
-	builder.CommonArgs.Append("-e", "WS_WORKSPACE_PORT="+ctx.Port())
-	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_HAS_NOTEBOOK=%t", ctx.HasNotebook()))
-	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_HAS_VSCODE=%t", ctx.HasVscode()))
-	builder.CommonArgs.Append("-e", fmt.Sprintf("WS_HAS_DESKTOP=%t", ctx.HasDesktop()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_SETUPS_DIR="+ctx.SetupsDir()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_CONTAINER_NAME="+ctx.Name()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_DAEMON=%t", ctx.Daemon())))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_HOST_PORT="+strconv.Itoa(ctx.PortNumber())))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_IMAGE_NAME="+ctx.Image()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_RUNMODE="+ctx.RunMode()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_VARIANT_TAG="+ctx.Variant()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_VERBOSE=%t", ctx.Verbose())))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_VERSION_TAG="+ctx.Version()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_WORKSPACE_PATH="+ctx.Workspace()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_WORKSPACE_PORT=10000"))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_HAS_NOTEBOOK=%t", ctx.HasNotebook())))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_HAS_VSCODE=%t", ctx.HasVscode())))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_HAS_DESKTOP=%t", ctx.HasDesktop())))
 
 	if !ctx.Pull() {
-		builder.CommonArgs.Append("--pull=never")
+		builder.CommonArgs.Append(ilist.NewList[string]("--pull=never"))
 	}
 
 	return builder.Build()
+}
+
+func flattenArgs(argsList ilist.List[ilist.List[string]]) []string {
+	var flattened []string
+	argsList.Range(func(_ int, group ilist.List[string]) bool {
+		flattened = append(flattened, group.Slice()...)
+		return true
+	})
+	return flattened
 }

@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Source workspace.sh to get the SetupDind function
+# Source workspace to get the SetupDind function
 export SKIP_MAIN=true
-source ../../workspace.sh
+source ../../workspace
 source ../common--source.sh
 
 # Test counter

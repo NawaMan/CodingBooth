@@ -6,6 +6,8 @@ import (
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // TestDocker_DryrunMode verifies no execution in dryrun mode.
@@ -24,7 +26,7 @@ func TestDocker_DryrunMode(t *testing.T) {
 	}
 
 	// Run docker command (should not execute, just print)
-	err := Docker(flags, "version", "--format", "{{.Server.Version}}")
+	err := Docker(flags, "version", ilist.NewList(ilist.NewList("--format", "{{.Server.Version}}")))
 
 	// Restore stdout
 	writer.Close()
@@ -65,7 +67,7 @@ func TestDocker_VerboseMode(t *testing.T) {
 	}
 
 	// Run docker command
-	err := Docker(flags, "version", "--format", "{{.Server.Version}}")
+	err := Docker(flags, "version", ilist.NewList(ilist.NewList("--format", "{{.Server.Version}}")))
 
 	// Restore stdout
 	writer.Close()
@@ -99,7 +101,7 @@ func TestDocker_Success(t *testing.T) {
 	}
 
 	// Run docker version (should succeed if docker is installed)
-	err := Docker(flags, "version", "--format", "{{.Server.Version}}")
+	err := Docker(flags, "version", ilist.NewList(ilist.NewList("--format", "{{.Server.Version}}")))
 
 	if err != nil {
 		t.Logf("Docker version failed (docker may not be installed): %v", err)
@@ -118,7 +120,7 @@ func TestDocker_Failure(t *testing.T) {
 	}
 
 	// Run invalid docker command (should fail)
-	err := Docker(flags, "invalid-subcommand-that-does-not-exist")
+	err := Docker(flags, "invalid-subcommand-that-does-not-exist", ilist.NewList[ilist.List[string]]())
 
 	// Verify error is returned
 	if err == nil {
@@ -148,7 +150,7 @@ func TestDocker_QuietMode(t *testing.T) {
 	}
 
 	// Run docker command
-	Docker(flags, "version", "--format", "{{.Server.Version}}")
+	Docker(flags, "version", ilist.NewList(ilist.NewList("--format", "{{.Server.Version}}")))
 
 	// Restore stdout
 	writer.Close()

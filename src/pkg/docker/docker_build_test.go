@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/nawaman/workspace/src/pkg/docker"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // TestDockerBuild_Silent tests DockerBuild with SilenceBuild enabled.
@@ -31,11 +32,11 @@ CMD ["echo", "Hello"]
 	}
 
 	// Build with silent mode - should not show progress
-	err := docker.DockerBuild(flags,
+	err := docker.DockerBuild(flags, ilist.NewList(ilist.NewList(
 		"-t", "test-silent:latest",
 		"-f", dockerfilePath,
 		tmpDir,
-	)
+	)))
 
 	if err != nil {
 		t.Fatalf("Silent build failed: %v", err)
@@ -67,11 +68,11 @@ CMD ["echo", "Hello"]
 	}
 
 	// Build with normal mode - should show progress
-	err := docker.DockerBuild(flags,
+	err := docker.DockerBuild(flags, ilist.NewList(ilist.NewList(
 		"-t", "test-normal:latest",
 		"-f", dockerfilePath,
 		tmpDir,
-	)
+	)))
 
 	if err != nil {
 		t.Fatalf("Normal build failed: %v", err)
@@ -90,7 +91,7 @@ func TestDockerBuild_Dryrun(t *testing.T) {
 	}
 
 	// Dryrun should not execute anything
-	err := docker.DockerBuild(flags, "-t", "test:latest", ".")
+	err := docker.DockerBuild(flags, ilist.NewList(ilist.NewList("-t", "test:latest", ".")))
 
 	if err != nil {
 		t.Fatalf("Dryrun should not fail: %v", err)

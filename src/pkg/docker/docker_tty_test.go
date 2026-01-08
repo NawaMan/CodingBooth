@@ -2,6 +2,8 @@ package docker
 
 import (
 	"testing"
+
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // TestDocker_TTYFiltering tests that -it flags are filtered when no TTY is available.
@@ -13,13 +15,13 @@ func TestDocker_TTYFiltering(t *testing.T) {
 	}
 
 	// This should work even though we're passing -it and there's no TTY in tests
-	err := Docker(flags, "run", "-it", "--rm", "alpine:latest", "echo", "test")
+	err := Docker(flags, "run", ilist.NewList(ilist.NewList("-it", "--rm", "alpine:latest", "echo", "test")))
 	if err != nil {
 		t.Fatalf("Docker with -it should not fail in dryrun: %v", err)
 	}
 
 	// Test with separate -i and -t flags
-	err = Docker(flags, "run", "-i", "-t", "--rm", "alpine:latest", "echo", "test")
+	err = Docker(flags, "run", ilist.NewList(ilist.NewList("-i", "-t", "--rm", "alpine:latest", "echo", "test")))
 	if err != nil {
 		t.Fatalf("Docker with -i -t should not fail in dryrun: %v", err)
 	}
@@ -38,7 +40,7 @@ func TestDocker_TTYFlagsPreservedInTTY(t *testing.T) {
 	t.Logf("Running with TTY: %v", hasTTY)
 
 	// The function should handle this gracefully regardless of TTY
-	err := Docker(flags, "run", "-it", "--rm", "alpine:latest", "sh")
+	err := Docker(flags, "run", ilist.NewList(ilist.NewList("-it", "--rm", "alpine:latest", "sh")))
 	if err != nil {
 		t.Fatalf("Docker should not fail in dryrun: %v", err)
 	}

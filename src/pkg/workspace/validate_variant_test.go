@@ -129,10 +129,10 @@ func TestValidateVariant(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			// Setup context with input variant
 			builder := &appctx.AppContextBuilder{
-				CommonArgs: ilist.NewAppendableList[string](),
-				BuildArgs:  ilist.NewAppendableList[string](),
-				RunArgs:    ilist.NewAppendableList[string](),
-				Cmds:       ilist.NewAppendableList[string](),
+				CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+				BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+				RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+				Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 			}
 			builder.Config.Variant = tt.inputVariant
 			ctx := builder.Build()

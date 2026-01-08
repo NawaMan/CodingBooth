@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Source workspace.sh to get the PrintCmd function
+# Source workspace to get the PrintCmd function
 export SKIP_MAIN=true
-source ../../workspace.sh
+source ../../workspace
 source ../common--source.sh
 
 # Test counter

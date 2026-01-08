@@ -19,14 +19,15 @@ type AppContext struct {
 	verbose    bool
 	configFile string
 	workspace  string
+	version    string
 
-	commonArgs ilist.List[string]
-	buildArgs  ilist.List[string]
-	runArgs    ilist.List[string]
-	cmds       ilist.List[string]
+	commonArgs ilist.List[ilist.List[string]]
+	buildArgs  ilist.List[ilist.List[string]]
+	runArgs    ilist.List[ilist.List[string]]
+	cmds       ilist.List[ilist.List[string]]
 }
 
-// NewAppContext creates a new immutable AppContext with defaults matching workspace.sh initialization.
+// NewAppContext creates a new immutable AppContext with defaults matching workspace initialization.
 func NewAppContext(builder *AppContextBuilder) AppContext {
 	return AppContext{
 		values:     *builder.Clone(),
@@ -34,6 +35,7 @@ func NewAppContext(builder *AppContextBuilder) AppContext {
 		verbose:    builder.Config.Verbose.ValueOr(false),
 		configFile: builder.Config.Config.ValueOr(""),
 		workspace:  builder.Config.Workspace.ValueOr(""),
+		version:    builder.Config.Version.ValueOr(builder.Version),
 		commonArgs: builder.CommonArgs.ToList(),
 		buildArgs:  builder.BuildArgs.ToList(),
 		runArgs:    builder.RunArgs.ToList(),
@@ -53,6 +55,7 @@ func (ctx AppContext) Dryrun() bool       { return ctx.dryrun }
 func (ctx AppContext) Verbose() bool      { return ctx.verbose }
 func (ctx AppContext) ConfigFile() string { return ctx.configFile }
 func (ctx AppContext) Workspace() string  { return ctx.workspace }
+func (ctx AppContext) Version() string    { return ctx.version }
 
 // taken from the script runtime
 func (ctx AppContext) ScriptName() string { return ctx.values.ScriptName }
@@ -87,7 +90,6 @@ func (ctx AppContext) Dind() bool         { return ctx.values.Config.Dind }
 func (ctx AppContext) Dockerfile() string { return ctx.values.Config.Dockerfile }
 func (ctx AppContext) Image() string      { return ctx.values.Config.Image }
 func (ctx AppContext) Variant() string    { return ctx.values.Config.Variant }
-func (ctx AppContext) Version() string    { return ctx.values.Config.Version }
 
 // Runtime values
 func (ctx AppContext) ProjectName() string { return ctx.values.Config.ProjectName }
@@ -101,10 +103,10 @@ func (ctx AppContext) Port() string    { return ctx.values.Config.Port }
 func (ctx AppContext) EnvFile() string { return ctx.values.Config.EnvFile }
 
 // derived from all the context processing (IMMUTABLE SNAPSHOTS)
-func (ctx AppContext) CommonArgs() ilist.List[string] { return ctx.commonArgs }
-func (ctx AppContext) BuildArgs() ilist.List[string]  { return ctx.buildArgs }
-func (ctx AppContext) RunArgs() ilist.List[string]    { return ctx.runArgs }
-func (ctx AppContext) Cmds() ilist.List[string]       { return ctx.cmds }
+func (ctx AppContext) CommonArgs() ilist.List[ilist.List[string]] { return ctx.commonArgs }
+func (ctx AppContext) BuildArgs() ilist.List[ilist.List[string]]  { return ctx.buildArgs }
+func (ctx AppContext) RunArgs() ilist.List[ilist.List[string]]    { return ctx.runArgs }
+func (ctx AppContext) Cmds() ilist.List[ilist.List[string]]       { return ctx.cmds }
 
 // ToBuilder converts an immutable AppContext back into a mutable builder.
 func (ctx AppContext) ToBuilder() *AppContextBuilder {
@@ -156,6 +158,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Verbose:          %t\n", ctx.Verbose())
 	fmt.Fprintf(&str, "    ConfigFile:       %q\n", ctx.ConfigFile())
 	fmt.Fprintf(&str, "    Workspace:        %q\n", ctx.Workspace())
+	fmt.Fprintf(&str, "    Version:          %q\n", ctx.Version())
 
 	fmt.Fprintf(&str, "# Flags -------------------------\n")
 	fmt.Fprintf(&str, "    KeepAlive:        %t\n", ctx.KeepAlive())
@@ -168,7 +171,6 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Dockerfile:       %q\n", ctx.Dockerfile())
 	fmt.Fprintf(&str, "    Image:            %q\n", ctx.Image())
 	fmt.Fprintf(&str, "    Variant:          %q\n", ctx.Variant())
-	fmt.Fprintf(&str, "    Version:          %q\n", ctx.Version())
 
 	fmt.Fprintf(&str, "# Runtime values ----------------\n")
 	fmt.Fprintf(&str, "    ProjectName:      %q\n", ctx.ProjectName())

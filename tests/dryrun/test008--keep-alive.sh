@@ -15,7 +15,7 @@ fi
 
 export TIMEZONE="America/Toronto"
 
-ACTUAL=$(../../workspace.sh --verbose --dryrun --keep-alive --variant base -- sleep 1)
+ACTUAL=$(../../workspace --verbose --dryrun --keep-alive --variant base -- sleep 1)
 ACTUAL=$(printf "%s\n" "$ACTUAL" | tail -n 1)
 
 HERE="$CURRENT_PATH"
@@ -23,33 +23,33 @@ VERSION="$(cat ../../version.txt)"
 
 # Notice that there is not `-rm`
 EXPECT="\
-docker run \
--i \
---name dryrun \
--e 'HOST_UID=${HOST_UID}' \
--e 'HOST_GID=${HOST_GID}' \
--v ${HERE}:/home/coder/workspace \
--w /home/coder/workspace \
--p 10000:10000 \
--e 'WS_SETUPS_DIR=/opt/workspace/setups' \
--e 'WS_CONTAINER_NAME=dryrun' \
--e 'WS_DAEMON=false' \
--e 'WS_HOST_PORT=10000' \
--e 'WS_IMAGE_NAME=nawaman/workspace:base-${VERSION}' \
--e 'WS_RUNMODE=COMMAND' \
--e 'WS_VARIANT_TAG=base' \
--e 'WS_VERBOSE=true' \
--e 'WS_VERSION_TAG=${VERSION}' \
--e 'WS_WORKSPACE_PATH=${HERE}' \
--e 'WS_WORKSPACE_PORT=NEXT' \
--e 'WS_HAS_NOTEBOOK=false' \
--e 'WS_HAS_VSCODE=false' \
--e 'WS_HAS_DESKTOP=false' \
-'--pull=never' \
--e 'TZ=America/Toronto' \
-nawaman/workspace:base-${VERSION} \
-bash -lc 'sleep 1' \
-"
+docker \\
+    run \\
+    -i \\
+    --name dryrun \\
+    -e 'HOST_UID=${HOST_UID}' \\
+    -e 'HOST_GID=${HOST_GID}' \\
+    -v ${HERE}:/home/coder/workspace \\
+    -w /home/coder/workspace \\
+    -p 10000:10000 \\
+    -e 'WS_SETUPS_DIR=/opt/workspace/setups' \\
+    -e 'WS_CONTAINER_NAME=dryrun' \\
+    -e 'WS_DAEMON=false' \\
+    -e 'WS_HOST_PORT=10000' \\
+    -e 'WS_IMAGE_NAME=nawaman/workspace:base-${VERSION}' \\
+    -e 'WS_RUNMODE=COMMAND' \\
+    -e 'WS_VARIANT_TAG=base' \\
+    -e 'WS_VERBOSE=true' \\
+    -e 'WS_VERSION_TAG=${VERSION}' \\
+    -e 'WS_WORKSPACE_PATH=${HERE}' \\
+    -e 'WS_WORKSPACE_PORT=NEXT' \\
+    -e 'WS_HAS_NOTEBOOK=false' \\
+    -e 'WS_HAS_VSCODE=false' \\
+    -e 'WS_HAS_DESKTOP=false' \\
+    '--pull=never' \\
+    -e 'TZ=America/Toronto' \\
+    nawaman/workspace:base-${VERSION} \\
+    bash -lc 'sleep 1'"
 
 if diff -u <(echo "$EXPECT") <(echo "$ACTUAL"); then
   print_test_result "true" "$0" "1" "Keep-alive output matches expected"

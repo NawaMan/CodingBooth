@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/nawaman/workspace/src/pkg/docker"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // TestIntegration_pullHelloWorld demonstrates pulling the hello-world image.
@@ -34,7 +35,7 @@ func TestIntegration_PullHelloWorld(t *testing.T) {
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(flags, "pull", "hello-world:latest")
+	err := docker.Docker(flags, "pull", ilist.NewList(ilist.NewList("hello-world:latest")))
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -72,7 +73,7 @@ func TestIntegration_runHelloWorld(t *testing.T) {
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(flags, "run", "--rm", "hello-world:latest")
+	err := docker.Docker(flags, "run", ilist.NewList(ilist.NewList("--rm", "hello-world:latest")))
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -109,7 +110,7 @@ func TestIntegration_runAlpineEcho(t *testing.T) {
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(flags, "run", "--rm", "alpine:latest", "echo", "Hello from Alpine!")
+	err := docker.Docker(flags, "run", ilist.NewList(ilist.NewList("--rm", "alpine:latest", "echo", "Hello from Alpine!")))
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -146,12 +147,12 @@ func TestIntegration_runAlpineWithEnv(t *testing.T) {
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(flags, "run",
+	err := docker.Docker(flags, "run", ilist.NewList(ilist.NewList(
 		"--rm",
 		"-e", "MY_VAR=test value",
 		"alpine:latest",
 		"sh", "-c", "echo $MY_VAR",
-	)
+	)))
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -190,7 +191,7 @@ func TestIntegration_imageInspect(t *testing.T) {
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(flags, "image", "inspect", "hello-world:latest")
+	err := docker.Docker(flags, "image", ilist.NewList(ilist.NewList("inspect", "hello-world:latest")))
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -226,7 +227,7 @@ func TestIntegration_listContainers(t *testing.T) {
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(flags, "ps", "-a")
+	err := docker.Docker(flags, "ps", ilist.NewList(ilist.NewList("-a")))
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -268,7 +269,7 @@ func TestIntegration_networkOperations(t *testing.T) {
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Creating network...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(flags, "network", "create", networkName)
+	err := docker.Docker(flags, "network", ilist.NewList(ilist.NewList("create", networkName)))
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Create failed: %v", err)
@@ -277,7 +278,7 @@ func TestIntegration_networkOperations(t *testing.T) {
 	// Inspect network
 	fmt.Println("\nInspecting network...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(flags, "network", "inspect", networkName)
+	err = docker.Docker(flags, "network", ilist.NewList(ilist.NewList("inspect", networkName)))
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Inspect failed: %v", err)
@@ -286,7 +287,7 @@ func TestIntegration_networkOperations(t *testing.T) {
 	// Remove network
 	fmt.Println("\nRemoving network...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(flags, "network", "rm", networkName)
+	err = docker.Docker(flags, "network", ilist.NewList(ilist.NewList("rm", networkName)))
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Remove failed: %v", err)
@@ -322,7 +323,7 @@ func TestIntegration_complexCommand(t *testing.T) {
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(flags, "run",
+	err := docker.Docker(flags, "run", ilist.NewList(ilist.NewList(
 		"--rm",                     // Remove after exit
 		"--name", "test-container", // Container name
 		"-e", "ENV_VAR=value with spaces", // Environment variable
@@ -332,7 +333,7 @@ func TestIntegration_complexCommand(t *testing.T) {
 		"--network", "bridge", // Network
 		"alpine:latest",                         // Image
 		"sh", "-c", "echo 'Hello from Alpine!'", // Command
-	)
+	)))
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -391,12 +392,12 @@ func TestIntegration_interactiveShell(t *testing.T) {
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	// Use -it flags unconditionally - they'll be auto-filtered if no TTY
-	err := docker.Docker(flags, "run",
+	err := docker.Docker(flags, "run", ilist.NewList(ilist.NewList(
 		"-it",  // Interactive + TTY (auto-filtered if no TTY)
 		"--rm", // Remove after exit
 		"alpine:latest",
 		"sh", "-c", "echo 'TTY Detection: -it flags are automatically handled!'",
-	)
+	)))
 
 	fmt.Println("───────────────────────────────────────────────────────────")
 
@@ -453,7 +454,7 @@ CMD ["echo", "Hello from test image!"]
 	fmt.Println("───────────────────────────────────────────────────────────")
 	fmt.Println("Executing Docker command...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.DockerBuild(flags, "-t", "test-example:latest", "-f", dockerfilePath, tmpDir)
+	err := docker.DockerBuild(flags, ilist.NewList(ilist.NewList("-t", "test-example:latest", "-f", dockerfilePath, tmpDir)))
 	fmt.Println("───────────────────────────────────────────────────────────")
 
 	fmt.Println()
@@ -493,13 +494,13 @@ func TestIntegration_runDaemon(t *testing.T) {
 	// Start in daemon mode
 	fmt.Println("Starting container in daemon mode...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(flags, "run",
+	err := docker.Docker(flags, "run", ilist.NewList(ilist.NewList(
 		"-d",
 		"--name", containerName,
 		"--rm",
 		"alpine:latest",
 		"sleep", "30",
-	)
+	)))
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Run daemon failed: %v", err)
@@ -508,7 +509,7 @@ func TestIntegration_runDaemon(t *testing.T) {
 	// Stop the container
 	fmt.Println("\nStopping daemon container...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(flags, "stop", containerName)
+	err = docker.Docker(flags, "stop", ilist.NewList(ilist.NewList(containerName)))
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Stop failed: %v", err)
@@ -547,17 +548,17 @@ func TestIntegration_stopContainer(t *testing.T) {
 	// Cleanup potential leftover from previous failed runs
 	cleanupFlags := flags
 	cleanupFlags.Silent = true
-	docker.Docker(cleanupFlags, "rm", "-f", containerName)
+	docker.Docker(cleanupFlags, "rm", ilist.NewList(ilist.NewList("-f", containerName)))
 
 	// Start container
 	fmt.Println("Starting container...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err := docker.Docker(flags, "run",
+	err := docker.Docker(flags, "run", ilist.NewList(ilist.NewList(
 		"-d",
 		"--name", containerName,
 		"alpine:latest",
 		"sleep", "60",
-	)
+	)))
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Run failed: %v", err)
@@ -566,7 +567,7 @@ func TestIntegration_stopContainer(t *testing.T) {
 	// Stop container
 	fmt.Println("\nStopping container...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(flags, "stop", containerName)
+	err = docker.Docker(flags, "stop", ilist.NewList(ilist.NewList(containerName)))
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Stop failed: %v", err)
@@ -575,7 +576,7 @@ func TestIntegration_stopContainer(t *testing.T) {
 	// Remove container (cleanup)
 	fmt.Println("\nRemoving container...")
 	fmt.Println("───────────────────────────────────────────────────────────")
-	err = docker.Docker(flags, "rm", containerName)
+	err = docker.Docker(flags, "rm", ilist.NewList(ilist.NewList(containerName)))
 	fmt.Println("───────────────────────────────────────────────────────────")
 	if err != nil {
 		t.Fatalf("Remove failed: %v", err)

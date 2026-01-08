@@ -10,7 +10,10 @@ import (
 
 func runWorkspace(version string) {
 	context := wsinit.InitializeAppContext(version, wsinit.DefaultInitializeAppContextBoundary{})
-	fmt.Printf("%+v\n", context)
+
+	if context.Verbose() {
+		fmt.Printf("%+v\n", context)
+	}
 
 	runner := workspace.NewWorkspaceRunner(context)
 	err := runner.Run()
@@ -19,7 +22,5 @@ func runWorkspace(version string) {
 		os.Exit(1)
 		return
 	}
-
-	fmt.Println("✅ Workspace completed successfully!")
 	os.Exit(0)
 }

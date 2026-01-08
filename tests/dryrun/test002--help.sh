@@ -13,22 +13,22 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     CURRENT_PATH="$(pwd -W)"
 fi
 
-ACTUAL=$(../../workspace.sh --help | head)
+ACTUAL=$(../../workspace --help | head)
 
 HERE="$PWD"
 VERSION="$(cat ../../version.txt)"
 
 EXPECT="\
-workspace.sh — launch a Docker-based development workspace
+workspace — launch a Docker-based development workspace (version $VERSION)
 
 USAGE:
-  workspace.sh [options] [--] [command ...]
-  workspace.sh --help
+  workspace version                              (print the workspace version)
+  workspace help                                 (show this help and exit)
+  workspace run [options] [--] [command ...]     (run the workspace)
+  workspace [options] [--] [command ...]         (default action: run)
 
-COMMAND:
-  ws-version             Print the workspace.sh version.
-
-GENERAL:"
+BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and config file):
+  --workspace <path>     Host workspace path to mount at /home/coder/workspace"
 
 if diff -u <(echo "$EXPECT") <(echo "$ACTUAL"); then
   print_test_result "true" "$0" "1" "Help output matches expected"

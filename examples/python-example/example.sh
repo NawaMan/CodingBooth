@@ -1,6 +1,6 @@
 #!/bin/bash
 
-../../workspace.sh --variant base -- '
+../../workspace --variant base -- '
 python3 - <<PY
 import os, sys
 print("CWD in container:", os.getcwd())

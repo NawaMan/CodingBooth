@@ -1,9 +1,9 @@
 #!/bin/bash
 set -euo pipefail
 
-# Source workspace.sh to get the PrepareTtyArgs function
+# Source workspace to get the PrepareTtyArgs function
 export SKIP_MAIN=true
-source ../../workspace.sh
+source ../../workspace
 source ../common--source.sh
 
 # Test counter

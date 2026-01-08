@@ -18,4 +18,4 @@ if [[ "$SILENCE" == "false" ]]; then
     sleep 1
 fi
 
-../../workspace.sh --variant base "$@"
+../../workspace --variant base "$@"

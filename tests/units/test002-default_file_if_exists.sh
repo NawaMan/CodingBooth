@@ -1,10 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-# Source workspace.sh to get the default_file_if_exists function
+# Source workspace to get the default_file_if_exists function
 # Set SKIP_MAIN to prevent the main script from executing
 export SKIP_MAIN=true
-source ../../workspace.sh
+source ../../workspace
 source ../common--source.sh
 
 # Test counter

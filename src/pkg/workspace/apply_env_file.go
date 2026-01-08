@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // ApplyEnvFile applies environment file configuration and returns updated AppContext.
@@ -41,7 +42,7 @@ func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 			os.Exit(1)
 		}
 
-		builder.CommonArgs.Append("--env-file", containerEnvFile)
+		builder.CommonArgs.Append(ilist.NewList[string]("--env-file", containerEnvFile))
 		if ctx.Verbose() {
 			fmt.Printf("Using env-file: %s\n", containerEnvFile)
 		}

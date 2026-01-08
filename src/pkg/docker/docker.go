@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 type DockerFlags struct {
@@ -17,13 +19,62 @@ type DockerFlags struct {
 
 // Docker executes a docker command with the given subcommand and arguments.
 // If silent is true, suppresses all stdout/stderr from the docker process.
-func Docker(flags DockerFlags, subcommand string, args ...string) error {
-	cmdArgs := make([]string, 0, len(args)+2) // +2 for potential -i and -t flags
+func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[string]]) error {
+	// Preserve current behavior: print the command for dry-run or verbose,
+	// even if silent is true (matches "contract" of showing what would run).
+	if flags.Dryrun || flags.Verbose {
+		var printingArgs [][]string
+		printingArgs = append(printingArgs, []string{subcommand})
+
+		// For build commands, check for --progress
+		if subcommand == "build" {
+			hasProgress := false
+			args.Range(func(_ int, group ilist.List[string]) bool {
+				group.Range(func(_ int, arg string) bool {
+					if strings.HasPrefix(arg, "--progress") {
+						hasProgress = true
+						return false
+					}
+					return true
+				})
+				return !hasProgress
+			})
+			if !hasProgress {
+				printingArgs = append(printingArgs, []string{"--progress=auto"})
+			}
+		}
+
+		// - Always add -i (interactive, keeps stdin open)
+		// - Add -t only when we have a TTY (allocates a pseudo-TTY)
+		if subcommand == "run" {
+			runFlags := []string{"-i"}
+			if HasInteractiveTTY() {
+				runFlags = append(runFlags, "-t")
+			}
+			printingArgs = append(printingArgs, runFlags)
+		}
+
+		args.Range(func(_ int, group ilist.List[string]) bool {
+			// We filter TTY flags for printing just like we do for execution
+			filtered := filterTTYFlags(group.Slice())
+			if len(filtered) > 0 {
+				printingArgs = append(printingArgs, filtered)
+			}
+			return true
+		})
+
+		printCmd("docker", printingArgs...)
+	}
+
+	if flags.Dryrun {
+		return nil
+	}
+
+	cmdArgs := make([]string, 0, 64) // Pre-allocate some space
 	cmdArgs = append(cmdArgs, subcommand)
 
 	// - Always add -i (interactive, keeps stdin open)
 	// - Add -t only when we have a TTY (allocates a pseudo-TTY)
-	// - Filter out any user-provided TTY flags from args (we manage them above)
 	if subcommand == "run" {
 		cmdArgs = append(cmdArgs, "-i")
 		if HasInteractiveTTY() {
@@ -31,31 +82,28 @@ func Docker(flags DockerFlags, subcommand string, args ...string) error {
 		}
 	}
 
-	// For build commands, add --progress=auto
+	// For build commands, add --progress=auto if not present
 	if subcommand == "build" {
 		hasProgress := false
-		for _, arg := range args {
-			if strings.HasPrefix(arg, "--progress") {
-				hasProgress = true
-				break
-			}
-		}
+		args.Range(func(_ int, group ilist.List[string]) bool {
+			group.Range(func(_ int, arg string) bool {
+				if strings.HasPrefix(arg, "--progress") {
+					hasProgress = true
+					return false
+				}
+				return true
+			})
+			return !hasProgress
+		})
 		if !hasProgress {
 			cmdArgs = append(cmdArgs, "--progress=auto")
 		}
 	}
 
-	cmdArgs = append(cmdArgs, filterTTYFlags(args)...)
-
-	// Preserve current behavior: print the command for dry-run or verbose,
-	// even if silent is true (matches "contract" of showing what would run).
-	if flags.Dryrun || flags.Verbose {
-		PrintCmd("docker", cmdArgs...)
-	}
-
-	if flags.Dryrun {
-		return nil
-	}
+	args.Range(func(_ int, group ilist.List[string]) bool {
+		cmdArgs = append(cmdArgs, filterTTYFlags(group.Slice())...)
+		return true
+	})
 
 	cmd := exec.Command("docker", cmdArgs...)
 
@@ -73,6 +121,8 @@ func Docker(flags DockerFlags, subcommand string, args ...string) error {
 		}
 	}
 	if !hasTermSet {
+		// Only set TERM if we are running interactively or if explicitly requested?
+		// For now, keeping existing logic
 		env = append(env, "TERM=xterm-256color")
 	}
 

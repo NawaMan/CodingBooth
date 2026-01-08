@@ -7,6 +7,7 @@ import (
 
 	"github.com/nawaman/workspace/src/pkg/appctx"
 	"github.com/nawaman/workspace/src/pkg/docker"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // EnsureDockerImage ensures the Docker image is available and returns updated AppContext.
@@ -108,22 +109,35 @@ func buildLocalImage(ctx appctx.AppContext) {
 	}
 
 	// Build arguments
-	args := []string{
+	args := ilist.NewList[ilist.List[string]]()
+	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
 		"-f", ctx.Dockerfile(),
 		"-t", ctx.Image(),
+	)))
+	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
 		"--build-arg", fmt.Sprintf("WS_VARIANT_TAG=%s", ctx.Variant()),
+	)))
+	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
 		"--build-arg", fmt.Sprintf("WS_VERSION_TAG=%s", ctx.Version()),
+	)))
+	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
 		"--build-arg", fmt.Sprintf("WS_SETUPS_DIR=%s", ctx.SetupsDir()),
+	)))
+	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
 		"--build-arg", fmt.Sprintf("WS_HAS_NOTEBOOK=%t", ctx.HasNotebook()),
+	)))
+	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
 		"--build-arg", fmt.Sprintf("WS_HAS_VSCODE=%t", ctx.HasVscode()),
+	)))
+	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
 		"--build-arg", fmt.Sprintf("WS_HAS_DESKTOP=%t", ctx.HasDesktop()),
-	}
+	)))
 
 	// Add user's build args
-	args = append(args, ctx.BuildArgs().Slice()...)
+	args = args.ExtendByLists(ctx.BuildArgs())
 
 	// Add context path
-	args = append(args, ctx.Workspace())
+	args = args.ExtendByLists(ilist.NewList(ilist.NewList(ctx.Workspace())))
 
 	// Build the image
 	flags := docker.DockerFlags{
@@ -131,7 +145,7 @@ func buildLocalImage(ctx appctx.AppContext) {
 		Verbose: ctx.Verbose(),
 		Silent:  ctx.SilenceBuild(),
 	}
-	err := docker.DockerBuild(flags, args...)
+	err := docker.DockerBuild(flags, args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: failed to build image\n")
 		os.Exit(1)
@@ -156,7 +170,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 			Verbose: ctx.Verbose(),
 			Silent:  false,
 		}
-		err := docker.Docker(flags, "pull", imageName)
+		err := docker.Docker(flags, "pull", ilist.NewList(ilist.NewList(imageName)))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: failed to pull '%s'\n", imageName)
 			os.Exit(1)
@@ -172,7 +186,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 			Verbose: ctx.Verbose(),
 			Silent:  true,
 		}
-		err := docker.Docker(flags, "image", "inspect", "--format", "{{.Id}}", imageName)
+		err := docker.Docker(flags, "image", ilist.NewList(ilist.NewList("inspect", "--format", "{{.Id}}", imageName)))
 		if err != nil {
 			// Image not found locally, pull it
 			fmt.Fprintf(os.Stderr, "Info: pulling image '%s' (not found locally)...\n", imageName)
@@ -185,7 +199,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 				Verbose: ctx.Verbose(),
 				Silent:  false,
 			}
-			err = docker.Docker(flags, "pull", imageName)
+			err = docker.Docker(flags, "pull", ilist.NewList(ilist.NewList(imageName)))
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error: failed to pull '%s'\n", imageName)
 				os.Exit(1)
@@ -209,7 +223,7 @@ func validateImageExists(ctx appctx.AppContext) {
 		Verbose: ctx.Verbose(),
 		Silent:  true,
 	}
-	err := docker.Docker(flags, "image", "inspect", ctx.Image())
+	err := docker.Docker(flags, "image", ilist.NewList(ilist.NewList("inspect", ctx.Image())))
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: image '%s' not available locally.\n", ctx.Image())
 		fmt.Fprintln(os.Stderr, "       Use '--pull' if you want to force pulling it.")

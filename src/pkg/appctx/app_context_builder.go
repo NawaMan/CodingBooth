@@ -1,6 +1,8 @@
 package appctx
 
-import "github.com/nawaman/workspace/src/pkg/ilist"
+import (
+	"github.com/nawaman/workspace/src/pkg/ilist"
+)
 
 // AppContextBuilder is a mutable builder for constructing AppContext instances.
 type AppContextBuilder struct {
@@ -9,6 +11,7 @@ type AppContextBuilder struct {
 	PrebuildRepo string
 	WsVersion    string
 	SetupsDir    string
+	Version      string
 
 	// taken from the script runtime
 	ScriptName string
@@ -29,10 +32,10 @@ type AppContextBuilder struct {
 	ImageMode  string
 
 	// derived from all the context processing
-	CommonArgs *ilist.AppendableList[string]
-	BuildArgs  *ilist.AppendableList[string]
-	RunArgs    *ilist.AppendableList[string]
-	Cmds       *ilist.AppendableList[string]
+	CommonArgs *ilist.AppendableList[ilist.List[string]]
+	BuildArgs  *ilist.AppendableList[ilist.List[string]]
+	RunArgs    *ilist.AppendableList[ilist.List[string]]
+	Cmds       *ilist.AppendableList[ilist.List[string]]
 
 	// derived from port determination
 	PortGenerated bool
@@ -62,9 +65,9 @@ func (builder *AppContextBuilder) Clone() *AppContextBuilder {
 }
 
 // Clone the content of the appendable list.
-func cloneAppendableList(list *ilist.AppendableList[string]) *ilist.AppendableList[string] {
+func cloneAppendableList(list *ilist.AppendableList[ilist.List[string]]) *ilist.AppendableList[ilist.List[string]] {
 	if list == nil {
-		return ilist.NewAppendableList[string]()
+		return ilist.NewAppendableList[ilist.List[string]]()
 	}
 	return list.Clone()
 }

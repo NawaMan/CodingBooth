@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // WorkspaceRunner handles the "run" command for workspace operations.
@@ -20,7 +21,7 @@ func NewWorkspaceRunner(ctx appctx.AppContext) *WorkspaceRunner {
 
 // Run is the main entry point that prepares the context and executes the workspace.
 func (runner *WorkspaceRunner) Run() error {
-	// Prepare arguments and determine run mode (matching workspace.sh order)
+	// Prepare arguments and determine run mode (matching workspace order)
 	ctx := runner.ctx
 	ctx = ValidateVariant(ctx)
 	ctx = EnsureDockerImage(ctx)
@@ -78,8 +79,8 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 	builder.RunArgs = stripNetworkFlags(ctx.RunArgs())
 
 	// Add DinD network and DOCKER_HOST to COMMON_ARGS
-	builder.CommonArgs.Append("--network", dindNet)
-	builder.CommonArgs.Append("-e", fmt.Sprintf("DOCKER_HOST=tcp://%s:2375", dindName))
+	builder.CommonArgs.Append(ilist.NewList[string]("--network", dindNet))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("DOCKER_HOST=tcp://%s:2375", dindName)))
 
 	return builder.Build()
 }

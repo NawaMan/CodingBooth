@@ -18,12 +18,12 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 	workspacePort := ctx.Port()
 	upperPort := strings.ToUpper(workspacePort)
 	portGenerated := false
-	var hostPort string
+	var portNumber int
 
 	switch upperPort {
 	case "RANDOM":
 		// Generate random ports in increments of 1000 (10000, 11000, 12000, etc.)
-		hostPort, portGenerated = findRandomPort()
+		portNumber, portGenerated = findRandomPort()
 		if !portGenerated {
 			fmt.Fprintln(os.Stderr, "Error: unable to find a free RANDOM port above 10000.")
 			os.Exit(1)
@@ -31,7 +31,7 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 
 	case "NEXT":
 		// Find next available port starting from 10000 in increments of 1000
-		hostPort, portGenerated = findNextPort()
+		portNumber, portGenerated = findNextPort()
 		if !portGenerated {
 			fmt.Fprintln(os.Stderr, "Error: unable to find the NEXT free port above 10000.")
 			os.Exit(1)
@@ -48,43 +48,43 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 			fmt.Fprintf(os.Stderr, "Error: --port must be between 1 and 65535 (got '%s').\n", workspacePort)
 			os.Exit(1)
 		}
-		hostPort = workspacePort
+		portNumber = port
 		portGenerated = false
 	}
 
-	builder.Config.Port = hostPort
+	builder.PortNumber = portNumber
 	builder.PortGenerated = portGenerated
 
 	if (portGenerated || ctx.Verbose()) && ctx.Cmds().Length() == 0 {
-		printPortBanner(hostPort)
+		printPortBanner(portNumber)
 	}
 
 	return builder.Build()
 }
 
 // findRandomPort finds a random free port in increments of 1000.
-func findRandomPort() (string, bool) {
+func findRandomPort() (int, bool) {
 	numSlots := (65000-10000)/1000 + 1 // 56 slots
 
 	for i := 0; i < 200; i++ {
 		slot := rand.Intn(numSlots)
 		port := 10000 + (slot * 1000)
 		if isPortFree(port) {
-			return strconv.Itoa(port), true
+			return port, true
 		}
 	}
 
-	return "", false
+	return 0, false
 }
 
 // findNextPort finds the next free port starting from 10000 in increments of 1000.
-func findNextPort() (string, bool) {
+func findNextPort() (int, bool) {
 	for port := 10000; port <= 65535; port += 1000 {
 		if isPortFree(port) {
-			return strconv.Itoa(port), true
+			return port, true
 		}
 	}
-	return "", false
+	return 0, false
 }
 
 // isPortFree checks if a port is available.
@@ -101,13 +101,13 @@ func isPortFree(port int) bool {
 }
 
 // printPortBanner prints the port selection banner.
-func printPortBanner(port string) {
+func printPortBanner(portNumber int) {
 	fmt.Println()
 	fmt.Println("============================================================")
 	fmt.Println("🚀 WORKSPACE PORT SELECTED")
 	fmt.Println("============================================================")
-	fmt.Printf("🔌 Using host port: \033[1;32m%s\033[0m -> container: \033[1;34m10000\033[0m\n", port)
-	fmt.Printf("🌐 Open: http://localhost:%s\n", port)
+	fmt.Printf("🔌 Using host port: \033[1;32m%d\033[0m -> container: \033[1;34m10000\033[0m\n", portNumber)
+	fmt.Printf("🌐 Open: http://localhost:%d\n", portNumber)
 	fmt.Println("============================================================")
 	fmt.Println()
 }

@@ -16,9 +16,9 @@ func TestAppContext_RoundTrip(t *testing.T) {
 			Verbose: nillable.NewNillableBool(true),
 			Image:   "test-image",
 		},
-		CommonArgs: ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 	}
-	builder.CommonArgs.Append("param1")
+	builder.CommonArgs.Append(ilist.NewList[string]("param1"))
 
 	ctx := NewAppContext(builder)
 
@@ -33,7 +33,7 @@ func TestAppContext_RoundTrip(t *testing.T) {
 	}
 
 	got := ctx.CommonArgs().Slice()
-	if len(got) != 1 || got[0] != "param1" {
+	if len(got) != 1 || got[0].At(0) != "param1" {
 		t.Fatalf("Expected CommonArgs ['param1'], got %v", got)
 	}
 
@@ -43,27 +43,27 @@ func TestAppContext_RoundTrip(t *testing.T) {
 	}
 
 	got2 := builder2.CommonArgs.Slice()
-	if len(got2) != 1 || got2[0] != "param1" {
+	if len(got2) != 1 || got2[0].At(0) != "param1" {
 		t.Fatalf("Expected builder2 CommonArgs ['param1'], got %v", got2)
 	}
 
 	// Stronger: rebuild ctx2 and compare
 	ctx2 := NewAppContext(builder2)
-	if ctx2.CommonArgs().At(0) != "param1" {
+	if ctx2.CommonArgs().At(0).At(0) != "param1" {
 		t.Fatalf("Round-trip rebuild mismatch: %v", ctx2.CommonArgs().Slice())
 	}
 }
 
 func TestAppContext_Immutability(t *testing.T) {
 	builder := &AppContextBuilder{
-		CommonArgs: ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 	}
-	builder.CommonArgs.Append("initial")
+	builder.CommonArgs.Append(ilist.NewList[string]("initial"))
 
 	ctx := NewAppContext(builder)
 
 	// Modify original builder
-	builder.CommonArgs.Append("modified")
+	builder.CommonArgs.Append(ilist.NewList[string]("modified"))
 
 	// Check context is unchanged
 	if ctx.CommonArgs().Length() != 1 {
@@ -72,7 +72,7 @@ func TestAppContext_Immutability(t *testing.T) {
 
 	// Modify new builder from context
 	builder2 := ctx.ToBuilder()
-	builder2.CommonArgs.Append("modified2")
+	builder2.CommonArgs.Append(ilist.NewList[string]("modified2"))
 
 	if ctx.CommonArgs().Length() != 1 {
 		t.Errorf("Context should still have 1 element after builder2 mod, got %d", ctx.CommonArgs().Length())
@@ -86,6 +86,7 @@ func TestAppContext_ConfigValues(t *testing.T) {
 			Workspace:    nillable.NewNillableString("path"),
 			Dryrun:       nillable.NewNillableBool(true),
 			Verbose:      nillable.NewNillableBool(true),
+			Version:      nillable.NewNillableString("version"),
 			KeepAlive:    true,
 			SilenceBuild: true,
 			Daemon:       true,
@@ -94,7 +95,6 @@ func TestAppContext_ConfigValues(t *testing.T) {
 			Dockerfile:   "dockerfile",
 			Image:        "image",
 			Variant:      "variant",
-			Version:      "version",
 			ProjectName:  "project",
 			HostUID:      "uid",
 			HostGID:      "gid",
@@ -235,28 +235,28 @@ func TestAppContext_DerivedValues(t *testing.T) {
 
 func TestAppContext_Lists(t *testing.T) {
 	builder := &AppContextBuilder{
-		CommonArgs: ilist.NewAppendableList[string](),
-		BuildArgs:  ilist.NewAppendableList[string](),
-		RunArgs:    ilist.NewAppendableList[string](),
-		Cmds:       ilist.NewAppendableList[string](),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
 	}
-	builder.CommonArgs.Append("common")
-	builder.BuildArgs.Append("build")
-	builder.RunArgs.Append("run")
-	builder.Cmds.Append("cmd")
+	builder.CommonArgs.Append(ilist.NewList[string]("common"))
+	builder.BuildArgs.Append(ilist.NewList[string]("build"))
+	builder.RunArgs.Append(ilist.NewList[string]("run"))
+	builder.Cmds.Append(ilist.NewList[string]("cmd"))
 
 	ctx := NewAppContext(builder)
 
-	if ctx.CommonArgs().At(0) != "common" {
+	if ctx.CommonArgs().At(0).At(0) != "common" {
 		t.Error("CommonArgs mismatch")
 	}
-	if ctx.BuildArgs().At(0) != "build" {
+	if ctx.BuildArgs().At(0).At(0) != "build" {
 		t.Error("BuildArgs mismatch")
 	}
-	if ctx.RunArgs().At(0) != "run" {
+	if ctx.RunArgs().At(0).At(0) != "run" {
 		t.Error("RunArgs mismatch")
 	}
-	if ctx.Cmds().At(0) != "cmd" {
+	if ctx.Cmds().At(0).At(0) != "cmd" {
 		t.Error("Cmds mismatch")
 	}
 }
@@ -293,14 +293,14 @@ func TestAppContextBuilder_NilListsSafeguard(t *testing.T) {
 }
 
 func TestAppContext_ListSliceDetachment(t *testing.T) {
-	b := &AppContextBuilder{CommonArgs: ilist.NewAppendableList[string]()}
-	b.CommonArgs.Append("a")
+	b := &AppContextBuilder{CommonArgs: ilist.NewAppendableList[ilist.List[string]]()}
+	b.CommonArgs.Append(ilist.NewList[string]("a"))
 	ctx := NewAppContext(b)
 
 	s := ctx.CommonArgs().Slice()
-	s[0] = "mutated"
+	s[0] = ilist.NewList[string]("mutated")
 
-	if ctx.CommonArgs().At(0) != "a" {
+	if ctx.CommonArgs().At(0).At(0) != "a" {
 		t.Fatalf("Expected context to remain 'a', got %q", ctx.CommonArgs().At(0))
 	}
 }

@@ -1,6 +1,7 @@
 package nillable
 
 import (
+	"fmt"
 	"strconv"
 	"strings"
 )
@@ -54,4 +55,11 @@ func (thisBool *NillableBool) UnmarshalTOML(data interface{}) error {
 		return nil
 	}
 	return nil
+}
+
+func (thisBool NillableBool) String() string {
+	if thisBool.V == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("%t", *thisBool.V)
 }

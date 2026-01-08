@@ -1,4 +1,4 @@
-name: Release workspace.sh, wrapper and launcher
+name: Release workspace, wrapper and launcher
 
 on:
   workflow_dispatch:
@@ -32,7 +32,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Show version
-        run: echo "Publishing workspace.sh for version ${{ steps.get_version.outputs.version }}"
+        run: echo "Publishing workspace for version ${{ steps.get_version.outputs.version }}"
 
       # ---------------------------------------------------------
       # Cleanup old untagged releases
@@ -49,16 +49,16 @@ jobs:
       # ---------------------------------------------------------
       # Prepare artifacts
       # ---------------------------------------------------------
-      - name: Make workspace.sh executable
-        run: chmod +x workspace.sh
+      - name: Make workspace executable
+        run: chmod +x workspace
 
       - name: Make launcher and wrapper executable
         run: |
           chmod +x launcher/workspace
           chmod +x launcher/wrapper/wrapper.sh
 
-      - name: Generate SHA256 checksum for workspace.sh
-        run: sha256sum workspace.sh > workspace.sh.sha256
+      - name: Generate SHA256 checksum for workspace
+        run: sha256sum workspace > workspacea256
 
       - name: Check if pre-release
         id: check_prerelease
@@ -74,7 +74,7 @@ jobs:
           VERSION: ${{ steps.get_version.outputs.version }}
 
       # ---------------------------------------------------------
-      # Publish versioned release (pre-release: only workspace.sh)
+      # Publish versioned release (pre-release: only workspace)
       # ---------------------------------------------------------
       - name: Publish versioned pre-release
         if: steps.check_prerelease.outputs.is_prerelease == 'true'
@@ -85,8 +85,8 @@ jobs:
           body:     ${{ steps.get_version.outputs.version }}
           prerelease: true
           files: |
-            workspace.sh
-            workspace.sh.sha256
+            workspace
+            workspace.sha256
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -102,8 +102,8 @@ jobs:
           body:     ${{ steps.get_version.outputs.version }}
           prerelease: false
           files: |
-            workspace.sh
-            workspace.sh.sha256
+            workspace
+            workspace.sha256
             launcher/workspace
             launcher/wrapper/wrapper.sh
         env:
@@ -122,8 +122,8 @@ jobs:
           prerelease: false
           draft: false
           files: |
-            workspace.sh
-            workspace.sh.sha256
+            workspace
+            workspace.sha256
             launcher/workspace
             launcher/wrapper/wrapper.sh
         env:

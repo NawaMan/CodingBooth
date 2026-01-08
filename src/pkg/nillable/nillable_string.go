@@ -46,3 +46,10 @@ func (thisString *NillableString) UnmarshalTOML(data interface{}) error {
 	}
 	return nil
 }
+
+func (thisString NillableString) String() string {
+	if thisString.V == nil {
+		return "<nil>"
+	}
+	return *thisString.V
+}
