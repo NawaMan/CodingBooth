@@ -168,7 +168,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 		flags := docker.DockerFlags{
 			Dryrun:  ctx.Dryrun(),
 			Verbose: ctx.Verbose(),
-			Silent:  false,
+			Silent:  true,
 		}
 		err := docker.Docker(flags, "pull", ilist.NewList(ilist.NewList(imageName)))
 		if err != nil {
@@ -197,7 +197,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 			flags := docker.DockerFlags{
 				Dryrun:  ctx.Dryrun(),
 				Verbose: ctx.Verbose(),
-				Silent:  false,
+				Silent:  true,
 			}
 			err = docker.Docker(flags, "pull", ilist.NewList(ilist.NewList(imageName)))
 			if err != nil {
