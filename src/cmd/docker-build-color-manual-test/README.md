@@ -4,13 +4,13 @@ This manual test shows Docker's native colored build output when running directl
 
 ## Files
 
-- **[run-docker-build-color-manual-test.sh](file:///home/nawa/dev/git/WorkSpace/tests/go/run-docker-build-color-manual-test.sh)** - Shell script to run the integration test
+- **[run-docker-build-color-manual-test.sh](file:///home/nawa/dev/git/WorkSpace/tests/manual/run-docker-build-color-manual-test.sh)** - Shell script to run the integration test
 - **[main.go](file:///home/nawa/dev/git/WorkSpace/src/cmd/docker-build-color-manual-test/main.go)** - Go program that builds a Docker image
 
 ## Usage
 
 ```bash
-cd tests/go
+cd tests/manual
 ./run-docker-build-color-manual-test.sh
 ```
 

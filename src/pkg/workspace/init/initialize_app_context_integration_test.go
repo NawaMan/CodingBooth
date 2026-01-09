@@ -50,9 +50,15 @@ func TestInitializeAppContext_ScenarioC_DefaultConfigAndCliConfig_CliConfigWins(
 	}
 }
 
-// Scenario D — With CLI config but the file does not exist, use default value.
+// Scenario D — With CLI config but the file does not exist, should panic.
 func TestInitializeAppContext_ScenarioD_DefaultConfigAndCliConfig_CliConfigWins(t *testing.T) {
-	res := RunInitializeAppContext(t, TestInput{
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic when CLI-specified config file doesn't exist, but didn't panic")
+		}
+	}()
+
+	_ = RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{},
 		Args: []string{
 			"--config", "sub-folder-Cli/ws--config.toml",
@@ -62,25 +68,23 @@ func TestInitializeAppContext_ScenarioD_DefaultConfigAndCliConfig_CliConfigWins(
 			Content: `variant = "from-default-config"`,
 		}},
 	})
-
-	if got := res.Ctx.Variant(); got != "default" {
-		t.Fatalf("expected Variant %q (CLI workspace TOML), got %q", "default", got)
-	}
 }
 
-// Scenario E — With default config and CLI config but the CLI configfile does not exist, use default value (not default config).
+// Scenario E — With CLI config but the file does not exist, should panic.
 func TestInitializeAppContext_ScenarioE_DefaultConfigAndCliConfig_CliConfigWins(t *testing.T) {
-	res := RunInitializeAppContext(t, TestInput{
+	defer func() {
+		if r := recover(); r == nil {
+			t.Fatal("expected panic when CLI-specified config file doesn't exist, but didn't panic")
+		}
+	}()
+
+	_ = RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{},
 		Args: []string{
 			"--config", "sub-folder-Cli/ws--config.toml",
 		},
 		TomlFiles: []TomlFile{},
 	})
-
-	if got := res.Ctx.Variant(); got != "default" {
-		t.Fatalf("expected Variant %q (CLI workspace TOML), got %q", "default", got)
-	}
 }
 
 // Scenario D — With default and ENV config, the default config should win

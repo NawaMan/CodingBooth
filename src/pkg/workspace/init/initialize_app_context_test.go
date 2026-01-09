@@ -120,9 +120,13 @@ func TestReadVerboseDryrunConfigFileAndWorkspace(t *testing.T) {
 	if !context.Config.Dryrun.ValueOr(false) {
 		t.Error("Expected Dryrun to be true")
 	}
-	if context.Config.Config.ValueOr("") != "myconfig.toml" {
-		t.Errorf("Expected Config to be 'myconfig.toml', got %q", context.Config.Config.ValueOr(""))
+
+	// Config path should be resolved to absolute path
+	expectedConfigPath, _ := filepath.Abs("myconfig.toml")
+	if context.Config.Config.ValueOr("") != expectedConfigPath {
+		t.Errorf("Expected Config to be %q, got %q", expectedConfigPath, context.Config.Config.ValueOr(""))
 	}
+
 	if context.Config.Workspace.ValueOr("") != "/my/ws" {
 		t.Errorf("Expected Workspace to be '/my/ws', got %q", context.Config.Workspace.ValueOr(""))
 	}

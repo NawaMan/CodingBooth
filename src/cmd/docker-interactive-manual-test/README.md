@@ -5,7 +5,7 @@ Manual test demonstrating Docker's TTY detection and interactive shell support.
 ## Usage
 
 ```bash
-cd tests/go
+cd tests/manual
 ./run-docker-interactive-manual-test.sh
 ```
 

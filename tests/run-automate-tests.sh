@@ -16,25 +16,14 @@ echo "Running All Test Suites"
 echo "========================================"
 echo ""
 
-# Run units tests
+# Run unit tests
 echo "----------------------------------------"
-echo "Running Units Tests"
-echo "----------------------------------------"
-total_suites=$((total_suites + 1))
-if ! (cd "$SCRIPT_DIR/units" && ./run-all-tests.sh); then
-    failed=1
-    failed_suites+=("units")
-fi
-echo ""
-
-# Run Go tests
-echo "----------------------------------------"
-echo "Running Go Tests"
+echo "Running Unit Tests"
 echo "----------------------------------------"
 total_suites=$((total_suites + 1))
-if ! (cd "$SCRIPT_DIR/go" && ./run-all-go-tests.sh); then
+if ! (cd "$SCRIPT_DIR/unit" && ./run-all-go-tests.sh); then
     failed=1
-    failed_suites+=("go")
+    failed_suites+=("unit")
 fi
 echo ""
 
