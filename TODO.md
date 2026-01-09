@@ -22,6 +22,7 @@ A list of upcoming ideas, improvements, and future goals for the workspace launc
 - [ ] Install jpterm - for all variants. https://github.com/davidbrochart/jpterm
 - [ ] Install yazi CLI file browser - for all variants. https://lindevs.com/install-yazi-on-ubuntu
 - [ ] Change to use JJava instead of IJava. https://github.com/dflib/jjava
+- [ ] Add symbolic link to go install directory.
 - 
 
 ---

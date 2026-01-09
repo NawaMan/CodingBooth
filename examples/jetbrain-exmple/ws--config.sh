@@ -1,2 +1,0 @@
-VARIANT=desktop-kde
-WORKSPACE_PORT=NEXT

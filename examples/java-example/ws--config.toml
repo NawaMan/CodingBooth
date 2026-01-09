@@ -1,0 +1,2 @@
+variant = "desktop-xfce"
+run-args = "-e;GEOMETRY=1920x1080"

@@ -1,0 +1,2 @@
+variant = "desktop"
+run-args="-p;8080:8080"

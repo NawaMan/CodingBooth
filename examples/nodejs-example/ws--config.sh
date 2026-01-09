@@ -1,4 +1,0 @@
-VARIANT=desktop-xfce
-WORKSPACE_PORT=NEXT
-
-ARGS+=("-p" "3000:3000")
