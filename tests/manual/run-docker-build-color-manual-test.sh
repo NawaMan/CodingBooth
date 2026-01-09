@@ -19,4 +19,4 @@ echo "Press Enter to start..."
 read
 
 cd "$SCRIPT_DIR"
-go run ./src/cmd/docker-build-color-manual-test/main.go
+go run ./cli/src/cmd/docker-build-color-manual-test/main.go

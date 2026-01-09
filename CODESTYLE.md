@@ -92,7 +92,7 @@ func (thisList List[TYPE]) Length() int
 ## Package Structure
 
 ```
-src/pkg/packagename/
+cli/src/pkg/packagename/
 ├── type_name.go              # One type per file
 ├── type_name_test.go         # Tests for that type
 ├── api_test.go               # API-level tests

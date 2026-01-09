@@ -4,7 +4,7 @@ set -euo pipefail
 
 # Build configuration
 APP_NAME="workspace"
-SRC_DIR="./src/cmd"
+SRC_DIR="./cli/src/cmd"
 OUTPUT_DIR="./bin"
 VERSION_FILE="version.txt"
 

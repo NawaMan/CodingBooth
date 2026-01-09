@@ -111,7 +111,7 @@ run_example() {
     echo
     
     cd "$SCRIPT_DIR"
-    if go test -v ./src/pkg/docker/... -run "^${example_name}$" 2>&1 2>&1; then
+    if go test -v ./cli/src/pkg/docker/... -run "^${example_name}$" 2>&1 2>&1; then
         echo
         echo -e "${GREEN}✅ Example completed successfully${NC}"
         return 0
