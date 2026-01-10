@@ -1,4 +1,4 @@
-name: Release workspace, wrapper and launcher
+name: Release workspace and ws
 
 on:
   workflow_dispatch:
