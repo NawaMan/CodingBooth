@@ -29,7 +29,7 @@ RUN set -euo pipefail         \
   jq                      \
   less                    \
   locales                 \
-  md                      \
+  mc                      \
   nano                    \
   ranger                  \
   sudo                    \
@@ -144,20 +144,94 @@ case "$-" in
   *) return ;;
 esac
 
+JPERM_INSTALLED=false
+function nbook() {
+  if [ "$JPERM_INSTALLED" = false ]; then
+
+    echo "First run: Installing jpterm -- this can take a while ..."
+
+    LOG_FILE="/var/setup.log"
+    sudo mkdir -p /var
+    sudo touch /var/setup.log
+    sudo chmod 777 /var/setup.log
+
+    run_quiet() {
+      "$@" >>"$LOG_FILE" 2>&1
+      local status=$?
+
+      if [ $status -ne 0 ]; then
+        echo "❌ ERROR: command failed: $*" >&2
+        echo "----- LOG OUTPUT ($LOG_FILE) -----" >&2
+        cat "$LOG_FILE" >&2 || echo "(log file not found)" >&2
+        echo "---------------------------------" >&2
+        on_error "$*" "$status"
+        exit $status
+      fi
+    }
+
+    on_error() {
+      local cmd="$1"
+      local code="$2"
+
+      # --- your error hook here ---
+      # Examples:
+      # logger -t setup "Command failed ($code): $cmd"
+      # mail -s "Setup failed" admin@example.com < "$LOG_FILE"
+      # curl -X POST https://hooks.slack.com/... -d "Setup failed"
+
+      echo "Hook: $cmd failed with exit code $code" >>"$LOG_FILE"
+    }
+
+    # export PATH="$HOME/.local/bin:$PATH"
+
+
+    run_quiet python3 -m pip install pipx
+    run_quiet pipx ensurepath
+
+    run_quiet pipx install jpterm
+    run_quiet python3 -m pip install --no-cache-dir jupyter_client bash_kernel
+    run_quiet python3 -m bash_kernel.install
+
+    JPERM_INSTALLED=true
+  fi
+
+  echo "Opening nbook..."
+  echo "After you quit jpterm, it can stuck in the background, you may have to do Ctrl+C."
+  jpterm "$@"
+}
+
 # Only once per login session
 if [ -z "${TIP_SHOWN:-}" ]; then
   export TIP_SHOWN=1
-  echo "Tip: type 'editor'   to open the terminal text editor."
-  echo "Tip: type 'explorer' to open the terminal file manager."
-  echo "Tip: type 'gitview'  to open the terminal git viewer."
+  echo "Welcome to the CodingBooth Workspace!"
+  echo ""
+  echo "Tip: use 'editor'   or 'tilde' to open the terminal text editor."
+  echo "Tip: use 'explorer' or 'mc'    to open the terminal file manager."
+  echo "Tip: use 'nbook'               to open the terminal nbook."
 fi
 EOF
 
 RUN echo "set -g mouse on" >> /etc/tmux.conf
 
+ARG WS_PY_VERSION=3.12
+ARG WS_SETUPS_DIR=/opt/workspace/setups
+
 
 # Always start as root so workspace-user-setup can realign ids
 USER root
+
+RUN "$WS_SETUPS_DIR/python--setup.sh" "${WS_PY_VERSION}" 
+
+
+# ---- Create startup file: to be executed ----
+RUN cat >"/usr/share/startup.d/100-ws--startup.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+git config --global alias.lg "log --oneline --graph --decorate --all"
+
+EOF
+RUN chmod 755 "/usr/share/startup.d/100-ws--startup.sh"
 
 # Workdir
 WORKDIR /home/coder/workspace
