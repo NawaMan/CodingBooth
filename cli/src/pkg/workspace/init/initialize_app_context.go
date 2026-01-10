@@ -101,14 +101,14 @@ func getProjectName(workspacePath string) string {
 	// Get the base name of the path
 	baseName := filepath.Base(workspacePath)
 
-	// Sanitize: replace non-alphanumeric characters with underscores
-	// This matches the workspace project_name function behavior
+	// Sanitize: replace non-alphanumeric characters with hyphens (kebab-case)
+	// This creates Docker-friendly container names
 	var result strings.Builder
 	for _, ch := range baseName {
 		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') {
 			result.WriteRune(ch)
 		} else {
-			result.WriteRune('_')
+			result.WriteRune('-')
 		}
 	}
 
