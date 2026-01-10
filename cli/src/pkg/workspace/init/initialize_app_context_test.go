@@ -18,7 +18,7 @@ func TestGetProjectName(t *testing.T) {
 		if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') {
 			result.WriteRune(ch)
 		} else {
-			result.WriteRune('_')
+			result.WriteRune('-')
 		}
 	}
 	cwdSanitized := result.String()
@@ -32,17 +32,17 @@ func TestGetProjectName(t *testing.T) {
 		expected string
 	}{
 		{"Simple", "/path/to/myproject", "myproject"},
-		{"WithSpaces", "/path/to/my project", "my_project"},
-		{"WithSpecialChars", "/path/to/my-project@v1", "my_project_v1"},
+		{"WithSpaces", "/path/to/my project", "my-project"},
+		{"WithSpecialChars", "/path/to/my-project@v1", "my-project-v1"},
 		{"Empty", "", cwdSanitized},
-		{"Root", "/", "_"}, // Base returns / or similar, sanitize replaces non-alnum
+		{"Root", "/", "-"}, // Base returns / or similar, sanitize replaces non-alnum
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getProjectName(tt.path)
 			// Special handling for Root case which might vary by OS, but testing logic mainly
-			if tt.name == "Root" && got != "_" && got != "workspace" {
+			if tt.name == "Root" && got != "-" && got != "workspace" {
 				// Accept reasonable fallbacks for root
 			} else if got != tt.expected {
 				t.Errorf("getProjectName(%q) = %q, want %q", tt.path, got, tt.expected)
@@ -220,7 +220,7 @@ func TestGetProjectName_ResolvesRelativePaths(t *testing.T) {
 			if (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9') {
 				result.WriteRune(ch)
 			} else {
-				result.WriteRune('_')
+				result.WriteRune('-')
 			}
 		}
 		if result.String() == "" {
