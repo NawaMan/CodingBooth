@@ -22,12 +22,14 @@ RUN set -euo pipefail         \
   curl                    \
   debian-archive-keyring  \
   direnv                  \
+  file                    \
   gettext-base            \
   git                     \
   gnupg                   \
   jq                      \
   less                    \
   locales                 \
+  md                      \
   nano                    \
   ranger                  \
   sudo                    \
@@ -35,6 +37,7 @@ RUN set -euo pipefail         \
   tig                     \
   tilde                   \
   tini                    \
+  tmux                    \
   tree                    \
   unzip                   \
   wget                    \
@@ -124,6 +127,34 @@ ENV DONT_PROMPT_WSL_INSTALL=1
 
 # Entry that aligns coder’s uid/gid to host, then drops privileges
 COPY --chmod=0755 ./setups/ /opt/workspace/setups/
+
+# Set common tools aliases
+ENV EDITOR=tilde
+ENV EXPLORER=mc
+ENV GITVIEW=tig
+RUN ln -s /usr/bin/tilde /usr/local/bin/editor
+RUN ln -s /usr/bin/mc    /usr/local/bin/explorer
+RUN ln -s /usr/bin/tig   /usr/local/bin/gitview
+
+RUN tee "/etc/profile.d/100-ws--profile.sh" >/dev/null <<'EOF'
+# Show a one-time-per-login tip about file-manager (Bash/sh-compatible)
+# Only for interactive shells
+case "$-" in
+  *i*) ;;
+  *) return ;;
+esac
+
+# Only once per login session
+if [ -z "${TIP_SHOWN:-}" ]; then
+  export TIP_SHOWN=1
+  echo "Tip: type 'editor'   to open the terminal text editor."
+  echo "Tip: type 'explorer' to open the terminal file manager."
+  echo "Tip: type 'gitview'  to open the terminal git viewer."
+fi
+EOF
+
+RUN echo "set -g mouse on" >> /etc/tmux.conf
+
 
 # Always start as root so workspace-user-setup can realign ids
 USER root
