@@ -134,6 +134,38 @@ function hash_sha256() {
     fi
 }
 
+# Detect platform (OS-ARCH format)
+function detect_platform() {
+    local os arch
+    
+    # Detect OS
+    case "$(uname -s)" in
+        Linux*)     os="linux" ;;
+        Darwin*)    os="darwin" ;;
+        MINGW*|MSYS*|CYGWIN*) os="windows" ;;
+        *)          echo "Error: Unsupported OS: $(uname -s)" >&2; return 1 ;;
+    esac
+    
+    # Detect architecture
+    case "$(uname -m)" in
+        x86_64|amd64)   arch="amd64" ;;
+        aarch64|arm64)  arch="arm64" ;;
+        *)              echo "Error: Unsupported architecture: $(uname -m)" >&2; return 1 ;;
+    esac
+    
+    echo "${os}-${arch}"
+}
+
+# Get binary name for platform (adds .exe for Windows)
+function get_binary_name() {
+    local platform="$1"
+    if [[ "$platform" == windows-* ]]; then
+        echo "workspace-${platform}.exe"
+    else
+        echo "workspace-${platform}"
+    fi
+}
+
 function UninstallWorkspace() {
     local tools_dir=".workspace/tools"
     local dest="$tools_dir/workspace"
@@ -156,13 +188,27 @@ function DownloadWorkspace() {
     local sha_file="$tools_dir/workspace.sha256"
     local meta_file="$tools_dir/workspace.meta"
 
+    # Detect platform
+    local platform binary_name
+    if ! platform=$(detect_platform); then
+        echo "Error: Failed to detect platform" >&2
+        return 1
+    fi
+    binary_name=$(get_binary_name "$platform")
+
     tmpfile=$(mktemp "/tmp/workspace.XXXXXX")
     tmpsha256=$(mktemp "/tmp/workspace.sha256.XXXXXX")
 
     REPO_URL="https://github.com/NawaMan/WorkSpace"
     DWLD_URL="${REPO_URL}/releases/download"
-    TOOL_URL="${DWLD_URL}/${WS_VERSION}/workspace"
-    SHA256_URL="${DWLD_URL}/${WS_VERSION}/workspace.sha256"
+    TOOL_URL="${DWLD_URL}/${WS_VERSION}/${binary_name}"
+    SHA256_URL="${DWLD_URL}/${WS_VERSION}/${binary_name}.sha256"
+
+    if [[ "$VERBOSE" == "true" ]]; then
+        echo "Downloading workspace for platform: $platform"
+        echo "Binary: $binary_name"
+        echo "URL: $TOOL_URL"
+    fi
 
     if ! curl -fsSLo "$tmpfile" "$TOOL_URL"; then
         echo "Error: Failed to download workspace from ${TOOL_URL}" >&2
@@ -205,6 +251,8 @@ function DownloadWorkspace() {
 
     {
         echo "version=${actual_version}"
+        echo "platform=${platform}"
+        echo "binary=${binary_name}"
         echo "url=${TOOL_URL}"
         echo "sha256=${actual_sha256}"
         echo "integrity=official"

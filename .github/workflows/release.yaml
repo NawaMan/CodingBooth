@@ -16,6 +16,11 @@ jobs:
       # ---------------------------------------------------------
       - name: Check out repository
         uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.1'
 
       # ---------------------------------------------------------
       # Read version.txt → output "version"
@@ -49,16 +54,19 @@ jobs:
       # ---------------------------------------------------------
       # Prepare artifacts
       # ---------------------------------------------------------
-      - name: Make workspace executable
-        run: chmod +x workspace
+      - name: Build Go binaries for all platforms
+        run: ./go-build.sh
 
-      - name: Make launcher and wrapper executable
+      - name: Make wrapper executable
+        run: chmod +x wrapper/ws
+
+      - name: Generate SHA256 checksums for all binaries
         run: |
-          chmod +x launcher/workspace
-          chmod +x launcher/wrapper/wrapper.sh
-
-      - name: Generate SHA256 checksum for workspace
-        run: sha256sum workspace > workspacea256
+          cd bin
+          for binary in workspace-*; do
+            sha256sum "$binary" > "${binary}.sha256"
+          done
+          cd ..
 
       - name: Check if pre-release
         id: check_prerelease
@@ -85,8 +93,19 @@ jobs:
           body:     ${{ steps.get_version.outputs.version }}
           prerelease: true
           files: |
-            workspace
-            workspace.sha256
+            bin/workspace-linux-amd64
+            bin/workspace-linux-amd64.sha256
+            bin/workspace-linux-arm64
+            bin/workspace-linux-arm64.sha256
+            bin/workspace-darwin-amd64
+            bin/workspace-darwin-amd64.sha256
+            bin/workspace-darwin-arm64
+            bin/workspace-darwin-arm64.sha256
+            bin/workspace-windows-amd64.exe
+            bin/workspace-windows-amd64.exe.sha256
+            bin/workspace-windows-arm64.exe
+            bin/workspace-windows-arm64.exe.sha256
+            wrapper/ws
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -102,10 +121,19 @@ jobs:
           body:     ${{ steps.get_version.outputs.version }}
           prerelease: false
           files: |
-            workspace
-            workspace.sha256
-            launcher/workspace
-            launcher/wrapper/wrapper.sh
+            bin/workspace-linux-amd64
+            bin/workspace-linux-amd64.sha256
+            bin/workspace-linux-arm64
+            bin/workspace-linux-arm64.sha256
+            bin/workspace-darwin-amd64
+            bin/workspace-darwin-amd64.sha256
+            bin/workspace-darwin-arm64
+            bin/workspace-darwin-arm64.sha256
+            bin/workspace-windows-amd64.exe
+            bin/workspace-windows-amd64.exe.sha256
+            bin/workspace-windows-arm64.exe
+            bin/workspace-windows-arm64.exe.sha256
+            wrapper/ws
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -122,9 +150,18 @@ jobs:
           prerelease: false
           draft: false
           files: |
-            workspace
-            workspace.sha256
-            launcher/workspace
-            launcher/wrapper/wrapper.sh
+            bin/workspace-linux-amd64
+            bin/workspace-linux-amd64.sha256
+            bin/workspace-linux-arm64
+            bin/workspace-linux-arm64.sha256
+            bin/workspace-darwin-amd64
+            bin/workspace-darwin-amd64.sha256
+            bin/workspace-darwin-arm64
+            bin/workspace-darwin-arm64.sha256
+            bin/workspace-windows-amd64.exe
+            bin/workspace-windows-amd64.exe.sha256
+            bin/workspace-windows-arm64.exe
+            bin/workspace-windows-arm64.exe.sha256
+            wrapper/ws
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
