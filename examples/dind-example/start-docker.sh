@@ -2,7 +2,7 @@
 set -euo pipefail
 
 
-SERVER_PORT=8080
+SERVER_PORT=${SERVER_PORT:-8080}
 
 SOCAT_PID="$(/usr/local/bin/dind-open-port "$SERVER_PORT")"
 cleanup() { /usr/local/bin/dind-open-port "$SOCAT_PID" ; }

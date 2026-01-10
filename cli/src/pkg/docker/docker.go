@@ -2,6 +2,7 @@
 package docker
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"os"
@@ -149,6 +150,137 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 	}
 
 	return nil
+}
+
+// DockerOutput executes a docker command and returns its stdout output.
+// This is useful for commands like "docker ps" where we need to check the output.
+// The function respects Dryrun and Verbose flags for printing, but always captures output when not in dryrun mode.
+func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.List[string]]) (string, error) {
+	// Print command if dryrun or verbose (same as Docker function)
+	if flags.Dryrun || flags.Verbose {
+		var printingArgs [][]string
+		printingArgs = append(printingArgs, []string{subcommand})
+
+		// For build commands, check for --progress
+		if subcommand == "build" {
+			hasProgress := false
+			args.Range(func(_ int, group ilist.List[string]) bool {
+				group.Range(func(_ int, arg string) bool {
+					if strings.HasPrefix(arg, "--progress") {
+						hasProgress = true
+						return false
+					}
+					return true
+				})
+				return !hasProgress
+			})
+			if !hasProgress {
+				printingArgs = append(printingArgs, []string{"--progress=auto"})
+			}
+		}
+
+		// - Always add -i (interactive, keeps stdin open)
+		// - Add -t only when we have a TTY (allocates a pseudo-TTY)
+		if subcommand == "run" {
+			runFlags := []string{"-i"}
+			if HasInteractiveTTY() {
+				runFlags = append(runFlags, "-t")
+			}
+			printingArgs = append(printingArgs, runFlags)
+		}
+
+		args.Range(func(_ int, group ilist.List[string]) bool {
+			filtered := filterTTYFlags(group.Slice())
+			if len(filtered) > 0 {
+				printingArgs = append(printingArgs, filtered)
+			}
+			return true
+		})
+
+		printCmd("docker", printingArgs...)
+	}
+
+	if flags.Dryrun {
+		return "", nil
+	}
+
+	cmdArgs := make([]string, 0, 64)
+	cmdArgs = append(cmdArgs, subcommand)
+
+	// - Always add -i (interactive, keeps stdin open)
+	// - Add -t only when we have a TTY (allocates a pseudo-TTY)
+	if subcommand == "run" {
+		cmdArgs = append(cmdArgs, "-i")
+		if HasInteractiveTTY() {
+			cmdArgs = append(cmdArgs, "-t")
+		}
+	}
+
+	// For build commands, add --progress=auto if not present
+	if subcommand == "build" {
+		hasProgress := false
+		args.Range(func(_ int, group ilist.List[string]) bool {
+			group.Range(func(_ int, arg string) bool {
+				if strings.HasPrefix(arg, "--progress") {
+					hasProgress = true
+					return false
+				}
+				return true
+			})
+			return !hasProgress
+		})
+		if !hasProgress {
+			cmdArgs = append(cmdArgs, "--progress=auto")
+		}
+	}
+
+	args.Range(func(_ int, group ilist.List[string]) bool {
+		cmdArgs = append(cmdArgs, filterTTYFlags(group.Slice())...)
+		return true
+	})
+
+	cmd := exec.Command("docker", cmdArgs...)
+
+	// Set environment for Windows path compatibility and color output
+	env := append(os.Environ(), "MSYS_NO_PATHCONV=1")
+	env = append(env, "FORCE_COLOR=1")
+	env = append(env, "BUILDKIT_COLORS=run=green:warning=yellow:error=red:cancel=cyan")
+
+	// Ensure TERM is set for color support (if not already set)
+	hasTermSet := false
+	for _, e := range env {
+		if strings.HasPrefix(e, "TERM=") {
+			hasTermSet = true
+			break
+		}
+	}
+	if !hasTermSet {
+		env = append(env, "TERM=xterm-256color")
+	}
+
+	cmd.Env = env
+	cmd.Stdin = os.Stdin
+
+	// Capture stdout to buffer
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+
+	// Handle stderr based on Silent flag
+	if flags.Silent {
+		cmd.Stderr = io.Discard
+	} else {
+		cmd.Stderr = os.Stderr
+	}
+
+	// Run and propagate exit status
+	if err := cmd.Run(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return stdout.String(), fmt.Errorf("docker %s failed with exit code %d", subcommand, exitErr.ExitCode())
+		}
+		return stdout.String(), fmt.Errorf("docker %s failed: %w", subcommand, err)
+	}
+
+	return stdout.String(), nil
 }
 
 // filterTTYFlags removes user-provided TTY-related flags from args.

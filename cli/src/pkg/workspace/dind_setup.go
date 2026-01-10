@@ -19,9 +19,9 @@ func createDindNetwork(ctx appctx.AppContext, networkName string) bool {
 		Verbose: ctx.Verbose(),
 		Silent:  true,
 	}
-	err := docker.Docker(flags, "network", ilist.NewList(ilist.NewList("inspect", networkName)))
-	if err == nil {
-		// Network already exists
+	output, err := docker.DockerOutput(flags, "network", ilist.NewList(ilist.NewList("inspect", networkName)))
+	if err == nil && strings.TrimSpace(output) != "" {
+		// Network already exists (inspect returned data)
 		return false
 	}
 
@@ -48,8 +48,9 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string) {
 		Verbose: ctx.Verbose(),
 		Silent:  true,
 	}
-	err := docker.Docker(flags, "ps", ilist.NewList(ilist.NewList("--filter", fmt.Sprintf("name=^/%s$", dindName), "--format", "{{.Names}}")))
-	if err == nil {
+	output, err := docker.DockerOutput(flags, "ps", ilist.NewList(ilist.NewList("--filter", fmt.Sprintf("name=^/%s$", dindName), "--format", "{{.Names}}")))
+
+	if err == nil && strings.TrimSpace(output) == dindName {
 		// Container is running
 		if ctx.Verbose() {
 			fmt.Printf("DinD sidecar already running: %s\n", dindName)
@@ -120,7 +121,7 @@ func waitForDindReady(ctx appctx.AppContext, dindName, dindNet string) {
 			Verbose: ctx.Verbose(),
 			Silent:  true,
 		}
-		err := docker.Docker(flags, "run", ilist.NewList(ilist.NewList("--rm", "--network", dindNet, "docker:cli",
+		_, err := docker.DockerOutput(flags, "run", ilist.NewList(ilist.NewList("--rm", "--network", dindNet, "docker:cli",
 			"-H", fmt.Sprintf("tcp://%s:2375", dindName), "version")))
 
 		if err == nil {
