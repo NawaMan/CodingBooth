@@ -22,7 +22,7 @@ echo "========================================"
 echo "Running tests matching: TestIntegration_.*"
 echo ""
 
-cd "$WORKSPACE_ROOT"
+cd "$WORKSPACE_ROOT/cli"
 
 echo "----------------------------------------"
 echo "Running: go test -v -run \"TestIntegration_.*\" ./..."

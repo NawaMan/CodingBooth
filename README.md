@@ -310,6 +310,33 @@ container
 > WorkSpace uses the Docker CLI (`docker` command) rather than Docker client libraries.  
 > This keeps the codebase simple, portable, and easier to maintain while ensuring compatibility across platforms.
 
+### Home Seed Directory
+
+WorkSpace supports a **copy-on-write pattern** for mounting host files (like credentials) into the container.  
+Instead of mounting directly to the user's home, you can mount read-only to `/tmp/ws-home-seed/` — files are automatically copied to the user's home at container startup.
+
+**How it works:**
+1. Mount host files read-only to `/tmp/ws-home-seed/` (preserving the relative path structure)
+2. At container startup, files are copied to `/home/coder/` without overwriting existing files
+3. The user gets a writable copy; the host's original files stay protected
+
+**Example (`ws--config.toml`):**
+```toml
+run-args = [
+    "-v", "~/.config/gcloud:/tmp/ws-home-seed/.config/gcloud:ro",
+    "-v", "~/.config/github-copilot:/tmp/ws-home-seed/.config/github-copilot:ro"
+]
+```
+
+**Use cases:**
+- **Credentials** — gcloud, GitHub Copilot, SSH keys (apps may refresh tokens)
+- **IDE settings** — VS Code, IntelliJ configurations
+- **Dotfiles** — `.bashrc`, `.gitconfig` (container can customize without affecting host)
+
+> 💡 **Tip:**  
+> Use this pattern when an application needs to write to its config files (e.g., refreshing OAuth tokens),  
+> but you don't want those changes persisted back to the host.
+
 
 
 ## workspace Manual

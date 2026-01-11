@@ -64,12 +64,21 @@
 ### -------------------------------------------------------------------------------------
 ### TOML-friendly array fields
 ### -------------------------------------------------------------------------------------
+# Environment variables and tilde are automatically expanded in these fields:
+#   - ~ at the start of a value expands to $HOME
+#   - $VAR and ${VAR} expand to their environment values
+#
+# Copy-on-write pattern for credentials:
+#   Mount host files read-only to /tmp/ws-home-seed/ and they will be copied
+#   to the user's home at container startup (without overwriting existing files).
+#   Example: "-v", "~/.config/gcloud:/tmp/ws-home-seed/.config/gcloud:ro"
+#
 # common-args = []        # Pre-applied CLI flags merged before command-line parameters
 #                         # Example: ["--name", "my-workspace", "-p", "8080:8080"]
 # build-args = []         # Extra args for `docker build` when dockerfile is used
 #                         # Example: ["--no-cache", "--build-arg", "VERSION=1.0"]
 # run-args = []           # Extra args for `docker run`
-#                         # Example: ["-e", "TZ=UTC", "-v", "/host/path:/container/path"]
+#                         # Example: ["-e", "TZ=UTC", "-v", "~/.config/app:/home/coder/.config/app"]
 # cmds = []               # Command to run inside the container when using COMMAND mode
 #                         # (i.e., after `--` on the CLI). Prefer passing commands via CLI
 #                         # Example: ["bash", "-lc", "make test"]

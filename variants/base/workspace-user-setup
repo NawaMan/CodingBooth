@@ -227,6 +227,19 @@ fi
 
 chown "$HOST_UID:$HOST_GID" "$HOME_DIR/.bashrc" "$HOME_DIR/.profile" "$HOME_DIR/.zshrc" 2>/dev/null || true
 
+# --- Copy-on-write staging: copy from /tmp/ws-home-seed to $HOME ---
+# This allows mounting host files read-only to /tmp/ws-home-seed/ (e.g., credentials)
+# and getting a writable copy in the user's home directory.
+# Files are copied without overwriting existing ones (cp -rn).
+WS_HOME_SEED="/tmp/ws-home-seed"
+if [ -d "$WS_HOME_SEED" ]; then
+  log "Copying seed files from $WS_HOME_SEED to $HOME_DIR..."
+  # Copy all contents, preserving structure, without overwriting existing files
+  cp -rn "$WS_HOME_SEED/." "$HOME_DIR/" 2>/dev/null || true
+  # Fix ownership of copied files
+  chown -R "$HOST_UID:$HOST_GID" "$HOME_DIR" 2>/dev/null || true
+fi
+
 # --- One-time workspace startup hooks (run as $USER_NAME) ---
 RUN_ONCE_FLAG="/var/run/ws-startup.once"
 if [ -d "/usr/share/startup.d" ] && [ ! -f "$RUN_ONCE_FLAG" ]; then
