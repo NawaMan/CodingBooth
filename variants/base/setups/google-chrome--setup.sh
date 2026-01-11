@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
 # chrome--setup.sh — Install Google Chrome (DEB, no snap) with no-sandbox wrapper
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO" >&2; exit 1' ERR

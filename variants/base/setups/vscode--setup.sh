@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
 # vscode--setup.sh — Install Visual Studio Code (DEB, no snap)
 # Adds: Jupyter Notebook + Bash kernel setup (for VS Code Jupyter extension)
 set -Eeuo pipefail

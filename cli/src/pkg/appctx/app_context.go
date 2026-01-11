@@ -1,3 +1,7 @@
+// Copyright 2025-2026 : Nawa Manusitthipol
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+
 // Package appctx provides centralized application context for workspace configuration and state.
 //
 // AppContext is an immutable snapshot (like List), AppContextBuilder is mutable (like AppendableList).

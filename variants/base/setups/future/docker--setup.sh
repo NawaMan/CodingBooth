@@ -1,4 +1,8 @@
 #!/bin/bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
 
 # WARNING: !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 # To use add the following to the host docker run: -v /var/run/docker.sock:/var/run/docker.sock  --group-add $(stat -c %g /var/run/docker.sock)

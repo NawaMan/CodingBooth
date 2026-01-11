@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
 # kde--setup.sh — root-only installer for KDE Plasma + VNC + noVNC + Dolphin & Konsole pinned + NO LOCK SCREEN
 # Installs deps, writes /etc/profile.d/99-ws-kde.sh, creates /usr/local/bin/start-kde,
 # pins Dolphin and Konsole, and disables KDE screen locking (no password on lock).

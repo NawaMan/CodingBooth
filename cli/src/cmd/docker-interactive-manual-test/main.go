@@ -1,3 +1,7 @@
+// Copyright 2025-2026 : Nawa Manusitthipol
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+
 // Interactive TTY Demo - demonstrates -it flags working with TTY detection
 //
 // Run this directly to see interactive mode:
@@ -8,6 +12,7 @@
 //
 //	go build -o docker-demo ./src/cmd/docker-interactive-demo/
 //	./docker-demo
+
 package main
 
 import (
