@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nawaman/workspace/cli/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/appctx"
 )
 
 // ValidateVariant validates and normalizes the variant and returns updated AppContext.

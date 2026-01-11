@@ -1,5 +1,12 @@
 #!/bin/bash
-
+#
+# init-go-setup.sh - Install Go programming language
+#
+# This script downloads and installs the specified version of Go (currently 1.24.1)
+# for Linux and macOS systems. It detects the OS and architecture automatically,
+# downloads the appropriate Go distribution, verifies it, and configures the PATH.
+# The script is idempotent and will skip installation if the correct version exists.
+#
 set -euo pipefail
 
 GO_VERSION="1.24.1"

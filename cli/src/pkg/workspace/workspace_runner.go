@@ -4,8 +4,8 @@ package workspace
 import (
 	"fmt"
 
-	"github.com/nawaman/workspace/cli/src/pkg/appctx"
-	"github.com/nawaman/workspace/cli/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // WorkspaceRunner handles the "run" command for workspace operations.

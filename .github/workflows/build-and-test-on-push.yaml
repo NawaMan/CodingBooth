@@ -1,5 +1,5 @@
 # .github/workflows/build-on-push.yml
-name: Build on Push
+name: Build and Test on Push
 
 on:
   push:
@@ -29,7 +29,7 @@ jobs:
           docker info
       
       - name: Build
-        run: ./go-build.sh
+        run: cd cli && ./cli-build.sh
       
       - name: Simple test
         run: ./sanity-test.sh

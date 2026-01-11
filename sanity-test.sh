@@ -1,4 +1,12 @@
 #!/bin/bash
+#
+# sanity-test.sh - Basic smoke test for WorkSpace
+#
+# This script performs a simple sanity check by running a command inside the WorkSpace
+# container and verifying that file operations work correctly. It compares output from
+# the host and container to ensure basic functionality. Pass a variant name as an argument
+# (default: base) to test specific WorkSpace variants.
+#
 set -euo pipefail
 
 VARIANT=${1:-base}

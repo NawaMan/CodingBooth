@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nawaman/workspace/cli/src/pkg/appctx"
-	"github.com/nawaman/workspace/cli/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // ApplyEnvFile applies environment file configuration and returns updated AppContext.

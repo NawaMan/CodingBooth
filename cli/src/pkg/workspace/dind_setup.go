@@ -5,9 +5,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/nawaman/workspace/cli/src/pkg/appctx"
-	"github.com/nawaman/workspace/cli/src/pkg/docker"
-	"github.com/nawaman/workspace/cli/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/docker"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // createDindNetwork creates a Docker network for DinD if it doesn't exist.

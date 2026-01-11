@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nawaman/workspace/cli/src/pkg/workspace"
-	wsinit "github.com/nawaman/workspace/cli/src/pkg/workspace/init"
+	"github.com/nawaman/workspace/src/pkg/workspace"
+	wsinit "github.com/nawaman/workspace/src/pkg/workspace/init"
 )
 
 func runWorkspace(version string) {

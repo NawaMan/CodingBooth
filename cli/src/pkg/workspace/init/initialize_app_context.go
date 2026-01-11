@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nawaman/workspace/cli/src/pkg/appctx"
-	"github.com/nawaman/workspace/cli/src/pkg/ilist"
-	"github.com/nawaman/workspace/cli/src/pkg/nillable"
+	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/nillable"
 )
 
 // InitializeAppContext creates an AppContext with default values matching workspace Main()
@@ -32,7 +32,7 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	context.Config.HostGID = boundary.GetHostGID()
 	context.Config.Timezone = boundary.DetectTimezone()
 
-	// First pass to read important flags and value: --dryrun, --verbose, --config
+	// First pass to read important flags and value: --dryrun, --verbose, --config and --workspace
 	configExplicitlySet := false
 	readVerboseDryrunConfigFileAndWorkspace(boundary, &context, &configExplicitlySet)
 

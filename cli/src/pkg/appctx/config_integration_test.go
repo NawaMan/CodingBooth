@@ -4,7 +4,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nawaman/workspace/cli/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/appctx"
 	"github.com/stretchr/testify/assert"
 )
 

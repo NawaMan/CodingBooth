@@ -1,7 +1,7 @@
 package ilist_test
 
 import (
-	"github.com/nawaman/workspace/cli/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // Example demonstrates basic usage of the ilist package.

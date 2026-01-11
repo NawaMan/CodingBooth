@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/nawaman/workspace/cli/src/pkg/appctx"
-	"github.com/nawaman/workspace/cli/src/pkg/ilist"
-	"github.com/nawaman/workspace/cli/src/pkg/nillable"
+	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/nillable"
 )
 
 type TomlFile struct {

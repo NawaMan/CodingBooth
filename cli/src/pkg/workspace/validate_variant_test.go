@@ -3,8 +3,8 @@ package workspace
 import (
 	"testing"
 
-	"github.com/nawaman/workspace/cli/src/pkg/appctx"
-	"github.com/nawaman/workspace/cli/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 func TestValidateVariant(t *testing.T) {

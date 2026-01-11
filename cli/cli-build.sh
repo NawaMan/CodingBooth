@@ -4,9 +4,9 @@ set -euo pipefail
 
 # Build configuration
 APP_NAME="workspace"
-SRC_DIR="./cli/src/cmd"
-OUTPUT_DIR="./bin"
-VERSION_FILE="version.txt"
+SRC_DIR="./src/cmd"
+OUTPUT_DIR="../bin"
+VERSION_FILE="../version.txt"
 
 # Read version from version.txt
 if [[ -f "$VERSION_FILE" ]]; then
@@ -38,9 +38,9 @@ echo ""
 
 # First, build for the current platform and place in project root
 echo "🏠 Building local executable for current platform..."
-LOCAL_OUTPUT="./workspace"
+LOCAL_OUTPUT="../workspace"
 if [[ "$(uname -s)" == "MINGW"* ]] || [[ "$(uname -s)" == "CYGWIN"* ]] || [[ "$(uname -s)" == "MSYS"* ]]; then
-    LOCAL_OUTPUT="./workspace.exe"
+    LOCAL_OUTPUT="../workspace.exe"
 fi
 
 if go build -ldflags "-X main.version=${VERSION}" -o "$LOCAL_OUTPUT" "$SRC_DIR/workspace" 2>/dev/null; then

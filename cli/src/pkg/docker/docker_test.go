@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nawaman/workspace/cli/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // TestDocker_DryrunMode verifies no execution in dryrun mode.

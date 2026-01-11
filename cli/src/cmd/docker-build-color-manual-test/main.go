@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nawaman/workspace/cli/src/pkg/docker"
-	"github.com/nawaman/workspace/cli/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/docker"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 func main() {

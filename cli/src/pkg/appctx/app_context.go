@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nawaman/workspace/cli/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/ilist"
 )
 
 // AppContext is an immutable snapshot of workspace configuration and state.

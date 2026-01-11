@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nawaman/workspace/cli/src/pkg/appctx"
-	"github.com/nawaman/workspace/cli/src/pkg/ilist"
-	"github.com/nawaman/workspace/cli/src/pkg/nillable"
+	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/ilist"
+	"github.com/nawaman/workspace/src/pkg/nillable"
 )
 
 // TestWorkspace_runAsCommand_DryrunMode verifies command construction in dryrun mode.

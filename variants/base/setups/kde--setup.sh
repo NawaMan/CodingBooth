@@ -48,20 +48,192 @@ fi
 # ---- Make autoconnect entrypoint for noVNC ----
 cat >/usr/share/novnc/index.html <<'HTML'
 <!doctype html>
-<meta charset="utf-8">
-<title>noVNC</title>
-<script>
-  const host = location.hostname || 'localhost';
-  const port = location.port || '6080';
-  const params = new URLSearchParams({
-    autoconnect: '1',
-    host,
-    port,
-    path: 'websockify',
-    resize: 'remote'
-  });
-  location.replace('vnc.html?' + params.toString());
-</script>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>noVNC</title>
+
+  <!-- Best effort client-side cache prevention (server headers are better) -->
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate, max-age=0" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      margin: 0;                 /* remove margin so centering is exact */
+      line-height: 1.4;
+      min-height: 100vh;
+
+      /* CENTER CONTENT */
+      display: flex;
+      align-items: center;      /* vertical center */
+      justify-content: center;  /* horizontal center */
+    }
+
+    .card {
+      max-width: 680px;
+      padding: 1.25rem 1.5rem;
+      border: 1px solid #ddd;
+      border-radius: 12px;
+    }
+
+    .muted { color: #666; }
+
+    button {
+      padding: 0.6rem 0.9rem;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .row {
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+      flex-wrap: wrap;
+      margin-top: 1rem;
+    }
+
+    .status { margin-top: 0.75rem; }
+
+    code {
+      background: #f6f6f6;
+      padding: 0.15rem 0.35rem;
+      border-radius: 6px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="card">
+    <h1>Connecting to VNC…</h1>
+    <p class="muted" id="subtitle">Checking if <code>vnc.html</code> is ready.</p>
+
+    <div class="status" id="status"></div>
+
+    <div class="row">
+      <button id="recheckBtn" type="button">Recheck now</button>
+      <span class="muted" id="countdown"></span>
+    </div>
+  </div>
+
+  <script>
+    // ---- Config ----
+    const CHECK_URL = 'vnc.html';
+    const RETRY_SECONDS = 30;
+
+    // noVNC redirect params (your existing logic)
+    const host = location.hostname || 'localhost';
+    const port = location.port || '6080';
+    const params = new URLSearchParams({
+      autoconnect: '1',
+      host,
+      port,
+      path: 'websockify',
+      resize: 'remote'
+    });
+    const redirectUrl = CHECK_URL + '?' + params.toString();
+
+    // ---- UI helpers ----
+    const statusEl = document.getElementById('status');
+    const subtitleEl = document.getElementById('subtitle');
+    const countdownEl = document.getElementById('countdown');
+    const recheckBtn = document.getElementById('recheckBtn');
+
+    function setStatus(html) {
+      statusEl.innerHTML = html;
+    }
+
+    // ---- Cache-busting & existence check ----
+    async function vncHtmlExists() {
+      // Add a cache-buster query param so any intermediary cache is bypassed
+      const url = `${CHECK_URL}?_=${Date.now()}`;
+
+      try {
+        // Try HEAD first (lightweight). Some servers don’t allow HEAD; fall back to GET.
+        let res = await fetch(url, { method: 'HEAD', cache: 'no-store' });
+        if (res.ok) return true;
+
+        // If HEAD not allowed or failed, try GET.
+        res = await fetch(url, { method: 'GET', cache: 'no-store' });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    }
+
+    // ---- Retry loop with countdown ----
+    let timer = null;
+    let remaining = RETRY_SECONDS;
+
+    function stopTimer() {
+      if (timer) clearInterval(timer);
+      timer = null;
+    }
+
+    function startCountdownAndRetry() {
+      stopTimer();
+      remaining = RETRY_SECONDS;
+
+      countdownEl.textContent = `Retrying in ${remaining}s…`;
+      recheckBtn.disabled = false;
+
+      timer = setInterval(async () => {
+        remaining -= 1;
+        if (remaining > 0) {
+          countdownEl.textContent = `Retrying in ${remaining}s…`;
+          return;
+        }
+
+        stopTimer();
+        countdownEl.textContent = `Rechecking now…`;
+        await checkAndMaybeRedirect();
+      }, 1000);
+    }
+
+    async function checkAndMaybeRedirect() {
+      recheckBtn.disabled = true;
+      subtitleEl.textContent = `Checking if ${CHECK_URL} is ready…`;
+      setStatus(`<span class="muted">Please wait.</span>`);
+
+      const exists = await vncHtmlExists();
+
+      if (exists) {
+        subtitleEl.textContent = `VNC is ready. Redirecting…`;
+        setStatus(`<span>Opening <code>${CHECK_URL}</code>…</span>`);
+        // Replace so user won't go "back" to the waiting screen
+        location.replace(redirectUrl);
+        return;
+      }
+
+      // Not ready
+      subtitleEl.textContent = `VNC is not ready yet.`;
+      setStatus(`
+        <strong>VNC is not ready.</strong>
+        <div class="muted">We’ll automatically recheck in ${RETRY_SECONDS} seconds, or you can recheck now.</div>
+      `);
+      recheckBtn.disabled = false;
+      startCountdownAndRetry();
+    }
+
+    // Button: immediate recheck
+    recheckBtn.addEventListener('click', async () => {
+      stopTimer();
+      countdownEl.textContent = '';
+      await checkAndMaybeRedirect();
+    });
+
+    // Initial check
+    checkAndMaybeRedirect();
+  </script>
+</body>
+</html>
 HTML
 
 # ---- profile snippet ----

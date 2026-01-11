@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nawaman/workspace/cli/src/pkg/appctx"
+	"github.com/nawaman/workspace/src/pkg/appctx"
 )
 
 // PortDetermination determines the host port and returns updated AppContext.

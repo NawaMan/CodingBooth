@@ -1,4 +1,12 @@
 #!/usr/bin/env bash
+#
+# docker-build.sh - Build and publish WorkSpace Docker images
+#
+# This script builds Docker images for all WorkSpace variants (base, ide-notebook,
+# ide-codeserver, desktop-xfce, desktop-kde) using multi-architecture support.
+# It can build locally or push to Docker Hub with cosign signature verification.
+# Run with --help for usage information.
+#
 set -euo pipefail
 
 #== ENVIRONMENTAL VARIABLES ==
@@ -295,7 +303,7 @@ SignImages() {
 
 Usage() {
   cat <<EOF
-Usage: ./build.sh [--push] [--no-cache] [variant ...]
+Usage: ./docker-build.sh [--push] [--no-cache] [variant ...]
 Options:
   --push          Build and push using buildx (multi-arch) and sign images with cosign
   --no-cache      Build without using cache
@@ -314,14 +322,14 @@ Environment:
   COSIGN_PASSWORD   Password for the private key (if the key is encrypted)
 
 Examples:
-  ./build.sh                         # local build of all variants
-  ./build.sh base                    # build only 'base'
-  ./build.sh ide-notebook desktop-xfce
+  ./docker-build.sh                         # local build of all variants
+  ./docker-build.sh base                    # build only 'base'
+  ./docker-build.sh ide-notebook desktop-xfce
                                      # build two specific variants
-  ./build.sh --push base             # push + sign only 'base' variant
-  COSIGN_KEY_FILE=/path/to/cosign.key ./build.sh --push base
+  ./docker-build.sh --push base             # push + sign only 'base' variant
+  COSIGN_KEY_FILE=/path/to/cosign.key ./docker-build.sh --push base
                                      # push + sign using key file
-  COSIGN_KEY="\$(cat cosign.key)" ./build.sh --push base
+  COSIGN_KEY="\$(cat cosign.key)" ./docker-build.sh --push base
                                      # push + sign using key from env
 EOF
 }
