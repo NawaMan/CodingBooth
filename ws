@@ -19,7 +19,7 @@ function Main() {
     esac
 
     ### --- RUN MODE --- ###
-    tools_dir=".workspace/tools"
+    tools_dir=".ws/tools"
     dest="$tools_dir/workspace"
     sha_file="$tools_dir/workspace.sha256"
     meta_file="$tools_dir/workspace.meta"
@@ -78,12 +78,12 @@ Purpose:
   This script is the *WorkSpace Wrapper*.
   - It is stable and does not update itself.
   - It downloads, verifies, and runs the actual WorkSpace script
-    (.workspace/tools/workspace) from the WorkSpace project.
+    (.ws/tools/workspace) from the WorkSpace project.
   - This lets workspace evolve independently while keeping a reliable entry point.
 
 Wrapper commands:
-  install [VERSION]   Download or update .workspace/tools/workspace
-  update  [VERSION]   Download or update .workspace/tools/workspace
+  install [VERSION]   Download or update .ws/tools/workspace
+  update  [VERSION]   Download or update .ws/tools/workspace
   uninstall           Remove workspace and metadata files
   rehash              Accept local edits and set a new trusted SHA256 baseline
   run [ARGS...]       Run workspace with ARGS (after integrity checks)
@@ -91,7 +91,7 @@ Wrapper commands:
   help                Show this help message
 
 Notes:
-  - workspace.sha256 and workspace.meta live in .workspace/tools
+  - workspace.sha256 and workspace.meta live in .ws/tools
   - Set VERBOSE=true for extra logs during update
   - Set WS_INTEGRITY=official to enforce official integrity checks at runtime
 EOF
@@ -107,8 +107,8 @@ __      __       _    ___                    __      __
 EOF
     echo "WorkSpace Wrapper: $VERSION"
 
-    TOOL=".workspace/tools/workspace"
-    META=".workspace/tools/workspace.meta"
+    TOOL=".ws/tools/workspace"
+    META=".ws/tools/workspace.meta"
 
     if [[ ! -f "$TOOL" ]]; then echo "WorkSpace: uninstalled" ; exit 0 ; fi
 
@@ -167,7 +167,7 @@ function get_binary_name() {
 }
 
 function UninstallWorkspace() {
-    local tools_dir=".workspace/tools"
+    local tools_dir=".ws/tools"
     local dest="$tools_dir/workspace"
     local sha_file="$tools_dir/workspace.sha256"
     local meta_file="$tools_dir/workspace.meta"
@@ -175,7 +175,7 @@ function UninstallWorkspace() {
     rm -f "$dest" "$sha_file" "$meta_file"
 
     rmdir "$tools_dir" 2>/dev/null || true
-    rmdir ".workspace" 2>/dev/null || true
+    rmdir ".ws" 2>/dev/null || true
 
     echo "WorkSpace has been uninstalled."
 }
@@ -183,7 +183,7 @@ function UninstallWorkspace() {
 function DownloadWorkspace() {
     WS_VERSION=${1:-latest}
     local tmpfile tmpsha256 expected_sha256 actual_sha256
-    local tools_dir=".workspace/tools"
+    local tools_dir=".ws/tools"
     local dest="$tools_dir/workspace"
     local sha_file="$tools_dir/workspace.sha256"
     local meta_file="$tools_dir/workspace.meta"
@@ -273,7 +273,7 @@ function DownloadWorkspace() {
 }
 
 function RehashWorkspace() {
-    local tools_dir=".workspace/tools"
+    local tools_dir=".ws/tools"
     local dest="$tools_dir/workspace"
     local sha_file="$tools_dir/workspace.sha256"
     local meta_file="$tools_dir/workspace.meta"

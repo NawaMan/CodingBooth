@@ -30,7 +30,7 @@ jobs:
           docker info
       
       - name: Build
-        run: cd cli && ./cli-build.sh
+        run: ./cli-build.sh
       
       - name: Simple test
         run: ./sanity-test.sh

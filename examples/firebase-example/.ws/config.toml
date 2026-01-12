@@ -1,0 +1,13 @@
+# Firebase Example
+#
+# This example demonstrates using ws-home-seed to mount Firebase credentials
+# from the host into the container (read-only, then copied at startup).
+
+variant = "notebook"
+
+# Mount Firebase credentials from host (copy-on-write pattern)
+# Firebase uses gcloud credentials + .config/configstore for CLI state
+run-args = [
+    "-v", "~/.config/gcloud:/tmp/ws-home-seed/.config/gcloud:ro",
+    "-v", "~/.config/configstore:/tmp/ws-home-seed/.config/configstore:ro"
+]

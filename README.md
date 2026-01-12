@@ -41,13 +41,13 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
 ![Select IDE](DesktopRun.png)
 
 ### Optional
-7. Inspect `ws--Dockerfile` and `ws--config.toml` inside `examples/go-example` and
+7. Inspect `.ws/Dockerfile` and `.ws/config.toml` inside `examples/go-example` and
     see if you can figure out what they are.
 8. Try other [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples) or different [variants](https://github.com/NawaMan/WorkSpace/tree/latest?tab=readme-ov-file#available-variants).
 9. Try on your own project,
   1. Download the [wrapper script (`ws`)](https://github.com/NawaMan/WorkSpace/releases/download/latest/ws) and put it in your project folder.
   2. Run `./ws install` to download the workspace binary for your platform.
-  2. Create `ws--Dockerfile` and `ws--config.toml` -- Take inspire from the existing [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples).
+  2. Create `.ws/Dockerfile` and `.ws/config.toml` -- Take inspire from the existing [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples).
 
 ## Installation
 
@@ -82,7 +82,7 @@ That means every file you create or modify inside the container is **owned by yo
 - **Seamless file access** – Create, edit, and delete files inside the container, then use them on the host with no permission issues.  
 - **Team-friendly** – Each developer uses their own UID and GID mapping — no more “root-owned” repositories.  
 - **Project isolation** – Keep toolchains and dependencies inside the container while working directly in your project folder.  
-- **Portable configuration** – `ws--config.toml` travel with your repository, ensuring consistent setups across machines.
+- **Portable configuration** – `.ws/config.toml` travel with your repository, ensuring consistent setups across machines.
 
 
 ## Variants
@@ -135,7 +135,7 @@ For desktop variants (`desktop-xfce`, `desktop-kde`), you can customize the scre
 ./workspace --variant desktop-xfce -e GEOMETRY=1920x1080
 ```
 
-**Example (in `ws--config.toml`):**
+**Example (in `.ws/config.toml`):**
 ```bash
 RUN_ARGS+=(-e GEOMETRY=1920x1080)
 ```
@@ -179,7 +179,7 @@ http://localhost:10000/vnc.html?autoconnect=1&host=localhost&port=10000&path=web
 > ```bash
 > ./workspace --variant codeserver
 > ```
-> Or set it permanently in your configuration file (`ws--config.toml`).
+> Or set it permanently in your configuration file (`.ws/config.toml`).
 
 
 ## Built-in Tools
@@ -234,12 +234,35 @@ More examples : https://github.com/NawaMan/WorkSpace/tree/main/examples
 
 You can tailor how WorkSpace runs by adjusting configuration files or using runtime flags:
 
-- **`ws--config.toml`** – Defines the image name, variant, UID/GID overrides, and default ports.  
+- **`.ws/config.toml`** – Defines the image name, variant, UID/GID overrides, and default ports.  
 - **Runtime flags** – Options such as `--variant`, `--name`, `--pull`, `--dryrun`, and others can override defaults at launch.
 
 > 💡 **Tip:** Configuration precedence follows this order:  
 > **CLI flags → config file → environment variables → built-in defaults.**
 > **Bootstrap note:** `--workspace` and `--config` are evaluated early (CLI first pass or defaults) and are not overridden by environment variables/TOML configuration file.
+
+#### The `.ws/` Folder
+
+All workspace configuration lives in a single `.ws/` folder in your project root:
+
+```
+my-project/
+└── .ws/
+    ├── config.toml     # Launcher configuration
+    ├── Dockerfile      # Custom Docker build (optional)
+    ├── home/           # Team-shared home directory files (optional)
+    │   └── .config/
+    └── tools/          # Managed by ws wrapper (auto-created)
+        └── workspace
+```
+
+| File | Purpose |
+|------|---------|
+| `config.toml` | Defines variant, ports, run-args, build-args, cmds |
+| `Dockerfile` | Custom image build extending a base variant |
+| `home/` | Team-shared dotfiles copied to `/home/coder/` at startup |
+
+> ⚠️ **Note on `cmds`:** When you pass commands via CLI (`-- <cmd>`), they **override** the `cmds` in config.toml (they don't append).
 
 ---
 
@@ -314,21 +337,21 @@ container
 
 WorkSpace provides two mechanisms for populating the user's home directory with custom files at container startup:
 
-#### Project Home Folder (`ws--home/`)
+#### Project Home Folder (`.ws/home/`)
 
-Create a `ws--home/` folder in your project to share team-wide dotfiles, tool configs, or shell customizations.
+Create a `.ws/home/` folder in your project to share team-wide dotfiles, tool configs, or shell customizations.
 
 **How it works:**
-- Place files in `ws--home/` with the same structure as `$HOME`
+- Place files in `.ws/home/` with the same structure as `$HOME`
 - At container startup, files are copied to `/home/coder/` without overwriting existing files
 - The folder should be version-controlled (committed to git)
 
 **Example structure:**
 ```
 my-project/
-├── ws--config.toml
-├── ws--Dockerfile
-└── ws--home/
+├── .ws/config.toml
+├── .ws/Dockerfile
+└── .ws/home/
     ├── .bashrc              # Team bashrc additions
     ├── .config/
     │   └── nvim/
@@ -337,7 +360,7 @@ my-project/
 ```
 
 > ⚠️ **Warning:**  
-> Do NOT put secrets, credentials, or personal tokens in `ws--home/` — this folder is meant to be committed to version control and shared with your team.
+> Do NOT put secrets, credentials, or personal tokens in `.ws/home/` — this folder is meant to be committed to version control and shared with your team.
 
 #### Home Seed Directory (`/tmp/ws-home-seed/`)
 
@@ -348,7 +371,7 @@ Mount host files read-only to `/tmp/ws-home-seed/` for **personal credentials** 
 2. At container startup, files are copied to `/home/coder/` without overwriting existing files
 3. The user gets a writable copy; the host's original files stay protected
 
-**Example (`ws--config.toml`):**
+**Example (`.ws/config.toml`):**
 ```toml
 run-args = [
     "-v", "~/.config/gcloud:/tmp/ws-home-seed/.config/gcloud:ro",
@@ -365,15 +388,15 @@ run-args = [
 
 Files are copied in this order (later sources win if the file doesn't exist yet):
 
-1. **`ws--home/`** (project folder) — Team-shared defaults
+1. **`.ws/home/`** (project folder) — Team-shared defaults
 2. **`/tmp/ws-home-seed/`** (host mounts) — Personal credentials & preferences
 3. **Existing files** — Already in `/home/coder/` are preserved
 
 Since all copies use `cp -rn` (no-clobber), the first source to create a file "wins".  
-In practice: host-mounted files in `ws-home-seed` override project defaults in `ws--home`.
+In practice: host-mounted files in `ws-home-seed` override project defaults in `.ws/home`.
 
 > 💡 **Tip:**  
-> Use `ws--home/` for team configs (neovim, linters, shell aliases).  
+> Use `.ws/home/` for team configs (neovim, linters, shell aliases).  
 > Use `ws-home-seed` for personal credentials (gcloud, SSH keys, API tokens).
 
 
@@ -391,7 +414,7 @@ In practice: host-mounted files in `ws-home-seed` override project defaults in `
 
 **Overrides**
 - **Environment variables:** `IMAGE_NAME`, `IMAGE_REPO`, `IMAGE_TAG`, `VARIANT`, `VERSION`  
-- **Configuration file:** `ws--config.toml`  
+- **Configuration file:** `.ws/config.toml`  
 - **CLI options:** `--variant`, `--version`, `--image`, `--dockerfile`
 
 **Precedence**
@@ -417,7 +440,7 @@ Command-line arguments → config file → environment variables → built-in de
 
 **Overrides**
 - **Environment variable:** `CONTAINER_NAME`  
-- **Configuration file:** `ws--config.toml`  
+- **Configuration file:** `.ws/config.toml`  
 - **CLI option:** `--name <name>`
 
 ---
@@ -431,7 +454,7 @@ Command-line arguments → config file → environment variables → built-in de
 WorkSpace supports several configuration files that control how containers are built and launched.  
 These files let you define defaults, environment variables, and runtime parameters without cluttering your CLI commands.
 
-#### **Launcher Config (`ws--config.toml`)**
+#### **Launcher Config (`.ws/config.toml`)**
 - Loaded after bootstrap flags are determined (`--workspace`, `--config`) and before full CLI parsing.  
 - Defines default values for image selection, user mapping, and runtime behavior.  
 - Typical keys include:  
@@ -439,7 +462,7 @@ These files let you define defaults, environment variables, and runtime paramete
   `CONTAINER_NAME`, `HOST_UID`, `HOST_GID`, `WORKSPACE_PORT`, `DIND`, and others.
 
 ##### **Custom Argument Arrays**
-You can define three special arrays in `ws--config.toml` to customize how the launcher interacts with Docker:
+You can define three special arrays in `.ws/config.toml` to customize how the launcher interacts with Docker:
 
 - **`ARGS`** – Adds command-line arguments directly to `workspace`.  
   Useful for predefining commonly used options (e.g., extra ports or mounts).  
@@ -472,7 +495,7 @@ These behave exactly like command-line flags passed to workspace.
 
 > 🧩 Summary:
 > Configuration layers allow customization at two levels:
-> Build+Image: ws--config.toml (persistent project defaults)
+> Build+Image: .ws/config.toml (persistent project defaults)
 > Container Environment: .env (runtime secrets and environment variables)
 > Together, they give you full control over build, run, and launcher behavior.
 
@@ -538,7 +561,7 @@ Meaning:
 **Overrides**
 - You can customize the exposed port via:
   - Environment variable: WORKSPACE_PORT
-  - Configuration file: ws--config.toml
+  - Configuration file: .ws/config.toml
   - CLI flag: --port <number>
 - The value can be a fixed number (8080), NEXT (to find the next available port), or RANDOM (to assign a random open port).
 
@@ -646,7 +669,7 @@ This feature is useful for CI/CD pipelines, containerized builds, or development
   ```bash
   DIND=true
   ```
-  in your ws--config.toml file or by passing:
+  in your .ws/config.toml file or by passing:
   ```bash
   ./workspace --dind
   ```

@@ -80,19 +80,30 @@ func normalizeDockerFile(ctx appctx.AppContext) string {
 
 	// If DOCKER_FILE is set
 	if dockerFile != "" {
-		// If it's a directory containing ws--Dockerfile, use that file
-		wsDockerfile := filepath.Join(dockerFile, "ws--Dockerfile")
-		if isDir(dockerFile) && isFile(wsDockerfile) {
-			return wsDockerfile
+		// If it's a directory, check for Dockerfile in .ws/ first, then ws--Dockerfile
+		if isDir(dockerFile) {
+			newDockerfile := filepath.Join(dockerFile, ".ws", "Dockerfile")
+			if isFile(newDockerfile) {
+				return newDockerfile
+			}
+			oldDockerfile := filepath.Join(dockerFile, "ws--Dockerfile")
+			if isFile(oldDockerfile) {
+				return oldDockerfile
+			}
 		}
 		return dockerFile
 	}
 
-	// If DOCKER_FILE is unset, check workspace for ws--Dockerfile
-	if ctx.Workspace() != "" {
-		wsDockerfile := filepath.Join(ctx.Workspace(), "ws--Dockerfile")
-		if isDir(ctx.Workspace()) && isFile(wsDockerfile) {
-			return wsDockerfile
+	// If DOCKER_FILE is unset, check workspace for Dockerfile
+	if ctx.Workspace() != "" && isDir(ctx.Workspace()) {
+		// Prefer new location (.ws/Dockerfile), fallback to old (ws--Dockerfile)
+		newDockerfile := filepath.Join(ctx.Workspace(), ".ws", "Dockerfile")
+		if isFile(newDockerfile) {
+			return newDockerfile
+		}
+		oldDockerfile := filepath.Join(ctx.Workspace(), "ws--Dockerfile")
+		if isFile(oldDockerfile) {
+			return oldDockerfile
 		}
 	}
 

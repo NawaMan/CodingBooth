@@ -66,7 +66,7 @@ function nbook() {
   fi
 
   echo "Opening nbook..."
-  echo "After you quit jpterm, it can stuck in the background, you may have to do Ctrl+C."
+  echo -e "After you quit jpterm, it can stuck in the background, you may have to do \e[1;34mCtrl+C\e[0m."
   jpterm "$@"
 }
 

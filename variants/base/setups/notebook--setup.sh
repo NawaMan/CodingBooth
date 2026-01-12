@@ -17,6 +17,8 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+STARTUP_FILE=/usr/share/startup.d/99-ws-notebook--startup.sh  # Last one so other settings take precedence
+STARTER_FILE=/usr/local/bin/start-notebook
 
 # Load python env exported by the base setup
 source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
@@ -77,8 +79,25 @@ python -m ipykernel install           \
 chmod -R a+rX "${KDIR}" || true
 
 
-# ---- Create startup script (ensures terminals inherit the venv) ----
-STARTER_FILE=/usr/local/bin/start-notebook
+# --- Create startup script (something to run under the user when the container starts) ----
+cat > ${STARTUP_FILE} <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+mkdir -p ~/.jupyter/lab/user-settings/@jupyterlab/apputils-extension
+
+# Write the JSON only when the settings file is missing
+[ ! -f ~/.jupyter/lab/user-settings/@jupyterlab/apputils-extension/themes.jupyterlab-settings ] && \
+cat > ~/.jupyter/lab/user-settings/@jupyterlab/apputils-extension/themes.jupyterlab-settings <<'CONFIG'
+{
+  "theme": "JupyterLab Light"
+}
+CONFIG
+EOF
+chmod +x ${STARTUP_FILE}
+
+
+# ---- Create starter script (ensures terminals inherit the venv) ----
 cat > ${STARTER_FILE} <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail

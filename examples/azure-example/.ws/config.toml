@@ -1,0 +1,12 @@
+# Azure Example
+#
+# This example demonstrates using ws-home-seed to mount Azure credentials
+# from the host into the container (read-only, then copied at startup).
+
+variant = "notebook"
+
+# Mount Azure credentials from host (copy-on-write pattern)
+# Azure CLI stores credentials in ~/.azure/
+run-args = [
+    "-v", "~/.azure:/tmp/ws-home-seed/.azure:ro"
+]

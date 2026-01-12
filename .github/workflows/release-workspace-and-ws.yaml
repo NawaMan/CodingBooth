@@ -55,7 +55,7 @@ jobs:
       # Prepare artifacts
       # ---------------------------------------------------------
       - name: Build Go binaries for all platforms
-        run: cd cli && ./cli-build.sh
+        run: ./cli-build.sh
 
       - name: Make wrapper executable
         run: chmod +x ws

@@ -47,7 +47,14 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	}
 	if !context.Config.Config.IsSet() {
 		workspace := context.Config.Workspace.ValueOr("")
-		context.Config.Config = nillable.NewNillableString(filepath.Join(workspace, "ws--config.toml"))
+		// Prefer new location (.ws/config.toml), fallback to old (ws--config.toml)
+		newConfig := filepath.Join(workspace, ".ws", "config.toml")
+		oldConfig := filepath.Join(workspace, "ws--config.toml")
+		if fileExists(newConfig) {
+			context.Config.Config = nillable.NewNillableString(newConfig)
+		} else {
+			context.Config.Config = nillable.NewNillableString(oldConfig)
+		}
 	}
 
 	readFromEnvVars(boundary, &context)
@@ -284,7 +291,8 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			i += 2
 
 		case "--":
-			// everything after goes to cmds
+			// everything after goes to cmds, overriding any cmds from config
+			cmds = []string{} // Clear existing cmds so CLI overrides config
 			parsingCmds = true
 			i++
 
@@ -404,4 +412,13 @@ func runPreserveWorkspaceAndConfig(context *appctx.AppContextBuilder, fn func())
 	if workspace.IsSet() {
 		context.Config.Workspace = workspace
 	}
+}
+
+// fileExists checks if a file exists and is not a directory
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	if err != nil {
+		return false
+	}
+	return !info.IsDir()
 }

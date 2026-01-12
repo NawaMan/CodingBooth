@@ -28,7 +28,7 @@ BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and 
   --workspace <path>     Host workspace path to mount at /home/coder/workspace
                          (default: current directory)
   --config <file>        Path to the config file to load
-                         (default: <workspace>/ws--config.toml)
+                         (default: <workspace>/.ws/config.toml)
 
 CONFIG PRECEDENCE:
   options (CLI) > config file (TOML) > environment (ENV) > defaults
@@ -41,7 +41,7 @@ GENERAL RUN OPTIONS:
 
 IMAGE SELECTION (precedence: --image > --dockerfile > prebuilt):
   --dockerfile <path>    Build locally from a Dockerfile (file or directory)
-                         If a directory is provided, it must contain ws--Dockerfile.
+                         If a directory is provided, it looks for .ws/Dockerfile.
   --image <name>         Use an existing local or remote image (e.g. repo/name:tag)
                          The script checks if the image exists locally and pulls it
                          only if it is missing (unless --pull is used).
