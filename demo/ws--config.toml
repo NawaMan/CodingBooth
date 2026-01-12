@@ -1,6 +1,8 @@
+variant = "xfce"
+
 # Mount credentials from host to container
 # NOTE: ~ and $VAR are automatically expanded
-#
+# 
 # Copy-on-write pattern: Mount to /tmp/ws-home-seed/ with :ro
 # Files are copied to user's home at startup (without overwriting existing)
 run-args = [

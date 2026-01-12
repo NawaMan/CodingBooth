@@ -227,10 +227,21 @@ fi
 
 chown "$HOST_UID:$HOST_GID" "$HOME_DIR/.bashrc" "$HOME_DIR/.profile" "$HOME_DIR/.zshrc" 2>/dev/null || true
 
+# --- Copy project's ws--home folder (team-shared defaults) ---
+# This allows teams to share common dotfiles, configs, or tool settings via version control.
+# Files are copied without overwriting existing ones (cp -rn).
+WS_HOME_DIR="$WORKSPACE_DIR/ws--home"
+if [ -d "$WS_HOME_DIR" ]; then
+  log "Copying project home files from $WS_HOME_DIR to $HOME_DIR..."
+  cp -rn "$WS_HOME_DIR/." "$HOME_DIR/" 2>/dev/null || true
+  chown -R "$HOST_UID:$HOST_GID" "$HOME_DIR" 2>/dev/null || true
+fi
+
 # --- Copy-on-write staging: copy from /tmp/ws-home-seed to $HOME ---
 # This allows mounting host files read-only to /tmp/ws-home-seed/ (e.g., credentials)
 # and getting a writable copy in the user's home directory.
 # Files are copied without overwriting existing ones (cp -rn).
+# NOTE: ws-home-seed runs AFTER ws--home, so host files take precedence over project files.
 WS_HOME_SEED="/tmp/ws-home-seed"
 if [ -d "$WS_HOME_SEED" ]; then
   log "Copying seed files from $WS_HOME_SEED to $HOME_DIR..."

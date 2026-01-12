@@ -6,7 +6,7 @@
 
 # notebook--setup.sh
 # Uses consolidated Python setup (/opt/workspace/setups/python--setup.sh),
-# then installs Jupyter and registers kernels + a "notebook" launcher.
+# then installs Jupyter and registers kernels + a "start-notebook" launcher.
 # NOTE: Bash kernel installation is delegated to ${SETUPS_DIR}/bash-nb-kernel--setup.sh
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -78,7 +78,7 @@ chmod -R a+rX "${KDIR}" || true
 
 
 # ---- Create startup script (ensures terminals inherit the venv) ----
-STARTER_FILE=/usr/local/bin/notebook
+STARTER_FILE=/usr/local/bin/start-notebook
 cat > ${STARTER_FILE} <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
@@ -101,7 +101,7 @@ exec "${WS_VENV_DIR}/bin/jupyter-lab" \
 EOF
 # Bake in the venv path
 _safe() { printf '%s' "$1" | sed -e 's/[&]/\\&/g'; }
-sed -i "s#__VENV_DIR_PLACEHOLDER__#$(_safe "${WS_VENV_DIR}")#g" /usr/local/bin/notebook
+sed -i "s#__VENV_DIR_PLACEHOLDER__#$(_safe "${WS_VENV_DIR}")#g" /usr/local/bin/start-notebook
 chmod +x ${STARTER_FILE}
 
 # ---- friendly summary ----
@@ -121,7 +121,7 @@ echo "     source /etc/profile.d/53-ws-python--profile.sh"
 echo
 echo "Then you can run:"
 echo "  notebook-setup-info"
-echo "  notebook            # launches JupyterLab on port 10000"
+echo "  start-notebook      # launches JupyterLab on port 10000"
 
 echo
 echo "Use it now in this shell (without reopening):"

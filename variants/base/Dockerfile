@@ -85,22 +85,8 @@ RUN mkdir -p /home/coder/workspace
 RUN mkdir -p /usr/share/startup.d
 
 
-# --- Shared shell config: create the file ---
-RUN cat >/etc/profile.d/50-ws-workspace-base--profile.sh <<'EOF'
-# ---- container defaults (safe to source multiple times) ----
-alias cp='cp -p'
-alias ls='ls --color=auto'
-alias grep='grep --color=auto'
-alias tree='tree -C'
-
-# Environment Defaults
-export EDITOR=${EDITOR:-tilde}
-export TERM=${TERM:-xterm-256color}
-
-# Permissions: default to 0664 files / 0775 dirs
-umask 0002
-# ---- end defaults ----
-EOF
+# --- Shared shell config: copy the profile script ---
+COPY --chmod=0644 50-ws-workspace-base--profile.sh /etc/profile.d/50-ws-workspace-base--profile.sh
 
 # --- Make bash and zsh source ALL /etc/profile.d/*.sh for interactive shells ---
 RUN set -euo pipefail \
@@ -136,80 +122,8 @@ RUN ln -s /usr/bin/tilde /usr/local/bin/editor
 RUN ln -s /usr/bin/mc    /usr/local/bin/explorer
 RUN ln -s /usr/bin/tig   /usr/local/bin/gitview
 
-RUN tee "/etc/profile.d/100-ws--profile.sh" >/dev/null <<'EOF'
-# Show a one-time-per-login tip about file-manager (Bash/sh-compatible)
-# Only for interactive shells
-case "$-" in
-  *i*) ;;
-  *) return ;;
-esac
-
-JPERM_INSTALLED=false
-function nbook() {
-  if [ "$JPERM_INSTALLED" = false ]; then
-
-    echo "First run: Installing jpterm -- this can take a while ..."
-
-    LOG_FILE="/var/setup.log"
-    sudo mkdir -p /var
-    sudo touch /var/setup.log
-    sudo chmod 777 /var/setup.log
-
-    run_quiet() {
-      "$@" >>"$LOG_FILE" 2>&1
-      local status=$?
-
-      if [ $status -ne 0 ]; then
-        echo "❌ ERROR: command failed: $*" >&2
-        echo "----- LOG OUTPUT ($LOG_FILE) -----" >&2
-        cat "$LOG_FILE" >&2 || echo "(log file not found)" >&2
-        echo "---------------------------------" >&2
-        on_error "$*" "$status"
-        exit $status
-      fi
-    }
-
-    on_error() {
-      local cmd="$1"
-      local code="$2"
-
-      # --- your error hook here ---
-      # Examples:
-      # logger -t setup "Command failed ($code): $cmd"
-      # mail -s "Setup failed" admin@example.com < "$LOG_FILE"
-      # curl -X POST https://hooks.slack.com/... -d "Setup failed"
-
-      echo "Hook: $cmd failed with exit code $code" >>"$LOG_FILE"
-    }
-
-    # export PATH="$HOME/.local/bin:$PATH"
-
-
-    run_quiet python3 -m pip install pipx
-    run_quiet pipx ensurepath
-
-    run_quiet pipx install jpterm
-    run_quiet python3 -m pip install --no-cache-dir jupyter_client bash_kernel
-    run_quiet python3 -m bash_kernel.install
-
-    JPERM_INSTALLED=true
-  fi
-
-  echo "Opening nbook..."
-  echo "After you quit jpterm, it can stuck in the background, you may have to do Ctrl+C."
-  jpterm "$@"
-}
-
-# Only once per login session
-if [ -z "${TIP_SHOWN:-}" ]; then
-  export TIP_SHOWN=1
-  echo "Welcome to the CodingBooth Workspace!"
-  echo ""
-  echo "Tip: use 'editor'   or 'tilde' to open the terminal text editor."
-  echo "Tip: use 'explorer' or 'mc'    to open the terminal file manager."
-  echo "Tip: use 'nbook'               to open the terminal nbook."
-fi
-EOF
+# --- Main workspace profile script with helper functions ---
+COPY --chmod=0644 100-ws--profile.sh /etc/profile.d/100-ws--profile.sh
 
 RUN echo "set -g mouse on" >> /etc/tmux.conf
 
@@ -223,15 +137,8 @@ USER root
 RUN "$WS_SETUPS_DIR/python--setup.sh" "${WS_PY_VERSION}" 
 
 
-# ---- Create startup file: to be executed ----
-RUN cat >"/usr/share/startup.d/100-ws--startup.sh" <<'EOF'
-#!/usr/bin/env bash
-set -euo pipefail
-
-git config --global alias.lg "log --oneline --graph --decorate --all"
-
-EOF
-RUN chmod 755 "/usr/share/startup.d/100-ws--startup.sh"
+# ---- Copy startup file: to be executed at first container start ----
+COPY --chmod=0755 100-ws--startup.sh /usr/share/startup.d/100-ws--startup.sh
 
 # Workdir
 WORKDIR /home/coder/workspace

@@ -13,4 +13,4 @@ RUN "$WS_SETUPS_DIR/python--setup.sh" "${WS_PY_VERSION}"
 RUN "$WS_SETUPS_DIR/notebook--setup.sh"
 RUN "$WS_SETUPS_DIR/bash-nb-kernel--setup.sh"
 
-CMD ["notebook"]
+CMD ["start-notebook"]

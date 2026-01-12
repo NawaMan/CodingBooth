@@ -265,8 +265,8 @@ You can tailor how WorkSpace runs by adjusting configuration files or using runt
 ```
 host                                 # your machine
   ├── project/                       # your project folder on the host
-  |    ├── workspace/                # workspace wrapper script
-  |    ├── .workspace                # workspace internal folder
+  |    ├── ws                        # workspace wrapper script
+  |    ├── .ws                       # workspace internal folder
   |    |    ├── tools                # workspace tools folder
   |    |        └── workspace        # workspace runner script
   |    ├── ...                       # other project files
@@ -276,8 +276,8 @@ container
   ├── home/
   |    ├── coder/
   |    |    ├── workspace/                # your project folder inside the container
-  |    |    |   ├── workspace             # workspace wrapper script
-  |    |    |   ├── .workspace            # workspace internal folder
+  |    |    |   ├── ws                    # workspace wrapper script
+  |    |    |   ├── .ws                   # workspace internal folder
   |    |    |   |    ├── tools            # workspace tools folder
   |    |    |   |    └── workspace        # workspace runner script
   |    |    ├── ...                       # other project files
@@ -310,10 +310,38 @@ container
 > WorkSpace uses the Docker CLI (`docker` command) rather than Docker client libraries.  
 > This keeps the codebase simple, portable, and easier to maintain while ensuring compatibility across platforms.
 
-### Home Seed Directory
+### Home Directory Customization
 
-WorkSpace supports a **copy-on-write pattern** for mounting host files (like credentials) into the container.  
-Instead of mounting directly to the user's home, you can mount read-only to `/tmp/ws-home-seed/` — files are automatically copied to the user's home at container startup.
+WorkSpace provides two mechanisms for populating the user's home directory with custom files at container startup:
+
+#### Project Home Folder (`ws--home/`)
+
+Create a `ws--home/` folder in your project to share team-wide dotfiles, tool configs, or shell customizations.
+
+**How it works:**
+- Place files in `ws--home/` with the same structure as `$HOME`
+- At container startup, files are copied to `/home/coder/` without overwriting existing files
+- The folder should be version-controlled (committed to git)
+
+**Example structure:**
+```
+my-project/
+├── ws--config.toml
+├── ws--Dockerfile
+└── ws--home/
+    ├── .bashrc              # Team bashrc additions
+    ├── .config/
+    │   └── nvim/
+    │       └── init.lua     # Shared neovim config
+    └── .gitconfig           # Team git settings
+```
+
+> ⚠️ **Warning:**  
+> Do NOT put secrets, credentials, or personal tokens in `ws--home/` — this folder is meant to be committed to version control and shared with your team.
+
+#### Home Seed Directory (`/tmp/ws-home-seed/`)
+
+Mount host files read-only to `/tmp/ws-home-seed/` for **personal credentials** that should not be version-controlled.
 
 **How it works:**
 1. Mount host files read-only to `/tmp/ws-home-seed/` (preserving the relative path structure)
@@ -330,12 +358,23 @@ run-args = [
 
 **Use cases:**
 - **Credentials** — gcloud, GitHub Copilot, SSH keys (apps may refresh tokens)
-- **IDE settings** — VS Code, IntelliJ configurations
-- **Dotfiles** — `.bashrc`, `.gitconfig` (container can customize without affecting host)
+- **Personal IDE settings** — VS Code, IntelliJ configurations
+- **Personal dotfiles** — `.bashrc`, `.gitconfig` customizations
+
+#### Precedence Order
+
+Files are copied in this order (later sources win if the file doesn't exist yet):
+
+1. **`ws--home/`** (project folder) — Team-shared defaults
+2. **`/tmp/ws-home-seed/`** (host mounts) — Personal credentials & preferences
+3. **Existing files** — Already in `/home/coder/` are preserved
+
+Since all copies use `cp -rn` (no-clobber), the first source to create a file "wins".  
+In practice: host-mounted files in `ws-home-seed` override project defaults in `ws--home`.
 
 > 💡 **Tip:**  
-> Use this pattern when an application needs to write to its config files (e.g., refreshing OAuth tokens),  
-> but you don't want those changes persisted back to the host.
+> Use `ws--home/` for team configs (neovim, linters, shell aliases).  
+> Use `ws-home-seed` for personal credentials (gcloud, SSH keys, API tokens).
 
 
 
