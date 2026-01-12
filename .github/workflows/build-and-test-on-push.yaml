@@ -1,4 +1,5 @@
-# .github/workflows/build-on-push.yml
+# CI workflow: builds Go CLI, runs tests on every push.
+# Triggers on: push to any branch, manual dispatch.
 name: Build and Test on Push
 
 on:

@@ -1,3 +1,5 @@
+# Creates GitHub releases with multi-platform workspace binaries and ws wrapper.
+# Triggers on: manual dispatch only.
 name: Release workspace and ws
 
 on:
