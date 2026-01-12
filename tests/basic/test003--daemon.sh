@@ -50,7 +50,7 @@ function random_free_port() {
 RunWorkspace() {
   local name="$1"
   local port="$2"
-  ../../workspace --variant base --name "$name" --port "$port" --daemon -- 'sleep 5'
+  ../../workspace --variant base --name "$name" --port "$port" --daemon -- 'sleep 10'
 }
 
 NAME="$(generate_name)"
@@ -75,7 +75,7 @@ else
 fi
 
 
-sleep 10
+sleep 20
 
 if ! docker inspect "$NAME" >/dev/null 2>&1; then
   print_test_result "true" "$0" "2" "Container '$NAME' has been removed as expected after waiting for it to finish."

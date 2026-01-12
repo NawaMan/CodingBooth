@@ -50,7 +50,7 @@ function random_free_port() {
 RunWorkspace() {
   local name="$1"
   local port="$2"
-  ../../workspace --variant base --name "$name" --port "$port" --daemon --keep-alive -- sleep 5
+  ../../workspace --variant base --name "$name" --port "$port" --daemon --keep-alive -- sleep 10
 }
 
 NAME="$(generate_name)"
@@ -75,7 +75,7 @@ else
 fi
 
 
-sleep 7
+sleep 12
 
 if docker inspect "$NAME" >/dev/null 2>&1; then
   print_test_result "true" "$0" "2" "Container '$NAME' still exists as it is kept alive"
