@@ -10,16 +10,6 @@ jobs:
     name: ${{ matrix.platform }} / ${{ matrix.arch }}
     runs-on: ${{ matrix.runs_on }}
 
-    # Linux+Windows ARM64 hosted runners are only available (free) on PUBLIC repos.
-    # Skip those entries automatically on private repos to avoid hard failures.
-    if: >-
-      ${{
-        !(
-          github.event.repository.private &&
-          (matrix.runs_on == 'ubuntu-24.04-arm' || matrix.runs_on == 'windows-11-arm')
-        )
-      }}
-
     permissions:
       contents: read
 
