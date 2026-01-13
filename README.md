@@ -787,12 +787,9 @@ Simply copy into your docker image and run it just like other setup scripts.
 
 ### JetBrains IDE licensing in containers (important)
 
-JetBrains IDEs (IntelliJ, PyCharm, GoLand, etc.) in ephemeral containers:
-JetBrains activation is stored as a machine-specific token. When you run an IDE backend inside a container, a fresh container may be treated as a new machine, so you may be asked to sign in again, and trials may appear to restart.
-This is expected behavior. WorkSpace does not copy or bypass licensing data.
+JetBrains activation is stored as a machine-specific token. When you run an IDE backend inside a container, a fresh container may be treated as a new machine, so you may be asked to sign in again unless IDE state is persisted.
 
-### Recommended options (supported by JetBrains):
-
+**Recommended approaches:**
 - JetBrains Gateway (preferred): license checked on your local machine; container backend doesn’t store license data.
 - Persistent volumes: mount configs/caches/plugins if you run a full GUI IDE inside the container.
 - License Vault: for short-lived containers / multi-machine scenarios.
