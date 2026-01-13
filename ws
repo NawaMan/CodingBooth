@@ -259,7 +259,15 @@ function DownloadWorkspace() {
     # Clear previous SHA256 file (will rebuild with all binaries)
     > "$sha_file"
 
+    # Download version.txt to get the actual version
     local actual_version=""
+    local VERSION_URL="${DWLD_URL}/${WS_VERSION}/version.txt"
+    if actual_version=$(curl -fsSL "$VERSION_URL" 2>/dev/null | tr -d ' \t\r\n'); then
+        [[ "$VERBOSE" == "true" ]] && echo "  Version: $actual_version"
+    else
+        actual_version=""
+    fi
+
     local current_platform
     current_platform=$(detect_platform 2>/dev/null || echo "unknown")
     local download_count=0
@@ -325,11 +333,6 @@ function DownloadWorkspace() {
 
         # Append to combined SHA256 file
         printf '%s  %s\n' "$actual_sha256" "$binary_name" >> "$sha_file"
-
-        # Get version from current platform binary
-        if [[ "$platform" == "$current_platform" && -z "$actual_version" ]]; then
-            actual_version=$("$dest" ws-version 2>/dev/null || echo "")
-        fi
 
         rm -f "$tmpsha256"
         : $((download_count++))
