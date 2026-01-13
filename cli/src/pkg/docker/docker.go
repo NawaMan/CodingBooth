@@ -171,7 +171,13 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 		cmd.Stdout = io.Discard
 		cmd.Stderr = io.Discard
 	} else {
-		cmd.Stdout = os.Stdout
+		// For build commands, redirect stdout to stderr for consistent behavior
+		// between legacy builder (outputs to stdout) and BuildKit (outputs to stderr)
+		if subcommand == "build" {
+			cmd.Stdout = os.Stderr
+		} else {
+			cmd.Stdout = os.Stdout
+		}
 		cmd.Stderr = os.Stderr
 	}
 
