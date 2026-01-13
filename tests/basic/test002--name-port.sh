@@ -75,7 +75,8 @@ else
 fi
 
 
-sleep 20
+# Wait longer for container to finish (sleep 10 + shell init + cleanup overhead)
+sleep 30
 
 if ! docker inspect "$NAME" >/dev/null 2>&1; then
   print_test_result "true" "$0" "2" "Container '$NAME' has been removed as expected after waiting for it to finish."
