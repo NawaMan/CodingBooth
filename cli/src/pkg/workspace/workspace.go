@@ -263,6 +263,11 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_HAS_VSCODE=%t", ctx.HasVscode())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_HAS_DESKTOP=%t", ctx.HasDesktop())))
 
+	// Custom startup script
+	if ctx.Startup() != "" {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_STARTUP="+ctx.Startup()))
+	}
+
 	if !ctx.Pull() {
 		builder.CommonArgs.Append(ilist.NewList[string]("--pull=never"))
 	}

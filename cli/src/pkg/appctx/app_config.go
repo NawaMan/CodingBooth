@@ -55,6 +55,7 @@ type AppConfig struct {
 	Name    string `toml:"name,omitempty"      envconfig:"WS_NAME"`
 	Port    string `toml:"port,omitempty"      envconfig:"WS_PORT" default:"NEXT"`
 	EnvFile string `toml:"env-file,omitempty"  envconfig:"WS_ENV_FILE"`
+	Startup string `toml:"startup,omitempty"   envconfig:"WS_STARTUP"`
 
 	// --------------------
 	// TOML-friendly array fields
@@ -125,6 +126,7 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Name:             %q\n", config.Name)
 	fmt.Fprintf(&str, "    Port:             %q\n", config.Port)
 	fmt.Fprintf(&str, "    EnvFile:          %q\n", config.EnvFile)
+	fmt.Fprintf(&str, "    Startup:          %q\n", config.Startup)
 
 	fmt.Fprintf(&str, "# TOML-friendly array fields ----\n")
 	formatList(&str, "CommonArgs", config.CommonArgs.List, "    ")

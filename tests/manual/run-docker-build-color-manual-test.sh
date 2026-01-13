@@ -22,5 +22,9 @@ echo
 echo "Press Enter to start..."
 read
 
+cd "$SCRIPT_DIR/cli"
+echo "Building test binary..."
+go build -o /tmp/docker-build-color-manual-test ./src/cmd/docker-build-color-manual-test/main.go
 cd "$SCRIPT_DIR"
-go run ./cli/src/cmd/docker-build-color-manual-test/main.go
+/tmp/docker-build-color-manual-test
+
