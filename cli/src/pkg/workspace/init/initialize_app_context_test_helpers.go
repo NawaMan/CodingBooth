@@ -62,6 +62,11 @@ func RunInitializeAppContext(test *testing.T, input TestInput) TestOutcome {
 
 	// Temp workspace dir + chdir
 	ws := test.TempDir()
+	// Resolve symlinks to get canonical path (e.g., on macOS /var -> /private/var)
+	// This ensures paths match what filepath.Abs() returns in production code
+	if resolved, err := filepath.EvalSymlinks(ws); err == nil {
+		ws = resolved
+	}
 	oldWD, err := os.Getwd()
 	if err != nil {
 		test.Fatalf("Getwd: %v", err)
