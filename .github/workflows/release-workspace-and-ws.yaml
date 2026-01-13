@@ -108,6 +108,7 @@ jobs:
             bin/workspace-windows-arm64.exe
             bin/workspace-windows-arm64.exe.sha256
             ws
+            version.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -136,6 +137,7 @@ jobs:
             bin/workspace-windows-arm64.exe
             bin/workspace-windows-arm64.exe.sha256
             ws
+            version.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -165,5 +167,6 @@ jobs:
             bin/workspace-windows-arm64.exe
             bin/workspace-windows-arm64.exe.sha256
             ws
+            version.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
