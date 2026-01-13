@@ -45,9 +45,8 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
     see if you can figure out what they are.
 8. Try other [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples) or different [variants](https://github.com/NawaMan/WorkSpace/tree/latest?tab=readme-ov-file#available-variants).
 9. Try on your own project,
-  1. Download the [wrapper script (`ws`)](https://github.com/NawaMan/WorkSpace/releases/download/latest/ws) and put it in your project folder.
-  2. Run `./ws install` to download the workspace binary for your platform.
-  2. Create `.ws/Dockerfile` and `.ws/config.toml` -- Take inspire from the existing [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples).
+  1. Run: `curl -fsSL https://github.com/NawaMan/WorkSpace/releases/download/latest/ws | bash`
+  2. Create `.ws/Dockerfile` and `.ws/config.toml` -- Take inspiration from the existing [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples).
 
 ## Installation
 
@@ -55,11 +54,7 @@ Run the following on the project **base folder** to install [CodingBooth WorkSpa
 The wrapper allows management of the workspace script file.
 
 ```shell
-curl -fsSL -o ws \
-  https://github.com/NawaMan/WorkSpace/releases/download/latest/ws \
-  && chmod +x ws \
-  && ./ws install \
-  && ./ws help
+curl -fsSL https://github.com/NawaMan/WorkSpace/releases/download/latest/ws | bash
 ```
 
 Run the wrapper script and follow the instructions.
