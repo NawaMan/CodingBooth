@@ -2,7 +2,21 @@
 set -euo pipefail
 trap 'status=$?; echo "❌ Error on line $LINENO (exit $status)" >&2; exit "$status"' ERR
 
-VERSION=0.4.0
+# --- PIPE INSTALL DETECTION ---
+# Detect if running via pipe (curl ... | bash)
+# When piped, $0 is the shell name, not a script path
+if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
+      "$0" == "sh"   || "$0" == "-sh"   || "$0" == "/bin/sh"   || \
+      "$0" == "zsh"  || "$0" == "-zsh"  || "$0" == "/bin/zsh" ]]; then
+    echo "Installing WorkSpace wrapper..."
+    curl -fsSL -o ws https://github.com/NawaMan/WorkSpace/releases/download/latest/ws
+    chmod +x ws
+    ./ws install
+    ./ws help
+    exit 0
+fi
+
+VERSION=0.5.0
 VERBOSE="${VERBOSE:-true}"
 
 # Decide what the "command" is:
