@@ -12,9 +12,39 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"sync"
 
 	"github.com/nawaman/workspace/src/pkg/ilist"
 )
+
+// buildKitAvailable caches the result of BuildKit detection
+var (
+	buildKitOnce      sync.Once
+	buildKitAvailable bool
+)
+
+// hasBuildKitSupport checks if Docker BuildKit is available.
+// BuildKit supports the --progress flag; the legacy builder does not.
+// This function caches the result for efficiency.
+func hasBuildKitSupport() bool {
+	buildKitOnce.Do(func() {
+		// Check if DOCKER_BUILDKIT=1 is explicitly set
+		if os.Getenv("DOCKER_BUILDKIT") == "1" {
+			buildKitAvailable = true
+			return
+		}
+
+		// Check if docker buildx is available (indicates BuildKit support)
+		cmd := exec.Command("docker", "buildx", "version")
+		if err := cmd.Run(); err == nil {
+			buildKitAvailable = true
+			return
+		}
+
+		buildKitAvailable = false
+	})
+	return buildKitAvailable
+}
 
 type DockerFlags struct {
 	Dryrun  bool
@@ -31,8 +61,8 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 		var printingArgs [][]string
 		printingArgs = append(printingArgs, []string{subcommand})
 
-		// For build commands, check for --progress
-		if subcommand == "build" {
+		// For build commands, add --progress=auto if BuildKit is available and not already set
+		if subcommand == "build" && hasBuildKitSupport() {
 			hasProgress := false
 			args.Range(func(_ int, group ilist.List[string]) bool {
 				group.Range(func(_ int, arg string) bool {
@@ -87,8 +117,8 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 		}
 	}
 
-	// For build commands, add --progress=auto if not present
-	if subcommand == "build" {
+	// For build commands, add --progress=auto if BuildKit is available and not already set
+	if subcommand == "build" && hasBuildKitSupport() {
 		hasProgress := false
 		args.Range(func(_ int, group ilist.List[string]) bool {
 			group.Range(func(_ int, arg string) bool {
@@ -141,7 +171,13 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 		cmd.Stdout = io.Discard
 		cmd.Stderr = io.Discard
 	} else {
-		cmd.Stdout = os.Stdout
+		// For build commands, redirect stdout to stderr for consistent behavior
+		// between legacy builder (outputs to stdout) and BuildKit (outputs to stderr)
+		if subcommand == "build" {
+			cmd.Stdout = os.Stderr
+		} else {
+			cmd.Stdout = os.Stdout
+		}
 		cmd.Stderr = os.Stderr
 	}
 
@@ -165,8 +201,8 @@ func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.Li
 		var printingArgs [][]string
 		printingArgs = append(printingArgs, []string{subcommand})
 
-		// For build commands, check for --progress
-		if subcommand == "build" {
+		// For build commands, add --progress=auto if BuildKit is available and not already set
+		if subcommand == "build" && hasBuildKitSupport() {
 			hasProgress := false
 			args.Range(func(_ int, group ilist.List[string]) bool {
 				group.Range(func(_ int, arg string) bool {
@@ -220,8 +256,8 @@ func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.Li
 		}
 	}
 
-	// For build commands, add --progress=auto if not present
-	if subcommand == "build" {
+	// For build commands, add --progress=auto if BuildKit is available and not already set
+	if subcommand == "build" && hasBuildKitSupport() {
 		hasProgress := false
 		args.Range(func(_ int, group ilist.List[string]) bool {
 			group.Range(func(_ int, arg string) bool {
