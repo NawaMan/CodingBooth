@@ -273,6 +273,21 @@ if [ -d "/usr/share/startup.d" ] && [ ! -f "$RUN_ONCE_FLAG" ]; then
   touch "$RUN_ONCE_FLAG"
 fi
 
+# --- User custom startup script (from --startup or .ws/startup.sh) ---
+# Use WS_STARTUP if set, otherwise check for .ws/startup.sh in workspace
+WS_STARTUP_SCRIPT="${WS_STARTUP:-}"
+if [ -z "$WS_STARTUP_SCRIPT" ] && [ -f "$WORKSPACE_DIR/.ws/startup.sh" ]; then
+  WS_STARTUP_SCRIPT="$WORKSPACE_DIR/.ws/startup.sh"
+fi
+
+if [ -n "$WS_STARTUP_SCRIPT" ] && [ -f "$WS_STARTUP_SCRIPT" ] && [ -r "$WS_STARTUP_SCRIPT" ]; then
+  log "Running user startup script: $WS_STARTUP_SCRIPT"
+  runuser -u "$USER_NAME" -- bash -lc "
+    set -euo pipefail
+    source '$WS_STARTUP_SCRIPT'
+  "
+fi
+
 # Exec the requested command as coder (default to login shell if none provided)
 if [ "$#" -eq 0 ]; then
   log "No command provided; starting login shell for $USER_NAME..."

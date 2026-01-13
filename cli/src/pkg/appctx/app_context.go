@@ -105,6 +105,7 @@ func (ctx AppContext) Timezone() string    { return ctx.values.Config.Timezone }
 func (ctx AppContext) Name() string    { return ctx.values.Config.Name }
 func (ctx AppContext) Port() string    { return ctx.values.Config.Port }
 func (ctx AppContext) EnvFile() string { return ctx.values.Config.EnvFile }
+func (ctx AppContext) Startup() string { return ctx.values.Config.Startup }
 
 // derived from all the context processing (IMMUTABLE SNAPSHOTS)
 func (ctx AppContext) CommonArgs() ilist.List[ilist.List[string]] { return ctx.commonArgs }
@@ -186,6 +187,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Name:             %q\n", ctx.Name())
 	fmt.Fprintf(&str, "    Port:             %q\n", ctx.Port())
 	fmt.Fprintf(&str, "    EnvFile:          %q\n", ctx.EnvFile())
+	fmt.Fprintf(&str, "    Startup:          %q\n", ctx.Startup())
 
 	fmt.Fprintf(&str, "# Lists (Immutable) -------------\n")
 	formatList(&str, "CommonArgs", ctx.CommonArgs(), "    ")
