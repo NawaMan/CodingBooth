@@ -1,4 +1,13 @@
 #!/bin/bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+
+# WorkSpace Wrapper (ws)
+# Downloads, verifies, and runs the platform-specific WorkSpace binary.
+# Install: curl -fsSL https://github.com/NawaMan/WorkSpace/releases/download/latest/ws | bash
+
 set -euo pipefail
 trap 'status=$?; echo "❌ Error on line $LINENO (exit $status)" >&2; exit "$status"' ERR
 
@@ -34,12 +43,20 @@ function Main() {
 
     ### --- RUN MODE --- ###
     tools_dir=".ws/tools"
-    dest="$tools_dir/workspace"
     sha_file="$tools_dir/workspace.sha256"
     meta_file="$tools_dir/workspace.meta"
 
+    # Detect current platform and get the correct binary
+    local platform binary_name dest
+    if ! platform=$(detect_platform); then
+        echo "Error: Failed to detect platform" >&2
+        exit 1
+    fi
+    binary_name=$(get_binary_name "$platform")
+    dest="$tools_dir/$binary_name"
+
     if [[ ! -f "$dest" || ! -f "$sha_file" || ! -f "$meta_file" ]]; then
-        echo "WorkSpace is not installed correctly."
+        echo "WorkSpace is not installed correctly for platform: $platform"
         echo "Please run: $0 install"
         exit 1
     fi
@@ -55,16 +72,25 @@ function Main() {
         integrity_mode="official"
     fi
 
-    # Ensure workspace is newer than checksum
+    # Ensure workspace binary is newer than checksum
     if [[ "$dest" -ot "$sha_file" ]]; then
-        echo "workspace appears older than its checksum file."
+        echo "workspace binary appears older than its checksum file."
         echo "Run: $0 update  to restore the official release."
         exit 1
     fi
 
-    # Verify SHA256 (suppress raw sha* warnings; we print our own)
-    if ! (cd "$tools_dir" && hash_sha256 -c "workspace.sha256" >/dev/null 2>&1); then
-        echo "Local workspace failed SHA256 verification."
+    # Verify SHA256 for this platform's binary
+    local expected_sha256 actual_sha256
+    expected_sha256=$(grep "  $binary_name\$" "$sha_file" 2>/dev/null | awk '{print $1}')
+    if [[ -z "$expected_sha256" ]]; then
+        echo "No SHA256 entry found for $binary_name"
+        echo "Run: $0 update  to restore the official release."
+        exit 1
+    fi
+
+    actual_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
+    if [[ "$expected_sha256" != "$actual_sha256" ]]; then
+        echo "Local workspace ($binary_name) failed SHA256 verification."
 
         if [[ "$integrity_mode" == "local" ]]; then
             echo "Run:    $0 update  to restore the official release,"
@@ -113,18 +139,27 @@ EOF
 
 function PrintVersion() {
     cat <<'EOF'
-__      __       _    ___                    __      __                           
-\ \    / /__ _ _| |__/ __|_ __  __ _ __ ___  \ \    / / _ __ _ _ __ _ __  ___ _ _ 
+__      __       _    ___                    __      __
+\ \    / /__ _ _| |__/ __|_ __  __ _ __ ___  \ \    / / _ __ _ _ __ _ __  ___ _ _
  \ \/\/ / _ \ '_| / /\__ \ '_ \/ _` / _/ -_)  \ \/\/ / '_/ _` | '_ \ '_ \/ -_) '_|
-  \_/\_/\___/_| |_\_\|___/ .__/\__,_\__\___|   \_/\_/|_| \__,_| .__/ .__/\___|_|  
-                         |_|                                  |_|  |_|            
+  \_/\_/\___/_| |_\_\|___/ .__/\__,_\__\___|   \_/\_/|_| \__,_| .__/ .__/\___|_|
+                         |_|                                  |_|  |_|
 EOF
     echo "WorkSpace Wrapper: $VERSION"
 
-    TOOL=".ws/tools/workspace"
-    META=".ws/tools/workspace.meta"
+    local tools_dir=".ws/tools"
+    local META="$tools_dir/workspace.meta"
 
-    if [[ ! -f "$TOOL" ]]; then echo "WorkSpace: uninstalled" ; exit 0 ; fi
+    # Detect current platform and get the correct binary
+    local platform binary_name TOOL
+    platform=$(detect_platform 2>/dev/null || echo "unknown")
+    binary_name=$(get_binary_name "$platform")
+    TOOL="$tools_dir/$binary_name"
+
+    if [[ ! -f "$TOOL" ]]; then
+        echo "WorkSpace: uninstalled (no binary for $platform)"
+        exit 0
+    fi
 
     [[ ! -x "$TOOL" ]] && chmod +x "$TOOL" 2>/dev/null || true
 
@@ -137,6 +172,7 @@ EOF
 
     echo ""
     echo "$TOOL_VERSION"
+    echo "Platform: $platform"
     if [[ "$local_integrity" == "local" ]]; then echo "With local changes." ; fi
 }
 
@@ -180,13 +216,28 @@ function get_binary_name() {
     fi
 }
 
+# All supported platforms (5 total)
+ALL_PLATFORMS=(
+    "linux-amd64"
+    "linux-arm64"
+    "darwin-amd64"
+    "darwin-arm64"
+    "windows-amd64"
+)
+
 function UninstallWorkspace() {
     local tools_dir=".ws/tools"
-    local dest="$tools_dir/workspace"
     local sha_file="$tools_dir/workspace.sha256"
     local meta_file="$tools_dir/workspace.meta"
 
-    rm -f "$dest" "$sha_file" "$meta_file"
+    # Remove all platform binaries
+    for platform in "${ALL_PLATFORMS[@]}"; do
+        local binary_name
+        binary_name=$(get_binary_name "$platform")
+        rm -f "$tools_dir/$binary_name"
+    done
+
+    rm -f "$sha_file" "$meta_file"
 
     rmdir "$tools_dir" 2>/dev/null || true
     rmdir ".ws" 2>/dev/null || true
@@ -196,126 +247,181 @@ function UninstallWorkspace() {
 
 function DownloadWorkspace() {
     WS_VERSION=${1:-latest}
-    local tmpfile tmpsha256 expected_sha256 actual_sha256
     local tools_dir=".ws/tools"
-    local dest="$tools_dir/workspace"
     local sha_file="$tools_dir/workspace.sha256"
     local meta_file="$tools_dir/workspace.meta"
 
-    # Detect platform
-    local platform binary_name
-    if ! platform=$(detect_platform); then
-        echo "Error: Failed to detect platform" >&2
-        return 1
-    fi
-    binary_name=$(get_binary_name "$platform")
-
-    tmpfile=$(mktemp "/tmp/workspace.XXXXXX")
-    tmpsha256=$(mktemp "/tmp/workspace.sha256.XXXXXX")
-
     REPO_URL="https://github.com/NawaMan/WorkSpace"
     DWLD_URL="${REPO_URL}/releases/download"
-    TOOL_URL="${DWLD_URL}/${WS_VERSION}/${binary_name}"
-    SHA256_URL="${DWLD_URL}/${WS_VERSION}/${binary_name}.sha256"
-
-    if [[ "$VERBOSE" == "true" ]]; then
-        echo "Downloading workspace for platform: $platform"
-        echo "Binary: $binary_name"
-        echo "URL: $TOOL_URL"
-    fi
-
-    if ! curl -fsSLo "$tmpfile" "$TOOL_URL"; then
-        echo "Error: Failed to download workspace from ${TOOL_URL}" >&2
-        rm -f "$tmpfile" "$tmpsha256"
-        return 1
-    fi
-
-    if ! curl -fsSLo "$tmpsha256" "$SHA256_URL"; then
-        echo "Error: Failed to download workspace.sha256 from ${SHA256_URL}" >&2
-        rm -f "$tmpfile" "$tmpsha256"
-        return 1
-    fi
-
-    expected_sha256=$(awk '{print $1}' "$tmpsha256")
-    if ! [[ "$expected_sha256" =~ ^[0-9a-fA-F]{64}$ ]]; then
-        echo "Malformed SHA256 file: $expected_sha256" >&2
-        rm -f "$tmpfile" "$tmpsha256"
-        return 1
-    fi
-
-    actual_sha256=$(hash_sha256 "$tmpfile" | awk '{print $1}')
-
-    if [[ "$expected_sha256" != "$actual_sha256" ]]; then
-        echo "SHA256 mismatch for downloaded workspace" >&2
-        rm -f "$tmpfile" "$tmpsha256"
-        return 1
-    fi
-
-    chmod +x "$tmpfile"
-    actual_version=$("$tmpfile" ws-version 2>/dev/null || echo "")
 
     mkdir -p "$tools_dir"
 
-    # Install the verified tool
-    mv    -f "$tmpfile" "$dest"
-    chmod +x "$dest"
+    # Clear previous SHA256 file (will rebuild with all binaries)
+    > "$sha_file"
 
-    # Write the checksum file for this exact file
-    printf '%s  %s\n' "$actual_sha256" "workspace" > "$sha_file"
+    local actual_version=""
+    local current_platform
+    current_platform=$(detect_platform 2>/dev/null || echo "unknown")
+    local download_count=0
+    local fail_count=0
 
+    echo "Downloading WorkSpace binaries for all platforms..."
+
+    for platform in "${ALL_PLATFORMS[@]}"; do
+        local binary_name
+        binary_name=$(get_binary_name "$platform")
+        local dest="$tools_dir/$binary_name"
+        local TOOL_URL="${DWLD_URL}/${WS_VERSION}/${binary_name}"
+        local SHA256_URL="${DWLD_URL}/${WS_VERSION}/${binary_name}.sha256"
+
+        if [[ "$VERBOSE" == "true" ]]; then
+            echo "  Downloading: $binary_name"
+        else
+            echo -n "  $platform ... "
+        fi
+
+        local tmpfile tmpsha256
+        tmpfile=$(mktemp "/tmp/workspace.XXXXXX")
+        tmpsha256=$(mktemp "/tmp/workspace.sha256.XXXXXX")
+
+        # Download binary
+        if ! curl -fsSLo "$tmpfile" "$TOOL_URL"; then
+            echo "FAILED (download)"
+            rm -f "$tmpfile" "$tmpsha256"
+            : $((fail_count++))
+            continue
+        fi
+
+        # Download SHA256
+        if ! curl -fsSLo "$tmpsha256" "$SHA256_URL"; then
+            echo "FAILED (sha256)"
+            rm -f "$tmpfile" "$tmpsha256"
+            : $((fail_count++))
+            continue
+        fi
+
+        # Verify SHA256
+        local expected_sha256 actual_sha256
+        expected_sha256=$(awk '{print $1}' "$tmpsha256")
+        if ! [[ "$expected_sha256" =~ ^[0-9a-fA-F]{64}$ ]]; then
+            echo "FAILED (malformed sha256)"
+            rm -f "$tmpfile" "$tmpsha256"
+            : $((fail_count++))
+            continue
+        fi
+
+        actual_sha256=$(hash_sha256 "$tmpfile" | awk '{print $1}')
+        if [[ "$expected_sha256" != "$actual_sha256" ]]; then
+            echo "FAILED (sha256 mismatch)"
+            rm -f "$tmpfile" "$tmpsha256"
+            : $((fail_count++))
+            continue
+        fi
+
+        # Install verified binary
+        chmod +x "$tmpfile"
+        mv -f "$tmpfile" "$dest"
+        chmod +x "$dest"
+
+        # Append to combined SHA256 file
+        printf '%s  %s\n' "$actual_sha256" "$binary_name" >> "$sha_file"
+
+        # Get version from current platform binary
+        if [[ "$platform" == "$current_platform" && -z "$actual_version" ]]; then
+            actual_version=$("$dest" ws-version 2>/dev/null || echo "")
+        fi
+
+        rm -f "$tmpsha256"
+        : $((download_count++))
+
+        if [[ "$VERBOSE" != "true" ]]; then
+            echo "OK"
+        fi
+    done
+
+    if [[ $fail_count -gt 0 ]]; then
+        echo "Warning: $fail_count platform(s) failed to download" >&2
+    fi
+
+    if [[ $download_count -eq 0 ]]; then
+        echo "Error: No binaries were downloaded successfully" >&2
+        return 1
+    fi
+
+    # Write metadata
     {
         echo "version=${actual_version}"
-        echo "platform=${platform}"
-        echo "binary=${binary_name}"
-        echo "url=${TOOL_URL}"
-        echo "sha256=${actual_sha256}"
+        echo "platforms=${ALL_PLATFORMS[*]}"
+        echo "download_count=${download_count}"
         echo "integrity=official"
         echo "downloaded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     } > "$meta_file"
 
-    rm -f "$tmpsha256"
+    # Touch all binaries to be newer than checksum
+    for platform in "${ALL_PLATFORMS[@]}"; do
+        local binary_name
+        binary_name=$(get_binary_name "$platform")
+        local dest="$tools_dir/$binary_name"
+        [[ -f "$dest" ]] && touch "$dest"
+    done
 
-    # IMPORTANT: enforce your integrity model
-    # Tool *must* be newer than its checksum in trusted states.
-    touch "$dest"
-
+    echo "WorkSpace installed: $download_count binaries downloaded, verified, and installed."
     if [[ "$VERBOSE" == "true" ]]; then
-        echo "workspace downloaded, verified, and installed."
-        echo "Workspace: $dest"
-        echo "Metadata : $meta_file"
+        echo "Metadata: $meta_file"
     fi
 }
 
 function RehashWorkspace() {
     local tools_dir=".ws/tools"
-    local dest="$tools_dir/workspace"
     local sha_file="$tools_dir/workspace.sha256"
     local meta_file="$tools_dir/workspace.meta"
 
-    if [[ ! -f "$dest" ]]; then
-        echo "Error: workspace not found. Please run: $0 install" >&2
+    # Check if at least one platform binary exists
+    local found_any=false
+    for platform in "${ALL_PLATFORMS[@]}"; do
+        local binary_name
+        binary_name=$(get_binary_name "$platform")
+        if [[ -f "$tools_dir/$binary_name" ]]; then
+            found_any=true
+            break
+        fi
+    done
+
+    if [[ "$found_any" != "true" ]]; then
+        echo "Error: No workspace binaries found. Please run: $0 install" >&2
         return 1
     fi
 
     mkdir -p "$tools_dir"
 
-    local actual_sha256
-    actual_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
+    # Clear and rebuild SHA256 file for all existing binaries
+    > "$sha_file"
+    local rehash_count=0
 
-    printf '%s  %s\n' "$actual_sha256" "workspace" > "$sha_file"
+    for platform in "${ALL_PLATFORMS[@]}"; do
+        local binary_name
+        binary_name=$(get_binary_name "$platform")
+        local dest="$tools_dir/$binary_name"
+
+        if [[ -f "$dest" ]]; then
+            local actual_sha256
+            actual_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
+            printf '%s  %s\n' "$actual_sha256" "$binary_name" >> "$sha_file"
+            touch "$dest"
+            : $((rehash_count++))
+        fi
+    done
 
     {
         echo "version=local"
-        echo "url=local"
-        echo "sha256=${actual_sha256}"
+        echo "platforms=${ALL_PLATFORMS[*]}"
+        echo "rehash_count=${rehash_count}"
         echo "integrity=local"
         echo "rehash_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     } > "$meta_file"
 
-    touch "$dest"
-
-    echo "workspace has been rehashed."
-    echo "⚠️ This WorkSpace installation is now marked as locally modified (integrity=local)."
+    echo "WorkSpace has been rehashed ($rehash_count binaries)."
+    echo "This installation is now marked as locally modified (integrity=local)."
 }
 
 # Early handling of version/help so they don't require curl
