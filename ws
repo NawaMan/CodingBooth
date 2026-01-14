@@ -112,7 +112,7 @@ function Main() {
 
 function PrintHelp() {
     cat <<EOF
-Usage: $(basename "$0") <command> [args...]
+Usage: ./$(basename "$0") <command> [args...]
 
 Purpose:
   This script is the *WorkSpace Wrapper*.
