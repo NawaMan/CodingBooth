@@ -75,8 +75,16 @@ else
 fi
 
 
-# Wait longer for container to finish (sleep 10 + shell init + cleanup overhead)
-sleep 30
+# Wait for container to finish and be removed (max ~60 seconds)                                                                                
+# Uses polling instead of fixed sleep for faster completion on amd64                                                                           
+# while allowing more time on slower ARM64 runners                                                                                             
+for i in {1..60}; do                                                                                                                           
+  if ! docker inspect "$NAME" >/dev/null 2>&1; then                                                                                            
+    break                                                                                                                                      
+  fi                                                                                                                                           
+  sleep 1                                                                                                                                      
+done
+
 
 if ! docker inspect "$NAME" >/dev/null 2>&1; then
   print_test_result "true" "$0" "2" "Container '$NAME' has been removed as expected after waiting for it to finish."
