@@ -20,7 +20,17 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     echo "Installing WorkSpace wrapper..."
     curl -fsSL -o ws https://github.com/NawaMan/WorkSpace/releases/download/latest/ws
     chmod +x ws
+    echo ""
+    echo ""
+    echo ""
     ./ws install
+    echo ""
+    echo "✅ WorkSpace has been installed."
+    echo ""
+    echo ""
+    echo ""
+    echo "Run './ws help' to see available commands."
+    echo ""
     ./ws help
     exit 0
 fi
@@ -35,7 +45,6 @@ function Main() {
     ### --- COMMAND DISPATCH --- ###
     case "${COMMAND}" in
         uninstall)      UninstallWorkspace               ; exit 0 ; ;;
-        rehash)         RehashWorkspace                  ; exit 0 ; ;;
         install|update) DownloadWorkspace "${2:-latest}" ; exit 0 ; ;;
         run)            [[ "${1-}" == "run" ]] && shift  ;          ;;
         *)                                                          ;;
@@ -61,17 +70,6 @@ function Main() {
         exit 1
     fi
 
-    # Default integrity: local (allow local modifications by design)
-    integrity_mode="local"
-    if [[ -f "$meta_file" ]]; then
-        integrity_mode=$(grep '^integrity=' "$meta_file" 2>/dev/null | cut -d= -f2- || echo "local")
-    fi
-
-    # Runtime override: WS_INTEGRITY=official forces official mode
-    if [[ "${WS_INTEGRITY:-}" == "official" ]]; then
-        integrity_mode="official"
-    fi
-
     # Ensure workspace binary is newer than checksum
     if [[ "$dest" -ot "$sha_file" ]]; then
         echo "workspace binary appears older than its checksum file."
@@ -91,20 +89,8 @@ function Main() {
     actual_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
     if [[ "$expected_sha256" != "$actual_sha256" ]]; then
         echo "Local workspace ($binary_name) failed SHA256 verification."
-
-        if [[ "$integrity_mode" == "local" ]]; then
-            echo "Run:    $0 update  to restore the official release,"
-            echo "or run: $0 rehash  to accept your recent modifications."
-        else
-            echo "Run: $0 update  to restore the official release."
-        fi
+        echo "Run: $0 update  to restore the official release."
         exit 1
-    fi
-
-    # Checksum passed; now it's fair to say we're running.
-    if [[ "$integrity_mode" == "local" ]]; then
-        echo "⚠️  Hash Check: Running locally modified WorkSpace script (integrity=local)." >&2
-        echo "⚠️  Hash Check: To restore the official release, run: $0 update" >&2
     fi
 
     exec "$dest" "$@"
@@ -125,7 +111,6 @@ Wrapper commands:
   install [VERSION]   Download or update .ws/tools/workspace
   update  [VERSION]   Download or update .ws/tools/workspace
   uninstall           Remove workspace and metadata files
-  rehash              Accept local edits and set a new trusted SHA256 baseline
   run [ARGS...]       Run workspace with ARGS (after integrity checks)
   version             Show this wrapper's version
   help                Show this help message
@@ -133,7 +118,6 @@ Wrapper commands:
 Notes:
   - workspace.sha256 and workspace.meta live in .ws/tools
   - Set VERBOSE=true for extra logs during update
-  - Set WS_INTEGRITY=official to enforce official integrity checks at runtime
 EOF
 }
 
@@ -165,15 +149,9 @@ EOF
 
     TOOL_VERSION=$("$TOOL" ws-version 2>/dev/null || echo "unknown")
 
-    local_integrity="local"
-    if [[ -f "$META" ]]; then
-        local_integrity=$(grep '^integrity=' "$META" 2>/dev/null | cut -d= -f2- || echo "local")
-    fi
-
     echo ""
     echo "$TOOL_VERSION"
     echo "Platform: $platform"
-    if [[ "$local_integrity" == "local" ]]; then echo "With local changes." ; fi
 }
 
 # Portable SHA256 helper
@@ -338,7 +316,7 @@ function DownloadWorkspace() {
         : $((download_count++))
 
         if [[ "$VERBOSE" != "true" ]]; then
-            echo "OK"
+            echo "✅ OK"
         fi
     done
 
@@ -354,9 +332,6 @@ function DownloadWorkspace() {
     # Write metadata
     {
         echo "version=${actual_version}"
-        echo "platforms=${ALL_PLATFORMS[*]}"
-        echo "download_count=${download_count}"
-        echo "integrity=official"
         echo "downloaded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
     } > "$meta_file"
 
@@ -368,63 +343,10 @@ function DownloadWorkspace() {
         [[ -f "$dest" ]] && touch "$dest"
     done
 
-    echo "WorkSpace installed: $download_count binaries downloaded, verified, and installed."
+    echo "WorkSpace installed: downloaded, verified, and installed."
     if [[ "$VERBOSE" == "true" ]]; then
         echo "Metadata: $meta_file"
     fi
-}
-
-function RehashWorkspace() {
-    local tools_dir=".ws/tools"
-    local sha_file="$tools_dir/workspace.sha256"
-    local meta_file="$tools_dir/workspace.meta"
-
-    # Check if at least one platform binary exists
-    local found_any=false
-    for platform in "${ALL_PLATFORMS[@]}"; do
-        local binary_name
-        binary_name=$(get_binary_name "$platform")
-        if [[ -f "$tools_dir/$binary_name" ]]; then
-            found_any=true
-            break
-        fi
-    done
-
-    if [[ "$found_any" != "true" ]]; then
-        echo "Error: No workspace binaries found. Please run: $0 install" >&2
-        return 1
-    fi
-
-    mkdir -p "$tools_dir"
-
-    # Clear and rebuild SHA256 file for all existing binaries
-    > "$sha_file"
-    local rehash_count=0
-
-    for platform in "${ALL_PLATFORMS[@]}"; do
-        local binary_name
-        binary_name=$(get_binary_name "$platform")
-        local dest="$tools_dir/$binary_name"
-
-        if [[ -f "$dest" ]]; then
-            local actual_sha256
-            actual_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
-            printf '%s  %s\n' "$actual_sha256" "$binary_name" >> "$sha_file"
-            touch "$dest"
-            : $((rehash_count++))
-        fi
-    done
-
-    {
-        echo "version=local"
-        echo "platforms=${ALL_PLATFORMS[*]}"
-        echo "rehash_count=${rehash_count}"
-        echo "integrity=local"
-        echo "rehash_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-    } > "$meta_file"
-
-    echo "WorkSpace has been rehashed ($rehash_count binaries)."
-    echo "This installation is now marked as locally modified (integrity=local)."
 }
 
 # Early handling of version/help so they don't require curl
@@ -433,7 +355,7 @@ case "${COMMAND}" in
     help)    PrintHelp    ; exit 0 ; ;;
 esac
 
-# Need curl for install/run/update/rehash/uninstall
+# Need curl for install/run/update/uninstall
 if ! command -v curl >/dev/null 2>&1; then
     echo "Error: curl is required but was not found." >&2
     exit 1
