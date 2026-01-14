@@ -53,7 +53,7 @@ function Main() {
     ### --- RUN MODE --- ###
     tools_dir=".ws/tools"
     sha_file="$tools_dir/workspace.sha256"
-    meta_file="$tools_dir/workspace.meta"
+    lock_file="$tools_dir/workspace.lock"
 
     # Detect current platform and get the correct binary
     local platform binary_name dest
@@ -64,7 +64,21 @@ function Main() {
     binary_name=$(get_binary_name "$platform")
     dest="$tools_dir/$binary_name"
 
-    if [[ ! -f "$dest" || ! -f "$sha_file" || ! -f "$meta_file" ]]; then
+    # If lock file exists but binary is missing, auto-download from lock version
+    if [[ -f "$lock_file" && ( ! -f "$dest" || ! -f "$sha_file" ) ]]; then
+        local lock_version
+        lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2-)
+        if [[ -n "$lock_version" ]]; then
+            echo "Binary missing, downloading version $lock_version from lock file..."
+            DownloadWorkspace "$lock_version"
+        else
+            echo "WorkSpace is not installed correctly for platform: $platform"
+            echo "Please run: $0 install"
+            exit 1
+        fi
+    fi
+
+    if [[ ! -f "$dest" || ! -f "$sha_file" || ! -f "$lock_file" ]]; then
         echo "WorkSpace is not installed correctly for platform: $platform"
         echo "Please run: $0 install"
         exit 1
@@ -116,7 +130,8 @@ Wrapper commands:
   help                Show this help message
 
 Notes:
-  - workspace.sha256 and workspace.meta live in .ws/tools
+  - workspace.lock and workspace.sha256 live in .ws/tools
+  - Binaries are auto-downloaded when lock file exists but binary is missing
   - Set VERBOSE=true for extra logs during update
 EOF
 }
@@ -132,7 +147,7 @@ EOF
     echo "WorkSpace Wrapper: $VERSION"
 
     local tools_dir=".ws/tools"
-    local META="$tools_dir/workspace.meta"
+    local LOCK="$tools_dir/workspace.lock"
 
     # Detect current platform and get the correct binary
     local platform binary_name TOOL
@@ -206,7 +221,7 @@ ALL_PLATFORMS=(
 function UninstallWorkspace() {
     local tools_dir=".ws/tools"
     local sha_file="$tools_dir/workspace.sha256"
-    local meta_file="$tools_dir/workspace.meta"
+    local lock_file="$tools_dir/workspace.lock"
 
     # Remove all platform binaries
     for platform in "${ALL_PLATFORMS[@]}"; do
@@ -215,7 +230,7 @@ function UninstallWorkspace() {
         rm -f "$tools_dir/$binary_name"
     done
 
-    rm -f "$sha_file" "$meta_file"
+    rm -f "$sha_file" "$lock_file"
 
     rmdir "$tools_dir" 2>/dev/null || true
     rmdir ".ws" 2>/dev/null || true
@@ -227,12 +242,19 @@ function DownloadWorkspace() {
     WS_VERSION=${1:-latest}
     local tools_dir=".ws/tools"
     local sha_file="$tools_dir/workspace.sha256"
-    local meta_file="$tools_dir/workspace.meta"
+    local lock_file="$tools_dir/workspace.lock"
 
     REPO_URL="https://github.com/NawaMan/WorkSpace"
     DWLD_URL="${REPO_URL}/releases/download"
 
     mkdir -p "$tools_dir"
+
+    # Create .gitignore to exclude binaries (they're large and can be re-downloaded)
+    cat > ".ws/.gitignore" <<'GITIGNORE'
+# Binaries are excluded - they can be re-downloaded from workspace.lock version
+tools/workspace-*
+tools/*.sha256
+GITIGNORE
 
     # Clear previous SHA256 file (will rebuild with all binaries)
     > "$sha_file"
@@ -333,7 +355,7 @@ function DownloadWorkspace() {
     {
         echo "version=${actual_version}"
         echo "downloaded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-    } > "$meta_file"
+    } > "$lock_file"
 
     # Touch all binaries to be newer than checksum
     for platform in "${ALL_PLATFORMS[@]}"; do
@@ -345,7 +367,7 @@ function DownloadWorkspace() {
 
     echo "WorkSpace installed: downloaded, verified, and installed."
     if [[ "$VERBOSE" == "true" ]]; then
-        echo "Metadata: $meta_file"
+        echo "Lock file: $lock_file"
     fi
 }
 
