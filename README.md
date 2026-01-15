@@ -526,6 +526,19 @@ WorkSpace supports multiple run modes to fit different workflows — from one-of
   ./workspace -- echo "Hello from container"
   ```
 - Useful for automation, scripting, or CI/CD pipelines.
+
+#### Silent Mode (--silence-build)
+- Suppresses container startup messages for a cleaner output.
+- Ideal when you want commands to appear as if they're running locally:
+  ```bash
+  ./workspace --variant base --silence-build -- echo "Hello"
+  # Output: Hello
+  ```
+- Combine with command mode to integrate workspace commands into scripts or pipelines where only the command output matters.
+
+> ⚠️ **Note:**  
+> Silent mode only hides startup messages — the container still needs time to build (if using a custom Dockerfile) and start up.  
+> First runs or cold starts may take several seconds to minutes depending on image pull/build requirements.
   
 #### Daemon Mode (--daemon)
 - Starts the container in the background (detached).
