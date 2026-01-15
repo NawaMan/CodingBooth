@@ -7,8 +7,8 @@ set -euo pipefail
 
 source ../common--source.sh
 
-HOST_UID="$(id -u)"
-HOST_GID="$(id -g)"
+HOST_UID="XXXXX"
+HOST_GID="XXXXX"
 
 # Cross-shell PWD : Detect MSYS/Git Bash and convert to Windows path
 CURRENT_PATH=$(pwd)
@@ -88,7 +88,7 @@ docker \\
     nawaman/workspace:${GOT_VARIANT}-${VERSION} \\
     bash -lc 'sleep 1'"
 
-  if diff -u <(echo "$EXPECT") <(echo "$ACTUAL"); then
+  if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
     print_test_result "true" "$0" "$test_num" "variant '${WANT_VARIANT}' -> '${GOT_VARIANT}'"
   else
     print_test_result "false" "$0" "$test_num" "variant '${WANT_VARIANT}' -> '${GOT_VARIANT}'"
