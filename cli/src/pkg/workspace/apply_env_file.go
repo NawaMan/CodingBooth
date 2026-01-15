@@ -7,6 +7,7 @@ package workspace
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/nawaman/workspace/src/pkg/appctx"
 	"github.com/nawaman/workspace/src/pkg/ilist"
@@ -20,11 +21,7 @@ func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 
 	// If not set, default to <workspace>/.env when it exists
 	if containerEnvFile == "" {
-		candidate := ctx.Workspace() + "/.env"
-		if candidate == "" {
-			candidate = "./.env"
-		}
-
+		candidate := filepath.Join(ctx.Workspace(), ".env")
 		if fileExists(candidate) {
 			containerEnvFile = candidate
 			builder.Config.EnvFile = candidate

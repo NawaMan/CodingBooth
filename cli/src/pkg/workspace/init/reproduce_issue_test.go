@@ -5,6 +5,7 @@
 package init
 
 import (
+	"path/filepath"
 	"testing"
 )
 
@@ -34,7 +35,7 @@ func TestConfigFileArgument(t *testing.T) {
 	outcome := RunInitializeAppContext(t, input)
 
 	// The config file should be test--config.toml, not ws--config.toml
-	expected := outcome.WorkspaceDir + "/test--config.toml"
+	expected := filepath.Join(outcome.WorkspaceDir, "test--config.toml")
 	actual := outcome.Ctx.ConfigFile()
 
 	if actual != expected {
