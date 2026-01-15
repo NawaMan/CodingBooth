@@ -12,7 +12,9 @@
 
 set -euo pipefail
 
-echo "🚀 Running demo startup script..."
+if [[ "${WS_SILENCE_BUILD:-false}" != "true" ]]; then
+  echo "🚀 Running demo startup script..."
+fi
 
 # Create a welcome message file on the desktop
 DESKTOP_DIR="$HOME/Desktop"
@@ -98,4 +100,6 @@ if ! grep -q ".motd" "$HOME/.bashrc" 2>/dev/null; then
   echo '[ -f ~/.motd ] && cat ~/.motd' >> "$HOME/.bashrc"
 fi
 
-echo "✅ Demo startup complete!"
+if [[ "${WS_SILENCE_BUILD:-false}" != "true" ]]; then
+  echo "✅ Demo startup complete!"
+fi
