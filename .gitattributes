@@ -1,0 +1,30 @@
+# Set default behavior to automatically normalize line endings
+* text=auto eol=lf
+
+# Shell scripts must use LF (critical for Docker containers)
+*.sh text eol=lf
+
+# Other text files
+*.go text eol=lf
+*.mod text eol=lf
+*.sum text eol=lf
+*.txt text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.html text eol=lf
+*.css text eol=lf
+*.js text eol=lf
+*.py text eol=lf
+*.java text eol=lf
+Dockerfile text eol=lf
+Makefile text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+*.exe binary
