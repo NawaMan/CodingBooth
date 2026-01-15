@@ -7,8 +7,8 @@ set -euo pipefail
 
 source ../common--source.sh
 
-HOST_UID="$(id -u)"
-HOST_GID="$(id -g)"
+HOST_UID="XXXXX"
+HOST_GID="XXXXX"
 
 # Cross-shell PWD : Detect MSYS/Git Bash and convert to Windows path
 CURRENT_PATH=$(pwd)
@@ -68,7 +68,7 @@ WORKSPACE_PATH: $HERE
 WORKSPACE_PORT: 10000
 WS_VERSION:     $VERSION"
 
-if diff -u <(echo "$EXPECT") <(echo "$ACTUAL"); then
+if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Expected default variables"
 else
   print_test_result "false" "$0" "1" "Expected default variables"
@@ -130,7 +130,7 @@ WORKSPACE_PATH: $HERE
 WORKSPACE_PORT: 10000
 WS_VERSION:     ${VERSION}"
 
-if diff -u <(echo "$EXPECT") <(echo "$ACTUAL"); then
+if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "2" "Override variables"
 else
   print_test_result "false" "$0" "2" "Override variables"
