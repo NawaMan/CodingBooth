@@ -263,6 +263,24 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_HAS_VSCODE=%t", ctx.HasVscode())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_HAS_DESKTOP=%t", ctx.HasDesktop())))
 
+	// Additional metadata from AppContext
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_WS_VERSION="+ctx.WsVersion()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_CONFIG_FILE="+ctx.ConfigFile()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_SCRIPT_NAME="+ctx.ScriptName()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_SCRIPT_DIR="+ctx.ScriptDir()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_LIB_DIR="+ctx.LibDir()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_KEEP_ALIVE=%t", ctx.KeepAlive())))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_SILENCE_BUILD=%t", ctx.SilenceBuild())))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_PULL=%t", ctx.Pull())))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("WS_DIND=%t", ctx.Dind())))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_DOCKERFILE="+ctx.Dockerfile()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_PROJECT_NAME="+ctx.ProjectName()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_TIMEZONE="+ctx.Timezone()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_PORT="+ctx.Port()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_ENV_FILE="+ctx.EnvFile()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_HOST_UID="+ctx.HostUID()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_HOST_GID="+ctx.HostGID()))
+
 	// Custom startup script
 	if ctx.Startup() != "" {
 		builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_STARTUP="+ctx.Startup()))
