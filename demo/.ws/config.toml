@@ -17,5 +17,8 @@ run-args = [
     # Disable GNOME keyring (not available in container)
     "-e", "GNOME_KEYRING_CONTROL=",
     "-e", "GNOME_KEYRING_PID=",
-    "-e", "SSH_AUTH_SOCK="
+    "-e", "SSH_AUTH_SOCK=",
+    # Claude Code config and credentials (copy-on-write: may update tokens/session)
+    "-v", "~/.claude.json:/tmp/ws-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/tmp/ws-home-seed/.claude:ro"
 ]
