@@ -1,5 +1,7 @@
 # CodingBooth WorkSpace
 
+**Current Version:** v0.11.0 — [View Changelog](CHANGELOG.md)
+
 CodingBooth WorkSpace delivers fully reproducible, Docker-powered development environments — anywhere, on any machine.
 You’ve containerized your app. You’ve containerized your build.
 But your development environment? Still a mess of system-wide installs, mismatched versions, and onboarding docs no one reads.
@@ -12,20 +14,18 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
 
 **Result:** a clean, consistent, portable development experience that just works.
 
-**WorkSpace** is a lightweight framework for running reproducible development environments ins
-
 # Table of Contents
-- [Introduction](#introduction)
 - [Quick Try](#quick-try)
 - [Installation](#installation)
+- [CLI Usage](#cli-usage)
 - [Why WorkSpace?](#why-workspace)
 - [Variants](#variants)
 - [Built-in Tools](#built-in-tools)
 - [Quick Examples](#quick-examples)
 - [Customization](#customization)
-- [Guarantees & Limits](#guarantees-limits)
+- [Guarantees & Limits](#guarantees--limits)
 - [How It Works](#how-it-works)
-- [`workspace` Manual](#workspace-sh-manual)
+- [`workspace` Manual](#workspace-manual)
 - [Setup Implementation Notes](#setup-implementation-notes)
 - [Community & Feedback](#community-feedback)
 
@@ -61,6 +61,52 @@ Run the wrapper script and follow the instructions.
 
 ```shell
 ./ws
+```
+
+## CLI Usage
+
+WorkSpace provides a command-line interface with the following structure:
+
+```shell
+./workspace [flags] [-- command...]
+```
+
+### Common Flags
+
+| Flag | Description |
+|------|-------------|
+| `--variant <name>` | Select container variant (base, notebook, codeserver, desktop-xfce, desktop-kde) |
+| `--version <tag>` | Specify image version tag (default: latest) |
+| `--name <name>` | Set container name |
+| `--port <port>` | Set host port mapping (number, NEXT, or RANDOM) |
+| `--daemon` | Run container in background |
+| `--pull` | Force pull latest image |
+| `--dind` | Enable Docker-in-Docker mode |
+| `--keep-alive` | Keep container after exit |
+| `--silence-build` | Suppress build/startup output |
+| `--dryrun` | Print docker commands without executing |
+| `--verbose` | Enable debug output |
+| `--config <path>` | Use custom config file |
+| `--workspace <path>` | Set workspace directory |
+| `--help`, `-h` | Show help information |
+
+### Examples
+
+```shell
+# Start with default settings (interactive shell)
+./workspace
+
+# Start VS Code in browser
+./workspace --variant codeserver
+
+# Run a command and exit
+./workspace -- make test
+
+# Start in background with custom port
+./workspace --daemon --port 8080
+
+# Dry-run to see what would be executed
+./workspace --dryrun --verbose
 ```
 
 ## Why WorkSpace?
@@ -104,7 +150,7 @@ All variants expose its UI on port 10000 but NEXT and RANDOM can be use. See [Po
 
 ### Aliases & Defaults
 
-The `ValidateVariant()` logic supports several shortcuts and fallback values:
+WorkSpace supports several shortcuts and aliases for variant names:
 
 | Input Alias	| Resolved Variant |
 |-------------|------------------|
@@ -131,8 +177,8 @@ For desktop variants (`desktop-xfce`, `desktop-kde`), you can customize the scre
 ```
 
 **Example (in `.ws/config.toml`):**
-```bash
-RUN_ARGS+=(-e GEOMETRY=1920x1080)
+```toml
+run-args = ["-e", "GEOMETRY=1920x1080"]
 ```
 
 #### noVNC Resize Modes
@@ -225,7 +271,7 @@ These essentials are preinstalled so you can start working immediately — no ex
 More examples : https://github.com/NawaMan/WorkSpace/tree/main/examples
 
 
-### Customization
+## Customization
 
 You can tailor how WorkSpace runs by adjusting configuration files or using runtime flags:
 
@@ -263,9 +309,18 @@ my-project/
 
 ## Guarantees & Limits
 
-- ✅ **Host file ownership:** All files in your project folder remain owned by your host user — no “root-owned” files.  
-- ✅ **Consistent user mapping:** Each container automatically creates a matching user and group via `workspace-user-setup`.  
-- ⚠️ **Cross-OS caveats:** WorkSpace doesn’t abstract away all host OS differences — things like line endings, symlinks, or file attributes may still vary between platforms.
+- ✅ **Host file ownership:** All files in your project folder remain owned by your host user — no "root-owned" files.
+- ✅ **Consistent user mapping:** Each container automatically creates a matching user and group via `workspace-user-setup`.
+- ⚠️ **Cross-OS caveats:** WorkSpace doesn't abstract away all host OS differences — things like line endings, symlinks, or file attributes may still vary between platforms.
+
+### JetBrains IDE Licensing in Containers
+
+JetBrains activation is stored as a machine-specific token. When you run an IDE backend inside a container, a fresh container may be treated as a new machine, so you may be asked to sign in again unless IDE state is persisted.
+
+**Recommended approaches:**
+- **JetBrains Gateway (preferred):** license checked on your local machine; container backend doesn't store license data.
+- **Persistent volumes:** mount configs/caches/plugins if you run a full GUI IDE inside the container.
+- **License Vault:** for short-lived containers / multi-machine scenarios.
 
 ---
 
@@ -450,43 +505,48 @@ WorkSpace supports several configuration files that control how containers are b
 These files let you define defaults, environment variables, and runtime parameters without cluttering your CLI commands.
 
 #### **Launcher Config (`.ws/config.toml`)**
-- Loaded after bootstrap flags are determined (`--workspace`, `--config`) and before full CLI parsing.  
-- Defines default values for image selection, user mapping, and runtime behavior.  
-- Typical keys include:  
-  `IMAGE_NAME`, `IMAGE_REPO`, `IMAGE_TAG`, `VARIANT`, `VERSION`,  
-  `CONTAINER_NAME`, `HOST_UID`, `HOST_GID`, `WORKSPACE_PORT`, `DIND`, and others.
+- Loaded after bootstrap flags are determined (`--workspace`, `--config`) and before full CLI parsing.
+- Defines default values for image selection, user mapping, and runtime behavior.
+- Typical keys include:
+  `variant`, `version`, `image`, `dockerfile`,
+  `name`, `host-uid`, `host-gid`, `port`, `dind`, and others.
 
 ##### **Custom Argument Arrays**
 You can define three special arrays in `.ws/config.toml` to customize how the launcher interacts with Docker:
 
-- **`ARGS`** – Adds command-line arguments directly to `workspace`.  
-  Useful for predefining commonly used options (e.g., extra ports or mounts).  
-  ```bash
-  ARGS+=("--variant" "ide-codeserver")
-  ARGS+=("--port"    "8080:8080")
+- **`common-args`** – Pre-applied CLI flags merged before command-line parameters.
+  Useful for predefining commonly used options (e.g., extra ports or mounts).
+  ```toml
+  common-args = ["--variant", "ide-codeserver", "--port", "8080"]
   ```
 
 These behave exactly like command-line flags passed to workspace.
 
-- BUILD_ARGS – Adds extra options to the docker build command.
+- **`build-args`** – Extra args for `docker build` when dockerfile is used.
   For example, disable caching or pass build-time variables:
-  ```bash
-  BUILD_ARGS=(--no-cache --build-arg NODE_VERSION=20)
+  ```toml
+  build-args = ["--no-cache", "--build-arg", "NODE_VERSION=20"]
   ```
-- RUN_ARGS – Adds extra options to the docker run command.
+- **`run-args`** – Extra args for `docker run`.
   These are appended automatically at launch:
-  ```bash
-  RUN_ARGS=(-e TZ=Asia/Bangkok -v /mnt/data:/data)
+  ```toml
+  run-args = ["-e", "TZ=Asia/Bangkok", "-v", "/mnt/data:/data"]
   ```
+- **`cmds`** – Default command to run inside the container.
+  Note: CLI `-- <cmd>` overrides this (does not append):
+  ```toml
+  cmds = ["bash", "-lc", "make test"]
+  ```
+
 > 💡 Tip:
 > These arrays allow you to version-control useful runtime and build options without hardcoding them into your CLI workflow.
-> Combined with ARGS, you can achieve fully reproducible builds and launches with zero manual typing.
+> Combined with `common-args`, you can achieve fully reproducible builds and launches with zero manual typing.
 
 #### Container Environment File (.env)
-- Passed directly to Docker using the --env-file option.
-- Commonly used for credentials or runtime configuration such as: PASSWORD, JUPYTER_TOKEN, TZ, PROXY, AWS_*, GH_TOKEN, etc.
-- Can be overridden with --env-file <path> or the CONTAINER_ENV_FILE variable.
-- To disable, set CONTAINER_ENV_FILE=none or use --env-file none.
+- Passed directly to Docker using the `--env-file` option.
+- Commonly used for credentials or runtime configuration such as: `PASSWORD`, `JUPYTER_TOKEN`, `TZ`, `PROXY`, `AWS_*`, `GH_TOKEN`, etc.
+- Can be overridden with `env-file = "<path>"` in config.toml.
+- To disable, set `env-file = "none"` in config.toml.
 
 > 🧩 Summary:
 > Configuration layers allow customization at two levels:
@@ -794,18 +854,6 @@ exec /usr/local/bin/real-<thing> "$@"
 ## Custom Setups
 You can create your own setup scripts to install any tool you need.
 Simply copy into your docker image and run it just like other setup scripts.
-
-
-## Guarantees & Limits
-
-### JetBrains IDE licensing in containers (important)
-
-JetBrains activation is stored as a machine-specific token. When you run an IDE backend inside a container, a fresh container may be treated as a new machine, so you may be asked to sign in again unless IDE state is persisted.
-
-**Recommended approaches:**
-- JetBrains Gateway (preferred): license checked on your local machine; container backend doesn’t store license data.
-- Persistent volumes: mount configs/caches/plugins if you run a full GUI IDE inside the container.
-- License Vault: for short-lived containers / multi-machine scenarios.
 
 
 ## Community & Feedback

@@ -3,13 +3,23 @@
 This file contains a list of changes for each released version.
 
 ## v0.11.0
-- Core engine rewritten in GO for portability and maintainability.
-- Repository history cleaned to remove legacy implementation artifacts.
-- Port List and List Builder to GO.
-- Port Docker function to GO.
+- Core engine rewritten in Go for portability (cross-platform: Linux, macOS, Windows)
+- Repository restructured: `workspace/` → `variants/`, `ws` → `workspace`, CLI moved to `cli/`
+- Home directory seeding via `/tmp/ws-home-seed/` for credentials
+- Environment variable expansion in config.toml (`~`, `$VAR`, `${VAR}`)
+- New examples: Neovim, AWS (with Jupyter notebook)
+- Fixed: DinD support, Windows compatibility, Python kernel in code-server, VNC issues
+- Removed LXQT desktop variant
 
 ## v0.10.0
-- Bring in the wrapper
+- Introduced the WorkSpace Wrapper (`ws`) - a stable bootstrapper script that:
+  - Provides a stable entry point for using workspace
+  - Automatically downloads, verifies, and launches the workspace tool
+  - Handles SHA1 checksum verification for integrity
+  - Supports version management and updates
+- Improved build.sh - disabled signing, stopped creating bare latest/version tags
+- Updated README introduction
+- Reorganized release workflow
 
 ## v0.9.0
 - Simplify conditional setups with WS_HAS_NOTEBOOK, WS_HAS_VSCODE and WS_HAS_DESKTOP
