@@ -7,90 +7,50 @@ set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
 # --------------------------
-# Root setup
+# Root setup - installs nodejs at BUILD time
 # --------------------------
 [ "$EUID" -eq 0 ] || { echo "❌ Run as root (use sudo)"; exit 1; }
 
 # --- Defaults ---
 NODE_MAJOR=20
-NVM_VERSION=0.40.3
 
 # --- Parse args ---
-# $1 → Node major (if provided)
-# optional flag: --nvm-version=<version>
 if [[ $# -ge 1 && ! "$1" =~ ^-- ]]; then
   NODE_MAJOR="$1"
   shift
 fi
 
-for arg in "$@"; do
-  case "$arg" in
-    --nvm-version=*)
-      NVM_VERSION="${arg#*=}"
-      ;;
-    *)
-      echo "⚠️  Unknown argument: $arg" >&2
-      ;;
-  esac
-done
-
-
-STARTUP_FILE="/usr/share/startup.d/57-ws-node--startup.sh"
-PROFILE_FILE="/etc/profile.d/57-ws-node--profile.sh"
-
-mkdir -p "$(dirname "$STARTUP_FILE")"
-
-# ---- Create startup file: to be executed as normal user on first login ----
-cat >"${STARTUP_FILE}" <<EOF
-#!/usr/bin/env bash
-set -euo pipefail
-
-sudo apt-get remove -y nodejs || true
-
-NODE_MAJOR="${NODE_MAJOR}"
-NVM_VERSION="${NVM_VERSION}"
-NVM_INSTALL_URL="https://raw.githubusercontent.com/nvm-sh/nvm/v\${NVM_VERSION}/install.sh"
-
-export NVM_DIR="\${NVM_DIR:-\$HOME/.nvm}"
-
-# If correct Node already installed, skip
-if command -v node >/dev/null 2>&1; then
-  v="\$(node -v 2>/dev/null || true)"; v="\${v#v}"
-  if [ "\${v%%.*}" = "\$NODE_MAJOR" ]; then
-    exit 0
-  fi
+# Determine latest version for the major
+NODE_VERSION=$(curl -fsSL "https://nodejs.org/dist/latest-v${NODE_MAJOR}.x/" | grep -oP 'node-v\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+if [[ -z "$NODE_VERSION" ]]; then
+  echo "❌ Could not determine latest Node.js v${NODE_MAJOR} version"
+  exit 1
 fi
 
-# Install nvm if missing
-if [ ! -s "\$NVM_DIR/nvm.sh" ]; then
-  mkdir -p "\$NVM_DIR"
-  tmp="\${TMPDIR:-/tmp}/nvm.\$\$"
-  curl -fsSL -o "\$tmp" "\$NVM_INSTALL_URL"
-  bash "\$tmp"
-fi
+ARCH=$(uname -m)
+case "$ARCH" in
+  x86_64)  NODE_ARCH="x64" ;;
+  aarch64) NODE_ARCH="arm64" ;;
+  armv7l)  NODE_ARCH="armv7l" ;;
+  *)       echo "❌ Unsupported architecture: $ARCH"; exit 1 ;;
+esac
 
-# Load nvm and install Node
-# shellcheck disable=SC1090
-. "\$NVM_DIR/nvm.sh"
-nvm install "\$NODE_MAJOR"
-nvm alias default "\$NODE_MAJOR"
-nvm use --silent default >/dev/null 2>&1 || true
-EOF
-chmod 755 "${STARTUP_FILE}"
+NODE_TARBALL="node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz"
+NODE_URL="https://nodejs.org/dist/v${NODE_VERSION}/${NODE_TARBALL}"
+INSTALL_DIR="/usr/local"
 
-cat >"$PROFILE_FILE" <<"EOF"
-# /etc/profile.d/57-ws-node--profile.sh
-# Load nvm (per-user) and quietly select the default Node.
-export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
-if [ -s "$NVM_DIR/nvm.sh" ]; then
-  # shellcheck disable=SC1090
-  . "$NVM_DIR/nvm.sh"
-  nvm use --silent default >/dev/null 2>&1 || true
-fi
-EOF
-chmod 644 "$PROFILE_FILE"
+echo "• Installing Node.js v${NODE_VERSION} (${NODE_ARCH}) to ${INSTALL_DIR}"
 
+# Download and extract
+cd /tmp
+curl -fsSL -o "$NODE_TARBALL" "$NODE_URL"
+tar -xJf "$NODE_TARBALL"
+cp -r "node-v${NODE_VERSION}-linux-${NODE_ARCH}"/{bin,lib,include,share} "$INSTALL_DIR"/
+rm -rf "$NODE_TARBALL" "node-v${NODE_VERSION}-linux-${NODE_ARCH}"
 
-echo "✅ Node.js (via nvm) bootstrap ready."
-echo "• Requested major: ${NODE_MAJOR}"
-echo "• Will install on first user login: ${STARTUP_FILE}"
+# Verify installation
+echo "• Verifying installation..."
+node --version
+npm --version
+
+echo "✅ Node.js v${NODE_VERSION} installed to ${INSTALL_DIR}"
