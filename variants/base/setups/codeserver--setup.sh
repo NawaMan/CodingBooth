@@ -40,12 +40,12 @@ fi
 command -v code-server >/dev/null
 
 
-echo "[2/9] Pre-seed Jupyter into ${WS_VENV_DIR} (build-time)…"
+echo "[2/9] Pre-seed Jupyter into ${CB_VENV_DIR} (build-time)…"
 
 # Always use the workspace venv Python, not whatever "python" happens to be.
-VENV_PY="${WS_VENV_DIR}/bin/python"
+VENV_PY="${CB_VENV_DIR}/bin/python"
 if [ ! -x "$VENV_PY" ]; then
-  echo "❌ Expected venv python at ${WS_VENV_DIR} but it is missing or not executable"
+  echo "❌ Expected venv python at ${CB_VENV_DIR} but it is missing or not executable"
   exit 1
 fi
 
@@ -93,12 +93,12 @@ codeserver_setup_info() {
   [ -x "$launcher" ] && _ok "Launcher: $launcher"
 
   _hdr "Python / venv"
-  local venv="${WS_VENV_DIR:-${VENV_SERIES_DIR:-/opt/venvs/py${WS_PY_SERIES:-}}}"
+  local venv="${CB_VENV_DIR:-${VENV_SERIES_DIR:-/opt/venvs/py${CB_PY_SERIES:-}}}"
   if [ -n "$venv" ] && [ -x "$venv/bin/python" ]; then
-    _ok "WS_VENV_DIR: $venv"
+    _ok "CB_VENV_DIR: $venv"
     _ok "Python: $("$venv/bin/python" -V 2>&1)"
   elif [ -x /opt/python/bin/python ]; then
-    _warn "WS_VENV_DIR not set; using /opt/python"
+    _warn "CB_VENV_DIR not set; using /opt/python"
     _ok "Python: $(/opt/python/bin/python -V 2>&1)"
   else
     _err "No Python interpreter found"
@@ -151,7 +151,7 @@ source "$PROFILE_FILE" || true
 
 
 # Make it usable right away in THIS shell
-source "${WS_VENV_DIR}/bin/activate"
+source "${CB_VENV_DIR}/bin/activate"
 
 
 # 1) Create a shared directory
@@ -202,7 +202,7 @@ source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
 
 # ==== Runtime tunables ====
 # Make venv kernels visible to any Jupyter process
-export JUPYTER_PATH="${WS_VENV_DIR}/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
+export JUPYTER_PATH="${CB_VENV_DIR}/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
 
 # Use the current user's home directory
 CSHOME="${HOME}"
@@ -231,7 +231,7 @@ mkdir -p "$SETTING_DIR"
 
 cat > "$SETTINGS_JSON" <<JSON
 {
-  "python.defaultInterpreterPath": "${WS_VENV_DIR}/bin/python",
+  "python.defaultInterpreterPath": "${CB_VENV_DIR}/bin/python",
   "jupyter.jupyterServerType": "local",
 
   "terminal.integrated.profiles.linux": {

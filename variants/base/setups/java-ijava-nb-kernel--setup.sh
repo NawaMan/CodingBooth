@@ -14,13 +14,13 @@
 #   IJAVA_VERSION         -> IJava release tag (default: 1.3.0)
 #   JUPYTER_KERNEL_PREFIX -> Where to install the kernelspec (default: /usr/local)
 #   KERNEL_NAME           -> internal kernelspec name (folder) (default: java)
-#   KERNEL_DISPLAY_NAME   -> user-facing name shown in picker (default: Java--${WS_JDK_VERSION})
+#   KERNEL_DISPLAY_NAME   -> user-facing name shown in picker (default: Java--${CB_JDK_VERSION})
 #
 # Prereqs:
 #   - JDK installed (JAVA_HOME set; java/jshell on PATH).
 #   - Target venv already has Jupyter (jupyter_client & jupyter_core present).
 #   - curl, unzip available.
-#   - Running under a venv; WS_VENV_DIR and WS_JDK_VERSION set.
+#   - Running under a venv; CB_VENV_DIR and CB_JDK_VERSION set.
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -31,16 +31,16 @@ if [ "${EUID}" -ne 0 ]; then
   exit 1
 fi
 
-if [[ "${WS_VARIANT_TAG:-}" == "base" ]]; then
+if [[ "${CB_VARIANT_TAG:-}" == "base" ]]; then
   echo "Variant does not include VS Code (code) or CodeServer" >&2
   exit 0
 fi
 
-if [[ "${WS_JDK_VERSION:-}" == "" ]]; then
-  echo "JDK is not properly installed (WS_JDK_VERSION is not given)." >&2
+if [[ "${CB_JDK_VERSION:-}" == "" ]]; then
+  echo "JDK is not properly installed (CB_JDK_VERSION is not given)." >&2
   exit 1
 fi
-if [[ "$WS_JDK_VERSION" =~ ^[0-9]+$ ]] && [ "$WS_JDK_VERSION" -lt 9 ]; then
+if [[ "$CB_JDK_VERSION" =~ ^[0-9]+$ ]] && [ "$CB_JDK_VERSION" -lt 9 ]; then
   echo "JDK version is less than 9 which notebook does not support."
   exit 1
 fi
@@ -55,7 +55,7 @@ source /etc/profile.d/60-ws-jdk--profile.sh
 IJAVA_VERSION="${IJAVA_VERSION:-1.3.0}"                         # default IJava tag
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"    # system-wide install
 KERNEL_NAME="${KERNEL_NAME:-java}"                              # folder name (must be "java" for stock install.py)
-KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Java (${WS_JDK_VERSION})}"
+KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Java (${CB_JDK_VERSION})}"
 WORKDIR="${WORKDIR:-/opt/ijava}"
 TMPDIR="$(mktemp -d)"
 
@@ -151,7 +151,7 @@ python install.py \
 # Move from the installed location to the target one where the folder name will be the kernel name 
 #    so that the kernel name will reflect the version.
 INSTALLED_KERNEL_DIR=${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels/java
-TARGET_KERNEL_DIR=${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels/java${WS_JDK_VERSION}
+TARGET_KERNEL_DIR=${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels/java${CB_JDK_VERSION}
 
 if [[ -d "${TARGET_KERNEL_DIR}" ]]; then
     rm -Rf "${TARGET_KERNEL_DIR}"
@@ -171,5 +171,5 @@ echo "✅ IJava template was at: ${KDIR}"
 echo "   Installed under:      ${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels/${KERNEL_NAME}"
 echo "   Display name:         ${KERNEL_DISPLAY_NAME}"
 echo "   JAVA_HOME:            ${JAVA_HOME}"
-echo "   Python used:          ${WS_VENV_DIR:-<unknown>}/bin/python"
-echo "   WS_VENV_DIR:          ${WS_VENV_DIR:-<unknown>}"
+echo "   Python used:          ${CB_VENV_DIR:-<unknown>}/bin/python"
+echo "   CB_VENV_DIR:          ${CB_VENV_DIR:-<unknown>}"

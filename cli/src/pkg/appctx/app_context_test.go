@@ -7,14 +7,14 @@ package appctx
 import (
 	"testing"
 
-	"github.com/nawaman/workspace/src/pkg/ilist"
-	"github.com/nawaman/workspace/src/pkg/nillable"
+	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/coding-booth/src/pkg/nillable"
 )
 
 func TestAppContext_RoundTrip(t *testing.T) {
 	builder := &AppContextBuilder{
 		PrebuildRepo: "repo",
-		WsVersion:    "1.0.0",
+		CbVersion:    "1.0.0",
 		Config: AppConfig{
 			Dryrun:  nillable.NewNillableBool(true),
 			Verbose: nillable.NewNillableBool(true),
@@ -87,7 +87,7 @@ func TestAppContext_ConfigValues(t *testing.T) {
 	builder := &AppContextBuilder{
 		Config: AppConfig{
 			Config:       nillable.NewNillableString("conf"),
-			Workspace:    nillable.NewNillableString("path"),
+			Code:         nillable.NewNillableString("path"),
 			Dryrun:       nillable.NewNillableBool(true),
 			Verbose:      nillable.NewNillableBool(true),
 			Version:      nillable.NewNillableString("version"),
@@ -114,7 +114,7 @@ func TestAppContext_ConfigValues(t *testing.T) {
 	if ctx.ConfigFile() != "conf" {
 		t.Error("Config mismatch")
 	}
-	if ctx.Workspace() != "path" {
+	if ctx.Code() != "path" {
 		t.Error("Workspace mismatch")
 	}
 	if !ctx.Dryrun() {
@@ -176,7 +176,7 @@ func TestAppContext_ConfigValues(t *testing.T) {
 func TestAppContext_DerivedValues(t *testing.T) {
 	builder := &AppContextBuilder{
 		PrebuildRepo:   "repo",
-		WsVersion:      "v1",
+		CbVersion:      "v1",
 		SetupsDir:      "dir",
 		ScriptName:     "script",
 		ScriptDir:      "sdir",
@@ -196,8 +196,8 @@ func TestAppContext_DerivedValues(t *testing.T) {
 	if ctx.PrebuildRepo() != "repo" {
 		t.Error("PrebuildRepo mismatch")
 	}
-	if ctx.WsVersion() != "v1" {
-		t.Error("WsVersion mismatch")
+	if ctx.CbVersion() != "v1" {
+		t.Error("CbVersion mismatch")
 	}
 	if ctx.SetupsDir() != "dir" {
 		t.Error("SetupsDir mismatch")

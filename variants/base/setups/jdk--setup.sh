@@ -169,8 +169,8 @@ case ":\$PATH:" in
   *) export PATH="\$PATH:\$JAVA_HOME/bin" ;;
 esac
 
-export WS_JDK_VERSION=${JDK_VERSION}
-export WS_JAVA_HOME=${JAVA_HOME}
+export CB_JDK_VERSION=${JDK_VERSION}
+export CB_JAVA_HOME=${JAVA_HOME}
 
 # Inspector: jdk-setup-info
 jdk_setup_info() {
@@ -239,5 +239,5 @@ echo
 echo "Use it now in this shell (without reopening):"
 echo "  . ${PROFILE_FILE} && jdk-setup-info"
 
-export WS_JDK_VERSION=${JDK_VERSION}
-export WS_JAVA_HOME=${JAVA_HOME}
+export CB_JDK_VERSION=${JDK_VERSION}
+export CB_JAVA_HOME=${JAVA_HOME}

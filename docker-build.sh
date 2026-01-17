@@ -4,9 +4,9 @@
 # you may not use this file except in compliance with the License.
 
 #
-# docker-build.sh - Build and publish WorkSpace Docker images
+# docker-build.sh - Build and publish CodingBooth Docker images
 #
-# This script builds Docker images for all WorkSpace variants (base, ide-notebook,
+# This script builds Docker images for all CodingBooth variants (base, ide-notebook,
 # ide-codeserver, desktop-xfce, desktop-kde) using multi-architecture support.
 # It can build locally or push to Docker Hub with cosign signature verification.
 # Run with --help for usage information.
@@ -16,12 +16,12 @@ set -euo pipefail
 #== ENVIRONMENTAL VARIABLES ==
 
 # Cosign key configuration
-COSIGN_KEY_FILE_DEFAULT="${HOME}/.config/nawaman-workspace/cosign.key"
+COSIGN_KEY_FILE_DEFAULT="${HOME}/.config/nawaman-coding-booth/cosign.key"
 COSIGN_KEY_FILE="${COSIGN_KEY_FILE:-$COSIGN_KEY_FILE_DEFAULT}"
 COSIGN_KEY_REF=""
 
 # --- Settings ---
-IMAGE_NAME="nawaman/workspace"
+IMAGE_NAME="nawaman/coding-booth"
 PLATFORMS="linux/amd64,linux/arm64"
 VERSION_FILE="version.txt"
 
@@ -163,7 +163,7 @@ BuildVariant() {
       "${no_cache_arg[@]}" \
       --platform "${PLATFORMS}" \
       -f "${docker_file}" \
-      --build-arg "WS_VERSION_TAG=${version}" \
+      --build-arg "CB_VERSION_TAG=${version}" \
       "${tags_arg[@]}" \
       "${context_dir}" \
       --push
@@ -185,7 +185,7 @@ BuildVariant() {
     docker build \
       "${no_cache_arg[@]}" \
       -f "${docker_file}" \
-      --build-arg "WS_VERSION_TAG=${version}" \
+      --build-arg "CB_VERSION_TAG=${version}" \
       "${tags_arg[@]}" \
       "${context_dir}"
   fi

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-# Dockerfile for workspace container (the base)
+# Dockerfile for CodingBooth container (the base)
 ARG UBUNTU_VERSION=24.04
 FROM ubuntu:${UBUNTU_VERSION}
 
@@ -52,10 +52,10 @@ ENV USER_NAME=coder  \
   HOME=/home/coder \
   LANG=${LOCALE}   \
   LC_ALL=${LOCALE} \
-  WORKSPACE=/home/coder/workspace
+  CODE=/home/coder/code
 
 # Make the venv default and set pip knobs AFTER the upgrade above
-ENV PATH=/opt/workspace/setups:/opt/python/bin:/home/coder/.local/bin:$PATH \
+ENV PATH=/opt/coding-booth/setups:/opt/python/bin:/home/coder/.local/bin:$PATH \
   TERM=xterm-256color \
   EDITOR=tilde
 
@@ -74,11 +74,11 @@ RUN set -eux; \
   useradd -M -u "$uid" -g coder -s /bin/bash coder; \
   fi;
 
-# Entry that aligns coder’s uid/gid to host, then drops privileges
-COPY --chmod=0755 workspace-user-setup /usr/local/bin/workspace-user-setup
+# Entry that aligns coder's uid/gid to host, then drops privileges
+COPY --chmod=0755 booth-user-setup /usr/local/bin/booth-user-setup
 
 # Seed dirs
-RUN mkdir -p /home/coder/workspace
+RUN mkdir -p /home/coder/code
 
 
 # Start up - to be run one time at the start of the docker.
@@ -86,7 +86,7 @@ RUN mkdir -p /usr/share/startup.d
 
 
 # --- Shared shell config: copy the profile script ---
-COPY --chmod=0644 50-ws-workspace-base--profile.sh /etc/profile.d/50-ws-workspace-base--profile.sh
+COPY --chmod=0644 50-cb-coding-booth-base--profile.sh /etc/profile.d/50-cb-coding-booth-base--profile.sh
 
 # --- Make bash and zsh source ALL /etc/profile.d/*.sh for interactive shells ---
 RUN set -euo pipefail \
@@ -99,20 +99,20 @@ RUN grep -Fq 'profile.d/*.sh' /etc/bash.bashrc || true \
 
 # Make sudo see setup scripts (extend secure_path)
 RUN set -euo pipefail \
-  && printf 'Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/workspace/setups:/usr/local/uv/bin"\n' \
-  > /etc/sudoers.d/50-workspace-base-secure-path \
-  && chmod  0440 /etc/sudoers.d/50-workspace-base-secure-path \
-  && visudo -cf  /etc/sudoers.d/50-workspace-base-secure-path
+  && printf 'Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/coding-booth/setups:/usr/local/uv/bin"\n' \
+  > /etc/sudoers.d/50-coding-booth-base-secure-path \
+  && chmod  0440 /etc/sudoers.d/50-coding-booth-base-secure-path \
+  && visudo -cf  /etc/sudoers.d/50-coding-booth-base-secure-path
 
-# --- Install the tidy terminal 
+# --- Install the tidy terminal
 RUN apt-get update && apt-get install -y ttyd \
   && rm -rf /var/lib/apt/lists/*
 
 # Suppress the WSL Visual Studio Code prompt
 ENV DONT_PROMPT_WSL_INSTALL=1
 
-# Entry that aligns coder’s uid/gid to host, then drops privileges
-COPY --chmod=0755 ./setups/ /opt/workspace/setups/
+# Entry that aligns coder's uid/gid to host, then drops privileges
+COPY --chmod=0755 ./setups/ /opt/coding-booth/setups/
 
 # Set common tools aliases
 ENV EDITOR=tilde
@@ -122,23 +122,23 @@ RUN ln -s /usr/bin/tilde /usr/local/bin/editor
 RUN ln -s /usr/bin/mc    /usr/local/bin/explorer
 RUN ln -s /usr/bin/tig   /usr/local/bin/gitview
 
-# --- Main workspace profile script with helper functions ---
-COPY --chmod=0644 100-ws--profile.sh /etc/profile.d/100-ws--profile.sh
+# --- Main CodingBooth profile script with helper functions ---
+COPY --chmod=0644 100-cb--profile.sh /etc/profile.d/100-cb--profile.sh
 
 RUN echo "set -g mouse on" >> /etc/tmux.conf
 
-ARG WS_PY_VERSION=3.12
-ARG WS_SETUPS_DIR=/opt/workspace/setups
+ARG CB_PY_VERSION=3.12
+ARG CB_SETUPS_DIR=/opt/coding-booth/setups
 
 
-# Always start as root so workspace-user-setup can realign ids
+# Always start as root so booth-user-setup can realign ids
 USER root
 
-RUN "$WS_SETUPS_DIR/python--setup.sh" "${WS_PY_VERSION}" 
+RUN "$CB_SETUPS_DIR/python--setup.sh" "${CB_PY_VERSION}"
 
 
 # ---- Copy startup file: to be executed at first container start ----
-COPY --chmod=0755 100-ws--startup.sh /usr/share/startup.d/100-ws--startup.sh
+COPY --chmod=0755 100-cb--startup.sh /usr/share/startup.d/100-cb--startup.sh
 
 # ---- Cleanup to reduce image size ----
 RUN set -euo pipefail \
@@ -152,12 +152,12 @@ RUN set -euo pipefail \
   && find /usr -name "*.pyc" -type f -delete 2>/dev/null || true
 
 # Workdir
-WORKDIR /home/coder/workspace
+WORKDIR /home/coder/code
 
 # tini as PID 1, then run the aligner which execs as 'coder'
-# This is needed as the workspace-user-setup will ended up running the CMD which is a chile process
+# This is needed as the booth-user-setup will ended up running the CMD which is a chile process
 #   so we need tini to handle that properly.
-ENTRYPOINT ["tini","-g","--","/usr/local/bin/workspace-user-setup"]
+ENTRYPOINT ["tini","-g","--","/usr/local/bin/booth-user-setup"]
 
-# CMD ["bash","-lc","exec python3 -m http.server 10000 --bind 0.0.0.0 --directory /home/coder/workspace"]
+# CMD ["bash","-lc","exec python3 -m http.server 10000 --bind 0.0.0.0 --directory /home/coder/code"]
 CMD ["bash","-lc","exec ttyd -W -i 0.0.0.0 -p 10000 --writable bash -l"]

@@ -16,7 +16,7 @@ fi
 
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
-if [[ "$WS_VARIANT_TAG" == "base" ]] || [[ "$WS_VARIANT_TAG" == "ide-notebook" ]]; then
+if [[ "$CB_VARIANT_TAG" == "base" ]] || [[ "$CB_VARIANT_TAG" == "ide-notebook" ]]; then
     echo "Variant does not include VS Code (code) or CodeServer" >&2
     exit 0
 fi

@@ -1,4 +1,4 @@
-module github.com/nawaman/workspace
+module github.com/nawaman/coding-booth
 
 go 1.24.1
 

@@ -55,10 +55,10 @@ PY
 }
 
 
-echo "🧩 Installing Jupyter into venv ${WS_VENV_DIR} ..."
+echo "🧩 Installing Jupyter into venv ${CB_VENV_DIR} ..."
 if ! ensure_jupyterlab_in_venv; then
   ACTUAL="$(python -c 'import sys;print(".".join(map(str,sys.version_info[:3])))' || echo "?")"
-  echo "❌ JupyterLab not importable in ${WS_VENV_DIR} (Python ${ACTUAL})."
+  echo "❌ JupyterLab not importable in ${CB_VENV_DIR} (Python ${ACTUAL})."
   echo "   If you chose a very new Python (e.g., 3.13), the ecosystem may not be ready yet."
   exit 1
 fi
@@ -108,9 +108,9 @@ PORT=${1:-10000}
 source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
 
 # Make sure non-Python kernels in the venv are visible if present
-export JUPYTER_PATH="${WS_VENV_DIR}/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
+export JUPYTER_PATH="${CB_VENV_DIR}/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
 
-exec "${WS_VENV_DIR}/bin/jupyter-lab" \
+exec "${CB_VENV_DIR}/bin/jupyter-lab" \
   --no-browser \
   --ip=0.0.0.0 \
   --port=$PORT \
@@ -120,7 +120,7 @@ exec "${WS_VENV_DIR}/bin/jupyter-lab" \
 EOF
 # Bake in the venv path
 _safe() { printf '%s' "$1" | sed -e 's/[&]/\\&/g'; }
-sed -i "s#__VENV_DIR_PLACEHOLDER__#$(_safe "${WS_VENV_DIR}")#g" /usr/local/bin/start-notebook
+sed -i "s#__VENV_DIR_PLACEHOLDER__#$(_safe "${CB_VENV_DIR}")#g" /usr/local/bin/start-notebook
 chmod +x ${STARTER_FILE}
 
 # ---- friendly summary ----
@@ -128,9 +128,9 @@ python --version || true
 pip    --version || true
 
 BASH_KDIR="${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels/bash"
-echo "✅ pyenv root:  ${WS_PYENV_ROOT}"
-echo "✅ Venvs root:  ${WS_VENV_DIR}"
-echo "✅ Active venv: ${WS_VENV_DIR}"
+echo "✅ pyenv root:  ${CB_PYENV_ROOT}"
+echo "✅ Venvs root:  ${CB_VENV_DIR}"
+echo "✅ Active venv: ${CB_VENV_DIR}"
 echo "✅ Jupyter kernel '${JUPYTER_KERNEL_NAME}' registered at ${KDIR} with display name '${JUPYTER_KERNEL_DISPLAY}'"
 
 echo 

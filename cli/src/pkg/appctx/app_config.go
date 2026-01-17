@@ -10,8 +10,8 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/nawaman/workspace/src/pkg/ilist"
-	"github.com/nawaman/workspace/src/pkg/nillable"
+	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/coding-booth/src/pkg/nillable"
 )
 
 type AppConfig struct {
@@ -19,51 +19,51 @@ type AppConfig struct {
 	// --------------------
 	// General configuration
 	// --------------------
-	Dryrun    nillable.NillableBool   `toml:"dryrun,omitempty"    envconfig:"WS_DRYRUN"`
-	Verbose   nillable.NillableBool   `toml:"verbose,omitempty"   envconfig:"WS_VERBOSE"`
-	Config    nillable.NillableString `toml:"config,omitempty"    envconfig:"WS_CONFIG"`
-	Workspace nillable.NillableString `toml:"workspace,omitempty" envconfig:"WS_WORKSPACE"`
-	Version   nillable.NillableString `toml:"version,omitempty"   envconfig:"WS_VERSION"`
+	Dryrun  nillable.NillableBool   `toml:"dryrun,omitempty"  envconfig:"CB_DRYRUN"`
+	Verbose nillable.NillableBool   `toml:"verbose,omitempty" envconfig:"CB_VERBOSE"`
+	Config  nillable.NillableString `toml:"config,omitempty"  envconfig:"CB_CONFIG"`
+	Code    nillable.NillableString `toml:"code,omitempty"    envconfig:"CB_CODE"`
+	Version nillable.NillableString `toml:"version,omitempty" envconfig:"CB_VERSION"`
 
 	// --------------------
 	// Flags
 	// --------------------
-	KeepAlive    bool `toml:"keep-alive,omitempty"    envconfig:"WS_KEEP_ALIVE" default:"false"`
-	SilenceBuild bool `toml:"silence-build,omitempty" envconfig:"WS_SILENCE_BUILD" default:"false"`
-	Daemon       bool `toml:"daemon,omitempty"        envconfig:"WS_DAEMON" default:"false"`
-	Pull         bool `toml:"pull,omitempty"          envconfig:"WS_PULL" default:"false"`
-	Dind         bool `toml:"dind,omitempty"          envconfig:"WS_DIND" default:"false"`
+	KeepAlive    bool `toml:"keep-alive,omitempty"    envconfig:"CB_KEEP_ALIVE" default:"false"`
+	SilenceBuild bool `toml:"silence-build,omitempty" envconfig:"CB_SILENCE_BUILD" default:"false"`
+	Daemon       bool `toml:"daemon,omitempty"        envconfig:"CB_DAEMON" default:"false"`
+	Pull         bool `toml:"pull,omitempty"          envconfig:"CB_PULL" default:"false"`
+	Dind         bool `toml:"dind,omitempty"          envconfig:"CB_DIND" default:"false"`
 
 	// --------------------
 	// Image configuration
 	// --------------------
-	Dockerfile string `toml:"dockerfile,omitempty" envconfig:"WS_DOCKERFILE"`
-	Image      string `toml:"image,omitempty"      envconfig:"WS_IMAGE"`
-	Variant    string `toml:"variant,omitempty"    envconfig:"WS_VARIANT" default:"default"`
+	Dockerfile string `toml:"dockerfile,omitempty" envconfig:"CB_DOCKERFILE"`
+	Image      string `toml:"image,omitempty"      envconfig:"CB_IMAGE"`
+	Variant    string `toml:"variant,omitempty"    envconfig:"CB_VARIANT" default:"default"`
 
 	// --------------------
 	// Runtime values
 	// --------------------
-	ProjectName string `toml:"project-name,omitempty" envconfig:"WS_PROJECT_NAME"`
-	HostUID     string `toml:"host-uid,omitempty"     envconfig:"WS_HOST_UID"`
-	HostGID     string `toml:"host-gid,omitempty"     envconfig:"WS_HOST_GID"`
-	Timezone    string `toml:"timezone,omitempty"     envconfig:"WS_TIMEZONE"`
+	ProjectName string `toml:"project-name,omitempty" envconfig:"CB_PROJECT_NAME"`
+	HostUID     string `toml:"host-uid,omitempty"     envconfig:"CB_HOST_UID"`
+	HostGID     string `toml:"host-gid,omitempty"     envconfig:"CB_HOST_GID"`
+	Timezone    string `toml:"timezone,omitempty"     envconfig:"CB_TIMEZONE"`
 
 	// --------------------
 	// Container configuration
 	// --------------------
-	Name    string `toml:"name,omitempty"      envconfig:"WS_NAME"`
-	Port    string `toml:"port,omitempty"      envconfig:"WS_PORT" default:"NEXT"`
-	EnvFile string `toml:"env-file,omitempty"  envconfig:"WS_ENV_FILE"`
-	Startup string `toml:"startup,omitempty"   envconfig:"WS_STARTUP"`
+	Name    string `toml:"name,omitempty"      envconfig:"CB_NAME"`
+	Port    string `toml:"port,omitempty"      envconfig:"CB_PORT" default:"NEXT"`
+	EnvFile string `toml:"env-file,omitempty"  envconfig:"CB_ENV_FILE"`
+	Startup string `toml:"startup,omitempty"   envconfig:"CB_STARTUP"`
 
 	// --------------------
 	// TOML-friendly array fields
 	// --------------------
-	CommonArgs ilist.SemicolonStringList `toml:"common-args,omitempty" envconfig:"WS_COMMON_ARGS"`
-	BuildArgs  ilist.SemicolonStringList `toml:"build-args,omitempty"  envconfig:"WS_BUILD_ARGS"`
-	RunArgs    ilist.SemicolonStringList `toml:"run-args,omitempty"    envconfig:"WS_RUN_ARGS"`
-	Cmds       ilist.SemicolonStringList `toml:"cmds,omitempty"        envconfig:"WS_CMDS"`
+	CommonArgs ilist.SemicolonStringList `toml:"common-args,omitempty" envconfig:"CB_COMMON_ARGS"`
+	BuildArgs  ilist.SemicolonStringList `toml:"build-args,omitempty"  envconfig:"CB_BUILD_ARGS"`
+	RunArgs    ilist.SemicolonStringList `toml:"run-args,omitempty"    envconfig:"CB_RUN_ARGS"`
+	Cmds       ilist.SemicolonStringList `toml:"cmds,omitempty"        envconfig:"CB_CMDS"`
 }
 
 // Clone the content of the app config.
@@ -101,7 +101,7 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Dryrun:           %v\n", config.Dryrun)
 	fmt.Fprintf(&str, "    Verbose:          %v\n", config.Verbose)
 	fmt.Fprintf(&str, "    Config:           %v\n", config.Config)
-	fmt.Fprintf(&str, "    Workspace:        %v\n", config.Workspace)
+	fmt.Fprintf(&str, "    Code:             %v\n", config.Code)
 	fmt.Fprintf(&str, "    Version:          %q\n", config.Version)
 
 	fmt.Fprintf(&str, "# Flags -------------------------\n")

@@ -47,7 +47,7 @@ echo "🧩 Registering Bash kernel under ${JUPYTER_KERNEL_PREFIX} (system-wide)�
 python -m bash_kernel.install --prefix "${JUPYTER_KERNEL_PREFIX}"
 
 # If we have a venv, also install the kernelspec in that venv (sys-prefix)
-echo "🧩 Also registering Bash kernel into venv: ${WS_VENV_DIR} (sys-prefix)…"
+echo "🧩 Also registering Bash kernel into venv: ${CB_VENV_DIR} (sys-prefix)…"
 python -m bash_kernel.install --sys-prefix || true
 
 

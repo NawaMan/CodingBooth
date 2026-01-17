@@ -13,10 +13,10 @@ CodingBooth WorkSpace is a Docker-powered development environment launcher writt
 ./cli-build.sh
 
 # Build creates:
-# - bin/workspace-linux-amd64, bin/workspace-linux-arm64
-# - bin/workspace-darwin-amd64, bin/workspace-darwin-arm64
-# - bin/workspace-windows-amd64.exe, bin/workspace-windows-arm64.exe
-# - ./workspace (local platform executable)
+# - bin/coding-booth-linux-amd64, bin/coding-booth-linux-arm64
+# - bin/coding-booth-darwin-amd64, bin/coding-booth-darwin-arm64
+# - bin/coding-booth-windows-amd64.exe, bin/coding-booth-windows-arm64.exe
+# - ./coding-booth (local platform executable)
 ```
 
 ## Test Commands
@@ -43,17 +43,17 @@ cd tests/dryrun && ./test003--command.sh
 
 ```
 cli/src/
-├── cmd/workspace/     # CLI entry point (main.go, run.go, help.go, version.go)
+├── cmd/coding-booth/     # CLI entry point (main.go, run.go, help.go, version.go)
 └── pkg/
     ├── appctx/        # Immutable application context & configuration (builder pattern)
-    ├── workspace/     # Core orchestration (runner, variant validation, image management)
+    ├── coding-booth/     # Core orchestration (runner, variant validation, image management)
     │   └── init/      # Initialization module
     ├── docker/        # Docker CLI wrapper (BuildKit, TTY handling)
     ├── ilist/         # Immutable list utilities
     └── nillable/      # Nullable type wrappers
 ```
 
-**Execution Flow**: `main.go` → `run.go` → `WorkspaceRunner.Run()` → Docker command execution
+**Execution Flow**: `main.go` → `run.go` → `BoothRunner.Run()` → Docker command execution
 
 **Key Patterns**:
 - AppContext is immutable (snapshot-like); use builder pattern for modifications
@@ -69,6 +69,6 @@ cli/src/
 
 ## Configuration
 
-- `.ws/config.toml` - Per-project launcher configuration
+- `.booth/config.toml` - Per-project launcher configuration
 - `.env` - Runtime environment variables
 - `template-config.toml` - Template for new projects
