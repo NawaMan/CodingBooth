@@ -34,10 +34,8 @@ RUN "$WS_SETUPS_DIR"/mvn--setup.sh
 RUN "$WS_SETUPS_DIR"/gradle--setup.sh
 RUN "$WS_SETUPS_DIR"/jenv--setup.sh
 
-COPY .ws/setups /tmp/setups
-
-RUN if [[ "$WS_HAS_DESKTOP"  != false ]]; then /tmp/setups/antigravity--setup.sh ; fi
-RUN if [[ "$WS_HAS_DESKTOP"  != false ]]; then /tmp/setups/claude-code--setup.sh ; fi
+RUN if [[ "$WS_HAS_DESKTOP"  != false ]]; then "$WS_SETUPS_DIR"/antigravity--setup.sh ; fi
+RUN if [[ "$WS_HAS_DESKTOP"  != false ]]; then "$WS_SETUPS_DIR"/claude-code--setup.sh ; fi
 
 RUN if [[ "$WS_HAS_VSCODE"   != false ]]; then "$WS_SETUPS_DIR"/base-code-extension--setup.sh   ; fi
 RUN if [[ "$WS_HAS_VSCODE"   != false ]]; then "$WS_SETUPS_DIR"/bash-code-extension--setup.sh   ; fi

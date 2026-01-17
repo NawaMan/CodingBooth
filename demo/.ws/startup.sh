@@ -7,7 +7,7 @@
 # Demo Startup Script
 #
 # This script runs at container startup, after all system hooks.
-# Uses: Show a welcome message and set up a friendly dev environment.
+# The aims is to show what sort of thing you can do at the startup of a booth.
 # ============================================================================
 
 set -euo pipefail
@@ -84,21 +84,49 @@ fi
 
 # Create a fun ASCII art file
 cat > "$HOME/.motd" << 'EOF'
-
- __        __         _                                
- \ \      / /__  _ __| | _____ _ __   __ _  ___ ___    
-  \ \ /\ / / _ \| '__| |/ / __| '_ \ / _` |/ __/ _ \   
-   \ V  V / (_) | |  |   <\__ \ |_) | (_| | (_|  __/   
-    \_/\_/ \___/|_|  |_|\_\___/ .__/ \__,_|\___\___|   
-                              |_|                       
-                                          Demo Edition
-
+===========================================
+== Welcome to CodingBooth WorkSpace Demo ==
+===========================================
 EOF
 
 # Append MOTD to bashrc if not already there
 if ! grep -q ".motd" "$HOME/.bashrc" 2>/dev/null; then
   echo '[ -f ~/.motd ] && cat ~/.motd' >> "$HOME/.bashrc"
 fi
+
+mkdir -p "/home/coder/.config/xfce4/xfconf/xfce-perchannel-xml"
+cat > "/home/coder/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfce4-desktop" version="1.0">
+  <property name="backdrop" type="empty">
+    <property name="screen0" type="empty">
+      <property name="monitorVNC-0" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="/usr/share/backgrounds/xfce/xfce-blue.jpg"/>
+        </property>
+        <property name="workspace1" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="/usr/share/backgrounds/xfce/xfce-blue.jpg"/>
+        </property>
+        <property name="workspace2" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="/usr/share/backgrounds/xfce/xfce-blue.jpg"/>
+        </property>
+        <property name="workspace3" type="empty">
+          <property name="color-style" type="int" value="0"/>
+          <property name="image-style" type="int" value="5"/>
+          <property name="last-image" type="string" value="/usr/share/backgrounds/xfce/xfce-blue.jpg"/>
+        </property>
+      </property>
+    </property>
+  </property>
+</channel>
+EOF
+
 
 if [[ "${WS_SILENCE_BUILD:-false}" != "true" ]]; then
   echo "✅ Demo startup complete!"
