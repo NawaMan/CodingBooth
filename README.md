@@ -750,6 +750,9 @@ This feature is useful for CI/CD pipelines, containerized builds, or development
 > ⚠️ Warning:
 > DinD mode is experimental and may not be stable.
 
+> 💡 **Tip:**
+> See `examples/dind-example` for basic DinD usage, or `examples/kind-example` for running Kubernetes with KinD inside the workspace.
+
 
 ## Setup Implementation Notes
 Setup scripts are scripts that install tools and dependencies.
