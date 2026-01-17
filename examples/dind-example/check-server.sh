@@ -1,19 +1,45 @@
 #!/usr/bin/env bash
-# Copyright 2025-2026 : Nawa Manusitthipol
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
 
-# Checks if the http-server container is running.
-# Displays green checkmark if running, red X if not.
+URL="http://localhost:8080"
+EXPECT="up"
 
-CONTAINER_NAME="http-server"
+# Parse arguments
+for arg in "$@"; do
+  case "$arg" in
+    --expect=up)
+      EXPECT="up"
+      ;;
+    --expect=down)
+      EXPECT="down"
+      ;;
+    *)
+      echo "Usage: $0 [--expect=up|--expect=down]"
+      exit 2
+      ;;
+  esac
+done
 
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+# Get HTTP status (000 if unreachable)
+status_code=$(curl -s -o /dev/null -w "%{http_code}" "$URL")
 
-if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-    echo -e "${GREEN}✓${NC} Server is running"
-else
-    echo -e "${RED}✗${NC} Server is not running"
+green="\e[32m"
+red="\e[31m"
+reset="\e[0m"
+
+if [[ "$EXPECT" == "up" ]]; then
+  if [[ "$status_code" == "200" ]]; then
+    echo -e "${green}✔ SUCCESS: $URL is UP (200)${reset}"
+    exit 0
+  else
+    echo -e "${red}✖ FAILURE: $URL expected UP, got $status_code${reset}"
+    exit 1
+  fi
+else # expect down
+  if [[ "$status_code" != "200" ]]; then
+    echo -e "${green}✔ SUCCESS: $URL is DOWN (got $status_code)${reset}"
+    exit 0
+  else
+    echo -e "${red}✖ FAILURE: $URL expected DOWN, but is UP (200)${reset}"
+    exit 1
+  fi
 fi

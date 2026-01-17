@@ -23,25 +23,27 @@ echo
 # Test 1: Start server
 echo "Starting server..."
 ./start-server.sh > /dev/null 2>&1
+sleep 1
 pass "Server started"
 
-# Test 2: Check server is running
-if ./check-server.sh 2>/dev/null | grep -q "✓"; then
-    pass "Check shows server running"
+# Test 2: Check server is running (expects UP)
+if ./check-server.sh --expect=up > /dev/null 2>&1; then
+  pass "Check shows server running"
 else
-    fail "Check should show server running"
+  fail "Check should show server running"
 fi
 
 # Test 3: Stop server
 echo "Stopping server..."
 ./stop-server.sh > /dev/null 2>&1
+sleep 1
 pass "Server stopped"
 
-# Test 4: Check server is not running
-if ./check-server.sh 2>/dev/null | grep -q "✗"; then
-    pass "Check shows server not running"
+# Test 4: Check server is not running (expects DOWN)
+if ./check-server.sh --expect=down > /dev/null 2>&1; then
+  pass "Check shows server not running"
 else
-    fail "Check should show server not running"
+  fail "Check should show server not running"
 fi
 
 echo

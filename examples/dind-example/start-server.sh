@@ -11,11 +11,6 @@ set -euo pipefail
 
 SERVER_PORT=${SERVER_PORT:-8080}
 CONTAINER_NAME="http-server"
-PID_FILE="/tmp/http-server-socat.pid"
-
-# Open port forwarding from workspace container to DinD sidecar
-SOCAT_PID="$(/usr/local/bin/dind-open-port "$SERVER_PORT")"
-echo "$SOCAT_PID" > "$PID_FILE"
 
 DOCKER_BUILDKIT=1 docker build -t http-server .
 
