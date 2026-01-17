@@ -1,12 +1,12 @@
 #########################################################################################
-## Workspace Launcher Configuration (.ws/config.toml)                                 ##
+## Booth Launcher Configuration (.booth/config.toml)                                     ##
 ##                                                                                     ##
-## This file customizes how `workspace` starts the container.                         ##
-## It is loaded automatically if present in the .ws/ folder.                          ##
+## This file customizes how `booth` starts the container.                             ##
+## It is loaded automatically if present in the .booth/ folder.                          ##
 ##                                                                                     ##
 ## Location / precedence (highest → lowest):                                          ##
 ##   1) Command-line args                                                             ##
-##   2) Values from this config file (.ws/config.toml)                                ##
+##   2) Values from this config file (.booth/config.toml)                                ##
 ##   3) Environment variables (exported before launch)                                ##
 ##   4) Built-in defaults                                                             ##
 ##                                                                                     ##
@@ -19,7 +19,7 @@
 # dryrun = false          # Print docker commands without executing them
 # verbose = false         # Extra debug output, banners, and printed commands
 # config = ""             # Path to this config file (usually auto-detected)
-# workspace = ""          # Host path mounted to /home/coder/workspace (default: current dir)
+# code = ""          # Host path mounted to /home/coder/code (default: current dir)
 # version = "latest"      # Prebuilt version tag
 
 ### -------------------------------------------------------------------------------------
@@ -37,12 +37,12 @@
 ### -------------------------------------------------------------------------------------
 # variant = "base"        # One of: base | notebook | codeserver | desktop-{xfce,kde}
 # image = ""              # Full image reference (e.g. repo/name:tag). If set, no build/pull logic runs
-# dockerfile = ""         # Path to Dockerfile OR a directory containing .ws/Dockerfile for local build
+# dockerfile = ""         # Path to Dockerfile OR a directory containing .booth/Dockerfile for local build
 
 ### -------------------------------------------------------------------------------------
 ### Runtime values
 ### -------------------------------------------------------------------------------------
-# project-name = ""       # Project name; default derives from workspace path basename
+# project-name = ""       # Project name; default derives from code path basename
 # host-uid = ""           # UID for user inside container (defaults to current host UID)
 # host-gid = ""           # GID for user inside container (defaults to current host GID)
 # timezone = ""           # Timezone for container (e.g., "America/Toronto")
@@ -57,7 +57,7 @@
 #                         #   - NEXT   (pick the next free port ≥ 10000)
 #                         #   - RANDOM (pick a random free port > 10000)
 # env-file = ""           # Path to env file passed to `docker run`
-#                         # If unset, auto-uses "${workspace}/.env" when it exists
+#                         # If unset, auto-uses "${code}/.env" when it exists
 #                         # Set to "none" to explicitly disable --env-file usage
 #                         # Common keys: PASSWORD, JUPYTER_TOKEN, TZ, HTTP(S)_PROXY, AWS_*, GH_TOKEN
 
@@ -74,7 +74,7 @@
 #   Example: "-v", "~/.config/gcloud:/tmp/ws-home-seed/.config/gcloud:ro"
 #
 # common-args = []        # Pre-applied CLI flags merged before command-line parameters
-#                         # Example: ["--name", "my-workspace", "-p", "8080:8080"]
+#                         # Example: ["--name", "my-booth", "-p", "8080:8080"]
 # build-args = []         # Extra args for `docker build` when dockerfile is used
 #                         # Example: ["--no-cache", "--build-arg", "VERSION=1.0"]
 # run-args = []           # Extra args for `docker run`
@@ -90,14 +90,14 @@
 # # Example 1: Use a prebuilt image with Codeserver, random open port, and custom name
 # variant = "codeserver"
 # version = "latest"
-# workspace = "/home/user/projects/my-app"
+# code = "/home/user/projects/my-app"
 # common-args = ["--port", "RANDOM", "--name", "my-app"]
 
 # # Example 2: Force pull the prebuilt image and disable automatic .env usage
 # pull = true
 # env-file = "none"
 
-# # Example 3: Local build from a workspace .ws/Dockerfile
+# # Example 3: Local build from a .booth/Dockerfile
 # dockerfile = "./"
 # build-args = ["--no-cache"]
 
@@ -112,11 +112,11 @@
 # [full-example]
 # dryrun = false
 # verbose = true
-# workspace = "/home/user/projects/my-workspace"
+# code = "/home/user/projects/my-booth"
 # variant = "base"
 # version = "latest"
 # project-name = "my-project"
-# name = "my-workspace-container"
+# name = "my-booth-container"
 # port = "10500"
 # env-file = ".env.development"
 # timezone = "America/New_York"
@@ -127,4 +127,4 @@
 # dind = false
 # common-args = ["--verbose"]
 # run-args = ["-e", "DEBUG=true", "-v", "/tmp:/tmp"]
-# cmds = ["bash", "-lc", "echo 'Hello from workspace'"]
+# cmds = ["bash", "-lc", "echo 'Hello from booth'"]

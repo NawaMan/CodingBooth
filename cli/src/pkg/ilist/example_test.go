@@ -5,7 +5,7 @@
 package ilist_test
 
 import (
-	"github.com/nawaman/workspace/src/pkg/ilist"
+	"github.com/nawaman/coding-booth/src/pkg/ilist"
 )
 
 // Example demonstrates basic usage of the ilist package.

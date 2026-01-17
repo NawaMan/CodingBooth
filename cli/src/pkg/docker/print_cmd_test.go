@@ -145,10 +145,10 @@ func TestPrintCmd_RealWorldExamples(t *testing.T) {
 				{"build"},
 				{"-f", "Dockerfile"},
 				{"-t", "workspace-local:myproject-default-latest"},
-				{"--build-arg", "WS_VARIANT_TAG=default"},
+				{"--build-arg", "CB_VARIANT_TAG=default"},
 				{"/workspace"},
 			},
-			expected: "docker \\\n    build \\\n    -f Dockerfile \\\n    -t workspace-local:myproject-default-latest \\\n    --build-arg 'WS_VARIANT_TAG=default' \\\n    /workspace\n",
+			expected: "docker \\\n    build \\\n    -f Dockerfile \\\n    -t workspace-local:myproject-default-latest \\\n    --build-arg 'CB_VARIANT_TAG=default' \\\n    /workspace\n",
 		},
 		{
 			name:    "docker run with bash command",

@@ -25,7 +25,7 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
 - [Customization](#customization)
 - [Guarantees & Limits](#guarantees--limits)
 - [How It Works](#how-it-works)
-- [`workspace` Manual](#workspace-manual)
+- [`booth` Manual](#booth-manual)
 - [Setup Implementation Notes](#setup-implementation-notes)
 - [Community & Feedback](#community-feedback)
 
@@ -34,24 +34,24 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
 1. Ensure you have Docker installed and running.
 2. Clone this repo.
 3. cd into it and cd further into `examples/go-example` or any other example in that folder.
-4. Run : `../../workspace`
+4. Run : `../../booth`
 5. Wait for a few minutes (may be more for the first run) and visit `http://localhost:10000`
-6. Select your IDE and start coding! (note: your code will be in `/home/coder/workspace` folder).
+6. Select your IDE and start coding! (note: your code will be in `/home/coder/code` folder).
 
 ![Select IDE](DesktopRun.png)
 
 ### Optional
-7. Inspect `.ws/Dockerfile` and `.ws/config.toml` inside `examples/go-example` and
+7. Inspect `.booth/Dockerfile` and `.booth/config.toml` inside `examples/go-example` and
     see if you can figure out what they are.
 8. Try other [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples) or different [variants](https://github.com/NawaMan/WorkSpace/tree/latest?tab=readme-ov-file#available-variants).
 9. Try on your own project,
   1. Run: `curl -fsSL https://github.com/NawaMan/WorkSpace/releases/download/latest/ws | bash`
-  2. Create `.ws/Dockerfile` and `.ws/config.toml` -- Take inspiration from the existing [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples).
+  2. Create `.booth/Dockerfile` and `.booth/config.toml` -- Take inspiration from the existing [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples).
 
 ## Installation
 
 Run the following on the project **base folder** to install [CodingBooth WorkSpace Wrapper](https://github.com/NawaMan/WorkSpaceWrapper).
-The wrapper allows management of the workspace script file.
+The wrapper allows management of the booth script file.
 
 ```shell
 curl -fsSL https://github.com/NawaMan/WorkSpace/releases/download/latest/ws | bash
@@ -68,7 +68,7 @@ Run the wrapper script and follow the instructions.
 WorkSpace provides a command-line interface with the following structure:
 
 ```shell
-./workspace [flags] [-- command...]
+./booth [flags] [-- command...]
 ```
 
 ### Common Flags
@@ -87,26 +87,26 @@ WorkSpace provides a command-line interface with the following structure:
 | `--dryrun` | Print docker commands without executing |
 | `--verbose` | Enable debug output |
 | `--config <path>` | Use custom config file |
-| `--workspace <path>` | Set workspace directory |
+| `--code <path>` | Set code directory |
 | `--help`, `-h` | Show help information |
 
 ### Examples
 
 ```shell
 # Start with default settings (interactive shell)
-./workspace
+./booth
 
 # Start VS Code in browser
-./workspace --variant codeserver
+./booth --variant codeserver
 
 # Run a command and exit
-./workspace -- make test
+./booth -- make test
 
 # Start in background with custom port
-./workspace --daemon --port 8080
+./booth --daemon --port 8080
 
 # Dry-run to see what would be executed
-./workspace --dryrun --verbose
+./booth --dryrun --verbose
 ```
 
 ## Why WorkSpace?
@@ -123,7 +123,7 @@ That means every file you create or modify inside the container is **owned by yo
 - **Seamless file access** – Create, edit, and delete files inside the container, then use them on the host with no permission issues.  
 - **Team-friendly** – Each developer uses their own UID and GID mapping — no more “root-owned” repositories.  
 - **Project isolation** – Keep toolchains and dependencies inside the container while working directly in your project folder.  
-- **Portable configuration** – `.ws/config.toml` travel with your repository, ensuring consistent setups across machines.
+- **Portable configuration** – `.booth/config.toml` travel with your repository, ensuring consistent setups across machines.
 
 
 ## Variants
@@ -173,10 +173,10 @@ For desktop variants (`desktop-xfce`, `desktop-kde`), you can customize the scre
 
 **Example (command line):**
 ```bash
-./workspace --variant desktop-xfce -e GEOMETRY=1920x1080
+./booth --variant desktop-xfce -e GEOMETRY=1920x1080
 ```
 
-**Example (in `.ws/config.toml`):**
+**Example (in `.booth/config.toml`):**
 ```toml
 run-args = ["-e", "GEOMETRY=1920x1080"]
 ```
@@ -218,9 +218,9 @@ http://localhost:10000/vnc.html?autoconnect=1&host=localhost&port=10000&path=web
 
 > 💡 **Tip:** You can override the variant at runtime using:
 > ```bash
-> ./workspace --variant codeserver
+> ./booth --variant codeserver
 > ```
-> Or set it permanently in your configuration file (`.ws/config.toml`).
+> Or set it permanently in your configuration file (`.booth/config.toml`).
 
 
 ## Built-in Tools
@@ -261,11 +261,11 @@ These essentials are preinstalled so you can start working immediately — no ex
 ## Quick Examples
 
 ```shell
-./workspace -- make test
+./booth -- make test
 ```
 
 ```shell
-./workspace -- 'read -r -p "Press Enter to continue..."'
+./booth -- 'read -r -p "Press Enter to continue..."'
 ```
 
 More examples : https://github.com/NawaMan/WorkSpace/tree/main/examples
@@ -275,26 +275,26 @@ More examples : https://github.com/NawaMan/WorkSpace/tree/main/examples
 
 You can tailor how WorkSpace runs by adjusting configuration files or using runtime flags:
 
-- **`.ws/config.toml`** – Defines the image name, variant, UID/GID overrides, and default ports.  
+- **`.booth/config.toml`** – Defines the image name, variant, UID/GID overrides, and default ports.  
 - **Runtime flags** – Options such as `--variant`, `--name`, `--pull`, `--dryrun`, and others can override defaults at launch.
 
 > 💡 **Tip:** Configuration precedence follows this order:  
 > **CLI flags → config file → environment variables → built-in defaults.**
-> **Bootstrap note:** `--workspace` and `--config` are evaluated early (CLI first pass or defaults) and are not overridden by environment variables/TOML configuration file.
+> **Bootstrap note:** `--code` and `--config` are evaluated early (CLI first pass or defaults) and are not overridden by environment variables/TOML configuration file.
 
-#### The `.ws/` Folder
+#### The `.booth/` Folder
 
-All workspace configuration lives in a single `.ws/` folder in your project root:
+All booth configuration lives in a single `.booth/` folder in your project root:
 
 ```
 my-project/
-└── .ws/
+└── .booth/
     ├── config.toml     # Launcher configuration
     ├── Dockerfile      # Custom Docker build (optional)
     ├── home/           # Team-shared home directory files (optional)
     │   └── .config/
-    └── tools/          # Managed by ws wrapper (auto-created)
-        └── workspace
+    └── tools/          # Managed by booth wrapper (auto-created)
+        └── coding-booth
 ```
 
 | File | Purpose |
@@ -310,7 +310,7 @@ my-project/
 ## Guarantees & Limits
 
 - ✅ **Host file ownership:** All files in your project folder remain owned by your host user — no "root-owned" files.
-- ✅ **Consistent user mapping:** Each container automatically creates a matching user and group via `workspace-user-setup`.
+- ✅ **Consistent user mapping:** Each container automatically creates a matching user and group via `booth-user-setup`.
 - ⚠️ **Cross-OS caveats:** WorkSpace doesn't abstract away all host OS differences — things like line endings, symlinks, or file attributes may still vary between platforms.
 
 ### JetBrains IDE Licensing in Containers
@@ -327,8 +327,8 @@ JetBrains activation is stored as a machine-specific token. When you run an IDE 
 ## How It Works
 
 1. The launcher passes your **host UID** and **GID** into the container using the environment variables `HOST_UID` and `HOST_GID`.  
-2. Inside the container, the entrypoint script (`workspace-user-setup`) ensures a matching `coder` user and group exist with those IDs.  
-3. The directories `/home/coder` and `/home/coder/workspace` are owned by that user, ensuring smooth file sharing between host and container.  
+2. Inside the container, the entrypoint script (`booth-user-setup`) ensures a matching `coder` user and group exist with those IDs.  
+3. The directories `/home/coder` and `/home/coder/code` are owned by that user, ensuring smooth file sharing between host and container.  
 4. Add the user `coder` to sudoers so that it can sudo without needing the password
 5. Prepare `.bashrc` and `.zshrc`
 6. Run startup script (files in `/etc/startup.d`)
@@ -338,27 +338,27 @@ JetBrains activation is stored as a machine-specific token. When you run an IDE 
 ```
 host                                 # your machine
   ├── project/                       # your project folder on the host
-  |    ├── ws                        # workspace wrapper script
-  |    ├── .ws                       # workspace internal folder
-  |    |    ├── tools                # workspace tools folder
-  |    |        └── workspace        # workspace runner script
+  |    ├── booth                     # booth wrapper script
+  |    ├── .booth                    # booth internal folder
+  |    |    ├── tools                # booth tools folder
+  |    |        └── coding-booth     # booth runner script
   |    ├── ...                       # other project files
   ...
 
 container
   ├── home/
   |    ├── coder/
-  |    |    ├── workspace/                # your project folder inside the container
-  |    |    |   ├── ws                    # workspace wrapper script
-  |    |    |   ├── .ws                   # workspace internal folder
-  |    |    |   |    ├── tools            # workspace tools folder
-  |    |    |   |    └── workspace        # workspace runner script
+  |    |    ├── code/                     # your project folder inside the container
+  |    |    |   ├── booth                 # booth wrapper script
+  |    |    |   ├── .booth                # booth internal folder
+  |    |    |   |    ├── tools            # booth tools folder
+  |    |    |   |    └── coding-booth     # booth runner script
   |    |    ├── ...                       # other project files
   |    ├── ...                            # other home files
   ├── etc/
   |    ├── profile.d/                     # profile script folder
   ├── opt/
-  |    ├── workspace/
+  |    ├── coding-booth/
   |    |    ├── setups/                   # setup script folder
   |    |    |    ├── ...                  # setup scripts
   ├── usr/
@@ -387,21 +387,21 @@ container
 
 WorkSpace provides two mechanisms for populating the user's home directory with custom files at container startup:
 
-#### Project Home Folder (`.ws/home/`)
+#### Project Home Folder (`.booth/home/`)
 
-Create a `.ws/home/` folder in your project to share team-wide dotfiles, tool configs, or shell customizations.
+Create a `.booth/home/` folder in your project to share team-wide dotfiles, tool configs, or shell customizations.
 
 **How it works:**
-- Place files in `.ws/home/` with the same structure as `$HOME`
+- Place files in `.booth/home/` with the same structure as `$HOME`
 - At container startup, files are copied to `/home/coder/` without overwriting existing files
 - The folder should be version-controlled (committed to git)
 
 **Example structure:**
 ```
 my-project/
-├── .ws/config.toml
-├── .ws/Dockerfile
-└── .ws/home/
+├── .booth/config.toml
+├── .booth/Dockerfile
+└── .booth/home/
     ├── .bashrc              # Team bashrc additions
     ├── .config/
     │   └── nvim/
@@ -410,7 +410,7 @@ my-project/
 ```
 
 > ⚠️ **Warning:**  
-> Do NOT put secrets, credentials, or personal tokens in `.ws/home/` — this folder is meant to be committed to version control and shared with your team.
+> Do NOT put secrets, credentials, or personal tokens in `.booth/home/` — this folder is meant to be committed to version control and shared with your team.
 
 #### Home Seed Directory (`/tmp/ws-home-seed/`)
 
@@ -421,7 +421,7 @@ Mount host files read-only to `/tmp/ws-home-seed/` for **personal credentials** 
 2. At container startup, files are copied to `/home/coder/` without overwriting existing files
 3. The user gets a writable copy; the host's original files stay protected
 
-**Example (`.ws/config.toml`):**
+**Example (`.booth/config.toml`):**
 ```toml
 run-args = [
     "-v", "~/.config/gcloud:/tmp/ws-home-seed/.config/gcloud:ro",
@@ -438,39 +438,39 @@ run-args = [
 
 Files are copied in this order (later sources win if the file doesn't exist yet):
 
-1. **`.ws/home/`** (project folder) — Team-shared defaults
+1. **`.booth/home/`** (project folder) — Team-shared defaults
 2. **`/tmp/ws-home-seed/`** (host mounts) — Personal credentials & preferences
 3. **Existing files** — Already in `/home/coder/` are preserved
 
 Since all copies use `cp -rn` (no-clobber), the first source to create a file "wins".  
-In practice: host-mounted files in `ws-home-seed` override project defaults in `.ws/home`.
+In practice: host-mounted files in `ws-home-seed` override project defaults in `.booth/home`.
 
 > 💡 **Tip:**  
-> Use `.ws/home/` for team configs (neovim, linters, shell aliases).  
+> Use `.booth/home/` for team configs (neovim, linters, shell aliases).  
 > Use `ws-home-seed` for personal credentials (gcloud, SSH keys, API tokens).
 
 
 
-## workspace Manual
+## booth Manual
 
 ### Feature List
 
 ### 1. Image Selection
 
 **Defaults**
-- **Repository:** `nawaman/workspace`  
+- **Repository:** `nawaman/coding-booth`  
 - **Variant:** `base`  
 - **Version:** `latest`
 
 **Overrides**
 - **Environment variables:** `IMAGE_NAME`, `IMAGE_REPO`, `IMAGE_TAG`, `VARIANT`, `VERSION`  
-- **Configuration file:** `.ws/config.toml`  
+- **Configuration file:** `.booth/config.toml`  
 - **CLI options:** `--variant`, `--version`, `--image`, `--dockerfile`
 
 **Precedence**
 Command-line arguments → config file → environment variables → built-in defaults
 
-> **Bootstrap note:** `--workspace` and `--config` are resolved from CLI (first pass) or defaults, and are not overridden by the config file or environment variables.
+> **Bootstrap note:** `--code` and `--config` are resolved from CLI (first pass) or defaults, and are not overridden by the config file or environment variables.
 
 
 **Derived Values**
@@ -479,18 +479,18 @@ Command-line arguments → config file → environment variables → built-in de
 
 > 💡 **Tip:**  
 > When both `--image` and `--dockerfile` are provided, `--image` takes precedence.  
-> Use `--dockerfile` when you want to build locally; otherwise, WorkSpace automatically pulls prebuilt images from `nawaman/workspace`.
+> Use `--dockerfile` when you want to build locally; otherwise, WorkSpace automatically pulls prebuilt images from `nawaman/coding-booth`.
 
 
 ### 2. Container Name
 
 **Default**  
 - The container name defaults to a sanitized version of the current folder name.  
-  If the directory name cannot be determined, it falls back to `workspace`.
+  If the directory name cannot be determined, it falls back to `booth`.
 
 **Overrides**
 - **Environment variable:** `CONTAINER_NAME`  
-- **Configuration file:** `.ws/config.toml`  
+- **Configuration file:** `.booth/config.toml`  
 - **CLI option:** `--name <name>`
 
 ---
@@ -504,15 +504,15 @@ Command-line arguments → config file → environment variables → built-in de
 WorkSpace supports several configuration files that control how containers are built and launched.  
 These files let you define defaults, environment variables, and runtime parameters without cluttering your CLI commands.
 
-#### **Launcher Config (`.ws/config.toml`)**
-- Loaded after bootstrap flags are determined (`--workspace`, `--config`) and before full CLI parsing.
+#### **Launcher Config (`.booth/config.toml`)**
+- Loaded after bootstrap flags are determined (`--code`, `--config`) and before full CLI parsing.
 - Defines default values for image selection, user mapping, and runtime behavior.
 - Typical keys include:
   `variant`, `version`, `image`, `dockerfile`,
   `name`, `host-uid`, `host-gid`, `port`, `dind`, and others.
 
 ##### **Custom Argument Arrays**
-You can define three special arrays in `.ws/config.toml` to customize how the launcher interacts with Docker:
+You can define three special arrays in `.booth/config.toml` to customize how the launcher interacts with Docker:
 
 - **`common-args`** – Pre-applied CLI flags merged before command-line parameters.
   Useful for predefining commonly used options (e.g., extra ports or mounts).
@@ -520,7 +520,7 @@ You can define three special arrays in `.ws/config.toml` to customize how the la
   common-args = ["--variant", "ide-codeserver", "--port", "8080"]
   ```
 
-These behave exactly like command-line flags passed to workspace.
+These behave exactly like command-line flags passed to booth.
 
 - **`build-args`** – Extra args for `docker build` when dockerfile is used.
   For example, disable caching or pass build-time variables:
@@ -544,13 +544,13 @@ These behave exactly like command-line flags passed to workspace.
 
 #### Container Environment File (.env)
 - Passed directly to Docker using the `--env-file` option.
-- Commonly used for credentials or runtime configuration such as: `PASSWORD`, `JUPYTER_TOKEN`, `TZ`, `PROXY`, `AWS_*`, `GH_TOKEN`, etc.
+- Commonly used for credentials or runtime configuration such as: `PASSWORD`, `JUPYTER_TOKEN`, `TZ`, `PROXY`, `ACB_*`, `GH_TOKEN`, etc.
 - Can be overridden with `env-file = "<path>"` in config.toml.
 - To disable, set `env-file = "none"` in config.toml.
 
 > 🧩 Summary:
 > Configuration layers allow customization at two levels:
-> Build+Image: .ws/config.toml (persistent project defaults)
+> Build+Image: .booth/config.toml (persistent project defaults)
 > Container Environment: .env (runtime secrets and environment variables)
 > Together, they give you full control over build, run, and launcher behavior.
 
@@ -583,7 +583,7 @@ WorkSpace supports multiple run modes to fit different workflows — from one-of
 - Executes a specific command inside the container and then exits.
 - Commands are run under a login shell for a consistent environment:
   ```bash
-  ./workspace -- echo "Hello from container"
+  ./booth -- echo "Hello from container"
   ```
 - Useful for automation, scripting, or CI/CD pipelines.
 
@@ -591,10 +591,10 @@ WorkSpace supports multiple run modes to fit different workflows — from one-of
 - Suppresses container startup messages for a cleaner output.
 - Ideal when you want commands to appear as if they're running locally:
   ```bash
-  ./workspace --variant base --silence-build -- echo "Hello"
+  ./booth --variant base --silence-build -- echo "Hello"
   # Output: Hello
   ```
-- Combine with command mode to integrate workspace commands into scripts or pipelines where only the command output matters.
+- Combine with command mode to integrate booth commands into scripts or pipelines where only the command output matters.
 
 > ⚠️ **Note:**  
 > Silent mode only hides startup messages — the container still needs time to build (if using a custom Dockerfile) and start up.  
@@ -629,7 +629,7 @@ Meaning:
 **Overrides**
 - You can customize the exposed port via:
   - Environment variable: WORKSPACE_PORT
-  - Configuration file: .ws/config.toml
+  - Configuration file: .booth/config.toml
   - CLI flag: --port <number>
 - The value can be a fixed number (8080), NEXT (to find the next available port), or RANDOM (to assign a random open port).
 
@@ -647,7 +647,7 @@ WorkSpace manages Docker image retrieval intelligently to balance performance an
 **Forced Pull**
 - Use the `--pull` flag to explicitly fetch the latest image version, even if a local copy exists:
   ```bash
-  ./workspace --pull
+  ./booth --pull
   ```
 > 💡 Tip:
 > Use --pull periodically to ensure your local environment stays in sync with the latest base image, especially when sharing configurations across teams.
@@ -659,7 +659,7 @@ The **dry-run** mode allows you to preview exactly what WorkSpace will execute �
 
 **Usage**
 ```bash
-./workspace --dryrun
+./booth --dryrun
 ```
 
 **Behavior**
@@ -707,9 +707,9 @@ Displays detailed usage information, supported flags, and configuration notes.
 
 **Usage**
 ```bash
-./workspace --help
+./booth --help
 # or
-./workspace -h
+./booth -h
 ```
 
 **Behavior**
@@ -719,13 +719,13 @@ Displays detailed usage information, supported flags, and configuration notes.
 
 ### 11. Docker-in-Docker (DinD) Support
 
-WorkSpace supports **Docker-in-Docker (DinD)** mode, allowing you to build and run Docker containers **from inside your workspace container**.  
+WorkSpace supports **Docker-in-Docker (DinD)** mode, allowing you to build and run Docker containers **from inside your booth container**.  
 This feature is useful for CI/CD pipelines, containerized builds, or development environments that need access to Docker tooling.
 
 ---
 
 **Behavior**
-- When DinD mode is enabled, the workspace container gains access to the host’s Docker daemon or runs its own isolated Docker service.  
+- When DinD mode is enabled, the booth container gains access to the host’s Docker daemon or runs its own isolated Docker service.  
 - The mode can operate in one of two styles:
   1. **Socket sharing (default):** Mounts the host's Docker socket (`/var/run/docker.sock`) for direct access.
   2. **Sidecar DinD service:** Starts a secondary "sidecar" container running the Docker daemon itself.
@@ -738,7 +738,7 @@ When DinD is enabled with the sidecar approach, the launcher:
 
 1. **Creates a dedicated network** — `{container-name}-{port}-dind-net`
 2. **Starts a DinD sidecar** — A `docker:dind` container runs the Docker daemon
-3. **Shares network namespace** — The workspace uses `--network container:{dind}` so `localhost` refers to the sidecar
+3. **Shares network namespace** — The booth uses `--network container:{dind}` so `localhost` refers to the sidecar
 4. **Configures Docker access** — Sets `DOCKER_HOST=tcp://localhost:2375`
 
 ```
@@ -752,7 +752,7 @@ Host
         └── DOCKER_HOST=tcp://localhost:2375
 ```
 
-This allows the workspace to run Docker commands that execute inside the isolated DinD environment.
+This allows the booth to run Docker commands that execute inside the isolated DinD environment.
 
 ---
 
@@ -761,9 +761,9 @@ This allows the workspace to run Docker commands that execute inside the isolate
   ```bash
   DIND=true
   ```
-  in your .ws/config.toml file or by passing:
+  in your .booth/config.toml file or by passing:
   ```bash
-  ./workspace --dind
+  ./booth --dind
   ```
 - Default behavior (DIND=false) disables Docker access inside the container.
   
@@ -772,7 +772,7 @@ This allows the workspace to run Docker commands that execute inside the isolate
 - The sidecar approach offers stronger isolation but can be slower and more complex to manage.
 
 > 💡 **Tip:**
-> See `examples/dind-example` for basic DinD usage, or `examples/kind-example` for running Kubernetes with KinD inside the workspace.
+> See `examples/dind-example` for basic DinD usage, or `examples/kind-example` for running Kubernetes with KinD inside the booth.
 
 
 ## Setup Implementation Notes
@@ -855,7 +855,7 @@ Choose `<LEVEL>` from these ranges to keep load order predictable:
   touch "$SENTINEL"
 
 **Environment variables**
-- Prefer the WS_* prefix for WorkSpace-specific variables (e.g., WS_PYTHON_HOME).
+- Prefer the CB_* prefix for WorkSpace-specific variables (e.g., CB_PYTHON_HOME).
 - In profile scripts, keep exports lightweight and guarded:
   ```bash
   case ":$PATH:" in *":/usr/local/bin:"*) ;; *) export PATH="/usr/local/bin:$PATH";; esac

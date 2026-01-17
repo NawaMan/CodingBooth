@@ -14,7 +14,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/nawaman/workspace/src/pkg/ilist"
+	"github.com/nawaman/coding-booth/src/pkg/ilist"
 )
 
 // buildKitAvailable caches the result of BuildKit detection

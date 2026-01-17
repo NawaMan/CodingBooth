@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nawaman/workspace/src/pkg/ilist"
-	"github.com/nawaman/workspace/src/pkg/nillable"
+	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/coding-booth/src/pkg/nillable"
 )
 
 func TestAppConfig_Clone(t *testing.T) {
@@ -56,8 +56,8 @@ func TestAppConfig_Clone(t *testing.T) {
 }
 
 func TestAppConfig_ReadFromEnvVars(t *testing.T) {
-	os.Setenv("WS_COMMON_ARGS", "foo;bar")
-	defer os.Unsetenv("WS_COMMON_ARGS")
+	os.Setenv("CB_COMMON_ARGS", "foo;bar")
+	defer os.Unsetenv("CB_COMMON_ARGS")
 
 	config := &AppConfig{}
 	err := ReadFromEnvVars(config)

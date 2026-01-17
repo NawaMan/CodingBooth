@@ -66,7 +66,7 @@ VARIANT:        ide-codeserver
 VERSION:        $VERSION
 WORKSPACE_PATH: $HERE
 WORKSPACE_PORT: 10000
-WS_VERSION:     $VERSION"
+CB_VERSION:     $VERSION"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Expected default variables"
@@ -128,7 +128,7 @@ VARIANT:        ide-codeserver
 VERSION:        ${VERSION}
 WORKSPACE_PATH: $HERE
 WORKSPACE_PORT: 10000
-WS_VERSION:     ${VERSION}"
+CB_VERSION:     ${VERSION}"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "2" "Override variables"

@@ -11,7 +11,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/nawaman/workspace/src/pkg/ilist"
+	"github.com/nawaman/coding-booth/src/pkg/ilist"
 )
 
 // DockerBuild executes a docker build command with optional silent mode.

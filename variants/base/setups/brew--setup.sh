@@ -97,21 +97,21 @@ export HOMEBREW_UPDATE_REPORT_ONLY_INSTALLED="${HOMEBREW_UPDATE_REPORT_ONLY_INST
 
 # Load brew's shell environment (PATH, MANPATH, etc.) if available.
 # Use a guard to avoid re-evaluating on every shell spawn.
-if [ -z "${__WS_BREW_SHELLENV_DONE:-}" ]; then
+if [ -z "${__CB_BREW_SHELLENV_DONE:-}" ]; then
   if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-    __WS_BREW_SHELLENV_DONE=1
+    __CB_BREW_SHELLENV_DONE=1
   elif [ -x /opt/homebrew/bin/brew ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
-    __WS_BREW_SHELLENV_DONE=1
+    __CB_BREW_SHELLENV_DONE=1
   elif [ -x /usr/local/bin/brew ]; then
     eval "$(/usr/local/bin/brew shellenv)"
-    __WS_BREW_SHELLENV_DONE=1
+    __CB_BREW_SHELLENV_DONE=1
   elif command -v brew >/dev/null 2>&1; then
     eval "$("$(command -v brew)" shellenv)"
-    __WS_BREW_SHELLENV_DONE=1
+    __CB_BREW_SHELLENV_DONE=1
   fi
-  export __WS_BREW_SHELLENV_DONE
+  export __CB_BREW_SHELLENV_DONE
 fi
 EOF
 chmod 644 "$PROFILE_FILE"

@@ -23,7 +23,7 @@ cat > "${STARTER_FILE}" <<'EOF'
 set -euo pipefail
 
 SERVER_PORT="$1"
-DIND_NAME="${WS_CONTAINER_NAME}-${WS_HOST_PORT}-dind"
+DIND_NAME="${CB_CONTAINER_NAME}-${CB_HOST_PORT}-dind"
 
 # fully detach socat from this shell
 setsid socat "TCP-LISTEN:${SERVER_PORT},reuseaddr,fork" \

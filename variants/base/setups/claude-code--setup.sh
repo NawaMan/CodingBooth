@@ -96,8 +96,8 @@ set -euo pipefail
 # Claude Code startup script
 # Ensures config and credentials from ws-home-seed are properly copied
 
-WS_SEED_DIR="/tmp/ws-home-seed/.claude"
-WS_SEED_JSON="/tmp/ws-home-seed/.claude.json"
+CB_SEED_DIR="/tmp/ws-home-seed/.claude"
+CB_SEED_JSON="/tmp/ws-home-seed/.claude.json"
 CLAUDE_DIR="$HOME/.claude"
 CLAUDE_JSON="$HOME/.claude.json"
 
@@ -105,19 +105,19 @@ mkdir -p "$CLAUDE_DIR"
 
 # Copy .claude.json config file (contains hasCompletedOnboarding, theme, etc.)
 # This must happen BEFORE claude runs to skip onboarding wizard
-if [[ -f "$WS_SEED_JSON" && ! -f "$CLAUDE_JSON" ]]; then
-    cp "$WS_SEED_JSON" "$CLAUDE_JSON"
+if [[ -f "$CB_SEED_JSON" && ! -f "$CLAUDE_JSON" ]]; then
+    cp "$CB_SEED_JSON" "$CLAUDE_JSON"
 fi
 
 # Copy .claude/ directory contents (credentials, plugins, etc.)
-if [[ -d "$WS_SEED_DIR" ]]; then
+if [[ -d "$CB_SEED_DIR" ]]; then
     # Use rsync if available (better merge), otherwise cp
     if command -v rsync &>/dev/null; then
-        rsync -a --ignore-existing "$WS_SEED_DIR/" "$CLAUDE_DIR/"
+        rsync -a --ignore-existing "$CB_SEED_DIR/" "$CLAUDE_DIR/"
     else
         # Copy files that don't exist in destination
-        find "$WS_SEED_DIR" -type f | while read -r src; do
-            rel="${src#$WS_SEED_DIR/}"
+        find "$CB_SEED_DIR" -type f | while read -r src; do
+            rel="${src#$CB_SEED_DIR/}"
             dst="$CLAUDE_DIR/$rel"
             if [[ ! -f "$dst" ]]; then
                 mkdir -p "$(dirname "$dst")"

@@ -10,7 +10,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 CLUSTER_NAME="${CLUSTER_NAME:-kind}"
-DIND_NAME="${WS_CONTAINER_NAME}-${WS_HOST_PORT}-dind"
+DIND_NAME="${CB_CONTAINER_NAME}-${CB_HOST_PORT}-dind"
 
 echo "Building hello-service image..."
 docker build -t hello-service:local ./app

@@ -15,12 +15,12 @@ source ../common--source.sh
 
 # ---- Config -------------------------------------------------------------------
 # Path to your workspace launcher script. Override via env if needed.
-WS_SCRIPT="${WS_SCRIPT:-../../workspace}"
+CB_SCRIPT="${CB_SCRIPT:-../../workspace}"
 # Canonicalize to absolute path before we cd/pushd anywhere
 if command -v readlink >/dev/null 2>&1; then
-  WS_SCRIPT="$(readlink -f "$WS_SCRIPT")"
+  CB_SCRIPT="$(readlink -f "$CB_SCRIPT")"
 else
-  WS_SCRIPT="$(cd "$(dirname "$WS_SCRIPT")" && pwd -P)/$(basename "$WS_SCRIPT")"
+  CB_SCRIPT="$(cd "$(dirname "$CB_SCRIPT")" && pwd -P)/$(basename "$CB_SCRIPT")"
 fi
 
 # Unique container name to avoid collisions
@@ -33,8 +33,8 @@ if ! command -v docker >/dev/null 2>&1; then
   exit 1
 fi
 
-if [[ ! -x "$WS_SCRIPT" ]]; then
-  echo "ERROR: WS_SCRIPT not executable or not found: $WS_SCRIPT" >&2
+if [[ ! -x "$CB_SCRIPT" ]]; then
+  echo "ERROR: CB_SCRIPT not executable or not found: $CB_SCRIPT" >&2
   exit 1
 fi
 
@@ -61,7 +61,7 @@ EOF
 run_ws() {
   # We’ll pass an explicit image to avoid any build/pull logic, pick a random port to avoid conflicts
   # Note: The script wraps the command in `bash -lc "<cmd>"` internally
-  "$WS_SCRIPT" -- "$@"
+  "$CB_SCRIPT" -- "$@"
 }
 
 # ---- Assertions ---------------------------------------------------------------

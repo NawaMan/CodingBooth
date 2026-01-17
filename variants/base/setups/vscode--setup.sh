@@ -63,7 +63,7 @@ pip install --upgrade pip setuptools wheel
 pip install jupyter ipykernel bash_kernel
 
 # Register both kernels system-wide
-python -m ipykernel install   --sys-prefix --name=python3 --display-name="Python 3 (${WS_PY_VERSION})"
+python -m ipykernel install   --sys-prefix --name=python3 --display-name="Python 3 (${CB_PY_VERSION})"
 python -m bash_kernel.install --sys-prefix
 
 # Make Jupyter path globally visible for VS Code

@@ -9,7 +9,7 @@
 set -euo pipefail
 
 CLUSTER_NAME="${CLUSTER_NAME:-kind}"
-DIND_NAME="${WS_CONTAINER_NAME}-${WS_HOST_PORT}-dind"
+DIND_NAME="${CB_CONTAINER_NAME}-${CB_HOST_PORT}-dind"
 API_PORT="${KIND_API_PORT:-6443}"
 
 echo "Creating KinD cluster: $CLUSTER_NAME"
