@@ -58,8 +58,8 @@ PORT="$(random_free_port)"
 
 RunWorkspace "$NAME" "$PORT" > $0.log
 
-# --- Wait for container to appear (max ~10 seconds) ---
-for i in {1..10}; do
+# --- Wait for container to appear (max ~60 seconds) ---
+for i in {1..60}; do
   if docker inspect "$NAME" >/dev/null 2>&1; then
     break
   fi

@@ -75,7 +75,14 @@ else
 fi
 
 
-sleep 12
+# --- Wait for container to appear (max ~60 seconds) ---
+for i in {1..60}; do
+  if docker inspect "$NAME" >/dev/null 2>&1; then
+    break
+  fi
+  sleep 1
+done
+# -------------------------------------------------------
 
 if docker inspect "$NAME" >/dev/null 2>&1; then
   print_test_result "true" "$0" "2" "Container '$NAME' still exists as it is kept alive"

@@ -245,7 +245,11 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_GID="+ctx.HostGID()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-v", ctx.Workspace()+":/home/coder/workspace"))
 	builder.CommonArgs.Append(ilist.NewList[string]("-w", "/home/coder/workspace"))
-	builder.CommonArgs.Append(ilist.NewList[string]("-p", fmt.Sprintf("%d:10000", ctx.PortNumber())))
+
+	// Skip port mapping when using DinD (port is exposed on DinD container instead)
+	if !ctx.Dind() {
+		builder.CommonArgs.Append(ilist.NewList[string]("-p", fmt.Sprintf("%d:10000", ctx.PortNumber())))
+	}
 
 	// Metadata
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "WS_SETUPS_DIR="+ctx.SetupsDir()))

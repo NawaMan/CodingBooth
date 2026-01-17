@@ -45,7 +45,7 @@ func createDindNetwork(ctx appctx.AppContext, networkName string) bool {
 }
 
 // startDindSidecar starts the DinD sidecar container if not already running.
-func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string) {
+func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort int) {
 	// Check if sidecar is already running
 	flags := docker.DockerFlags{
 		Dryrun:  ctx.Dryrun(),
@@ -69,6 +69,9 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string) {
 	// Detect if running on Docker Desktop
 	isDockerDesktop := isDockerDesktop(ctx)
 
+	// Port mapping for the workspace container (since workspace shares DinD's network)
+	portMapping := fmt.Sprintf("%d:10000", hostPort)
+
 	var args []string
 	if isDockerDesktop {
 		// Docker Desktop: skip cgroup flags + /sys/fs/cgroup mount
@@ -76,6 +79,7 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string) {
 			"run", "-d", "--rm", "--privileged",
 			"--name", dindName,
 			"--network", dindNet,
+			"-p", portMapping,
 			"-e", "DOCKER_TLS_CERTDIR=",
 			"docker:dind",
 		}
@@ -87,6 +91,7 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string) {
 			"-v", "/sys/fs/cgroup:/sys/fs/cgroup:rw",
 			"--name", dindName,
 			"--network", dindNet,
+			"-p", portMapping,
 			"-e", "DOCKER_TLS_CERTDIR=",
 			"docker:dind",
 		}
@@ -139,8 +144,9 @@ func waitForDindReady(ctx appctx.AppContext, dindName, dindNet string) {
 	fmt.Printf("⚠️  DinD did not become ready. Check: docker logs %s\n", dindName)
 }
 
-// stripNetworkFlags removes --network and --net flags from the argument list.
-func stripNetworkFlags(runArgs ilist.List[ilist.List[string]]) *ilist.AppendableList[ilist.List[string]] {
+// stripNetworkAndPortFlags removes --network, --net, -p, and --publish flags from the argument list.
+// This is needed when using container network mode, which doesn't allow port publishing.
+func stripNetworkAndPortFlags(runArgs ilist.List[ilist.List[string]]) *ilist.AppendableList[ilist.List[string]] {
 	result := ilist.NewAppendableList[ilist.List[string]]()
 	args := runArgs.Slice()
 
@@ -151,14 +157,32 @@ func stripNetworkFlags(runArgs ilist.List[ilist.List[string]]) *ilist.Appendable
 			continue
 		}
 
+		flag := arg.At(0)
+
 		// Check for --network or --net (with value in next arg)
-		if arg.At(0) == "--network" || arg.At(0) == "--net" {
+		if flag == "--network" || flag == "--net" {
 			skipNext = true
 			continue
 		}
 
 		// Check for --network=value or --net=value
-		if strings.HasPrefix(arg.At(0), "--network=") || strings.HasPrefix(arg.At(0), "--net=") {
+		if strings.HasPrefix(flag, "--network=") || strings.HasPrefix(flag, "--net=") {
+			continue
+		}
+
+		// Check for -p or --publish (with value in next arg)
+		if flag == "-p" || flag == "--publish" {
+			skipNext = true
+			continue
+		}
+
+		// Check for -p=value or --publish=value
+		if strings.HasPrefix(flag, "-p=") || strings.HasPrefix(flag, "--publish=") {
+			continue
+		}
+
+		// Check for -p<value> (e.g., -p8080:8080)
+		if strings.HasPrefix(flag, "-p") && len(flag) > 2 {
 			continue
 		}
 

@@ -73,18 +73,19 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 	createdNet := createDindNetwork(ctx, dindNet)
 	builder.CreatedDindNet = createdNet
 
-	// Start DinD sidecar if not already running
-	startDindSidecar(ctx, dindName, dindNet)
+	// Start DinD sidecar if not already running (pass hostPort for port mapping)
+	startDindSidecar(ctx, dindName, dindNet, ctx.PortNumber())
 
 	// Wait for DinD to become ready
 	waitForDindReady(ctx, dindName, dindNet)
 
-	// Strip network flags from RUN_ARGS
-	builder.RunArgs = stripNetworkFlags(ctx.RunArgs())
+	// Strip network and port flags from RUN_ARGS (not allowed with container network mode)
+	builder.RunArgs = stripNetworkAndPortFlags(ctx.RunArgs())
 
-	// Add DinD network and DOCKER_HOST to COMMON_ARGS
-	builder.CommonArgs.Append(ilist.NewList[string]("--network", dindNet))
-	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("DOCKER_HOST=tcp://%s:2375", dindName)))
+	// Use container network mode to share DinD's network namespace
+	// This allows localhost access to DinD's ports from the workspace
+	builder.CommonArgs.Append(ilist.NewList[string]("--network", fmt.Sprintf("container:%s", dindName)))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "DOCKER_HOST=tcp://localhost:2375"))
 
 	return builder.Build()
 }
