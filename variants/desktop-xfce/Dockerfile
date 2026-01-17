@@ -11,6 +11,27 @@ SHELL ["/bin/bash","-o","pipefail","-lc"]
 
 RUN "$WS_SETUPS_DIR/xfce--setup.sh"
 
+# Copy CodingBooth wallpaper
+COPY Wallpaper.png /usr/share/backgrounds/codingbooth-wallpaper.png
+
+# Create XFCE wallpaper config for new users
+RUN mkdir -p /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml \
+  && cat > /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfce4-desktop" version="1.0">
+  <property name="backdrop" type="empty">
+    <property name="screen0" type="empty">
+      <property name="monitorscreen" type="empty">
+        <property name="workspace0" type="empty">
+          <property name="last-image" type="string" value="/usr/share/backgrounds/codingbooth-wallpaper.png"/>
+          <property name="image-style" type="int" value="5"/>
+        </property>
+      </property>
+    </property>
+  </property>
+</channel>
+EOF
+
 # Not really "needed" but feel unuseful without them so put here as a "good starting point".
 RUN "$WS_SETUPS_DIR/firefox--setup.sh"
 RUN "$WS_SETUPS_DIR/google-chrome--setup.sh"
