@@ -717,7 +717,7 @@ Displays detailed usage information, supported flags, and configuration notes.
 - Provides hints for environment variables and configuration file structure.
 - Exits immediately after displaying help.
 
-### 11. Docker-in-Docker (DinD) Support -- Experimental Feature
+### 11. Docker-in-Docker (DinD) Support
 
 WorkSpace supports **Docker-in-Docker (DinD)** mode, allowing you to build and run Docker containers **from inside your workspace container**.  
 This feature is useful for CI/CD pipelines, containerized builds, or development environments that need access to Docker tooling.
@@ -727,8 +727,32 @@ This feature is useful for CI/CD pipelines, containerized builds, or development
 **Behavior**
 - When DinD mode is enabled, the workspace container gains access to the host’s Docker daemon or runs its own isolated Docker service.  
 - The mode can operate in one of two styles:
-  1. **Socket sharing (default):** Mounts the host’s Docker socket (`/var/run/docker.sock`) for direct access.  
-  2. **Sidecar DinD service:** Starts a secondary “sidecar” container running the Docker daemon itself (experimental).
+  1. **Socket sharing (default):** Mounts the host's Docker socket (`/var/run/docker.sock`) for direct access.
+  2. **Sidecar DinD service:** Starts a secondary "sidecar" container running the Docker daemon itself.
+
+---
+
+**How It Works (Sidecar Mode)**
+
+When DinD is enabled with the sidecar approach, the launcher:
+
+1. **Creates a dedicated network** — `{container-name}-{port}-dind-net`
+2. **Starts a DinD sidecar** — A `docker:dind` container runs the Docker daemon
+3. **Shares network namespace** — The workspace uses `--network container:{dind}` so `localhost` refers to the sidecar
+4. **Configures Docker access** — Sets `DOCKER_HOST=tcp://localhost:2375`
+
+```
+Host
+└── Docker
+    ├── DinD sidecar container
+    │   └── Docker daemon (:2375)
+    │       └── (your containers run here)
+    └── Workspace container
+        ├── shares DinD's network (localhost = DinD)
+        └── DOCKER_HOST=tcp://localhost:2375
+```
+
+This allows the workspace to run Docker commands that execute inside the isolated DinD environment.
 
 ---
 
@@ -746,9 +770,6 @@ This feature is useful for CI/CD pipelines, containerized builds, or development
 **Usage Notes**
 - DinD mode may increase resource usage and startup time.
 - The sidecar approach offers stronger isolation but can be slower and more complex to manage.
-
-> ⚠️ Warning:
-> DinD mode is experimental and may not be stable.
 
 > 💡 **Tip:**
 > See `examples/dind-example` for basic DinD usage, or `examples/kind-example` for running Kubernetes with KinD inside the workspace.
