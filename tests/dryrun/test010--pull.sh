@@ -17,7 +17,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     CURRENT_PATH="$(pwd -W)"
 fi
 
-ACTUAL=$(../../workspace --dryrun --pull --variant base -- tree -C)
+ACTUAL=$(../../coding-booth --dryrun --pull --variant base -- tree -C)
 ACTUAL=$(printf "%s\n" "$ACTUAL" | head -n 3)
 
 HERE="$CURRENT_PATH"
@@ -26,7 +26,7 @@ VERSION="$(cat ../../version.txt)"
 EXPECT="\
 docker \\
     pull \\
-    nawaman/workspace:base-${VERSION}"
+    nawaman/coding-booth:base-${VERSION}"
 
 if diff -u <(echo "$EXPECT") <(echo "$ACTUAL"); then
   print_test_result "true" "$0" "1" "Pull output matches expected"

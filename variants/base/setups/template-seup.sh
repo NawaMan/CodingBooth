@@ -17,8 +17,8 @@ XXXXXX_VERSION="${1:-0.0.0}"      # Replace this variable with your component ve
 
 LEVEL=57                          # See README.md – Profile Ordering (choose an appropriate level)
 
-STARTUP_FILE="/usr/share/startup.d/${LEVEL}-ws-xxxxxx--startup.sh"
-PROFILE_FILE="/etc/profile.d/${LEVEL}-ws-xxxxxx--profile.sh"
+STARTUP_FILE="/usr/share/startup.d/${LEVEL}-cb-xxxxxx--startup.sh"
+PROFILE_FILE="/etc/profile.d/${LEVEL}-cb-xxxxxx--profile.sh"
 STARTER_FILE="/usr/local/bin/xxxxxx"
 
 # Ensure target directories exist

@@ -6,12 +6,11 @@
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
-PROFILE_FILE="/etc/profile.d/57-ws-jenv--profile.sh"
+PROFILE_FILE="/etc/profile.d/57-cb-jenv--profile.sh"
 
 # ----- idempotent/atomic write of PROFILE_FILE -----
 mkdir -p "$(dirname "$PROFILE_FILE")"
-tmp="$(mktemp "${PROFILE_FILE}.XXXX")"
-cat >"$tmp" <<'EOF'
+cat >"$PROFILE_FILE" <<'EOF'
 
 JENV_ROOT="${HOME}/.jenv"
 JENV_BIN="${JENV_ROOT}/bin/jenv"
@@ -34,10 +33,3 @@ if [ ! -e "${JENV_ROOT}/plugins/export" ]; then
 fi
 
 EOF
-
-# Only replace if content changed
-if [ -f "$PROFILE_FILE" ] && cmp -s "$tmp" "$PROFILE_FILE"; then
-  rm -f "$tmp"
-else
-  install -m 755 "$tmp" "$PROFILE_FILE"
-fi

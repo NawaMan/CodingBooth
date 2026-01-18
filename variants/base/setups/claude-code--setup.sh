@@ -15,8 +15,8 @@ trap 'echo "Error on line $LINENO"; exit 1' ERR
 # --- Defaults ---
 CLAUDE_CODE_VERSION="${1:-latest}"
 
-STARTUP_FILE="/usr/share/startup.d/70-ws-claude-code--startup.sh"
-PROFILE_FILE="/etc/profile.d/70-ws-claude-code--profile.sh"
+STARTUP_FILE="/usr/share/startup.d/70-cb-claude-code--startup.sh"
+PROFILE_FILE="/etc/profile.d/70-cb-claude-code--profile.sh"
 
 # ==== Install Claude Code ====
 

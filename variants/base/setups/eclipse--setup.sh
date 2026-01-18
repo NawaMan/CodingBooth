@@ -13,10 +13,10 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
 fi
 
 
-PROFILE_FILE="/etc/profile.d/70-ws-eclipse-gtk--profile.sh"
+PROFILE_FILE="/etc/profile.d/70-cb-eclipse-gtk--profile.sh"
 
 # Load JDK env exported by the base setup
-source /etc/profile.d/60-ws-jdk--profile.sh 2>/dev/null || true
+source /etc/profile.d/60-cb-jdk--profile.sh 2>/dev/null || true
 
 # ===================== Check Java =====================
 if ! command -v java >/dev/null 2>&1; then

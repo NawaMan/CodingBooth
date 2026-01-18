@@ -48,8 +48,8 @@ fi
 
 
 # ---------------- Source helpful profiles ----------------
-source /etc/profile.d/53-ws-python--profile.sh
-source /etc/profile.d/60-ws-jdk--profile.sh
+source /etc/profile.d/53-cb-python--profile.sh
+source /etc/profile.d/60-cb-jdk--profile.sh
 
 # ---------------- Defaults / Tunables ----------------
 IJAVA_VERSION="${IJAVA_VERSION:-1.3.0}"                         # default IJava tag

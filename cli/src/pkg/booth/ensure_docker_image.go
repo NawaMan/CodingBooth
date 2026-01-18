@@ -136,7 +136,7 @@ func buildLocalImage(ctx appctx.AppContext) {
 		"--build-arg", fmt.Sprintf("CB_VERSION_TAG=%s", ctx.Version()),
 	)))
 	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
-		"--build-arg", fmt.Sprintf("CB_SETUPS_DIR=%s", ctx.SetupsDir()),
+		"--build-arg", fmt.Sprintf("CB_SETUPS=%s", ctx.SetupsDir()),
 	)))
 	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
 		"--build-arg", fmt.Sprintf("CB_HAS_NOTEBOOK=%t", ctx.HasNotebook()),

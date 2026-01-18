@@ -45,7 +45,8 @@ func createDindNetwork(ctx appctx.AppContext, networkName string) bool {
 }
 
 // startDindSidecar starts the DinD sidecar container if not already running.
-func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort int) {
+// extraPorts contains additional port mappings (e.g., "8080:8080") from run-args.
+func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort int, extraPorts []string) {
 	// Check if sidecar is already running
 	flags := docker.DockerFlags{
 		Dryrun:  ctx.Dryrun(),
@@ -80,8 +81,6 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 			"--name", dindName,
 			"--network", dindNet,
 			"-p", portMapping,
-			"-e", "DOCKER_TLS_CERTDIR=",
-			"docker:dind",
 		}
 	} else {
 		// Native Linux: full flags
@@ -92,10 +91,16 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 			"--name", dindName,
 			"--network", dindNet,
 			"-p", portMapping,
-			"-e", "DOCKER_TLS_CERTDIR=",
-			"docker:dind",
 		}
 	}
+
+	// Add extra port mappings from run-args
+	for _, port := range extraPorts {
+		args = append(args, "-p", port)
+	}
+
+	// Add final args (env and image)
+	args = append(args, "-e", "DOCKER_TLS_CERTDIR=", "docker:dind")
 
 	flags.Silent = false
 	err = docker.Docker(flags, args[0], ilist.NewList(ilist.NewListFromSlice(args[1:])))
@@ -142,6 +147,42 @@ func waitForDindReady(ctx appctx.AppContext, dindName, dindNet string) {
 	}
 
 	fmt.Printf("⚠️  DinD did not become ready. Check: docker logs %s\n", dindName)
+}
+
+// extractPortFlags extracts -p and --publish flags from RunArgs and returns them as a slice of port mappings.
+// Returns mappings like "8080:8080" (without the -p prefix).
+func extractPortFlags(runArgs ilist.List[ilist.List[string]]) []string {
+	var ports []string
+	args := runArgs.Slice()
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		flag := arg.At(0)
+
+		// Check for -p or --publish with value in next element of the group
+		if (flag == "-p" || flag == "--publish") && arg.Length() > 1 {
+			ports = append(ports, arg.At(1))
+			continue
+		}
+
+		// Check for -p=value or --publish=value
+		if strings.HasPrefix(flag, "-p=") {
+			ports = append(ports, strings.TrimPrefix(flag, "-p="))
+			continue
+		}
+		if strings.HasPrefix(flag, "--publish=") {
+			ports = append(ports, strings.TrimPrefix(flag, "--publish="))
+			continue
+		}
+
+		// Check for -p<value> (e.g., -p8080:8080)
+		if strings.HasPrefix(flag, "-p") && len(flag) > 2 {
+			ports = append(ports, flag[2:])
+			continue
+		}
+	}
+
+	return ports
 }
 
 // stripNetworkAndPortFlags removes --network, --net, -p, and --publish flags from the argument list.

@@ -196,6 +196,32 @@ http://localhost:10000/vnc.html?autoconnect=1&host=localhost&port=10000&path=web
 
 > 💡 **Tip:** If you set a specific resolution like `1920x1080`, you may want to use `resize=off` to see it at native resolution, or `resize=scale` to fit it within your browser window.
 
+#### Clipboard Limitations
+
+noVNC does not have direct clipboard integration with your host machine. To copy and paste text between the remote desktop and your host:
+
+1. Click the arrow on the left edge of the screen to open the noVNC side panel
+2. Select the clipboard icon
+3. Use the text area to transfer clipboard content:
+   - **To paste into VNC:** Paste text into the panel, then Ctrl+V inside the desktop
+   - **To copy from VNC:** Copy text inside the desktop, then copy from the panel to your host
+
+![Clipboard Panel](noVNC-Clipboard.gif)
+
+### Code Server Notes
+
+#### Clipboard in Terminal
+
+When pasting into the integrated terminal, your browser may show a "Paste" confirmation popup instead of pasting directly. This is a browser security feature for clipboard access. Simply click the popup or press Enter to confirm the paste.
+
+This behavior is inconsistent because it depends on several browser conditions:
+- **Clipboard permission granted** — Once allowed, pastes may work directly for that session
+- **Terminal has focus** — Clicking directly into the terminal before pasting helps
+- **Recent user gesture** — Browsers require recent interaction (click/keypress); paste immediately after clicking and it works, wait too long and the popup appears
+- **HTTPS context** — Clipboard API is more reliable over HTTPS; HTTP localhost can be inconsistent
+
+When all conditions align, paste works directly. When any condition isn't met, the confirmation popup appears.
+
 ### Typical Use Cases
 
 - **Data Science & Notebooks** – Quickly spin up reproducible Jupyter environments using `--variant notebook`.  
@@ -412,20 +438,20 @@ my-project/
 > ⚠️ **Warning:**  
 > Do NOT put secrets, credentials, or personal tokens in `.booth/home/` — this folder is meant to be committed to version control and shared with your team.
 
-#### Home Seed Directory (`/tmp/ws-home-seed/`)
+#### Home Seed Directory (`/tmp/cb-home-seed/`)
 
-Mount host files read-only to `/tmp/ws-home-seed/` for **personal credentials** that should not be version-controlled.
+Mount host files read-only to `/tmp/cb-home-seed/` for **personal credentials** that should not be version-controlled.
 
 **How it works:**
-1. Mount host files read-only to `/tmp/ws-home-seed/` (preserving the relative path structure)
+1. Mount host files read-only to `/tmp/cb-home-seed/` (preserving the relative path structure)
 2. At container startup, files are copied to `/home/coder/` without overwriting existing files
 3. The user gets a writable copy; the host's original files stay protected
 
 **Example (`.booth/config.toml`):**
 ```toml
 run-args = [
-    "-v", "~/.config/gcloud:/tmp/ws-home-seed/.config/gcloud:ro",
-    "-v", "~/.config/github-copilot:/tmp/ws-home-seed/.config/github-copilot:ro"
+    "-v", "~/.config/gcloud:/tmp/cb-home-seed/.config/gcloud:ro",
+    "-v", "~/.config/github-copilot:/tmp/cb-home-seed/.config/github-copilot:ro"
 ]
 ```
 
@@ -439,15 +465,15 @@ run-args = [
 Files are copied in this order (later sources win if the file doesn't exist yet):
 
 1. **`.booth/home/`** (project folder) — Team-shared defaults
-2. **`/tmp/ws-home-seed/`** (host mounts) — Personal credentials & preferences
+2. **`/tmp/cb-home-seed/`** (host mounts) — Personal credentials & preferences
 3. **Existing files** — Already in `/home/coder/` are preserved
 
 Since all copies use `cp -rn` (no-clobber), the first source to create a file "wins".  
-In practice: host-mounted files in `ws-home-seed` override project defaults in `.booth/home`.
+In practice: host-mounted files in `cb-home-seed` override project defaults in `.booth/home`.
 
 > 💡 **Tip:**  
 > Use `.booth/home/` for team configs (neovim, linters, shell aliases).  
-> Use `ws-home-seed` for personal credentials (gcloud, SSH keys, API tokens).
+> Use `cb-home-seed` for personal credentials (gcloud, SSH keys, API tokens).
 
 
 
@@ -790,12 +816,12 @@ A setup script may be required, if a tool or dependency requires:
 WorkSpace setup scripts follow a simple pattern that produces **three artifacts**:
 
 1. **Startup script** (runs once per container start, as the normal user)  
-   - Path: `/usr/share/startup.d/<LEVEL>-ws-<thing>--startup.sh`  
+   - Path: `/usr/share/startup.d/<LEVEL>-cb-<thing>--startup.sh`  
    - Purpose: one-time initialization per container boot (idempotent).  
    - Example tasks: create user cache dirs, generate config files if missing, first-run migrations.
 
 2. **Profile script** (sourced at the beginning of every shell session)  
-   - Path: `/etc/profile.d/<LEVEL>-ws-<thing>--profile.sh`  
+   - Path: `/etc/profile.d/<LEVEL>-cb-<thing>--profile.sh`  
    - Purpose: lightweight per-shell setup.  
    - Example tasks: export env vars, update `PATH`, define aliases.
 
@@ -815,7 +841,7 @@ WorkSpace setup scripts follow a simple pattern that produces **three artifacts*
 ### Startup/Profile Ordering
 
 Name your scripts using this pattern:  
-`/etc/profile.d/<LEVEL>-ws-<thing>--profile.sh` and `/etc/startup.d/<LEVEL>-ws-<thing>--startup.sh`
+`/etc/profile.d/<LEVEL>-cb-<thing>--profile.sh` and `/etc/startup.d/<LEVEL>-cb-<thing>--startup.sh`
 
 Choose `<LEVEL>` from these ranges to keep load order predictable:
 
@@ -838,8 +864,8 @@ Choose `<LEVEL>` from these ranges to keep load order predictable:
 **Script naming**
 - Installation script (run as root): `*setup.sh` (placed in a build or image layer)
 - Generated files (by the setup script):  
-  - Startup: `/etc/startup.d/<LEVEL>-ws-<thing>--startup.sh`  
-  - Profile: `/etc/profile.d/<LEVEL>-ws-<thing>--profile.sh`  
+  - Startup: `/etc/startup.d/<LEVEL>-cb-<thing>--startup.sh`  
+  - Profile: `/etc/profile.d/<LEVEL>-cb-<thing>--profile.sh`  
   - Starter: `/usr/local/bin/<thing>`
 
 **Root vs. user**

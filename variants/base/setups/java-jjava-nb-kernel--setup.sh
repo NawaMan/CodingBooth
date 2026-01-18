@@ -53,8 +53,8 @@ if [[ "$CB_JDK_VERSION" =~ ^[0-9]+$ ]] && [ "$CB_JDK_VERSION" -lt 11 ]; then
 fi
 
 # ---------------- Source helpful profiles ----------------
-source /etc/profile.d/53-ws-python--profile.sh
-source /etc/profile.d/60-ws-jdk--profile.sh
+source /etc/profile.d/53-cb-python--profile.sh
+source /etc/profile.d/60-cb-jdk--profile.sh
 
 # ---------------- Defaults / Tunables ----------------
 JJAVA_VERSION="${JJAVA_VERSION:-1.0-a6}"                        # default JJava tag (GitHub Release tag)

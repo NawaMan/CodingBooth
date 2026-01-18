@@ -37,11 +37,14 @@ function realpath() {
 }
 
 
-ACTUAL=$(../../workspace --verbose --dryrun | grep -E '^[A-Z_]+:' | sort)
+ACTUAL=$(../../coding-booth --verbose --dryrun | grep -E '^[A-Z_]+:' | sort)
 
 EXPECT="\
 BUILD_ARGS: 
+CB_VERSION:     $VERSION
 CMDS:       
+CODE_PATH:      $HERE
+CODE_PORT:      10000
 CONFIG_FILE:    ${HERE}/ws--config.toml
 CONTAINER_ENV_FILE: 
 CONTAINER_NAME: dryrun
@@ -54,19 +57,16 @@ HOST_GID:       $HOST_GID
 HOST_PORT:      10000
 HOST_UID:       $HOST_UID
 IMAGE_MODE:     PREBUILT
-IMAGE_NAME:     nawaman/workspace:ide-codeserver-$VERSION
+IMAGE_NAME:     nawaman/coding-booth:ide-codeserver-$VERSION
 KEEPALIVE:      false
 LOCAL_BUILD:    false
 PORT_GENERATED: true
-PREBUILD_REPO:  nawaman/workspace
+PREBUILD_REPO:  nawaman/coding-booth
 RUN_ARGS:   
 SCRIPT_DIR:     $(realpath "$HERE/../..")
-SCRIPT_NAME:    workspace
+SCRIPT_NAME:    coding-booth
 VARIANT:        ide-codeserver
-VERSION:        $VERSION
-WORKSPACE_PATH: $HERE
-WORKSPACE_PORT: 10000
-CB_VERSION:     $VERSION"
+VERSION:        $VERSION"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Expected default variables"
@@ -102,11 +102,14 @@ EOF
 
 
 
-ACTUAL=$(../../workspace --config test--config.toml | grep -E '^[A-Z_]+:' | sort)
+ACTUAL=$(../../coding-booth --config test--config.toml | grep -E '^[A-Z_]+:' | sort)
 
 EXPECT="\
 BUILD_ARGS: 
+CB_VERSION:     ${VERSION}
 CMDS:       
+CODE_PATH:      $HERE
+CODE_PORT:      10000
 CONFIG_FILE:    $HERE/test--config.toml
 CONTAINER_ENV_FILE: test--.env
 CONTAINER_NAME: test-container
@@ -123,15 +126,12 @@ IMAGE_NAME:     workspace-local:dryrun-ide-codeserver-$VERSION
 KEEPALIVE:      true
 LOCAL_BUILD:    true
 PORT_GENERATED: true
-PREBUILD_REPO:  nawaman/workspace
+PREBUILD_REPO:  nawaman/coding-booth
 RUN_ARGS:    \"-p\" \"10005\"
 SCRIPT_DIR:     $(realpath "$HERE/../..")
-SCRIPT_NAME:    workspace
+SCRIPT_NAME:    coding-booth
 VARIANT:        ide-codeserver
-VERSION:        ${VERSION}
-WORKSPACE_PATH: $HERE
-WORKSPACE_PORT: 10000
-CB_VERSION:     ${VERSION}"
+VERSION:        ${VERSION}"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "2" "Override variables"

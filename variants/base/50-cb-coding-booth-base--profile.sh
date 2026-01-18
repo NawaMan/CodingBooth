@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# 50-ws-workspace-base--profile.sh
+# 50-cb-workspace-base--profile.sh
 # Container defaults (safe to source multiple times)
 
 alias cp='cp -p'

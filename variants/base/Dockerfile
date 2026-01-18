@@ -128,13 +128,13 @@ COPY --chmod=0644 100-cb--profile.sh /etc/profile.d/100-cb--profile.sh
 RUN echo "set -g mouse on" >> /etc/tmux.conf
 
 ARG CB_PY_VERSION=3.12
-ARG CB_SETUPS_DIR=/opt/coding-booth/setups
+ARG CB_SETUPS=/opt/coding-booth/setups
 
 
 # Always start as root so booth-user-setup can realign ids
 USER root
 
-RUN "$CB_SETUPS_DIR/python--setup.sh" "${CB_PY_VERSION}"
+RUN "$CB_SETUPS/python--setup.sh" "${CB_PY_VERSION}"
 
 
 # ---- Copy startup file: to be executed at first container start ----

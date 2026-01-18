@@ -252,7 +252,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	}
 
 	// Metadata
-	builder.CommonArgs.Append(ilist.NewList[string]("-e", "CB_SETUPS_DIR="+ctx.SetupsDir()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "CB_SETUPS="+ctx.SetupsDir()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "CB_CONTAINER_NAME="+ctx.Name()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("CB_DAEMON=%t", ctx.Daemon())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "CB_HOST_PORT="+strconv.Itoa(ctx.PortNumber())))

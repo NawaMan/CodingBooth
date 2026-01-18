@@ -5,7 +5,7 @@
 
 
 # notebook--setup.sh
-# Uses consolidated Python setup (/opt/workspace/setups/python--setup.sh),
+# Uses consolidated Python setup (/opt/coding-booth/setups/python--setup.sh),
 # then installs Jupyter and registers kernels + a "start-notebook" launcher.
 # NOTE: Bash kernel installation is delegated to ${SETUPS_DIR}/bash-nb-kernel--setup.sh
 set -Eeuo pipefail
@@ -17,11 +17,11 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-STARTUP_FILE=/usr/share/startup.d/99-ws-notebook--startup.sh  # Last one so other settings take precedence
+STARTUP_FILE=/usr/share/startup.d/99-cb-notebook--startup.sh  # Last one so other settings take precedence
 STARTER_FILE=/usr/local/bin/start-notebook
 
 # Load python env exported by the base setup
-source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 
 # ---- Jupyter kernel registration tunables (match code-server) ----
@@ -105,7 +105,7 @@ set -euo pipefail
 PORT=${1:-10000}
 
 # Ensure PATH and /opt/python are active in non-login shells
-source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # Make sure non-Python kernels in the venv are visible if present
 export JUPYTER_PATH="${CB_VENV_DIR}/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
@@ -136,7 +136,7 @@ echo "✅ Jupyter kernel '${JUPYTER_KERNEL_NAME}' registered at ${KDIR} with dis
 echo 
 echo "To start using notebook, start a new shell session, OR"
 echo "Load the Notebook helpers into THIS shell (no restart):"
-echo "     source /etc/profile.d/53-ws-python--profile.sh"
+echo "     source /etc/profile.d/53-cb-python--profile.sh"
 echo
 echo "Then you can run:"
 echo "  notebook-setup-info"
