@@ -19,12 +19,12 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 
-PROFILE_FILE="/etc/profile.d/55-ws-codeserver--profile.sh"
+PROFILE_FILE="/etc/profile.d/55-cb-codeserver--profile.sh"
 STARTER_FILE=/usr/local/bin/codeserver
 
 
 # Load python env exported by the base setup
-source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # Extensions
 CODESERVER_EXTENSION_DIR=/usr/local/share/code-server/extensions
@@ -198,7 +198,7 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 PORT=${1:-10000}
 
 # Ensure PATH and /opt/python are active in non-login shells
-source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # ==== Runtime tunables ====
 # Make venv kernels visible to any Jupyter process

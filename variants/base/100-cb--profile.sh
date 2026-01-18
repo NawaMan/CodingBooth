@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# 100-ws--profile.sh
+# 100-cb--profile.sh
 # Main workspace profile script with helper functions and welcome message.
 # Sourced on interactive shell login.
 

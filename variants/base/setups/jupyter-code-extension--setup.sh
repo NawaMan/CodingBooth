@@ -15,7 +15,7 @@ fi
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
 
-SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/workspace/setups/libs}
+SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/coding-booth/setups/libs}
 CODE_EXTENSION_LIB=${CODE_EXTENSION_LIB:-code-extension-source.sh}
 source "${SETUP_LIBS_DIR}/${CODE_EXTENSION_LIB}"
 

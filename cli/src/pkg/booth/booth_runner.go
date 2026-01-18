@@ -73,8 +73,11 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 	createdNet := createDindNetwork(ctx, dindNet)
 	builder.CreatedDindNet = createdNet
 
+	// Extract extra port mappings from RunArgs before stripping
+	extraPorts := extractPortFlags(ctx.RunArgs())
+
 	// Start DinD sidecar if not already running (pass hostPort for port mapping)
-	startDindSidecar(ctx, dindName, dindNet, ctx.PortNumber())
+	startDindSidecar(ctx, dindName, dindNet, ctx.PortNumber(), extraPorts)
 
 	// Wait for DinD to become ready
 	waitForDindReady(ctx, dindName, dindNet)

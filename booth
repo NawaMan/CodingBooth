@@ -240,7 +240,7 @@ function UninstallBooth() {
 }
 
 function DownloadBooth() {
-    WS_VERSION=${1:-latest}
+    CB_VERSION=${1:-latest}
     local tools_dir=".booth/tools"
     local sha_file="$tools_dir/coding-booth.sha256"
     local lock_file="$tools_dir/coding-booth.lock"
@@ -262,7 +262,7 @@ GITIGNORE
 
     # Download version.txt to get the actual version
     local actual_version=""
-    local VERSION_URL="${DWLD_URL}/${WS_VERSION}/version.txt"
+    local VERSION_URL="${DWLD_URL}/${CB_VERSION}/version.txt"
     if actual_version=$(curl -fsSL "$VERSION_URL" 2>/dev/null | tr -d ' \t\r\n'); then
         [[ "$VERBOSE" == "true" ]] && echo "  Version: $actual_version"
     else
@@ -280,8 +280,8 @@ GITIGNORE
         local binary_name
         binary_name=$(get_binary_name "$platform")
         local dest="$tools_dir/$binary_name"
-        local TOOL_URL="${DWLD_URL}/${WS_VERSION}/${binary_name}"
-        local SHA256_URL="${DWLD_URL}/${WS_VERSION}/${binary_name}.sha256"
+        local TOOL_URL="${DWLD_URL}/${CB_VERSION}/${binary_name}"
+        local SHA256_URL="${DWLD_URL}/${CB_VERSION}/${binary_name}.sha256"
 
         if [[ "$VERBOSE" == "true" ]]; then
             echo "  Downloading: $binary_name"

@@ -22,7 +22,7 @@ fi
 
 export TIMEZONE="America/Toronto"
 
-ACTUAL=$(../../workspace --variant base --dryrun --name test-container -- tree -C)
+ACTUAL=$(../../coding-booth --variant base --dryrun --name test-container -- tree -C)
 
 HERE="$CURRENT_PATH"
 VERSION="$(cat ../../version.txt)"
@@ -35,26 +35,26 @@ docker \\
     --name test-container \\
     -e 'HOST_UID=${HOST_UID}' \\
     -e 'HOST_GID=${HOST_GID}' \\
-    -v ${HERE}:/home/coder/workspace \\
-    -w /home/coder/workspace \\
+    -v ${HERE}:/home/coder/code \\
+    -w /home/coder/code \\
     -p 10000:10000 \\
-    -e 'CB_SETUPS_DIR=/opt/workspace/setups' \\
+    -e 'CB_SETUPS=/opt/coding-booth/setups' \\
     -e 'CB_CONTAINER_NAME=test-container' \\
     -e 'CB_DAEMON=false' \\
     -e 'CB_HOST_PORT=10000' \\
-    -e 'CB_IMAGE_NAME=nawaman/workspace:base-${VERSION}' \\
+    -e 'CB_IMAGE_NAME=nawaman/coding-booth:base-${VERSION}' \\
     -e 'CB_RUNMODE=COMMAND' \\
     -e 'CB_VARIANT_TAG=base' \\
     -e 'CB_VERBOSE=false' \\
     -e 'CB_VERSION_TAG=${VERSION}' \\
-    -e 'CB_WORKSPACE_PATH=${HERE}' \\
-    -e 'CB_WORKSPACE_PORT=10000' \\
+    -e 'CB_CODE_PATH=${HERE}' \\
+    -e 'CB_CODE_PORT=10000' \\
     -e 'CB_HAS_NOTEBOOK=false' \\
     -e 'CB_HAS_VSCODE=false' \\
     -e 'CB_HAS_DESKTOP=false' \\
-    -e 'CB_CB_VERSION=${VERSION}' \\
+    -e 'CB_VERSION=${VERSION}' \\
     -e 'CB_CONFIG_FILE=${HERE}/ws--config.toml' \\
-    -e 'CB_SCRIPT_NAME=workspace' \\
+    -e 'CB_SCRIPT_NAME=coding-booth' \\
     -e 'CB_SCRIPT_DIR=${SCRIPT_DIR}' \\
     -e 'CB_LIB_DIR=${LIB_DIR}' \\
     -e 'CB_KEEP_ALIVE=false' \\
@@ -70,7 +70,7 @@ docker \\
     -e 'CB_HOST_GID=${HOST_GID}' \\
     '--pull=never' \\
     -e 'TZ=America/Toronto' \\
-    nawaman/workspace:base-${VERSION} \\
+    nawaman/coding-booth:base-${VERSION} \\
     bash -lc 'tree -C'"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then

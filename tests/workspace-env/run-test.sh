@@ -15,7 +15,7 @@ source ../common--source.sh
 
 # ---- Config -------------------------------------------------------------------
 # Path to your workspace launcher script. Override via env if needed.
-CB_SCRIPT="${CB_SCRIPT:-../../workspace}"
+CB_SCRIPT="${CB_SCRIPT:-../../coding-booth}"
 # Canonicalize to absolute path before we cd/pushd anywhere
 if command -v readlink >/dev/null 2>&1; then
   CB_SCRIPT="$(readlink -f "$CB_SCRIPT")"
@@ -25,7 +25,7 @@ fi
 
 # Unique container name to avoid collisions
 RUN_ID="$(date +%s)-$$"
-CONTAINER_NAME="ws-test-${RUN_ID}"
+CONTAINER_NAME="cb-test-${RUN_ID}"
 
 # ---- Preconditions ------------------------------------------------------------
 if ! command -v docker >/dev/null 2>&1; then
@@ -39,7 +39,7 @@ if [[ ! -x "$CB_SCRIPT" ]]; then
 fi
 
 # ---- Test workspace -----------------------------------------------------------
-TMPDIR="$(mktemp -d "$HOME/ws-test.XXXXXX")"
+TMPDIR="$(mktemp -d "$HOME/cb-test.XXXXXX")"
 cleanup() {
   # Workspace container is started with --rm, so nothing to stop.
   rm -rf "$TMPDIR" || true
@@ -58,7 +58,7 @@ PUBLIC=Yo
 EOF
 
 # Helper to run the workspace with our test image and capture stdout
-run_ws() {
+run_cb() {
   # We’ll pass an explicit image to avoid any build/pull logic, pick a random port to avoid conflicts
   # Note: The script wraps the command in `bash -lc "<cmd>"` internally
   "$CB_SCRIPT" -- "$@"
@@ -82,17 +82,17 @@ fail() {
 }
 
 # 1) SECRET from .env is visible
-out="$(run_ws 'echo $SECRET' | tr -d '\r')"
+out="$(run_cb 'echo $SECRET' | tr -d '\r')"
 [[ "$out" == "Boo" ]] || fail "SECRET expected 'Boo', got: '$out'"
 pass "SECRET from .env visible in container"
 
 # 2) data.txt is present
-out="$(run_ws 'cat data.txt' | tr -d '\r')"
+out="$(run_cb 'cat data.txt' | tr -d '\r')"
 [[ "$out" == "PUBLIC=Yo" ]] || fail "data.txt content mismatch, got: '$out'"
 pass "data.txt present in workspace mount"
 
 # 3) source data.txt -> PUBLIC available
-out="$(run_ws 'source data.txt; echo $PUBLIC' | tr -d '\r')"
+out="$(run_cb 'source data.txt; echo $PUBLIC' | tr -d '\r')"
 [[ "$out" == "Yo" ]] || fail "PUBLIC expected 'Yo' after sourcing, got: '$out'"
 pass "Sourcing data.txt exposes PUBLIC"
 

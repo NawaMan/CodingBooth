@@ -12,7 +12,7 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-PROFILE_FILE="/etc/profile.d/53-ws-python--profile.sh"  # profile to be run when login
+PROFILE_FILE="/etc/profile.d/53-cb-python--profile.sh"  # profile to be run when login
 
 # ---- validate python version format ----
 # accepts X.Y or X.Y.Z (exact patch recommended)

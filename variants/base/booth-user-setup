@@ -243,7 +243,7 @@ if [ -n "$CB_HOME_DIR" ]; then
   chown -R "$HOST_UID:$HOST_GID" "$HOME_DIR" 2>/dev/null || true
 fi
 
-# --- Copy-on-write staging: copy from /tmp/cb-home-seed to $HOME ---
+# --- Home-seeding staging: copy from /tmp/cb-home-seed to $HOME ---
 # This allows mounting host files read-only to /tmp/cb-home-seed/ (e.g., credentials)
 # and getting a writable copy in the user's home directory.
 # Files are copied without overwriting existing ones (cp -rn).

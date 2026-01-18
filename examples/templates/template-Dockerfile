@@ -1,0 +1,32 @@
+# syntax=docker/dockerfile:1.7
+
+#== This section is required to allow normal operation of all variants ==
+
+ARG CB_VARIANT_TAG=base
+ARG CB_VERSION_TAG=latest
+FROM nawaman/coding-booth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
+
+
+SHELL ["/bin/bash","-o","pipefail","-lc"]
+USER root
+
+ARG CB_SETUPS=/opt/coding-booth/setups
+ARG CB_VARIANT_TAG=base
+ARG CB_VERSION_TAG=latest
+ARG CB_HAS_NOTEBOOK=false
+ARG CB_HAS_VSCODE=false
+ARG CB_HAS_DESKTOP=false
+
+#== Customizations ==
+
+# ARG for customizable stuff
+
+# Example
+# ARG JDK_VERSION=24
+
+#== Setup ==
+
+# RUN command to setup things (mostly from "$SETUPS_DIR")
+
+# Example
+# RUN "$SETUPS_DIR"/jdk--setup.sh 25

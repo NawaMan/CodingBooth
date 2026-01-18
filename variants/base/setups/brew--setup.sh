@@ -10,8 +10,8 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 # Config (override via env or first arg)
 # --------------------------
 BREW_INSTALL_URL="${BREW_INSTALL_URL:-${1:-https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh}}"
-STARTUP_FILE="/usr/share/startup.d/57-ws-brew--startup.sh"
-PROFILE_FILE="/etc/profile.d/57-ws-brew--profile.sh"
+STARTUP_FILE="/usr/share/startup.d/57-cb-brew--startup.sh"
+PROFILE_FILE="/etc/profile.d/57-cb-brew--profile.sh"
 
 
 # ---- Create startup file: to be executed ----
@@ -86,7 +86,7 @@ chmod 755 "${STARTUP_FILE}"
 
 # ---- Create profile script: to be source ----
 cat >"$PROFILE_FILE" <<"EOF"
-# /etc/profile.d/57-ws-brew--profile.sh
+# /etc/profile.d/57-cb-brew--profile.sh
 # Idempotent, safe to source multiple times. No installation here.
 
 # Prefer non-interactive, quiet hints, and no analytics in shells too.

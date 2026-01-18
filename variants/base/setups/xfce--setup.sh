@@ -23,14 +23,14 @@ DEFAULT_VNC_PASSWORD="${DEFAULT_VNC_PASSWORD:-}"
 
 # Use python--setup.sh exactly like setup-code-server-jupyter.sh
 PY_VERSION=${1:-3.12}                    # accepts X.Y or X.Y.Z
-SETUPS_DIR=${SETUPS_DIR:-/opt/workspace/setups}
+SETUPS_DIR=${SETUPS_DIR:-/opt/coding-booth/setups}
 "${SETUPS_DIR}/python--setup.sh" "${PY_VERSION}"
 
 # Load python env exported by the base setup
-source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # Profile snippet this script will write to (used later)
-PROFILE_FILE="/etc/profile.d/55-ws-desktop-xfce--profile.sh"
+PROFILE_FILE="/etc/profile.d/55-cb-desktop-xfce--profile.sh"
 STARTER_FILE="/usr/local/bin/start-xfce"
 DESKTOP_FILE="/usr/local/bin/start-desktop"
 

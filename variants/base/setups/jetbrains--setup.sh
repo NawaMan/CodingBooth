@@ -81,8 +81,8 @@ fi
 [[ "${EUID:-$(id -u)}" -eq 0 ]] || { echo "Must be root"; exit 1; }
 
 # --- Load workspace JDK/Python env if available ---
-source /etc/profile.d/60-ws-jdk--profile.sh    2>/dev/null || true
-source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
+source /etc/profile.d/60-cb-jdk--profile.sh    2>/dev/null || true
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 ARCH_RAW="$(uname -m)"
 case "$ARCH_RAW" in
@@ -154,7 +154,7 @@ case "$IDE" in
 esac
 
 
-PROFILE_FILE="/etc/profile.d/70-ws-${IDE}--profile.sh"
+PROFILE_FILE="/etc/profile.d/70-cb-${IDE}--profile.sh"
 STARTER_FILE="${INSTALL_DIR}/${IDE}-starter"
 
 
@@ -241,8 +241,8 @@ cat > "${STARTER_FILE}" <<EOF
 #!/usr/bin/env bash
 set -Eeuo pipefail
 BASE_DIR="\$(cd "\$(dirname "\$0")" && pwd)"
-source /etc/profile.d/60-ws-jdk--profile.sh"    2>/dev/null || true
-source /etc/profile.d/53-ws-python--profile.sh" 2>/dev/null || true
+source /etc/profile.d/60-cb-jdk--profile.sh"    2>/dev/null || true
+source /etc/profile.d/53-cb-python--profile.sh" 2>/dev/null || true
 exec "\${BASE_DIR}/bin/${IDE}" "\$@"
 EOF
 chmod 0755 "${STARTER_FILE}"

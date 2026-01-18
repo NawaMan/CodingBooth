@@ -35,7 +35,7 @@ func Example_dockerArgs() {
 	// Build common args
 	commonArgs := ilist.NewAppendableList[string]()
 	commonArgs.Append("--name", "workspace")
-	commonArgs.Append("-v", "/workspace:/home/coder/workspace")
+	commonArgs.Append("-v", "/workspace:/home/coder/code")
 
 	// Create snapshot for reuse
 	baseArgs := commonArgs.Snapshot()

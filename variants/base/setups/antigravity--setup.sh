@@ -41,7 +41,7 @@ cat >"${ANTIGRAVITY_NEW_BIN}" <<EOF
 #!/usr/bin/env bash
 exec "$ANTIGRAVITY_ORG_BIN" \
   --no-sandbox \
-  "\${@:-/home/coder/workspace}"
+  "\${@:-/home/coder/code}"
 EOF
 chmod 0755 "${ANTIGRAVITY_NEW_BIN}"
 

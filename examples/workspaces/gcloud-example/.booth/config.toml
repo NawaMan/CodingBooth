@@ -1,0 +1,12 @@
+# Google Cloud Example
+#
+# This example demonstrates using cb-home-seed to mount gcloud credentials
+# from the host into the container (read-only, then copied at startup).
+
+variant = "notebook"
+
+# Mount gcloud credentials from host (home-seeding pattern)
+# The credentials are copied to ~/.config/gcloud/ at startup
+run-args = [
+    "-v", "~/.config/gcloud:/tmp/cb-home-seed/.config/gcloud:ro"
+]

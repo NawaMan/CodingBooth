@@ -7,7 +7,7 @@
 # 
 # Prereqs:
 #   - python--setup.sh and notebook--setup.sh already ran successfully.
-#   - /etc/profile.d/53-ws-python--profile.sh should be source
+#   - /etc/profile.d/53-cb-python--profile.sh should be source
 #   - The chosen Python can install packages with pip.
 
 set -Eeuo pipefail
@@ -21,7 +21,7 @@ fi
 
 # ---------------- Load environment from profile.d ----------------
 # These set: PY_STABLE, PY_STABLE_VERSION, PY_SERIES, VENV_SERIES_DIR, PATH tweaks, etc.
-source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # ---------------- Defaults / Tunables ----------------
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"
