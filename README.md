@@ -611,6 +611,11 @@ WorkSpace supports multiple run modes to fit different workflows — from one-of
   ```bash
   ./booth -- echo "Hello from container"
   ```
+- **Exit code forwarding:** When a command fails, booth silently exits with the same exit code as the command — no error message is printed. This makes booth behave like a transparent wrapper, ideal for scripting and CI/CD pipelines where you want to check `$?` or let the pipeline fail naturally.
+  ```bash
+  ./booth -- false
+  echo $?  # prints: 1
+  ```
 - Useful for automation, scripting, or CI/CD pipelines.
 
 #### Silent Mode (--silence-build)

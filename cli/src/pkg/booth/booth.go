@@ -21,6 +21,16 @@ type Booth struct {
 	ctx appctx.AppContext
 }
 
+// SilentExitError signals that the program should exit with a specific code without printing an error message.
+// This is used for command mode when the user's command fails - we forward the exit code silently.
+type SilentExitError struct {
+	ExitCode int
+}
+
+func (e *SilentExitError) Error() string {
+	return fmt.Sprintf("exit code %d", e.ExitCode)
+}
+
 // NewBooth creates a new Booth with the given AppContext.
 func NewBooth(ctx appctx.AppContext) *Booth {
 	return &Booth{ctx: ctx}
@@ -81,6 +91,11 @@ func (booth *Booth) runAsCommand() error {
 		if booth.ctx.CreatedDindNet() {
 			_ = docker.Docker(flags, "network", ilist.NewList(ilist.NewList("rm", dindNet)))
 		}
+	}
+
+	// In command mode, forward exit codes silently (no error message)
+	if exitErr, ok := err.(*docker.DockerExitError); ok {
+		return &SilentExitError{ExitCode: exitErr.ExitCode}
 	}
 
 	return err
