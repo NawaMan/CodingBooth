@@ -100,7 +100,7 @@ exec /usr/bin/code                           \
   --user-data-dir="${DATA_DIR}"              \
   --extensions-dir="${VSCODE_EXTENSION_DIR}" \
   --disable-workspace-trust                  \
-  "$HOME/workspace"                          \
+  "$HOME/code"                               \
   "$@"
 EOF
 chmod 755 "$STARTER_FILE"

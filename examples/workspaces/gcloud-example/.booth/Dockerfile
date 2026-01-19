@@ -7,6 +7,8 @@ ARG CB_VERSION_TAG=latest
 
 FROM nawaman/coding-booth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 
+# TODO - The version should be pinned to a specific version
+
 # Install Google Cloud CLI
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \

@@ -257,7 +257,7 @@ exec code-server \
     --extensions-dir "$CODESERVER_EXTENSION_DIR" \
     --bind-addr      "0.0.0.0:$PORT"             \
     --auth           "$AUTH"                     \
-    "$CSHOME/workspace"
+    "$CSHOME/code"
 
 LAUNCH
 chmod 755 ${STARTER_FILE}

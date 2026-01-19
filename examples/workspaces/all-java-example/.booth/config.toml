@@ -1,1 +1,4 @@
 variant="desktop-xfce"
+run-args=[
+    "-v", "$HOME/.m2:/home/coder/.m2"
+]

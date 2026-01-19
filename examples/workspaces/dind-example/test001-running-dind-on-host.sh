@@ -95,8 +95,8 @@ fi
 
 # Stop and remove container
 echo "Stopping and removing container..."
-docker stop "$CONTAINER_NAME"
-docker rm   "$CONTAINER_NAME"
+docker stop "$CONTAINER_NAME" || true
+docker rm   "$CONTAINER_NAME" || true
 
 echo
 echo -e "${GREEN}All tests passed!${NC}"

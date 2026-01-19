@@ -4,6 +4,7 @@ This file contains a list of changes for each released version.
 
 ## v0.12.0
 - Rebrand fully to "CodingBooth"!!! Yeah!
+- Command mode now silently forwards exit codes (no error message when commands fail)
 
 ## v0.11.0
 - Core engine rewritten in Go for portability (cross-platform: Linux, macOS, Windows)
