@@ -35,6 +35,7 @@ A list of upcoming ideas, improvements, and future goals for the workspace launc
 - [ ] Firebase example does not work because home seed will not copy the file if exist but FB creates empty JSON file -- "{}" there.
 Need to find a way to fix this. This may involve creating a different type of home seed that will overwrite the file if exist.
 - [ ] Report container with the same name exists better. Also suggest how to remove the container.
+- [ ] SAVE (--keep-alive)/LOAD (continue)/EXPORT (save to file)/IMPORT (load from file) 
 - [ ] ...
 
 ## Problems

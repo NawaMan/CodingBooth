@@ -150,35 +150,36 @@ func waitForDindReady(ctx appctx.AppContext, dindName, dindNet string) {
 }
 
 // extractPortFlags extracts -p and --publish flags from RunArgs and returns them as a slice of port mappings.
-// Returns mappings like "8080:8080" (without the -p prefix).
+// Returns deduplicated mappings like "8080:8080" (without the -p prefix).
 func extractPortFlags(runArgs ilist.List[ilist.List[string]]) []string {
+	seen := make(map[string]bool)
 	var ports []string
 	args := runArgs.Slice()
 
-	for i := 0; i < len(args); i++ {
-		arg := args[i]
-		flag := arg.At(0)
+	for _, argList := range args {
+		// Iterate through all elements in the list
+		for j := 0; j < argList.Length(); j++ {
+			flag := argList.At(j)
+			var port string
 
-		// Check for -p or --publish with value in next element of the group
-		if (flag == "-p" || flag == "--publish") && arg.Length() > 1 {
-			ports = append(ports, arg.At(1))
-			continue
-		}
+			// Check for -p or --publish with value in next element
+			if (flag == "-p" || flag == "--publish") && j+1 < argList.Length() {
+				port = argList.At(j+1)
+				j++ // Skip the next element (the port value)
+			} else if strings.HasPrefix(flag, "-p=") {
+				port = strings.TrimPrefix(flag, "-p=")
+			} else if strings.HasPrefix(flag, "--publish=") {
+				port = strings.TrimPrefix(flag, "--publish=")
+			} else if strings.HasPrefix(flag, "-p") && len(flag) > 2 {
+				// Check for -p<value> (e.g., -p8080:8080)
+				port = flag[2:]
+			}
 
-		// Check for -p=value or --publish=value
-		if strings.HasPrefix(flag, "-p=") {
-			ports = append(ports, strings.TrimPrefix(flag, "-p="))
-			continue
-		}
-		if strings.HasPrefix(flag, "--publish=") {
-			ports = append(ports, strings.TrimPrefix(flag, "--publish="))
-			continue
-		}
-
-		// Check for -p<value> (e.g., -p8080:8080)
-		if strings.HasPrefix(flag, "-p") && len(flag) > 2 {
-			ports = append(ports, flag[2:])
-			continue
+			// Add to result if not already seen
+			if port != "" && !seen[port] {
+				seen[port] = true
+				ports = append(ports, port)
+			}
 		}
 	}
 
