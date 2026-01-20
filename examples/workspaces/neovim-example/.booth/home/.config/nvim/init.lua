@@ -1,5 +1,5 @@
 -- Neovim Configuration
--- This is a team-shared configuration via ws--home/
+-- This is a team-shared configuration via .booth/home/
 
 -- Basic settings
 vim.opt.number = true           -- Show line numbers
@@ -43,4 +43,4 @@ vim.keymap.set("n", "<leader>bd", ":bdelete<CR>", { desc = "Delete buffer" })
 -- Colorscheme (using built-in)
 vim.cmd.colorscheme("habamax")
 
-print("Neovim config loaded from ws--home!")
+print("Neovim config loaded from .booth/home!")

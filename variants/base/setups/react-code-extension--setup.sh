@@ -12,6 +12,9 @@ if [[ ${EUID} -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
 
 SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/coding-booth/setups/libs}
 CODE_EXTENSION_LIB=${CODE_EXTENSION_LIB:-code-extension-source.sh}

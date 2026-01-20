@@ -16,6 +16,9 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
 
 PROFILE_FILE="/etc/profile.d/55-cb-kde--profile.sh"
 STARTER_FILE="/usr/local/bin/start-kde"

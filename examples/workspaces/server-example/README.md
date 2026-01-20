@@ -14,6 +14,6 @@ workspace
 ./start-server.sh    # starts the web server
 ```
 
-**Access:** Open browser to configured port (check `ws--config.toml` for port settings).
+**Access:** Open browser to configured port (check `.booth/config.toml` for port settings).
 
 **Purpose:** Minimal example of running a web server inside WorkSpace with proper port exposure.

@@ -17,6 +17,10 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 STARTUP_FILE=/usr/share/startup.d/99-cb-notebook--startup.sh  # Last one so other settings take precedence
 STARTER_FILE=/usr/local/bin/start-notebook
 

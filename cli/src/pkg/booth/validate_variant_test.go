@@ -72,11 +72,11 @@ func TestValidateVariant(t *testing.T) {
 			wantDesktop:  false,
 		},
 		{
-			name:         "alias default -> ide-codeserver",
+			name:         "alias default -> base",
 			inputVariant: "default",
-			wantVariant:  "ide-codeserver",
-			wantNotebook: true,
-			wantVscode:   true,
+			wantVariant:  "base",
+			wantNotebook: false,
+			wantVscode:   false,
 			wantDesktop:  false,
 		},
 		{

@@ -34,7 +34,7 @@ func TestConfigFileArgument(t *testing.T) {
 
 	outcome := RunInitializeAppContext(t, input)
 
-	// The config file should be test--config.toml, not ws--config.toml
+	// The config file should be test--config.toml, not .booth/config.toml
 	expected := filepath.Join(outcome.CodeDir, "test--config.toml")
 	actual := outcome.Ctx.ConfigFile()
 

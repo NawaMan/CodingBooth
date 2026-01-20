@@ -17,7 +17,7 @@ aws configure
 
 ## How It Works
 
-The `ws--config.toml` mounts `~/.aws/` read-only to `/tmp/cb-home-seed/.aws/`.
+The `.booth/config.toml` mounts `~/.aws/` read-only to `/tmp/cb-home-seed/.aws/`.
 At container startup, this is copied to `/home/coder/.aws/`.
 
 This means:

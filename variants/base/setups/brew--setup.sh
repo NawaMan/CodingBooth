@@ -6,6 +6,10 @@
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # --------------------------
 # Config (override via env or first arg)
 # --------------------------

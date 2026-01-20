@@ -12,6 +12,10 @@ trap 'echo "Error on line $LINENO"; exit 1' ERR
 # --------------------------
 [ "$EUID" -eq 0 ] || { echo "Run as root (use sudo)"; exit 1; }
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # --- Defaults ---
 CLAUDE_CODE_VERSION="${1:-latest}"
 
@@ -94,10 +98,10 @@ envsubst '$CLAUDE_CODE_VERSION' > "${STARTUP_FILE}" <<'EOF'
 set -euo pipefail
 
 # Claude Code startup script
-# Ensures config and credentials from ws-home-seed are properly copied
+# Ensures config and credentials from cb-home-seed are properly copied
 
-CB_SEED_DIR="/tmp/ws-home-seed/.claude"
-CB_SEED_JSON="/tmp/ws-home-seed/.claude.json"
+CB_SEED_DIR="/tmp/cb-home-seed/.claude"
+CB_SEED_JSON="/tmp/cb-home-seed/.claude.json"
 CLAUDE_DIR="$HOME/.claude"
 CLAUDE_JSON="$HOME/.claude.json"
 
@@ -144,5 +148,5 @@ echo "  Startup: ${STARTUP_FILE}"
 echo "  Profile: ${PROFILE_FILE}"
 echo ""
 echo "Users can run 'claude' directly. Config will be set up on first run."
-echo "To reuse credentials from host, mount ~/.claude via ws-home-seed in config.toml"
+echo "To reuse credentials from host, mount ~/.claude via cb-home-seed in config.toml"
 echo ""

@@ -24,7 +24,7 @@ run-args = [
     
     # Claude Code config and credentials (home-seeding: may update tokens/session)
     "-v", "~/.claude.json:/tmp/cb-home-seed/.claude.json:ro",
-    "-v", "~/.claude:/tmp/cb-home-seed/.claude:ro"
+    "-v", "~/.claude:/tmp/cb-home-seed/.claude:ro",
 
     # Maven repository
     "-v", "$HOME/.m2:/home/coder/.m2"

@@ -80,6 +80,10 @@ fi
 # --- Ensure root ---
 [[ "${EUID:-$(id -u)}" -eq 0 ]] || { echo "Must be root"; exit 1; }
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # --- Load workspace JDK/Python env if available ---
 source /etc/profile.d/60-cb-jdk--profile.sh    2>/dev/null || true
 source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true

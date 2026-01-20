@@ -21,9 +21,9 @@ func ValidateVariant(ctx appctx.AppContext) appctx.AppContext {
 	switch variant {
 	case "base", "ide-notebook", "ide-codeserver", "desktop-xfce", "desktop-kde":
 		// Valid variants, no change needed
-	case "console":
+	case "default", "console":
 		variant = "base"
-	case "default", "ide":
+	case "ide":
 		variant = "ide-codeserver"
 	case "desktop":
 		variant = "desktop-xfce"

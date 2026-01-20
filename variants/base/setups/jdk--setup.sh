@@ -30,6 +30,10 @@ die() { echo "❌ $*" >&2; exit 1; }
 # --- Root check ---
 [[ "${EUID}" -eq 0 ]] || die "This script must be run as root (use sudo)."
 
+# This script will always be installed by root.
+HOME=/root
+
+
 PROFILE_FILE="/etc/profile.d/60-cb-jdk--profile.sh"
 STARTUP_FILE="/usr/share/startup.d/60-cb-jdk--startup.sh"
 

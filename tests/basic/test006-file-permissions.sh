@@ -105,8 +105,8 @@ if [[ ! -f "$HOST_FILE" ]]; then
   exit 1
 fi
 
-# Read file from inside container
-CONTAINER_READ=$(docker exec "$NAME" cat "/home/coder/code/$HOST_FILE" 2>&1) || {
+# Read file from inside container (as coder user)
+CONTAINER_READ=$(docker exec -u coder "$NAME" cat "/home/coder/code/$HOST_FILE" 2>&1) || {
   print_test_result "false" "$0" "1" "Container cannot read host-created file"
   echo "Error: $CONTAINER_READ"
   exit 1
@@ -126,7 +126,7 @@ fi
 # TEST 2: Create file inside container, verify ownership on host
 # =============================================================================
 CONTAINER_CONTENT="Test content from container: $(date)"
-docker exec "$NAME" bash -c "echo '$CONTAINER_CONTENT' > /home/coder/code/$CONTAINER_FILE"
+docker exec -u coder "$NAME" bash -c "echo '$CONTAINER_CONTENT' > /home/coder/code/$CONTAINER_FILE"
 
 # Wait a moment for file to be written
 sleep 1
@@ -173,7 +173,7 @@ fi
 # =============================================================================
 echo "Modified by host" >> "$CONTAINER_FILE"
 
-MODIFIED_READ=$(docker exec "$NAME" cat "/home/coder/code/$CONTAINER_FILE" 2>&1) || {
+MODIFIED_READ=$(docker exec -u coder "$NAME" cat "/home/coder/code/$CONTAINER_FILE" 2>&1) || {
   print_test_result "false" "$0" "5" "Container cannot read host-modified file"
   exit 1
 }

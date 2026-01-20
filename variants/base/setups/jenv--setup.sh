@@ -6,6 +6,10 @@
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
+# This script will always be installed by root.
+HOME=/root
+
+
 PROFILE_FILE="/etc/profile.d/57-cb-jenv--profile.sh"
 
 # ----- idempotent/atomic write of PROFILE_FILE -----

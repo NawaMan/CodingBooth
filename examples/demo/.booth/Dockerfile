@@ -4,7 +4,6 @@ ARG CB_VERSION_TAG=latest
 FROM nawaman/coding-booth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 
 
-SHELL ["/bin/bash","-o","pipefail","-lc"]
 USER root
 
 ARG CB_SETUPS=/opt/coding-booth/setups
@@ -21,25 +20,25 @@ ARG MVN_VERSION=3.9.11
 
 
 # Setup
+WORKDIR /opt/coding-booth/setups
 
-# You only need one of the below.
-
-RUN "$CB_SETUPS"/python--setup.sh "${CB_PY_VERSION}" 
-RUN "$CB_SETUPS"/jdk--setup.sh    "${JDK_VERSION}"
+# RUN ./jdk--setup.sh    "${JDK_VERSION}"
+# RUN ./mvn--setup.sh
+# RUN ./gradle--setup.sh
+# RUN ./jenv--setup.sh
 
 # Force jbang run to not show download afterward.
-RUN echo 'class Hi { public static void main(String[] args) { System.out.println("Hi again"); }}' | jbang -
+# RUN echo 'class Hi { public static void main(String[] args) { System.out.println("Hi again"); }}' | jbang -
 
-RUN "$CB_SETUPS"/mvn--setup.sh
-RUN "$CB_SETUPS"/gradle--setup.sh
-RUN "$CB_SETUPS"/jenv--setup.sh
+RUN if [[ "$CB_HAS_DESKTOP"  != false ]]; then ./antigravity--setup.sh ; fi
+RUN if [[ "$CB_HAS_DESKTOP"  != false ]]; then ./claude-code--setup.sh ; fi
 
-RUN if [[ "$CB_HAS_DESKTOP"  != false ]]; then "$CB_SETUPS"/antigravity--setup.sh ; fi
-RUN if [[ "$CB_HAS_DESKTOP"  != false ]]; then "$CB_SETUPS"/claude-code--setup.sh ; fi
+RUN if [[ "$CB_HAS_VSCODE"   != false ]]; then ./base-code-extension--setup.sh   ; fi
+RUN if [[ "$CB_HAS_VSCODE"   != false ]]; then ./bash-code-extension--setup.sh   ; fi
+RUN if [[ "$CB_HAS_VSCODE"   != false ]]; then ./python-code-extension--setup.sh ; fi
+# RUN if [[ "$CB_HAS_VSCODE"   != false ]]; then ./java-code-extension--setup.sh   ; fi
+# RUN if [[ "$CB_HAS_NOTEBOOK" != false ]]; then ./java-jjava-nb-kernel--setup.sh  ; fi
+RUN if [[ "$CB_HAS_NOTEBOOK" != false ]]; then ./bash-nb-kernel--setup.sh        ; fi
 
-RUN if [[ "$CB_HAS_VSCODE"   != false ]]; then "$CB_SETUPS"/base-code-extension--setup.sh   ; fi
-RUN if [[ "$CB_HAS_VSCODE"   != false ]]; then "$CB_SETUPS"/bash-code-extension--setup.sh   ; fi
-RUN if [[ "$CB_HAS_VSCODE"   != false ]]; then "$CB_SETUPS"/python-code-extension--setup.sh ; fi
-RUN if [[ "$CB_HAS_VSCODE"   != false ]]; then "$CB_SETUPS"/java-code-extension--setup.sh   ; fi
-RUN if [[ "$CB_HAS_NOTEBOOK" != false ]]; then "$CB_SETUPS"/java-jjava-nb-kernel--setup.sh  ; fi
-RUN if [[ "$CB_HAS_NOTEBOOK" != false ]]; then "$CB_SETUPS"/bash-nb-kernel--setup.sh        ; fi
+WORKDIR /home/coder/code
+SHELL ["/bin/bash","-o","pipefail","-lc"]

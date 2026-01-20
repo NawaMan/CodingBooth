@@ -12,6 +12,10 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 PROFILE_FILE="/etc/profile.d/62-cb-maven--profile.sh"
 
 MAVEN_VERSION=${1:-3.9.11}

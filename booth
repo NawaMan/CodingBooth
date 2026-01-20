@@ -163,7 +163,7 @@ EOF
 
     [[ ! -x "$TOOL" ]] && chmod +x "$TOOL" 2>/dev/null || true
 
-    TOOL_VERSION=$("$TOOL" ws-version 2>/dev/null || echo "unknown")
+    TOOL_VERSION=$("$TOOL" version 2>/dev/null || echo "unknown")
 
     echo ""
     echo "$TOOL_VERSION"

@@ -12,5 +12,9 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 SETUPS_DIR=${SETUPS_DIR:-/opt/coding-booth/setups}
 "${SETUPS_DIR}"/jetbrains--setup.sh pycharm

@@ -12,6 +12,10 @@ if [[ ${EUID} -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
 

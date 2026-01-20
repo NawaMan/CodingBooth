@@ -12,6 +12,10 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 STARTER_FILE=/usr/local/bin/dind-open-port
 STOPPER_FILE=/usr/local/bin/dind-close-port
 

@@ -19,6 +19,10 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # ---------------- Load environment from profile.d ----------------
 # These set: PY_STABLE, PY_STABLE_VERSION, PY_SERIES, VENV_SERIES_DIR, PATH tweaks, etc.
 source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true

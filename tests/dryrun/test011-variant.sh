@@ -34,7 +34,7 @@ VARIANTS=(
   "desktop-kde:desktop-kde"
 
   # aliases
-  "default:ide-codeserver"
+  "default:base"
   "ide:ide-codeserver"
   "desktop:desktop-xfce"
   "notebook:ide-notebook"
@@ -87,7 +87,7 @@ docker \\
     -e 'CB_HAS_VSCODE=${HAS_VSCODE}' \\
     -e 'CB_HAS_DESKTOP=${HAS_DESKTOP}' \\
     -e 'CB_VERSION=${VERSION}' \\
-    -e 'CB_CONFIG_FILE=${HERE}/ws--config.toml' \\
+    -e 'CB_CONFIG_FILE=' \\
     -e 'CB_SCRIPT_NAME=coding-booth' \\
     -e 'CB_SCRIPT_DIR=${SCRIPT_DIR}' \\
     -e 'CB_LIB_DIR=${LIB_DIR}' \\

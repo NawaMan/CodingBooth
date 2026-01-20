@@ -14,6 +14,10 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # ---- configurable args ----
 DEFAULT_DISPLAY="${DEFAULT_DISPLAY:-:1}"
 DEFAULT_GEOMETRY="${DEFAULT_GEOMETRY:-1280x800}"

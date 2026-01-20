@@ -18,6 +18,9 @@ ARG CB_HAS_DESKTOP=false
 
 
 # Setup
+WORKDIR /opt/coding-booth/setups
 
-RUN "$CB_SETUPS"/dind--setup.sh
-RUN "$CB_SETUPS"/docker-buildx--setup.sh
+RUN ./dind--setup.sh
+RUN ./docker-buildx--setup.sh
+
+WORKDIR /home/coder/code
