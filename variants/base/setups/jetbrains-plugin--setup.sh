@@ -9,6 +9,10 @@ trap 'echo "❌ Error on line $LINENO: $BASH_COMMAND" >&2' ERR
 # --- Ensure root ---
 [[ "${EUID:-$(id -u)}" -eq 0 ]] || { echo "Must be root"; exit 1; }
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # --- Config ---
 IDE="$1"              # e.g., pycharm, idea, goland, webstorm
 PLUGIN="$2"           # e.g., "Lombook Plugin"

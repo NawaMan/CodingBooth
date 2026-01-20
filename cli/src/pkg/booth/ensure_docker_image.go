@@ -80,15 +80,11 @@ func normalizeDockerFile(ctx appctx.AppContext) string {
 
 	// If DOCKER_FILE is set
 	if dockerFile != "" {
-		// If it's a directory, check for Dockerfile in .booth/ first, then ws--Dockerfile (legacy)
+		// If it's a directory, check for Dockerfile in .booth/ first
 		if isDir(dockerFile) {
-			newDockerfile := filepath.Join(dockerFile, ".booth", "Dockerfile")
-			if isFile(newDockerfile) {
-				return newDockerfile
-			}
-			oldDockerfile := filepath.Join(dockerFile, "ws--Dockerfile")
-			if isFile(oldDockerfile) {
-				return oldDockerfile
+			dockerfile := filepath.Join(dockerFile, ".booth", "Dockerfile")
+			if isFile(dockerfile) {
+				return dockerfile
 			}
 		}
 		return dockerFile
@@ -96,14 +92,10 @@ func normalizeDockerFile(ctx appctx.AppContext) string {
 
 	// If DOCKER_FILE is unset, check code path for Dockerfile
 	if ctx.Code() != "" && isDir(ctx.Code()) {
-		// Prefer new location (.booth/Dockerfile), fallback to old (ws--Dockerfile)
-		newDockerfile := filepath.Join(ctx.Code(), ".booth", "Dockerfile")
-		if isFile(newDockerfile) {
-			return newDockerfile
-		}
-		oldDockerfile := filepath.Join(ctx.Code(), "ws--Dockerfile")
-		if isFile(oldDockerfile) {
-			return oldDockerfile
+		// Prefer new location (.booth/Dockerfile)
+		dockerfile := filepath.Join(ctx.Code(), ".booth", "Dockerfile")
+		if isFile(dockerfile) {
+			return dockerfile
 		}
 	}
 

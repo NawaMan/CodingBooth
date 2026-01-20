@@ -8,6 +8,8 @@ import (
 	"bytes"
 	"io"
 	"os"
+	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -15,6 +17,19 @@ import (
 	"github.com/nawaman/coding-booth/src/pkg/ilist"
 	"github.com/nawaman/coding-booth/src/pkg/nillable"
 )
+
+// getTestVersion reads the version from version.txt at the project root.
+func getTestVersion() string {
+	_, currentFile, _, _ := runtime.Caller(0)
+	// Navigate from cli/src/pkg/booth/booth_test.go to project root
+	projectRoot := filepath.Join(filepath.Dir(currentFile), "..", "..", "..", "..")
+	versionFile := filepath.Join(projectRoot, "version.txt")
+	data, err := os.ReadFile(versionFile)
+	if err != nil {
+		panic("failed to read version.txt: " + err.Error())
+	}
+	return strings.TrimSpace(string(data))
+}
 
 // TestWorkspace_runAsCommand_DryrunMode verifies command construction in dryrun mode.
 func TestWorkspace_runAsCommand_DryrunMode(t *testing.T) {
@@ -25,7 +40,7 @@ func TestWorkspace_runAsCommand_DryrunMode(t *testing.T) {
 
 	// Create context with dryrun enabled
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -122,9 +137,8 @@ func TestWorkspace_runAsCommand_WithDind(t *testing.T) {
 	os.Stdout = writer
 
 	// Create context with DinD enabled
-	// Create context with DinD enabled
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -192,7 +206,7 @@ func TestWorkspace_runAsCommand_WithDindNoNetwork(t *testing.T) {
 
 	// Create context with DinD enabled but CreatedDindNet=false
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -255,7 +269,7 @@ func TestWorkspace_runAsCommand_WithoutDind(t *testing.T) {
 	// Create context with DinD disabled
 	// Create context with DinD disabled
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -320,7 +334,7 @@ func TestWorkspace_runAsCommand_EmptyCommands(t *testing.T) {
 	// Create context with no commands
 	// Create context with no commands
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -371,7 +385,7 @@ func TestWorkspace_runAsCommand_ArgumentOrder(t *testing.T) {
 	// Create context with all argument types
 	// Create context with all argument types
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -435,7 +449,7 @@ func TestWorkspace_runAsDaemon_DryrunMode(t *testing.T) {
 
 	// Create context with dryrun enabled
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -538,7 +552,7 @@ func TestWorkspace_runAsDaemon_WithDind(t *testing.T) {
 	// Create context with DinD enabled
 	// Create context with DinD enabled
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -601,7 +615,7 @@ func TestWorkspace_runAsDaemon_NoCommands(t *testing.T) {
 	// Create context with no commands
 	// Create context with no commands
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -673,7 +687,7 @@ func TestWorkspace_runAsDaemon_WithKeepalive(t *testing.T) {
 	// Create context with keepalive enabled
 	// Create context with keepalive enabled
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -724,7 +738,7 @@ func TestWorkspace_runAsForeground_DryrunMode(t *testing.T) {
 
 	// Create context with dryrun enabled
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -815,7 +829,7 @@ func TestWorkspace_runAsForeground_WithDind(t *testing.T) {
 
 	// Create context with DinD enabled
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -882,7 +896,7 @@ func TestWorkspace_Run_DaemonMode(t *testing.T) {
 
 	// Create context with daemon enabled
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -937,7 +951,7 @@ func TestWorkspace_Run_ForegroundMode(t *testing.T) {
 	os.Stdout = writer
 
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
@@ -989,7 +1003,7 @@ func TestWorkspace_Run_CommandMode(t *testing.T) {
 	os.Stdout = writer
 
 	builder := &appctx.AppContextBuilder{
-		CbVersion:  "0.12.0--rc3",
+		CbVersion:  getTestVersion(),
 		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
 		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
 		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),

@@ -12,6 +12,10 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 PROFILE_FILE="/etc/profile.d/53-cb-python--profile.sh"  # profile to be run when login
 
 # ---- validate python version format ----

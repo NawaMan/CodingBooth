@@ -154,7 +154,7 @@ WorkSpace supports several shortcuts and aliases for variant names:
 
 | Input Alias	| Resolved Variant |
 |-------------|------------------|
-| default	    | ide-codeserver   |
+| default	    | base             |
 | console     | base             |
 | ide	        | ide-codeserver   |
 | notebook    | ide-notebook     |

@@ -21,7 +21,7 @@ func TestInitializeAppContext_ScenarioA_DefaultConfig_NoConfig(t *testing.T) {
 func TestInitializeAppContext_ScenarioB_DefaultConfig_WithDefaultConfig(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{
 		TomlFiles: []TomlFile{{
-			Path:    "ws--config.toml",
+			Path:    ".booth/config.toml",
 			Content: `variant = "from-default-config"`,
 		}},
 	})
@@ -36,15 +36,15 @@ func TestInitializeAppContext_ScenarioC_DefaultConfigAndCliConfig_CliConfigWins(
 	res := RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{},
 		Args: []string{
-			"--config", "sub-folder-Cli/ws--config.toml",
+			"--config", "sub-folder-Cli/.booth/config.toml",
 		},
 		TomlFiles: []TomlFile{{
 
-			Path:    "ws--config.toml",
+			Path:    ".booth/config.toml",
 			Content: `variant = "from-default-config"`,
 		}, {
 			// CLI config
-			Path:    "sub-folder-Cli/ws--config.toml",
+			Path:    "sub-folder-Cli/.booth/config.toml",
 			Content: `variant = "from-cli-ws"`,
 		}},
 	})
@@ -65,10 +65,10 @@ func TestInitializeAppContext_ScenarioD_DefaultConfigAndCliConfig_CliConfigWins(
 	_ = RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{},
 		Args: []string{
-			"--config", "sub-folder-Cli/ws--config.toml",
+			"--config", "sub-folder-Cli/.booth/config.toml",
 		},
 		TomlFiles: []TomlFile{{
-			Path:    "ws--config.toml",
+			Path:    ".booth/config.toml",
 			Content: `variant = "from-default-config"`,
 		}},
 	})
@@ -85,7 +85,7 @@ func TestInitializeAppContext_ScenarioE_DefaultConfigAndCliConfig_CliConfigWins(
 	_ = RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{},
 		Args: []string{
-			"--config", "sub-folder-Cli/ws--config.toml",
+			"--config", "sub-folder-Cli/.booth/config.toml",
 		},
 		TomlFiles: []TomlFile{},
 	})
@@ -95,14 +95,14 @@ func TestInitializeAppContext_ScenarioE_DefaultConfigAndCliConfig_CliConfigWins(
 func TestInitializeAppContext_ScenarioD_DefaultConfigAndEnvConfig_DefaultConfigWins(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{
-			"CB_CONFIG": "sub-folder-Env/ws--config.toml",
+			"CB_CONFIG": "sub-folder-Env/.booth/config.toml",
 		},
 		Args: []string{},
 		TomlFiles: []TomlFile{{
-			Path:    "ws--config.toml",
+			Path:    ".booth/config.toml",
 			Content: `variant = "from-default-config"`,
 		}, {
-			Path:    "sub-folder-Env/ws--config.toml",
+			Path:    "sub-folder-Env/.booth/config.toml",
 			Content: `variant = "from-env-ws"`,
 		}},
 	})
@@ -116,14 +116,14 @@ func TestInitializeAppContext_ScenarioD_DefaultConfigAndEnvConfig_DefaultConfigW
 func TestInitializeAppContext_ScenarioE_EnvConfig_DefaultConfigWins(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{
-			"CB_CONFIG": "sub-folder-Env/ws--config.toml",
+			"CB_CONFIG": "sub-folder-Env/.booth/config.toml",
 		},
 		Args: []string{},
 		TomlFiles: []TomlFile{{
-			Path:    "ws--config.toml",
+			Path:    ".booth/config.toml",
 			Content: `variant = "from-default-config"`,
 		}, {
-			Path:    "sub-folder-Env/ws--config.toml",
+			Path:    "sub-folder-Env/.booth/config.toml",
 			Content: `variant = "from-env-ws"`,
 		}},
 	})
@@ -134,18 +134,18 @@ func TestInitializeAppContext_ScenarioE_EnvConfig_DefaultConfigWins(t *testing.T
 }
 
 // Scenario F — CLI first-pass --config sticks and determines TOML source
-// We write two TOMLs: default ws--config.toml and custom.toml; --config must pick custom.toml.
+// We write two TOMLs: default .booth/config.toml and custom.toml; --config must pick custom.toml.
 func TestInitializeAppContext_ScenarioF_DefaultConfigAndEnvConfig_DefaultConfigWins(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{},
 		Args:   []string{},
 		TomlFiles: []TomlFile{{
 			// Default config
-			Path:    "ws--config.toml",
+			Path:    ".booth/config.toml",
 			Content: `variant = "from-default-config"`,
 		}, {
 			// CLI config
-			Path:    "sub-folder-Env/ws--config.toml",
+			Path:    "sub-folder-Env/.booth/config.toml",
 			Content: `variant = "from-env-ws"`,
 		}},
 	})
@@ -164,11 +164,11 @@ func TestInitializeAppContext_ScenarioG_DefaultCodeAndCliCode_CliConfigWins(t *t
 		},
 		TomlFiles: []TomlFile{{
 			// Default config
-			Path:    "ws--config.toml",
+			Path:    ".booth/config.toml",
 			Content: `variant = "from-default-config"`,
 		}, {
 			// CLI config
-			Path:    "sub-folder-Cli/ws--config.toml",
+			Path:    "sub-folder-Cli/.booth/config.toml",
 			Content: `variant = "from-cli-ws"`,
 		}},
 	})

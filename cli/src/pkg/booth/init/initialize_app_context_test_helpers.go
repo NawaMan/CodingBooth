@@ -146,7 +146,7 @@ func RunInitializeAppContext(test *testing.T, input TestInput) TestOutcome {
 	//
 	// So for TOML writing we mirror that:
 	// 1) Determine workspace from CLI --workspace; else default = ws (CWD set above).
-	// 2) Determine config from CLI --config; else default = <workspace>/ws--config.toml.
+	// 2) Determine config from CLI --config; else default = <workspace>/.booth/config.toml.
 	//
 	workspace := ws
 	var config string
@@ -168,7 +168,7 @@ func RunInitializeAppContext(test *testing.T, input TestInput) TestOutcome {
 
 	if config == "" {
 		// default derived from workspace
-		config = filepath.Join(workspace, "ws--config.toml")
+		config = filepath.Join(workspace, ".booth/config.toml")
 	}
 
 	// If config is relative, interpret it relative to current working directory (ws).

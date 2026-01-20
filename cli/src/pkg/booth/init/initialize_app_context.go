@@ -47,13 +47,9 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	}
 	if !context.Config.Config.IsSet() {
 		codePath := context.Config.Code.ValueOr("")
-		// Prefer new location (.booth/config.toml), fallback to old (ws--config.toml)
-		newConfig := filepath.Join(codePath, ".booth", "config.toml")
-		oldConfig := filepath.Join(codePath, "ws--config.toml")
-		if fileExists(newConfig) {
-			context.Config.Config = nillable.NewNillableString(newConfig)
-		} else {
-			context.Config.Config = nillable.NewNillableString(oldConfig)
+		configFile := filepath.Join(codePath, ".booth", "config.toml")
+		if fileExists(configFile) {
+			context.Config.Config = nillable.NewNillableString(configFile)
 		}
 	}
 

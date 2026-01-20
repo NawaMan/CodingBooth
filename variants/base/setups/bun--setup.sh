@@ -11,6 +11,10 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 # --------------------------
 [ "$EUID" -eq 0 ] || { echo "❌ Run as root (use sudo)"; exit 1; }
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # --- Defaults ---
 BUN_VERSION="latest"
 

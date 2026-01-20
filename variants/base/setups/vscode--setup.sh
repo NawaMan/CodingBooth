@@ -14,6 +14,10 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # Work around hash-sum-mismatch issues under emulation (libgcrypt)
 mkdir -p /etc/gcrypt
 echo all > /etc/gcrypt/hwf.deny

@@ -48,7 +48,7 @@ IMAGE SELECTION (precedence: --image > --dockerfile > prebuilt):
   --pull                 Always pull the image, even if it exists locally
                          (default: pull only if the image is missing)
   --variant <name>       Prebuilt variant (examples):
-                           container | ide-notebook | ide-codeserver
+                           base | ide-notebook | ide-codeserver
                            desktop-xfce | desktop-kde
                          Aliases:
                            notebook | codeserver | xfce | kde
@@ -95,7 +95,7 @@ NOTES:
 
 EXAMPLES:
   # Prebuilt, foreground
-  %s --variant container --version latest --code /path/to/code
+  %s --variant base --version latest --code /path/to/code
 
   # Local build from Dockerfile
   %s --dockerfile ./Dockerfile --code . --build-arg FOO=bar

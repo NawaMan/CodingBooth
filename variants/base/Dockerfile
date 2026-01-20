@@ -12,9 +12,9 @@ SHELL ["/bin/bash","-o","pipefail","-lc"]
 
 # Update base OS, install packages, generate locale
 # NOTE: we intentionally DO NOT install python3-pip (it can pull in an old setuptools)
-RUN set -euo pipefail         \
-  && apt-get update            \
-  && apt-get install           \
+RUN set -euo pipefail     \
+  && apt-get update       \
+  && apt-get install      \
   -y                      \
   --no-install-recommends \
   bash                    \
@@ -48,13 +48,11 @@ RUN set -euo pipefail         \
   && locale-gen "${LOCALE}"
 
 # Fixed values (name & paths). UID/GID come from HOST_UID/HOST_GID at runtime.
-ENV USER_NAME=coder  \
-  HOME=/home/coder \
+ENV \
   LANG=${LOCALE}   \
-  LC_ALL=${LOCALE} \
-  CODE=/home/coder/code
+  LC_ALL=${LOCALE}
 
-# Make the venv default and set pip knobs AFTER the upgrade above
+# Set PATH and terminal environment
 ENV PATH=/opt/coding-booth/setups:/opt/python/bin:/home/coder/.local/bin:$PATH \
   TERM=xterm-256color \
   EDITOR=tilde
@@ -74,19 +72,13 @@ RUN set -eux; \
   useradd -M -u "$uid" -g coder -s /bin/bash coder; \
   fi;
 
-# Entry that aligns coder's uid/gid to host, then drops privileges
-COPY --chmod=0755 booth-user-setup /usr/local/bin/booth-user-setup
-
 # Seed dirs
 RUN mkdir -p /home/coder/code
 
 
-# Start up - to be run one time at the start of the docker.
+# Startup scripts directory - scripts here run once at first container start
 RUN mkdir -p /usr/share/startup.d
 
-
-# --- Shared shell config: copy the profile script ---
-COPY --chmod=0644 50-cb-coding-booth-base--profile.sh /etc/profile.d/50-cb-coding-booth-base--profile.sh
 
 # --- Make bash and zsh source ALL /etc/profile.d/*.sh for interactive shells ---
 RUN set -euo pipefail \
@@ -111,8 +103,6 @@ RUN apt-get update && apt-get install -y ttyd \
 # Suppress the WSL Visual Studio Code prompt
 ENV DONT_PROMPT_WSL_INSTALL=1
 
-# Entry that aligns coder's uid/gid to host, then drops privileges
-COPY --chmod=0755 ./setups/ /opt/coding-booth/setups/
 
 # Set common tools aliases
 ENV EDITOR=tilde
@@ -122,41 +112,45 @@ RUN ln -s /usr/bin/tilde /usr/local/bin/editor
 RUN ln -s /usr/bin/mc    /usr/local/bin/explorer
 RUN ln -s /usr/bin/tig   /usr/local/bin/gitview
 
-# --- Main CodingBooth profile script with helper functions ---
-COPY --chmod=0644 100-cb--profile.sh /etc/profile.d/100-cb--profile.sh
 
 RUN echo "set -g mouse on" >> /etc/tmux.conf
 
-ARG CB_PY_VERSION=3.12
-ARG CB_SETUPS=/opt/coding-booth/setups
-
-
 # Always start as root so booth-user-setup can realign ids
 USER root
+WORKDIR /opt/coding-booth/setups
 
-RUN "$CB_SETUPS/python--setup.sh" "${CB_PY_VERSION}"
+# Copy setup scripts
+COPY --chmod=0755 ./setups/ /opt/coding-booth/setups/
 
+# Install Python
+ARG CB_PY_VERSION=3.12
+RUN "./python--setup.sh" "${CB_PY_VERSION}"
 
+# Cleanup to reduce image size
+RUN "./cleanup-after--setup.sh"
+
+# Set coder's home owner
+RUN chown coder:coder /home/coder
+
+# Entry that aligns coder's uid/gid to host, then drops privileges
+COPY --chmod=0755 booth-user-setup /usr/local/bin/booth-user-setup
+# --- Main CodingBooth profile script with helper functions ---
+COPY --chmod=0644 99z-cb--profile.sh /etc/profile.d/99z-cb--profile.sh
 # ---- Copy startup file: to be executed at first container start ----
-COPY --chmod=0755 100-cb--startup.sh /usr/share/startup.d/100-cb--startup.sh
+COPY --chmod=0755 99z-cb--startup.sh /usr/share/startup.d/99z-cb--startup.sh
 
-# ---- Cleanup to reduce image size ----
-RUN set -euo pipefail \
-  && rm -rf /var/lib/apt/lists/* \
-  && rm -rf /usr/share/doc/* \
-  && rm -rf /usr/share/info/* \
-  && rm -rf /var/log/* \
-  && rm -rf /opt/pip-cache/* \
-  && find /opt/local-pythons -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true \
-  && find /opt/venvs -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true \
-  && find /usr -name "*.pyc" -type f -delete 2>/dev/null || true
+# Fixed values (name & paths). UID/GID come from HOST_UID/HOST_GID at runtime.
+ENV \
+  USER_NAME=coder  \
+  HOME=/home/coder \
+  CODE=/home/coder/code
 
 # Workdir
 WORKDIR /home/coder/code
 
-# tini as PID 1, then run the aligner which execs as 'coder'
-# This is needed as the booth-user-setup will ended up running the CMD which is a chile process
-#   so we need tini to handle that properly.
+# tini as PID 1, then run booth-user-setup which execs CMD as 'coder'
+# This is needed as booth-user-setup ends up running CMD which is a child process,
+#   so we need tini to handle signals properly.
 ENTRYPOINT ["tini","-g","--","/usr/local/bin/booth-user-setup"]
 
 # CMD ["bash","-lc","exec python3 -m http.server 10000 --bind 0.0.0.0 --directory /home/coder/code"]

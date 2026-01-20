@@ -18,6 +18,10 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # Sanity checks
 [[ -f "${ECLIPSE_INI}" ]] || { echo "eclipse.ini not found at ${ECLIPSE_INI}"; exit 1; }
 

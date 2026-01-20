@@ -12,6 +12,10 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 ANTIGRAVITY_NEW_BIN=/usr/bin/antigravity
 ANTIGRAVITY_ORG_BIN=/usr/bin/antigravity-original
 

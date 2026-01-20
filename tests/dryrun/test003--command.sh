@@ -53,7 +53,7 @@ docker \\
     -e 'CB_HAS_VSCODE=false' \\
     -e 'CB_HAS_DESKTOP=false' \\
     -e 'CB_VERSION=${VERSION}' \\
-    -e 'CB_CONFIG_FILE=${HERE}/ws--config.toml' \\
+    -e 'CB_CONFIG_FILE=' \\
     -e 'CB_SCRIPT_NAME=coding-booth' \\
     -e 'CB_SCRIPT_DIR=${SCRIPT_DIR}' \\
     -e 'CB_LIB_DIR=${LIB_DIR}' \\

@@ -45,7 +45,7 @@ CB_VERSION:     $VERSION
 CMDS:       
 CODE_PATH:      $HERE
 CODE_PORT:      10000
-CONFIG_FILE:    ${HERE}/ws--config.toml
+CONFIG_FILE:    
 CONTAINER_ENV_FILE: 
 CONTAINER_NAME: dryrun
 DAEMON:         false
@@ -57,7 +57,7 @@ HOST_GID:       $HOST_GID
 HOST_PORT:      10000
 HOST_UID:       $HOST_UID
 IMAGE_MODE:     PREBUILT
-IMAGE_NAME:     nawaman/coding-booth:ide-codeserver-$VERSION
+IMAGE_NAME:     nawaman/coding-booth:base-$VERSION
 KEEPALIVE:      false
 LOCAL_BUILD:    false
 PORT_GENERATED: true
@@ -65,7 +65,7 @@ PREBUILD_REPO:  nawaman/coding-booth
 RUN_ARGS:   
 SCRIPT_DIR:     $(realpath "$HERE/../..")
 SCRIPT_NAME:    coding-booth
-VARIANT:        ide-codeserver
+VARIANT:        base
 VERSION:        $VERSION"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
@@ -94,7 +94,7 @@ env-file = "test--.env"
 keep-alive = true
 name = "test-container"
 pull = true
-variant = "codeserver"
+variant = "base"
 verbose = true
 version = "$VERSION"
 run-args = "-p;10005"
@@ -122,7 +122,7 @@ HOST_GID:       $HOST_GID
 HOST_PORT:      10000
 HOST_UID:       $HOST_UID
 IMAGE_MODE:     LOCAL-BUILD
-IMAGE_NAME:     workspace-local:dryrun-ide-codeserver-$VERSION
+IMAGE_NAME:     workspace-local:dryrun-base-$VERSION
 KEEPALIVE:      true
 LOCAL_BUILD:    true
 PORT_GENERATED: true
@@ -130,7 +130,7 @@ PREBUILD_REPO:  nawaman/coding-booth
 RUN_ARGS:    \"-p\" \"10005\"
 SCRIPT_DIR:     $(realpath "$HERE/../..")
 SCRIPT_NAME:    coding-booth
-VARIANT:        ide-codeserver
+VARIANT:        base
 VERSION:        ${VERSION}"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then

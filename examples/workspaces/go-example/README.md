@@ -92,7 +92,6 @@ my-project
 ├── run.sh
 ├── test.sh
 ├── go.mod
-├── ws--Dockerfile
 └── README.md
 ```
 
@@ -113,7 +112,6 @@ my-project
 ├── 📄 run.sh
 ├── 📄 test.sh
 ├── 📄 go.mod
-├── 📄 ws--Dockerfile
 └── 📄 README.md
 ```
 

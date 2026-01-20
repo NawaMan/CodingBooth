@@ -1,6 +1,6 @@
 # Neovim Example
 #
-# This example demonstrates using ws--home/ to share team-wide neovim configuration.
+# This example demonstrates using .booth/home/ to share team-wide neovim configuration.
 # The neovim config is version-controlled and shared with the team.
 
 variant = "base"

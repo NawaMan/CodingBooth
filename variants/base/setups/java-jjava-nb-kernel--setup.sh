@@ -38,6 +38,10 @@ if [ "${EUID}" -ne 0 ]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 if [[ "${CB_VARIANT_TAG:-}" == "base" ]]; then
   echo "Variant does not include VS Code (code) or CodeServer" >&2
   exit 0

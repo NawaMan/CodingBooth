@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# 100-cb--profile.sh
+# 99z-cb--profile.sh
 # Main workspace profile script with helper functions and welcome message.
 # Sourced on interactive shell login.
 
@@ -146,5 +146,8 @@ if [ -z "${TIP_SHOWN:-}" ]; then
   echo ""
   echo "Tip: use 'editor'   or 'tilde' to open the terminal text editor."
   echo "Tip: use 'explorer' or 'mc'    to open the terminal file manager."
-  echo "Tip: use 'notebook'            to open the notebook."
+  echo "Tip: use 'notebook'            to open the notebook (jpterm or jupyterlab)."
+  echo ""
+  echo "Looking for different UIs? Exit and rerun with --variant <variant-name> or consult help for more info."
+  echo ""
 fi
