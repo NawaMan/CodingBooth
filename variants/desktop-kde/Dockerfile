@@ -37,37 +37,8 @@ RUN apt-get update && apt-get install -y \
 RUN ./cleanup-after--setup.sh
 
 # Copy CodingBooth wallpaper
-COPY wallpaper.png /usr/share/backgrounds/codingbooth-wallpaper.png
-
-# Create KDE Plasma wallpaper config for new users
-RUN mkdir -p /etc/skel/.config \
-  && cat > /etc/skel/.config/plasma-org.kde.plasma.desktop-appletsrc.wallpaper <<'EOF'
-[Containments][1][Wallpaper][org.kde.image][General]
-Image=/usr/share/backgrounds/codingbooth-wallpaper.png
-EOF
-
-# Create startup script to set wallpaper on first login
-RUN cat > /usr/local/bin/kde-set-wallpaper <<'SCRIPT'
-#!/usr/bin/env bash
-MARKER="$HOME/.config/.wallpaper-set"
-[[ -f "$MARKER" ]] && exit 0
-if command -v plasma-apply-wallpaperimage >/dev/null 2>&1; then
-  plasma-apply-wallpaperimage /usr/share/backgrounds/codingbooth-wallpaper.png 2>/dev/null || true
-fi
-touch "$MARKER"
-SCRIPT
-RUN chmod +x /usr/local/bin/kde-set-wallpaper \
-  && mkdir -p /etc/xdg/autostart \
-  && cat > /etc/xdg/autostart/kde-set-wallpaper.desktop <<'DESK'
-[Desktop Entry]
-Type=Application
-Name=Set CodingBooth Wallpaper
-Exec=/usr/local/bin/kde-set-wallpaper
-OnlyShowIn=KDE;
-X-KDE-autostart-phase=2
-Hidden=false
-NoDisplay=true
-DESK
+COPY wallpaper.png                       /usr/share/backgrounds/codingbooth-wallpaper.png
+COPY 99-cb-kde-set-wallpaper--startup.sh /usr/share/startup.d/99-cb-kde-set-wallpaper--startup.sh
 
 WORKDIR /home/coder/code
 CMD ["start-kde"]

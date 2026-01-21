@@ -3,53 +3,53 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# Starts a simple HTTP server in daemon mode.
-# Supports multiple runtimes: node, bun, deno (set via RUNTIME env var)
+# Starts the API server and Vite dev server as daemons with configurable runtime.
 
 set -euo pipefail
 
-cd "$(dirname "$0")"
+API_PID_FILE="$HOME/.dev_api_server.pid"
+API_LOG_FILE="$HOME/.dev_api_server.log"
+VITE_PID_FILE="$HOME/.dev_vite_server.pid"
+VITE_LOG_FILE="$HOME/.dev_vite_server.log"
 
-SERVER_PORT=${SERVER_PORT:-8080}
-RUNTIME=${RUNTIME:-node}
-PID_FILE="/tmp/js-server.pid"
-LOG_FILE="/tmp/js-server.log"
+runtime="npm"
+for arg in "$@"; do
+    case $arg in
+        --runtime=*)
+            runtime="${arg#--runtime=}"
+            ;;
+        *)
+            echo "Usage: start-server.sh [--runtime=NAME]"
+            exit 1
+            ;;
+    esac
+done
 
-# Check if already running
-if [[ -f "$PID_FILE" ]]; then
-    PID="$(cat "$PID_FILE")"
-    if kill -0 "$PID" 2>/dev/null; then
-        echo "Server already running (PID: $PID)"
-        exit 0
-    fi
-    rm -f "$PID_FILE"
-fi
-
-# Determine runtime command
-case "$RUNTIME" in
-    node) RUNTIME_CMD="node server.js"    ;;
-    bun)  RUNTIME_CMD="bun run server.js" ;;
-    deno) RUNTIME_CMD="deno run --allow-net --allow-env --allow-read server.js"  ;;
-    *)
-        echo "Unknown runtime: $RUNTIME (supported: node, bun, deno)"
-        exit 1
+# Determine API server command based on runtime
+api_cmd=""
+case "$runtime" in
+    bun)   api_cmd="bun run server/index.ts" ;;
+    deno)
+        if [[ -f deno.json ]]; then
+            main=$(jq -r '.main // empty' deno.json)
+        fi
+        main="${main:-server/index.ts}"
+        api_cmd="deno run --allow-net --allow-read --allow-env $main"
         ;;
+    node|npm|*) api_cmd="npx tsx server/index.ts" ;;
 esac
 
-echo "Starting server with ${RUNTIME} on port ${SERVER_PORT}..."
-SERVER_PORT="$SERVER_PORT" nohup $RUNTIME_CMD > "$LOG_FILE" 2>&1 &
-echo $! > "$PID_FILE"
+# Vite always runs with npm (it's a Node.js tool)
+vite_cmd="npx vite"
 
-sleep 1
+# Start API server in its own session/process group
+setsid bash -c "exec $api_cmd" > "$API_LOG_FILE" 2>&1 &
+api_pid=$!
+echo "$api_pid" > "$API_PID_FILE"
+echo "🚀 Started API server with $runtime (PID: $api_pid). Log → $API_LOG_FILE"
 
-# Verify it started
-if [[ -f "$PID_FILE" ]]; then
-    PID="$(cat "$PID_FILE")"
-    if kill -0 "$PID" 2>/dev/null; then
-        echo "Server started (PID: $PID). Use ./stop-server.sh to stop it."
-        exit 0
-    fi
-fi
-
-echo "Failed to start server. Check $LOG_FILE for details."
-exit 1
+# Start Vite dev server in its own session/process group
+setsid bash -c "exec $vite_cmd" > "$VITE_LOG_FILE" 2>&1 &
+vite_pid=$!
+echo "$vite_pid" > "$VITE_PID_FILE"
+echo "🚀 Started Vite dev server (PID: $vite_pid). Log → $VITE_LOG_FILE"

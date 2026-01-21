@@ -7,7 +7,6 @@ FROM nawaman/coding-booth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 USER root
 
-ARG CB_SETUPS=/opt/coding-booth/setups
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
 ARG CB_HAS_NOTEBOOK=false
@@ -21,12 +20,14 @@ ARG CB_DENO_VERSION=2.6.5
 
 
 # Setup
+WORKDIR /opt/coding-booth/setups
 
-COPY .booth/setups /tmp/setups
+RUN ./antigravity--setup.sh
+RUN ./nodejs--setup.sh ${CB_NODE_MAJOR}
+RUN ./bun--setup.sh    ${CB_BUN_VERSION}
+RUN ./deno--setup.sh   ${CB_DENO_VERSION}
 
-RUN /tmp/setups/nodejs--setup.sh ${CB_NODE_MAJOR}
-RUN /tmp/setups/bun--setup.sh    ${CB_BUN_VERSION}
-RUN /tmp/setups/deno--setup.sh   ${CB_DENO_VERSION}
+RUN if [[ "$CB_HAS_VSCODE"  != false ]]; then ./react-code-extension--setup.sh ; fi
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./jetbrains--setup.sh webstorm   ; fi
 
-RUN if [[ "$CB_HAS_VSCODE"  != false ]]; then "$CB_SETUPS/react-code-extension--setup.sh" ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS/jetbrains--setup.sh" webstorm   ; fi
+WORKDIR /home/coder/code

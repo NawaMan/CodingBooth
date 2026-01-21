@@ -152,7 +152,7 @@ fi
 
 
 log "5) Change the owner after the UID/GID adjustment."
-chown -R "$USER_NAME:$USER_NAME" /home/"$USER_NAME"
+chown -R "$USER_NAME:$USER_NAME" /home/"$USER_NAME" 2>/dev/null || true
 
 
 log "6) Configuring passwordless sudo for '$USER_NAME'..."
