@@ -1,6 +1,13 @@
-import express from 'express';
-import fs from 'fs';
-import path from 'path';
+// Use node: prefix for built-in modules (works in Node.js 16+ and Deno)
+import fs from 'node:fs';
+import path from 'node:path';
+
+// Dynamic import for express to support both Node.js and Deno
+// @ts-ignore: Deno uses npm: specifier
+const express = (await import(
+  // @ts-ignore: Runtime detection
+  typeof Deno !== 'undefined' ? 'npm:express' : 'express'
+)).default;
 
 const app = express();
 const PORT = process.env.PORT ? Number(process.env.PORT) : 3000;

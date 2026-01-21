@@ -74,7 +74,7 @@ echo
 echo "=== Testing server with each runtime ==="
 echo
 
-SERVER_PORT=${SERVER_PORT:-8080}
+API_PORT=${API_PORT:-3000}
 
 # Helper function to test a runtime
 test_runtime() {
@@ -85,17 +85,17 @@ test_runtime() {
 
     # Start server
     eval "$start_cmd" > /dev/null 2>&1
-    sleep 1
+    sleep 2
 
     # Check it's running
-    if ./check-server.sh 2>/dev/null | grep -q "✓"; then
+    if ./check-server.sh --expect=up > /dev/null 2>&1; then
         pass "${runtime}: Server started"
     else
         fail "${runtime}: Server failed to start"
     fi
 
-    # Test HTTP response
-    if curl -s --max-time 5 "http://localhost:${SERVER_PORT}" | grep -q "Hello"; then
+    # Test HTTP response - API returns JSON with 'iso' field from /api/time
+    if curl -s --max-time 5 "http://localhost:${API_PORT}/api/time" | grep -q "iso"; then
         pass "${runtime}: Server responds to HTTP"
     else
         fail "${runtime}: Server should respond to HTTP"
@@ -106,7 +106,7 @@ test_runtime() {
     sleep 0.5
 
     # Check it stopped
-    if ./check-server.sh 2>/dev/null | grep -q "✗"; then
+    if ./check-server.sh --expect=down > /dev/null 2>&1; then
         pass "${runtime}: Server stopped"
     else
         fail "${runtime}: Server should have stopped"
@@ -117,17 +117,17 @@ test_runtime() {
 
 # Test with Node.js
 if [[ "$HAS_NODE" == "true" ]]; then
-    test_runtime "Node.js" "RUNTIME=node ./start-server.sh"
+    test_runtime "Node.js" "./start-server.sh --runtime=node"
 fi
 
 # Test with Bun
 if [[ "$HAS_BUN" == "true" ]]; then
-    test_runtime "Bun" "RUNTIME=bun ./start-server.sh"
+    test_runtime "Bun" "./start-server.sh --runtime=bun"
 fi
 
 # Test with Deno
 if [[ "$HAS_DENO" == "true" ]]; then
-    test_runtime "Deno" "RUNTIME=deno ./start-server.sh"
+    test_runtime "Deno" "./start-server.sh --runtime=deno"
 fi
 
 echo -e "${GREEN}All container tests passed!${NC}"

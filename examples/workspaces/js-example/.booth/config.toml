@@ -1,2 +1,9 @@
-variant  = "desktop-xfce"
-run-args = "-p;3000:3000"
+variant  = "kde"
+run-args = [
+    # Google Antigravity credentials (home-seeding: app may write session data)
+    "-v", "~/.config/Antigravity:/tmp/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/.antigravity:/tmp/cb-home-seed/.antigravity:ro",
+    
+    "-p", "3000:3000",   # API server - this can be removed if you don't want API to be accessible outside of the container.
+    "-p", "5173:5173"    # Vite dev server
+]

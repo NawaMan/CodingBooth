@@ -3,29 +3,81 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# Stops the HTTP server.
+# Stops the API server and Vite dev server by PID files or port detection.
 
 set -euo pipefail
 
-PID_FILE="/tmp/js-server.pid"
+API_PID_FILE="$HOME/.dev_api_server.pid"
+VITE_PID_FILE="$HOME/.dev_vite_server.pid"
 
-if [[ ! -f "$PID_FILE" ]]; then
-    echo "Server not running (no PID file)"
-    exit 0
-fi
+stopped=0
+failed=0
 
-PID="$(cat "$PID_FILE")"
-
-echo "Stopping server (PID: $PID)..."
-if kill "$PID" 2>/dev/null; then
-    # Wait for process to terminate
-    for i in {1..10}; do
-        if ! kill -0 "$PID" 2>/dev/null; then
-            break
+# Function to kill processes listening on a specific port
+kill_by_port() {
+    local port="$1"
+    # Check if anything is listening on the port and kill it
+    if fuser "${port}/tcp" >/dev/null 2>&1; then
+        fuser -k "${port}/tcp" >/dev/null 2>&1 || true
+        sleep 0.3
+        # Force kill if still running
+        if fuser "${port}/tcp" >/dev/null 2>&1; then
+            fuser -k -9 "${port}/tcp" >/dev/null 2>&1 || true
         fi
-        sleep 0.1
-    done
-fi
+        return 0
+    fi
+    return 1
+}
 
-rm -f "$PID_FILE"
-echo "Server stopped."
+# Function to stop a server by PID file and port
+stop_server() {
+    local name="$1"
+    local pid_file="$2"
+    local port="$3"
+    
+    local stopped_something=false
+    
+    # Try PID file first
+    if [[ -f "$pid_file" ]]; then
+        local pid
+        pid=$(cat "$pid_file")
+        
+        # Send SIGTERM to the whole process group (negative pid)
+        kill -- -"$pid" 2>/dev/null || true
+        sleep 0.5
+        
+        if [[ -d "/proc/$pid" ]]; then
+            # Still alive – force kill the entire group
+            kill -9 -- -"$pid" 2>/dev/null || true
+            echo "⚡️ Force-killed $name (PID: $pid)."
+        else
+            echo "✅ $name stopped gracefully (PID: $pid)."
+        fi
+        
+        rm -f "$pid_file"
+        stopped_something=true
+    fi
+    
+    # Also try to kill by port as fallback (handles orphaned processes)
+    if kill_by_port "$port"; then
+        if [[ "$stopped_something" == false ]]; then
+            echo "✅ $name stopped (found on port $port)."
+        fi
+        stopped_something=true
+    fi
+    
+    if [[ "$stopped_something" == true ]]; then
+        ((stopped++)) || true
+    else
+        echo "🔴 $name not running."
+    fi
+}
+
+# Stop both servers
+stop_server "API server" "$API_PID_FILE" 3000
+stop_server "Vite dev server" "$VITE_PID_FILE" 5173
+
+if [[ $stopped -eq 0 ]]; then
+    echo "🔴 No servers were running."
+    exit 1
+fi
