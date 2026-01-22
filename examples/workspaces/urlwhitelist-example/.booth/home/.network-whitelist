@@ -1,0 +1,9 @@
+# Custom whitelist for urlwhitelist-example
+# This file is copied to ~/.network-whitelist at container startup
+
+# Example: Allow httpbin for testing
+httpbin.org
+
+# Add your custom domains here (one per line)
+# example.com
+# api.mycompany.com

@@ -806,6 +806,83 @@ This allows the booth to run Docker commands that execute inside the isolated Di
 > See `examples/dind-example` for basic DinD usage, or `examples/kind-example` for running Kubernetes with KinD inside the booth.
 
 
+### 12. Network Whitelist
+
+WorkSpace includes a **network whitelist** feature that restricts container internet access to only approved domains. This is useful for:
+- Security-conscious environments
+- Ensuring containers only access package registries
+- Compliance requirements that limit network access
+
+**How It Works**
+- Uses a lightweight HTTP proxy (tinyproxy) inside the container
+- Only allows connections to whitelisted domains
+- Disabled by default for backwards compatibility
+
+**Enabling Network Whitelist**
+
+First, include the setup in your Dockerfile:
+```dockerfile
+RUN /opt/coding-booth/setups/network-whitelist--setup.sh
+```
+
+Then enable it inside the container:
+```bash
+network-whitelist-enable
+```
+
+**Default Whitelisted Domains**
+
+The following package registries and services are whitelisted by default:
+- **npm:** registry.npmjs.org, npmjs.com, yarnpkg.com
+- **Python:** pypi.org, files.pythonhosted.org
+- **Maven:** repo.maven.apache.org, repo1.maven.org
+- **Go:** proxy.golang.org, sum.golang.org
+- **Rust:** crates.io, static.crates.io
+- **Docker:** registry-1.docker.io, docker.io
+- **GitHub:** github.com, raw.githubusercontent.com
+- **Ubuntu/Debian:** archive.ubuntu.com, security.ubuntu.com
+
+**Adding Custom Domains**
+
+Option 1: Using the CLI command
+```bash
+network-whitelist-add example.com api.example.com
+network-whitelist-reload
+```
+
+Option 2: Edit the whitelist file directly
+```bash
+# Edit ~/.network-whitelist (one domain per line)
+nano ~/.network-whitelist
+network-whitelist-reload
+```
+
+Option 3: Team-shared whitelist via `.booth/home/`
+```
+my-project/
+└── .booth/
+    └── home/
+        └── .network-whitelist    # Team-shared custom domains
+```
+
+**Available Commands**
+
+| Command                    | Description                              |
+|:---------------------------|:-----------------------------------------|
+| `network-whitelist-enable` | Enable network restrictions              |
+| `network-whitelist-disable`| Disable network restrictions             |
+| `network-whitelist-status` | Show current status and domain counts    |
+| `network-whitelist-list`   | List all whitelisted domains             |
+| `network-whitelist-add`    | Add domain(s) to user whitelist          |
+| `network-whitelist-reload` | Apply whitelist changes                  |
+
+> ⚠️ **Note:**
+> The network whitelist only affects HTTP/HTTPS traffic that respects proxy environment variables.
+> Most package managers (npm, pip, maven, etc.) respect these variables automatically.
+
+For detailed documentation including the full default whitelist, troubleshooting, and file locations, see [docs/URL_WHITELIST.md](docs/URL_WHITELIST.md).
+
+
 ## Setup Implementation Notes
 Setup scripts are scripts that install tools and dependencies.
 Not every tool or dependency needs a setup script.

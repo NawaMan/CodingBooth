@@ -173,7 +173,9 @@ Located in `variants/base/setups/`. Each `*--setup.sh` produces:
 2. **Profile script** → `/etc/profile.d/` (sourced per shell)
 3. **Starter wrapper** → `/usr/local/bin/` (user-invocable command)
 
-Available setups (46 total): `python`, `nodejs`, `go`, `java`, `jdk`, `mvn`, `gradle`, `deno`, `bun`, `codeserver`, `notebook`, `dind`, `docker-compose`, `jetbrains`, `idea`, `pycharm`, `eclipse`, `claude-code`, `xfce`, `kde`, etc.
+Available setups (47 total): `python`, `nodejs`, `go`, `java`, `jdk`, `mvn`, `gradle`, `deno`, `bun`, `codeserver`, `notebook`, `dind`, `docker-compose`, `jetbrains`, `idea`, `pycharm`, `eclipse`, `claude-code`, `xfce`, `kde`, `network-whitelist`, etc.
+
+**Note:** For `network-whitelist` setup details, see `docs/URL_WHITELIST.md`.
 
 ---
 

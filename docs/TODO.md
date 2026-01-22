@@ -48,6 +48,7 @@ Need to find a way to fix this. This may involve creating a different type of ho
 ## Additional Setups
 Add or improve support for these developer tools and environments:
 
+- [x] `network-whitelist` - Restrict container internet access to whitelisted domains
 - [ ] `aws-cli`
 - [ ] `az-cli`
 - [ ] `bun`
