@@ -21,21 +21,20 @@ ARG MVN_VERSION=3.9.11
 
 
 # Setup
+WORKDIR /opt/coding-booth/setups
 
-# You only need one of the below.
-
-RUN "$CB_SETUPS"/jdk--setup.sh 25
+RUN ./jdk--setup.sh 25
 
 # Force jbang run to not show download afterward.
 RUN echo 'class Hi { public static void main(String[] args) { System.out.println("Hi again"); }}' | jbang -
 
-RUN "$CB_SETUPS"/mvn--setup.sh
-RUN "$CB_SETUPS"/gradle--setup.sh
-RUN "$CB_SETUPS"/jenv--setup.sh
+RUN ./mvn--setup.sh
+RUN ./gradle--setup.sh
+RUN ./jenv--setup.sh
 
-RUN if [[ "$CB_HAS_VSCODE"  != false ]]; then "$CB_SETUPS"/java-code-extension--setup.sh                    ; fi
-RUN if [[ "$CB_HAS_VSCODE"  != false ]]; then "$CB_SETUPS"/java-ijava-nb-kernel--setup.sh                   ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/eclipse--setup.sh                                ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/idea--setup.sh                                   ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/lombok-eclipse--setup.sh                         ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/jetbrains-plugin--setup.sh idea "Lombook Plugin" ; fi
+RUN if [[ "$CB_HAS_VSCODE"  != false ]]; then ./java-code-extension--setup.sh                    ; fi
+RUN if [[ "$CB_HAS_VSCODE"  != false ]]; then ./java-jjava-nb-kernel--setup.sh                   ; fi
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./eclipse--setup.sh                                ; fi
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./idea--setup.sh                                   ; fi
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./lombok-eclipse--setup.sh                         ; fi
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./jetbrains-plugin--setup.sh idea "Lombook Plugin" ; fi
