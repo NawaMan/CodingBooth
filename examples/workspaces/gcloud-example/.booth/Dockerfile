@@ -27,3 +27,9 @@ RUN apt-get update && \
 
 # Verify installation
 RUN gcloud --version
+
+ARG CB_SETUPS=/opt/coding-booth/setups
+ARG CB_HAS_DESKTOP=false
+
+RUN "$CB_SETUPS"/claude-code--setup.sh
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/antigravity--setup.sh ; fi

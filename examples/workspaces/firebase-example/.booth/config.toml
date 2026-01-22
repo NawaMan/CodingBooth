@@ -9,5 +9,13 @@ variant = "notebook"
 # Firebase uses gcloud credentials + .config/configstore for CLI state
 run-args = [
     "-v", "~/.config/gcloud:/tmp/cb-home-seed/.config/gcloud:ro",
-    "-v", "~/.config/configstore:/tmp/cb-home-seed/.config/configstore:ro"
+    "-v", "~/.config/configstore:/tmp/cb-home-seed/.config/configstore:ro",
+
+    # Claude Code credentials (home-seeding)
+    "-v", "~/.claude.json:/tmp/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/tmp/cb-home-seed/.claude:ro",
+
+    # Antigravity credentials (home-seeding)
+    "-v", "~/.config/Antigravity:/tmp/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/.antigravity:/tmp/cb-home-seed/.antigravity:ro",
 ]

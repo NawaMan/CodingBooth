@@ -73,3 +73,6 @@ RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/eclipse--setup.sh    
 RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/idea--setup.sh                                   ; fi
 RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/lombok-eclipse--setup.sh                         ; fi
 RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/jetbrains-plugin--setup.sh idea "Lombook Plugin" ; fi
+
+RUN "$CB_SETUPS"/claude-code--setup.sh
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/antigravity--setup.sh ; fi

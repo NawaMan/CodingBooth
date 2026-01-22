@@ -192,43 +192,53 @@ func stripNetworkAndPortFlags(runArgs ilist.List[ilist.List[string]]) *ilist.App
 	result := ilist.NewAppendableList[ilist.List[string]]()
 	args := runArgs.Slice()
 
-	skipNext := false
-	for _, arg := range args {
-		if skipNext {
-			skipNext = false
-			continue
+	for _, argList := range args {
+		// Build a filtered list for each inner list
+		filtered := ilist.NewAppendableList[string]()
+		skipNext := false
+
+		for j := 0; j < argList.Length(); j++ {
+			if skipNext {
+				skipNext = false
+				continue
+			}
+
+			flag := argList.At(j)
+
+			// Check for --network or --net (with value in next arg)
+			if flag == "--network" || flag == "--net" {
+				skipNext = true
+				continue
+			}
+
+			// Check for --network=value or --net=value
+			if strings.HasPrefix(flag, "--network=") || strings.HasPrefix(flag, "--net=") {
+				continue
+			}
+
+			// Check for -p or --publish (with value in next arg)
+			if flag == "-p" || flag == "--publish" {
+				skipNext = true
+				continue
+			}
+
+			// Check for -p=value or --publish=value
+			if strings.HasPrefix(flag, "-p=") || strings.HasPrefix(flag, "--publish=") {
+				continue
+			}
+
+			// Check for -p<value> (e.g., -p8080:8080)
+			if strings.HasPrefix(flag, "-p") && len(flag) > 2 {
+				continue
+			}
+
+			filtered.Append(flag)
 		}
 
-		flag := arg.At(0)
-
-		// Check for --network or --net (with value in next arg)
-		if flag == "--network" || flag == "--net" {
-			skipNext = true
-			continue
+		// Only add non-empty filtered lists to the result
+		if filtered.Length() > 0 {
+			result.Append(filtered.ToList())
 		}
-
-		// Check for --network=value or --net=value
-		if strings.HasPrefix(flag, "--network=") || strings.HasPrefix(flag, "--net=") {
-			continue
-		}
-
-		// Check for -p or --publish (with value in next arg)
-		if flag == "-p" || flag == "--publish" {
-			skipNext = true
-			continue
-		}
-
-		// Check for -p=value or --publish=value
-		if strings.HasPrefix(flag, "-p=") || strings.HasPrefix(flag, "--publish=") {
-			continue
-		}
-
-		// Check for -p<value> (e.g., -p8080:8080)
-		if strings.HasPrefix(flag, "-p") && len(flag) > 2 {
-			continue
-		}
-
-		result.Append(arg)
 	}
 
 	return result

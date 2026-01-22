@@ -14,8 +14,11 @@ ARG CB_HAS_NOTEBOOK=false
 ARG CB_HAS_VSCODE=false
 ARG CB_HAS_DESKTOP=false
 
+# Setup
+WORKDIR /opt/coding-booth/setups
+
 # Setup DinD support
-RUN "$CB_SETUPS"/dind--setup.sh
+RUN ./dind--setup.sh
 
 # Install kubectl
 RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" \
@@ -26,3 +29,8 @@ RUN curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/s
 RUN curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64 \
     && chmod +x ./kind \
     && mv ./kind /usr/local/bin/kind
+
+RUN ./claude-code--setup.sh
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./antigravity--setup.sh ; fi
+
+WORKDIR /home/coder/code

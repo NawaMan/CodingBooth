@@ -38,3 +38,6 @@ RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./eclipse--setup.sh               
 RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./idea--setup.sh                                   ; fi
 RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./lombok-eclipse--setup.sh                         ; fi
 RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./jetbrains-plugin--setup.sh idea "Lombook Plugin" ; fi
+
+RUN ./claude-code--setup.sh
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./antigravity--setup.sh ; fi
