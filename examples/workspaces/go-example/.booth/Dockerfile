@@ -15,11 +15,15 @@ ARG CB_HAS_VSCODE=false
 ARG CB_HAS_DESKTOP=false
 
 # Customizations
-ARG GO_VERSION=1.25.3
+ARG CB_GO_VERSION=1.25.3
 
 # Setup
+WORKDIR /opt/coding-booth/setups
 
-RUN "$CB_SETUPS/go--setup.sh" "${GO_VERSION}"
+RUN ./go--setup.sh "${CB_GO_VERSION}"
 
-RUN if [[ "$CB_HAS_VSCODE"  != false ]]; then "$CB_SETUPS/go-code-extension--setup.sh" ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS/jetbrains--setup.sh" goland  ; fi
+RUN if [[ "$CB_HAS_VSCODE"  != false ]]; then ./go-code-extension--setup.sh ; fi
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./jetbrains--setup.sh goland  ; fi
+
+RUN ./claude-code--setup.sh
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./antigravity--setup.sh ; fi

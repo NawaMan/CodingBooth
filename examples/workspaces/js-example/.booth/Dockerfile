@@ -22,7 +22,9 @@ ARG CB_DENO_VERSION=2.6.5
 # Setup
 WORKDIR /opt/coding-booth/setups
 
-RUN ./antigravity--setup.sh
+RUN ./claude-code--setup.sh
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./antigravity--setup.sh ; fi
+
 RUN ./nodejs--setup.sh ${CB_NODE_MAJOR}
 RUN ./bun--setup.sh    ${CB_BUN_VERSION}
 RUN ./deno--setup.sh   ${CB_DENO_VERSION}
@@ -30,4 +32,3 @@ RUN ./deno--setup.sh   ${CB_DENO_VERSION}
 RUN if [[ "$CB_HAS_VSCODE"  != false ]]; then ./react-code-extension--setup.sh ; fi
 RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./jetbrains--setup.sh webstorm   ; fi
 
-WORKDIR /home/coder/code

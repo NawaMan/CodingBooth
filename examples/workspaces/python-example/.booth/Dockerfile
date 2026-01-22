@@ -20,14 +20,18 @@ ARG CB_JDK_VERSION=24
 
 
 # Setup
+WORKDIR /opt/coding-booth/setups
 
-RUN "$CB_SETUPS"/python--setup.sh ${CB_PY_VERSION}
+RUN ./python--setup.sh ${CB_PY_VERSION}
 
 # Needed by pycharm. if you don't use pycharm, remove this.
-RUN "$CB_SETUPS"/jdk--setup.sh ${CB_JDK_VERSION}
+RUN ./jdk--setup.sh ${CB_JDK_VERSION}
 
-RUN if [[ "$CB_HAS_VSCODE" != false ]]; then "$CB_SETUPS"/python-code-extension--setup.sh ;  fi
-RUN if [[ "$CB_HAS_VSCODE" != false ]]; then "$CB_SETUPS"/jupyter-code-extension--setup.sh ; fi
+RUN if [[ "$CB_HAS_VSCODE" != false ]]; then ./python-code-extension--setup.sh ;  fi
+RUN if [[ "$CB_HAS_VSCODE" != false ]]; then ./jupyter-code-extension--setup.sh ; fi
 
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/pycharm--setup.sh                                       ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/jetbrains-plugin--setup.sh pycharm ru.adelf.idea.dotenv ; fi
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./pycharm--setup.sh                                       ; fi
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./jetbrains-plugin--setup.sh pycharm ru.adelf.idea.dotenv ; fi
+
+RUN ./claude-code--setup.sh
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./antigravity--setup.sh ; fi

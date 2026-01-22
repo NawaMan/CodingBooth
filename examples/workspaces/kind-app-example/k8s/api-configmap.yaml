@@ -1,0 +1,8 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: api-config
+data:
+  DATABASE_URL: "postgres://todouser:todopass@postgres:5432/tododb?sslmode=disable"
+  EXPORT_SERVICE_URL: "http://export-service:8081"
+  PORT: "8080"

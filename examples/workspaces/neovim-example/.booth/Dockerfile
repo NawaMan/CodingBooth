@@ -12,3 +12,12 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends neovim && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
+
+ARG CB_SETUPS=/opt/coding-booth/setups
+ARG CB_HAS_DESKTOP=false
+
+# Setup
+WORKDIR /opt/coding-booth/setups
+
+RUN ./claude-code--setup.sh
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./antigravity--setup.sh ; fi

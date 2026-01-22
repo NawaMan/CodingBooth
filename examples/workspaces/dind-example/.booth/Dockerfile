@@ -23,4 +23,7 @@ WORKDIR /opt/coding-booth/setups
 RUN ./dind--setup.sh
 RUN ./docker-buildx--setup.sh
 
+RUN ./claude-code--setup.sh
+RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./antigravity--setup.sh ; fi
+
 WORKDIR /home/coder/code
