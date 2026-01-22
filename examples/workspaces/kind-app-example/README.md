@@ -1,129 +1,162 @@
-# KinD (Kubernetes in Docker) Example
+# TODO App on KIND - Full-Stack Kubernetes Example
 
-This example demonstrates running a Kubernetes cluster inside the workspace using KinD and DinD (Docker in Docker).
+A real-world TODO application deployed to KIND (Kubernetes IN Docker), demonstrating microservices architecture with React, Go, and PostgreSQL.
 
-## How It Works
+## Quick Start
 
-The workspace uses the **sidecar DinD** approach:
-1. A DinD sidecar container runs the Docker daemon
-2. The workspace container connects to it via `DOCKER_HOST=tcp://dind:2375`
-3. KinD creates Kubernetes nodes as containers inside the DinD sidecar
-4. The workspace can access K8s API and services via the DinD sidecar's hostname
+**Interactive Guide:** Open [`TODO-App-Guide.ipynb`](TODO-App-Guide.ipynb) in Jupyter Notebook for a step-by-step walkthrough with runnable code cells.
 
-```
-Host
-└── Workspace container (this)
-    │   - has kubectl, kind installed
-    │   - DOCKER_HOST=tcp://{dind}:2375
-    │
-    └── DinD sidecar (same network)
-        └── Docker daemon
-            ├── kind-control-plane container
-            │   - K8s API on :6443
-            │   - NodePorts on :30080-30084
-            └── (K8s pods run inside)
+```bash
+# Start the workspace
+cd examples/workspaces/kind-app-example
+../../coding-booth
+
+# Inside the workspace, run:
+./start-cluster.sh   # Create KIND cluster
+./build.sh           # Build Docker images
+./deploy-app.sh      # Deploy to Kubernetes
+./access-app.sh      # Start port-forwards
+
+# Open http://localhost:3000 in your browser
 ```
 
-## Network Configuration
+## Architecture
 
-The workspace shares DinD's network namespace (`--network container:dind`), which means:
-- **`localhost` inside the workspace = `localhost` inside DinD**
-- No hostname configuration needed - just use `localhost`
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  KIND Cluster (todo-app namespace)                              │
+│                                                                 │
+│   ┌──────────────┐      ┌──────────────┐      ┌──────────────┐ │
+│   │    React     │      │   Go API     │      │   Export     │ │
+│   │   (nginx)    │─────▶│   Service    │─────▶│   Service    │ │
+│   │   web:80     │ /api │   api:8080   │ HTTP │ export:8081  │ │
+│   └──────────────┘  /ws └──────────────┘      └──────────────┘ │
+│                              │                                  │
+│                              ▼                                  │
+│                        ┌──────────────┐                        │
+│                        │  PostgreSQL  │                        │
+│                        │ postgres:5432│                        │
+│                        └──────────────┘                        │
+└─────────────────────────────────────────────────────────────────┘
+```
 
-### NodePort Access
-- KinD nodes run inside DinD's internal Docker network
-- NodePorts need `extraPortMappings` in kind config to be accessible
-- The `start-cluster.sh` script configures this automatically
+## Tech Stack
 
-## Exposed Ports
+| Component | Technology |
+|-----------|------------|
+| Frontend | React 18 + TypeScript + Vite + Tailwind CSS + Bun |
+| API | Go 1.21 + Chi router + gorilla/websocket |
+| Export Service | Go 1.21 + Chi router |
+| Database | PostgreSQL 15 |
+| Web Server | nginx |
+| Container | Docker + KIND (Kubernetes IN Docker) |
 
-The following ports are pre-mapped and accessible via `http://localhost:{port}`:
+## Ports
 
-| Port       | Purpose                    |
-|------------|----------------------------|
-| 6443       | Kubernetes API server      |
-| 80         | HTTP (for ingress)         |
-| 443        | HTTPS (for ingress)        |
-| 30080-30084| NodePort services          |
+| Port | Service | Description |
+|------|---------|-------------|
+| 3000 | Web UI | React frontend |
+| 8080 | API | Go REST API + WebSocket |
+| 8081 | Export | Export service (CSV/JSON) |
 
 ## Scripts
 
-| Script                 | Description                                    |
-|------------------------|------------------------------------------------|
-| `start-cluster.sh`     | Creates a KinD cluster with proper networking  |
-| `stop-cluster.sh`      | Deletes the KinD cluster                       |
-| `check-cluster.sh`     | Checks if the cluster is running               |
-| `deploy-app.sh`        | Deploys a sample nginx app with NodePort 30080 |
-| `remove-app.sh`        | Removes the sample nginx app                   |
-| `deploy-hello.sh`      | Builds and deploys hello-service (NodePort 30081) |
-| `remove-hello.sh`      | Removes hello-service                          |
-| `test-on-container.sh` | Tests scripts inside the container             |
-| `test-on-host.sh`      | Full integration test from the host            |
+| Script | Description |
+|--------|-------------|
+| `./status.sh` | Show cluster, pods, services, and port-forward status |
+| `./start-cluster.sh` | Create KIND cluster |
+| `./stop-cluster.sh` | Delete KIND cluster |
+| `./check-cluster.sh` | Check if cluster is running |
+| `./build.sh` | Build all Docker images |
+| `./deploy-app.sh` | Deploy TODO app to cluster |
+| `./remove-app.sh` | Remove TODO app from cluster |
+| `./access-app.sh` | Start port-forwards to access app from host |
+| `./access-app-stop.sh` | Stop port-forwards |
 
-## Usage
+## API Endpoints
 
-### Start the workspace
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | /api/tasks | List all tasks |
+| POST | /api/tasks | Create a task |
+| GET | /api/tasks/:id | Get a task |
+| PUT | /api/tasks/:id | Update a task |
+| DELETE | /api/tasks/:id | Delete a task |
+| GET | /api/export?format=csv\|json | Export tasks |
+| WS | /ws | WebSocket for real-time updates |
 
-```bash
-cd examples/kind-example
-../../coding-booth
+## Project Structure
+
+```
+kind-app-example/
+├── TODO-App-Guide.ipynb  # Interactive Jupyter notebook guide
+├── .booth/
+│   ├── config.toml       # Workspace config (DinD, ports)
+│   └── Dockerfile        # Workspace image with kubectl, kind, go, bun
+│
+├── api/                  # Go API Service
+│   ├── main.go
+│   ├── handlers/         # REST + WebSocket handlers
+│   ├── models/           # Data models
+│   ├── db/               # Database connection
+│   └── Dockerfile
+│
+├── export-service/       # Go Export Service
+│   ├── main.go
+│   ├── handlers/         # Export handlers (CSV/JSON)
+│   └── Dockerfile
+│
+├── web/                  # React Frontend
+│   ├── src/
+│   │   ├── components/   # React components
+│   │   ├── api/          # API client
+│   │   └── hooks/        # Custom hooks (WebSocket)
+│   ├── e2e/              # Playwright tests
+│   └── Dockerfile
+│
+├── k8s/                  # Kubernetes manifests
+│   ├── postgres-*.yaml   # Database
+│   ├── api-*.yaml        # API service
+│   ├── export-*.yaml     # Export service
+│   └── web-*.yaml        # Frontend
+│
+└── seed/seed.sql         # Database seed data
 ```
 
-### Inside the workspace
+## How It Works
 
-```bash
-# Create a KinD cluster
-./start-cluster.sh
+This example uses **Docker-in-Docker (DinD)** to run a KIND cluster inside the workspace:
 
-# Check cluster status
-./check-cluster.sh
-kubectl get nodes
-
-# Deploy sample app (uses NodePort 30080)
-./deploy-app.sh
-
-# Access the app via localhost
-curl http://localhost:30080
-
-# Clean up
-./remove-app.sh
-./stop-cluster.sh
+```
+Host
+└── DinD sidecar container
+    ├── Docker daemon (:2375)
+    │   └── KIND cluster
+    │       └── Kubernetes pods (postgres, api, web, export)
+    └── Workspace container (shares DinD network)
+        ├── kubectl, kind, docker CLI
+        └── Your code mounted at /home/coder/code
 ```
 
-### Run tests
-
-From inside the container:
-```bash
-./test-on-container.sh
-```
-
-From the host:
-```bash
-./test-on-host.sh
-```
+Port-forwards use `--address 0.0.0.0` to make services accessible from the host through the DinD sidecar's port mappings.
 
 ## Configuration
 
-The `.ws/config.toml` enables DinD mode:
+`.booth/config.toml`:
 ```toml
 variant  = "xfce"
 dind     = true
+run-args = [
+    "-p", "3000:3000",
+    "-p", "8080:8080",
+    "-p", "8081:8081",
+]
 ```
 
-The `.ws/Dockerfile` installs:
-- Docker CLI and DinD support
-- kubectl
-- kind
+## Cleanup
 
-## Adding More NodePorts
-
-To expose additional NodePorts, edit `start-cluster.sh` and add more entries to `extraPortMappings`:
-
-```yaml
-- containerPort: 30085
-  hostPort: 30085
-  listenAddress: "0.0.0.0"
-  protocol: TCP
+```bash
+./access-app-stop.sh   # Stop port-forwards
+./remove-app.sh        # Remove app from cluster
+./stop-cluster.sh      # Delete KIND cluster
 ```
-
-Then recreate the cluster.
