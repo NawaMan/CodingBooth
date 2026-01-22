@@ -5,6 +5,7 @@ This file contains a list of changes for each released version.
 ## v0.12.0
 - Rebrand fully to "CodingBooth"!!! Yeah!
 - Command mode now silently forwards exit codes (no error message when commands fail)
+- Added `network-whitelist` setup for restricting container internet access to whitelisted domains
 
 ## v0.11.0
 - Core engine rewritten in Go for portability (cross-platform: Linux, macOS, Windows)
