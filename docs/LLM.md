@@ -63,7 +63,7 @@ User lands in consistent environment
 /
 ├── booth                    # Bash launcher (downloads + runs binary)
 ├── coding-booth             # Go binary (the actual CLI)
-├── version.txt              # Version (currently 0.12.0--rc5)
+├── version.txt              # Version (currently 0.12.0--rc6)
 │
 ├── cli/src/                 # Go source code
 │   ├── cmd/coding-booth/    # CLI entry: main.go, run.go, help.go

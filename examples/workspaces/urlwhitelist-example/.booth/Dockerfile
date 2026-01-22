@@ -20,9 +20,8 @@ ARG CB_HAS_DESKTOP=false
 # Setup
 WORKDIR /opt/coding-booth/setups
 
-# Copy and install network whitelist setup (not yet in base image)
-COPY network-whitelist--setup.sh ./
-RUN chmod +x ./network-whitelist--setup.sh && ./network-whitelist--setup.sh
+# Install network whitelist - restricts internet access to whitelisted domains
+RUN ./network-whitelist--setup.sh
 
 # Always install claude-code
 RUN ./claude-code--setup.sh

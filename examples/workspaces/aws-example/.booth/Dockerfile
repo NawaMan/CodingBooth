@@ -3,7 +3,7 @@
 # Installs AWS CLI on top of the base workspace image
 
 ARG CB_VARIANT_TAG=base
-ARG CB_VERSION_TAG=0.12.0--rc5
+ARG CB_VERSION_TAG=0.12.0--rc6
 
 FROM nawaman/coding-booth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 
