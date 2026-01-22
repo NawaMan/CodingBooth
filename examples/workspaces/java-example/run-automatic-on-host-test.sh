@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 #
-# Test runner for all-java example.
+# Test runner for java-example.
 # Runs all test0*.sh files and reports pass/fail counts.
 #
 

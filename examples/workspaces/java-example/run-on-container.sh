@@ -7,4 +7,5 @@
 
 mvn -q clean install exec:java 2>&1 \
   | grep -v 'sun.misc.Unsafe' \
-  | grep -v 'com.google.inject.internal.aop.HiddenClassDefiner'
+  | grep -v 'com.google.inject.internal.aop.HiddenClassDefiner' \
+  | grep -v 'Use of the three-letter time zone ID "EST" is deprecated'
