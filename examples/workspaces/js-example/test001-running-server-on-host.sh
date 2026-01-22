@@ -33,10 +33,22 @@ echo
 
 # Start workspace in daemon mode
 echo "Starting workspace..."
-../../../coding-booth --daemon > /dev/null 2>&1 || true
+../../../coding-booth --daemon -- 'while true; do sleep 1; done' > /dev/null 2>&1 || true
 
-# Wait for workspace to be ready
-sleep 2
+# Wait for npm install to complete (up to 60 seconds)
+echo "Waiting for npm install to complete..."
+WAIT_COUNT=0
+while true; do
+    if docker logs "$CONTAINER_NAME" 2>&1 | grep -q "npm install completed"; then
+        break
+    fi
+    WAIT_COUNT=$((WAIT_COUNT + 1))
+    if [ "$WAIT_COUNT" -ge 60 ]; then
+        fail "Timeout waiting for npm install to complete"
+    fi
+    sleep 1
+done
+pass "npm install completed"
 
 # Check if workspace container is running
 if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
