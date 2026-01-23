@@ -5,8 +5,8 @@
 package init
 
 import (
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 type InitializeAppContextBoundary interface {

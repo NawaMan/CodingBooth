@@ -12,7 +12,7 @@ Lightweight desktop environment with full GUI support.
 
 **Usage:**
 ```bash
-workspace --variant desktop-xfce
+booth --variant desktop-xfce
 ```
 
 **Access:** Connect via VNC or noVNC web interface for full desktop experience.

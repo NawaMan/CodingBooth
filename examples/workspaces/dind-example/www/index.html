@@ -1,21 +1,23 @@
 <html>
+
 <body>
-<h1>Hello world!</h1>
-<h2>Welcome to CodingBooth Workspace!</h2>
+    <h1>Hello world!</h1>
+    <h2>Welcome to CodingBooth!</h2>
 
-<p>Current time: <span id="time"></span></p>
+    <p>Current time: <span id="time"></span></p>
 
-<script>
-function updateTime() {
-    const now = new Date();
-    document.getElementById("time").textContent =
-        now.toLocaleString();  // formats according to system locale
-}
+    <script>
+        function updateTime() {
+            const now = new Date();
+            document.getElementById("time").textContent =
+                now.toLocaleString();  // formats according to system locale
+        }
 
-// Refresh every second
-setInterval(updateTime, 1000);
-updateTime(); // run immediately once
-</script>
+        // Refresh every second
+        setInterval(updateTime, 1000);
+        updateTime(); // run immediately once
+    </script>
 
 </body>
+
 </html>

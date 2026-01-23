@@ -7,9 +7,10 @@ package booth
 
 import (
 	"fmt"
+	"os"
 
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // BoothRunner handles the "run" command for booth operations.
@@ -65,6 +66,10 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 
 	builder := ctx.ToBuilder()
 
+	// Clean up any leftover containers/networks from previous booth runs
+	// This prevents port conflicts when restarting the booth
+	cleanupPreviousBoothInstances(ctx, ctx.ProjectName())
+
 	// Set up unique network and sidecar names
 	dindNet := getDindNet(ctx)
 	dindName := getDindName(ctx)
@@ -77,7 +82,22 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 	extraPorts := extractPortFlags(ctx.RunArgs())
 
 	// Start DinD sidecar if not already running (pass hostPort for port mapping)
-	startDindSidecar(ctx, dindName, dindNet, ctx.PortNumber(), extraPorts)
+	err := startDindSidecar(ctx, dindName, dindNet, ctx.PortNumber(), extraPorts)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ Failed to start DinD sidecar.\n\n")
+
+		// Try to diagnose if this is a port conflict
+		port, diagnostic := diagnosePortConflict(err, ctx.PortNumber(), extraPorts)
+		if port != "" {
+			fmt.Fprintf(os.Stderr, "   %s\n", diagnostic)
+		} else {
+			// Generic error - show the original error message
+			fmt.Fprintf(os.Stderr, "   Error: %v\n", err)
+			fmt.Fprintf(os.Stderr, "   Check if any port is already in use.\n")
+			fmt.Fprintf(os.Stderr, "   Use 'lsof -i :<port>' or 'ss -tlnp | grep <port>' to find the process.\n")
+		}
+		os.Exit(1)
+	}
 
 	// Wait for DinD to become ready
 	waitForDindReady(ctx, dindName, dindNet)
@@ -86,7 +106,7 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 	builder.RunArgs = stripNetworkAndPortFlags(ctx.RunArgs())
 
 	// Use container network mode to share DinD's network namespace
-	// This allows localhost access to DinD's ports from the workspace
+	// This allows localhost access to DinD's ports from the booth
 	builder.CommonArgs.Append(ilist.NewList[string]("--network", fmt.Sprintf("container:%s", dindName)))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "DOCKER_HOST=tcp://localhost:2375"))
 

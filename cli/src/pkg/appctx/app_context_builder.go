@@ -5,7 +5,7 @@
 package appctx
 
 import (
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // AppContextBuilder is a mutable builder for constructing AppContext instances.

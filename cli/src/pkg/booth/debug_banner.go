@@ -9,8 +9,8 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // ShowDebugBanner prints debug information if verbose mode is enabled.

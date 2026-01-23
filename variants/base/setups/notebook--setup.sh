@@ -5,7 +5,7 @@
 
 
 # notebook--setup.sh
-# Uses consolidated Python setup (/opt/coding-booth/setups/python--setup.sh),
+# Uses consolidated Python setup (/opt/codingbooth/setups/python--setup.sh),
 # then installs Jupyter and registers kernels + a "start-notebook" launcher.
 # NOTE: Bash kernel installation is delegated to ${SETUPS_DIR}/bash-nb-kernel--setup.sh
 set -Eeuo pipefail

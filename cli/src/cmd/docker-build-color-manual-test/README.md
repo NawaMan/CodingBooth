@@ -2,24 +2,6 @@
 
 This manual test shows Docker's native colored build output when running directly in a terminal.
 
-## Files
-
-- **[run-docker-build-color-manual-test.sh](file:///home/nawa/dev/git/WorkSpace/tests/manual/run-docker-build-color-manual-test.sh)** - Shell script to run the integration test
-- **[main.go](file:///home/nawa/dev/git/WorkSpace/cli/src/cmd/docker-build-color-manual-test/main.go)** - Go program that builds a Docker image
-
-## Usage
-
-```bash
-cd tests/manual
-./run-docker-build-color-manual-test.sh
-```
-
-Or run directly:
-
-```bash
-go run ./cli/src/cmd/docker-build-color-manual-test/main.go
-```
-
 ## What You'll See
 
 When running this integration test in a terminal (not through `go test`), you should see:

@@ -9,8 +9,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // ApplyEnvFile applies environment file configuration and returns updated AppContext.

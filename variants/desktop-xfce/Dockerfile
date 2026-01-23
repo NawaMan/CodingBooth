@@ -1,15 +1,15 @@
 # syntax=docker/dockerfile:1.7
 ARG CB_VERSION_TAG=latest
-FROM nawaman/coding-booth:base-${CB_VERSION_TAG}
+FROM nawaman/codingbooth:base-${CB_VERSION_TAG}
 
 ARG CB_PY_VERSION=3.12
 
-# Stay as root so the base ENTRYPOINT (workspace-user-setup) can align uid/gid, then drop to 'coder'
+# Stay as root so the base ENTRYPOINT (booth-user-setup) can align uid/gid, then drop to 'coder'
 USER root
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 
 # Setup
-WORKDIR /opt/coding-booth/setups
+WORKDIR /opt/codingbooth/setups
 
 RUN ./xfce--setup.sh
 

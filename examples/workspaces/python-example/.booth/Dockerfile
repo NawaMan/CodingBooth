@@ -1,18 +1,15 @@
 # syntax=docker/dockerfile:1.7
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
-FROM nawaman/coding-booth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
+FROM nawaman/codingbooth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 
 
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 USER root
 
-ARG CB_SETUPS=/opt/coding-booth/setups
+ARG CB_SETUPS=/opt/codingbooth/setups
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
-ARG CB_HAS_NOTEBOOK=false
-ARG CB_HAS_VSCODE=false
-ARG CB_HAS_DESKTOP=false
 
 # Customizations
 ARG CB_PY_VERSION="${CB_PY_VERSION}"
@@ -20,18 +17,18 @@ ARG CB_JDK_VERSION=24
 
 
 # Setup
-WORKDIR /opt/coding-booth/setups
+WORKDIR /opt/codingbooth/setups
 
 RUN ./python--setup.sh ${CB_PY_VERSION}
 
 # Needed by pycharm. if you don't use pycharm, remove this.
 RUN ./jdk--setup.sh ${CB_JDK_VERSION}
 
-RUN if [[ "$CB_HAS_VSCODE" != false ]]; then ./python-code-extension--setup.sh ;  fi
-RUN if [[ "$CB_HAS_VSCODE" != false ]]; then ./jupyter-code-extension--setup.sh ; fi
+RUN ./python-code-extension--setup.sh                        || [[ $? -eq 42 ]]
+RUN ./jupyter-code-extension--setup.sh                       || [[ $? -eq 42 ]]
 
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./pycharm--setup.sh                                       ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./jetbrains-plugin--setup.sh pycharm ru.adelf.idea.dotenv ; fi
+RUN ./pycharm--setup.sh                                      || [[ $? -eq 42 ]]
+RUN ./jetbrains-plugin--setup.sh pycharm ru.adelf.idea.dotenv || [[ $? -eq 42 ]]
 
-RUN ./claude-code--setup.sh
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./antigravity--setup.sh ; fi
+RUN ./claude-code--setup.sh                                  || [[ $? -eq 42 ]]
+RUN ./antigravity--setup.sh                                  || [[ $? -eq 42 ]]

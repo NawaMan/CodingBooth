@@ -4,7 +4,9 @@ A real-world TODO application deployed to KIND (Kubernetes IN Docker), demonstra
 
 ## Quick Start
 
-**Interactive Guide:** Open [`TODO-App-Guide.ipynb`](TODO-App-Guide.ipynb) in Jupyter Notebook for a step-by-step walkthrough with runnable code cells.
+**Interactive Guides (Jupyter Notebooks):**
+- [`TODO-App-Guide.ipynb`](TODO-App-Guide.ipynb) - Deploy to KIND (local Kubernetes)
+- [`TODO-App-AWS-EKS-Guide.ipynb`](TODO-App-AWS-EKS-Guide.ipynb) - Deploy to AWS EKS (cloud)
 
 ```bash
 # Start the workspace

@@ -21,6 +21,12 @@ fi
 # This script will always be installed by root.
 HOME=/root
 
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
+    echo "SKIP: $SCRIPT_NAME - desktop environment not available" >&2
+    exit 42
+fi
 
 # Sanity checks
 [[ -f "${ECLIPSE_INI}" ]] || { echo "eclipse.ini not found at ${ECLIPSE_INI}"; exit 1; }

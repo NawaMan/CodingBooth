@@ -1,18 +1,15 @@
 # syntax=docker/dockerfile:1.7
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
-FROM nawaman/coding-booth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
+FROM nawaman/codingbooth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 
 
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 USER root
 
-ARG CB_SETUPS=/opt/coding-booth/setups
+ARG CB_SETUPS=/opt/codingbooth/setups
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
-ARG CB_HAS_NOTEBOOK=false
-ARG CB_HAS_VSCODE=false
-ARG CB_HAS_DESKTOP=false
 
 # Customizations
 ARG JDK_VERSION=24
@@ -21,7 +18,7 @@ ARG MVN_VERSION=3.9.11
 
 
 # Setup
-WORKDIR /opt/coding-booth/setups
+WORKDIR /opt/codingbooth/setups
 
 RUN ./jdk--setup.sh 25
 
@@ -32,12 +29,12 @@ RUN ./mvn--setup.sh
 RUN ./gradle--setup.sh
 RUN ./jenv--setup.sh
 
-RUN if [[ "$CB_HAS_VSCODE"  != false ]]; then ./java-code-extension--setup.sh                    ; fi
-RUN if [[ "$CB_HAS_VSCODE"  != false ]]; then ./java-jjava-nb-kernel--setup.sh                   ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./eclipse--setup.sh                                ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./idea--setup.sh                                   ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./lombok-eclipse--setup.sh                         ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./jetbrains-plugin--setup.sh idea "Lombook Plugin" ; fi
+RUN ./java-code-extension--setup.sh                    || [[ $? -eq 42 ]]
+RUN ./java-jjava-nb-kernel--setup.sh
+RUN ./eclipse--setup.sh                                || [[ $? -eq 42 ]]
+RUN ./idea--setup.sh                                   || [[ $? -eq 42 ]]
+RUN ./lombok-eclipse--setup.sh                         || [[ $? -eq 42 ]]
+RUN ./jetbrains-plugin--setup.sh idea "Lombook Plugin" || [[ $? -eq 42 ]]
 
-RUN ./claude-code--setup.sh
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./antigravity--setup.sh ; fi
+RUN ./claude-code--setup.sh                            || [[ $? -eq 42 ]]
+RUN ./antigravity--setup.sh                            || [[ $? -eq 42 ]]

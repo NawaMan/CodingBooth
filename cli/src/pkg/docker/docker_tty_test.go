@@ -7,7 +7,7 @@ package docker
 import (
 	"testing"
 
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // TestDocker_TTYFiltering tests that -it flags are filtered when no TTY is available.

@@ -10,8 +10,8 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/kelseyhightower/envconfig"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
-	"github.com/nawaman/coding-booth/src/pkg/nillable"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
 
 type AppConfig struct {

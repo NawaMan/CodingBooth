@@ -11,9 +11,9 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
-	"github.com/nawaman/coding-booth/src/pkg/docker"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/docker"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"golang.org/x/term"
 )
 
@@ -36,7 +36,7 @@ func NewBooth(ctx appctx.AppContext) *Booth {
 	return &Booth{ctx: ctx}
 }
 
-// Run executes the workspace based on the provided run mode.
+// Run executes the booth based on the provided run mode.
 // The AppContext should already be prepared with all necessary arguments.
 func (booth *Booth) Run(runMode string) error {
 	// Execute based on run mode

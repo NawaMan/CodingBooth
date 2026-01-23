@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nawaman/coding-booth/src/pkg/booth"
-	boothinit "github.com/nawaman/coding-booth/src/pkg/booth/init"
+	"github.com/nawaman/codingbooth/src/pkg/booth"
+	boothinit "github.com/nawaman/codingbooth/src/pkg/booth/init"
 )
 
 func runBooth(version string) {

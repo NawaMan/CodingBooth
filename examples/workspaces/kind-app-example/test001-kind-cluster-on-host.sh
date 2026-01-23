@@ -35,19 +35,22 @@ trap cleanup EXIT
 echo "=== Testing KinD example on host ==="
 echo
 
-# Start workspace in daemon mode
-echo "Starting workspace with DinD..."
+# Start booth in daemon mode
+echo "Starting booth with KinD..."
 ../../../coding-booth --keep-alive --daemon > /dev/null 2>&1 || true
 
-# Wait for workspace to be ready
-sleep 3
-
-# Check if workspace container is running
-if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-    pass "Workspace started"
-else
-    fail "Failed to start workspace"
-fi
+# Wait for booth to be ready (up to 60 seconds)
+echo "Waiting for booth container to start..."
+for i in $(seq 1 60); do
+    if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+        pass "Booth started (after ${i}s)"
+        break
+    fi
+    if [ "$i" -eq 60 ]; then
+        fail "Failed to start booth (timeout after 60s)"
+    fi
+    sleep 1
+done
 
 # Check if DinD sidecar is running
 if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}-10000-dind$"; then

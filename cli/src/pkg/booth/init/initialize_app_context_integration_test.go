@@ -50,7 +50,7 @@ func TestInitializeAppContext_ScenarioC_DefaultConfigAndCliConfig_CliConfigWins(
 	})
 
 	if got := res.Ctx.Variant(); got != "from-cli-ws" {
-		t.Fatalf("expected Variant %q (CLI workspace TOML), got %q", "from-cli-ws", got)
+		t.Fatalf("expected Variant %q (CLI booth TOML), got %q", "from-cli-ws", got)
 	}
 }
 
@@ -174,6 +174,6 @@ func TestInitializeAppContext_ScenarioG_DefaultCodeAndCliCode_CliConfigWins(t *t
 	})
 
 	if got := res.Ctx.Variant(); got != "from-cli-ws" {
-		t.Fatalf("expected Variant %q (CLI workspace TOML), got %q", "from-cli-ws", got)
+		t.Fatalf("expected Variant %q (CLI booth TOML), got %q", "from-cli-ws", got)
 	}
 }

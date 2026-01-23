@@ -35,7 +35,7 @@ echo "=== Test 002: Host Accessibility ==="
 echo
 
 # Start workspace in daemon mode
-echo "Starting workspace..."
+echo "Starting coding-booth..."
 ../../../coding-booth --daemon > /dev/null 2>&1 || true
 
 # Wait for npm install to complete (up to 60 seconds)
@@ -53,11 +53,11 @@ while true; do
 done
 pass "npm install completed"
 
-# Check if workspace container is running
+# Check if booth container is running
 if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-    pass "Workspace started"
+    pass "Booth started"
 else
-    fail "Failed to start workspace"
+    fail "Failed to start booth"
 fi
 
 # Start server inside container

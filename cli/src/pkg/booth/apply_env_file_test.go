@@ -9,14 +9,14 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
-	"github.com/nawaman/coding-booth/src/pkg/nillable"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
 
 func TestApplyEnvFile_Default(t *testing.T) {
 	// Setup temporary directory as workspace
-	tmpDir, err := os.MkdirTemp("", "ws_test_default")
+	tmpDir, err := os.MkdirTemp("", "cb_test_default")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -72,7 +72,7 @@ func TestApplyEnvFile_Default(t *testing.T) {
 }
 
 func TestApplyEnvFile_Explicit(t *testing.T) {
-	tmpDir, err := os.MkdirTemp("", "ws_test_explicit")
+	tmpDir, err := os.MkdirTemp("", "cb_test_explicit")
 	if err != nil {
 		t.Fatal(err)
 	}

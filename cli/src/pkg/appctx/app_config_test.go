@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
-	"github.com/nawaman/coding-booth/src/pkg/nillable"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
 
 func TestAppConfig_Clone(t *testing.T) {

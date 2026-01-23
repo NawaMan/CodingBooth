@@ -297,9 +297,9 @@ python_setup_info() {
 
 # #== Override what venv activation does ==
 # Bash
-export PS1="\[\e[1;32m\]${CB_CONTAINER_NAME:-workspace}\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "
+export PS1="\[\e[1;32m\]${CB_CONTAINER_NAME:-booth}\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "
 # Zsh
-export PROMPT="%%B%%F{green}${CB_CONTAINER_NAME:-workspace}%%b%%f:%%B%%F{blue}%%~%%b%%f❯ "
+export PROMPT="%%B%%F{green}${CB_CONTAINER_NAME:-booth}%%b%%f:%%B%%F{blue}%%~%%b%%f❯ "
 
 alias python-setup-info='python_setup_info'
 EOF

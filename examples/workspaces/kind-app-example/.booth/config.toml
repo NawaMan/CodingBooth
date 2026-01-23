@@ -20,4 +20,7 @@ run-args = [
 
     # Bind database volume for PostgreSQL persistence
     "-v", "todo-postgres-data:/var/lib/postgresql/data",
+    
+    # AWS credentials
+    "-v", "~/.aws:/tmp/cb-home-seed/.aws:ro",
 ]

@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
-FROM nawaman/coding-booth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
+FROM nawaman/codingbooth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 
 # The default value is the latest LTS
 ARG CB_PY_VERSION=3.12
@@ -12,7 +12,7 @@ ARG CB_MVN_VERSION=3.9.11
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 USER root
 
-ARG CB_SETUPS=/opt/coding-booth/setups
+ARG CB_SETUPS=/opt/codingbooth/setups
 ARG CB_VARIANT_TAG="${CB_VARIANT_TAG}"
 ARG CB_VERSION_TAG="${CB_VERSION_TAG}"
 ARG CB_PY_VERSION="${CB_PY_VERSION}"

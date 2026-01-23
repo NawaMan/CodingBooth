@@ -1,6 +1,6 @@
 # Base Variant
 
-The foundation variant containing core WorkSpace functionality and setup scripts.
+The foundation variant containing core CodingBooth functionality and setup scripts.
 
 **Includes:**
 - Ubuntu-based container with user management
@@ -10,7 +10,7 @@ The foundation variant containing core WorkSpace functionality and setup scripts
 
 **Usage:**
 ```bash
-workspace --variant base
+booth --variant base
 ```
 
 **Purpose:** Serves as the base image for all other variants. Use directly for minimal, customizable environments or as a starting point for custom variants.

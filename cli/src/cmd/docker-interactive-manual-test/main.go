@@ -19,8 +19,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nawaman/coding-booth/src/pkg/docker"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/docker"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 func main() {

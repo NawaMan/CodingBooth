@@ -1,8 +1,8 @@
-# LLM Project Summary: CodingBooth WorkSpace
+# LLM Project Summary: CodingBooth
 
 ## What This Project Does
 
-**CodingBooth WorkSpace** is a Docker-based development environment launcher. It solves the "root-owned files" problem when using containers for development by automatically mapping the container user's UID/GID to match the host user.
+**CodingBooth** is a Docker-based development environment launcher. It solves the "root-owned files" problem when using containers for development by automatically mapping the container user's UID/GID to match the host user.
 
 **Core value proposition**: Run `./booth` in any project, get a consistent dev environment with proper file permissions.
 

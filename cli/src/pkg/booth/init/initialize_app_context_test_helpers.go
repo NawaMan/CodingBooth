@@ -11,9 +11,9 @@ import (
 	"testing"
 
 	"github.com/kelseyhightower/envconfig"
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
-	"github.com/nawaman/coding-booth/src/pkg/nillable"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
 
 type TomlFile struct {
@@ -27,7 +27,7 @@ type TestInput struct {
 	// (important for bool parsing with envconfig).
 	EnvMap map[string]string
 
-	// Args passed to InitializeAppContext. If nil, helper uses []string{"workspace"}.
+	// Args passed to InitializeAppContext. If nil, helper uses []string{"booth"}.
 	// NOTE: InitializeAppContext expects argv0 to be included.
 	Args []string
 
@@ -52,15 +52,15 @@ type TestInput struct {
 type TestOutcome struct {
 	CodeDir     string            // the temp dir the helper chdir'd into
 	Ctx         appctx.AppContext // result of InitializeAppContext
-	FinalConfig appctx.AppConfig  // snapshot of bootstrap workspace/config (best effort)
+	FinalConfig appctx.AppConfig  // snapshot of bootstrap booth/config (best effort)
 }
 
 // RunInitializeAppContext sets up env/CWD/config file and runs InitializeAppContext.
-// It also returns FinalConfig snapshot (because AppContext may not expose workspace/config path).
+// It also returns FinalConfig snapshot (because AppContext may not expose booth/config path).
 func RunInitializeAppContext(test *testing.T, input TestInput) TestOutcome {
 	test.Helper()
 
-	// Temp workspace dir + chdir
+	// Temp booth dir + chdir
 	ws := test.TempDir()
 	// Resolve symlinks to get canonical path (e.g., on macOS /var -> /private/var)
 	// This ensures paths match what filepath.Abs() returns in production code
@@ -132,16 +132,16 @@ func RunInitializeAppContext(test *testing.T, input TestInput) TestOutcome {
 	// Build argv for InitializeAppContext (must include argv0)
 	args := input.ArgList()
 	if args.Length() == 0 {
-		args = ilist.NewListFromSlice([]string{"workspace"})
+		args = ilist.NewListFromSlice([]string{"booth"})
 	} else if args.Length() > 0 && len(args.At(0)) > 0 && args.At(0)[0] == '-' {
 		// If user passed only flags, prepend argv0
-		args = ilist.NewListFromSlice(append([]string{"workspace"}, args.Slice()...))
+		args = ilist.NewListFromSlice(append([]string{"booth"}, args.Slice()...))
 	}
 
 	// --- Determine where to write TOML (bootstrap-equivalent inference) ---
 	//
 	// Bootstrap stickiness model:
-	// - Workspace/Config are set by first-pass CLI scan or defaults.
+	// - Booth/Config are set by first-pass CLI scan or defaults.
 	// - ENV must NOT override them once set by CLI scan/defaults.
 	//
 	// So for TOML writing we mirror that:
@@ -217,7 +217,7 @@ func (input TestInput) ArgList() ilist.List[string] {
 	if args == nil {
 		args = []string{}
 	}
-	return ilist.NewListFromSlice(append([]string{"workspace"}, args...))
+	return ilist.NewListFromSlice(append([]string{"booth"}, args...))
 }
 
 func (input TestInput) PopulateAppConfigFromEnvVars(config *appctx.AppConfig) error {

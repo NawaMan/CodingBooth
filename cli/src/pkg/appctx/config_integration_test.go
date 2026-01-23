@@ -8,7 +8,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/stretchr/testify/assert"
 )
 

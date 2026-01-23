@@ -48,5 +48,5 @@ jobs:
       - name: DryRun tests
         run: cd tests/dryrun && ./run-dryrun-tests.sh
       
-      - name: WorkSpace Env
+      - name: CodingBooth Env
         run: cd tests/workspace-env && ./run-test.sh

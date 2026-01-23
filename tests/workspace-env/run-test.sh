@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# Smoke test for env-file passthrough and workspace mount
+# Smoke test for env-file passthrough and booth mount
 # Verifies:
 #   1) .env -> SECRET is visible inside container
 #   2) data.txt is present and readable inside container
@@ -14,7 +14,7 @@ set -euo pipefail
 source ../common--source.sh
 
 # ---- Config -------------------------------------------------------------------
-# Path to your workspace launcher script. Override via env if needed.
+# Path to your booth launcher script. Override via env if needed.
 CB_SCRIPT="${CB_SCRIPT:-../../coding-booth}"
 # Canonicalize to absolute path before we cd/pushd anywhere
 if command -v readlink >/dev/null 2>&1; then
@@ -38,10 +38,10 @@ if [[ ! -x "$CB_SCRIPT" ]]; then
   exit 1
 fi
 
-# ---- Test workspace -----------------------------------------------------------
+# ---- Test booth -----------------------------------------------------------
 TMPDIR="$(mktemp -d "$HOME/cb-test.XXXXXX")"
 cleanup() {
-  # Workspace container is started with --rm, so nothing to stop.
+  # Booth container is started with --rm, so nothing to stop.
   rm -rf "$TMPDIR" || true
 }
 trap cleanup EXIT
@@ -57,7 +57,7 @@ cat > data.txt <<'EOF'
 PUBLIC=Yo
 EOF
 
-# Helper to run the workspace with our test image and capture stdout
+# Helper to run the booth with our test image and capture stdout
 run_cb() {
   # We’ll pass an explicit image to avoid any build/pull logic, pick a random port to avoid conflicts
   # Note: The script wraps the command in `bash -lc "<cmd>"` internally
@@ -89,7 +89,7 @@ pass "SECRET from .env visible in container"
 # 2) data.txt is present
 out="$(run_cb 'cat data.txt' | tr -d '\r')"
 [[ "$out" == "PUBLIC=Yo" ]] || fail "data.txt content mismatch, got: '$out'"
-pass "data.txt present in workspace mount"
+pass "data.txt present in booth mount"
 
 # 3) source data.txt -> PUBLIC available
 out="$(run_cb 'source data.txt; echo $PUBLIC' | tr -d '\r')"

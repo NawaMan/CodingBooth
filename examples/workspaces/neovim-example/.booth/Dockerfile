@@ -5,7 +5,7 @@
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=0.12.0--rc6
 
-FROM nawaman/coding-booth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
+FROM nawaman/codingbooth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 
 # Install neovim
 RUN apt-get update && \
@@ -13,11 +13,10 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-ARG CB_SETUPS=/opt/coding-booth/setups
-ARG CB_HAS_DESKTOP=false
+ARG CB_SETUPS=/opt/codingbooth/setups
 
 # Setup
-WORKDIR /opt/coding-booth/setups
+WORKDIR /opt/codingbooth/setups
 
-RUN ./claude-code--setup.sh
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./antigravity--setup.sh ; fi
+RUN ./claude-code--setup.sh || [[ $? -eq 42 ]]
+RUN ./antigravity--setup.sh || [[ $? -eq 42 ]]
