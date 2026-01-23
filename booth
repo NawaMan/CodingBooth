@@ -84,9 +84,9 @@ function Main() {
         exit 1
     fi
 
-    # Ensure workspace binary is newer than checksum
+    # Ensure booth binary is newer than checksum
     if [[ "$dest" -ot "$sha_file" ]]; then
-        echo "workspace binary appears older than its checksum file."
+        echo "booth binary appears older than its checksum file."
         echo "Run: $0 update  to restore the official release."
         exit 1
     fi
@@ -102,7 +102,7 @@ function Main() {
 
     actual_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
     if [[ "$expected_sha256" != "$actual_sha256" ]]; then
-        echo "Local workspace ($binary_name) failed SHA256 verification."
+        echo "Local booth ($binary_name) failed SHA256 verification."
         echo "Run: $0 update  to restore the official release."
         exit 1
     fi
@@ -119,13 +119,13 @@ Purpose:
   - It is stable and does not update itself.
   - It downloads, verifies, and runs the actual CodingBooth script
     (.booth/tools/coding-booth) from the CodingBooth project.
-  - This lets workspace evolve independently while keeping a reliable entry point.
+  - This lets booth evolve independently while keeping a reliable entry point.
 
 Wrapper commands:
   install [VERSION]   Download or update .booth/tools/coding-booth
   update  [VERSION]   Download or update .booth/tools/coding-booth
-  uninstall           Remove workspace and metadata files
-  run [ARGS...]       Run workspace with ARGS (after integrity checks)
+  uninstall           Remove booth and metadata files
+  run [ARGS...]       Run booth with ARGS (after integrity checks)
   version             Show this wrapper's version
   help                Show this help message
 
@@ -290,8 +290,8 @@ GITIGNORE
         fi
 
         local tmpfile tmpsha256
-        tmpfile=$(mktemp "/tmp/workspace.XXXXXX")
-        tmpsha256=$(mktemp "/tmp/coding-booth.sha256.XXXXXX")
+        tmpfile=$(mktemp "/tmp/booth.XXXXXX")
+        tmpsha256=$(mktemp "/tmp/booth.sha256.XXXXXX")
 
         # Download binary
         if ! curl -fsSLo "$tmpfile" "$TOOL_URL"; then

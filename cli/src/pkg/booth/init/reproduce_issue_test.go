@@ -11,7 +11,7 @@ import (
 
 // TestConfigFileArgument tests that --config argument is properly parsed
 func TestConfigFileArgument(t *testing.T) {
-	// Simulate: workspace --verbose --dryrun --config test--config.toml
+	// Simulate: booth --verbose --dryrun --config test--config.toml
 	input := TestInput{
 		Args: []string{
 			"--verbose",

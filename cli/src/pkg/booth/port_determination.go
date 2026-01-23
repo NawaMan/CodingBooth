@@ -12,15 +12,15 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
 )
 
 // PortDetermination determines the host port and returns updated AppContext.
 func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
 
-	workspacePort := ctx.Port()
-	upperPort := strings.ToUpper(workspacePort)
+	boothPort := ctx.Port()
+	upperPort := strings.ToUpper(boothPort)
 	portGenerated := false
 	var portNumber int
 
@@ -43,13 +43,13 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 
 	default:
 		// User-specified port: validate it
-		port, err := strconv.Atoi(workspacePort)
+		port, err := strconv.Atoi(boothPort)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: --port must be a number (got '%s').\n", workspacePort)
+			fmt.Fprintf(os.Stderr, "Error: --port must be a number (got '%s').\n", boothPort)
 			os.Exit(1)
 		}
 		if port < 1 || port > 65535 {
-			fmt.Fprintf(os.Stderr, "Error: --port must be between 1 and 65535 (got '%s').\n", workspacePort)
+			fmt.Fprintf(os.Stderr, "Error: --port must be between 1 and 65535 (got '%s').\n", boothPort)
 			os.Exit(1)
 		}
 		portNumber = port

@@ -1,4 +1,4 @@
-module github.com/nawaman/coding-booth
+module github.com/nawaman/codingbooth
 
 go 1.24.1
 

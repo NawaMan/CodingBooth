@@ -12,6 +12,12 @@ trap 'echo "❌ Error on line $LINENO: $BASH_COMMAND" >&2' ERR
 # This script will always be installed by root.
 HOME=/root
 
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
+    echo "SKIP: $SCRIPT_NAME - desktop environment not available" >&2
+    exit 42
+fi
 
 # --- Config ---
 IDE="$1"              # e.g., pycharm, idea, goland, webstorm

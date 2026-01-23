@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 func TestGetProjectName(t *testing.T) {
@@ -27,7 +27,7 @@ func TestGetProjectName(t *testing.T) {
 	}
 	cwdSanitized := result.String()
 	if cwdSanitized == "" {
-		cwdSanitized = "workspace"
+		cwdSanitized = "booth"
 	}
 
 	tests := []struct {
@@ -46,7 +46,7 @@ func TestGetProjectName(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			got := getProjectName(tt.path)
 			// Special handling for Root case which might vary by OS, but testing logic mainly
-			if tt.name == "Root" && got != "-" && got != "workspace" {
+			if tt.name == "Root" && got != "-" && got != "booth" {
 				// Accept reasonable fallbacks for root
 			} else if got != tt.expected {
 				t.Errorf("getProjectName(%q) = %q, want %q", tt.path, got, tt.expected)
@@ -192,7 +192,7 @@ func TestGetScriptDir(t *testing.T) {
 	t.Run("Simple", func(t *testing.T) {
 		// Mocking os.Executable essentially via args[0]
 		// For an arbitrary path that likely doesn't exist, it should return filepath.Dir(arg)
-		arg := "/path/to/workspace"
+		arg := "/path/to/booth"
 		argList := ilist.NewListFromSlice([]string{arg})
 		got := getScriptDir(argList)
 
@@ -228,7 +228,7 @@ func TestGetProjectName_ResolvesRelativePaths(t *testing.T) {
 			}
 		}
 		if result.String() == "" {
-			return "workspace"
+			return "booth"
 		}
 		return result.String()
 	}

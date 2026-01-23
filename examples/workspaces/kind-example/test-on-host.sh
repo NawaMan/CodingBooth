@@ -24,7 +24,7 @@ cleanup() {
     echo "Cleaning up..."
     # Delete kind cluster if running
     docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./stop-cluster.sh" 2>/dev/null || true
-    # Stop workspace
+    # Stop booth
     docker stop "$CONTAINER_NAME" 2>/dev/null || true
     docker stop "${CONTAINER_NAME}-10000-dind" 2>/dev/null || true
     docker network rm "${CONTAINER_NAME}-10000-net" 2>/dev/null || true
@@ -35,18 +35,18 @@ trap cleanup EXIT
 echo "=== Testing KinD example on host ==="
 echo
 
-# Start workspace in daemon mode
-echo "Starting workspace with DinD..."
+# Start booth in daemon mode
+echo "Starting booth with DinD..."
 ../../coding-booth --keep-alive --daemon > /dev/null 2>&1 || true
 
-# Wait for workspace to be ready
+# Wait for booth to be ready
 sleep 3
 
-# Check if workspace container is running
+# Check if booth container is running
 if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-    pass "Workspace started"
+    pass "Booth started"
 else
-    fail "Failed to start workspace"
+    fail "Failed to start booth"
 fi
 
 # Check if DinD sidecar is running

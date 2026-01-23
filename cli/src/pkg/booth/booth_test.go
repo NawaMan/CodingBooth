@@ -13,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
-	"github.com/nawaman/coding-booth/src/pkg/nillable"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
 
 // getTestVersion reads the version from version.txt at the project root.
@@ -31,8 +31,8 @@ func getTestVersion() string {
 	return strings.TrimSpace(string(data))
 }
 
-// TestWorkspace_runAsCommand_DryrunMode verifies command construction in dryrun mode.
-func TestWorkspace_runAsCommand_DryrunMode(t *testing.T) {
+// TestBooth_runAsCommand_DryrunMode verifies command construction in dryrun mode.
+func TestBooth_runAsCommand_DryrunMode(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
@@ -129,8 +129,8 @@ func TestWorkspace_runAsCommand_DryrunMode(t *testing.T) {
 	}
 }
 
-// TestWorkspace_runAsCommand_WithDind verifies DinD cleanup logic.
-func TestWorkspace_runAsCommand_WithDind(t *testing.T) {
+// TestBooth_runAsCommand_WithDind verifies DinD cleanup logic.
+func TestBooth_runAsCommand_WithDind(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
@@ -197,8 +197,8 @@ func TestWorkspace_runAsCommand_WithDind(t *testing.T) {
 	}
 }
 
-// TestWorkspace_runAsCommand_WithDindNoNetwork verifies DinD cleanup without network removal.
-func TestWorkspace_runAsCommand_WithDindNoNetwork(t *testing.T) {
+// TestBooth_runAsCommand_WithDindNoNetwork verifies DinD cleanup without network removal.
+func TestBooth_runAsCommand_WithDindNoNetwork(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
@@ -259,8 +259,8 @@ func TestWorkspace_runAsCommand_WithDindNoNetwork(t *testing.T) {
 	}
 }
 
-// TestWorkspace_runAsCommand_WithoutDind verifies no cleanup when DinD is disabled.
-func TestWorkspace_runAsCommand_WithoutDind(t *testing.T) {
+// TestBooth_runAsCommand_WithoutDind verifies no cleanup when DinD is disabled.
+func TestBooth_runAsCommand_WithoutDind(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
@@ -324,8 +324,8 @@ func TestWorkspace_runAsCommand_WithoutDind(t *testing.T) {
 	}
 }
 
-// TestWorkspace_runAsCommand_EmptyCommands verifies handling of empty command list.
-func TestWorkspace_runAsCommand_EmptyCommands(t *testing.T) {
+// TestBooth_runAsCommand_EmptyCommands verifies handling of empty command list.
+func TestBooth_runAsCommand_EmptyCommands(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
@@ -375,8 +375,8 @@ func TestWorkspace_runAsCommand_EmptyCommands(t *testing.T) {
 	}
 }
 
-// TestWorkspace_runAsCommand_ArgumentOrder verifies the order of arguments.
-func TestWorkspace_runAsCommand_ArgumentOrder(t *testing.T) {
+// TestBooth_runAsCommand_ArgumentOrder verifies the order of arguments.
+func TestBooth_runAsCommand_ArgumentOrder(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
@@ -440,8 +440,8 @@ func TestWorkspace_runAsCommand_ArgumentOrder(t *testing.T) {
 	}
 }
 
-// TestWorkspace_runAsDaemon_DryrunMode verifies daemon mode command construction.
-func TestWorkspace_runAsDaemon_DryrunMode(t *testing.T) {
+// TestBooth_runAsDaemon_DryrunMode verifies daemon mode command construction.
+func TestBooth_runAsDaemon_DryrunMode(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
@@ -542,8 +542,8 @@ func TestWorkspace_runAsDaemon_DryrunMode(t *testing.T) {
 	}
 }
 
-// TestWorkspace_runAsDaemon_WithDind verifies DinD informational message.
-func TestWorkspace_runAsDaemon_WithDind(t *testing.T) {
+// TestBooth_runAsDaemon_WithDind verifies DinD informational message.
+func TestBooth_runAsDaemon_WithDind(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
@@ -568,7 +568,7 @@ func TestWorkspace_runAsDaemon_WithDind(t *testing.T) {
 	// DindName/DindNet derived from name/port
 	builder.Config.Timezone = "UTC"
 	builder.Config.Image = "alpine:latest"
-	builder.ScriptName = "workspace"
+	builder.ScriptName = "booth"
 	builder.Cmds.Append(ilist.NewList("echo", "test"))
 
 	ctx := builder.Build()
@@ -605,8 +605,8 @@ func TestWorkspace_runAsDaemon_WithDind(t *testing.T) {
 	}
 }
 
-// TestWorkspace_runAsDaemon_NoCommands verifies daemon mode without commands.
-func TestWorkspace_runAsDaemon_NoCommands(t *testing.T) {
+// TestBooth_runAsDaemon_NoCommands verifies daemon mode without commands.
+func TestBooth_runAsDaemon_NoCommands(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
@@ -625,7 +625,7 @@ func TestWorkspace_runAsDaemon_NoCommands(t *testing.T) {
 	builder.Config.Verbose = nillable.NewNillableBool(true)
 	builder.Config.Timezone = "UTC"
 	builder.Config.Image = "alpine:latest"
-	builder.ScriptName = "workspace"
+	builder.ScriptName = "booth"
 	builder.Config.Port = "10000"
 	builder.PortNumber = 10000
 	builder.Config.Name = "test-container"
@@ -662,7 +662,7 @@ func TestWorkspace_runAsDaemon_NoCommands(t *testing.T) {
 	}
 
 	// Should NOT have bash -lc when no commands
-	// The word "bash" appears in the help message "workspace -- bash"
+	// The word "bash" appears in the help message "booth -- bash"
 	// but should not appear as a command argument after the image name
 	// Check that the docker command doesn't have bash after the image name
 	lines := strings.Split(output, "\n")
@@ -677,8 +677,8 @@ func TestWorkspace_runAsDaemon_NoCommands(t *testing.T) {
 	}
 }
 
-// TestWorkspace_runAsDaemon_WithKeepalive verifies keepalive mode messaging.
-func TestWorkspace_runAsDaemon_WithKeepalive(t *testing.T) {
+// TestBooth_runAsDaemon_WithKeepalive verifies keepalive mode messaging.
+func TestBooth_runAsDaemon_WithKeepalive(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
@@ -698,7 +698,7 @@ func TestWorkspace_runAsDaemon_WithKeepalive(t *testing.T) {
 	builder.Config.KeepAlive = true
 	builder.Config.Timezone = "UTC"
 	builder.Config.Image = "alpine:latest"
-	builder.ScriptName = "workspace"
+	builder.ScriptName = "booth"
 	builder.Config.Port = "10000"
 	builder.PortNumber = 10000
 	builder.Config.Name = "test-container"
@@ -729,8 +729,8 @@ func TestWorkspace_runAsDaemon_WithKeepalive(t *testing.T) {
 	}
 }
 
-// TestWorkspace_runAsForeground_DryrunMode verifies foreground mode command construction.
-func TestWorkspace_runAsForeground_DryrunMode(t *testing.T) {
+// TestBooth_runAsForeground_DryrunMode verifies foreground mode command construction.
+func TestBooth_runAsForeground_DryrunMode(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
@@ -751,7 +751,7 @@ func TestWorkspace_runAsForeground_DryrunMode(t *testing.T) {
 	builder.Config.Name = "test-container"
 	builder.Config.Port = "10000"
 	builder.PortNumber = 10000
-	builder.ScriptName = "workspace"
+	builder.ScriptName = "booth"
 
 	// Set up argument lists
 	builder.CommonArgs.Append(ilist.NewList("--name", "test-container"))
@@ -820,8 +820,8 @@ func TestWorkspace_runAsForeground_DryrunMode(t *testing.T) {
 	}
 }
 
-// TestWorkspace_runAsForeground_WithDind verifies DinD cleanup logic.
-func TestWorkspace_runAsForeground_WithDind(t *testing.T) {
+// TestBooth_runAsForeground_WithDind verifies DinD cleanup logic.
+func TestBooth_runAsForeground_WithDind(t *testing.T) {
 	// Capture stdout
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
@@ -844,7 +844,7 @@ func TestWorkspace_runAsForeground_WithDind(t *testing.T) {
 	builder.PortNumber = 10000
 	builder.Config.Timezone = "UTC"
 	builder.Config.Image = "alpine:latest"
-	builder.ScriptName = "workspace"
+	builder.ScriptName = "booth"
 
 	ctx := builder.Build()
 	ws := NewBooth(ctx)
@@ -888,8 +888,8 @@ func TestWorkspace_runAsForeground_WithDind(t *testing.T) {
 	}
 }
 
-// TestWorkspace_Run_DaemonMode verifies Run delegates to runAsDaemon when daemon flag is set.
-func TestWorkspace_Run_DaemonMode(t *testing.T) {
+// TestBooth_Run_DaemonMode verifies Run delegates to runAsDaemon when daemon flag is set.
+func TestBooth_Run_DaemonMode(t *testing.T) {
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
 	os.Stdout = writer
@@ -911,7 +911,7 @@ func TestWorkspace_Run_DaemonMode(t *testing.T) {
 	builder.Config.Port = "10000"
 	builder.PortNumber = 10000
 	builder.Config.Name = "test-container"
-	builder.ScriptName = "workspace"
+	builder.ScriptName = "booth"
 	builder.Config.Port = "10000"
 	builder.PortNumber = 10000
 	builder.Config.Name = "test-container"
@@ -944,8 +944,8 @@ func TestWorkspace_Run_DaemonMode(t *testing.T) {
 	}
 }
 
-// TestWorkspace_Run_ForegroundMode verifies Run delegates to runAsForeground when no commands.
-func TestWorkspace_Run_ForegroundMode(t *testing.T) {
+// TestBooth_Run_ForegroundMode verifies Run delegates to runAsForeground when no commands.
+func TestBooth_Run_ForegroundMode(t *testing.T) {
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
 	os.Stdout = writer
@@ -966,7 +966,7 @@ func TestWorkspace_Run_ForegroundMode(t *testing.T) {
 	builder.PortNumber = 10000
 	builder.Config.Name = "test-container"
 	builder.Config.Image = "alpine:latest"
-	builder.ScriptName = "workspace"
+	builder.ScriptName = "booth"
 	// No commands - should trigger foreground mode
 
 	ctx := builder.Build()
@@ -996,8 +996,8 @@ func TestWorkspace_Run_ForegroundMode(t *testing.T) {
 	}
 }
 
-// TestWorkspace_Run_CommandMode verifies Run delegates to runAsCommand when commands are provided.
-func TestWorkspace_Run_CommandMode(t *testing.T) {
+// TestBooth_Run_CommandMode verifies Run delegates to runAsCommand when commands are provided.
+func TestBooth_Run_CommandMode(t *testing.T) {
 	oldStdout := os.Stdout
 	reader, writer, _ := os.Pipe()
 	os.Stdout = writer

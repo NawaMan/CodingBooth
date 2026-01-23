@@ -12,7 +12,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // AppContext is an immutable snapshot of booth configuration and state.

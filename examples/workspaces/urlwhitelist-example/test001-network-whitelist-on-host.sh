@@ -22,7 +22,7 @@ CONTAINER_NAME="urlwhitelist-example"
 cleanup() {
     echo
     echo "Cleaning up..."
-    # Stop workspace
+    # Stop booth
     docker stop "$CONTAINER_NAME" 2>/dev/null || true
     docker rm "$CONTAINER_NAME" 2>/dev/null || true
 }
@@ -32,18 +32,18 @@ trap cleanup EXIT
 echo "=== Network Whitelist Test (on host) ==="
 echo
 
-# Start workspace in daemon mode
-echo "Starting workspace..."
+# Start booth in daemon mode
+echo "Starting coding-booth..."
 ../../../coding-booth --daemon > /dev/null 2>&1 || true
 
-# Wait for workspace to be ready
+# Wait for booth to be ready
 sleep 3
 
-# Check if workspace container is running
+# Check if booth container is running
 if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-    pass "Workspace started"
+    pass "Booth started"
 else
-    fail "Failed to start workspace"
+    fail "Failed to start booth"
 fi
 
 # Run container tests

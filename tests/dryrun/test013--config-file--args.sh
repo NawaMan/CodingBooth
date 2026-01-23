@@ -57,11 +57,11 @@ HOST_GID:       $HOST_GID
 HOST_PORT:      10000
 HOST_UID:       $HOST_UID
 IMAGE_MODE:     PREBUILT
-IMAGE_NAME:     nawaman/coding-booth:base-$VERSION
+IMAGE_NAME:     nawaman/codingbooth:base-$VERSION
 KEEPALIVE:      false
 LOCAL_BUILD:    false
 PORT_GENERATED: true
-PREBUILD_REPO:  nawaman/coding-booth
+PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:   
 SCRIPT_DIR:     $(realpath "$HERE/../..")
 SCRIPT_NAME:    coding-booth
@@ -122,11 +122,11 @@ HOST_GID:       $HOST_GID
 HOST_PORT:      10000
 HOST_UID:       $HOST_UID
 IMAGE_MODE:     LOCAL-BUILD
-IMAGE_NAME:     workspace-local:dryrun-base-$VERSION
+IMAGE_NAME:     codingbooth-local:dryrun-base-$VERSION
 KEEPALIVE:      true
 LOCAL_BUILD:    true
 PORT_GENERATED: true
-PREBUILD_REPO:  nawaman/coding-booth
+PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:    \"-p\" \"10005\"
 SCRIPT_DIR:     $(realpath "$HERE/../..")
 SCRIPT_NAME:    coding-booth

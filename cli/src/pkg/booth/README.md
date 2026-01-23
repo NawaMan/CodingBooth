@@ -1,4 +1,4 @@
-# workspace
+# booth
 
-This package contains the code related to the workspace application.
-It involves operation of the workspace application.
+This package contains the code related to the booth application.
+It involves operation of the booth application.

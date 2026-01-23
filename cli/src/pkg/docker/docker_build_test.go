@@ -8,8 +8,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nawaman/coding-booth/src/pkg/docker"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/docker"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // TestDockerBuild_Silent tests DockerBuild with SilenceBuild enabled.

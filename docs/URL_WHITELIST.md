@@ -1,6 +1,6 @@
 # Network Whitelist Feature
 
-This document describes the network whitelist feature for CodingBooth WorkSpace, which restricts container internet access to only approved domains.
+This document describes the network whitelist feature for CodingBooth, which restricts container internet access to only approved domains.
 
 ## Overview
 
@@ -46,10 +46,10 @@ The network whitelist feature uses a lightweight HTTP proxy (tinyproxy) to filte
 Add the setup script to your `.booth/Dockerfile`:
 
 ```dockerfile
-FROM nawaman/coding-booth:base-latest
+FROM nawaman/codingbooth:base-latest
 
 # Install network whitelist
-RUN /opt/coding-booth/setups/network-whitelist--setup.sh
+RUN /opt/codingbooth/setups/network-whitelist--setup.sh
 
 # ... other setups
 ```

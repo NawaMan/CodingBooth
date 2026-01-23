@@ -1,6 +1,6 @@
-# Creates GitHub releases with multi-platform workspace binaries and ws wrapper.
+# Creates GitHub releases with multi-platform CodingBooth binaries and ws wrapper.
 # Triggers on: manual dispatch only.
-name: Release workspace and ws
+name: Release CodingBooth and ws
 
 on:
   workflow_dispatch:
@@ -39,7 +39,7 @@ jobs:
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Show version
-        run: echo "Publishing workspace for version ${{ steps.get_version.outputs.version }}"
+        run: echo "Publishing CodingBooth for version ${{ steps.get_version.outputs.version }}"
 
       # ---------------------------------------------------------
       # Cleanup old untagged releases
@@ -65,7 +65,7 @@ jobs:
       - name: Generate SHA256 checksums for all binaries
         run: |
           cd bin
-          for binary in workspace-*; do
+          for binary in coding-booth-*; do
             sha256sum "$binary" > "${binary}.sha256"
           done
           cd ..
@@ -84,7 +84,7 @@ jobs:
           VERSION: ${{ steps.get_version.outputs.version }}
 
       # ---------------------------------------------------------
-      # Publish versioned release (pre-release: only workspace)
+      # Publish versioned release (pre-release: only coding-booth)
       # ---------------------------------------------------------
       - name: Publish versioned pre-release
         if: steps.check_prerelease.outputs.is_prerelease == 'true'
@@ -95,18 +95,18 @@ jobs:
           body:     ${{ steps.get_version.outputs.version }}
           prerelease: true
           files: |
-            bin/workspace-linux-amd64
-            bin/workspace-linux-amd64.sha256
-            bin/workspace-linux-arm64
-            bin/workspace-linux-arm64.sha256
-            bin/workspace-darwin-amd64
-            bin/workspace-darwin-amd64.sha256
-            bin/workspace-darwin-arm64
-            bin/workspace-darwin-arm64.sha256
-            bin/workspace-windows-amd64.exe
-            bin/workspace-windows-amd64.exe.sha256
-            bin/workspace-windows-arm64.exe
-            bin/workspace-windows-arm64.exe.sha256
+            bin/coding-booth-linux-amd64
+            bin/coding-booth-linux-amd64.sha256
+            bin/coding-booth-linux-arm64
+            bin/coding-booth-linux-arm64.sha256
+            bin/coding-booth-darwin-amd64
+            bin/coding-booth-darwin-amd64.sha256
+            bin/coding-booth-darwin-arm64
+            bin/coding-booth-darwin-arm64.sha256
+            bin/coding-booth-windows-amd64.exe
+            bin/coding-booth-windows-amd64.exe.sha256
+            bin/coding-booth-windows-arm64.exe
+            bin/coding-booth-windows-arm64.exe.sha256
             ws
             version.txt
         env:
@@ -124,18 +124,18 @@ jobs:
           body:     ${{ steps.get_version.outputs.version }}
           prerelease: false
           files: |
-            bin/workspace-linux-amd64
-            bin/workspace-linux-amd64.sha256
-            bin/workspace-linux-arm64
-            bin/workspace-linux-arm64.sha256
-            bin/workspace-darwin-amd64
-            bin/workspace-darwin-amd64.sha256
-            bin/workspace-darwin-arm64
-            bin/workspace-darwin-arm64.sha256
-            bin/workspace-windows-amd64.exe
-            bin/workspace-windows-amd64.exe.sha256
-            bin/workspace-windows-arm64.exe
-            bin/workspace-windows-arm64.exe.sha256
+            bin/coding-booth-linux-amd64
+            bin/coding-booth-linux-amd64.sha256
+            bin/coding-booth-linux-arm64
+            bin/coding-booth-linux-arm64.sha256
+            bin/coding-booth-darwin-amd64
+            bin/coding-booth-darwin-amd64.sha256
+            bin/coding-booth-darwin-arm64
+            bin/coding-booth-darwin-arm64.sha256
+            bin/coding-booth-windows-amd64.exe
+            bin/coding-booth-windows-amd64.exe.sha256
+            bin/coding-booth-windows-arm64.exe
+            bin/coding-booth-windows-arm64.exe.sha256
             ws
             version.txt
         env:
@@ -154,18 +154,18 @@ jobs:
           prerelease: false
           draft: false
           files: |
-            bin/workspace-linux-amd64
-            bin/workspace-linux-amd64.sha256
-            bin/workspace-linux-arm64
-            bin/workspace-linux-arm64.sha256
-            bin/workspace-darwin-amd64
-            bin/workspace-darwin-amd64.sha256
-            bin/workspace-darwin-arm64
-            bin/workspace-darwin-arm64.sha256
-            bin/workspace-windows-amd64.exe
-            bin/workspace-windows-amd64.exe.sha256
-            bin/workspace-windows-arm64.exe
-            bin/workspace-windows-arm64.exe.sha256
+            bin/coding-booth-linux-amd64
+            bin/coding-booth-linux-amd64.sha256
+            bin/coding-booth-linux-arm64
+            bin/coding-booth-linux-arm64.sha256
+            bin/coding-booth-darwin-amd64
+            bin/coding-booth-darwin-amd64.sha256
+            bin/coding-booth-darwin-arm64
+            bin/coding-booth-darwin-arm64.sha256
+            bin/coding-booth-windows-amd64.exe
+            bin/coding-booth-windows-amd64.exe.sha256
+            bin/coding-booth-windows-arm64.exe
+            bin/coding-booth-windows-arm64.exe.sha256
             ws
             version.txt
         env:

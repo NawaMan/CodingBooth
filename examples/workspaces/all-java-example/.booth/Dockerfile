@@ -1,18 +1,15 @@
 # syntax=docker/dockerfile:1.7
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
-FROM nawaman/coding-booth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
+FROM nawaman/codingbooth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 
 
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 USER root
 
-ARG CB_SETUPS=/opt/coding-booth/setups
+ARG CB_SETUPS=/opt/codingbooth/setups
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
-ARG CB_HAS_NOTEBOOK=false
-ARG CB_HAS_VSCODE=false
-ARG CB_HAS_DESKTOP=false
 
 # Customizations
 ARG JDK_VERSION=24
@@ -68,11 +65,11 @@ RUN jbang - 'class Hi { public static void main(String[]a){System.out.println("H
 RUN "$CB_SETUPS"/mvn--setup.sh
 RUN "$CB_SETUPS"/gradle--setup.sh
 
-RUN if [[ "$CB_HAS_VSCODE"  != false ]]; then "$CB_SETUPS"/java-code-extension--setup.sh                    ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/eclipse--setup.sh                                ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/idea--setup.sh                                   ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/lombok-eclipse--setup.sh                         ; fi
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/jetbrains-plugin--setup.sh idea "Lombook Plugin" ; fi
+RUN "$CB_SETUPS"/java-code-extension--setup.sh                    || [[ $? -eq 42 ]]
+RUN "$CB_SETUPS"/eclipse--setup.sh                                || [[ $? -eq 42 ]]
+RUN "$CB_SETUPS"/idea--setup.sh                                   || [[ $? -eq 42 ]]
+RUN "$CB_SETUPS"/lombok-eclipse--setup.sh                         || [[ $? -eq 42 ]]
+RUN "$CB_SETUPS"/jetbrains-plugin--setup.sh idea "Lombook Plugin" || [[ $? -eq 42 ]]
 
-RUN "$CB_SETUPS"/claude-code--setup.sh
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/antigravity--setup.sh ; fi
+RUN "$CB_SETUPS"/claude-code--setup.sh                            || [[ $? -eq 42 ]]
+RUN "$CB_SETUPS"/antigravity--setup.sh                            || [[ $? -eq 42 ]]

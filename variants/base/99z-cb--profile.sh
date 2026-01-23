@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 # 99z-cb--profile.sh
-# Main workspace profile script with helper functions and welcome message.
+# Main booth profile script with helper functions and welcome message.
 # Sourced on interactive shell login.
 
 # Only for interactive shells
@@ -18,7 +18,7 @@ JPERM_INSTALLED=false
 function nbook() {
   if [ "$JPERM_INSTALLED" = false ]; then
 
-    echo "First run: Installing jpterm -- this can take a while ..."
+    echo "First run: Installing jpterm (Jupyter Terminal) -- this can take a while ..."
 
     LOG_FILE="/var/setup.log"
     sudo mkdir -p /var
@@ -142,7 +142,7 @@ function notebook() {
 # Only once per login session
 if [ -z "${TIP_SHOWN:-}" ]; then
   export TIP_SHOWN=1
-  echo "Welcome to the CodingBooth Workspace!"
+  echo "Welcome to the CodingBooth!"
   echo ""
   echo "Tip: use 'editor'   or 'tilde' to open the terminal text editor."
   echo "Tip: use 'explorer' or 'mc'    to open the terminal file manager."

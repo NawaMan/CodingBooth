@@ -53,7 +53,7 @@ ENV \
   LC_ALL=${LOCALE}
 
 # Set PATH and terminal environment
-ENV PATH=/opt/coding-booth/setups:/opt/python/bin:/home/coder/.local/bin:$PATH \
+ENV PATH=/opt/codingbooth/setups:/opt/python/bin:/home/coder/.local/bin:$PATH \
   TERM=xterm-256color \
   EDITOR=tilde
 
@@ -91,10 +91,10 @@ RUN grep -Fq 'profile.d/*.sh' /etc/bash.bashrc || true \
 
 # Make sudo see setup scripts (extend secure_path)
 RUN set -euo pipefail \
-  && printf 'Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/coding-booth/setups:/usr/local/uv/bin"\n' \
-  > /etc/sudoers.d/50-coding-booth-base-secure-path \
-  && chmod  0440 /etc/sudoers.d/50-coding-booth-base-secure-path \
-  && visudo -cf  /etc/sudoers.d/50-coding-booth-base-secure-path
+  && printf 'Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/codingbooth/setups:/usr/local/uv/bin"\n' \
+  > /etc/sudoers.d/50-cb-base-secure-path \
+  && chmod  0440 /etc/sudoers.d/50-cb-base-secure-path \
+  && visudo -cf  /etc/sudoers.d/50-cb-base-secure-path
 
 # --- Install the tidy terminal
 RUN apt-get update && apt-get install -y ttyd \
@@ -117,10 +117,10 @@ RUN echo "set -g mouse on" >> /etc/tmux.conf
 
 # Always start as root so booth-user-setup can realign ids
 USER root
-WORKDIR /opt/coding-booth/setups
+WORKDIR /opt/codingbooth/setups
 
 # Copy setup scripts
-COPY --chmod=0755 ./setups/ /opt/coding-booth/setups/
+COPY --chmod=0755 ./setups/ /opt/codingbooth/setups/
 
 # Install Python
 ARG CB_PY_VERSION=3.12

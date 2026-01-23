@@ -27,7 +27,7 @@ DEFAULT_VNC_PASSWORD="${DEFAULT_VNC_PASSWORD:-}"
 
 # Use python--setup.sh exactly like setup-code-server-jupyter.sh
 PY_VERSION=${1:-3.12}                    # accepts X.Y or X.Y.Z
-SETUPS_DIR=${SETUPS_DIR:-/opt/coding-booth/setups}
+SETUPS_DIR=${SETUPS_DIR:-/opt/codingbooth/setups}
 "${SETUPS_DIR}/python--setup.sh" "${PY_VERSION}"
 
 # Load python env exported by the base setup

@@ -83,8 +83,14 @@ fi
 # This script will always be installed by root.
 HOME=/root
 
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
+    echo "SKIP: $SCRIPT_NAME - desktop environment not available" >&2
+    exit 42
+fi
 
-# --- Load workspace JDK/Python env if available ---
+# --- Load booth JDK/Python env if available ---
 source /etc/profile.d/60-cb-jdk--profile.sh    2>/dev/null || true
 source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 

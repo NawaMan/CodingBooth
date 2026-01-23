@@ -8,12 +8,14 @@ set -euo pipefail
 source ../common--source.sh
 
 DOCKERFILE=test--dockerfile
+VERSION_TAG=$(cat ../../version.txt)
 
-cat > $DOCKERFILE <<'EOF'
+export VERSION_TAG="$VERSION_TAG"
+envsubst '$VERSION_TAG' > "${DOCKERFILE}" <<'EOF'
 # syntax=docker/dockerfile:1.7
 ARG VARIANT_TAG=base
-ARG VERSION_TAG=latest
-FROM nawaman/coding-booth:${VARIANT_TAG}-${VERSION_TAG}
+ARG VERSION_TAG=${VERSION_TAG}
+FROM nawaman/codingbooth:${VARIANT_TAG}-${VERSION_TAG}
 
 # The default value is the latest LTS
 ARG PY_VERSION=3.12
@@ -22,7 +24,7 @@ ARG VARIANT_TAG=base
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 USER root
 
-ENV SETUPS_DIR=/opt/coding-booth/setups
+ENV SETUPS_DIR=/opt/codingbooth/setups
 ENV VARIANT_TAG="${VARIANT_TAG}"
 ENV CB_VARIANT_TAG="${VARIANT_TAG}"
 ENV PY_VERSION="${PY_VERSION}"

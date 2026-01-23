@@ -1,16 +1,16 @@
-# CodingBooth WorkSpace
+# CodingBooth
 
 **Current Version:** v0.11.0 — [View Changelog](CHANGELOG.md)
 
-CodingBooth WorkSpace delivers fully reproducible, Docker-powered development environments — anywhere, on any machine.
+CodingBooth delivers fully reproducible, Docker-powered development environments — anywhere, on any machine.
 You’ve containerized your app. You’ve containerized your build.
 But your development environment? Still a mess of system-wide installs, mismatched versions, and onboarding docs no one reads.
 
-**WorkSpace** fixes that.
+**CodingBooth** fixes that.
 
-With WorkSpace, you can run your IDE, shell, or even an entire Linux desktop inside a container — perfectly mapped to your host user (no root-owned files, no permission headaches). Every developer on your team gets the same consistent environment with zero setup friction.
+With CodingBooth, you can run your IDE, shell, or even an entire Linux desktop inside a container — perfectly mapped to your host user (no root-owned files, no permission headaches). Every developer on your team gets the same consistent environment with zero setup friction.
 
-Whether you want a browser-based VS Code session, a Jupyter notebook environment, or a complete XFCE/KDE desktop accessible through your browser — the WorkSpace images and launcher script make it effortless.
+Whether you want a browser-based VS Code session, a Jupyter notebook environment, or a complete XFCE/KDE desktop accessible through your browser — the CodingBooth images and launcher script make it effortless.
 
 **Result:** a clean, consistent, portable development experience that just works.
 
@@ -18,7 +18,7 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
 - [Quick Try](#quick-try)
 - [Installation](#installation)
 - [CLI Usage](#cli-usage)
-- [Why WorkSpace?](#why-workspace)
+- [Why CodingBooth?](#why-codingbooth)
 - [Variants](#variants)
 - [Built-in Tools](#built-in-tools)
 - [Quick Examples](#quick-examples)
@@ -50,7 +50,7 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
 
 ## Installation
 
-Run the following on the project **base folder** to install [CodingBooth WorkSpace Wrapper](https://github.com/NawaMan/WorkSpaceWrapper).
+Run the following on the project **base folder** to install [CodingBooth Wrapper](https://github.com/NawaMan/WorkSpaceWrapper).
 The wrapper allows management of the booth script file.
 
 ```shell
@@ -65,7 +65,7 @@ Run the wrapper script and follow the instructions.
 
 ## CLI Usage
 
-WorkSpace provides a command-line interface with the following structure:
+CodingBooth provides a command-line interface with the following structure:
 
 ```shell
 ./booth [flags] [-- command...]
@@ -73,22 +73,22 @@ WorkSpace provides a command-line interface with the following structure:
 
 ### Common Flags
 
-| Flag | Description |
-|------|-------------|
+| Flag               | Description                                                                      |
+|--------------------|----------------------------------------------------------------------------------|
 | `--variant <name>` | Select container variant (base, notebook, codeserver, desktop-xfce, desktop-kde) |
-| `--version <tag>` | Specify image version tag (default: latest) |
-| `--name <name>` | Set container name |
-| `--port <port>` | Set host port mapping (number, NEXT, or RANDOM) |
-| `--daemon` | Run container in background |
-| `--pull` | Force pull latest image |
-| `--dind` | Enable Docker-in-Docker mode |
-| `--keep-alive` | Keep container after exit |
-| `--silence-build` | Suppress build/startup output |
-| `--dryrun` | Print docker commands without executing |
-| `--verbose` | Enable debug output |
-| `--config <path>` | Use custom config file |
-| `--code <path>` | Set code directory |
-| `--help`, `-h` | Show help information |
+| `--version <tag>`  | Specify image version tag (default: latest)                                      |
+| `--name <name>`    | Set container name                                                               |
+| `--port <port>`    | Set host port mapping (number, NEXT, or RANDOM)                                  |
+| `--daemon`         | Run container in background                                                      |
+| `--pull`           | Force pull latest image                                                          |
+| `--dind`           | Enable Docker-in-Docker mode                                                     |
+| `--keep-alive`     | Keep container after exit                                                        |
+| `--silence-build`  | Suppress build/startup output                                                    |
+| `--dryrun`         | Print docker commands without executing                                          |
+| `--verbose`        | Enable debug output                                                              |
+| `--config <path>`  | Use custom config file                                                           |
+| `--code <path>`    | Set code directory                                                               |
+| `--help`, `-h`     | Show help information                                                            |
 
 ### Examples
 
@@ -109,12 +109,12 @@ WorkSpace provides a command-line interface with the following structure:
 ./booth --dryrun --verbose
 ```
 
-## Why WorkSpace?
+## Why CodingBooth?
 
 When developing inside containers, files you create often end up owned by the container’s user (usually `root`).  
 This leads to frustrating permission issues on the host — you can’t easily edit, remove, or commit those files without resorting to `sudo` or other workarounds.
 
-**WorkSpace** solves this by mapping the container’s user to **your host UID and GID**.  
+**CodingBooth** solves this by mapping the container’s user to **your host UID and GID**.  
 That means every file you create or modify inside the container is **owned by you on the host** — just as if it were created directly on your local machine.
 
 
@@ -128,7 +128,7 @@ That means every file you create or modify inside the container is **owned by yo
 
 ## Variants
 
-WorkSpace provides several **ready-to-use container variants** designed for different development workflows.
+CodingBooth provides several **ready-to-use container variants** designed for different development workflows.
 Each variant comes pre-configured with a curated toolset and a consistent runtime environment.
 
 ### Available Variants
@@ -150,7 +150,7 @@ All variants expose its UI on port 10000 but NEXT and RANDOM can be use. See [Po
 
 ### Aliases & Defaults
 
-WorkSpace supports several shortcuts and aliases for variant names:
+CodingBooth supports several shortcuts and aliases for variant names:
 
 | Input Alias	| Resolved Variant |
 |-------------|------------------|
@@ -163,7 +163,7 @@ WorkSpace supports several shortcuts and aliases for variant names:
 | xfce        | desktop-xfce     |
 | kde	        | desktop-kde      |
 
-If an unknown value is provided, WorkSpace will exit with an error listing supported variants and aliases.
+If an unknown value is provided, CodingBooth will exit with an error listing supported variants and aliases.
 
 ### Desktop Configuration
 
@@ -251,7 +251,7 @@ When all conditions align, paste works directly. When any condition isn't met, t
 
 ## Built-in Tools
 
-Every WorkSpace image comes with a carefully selected set of command-line tools for productivity, scripting, and troubleshooting.  
+Every CodingBooth image comes with a carefully selected set of command-line tools for productivity, scripting, and troubleshooting.  
 These essentials are preinstalled so you can start working immediately — no extra setup required.
 
 ### 🧰 Included Tool Categories
@@ -299,7 +299,7 @@ More examples : https://github.com/NawaMan/WorkSpace/tree/main/examples
 
 ## Customization
 
-You can tailor how WorkSpace runs by adjusting configuration files or using runtime flags:
+You can tailor how CodingBooth runs by adjusting configuration files or using runtime flags:
 
 - **`.booth/config.toml`** – Defines the image name, variant, UID/GID overrides, and default ports.  
 - **Runtime flags** – Options such as `--variant`, `--name`, `--pull`, `--dryrun`, and others can override defaults at launch.
@@ -337,7 +337,7 @@ my-project/
 
 - ✅ **Host file ownership:** All files in your project folder remain owned by your host user — no "root-owned" files.
 - ✅ **Consistent user mapping:** Each container automatically creates a matching user and group via `booth-user-setup`.
-- ⚠️ **Cross-OS caveats:** WorkSpace doesn't abstract away all host OS differences — things like line endings, symlinks, or file attributes may still vary between platforms.
+- ⚠️ **Cross-OS caveats:** CodingBooth doesn't abstract away all host OS differences — things like line endings, symlinks, or file attributes may still vary between platforms.
 
 ### JetBrains IDE Licensing in Containers
 
@@ -398,7 +398,7 @@ container
 ---
 
 > 🧠 **In short:**  
-> WorkSpace mirrors your host identity inside the container — you work as yourself, not as root.
+> CodingBooth mirrors your host identity inside the container — you work as yourself, not as root.
 
 
 **Result:** seamless dev environment, no permission headaches.
@@ -406,12 +406,12 @@ container
 ---
 
 > 📝 **Technical Note:**  
-> WorkSpace uses the Docker CLI (`docker` command) rather than Docker client libraries.  
+> CodingBooth uses the Docker CLI (`docker` command) rather than Docker client libraries.  
 > This keeps the codebase simple, portable, and easier to maintain while ensuring compatibility across platforms.
 
 ### Home Directory Customization
 
-WorkSpace provides two mechanisms for populating the user's home directory with custom files at container startup:
+CodingBooth provides two mechanisms for populating the user's home directory with custom files at container startup:
 
 #### Project Home Folder (`.booth/home/`)
 
@@ -484,7 +484,7 @@ In practice: host-mounted files in `cb-home-seed` override project defaults in `
 ### 1. Image Selection
 
 **Defaults**
-- **Repository:** `nawaman/coding-booth`  
+- **Repository:** `nawaman/codingbooth`  
 - **Variant:** `base`  
 - **Version:** `latest`
 
@@ -505,7 +505,7 @@ Command-line arguments → config file → environment variables → built-in de
 
 > 💡 **Tip:**  
 > When both `--image` and `--dockerfile` are provided, `--image` takes precedence.  
-> Use `--dockerfile` when you want to build locally; otherwise, WorkSpace automatically pulls prebuilt images from `nawaman/coding-booth`.
+> Use `--dockerfile` when you want to build locally; otherwise, CodingBooth automatically pulls prebuilt images from `nawaman/codingbooth`.
 
 
 ### 2. Container Name
@@ -522,12 +522,12 @@ Command-line arguments → config file → environment variables → built-in de
 ---
 
 > 💡 **Tip:**  
-> Using unique container names helps avoid conflicts when running multiple WorkSpace instances simultaneously.
+> Using unique container names helps avoid conflicts when running multiple booth instances simultaneously.
 
 
 ### 3. Config Files
 
-WorkSpace supports several configuration files that control how containers are built and launched.  
+CodingBooth supports several configuration files that control how containers are built and launched.  
 These files let you define defaults, environment variables, and runtime parameters without cluttering your CLI commands.
 
 #### **Launcher Config (`.booth/config.toml`)**
@@ -583,7 +583,7 @@ These behave exactly like command-line flags passed to booth.
 
 ### 4. Host UID/GID Handling
 
-WorkSpace ensures that all files created inside the container are owned by the same user and group as on your host system.  
+CodingBooth ensures that all files created inside the container are owned by the same user and group as on your host system.  
 This eliminates the common “root-owned files” problem when developing inside Docker.
 
 **Defaults**
@@ -595,7 +595,7 @@ This eliminates the common “root-owned files” problem when developing inside
 
 ### 5. Run Modes
 
-WorkSpace supports multiple run modes to fit different workflows — from one-off commands to long-running containers.
+CodingBooth supports multiple run modes to fit different workflows — from one-off commands to long-running containers.
 
 #### **Interactive Shell (Default)**
 - Launches an interactive terminal session inside the container.  
@@ -643,36 +643,31 @@ WorkSpace supports multiple run modes to fit different workflows — from one-of
 > `docker stop <container_name>`
 
 ### 6. Ports
-WorkSpace automatically manages host ↔ container port mappings for interactive and web-based variants.
+CodingBooth automatically manages host ↔ container port mappings for interactive and web-based variants.
 
 **Defaults Behavior**
-For the notebook and codeserver variants, the container exposes port 10000, which is mapped to:
-
-  ```bash
-  ${WORKSPACE_PORT:-NEXT}:10000
-  ```
-
-Meaning:
-- The launcher will search for the first available host port ≥ 10000
-- It tries 10000 → 10001 → 10002 → … until it finds a free port
-
+For the notebook and codeserver variants, the container exposes port 10000
+- If 10000 is not available, it will try 10001, then 10002, and so on.
 
 **Overrides**
 - You can customize the exposed port via:
-  - Environment variable: WORKSPACE_PORT
+  - Environment variable: CB_PORT
   - Configuration file: .booth/config.toml
   - CLI flag: --port <number>
-- The value can be a fixed number (8080), NEXT (to find the next available port), or RANDOM (to assign a random open port).
+- The value can beL:
+  - a fixed number (8080), or
+  - NEXT (to find the next available port -- 1000 increment), or
+  - RANDOM (to assign a random open port -- 1000 increment from 10000).
 
 > 💡 Tip:
-> When using multiple WorkSpace containers at once, consider setting WORKSPACE_PORT=NEXT to avoid conflicts automatically.
+> When using multiple booth containers at once, consider setting CB_PORT=NEXT to avoid conflicts automatically.
 
 ### 7. Pulling Images
 
-WorkSpace manages Docker image retrieval intelligently to balance performance and consistency.
+CodingBooth manages Docker image retrieval intelligently to balance performance and consistency.
 
 **Default Behavior**
-- If the specified image does not exist locally, WorkSpace will **automatically pull** it from the configured repository.  
+- If the specified image does not exist locally, CodingBooth will **automatically pull** it from the configured repository.  
 - If the image is already present, it reuses the local copy for faster startup.
 
 **Forced Pull**
@@ -686,7 +681,7 @@ WorkSpace manages Docker image retrieval intelligently to balance performance an
 
 ### 8. Dry-Run Mode
 
-The **dry-run** mode allows you to preview exactly what WorkSpace will execute — without actually starting a container.
+The **dry-run** mode allows you to preview exactly what CodingBooth will execute — without actually starting a container.
 
 **Usage**
 ```bash
@@ -750,7 +745,7 @@ Displays detailed usage information, supported flags, and configuration notes.
 
 ### 11. Docker-in-Docker (DinD) Support
 
-WorkSpace supports **Docker-in-Docker (DinD)** mode, allowing you to build and run Docker containers **from inside your booth container**.  
+CodingBooth supports **Docker-in-Docker (DinD)** mode, allowing you to build and run Docker containers **from inside your booth container**.  
 This feature is useful for CI/CD pipelines, containerized builds, or development environments that need access to Docker tooling.
 
 ---
@@ -778,7 +773,7 @@ Host
     ├── DinD sidecar container
     │   └── Docker daemon (:2375)
     │       └── (your containers run here)
-    └── Workspace container
+    └── Booth container
         ├── shares DinD's network (localhost = DinD)
         └── DOCKER_HOST=tcp://localhost:2375
 ```
@@ -808,7 +803,7 @@ This allows the booth to run Docker commands that execute inside the isolated Di
 
 ### 12. Network Whitelist
 
-WorkSpace includes a **network whitelist** feature that restricts container internet access to only approved domains. This is useful for:
+CodingBooth includes a **network whitelist** feature that restricts container internet access to only approved domains. This is useful for:
 - Security-conscious environments
 - Ensuring containers only access package registries
 - Compliance requirements that limit network access
@@ -822,7 +817,7 @@ WorkSpace includes a **network whitelist** feature that restricts container inte
 
 First, include the setup in your Dockerfile:
 ```dockerfile
-RUN /opt/coding-booth/setups/network-whitelist--setup.sh
+RUN /opt/codingbooth/setups/network-whitelist--setup.sh
 ```
 
 Then enable it inside the container:
@@ -895,7 +890,7 @@ A setup script may be required, if a tool or dependency requires:
 
 ### Setup Files Overview
 
-WorkSpace setup scripts follow a simple pattern that produces **three artifacts**:
+CodingBooth setup scripts follow a simple pattern that produces **three artifacts**:
 
 1. **Startup script** (runs once per container start, as the normal user)  
    - Path: `/usr/share/startup.d/<LEVEL>-cb-<thing>--startup.sh`  
@@ -927,14 +922,14 @@ Name your scripts using this pattern:
 
 Choose `<LEVEL>` from these ranges to keep load order predictable:
 
-| Level Range | Purpose |
-|---|---|
-| **50–54** | Core WorkSpace base setup |
-| **55–59** | OS / UI setup (desktop, display, browsers) |
-| **60–64** | Language / platform setup (Python, Java, Node.js, Go, etc.) |
-| **65–69** | Language / platform extensions (venv managers, JDK tools, linters) |
-| **70–74** | Developer tools (IDEs, editors, notebook servers) |
-| **75–79** | Tool extensions (plugins, kernels, IDE extensions) |
+| Level Range | Purpose                                                               |
+|-------------|-----------------------------------------------------------------------|
+| **50–54**   | Core CodingBooth base setup                                           |
+| **55–59**   | OS / UI setup (desktop, display, browsers)                            |
+| **60–64**   | Language / platform setup (Python, Java, Node.js, Go, etc.)           |
+| **65–69**   | Language / platform extensions (venv managers, JDK tools, linters)    |
+| **70–74**   | Developer tools (IDEs, editors, notebook servers)                     |
+| **75–79**   | Tool extensions (plugins, kernels, IDE extensions)                    |
 
 > 💡 **Guideline:** Prefer **lower** levels for prerequisites and **higher** levels for dependents.  
 > For example, install Python at **60–64**, then add Jupyter kernels at **75–79**.
@@ -963,7 +958,7 @@ Choose `<LEVEL>` from these ranges to keep load order predictable:
   touch "$SENTINEL"
 
 **Environment variables**
-- Prefer the CB_* prefix for WorkSpace-specific variables (e.g., CB_PYTHON_HOME).
+- Prefer the CB_* prefix for CodingBooth-specific variables (e.g., CB_PYTHON_HOME).
 - In profile scripts, keep exports lightweight and guarded:
   ```bash
   case ":$PATH:" in *":/usr/local/bin:"*) ;; *) export PATH="/usr/local/bin:$PATH";; esac
@@ -990,7 +985,7 @@ Simply copy into your docker image and run it just like other setup scripts.
 
 ## Community & Feedback
 
-WorkSpace is built to meet **real developer needs** — simple, reproducible, and flexible without unnecessary complexity.  
+CodingBooth is built to meet **real developer needs** — simple, reproducible, and flexible without unnecessary complexity.  
 Your feedback and contributions help it evolve and stay relevant for everyone.
 
 ---
@@ -1004,7 +999,7 @@ Your feedback and contributions help it evolve and stay relevant for everyone.
 ---
 
 ### ☕ Support & Appreciation
-If WorkSpace has saved you time, simplified your setup, or made development more enjoyable —  
+If CodingBooth has saved you time, simplified your setup, or made development more enjoyable —  
 you can **[buy me a coffee](https://buymeacoffee.com/NawaMan)** to show your support.  
 
 Your encouragement keeps this project active — and might even help with my kids’ college fund 😄.
@@ -1019,7 +1014,7 @@ Stay in touch or follow updates, insights, and development notes:
 
 ---
 
-> 🙏 Every issue, idea, and pull request — big or small — helps make WorkSpace better for everyone.  
+> 🙏 Every issue, idea, and pull request — big or small — helps make CodingBooth better for everyone.  
 > Thank you for being part of the community!
 
 

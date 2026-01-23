@@ -26,7 +26,7 @@ VERSION="$(cat ../../version.txt)"
 EXPECT="\
 docker \\
     pull \\
-    nawaman/coding-booth:base-${VERSION}"
+    nawaman/codingbooth:base-${VERSION}"
 
 if diff -u <(echo "$EXPECT") <(echo "$ACTUAL"); then
   print_test_result "true" "$0" "1" "Pull output matches expected"

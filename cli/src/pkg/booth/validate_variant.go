@@ -9,7 +9,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
 )
 
 // ValidateVariant validates and normalizes the variant and returns updated AppContext.

@@ -8,6 +8,7 @@ variant = "notebook"
 # Mount AWS credentials from host (home-seeding pattern)
 # The credentials are copied to ~/.aws/ at startup
 run-args = [
+    # AWS credentials
     "-v", "~/.aws:/tmp/cb-home-seed/.aws:ro",
 
     # Claude Code credentials (home-seeding)

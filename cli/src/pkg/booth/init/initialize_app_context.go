@@ -10,9 +10,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
-	"github.com/nawaman/coding-booth/src/pkg/nillable"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
 
 // InitializeAppContext creates an AppContext with default values matching booth Main()
@@ -26,9 +26,9 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	args := boundary.ArgList()
 
 	// Set default values and effective constants
-	context.PrebuildRepo = "nawaman/coding-booth"
+	context.PrebuildRepo = "nawaman/codingbooth"
 	context.CbVersion = version
-	context.SetupsDir = "/opt/coding-booth/setups"
+	context.SetupsDir = "/opt/codingbooth/setups"
 	context.ScriptName = getScriptName(args)
 	context.ScriptDir = getScriptDir(args)
 	context.Version = context.Config.Version.ValueOr(context.CbVersion)

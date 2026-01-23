@@ -9,9 +9,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/nawaman/coding-booth/src/pkg/appctx"
-	"github.com/nawaman/coding-booth/src/pkg/docker"
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/docker"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // EnsureDockerImage ensures the Docker image is available and returns updated AppContext.
@@ -48,7 +48,7 @@ func EnsureDockerImage(ctx appctx.AppContext) appctx.AppContext {
 	if ctx.Image() == "" {
 		builder = ctx.ToBuilder()
 		if ctx.ImageMode() == "LOCAL-BUILD" {
-			builder.Config.Image = fmt.Sprintf("workspace-local:%s-%s-%s",
+			builder.Config.Image = fmt.Sprintf("codingbooth-local:%s-%s-%s",
 				ctx.ProjectName(), ctx.Variant(), ctx.Version())
 		} else {
 			// PREBUILT

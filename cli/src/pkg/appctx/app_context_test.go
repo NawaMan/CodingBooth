@@ -7,8 +7,8 @@ package appctx
 import (
 	"testing"
 
-	"github.com/nawaman/coding-booth/src/pkg/ilist"
-	"github.com/nawaman/coding-booth/src/pkg/nillable"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
 
 func TestAppContext_RoundTrip(t *testing.T) {

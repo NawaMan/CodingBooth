@@ -45,7 +45,7 @@ command -v code-server >/dev/null
 
 echo "[2/9] Pre-seed Jupyter into ${CB_VENV_DIR} (build-time)…"
 
-# Always use the workspace venv Python, not whatever "python" happens to be.
+# Always use the booth venv Python, not whatever "python" happens to be.
 VENV_PY="${CB_VENV_DIR}/bin/python"
 if [ ! -x "$VENV_PY" ]; then
   echo "❌ Expected venv python at ${CB_VENV_DIR} but it is missing or not executable"

@@ -5,7 +5,7 @@
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=0.12.0--rc6
 
-FROM nawaman/coding-booth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
+FROM nawaman/codingbooth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 
 # Install AWS CLI v2
 RUN apt-get update && \
@@ -20,8 +20,7 @@ RUN apt-get update && \
 # Verify installation
 RUN aws --version
 
-ARG CB_SETUPS=/opt/coding-booth/setups
-ARG CB_HAS_DESKTOP=false
+ARG CB_SETUPS=/opt/codingbooth/setups
 
-RUN "$CB_SETUPS"/claude-code--setup.sh
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then "$CB_SETUPS"/antigravity--setup.sh ; fi
+RUN "$CB_SETUPS"/claude-code--setup.sh || [[ $? -eq 42 ]]
+RUN "$CB_SETUPS"/antigravity--setup.sh || [[ $? -eq 42 ]]

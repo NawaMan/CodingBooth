@@ -38,11 +38,11 @@ docker \\
     -v ${HERE}:/home/coder/code \\
     -w /home/coder/code \\
     -p 10000:10000 \\
-    -e 'CB_SETUPS=/opt/coding-booth/setups' \\
+    -e 'CB_SETUPS=/opt/codingbooth/setups' \\
     -e 'CB_CONTAINER_NAME=dryrun' \\
     -e 'CB_DAEMON=false' \\
     -e 'CB_HOST_PORT=10000' \\
-    -e 'CB_IMAGE_NAME=nawaman/coding-booth:base-${VERSION}' \\
+    -e 'CB_IMAGE_NAME=nawaman/codingbooth:base-${VERSION}' \\
     -e 'CB_RUNMODE=COMMAND' \\
     -e 'CB_VARIANT_TAG=base' \\
     -e 'CB_VERBOSE=false' \\
@@ -70,7 +70,7 @@ docker \\
     -e 'CB_HOST_GID=${HOST_GID}' \\
     '--pull=never' \\
     -e 'TZ=America/Toronto' \\
-    nawaman/coding-booth:base-${VERSION} \\
+    nawaman/codingbooth:base-${VERSION} \\
     bash -lc 'tree -C'"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then

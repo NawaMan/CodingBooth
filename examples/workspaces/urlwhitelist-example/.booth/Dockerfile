@@ -5,26 +5,23 @@
 
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
-FROM nawaman/coding-booth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
+FROM nawaman/codingbooth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 USER root
 
-ARG CB_SETUPS=/opt/coding-booth/setups
+ARG CB_SETUPS=/opt/codingbooth/setups
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
-ARG CB_HAS_NOTEBOOK=false
-ARG CB_HAS_VSCODE=false
-ARG CB_HAS_DESKTOP=false
 
 # Setup
-WORKDIR /opt/coding-booth/setups
+WORKDIR /opt/codingbooth/setups
 
 # Install network whitelist - restricts internet access to whitelisted domains
 RUN ./network-whitelist--setup.sh
 
 # Always install claude-code
-RUN ./claude-code--setup.sh
-RUN if [[ "$CB_HAS_DESKTOP" != false ]]; then ./antigravity--setup.sh ; fi
+RUN ./claude-code--setup.sh || [[ $? -eq 42 ]]
+RUN ./antigravity--setup.sh || [[ $? -eq 42 ]]
 
 WORKDIR /home/coder/code

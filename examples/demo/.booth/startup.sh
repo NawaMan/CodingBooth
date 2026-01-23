@@ -24,9 +24,9 @@ fi
 
 # Create a fun ASCII art file
 cat > "$HOME/.motd" << 'EOF'
-===========================================
-== Welcome to CodingBooth WorkSpace Demo ==
-===========================================
+=================================
+== Welcome to CodingBooth Demo ==
+=================================
 EOF
 
 # Append MOTD to bashrc if not already there
@@ -67,7 +67,6 @@ cat > "/home/coder/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml" <
   </property>
 </channel>
 EOF
-
 
 if [[ "${CB_SILENCE_BUILD:-false}" != "true" ]]; then
   echo "✅ Demo startup complete!"
