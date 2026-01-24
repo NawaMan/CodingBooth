@@ -8,9 +8,14 @@ RUN xfce--setup.sh
 RUN firefox--setup.sh
 RUN google-chrome--setup.sh
 RUN vscode--setup.sh
+
+ARG PYTHON_VERSION=3.12
+RUN python--setup.sh ${PYTHON_VERSION}
+RUN base-code-extension--setup.sh
 RUN bash-code-extension--setup.sh
 RUN python-code-extension--setup.sh
-RUN base-code-extension--setup.sh
+RUN jupyter-code-extension--setup.sh
+RUN bash-nb-kernel--setup.sh
 
 # This is so that some basic GTK would work.
 RUN apt-get update        \

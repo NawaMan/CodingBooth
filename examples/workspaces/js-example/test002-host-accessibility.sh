@@ -46,7 +46,7 @@ while true; do
         break
     fi
     WAIT_COUNT=$((WAIT_COUNT + 1))
-    if [ "$WAIT_COUNT" -ge 60 ]; then
+    if [ "$WAIT_COUNT" -ge 120 ]; then
         fail "Timeout waiting for npm install to complete"
     fi
     sleep 1

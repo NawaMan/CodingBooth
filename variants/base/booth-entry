@@ -298,7 +298,7 @@ info "15) Executing the requested command as coder (default to login shell if no
 cd "$CODE_DIR"
 if [ "$#" -eq 0 ]; then
   info "No command provided; starting login shell for $USER_NAME..."
-  exec runuser -u "$USER_NAME" -- "$USER_SHELL" -l
+  exec runuser -u "$USER_NAME" --login
 else
   info "Executing as $USER_NAME: $*"
   exec runuser -u "$USER_NAME" -- "$@"

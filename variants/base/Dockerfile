@@ -137,4 +137,4 @@ COPY --chmod=0755 99z-cb--startup.sh /usr/share/startup.d/99z-cb--startup.sh
 ENTRYPOINT ["tini","-g","--","/usr/local/bin/booth-entry"]
 
 # By default, start ttyd on port 10000 in the home directory (the online terminal)
-CMD ["exec ttyd -W -i 0.0.0.0 -p 10000 --writable bash -l"]
+CMD ["bash","-lc","exec ttyd -W -i 0.0.0.0 -p 10000 --writable bash -l"]
