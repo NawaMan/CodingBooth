@@ -36,7 +36,7 @@ jobs:
   # ---------------------------------------------------------
   # 2. Build all other variants in PARALLEL
   # ---------------------------------------------------------
-  build-ide-notebook:
+  build-notebook:
     needs: build-base
     runs-on: ubuntu-latest
     steps:
@@ -48,8 +48,8 @@ jobs:
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      - name: Build & Push ide-notebook
-        run: ./build/docker-build.sh --push ide-notebook
+      - name: Build & Push notebook
+        run: ./build/docker-build.sh --push notebook
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
@@ -57,7 +57,7 @@ jobs:
           COSIGN_KEY:         ${{ secrets.COSIGN_KEY }}
 
 
-  build-ide-codeserver:
+  build-codeserver:
     needs: build-base
     runs-on: ubuntu-latest
     steps:
@@ -69,8 +69,8 @@ jobs:
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      - name: Build & Push ide-codeserver
-        run: ./build/docker-build.sh --push ide-codeserver
+      - name: Build & Push codeserver
+        run: ./build/docker-build.sh --push codeserver
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}

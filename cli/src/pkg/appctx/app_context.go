@@ -66,11 +66,6 @@ func (ctx AppContext) ScriptName() string { return ctx.values.ScriptName }
 func (ctx AppContext) ScriptDir() string  { return ctx.values.ScriptDir }
 func (ctx AppContext) LibDir() string     { return ctx.values.LibDir }
 
-// derived from variant
-func (ctx AppContext) HasNotebook() bool { return ctx.values.HasNotebook }
-func (ctx AppContext) HasVscode() bool   { return ctx.values.HasVscode }
-func (ctx AppContext) HasDesktop() bool  { return ctx.values.HasDesktop }
-
 // derived from DinD
 func (ctx AppContext) CreatedDindNet() bool { return ctx.values.CreatedDindNet }
 
@@ -140,11 +135,6 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    ScriptName:       %q\n", ctx.ScriptName())
 	fmt.Fprintf(&str, "    ScriptDir:        %q\n", ctx.ScriptDir())
 	fmt.Fprintf(&str, "    LibDir:           %q\n", ctx.LibDir())
-
-	fmt.Fprintf(&str, "# Variant -----------------------\n")
-	fmt.Fprintf(&str, "    HasNotebook:      %t\n", ctx.HasNotebook())
-	fmt.Fprintf(&str, "    HasVscode:        %t\n", ctx.HasVscode())
-	fmt.Fprintf(&str, "    HasDesktop:       %t\n", ctx.HasDesktop())
 
 	fmt.Fprintf(&str, "# DinD --------------------------\n")
 	fmt.Fprintf(&str, "    CreatedDindNet:   %t\n", ctx.CreatedDindNet())

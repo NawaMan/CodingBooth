@@ -9,7 +9,7 @@ Browser-based Jupyter Notebook environment for interactive development.
 
 **Usage:**
 ```bash
-booth --variant ide-notebook
+booth --variant notebook
 ```
 
 **Access:** Open browser to `http://localhost:8888` (default port) for Jupyter interface.

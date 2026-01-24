@@ -278,9 +278,6 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "CB_VERSION_TAG="+ctx.Version()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "CB_CODE_PATH="+ctx.Code()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "CB_CODE_PORT=10000"))
-	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("CB_HAS_NOTEBOOK=%t", ctx.HasNotebook())))
-	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("CB_HAS_VSCODE=%t", ctx.HasVscode())))
-	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("CB_HAS_DESKTOP=%t", ctx.HasDesktop())))
 
 	// Additional metadata from AppContext
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "CB_VERSION="+ctx.CbVersion()))

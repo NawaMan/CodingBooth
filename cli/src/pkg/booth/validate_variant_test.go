@@ -30,17 +30,17 @@ func TestValidateVariant(t *testing.T) {
 			wantDesktop:  false,
 		},
 		{
-			name:         "valid ide-notebook",
-			inputVariant: "ide-notebook",
-			wantVariant:  "ide-notebook",
+			name:         "valid notebook",
+			inputVariant: "notebook",
+			wantVariant:  "notebook",
 			wantNotebook: true,
 			wantVscode:   false,
 			wantDesktop:  false,
 		},
 		{
-			name:         "valid ide-codeserver",
-			inputVariant: "ide-codeserver",
-			wantVariant:  "ide-codeserver",
+			name:         "valid codeserver",
+			inputVariant: "codeserver",
+			wantVariant:  "codeserver",
 			wantNotebook: true,
 			wantVscode:   true,
 			wantDesktop:  false,
@@ -64,14 +64,6 @@ func TestValidateVariant(t *testing.T) {
 
 		// Aliases
 		{
-			name:         "alias console -> base",
-			inputVariant: "console",
-			wantVariant:  "base",
-			wantNotebook: false,
-			wantVscode:   false,
-			wantDesktop:  false,
-		},
-		{
 			name:         "alias default -> base",
 			inputVariant: "default",
 			wantVariant:  "base",
@@ -80,9 +72,17 @@ func TestValidateVariant(t *testing.T) {
 			wantDesktop:  false,
 		},
 		{
-			name:         "alias ide -> ide-codeserver",
+			name:         "alias console -> base",
+			inputVariant: "console",
+			wantVariant:  "base",
+			wantNotebook: false,
+			wantVscode:   false,
+			wantDesktop:  false,
+		},
+		{
+			name:         "alias ide -> codeserver",
 			inputVariant: "ide",
-			wantVariant:  "ide-codeserver",
+			wantVariant:  "codeserver",
 			wantNotebook: true,
 			wantVscode:   true,
 			wantDesktop:  false,
@@ -94,22 +94,6 @@ func TestValidateVariant(t *testing.T) {
 			wantNotebook: true,
 			wantVscode:   true,
 			wantDesktop:  true,
-		},
-		{
-			name:         "alias notebook -> ide-notebook",
-			inputVariant: "notebook",
-			wantVariant:  "ide-notebook",
-			wantNotebook: true,
-			wantVscode:   false,
-			wantDesktop:  false,
-		},
-		{
-			name:         "alias codeserver -> ide-codeserver",
-			inputVariant: "codeserver",
-			wantVariant:  "ide-codeserver",
-			wantNotebook: true,
-			wantVscode:   true,
-			wantDesktop:  false,
 		},
 		{
 			name:         "alias xfce -> desktop-xfce",
@@ -147,17 +131,6 @@ func TestValidateVariant(t *testing.T) {
 			// Assert Variant
 			if gotCtx.Variant() != tt.wantVariant {
 				t.Errorf("ValidateVariant() variant = %v, want %v", gotCtx.Variant(), tt.wantVariant)
-			}
-
-			// Assert Flags
-			if gotCtx.HasNotebook() != tt.wantNotebook {
-				t.Errorf("ValidateVariant() HasNotebook = %v, want %v", gotCtx.HasNotebook(), tt.wantNotebook)
-			}
-			if gotCtx.HasVscode() != tt.wantVscode {
-				t.Errorf("ValidateVariant() HasVscode = %v, want %v", gotCtx.HasVscode(), tt.wantVscode)
-			}
-			if gotCtx.HasDesktop() != tt.wantDesktop {
-				t.Errorf("ValidateVariant() HasDesktop = %v, want %v", gotCtx.HasDesktop(), tt.wantDesktop)
 			}
 		})
 	}

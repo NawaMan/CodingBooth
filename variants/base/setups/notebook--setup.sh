@@ -23,6 +23,7 @@ HOME=/root
 
 STARTUP_FILE=/usr/share/startup.d/99-cb-notebook--startup.sh  # Last one so other settings take precedence
 STARTER_FILE=/usr/local/bin/start-notebook
+NOTEBOOK_PROFILE_FILE=/etc/profile.d/70-cb-notebook--profile.sh
 
 # Load python env exported by the base setup
 source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
@@ -72,6 +73,23 @@ fi
 ACTUAL_VER="$(python -c 'import sys;print(".".join(map(str,sys.version_info[:3])))')"
 JUPYTER_KERNEL_DISPLAY="${JUPYTER_KERNEL_DISPLAY:-Python (${ACTUAL_VER} (venv))}"
 
+# ---- Generate profile script with frozen notebook environment values ----
+cat > "${NOTEBOOK_PROFILE_FILE}" <<PROFILE_EOF
+# Frozen Python environment for Jupyter Notebook (set at install time)
+export CB_NOTEBOOK_VENV_DIR="${CB_VENV_DIR}"
+export CB_NOTEBOOK_PYTHON="\${CB_NOTEBOOK_VENV_DIR}/bin/python"
+export CB_NOTEBOOK_PY_VERSION="${ACTUAL_VER}"
+
+# Helper function
+notebook_setup_info() {
+  echo "Notebook Python:  \${CB_NOTEBOOK_PY_VERSION}"
+  echo "Notebook venv:    \${CB_NOTEBOOK_VENV_DIR}"
+  echo "Notebook python:  \${CB_NOTEBOOK_PYTHON}"
+}
+alias notebook-setup-info='notebook_setup_info'
+PROFILE_EOF
+chmod +x "${NOTEBOOK_PROFILE_FILE}"
+
 # ---- Register venv Python as a Jupyter kernel (primary: python3) ----
 KDIR_BASE="${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels"
 KDIR="${KDIR_BASE}/${JUPYTER_KERNEL_NAME}"
@@ -102,19 +120,17 @@ chmod +x ${STARTUP_FILE}
 
 
 # ---- Create starter script (ensures terminals inherit the venv) ----
+# Uses placeholder that gets replaced with frozen venv path
 cat > ${STARTER_FILE} <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
 PORT=${1:-10000}
 
-# Ensure PATH and /opt/python are active in non-login shells
-source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
-
 # Make sure non-Python kernels in the venv are visible if present
-export JUPYTER_PATH="${CB_VENV_DIR}/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
+export JUPYTER_PATH="__CB_NOTEBOOK_VENV_DIR__/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
 
-exec "${CB_VENV_DIR}/bin/jupyter-lab" \
+exec "__CB_NOTEBOOK_VENV_DIR__/bin/jupyter-lab" \
   --no-browser \
   --ip=0.0.0.0 \
   --port=$PORT \
@@ -122,9 +138,9 @@ exec "${CB_VENV_DIR}/bin/jupyter-lab" \
   --ServerApp.custom_display_url="http://localhost:$PORT/lab" \
   --ServerApp.terminado_settings='{"shell_command":["/bin/bash"]}'
 EOF
-# Bake in the venv path
+# Bake in the frozen venv path (absolute path, not variable reference)
 _safe() { printf '%s' "$1" | sed -e 's/[&]/\\&/g'; }
-sed -i "s#__VENV_DIR_PLACEHOLDER__#$(_safe "${CB_VENV_DIR}")#g" /usr/local/bin/start-notebook
+sed -i "s#__CB_NOTEBOOK_VENV_DIR__#$(_safe "${CB_VENV_DIR}")#g" "${STARTER_FILE}"
 chmod +x ${STARTER_FILE}
 
 # ---- friendly summary ----
@@ -136,11 +152,12 @@ echo "✅ pyenv root:  ${CB_PYENV_ROOT}"
 echo "✅ Venvs root:  ${CB_VENV_DIR}"
 echo "✅ Active venv: ${CB_VENV_DIR}"
 echo "✅ Jupyter kernel '${JUPYTER_KERNEL_NAME}' registered at ${KDIR} with display name '${JUPYTER_KERNEL_DISPLAY}'"
+echo "✅ Notebook profile: ${NOTEBOOK_PROFILE_FILE} (frozen Python ${ACTUAL_VER})"
 
-echo 
+echo
 echo "To start using notebook, start a new shell session, OR"
 echo "Load the Notebook helpers into THIS shell (no restart):"
-echo "     source /etc/profile.d/53-cb-python--profile.sh"
+echo "     source ${NOTEBOOK_PROFILE_FILE}"
 echo
 echo "Then you can run:"
 echo "  notebook-setup-info"

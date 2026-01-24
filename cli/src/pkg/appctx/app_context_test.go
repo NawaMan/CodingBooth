@@ -211,15 +211,6 @@ func TestAppContext_DerivedValues(t *testing.T) {
 	if ctx.LibDir() != "ldir" {
 		t.Error("LibDir mismatch")
 	}
-	if !ctx.HasNotebook() {
-		t.Error("HasNotebook mismatch")
-	}
-	if !ctx.HasVscode() {
-		t.Error("HasVscode mismatch")
-	}
-	if !ctx.HasDesktop() {
-		t.Error("HasDesktop mismatch")
-	}
 	if !ctx.CreatedDindNet() {
 		t.Error("CreatedDindNet mismatch")
 	}

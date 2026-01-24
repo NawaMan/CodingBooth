@@ -154,7 +154,7 @@ Manual testing:
 
 | Test Case                          | Expected Result                     |
 |:-----------------------------------|:------------------------------------|
-| Build with `ide-codeserver` variant| VS Code extensions install          |
+| Build with `codeserver` variant    | VS Code extensions install          |
 | Build with `base` variant          | VS Code extensions skip (exit 42)   |
 | Build with `desktop-xfce` variant  | Desktop setups install              |
 | Build with `base` variant          | Desktop setups skip (exit 42)       |

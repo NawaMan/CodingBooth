@@ -130,15 +130,6 @@ func buildLocalImage(ctx appctx.AppContext) {
 	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
 		"--build-arg", fmt.Sprintf("CB_SETUPS=%s", ctx.SetupsDir()),
 	)))
-	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
-		"--build-arg", fmt.Sprintf("CB_HAS_NOTEBOOK=%t", ctx.HasNotebook()),
-	)))
-	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
-		"--build-arg", fmt.Sprintf("CB_HAS_VSCODE=%t", ctx.HasVscode()),
-	)))
-	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
-		"--build-arg", fmt.Sprintf("CB_HAS_DESKTOP=%t", ctx.HasDesktop()),
-	)))
 
 	// Add user's build args
 	args = args.ExtendByLists(ctx.BuildArgs())

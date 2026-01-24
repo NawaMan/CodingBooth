@@ -451,7 +451,7 @@ When a container is committed (`docker commit`) or backed up/restored, the files
 2. Container is committed: `docker commit container myimage:v1`
 3. Image saved with `/home/coder` owned by `1000:1000`
 4. User B (UID 1001, GID 1001) runs `./booth --image myimage:v1`
-5. `booth-user-setup` creates user `coder` with UID 1001, GID 1001
+5. `booth-entry` creates user `coder` with UID 1001, GID 1001
 6. **Problem**: `/home/coder` files are still owned by `1000:1000` — User B cannot access their own home directory
 
 **Edge cases:**
@@ -472,7 +472,7 @@ When a container is committed (`docker commit`) or backed up/restored, the files
 1000:1000
 ```
 
-**Startup logic in `booth-user-setup`:**
+**Startup logic in `booth-entry`:**
 
 ```bash
 MARKER="$HOME_DIR/.booth-owner"
@@ -517,7 +517,7 @@ chown "$HOST_UID:$HOST_GID" "$MARKER"
 
 ### Current Code State
 
-**File:** `variants/base/booth-user-setup` (lines 157-162)
+**File:** `variants/base/booth-entry` (lines 157-162)
 
 ```bash
 # OK, I don't know where are these from but it need to be belong to the user
@@ -536,7 +536,7 @@ find "${HOME_DIR}"         \
 
 ### Implementation Location
 
-Insert the migration logic in `booth-user-setup` around line 156, **before** the existing `find/chown` block.
+Insert the migration logic in `booth-entry` around line 156, **before** the existing `find/chown` block.
 
 The existing blanket chown can be:
 - **Option A**: Removed entirely (rely on targeted migration)

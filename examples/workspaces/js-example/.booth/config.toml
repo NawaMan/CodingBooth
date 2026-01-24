@@ -1,12 +1,12 @@
 variant  = "kde"
 run-args = [
     # Claude Code credentials (home-seeding)
-    "-v", "~/.claude.json:/tmp/cb-home-seed/.claude.json:ro",
-    "-v", "~/.claude:/tmp/cb-home-seed/.claude:ro",
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
 
     # Google Antigravity credentials (home-seeding: app may write session data)
-    "-v", "~/.config/Antigravity:/tmp/cb-home-seed/.config/Antigravity:ro",
-    "-v", "~/.antigravity:/tmp/cb-home-seed/.antigravity:ro",
+    "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",
 
     "-p", "3000:3000",   # API server - this can be removed if you don't want API to be accessible outside of the container.
     "-p", "5173:5173"    # Vite dev server

@@ -61,9 +61,6 @@ docker \\
     -e 'CB_VERSION_TAG=${VERSION}' \\
     -e 'CB_CODE_PATH=${HERE}' \\
     -e 'CB_CODE_PORT=10000' \\
-    -e 'CB_HAS_NOTEBOOK=false' \\
-    -e 'CB_HAS_VSCODE=false' \\
-    -e 'CB_HAS_DESKTOP=false' \\
     -e 'CB_VERSION=${VERSION}' \\
     -e 'CB_CONFIG_FILE=' \\
     -e 'CB_SCRIPT_NAME=coding-booth' \\

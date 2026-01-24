@@ -2,77 +2,33 @@
 ARG CB_VERSION_TAG=latest
 FROM nawaman/codingbooth:base-${CB_VERSION_TAG}
 
-ARG CB_PY_VERSION=3.12
+# Given user is root and /opt/codingbooth/setups is in PATH (from base image)
 
-# Stay as root so the base ENTRYPOINT (booth-user-setup) can align uid/gid, then drop to 'coder'
-USER root
-SHELL ["/bin/bash","-o","pipefail","-lc"]
-
-# Setup
-WORKDIR /opt/codingbooth/setups
-
-RUN ./xfce--setup.sh
-
-# Not really "needed" but feel unuseful without them so put here as a "good starting point".
-RUN ./firefox--setup.sh
-RUN ./google-chrome--setup.sh
-RUN ./python--setup.sh "${CB_PY_VERSION}" 
-RUN ./vscode--setup.sh
-RUN ./jupyter-code-extension--setup.sh
-RUN ./bash-code-extension--setup.sh
-RUN ./python-code-extension--setup.sh
-RUN ./base-code-extension--setup.sh
-RUN ./bash-nb-kernel--setup.sh
+RUN xfce--setup.sh
+RUN firefox--setup.sh
+RUN google-chrome--setup.sh
+RUN vscode--setup.sh
+RUN bash-code-extension--setup.sh
+RUN python-code-extension--setup.sh
+RUN base-code-extension--setup.sh
 
 # This is so that some basic GTK would work.
-RUN apt-get update && apt-get install -y \
-  breeze-gtk-theme \
-  gnome-themes-extra \
-  libgtk-3-0 \
+RUN apt-get update        \
+  && apt-get install -y   \
+  breeze-gtk-theme        \
+  gnome-themes-extra      \
+  libgtk-3-0              \
   libcanberra-gtk3-module \
-  lxappearance \
+  lxappearance            \
   kde-config-gtk-style
 
-# ---- Cleanup to reduce image size ----
-RUN ./cleanup-after--setup.sh
 
-# Copy CodingBooth wallpaper
-COPY wallpaper.png /usr/share/backgrounds/codingbooth-wallpaper.png
+# Cleanup to reduce image size
+RUN cleanup-after--setup.sh
 
-# Create XFCE wallpaper config for new users
-RUN mkdir -p /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml \
-  && cat > /etc/skel/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml <<'EOF'
-<?xml version="1.0" encoding="UTF-8"?>
-<?xml version="1.0" encoding="UTF-8"?>
-<channel name="xfce4-desktop" version="1.0">
-  <property name="backdrop" type="empty">
-    <property name="screen0" type="empty">
-      <property name="monitorVNC-0" type="empty">
-        <property name="workspace0" type="empty">
-          <property name="color-style" type="int" value="0"/>
-          <property name="image-style" type="int" value="5"/>
-          <property name="last-image" type="string" value="/usr/share/backgrounds/codingbooth-wallpaper.png"/>
-        </property>
-        <property name="workspace1" type="empty">
-          <property name="color-style" type="int" value="0"/>
-          <property name="image-style" type="int" value="5"/>
-          <property name="last-image" type="string" value="/usr/share/backgrounds/codingbooth-wallpaper.png"/>
-        </property>
-        <property name="workspace2" type="empty">
-          <property name="color-style" type="int" value="0"/>
-          <property name="image-style" type="int" value="5"/>
-          <property name="last-image" type="string" value="/usr/share/backgrounds/codingbooth-wallpaper.png"/>
-        </property>
-        <property name="workspace3" type="empty">
-          <property name="color-style" type="int" value="0"/>
-          <property name="image-style" type="int" value="5"/>
-          <property name="last-image" type="string" value="/usr/share/backgrounds/codingbooth-wallpaper.png"/>
-        </property>
-      </property>
-    </property>
-  </property>
-</channel>
-EOF
+# Replace default wallpaper with CodingBooth wallpaper -- Hacky but can't do it the proper way
+RUN cp /usr/share/backgrounds/xfce/xfce-blue.jpg /usr/share/backgrounds/xfce/xfce-original-wallpaper.jpg
+COPY wallpaper.jpg /usr/share/backgrounds/xfce/xfce-blue.jpg
 
 WORKDIR /home/coder/code
 CMD ["start-xfce"]

@@ -50,7 +50,7 @@ Runs container with:
   - Volume mount: $PWD → /home/coder/code
   - Port mapping: host port → 10000
     ↓
-Container entrypoint (booth-user-setup) aligns UID/GID
+Container entrypoint (booth-entry) aligns UID/GID
     ↓
 User lands in consistent environment
 ```
@@ -63,7 +63,7 @@ User lands in consistent environment
 /
 ├── booth                    # Bash launcher (downloads + runs binary)
 ├── coding-booth             # Go binary (the actual CLI)
-├── version.txt              # Version (currently 0.12.0--rc6)
+├── version.txt              # Version (currently 0.12.0--rc8)
 │
 ├── cli/src/                 # Go source code
 │   ├── cmd/coding-booth/    # CLI entry: main.go, run.go, help.go
@@ -76,10 +76,10 @@ User lands in consistent environment
 ├── variants/                # Docker image definitions
 │   ├── base/                # Base image + 46 setup scripts
 │   │   ├── Dockerfile
-│   │   ├── booth-user-setup # Container entrypoint
+│   │   ├── booth-entry      # Container entrypoint
 │   │   └── setups/          # Tool installers (python, nodejs, go, etc.)
-│   ├── ide-codeserver/      # Browser-based VS Code
-│   ├── ide-notebook/        # Jupyter notebook
+│   ├── codeserver/          # Browser-based VS Code
+│   ├── notebook/            # Jupyter notebook
 │   ├── desktop-xfce/        # XFCE desktop
 │   └── desktop-kde/         # KDE desktop
 │
@@ -98,15 +98,15 @@ Located in project root. All options optional.
 
 ```toml
 # Image selection (pick one)
-variant = "desktop-xfce"       # Prebuilt: base, ide-codeserver, ide-notebook, desktop-xfce, desktop-kde
+variant = "desktop-xfce"          # Prebuilt: base, codeserver, notebook, desktop-xfce, desktop-kde
 dockerfile = ".booth/Dockerfile"  # Or custom build
-image = "myrepo/myimage:tag"   # Or existing image
+image = "myrepo/myimage:tag"      # Or existing image
 
-version = "latest"             # Image version tag
+version = "latest"                # Image version tag
 
 # Container settings
-name = "my-container"          # Container name (default: folder name)
-port = "NEXT"                  # NEXT | RANDOM | <number>
+name = "my-container"             # Container name (default: folder name)
+port = "NEXT"                     # NEXT | RANDOM | <number>
 
 # UID/GID (auto-detected, rarely needed)
 host-uid = "1000"
@@ -154,13 +154,13 @@ All config options available as `CB_*` env vars:
 
 ## Variants
 
-| Variant          | Description                    | Port 10000 Serves |
-|:-----------------|:-------------------------------|:------------------|
-| `base`           | Minimal CLI with ttyd terminal | Web terminal      |
-| `ide-codeserver` | Browser VS Code                | VS Code UI        |
-| `ide-notebook`   | Jupyter with Bash kernel       | Jupyter           |
-| `desktop-xfce`   | Full XFCE desktop              | noVNC desktop     |
-| `desktop-kde`    | Full KDE desktop               | noVNC desktop     |
+| Variant        | Description                    | Port 10000 Serves |
+|:---------------|:-------------------------------|:------------------|
+| `base`         | Minimal CLI with ttyd terminal | Web terminal      |
+| `codeserver`   | Browser VS Code                | VS Code UI        |
+| `notebook`     | Jupyter with Bash kernel       | Jupyter           |
+| `desktop-xfce` | Full XFCE desktop              | noVNC desktop     |
+| `desktop-kde`  | Full KDE desktop               | noVNC desktop     |
 
 Aliases: `notebook`, `codeserver`, `xfce`, `kde`
 
@@ -183,15 +183,15 @@ Available setups (47 total): `python`, `nodejs`, `go`, `java`, `jdk`, `mvn`, `gr
 
 Two layers (applied in order):
 1. `.booth/home/` - Team defaults (committed to git)
-2. `/tmp/cb-home-seed/` - Personal files (mounted from host, never committed)
+2. `/etc/cb-home-seed/` - Personal files (mounted from host, never committed)
 
-Uses `cp -rn` (no-clobber) for `.booth/home/`, then copies `/tmp/cb-home-seed/` which can overwrite.
+Uses `cp -rn` (no-clobber) for `.booth/home/`, then copies `/etc/cb-home-seed/` which can overwrite.
 
 ---
 
 ## UID/GID Mapping (The Core Feature)
 
-Container entrypoint `booth-user-setup`:
+Container entrypoint `booth-entry`:
 1. Reads `HOST_UID` and `HOST_GID` env vars
 2. Creates/modifies `coder` user to match
 3. Relocates conflicting UIDs/GIDs if needed
@@ -220,7 +220,7 @@ Container entrypoint `booth-user-setup`:
 | `cli/src/pkg/appctx/app_config.go`                 | Config struct with TOML/env mappings     |
 | `cli/src/pkg/booth/init/initialize_app_context.go` | Context initialization                   |
 | `cli/src/pkg/docker/docker.go`                     | Docker CLI wrapper                       |
-| `variants/base/booth-user-setup`                   | Container entrypoint (bash)              |
+| `variants/base/booth-entry`                   | Container entrypoint (bash)              |
 | `variants/base/Dockerfile`                         | Base image definition                    |
 
 ---

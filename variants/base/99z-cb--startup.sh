@@ -3,21 +3,13 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
+# -----------------------------------------------------------------------------
 # 99z-cb--startup.sh
 # One-time startup script executed at first container start.
 # Sets up shell aliases, environment defaults, git config, and umask.
+# -----------------------------------------------------------------------------
 
 set -euo pipefail
-
-# Aliases
-alias cp='cp -p'
-alias ls='ls --color=auto'
-alias grep='grep --color=auto'
-alias tree='tree -C'
-
-# Environment Defaults
-export EDITOR=${EDITOR:-tilde}
-export TERM=${TERM:-xterm-256color}
 
 # Git aliases
 git config --global alias.lg "log --oneline --graph --decorate --all"

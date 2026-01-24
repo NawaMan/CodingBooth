@@ -1,7 +1,20 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# python--setup.sh
+# Installs/manages Python versions using pyenv and uv.
+# 
+# Python can be setup in different ways.
+# This script step of python specificaly for CodingBooth.
+# We want:
+# 1. Control the version number
+# 2. Don't want unneccessary destro dependencies such as setuptools, pip, wheel (it comes with complication)
+# 3. Global venv so all other setups can refer to (otherwise they will ended up with different venv) -- user can still create their own venv if needed.
+# 4. An stable environment for python tools like Jupyter (as well as jpterm) and its extensions, etc.
+# -----------------------------------------------------------------------------
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -18,15 +31,36 @@ HOME=/root
 
 PROFILE_FILE="/etc/profile.d/53-cb-python--profile.sh"  # profile to be run when login
 
+# Wanted python version
+PY_VERSION=${1:-3.12}
+
 # ---- validate python version format ----
 # accepts X.Y or X.Y.Z (exact patch recommended)
-PY_VERSION=${1:-3.12}
-CB_PY_VERSION=${PY_VERSION}
-if [[ ! "$CB_PY_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
-  echo "❌ Invalid Python version format: '$CB_PY_VERSION'"
+if [[ ! "$PY_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
+  echo "❌ Invalid Python version format: '$PY_VERSION'"
   echo "   Expected format: X.Y or X.Y.Z (e.g., 3.11 or 3.11.6)"
   exit 1
 fi
+
+# Idempotent check - compare at the requested precision level
+if [[ -n "${CB_INSTALLED_PYTHON_VERSION:-}" ]]; then
+  if [[ "$PY_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
+    # Requested X.Y format - check if installed version starts with X.Y.
+    if [[ "${CB_INSTALLED_PYTHON_VERSION}" == "${PY_VERSION}".* ]]; then
+      echo "Already setup python version ${CB_INSTALLED_PYTHON_VERSION} (satisfies ${PY_VERSION})" | tee /tmp/setups.txt
+      exit 0
+    fi
+  else
+    # Requested X.Y.Z format - exact match required
+    if [[ "${CB_INSTALLED_PYTHON_VERSION}" == "${PY_VERSION}" ]]; then
+      echo "Already setup python version ${PY_VERSION}" | tee /tmp/setups.txt
+      exit 0
+    fi
+  fi
+fi
+
+
+CB_PY_VERSION=${PY_VERSION}
 
 PY_SERIES="$(echo "${CB_PY_VERSION}" | cut -d. -f1-2)"
 
@@ -249,6 +283,7 @@ else
   CB_PY_VERSION=""
 fi
 export CB_PY_VERSION
+export CB_INSTALLED_PYTHON_VERSION="${CB_PY_VERSION}"
 export CB_VENV_DIR="/opt/venvs/py${CB_PY_VERSION}"
 
 # 2) Compute the series (X.Y) from CB_PY_VERSION (POSIX-safe)

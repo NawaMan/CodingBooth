@@ -1,6 +1,6 @@
 variant = "base"
 
 run-args = [
-    "-v", "~/.claude.json:/tmp/cb-home-seed/.claude.json:ro",
-    "-v", "~/.claude:/tmp/cb-home-seed/.claude:ro",
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
 ]

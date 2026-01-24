@@ -5,10 +5,10 @@ run-args = [
     "-p", "3000:3000",
 
     # Claude Code credentials (home-seeding)
-    "-v", "~/.claude.json:/tmp/cb-home-seed/.claude.json:ro",
-    "-v", "~/.claude:/tmp/cb-home-seed/.claude:ro",
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
 
     # Antigravity credentials (home-seeding)
-    "-v", "~/.config/Antigravity:/tmp/cb-home-seed/.config/Antigravity:ro",
-    "-v", "~/.antigravity:/tmp/cb-home-seed/.antigravity:ro",
+    "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",
 ]

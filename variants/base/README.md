@@ -3,9 +3,10 @@
 The foundation variant containing core CodingBooth functionality and setup scripts.
 
 **Includes:**
-- Ubuntu-based container with user management
+- Ubuntu-based container -- a human-friendly made for development
+- Default variant
+- Manage user ownership and permission for the workspace (project directory) on host and /home/coder/code on the container.
 - 70+ setup scripts in `setups/` directory
-- Docker-in-Docker (DinD) support
 - Common development tools and utilities
 
 **Usage:**

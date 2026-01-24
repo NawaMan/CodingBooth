@@ -16,7 +16,7 @@ firebase login
 
 ## How It Works
 
-The `.ws/config.toml` mounts Firebase-related config directories read-only to `/tmp/cb-home-seed/`.
+The `.ws/config.toml` mounts Firebase-related config directories read-only to `/etc/cb-home-seed/`.
 At container startup, these are copied to `/home/coder/.config/`.
 
 This means:

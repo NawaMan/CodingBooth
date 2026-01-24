@@ -127,7 +127,7 @@ PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:   
 SCRIPT_DIR:     $(realpath "$HERE/../..")
 SCRIPT_NAME:    coding-booth
-VARIANT:        ide-codeserver
+VARIANT:        codeserver
 VERSION:        ${VERSION}"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
