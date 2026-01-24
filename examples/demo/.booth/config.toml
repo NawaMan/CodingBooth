@@ -3,19 +3,19 @@ variant = "xfce"
 # Mount credentials from host to container
 # NOTE: ~ and $VAR are automatically expanded
 # 
-# Home-seeding pattern: Mount to /tmp/cb-home-seed/ with :ro
+# Home-seeding pattern: Mount to /etc/cb-home-seed/ with :ro
 # Files are copied to user's home at startup (without overwriting existing)
 run-args = [
     # Google Antigravity credentials (home-seeding: app may write session data)
-    "-v", "~/.config/Antigravity:/tmp/cb-home-seed/.config/Antigravity:ro",
-    "-v", "~/.antigravity:/tmp/cb-home-seed/.antigravity:ro",
+    "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",
 
     # Google Cloud credentials (home-seeding: gcloud may refresh tokens)
-    "-v", "~/.config/gcloud:/tmp/cb-home-seed/.config/gcloud:ro",
+    "-v", "~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro",
     "-e", "GOOGLE_APPLICATION_CREDENTIALS=/home/coder/.config/gcloud/application_default_credentials.json",
 
     # GitHub Copilot credentials (home-seeding: may update tokens)
-    "-v", "~/.config/github-copilot:/tmp/cb-home-seed/.config/github-copilot:ro",
+    "-v", "~/.config/github-copilot:/etc/cb-home-seed/.config/github-copilot:ro",
     
     # Disable GNOME keyring (not available in container)
     "-e", "GNOME_KEYRING_CONTROL=",
@@ -23,8 +23,8 @@ run-args = [
     "-e", "SSH_AUTH_SOCK=",
     
     # Claude Code config and credentials (home-seeding: may update tokens/session)
-    "-v", "~/.claude.json:/tmp/cb-home-seed/.claude.json:ro",
-    "-v", "~/.claude:/tmp/cb-home-seed/.claude:ro",
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
 
     # Maven repository
     "-v", "$HOME/.m2:/home/coder/.m2"

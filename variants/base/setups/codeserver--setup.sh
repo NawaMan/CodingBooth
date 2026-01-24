@@ -43,30 +43,30 @@ fi
 command -v code-server >/dev/null
 
 
-echo "[2/9] Pre-seed Jupyter into ${CB_VENV_DIR} (build-time)…"
+# echo "[2/9] Pre-seed Jupyter into ${CB_VENV_DIR} (build-time)…"
 
-# Always use the booth venv Python, not whatever "python" happens to be.
-VENV_PY="${CB_VENV_DIR}/bin/python"
-if [ ! -x "$VENV_PY" ]; then
-  echo "❌ Expected venv python at ${CB_VENV_DIR} but it is missing or not executable"
-  exit 1
-fi
+# # Always use the booth venv Python, not whatever "python" happens to be.
+# VENV_PY="${CB_VENV_DIR}/bin/python"
+# if [ ! -x "$VENV_PY" ]; then
+#   echo "❌ Expected venv python at ${CB_VENV_DIR} but it is missing or not executable"
+#   exit 1
+# fi
 
-# Upgrade basics in the venv
-env PIP_CACHE_DIR="${PIP_CACHE_DIR}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
-  "$VENV_PY" -m pip install -U pip setuptools wheel
+# # Upgrade basics in the venv
+# env PIP_CACHE_DIR="${PIP_CACHE_DIR}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
+#   "$VENV_PY" -m pip install -U pip setuptools wheel
 
-# Install Jupyter + ipykernel into the venv
-env PIP_CACHE_DIR="${PIP_CACHE_DIR}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
-  "$VENV_PY" -m pip install -U jupyter ipykernel
+# # Install Jupyter + ipykernel into the venv
+# env PIP_CACHE_DIR="${PIP_CACHE_DIR}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
+#   "$VENV_PY" -m pip install -U jupyter ipykernel
 
-# Kernelspec (use actual patch version for display), bound to this venv
-ACTUAL_VER="$("$VENV_PY" -c 'import sys;print(".".join(map(str,sys.version_info[:3])))')"
-"$VENV_PY"             \
-  -m ipykernel install \
-  --sys-prefix         \
-  --name=python3       \
-  --display-name="Python ${ACTUAL_VER} (venv)"
+# # Kernelspec (use actual patch version for display), bound to this venv
+# ACTUAL_VER="$("$VENV_PY" -c 'import sys;print(".".join(map(str,sys.version_info[:3])))')"
+# "$VENV_PY"             \
+#   -m ipykernel install \
+#   --sys-prefix         \
+#   --name=python3       \
+#   --display-name="Python ${ACTUAL_VER} (venv)"
 
 
 cat >> "$PROFILE_FILE" <<'SH'

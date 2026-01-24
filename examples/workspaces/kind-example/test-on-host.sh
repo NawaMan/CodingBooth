@@ -36,7 +36,7 @@ echo "=== Testing KinD example on host ==="
 echo
 
 # Start booth in daemon mode
-echo "Starting booth with DinD..."
+echo "Starting booth with KinD..."
 ../../coding-booth --keep-alive --daemon > /dev/null 2>&1 || true
 
 # Wait for booth to be ready

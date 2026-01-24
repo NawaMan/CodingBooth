@@ -106,8 +106,8 @@ set -euo pipefail
 # Claude Code startup script
 # Ensures config and credentials from cb-home-seed are properly copied
 
-CB_SEED_DIR="/tmp/cb-home-seed/.claude"
-CB_SEED_JSON="/tmp/cb-home-seed/.claude.json"
+CB_SEED_DIR="/etc/cb-home-seed/.claude"
+CB_SEED_JSON="/etc/cb-home-seed/.claude.json"
 CLAUDE_DIR="$HOME/.claude"
 CLAUDE_JSON="$HOME/.claude.json"
 

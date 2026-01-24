@@ -9,7 +9,7 @@ Browser-based VS Code environment for full-featured development.
 
 **Usage:**
 ```bash
-booth --variant ide-codeserver
+booth --variant codeserver
 ```
 
 **Access:** Open browser to `http://localhost:8080` (default port) for VS Code interface.

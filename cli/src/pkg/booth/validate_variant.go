@@ -19,21 +19,19 @@ func ValidateVariant(ctx appctx.AppContext) appctx.AppContext {
 
 	// Step 1: Normalize variant aliases
 	switch variant {
-	case "base", "ide-notebook", "ide-codeserver", "desktop-xfce", "desktop-kde":
+	case "base", "notebook", "codeserver", "desktop-xfce", "desktop-kde":
 		// Valid variants, no change needed
 	case "default", "console":
 		variant = "base"
 	case "ide":
-		variant = "ide-codeserver"
+		variant = "codeserver"
 	case "desktop":
 		variant = "desktop-xfce"
-	case "notebook", "codeserver":
-		variant = "ide-" + variant
 	case "xfce", "kde":
 		variant = "desktop-" + variant
 	default:
-		fmt.Fprintf(os.Stderr, "Error: unknown --variant '%s' (valid: base|ide-notebook|ide-codeserver|desktop-xfce|desktop-kde;\n", variant)
-		fmt.Fprintln(os.Stderr, "       aliases: notebook|codeserver|xfce|kde)")
+		fmt.Fprintf(os.Stderr, "Error: unknown --variant '%s' (valid: base|notebook|codeserver|desktop-xfce|desktop-kde;\n", variant)
+		fmt.Fprintln(os.Stderr, "       aliases: console|ide|desktop|xfce|kde)")
 		os.Exit(1)
 	}
 
@@ -45,11 +43,11 @@ func ValidateVariant(ctx appctx.AppContext) appctx.AppContext {
 		builder.HasNotebook = false
 		builder.HasVscode = false
 		builder.HasDesktop = false
-	case variant == "ide-notebook":
+	case variant == "notebook":
 		builder.HasNotebook = true
 		builder.HasVscode = false
 		builder.HasDesktop = false
-	case variant == "ide-codeserver":
+	case variant == "codeserver":
 		builder.HasNotebook = true
 		builder.HasVscode = true
 		builder.HasDesktop = false

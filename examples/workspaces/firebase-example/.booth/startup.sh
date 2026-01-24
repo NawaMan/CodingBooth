@@ -13,9 +13,9 @@
 set -euo pipefail
 
 # Work around for Firebase authentication.
-# Home-seeding works by copy files from /tmp/cb-home-seed to $HOME.
+# Home-seeding works by copy files from /etc/cb-home-seed to $HOME.
 # However, it only does so if the files do not already exist in $HOME.
 # But Firebase installation creates an JSON-empty files there ("{}").
 
 rm -rf ~/.config/configstore/firebase-tools.json
-cp /tmp/cb-home-seed/.config/configstore/firebase-tools.json ~/.config/configstore/firebase-tools.json
+cp /etc/cb-home-seed/.config/configstore/firebase-tools.json ~/.config/configstore/firebase-tools.json

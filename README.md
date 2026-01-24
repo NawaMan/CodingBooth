@@ -137,10 +137,10 @@ Each variant comes pre-configured with a curated toolset and a consistent runtim
   Ideal for building custom environments, running CLI applications, or lightweight automation tasks.
   The terminal is expose with [ttyd](https://github.com/tsl0922/ttyd) on port 10000.
 
-- **`ide-notebook`** – Includes [Jupyter Notebook](https://jupyter.org/) with Bash and other utilities.  
+- **`notebook`** – Includes [Jupyter Notebook](https://jupyter.org/) with Bash and other utilities.  
   Great for data science, analytics, documentation, or interactive scripting workflows.
 
-- **`ide-codeserver`** – A web-based VS Code environment powered by [`code-server`](https://github.com/coder/code-server).  
+- **`codeserver`** – A web-based VS Code environment powered by [`code-server`](https://github.com/coder/code-server).  
   Provides a full browser-accessible IDE with Git integration, terminals, and extensions.
 
 - **[`desktop-xfce`]( https://www.xfce.org  )**, **[`desktop-kde`]( https://kde.org/plasma-desktop)** – Full Linux desktop environments accessible via browser or remote desktop (e.g., [noVNC](https://novnc.com)).  
@@ -156,9 +156,9 @@ CodingBooth supports several shortcuts and aliases for variant names:
 |-------------|------------------|
 | default	    | base             |
 | console     | base             |
-| ide	        | ide-codeserver   |
-| notebook    | ide-notebook     |
-| codeserver  | ide-codeserver   |
+| ide	        | codeserver       |
+| notebook    | notebook         |
+| codeserver  | codeserver       |
 | desktop	    | desktop-xfce     |
 | xfce        | desktop-xfce     |
 | kde	        | desktop-kde      |
@@ -336,7 +336,7 @@ my-project/
 ## Guarantees & Limits
 
 - ✅ **Host file ownership:** All files in your project folder remain owned by your host user — no "root-owned" files.
-- ✅ **Consistent user mapping:** Each container automatically creates a matching user and group via `booth-user-setup`.
+- ✅ **Consistent user mapping:** Each container automatically creates a matching user and group via `booth-entry`.
 - ⚠️ **Cross-OS caveats:** CodingBooth doesn't abstract away all host OS differences — things like line endings, symlinks, or file attributes may still vary between platforms.
 
 ### JetBrains IDE Licensing in Containers
@@ -353,7 +353,7 @@ JetBrains activation is stored as a machine-specific token. When you run an IDE 
 ## How It Works
 
 1. The launcher passes your **host UID** and **GID** into the container using the environment variables `HOST_UID` and `HOST_GID`.  
-2. Inside the container, the entrypoint script (`booth-user-setup`) ensures a matching `coder` user and group exist with those IDs.  
+2. Inside the container, the entrypoint script (`booth-entry`) ensures a matching `coder` user and group exist with those IDs.  
 3. The directories `/home/coder` and `/home/coder/code` are owned by that user, ensuring smooth file sharing between host and container.  
 4. Add the user `coder` to sudoers so that it can sudo without needing the password
 5. Prepare `.bashrc` and `.zshrc`
@@ -438,20 +438,20 @@ my-project/
 > ⚠️ **Warning:**  
 > Do NOT put secrets, credentials, or personal tokens in `.booth/home/` — this folder is meant to be committed to version control and shared with your team.
 
-#### Home Seed Directory (`/tmp/cb-home-seed/`)
+#### Home Seed Directory (`/etc/cb-home-seed/`)
 
-Mount host files read-only to `/tmp/cb-home-seed/` for **personal credentials** that should not be version-controlled.
+Mount host files read-only to `/etc/cb-home-seed/` for **personal credentials** that should not be version-controlled.
 
 **How it works:**
-1. Mount host files read-only to `/tmp/cb-home-seed/` (preserving the relative path structure)
+1. Mount host files read-only to `/etc/cb-home-seed/` (preserving the relative path structure)
 2. At container startup, files are copied to `/home/coder/` without overwriting existing files
 3. The user gets a writable copy; the host's original files stay protected
 
 **Example (`.booth/config.toml`):**
 ```toml
 run-args = [
-    "-v", "~/.config/gcloud:/tmp/cb-home-seed/.config/gcloud:ro",
-    "-v", "~/.config/github-copilot:/tmp/cb-home-seed/.config/github-copilot:ro"
+    "-v", "~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro",
+    "-v", "~/.config/github-copilot:/etc/cb-home-seed/.config/github-copilot:ro"
 ]
 ```
 
@@ -465,7 +465,7 @@ run-args = [
 Files are copied in this order (later sources win if the file doesn't exist yet):
 
 1. **`.booth/home/`** (project folder) — Team-shared defaults
-2. **`/tmp/cb-home-seed/`** (host mounts) — Personal credentials & preferences
+2. **`/etc/cb-home-seed/`** (host mounts) — Personal credentials & preferences
 3. **Existing files** — Already in `/home/coder/` are preserved
 
 Since all copies use `cp -rn` (no-clobber), the first source to create a file "wins".  
@@ -543,7 +543,7 @@ You can define three special arrays in `.booth/config.toml` to customize how the
 - **`common-args`** – Pre-applied CLI flags merged before command-line parameters.
   Useful for predefining commonly used options (e.g., extra ports or mounts).
   ```toml
-  common-args = ["--variant", "ide-codeserver", "--port", "8080"]
+  common-args = ["--variant", "codeserver", "--port", "8080"]
   ```
 
 These behave exactly like command-line flags passed to booth.

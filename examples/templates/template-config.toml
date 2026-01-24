@@ -69,9 +69,9 @@
 #   - $VAR and ${VAR} expand to their environment values
 #
 # Home seeding pattern for credentials:
-#   Mount host files read-only to /tmp/cb-home-seed/ and they will be copied
+#   Mount host files read-only to /etc/cb-home-seed/ and they will be copied
 #   to the user's home at container startup (without overwriting existing files).
-#   Example: "-v", "~/.config/gcloud:/tmp/cb-home-seed/.config/gcloud:ro"
+#   Example: "-v", "~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro"
 #
 # common-args = []        # Pre-applied CLI flags merged before command-line parameters
 #                         # Example: ["--name", "my-booth", "-p", "8080:8080"]

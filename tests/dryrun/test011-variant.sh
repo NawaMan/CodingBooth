@@ -28,17 +28,15 @@ export TIMEZONE="America/Toronto"
 # Each entry is WANT_VARIANT:GOT_VARIANT
 VARIANTS=(
   "base:base"
-  "ide-notebook:ide-notebook"
-  "ide-codeserver:ide-codeserver"
+  "notebook:notebook"
+  "codeserver:codeserver"
   "desktop-xfce:desktop-xfce"
   "desktop-kde:desktop-kde"
 
   # aliases
   "default:base"
-  "ide:ide-codeserver"
+  "ide:codeserver"
   "desktop:desktop-xfce"
-  "notebook:ide-notebook"
-  "codeserver:ide-codeserver"
   "xfce:desktop-xfce"
   "kde:desktop-kde"
 )
@@ -51,14 +49,6 @@ for entry in "${VARIANTS[@]}"; do
 
   ACTUAL=$(../../coding-booth --dryrun --variant "${WANT_VARIANT}" -- sleep 1)
   ACTUAL=$(printf "%s\n" "$ACTUAL")
-
-  case "${GOT_VARIANT}" in
-    base)           HAS_NOTEBOOK=false ; HAS_VSCODE=false ; HAS_DESKTOP=false ;;
-    ide-notebook)   HAS_NOTEBOOK=true  ; HAS_VSCODE=false ; HAS_DESKTOP=false ;;
-    ide-codeserver) HAS_NOTEBOOK=true  ; HAS_VSCODE=true  ; HAS_DESKTOP=false ;;
-    desktop-*)      HAS_NOTEBOOK=true  ; HAS_VSCODE=true  ; HAS_DESKTOP=true  ;;
-    *)              echo "Error: unknown variant '$VARIANT'." >&2 ; exit 1    ;;
-  esac
 
   # Notice that there is not `-rm`
   EXPECT="\
@@ -83,9 +73,6 @@ docker \\
     -e 'CB_VERSION_TAG=${VERSION}' \\
     -e 'CB_CODE_PATH=${HERE}' \\
     -e 'CB_CODE_PORT=10000' \\
-    -e 'CB_HAS_NOTEBOOK=${HAS_NOTEBOOK}' \\
-    -e 'CB_HAS_VSCODE=${HAS_VSCODE}' \\
-    -e 'CB_HAS_DESKTOP=${HAS_DESKTOP}' \\
     -e 'CB_VERSION=${VERSION}' \\
     -e 'CB_CONFIG_FILE=' \\
     -e 'CB_SCRIPT_NAME=coding-booth' \\

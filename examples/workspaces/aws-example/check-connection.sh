@@ -6,8 +6,8 @@
 #
 # docker-build.sh - Build and publish WorkSpace Docker images
 #
-# This script builds Docker images for all WorkSpace variants (base, ide-notebook,
-# ide-codeserver, desktop-xfce, desktop-kde) using multi-architecture support.
+# This script builds Docker images for all WorkSpace variants (base, notebook,
+# codeserver, desktop-xfce, desktop-kde) using multi-architecture support.
 # It can build locally or push to Docker Hub with cosign signature verification.
 # Run with --help for usage information.
 #

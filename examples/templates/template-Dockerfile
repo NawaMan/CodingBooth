@@ -12,9 +12,6 @@ USER root
 
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
-ARG CB_HAS_NOTEBOOK=false
-ARG CB_HAS_VSCODE=false
-ARG CB_HAS_DESKTOP=false
 
 #== Customizations ==
 
