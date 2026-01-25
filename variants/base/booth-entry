@@ -69,6 +69,17 @@ HOST_GID="${HOST_GID:-1000}"
 info "USER_NAME=$USER_NAME HOME_DIR=$HOME_DIR CODE_DIR=$CODE_DIR"
 info "HOST_UID=$HOST_UID HOST_GID=$HOST_GID"
 
+# Capture original UID/GID before any modifications (for ownership fixup later)
+ORIG_UID=""
+ORIG_GID=""
+if id -u "$USER_NAME" >/dev/null 2>&1; then
+  ORIG_UID="$(id -u "$USER_NAME")"
+fi
+if getent group "$USER_NAME" >/dev/null 2>&1; then
+  ORIG_GID="$(getent group "$USER_NAME" | cut -d: -f3)"
+fi
+info "ORIG_UID=$ORIG_UID ORIG_GID=$ORIG_GID"
+
 # Find a free numeric uid/gid starting from 2000 to relocate conflicts safely
 find_free_uid() { local uid=2000; while getent passwd "$uid" >/dev/null 2>&1; do uid=$((uid+1)); done; echo "$uid"; }
 find_free_gid() { local gid=2000; while getent group  "$gid" >/dev/null 2>&1; do gid=$((gid+1)); done; echo "$gid"; }
@@ -132,8 +143,15 @@ else
   fi
 fi
 
-# info "5) Change the owner after the UID/GID adjustment."
-# chown -R "$USER_NAME:$USER_NAME" /home/"$USER_NAME" 2>/dev/null || true
+info "5) Fixing ownership for files owned by original UID:GID (skipping $CODE_DIR)..."
+if [ -n "$ORIG_UID" ] && [ "$ORIG_UID" != "$HOST_UID" ]; then
+  info "Changing ownership from UID $ORIG_UID to $HOST_UID..."
+  find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o -user "$ORIG_UID" -exec chown "$HOST_UID" {} + 2>/dev/null || true
+fi
+if [ -n "$ORIG_GID" ] && [ "$ORIG_GID" != "$HOST_GID" ]; then
+  info "Changing group from GID $ORIG_GID to $HOST_GID..."
+  find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o -group "$ORIG_GID" -exec chgrp "$HOST_GID" {} + 2>/dev/null || true
+fi
 
 
 section "Allow sudo access to the user"
@@ -178,19 +196,17 @@ fi
 
 info "8) Ensuring default profile exists in $HOME_DIR..."
 
-# Ensure .profile exists first (login shells)
+# Ensure .profile exists first (login shells) - prefer skeleton if available
 if [ ! -f "$HOME_DIR/.profile" ]; then
   if [ -f /etc/skel/.profile ]; then
     cp /etc/skel/.profile "$HOME_DIR/.profile"
-  else
-    touch "$HOME_DIR/.profile"
   fi
 fi
 
-# Add minimal login hook to .profile (idempotent, POSIX-ish)
-if ! grep -Fq '# Minimal profile for login shells' "$HOME_DIR/.profile" 2>/dev/null; then
-  cat >>"$HOME_DIR/.profile" <<'RC'
-
+# Only add minimal profile hook if .profile still doesn't exist (no skeleton was available)
+# This is a fallback - the skeleton .profile already handles sourcing .bashrc properly
+if [ ! -f "$HOME_DIR/.profile" ]; then
+  cat >"$HOME_DIR/.profile" <<'RC'
 # Minimal profile for login shells
 [ -f /etc/profile ] && . /etc/profile
 RC
@@ -240,20 +256,27 @@ if [ -n "$CB_HOME_DIR" ]; then
   cp -rn "$CB_HOME_DIR/." "$HOME_DIR/" 2>/dev/null || true
 fi
 
-info "12) Copying seed files from /etc/cb-home-seed/ to /home/coder ..."
+info "12) Copying seed files from /etc/cb-home-seed/ to /home/coder (no-clobber)..."
 CB_HOME_SEED="/etc/cb-home-seed"
 if [ -d "$CB_HOME_SEED" ]; then
   info "Copying seed files from $CB_HOME_SEED to $HOME_DIR..."
   cp -rn "$CB_HOME_SEED/." "$HOME_DIR/" 2>/dev/null || true
-
-  # Fix ownership ONLY for root-owned files/dirs that were just copied in
-  find "$HOME_DIR" -xdev -user root -exec chown "$HOST_UID:$HOST_GID" {} + 2>/dev/null || true
 fi
+
+info "13) Copying override files from /etc/cb-home/ to /home/coder (with override)..."
+CB_HOME_OVERRIDE="/etc/cb-home"
+if [ -d "$CB_HOME_OVERRIDE" ]; then
+  info "Copying override files from $CB_HOME_OVERRIDE to $HOME_DIR..."
+  cp -r "$CB_HOME_OVERRIDE/." "$HOME_DIR/" 2>/dev/null || true
+fi
+
+# Fix ownership for root-owned files/dirs that were copied in from seed or override
+find "$HOME_DIR" -xdev -user root -exec chown "$HOST_UID:$HOST_GID" {} + 2>/dev/null || true
 
 
 section "Run one-time CodingBooth startup hooks"
 
-info "13) Running one-time CodingBooth startup hooks in /usr/share/startup.d..."
+info "14) Running one-time CodingBooth startup hooks in /usr/share/startup.d..."
 RUN_ONCE_FLAG="/var/run/cb-startup.once"
 if [ -d "/usr/share/startup.d" ] && [ ! -f "$RUN_ONCE_FLAG" ]; then
   runuser -u "$USER_NAME" -- bash -lc '
@@ -277,7 +300,7 @@ if [ -d "/usr/share/startup.d" ] && [ ! -f "$RUN_ONCE_FLAG" ]; then
   touch "$RUN_ONCE_FLAG"
 fi
 
-info "14) Running user custom startup script (from --startup or .booth/startup.sh)"
+info "15) Running user custom startup script (from --startup or .booth/startup.sh)"
 # Use CB_STARTUP if set, otherwise check for .booth/startup.sh in code path
 CB_STARTUP_SCRIPT="${CB_STARTUP:-}"
 if [ -z "$CB_STARTUP_SCRIPT" ] && [ -f "$CODE_DIR/.booth/startup.sh" ]; then
@@ -294,7 +317,7 @@ fi
 
 section "Execute the requested command"
 
-info "15) Executing the requested command as coder (default to login shell if none provided)"
+info "16) Executing the requested command as coder (default to login shell if none provided)"
 cd "$CODE_DIR"
 if [ "$#" -eq 0 ]; then
   info "No command provided; starting login shell for $USER_NAME..."

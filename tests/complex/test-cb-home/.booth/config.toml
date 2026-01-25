@@ -1,0 +1,9 @@
+variant = "base"
+
+# Mount the override content to /etc/cb-home
+# The .testfile SHOULD overwrite the one created during build (override behavior)
+# The .testfile-normal SHOULD also be copied (doesn't exist during build)
+run-args = [
+    "-v", "./override-content/.testfile:/etc/cb-home/.testfile:ro",
+    "-v", "./override-content/.testfile-normal:/etc/cb-home/.testfile-normal:ro",
+]

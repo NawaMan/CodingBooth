@@ -11,11 +11,11 @@
 
 set -euo pipefail
 
-source ../common--source.sh
+source ../../common--source.sh
 
 # ---- Config -------------------------------------------------------------------
 # Path to your booth launcher script. Override via env if needed.
-CB_SCRIPT="${CB_SCRIPT:-../../coding-booth}"
+CB_SCRIPT="${CB_SCRIPT:-../../../coding-booth}"
 # Canonicalize to absolute path before we cd/pushd anywhere
 if command -v readlink >/dev/null 2>&1; then
   CB_SCRIPT="$(readlink -f "$CB_SCRIPT")"

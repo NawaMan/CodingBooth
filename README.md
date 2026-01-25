@@ -418,9 +418,9 @@ CodingBooth provides two mechanisms for populating the user's home directory wit
 Create a `.booth/home/` folder in your project to share team-wide dotfiles, tool configs, or shell customizations.
 
 **How it works:**
-- Place files in `.booth/home/` with the same structure as `$HOME`
-- At container startup, files are copied to `/home/coder/` without overwriting existing files
-- The folder should be version-controlled (committed to git)
+- Place files in `.booth/home/` with the same structure as `$HOME`.
+- At container startup, files are copied to `/home/coder/` without overwriting existing files.
+- Since the folder is part of the project, it will be version-controlled (committed to git) and shared with your team.
 
 **Example structure:**
 ```

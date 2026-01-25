@@ -17,6 +17,9 @@ ARG CB_VERSION_TAG=latest
 # Setup
 WORKDIR /opt/codingbooth/setups
 
+# Copy the modified setup script (local override until base image is updated)
+COPY setups/network-whitelist--setup.sh ./network-whitelist--setup.sh
+
 # Install network whitelist - restricts internet access to whitelisted domains
 RUN ./network-whitelist--setup.sh
 
