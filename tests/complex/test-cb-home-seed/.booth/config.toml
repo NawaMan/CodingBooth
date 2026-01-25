@@ -1,0 +1,9 @@
+variant = "base"
+
+# Mount the seed content to /etc/cb-home-seed
+# The .testfile should NOT overwrite the one created during build (no-clobber)
+# The .testfile-normal SHOULD be copied (doesn't exist during build)
+run-args = [
+    "-v", "./seed-content/.testfile:/etc/cb-home-seed/.testfile:ro",
+    "-v", "./seed-content/.testfile-normal:/etc/cb-home-seed/.testfile-normal:ro",
+]

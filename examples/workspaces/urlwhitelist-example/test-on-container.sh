@@ -21,8 +21,6 @@ echo
 
 # --- Test 1: Check that network-whitelist commands are available ---
 echo "Checking network-whitelist commands are installed..."
-command -v network-whitelist-enable  >/dev/null || fail "network-whitelist-enable not found"
-command -v network-whitelist-disable >/dev/null || fail "network-whitelist-disable not found"
 command -v network-whitelist-status  >/dev/null || fail "network-whitelist-status not found"
 command -v network-whitelist-list    >/dev/null || fail "network-whitelist-list not found"
 command -v network-whitelist-add     >/dev/null || fail "network-whitelist-add not found"
@@ -42,28 +40,19 @@ else
     fail "User whitelist file not found at $HOME/.network-whitelist"
 fi
 
-# --- Test 3: Enable network whitelist ---
-echo
-echo "Enabling network whitelist..."
-network-whitelist-enable
-pass "Network whitelist enabled"
-
-# Give tinyproxy time to start
-sleep 2
-
-# --- Test 4: Check proxy is running ---
+# --- Test 3: Check proxy is running (always enabled now) ---
 echo
 echo "Checking proxy is running..."
 if pgrep -x tinyproxy > /dev/null 2>&1; then
     pass "Tinyproxy is running"
 else
-    fail "Tinyproxy is not running"
+    fail "Tinyproxy is not running (whitelist should be enabled by default)"
 fi
 
-# --- Test 5: Check environment variables are set ---
+# --- Test 4: Check environment variables are set ---
 echo
 echo "Checking proxy environment variables..."
-# Source the profile to get the variables
+# Source the profile to get the variables (should already be set in login shell)
 source /etc/profile.d/40-cb-network-whitelist--profile.sh
 
 if [[ -n "${HTTP_PROXY:-}" ]]; then
@@ -78,7 +67,7 @@ else
     fail "HTTPS_PROXY is not set"
 fi
 
-# --- Test 6: Test whitelisted domain (pypi.org - default whitelist) ---
+# --- Test 5: Test whitelisted domain (pypi.org - default whitelist) ---
 echo
 echo "Testing access to whitelisted domain (pypi.org)..."
 if curl -s --max-time 10 --proxy "$HTTP_PROXY" -I "https://pypi.org" 2>/dev/null | head -1 | grep -qE "HTTP/[0-9.]+ [23][0-9][0-9]"; then
@@ -87,7 +76,7 @@ else
     fail "pypi.org should be accessible (it's in the default whitelist)"
 fi
 
-# --- Test 7: Test user-whitelisted domain (httpbin.org) ---
+# --- Test 6: Test user-whitelisted domain (httpbin.org) ---
 echo
 echo "Testing access to user-whitelisted domain (httpbin.org)..."
 if curl -s --max-time 10 --proxy "$HTTP_PROXY" -I "https://httpbin.org" 2>/dev/null | head -1 | grep -qE "HTTP/[0-9.]+ [23][0-9][0-9]"; then
@@ -96,7 +85,7 @@ else
     fail "httpbin.org should be accessible (it's in the user whitelist)"
 fi
 
-# --- Test 8: Test blocked domain (example.com - not whitelisted) ---
+# --- Test 7: Test blocked domain (example.com - not whitelisted) ---
 echo
 echo "Testing that non-whitelisted domain is blocked (example.com)..."
 # This should fail or return a proxy error
@@ -106,7 +95,7 @@ else
     pass "example.com is blocked (not whitelisted)"
 fi
 
-# --- Test 9: Test another blocked domain ---
+# --- Test 8: Test another blocked domain ---
 echo
 echo "Testing that another non-whitelisted domain is blocked (wikipedia.org)..."
 if curl -s --max-time 5 --proxy "$HTTP_PROXY" -I "https://wikipedia.org" 2>/dev/null | head -1 | grep -qE "HTTP/[0-9.]+ [23][0-9][0-9]"; then
@@ -115,12 +104,11 @@ else
     pass "wikipedia.org is blocked (not whitelisted)"
 fi
 
-# --- Test 10: Test adding a domain dynamically ---
+# --- Test 9: Test adding a domain dynamically ---
 echo
 echo "Testing dynamic domain addition..."
 
-# First verify that example.com is currently FILTERED (403)
-# Note: example.com might already be in whitelist from test 8, so we use a fresh domain
+# Use a fresh domain that's definitely not in any whitelist
 TEST_DOMAIN="test-whitelist-example.org"
 
 BEFORE_RESPONSE=$(curl -s --max-time 5 --proxy "$HTTP_PROXY" -I "https://${TEST_DOMAIN}" 2>/dev/null | head -1 || echo "curl failed")
@@ -152,29 +140,14 @@ else
     fi
 fi
 
-# --- Test 11: Disable and verify unrestricted access ---
-echo
-echo "Testing disable functionality..."
-network-whitelist-disable
-
-# Unset proxy vars for this test
-unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
-
-# Without proxy, direct access should work
-if curl -s --max-time 10 -I "https://wikipedia.org" 2>/dev/null | head -1 | grep -qE "HTTP/[0-9.]+ [23][0-9][0-9]"; then
-    pass "wikipedia.org accessible after disabling whitelist"
-else
-    info "wikipedia.org not accessible (may be network issue, not whitelist)"
-fi
-
-# --- Test 12: Check status command ---
+# --- Test 10: Check status command ---
 echo
 echo "Checking status command output..."
 STATUS_OUTPUT=$(network-whitelist-status 2>&1)
-if echo "$STATUS_OUTPUT" | grep -q "DISABLED"; then
-    pass "Status correctly shows DISABLED"
+if echo "$STATUS_OUTPUT" | grep -q "ENABLED"; then
+    pass "Status correctly shows ENABLED"
 else
-    fail "Status should show DISABLED"
+    fail "Status should show ENABLED"
 fi
 
 echo

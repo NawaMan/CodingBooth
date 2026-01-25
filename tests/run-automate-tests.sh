@@ -53,14 +53,14 @@ if ! (cd "$SCRIPT_DIR/dryrun" && ./run-dryrun-tests.sh); then
 fi
 echo ""
 
-# Run workspace-env tests
+# Run complex tests
 echo "----------------------------------------"
-echo "Running Workspace-Env Tests"
+echo "Running Complex Tests"
 echo "----------------------------------------"
 total_suites=$((total_suites + 1))
-if ! (cd "$SCRIPT_DIR/workspace-env" && ./run-test.sh); then
+if ! (cd "$SCRIPT_DIR/complex" && ./run-complex-tests.sh); then
     failed=1
-    failed_suites+=("workspace-env")
+    failed_suites+=("complex")
 fi
 echo ""
 

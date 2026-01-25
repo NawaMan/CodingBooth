@@ -4,7 +4,7 @@ This document describes the network whitelist feature for CodingBooth, which res
 
 ## Overview
 
-The network whitelist feature uses a lightweight HTTP proxy (tinyproxy) to filter outbound HTTP/HTTPS traffic. When enabled, only connections to whitelisted domains are allowed - all other traffic is blocked with a `403 Filtered` response.
+The network whitelist feature uses a lightweight HTTP proxy (tinyproxy) to filter outbound HTTP/HTTPS traffic. When installed, only connections to whitelisted domains are allowed - all other traffic is blocked with a `403 Filtered` response.
 
 **Use cases:**
 - Security-conscious development environments
@@ -35,7 +35,7 @@ The network whitelist feature uses a lightweight HTTP proxy (tinyproxy) to filte
 ```
 
 1. The `network-whitelist--setup.sh` script installs tinyproxy and configures it
-2. When enabled, `HTTP_PROXY` and `HTTPS_PROXY` environment variables are set to `http://127.0.0.1:18888`
+2. `HTTP_PROXY` and `HTTPS_PROXY` environment variables are set to `http://127.0.0.1:18888`
 3. Most tools (curl, wget, npm, pip, maven, etc.) automatically use these proxy variables
 4. Tinyproxy checks each request against the whitelist file
 5. Whitelisted domains: connection proceeds normally
@@ -54,37 +54,89 @@ RUN /opt/codingbooth/setups/network-whitelist--setup.sh
 # ... other setups
 ```
 
+**Important:** The network whitelist is **always enabled** when this setup is installed. There is no way to disable it from inside the container (by design, for security).
+
+## Experimental: Firewall Enforcement
+
+> **⚠️ EXPERIMENTAL FEATURE - NOT A SECURITY BOUNDARY**
+>
+> This feature is experimental and **can be bypassed by a determined bad actor** with shell access inside the container. It provides defense-in-depth but should not be relied upon as a security boundary. See "Known Bypass Methods" below.
+
+By default, the network whitelist relies on applications respecting the `HTTP_PROXY` environment variables. A malicious actor could bypass this by unsetting these variables.
+
+For stronger enforcement, you can enable iptables-based firewall rules that block direct HTTP/HTTPS connections, forcing all traffic through the proxy.
+
+### Enabling Firewall Enforcement
+
+Add `CAP_NET_ADMIN` capability in your `.booth/config.toml`:
+
+```toml
+run-args = [
+    "--cap-add=NET_ADMIN",
+]
+```
+
+When the container starts with this capability, the setup will automatically:
+1. Block direct outgoing connections to ports 80 and 443
+2. Allow only localhost connections (where the proxy runs)
+3. Allow DNS queries (port 53)
+
+This means even if someone runs `unset HTTP_PROXY && curl google.com`, the connection will be blocked at the firewall level.
+
+### Verifying Firewall Enforcement
+
+Inside the container, check if iptables rules are active:
+
+```bash
+sudo iptables -L OUTPUT -n
+```
+
+You should see rules blocking ports 80 and 443.
+
+### Known Bypass Methods (Why This Is Experimental)
+
+A bad actor with shell access inside the container could bypass this feature by:
+
+1. **Modifying iptables rules** - If they have sudo access, they can flush or modify the firewall rules
+2. **Killing tinyproxy** - Stop the proxy process and modify the whitelist
+3. **Editing whitelist files** - Add their desired domains to `~/.network-whitelist`
+4. **Using other ports** - The firewall only blocks ports 80 and 443; traffic on other ports (8080, 8443, etc.) is not affected
+5. **Using non-HTTP protocols** - SSH tunneling, raw TCP connections, etc. are not filtered
+6. **DNS exfiltration** - DNS queries are allowed for domain resolution
+
+### What This Feature Is Good For
+
+Despite the limitations, firewall enforcement is useful for:
+
+- **Accidental bypass prevention** - Stops scripts that don't respect proxy environment variables
+- **Defense in depth** - Adds another layer that must be bypassed
+- **Compliance guardrails** - Demonstrates network controls are in place
+- **Legitimate user guidance** - Makes it clear that network restrictions are intentional
+
+### Security Considerations
+
+With firewall enforcement enabled:
+- Direct HTTP/HTTPS connections are blocked at the kernel level
+- The proxy environment variables cannot be accidentally bypassed
+- DNS queries are still allowed (for domain resolution)
+- Other protocols (SSH, raw TCP on other ports) are not affected
+- **A determined bad actor with sudo access CAN still bypass**
+
+Without firewall enforcement (no `CAP_NET_ADMIN`):
+- Security relies on applications respecting `HTTP_PROXY`
+- A determined user can bypass by unsetting environment variables
+- Still effective as a "guardrail" for legitimate use
+
+### Future Improvements (Under Consideration)
+
+For truly enforced network restrictions, future versions may explore:
+
+1. **Docker network isolation** - Using `--network=none` with a sidecar proxy container
+2. **Removing sudo access** - Preventing users from modifying iptables (may break other features)
+3. **Network namespaces** - More granular network isolation at the container level
+4. **External proxy/firewall** - Enforcing restrictions outside the container where users have no access
+
 ## Usage
-
-### Enable Network Whitelist
-
-The whitelist is **disabled by default** for backwards compatibility. Enable it inside the container:
-
-```bash
-network-whitelist-enable
-```
-
-This will:
-1. Create the enabled flag file (`~/.network-whitelist-enabled`)
-2. Combine default and user whitelists
-3. Start the tinyproxy proxy
-4. Set environment variables in new shell sessions
-
-**Important:** After enabling, start a new shell session or source the profile:
-```bash
-source /etc/profile.d/40-cb-network-whitelist--profile.sh
-```
-
-### Disable Network Whitelist
-
-```bash
-network-whitelist-disable
-```
-
-Then start a new shell session or manually unset the proxy variables:
-```bash
-unset HTTP_PROXY HTTPS_PROXY http_proxy https_proxy
-```
 
 ### Check Status
 
@@ -96,7 +148,7 @@ Output:
 ```
 === Network Whitelist Status ===
 
-Status: ENABLED
+Status: ENABLED (always on when installed)
 
 Proxy: Running (port 18888)
 
@@ -163,12 +215,12 @@ network-whitelist-reload
 
 | Command                      | Description                              |
 |:-----------------------------|:-----------------------------------------|
-| `network-whitelist-enable`   | Enable network restrictions              |
-| `network-whitelist-disable`  | Disable network restrictions             |
 | `network-whitelist-status`   | Show current status and domain counts    |
 | `network-whitelist-list`     | List whitelisted domains                 |
 | `network-whitelist-add`      | Add domain(s) to user whitelist          |
 | `network-whitelist-reload`   | Apply whitelist changes                  |
+
+**Note:** There are no `enable` or `disable` commands. The whitelist is always enabled when installed and cannot be disabled from inside the container.
 
 ## Default Whitelisted Domains
 
@@ -240,16 +292,15 @@ api\.v[0-9]+\.example\.com
 | `/etc/tinyproxy/default-whitelist.txt` | System default whitelist      |
 | `/etc/tinyproxy/whitelist.txt`      | Combined active whitelist        |
 | `~/.network-whitelist`              | User's custom whitelist          |
-| `~/.network-whitelist-enabled`      | Flag file (presence = enabled)   |
 | `.booth/home/.network-whitelist`    | Team-shared whitelist (in repo)  |
 
 ## Limitations
 
 1. **HTTP/HTTPS only** - The proxy only filters HTTP and HTTPS traffic. Other protocols (SSH, raw TCP, etc.) are not affected.
 
-2. **Proxy-aware tools only** - Tools must respect the `HTTP_PROXY`/`HTTPS_PROXY` environment variables. Most package managers do, but some tools may not.
+2. **Proxy-aware tools only** - Without firewall enforcement, tools must respect the `HTTP_PROXY`/`HTTPS_PROXY` environment variables. With firewall enforcement (`CAP_NET_ADMIN`), direct connections are blocked.
 
-3. **No IP address filtering** - The whitelist works on domain names, not IP addresses. Direct IP connections bypass the proxy.
+3. **No IP address filtering** - The whitelist works on domain names, not IP addresses. Direct IP connections bypass the proxy (unless firewall enforcement is enabled).
 
 4. **DNS resolution** - DNS queries are not filtered. The domain is checked when the HTTP CONNECT request is made.
 
@@ -294,18 +345,33 @@ curl -v --proxy $HTTP_PROXY https://blocked-domain.com
 
 Look for `403 Filtered` in the response.
 
+### Firewall rules not working
+
+Make sure the container has `CAP_NET_ADMIN`:
+```bash
+# In config.toml
+run-args = ["--cap-add=NET_ADMIN"]
+```
+
+Check if iptables rules are present:
+```bash
+sudo iptables -L OUTPUT -n
+```
+
 ## Example Project
 
 See `examples/workspaces/urlwhitelist-example/` for a complete working example with tests.
 
 ```bash
 cd examples/workspaces/urlwhitelist-example
-../../booth --daemon
-docker exec -it urlwhitelist-example bash -l
+../../../coding-booth -- bash
 
 # Inside container:
-network-whitelist-enable
 network-whitelist-status
 curl -I https://pypi.org      # Works (whitelisted)
 curl -I https://example.com   # Blocked (not whitelisted)
+
+# Test firewall enforcement (if CAP_NET_ADMIN enabled)
+unset HTTP_PROXY HTTPS_PROXY
+curl https://google.com       # Still blocked by iptables
 ```

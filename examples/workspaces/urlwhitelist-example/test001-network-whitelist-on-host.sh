@@ -36,20 +36,23 @@ echo
 echo "Starting coding-booth..."
 ../../../coding-booth --daemon > /dev/null 2>&1 || true
 
-# Wait for booth to be ready
-sleep 3
+# Wait for booth to be ready (up to 60 seconds)
+echo "Waiting for booth container to be ready..."
+for i in {1..60}; do
+    if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+        pass "Booth started (after ${i}s)"
+        break
+    fi
+    if [ $i -eq 60 ]; then
+        fail "Failed to start booth (timeout after 60s)"
+    fi
+    sleep 1
+done
 
-# Check if booth container is running
-if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-    pass "Booth started"
-else
-    fail "Failed to start booth"
-fi
-
-# Run container tests
+# Run container tests (as coder user so $HOME is /home/coder)
 echo
 echo "Running container tests..."
-if docker exec "$CONTAINER_NAME" bash -lc "cd /home/coder/code && ./test-on-container.sh"; then
+if docker exec -u coder "$CONTAINER_NAME" bash -lc "cd /home/coder/code && ./test-on-container.sh"; then
     pass "Container tests passed"
 else
     fail "Container tests failed"

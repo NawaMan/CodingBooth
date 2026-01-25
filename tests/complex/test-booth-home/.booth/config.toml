@@ -1,0 +1,4 @@
+variant = "base"
+
+# No special run-args needed - .booth/home is automatically detected
+# and copied to /home/coder at container start (no-clobber)
