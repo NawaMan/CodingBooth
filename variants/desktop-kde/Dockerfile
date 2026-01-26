@@ -4,17 +4,18 @@ FROM nawaman/codingbooth:base-${CB_VERSION_TAG}
 
 # Given user is root and /opt/codingbooth/setups is in PATH (from base image)
 
+ARG PYTHON_VERSION=3.12
+RUN python--setup.sh ${PYTHON_VERSION}
+
 RUN kde--setup.sh
 RUN firefox--setup.sh
 RUN google-chrome--setup.sh
-
-ARG PYTHON_VERSION=3.12
-RUN python--setup.sh ${PYTHON_VERSION}
 RUN vscode--setup.sh
 RUN base-code-extension--setup.sh
 RUN bash-code-extension--setup.sh
 RUN python-code-extension--setup.sh
 RUN jupyter-code-extension--setup.sh
+RUN python-nb-kernel--setup.sh
 RUN bash-nb-kernel--setup.sh
 
 # This is so that some basic GTK would work.

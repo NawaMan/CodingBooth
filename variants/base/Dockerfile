@@ -58,7 +58,6 @@ RUN set -euo pipefail \
   jq     \
   mc     \
   nano   \
-  ranger \
   tilde  \
   tig    \
   tmux   \
@@ -86,11 +85,11 @@ RUN set -euo pipefail \
   ; free_gid() { local gid=1000; while getent group  "$gid" >/dev/null; do gid=$((gid+1)); done; echo "$gid"; } \
   ; if ! getent group coder >/dev/null;      then gid="$(free_gid)"; groupadd -g    "$gid"                       coder; fi \
   ; if ! id -u coder        >/dev/null 2>&1; then uid="$(free_uid)"; useradd  -M -u "$uid" -g coder -s /bin/bash coder; fi \
-  ; mkdir -p  /home/coder/code         \
+  ; mkdir -p          /home/coder/code \
   ; chown coder:coder /home/coder      \
   ; chown coder:coder /home/coder/code \
-  ; chmod 755 /home/coder              \
-  ; chmod 755 /home/coder/code
+  ; chmod 755         /home/coder      \
+  ; chmod 755         /home/coder/code
 
 # Startup scripts directory - scripts here run once at first container start
 RUN mkdir -p /usr/share/startup.d
@@ -122,10 +121,10 @@ ENV PATH=/opt/codingbooth/setups:/home/coder/.local/bin:$PATH
 
 # Copy documentation files (staged by build script)
 # These provide self-documenting environment for users/agents inside the container
-COPY --chmod=0644 ./_stage/README.md /opt/codingbooth/
-COPY --chmod=0644 ./_stage/LICENSE /opt/codingbooth/
+COPY --chmod=0644 ./_stage/README.md   /opt/codingbooth/
+COPY --chmod=0644 ./_stage/LICENSE     /opt/codingbooth/
 COPY --chmod=0644 ./_stage/version.txt /opt/codingbooth/
-COPY --chmod=0644 ./_stage/AGENT.md /opt/codingbooth/
+COPY --chmod=0644 ./_stage/AGENT.md    /opt/codingbooth/
 # Directories need 0755 for traversal; files inside are still readable
 COPY ./_stage/variants/ /opt/codingbooth/variants/
 RUN chmod -R a+rX /opt/codingbooth/variants

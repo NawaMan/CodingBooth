@@ -24,6 +24,10 @@ fi
 
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
+# ---------------- Load environment from profile.d ----------------
+# These set: PY_STABLE, PY_STABLE_VERSION, PY_SERIES, VENV_SERIES_DIR, PATH tweaks, etc.
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+
 SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}
 CODE_EXTENSION_LIB=${CODE_EXTENSION_LIB:-code-extension-source.sh}
 source "${SETUP_LIBS_DIR}/${CODE_EXTENSION_LIB}"

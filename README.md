@@ -28,8 +28,9 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
 - [How It Works](#how-it-works)
 - [`booth` Manual](#booth-manual)
 - [Setup Implementation Notes](#setup-implementation-notes)
+- [Troubleshooting](#troubleshooting)
 - [Implementation Documentation](#implementation-documentation)
-- [Community & Feedback](#community-feedback)
+- [Community & Feedback](#community--feedback)
 
 ## Quick Try
 
@@ -68,6 +69,20 @@ Run the wrapper script and follow the instructions.
 ```shell
 ./ws
 ```
+
+### Updating CodingBooth
+
+To update CodingBooth to the latest version:
+
+```shell
+# Re-run the wrapper to update the booth script
+./ws
+
+# Pull the latest images (optional, happens automatically if not present)
+./booth --pull
+```
+
+The wrapper script (`./ws`) checks for updates and downloads the latest `coding-booth` binary when run.
 
 ## CLI Usage
 
@@ -285,9 +300,42 @@ These essentials are preinstalled so you can start working immediately — no ex
 
 ---
 
-> 💡 **Tip:** Each variant extends this base toolset — for example,  
-> `notebook` adds Jupyter, and `codeserver` adds a web-based IDE.  
+> 💡 **Tip:** Each variant extends this base toolset — for example,
+> `notebook` adds Jupyter, and `codeserver` adds a web-based IDE.
 > You can also customize your setup by adding additional packages in your Dockerfile.
+
+### Available Setup Scripts
+
+CodingBooth provides ready-to-use setup scripts for common development tools. Add them to your `.booth/Dockerfile`:
+
+```dockerfile
+FROM nawaman/codingbooth:base-latest
+
+# Languages
+RUN python--setup.sh           # Python with pip, venv
+RUN nodejs--setup.sh           # Node.js with npm
+RUN jdk--setup.sh              # Java JDK
+RUN go--setup.sh               # Go language
+
+# Build tools
+RUN mvn--setup.sh              # Apache Maven
+RUN gradle--setup.sh           # Gradle
+
+# Developer tools
+RUN docker-compose--setup.sh   # Docker Compose
+RUN neovim--setup.sh           # Neovim editor
+```
+
+**To see all available scripts:**
+```bash
+# Inside a running container
+ls /opt/codingbooth/setups/
+
+# Or check the repository
+# https://github.com/NawaMan/CodingBooth/tree/main/variants/base/setups
+```
+
+> 💡 **Tip:** Setup scripts handle PATH configuration, environment variables, and any required startup hooks automatically.
 
 
 ## Quick Examples
@@ -344,6 +392,26 @@ my-project/
 - ✅ **Host file ownership:** All files in your project folder remain owned by your host user — no "root-owned" files.
 - ✅ **Consistent user mapping:** Each container automatically creates a matching user and group via `booth-entry`.
 - ⚠️ **Cross-OS caveats:** CodingBooth doesn't abstract away all host OS differences — things like line endings, symlinks, or file attributes may still vary between platforms.
+
+### Security Considerations
+
+CodingBooth is designed for development environments, not production workloads. Key security aspects:
+
+| Aspect | Behavior |
+|--------|----------|
+| **User privileges** | Processes run as unprivileged `coder` user, not root |
+| **Sudo access** | `coder` has passwordless sudo (for installing packages) |
+| **File ownership** | Files match your host UID/GID — no root-owned files |
+| **Network** | Full network access by default; use Network Whitelist for restrictions |
+| **DinD mode** | Requires `--privileged` flag (elevated permissions) |
+
+**Best practices:**
+- Don't run untrusted code in CodingBooth containers
+- Use Network Whitelist in security-conscious environments
+- Avoid mounting sensitive host directories beyond what's needed
+- DinD mode grants significant privileges — use only when needed
+
+> ⚠️ **Note:** CodingBooth prioritizes developer experience over strict isolation. For production containers or multi-tenant environments, use standard Docker security practices.
 
 ### JetBrains IDE Licensing in Containers
 
@@ -403,11 +471,30 @@ container
 
 ---
 
-> 🧠 **In short:**  
+> 🧠 **In short:**
 > CodingBooth mirrors your host identity inside the container — you work as yourself, not as root.
 
 
 **Result:** seamless dev environment, no permission headaches.
+
+### Data Persistence
+
+Understanding what persists across container restarts is critical:
+
+| Location | Persists? | Notes |
+|----------|-----------|-------|
+| `/home/coder/code/` | **Yes** | Bind-mounted from host; this is your project folder |
+| `/home/coder/` (outside `code/`) | No | Ephemeral; lost on container restart |
+| `/opt/`, `/usr/`, `/etc/` | No | System directories; lost on restart |
+| Installed packages | No | Must be in Dockerfile to persist |
+
+**What this means:**
+- **Your code is safe** — it lives on the host and is never lost
+- **Home directory customizations** — use `.booth/home/` or `.booth/home-seed/` to persist dotfiles
+- **Installed tools** — add them to your `.booth/Dockerfile` so they're rebuilt each time
+- **Container state** — treat containers as disposable; rebuild rather than modify
+
+> 💡 **Tip:** If you need to persist something outside `/home/coder/code/`, either add it to your Dockerfile or mount an additional volume via `run-args`.
 
 ---
 
@@ -1109,6 +1196,91 @@ exec /usr/local/bin/real-<thing> "$@"
 ## Custom Setups
 You can create your own setup scripts to install any tool you need.
 Simply copy into your docker image and run it just like other setup scripts.
+
+
+## Troubleshooting
+
+### "Docker not found" or "Cannot connect to Docker daemon"
+
+```bash
+# Check if Docker is installed and running
+docker version
+
+# If permission denied, add yourself to docker group
+sudo usermod -aG docker $USER
+# Then logout and login again
+```
+
+### "Permission denied" on project files
+
+This usually means the container's user doesn't match your host user. CodingBooth handles this automatically, but if you see issues:
+
+```bash
+# Check your UID/GID
+id
+
+# Verify booth is passing them correctly
+./booth --dryrun --verbose | grep HOST_UID
+```
+
+### "Port already in use"
+
+```bash
+# Find what's using the port
+lsof -i :10000
+
+# Use a different port
+./booth --port 10001
+
+# Or let CodingBooth find the next available port
+./booth --port NEXT
+```
+
+### "Container exits immediately"
+
+Common causes:
+- **Command failed** — Check the exit code and logs
+- **Missing dependencies** — Ensure your Dockerfile installs everything needed
+- **Syntax error in startup script** — Check `.booth/startup.sh`
+
+```bash
+# Debug by getting a shell instead
+./booth --variant base
+
+# Check container logs
+docker logs <container-name>
+```
+
+### "Build takes forever" / "Downloading same packages every time"
+
+Your Dockerfile might not be using layer caching effectively:
+- Put rarely-changing commands first
+- Use `COPY requirements.txt` before `RUN pip install`
+- Don't run `apt-get update` and `apt-get install` in separate layers
+
+### Desktop variant shows black screen
+
+- Wait a few seconds — VNC server takes time to start
+- Check `~/.vnc/*.log` inside the container for errors
+- Verify dbus is running: `pgrep dbus-daemon`
+
+### "Network timeout" when installing packages
+
+If behind a corporate proxy:
+```toml
+# .booth/config.toml
+run-args = [
+    "-e", "HTTP_PROXY=http://proxy.company.com:8080",
+    "-e", "HTTPS_PROXY=http://proxy.company.com:8080"
+]
+```
+
+### Still stuck?
+
+1. Try `--verbose` for detailed debug output
+2. Use `--dryrun` to see the exact Docker command
+3. Check [GitHub Issues](https://github.com/NawaMan/CodingBooth/issues) for similar problems
+4. Open a new issue with your config and error message
 
 
 ## Implementation Documentation
