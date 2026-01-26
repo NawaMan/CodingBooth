@@ -24,7 +24,7 @@ PORT=7654
 
 export TIMEZONE="America/Toronto"
 
-ACTUAL=$(../../coding-booth --dryrun --port $PORT --variant base -- sleep 1)
+ACTUAL=$(run_coding_booth --dryrun --port $PORT --variant base -- sleep 1)
 ACTUAL=$(printf "%s\n" "$ACTUAL")
 
 HERE="$CURRENT_PATH"

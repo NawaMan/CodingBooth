@@ -47,7 +47,7 @@ for entry in "${VARIANTS[@]}"; do
   WANT_VARIANT="${entry%%:*}"
   GOT_VARIANT="${entry#*:}"
 
-  ACTUAL=$(../../coding-booth --dryrun --variant "${WANT_VARIANT}" -- sleep 1)
+  ACTUAL=$(run_coding_booth --dryrun --variant "${WANT_VARIANT}" -- sleep 1)
   ACTUAL=$(printf "%s\n" "$ACTUAL")
 
   # Notice that there is not `-rm`

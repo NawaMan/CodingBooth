@@ -22,7 +22,7 @@ fi
 
 export TIMEZONE="America/Toronto"
 
-ACTUAL=$(../../coding-booth --variant base --dryrun --name test-container -- tree -C)
+ACTUAL=$(run_coding_booth --variant base --dryrun --name test-container -- tree -C)
 
 HERE="$CURRENT_PATH"
 VERSION="$(cat ../../version.txt)"

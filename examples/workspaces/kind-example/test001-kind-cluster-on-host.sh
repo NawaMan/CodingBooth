@@ -24,10 +24,21 @@ cleanup() {
     echo "Cleaning up..."
     # Delete kind cluster if running
     docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./stop-cluster.sh" 2>/dev/null || true
-    # Stop booth
+
+    # Stop and remove the main booth container
     docker stop "$CONTAINER_NAME" 2>/dev/null || true
-    docker stop "${CONTAINER_NAME}-10000-dind" 2>/dev/null || true
-    docker network rm "${CONTAINER_NAME}-10000-net" 2>/dev/null || true
+    docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+
+    # Stop and remove any DinD sidecar containers (pattern: {name}-*-dind)
+    for container in $(docker ps -aq --filter "name=${CONTAINER_NAME}-.*-dind" 2>/dev/null); do
+        docker stop "$container" 2>/dev/null || true
+        docker rm -f "$container" 2>/dev/null || true
+    done
+
+    # Remove any associated networks (pattern: {name}-*-net)
+    for network in $(docker network ls --filter "name=${CONTAINER_NAME}-" --format '{{.Name}}' 2>/dev/null | grep -- '-net$'); do
+        docker network rm "$network" 2>/dev/null || true
+    done
 }
 
 trap cleanup EXIT
@@ -49,8 +60,8 @@ else
     fail "Failed to start booth"
 fi
 
-# Check if DinD sidecar is running
-if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}-10000-dind$"; then
+# Check if DinD sidecar is running (any port)
+if docker ps --format '{{.Names}}' | grep -qE "^${CONTAINER_NAME}-[0-9]+-dind$"; then
     pass "DinD sidecar running"
 else
     fail "DinD sidecar should be running"

@@ -20,7 +20,7 @@ echo "=== Testing Java Version ==="
 echo ""
 
 # Capture java -version output (note: java -version outputs to stderr)
-output=$("$SCRIPT_DIR/../../../coding-booth" --variant base -- 'java -version' 2>&1)
+output=$("$SCRIPT_DIR/../../../coding-booth" --variant base --silence-build -- 'java -version' 2>&1)
 
 echo "$output"
 echo ""

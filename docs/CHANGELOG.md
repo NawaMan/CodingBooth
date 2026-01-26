@@ -5,6 +5,8 @@ This file contains a list of changes for each released version.
 ## v0.12.0
 - Rebrand fully to "CodingBooth"!!! Yeah!
 - Command mode now silently forwards exit codes (no error message when commands fail)
+- Add /etc/cb-home and /etc/cb-home-seed feature
+- Add .booth/home and ~/.booth/home-seed feature
 - Added `network-whitelist` setup for restricting container internet access to whitelisted domains
 
 ## v0.11.0

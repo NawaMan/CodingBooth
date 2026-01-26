@@ -73,7 +73,7 @@ cleanup
 
 # Start container in daemon mode
 echo "Starting container '$NAME' on port $PORT..."
-../../coding-booth --variant base --name "$NAME" --port "$PORT" --daemon -- 'sleep 120'
+run_coding_booth --variant base --name "$NAME" --port "$PORT" --daemon -- 'sleep 120'
 
 # Wait for container to be ready (max ~30 seconds)
 for i in {1..30}; do

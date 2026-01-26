@@ -12,7 +12,7 @@ source ../../common--source.sh
 strip_ansi() { sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g'; }
 
 # Run with config that has multiple ports
-ACTUAL=$(../../../coding-booth --config test--config.toml --dryrun 2>&1 | strip_ansi)
+ACTUAL=$(run_coding_booth --config test--config.toml --dryrun 2>&1 | strip_ansi)
 
 # Test 1: Check that all ports are in the DinD sidecar command (docker:dind line)
 if echo "$ACTUAL" | grep "docker:dind" | grep -q "\-p 10000:10000 -p 8080:8080 -p 3000:3000"; then

@@ -68,6 +68,9 @@ cat > "/home/coder/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml" <
 </channel>
 EOF
 
+# Link Claude agent
+ln -sf /opt/codingbooth/AGENT.md /home/coder/CLAUDE.md
+
 if [[ "${CB_SILENCE_BUILD:-false}" != "true" ]]; then
   echo "✅ Demo startup complete!"
 fi

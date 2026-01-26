@@ -59,8 +59,9 @@ EOF
 
 # Helper to run the booth with our test image and capture stdout
 run_cb() {
-  # We’ll pass an explicit image to avoid any build/pull logic, pick a random port to avoid conflicts
+  # We'll pass an explicit image to avoid any build/pull logic, pick a random port to avoid conflicts
   # Note: The script wraps the command in `bash -lc "<cmd>"` internally
+  echo -e "${COLOR_BOOTH:-}> coding-booth -- $*${COLOR_RESET:-}" >&2
   "$CB_SCRIPT" -- "$@"
 }
 

@@ -16,7 +16,7 @@ trap cleanup EXIT  # run cleanup on script exit (success or error)
 cleanup
 DATE=$(date)
 echo $DATE > in-host.txt
-../../coding-booth --variant base -- echo $DATE '>' in-workspace.txt
+run_coding_booth --variant base -- echo $DATE '>' in-workspace.txt
 
 if diff -u in-workspace.txt in-host.txt; then
   print_test_result "true" "$0" "1" "Command execution matches"

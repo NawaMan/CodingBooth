@@ -22,7 +22,7 @@ echo "=== Test: cb-home-seed ==="
 FAILED=0
 
 # Test 1: No-clobber - existing file should NOT be overwritten
-ACTUAL=$(../../../coding-booth -- cat /home/coder/.testfile 2>/dev/null | tr -d '\r\n')
+ACTUAL=$(run_coding_booth -- cat /home/coder/.testfile 2>/dev/null | tr -d '\r\n')
 EXPECTED="ORIGINAL_FROM_BUILD"
 
 if [[ "$ACTUAL" == "$EXPECTED" ]]; then
@@ -35,7 +35,7 @@ else
 fi
 
 # Test 2: Normal copy - non-existing file SHOULD be copied
-ACTUAL=$(../../../coding-booth -- cat /home/coder/.testfile-normal 2>/dev/null | tr -d '\r\n')
+ACTUAL=$(run_coding_booth -- cat /home/coder/.testfile-normal 2>/dev/null | tr -d '\r\n')
 EXPECTED="FROM_CB_HOME_SEED_NORMAL"
 
 if [[ "$ACTUAL" == "$EXPECTED" ]]; then

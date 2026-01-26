@@ -25,7 +25,7 @@ WORKSPACE=".."
 
 export TIMEZONE="America/Toronto"
 
-ACTUAL=$(../../coding-booth --dryrun --code ${WORKSPACE} --variant base -- sleep 1)
+ACTUAL=$(run_coding_booth --dryrun --code ${WORKSPACE} --variant base -- sleep 1)
 ACTUAL=$(printf "%s\n" "$ACTUAL")
 
 VERSION="$(cat ../../version.txt)"

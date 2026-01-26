@@ -26,7 +26,7 @@ FAILED=0
 
 # Test 1: cmds from config.toml should execute when no CLI command provided
 # Note: We need to use a subshell approach since booth without -- runs interactively
-ACTUAL=$(../../../coding-booth 2>/dev/null | tr -d '\r\n')
+ACTUAL=$(run_coding_booth 2>/dev/null | tr -d '\r\n')
 EXPECTED="CMDS_EXECUTED"
 
 if [[ "$ACTUAL" == "$EXPECTED" ]]; then
@@ -39,7 +39,7 @@ else
 fi
 
 # Test 2: CLI command should override cmds (not append)
-ACTUAL=$(../../../coding-booth -- echo "CLI_OVERRIDE" 2>/dev/null | tr -d '\r\n')
+ACTUAL=$(run_coding_booth -- echo "CLI_OVERRIDE" 2>/dev/null | tr -d '\r\n')
 EXPECTED="CLI_OVERRIDE"
 
 if [[ "$ACTUAL" == "$EXPECTED" ]]; then

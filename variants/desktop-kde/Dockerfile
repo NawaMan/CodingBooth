@@ -34,5 +34,5 @@ RUN cleanup-after--setup.sh
 COPY wallpaper.png /usr/share/backgrounds/codingbooth-wallpaper.png
 
 
-CMD ["bash","-lc","exec start-kde"]
+CMD ["start-kde"]
 

@@ -37,7 +37,7 @@ function realpath() {
 }
 
 
-ACTUAL=$(../../coding-booth --verbose --dryrun | grep -E '^[A-Z_]+:' | sort)
+ACTUAL=$(run_coding_booth --verbose --dryrun | grep -E '^[A-Z_]+:' | sort)
 
 EXPECT="\
 BUILD_ARGS: 
@@ -99,7 +99,7 @@ variant = "codeserver"
 EOF
 
 
-ACTUAL=$(../../coding-booth --verbose --dryrun --config test--config.toml | grep -E '^[A-Z_]+:' | sort)
+ACTUAL=$(run_coding_booth --verbose --dryrun --config test--config.toml | grep -E '^[A-Z_]+:' | sort)
 
 EXPECT="\
 BUILD_ARGS: 

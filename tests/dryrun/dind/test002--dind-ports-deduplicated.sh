@@ -12,7 +12,7 @@ source ../../common--source.sh
 strip_ansi() { sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g'; }
 
 # Run with config that has 8080 and 3000, plus CLI adds 8080 again (duplicate) and 5000 (new)
-ACTUAL=$(../../../coding-booth --config test--config.toml --dryrun -p 8080:8080 -p 5000:5000 2>&1 | strip_ansi)
+ACTUAL=$(run_coding_booth --config test--config.toml --dryrun -p 8080:8080 -p 5000:5000 2>&1 | strip_ansi)
 
 # Test 1: Check that all unique ports are present in DinD sidecar (no duplicates)
 # Expected: -p 10000:10000 -p 8080:8080 -p 3000:3000 -p 5000:5000

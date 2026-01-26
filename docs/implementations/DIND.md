@@ -1,12 +1,19 @@
-# Docker-in-Docker (DinD) in Coding Booth
+# Docker-in-Docker (DinD) Implementation
 
-This document describes the Docker-in-Docker (DinD) implementation used by Coding Booth, including its architecture, startup flow, and the observable effects from both the host and inside the booth container.
+Run Docker and Kubernetes inside CodingBooth — without touching your host Docker daemon.
+CodingBooth’s Docker-in-Docker (DinD) implementation provides a fully isolated, reproducible container runtime that lets you build images, run containers, and launch Kubernetes clusters safely inside a workspace.
+All Docker state lives in a dedicated sidecar daemon, host ports are exposed only by explicit declaration, and nothing started inside the booth can pollute or interfere with your host environment.
+The result is a clean, predictable, and secure Docker experience — perfect for microservices development, CI workflows, and Kubernetes experimentation.
 
-The goal is to allow users to run Docker workloads inside Coding Booth without exposing the host Docker daemon, while maintaining predictable and secure port exposure behavior.
+This document describes the Docker-in-Docker (DinD) implementation used by CodingBooth, including its architecture, startup flow, and the observable effects from both the host and inside the booth container.
+
+The goal is to allow users to run Docker workloads inside CodingBooth without exposing the host Docker daemon, while maintaining predictable and secure port exposure behavior.
+
+---
 
 ## Design Goals
 
-The DinD implementation in Coding Booth is designed to:
+The DinD implementation in CodingBooth is designed to:
 
 - Allow users to run Docker commands (`docker build`, `docker run`, Kubernetes tools, etc.) inside the booth container
 - Avoid mounting the host Docker socket (`/var/run/docker.sock`)
@@ -16,7 +23,7 @@ The DinD implementation in Coding Booth is designed to:
 
 ## High-Level Overview
 
-When DinD is enabled, Coding Booth runs two containers:
+When DinD is enabled, CodingBooth runs two containers:
 
 **DinD sidecar container**
 - Runs a Docker daemon (`docker:dind`)
@@ -53,15 +60,15 @@ The booth container does not talk to the host Docker daemon. Instead, it talks t
 │  │            │                                             │  │
 │  │            │  Shared network namespace                   │  │
 │  │            │                                             │  │
-│  │  ┌─────────┴───────────┐                                 │  │
-│  │  │   Booth Container   │                                 │  │
-│  │  │   (coding-booth)    │                                 │  │
-│  │  │                     │                                 │  │
-│  │  │  - User code        │                                 │  │
-│  │  │  - Docker CLI       │                                 │  │
-│  │  │  - DOCKER_HOST=     │                                 │  │
-│  │  │    tcp://localhost:2375                               │  │
-│  │  └─────────────────────┘                                 │  │
+│  │  ┌─────────┴─────────────────┐                           │  │
+│  │  │   Booth Container         │                           │  │
+│  │  │   (coding-booth)          │                           │  │
+│  │  │                           │                           │  │
+│  │  │  - User code              │                           │  │
+│  │  │  - Docker CLI             │                           │  │
+│  │  │  - DOCKER_HOST=           │                           │  │
+│  │  │    tcp://localhost:2375   │                           │  │
+│  │  └───────────────────────────┘                           │  │
 │  └──────────────────────────────────────────────────────────┘  │
 │                                                                │
 │  Host ports exposed: 10000, 8080, 3000                         │
@@ -118,11 +125,11 @@ This has several important effects:
 
 Ports exposed to the host come from three sources:
 
-| Source | Description | Example |
-|--------|-------------|---------|
-| Booth port | Main port for booth services (code-server, VNC, etc.) | `10000:10000` |
-| Config file | Ports declared in `.booth/config.toml` via `run-args` | `8080:8080` |
-| CLI | Ports passed directly on command line | `5000:5000` |
+| Source      | Description                                           | Example       |
+|-------------|-------------------------------------------------------|---------------|
+| Booth port  | Main port for booth services (code-server, VNC, etc.) | `10000:10000` |
+| Config file | Ports declared in `.booth/config.toml` via `run-args` | `8080:8080`   |
+| CLI         | Ports passed directly on command line                 | `5000:5000`   |
 
 All ports are collected and passed to the DinD sidecar. **Duplicate ports are automatically deduplicated.**
 
@@ -162,7 +169,7 @@ If the same port is declared in both config and CLI, it appears only once:
 
 ### How Port Handling Works
 
-1. Coding Booth parses `run-args` from config and CLI
+1. CodingBooth parses `run-args` from config and CLI
 2. Port flags (`-p`, `--publish`) are extracted and deduplicated
 3. These flags are applied to the DinD sidecar
 4. Port flags are removed from the booth container arguments
@@ -198,9 +205,9 @@ Both services are reachable from inside the booth:
 Only ports declared at startup are reachable:
 
 | Port | Declared at startup? | Accessible from host? |
-|------|---------------------|----------------------|
-| 8080 | Yes (in config) | Yes |
-| 3000 | No | No |
+|------|----------------------|-----------------------|
+| 8080 | Yes (in config)      | Yes                   |
+| 3000 | No                   | No                    |
 
 This guarantees that no new host ports can be exposed after startup.
 
@@ -225,9 +232,9 @@ There are two Docker daemons involved:
 
 ### Resulting Visibility
 
-| Location | `docker ps` shows |
-|----------|-------------------|
-| Host | Sidecar + booth containers |
+| Location     | `docker ps` shows            |
+|--------------|------------------------------|
+| Host         | Sidecar + booth containers   |
 | Inside booth | Only user-started containers |
 
 This separation is intentional and ensures isolation from the host Docker daemon.
@@ -255,11 +262,11 @@ When the booth session ends:
 
 The DinD setup is handled in these source files:
 
-| File | Purpose |
-|------|---------|
-| `cli/src/pkg/booth/booth_runner.go` | `SetupDind()` orchestrates DinD initialization |
-| `cli/src/pkg/booth/dind_setup.go` | Network creation, sidecar management, port extraction |
-| `cli/src/pkg/booth/dind_names.go` | Naming conventions for DinD resources |
+| File                                | Purpose                                               |
+|-------------------------------------|-------------------------------------------------------|
+| `cli/src/pkg/booth/booth_runner.go` | `SetupDind()` orchestrates DinD initialization        |
+| `cli/src/pkg/booth/dind_setup.go`   | Network creation, sidecar management, port extraction |
+| `cli/src/pkg/booth/dind_names.go`   | Naming conventions for DinD resources                 |
 
 Key functions:
 - `extractPortFlags()` - Extracts and deduplicates port mappings from `run-args`
@@ -273,9 +280,27 @@ Key functions:
 - DinD requires privileged mode
 - Slight performance overhead due to nested Docker
 
+## FAQ
+
+### Why Not Mount the Host Docker Socket?
+
+Mounting `/var/run/docker.sock` would:
+
+- give the booth full control over the host Docker daemon
+- allow accidental deletion of host containers and images
+- allow uncontrolled host port exposure
+- break isolation between projects
+
+The DinD sidecar design avoids all of these risks by:
+
+- isolating Docker state per booth
+- preventing host daemon access
+- enforcing explicit port exposure
+- keeping host Docker clean
+
 ## Summary
 
-Coding Booth's DinD implementation provides:
+CodingBooth's DinD implementation provides:
 
 - A clean separation between host and user Docker workloads
 - Explicit, startup-time port exposure
@@ -284,3 +309,13 @@ Coding Booth's DinD implementation provides:
 - Automatic deduplication of port mappings
 
 All observed behaviors — port access, container visibility, and isolation — are intentional design outcomes, not side effects.
+
+---
+
+## Related Files
+
+- `cli/src/pkg/booth/booth_runner.go` — `SetupDind()` orchestrates DinD initialization
+- `cli/src/pkg/booth/dind_setup.go` — Network creation, sidecar management, port extraction
+- `cli/src/pkg/booth/dind_names.go` — Naming conventions for DinD resources
+- `examples/dind-example/` — Basic DinD usage example
+- `examples/kind-example/` — Running Kubernetes with KinD inside the booth

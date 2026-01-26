@@ -1,6 +1,6 @@
 # Server Example
 
-Simple HTTP server example demonstrating web service hosting in WorkSpace.
+Simple HTTP server example demonstrating web service hosting in CodingBooth.
 
 **Includes:**
 - Basic HTTP server setup
