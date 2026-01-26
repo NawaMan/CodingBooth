@@ -212,9 +212,21 @@ ln -sfn "${ENV_PATH}" "${CB_VENV_ROOT}/py${PY_SERIES}"
 # ---- stable symlink & convenience shims ----
 ln -snf "$ENV_PATH" "$STABLE_PY_LINK"
 
-# Prefer stable venv for python/python3 via /usr/local/bin (PATH usually picks this before /usr/bin)
-ln -sfn "${STABLE_PY_LINK}/bin/python" /usr/local/bin/python  || true
-ln -sfn "${STABLE_PY_LINK}/bin/python" /usr/local/bin/python3 || true
+# Thin wrappers for python/python3 (exec preserves venv detection via /opt/python path)
+# Note: symlinks don't work because Python's venv detection uses sys.executable path
+# to find pyvenv.cfg. With symlinks, sys.executable becomes /usr/local/bin/python
+# which doesn't have pyvenv.cfg nearby, so venv detection fails.
+cat >/usr/local/bin/python <<'EOF'
+#!/bin/sh
+exec /opt/python/bin/python "$@"
+EOF
+chmod 0755 /usr/local/bin/python
+
+cat >/usr/local/bin/python3 <<'EOF'
+#!/bin/sh
+exec /opt/python/bin/python "$@"
+EOF
+chmod 0755 /usr/local/bin/python3
 
 # Thin wrappers: ensure "pip" always means "python -m pip" for the stable venv
 cat >"$PIP_WRAPPER" <<'EOF'
