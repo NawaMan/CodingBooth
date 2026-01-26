@@ -246,14 +246,24 @@ chown "$HOST_UID:$HOST_GID" \
 
 section "Prepare the user's home directory"
 
-info "11) Copying project's home folder (team-shared defaults)..."
+info "11) Copying project's home-seed folder (team defaults, no-clobber)..."
+CB_HOME_SEED_DIR=""
+if [ -d "$CODE_DIR/.booth/home-seed" ]; then
+  CB_HOME_SEED_DIR="$CODE_DIR/.booth/home-seed"
+fi
+if [ -n "$CB_HOME_SEED_DIR" ]; then
+  info "Copying project home-seed files from $CB_HOME_SEED_DIR to $HOME_DIR (no-clobber)..."
+  cp -rn "$CB_HOME_SEED_DIR/." "$HOME_DIR/" 2>/dev/null || true
+fi
+
+info "11b) Copying project's home folder (team-shared overrides)..."
 CB_HOME_DIR=""
 if [ -d "$CODE_DIR/.booth/home" ]; then
   CB_HOME_DIR="$CODE_DIR/.booth/home"
 fi
 if [ -n "$CB_HOME_DIR" ]; then
-  info "Copying project home files from $CB_HOME_DIR to $HOME_DIR..."
-  cp -rn "$CB_HOME_DIR/." "$HOME_DIR/" 2>/dev/null || true
+  info "Copying project home files from $CB_HOME_DIR to $HOME_DIR (override)..."
+  cp -r "$CB_HOME_DIR/." "$HOME_DIR/" 2>/dev/null || true
 fi
 
 info "12) Copying seed files from /etc/cb-home-seed/ to /home/coder (no-clobber)..."

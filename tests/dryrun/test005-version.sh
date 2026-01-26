@@ -26,7 +26,7 @@ CB_VERSION="$(cat ../../version.txt)"
 
 export TIMEZONE="America/Toronto"
 
-ACTUAL=$(../../coding-booth --dryrun --version $VERSION --variant base -- sleep 1)
+ACTUAL=$(run_coding_booth --dryrun --version $VERSION --variant base -- sleep 1)
 ACTUAL=$(printf "%s\n" "$ACTUAL")
 
 # Notice that there is not `-rm`

@@ -16,6 +16,7 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
 
 # Table of Contents
 - [Quick Try](#quick-try)
+- [For AI Agents](#for-ai-agents)
 - [Installation](#installation)
 - [CLI Usage](#cli-usage)
 - [Why CodingBooth?](#why-codingbooth)
@@ -27,6 +28,7 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
 - [How It Works](#how-it-works)
 - [`booth` Manual](#booth-manual)
 - [Setup Implementation Notes](#setup-implementation-notes)
+- [Implementation Documentation](#implementation-documentation)
 - [Community & Feedback](#community-feedback)
 
 ## Quick Try
@@ -43,10 +45,14 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
 ### Optional
 7. Inspect `.booth/Dockerfile` and `.booth/config.toml` inside `examples/go-example` and
     see if you can figure out what they are.
-8. Try other [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples) or different [variants](https://github.com/NawaMan/WorkSpace/tree/latest?tab=readme-ov-file#available-variants).
+8. Try other [examples](https://github.com/NawaMan/CodingBooth/tree/latest/examples) or different [variants](https://github.com/NawaMan/CodingBooth/tree/latest?tab=readme-ov-file#available-variants).
 9. Try on your own project,
-  1. Run: `curl -fsSL https://github.com/NawaMan/WorkSpace/releases/download/latest/ws | bash`
-  2. Create `.booth/Dockerfile` and `.booth/config.toml` -- Take inspiration from the existing [examples](https://github.com/NawaMan/WorkSpace/tree/latest/examples).
+  1. Run: `curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash`
+  2. Create `.booth/Dockerfile` and `.booth/config.toml` -- Take inspiration from the existing [examples](https://github.com/NawaMan/CodingBooth/tree/latest/examples).
+
+## For AI Agents
+
+If you're an AI agent (Claude, Copilot, Cursor, GPT, etc.) helping a user with CodingBooth, read [docs/AGENT_SETUP.md](docs/AGENT_SETUP.md).
 
 ## Installation
 
@@ -54,7 +60,7 @@ Run the following on the project **base folder** to install [CodingBooth Wrapper
 The wrapper allows management of the booth script file.
 
 ```shell
-curl -fsSL https://github.com/NawaMan/WorkSpace/releases/download/latest/ws | bash
+curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash
 ```
 
 Run the wrapper script and follow the instructions.
@@ -405,47 +411,108 @@ container
 
 ---
 
-> 📝 **Technical Note:**  
-> CodingBooth uses the Docker CLI (`docker` command) rather than Docker client libraries.  
+> 📝 **Technical Note:**
+> CodingBooth uses the Docker CLI (`docker` command) rather than Docker client libraries.
 > This keeps the codebase simple, portable, and easier to maintain while ensuring compatibility across platforms.
+
+### In-Container Documentation
+
+Every CodingBooth container includes documentation and resources at `/opt/codingbooth/`:
+
+```
+/opt/codingbooth/
+├── README.md              # This documentation
+├── LICENSE                # Apache 2.0 License
+├── version.txt            # Current CodingBooth version
+├── AGENT.md               # Instructions for AI agents
+├── variants/              # Dockerfiles for all variants
+│   ├── base/Dockerfile
+│   ├── codeserver/Dockerfile
+│   └── ...
+└── setups/                # Built-in setup scripts
+    ├── python--setup.sh
+    ├── node--setup.sh
+    └── ...
+```
+
+Run `codingbooth-info` inside the container to see a quick overview of your environment.
+
+#### For AI Agents
+
+If you're using an AI coding assistant inside a CodingBooth container, the agent can find instructions at:
+
+- `/opt/codingbooth/AGENT.md` — the canonical location
+
+This file provides operational instructions specifically for AI agents working inside the container — covering persistence rules, setup patterns, and how to properly configure the environment.
+
+**Optional:** Create a symlink in the home directory so your AI agent discovers it automatically. Add to `.booth/startup.sh`:
+
+```bash
+# Link for your AI agent (choose the one you use)
+ln -sf /opt/codingbooth/AGENT.md /home/coder/CLAUDE.md      # Anthropic Claude
+ln -sf /opt/codingbooth/AGENT.md /home/coder/COPILOT.md     # GitHub Copilot
+ln -sf /opt/codingbooth/AGENT.md /home/coder/CURSOR.md      # Cursor IDE
+ln -sf /opt/codingbooth/AGENT.md /home/coder/GPT.md         # OpenAI GPT/ChatGPT
+ln -sf /opt/codingbooth/AGENT.md /home/coder/GEMINI.md      # Google Gemini
+ln -sf /opt/codingbooth/AGENT.md /home/coder/CODEIUM.md     # Codeium/Windsurf
+ln -sf /opt/codingbooth/AGENT.md /home/coder/WARP.md        # Warp terminal
+```
 
 ### Home Directory Customization
 
-CodingBooth provides two mechanisms for populating the user's home directory with custom files at container startup:
+CodingBooth provides mechanisms for populating the user's home directory with custom files at container startup. There are two patterns: **seed** (no-clobber) and **override**.
 
-#### Project Home Folder (`.booth/home/`)
+#### Project Home Seed (`.booth/home-seed/`)
 
-Create a `.booth/home/` folder in your project to share team-wide dotfiles, tool configs, or shell customizations.
+Create a `.booth/home-seed/` folder in your project to provide team-wide defaults that **will not overwrite** existing files.
+
+**How it works:**
+- Place files in `.booth/home-seed/` with the same structure as `$HOME`.
+- At container startup, files are copied to `/home/coder/` **without overwriting** existing files.
+- Good for providing default templates that users can customize.
+
+#### Project Home Override (`.booth/home/`)
+
+Create a `.booth/home/` folder in your project to provide team-wide configs that **will overwrite** existing files.
 
 **How it works:**
 - Place files in `.booth/home/` with the same structure as `$HOME`.
-- At container startup, files are copied to `/home/coder/` without overwriting existing files.
-- Since the folder is part of the project, it will be version-controlled (committed to git) and shared with your team.
+- At container startup, files are copied to `/home/coder/` **overwriting** existing files.
+- Good for enforcing consistent team configurations.
 
 **Example structure:**
 ```
 my-project/
 ├── .booth/config.toml
 ├── .booth/Dockerfile
-└── .booth/home/
-    ├── .bashrc              # Team bashrc additions
-    ├── .config/
-    │   └── nvim/
-    │       └── init.lua     # Shared neovim config
-    └── .gitconfig           # Team git settings
+├── .booth/home-seed/        # Defaults (won't overwrite)
+│   └── .config/
+│       └── myapp/
+│           └── config.yaml  # Default config template
+└── .booth/home/             # Overrides (will overwrite)
+    ├── .bashrc              # Team bashrc (enforced)
+    └── .gitconfig           # Team git settings (enforced)
 ```
 
-> ⚠️ **Warning:**  
-> Do NOT put secrets, credentials, or personal tokens in `.booth/home/` — this folder is meant to be committed to version control and shared with your team.
+> ⚠️ **Warning:**
+> Do NOT put secrets, credentials, or personal tokens in `.booth/home/` or `.booth/home-seed/` — these folders are meant to be committed to version control and shared with your team.
 
-#### Home Seed Directory (`/etc/cb-home-seed/`)
+#### Host Home Seed (`/etc/cb-home-seed/`)
 
 Mount host files read-only to `/etc/cb-home-seed/` for **personal credentials** that should not be version-controlled.
 
 **How it works:**
 1. Mount host files read-only to `/etc/cb-home-seed/` (preserving the relative path structure)
-2. At container startup, files are copied to `/home/coder/` without overwriting existing files
+2. At container startup, files are copied to `/home/coder/` **without overwriting** existing files
 3. The user gets a writable copy; the host's original files stay protected
+
+#### Host Home Override (`/etc/cb-home/`)
+
+Mount host files read-only to `/etc/cb-home/` for **personal configs** that should override other sources.
+
+**How it works:**
+1. Mount host files read-only to `/etc/cb-home/` (preserving the relative path structure)
+2. At container startup, files are copied to `/home/coder/` **overwriting** existing files
 
 **Example (`.booth/config.toml`):**
 ```toml
@@ -462,19 +529,80 @@ run-args = [
 
 #### Precedence Order
 
-Files are copied in this order (later sources win if the file doesn't exist yet):
+Files are copied in this order:
 
-1. **`.booth/home/`** (project folder) — Team-shared defaults
-2. **`/etc/cb-home-seed/`** (host mounts) — Personal credentials & preferences
-3. **Existing files** — Already in `/home/coder/` are preserved
+1. **`.booth/home-seed/`** (project folder) — Team defaults, no-clobber
+2. **`.booth/home/`** (project folder) — Team overrides, will overwrite
+3. **`/etc/cb-home-seed/`** (host mounts) — Personal defaults, no-clobber
+4. **`/etc/cb-home/`** (host mounts) — Personal overrides, will overwrite
 
-Since all copies use `cp -rn` (no-clobber), the first source to create a file "wins".  
-In practice: host-mounted files in `cb-home-seed` override project defaults in `.booth/home`.
+The **seed** sources use `cp -rn` (no-clobber) — they only copy if the file doesn't exist.
+The **override** sources use `cp -r` — they always copy, overwriting existing files.
 
-> 💡 **Tip:**  
-> Use `.booth/home/` for team configs (neovim, linters, shell aliases).  
-> Use `cb-home-seed` for personal credentials (gcloud, SSH keys, API tokens).
+> 💡 **Tip:**
+> Use **seed** for fallback defaults — "if no setup script provided this file, use this one."
+> Use **override** for enforced configs — "regardless of what's already there, always use this file."
 
+#### Common Credential Seeding Examples
+
+Here are common credentials you might want to seed from your host:
+
+```toml
+# .booth/config.toml
+run-args = [
+    # Git credentials and config
+    "-v", "~/.gitconfig:/etc/cb-home-seed/.gitconfig:ro",
+    "-v", "~/.git-credentials:/etc/cb-home-seed/.git-credentials:ro",
+
+    # SSH keys (for git over SSH)
+    "-v", "~/.ssh:/etc/cb-home-seed/.ssh:ro",
+
+    # AWS CLI credentials
+    "-v", "~/.aws:/etc/cb-home-seed/.aws:ro",
+
+    # Google Cloud credentials
+    "-v", "~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro",
+
+    # Azure CLI credentials
+    "-v", "~/.azure:/etc/cb-home-seed/.azure:ro",
+
+    # GitHub CLI
+    "-v", "~/.config/gh:/etc/cb-home-seed/.config/gh:ro",
+
+    # GitHub Copilot
+    "-v", "~/.config/github-copilot:/etc/cb-home-seed/.config/github-copilot:ro",
+
+    # Claude Code
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
+
+    # Neovim config
+    "-v", "~/.config/nvim:/etc/cb-home-seed/.config/nvim:ro",
+    "-v", "~/.local/share/nvim:/etc/cb-home-seed/.local/share/nvim:ro"
+]
+```
+
+> 💡 **Tip:** Only include the credentials you actually need. Each mount adds startup overhead.
+
+#### Why You Shouldn't Seed Everything
+
+It's tempting to mount your entire `~/.config` or even `~` into the container. **Don't.**
+
+**It defeats the purpose of containers.** The whole point of CodingBooth is a clean, reproducible environment. Bringing too much host state recreates the "works on my machine" problem you're trying to escape.
+
+**Version and architecture conflicts.** Your host's Neovim plugins might be compiled for a different glibc. Your IDE settings might reference paths that don't exist in the container. Your shell config might source files that aren't there.
+
+**Security exposure.** Your home directory contains more secrets than you remember — browser cookies, chat history, cached tokens in random dotfiles, SSH keys you forgot about. Every bind mount increases your attack surface.
+
+**State confusion.** `cb-home-seed` *copies* files at startup (it doesn't sync). You might edit config in the container thinking it persists to host, or edit on host thinking the container will see it. Neither happens.
+
+**Breaks team reproducibility.** If everyone seeds different things, environments diverge. When a new team member joins, they can't reproduce the issues you're seeing.
+
+**Debugging becomes harder.** When something breaks, is it the container image, or something you seeded from host? The more you seed, the harder it is to isolate problems.
+
+**The philosophy:** Seed the *minimum* credentials needed for your specific workflow. Authentication tokens, SSH keys for git, cloud CLI credentials — yes. Your entire dotfile collection — no.
+
+> 🤔 **Reality check:** If you find yourself needing to seed most of your home directory, ask yourself: do you actually need a container? Maybe the friction is telling you something.
 
 
 ## booth Manual
@@ -981,6 +1109,17 @@ exec /usr/local/bin/real-<thing> "$@"
 ## Custom Setups
 You can create your own setup scripts to install any tool you need.
 Simply copy into your docker image and run it just like other setup scripts.
+
+
+## Implementation Documentation
+
+For deeper technical details on how CodingBooth works internally, see [docs/implementations/](docs/implementations/):
+
+- **[User Permissions](docs/implementations/USER_PERMISSIONS.md)** — UID/GID mapping between host and container
+- **[Desktop + noVNC](docs/implementations/DESKTOP_NOVNC.md)** — VNC server and browser-based desktop access
+- **[Variant Selection](docs/implementations/VARIANTS.md)** — How variants and aliases are resolved
+- **[Docker-in-Docker](docs/implementations/DIND.md)** — Running Docker inside CodingBooth
+- **[Network Whitelist](docs/implementations/URL_WHITELIST.md)** — Restricting container network access
 
 
 ## Community & Feedback

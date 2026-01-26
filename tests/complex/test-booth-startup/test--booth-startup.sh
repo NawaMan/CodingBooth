@@ -26,7 +26,7 @@ echo "=== Test: .booth/startup.sh ==="
 FAILED=0
 
 # Test 1: Verify startup script ran
-ACTUAL=$(../../../coding-booth -- cat /home/coder/.startup-test 2>/dev/null | tr -d '\r\n')
+ACTUAL=$(run_coding_booth -- cat /home/coder/.startup-test 2>/dev/null | tr -d '\r\n')
 EXPECTED="STARTUP_SCRIPT_RAN"
 
 if [[ "$ACTUAL" == "$EXPECTED" ]]; then
@@ -39,7 +39,7 @@ else
 fi
 
 # Test 2: Verify script runs as coder user
-ACTUAL=$(../../../coding-booth -- cat /home/coder/.startup-user 2>/dev/null | tr -d '\r\n')
+ACTUAL=$(run_coding_booth -- cat /home/coder/.startup-user 2>/dev/null | tr -d '\r\n')
 EXPECTED="coder"
 
 if [[ "$ACTUAL" == "$EXPECTED" ]]; then
@@ -52,7 +52,7 @@ else
 fi
 
 # Test 3: Verify HOME is set correctly
-ACTUAL=$(../../../coding-booth -- cat /home/coder/.startup-home 2>/dev/null | tr -d '\r\n')
+ACTUAL=$(run_coding_booth -- cat /home/coder/.startup-home 2>/dev/null | tr -d '\r\n')
 EXPECTED="/home/coder"
 
 if [[ "$ACTUAL" == "$EXPECTED" ]]; then
@@ -65,7 +65,7 @@ else
 fi
 
 # Test 4: Verify working directory is code directory
-ACTUAL=$(../../../coding-booth -- cat /home/coder/.startup-pwd 2>/dev/null | tr -d '\r\n')
+ACTUAL=$(run_coding_booth -- cat /home/coder/.startup-pwd 2>/dev/null | tr -d '\r\n')
 EXPECTED="/home/coder/code"
 
 if [[ "$ACTUAL" == "$EXPECTED" ]]; then

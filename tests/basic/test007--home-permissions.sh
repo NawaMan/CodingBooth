@@ -12,7 +12,7 @@ source ../common--source.sh
 # =============================================================================
 # TEST 1: /home/coder exists and is owned by coder user
 # =============================================================================
-HOME_USER=$(../../coding-booth --variant base --silence-build -- 'stat -c "%U" /home/coder' 2>&1) || {
+HOME_USER=$(run_coding_booth --variant base --silence-build -- 'stat -c "%U" /home/coder' | grep -v "coding-booth" 2>&1) || {
   print_test_result "false" "$0" "1" "Failed to stat /home/coder"
   echo "Output: $HOME_USER"
   exit 1
@@ -28,7 +28,7 @@ fi
 # =============================================================================
 # TEST 2: /home/coder/code exists and is accessible
 # =============================================================================
-CODE_EXISTS=$(../../coding-booth --variant base --silence-build -- 'test -d /home/coder/code && echo "OK"' 2>&1) || {
+CODE_EXISTS=$(run_coding_booth --variant base --silence-build -- 'test -d /home/coder/code && echo "OK"' | grep -v "coding-booth" 2>&1) || {
   print_test_result "false" "$0" "2" "Failed to check /home/coder/code"
   exit 1
 }
@@ -43,7 +43,7 @@ fi
 # =============================================================================
 # TEST 3: .bashrc exists, owned by coder, and has 644 permissions
 # =============================================================================
-BASHRC_CHECK=$(../../coding-booth --variant base --silence-build -- 'test -f /home/coder/.bashrc && stat -c "%U %a" /home/coder/.bashrc' 2>&1) || {
+BASHRC_CHECK=$(run_coding_booth --variant base --silence-build -- 'test -f /home/coder/.bashrc && stat -c "%U %a" /home/coder/.bashrc' | grep -v "coding-booth" 2>&1) || {
   print_test_result "false" "$0" "3" ".bashrc does not exist or cannot be read"
   exit 1
 }
@@ -58,7 +58,7 @@ fi
 # =============================================================================
 # TEST 4: .profile exists, owned by coder, and has 644 permissions
 # =============================================================================
-PROFILE_CHECK=$(../../coding-booth --variant base --silence-build -- 'test -f /home/coder/.profile && stat -c "%U %a" /home/coder/.profile' 2>&1) || {
+PROFILE_CHECK=$(run_coding_booth --variant base --silence-build -- 'test -f /home/coder/.profile && stat -c "%U %a" /home/coder/.profile' | grep -v "coding-booth" 2>&1) || {
   print_test_result "false" "$0" "4" ".profile does not exist or cannot be read"
   exit 1
 }
@@ -73,7 +73,7 @@ fi
 # =============================================================================
 # TEST 5: .zshrc exists, owned by coder, and has 644 permissions
 # =============================================================================
-ZSHRC_CHECK=$(../../coding-booth --variant base --silence-build -- 'test -f /home/coder/.zshrc && stat -c "%U %a" /home/coder/.zshrc' 2>&1) || {
+ZSHRC_CHECK=$(run_coding_booth --variant base --silence-build -- 'test -f /home/coder/.zshrc && stat -c "%U %a" /home/coder/.zshrc' | grep -v "coding-booth" 2>&1) || {
   print_test_result "false" "$0" "5" ".zshrc does not exist or cannot be read"
   exit 1
 }
@@ -88,7 +88,7 @@ fi
 # =============================================================================
 # TEST 6: .gitconfig exists, owned by coder, and has 644 permissions
 # =============================================================================
-GITCONFIG_CHECK=$(../../coding-booth --variant base --silence-build -- 'test -f /home/coder/.gitconfig && stat -c "%U %a" /home/coder/.gitconfig' 2>&1) || {
+GITCONFIG_CHECK=$(run_coding_booth --variant base --silence-build -- 'test -f /home/coder/.gitconfig && stat -c "%U %a" /home/coder/.gitconfig' | grep -v "coding-booth" 2>&1) || {
   print_test_result "false" "$0" "6" ".gitconfig does not exist or cannot be read"
   exit 1
 }
@@ -103,7 +103,7 @@ fi
 # =============================================================================
 # TEST 7: coder can write to home directory
 # =============================================================================
-WRITE_TEST=$(../../coding-booth --variant base --silence-build -- 'touch /home/coder/test-write && rm /home/coder/test-write && echo "OK"' 2>&1) || {
+WRITE_TEST=$(run_coding_booth --variant base --silence-build -- 'touch /home/coder/test-write && rm /home/coder/test-write && echo "OK"' | grep -v "coding-booth" 2>&1) || {
   print_test_result "false" "$0" "7" "coder cannot write to home directory"
   exit 1
 }
@@ -118,7 +118,7 @@ fi
 # =============================================================================
 # TEST 8: Home directory has correct permissions (755)
 # =============================================================================
-HOME_PERMS=$(../../coding-booth --variant base --silence-build -- 'stat -c "%a" /home/coder' 2>&1) || {
+HOME_PERMS=$(run_coding_booth --variant base --silence-build -- 'stat -c "%a" /home/coder' | grep -v "coding-booth" 2>&1) || {
   print_test_result "false" "$0" "8" "Failed to get /home/coder permissions"
   exit 1
 }

@@ -24,7 +24,7 @@ failed=0
 
 # Test 1: jenv versions runs successfully
 echo "Testing 'jenv versions'..."
-if output=$("$BOOTH" --variant base -- 'jenv versions' 2>&1); then
+if output=$("$BOOTH" --variant base --silence-build -- 'jenv versions' 2>&1); then
     echo "$output"
     echo ""
     echo -e "${GREEN}✓${NC} 'jenv versions' completed successfully"
@@ -36,7 +36,7 @@ echo ""
 
 # Test 2: jenv version returns current version
 echo "Testing 'jenv version'..."
-if version_output=$("$BOOTH" --variant base -- 'jenv version' 2>&1); then
+if version_output=$("$BOOTH" --variant base --silence-build -- 'jenv version' 2>&1); then
     echo "$version_output"
     # Check that output contains a version number pattern (e.g., "25" or "25.0.1")
     if echo "$version_output" | grep -qE '[0-9]+(\.[0-9]+)?'; then

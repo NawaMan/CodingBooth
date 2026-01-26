@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Test: .booth/home
 #
-# Test 1 (no-clobber): Verifies that .booth/home does NOT overwrite existing files
+# Test 1 (override): Verifies that .booth/home DOES overwrite existing files
 # Test 2 (normal copy): Verifies that .booth/home DOES copy files when they don't exist
 # -----------------------------------------------------------------------------
 
@@ -21,21 +21,21 @@ echo "=== Test: .booth/home ==="
 
 FAILED=0
 
-# Test 1: No-clobber - existing file should NOT be overwritten
-ACTUAL=$(../../../coding-booth -- cat /home/coder/.testfile 2>/dev/null | tr -d '\r\n')
-EXPECTED="ORIGINAL_FROM_BUILD"
+# Test 1: Override - existing file SHOULD be overwritten
+ACTUAL=$(run_coding_booth -- cat /home/coder/.testfile 2>/dev/null | tr -d '\r\n')
+EXPECTED="FROM_BOOTH_HOME"
 
 if [[ "$ACTUAL" == "$EXPECTED" ]]; then
-  print_test_result "true" "$0" "1" ".booth/home did NOT overwrite existing file (no-clobber works)"
+  print_test_result "true" "$0" "1" ".booth/home DID overwrite existing file (override works)"
 else
-  print_test_result "false" "$0" "1" ".booth/home should NOT overwrite existing file"
+  print_test_result "false" "$0" "1" ".booth/home should overwrite existing file"
   echo "  Expected: $EXPECTED"
   echo "  Actual:   $ACTUAL"
   FAILED=$((FAILED + 1))
 fi
 
 # Test 2: Normal copy - non-existing file SHOULD be copied
-ACTUAL=$(../../../coding-booth -- cat /home/coder/.testfile-normal 2>/dev/null | tr -d '\r\n')
+ACTUAL=$(run_coding_booth -- cat /home/coder/.testfile-normal 2>/dev/null | tr -d '\r\n')
 EXPECTED="FROM_BOOTH_HOME_NORMAL"
 
 if [[ "$ACTUAL" == "$EXPECTED" ]]; then

@@ -17,7 +17,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     CURRENT_PATH="$(pwd -W)"
 fi
 
-ACTUAL=$(../../coding-booth --dryrun --pull --variant base -- tree -C)
+ACTUAL=$(run_coding_booth --dryrun --pull --variant base -- tree -C)
 ACTUAL=$(printf "%s\n" "$ACTUAL" | head -n 3)
 
 HERE="$CURRENT_PATH"

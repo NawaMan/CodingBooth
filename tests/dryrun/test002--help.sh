@@ -17,7 +17,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     CURRENT_PATH="$(pwd -W)"
 fi
 
-ACTUAL=$(../../coding-booth --help | head)
+ACTUAL=$(run_coding_booth --help | head)
 
 HERE="$PWD"
 VERSION="$(cat ../../version.txt)"

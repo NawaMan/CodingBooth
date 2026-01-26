@@ -1,6 +1,15 @@
-# Network Whitelist Feature
+# Network Whitelist Implementation
 
 This document describes the network whitelist feature for CodingBooth, which restricts container internet access to only approved domains.
+
+---
+
+This feature is still experimental and subject to change. The main limitation is that users with shell access inside the container can bypass the restrictions (by modifying proxy settings, editing whitelist files, or using non-HTTP protocols).
+
+The current approach uses [tinyproxy](https://tinyproxy.github.io/) as a lightweight HTTP proxy running inside the container. Applications that respect the `HTTP_PROXY`/`HTTPS_PROXY` environment variables will have their traffic filtered through the proxy, which checks each request against a whitelist of allowed domains.
+
+Future versions may explore more robust approaches such as Docker network isolation with an external proxy, where restrictions are enforced outside the container. However, implementing these alternatives requires additional infrastructure and is not yet available.
+
 
 ## Overview
 
@@ -375,3 +384,13 @@ curl -I https://example.com   # Blocked (not whitelisted)
 unset HTTP_PROXY HTTPS_PROXY
 curl https://google.com       # Still blocked by iptables
 ```
+
+---
+
+## Related Files
+
+- `variants/base/setups/network-whitelist--setup.sh` — Setup script that installs and configures tinyproxy
+- `/etc/tinyproxy/tinyproxy.conf` — Proxy configuration (in container)
+- `/etc/tinyproxy/default-whitelist.txt` — System default whitelist (in container)
+- `~/.network-whitelist` — User's custom whitelist (in container)
+- `.booth/home/.network-whitelist` — Team-shared whitelist (in project)

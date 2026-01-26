@@ -15,6 +15,9 @@ RUN mvn--setup.sh
 RUN gradle--setup.sh
 RUN jenv--setup.sh
 
+RUN go--setup.sh
+RUN go-code-extension--setup.sh  || [[ $? -eq 42 ]]
+
 # Force jbang run to not show download afterward.
 RUN echo 'class Hi { public static void main(String[] args) { System.out.println("Hi again"); }}' | jbang -
 

@@ -36,8 +36,7 @@ EOF
 # Basic test
 
 rm -f $0.log
-ACTUAL=$(../../coding-booth --dockerfile $DOCKERFILE -- 'echo TEST_VAR=$TEST_VAR' 2>/dev/null)
-
+ACTUAL=$(run_coding_booth --dockerfile $DOCKERFILE -- 'echo TEST_VAR=$TEST_VAR' 2>/dev/null)
 EXPECT="TEST_VAR=Default-Test-Value"
 
 
@@ -59,7 +58,7 @@ fi
 # BuildArg
 
 rm -f $0.log
-ACTUAL=$(../../coding-booth --dockerfile $DOCKERFILE --build-arg TEST_VALUE=Overriden-Test-Value -- 'echo TEST_VAR=$TEST_VAR' 2> $0.log)
+ACTUAL=$(run_coding_booth --dockerfile $DOCKERFILE --build-arg TEST_VALUE=Overriden-Test-Value -- 'echo TEST_VAR=$TEST_VAR' 2> $0.log)
 
 EXPECT="TEST_VAR=Overriden-Test-Value"
 
@@ -89,7 +88,7 @@ fi
 # Check Silence Build
 
 rm -f $0.log
-ACTUAL=$(../../coding-booth --dockerfile $DOCKERFILE --silence-build -- 'echo TEST_VAR=$TEST_VAR' 2> $0.log)
+ACTUAL=$(run_coding_booth --dockerfile $DOCKERFILE --silence-build -- 'echo TEST_VAR=$TEST_VAR' | grep -v "coding-booth" 2> $0.log)
 
 # Validate that $0.log exists and is empty
 if [[ -e "$0.log" && ! -s "$0.log" ]]; then

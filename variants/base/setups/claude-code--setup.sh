@@ -154,5 +154,13 @@ echo "  Startup: ${STARTUP_FILE}"
 echo "  Profile: ${PROFILE_FILE}"
 echo ""
 echo "Users can run 'claude' directly. Config will be set up on first run."
-echo "To reuse credentials from host, mount ~/.claude via cb-home-seed in config.toml"
+echo ""
+echo "=== Credential Seeding ==="
+echo "To reuse credentials from host, add to .booth/config.toml:"
+echo ""
+echo '  run-args = ['
+echo '      # Claude Code config and credentials (home-seeding: may update tokens/session)'
+echo '      "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",'
+echo '      "-v", "~/.claude:/etc/cb-home-seed/.claude:ro"'
+echo '  ]'
 echo ""

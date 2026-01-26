@@ -24,7 +24,7 @@ strip_ansi() { sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g'; }
 
 export TIMEZONE="America/Toronto"
 
-ACTUAL=$(../../coding-booth --variant base --dryrun | strip_ansi)
+ACTUAL=$(run_coding_booth --variant base --dryrun | strip_ansi)
 
 HERE="$CURRENT_PATH"
 VERSION="$(cat ../../version.txt)"

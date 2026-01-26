@@ -6,6 +6,9 @@ variant = "xfce"
 # Home-seeding pattern: Mount to /etc/cb-home-seed/ with :ro
 # Files are copied to user's home at startup (without overwriting existing)
 run-args = [
+    # Set screen resolution
+    "-e", "GEOMETRY=1920x1080",
+
     # Google Antigravity credentials (home-seeding: app may write session data)
     "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
     "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",

@@ -61,3 +61,17 @@ if [[ -f "$DESKTOP_FILE" ]]; then
   # Replace /usr/share/antigravity/antigravity with our wrapper
   sed -i 's|Exec=/usr/share/antigravity/antigravity|Exec=/usr/bin/antigravity|g' "$DESKTOP_FILE"
 fi
+
+echo ""
+echo "Antigravity installed successfully!"
+echo "  Binary:  ${ANTIGRAVITY_NEW_BIN}"
+echo ""
+echo "=== Credential Seeding ==="
+echo "To reuse credentials from host, add to .booth/config.toml:"
+echo ""
+echo '  run-args = ['
+echo '      # Google Antigravity credentials (home-seeding: app may write session data)'
+echo '      "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",'
+echo '      "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro"'
+echo '  ]'
+echo ""

@@ -78,9 +78,29 @@ if [[ $WITH_COMPLETION -eq 1 && -x /usr/bin/gcloud ]]; then
   /usr/bin/gcloud completion bash > /etc/bash_completion.d/gcloud || true
 fi
 
+# ---- startup script for credential seeding ----
+STARTUP_FILE="/usr/share/startup.d/60-cb-gcloud--startup.sh"
+cat > "${STARTUP_FILE}" <<'STARTUP'
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Google Cloud SDK startup script
+# Copies credentials from cb-home-seed if available
+
+CB_SEED_DIR="/etc/cb-home-seed/.config/gcloud"
+GCLOUD_CONFIG_DIR="$HOME/.config/gcloud"
+
+if [[ -d "$CB_SEED_DIR" && ! -d "$GCLOUD_CONFIG_DIR" ]]; then
+    mkdir -p "$GCLOUD_CONFIG_DIR"
+    cp -r "$CB_SEED_DIR/." "$GCLOUD_CONFIG_DIR/"
+fi
+STARTUP
+chmod 755 "${STARTUP_FILE}"
+
 # ---- summary ----
 echo "✅ Google Cloud SDK installed."
 echo -n "   gcloud → "; gcloud version | head -n 1
+echo "   Startup: ${STARTUP_FILE}"
 
 cat <<'EON'
 ℹ️ Ready to use:
@@ -91,6 +111,17 @@ cat <<'EON'
     gcloud auth login
     gcloud config set project <PROJECT_ID>
 EON
+
+echo ""
+echo "=== Credential Seeding ==="
+echo "To reuse gcloud credentials from host, add to .booth/config.toml:"
+echo ""
+echo '  run-args = ['
+echo '      # Google Cloud credentials (home-seeding: gcloud may refresh tokens)'
+echo '      "-v", "~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro",'
+echo '      "-e", "GOOGLE_APPLICATION_CREDENTIALS=/home/coder/.config/gcloud/application_default_credentials.json"'
+echo '  ]'
+echo ""
 
 
 

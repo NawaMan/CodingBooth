@@ -120,6 +120,16 @@ RUN set -euo pipefail                             \
 COPY --chmod=0755 ./setups/ /opt/codingbooth/setups/
 ENV PATH=/opt/codingbooth/setups:/home/coder/.local/bin:$PATH
 
+# Copy documentation files (staged by build script)
+# These provide self-documenting environment for users/agents inside the container
+COPY --chmod=0644 ./_stage/README.md /opt/codingbooth/
+COPY --chmod=0644 ./_stage/LICENSE /opt/codingbooth/
+COPY --chmod=0644 ./_stage/version.txt /opt/codingbooth/
+COPY --chmod=0644 ./_stage/AGENT.md /opt/codingbooth/
+# Directories need 0755 for traversal; files inside are still readable
+COPY ./_stage/variants/ /opt/codingbooth/variants/
+RUN chmod -R a+rX /opt/codingbooth/variants
+
 # Cleanup to reduce image size
 RUN cleanup-after--setup.sh
 

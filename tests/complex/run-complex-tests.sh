@@ -8,6 +8,11 @@
 #
 # Complex tests are tests that require custom Dockerfiles, setup scripts,
 # and more elaborate configurations.
+#
+# Test discovery:
+# - Looks for directories matching test-*/
+# - Each directory should contain a script named test--<name>.sh
+#   where <name> is the directory name without the "test-" prefix
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -20,73 +25,52 @@ echo "Running Complex Tests"
 echo "============================================================"
 
 FAILED=0
+PASSED=0
+FAILED_TESTS=()
 
-# Test .booth/home (no-clobber behavior)
-echo ""
-echo "--- Running: test-booth-home ---"
-if (cd test-booth-home && ./test--booth-home.sh); then
-  echo "PASSED: test-booth-home"
-else
-  echo "FAILED: test-booth-home"
-  FAILED=$((FAILED + 1))
-fi
+# Loop over all test-* directories
+for test_dir in test-*/; do
+  # Remove trailing slash
+  test_dir="${test_dir%/}"
 
-# Test cb-home-seed (no-clobber behavior)
-echo ""
-echo "--- Running: test-cb-home-seed ---"
-if (cd test-cb-home-seed && ./test--cb-home-seed.sh); then
-  echo "PASSED: test-cb-home-seed"
-else
-  echo "FAILED: test-cb-home-seed"
-  FAILED=$((FAILED + 1))
-fi
+  # Extract test name (remove "test-" prefix)
+  test_name="${test_dir#test-}"
 
-# Test cb-home (override behavior)
-echo ""
-echo "--- Running: test-cb-home ---"
-if (cd test-cb-home && ./test--cb-home.sh); then
-  echo "PASSED: test-cb-home"
-else
-  echo "FAILED: test-cb-home"
-  FAILED=$((FAILED + 1))
-fi
+  # Expected script name
+  test_script="test--${test_name}.sh"
 
-# Test .booth/startup.sh
-echo ""
-echo "--- Running: test-booth-startup ---"
-if (cd test-booth-startup && ./test--booth-startup.sh); then
-  echo "PASSED: test-booth-startup"
-else
-  echo "FAILED: test-booth-startup"
-  FAILED=$((FAILED + 1))
-fi
+  # Check if test script exists
+  if [[ ! -x "${test_dir}/${test_script}" ]]; then
+    echo ""
+    echo "--- Skipping: ${test_dir} (no executable ${test_script}) ---"
+    continue
+  fi
 
-# Test workspace environment (.env file, mounts)
-echo ""
-echo "--- Running: test-workspace-env ---"
-if (cd test-workspace-env && ./test--workspace-env.sh); then
-  echo "PASSED: test-workspace-env"
-else
-  echo "FAILED: test-workspace-env"
-  FAILED=$((FAILED + 1))
-fi
-
-# Test cmds in config.toml (default command)
-echo ""
-echo "--- Running: test-config-cmds ---"
-if (cd test-config-cmds && ./test--config-cmds.sh); then
-  echo "PASSED: test-config-cmds"
-else
-  echo "FAILED: test-config-cmds"
-  FAILED=$((FAILED + 1))
-fi
+  echo ""
+  echo "--- Running: ${test_dir} ---"
+  if (cd "${test_dir}" && "./${test_script}"); then
+    echo "PASSED: ${test_dir}"
+    PASSED=$((PASSED + 1))
+  else
+    echo "FAILED: ${test_dir}"
+    FAILED=$((FAILED + 1))
+    FAILED_TESTS+=("${test_dir}")
+  fi
+done
 
 echo ""
 echo "============================================================"
+TOTAL=$((PASSED + FAILED))
+echo "Results: ${PASSED}/${TOTAL} passed"
+
 if [ $FAILED -eq 0 ]; then
   echo "All complex tests passed!"
   exit 0
 else
-  echo "FAILED: $FAILED test(s) failed"
+  echo ""
+  echo "Failed tests:"
+  for test in "${FAILED_TESTS[@]}"; do
+    echo "  - $test"
+  done
   exit 1
 fi
