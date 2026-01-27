@@ -12,6 +12,16 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/libs/skip-setup.sh"
+if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
+    skip_setup "$SCRIPT_NAME" "desktop environment not available"
+fi
+
 ANTIGRAVITY_NEW_BIN=/usr/bin/antigravity
 ANTIGRAVITY_ORG_BIN=/usr/bin/antigravity-original
 
@@ -41,7 +51,7 @@ cat >"${ANTIGRAVITY_NEW_BIN}" <<EOF
 #!/usr/bin/env bash
 exec "$ANTIGRAVITY_ORG_BIN" \
   --no-sandbox \
-  "\${@:-/home/coder/workspace}"
+  "\${@:-/home/coder/code}"
 EOF
 chmod 0755 "${ANTIGRAVITY_NEW_BIN}"
 
@@ -51,3 +61,17 @@ if [[ -f "$DESKTOP_FILE" ]]; then
   # Replace /usr/share/antigravity/antigravity with our wrapper
   sed -i 's|Exec=/usr/share/antigravity/antigravity|Exec=/usr/bin/antigravity|g' "$DESKTOP_FILE"
 fi
+
+echo ""
+echo "Antigravity installed successfully!"
+echo "  Binary:  ${ANTIGRAVITY_NEW_BIN}"
+echo ""
+echo "=== Credential Seeding ==="
+echo "To reuse credentials from host, add to .booth/config.toml:"
+echo ""
+echo '  run-args = ['
+echo '      # Google Antigravity credentials (home-seeding: app may write session data)'
+echo '      "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",'
+echo '      "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro"'
+echo '  ]'
+echo ""

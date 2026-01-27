@@ -14,7 +14,7 @@
 #   JJAVA_VERSION         -> JJava GitHub release tag (default: 1.0-M1)
 #   JUPYTER_KERNEL_PREFIX -> Where to install the kernelspec (default: /usr/local)
 #   KERNEL_NAME           -> internal kernelspec name (folder before optional rename) (default: java)
-#   KERNEL_DISPLAY_NAME   -> user-facing name shown in picker (default: Java (${WS_JDK_VERSION}))
+#   KERNEL_DISPLAY_NAME   -> user-facing name shown in picker (default: Java (${CB_JDK_VERSION}))
 #
 # Optional JJava env vars to bake into kernel.json "env":
 #   JJAVA_JVM_OPTS
@@ -27,7 +27,7 @@
 #   - JDK installed (JAVA_HOME set; java/jshell on PATH).
 #   - Target venv already has Jupyter (jupyter_client & jupyter_core present).
 #   - curl, unzip available.
-#   - Running under a venv; WS_VENV_DIR and WS_JDK_VERSION set.
+#   - Running under a venv; CB_VENV_DIR and CB_JDK_VERSION set.
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -38,29 +38,33 @@ if [ "${EUID}" -ne 0 ]; then
   exit 1
 fi
 
-if [[ "${WS_VARIANT_TAG:-}" == "base" ]]; then
+# This script will always be installed by root.
+HOME=/root
+
+
+if [[ "${CB_VARIANT_TAG:-}" == "base" ]]; then
   echo "Variant does not include VS Code (code) or CodeServer" >&2
   exit 0
 fi
 
-if [[ "${WS_JDK_VERSION:-}" == "" ]]; then
-  echo "❌ JDK is not properly installed (WS_JDK_VERSION is not given)." >&2
+if [[ "${CB_JDK_VERSION:-}" == "" ]]; then
+  echo "❌ JDK is not properly installed (CB_JDK_VERSION is not given)." >&2
   exit 1
 fi
-if [[ "$WS_JDK_VERSION" =~ ^[0-9]+$ ]] && [ "$WS_JDK_VERSION" -lt 11 ]; then
+if [[ "$CB_JDK_VERSION" =~ ^[0-9]+$ ]] && [ "$CB_JDK_VERSION" -lt 11 ]; then
   echo "❌ JDK version is less than 11; JJava requires Java 11+." >&2
   exit 1
 fi
 
 # ---------------- Source helpful profiles ----------------
-source /etc/profile.d/53-ws-python--profile.sh
-source /etc/profile.d/60-ws-jdk--profile.sh
+source /etc/profile.d/53-cb-python--profile.sh
+source /etc/profile.d/60-cb-jdk--profile.sh
 
 # ---------------- Defaults / Tunables ----------------
 JJAVA_VERSION="${JJAVA_VERSION:-1.0-a6}"                        # default JJava tag (GitHub Release tag)
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"    # system-wide install
 KERNEL_NAME="${KERNEL_NAME:-java}"                              # kernelspec name (initial install name)
-KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Java (${WS_JDK_VERSION})}"
+KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Java (${CB_JDK_VERSION})}"
 WORKDIR="${WORKDIR:-/opt/jjava}"
 TMPDIR="$(mktemp -d)"
 
@@ -178,7 +182,7 @@ python -m jupyter kernelspec install "${WORKDIR}" \
 
 # ---------------- Rename kernel folder to include JDK version (match existing IJava behavior) ----------------
 INSTALLED_KERNEL_DIR="${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels/${KERNEL_NAME}"
-TARGET_KERNEL_DIR="${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels/java${WS_JDK_VERSION}"
+TARGET_KERNEL_DIR="${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels/java${CB_JDK_VERSION}"
 
 if [[ ! -d "${INSTALLED_KERNEL_DIR}" ]]; then
   echo "❌ Expected installed kernel dir not found: ${INSTALLED_KERNEL_DIR}" >&2
@@ -232,8 +236,8 @@ python -m jupyter kernelspec list || true
 echo
 echo "✅ JJava kernelspec staged at: ${WORKDIR}"
 echo "   Installed under:          ${TARGET_KERNEL_DIR}"
-echo "   Kernel name (installed):  java${WS_JDK_VERSION}"
+echo "   Kernel name (installed):  java${CB_JDK_VERSION}"
 echo "   Display name:             ${KERNEL_DISPLAY_NAME}"
 echo "   JAVA_HOME:                ${JAVA_HOME}"
-echo "   Python used:              ${WS_VENV_DIR:-<unknown>}/bin/python"
-echo "   WS_VENV_DIR:              ${WS_VENV_DIR:-<unknown>}"
+echo "   Python used:              ${CB_VENV_DIR:-<unknown>}/bin/python"
+echo "   CB_VENV_DIR:              ${CB_VENV_DIR:-<unknown>}"

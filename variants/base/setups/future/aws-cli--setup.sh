@@ -107,10 +107,31 @@ if [[ $WITH_COMPLETION -eq 1 ]]; then
   fi
 fi
 
+# ---- startup script for credential seeding ----
+STARTUP_FILE="/usr/share/startup.d/60-cb-aws-cli--startup.sh"
+cat > "${STARTUP_FILE}" <<'STARTUP'
+#!/usr/bin/env bash
+set -euo pipefail
+
+# AWS CLI startup script
+# Copies credentials from cb-home-seed if available
+
+CB_SEED_DIR="/etc/cb-home-seed/.aws"
+AWS_CONFIG_DIR="$HOME/.aws"
+
+if [[ -d "$CB_SEED_DIR" && ! -d "$AWS_CONFIG_DIR" ]]; then
+    mkdir -p "$AWS_CONFIG_DIR"
+    cp -r "$CB_SEED_DIR/." "$AWS_CONFIG_DIR/"
+    chmod 600 "$AWS_CONFIG_DIR/credentials" 2>/dev/null || true
+fi
+STARTUP
+chmod 755 "${STARTUP_FILE}"
+
 # ---- friendly summary ----
 echo "✅ AWS CLI installed at ${TARGET_DIR} (linked at ${LINK_DIR})."
 echo -n "   aws --version → "; aws --version 2>/dev/null || true
 command -v aws_completer >/dev/null && echo "   aws_completer  → $(command -v aws_completer)" || true
+echo "   Startup: ${STARTUP_FILE}"
 
 cat <<'EON'
 ℹ️ Ready to use:
@@ -128,3 +149,13 @@ Uninstall a specific version:
   rm -rf /opt/aws-cli/aws-<version>
   # (optionally) update /opt/aws-cli-stable to point to another installed version
 EON
+
+echo ""
+echo "=== Credential Seeding ==="
+echo "To reuse AWS credentials from host, add to .booth/config.toml:"
+echo ""
+echo '  run-args = ['
+echo '      # AWS CLI credentials (home-seeding: credentials and config)'
+echo '      "-v", "~/.aws:/etc/cb-home-seed/.aws:ro"'
+echo '  ]'
+echo ""

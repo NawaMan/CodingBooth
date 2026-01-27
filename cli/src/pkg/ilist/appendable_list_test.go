@@ -62,10 +62,10 @@ func TestCloneIndependence(t *testing.T) {
 	}
 }
 
-// TestDockerArgsWorkflow simulates the workspace pattern.
+// TestDockerArgsWorkflow simulates the booth pattern.
 func TestDockerArgsWorkflow(t *testing.T) {
 	builder := NewAppendableList[string]()
-	builder.Append("--name", "mycontainer")
+	builder.Append("--name", "booth")
 	builder.Append("--network", "bridge")
 	builder.Append("--rm")
 	originalArgs := builder.Snapshot()

@@ -13,6 +13,10 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 export DEBIAN_FRONTEND=noninteractive
 
 echo "🔧 Installing Firefox (Mozillateam PPA, no snap)…"

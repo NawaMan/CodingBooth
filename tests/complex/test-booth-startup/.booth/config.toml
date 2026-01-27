@@ -1,0 +1,3 @@
+variant = "base"
+
+# No special config needed - .booth/startup.sh is automatically detected and run

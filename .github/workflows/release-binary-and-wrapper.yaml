@@ -1,0 +1,172 @@
+# Creates GitHub releases with multi-platform CodingBooth binaries and wrapper.
+# Triggers on: manual dispatch only.
+name: Release CodingBooth binary and wrapper
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      # ---------------------------------------------------------
+      # Checkout
+      # ---------------------------------------------------------
+      - name: Check out repository
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.1'
+
+      # ---------------------------------------------------------
+      # Read version.txt → output "version"
+      # ---------------------------------------------------------
+      - name: Read version from version.txt
+        id: get_version
+        run: |
+          set -euo pipefail
+          VERSION=$(tr -d ' \t\r\n' < version.txt)
+          if [ -z "$VERSION" ]; then
+            echo "version.txt is empty" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Show version
+        run: echo "Publishing CodingBooth for version ${{ steps.get_version.outputs.version }}"
+
+      # ---------------------------------------------------------
+      # Cleanup old untagged releases
+      # ---------------------------------------------------------
+      - name: Delete untagged releases
+        run: |
+          set -euo pipefail
+          gh release list --limit 100 --json tagName \
+            --jq '.[] | select(.tagName | startswith("untagged-")) | .tagName' \
+            | xargs -r -I {} gh release delete {} -y
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ---------------------------------------------------------
+      # Prepare artifacts
+      # ---------------------------------------------------------
+      - name: Build Go binaries for all platforms
+        run: ./build/cli-build.sh
+
+      - name: Make wrapper executable
+        run: chmod +x booth
+
+      - name: Generate SHA256 checksums for all binaries
+        run: |
+          cd bin
+          for binary in coding-booth-*; do
+            sha256sum "$binary" > "${binary}.sha256"
+          done
+          cd ..
+
+      - name: Check if pre-release
+        id: check_prerelease
+        run: |
+          if [[ "$VERSION" =~ --rc([0-9]+)?$ ]]; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "Detected pre-release version: $VERSION"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "Detected stable version: $VERSION"
+          fi
+        env:
+          VERSION: ${{ steps.get_version.outputs.version }}
+
+      # ---------------------------------------------------------
+      # Publish versioned release (pre-release: only coding-booth)
+      # ---------------------------------------------------------
+      - name: Publish versioned pre-release
+        if: steps.check_prerelease.outputs.is_prerelease == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name:     ${{ steps.get_version.outputs.version }}
+          body:     ${{ steps.get_version.outputs.version }}
+          prerelease: true
+          files: |
+            bin/coding-booth-linux-amd64
+            bin/coding-booth-linux-amd64.sha256
+            bin/coding-booth-linux-arm64
+            bin/coding-booth-linux-arm64.sha256
+            bin/coding-booth-darwin-amd64
+            bin/coding-booth-darwin-amd64.sha256
+            bin/coding-booth-darwin-arm64
+            bin/coding-booth-darwin-arm64.sha256
+            bin/coding-booth-windows-amd64.exe
+            bin/coding-booth-windows-amd64.exe.sha256
+            bin/coding-booth-windows-arm64.exe
+            bin/coding-booth-windows-arm64.exe.sha256
+            booth
+            version.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ---------------------------------------------------------
+      # Publish versioned release (stable: all three scripts)
+      # ---------------------------------------------------------
+      - name: Publish versioned stable release
+        if: steps.check_prerelease.outputs.is_prerelease == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name:     ${{ steps.get_version.outputs.version }}
+          body:     ${{ steps.get_version.outputs.version }}
+          prerelease: false
+          files: |
+            bin/coding-booth-linux-amd64
+            bin/coding-booth-linux-amd64.sha256
+            bin/coding-booth-linux-arm64
+            bin/coding-booth-linux-arm64.sha256
+            bin/coding-booth-darwin-amd64
+            bin/coding-booth-darwin-amd64.sha256
+            bin/coding-booth-darwin-arm64
+            bin/coding-booth-darwin-arm64.sha256
+            bin/coding-booth-windows-amd64.exe
+            bin/coding-booth-windows-amd64.exe.sha256
+            bin/coding-booth-windows-arm64.exe
+            bin/coding-booth-windows-arm64.exe.sha256
+            booth
+            version.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # ---------------------------------------------------------
+      # Publish latest release (stable only, all three scripts)
+      # ---------------------------------------------------------
+      - name: Publish latest release
+        if: steps.check_prerelease.outputs.is_prerelease == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest
+          name: latest - ${{ steps.get_version.outputs.version }}
+          body: latest - ${{ steps.get_version.outputs.version }}
+          prerelease: false
+          draft: false
+          files: |
+            bin/coding-booth-linux-amd64
+            bin/coding-booth-linux-amd64.sha256
+            bin/coding-booth-linux-arm64
+            bin/coding-booth-linux-arm64.sha256
+            bin/coding-booth-darwin-amd64
+            bin/coding-booth-darwin-amd64.sha256
+            bin/coding-booth-darwin-arm64
+            bin/coding-booth-darwin-arm64.sha256
+            bin/coding-booth-windows-amd64.exe
+            bin/coding-booth-windows-amd64.exe.sha256
+            bin/coding-booth-windows-arm64.exe
+            bin/coding-booth-windows-arm64.exe.sha256
+            booth
+            version.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

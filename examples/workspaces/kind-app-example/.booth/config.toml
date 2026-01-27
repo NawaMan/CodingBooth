@@ -1,0 +1,26 @@
+variant  = "xfce"
+dind     = true
+run-args = [
+    # Claude Code credentials (home-seeding)
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
+
+    # Antigravity credentials (home-seeding)
+    "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",
+
+    # Web UI (React/Vite dev server)
+    "-p", "3000:3000",
+    # # Go API Service
+    # "-p", "8080:8080",
+    # # Go Export Service
+    # "-p", "8081:8081",
+    # # PostgreSQL Database
+    # "-p", "5432:5432",
+
+    # Bind database volume for PostgreSQL persistence
+    "-v", "todo-postgres-data:/var/lib/postgresql/data",
+    
+    # AWS credentials
+    "-v", "~/.aws:/etc/cb-home-seed/.aws:ro",
+]

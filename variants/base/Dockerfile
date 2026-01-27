@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.7
 
-# Dockerfile for workspace container (the base)
+# Dockerfile for CodingBooth container (the base)
 ARG UBUNTU_VERSION=24.04
 FROM ubuntu:${UBUNTU_VERSION}
 
@@ -10,154 +10,140 @@ ARG LOCALE=en_US.UTF-8
 # Safer default shell
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 
+
+# Setup logs -- setup scripts can use this and user can bind this to host and check the logs.
+RUN touch /tmp/setup.log \
+  ; chmod 777 /tmp/setup.log
+
+# Startup logs -- startup scripts can use this and user can bind this to host and check the logs.
+RUN touch /tmp/startups.log \
+  ; chmod 777 /tmp/startups.log
+
+
 # Update base OS, install packages, generate locale
 # NOTE: we intentionally DO NOT install python3-pip (it can pull in an old setuptools)
-RUN set -euo pipefail         \
-  && apt-get update            \
-  && apt-get install           \
-  -y                      \
-  --no-install-recommends \
-  bash                    \
-  ca-certificates         \
-  curl                    \
-  debian-archive-keyring  \
-  direnv                  \
-  file                    \
-  gettext-base            \
-  git                     \
-  gnupg                   \
-  jq                      \
-  less                    \
-  locales                 \
-  mc                      \
-  nano                    \
-  ranger                  \
-  sudo                    \
-  tar                     \
-  tig                     \
-  tilde                   \
-  tini                    \
-  tmux                    \
-  tree                    \
-  unzip                   \
-  wget                    \
-  xz-utils                \
-  zip                     \
-  zsh                     \
-  && sed -i "/${LOCALE}/s/^# //g" /etc/locale.gen \
-  && locale-gen "${LOCALE}"
 
-# Fixed values (name & paths). UID/GID come from HOST_UID/HOST_GID at runtime.
-ENV USER_NAME=coder  \
-  HOME=/home/coder \
-  LANG=${LOCALE}   \
-  LC_ALL=${LOCALE} \
-  WORKSPACE=/home/coder/workspace
-
-# Make the venv default and set pip knobs AFTER the upgrade above
-ENV PATH=/opt/workspace/setups:/opt/python/bin:/home/coder/.local/bin:$PATH \
-  TERM=xterm-256color \
-  EDITOR=tilde
-
-# ---- Belt & suspenders: seed a 'coder' user/group even if 1000 is taken ----
-# We pick the first free UID/GID >= 1000 so name lookups always work.
-RUN set -eux; \
-  free_uid() { local uid=1000; while getent passwd "$uid" >/dev/null; do uid=$((uid+1)); done; echo "$uid"; }; \
-  free_gid() { local gid=1000; while getent group  "$gid" >/dev/null; do gid=$((gid+1)); done; echo "$gid"; }; \
-  if ! getent group coder >/dev/null; then \
-  gid="$(free_gid)"; \
-  groupadd -g "$gid" coder; \
-  fi; \
-  if ! id -u coder >/dev/null 2>&1; then \
-  uid="$(free_uid)"; \
-  # Do NOT create the home at build time: avoids skel dotfiles with old GID
-  useradd -M -u "$uid" -g coder -s /bin/bash coder; \
-  fi;
-
-# Entry that aligns coder’s uid/gid to host, then drops privileges
-COPY --chmod=0755 workspace-user-setup /usr/local/bin/workspace-user-setup
-
-# Seed dirs
-RUN mkdir -p /home/coder/workspace
-
-
-# Start up - to be run one time at the start of the docker.
-RUN mkdir -p /usr/share/startup.d
-
-
-# --- Shared shell config: copy the profile script ---
-COPY --chmod=0644 50-ws-workspace-base--profile.sh /etc/profile.d/50-ws-workspace-base--profile.sh
-
-# --- Make bash and zsh source ALL /etc/profile.d/*.sh for interactive shells ---
+# Essential system setup
 RUN set -euo pipefail \
-  && mkdir -p /etc/zsh \
-  && touch /etc/bash.bashrc /etc/zsh/zshrc
+  ; apt-get update \
+  ; apt-get install -y --no-install-recommends \
+  bash                   \
+  ca-certificates        \
+  curl                   \
+  debian-archive-keyring \
+  file                   \
+  gettext-base           \
+  git                    \
+  gnupg                  \
+  less                   \
+  locales                \
+  sudo                   \
+  tar                    \
+  tini                   \
+  ttyd                   \
+  unzip                  \
+  wget                   \
+  xz-utils               \
+  zip                    \
+  ; rm -rf /var/lib/apt/lists/*      \
+  ; rm -rf /var/cache/apt/archives/* \
+  ; rm -rf /var/cache/apt/archives/partial/*
 
-RUN grep -Fq 'profile.d/*.sh' /etc/bash.bashrc || true \
-  grep -Fq 'profile.d/*.sh' /etc/zsh/zshrc   || true
+
+# Optional + niceties
+RUN set -euo pipefail \
+  ; apt-get update \
+  ; apt-get install -y --no-install-recommends \
+  direnv \
+  jq     \
+  mc     \
+  nano   \
+  tilde  \
+  tig    \
+  tmux   \
+  tree   \
+  zsh    \
+  ; rm -rf /var/lib/apt/lists/*      \
+  ; rm -rf /var/cache/apt/archives/* \
+  ; rm -rf /var/cache/apt/archives/partial/*
+
+RUN  set -euo pipefail \
+  ; sed -i "s/^#\s*\(${LOCALE}[[:space:]]\+UTF-8\)/\1/" /etc/locale.gen \
+  ; locale-gen "${LOCALE}"
+
+# Setup locale, PATH and terminal environment
+ENV LANG=${LOCALE}
+ENV LC_ALL=${LOCALE}
+ENV TERM=xterm-256color
+
+# Seed a 'coder' user/group + (clean) home directory safely
+# We need to create a brand new user (+group) so that there is no existing home directory (and possible permission problem that might come with it).
+# We use -M to not create a home directory so that we can avoid getting the skeleton files when the user is created.
+# Then we can create the home directory manually and set the permissions as we want.
+RUN set -euo pipefail \
+  ; free_uid() { local uid=1000; while getent passwd "$uid" >/dev/null; do uid=$((uid+1)); done; echo "$uid"; } \
+  ; free_gid() { local gid=1000; while getent group  "$gid" >/dev/null; do gid=$((gid+1)); done; echo "$gid"; } \
+  ; if ! getent group coder >/dev/null;      then gid="$(free_gid)"; groupadd -g    "$gid"                       coder; fi \
+  ; if ! id -u coder        >/dev/null 2>&1; then uid="$(free_uid)"; useradd  -M -u "$uid" -g coder -s /bin/bash coder; fi \
+  ; mkdir -p          /home/coder/code \
+  ; chown coder:coder /home/coder      \
+  ; chown coder:coder /home/coder/code \
+  ; chmod 755         /home/coder      \
+  ; chmod 755         /home/coder/code
+
+# Startup scripts directory - scripts here run once at first container start
+RUN mkdir -p /usr/share/startup.d
 
 
 # Make sudo see setup scripts (extend secure_path)
 RUN set -euo pipefail \
-  && printf 'Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/workspace/setups:/usr/local/uv/bin"\n' \
-  > /etc/sudoers.d/50-workspace-base-secure-path \
-  && chmod  0440 /etc/sudoers.d/50-workspace-base-secure-path \
-  && visudo -cf  /etc/sudoers.d/50-workspace-base-secure-path
-
-# --- Install the tidy terminal 
-RUN apt-get update && apt-get install -y ttyd \
-  && rm -rf /var/lib/apt/lists/*
+  ; printf 'Defaults secure_path="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/opt/codingbooth/setups:/usr/local/uv/bin"\n' \
+  > /etc/sudoers.d/50-cb-base-secure-path \
+  ; chmod  0440 /etc/sudoers.d/50-cb-base-secure-path \
+  ; visudo -cf  /etc/sudoers.d/50-cb-base-secure-path
 
 # Suppress the WSL Visual Studio Code prompt
 ENV DONT_PROMPT_WSL_INSTALL=1
-
-# Entry that aligns coder’s uid/gid to host, then drops privileges
-COPY --chmod=0755 ./setups/ /opt/workspace/setups/
 
 # Set common tools aliases
 ENV EDITOR=tilde
 ENV EXPLORER=mc
 ENV GITVIEW=tig
-RUN ln -s /usr/bin/tilde /usr/local/bin/editor
-RUN ln -s /usr/bin/mc    /usr/local/bin/explorer
-RUN ln -s /usr/bin/tig   /usr/local/bin/gitview
-
-# --- Main workspace profile script with helper functions ---
-COPY --chmod=0644 100-ws--profile.sh /etc/profile.d/100-ws--profile.sh
-
-RUN echo "set -g mouse on" >> /etc/tmux.conf
-
-ARG WS_PY_VERSION=3.12
-ARG WS_SETUPS_DIR=/opt/workspace/setups
+RUN set -euo pipefail                             \
+  ; ln -sf /usr/bin/tilde /usr/local/bin/editor   \
+  ; ln -sf /usr/bin/mc    /usr/local/bin/explorer \
+  ; ln -sf /usr/bin/tig   /usr/local/bin/gitview
 
 
-# Always start as root so workspace-user-setup can realign ids
-USER root
+# Copy setup scripts and work in that directory
+COPY --chmod=0755 ./setups/ /opt/codingbooth/setups/
+ENV PATH=/opt/codingbooth/setups:/home/coder/.local/bin:$PATH
 
-RUN "$WS_SETUPS_DIR/python--setup.sh" "${WS_PY_VERSION}" 
+# Copy documentation files (staged by build script)
+# These provide self-documenting environment for users/agents inside the container
+COPY --chmod=0644 ./_stage/README.md   /opt/codingbooth/
+COPY --chmod=0644 ./_stage/LICENSE     /opt/codingbooth/
+COPY --chmod=0644 ./_stage/version.txt /opt/codingbooth/
+COPY --chmod=0644 ./_stage/AGENT.md    /opt/codingbooth/
+# Directories need 0755 for traversal; files inside are still readable
+COPY ./_stage/variants/ /opt/codingbooth/variants/
+RUN chmod -R a+rX /opt/codingbooth/variants
+
+# Cleanup to reduce image size
+RUN cleanup-after--setup.sh
+
+# Entry that aligns coder's uid/gid to host, then drops privileges
+COPY --chmod=0755 booth-entry /usr/local/bin/booth-entry
+# Main CodingBooth profile script with helper functions
+COPY --chmod=0644 99z-cb--profile.sh /etc/profile.d/99z-cb--profile.sh
+# Startup file: to be executed at first container start
+COPY --chmod=0755 99z-cb--startup.sh /usr/share/startup.d/99z-cb--startup.sh
 
 
-# ---- Copy startup file: to be executed at first container start ----
-COPY --chmod=0755 100-ws--startup.sh /usr/share/startup.d/100-ws--startup.sh
+# tini as PID 1, then run booth-entry which execs CMD as 'coder'
+# This is needed as booth-entry ends up running CMD which is a child process,
+#   so we need tini to handle signals properly.
+ENTRYPOINT ["tini","-g","--","/usr/local/bin/booth-entry"]
 
-# ---- Cleanup to reduce image size ----
-RUN set -euo pipefail \
-  && rm -rf /var/lib/apt/lists/* \
-  && rm -rf /usr/share/doc/* \
-  && rm -rf /usr/share/info/* \
-  && rm -rf /var/log/* \
-  && rm -rf /opt/pip-cache/* \
-  && find /opt/local-pythons -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true \
-  && find /opt/venvs -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true \
-  && find /usr -name "*.pyc" -type f -delete 2>/dev/null || true
-
-# Workdir
-WORKDIR /home/coder/workspace
-
-# tini as PID 1, then run the aligner which execs as 'coder'
-# This is needed as the workspace-user-setup will ended up running the CMD which is a chile process
-#   so we need tini to handle that properly.
-ENTRYPOINT ["tini","-g","--","/usr/local/bin/workspace-user-setup"]
-
-# CMD ["bash","-lc","exec python3 -m http.server 10000 --bind 0.0.0.0 --directory /home/coder/workspace"]
+# By default, start ttyd on port 10000 in the home directory (the online terminal)
 CMD ["bash","-lc","exec ttyd -W -i 0.0.0.0 -p 10000 --writable bash -l"]

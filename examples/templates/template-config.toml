@@ -1,0 +1,130 @@
+#########################################################################################
+## Booth Launcher Configuration (.booth/config.toml)                                     ##
+##                                                                                     ##
+## This file customizes how `booth` starts the container.                             ##
+## It is loaded automatically if present in the .booth/ folder.                          ##
+##                                                                                     ##
+## Location / precedence (highest → lowest):                                          ##
+##   1) Command-line args                                                             ##
+##   2) Values from this config file (.booth/config.toml)                                ##
+##   3) Environment variables (exported before launch)                                ##
+##   4) Built-in defaults                                                             ##
+##                                                                                     ##
+## Tip: You can also set common-args in this file to pre-apply CLI flags.             ##
+#########################################################################################
+
+### -------------------------------------------------------------------------------------
+### General configuration
+### -------------------------------------------------------------------------------------
+# dryrun = false          # Print docker commands without executing them
+# verbose = false         # Extra debug output, banners, and printed commands
+# config = ""             # Path to this config file (usually auto-detected)
+# code = ""          # Host path mounted to /home/coder/code (default: current dir)
+# version = "latest"      # Prebuilt version tag
+
+### -------------------------------------------------------------------------------------
+### Flags
+### -------------------------------------------------------------------------------------
+# keep-alive = false      # Keep container running after command exits
+# silence-build = false   # Suppress build output
+# daemon = false          # Run container in background (no commands after `--`)
+# pull = false            # Force `docker pull` even if image is present locally
+# dind = false            # Start a docker:dind sidecar and wire DOCKER_HOST to it
+#                         # Note: This provides a dev-only Docker daemon with limitations
+
+### -------------------------------------------------------------------------------------
+### Image configuration (precedence: image > dockerfile > variant/version)
+### -------------------------------------------------------------------------------------
+# variant = "base"        # One of: base | notebook | codeserver | desktop-{xfce,kde}
+# image = ""              # Full image reference (e.g. repo/name:tag). If set, no build/pull logic runs
+# dockerfile = ""         # Path to Dockerfile OR a directory containing .booth/Dockerfile for local build
+
+### -------------------------------------------------------------------------------------
+### Runtime values
+### -------------------------------------------------------------------------------------
+# project-name = ""       # Project name; default derives from code path basename
+# host-uid = ""           # UID for user inside container (defaults to current host UID)
+# host-gid = ""           # GID for user inside container (defaults to current host GID)
+# timezone = ""           # Timezone for container (e.g., "America/Toronto")
+
+### -------------------------------------------------------------------------------------
+### Container configuration
+### -------------------------------------------------------------------------------------
+# name = ""               # Container name; default derives from project-name
+# port = "NEXT"           # Host port mapped to container 10000
+#                         # Allowed values:
+#                         #   - A number between 10000 and 65535
+#                         #   - NEXT   (pick the next free port ≥ 10000)
+#                         #   - RANDOM (pick a random free port > 10000)
+# env-file = ""           # Path to env file passed to `docker run`
+#                         # If unset, auto-uses "${code}/.env" when it exists
+#                         # Set to "none" to explicitly disable --env-file usage
+#                         # Common keys: PASSWORD, JUPYTER_TOKEN, TZ, HTTP(S)_PROXY, AWS_*, GH_TOKEN
+
+### -------------------------------------------------------------------------------------
+### TOML-friendly array fields
+### -------------------------------------------------------------------------------------
+# Environment variables and tilde are automatically expanded in these fields:
+#   - ~ at the start of a value expands to $HOME
+#   - $VAR and ${VAR} expand to their environment values
+#
+# Home seeding pattern for credentials:
+#   Mount host files read-only to /etc/cb-home-seed/ and they will be copied
+#   to the user's home at container startup (without overwriting existing files).
+#   Example: "-v", "~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro"
+#
+# common-args = []        # Pre-applied CLI flags merged before command-line parameters
+#                         # Example: ["--name", "my-booth", "-p", "8080:8080"]
+# build-args = []         # Extra args for `docker build` when dockerfile is used
+#                         # Example: ["--no-cache", "--build-arg", "VERSION=1.0"]
+# run-args = []           # Extra args for `docker run`
+#                         # Example: ["-e", "TZ=UTC", "-v", "~/.config/app:/home/coder/.config/app"]
+# cmds = []               # Default command to run inside the container
+#                         # NOTE: CLI `-- <cmd>` OVERRIDES this (does not append)
+#                         # Example: ["bash", "-lc", "make test"]
+
+#########################################################################################
+## Examples                                                                            ##
+#########################################################################################
+
+# # Example 1: Use a prebuilt image with Codeserver, random open port, and custom name
+# variant = "codeserver"
+# version = "latest"
+# code = "/home/user/projects/my-app"
+# common-args = ["--port", "RANDOM", "--name", "my-app"]
+
+# # Example 2: Force pull the prebuilt image and disable automatic .env usage
+# pull = true
+# env-file = "none"
+
+# # Example 3: Local build from a .booth/Dockerfile
+# dockerfile = "./"
+# build-args = ["--no-cache"]
+
+# # Example 4: Provide additional runtime env and volume
+# run-args = ["-e", "TZ=America/Toronto", "-v", "/home/user/.cache:/home/coder/.cache"]
+
+# # Example 5: Enable Docker-in-Docker with verbose output
+# dind = true
+# verbose = true
+
+# # Example 6: Full configuration example
+# [full-example]
+# dryrun = false
+# verbose = true
+# code = "/home/user/projects/my-booth"
+# variant = "base"
+# version = "latest"
+# project-name = "my-project"
+# name = "my-booth-container"
+# port = "10500"
+# env-file = ".env.development"
+# timezone = "America/New_York"
+# host-uid = "1000"
+# host-gid = "1000"
+# daemon = false
+# pull = false
+# dind = false
+# common-args = ["--verbose"]
+# run-args = ["-e", "DEBUG=true", "-v", "/tmp:/tmp"]
+# cmds = ["bash", "-lc", "echo 'Hello from booth'"]

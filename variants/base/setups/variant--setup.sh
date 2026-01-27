@@ -12,11 +12,15 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 export PY_VERSION=${PY_VERSION:-3.12}
 
-if [[ "$WS_VARIANT_TAG" == "ide-notebook" ]]; then
-    /opt/workspace/setups/notebook--setup.sh "${PY_VERSION}"
+if [[ "$CB_VARIANT_TAG" == "notebook" ]]; then
+    /opt/codingbooth/setups/notebook--setup.sh "${PY_VERSION}"
 fi
-if [[ "$WS_VARIANT_TAG" == "ide-codeserver" ]]; then
-    /opt/workspace/setups/codeserver--setup.sh "${PY_VERSION}"
+if [[ "$CB_VARIANT_TAG" == "codeserver" ]]; then
+    /opt/codingbooth/setups/codeserver--setup.sh "${PY_VERSION}"
 fi

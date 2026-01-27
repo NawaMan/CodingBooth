@@ -12,11 +12,21 @@ trap 'echo "Error on line $LINENO"; exit 1' ERR
 # --------------------------
 [ "$EUID" -eq 0 ] || { echo "Run as root (use sudo)"; exit 1; }
 
+# This script will always be installed by root.
+HOME=/root
+
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/libs/skip-setup.sh"
+if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
+    skip_setup "$SCRIPT_NAME" "desktop environment not available"
+fi
+
 # --- Defaults ---
 CLAUDE_CODE_VERSION="${1:-latest}"
 
-STARTUP_FILE="/usr/share/startup.d/70-ws-claude-code--startup.sh"
-PROFILE_FILE="/etc/profile.d/70-ws-claude-code--profile.sh"
+STARTUP_FILE="/usr/share/startup.d/70-cb-claude-code--startup.sh"
+PROFILE_FILE="/etc/profile.d/70-cb-claude-code--profile.sh"
 
 # ==== Install Claude Code ====
 
@@ -94,10 +104,10 @@ envsubst '$CLAUDE_CODE_VERSION' > "${STARTUP_FILE}" <<'EOF'
 set -euo pipefail
 
 # Claude Code startup script
-# Ensures config and credentials from ws-home-seed are properly copied
+# Ensures config and credentials from cb-home-seed are properly copied
 
-WS_SEED_DIR="/tmp/ws-home-seed/.claude"
-WS_SEED_JSON="/tmp/ws-home-seed/.claude.json"
+CB_SEED_DIR="/etc/cb-home-seed/.claude"
+CB_SEED_JSON="/etc/cb-home-seed/.claude.json"
 CLAUDE_DIR="$HOME/.claude"
 CLAUDE_JSON="$HOME/.claude.json"
 
@@ -105,19 +115,19 @@ mkdir -p "$CLAUDE_DIR"
 
 # Copy .claude.json config file (contains hasCompletedOnboarding, theme, etc.)
 # This must happen BEFORE claude runs to skip onboarding wizard
-if [[ -f "$WS_SEED_JSON" && ! -f "$CLAUDE_JSON" ]]; then
-    cp "$WS_SEED_JSON" "$CLAUDE_JSON"
+if [[ -f "$CB_SEED_JSON" && ! -f "$CLAUDE_JSON" ]]; then
+    cp "$CB_SEED_JSON" "$CLAUDE_JSON"
 fi
 
 # Copy .claude/ directory contents (credentials, plugins, etc.)
-if [[ -d "$WS_SEED_DIR" ]]; then
+if [[ -d "$CB_SEED_DIR" ]]; then
     # Use rsync if available (better merge), otherwise cp
     if command -v rsync &>/dev/null; then
-        rsync -a --ignore-existing "$WS_SEED_DIR/" "$CLAUDE_DIR/"
+        rsync -a --ignore-existing "$CB_SEED_DIR/" "$CLAUDE_DIR/"
     else
         # Copy files that don't exist in destination
-        find "$WS_SEED_DIR" -type f | while read -r src; do
-            rel="${src#$WS_SEED_DIR/}"
+        find "$CB_SEED_DIR" -type f | while read -r src; do
+            rel="${src#$CB_SEED_DIR/}"
             dst="$CLAUDE_DIR/$rel"
             if [[ ! -f "$dst" ]]; then
                 mkdir -p "$(dirname "$dst")"
@@ -144,5 +154,13 @@ echo "  Startup: ${STARTUP_FILE}"
 echo "  Profile: ${PROFILE_FILE}"
 echo ""
 echo "Users can run 'claude' directly. Config will be set up on first run."
-echo "To reuse credentials from host, mount ~/.claude via ws-home-seed in config.toml"
+echo ""
+echo "=== Credential Seeding ==="
+echo "To reuse credentials from host, add to .booth/config.toml:"
+echo ""
+echo '  run-args = ['
+echo '      # Claude Code config and credentials (home-seeding: may update tokens/session)'
+echo '      "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",'
+echo '      "-v", "~/.claude:/etc/cb-home-seed/.claude:ro"'
+echo '  ]'
 echo ""

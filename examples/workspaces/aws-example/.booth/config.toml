@@ -1,0 +1,21 @@
+# AWS Example
+#
+# This example demonstrates using cb-home-seed to mount AWS credentials
+# from the host into the container (read-only, then copied at startup).
+
+variant = "notebook"
+
+# Mount AWS credentials from host (home-seeding pattern)
+# The credentials are copied to ~/.aws/ at startup
+run-args = [
+    # AWS credentials
+    "-v", "~/.aws:/etc/cb-home-seed/.aws:ro",
+
+    # Claude Code credentials (home-seeding)
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
+
+    # Antigravity credentials (home-seeding)
+    "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",
+]

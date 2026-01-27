@@ -1,16 +1,17 @@
 # Base Variant
 
-The foundation variant containing core WorkSpace functionality and setup scripts.
+The foundation variant containing core CodingBooth functionality and setup scripts.
 
 **Includes:**
-- Ubuntu-based container with user management
+- Ubuntu-based container -- a human-friendly made for development
+- Default variant
+- Manage user ownership and permission for the workspace (project directory) on host and /home/coder/code on the container.
 - 70+ setup scripts in `setups/` directory
-- Docker-in-Docker (DinD) support
 - Common development tools and utilities
 
 **Usage:**
 ```bash
-workspace --variant base
+booth --variant base
 ```
 
 **Purpose:** Serves as the base image for all other variants. Use directly for minimal, customizable environments or as a starting point for custom variants.

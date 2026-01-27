@@ -50,7 +50,7 @@ function random_free_port() {
 RunWorkspace() {
   local name="$1"
   local port="$2"
-  ../../workspace --variant base --name "$name" --port "$port" -- sleep 10
+  run_coding_booth --variant base --name "$name" --port "$port" -- sleep 10
 }
 
 NAME="$(generate_name)"

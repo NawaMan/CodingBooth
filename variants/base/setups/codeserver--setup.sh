@@ -18,13 +18,16 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
 
-PROFILE_FILE="/etc/profile.d/55-ws-codeserver--profile.sh"
+
+PROFILE_FILE="/etc/profile.d/55-cb-codeserver--profile.sh"
 STARTER_FILE=/usr/local/bin/codeserver
 
 
 # Load python env exported by the base setup
-source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # Extensions
 CODESERVER_EXTENSION_DIR=/usr/local/share/code-server/extensions
@@ -40,30 +43,30 @@ fi
 command -v code-server >/dev/null
 
 
-echo "[2/9] Pre-seed Jupyter into ${WS_VENV_DIR} (build-time)…"
+# echo "[2/9] Pre-seed Jupyter into ${CB_VENV_DIR} (build-time)…"
 
-# Always use the workspace venv Python, not whatever "python" happens to be.
-VENV_PY="${WS_VENV_DIR}/bin/python"
-if [ ! -x "$VENV_PY" ]; then
-  echo "❌ Expected venv python at ${WS_VENV_DIR} but it is missing or not executable"
-  exit 1
-fi
+# # Always use the booth venv Python, not whatever "python" happens to be.
+# VENV_PY="${CB_VENV_DIR}/bin/python"
+# if [ ! -x "$VENV_PY" ]; then
+#   echo "❌ Expected venv python at ${CB_VENV_DIR} but it is missing or not executable"
+#   exit 1
+# fi
 
-# Upgrade basics in the venv
-env PIP_CACHE_DIR="${PIP_CACHE_DIR}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
-  "$VENV_PY" -m pip install -U pip setuptools wheel
+# # Upgrade basics in the venv
+# env PIP_CACHE_DIR="${PIP_CACHE_DIR}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
+#   "$VENV_PY" -m pip install -U pip setuptools wheel
 
-# Install Jupyter + ipykernel into the venv
-env PIP_CACHE_DIR="${PIP_CACHE_DIR}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
-  "$VENV_PY" -m pip install -U jupyter ipykernel
+# # Install Jupyter + ipykernel into the venv
+# env PIP_CACHE_DIR="${PIP_CACHE_DIR}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
+#   "$VENV_PY" -m pip install -U jupyter ipykernel
 
-# Kernelspec (use actual patch version for display), bound to this venv
-ACTUAL_VER="$("$VENV_PY" -c 'import sys;print(".".join(map(str,sys.version_info[:3])))')"
-"$VENV_PY"             \
-  -m ipykernel install \
-  --sys-prefix         \
-  --name=python3       \
-  --display-name="Python ${ACTUAL_VER} (venv)"
+# # Kernelspec (use actual patch version for display), bound to this venv
+# ACTUAL_VER="$("$VENV_PY" -c 'import sys;print(".".join(map(str,sys.version_info[:3])))')"
+# "$VENV_PY"             \
+#   -m ipykernel install \
+#   --sys-prefix         \
+#   --name=python3       \
+#   --display-name="Python ${ACTUAL_VER} (venv)"
 
 
 cat >> "$PROFILE_FILE" <<'SH'
@@ -93,12 +96,12 @@ codeserver_setup_info() {
   [ -x "$launcher" ] && _ok "Launcher: $launcher"
 
   _hdr "Python / venv"
-  local venv="${WS_VENV_DIR:-${VENV_SERIES_DIR:-/opt/venvs/py${WS_PY_SERIES:-}}}"
+  local venv="${CB_VENV_DIR:-${VENV_SERIES_DIR:-/opt/venvs/py${CB_PY_SERIES:-}}}"
   if [ -n "$venv" ] && [ -x "$venv/bin/python" ]; then
-    _ok "WS_VENV_DIR: $venv"
+    _ok "CB_VENV_DIR: $venv"
     _ok "Python: $("$venv/bin/python" -V 2>&1)"
   elif [ -x /opt/python/bin/python ]; then
-    _warn "WS_VENV_DIR not set; using /opt/python"
+    _warn "CB_VENV_DIR not set; using /opt/python"
     _ok "Python: $(/opt/python/bin/python -V 2>&1)"
   else
     _err "No Python interpreter found"
@@ -151,7 +154,7 @@ source "$PROFILE_FILE" || true
 
 
 # Make it usable right away in THIS shell
-source "${WS_VENV_DIR}/bin/activate"
+source "${CB_VENV_DIR}/bin/activate"
 
 
 # 1) Create a shared directory
@@ -198,11 +201,11 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 PORT=${1:-10000}
 
 # Ensure PATH and /opt/python are active in non-login shells
-source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # ==== Runtime tunables ====
 # Make venv kernels visible to any Jupyter process
-export JUPYTER_PATH="${WS_VENV_DIR}/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
+export JUPYTER_PATH="${CB_VENV_DIR}/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
 
 # Use the current user's home directory
 CSHOME="${HOME}"
@@ -231,7 +234,7 @@ mkdir -p "$SETTING_DIR"
 
 cat > "$SETTINGS_JSON" <<JSON
 {
-  "python.defaultInterpreterPath": "${WS_VENV_DIR}/bin/python",
+  "python.defaultInterpreterPath": "${CB_VENV_DIR}/bin/python",
   "jupyter.jupyterServerType": "local",
 
   "terminal.integrated.profiles.linux": {
@@ -257,7 +260,7 @@ exec code-server \
     --extensions-dir "$CODESERVER_EXTENSION_DIR" \
     --bind-addr      "0.0.0.0:$PORT"             \
     --auth           "$AUTH"                     \
-    "$CSHOME/workspace"
+    "$CSHOME/code"
 
 LAUNCH
 chmod 755 ${STARTER_FILE}

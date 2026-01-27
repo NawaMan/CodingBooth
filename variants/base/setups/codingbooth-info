@@ -1,0 +1,79 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# codingbooth-info
+#
+# Display information about the CodingBooth environment.
+# This helps users and AI agents understand their container environment.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+CB_DIR="/opt/codingbooth"
+
+# Colors (disabled if not a terminal)
+if [[ -t 1 ]]; then
+  BOLD='\033[1m'
+  CYAN='\033[1;36m'
+  GREEN='\033[1;32m'
+  RESET='\033[0m'
+else
+  BOLD=''
+  CYAN=''
+  GREEN=''
+  RESET=''
+fi
+
+echo -e "${BOLD}=== CodingBooth Environment ===${RESET}"
+echo ""
+
+# Version
+if [[ -f "$CB_DIR/version.txt" ]]; then
+  VERSION=$(cat "$CB_DIR/version.txt")
+  echo -e "${CYAN}Version:${RESET}  $VERSION"
+else
+  echo -e "${CYAN}Version:${RESET}  (unknown)"
+fi
+
+# Variant (from environment variable set at runtime)
+echo -e "${CYAN}Variant:${RESET}  ${CB_VARIANT_TAG:-base}"
+
+# Booth name
+echo -e "${CYAN}Booth:${RESET}    ${CB_CONTAINER_NAME:-unknown}"
+
+echo ""
+echo -e "${BOLD}=== Key Paths ===${RESET}"
+echo ""
+echo -e "${GREEN}/home/coder/code${RESET}        - Your project directory (mounted from host)"
+echo -e "${GREEN}/opt/codingbooth/setups${RESET} - Available setup scripts"
+echo -e "${GREEN}/opt/codingbooth/docs${RESET}   - Documentation"
+
+echo ""
+echo -e "${BOLD}=== Documentation ===${RESET}"
+echo ""
+echo "Available documentation in /opt/codingbooth/:"
+echo ""
+
+if [[ -f "$CB_DIR/README.md" ]]; then
+  echo "  - README.md        : Main documentation"
+fi
+if [[ -f "$CB_DIR/LICENSE" ]]; then
+  echo "  - LICENSE          : Apache 2.0 License"
+fi
+if [[ -f "$CB_DIR/AGENT.md" ]]; then
+  echo "  - AGENT.md         : Instructions for AI agents (also at ~/AGENT.md)"
+fi
+if [[ -d "$CB_DIR/variants" ]]; then
+  echo "  - variants/        : Dockerfiles for all variants"
+fi
+
+echo ""
+echo -e "${BOLD}=== Quick Commands ===${RESET}"
+echo ""
+echo "  cat /opt/codingbooth/version.txt     # Show version"
+echo "  ls /opt/codingbooth/setups/          # List available setup scripts"
+echo "  cat /opt/codingbooth/README.md       # Read main documentation"
+echo ""

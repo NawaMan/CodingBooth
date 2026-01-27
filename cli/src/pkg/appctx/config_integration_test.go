@@ -8,16 +8,16 @@ import (
 	"os"
 	"testing"
 
-	"github.com/nawaman/workspace/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestIntegration_ReadFromEnvVars(t *testing.T) {
 	// Setup environment variables
 	envVars := map[string]string{
-		"WS_VERBOSE":      "true",
-		"WS_PROJECT_NAME": "integration-test-project",
-		"WS_HOST_UID":     "1001",
+		"CB_VERBOSE":      "true",
+		"CB_PROJECT_NAME": "integration-test-project",
+		"CB_HOST_UID":     "1001",
 	}
 
 	for k, v := range envVars {

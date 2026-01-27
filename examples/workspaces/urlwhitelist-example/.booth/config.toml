@@ -1,0 +1,10 @@
+variant = "base"
+
+run-args = [
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
+    # EXPERIMENTAL: iptables-based firewall enforcement
+    # This blocks direct HTTP/HTTPS but can be bypassed by determined users
+    # See docs/URL_WHITELIST.md for limitations
+    "--cap-add=NET_ADMIN",
+]

@@ -19,6 +19,27 @@ for f in test0*.sh ; do
     echo ""
 done
 
+# Run tests in subdirectories
+for subdir in */ ; do
+    if [ -d "$subdir" ] && [ -f "${subdir}run-"*"-tests.sh" ]; then
+        echo "--- Running tests in $subdir ---"
+        pushd "$subdir" > /dev/null
+        for f in test0*.sh ; do
+            if [ -f "$f" ]; then
+                echo "$f"
+                total_tests=$((total_tests + 1))
+
+                if ! ./"$f"; then
+                    failed=1
+                    failed_tests+=("${subdir}$f")
+                fi
+                echo ""
+            fi
+        done
+        popd > /dev/null
+    fi
+done
+
 num_failed=${#failed_tests[@]}
 
 if [ $failed -eq 0 ]; then

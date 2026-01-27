@@ -9,12 +9,22 @@ trap 'echo "❌ Error on line $LINENO: $BASH_COMMAND" >&2' ERR
 # --- Ensure root ---
 [[ "${EUID:-$(id -u)}" -eq 0 ]] || { echo "Must be root"; exit 1; }
 
+# This script will always be installed by root.
+HOME=/root
+
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/libs/skip-setup.sh"
+if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
+    skip_setup "$SCRIPT_NAME" "desktop environment not available"
+fi
+
 # --- Config ---
 IDE="$1"              # e.g., pycharm, idea, goland, webstorm
 PLUGIN="$2"           # e.g., "Lombook Plugin"
 
 # --- Constant ---
-STARTUP_FILE="/usr/share/startup.d/75-ws-${IDE}-plugin--startup.sh"
+STARTUP_FILE="/usr/share/startup.d/75-cb-${IDE}-plugin--startup.sh"
 
 if ! command -v "${IDE}" >/dev/null 2>&1; then
     echo "$IDE not found."
@@ -27,7 +37,7 @@ cat > "${STARTUP_FILE}" <<EOF
 EOF
 chmod 755 "${STARTUP_FILE}"
 
-PROFILE_FILE="/etc/profile.d/70-ws-${IDE}--profile.sh"
+PROFILE_FILE="/etc/profile.d/70-cb-${IDE}--profile.sh"
 if [[ -f "${PROFILE_FILE}" ]]; then
     source "${PROFILE_FILE}"
 fi

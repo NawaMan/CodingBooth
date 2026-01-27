@@ -28,17 +28,15 @@ export TIMEZONE="America/Toronto"
 # Each entry is WANT_VARIANT:GOT_VARIANT
 VARIANTS=(
   "base:base"
-  "ide-notebook:ide-notebook"
-  "ide-codeserver:ide-codeserver"
+  "notebook:notebook"
+  "codeserver:codeserver"
   "desktop-xfce:desktop-xfce"
   "desktop-kde:desktop-kde"
 
   # aliases
-  "default:ide-codeserver"
-  "ide:ide-codeserver"
+  "default:base"
+  "ide:codeserver"
   "desktop:desktop-xfce"
-  "notebook:ide-notebook"
-  "codeserver:ide-codeserver"
   "xfce:desktop-xfce"
   "kde:desktop-kde"
 )
@@ -49,16 +47,8 @@ for entry in "${VARIANTS[@]}"; do
   WANT_VARIANT="${entry%%:*}"
   GOT_VARIANT="${entry#*:}"
 
-  ACTUAL=$(../../workspace --dryrun --variant "${WANT_VARIANT}" -- sleep 1)
+  ACTUAL=$(run_coding_booth --dryrun --variant "${WANT_VARIANT}" -- sleep 1)
   ACTUAL=$(printf "%s\n" "$ACTUAL")
-
-  case "${GOT_VARIANT}" in
-    base)           HAS_NOTEBOOK=false ; HAS_VSCODE=false ; HAS_DESKTOP=false ;;
-    ide-notebook)   HAS_NOTEBOOK=true  ; HAS_VSCODE=false ; HAS_DESKTOP=false ;;
-    ide-codeserver) HAS_NOTEBOOK=true  ; HAS_VSCODE=true  ; HAS_DESKTOP=false ;;
-    desktop-*)      HAS_NOTEBOOK=true  ; HAS_VSCODE=true  ; HAS_DESKTOP=true  ;;
-    *)              echo "Error: unknown variant '$VARIANT'." >&2 ; exit 1    ;;
-  esac
 
   # Notice that there is not `-rm`
   EXPECT="\
@@ -69,42 +59,39 @@ docker \\
     --name dryrun \\
     -e 'HOST_UID=${HOST_UID}' \\
     -e 'HOST_GID=${HOST_GID}' \\
-    -v ${HERE}:/home/coder/workspace \\
-    -w /home/coder/workspace \\
+    -v ${HERE}:/home/coder/code \\
+    -w /home/coder/code \\
     -p 10000:10000 \\
-    -e 'WS_SETUPS_DIR=/opt/workspace/setups' \\
-    -e 'WS_CONTAINER_NAME=dryrun' \\
-    -e 'WS_DAEMON=false' \\
-    -e 'WS_HOST_PORT=10000' \\
-    -e 'WS_IMAGE_NAME=nawaman/workspace:${GOT_VARIANT}-${VERSION}' \\
-    -e 'WS_RUNMODE=COMMAND' \\
-    -e 'WS_VARIANT_TAG=${GOT_VARIANT}' \\
-    -e 'WS_VERBOSE=false' \\
-    -e 'WS_VERSION_TAG=${VERSION}' \\
-    -e 'WS_WORKSPACE_PATH=${HERE}' \\
-    -e 'WS_WORKSPACE_PORT=10000' \\
-    -e 'WS_HAS_NOTEBOOK=${HAS_NOTEBOOK}' \\
-    -e 'WS_HAS_VSCODE=${HAS_VSCODE}' \\
-    -e 'WS_HAS_DESKTOP=${HAS_DESKTOP}' \\
-    -e 'WS_WS_VERSION=${VERSION}' \\
-    -e 'WS_CONFIG_FILE=${HERE}/ws--config.toml' \\
-    -e 'WS_SCRIPT_NAME=workspace' \\
-    -e 'WS_SCRIPT_DIR=${SCRIPT_DIR}' \\
-    -e 'WS_LIB_DIR=${LIB_DIR}' \\
-    -e 'WS_KEEP_ALIVE=false' \\
-    -e 'WS_SILENCE_BUILD=false' \\
-    -e 'WS_PULL=false' \\
-    -e 'WS_DIND=false' \\
-    -e 'WS_DOCKERFILE=' \\
-    -e 'WS_PROJECT_NAME=dryrun' \\
-    -e 'WS_TIMEZONE=America/Toronto' \\
-    -e 'WS_PORT=NEXT' \\
-    -e 'WS_ENV_FILE=' \\
-    -e 'WS_HOST_UID=${HOST_UID}' \\
-    -e 'WS_HOST_GID=${HOST_GID}' \\
+    -e 'CB_SETUPS=/opt/codingbooth/setups' \\
+    -e 'CB_CONTAINER_NAME=dryrun' \\
+    -e 'CB_DAEMON=false' \\
+    -e 'CB_HOST_PORT=10000' \\
+    -e 'CB_IMAGE_NAME=nawaman/codingbooth:${GOT_VARIANT}-${VERSION}' \\
+    -e 'CB_RUNMODE=COMMAND' \\
+    -e 'CB_VARIANT_TAG=${GOT_VARIANT}' \\
+    -e 'CB_VERBOSE=false' \\
+    -e 'CB_VERSION_TAG=${VERSION}' \\
+    -e 'CB_CODE_PATH=${HERE}' \\
+    -e 'CB_CODE_PORT=10000' \\
+    -e 'CB_VERSION=${VERSION}' \\
+    -e 'CB_CONFIG_FILE=' \\
+    -e 'CB_SCRIPT_NAME=coding-booth' \\
+    -e 'CB_SCRIPT_DIR=${SCRIPT_DIR}' \\
+    -e 'CB_LIB_DIR=${LIB_DIR}' \\
+    -e 'CB_KEEP_ALIVE=false' \\
+    -e 'CB_SILENCE_BUILD=false' \\
+    -e 'CB_PULL=false' \\
+    -e 'CB_DIND=false' \\
+    -e 'CB_DOCKERFILE=' \\
+    -e 'CB_PROJECT_NAME=dryrun' \\
+    -e 'CB_TIMEZONE=America/Toronto' \\
+    -e 'CB_PORT=NEXT' \\
+    -e 'CB_ENV_FILE=' \\
+    -e 'CB_HOST_UID=${HOST_UID}' \\
+    -e 'CB_HOST_GID=${HOST_GID}' \\
     '--pull=never' \\
     -e 'TZ=America/Toronto' \\
-    nawaman/workspace:${GOT_VARIANT}-${VERSION} \\
+    nawaman/codingbooth:${GOT_VARIANT}-${VERSION} \\
     bash -lc 'sleep 1'"
 
   if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then

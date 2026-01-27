@@ -17,22 +17,22 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     CURRENT_PATH="$(pwd -W)"
 fi
 
-ACTUAL=$(../../workspace --help | head)
+ACTUAL=$(run_coding_booth --help | head)
 
 HERE="$PWD"
 VERSION="$(cat ../../version.txt)"
 
 EXPECT="\
-workspace — launch a Docker-based development workspace (version $VERSION)
+coding-booth — launch a Docker-based development booth (version $VERSION)
 
 USAGE:
-  workspace version                              (print the workspace version)
-  workspace help                                 (show this help and exit)
-  workspace run [options] [--] [command ...]     (run the workspace)
-  workspace [options] [--] [command ...]         (default action: run)
+  coding-booth version                              (print the CodingBooth version)
+  coding-booth help                                 (show this help and exit)
+  coding-booth run [options] [--] [command ...]     (run the booth)
+  coding-booth [options] [--] [command ...]         (default action: run)
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and config file):
-  --workspace <path>     Host workspace path to mount at /home/coder/workspace"
+  --code <path>          Host code path to mount at /home/coder/code"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Help output matches expected"

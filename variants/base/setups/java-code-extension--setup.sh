@@ -14,15 +14,19 @@ if [[ ${EUID} -ne 0 ]]; then
   exit 1
 fi
 
-trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
+# This script will always be installed by root.
+HOME=/root
 
-if [[ "$WS_VARIANT_TAG" == "base" ]] || [[ "$WS_VARIANT_TAG" == "ide-notebook" ]]; then
-    echo "Variant does not include VS Code (code) or CodeServer" >&2
-    exit 0
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/libs/skip-setup.sh"
+if ! "$SCRIPT_DIR/cb-has-vscode.sh"; then
+    skip_setup "$SCRIPT_NAME" "code-server/VSCode not installed"
 fi
 
+trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
-SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/workspace/setups/libs}
+SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}
 CODE_EXTENSION_LIB=${CODE_EXTENSION_LIB:-code-extension-source.sh}
 source "${SETUP_LIBS_DIR}/${CODE_EXTENSION_LIB}"
 

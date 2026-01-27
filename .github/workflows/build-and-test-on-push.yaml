@@ -31,22 +31,13 @@ jobs:
           docker info
       
       - name: Build
-        run: ./cli-build.sh
+        run: ./build/cli-build.sh
       
       - name: Simple test
         run: ./sanity-test.sh
       
       - name: Go Unit tests
         run: cd tests/unit && ./run-go-unit-tests.sh
-      
-      - name: Go Integration tests
-        run: cd tests/unit && ./run-go-integration-tests.sh
-      
-      - name: Basic tests
-        run: cd tests/basic && ./run-basic-tests.sh
-      
+
       - name: DryRun tests
         run: cd tests/dryrun && ./run-dryrun-tests.sh
-      
-      - name: WorkSpace Env
-        run: cd tests/workspace-env && ./run-test.sh

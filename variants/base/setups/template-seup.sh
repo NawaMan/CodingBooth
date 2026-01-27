@@ -10,6 +10,11 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 # Root setup
 # --------------------------
 [ "$EUID" -eq 0 ] || { echo "❌ Run as root (use sudo)"; exit 1; }
+
+# This script will always be installed by root.
+HOME=/root
+
+
 command -v envsubst >/dev/null 2>&1 || { echo "❌ 'envsubst' is required but not installed"; exit 1; }
 
 # --- Defaults ---
@@ -17,8 +22,8 @@ XXXXXX_VERSION="${1:-0.0.0}"      # Replace this variable with your component ve
 
 LEVEL=57                          # See README.md – Profile Ordering (choose an appropriate level)
 
-STARTUP_FILE="/usr/share/startup.d/${LEVEL}-ws-xxxxxx--startup.sh"
-PROFILE_FILE="/etc/profile.d/${LEVEL}-ws-xxxxxx--profile.sh"
+STARTUP_FILE="/usr/share/startup.d/${LEVEL}-cb-xxxxxx--startup.sh"
+PROFILE_FILE="/etc/profile.d/${LEVEL}-cb-xxxxxx--profile.sh"
 STARTER_FILE="/usr/local/bin/xxxxxx"
 
 # Ensure target directories exist

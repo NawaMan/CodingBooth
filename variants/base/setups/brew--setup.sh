@@ -6,12 +6,16 @@
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # --------------------------
 # Config (override via env or first arg)
 # --------------------------
 BREW_INSTALL_URL="${BREW_INSTALL_URL:-${1:-https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh}}"
-STARTUP_FILE="/usr/share/startup.d/57-ws-brew--startup.sh"
-PROFILE_FILE="/etc/profile.d/57-ws-brew--profile.sh"
+STARTUP_FILE="/usr/share/startup.d/57-cb-brew--startup.sh"
+PROFILE_FILE="/etc/profile.d/57-cb-brew--profile.sh"
 
 
 # ---- Create startup file: to be executed ----
@@ -86,7 +90,7 @@ chmod 755 "${STARTUP_FILE}"
 
 # ---- Create profile script: to be source ----
 cat >"$PROFILE_FILE" <<"EOF"
-# /etc/profile.d/57-ws-brew--profile.sh
+# /etc/profile.d/57-cb-brew--profile.sh
 # Idempotent, safe to source multiple times. No installation here.
 
 # Prefer non-interactive, quiet hints, and no analytics in shells too.
@@ -97,21 +101,21 @@ export HOMEBREW_UPDATE_REPORT_ONLY_INSTALLED="${HOMEBREW_UPDATE_REPORT_ONLY_INST
 
 # Load brew's shell environment (PATH, MANPATH, etc.) if available.
 # Use a guard to avoid re-evaluating on every shell spawn.
-if [ -z "${__WS_BREW_SHELLENV_DONE:-}" ]; then
+if [ -z "${__CB_BREW_SHELLENV_DONE:-}" ]; then
   if [ -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
     eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-    __WS_BREW_SHELLENV_DONE=1
+    __CB_BREW_SHELLENV_DONE=1
   elif [ -x /opt/homebrew/bin/brew ]; then
     eval "$(/opt/homebrew/bin/brew shellenv)"
-    __WS_BREW_SHELLENV_DONE=1
+    __CB_BREW_SHELLENV_DONE=1
   elif [ -x /usr/local/bin/brew ]; then
     eval "$(/usr/local/bin/brew shellenv)"
-    __WS_BREW_SHELLENV_DONE=1
+    __CB_BREW_SHELLENV_DONE=1
   elif command -v brew >/dev/null 2>&1; then
     eval "$("$(command -v brew)" shellenv)"
-    __WS_BREW_SHELLENV_DONE=1
+    __CB_BREW_SHELLENV_DONE=1
   fi
-  export __WS_BREW_SHELLENV_DONE
+  export __CB_BREW_SHELLENV_DONE
 fi
 EOF
 chmod 644 "$PROFILE_FILE"

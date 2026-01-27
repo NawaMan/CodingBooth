@@ -14,15 +14,19 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # Work around hash-sum-mismatch issues under emulation (libgcrypt)
 mkdir -p /etc/gcrypt
 echo all > /etc/gcrypt/hwf.deny
 
 # ---------------- Load environment from profile.d ----------------
 # These set: PY_STABLE, PY_STABLE_VERSION, PY_SERIES, VENV_SERIES_DIR, PATH tweaks, etc.
-source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
-PROFILE_FILE="/etc/profile.d/70-ws-vscode-jupyter--profile.sh"
+PROFILE_FILE="/etc/profile.d/70-cb-vscode-jupyter--profile.sh"
 
 export DEBIAN_FRONTEND=noninteractive
 
@@ -63,7 +67,7 @@ pip install --upgrade pip setuptools wheel
 pip install jupyter ipykernel bash_kernel
 
 # Register both kernels system-wide
-python -m ipykernel install   --sys-prefix --name=python3 --display-name="Python 3 (${WS_PY_VERSION})"
+python -m ipykernel install   --sys-prefix --name=python3 --display-name="Python 3 (${CB_PY_VERSION})"
 python -m bash_kernel.install --sys-prefix
 
 # Make Jupyter path globally visible for VS Code
@@ -100,7 +104,7 @@ exec /usr/bin/code                           \
   --user-data-dir="${DATA_DIR}"              \
   --extensions-dir="${VSCODE_EXTENSION_DIR}" \
   --disable-workspace-trust                  \
-  "$HOME/workspace"                          \
+  "$HOME/code"                               \
   "$@"
 EOF
 chmod 755 "$STARTER_FILE"

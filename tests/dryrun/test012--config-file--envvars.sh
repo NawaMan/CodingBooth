@@ -37,12 +37,15 @@ function realpath() {
 }
 
 
-ACTUAL=$(../../workspace --verbose --dryrun | grep -E '^[A-Z_]+:' | sort)
+ACTUAL=$(run_coding_booth --verbose --dryrun | grep -E '^[A-Z_]+:' | sort)
 
 EXPECT="\
 BUILD_ARGS: 
+CB_VERSION:     $VERSION
 CMDS:       
-CONFIG_FILE:    ${HERE}/ws--config.toml
+CODE_PATH:      $HERE
+CODE_PORT:      10000
+CONFIG_FILE:    
 CONTAINER_ENV_FILE: 
 CONTAINER_NAME: dryrun
 DAEMON:         false
@@ -54,19 +57,16 @@ HOST_GID:       $HOST_GID
 HOST_PORT:      10000
 HOST_UID:       $HOST_UID
 IMAGE_MODE:     PREBUILT
-IMAGE_NAME:     nawaman/workspace:ide-codeserver-$VERSION
+IMAGE_NAME:     nawaman/codingbooth:base-$VERSION
 KEEPALIVE:      false
 LOCAL_BUILD:    false
 PORT_GENERATED: true
-PREBUILD_REPO:  nawaman/workspace
+PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:   
 SCRIPT_DIR:     $(realpath "$HERE/../..")
-SCRIPT_NAME:    workspace
-VARIANT:        ide-codeserver
-VERSION:        $VERSION
-WORKSPACE_PATH: $HERE
-WORKSPACE_PORT: 10000
-WS_VERSION:     $VERSION"
+SCRIPT_NAME:    coding-booth
+VARIANT:        base
+VERSION:        $VERSION"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Expected default variables"
@@ -90,7 +90,7 @@ daemon = true
 dind = true
 dockerfile = "test--config.sh"
 env-file = "test--.env"
-image = "test/workspace:codeserver-$VERSION"
+image = "test/workspace:base-$VERSION"
 keep-alive = true
 name = "test-container"
 port = "10005"
@@ -99,11 +99,14 @@ variant = "codeserver"
 EOF
 
 
-ACTUAL=$(../../workspace --verbose --dryrun --config test--config.toml | grep -E '^[A-Z_]+:' | sort)
+ACTUAL=$(run_coding_booth --verbose --dryrun --config test--config.toml | grep -E '^[A-Z_]+:' | sort)
 
 EXPECT="\
 BUILD_ARGS: 
+CB_VERSION:     ${VERSION}
 CMDS:       
+CODE_PATH:      $HERE
+CODE_PORT:      10000
 CONFIG_FILE:    ${HERE}/test--config.toml
 CONTAINER_ENV_FILE: test--.env
 CONTAINER_NAME: test-container
@@ -116,19 +119,16 @@ HOST_GID:       $HOST_GID
 HOST_PORT:      10005
 HOST_UID:       $HOST_UID
 IMAGE_MODE:     EXISTING
-IMAGE_NAME:     test/workspace:codeserver-${VERSION}
+IMAGE_NAME:     test/workspace:base-${VERSION}
 KEEPALIVE:      true
 LOCAL_BUILD:    false
 PORT_GENERATED: false
-PREBUILD_REPO:  nawaman/workspace
+PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:   
 SCRIPT_DIR:     $(realpath "$HERE/../..")
-SCRIPT_NAME:    workspace
-VARIANT:        ide-codeserver
-VERSION:        ${VERSION}
-WORKSPACE_PATH: $HERE
-WORKSPACE_PORT: 10000
-WS_VERSION:     ${VERSION}"
+SCRIPT_NAME:    coding-booth
+VARIANT:        codeserver
+VERSION:        ${VERSION}"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "2" "Override variables"

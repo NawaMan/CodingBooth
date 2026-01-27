@@ -5,7 +5,7 @@
 package ilist_test
 
 import (
-	"github.com/nawaman/workspace/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // Example demonstrates basic usage of the ilist package.
@@ -34,8 +34,8 @@ func Example() {
 func Example_dockerArgs() {
 	// Build common args
 	commonArgs := ilist.NewAppendableList[string]()
-	commonArgs.Append("--name", "workspace")
-	commonArgs.Append("-v", "/workspace:/home/coder/workspace")
+	commonArgs.Append("--name", "booth")
+	commonArgs.Append("-v", "/booth:/home/coder/code")
 
 	// Create snapshot for reuse
 	baseArgs := commonArgs.Snapshot()

@@ -42,6 +42,17 @@ if ! (cd "$SCRIPT_DIR/manual" && ./run-docker-interactive-manual-test.sh); then
 fi
 echo ""
 
+# Run colored-prompt manual test
+echo "----------------------------------------"
+echo "Running Colored Prompt Manual Test"
+echo "----------------------------------------"
+total_suites=$((total_suites + 1))
+if ! (cd "$SCRIPT_DIR/manual" && ./run-colored-prompt-manual-test.sh); then
+    failed=1
+    failed_suites+=("colored-prompt")
+fi
+echo ""
+
 # Summary
 echo "========================================"
 echo "Test Summary"

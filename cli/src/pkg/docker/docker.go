@@ -14,7 +14,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/nawaman/workspace/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // buildKitAvailable caches the result of BuildKit detection
@@ -50,6 +50,17 @@ type DockerFlags struct {
 	Dryrun  bool
 	Verbose bool
 	Silent  bool
+}
+
+// DockerExitError is returned when a docker command exits with a non-zero exit code.
+// It allows callers to retrieve the exit code for special handling.
+type DockerExitError struct {
+	Subcommand string
+	ExitCode   int
+}
+
+func (e *DockerExitError) Error() string {
+	return fmt.Sprintf("docker %s failed with exit code %d", e.Subcommand, e.ExitCode)
 }
 
 // Docker executes a docker command with the given subcommand and arguments.
@@ -184,7 +195,7 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 	// Run and propagate exit status
 	if err := cmd.Run(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			return fmt.Errorf("docker %s failed with exit code %d", subcommand, exitErr.ExitCode())
+			return &DockerExitError{Subcommand: subcommand, ExitCode: exitErr.ExitCode()}
 		}
 		return fmt.Errorf("docker %s failed: %w", subcommand, err)
 	}
@@ -315,7 +326,7 @@ func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.Li
 	// Run and propagate exit status
 	if err := cmd.Run(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			return stdout.String(), fmt.Errorf("docker %s failed with exit code %d", subcommand, exitErr.ExitCode())
+			return stdout.String(), &DockerExitError{Subcommand: subcommand, ExitCode: exitErr.ExitCode()}
 		}
 		return stdout.String(), fmt.Errorf("docker %s failed: %w", subcommand, err)
 	}

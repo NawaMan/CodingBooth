@@ -12,5 +12,15 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   exit 1
 fi
 
-SETUPS_DIR=${SETUPS_DIR:-/opt/workspace/setups}
+# This script will always be installed by root.
+HOME=/root
+
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/libs/skip-setup.sh"
+if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
+    skip_setup "$SCRIPT_NAME" "desktop environment not available"
+fi
+
+SETUPS_DIR=${SETUPS_DIR:-/opt/codingbooth/setups}
 "${SETUPS_DIR}"/jetbrains--setup.sh pycharm
