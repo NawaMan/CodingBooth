@@ -24,7 +24,7 @@ COPY setups/network-whitelist--setup.sh ./network-whitelist--setup.sh
 RUN ./network-whitelist--setup.sh
 
 # Always install claude-code
-RUN ./claude-code--setup.sh || [[ $? -eq 42 ]]
-RUN ./antigravity--setup.sh || [[ $? -eq 42 ]]
+RUN ./claude-code--setup.sh
+RUN ./antigravity--setup.sh
 
 WORKDIR /home/coder/code

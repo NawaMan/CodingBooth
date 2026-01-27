@@ -19,8 +19,8 @@ WORKDIR /opt/codingbooth/setups
 
 RUN ./go--setup.sh "${CB_GO_VERSION}"
 
-RUN ./go-code-extension--setup.sh  || [[ $? -eq 42 ]]
-RUN ./jetbrains--setup.sh goland   || [[ $? -eq 42 ]]
+RUN ./go-code-extension--setup.sh
+RUN ./jetbrains--setup.sh goland
 
-RUN ./claude-code--setup.sh        || [[ $? -eq 42 ]]
-RUN ./antigravity--setup.sh        || [[ $? -eq 42 ]]
+RUN ./claude-code--setup.sh
+RUN ./antigravity--setup.sh

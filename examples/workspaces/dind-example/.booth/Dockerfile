@@ -20,7 +20,7 @@ WORKDIR /opt/codingbooth/setups
 RUN ./dind--setup.sh
 RUN ./docker-buildx--setup.sh
 
-RUN ./claude-code--setup.sh || [[ $? -eq 42 ]]
-RUN ./antigravity--setup.sh || [[ $? -eq 42 ]]
+RUN ./claude-code--setup.sh
+RUN ./antigravity--setup.sh
 
 WORKDIR /home/coder/code

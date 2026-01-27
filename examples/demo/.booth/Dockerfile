@@ -23,10 +23,10 @@ RUN mvn--setup.sh
 RUN gradle--setup.sh
 RUN jenv--setup.sh
 
-RUN antigravity--setup.sh            || [[ $? -eq 42 ]]
-RUN claude-code--setup.sh            || [[ $? -eq 42 ]]
+RUN antigravity--setup.sh
+RUN claude-code--setup.sh
 
-RUN java-code-extension--setup.sh    || [[ $? -eq 42 ]]
-RUN go-code-extension--setup.sh      || [[ $? -eq 42 ]]
+RUN java-code-extension--setup.sh
+RUN go-code-extension--setup.sh
 
-RUN java-jjava-nb-kernel--setup.sh   || [[ $? -eq 42 ]]
+RUN java-jjava-nb-kernel--setup.sh

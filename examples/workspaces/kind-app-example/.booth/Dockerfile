@@ -33,14 +33,14 @@ RUN curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64 \
 
 
 RUN ./go--setup.sh "${CB_GO_VERSION}"
-RUN ./go-code-extension--setup.sh || [[ $? -eq 42 ]]
+RUN ./go-code-extension--setup.sh
 
 RUN ./bun--setup.sh    ${CB_BUN_VERSION}
 
 RUN ./notebook--setup.sh
 
-RUN ./claude-code--setup.sh || [[ $? -eq 42 ]]
-RUN ./antigravity--setup.sh || [[ $? -eq 42 ]]
+RUN ./claude-code--setup.sh
+RUN ./antigravity--setup.sh
 
 # Install AWS CLI v2
 RUN apt-get update && \

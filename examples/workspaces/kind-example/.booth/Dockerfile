@@ -27,7 +27,7 @@ RUN curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64 \
     && chmod +x ./kind \
     && mv ./kind /usr/local/bin/kind
 
-RUN ./claude-code--setup.sh || [[ $? -eq 42 ]]
-RUN ./antigravity--setup.sh || [[ $? -eq 42 ]]
+RUN ./claude-code--setup.sh
+RUN ./antigravity--setup.sh
 
 WORKDIR /home/coder/code

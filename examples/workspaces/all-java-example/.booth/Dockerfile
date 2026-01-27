@@ -65,11 +65,11 @@ RUN jbang - 'class Hi { public static void main(String[]a){System.out.println("H
 RUN "$CB_SETUPS"/mvn--setup.sh
 RUN "$CB_SETUPS"/gradle--setup.sh
 
-RUN "$CB_SETUPS"/java-code-extension--setup.sh                    || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS"/eclipse--setup.sh                                || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS"/idea--setup.sh                                   || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS"/lombok-eclipse--setup.sh                         || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS"/jetbrains-plugin--setup.sh idea "Lombook Plugin" || [[ $? -eq 42 ]]
+RUN "$CB_SETUPS"/java-code-extension--setup.sh
+RUN "$CB_SETUPS"/eclipse--setup.sh
+RUN "$CB_SETUPS"/idea--setup.sh
+RUN "$CB_SETUPS"/lombok-eclipse--setup.sh
+RUN "$CB_SETUPS"/jetbrains-plugin--setup.sh idea "Lombook Plugin"
 
-RUN "$CB_SETUPS"/claude-code--setup.sh                            || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS"/antigravity--setup.sh                            || [[ $? -eq 42 ]]
+RUN "$CB_SETUPS"/claude-code--setup.sh
+RUN "$CB_SETUPS"/antigravity--setup.sh

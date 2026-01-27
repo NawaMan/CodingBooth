@@ -22,5 +22,5 @@ RUN aws --version
 
 ARG CB_SETUPS=/opt/codingbooth/setups
 
-RUN "$CB_SETUPS"/claude-code--setup.sh || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS"/antigravity--setup.sh || [[ $? -eq 42 ]]
+RUN "$CB_SETUPS"/claude-code--setup.sh
+RUN "$CB_SETUPS"/antigravity--setup.sh
