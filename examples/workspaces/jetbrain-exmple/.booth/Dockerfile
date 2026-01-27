@@ -21,15 +21,15 @@ ARG CB_MVN_VERSION=3.9.11
 RUN "$CB_SETUPS/jdk--setup.sh" "${CB_JDK_VERSION}"
 
 # COPY --chmod=0755 ./setups/ /tmp/setups/
-RUN "$CB_SETUPS/jetbrains--setup.sh" idea     || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS/jetbrains--setup.sh" pycharm  || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS/jetbrains--setup.sh" goland   || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS/jetbrains--setup.sh" webstorm || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS/jetbrains--setup.sh" phpstorm || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS/jetbrains--setup.sh" clion    || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS/jetbrains--setup.sh" rider    || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS/jetbrains--setup.sh" rubymine || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS/jetbrains--setup.sh" datagrip || [[ $? -eq 42 ]]
+RUN "$CB_SETUPS/jetbrains--setup.sh" idea
+RUN "$CB_SETUPS/jetbrains--setup.sh" pycharm
+RUN "$CB_SETUPS/jetbrains--setup.sh" goland
+RUN "$CB_SETUPS/jetbrains--setup.sh" webstorm
+RUN "$CB_SETUPS/jetbrains--setup.sh" phpstorm
+RUN "$CB_SETUPS/jetbrains--setup.sh" clion
+RUN "$CB_SETUPS/jetbrains--setup.sh" rider
+RUN "$CB_SETUPS/jetbrains--setup.sh" rubymine
+RUN "$CB_SETUPS/jetbrains--setup.sh" datagrip
 
-RUN "$CB_SETUPS"/claude-code--setup.sh        || [[ $? -eq 42 ]]
-RUN "$CB_SETUPS"/antigravity--setup.sh        || [[ $? -eq 42 ]]
+RUN "$CB_SETUPS"/claude-code--setup.sh
+RUN "$CB_SETUPS"/antigravity--setup.sh

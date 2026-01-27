@@ -19,12 +19,12 @@ ARG CB_DENO_VERSION=2.6.5
 # Setup
 WORKDIR /opt/codingbooth/setups
 
-RUN ./claude-code--setup.sh            || [[ $? -eq 42 ]]
-RUN ./antigravity--setup.sh            || [[ $? -eq 42 ]]
+RUN ./claude-code--setup.sh
+RUN ./antigravity--setup.sh
 
 RUN ./nodejs--setup.sh ${CB_NODE_MAJOR}
 RUN ./bun--setup.sh    ${CB_BUN_VERSION}
 RUN ./deno--setup.sh   ${CB_DENO_VERSION}
 
-RUN ./react-code-extension--setup.sh   || [[ $? -eq 42 ]]
-RUN ./jetbrains--setup.sh webstorm     || [[ $? -eq 42 ]]
+RUN ./react-code-extension--setup.sh
+RUN ./jetbrains--setup.sh webstorm

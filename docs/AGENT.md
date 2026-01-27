@@ -40,11 +40,11 @@ cat /home/coder/code/.booth/Dockerfile  # What's already configured?
 
 **You are INSIDE the container.** This changes everything:
 
-| Location | Persistence | What to do |
-|----------|-------------|------------|
-| `/home/coder/code/` | Persists (mounted from host) | Project files, `.booth/` config |
-| `/home/coder/` (outside `code/`) | Ephemeral | Lost on restart |
-| `/opt/`, `/usr/`, `/etc/` | Ephemeral | Lost on restart |
+| Location                         | Persistence                  | What to do                      |
+|----------------------------------|------------------------------|---------------------------------|
+| `/home/coder/code/`              | Persists (mounted from host) | Project files, `.booth/` config |
+| `/home/coder/` (outside `code/`) | Ephemeral                    | Lost on restart                 |
+| `/opt/`, `/usr/`, `/etc/`        | Ephemeral                    | Lost on restart                 |
 
 **Key insight:** To make changes permanent, modify files in `/home/coder/code/.booth/` — these are the source of truth that rebuild the container.
 

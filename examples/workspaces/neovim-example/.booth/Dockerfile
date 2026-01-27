@@ -18,5 +18,5 @@ ARG CB_SETUPS=/opt/codingbooth/setups
 # Setup
 WORKDIR /opt/codingbooth/setups
 
-RUN ./claude-code--setup.sh || [[ $? -eq 42 ]]
-RUN ./antigravity--setup.sh || [[ $? -eq 42 ]]
+RUN ./claude-code--setup.sh
+RUN ./antigravity--setup.sh

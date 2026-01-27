@@ -17,9 +17,9 @@ HOME=/root
 
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/libs/skip-setup.sh"
 if ! "$SCRIPT_DIR/cb-has-vscode.sh"; then
-    echo "SKIP: $SCRIPT_NAME - code-server/VSCode not installed" >&2
-    exit 42
+    skip_setup "$SCRIPT_NAME" "code-server/VSCode not installed"
 fi
 
 SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}

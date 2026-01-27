@@ -68,8 +68,15 @@ cat > "/home/coder/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-desktop.xml" <
 </channel>
 EOF
 
-# Link Claude agent
-ln -sf /opt/codingbooth/AGENT.md /home/coder/CLAUDE.md
+# Create CLAUDE.md with reference to AGENT.md (idempotent)
+CLAUDE_MD="/home/coder/CLAUDE.md"
+AGENT_REF="Read /opt/codingbooth/AGENT.md for CodingBooth-specific instructions."
+if [[ ! -f "$CLAUDE_MD" ]]; then
+  echo "$AGENT_REF" > "$CLAUDE_MD"
+elif ! grep -qF "$AGENT_REF" "$CLAUDE_MD"; then
+  # Prepend the reference if not already present
+  printf '%s\n\n%s' "$AGENT_REF" "$(cat "$CLAUDE_MD")" > "$CLAUDE_MD"
+fi
 
 if [[ "${CB_SILENCE_BUILD:-false}" != "true" ]]; then
   echo "✅ Demo startup complete!"

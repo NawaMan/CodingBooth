@@ -16,11 +16,11 @@ trap 'echo "Error on line $LINENO"; exit 1' ERR
 
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/libs/skip-setup.sh"
 
 # Check for desktop environment
 if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
-    echo "SKIP: $SCRIPT_NAME - desktop environment not available" >&2
-    exit 42
+    skip_setup "$SCRIPT_NAME" "desktop environment not available"
 fi
 
 STARTUP_FILE="/usr/share/startup.d/70-cb-warp--startup.sh"

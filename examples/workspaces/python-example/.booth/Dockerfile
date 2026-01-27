@@ -12,11 +12,11 @@ ARG JDK_VERSION=24
 RUN python--setup.sh ${PY_VERSION}
 RUN jdk--setup.sh    ${JDK_VERSION}
 
-RUN python-code-extension--setup.sh                         || [[ $? -eq 42 ]]
-RUN jupyter-code-extension--setup.sh                        || [[ $? -eq 42 ]]
+RUN python-code-extension--setup.sh
+RUN jupyter-code-extension--setup.sh
 
-RUN pycharm--setup.sh                                       || [[ $? -eq 42 ]]
-RUN jetbrains-plugin--setup.sh pycharm ru.adelf.idea.dotenv || [[ $? -eq 42 ]]
+RUN pycharm--setup.sh
+RUN jetbrains-plugin--setup.sh pycharm ru.adelf.idea.dotenv
 
-RUN claude-code--setup.sh                                   || [[ $? -eq 42 ]]
-RUN antigravity--setup.sh                                   || [[ $? -eq 42 ]]
+RUN claude-code--setup.sh
+RUN antigravity--setup.sh

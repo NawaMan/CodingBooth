@@ -29,12 +29,12 @@ RUN ./mvn--setup.sh
 RUN ./gradle--setup.sh
 RUN ./jenv--setup.sh
 
-RUN ./java-code-extension--setup.sh                    || [[ $? -eq 42 ]]
+RUN ./java-code-extension--setup.sh
 RUN ./java-jjava-nb-kernel--setup.sh
-RUN ./eclipse--setup.sh                                || [[ $? -eq 42 ]]
-RUN ./idea--setup.sh                                   || [[ $? -eq 42 ]]
-RUN ./lombok-eclipse--setup.sh                         || [[ $? -eq 42 ]]
-RUN ./jetbrains-plugin--setup.sh idea "Lombook Plugin" || [[ $? -eq 42 ]]
+RUN ./eclipse--setup.sh
+RUN ./idea--setup.sh
+RUN ./lombok-eclipse--setup.sh
+RUN ./jetbrains-plugin--setup.sh idea "Lombook Plugin"
 
-RUN ./claude-code--setup.sh                            || [[ $? -eq 42 ]]
-RUN ./antigravity--setup.sh                            || [[ $? -eq 42 ]]
+RUN ./claude-code--setup.sh
+RUN ./antigravity--setup.sh
