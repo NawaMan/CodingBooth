@@ -1,0 +1,6 @@
+variant  = "base"
+dind     = true
+run-args = [
+    "-p", "8080:8080",
+    "-p", "3000:3000"
+]

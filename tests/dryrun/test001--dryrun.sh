@@ -24,7 +24,7 @@ strip_ansi() { sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g'; }
 
 export TIMEZONE="America/Toronto"
 
-ACTUAL=$(../../workspace --variant base --dryrun | strip_ansi)
+ACTUAL=$(run_coding_booth --variant base --dryrun | strip_ansi)
 
 HERE="$CURRENT_PATH"
 VERSION="$(cat ../../version.txt)"
@@ -32,15 +32,15 @@ VERSION="$(cat ../../version.txt)"
 EXPECT="\
 
 ============================================================
-🚀 WORKSPACE PORT SELECTED
+🚀 BOOTH PORT SELECTED
 ============================================================
 🔌 Using host port: 10000 -> container: 10000
 🌐 Open: http://localhost:10000
 ============================================================
 
-📦 Running workspace in foreground.
+📦 Running booth in foreground.
 👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.
-👉 To open an interactive shell instead: 'workspace -- bash'
+👉 To open an interactive shell instead: 'coding-booth -- bash'
 
 docker \\
     run \\
@@ -49,42 +49,39 @@ docker \\
     --name dryrun \\
     -e 'HOST_UID=${HOST_UID}' \\
     -e 'HOST_GID=${HOST_GID}' \\
-    -v ${HERE}:/home/coder/workspace \\
-    -w /home/coder/workspace \\
+    -v ${HERE}:/home/coder/code \\
+    -w /home/coder/code \\
     -p 10000:10000 \\
-    -e 'WS_SETUPS_DIR=/opt/workspace/setups' \\
-    -e 'WS_CONTAINER_NAME=dryrun' \\
-    -e 'WS_DAEMON=false' \\
-    -e 'WS_HOST_PORT=10000' \\
-    -e 'WS_IMAGE_NAME=nawaman/workspace:base-${VERSION}' \\
-    -e 'WS_RUNMODE=FOREGROUND' \\
-    -e 'WS_VARIANT_TAG=base' \\
-    -e 'WS_VERBOSE=false' \\
-    -e 'WS_VERSION_TAG=${VERSION}' \\
-    -e 'WS_WORKSPACE_PATH=${HERE}' \\
-    -e 'WS_WORKSPACE_PORT=10000' \\
-    -e 'WS_HAS_NOTEBOOK=false' \\
-    -e 'WS_HAS_VSCODE=false' \\
-    -e 'WS_HAS_DESKTOP=false' \\
-    -e 'WS_WS_VERSION=${VERSION}' \\
-    -e 'WS_CONFIG_FILE=${HERE}/ws--config.toml' \\
-    -e 'WS_SCRIPT_NAME=workspace' \\
-    -e 'WS_SCRIPT_DIR=${SCRIPT_DIR}' \\
-    -e 'WS_LIB_DIR=${LIB_DIR}' \\
-    -e 'WS_KEEP_ALIVE=false' \\
-    -e 'WS_SILENCE_BUILD=false' \\
-    -e 'WS_PULL=false' \\
-    -e 'WS_DIND=false' \\
-    -e 'WS_DOCKERFILE=' \\
-    -e 'WS_PROJECT_NAME=dryrun' \\
-    -e 'WS_TIMEZONE=America/Toronto' \\
-    -e 'WS_PORT=NEXT' \\
-    -e 'WS_ENV_FILE=' \\
-    -e 'WS_HOST_UID=${HOST_UID}' \\
-    -e 'WS_HOST_GID=${HOST_GID}' \\
+    -e 'CB_SETUPS=/opt/codingbooth/setups' \\
+    -e 'CB_CONTAINER_NAME=dryrun' \\
+    -e 'CB_DAEMON=false' \\
+    -e 'CB_HOST_PORT=10000' \\
+    -e 'CB_IMAGE_NAME=nawaman/codingbooth:base-${VERSION}' \\
+    -e 'CB_RUNMODE=FOREGROUND' \\
+    -e 'CB_VARIANT_TAG=base' \\
+    -e 'CB_VERBOSE=false' \\
+    -e 'CB_VERSION_TAG=${VERSION}' \\
+    -e 'CB_CODE_PATH=${HERE}' \\
+    -e 'CB_CODE_PORT=10000' \\
+    -e 'CB_VERSION=${VERSION}' \\
+    -e 'CB_CONFIG_FILE=' \\
+    -e 'CB_SCRIPT_NAME=coding-booth' \\
+    -e 'CB_SCRIPT_DIR=${SCRIPT_DIR}' \\
+    -e 'CB_LIB_DIR=${LIB_DIR}' \\
+    -e 'CB_KEEP_ALIVE=false' \\
+    -e 'CB_SILENCE_BUILD=false' \\
+    -e 'CB_PULL=false' \\
+    -e 'CB_DIND=false' \\
+    -e 'CB_DOCKERFILE=' \\
+    -e 'CB_PROJECT_NAME=dryrun' \\
+    -e 'CB_TIMEZONE=America/Toronto' \\
+    -e 'CB_PORT=NEXT' \\
+    -e 'CB_ENV_FILE=' \\
+    -e 'CB_HOST_UID=${HOST_UID}' \\
+    -e 'CB_HOST_GID=${HOST_GID}' \\
     '--pull=never' \\
     -e 'TZ=America/Toronto' \\
-    nawaman/workspace:base-${VERSION}"
+    nawaman/codingbooth:base-${VERSION}"
 
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then

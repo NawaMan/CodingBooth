@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 # kde--setup.sh — root-only installer for KDE Plasma + VNC + noVNC + Dolphin & Konsole pinned + NO LOCK SCREEN
-# Installs deps, writes /etc/profile.d/99-ws-kde.sh, creates /usr/local/bin/start-kde,
+# Installs deps, writes /etc/profile.d/99-cb-kde.sh, creates /usr/local/bin/start-kde,
 # pins Dolphin and Konsole, and disables KDE screen locking (no password on lock).
 
 set -Eeuo pipefail
@@ -16,8 +16,11 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
 
-PROFILE_FILE="/etc/profile.d/55-ws-kde--profile.sh"
+
+PROFILE_FILE="/etc/profile.d/55-cb-kde--profile.sh"
 STARTER_FILE="/usr/local/bin/start-kde"
 DESKTOP_FILE="/usr/local/bin/start-desktop"
 

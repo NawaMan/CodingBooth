@@ -1,0 +1,338 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth-entry
+#
+# Purpose:
+#   This is the core component that enable smooth host-container access to shared files.
+#   It is a container entry script that aligns the in-container "coder" user/group with
+#   the host's UID/GID, ensures passwordless sudo, prepares $HOME and code path,
+#   and finally execs the given command as "coder".
+#
+#   This allows files created in the container to be owned by the host user
+#   when a bind mount is used (e.g., -v $PWD:/home/coder/code).
+#
+# Here is what this script does:
+# - Ensure user/group alignment
+# - Setup user profile/environment
+# - Prepare the user's home directory
+# - Run one-time CodingBooth startup hooks
+# - Execute the requested command
+#
+# Approach for ensuring the user/group alignment:
+#   1) Ensure '$USER_NAME' group exists (with any GID for now). Prefer HOST_GID if free ...
+#   2) If some other group owns HOST_GID, move it to a free gid (keep its name) ...
+#   3) Set 'coder' group's gid to HOST_GID (if not already) ...
+#   4) Ensuring user '$USER_NAME' exists and matches HOST_UID...
+#   5) Change the owner after the UID/GID adjustment.
+#
+# Notes:
+#   * This script prefers to minimally mutate the system: it only moves aside
+#     conflicting UID/GID holders when necessary.
+#   * Designed to be re-run safely (idempotent).
+#   * No-op if host UID/GID matches current "coder" UID/GID and ownership is OK.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+# Verbose logging (default: false)
+CB_VERBOSE="${CB_VERBOSE:-false}"
+info() {
+  if [ "$CB_VERBOSE" = "true" ]; then
+    printf '[cb-setup] %s\n' "$*"
+  fi
+}
+
+
+section() {
+  if [ "$CB_VERBOSE" = "true" ]; then
+    printf '\n'
+    printf '[cb-setup] ====================================================================\n'
+    printf '[cb-setup] %s\n' "$*"
+    printf '[cb-setup] --------------------------------------------------------------------\n'
+  fi
+}
+
+section "Ensure user/group alignment ..."
+
+USER_NAME="coder"
+HOME_DIR="/home/${USER_NAME}"
+CODE_NAME="${CODE_NAME:-code}"
+CODE_DIR="/home/${USER_NAME}/${CODE_NAME}"
+USER_SHELL="${USER_SHELL:-/bin/bash}"
+HOST_UID="${HOST_UID:-1000}"
+HOST_GID="${HOST_GID:-1000}"
+
+info "USER_NAME=$USER_NAME HOME_DIR=$HOME_DIR CODE_DIR=$CODE_DIR"
+info "HOST_UID=$HOST_UID HOST_GID=$HOST_GID"
+
+# Capture original UID/GID before any modifications (for ownership fixup later)
+ORIG_UID=""
+ORIG_GID=""
+if id -u "$USER_NAME" >/dev/null 2>&1; then
+  ORIG_UID="$(id -u "$USER_NAME")"
+fi
+if getent group "$USER_NAME" >/dev/null 2>&1; then
+  ORIG_GID="$(getent group "$USER_NAME" | cut -d: -f3)"
+fi
+info "ORIG_UID=$ORIG_UID ORIG_GID=$ORIG_GID"
+
+# Find a free numeric uid/gid starting from 2000 to relocate conflicts safely
+find_free_uid() { local uid=2000; while getent passwd "$uid" >/dev/null 2>&1; do uid=$((uid+1)); done; echo "$uid"; }
+find_free_gid() { local gid=2000; while getent group  "$gid" >/dev/null 2>&1; do gid=$((gid+1)); done; echo "$gid"; }
+
+# Wrappers to hide "no changes" noise while preserving behavior/exit codes
+UserMod()  { usermod "$@" 2> >(grep -v -F "usermod: no changes" >&2) ; }
+GroupMod() { groupmod "$@" 2> >(grep -v -F "groupmod: no changes" >&2) ; }
+
+info "1) Ensure '$USER_NAME' group exists (with any GID for now). Prefer HOST_GID if free ..."
+if ! getent group "$USER_NAME" >/dev/null 2>&1; then
+  if getent group "$HOST_GID"  >/dev/null 2>&1; then
+    groupadd "$USER_NAME"
+  else
+    groupadd -g "$HOST_GID" "$USER_NAME"
+  fi
+fi
+
+info "2) If some other group owns HOST_GID, move it to a free gid (keep its name) ..."
+owner_of_host_gid="$(getent group "$HOST_GID" | cut -d: -f1 || true)"
+if [ -n "$owner_of_host_gid" ] && [ "$owner_of_host_gid" != "$USER_NAME" ]; then
+  tmp_gid="$(find_free_gid)"
+  GroupMod -g "$tmp_gid" "$owner_of_host_gid"
+fi
+
+info "3) Set 'coder' group's gid to HOST_GID (if not already) ..."
+current_gid="$(getent group "$USER_NAME" | cut -d: -f3)"
+if [ "$current_gid" != "$HOST_GID" ]; then
+  GroupMod -g "$HOST_GID" "$USER_NAME"
+fi
+
+info "4) Ensuring user '$USER_NAME' exists and matches HOST_UID..."
+existing_uid_user="$(getent passwd "$HOST_UID" | cut -d: -f1 || true)"
+if id -u "$USER_NAME" >/dev/null 2>&1; then
+  current_uid="$(id -u "$USER_NAME")"
+  # minimal additions: detect current primary group name and shell
+  current_gid_name="$(id -gn "$USER_NAME")"
+  current_shell="$(getent passwd "$USER_NAME" | cut -d: -f7 || true)"
+
+  if [ "$current_uid" != "$HOST_UID" ]; then
+    # If another user has HOST_UID, move them out of the way
+    if [ -n "$existing_uid_user" ] && [ "$existing_uid_user" != "$USER_NAME" ]; then
+      temp_uid="$(find_free_uid)"; UserMod -u "$temp_uid" "$existing_uid_user"
+    fi
+    UserMod -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+  else
+    # Only call usermod if group or shell actually differ (avoid "no changes" noise)
+    if [ "$current_gid_name" != "$USER_NAME" ] || [ "$current_shell" != "$USER_SHELL" ]; then
+      UserMod -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+    fi
+  fi
+else
+  # 'coder' doesn't exist yet; if HOST_UID is already taken, move that user aside
+  if [ -n "$existing_uid_user" ] && [ "$existing_uid_user" != "$USER_NAME" ]; then
+    temp_uid="$(find_free_uid)"; UserMod -u "$temp_uid" "$existing_uid_user"
+  fi
+  # Create coder. Reuse existing HOME_DIR if present; otherwise create it (-m).
+  if [ -d "$HOME_DIR" ]; then
+    useradd    -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+  else
+    useradd -m -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+  fi
+fi
+
+info "5) Fixing ownership for files owned by original UID:GID (skipping $CODE_DIR)..."
+if [ -n "$ORIG_UID" ] && [ "$ORIG_UID" != "$HOST_UID" ]; then
+  info "Changing ownership from UID $ORIG_UID to $HOST_UID..."
+  find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o -user "$ORIG_UID" -exec chown "$HOST_UID" {} + 2>/dev/null || true
+fi
+if [ -n "$ORIG_GID" ] && [ "$ORIG_GID" != "$HOST_GID" ]; then
+  info "Changing group from GID $ORIG_GID to $HOST_GID..."
+  find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o -group "$ORIG_GID" -exec chgrp "$HOST_GID" {} + 2>/dev/null || true
+fi
+
+
+section "Allow sudo access to the user"
+
+info "6) Configuring passwordless sudo for '$USER_NAME'..."
+echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/${USER_NAME}
+chmod 0440 /etc/sudoers.d/${USER_NAME}
+
+# Set up environment for coder and switch to code
+export HOME="$HOME_DIR"
+export PATH="$HOME/.local/bin:$PATH"
+cd "$CODE_DIR"
+
+section "Setup user profile/environment"
+
+info "7) Ensuring default dotfiles exist in $HOME_DIR..."
+
+# ---- .bashrc ----
+if [ ! -f "$HOME_DIR/.bashrc" ]; then
+  if [ -f /etc/skel/.bashrc ]; then
+    cp /etc/skel/.bashrc "$HOME_DIR/.bashrc"
+  else
+    touch "$HOME_DIR/.bashrc"
+  fi
+  echo 'export PS1="\[\e[1;32m\]${CB_CONTAINER_NAME}\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "' >> "$HOME_DIR/.bashrc"
+fi
+
+# ---- .zshrc ----
+if [ ! -f "$HOME_DIR/.zshrc" ]; then
+  if [ -f /etc/skel/.zshrc ]; then
+    cp /etc/skel/.zshrc "$HOME_DIR/.zshrc"
+  else
+    touch "$HOME_DIR/.zshrc"
+  fi
+  {
+    printf '\n# ---- custom prompt (added at build) ----\n'
+    printf 'setopt PROMPT_SUBST\n'
+    printf 'PROMPT="%%B%%F{green}${CB_CONTAINER_NAME}%%b%%f:%%B%%F{blue}%%~%%b%%f> "\n'
+    printf '# ---- end custom prompt ----\n'
+  } >> "$HOME_DIR/.zshrc"
+fi
+
+info "8) Ensuring default profile exists in $HOME_DIR..."
+
+# Ensure .profile exists first (login shells) - prefer skeleton if available
+if [ ! -f "$HOME_DIR/.profile" ]; then
+  if [ -f /etc/skel/.profile ]; then
+    cp /etc/skel/.profile "$HOME_DIR/.profile"
+  fi
+fi
+
+# Only add minimal profile hook if .profile still doesn't exist (no skeleton was available)
+# This is a fallback - the skeleton .profile already handles sourcing .bashrc properly
+if [ ! -f "$HOME_DIR/.profile" ]; then
+  cat >"$HOME_DIR/.profile" <<'RC'
+# Minimal profile for login shells
+[ -f /etc/profile ] && . /etc/profile
+RC
+fi
+
+# Add CodingBooth interactive hook to shell rc files (idempotent + verbose)
+ensure_cb_profile_block() {
+  local rc="$1"
+  local marker="# ---- CodingBooth profile ----"
+
+  [ -f "$rc" ] || return 0
+  grep -Fq "$marker" "$rc" && return 0
+
+  cat >>"$rc" <<'RC'
+
+# ---- CodingBooth profile ----
+for f in /etc/profile.d/*-cb-*.sh; do
+  [ -r "$f" ] || continue
+  if [ "${CB_VERBOSE:-}" = "true" ] || [ "${CB_VERBOSE:-}" = "1" ] || [ "${CB_VERBOSE:-}" = "yes" ]; then
+    echo "[cb-profile] running: $f" >&2
+  fi
+  . "$f"
+done
+RC
+}
+
+ensure_cb_profile_block "$HOME_DIR/.bashrc"
+ensure_cb_profile_block "$HOME_DIR/.zshrc"
+
+info "10) Setting permissions for dotfiles..."
+chown "$HOST_UID:$HOST_GID" \
+  "$HOME_DIR/.bashrc"  \
+  "$HOME_DIR/.profile" \
+  "$HOME_DIR/.zshrc"   \
+  2>/dev/null || true
+
+
+section "Prepare the user's home directory"
+
+info "11) Copying project's home-seed folder (team defaults, no-clobber)..."
+CB_HOME_SEED_DIR=""
+if [ -d "$CODE_DIR/.booth/home-seed" ]; then
+  CB_HOME_SEED_DIR="$CODE_DIR/.booth/home-seed"
+fi
+if [ -n "$CB_HOME_SEED_DIR" ]; then
+  info "Copying project home-seed files from $CB_HOME_SEED_DIR to $HOME_DIR (no-clobber)..."
+  cp -rn "$CB_HOME_SEED_DIR/." "$HOME_DIR/" 2>/dev/null || true
+fi
+
+info "11b) Copying project's home folder (team-shared overrides)..."
+CB_HOME_DIR=""
+if [ -d "$CODE_DIR/.booth/home" ]; then
+  CB_HOME_DIR="$CODE_DIR/.booth/home"
+fi
+if [ -n "$CB_HOME_DIR" ]; then
+  info "Copying project home files from $CB_HOME_DIR to $HOME_DIR (override)..."
+  cp -r "$CB_HOME_DIR/." "$HOME_DIR/" 2>/dev/null || true
+fi
+
+info "12) Copying seed files from /etc/cb-home-seed/ to /home/coder (no-clobber)..."
+CB_HOME_SEED="/etc/cb-home-seed"
+if [ -d "$CB_HOME_SEED" ]; then
+  info "Copying seed files from $CB_HOME_SEED to $HOME_DIR..."
+  cp -rn "$CB_HOME_SEED/." "$HOME_DIR/" 2>/dev/null || true
+fi
+
+info "13) Copying override files from /etc/cb-home/ to /home/coder (with override)..."
+CB_HOME_OVERRIDE="/etc/cb-home"
+if [ -d "$CB_HOME_OVERRIDE" ]; then
+  info "Copying override files from $CB_HOME_OVERRIDE to $HOME_DIR..."
+  cp -r "$CB_HOME_OVERRIDE/." "$HOME_DIR/" 2>/dev/null || true
+fi
+
+# Fix ownership for root-owned files/dirs that were copied in from seed or override
+find "$HOME_DIR" -xdev -user root -exec chown "$HOST_UID:$HOST_GID" {} + 2>/dev/null || true
+
+
+section "Run one-time CodingBooth startup hooks"
+
+info "14) Running one-time CodingBooth startup hooks in /usr/share/startup.d..."
+RUN_ONCE_FLAG="/var/run/cb-startup.once"
+if [ -d "/usr/share/startup.d" ] && [ ! -f "$RUN_ONCE_FLAG" ]; then
+  runuser -u "$USER_NAME" -- bash -lc '
+    # Run the startup.
+    set -euo pipefail
+    shopt -s nullglob
+    echo "Scan for CodingBooth startup hooks in /usr/share/startup.d..."           >> /tmp/startups.log
+    for f in /usr/share/startup.d/*-cb-*.sh; do
+      echo "Found startup script: $f ---"                                          >> /tmp/startups.log
+    done
+    echo "Scan completed: $(ls /usr/share/startup.d/*-cb-*.sh | wc -l) found."     >> /tmp/startups.log
+    echo ""                                                                        >> /tmp/startups.log
+    echo "Running startup scripts..."                                              >> /tmp/startups.log
+    for f in /usr/share/startup.d/*-cb-*.sh; do
+      echo "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" >> /tmp/startups.log
+      echo "Running startup script: $f ---"                                        >> /tmp/startups.log
+      [ -r "$f" ] && "$f"                                                          >> /tmp/startups.log
+      echo "---------------------------------------------------------------------" >> /tmp/startups.log
+    done
+  '
+  touch "$RUN_ONCE_FLAG"
+fi
+
+info "15) Running user custom startup script (from --startup or .booth/startup.sh)"
+# Use CB_STARTUP if set, otherwise check for .booth/startup.sh in code path
+CB_STARTUP_SCRIPT="${CB_STARTUP:-}"
+if [ -z "$CB_STARTUP_SCRIPT" ] && [ -f "$CODE_DIR/.booth/startup.sh" ]; then
+  CB_STARTUP_SCRIPT="$CODE_DIR/.booth/startup.sh"
+fi
+if [ -n "$CB_STARTUP_SCRIPT" ] && [ -f "$CB_STARTUP_SCRIPT" ] && [ -r "$CB_STARTUP_SCRIPT" ]; then
+  info "Running user startup script: $CB_STARTUP_SCRIPT"
+  runuser -u "$USER_NAME" -- bash -lc "
+    set -euo pipefail
+    source '$CB_STARTUP_SCRIPT'
+  "
+fi
+
+
+section "Execute the requested command"
+
+info "16) Executing the requested command as coder (default to login shell if none provided)"
+cd "$CODE_DIR"
+if [ "$#" -eq 0 ]; then
+  info "No command provided; starting login shell for $USER_NAME..."
+  exec runuser -u "$USER_NAME" --login
+else
+  info "Executing as $USER_NAME: $*"
+  exec runuser -u "$USER_NAME" -- "$@"
+fi

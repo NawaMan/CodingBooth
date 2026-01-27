@@ -12,7 +12,7 @@ Feature-rich KDE Plasma desktop environment with full GUI support.
 
 **Usage:**
 ```bash
-workspace --variant desktop-kde
+booth --variant desktop-kde
 ```
 
 **Access:** Connect via VNC or noVNC web interface for full desktop experience.

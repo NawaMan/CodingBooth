@@ -12,11 +12,20 @@ if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
 
-PROFILE_FILE="/etc/profile.d/70-ws-eclipse-gtk--profile.sh"
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/libs/skip-setup.sh"
+if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
+    skip_setup "$SCRIPT_NAME" "desktop environment not available"
+fi
+
+PROFILE_FILE="/etc/profile.d/70-cb-eclipse-gtk--profile.sh"
 
 # Load JDK env exported by the base setup
-source /etc/profile.d/60-ws-jdk--profile.sh 2>/dev/null || true
+source /etc/profile.d/60-cb-jdk--profile.sh 2>/dev/null || true
 
 # ===================== Check Java =====================
 if ! command -v java >/dev/null 2>&1; then

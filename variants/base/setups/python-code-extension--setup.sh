@@ -11,8 +11,17 @@ if [[ ${EUID} -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
 
-SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/workspace/setups/libs}
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/libs/skip-setup.sh"
+if ! "$SCRIPT_DIR/cb-has-vscode.sh"; then
+    skip_setup "$SCRIPT_NAME" "code-server/VSCode not installed"
+fi
+
+SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}
 CODE_EXTENSION_LIB=${CODE_EXTENSION_LIB:-code-extension-source.sh}
 source "${SETUP_LIBS_DIR}/${CODE_EXTENSION_LIB}"
 

@@ -12,6 +12,10 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 export DEBIAN_FRONTEND=noninteractive
 
 UBUNTU_CODENAME="$(. /etc/os-release && echo "${VERSION_CODENAME:-noble}")"

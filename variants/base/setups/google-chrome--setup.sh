@@ -13,6 +13,10 @@ if [[ $EUID -ne 0 ]]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 arch="$(dpkg --print-architecture)"   # arm64
 if [[ "$arch" == "arm64" ]]; then
   echo "Chrom installation is not supported."

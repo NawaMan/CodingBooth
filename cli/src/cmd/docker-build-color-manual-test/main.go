@@ -8,8 +8,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nawaman/workspace/src/pkg/docker"
-	"github.com/nawaman/workspace/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/docker"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 func main() {

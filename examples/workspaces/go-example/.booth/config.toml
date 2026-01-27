@@ -1,0 +1,10 @@
+variant="desktop-xfce"
+run-args = [
+    # Claude Code credentials (home-seeding)
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
+
+    # Antigravity credentials (home-seeding)
+    "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",
+]

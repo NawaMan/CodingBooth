@@ -107,3 +107,11 @@ run-all-go-tests.log
 run-docker-tests.log
 run-go-integration-tests.log
 run-go-unit-tests.log
+
+/coding-booth
+
+# Build staging directory for documentation files
+variants/base/_stage/
+
+# AI Agent
+.claude

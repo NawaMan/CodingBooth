@@ -5,6 +5,55 @@
 
 # Common utilities for unit tests
 
+# Colors for output (disabled if not a terminal)
+if [[ -t 1 ]]; then
+  COLOR_CMD='\033[1;36m'    # Cyan bold for commands
+  COLOR_BOOTH='\033[1;33m'  # Yellow bold for coding-booth
+  COLOR_RESET='\033[0m'
+else
+  COLOR_CMD=''
+  COLOR_BOOTH=''
+  COLOR_RESET=''
+fi
+
+# Run a command with visible output of what's being executed
+# Usage: run_cmd <command...>
+# Example: run_cmd ls -la
+# Note: Command trace goes to stderr so it doesn't interfere with captured stdout
+run_cmd() {
+  echo -e "${COLOR_CMD}> $*${COLOR_RESET}" >&2
+  "$@"
+}
+
+# Run a coding-booth command with highlighted output
+# Usage: run_coding_booth [args...]
+# Example: run_coding_booth --variant base -- echo hello
+# The path to coding-booth is auto-detected relative to the test script
+# Note: Command trace goes to stderr so it doesn't interfere with captured stdout
+run_coding_booth() {
+  local script_dir
+  script_dir="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
+
+  # Find coding-booth relative to the test location
+  local booth_path=""
+  local check_dir="$script_dir"
+  for _ in 1 2 3 4 5; do
+    if [[ -x "$check_dir/coding-booth" ]]; then
+      booth_path="$check_dir/coding-booth"
+      break
+    fi
+    check_dir="$(dirname "$check_dir")"
+  done
+
+  if [[ -z "$booth_path" ]]; then
+    echo "ERROR: Could not find coding-booth" >&2
+    return 1
+  fi
+
+  echo -e "${COLOR_BOOTH}> coding-booth $*${COLOR_RESET}" >&2
+  "$booth_path" "$@"
+}
+
 # Normalize output for cross-platform comparison
 # - Strips .exe extension from binary name
 # - Converts Windows backslashes to forward slashes

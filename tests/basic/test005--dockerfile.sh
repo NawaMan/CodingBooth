@@ -8,12 +8,14 @@ set -euo pipefail
 source ../common--source.sh
 
 DOCKERFILE=test--dockerfile
+VERSION_TAG=$(cat ../../version.txt)
 
-cat > $DOCKERFILE <<'EOF'
+export VERSION_TAG="$VERSION_TAG"
+envsubst '$VERSION_TAG' > "${DOCKERFILE}" <<'EOF'
 # syntax=docker/dockerfile:1.7
 ARG VARIANT_TAG=base
-ARG VERSION_TAG=latest
-FROM nawaman/workspace:${VARIANT_TAG}-${VERSION_TAG}
+ARG VERSION_TAG=${VERSION_TAG}
+FROM nawaman/codingbooth:${VARIANT_TAG}-${VERSION_TAG}
 
 # The default value is the latest LTS
 ARG PY_VERSION=3.12
@@ -22,9 +24,9 @@ ARG VARIANT_TAG=base
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 USER root
 
-ENV SETUPS_DIR=/opt/workspace/setups
+ENV SETUPS_DIR=/opt/codingbooth/setups
 ENV VARIANT_TAG="${VARIANT_TAG}"
-ENV WS_VARIANT_TAG="${VARIANT_TAG}"
+ENV CB_VARIANT_TAG="${VARIANT_TAG}"
 ENV PY_VERSION="${PY_VERSION}"
 
 ARG TEST_VALUE=Default-Test-Value
@@ -34,8 +36,7 @@ EOF
 # Basic test
 
 rm -f $0.log
-ACTUAL=$(../../workspace --dockerfile $DOCKERFILE -- 'echo TEST_VAR=$TEST_VAR' 2>/dev/null)
-
+ACTUAL=$(run_coding_booth --dockerfile $DOCKERFILE -- 'echo TEST_VAR=$TEST_VAR' 2>/dev/null)
 EXPECT="TEST_VAR=Default-Test-Value"
 
 
@@ -57,7 +58,7 @@ fi
 # BuildArg
 
 rm -f $0.log
-ACTUAL=$(../../workspace --dockerfile $DOCKERFILE --build-arg TEST_VALUE=Overriden-Test-Value -- 'echo TEST_VAR=$TEST_VAR' 2> $0.log)
+ACTUAL=$(run_coding_booth --dockerfile $DOCKERFILE --build-arg TEST_VALUE=Overriden-Test-Value -- 'echo TEST_VAR=$TEST_VAR' 2> $0.log)
 
 EXPECT="TEST_VAR=Overriden-Test-Value"
 
@@ -87,7 +88,7 @@ fi
 # Check Silence Build
 
 rm -f $0.log
-ACTUAL=$(../../workspace --dockerfile $DOCKERFILE --silence-build -- 'echo TEST_VAR=$TEST_VAR' 2> $0.log)
+ACTUAL=$(run_coding_booth --dockerfile $DOCKERFILE --silence-build -- 'echo TEST_VAR=$TEST_VAR' | grep -v "coding-booth" 2> $0.log)
 
 # Validate that $0.log exists and is empty
 if [[ -e "$0.log" && ! -s "$0.log" ]]; then

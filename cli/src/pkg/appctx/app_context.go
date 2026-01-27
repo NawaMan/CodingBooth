@@ -2,7 +2,7 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 
-// Package appctx provides centralized application context for workspace configuration and state.
+// Package appctx provides centralized application context for booth configuration and state.
 //
 // AppContext is an immutable snapshot (like List), AppContextBuilder is mutable (like AppendableList).
 // Use ToBuilder() and Build() to convert between them.
@@ -12,17 +12,17 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nawaman/workspace/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
-// AppContext is an immutable snapshot of workspace configuration and state.
+// AppContext is an immutable snapshot of booth configuration and state.
 type AppContext struct {
 	values AppContextBuilder
 
 	dryrun     bool
 	verbose    bool
 	configFile string
-	workspace  string
+	code       string
 	version    string
 
 	commonArgs ilist.List[ilist.List[string]]
@@ -31,14 +31,14 @@ type AppContext struct {
 	cmds       ilist.List[ilist.List[string]]
 }
 
-// NewAppContext creates a new immutable AppContext with defaults matching workspace initialization.
+// NewAppContext creates a new immutable AppContext with defaults matching booth initialization.
 func NewAppContext(builder *AppContextBuilder) AppContext {
 	return AppContext{
 		values:     *builder.Clone(),
 		dryrun:     builder.Config.Dryrun.ValueOr(false),
 		verbose:    builder.Config.Verbose.ValueOr(false),
 		configFile: builder.Config.Config.ValueOr(""),
-		workspace:  builder.Config.Workspace.ValueOr(""),
+		code:       builder.Config.Code.ValueOr(""),
 		version:    builder.Config.Version.ValueOr(builder.Version),
 		commonArgs: builder.CommonArgs.ToList(),
 		buildArgs:  builder.BuildArgs.ToList(),
@@ -51,25 +51,20 @@ func NewAppContext(builder *AppContextBuilder) AppContext {
 
 // constant
 func (ctx AppContext) PrebuildRepo() string { return ctx.values.PrebuildRepo }
-func (ctx AppContext) WsVersion() string    { return ctx.values.WsVersion }
+func (ctx AppContext) CbVersion() string    { return ctx.values.CbVersion }
 func (ctx AppContext) SetupsDir() string    { return ctx.values.SetupsDir }
 
 // bootstrap flags
 func (ctx AppContext) Dryrun() bool       { return ctx.dryrun }
 func (ctx AppContext) Verbose() bool      { return ctx.verbose }
 func (ctx AppContext) ConfigFile() string { return ctx.configFile }
-func (ctx AppContext) Workspace() string  { return ctx.workspace }
+func (ctx AppContext) Code() string       { return ctx.code }
 func (ctx AppContext) Version() string    { return ctx.version }
 
 // taken from the script runtime
 func (ctx AppContext) ScriptName() string { return ctx.values.ScriptName }
 func (ctx AppContext) ScriptDir() string  { return ctx.values.ScriptDir }
 func (ctx AppContext) LibDir() string     { return ctx.values.LibDir }
-
-// derived from variant
-func (ctx AppContext) HasNotebook() bool { return ctx.values.HasNotebook }
-func (ctx AppContext) HasVscode() bool   { return ctx.values.HasVscode }
-func (ctx AppContext) HasDesktop() bool  { return ctx.values.HasDesktop }
 
 // derived from DinD
 func (ctx AppContext) CreatedDindNet() bool { return ctx.values.CreatedDindNet }
@@ -133,18 +128,13 @@ func (ctx AppContext) String() string {
 
 	fmt.Fprintf(&str, "# Constants ---------------------\n")
 	fmt.Fprintf(&str, "    PrebuildRepo:     %q\n", ctx.PrebuildRepo())
-	fmt.Fprintf(&str, "    WsVersion:        %q\n", ctx.WsVersion())
+	fmt.Fprintf(&str, "    CbVersion:        %q\n", ctx.CbVersion())
 	fmt.Fprintf(&str, "    SetupsDir:        %q\n", ctx.SetupsDir())
 
 	fmt.Fprintf(&str, "# Script Runtime ----------------\n")
 	fmt.Fprintf(&str, "    ScriptName:       %q\n", ctx.ScriptName())
 	fmt.Fprintf(&str, "    ScriptDir:        %q\n", ctx.ScriptDir())
 	fmt.Fprintf(&str, "    LibDir:           %q\n", ctx.LibDir())
-
-	fmt.Fprintf(&str, "# Variant -----------------------\n")
-	fmt.Fprintf(&str, "    HasNotebook:      %t\n", ctx.HasNotebook())
-	fmt.Fprintf(&str, "    HasVscode:        %t\n", ctx.HasVscode())
-	fmt.Fprintf(&str, "    HasDesktop:       %t\n", ctx.HasDesktop())
 
 	fmt.Fprintf(&str, "# DinD --------------------------\n")
 	fmt.Fprintf(&str, "    CreatedDindNet:   %t\n", ctx.CreatedDindNet())
@@ -162,7 +152,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Dryrun:           %t\n", ctx.Dryrun())
 	fmt.Fprintf(&str, "    Verbose:          %t\n", ctx.Verbose())
 	fmt.Fprintf(&str, "    ConfigFile:       %q\n", ctx.ConfigFile())
-	fmt.Fprintf(&str, "    Workspace:        %q\n", ctx.Workspace())
+	fmt.Fprintf(&str, "    Code:             %q\n", ctx.Code())
 	fmt.Fprintf(&str, "    Version:          %q\n", ctx.Version())
 
 	fmt.Fprintf(&str, "# Flags -------------------------\n")

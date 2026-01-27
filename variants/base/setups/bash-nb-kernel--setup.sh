@@ -7,7 +7,7 @@
 # 
 # Prereqs:
 #   - python--setup.sh and notebook--setup.sh already ran successfully.
-#   - /etc/profile.d/53-ws-python--profile.sh should be source
+#   - /etc/profile.d/53-cb-python--profile.sh should be source
 #   - The chosen Python can install packages with pip.
 
 set -Eeuo pipefail
@@ -19,9 +19,13 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # ---------------- Load environment from profile.d ----------------
 # These set: PY_STABLE, PY_STABLE_VERSION, PY_SERIES, VENV_SERIES_DIR, PATH tweaks, etc.
-source /etc/profile.d/53-ws-python--profile.sh 2>/dev/null || true
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # ---------------- Defaults / Tunables ----------------
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"
@@ -47,7 +51,7 @@ echo "🧩 Registering Bash kernel under ${JUPYTER_KERNEL_PREFIX} (system-wide)�
 python -m bash_kernel.install --prefix "${JUPYTER_KERNEL_PREFIX}"
 
 # If we have a venv, also install the kernelspec in that venv (sys-prefix)
-echo "🧩 Also registering Bash kernel into venv: ${WS_VENV_DIR} (sys-prefix)…"
+echo "🧩 Also registering Bash kernel into venv: ${CB_VENV_DIR} (sys-prefix)…"
 python -m bash_kernel.install --sys-prefix || true
 
 

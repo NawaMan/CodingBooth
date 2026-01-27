@@ -11,13 +11,17 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 # --------------------------
 [ "$EUID" -eq 0 ] || { echo "❌ Run as root (use sudo)"; exit 1; }
 
+# This script will always be installed by root.
+HOME=/root
+
+
 # --- Defaults ---
 GO_VERSION="${1:-1.25.3}"         # Replace with desired Go version
 
 LEVEL=57                          # See README.md - Profile Ordering
 
-STARTUP_FILE="/usr/share/startup.d/${LEVEL}-ws-go--startup.sh"
-PROFILE_FILE="/etc/profile.d/${LEVEL}-ws-go--profile.sh"
+STARTUP_FILE="/usr/share/startup.d/${LEVEL}-cb-go--startup.sh"
+PROFILE_FILE="/etc/profile.d/${LEVEL}-cb-go--profile.sh"
 STARTER_FILE="/usr/local/bin/go"
 
 # ==== Things to do once at the call time by root. ====

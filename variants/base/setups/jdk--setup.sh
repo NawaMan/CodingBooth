@@ -30,8 +30,12 @@ die() { echo "❌ $*" >&2; exit 1; }
 # --- Root check ---
 [[ "${EUID}" -eq 0 ]] || die "This script must be run as root (use sudo)."
 
-PROFILE_FILE="/etc/profile.d/60-ws-jdk--profile.sh"
-STARTUP_FILE="/usr/share/startup.d/60-ws-jdk--startup.sh"
+# This script will always be installed by root.
+HOME=/root
+
+
+PROFILE_FILE="/etc/profile.d/60-cb-jdk--profile.sh"
+STARTUP_FILE="/usr/share/startup.d/60-cb-jdk--startup.sh"
 
 # --- Defaults ---
 JDK_VERSION="21"
@@ -169,8 +173,8 @@ case ":\$PATH:" in
   *) export PATH="\$PATH:\$JAVA_HOME/bin" ;;
 esac
 
-export WS_JDK_VERSION=${JDK_VERSION}
-export WS_JAVA_HOME=${JAVA_HOME}
+export CB_JDK_VERSION=${JDK_VERSION}
+export CB_JAVA_HOME=${JAVA_HOME}
 
 # Inspector: jdk-setup-info
 jdk_setup_info() {
@@ -239,5 +243,5 @@ echo
 echo "Use it now in this shell (without reopening):"
 echo "  . ${PROFILE_FILE} && jdk-setup-info"
 
-export WS_JDK_VERSION=${JDK_VERSION}
-export WS_JAVA_HOME=${JAVA_HOME}
+export CB_JDK_VERSION=${JDK_VERSION}
+export CB_JAVA_HOME=${JAVA_HOME}

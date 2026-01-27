@@ -25,7 +25,7 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build & Push base
-        run: ./docker-build.sh --push base
+        run: ./build/docker-build.sh --push base
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
@@ -36,7 +36,7 @@ jobs:
   # ---------------------------------------------------------
   # 2. Build all other variants in PARALLEL
   # ---------------------------------------------------------
-  build-ide-notebook:
+  build-notebook:
     needs: build-base
     runs-on: ubuntu-latest
     steps:
@@ -48,8 +48,8 @@ jobs:
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      - name: Build & Push ide-notebook
-        run: ./docker-build.sh --push ide-notebook
+      - name: Build & Push notebook
+        run: ./build/docker-build.sh --push notebook
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
@@ -57,7 +57,7 @@ jobs:
           COSIGN_KEY:         ${{ secrets.COSIGN_KEY }}
 
 
-  build-ide-codeserver:
+  build-codeserver:
     needs: build-base
     runs-on: ubuntu-latest
     steps:
@@ -69,8 +69,8 @@ jobs:
       - name: Login to Docker Hub
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
-      - name: Build & Push ide-codeserver
-        run: ./docker-build.sh --push ide-codeserver
+      - name: Build & Push codeserver
+        run: ./build/docker-build.sh --push codeserver
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
@@ -91,7 +91,7 @@ jobs:
         run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Build & Push desktop-xfce
-        run: ./docker-build.sh --push desktop-xfce
+        run: ./build/docker-build.sh --push desktop-xfce
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
@@ -120,9 +120,36 @@ jobs:
           sudo rm -rf $AGENT_TOOLSDIRECTORY
 
       - name: Build & Push desktop-kde
-        run: ./docker-build.sh --push desktop-kde
+        run: ./build/docker-build.sh --push desktop-kde
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
           COSIGN_PASSWORD:    ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_KEY:         ${{ secrets.COSIGN_KEY }}
+
+
+  # ---------------------------------------------------------
+  # 3. Run integration tests after all images are published
+  # ---------------------------------------------------------
+  integration-tests:
+    needs: [build-base, build-notebook, build-codeserver, build-desktop-xfce, build-desktop-kde]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.1'
+
+      - name: Build CLI
+        run: ./build/cli-build.sh
+
+      - name: Go Integration tests
+        run: cd tests/unit && ./run-go-integration-tests.sh
+
+      - name: Basic tests
+        run: cd tests/basic && ./run-basic-tests.sh
+
+      - name: Complex tests
+        run: cd tests/complex && ./run-complex-tests.sh

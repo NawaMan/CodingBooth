@@ -1,0 +1,5 @@
+variant = "base"
+
+# Default command to run when no CLI command is provided
+# This should execute and output "CMDS_EXECUTED"
+cmds = ["echo", "CMDS_EXECUTED"]
