@@ -9,7 +9,7 @@ import (
 )
 
 // Scenario A — Without any config, the expected variant is "default"
-func TestInitializeAppContext_ScenarioA_DefaultConfig_NoConfig(t *testing.T) {
+func TestIntegration_InitializeAppContext_ScenarioA_DefaultConfig_NoConfig(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{})
 
 	if got := res.Ctx.Variant(); got != "default" {
@@ -18,7 +18,7 @@ func TestInitializeAppContext_ScenarioA_DefaultConfig_NoConfig(t *testing.T) {
 }
 
 // Scenario B — With a default config, the expected variant is the one in the default config
-func TestInitializeAppContext_ScenarioB_DefaultConfig_WithDefaultConfig(t *testing.T) {
+func TestIntegration_InitializeAppContext_ScenarioB_DefaultConfig_WithDefaultConfig(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{
 		TomlFiles: []TomlFile{{
 			Path:    ".booth/config.toml",
@@ -32,7 +32,7 @@ func TestInitializeAppContext_ScenarioB_DefaultConfig_WithDefaultConfig(t *testi
 }
 
 // Scenario C — With default config and CLI config, the CLI config should win
-func TestInitializeAppContext_ScenarioC_DefaultConfigAndCliConfig_CliConfigWins(t *testing.T) {
+func TestIntegration_InitializeAppContext_ScenarioC_DefaultConfigAndCliConfig_CliConfigWins(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{},
 		Args: []string{
@@ -55,7 +55,7 @@ func TestInitializeAppContext_ScenarioC_DefaultConfigAndCliConfig_CliConfigWins(
 }
 
 // Scenario D — With CLI config but the file does not exist, should panic.
-func TestInitializeAppContext_ScenarioD_DefaultConfigAndCliConfig_CliConfigWins(t *testing.T) {
+func TestIntegration_InitializeAppContext_ScenarioD_DefaultConfigAndCliConfig_CliConfigWins(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
 			t.Fatal("expected panic when CLI-specified config file doesn't exist, but didn't panic")
@@ -75,7 +75,7 @@ func TestInitializeAppContext_ScenarioD_DefaultConfigAndCliConfig_CliConfigWins(
 }
 
 // Scenario E — With CLI config but the file does not exist, should panic.
-func TestInitializeAppContext_ScenarioE_DefaultConfigAndCliConfig_CliConfigWins(t *testing.T) {
+func TestIntegration_InitializeAppContext_ScenarioE_DefaultConfigAndCliConfig_CliConfigWins(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
 			t.Fatal("expected panic when CLI-specified config file doesn't exist, but didn't panic")
@@ -92,7 +92,7 @@ func TestInitializeAppContext_ScenarioE_DefaultConfigAndCliConfig_CliConfigWins(
 }
 
 // Scenario D — With default and ENV config, the default config should win
-func TestInitializeAppContext_ScenarioD_DefaultConfigAndEnvConfig_DefaultConfigWins(t *testing.T) {
+func TestIntegration_InitializeAppContext_ScenarioD_DefaultConfigAndEnvConfig_DefaultConfigWins(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{
 			"CB_CONFIG": "sub-folder-Env/.booth/config.toml",
@@ -113,7 +113,7 @@ func TestInitializeAppContext_ScenarioD_DefaultConfigAndEnvConfig_DefaultConfigW
 }
 
 // Scenario E — With ENV config, the ENV config should win. -- That is ENV config is ignored.
-func TestInitializeAppContext_ScenarioE_EnvConfig_DefaultConfigWins(t *testing.T) {
+func TestIntegration_InitializeAppContext_ScenarioE_EnvConfig_DefaultConfigWins(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{
 			"CB_CONFIG": "sub-folder-Env/.booth/config.toml",
@@ -135,7 +135,7 @@ func TestInitializeAppContext_ScenarioE_EnvConfig_DefaultConfigWins(t *testing.T
 
 // Scenario F — CLI first-pass --config sticks and determines TOML source
 // We write two TOMLs: default .booth/config.toml and custom.toml; --config must pick custom.toml.
-func TestInitializeAppContext_ScenarioF_DefaultConfigAndEnvConfig_DefaultConfigWins(t *testing.T) {
+func TestIntegration_InitializeAppContext_ScenarioF_DefaultConfigAndEnvConfig_DefaultConfigWins(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{},
 		Args:   []string{},
@@ -156,7 +156,7 @@ func TestInitializeAppContext_ScenarioF_DefaultConfigAndEnvConfig_DefaultConfigW
 }
 
 // Scenario G — With default code dir and CLI code dir, the CLI config on the CLI code dir should win
-func TestInitializeAppContext_ScenarioG_DefaultCodeAndCliCode_CliConfigWins(t *testing.T) {
+func TestIntegration_InitializeAppContext_ScenarioG_DefaultCodeAndCliCode_CliConfigWins(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{
 		EnvMap: map[string]string{},
 		Args: []string{
