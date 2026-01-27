@@ -34,7 +34,7 @@ jobs:
         run: ./build/cli-build.sh
       
       - name: Simple test
-        run: ./sanity-test.sh
+        run: cd tests && ./sanity-test.sh
       
       - name: Go Unit tests
         run: cd tests/unit && ./run-go-unit-tests.sh
