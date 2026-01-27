@@ -32,6 +32,7 @@ source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 # ---- Jupyter kernel registration tunables (match code-server) ----
 JUPYTER_KERNEL_NAME="${JUPYTER_KERNEL_NAME:-python}"
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"
+NOTEBOOK_DEFAULT_PORT="${NOTEBOOK_DEFAULT_PORT:-18888}"
 
 
 # ---- helper: install + verify Jupyter in venv ----
@@ -125,7 +126,7 @@ cat > ${STARTER_FILE} <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-PORT=${1:-10000}
+PORT=${1:-__NOTEBOOK_DEFAULT_PORT__}
 
 # Make sure non-Python kernels in the venv are visible if present
 export JUPYTER_PATH="__CB_NOTEBOOK_VENV_DIR__/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
@@ -138,9 +139,10 @@ exec "__CB_NOTEBOOK_VENV_DIR__/bin/jupyter-lab" \
   --ServerApp.custom_display_url="http://localhost:$PORT/lab" \
   --ServerApp.terminado_settings='{"shell_command":["/bin/bash"]}'
 EOF
-# Bake in the frozen venv path (absolute path, not variable reference)
+# Bake in frozen values (absolute path, not variable reference)
 _safe() { printf '%s' "$1" | sed -e 's/[&]/\\&/g'; }
 sed -i "s#__CB_NOTEBOOK_VENV_DIR__#$(_safe "${CB_VENV_DIR}")#g" "${STARTER_FILE}"
+sed -i "s#__NOTEBOOK_DEFAULT_PORT__#${NOTEBOOK_DEFAULT_PORT}#g" "${STARTER_FILE}"
 chmod +x ${STARTER_FILE}
 
 # ---- friendly summary ----
@@ -161,7 +163,7 @@ echo "     source ${NOTEBOOK_PROFILE_FILE}"
 echo
 echo "Then you can run:"
 echo "  notebook-setup-info"
-echo "  start-notebook      # launches JupyterLab on port 10000"
+echo "  start-notebook      # launches JupyterLab on port 18888"
 
 echo
 echo "Use it now in this shell (without reopening):"
