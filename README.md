@@ -1287,6 +1287,7 @@ run-args = [
 
 For deeper technical details on how CodingBooth works internally, see [docs/implementations/](docs/implementations/):
 
+- **[Wrapper](docs/implementations/WRAPPER.md)** — The booth wrapper script that manages binary downloads and verification
 - **[User Permissions](docs/implementations/USER_PERMISSIONS.md)** — UID/GID mapping between host and container
 - **[Desktop + noVNC](docs/implementations/DESKTOP_NOVNC.md)** — VNC server and browser-based desktop access
 - **[Variant Selection](docs/implementations/VARIANTS.md)** — How variants and aliases are resolved
