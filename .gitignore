@@ -115,3 +115,5 @@ variants/base/_stage/
 
 # AI Agent
 .claude
+
+!/build/
