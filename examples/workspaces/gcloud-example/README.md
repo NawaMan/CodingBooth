@@ -17,7 +17,7 @@ gcloud auth application-default login
 
 ## How It Works
 
-The `.ws/config.toml` mounts `~/.config/gcloud/` read-only to `/etc/cb-home-seed/.config/gcloud/`.
+The `.booth/config.toml` mounts `~/.config/gcloud/` read-only to `/etc/cb-home-seed/.config/gcloud/`.
 At container startup, this is copied to `/home/coder/.config/gcloud/`.
 
 This means:

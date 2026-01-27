@@ -45,12 +45,12 @@ func TestInitializeAppContext_ScenarioC_DefaultConfigAndCliConfig_CliConfigWins(
 		}, {
 			// CLI config
 			Path:    "sub-folder-Cli/.booth/config.toml",
-			Content: `variant = "from-cli-ws"`,
+			Content: `variant = "from-cli-booth"`,
 		}},
 	})
 
-	if got := res.Ctx.Variant(); got != "from-cli-ws" {
-		t.Fatalf("expected Variant %q (CLI booth TOML), got %q", "from-cli-ws", got)
+	if got := res.Ctx.Variant(); got != "from-cli-booth" {
+		t.Fatalf("expected Variant %q (CLI booth TOML), got %q", "from-cli-booth", got)
 	}
 }
 
@@ -103,7 +103,7 @@ func TestInitializeAppContext_ScenarioD_DefaultConfigAndEnvConfig_DefaultConfigW
 			Content: `variant = "from-default-config"`,
 		}, {
 			Path:    "sub-folder-Env/.booth/config.toml",
-			Content: `variant = "from-env-ws"`,
+			Content: `variant = "from-env-booth"`,
 		}},
 	})
 
@@ -124,7 +124,7 @@ func TestInitializeAppContext_ScenarioE_EnvConfig_DefaultConfigWins(t *testing.T
 			Content: `variant = "from-default-config"`,
 		}, {
 			Path:    "sub-folder-Env/.booth/config.toml",
-			Content: `variant = "from-env-ws"`,
+			Content: `variant = "from-env-booth"`,
 		}},
 	})
 
@@ -146,12 +146,12 @@ func TestInitializeAppContext_ScenarioF_DefaultConfigAndEnvConfig_DefaultConfigW
 		}, {
 			// CLI config
 			Path:    "sub-folder-Env/.booth/config.toml",
-			Content: `variant = "from-env-ws"`,
+			Content: `variant = "from-cli-booth"`,
 		}},
 	})
 
-	if got := res.Ctx.Variant(); got != "from-default-config" {
-		t.Fatalf("expected Variant %q (Default config), got %q", "from-default-config", got)
+	if got := res.Ctx.Variant(); got != "from-cli-booth" {
+		t.Fatalf("expected Variant %q (CLI booth TOML), got %q", "from-cli-booth", got)
 	}
 }
 
@@ -169,11 +169,11 @@ func TestInitializeAppContext_ScenarioG_DefaultCodeAndCliCode_CliConfigWins(t *t
 		}, {
 			// CLI config
 			Path:    "sub-folder-Cli/.booth/config.toml",
-			Content: `variant = "from-cli-ws"`,
+			Content: `variant = "from-cli-booth"`,
 		}},
 	})
 
-	if got := res.Ctx.Variant(); got != "from-cli-ws" {
-		t.Fatalf("expected Variant %q (CLI booth TOML), got %q", "from-cli-ws", got)
+	if got := res.Ctx.Variant(); got != "from-cli-booth" {
+		t.Fatalf("expected Variant %q (CLI booth TOML), got %q", "from-cli-booth", got)
 	}
 }

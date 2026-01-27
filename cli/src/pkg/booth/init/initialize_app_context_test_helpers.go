@@ -61,18 +61,18 @@ func RunInitializeAppContext(test *testing.T, input TestInput) TestOutcome {
 	test.Helper()
 
 	// Temp booth dir + chdir
-	ws := test.TempDir()
+	booth := test.TempDir()
 	// Resolve symlinks to get canonical path (e.g., on macOS /var -> /private/var)
 	// This ensures paths match what filepath.Abs() returns in production code
-	if resolved, err := filepath.EvalSymlinks(ws); err == nil {
-		ws = resolved
+	if resolved, err := filepath.EvalSymlinks(booth); err == nil {
+		booth = resolved
 	}
 	oldWD, err := os.Getwd()
 	if err != nil {
 		test.Fatalf("Getwd: %v", err)
 	}
-	if err := os.Chdir(ws); err != nil {
-		test.Fatalf("Chdir(%q): %v", ws, err)
+	if err := os.Chdir(booth); err != nil {
+		test.Fatalf("Chdir(%q): %v", booth, err)
 	}
 	test.Cleanup(func() { _ = os.Chdir(oldWD) })
 
@@ -145,10 +145,10 @@ func RunInitializeAppContext(test *testing.T, input TestInput) TestOutcome {
 	// - ENV must NOT override them once set by CLI scan/defaults.
 	//
 	// So for TOML writing we mirror that:
-	// 1) Determine workspace from CLI --workspace; else default = ws (CWD set above).
+	// 1) Determine workspace from CLI --workspace; else default = booth (CWD set above).
 	// 2) Determine config from CLI --config; else default = <workspace>/.booth/config.toml.
 	//
-	workspace := ws
+	workspace := booth
 	var config string
 
 	for i := 0; i < args.Length(); i++ {
@@ -171,19 +171,19 @@ func RunInitializeAppContext(test *testing.T, input TestInput) TestOutcome {
 		config = filepath.Join(workspace, ".booth/config.toml")
 	}
 
-	// If config is relative, interpret it relative to current working directory (ws).
+	// If config is relative, interpret it relative to current working directory (booth).
 	// This matches typical CLI behavior and keeps tests portable.
 	if !filepath.IsAbs(config) {
-		config = filepath.Join(ws, config)
+		config = filepath.Join(booth, config)
 	}
 
 	// Write TOML file if content provided
 	for _, tf := range input.TomlFiles {
 		path := tf.Path
 
-		// Force relative paths under ws
+		// Force relative paths under booth
 		if !filepath.IsAbs(path) {
-			path = filepath.Join(ws, path)
+			path = filepath.Join(booth, path)
 		} else {
 			// Optional: disallow absolute paths in tests
 			test.Fatalf("TomlFile.Path must be relative, got %q", tf.Path)
@@ -206,7 +206,7 @@ func RunInitializeAppContext(test *testing.T, input TestInput) TestOutcome {
 	final.Config = nillable.NewNillableString(config)
 
 	return TestOutcome{
-		CodeDir:     ws,
+		CodeDir:     booth,
 		Ctx:         ctx,
 		FinalConfig: final,
 	}

@@ -1,6 +1,6 @@
-# Creates GitHub releases with multi-platform CodingBooth binaries and ws wrapper.
+# Creates GitHub releases with multi-platform CodingBooth binaries and wrapper.
 # Triggers on: manual dispatch only.
-name: Release CodingBooth and ws
+name: Release CodingBooth binary and wrapper
 
 on:
   workflow_dispatch:
@@ -60,7 +60,7 @@ jobs:
         run: ./build/cli-build.sh
 
       - name: Make wrapper executable
-        run: chmod +x ws
+        run: chmod +x booth
 
       - name: Generate SHA256 checksums for all binaries
         run: |
@@ -107,7 +107,7 @@ jobs:
             bin/coding-booth-windows-amd64.exe.sha256
             bin/coding-booth-windows-arm64.exe
             bin/coding-booth-windows-arm64.exe.sha256
-            ws
+            booth
             version.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -136,7 +136,7 @@ jobs:
             bin/coding-booth-windows-amd64.exe.sha256
             bin/coding-booth-windows-arm64.exe
             bin/coding-booth-windows-arm64.exe.sha256
-            ws
+            booth
             version.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -166,7 +166,7 @@ jobs:
             bin/coding-booth-windows-amd64.exe.sha256
             bin/coding-booth-windows-arm64.exe
             bin/coding-booth-windows-arm64.exe.sha256
-            ws
+            booth
             version.txt
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

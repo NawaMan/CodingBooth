@@ -1,7 +1,7 @@
 # TODO
 
 This is where dreams begin. ✨  
-A list of upcoming ideas, improvements, and future goals for the workspace launcher.
+A list of upcoming ideas, improvements, and future goals for the CodingBooth launcher.
 
 ---
 

@@ -67,7 +67,7 @@ curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth
 Run the wrapper script and follow the instructions.
 
 ```shell
-./ws
+./booth
 ```
 
 ### Updating CodingBooth
@@ -76,7 +76,7 @@ To update CodingBooth to the latest version:
 
 ```shell
 # Re-run the wrapper to update the booth script
-./ws
+./booth
 
 # Pull the latest images (optional, happens automatically if not present)
 ./booth --pull

@@ -234,7 +234,7 @@ function UninstallBooth() {
     rm -f "$sha_file" "$lock_file"
 
     rmdir "$tools_dir" 2>/dev/null || true
-    rmdir ".ws" 2>/dev/null || true
+    rmdir ".booth" 2>/dev/null || true
 
     echo "CodingBooth has been uninstalled."
 }
