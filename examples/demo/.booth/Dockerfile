@@ -29,4 +29,8 @@ RUN claude-code--setup.sh
 RUN java-code-extension--setup.sh
 RUN go-code-extension--setup.sh
 
+RUN notebook--setup.sh
+RUN python-nb-kernel--setup.sh
+RUN bash-nb-kernel--setup.sh
 RUN java-jjava-nb-kernel--setup.sh
+

@@ -6,7 +6,10 @@ FROM nawaman/codingbooth:base-${CB_VERSION_TAG}
 
 ARG PYTHON_VERSION=3.12
 RUN python--setup.sh ${PYTHON_VERSION}
-RUN notebook--setup.sh
+
+ARG NOTEBOOK_PORT=10000
+RUN notebook--setup.sh ${NOTEBOOK_PORT}
+
 RUN bash-nb-kernel--setup.sh
 RUN cleanup-after--setup.sh
 
