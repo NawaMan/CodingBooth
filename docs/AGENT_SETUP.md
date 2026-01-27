@@ -28,10 +28,8 @@ For users who want to get started immediately:
 curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash
 
 # 2. Run the wrapper to set up booth
-./ws
-
-# 3. Start the booth
 ./booth
+
 ```
 
 That's it. The booth will build and start with sensible defaults.

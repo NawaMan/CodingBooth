@@ -57,10 +57,10 @@ func TestBooth_runAsCommand_DryrunMode(t *testing.T) {
 	builder.Cmds.Append(ilist.NewList("echo", "Hello"), ilist.NewList("ls", "-la"))
 
 	ctx := builder.Build()
-	ws := NewBooth(ctx)
+	booth := NewBooth(ctx)
 
 	// Run the command
-	err := ws.runAsCommand()
+	err := booth.runAsCommand()
 
 	// Restore stdout
 	writer.Close()
@@ -156,10 +156,10 @@ func TestBooth_runAsCommand_WithDind(t *testing.T) {
 	builder.Cmds.Append(ilist.NewList("echo", "test"))
 
 	ctx := builder.Build()
-	ws := NewBooth(ctx)
+	booth := NewBooth(ctx)
 
 	// Run the command
-	err := ws.runAsCommand()
+	err := booth.runAsCommand()
 
 	// Restore stdout
 	writer.Close()
@@ -224,10 +224,10 @@ func TestBooth_runAsCommand_WithDindNoNetwork(t *testing.T) {
 	builder.Cmds.Append(ilist.NewList("echo", "test"))
 
 	ctx := builder.Build()
-	ws := NewBooth(ctx)
+	booth := NewBooth(ctx)
 
 	// Run the command
-	err := ws.runAsCommand()
+	err := booth.runAsCommand()
 
 	// Restore stdout
 	writer.Close()
@@ -283,10 +283,10 @@ func TestBooth_runAsCommand_WithoutDind(t *testing.T) {
 	builder.Cmds.Append(ilist.NewList("echo", "test"))
 
 	ctx := builder.Build()
-	ws := NewBooth(ctx)
+	booth := NewBooth(ctx)
 
 	// Run the command
-	err := ws.runAsCommand()
+	err := booth.runAsCommand()
 
 	// Restore stdout
 	writer.Close()
@@ -347,10 +347,10 @@ func TestBooth_runAsCommand_EmptyCommands(t *testing.T) {
 	// Don't add any commands to builder.Cmds
 
 	ctx := builder.Build()
-	ws := NewBooth(ctx)
+	booth := NewBooth(ctx)
 
 	// Run the command
-	err := ws.runAsCommand()
+	err := booth.runAsCommand()
 
 	// Restore stdout
 	writer.Close()
@@ -401,10 +401,10 @@ func TestBooth_runAsCommand_ArgumentOrder(t *testing.T) {
 	builder.Cmds.Append(ilist.NewList("echo", "hello"))
 
 	ctx := builder.Build()
-	ws := NewBooth(ctx)
+	booth := NewBooth(ctx)
 
 	// Run the command
-	err := ws.runAsCommand()
+	err := booth.runAsCommand()
 
 	// Restore stdout
 	writer.Close()
@@ -469,10 +469,10 @@ func TestBooth_runAsDaemon_DryrunMode(t *testing.T) {
 	builder.Cmds.Append(ilist.NewList("echo", "Hello"), ilist.NewList("ls", "-la"))
 
 	ctx := builder.Build()
-	ws := NewBooth(ctx)
+	booth := NewBooth(ctx)
 
 	// Run the command
-	err := ws.runAsDaemon()
+	err := booth.runAsDaemon()
 
 	// Restore stdout
 	writer.Close()
@@ -572,10 +572,10 @@ func TestBooth_runAsDaemon_WithDind(t *testing.T) {
 	builder.Cmds.Append(ilist.NewList("echo", "test"))
 
 	ctx := builder.Build()
-	ws := NewBooth(ctx)
+	booth := NewBooth(ctx)
 
 	// Run the command
-	err := ws.runAsDaemon()
+	err := booth.runAsDaemon()
 
 	// Restore stdout
 	writer.Close()
@@ -632,10 +632,10 @@ func TestBooth_runAsDaemon_NoCommands(t *testing.T) {
 	// Don't add any commands
 
 	ctx := builder.Build()
-	ws := NewBooth(ctx)
+	booth := NewBooth(ctx)
 
 	// Run the command
-	err := ws.runAsDaemon()
+	err := booth.runAsDaemon()
 
 	// Restore stdout
 	writer.Close()
@@ -704,10 +704,10 @@ func TestBooth_runAsDaemon_WithKeepalive(t *testing.T) {
 	builder.Config.Name = "test-container"
 
 	ctx := builder.Build()
-	ws := NewBooth(ctx)
+	booth := NewBooth(ctx)
 
 	// Run the command
-	err := ws.runAsDaemon()
+	err := booth.runAsDaemon()
 
 	// Restore stdout
 	writer.Close()
@@ -758,10 +758,10 @@ func TestBooth_runAsForeground_DryrunMode(t *testing.T) {
 	builder.RunArgs.Append(ilist.NewList("-e", "TEST_VAR=value"))
 
 	ctx := builder.Build()
-	ws := NewBooth(ctx)
+	booth := NewBooth(ctx)
 
 	// Run the command
-	err := ws.runAsForeground()
+	err := booth.runAsForeground()
 
 	// Restore stdout
 	writer.Close()
@@ -847,10 +847,10 @@ func TestBooth_runAsForeground_WithDind(t *testing.T) {
 	builder.ScriptName = "booth"
 
 	ctx := builder.Build()
-	ws := NewBooth(ctx)
+	booth := NewBooth(ctx)
 
 	// Run the command
-	err := ws.runAsForeground()
+	err := booth.runAsForeground()
 
 	// Restore stdout
 	writer.Close()

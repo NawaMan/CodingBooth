@@ -13,7 +13,7 @@ Comprehensive Java development environment with multiple JDK versions and build 
 **Usage:**
 ```bash
 cd examples/all-java-example
-workspace
+booth
 ```
 
 **Purpose:** Demonstrates multi-version Java development setup with all major tools and IDEs. Perfect for testing cross-version compatibility or learning different Java ecosystems.
