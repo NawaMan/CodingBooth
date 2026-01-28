@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.11.0 — [View Changelog](CHANGELOG.md)
+**Current Version:** v0.13.0 — [View Changelog](CHANGELOG.md)
 
 CodingBooth delivers fully reproducible, Docker-powered development environments — anywhere, on any machine.
 You’ve containerized your app. You’ve containerized your build.
