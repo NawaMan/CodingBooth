@@ -269,6 +269,12 @@ Notes:
   - Binaries are auto-downloaded when lock file exists but binary missing
   - Use --cache=local for CI/CD or portable/air-gapped environments
   - Set VERBOSE=true for extra logs during install
+
+Help/Version disambiguation:
+  ./booth help       Show this wrapper help (install, update, cache commands)
+  ./booth --help     Show coding-booth binary help (run flags, variants, etc.)
+  ./booth version    Show wrapper version + binary version info
+  ./booth --version  Show coding-booth binary version only
 EOF
 }
 
