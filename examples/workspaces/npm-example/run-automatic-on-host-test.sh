@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 #
-# Test runner for go example.
+# Test runner for npm example.
 # Runs all test0*.sh files and reports pass/fail counts.
 #
 

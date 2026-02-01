@@ -3,11 +3,6 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-#
-# Test runner for go example.
-# Runs all test0*.sh files and reports pass/fail counts.
-#
-
 cd "$(dirname "$0")"
 
 failed=0
