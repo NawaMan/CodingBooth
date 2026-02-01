@@ -50,8 +50,24 @@ cp deno "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/deno"
 rm -rf deno.zip deno
 
+# Create profile file for ~/.deno/bin
+LEVEL=56
+PROFILE_FILE="/etc/profile.d/${LEVEL}-cb-deno--profile.sh"
+
+cat > "${PROFILE_FILE}" << 'EOF'
+# Profile: Deno
+
+# Add user's deno bin to PATH (for deno-installed scripts)
+case ":$PATH:" in
+  *":$HOME/.deno/bin:"*) ;;
+  *) export PATH="$HOME/.deno/bin:$PATH";;
+esac
+EOF
+chmod 644 "${PROFILE_FILE}"
+
 # Verify installation
 echo "• Verifying installation..."
 deno --version
 
 echo "✅ Deno installed to ${INSTALL_DIR}"
+echo "• Profile file: ${PROFILE_FILE}"
