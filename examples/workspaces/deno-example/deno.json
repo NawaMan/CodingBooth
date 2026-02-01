@@ -1,0 +1,6 @@
+{
+  "tasks": {
+    "start": "deno run src/dice.ts",
+    "test": "deno test"
+  }
+}
