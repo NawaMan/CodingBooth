@@ -75,14 +75,21 @@ Run the wrapper script and follow the instructions.
 To update CodingBooth to the latest version:
 
 ```shell
-# Re-run the wrapper to update the booth script
-./booth
+# Install/update to a specific version
+./booth install 0.13.0
+
+# Install/update to the latest version
+./booth install
 
 # Pull the latest images (optional, happens automatically if not present)
 ./booth --pull
 ```
 
-The wrapper script checks for updates and downloads the `coding-booth` binary to a shared cache (`~/.cache/booth/`) when run.
+The wrapper script downloads the `coding-booth` binary to `.booth/tools/`. If binaries are already up-to-date, the download is skipped.
+
+> **Note:** The version is a positional argument: `./booth install 0.13.0`, not `./booth install --version 0.13.0`.
+
+> **Note:** The `booth` script operates relative to its own location, not the current working directory. This means you can run `/path/to/project/booth` from anywhere and it will correctly find the `.booth/` configuration in the project folder.
 
 ## CLI Usage
 
@@ -173,16 +180,16 @@ All variants expose its UI on port 10000 but NEXT and RANDOM can be use. See [Po
 
 CodingBooth supports several shortcuts and aliases for variant names:
 
-| Input Alias	| Resolved Variant |
-|-------------|------------------|
-| default	    | base             |
-| console     | base             |
-| ide	        | codeserver       |
-| notebook    | notebook         |
-| codeserver  | codeserver       |
-| desktop	    | desktop-xfce     |
-| xfce        | desktop-xfce     |
-| kde	        | desktop-kde      |
+| Input Alias  | Resolved Variant |
+|--------------|------------------|
+| default      | base             |
+| console      | base             |
+| ide          | codeserver       |
+| notebook     | notebook         |
+| codeserver   | codeserver       |
+| desktop      | desktop-xfce     |
+| xfce         | desktop-xfce     |
+| kde          | desktop-kde      |
 
 If an unknown value is provided, CodingBooth will exit with an error listing supported variants and aliases.
 
@@ -382,7 +389,7 @@ my-project/
 | `config.toml`             | Defines variant, ports, run-args, build-args, cmds      |
 | `Dockerfile`              | Custom image build extending a base variant             |
 | `home/`                   | Team-shared dotfiles copied to `/home/coder/` at startup |
-| `tools/coding-booth.lock` | Version lock file; binaries cached in `~/.cache/booth/` |
+| `tools/coding-booth.lock` | Version lock file; binaries cached in `~/.cache/codingbooth/` |
 
 > ⚠️ **Note on `cmds`:** When you pass commands via CLI (`-- <cmd>`), they **override** the `cmds` in config.toml (they don't append).
 
@@ -398,13 +405,13 @@ my-project/
 
 CodingBooth is designed for development environments, not production workloads. Key security aspects:
 
-| Aspect | Behavior |
-|--------|----------|
-| **User privileges** | Processes run as unprivileged `coder` user, not root |
-| **Sudo access** | `coder` has passwordless sudo (for installing packages) |
-| **File ownership** | Files match your host UID/GID — no root-owned files |
-| **Network** | Full network access by default; use Network Whitelist for restrictions |
-| **DinD mode** | Requires `--privileged` flag (elevated permissions) |
+| Aspect              | Behavior                                                               |
+|---------------------|------------------------------------------------------------------------|
+| **User privileges** | Processes run as unprivileged `coder` user, not root                   |
+| **Sudo access**     | `coder` has passwordless sudo (for installing packages)                |
+| **File ownership**  | Files match your host UID/GID — no root-owned files                    |
+| **Network**         | Full network access by default; use Network Whitelist for restrictions |
+| **DinD mode**       | Requires `--privileged` flag (elevated permissions)                    |
 
 **Best practices:**
 - Don't run untrusted code in CodingBooth containers
@@ -427,6 +434,11 @@ JetBrains activation is stored as a machine-specific token. When you run an IDE 
 
 ## How It Works
 
+The `booth` wrapper script is **location-based**: it operates relative to its own location, not the current working directory. This means:
+- Running `./booth` from the project root works as expected
+- Running `/path/to/project/booth` from any directory also works correctly
+- The script always finds `.booth/` in the same directory where `booth` is located
+
 1. The launcher passes your **host UID** and **GID** into the container using the environment variables `HOST_UID` and `HOST_GID`.  
 2. Inside the container, the entrypoint script (`booth-entry`) ensures a matching `coder` user and group exist with those IDs.  
 3. The directories `/home/coder` and `/home/coder/code` are owned by that user, ensuring smooth file sharing between host and container.  
@@ -438,7 +450,7 @@ JetBrains activation is stored as a machine-specific token. When you run an IDE 
 
 ```
 host                                 # your machine
-  ├── ~/.cache/booth/                # shared binary cache
+  ├── ~/.cache/codingbooth/                # shared binary cache
   |    └── versions/
   |         └── 0.13.0/              # version-specific binaries
   |              ├── coding-booth.sha256
@@ -487,12 +499,12 @@ container
 
 Understanding what persists across container restarts is critical:
 
-| Location | Persists? | Notes |
-|----------|-----------|-------|
-| `/home/coder/code/` | **Yes** | Bind-mounted from host; this is your project folder |
-| `/home/coder/` (outside `code/`) | No | Ephemeral; lost on container restart |
-| `/opt/`, `/usr/`, `/etc/` | No | System directories; lost on restart |
-| Installed packages | No | Must be in Dockerfile to persist |
+| Location                          | Persists? | Notes                                               |
+|-----------------------------------|-----------|-----------------------------------------------------|
+| `/home/coder/code/`               | **Yes**   | Bind-mounted from host; this is your project folder |
+| `/home/coder/` (outside `code/`)  | No        | Ephemeral; lost on container restart                |
+| `/opt/`, `/usr/`, `/etc/`         | No        | System directories; lost on restart                 |
+| Installed packages                | No        | Must be in Dockerfile to persist                    |
 
 **What this means:**
 - **Your code is safe** — it lives on the host and is never lost
@@ -1083,14 +1095,14 @@ my-project/
 
 **Available Commands**
 
-| Command                    | Description                              |
-|:---------------------------|:-----------------------------------------|
-| `network-whitelist-enable` | Enable network restrictions              |
-| `network-whitelist-disable`| Disable network restrictions             |
-| `network-whitelist-status` | Show current status and domain counts    |
-| `network-whitelist-list`   | List all whitelisted domains             |
-| `network-whitelist-add`    | Add domain(s) to user whitelist          |
-| `network-whitelist-reload` | Apply whitelist changes                  |
+| Command                     | Description                           |
+|:----------------------------|:--------------------------------------|
+| `network-whitelist-enable`  | Enable network restrictions           |
+| `network-whitelist-disable` | Disable network restrictions          |
+| `network-whitelist-status`  | Show current status and domain counts |
+| `network-whitelist-list`    | List all whitelisted domains          |
+| `network-whitelist-add`     | Add domain(s) to user whitelist       |
+| `network-whitelist-reload`  | Apply whitelist changes               |
 
 > ⚠️ **Note:**
 > The network whitelist only affects HTTP/HTTPS traffic that respects proxy environment variables.
