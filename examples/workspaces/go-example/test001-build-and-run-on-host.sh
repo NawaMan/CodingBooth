@@ -23,7 +23,7 @@ echo ""
 
 # Run build and run inside the container
 echo "Building and running treemoji inside container..."
-output=$("$BOOTH" --silence-build -- './build.sh ; ./run.sh' 2>&1)
+output=$("$BOOTH" --silence-build -- './build.sh ; ./run-treemoji.sh' 2>&1)
 
 echo "$output"
 echo ""
