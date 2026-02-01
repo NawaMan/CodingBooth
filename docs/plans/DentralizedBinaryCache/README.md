@@ -2,7 +2,7 @@
 
 ## Goal
 
-Move CodingBooth binaries from per-project `.booth/tools/` to a central user-level cache, improving storage efficiency and security.
+Move CodingBooth binaries from per-project `.booth/tools/` to a central user-level cache, improving efficiency and security.
 
 ## Current State
 
@@ -21,9 +21,9 @@ project/
 ```
 
 **Problems:**
-- 30-48MB duplicated per project
 - Binaries accessible inside container (security concern)
 - Redundant downloads across projects
+- 30-48MB duplicated per project
 
 ---
 
@@ -119,7 +119,7 @@ downloaded_at=2025-01-27T12:34:56Z
 7. exec binary with arguments
 ```
 
-> **Note:** Local takes precedence. This allows projects with `--local` binaries to work
+> **Note:** Local takes precedence. This allows projects with `--cache=local` binaries to work
 > even if central cache has the same version.
 
 ### Update (`./booth update [VERSION]`)
@@ -232,7 +232,7 @@ find_binary_dir() {
     local binary_name
     binary_name=$(get_binary_name "$platform")
 
-    # Check local first (for --local mode)
+    # Check local first (for --cache=local mode)
     if [[ -f ".booth/tools/${binary_name}" ]]; then
         echo ".booth/tools"
         return 0
@@ -260,16 +260,16 @@ Modify `DownloadBooth()` function. Key changes:
 ```bash
 function DownloadBooth() {
     local CB_VERSION=${1:-latest}
-    local LOCAL_MODE=${2:-false}  # NEW: --local flag
+    local CACHE_MODE=${2:-shared}  # NEW: --cache=local|shared
 
     local tools_dir=".booth/tools"
     local lock_file="$tools_dir/coding-booth.lock"
 
     # ... resolve actual_version from CB_VERSION ...
 
-    # NEW: Determine target directory
+    # NEW: Determine target directory based on cache mode
     local target_dir sha_file
-    if [[ "$LOCAL_MODE" == "true" ]]; then
+    if [[ "$CACHE_MODE" == "local" ]]; then
         target_dir="$tools_dir"
         sha_file="$tools_dir/coding-booth.sha256"
     else
@@ -290,7 +290,7 @@ function DownloadBooth() {
     {
         echo "version=${actual_version}"
         echo "downloaded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-        [[ "$LOCAL_MODE" == "true" ]] && echo "local=true"
+        echo "cache=${CACHE_MODE}"
     } > "$lock_file"
 }
 ```
@@ -306,16 +306,16 @@ Modify `Main()` function's RUN MODE section:
 local tools_dir=".booth/tools"
 local lock_file="$tools_dir/coding-booth.lock"
 
-# Read version and local mode from lock file
+# Read version and cache mode from lock file
 if [[ ! -f "$lock_file" ]]; then
     echo "CodingBooth is not installed."
     echo "Please run: $0 install"
     exit 1
 fi
 
-local lock_version lock_local
+local lock_version lock_cache
 lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2-)
-lock_local=$(grep '^local=' "$lock_file" 2>/dev/null | cut -d= -f2- || echo "false")
+lock_cache=$(grep '^cache=' "$lock_file" 2>/dev/null | cut -d= -f2- || echo "shared")
 
 if [[ -z "$lock_version" ]]; then
     echo "Invalid lock file: missing version"
@@ -332,7 +332,7 @@ local binary_dir sha_file dest
 if ! binary_dir=$(find_binary_dir "$lock_version" "$platform"); then
     # Binary not found, auto-download
     echo "Binary missing, downloading version $lock_version..."
-    DownloadBooth "$lock_version" "$lock_local"
+    DownloadBooth "$lock_version" "$lock_cache"
     binary_dir=$(find_binary_dir "$lock_version" "$platform") || {
         echo "Failed to download binary"
         exit 1
@@ -379,15 +379,15 @@ fi
 In `DownloadBooth()`, simplify .gitignore (only needed for local mode):
 
 ```bash
-# Only create .gitignore for local mode
-if [[ "$LOCAL_MODE" == "true" ]]; then
+# Create .gitignore based on cache mode
+if [[ "$CACHE_MODE" == "local" ]]; then
     cat > ".booth/.gitignore" <<'GITIGNORE'
 # Binaries excluded - re-download from lock version
 tools/coding-booth-*
 tools/*.sha256
 GITIGNORE
 else
-    # Central cache mode - no binaries in project
+    # Shared cache mode - no binaries in project
     cat > ".booth/.gitignore" <<'GITIGNORE'
 # Lock file is version-controlled
 # Binaries are in ~/.cache/booth/ (not here)
@@ -553,10 +553,11 @@ Purpose:
   - Binaries are cached in ~/.cache/booth/ (shared across projects).
 
 Wrapper commands:
-  install [VERSION]       Download binaries to central cache
-  install --local [VER]   Download binaries to .booth/tools/ (project-local)
-  update  [VERSION]       Re-download binaries (force refresh)
-  uninstall               Remove project lock file
+  install [VERSION]              Download binaries to shared cache (default)
+  install --cache=shared [VER]   Download binaries to shared cache (explicit)
+  install --cache=local [VER]    Download binaries to .booth/tools/ (project-local)
+  update  [VERSION]              Re-download binaries (force refresh)
+  uninstall                      Remove project lock file
 
   tools-cache list        Show cached binary versions and sizes
   tools-cache clean       Interactively remove cached versions
@@ -567,7 +568,11 @@ Wrapper commands:
   version                 Show version information
   help                    Show this help message
 
-Cache locations:
+Cache modes:
+  --cache=shared   Store in user cache, shared across projects (default)
+  --cache=local    Store in .booth/tools/, project-specific
+
+Cache locations (for --cache=shared):
   Linux:   ~/.cache/booth/
   macOS:   ~/Library/Caches/booth/
   Windows: %LOCALAPPDATA%\\booth\\
@@ -575,7 +580,7 @@ Cache locations:
 Notes:
   - Lock file (.booth/tools/coding-booth.lock) is version-controlled
   - Binaries are auto-downloaded when lock file exists but binary missing
-  - Use --local to store binaries in project (for CI/CD or portable use)
+  - Use --cache=local for CI/CD or portable/air-gapped environments
 EOF
 }
 ```
@@ -587,7 +592,7 @@ EOF
 Key updates:
 - Document new cache location structure
 - Document `tools-cache list` and `tools-cache clean` commands
-- Document `--local` flag for install/update
+- Document `--cache=local` and `--cache=shared` flags for install/update
 - Update file structure diagrams
 
 ### Task 9: Migration path (optional)
@@ -687,7 +692,10 @@ If issues arise:
 - [ ] Fresh install on empty cache
 - [ ] Install specific version
 - [ ] Install "latest"
-- [ ] Run with cached binary
+- [ ] Install with `--cache=shared` (explicit)
+- [ ] Install with `--cache=local`
+- [ ] Run with cached binary (shared mode)
+- [ ] Run with local binary (local mode)
 - [ ] Run triggers auto-download when cache missing
 - [ ] Multiple projects sharing same version
 - [ ] Multiple projects with different versions
@@ -698,54 +706,79 @@ If issues arise:
 - [ ] `tools-cache list` shows correct versions and sizes
 - [ ] `tools-cache clean` removes specific version
 - [ ] `tools-cache clean --all` removes entire cache
+- [ ] Lock file contains correct `cache=` value
 - [ ] Works on Linux
 - [ ] Works on macOS
 - [ ] Works on Windows (Git Bash/MSYS2)
 
 ---
 
-## Local Mode Flag
+## Cache Mode Flag
 
-### Option: `--local` flag
+### `--cache=local|shared`
 
-Allow users to opt into per-project binary storage (the old behavior):
+Control where binaries are stored:
 
 ```bash
-./booth install --local          # Store binaries in .booth/tools/
-./booth install                  # Store binaries in ~/.cache/booth/ (default)
+./booth install                      # Default: --cache=shared
+./booth install --cache=shared       # Explicit: store in user cache
+./booth install --cache=local        # Store in .booth/tools/ (project-local)
 ```
 
-### Use Cases for Local Mode
+### Use Cases
 
-| Use Case                  | Why Local                                          |
-|---------------------------|----------------------------------------------------|
-| CI/CD pipelines           | Self-contained, no shared cache between jobs       |
-| Air-gapped environments   | Project folder is the only writable location       |
-| Portable projects         | USB drive, shared folder — everything in one place |
-| Testing specific versions | Isolate from other projects                        |
+| Mode | Use Case | Why |
+|------|----------|-----|
+| `shared` (default) | Normal development | Saves disk space, shared across projects |
+| `local` | CI/CD pipelines | Self-contained, no shared cache between jobs |
+| `local` | Air-gapped environments | Project folder is the only writable location |
+| `local` | Portable projects | USB drive, shared folder — everything in one place |
+| `local` | Testing specific versions | Isolate from other projects |
 
 ### Implementation
 
-**Lock file extended format:**
+**Lock file format:**
 ```
 version=0.13.0
 downloaded_at=2025-01-27T12:34:56Z
-local=true
+cache=shared
 ```
 
-The `local=true` line indicates binaries are in `.booth/tools/` instead of central cache.
+or
+
+```
+version=0.13.0
+downloaded_at=2025-01-27T12:34:56Z
+cache=local
+```
 
 **Wrapper logic:**
 
 ```bash
+# Parse --cache= flag
+CACHE_MODE="shared"  # default
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --cache=*) CACHE_MODE="${1#--cache=}"; shift ;;
+        --cache)   CACHE_MODE="$2"; shift 2 ;;
+        *) break ;;
+    esac
+done
+
+# Validate cache mode
+if [[ "$CACHE_MODE" != "local" && "$CACHE_MODE" != "shared" ]]; then
+    echo "Error: Invalid cache mode '$CACHE_MODE'. Use 'local' or 'shared'."
+    exit 1
+fi
+
 # During install
-if [[ "$LOCAL_MODE" == "true" ]]; then
+if [[ "$CACHE_MODE" == "local" ]]; then
     BINARY_DIR=".booth/tools"
 else
     BINARY_DIR="$(get_cache_dir)/versions/${VERSION}"
 fi
 
-# During run — check local first, then central
+# During run — check local first, then shared
 find_binary() {
     local version="$1"
     local platform="$2"
@@ -757,10 +790,10 @@ find_binary() {
         return 0
     fi
 
-    # Then check central cache
-    local central_dir="$(get_cache_dir)/versions/${version}"
-    if [[ -f "${central_dir}/${binary_name}" ]]; then
-        echo "$central_dir"
+    # Then check shared cache
+    local shared_dir="$(get_cache_dir)/versions/${version}"
+    if [[ -f "${shared_dir}/${binary_name}" ]]; then
+        echo "$shared_dir"
         return 0
     fi
 
@@ -773,32 +806,32 @@ find_binary() {
 
 ```toml
 # .booth/config.toml
-local-binaries = true    # Always use local mode for this project
+cache = "local"    # Always use local mode for this project
 ```
 
 ### Directory Structure Comparison
 
-**Default (centralized):**
+**`--cache=shared` (default):**
 ```
 ~/.cache/booth/versions/0.13.0/
 ├── coding-booth.sha256
 └── coding-booth-*
 
 project/.booth/tools/
-└── coding-booth.lock        # local=false or absent
+└── coding-booth.lock        # cache=shared
 ```
 
-**Local mode:**
+**`--cache=local`:**
 ```
 project/.booth/tools/
-├── coding-booth.lock        # local=true
+├── coding-booth.lock        # cache=local
 ├── coding-booth.sha256
 └── coding-booth-*           # 744 permissions
 ```
 
 ### Security in Local Mode
 
-When `local=true`:
+When `cache=local`:
 - Binaries ARE mounted in container (same as current behavior)
 - Still verify SHA256 before execution
 - Still use 744 permissions
@@ -806,34 +839,34 @@ When `local=true`:
 
 ---
 
-## Updated Implementation Tasks (with Local Mode)
+## Updated Implementation Tasks (with Cache Mode)
 
 ### Task 1: Update wrapper — central cache path logic
 
-(unchanged, but add local mode detection)
+(unchanged, but add cache mode detection)
 
-### Task 1b: Add `--local` flag parsing
+### Task 1b: Add `--cache=` flag parsing
 
 **File:** `booth` (wrapper script)
 
-- Parse `--local` flag in install/update commands
-- Check `local-binaries` in config.toml
-- Set `LOCAL_MODE=true/false`
+- Parse `--cache=local` and `--cache=shared` flags in install/update commands
+- Check `cache` setting in config.toml
+- Set `CACHE_MODE=local|shared` (default: shared)
 
 ### Task 2: Update installation flow
 
 **File:** `booth` (wrapper script)
 
-- If `LOCAL_MODE=true`: download to `.booth/tools/`
-- If `LOCAL_MODE=false`: download to `~/.cache/booth/versions/<version>/`
-- Write `local=true` or omit line in lock file
+- If `CACHE_MODE=local`: download to `.booth/tools/`
+- If `CACHE_MODE=shared`: download to `~/.cache/booth/versions/<version>/`
+- Write `cache=local` or `cache=shared` in lock file
 
 ### Task 3: Update run flow
 
 **File:** `booth` (wrapper script)
 
-- Read `local=` from lock file
-- Look up binary in correct location
+- Read `cache=` from lock file
+- Look up binary in correct location (local first, then shared)
 - Verify and execute
 
 (Tasks 4-9 unchanged)
@@ -845,4 +878,4 @@ When `local=true`:
 1. **Cache cleanup policy?** — Should we auto-prune old versions, or leave that to users? → Manual via `./booth tools-cache clean`
 2. **Concurrent access?** — Multiple terminals installing same version simultaneously — use lock file?
 3. **Offline mode?** — If cache has version but can't verify (no network), should we trust it?
-4. ~~**Flag name?** — `--local` vs `--project` vs `--portable`?~~ → Decided: `--local`
+4. ~~**Flag name?**~~ → Decided: `--cache=local` / `--cache=shared`
