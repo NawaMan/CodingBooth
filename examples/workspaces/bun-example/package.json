@@ -1,0 +1,11 @@
+{
+  "name": "greeter",
+  "version": "0.1.0",
+  "scripts": {
+    "start": "bun run src/greeter.ts",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
