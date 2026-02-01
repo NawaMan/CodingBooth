@@ -191,96 +191,418 @@ Cache location: ~/.cache/booth
 
 **File:** `booth` (wrapper script)
 
-- Add `BOOTH_CACHE_DIR` variable: `${XDG_CACHE_HOME:-$HOME/.cache}/booth`
-- Add helper function `get_cache_version_dir()`:
-  ```bash
-  get_cache_version_dir() {
-      local version="$1"
-      echo "${BOOTH_CACHE_DIR}/versions/${version}"
-  }
-  ```
-- Add helper function `get_binary_path()`:
-  ```bash
-  get_binary_path() {
-      local version="$1"
-      local platform="$2"
-      echo "$(get_cache_version_dir "$version")/coding-booth-${platform}"
-  }
-  ```
+Add after line 39 (`VERBOSE="${VERBOSE:-true}"`):
+
+```bash
+# --- CENTRAL CACHE SETUP ---
+# Platform-specific cache directory
+get_cache_dir() {
+    case "$(uname -s)" in
+        Linux*)
+            echo "${XDG_CACHE_HOME:-$HOME/.cache}/booth"
+            ;;
+        Darwin*)
+            echo "$HOME/Library/Caches/booth"
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            if [[ -n "${LOCALAPPDATA:-}" ]]; then
+                echo "$LOCALAPPDATA/booth"
+            else
+                echo "$HOME/AppData/Local/booth"
+            fi
+            ;;
+        *)
+            echo "${XDG_CACHE_HOME:-$HOME/.cache}/booth"
+            ;;
+    esac
+}
+
+BOOTH_CACHE_DIR="${BOOTH_CACHE_DIR:-$(get_cache_dir)}"
+
+get_cache_version_dir() {
+    local version="$1"
+    echo "${BOOTH_CACHE_DIR}/versions/${version}"
+}
+
+# Find binary directory: local first, then central cache
+# Returns directory path, or empty string if not found
+find_binary_dir() {
+    local version="$1"
+    local platform="$2"
+    local binary_name
+    binary_name=$(get_binary_name "$platform")
+
+    # Check local first (for --local mode)
+    if [[ -f ".booth/tools/${binary_name}" ]]; then
+        echo ".booth/tools"
+        return 0
+    fi
+
+    # Then check central cache
+    local central_dir
+    central_dir="$(get_cache_version_dir "$version")"
+    if [[ -f "${central_dir}/${binary_name}" ]]; then
+        echo "$central_dir"
+        return 0
+    fi
+
+    # Not found
+    return 1
+}
+```
 
 ### Task 2: Update installation flow
 
 **File:** `booth` (wrapper script)
 
-Modify `DownloadBooth()` function:
-- Download to `~/.cache/booth/versions/<version>/` instead of `.booth/tools/`
-- Set `chmod 744` on each binary after download
-- Touch binaries after verification
-- Only write lock file to `.booth/tools/`
+Modify `DownloadBooth()` function. Key changes:
+
+```bash
+function DownloadBooth() {
+    local CB_VERSION=${1:-latest}
+    local LOCAL_MODE=${2:-false}  # NEW: --local flag
+
+    local tools_dir=".booth/tools"
+    local lock_file="$tools_dir/coding-booth.lock"
+
+    # ... resolve actual_version from CB_VERSION ...
+
+    # NEW: Determine target directory
+    local target_dir sha_file
+    if [[ "$LOCAL_MODE" == "true" ]]; then
+        target_dir="$tools_dir"
+        sha_file="$tools_dir/coding-booth.sha256"
+    else
+        target_dir="$(get_cache_version_dir "$actual_version")"
+        sha_file="$target_dir/coding-booth.sha256"
+    fi
+
+    mkdir -p "$target_dir"
+    mkdir -p "$tools_dir"  # Always need tools dir for lock file
+
+    # Download binaries to $target_dir instead of $tools_dir
+    # ... existing download loop, but use $target_dir ...
+
+    # NEW: chmod 744 instead of +x
+    chmod 744 "$dest"
+
+    # Write lock file (always in .booth/tools/)
+    {
+        echo "version=${actual_version}"
+        echo "downloaded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+        [[ "$LOCAL_MODE" == "true" ]] && echo "local=true"
+    } > "$lock_file"
+}
+```
 
 ### Task 3: Update run flow
 
 **File:** `booth` (wrapper script)
 
-Modify run logic:
-- Read version from `.booth/tools/coding-booth.lock`
-- Look up binary in central cache
-- Verify from central cache
-- Execute from central cache
+Modify `Main()` function's RUN MODE section:
+
+```bash
+### --- RUN MODE --- ###
+local tools_dir=".booth/tools"
+local lock_file="$tools_dir/coding-booth.lock"
+
+# Read version and local mode from lock file
+if [[ ! -f "$lock_file" ]]; then
+    echo "CodingBooth is not installed."
+    echo "Please run: $0 install"
+    exit 1
+fi
+
+local lock_version lock_local
+lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2-)
+lock_local=$(grep '^local=' "$lock_file" 2>/dev/null | cut -d= -f2- || echo "false")
+
+if [[ -z "$lock_version" ]]; then
+    echo "Invalid lock file: missing version"
+    exit 1
+fi
+
+# Detect platform
+local platform binary_name
+platform=$(detect_platform) || exit 1
+binary_name=$(get_binary_name "$platform")
+
+# Find binary directory (local first, then central)
+local binary_dir sha_file dest
+if ! binary_dir=$(find_binary_dir "$lock_version" "$platform"); then
+    # Binary not found, auto-download
+    echo "Binary missing, downloading version $lock_version..."
+    DownloadBooth "$lock_version" "$lock_local"
+    binary_dir=$(find_binary_dir "$lock_version" "$platform") || {
+        echo "Failed to download binary"
+        exit 1
+    }
+fi
+
+sha_file="$binary_dir/coding-booth.sha256"
+dest="$binary_dir/$binary_name"
+
+# ... existing verification logic using $sha_file and $dest ...
+
+exec "$dest" "$@"
+```
 
 ### Task 4: Update verification logic
 
-**File:** `booth` (wrapper script)
+Verification logic remains the same, but now uses paths from `find_binary_dir()`:
 
-Modify verification:
-- SHA256 file location: `~/.cache/booth/versions/<version>/coding-booth.sha256`
-- Binary location: `~/.cache/booth/versions/<version>/coding-booth-<platform>`
-- Same freshness + checksum checks
+```bash
+# Ensure binary is newer than checksum
+if [[ "$dest" -ot "$sha_file" ]]; then
+    echo "Binary appears older than its checksum file."
+    echo "Run: $0 update  to restore the official release."
+    exit 1
+fi
+
+# Verify SHA256
+local expected_sha256 actual_sha256
+expected_sha256=$(grep "  $binary_name\$" "$sha_file" 2>/dev/null | awk '{print $1}')
+if [[ -z "$expected_sha256" ]]; then
+    echo "No SHA256 entry found for $binary_name"
+    exit 1
+fi
+
+actual_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
+if [[ "$expected_sha256" != "$actual_sha256" ]]; then
+    echo "Binary failed SHA256 verification."
+    exit 1
+fi
+```
 
 ### Task 5: Update .gitignore handling
 
-**File:** `booth` (wrapper script)
+In `DownloadBooth()`, simplify .gitignore (only needed for local mode):
 
-- Remove binary entries from `.booth/.gitignore` (no longer needed)
-- Keep only:
-  ```gitignore
-  # Lock file is version-controlled
-  # Binaries are in ~/.cache/booth/ (not here)
-  ```
+```bash
+# Only create .gitignore for local mode
+if [[ "$LOCAL_MODE" == "true" ]]; then
+    cat > ".booth/.gitignore" <<'GITIGNORE'
+# Binaries excluded - re-download from lock version
+tools/coding-booth-*
+tools/*.sha256
+GITIGNORE
+else
+    # Central cache mode - no binaries in project
+    cat > ".booth/.gitignore" <<'GITIGNORE'
+# Lock file is version-controlled
+# Binaries are in ~/.cache/booth/ (not here)
+GITIGNORE
+fi
+```
 
 ### Task 6: Implement `./booth tools-cache list`
 
-**File:** `booth` (wrapper script)
+Add new function and command dispatch:
 
-- Add `tools-cache` command with `list` subcommand
-- Scan `<CACHE_DIR>/versions/` directories
-- Calculate and display size per version
-- Show which platform binaries exist
-- Display total cache size and location
+```bash
+function ToolsCacheList() {
+    local versions_dir="${BOOTH_CACHE_DIR}/versions"
+
+    if [[ ! -d "$versions_dir" ]]; then
+        echo "No cached versions found."
+        echo "Cache location: $BOOTH_CACHE_DIR"
+        return 0
+    fi
+
+    echo "Cached binary versions:"
+    echo ""
+
+    local total_size=0
+    local version_count=0
+
+    for version_dir in "$versions_dir"/*/; do
+        [[ ! -d "$version_dir" ]] && continue
+
+        local version
+        version=$(basename "$version_dir")
+
+        # Calculate size
+        local size_bytes size_human
+        size_bytes=$(du -sb "$version_dir" 2>/dev/null | cut -f1 || echo 0)
+        size_human=$(numfmt --to=iec-i --suffix=B "$size_bytes" 2>/dev/null || echo "${size_bytes}B")
+
+        # List platforms
+        local platforms=()
+        for bin in "$version_dir"/coding-booth-*; do
+            [[ -f "$bin" ]] || continue
+            local name
+            name=$(basename "$bin")
+            name=${name#coding-booth-}
+            name=${name%.exe}
+            platforms+=("$name")
+        done
+
+        printf "  %-12s %10s   [%s]\n" "$version" "$size_human" "${platforms[*]}"
+
+        total_size=$((total_size + size_bytes))
+        : $((version_count++))
+    done
+
+    echo ""
+    local total_human
+    total_human=$(numfmt --to=iec-i --suffix=B "$total_size" 2>/dev/null || echo "${total_size}B")
+    echo "Total: $total_human in $version_count version(s)"
+    echo ""
+    echo "Cache location: $BOOTH_CACHE_DIR"
+}
+```
+
+Add to command dispatch:
+
+```bash
+case "${COMMAND}" in
+    tools-cache)
+        shift
+        case "${1:-list}" in
+            list)  ToolsCacheList ;;
+            clean) shift; ToolsCacheClean "$@" ;;
+            *)     echo "Unknown tools-cache command: $1"; exit 1 ;;
+        esac
+        exit 0
+        ;;
+    # ... existing cases ...
+esac
+```
 
 ### Task 7: Implement `./booth tools-cache clean`
 
-**File:** `booth` (wrapper script)
+```bash
+function ToolsCacheClean() {
+    local versions_dir="${BOOTH_CACHE_DIR}/versions"
 
-- Add `clean` subcommand to `tools-cache`
-- Support `--all` flag to remove everything
-- Support specific version argument
-- Interactive mode when no arguments
-- Print freed disk space summary
+    if [[ ! -d "$versions_dir" ]]; then
+        echo "No cached versions to clean."
+        return 0
+    fi
 
-### Task 8: Update documentation
+    # Parse arguments
+    local clean_all=false
+    local target_version=""
 
-**Files:**
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --all) clean_all=true; shift ;;
+            --unused) echo "Warning: --unused not yet implemented"; shift ;;
+            -*) echo "Unknown option: $1"; exit 1 ;;
+            *) target_version="$1"; shift ;;
+        esac
+    done
+
+    if [[ "$clean_all" == "true" ]]; then
+        local size_before
+        size_before=$(du -sb "$versions_dir" 2>/dev/null | cut -f1 || echo 0)
+
+        rm -rf "$versions_dir"
+
+        local size_human
+        size_human=$(numfmt --to=iec-i --suffix=B "$size_before" 2>/dev/null || echo "${size_before}B")
+        echo "Removed all cached versions. Freed $size_human"
+        return 0
+    fi
+
+    if [[ -n "$target_version" ]]; then
+        local target_dir="$versions_dir/$target_version"
+        if [[ ! -d "$target_dir" ]]; then
+            echo "Version $target_version not found in cache."
+            return 1
+        fi
+
+        local size_before
+        size_before=$(du -sb "$target_dir" 2>/dev/null | cut -f1 || echo 0)
+
+        rm -rf "$target_dir"
+
+        local size_human
+        size_human=$(numfmt --to=iec-i --suffix=B "$size_before" 2>/dev/null || echo "${size_before}B")
+        echo "Removed version $target_version. Freed $size_human"
+        return 0
+    fi
+
+    # Interactive mode: list and prompt
+    ToolsCacheList
+    echo ""
+    read -rp "Enter version to remove (or 'all'): " choice
+
+    if [[ "$choice" == "all" ]]; then
+        ToolsCacheClean --all
+    elif [[ -n "$choice" ]]; then
+        ToolsCacheClean "$choice"
+    else
+        echo "No version selected."
+    fi
+}
+```
+
+### Task 8: Update help message and documentation
+
+**Update `PrintHelp()` in `booth`:**
+
+```bash
+function PrintHelp() {
+    cat <<EOF
+Usage: ./$(basename "$0") <command> [args...]
+
+Purpose:
+  This script is the *CodingBooth Wrapper*.
+  - It downloads, verifies, and runs the CodingBooth binary.
+  - Binaries are cached in ~/.cache/booth/ (shared across projects).
+
+Wrapper commands:
+  install [VERSION]       Download binaries to central cache
+  install --local [VER]   Download binaries to .booth/tools/ (project-local)
+  update  [VERSION]       Re-download binaries (force refresh)
+  uninstall               Remove project lock file
+
+  tools-cache list        Show cached binary versions and sizes
+  tools-cache clean       Interactively remove cached versions
+  tools-cache clean --all Remove all cached versions
+  tools-cache clean VER   Remove specific version
+
+  run [ARGS...]           Run booth with ARGS (after integrity checks)
+  version                 Show version information
+  help                    Show this help message
+
+Cache locations:
+  Linux:   ~/.cache/booth/
+  macOS:   ~/Library/Caches/booth/
+  Windows: %LOCALAPPDATA%\\booth\\
+
+Notes:
+  - Lock file (.booth/tools/coding-booth.lock) is version-controlled
+  - Binaries are auto-downloaded when lock file exists but binary missing
+  - Use --local to store binaries in project (for CI/CD or portable use)
+EOF
+}
+```
+
+**Files to update:**
 - `docs/implementations/WRAPPER.md` — update architecture diagram and file structure
 - `README.md` — update any references to `.booth/tools/` containing binaries
 
+Key updates:
+- Document new cache location structure
+- Document `tools-cache list` and `tools-cache clean` commands
+- Document `--local` flag for install/update
+- Update file structure diagrams
+
 ### Task 9: Migration path (optional)
 
-For existing projects with binaries in `.booth/tools/`:
-- Wrapper detects old layout
-- Prints migration message
-- Optionally moves binaries to central cache
-- Cleans up old files
+Add detection in `Main()`:
+
+```bash
+# Migration: detect old layout (binaries in .booth/tools/)
+local old_binary="$tools_dir/coding-booth-$(detect_platform)"
+if [[ -f "$old_binary" && ! -f "$lock_file" ]]; then
+    echo "⚠️  Detected old CodingBooth layout."
+    echo "   Binaries in .booth/tools/ are deprecated."
+    echo "   Run: $0 install  to migrate to central cache."
+fi
+```
 
 ---
 
