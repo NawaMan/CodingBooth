@@ -35,7 +35,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.7.0
+VERSION=0.8.0
 VERBOSE="${VERBOSE:-true}"
 
 # --- CENTRAL CACHE SETUP ---
@@ -43,20 +43,20 @@ VERBOSE="${VERBOSE:-true}"
 get_cache_dir() {
     case "$(uname -s)" in
         Linux*)
-            echo "${XDG_CACHE_HOME:-$HOME/.cache}/booth"
+            echo "${XDG_CACHE_HOME:-$HOME/.cache}/codingbooth"
             ;;
         Darwin*)
-            echo "$HOME/Library/Caches/booth"
+            echo "$HOME/Library/Caches/codingbooth"
             ;;
         MINGW*|MSYS*|CYGWIN*)
             if [[ -n "${LOCALAPPDATA:-}" ]]; then
-                echo "$LOCALAPPDATA/booth"
+                echo "$LOCALAPPDATA/codingbooth"
             else
-                echo "$HOME/AppData/Local/booth"
+                echo "$HOME/AppData/Local/codingbooth"
             fi
             ;;
         *)
-            echo "${XDG_CACHE_HOME:-$HOME/.cache}/booth"
+            echo "${XDG_CACHE_HOME:-$HOME/.cache}/codingbooth"
             ;;
     esac
 }
@@ -251,6 +251,7 @@ Wrapper commands:
   tools-cache clean VER   Remove specific version
 
   run [ARGS...]           Run booth with ARGS (after integrity checks)
+  shell-config            Add 'booth' command to your shell (bash/zsh)
   version                 Show version information
   help                    Show this help message
 
@@ -259,9 +260,9 @@ Cache modes:
   --cache=local    Store in .booth/tools/, project-specific
 
 Cache locations (for --cache=shared):
-  Linux:   ~/.cache/booth/
-  macOS:   ~/Library/Caches/booth/
-  Windows: %LOCALAPPDATA%\\booth\\
+  Linux:   ~/.cache/codingbooth/
+  macOS:   ~/Library/Caches/codingbooth/
+  Windows: %LOCALAPPDATA%\\codingbooth\\
 
 Notes:
   - Lock file (.booth/tools/coding-booth.lock) is version-controlled
@@ -269,6 +270,76 @@ Notes:
   - Use --cache=local for CI/CD or portable/air-gapped environments
   - Set VERBOSE=true for extra logs during install
 EOF
+}
+
+function ShellConfig() {
+    local booth_func='unalias booth 2>/dev/null; booth() { d="$PWD"; while [[ "$d" != "/" && ! -x "$d/booth" ]]; do d="${d%/*}"; done; [[ -x "$d/booth" ]] && "$d/booth" "$@" || echo "booth not found" >&2; }'
+
+    # All supported shell rc files
+    local rc_files=(
+        "$HOME/.bashrc"
+        "$HOME/.zshrc"
+        "$HOME/.bash_profile"
+        "$HOME/.profile"
+    )
+
+    local added=()
+    local skipped=()
+    local not_found=()
+
+    for rc_file in "${rc_files[@]}"; do
+        if [[ ! -f "$rc_file" ]]; then
+            not_found+=("$rc_file")
+            continue
+        fi
+
+        # Check if already configured (idempotent)
+        if grep -q 'booth()' "$rc_file" 2>/dev/null; then
+            skipped+=("$rc_file")
+            continue
+        fi
+
+        # Add the function
+        {
+            echo ""
+            echo "# CodingBooth - run 'booth' from any subdirectory"
+            echo "$booth_func"
+        } >> "$rc_file"
+
+        added+=("$rc_file")
+    done
+
+    # Report results
+    if [[ ${#added[@]} -gt 0 ]]; then
+        echo "✓ Added booth function to:"
+        for f in "${added[@]}"; do
+            echo "    $f"
+        done
+    fi
+
+    if [[ ${#skipped[@]} -gt 0 ]]; then
+        echo "✓ Already configured (skipped):"
+        for f in "${skipped[@]}"; do
+            echo "    $f"
+        done
+    fi
+
+    if [[ ${#added[@]} -eq 0 && ${#skipped[@]} -eq 0 ]]; then
+        echo "No shell config files found."
+        echo ""
+        echo "You can manually add this to your shell config:"
+        echo "  $booth_func"
+        exit 1
+    fi
+
+    echo ""
+    if [[ ${#added[@]} -gt 0 ]]; then
+        echo "To activate, restart your terminal or run:"
+        echo "  source ~/.bashrc   # for bash"
+        echo "  source ~/.zshrc    # for zsh"
+        echo ""
+    fi
+    echo "Then you can run 'booth' from any subdirectory of a CodingBooth project."
 }
 
 function PrintVersion() {
@@ -556,6 +627,15 @@ function ToolsCacheClean() {
 function DownloadBooth() {
     local CB_VERSION=${1:-latest}
     local CACHE_MODE=${2:-shared}
+
+    # Detect common mistake: using --version flag instead of positional argument
+    if [[ "$CB_VERSION" == --* ]]; then
+        echo "Error: Invalid version '$CB_VERSION'" >&2
+        echo "Usage: $0 install [VERSION]" >&2
+        echo "Example: $0 install 0.13.0" >&2
+        exit 1
+    fi
+
     local tools_dir=".booth/tools"
     local lock_file="$tools_dir/coding-booth.lock"
 
@@ -594,7 +674,7 @@ GITIGNORE
     else
         cat > ".booth/.gitignore" <<'GITIGNORE'
 # Lock file is version-controlled
-# Binaries are in ~/.cache/booth/ (not here)
+# Binaries are in ~/.cache/codingbooth/ (not here)
 GITIGNORE
     fi
 
@@ -621,14 +701,56 @@ GITIGNORE
         local SHA256_URL="${DWLD_URL}/${CB_VERSION}/${binary_name}.sha256"
 
         if [[ "$VERBOSE" == "true" ]]; then
-            echo "  Downloading: $binary_name"
+            echo "  Checking: $binary_name"
         else
             echo -n "  $platform ... "
         fi
 
-        local tmpfile tmpsha256
-        tmpfile=$(mktemp "/tmp/booth.XXXXXX")
+        local tmpsha256
         tmpsha256=$(mktemp "/tmp/booth.sha256.XXXXXX")
+
+        # Download SHA256 first to check if we need to download the binary
+        if ! curl -fsSLo "$tmpsha256" "$SHA256_URL"; then
+            echo "FAILED (sha256 fetch)"
+            rm -f "$tmpsha256"
+            : $((fail_count++))
+            continue
+        fi
+
+        local expected_sha256
+        expected_sha256=$(awk '{print $1}' "$tmpsha256")
+        if ! [[ "$expected_sha256" =~ ^[0-9a-fA-F]{64}$ ]]; then
+            echo "FAILED (malformed sha256)"
+            rm -f "$tmpsha256"
+            : $((fail_count++))
+            continue
+        fi
+
+        # Check if binary already exists with correct checksum
+        if [[ -f "$dest" ]]; then
+            local existing_sha256
+            existing_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
+            if [[ "$expected_sha256" == "$existing_sha256" ]]; then
+                # Binary already exists and is valid, skip download
+                printf '%s  %s\n' "$expected_sha256" "$binary_name" >> "$sha_file"
+                rm -f "$tmpsha256"
+                : $((download_count++))
+                if [[ "$VERBOSE" != "true" ]]; then
+                    echo "✓ up-to-date"
+                else
+                    echo "  Already up-to-date: $binary_name"
+                fi
+                continue
+            fi
+        fi
+
+        # Need to download - binary missing or checksum mismatch
+        if [[ "$VERBOSE" == "true" ]]; then
+            echo "  Downloading: $binary_name"
+        fi
+
+        local tmpfile
+        tmpfile=$(mktemp "/tmp/booth.XXXXXX")
 
         # Download binary
         if ! curl -fsSLo "$tmpfile" "$TOOL_URL"; then
@@ -638,24 +760,8 @@ GITIGNORE
             continue
         fi
 
-        # Download SHA256
-        if ! curl -fsSLo "$tmpsha256" "$SHA256_URL"; then
-            echo "FAILED (sha256)"
-            rm -f "$tmpfile" "$tmpsha256"
-            : $((fail_count++))
-            continue
-        fi
-
         # Verify SHA256
-        local expected_sha256 actual_sha256
-        expected_sha256=$(awk '{print $1}' "$tmpsha256")
-        if ! [[ "$expected_sha256" =~ ^[0-9a-fA-F]{64}$ ]]; then
-            echo "FAILED (malformed sha256)"
-            rm -f "$tmpfile" "$tmpsha256"
-            : $((fail_count++))
-            continue
-        fi
-
+        local actual_sha256
         actual_sha256=$(hash_sha256 "$tmpfile" | awk '{print $1}')
         if [[ "$expected_sha256" != "$actual_sha256" ]]; then
             echo "FAILED (sha256 mismatch)"
@@ -709,10 +815,11 @@ GITIGNORE
     fi
 }
 
-# Early handling of version/help so they don't require curl
+# Early handling of version/help/shell-config so they don't require curl
 case "${COMMAND}" in
-    version) PrintVersion ; exit 0 ; ;;
-    help)    PrintHelp    ; exit 0 ; ;;
+    version)      PrintVersion ; exit 0 ; ;;
+    help)         PrintHelp    ; exit 0 ; ;;
+    shell-config) ShellConfig  ; exit 0 ; ;;
 esac
 
 # Need curl for install/run/update/uninstall

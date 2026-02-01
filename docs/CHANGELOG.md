@@ -2,6 +2,14 @@
 
 This file contains a list of changes for each released version.
 
+## v0.14.0
+- booth wrapper script now cache the binary per user
+- booth is now location-based, meaning it operates relative to the script's own location (not the current directory) 
+- booth will suggest booth function (shell-config command) that will searc upward from the current DIR until ./booth is found.
+
+## v0.13.0
+- Mess happens so don't have a coherent items, sorry :-p
+
 ## v0.12.0
 - Rebrand fully to "CodingBooth"!!! Yeah!
 - Command mode now silently forwards exit codes (no error message when commands fail)

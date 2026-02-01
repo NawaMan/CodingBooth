@@ -6,6 +6,8 @@
 **A single, stable script that handles everything.**
 The `booth` wrapper script is a lightweight shell script that downloads, verifies, and executes the platform-specific CodingBooth binary. It allows CodingBooth to evolve independently while providing users with a reliable, self-updating entry point. The wrapper handles multi-platform support, cryptographic verification, and automatic recovery — all while remaining simple enough to audit and commit to version control.
 
+The wrapper is **location-based**: it operates relative to its own location, not the current working directory. This means `/path/to/project/booth` works correctly from any directory.
+
 This document explains how the CodingBooth wrapper works internally.
 
 ---
@@ -31,7 +33,7 @@ booth (wrapper)              — Small bash script, committed to repo
     │
     ▼ downloads, verifies, executes
     │
-~/.cache/booth/versions/     — Shared binary cache (default)
+~/.cache/codingbooth/versions/     — Shared binary cache (default)
     └── 0.13.0/
         └── coding-booth-*   — Platform-specific binaries
 ```
@@ -46,10 +48,10 @@ booth (wrapper)              — Small bash script, committed to repo
 
 The wrapper supports two cache modes:
 
-| Mode               | Location          | Use Case                                   |
-|--------------------|-------------------|--------------------------------------------|
-| `shared` (default) | `~/.cache/booth/` | Normal development, shared across projects |
-| `local`            | `.booth/tools/`   | CI/CD, air-gapped, portable environments   |
+| Mode               | Location                | Use Case                                   |
+|--------------------|-------------------------|--------------------------------------------|
+| `shared` (default) | `~/.cache/codingbooth/` | Normal development, shared across projects |
+| `local`            | `.booth/tools/`         | CI/CD, air-gapped, portable environments   |
 
 ---
 
@@ -89,18 +91,21 @@ esac
 
 The wrapper handles these commands:
 
-| Command                            | Description                              |
-|------------------------------------|------------------------------------------|
-| `install [VERSION]`                | Download binaries to shared cache (default) |
-| `install --cache=shared [VERSION]` | Download to shared cache (explicit)      |
-| `install --cache=local [VERSION]`  | Download to .booth/tools/                |
-| `update [VERSION]`                 | Re-download binaries (force refresh)     |
-| `uninstall`                        | Remove lock file and local binaries      |
-| `tools-cache list`                 | Show cached versions and sizes           |
-| `tools-cache clean`                | Remove cached versions                   |
-| `run [ARGS...]`                    | Execute binary (after verification)      |
-| `version`                          | Show wrapper and binary versions         |
-| `help`                             | Show usage information                   |
+| Command                            | Description                                      |
+|------------------------------------|--------------------------------------------------|
+| `install [VERSION]`                | Download binaries (skips if already up-to-date)  |
+| `install --cache=shared [VERSION]` | Download to shared cache (explicit)              |
+| `install --cache=local [VERSION]`  | Download to .booth/tools/                        |
+| `update [VERSION]`                 | Re-download binaries (force refresh)             |
+| `uninstall`                        | Remove lock file and local binaries              |
+| `tools-cache list`                 | Show cached versions and sizes                   |
+| `tools-cache clean`                | Interactively remove cached versions             |
+| `tools-cache clean --all`          | Remove all cached versions                       |
+| `tools-cache clean VERSION`        | Remove specific version                          |
+| `run [ARGS...]`                    | Execute binary (after verification)              |
+| `shell-config`                     | Add 'booth' command to your shell (bash/zsh)     |
+| `version`                          | Show wrapper and binary versions                 |
+| `help`                             | Show usage information                           |
 
 Default command (no arguments): `run`
 
@@ -112,6 +117,10 @@ Default command (no arguments): `run`
 # Pass arguments to the binary:
 ./booth --variant codeserver
 ./booth run --variant codeserver
+
+# Install specific version (downloads only if needed):
+./booth install 0.13.0
+./booth install                   # Uses "latest"
 
 # Cache management:
 ./booth tools-cache list           # Show cached versions
@@ -144,6 +153,51 @@ curl -fsSL https://github.com/NawaMan/WorkSpace/releases/download/latest/booth |
 
 ---
 
+## Script Location Resolution
+
+The wrapper is **location-based**, meaning it operates relative to its own location rather than the current working directory. This is implemented using `BASH_SOURCE[0]` with symlink resolution:
+
+```bash
+get_script_dir() {
+    local source="${BASH_SOURCE[0]}"
+    while [[ -L "$source" ]]; do
+        local dir
+        dir="$(cd -P "$(dirname "$source")" && pwd)"
+        source="$(readlink "$source")"
+        [[ "$source" != /* ]] && source="$dir/$source"
+    done
+    cd -P "$(dirname "$source")" && pwd
+}
+SCRIPT_DIR="$(get_script_dir)"
+```
+
+### Why Location-Based?
+
+| Approach          | Behavior                                                                   |
+|-------------------|----------------------------------------------------------------------------|
+| Current directory | `cd /tmp && /path/to/project/booth` looks for `/tmp/.booth/`               |
+| Script location   | `cd /tmp && /path/to/project/booth` looks for `/path/to/project/.booth/`   |
+
+The location-based approach is more suitable for CodingBooth because:
+
+- **Per-project design**: The `booth` script is installed per-project alongside `.booth/`
+- **Intuitive behavior**: Running a project's booth script always operates on that project
+- **Symlink support**: Symlinks are followed to find the original project location
+- **Subdirectory support**: Running `../booth` from a subdirectory works correctly
+- **Safety**: Prevents accidental operation on the wrong directory
+
+### Examples
+
+```bash
+# All of these work correctly:
+./booth                              # From project root
+../booth                             # From a subdirectory
+/home/user/myproject/booth           # Absolute path from anywhere
+cd /tmp && /home/user/myproject/booth  # From unrelated directory
+```
+
+---
+
 ## File Structure
 
 ### Shared Cache Mode (Default)
@@ -160,14 +214,14 @@ With `--cache=shared` (the default), binaries are stored in a user-level cache:
 
 **User cache (platform-specific):**
 
-| Platform | Cache Location |
-|----------|----------------|
-| Linux    | `~/.cache/booth/` (or `$XDG_CACHE_HOME/booth/`) |
-| macOS    | `~/Library/Caches/booth/` |
-| Windows  | `%LOCALAPPDATA%\booth\` |
+| Platform | Cache Location                                              |
+|----------|-------------------------------------------------------------|
+| Linux    | `~/.cache/codingbooth/` (or `$XDG_CACHE_HOME/codingbooth/`) |
+| macOS    | `~/Library/Caches/codingbooth/`                             |
+| Windows  | `%LOCALAPPDATA%\codingbooth\`                               |
 
 ```
-~/.cache/booth/
+~/.cache/codingbooth/
 └── versions/
     └── 0.13.0/
         ├── coding-booth.sha256      # SHA256 checksums for all platforms
@@ -222,7 +276,7 @@ def456...  coding-booth-linux-arm64
 For shared cache mode:
 ```gitignore
 # Lock file is version-controlled
-# Binaries are in ~/.cache/booth/ (not here)
+# Binaries are in ~/.cache/codingbooth/ (not here)
 ```
 
 For local cache mode:
@@ -239,41 +293,49 @@ tools/*.sha256
 ### Installation (`./booth install`)
 
 ```
-User runs: ./booth install [--cache=shared|local] [VERSION]
+User runs: ./booth install [VERSION]
     │
-    ▼ VERSION defaults to "latest", cache defaults to "shared"
+    ▼ Resolve script location (SCRIPT_DIR)
+    │
+    ├─► Validate VERSION (reject if starts with "--")
+    │
+    ├─► VERSION defaults to "latest"
     │
     ├─► Fetch version.txt to get actual version number
     │
-    ├─► Determine target directory:
-    │     - shared: ~/.cache/booth/versions/<version>/
-    │     - local:  .booth/tools/
-    │
     ├─► For each platform:
-    │     ├─► Download binary to temp file
     │     ├─► Download .sha256 file
-    │     ├─► Verify SHA256 matches
-    │     ├─► Move to target directory
-    │     ├─► Set permissions to 744
+    │     ├─► If binary exists with matching checksum:
+    │     │     └─► Skip download (already up-to-date)
+    │     ├─► Otherwise:
+    │     │     ├─► Download binary to temp file
+    │     │     ├─► Verify SHA256 matches
+    │     │     ├─► Move to target directory
+    │     │     └─► Set permissions to 755
     │     └─► Append to combined sha256 file
     │
-    ├─► Write lock file with version + timestamp + cache mode
+    ├─► Write lock file with version + timestamp
     │
     └─► Touch all binaries (newer than sha256 file)
 ```
+
+> **Note:** VERSION is a positional argument, not a flag. Use `./booth install 0.13.0`, not `./booth install --version 0.13.0`.
 
 ### Run Mode (`./booth` or `./booth run`)
 
 ```
 User runs: ./booth [args...]
     │
-    ▼ Read lock file for version and cache mode
+    ▼ Resolve script location (SCRIPT_DIR)
+    │
+    ├─► Read lock file for version and cache mode
+    │     (from $SCRIPT_DIR/.booth/tools/coding-booth.lock)
     │
     ├─► Detect platform (linux-amd64, darwin-arm64, etc.)
     │
     ├─► Find binary directory:
-    │     1. Check .booth/tools/ first (local mode)
-    │     2. Check ~/.cache/booth/versions/<version>/ (shared mode)
+    │     1. Check $SCRIPT_DIR/.booth/tools/ first (local mode)
+    │     2. Check ~/.cache/codingbooth/versions/<version>/ (shared mode)
     │   │
     │   └─► If not found but lock file exists:
     │         Auto-download using cache mode from lock file
@@ -360,7 +422,7 @@ fi
 
 The `find_binary_dir()` function checks:
 1. `.booth/tools/` first (for local mode compatibility)
-2. `~/.cache/booth/versions/<version>/` (shared cache)
+2. `~/.cache/codingbooth/versions/<version>/` (shared cache)
 
 This enables:
 - Cloning a repo and running `./booth` immediately (downloads correct version)
@@ -372,9 +434,24 @@ This enables:
 
 ## Design Decisions
 
+### Why Location-Based Instead of Current Directory?
+
+The wrapper resolves paths relative to its own location (`$SCRIPT_DIR/.booth/`) rather than the current working directory (`.booth/`):
+
+**Pros:**
+- Intuitive for per-project scripts (running a project's booth works on that project)
+- Safe from accidental wrong-directory execution
+- Works when running from subdirectories (`../booth`)
+- Supports symlinks (follows to original project)
+
+**Cons:**
+- Cannot use a single booth script for multiple projects (not the intended use case)
+
+The per-project design of CodingBooth (where each project has its own `booth` and `.booth/`) makes location-based resolution the natural choice.
+
 ### Why Shared Cache by Default?
 
-The wrapper uses a user-level cache (`~/.cache/booth/`) by default:
+The wrapper uses a user-level cache (`~/.cache/codingbooth/`) by default:
 
 **Pros:**
 - Saves 30-50MB per project (binaries not duplicated)
@@ -506,8 +583,8 @@ sudo apt-get install coreutils
 
 - `booth` — The wrapper script (this document)
 - `.booth/tools/coding-booth.lock` — Version and cache mode metadata
-- `~/.cache/booth/versions/<version>/` — Shared binary cache (Linux)
-- `~/Library/Caches/booth/versions/<version>/` — Shared binary cache (macOS)
-- `%LOCALAPPDATA%\booth\versions\<version>\` — Shared binary cache (Windows)
+- `~/.cache/codingbooth/versions/<version>/` — Shared binary cache (Linux)
+- `~/Library/Caches/codingbooth/versions/<version>/` — Shared binary cache (macOS)
+- `%LOCALAPPDATA%\codingbooth\versions\<version>\` — Shared binary cache (Windows)
 - `.booth/tools/coding-booth-*` — Local binaries (when using `--cache=local`)
 - `cli/` — Source code for the Go binary
