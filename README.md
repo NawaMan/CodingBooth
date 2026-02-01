@@ -82,7 +82,7 @@ To update CodingBooth to the latest version:
 ./booth --pull
 ```
 
-The wrapper script (`./ws`) checks for updates and downloads the latest `coding-booth` binary when run.
+The wrapper script checks for updates and downloads the `coding-booth` binary to a shared cache (`~/.cache/booth/`) when run.
 
 ## CLI Usage
 
@@ -374,14 +374,15 @@ my-project/
     ├── home/           # Team-shared home directory files (optional)
     │   └── .config/
     └── tools/          # Managed by booth wrapper (auto-created)
-        └── coding-booth
+        └── coding-booth.lock   # Version reference (binaries in shared cache)
 ```
 
-| File | Purpose |
-|------|---------|
-| `config.toml` | Defines variant, ports, run-args, build-args, cmds |
-| `Dockerfile` | Custom image build extending a base variant |
-| `home/` | Team-shared dotfiles copied to `/home/coder/` at startup |
+| File                      | Purpose                                                 |
+|---------------------------|---------------------------------------------------------|
+| `config.toml`             | Defines variant, ports, run-args, build-args, cmds      |
+| `Dockerfile`              | Custom image build extending a base variant             |
+| `home/`                   | Team-shared dotfiles copied to `/home/coder/` at startup |
+| `tools/coding-booth.lock` | Version lock file; binaries cached in `~/.cache/booth/` |
 
 > ⚠️ **Note on `cmds`:** When you pass commands via CLI (`-- <cmd>`), they **override** the `cmds` in config.toml (they don't append).
 
@@ -437,11 +438,16 @@ JetBrains activation is stored as a machine-specific token. When you run an IDE 
 
 ```
 host                                 # your machine
+  ├── ~/.cache/booth/                # shared binary cache
+  |    └── versions/
+  |         └── 0.13.0/              # version-specific binaries
+  |              ├── coding-booth.sha256
+  |              └── coding-booth-*  # platform binaries
   ├── project/                       # your project folder on the host
   |    ├── booth                     # booth wrapper script
   |    ├── .booth                    # booth internal folder
-  |    |    ├── tools                # booth tools folder
-  |    |        └── coding-booth     # booth runner script
+  |    |    └── tools/
+  |    |         └── coding-booth.lock  # version reference
   |    ├── ...                       # other project files
   ...
 
@@ -451,14 +457,14 @@ container
   |    |    ├── code/                     # your project folder inside the container
   |    |    |   ├── booth                 # booth wrapper script
   |    |    |   ├── .booth                # booth internal folder
-  |    |    |   |    ├── tools            # booth tools folder
-  |    |    |   |    └── coding-booth     # booth runner script
+  |    |    |   |    └── tools/
+  |    |    |   |         └── coding-booth.lock  # version reference
   |    |    ├── ...                       # other project files
   |    ├── ...                            # other home files
   ├── etc/
   |    ├── profile.d/                     # profile script folder
   ├── opt/
-  |    ├── coding-booth/
+  |    ├── codingbooth/
   |    |    ├── setups/                   # setup script folder
   |    |    |    ├── ...                  # setup scripts
   ├── usr/
