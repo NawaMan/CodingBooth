@@ -35,8 +35,65 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.6.0
+VERSION=0.7.0
 VERBOSE="${VERBOSE:-true}"
+
+# --- CENTRAL CACHE SETUP ---
+# Platform-specific cache directory for shared binary storage
+get_cache_dir() {
+    case "$(uname -s)" in
+        Linux*)
+            echo "${XDG_CACHE_HOME:-$HOME/.cache}/booth"
+            ;;
+        Darwin*)
+            echo "$HOME/Library/Caches/booth"
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            if [[ -n "${LOCALAPPDATA:-}" ]]; then
+                echo "$LOCALAPPDATA/booth"
+            else
+                echo "$HOME/AppData/Local/booth"
+            fi
+            ;;
+        *)
+            echo "${XDG_CACHE_HOME:-$HOME/.cache}/booth"
+            ;;
+    esac
+}
+
+BOOTH_CACHE_DIR="${BOOTH_CACHE_DIR:-$(get_cache_dir)}"
+
+# Get version-specific cache directory
+get_cache_version_dir() {
+    local version="$1"
+    echo "${BOOTH_CACHE_DIR}/versions/${version}"
+}
+
+# Find binary directory: local first, then shared cache
+# Returns directory path on stdout, returns 0 if found, 1 if not found
+find_binary_dir() {
+    local version="$1"
+    local platform="$2"
+    local binary_name
+    binary_name=$(get_binary_name "$platform")
+
+    # Check local first (for --cache=local mode)
+    if [[ -f ".booth/tools/${binary_name}" ]]; then
+        echo ".booth/tools"
+        return 0
+    fi
+
+    # Then check shared cache
+    local shared_dir
+    shared_dir="$(get_cache_version_dir "$version")"
+    if [[ -f "${shared_dir}/${binary_name}" ]]; then
+        echo "$shared_dir"
+        return 0
+    fi
+
+    # Not found
+    return 1
+}
 
 # Decide what the "command" is:
 if [[ $# -eq 0 ]]; then COMMAND="run" ; else COMMAND="$1" ; fi
@@ -45,48 +102,99 @@ function Main() {
     ### --- COMMAND DISPATCH --- ###
     case "${COMMAND}" in
         uninstall)      UninstallBooth               ; exit 0 ; ;;
-        install|update) DownloadBooth "${2:-latest}" ; exit 0 ; ;;
+        install|update)
+            # Parse --cache= flag
+            shift  # Remove 'install' or 'update'
+            local cache_mode="shared"
+            local version_arg="latest"
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --cache=*) cache_mode="${1#--cache=}"; shift ;;
+                    --cache)   cache_mode="$2"; shift 2 ;;
+                    -*) echo "Unknown option: $1" >&2; exit 1 ;;
+                    *)  version_arg="$1"; shift ;;
+                esac
+            done
+            # Validate cache mode
+            if [[ "$cache_mode" != "local" && "$cache_mode" != "shared" ]]; then
+                echo "Error: Invalid cache mode '$cache_mode'. Use 'local' or 'shared'." >&2
+                exit 1
+            fi
+            DownloadBooth "$version_arg" "$cache_mode"
+            exit 0
+            ;;
+        tools-cache)
+            shift  # Remove 'tools-cache'
+            case "${1:-list}" in
+                list)  ToolsCacheList ;;
+                clean) shift; ToolsCacheClean "$@" ;;
+                *)     echo "Unknown tools-cache command: $1" >&2; exit 1 ;;
+            esac
+            exit 0
+            ;;
         run)            [[ "${1-}" == "run" ]] && shift  ;          ;;
         *)                                                          ;;
     esac
 
     ### --- RUN MODE --- ###
-    tools_dir=".booth/tools"
-    sha_file="$tools_dir/coding-booth.sha256"
-    lock_file="$tools_dir/coding-booth.lock"
+    local tools_dir=".booth/tools"
+    local lock_file="$tools_dir/coding-booth.lock"
 
-    # Detect current platform and get the correct binary
-    local platform binary_name dest
+    # Read version and cache mode from lock file
+    if [[ ! -f "$lock_file" ]]; then
+        echo "CodingBooth is not installed."
+        echo "Please run: $0 install"
+        exit 1
+    fi
+
+    local lock_version lock_cache
+    lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2-)
+    lock_cache=$(grep '^cache=' "$lock_file" 2>/dev/null | cut -d= -f2- || echo "shared")
+
+    # Handle legacy lock files without cache= line
+    if [[ -z "$lock_cache" ]]; then
+        lock_cache="shared"
+    fi
+
+    if [[ -z "$lock_version" ]]; then
+        echo "Invalid lock file: missing version"
+        echo "Please run: $0 install"
+        exit 1
+    fi
+
+    # Detect platform
+    local platform binary_name
     if ! platform=$(detect_platform); then
         echo "Error: Failed to detect platform" >&2
         exit 1
     fi
     binary_name=$(get_binary_name "$platform")
-    dest="$tools_dir/$binary_name"
 
-    # If lock file exists but binary is missing, auto-download from lock version
-    if [[ -f "$lock_file" && ( ! -f "$dest" || ! -f "$sha_file" ) ]]; then
-        local lock_version
-        lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2-)
-        if [[ -n "$lock_version" ]]; then
-            echo "Binary missing, downloading version $lock_version from lock file..."
-            DownloadBooth "$lock_version"
-        else
-            echo "CodingBooth is not installed correctly for platform: $platform"
-            echo "Please run: $0 install"
+    # Find binary directory (local first, then shared cache)
+    local binary_dir sha_file dest
+    if ! binary_dir=$(find_binary_dir "$lock_version" "$platform"); then
+        # Binary not found, auto-download
+        echo "Binary missing, downloading version $lock_version..."
+        DownloadBooth "$lock_version" "$lock_cache"
+        if ! binary_dir=$(find_binary_dir "$lock_version" "$platform"); then
+            echo "Failed to download binary"
             exit 1
         fi
     fi
 
-    if [[ ! -f "$dest" || ! -f "$sha_file" || ! -f "$lock_file" ]]; then
-        echo "CodingBooth is not installed correctly for platform: $platform"
+    sha_file="$binary_dir/coding-booth.sha256"
+    dest="$binary_dir/$binary_name"
+
+    # Verify binary exists
+    if [[ ! -f "$dest" || ! -f "$sha_file" ]]; then
+        echo "CodingBooth binary or checksum missing for platform: $platform"
         echo "Please run: $0 install"
         exit 1
     fi
 
-    # Ensure booth binary is newer than checksum
+    # Ensure binary is newer than checksum
     if [[ "$dest" -ot "$sha_file" ]]; then
-        echo "booth binary appears older than its checksum file."
+        echo "Binary appears older than its checksum file."
         echo "Run: $0 update  to restore the official release."
         exit 1
     fi
@@ -102,7 +210,7 @@ function Main() {
 
     actual_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
     if [[ "$expected_sha256" != "$actual_sha256" ]]; then
-        echo "Local booth ($binary_name) failed SHA256 verification."
+        echo "Binary ($binary_name) failed SHA256 verification."
         echo "Run: $0 update  to restore the official release."
         exit 1
     fi
@@ -116,23 +224,39 @@ Usage: ./$(basename "$0") <command> [args...]
 
 Purpose:
   This script is the *CodingBooth Wrapper*.
-  - It is stable and does not update itself.
-  - It downloads, verifies, and runs the actual CodingBooth script
-    (.booth/tools/coding-booth) from the CodingBooth project.
-  - This lets booth evolve independently while keeping a reliable entry point.
+  - It downloads, verifies, and runs the CodingBooth binary.
+  - Binaries are cached in a shared location (default) or per-project.
 
 Wrapper commands:
-  install [VERSION]   Download or update .booth/tools/coding-booth
-  update  [VERSION]   Download or update .booth/tools/coding-booth
-  uninstall           Remove booth and metadata files
-  run [ARGS...]       Run booth with ARGS (after integrity checks)
-  version             Show this wrapper's version
-  help                Show this help message
+  install [VERSION]              Download binaries to shared cache (default)
+  install --cache=shared [VER]   Download binaries to shared cache (explicit)
+  install --cache=local [VER]    Download binaries to .booth/tools/ (project-local)
+  update  [VERSION]              Re-download binaries (force refresh)
+  uninstall                      Remove project lock file and local binaries
+
+  tools-cache list        Show cached binary versions and sizes
+  tools-cache clean       Interactively remove cached versions
+  tools-cache clean --all Remove all cached versions
+  tools-cache clean VER   Remove specific version
+
+  run [ARGS...]           Run booth with ARGS (after integrity checks)
+  version                 Show version information
+  help                    Show this help message
+
+Cache modes:
+  --cache=shared   Store in user cache, shared across projects (default)
+  --cache=local    Store in .booth/tools/, project-specific
+
+Cache locations (for --cache=shared):
+  Linux:   ~/.cache/booth/
+  macOS:   ~/Library/Caches/booth/
+  Windows: %LOCALAPPDATA%\\booth\\
 
 Notes:
-  - coding-booth.lock and coding-booth.sha256 live in .booth/tools
-  - Binaries are auto-downloaded when lock file exists but binary is missing
-  - Set VERBOSE=true for extra logs during update
+  - Lock file (.booth/tools/coding-booth.lock) is version-controlled
+  - Binaries are auto-downloaded when lock file exists but binary missing
+  - Use --cache=local for CI/CD or portable/air-gapped environments
+  - Set VERBOSE=true for extra logs during install
 EOF
 }
 
@@ -148,26 +272,49 @@ EOF
     echo "CodingBooth Wrapper: $VERSION"
 
     local tools_dir=".booth/tools"
-    local LOCK="$tools_dir/coding-booth.lock"
+    local lock_file="$tools_dir/coding-booth.lock"
 
-    # Detect current platform and get the correct binary
-    local platform binary_name TOOL
+    # Detect current platform
+    local platform binary_name
     platform=$(detect_platform 2>/dev/null || echo "unknown")
     binary_name=$(get_binary_name "$platform")
-    TOOL="$tools_dir/$binary_name"
 
-    if [[ ! -f "$TOOL" ]]; then
-        echo "CodingBooth: uninstalled (no binary for $platform)"
+    # Check if lock file exists
+    if [[ ! -f "$lock_file" ]]; then
+        echo "CodingBooth: not installed"
+        echo "Platform: $platform"
+        echo "Shared cache: $BOOTH_CACHE_DIR"
+        exit 0
+    fi
+
+    # Read lock file
+    local lock_version lock_cache
+    lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2- || echo "unknown")
+    lock_cache=$(grep '^cache=' "$lock_file" 2>/dev/null | cut -d= -f2- || echo "shared")
+
+    # Find binary
+    local binary_dir TOOL
+    if binary_dir=$(find_binary_dir "$lock_version" "$platform" 2>/dev/null); then
+        TOOL="$binary_dir/$binary_name"
+    else
+        echo "CodingBooth: $lock_version (binary missing)"
+        echo "Platform: $platform"
+        echo "Cache mode: $lock_cache"
         exit 0
     fi
 
     [[ ! -x "$TOOL" ]] && chmod +x "$TOOL" 2>/dev/null || true
 
+    local TOOL_VERSION
     TOOL_VERSION=$("$TOOL" version 2>/dev/null || echo "unknown")
 
     echo ""
     echo "$TOOL_VERSION"
     echo "Platform: $platform"
+    echo "Cache mode: $lock_cache"
+    if [[ "$lock_cache" == "shared" ]]; then
+        echo "Binary location: $binary_dir"
+    fi
 }
 
 # Portable SHA256 helper
@@ -224,7 +371,7 @@ function UninstallBooth() {
     local sha_file="$tools_dir/coding-booth.sha256"
     local lock_file="$tools_dir/coding-booth.lock"
 
-    # Remove all platform binaries
+    # Remove local binaries if they exist
     for platform in "${ALL_PLATFORMS[@]}"; do
         local binary_name
         binary_name=$(get_binary_name "$platform")
@@ -236,50 +383,229 @@ function UninstallBooth() {
     rmdir "$tools_dir" 2>/dev/null || true
     rmdir ".booth" 2>/dev/null || true
 
-    echo "CodingBooth has been uninstalled."
+    echo "CodingBooth has been uninstalled from this project."
+    echo "To clean shared cache, run: $0 tools-cache clean"
+}
+
+# Format bytes to human-readable size
+format_size() {
+    local bytes=$1
+    if command -v numfmt >/dev/null 2>&1; then
+        numfmt --to=iec-i --suffix=B "$bytes" 2>/dev/null || echo "${bytes}B"
+    else
+        # Fallback for systems without numfmt (e.g., macOS)
+        if [[ $bytes -ge 1073741824 ]]; then
+            echo "$(( bytes / 1073741824 ))GiB"
+        elif [[ $bytes -ge 1048576 ]]; then
+            echo "$(( bytes / 1048576 ))MiB"
+        elif [[ $bytes -ge 1024 ]]; then
+            echo "$(( bytes / 1024 ))KiB"
+        else
+            echo "${bytes}B"
+        fi
+    fi
+}
+
+# Get directory size in bytes (portable)
+get_dir_size() {
+    local dir="$1"
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        # macOS: du -sk gives size in KB
+        local kb
+        kb=$(du -sk "$dir" 2>/dev/null | cut -f1 || echo 0)
+        echo $((kb * 1024))
+    else
+        # Linux: du -sb gives size in bytes
+        du -sb "$dir" 2>/dev/null | cut -f1 || echo 0
+    fi
+}
+
+function ToolsCacheList() {
+    local versions_dir="${BOOTH_CACHE_DIR}/versions"
+
+    echo ""
+    if [[ ! -d "$versions_dir" ]]; then
+        echo "No cached versions found."
+        echo ""
+        echo "Cache location: $BOOTH_CACHE_DIR"
+        return 0
+    fi
+
+    echo "Cached binary versions:"
+    echo ""
+
+    local total_size=0
+    local version_count=0
+
+    for version_dir in "$versions_dir"/*/; do
+        [[ ! -d "$version_dir" ]] && continue
+
+        local version
+        version=$(basename "$version_dir")
+
+        # Calculate size
+        local size_bytes size_human
+        size_bytes=$(get_dir_size "$version_dir")
+        size_human=$(format_size "$size_bytes")
+
+        # List platforms
+        local platforms=()
+        for bin in "$version_dir"/coding-booth-*; do
+            [[ -f "$bin" ]] || continue
+            local name
+            name=$(basename "$bin")
+            name=${name#coding-booth-}
+            name=${name%.exe}
+            platforms+=("$name")
+        done
+
+        printf "  %-12s %10s   [%s]\n" "$version" "$size_human" "${platforms[*]}"
+
+        total_size=$((total_size + size_bytes))
+        : $((version_count++))
+    done
+
+    if [[ $version_count -eq 0 ]]; then
+        echo "  (no versions cached)"
+    fi
+
+    echo ""
+    local total_human
+    total_human=$(format_size "$total_size")
+    echo "Total: $total_human in $version_count version(s)"
+    echo ""
+    echo "Cache location: $BOOTH_CACHE_DIR"
+}
+
+function ToolsCacheClean() {
+    local versions_dir="${BOOTH_CACHE_DIR}/versions"
+
+    if [[ ! -d "$versions_dir" ]]; then
+        echo "No cached versions to clean."
+        return 0
+    fi
+
+    # Parse arguments
+    local clean_all=false
+    local target_version=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --all) clean_all=true; shift ;;
+            --unused) echo "Warning: --unused not yet implemented"; shift ;;
+            -*) echo "Unknown option: $1" >&2; exit 1 ;;
+            *) target_version="$1"; shift ;;
+        esac
+    done
+
+    if [[ "$clean_all" == "true" ]]; then
+        local size_before
+        size_before=$(get_dir_size "$versions_dir")
+
+        rm -rf "$versions_dir"
+
+        local size_human
+        size_human=$(format_size "$size_before")
+        echo "Removed all cached versions. Freed $size_human"
+        return 0
+    fi
+
+    if [[ -n "$target_version" ]]; then
+        local target_dir="$versions_dir/$target_version"
+        if [[ ! -d "$target_dir" ]]; then
+            echo "Version $target_version not found in cache."
+            return 1
+        fi
+
+        local size_before
+        size_before=$(get_dir_size "$target_dir")
+
+        rm -rf "$target_dir"
+
+        local size_human
+        size_human=$(format_size "$size_before")
+        echo "Removed version $target_version. Freed $size_human"
+        return 0
+    fi
+
+    # Interactive mode: list and prompt
+    ToolsCacheList
+    echo ""
+    read -rp "Enter version to remove (or 'all' or press Enter to cancel): " choice
+
+    if [[ "$choice" == "all" ]]; then
+        ToolsCacheClean --all
+    elif [[ -n "$choice" ]]; then
+        ToolsCacheClean "$choice"
+    else
+        echo "No version selected."
+    fi
 }
 
 function DownloadBooth() {
-    CB_VERSION=${1:-latest}
+    local CB_VERSION=${1:-latest}
+    local CACHE_MODE=${2:-shared}
     local tools_dir=".booth/tools"
-    local sha_file="$tools_dir/coding-booth.sha256"
     local lock_file="$tools_dir/coding-booth.lock"
 
     REPO_URL="https://github.com/NawaMan/WorkSpace"
     DWLD_URL="${REPO_URL}/releases/download"
 
-    mkdir -p "$tools_dir"
-
-    # Create .gitignore to exclude binaries (they're large and can be re-downloaded)
-    cat > ".booth/.gitignore" <<'GITIGNORE'
-# Binaries are excluded - they can be re-downloaded from coding-booth.lock version
-tools/coding-booth-*
-tools/*.sha256
-GITIGNORE
-
-    # Clear previous SHA256 file (will rebuild with all binaries)
-    > "$sha_file"
-
-    # Download version.txt to get the actual version
+    # Download version.txt to get the actual version first
     local actual_version=""
     local VERSION_URL="${DWLD_URL}/${CB_VERSION}/version.txt"
     if actual_version=$(curl -fsSL "$VERSION_URL" 2>/dev/null | tr -d ' \t\r\n'); then
         [[ "$VERBOSE" == "true" ]] && echo "  Version: $actual_version"
     else
-        actual_version=""
+        actual_version="$CB_VERSION"
     fi
+
+    # Determine target directory based on cache mode
+    local target_dir sha_file
+    if [[ "$CACHE_MODE" == "local" ]]; then
+        target_dir="$tools_dir"
+        sha_file="$tools_dir/coding-booth.sha256"
+    else
+        target_dir="$(get_cache_version_dir "$actual_version")"
+        sha_file="$target_dir/coding-booth.sha256"
+    fi
+
+    mkdir -p "$target_dir"
+    mkdir -p "$tools_dir"  # Always need tools dir for lock file
+
+    # Create .gitignore based on cache mode
+    if [[ "$CACHE_MODE" == "local" ]]; then
+        cat > ".booth/.gitignore" <<'GITIGNORE'
+# Binaries excluded - re-download from lock version
+tools/coding-booth-*
+tools/*.sha256
+GITIGNORE
+    else
+        cat > ".booth/.gitignore" <<'GITIGNORE'
+# Lock file is version-controlled
+# Binaries are in ~/.cache/booth/ (not here)
+GITIGNORE
+    fi
+
+    # Clear previous SHA256 file (will rebuild with all binaries)
+    > "$sha_file"
 
     local current_platform
     current_platform=$(detect_platform 2>/dev/null || echo "unknown")
     local download_count=0
     local fail_count=0
 
-    echo "Downloading CodingBooth binaries for all platforms..."
+    if [[ "$CACHE_MODE" == "local" ]]; then
+        echo "Downloading CodingBooth binaries to project (--cache=local)..."
+    else
+        echo "Downloading CodingBooth binaries to shared cache..."
+        echo "  Cache: $target_dir"
+    fi
 
     for platform in "${ALL_PLATFORMS[@]}"; do
         local binary_name
         binary_name=$(get_binary_name "$platform")
-        local dest="$tools_dir/$binary_name"
+        local dest="$target_dir/$binary_name"
         local TOOL_URL="${DWLD_URL}/${CB_VERSION}/${binary_name}"
         local SHA256_URL="${DWLD_URL}/${CB_VERSION}/${binary_name}.sha256"
 
@@ -327,10 +653,9 @@ GITIGNORE
             continue
         fi
 
-        # Install verified binary
-        chmod +x "$tmpfile"
+        # Install verified binary with 744 permissions
         mv -f "$tmpfile" "$dest"
-        chmod +x "$dest"
+        chmod 744 "$dest"
 
         # Append to combined SHA256 file
         printf '%s  %s\n' "$actual_sha256" "$binary_name" >> "$sha_file"
@@ -339,7 +664,7 @@ GITIGNORE
         : $((download_count++))
 
         if [[ "$VERBOSE" != "true" ]]; then
-            echo "✅ OK"
+            echo "OK"
         fi
     done
 
@@ -352,17 +677,18 @@ GITIGNORE
         return 1
     fi
 
-    # Write metadata
+    # Write lock file (always in .booth/tools/)
     {
         echo "version=${actual_version}"
         echo "downloaded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+        echo "cache=${CACHE_MODE}"
     } > "$lock_file"
 
     # Touch all binaries to be newer than checksum
     for platform in "${ALL_PLATFORMS[@]}"; do
         local binary_name
         binary_name=$(get_binary_name "$platform")
-        local dest="$tools_dir/$binary_name"
+        local dest="$target_dir/$binary_name"
         [[ -f "$dest" ]] && touch "$dest"
     done
 
