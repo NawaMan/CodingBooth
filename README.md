@@ -118,6 +118,19 @@ CodingBooth provides a command-line interface with the following structure:
 | `--code <path>`    | Set code directory                                                               |
 | `--help`, `-h`     | Show help information                                                            |
 
+### Wrapper vs Binary Commands
+
+The `booth` script is a **wrapper** that manages the underlying `coding-booth` binary. They have separate help and version commands:
+
+| Command           | What it shows                              |
+|-------------------|--------------------------------------------|
+| `./booth help`    | Wrapper help (install, update, cache, etc.)|
+| `./booth --help`  | Binary help (run flags, variants, etc.)    |
+| `./booth version` | Wrapper + binary version info              |
+| `./booth --version`| Binary version only                       |
+
+> 💡 **Tip:** Use `booth help` to learn about managing CodingBooth installations. Use `booth --help` to see runtime options for launching containers.
+
 ### Examples
 
 ```shell
