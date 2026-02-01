@@ -215,7 +215,18 @@ function Main() {
         exit 1
     fi
 
-    exec "$dest" "$@"
+    # Create/update symlink named 'booth' so the binary displays correct name
+    local booth_link="$binary_dir/booth"
+    if [[ ! -L "$booth_link" ]] || [[ "$(readlink "$booth_link")" != "$binary_name" ]]; then
+        ln -sf "$binary_name" "$booth_link" 2>/dev/null || true
+    fi
+
+    # Execute via symlink if available, otherwise direct
+    if [[ -L "$booth_link" ]]; then
+        exec "$booth_link" "$@"
+    else
+        exec "$dest" "$@"
+    fi
 }
 
 function PrintHelp() {
