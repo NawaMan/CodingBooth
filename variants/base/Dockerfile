@@ -91,6 +91,10 @@ RUN set -euo pipefail \
   ; chmod 755         /home/coder      \
   ; chmod 755         /home/coder/code
 
+RUN set -euo pipefail \
+  ; echo "coder ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/coder\
+  ; chmod 0440 /etc/sudoers.d/coder
+
 # Startup scripts directory - scripts here run once at first container start
 RUN mkdir -p /usr/share/startup.d
 
