@@ -46,9 +46,21 @@ trap cleanup EXIT
 echo "=== Testing KinD example on host ==="
 echo
 
+# Pre-cleanup: ensure no leftover containers/networks
+docker stop "$CONTAINER_NAME" 2>/dev/null || true
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+for container in $(docker ps -aq --filter "name=${CONTAINER_NAME}-.*-dind" 2>/dev/null); do
+    docker stop "$container" 2>/dev/null || true
+    docker rm -f "$container" 2>/dev/null || true
+done
+for network in $(docker network ls --filter "name=${CONTAINER_NAME}-" --format '{{.Name}}' 2>/dev/null | grep -- '-net$'); do
+    docker network rm "$network" 2>/dev/null || true
+done
+sleep 1
+
 # Start booth in daemon mode
 echo "Starting booth with KinD..."
-../../../coding-booth --keep-alive --daemon > /dev/null 2>&1 || true
+../../../coding-booth --keep-alive --variant base --port 25000 --daemon --name "$CONTAINER_NAME" -p "" || true
 
 # Wait for booth to be ready
 sleep 3

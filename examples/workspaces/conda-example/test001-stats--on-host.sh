@@ -12,7 +12,7 @@ NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BOOTH="$SCRIPT_DIR/../../../coding-booth"
 
-"$BOOTH" --silence-build -- "./inBooth--run-all-tests.sh" 2>&1 | tee "$0.out"
+"$BOOTH" --variant base --port 13000 -- "./inBooth--run-all-tests.sh" 2>&1 | tee "$0.out"
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}All tests passed!${NC}"

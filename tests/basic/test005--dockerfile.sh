@@ -88,7 +88,7 @@ fi
 # Check Silence Build
 
 rm -f $0.log
-ACTUAL=$(run_coding_booth --dockerfile $DOCKERFILE --silence-build -- 'echo TEST_VAR=$TEST_VAR' | grep -v "coding-booth" 2> $0.log)
+ACTUAL=$(run_coding_booth --dockerfile $DOCKERFILE --variant base -- 'echo TEST_VAR=$TEST_VAR' | grep -v "coding-booth" 2> $0.log)
 
 # Validate that $0.log exists and is empty
 if [[ -e "$0.log" && ! -s "$0.log" ]]; then

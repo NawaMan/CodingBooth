@@ -7,6 +7,9 @@ ARG CB_VERSION_TAG=latest
 
 FROM nawaman/codingbooth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 
+ARG CB_VARIANT_TAG=base
+ARG CB_VERSION_TAG=latest
+
 # Setup DinD support (required for kind)
 RUN dind--setup.sh
 

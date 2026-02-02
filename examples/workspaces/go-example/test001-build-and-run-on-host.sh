@@ -5,7 +5,8 @@
 
 #
 # Test for Go example.
-# Verifies that the Go project builds and runs correctly.
+# Verifies that the Go project builds, runs correctly, and all tools work.
+# Combines build/run test with inBooth tests in a single container session.
 #
 
 set -euo pipefail
@@ -18,12 +19,12 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BOOTH="$SCRIPT_DIR/../../../coding-booth"
 
-echo "=== Testing Go Build and Run ==="
+echo "=== Testing Go Build, Run, and Tools ==="
 echo ""
 
-# Run build and run inside the container
-echo "Building and running treemoji inside container..."
-output=$("$BOOTH" --silence-build -- './build.sh ; ./run-treemoji.sh' 2>&1)
+# Run build, run, and inBooth tests all in one container session
+echo "Building, running treemoji, and testing Go tools inside container..."
+output=$("$BOOTH" --variant base --port 19000 -- './build.sh && ./run-treemoji.sh && ./inBooth--run-all-tests.sh' 2>&1)
 
 echo "$output"
 echo ""
@@ -62,10 +63,18 @@ else
     failed=1
 fi
 
+# Check for inBooth tests passed
+if echo "$output" | grep -q "All tests passed!"; then
+    echo -e "${GREEN}✓${NC} All inBooth Go tool tests passed"
+else
+    echo -e "${RED}✗${NC} Some inBooth Go tool tests failed"
+    failed=1
+fi
+
 echo ""
 if [ $failed -eq 0 ]; then
-    echo -e "${GREEN}All Go build and run checks passed!${NC}"
+    echo -e "${GREEN}All Go checks passed!${NC}"
 else
-    echo -e "${RED}Go build and run checks FAILED!${NC}"
+    echo -e "${RED}Go checks FAILED!${NC}"
     exit 1
 fi
