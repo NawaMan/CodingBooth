@@ -10,4 +10,4 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXAMPLES_DIR="$SCRIPT_DIR/../examples/workspaces"
 
-exec "$EXAMPLES_DIR/run-all-example-tests.sh"
+exec "$EXAMPLES_DIR/run-example-tests.sh"

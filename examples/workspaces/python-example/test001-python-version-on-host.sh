@@ -20,7 +20,7 @@ echo "=== Testing Python Version (default 3.12) ==="
 echo ""
 
 # Capture python --version output
-output=$("$SCRIPT_DIR/../../../coding-booth" --variant base --silence-build -- 'python --version' 2>&1)
+output=$("$SCRIPT_DIR/../../../coding-booth" --variant base --port 31000 -- 'python --version' 2>&1)
 
 echo "$output"
 echo ""

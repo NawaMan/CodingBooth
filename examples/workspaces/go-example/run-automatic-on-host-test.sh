@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 #
-# Test runner for all-java example.
+# Test runner for go example.
 # Runs all test0*.sh files and reports pass/fail counts.
 #
 
@@ -14,7 +14,7 @@ failed=0
 failed_tests=()
 total_tests=0
 
-for f in test0*.sh ; do
+for f in test*.sh ; do
     echo "$f"
     total_tests=$((total_tests + 1))
 
@@ -38,5 +38,3 @@ else
 fi
 
 exit $failed
-
-
