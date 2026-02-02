@@ -18,6 +18,8 @@ pass() { echo -e "${GREEN}✓${NC} $1"; }
 fail() { echo -e "${RED}✗${NC} $1"; cleanup; exit 1; }
 
 CONTAINER_NAME="js-example"
+API_HOST_PORT=23003
+VITE_HOST_PORT=23173
 
 cleanup() {
     echo
@@ -34,11 +36,16 @@ trap cleanup EXIT
 echo "=== Test 002: Host Accessibility ==="
 echo
 
-# Start workspace in daemon mode
-echo "Starting coding-booth..."
-../../../coding-booth --daemon > /dev/null 2>&1 || true
+# Pre-cleanup: ensure no leftover container
+docker stop "$CONTAINER_NAME" 2>/dev/null || true
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+sleep 1
 
-# Wait for npm install to complete (up to 60 seconds)
+# Start workspace in daemon mode with fixed port mappings
+echo "Starting coding-booth..."
+../../../coding-booth --daemon --variant base --port 23100 --name "$CONTAINER_NAME" -p "$API_HOST_PORT":3000 -p "$VITE_HOST_PORT":5173 || true
+
+# Wait for npm install to complete (up to 120 seconds)
 echo "Waiting for npm install to complete..."
 WAIT_COUNT=0
 while true; do
@@ -60,6 +67,11 @@ else
     fail "Failed to start booth"
 fi
 
+# Use the configured host ports
+API_PORT=$API_HOST_PORT
+VITE_PORT=$VITE_HOST_PORT
+pass "Using ports: API=$API_PORT, Vite=$VITE_PORT"
+
 # Start server inside container
 echo
 echo "Starting server inside container..."
@@ -71,7 +83,7 @@ sleep 2
 
 # Check servers are accessible from host
 echo "Checking servers from host..."
-if ./check-server.sh --expect=up; then
+if API_PORT=$API_PORT VITE_PORT=$VITE_PORT ./check-server.sh --expect=up; then
     pass "Servers accessible from host"
 else
     fail "Servers should be accessible from host"
@@ -87,7 +99,7 @@ sleep 1
 
 # Check servers are down from host
 echo "Checking servers are down from host..."
-if ./check-server.sh --expect=down; then
+if API_PORT=$API_PORT VITE_PORT=$VITE_PORT ./check-server.sh --expect=down; then
     pass "Servers not accessible from host (expected)"
 else
     fail "Servers should not be accessible after stop"

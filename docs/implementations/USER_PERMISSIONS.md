@@ -104,28 +104,56 @@ fi
 
 #### Step 4: Ensure User Exists with Correct UID
 
+The script handles two cases: when the `coder` user already exists vs. when it needs to be created.
+
 ```bash
-# If another user has HOST_UID, move them aside
-if [ -n "$existing_uid_user" ] && [ "$existing_uid_user" != "$USER_NAME" ]; then
-  temp_uid="$(find_free_uid)"
-  usermod -u "$temp_uid" "$existing_uid_user"
+existing_uid_user="$(getent passwd "$HOST_UID" | cut -d: -f1 || true)"
+
+if id -u "$USER_NAME" >/dev/null 2>&1; then
+  # User exists - check if UID needs updating
+  current_uid="$(id -u "$USER_NAME")"
+
+  if [ "$current_uid" != "$HOST_UID" ]; then
+    # If another user has HOST_UID, move them out of the way
+    if [ -n "$existing_uid_user" ] && [ "$existing_uid_user" != "$USER_NAME" ]; then
+      temp_uid="$(find_free_uid)"
+      usermod -u "$temp_uid" "$existing_uid_user"
+    fi
+    usermod -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+  else
+    # UID matches; only update group/shell if they differ
+  fi
+else
+  # User doesn't exist - create it
+  if [ -n "$existing_uid_user" ] && [ "$existing_uid_user" != "$USER_NAME" ]; then
+    temp_uid="$(find_free_uid)"
+    usermod -u "$temp_uid" "$existing_uid_user"
+  fi
+  # Create coder. Reuse existing HOME_DIR if present; otherwise create it (-m).
+  if [ -d "$HOME_DIR" ]; then
+    useradd    -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+  else
+    useradd -m -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+  fi
 fi
-# Set coder's UID
-usermod -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
 ```
 
 #### Step 5: Fix File Ownership
 
-After UID/GID changes, fix ownership of files in home directory:
+After UID/GID changes, fix ownership of files in home directory (only if the IDs actually changed):
 
 ```bash
-# Change ownership from old UID to new UID
-find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o \
-  -user "$ORIG_UID" -exec chown "$HOST_UID" {} + 2>/dev/null || true
+# Change ownership from old UID to new UID (only if changed)
+if [ -n "$ORIG_UID" ] && [ "$ORIG_UID" != "$HOST_UID" ]; then
+  find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o \
+    -user "$ORIG_UID" -exec chown "$HOST_UID" {} + 2>/dev/null || true
+fi
 
-# Change group from old GID to new GID
-find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o \
-  -group "$ORIG_GID" -exec chgrp "$HOST_GID" {} + 2>/dev/null || true
+# Change group from old GID to new GID (only if changed)
+if [ -n "$ORIG_GID" ] && [ "$ORIG_GID" != "$HOST_GID" ]; then
+  find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o \
+    -group "$ORIG_GID" -exec chgrp "$HOST_GID" {} + 2>/dev/null || true
+fi
 ```
 
 Note: The code directory (`/home/coder/code`) is excluded because it's bind-mounted from the host and already has correct ownership.
