@@ -18,6 +18,7 @@ pass() { echo -e "${GREEN}✓${NC} $1"; }
 fail() { echo -e "${RED}✗${NC} $1"; cleanup; exit 1; }
 
 CONTAINER_NAME="urlwhitelist-example"
+CONTAINER_PORT=35080
 
 cleanup() {
     echo
@@ -32,10 +33,15 @@ trap cleanup EXIT
 echo "=== Network Whitelist Test (on host) ==="
 echo
 
+# Pre-cleanup: ensure no leftover container
+docker stop "$CONTAINER_NAME" 2>/dev/null || true
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+sleep 1
+
 # Run container tests (as coder user so $HOME is /home/coder)
 echo
 echo "Running container tests..."
-../../../coding-booth -- ./test-on-container.sh
+../../../coding-booth --variant base --port 35000 --name "$CONTAINER_NAME" -p "$CONTAINER_PORT:8080" -- ./test-on-container.sh
 if [ $? -eq 0 ]; then
     pass "Container tests passed"
 else

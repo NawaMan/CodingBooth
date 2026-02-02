@@ -20,7 +20,7 @@ echo "=== Testing Python Version Override (3.13 via --build-arg) ==="
 echo ""
 
 # Capture python --version output with build-arg override
-output=$("$SCRIPT_DIR/../../../coding-booth" --variant base --silence-build --build-arg PY_VERSION=3.13 -- 'python --version' 2>&1)
+output=$("$SCRIPT_DIR/../../../coding-booth" --variant base --port 31100 --build-arg PY_VERSION=3.13 -- 'python --version' 2>&1)
 
 echo "$output"
 echo ""

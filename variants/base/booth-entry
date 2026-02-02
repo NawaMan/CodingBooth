@@ -154,13 +154,7 @@ if [ -n "$ORIG_GID" ] && [ "$ORIG_GID" != "$HOST_GID" ]; then
 fi
 
 
-section "Allow sudo access to the user"
-
-info "6) Configuring passwordless sudo for '$USER_NAME'..."
-echo "${USER_NAME} ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/${USER_NAME}
-chmod 0440 /etc/sudoers.d/${USER_NAME}
-
-# Set up environment for coder and switch to code
+section "Set up environment for coder and switch to code"
 export HOME="$HOME_DIR"
 export PATH="$HOME/.local/bin:$PATH"
 cd "$CODE_DIR"
@@ -239,8 +233,8 @@ ensure_cb_profile_block "$HOME_DIR/.zshrc"
 info "10) Setting permissions for dotfiles..."
 chown "$HOST_UID:$HOST_GID" \
   "$HOME_DIR/.bashrc"  \
-  "$HOME_DIR/.profile" \
   "$HOME_DIR/.zshrc"   \
+  "$HOME_DIR/.profile" \
   2>/dev/null || true
 
 
