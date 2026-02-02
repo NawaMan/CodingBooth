@@ -29,13 +29,13 @@ This means:
 ### From Host
 
 ```bash
-../../../coding-booth -- ./test-connection.sh
+../../../codingbooth -- ./test-connection.sh
 ```
 
 ### From Container
 
 ```bash
-../../coding-booth
+../../codingbooth
 # Then in the container:
 firebase login:list
 firebase projects:list

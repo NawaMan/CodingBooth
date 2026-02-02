@@ -26,7 +26,7 @@ fi
 #== ENVIRONMENTAL VARIABLES ==
 
 # Cosign key configuration
-COSIGN_KEY_FILE_DEFAULT="${HOME}/.config/nawaman-coding-booth/cosign.key"
+COSIGN_KEY_FILE_DEFAULT="${HOME}/.config/nawaman-codingbooth/cosign.key"
 COSIGN_KEY_FILE="${COSIGN_KEY_FILE:-$COSIGN_KEY_FILE_DEFAULT}"
 COSIGN_KEY_REF=""
 

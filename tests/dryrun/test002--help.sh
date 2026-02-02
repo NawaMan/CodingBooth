@@ -23,13 +23,13 @@ HERE="$PWD"
 VERSION="$(cat ../../version.txt)"
 
 EXPECT="\
-coding-booth — launch a Docker-based development booth (version $VERSION)
+codingbooth — launch a Docker-based development booth (version $VERSION)
 
 USAGE:
-  coding-booth version                              (print the CodingBooth version)
-  coding-booth help                                 (show this help and exit)
-  coding-booth run [options] [--] [command ...]     (run the booth)
-  coding-booth [options] [--] [command ...]         (default action: run)
+  codingbooth version                              (print the CodingBooth version)
+  codingbooth help                                 (show this help and exit)
+  codingbooth run [options] [--] [command ...]     (run the booth)
+  codingbooth [options] [--] [command ...]         (default action: run)
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and config file):
   --code <path>          Host code path to mount at /home/coder/code"

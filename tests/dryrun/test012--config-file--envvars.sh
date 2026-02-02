@@ -64,7 +64,7 @@ PORT_GENERATED: true
 PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:   
 SCRIPT_DIR:     $(realpath "$HERE/../..")
-SCRIPT_NAME:    coding-booth
+SCRIPT_NAME:    codingbooth
 VARIANT:        base
 VERSION:        $VERSION"
 
@@ -126,7 +126,7 @@ PORT_GENERATED: false
 PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:   
 SCRIPT_DIR:     $(realpath "$HERE/../..")
-SCRIPT_NAME:    coding-booth
+SCRIPT_NAME:    codingbooth
 VARIANT:        codeserver
 VERSION:        ${VERSION}"
 

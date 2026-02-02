@@ -10,7 +10,7 @@ GREEN='\033[0;32m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BOOTH="$SCRIPT_DIR/../../../coding-booth"
+BOOTH="$SCRIPT_DIR/../../../codingbooth"
 
 "$BOOTH" --variant base --port 13000 -- "./inBooth--run-all-tests.sh" 2>&1 | tee "$0.out"
 

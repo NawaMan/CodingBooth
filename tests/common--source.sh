@@ -8,7 +8,7 @@
 # Colors for output (disabled if not a terminal)
 if [[ -t 1 ]]; then
   COLOR_CMD='\033[1;36m'    # Cyan bold for commands
-  COLOR_BOOTH='\033[1;33m'  # Yellow bold for coding-booth
+  COLOR_BOOTH='\033[1;33m'  # Yellow bold for codingbooth
   COLOR_RESET='\033[0m'
 else
   COLOR_CMD=''
@@ -25,32 +25,32 @@ run_cmd() {
   "$@"
 }
 
-# Run a coding-booth command with highlighted output
+# Run a codingbooth command with highlighted output
 # Usage: run_coding_booth [args...]
 # Example: run_coding_booth --variant base -- echo hello
-# The path to coding-booth is auto-detected relative to the test script
+# The path to codingbooth is auto-detected relative to the test script
 # Note: Command trace goes to stderr so it doesn't interfere with captured stdout
 run_coding_booth() {
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
 
-  # Find coding-booth relative to the test location
+  # Find codingbooth relative to the test location
   local booth_path=""
   local check_dir="$script_dir"
   for _ in 1 2 3 4 5; do
-    if [[ -x "$check_dir/coding-booth" ]]; then
-      booth_path="$check_dir/coding-booth"
+    if [[ -x "$check_dir/codingbooth" ]]; then
+      booth_path="$check_dir/codingbooth"
       break
     fi
     check_dir="$(dirname "$check_dir")"
   done
 
   if [[ -z "$booth_path" ]]; then
-    echo "ERROR: Could not find coding-booth" >&2
+    echo "ERROR: Could not find codingbooth" >&2
     return 1
   fi
 
-  echo -e "${COLOR_BOOTH}> coding-booth $*${COLOR_RESET}" >&2
+  echo -e "${COLOR_BOOTH}> codingbooth $*${COLOR_RESET}" >&2
   "$booth_path" "$@"
 }
 

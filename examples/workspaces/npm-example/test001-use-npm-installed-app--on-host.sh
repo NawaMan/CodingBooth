@@ -16,7 +16,7 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BOOTH="$SCRIPT_DIR/../../../coding-booth"
+BOOTH="$SCRIPT_DIR/../../../codingbooth"
 
 # Run inside the container
 "$BOOTH" --variant base --port 28000 -- './inBooth--run-all-tests.sh' 2>&1 | tee "$0.out"

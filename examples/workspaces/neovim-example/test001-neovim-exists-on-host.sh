@@ -20,7 +20,7 @@ echo "=== Testing Neovim Exists ==="
 echo ""
 
 # Capture nvim --version output
-output=$("$SCRIPT_DIR/../../../coding-booth" --variant base --port 27000 -- 'nvim --version' 2>&1)
+output=$("$SCRIPT_DIR/../../../codingbooth" --variant base --port 27000 -- 'nvim --version' 2>&1)
 
 echo "$output"
 echo ""

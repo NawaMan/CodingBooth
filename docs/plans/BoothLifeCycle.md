@@ -93,16 +93,16 @@ These labels enable:
 
 ```bash
 # Explicit
-./coding-booth run --variant base --port 50000
+./codingbooth run --variant base --port 50000
 
 # Implicit (backward compatible)
-./coding-booth --variant base --port 50000
+./codingbooth --variant base --port 50000
 
 # With keep-alive
-./coding-booth run --variant base --keep-alive
+./codingbooth run --variant base --keep-alive
 
 # With command
-./coding-booth run --variant base -- 'npm start'
+./codingbooth run --variant base -- 'npm start'
 ```
 
 ---
@@ -112,9 +112,9 @@ These labels enable:
 **Purpose**: Display all booth-managed containers with status and metadata.
 
 ```bash
-./coding-booth list              # All booth containers
-./coding-booth list --running    # Only running
-./coding-booth list --stopped    # Only stopped
+./codingbooth list              # All booth containers
+./codingbooth list --running    # Only running
+./codingbooth list --stopped    # Only stopped
 ```
 
 **Output Format**:
@@ -146,14 +146,14 @@ docker ps -a --filter "label=cb.managed=true" --format "..."
 
 ```bash
 # From project directory (auto-detect name)
-./coding-booth start
+./codingbooth start
 
 # Explicit name
-./coding-booth start --name my-project
-./coding-booth start my-project          # Positional shorthand
+./codingbooth start --name my-project
+./codingbooth start my-project          # Positional shorthand
 
 # By code path (from different directory)
-./coding-booth start --code /home/user/my-project
+./codingbooth start --code /home/user/my-project
 ```
 
 **Behavior**:
@@ -172,10 +172,10 @@ docker ps -a --filter "label=cb.managed=true" --format "..."
 **Error Cases**:
 ```
 Error: No stopped booth 'my-project' found.
-Use './coding-booth list --stopped' to see available containers.
+Use './codingbooth list --stopped' to see available containers.
 
 Error: Cannot determine booth name from current directory.
-Use './coding-booth start --name <NAME>' or './coding-booth start --code <PATH>'
+Use './codingbooth start --name <NAME>' or './codingbooth start --code <PATH>'
 ```
 
 ---
@@ -186,14 +186,14 @@ Use './coding-booth start --name <NAME>' or './coding-booth start --code <PATH>'
 
 ```bash
 # From project directory
-./coding-booth stop
+./codingbooth stop
 
 # Explicit name
-./coding-booth stop --name my-project
-./coding-booth stop my-project
+./codingbooth stop --name my-project
+./codingbooth stop my-project
 
 # Force stop (kill)
-./coding-booth stop --force
+./codingbooth stop --force
 ```
 
 **Behavior**:
@@ -220,8 +220,8 @@ Use './coding-booth start --name <NAME>' or './coding-booth start --code <PATH>'
 **Purpose**: Stop and start a running booth (useful for applying changes).
 
 ```bash
-./coding-booth restart
-./coding-booth restart --name my-project
+./codingbooth restart
+./codingbooth restart --name my-project
 ```
 
 **Behavior**:
@@ -240,15 +240,15 @@ Use './coding-booth start --name <NAME>' or './coding-booth start --code <PATH>'
 **Purpose**: Explicitly remove a stopped booth container.
 
 ```bash
-./coding-booth remove
-./coding-booth remove --name my-project
-./coding-booth remove my-project
+./codingbooth remove
+./codingbooth remove --name my-project
+./codingbooth remove my-project
 
 # Remove multiple
-./coding-booth remove proj1 proj2 proj3
+./codingbooth remove proj1 proj2 proj3
 
 # Force remove (even if running)
-./coding-booth remove --force my-project
+./codingbooth remove --force my-project
 ```
 
 **Options**:
@@ -266,13 +266,13 @@ Use './coding-booth start --name <NAME>' or './coding-booth start --code <PATH>'
 
 ```bash
 # From current project
-./coding-booth commit --tag mywork:v1
+./codingbooth commit --tag mywork:v1
 
 # Explicit container
-./coding-booth commit --name my-project --tag mywork:v1
+./codingbooth commit --name my-project --tag mywork:v1
 
 # With message
-./coding-booth commit --tag mywork:v1 --message "Added dependencies"
+./codingbooth commit --tag mywork:v1 --message "Added dependencies"
 ```
 
 **Behavior**:
@@ -293,8 +293,8 @@ Use './coding-booth start --name <NAME>' or './coding-booth start --code <PATH>'
 **Purpose**: Push a committed image to a container registry.
 
 ```bash
-./coding-booth push mywork:v1
-./coding-booth push mywork:v1 --registry ghcr.io/username
+./codingbooth push mywork:v1
+./codingbooth push mywork:v1 --registry ghcr.io/username
 ```
 
 **Behavior**:
@@ -314,8 +314,8 @@ Use './coding-booth start --name <NAME>' or './coding-booth start --code <PATH>'
 **Purpose**: Export a Docker image to a tar file for offline sharing.
 
 ```bash
-./coding-booth backup mywork:v1 -o mywork.tar
-./coding-booth backup mywork:v1 --output mywork.tar.gz --compress
+./codingbooth backup mywork:v1 -o mywork.tar
+./codingbooth backup mywork:v1 --output mywork.tar.gz --compress
 ```
 
 **Behavior**:
@@ -335,8 +335,8 @@ Use './coding-booth start --name <NAME>' or './coding-booth start --code <PATH>'
 **Purpose**: Load a Docker image from a tar file.
 
 ```bash
-./coding-booth restore mywork.tar
-./coding-booth restore mywork.tar.gz
+./codingbooth restore mywork.tar
+./codingbooth restore mywork.tar.gz
 ```
 
 **Behavior**:
@@ -345,7 +345,7 @@ Use './coding-booth start --name <NAME>' or './coding-booth start --code <PATH>'
 
 **After restore**, user can run:
 ```bash
-./coding-booth run --image mywork:v1
+./codingbooth run --image mywork:v1
 ```
 
 ---
@@ -381,18 +381,18 @@ Use './coding-booth start --name <NAME>' or './coding-booth start --code <PATH>'
 ## File Changes Required
 
 ### New Files
-- `cli/src/cmd/coding-booth/list.go`
-- `cli/src/cmd/coding-booth/start.go`
-- `cli/src/cmd/coding-booth/stop.go`
-- `cli/src/cmd/coding-booth/restart.go`
-- `cli/src/cmd/coding-booth/remove.go`
-- `cli/src/cmd/coding-booth/commit.go`
-- `cli/src/cmd/coding-booth/push.go`
-- `cli/src/cmd/coding-booth/backup.go`
-- `cli/src/cmd/coding-booth/restore.go`
+- `cli/src/cmd/codingbooth/list.go`
+- `cli/src/cmd/codingbooth/start.go`
+- `cli/src/cmd/codingbooth/stop.go`
+- `cli/src/cmd/codingbooth/restart.go`
+- `cli/src/cmd/codingbooth/remove.go`
+- `cli/src/cmd/codingbooth/commit.go`
+- `cli/src/cmd/codingbooth/push.go`
+- `cli/src/cmd/codingbooth/backup.go`
+- `cli/src/cmd/codingbooth/restore.go`
 
 ### Modified Files
-- `cli/src/cmd/coding-booth/main.go` - Add subcommand routing
+- `cli/src/cmd/codingbooth/main.go` - Add subcommand routing
 - `cli/src/pkg/booth/booth.go` - Add label generation in `PrepareCommonArgs`
 - `cli/src/pkg/docker/docker.go` - Add helper functions for ps, start, stop, etc.
 
@@ -403,39 +403,39 @@ Use './coding-booth start --name <NAME>' or './coding-booth start --code <PATH>'
 ### Daily Workflow
 ```bash
 # Start work
-./coding-booth run --variant codeserver --keep-alive
+./codingbooth run --variant codeserver --keep-alive
 
 # End of day - stop but keep container
-./coding-booth stop
+./codingbooth stop
 
 # Next day - continue where you left off
-./coding-booth start
+./codingbooth start
 
 # Done with project - clean up
-./coding-booth remove
+./codingbooth remove
 ```
 
 ### Team Sharing via Registry
 ```bash
 # Developer A: Save and share environment
-./coding-booth commit --tag team/myproject:configured
-./coding-booth push team/myproject:configured
+./codingbooth commit --tag team/myproject:configured
+./codingbooth push team/myproject:configured
 
 # Developer B: Use shared environment
-./coding-booth run --image team/myproject:configured
+./codingbooth run --image team/myproject:configured
 ```
 
 ### Offline Sharing via File
 ```bash
 # Export for colleague without registry access
-./coding-booth commit --tag myproject:v1
-./coding-booth backup myproject:v1 -o myproject-env.tar
+./codingbooth commit --tag myproject:v1
+./codingbooth backup myproject:v1 -o myproject-env.tar
 
 # Send file to colleague...
 
 # Colleague imports and runs
-./coding-booth restore myproject-env.tar
-./coding-booth run --image myproject:v1
+./codingbooth restore myproject-env.tar
+./codingbooth run --image myproject:v1
 ```
 
 ---
@@ -570,7 +570,7 @@ The existing blanket chown can be:
 
 2. **Auto-cleanup**: Should we add a `prune` command to remove old stopped containers?
 
-3. **Container naming conflicts**: What happens if user runs `./coding-booth run` twice in same directory without `--name`? Currently fails on name collision - is this desired?
+3. **Container naming conflicts**: What happens if user runs `./codingbooth run` twice in same directory without `--name`? Currently fails on name collision - is this desired?
 
 4. **Image naming convention**: Should `commit` suggest/enforce a naming convention? e.g., `cb/<project>:<timestamp>`
 

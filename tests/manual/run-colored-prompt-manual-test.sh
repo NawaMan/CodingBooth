@@ -39,4 +39,4 @@ echo "────────────────────────�
 echo
 
 cd "$SCRIPT_DIR"
-./coding-booth --variant base
+./codingbooth --variant base
