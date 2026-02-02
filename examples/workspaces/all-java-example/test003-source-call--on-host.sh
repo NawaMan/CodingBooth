@@ -21,7 +21,7 @@ echo "=== Testing jbang Source Execution ==="
 echo ""
 
 # Run jbang with inline Java source
-output=$("$BOOTH" --variant base --silence-build -- '
+output=$("$BOOTH" --variant base --port 10200 -- '
 cat > /tmp/Test.java << "EOFJAVA"
 import java.nio.file.*;
 import java.util.Arrays;

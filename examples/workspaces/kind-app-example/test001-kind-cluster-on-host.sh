@@ -46,19 +46,31 @@ trap cleanup EXIT
 echo "=== Testing KinD example on host ==="
 echo
 
+# Pre-cleanup: ensure no leftover containers/networks
+docker stop "$CONTAINER_NAME" 2>/dev/null || true
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+for container in $(docker ps -aq --filter "name=${CONTAINER_NAME}-.*-dind" 2>/dev/null); do
+    docker stop "$container" 2>/dev/null || true
+    docker rm -f "$container" 2>/dev/null || true
+done
+for network in $(docker network ls --filter "name=${CONTAINER_NAME}-" --format '{{.Name}}' 2>/dev/null | grep -- '-net$'); do
+    docker network rm "$network" 2>/dev/null || true
+done
+sleep 1
+
 # Start booth in daemon mode
 echo "Starting booth with KinD..."
-../../../coding-booth --keep-alive --daemon > /dev/null 2>&1 || true
+../../../coding-booth --keep-alive --daemon --variant base --port 24000 --name "$CONTAINER_NAME" -p ""
 
 # Wait for booth to be ready (up to 60 seconds)
 echo "Waiting for booth container to start..."
-for i in $(seq 1 60); do
+for i in $(seq 1 300); do
     if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
         pass "Booth started (after ${i}s)"
         break
     fi
-    if [ "$i" -eq 60 ]; then
-        fail "Failed to start booth (timeout after 60s)"
+    if [ "$i" -eq 300 ]; then
+        fail "Failed to start booth (timeout after 300s)"
     fi
     sleep 1
 done

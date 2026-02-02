@@ -18,6 +18,7 @@ pass() { echo -e "${GREEN}✓${NC} $1"; }
 fail() { echo -e "${RED}✗${NC} $1"; cleanup; exit 1; }
 
 CONTAINER_NAME="js-example"
+CONTAINER_PORT=23080
 
 cleanup() {
     echo
@@ -31,11 +32,16 @@ trap cleanup EXIT
 echo "=== Test 001: Container Tests ==="
 echo
 
+# Pre-cleanup: ensure no leftover container
+docker stop "$CONTAINER_NAME" 2>/dev/null || true
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+sleep 1
+
 # Start workspace in daemon mode
 echo "Starting coding-booth..."
-../../../coding-booth --daemon -- 'while true; do sleep 1; done' > /dev/null 2>&1 || true
+../../../coding-booth --daemon --variant base --port 23000 --name "$CONTAINER_NAME" -p "$CONTAINER_PORT":8080 || true
 
-# Wait for npm install to complete (up to 60 seconds)
+# Wait for npm install to complete (up to 120 seconds)
 echo "Waiting for npm install to complete..."
 WAIT_COUNT=0
 while true; do

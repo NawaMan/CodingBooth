@@ -18,7 +18,7 @@ pass() { echo -e "${GREEN}✓${NC} $1"; }
 fail() { echo -e "${RED}✗${NC} $1"; cleanup; exit 1; }
 
 CONTAINER_NAME="server-example"
-SERVER_PORT=8080
+SERVER_HOST_PORT=34080
 
 cleanup() {
     echo
@@ -35,9 +35,14 @@ trap cleanup EXIT
 echo "=== Testing server-example ==="
 echo
 
-# Start workspace in daemon mode
+# Pre-cleanup: ensure no leftover container
+docker stop "$CONTAINER_NAME" 2>/dev/null || true
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+sleep 1
+
+# Start workspace in daemon mode with fixed port mapping
 echo "Starting coding-booth..."
-../../../coding-booth --daemon > /dev/null 2>&1 || true
+../../../coding-booth --variant base --port 34000 --daemon --name "$CONTAINER_NAME" -p "$SERVER_HOST_PORT":8080 || true
 sleep 2
 
 # Check if booth container is running
@@ -46,6 +51,10 @@ if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
 else
     fail "Failed to start booth"
 fi
+
+# Use the configured host port
+SERVER_PORT=$SERVER_HOST_PORT
+pass "Using host port: $SERVER_PORT"
 
 # Run container tests
 echo

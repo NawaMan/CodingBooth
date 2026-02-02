@@ -18,7 +18,7 @@ pass() { echo -e "${GREEN}✓${NC} $1"; }
 fail() { echo -e "${RED}✗${NC} $1"; cleanup; exit 1; }
 
 CONTAINER_NAME="dind-example"
-SERVER_PORT=8080
+CONTAINER_PORT=15080
 
 cleanup() {
     echo
@@ -47,9 +47,21 @@ trap cleanup EXIT
 echo "=== Testing on host ==="
 echo
 
-# Start workspace in daemon mode
+# Pre-cleanup: ensure no leftover containers/networks
+docker stop "$CONTAINER_NAME" 2>/dev/null || true
+docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
+for container in $(docker ps -aq --filter "name=${CONTAINER_NAME}-.*-dind" 2>/dev/null); do
+    docker stop "$container" 2>/dev/null || true
+    docker rm -f "$container" 2>/dev/null || true
+done
+for network in $(docker network ls --filter "name=${CONTAINER_NAME}-" --format '{{.Name}}' 2>/dev/null | grep -- '-net$'); do
+    docker network rm "$network" 2>/dev/null || true
+done
+sleep 1
+
+# Start workspace in daemon mode with fixed port mapping
 echo "Starting coding-booth..."
-../../../coding-booth --daemon > /dev/null 2>&1 || true
+../../../coding-booth --variant base --port 15000 --daemon --name "$CONTAINER_NAME" -p "$CONTAINER_PORT":8080 || true
 
 # Wait for booth to be ready
 sleep 2
@@ -60,6 +72,10 @@ if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
 else
     fail "Failed to start booth"
 fi
+
+# For fixed port mapping, use the configured host port
+SERVER_PORT=$CONTAINER_PORT
+pass "Using host port: $SERVER_PORT"
 
 # Run container tests
 echo
