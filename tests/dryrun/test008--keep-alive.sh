@@ -52,7 +52,7 @@ docker \\
     -e 'CB_CODE_PORT=10000' \\
     -e 'CB_VERSION=${VERSION}' \\
     -e 'CB_CONFIG_FILE=' \\
-    -e 'CB_SCRIPT_NAME=coding-booth' \\
+    -e 'CB_SCRIPT_NAME=codingbooth' \\
     -e 'CB_SCRIPT_DIR=${SCRIPT_DIR}' \\
     -e 'CB_LIB_DIR=${LIB_DIR}' \\
     -e 'CB_KEEP_ALIVE=true' \\

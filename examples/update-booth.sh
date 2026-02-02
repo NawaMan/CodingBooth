@@ -27,7 +27,7 @@ for dir in "$SCRIPT_DIR"/*/; do
         cp "$SOURCE_BOOTH" "$target"
         chmod +x "$target"
         # Remove lock file to force fresh install
-        rm -f "$dir/.booth/tools/coding-booth.lock"
+        rm -f "$dir/.booth/tools/codingbooth.lock"
         echo "  Updated: ${dir#$PROJECT_ROOT/}booth"
         : $((updated++))
     fi
@@ -42,7 +42,7 @@ if [[ -d "$SCRIPT_DIR/workspaces" ]]; then
             cp "$SOURCE_BOOTH" "$target"
             chmod +x "$target"
             # Remove lock file to force fresh install
-            rm -f "$dir/.booth/tools/coding-booth.lock"
+            rm -f "$dir/.booth/tools/codingbooth.lock"
             echo "  Updated: ${dir#$PROJECT_ROOT/}booth"
             : $((updated++))
         fi

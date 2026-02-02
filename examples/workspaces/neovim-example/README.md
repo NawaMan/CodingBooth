@@ -15,7 +15,7 @@ This means everyone on the team gets the same neovim setup automatically.
 ## Try It
 
 ```bash
-../../coding-booth
+../../codingbooth
 # Then in the container:
 nvim
 ```

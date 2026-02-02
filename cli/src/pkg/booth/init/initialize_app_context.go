@@ -155,7 +155,7 @@ func getScriptName(args ilist.List[string]) string {
 	if args.Length() > 0 {
 		return filepath.Base(args.At(0))
 	}
-	return "coding-booth"
+	return "codingbooth"
 }
 
 func needValue(args ilist.List[string], i int, flag string) (string, error) {

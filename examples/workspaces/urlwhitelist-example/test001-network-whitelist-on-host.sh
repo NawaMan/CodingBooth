@@ -41,7 +41,7 @@ sleep 1
 # Run container tests (as coder user so $HOME is /home/coder)
 echo
 echo "Running container tests..."
-../../../coding-booth --variant base --port 35000 --name "$CONTAINER_NAME" -p "$CONTAINER_PORT:8080" -- ./test-on-container.sh
+../../../codingbooth --variant base --port 35000 --name "$CONTAINER_NAME" -p "$CONTAINER_PORT:8080" -- ./test-on-container.sh
 if [ $? -eq 0 ]; then
     pass "Container tests passed"
 else

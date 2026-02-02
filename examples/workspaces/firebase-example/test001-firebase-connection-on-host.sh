@@ -47,7 +47,7 @@ echo ""
 
 # Test 2: Firebase connection from inside the container
 echo "Testing Firebase connection from inside container..."
-if ../../../coding-booth --variant base --port 17000 -- ./check-connection.sh; then
+if ../../../codingbooth --variant base --port 17000 -- ./check-connection.sh; then
     echo -e "${GREEN}✓${NC} Container Firebase connection test passed"
 else
     echo -e "${RED}✗${NC} Container Firebase connection test failed"

@@ -35,14 +35,14 @@ booth (wrapper)              — Small bash script, committed to repo
     │
 ~/.cache/codingbooth/versions/     — Shared binary cache (default)
     └── 0.13.0/
-        └── coding-booth-*   — Platform-specific binaries
+        └── codingbooth-*   — Platform-specific binaries
 ```
 
 | Layer                            | Purpose                              | Version Controlled |
 |----------------------------------|--------------------------------------|--------------------|
 | `booth` (wrapper)                | Stable entry point, manages binaries | Yes                |
-| `.booth/tools/coding-booth.lock` | Version reference                    | Yes                |
-| `coding-booth-*` (binary)        | Actual launcher logic                | No (in cache)      |
+| `.booth/tools/codingbooth.lock` | Version reference                    | Yes                |
+| `codingbooth-*` (binary)        | Actual launcher logic                | No (in cache)      |
 
 ### Cache Modes
 
@@ -61,12 +61,12 @@ The wrapper supports six platform combinations:
 
 | Platform        | Binary Name                       |
 |-----------------|-----------------------------------|
-| `linux-amd64`   | `coding-booth-linux-amd64`        |
-| `linux-arm64`   | `coding-booth-linux-arm64`        |
-| `darwin-amd64`  | `coding-booth-darwin-amd64`       |
-| `darwin-arm64`  | `coding-booth-darwin-arm64`       |
-| `windows-amd64` | `coding-booth-windows-amd64.exe`  |
-| `windows-arm64` | `coding-booth-windows-arm64.exe`  |
+| `linux-amd64`   | `codingbooth-linux-amd64`        |
+| `linux-arm64`   | `codingbooth-linux-arm64`        |
+| `darwin-amd64`  | `codingbooth-darwin-amd64`       |
+| `darwin-arm64`  | `codingbooth-darwin-arm64`       |
+| `windows-amd64` | `codingbooth-windows-amd64.exe`  |
+| `windows-arm64` | `codingbooth-windows-arm64.exe`  |
 
 Platform detection uses `uname -s` (OS) and `uname -m` (architecture):
 
@@ -209,7 +209,7 @@ With `--cache=shared` (the default), binaries are stored in a user-level cache:
 .booth/
 ├── .gitignore              # Notes about cache location
 └── tools/
-    └── coding-booth.lock   # Version reference only
+    └── codingbooth.lock   # Version reference only
 ```
 
 **User cache (platform-specific):**
@@ -224,12 +224,12 @@ With `--cache=shared` (the default), binaries are stored in a user-level cache:
 ~/.cache/codingbooth/
 └── versions/
     └── 0.13.0/
-        ├── coding-booth.sha256      # SHA256 checksums for all platforms
-        ├── coding-booth-linux-amd64
-        ├── coding-booth-linux-arm64
-        ├── coding-booth-darwin-amd64
-        ├── coding-booth-darwin-arm64
-        └── coding-booth-windows-amd64.exe
+        ├── codingbooth.sha256      # SHA256 checksums for all platforms
+        ├── codingbooth-linux-amd64
+        ├── codingbooth-linux-arm64
+        ├── codingbooth-darwin-amd64
+        ├── codingbooth-darwin-arm64
+        └── codingbooth-windows-amd64.exe
 ```
 
 ### Local Cache Mode
@@ -240,13 +240,13 @@ With `--cache=local`, binaries are stored in the project:
 .booth/
 ├── .gitignore              # Excludes binaries from git
 └── tools/
-    ├── coding-booth.lock   # Version metadata with cache=local
-    ├── coding-booth.sha256 # SHA256 checksums for all platforms
-    ├── coding-booth-linux-amd64
-    ├── coding-booth-linux-arm64
-    ├── coding-booth-darwin-amd64
-    ├── coding-booth-darwin-arm64
-    └── coding-booth-windows-amd64.exe
+    ├── codingbooth.lock   # Version metadata with cache=local
+    ├── codingbooth.sha256 # SHA256 checksums for all platforms
+    ├── codingbooth-linux-amd64
+    ├── codingbooth-linux-arm64
+    ├── codingbooth-darwin-amd64
+    ├── codingbooth-darwin-arm64
+    └── codingbooth-windows-amd64.exe
 ```
 
 ### Lock File Format
@@ -266,8 +266,8 @@ The `cache=` line indicates where binaries are stored:
 Standard sha256sum format with all platform binaries:
 
 ```
-abc123...  coding-booth-linux-amd64
-def456...  coding-booth-linux-arm64
+abc123...  codingbooth-linux-amd64
+def456...  codingbooth-linux-arm64
 ...
 ```
 
@@ -282,7 +282,7 @@ For shared cache mode:
 For local cache mode:
 ```gitignore
 # Binaries excluded - re-download from lock version
-tools/coding-booth-*
+tools/codingbooth-*
 tools/*.sha256
 ```
 
@@ -329,7 +329,7 @@ User runs: ./booth [args...]
     ▼ Resolve script location (SCRIPT_DIR)
     │
     ├─► Read lock file for version and cache mode
-    │     (from $SCRIPT_DIR/.booth/tools/coding-booth.lock)
+    │     (from $SCRIPT_DIR/.booth/tools/codingbooth.lock)
     │
     ├─► Detect platform (linux-amd64, darwin-arm64, etc.)
     │
@@ -582,9 +582,9 @@ sudo apt-get install coreutils
 ## Related Files
 
 - `booth` — The wrapper script (this document)
-- `.booth/tools/coding-booth.lock` — Version and cache mode metadata
+- `.booth/tools/codingbooth.lock` — Version and cache mode metadata
 - `~/.cache/codingbooth/versions/<version>/` — Shared binary cache (Linux)
 - `~/Library/Caches/codingbooth/versions/<version>/` — Shared binary cache (macOS)
 - `%LOCALAPPDATA%\codingbooth\versions\<version>\` — Shared binary cache (Windows)
-- `.booth/tools/coding-booth-*` — Local binaries (when using `--cache=local`)
+- `.booth/tools/codingbooth-*` — Local binaries (when using `--cache=local`)
 - `cli/` — Source code for the Go binary

@@ -41,8 +41,8 @@ docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 sleep 1
 
 # Start workspace in daemon mode with fixed port mapping
-echo "Starting coding-booth..."
-../../../coding-booth --variant base --port 34000 --daemon --name "$CONTAINER_NAME" -p "$SERVER_HOST_PORT":8080 || true
+echo "Starting codingbooth..."
+../../../codingbooth --variant base --port 34000 --daemon --name "$CONTAINER_NAME" -p "$SERVER_HOST_PORT":8080 || true
 sleep 2
 
 # Check if booth container is running

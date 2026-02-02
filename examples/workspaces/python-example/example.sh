@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 
-../../coding-booth --variant base -- '
+../../codingbooth --variant base -- '
 python3 - <<PY
 import os, sys
 print("CWD in container:", os.getcwd())

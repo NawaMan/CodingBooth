@@ -61,9 +61,9 @@ func TestGetScriptName(t *testing.T) {
 		args     []string
 		expected string
 	}{
-		{"Standard", []string{"/bin/coding-booth", "arg1"}, "coding-booth"},
+		{"Standard", []string{"/bin/codingbooth", "arg1"}, "codingbooth"},
 		{"Relative", []string{"./booth"}, "booth"},
-		{"Empty", []string{}, "coding-booth"},
+		{"Empty", []string{}, "codingbooth"},
 	}
 
 	for _, tt := range tests {

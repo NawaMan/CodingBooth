@@ -2,6 +2,9 @@
 
 This file contains a list of changes for each released version.
 
+## v0.16.0
+- Rename binary from `coding-booth` to `codingbooth`
+
 ## v0.15.0
 
 ### Added

@@ -36,8 +36,8 @@ echo "=== Testing HTTP server from host ==="
 echo
 
 # Test 1: Start booth in daemon mode
-echo "Starting coding-booth in daemon mode..."
-../../../coding-booth --daemon > /dev/null 2>&1 || true
+echo "Starting codingbooth in daemon mode..."
+../../../codingbooth --daemon > /dev/null 2>&1 || true
 sleep 2
 
 # Check if booth container is running

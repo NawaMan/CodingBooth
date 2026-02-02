@@ -11,7 +11,7 @@ import (
 )
 
 func showHelp(version string) {
-	scriptName := "coding-booth"
+	scriptName := "codingbooth"
 	if len(os.Args) > 0 && os.Args[0] != "" {
 		scriptName = filepath.Base(os.Args[0])
 	}

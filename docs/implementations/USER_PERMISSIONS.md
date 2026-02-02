@@ -54,7 +54,7 @@ Files created are owned by 1001:1001 (your host user!)
 
 ### 1. Passing Host UID/GID
 
-The launcher (`coding-booth`) automatically detects and passes your UID/GID.
+The launcher (`codingbooth`) automatically detects and passes your UID/GID.
 Ref: `cli/src/pkg/booth/booth.go` (PrepareCommonArgs function)
 
 ```go

@@ -28,7 +28,7 @@ This means:
 ## Try It
 
 ```bash
-../../coding-booth
+../../codingbooth
 # Then in the container:
 gcloud auth list
 gcloud config list
