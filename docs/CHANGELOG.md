@@ -2,7 +2,19 @@
 
 This file contains a list of changes for each released version.
 
-## v0.14.0
+## v0.15.0
+
+### Added
+- Non-root package installation support -- previously only root was allowed to install packages.
+    - Homebrew setup script (`homebrew--setup.sh`) for non-root package installation inside containers
+    - Pip install helper script (`pip--install.sh`) for installing Python packages during image build
+    - NPM install helper script (`npm--install.sh`) for installing Node.js packages during image build
+    - Cargo install helper script (`cargo--install.sh`) for installing Rust packages during image build
+    - Bun install helper script (`bun--install.sh`) for installing Bun packages during image build
+    - RubyGems install helper script (`gem--install.sh`) for installing Ruby packages during image build
+    - Deno install helper script (`deno--install.sh`) for installing Deno packages during image build
+
+### Changed
 - booth wrapper script now cache the binary per user
 - booth is now location-based, meaning it operates relative to the script's own location (not the current directory) 
 - booth will suggest booth function (shell-config command) that will searc upward from the current DIR until ./booth is found.
