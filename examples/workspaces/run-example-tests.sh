@@ -10,7 +10,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Default settings
-MAX_PARALLEL=1
+MAX_PARALLEL=32
 GROUP_TIMEOUT=600  # 10 minutes per group
 declare -a FILTER_TAGS=()
 declare -a FILTER_GROUPS=()
