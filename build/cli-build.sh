@@ -7,7 +7,7 @@
 set -euo pipefail
 
 # Build configuration
-APP_NAME="coding-booth"
+APP_NAME="codingbooth"
 SRC_DIR="./src/cmd"
 OUTPUT_DIR="../bin"
 VERSION_FILE="../version.txt"
@@ -52,12 +52,12 @@ echo ""
 
 # First, build for the current platform and place in project root
 echo "🏠 Building local executable for current platform..."
-LOCAL_OUTPUT="../coding-booth"
+LOCAL_OUTPUT="../codingbooth"
 if [[ "$(uname -s)" == "MINGW"* ]] || [[ "$(uname -s)" == "CYGWIN"* ]] || [[ "$(uname -s)" == "MSYS"* ]]; then
-    LOCAL_OUTPUT="../coding-booth.exe"
+    LOCAL_OUTPUT="../codingbooth.exe"
 fi
 
-if go build -ldflags "-X main.version=${VERSION}" -o "$LOCAL_OUTPUT" "$SRC_DIR/coding-booth" 2>/dev/null; then
+if go build -ldflags "-X main.version=${VERSION}" -o "$LOCAL_OUTPUT" "$SRC_DIR/codingbooth" 2>/dev/null; then
     LOCAL_SIZE=$(du -h "$LOCAL_OUTPUT" | cut -f1)
     echo "   ✅ Built: $LOCAL_OUTPUT (${LOCAL_SIZE})"
 else
@@ -86,7 +86,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     # Build
     echo -n "   Building ${GOOS}/${GOARCH}... "
     
-    if GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "-X main.version=${VERSION}" -o "$OUTPUT_PATH" "$SRC_DIR/coding-booth" 2>/dev/null; then
+    if GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "-X main.version=${VERSION}" -o "$OUTPUT_PATH" "$SRC_DIR/codingbooth" 2>/dev/null; then
         SIZE=$(du -h "$OUTPUT_PATH" | cut -f1)
         echo "✅ (${SIZE})"
         BUILD_COUNT=$((BUILD_COUNT + 1))

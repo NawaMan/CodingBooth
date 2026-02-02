@@ -33,7 +33,7 @@ func main() {
 				return
 			}
 			fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
-			fmt.Fprintln(os.Stderr, "Use 'coding-booth help' for usage information")
+			fmt.Fprintln(os.Stderr, "Use 'codingbooth help' for usage information")
 			os.Exit(1)
 			return
 		}

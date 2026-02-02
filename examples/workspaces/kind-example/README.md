@@ -66,7 +66,7 @@ The following ports are pre-mapped and accessible via `http://localhost:{port}`:
 
 ```bash
 cd examples/kind-example
-../../coding-booth
+../../codingbooth
 ```
 
 ### Inside the workspace

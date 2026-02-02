@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 
-../../../coding-booth --variant base --port 22000 -- '
+../../../codingbooth --variant base --port 22000 -- '
 jbang --quiet - <<EOF one "two 2"
 import java.nio.file.*;
 import java.util.Arrays;

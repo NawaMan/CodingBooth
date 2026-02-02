@@ -60,8 +60,8 @@ done
 sleep 1
 
 # Start workspace in daemon mode with fixed port mapping
-echo "Starting coding-booth..."
-../../../coding-booth --variant base --port 15000 --daemon --name "$CONTAINER_NAME" -p "$CONTAINER_PORT":8080 || true
+echo "Starting codingbooth..."
+../../../codingbooth --variant base --port 15000 --daemon --name "$CONTAINER_NAME" -p "$CONTAINER_PORT":8080 || true
 
 # Wait for booth to be ready
 sleep 2

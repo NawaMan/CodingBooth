@@ -85,7 +85,7 @@ To update CodingBooth to the latest version:
 ./booth --pull
 ```
 
-The wrapper script downloads the `coding-booth` binary to `.booth/tools/`. If binaries are already up-to-date, the download is skipped.
+The wrapper script downloads the `codingbooth` binary to `.booth/tools/`. If binaries are already up-to-date, the download is skipped.
 
 > **Note:** The version is a positional argument: `./booth install 0.13.0`, not `./booth install --version 0.13.0`.
 
@@ -120,7 +120,7 @@ CodingBooth provides a command-line interface with the following structure:
 
 ### Wrapper vs Binary Commands
 
-The `booth` script is a **wrapper** that manages the underlying `coding-booth` binary. They have separate help and version commands:
+The `booth` script is a **wrapper** that manages the underlying `codingbooth` binary. They have separate help and version commands:
 
 | Command           | What it shows                              |
 |-------------------|--------------------------------------------|
@@ -394,7 +394,7 @@ my-project/
     ├── home/           # Team-shared home directory files (optional)
     │   └── .config/
     └── tools/          # Managed by booth wrapper (auto-created)
-        └── coding-booth.lock   # Version reference (binaries in shared cache)
+        └── codingbooth.lock   # Version reference (binaries in shared cache)
 ```
 
 | File                      | Purpose                                                 |
@@ -402,7 +402,7 @@ my-project/
 | `config.toml`             | Defines variant, ports, run-args, build-args, cmds      |
 | `Dockerfile`              | Custom image build extending a base variant             |
 | `home/`                   | Team-shared dotfiles copied to `/home/coder/` at startup |
-| `tools/coding-booth.lock` | Version lock file; binaries cached in `~/.cache/codingbooth/` |
+| `tools/codingbooth.lock` | Version lock file; binaries cached in `~/.cache/codingbooth/` |
 
 > ⚠️ **Note on `cmds`:** When you pass commands via CLI (`-- <cmd>`), they **override** the `cmds` in config.toml (they don't append).
 
@@ -466,13 +466,13 @@ host                                 # your machine
   ├── ~/.cache/codingbooth/                # shared binary cache
   |    └── versions/
   |         └── 0.13.0/              # version-specific binaries
-  |              ├── coding-booth.sha256
-  |              └── coding-booth-*  # platform binaries
+  |              ├── codingbooth.sha256
+  |              └── codingbooth-*  # platform binaries
   ├── project/                       # your project folder on the host
   |    ├── booth                     # booth wrapper script
   |    ├── .booth                    # booth internal folder
   |    |    └── tools/
-  |    |         └── coding-booth.lock  # version reference
+  |    |         └── codingbooth.lock  # version reference
   |    ├── ...                       # other project files
   ...
 
@@ -483,7 +483,7 @@ container
   |    |    |   ├── booth                 # booth wrapper script
   |    |    |   ├── .booth                # booth internal folder
   |    |    |   |    └── tools/
-  |    |    |   |         └── coding-booth.lock  # version reference
+  |    |    |   |         └── codingbooth.lock  # version reference
   |    |    ├── ...                       # other project files
   |    ├── ...                            # other home files
   ├── etc/

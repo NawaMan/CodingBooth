@@ -20,7 +20,7 @@ Running Kubernetes inside CodingBooth provides a **repeatable, isolated environm
 |--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------|
 | **Reproducibility**      | Every developer gets the exact same Kubernetes setup. No version mismatches, no missing tools, no configuration drift.                        |
 | **Isolation**            | The entire cluster lives inside the booth. Host system stays clean - no leftover Docker resources, or kubectl configs polluting your machine. |
-| **Team Consistency**     | New team members can run `./coding-booth` and have a working Kubernetes environment in minutes, not hours of setup.                           |
+| **Team Consistency**     | New team members can run `./codingbooth` and have a working Kubernetes environment in minutes, not hours of setup.                           |
 | **Safe Experimentation** | Break things freely. Corrupt your cluster? Just restart the container. No risk to your host or other projects.                                |
 | **Clean Teardown**       | When you're done, everything disappears cleanly. No orphaned resources, no zombie processes, no manual cleanup.                               |
 | **CI/CD Ready**          | The same containerized environment runs locally and in CI pipelines, eliminating "works on my machine" issues.                                |
@@ -79,7 +79,7 @@ This example includes:
 ```bash
 # Start the workspace
 cd examples/workspaces/kind-app-example
-../../coding-booth
+../../codingbooth
 
 # Inside the workspace, run:
 ./start-cluster.sh   # Create KIND cluster

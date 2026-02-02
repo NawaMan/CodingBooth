@@ -16,7 +16,7 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BOOTH="$SCRIPT_DIR/../../../coding-booth"
+BOOTH="$SCRIPT_DIR/../../../codingbooth"
 
 echo "=== Test 002: Maven Build and Run ==="
 echo ""

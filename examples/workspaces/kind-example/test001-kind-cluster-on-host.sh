@@ -60,7 +60,7 @@ sleep 1
 
 # Start booth in daemon mode
 echo "Starting booth with KinD..."
-../../../coding-booth --keep-alive --variant base --port 25000 --daemon --name "$CONTAINER_NAME" -p "" || true
+../../../codingbooth --keep-alive --variant base --port 25000 --daemon --name "$CONTAINER_NAME" -p "" || true
 
 # Wait for booth to be ready
 sleep 3

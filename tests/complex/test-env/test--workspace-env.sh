@@ -15,7 +15,7 @@ source ../../common--source.sh
 
 # ---- Config -------------------------------------------------------------------
 # Path to your booth launcher script. Override via env if needed.
-CB_SCRIPT="${CB_SCRIPT:-../../../coding-booth}"
+CB_SCRIPT="${CB_SCRIPT:-../../../codingbooth}"
 # Canonicalize to absolute path before we cd/pushd anywhere
 if command -v readlink >/dev/null 2>&1; then
   CB_SCRIPT="$(readlink -f "$CB_SCRIPT")"
@@ -61,7 +61,7 @@ EOF
 run_cb() {
   # We'll pass an explicit image to avoid any build/pull logic, pick a random port to avoid conflicts
   # Note: The script wraps the command in `bash -lc "<cmd>"` internally
-  echo -e "${COLOR_BOOTH:-}> coding-booth -- $*${COLOR_RESET:-}" >&2
+  echo -e "${COLOR_BOOTH:-}> codingbooth -- $*${COLOR_RESET:-}" >&2
   "$CB_SCRIPT" -- "$@"
 }
 

@@ -138,7 +138,7 @@ function Main() {
 
     ### --- RUN MODE --- ###
     local tools_dir=".booth/tools"
-    local lock_file="$tools_dir/coding-booth.lock"
+    local lock_file="$tools_dir/codingbooth.lock"
 
     # Read version and cache mode from lock file
     if [[ ! -f "$lock_file" ]]; then
@@ -182,7 +182,7 @@ function Main() {
         fi
     fi
 
-    sha_file="$binary_dir/coding-booth.sha256"
+    sha_file="$binary_dir/codingbooth.sha256"
     dest="$binary_dir/$binary_name"
 
     # Verify binary exists
@@ -265,16 +265,16 @@ Cache locations (for --cache=shared):
   Windows: %LOCALAPPDATA%\\codingbooth\\
 
 Notes:
-  - Lock file (.booth/tools/coding-booth.lock) is version-controlled
+  - Lock file (.booth/tools/codingbooth.lock) is version-controlled
   - Binaries are auto-downloaded when lock file exists but binary missing
   - Use --cache=local for CI/CD or portable/air-gapped environments
   - Set VERBOSE=true for extra logs during install
 
 Help/Version disambiguation:
   ./booth help       Show this wrapper help (install, update, cache commands)
-  ./booth --help     Show coding-booth binary help (run flags, variants, etc.)
+  ./booth --help     Show codingbooth binary help (run flags, variants, etc.)
   ./booth version    Show wrapper version + binary version info
-  ./booth --version  Show coding-booth binary version only
+  ./booth --version  Show codingbooth binary version only
 EOF
 }
 
@@ -360,7 +360,7 @@ EOF
     echo "CodingBooth Wrapper: $VERSION"
 
     local tools_dir=".booth/tools"
-    local lock_file="$tools_dir/coding-booth.lock"
+    local lock_file="$tools_dir/codingbooth.lock"
 
     # Detect current platform
     local platform binary_name
@@ -439,9 +439,9 @@ function detect_platform() {
 function get_binary_name() {
     local platform="$1"
     if [[ "$platform" == windows-* ]]; then
-        echo "coding-booth-${platform}.exe"
+        echo "codingbooth-${platform}.exe"
     else
-        echo "coding-booth-${platform}"
+        echo "codingbooth-${platform}"
     fi
 }
 
@@ -456,8 +456,8 @@ ALL_PLATFORMS=(
 
 function UninstallBooth() {
     local tools_dir=".booth/tools"
-    local sha_file="$tools_dir/coding-booth.sha256"
-    local lock_file="$tools_dir/coding-booth.lock"
+    local sha_file="$tools_dir/codingbooth.sha256"
+    local lock_file="$tools_dir/codingbooth.lock"
 
     # Remove local binaries if they exist
     for platform in "${ALL_PLATFORMS[@]}"; do
@@ -538,11 +538,11 @@ function ToolsCacheList() {
 
         # List platforms
         local platforms=()
-        for bin in "$version_dir"/coding-booth-*; do
+        for bin in "$version_dir"/codingbooth-*; do
             [[ -f "$bin" ]] || continue
             local name
             name=$(basename "$bin")
-            name=${name#coding-booth-}
+            name=${name#codingbooth-}
             name=${name%.exe}
             platforms+=("$name")
         done
@@ -643,7 +643,7 @@ function DownloadBooth() {
     fi
 
     local tools_dir=".booth/tools"
-    local lock_file="$tools_dir/coding-booth.lock"
+    local lock_file="$tools_dir/codingbooth.lock"
 
     REPO_URL="https://github.com/NawaMan/WorkSpace"
     DWLD_URL="${REPO_URL}/releases/download"
@@ -661,10 +661,10 @@ function DownloadBooth() {
     local target_dir sha_file
     if [[ "$CACHE_MODE" == "local" ]]; then
         target_dir="$tools_dir"
-        sha_file="$tools_dir/coding-booth.sha256"
+        sha_file="$tools_dir/codingbooth.sha256"
     else
         target_dir="$(get_cache_version_dir "$actual_version")"
-        sha_file="$target_dir/coding-booth.sha256"
+        sha_file="$target_dir/codingbooth.sha256"
     fi
 
     mkdir -p "$target_dir"
@@ -674,7 +674,7 @@ function DownloadBooth() {
     if [[ "$CACHE_MODE" == "local" ]]; then
         cat > ".booth/.gitignore" <<'GITIGNORE'
 # Binaries excluded - re-download from lock version
-tools/coding-booth-*
+tools/codingbooth-*
 tools/*.sha256
 GITIGNORE
     else

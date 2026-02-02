@@ -13,22 +13,22 @@ Builds the CLI binary for multiple platforms.
 ```
 
 **What it does:**
-- Compiles the Go CLI application from `cli/src/cmd/coding-booth/`
+- Compiles the Go CLI application from `cli/src/cmd/codingbooth/`
 - Builds binaries for 6 platform combinations:
   - `linux/amd64`, `linux/arm64`
   - `darwin/amd64`, `darwin/arm64`
   - `windows/amd64`, `windows/arm64`
 - Outputs platform-specific binaries to `bin/` directory
-- Creates a local `coding-booth` executable in the project root
+- Creates a local `codingbooth` executable in the project root
 
 **Output files:**
-- `bin/coding-booth-linux-amd64`
-- `bin/coding-booth-linux-arm64`
-- `bin/coding-booth-darwin-amd64`
-- `bin/coding-booth-darwin-arm64`
-- `bin/coding-booth-windows-amd64.exe`
-- `bin/coding-booth-windows-arm64.exe`
-- `./coding-booth` (current platform)
+- `bin/codingbooth-linux-amd64`
+- `bin/codingbooth-linux-arm64`
+- `bin/codingbooth-darwin-amd64`
+- `bin/codingbooth-darwin-arm64`
+- `bin/codingbooth-windows-amd64.exe`
+- `bin/codingbooth-windows-arm64.exe`
+- `./codingbooth` (current platform)
 
 ---
 
@@ -67,7 +67,7 @@ Builds Docker images for all CodingBooth variants.
 - `DOCKERHUB_USERNAME` - Docker Hub username
 - `DOCKERHUB_TOKEN` - Docker Hub access token
 - `COSIGN_KEY` - Cosign private key content (PEM format)
-- `COSIGN_KEY_FILE` - Path to cosign private key file (default: `~/.config/nawaman-coding-booth/cosign.key`)
+- `COSIGN_KEY_FILE` - Path to cosign private key file (default: `~/.config/nawaman-codingbooth/cosign.key`)
 - `COSIGN_PASSWORD` - Password for encrypted private key
 
 ---
@@ -99,5 +99,5 @@ Public key for verifying Docker image signatures. This is used to verify that pu
 
 ```bash
 # Verify an image signature
-cosign verify --key ./build/cosign.pub nawaman/coding-booth:base-latest
+cosign verify --key ./build/cosign.pub nawaman/codingbooth:base-latest
 ```

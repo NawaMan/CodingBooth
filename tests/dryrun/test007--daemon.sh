@@ -31,7 +31,7 @@ EXPECT="\
 📦 Running booth in daemon mode.
 👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.
 👉 Visit 'http://localhost:10000'
-👉 To open an interactive shell instead: coding-booth -- bash
+👉 To open an interactive shell instead: codingbooth -- bash
 👉 To stop the running container:
 
       docker stop dryrun
@@ -63,7 +63,7 @@ docker \\
     -e 'CB_CODE_PORT=10000' \\
     -e 'CB_VERSION=${VERSION}' \\
     -e 'CB_CONFIG_FILE=' \\
-    -e 'CB_SCRIPT_NAME=coding-booth' \\
+    -e 'CB_SCRIPT_NAME=codingbooth' \\
     -e 'CB_SCRIPT_DIR=${SCRIPT_DIR}' \\
     -e 'CB_LIB_DIR=${LIB_DIR}' \\
     -e 'CB_KEEP_ALIVE=false' \\

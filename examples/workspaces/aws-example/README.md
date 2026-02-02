@@ -22,7 +22,7 @@ Running AWS development inside CodingBooth provides a **secure, consistent envir
 | **Credentials Safety**   | Your AWS credentials stay on your host (read-only mount). The container gets a copy, never the original.                |
 | **Reproducibility**      | Every developer gets the same AWS CLI version, same SDKs, same tools. No "works on my machine" issues.                  |
 | **Project Isolation**    | Each project can have its own AWS profile/region configuration without affecting other projects or your host.           |
-| **Team Consistency**     | New team members run `./coding-booth` and have a working AWS environment immediately. No setup docs to follow.          |
+| **Team Consistency**     | New team members run `./codingbooth` and have a working AWS environment immediately. No setup docs to follow.          |
 | **Safe Experimentation** | Test IAM policies, try new services, experiment freely. Your host AWS config stays untouched.                           |
 | **Clean Teardown**       | When you're done, the workspace disappears. No leftover AWS CLI configs or cached credentials on your host.             |
 
@@ -33,7 +33,7 @@ Running AWS development inside CodingBooth provides a **secure, consistent envir
 ```bash
 # Start the workspace
 cd examples/workspaces/aws-example
-../../coding-booth
+../../codingbooth
 
 # Inside the workspace, AWS CLI is ready:
 aws sts get-caller-identity

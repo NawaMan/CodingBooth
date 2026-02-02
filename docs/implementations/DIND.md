@@ -62,7 +62,7 @@ The booth container does not talk to the host Docker daemon. Instead, it talks t
 │  │            │                                             │  │
 │  │  ┌─────────┴─────────────────┐                           │  │
 │  │  │   Booth Container         │                           │  │
-│  │  │   (coding-booth)          │                           │  │
+│  │  │   (codingbooth)          │                           │  │
 │  │  │                           │                           │  │
 │  │  │  - User code              │                           │  │
 │  │  │  - Docker CLI             │                           │  │
@@ -151,7 +151,7 @@ run-args = [
 Additional ports can be passed directly on the command line:
 
 ```bash
-coding-booth -p 5000:5000
+codingbooth -p 5000:5000
 ```
 
 These are combined with ports from the config file.

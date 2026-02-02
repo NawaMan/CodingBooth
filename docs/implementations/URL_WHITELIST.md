@@ -373,7 +373,7 @@ See `examples/workspaces/urlwhitelist-example/` for a complete working example w
 
 ```bash
 cd examples/workspaces/urlwhitelist-example
-../../../coding-booth -- bash
+../../../codingbooth -- bash
 
 # Inside container:
 network-whitelist-status

@@ -38,8 +38,8 @@ docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
 sleep 1
 
 # Start workspace in daemon mode
-echo "Starting coding-booth..."
-../../../coding-booth --daemon --variant base --port 23000 --name "$CONTAINER_NAME" -p "$CONTAINER_PORT":8080 || true
+echo "Starting codingbooth..."
+../../../codingbooth --daemon --variant base --port 23000 --name "$CONTAINER_NAME" -p "$CONTAINER_PORT":8080 || true
 
 # Wait for npm install to complete (up to 120 seconds)
 echo "Waiting for npm install to complete..."
