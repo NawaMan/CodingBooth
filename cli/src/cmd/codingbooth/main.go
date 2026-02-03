@@ -26,6 +26,9 @@ func main() {
 		case "run":
 			runBooth(version)
 			return
+		case "example":
+			runExample(version)
+			return
 		default:
 			// If it starts with --, treat as run with options
 			if len(command) > 0 && command[0] == '-' {
