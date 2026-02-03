@@ -1,6 +1,6 @@
-# Creates GitHub releases with multi-platform CodingBooth binaries and wrapper.
+# Creates GitHub releases with multi-platform CodingBooth binaries, wrapper, and examples.
 # Triggers on: manual dispatch only.
-name: Release CodingBooth binary and wrapper
+name: Release CodingBooth
 
 on:
   workflow_dispatch:
@@ -14,11 +14,11 @@ jobs:
 
     steps:
       # ---------------------------------------------------------
-      # Checkout
+      # Checkout and Setup
       # ---------------------------------------------------------
       - name: Check out repository
         uses: actions/checkout@v4
-      
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -41,6 +41,19 @@ jobs:
       - name: Show version
         run: echo "Publishing CodingBooth for version ${{ steps.get_version.outputs.version }}"
 
+      - name: Check if pre-release
+        id: check_prerelease
+        run: |
+          if [[ "$VERSION" =~ --rc([0-9]+)?$ ]]; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "Detected pre-release version: $VERSION"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "Detected stable version: $VERSION"
+          fi
+        env:
+          VERSION: ${{ steps.get_version.outputs.version }}
+
       # ---------------------------------------------------------
       # Cleanup old untagged releases
       # ---------------------------------------------------------
@@ -54,7 +67,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ---------------------------------------------------------
-      # Prepare artifacts
+      # Build binary artifacts
       # ---------------------------------------------------------
       - name: Build Go binaries for all platforms
         run: ./build/cli-build.sh
@@ -70,30 +83,55 @@ jobs:
           done
           cd ..
 
-      - name: Check if pre-release
-        id: check_prerelease
+      # ---------------------------------------------------------
+      # Build example artifacts
+      # ---------------------------------------------------------
+      - name: Update booth wrappers
+        run: ./examples/update-booth.sh
+
+      - name: Create example-list.txt
         run: |
-          if [[ "$VERSION" =~ --rc([0-9]+)?$ ]]; then
-            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
-            echo "Detected pre-release version: $VERSION"
-          else
-            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
-            echo "Detected stable version: $VERSION"
-          fi
-        env:
-          VERSION: ${{ steps.get_version.outputs.version }}
+          echo "# CodingBooth Examples" > example-list.txt
+          echo "" >> example-list.txt
+          echo "## Workspace Examples" >> example-list.txt
+          for dir in examples/workspaces/*-example/; do
+            name=$(basename "$dir")
+            echo "- $name" >> example-list.txt
+          done
+          echo "" >> example-list.txt
+          echo "## Demo" >> example-list.txt
+          echo "- demo" >> example-list.txt
+
+      - name: Package workspace examples
+        run: |
+          mkdir -p dist
+          cd examples/workspaces
+          for dir in *-example/; do
+            name=$(basename "$dir")
+            zip -r "../../dist/${name}.zip" "$dir"
+          done
+
+      - name: Package demo
+        run: |
+          cd examples
+          zip -r ../dist/demo.zip demo/
+
+      - name: Move example-list.txt to dist
+        run: mv example-list.txt dist/
 
       # ---------------------------------------------------------
-      # Publish versioned release (pre-release: only codingbooth)
+      # Publish versioned release (binary + examples)
       # ---------------------------------------------------------
-      - name: Publish versioned pre-release
-        if: steps.check_prerelease.outputs.is_prerelease == 'true'
+      - name: Publish versioned release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.get_version.outputs.version }}
-          name:     ${{ steps.get_version.outputs.version }}
-          body:     ${{ steps.get_version.outputs.version }}
-          prerelease: true
+          name: ${{ steps.get_version.outputs.version }}
+          body: |
+            CodingBooth ${{ steps.get_version.outputs.version }}
+
+            Multi-platform binaries and example workspaces.
+          prerelease: ${{ steps.check_prerelease.outputs.is_prerelease == 'true' }}
           files: |
             bin/codingbooth-linux-amd64
             bin/codingbooth-linux-amd64.sha256
@@ -109,48 +147,24 @@ jobs:
             bin/codingbooth-windows-arm64.exe.sha256
             booth
             version.txt
+            dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # ---------------------------------------------------------
-      # Publish versioned release (stable: all three scripts)
-      # ---------------------------------------------------------
-      - name: Publish versioned stable release
-        if: steps.check_prerelease.outputs.is_prerelease == 'false'
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: ${{ steps.get_version.outputs.version }}
-          name:     ${{ steps.get_version.outputs.version }}
-          body:     ${{ steps.get_version.outputs.version }}
-          prerelease: false
-          files: |
-            bin/codingbooth-linux-amd64
-            bin/codingbooth-linux-amd64.sha256
-            bin/codingbooth-linux-arm64
-            bin/codingbooth-linux-arm64.sha256
-            bin/codingbooth-darwin-amd64
-            bin/codingbooth-darwin-amd64.sha256
-            bin/codingbooth-darwin-arm64
-            bin/codingbooth-darwin-arm64.sha256
-            bin/codingbooth-windows-amd64.exe
-            bin/codingbooth-windows-amd64.exe.sha256
-            bin/codingbooth-windows-arm64.exe
-            bin/codingbooth-windows-arm64.exe.sha256
-            booth
-            version.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # ---------------------------------------------------------
-      # Publish latest release (stable only, all three scripts)
+      # Publish latest release (stable only, replaces on each run)
       # ---------------------------------------------------------
       - name: Publish latest release
         if: steps.check_prerelease.outputs.is_prerelease == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
-          name: latest - ${{ steps.get_version.outputs.version }}
-          body: latest - ${{ steps.get_version.outputs.version }}
+          name: latest
+          body: |
+            CodingBooth ${{ steps.get_version.outputs.version }}
+
+            Multi-platform binaries and example workspaces.
+            This release is updated with each stable version.
           prerelease: false
           draft: false
           files: |
@@ -168,5 +182,6 @@ jobs:
             bin/codingbooth-windows-arm64.exe.sha256
             booth
             version.txt
+            dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
