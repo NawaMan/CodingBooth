@@ -23,6 +23,7 @@ USAGE:
   %s help                                 (show this help and exit)
   %s run [options] [--] [command ...]     (run the booth)
   %s [options] [--] [command ...]         (default action: run)
+  %s example <subcommand>                 (manage examples)
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and config file):
   --code <path>          Host code path to mount at /home/coder/code
@@ -110,6 +111,7 @@ EXAMPLES:
 `,
 		scriptName,
 		version,
+		scriptName,
 		scriptName,
 		scriptName,
 		scriptName,

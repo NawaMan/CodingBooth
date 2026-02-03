@@ -279,7 +279,7 @@ EOF
 }
 
 function ShellConfig() {
-    local booth_func='unalias booth 2>/dev/null; booth() { d="$PWD"; while [[ "$d" != "/" && ! -x "$d/booth" ]]; do d="${d%/*}"; done; [[ -x "$d/booth" ]] && "$d/booth" "$@" || echo "booth not found" >&2; }'
+    local booth_func='unalias booth 2>/dev/null; booth() { d="$PWD"; while [[ "$d" != "/" && ! -x "$d/booth" ]]; do d="${d%/*}"; done; if [[ -x "$d/booth" ]]; then "$d/booth" "$@"; else echo "booth not found" >&2; fi; }'
 
     # All supported shell rc files
     local rc_files=(
