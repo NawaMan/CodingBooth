@@ -1,0 +1,72 @@
+name: Release Examples
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: 'Release tag (e.g., examples-v1.0.0)'
+        required: true
+        default: 'examples-latest'
+
+jobs:
+  release-examples:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.1'
+
+      - name: Build codingbooth binary
+        run: ./build/cli-build.sh
+
+      - name: Update booth wrappers
+        run: ./examples/update-booth.sh
+
+      - name: Create example-list.txt
+        run: |
+          echo "# CodingBooth Examples" > example-list.txt
+          echo "" >> example-list.txt
+          echo "## Workspace Examples" >> example-list.txt
+          for dir in examples/workspaces/*-example/; do
+            name=$(basename "$dir")
+            echo "- $name" >> example-list.txt
+          done
+          echo "" >> example-list.txt
+          echo "## Demo" >> example-list.txt
+          echo "- demo" >> example-list.txt
+
+      - name: Package workspace examples
+        run: |
+          mkdir -p dist
+          cd examples/workspaces
+          for dir in *-example/; do
+            name=$(basename "$dir")
+            zip -r "../../dist/${name}.zip" "$dir"
+          done
+
+      - name: Package demo
+        run: |
+          cd examples
+          zip -r ../dist/demo.zip demo/
+
+      - name: Move example-list.txt to dist
+        run: mv example-list.txt dist/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.release_tag }}
+          name: "Examples - ${{ github.event.inputs.release_tag }}"
+          body: |
+            ## CodingBooth Examples
+
+            Download individual example zips to try CodingBooth with different languages and tools.
+
+            See `example-list.txt` for the complete list of available examples.
+          files: dist/*
+          prerelease: ${{ contains(github.event.inputs.release_tag, 'rc') }}
