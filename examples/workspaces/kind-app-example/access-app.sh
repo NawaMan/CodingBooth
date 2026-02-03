@@ -19,7 +19,7 @@ echo ""
 # Kill any existing port-forwards for these ports
 pkill -f "port-forward.*svc/web.*3000" 2>/dev/null || true
 pkill -f "port-forward.*svc/api.*8080" 2>/dev/null || true
-pkill -f "port-forward.*svc/export.*8081" 2>/dev/null || true
+pkill -f "port-forward.*svc/export-service.*8081" 2>/dev/null || true
 
 sleep 1
 
@@ -27,7 +27,7 @@ sleep 1
 # This is required for access from host through DinD sidecar
 kubectl port-forward svc/web 3000:80 -n "$NAMESPACE" --address 0.0.0.0 &
 kubectl port-forward svc/api 8080:8080 -n "$NAMESPACE" --address 0.0.0.0 &
-kubectl port-forward svc/export 8081:8081 -n "$NAMESPACE" --address 0.0.0.0 &
+kubectl port-forward svc/export-service 8081:8081 -n "$NAMESPACE" --address 0.0.0.0 &
 
 sleep 2
 
