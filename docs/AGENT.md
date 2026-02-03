@@ -11,7 +11,7 @@
 ```bash
 # Any of these indicate you're in a booth:
 [[ -d /opt/codingbooth ]]               # CodingBooth directory exists
-command -v codingbooth-info &>/dev/null # CodingBooth info command available
+command -v booth--info &>/dev/null # CodingBooth info command available
 [[ -f /opt/codingbooth/version.txt ]]   # Version file exists
 ```
 
@@ -27,7 +27,7 @@ That guide helps you assist users in setting up CodingBooth from scratch. Once t
 ## First Things First
 
 ```bash
-codingbooth-info                        # What environment am I in?
+booth--info                              # What environment am I in?
 ls /opt/codingbooth/setups/             # What tools can I easily add?
 cat /home/coder/code/.booth/Dockerfile  # What's already configured?
 ```
@@ -72,7 +72,7 @@ cat /home/coder/code/.booth/Dockerfile  # What's already configured?
     ├── node--setup.sh
     ├── java--setup.sh
     ├── go--setup.sh
-    ├── codingbooth-info       # Quick info about current environment
+    ├── booth--info       # Quick info about current environment
     └── ...                    # Many more — list with: ls /opt/codingbooth/setups/
 
 /etc/profile.d/                # Shell profile scripts (sourced on login)
@@ -320,9 +320,9 @@ build-args = ["--build-arg", "NODE_VERSION=20"]
 
 ## Action: Find Information About the Environment
 
-**Quick overview:** Run `codingbooth-info` to see version, variant, and key paths:
+**Quick overview:** Run `booth--info` to see version, variant, and key paths:
 ```bash
-codingbooth-info
+booth--info
 ```
 
 **Read setup scripts** to understand paths, env vars, and configuration:
