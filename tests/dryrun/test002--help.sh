@@ -17,7 +17,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     CURRENT_PATH="$(pwd -W)"
 fi
 
-ACTUAL=$(run_coding_booth --help | head)
+ACTUAL=$(run_coding_booth --help | head -11)
 
 HERE="$PWD"
 VERSION="$(cat ../../version.txt)"
@@ -30,6 +30,7 @@ USAGE:
   codingbooth help                                 (show this help and exit)
   codingbooth run [options] [--] [command ...]     (run the booth)
   codingbooth [options] [--] [command ...]         (default action: run)
+  codingbooth example <subcommand>                 (manage examples)
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and config file):
   --code <path>          Host code path to mount at /home/coder/code"

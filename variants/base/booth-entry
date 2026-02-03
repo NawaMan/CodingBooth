@@ -39,16 +39,16 @@
 set -euo pipefail
 
 # Verbose logging (default: false)
-CB_VERBOSE="${CB_VERBOSE:-false}"
+BOOTH_VERBOSE="${BOOTH_VERBOSE:-false}"
 info() {
-  if [ "$CB_VERBOSE" = "true" ]; then
+  if [ "$BOOTH_VERBOSE" = "true" ]; then
     printf '[cb-setup] %s\n' "$*"
   fi
 }
 
 
 section() {
-  if [ "$CB_VERBOSE" = "true" ]; then
+  if [ "$BOOTH_VERBOSE" = "true" ]; then
     printf '\n'
     printf '[cb-setup] ====================================================================\n'
     printf '[cb-setup] %s\n' "$*"
@@ -170,7 +170,7 @@ if [ ! -f "$HOME_DIR/.bashrc" ]; then
   else
     touch "$HOME_DIR/.bashrc"
   fi
-  echo 'export PS1="\[\e[1;32m\]${CB_CONTAINER_NAME}\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "' >> "$HOME_DIR/.bashrc"
+  echo 'export PS1="\[\e[1;32m\]${BOOTH_CONTAINER_NAME}\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "' >> "$HOME_DIR/.bashrc"
 fi
 
 # ---- .zshrc ----
@@ -183,7 +183,7 @@ if [ ! -f "$HOME_DIR/.zshrc" ]; then
   {
     printf '\n# ---- custom prompt (added at build) ----\n'
     printf 'setopt PROMPT_SUBST\n'
-    printf 'PROMPT="%%B%%F{green}${CB_CONTAINER_NAME}%%b%%f:%%B%%F{blue}%%~%%b%%f> "\n'
+    printf 'PROMPT="%%B%%F{green}${BOOTH_CONTAINER_NAME}%%b%%f:%%B%%F{blue}%%~%%b%%f> "\n'
     printf '# ---- end custom prompt ----\n'
   } >> "$HOME_DIR/.zshrc"
 fi
@@ -219,7 +219,7 @@ ensure_cb_profile_block() {
 # ---- CodingBooth profile ----
 for f in /etc/profile.d/*-cb-*.sh; do
   [ -r "$f" ] || continue
-  if [ "${CB_VERBOSE:-}" = "true" ] || [ "${CB_VERBOSE:-}" = "1" ] || [ "${CB_VERBOSE:-}" = "yes" ]; then
+  if [ "${BOOTH_VERBOSE:-}" = "true" ] || [ "${BOOTH_VERBOSE:-}" = "1" ] || [ "${BOOTH_VERBOSE:-}" = "yes" ]; then
     echo "[cb-profile] running: $f" >&2
   fi
   . "$f"
@@ -241,37 +241,37 @@ chown "$HOST_UID:$HOST_GID" \
 section "Prepare the user's home directory"
 
 info "11) Copying project's home-seed folder (team defaults, no-clobber)..."
-CB_HOME_SEED_DIR=""
+BOOTH_HOME_SEED_DIR=""
 if [ -d "$CODE_DIR/.booth/home-seed" ]; then
-  CB_HOME_SEED_DIR="$CODE_DIR/.booth/home-seed"
+  BOOTH_HOME_SEED_DIR="$CODE_DIR/.booth/home-seed"
 fi
-if [ -n "$CB_HOME_SEED_DIR" ]; then
-  info "Copying project home-seed files from $CB_HOME_SEED_DIR to $HOME_DIR (no-clobber)..."
-  cp -rn "$CB_HOME_SEED_DIR/." "$HOME_DIR/" 2>/dev/null || true
+if [ -n "$BOOTH_HOME_SEED_DIR" ]; then
+  info "Copying project home-seed files from $BOOTH_HOME_SEED_DIR to $HOME_DIR (no-clobber)..."
+  cp -rn "$BOOTH_HOME_SEED_DIR/." "$HOME_DIR/" 2>/dev/null || true
 fi
 
 info "11b) Copying project's home folder (team-shared overrides)..."
-CB_HOME_DIR=""
+BOOTH_HOME_DIR=""
 if [ -d "$CODE_DIR/.booth/home" ]; then
-  CB_HOME_DIR="$CODE_DIR/.booth/home"
+  BOOTH_HOME_DIR="$CODE_DIR/.booth/home"
 fi
-if [ -n "$CB_HOME_DIR" ]; then
-  info "Copying project home files from $CB_HOME_DIR to $HOME_DIR (override)..."
-  cp -r "$CB_HOME_DIR/." "$HOME_DIR/" 2>/dev/null || true
+if [ -n "$BOOTH_HOME_DIR" ]; then
+  info "Copying project home files from $BOOTH_HOME_DIR to $HOME_DIR (override)..."
+  cp -r "$BOOTH_HOME_DIR/." "$HOME_DIR/" 2>/dev/null || true
 fi
 
 info "12) Copying seed files from /etc/cb-home-seed/ to /home/coder (no-clobber)..."
-CB_HOME_SEED="/etc/cb-home-seed"
-if [ -d "$CB_HOME_SEED" ]; then
-  info "Copying seed files from $CB_HOME_SEED to $HOME_DIR..."
-  cp -rn "$CB_HOME_SEED/." "$HOME_DIR/" 2>/dev/null || true
+BOOTH_HOME_SEED="/etc/cb-home-seed"
+if [ -d "$BOOTH_HOME_SEED" ]; then
+  info "Copying seed files from $BOOTH_HOME_SEED to $HOME_DIR..."
+  cp -rn "$BOOTH_HOME_SEED/." "$HOME_DIR/" 2>/dev/null || true
 fi
 
 info "13) Copying override files from /etc/cb-home/ to /home/coder (with override)..."
-CB_HOME_OVERRIDE="/etc/cb-home"
-if [ -d "$CB_HOME_OVERRIDE" ]; then
-  info "Copying override files from $CB_HOME_OVERRIDE to $HOME_DIR..."
-  cp -r "$CB_HOME_OVERRIDE/." "$HOME_DIR/" 2>/dev/null || true
+BOOTH_HOME_OVERRIDE="/etc/cb-home"
+if [ -d "$BOOTH_HOME_OVERRIDE" ]; then
+  info "Copying override files from $BOOTH_HOME_OVERRIDE to $HOME_DIR..."
+  cp -r "$BOOTH_HOME_OVERRIDE/." "$HOME_DIR/" 2>/dev/null || true
 fi
 
 # Fix ownership for root-owned files/dirs that were copied in from seed or override
@@ -305,16 +305,16 @@ if [ -d "/usr/share/startup.d" ] && [ ! -f "$RUN_ONCE_FLAG" ]; then
 fi
 
 info "15) Running user custom startup script (from --startup or .booth/startup.sh)"
-# Use CB_STARTUP if set, otherwise check for .booth/startup.sh in code path
-CB_STARTUP_SCRIPT="${CB_STARTUP:-}"
-if [ -z "$CB_STARTUP_SCRIPT" ] && [ -f "$CODE_DIR/.booth/startup.sh" ]; then
-  CB_STARTUP_SCRIPT="$CODE_DIR/.booth/startup.sh"
+# Use BOOTH_STARTUP if set, otherwise check for .booth/startup.sh in code path
+BOOTH_STARTUP_SCRIPT="${BOOTH_STARTUP:-}"
+if [ -z "$BOOTH_STARTUP_SCRIPT" ] && [ -f "$CODE_DIR/.booth/startup.sh" ]; then
+  BOOTH_STARTUP_SCRIPT="$CODE_DIR/.booth/startup.sh"
 fi
-if [ -n "$CB_STARTUP_SCRIPT" ] && [ -f "$CB_STARTUP_SCRIPT" ] && [ -r "$CB_STARTUP_SCRIPT" ]; then
-  info "Running user startup script: $CB_STARTUP_SCRIPT"
+if [ -n "$BOOTH_STARTUP_SCRIPT" ] && [ -f "$BOOTH_STARTUP_SCRIPT" ] && [ -r "$BOOTH_STARTUP_SCRIPT" ]; then
+  info "Running user startup script: $BOOTH_STARTUP_SCRIPT"
   runuser -u "$USER_NAME" -- bash -lc "
     set -euo pipefail
-    source '$CB_STARTUP_SCRIPT'
+    source '$BOOTH_STARTUP_SCRIPT'
   "
 fi
 

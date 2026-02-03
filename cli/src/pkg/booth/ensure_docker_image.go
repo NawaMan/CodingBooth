@@ -122,13 +122,13 @@ func buildLocalImage(ctx appctx.AppContext) {
 		"-t", ctx.Image(),
 	)))
 	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
-		"--build-arg", fmt.Sprintf("CB_VARIANT_TAG=%s", ctx.Variant()),
+		"--build-arg", fmt.Sprintf("BOOTH_VARIANT_TAG=%s", ctx.Variant()),
 	)))
 	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
-		"--build-arg", fmt.Sprintf("CB_VERSION_TAG=%s", ctx.Version()),
+		"--build-arg", fmt.Sprintf("BOOTH_VERSION_TAG=%s", ctx.Version()),
 	)))
 	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
-		"--build-arg", fmt.Sprintf("CB_SETUPS=%s", ctx.SetupsDir()),
+		"--build-arg", fmt.Sprintf("BOOTH_SETUPS=%s", ctx.SetupsDir()),
 	)))
 
 	// Add user's build args

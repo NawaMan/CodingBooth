@@ -35,7 +35,7 @@ fi
 HOME=/root
 
 
-if [[ "${CB_VARIANT_TAG:-}" == "base" ]]; then
+if [[ "${BOOTH_VARIANT_TAG:-}" == "base" ]]; then
   echo "Variant does not include VS Code (code) or CodeServer" >&2
   exit 0
 fi
