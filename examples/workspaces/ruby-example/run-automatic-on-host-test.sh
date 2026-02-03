@@ -9,13 +9,15 @@ failed=0
 failed_tests=()
 total_tests=0
 
-for f in test*.sh ; do
-    echo "$f"
+for f in .cb-tests/test0*.sh ; do
+    [ -f "$f" ] || continue
+    test_name="$(basename "$f")"
+    echo "$test_name"
     total_tests=$((total_tests + 1))
 
     if ! ./"$f"; then
         failed=1
-        failed_tests+=("$f")
+        failed_tests+=("$test_name")
     fi
     echo ""
 done

@@ -85,14 +85,20 @@ format_duration() {
 # Function to check if example matches any filter tag
 matches_tag_filter() {
     local example_dir="$1"
-    local tags_file="$example_dir/tags.txt"
+    local tags_file="$example_dir/.cb-tests/tags.txt"
 
     # If no filter tags specified, match all
     if [ ${#FILTER_TAGS[@]} -eq 0 ]; then
         return 0
     fi
 
-    # If no tags file exists, don't match
+    # Backward compatibility while examples migrate:
+    # prefer .cb-tests/tags.txt, fallback to root tags.txt.
+    if [ ! -f "$tags_file" ]; then
+        tags_file="$example_dir/tags.txt"
+    fi
+
+    # If no tags file exists, don't match.
     if [ ! -f "$tags_file" ]; then
         return 1
     fi
@@ -155,8 +161,8 @@ for example_dir in "$SCRIPT_DIR"/*/; do
         continue
     fi
 
-    # Check if has any tests
-    test_count=$(find "$example_dir" -maxdepth 1 -name "test0*.sh" 2>/dev/null | wc -l)
+    # Check if has any tests (root-level or .cb-tests/)
+    test_count=$(find "$example_dir" "$example_dir/.cb-tests" -maxdepth 1 -name "test0*.sh" 2>/dev/null | wc -l)
     if [ "$test_count" -eq 0 ]; then
         continue
     fi
@@ -214,7 +220,7 @@ for example_dir in "${examples[@]}"; do
         start_time=$(date +%s)
 
         test_runner="$example_dir/run-automatic-on-host-test.sh"
-        test_count=$(find "$example_dir" -maxdepth 1 -name "test0*.sh" 2>/dev/null | wc -l)
+        test_count=$(find "$example_dir" "$example_dir/.cb-tests" -maxdepth 1 -name "test0*.sh" 2>/dev/null | wc -l)
 
         echo "========================================"
         echo "Example: $example_name ($test_count test(s))"

@@ -3,24 +3,21 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-#
-# Test runner for js-example workspace.
-# Runs all test0*.sh files and reports pass/fail counts.
-#
-
 cd "$(dirname "$0")"
 
 failed=0
 failed_tests=()
 total_tests=0
 
-for f in test0*.sh ; do
-    echo "$f"
+for f in .cb-tests/test0*.sh ; do
+    [ -f "$f" ] || continue
+    test_name="$(basename "$f")"
+    echo "$test_name"
     total_tests=$((total_tests + 1))
 
     if ! ./"$f"; then
         failed=1
-        failed_tests+=("$f")
+        failed_tests+=("$test_name")
     fi
     echo ""
 done
@@ -38,5 +35,3 @@ else
 fi
 
 exit $failed
-
-
