@@ -2,17 +2,13 @@ name: Release Examples
 
 on:
   workflow_dispatch:
-    inputs:
-      release_tag:
-        description: 'Release tag (e.g., examples-v1.0.0)'
-        required: true
-        default: 'examples-latest'
+
+permissions:
+  contents: write
 
 jobs:
   release-examples:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -20,6 +16,33 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.24.1'
+
+      - name: Read version from version.txt
+        id: get_version
+        run: |
+          set -euo pipefail
+          VERSION=$(tr -d ' \t\r\n' < version.txt)
+          if [ -z "$VERSION" ]; then
+            echo "version.txt is empty" >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Show version
+        run: echo "Publishing examples for version ${{ steps.get_version.outputs.version }}"
+
+      - name: Check if pre-release
+        id: check_prerelease
+        run: |
+          if [[ "$VERSION" =~ --rc([0-9]+)?$ ]]; then
+            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
+            echo "Detected pre-release version: $VERSION"
+          else
+            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
+            echo "Detected stable version: $VERSION"
+          fi
+        env:
+          VERSION: ${{ steps.get_version.outputs.version }}
 
       - name: Build codingbooth binary
         run: ./build/cli-build.sh
@@ -57,16 +80,35 @@ jobs:
       - name: Move example-list.txt to dist
         run: mv example-list.txt dist/
 
-      - name: Create GitHub Release
+      - name: Create versioned GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ github.event.inputs.release_tag }}
-          name: "Examples - ${{ github.event.inputs.release_tag }}"
+          tag_name: examples-${{ steps.get_version.outputs.version }}
+          name: "Examples - ${{ steps.get_version.outputs.version }}"
           body: |
-            ## CodingBooth Examples
+            ## CodingBooth Examples - ${{ steps.get_version.outputs.version }}
 
             Download individual example zips to try CodingBooth with different languages and tools.
 
             See `example-list.txt` for the complete list of available examples.
           files: dist/*
-          prerelease: ${{ contains(github.event.inputs.release_tag, 'rc') }}
+          prerelease: ${{ steps.check_prerelease.outputs.is_prerelease == 'true' }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create latest GitHub Release
+        if: steps.check_prerelease.outputs.is_prerelease == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: examples-latest
+          name: "Examples - latest (${{ steps.get_version.outputs.version }})"
+          body: |
+            ## CodingBooth Examples - latest (${{ steps.get_version.outputs.version }})
+
+            Download individual example zips to try CodingBooth with different languages and tools.
+
+            See `example-list.txt` for the complete list of available examples.
+          files: dist/*
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
