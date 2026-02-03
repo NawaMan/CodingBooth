@@ -20,3 +20,5 @@ RUN notebook--setup.sh
 
 RUN claude-code--setup.sh
 RUN antigravity--setup.sh
+
+RUN apt update && apt install -y libreoffice libreoffice-gtk3 && rm -rf /var/lib/apt/lists/*
