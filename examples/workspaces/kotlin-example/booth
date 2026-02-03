@@ -38,6 +38,125 @@ fi
 VERSION=0.8.0
 VERBOSE="${VERBOSE:-true}"
 
+# --- NESTED BOOTH DETECTION ---
+# Detect if running inside a CodingBooth container and prevent accidental nested execution.
+# Users can explicitly allow nested execution by setting BOOTH_IN_BOOTH=true and using a different port.
+detect_nested_booth() {
+    # Check if we're inside a CodingBooth container
+    # Markers: /opt/codingbooth/ directory exists OR CB_CONTAINER_NAME is set
+    if [[ ! -d "/opt/codingbooth" && -z "${CB_CONTAINER_NAME:-}" ]]; then
+        return 0  # Not inside a container, continue normally
+    fi
+
+    # We're inside a CodingBooth container
+    if [[ "${BOOTH_IN_BOOTH:-}" != "true" ]]; then
+        cat >&2 <<'EOF'
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                    Running booth inside a booth container                 ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ You appear to be running 'booth' from inside a CodingBooth container.    ║
+║ This is usually accidental - the booth script is visible here because    ║
+║ your project folder is mounted at /home/coder/code.                       ║
+║                                                                           ║
+║ If you intentionally want to run a nested booth (booth-in-booth), set:   ║
+║                                                                           ║
+║     export BOOTH_IN_BOOTH=true                                            ║
+║                                                                           ║
+║ AND specify a different port (not the current container's port):         ║
+║                                                                           ║
+║     ./booth --port NEXT ...                                               ║
+║     ./booth --port 11000 ...                                              ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+EOF
+        exit 1
+    fi
+
+    # BOOTH_IN_BOOTH=true is set, now check port
+    local requested_port=""
+    local args=("$@")
+    local i=0
+    while [[ $i -lt ${#args[@]} ]]; do
+        case "${args[$i]}" in
+            --port)
+                if [[ $((i+1)) -lt ${#args[@]} ]]; then
+                    requested_port="${args[$((i+1))]}"
+                fi
+                break
+                ;;
+            --port=*)
+                requested_port="${args[$i]#--port=}"
+                break
+                ;;
+        esac
+        ((i++)) || true
+    done
+
+    # Get current container's ports
+    local host_port="${CB_HOST_PORT:-}"
+    local code_port="${CB_CODE_PORT:-10000}"
+
+    # If no port specified, error out - we need an explicit different port
+    if [[ -z "$requested_port" ]]; then
+        cat >&2 <<EOF
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                         Port conflict in nested booth                     ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ BOOTH_IN_BOOTH=true is set, but no port was specified.                   ║
+║                                                                           ║
+║ You must specify a different port to avoid conflicts with this container: ║
+║   Current container's host port: ${host_port:-"(not set)"}
+║   Current container's code port: ${code_port}
+║                                                                           ║
+║ Use one of:                                                               ║
+║     ./booth --port NEXT ...      (auto-find next available port)          ║
+║     ./booth --port RANDOM ...    (use a random port)                      ║
+║     ./booth --port 11000 ...     (explicit different port)                ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+EOF
+        exit 1
+    fi
+
+    # Check if the requested port conflicts with current container's ports
+    # Skip check for NEXT and RANDOM as they will find a different port
+    if [[ "$requested_port" != "NEXT" && "$requested_port" != "RANDOM" ]]; then
+        if [[ "$requested_port" == "$host_port" ]]; then
+            cat >&2 <<EOF
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                         Port conflict in nested booth                     ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ The requested port ($requested_port) conflicts with this container's host port.
+║                                                                           ║
+║ Use a different port:                                                     ║
+║     ./booth --port NEXT ...      (auto-find next available port)          ║
+║     ./booth --port RANDOM ...    (use a random port)                      ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+EOF
+            exit 1
+        fi
+        if [[ "$requested_port" == "$code_port" ]]; then
+            cat >&2 <<EOF
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                         Port conflict in nested booth                     ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ The requested port ($requested_port) conflicts with this container's code port.
+║                                                                           ║
+║ Use a different port:                                                     ║
+║     ./booth --port NEXT ...      (auto-find next available port)          ║
+║     ./booth --port RANDOM ...    (use a random port)                      ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+EOF
+            exit 1
+        fi
+    fi
+
+    # All checks passed, allow nested execution
+    return 0
+}
+
 # --- CENTRAL CACHE SETUP ---
 # Platform-specific cache directory for shared binary storage
 get_cache_dir() {
@@ -279,7 +398,7 @@ EOF
 }
 
 function ShellConfig() {
-    local booth_func='unalias booth 2>/dev/null; booth() { d="$PWD"; while [[ "$d" != "/" && ! -x "$d/booth" ]]; do d="${d%/*}"; done; [[ -x "$d/booth" ]] && "$d/booth" "$@" || echo "booth not found" >&2; }'
+    local booth_func='unalias booth 2>/dev/null; booth() { d="$PWD"; while [[ "$d" != "/" && ! -x "$d/booth" ]]; do d="${d%/*}"; done; if [[ -x "$d/booth" ]]; then "$d/booth" "$@"; else echo "booth not found" >&2; fi; }'
 
     # All supported shell rc files
     local rc_files=(
@@ -827,6 +946,10 @@ case "${COMMAND}" in
     help)         PrintHelp    ; exit 0 ; ;;
     shell-config) ShellConfig  ; exit 0 ; ;;
 esac
+
+# Check for nested booth execution (running booth inside a booth container)
+# This check runs for all commands except help/version/shell-config
+detect_nested_booth "$@"
 
 # Need curl for install/run/update/uninstall
 if ! command -v curl >/dev/null 2>&1; then
