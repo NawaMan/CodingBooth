@@ -12,6 +12,7 @@ A simple greeting CLI built with Bun and TypeScript.
 ```bash
 bun run src/greeter.ts World
 bun run src/greeter.ts --color Alice
+./greeting.sh Alice
 ```
 
 ## Development
@@ -24,4 +25,9 @@ bun run src/greeter.ts [name]
 Run tests:
 ```bash
 bun test
+```
+
+For maintainers, automated example tests live in `.cb-tests/` and can be run from:
+```bash
+./run-automatic-on-host-test.sh
 ```
