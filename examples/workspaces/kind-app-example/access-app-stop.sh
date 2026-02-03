@@ -9,6 +9,6 @@ echo "Stopping port-forwards..."
 
 pkill -f "port-forward.*svc/web.*3000" 2>/dev/null || true
 pkill -f "port-forward.*svc/api.*8080" 2>/dev/null || true
-pkill -f "port-forward.*svc/export.*8081" 2>/dev/null || true
+pkill -f "port-forward.*svc/export-service.*8081" 2>/dev/null || true
 
 echo "Port-forwards stopped."
