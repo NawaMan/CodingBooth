@@ -8,5 +8,5 @@ name = "test-container"
 pull = true
 variant = "base"
 verbose = true
-version = "0.15.0"
+version = "0.16.0"
 run-args = "-p;10005"

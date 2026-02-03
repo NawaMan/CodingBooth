@@ -18,9 +18,9 @@ HOME=/root
 
 export PY_VERSION=${PY_VERSION:-3.12}
 
-if [[ "$CB_VARIANT_TAG" == "notebook" ]]; then
+if [[ "$BOOTH_VARIANT_TAG" == "notebook" ]]; then
     /opt/codingbooth/setups/notebook--setup.sh "${PY_VERSION}"
 fi
-if [[ "$CB_VARIANT_TAG" == "codeserver" ]]; then
+if [[ "$BOOTH_VARIANT_TAG" == "codeserver" ]]; then
     /opt/codingbooth/setups/codeserver--setup.sh "${PY_VERSION}"
 fi

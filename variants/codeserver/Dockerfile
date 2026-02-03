@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
-ARG CB_VERSION_TAG=latest
+ARG BOOTH_VERSION_TAG=latest
 ARG FINAL_STAGE=base
-FROM nawaman/codingbooth:base-${CB_VERSION_TAG} AS base
+FROM nawaman/codingbooth:base-${BOOTH_VERSION_TAG} AS base
 
 # Given user is root and /opt/codingbooth/setups is in PATH (from base image)
 
