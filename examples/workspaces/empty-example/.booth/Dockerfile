@@ -1,17 +1,14 @@
 # syntax=docker/dockerfile:1.7
-
-#== This section is required to allow normal operation of all variants ==
+# Empty Example Dockerfile
 
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
+
 FROM nawaman/codingbooth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
 
 ARG CB_VARIANT_TAG=base
 ARG CB_VERSION_TAG=latest
 
-#== Customizations ==
-
-# ARG for customizable stuff
 
 #== Setup ==
 
