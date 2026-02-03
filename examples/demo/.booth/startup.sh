@@ -16,9 +16,9 @@ if [[ "${CB_SILENCE_BUILD:-false}" != "true" ]]; then
   echo "🚀 Running demo startup script..."
 fi
 
-# Add a simple desktop notification if notify-send is available
-if command -v notify-send &> /dev/null; then
-  # Delay to ensure desktop is ready
+# Add a simple desktop notification if desktop is running
+if command -v notify-send &> /dev/null && cb-has-desktop-running.sh; then
+  # Delay to ensure desktop is fully ready
   (sleep 5 && notify-send "Workspace Ready" "Welcome to the demo environment! 🚀" --icon=dialog-information) &
 fi
 

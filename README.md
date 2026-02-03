@@ -553,7 +553,7 @@ Every CodingBooth container includes documentation and resources at `/opt/coding
     └── ...
 ```
 
-Run `codingbooth-info` inside the container to see a quick overview of your environment.
+Run `booth--info` inside the container to see a quick overview of your environment.
 
 #### For AI Agents
 

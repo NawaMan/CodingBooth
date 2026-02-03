@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# codingbooth-info
+# booth--info
 #
 # Display information about the CodingBooth environment.
 # This helps users and AI agents understand their container environment.
@@ -49,7 +49,6 @@ echo -e "${BOLD}=== Key Paths ===${RESET}"
 echo ""
 echo -e "${GREEN}/home/coder/code${RESET}        - Your project directory (mounted from host)"
 echo -e "${GREEN}/opt/codingbooth/setups${RESET} - Available setup scripts"
-echo -e "${GREEN}/opt/codingbooth/docs${RESET}   - Documentation"
 
 echo ""
 echo -e "${BOLD}=== Documentation ===${RESET}"
@@ -58,10 +57,10 @@ echo "Available documentation in /opt/codingbooth/:"
 echo ""
 
 if [[ -f "$CB_DIR/README.md" ]]; then
-  echo "  - README.md        : Main documentation"
+  echo "  - README.md        : Main documentation -- Lean about CodingBooth."
 fi
 if [[ -f "$CB_DIR/LICENSE" ]]; then
-  echo "  - LICENSE          : Apache 2.0 License"
+  echo "  - LICENSE          : Apache 2.0 License."
 fi
 if [[ -f "$CB_DIR/AGENT.md" ]]; then
   echo "  - AGENT.md         : Instructions for AI agents (also at ~/AGENT.md)"
@@ -71,9 +70,9 @@ if [[ -d "$CB_DIR/variants" ]]; then
 fi
 
 echo ""
-echo -e "${BOLD}=== Quick Commands ===${RESET}"
-echo ""
+echo -e "${BOLD}Further Information: ${RESET}"
 echo "  cat /opt/codingbooth/version.txt     # Show version"
-echo "  ls /opt/codingbooth/setups/          # List available setup scripts"
+echo "  ls  /opt/codingbooth/setups/         # List available setup scripts"
 echo "  cat /opt/codingbooth/README.md       # Read main documentation"
+echo "  booth--envs                          # Show environment variables"
 echo ""
