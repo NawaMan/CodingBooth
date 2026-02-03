@@ -1324,6 +1324,7 @@ For deeper technical details on how CodingBooth works internally, see [docs/impl
 - **[Variant Selection](docs/implementations/VARIANTS.md)** — How variants and aliases are resolved
 - **[Docker-in-Docker](docs/implementations/DIND.md)** — Running Docker inside CodingBooth
 - **[Network Whitelist](docs/implementations/URL_WHITELIST.md)** — Restricting container network access
+- **[Booth-in-Booth](docs/implementations/BOOTH_IN_BOOTH.md)** — Nested booth detection and opt-in mechanism
 
 
 ## Community & Feedback
