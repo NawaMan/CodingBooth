@@ -120,4 +120,4 @@ variants/base/_stage/
 .claude
 
 !/build/
-codingbooth
+/codingbooth

@@ -20,10 +20,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.24.1'
-          cache-dependency-path: cli/go.sum
+        run: |
+          ./build/init-go-setup.sh
+          echo "/usr/local/go/bin" >> $GITHUB_PATH
 
       # ---------------------------------------------------------
       # Read version.txt → output "version"
@@ -71,7 +70,9 @@ jobs:
       # Build binary artifacts
       # ---------------------------------------------------------
       - name: Build Go binaries for all platforms
-        run: ./build/cli-build.sh
+        run: |
+          ./build/cli-build.sh
+          ls -la bin
 
       - name: Make wrapper executable
         run: chmod +x booth
@@ -79,6 +80,7 @@ jobs:
       - name: Generate SHA256 checksums for all binaries
         run: |
           cd bin
+          ls -la 
           for binary in codingbooth-*; do
             sha256sum "$binary" > "${binary}.sha256"
           done
