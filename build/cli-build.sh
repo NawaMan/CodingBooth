@@ -34,6 +34,11 @@ echo "🔨 Building ${APP_NAME} v${VERSION}"
 echo "=================================="
 echo ""
 
+# Download dependencies
+echo "📥 Downloading dependencies..."
+go mod download
+echo ""
+
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
 
@@ -57,11 +62,13 @@ if [[ "$(uname -s)" == "MINGW"* ]] || [[ "$(uname -s)" == "CYGWIN"* ]] || [[ "$(
     LOCAL_OUTPUT="../codingbooth.exe"
 fi
 
-if go build -ldflags "-X main.version=${VERSION}" -o "$LOCAL_OUTPUT" "$SRC_DIR/codingbooth" 2>/dev/null; then
+BUILD_OUTPUT=$(go build -ldflags "-X main.version=${VERSION}" -o "$LOCAL_OUTPUT" "$SRC_DIR/codingbooth" 2>&1) && BUILD_SUCCESS=true || BUILD_SUCCESS=false
+if $BUILD_SUCCESS; then
     LOCAL_SIZE=$(du -h "$LOCAL_OUTPUT" | cut -f1)
     echo "   ✅ Built: $LOCAL_OUTPUT (${LOCAL_SIZE})"
 else
     echo "   ❌ FAILED to build local executable"
+    echo "$BUILD_OUTPUT" | sed 's/^/      /'
 fi
 echo ""
 
@@ -86,12 +93,14 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     # Build
     echo -n "   Building ${GOOS}/${GOARCH}... "
     
-    if GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "-X main.version=${VERSION}" -o "$OUTPUT_PATH" "$SRC_DIR/codingbooth" 2>/dev/null; then
+    BUILD_OUTPUT=$(GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "-X main.version=${VERSION}" -o "$OUTPUT_PATH" "$SRC_DIR/codingbooth" 2>&1) && BUILD_SUCCESS=true || BUILD_SUCCESS=false
+    if $BUILD_SUCCESS; then
         SIZE=$(du -h "$OUTPUT_PATH" | cut -f1)
         echo "✅ (${SIZE})"
         BUILD_COUNT=$((BUILD_COUNT + 1))
     else
         echo "❌ FAILED"
+        echo "$BUILD_OUTPUT" | sed 's/^/      /'
         FAILED_COUNT=$((FAILED_COUNT + 1))
     fi
 done
