@@ -39,10 +39,10 @@ else
 fi
 
 # Variant (from environment variable set at runtime)
-echo -e "${CYAN}Variant:${RESET}  ${CB_VARIANT_TAG:-base}"
+echo -e "${CYAN}Variant:${RESET}  ${BOOTH_VARIANT_TAG:-base}"
 
 # Booth name
-echo -e "${CYAN}Booth:${RESET}    ${CB_CONTAINER_NAME:-unknown}"
+echo -e "${CYAN}Booth:${RESET}    ${BOOTH_CONTAINER_NAME:-unknown}"
 
 echo ""
 echo -e "${BOLD}=== Key Paths ===${RESET}"

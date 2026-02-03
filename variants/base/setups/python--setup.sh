@@ -43,16 +43,16 @@ if [[ ! "$PY_VERSION" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]]; then
 fi
 
 # Idempotent check - compare at the requested precision level
-if [[ -n "${CB_INSTALLED_PYTHON_VERSION:-}" ]]; then
+if [[ -n "${BOOTH_INSTALLED_PYTHON_VERSION:-}" ]]; then
   if [[ "$PY_VERSION" =~ ^[0-9]+\.[0-9]+$ ]]; then
     # Requested X.Y format - check if installed version starts with X.Y.
-    if [[ "${CB_INSTALLED_PYTHON_VERSION}" == "${PY_VERSION}".* ]]; then
-      echo "Already setup python version ${CB_INSTALLED_PYTHON_VERSION} (satisfies ${PY_VERSION})" | tee /tmp/setups.txt
+    if [[ "${BOOTH_INSTALLED_PYTHON_VERSION}" == "${PY_VERSION}".* ]]; then
+      echo "Already setup python version ${BOOTH_INSTALLED_PYTHON_VERSION} (satisfies ${PY_VERSION})" | tee /tmp/setups.txt
       exit 0
     fi
   else
     # Requested X.Y.Z format - exact match required
-    if [[ "${CB_INSTALLED_PYTHON_VERSION}" == "${PY_VERSION}" ]]; then
+    if [[ "${BOOTH_INSTALLED_PYTHON_VERSION}" == "${PY_VERSION}" ]]; then
       echo "Already setup python version ${PY_VERSION}" | tee /tmp/setups.txt
       exit 0
     fi
@@ -295,7 +295,7 @@ else
   CB_PY_VERSION=""
 fi
 export CB_PY_VERSION
-export CB_INSTALLED_PYTHON_VERSION="${CB_PY_VERSION}"
+export BOOTH_INSTALLED_PYTHON_VERSION="${CB_PY_VERSION}"
 export CB_VENV_DIR="/opt/venvs/py${CB_PY_VERSION}"
 
 # 2) Compute the series (X.Y) from CB_PY_VERSION (POSIX-safe)
@@ -344,9 +344,9 @@ python_setup_info() {
 
 # #== Override what venv activation does ==
 # Bash
-export PS1="\[\e[1;32m\]${CB_CONTAINER_NAME:-booth}\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "
+export PS1="\[\e[1;32m\]${BOOTH_CONTAINER_NAME:-booth}\[\e[0m\]:\[\e[1;34m\]\w\[\e[0m\]\$ "
 # Zsh
-export PROMPT="%%B%%F{green}${CB_CONTAINER_NAME:-booth}%%b%%f:%%B%%F{blue}%%~%%b%%f❯ "
+export PROMPT="%%B%%F{green}${BOOTH_CONTAINER_NAME:-booth}%%b%%f:%%B%%F{blue}%%~%%b%%f❯ "
 
 alias python-setup-info='python_setup_info'
 EOF

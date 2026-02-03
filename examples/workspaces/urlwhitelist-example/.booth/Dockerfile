@@ -3,16 +3,16 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-ARG CB_VARIANT_TAG=base
-ARG CB_VERSION_TAG=latest
-FROM nawaman/codingbooth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
+FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
 
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 USER root
 
-ARG CB_SETUPS=/opt/codingbooth/setups
-ARG CB_VARIANT_TAG=base
-ARG CB_VERSION_TAG=latest
+ARG BOOTH_SETUPS=/opt/codingbooth/setups
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
 
 # Setup
 WORKDIR /opt/codingbooth/setups

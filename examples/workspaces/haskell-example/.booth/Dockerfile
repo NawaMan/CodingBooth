@@ -2,13 +2,13 @@
 # Haskell Example Dockerfile
 # Uses apt packages for simplicity (faster than ghcup)
 
-ARG CB_VARIANT_TAG=base
-ARG CB_VERSION_TAG=latest
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
 
-FROM nawaman/codingbooth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
+FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
 
-ARG CB_VARIANT_TAG=base
-ARG CB_VERSION_TAG=latest
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
 
 # Install GHC and Cabal from apt (simpler than ghcup for examples)
 RUN apt-get update && \

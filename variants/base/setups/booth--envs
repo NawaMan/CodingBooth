@@ -6,10 +6,10 @@
 # -----------------------------------------------------------------------------
 # booth--envs
 #
-# Display CodingBooth-related environment variables (CB_* prefix).
+# Display CodingBooth-related environment variables (BOOTH_* prefix).
 # Useful for debugging and understanding the current container configuration.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
 
-env | sort | grep CB_ || echo "No CB_* environment variables found."
+env | sort | grep BOOTH_ || echo "No BOOTH_* environment variables found."

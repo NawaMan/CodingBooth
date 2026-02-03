@@ -2,13 +2,13 @@
 # Go Example Dockerfile
 # Installs popular Go tools on top of the base workspace image
 
-ARG CB_VARIANT_TAG=base
-ARG CB_VERSION_TAG=latest
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
 
-FROM nawaman/codingbooth:${CB_VARIANT_TAG}-${CB_VERSION_TAG}
+FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
 
-ARG CB_VARIANT_TAG=base
-ARG CB_VERSION_TAG=latest
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
 
 RUN go--setup.sh
 RUN go--install.sh \
