@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/boothfile"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
@@ -74,12 +75,12 @@ func EnsureDockerImage(ctx appctx.AppContext) appctx.AppContext {
 	return ctx
 }
 
-// normalizeDockerFile normalizes the DOCKER_FILE path.
+// normalizeDockerFile normalizes the DOCKER_FILE path, handling Boothfile compilation.
+// Returns the Dockerfile path (either existing or generated from Boothfile).
 func normalizeDockerFile(ctx appctx.AppContext) string {
-	dockerFile := ctx.Dockerfile()
-
-	// If DOCKER_FILE is set
-	if dockerFile != "" {
+	// If --dockerfile is explicitly set, use it (takes precedence over Boothfile detection)
+	if ctx.Dockerfile() != "" {
+		dockerFile := ctx.Dockerfile()
 		// If it's a directory, check for Dockerfile in .booth/ first
 		if isDir(dockerFile) {
 			dockerfile := filepath.Join(dockerFile, ".booth", "Dockerfile")
@@ -90,9 +91,24 @@ func normalizeDockerFile(ctx appctx.AppContext) string {
 		return dockerFile
 	}
 
-	// If DOCKER_FILE is unset, check code path for Dockerfile
+	// If --boothfile is explicitly set, compile it
+	if ctx.Boothfile() != "" {
+		return compileBoothfile(ctx, ctx.Boothfile())
+	}
+
+	// Auto-detect: check code path for Boothfile first, then Dockerfile
 	if ctx.Code() != "" && isDir(ctx.Code()) {
-		// Prefer new location (.booth/Dockerfile)
+		// Check for Boothfile first (higher precedence)
+		boothfilePath := filepath.Join(ctx.Code(), ".booth", "Boothfile")
+		if isFile(boothfilePath) {
+			if ctx.Dockerfile() != "" {
+				// Both exist and --dockerfile wasn't explicit - warn
+				fmt.Fprintf(os.Stderr, "Warning: Both Boothfile and Dockerfile exist. Using Boothfile.\n")
+			}
+			return compileBoothfile(ctx, boothfilePath)
+		}
+
+		// Fall back to Dockerfile
 		dockerfile := filepath.Join(ctx.Code(), ".booth", "Dockerfile")
 		if isFile(dockerfile) {
 			return dockerfile
@@ -100,6 +116,85 @@ func normalizeDockerFile(ctx appctx.AppContext) string {
 	}
 
 	return ""
+}
+
+// compileBoothfile compiles a Boothfile to a Dockerfile.
+// If --emit-dockerfile is set, it prints the Dockerfile and exits.
+// Returns the path to the generated Dockerfile.
+func compileBoothfile(ctx appctx.AppContext, boothfilePath string) string {
+	if !ctx.SilenceBuild() {
+		fmt.Fprintf(os.Stderr, "Info: compiling Boothfile '%s'...\n", boothfilePath)
+	}
+
+	// Read Boothfile
+	content, err := os.ReadFile(boothfilePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to read Boothfile '%s': %v\n", boothfilePath, err)
+		os.Exit(1)
+	}
+
+	// Parse
+	parser := boothfile.NewParser()
+	if ctx.Strict() {
+		parser = boothfile.NewStrictParser()
+	}
+	parseResult := parser.ParseString(string(content))
+
+	// Check for parse errors
+	if parseResult.HasErrors() {
+		fmt.Fprintf(os.Stderr, "Error: Boothfile compilation failed:\n")
+		for _, e := range parseResult.Errors {
+			fmt.Fprintf(os.Stderr, "  %s\n", e.Error())
+		}
+		os.Exit(1)
+	}
+
+	// Show warnings
+	if parseResult.HasWarnings() {
+		for _, w := range parseResult.Warnings {
+			fmt.Fprintf(os.Stderr, "Warning: %s\n", w.Error())
+		}
+	}
+
+	// Compile with custom setup detection
+	compilerOpts := boothfile.CompilerOptions{
+		CustomSetupsDir: ".booth/setups",
+		CheckCustomSetupExists: func(name string) bool {
+			setupPath := filepath.Join(ctx.Code(), ".booth", "setups", name+"--setup.sh")
+			return isFile(setupPath)
+		},
+	}
+	compiler := boothfile.NewCompilerWithOptions(compilerOpts)
+	compileResult := compiler.Compile(parseResult)
+
+	// Check for compile errors
+	if compileResult.HasErrors() {
+		fmt.Fprintf(os.Stderr, "Error: Boothfile compilation failed:\n")
+		for _, e := range compileResult.Errors {
+			fmt.Fprintf(os.Stderr, "  %s\n", e.Error())
+		}
+		os.Exit(1)
+	}
+
+	// If --emit-dockerfile, print and exit
+	if ctx.EmitDockerfile() {
+		fmt.Print(compileResult.Dockerfile)
+		os.Exit(0)
+	}
+
+	// Write to a temporary file in .booth/
+	generatedPath := filepath.Join(ctx.Code(), ".booth", ".Dockerfile.generated")
+	err = os.WriteFile(generatedPath, []byte(compileResult.Dockerfile), 0644)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to write generated Dockerfile: %v\n", err)
+		os.Exit(1)
+	}
+
+	if ctx.Verbose() {
+		fmt.Fprintf(os.Stderr, "Generated Dockerfile: %s\n", generatedPath)
+	}
+
+	return generatedPath
 }
 
 // buildLocalImage builds a local Docker image.
