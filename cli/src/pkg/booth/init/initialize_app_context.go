@@ -251,6 +251,22 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.Dockerfile = v
 			i += 2
 
+		case "--boothfile":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			cfg.Boothfile = v
+			i += 2
+
+		case "--emit-dockerfile":
+			cfg.EmitDockerfile = true
+			i++
+
+		case "--strict":
+			cfg.Strict = true
+			i++
+
 		// Build
 		case "--build-arg":
 			v, err := needValue(args, i, arg)
