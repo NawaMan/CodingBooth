@@ -34,19 +34,9 @@ Important rule:
 - Without `--keep-alive`, the default run path uses `--rm`; after exit there is no resumable container state.
 
 ### Flow Chart
-```mermaid
-flowchart TD
-    A[run --keep-alive] --> B[RUNNING]
-    C[start] --> B
-    B -->|stop| D[STOPPED]
-    B -->|restart| B
-    D -->|start| B
-    D -->|remove| E[REMOVED]
-    D -->|prune| E
+![Booth Lifecycle Flow](../images/booth-lifecycle-flow.svg)
 
-    F[run (default, no --keep-alive)] --> G[RUNNING --rm]
-    G -->|exit/stop| E
-```
+Source definition: see [Appendix A: Mermaid Source](#appendix-a-mermaid-source).
 
 ### Command-to-Transition Table
 | Command | From | To | Notes |
@@ -165,3 +155,18 @@ Examples:
 - offset local ports (for example `10001`)
 
 `NEXT` and `RANDOM` currently allocate in increments of 1000 starting at `10000`.
+
+## Appendix A: Mermaid Source
+```mermaid
+flowchart TD
+    A[run --keep-alive] --> B[RUNNING]
+    C[start] --> B
+    B -->|stop| D[STOPPED]
+    B -->|restart| B
+    D -->|start| B
+    D -->|remove| E[REMOVED]
+    D -->|prune| E
+
+    F[run (default, no --keep-alive)] --> G[RUNNING --rm]
+    G -->|exit/stop| E
+```
