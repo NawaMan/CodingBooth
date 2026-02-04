@@ -15,6 +15,36 @@ cd "$ROOT_DIR"
 PLAYGROUND_DIR="$ROOT_DIR/examples/playground"
 
 TAG="cb-manual-cross-user:$(date +%Y%m%d-%H%M%S)"
+TARGET_USER=""
+AUTO_CONFIRM=false
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --user)
+      if [[ $# -lt 2 || -z "${2:-}" ]]; then
+        echo "Error: --user requires a username value."
+        exit 2
+      fi
+      TARGET_USER="$2"
+      shift 2
+      ;;
+    --yes|-y)
+      AUTO_CONFIRM=true
+      shift
+      ;;
+    --help|-h)
+      echo "Usage: $0 [--user <username>] [--yes]"
+      echo "  --user <username>  Run test against this local user without username prompt"
+      echo "  --yes, -y          Skip confirmation prompt"
+      exit 0
+      ;;
+    *)
+      echo "Unknown argument: $1"
+      echo "Use --help for usage."
+      exit 2
+      ;;
+  esac
+done
 
 echo "═══════════════════════════════════════════════════════════"
 echo "Lifecycle Cross-User Manual Test"
@@ -26,7 +56,10 @@ echo "  1) User A (you) creates and commits a booth image"
 echo "  2) User B runs that image"
 echo "  3) We check if /home/coder is writable for User B"
 echo
-read -rp "Enter another local username to test with: " TARGET_USER
+
+if [[ -z "$TARGET_USER" ]]; then
+  read -rp "Enter another local username to test with: " TARGET_USER
+fi
 
 if [[ -z "${TARGET_USER}" ]]; then
   echo "No username provided. Exiting."
@@ -39,11 +72,13 @@ if ! id "$TARGET_USER" >/dev/null 2>&1; then
 fi
 
 echo
-read -rp "Proceed with manual cross-user test using '$TARGET_USER'? [y/N]: " CONFIRM
-CONFIRM="$(echo "$CONFIRM" | tr '[:upper:]' '[:lower:]')"
-if [[ "$CONFIRM" != "y" && "$CONFIRM" != "yes" ]]; then
-  echo "Cancelled."
-  exit 0
+if [[ "$AUTO_CONFIRM" != "true" ]]; then
+  read -rp "Proceed with manual cross-user test using '$TARGET_USER'? [y/N]: " CONFIRM
+  CONFIRM="$(echo "$CONFIRM" | tr '[:upper:]' '[:lower:]')"
+  if [[ "$CONFIRM" != "y" && "$CONFIRM" != "yes" ]]; then
+    echo "Cancelled."
+    exit 0
+  fi
 fi
 
 echo
