@@ -1,0 +1,91 @@
+#!/bin/bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# Manual test: cross-user lifecycle image restore behavior
+#
+# This validates the known limitation:
+# image committed by User A and run by User B may hit UID/GID ownership issues.
+
+set -euo pipefail
+
+ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+cd "$ROOT_DIR"
+
+TAG="cb-manual-cross-user:$(date +%Y%m%d-%H%M%S)"
+
+echo "═══════════════════════════════════════════════════════════"
+echo "Lifecycle Cross-User Manual Test"
+echo "═══════════════════════════════════════════════════════════"
+echo
+
+echo "This manual test asks for another local user and attempts:"
+echo "  1) User A (you) creates and commits a booth image"
+echo "  2) User B runs that image"
+echo "  3) We check if /home/coder is writable for User B"
+echo
+read -rp "Enter another local username to test with: " TARGET_USER
+
+if [[ -z "${TARGET_USER}" ]]; then
+  echo "No username provided. Exiting."
+  exit 1
+fi
+
+if ! id "$TARGET_USER" >/dev/null 2>&1; then
+  echo "User '$TARGET_USER' does not exist on this machine."
+  exit 1
+fi
+
+echo
+read -rp "Proceed with manual cross-user test using '$TARGET_USER'? [y/N]: " CONFIRM
+CONFIRM="$(echo "$CONFIRM" | tr '[:upper:]' '[:lower:]')"
+if [[ "$CONFIRM" != "y" && "$CONFIRM" != "yes" ]]; then
+  echo "Cancelled."
+  exit 0
+fi
+
+echo
+echo "Step A: build and copy latest codingbooth binary"
+GOCACHE=/tmp/go-cache ./build/cli-build.sh >/dev/null
+cp -f ./codingbooth ./examples/playground/codingbooth
+chmod +x ./examples/playground/codingbooth
+
+echo "Step B: create keep-alive booth and commit image as current user"
+(
+  cd ./examples/playground
+  ./codingbooth --name cross-user-source --keep-alive -- 'mkdir -p /home/coder/.manual-cross-user && echo created-by-user-a > /home/coder/.manual-cross-user/owner.txt'
+  docker commit cross-user-source "$TAG" >/dev/null
+  docker rm -f cross-user-source >/dev/null 2>&1 || true
+)
+
+echo
+echo "Step C: run committed image as user '$TARGET_USER'"
+echo "Command to run (you may be prompted for sudo password):"
+echo "  sudo -u $TARGET_USER -H bash -lc 'cd $ROOT_DIR/examples/playground && ./codingbooth --image $TAG --keep-alive -- \"touch /home/coder/.manual-cross-user/from-user-b\"'"
+echo
+
+set +e
+sudo -u "$TARGET_USER" -H bash -lc "cd '$ROOT_DIR/examples/playground' && ./codingbooth --image '$TAG' --keep-alive -- 'touch /home/coder/.manual-cross-user/from-user-b'"
+RESULT=$?
+set -e
+
+echo
+if [[ $RESULT -eq 0 ]]; then
+  echo "✅ Manual check result: User B command succeeded."
+  echo "   Cross-user restore may be fine for this setup."
+else
+  echo "⚠️  Manual check result: User B command failed (exit $RESULT)."
+  echo "   This can indicate the known cross-UID/GID ownership limitation."
+fi
+
+echo
+echo "Cleanup commands:"
+echo "  docker rm -f cross-user-source >/dev/null 2>&1 || true"
+echo "  docker rmi $TAG >/dev/null 2>&1 || true"
+
+echo
+docker rm -f cross-user-source >/dev/null 2>&1 || true
+docker rmi "$TAG" >/dev/null 2>&1 || true
+
+echo "Done."
