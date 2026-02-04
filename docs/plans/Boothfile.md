@@ -2,7 +2,7 @@
 
 > **Status:** Draft / Design Proposal
 >
-> This document describes the initial design and intent of **Boothfile**, a simplified, declarative configuration format for CodingBooth. It is intentionally incomplete and will be refined over time.
+> This document describes the design and intent of **Boothfile**, a simplified, declarative configuration format for CodingBooth. It will be refined over time.
 
 ---
 
@@ -10,7 +10,7 @@
 
 CodingBooth currently uses a Dockerfile-based customization model. While powerful, this exposes users to:
 
-- Boilerplate Dockerfile headers that must remain fixed
+- Boilerplate Dockerfile headers that must remain fixed (`ARG`, `FROM`, `SHELL`, `WORKDIR`, etc.)
 - Repetitive `RUN <setup-script>` patterns
 - Conditional logic that clutters Dockerfiles
 - Cognitive overhead for users who only want to *declare intent*
@@ -25,33 +25,87 @@ CodingBooth currently uses a Dockerfile-based customization model. While powerfu
 
 Boothfile is **not** a replacement for Dockerfile power. It is a *higher-level authoring format* that generates Dockerfiles (or potentially other build specifications in the future).
 
+### 1.1 Relationship to BoothInit
+
+Boothfile is designed to be the output target for `booth init`. Once Boothfile is implemented:
+
+- `booth init` generates a **Boothfile** (not a raw Dockerfile)
+- Users can read, understand, and edit the generated Boothfile easily
+- The Boothfile compiles into a Dockerfile at build time
+
+This creates a clean pipeline:
+
+```
+Templates → BoothInit → Boothfile → Dockerfile → Docker image
+```
+
+Each layer has one job. Templates describe available tools. BoothInit selects and configures them. Boothfile is the human-readable, editable configuration. The Dockerfile is the generated build artifact.
+
+### 1.2 Scope
+
+Boothfile covers **Dockerfile generation only**. It does not manage:
+
+- `config.toml` (variant, port, run-args for `docker run`)
+- `startup.sh`
+- `home/` or `home-seed/` files
+
+Those responsibilities belong to `booth init` and the existing `.booth/` configuration model.
+
+Notably, **variant and version are not Boothfile concerns**. They are determined by `config.toml` and/or CLI flags (`--variant`, `--version`), and injected into the Dockerfile prologue at build time via build arguments. Boothfile focuses purely on *what to install inside the image*.
+
 ---
 
 ## 2. Design Principles
 
-### 2.1 Declarative over imperative
+### 2.1 Concise over ceremonial
 
-Users describe *what they want*, not *how to install it*.
+Users write *what they want* without boilerplate, but **order still matters**.
 
 ```text
-setup python
+# syntax=codingbooth/boothfile:1
+
+setup python 3.13
 install pip django
 ```
 
 not:
 
 ```dockerfile
-RUN python--setup.sh
+# syntax=docker/dockerfile:1
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
+FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
+SHELL ["/bin/bash","-o","pipefail","-lc"]
+USER root
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
+WORKDIR /opt/codingbooth/setups
+
+RUN python--setup.sh 3.13
 RUN pip--install.sh django
 ```
+
+Boothfile is **not declarative** — it is an ordered, imperative sequence. The order of commands matters because each line may depend on what came before it:
+
+```text
+# Correct: install Python first, then use its pip
+setup python 3.13
+install pip django
+
+# Wrong: pip will fail because Python isn't installed yet
+install pip django
+setup python 3.13
+```
+
+What Boothfile eliminates is *ceremony*, not *sequencing*. Users still think about dependency order — they just don't have to write ARG/FROM/SHELL/WORKDIR boilerplate to do it.
 
 ### 2.2 Generated, not interpreted
 
 - Boothfile is compiled into a Dockerfile
-- The Dockerfile remains the source of truth
+- The Dockerfile remains the source of truth for Docker
 - No hidden runtime mutations
 
-Users must always be able to inspect the generated Dockerfile.
+Users must always be able to inspect the generated Dockerfile via `--emit-dockerfile`.
 
 ### 2.3 Order-preserving
 
@@ -62,16 +116,19 @@ This is critical because:
 - Dependencies must be installed before dependents
 - Users can reason about build behavior by reading top-to-bottom
 
-### 2.4 Case convention
+### 2.4 All lowercase
 
-Boothfile uses a clear case convention to distinguish between convenience commands and raw passthrough:
+Boothfile commands are all lowercase. Dockerfile directives become their lowercase equivalents, and Boothfile-specific commands (`setup`, `install`) use the same style:
 
-| Case        | Meaning                          | Examples                        |
-|-------------|----------------------------------|---------------------------------|
-| `lowercase` | Boothfile convenience (magic)    | `setup`, `pip install`, `copy`  |
-| `UPPERCASE` | Raw passthrough (no magic)       | `DOCKER`, `BASH`                |
+```text
+run apt-get update
+env MY_VAR=value
+setup python 3.12
+install pip django
+copy ./config /opt/config
+```
 
-This makes it immediately obvious when you're using Boothfile abstractions vs. dropping down to raw commands.
+No uppercase, no mixed case, no prefixes. Just simple commands.
 
 ---
 
@@ -79,74 +136,96 @@ This makes it immediately obvious when you're using Boothfile abstractions vs. d
 
 Boothfile will be implemented incrementally, allowing users to adopt it immediately while features are added over time.
 
-### Phase 1: Header Generation + Raw Passthrough
+### Phase 1: Header Generation + Basic Commands
 
-**Goal:** Eliminate boilerplate. Users write familiar Dockerfile commands.
+**Goal:** Eliminate boilerplate. Users write commands without the header ceremony.
 
 What works:
-- `variant` / `version` directives
-- `DOCKER` passthrough (raw Dockerfile commands)
-- `BASH` passthrough (raw shell commands)
+- `# syntax=codingbooth/boothfile:1` header
+- `run` — shell commands
+- `copy` — file copying
+- `env` — environment variables
+- `workdir` — working directory
+- `expose` — port declaration
+- `label` — metadata
+- `arg` — build arguments
 - Comments
+- Blank lines
 
 Example Boothfile (Phase 1):
 ```text
-variant notebook
-version latest
+# syntax=codingbooth/boothfile:1
 
 # Install graphviz
-DOCKER RUN apt-get update && apt-get install -y graphviz
+run apt-get update && apt-get install -y graphviz
 
 # Setup Python and install Django
-DOCKER RUN python--setup.sh
-DOCKER RUN pip--install.sh django
+run python--setup.sh
+run pip--install.sh django
 ```
 
 **Value delivered:** No more copy-pasting ARG/FROM boilerplate. Immediate usability.
 
-### Phase 2: Setup Convenience
+### Phase 2: Setup Convenience with Parameters
 
-**Goal:** Simplify setup script invocation.
+**Goal:** Simplify setup script invocation, including parameterized setups.
 
 New command:
-- `setup <name>` --> `RUN <name>--setup.sh`
+- `setup <n>` → `RUN <n>--setup.sh`
+- `setup <n> <args...>` → `RUN <n>--setup.sh <args...>`
 
 Example Boothfile (Phase 2):
 ```text
-variant notebook
-version latest
+# syntax=codingbooth/boothfile:1
 
-DOCKER RUN apt-get update && apt-get install -y graphviz
+# Install graphviz
+run apt-get update && apt-get install -y graphviz
 
+# Languages and tools
 setup python
-DOCKER RUN pip--install.sh django
+setup jdk 21 temurin
+run pip--install.sh django
 ```
 
-### Phase 3: Package Manager Conveniences
+Compiles to:
+
+```dockerfile
+...
+RUN apt-get update && apt-get install -y graphviz
+RUN python--setup.sh
+RUN jdk--setup.sh 21 temurin
+RUN pip--install.sh django
+```
+
+Parameters are positional and passed through directly to the setup script in the order they appear.
+
+### Phase 3: Package Manager Convenience
 
 **Goal:** Simplify common package installation patterns.
 
-New commands:
-- `install pip <packages>` --> `RUN pip--install.sh <packages>`
-- `install npm <packages>` --> `RUN npm--install.sh <packages>`
-- `install brew <packages>` --> `RUN brew--install.sh <packages>`
-- `copy <src> <dest>` --> `COPY <src> <dest>`
+New command:
+- `install pip <packages...>` → `RUN pip--install.sh <packages...>`
+- `install npm <packages...>` → `RUN npm--install.sh <packages...>`
+- `install brew <packages...>` → `RUN brew--install.sh <packages...>`
 
 Example Boothfile (Phase 3):
 ```text
-variant notebook
-version latest
+# syntax=codingbooth/boothfile:1
 
-BASH apt-get update && apt-get install -y graphviz
+run apt-get update && apt-get install -y graphviz
 
-setup python
+setup python 3.12
+setup jdk 21 temurin
 install pip django djangorestframework
+
+setup mvn 3.9.6
 
 copy ./config /opt/config
 ```
 
 ### Future Phases
 
+- BuildKit frontend image (see Section 5.2)
 - Setup script validation with suggestions
 - Additional package managers (`gem install`, `cargo install`, etc.)
 - Editor tooling / syntax highlighting
@@ -159,93 +238,161 @@ copy ./config /opt/config
 Boothfile:
 - Is optional
 - Compiles into a Dockerfile
-- Can coexist with a manually written Dockerfile (advanced usage)
+- Can coexist with a manually written Dockerfile
 
-Proposed behavior:
+Using a Dockerfile directly with `booth` (via `--dockerfile`) continues to work as before. Boothfile does not replace this path — it adds a higher-level alternative.
 
-- If `Boothfile` exists --> generate Dockerfile
-- If `.booth/Dockerfile` exists and no Boothfile --> use as-is
-- Flag: `booth build --emit-dockerfile` to output generated Dockerfile
+### 4.1 File Selection Precedence
+
+| Scenario | Behavior |
+|----------|----------|
+| No flags given | Look for `.booth/Boothfile` first, then `.booth/Dockerfile`. Use whichever is found. Error if neither exists. |
+| `--dockerfile <path>` | Use the specified Dockerfile directly. Error if it does not exist. |
+| `--boothfile <path>` | Use the specified Boothfile (compile to Dockerfile). Error if it does not exist. |
+| `--boothfile <path>` and `--dockerfile <path>` | Use the Boothfile. Emit a **warning** that both were given and Boothfile takes precedence. |
+
+### 4.2 The `--emit-dockerfile` Flag
+
+The `--emit-dockerfile` flag outputs the generated Dockerfile to stdout (or a specified path) without proceeding to build. This is essential for:
+
+- **Testing:** Verify the compiler produces correct output during development
+- **Debugging:** Users can inspect exactly what Docker will see
+- **CI/CD:** Pipelines can generate and cache Dockerfiles
+- **Migration:** Users evaluating Boothfile can compare output against their existing Dockerfile
+
+```bash
+booth build --emit-dockerfile            # Print to stdout
+booth build --emit-dockerfile > out.Dockerfile  # Save to file
+booth build --dryrun                     # Show what would be built without building
+```
 
 ---
 
-## 5. Fixed Dockerfile Prologue (Hidden)
+## 5. The `# syntax` Directive
 
-Certain Dockerfile lines are required for CodingBooth to function correctly.
+Every Boothfile begins with:
 
-These include (conceptually):
+```text
+# syntax=codingbooth/boothfile:1
+```
 
-- `FROM nawaman/codingbooth:<variant>-<version>`
-- Required `SHELL` configuration
-- Standard `ARG` definitions
-- Required environment variables
+This line serves two purposes:
 
-These lines:
-- Are generated automatically
-- Are not user-editable in Boothfile
-- May evolve over time without breaking Boothfiles
+### 5.1 File Identification (Now)
+
+Since `#` is a comment in Boothfile, the syntax directive is stripped during compilation like any other comment. But it immediately tells humans, editors, and tooling:
+
+- **What this file is** — not a shell script, not a Dockerfile, but a Boothfile
+- **Which syntax version** — enabling future evolution without breaking existing files
+- **How to process it** — tools can detect and handle Boothfiles automatically
+
+The `booth` compiler uses this line to validate that a file is a Boothfile. If the first non-blank line is not `# syntax=codingbooth/boothfile:1`, the compiler emits a warning (or error in `--strict` mode).
+
+### 5.2 BuildKit Frontend (Future)
+
+The `# syntax=` line follows the exact convention Docker uses for custom build frontends. If a `codingbooth/boothfile:1` image is published to Docker Hub containing the Boothfile compiler, then BuildKit can process Boothfiles directly:
+
+```bash
+docker build -f Boothfile .
+```
+
+Docker would see `# syntax=codingbooth/boothfile:1`, pull the frontend image, and use it to compile the Boothfile into build instructions — no `booth` CLI needed. The Boothfile *becomes* the Dockerfile.
+
+This is a future goal, not an initial requirement. For now, the `booth` binary handles compilation. But designing with this convention from day one ensures forward compatibility.
+
+### 5.3 Version Semantics
+
+The `:1` tag indicates major version 1 of the Boothfile syntax. All phases (1, 2, 3) are additive and backward-compatible within version 1:
+
+- A Phase 1 Boothfile is valid under a Phase 3 compiler
+- New commands added in later phases don't break earlier files
+- Breaking syntax changes would require `# syntax=codingbooth/boothfile:2`
 
 ---
 
-## 6. Boothfile Structure
+## 6. Fixed Dockerfile Prologue (Hidden)
 
-Boothfile is a **line-oriented DSL** with simple commands.
+Every Boothfile compiles with a fixed prologue that is required for CodingBooth to function. The prologue is **always the same** regardless of Boothfile content:
+
+```dockerfile
+# syntax=docker/dockerfile:1
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
+FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
+
+SHELL ["/bin/bash","-o","pipefail","-lc"]
+USER root
+
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
+
+WORKDIR /opt/codingbooth/setups
+```
+
+Key points:
+
+- The Boothfile's `# syntax=codingbooth/boothfile:1` is replaced by `# syntax=docker/dockerfile:1` in the generated Dockerfile
+- `BOOTH_VARIANT_TAG` and `BOOTH_VERSION_TAG` default to `base` and `latest` but are overridden at build time by `config.toml` / CLI flags — **Boothfile never specifies these**
+- These lines are generated automatically and are not user-editable in Boothfile
+- The prologue may evolve over time without breaking Boothfiles
+
+---
+
+## 7. Boothfile Structure
+
+Boothfile is a **line-oriented DSL** with simple, all-lowercase commands.
 
 Example (using Phase 3 syntax):
 
 ```text
-# Development environment for my Django project
-variant notebook
-version latest
+# syntax=codingbooth/boothfile:1
 
-setup python
+# Development environment for my Django project
+setup python 3.12
 install pip django
 
 setup java-jjava-nb-kernel
 ```
 
-### 6.1 Global directives
+A Boothfile requires the `# syntax` line. Beyond that, an empty file (or a file with only comments) is valid and produces only the prologue.
 
-| Directive             | Description                           | Default                |
-|-----------------------|---------------------------------------|------------------------|
-| `variant <name>`      | Select CodingBooth variant            | `base`                 |
-| `version <tag>`       | Select image version                  | `latest`               |
-| `namespace <name>`    | Image namespace *(future)*            | `nawaman/codingbooth`  |
-
-These map directly to image selection in CodingBooth.
-
-All directives are **optional**. A minimal Boothfile can omit them entirely:
+### 7.1 Minimal Boothfile
 
 ```text
-# Uses base:latest by default
-BASH echo "Hello from CodingBooth"
+# syntax=codingbooth/boothfile:1
 ```
+
+This is valid. It produces only the prologue — useful as a starting point or when the base image already has everything you need.
 
 ---
 
-## 7. Comments
+## 8. Comments
 
 Boothfile supports comments for documentation and readability.
 
-### 7.1 Full-line comments
+### 8.1 Full-line comments
 
-Lines starting with `#` are ignored.
+Lines starting with `#` are ignored (including the `# syntax` line).
 
 ```text
 # This is a comment
 setup python
 ```
 
-### 7.2 Inline comments
+### 8.2 Inline comments
 
 Comments may appear at the end of a line after `#`.
 
 ```text
 setup python       # Required for Django
-pip install django # Web framework
+install pip django # Web framework
 ```
 
-### 7.3 Compilation behavior
+### 8.3 Blank lines
+
+Blank lines are ignored and can be used freely for readability.
+
+### 8.4 Compilation behavior
 
 Comments are **stripped** during compilation and do not appear in the generated Dockerfile.
 
@@ -253,36 +400,21 @@ Future consideration: A flag like `--preserve-comments` could emit comments as D
 
 ---
 
-## 8. Raw Passthrough Commands
+## 9. Commands
 
-Uppercase commands pass through to the generated Dockerfile with minimal transformation. These are available from **Phase 1**.
+All Boothfile commands are lowercase. They fall into two categories:
 
-### 8.1 `DOCKER` — Raw Dockerfile directives
+- **Direct mappings** — lowercase equivalents of Dockerfile directives (`run`, `copy`, `env`, etc.)
+- **Boothfile-specific** — higher-level commands that expand into Dockerfile instructions (`setup`, `install`)
 
-Passes any Dockerfile instruction directly to the output.
+### 9.1 `run` (Phase 1+)
 
-```text
-DOCKER RUN apt-get update && apt-get install -y graphviz
-DOCKER COPY . /opt/data
-DOCKER ENV MY_VAR=value
-DOCKER WORKDIR /app
-```
+Runs a shell command.
 
-Compiles to:
-
-```dockerfile
-RUN apt-get update && apt-get install -y graphviz
-COPY . /opt/data
-ENV MY_VAR=value
-WORKDIR /app
-```
-
-### 8.2 `BASH` — Raw shell commands
-
-A convenience shorthand for `DOCKER RUN`.
+**Syntax:** `run <command>`
 
 ```text
-BASH apt-get update && apt-get install -y graphviz
+run apt-get update && apt-get install -y graphviz
 ```
 
 Compiles to:
@@ -291,12 +423,12 @@ Compiles to:
 RUN apt-get update && apt-get install -y graphviz
 ```
 
-### 8.3 Multi-line commands
+#### Multi-line commands
 
 Complex commands spanning multiple lines use heredoc-style syntax:
 
 ```text
-BASH <<END
+run <<END
   apt-get update
   apt-get install -y \
     unzip \
@@ -322,18 +454,128 @@ Delimiter rules:
 - The closing delimiter must appear alone on its own line
 - Leading whitespace inside the block is preserved (for readability) but normalized during compilation
 
----
+### 9.2 `copy` (Phase 1+)
 
-## 9. Convenience Commands (Lowercase)
+Copies files into the image.
 
-These commands provide Boothfile "magic" — simpler syntax that compiles to more verbose Dockerfile instructions.
+```text
+copy ./config /opt/config
+copy requirements.txt /tmp/requirements.txt
+```
 
-### 9.1 `setup` (Phase 2+)
+Compiles to:
 
-Declares a CodingBooth setup script dependency.
+```dockerfile
+COPY ./config /opt/config
+COPY requirements.txt /tmp/requirements.txt
+```
+
+- Source paths are relative to the build context
+- Destination paths are absolute paths in the container
+
+### 9.3 `env` (Phase 1+)
+
+Sets environment variables.
+
+```text
+env MY_VAR=value
+env APP_ENV=production
+```
+
+Compiles to:
+
+```dockerfile
+ENV MY_VAR=value
+ENV APP_ENV=production
+```
+
+### 9.4 `workdir` (Phase 1+)
+
+Sets the working directory.
+
+```text
+workdir /app
+```
+
+Compiles to:
+
+```dockerfile
+WORKDIR /app
+```
+
+### 9.5 `expose` (Phase 1+)
+
+Declares a port.
+
+```text
+expose 8080
+```
+
+Compiles to:
+
+```dockerfile
+EXPOSE 8080
+```
+
+### 9.6 `label` (Phase 1+)
+
+Adds metadata.
+
+```text
+label maintainer="team@example.com"
+```
+
+Compiles to:
+
+```dockerfile
+LABEL maintainer="team@example.com"
+```
+
+### 9.7 `arg` (Phase 1+)
+
+Defines a build argument.
+
+```text
+arg NODE_VERSION=20
+```
+
+Compiles to:
+
+```dockerfile
+ARG NODE_VERSION=20
+```
+
+### 9.8 Dependency Contract
+
+Setup scripts (run as root) and install scripts (run as user) **must not silently install their own dependencies**. If a required dependency is missing, the script must **error at build time** with a clear message.
+
+For example:
+- `pip--install.sh` requires Python to already be installed. If Python is missing, it must fail — not quietly install a default Python version.
+- `mvn--setup.sh` requires a JDK to already be installed. If no JDK is found, it must fail.
+
+This prevents subtle bugs where the wrong version of a dependency gets installed:
+
+```text
+# Without this contract, this could silently install default Python (3.12)
+# then install Python 3.13 on top — leaving django on 3.12's pip
+install pip django
+setup python 3.13
+```
+
+With the contract, the above fails immediately at `install pip django` because Python isn't installed yet. The user gets a clear build error and fixes the order.
+
+**Rule:** Setup scripts set up tools. Install scripts use tools. Neither guesses.
+
+### 9.9 `setup` (Phase 2+)
+
+Declares a CodingBooth setup script dependency, optionally with parameters.
+
+**Syntax:** `setup <n> [<args...>]`
 
 ```text
 setup python
+setup python 3.12
+setup jdk 21 temurin
 setup nodejs
 ```
 
@@ -341,14 +583,27 @@ Compiles to:
 
 ```dockerfile
 RUN python--setup.sh
+RUN python--setup.sh 3.12
+RUN jdk--setup.sh 21 temurin
 RUN nodejs--setup.sh
 ```
+
+#### Parameters
+
+Parameters are **positional** — they are passed to the setup script in the order they appear on the line.
+
+The meaning of each parameter is defined by the setup script itself (e.g., `jdk--setup.sh` expects `<version>` then `<vendor>`). Boothfile does not interpret or validate parameter values; it passes them through.
+
+This design:
+- Keeps Boothfile simple (no named parameter syntax to parse)
+- Matches how shell scripts naturally receive arguments
+- Aligns with how `booth init` templates define parameters (ordered `[[setups.params]]`)
 
 #### Idempotent expectation
 
 Setup scripts **must**:
-- Be safe to run even if prerequisites are missing
-- Exit successfully if the feature is not applicable
+- Be safe to run multiple times (idempotent)
+- **Fail with a clear error** if required dependencies are missing (see Section 9.8)
 
 #### Setup script validation (Future)
 
@@ -369,7 +624,32 @@ Warning: Unknown setup script 'pytohn'. Did you mean 'python'?
 
 Optional strict mode: `booth build --strict` treats warnings as errors.
 
-### 9.2 `install` (Phase 3+)
+#### Custom setup scripts (`.booth/setups/`)
+
+Users can provide their own setup scripts by placing them in `.booth/setups/`. The compiler handles this automatically:
+
+1. When it encounters `setup foo`, it checks if `.booth/setups/foo--setup.sh` exists
+2. If found, the compiler automatically emits a `COPY` to bring it into the image before the `RUN`
+3. If not found, it falls back to the built-in scripts at `/opt/codingbooth/setups/`
+
+For example, given `.booth/setups/myapp--setup.sh`:
+
+```text
+setup myapp
+```
+
+Compiles to:
+
+```dockerfile
+COPY .booth/setups/myapp--setup.sh /opt/codingbooth/setups/myapp--setup.sh
+RUN myapp--setup.sh
+```
+
+The same resolution applies to `install` — a custom `.booth/setups/pip--install.sh` would override the built-in one.
+
+The user never thinks about the `COPY`. They just write `setup myapp` and it works.
+
+### 9.10 `install` (Phase 3+)
 
 Installs packages using a specified package manager.
 
@@ -392,36 +672,33 @@ RUN npm--install.sh express
 ```
 
 This mirrors the `setup` pattern:
-- `setup python` --> `RUN python--setup.sh`
-- `install pip django` --> `RUN pip--install.sh django`
+- `setup python` → `RUN python--setup.sh`
+- `install pip django` → `RUN pip--install.sh django`
 
 #### Raw tool access
 
-If you need flags or behavior not supported by the wrapper scripts, use `BASH`:
+If you need flags or behavior not supported by the wrapper scripts, use `run`:
 
 ```text
-BASH pip install django -U
-BASH npm install express -g
+run pip install django -U
+run npm install express -g
 ```
 
-### 9.3 `copy` (Phase 3+)
+### 9.11 `DOCKER` (Escape Hatch)
 
-Copying files into the image.
+If a Dockerfile directive is not yet supported as a lowercase command, `DOCKER` passes it through verbatim with the prefix stripped.
 
 ```text
-copy ./config /opt/config
-copy requirements.txt /tmp/requirements.txt
+DOCKER HEALTHCHECK CMD curl -f http://localhost/ || exit 1
 ```
 
 Compiles to:
 
 ```dockerfile
-COPY ./config /opt/config
-COPY requirements.txt /tmp/requirements.txt
+HEALTHCHECK CMD curl -f http://localhost/ || exit 1
 ```
 
-- Source paths are relative to the build context
-- Destination paths are absolute paths in the container
+This exists as a fallback. Prefer the lowercase commands whenever possible.
 
 ---
 
@@ -431,9 +708,9 @@ Boothfile must preserve CodingBooth philosophy:
 
 - Containers are disposable
 - All persistence comes from Dockerfile layers
-- Generated Dockerfile is inspectable
+- Generated Dockerfile is inspectable via `--emit-dockerfile`
 
-Recommended tooling:
+Tooling:
 
 ```bash
 booth build --emit-dockerfile   # Output generated Dockerfile to stdout
@@ -447,10 +724,11 @@ booth build --strict            # Treat warnings as errors
 
 ### 11.1 Compilation errors
 
-The compiler should provide clear, actionable error messages:
+The compiler should provide clear, actionable error messages with line numbers:
 
 ```text
-Boothfile:7: Unknown directive 'instal'. Did you mean 'install'?
+Boothfile:1: Missing or invalid syntax directive. Expected: # syntax=codingbooth/boothfile:1
+Boothfile:7: Unknown command 'instal'. Did you mean 'install'?
 Boothfile:12: Unclosed heredoc block started at line 10
 ```
 
@@ -468,10 +746,12 @@ Warnings do not stop compilation unless `--strict` is used.
 
 Boothfile **will not** initially support:
 
+- Variant or version selection (handled by `config.toml` / CLI)
 - Conditionals (`if`, `when`, `else`)
 - Loops
-- Variables
-- Templating
+- Variables or templating
+- Named parameters (e.g., `setup jdk version=21 vendor=temurin`)
+- Managing `config.toml`, `startup.sh`, or home directory files
 
 These can be reconsidered later if needed.
 
@@ -483,63 +763,132 @@ These can be reconsidered later if needed.
 
 Users can migrate incrementally:
 
-1. **Start with Phase 1 syntax**: Wrap existing RUN commands with `DOCKER`
+1. **Start with Phase 1 syntax**: Add the syntax line, convert directives to lowercase, remove the header
    ```text
-   variant base
-   version latest
-   
-   DOCKER RUN python--setup.sh
-   DOCKER RUN pip--install.sh django
+   # syntax=codingbooth/boothfile:1
+
+   run python--setup.sh
+   run pip--install.sh django
+   env APP_ENV=production
    ```
 
 2. **Adopt conveniences as available**:
-   - Phase 2: Replace `DOCKER RUN python--setup.sh` with `setup python`
-   - Phase 3: Replace `DOCKER RUN pip--install.sh django` with `install pip django`
+   - Phase 2: Replace `run python--setup.sh` with `setup python`
+   - Phase 2: Replace `run jdk--setup.sh 21 temurin` with `setup jdk 21 temurin`
+   - Phase 3: Replace `run pip--install.sh django` with `install pip django`
 
-3. **Keep raw commands for edge cases**: `BASH` and `DOCKER` always remain available
+3. **Keep `run` for edge cases**: `run` always remains available for arbitrary shell commands
 
 ### Coexistence
 
 During transition, projects may have both:
 - `.booth/Dockerfile` (legacy, manually written)
-- `Boothfile` (new, compiled)
+- `.booth/Boothfile` (new, compiled)
 
-Proposed precedence:
-- If `Boothfile` exists, use it (generates Dockerfile)
-- Otherwise, fall back to `.booth/Dockerfile`
+Default precedence (no flags): Boothfile wins. See Section 4.1 for full rules.
+
+Users can force a specific file with `--dockerfile` or `--boothfile` flags.
 
 ---
 
-## 14. Summary
+## 14. Complete Example
+
+A realistic Boothfile for a Java/Python data engineering project:
+
+```text
+# syntax=codingbooth/boothfile:1
+
+# Data engineering booth
+
+# System dependencies
+run apt-get update && apt-get install -y graphviz libpq-dev
+
+# Languages
+setup python 3.12
+setup jdk 21 temurin
+
+# Build tools
+setup mvn 3.9.6
+
+# Python packages
+install pip django djangorestframework psycopg2-binary
+
+# Project config
+copy ./config /opt/config
+copy requirements.txt /tmp/requirements.txt
+
+# Environment
+env APP_ENV=production
+```
+
+Compiles to (via `booth build --emit-dockerfile`):
+
+```dockerfile
+# syntax=docker/dockerfile:1
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
+FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
+
+SHELL ["/bin/bash","-o","pipefail","-lc"]
+USER root
+
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
+
+WORKDIR /opt/codingbooth/setups
+
+RUN apt-get update && apt-get install -y graphviz libpq-dev
+RUN python--setup.sh 3.12
+RUN jdk--setup.sh 21 temurin
+RUN mvn--setup.sh 3.9.6
+RUN pip--install.sh django djangorestframework psycopg2-binary
+COPY ./config /opt/config
+COPY requirements.txt /tmp/requirements.txt
+ENV APP_ENV=production
+```
+
+The variant and version (`base`/`latest` here) are defaults — overridden at build time by whatever `config.toml` or `--variant`/`--version` specifies.
+
+---
+
+## 15. Summary
 
 Boothfile is:
 
-- A convenience layer
+- A convenience layer over Dockerfile authoring
 - A compiler targeting Dockerfile
-- Opinionated but escapable
+- Identified by `# syntax=codingbooth/boothfile:1` — a convention that doubles as a future BuildKit frontend hook
+- **All lowercase** — Dockerfile directives as lowercase equivalents, plus Boothfile-specific commands
 - Focused on clarity and reproducibility
 - **Incrementally adoptable** — useful from Phase 1
+- **The intended output format for `booth init`**
+- **Unconcerned with variant/version** — those are runtime decisions, not build declarations
 
 The Dockerfile remains the foundation.
 Boothfile makes it pleasant to write.
+`booth init` makes it pleasant to start.
 
 ---
 
-## 15. Quick Reference
+## 16. Quick Reference
 
 | Boothfile                              | Generated Dockerfile                          | Phase |
 |----------------------------------------|-----------------------------------------------|-------|
-| `variant notebook`                     | (affects FROM line)                           | 1     |
-| `version latest`                       | (affects FROM line)                           | 1     |
+| `# syntax=codingbooth/boothfile:1`     | `# syntax=docker/dockerfile:1` + prologue     | 1     |
 | `# comment`                            | (stripped)                                    | 1     |
-| `DOCKER RUN apt-get install -y foo`    | `RUN apt-get install -y foo`                  | 1     |
-| `DOCKER ENV FOO=bar`                   | `ENV FOO=bar`                                 | 1     |
-| `BASH apt-get update`                  | `RUN apt-get update`                          | 1     |
-| `BASH <<END ... END`                   | `RUN ...` (multi-line)                        | 1     |
+| `run apt-get install -y foo`           | `RUN apt-get install -y foo`                  | 1     |
+| `run <<END ... END`                    | `RUN ...` (multi-line)                        | 1     |
+| `copy ./src /app`                      | `COPY ./src /app`                             | 1     |
+| `env FOO=bar`                          | `ENV FOO=bar`                                 | 1     |
+| `workdir /app`                         | `WORKDIR /app`                                | 1     |
+| `expose 8080`                          | `EXPOSE 8080`                                 | 1     |
+| `label maintainer="me"`               | `LABEL maintainer="me"`                       | 1     |
+| `arg NODE_VERSION=20`                  | `ARG NODE_VERSION=20`                         | 1     |
 | `setup python`                         | `RUN python--setup.sh`                        | 2     |
+| `setup python 3.12`                    | `RUN python--setup.sh 3.12`                   | 2     |
+| `setup jdk 21 temurin`                 | `RUN jdk--setup.sh 21 temurin`                | 2     |
 | `install pip django`                   | `RUN pip--install.sh django`                  | 3     |
 | `install brew gcc`                     | `RUN brew--install.sh gcc`                    | 3     |
-| `copy ./src /app`                      | `COPY ./src /app`                             | 3     |
 
 ---
 
