@@ -8,8 +8,10 @@ package booth
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
@@ -258,8 +260,19 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("--name", containerName))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_UID="+ctx.HostUID()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_GID="+ctx.HostGID()))
-	builder.CommonArgs.Append(ilist.NewList[string]("-v", ctx.Code()+":/home/coder/code"))
+	codePath := normalizeCodePath(ctx.Code())
+	createdAt := time.Now().UTC().Format(time.RFC3339)
+	builder.CommonArgs.Append(ilist.NewList[string]("-v", codePath+":/home/coder/code"))
 	builder.CommonArgs.Append(ilist.NewList[string]("-w", "/home/coder/code"))
+
+	// Lifecycle management labels used by list/start/stop/restart/remove commands.
+	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.managed=true"))
+	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.project="+ctx.ProjectName()))
+	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.variant="+ctx.Variant()))
+	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.code-path="+codePath))
+	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.created-at="+createdAt))
+	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.version="+ctx.CbVersion()))
+	builder.CommonArgs.Append(ilist.NewList[string]("--label", fmt.Sprintf("cb.keep-alive=%t", ctx.KeepAlive())))
 
 	// Skip port mapping when using DinD (port is exposed on DinD container instead)
 	if !ctx.Dind() {
@@ -276,7 +289,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_VARIANT_TAG="+ctx.Variant()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_VERBOSE=%t", ctx.Verbose())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_VERSION_TAG="+ctx.Version()))
-	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_CODE_PATH="+ctx.Code()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_CODE_PATH="+codePath))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_CODE_PORT=10000"))
 
 	// Additional metadata from AppContext
@@ -307,6 +320,17 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	}
 
 	return builder.Build()
+}
+
+func normalizeCodePath(path string) string {
+	if path == "" {
+		return path
+	}
+	absPath, err := filepath.Abs(path)
+	if err != nil {
+		return path
+	}
+	return absPath
 }
 
 func flattenArgs(argsList ilist.List[ilist.List[string]]) []string {

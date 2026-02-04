@@ -23,6 +23,11 @@ USAGE:
   %s help                                 (show this help and exit)
   %s run [options] [--] [command ...]     (run the booth)
   %s [options] [--] [command ...]         (default action: run)
+  %s list [--running|--stopped] [-q]      (list booth-managed containers)
+  %s start [--name <name>|--code <path>]  (start a stopped keep-alive booth)
+  %s stop [--name <name>] [--force]       (stop a running booth)
+  %s restart [--name <name>]              (restart a running booth)
+  %s remove [--name <name>] [--force]     (remove booth container(s))
   %s example <subcommand>                 (manage examples)
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and config file):
@@ -111,6 +116,11 @@ EXAMPLES:
 `,
 		scriptName,
 		version,
+		scriptName,
+		scriptName,
+		scriptName,
+		scriptName,
+		scriptName,
 		scriptName,
 		scriptName,
 		scriptName,
