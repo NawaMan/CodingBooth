@@ -43,6 +43,9 @@ func main() {
 		case "remove":
 			removeBooth(version)
 			return
+		case "prune":
+			pruneBooths(version)
+			return
 		case "example":
 			runExample(version)
 			return
