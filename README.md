@@ -694,6 +694,9 @@ run-args = [
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
     "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
 
+    # OpenAI Codex
+    "-v", "~/.codex:/etc/cb-home-seed/.codex:ro",
+
     # Neovim config
     "-v", "~/.config/nvim:/etc/cb-home-seed/.config/nvim:ro",
     "-v", "~/.local/share/nvim:/etc/cb-home-seed/.local/share/nvim:ro"
@@ -1360,7 +1363,6 @@ Stay in touch or follow updates, insights, and development notes:
 
 > 🙏 Every issue, idea, and pull request — big or small — helps make CodingBooth better for everyone.  
 > Thank you for being part of the community!
-
 
 
 
