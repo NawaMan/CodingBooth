@@ -34,20 +34,20 @@ Important rule:
 - Without `--keep-alive`, the default run path uses `--rm`; after exit there is no resumable container state.
 
 ### Flow Chart
-![Booth Lifecycle Flow](../images/booth-lifecycle-flow.svg)
+![Booth Lifecycle Flow](../images/BoothLifeCycle.png)
 
 Source definition: see [Appendix A: Mermaid Source](#appendix-a-mermaid-source).
 
 ### Command-to-Transition Table
-| Command | From | To | Notes |
-|---|---|---|---|
-| `run --keep-alive` | none | running | Resumable container created |
-| `run` (default) | none | removed on exit | Uses `--rm`; no resumable state |
-| `start` | stopped | running | Reuses existing container config |
-| `stop` | running | stopped or removed | Removed when `cb.keep-alive=false` |
-| `restart` | running | running | Same container identity |
-| `remove` | stopped (or running with `--force`) | removed | Explicit cleanup |
-| `prune` | stopped set | removed | Batch cleanup with prompt |
+| Command             | From                                | To                | Notes                              |
+|---------------------|-------------------------------------|-------------------|------------------------------------|
+| `run --keep-alive`  | none                                | running           | Resumable container created        |
+| `run` (default)     | none                                | removed on exit   | Uses `--rm`; no resumable state    |
+| `start`             | stopped                             | running           | Reuses existing container config   |
+| `stop`              | running                             | stopped or removed | Removed when `cb.keep-alive=false` |
+| `restart`           | running                             | running           | Same container identity            |
+| `remove`            | stopped (or running with `--force`) | removed           | Explicit cleanup                   |
+| `prune`             | stopped set                         | removed           | Batch cleanup with prompt          |
 
 ## Container Metadata Contract
 Booth-managed containers are identified and queried by labels:
