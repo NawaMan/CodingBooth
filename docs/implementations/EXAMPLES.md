@@ -22,11 +22,12 @@ booth example list
 
 Output:
 ```
-Available examples (29):
+Available examples (30):
 
   all-java        aws             bun             conda
   demo            deno            dind            elixir
   empty           firebase        gcloud          go
+  firewall        ...
   ...
 ```
 
@@ -147,3 +148,7 @@ Each example contains:
 - `.booth/config.toml` configuration
 - `.booth/Dockerfile` (optional) for custom images
 - Example code and documentation
+
+Security/network examples:
+- `examples/workspaces/urlwhitelist-example/` - tinyproxy-based domain whitelist flow
+- `examples/workspaces/firewall-example/` - `--sandbox` egress enforcement (Envoy + iptables, with and without DinD reuse)

@@ -385,6 +385,8 @@ unset HTTP_PROXY HTTPS_PROXY
 curl https://google.com       # Still blocked by iptables
 ```
 
+For the newer sidecar-based egress sandbox flow (`--sandbox`, Envoy + iptables, including DinD netns reuse), see `examples/workspaces/firewall-example/`.
+
 ---
 
 ## Related Files

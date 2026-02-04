@@ -28,7 +28,8 @@ type AppContextBuilder struct {
 	HasDesktop  bool
 
 	// derived from DinD
-	CreatedDindNet bool
+	CreatedDindNet    bool
+	CreatedSandboxNet bool
 
 	// derived from image determination of image
 	RunMode    string

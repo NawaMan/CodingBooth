@@ -1204,7 +1204,7 @@ This allows the booth to run Docker commands that execute inside the isolated Di
 - The sidecar approach offers stronger isolation but can be slower and more complex to manage.
 
 > 💡 **Tip:**
-> See `examples/dind-example` for basic DinD usage, or `examples/kind-example` for running Kubernetes with KinD inside the booth.
+> See `examples/workspaces/dind-example` for basic DinD usage, `examples/workspaces/kind-example` for KinD, and `examples/workspaces/firewall-example` for `--sandbox` egress enforcement with/without DinD reuse.
 
 
 ### 12. Network Whitelist
@@ -1520,7 +1520,6 @@ Stay in touch or follow updates, insights, and development notes:
 
 > 🙏 Every issue, idea, and pull request — big or small — helps make CodingBooth better for everyone.  
 > Thank you for being part of the community!
-
 
 
 

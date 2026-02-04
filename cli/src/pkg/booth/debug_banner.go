@@ -47,6 +47,7 @@ func ShowDebugBanner(ctx appctx.AppContext) appctx.AppContext {
 	fmt.Printf("PORT_GENERATED: %t\n", ctx.PortGenerated())
 	fmt.Println()
 	fmt.Printf("DIND:           %t\n", ctx.Dind())
+	fmt.Printf("SANDBOX:        %t\n", ctx.Sandbox())
 	fmt.Println()
 	fmt.Printf("CONTAINER_ENV_FILE: %s\n", ctx.EnvFile())
 	fmt.Println()
