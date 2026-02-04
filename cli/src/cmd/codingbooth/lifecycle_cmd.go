@@ -31,6 +31,10 @@ func removeBooth(_ string) {
 	handleLifecycleErr(lifecycle.Remove(os.Args[2:], os.Stderr))
 }
 
+func pruneBooths(_ string) {
+	handleLifecycleErr(lifecycle.Prune(os.Args[2:], os.Stdin, os.Stdout, os.Stderr))
+}
+
 func handleLifecycleErr(err error) {
 	if err == nil {
 		return
