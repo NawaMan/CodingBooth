@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="760" viewBox="0 0 1200 760" role="img" aria-labelledby="title desc">
+  <title id="title">Booth Lifecycle Flow</title>
+  <desc id="desc">Lifecycle state transitions for keep-alive and default run paths.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,4 L0,8 z" fill="#2b2b2b" />
+    </marker>
+    <style>
+      .state { fill: #eef5ff; stroke: #2357a5; stroke-width: 2; rx: 12; }
+      .start { fill: #effaf0; stroke: #2f7d32; stroke-width: 2; rx: 12; }
+      .removed { fill: #fff2f2; stroke: #b23a3a; stroke-width: 2; rx: 12; }
+      .text { font-family: Arial, Helvetica, sans-serif; font-size: 22px; fill: #1f1f1f; }
+      .small { font-size: 18px; fill: #333; }
+      .edge { stroke: #2b2b2b; stroke-width: 2.5; fill: none; marker-end: url(#arrow); }
+      .group-title { font-size: 24px; font-weight: 700; }
+      .hint { font-size: 17px; fill: #555; }
+    </style>
+  </defs>
+
+  <text x="40" y="48" class="text group-title">Keep-Alive Lifecycle Path</text>
+
+  <rect x="60" y="90" width="250" height="72" class="start" />
+  <text x="185" y="135" text-anchor="middle" class="text">run --keep-alive</text>
+
+  <rect x="430" y="90" width="210" height="72" class="state" />
+  <text x="535" y="135" text-anchor="middle" class="text">RUNNING</text>
+
+  <rect x="430" y="300" width="210" height="72" class="state" />
+  <text x="535" y="345" text-anchor="middle" class="text">STOPPED</text>
+
+  <rect x="860" y="300" width="220" height="72" class="removed" />
+  <text x="970" y="345" text-anchor="middle" class="text">REMOVED</text>
+
+  <rect x="60" y="300" width="250" height="72" class="start" />
+  <text x="185" y="345" text-anchor="middle" class="text">start</text>
+
+  <path d="M310 126 L430 126" class="edge" />
+  <text x="360" y="112" text-anchor="middle" class="small">create</text>
+
+  <path d="M310 336 L430 336" class="edge" />
+  <text x="360" y="322" text-anchor="middle" class="small">resume</text>
+
+  <path d="M535 162 L535 300" class="edge" />
+  <text x="555" y="234" class="small">stop</text>
+
+  <path d="M640 336 L860 336" class="edge" />
+  <text x="750" y="322" text-anchor="middle" class="small">remove / prune</text>
+
+  <path d="M640 120 C760 40 920 40 1040 120 C1120 172 1120 248 1040 300 L640 300" class="edge" />
+  <text x="845" y="86" text-anchor="middle" class="small">restart (RUNNING -&gt; RUNNING)</text>
+
+  <text x="40" y="460" class="text group-title">Default Non-Keep-Alive Path</text>
+
+  <rect x="60" y="500" width="300" height="72" class="start" />
+  <text x="210" y="545" text-anchor="middle" class="text">run (default, no --keep-alive)</text>
+
+  <rect x="500" y="500" width="230" height="72" class="state" />
+  <text x="615" y="545" text-anchor="middle" class="text">RUNNING --rm</text>
+
+  <rect x="860" y="500" width="220" height="72" class="removed" />
+  <text x="970" y="545" text-anchor="middle" class="text">REMOVED</text>
+
+  <path d="M360 536 L500 536" class="edge" />
+  <path d="M730 536 L860 536" class="edge" />
+  <text x="795" y="522" text-anchor="middle" class="small">exit / stop</text>
+
+  <text x="40" y="700" class="hint">Note: start/restart reuse existing container configuration; to change name/ports/binds, remove and run again.</text>
+</svg>
