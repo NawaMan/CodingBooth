@@ -425,16 +425,49 @@ RUN apt-get update && apt-get install -y graphviz
 
 #### Multi-line commands
 
-Complex commands spanning multiple lines use heredoc-style syntax:
+Complex commands spanning multiple lines use heredoc-style syntax with explicit mode selection:
+
+| Syntax | Behavior | Use case |
+|--------|----------|----------|
+| `run <<END` | Verbatim Docker heredoc | Full control, multi-line scripts |
+| `run &&<<END` | Join lines with `&&` | Fail-fast sequences (typical apt/package installs) |
+| `run ;<<END` | Join lines with `;` | Commands that can fail independently |
+
+##### Verbatim mode (`run <<END`)
+
+Passes content directly to Docker's native heredoc support:
 
 ```text
 run <<END
-  apt-get update
-  apt-get install -y \
-    unzip \
-    curl \
-    jq
-  rm -rf /var/lib/apt/lists/*
+set -e
+apt-get update
+apt-get install -y unzip curl jq
+rm -rf /var/lib/apt/lists/*
+END
+```
+
+Compiles to:
+
+```dockerfile
+RUN <<END
+set -e
+apt-get update
+apt-get install -y unzip curl jq
+rm -rf /var/lib/apt/lists/*
+END
+```
+
+Use this when you need full control over shell behavior (e.g., `set -e`, conditionals, loops).
+
+##### And-join mode (`run &&<<END`)
+
+Joins lines with `&&` for fail-fast behavior:
+
+```text
+run &&<<END
+apt-get update
+apt-get install -y unzip curl jq
+rm -rf /var/lib/apt/lists/*
 END
 ```
 
@@ -442,17 +475,62 @@ Compiles to:
 
 ```dockerfile
 RUN apt-get update \
-    && apt-get install -y \
-    unzip \
-    curl \
-    jq \
+    && apt-get install -y unzip curl jq \
     && rm -rf /var/lib/apt/lists/*
 ```
 
-Delimiter rules:
+This is the most common pattern for package installation sequences.
+
+##### Semicolon-join mode (`run ;<<END`)
+
+Joins lines with `;` when commands can fail independently:
+
+```text
+run ;<<END
+rm -f /tmp/optional-file
+echo "Continuing regardless"
+END
+```
+
+Compiles to:
+
+```dockerfile
+RUN rm -f /tmp/optional-file; echo "Continuing regardless"
+```
+
+##### Processing rules for `&&` and `;` modes
+
+1. Lines ending with `\` are collapsed first (continuations preserved)
+2. Blank lines are skipped
+3. Comment lines (starting with `#`) are skipped
+4. Remaining logical lines are joined with the chosen operator
+
+Example with continuations:
+
+```text
+run &&<<END
+apt-get update
+apt-get install -y \
+    unzip \
+    curl \
+    jq
+# Clean up apt cache
+rm -rf /var/lib/apt/lists/*
+END
+```
+
+Compiles to:
+
+```dockerfile
+RUN apt-get update \
+    && apt-get install -y unzip curl jq \
+    && rm -rf /var/lib/apt/lists/*
+```
+
+##### Delimiter rules
+
 - The delimiter word (e.g., `END`) can be any uppercase identifier
 - The closing delimiter must appear alone on its own line
-- Leading whitespace inside the block is preserved (for readability) but normalized during compilation
 
 ### 9.2 `copy` (Phase 1+)
 
@@ -544,6 +622,44 @@ Compiles to:
 ```dockerfile
 ARG NODE_VERSION=20
 ```
+
+#### Using variables
+
+Variables defined with `arg` can be used anywhere with `${name}` syntax:
+
+```text
+arg NODE_VERSION=20
+arg PYTHON_VERSION=3.12
+
+setup nodejs ${NODE_VERSION}
+setup python ${PYTHON_VERSION}
+```
+
+Compiles to:
+
+```dockerfile
+ARG NODE_VERSION=20
+ARG PYTHON_VERSION=3.12
+RUN nodejs--setup.sh ${NODE_VERSION}
+RUN python--setup.sh ${PYTHON_VERSION}
+```
+
+Docker expands the variables at build time. Override defaults with:
+
+```bash
+booth build --build-arg NODE_VERSION=22
+```
+
+#### Naming conventions
+
+Variable names can be any valid identifier. Uppercase is conventional (e.g., `NODE_VERSION`) but not required:
+
+```text
+arg node_version=20      # works fine
+arg NODE_VERSION=20      # conventional
+```
+
+Boothfile does not enforce a naming convention — use whatever fits your project's style.
 
 ### 9.8 Dependency Contract
 
