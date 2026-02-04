@@ -160,7 +160,12 @@ run-args = [
 
     # Cloud CLI (pick what you need)
     "-v", "~/.aws:/etc/cb-home-seed/.aws:ro",
-    "-v", "~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro"
+    "-v", "~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro",
+
+    # AI coding assistants (pick what you need)
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
+    "-v", "~/.codex:/etc/cb-home-seed/.codex:ro"
 ]
 ```
 

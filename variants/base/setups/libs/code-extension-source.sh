@@ -22,6 +22,28 @@ ext_dir_for_cli() {
   esac
 }
 
+# ---- Helper: choose install executable (avoid wrapper side-effects) ----
+cli_bin_for_install() {
+  local cli="$1"
+  case "$cli" in
+    code)
+      # Prefer the real VS Code binary during image build.
+      # /usr/local/bin/code may be a GUI wrapper script in this project.
+      if [[ -x /usr/bin/code ]]; then
+        printf '%s\n' "/usr/bin/code"
+      else
+        command -v code
+      fi
+      ;;
+    code-server)
+      command -v code-server
+      ;;
+    *)
+      return 1
+      ;;
+  esac
+}
+
 # ---- Function: install to all available CLIs ----
 install_extensions() {
   local -a exts=("$@")
@@ -39,17 +61,32 @@ install_extensions() {
   # Install each extension to each available CLI
   for cli in "${clis[@]}"; do
     local dir
+    local cli_bin
+    local -a cli_opts=()
     dir="$(ext_dir_for_cli "$cli")"
+    cli_bin="$(cli_bin_for_install "$cli")"
 
     # Ensure the directory exists
     mkdir -p "$dir"
 
-    echo "Installing extensions via ${cli} (extensions dir: ${dir})..."
+    if [[ "$cli" == "code" && "${EUID}" -eq 0 ]]; then
+      local vscode_root_data="/tmp/vscode-root-user-data"
+      mkdir -p "$vscode_root_data"
+      cli_opts=(--no-sandbox --user-data-dir "$vscode_root_data")
+    fi
+
+    echo "Installing extensions via ${cli_bin} (extensions dir: ${dir})..."
     for ext in "${exts[@]}"; do
-      if "$cli" --extensions-dir "$dir" --install-extension "$ext" >/dev/null 2>&1; then
+      if "$cli_bin" "${cli_opts[@]}" --extensions-dir "$dir" --install-extension "$ext"; then
         echo "  ✔ ${ext}"
       else
-        echo "  ⚠ Failed (or already installed): ${ext}" >&2
+        echo "  ⚠ Failed to install: ${ext}" >&2
+      fi
+
+      if "$cli_bin" "${cli_opts[@]}" --extensions-dir "$dir" --list-extensions | grep -qx "$ext"; then
+        echo "  ✔ Verified: ${ext}"
+      else
+        echo "  ⚠ Not found after install: ${ext}" >&2
       fi
     done
   done
