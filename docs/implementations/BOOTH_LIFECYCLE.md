@@ -159,14 +159,14 @@ Examples:
 ## Appendix A: Mermaid Source
 ```mermaid
 flowchart TD
-    A[run --keep-alive] --> B[RUNNING]
-    C[start] --> B
-    B -->|stop| D[STOPPED]
-    B -->|restart| B
-    D -->|start| B
-    D -->|remove| E[REMOVED]
-    D -->|prune| E
+    A["run --keep-alive"] --> B["RUNNING"];
+    C["start"] --> B;
+    B -->|stop| D["STOPPED"];
+    B -->|restart| B;
+    D -->|start| B;
+    D -->|remove| E["REMOVED"];
+    D -->|prune| E;
 
-    F[run (default, no --keep-alive)] --> G[RUNNING --rm]
-    G -->|exit/stop| E
+    F["run (default, no keep-alive)"] --> G["RUNNING --rm"];
+    G -->|exit/stop| E;
 ```
