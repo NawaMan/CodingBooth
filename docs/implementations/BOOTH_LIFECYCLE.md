@@ -33,6 +33,32 @@ Container state model:
 Important rule:
 - Without `--keep-alive`, the default run path uses `--rm`; after exit there is no resumable container state.
 
+### Flow Chart
+```mermaid
+flowchart TD
+    A[run --keep-alive] --> B[RUNNING]
+    C[start] --> B
+    B -->|stop| D[STOPPED]
+    B -->|restart| B
+    D -->|start| B
+    D -->|remove| E[REMOVED]
+    D -->|prune| E
+
+    F[run (default, no --keep-alive)] --> G[RUNNING --rm]
+    G -->|exit/stop| E
+```
+
+### Command-to-Transition Table
+| Command | From | To | Notes |
+|---|---|---|---|
+| `run --keep-alive` | none | running | Resumable container created |
+| `run` (default) | none | removed on exit | Uses `--rm`; no resumable state |
+| `start` | stopped | running | Reuses existing container config |
+| `stop` | running | stopped or removed | Removed when `cb.keep-alive=false` |
+| `restart` | running | running | Same container identity |
+| `remove` | stopped (or running with `--force`) | removed | Explicit cleanup |
+| `prune` | stopped set | removed | Batch cleanup with prompt |
+
 ## Container Metadata Contract
 Booth-managed containers are identified and queried by labels:
 - `cb.managed=true`
@@ -100,6 +126,18 @@ To change those values, the container must be removed and recreated (`run`).
   - wrong state (running vs stopped)
   - invalid flag combinations
 - Command-level wrappers map internal command errors to CLI exit codes.
+
+## Code Map
+Core implementation and command wiring:
+- CLI command routing: [`cli/src/cmd/codingbooth/main.go`](../../cli/src/cmd/codingbooth/main.go)
+- Lifecycle command wrappers: [`cli/src/cmd/codingbooth/lifecycle_cmd.go`](../../cli/src/cmd/codingbooth/lifecycle_cmd.go)
+- Lifecycle engine: [`cli/src/pkg/lifecycle/lifecycle.go`](../../cli/src/pkg/lifecycle/lifecycle.go)
+- Run label injection: [`cli/src/pkg/booth/booth.go`](../../cli/src/pkg/booth/booth.go)
+- Name-collision guard: [`cli/src/pkg/booth/booth_runner.go`](../../cli/src/pkg/booth/booth_runner.go)
+
+Test references:
+- Lifecycle unit tests: [`cli/src/pkg/lifecycle/lifecycle_test.go`](../../cli/src/pkg/lifecycle/lifecycle_test.go)
+- Label tests: [`cli/src/pkg/booth/lifecycle_labels_test.go`](../../cli/src/pkg/booth/lifecycle_labels_test.go)
 
 ## Testing
 ### Automated (complex)
