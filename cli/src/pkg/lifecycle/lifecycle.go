@@ -2,13 +2,14 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 
-package main
+package lifecycle
 
 import (
 	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"sort"
@@ -46,49 +47,79 @@ type inspectData struct {
 	} `json:"NetworkSettings"`
 }
 
-func listBooths(_ string) {
+type commandError struct {
+	exitCode int
+	message  string
+}
+
+func (err *commandError) Error() string {
+	return err.message
+}
+
+func (err *commandError) ExitCode() int {
+	return err.exitCode
+}
+
+func commandExit(exitCode int, message string) error {
+	return &commandError{
+		exitCode: exitCode,
+		message:  message,
+	}
+}
+
+func ExitCode(err error) int {
+	if err == nil {
+		return 0
+	}
+	var commandErr *commandError
+	if errors.As(err, &commandErr) {
+		return commandErr.exitCode
+	}
+	return 1
+}
+
+func List(args []string, stdout io.Writer, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("list", flag.ContinueOnError)
 	runningOnly := flagSet.Bool("running", false, "Show only running booths")
 	stoppedOnly := flagSet.Bool("stopped", false, "Show only stopped booths")
 	quiet := flagSet.Bool("quiet", false, "Show only container names")
 	flagSet.BoolVar(quiet, "q", false, "Show only container names")
-	flagSet.SetOutput(os.Stderr)
+	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(os.Args[2:]); err != nil {
-		os.Exit(2)
-		return
+	if err := flagSet.Parse(args); err != nil {
+		return commandExit(2, "")
 	}
 	if *runningOnly && *stoppedOnly {
-		failLifecycle("Error: --running and --stopped cannot be used together.")
+		return commandExit(1, "Error: --running and --stopped cannot be used together.")
 	}
 
 	containers, err := managedContainers(false)
 	if err != nil {
-		failLifecycle(fmt.Sprintf("Error: failed to list booths: %v", err))
+		return commandExit(1, fmt.Sprintf("Error: failed to list booths: %v", err))
 	}
 
 	containers = filterByState(containers, *runningOnly, *stoppedOnly)
 	if len(containers) == 0 {
 		if *runningOnly {
-			fmt.Println("No running booth containers found.")
-			return
+			_, _ = fmt.Fprintln(stdout, "No running booth containers found.")
+			return nil
 		}
 		if *stoppedOnly {
-			fmt.Println("No stopped booth containers found.")
-			return
+			_, _ = fmt.Fprintln(stdout, "No stopped booth containers found.")
+			return nil
 		}
-		fmt.Println("No booth containers found.")
-		return
+		_, _ = fmt.Fprintln(stdout, "No booth containers found.")
+		return nil
 	}
 
 	if *quiet {
 		for _, container := range containers {
-			fmt.Println(container.Name)
+			_, _ = fmt.Fprintln(stdout, container.Name)
 		}
-		return
+		return nil
 	}
 
-	writer := tabwriter.NewWriter(os.Stdout, 0, 4, 2, ' ', 0)
+	writer := tabwriter.NewWriter(stdout, 0, 4, 2, ' ', 0)
 	_, _ = fmt.Fprintln(writer, "NAME\tSTATUS\tVARIANT\tKEEP_ALIVE\tPORT\tCODE PATH\tCREATED")
 	for _, container := range containers {
 		status := "Stopped"
@@ -112,167 +143,168 @@ func listBooths(_ string) {
 		)
 	}
 	_ = writer.Flush()
+	return nil
 }
 
-func startBooth(_ string) {
+func Start(args []string, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("start", flag.ContinueOnError)
 	name := flagSet.String("name", "", "Container name")
 	code := flagSet.String("code", "", "Code path used to find the container")
 	daemon := flagSet.Bool("daemon", false, "Start detached")
 	flagSet.BoolVar(daemon, "d", false, "Start detached")
-	flagSet.SetOutput(os.Stderr)
+	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(os.Args[2:]); err != nil {
-		os.Exit(2)
-		return
+	if err := flagSet.Parse(args); err != nil {
+		return commandExit(2, "")
 	}
 
 	containers, err := managedContainers(false)
 	if err != nil {
-		failLifecycle(fmt.Sprintf("Error: failed to query booths: %v", err))
+		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
 
 	target, err := resolveSingleContainer(containers, *name, *code, flagSet.Args(), stateStopped)
 	if err != nil {
-		failLifecycle(err.Error())
+		return commandExit(1, err.Error())
 	}
 
-	args := ilist.NewList(ilist.NewList(target.Name))
+	dockerArgs := ilist.NewList(ilist.NewList(target.Name))
 	if !*daemon {
-		args = ilist.NewList(ilist.NewList("-ai"), ilist.NewList(target.Name))
+		dockerArgs = ilist.NewList(ilist.NewList("-ai"), ilist.NewList(target.Name))
 	}
-	if err := docker.Docker(docker.DockerFlags{Silent: false}, "start", args); err != nil {
-		failLifecycle(fmt.Sprintf("Error: failed to start %q: %v", target.Name, err))
+	if err := docker.Docker(docker.DockerFlags{Silent: false}, "start", dockerArgs); err != nil {
+		return commandExit(1, fmt.Sprintf("Error: failed to start %q: %v", target.Name, err))
 	}
+	return nil
 }
 
-func stopBooth(_ string) {
+func Stop(args []string, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("stop", flag.ContinueOnError)
 	name := flagSet.String("name", "", "Container name")
 	force := flagSet.Bool("force", false, "Force stop with SIGKILL")
 	flagSet.BoolVar(force, "f", false, "Force stop with SIGKILL")
 	timeout := flagSet.Int("time", 10, "Seconds to wait before force kill")
-	flagSet.SetOutput(os.Stderr)
+	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(os.Args[2:]); err != nil {
-		os.Exit(2)
-		return
+	if err := flagSet.Parse(args); err != nil {
+		return commandExit(2, "")
 	}
 	if *timeout < 0 {
-		failLifecycle("Error: --time must be a non-negative integer.")
+		return commandExit(1, "Error: --time must be a non-negative integer.")
 	}
 
 	containers, err := managedContainers(false)
 	if err != nil {
-		failLifecycle(fmt.Sprintf("Error: failed to query booths: %v", err))
+		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
 
 	target, err := resolveSingleContainer(containers, *name, "", flagSet.Args(), stateRunning)
 	if err != nil {
-		failLifecycle(err.Error())
+		return commandExit(1, err.Error())
 	}
 
 	if *force {
 		if err := docker.Docker(docker.DockerFlags{Silent: false}, "kill", ilist.NewList(ilist.NewList(target.Name))); err != nil {
-			failLifecycle(fmt.Sprintf("Error: failed to force-stop %q: %v", target.Name, err))
+			return commandExit(1, fmt.Sprintf("Error: failed to force-stop %q: %v", target.Name, err))
 		}
 	} else {
 		if err := docker.Docker(docker.DockerFlags{Silent: false}, "stop", ilist.NewList(
 			ilist.NewList("--time", strconv.Itoa(*timeout)),
 			ilist.NewList(target.Name),
 		)); err != nil {
-			failLifecycle(fmt.Sprintf("Error: failed to stop %q: %v", target.Name, err))
+			return commandExit(1, fmt.Sprintf("Error: failed to stop %q: %v", target.Name, err))
 		}
 	}
 
 	if target.KeepAlive {
-		return
+		return nil
 	}
 
 	exists, err := containerExists(target.Name)
 	if err != nil {
-		failLifecycle(fmt.Sprintf("Error: failed to verify container state: %v", err))
+		return commandExit(1, fmt.Sprintf("Error: failed to verify container state: %v", err))
 	}
 	if !exists {
-		return
+		return nil
 	}
 
 	if err := docker.Docker(docker.DockerFlags{Silent: false}, "rm", ilist.NewList(ilist.NewList(target.Name))); err != nil {
-		failLifecycle(fmt.Sprintf("Error: failed to remove non-keep-alive container %q: %v", target.Name, err))
+		return commandExit(1, fmt.Sprintf("Error: failed to remove non-keep-alive container %q: %v", target.Name, err))
 	}
+	return nil
 }
 
-func restartBooth(_ string) {
+func Restart(args []string, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("restart", flag.ContinueOnError)
 	name := flagSet.String("name", "", "Container name")
 	timeout := flagSet.Int("time", 10, "Seconds to wait before force kill")
-	flagSet.SetOutput(os.Stderr)
+	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(os.Args[2:]); err != nil {
-		os.Exit(2)
-		return
+	if err := flagSet.Parse(args); err != nil {
+		return commandExit(2, "")
 	}
 	if *timeout < 0 {
-		failLifecycle("Error: --time must be a non-negative integer.")
+		return commandExit(1, "Error: --time must be a non-negative integer.")
 	}
 
 	containers, err := managedContainers(false)
 	if err != nil {
-		failLifecycle(fmt.Sprintf("Error: failed to query booths: %v", err))
+		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
 
 	target, err := resolveSingleContainer(containers, *name, "", flagSet.Args(), stateRunning)
 	if err != nil {
-		failLifecycle(err.Error())
+		return commandExit(1, err.Error())
 	}
 
 	if err := docker.Docker(docker.DockerFlags{Silent: false}, "restart", ilist.NewList(
 		ilist.NewList("--time", strconv.Itoa(*timeout)),
 		ilist.NewList(target.Name),
 	)); err != nil {
-		failLifecycle(fmt.Sprintf("Error: failed to restart %q: %v", target.Name, err))
+		return commandExit(1, fmt.Sprintf("Error: failed to restart %q: %v", target.Name, err))
 	}
+	return nil
 }
 
-func removeBooth(_ string) {
+func Remove(args []string, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("remove", flag.ContinueOnError)
 	name := flagSet.String("name", "", "Container name")
 	force := flagSet.Bool("force", false, "Force remove even if running")
 	flagSet.BoolVar(force, "f", false, "Force remove even if running")
-	flagSet.SetOutput(os.Stderr)
+	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(os.Args[2:]); err != nil {
-		os.Exit(2)
-		return
+	if err := flagSet.Parse(args); err != nil {
+		return commandExit(2, "")
 	}
 
 	containers, err := managedContainers(false)
 	if err != nil {
-		failLifecycle(fmt.Sprintf("Error: failed to query booths: %v", err))
+		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
 
 	names, err := resolveRemoveTargets(containers, *name, flagSet.Args())
 	if err != nil {
-		failLifecycle(err.Error())
+		return commandExit(1, err.Error())
 	}
 
 	for _, targetName := range names {
 		container, found := findByName(containers, targetName)
 		if !found {
-			failLifecycle(fmt.Sprintf("Error: booth %q not found. Use 'codingbooth list' to see available containers.", targetName))
+			return commandExit(1, fmt.Sprintf("Error: booth %q not found. Use 'codingbooth list' to see available containers.", targetName))
 		}
 		if container.State == "running" && !*force {
-			failLifecycle(fmt.Sprintf("Error: booth %q is running. Stop it first or use --force.", targetName))
+			return commandExit(1, fmt.Sprintf("Error: booth %q is running. Stop it first or use --force.", targetName))
 		}
 
-		args := ilist.NewList(ilist.NewList(targetName))
+		dockerArgs := ilist.NewList(ilist.NewList(targetName))
 		if *force {
-			args = ilist.NewList(ilist.NewList("--force"), ilist.NewList(targetName))
+			dockerArgs = ilist.NewList(ilist.NewList("--force"), ilist.NewList(targetName))
 		}
-		if err := docker.Docker(docker.DockerFlags{Silent: false}, "rm", args); err != nil {
-			failLifecycle(fmt.Sprintf("Error: failed to remove %q: %v", targetName, err))
+		if err := docker.Docker(docker.DockerFlags{Silent: false}, "rm", dockerArgs); err != nil {
+			return commandExit(1, fmt.Sprintf("Error: failed to remove %q: %v", targetName, err))
 		}
 	}
+	return nil
 }
 
 func managedContainers(verbose bool) ([]managedContainer, error) {
@@ -543,9 +575,4 @@ func nonEmpty(value string, fallback string) string {
 		return fallback
 	}
 	return value
-}
-
-func failLifecycle(message string) {
-	fmt.Fprintln(os.Stderr, message)
-	os.Exit(1)
 }
