@@ -1,0 +1,7 @@
+# syntax=codingbooth/boothfile:1
+
+# Test Boothfile for --emit-dockerfile
+
+setup python 3.12
+install pip django
+env APP_ENV=production
