@@ -5,6 +5,7 @@
 package lifecycle
 
 import (
+	"bufio"
 	"encoding/json"
 	"errors"
 	"flag"
@@ -307,6 +308,56 @@ func Remove(args []string, stderr io.Writer) error {
 	return nil
 }
 
+func Prune(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) error {
+	flagSet := flag.NewFlagSet("prune", flag.ContinueOnError)
+	yes := flagSet.Bool("yes", false, "Skip confirmation prompt")
+	flagSet.BoolVar(yes, "y", false, "Skip confirmation prompt")
+	flagSet.SetOutput(stderr)
+
+	if err := flagSet.Parse(args); err != nil {
+		return commandExit(2, "")
+	}
+
+	containers, err := managedContainers(false)
+	if err != nil {
+		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
+	}
+
+	candidates := filterByState(containers, false, true)
+	if len(candidates) == 0 {
+		_, _ = fmt.Fprintln(stdout, "No stopped booth containers to prune.")
+		return nil
+	}
+
+	names := make([]string, 0, len(candidates))
+	for _, container := range candidates {
+		names = append(names, container.Name)
+	}
+	sort.Strings(names)
+
+	if !*yes {
+		_, _ = fmt.Fprintf(stdout, "About to remove %d stopped booth container(s): %s\n", len(names), strings.Join(names, ", "))
+		_, _ = fmt.Fprint(stdout, "Proceed? [y/N]: ")
+		confirmed, confirmErr := readConfirmation(stdin)
+		if confirmErr != nil {
+			return commandExit(1, fmt.Sprintf("Error: failed to read confirmation: %v", confirmErr))
+		}
+		if !confirmed {
+			_, _ = fmt.Fprintln(stdout, "Prune cancelled.")
+			return nil
+		}
+	}
+
+	for _, name := range names {
+		if err := docker.Docker(docker.DockerFlags{Silent: false}, "rm", ilist.NewList(ilist.NewList(name))); err != nil {
+			return commandExit(1, fmt.Sprintf("Error: failed to remove %q: %v", name, err))
+		}
+	}
+
+	_, _ = fmt.Fprintf(stdout, "Removed %d stopped booth container(s).\n", len(names))
+	return nil
+}
+
 func managedContainers(verbose bool) ([]managedContainer, error) {
 	flags := docker.DockerFlags{Verbose: verbose, Silent: true}
 
@@ -575,4 +626,14 @@ func nonEmpty(value string, fallback string) string {
 		return fallback
 	}
 	return value
+}
+
+func readConfirmation(reader io.Reader) (bool, error) {
+	line, err := bufio.NewReader(reader).ReadString('\n')
+	if err != nil && !errors.Is(err, io.EOF) {
+		return false, err
+	}
+
+	answer := strings.ToLower(strings.TrimSpace(line))
+	return answer == "y" || answer == "yes", nil
 }
