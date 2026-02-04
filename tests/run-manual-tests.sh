@@ -53,6 +53,17 @@ if ! (cd "$SCRIPT_DIR/manual" && ./run-colored-prompt-manual-test.sh); then
 fi
 echo ""
 
+# Run lifecycle cross-user manual test
+echo "----------------------------------------"
+echo "Running Lifecycle Cross-User Manual Test"
+echo "----------------------------------------"
+total_suites=$((total_suites + 1))
+if ! (cd "$SCRIPT_DIR/manual" && ./run-lifecycle-cross-user-manual-test.sh); then
+    failed=1
+    failed_suites+=("lifecycle-cross-user")
+fi
+echo ""
+
 # Summary
 echo "========================================"
 echo "Test Summary"
