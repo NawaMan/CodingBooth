@@ -8,8 +8,10 @@ package booth
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
@@ -36,10 +38,45 @@ func (runner *BoothRunner) Run() error {
 	ctx = SetupDind(ctx)
 	ctx = PrepareRunMode(ctx)
 	ctx = PrepareCommonArgs(ctx)
+	if err := ensureContainerNameAvailable(ctx); err != nil {
+		return err
+	}
 
 	// Create booth with prepared context and run
 	booth := NewBooth(ctx)
 	return booth.Run(ctx.RunMode())
+}
+
+func ensureContainerNameAvailable(ctx appctx.AppContext) error {
+	flags := docker.DockerFlags{
+		Dryrun:  ctx.Dryrun(),
+		Verbose: ctx.Verbose(),
+		Silent:  true,
+	}
+
+	containerName := ctx.Name()
+	if containerName == "" {
+		containerName = ctx.ProjectName()
+	}
+
+	output, err := docker.DockerOutput(flags, "ps", ilist.NewList(
+		ilist.NewList("-a"),
+		ilist.NewList("--filter", "name=^"+containerName+"$"),
+		ilist.NewList("--format", "{{.Names}}"),
+	))
+	if err != nil {
+		return fmt.Errorf("failed to check container name availability: %w", err)
+	}
+	if strings.TrimSpace(output) == "" {
+		return nil
+	}
+
+	return fmt.Errorf(
+		"container name %q already exists. Choose a different name with --name, or remove the existing one with 'codingbooth remove --name %s' (or 'docker rm -f %s')",
+		containerName,
+		containerName,
+		containerName,
+	)
 }
 
 // PrepareRunMode determines the run mode and stores it in the context.

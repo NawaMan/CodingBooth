@@ -10,10 +10,23 @@ import (
 
 	"github.com/nawaman/codingbooth/src/pkg/booth"
 	boothinit "github.com/nawaman/codingbooth/src/pkg/booth/init"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
-func runBooth(version string) {
-	context := boothinit.InitializeAppContext(version, boothinit.DefaultInitializeAppContextBoundary{})
+type runBoundary struct {
+	boothinit.DefaultInitializeAppContextBoundary
+	args []string
+}
+
+func (boundary runBoundary) ArgList() ilist.List[string] {
+	return ilist.NewListFromSlice(boundary.args)
+}
+
+func runBooth(version string, args []string) {
+	context := boothinit.InitializeAppContext(version, runBoundary{
+		DefaultInitializeAppContextBoundary: boothinit.DefaultInitializeAppContextBoundary{},
+		args:                                args,
+	})
 
 	if context.Verbose() {
 		fmt.Printf("%+v\n", context)

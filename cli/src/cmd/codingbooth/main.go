@@ -24,7 +24,24 @@ func main() {
 			showHelp(version)
 			return
 		case "run":
-			runBooth(version)
+			// Keep explicit "run" behavior identical to the implicit default action.
+			trimmedArgs := append([]string{os.Args[0]}, os.Args[2:]...)
+			runBooth(version, trimmedArgs)
+			return
+		case "list":
+			listBooths(version)
+			return
+		case "start":
+			startBooth(version)
+			return
+		case "stop":
+			stopBooth(version)
+			return
+		case "restart":
+			restartBooth(version)
+			return
+		case "remove":
+			removeBooth(version)
 			return
 		case "example":
 			runExample(version)
@@ -32,7 +49,7 @@ func main() {
 		default:
 			// If it starts with --, treat as run with options
 			if len(command) > 0 && command[0] == '-' {
-				runBooth(version)
+				runBooth(version, os.Args)
 				return
 			}
 			fmt.Fprintf(os.Stderr, "Unknown command: %s\n", command)
@@ -43,5 +60,5 @@ func main() {
 	}
 
 	// No arguments: run booth
-	runBooth(version)
+	runBooth(version, os.Args)
 }
