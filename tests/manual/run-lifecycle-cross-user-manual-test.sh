@@ -12,6 +12,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT_DIR"
+PLAYGROUND_DIR="$ROOT_DIR/examples/playground"
 
 TAG="cb-manual-cross-user:$(date +%Y%m%d-%H%M%S)"
 
@@ -53,7 +54,7 @@ chmod +x ./examples/playground/codingbooth
 
 echo "Step B: create keep-alive booth and commit image as current user"
 (
-  cd ./examples/playground
+  cd "$PLAYGROUND_DIR"
   ./codingbooth --name cross-user-source --keep-alive -- 'mkdir -p /home/coder/.manual-cross-user && echo created-by-user-a > /home/coder/.manual-cross-user/owner.txt'
   docker commit cross-user-source "$TAG" >/dev/null
   docker rm -f cross-user-source >/dev/null 2>&1 || true
@@ -62,11 +63,11 @@ echo "Step B: create keep-alive booth and commit image as current user"
 echo
 echo "Step C: run committed image as user '$TARGET_USER'"
 echo "Command to run (you may be prompted for sudo password):"
-echo "  sudo -u $TARGET_USER -H bash -lc 'cd $ROOT_DIR/examples/playground && ./codingbooth --image $TAG --keep-alive -- \"touch /home/coder/.manual-cross-user/from-user-b\"'"
+echo "  sudo -u $TARGET_USER -H bash -lc 'cd $PLAYGROUND_DIR && ./codingbooth --image $TAG --keep-alive -- \"touch /home/coder/.manual-cross-user/from-user-b\"'"
 echo
 
 set +e
-sudo -u "$TARGET_USER" -H bash -lc "cd '$ROOT_DIR/examples/playground' && ./codingbooth --image '$TAG' --keep-alive -- 'touch /home/coder/.manual-cross-user/from-user-b'"
+OUTPUT="$(sudo -u "$TARGET_USER" -H bash -lc "cd '$PLAYGROUND_DIR' && ./codingbooth --image '$TAG' --keep-alive -- 'touch /home/coder/.manual-cross-user/from-user-b'" 2>&1)"
 RESULT=$?
 set -e
 
@@ -74,9 +75,15 @@ echo
 if [[ $RESULT -eq 0 ]]; then
   echo "✅ Manual check result: User B command succeeded."
   echo "   Cross-user restore may be fine for this setup."
+elif grep -q "Permission denied" <<<"$OUTPUT" && grep -q "cd: $PLAYGROUND_DIR" <<<"$OUTPUT"; then
+  echo "✅ Expected environment limitation: target user cannot access the test folder."
+  echo "   This run did not reach the cross-UID/GID check."
+  echo "   Re-run from a shared path (for example /tmp) to perform the real ownership test."
 else
   echo "⚠️  Manual check result: User B command failed (exit $RESULT)."
   echo "   This can indicate the known cross-UID/GID ownership limitation."
+  echo "   Command output:"
+  echo "$OUTPUT" | sed 's/^/     /'
 fi
 
 echo
