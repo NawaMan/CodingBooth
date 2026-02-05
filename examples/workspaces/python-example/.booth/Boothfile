@@ -1,0 +1,18 @@
+# syntax=codingbooth/boothfile:1
+
+# Python Example
+
+arg PY_VERSION=3.12
+arg JDK_VERSION=24
+
+setup python ${PY_VERSION}
+setup jdk    ${JDK_VERSION}
+
+setup python-code-extension
+setup jupyter-code-extension
+
+setup pycharm
+setup jetbrains-plugin pycharm ru.adelf.idea.dotenv
+
+setup claude-code
+setup antigravity

@@ -37,9 +37,12 @@ type AppConfig struct {
 	// --------------------
 	// Image configuration
 	// --------------------
-	Dockerfile string `toml:"dockerfile,omitempty" envconfig:"CB_DOCKERFILE"`
-	Image      string `toml:"image,omitempty"      envconfig:"CB_IMAGE"`
-	Variant    string `toml:"variant,omitempty"    envconfig:"CB_VARIANT" default:"default"`
+	Dockerfile     string `toml:"dockerfile,omitempty"      envconfig:"CB_DOCKERFILE"`
+	Boothfile      string `toml:"boothfile,omitempty"       envconfig:"CB_BOOTHFILE"`
+	Image          string `toml:"image,omitempty"           envconfig:"CB_IMAGE"`
+	Variant        string `toml:"variant,omitempty"         envconfig:"CB_VARIANT" default:"default"`
+	EmitDockerfile bool   `toml:"emit-dockerfile,omitempty" envconfig:"CB_EMIT_DOCKERFILE" default:"false"`
+	Strict         bool   `toml:"strict,omitempty"          envconfig:"CB_STRICT" default:"false"`
 
 	// --------------------
 	// Runtime values
@@ -113,8 +116,11 @@ func (config AppConfig) String() string {
 
 	fmt.Fprintf(&str, "# Image Configuration -----------\n")
 	fmt.Fprintf(&str, "    Dockerfile:       %q\n", config.Dockerfile)
+	fmt.Fprintf(&str, "    Boothfile:        %q\n", config.Boothfile)
 	fmt.Fprintf(&str, "    Image:            %q\n", config.Image)
 	fmt.Fprintf(&str, "    Variant:          %q\n", config.Variant)
+	fmt.Fprintf(&str, "    EmitDockerfile:   %t\n", config.EmitDockerfile)
+	fmt.Fprintf(&str, "    Strict:           %t\n", config.Strict)
 
 	fmt.Fprintf(&str, "# Runtime values ----------------\n")
 	fmt.Fprintf(&str, "    ProjectName:      %q\n", config.ProjectName)

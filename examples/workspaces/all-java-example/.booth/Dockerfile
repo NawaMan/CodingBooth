@@ -42,8 +42,8 @@ RUN "$BOOTH_SETUPS"/java-ijava-nb-kernel--setup.sh
 # RUN "$BOOTH_SETUPS/java-ijava-nb-kernel--setup.sh
 RUN "$BOOTH_SETUPS"/jdk--setup.sh 17
 RUN "$BOOTH_SETUPS"/java-ijava-nb-kernel--setup.sh
-RUN "$BOOTH_SETUPS"/jdk--setup.sh 18
-RUN "$BOOTH_SETUPS"/java-ijava-nb-kernel--setup.sh
+# RUN "$BOOTH_SETUPS"/jdk--setup.sh 18
+# RUN "$BOOTH_SETUPS"/java-ijava-nb-kernel--setup.sh
 RUN "$BOOTH_SETUPS"/jdk--setup.sh 19
 RUN "$BOOTH_SETUPS"/java-ijava-nb-kernel--setup.sh
 RUN "$BOOTH_SETUPS"/jdk--setup.sh 20

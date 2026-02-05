@@ -1,0 +1,7 @@
+# syntax=codingbooth/boothfile:1
+
+# Pip Example
+# Installs popular Python packages on top of the base workspace image
+
+setup python
+install pip httpx rich click pytest black ruff cowsay pyfiglet

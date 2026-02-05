@@ -53,6 +53,17 @@ if ! (cd "$SCRIPT_DIR/dryrun" && ./run-dryrun-tests.sh); then
 fi
 echo ""
 
+# Run boothfile tests
+echo "----------------------------------------"
+echo "Running Boothfile Tests"
+echo "----------------------------------------"
+total_suites=$((total_suites + 1))
+if ! (cd "$SCRIPT_DIR/boothfile" && ./run-boothfile-tests.sh); then
+    failed=1
+    failed_suites+=("boothfile")
+fi
+echo ""
+
 # Run complex tests
 echo "----------------------------------------"
 echo "Running Complex Tests"
