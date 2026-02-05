@@ -1,0 +1,13 @@
+# syntax=codingbooth/boothfile:1
+
+# Kind Example
+# Installs kind (Kubernetes in Docker) on top of the base workspace image
+
+# Setup DinD support (required for kind)
+setup dind
+
+# Install kind and kubectl
+setup kind
+
+setup claude-code
+setup antigravity

@@ -1,0 +1,22 @@
+# syntax=codingbooth/boothfile:1
+
+# Java Example
+
+setup jdk 25
+
+# Force jbang run to not show download afterward
+run echo 'class Hi { public static void main(String[] args) { System.out.println("Hi again"); }}' | jbang -
+
+setup mvn
+setup gradle
+setup jenv
+
+setup java-code-extension
+setup java-jjava-nb-kernel
+setup eclipse
+setup idea
+setup lombok-eclipse
+setup jetbrains-plugin idea "Lombook Plugin"
+
+setup claude-code
+setup antigravity

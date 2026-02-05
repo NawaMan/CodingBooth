@@ -1,0 +1,15 @@
+# syntax=codingbooth/boothfile:1
+
+# Neovim Example
+# Installs neovim on top of the base workspace image
+
+# Install neovim
+run &&<<APT
+apt-get update
+apt-get install -y --no-install-recommends neovim
+apt-get clean
+rm -rf /var/lib/apt/lists/*
+APT
+
+setup claude-code
+setup antigravity

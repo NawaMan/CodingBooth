@@ -1,0 +1,12 @@
+# syntax=codingbooth/boothfile:1
+
+# URL Whitelist Example
+# Restricts internet access to whitelisted domains only
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0
+
+# Install network whitelist (uses custom setup from .booth/setups/)
+setup network-whitelist
+
+setup claude-code
+setup antigravity
