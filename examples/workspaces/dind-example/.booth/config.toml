@@ -1,8 +1,8 @@
 variant  = "desktop-xfce"
 dind     = true
 run-args = [
-    "-p", "8080:8080",
-    "-p", "3000:3000",
+    "-p", "8888:8888",
+    "-p", "3333:3333",
 
     # Claude Code credentials (home-seeding)
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",

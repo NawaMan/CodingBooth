@@ -22,6 +22,7 @@ fi
 
 # The workspace is set to be non default
 WORKSPACE=".."
+RESOLVED_WORKSPACE="$(cd ${WORKSPACE} && pwd)"
 
 export TIMEZONE="America/Toronto"
 
@@ -33,42 +34,54 @@ VERSION="$(cat ../../version.txt)"
 # Notice that there is not `-rm`
 EXPECT="\
 docker \\
+    ps \\
+    -a \\
+    --filter 'name=^tests\$' \\
+    --format '{{.Names}}'
+docker \\
     run \\
     -i \\
     --rm \\
     --name tests \\
     -e 'HOST_UID=${HOST_UID}' \\
     -e 'HOST_GID=${HOST_GID}' \\
-    -v ${WORKSPACE}:/home/coder/code \\
+    -v ${RESOLVED_WORKSPACE}:/home/coder/code \\
     -w /home/coder/code \\
+    --label 'cb.managed=true' \\
+    --label 'cb.project=tests' \\
+    --label 'cb.variant=base' \\
+    --label 'cb.code-path=${RESOLVED_WORKSPACE}' \\
+    --label 'cb.created-at=XXXXX' \\
+    --label 'cb.version=${VERSION}' \\
+    --label 'cb.keep-alive=false' \\
     -p 10000:10000 \\
-    -e 'CB_SETUPS=/opt/codingbooth/setups' \\
-    -e 'CB_CONTAINER_NAME=tests' \\
-    -e 'CB_DAEMON=false' \\
-    -e 'CB_HOST_PORT=10000' \\
-    -e 'CB_IMAGE_NAME=nawaman/codingbooth:base-${VERSION}' \\
-    -e 'CB_RUNMODE=COMMAND' \\
-    -e 'CB_VARIANT_TAG=base' \\
-    -e 'CB_VERBOSE=false' \\
-    -e 'CB_VERSION_TAG=${VERSION}' \\
-    -e 'CB_CODE_PATH=..' \\
-    -e 'CB_CODE_PORT=10000' \\
-    -e 'CB_VERSION=${VERSION}' \\
-    -e 'CB_CONFIG_FILE=' \\
-    -e 'CB_SCRIPT_NAME=codingbooth' \\
-    -e 'CB_SCRIPT_DIR=${SCRIPT_DIR}' \\
-    -e 'CB_LIB_DIR=${LIB_DIR}' \\
-    -e 'CB_KEEP_ALIVE=false' \\
-    -e 'CB_SILENCE_BUILD=false' \\
-    -e 'CB_PULL=false' \\
-    -e 'CB_DIND=false' \\
-    -e 'CB_DOCKERFILE=' \\
-    -e 'CB_PROJECT_NAME=tests' \\
-    -e 'CB_TIMEZONE=America/Toronto' \\
-    -e 'CB_PORT=NEXT' \\
-    -e 'CB_ENV_FILE=' \\
-    -e 'CB_HOST_UID=${HOST_UID}' \\
-    -e 'CB_HOST_GID=${HOST_GID}' \\
+    -e 'BOOTH_SETUPS=/opt/codingbooth/setups' \\
+    -e 'BOOTH_CONTAINER_NAME=tests' \\
+    -e 'BOOTH_DAEMON=false' \\
+    -e 'BOOTH_HOST_PORT=10000' \\
+    -e 'BOOTH_IMAGE_NAME=nawaman/codingbooth:base-${VERSION}' \\
+    -e 'BOOTH_RUNMODE=COMMAND' \\
+    -e 'BOOTH_VARIANT_TAG=base' \\
+    -e 'BOOTH_VERBOSE=false' \\
+    -e 'BOOTH_VERSION_TAG=${VERSION}' \\
+    -e 'BOOTH_CODE_PATH=${RESOLVED_WORKSPACE}' \\
+    -e 'BOOTH_CODE_PORT=10000' \\
+    -e 'BOOTH_VERSION=${VERSION}' \\
+    -e 'BOOTH_CONFIG_FILE=' \\
+    -e 'BOOTH_SCRIPT_NAME=codingbooth' \\
+    -e 'BOOTH_SCRIPT_DIR=${SCRIPT_DIR}' \\
+    -e 'BOOTH_LIB_DIR=${LIB_DIR}' \\
+    -e 'BOOTH_KEEP_ALIVE=false' \\
+    -e 'BOOTH_SILENCE_BUILD=false' \\
+    -e 'BOOTH_PULL=false' \\
+    -e 'BOOTH_DIND=false' \\
+    -e 'BOOTH_DOCKERFILE=' \\
+    -e 'BOOTH_PROJECT_NAME=tests' \\
+    -e 'BOOTH_TIMEZONE=America/Toronto' \\
+    -e 'BOOTH_PORT=NEXT' \\
+    -e 'BOOTH_ENV_FILE=' \\
+    -e 'BOOTH_HOST_UID=${HOST_UID}' \\
+    -e 'BOOTH_HOST_GID=${HOST_GID}' \\
     '--pull=never' \\
     -e 'TZ=America/Toronto' \\
     nawaman/codingbooth:base-${VERSION} \\

@@ -51,23 +51,23 @@ detect_nested_booth() {
     # We're inside a CodingBooth container
     if [[ "${BOOTH_IN_BOOTH:-}" != "true" ]]; then
         cat >&2 <<'EOF'
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                    Running booth inside a booth container                 ║
-╠═══════════════════════════════════════════════════════════════════════════╣
-║ You appear to be running 'booth' from inside a CodingBooth container.    ║
-║ This is usually accidental - the booth script is visible here because    ║
-║ your project folder is mounted at /home/coder/code.                       ║
-║                                                                           ║
-║ If you intentionally want to run a nested booth (booth-in-booth), set:   ║
-║                                                                           ║
-║     export BOOTH_IN_BOOTH=true                                            ║
-║                                                                           ║
-║ AND specify a different port (not the current container's port):         ║
-║                                                                           ║
-║     ./booth --port NEXT ...                                               ║
-║     ./booth --port 11000 ...                                              ║
-║                                                                           ║
-╚═══════════════════════════════════════════════════════════════════════════╝
+╔════════════════════════════════════════════════════════════════════════╗
+║                    Running booth inside a booth container              ║
+╠════════════════════════════════════════════════════════════════════════╣
+║ You appear to be running 'booth' from inside a CodingBooth container.  ║
+║ This is usually accidental - the booth script is visible here because  ║
+║ your project folder is mounted at /home/coder/code.                    ║
+║                                                                        ║
+║ If you intentionally want to run a nested booth (booth-in-booth), set: ║
+║                                                                        ║
+║     export BOOTH_IN_BOOTH=true                                         ║
+║                                                                        ║
+║ AND specify a different port (not the current container's port):       ║
+║                                                                        ║
+║     ./booth --port NEXT ...                                            ║
+║     ./booth --port 11000 ...                                           ║
+║                                                                        ║
+╚════════════════════════════════════════════════════════════════════════╝
 EOF
         exit 1
     fi
@@ -102,11 +102,11 @@ EOF
 ╔═══════════════════════════════════════════════════════════════════════════╗
 ║                         Port conflict in nested booth                     ║
 ╠═══════════════════════════════════════════════════════════════════════════╣
-║ BOOTH_IN_BOOTH=true is set, but no port was specified.                   ║
+║ BOOTH_IN_BOOTH=true is set, but no port was specified.                    ║
 ║                                                                           ║
 ║ You must specify a different port to avoid conflicts with this container: ║
-║   Current container's host port: ${host_port:-"(not set)"}
-║   Current container's code port: ${code_port}
+║   Current container's host port: ${host_port:-"(not set)"}                ║
+║   Current container's code port: ${code_port}                             ║
 ║                                                                           ║
 ║ Use one of:                                                               ║
 ║     ./booth --port NEXT ...      (auto-find next available port)          ║
@@ -123,31 +123,31 @@ EOF
     if [[ "$requested_port" != "NEXT" && "$requested_port" != "RANDOM" ]]; then
         if [[ "$requested_port" == "$host_port" ]]; then
             cat >&2 <<EOF
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                         Port conflict in nested booth                     ║
-╠═══════════════════════════════════════════════════════════════════════════╣
-║ The requested port ($requested_port) conflicts with this container's host port.
-║                                                                           ║
-║ Use a different port:                                                     ║
-║     ./booth --port NEXT ...      (auto-find next available port)          ║
-║     ./booth --port RANDOM ...    (use a random port)                      ║
-║                                                                           ║
-╚═══════════════════════════════════════════════════════════════════════════╝
+╔═════════════════════════════════════════════════════════════════════════════════╗
+║                         Port conflict in nested booth                           ║
+╠═════════════════════════════════════════════════════════════════════════════════╣
+║ The requested port ($requested_port) conflicts with this container's host port. ║
+║                                                                                 ║
+║ Use a different port:                                                           ║
+║     ./booth --port NEXT ...      (auto-find next available port)                ║
+║     ./booth --port RANDOM ...    (use a random port)                            ║
+║                                                                                 ║
+╚═════════════════════════════════════════════════════════════════════════════════╝
 EOF
             exit 1
         fi
         if [[ "$requested_port" == "$code_port" ]]; then
             cat >&2 <<EOF
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                         Port conflict in nested booth                     ║
-╠═══════════════════════════════════════════════════════════════════════════╣
-║ The requested port ($requested_port) conflicts with this container's code port.
-║                                                                           ║
-║ Use a different port:                                                     ║
-║     ./booth --port NEXT ...      (auto-find next available port)          ║
-║     ./booth --port RANDOM ...    (use a random port)                      ║
-║                                                                           ║
-╚═══════════════════════════════════════════════════════════════════════════╝
+╔═════════════════════════════════════════════════════════════════════════════════╗
+║                         Port conflict in nested booth                           ║
+╠═════════════════════════════════════════════════════════════════════════════════╣
+║ The requested port ($requested_port) conflicts with this container's code port. ║
+║                                                                                 ║
+║ Use a different port:                                                           ║
+║     ./booth --port NEXT ...      (auto-find next available port)                ║
+║     ./booth --port RANDOM ...    (use a random port)                            ║
+║                                                                                 ║
+╚═════════════════════════════════════════════════════════════════════════════════╝
 EOF
             exit 1
         fi

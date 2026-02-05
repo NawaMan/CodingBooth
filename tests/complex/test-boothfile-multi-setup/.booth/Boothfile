@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Multiple setups in a single Boothfile
+setup python 3.12
+setup nodejs 20
+
+# Install packages via pip
+install pip requests

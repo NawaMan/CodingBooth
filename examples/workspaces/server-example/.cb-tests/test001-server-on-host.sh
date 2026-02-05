@@ -69,14 +69,40 @@ echo
 
 # Start server for host tests
 echo "Starting server for host tests..."
-docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./start-server.sh > /dev/null 2>&1 &"
-sleep 2
+docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./start-server.sh > /tmp/server.log 2>&1 &"
+
+# Wait for server to start with retries
+MAX_RETRIES=10
+RETRY_DELAY=1
+echo "  Waiting for server to start (max ${MAX_RETRIES}s)..."
+
+for i in $(seq 1 $MAX_RETRIES); do
+    if curl -s --max-time 5 "http://localhost:${SERVER_PORT}" | grep -q "Hello"; then
+        echo "  Server ready after ${i}s"
+        break
+    fi
+    if [ $i -eq $MAX_RETRIES ]; then
+        echo "  Server did not respond within ${MAX_RETRIES}s"
+    else
+        sleep $RETRY_DELAY
+    fi
+done
 
 # Test curl from host
 echo "Testing curl from host..."
-if curl -s --max-time 5 "http://localhost:${SERVER_PORT}" | grep -q "Hello"; then
+RESPONSE=$(curl -s --max-time 5 "http://localhost:${SERVER_PORT}" 2>&1 || true)
+if echo "$RESPONSE" | grep -q "Hello"; then
     pass "Server accessible from host at port ${SERVER_PORT}"
 else
+    echo "  Response: ${RESPONSE:-<empty>}"
+    echo "  Container server log:"
+    docker exec "$CONTAINER_NAME" cat /tmp/server.log 2>/dev/null | head -20 || echo "    <no log>"
+    echo "  Container process check:"
+    docker exec "$CONTAINER_NAME" ps aux 2>/dev/null | grep -E "python.*http.server" | grep -v grep || echo "    <no python server process>"
+    echo "  Container port check:"
+    docker exec "$CONTAINER_NAME" python3 -c "import socket; s=socket.socket(); s.settimeout(1); exit(0 if s.connect_ex(('localhost', 8080)) == 0 else 1)" 2>/dev/null && echo "    port 8080 is listening" || echo "    <port 8080 not listening>"
+    echo "  Host port mapping check:"
+    docker port "$CONTAINER_NAME" 2>/dev/null || echo "    <no port mappings>"
     fail "Server should be accessible from host"
 fi
 
@@ -87,7 +113,7 @@ sleep 1
 
 # Test curl fails from host
 echo "Testing curl fails after stop..."
-if curl -s --max-time 2 "http://localhost:${SERVER_PORT}" 2>/dev/null | grep -q "Hello"; then
+if curl -s --max-time 5 "http://localhost:${SERVER_PORT}" 2>/dev/null | grep -q "Hello"; then
     fail "Server should not be accessible after stop"
 else
     pass "Server not accessible from host (expected)"

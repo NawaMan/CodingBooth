@@ -24,6 +24,7 @@ Whether you want a browser-based VS Code session, a Jupyter notebook environment
 - [Built-in Tools](#built-in-tools)
 - [Quick Examples](#quick-examples)
 - [Customization](#customization)
+- [Boothfile](#boothfile)
 - [Guarantees & Limits](#guarantees--limits)
 - [How It Works](#how-it-works)
 - [`booth` Manual](#booth-manual)
@@ -116,18 +117,21 @@ CodingBooth provides a command-line interface with the following structure:
 | `--verbose`        | Enable debug output                                                              |
 | `--config <path>`  | Use custom config file                                                           |
 | `--code <path>`    | Set code directory                                                               |
+| `--boothfile <path>` | Use specific Boothfile (compiles to Dockerfile)                                |
+| `--emit-dockerfile` | Print generated Dockerfile without building                                     |
+| `--strict`         | Treat Boothfile warnings as errors                                               |
 | `--help`, `-h`     | Show help information                                                            |
 
 ### Wrapper vs Binary Commands
 
 The `booth` script is a **wrapper** that manages the underlying `codingbooth` binary. They have separate help and version commands:
 
-| Command           | What it shows                              |
-|-------------------|--------------------------------------------|
-| `./booth help`    | Wrapper help (install, update, cache, etc.)|
-| `./booth --help`  | Binary help (run flags, variants, etc.)    |
-| `./booth version` | Wrapper + binary version info              |
-| `./booth --version`| Binary version only                       |
+| Command            | What it shows                               |
+|--------------------|---------------------------------------------|
+| `./booth help`     | Wrapper help (install, update, cache, etc.) |
+| `./booth --help`   | Binary help (run flags, variants, etc.)     |
+| `./booth version`  | Wrapper + binary version info               |
+| `./booth --version`| Binary version only                         |
 
 > 💡 **Tip:** Use `booth help` to learn about managing CodingBooth installations. Use `booth --help` to see runtime options for launching containers.
 
@@ -390,7 +394,10 @@ All booth configuration lives in a single `.booth/` folder in your project root:
 my-project/
 └── .booth/
     ├── config.toml     # Launcher configuration
-    ├── Dockerfile      # Custom Docker build (optional)
+    ├── Boothfile       # Simplified build script (optional, preferred)
+    ├── Dockerfile      # Custom Docker build (optional, fallback)
+    ├── setups/         # Custom setup scripts (optional)
+    │   └── myapp--setup.sh
     ├── home/           # Team-shared home directory files (optional)
     │   └── .config/
     └── tools/          # Managed by booth wrapper (auto-created)
@@ -400,11 +407,161 @@ my-project/
 | File                      | Purpose                                                 |
 |---------------------------|---------------------------------------------------------|
 | `config.toml`             | Defines variant, ports, run-args, build-args, cmds      |
+| `Boothfile`               | Simplified build script (compiles to Dockerfile)        |
 | `Dockerfile`              | Custom image build extending a base variant             |
+| `setups/`                 | Custom setup scripts for `setup` command in Boothfile   |
 | `home/`                   | Team-shared dotfiles copied to `/home/coder/` at startup |
 | `tools/codingbooth.lock` | Version lock file; binaries cached in `~/.cache/codingbooth/` |
 
+> 💡 **Tip:** When both `Boothfile` and `Dockerfile` exist, Boothfile takes precedence. Use `--dockerfile` to force using the Dockerfile.
+
 > ⚠️ **Note on `cmds`:** When you pass commands via CLI (`-- <cmd>`), they **override** the `cmds` in config.toml (they don't append).
+
+---
+
+## Boothfile
+
+Boothfile is a simplified, script-like format for defining your container environment. It compiles to a Dockerfile automatically, hiding the boilerplate while preserving full control.
+
+### Why Boothfile?
+
+Instead of writing this Dockerfile:
+
+```dockerfile
+# syntax=docker/dockerfile:1
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
+FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
+SHELL ["/bin/bash","-o","pipefail","-lc"]
+USER root
+WORKDIR /opt/codingbooth/setups
+
+RUN python--setup.sh 3.12
+RUN pip--install.sh django
+ENV APP_ENV=production
+```
+
+Write this Boothfile:
+
+```text
+# syntax=codingbooth/boothfile:1
+
+setup python 3.12
+install pip django
+env APP_ENV=production
+```
+
+### Boothfile Commands
+
+| Command | Example | Compiles to |
+|---------|---------|-------------|
+| `run` | `run apt-get update` | `RUN apt-get update` |
+| `setup` | `setup python 3.12` | `RUN python--setup.sh 3.12` |
+| `install` | `install pip django` | `RUN pip--install.sh django` |
+| `copy` | `copy ./config /opt` | `COPY ./config /opt` |
+| `env` | `env DEBUG=true` | `ENV DEBUG=true` |
+| `arg` | `arg VERSION=1.0` | `ARG VERSION=1.0` |
+| `workdir` | `workdir /app` | `WORKDIR /app` |
+| `expose` | `expose 8080` | `EXPOSE 8080` |
+| `label` | `label maintainer="me"` | `LABEL maintainer="me"` |
+
+### Multi-line Commands (Heredocs)
+
+Boothfile supports three heredoc modes for multi-line commands:
+
+```text
+# Verbatim - passes through to Docker heredoc
+run <<END
+set -e
+apt-get update
+apt-get install -y curl
+END
+
+# And-join - joins lines with && (fail-fast)
+run &&<<END
+apt-get update
+apt-get install -y curl wget
+rm -rf /var/lib/apt/lists/*
+END
+
+# Semi-join - joins lines with ; (continue on failure)
+run ;<<END
+rm -f /tmp/optional
+echo "done"
+END
+```
+
+### Using Variables
+
+```text
+# syntax=codingbooth/boothfile:1
+
+arg NODE_VERSION=20
+arg PYTHON_VERSION=3.12
+
+setup nodejs ${NODE_VERSION}
+setup python ${PYTHON_VERSION}
+```
+
+Override at build time with `--build-arg NODE_VERSION=22`.
+
+### Custom Setup Scripts
+
+Place custom scripts in `.booth/setups/`:
+
+```
+.booth/
+└── setups/
+    └── myapp--setup.sh
+```
+
+Then use them in your Boothfile:
+
+```text
+setup myapp
+```
+
+The compiler automatically adds a `COPY` to bring your script into the image.
+
+### CLI Flags
+
+| Flag | Description |
+|------|-------------|
+| `--boothfile <path>` | Use a specific Boothfile |
+| `--emit-dockerfile` | Print generated Dockerfile without building |
+| `--strict` | Treat warnings as errors |
+
+### File Precedence
+
+When no flags are given, CodingBooth looks for files in this order:
+1. `.booth/Boothfile` (preferred)
+2. `.booth/Dockerfile` (fallback)
+
+Use `--dockerfile <path>` to force using a specific Dockerfile.
+
+### Complete Example
+
+```text
+# syntax=codingbooth/boothfile:1
+
+# Data engineering environment
+
+# System dependencies
+run apt-get update && apt-get install -y libpq-dev
+
+# Languages
+setup python 3.12
+setup jdk 21 temurin
+
+# Python packages
+install pip django psycopg2-binary
+
+# Project config
+copy ./config /opt/config
+env DJANGO_SETTINGS_MODULE=myproject.settings
+```
+
+> 📖 For the full Boothfile specification, see [docs/plans/Boothfile.md](docs/plans/Boothfile.md).
 
 ---
 

@@ -1,0 +1,38 @@
+# syntax=codingbooth/boothfile:1
+
+# Boothfile Example - Web Application Development Environment
+# This file demonstrates the Boothfile DSL syntax
+
+# Build-time arguments with defaults
+arg PY_VERSION=3.12
+arg NODE_VERSION=20
+
+# Python setup
+setup python ${PY_VERSION}
+
+# Node.js setup
+setup nodejs ${NODE_VERSION}
+
+# Install Python packages
+install pip flask requests pytest
+
+# Install Node packages
+install npm typescript prettier
+
+# Environment variables
+env FLASK_APP=app.py
+env FLASK_ENV=development
+env NODE_ENV=development
+
+# VS Code extensions
+setup python-code-extension
+
+# Expose common development ports
+expose 5000
+expose 3000
+
+# Custom initialization with heredoc (and-join mode)
+run &&<<SETUP
+echo "Boothfile example initialized"
+date > /tmp/booth-init-time.txt
+SETUP

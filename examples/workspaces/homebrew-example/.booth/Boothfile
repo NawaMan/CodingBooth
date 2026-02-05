@@ -1,0 +1,7 @@
+# syntax=codingbooth/boothfile:1
+
+# Homebrew Example
+# Installs popular brew packages on top of the base workspace image
+
+setup homebrew
+install brew bat neovim imagemagick node ffmpeg gcc postgresql redis nginx

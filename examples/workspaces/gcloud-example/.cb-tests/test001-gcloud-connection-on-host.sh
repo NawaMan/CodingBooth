@@ -17,7 +17,8 @@ YELLOW='\033[0;33m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-cd "$SCRIPT_DIR"
+EXAMPLE_DIR="$(dirname "$SCRIPT_DIR")"
+cd "$EXAMPLE_DIR"
 
 echo "=== Testing gcloud Connection ==="
 echo ""

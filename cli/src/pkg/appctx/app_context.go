@@ -86,9 +86,12 @@ func (ctx AppContext) Pull() bool         { return ctx.values.Config.Pull }
 func (ctx AppContext) Dind() bool         { return ctx.values.Config.Dind }
 
 // Image Configuration
-func (ctx AppContext) Dockerfile() string { return ctx.values.Config.Dockerfile }
-func (ctx AppContext) Image() string      { return ctx.values.Config.Image }
-func (ctx AppContext) Variant() string    { return ctx.values.Config.Variant }
+func (ctx AppContext) Dockerfile() string     { return ctx.values.Config.Dockerfile }
+func (ctx AppContext) Boothfile() string      { return ctx.values.Config.Boothfile }
+func (ctx AppContext) Image() string          { return ctx.values.Config.Image }
+func (ctx AppContext) Variant() string        { return ctx.values.Config.Variant }
+func (ctx AppContext) EmitDockerfile() bool   { return ctx.values.Config.EmitDockerfile }
+func (ctx AppContext) Strict() bool           { return ctx.values.Config.Strict }
 
 // Runtime values
 func (ctx AppContext) ProjectName() string { return ctx.values.Config.ProjectName }
