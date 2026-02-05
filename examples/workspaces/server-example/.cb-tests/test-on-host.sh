@@ -67,7 +67,7 @@ sleep 1
 
 # Test 5: Verify server is NOT accessible after booth stops
 echo "Checking server not accessible after booth stop..."
-if curl -s --max-time 2 "http://localhost:${SERVER_PORT}" >/dev/null 2>&1; then
+if curl -s --max-time 5 "http://localhost:${SERVER_PORT}" >/dev/null 2>&1; then
     fail "Server should not be accessible after booth stop"
 else
     pass "Server not accessible (expected)"

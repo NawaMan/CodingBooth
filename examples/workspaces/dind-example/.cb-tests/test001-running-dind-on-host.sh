@@ -114,7 +114,7 @@ sleep 1
 
 # Test curl fails from host
 echo "Testing curl fails after stop..."
-if curl -s --max-time 2 "http://localhost:${SERVER_PORT}" 2>/dev/null | grep -q "Hello"; then
+if curl -s --max-time 5 "http://localhost:${SERVER_PORT}" 2>/dev/null | grep -q "Hello"; then
     fail "Server should not be accessible after stop"
 else
     pass "Server not accessible from host (expected)"

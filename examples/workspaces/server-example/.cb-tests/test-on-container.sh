@@ -29,7 +29,7 @@ echo
 
 # Test 1: Verify server is NOT running initially
 echo "Checking server is not running..."
-if curl -s --max-time 2 "http://localhost:${SERVER_PORT}" >/dev/null 2>&1; then
+if curl -s --max-time 5 "http://localhost:${SERVER_PORT}" >/dev/null 2>&1; then
     fail "Server should not be running initially"
 else
     pass "Server not running (expected)"
@@ -37,15 +37,40 @@ fi
 
 # Test 2: Start the server in background
 echo "Starting server..."
-./start-server.sh > /dev/null 2>&1 &
+./start-server.sh > /tmp/server.log 2>&1 &
 SERVER_PID=$!
-sleep 2
+echo "  Server start PID: $SERVER_PID"
+
+# Wait for server to start with retries
+MAX_RETRIES=10
+RETRY_DELAY=1
+echo "  Waiting for server to start (max ${MAX_RETRIES}s)..."
+
+for i in $(seq 1 $MAX_RETRIES); do
+    if curl -s --max-time 5 "http://localhost:${SERVER_PORT}" | grep -q "Hello"; then
+        echo "  Server ready after ${i}s"
+        break
+    fi
+    if [ $i -eq $MAX_RETRIES ]; then
+        echo "  Server did not start within ${MAX_RETRIES}s"
+    else
+        sleep $RETRY_DELAY
+    fi
+done
 
 # Test 3: Verify server IS running
 echo "Checking server is running..."
-if curl -s --max-time 5 "http://localhost:${SERVER_PORT}" | grep -q "Hello"; then
+RESPONSE=$(curl -s --max-time 5 "http://localhost:${SERVER_PORT}" 2>&1 || true)
+if echo "$RESPONSE" | grep -q "Hello"; then
     pass "Server is running and responding"
 else
+    echo "  Response: ${RESPONSE:-<empty>}"
+    echo "  Server log:"
+    cat /tmp/server.log 2>/dev/null | head -20 || echo "    <no log>"
+    echo "  Process check:"
+    ps aux | grep -E "python.*http.server" | grep -v grep || echo "    <no python server process>"
+    echo "  Port check:"
+    python3 -c "import socket; s=socket.socket(); s.settimeout(1); exit(0 if s.connect_ex(('localhost', ${SERVER_PORT})) == 0 else 1)" 2>/dev/null && echo "    port ${SERVER_PORT} is listening" || echo "    <port ${SERVER_PORT} not listening>"
     fail "Server should be running and responding"
 fi
 
@@ -56,7 +81,7 @@ sleep 1
 
 # Test 5: Verify server is NOT running after stop
 echo "Checking server stopped..."
-if curl -s --max-time 2 "http://localhost:${SERVER_PORT}" >/dev/null 2>&1; then
+if curl -s --max-time 5 "http://localhost:${SERVER_PORT}" >/dev/null 2>&1; then
     fail "Server should not be running after stop"
 else
     pass "Server stopped (expected)"
