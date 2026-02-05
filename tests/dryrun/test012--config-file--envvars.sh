@@ -63,6 +63,7 @@ LOCAL_BUILD:    false
 PORT_GENERATED: true
 PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:   
+SANDBOX:        false
 SCRIPT_DIR:     $(realpath "$HERE/../..")
 SCRIPT_NAME:    codingbooth
 VARIANT:        base
@@ -125,6 +126,7 @@ LOCAL_BUILD:    false
 PORT_GENERATED: false
 PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:   
+SANDBOX:        false
 SCRIPT_DIR:     $(realpath "$HERE/../..")
 SCRIPT_NAME:    codingbooth
 VARIANT:        codeserver
