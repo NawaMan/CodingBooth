@@ -39,7 +39,7 @@ check_server() {
   
   # Get HTTP status (000 if unreachable)
   local status_code
-  status_code=$(curl -s -o /dev/null -w "%{http_code}" "$url" --max-time 2)
+  status_code=$(curl -s -o /dev/null -w "%{http_code}" "$url" --max-time 5)
   
   if [[ "$EXPECT" == "up" ]]; then
     if [[ "$status_code" == "200" ]]; then
