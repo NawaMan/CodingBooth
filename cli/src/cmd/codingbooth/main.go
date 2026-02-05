@@ -49,6 +49,9 @@ func main() {
 		case "example":
 			runExample(version)
 			return
+		case "emit-dockerfile":
+			emitDockerfile()
+			return
 		default:
 			// If it starts with --, treat as run with options
 			if len(command) > 0 && command[0] == '-' {

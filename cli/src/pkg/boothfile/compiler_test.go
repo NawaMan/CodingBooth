@@ -20,13 +20,11 @@ func TestCompiler_Prologue(t *testing.T) {
 	assert.False(t, result.HasErrors(), "errors: %v", result.Errors)
 
 	// Check prologue components
-	assert.Contains(t, result.Dockerfile, "# syntax=docker/dockerfile:1")
+	assert.Contains(t, result.Dockerfile, "# syntax=docker/dockerfile:1.7")
 	assert.Contains(t, result.Dockerfile, "ARG BOOTH_VARIANT_TAG=base")
 	assert.Contains(t, result.Dockerfile, "ARG BOOTH_VERSION_TAG=latest")
 	assert.Contains(t, result.Dockerfile, "FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}")
-	assert.Contains(t, result.Dockerfile, `SHELL ["/bin/bash","-o","pipefail","-lc"]`)
-	assert.Contains(t, result.Dockerfile, "USER root")
-	assert.Contains(t, result.Dockerfile, "WORKDIR /opt/codingbooth/setups")
+	// SHELL, USER, and WORKDIR are already set in the base image
 }
 
 func TestCompiler_Run(t *testing.T) {
@@ -267,25 +265,27 @@ setup jdk 21 temurin
 	})
 }
 
-func TestCompiler_SetupWithCustomScript(t *testing.T) {
+func TestCompiler_WithCustomSetupsDir(t *testing.T) {
 	content := `# syntax=codingbooth/boothfile:1
 setup myapp
 `
 	parser := NewParser()
 	parseResult := parser.ParseString(content)
 
-	// Compiler with custom setup detection
+	// Compiler with custom setups directory
 	compiler := NewCompilerWithOptions(CompilerOptions{
 		CustomSetupsDir: ".booth/setups",
-		CheckCustomSetupExists: func(name string) bool {
-			return name == "myapp"
-		},
+		HasCustomSetups: true,
 	})
 
 	result := compiler.Compile(parseResult)
 
 	assert.False(t, result.HasErrors())
-	assert.Contains(t, result.Dockerfile, "COPY .booth/setups/myapp--setup.sh /opt/codingbooth/setups/myapp--setup.sh")
+	// Custom setups dir should be copied in prologue
+	assert.Contains(t, result.Dockerfile, "COPY .booth/setups/ /home/coder/.booth/setups/")
+	// PATH should be updated in prologue
+	assert.Contains(t, result.Dockerfile, "ENV PATH=/home/coder/.booth/setups:$PATH")
+	// Setup command generates RUN (script is found via PATH)
 	assert.Contains(t, result.Dockerfile, "RUN myapp--setup.sh")
 }
 
@@ -333,7 +333,7 @@ DOCKER HEALTHCHECK CMD curl -f http://localhost/ || exit 1
 	assert.NotContains(t, result.Dockerfile, "DOCKER HEALTHCHECK")
 }
 
-func TestCompiler_CommentsStripped(t *testing.T) {
+func TestCompiler_CommentsPreserved(t *testing.T) {
 	content := `# syntax=codingbooth/boothfile:1
 # This is a comment
 run echo hello
@@ -342,16 +342,13 @@ run echo hello
 	result := CompileString(content)
 
 	assert.False(t, result.HasErrors())
-	// Comments should not appear (except in prologue which has its own comments)
-	lines := strings.Split(result.Dockerfile, "\n")
-	commentCount := 0
-	for _, line := range lines {
-		if strings.HasPrefix(strings.TrimSpace(line), "#") {
-			commentCount++
-		}
-	}
-	// Only the syntax directive comment from prologue should remain
-	assert.Equal(t, 1, commentCount, "only prologue syntax comment should remain")
+	// Comments should be preserved for readability (except syntax directive which transforms)
+	assert.Contains(t, result.Dockerfile, "# This is a comment")
+	assert.Contains(t, result.Dockerfile, "# Another comment")
+	// Syntax directive should be transformed, not preserved
+	assert.NotContains(t, result.Dockerfile, "# syntax=codingbooth/boothfile")
+	// Prologue should have docker syntax
+	assert.Contains(t, result.Dockerfile, "# syntax=docker/dockerfile:1.7")
 }
 
 func TestCompiler_CompleteExample(t *testing.T) {
@@ -387,7 +384,7 @@ env APP_ENV=production
 	df := result.Dockerfile
 
 	// Prologue
-	assert.Contains(t, df, "# syntax=docker/dockerfile:1")
+	assert.Contains(t, df, "# syntax=docker/dockerfile:1.7")
 	assert.Contains(t, df, "FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}")
 
 	// Commands
