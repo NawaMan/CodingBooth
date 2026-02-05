@@ -1,0 +1,11 @@
+# syntax=docker/dockerfile:1.7
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
+FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
+
+ARG BOOTH_VARIANT_TAG=base
+ARG BOOTH_VERSION_TAG=latest
+
+RUN python--setup.sh 3.12
+RUN nodejs--setup.sh 20
+RUN pip--install.sh requests

@@ -259,10 +259,6 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.Boothfile = v
 			i += 2
 
-		case "--emit-dockerfile":
-			cfg.EmitDockerfile = true
-			i++
-
 		case "--strict":
 			cfg.Strict = true
 			i++

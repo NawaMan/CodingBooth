@@ -7,43 +7,47 @@ set -euo pipefail
 
 source ../common--source.sh
 
-# Test --emit-dockerfile flag with a Boothfile
+# Test: Minimal Boothfile (only syntax line) generates prologue only
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-TEST_DIR="$SCRIPT_DIR/boothfile-test"
+TEST_DIR=$(mktemp -d)
+trap "rm -rf $TEST_DIR" EXIT
 
-# Run with --emit-dockerfile
+mkdir -p "$TEST_DIR/.booth"
+cat > "$TEST_DIR/.booth/Boothfile" << 'EOF'
+# syntax=codingbooth/boothfile:1
+EOF
+
 ACTUAL=$(run_coding_booth emit-dockerfile --code "$TEST_DIR" 2>/dev/null)
 
-# Expected output should contain the Dockerfile prologue and compiled commands
 EXPECT_CONTAINS=(
     "# syntax=docker/dockerfile:1.7"
     "ARG BOOTH_VARIANT_TAG=base"
     "ARG BOOTH_VERSION_TAG=latest"
     "FROM nawaman/codingbooth:"
-    "RUN python--setup.sh 3.12"
-    "RUN pip--install.sh django"
-    "ENV APP_ENV=production"
 )
 
 ALL_PASSED=true
 
 for expected in "${EXPECT_CONTAINS[@]}"; do
     if echo "$ACTUAL" | grep -qF "$expected"; then
-        print_test_result "true" "$0" "emit-dockerfile" "Output contains: $expected"
+        print_test_result "true" "$0" "001" "Output contains: $expected"
     else
-        print_test_result "false" "$0" "emit-dockerfile" "Output contains: $expected"
+        print_test_result "false" "$0" "001" "Output contains: $expected"
         ALL_PASSED=false
     fi
 done
 
-if [[ "$ALL_PASSED" != "true" ]]; then
-    echo "-------------------------------------------------------------------------------"
-    echo "Actual output:"
-    echo "$ACTUAL"
-    echo "-------------------------------------------------------------------------------"
-    exit 1
+# Ensure no RUN/COPY/ENV commands beyond prologue
+if echo "$ACTUAL" | grep -qE "^RUN |^COPY |^ENV "; then
+    print_test_result "false" "$0" "001" "Minimal boothfile should not have RUN/COPY/ENV commands"
+    ALL_PASSED=false
+else
+    print_test_result "true" "$0" "001" "Minimal boothfile has no extra commands"
 fi
 
-# Test that it exits cleanly (exit code 0)
-print_test_result "true" "$0" "emit-dockerfile" "--emit-dockerfile exits successfully"
+if [[ "$ALL_PASSED" != "true" ]]; then
+    echo "Actual output:"
+    echo "$ACTUAL"
+    exit 1
+fi

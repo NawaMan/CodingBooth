@@ -13,8 +13,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 TEST_DIR="$SCRIPT_DIR/boothfile-test"
 BOOTHFILE_PATH="$TEST_DIR/.booth/Boothfile"
 
-# Run with explicit --boothfile and --emit-dockerfile
-ACTUAL=$(run_coding_booth --code "$TEST_DIR" --boothfile "$BOOTHFILE_PATH" --emit-dockerfile 2>/dev/null)
+# Run with explicit --boothfile
+ACTUAL=$(run_coding_booth emit-dockerfile --code "$TEST_DIR" --boothfile "$BOOTHFILE_PATH" 2>/dev/null)
 
 # Should produce the same output as auto-detected Boothfile
 EXPECT_CONTAINS=(

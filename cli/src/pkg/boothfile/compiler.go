@@ -18,15 +18,17 @@ const DefaultVariant = "base"
 // DefaultVersion is the default version tag when not specified.
 const DefaultVersion = "latest"
 
+// ProjectSetupsPath is the destination path for custom setup scripts in the container.
+const ProjectSetupsPath = "/home/coder/.booth/setups"
+
 // CompilerOptions contains options for the Boothfile compiler.
 type CompilerOptions struct {
-	// CustomSetupsDir is the path to check for custom setup scripts (e.g., ".booth/setups")
-	// If empty, custom setup detection is disabled.
+	// CustomSetupsDir is the source path for custom setup scripts (e.g., ".booth/setups")
 	CustomSetupsDir string
 
-	// CheckCustomSetupExists is a function that checks if a custom setup script exists.
-	// If nil, no custom setup detection is performed.
-	CheckCustomSetupExists func(name string) bool
+	// HasCustomSetups indicates whether the CustomSetupsDir exists and should be copied.
+	// If true, the compiler will add COPY and ENV PATH instructions.
+	HasCustomSetups bool
 }
 
 // Compiler compiles parsed Boothfile commands into a Dockerfile.
@@ -79,6 +81,12 @@ func (c *Compiler) Compile(parseResult ParseResult) CompileResult {
 
 	// Compile each command
 	for _, cmd := range parseResult.Commands {
+		// Handle blank lines specially - emit empty line for readability
+		if cmd.Type == CommandBlank {
+			sb.WriteString("\n")
+			continue
+		}
+
 		line, err := c.compileCommand(cmd)
 		if err != nil {
 			result.Errors = append(result.Errors, *err)
@@ -96,29 +104,39 @@ func (c *Compiler) Compile(parseResult ParseResult) CompileResult {
 
 // writePrologue writes the fixed Dockerfile prologue.
 func (c *Compiler) writePrologue(sb *strings.Builder) {
-	prologue := `# syntax=docker/dockerfile:1
+	prologue := `# syntax=docker/dockerfile:1.7
 ARG BOOTH_VARIANT_TAG=base
 ARG BOOTH_VERSION_TAG=latest
 FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
 
-SHELL ["/bin/bash","-o","pipefail","-lc"]
-USER root
-
 ARG BOOTH_VARIANT_TAG=base
 ARG BOOTH_VERSION_TAG=latest
 
-WORKDIR /opt/codingbooth/setups
-
 `
 	sb.WriteString(prologue)
+
+	// If custom setups directory exists, copy it and prepend to PATH
+	if c.options.HasCustomSetups && c.options.CustomSetupsDir != "" {
+		sb.WriteString(fmt.Sprintf("COPY %s/ %s/\n", c.options.CustomSetupsDir, ProjectSetupsPath))
+		sb.WriteString(fmt.Sprintf("ENV PATH=%s:$PATH\n", ProjectSetupsPath))
+		sb.WriteString("\n")
+	}
 }
 
 // compileCommand compiles a single command to Dockerfile instruction(s).
 func (c *Compiler) compileCommand(cmd Command) (string, *ParseError) {
 	switch cmd.Type {
-	case CommandComment, CommandBlank:
-		// Comments and blank lines are stripped
+	case CommandBlank:
+		// Blank lines pass through for readability
 		return "", nil
+
+	case CommandComment:
+		// Pass through comments (except syntax directive which is in prologue)
+		raw := strings.TrimSpace(cmd.Raw)
+		if strings.HasPrefix(raw, "# syntax=") {
+			return "", nil
+		}
+		return raw, nil
 
 	case CommandRun:
 		return c.compileRun(cmd)
@@ -342,6 +360,7 @@ func (c *Compiler) compileArg(cmd Command) (string, *ParseError) {
 }
 
 // compileSetup compiles a setup command.
+// Custom setup scripts are found via PATH (project setups are prepended in prologue).
 func (c *Compiler) compileSetup(cmd Command) (string, *ParseError) {
 	if len(cmd.Args) == 0 {
 		return "", &ParseError{
@@ -353,27 +372,17 @@ func (c *Compiler) compileSetup(cmd Command) (string, *ParseError) {
 	toolName := cmd.Args[0]
 	scriptArgs := cmd.Args[1:]
 
-	var lines []string
-
-	// Check for custom setup script
-	if c.options.CheckCustomSetupExists != nil && c.options.CheckCustomSetupExists(toolName) {
-		// Add COPY for custom script
-		srcPath := fmt.Sprintf("%s/%s--setup.sh", c.options.CustomSetupsDir, toolName)
-		dstPath := fmt.Sprintf("/opt/codingbooth/setups/%s--setup.sh", toolName)
-		lines = append(lines, fmt.Sprintf("COPY %s %s", srcPath, dstPath))
-	}
-
-	// Build RUN command
+	// Build RUN command - script is found via PATH
 	runCmd := fmt.Sprintf("RUN %s--setup.sh", toolName)
 	if len(scriptArgs) > 0 {
 		runCmd += " " + strings.Join(scriptArgs, " ")
 	}
-	lines = append(lines, runCmd)
 
-	return strings.Join(lines, "\n"), nil
+	return runCmd, nil
 }
 
 // compileInstall compiles an install command.
+// Custom install scripts are found via PATH (project setups are prepended in prologue).
 func (c *Compiler) compileInstall(cmd Command) (string, *ParseError) {
 	if len(cmd.Args) < 2 {
 		return "", &ParseError{
@@ -385,21 +394,8 @@ func (c *Compiler) compileInstall(cmd Command) (string, *ParseError) {
 	toolName := cmd.Args[0]
 	packages := cmd.Args[1:]
 
-	var lines []string
-
-	// Check for custom install script
-	if c.options.CheckCustomSetupExists != nil && c.options.CheckCustomSetupExists(toolName) {
-		// Add COPY for custom script
-		srcPath := fmt.Sprintf("%s/%s--install.sh", c.options.CustomSetupsDir, toolName)
-		dstPath := fmt.Sprintf("/opt/codingbooth/setups/%s--install.sh", toolName)
-		lines = append(lines, fmt.Sprintf("COPY %s %s", srcPath, dstPath))
-	}
-
-	// Build RUN command
-	runCmd := fmt.Sprintf("RUN %s--install.sh %s", toolName, strings.Join(packages, " "))
-	lines = append(lines, runCmd)
-
-	return strings.Join(lines, "\n"), nil
+	// Build RUN command - script is found via PATH
+	return fmt.Sprintf("RUN %s--install.sh %s", toolName, strings.Join(packages, " ")), nil
 }
 
 // compileDocker compiles a DOCKER escape hatch command.
