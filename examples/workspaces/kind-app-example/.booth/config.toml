@@ -10,7 +10,7 @@ run-args = [
     "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",
 
     # Web UI (React/Vite dev server)
-    "-p", "3000:3000",
+    "-p", "3334:3334",
     # # Go API Service
     # "-p", "8080:8080",
     # # Go Export Service
