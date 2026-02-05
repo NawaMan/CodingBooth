@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+
+# Kotlin Example
+
+arg CB_JDK_VERSION=21
+
+setup jdk ${CB_JDK_VERSION}
+setup kotlin

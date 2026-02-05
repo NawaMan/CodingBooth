@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Python installation via Boothfile
+setup python 3.12

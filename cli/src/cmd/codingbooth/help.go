@@ -30,6 +30,7 @@ USAGE:
   %s remove [--name <name>] [--force]     (remove booth container(s))
   %s prune [--yes]                        (remove stopped booth containers)
   %s example <subcommand>                 (manage examples)
+  %s emit-dockerfile [options]            (compile Boothfile to Dockerfile)
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and config file):
   --code <path>          Host code path to mount at /home/coder/code
@@ -46,7 +47,9 @@ GENERAL RUN OPTIONS:
   --dryrun               Print docker commands without executing them
   --verbose              Print extra debugging information
 
-IMAGE SELECTION (precedence: --image > --dockerfile > prebuilt):
+IMAGE SELECTION (precedence: --image > --dockerfile > --boothfile > prebuilt):
+  --boothfile <path>     Build from a Boothfile (compiled to Dockerfile)
+                         Auto-detected at .booth/Boothfile if present.
   --dockerfile <path>    Build locally from a Dockerfile (file or directory)
                          If a directory is provided, it looks for .booth/Dockerfile.
   --image <name>         Use an existing local or remote image (e.g. repo/name:tag)
@@ -59,6 +62,7 @@ IMAGE SELECTION (precedence: --image > --dockerfile > prebuilt):
                          Aliases:
                            default | ide | desktop | desktop-xfce | desktop-kde
   --version <tag>        Prebuilt version tag (default: latest)
+  --strict               Treat Boothfile warnings as errors
 
 BUILD OPTIONS (only when using --dockerfile):
   --build-arg <KEY=VAL>  Add a Docker build-arg (repeatable)
@@ -117,6 +121,7 @@ EXAMPLES:
 `,
 		scriptName,
 		version,
+		scriptName,
 		scriptName,
 		scriptName,
 		scriptName,

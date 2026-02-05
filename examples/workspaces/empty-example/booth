@@ -43,8 +43,8 @@ VERBOSE="${VERBOSE:-true}"
 # Users can explicitly allow nested execution by setting BOOTH_IN_BOOTH=true and using a different port.
 detect_nested_booth() {
     # Check if we're inside a CodingBooth container
-    # Markers: /opt/codingbooth/ directory exists OR CB_CONTAINER_NAME is set
-    if [[ ! -d "/opt/codingbooth" && -z "${CB_CONTAINER_NAME:-}" ]]; then
+    # Markers: /opt/codingbooth/ directory exists OR BOOTH_CONTAINER_NAME is set
+    if [[ ! -d "/opt/codingbooth" && -z "${BOOTH_CONTAINER_NAME:-}" ]]; then
         return 0  # Not inside a container, continue normally
     fi
 
@@ -93,8 +93,8 @@ EOF
     done
 
     # Get current container's ports
-    local host_port="${CB_HOST_PORT:-}"
-    local code_port="${CB_CODE_PORT:-10000}"
+    local host_port="${BOOTH_HOST_PORT:-}"
+    local code_port="${BOOTH_CODE_PORT:-10000}"
 
     # If no port specified, error out - we need an explicit different port
     if [[ -z "$requested_port" ]]; then

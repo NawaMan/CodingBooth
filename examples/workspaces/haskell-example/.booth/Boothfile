@@ -1,0 +1,11 @@
+# syntax=codingbooth/boothfile:1
+
+# Haskell Example
+# Uses apt packages for simplicity (faster than ghcup)
+
+# Install GHC and Cabal from apt (simpler than ghcup for examples)
+run &&<<APT
+apt-get update
+apt-get install -y --no-install-recommends ghc cabal-install
+rm -rf /var/lib/apt/lists/*
+APT

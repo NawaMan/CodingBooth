@@ -1,0 +1,7 @@
+# syntax=codingbooth/boothfile:1
+
+# Deno Example
+# Installs Deno and some tools on top of the base workspace image
+
+setup deno
+install deno -Agf npm:cowsay

@@ -17,7 +17,8 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     CURRENT_PATH="$(pwd -W)"
 fi
 
-ACTUAL=$(run_coding_booth --help | head -11)
+# Just check the USAGE section (first 16 lines) - the full help is ~98 lines
+ACTUAL=$(run_coding_booth --help | head -16)
 
 HERE="$PWD"
 VERSION="$(cat ../../version.txt)"
@@ -30,10 +31,14 @@ USAGE:
   codingbooth help                                 (show this help and exit)
   codingbooth run [options] [--] [command ...]     (run the booth)
   codingbooth [options] [--] [command ...]         (default action: run)
+  codingbooth list [--running|--stopped] [-q]      (list booth-managed containers)
+  codingbooth start [--name <name>|--code <path>]  (start a stopped keep-alive booth)
+  codingbooth stop [--name <name>] [--force]       (stop a running booth)
+  codingbooth restart [--name <name>]              (restart a running booth)
+  codingbooth remove [--name <name>] [--force]     (remove booth container(s))
+  codingbooth prune [--yes]                        (remove stopped booth containers)
   codingbooth example <subcommand>                 (manage examples)
-
-BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and config file):
-  --code <path>          Host code path to mount at /home/coder/code"
+  codingbooth emit-dockerfile [options]            (compile Boothfile to Dockerfile)"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Help output matches expected"

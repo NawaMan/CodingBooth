@@ -1,0 +1,7 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: env and workdir commands
+env MY_TEST_VAR=hello_from_boothfile
+env ANOTHER_VAR=42
+workdir /tmp/testdir
+run mkdir -p /tmp/testdir
