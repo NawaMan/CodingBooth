@@ -1,0 +1,20 @@
+# syntax=codingbooth/boothfile:1
+
+# JetBrains IDEs Example
+
+arg CB_JDK_VERSION=24
+
+setup jdk ${CB_JDK_VERSION}
+
+setup jetbrains idea
+setup jetbrains pycharm
+setup jetbrains goland
+setup jetbrains webstorm
+setup jetbrains phpstorm
+setup jetbrains clion
+setup jetbrains rider
+setup jetbrains rubymine
+setup jetbrains datagrip
+
+setup claude-code
+setup antigravity

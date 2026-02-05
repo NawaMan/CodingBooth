@@ -1,0 +1,7 @@
+# syntax=codingbooth/boothfile:1
+
+# Ruby Example
+# Installs Ruby and popular gems on top of the base workspace image
+
+setup ruby
+install gem bundler rake pry colorize
