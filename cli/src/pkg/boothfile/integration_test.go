@@ -43,9 +43,8 @@ expose 8000
 		df := result.Dockerfile
 
 		// Check prologue
-		assert.Contains(t, df, "# syntax=docker/dockerfile:1")
+		assert.Contains(t, df, "# syntax=docker/dockerfile:1.7")
 		assert.Contains(t, df, "FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}")
-		assert.Contains(t, df, "WORKDIR /opt/codingbooth/setups")
 
 		// Check commands in order
 		lines := strings.Split(df, "\n")
@@ -227,12 +226,10 @@ setup python 3.12
 
 		require.False(t, parseResult.HasErrors())
 
-		// Compiler with custom setup detection for "mycompany-tools"
+		// Compiler with custom setups directory
 		compiler := NewCompilerWithOptions(CompilerOptions{
 			CustomSetupsDir: ".booth/setups",
-			CheckCustomSetupExists: func(name string) bool {
-				return name == "mycompany-tools"
-			},
+			HasCustomSetups: true,
 		})
 
 		result := compiler.Compile(parseResult)
@@ -241,13 +238,17 @@ setup python 3.12
 
 		df := result.Dockerfile
 
-		// Custom script should have COPY
-		assert.Contains(t, df, "COPY .booth/setups/mycompany-tools--setup.sh /opt/codingbooth/setups/mycompany-tools--setup.sh")
-		assert.Contains(t, df, "RUN mycompany-tools--setup.sh")
+		// Custom setups dir should be copied once in prologue
+		assert.Contains(t, df, "COPY .booth/setups/ /home/coder/.booth/setups/")
+		assert.Contains(t, df, "ENV PATH=/home/coder/.booth/setups:$PATH")
 
-		// Built-in script should NOT have COPY
+		// Both setup commands generate RUN (scripts found via PATH)
+		assert.Contains(t, df, "RUN mycompany-tools--setup.sh")
+		assert.Contains(t, df, "RUN python--setup.sh 3.12")
+
+		// Only one COPY (for the whole setups directory)
 		copyCount := strings.Count(df, "COPY")
-		assert.Equal(t, 1, copyCount, "should only have one COPY for custom script")
+		assert.Equal(t, 1, copyCount, "should only have one COPY for setups directory")
 	})
 }
 

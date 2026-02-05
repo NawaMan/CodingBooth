@@ -71,15 +71,13 @@ install pip django
 not:
 
 ```dockerfile
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.7
 ARG BOOTH_VARIANT_TAG=base
 ARG BOOTH_VERSION_TAG=latest
 FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
-SHELL ["/bin/bash","-o","pipefail","-lc"]
-USER root
+
 ARG BOOTH_VARIANT_TAG=base
 ARG BOOTH_VERSION_TAG=latest
-WORKDIR /opt/codingbooth/setups
 
 RUN python--setup.sh 3.13
 RUN pip--install.sh django
@@ -227,9 +225,10 @@ copy ./config /opt/config
 
 - BuildKit frontend image (see Section 5.2)
 - Setup script validation with suggestions
-- Additional package managers (`gem install`, `cargo install`, etc.)
 - Editor tooling / syntax highlighting
 - Alternative compilation targets (Podman, Buildah)
+
+Note: Additional package managers (`gem`, `cargo`, `conda`, `yarn`, etc.) already work via the generic `install` command — any `install <tool> <packages>` generates `RUN <tool>--install.sh <packages>`.
 
 ---
 
@@ -244,12 +243,12 @@ Using a Dockerfile directly with `booth` (via `--dockerfile`) continues to work 
 
 ### 4.1 File Selection Precedence
 
-| Scenario | Behavior |
-|----------|----------|
-| No flags given | Look for `.booth/Boothfile` first, then `.booth/Dockerfile`. Use whichever is found. Error if neither exists. |
-| `--dockerfile <path>` | Use the specified Dockerfile directly. Error if it does not exist. |
-| `--boothfile <path>` | Use the specified Boothfile (compile to Dockerfile). Error if it does not exist. |
-| `--boothfile <path>` and `--dockerfile <path>` | Use the Boothfile. Emit a **warning** that both were given and Boothfile takes precedence. |
+| Scenario                                        | Behavior                                                                                                        |
+|-------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
+| No flags given                                  | Look for `.booth/Boothfile` first, then `.booth/Dockerfile`. Use whichever is found. Error if neither exists.   |
+| `--dockerfile <path>`                           | Use the specified Dockerfile directly. Error if it does not exist.                                              |
+| `--boothfile <path>`                            | Use the specified Boothfile (compile to Dockerfile). Error if it does not exist.                                |
+| `--boothfile <path>` and `--dockerfile <path>`  | Use the Boothfile. Emit a **warning** that both were given and Boothfile takes precedence.                      |
 
 ### 4.2 The `--emit-dockerfile` Flag
 
@@ -315,23 +314,19 @@ The `:1` tag indicates major version 1 of the Boothfile syntax. All phases (1, 2
 Every Boothfile compiles with a fixed prologue that is required for CodingBooth to function. The prologue is **always the same** regardless of Boothfile content:
 
 ```dockerfile
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.7
 ARG BOOTH_VARIANT_TAG=base
 ARG BOOTH_VERSION_TAG=latest
 FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
 
-SHELL ["/bin/bash","-o","pipefail","-lc"]
-USER root
-
 ARG BOOTH_VARIANT_TAG=base
 ARG BOOTH_VERSION_TAG=latest
-
-WORKDIR /opt/codingbooth/setups
 ```
 
 Key points:
 
-- The Boothfile's `# syntax=codingbooth/boothfile:1` is replaced by `# syntax=docker/dockerfile:1` in the generated Dockerfile
+- The Boothfile's `# syntax=codingbooth/boothfile:1` is replaced by `# syntax=docker/dockerfile:1.7` in the generated Dockerfile
+- `SHELL`, `USER root`, and `WORKDIR` are already set in the base image, so they don't need to be repeated
 - `BOOTH_VARIANT_TAG` and `BOOTH_VERSION_TAG` default to `base` and `latest` but are overridden at build time by `config.toml` / CLI flags — **Boothfile never specifies these**
 - These lines are generated automatically and are not user-editable in Boothfile
 - The prologue may evolve over time without breaking Boothfiles
@@ -394,9 +389,9 @@ Blank lines are ignored and can be used freely for readability.
 
 ### 8.4 Compilation behavior
 
-Comments are **stripped** during compilation and do not appear in the generated Dockerfile.
+Comments are **preserved** in the generated Dockerfile for readability. This makes it easier to understand the structure of the generated output.
 
-Future consideration: A flag like `--preserve-comments` could emit comments as Dockerfile `# ...` lines for traceability.
+The only exception is the `# syntax=codingbooth/boothfile:1` directive, which is transformed into `# syntax=docker/dockerfile:1.7` in the prologue.
 
 ---
 
@@ -427,11 +422,11 @@ RUN apt-get update && apt-get install -y graphviz
 
 Complex commands spanning multiple lines use heredoc-style syntax with explicit mode selection:
 
-| Syntax | Behavior | Use case |
-|--------|----------|----------|
-| `run <<END` | Verbatim Docker heredoc | Full control, multi-line scripts |
-| `run &&<<END` | Join lines with `&&` | Fail-fast sequences (typical apt/package installs) |
-| `run ;<<END` | Join lines with `;` | Commands that can fail independently |
+| Syntax        | Behavior                | Use case                                            |
+|---------------|-------------------------|-----------------------------------------------------|
+| `run <<END`   | Verbatim Docker heredoc | Full control, multi-line scripts                    |
+| `run &&<<END` | Join lines with `&&`    | Fail-fast sequences (typical apt/package installs)  |
+| `run ;<<END`  | Join lines with `;`     | Commands that can fail independently                |
 
 ##### Verbatim mode (`run <<END`)
 
@@ -569,7 +564,7 @@ ENV APP_ENV=production
 
 ### 9.4 `workdir` (Phase 1+)
 
-Sets the working directory.
+Sets the working directory for subsequent Dockerfile commands.
 
 ```text
 workdir /app
@@ -580,6 +575,18 @@ Compiles to:
 ```dockerfile
 WORKDIR /app
 ```
+
+**Important:** The `workdir` command only affects subsequent Boothfile and Dockerfile commands *during the build process*. It does **not** affect the user's working directory when they log into the booth.
+
+The user's login working directory is controlled by `variants/<variant>/booth_entry` (e.g., `/home/coder/code` for the base variant). This is intentional — build-time concerns are separate from runtime user experience.
+
+Example:
+```text
+workdir /tmp/build
+run make install       # This runs in /tmp/build
+```
+
+When the user logs in, they will still be in `/home/coder/code` (or whatever the variant's entry script sets), not `/tmp/build`.
 
 ### 9.5 `expose` (Phase 1+)
 
@@ -940,18 +947,13 @@ env APP_ENV=production
 Compiles to (via `booth build --emit-dockerfile`):
 
 ```dockerfile
-# syntax=docker/dockerfile:1
+# syntax=docker/dockerfile:1.7
 ARG BOOTH_VARIANT_TAG=base
 ARG BOOTH_VERSION_TAG=latest
 FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
 
-SHELL ["/bin/bash","-o","pipefail","-lc"]
-USER root
-
 ARG BOOTH_VARIANT_TAG=base
 ARG BOOTH_VERSION_TAG=latest
-
-WORKDIR /opt/codingbooth/setups
 
 RUN apt-get update && apt-get install -y graphviz libpq-dev
 RUN python--setup.sh 3.12
@@ -990,7 +992,7 @@ Boothfile makes it pleasant to write.
 
 | Boothfile                              | Generated Dockerfile                          | Phase |
 |----------------------------------------|-----------------------------------------------|-------|
-| `# syntax=codingbooth/boothfile:1`     | `# syntax=docker/dockerfile:1` + prologue     | 1     |
+| `# syntax=codingbooth/boothfile:1`     | `# syntax=docker/dockerfile:1.7` + prologue   | 1     |
 | `# comment`                            | (stripped)                                    | 1     |
 | `run apt-get install -y foo`           | `RUN apt-get install -y foo`                  | 1     |
 | `run <<END ... END`                    | `RUN ...` (multi-line)                        | 1     |

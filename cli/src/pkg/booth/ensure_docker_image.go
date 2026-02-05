@@ -119,7 +119,6 @@ func normalizeDockerFile(ctx appctx.AppContext) string {
 }
 
 // compileBoothfile compiles a Boothfile to a Dockerfile.
-// If --emit-dockerfile is set, it prints the Dockerfile and exits.
 // Returns the path to the generated Dockerfile.
 func compileBoothfile(ctx appctx.AppContext, boothfilePath string) string {
 	if !ctx.SilenceBuild() {
@@ -156,13 +155,11 @@ func compileBoothfile(ctx appctx.AppContext, boothfilePath string) string {
 		}
 	}
 
-	// Compile with custom setup detection
+	// Compile with custom setups directory if it exists
+	customSetupsDir := filepath.Join(ctx.Code(), ".booth", "setups")
 	compilerOpts := boothfile.CompilerOptions{
 		CustomSetupsDir: ".booth/setups",
-		CheckCustomSetupExists: func(name string) bool {
-			setupPath := filepath.Join(ctx.Code(), ".booth", "setups", name+"--setup.sh")
-			return isFile(setupPath)
-		},
+		HasCustomSetups: isDir(customSetupsDir),
 	}
 	compiler := boothfile.NewCompilerWithOptions(compilerOpts)
 	compileResult := compiler.Compile(parseResult)
@@ -174,12 +171,6 @@ func compileBoothfile(ctx appctx.AppContext, boothfilePath string) string {
 			fmt.Fprintf(os.Stderr, "  %s\n", e.Error())
 		}
 		os.Exit(1)
-	}
-
-	// If --emit-dockerfile, print and exit
-	if ctx.EmitDockerfile() {
-		fmt.Print(compileResult.Dockerfile)
-		os.Exit(0)
 	}
 
 	// Write to a temporary file in .booth/

@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Custom setup script from .booth/setups/
+setup mytool
