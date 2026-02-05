@@ -1,0 +1,9 @@
+# syntax=codingbooth/boothfile:1
+
+# Google Cloud Example
+# Installs Google Cloud CLI on top of the base workspace image
+
+setup gcloud
+
+setup claude-code
+setup antigravity

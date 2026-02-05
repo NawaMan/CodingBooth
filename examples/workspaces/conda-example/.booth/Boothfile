@@ -1,0 +1,6 @@
+# syntax=codingbooth/boothfile:1
+
+# Conda Example
+
+setup conda --python-version 3.12
+install conda numpy

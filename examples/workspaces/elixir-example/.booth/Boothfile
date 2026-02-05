@@ -1,0 +1,13 @@
+# syntax=codingbooth/boothfile:1
+
+# Elixir Example
+# Uses apt packages for simplicity (faster than building from source)
+
+# Install Erlang and Elixir from apt (simpler than kerl for examples)
+run &&<<APT
+apt-get update
+apt-get install -y --no-install-recommends erlang elixir
+rm -rf /var/lib/apt/lists/*
+mix local.hex --force
+mix local.rebar --force
+APT
