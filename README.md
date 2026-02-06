@@ -1208,7 +1208,43 @@ This allows the booth to run Docker commands that execute inside the isolated Di
 > **Security note (2026-02-06):** `--sandboxed` with `--dind` is **not supported**. The DinD sidecar can bypass the egress firewall by running a privileged container in the shared network namespace. Use `--sandboxed` **without** `--dind` until further research.
 
 
-### 12. Network Whitelist
+### 12. Egress Sandbox (`--sandboxed`)
+
+CodingBooth includes an **egress sandbox** that restricts outbound traffic to an allowlist.  
+When enabled, traffic must pass through an Envoy proxy sidecar and is enforced with firewall rules.
+
+**How It Works**
+- Envoy forward proxy enforces a domain allowlist.
+- iptables rules force all HTTP/HTTPS traffic through the proxy.
+- Default policy is **deny**; only allowlisted domains are reachable.
+
+**Configuration**
+- Enable with:
+  ```bash
+  ./booth --sandboxed
+  ```
+- Policy is provided by **one** of:
+  - `.booth/egress/allowlist.txt` (simple allowlist), or
+  - `.booth/egress/envoy.yaml` (advanced/custom).
+- These are **mutually exclusive**; if both exist, startup fails with a clear error.
+
+**Default Allowlist (embedded)**
+- If `--sandboxed` is enabled and no policy files exist, CodingBooth materializes a default allowlist at:
+  - `.booth/egress/allowlist.txt`
+- This default content is embedded in the CLI binary and is based on `docs/implementations/example-allowlist.txt`.
+
+**Important Security Note (2026-02-06)**
+- `--sandboxed` with `--dind` is **not supported** due to a known firewall bypass via privileged DinD containers.
+- Use `--sandboxed` **without** `--dind` until further research.
+
+**Quick Example**
+```bash
+mkdir -p .booth/egress
+cp docs/implementations/example-allowlist.txt .booth/egress/allowlist.txt
+./booth --sandboxed
+```
+
+### 13. Network Whitelist
 
 CodingBooth includes a **network whitelist** feature that restricts container internet access to only approved domains. This is useful for:
 - Security-conscious environments
@@ -1521,4 +1557,3 @@ Stay in touch or follow updates, insights, and development notes:
 
 > 🙏 Every issue, idea, and pull request — big or small — helps make CodingBooth better for everyone.  
 > Thank you for being part of the community!
-

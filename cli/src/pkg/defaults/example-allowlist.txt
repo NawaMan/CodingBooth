@@ -198,3 +198,210 @@ dl.fedoraproject.org
 centos.org
 mirror.centos.org
 vault.centos.org
+packages.microsoft.com
+apt.llvm.org
+ppa.launchpad.net
+
+# ----------------------------------------------------------
+# macOS / Homebrew (if applicable)
+# ----------------------------------------------------------
+formulae.brew.sh
+homebrew.bintray.com
+ghcr.io
+
+# ----------------------------------------------------------
+# Infrastructure-as-Code & DevOps tooling
+# ----------------------------------------------------------
+registry.terraform.io
+releases.hashicorp.com
+checkpoint-api.hashicorp.com
+galaxy.ansible.com
+charts.helm.sh
+artifacthub.io
+kubernetes.io
+dl.k8s.io
+storage.googleapis.com
+get.helm.sh
+
+# ----------------------------------------------------------
+# CI/CD services
+# ----------------------------------------------------------
+circleci.com
+app.circleci.com
+travis-ci.com
+buildkite.com
+dev.azure.com
+vsrm.dev.azure.com
+
+# ----------------------------------------------------------
+# Cloud providers (broad — consider narrowing per use case)
+# ----------------------------------------------------------
+# AWS
+aws.amazon.com
+amazonaws.com
+elasticbeanstalk.com
+cloudfront.net
+# Azure
+azure.com
+azure.microsoft.com
+windows.net
+login.microsoftonline.com
+management.azure.com
+# GCP
+cloud.google.com
+googleapis.com
+appspot.com
+# Cloudflare
+cloudflare.com
+workers.dev
+pages.dev
+# Others
+digitalocean.com
+heroku.com
+herokuapp.com
+vercel.app
+vercel.com
+netlify.app
+netlify.com
+fly.dev
+fly.io
+railway.app
+render.com
+supabase.com
+supabase.co
+
+# ----------------------------------------------------------
+# Database providers (docs, drivers, downloads)
+# ----------------------------------------------------------
+postgresql.org
+mysql.com
+mongodb.com
+downloads.mongodb.com
+cloud.mongodb.com
+redis.io
+download.redis.io
+elastic.co
+artifacts.elastic.co
+neo4j.com
+mariadb.org
+clickhouse.com
+cockroachlabs.com
+couchdb.apache.org
+planetscale.com
+neon.tech
+
+# ----------------------------------------------------------
+# Monitoring, logging & observability
+# ----------------------------------------------------------
+sentry.io
+datadoghq.com
+newrelic.com
+grafana.com
+grafana.net
+prometheus.io
+pagerduty.com
+honeycomb.io
+splunk.com
+
+# ----------------------------------------------------------
+# Security scanning & vulnerability databases
+# ----------------------------------------------------------
+snyk.io
+api.snyk.io
+sonarcloud.io
+sonarqube.org
+cve.mitre.org
+nvd.nist.gov
+osv.dev
+security.snyk.io
+github.com/advisories
+
+# ----------------------------------------------------------
+# Documentation & reference
+# ----------------------------------------------------------
+stackoverflow.com
+cdn.sstatic.net
+developer.mozilla.org
+devdocs.io
+readthedocs.io
+readthedocs.org
+
+# ----------------------------------------------------------
+# TLS / Certificates / OCSP
+# ----------------------------------------------------------
+letsencrypt.org
+acme-v02.api.letsencrypt.org
+ocsp.digicert.com
+ocsp.pki.goog
+crl.microsoft.com
+cacerts.digicert.com
+ocsp.comodoca.com
+ocsp.sectigo.com
+ocsp.usertrust.com
+
+# ----------------------------------------------------------
+# Project management & communication
+# ----------------------------------------------------------
+atlassian.com
+atlassian.net
+jira.com
+trello.com
+slack.com
+wss-primary.slack.com
+discord.com
+gateway.discord.gg
+notion.so
+notion-static.com
+linear.app
+asana.com
+teams.microsoft.com
+
+# ----------------------------------------------------------
+# Testing & browser automation services
+# ----------------------------------------------------------
+browserstack.com
+saucelabs.com
+cypress.io
+download.cypress.io
+lambdatest.com
+percy.io
+
+# ----------------------------------------------------------
+# AI coding assistants
+# ----------------------------------------------------------
+api.anthropic.com
+anthropic.com
+claude.ai
+api.openai.com
+openai.com
+copilot.github.com
+copilot-proxy.githubusercontent.com
+codeium.com
+cursor.sh
+platform.claude.com
+tabnine.com
+
+# ----------------------------------------------------------
+# Internal registry proxies (uncomment if self-hosted)
+# ----------------------------------------------------------
+# jfrog.io
+# your-artifactory.example.com
+# your-nexus.example.com
+# your-verdaccio.example.com
+
+# ----------------------------------------------------------
+# Optional: Analytics & error tracking (uncomment if needed)
+# ----------------------------------------------------------
+# google-analytics.com
+# segment.io
+# segment.com
+# mixpanel.com
+# amplitude.com
+# bugsnag.com
+
+# ============================================================
+# END OF LIST
+# Remember: This WILL be incomplete. Consider pairing with
+# category-based filtering or egress proxy logging rather
+# than relying on this as a sole enforcement mechanism.
+# ============================================================

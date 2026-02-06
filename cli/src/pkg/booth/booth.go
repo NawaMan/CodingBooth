@@ -278,6 +278,12 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-v", codePath+":/home/coder/code"))
 	builder.CommonArgs.Append(ilist.NewList[string]("-w", "/home/coder/code"))
 
+	if ctx.Sandbox() {
+		addReadOnlyProjectFile(builder, codePath, ".booth/config.toml")
+		addReadOnlyProjectFile(builder, codePath, ".booth/Boothfile")
+		addReadOnlyEgressAllowlist(builder, codePath, ctx.EgressAllowlistFile())
+	}
+
 	// Lifecycle management labels used by list/start/stop/restart/remove commands.
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.managed=true"))
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.project="+ctx.ProjectName()))
@@ -345,6 +351,38 @@ func normalizeCodePath(path string) string {
 		return path
 	}
 	return absPath
+}
+
+func addReadOnlyProjectFile(builder *appctx.AppContextBuilder, codePath, relPath string) {
+	if codePath == "" || relPath == "" {
+		return
+	}
+	hostPath := filepath.Join(codePath, relPath)
+	info, err := os.Stat(hostPath)
+	if err != nil || info.IsDir() {
+		return
+	}
+	containerPath := filepath.Join("/home/coder/code", relPath)
+	builder.CommonArgs.Append(ilist.NewList[string]("-v", hostPath+":"+containerPath+":ro"))
+}
+
+func addReadOnlyEgressAllowlist(builder *appctx.AppContextBuilder, codePath, allowlistPath string) {
+	if codePath == "" || allowlistPath == "" {
+		return
+	}
+
+	var rel string
+	if filepath.IsAbs(allowlistPath) {
+		if relPath, err := filepath.Rel(codePath, allowlistPath); err == nil && !strings.HasPrefix(relPath, ".."+string(filepath.Separator)) && relPath != ".." {
+			rel = relPath
+		} else {
+			return
+		}
+	} else {
+		rel = allowlistPath
+	}
+
+	addReadOnlyProjectFile(builder, codePath, rel)
 }
 
 func flattenArgs(argsList ilist.List[ilist.List[string]]) []string {
