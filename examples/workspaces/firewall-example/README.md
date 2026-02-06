@@ -1,11 +1,13 @@
 # Firewall Egress Sandbox Example
 
-This example demonstrates the new `--sandbox` egress flow in CodingBooth.
+This example demonstrates the new `--sandboxed` egress flow in CodingBooth.
 
-It validates two scenarios:
+It validates the primary scenario:
 
-1. `--sandbox` (dedicated sandbox network namespace sidecar)
-2. `--sandbox --dind` (reuses DinD sidecar network namespace)
+1. `--sandboxed` (dedicated sandbox network namespace sidecar)
+
+**Security note (2026-02-06):** `--sandboxed` with `--dind` is **not supported**.  
+DinD can bypass the egress firewall by running a privileged container in the shared network namespace. Use `--sandboxed` **without** `--dind` until further research.
 
 The policy is read from `.booth/egress/allowlist.txt` and enforced by:
 
@@ -16,7 +18,7 @@ The policy is read from `.booth/egress/allowlist.txt` and enforced by:
 
 ```bash
 cd examples/workspaces/firewall-example
-../../../codingbooth --sandbox --variant base
+../../../codingbooth --sandboxed --variant base
 ```
 
 Inside the container:

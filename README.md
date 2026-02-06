@@ -1204,7 +1204,8 @@ This allows the booth to run Docker commands that execute inside the isolated Di
 - The sidecar approach offers stronger isolation but can be slower and more complex to manage.
 
 > 💡 **Tip:**
-> See `examples/workspaces/dind-example` for basic DinD usage, `examples/workspaces/kind-example` for KinD, and `examples/workspaces/firewall-example` for `--sandbox` egress enforcement with/without DinD reuse.
+> See `examples/workspaces/dind-example` for basic DinD usage, `examples/workspaces/kind-example` for KinD, and `examples/workspaces/firewall-example` for `--sandboxed` egress enforcement.  
+> **Security note (2026-02-06):** `--sandboxed` with `--dind` is **not supported**. The DinD sidecar can bypass the egress firewall by running a privileged container in the shared network namespace. Use `--sandboxed` **without** `--dind` until further research.
 
 
 ### 12. Network Whitelist
@@ -1520,6 +1521,4 @@ Stay in touch or follow updates, insights, and development notes:
 
 > 🙏 Every issue, idea, and pull request — big or small — helps make CodingBooth better for everyone.  
 > Thank you for being part of the community!
-
-
 

@@ -19,7 +19,7 @@ This is the execution breakdown for shipping egress policy in Booth.
 Goal: parse and validate egress configuration without runtime behavior changes.
 
 Work items:
-- Add `--sandbox` shorthand flag to enable egress defaults.
+- Add `--sandboxed` shorthand flag to enable egress defaults.
 - Add `[egress]` config model in AppConfig.
 - Add AppContext accessors for egress values.
 - Validate:

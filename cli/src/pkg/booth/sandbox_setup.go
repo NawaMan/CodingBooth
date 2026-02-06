@@ -27,9 +27,9 @@ const (
 // SetupSandbox sets up egress sandbox sidecars and firewall policy.
 //
 // Behavior:
-// - If --sandbox is off: no-op.
-// - If --sandbox + --dind: reuse DinD sidecar network namespace.
-// - If --sandbox only: create a dedicated netns-owner sidecar and share its namespace.
+// - If --sandboxed is off: no-op.
+// - If --sandboxed + --dind: reuse DinD sidecar network namespace.
+// - If --sandboxed only: create a dedicated netns-owner sidecar and share its namespace.
 func SetupSandbox(ctx appctx.AppContext) appctx.AppContext {
 	if !ctx.Sandbox() {
 		return ctx

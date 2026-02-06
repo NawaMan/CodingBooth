@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/defaults"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
@@ -105,8 +106,13 @@ func validateConfig(config *appctx.AppConfig) {
 	}
 }
 
+const (
+	defaultSandboxAllowlistPath = ".booth/egress/allowlist.txt"
+	defaultSandboxPolicyPath    = ".booth/egress/envoy.yaml"
+)
+
 func validateEgressConfig(config *appctx.AppConfig) error {
-	// --sandbox is a shorthand for egress guardrails.
+	// --sandboxed is a shorthand for egress guardrails.
 	if config.Sandbox {
 		if config.Egress.Mode == "" {
 			config.Egress.Mode = "envoy"
@@ -124,6 +130,10 @@ func validateEgressConfig(config *appctx.AppConfig) error {
 	config.Egress.Default = strings.ToLower(strings.TrimSpace(config.Egress.Default))
 	config.Egress.AllowlistFile = strings.TrimSpace(config.Egress.AllowlistFile)
 	config.Egress.PolicyFile = strings.TrimSpace(config.Egress.PolicyFile)
+
+	if err := applySandboxPolicyDefaults(config); err != nil {
+		return err
+	}
 
 	if config.Egress.Mode != "" &&
 		config.Egress.Mode != "none" &&
@@ -162,6 +172,46 @@ func validateEgressConfig(config *appctx.AppConfig) error {
 		}
 	}
 
+	return nil
+}
+
+func applySandboxPolicyDefaults(config *appctx.AppConfig) error {
+	if !config.Sandbox {
+		return nil
+	}
+	if config.Egress.AllowlistFile != "" || config.Egress.PolicyFile != "" {
+		return nil
+	}
+
+	codeDir := config.Code.ValueOr("")
+	if codeDir == "" {
+		return fmt.Errorf("sandbox requires a code directory to resolve egress policy")
+	}
+
+	allowlistPath := filepath.Join(codeDir, defaultSandboxAllowlistPath)
+	policyPath := filepath.Join(codeDir, defaultSandboxPolicyPath)
+	allowlistExists := fileExists(allowlistPath)
+	policyExists := fileExists(policyPath)
+
+	if allowlistExists && policyExists {
+		return fmt.Errorf("both %q and %q exist; choose only one", defaultSandboxAllowlistPath, defaultSandboxPolicyPath)
+	}
+	if allowlistExists {
+		config.Egress.AllowlistFile = defaultSandboxAllowlistPath
+		return nil
+	}
+	if policyExists {
+		config.Egress.PolicyFile = defaultSandboxPolicyPath
+		return nil
+	}
+
+	if err := os.MkdirAll(filepath.Dir(allowlistPath), 0o755); err != nil {
+		return fmt.Errorf("failed to create default allowlist dir: %w", err)
+	}
+	if err := os.WriteFile(allowlistPath, []byte(defaults.ExampleAllowlist), 0o644); err != nil {
+		return fmt.Errorf("failed to write default allowlist: %w", err)
+	}
+	config.Egress.AllowlistFile = defaultSandboxAllowlistPath
 	return nil
 }
 
@@ -295,7 +345,11 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.Dind = true
 			i++
 
+		case "--sandboxed":
+			cfg.Sandbox = true
+			i++
 		case "--sandbox":
+			// Backward compatibility alias.
 			cfg.Sandbox = true
 			i++
 

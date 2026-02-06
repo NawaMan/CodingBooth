@@ -22,22 +22,15 @@ This file captures decisions from the Envoy/firewall experiments and the task li
    - Default to **deny outbound**.
    - Explicit allow rules are required for access.
 
-4. **Config model**
-   - Add egress config in `.booth/config.toml`:
-     - `egress.mode = "none|envoy|squid|tinyproxy"`
-     - `egress.enforcement = "none|iptables|nftables"`
-     - `egress.default = "deny|allow"`
-     - `egress.allowlist_file = ".booth/egress/allowlist.txt"` (optional)
-     - `egress.policy_file = ".booth/egress/envoy.yaml"` (optional advanced mode)
-   - Add `--sandbox` shorthand flag to enable secure defaults:
-     - `egress.mode=envoy`
-     - `egress.enforcement=iptables`
-     - `egress.default=deny`
-
-5. **User-facing policy files**
-   - Support either:
+4. **Configuration surface**
+   - Externally supported surface is **only** `--sandboxed`.
+   - Policy is provided by **one** of:
      - `.booth/egress/allowlist.txt` (simple), or
      - `.booth/egress/envoy.yaml` (advanced/custom).
+   - These are **mutually exclusive**. If both are set, fail fast with a clear error (no implicit precedence).
+   - Internally, `--sandboxed` uses Envoy + iptables with default deny (implementation detail, not user-tunable).
+   - If neither file exists, a default allowlist is materialized from the embedded template
+     (see `docs/implementations/example-allowlist.txt` or `codingbooth print-default-allowlist.txt`).
 
 6. **Immutability requirement for policy files**
    - Policy files must be mounted into sidecar/proxy containers as **read-only bind mounts**.
@@ -48,13 +41,21 @@ This file captures decisions from the Envoy/firewall experiments and the task li
 7. **Operational note**
    - If host-level trust is broken (host root, privileged container, or Docker socket control), policy can still be bypassed.
    - This is expected and should be documented in threat model.
+8. **GPU/USB compatibility note**
+   - GPU/USB access does **not** require `--privileged` or `CAP_NET_ADMIN`.
+   - As long as `--privileged` and `CAP_NET_ADMIN` are **not** granted, egress firewall rules remain enforced.
+9. **DinD incompatibility (2026-02-06)**
+   - `--sandboxed` with `--dind` is **not supported**.
+   - The DinD sidecar shares the egress network namespace, and a user with Docker access can run
+     a privileged container to flush nftables/iptables, bypassing the firewall.
+   - Until further research, require `--sandboxed` to run **without** `--dind`.
 
 ## Implementation Tasks
 
 ## Phase 1 - Config + Parsing
 
-- [ ] Add `[egress]` schema support to config parsing.
-- [ ] Add validation for:
+- [x] Add `[egress]` schema support to config parsing.
+- [x] Add validation for:
   - mode/enforcement enum values
   - deny/allow default
   - mutually exclusive/simple-vs-advanced policy inputs
@@ -62,20 +63,20 @@ This file captures decisions from the Envoy/firewall experiments and the task li
 
 ## Phase 2 - Runtime Orchestration
 
-- [ ] Add netns-owner container lifecycle (create/start/reuse/cleanup).
-- [ ] Add proxy sidecar lifecycle for `egress.mode`.
-- [ ] Attach workspace container to netns-owner (`--network container:...`).
-- [ ] Add deterministic naming (`{container}-{port}-egress-netns`, etc).
+- [x] Add netns-owner container lifecycle (create/start/reuse/cleanup).
+- [x] Add proxy sidecar lifecycle for `egress.mode`.
+- [x] Attach workspace container to netns-owner (`--network container:...`).
+- [x] Add deterministic naming (`{container}-{port}-egress-netns`, etc).
 
 ## Phase 3 - Policy Materialization
 
-- [ ] Implement allowlist -> generated proxy config rendering.
-- [ ] Support direct custom config pass-through for `.booth/egress/envoy.yaml`.
-- [ ] Store generated artifacts under `.booth/tools/egress/` and mount read-only.
+- [x] Implement allowlist -> generated proxy config rendering.
+- [x] Support direct custom config pass-through for `.booth/egress/envoy.yaml`.
+- [x] Store generated artifacts under `.booth/tools/egress/` and mount read-only.
 
 ## Phase 4 - Enforcement
 
-- [ ] Implement `iptables` enforcement script for shared netns:
+- [x] Implement `iptables` enforcement script for shared netns:
   - allow loopback
   - allow established/related
   - allow DNS
@@ -88,18 +89,15 @@ This file captures decisions from the Envoy/firewall experiments and the task li
 ## Phase 5 - Hardening
 
 - [ ] Ensure sidecar/workspace are not launched privileged for egress mode.
-- [ ] Drop unnecessary capabilities.
+  - [ ] error out
+  - [ ] offer an explicit override
+- [ ] Drop unnecessary capabilities. -- error out
 - [ ] Set `no-new-privileges` where possible.
 - [ ] Ensure policy mounts are read-only and verify write attempts fail.
 
 ## Phase 6 - UX + CLI
 
-- [ ] Add CLI flags mirroring config values (with clear precedence rules).
-- [ ] Add `booth --egress-status` diagnostics output:
-  - mode/enforcement
-  - loaded policy file
-  - active proxy endpoint
-  - enforcement active/inactive.
+- [ ] Document `--verbose` as the debug surface for egress details (mode, policy file, proxy port, enforcement status).
 
 ## Phase 7 - Docs
 
@@ -119,20 +117,19 @@ This file captures decisions from the Envoy/firewall experiments and the task li
 
 ## Suggested MVP scope
 
-Start with:
-- `egress.mode = envoy`
-- `egress.enforcement = iptables`
-- `egress.default = deny`
-- only `.booth/egress/allowlist.txt`
+Start with `--sandboxed` only:
+- Envoy + iptables with default deny (implementation detail).
+- Policy provided by `.booth/egress/allowlist.txt` or `.booth/egress/envoy.yaml` (mutually exclusive).
 
-Then add custom `envoy.yaml` and alternate engines after MVP stabilizes.
+Defer alternate engines and user-tunable config until after MVP stabilizes.
 
 ## Current MVP Progress
 
-- [x] `--sandbox` flag + config parsing and validation
+- [x] `--sandboxed` flag + config parsing and validation
 - [x] Envoy sidecar runtime wiring
 - [x] iptables enforcement runtime wiring
 - [x] Reuse DinD sidecar network namespace when `--dind` is enabled
 - [x] Dedicated sandbox netns owner when `--dind` is not enabled
+- [ ] **Re-evaluate DinD reuse** — shared netns allows firewall bypass via privileged DinD containers.
 - [ ] CLI status/diagnostics command
 - [ ] Full integration tests that run real Docker end-to-end in CI
