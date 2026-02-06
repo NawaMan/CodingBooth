@@ -198,8 +198,13 @@ func compileBoothfile(ctx appctx.AppContext, boothfilePath string) string {
 		}
 	}
 
-	// Write to a temporary file in .booth/
-	generatedPath := filepath.Join(ctx.Code(), ".booth", ".Dockerfile.generated")
+	// Write to a temporary file (avoid polluting .booth/)
+	tempDir, err := os.MkdirTemp("", "codingbooth-dockerfile-")
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to create temp dir for Dockerfile: %v\n", err)
+		os.Exit(1)
+	}
+	generatedPath := filepath.Join(tempDir, "Dockerfile.generated")
 	err = os.WriteFile(generatedPath, []byte(compileResult.Dockerfile), 0644)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: failed to write generated Dockerfile: %v\n", err)
