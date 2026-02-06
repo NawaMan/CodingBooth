@@ -34,6 +34,9 @@ type AppConfig struct {
 	Pull         bool `toml:"pull,omitempty"          envconfig:"CB_PULL" default:"false"`
 	Dind         bool `toml:"dind,omitempty"          envconfig:"CB_DIND" default:"false"`
 	Sandbox      bool `toml:"sandboxed,omitempty"     envconfig:"CB_SANDBOX" default:"false"`
+	SandboxAllowlistFile string `toml:"sandbox-allowlist-file,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST_FILE"`
+	SandboxPolicyFile    string `toml:"sandbox-policy-file,omitempty"    envconfig:"CB_SANDBOX_POLICY_FILE"`
+	SandboxAllowlist     []string `toml:"sandbox-allowlist,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST"`
 
 	// --------------------
 	// Image configuration
@@ -120,6 +123,9 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Pull:             %t\n", config.Pull)
 	fmt.Fprintf(&str, "    Dind:             %t\n", config.Dind)
 	fmt.Fprintf(&str, "    Sandbox:          %t\n", config.Sandbox)
+	fmt.Fprintf(&str, "    SandboxAllowlist: %q\n", config.SandboxAllowlistFile)
+	fmt.Fprintf(&str, "    SandboxPolicy:    %q\n", config.SandboxPolicyFile)
+	fmt.Fprintf(&str, "    SandboxAllowlist+: %v\n", config.SandboxAllowlist)
 
 	fmt.Fprintf(&str, "# Image Configuration -----------\n")
 	fmt.Fprintf(&str, "    Dockerfile:       %q\n", config.Dockerfile)

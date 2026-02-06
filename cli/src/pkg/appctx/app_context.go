@@ -88,6 +88,11 @@ func (ctx AppContext) Daemon() bool       { return ctx.values.Config.Daemon }
 func (ctx AppContext) Pull() bool         { return ctx.values.Config.Pull }
 func (ctx AppContext) Dind() bool         { return ctx.values.Config.Dind }
 func (ctx AppContext) Sandbox() bool      { return ctx.values.Config.Sandbox }
+func (ctx AppContext) SandboxAllowlistFile() string {
+	return ctx.values.Config.SandboxAllowlistFile
+}
+func (ctx AppContext) SandboxPolicyFile() string { return ctx.values.Config.SandboxPolicyFile }
+func (ctx AppContext) SandboxAllowlist() []string { return ctx.values.Config.SandboxAllowlist }
 
 // Image Configuration
 func (ctx AppContext) Dockerfile() string     { return ctx.values.Config.Dockerfile }
@@ -201,6 +206,9 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    EgressDefault:    %q\n", ctx.EgressDefault())
 	fmt.Fprintf(&str, "    EgressAllowlist:  %q\n", ctx.EgressAllowlistFile())
 	fmt.Fprintf(&str, "    EgressPolicy:     %q\n", ctx.EgressPolicyFile())
+	fmt.Fprintf(&str, "    SandboxAllowlist: %q\n", ctx.SandboxAllowlistFile())
+	fmt.Fprintf(&str, "    SandboxPolicy:    %q\n", ctx.SandboxPolicyFile())
+	fmt.Fprintf(&str, "    SandboxAllowlist+: %v\n", ctx.SandboxAllowlist())
 
 	fmt.Fprintf(&str, "# Lists (Immutable) -------------\n")
 	formatList(&str, "CommonArgs", ctx.CommonArgs(), "    ")

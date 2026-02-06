@@ -36,14 +36,14 @@ static_resources:
               rules:
                 action: ALLOW
                 policies:
-                  allow_pypi_connect:
+                  allow_pypi:
                     permissions:
                     - header:
                         name: ":authority"
                         string_match:
                           safe_regex:
                             google_re2: {}
-                            regex: "(^|.*\\.)pypi\\.org(:443)?$"
+                            regex: "(^|.*\\.)pypi\\.org(:[0-9]+)?$"
                     principals:
                     - any: true
           - name: envoy.filters.http.dynamic_forward_proxy

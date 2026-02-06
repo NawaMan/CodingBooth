@@ -12,15 +12,12 @@ func TestIntegration_InitializeAppContext_Egress_ValidAllowlist(t *testing.T) {
 			{
 				Path: ".booth/config.toml",
 				Content: `
-[egress]
-mode = "Envoy"
-enforcement = "iptables"
-default = "deny"
-allowlist-file = ".booth/egress/allowlist.txt"
+sandboxed = true
+sandbox-allowlist-file = ".booth/sandbox/allowlist.txt"
 `,
 			},
 			{
-				Path:    ".booth/egress/allowlist.txt",
+				Path:    ".booth/sandbox/allowlist.txt",
 				Content: "pypi.org\n",
 			},
 		},
@@ -37,10 +34,10 @@ allowlist-file = ".booth/egress/allowlist.txt"
 	}
 }
 
-func TestIntegration_InitializeAppContext_Egress_InvalidMode_Panics(t *testing.T) {
+func TestIntegration_InitializeAppContext_EgressBlock_Panics(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
-			t.Fatal("expected panic for invalid egress.mode, but did not panic")
+			t.Fatal("expected panic when egress.* is set, but did not panic")
 		}
 	}()
 
@@ -50,14 +47,14 @@ func TestIntegration_InitializeAppContext_Egress_InvalidMode_Panics(t *testing.T
 				Path: ".booth/config.toml",
 				Content: `
 [egress]
-mode = "not-supported"
+allowlist-file = ".booth/sandbox/allowlist.txt"
 `,
 			},
 		},
 	})
 }
 
-func TestIntegration_InitializeAppContext_Egress_AllowlistAndPolicy_Panics(t *testing.T) {
+func TestIntegration_InitializeAppContext_Sandbox_AllowlistAndPolicy_Panics(t *testing.T) {
 	defer func() {
 		if r := recover(); r == nil {
 			t.Fatal("expected panic when both allowlist and policy are set, but did not panic")
@@ -69,13 +66,13 @@ func TestIntegration_InitializeAppContext_Egress_AllowlistAndPolicy_Panics(t *te
 			{
 				Path: ".booth/config.toml",
 				Content: `
-[egress]
-allowlist-file = ".booth/egress/allowlist.txt"
-policy-file = ".booth/egress/envoy.yaml"
+sandboxed = true
+sandbox-allowlist-file = ".booth/sandbox/allowlist.txt"
+sandbox-policy-file = ".booth/sandbox/envoy.yaml"
 `,
 			},
-			{Path: ".booth/egress/allowlist.txt", Content: "pypi.org\n"},
-			{Path: ".booth/egress/envoy.yaml", Content: "static_resources: {}\n"},
+			{Path: ".booth/sandbox/allowlist.txt", Content: "pypi.org\n"},
+			{Path: ".booth/sandbox/envoy.yaml", Content: "static_resources: {}\n"},
 		},
 	})
 }

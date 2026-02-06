@@ -144,7 +144,7 @@ func startSandboxNetnsOwner(ctx appctx.AppContext, ownerName, netName string, ho
 }
 
 func resolveSandboxProxyConfig(ctx appctx.AppContext) (string, error) {
-	policyFile := strings.TrimSpace(ctx.EgressPolicyFile())
+	policyFile := strings.TrimSpace(ctx.SandboxPolicyFile())
 	if policyFile != "" {
 		return resolvePolicyPath(ctx, policyFile), nil
 	}
@@ -159,14 +159,16 @@ func resolvePolicyPath(ctx appctx.AppContext, path string) string {
 }
 
 func renderSandboxEnvoyConfigFromAllowlist(ctx appctx.AppContext) (string, error) {
-	allowlistPath := strings.TrimSpace(ctx.EgressAllowlistFile())
+	allowlistPath := strings.TrimSpace(ctx.SandboxAllowlistFile())
 	var patterns []string
 	if allowlistPath != "" {
 		content, err := os.ReadFile(resolvePolicyPath(ctx, allowlistPath))
 		if err != nil {
 			return "", fmt.Errorf("failed to read allowlist file: %w", err)
 		}
-		patterns = parseAllowlistPatterns(string(content))
+		patterns = parseAllowlistPatterns(mergeAllowlistContent(string(content), ctx.SandboxAllowlist()))
+	} else if len(ctx.SandboxAllowlist()) > 0 {
+		patterns = parseAllowlistPatterns(mergeAllowlistContent("", ctx.SandboxAllowlist()))
 	}
 
 	outDir := filepath.Join(ctx.Code(), ".booth", "tools", "egress")
@@ -200,6 +202,26 @@ func parseAllowlistPatterns(content string) []string {
 		patterns = append(patterns, fmt.Sprintf("(^|.*\\.)%s(:[0-9]+)?$", escaped))
 	}
 	return patterns
+}
+
+func mergeAllowlistContent(content string, extra []string) string {
+	if len(extra) == 0 {
+		return content
+	}
+	var builder strings.Builder
+	builder.WriteString(content)
+	if content != "" && !strings.HasSuffix(content, "\n") {
+		builder.WriteString("\n")
+	}
+	for _, entry := range extra {
+		entry = strings.TrimSpace(entry)
+		if entry == "" {
+			continue
+		}
+		builder.WriteString(entry)
+		builder.WriteString("\n")
+	}
+	return builder.String()
 }
 
 func buildEnvoyConfigFromPatterns(patterns []string) string {

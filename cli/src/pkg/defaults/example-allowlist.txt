@@ -5,7 +5,7 @@
 # tool, or framework may introduce domains not listed here.
 # Review and maintain regularly.
 # 
-# Put this file at: .booth/egress/allowlist.txt
+# Put this file at: .booth/sandbox/allowlist.txt
 # 
 # ============================================================
 

@@ -281,7 +281,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	if ctx.Sandbox() {
 		addReadOnlyProjectFile(builder, codePath, ".booth/config.toml")
 		addReadOnlyProjectFile(builder, codePath, ".booth/Boothfile")
-		addReadOnlyEgressAllowlist(builder, codePath, ctx.EgressAllowlistFile())
+		addReadOnlyEgressAllowlist(builder, codePath, ctx.SandboxAllowlistFile())
 	}
 
 	// Lifecycle management labels used by list/start/stop/restart/remove commands.
