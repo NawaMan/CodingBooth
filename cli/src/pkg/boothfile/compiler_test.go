@@ -488,3 +488,178 @@ install pip
 		assert.True(t, result.HasErrors())
 	})
 }
+
+func TestCompiler_ScriptValidation(t *testing.T) {
+	t.Run("unknown setup script warns", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
+setup pytohn 3.12
+`
+		parser := NewParser()
+		parseResult := parser.ParseString(content)
+		assert.False(t, parseResult.HasErrors())
+
+		compiler := NewCompilerWithOptions(CompilerOptions{
+			KnownSetupScripts: []string{"python", "nodejs", "go"},
+		})
+		result := compiler.Compile(parseResult)
+
+		assert.False(t, result.HasErrors(), "Should compile successfully")
+		assert.True(t, result.HasWarnings(), "Should have warning for unknown script")
+		assert.Len(t, result.Warnings, 1)
+		assert.Contains(t, result.Warnings[0].Message, "Unknown setup script 'pytohn'")
+		assert.Contains(t, result.Warnings[0].Hint, "python")
+	})
+
+	t.Run("unknown install script warns", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
+install ppi django
+`
+		parser := NewParser()
+		parseResult := parser.ParseString(content)
+		assert.False(t, parseResult.HasErrors())
+
+		compiler := NewCompilerWithOptions(CompilerOptions{
+			KnownInstallScripts: []string{"pip", "npm", "brew"},
+		})
+		result := compiler.Compile(parseResult)
+
+		assert.False(t, result.HasErrors(), "Should compile successfully")
+		assert.True(t, result.HasWarnings(), "Should have warning for unknown script")
+		assert.Contains(t, result.Warnings[0].Message, "Unknown install script 'ppi'")
+		assert.Contains(t, result.Warnings[0].Hint, "pip")
+	})
+
+	t.Run("known setup script no warning", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
+setup python 3.12
+`
+		parser := NewParser()
+		parseResult := parser.ParseString(content)
+
+		compiler := NewCompilerWithOptions(CompilerOptions{
+			KnownSetupScripts: []string{"python", "nodejs", "go"},
+		})
+		result := compiler.Compile(parseResult)
+
+		assert.False(t, result.HasErrors())
+		assert.False(t, result.HasWarnings(), "Should have no warnings for known script")
+	})
+
+	t.Run("custom setup script no warning", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
+setup myapp
+`
+		parser := NewParser()
+		parseResult := parser.ParseString(content)
+
+		compiler := NewCompilerWithOptions(CompilerOptions{
+			KnownSetupScripts:  []string{"python", "nodejs"},
+			CustomSetupScripts: []string{"myapp"},
+		})
+		result := compiler.Compile(parseResult)
+
+		assert.False(t, result.HasErrors())
+		assert.False(t, result.HasWarnings(), "Should have no warnings for custom script")
+	})
+
+	t.Run("no known scripts skips validation", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
+setup unknownscript
+`
+		parser := NewParser()
+		parseResult := parser.ParseString(content)
+
+		// Compiler with no known scripts configured - should skip validation
+		compiler := NewCompiler()
+		result := compiler.Compile(parseResult)
+
+		assert.False(t, result.HasErrors())
+		assert.False(t, result.HasWarnings(), "Should have no warnings when validation disabled")
+	})
+
+	t.Run("multiple unknown scripts multiple warnings", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
+setup pytohn
+install ppi django
+setup nodjes
+`
+		parser := NewParser()
+		parseResult := parser.ParseString(content)
+
+		compiler := NewCompilerWithOptions(CompilerOptions{
+			KnownSetupScripts:   []string{"python", "nodejs"},
+			KnownInstallScripts: []string{"pip", "npm"},
+		})
+		result := compiler.Compile(parseResult)
+
+		assert.False(t, result.HasErrors())
+		assert.True(t, result.HasWarnings())
+		assert.Len(t, result.Warnings, 3, "Should have 3 warnings")
+	})
+}
+
+func TestCompiler_SimilarityScore(t *testing.T) {
+	t.Run("exact match high score", func(t *testing.T) {
+		score := similarityScore("python", "python")
+		assert.Greater(t, score, 10)
+	})
+
+	t.Run("similar strings have positive score", func(t *testing.T) {
+		score := similarityScore("pytohn", "python")
+		assert.Greater(t, score, 0)
+	})
+
+	t.Run("completely different low score", func(t *testing.T) {
+		score := similarityScore("xyz", "abc")
+		assert.Less(t, score, 2)
+	})
+}
+
+func TestCompiler_SuggestScript(t *testing.T) {
+	known := []string{"python", "nodejs", "go", "rust", "ruby"}
+
+	t.Run("suggests similar script", func(t *testing.T) {
+		suggestion := suggestScript("pytohn", known)
+		assert.Equal(t, "python", suggestion)
+	})
+
+	t.Run("suggests nodejs for nodjes", func(t *testing.T) {
+		suggestion := suggestScript("nodjes", known)
+		assert.Equal(t, "nodejs", suggestion)
+	})
+
+	t.Run("no suggestion for completely different", func(t *testing.T) {
+		suggestion := suggestScript("xyz", known)
+		assert.Equal(t, "", suggestion)
+	})
+}
+
+func TestScanSetupsDir(t *testing.T) {
+	t.Run("empty string returns nil", func(t *testing.T) {
+		setup, install := ScanSetupsDir("")
+		assert.Nil(t, setup)
+		assert.Nil(t, install)
+	})
+
+	t.Run("nonexistent dir returns nil", func(t *testing.T) {
+		setup, install := ScanSetupsDir("/nonexistent/path")
+		assert.Nil(t, setup)
+		assert.Nil(t, install)
+	})
+
+	t.Run("scans real setups directory", func(t *testing.T) {
+		// Try to find the actual setups directory
+		dir := FindBuiltinSetupsDir()
+		if dir == "" {
+			t.Skip("Could not find built-in setups directory")
+		}
+
+		setup, install := ScanSetupsDir(dir)
+		assert.NotEmpty(t, setup, "Should find setup scripts")
+		assert.NotEmpty(t, install, "Should find install scripts")
+
+		// Verify some known scripts exist
+		assert.Contains(t, setup, "python")
+		assert.Contains(t, install, "pip")
+	})
+}

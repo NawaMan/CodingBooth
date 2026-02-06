@@ -6,6 +6,8 @@ package boothfile
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -29,11 +31,28 @@ type CompilerOptions struct {
 	// HasCustomSetups indicates whether the CustomSetupsDir exists and should be copied.
 	// If true, the compiler will add COPY and ENV PATH instructions.
 	HasCustomSetups bool
+
+	// KnownSetupScripts is a list of known setup script names (without --setup.sh suffix).
+	// Used for validation and suggestions.
+	KnownSetupScripts []string
+
+	// KnownInstallScripts is a list of known install script names (without --install.sh suffix).
+	// Used for validation and suggestions.
+	KnownInstallScripts []string
+
+	// CustomSetupScripts is a list of custom setup script names from .booth/setups/.
+	// These are added to the known scripts for validation.
+	CustomSetupScripts []string
+
+	// CustomInstallScripts is a list of custom install script names from .booth/setups/.
+	// These are added to the known scripts for validation.
+	CustomInstallScripts []string
 }
 
 // Compiler compiles parsed Boothfile commands into a Dockerfile.
 type Compiler struct {
-	options CompilerOptions
+	options  CompilerOptions
+	warnings []ParseError // Accumulated warnings during compilation
 }
 
 // NewCompiler creates a new Boothfile compiler with default options.
@@ -62,8 +81,16 @@ func (cr CompileResult) HasErrors() bool {
 	return len(cr.Errors) > 0
 }
 
+// HasWarnings returns true if there were compilation warnings.
+func (cr CompileResult) HasWarnings() bool {
+	return len(cr.Warnings) > 0
+}
+
 // Compile compiles a ParseResult into a Dockerfile string.
 func (c *Compiler) Compile(parseResult ParseResult) CompileResult {
+	// Initialize compiler warnings
+	c.warnings = make([]ParseError, 0)
+
 	result := CompileResult{
 		Errors:   append([]ParseError{}, parseResult.Errors...),
 		Warnings: append([]ParseError{}, parseResult.Warnings...),
@@ -99,6 +126,10 @@ func (c *Compiler) Compile(parseResult ParseResult) CompileResult {
 	}
 
 	result.Dockerfile = sb.String()
+
+	// Append any warnings accumulated during compilation
+	result.Warnings = append(result.Warnings, c.warnings...)
+
 	return result
 }
 
@@ -372,6 +403,19 @@ func (c *Compiler) compileSetup(cmd Command) (string, *ParseError) {
 	toolName := cmd.Args[0]
 	scriptArgs := cmd.Args[1:]
 
+	// Validate script name if we have known scripts configured
+	if c.hasKnownScripts() && !c.isKnownSetupScript(toolName) {
+		// Combine all known setup scripts for suggestion
+		allKnown := append([]string{}, c.options.KnownSetupScripts...)
+		allKnown = append(allKnown, c.options.CustomSetupScripts...)
+
+		hint := ""
+		if suggestion := suggestScript(toolName, allKnown); suggestion != "" {
+			hint = fmt.Sprintf("Did you mean '%s'?", suggestion)
+		}
+		c.addWarning(cmd.LineNumber, fmt.Sprintf("Unknown setup script '%s'", toolName), hint)
+	}
+
 	// Build RUN command - script is found via PATH
 	runCmd := fmt.Sprintf("RUN %s--setup.sh", toolName)
 	if len(scriptArgs) > 0 {
@@ -393,6 +437,19 @@ func (c *Compiler) compileInstall(cmd Command) (string, *ParseError) {
 
 	toolName := cmd.Args[0]
 	packages := cmd.Args[1:]
+
+	// Validate script name if we have known scripts configured
+	if c.hasKnownScripts() && !c.isKnownInstallScript(toolName) {
+		// Combine all known install scripts for suggestion
+		allKnown := append([]string{}, c.options.KnownInstallScripts...)
+		allKnown = append(allKnown, c.options.CustomInstallScripts...)
+
+		hint := ""
+		if suggestion := suggestScript(toolName, allKnown); suggestion != "" {
+			hint = fmt.Sprintf("Did you mean '%s'?", suggestion)
+		}
+		c.addWarning(cmd.LineNumber, fmt.Sprintf("Unknown install script '%s'", toolName), hint)
+	}
 
 	// Build RUN command - script is found via PATH
 	return fmt.Sprintf("RUN %s--install.sh %s", toolName, strings.Join(packages, " ")), nil
@@ -417,4 +474,190 @@ func CompileString(content string) CompileResult {
 
 	compiler := NewCompiler()
 	return compiler.Compile(parseResult)
+}
+
+// isKnownSetupScript checks if a script name is in the known setup scripts list.
+func (c *Compiler) isKnownSetupScript(name string) bool {
+	// Check built-in scripts
+	for _, s := range c.options.KnownSetupScripts {
+		if s == name {
+			return true
+		}
+	}
+	// Check custom scripts
+	for _, s := range c.options.CustomSetupScripts {
+		if s == name {
+			return true
+		}
+	}
+	return false
+}
+
+// isKnownInstallScript checks if a script name is in the known install scripts list.
+func (c *Compiler) isKnownInstallScript(name string) bool {
+	// Check built-in scripts
+	for _, s := range c.options.KnownInstallScripts {
+		if s == name {
+			return true
+		}
+	}
+	// Check custom scripts
+	for _, s := range c.options.CustomInstallScripts {
+		if s == name {
+			return true
+		}
+	}
+	return false
+}
+
+// suggestScript returns a suggestion for a misspelled script name.
+func suggestScript(name string, known []string) string {
+	bestMatch := ""
+	bestScore := 0
+
+	for _, s := range known {
+		score := similarityScore(name, s)
+		if score > bestScore {
+			bestScore = score
+			bestMatch = s
+		}
+	}
+
+	// Only suggest if reasonably similar (at least 50% match)
+	if bestScore >= len(name)/2 {
+		return bestMatch
+	}
+	return ""
+}
+
+// similarityScore returns a simple similarity score between two strings.
+// Higher scores mean more similar.
+func similarityScore(a, b string) int {
+	if a == b {
+		return len(a) * 2
+	}
+
+	score := 0
+
+	// Same first letter bonus
+	if len(a) > 0 && len(b) > 0 && a[0] == b[0] {
+		score += 2
+	}
+
+	// Count matching characters in order
+	j := 0
+	for i := 0; i < len(a) && j < len(b); i++ {
+		if a[i] == b[j] {
+			score++
+			j++
+		}
+	}
+
+	// Penalize length difference
+	lenDiff := len(a) - len(b)
+	if lenDiff < 0 {
+		lenDiff = -lenDiff
+	}
+	score -= lenDiff / 2
+
+	return score
+}
+
+// addWarning adds a warning to the compiler's warning list.
+func (c *Compiler) addWarning(lineNumber int, message string, hint string) {
+	c.warnings = append(c.warnings, ParseError{
+		LineNumber: lineNumber,
+		Message:    message,
+		Hint:       hint,
+	})
+}
+
+// hasKnownScripts returns true if the compiler has any known scripts configured.
+func (c *Compiler) hasKnownScripts() bool {
+	return len(c.options.KnownSetupScripts) > 0 ||
+		len(c.options.KnownInstallScripts) > 0 ||
+		len(c.options.CustomSetupScripts) > 0 ||
+		len(c.options.CustomInstallScripts) > 0
+}
+
+// ScanSetupsDir scans a directory for setup and install scripts.
+// Returns two slices: setup script names and install script names (without suffixes).
+func ScanSetupsDir(dir string) (setupScripts []string, installScripts []string) {
+	if dir == "" {
+		return nil, nil
+	}
+
+	info, err := os.Stat(dir)
+	if err != nil || !info.IsDir() {
+		return nil, nil
+	}
+
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return nil, nil
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if strings.HasSuffix(name, "--setup.sh") {
+			scriptName := strings.TrimSuffix(name, "--setup.sh")
+			setupScripts = append(setupScripts, scriptName)
+		} else if strings.HasSuffix(name, "--install.sh") {
+			scriptName := strings.TrimSuffix(name, "--install.sh")
+			installScripts = append(installScripts, scriptName)
+		}
+	}
+
+	return setupScripts, installScripts
+}
+
+// FindBuiltinSetupsDir attempts to find the built-in setups directory.
+// It checks several locations relative to the executable and working directory.
+func FindBuiltinSetupsDir() string {
+	// Candidates to check
+	candidates := []string{}
+
+	// Check relative to executable
+	if exe, err := os.Executable(); err == nil {
+		exeDir := filepath.Dir(exe)
+		// If exe is in cli/bin or similar, look for variants/base/setups
+		candidates = append(candidates,
+			filepath.Join(exeDir, "..", "..", "variants", "base", "setups"),
+			filepath.Join(exeDir, "..", "variants", "base", "setups"),
+			filepath.Join(exeDir, "variants", "base", "setups"),
+		)
+	}
+
+	// Check relative to working directory
+	if wd, err := os.Getwd(); err == nil {
+		candidates = append(candidates,
+			filepath.Join(wd, "variants", "base", "setups"),
+			filepath.Join(wd, "..", "variants", "base", "setups"),
+			filepath.Join(wd, "..", "..", "variants", "base", "setups"),
+		)
+	}
+
+	// Check CODINGBOOTH_SETUPS_DIR environment variable
+	if envDir := os.Getenv("CODINGBOOTH_SETUPS_DIR"); envDir != "" {
+		candidates = append([]string{envDir}, candidates...)
+	}
+
+	// Return first valid directory
+	for _, dir := range candidates {
+		if info, err := os.Stat(dir); err == nil && info.IsDir() {
+			// Verify it looks like a setups directory (has at least one --setup.sh file)
+			if entries, err := os.ReadDir(dir); err == nil {
+				for _, entry := range entries {
+					if strings.HasSuffix(entry.Name(), "--setup.sh") {
+						return dir
+					}
+				}
+			}
+		}
+	}
+
+	return ""
 }
