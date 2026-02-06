@@ -44,6 +44,12 @@ func TestIntegration_ReadFromToml(t *testing.T) {
 verbose = true
 project-name = "toml-test-project"
 host-uid = "1002"
+
+[egress]
+mode = "envoy"
+enforcement = "iptables"
+default = "deny"
+allowlist-file = ".booth/egress/allowlist.txt"
 `
 	tmpfile, err := os.CreateTemp("", "config-*.toml")
 	assert.NoError(t, err)
@@ -64,4 +70,8 @@ host-uid = "1002"
 	assert.True(t, config.Verbose.ValueOr(false))
 	assert.Equal(t, "toml-test-project", config.ProjectName)
 	assert.Equal(t, "1002", config.HostUID)
+	assert.Equal(t, "envoy", config.Egress.Mode)
+	assert.Equal(t, "iptables", config.Egress.Enforcement)
+	assert.Equal(t, "deny", config.Egress.Default)
+	assert.Equal(t, ".booth/egress/allowlist.txt", config.Egress.AllowlistFile)
 }

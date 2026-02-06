@@ -33,6 +33,7 @@ type AppConfig struct {
 	Daemon       bool `toml:"daemon,omitempty"        envconfig:"CB_DAEMON" default:"false"`
 	Pull         bool `toml:"pull,omitempty"          envconfig:"CB_PULL" default:"false"`
 	Dind         bool `toml:"dind,omitempty"          envconfig:"CB_DIND" default:"false"`
+	Sandbox      bool `toml:"sandbox,omitempty"       envconfig:"CB_SANDBOX" default:"false"`
 
 	// --------------------
 	// Image configuration
@@ -67,6 +68,11 @@ type AppConfig struct {
 	BuildArgs  ilist.SemicolonStringList `toml:"build-args,omitempty"  envconfig:"CB_BUILD_ARGS"`
 	RunArgs    ilist.SemicolonStringList `toml:"run-args,omitempty"    envconfig:"CB_RUN_ARGS"`
 	Cmds       ilist.SemicolonStringList `toml:"cmds,omitempty"        envconfig:"CB_CMDS"`
+
+	// --------------------
+	// Nested TOML configuration
+	// --------------------
+	Egress EgressConfig `toml:"egress,omitempty" ignored:"true"`
 }
 
 // Clone the content of the app config.
@@ -113,6 +119,7 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Daemon:           %t\n", config.Daemon)
 	fmt.Fprintf(&str, "    Pull:             %t\n", config.Pull)
 	fmt.Fprintf(&str, "    Dind:             %t\n", config.Dind)
+	fmt.Fprintf(&str, "    Sandbox:          %t\n", config.Sandbox)
 
 	fmt.Fprintf(&str, "# Image Configuration -----------\n")
 	fmt.Fprintf(&str, "    Dockerfile:       %q\n", config.Dockerfile)
@@ -139,6 +146,13 @@ func (config AppConfig) String() string {
 	formatList(&str, "BuildArgs", config.BuildArgs.List, "    ")
 	formatList(&str, "RunArgs", config.RunArgs.List, "    ")
 	formatList(&str, "Cmds", config.Cmds.List, "    ")
+
+	fmt.Fprintf(&str, "# Egress Configuration ----------\n")
+	fmt.Fprintf(&str, "    Egress.Mode:      %q\n", config.Egress.Mode)
+	fmt.Fprintf(&str, "    Egress.Enforcement:%q\n", config.Egress.Enforcement)
+	fmt.Fprintf(&str, "    Egress.Default:   %q\n", config.Egress.Default)
+	fmt.Fprintf(&str, "    Egress.Allowlist: %q\n", config.Egress.AllowlistFile)
+	fmt.Fprintf(&str, "    Egress.Policy:    %q\n", config.Egress.PolicyFile)
 
 	str.WriteString("==================================================================\n")
 

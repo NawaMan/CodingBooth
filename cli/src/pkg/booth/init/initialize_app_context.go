@@ -56,6 +56,7 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	readFromEnvVars(boundary, &context)
 	readFromToml(boundary, &context, configExplicitlySet)
 	readFromArgs(boundary, &context, ilist.NewListFromSlice(args.Slice()[1:]))
+	validateConfig(&context.Config)
 
 	if context.Config.ProjectName == "" {
 		context.Config.ProjectName = getProjectName(context.Config.Code.ValueOr("."))
@@ -96,6 +97,90 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	}
 
 	return context.Build()
+}
+
+func validateConfig(config *appctx.AppConfig) {
+	if err := validateEgressConfig(config); err != nil {
+		panic(err)
+	}
+}
+
+func validateEgressConfig(config *appctx.AppConfig) error {
+	// --sandbox is a shorthand for egress guardrails.
+	if config.Sandbox {
+		if config.Egress.Mode == "" {
+			config.Egress.Mode = "envoy"
+		}
+		if config.Egress.Enforcement == "" {
+			config.Egress.Enforcement = "iptables"
+		}
+		if config.Egress.Default == "" {
+			config.Egress.Default = "deny"
+		}
+	}
+
+	config.Egress.Mode = strings.ToLower(strings.TrimSpace(config.Egress.Mode))
+	config.Egress.Enforcement = strings.ToLower(strings.TrimSpace(config.Egress.Enforcement))
+	config.Egress.Default = strings.ToLower(strings.TrimSpace(config.Egress.Default))
+	config.Egress.AllowlistFile = strings.TrimSpace(config.Egress.AllowlistFile)
+	config.Egress.PolicyFile = strings.TrimSpace(config.Egress.PolicyFile)
+
+	if config.Egress.Mode != "" &&
+		config.Egress.Mode != "none" &&
+		config.Egress.Mode != "envoy" &&
+		config.Egress.Mode != "squid" &&
+		config.Egress.Mode != "tinyproxy" {
+		return fmt.Errorf("invalid egress.mode %q (supported: none, envoy, squid, tinyproxy)", config.Egress.Mode)
+	}
+
+	if config.Egress.Enforcement != "" &&
+		config.Egress.Enforcement != "none" &&
+		config.Egress.Enforcement != "iptables" &&
+		config.Egress.Enforcement != "nftables" {
+		return fmt.Errorf("invalid egress.enforcement %q (supported: none, iptables, nftables)", config.Egress.Enforcement)
+	}
+
+	if config.Egress.Default != "" &&
+		config.Egress.Default != "deny" &&
+		config.Egress.Default != "allow" {
+		return fmt.Errorf("invalid egress.default %q (supported: deny, allow)", config.Egress.Default)
+	}
+
+	if config.Egress.AllowlistFile != "" && config.Egress.PolicyFile != "" {
+		return fmt.Errorf("egress.allowlist-file and egress.policy-file are mutually exclusive")
+	}
+
+	if config.Egress.AllowlistFile != "" {
+		if err := ensureRegularFile(resolvePathFromCodeDir(config.Code.ValueOr(""), config.Egress.AllowlistFile)); err != nil {
+			return fmt.Errorf("invalid egress.allowlist-file: %w", err)
+		}
+	}
+
+	if config.Egress.PolicyFile != "" {
+		if err := ensureRegularFile(resolvePathFromCodeDir(config.Code.ValueOr(""), config.Egress.PolicyFile)); err != nil {
+			return fmt.Errorf("invalid egress.policy-file: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func resolvePathFromCodeDir(codeDir, path string) string {
+	if filepath.IsAbs(path) || codeDir == "" {
+		return path
+	}
+	return filepath.Join(codeDir, path)
+}
+
+func ensureRegularFile(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("file %q does not exist", path)
+	}
+	if info.IsDir() {
+		return fmt.Errorf("%q is a directory", path)
+	}
+	return nil
 }
 
 // getProjectName extracts a sanitized project name from the code path
@@ -208,6 +293,10 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 
 		case "--dind":
 			cfg.Dind = true
+			i++
+
+		case "--sandbox":
+			cfg.Sandbox = true
 			i++
 
 		case "--pull":
