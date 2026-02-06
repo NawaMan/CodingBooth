@@ -620,29 +620,30 @@ func FindBuiltinSetupsDir() string {
 	// Candidates to check
 	candidates := []string{}
 
+	// Check CODINGBOOTH_SETUPS_DIR environment variable first
+	if envDir := os.Getenv("CODINGBOOTH_SETUPS_DIR"); envDir != "" {
+		candidates = append(candidates, envDir)
+	}
+
 	// Check relative to executable
 	if exe, err := os.Executable(); err == nil {
 		exeDir := filepath.Dir(exe)
-		// If exe is in cli/bin or similar, look for variants/base/setups
-		candidates = append(candidates,
-			filepath.Join(exeDir, "..", "..", "variants", "base", "setups"),
-			filepath.Join(exeDir, "..", "variants", "base", "setups"),
-			filepath.Join(exeDir, "variants", "base", "setups"),
-		)
+		// Walk up parent directories looking for variants/base/setups
+		dir := exeDir
+		for i := 0; i < 6; i++ {
+			candidates = append(candidates, filepath.Join(dir, "variants", "base", "setups"))
+			dir = filepath.Dir(dir)
+		}
 	}
 
 	// Check relative to working directory
 	if wd, err := os.Getwd(); err == nil {
-		candidates = append(candidates,
-			filepath.Join(wd, "variants", "base", "setups"),
-			filepath.Join(wd, "..", "variants", "base", "setups"),
-			filepath.Join(wd, "..", "..", "variants", "base", "setups"),
-		)
-	}
-
-	// Check CODINGBOOTH_SETUPS_DIR environment variable
-	if envDir := os.Getenv("CODINGBOOTH_SETUPS_DIR"); envDir != "" {
-		candidates = append([]string{envDir}, candidates...)
+		// Walk up parent directories looking for variants/base/setups
+		dir := wd
+		for i := 0; i < 6; i++ {
+			candidates = append(candidates, filepath.Join(dir, "variants", "base", "setups"))
+			dir = filepath.Dir(dir)
+		}
 	}
 
 	// Return first valid directory
