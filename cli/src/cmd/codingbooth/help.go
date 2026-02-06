@@ -31,6 +31,7 @@ USAGE:
   %s prune [--yes]                        (remove stopped booth containers)
   %s example <subcommand>                 (manage examples)
   %s emit-dockerfile [options]            (compile Boothfile to Dockerfile)
+  %s print-default-allowlist.txt          (print built-in egress allowlist)
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and config file):
   --code <path>          Host code path to mount at /home/coder/code
@@ -81,7 +82,7 @@ RUNTIME OPTIONS:
 CONTAINER MODE:
   --daemon               Run the booth container in the background
   --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST
-  --sandbox              Enable egress sandbox defaults (proxy + enforcement setup)
+  --sandboxed            Enable egress sandbox defaults (proxy + enforcement setup)
   --keep-alive           Do not remove the container when stopped
 
 COMMANDS:
@@ -103,7 +104,7 @@ NOTES:
 
   - With --dind, a docker:dind sidecar runs on a private network and the main
     container uses DOCKER_HOST=tcp://<sidecar>:2375.
-  - With --sandbox, booth enables egress policy defaults. If --dind is also set,
+  - With --sandboxed, booth enables egress policy defaults. If --dind is also set,
     the existing DinD sidecar network namespace is reused.
 
 EXAMPLES:
@@ -124,6 +125,7 @@ EXAMPLES:
 `,
 		scriptName,
 		version,
+		scriptName,
 		scriptName,
 		scriptName,
 		scriptName,

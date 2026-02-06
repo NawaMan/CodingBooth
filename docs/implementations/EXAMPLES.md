@@ -151,4 +151,4 @@ Each example contains:
 
 Security/network examples:
 - `examples/workspaces/urlwhitelist-example/` - tinyproxy-based domain whitelist flow
-- `examples/workspaces/firewall-example/` - `--sandbox` egress enforcement (Envoy + iptables, with and without DinD reuse)
+- `examples/workspaces/firewall-example/` - `--sandboxed` egress enforcement (Envoy + iptables, with and without DinD reuse)

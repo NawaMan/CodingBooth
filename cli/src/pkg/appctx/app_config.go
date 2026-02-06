@@ -33,7 +33,7 @@ type AppConfig struct {
 	Daemon       bool `toml:"daemon,omitempty"        envconfig:"CB_DAEMON" default:"false"`
 	Pull         bool `toml:"pull,omitempty"          envconfig:"CB_PULL" default:"false"`
 	Dind         bool `toml:"dind,omitempty"          envconfig:"CB_DIND" default:"false"`
-	Sandbox      bool `toml:"sandbox,omitempty"       envconfig:"CB_SANDBOX" default:"false"`
+	Sandbox      bool `toml:"sandboxed,omitempty"     envconfig:"CB_SANDBOX" default:"false"`
 
 	// --------------------
 	// Image configuration

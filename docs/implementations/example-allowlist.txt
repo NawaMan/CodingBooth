@@ -1,0 +1,407 @@
+# ============================================================
+# Common software development egress allowlist
+# ============================================================
+# NOTE: This list is inevitably incomplete. Any new dependency,
+# tool, or framework may introduce domains not listed here.
+# Review and maintain regularly.
+# 
+# Put this file at: .booth/egress/allowlist.txt
+# 
+# ============================================================
+
+# ----------------------------------------------------------
+# Source control & collaboration
+# ----------------------------------------------------------
+github.com
+api.github.com
+raw.githubusercontent.com
+codeload.github.com
+objects.githubusercontent.com
+github-releases.githubusercontent.com
+gist.github.com
+gitlab.com
+gitlab-static.net
+registry.gitlab.com
+bitbucket.org
+codeberg.org
+sr.ht
+
+# ----------------------------------------------------------
+# Container registries
+# ----------------------------------------------------------
+docker.io
+registry-1.docker.io
+auth.docker.io
+production.cloudflare.docker.com
+hub.docker.com
+ghcr.io
+quay.io
+mcr.microsoft.com
+gallery.ecr.aws
+gcr.io
+
+# ----------------------------------------------------------
+# JavaScript / Node.js
+# ----------------------------------------------------------
+registry.npmjs.org
+npmjs.org
+yarnpkg.com
+nodejs.org
+deno.land
+
+# ----------------------------------------------------------
+# Python
+# ----------------------------------------------------------
+pypi.org
+files.pythonhosted.org
+python.org
+docs.python.org
+conda.anaconda.org
+repo.anaconda.com
+
+# ----------------------------------------------------------
+# Go
+# ----------------------------------------------------------
+proxy.golang.org
+sum.golang.org
+golang.org
+go.dev
+pkg.go.dev
+
+# ----------------------------------------------------------
+# Rust
+# ----------------------------------------------------------
+crates.io
+index.crates.io
+static.crates.io
+static.rust-lang.org
+rust-lang.org
+docs.rs
+
+# ----------------------------------------------------------
+# Java / JVM / Kotlin / Scala
+# ----------------------------------------------------------
+repo.maven.apache.org
+repo1.maven.org
+plugins.gradle.org
+services.gradle.org
+search.maven.org
+dl.google.com
+kotlinlang.org
+scala-lang.org
+
+# ----------------------------------------------------------
+# .NET / NuGet
+# ----------------------------------------------------------
+nuget.org
+api.nuget.org
+dotnet.microsoft.com
+
+# ----------------------------------------------------------
+# Ruby
+# ----------------------------------------------------------
+rubygems.org
+api.rubygems.org
+ruby-lang.org
+
+# ----------------------------------------------------------
+# PHP
+# ----------------------------------------------------------
+packagist.org
+repo.packagist.org
+getcomposer.org
+php.net
+
+# ----------------------------------------------------------
+# Elixir / Erlang
+# ----------------------------------------------------------
+hex.pm
+repo.hex.pm
+elixir-lang.org
+erlang.org
+
+# ----------------------------------------------------------
+# Haskell
+# ----------------------------------------------------------
+hackage.haskell.org
+haskell.org
+
+# ----------------------------------------------------------
+# Dart / Flutter
+# ----------------------------------------------------------
+pub.dev
+storage.flutter-io.cn
+dart.dev
+
+# ----------------------------------------------------------
+# Swift / Cocoapods
+# ----------------------------------------------------------
+swift.org
+cocoapods.org
+cdn.cocoapods.org
+
+# ----------------------------------------------------------
+# R / CRAN
+# ----------------------------------------------------------
+cran.r-project.org
+cran.rstudio.com
+
+# ----------------------------------------------------------
+# Perl
+# ----------------------------------------------------------
+cpan.org
+metacpan.org
+
+# ----------------------------------------------------------
+# Other languages / toolchains
+# ----------------------------------------------------------
+ziglang.org
+nim-lang.org
+dlang.org
+vlang.io
+adoptium.net
+
+# ----------------------------------------------------------
+# CDNs hosting libraries & assets
+# ----------------------------------------------------------
+cdnjs.cloudflare.com
+cdn.jsdelivr.net
+unpkg.com
+esm.sh
+esm.run
+fonts.googleapis.com
+fonts.gstatic.com
+ajax.googleapis.com
+
+# ----------------------------------------------------------
+# IDE & editor extensions
+# ----------------------------------------------------------
+marketplace.visualstudio.com
+update.code.visualstudio.com
+vscode.blob.core.windows.net
+az764295.vo.msecnd.net
+gallery.vsassets.io
+plugins.jetbrains.com
+download.jetbrains.com
+open-vsx.org
+
+# ----------------------------------------------------------
+# Linux package repos & mirrors
+# ----------------------------------------------------------
+archive.ubuntu.com
+security.ubuntu.com
+deb.debian.org
+security.debian.org
+download.opensuse.org
+mirrors.fedoraproject.org
+dl.fedoraproject.org
+centos.org
+mirror.centos.org
+vault.centos.org
+packages.microsoft.com
+apt.llvm.org
+ppa.launchpad.net
+
+# ----------------------------------------------------------
+# macOS / Homebrew (if applicable)
+# ----------------------------------------------------------
+formulae.brew.sh
+homebrew.bintray.com
+ghcr.io
+
+# ----------------------------------------------------------
+# Infrastructure-as-Code & DevOps tooling
+# ----------------------------------------------------------
+registry.terraform.io
+releases.hashicorp.com
+checkpoint-api.hashicorp.com
+galaxy.ansible.com
+charts.helm.sh
+artifacthub.io
+kubernetes.io
+dl.k8s.io
+storage.googleapis.com
+get.helm.sh
+
+# ----------------------------------------------------------
+# CI/CD services
+# ----------------------------------------------------------
+circleci.com
+app.circleci.com
+travis-ci.com
+buildkite.com
+dev.azure.com
+vsrm.dev.azure.com
+
+# ----------------------------------------------------------
+# Cloud providers (broad — consider narrowing per use case)
+# ----------------------------------------------------------
+# AWS
+aws.amazon.com
+amazonaws.com
+elasticbeanstalk.com
+cloudfront.net
+# Azure
+azure.com
+azure.microsoft.com
+windows.net
+login.microsoftonline.com
+management.azure.com
+# GCP
+cloud.google.com
+googleapis.com
+appspot.com
+# Cloudflare
+cloudflare.com
+workers.dev
+pages.dev
+# Others
+digitalocean.com
+heroku.com
+herokuapp.com
+vercel.app
+vercel.com
+netlify.app
+netlify.com
+fly.dev
+fly.io
+railway.app
+render.com
+supabase.com
+supabase.co
+
+# ----------------------------------------------------------
+# Database providers (docs, drivers, downloads)
+# ----------------------------------------------------------
+postgresql.org
+mysql.com
+mongodb.com
+downloads.mongodb.com
+cloud.mongodb.com
+redis.io
+download.redis.io
+elastic.co
+artifacts.elastic.co
+neo4j.com
+mariadb.org
+clickhouse.com
+cockroachlabs.com
+couchdb.apache.org
+planetscale.com
+neon.tech
+
+# ----------------------------------------------------------
+# Monitoring, logging & observability
+# ----------------------------------------------------------
+sentry.io
+datadoghq.com
+newrelic.com
+grafana.com
+grafana.net
+prometheus.io
+pagerduty.com
+honeycomb.io
+splunk.com
+
+# ----------------------------------------------------------
+# Security scanning & vulnerability databases
+# ----------------------------------------------------------
+snyk.io
+api.snyk.io
+sonarcloud.io
+sonarqube.org
+cve.mitre.org
+nvd.nist.gov
+osv.dev
+security.snyk.io
+github.com/advisories
+
+# ----------------------------------------------------------
+# Documentation & reference
+# ----------------------------------------------------------
+stackoverflow.com
+cdn.sstatic.net
+developer.mozilla.org
+devdocs.io
+readthedocs.io
+readthedocs.org
+
+# ----------------------------------------------------------
+# TLS / Certificates / OCSP
+# ----------------------------------------------------------
+letsencrypt.org
+acme-v02.api.letsencrypt.org
+ocsp.digicert.com
+ocsp.pki.goog
+crl.microsoft.com
+cacerts.digicert.com
+ocsp.comodoca.com
+ocsp.sectigo.com
+ocsp.usertrust.com
+
+# ----------------------------------------------------------
+# Project management & communication
+# ----------------------------------------------------------
+atlassian.com
+atlassian.net
+jira.com
+trello.com
+slack.com
+wss-primary.slack.com
+discord.com
+gateway.discord.gg
+notion.so
+notion-static.com
+linear.app
+asana.com
+teams.microsoft.com
+
+# ----------------------------------------------------------
+# Testing & browser automation services
+# ----------------------------------------------------------
+browserstack.com
+saucelabs.com
+cypress.io
+download.cypress.io
+lambdatest.com
+percy.io
+
+# ----------------------------------------------------------
+# AI coding assistants
+# ----------------------------------------------------------
+api.anthropic.com
+anthropic.com
+claude.ai
+api.openai.com
+openai.com
+copilot.github.com
+copilot-proxy.githubusercontent.com
+codeium.com
+cursor.sh
+platform.claude.com
+tabnine.com
+
+# ----------------------------------------------------------
+# Internal registry proxies (uncomment if self-hosted)
+# ----------------------------------------------------------
+# jfrog.io
+# your-artifactory.example.com
+# your-nexus.example.com
+# your-verdaccio.example.com
+
+# ----------------------------------------------------------
+# Optional: Analytics & error tracking (uncomment if needed)
+# ----------------------------------------------------------
+# google-analytics.com
+# segment.io
+# segment.com
+# mixpanel.com
+# amplitude.com
+# bugsnag.com
+
+# ============================================================
+# END OF LIST
+# Remember: This WILL be incomplete. Consider pairing with
+# category-based filtering or egress proxy logging rather
+# than relying on this as a sole enforcement mechanism.
+# ============================================================

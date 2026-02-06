@@ -113,9 +113,13 @@ CLAUDE_JSON="$HOME/.claude.json"
 
 mkdir -p "$CLAUDE_DIR"
 
-mkdir -p "/home/coder/.local/bin"
-if [[ ! -e "/home/coder/.local/bin/claude" ]]; then
-    ln -s /usr/local/bin/claude "/home/coder/.local/bin/claude"
+# Create symlink at ~/.local/bin/claude -> /usr/local/bin/claude
+# Claude Code's native install expects the binary at ~/.local/bin/claude.
+# Without this, it errors: "installMethod is native, but claude command not found"
+CLAUDE_LOCAL_BIN="$HOME/.local/bin"
+mkdir -p "$CLAUDE_LOCAL_BIN"
+if [[ ! -e "$CLAUDE_LOCAL_BIN/claude" ]]; then
+    ln -s /usr/local/bin/claude "$CLAUDE_LOCAL_BIN/claude"
 fi
 
 # Copy .claude.json config file (contains hasCompletedOnboarding, theme, etc.)

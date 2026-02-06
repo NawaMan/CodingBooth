@@ -82,7 +82,7 @@ policy-file = ".booth/egress/envoy.yaml"
 
 func TestIntegration_InitializeAppContext_Egress_SandboxFlagSetsDefaults(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{
-		Args: []string{"--sandbox"},
+		Args: []string{"--sandboxed"},
 	})
 
 	if !res.Ctx.Sandbox() {

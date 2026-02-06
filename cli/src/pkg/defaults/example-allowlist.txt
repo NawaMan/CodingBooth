@@ -1,0 +1,200 @@
+# ============================================================
+# Common software development egress allowlist
+# ============================================================
+# NOTE: This list is inevitably incomplete. Any new dependency,
+# tool, or framework may introduce domains not listed here.
+# Review and maintain regularly.
+# 
+# Put this file at: .booth/egress/allowlist.txt
+# 
+# ============================================================
+
+# ----------------------------------------------------------
+# Source control & collaboration
+# ----------------------------------------------------------
+github.com
+api.github.com
+raw.githubusercontent.com
+codeload.github.com
+objects.githubusercontent.com
+github-releases.githubusercontent.com
+gist.github.com
+gitlab.com
+gitlab-static.net
+registry.gitlab.com
+bitbucket.org
+codeberg.org
+sr.ht
+
+# ----------------------------------------------------------
+# Container registries
+# ----------------------------------------------------------
+docker.io
+registry-1.docker.io
+auth.docker.io
+production.cloudflare.docker.com
+hub.docker.com
+ghcr.io
+quay.io
+mcr.microsoft.com
+gallery.ecr.aws
+gcr.io
+
+# ----------------------------------------------------------
+# JavaScript / Node.js
+# ----------------------------------------------------------
+registry.npmjs.org
+npmjs.org
+yarnpkg.com
+nodejs.org
+deno.land
+
+# ----------------------------------------------------------
+# Python
+# ----------------------------------------------------------
+pypi.org
+files.pythonhosted.org
+python.org
+docs.python.org
+conda.anaconda.org
+repo.anaconda.com
+
+# ----------------------------------------------------------
+# Go
+# ----------------------------------------------------------
+proxy.golang.org
+sum.golang.org
+golang.org
+go.dev
+pkg.go.dev
+
+# ----------------------------------------------------------
+# Rust
+# ----------------------------------------------------------
+crates.io
+index.crates.io
+static.crates.io
+static.rust-lang.org
+rust-lang.org
+docs.rs
+
+# ----------------------------------------------------------
+# Java / JVM / Kotlin / Scala
+# ----------------------------------------------------------
+repo.maven.apache.org
+repo1.maven.org
+plugins.gradle.org
+services.gradle.org
+search.maven.org
+dl.google.com
+kotlinlang.org
+scala-lang.org
+
+# ----------------------------------------------------------
+# .NET / NuGet
+# ----------------------------------------------------------
+nuget.org
+api.nuget.org
+dotnet.microsoft.com
+
+# ----------------------------------------------------------
+# Ruby
+# ----------------------------------------------------------
+rubygems.org
+api.rubygems.org
+ruby-lang.org
+
+# ----------------------------------------------------------
+# PHP
+# ----------------------------------------------------------
+packagist.org
+repo.packagist.org
+getcomposer.org
+php.net
+
+# ----------------------------------------------------------
+# Elixir / Erlang
+# ----------------------------------------------------------
+hex.pm
+repo.hex.pm
+elixir-lang.org
+erlang.org
+
+# ----------------------------------------------------------
+# Haskell
+# ----------------------------------------------------------
+hackage.haskell.org
+haskell.org
+
+# ----------------------------------------------------------
+# Dart / Flutter
+# ----------------------------------------------------------
+pub.dev
+storage.flutter-io.cn
+dart.dev
+
+# ----------------------------------------------------------
+# Swift / Cocoapods
+# ----------------------------------------------------------
+swift.org
+cocoapods.org
+cdn.cocoapods.org
+
+# ----------------------------------------------------------
+# R / CRAN
+# ----------------------------------------------------------
+cran.r-project.org
+cran.rstudio.com
+
+# ----------------------------------------------------------
+# Perl
+# ----------------------------------------------------------
+cpan.org
+metacpan.org
+
+# ----------------------------------------------------------
+# Other languages / toolchains
+# ----------------------------------------------------------
+ziglang.org
+nim-lang.org
+dlang.org
+vlang.io
+adoptium.net
+
+# ----------------------------------------------------------
+# CDNs hosting libraries & assets
+# ----------------------------------------------------------
+cdnjs.cloudflare.com
+cdn.jsdelivr.net
+unpkg.com
+esm.sh
+esm.run
+fonts.googleapis.com
+fonts.gstatic.com
+ajax.googleapis.com
+
+# ----------------------------------------------------------
+# IDE & editor extensions
+# ----------------------------------------------------------
+marketplace.visualstudio.com
+update.code.visualstudio.com
+vscode.blob.core.windows.net
+az764295.vo.msecnd.net
+gallery.vsassets.io
+plugins.jetbrains.com
+download.jetbrains.com
+open-vsx.org
+
+# ----------------------------------------------------------
+# Linux package repos & mirrors
+# ----------------------------------------------------------
+archive.ubuntu.com
+security.ubuntu.com
+deb.debian.org
+security.debian.org
+download.opensuse.org
+mirrors.fedoraproject.org
+dl.fedoraproject.org
+centos.org
+mirror.centos.org
+vault.centos.org

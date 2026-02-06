@@ -2,6 +2,9 @@
 
 This file contains a list of changes for each released version.
 
+## Unreleased
+- Document that `--sandboxed` with `--dind` is **not supported** due to firewall bypass risk in the shared network namespace.
+
 ## v0.16.0
 - Rename binary from `coding-booth` to `codingbooth`
 - Booth example.
