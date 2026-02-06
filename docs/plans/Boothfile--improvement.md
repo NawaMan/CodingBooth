@@ -8,64 +8,19 @@
 
 ---
 
-## 1. Setup Script Validation
+## ~~1. Setup Script Validation~~ ✅ COMPLETED
 
-### Current State
+Implemented in compiler.go. The compiler validates script names against:
+- Built-in scripts (defined in `known_scripts.go`)
+- Custom scripts from `.booth/setups/`
 
-The parser detects **command typos** (e.g., `setpu` → "Did you mean 'setup'?"), but does **not** validate whether a setup script actually exists.
-
-### Planned Behavior
-
-When the compiler encounters `setup <name>` or `install <name> <packages>`, it should:
-
-1. Check if `<name>--setup.sh` or `<name>--install.sh` exists in:
-   - `.booth/setups/` (custom scripts)
-   - Known built-in scripts list
-
-2. If not found, emit a **warning** (not an error):
-   ```
-   Warning: Unknown setup script 'pytohn'. Did you mean 'python'?
-   ```
-
-3. Compilation continues — the warning allows users to proceed if they know the script will exist at build time.
-
-### Implementation Notes
-
-- Maintain a list of known built-in setup scripts (can be generated from `variants/base/setups/`)
-- Use fuzzy matching for suggestions (Levenshtein distance or similar)
-- Warnings should include line numbers: `Boothfile:7: Warning: ...`
+Unknown scripts emit warnings with fuzzy-match suggestions.
 
 ---
 
-## 2. Functional `--strict` Mode
+## ~~2. Functional `--strict` Mode~~ ✅ COMPLETED
 
-### Current State
-
-The `--strict` flag exists in the CLI but has no effect — no warnings are ever generated.
-
-### Planned Behavior
-
-With `--strict`:
-- All warnings become errors
-- Compilation fails if any warnings exist
-
-```bash
-# Normal: warnings printed but compilation succeeds
-codingbooth emit-dockerfile
-# Warning: Unknown setup script 'pytohn'. Did you mean 'python'?
-# (outputs Dockerfile)
-
-# Strict: warnings become errors
-codingbooth emit-dockerfile --strict
-# Error: Unknown setup script 'pytohn'. Did you mean 'python'?
-# (exits with error, no output)
-```
-
-### Implementation Notes
-
-- Requires Section 1 (setup script validation) to be implemented first
-- The `ParseResult.Warnings` and `CompileResult.Warnings` fields exist but are never populated
-- Add warning collection during compilation, then check warnings + strict flag before returning
+Implemented in emit.go and ensure_docker_image.go. With `--strict`, warnings become errors and compilation fails.
 
 ---
 
@@ -139,12 +94,12 @@ Decouples user intent from container runtime. If CodingBooth migrates to Podman 
 
 ## Summary
 
-| Improvement | Priority | Dependency |
-|-------------|----------|------------|
-| Setup script validation | High | None |
-| Functional `--strict` mode | High | Setup script validation |
-| BuildKit frontend image | Medium | None |
-| Editor tooling | Low | None |
-| Alternative targets | Low | None |
+| Improvement | Priority | Status |
+|-------------|----------|--------|
+| Setup script validation | High | ✅ Completed |
+| Functional `--strict` mode | High | ✅ Completed |
+| BuildKit frontend image | Medium | Planned |
+| Editor tooling | Low | Planned |
+| Alternative targets | Low | Planned |
 
-The high-priority items (validation + strict mode) improve developer experience. The future items are nice-to-have and can be deferred indefinitely without impacting core functionality.
+The high-priority items (validation + strict mode) are now complete. The future items are nice-to-have and can be deferred indefinitely without impacting core functionality.
