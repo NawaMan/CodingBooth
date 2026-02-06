@@ -91,9 +91,22 @@ func emitDockerfile() {
 
 	// Compile with custom setups directory if it exists
 	customSetupsDir := filepath.Join(codePath, ".booth", "setups")
+	hasCustomSetups := isDir(customSetupsDir)
+
+	// Scan for custom scripts
+	customSetupScripts, customInstallScripts := boothfile.ScanSetupsDir(customSetupsDir)
+
+	// Scan for built-in scripts (if we can find the directory)
+	builtinSetupsDir := boothfile.FindBuiltinSetupsDir()
+	builtinSetupScripts, builtinInstallScripts := boothfile.ScanSetupsDir(builtinSetupsDir)
+
 	compilerOpts := boothfile.CompilerOptions{
-		CustomSetupsDir: ".booth/setups",
-		HasCustomSetups: isDir(customSetupsDir),
+		CustomSetupsDir:      ".booth/setups",
+		HasCustomSetups:      hasCustomSetups,
+		KnownSetupScripts:    builtinSetupScripts,
+		KnownInstallScripts:  builtinInstallScripts,
+		CustomSetupScripts:   customSetupScripts,
+		CustomInstallScripts: customInstallScripts,
 	}
 	compiler := boothfile.NewCompilerWithOptions(compilerOpts)
 	compileResult := compiler.Compile(parseResult)
@@ -105,6 +118,18 @@ func emitDockerfile() {
 			fmt.Fprintf(os.Stderr, "  %s\n", e.Error())
 		}
 		os.Exit(1)
+	}
+
+	// Handle warnings
+	if compileResult.HasWarnings() {
+		for _, w := range compileResult.Warnings {
+			fmt.Fprintf(os.Stderr, "Warning: %s\n", w.Error())
+		}
+		// In strict mode, warnings are errors
+		if strict {
+			fmt.Fprintf(os.Stderr, "Error: Boothfile compilation failed due to warnings (--strict mode)\n")
+			os.Exit(1)
+		}
 	}
 
 	// Print to stdout
@@ -119,3 +144,4 @@ func isDir(path string) bool {
 	}
 	return info.IsDir()
 }
+

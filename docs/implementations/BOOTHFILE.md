@@ -384,7 +384,20 @@ When determining which file to use for image building:
 
 | Warning                | Cause                                        |
 |------------------------|----------------------------------------------|
-| Unknown setup script   | `setup foo` where `foo--setup.sh` not found  |
+| Unknown setup script   | `setup foo` where `foo--setup.sh` not known  |
+| Unknown install script | `install bar` where `bar--install.sh` not known |
+
+The compiler validates script names against:
+1. Built-in scripts from `variants/base/setups/`
+2. Custom scripts from `.booth/setups/`
+
+When an unknown script is found, a warning is emitted with a suggestion if a similar script exists:
+```
+Warning: Boothfile:3: Unknown setup script 'pytohn'
+Hint: Did you mean 'python'?
+```
+
+Compilation continues despite warnings — the script may exist at build time.
 
 ### Strict Mode
 
@@ -393,6 +406,8 @@ With `--strict`, warnings become errors:
 ```bash
 codingbooth emit-dockerfile --strict
 ```
+
+This causes compilation to fail if any warnings are generated, useful for CI/CD pipelines.
 
 ---
 
