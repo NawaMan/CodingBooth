@@ -1,0 +1,10 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Script validation warnings
+# This file intentionally uses unknown scripts to test validation
+
+# Unknown setup script (typo of 'python')
+setup pytohn 3.12
+
+# Unknown install script (typo of 'pip')
+install ppi django
