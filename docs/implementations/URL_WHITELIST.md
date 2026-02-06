@@ -151,21 +151,32 @@ For truly enforced network restrictions, future versions may explore:
 
 There is a ready-made allowlist template at `docs/implementations/example-allowlist.txt`. Use it as a starting point and customize it for your stack.
 
-**For sandbox egress allowlists:**
+**For sandbox allowlists:**
 
 ```bash
-mkdir -p .booth/egress
-cp docs/implementations/example-allowlist.txt .booth/egress/allowlist.txt
+mkdir -p .booth/sandbox
+cp docs/implementations/example-allowlist.txt .booth/sandbox/allowlist.txt
 ```
 
 You can also print the built-in default allowlist directly from the CLI:
 
 ```bash
-codingbooth print-default-allowlist.txt > .booth/egress/allowlist.txt
+codingbooth print-default-allowlist.txt > .booth/sandbox/allowlist.txt
 ```
 
 When `--sandboxed` is enabled and no policy files are present, CodingBooth will
-materialize this embedded default into `.booth/egress/allowlist.txt`.
+materialize this embedded default into `.booth/sandbox/allowlist.txt`.
+
+**Optional extra allowlist**
+
+You can append extra domains via `.booth/config.toml`:
+```toml
+sandbox-allowlist = [
+  "example.com",
+  "registry.npmjs.org"
+]
+```
+This list is merged into the active allowlist (default or file-based). It cannot be used with `sandbox-policy-file`.
 
 **For tinyproxy (in-container) allowlists:**
 

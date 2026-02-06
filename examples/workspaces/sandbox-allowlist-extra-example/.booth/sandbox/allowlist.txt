@@ -1,0 +1,2 @@
+# Domains allowed by sandbox policy (base list)
+pypi.org

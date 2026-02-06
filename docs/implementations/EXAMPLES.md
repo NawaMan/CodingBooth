@@ -152,3 +152,5 @@ Each example contains:
 Security/network examples:
 - `examples/workspaces/urlwhitelist-example/` - tinyproxy-based domain whitelist flow
 - `examples/workspaces/firewall-example/` - `--sandboxed` egress enforcement (Envoy + iptables, with and without DinD reuse)
+- `examples/workspaces/sandbox-allowlist-extra-example/` - `--sandboxed` with allowlist file + extra domains
+- `examples/workspaces/sandbox-envoy-example/` - `--sandboxed` with custom `envoy.yaml` policy

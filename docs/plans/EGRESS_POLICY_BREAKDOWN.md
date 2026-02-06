@@ -51,8 +51,8 @@ Work items:
 Goal: support simple + advanced policy input modes.
 
 Work items:
-- Simple mode: `.booth/egress/allowlist.txt` -> generated Envoy config.
-- Advanced mode: `.booth/egress/envoy.yaml` passthrough.
+- Simple mode: `.booth/sandbox/allowlist.txt` -> generated Envoy config.
+- Advanced mode: `.booth/sandbox/envoy.yaml` passthrough.
 - Mount policy artifacts read-only.
 
 ## Milestone 4 - Hardening + UX

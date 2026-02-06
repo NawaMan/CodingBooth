@@ -1,0 +1,2458 @@
+static_resources:
+  listeners:
+  - name: egress_proxy
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 15001
+    filter_chains:
+    - filters:
+      - name: envoy.filters.network.http_connection_manager
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+          stat_prefix: egress_http
+          codec_type: AUTO
+          route_config:
+            name: proxy_routes
+            virtual_hosts:
+            - name: forward_proxy
+              domains: ["*"]
+              routes:
+              - match:
+                  connect_matcher: {}
+                route:
+                  cluster: dynamic_forward_proxy_cluster
+                  upgrade_configs:
+                  - upgrade_type: CONNECT
+                    connect_config: {}
+              - match:
+                  prefix: "/"
+                route:
+                  cluster: dynamic_forward_proxy_cluster
+          http_filters:
+          - name: envoy.filters.http.rbac
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.rbac.v3.RBAC
+              rules:
+                action: ALLOW
+                policies:
+                  allow_0:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)github\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_1:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)api\\.github\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_2:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)raw\\.githubusercontent\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_3:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)codeload\\.github\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_4:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)objects\\.githubusercontent\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_5:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)github-releases\\.githubusercontent\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_6:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)gist\\.github\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_7:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)gitlab\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_8:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)gitlab-static\\.net(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_9:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)registry\\.gitlab\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_10:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)bitbucket\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_11:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)codeberg\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_12:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)sr\\.ht(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_13:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)docker\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_14:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)registry-1\\.docker\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_15:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)auth\\.docker\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_16:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)production\\.cloudflare\\.docker\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_17:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)hub\\.docker\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_18:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)ghcr\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_19:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)quay\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_20:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)mcr\\.microsoft\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_21:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)gallery\\.ecr\\.aws(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_22:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)gcr\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_23:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)registry\\.npmjs\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_24:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)npmjs\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_25:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)yarnpkg\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_26:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)nodejs\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_27:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)deno\\.land(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_28:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)pypi\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_29:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)files\\.pythonhosted\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_30:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)python\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_31:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)docs\\.python\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_32:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)conda\\.anaconda\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_33:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)repo\\.anaconda\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_34:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)proxy\\.golang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_35:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)sum\\.golang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_36:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)golang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_37:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)go\\.dev(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_38:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)pkg\\.go\\.dev(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_39:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)crates\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_40:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)index\\.crates\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_41:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)static\\.crates\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_42:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)static\\.rust-lang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_43:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)rust-lang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_44:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)docs\\.rs(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_45:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)repo\\.maven\\.apache\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_46:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)repo1\\.maven\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_47:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)plugins\\.gradle\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_48:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)services\\.gradle\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_49:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)search\\.maven\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_50:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)dl\\.google\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_51:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)kotlinlang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_52:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)scala-lang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_53:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)nuget\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_54:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)api\\.nuget\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_55:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)dotnet\\.microsoft\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_56:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)rubygems\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_57:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)api\\.rubygems\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_58:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)ruby-lang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_59:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)packagist\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_60:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)repo\\.packagist\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_61:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)getcomposer\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_62:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)php\\.net(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_63:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)hex\\.pm(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_64:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)repo\\.hex\\.pm(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_65:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)elixir-lang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_66:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)erlang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_67:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)hackage\\.haskell\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_68:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)haskell\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_69:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)pub\\.dev(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_70:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)storage\\.flutter-io\\.cn(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_71:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)dart\\.dev(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_72:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)swift\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_73:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cocoapods\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_74:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cdn\\.cocoapods\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_75:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cran\\.r-project\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_76:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cran\\.rstudio\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_77:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cpan\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_78:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)metacpan\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_79:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)ziglang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_80:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)nim-lang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_81:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)dlang\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_82:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)vlang\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_83:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)adoptium\\.net(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_84:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cdnjs\\.cloudflare\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_85:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cdn\\.jsdelivr\\.net(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_86:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)unpkg\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_87:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)esm\\.sh(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_88:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)esm\\.run(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_89:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)fonts\\.googleapis\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_90:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)fonts\\.gstatic\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_91:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)ajax\\.googleapis\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_92:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)marketplace\\.visualstudio\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_93:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)update\\.code\\.visualstudio\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_94:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)vscode\\.blob\\.core\\.windows\\.net(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_95:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)az764295\\.vo\\.msecnd\\.net(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_96:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)gallery\\.vsassets\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_97:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)plugins\\.jetbrains\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_98:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)download\\.jetbrains\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_99:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)open-vsx\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_100:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)archive\\.ubuntu\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_101:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)security\\.ubuntu\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_102:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)deb\\.debian\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_103:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)security\\.debian\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_104:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)download\\.opensuse\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_105:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)mirrors\\.fedoraproject\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_106:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)dl\\.fedoraproject\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_107:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)centos\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_108:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)mirror\\.centos\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_109:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)vault\\.centos\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_110:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)packages\\.microsoft\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_111:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)apt\\.llvm\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_112:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)ppa\\.launchpad\\.net(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_113:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)formulae\\.brew\\.sh(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_114:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)homebrew\\.bintray\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_115:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)ghcr\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_116:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)registry\\.terraform\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_117:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)releases\\.hashicorp\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_118:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)checkpoint-api\\.hashicorp\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_119:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)galaxy\\.ansible\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_120:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)charts\\.helm\\.sh(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_121:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)artifacthub\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_122:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)kubernetes\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_123:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)dl\\.k8s\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_124:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)storage\\.googleapis\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_125:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)get\\.helm\\.sh(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_126:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)circleci\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_127:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)app\\.circleci\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_128:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)travis-ci\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_129:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)buildkite\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_130:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)dev\\.azure\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_131:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)vsrm\\.dev\\.azure\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_132:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)aws\\.amazon\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_133:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)amazonaws\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_134:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)elasticbeanstalk\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_135:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cloudfront\\.net(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_136:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)azure\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_137:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)azure\\.microsoft\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_138:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)windows\\.net(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_139:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)login\\.microsoftonline\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_140:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)management\\.azure\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_141:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cloud\\.google\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_142:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)googleapis\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_143:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)appspot\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_144:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cloudflare\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_145:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)workers\\.dev(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_146:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)pages\\.dev(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_147:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)digitalocean\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_148:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)heroku\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_149:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)herokuapp\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_150:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)vercel\\.app(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_151:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)vercel\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_152:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)netlify\\.app(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_153:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)netlify\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_154:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)fly\\.dev(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_155:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)fly\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_156:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)railway\\.app(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_157:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)render\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_158:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)supabase\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_159:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)supabase\\.co(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_160:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)postgresql\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_161:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)mysql\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_162:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)mongodb\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_163:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)downloads\\.mongodb\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_164:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cloud\\.mongodb\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_165:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)redis\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_166:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)download\\.redis\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_167:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)elastic\\.co(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_168:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)artifacts\\.elastic\\.co(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_169:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)neo4j\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_170:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)mariadb\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_171:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)clickhouse\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_172:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cockroachlabs\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_173:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)couchdb\\.apache\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_174:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)planetscale\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_175:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)neon\\.tech(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_176:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)sentry\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_177:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)datadoghq\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_178:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)newrelic\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_179:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)grafana\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_180:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)grafana\\.net(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_181:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)prometheus\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_182:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)pagerduty\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_183:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)honeycomb\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_184:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)splunk\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_185:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)snyk\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_186:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)api\\.snyk\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_187:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)sonarcloud\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_188:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)sonarqube\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_189:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cve\\.mitre\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_190:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)nvd\\.nist\\.gov(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_191:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)osv\\.dev(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_192:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)security\\.snyk\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_193:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)github\\.com/advisories(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_194:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)stackoverflow\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_195:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cdn\\.sstatic\\.net(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_196:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)developer\\.mozilla\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_197:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)devdocs\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_198:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)readthedocs\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_199:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)readthedocs\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_200:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)letsencrypt\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_201:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)acme-v02\\.api\\.letsencrypt\\.org(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_202:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)ocsp\\.digicert\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_203:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)ocsp\\.pki\\.goog(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_204:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)crl\\.microsoft\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_205:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cacerts\\.digicert\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_206:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)ocsp\\.comodoca\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_207:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)ocsp\\.sectigo\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_208:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)ocsp\\.usertrust\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_209:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)atlassian\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_210:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)atlassian\\.net(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_211:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)jira\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_212:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)trello\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_213:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)slack\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_214:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)wss-primary\\.slack\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_215:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)discord\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_216:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)gateway\\.discord\\.gg(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_217:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)notion\\.so(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_218:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)notion-static\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_219:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)linear\\.app(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_220:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)asana\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_221:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)teams\\.microsoft\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_222:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)browserstack\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_223:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)saucelabs\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_224:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cypress\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_225:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)download\\.cypress\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_226:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)lambdatest\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_227:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)percy\\.io(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_228:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)api\\.anthropic\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_229:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)anthropic\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_230:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)claude\\.ai(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_231:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)api\\.openai\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_232:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)openai\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_233:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)copilot\\.github\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_234:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)copilot-proxy\\.githubusercontent\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_235:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)codeium\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_236:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)cursor\\.sh(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_237:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)platform\\.claude\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+                  allow_238:
+                    permissions:
+                    - header:
+                        name: ":authority"
+                        string_match:
+                          safe_regex:
+                            google_re2: {}
+                            regex: "(^|.*\\.)tabnine\\.com(:[0-9]+)?$"
+                    principals:
+                    - any: true
+
+          - name: envoy.filters.http.dynamic_forward_proxy
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.dynamic_forward_proxy.v3.FilterConfig
+              dns_cache_config:
+                name: dynamic_forward_proxy_cache_config
+                dns_lookup_family: V4_ONLY
+          - name: envoy.filters.http.router
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+          upgrade_configs:
+          - upgrade_type: CONNECT
+
+  clusters:
+  - name: dynamic_forward_proxy_cluster
+    connect_timeout: 5s
+    lb_policy: CLUSTER_PROVIDED
+    cluster_type:
+      name: envoy.clusters.dynamic_forward_proxy
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.clusters.dynamic_forward_proxy.v3.ClusterConfig
+        dns_cache_config:
+          name: dynamic_forward_proxy_cache_config
+          dns_lookup_family: V4_ONLY
+
+admin:
+  address:
+    socket_address:
+      address: 127.0.0.1
+      port_value: 9901

@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 # Complex test: when --sandboxed is enabled, certain project files are read-only
-# inside the container: .booth/config.toml, .booth/Boothfile, .booth/egress/allowlist.txt
+# inside the container: .booth/config.toml, .booth/Boothfile, .booth/sandbox/allowlist.txt
 
 set -euo pipefail
 
@@ -43,7 +43,7 @@ trap cleanup EXIT
 pushd "$TMPDIR" >/dev/null
 
 # Prepare .booth files
-mkdir -p .booth/egress
+mkdir -p .booth/sandbox
 
 cat > .booth/config.toml <<'EOF'
 # test config
@@ -54,7 +54,7 @@ cat > .booth/Boothfile <<'EOF'
 # test Boothfile (not used because we pass --image)
 EOF
 
-cat > .booth/egress/allowlist.txt <<'EOF'
+cat > .booth/sandbox/allowlist.txt <<'EOF'
 github.com
 EOF
 
@@ -149,7 +149,7 @@ expect_success_plain() {
 # Should NOT be writable when --sandboxed is enabled
 expect_fail "config.toml is read-only" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/config.toml"
 expect_fail "Boothfile is read-only" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/Boothfile"
-expect_fail "allowlist.txt is read-only" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/egress/allowlist.txt"
+expect_fail "allowlist.txt is read-only" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/sandbox/allowlist.txt"
 
 # Control: normal file should still be writable
 expect_success "normal.txt is writable" "bash" "-lc" "echo 'ok' > /home/coder/code/normal.txt"
@@ -157,7 +157,7 @@ expect_success "normal.txt is writable" "bash" "-lc" "echo 'ok' > /home/coder/co
 # Control (no --sandboxed): project files should be writable
 expect_success_plain "config.toml writable without --sandboxed" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/config.toml"
 expect_success_plain "Boothfile writable without --sandboxed" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/Boothfile"
-expect_success_plain "allowlist.txt writable without --sandboxed" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/egress/allowlist.txt"
+expect_success_plain "allowlist.txt writable without --sandboxed" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/sandbox/allowlist.txt"
 
 popd >/dev/null
 

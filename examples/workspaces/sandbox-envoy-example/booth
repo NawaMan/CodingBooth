@@ -1,0 +1,960 @@
+#!/bin/bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+
+# CodingBooth Wrapper (booth)
+# Downloads, verifies, and runs the platform-specific CodingBooth binary.
+# Install: curl -fsSL https://github.com/NawaMan/WorkSpace/releases/download/latest/booth | bash
+
+set -euo pipefail
+trap 'status=$?; echo "❌ Error on line $LINENO (exit $status)" >&2; exit "$status"' ERR
+
+# --- PIPE INSTALL DETECTION ---
+# Detect if running via pipe (curl ... | bash)
+# When piped, $0 is the shell name, not a script path
+if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
+      "$0" == "sh"   || "$0" == "-sh"   || "$0" == "/bin/sh"   || \
+      "$0" == "zsh"  || "$0" == "-zsh"  || "$0" == "/bin/zsh" ]]; then
+    echo "Installing CodingBooth wrapper..."
+    curl -fsSL -o booth https://github.com/NawaMan/WorkSpace/releases/download/latest/booth
+    chmod +x booth
+    echo ""
+    echo ""
+    echo ""
+    ./booth install
+    echo ""
+    echo "✅ CodingBooth has been installed."
+    echo ""
+    echo ""
+    echo ""
+    echo "Run './booth help' to see available commands."
+    echo ""
+    ./booth help
+    exit 0
+fi
+
+VERSION=0.8.0
+VERBOSE="${VERBOSE:-true}"
+
+# --- NESTED BOOTH DETECTION ---
+# Detect if running inside a CodingBooth container and prevent accidental nested execution.
+# Users can explicitly allow nested execution by setting BOOTH_IN_BOOTH=true and using a different port.
+detect_nested_booth() {
+    # Check if we're inside a CodingBooth container
+    # Markers: /opt/codingbooth/ directory exists OR CB_CONTAINER_NAME is set
+    if [[ ! -d "/opt/codingbooth" && -z "${CB_CONTAINER_NAME:-}" ]]; then
+        return 0  # Not inside a container, continue normally
+    fi
+
+    # We're inside a CodingBooth container
+    if [[ "${BOOTH_IN_BOOTH:-}" != "true" ]]; then
+        cat >&2 <<'EOF'
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                    Running booth inside a booth container                 ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ You appear to be running 'booth' from inside a CodingBooth container.    ║
+║ This is usually accidental - the booth script is visible here because    ║
+║ your project folder is mounted at /home/coder/code.                       ║
+║                                                                           ║
+║ If you intentionally want to run a nested booth (booth-in-booth), set:   ║
+║                                                                           ║
+║     export BOOTH_IN_BOOTH=true                                            ║
+║                                                                           ║
+║ AND specify a different port (not the current container's port):         ║
+║                                                                           ║
+║     ./booth --port NEXT ...                                               ║
+║     ./booth --port 11000 ...                                              ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+EOF
+        exit 1
+    fi
+
+    # BOOTH_IN_BOOTH=true is set, now check port
+    local requested_port=""
+    local args=("$@")
+    local i=0
+    while [[ $i -lt ${#args[@]} ]]; do
+        case "${args[$i]}" in
+            --port)
+                if [[ $((i+1)) -lt ${#args[@]} ]]; then
+                    requested_port="${args[$((i+1))]}"
+                fi
+                break
+                ;;
+            --port=*)
+                requested_port="${args[$i]#--port=}"
+                break
+                ;;
+        esac
+        ((i++)) || true
+    done
+
+    # Get current container's ports
+    local host_port="${CB_HOST_PORT:-}"
+    local code_port="${CB_CODE_PORT:-10000}"
+
+    # If no port specified, error out - we need an explicit different port
+    if [[ -z "$requested_port" ]]; then
+        cat >&2 <<EOF
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                         Port conflict in nested booth                     ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ BOOTH_IN_BOOTH=true is set, but no port was specified.                   ║
+║                                                                           ║
+║ You must specify a different port to avoid conflicts with this container: ║
+║   Current container's host port: ${host_port:-"(not set)"}
+║   Current container's code port: ${code_port}
+║                                                                           ║
+║ Use one of:                                                               ║
+║     ./booth --port NEXT ...      (auto-find next available port)          ║
+║     ./booth --port RANDOM ...    (use a random port)                      ║
+║     ./booth --port 11000 ...     (explicit different port)                ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+EOF
+        exit 1
+    fi
+
+    # Check if the requested port conflicts with current container's ports
+    # Skip check for NEXT and RANDOM as they will find a different port
+    if [[ "$requested_port" != "NEXT" && "$requested_port" != "RANDOM" ]]; then
+        if [[ "$requested_port" == "$host_port" ]]; then
+            cat >&2 <<EOF
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                         Port conflict in nested booth                     ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ The requested port ($requested_port) conflicts with this container's host port.
+║                                                                           ║
+║ Use a different port:                                                     ║
+║     ./booth --port NEXT ...      (auto-find next available port)          ║
+║     ./booth --port RANDOM ...    (use a random port)                      ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+EOF
+            exit 1
+        fi
+        if [[ "$requested_port" == "$code_port" ]]; then
+            cat >&2 <<EOF
+╔═══════════════════════════════════════════════════════════════════════════╗
+║                         Port conflict in nested booth                     ║
+╠═══════════════════════════════════════════════════════════════════════════╣
+║ The requested port ($requested_port) conflicts with this container's code port.
+║                                                                           ║
+║ Use a different port:                                                     ║
+║     ./booth --port NEXT ...      (auto-find next available port)          ║
+║     ./booth --port RANDOM ...    (use a random port)                      ║
+║                                                                           ║
+╚═══════════════════════════════════════════════════════════════════════════╝
+EOF
+            exit 1
+        fi
+    fi
+
+    # All checks passed, allow nested execution
+    return 0
+}
+
+# --- CENTRAL CACHE SETUP ---
+# Platform-specific cache directory for shared binary storage
+get_cache_dir() {
+    case "$(uname -s)" in
+        Linux*)
+            echo "${XDG_CACHE_HOME:-$HOME/.cache}/codingbooth"
+            ;;
+        Darwin*)
+            echo "$HOME/Library/Caches/codingbooth"
+            ;;
+        MINGW*|MSYS*|CYGWIN*)
+            if [[ -n "${LOCALAPPDATA:-}" ]]; then
+                echo "$LOCALAPPDATA/codingbooth"
+            else
+                echo "$HOME/AppData/Local/codingbooth"
+            fi
+            ;;
+        *)
+            echo "${XDG_CACHE_HOME:-$HOME/.cache}/codingbooth"
+            ;;
+    esac
+}
+
+BOOTH_CACHE_DIR="${BOOTH_CACHE_DIR:-$(get_cache_dir)}"
+
+# Get version-specific cache directory
+get_cache_version_dir() {
+    local version="$1"
+    echo "${BOOTH_CACHE_DIR}/versions/${version}"
+}
+
+# Find binary directory: local first, then shared cache
+# Returns directory path on stdout, returns 0 if found, 1 if not found
+find_binary_dir() {
+    local version="$1"
+    local platform="$2"
+    local binary_name
+    binary_name=$(get_binary_name "$platform")
+
+    # Check local first (for --cache=local mode)
+    if [[ -f ".booth/tools/${binary_name}" ]]; then
+        echo ".booth/tools"
+        return 0
+    fi
+
+    # Then check shared cache
+    local shared_dir
+    shared_dir="$(get_cache_version_dir "$version")"
+    if [[ -f "${shared_dir}/${binary_name}" ]]; then
+        echo "$shared_dir"
+        return 0
+    fi
+
+    # Not found
+    return 1
+}
+
+# Decide what the "command" is:
+if [[ $# -eq 0 ]]; then COMMAND="run" ; else COMMAND="$1" ; fi
+
+function Main() {
+    ### --- COMMAND DISPATCH --- ###
+    case "${COMMAND}" in
+        uninstall)      UninstallBooth               ; exit 0 ; ;;
+        install|update)
+            # Parse --cache= flag
+            shift  # Remove 'install' or 'update'
+            local cache_mode="shared"
+            local version_arg="latest"
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --cache=*) cache_mode="${1#--cache=}"; shift ;;
+                    --cache)   cache_mode="$2"; shift 2 ;;
+                    -*) echo "Unknown option: $1" >&2; exit 1 ;;
+                    *)  version_arg="$1"; shift ;;
+                esac
+            done
+            # Validate cache mode
+            if [[ "$cache_mode" != "local" && "$cache_mode" != "shared" ]]; then
+                echo "Error: Invalid cache mode '$cache_mode'. Use 'local' or 'shared'." >&2
+                exit 1
+            fi
+            DownloadBooth "$version_arg" "$cache_mode"
+            exit 0
+            ;;
+        tools-cache)
+            shift  # Remove 'tools-cache'
+            case "${1:-list}" in
+                list)  ToolsCacheList ;;
+                clean) shift; ToolsCacheClean "$@" ;;
+                *)     echo "Unknown tools-cache command: $1" >&2; exit 1 ;;
+            esac
+            exit 0
+            ;;
+        run)            [[ "${1-}" == "run" ]] && shift  ;          ;;
+        *)                                                          ;;
+    esac
+
+    ### --- RUN MODE --- ###
+    local tools_dir=".booth/tools"
+    local lock_file="$tools_dir/codingbooth.lock"
+
+    # Read version and cache mode from lock file
+    if [[ ! -f "$lock_file" ]]; then
+        echo "CodingBooth is not installed."
+        echo "Please run: $0 install"
+        exit 1
+    fi
+
+    local lock_version lock_cache
+    lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2-)
+    lock_cache=$(grep '^cache=' "$lock_file" 2>/dev/null | cut -d= -f2- || echo "shared")
+
+    # Handle legacy lock files without cache= line
+    if [[ -z "$lock_cache" ]]; then
+        lock_cache="shared"
+    fi
+
+    if [[ -z "$lock_version" ]]; then
+        echo "Invalid lock file: missing version"
+        echo "Please run: $0 install"
+        exit 1
+    fi
+
+    # Detect platform
+    local platform binary_name
+    if ! platform=$(detect_platform); then
+        echo "Error: Failed to detect platform" >&2
+        exit 1
+    fi
+    binary_name=$(get_binary_name "$platform")
+
+    # Find binary directory (local first, then shared cache)
+    local binary_dir sha_file dest
+    if ! binary_dir=$(find_binary_dir "$lock_version" "$platform"); then
+        # Binary not found, auto-download
+        echo "Binary missing, downloading version $lock_version..."
+        DownloadBooth "$lock_version" "$lock_cache"
+        if ! binary_dir=$(find_binary_dir "$lock_version" "$platform"); then
+            echo "Failed to download binary"
+            exit 1
+        fi
+    fi
+
+    sha_file="$binary_dir/codingbooth.sha256"
+    dest="$binary_dir/$binary_name"
+
+    # Verify binary exists
+    if [[ ! -f "$dest" || ! -f "$sha_file" ]]; then
+        echo "CodingBooth binary or checksum missing for platform: $platform"
+        echo "Please run: $0 install"
+        exit 1
+    fi
+
+    # Ensure binary is newer than checksum
+    if [[ "$dest" -ot "$sha_file" ]]; then
+        echo "Binary appears older than its checksum file."
+        echo "Run: $0 update  to restore the official release."
+        exit 1
+    fi
+
+    # Verify SHA256 for this platform's binary
+    local expected_sha256 actual_sha256
+    expected_sha256=$(grep "  $binary_name\$" "$sha_file" 2>/dev/null | awk '{print $1}')
+    if [[ -z "$expected_sha256" ]]; then
+        echo "No SHA256 entry found for $binary_name"
+        echo "Run: $0 update  to restore the official release."
+        exit 1
+    fi
+
+    actual_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
+    if [[ "$expected_sha256" != "$actual_sha256" ]]; then
+        echo "Binary ($binary_name) failed SHA256 verification."
+        echo "Run: $0 update  to restore the official release."
+        exit 1
+    fi
+
+    # Create/update symlink named 'booth' so the binary displays correct name
+    local booth_link="$binary_dir/booth"
+    if [[ ! -L "$booth_link" ]] || [[ "$(readlink "$booth_link")" != "$binary_name" ]]; then
+        ln -sf "$binary_name" "$booth_link" 2>/dev/null || true
+    fi
+
+    # Execute via symlink if available, otherwise direct
+    if [[ -L "$booth_link" ]]; then
+        exec "$booth_link" "$@"
+    else
+        exec "$dest" "$@"
+    fi
+}
+
+function PrintHelp() {
+    cat <<EOF
+Usage: ./$(basename "$0") <command> [args...]
+
+Purpose:
+  This script is the *CodingBooth Wrapper*.
+  - It downloads, verifies, and runs the CodingBooth binary.
+  - Binaries are cached in a shared location (default) or per-project.
+
+Wrapper commands:
+  install [VERSION]              Download binaries to shared cache (default)
+  install --cache=shared [VER]   Download binaries to shared cache (explicit)
+  install --cache=local [VER]    Download binaries to .booth/tools/ (project-local)
+  update  [VERSION]              Re-download binaries (force refresh)
+  uninstall                      Remove project lock file and local binaries
+
+  tools-cache list        Show cached binary versions and sizes
+  tools-cache clean       Interactively remove cached versions
+  tools-cache clean --all Remove all cached versions
+  tools-cache clean VER   Remove specific version
+
+  run [ARGS...]           Run booth with ARGS (after integrity checks)
+  shell-config            Add 'booth' command to your shell (bash/zsh)
+  version                 Show version information
+  help                    Show this help message
+
+Cache modes:
+  --cache=shared   Store in user cache, shared across projects (default)
+  --cache=local    Store in .booth/tools/, project-specific
+
+Cache locations (for --cache=shared):
+  Linux:   ~/.cache/codingbooth/
+  macOS:   ~/Library/Caches/codingbooth/
+  Windows: %LOCALAPPDATA%\\codingbooth\\
+
+Notes:
+  - Lock file (.booth/tools/codingbooth.lock) is version-controlled
+  - Binaries are auto-downloaded when lock file exists but binary missing
+  - Use --cache=local for CI/CD or portable/air-gapped environments
+  - Set VERBOSE=true for extra logs during install
+
+Help/Version disambiguation:
+  ./booth help       Show this wrapper help (install, update, cache commands)
+  ./booth --help     Show codingbooth binary help (run flags, variants, etc.)
+  ./booth version    Show wrapper version + binary version info
+  ./booth --version  Show codingbooth binary version only
+EOF
+}
+
+function ShellConfig() {
+    local booth_func='unalias booth 2>/dev/null; booth() { d="$PWD"; while [[ "$d" != "/" && ! -x "$d/booth" ]]; do d="${d%/*}"; done; if [[ -x "$d/booth" ]]; then "$d/booth" "$@"; else echo "booth not found" >&2; fi; }'
+
+    # All supported shell rc files
+    local rc_files=(
+        "$HOME/.bashrc"
+        "$HOME/.zshrc"
+        "$HOME/.bash_profile"
+        "$HOME/.profile"
+    )
+
+    local added=()
+    local skipped=()
+    local not_found=()
+
+    for rc_file in "${rc_files[@]}"; do
+        if [[ ! -f "$rc_file" ]]; then
+            not_found+=("$rc_file")
+            continue
+        fi
+
+        # Check if already configured (idempotent)
+        if grep -q 'booth()' "$rc_file" 2>/dev/null; then
+            skipped+=("$rc_file")
+            continue
+        fi
+
+        # Add the function
+        {
+            echo ""
+            echo "# CodingBooth - run 'booth' from any subdirectory"
+            echo "$booth_func"
+        } >> "$rc_file"
+
+        added+=("$rc_file")
+    done
+
+    # Report results
+    if [[ ${#added[@]} -gt 0 ]]; then
+        echo "✓ Added booth function to:"
+        for f in "${added[@]}"; do
+            echo "    $f"
+        done
+    fi
+
+    if [[ ${#skipped[@]} -gt 0 ]]; then
+        echo "✓ Already configured (skipped):"
+        for f in "${skipped[@]}"; do
+            echo "    $f"
+        done
+    fi
+
+    if [[ ${#added[@]} -eq 0 && ${#skipped[@]} -eq 0 ]]; then
+        echo "No shell config files found."
+        echo ""
+        echo "You can manually add this to your shell config:"
+        echo "  $booth_func"
+        exit 1
+    fi
+
+    echo ""
+    if [[ ${#added[@]} -gt 0 ]]; then
+        echo "To activate, restart your terminal or run:"
+        echo "  source ~/.bashrc   # for bash"
+        echo "  source ~/.zshrc    # for zsh"
+        echo ""
+    fi
+    echo "Then you can run 'booth' from any subdirectory of a CodingBooth project."
+}
+
+function PrintVersion() {
+    cat <<'EOF'
+  ____          _ _             ____              _   _
+ / ___|___   __| (_)_ __   __ _| __ )  ___   ___ | |_| |__
+| |   / _ \ / _` | | '_ \ / _` |  _ \ / _ \ / _ \| __| '_ \
+| |__| (_) | (_| | | | | | (_| | |_) | (_) | (_) | |_| | | |
+ \____\___/ \__,_|_|_| |_|\__, |____/ \___/ \___/ \__|_| |_|
+                          |___/
+EOF
+    echo "CodingBooth Wrapper: $VERSION"
+
+    local tools_dir=".booth/tools"
+    local lock_file="$tools_dir/codingbooth.lock"
+
+    # Detect current platform
+    local platform binary_name
+    platform=$(detect_platform 2>/dev/null || echo "unknown")
+    binary_name=$(get_binary_name "$platform")
+
+    # Check if lock file exists
+    if [[ ! -f "$lock_file" ]]; then
+        echo "CodingBooth: not installed"
+        echo "Platform: $platform"
+        echo "Shared cache: $BOOTH_CACHE_DIR"
+        exit 0
+    fi
+
+    # Read lock file
+    local lock_version lock_cache
+    lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2- || echo "unknown")
+    lock_cache=$(grep '^cache=' "$lock_file" 2>/dev/null | cut -d= -f2- || echo "shared")
+
+    # Find binary
+    local binary_dir TOOL
+    if binary_dir=$(find_binary_dir "$lock_version" "$platform" 2>/dev/null); then
+        TOOL="$binary_dir/$binary_name"
+    else
+        echo "CodingBooth: $lock_version (binary missing)"
+        echo "Platform: $platform"
+        echo "Cache mode: $lock_cache"
+        exit 0
+    fi
+
+    [[ ! -x "$TOOL" ]] && chmod +x "$TOOL" 2>/dev/null || true
+
+    local TOOL_VERSION
+    TOOL_VERSION=$("$TOOL" version 2>/dev/null || echo "unknown")
+
+    echo ""
+    echo "$TOOL_VERSION"
+    echo "Platform: $platform"
+    echo "Cache mode: $lock_cache"
+    if [[ "$lock_cache" == "shared" ]]; then
+        echo "Binary location: $binary_dir"
+    fi
+}
+
+# Portable SHA256 helper
+function hash_sha256() {
+    if   command -v sha256sum >/dev/null 2>&1; then sha256sum        "$@"
+    elif command -v shasum    >/dev/null 2>&1; then shasum    -a 256 "$@"
+    else echo "Error: No SHA256 tool found (sha256sum or shasum)." >&2 ; return 1
+    fi
+}
+
+# Detect platform (OS-ARCH format)
+function detect_platform() {
+    local os arch
+    
+    # Detect OS
+    case "$(uname -s)" in
+        Linux*)     os="linux" ;;
+        Darwin*)    os="darwin" ;;
+        MINGW*|MSYS*|CYGWIN*) os="windows" ;;
+        *)          echo "Error: Unsupported OS: $(uname -s)" >&2; return 1 ;;
+    esac
+    
+    # Detect architecture
+    case "$(uname -m)" in
+        x86_64|amd64)   arch="amd64" ;;
+        aarch64|arm64)  arch="arm64" ;;
+        *)              echo "Error: Unsupported architecture: $(uname -m)" >&2; return 1 ;;
+    esac
+    
+    echo "${os}-${arch}"
+}
+
+# Get binary name for platform (adds .exe for Windows)
+function get_binary_name() {
+    local platform="$1"
+    if [[ "$platform" == windows-* ]]; then
+        echo "codingbooth-${platform}.exe"
+    else
+        echo "codingbooth-${platform}"
+    fi
+}
+
+# All supported platforms (5 total)
+ALL_PLATFORMS=(
+    "linux-amd64"
+    "linux-arm64"
+    "darwin-amd64"
+    "darwin-arm64"
+    "windows-amd64"
+)
+
+function UninstallBooth() {
+    local tools_dir=".booth/tools"
+    local sha_file="$tools_dir/codingbooth.sha256"
+    local lock_file="$tools_dir/codingbooth.lock"
+
+    # Remove local binaries if they exist
+    for platform in "${ALL_PLATFORMS[@]}"; do
+        local binary_name
+        binary_name=$(get_binary_name "$platform")
+        rm -f "$tools_dir/$binary_name"
+    done
+
+    rm -f "$sha_file" "$lock_file"
+
+    rmdir "$tools_dir" 2>/dev/null || true
+    rmdir ".booth" 2>/dev/null || true
+
+    echo "CodingBooth has been uninstalled from this project."
+    echo "To clean shared cache, run: $0 tools-cache clean"
+}
+
+# Format bytes to human-readable size
+format_size() {
+    local bytes=$1
+    if command -v numfmt >/dev/null 2>&1; then
+        numfmt --to=iec-i --suffix=B "$bytes" 2>/dev/null || echo "${bytes}B"
+    else
+        # Fallback for systems without numfmt (e.g., macOS)
+        if [[ $bytes -ge 1073741824 ]]; then
+            echo "$(( bytes / 1073741824 ))GiB"
+        elif [[ $bytes -ge 1048576 ]]; then
+            echo "$(( bytes / 1048576 ))MiB"
+        elif [[ $bytes -ge 1024 ]]; then
+            echo "$(( bytes / 1024 ))KiB"
+        else
+            echo "${bytes}B"
+        fi
+    fi
+}
+
+# Get directory size in bytes (portable)
+get_dir_size() {
+    local dir="$1"
+    if [[ "$(uname -s)" == "Darwin" ]]; then
+        # macOS: du -sk gives size in KB
+        local kb
+        kb=$(du -sk "$dir" 2>/dev/null | cut -f1 || echo 0)
+        echo $((kb * 1024))
+    else
+        # Linux: du -sb gives size in bytes
+        du -sb "$dir" 2>/dev/null | cut -f1 || echo 0
+    fi
+}
+
+function ToolsCacheList() {
+    local versions_dir="${BOOTH_CACHE_DIR}/versions"
+
+    echo ""
+    if [[ ! -d "$versions_dir" ]]; then
+        echo "No cached versions found."
+        echo ""
+        echo "Cache location: $BOOTH_CACHE_DIR"
+        return 0
+    fi
+
+    echo "Cached binary versions:"
+    echo ""
+
+    local total_size=0
+    local version_count=0
+
+    for version_dir in "$versions_dir"/*/; do
+        [[ ! -d "$version_dir" ]] && continue
+
+        local version
+        version=$(basename "$version_dir")
+
+        # Calculate size
+        local size_bytes size_human
+        size_bytes=$(get_dir_size "$version_dir")
+        size_human=$(format_size "$size_bytes")
+
+        # List platforms
+        local platforms=()
+        for bin in "$version_dir"/codingbooth-*; do
+            [[ -f "$bin" ]] || continue
+            local name
+            name=$(basename "$bin")
+            name=${name#codingbooth-}
+            name=${name%.exe}
+            platforms+=("$name")
+        done
+
+        printf "  %-12s %10s   [%s]\n" "$version" "$size_human" "${platforms[*]}"
+
+        total_size=$((total_size + size_bytes))
+        : $((version_count++))
+    done
+
+    if [[ $version_count -eq 0 ]]; then
+        echo "  (no versions cached)"
+    fi
+
+    echo ""
+    local total_human
+    total_human=$(format_size "$total_size")
+    echo "Total: $total_human in $version_count version(s)"
+    echo ""
+    echo "Cache location: $BOOTH_CACHE_DIR"
+}
+
+function ToolsCacheClean() {
+    local versions_dir="${BOOTH_CACHE_DIR}/versions"
+
+    if [[ ! -d "$versions_dir" ]]; then
+        echo "No cached versions to clean."
+        return 0
+    fi
+
+    # Parse arguments
+    local clean_all=false
+    local target_version=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --all) clean_all=true; shift ;;
+            --unused) echo "Warning: --unused not yet implemented"; shift ;;
+            -*) echo "Unknown option: $1" >&2; exit 1 ;;
+            *) target_version="$1"; shift ;;
+        esac
+    done
+
+    if [[ "$clean_all" == "true" ]]; then
+        local size_before
+        size_before=$(get_dir_size "$versions_dir")
+
+        rm -rf "$versions_dir"
+
+        local size_human
+        size_human=$(format_size "$size_before")
+        echo "Removed all cached versions. Freed $size_human"
+        return 0
+    fi
+
+    if [[ -n "$target_version" ]]; then
+        local target_dir="$versions_dir/$target_version"
+        if [[ ! -d "$target_dir" ]]; then
+            echo "Version $target_version not found in cache."
+            return 1
+        fi
+
+        local size_before
+        size_before=$(get_dir_size "$target_dir")
+
+        rm -rf "$target_dir"
+
+        local size_human
+        size_human=$(format_size "$size_before")
+        echo "Removed version $target_version. Freed $size_human"
+        return 0
+    fi
+
+    # Interactive mode: list and prompt
+    ToolsCacheList
+    echo ""
+    read -rp "Enter version to remove (or 'all' or press Enter to cancel): " choice
+
+    if [[ "$choice" == "all" ]]; then
+        ToolsCacheClean --all
+    elif [[ -n "$choice" ]]; then
+        ToolsCacheClean "$choice"
+    else
+        echo "No version selected."
+    fi
+}
+
+function DownloadBooth() {
+    local CB_VERSION=${1:-latest}
+    local CACHE_MODE=${2:-shared}
+
+    # Detect common mistake: using --version flag instead of positional argument
+    if [[ "$CB_VERSION" == --* ]]; then
+        echo "Error: Invalid version '$CB_VERSION'" >&2
+        echo "Usage: $0 install [VERSION]" >&2
+        echo "Example: $0 install 0.13.0" >&2
+        exit 1
+    fi
+
+    local tools_dir=".booth/tools"
+    local lock_file="$tools_dir/codingbooth.lock"
+
+    REPO_URL="https://github.com/NawaMan/WorkSpace"
+    DWLD_URL="${REPO_URL}/releases/download"
+
+    # Download version.txt to get the actual version first
+    local actual_version=""
+    local VERSION_URL="${DWLD_URL}/${CB_VERSION}/version.txt"
+    if actual_version=$(curl -fsSL "$VERSION_URL" 2>/dev/null | tr -d ' \t\r\n'); then
+        [[ "$VERBOSE" == "true" ]] && echo "  Version: $actual_version"
+    else
+        actual_version="$CB_VERSION"
+    fi
+
+    # Determine target directory based on cache mode
+    local target_dir sha_file
+    if [[ "$CACHE_MODE" == "local" ]]; then
+        target_dir="$tools_dir"
+        sha_file="$tools_dir/codingbooth.sha256"
+    else
+        target_dir="$(get_cache_version_dir "$actual_version")"
+        sha_file="$target_dir/codingbooth.sha256"
+    fi
+
+    mkdir -p "$target_dir"
+    mkdir -p "$tools_dir"  # Always need tools dir for lock file
+
+    # Create .gitignore based on cache mode
+    if [[ "$CACHE_MODE" == "local" ]]; then
+        cat > ".booth/.gitignore" <<'GITIGNORE'
+# Binaries excluded - re-download from lock version
+tools/codingbooth-*
+tools/*.sha256
+GITIGNORE
+    else
+        cat > ".booth/.gitignore" <<'GITIGNORE'
+# Lock file is version-controlled
+# Binaries are in ~/.cache/codingbooth/ (not here)
+GITIGNORE
+    fi
+
+    # Clear previous SHA256 file (will rebuild with all binaries)
+    > "$sha_file"
+
+    local current_platform
+    current_platform=$(detect_platform 2>/dev/null || echo "unknown")
+    local download_count=0
+    local fail_count=0
+
+    if [[ "$CACHE_MODE" == "local" ]]; then
+        echo "Downloading CodingBooth binaries to project (--cache=local)..."
+    else
+        echo "Downloading CodingBooth binaries to shared cache..."
+        echo "  Cache: $target_dir"
+    fi
+
+    for platform in "${ALL_PLATFORMS[@]}"; do
+        local binary_name
+        binary_name=$(get_binary_name "$platform")
+        local dest="$target_dir/$binary_name"
+        local TOOL_URL="${DWLD_URL}/${CB_VERSION}/${binary_name}"
+        local SHA256_URL="${DWLD_URL}/${CB_VERSION}/${binary_name}.sha256"
+
+        if [[ "$VERBOSE" == "true" ]]; then
+            echo "  Checking: $binary_name"
+        else
+            echo -n "  $platform ... "
+        fi
+
+        local tmpsha256
+        tmpsha256=$(mktemp "/tmp/booth.sha256.XXXXXX")
+
+        # Download SHA256 first to check if we need to download the binary
+        if ! curl -fsSLo "$tmpsha256" "$SHA256_URL"; then
+            echo "FAILED (sha256 fetch)"
+            rm -f "$tmpsha256"
+            : $((fail_count++))
+            continue
+        fi
+
+        local expected_sha256
+        expected_sha256=$(awk '{print $1}' "$tmpsha256")
+        if ! [[ "$expected_sha256" =~ ^[0-9a-fA-F]{64}$ ]]; then
+            echo "FAILED (malformed sha256)"
+            rm -f "$tmpsha256"
+            : $((fail_count++))
+            continue
+        fi
+
+        # Check if binary already exists with correct checksum
+        if [[ -f "$dest" ]]; then
+            local existing_sha256
+            existing_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
+            if [[ "$expected_sha256" == "$existing_sha256" ]]; then
+                # Binary already exists and is valid, skip download
+                printf '%s  %s\n' "$expected_sha256" "$binary_name" >> "$sha_file"
+                rm -f "$tmpsha256"
+                : $((download_count++))
+                if [[ "$VERBOSE" != "true" ]]; then
+                    echo "✓ up-to-date"
+                else
+                    echo "  Already up-to-date: $binary_name"
+                fi
+                continue
+            fi
+        fi
+
+        # Need to download - binary missing or checksum mismatch
+        if [[ "$VERBOSE" == "true" ]]; then
+            echo "  Downloading: $binary_name"
+        fi
+
+        local tmpfile
+        tmpfile=$(mktemp "/tmp/booth.XXXXXX")
+
+        # Download binary
+        if ! curl -fsSLo "$tmpfile" "$TOOL_URL"; then
+            echo "FAILED (download)"
+            rm -f "$tmpfile" "$tmpsha256"
+            : $((fail_count++))
+            continue
+        fi
+
+        # Verify SHA256
+        local actual_sha256
+        actual_sha256=$(hash_sha256 "$tmpfile" | awk '{print $1}')
+        if [[ "$expected_sha256" != "$actual_sha256" ]]; then
+            echo "FAILED (sha256 mismatch)"
+            rm -f "$tmpfile" "$tmpsha256"
+            : $((fail_count++))
+            continue
+        fi
+
+        # Install verified binary with 744 permissions
+        mv -f "$tmpfile" "$dest"
+        chmod 744 "$dest"
+
+        # Append to combined SHA256 file
+        printf '%s  %s\n' "$actual_sha256" "$binary_name" >> "$sha_file"
+
+        rm -f "$tmpsha256"
+        : $((download_count++))
+
+        if [[ "$VERBOSE" != "true" ]]; then
+            echo "OK"
+        fi
+    done
+
+    if [[ $fail_count -gt 0 ]]; then
+        echo "Warning: $fail_count platform(s) failed to download" >&2
+    fi
+
+    if [[ $download_count -eq 0 ]]; then
+        echo "Error: No binaries were downloaded successfully" >&2
+        return 1
+    fi
+
+    # Write lock file (always in .booth/tools/)
+    {
+        echo "version=${actual_version}"
+        echo "downloaded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+        echo "cache=${CACHE_MODE}"
+    } > "$lock_file"
+
+    # Touch all binaries to be newer than checksum
+    for platform in "${ALL_PLATFORMS[@]}"; do
+        local binary_name
+        binary_name=$(get_binary_name "$platform")
+        local dest="$target_dir/$binary_name"
+        [[ -f "$dest" ]] && touch "$dest"
+    done
+
+    echo "CodingBooth installed: downloaded, verified, and installed."
+    if [[ "$VERBOSE" == "true" ]]; then
+        echo "Lock file: $lock_file"
+    fi
+}
+
+# Early handling of version/help/shell-config so they don't require curl
+case "${COMMAND}" in
+    version)      PrintVersion ; exit 0 ; ;;
+    help)         PrintHelp    ; exit 0 ; ;;
+    shell-config) ShellConfig  ; exit 0 ; ;;
+esac
+
+# Check for nested booth execution (running booth inside a booth container)
+# This check runs for all commands except help/version/shell-config
+detect_nested_booth "$@"
+
+# Need curl for install/run/update/uninstall
+if ! command -v curl >/dev/null 2>&1; then
+    echo "Error: curl is required but was not found." >&2
+    exit 1
+fi
+
+Main "$@"

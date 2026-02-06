@@ -25,8 +25,8 @@ This file captures decisions from the Envoy/firewall experiments and the task li
 4. **Configuration surface**
    - Externally supported surface is **only** `--sandboxed`.
    - Policy is provided by **one** of:
-     - `.booth/egress/allowlist.txt` (simple), or
-     - `.booth/egress/envoy.yaml` (advanced/custom).
+   - `.booth/sandbox/allowlist.txt` (simple), or
+   - `.booth/sandbox/envoy.yaml` (advanced/custom).
    - These are **mutually exclusive**. If both are set, fail fast with a clear error (no implicit precedence).
    - Internally, `--sandboxed` uses Envoy + iptables with default deny (implementation detail, not user-tunable).
    - If neither file exists, a default allowlist is materialized from the embedded template
@@ -71,7 +71,7 @@ This file captures decisions from the Envoy/firewall experiments and the task li
 ## Phase 3 - Policy Materialization
 
 - [x] Implement allowlist -> generated proxy config rendering.
-- [x] Support direct custom config pass-through for `.booth/egress/envoy.yaml`.
+- [x] Support direct custom config pass-through for `.booth/sandbox/envoy.yaml`.
 - [x] Store generated artifacts under `.booth/tools/egress/` and mount read-only.
 
 ## Phase 4 - Enforcement
@@ -119,7 +119,7 @@ This file captures decisions from the Envoy/firewall experiments and the task li
 
 Start with `--sandboxed` only:
 - Envoy + iptables with default deny (implementation detail).
-- Policy provided by `.booth/egress/allowlist.txt` or `.booth/egress/envoy.yaml` (mutually exclusive).
+- Policy provided by `.booth/sandbox/allowlist.txt` or `.booth/sandbox/envoy.yaml` (mutually exclusive).
 
 Defer alternate engines and user-tunable config until after MVP stabilizes.
 

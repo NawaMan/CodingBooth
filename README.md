@@ -1224,13 +1224,21 @@ When enabled, traffic must pass through an Envoy proxy sidecar and is enforced w
   ./booth --sandboxed
   ```
 - Policy is provided by **one** of:
-  - `.booth/egress/allowlist.txt` (simple allowlist), or
-  - `.booth/egress/envoy.yaml` (advanced/custom).
+  - `.booth/sandbox/allowlist.txt` (simple allowlist), or
+  - `.booth/sandbox/envoy.yaml` (advanced/custom).
 - These are **mutually exclusive**; if both exist, startup fails with a clear error.
+ - Optional: add extra domains with `sandbox-allowlist` in `.booth/config.toml`:
+  ```toml
+  sandbox-allowlist = [
+    "example.com",
+    "registry.npmjs.org"
+  ]
+  ```
+  This list is merged into the active allowlist (default or file-based). It cannot be used with `sandbox-policy-file`.
 
 **Default Allowlist (embedded)**
 - If `--sandboxed` is enabled and no policy files exist, CodingBooth materializes a default allowlist at:
-  - `.booth/egress/allowlist.txt`
+  - `.booth/sandbox/allowlist.txt`
 - This default content is embedded in the CLI binary and is based on `docs/implementations/example-allowlist.txt`.
 
 **Important Security Note (2026-02-06)**
@@ -1239,8 +1247,8 @@ When enabled, traffic must pass through an Envoy proxy sidecar and is enforced w
 
 **Quick Example**
 ```bash
-mkdir -p .booth/egress
-cp docs/implementations/example-allowlist.txt .booth/egress/allowlist.txt
+mkdir -p .booth/sandbox
+cp docs/implementations/example-allowlist.txt .booth/sandbox/allowlist.txt
 ./booth --sandboxed
 ```
 
