@@ -80,6 +80,7 @@ sandbox-policy-file = ".booth/sandbox/envoy.yaml"
 func TestIntegration_InitializeAppContext_Egress_SandboxFlagSetsDefaults(t *testing.T) {
 	res := RunInitializeAppContext(t, TestInput{
 		Args: []string{"--sandboxed"},
+		CurrentPath: ".",
 	})
 
 	if !res.Ctx.Sandbox() {

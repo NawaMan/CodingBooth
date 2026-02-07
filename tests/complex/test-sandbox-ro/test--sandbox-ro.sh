@@ -34,7 +34,7 @@ if [[ ! -x "$CB_SCRIPT" ]]; then
 fi
 
 # ---- Test booth -----------------------------------------------------------
-TMPDIR="$(mktemp -d "$HOME/cb-test-sandbox-ro.XXXXXX")"
+TMPDIR="$(mktemp -d "${TMPDIR:-/tmp}/cb-test-sandbox-ro.XXXXXX")"
 cleanup() {
   rm -rf "$TMPDIR" || true
 }

@@ -22,42 +22,19 @@ updated=0
 # Update booth in immediate subfolders of examples/
 for dir in "$SCRIPT_DIR"/*/; do
     [[ ! -d "$dir" ]] && continue
-    target="$dir/booth"
-    if [[ -f "$target" ]]; then
-        cp "$SOURCE_BOOTH" "$target"
-        chmod +x "$target"
-        # Remove lock file to force fresh install
-        rm -rf "$dir/.booth/tools"
-        echo "  Updated: ${dir#$PROJECT_ROOT/}booth"
-
-        # Run booth install to update tools
-        cd "$dir"
-        ./booth install
-        cd -
-        echo "    Installed tools"
-        : $((updated++))
-    fi
+    rm -rf "$dir/.booth/tools"
+    cp ../codingbooth $dir/booth
+    echo "Installed tools: $dir"
+    : $((updated++))
 done
 
 # Update booth in immediate subfolders of examples/workspaces/
 if [[ -d "$SCRIPT_DIR/workspaces" ]]; then
     for dir in "$SCRIPT_DIR/workspaces"/*/; do
-        [[ ! -d "$dir" ]] && continue
-        target="$dir/booth"
-        if [[ -f "$target" ]]; then
-            cp "$SOURCE_BOOTH" "$target"
-            chmod +x "$target"
-            # Remove lock file to force fresh install
-            rm -rf "$dir/.booth/tools"
-            echo "  Updated: ${dir#$PROJECT_ROOT/}booth"
-
-            # Run booth install to update tools
-            cd "$dir"
-            ./booth install
-            cd -
-            echo "    Installed tools"
-            : $((updated++))
-        fi
+        rm -rf "$dir/.booth/tools"
+	cp ../codingbooth $dir/booth
+        echo "Installed tools: $dir"
+        : $((updated++))
     done
 fi
 

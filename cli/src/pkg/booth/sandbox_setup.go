@@ -180,6 +180,11 @@ func renderSandboxEnvoyConfigFromAllowlist(ctx appctx.AppContext) (string, error
 	if err := os.WriteFile(outPath, []byte(buildEnvoyConfigFromPatterns(patterns)), 0o644); err != nil {
 		return "", fmt.Errorf("failed to write generated envoy config: %w", err)
 	}
+	if ctx.Verbose() {
+		fmt.Printf("SANDBOX_ENVOY_CONFIG: %s\n", outPath)
+		fmt.Println("SANDBOX_ENVOY_CONFIG_CONTENT:")
+		fmt.Println(buildEnvoyConfigFromPatterns(patterns))
+	}
 	return outPath, nil
 }
 
@@ -204,6 +209,26 @@ func parseAllowlistPatterns(content string) []string {
 	return patterns
 }
 
+func parseAllowlistEntries(content string) []string {
+	lines := strings.Split(content, "\n")
+	entries := make([]string, 0, len(lines))
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		domain := line
+		if idx := strings.Index(domain, "#"); idx >= 0 {
+			domain = strings.TrimSpace(domain[:idx])
+		}
+		if domain == "" {
+			continue
+		}
+		entries = append(entries, domain)
+	}
+	return entries
+}
+
 func mergeAllowlistContent(content string, extra []string) string {
 	if len(extra) == 0 {
 		return content
@@ -222,6 +247,24 @@ func mergeAllowlistContent(content string, extra []string) string {
 		builder.WriteString("\n")
 	}
 	return builder.String()
+}
+
+func effectiveSandboxAllowlist(ctx appctx.AppContext) (entries []string, note string) {
+	allowlistPath := strings.TrimSpace(ctx.SandboxAllowlistFile())
+	content := ""
+	if allowlistPath != "" {
+		path := resolvePolicyPath(ctx, allowlistPath)
+		b, err := os.ReadFile(path)
+		if err != nil {
+			return nil, fmt.Sprintf("SANDBOX_ALLOWLIST_ERROR: %v", err)
+		}
+		content = string(b)
+	}
+	if content == "" && len(ctx.SandboxAllowlist()) == 0 {
+		return nil, ""
+	}
+	merged := mergeAllowlistContent(content, ctx.SandboxAllowlist())
+	return parseAllowlistEntries(merged), ""
 }
 
 func buildEnvoyConfigFromPatterns(patterns []string) string {

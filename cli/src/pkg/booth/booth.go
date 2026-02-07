@@ -87,6 +87,7 @@ func (booth *Booth) runAsCommand() error {
 	// Cleanup sandbox/DinD sidecars after command exits.
 	cleanupFlags := flags
 	cleanupFlags.Silent = true
+	cleanupFlags.Verbose = false
 	cleanupSandboxResources(booth.ctx, &cleanupFlags)
 	if booth.ctx.Dind() {
 		dindName := getDindName(booth.ctx)
@@ -226,6 +227,7 @@ func (booth *Booth) runAsForeground() error {
 	// Cleanup sandbox/DinD sidecars after foreground exits.
 	cleanupFlags := flags
 	cleanupFlags.Silent = true
+	cleanupFlags.Verbose = false
 	cleanupSandboxResources(booth.ctx, &cleanupFlags)
 	if booth.ctx.Dind() {
 		dindName := getDindName(booth.ctx)

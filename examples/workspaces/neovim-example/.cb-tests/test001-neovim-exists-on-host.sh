@@ -15,12 +15,18 @@ GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$SCRIPT_DIR/../../../.."
+if [ -x "$REPO_ROOT/codingbooth" ]; then
+    BOOTH="$REPO_ROOT/codingbooth"
+else
+    BOOTH="$REPO_ROOT/booth"
+fi
 
 echo "=== Testing Neovim Exists ==="
 echo ""
 
 # Capture nvim --version output
-output=$("$SCRIPT_DIR/../../../../booth" --variant base --port 27000 -- 'nvim --version' 2>&1)
+output=$("$BOOTH" --variant base --port 27000 -- 'nvim --version' 2>&1)
 
 echo "$output"
 echo ""

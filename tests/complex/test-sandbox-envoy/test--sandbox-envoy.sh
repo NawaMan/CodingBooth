@@ -34,7 +34,7 @@ if [[ ! -x "$CB_SCRIPT" ]]; then
 fi
 
 # ---- Test booth -----------------------------------------------------------
-TMPDIR="$(mktemp -d "$HOME/cb-test-sandbox-envoy.XXXXXX")"
+TMPDIR="$(mktemp -d "${TMPDIR:-/tmp}/cb-test-sandbox-envoy.XXXXXX")"
 cleanup() {
   rm -rf "$TMPDIR" || true
 }
@@ -146,7 +146,15 @@ fail() {
 }
 
 http_code() {
-  run_cb "curl -s -o /dev/null -w \"%{http_code}\" --max-time 8 $1" | tr -d '\r'
+  local output code
+  set +e
+  output="$(run_cb "curl -s -o /dev/null -w \"\\n%{http_code}\\n\" --max-time 8 $1 || true" | tr -d '\r')"
+  set -e
+  code="$(printf "%s\n" "$output" | awk 'NF{line=$0} END{print line}' | grep -Eo '[0-9]{3}' | tail -n 1 || true)"
+  if [[ -z "$code" ]]; then
+    code="000"
+  fi
+  echo "$code"
 }
 
 code="$(http_code "https://pypi.org")"
