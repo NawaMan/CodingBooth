@@ -1,3 +1,0 @@
-variant = "base"
-
-sandbox-allowlist-file = ".booth/sandbox/allowlist.txt"

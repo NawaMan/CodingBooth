@@ -1,2 +1,0 @@
-# Domains allowed by sandbox egress policy
-pypi.org
