@@ -71,7 +71,7 @@ BIND_ARG="${HOST_DIR}:/tmp/lifecycle-extra"
 
 # 1) Create keep-alive booth with extra bind and extra port mapping.
 if run_coding_booth --variant base --name "$NAME" --port "$UI_PORT" --daemon --keep-alive \
-  -v "$BIND_ARG" -p "${EXTRA_PORT}:12345" -- 'sleep 60' >/dev/null 2>&1; then
+  -v "$BIND_ARG" -p "${EXTRA_PORT}:12345" -- 'sleep 120' >/dev/null 2>&1; then
 
   if [[ "$(host_port "$NAME" 10000)" == "$UI_PORT" ]] \
     && [[ "$(host_port "$NAME" 12345)" == "$EXTRA_PORT" ]] \
