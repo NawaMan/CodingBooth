@@ -42,11 +42,12 @@ cat /home/coder/code/.booth/Dockerfile  # What's already configured?
 
 | Location                         | Persistence                  | What to do                      |
 |----------------------------------|------------------------------|---------------------------------|
-| `/home/coder/code/`              | Persists (mounted from host) | Project files, `.booth/` config |
+| `/home/coder/code/`              | Persists (mounted from host) | Project files                   |
+| `/home/coder/code/.booth/`       | Persists but **read-only**   | Config — edit from host side    |
 | `/home/coder/` (outside `code/`) | Ephemeral                    | Lost on restart                 |
 | `/opt/`, `/usr/`, `/etc/`        | Ephemeral                    | Lost on restart                 |
 
-**Key insight:** To make changes permanent, modify files in `/home/coder/code/.booth/` — these are the source of truth that rebuild the container.
+**Key insight:** The `.booth/` directory is the source of truth that rebuilds the container, but it is **read-only inside the container** by default. To modify `.booth/` files, the user must edit them on the host (outside the container), or restart with `--writable-booth` to allow edits from inside.
 
 ---
 
@@ -54,7 +55,7 @@ cat /home/coder/code/.booth/Dockerfile  # What's already configured?
 
 ```
 /home/coder/code/              # Project root (PERSISTENT - mounted from host)
-├── .booth/
+├── .booth/                    # READ-ONLY by default (use --writable-booth to allow edits)
 │   ├── config.toml            # Runtime config (variant, ports, run-args, etc.)
 │   ├── Dockerfile             # Custom image build
 │   ├── setups/                # Custom setup scripts (you create these)
@@ -343,6 +344,7 @@ Setup scripts are the **source of truth** for:
 
 | Don't                                                    | Do Instead                                    |
 |----------------------------------------------------------|-----------------------------------------------|
+| Edit `.booth/` files from inside the container           | Edit on the host, or use `--writable-booth`   |
 | Install tools directly in running container (ephemeral)  | Add to `.booth/Dockerfile`                    |
 | Edit files in `/etc/`, `/opt/`, `/usr/` directly         | Create setup scripts in `.booth/setups/`      |
 | Tell user to "just run `curl \| bash`"                   | Add proper setup to Dockerfile                |
@@ -357,6 +359,9 @@ Setup scripts are the **source of truth** for:
 
 **"Tool not found after restart"**
 - Was it added to `.booth/Dockerfile`? Ephemeral installs don't persist.
+
+**"Read-only file system" when editing `.booth/` files**
+- `.booth/` is mounted read-only by default. Edit files on the host side, or ask the user to restart with `--writable-booth`.
 
 **"Permission denied"**
 - Setup scripts run as root during build. User-level changes go in startup scripts or `.booth/home/`.

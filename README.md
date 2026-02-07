@@ -112,6 +112,7 @@ CodingBooth provides a command-line interface with the following structure:
 | `--pull`           | Force pull latest image                                                          |
 | `--dind`           | Enable Docker-in-Docker mode                                                     |
 | `--keep-alive`     | Keep container after exit                                                        |
+| `--writable-booth` | Allow writing to `.booth/` inside the container (read-only by default)            |
 | `--silence-build`  | Suppress build/startup output                                                    |
 | `--dryrun`         | Print docker commands without executing                                          |
 | `--verbose`        | Enable debug output                                                              |
@@ -415,6 +416,8 @@ my-project/
 
 > 💡 **Tip:** When both `Boothfile` and `Dockerfile` exist, Boothfile takes precedence. Use `--dockerfile` to force using the Dockerfile.
 
+> 🔒 **Read-only by default:** The `.booth/` folder is mounted **read-only** inside the container to prevent accidental or malicious modifications to your configuration. Use `--writable-booth` if you need to edit `.booth/` files from inside the container (e.g., during development).
+
 > ⚠️ **Note on `cmds`:** When you pass commands via CLI (`-- <cmd>`), they **override** the `cmds` in config.toml (they don't append).
 
 ---
@@ -453,17 +456,17 @@ env APP_ENV=production
 
 ### Boothfile Commands
 
-| Command | Example | Compiles to |
-|---------|---------|-------------|
-| `run` | `run apt-get update` | `RUN apt-get update` |
-| `setup` | `setup python 3.12` | `RUN python--setup.sh 3.12` |
-| `install` | `install pip django` | `RUN pip--install.sh django` |
-| `copy` | `copy ./config /opt` | `COPY ./config /opt` |
-| `env` | `env DEBUG=true` | `ENV DEBUG=true` |
-| `arg` | `arg VERSION=1.0` | `ARG VERSION=1.0` |
-| `workdir` | `workdir /app` | `WORKDIR /app` |
-| `expose` | `expose 8080` | `EXPOSE 8080` |
-| `label` | `label maintainer="me"` | `LABEL maintainer="me"` |
+| Command   | Example                 | Compiles to                  |
+|-----------|-------------------------|------------------------------|
+| `run`     | `run apt-get update`    | `RUN apt-get update`         |
+| `setup`   | `setup python 3.12`     | `RUN python--setup.sh 3.12`  |
+| `install` | `install pip django`    | `RUN pip--install.sh django` |
+| `copy`    | `copy ./config /opt`    | `COPY ./config /opt`         |
+| `env`     | `env DEBUG=true`        | `ENV DEBUG=true`             |
+| `arg`     | `arg VERSION=1.0`       | `ARG VERSION=1.0`            |
+| `workdir` | `workdir /app`          | `WORKDIR /app`               |
+| `expose`  | `expose 8080`           | `EXPOSE 8080`                |
+| `label`   | `label maintainer="me"` | `LABEL maintainer="me"`      |
 
 ### Multi-line Commands (Heredocs)
 
@@ -525,11 +528,11 @@ The compiler automatically adds a `COPY` to bring your script into the image.
 
 ### CLI Flags
 
-| Flag | Description |
-|------|-------------|
-| `--boothfile <path>` | Use a specific Boothfile |
-| `--emit-dockerfile` | Print generated Dockerfile without building |
-| `--strict` | Treat warnings as errors |
+| Flag                 | Description                                 |
+|----------------------|---------------------------------------------|
+| `--boothfile <path>` | Use a specific Boothfile                    |
+| `--emit-dockerfile`  | Print generated Dockerfile without building |
+| `--strict`           | Treat warnings as errors                    |
 
 ### File Precedence
 
@@ -575,13 +578,14 @@ env DJANGO_SETTINGS_MODULE=myproject.settings
 
 CodingBooth is designed for development environments, not production workloads. Key security aspects:
 
-| Aspect              | Behavior                                                               |
-|---------------------|------------------------------------------------------------------------|
-| **User privileges** | Processes run as unprivileged `coder` user, not root                   |
-| **Sudo access**     | `coder` has passwordless sudo (for installing packages)                |
-| **File ownership**  | Files match your host UID/GID — no root-owned files                    |
-| **Network**         | Full network access by default; use Network Whitelist for restrictions |
-| **DinD mode**       | Requires `--privileged` flag (elevated permissions)                    |
+| Aspect               | Behavior                                                                  |
+|----------------------|---------------------------------------------------------------------------|
+| **User privileges**  | Processes run as unprivileged `coder` user, not root                      |
+| **Sudo access**      | `coder` has passwordless sudo (for installing packages)                   |
+| **File ownership**   | Files match your host UID/GID — no root-owned files                       |
+| **`.booth/` config** | Read-only inside the container by default (`--writable-booth` to opt out) |
+| **Network**          | Full network access by default; use Network Whitelist for restrictions    |
+| **DinD mode**        | Requires `--privileged` flag (elevated permissions)                       |
 
 **Best practices:**
 - Don't run untrusted code in CodingBooth containers
@@ -619,41 +623,41 @@ The `booth` wrapper script is **location-based**: it operates relative to its ow
 
 
 ```
-host                                 # your machine
-  ├── ~/.cache/codingbooth/                # shared binary cache
+host                                     # your machine
+  ├── ~/.cache/codingbooth/              # shared binary cache
   |    └── versions/
-  |         └── 0.13.0/              # version-specific binaries
+  |         └── 0.13.0/                  # version-specific binaries
   |              ├── codingbooth.sha256
-  |              └── codingbooth-*  # platform binaries
-  ├── project/                       # your project folder on the host
-  |    ├── booth                     # booth wrapper script
-  |    ├── .booth                    # booth internal folder
+  |              └── codingbooth-*       # platform binaries
+  ├── project/                           # your project folder on the host
+  |    ├── booth                         # booth wrapper script
+  |    ├── .booth                        # booth internal folder
   |    |    └── tools/
-  |    |         └── codingbooth.lock  # version reference
-  |    ├── ...                       # other project files
+  |    |         └── codingbooth.lock    # version reference
+  |    ├── ...                           # other project files
   ...
 
 container
   ├── home/
   |    ├── coder/
-  |    |    ├── code/                     # your project folder inside the container
-  |    |    |   ├── booth                 # booth wrapper script
-  |    |    |   ├── .booth                # booth internal folder
+  |    |    ├── code/                           # your project folder inside the container
+  |    |    |   ├── booth                       # booth wrapper script
+  |    |    |   ├── .booth                      # booth internal folder
   |    |    |   |    └── tools/
   |    |    |   |         └── codingbooth.lock  # version reference
-  |    |    ├── ...                       # other project files
-  |    ├── ...                            # other home files
+  |    |    ├── ...                             # other project files
+  |    ├── ...                                  # other home files
   ├── etc/
-  |    ├── profile.d/                     # profile script folder
+  |    ├── profile.d/                           # profile script folder
   ├── opt/
   |    ├── codingbooth/
-  |    |    ├── setups/                   # setup script folder
-  |    |    |    ├── ...                  # setup scripts
+  |    |    ├── setups/                         # setup script folder
+  |    |    |    ├── ...                        # setup scripts
   ├── usr/
   |    ├── local/
-  |    |    ├── bin/                      # program file folder
+  |    |    ├── bin/                            # program file folder
   |    ├── share/
-  |    |    ├── startup.d/                # startup script folder
+  |    |    ├── startup.d/                      # startup script folder
   ...
 ```
 

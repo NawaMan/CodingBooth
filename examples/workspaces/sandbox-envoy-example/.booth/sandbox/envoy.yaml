@@ -27,8 +27,8 @@ static_resources:
                     connect_config: {}
               - match:
                   prefix: "/"
-                route:
-                  cluster: dynamic_forward_proxy_cluster
+                redirect:
+                  https_redirect: true
           http_filters:
           - name: envoy.filters.http.rbac
             typed_config:

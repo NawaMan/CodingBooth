@@ -87,8 +87,12 @@ func SetupSandbox(ctx appctx.AppContext) appctx.AppContext {
 
 	// Set proxy env for the workspace container.
 	builder = ctx.ToBuilder()
-	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("HTTP_PROXY=http://127.0.0.1:%d", sandboxProxyPort)))
-	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("HTTPS_PROXY=http://127.0.0.1:%d", sandboxProxyPort)))
+	proxyURL := fmt.Sprintf("http://127.0.0.1:%d", sandboxProxyPort)
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "http_proxy="+proxyURL))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HTTP_PROXY="+proxyURL))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "https_proxy="+proxyURL))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HTTPS_PROXY="+proxyURL))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "no_proxy=127.0.0.1,localhost"))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "NO_PROXY=127.0.0.1,localhost"))
 	return builder.Build()
 }
@@ -171,7 +175,7 @@ func renderSandboxEnvoyConfigFromAllowlist(ctx appctx.AppContext) (string, error
 		patterns = parseAllowlistPatterns(mergeAllowlistContent("", ctx.SandboxAllowlist()))
 	}
 
-	outDir := filepath.Join(ctx.Code(), ".booth", "tools", "egress")
+	outDir := filepath.Join(ctx.Code(), ".booth", "tools", "sandbox")
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return "", fmt.Errorf("failed to create egress output dir: %w", err)
 	}
@@ -322,8 +326,8 @@ func buildEnvoyConfigFromPatterns(patterns []string) string {
                     connect_config: {}
               - match:
                   prefix: "/"
-                route:
-                  cluster: dynamic_forward_proxy_cluster
+                redirect:
+                  https_redirect: true
           http_filters:
           - name: envoy.filters.http.rbac
             typed_config:
