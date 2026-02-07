@@ -10,8 +10,12 @@ GREEN='\033[0;32m'
 NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_ROOT="$SCRIPT_DIR/.."
-BOOTH="$REPO_ROOT/booth"
+REPO_ROOT="$SCRIPT_DIR/../../../.."
+if [ -x "$REPO_ROOT/codingbooth" ]; then
+    BOOTH="$REPO_ROOT/codingbooth"
+else
+    BOOTH="$REPO_ROOT/booth"
+fi
 
 "$BOOTH" --variant base --port 12000 -- "./.cb-tests/inBooth--run-all-tests.sh" 2>&1 | tee "$0.out"
 
