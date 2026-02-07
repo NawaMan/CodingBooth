@@ -3,8 +3,8 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# Complex test: when --sandboxed is enabled, certain project files are read-only
-# inside the container: .booth/config.toml, .booth/Boothfile, .booth/sandbox/allowlist.txt
+# Complex test: .booth/ is always read-only inside the container by default.
+# Use --writable-booth to opt out of this protection.
 
 set -euo pipefail
 
@@ -66,10 +66,16 @@ run_cb() {
   "$CB_SCRIPT" --sandboxed --image "$IMAGE_NAME" --name "$CONTAINER_NAME" -- "$@"
 }
 
-# Helper to run without sandbox (control)
+# Helper to run without sandbox (default)
 run_cb_plain() {
   echo -e "${COLOR_BOOTH:-}> codingbooth --image $IMAGE_NAME --name $CONTAINER_NAME -- $*${COLOR_RESET:-}" >&2
   "$CB_SCRIPT" --image "$IMAGE_NAME" --name "$CONTAINER_NAME" -- "$@"
+}
+
+# Helper to run with --writable-booth
+run_cb_writable() {
+  echo -e "${COLOR_BOOTH:-}> codingbooth --writable-booth --image $IMAGE_NAME --name $CONTAINER_NAME -- $*${COLOR_RESET:-}" >&2
+  "$CB_SCRIPT" --writable-booth --image "$IMAGE_NAME" --name "$CONTAINER_NAME" -- "$@"
 }
 
 # ---- Assertions ---------------------------------------------------------------
@@ -146,18 +152,55 @@ expect_success_plain() {
   fi
 }
 
-# Should NOT be writable when --sandboxed is enabled
-expect_fail "config.toml is read-only" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/config.toml"
-expect_fail "Boothfile is read-only" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/Boothfile"
-expect_fail "allowlist.txt is read-only" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/sandbox/allowlist.txt"
+# Same helpers, but with --writable-booth
+expect_fail_writable() {
+  local label="$1"
+  shift
+  set +e
+  run_cb_writable "$@" >/dev/null 2>&1
+  local status=$?
+  set -e
+  if [[ $status -eq 0 ]]; then
+    fail "$label (expected failure, but exit=0)"
+  else
+    pass "$label (write blocked as expected)"
+  fi
+}
+
+expect_success_writable() {
+  local label="$1"
+  shift
+  set +e
+  run_cb_writable "$@" >/dev/null 2>&1
+  local status=$?
+  set -e
+  if [[ $status -ne 0 ]]; then
+    fail "$label (expected success, exit=$status)"
+  else
+    pass "$label"
+  fi
+}
+
+# .booth should be read-only with --sandboxed
+expect_fail "config.toml is read-only (sandboxed)" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/config.toml"
+expect_fail "Boothfile is read-only (sandboxed)" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/Boothfile"
+expect_fail "allowlist.txt is read-only (sandboxed)" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/sandbox/allowlist.txt"
 
 # Control: normal file should still be writable
 expect_success "normal.txt is writable" "bash" "-lc" "echo 'ok' > /home/coder/code/normal.txt"
 
-# Control (no --sandboxed): project files should be writable
-expect_success_plain "config.toml writable without --sandboxed" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/config.toml"
-expect_success_plain "Boothfile writable without --sandboxed" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/Boothfile"
-expect_success_plain "allowlist.txt writable without --sandboxed" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/sandbox/allowlist.txt"
+# .booth should ALSO be read-only without --sandboxed (always-on protection)
+expect_fail_plain "config.toml is read-only (no sandbox)" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/config.toml"
+expect_fail_plain "Boothfile is read-only (no sandbox)" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/Boothfile"
+expect_fail_plain "allowlist.txt is read-only (no sandbox)" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/sandbox/allowlist.txt"
+
+# Control: normal file should still be writable without sandbox
+expect_success_plain "normal.txt is writable (no sandbox)" "bash" "-lc" "echo 'ok' > /home/coder/code/normal.txt"
+
+# --writable-booth should allow writing to .booth files
+expect_success_writable "config.toml writable with --writable-booth" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/config.toml"
+expect_success_writable "Boothfile writable with --writable-booth" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/Boothfile"
+expect_success_writable "allowlist.txt writable with --writable-booth" "bash" "-lc" "echo 'thing' > /home/coder/code/.booth/sandbox/allowlist.txt"
 
 popd >/dev/null
 

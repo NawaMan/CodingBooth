@@ -33,7 +33,8 @@ type AppConfig struct {
 	Daemon       bool `toml:"daemon,omitempty"        envconfig:"CB_DAEMON" default:"false"`
 	Pull         bool `toml:"pull,omitempty"          envconfig:"CB_PULL" default:"false"`
 	Dind         bool `toml:"dind,omitempty"          envconfig:"CB_DIND" default:"false"`
-	Sandbox      bool `toml:"sandboxed,omitempty"     envconfig:"CB_SANDBOX" default:"false"`
+	Sandbox       bool `toml:"sandboxed,omitempty"      envconfig:"CB_SANDBOX" default:"false"`
+	WritableBooth bool `toml:"writable-booth,omitempty" envconfig:"CB_WRITABLE_BOOTH" default:"false"`
 	SandboxAllowlistFile string `toml:"sandbox-allowlist-file,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST_FILE"`
 	SandboxPolicyFile    string `toml:"sandbox-policy-file,omitempty"    envconfig:"CB_SANDBOX_POLICY_FILE"`
 	SandboxAllowlist     []string `toml:"sandbox-allowlist,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST"`
@@ -123,6 +124,7 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Pull:             %t\n", config.Pull)
 	fmt.Fprintf(&str, "    Dind:             %t\n", config.Dind)
 	fmt.Fprintf(&str, "    Sandbox:          %t\n", config.Sandbox)
+	fmt.Fprintf(&str, "    WritableBooth:    %t\n", config.WritableBooth)
 	fmt.Fprintf(&str, "    SandboxAllowlist: %q\n", config.SandboxAllowlistFile)
 	fmt.Fprintf(&str, "    SandboxPolicy:    %q\n", config.SandboxPolicyFile)
 	fmt.Fprintf(&str, "    SandboxAllowlist+: %v\n", config.SandboxAllowlist)

@@ -374,6 +374,10 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.SilenceBuild = true
 			i++
 
+		case "--writable-booth":
+			cfg.WritableBooth = true
+			i++
+
 		// Image selection
 		case "--image":
 			v, err := needValue(args, i, arg)

@@ -84,6 +84,7 @@ CONTAINER MODE:
   --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST
   --sandboxed            Enable egress sandbox defaults (proxy + enforcement setup)
   --keep-alive           Do not remove the container when stopped
+  --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
 
 COMMANDS:
   All arguments after '--' are executed *inside* the container instead of starting

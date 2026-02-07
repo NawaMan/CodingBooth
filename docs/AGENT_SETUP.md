@@ -195,6 +195,16 @@ Access UI at shown URL. Stop with `docker stop <container-name>`.
 ./booth -- python script.py
 ```
 
+### Allow Editing `.booth/` from Inside the Container
+
+By default, `.booth/` is **read-only** inside the container to prevent accidental or malicious config changes. If the user (or an AI agent inside) needs to edit `.booth/` files from within the container:
+
+```bash
+./booth --writable-booth
+```
+
+> **Note:** This is mainly useful during initial setup or development of the booth configuration itself. For normal use, edit `.booth/` files on the host.
+
 ---
 
 ## Available Setup Scripts
