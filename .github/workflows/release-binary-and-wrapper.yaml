@@ -80,17 +80,23 @@ jobs:
       - name: Generate SHA256 checksums for all binaries
         run: |
           cd bin
+          echo "BIN"
           ls -la 
           for binary in codingbooth-*; do
             sha256sum "$binary" > "${binary}.sha256"
           done
           cd ..
+          echo "ROOT"
+          ls -la 
 
       # ---------------------------------------------------------
       # Build example artifacts
       # ---------------------------------------------------------
       - name: Update booth wrappers
-        run: ./examples/update-booth.sh
+        run: |
+          cd ./examples
+          ./update-booth.sh
+          cd ..
 
       - name: Create example-list.txt
         run: |
