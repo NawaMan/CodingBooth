@@ -123,3 +123,5 @@ variants/base/_stage/
 
 !/build/
 /codingbooth
+**/booth
+!/booth
