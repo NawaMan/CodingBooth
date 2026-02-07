@@ -24,6 +24,15 @@ echo "============================================================"
 echo "Running Complex Tests"
 echo "============================================================"
 
+if ! command -v docker >/dev/null 2>&1; then
+  echo "SKIP: Docker is not installed or not in PATH"
+  exit 0
+fi
+if ! docker info >/dev/null 2>&1; then
+  echo "SKIP: Docker daemon is not accessible (permission or not running)"
+  exit 0
+fi
+
 FAILED=0
 PASSED=0
 FAILED_TESTS=()

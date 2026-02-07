@@ -39,7 +39,7 @@ if [[ ! -x "$CB_SCRIPT" ]]; then
 fi
 
 # ---- Test booth -----------------------------------------------------------
-TMPDIR="$(mktemp -d "$HOME/cb-test.XXXXXX")"
+TMPDIR="$(mktemp -d "${TMPDIR:-/tmp}/cb-test.XXXXXX")"
 cleanup() {
   # Booth container is started with --rm, so nothing to stop.
   rm -rf "$TMPDIR" || true

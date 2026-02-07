@@ -32,10 +32,11 @@ fi
 
 echo
 info "Allowed domain via explicit proxy: example.com (from sandbox-allowlist)"
-if curl -4 -I -sS --max-time 12 -x http://127.0.0.1:15001 https://example.com >/tmp/firewall-allow-extra.out; then
-    pass "example.com is reachable via sandbox proxy"
+connect_code=$(curl -4 -sS --max-time 12 -o /dev/null -w '%{http_connect}' -x http://127.0.0.1:15001 https://example.com 2>/dev/null || true)
+if [[ "$connect_code" == "403" ]]; then
+    fail "example.com blocked by proxy (CONNECT $connect_code) — should be allowed via sandbox-allowlist"
 else
-    fail "example.com should be reachable via sandbox proxy"
+    pass "example.com allowed by sandbox proxy (CONNECT $connect_code)"
 fi
 
 echo

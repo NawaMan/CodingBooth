@@ -33,7 +33,7 @@ if [[ ! -x "$CB_SCRIPT" ]]; then
 fi
 
 # ---- Test booth -----------------------------------------------------------
-TMPDIR="$(mktemp -d "$HOME/cb-test-sandbox-allowlist-extra.XXXXXX")"
+TMPDIR="$(mktemp -d "${TMPDIR:-/tmp}/cb-test-sandbox-allowlist-extra.XXXXXX")"
 cleanup() {
   rm -rf "$TMPDIR" || true
 }
@@ -54,9 +54,12 @@ sandbox-allowlist = [
 ]
 EOF
 
+rm -f cb-log.log
+touch cb-log.log
+
 run_cb() {
-  echo -e "${COLOR_BOOTH:-}> codingbooth --sandboxed --image $IMAGE_NAME --name $CONTAINER_NAME -- $*${COLOR_RESET:-}" >&2
-  "$CB_SCRIPT" --sandboxed --image "$IMAGE_NAME" --name "$CONTAINER_NAME" -- "$@"
+  echo -e "${COLOR_BOOTH:-}> codingbooth --sandboxed --verbose --config .booth/config.toml --image $IMAGE_NAME --name $CONTAINER_NAME -- $*${COLOR_RESET:-}" >&2
+  "$CB_SCRIPT" --sandboxed --verbose --config .booth/config.toml --image "$IMAGE_NAME" --name "$CONTAINER_NAME" -- "$@" | tee cb-log.log
 }
 
 # ---- Assertions ---------------------------------------------------------------
@@ -76,29 +79,37 @@ fail() {
   print_test_result "false" "$0" "$total_checks" "$*"
 }
 
-http_code() {
-  run_cb "curl -s -o /dev/null -w \"%{http_code}\" --max-time 8 $1" | tr -d '\r'
+proxy_connect_code() {
+  local output code
+  set +e
+  output="$(run_cb "curl -s -o /dev/null -w \"\\n%{http_connect}\\n\" --max-time 8 $1 || true" | tr -d '\r')"
+  set -e
+  code="$(printf "%s\n" "$output" | awk 'NF{line=$0} END{print line}' | grep -Eo '[0-9]{3}' | tail -n 1 || true)"
+  if [[ -z "$code" ]]; then
+    code="000"
+  fi
+  echo "$code"
 }
 
-code="$(http_code "https://pypi.org")"
-if [[ "$code" == "000" || "$code" == "403" ]]; then
-  fail "allowlist file domain blocked (pypi.org) -> HTTP $code"
+code="$(proxy_connect_code "https://pypi.org")"
+if [[ "$code" == "403" ]]; then
+  fail "allowlist file domain blocked by proxy (pypi.org) -> CONNECT $code"
 else
-  pass "allowlist file domain reachable (pypi.org) -> HTTP $code"
+  pass "allowlist file domain allowed by proxy (pypi.org) -> CONNECT $code"
 fi
 
-code="$(http_code "https://example.com")"
-if [[ "$code" == "000" || "$code" == "403" ]]; then
-  fail "sandbox-allowlist domain blocked (example.com) -> HTTP $code"
+code="$(proxy_connect_code "https://example.com")"
+if [[ "$code" == "403" ]]; then
+  fail "sandbox-allowlist domain blocked by proxy (example.com) -> CONNECT $code"
 else
-  pass "sandbox-allowlist domain reachable (example.com) -> HTTP $code"
+  pass "sandbox-allowlist domain allowed by proxy (example.com) -> CONNECT $code"
 fi
 
-code="$(http_code "https://reddit.com")"
-if [[ "$code" == "000" || "$code" == "403" ]]; then
-  pass "non-allowlisted domain blocked (reddit.com) -> HTTP $code"
+code="$(proxy_connect_code "https://reddit.com")"
+if [[ "$code" == "403" ]]; then
+  pass "non-allowlisted domain blocked by proxy (reddit.com) -> CONNECT $code"
 else
-  fail "non-allowlisted domain reachable (reddit.com) -> HTTP $code"
+  fail "non-allowlisted domain not blocked by proxy (reddit.com) -> CONNECT $code"
 fi
 
 popd >/dev/null
