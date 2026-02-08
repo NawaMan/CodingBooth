@@ -1,0 +1,7 @@
+go
+python:3.13
+  + uv
+  + vscode-ext
+java:25,temurin
+  + maven
+claude-code

@@ -1,6 +1,7 @@
 display-name = "Claude Code"
 display-disc = "Anthropic Claude Code AI assistant"
 display-order = 10
-tags = ["ai", "assistant", "claude"]
-
-dind = true
+tags = [
+    "ai",
+    "claude"
+]
