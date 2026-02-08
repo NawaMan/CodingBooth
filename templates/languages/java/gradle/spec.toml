@@ -1,0 +1,5 @@
+display-name = "Gradle"
+display-disc = "Gradle build tool"
+display-order = 11
+tags = ["build", "gradle"]
+auto-select = false

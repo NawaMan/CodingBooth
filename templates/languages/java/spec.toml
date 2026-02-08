@@ -1,0 +1,8 @@
+display-name = "Java"
+display-disc = "JDK with build tools"
+display-order = 30
+tags = ["java", "jvm", "backend"]
+
+[params.JDK_VERSION]
+default = "25"
+suggests = ["21", "24", "25"]
