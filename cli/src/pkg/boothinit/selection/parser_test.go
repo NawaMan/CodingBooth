@@ -5,6 +5,9 @@
 package selection
 
 import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"path/filepath"
 	"testing"
@@ -206,8 +209,30 @@ func TestReadSelectInput_FileNotFound(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func TestReadSelectInput_URLNotImplemented(t *testing.T) {
-	_, err := ReadSelectInput("@@https://example.com/selection")
+func TestReadSelectInput_FromURL(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		fmt.Fprint(w, "go:1.24\npython:3.12\n")
+	}))
+	defer server.Close()
+
+	result, err := ReadSelectInput("@@" + server.URL)
+	require.NoError(t, err)
+	assert.Equal(t, "go:1.24\npython:3.12\n", result)
+}
+
+func TestReadSelectInput_URLNotFound(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.NotFound(w, r)
+	}))
+	defer server.Close()
+
+	_, err := ReadSelectInput("@@" + server.URL + "/missing")
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "not yet implemented")
+	assert.Contains(t, err.Error(), "HTTP 404")
+}
+
+func TestReadSelectInput_URLUnreachable(t *testing.T) {
+	_, err := ReadSelectInput("@@http://127.0.0.1:1/nonexistent")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "fetching selection URL")
 }
