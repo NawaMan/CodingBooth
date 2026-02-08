@@ -17,10 +17,6 @@ HOME=/root
 
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_DIR="$(dirname "$0")"
-source "$SCRIPT_DIR/libs/skip-setup.sh"
-if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
-    skip_setup "$SCRIPT_NAME" "desktop environment not available"
-fi
 
 # --- Defaults ---
 CLAUDE_CODE_VERSION="${1:-latest}"

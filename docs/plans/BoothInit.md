@@ -28,7 +28,7 @@ The feature is visioned to have three interfaces:
 
 | Interface   | Purpose                           | Invocation                                   |
 |-------------|-----------------------------------|----------------------------------------------|
-| **CLI**     | Scriptable, testing               | `./booth init on ../new-project --select go` |
+| **CLI**     | Scriptable, testing               | `./booth init new ../new-project --select go` |
 | **Quick**   | Fast setup with sensible defaults | `./booth init`                               |
 | **Advance** | Full control via template browser | `./booth init --advance`                     |
 
@@ -38,7 +38,7 @@ That means it is designed to implement all three but we may not actually do it.
 Reminded that `booth` is a wrapper to `codingbooth` binary which will be download using `booth install`.
 So to have `booth` running, you will have to be in a project folder that has ALREADY BEEN initialize.
 Therefore, the `booth init ...` command aims to initialize ANOTHER project folder and not this one.
-That is why the target location (the `on ...`) must not be this folder.
+That is why the target location (the `new ...`) must not be this folder.
 
 ---
 
@@ -93,25 +93,25 @@ Frameworks
 
 ```bash
 # Basic selection with defaults
-./booth init on ../new-project --default variant=codeserver --default port=12345 --select go/claude-code
+./booth init new ../new-project --default variant=codeserver --default port=12345 --select go/claude-code
 
 # Short
-./booth init on ../new-project --select go/claude-code
+./booth init new ../new-project --select go/claude-code
 
 # Option 1
-./booth init on ../new-project --select go:1.24/java:21,corretto
+./booth init new ../new-project --select go:1.24/java:21,corretto
 
 # Option 2
-./booth init on ../new-project --select - <<SELECT
+./booth init new ../new-project --select - <<SELECT
   go:1.24
   java:21,corretto
 SELECT
 
 # Option 3
-./booth init on ../new-project --select @file
+./booth init new ../new-project --select @file
 
 # Option 4
-./booth init on ../new-project --select @@url
+./booth init new ../new-project --select @@url
 
 # Dry run to preview
 ./booth init dryrun --select python+django
@@ -121,9 +121,27 @@ The selection DSL is:
 `<name>:<param1>,<param2>+<extension1>+<extension2>/<name2>:<param2-1>,<param2-2>+<extension2-1>+<extension2-2>`
 
 **Operator precedence:** Split `/` first, then `+`, then `:` and `,` last.
-For heredoc and stdin input, whitespace is normalized before parsing.
+For heredoc and stdin input, whitespace is normalized before parsing:
+- Spaces around `+` are stripped (e.g., `java + maven` → `java+maven`)
+- Lines starting with `+` are joined to the previous template (continuation lines)
+- Remaining whitespace (newlines, tabs, spaces) becomes `/` separators
 
 Note: If `@file` or `@@url` is used, it consumes the entire value — no `/` parsing is applied.
+
+**Recipe files:** The `@file` syntax allows storing selections in recipe files:
+```bash
+# cool-project.recipe
+go
+python:3.13
+  + uv
+  + vscode-ext
+java:25,temurin
+  + maven
+claude-code
+```
+```bash
+./booth init new ../my-project --select @cool-project.recipe
+```
 
 > **Design note:** The `--select` DSL is intentionally simple — it cannot support every possible scenario. It aims to cover the common init cases. Users with more complex needs should modify the generated configs by hand after init. Multiple input methods (inline, heredoc, `@file`, `@@url`) are provided so users can work around platform-specific escaping or delimiter issues.
 
@@ -135,21 +153,23 @@ Note: If `@file` or `@@url` is used, it consumes the entire value — no `/` par
 |------------------|---------------------------------------------------------------|
 | `list`           | List all templates by category                                |
 | `search <term>`  | Search templates (prefix match of name, display-name and tag) |
-| `on <path>`      | Generate a new project on the given location                  |
+| `new <path>`     | Generate a new project on the given location                  |
 | `dryrun`         | Print what would be generated without writing files           |
 
-> **Note:** `dryrun` is a subcommand (not a `--dryrun` flag) because it does not require a target location. In contrast, `on` requires a target path.
+> **Note:** `dryrun` is a subcommand (not a `--dryrun` flag) because it does not require a target location. In contrast, `new` requires a target path.
 
-**Target location safety:** The `on` subcommand will only initialize a **new** project. "New" means the target folder either does not exist, or exists but does not contain a `.booth/` directory. Init will never overwrite an existing `.booth/` configuration. This prevents accidental loss of manual customizations made after a previous init.
+**Target location safety:** The `new` subcommand will only initialize a **new** project. "New" means the target folder either does not exist, or exists but does not contain a `.booth/` directory. Init will never overwrite an existing `.booth/` configuration. This prevents accidental loss of manual customizations made after a previous init.
 
 ### CLI Flags Reference
 
-| Flag               | Description                                                                         |
-|--------------------|-------------------------------------------------------------------------------------|
-| `--select <names>` | Slash-separated template names to select – the name must fully match. Error if not. |
-| `--variant <name>` | Set variant (codeserver, notebook, desktop-xfce, etc.)                              |
-| `--port <value>`   | Set port (number, NEXT, RANDOM)                                                     |
-| ...                | Other Booth single setting ...                                                      |
+| Flag                      | Description                                                                         |
+|---------------------------|-------------------------------------------------------------------------------------|
+| `--select <names>`        | Slash-separated template names to select – the name must fully match. Error if not. Use `-` to read from stdin. Use `@file` to read from a file (recipe). |
+| `--templates-path <dir>`  | Load templates from a local directory (skips download/extraction). Required until template download is implemented. |
+| `--start`                 | After init, immediately start the booth (chains into `codingbooth run --code <path>`). |
+| `--debug`                 | Print resolved selection and compiled output as JSON before generating.              |
+| `--variant <name>`        | Set variant (codeserver, notebook, desktop-xfce, etc.) — future                     |
+| `--port <value>`          | Set port (number, NEXT, RANDOM) — future                                            |
 
 ---
 
@@ -286,8 +306,8 @@ When multiple templates are selected, their outputs are merged according to thre
 ```
 .booth/
 ├── config.toml       # Variant, port, timezone, dind, run-args
-├── Dockerfile        # Header + setups ordered by setup.order
-├── startup.sh        # Startup scripts ordered by order (if any)by order (if any)
+├── Boothfile         # ARG directives + setup/install commands ordered by segment order
+├── startup.sh        # Startup scripts ordered by order (if any)
 ├── setups/           # Setup files
 ├── home/             # Files with target="home"
 └── home-seed/        # Files with target="home-seed"
@@ -311,18 +331,25 @@ run-args = [
 ]
 ```
 
-### Dockerfile Generation
+### Boothfile Generation
 
-Combined from Dockerfile of each template in alphabetical order of the template name
-OR `Dockerfile--<order>` order by `order` and tibreak by template name.
+Combined from Boothfile segments of each template, ordered by segment order with tiebreak by template name.
+Parameters are emitted as `arg NAME=value` directives before segments, sorted alphabetically.
 
-```dockerfile
+```
 # syntax=codingbooth/boothfile:1
-setup python  3.12
-setup go      1.24
-setup jdk     21 temurin
-setup mvn     3.9.6
-setup go-code-extension 
+# Generated by booth init
+
+arg GO_VERSION=1.25.7
+arg JDK_VENDOR=temurin
+arg JDK_VERSION=25
+
+setup go ${GO_VERSION}
+install go golang.org/x/tools/gopls@latest
+setup go-code-extension
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+setup mvn ${MAVEN_VERSION}
+setup java-code-extension
 ```
 
 ### startup.sh Generation (if any startup-scripts)
@@ -440,8 +467,8 @@ The init feature lives under `pkg/boothinit/` (not `pkg/init/` to avoid collisio
 ```
 cmd/
 └── codingbooth/
-    ├── main.go
-    └── init.go
+    ├── main.go                    # "init" case dispatches to runInit()
+    └── init.go                    # runInit(), runInitNew(), runInitDryrun(), compileSelection()
 
 pkg/
 └── boothinit/
@@ -452,18 +479,19 @@ pkg/
     │   ├── startup.go             # startup.sh generation (SerializeStartup)
     │   ├── files.go               # File copy logic (CopyFiles)
     │   └── writer.go              # Orchestrator (WriteOutput) — writes all files to .booth/
-    ├── cache/
+    ├── template/                  # Phase 2 — Template model and loading
+    │   ├── model.go               # TemplateRegistry, Category, Template, Param, Segment, FileRef
+    │   └── loader.go              # LoadRegistry, TOML parsing, segment/extension loading
+    ├── selection/                  # Phase 3 — Selection parsing and resolution
+    │   ├── model.go               # ParsedSelection, ResolvedSelection, SelectedTemplate, SelectMode
+    │   ├── parser.go              # ParseSelectDSL, NormalizeInput, ReadSelectInput
+    │   └── resolver.go            # Resolve (params, extensions, requires validation)
+    ├── compiler/                  # Phase 4 — Template + Selection → Output
+    │   └── compiler.go            # Compile(resolved) → (*BoothOutput, error)
+    ├── cache/                     # Phase 6 (future)
     │   ├── download.go            # Download templates.zip from GitHub
     │   ├── verify.go              # SHA256 verification
     │   └── extract.go             # Extract to temp dir
-    ├── template/
-    │   ├── model.go               # Template data structures
-    │   ├── loader.go              # TOML parsing and registry
-    │   └── resolve.go             # Template → Output conversion
-    ├── cli/
-    │   ├── list.go                # list command
-    │   ├── search.go              # search command
-    │   └── select.go              # select --non-interactive command
     ├── quick/
     │   └── quick.go               # Quick mode UI  (future)
     └── tui/
@@ -535,16 +563,25 @@ Suggest steps
   - `@file` reading, `@@url` stub
 - [x] Implement resolver (`Resolve`):
   - Template name lookup, duplicate detection
-  - Positional param → named param mapping (alphabetical order of param names)
+  - Positional param → named param mapping (TOML declaration order, falling back to alphabetical)
   - Auto-select extensions (`auto-select=true`), explicit extension validation
   - `requires` dependency checking (error if missing)
 - [x] 39 unit tests (parser, resolver, end-to-end parse+resolve)
 
-### Phase 4: Template + Selection → Output Conversion
+### Phase 4: Template + Selection → Output Conversion ✓
 Prompt: Implement the function to create output model from template defintion and input section to the output mode.
 Suggest steps
 - [x] Implementing the logic (compiler/compiler.go)
 - [x] hooking it to the CLI -- Add --debug to out the selection and the final output data model as well as the ordering/tiebreaking and template override decision.
+- [x] `--start` flag to chain into `codingbooth run --code <path>` after init
+- [x] Summary output showing selected templates, extensions, and parameters
+- [x] Stdin support (`--select -`) with heredoc
+- [x] Recipe file support (`--select @file`)
+- [x] Whitespace-tolerant DSL parsing (spaces around `+`, continuation lines)
+- [x] TOML declaration order for positional param mapping
+- [x] Real templates: go, python, java (with maven/gradle/jenv/vscode-ext extensions), claude-code
+- [x] Python extensions: uv, conda
+- [x] `uv--install.sh` setup script
 
 **Design notes (Phase 4):**
 - Package: `boothinit/compiler` — `Compile(resolved) → (*BoothOutput, error)`

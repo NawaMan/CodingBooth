@@ -3,6 +3,26 @@
 This file contains a list of changes for each released version.
 
 ## Unreleased
+
+### Added
+- `codingbooth init` command for guided project initialization
+  - `init new <path>` — generate `.booth/` configuration at a target path
+  - `init dryrun` — preview generated output without writing files
+  - `--select` DSL for template selection (inline, heredoc `-`, file `@recipe`, URL `@@url`)
+  - `--start` flag to immediately start the booth after init
+  - `--debug` flag to inspect resolved selection and compiled output
+  - `--templates-path` for local template development
+  - Selection summary printed after init (templates, extensions, parameters)
+  - Recipe file support for reusable selection definitions
+  - Whitespace-tolerant DSL: spaces around `+` and `+` continuation lines
+- Init templates: go, python, java, claude-code
+  - Go extensions: vscode-ext (auto), linter
+  - Python extensions: vscode-ext (auto), uv, conda
+  - Java extensions: vscode-ext (auto), maven, gradle, jenv
+- `uv--install.sh` — install Python packages via uv
+- Example recipes in `examples/recipes/`
+
+### Notes
 - Document that `--sandboxed` with `--dind` is **not supported** due to firewall bypass risk in the shared network namespace.
 
 ## v0.16.0

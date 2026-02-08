@@ -1,0 +1,355 @@
+# CodingBooth Template Authoring Guide
+
+**Purpose:** Guide for AI agents and developers to create init templates for `codingbooth init`.
+
+---
+
+## Overview
+
+Templates define what gets installed when a user runs `codingbooth init new <path> --select <templates>`. Each template produces Boothfile segments, config settings, and file references that are merged together into a `.booth/` directory.
+
+Templates live under the `templates/` directory, organized by category.
+
+---
+
+## Directory Structure
+
+```
+templates/
+├── languages/                    # Category
+│   ├── meta.toml                 # Category metadata
+│   ├── go/                       # Template (name = "go")
+│   │   ├── spec.toml             # Template spec (required)
+│   │   ├── Boothfile             # Boothfile segment (order 50)
+│   │   ├── linter/               # Extension (name = "linter")
+│   │   │   ├── spec.toml
+│   │   │   └── Boothfile
+│   │   └── vscode-ext/           # Extension (name = "vscode-ext")
+│   │       ├── spec.toml
+│   │       └── Boothfile
+│   ├── python/
+│   │   ├── spec.toml
+│   │   ├── Boothfile
+│   │   ├── uv/                   # Extension
+│   │   │   ├── spec.toml
+│   │   │   └── Boothfile
+│   │   └── vscode-ext/
+│   │       ├── spec.toml
+│   │       └── Boothfile
+│   └── java/
+│       ├── spec.toml
+│       ├── Boothfile
+│       ├── maven/                # Extension with its own params
+│       │   ├── spec.toml
+│       │   └── Boothfile
+│       └── vscode-ext/
+│           ├── spec.toml
+│           └── Boothfile
+└── tools/                        # Another category
+    ├── meta.toml
+    └── claude-code/
+        ├── spec.toml
+        └── Boothfile
+```
+
+**Key rules:**
+- Template name = folder name (must be unique across ALL categories)
+- Extensions are subdirectories of a template with their own `spec.toml`
+- Special subdirectories (`setups/`, `home/`, `home-seed/`) are for files, not extensions
+
+---
+
+## Category meta.toml
+
+Every category directory needs a `meta.toml`:
+
+```toml
+display-name = "Languages"
+order = 1
+```
+
+| Field          | Required | Description                          |
+|----------------|----------|--------------------------------------|
+| `display-name` | Yes      | Human-readable category name         |
+| `order`        | Yes      | Sort order (lower = first)           |
+
+---
+
+## Template spec.toml
+
+Every template and extension needs a `spec.toml`:
+
+```toml
+display-name = "Go"
+display-disc = "Go language toolchain"
+display-order = 10
+tags = ["go", "golang", "backend"]
+
+# Extension only: auto-select when parent is selected
+# auto-select = true
+
+# Config scalars (match-or-error if multiple templates set the same one)
+# variant = "codeserver"
+# port = "NEXT"
+# timezone = "America/Toronto"
+# dind = true
+
+# Config arrays (combined and deduped across templates)
+# cmds = ["start-notebook"]
+# build-args = ["--build-arg", "FOO=bar"]
+run-args = [
+    "-e", "GOPROXY=https://proxy.golang.org,direct",
+]
+
+# Dependencies: error if these templates are not also selected
+# requires = ["python"]
+
+# Parameters: positional mapping uses declaration order in this file
+[params.GO_VERSION]
+default = "1.25.7"
+suggests = ["1.25.7", "1.24.13", "1.23.12"]
+```
+
+### Spec Fields Reference
+
+| Field           | Type       | Description                                              |
+|-----------------|------------|----------------------------------------------------------|
+| `display-name`  | string     | Human-readable name                                      |
+| `display-disc`  | string     | Short description                                        |
+| `display-order` | int        | Sort order within category (lower = first)               |
+| `tags`          | []string   | Searchable tags                                          |
+| `auto-select`   | bool       | Extension only: auto-include when parent selected        |
+| `variant`       | string     | Config: booth variant                                    |
+| `port`          | string     | Config: port mapping                                     |
+| `timezone`      | string     | Config: timezone                                         |
+| `dind`          | bool       | Config: Docker-in-Docker                                 |
+| `cmds`          | []string   | Config: default commands                                 |
+| `build-args`    | []string   | Config: Docker build arguments                           |
+| `run-args`      | []string   | Config: Docker run arguments (flag-value pairs deduped)  |
+| `requires`      | []string   | Other template names that must also be selected          |
+
+### Parameters
+
+Parameters become `arg NAME=value` directives in the generated Boothfile.
+
+```toml
+[params.JDK_VERSION]
+default = "25"
+suggests = ["25", "21", "17", "11"]
+
+[params.JDK_VENDOR]
+default = "temurin"
+suggests = ["temurin", "corretto", "openjdk"]
+```
+
+**Positional mapping:** When a user writes `java:25,corretto`, the values are mapped to params in **declaration order** in spec.toml. In the example above, `25` maps to `JDK_VERSION` and `corretto` maps to `JDK_VENDOR`.
+
+**Naming:** Use explicit, prefixed names (e.g., `GO_VERSION`, `PYTHON_VERSION`) to avoid collisions across templates.
+
+---
+
+## Boothfile Segments
+
+Each template/extension can have Boothfile content that gets merged into the final `.booth/Boothfile`.
+
+**Single segment:**
+```
+Boothfile              # Gets order 50 (default)
+```
+
+**Multiple segments with explicit order:**
+```
+Boothfile--30          # Order 30 (runs earlier)
+Boothfile--80          # Order 80 (runs later)
+```
+
+Segments across all selected templates are sorted by order, with tiebreak by template name alphabetically.
+
+### Boothfile Content
+
+Use Boothfile commands. Reference params with `${PARAM_NAME}`:
+
+```
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+```
+
+**Common commands:**
+| Command                     | Description                          |
+|-----------------------------|--------------------------------------|
+| `setup <tool> [args...]`    | Install a tool/runtime (runs as root)|
+| `install <mgr> <pkg...>`   | Install packages (runs as coder)     |
+
+The `setup` command maps to `<tool>--setup.sh` scripts in `variants/base/setups/`.
+The `install` command maps to `<mgr>--install.sh` scripts.
+
+---
+
+## Startup Segments
+
+Same pattern as Boothfile but for startup scripts:
+
+```
+startup.sh             # Gets order 50
+startup--30.sh         # Order 30
+startup--60.sh         # Order 60
+```
+
+These are merged into `.booth/startup.sh` (runs once at container start as the `coder` user).
+
+---
+
+## File Directories
+
+Templates can include files to copy into the generated `.booth/`:
+
+| Directory    | Copied to          | Description                               |
+|--------------|--------------------|-------------------------------------------|
+| `setups/`    | `.booth/setups/`   | Custom setup/install scripts              |
+| `home/`      | `.booth/home/`     | Files copied to `~` (override mode)       |
+| `home-seed/` | `.booth/home-seed/`| Files copied to `~` (no-clobber mode)     |
+
+---
+
+## Extensions
+
+Extensions are subdirectories of a template with their own `spec.toml`:
+
+```
+go/
+├── spec.toml
+├── Boothfile
+├── linter/           # Extension
+│   ├── spec.toml     # Must have auto-select field
+│   └── Boothfile
+└── vscode-ext/       # Extension
+    ├── spec.toml
+    └── Boothfile
+```
+
+**auto-select behavior:**
+- `auto-select = true` — Included automatically when parent is selected (e.g., vscode-ext)
+- `auto-select = false` — Must be explicitly selected with `+` syntax (e.g., `java+maven`)
+
+Extensions share the parent's parameters and are listed as sub-items in the selection summary.
+
+---
+
+## Merge Rules
+
+When multiple templates are selected, their outputs merge:
+
+| Type                   | Strategy         | Example                        |
+|------------------------|------------------|--------------------------------|
+| Boothfile segments     | Concatenate      | Sorted by order, tiebreak name |
+| Startup segments       | Concatenate      | Sorted by order, tiebreak name |
+| Scalars (variant, etc) | Match-or-error   | Conflict = error               |
+| Arrays (run-args, etc) | Combine & dedup  | Flag-value pairs preserved     |
+| Files                  | Collect all      | From templates + extensions    |
+| Params                 | Error on conflict| Same key, different value      |
+
+---
+
+## Complete Examples
+
+### Simple Language Template
+
+**`templates/languages/rust/spec.toml`:**
+```toml
+display-name = "Rust"
+display-disc = "Rust language toolchain"
+display-order = 40
+tags = ["rust", "systems"]
+
+[params.RUST_VERSION]
+default = "stable"
+suggests = ["stable", "nightly", "1.82.0"]
+```
+
+**`templates/languages/rust/Boothfile`:**
+```
+setup rust ${RUST_VERSION}
+```
+
+### Template with Auto-select Extension
+
+**`templates/languages/rust/vscode-ext/spec.toml`:**
+```toml
+display-name = "Rust VS Code Extension"
+display-disc = "rust-analyzer for VS Code"
+display-order = 1
+auto-select = true
+tags = ["rust", "ide", "vscode"]
+```
+
+**`templates/languages/rust/vscode-ext/Boothfile`:**
+```
+setup rust-code-extension
+```
+
+### Tool Template with Credentials
+
+**`templates/tools/claude-code/spec.toml`:**
+```toml
+display-name = "Claude Code"
+display-disc = "Anthropic Claude Code AI assistant"
+display-order = 10
+tags = ["ai", "claude"]
+
+run-args = [
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
+]
+```
+
+### Template with Multiple Boothfile Segments
+
+Use segment ordering when a tool needs setup both early and late:
+
+**`templates/tools/claude-code/Boothfile--30`:**
+```
+setup nodejs 20
+```
+
+**`templates/tools/claude-code/Boothfile--80`:**
+```
+setup claude-code
+```
+
+This ensures Node.js (order 30) is installed before claude-code (order 80), regardless of what other templates add in between.
+
+---
+
+## Checklist for Creating a Template
+
+- [ ] Create category directory with `meta.toml` (if new category)
+- [ ] Create template directory with a unique name
+- [ ] Write `spec.toml` with display-name, display-disc, display-order, tags
+- [ ] Add params with explicit prefixed names (e.g., `TOOL_VERSION`)
+- [ ] Write Boothfile with `setup`/`install` commands referencing params
+- [ ] Add `run-args` for credentials or environment variables if needed
+- [ ] Create extensions with `auto-select` for common add-ons (e.g., vscode-ext)
+- [ ] Test with `codingbooth init dryrun --templates-path templates --select <name>`
+- [ ] Verify param positional mapping: `codingbooth init dryrun --select "<name>:value1,value2"`
+
+---
+
+## Testing
+
+```bash
+# Preview what a single template generates
+codingbooth init dryrun --templates-path templates --select "go"
+
+# Preview with params
+codingbooth init dryrun --templates-path templates --select "java:21,corretto"
+
+# Preview with extensions
+codingbooth init dryrun --templates-path templates --select "java:25+maven+gradle"
+
+# Preview multiple templates
+codingbooth init dryrun --templates-path templates --select "go/python/claude-code"
+
+# Generate for real
+codingbooth init new ./my-project --templates-path templates --select "go/python"
+```

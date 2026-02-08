@@ -38,6 +38,7 @@ This document describes the technical implementation of Boothfile parsing, compi
 │  │                                                                     │  │
 │  │  # Packages                                                         │  │
 │  │  install pip django requests                                        │  │
+│  │  install uv numpy pandas                                            │  │
 │  │                                                                     │  │
 │  │  env APP_ENV=production                                             │  │
 │  └─────────────────────────────────────────────────────────────────────┘  │
@@ -74,6 +75,7 @@ This document describes the technical implementation of Boothfile parsing, compi
 │  │                                                                     │  │
 │  │  # Packages                                                         │  │
 │  │  RUN pip--install.sh django requests                                │  │
+│  │  RUN uv--install.sh numpy pandas                                    │  │
 │  │                                                                     │  │
 │  │  ENV APP_ENV=production                                             │  │
 │  └─────────────────────────────────────────────────────────────────────┘  │
@@ -262,6 +264,7 @@ ParseResult
 | `run apt-get update`       | `RUN apt-get update`           |
 | `setup python 3.12`        | `RUN python--setup.sh 3.12`    |
 | `install pip django`       | `RUN pip--install.sh django`   |
+| `install uv requests`      | `RUN uv--install.sh requests`  |
 | `copy ./src /app`          | `COPY ./src /app`              |
 | `env FOO=bar`              | `ENV FOO=bar`                  |
 | `DOCKER HEALTHCHECK ...`   | `HEALTHCHECK ...`              |
