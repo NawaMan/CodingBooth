@@ -541,10 +541,20 @@ Suggest steps
 - [x] 39 unit tests (parser, resolver, end-to-end parse+resolve)
 
 ### Phase 4: Template + Selection → Output Conversion
-Prompt: Implement the function to create output model from template defintion and input section to the output mode. 
+Prompt: Implement the function to create output model from template defintion and input section to the output mode.
 Suggest steps
-- [ ] Implementing the logic (template_compiler.go)
+- [x] Implementing the logic (compiler/compiler.go)
 - [ ] hooking it to the CLI -- Add --debug to out the selection and the final output data model as well as the ordering/tiebreaking and template override decision.
+
+**Design notes (Phase 4):**
+- Package: `boothinit/compiler` — `Compile(resolved) → (*BoothOutput, error)`
+- Internal `collector` struct accumulates contributions from all templates + extensions
+- Extension source names use `"parent+ext"` format for error messages and segment tiebreaking
+- Segments: sorted by Order, tiebreak by source name (alphabetical), trailing newlines normalized
+- Params: emitted as `arg NAME=value` directives in Boothfile, sorted alphabetically, before segments
+- Scalars (variant, port, timezone, dind, cmds): match-or-error with source tracking for conflict messages
+- Arrays (run-args, build-args): combined and exact-string deduped preserving order
+- Files (setups, home, home-seed): collected from both templates and extensions
 
 ### Phase 5: Other CLI Commands
 Prompt: Implement the rest of the CLI sub items
