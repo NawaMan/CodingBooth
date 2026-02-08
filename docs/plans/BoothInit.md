@@ -502,21 +502,25 @@ Suggest steps
   - `WriteOutput` orchestrates all writes and enforces `.booth/` must not exist
 - [x] Test with hardcoded data (36 unit tests covering all serializers, file copy, and writer orchestration)
 
-### Phase 2: Template
+### Phase 2: Template ✓
 Prompt: Define data model of the templates and the code to deserialize them
 Suggest steps
-- [ ] Define Go structs for templates:
-  - `Category` (from meta.toml)
-  - `Template` (from spec.toml)
-  - `Param`
-  - `BoothfileSegments`
-  - `StartupSegments`
-  - `SetupFile`
-  - `File`
-  - `RunArg`
-- [ ] Create a set of templates based the model and ask to be verified manually.
-- [ ] Include ./templates/ for the local template location (priority)
-- [ ] Test with local defined template (define a few for testing)
+- [x] Define Go structs for templates:
+  - `TemplateRegistry` (holds categories and global name→template lookup)
+  - `Category` (from meta.toml: name, display-name, order)
+  - `Template` (from spec.toml: metadata, config values, params, segments, files, extensions)
+  - `Param` (default, suggests)
+  - `Segment` (order, content — for Boothfile and startup fragments)
+  - `FileRef` (source-path, rel-path — for setups, home, home-seed files)
+- [x] Implement `LoadRegistry(dir)` loader that reads the full directory tree:
+  - Categories sorted by `order`, templates sorted by `display-order`
+  - Segment files parsed: `Boothfile`/`Boothfile--N` and `startup.sh`/`startup--N.sh` (default order 50)
+  - Special subdirs collected: `setups/`, `home/`, `home-seed/`
+  - Extensions loaded from subdirs with `spec.toml` (no further nesting)
+  - Duplicate template names across categories detected and rejected
+  - Optional `*bool` for `dind` and `auto-select` (distinguishes unset vs false)
+- [x] Create test fixture templates (languages/go+linter, python, frameworks/django, tools/neovim, claude-code)
+- [x] Test with local defined template (39 unit tests covering parsing, loading, segments, files, extensions, edge cases)
 
 ### Phase 3: Selection
 Prompt: Define data model of the selection and the code construct the data from the CLI

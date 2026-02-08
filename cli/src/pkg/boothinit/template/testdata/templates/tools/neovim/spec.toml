@@ -1,0 +1,4 @@
+display-name = "Neovim"
+display-disc = "Neovim editor"
+display-order = 10
+tags = ["editor", "vim"]
