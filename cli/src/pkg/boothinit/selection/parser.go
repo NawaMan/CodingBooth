@@ -32,10 +32,27 @@ func ReadSelectInput(value string) (string, error) {
 }
 
 // NormalizeInput normalizes whitespace in selection input.
-// Newlines, tabs, and multiple spaces are collapsed and treated as
-// "/" separators, so heredoc and file inputs work the same as inline DSL.
+// Spaces around "+" are removed so "java + maven" becomes "java+maven".
+// Remaining whitespace (newlines, tabs, multiple spaces) is collapsed
+// and treated as "/" separators, so heredoc and file inputs work the
+// same as inline DSL.
 func NormalizeInput(input string) string {
-	return strings.Join(strings.Fields(input), "/")
+	// Remove spaces around "+" so extensions stay attached to their template
+	for strings.Contains(input, " +") || strings.Contains(input, "+ ") {
+		input = strings.ReplaceAll(input, " +", "+")
+		input = strings.ReplaceAll(input, "+ ", "+")
+	}
+	fields := strings.Fields(input)
+	// Join "+"-prefixed fields to the previous field (continuation lines)
+	var merged []string
+	for _, f := range fields {
+		if strings.HasPrefix(f, "+") && len(merged) > 0 {
+			merged[len(merged)-1] += f
+		} else {
+			merged = append(merged, f)
+		}
+	}
+	return strings.Join(merged, "/")
 }
 
 // ParseSelectDSL parses a --select DSL string into a ParsedSelection.

@@ -1,5 +1,8 @@
 display-name = "jenv"
 display-disc = "Java environment manager for multiple JDKs"
 display-order = 20
-tags = ["java", "version-manager"]
 auto-select = false
+tags = [
+    "java",
+    "version-manager"
+]

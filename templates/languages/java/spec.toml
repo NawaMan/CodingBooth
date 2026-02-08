@@ -8,8 +8,8 @@ tags = [
     "awesome"
 ]
 
-[params.JAVA_VERSION]
-default = "21"
+[params.JDK_VERSION]
+default = "25"
 suggests = [
     "25",
     "21",
@@ -18,7 +18,7 @@ suggests = [
     "8"
 ]
 
-[params.JAVA_VENDOR]
+[params.JDK_VENDOR]
 default = "temurin"
 suggests = [
     "temurin",

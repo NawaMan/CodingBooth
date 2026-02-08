@@ -39,6 +39,28 @@ func TestNormalizeInput_PreservesSlash(t *testing.T) {
 	assert.Equal(t, "go/python", NormalizeInput("go/python"))
 }
 
+func TestNormalizeInput_SpacesAroundPlus(t *testing.T) {
+	assert.Equal(t, "java+maven+gradle", NormalizeInput("java + maven + gradle"))
+}
+
+func TestNormalizeInput_SpacesAroundPlusWithParams(t *testing.T) {
+	assert.Equal(t, "java:25,openjdk+maven+vscode-ext", NormalizeInput("java:25,openjdk + maven + vscode-ext"))
+}
+
+func TestNormalizeInput_SpacesAroundPlusMultiline(t *testing.T) {
+	assert.Equal(t, "go/java:25+maven", NormalizeInput("go\njava:25 + maven"))
+}
+
+func TestNormalizeInput_PlusContinuationLine(t *testing.T) {
+	input := "go\njava:25,temurin\n  + maven"
+	assert.Equal(t, "go/java:25,temurin+maven", NormalizeInput(input))
+}
+
+func TestNormalizeInput_MultipleContinuationLines(t *testing.T) {
+	input := "java:25\n  + maven\n  + vscode-ext"
+	assert.Equal(t, "java:25+maven+vscode-ext", NormalizeInput(input))
+}
+
 // --- ParseSelectDSL ---
 
 func TestParseSelectDSL_SingleTemplate(t *testing.T) {

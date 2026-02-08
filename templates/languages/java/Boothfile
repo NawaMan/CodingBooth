@@ -1,1 +1,1 @@
-setup jdk ${JDK_VERSION}
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}

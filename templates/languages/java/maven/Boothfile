@@ -1,1 +1,1 @@
-setup mvn
+setup mvn ${MAVEN_VERSION}

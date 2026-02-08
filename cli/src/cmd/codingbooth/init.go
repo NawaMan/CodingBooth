@@ -7,7 +7,9 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/compiler"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
@@ -21,19 +23,19 @@ func runInit() {
 
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "Error: missing subcommand")
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth init <on <path>|dryrun> --select <dsl> --templates-path <dir>")
+		fmt.Fprintln(os.Stderr, "Usage: codingbooth init <new <path>|dryrun> --select <dsl> --templates-path <dir>")
 		os.Exit(1)
 	}
 
 	subCmd := args[0]
 	switch subCmd {
-	case "on":
-		runInitOn(args[1:])
+	case "new":
+		runInitNew(args[1:])
 	case "dryrun":
 		runInitDryrun(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "Error: unknown init subcommand: %s\n", subCmd)
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth init <on <path>|dryrun> --select <dsl> --templates-path <dir>")
+		fmt.Fprintln(os.Stderr, "Usage: codingbooth init <new <path>|dryrun> --select <dsl> --templates-path <dir>")
 		os.Exit(1)
 	}
 }
@@ -42,6 +44,7 @@ type initFlags struct {
 	selectDSL     string
 	templatesPath string
 	debug         bool
+	start         bool
 }
 
 func parseInitFlags(args []string) initFlags {
@@ -64,6 +67,8 @@ func parseInitFlags(args []string) initFlags {
 			i++
 		case "--debug":
 			flags.debug = true
+		case "--start":
+			flags.start = true
 		default:
 			fmt.Fprintf(os.Stderr, "Error: unknown flag: %s\n", args[i])
 			os.Exit(1)
@@ -72,11 +77,11 @@ func parseInitFlags(args []string) initFlags {
 	return flags
 }
 
-// runInitOn handles: codingbooth init on <path> --select <dsl> [--templates-path <dir>] [--debug]
-func runInitOn(args []string) {
+// runInitNew handles: codingbooth init new <path> --select <dsl> [--templates-path <dir>] [--debug]
+func runInitNew(args []string) {
 	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: 'init on' requires a target path")
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth init on <path> --select <dsl> --templates-path <dir>")
+		fmt.Fprintln(os.Stderr, "Error: 'init new' requires a target path")
+		fmt.Fprintln(os.Stderr, "Usage: codingbooth init new <path> --select <dsl> --templates-path <dir>")
 		os.Exit(1)
 	}
 
@@ -103,7 +108,16 @@ func runInitOn(args []string) {
 		os.Exit(1)
 	}
 
+	printSummary(resolved)
 	fmt.Printf("Initialized .booth/ in %s\n", targetPath)
+
+	if flags.start {
+		fmt.Printf("Starting booth in %s ...\n", targetPath)
+		runBooth(version, []string{os.Args[0], "--code", targetPath})
+		return
+	}
+
+	fmt.Printf("\nTo start:  cd %s && codingbooth\n", targetPath)
 }
 
 // runInitDryrun handles: codingbooth init dryrun --select <dsl> [--templates-path <dir>] [--debug]
@@ -131,8 +145,17 @@ func runInitDryrun(args []string) {
 
 // compileSelection runs the full pipeline: read input → parse → resolve → compile.
 func compileSelection(flags initFlags) (*output.BoothOutput, *selection.ResolvedSelection) {
-	// Read input (handles @file, @@url, plain DSL)
-	rawInput, err := selection.ReadSelectInput(flags.selectDSL)
+	// Read input (handles -, @file, @@url, plain DSL)
+	selectDSL := flags.selectDSL
+	if selectDSL == "-" {
+		data, err := io.ReadAll(os.Stdin)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error reading stdin: %v\n", err)
+			os.Exit(1)
+		}
+		selectDSL = string(data)
+	}
+	rawInput, err := selection.ReadSelectInput(selectDSL)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error reading selection: %v\n", err)
 		os.Exit(1)
@@ -236,4 +259,27 @@ func printDebug(resolved *selection.ResolvedSelection, out *output.BoothOutput) 
 	fmt.Println()
 
 	printDryrun(out)
+}
+
+// printSummary prints a human-readable summary of the resolved selection.
+func printSummary(resolved *selection.ResolvedSelection) {
+	for _, st := range resolved.Templates {
+		line := st.Template.DisplayName
+		if len(st.ParamValues) > 0 {
+			var params []string
+			for k, v := range st.ParamValues {
+				params = append(params, k+"="+v)
+			}
+			line += " (" + strings.Join(params, ", ") + ")"
+		}
+		fmt.Printf("  - %s\n", line)
+		for _, ext := range st.Extensions {
+			mode := ""
+			if ext.SelectMode == selection.AutoSelected {
+				mode = " (auto)"
+			}
+			fmt.Printf("    + %s%s\n", ext.Extension.DisplayName, mode)
+		}
+	}
+	fmt.Println()
 }
