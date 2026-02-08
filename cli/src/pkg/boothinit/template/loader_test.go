@@ -143,13 +143,94 @@ func TestParseInlineSegments_UnrecognizedKey(t *testing.T) {
 	assert.Contains(t, err.Error(), "unrecognized segment key")
 }
 
-func TestLoadRegistry_ConflictBoothfile(t *testing.T) {
+// --- mergeSegments ---
+
+func TestMergeSegments_BothEmpty(t *testing.T) {
+	merged, err := mergeSegments(nil, nil)
+	require.NoError(t, err)
+	assert.Empty(t, merged)
+}
+
+func TestMergeSegments_FileOnly(t *testing.T) {
+	file := []Segment{{Order: 30, Content: "file content"}}
+	merged, err := mergeSegments(file, nil)
+	require.NoError(t, err)
+	assert.Equal(t, file, merged)
+}
+
+func TestMergeSegments_InlineOnly(t *testing.T) {
+	inline := []Segment{{Order: 50, Content: "inline content"}}
+	merged, err := mergeSegments(nil, inline)
+	require.NoError(t, err)
+	assert.Equal(t, inline, merged)
+}
+
+func TestMergeSegments_DifferentOrders(t *testing.T) {
+	file := []Segment{{Order: 30, Content: "file early"}}
+	inline := []Segment{{Order: 80, Content: "inline late"}}
+	merged, err := mergeSegments(file, inline)
+	require.NoError(t, err)
+	require.Len(t, merged, 2)
+	assert.Equal(t, 30, merged[0].Order)
+	assert.Equal(t, "file early", merged[0].Content)
+	assert.Equal(t, 80, merged[1].Order)
+	assert.Equal(t, "inline late", merged[1].Content)
+}
+
+func TestMergeSegments_DuplicateOrderError(t *testing.T) {
+	file := []Segment{{Order: 50, Content: "file"}}
+	inline := []Segment{{Order: 50, Content: "inline"}}
+	_, err := mergeSegments(file, inline)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "duplicate segment order 50")
+}
+
+func TestMergeSegments_MultipleSegmentsSorted(t *testing.T) {
+	file := []Segment{{Order: 60, Content: "f60"}, {Order: 20, Content: "f20"}}
+	inline := []Segment{{Order: 40, Content: "i40"}, {Order: 10, Content: "i10"}}
+	merged, err := mergeSegments(file, inline)
+	require.NoError(t, err)
+	require.Len(t, merged, 4)
+	assert.Equal(t, 10, merged[0].Order)
+	assert.Equal(t, 20, merged[1].Order)
+	assert.Equal(t, 40, merged[2].Order)
+	assert.Equal(t, 60, merged[3].Order)
+}
+
+// --- Mixed source loading (file + inline segments with different orders) ---
+
+func TestLoadRegistry_MixedBoothfileSegments(t *testing.T) {
+	tmpDir := t.TempDir()
+	catDir := filepath.Join(tmpDir, "mycat")
+	tmplDir := filepath.Join(catDir, "mixed")
+	require.NoError(t, os.MkdirAll(tmplDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+		[]byte("display-name = \"MyCat\"\norder = 1\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+		[]byte("display-name = \"Mixed\"\ndisplay-order = 1\n\n[segments]\n\"Boothfile--10\" = \"inline early\"\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "Boothfile--30"),
+		[]byte("file later\n"), 0644))
+
+	registry, err := LoadRegistry(tmpDir)
+	require.NoError(t, err)
+
+	tmpl := registry.ByName["mixed"]
+	require.NotNil(t, tmpl)
+	require.Len(t, tmpl.BoothfileSegments, 2)
+	assert.Equal(t, 10, tmpl.BoothfileSegments[0].Order)
+	assert.Equal(t, "inline early", tmpl.BoothfileSegments[0].Content)
+	assert.Equal(t, 30, tmpl.BoothfileSegments[1].Order)
+	assert.Equal(t, "file later\n", tmpl.BoothfileSegments[1].Content)
+}
+
+func TestLoadRegistry_DuplicateBoothfileOrderError(t *testing.T) {
 	tmpDir := t.TempDir()
 	catDir := filepath.Join(tmpDir, "mycat")
 	tmplDir := filepath.Join(catDir, "conflict")
 	require.NoError(t, os.MkdirAll(tmplDir, 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
 		[]byte("display-name = \"MyCat\"\norder = 1\n"), 0644))
+	// Both inline and file use default order 50
 	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
 		[]byte("display-name = \"Conflict\"\ndisplay-order = 1\n\n[segments]\nBoothfile = \"setup go\"\n"), 0644))
 	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "Boothfile"),
@@ -157,7 +238,29 @@ func TestLoadRegistry_ConflictBoothfile(t *testing.T) {
 
 	_, err := LoadRegistry(tmpDir)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "both file-based and inline Boothfile")
+	assert.Contains(t, err.Error(), "duplicate segment order 50")
+}
+
+func TestLoadRegistry_MixedStartupSegments(t *testing.T) {
+	tmpDir := t.TempDir()
+	catDir := filepath.Join(tmpDir, "mycat")
+	tmplDir := filepath.Join(catDir, "mixed-startup")
+	require.NoError(t, os.MkdirAll(tmplDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+		[]byte("display-name = \"MyCat\"\norder = 1\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+		[]byte("display-name = \"MixedStartup\"\ndisplay-order = 1\n\n[segments]\n\"startup--20.sh\" = \"echo inline\"\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "startup--70.sh"),
+		[]byte("echo file\n"), 0644))
+
+	registry, err := LoadRegistry(tmpDir)
+	require.NoError(t, err)
+
+	tmpl := registry.ByName["mixed-startup"]
+	require.NotNil(t, tmpl)
+	require.Len(t, tmpl.StartupSegments, 2)
+	assert.Equal(t, 20, tmpl.StartupSegments[0].Order)
+	assert.Equal(t, 70, tmpl.StartupSegments[1].Order)
 }
 
 // --- LoadRegistry ---

@@ -1,0 +1,14 @@
+display-name = "Rust VS Code Extension"
+display-disc = "rust-analyzer for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "rust",
+    "ide",
+    "vscode",
+]
+
+[segments]
+Boothfile = """
+setup rust-code-extension
+"""

@@ -220,7 +220,7 @@ startup.sh             # Gets order 50
 startup--10.sh         # Order 10
 ```
 
-**Important:** A template cannot mix inline and file-based segments of the same type. If `[segments]` defines a Boothfile key, there must be no Boothfile file in the same directory (and vice versa). Mixing causes a load error.
+**Mixing sources:** A template can use both inline and file-based segments of the same type, as long as no two segments share the same order number. For example, an inline `"Boothfile--10"` and a file `Boothfile--30` will be merged together. However, an inline `Boothfile` (order 50) and a file `Boothfile` (also order 50) will cause a duplicate order error.
 
 ---
 
@@ -366,6 +366,8 @@ This ensures Node.js (order 30) is installed before my-tool (order 80), regardle
 ---
 
 ## Testing
+
+**Tip:** Set `export CB_TEMPLATES_PATH=templates` to avoid repeating `--templates-path` on every command.
 
 ```bash
 # Preview what a single template generates
