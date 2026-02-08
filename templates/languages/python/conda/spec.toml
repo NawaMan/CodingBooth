@@ -1,0 +1,9 @@
+display-name = "Conda"
+display-disc = "Conda package and environment manager"
+display-order = 11
+auto-select = false
+tags = [
+    "python",
+    "data",
+    "packages"
+]
