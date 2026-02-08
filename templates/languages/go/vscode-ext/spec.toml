@@ -1,5 +1,9 @@
 display-name = "Go VS Code Extension"
 display-disc = "Go language support for VS Code"
 display-order = 2
-tags = ["vscode", "ide"]
 auto-select = true
+tags = [
+    "go",
+    "ide",
+    "vscode",
+]

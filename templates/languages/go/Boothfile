@@ -1,2 +1,3 @@
-setup go ${GO_VERSION}
-install go golang.org/x/tools/gopls@latest github.com/go-delve/delve/cmd/dlv@latest
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
