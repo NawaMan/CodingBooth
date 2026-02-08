@@ -544,7 +544,7 @@ Suggest steps
 Prompt: Implement the function to create output model from template defintion and input section to the output mode.
 Suggest steps
 - [x] Implementing the logic (compiler/compiler.go)
-- [ ] hooking it to the CLI -- Add --debug to out the selection and the final output data model as well as the ordering/tiebreaking and template override decision.
+- [x] hooking it to the CLI -- Add --debug to out the selection and the final output data model as well as the ordering/tiebreaking and template override decision.
 
 **Design notes (Phase 4):**
 - Package: `boothinit/compiler` — `Compile(resolved) → (*BoothOutput, error)`

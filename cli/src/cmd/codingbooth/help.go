@@ -30,6 +30,7 @@ USAGE:
   %s remove [--name <name>] [--force]     (remove booth container(s))
   %s prune [--yes]                        (remove stopped booth containers)
   %s example <subcommand>                 (manage examples)
+  %s init <subcommand> [options]           (initialize a new .booth/ project)
   %s emit-dockerfile [options]            (compile Boothfile to Dockerfile)
   %s print-default-allowlist.txt          (print built-in egress allowlist)
 
@@ -126,6 +127,7 @@ EXAMPLES:
 `,
 		scriptName,
 		version,
+		scriptName,
 		scriptName,
 		scriptName,
 		scriptName,
