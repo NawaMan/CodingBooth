@@ -1,0 +1,10 @@
+display-name = "Python"
+display-disc = "Python language with pip"
+display-order = 20
+tags = ["python", "scripting"]
+
+run-args = ["-e", "PYTHONDONTWRITEBYTECODE=1"]
+
+[params.PYTHON_VERSION]
+default = "3.12"
+suggests = ["3.11", "3.12", "3.13"]

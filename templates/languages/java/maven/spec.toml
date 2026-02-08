@@ -1,0 +1,5 @@
+display-name = "Maven"
+display-disc = "Apache Maven build tool"
+display-order = 10
+tags = ["build", "maven"]
+auto-select = false

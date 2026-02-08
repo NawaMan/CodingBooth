@@ -1,0 +1,10 @@
+display-name = "Go"
+display-disc = "Go language toolchain"
+display-order = 10
+tags = ["golang", "backend"]
+
+run-args = ["-e", "GOPROXY=https://proxy.golang.org,direct"]
+
+[params.GO_VERSION]
+default = "1.24"
+suggests = ["1.22", "1.23", "1.24"]

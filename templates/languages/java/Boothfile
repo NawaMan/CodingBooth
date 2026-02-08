@@ -1,0 +1,2 @@
+setup jdk ${JDK_VERSION}
+setup jenv
