@@ -19,42 +19,42 @@ templates/
 ├── languages/                    # Category
 │   ├── meta.toml                 # Category metadata
 │   ├── go/                       # Template (name = "go")
-│   │   ├── spec.toml             # Template spec (required)
+│   │   ├── template.toml             # Template spec (required)
 │   │   ├── Boothfile             # Boothfile segment (order 50)
 │   │   ├── linter/               # Extension (name = "linter")
-│   │   │   ├── spec.toml
+│   │   │   ├── template.toml
 │   │   │   └── Boothfile
 │   │   └── vscode-ext/           # Extension (name = "vscode-ext")
-│   │       ├── spec.toml
+│   │       ├── template.toml
 │   │       └── Boothfile
 │   ├── python/
-│   │   ├── spec.toml
+│   │   ├── template.toml
 │   │   ├── Boothfile
 │   │   ├── uv/                   # Extension
-│   │   │   ├── spec.toml
+│   │   │   ├── template.toml
 │   │   │   └── Boothfile
 │   │   └── vscode-ext/
-│   │       ├── spec.toml
+│   │       ├── template.toml
 │   │       └── Boothfile
 │   └── java/
-│       ├── spec.toml
+│       ├── template.toml
 │       ├── Boothfile
 │       ├── maven/                # Extension with its own params
-│       │   ├── spec.toml
+│       │   ├── template.toml
 │       │   └── Boothfile
 │       └── vscode-ext/
-│           ├── spec.toml
+│           ├── template.toml
 │           └── Boothfile
 └── tools/                        # Another category
     ├── meta.toml
     └── claude-code/
-        ├── spec.toml
+        ├── template.toml
         └── Boothfile
 ```
 
 **Key rules:**
 - Template name = folder name (must be unique across ALL categories)
-- Extensions are subdirectories of a template with their own `spec.toml`
+- Extensions are subdirectories of a template with their own `template.toml`
 - Special subdirectories (`setups/`, `home/`, `home-seed/`) are for files, not extensions
 
 ---
@@ -75,9 +75,9 @@ order = 1
 
 ---
 
-## Template spec.toml
+## Template template.toml
 
-Every template and extension needs a `spec.toml`:
+Every template and extension needs a `template.toml`:
 
 ```toml
 display-name = "Go"
@@ -142,7 +142,7 @@ default = "temurin"
 suggests = ["temurin", "corretto", "openjdk"]
 ```
 
-**Positional mapping:** When a user writes `java:25,corretto`, the values are mapped to params in **declaration order** in spec.toml. In the example above, `25` maps to `JDK_VERSION` and `corretto` maps to `JDK_VENDOR`.
+**Positional mapping:** When a user writes `java:25,corretto`, the values are mapped to params in **declaration order** in template.toml. In the example above, `25` maps to `JDK_VERSION` and `corretto` maps to `JDK_VENDOR`.
 
 **Naming:** Use explicit, prefixed names (e.g., `GO_VERSION`, `PYTHON_VERSION`) to avoid collisions across templates.
 
@@ -214,17 +214,17 @@ Templates can include files to copy into the generated `.booth/`:
 
 ## Extensions
 
-Extensions are subdirectories of a template with their own `spec.toml`:
+Extensions are subdirectories of a template with their own `template.toml`:
 
 ```
 go/
-├── spec.toml
+├── template.toml
 ├── Boothfile
 ├── linter/           # Extension
-│   ├── spec.toml     # Must have auto-select field
+│   ├── template.toml     # Must have auto-select field
 │   └── Boothfile
 └── vscode-ext/       # Extension
-    ├── spec.toml
+    ├── template.toml
     └── Boothfile
 ```
 
@@ -255,7 +255,7 @@ When multiple templates are selected, their outputs merge:
 
 ### Simple Language Template
 
-**`templates/languages/rust/spec.toml`:**
+**`templates/languages/rust/template.toml`:**
 ```toml
 display-name = "Rust"
 display-disc = "Rust language toolchain"
@@ -274,7 +274,7 @@ setup rust ${RUST_VERSION}
 
 ### Template with Auto-select Extension
 
-**`templates/languages/rust/vscode-ext/spec.toml`:**
+**`templates/languages/rust/vscode-ext/template.toml`:**
 ```toml
 display-name = "Rust VS Code Extension"
 display-disc = "rust-analyzer for VS Code"
@@ -290,7 +290,7 @@ setup rust-code-extension
 
 ### Tool Template with Credentials
 
-**`templates/tools/claude-code/spec.toml`:**
+**`templates/tools/claude-code/template.toml`:**
 ```toml
 display-name = "Claude Code"
 display-disc = "Anthropic Claude Code AI assistant"
@@ -325,7 +325,7 @@ This ensures Node.js (order 30) is installed before claude-code (order 80), rega
 
 - [ ] Create category directory with `meta.toml` (if new category)
 - [ ] Create template directory with a unique name
-- [ ] Write `spec.toml` with display-name, display-disc, display-order, tags
+- [ ] Write `template.toml` with display-name, display-disc, display-order, tags
 - [ ] Add params with explicit prefixed names (e.g., `TOOL_VERSION`)
 - [ ] Write Boothfile with `setup`/`install` commands referencing params
 - [ ] Add `run-args` for credentials or environment variables if needed

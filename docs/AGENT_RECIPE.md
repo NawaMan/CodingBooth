@@ -42,7 +42,7 @@ python:3.12
 java:21,corretto
 ```
 
-Parameters are mapped positionally based on the declaration order in the template's `spec.toml`. For example, Java declares `JDK_VERSION` then `JDK_VENDOR`, so `java:21,corretto` means `JDK_VERSION=21` and `JDK_VENDOR=corretto`.
+Parameters are mapped positionally based on the declaration order in the template's `template.toml`. For example, Java declares `JDK_VERSION` then `JDK_VENDOR`, so `java:21,corretto` means `JDK_VERSION=21` and `JDK_VENDOR=corretto`.
 
 Omitted parameters use their defaults.
 

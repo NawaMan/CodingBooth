@@ -62,7 +62,7 @@ func Resolve(parsed *ParsedSelection, registry *tmpl.TemplateRegistry) (*Resolve
 }
 
 // resolveParams maps positional CLI params to named template params.
-// Param names follow declaration order from spec.toml, falling back to
+// Param names follow declaration order from template.toml, falling back to
 // alphabetical order if declaration order is not available.
 // Unspecified params use their default values.
 func resolveParams(t *tmpl.Template, positional []string) (map[string]string, error) {
@@ -123,7 +123,7 @@ func resolveExtensions(t *tmpl.Template, explicit []string) ([]SelectedExtension
 	return result, nil
 }
 
-// orderedParamNames returns param names in declaration order from spec.toml.
+// orderedParamNames returns param names in declaration order from template.toml.
 // Falls back to alphabetical order if ParamOrder is not set.
 func orderedParamNames(t *tmpl.Template) []string {
 	if len(t.ParamOrder) > 0 {
