@@ -147,6 +147,45 @@ For truly enforced network restrictions, future versions may explore:
 
 ## Usage
 
+### Example allowlist template
+
+There is a ready-made allowlist template at `docs/implementations/example-allowlist.txt`. Use it as a starting point and customize it for your stack.
+
+**For sandbox allowlists:**
+
+```bash
+mkdir -p .booth/sandbox
+cp docs/implementations/example-allowlist.txt .booth/sandbox/allowlist.txt
+```
+
+You can also print the built-in default allowlist directly from the CLI:
+
+```bash
+codingbooth print-default-allowlist.txt > .booth/sandbox/allowlist.txt
+```
+
+When `--sandboxed` is enabled and no policy files are present, CodingBooth will
+materialize this embedded default into `.booth/sandbox/allowlist.txt`.
+
+**Optional extra allowlist**
+
+You can append extra domains via `.booth/config.toml`:
+```toml
+sandbox-allowlist = [
+  "example.com",
+  "registry.npmjs.org"
+]
+```
+This list is merged into the active allowlist (default or file-based). It cannot be used with `sandbox-policy-file`.
+
+**For tinyproxy (in-container) allowlists:**
+
+```bash
+cp docs/implementations/example-allowlist.txt .booth/home/.network-whitelist
+```
+
+Then add or remove domains as needed for your project.
+
 ### Check Status
 
 ```bash
@@ -384,6 +423,11 @@ curl -I https://example.com   # Blocked (not whitelisted)
 unset HTTP_PROXY HTTPS_PROXY
 curl https://google.com       # Still blocked by iptables
 ```
+
+For the newer sidecar-based egress sandbox flow (`--sandboxed`, Envoy + iptables), see `examples/workspaces/firewall-example/`.
+
+**Security note (2026-02-06):** `--sandboxed` with `--dind` is **not supported**.  
+Testing shows that a user with DinD access can start a privileged container in the shared network namespace and flush nftables, bypassing the egress firewall. Use `--sandboxed` **without** `--dind` until further research.
 
 ---
 

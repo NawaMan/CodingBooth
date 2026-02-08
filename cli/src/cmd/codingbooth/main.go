@@ -52,6 +52,9 @@ func main() {
 		case "emit-dockerfile":
 			emitDockerfile()
 			return
+		case "print-default-allowlist.txt":
+			printDefaultAllowlist()
+			return
 		default:
 			// If it starts with --, treat as run with options
 			if len(command) > 0 && command[0] == '-' {

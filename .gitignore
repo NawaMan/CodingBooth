@@ -82,6 +82,8 @@ tests/basic/test*.sh.log
 tests/basic/test--dockerfile
 tests/dryrun/test--.env
 tests/dryrun/test--config.sh
+tests/dryrun/test--config.toml
+**/.Dockerfile.generated
 
 playground/
 
@@ -121,3 +123,5 @@ variants/base/_stage/
 
 !/build/
 /codingbooth
+**/booth
+!/booth

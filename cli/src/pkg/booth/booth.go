@@ -84,14 +84,17 @@ func (booth *Booth) runAsCommand() error {
 	// Execute the docker run command
 	err := docker.Docker(flags, "run", args)
 
-	// Cleanup DinD resources if enabled
+	// Cleanup sandbox/DinD sidecars after command exits.
+	cleanupFlags := flags
+	cleanupFlags.Silent = true
+	cleanupFlags.Verbose = false
+	cleanupSandboxResources(booth.ctx, &cleanupFlags)
 	if booth.ctx.Dind() {
-		flags.Silent = true
 		dindName := getDindName(booth.ctx)
 		dindNet := getDindNet(booth.ctx)
-		_ = docker.Docker(flags, "stop", ilist.NewList(ilist.NewList(dindName)))
+		_ = docker.Docker(cleanupFlags, "stop", ilist.NewList(ilist.NewList(dindName)))
 		if booth.ctx.CreatedDindNet() {
-			_ = docker.Docker(flags, "network", ilist.NewList(ilist.NewList("rm", dindNet)))
+			_ = docker.Docker(cleanupFlags, "network", ilist.NewList(ilist.NewList("rm", dindNet)))
 		}
 	}
 
@@ -163,6 +166,15 @@ func (booth *Booth) runAsDaemon() error {
 	err := docker.Docker(flags, "run", args)
 
 	// If DinD is enabled in daemon mode, inform user how to stop it
+	if booth.ctx.Sandbox() {
+		fmt.Printf("🛡️  Sandbox sidecar running: %s\n", getSandboxProxyName(booth.ctx))
+		if booth.ctx.Dind() {
+			fmt.Printf("   Reusing DinD netns owner: %s\n", getDindName(booth.ctx))
+		} else {
+			fmt.Printf("   Netns owner sidecar: %s (network: %s)\n", getSandboxNetnsName(booth.ctx), getSandboxNet(booth.ctx))
+		}
+	}
+
 	if booth.ctx.Dind() {
 		dindName := getDindName(booth.ctx)
 		dindNet := getDindNet(booth.ctx)
@@ -212,14 +224,17 @@ func (booth *Booth) runAsForeground() error {
 	// Execute the docker run command
 	err := docker.Docker(flags, "run", args)
 
-	// Cleanup DinD resources if enabled
+	// Cleanup sandbox/DinD sidecars after foreground exits.
+	cleanupFlags := flags
+	cleanupFlags.Silent = true
+	cleanupFlags.Verbose = false
+	cleanupSandboxResources(booth.ctx, &cleanupFlags)
 	if booth.ctx.Dind() {
 		dindName := getDindName(booth.ctx)
 		dindNet := getDindNet(booth.ctx)
-		flags.Silent = true
-		_ = docker.Docker(flags, "stop", ilist.NewList(ilist.NewList(dindName)))
+		_ = docker.Docker(cleanupFlags, "stop", ilist.NewList(ilist.NewList(dindName)))
 		if booth.ctx.CreatedDindNet() {
-			_ = docker.Docker(flags, "network", ilist.NewList(ilist.NewList("rm", dindNet)))
+			_ = docker.Docker(cleanupFlags, "network", ilist.NewList(ilist.NewList("rm", dindNet)))
 		}
 	}
 
@@ -265,6 +280,10 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-v", codePath+":/home/coder/code"))
 	builder.CommonArgs.Append(ilist.NewList[string]("-w", "/home/coder/code"))
 
+	if !ctx.WritableBooth() {
+		addReadOnlyBoothDir(builder, codePath)
+	}
+
 	// Lifecycle management labels used by list/start/stop/restart/remove commands.
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.managed=true"))
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.project="+ctx.ProjectName()))
@@ -274,8 +293,8 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.version="+ctx.CbVersion()))
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", fmt.Sprintf("cb.keep-alive=%t", ctx.KeepAlive())))
 
-	// Skip port mapping when using DinD (port is exposed on DinD container instead)
-	if !ctx.Dind() {
+	// Skip port mapping when using shared network namespace sidecars.
+	if !ctx.Dind() && !ctx.Sandbox() {
 		builder.CommonArgs.Append(ilist.NewList[string]("-p", fmt.Sprintf("%d:10000", ctx.PortNumber())))
 	}
 
@@ -302,6 +321,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_SILENCE_BUILD=%t", ctx.SilenceBuild())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_PULL=%t", ctx.Pull())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_DIND=%t", ctx.Dind())))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_SANDBOX=%t", ctx.Sandbox())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_DOCKERFILE="+ctx.Dockerfile()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_PROJECT_NAME="+ctx.ProjectName()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_TIMEZONE="+ctx.Timezone()))
@@ -331,6 +351,18 @@ func normalizeCodePath(path string) string {
 		return path
 	}
 	return absPath
+}
+
+func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
+	if codePath == "" {
+		return
+	}
+	hostPath := filepath.Join(codePath, ".booth")
+	info, err := os.Stat(hostPath)
+	if err != nil || !info.IsDir() {
+		return
+	}
+	builder.CommonArgs.Append(ilist.NewList[string]("-v", hostPath+":/home/coder/code/.booth:ro"))
 }
 
 func flattenArgs(argsList ilist.List[ilist.List[string]]) []string {

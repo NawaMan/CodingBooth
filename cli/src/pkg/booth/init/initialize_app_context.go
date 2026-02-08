@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/defaults"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
@@ -56,6 +57,7 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	readFromEnvVars(boundary, &context)
 	readFromToml(boundary, &context, configExplicitlySet)
 	readFromArgs(boundary, &context, ilist.NewListFromSlice(args.Slice()[1:]))
+	validateConfig(&context.Config)
 
 	if context.Config.ProjectName == "" {
 		context.Config.ProjectName = getProjectName(context.Config.Code.ValueOr("."))
@@ -96,6 +98,152 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	}
 
 	return context.Build()
+}
+
+func validateConfig(config *appctx.AppConfig) {
+	if err := validateEgressConfig(config); err != nil {
+		panic(err)
+	}
+}
+
+const (
+	defaultSandboxAllowlistPath = ".booth/sandbox/allowlist.txt"
+	defaultSandboxPolicyPath    = ".booth/sandbox/envoy.yaml"
+)
+
+func validateEgressConfig(config *appctx.AppConfig) error {
+	// --sandboxed is a shorthand for egress guardrails.
+	if config.Sandbox {
+		if config.Egress.Mode == "" {
+			config.Egress.Mode = "envoy"
+		}
+		if config.Egress.Enforcement == "" {
+			config.Egress.Enforcement = "iptables"
+		}
+		if config.Egress.Default == "" {
+			config.Egress.Default = "deny"
+		}
+	}
+
+	config.Egress.Mode = strings.ToLower(strings.TrimSpace(config.Egress.Mode))
+	config.Egress.Enforcement = strings.ToLower(strings.TrimSpace(config.Egress.Enforcement))
+	config.Egress.Default = strings.ToLower(strings.TrimSpace(config.Egress.Default))
+	config.Egress.AllowlistFile = strings.TrimSpace(config.Egress.AllowlistFile)
+	config.Egress.PolicyFile = strings.TrimSpace(config.Egress.PolicyFile)
+	config.SandboxAllowlistFile = strings.TrimSpace(config.SandboxAllowlistFile)
+	config.SandboxPolicyFile = strings.TrimSpace(config.SandboxPolicyFile)
+	for i := range config.SandboxAllowlist {
+		config.SandboxAllowlist[i] = strings.TrimSpace(config.SandboxAllowlist[i])
+	}
+
+	if err := applySandboxPolicyDefaults(config); err != nil {
+		return err
+	}
+
+	if config.Egress.Mode != "" &&
+		config.Egress.Mode != "none" &&
+		config.Egress.Mode != "envoy" &&
+		config.Egress.Mode != "squid" &&
+		config.Egress.Mode != "tinyproxy" {
+		return fmt.Errorf("invalid egress.mode %q (supported: none, envoy, squid, tinyproxy)", config.Egress.Mode)
+	}
+
+	if config.Egress.Enforcement != "" &&
+		config.Egress.Enforcement != "none" &&
+		config.Egress.Enforcement != "iptables" &&
+		config.Egress.Enforcement != "nftables" {
+		return fmt.Errorf("invalid egress.enforcement %q (supported: none, iptables, nftables)", config.Egress.Enforcement)
+	}
+
+	if config.Egress.Default != "" &&
+		config.Egress.Default != "deny" &&
+		config.Egress.Default != "allow" {
+		return fmt.Errorf("invalid egress.default %q (supported: deny, allow)", config.Egress.Default)
+	}
+
+	if config.Egress.AllowlistFile != "" || config.Egress.PolicyFile != "" {
+		return fmt.Errorf("egress.* is no longer supported; use sandbox-allowlist-file or sandbox-policy-file")
+	}
+
+	if config.SandboxPolicyFile != "" && len(config.SandboxAllowlist) > 0 {
+		return fmt.Errorf("sandbox-allowlist cannot be used with sandbox-policy-file")
+	}
+
+	if config.SandboxAllowlistFile != "" && config.SandboxPolicyFile != "" {
+		return fmt.Errorf("sandbox-allowlist-file and sandbox-policy-file are mutually exclusive")
+	}
+
+	if config.SandboxAllowlistFile != "" {
+		if err := ensureRegularFile(resolvePathFromCodeDir(config.Code.ValueOr(""), config.SandboxAllowlistFile)); err != nil {
+			return fmt.Errorf("invalid sandbox-allowlist-file: %w", err)
+		}
+	}
+
+	if config.SandboxPolicyFile != "" {
+		if err := ensureRegularFile(resolvePathFromCodeDir(config.Code.ValueOr(""), config.SandboxPolicyFile)); err != nil {
+			return fmt.Errorf("invalid sandbox-policy-file: %w", err)
+		}
+	}
+
+	return nil
+}
+
+func applySandboxPolicyDefaults(config *appctx.AppConfig) error {
+	if !config.Sandbox {
+		return nil
+	}
+	if config.SandboxAllowlistFile != "" || config.SandboxPolicyFile != "" {
+		return nil
+	}
+
+	codeDir := config.Code.ValueOr("")
+	if codeDir == "" {
+		return fmt.Errorf("sandbox requires a code directory to resolve egress policy")
+	}
+
+	allowlistPath := filepath.Join(codeDir, defaultSandboxAllowlistPath)
+	policyPath := filepath.Join(codeDir, defaultSandboxPolicyPath)
+	allowlistExists := fileExists(allowlistPath)
+	policyExists := fileExists(policyPath)
+
+	if allowlistExists && policyExists {
+		return fmt.Errorf("both %q and %q exist; choose only one", defaultSandboxAllowlistPath, defaultSandboxPolicyPath)
+	}
+	if allowlistExists {
+		config.SandboxAllowlistFile = defaultSandboxAllowlistPath
+		return nil
+	}
+	if policyExists {
+		config.SandboxPolicyFile = defaultSandboxPolicyPath
+		return nil
+	}
+
+	if err := os.MkdirAll(filepath.Dir(allowlistPath), 0o755); err != nil {
+		return fmt.Errorf("failed to create default allowlist dir: %w", err)
+	}
+	if err := os.WriteFile(allowlistPath, []byte(defaults.ExampleAllowlist), 0o644); err != nil {
+		return fmt.Errorf("failed to write default allowlist: %w", err)
+	}
+	config.SandboxAllowlistFile = defaultSandboxAllowlistPath
+	return nil
+}
+
+func resolvePathFromCodeDir(codeDir, path string) string {
+	if filepath.IsAbs(path) || codeDir == "" {
+		return path
+	}
+	return filepath.Join(codeDir, path)
+}
+
+func ensureRegularFile(path string) error {
+	info, err := os.Stat(path)
+	if err != nil {
+		return fmt.Errorf("file %q does not exist", path)
+	}
+	if info.IsDir() {
+		return fmt.Errorf("%q is a directory", path)
+	}
+	return nil
 }
 
 // getProjectName extracts a sanitized project name from the code path
@@ -210,12 +358,24 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.Dind = true
 			i++
 
+		case "--sandboxed":
+			cfg.Sandbox = true
+			i++
+		case "--sandbox":
+			// Backward compatibility alias.
+			cfg.Sandbox = true
+			i++
+
 		case "--pull":
 			cfg.Pull = true
 			i++
 
 		case "--silence-build":
 			cfg.SilenceBuild = true
+			i++
+
+		case "--writable-booth":
+			cfg.WritableBooth = true
 			i++
 
 		// Image selection

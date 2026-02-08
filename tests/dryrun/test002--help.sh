@@ -17,8 +17,8 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     CURRENT_PATH="$(pwd -W)"
 fi
 
-# Just check the USAGE section (first 16 lines) - the full help is ~98 lines
-ACTUAL=$(run_coding_booth --help | head -16)
+# Just check the USAGE section (first 17 lines) - the full help is ~98 lines
+ACTUAL=$(run_coding_booth --help | head -17)
 
 HERE="$PWD"
 VERSION="$(cat ../../version.txt)"
@@ -38,7 +38,8 @@ USAGE:
   codingbooth remove [--name <name>] [--force]     (remove booth container(s))
   codingbooth prune [--yes]                        (remove stopped booth containers)
   codingbooth example <subcommand>                 (manage examples)
-  codingbooth emit-dockerfile [options]            (compile Boothfile to Dockerfile)"
+  codingbooth emit-dockerfile [options]            (compile Boothfile to Dockerfile)
+  codingbooth print-default-allowlist.txt          (print built-in egress allowlist)"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Help output matches expected"

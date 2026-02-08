@@ -113,6 +113,11 @@ CLAUDE_JSON="$HOME/.claude.json"
 
 mkdir -p "$CLAUDE_DIR"
 
+mkdir -p "/home/coder/.local/bin"
+if [[ ! -e "/home/coder/.local/bin/claude" ]]; then
+    ln -s /usr/local/bin/claude "/home/coder/.local/bin/claude"
+fi
+
 # Copy .claude.json config file (contains hasCompletedOnboarding, theme, etc.)
 # This must happen BEFORE claude runs to skip onboarding wizard
 if [[ -f "$CB_SEED_JSON" && ! -f "$CLAUDE_JSON" ]]; then

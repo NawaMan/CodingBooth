@@ -26,6 +26,11 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 
 	switch upperPort {
 	case "RANDOM":
+		// In dryrun mode, avoid binding sockets so tests remain deterministic in restricted environments.
+		if ctx.Dryrun() {
+			portNumber, portGenerated = 10000, true
+			break
+		}
 		// Generate random ports in increments of 1000 (10000, 11000, 12000, etc.)
 		portNumber, portGenerated = findRandomPort()
 		if !portGenerated {
@@ -34,6 +39,11 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 		}
 
 	case "NEXT":
+		// In dryrun mode, avoid binding sockets so tests remain deterministic in restricted environments.
+		if ctx.Dryrun() {
+			portNumber, portGenerated = 10000, true
+			break
+		}
 		// Find next available port starting from 10000 in increments of 1000
 		portNumber, portGenerated = findNextPort()
 		if !portGenerated {

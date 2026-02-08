@@ -16,6 +16,10 @@ LOG_FILE="$SCRIPT_DIR/run-go-unit-tests.log"
 # Redirect output to log file and stdout
 exec > >(tee -i "$LOG_FILE") 2>&1
 
+GOCACHE="${GOCACHE:-/tmp/codingbooth-go-build}"
+mkdir -p "$GOCACHE"
+export GOCACHE
+
 echo "========================================"
 echo "Running Go Unit Tests Only"
 echo "========================================"
