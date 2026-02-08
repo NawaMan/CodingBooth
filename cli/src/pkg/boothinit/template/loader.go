@@ -149,7 +149,8 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 	}
 
 	var spec specToml
-	if _, err := toml.DecodeFile(specPath, &spec); err != nil {
+	md, err := toml.DecodeFile(specPath, &spec)
+	if err != nil {
 		return nil, fmt.Errorf("parsing spec.toml: %w", err)
 	}
 
@@ -171,11 +172,17 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		Requires:     spec.Requires,
 	}
 
-	// Convert params
+	// Convert params, preserving declaration order from TOML
 	if len(spec.Params) > 0 {
 		tmpl.Params = make(map[string]Param, len(spec.Params))
 		for k, v := range spec.Params {
 			tmpl.Params[k] = Param{Default: v.Default, Suggests: v.Suggests}
+		}
+		// Extract declaration order from TOML metadata keys
+		for _, key := range md.Keys() {
+			if len(key) == 2 && key[0] == "params" {
+				tmpl.ParamOrder = append(tmpl.ParamOrder, key[1])
+			}
 		}
 	}
 
