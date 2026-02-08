@@ -19,37 +19,28 @@ templates/
 ├── languages/                    # Category
 │   ├── meta.toml                 # Category metadata
 │   ├── go/                       # Template (name = "go")
-│   │   ├── template.toml             # Template spec (required)
-│   │   ├── Boothfile             # Boothfile segment (order 50)
-│   │   ├── linter/               # Extension (name = "linter")
-│   │   │   ├── template.toml
-│   │   │   └── Boothfile
-│   │   └── vscode-ext/           # Extension (name = "vscode-ext")
-│   │       ├── template.toml
-│   │       └── Boothfile
+│   │   ├── template.toml        # Template spec + inline segments (required)
+│   │   ├── linter/              # Extension (name = "linter")
+│   │   │   └── template.toml
+│   │   └── vscode-ext/          # Extension (name = "vscode-ext")
+│   │       └── template.toml
 │   ├── python/
 │   │   ├── template.toml
-│   │   ├── Boothfile
-│   │   ├── uv/                   # Extension
-│   │   │   ├── template.toml
-│   │   │   └── Boothfile
+│   │   ├── home-seed/           # Files copied to ~ (no-clobber)
+│   │   ├── uv/                  # Extension
+│   │   │   └── template.toml
 │   │   └── vscode-ext/
-│   │       ├── template.toml
-│   │       └── Boothfile
+│   │       └── template.toml
 │   └── java/
 │       ├── template.toml
-│       ├── Boothfile
-│       ├── maven/                # Extension with its own params
-│       │   ├── template.toml
-│       │   └── Boothfile
+│       ├── maven/               # Extension with its own params
+│       │   └── template.toml
 │       └── vscode-ext/
-│           ├── template.toml
-│           └── Boothfile
-└── tools/                        # Another category
+│           └── template.toml
+└── tools/                       # Another category
     ├── meta.toml
     └── claude-code/
-        ├── template.toml
-        └── Boothfile
+        └── template.toml
 ```
 
 **Key rules:**
@@ -108,6 +99,13 @@ run-args = [
 [params.GO_VERSION]
 default = "1.25.7"
 suggests = ["1.25.7", "1.24.13", "1.23.12"]
+
+# Inline segments: Boothfile and startup content
+[segments]
+Boothfile = """
+setup go ${GO_VERSION}
+install go golang.org/x/tools/gopls@latest
+"""
 ```
 
 ### Spec Fields Reference
@@ -148,34 +146,61 @@ suggests = ["temurin", "corretto", "openjdk"]
 
 ---
 
-## Boothfile Segments
+## Inline Segments
 
-Each template/extension can have Boothfile content that gets merged into the final `.booth/Boothfile`.
+Boothfile and startup content is defined inline in `template.toml` under a `[segments]` table. These segments are merged into the final `.booth/Boothfile` and `.booth/startup.sh`.
 
-**Single segment:**
-```
-Boothfile              # Gets order 50 (default)
+### Single Boothfile segment (default order 50):
+
+```toml
+[segments]
+Boothfile = """
+setup go ${GO_VERSION}
+install go golang.org/x/tools/gopls@latest
+"""
 ```
 
-**Multiple segments with explicit order:**
+### Multiple ordered segments:
+
+Use quoted keys with `--N` suffix to control ordering. Lower numbers run earlier.
+
+```toml
+[segments]
+"Boothfile--30" = """
+setup nodejs 20
+"""
+"Boothfile--80" = """
+setup claude-code
+"""
 ```
-Boothfile--30          # Order 30 (runs earlier)
-Boothfile--80          # Order 80 (runs later)
+
+### Startup segments:
+
+```toml
+[segments]
+"startup.sh" = """
+echo "Environment ready"
+"""
+"startup--10.sh" = """
+echo "Early startup..."
+"""
 ```
+
+### Segment key reference
+
+| Key pattern         | Type      | Order |
+|---------------------|-----------|-------|
+| `Boothfile`         | Boothfile | 50    |
+| `"Boothfile--30"`   | Boothfile | 30    |
+| `"startup.sh"`      | Startup   | 50    |
+| `"startup--10.sh"`  | Startup   | 10    |
 
 Segments across all selected templates are sorted by order, with tiebreak by template name alphabetically.
 
-### Boothfile Content
+### Boothfile commands
 
-Use Boothfile commands. Reference params with `${PARAM_NAME}`:
+Reference params with `${PARAM_NAME}`:
 
-```
-setup go ${GO_VERSION}                                # GO tool chain
-install go golang.org/x/tools/gopls@latest            # GO language server
-install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
-```
-
-**Common commands:**
 | Command                     | Description                          |
 |-----------------------------|--------------------------------------|
 | `setup <tool> [args...]`    | Install a tool/runtime (runs as root)|
@@ -184,19 +209,18 @@ install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
 The `setup` command maps to `<tool>--setup.sh` scripts in `variants/base/setups/`.
 The `install` command maps to `<mgr>--install.sh` scripts.
 
----
+### File-based segments (fallback)
 
-## Startup Segments
-
-Same pattern as Boothfile but for startup scripts:
+For backward compatibility, segment files alongside `template.toml` are also supported:
 
 ```
+Boothfile              # Gets order 50 (default)
+Boothfile--30          # Order 30
 startup.sh             # Gets order 50
-startup--30.sh         # Order 30
-startup--60.sh         # Order 60
+startup--10.sh         # Order 10
 ```
 
-These are merged into `.booth/startup.sh` (runs once at container start as the `coder` user).
+**Important:** A template cannot mix inline and file-based segments of the same type. If `[segments]` defines a Boothfile key, there must be no Boothfile file in the same directory (and vice versa). Mixing causes a load error.
 
 ---
 
@@ -218,14 +242,11 @@ Extensions are subdirectories of a template with their own `template.toml`:
 
 ```
 go/
-├── template.toml
-├── Boothfile
-├── linter/           # Extension
-│   ├── template.toml     # Must have auto-select field
-│   └── Boothfile
-└── vscode-ext/       # Extension
-    ├── template.toml
-    └── Boothfile
+├── template.toml          # Includes [segments] with Boothfile content
+├── linter/                # Extension
+│   └── template.toml     # Must have auto-select field; includes [segments]
+└── vscode-ext/            # Extension
+    └── template.toml
 ```
 
 **auto-select behavior:**
@@ -265,11 +286,11 @@ tags = ["rust", "systems"]
 [params.RUST_VERSION]
 default = "stable"
 suggests = ["stable", "nightly", "1.82.0"]
-```
 
-**`templates/languages/rust/Boothfile`:**
-```
+[segments]
+Boothfile = """
 setup rust ${RUST_VERSION}
+"""
 ```
 
 ### Template with Auto-select Extension
@@ -281,11 +302,11 @@ display-disc = "rust-analyzer for VS Code"
 display-order = 1
 auto-select = true
 tags = ["rust", "ide", "vscode"]
-```
 
-**`templates/languages/rust/vscode-ext/Boothfile`:**
-```
+[segments]
+Boothfile = """
 setup rust-code-extension
+"""
 ```
 
 ### Tool Template with Credentials
@@ -301,23 +322,32 @@ run-args = [
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
     "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
 ]
-```
 
-### Template with Multiple Boothfile Segments
-
-Use segment ordering when a tool needs setup both early and late:
-
-**`templates/tools/claude-code/Boothfile--30`:**
-```
-setup nodejs 20
-```
-
-**`templates/tools/claude-code/Boothfile--80`:**
-```
+[segments]
+Boothfile = """
 setup claude-code
+"""
 ```
 
-This ensures Node.js (order 30) is installed before claude-code (order 80), regardless of what other templates add in between.
+### Template with Multiple Ordered Segments
+
+Use ordered segment keys when a tool needs setup both early and late:
+
+**`templates/tools/example/template.toml`:**
+```toml
+display-name = "Example"
+display-order = 10
+
+[segments]
+"Boothfile--30" = """
+setup nodejs 20
+"""
+"Boothfile--80" = """
+setup my-tool
+"""
+```
+
+This ensures Node.js (order 30) is installed before my-tool (order 80), regardless of what other templates add in between.
 
 ---
 
@@ -327,7 +357,7 @@ This ensures Node.js (order 30) is installed before claude-code (order 80), rega
 - [ ] Create template directory with a unique name
 - [ ] Write `template.toml` with display-name, display-disc, display-order, tags
 - [ ] Add params with explicit prefixed names (e.g., `TOOL_VERSION`)
-- [ ] Write Boothfile with `setup`/`install` commands referencing params
+- [ ] Add `[segments]` with Boothfile content using `setup`/`install` commands referencing params
 - [ ] Add `run-args` for credentials or environment variables if needed
 - [ ] Create extensions with `auto-select` for common add-ons (e.g., vscode-ext)
 - [ ] Test with `codingbooth init dryrun --templates-path templates --select <name>`

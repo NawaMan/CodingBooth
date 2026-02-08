@@ -1,1 +1,0 @@
-echo "Claude Code ready"

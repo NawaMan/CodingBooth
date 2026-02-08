@@ -7,3 +7,8 @@ tags = [
     "ide",
     "vscode",
 ]
+
+[segments]
+Boothfile = """
+setup go-code-extension
+"""

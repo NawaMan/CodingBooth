@@ -13,3 +13,8 @@ suggests = [
     "3.9.12", "3.9",
     "4.0.0-rc-5",
 ]
+
+[segments]
+Boothfile = """
+setup mvn ${MAVEN_VERSION}
+"""

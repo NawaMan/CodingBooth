@@ -4,3 +4,8 @@ display-order = 10
 tags = ["python", "web"]
 
 requires = ["python"]
+
+[segments]
+Boothfile = """
+install pip django
+"""

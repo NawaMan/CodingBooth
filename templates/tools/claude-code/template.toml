@@ -11,3 +11,8 @@ run-args = [
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
     "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
 ]
+
+[segments]
+Boothfile = """
+setup claude-code
+"""

@@ -21,3 +21,8 @@ suggests = [
     "3.11.14", "3.11",
     "3.10.19", "3.10",
 ]
+
+[segments]
+Boothfile = """
+setup python ${PYTHON_VERSION}
+"""

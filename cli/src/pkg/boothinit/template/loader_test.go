@@ -81,6 +81,85 @@ func TestParseSegmentOrder_ExtraChars(t *testing.T) {
 	assert.False(t, ok)
 }
 
+// --- ParseInlineSegments ---
+
+func TestParseInlineSegments_BoothfileOnly(t *testing.T) {
+	segs := map[string]string{
+		"Boothfile": "setup go 1.24\n",
+	}
+	booth, startup, err := parseInlineSegments(segs)
+	require.NoError(t, err)
+	require.Len(t, booth, 1)
+	assert.Equal(t, DefaultSegmentOrder, booth[0].Order)
+	assert.Equal(t, "setup go 1.24\n", booth[0].Content)
+	assert.Empty(t, startup)
+}
+
+func TestParseInlineSegments_OrderedBoothfile(t *testing.T) {
+	segs := map[string]string{
+		"Boothfile--80": "setup claude-code\n",
+		"Boothfile--30": "setup nodejs 20\n",
+	}
+	booth, startup, err := parseInlineSegments(segs)
+	require.NoError(t, err)
+	require.Len(t, booth, 2)
+	assert.Equal(t, 30, booth[0].Order)
+	assert.Contains(t, booth[0].Content, "nodejs")
+	assert.Equal(t, 80, booth[1].Order)
+	assert.Contains(t, booth[1].Content, "claude-code")
+	assert.Empty(t, startup)
+}
+
+func TestParseInlineSegments_StartupOnly(t *testing.T) {
+	segs := map[string]string{
+		"startup.sh": "echo ready\n",
+	}
+	booth, startup, err := parseInlineSegments(segs)
+	require.NoError(t, err)
+	assert.Empty(t, booth)
+	require.Len(t, startup, 1)
+	assert.Equal(t, DefaultSegmentOrder, startup[0].Order)
+	assert.Equal(t, "echo ready\n", startup[0].Content)
+}
+
+func TestParseInlineSegments_Mixed(t *testing.T) {
+	segs := map[string]string{
+		"Boothfile":      "setup go 1.24\n",
+		"startup--10.sh": "echo starting\n",
+	}
+	booth, startup, err := parseInlineSegments(segs)
+	require.NoError(t, err)
+	require.Len(t, booth, 1)
+	require.Len(t, startup, 1)
+	assert.Equal(t, 10, startup[0].Order)
+}
+
+func TestParseInlineSegments_UnrecognizedKey(t *testing.T) {
+	segs := map[string]string{
+		"Dockerfile": "FROM ubuntu\n",
+	}
+	_, _, err := parseInlineSegments(segs)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unrecognized segment key")
+}
+
+func TestLoadRegistry_ConflictBoothfile(t *testing.T) {
+	tmpDir := t.TempDir()
+	catDir := filepath.Join(tmpDir, "mycat")
+	tmplDir := filepath.Join(catDir, "conflict")
+	require.NoError(t, os.MkdirAll(tmplDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+		[]byte("display-name = \"MyCat\"\norder = 1\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+		[]byte("display-name = \"Conflict\"\ndisplay-order = 1\n\n[segments]\nBoothfile = \"setup go\"\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "Boothfile"),
+		[]byte("setup go\n"), 0644))
+
+	_, err := LoadRegistry(tmpDir)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "both file-based and inline Boothfile")
+}
+
 // --- LoadRegistry ---
 
 func TestLoadRegistry_FullFixture(t *testing.T) {

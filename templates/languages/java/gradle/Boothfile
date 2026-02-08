@@ -1,1 +1,0 @@
-setup gradle "${GRADLE_VERSION}"

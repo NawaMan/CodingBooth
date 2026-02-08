@@ -16,3 +16,10 @@ suggests = [
     "1.22.12", "1.22.0",
     "1.21.13", "1.21.0",
 ]
+
+[segments]
+Boothfile = """
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+"""

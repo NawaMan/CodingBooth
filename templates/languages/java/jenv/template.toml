@@ -6,3 +6,8 @@ tags = [
     "java",
     "version-manager"
 ]
+
+[segments]
+Boothfile = """
+setup jenv
+"""

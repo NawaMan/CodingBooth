@@ -1,1 +1,0 @@
-echo "Python environment ready"
