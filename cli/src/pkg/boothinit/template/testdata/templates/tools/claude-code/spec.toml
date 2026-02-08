@@ -1,0 +1,6 @@
+display-name = "Claude Code"
+display-disc = "Anthropic Claude Code assistant"
+display-order = 20
+tags = ["ai", "assistant"]
+
+dind = true
