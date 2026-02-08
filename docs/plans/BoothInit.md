@@ -522,14 +522,23 @@ Suggest steps
 - [x] Create test fixture templates (languages/go+linter, python, frameworks/django, tools/neovim, claude-code)
 - [x] Test with local defined template (39 unit tests covering parsing, loading, segments, files, extensions, edge cases)
 
-### Phase 3: Selection
+### Phase 3: Selection ✓
 Prompt: Define data model of the selection and the code construct the data from the CLI
 Suggest steps
-- [ ] Define selection state:
-  - `SelectionState` (selected, auto-selected via dependency)
-  - `ParamValues` (user-specified or default)
-- [ ] Add code to parse parameters/in
-- [ ] Test but hooking it to the CLI but print out the selection
+- [x] Define selection data model:
+  - `ParsedSelection` / `ParsedItem` — raw DSL parse result (name, positional params, extensions)
+  - `ResolvedSelection` / `SelectedTemplate` / `SelectedExtension` — validated against registry
+  - `SelectMode` — ExplicitSelect, AutoSelected, DependencySelect
+- [x] Implement DSL parser (`ParseSelectDSL`):
+  - Operator precedence: `/` → `+` → `:` and `,`
+  - Input normalization: whitespace/newlines → `/` separators (heredoc/file compat)
+  - `@file` reading, `@@url` stub
+- [x] Implement resolver (`Resolve`):
+  - Template name lookup, duplicate detection
+  - Positional param → named param mapping (alphabetical order of param names)
+  - Auto-select extensions (`auto-select=true`), explicit extension validation
+  - `requires` dependency checking (error if missing)
+- [x] 39 unit tests (parser, resolver, end-to-end parse+resolve)
 
 ### Phase 4: Template + Selection → Output Conversion
 Prompt: Implement the function to create output model from template defintion and input section to the output mode. 
