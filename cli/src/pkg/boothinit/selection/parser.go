@@ -6,19 +6,23 @@ package selection
 
 import (
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"strings"
+	"time"
 )
 
 // ReadSelectInput resolves a --select value to its raw content.
 //   - "@filename" reads from a file
-//   - "@@url" is not yet implemented (returns error)
+//   - "@@url" fetches from a URL
 //   - anything else is returned as-is
 //
 // Stdin ("-") should be handled by the caller before calling this function.
 func ReadSelectInput(value string) (string, error) {
 	if strings.HasPrefix(value, "@@") {
-		return "", fmt.Errorf("URL-based selection (@@) not yet implemented")
+		url := strings.TrimPrefix(value, "@@")
+		return fetchURL(url)
 	}
 	if strings.HasPrefix(value, "@") {
 		filename := strings.TrimPrefix(value, "@")
@@ -121,4 +125,24 @@ func parseItem(s string) (ParsedItem, error) {
 		Params:     params,
 		Extensions: extensions,
 	}, nil
+}
+
+// fetchURL fetches the content of a URL and returns it as a string.
+func fetchURL(url string) (string, error) {
+	client := &http.Client{Timeout: 30 * time.Second}
+	resp, err := client.Get(url)
+	if err != nil {
+		return "", fmt.Errorf("fetching selection URL %q: %w", url, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("fetching selection URL %q: HTTP %d", url, resp.StatusCode)
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", fmt.Errorf("reading response from %q: %w", url, err)
+	}
+	return string(data), nil
 }
