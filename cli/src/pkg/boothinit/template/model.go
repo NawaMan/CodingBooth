@@ -24,9 +24,9 @@ type Category struct {
 type Template struct {
 	Name         string // directory name (unique across all categories for top-level templates)
 	CategoryName string // parent category name
-	DisplayName  string // from spec.toml display-name
-	DisplayDesc  string // from spec.toml display-disc
-	DisplayOrder int    // from spec.toml display-order
+	DisplayName  string // from template.toml display-name
+	DisplayDesc  string // from template.toml display-disc
+	DisplayOrder int    // from template.toml display-order
 	Tags         []string
 	AutoSelect   *bool // extension only: auto-select when parent is selected
 
@@ -46,7 +46,7 @@ type Template struct {
 
 	// Parameters
 	Params     map[string]Param
-	ParamOrder []string // declaration order from spec.toml
+	ParamOrder []string // declaration order from template.toml
 
 	// Content segments (ordered by Order, tiebreak alphabetically by source)
 	BoothfileSegments []Segment

@@ -49,7 +49,7 @@ type paramToml struct {
 
 // LoadRegistry loads all templates from the given root directory.
 // The directory should contain category subdirectories, each with meta.toml
-// and template subdirectories containing spec.toml.
+// and template subdirectories containing template.toml.
 func LoadRegistry(rootDir string) (*TemplateRegistry, error) {
 	entries, err := os.ReadDir(rootDir)
 	if err != nil {
@@ -127,7 +127,7 @@ func loadCategory(dir, name string) (*Category, error) {
 			return nil, fmt.Errorf("loading template %q: %w", entry.Name(), err)
 		}
 		if tmpl == nil {
-			continue // no spec.toml — skip
+			continue // no template.toml — skip
 		}
 		cat.Templates = append(cat.Templates, tmpl)
 	}
@@ -140,10 +140,10 @@ func loadCategory(dir, name string) (*Category, error) {
 }
 
 // loadTemplateDir loads a template or extension from a directory.
-// If allowExtensions is true, subdirectories with spec.toml are loaded as extensions.
-// Returns nil if spec.toml doesn't exist.
+// If allowExtensions is true, subdirectories with template.toml are loaded as extensions.
+// Returns nil if template.toml doesn't exist.
 func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Template, error) {
-	specPath := filepath.Join(dir, "spec.toml")
+	specPath := filepath.Join(dir, "template.toml")
 	if _, err := os.Stat(specPath); os.IsNotExist(err) {
 		return nil, nil
 	}
@@ -151,7 +151,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 	var spec specToml
 	md, err := toml.DecodeFile(specPath, &spec)
 	if err != nil {
-		return nil, fmt.Errorf("parsing spec.toml: %w", err)
+		return nil, fmt.Errorf("parsing template.toml: %w", err)
 	}
 
 	tmpl := &Template{
@@ -214,7 +214,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		return nil, fmt.Errorf("loading home-seed/: %w", err)
 	}
 
-	// Load extensions (subdirectories with spec.toml that aren't special dirs)
+	// Load extensions (subdirectories with template.toml that aren't special dirs)
 	if allowExtensions {
 		entries, err := os.ReadDir(dir)
 		if err != nil {

@@ -184,42 +184,42 @@ claude-code
 ├── languages/
 │   ├── meta.toml                      # Category metadata
 │   ├── python/                        # template -- the name of the dir become the name of the template
-│   │   ├── spec.toml                  # Template spec
+│   │   ├── template.toml                  # Template spec
 │   │   ├── Boothfile                  # Boothfile
 │   │   └── startup.sh                 # Startup file.   -- only one and can be any where
 │   ├── go/
-│   │   ├── spec.toml
+│   │   ├── template.toml
 │   │   ├── Boothfile                  # Boothfile
 │   │   ├── startup--30.sh             # Startup file segment with order 30
 │   │   ├── startup--60.sh             # Startup file segment with order 60
-│   │   ├── spec.toml
+│   │   ├── template.toml
 │   │   ├── proxy/                     # Extension
-│   │   │   └── spec.toml
+│   │   │   └── template.toml
 │   │   └── linter/
-│   │       └── spec.toml
+│   │       └── template.toml
 │   └── nodejs/
-│       └── spec.toml
+│       └── template.toml
 ├── frameworks/
 │   ├── meta.toml
 │   ├── django/
 │   │   ├── Boothfile                  # Boothfile
-│   │   ├── spec.toml
+│   │   ├── template.toml
 │   │   ├── setups/
 │   │   │   └── django--setup.sh       # Additional setup
 │   └── fastapi/
-│       └── spec.toml
+│       └── template.toml
 └── tools/
     ├── meta.toml
     ├── claude-code/
 │   │   ├── Boothfile--30              # Boothfile segment with order 30
 │   │   ├── Boothfile--80              # Boothfile segment with order 80
     │   ├── credential/
-    │   │   └── spec.toml
-    │   └── spec.toml
+    │   │   └── template.toml
+    │   └── template.toml
     └── neovim/
         ├── home/
         │   └── .nvim.lua              # File in home (similar with home-seed)
-        └── spec.toml
+        └── template.toml
 ```
 
 <category>  >  <template>  > <extension>
@@ -227,7 +227,7 @@ claude-code
 **Template naming:** The template name is the folder name, and it serves as the **unique identifier** across all categories. Categories are for organizational purposes only. This means `languages/go` and `tools/go` cannot both exist — use distinct, descriptive names (e.g., `go` and `go-tools`). Long, descriptive names are preferred over short ambiguous ones. Symlinks should not be used inside template directories.
 
 For each template or extension:
-  > spec.toml
+  > template.toml
       -> metadata
       -> config.toml items
   > Boothfile segment files
@@ -243,7 +243,7 @@ order = 1
 
 Categories are displayed in `order` sequence. Keyboard shortcuts (^1, ^2, etc.) assigned by order.
 
-### Template spec.toml
+### Template template.toml
 
 ```toml
 display-name = "Go"
@@ -283,7 +283,7 @@ params.GO_WHATEVER.default = "thing"
 
 ### Template Extensions
 
-Extensions are subfolders with their own `spec.toml`. They are:
+Extensions are subfolders with their own `template.toml`. They are:
 - Dependent on the parent
 - Got the same parameters as parent
 - Displayed as sub-items (e.g., `2-1`, `2-2`) when parent is selected
@@ -536,7 +536,7 @@ Suggest steps
 - [x] Define Go structs for templates:
   - `TemplateRegistry` (holds categories and global name→template lookup)
   - `Category` (from meta.toml: name, display-name, order)
-  - `Template` (from spec.toml: metadata, config values, params, segments, files, extensions)
+  - `Template` (from template.toml: metadata, config values, params, segments, files, extensions)
   - `Param` (default, suggests)
   - `Segment` (order, content — for Boothfile and startup fragments)
   - `FileRef` (source-path, rel-path — for setups, home, home-seed files)
@@ -544,7 +544,7 @@ Suggest steps
   - Categories sorted by `order`, templates sorted by `display-order`
   - Segment files parsed: `Boothfile`/`Boothfile--N` and `startup.sh`/`startup--N.sh` (default order 50)
   - Special subdirs collected: `setups/`, `home/`, `home-seed/`
-  - Extensions loaded from subdirs with `spec.toml` (no further nesting)
+  - Extensions loaded from subdirs with `template.toml` (no further nesting)
   - Duplicate template names across categories detected and rejected
   - Optional `*bool` for `dind` and `auto-select` (distinguishes unset vs false)
 - [x] Create test fixture templates (languages/go+linter, python, frameworks/django, tools/neovim, claude-code)

@@ -367,9 +367,9 @@ func TestLoadRegistry_DuplicateTemplateNames(t *testing.T) {
 		[]byte("display-name = \"Cat1\"\norder = 1\n"), 0644))
 	require.NoError(t, os.WriteFile(filepath.Join(cat2Dir, "meta.toml"),
 		[]byte("display-name = \"Cat2\"\norder = 2\n"), 0644))
-	require.NoError(t, os.WriteFile(filepath.Join(tmpl1Dir, "spec.toml"),
+	require.NoError(t, os.WriteFile(filepath.Join(tmpl1Dir, "template.toml"),
 		[]byte("display-name = \"Dupe\"\ndisplay-order = 1\n"), 0644))
-	require.NoError(t, os.WriteFile(filepath.Join(tmpl2Dir, "spec.toml"),
+	require.NoError(t, os.WriteFile(filepath.Join(tmpl2Dir, "template.toml"),
 		[]byte("display-name = \"Dupe2\"\ndisplay-order = 1\n"), 0644))
 
 	_, err := LoadRegistry(tmpDir)
@@ -415,7 +415,7 @@ func TestLoadRegistry_SkipsTemplateWithoutSpec(t *testing.T) {
 	require.NoError(t, os.MkdirAll(tmplDir, 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
 		[]byte("display-name = \"MyCat\"\norder = 1\n"), 0644))
-	// No spec.toml in tmplDir
+	// No template.toml in tmplDir
 
 	registry, err := LoadRegistry(tmpDir)
 	require.NoError(t, err)
