@@ -74,6 +74,10 @@ func parseInitFlags(args []string) initFlags {
 			os.Exit(1)
 		}
 	}
+	// Fall back to env var if --templates-path not provided
+	if flags.templatesPath == "" {
+		flags.templatesPath = os.Getenv("CB_TEMPLATES_PATH")
+	}
 	return flags
 }
 

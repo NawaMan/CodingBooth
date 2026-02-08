@@ -1,0 +1,28 @@
+display-name = "Rust"
+display-disc = "Rust language toolchain"
+display-order = 40
+tags = [
+    "rust",
+    "systems",
+    "compiled"
+]
+
+run-args = [
+    "-e", "CARGO_NET_GIT_FETCH_WITH_CLI=true",
+]
+
+[params.RUST_VERSION]
+default = "stable"
+suggests = [
+    "stable",
+    "nightly",
+    "1.84.0",
+    "1.83.0",
+    "1.82.0",
+    "1.81.0",
+]
+
+[segments]
+Boothfile = """
+setup rust ${RUST_VERSION}
+"""

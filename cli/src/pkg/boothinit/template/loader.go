@@ -206,24 +206,14 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		}
 	}
 
-	// Conflict check: cannot mix file-based and inline for the same segment type
-	if len(fileBoothSegs) > 0 && len(inlineBoothSegs) > 0 {
-		return nil, fmt.Errorf("template has both file-based and inline Boothfile segments; use one or the other")
+	// Merge file-based and inline segments, rejecting duplicate orders
+	tmpl.BoothfileSegments, err = mergeSegments(fileBoothSegs, inlineBoothSegs)
+	if err != nil {
+		return nil, fmt.Errorf("merging Boothfile segments: %w", err)
 	}
-	if len(fileStartupSegs) > 0 && len(inlineStartupSegs) > 0 {
-		return nil, fmt.Errorf("template has both file-based and inline startup segments; use one or the other")
-	}
-
-	// Use whichever source is present
-	if len(inlineBoothSegs) > 0 {
-		tmpl.BoothfileSegments = inlineBoothSegs
-	} else {
-		tmpl.BoothfileSegments = fileBoothSegs
-	}
-	if len(inlineStartupSegs) > 0 {
-		tmpl.StartupSegments = inlineStartupSegs
-	} else {
-		tmpl.StartupSegments = fileStartupSegs
+	tmpl.StartupSegments, err = mergeSegments(fileStartupSegs, inlineStartupSegs)
+	if err != nil {
+		return nil, fmt.Errorf("merging startup segments: %w", err)
 	}
 
 	// Load files from special subdirectories
@@ -268,6 +258,36 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 	}
 
 	return tmpl, nil
+}
+
+// mergeSegments combines file-based and inline segments into a single sorted slice.
+// Returns an error if both sources contain a segment with the same order number.
+func mergeSegments(fileSegs, inlineSegs []Segment) ([]Segment, error) {
+	if len(fileSegs) == 0 {
+		return inlineSegs, nil
+	}
+	if len(inlineSegs) == 0 {
+		return fileSegs, nil
+	}
+
+	// Check for duplicate orders across sources
+	fileOrders := make(map[int]bool, len(fileSegs))
+	for _, s := range fileSegs {
+		fileOrders[s.Order] = true
+	}
+	for _, s := range inlineSegs {
+		if fileOrders[s.Order] {
+			return nil, fmt.Errorf("duplicate segment order %d found in both file-based and inline sources", s.Order)
+		}
+	}
+
+	merged := make([]Segment, 0, len(fileSegs)+len(inlineSegs))
+	merged = append(merged, fileSegs...)
+	merged = append(merged, inlineSegs...)
+	slices.SortFunc(merged, func(a, b Segment) int {
+		return a.Order - b.Order
+	})
+	return merged, nil
 }
 
 // loadSegments reads segment files matching the pattern prefix[--N]suffix from a directory.

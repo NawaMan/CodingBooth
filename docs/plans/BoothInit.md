@@ -165,7 +165,7 @@ claude-code
 | Flag                      | Description                                                                         |
 |---------------------------|-------------------------------------------------------------------------------------|
 | `--select <names>`        | Slash-separated template names to select – the name must fully match. Error if not. Use `-` to read from stdin. Use `@file` to read from a file (recipe). |
-| `--templates-path <dir>`  | Load templates from a local directory (skips download/extraction). Required until template download is implemented. |
+| `--templates-path <dir>`  | Load templates from a local directory (skips download/extraction). Required until template download is implemented. Falls back to `CB_TEMPLATES_PATH` env var if not provided. |
 | `--start`                 | After init, immediately start the booth (chains into `codingbooth run --code <path>`). |
 | `--debug`                 | Print resolved selection and compiled output as JSON before generating.              |
 | `--variant <name>`        | Set variant (codeserver, notebook, desktop-xfce, etc.) — future                     |
