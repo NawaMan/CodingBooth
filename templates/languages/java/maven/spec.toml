@@ -1,5 +1,15 @@
 display-name = "Maven"
 display-disc = "Apache Maven build tool"
 display-order = 10
-tags = ["build", "maven"]
 auto-select = false
+tags = [
+    "build",
+    "maven"
+]
+
+[params.MAVEN_VERSION]
+default = "3.9.12"
+suggests = [
+    "3.9.12", "3.9",
+    "4.0.0-rc-5",
+]
