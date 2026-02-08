@@ -6,3 +6,9 @@ tags = [
     "python",
     "packages"
 ]
+
+[segments]
+Boothfile = """
+# uv is already installed by python setup.
+# This extension enables 'install uv <packages>' in Boothfiles.
+"""

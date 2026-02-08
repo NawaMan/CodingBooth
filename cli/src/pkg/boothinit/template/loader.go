@@ -40,6 +40,7 @@ type specToml struct {
 	RunArgs      []string             `toml:"run-args"`
 	Requires     []string             `toml:"requires"`
 	Params       map[string]paramToml `toml:"params"`
+	Segments     map[string]string    `toml:"segments"`
 }
 
 type paramToml struct {
@@ -186,19 +187,44 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		}
 	}
 
-	// Load Boothfile segments
-	segments, err := loadSegments(dir, "Boothfile", "")
+	// Load file-based segments
+	fileBoothSegs, err := loadSegments(dir, "Boothfile", "")
 	if err != nil {
 		return nil, fmt.Errorf("loading Boothfile segments: %w", err)
 	}
-	tmpl.BoothfileSegments = segments
-
-	// Load startup segments
-	segments, err = loadSegments(dir, "startup", ".sh")
+	fileStartupSegs, err := loadSegments(dir, "startup", ".sh")
 	if err != nil {
 		return nil, fmt.Errorf("loading startup segments: %w", err)
 	}
-	tmpl.StartupSegments = segments
+
+	// Parse inline segments from [segments] table
+	var inlineBoothSegs, inlineStartupSegs []Segment
+	if len(spec.Segments) > 0 {
+		inlineBoothSegs, inlineStartupSegs, err = parseInlineSegments(spec.Segments)
+		if err != nil {
+			return nil, fmt.Errorf("parsing inline segments: %w", err)
+		}
+	}
+
+	// Conflict check: cannot mix file-based and inline for the same segment type
+	if len(fileBoothSegs) > 0 && len(inlineBoothSegs) > 0 {
+		return nil, fmt.Errorf("template has both file-based and inline Boothfile segments; use one or the other")
+	}
+	if len(fileStartupSegs) > 0 && len(inlineStartupSegs) > 0 {
+		return nil, fmt.Errorf("template has both file-based and inline startup segments; use one or the other")
+	}
+
+	// Use whichever source is present
+	if len(inlineBoothSegs) > 0 {
+		tmpl.BoothfileSegments = inlineBoothSegs
+	} else {
+		tmpl.BoothfileSegments = fileBoothSegs
+	}
+	if len(inlineStartupSegs) > 0 {
+		tmpl.StartupSegments = inlineStartupSegs
+	} else {
+		tmpl.StartupSegments = fileStartupSegs
+	}
 
 	// Load files from special subdirectories
 	tmpl.Setups, err = collectFiles(filepath.Join(dir, "setups"))
@@ -274,6 +300,33 @@ func loadSegments(dir, prefix, suffix string) ([]Segment, error) {
 	})
 
 	return segments, nil
+}
+
+// parseInlineSegments extracts Boothfile and startup segments from the inline [segments] map.
+// Each key must match either Boothfile[--N] or startup[--N].sh pattern.
+func parseInlineSegments(segMap map[string]string) ([]Segment, []Segment, error) {
+	var boothSegs, startupSegs []Segment
+
+	for key, content := range segMap {
+		if order, ok := parseSegmentOrder(key, "Boothfile", ""); ok {
+			boothSegs = append(boothSegs, Segment{Order: order, Content: content})
+			continue
+		}
+		if order, ok := parseSegmentOrder(key, "startup", ".sh"); ok {
+			startupSegs = append(startupSegs, Segment{Order: order, Content: content})
+			continue
+		}
+		return nil, nil, fmt.Errorf("unrecognized segment key %q: must match Boothfile[--N] or startup[--N].sh", key)
+	}
+
+	slices.SortFunc(boothSegs, func(a, b Segment) int {
+		return a.Order - b.Order
+	})
+	slices.SortFunc(startupSegs, func(a, b Segment) int {
+		return a.Order - b.Order
+	})
+
+	return boothSegs, startupSegs, nil
 }
 
 // parseSegmentOrder extracts the order number from a segment filename.

@@ -7,3 +7,8 @@ tags = [
     "data",
     "packages"
 ]
+
+[segments]
+Boothfile = """
+setup conda
+"""

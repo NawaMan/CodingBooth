@@ -8,3 +8,8 @@ run-args = ["-e", "GOPROXY=https://proxy.golang.org,direct"]
 [params.GO_VERSION]
 default = "1.24"
 suggests = ["1.22", "1.23", "1.24"]
+
+[segments]
+Boothfile = """
+setup go ${GO_VERSION}
+"""

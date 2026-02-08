@@ -25,3 +25,8 @@ suggests = [
     "corretto",
     "openjdk"
 ]
+
+[segments]
+Boothfile = """
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+"""

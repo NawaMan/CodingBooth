@@ -8,3 +8,11 @@ run-args = ["-e", "PYTHONDONTWRITEBYTECODE=1"]
 [params.PYTHON_VERSION]
 default = "3.12"
 suggests = ["3.11", "3.12", "3.13"]
+
+[segments]
+Boothfile = """
+setup python ${PYTHON_VERSION}
+"""
+"startup.sh" = """
+echo "Python environment ready"
+"""
