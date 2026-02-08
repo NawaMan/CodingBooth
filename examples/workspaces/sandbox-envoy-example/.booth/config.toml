@@ -1,0 +1,4 @@
+sandboxed = true
+variant = "base"
+
+sandbox-policy-file = ".booth/sandbox/envoy.yaml"

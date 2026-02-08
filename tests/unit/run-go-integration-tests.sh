@@ -16,6 +16,19 @@ LOG_FILE="$SCRIPT_DIR/run-go-integration-tests.log"
 # Redirect output to log file and stdout
 exec > >(tee -i "$LOG_FILE") 2>&1
 
+GOCACHE="${GOCACHE:-/tmp/codingbooth-go-build}"
+mkdir -p "$GOCACHE"
+export GOCACHE
+
+if ! command -v docker >/dev/null 2>&1; then
+    echo "SKIP: Docker is not installed or not in PATH"
+    exit 0
+fi
+if ! docker info >/dev/null 2>&1; then
+    echo "SKIP: Docker daemon is not accessible (permission or not running)"
+    exit 0
+fi
+
 echo "========================================"
 echo "Running Go Integration Tests Only"
 echo "========================================"

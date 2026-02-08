@@ -3,35 +3,35 @@
 # Demo booth - showcases multiple languages and tools
 
 # Build arguments for version pinning
-arg JDK_VERSION=25
-arg PY_VERSION=3.12
-arg GO_VERSION=1.25.4
-arg NODE_MAJOR=20
+# arg JDK_VERSION=25
+# arg PY_VERSION=3.12
+# arg GO_VERSION=1.25.4
+# arg NODE_MAJOR=20
 
 # Languages
-setup python ${PY_VERSION}
-setup jdk    ${JDK_VERSION}
-setup go     ${GO_VERSION}
-setup nodejs ${NODE_MAJOR}
+# setup python ${PY_VERSION}
+# setup jdk    ${JDK_VERSION}
+# setup go     ${GO_VERSION}
+# setup nodejs ${NODE_MAJOR}
 
 # Force jbang to cache dependencies (avoid download on first run)
-run echo 'class Hi { public static void main(String[] args) { System.out.println("Hi"); }}' | jbang -
+# run echo 'class Hi { public static void main(String[] args) { System.out.println("Hi"); }}' | jbang -
 
 # Build tools
-setup mvn
-setup gradle
-setup jenv
+# setup mvn
+# setup gradle
+# setup jenv
 
 # AI tools
-setup antigravity
+# setup antigravity
 setup claude-code
 
-# VS Code extensions
-setup java-code-extension
-setup go-code-extension
+# # VS Code extensions
+# setup java-code-extension
+# setup go-code-extension
 
-# Jupyter notebooks with language kernels
-setup notebook
-setup python-nb-kernel
-setup bash-nb-kernel
-setup java-jjava-nb-kernel
+# # Jupyter notebooks with language kernels
+# setup notebook
+# setup python-nb-kernel
+# setup bash-nb-kernel
+# setup java-jjava-nb-kernel

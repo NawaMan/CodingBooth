@@ -36,6 +36,7 @@ func (runner *BoothRunner) Run() error {
 	ctx = PortDetermination(ctx)
 	ctx = ShowDebugBanner(ctx)
 	ctx = SetupDind(ctx)
+	ctx = SetupSandbox(ctx)
 	ctx = PrepareRunMode(ctx)
 	ctx = PrepareCommonArgs(ctx)
 	if err := ensureContainerNameAvailable(ctx); err != nil {

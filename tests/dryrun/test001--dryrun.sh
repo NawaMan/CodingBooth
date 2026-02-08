@@ -84,6 +84,7 @@ docker \\
     -e 'BOOTH_SILENCE_BUILD=false' \\
     -e 'BOOTH_PULL=false' \\
     -e 'BOOTH_DIND=false' \\
+    -e 'BOOTH_SANDBOX=false' \\
     -e 'BOOTH_DOCKERFILE=' \\
     -e 'BOOTH_PROJECT_NAME=dryrun' \\
     -e 'BOOTH_TIMEZONE=America/Toronto' \\

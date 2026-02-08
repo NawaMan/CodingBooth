@@ -112,6 +112,7 @@ CodingBooth provides a command-line interface with the following structure:
 | `--pull`           | Force pull latest image                                                          |
 | `--dind`           | Enable Docker-in-Docker mode                                                     |
 | `--keep-alive`     | Keep container after exit                                                        |
+| `--writable-booth` | Allow writing to `.booth/` inside the container (read-only by default)            |
 | `--silence-build`  | Suppress build/startup output                                                    |
 | `--dryrun`         | Print docker commands without executing                                          |
 | `--verbose`        | Enable debug output                                                              |
@@ -415,6 +416,8 @@ my-project/
 
 > 💡 **Tip:** When both `Boothfile` and `Dockerfile` exist, Boothfile takes precedence. Use `--dockerfile` to force using the Dockerfile.
 
+> 🔒 **Read-only by default:** The `.booth/` folder is mounted **read-only** inside the container to prevent accidental or malicious modifications to your configuration. Use `--writable-booth` if you need to edit `.booth/` files from inside the container (e.g., during development).
+
 > ⚠️ **Note on `cmds`:** When you pass commands via CLI (`-- <cmd>`), they **override** the `cmds` in config.toml (they don't append).
 
 ---
@@ -453,17 +456,17 @@ env APP_ENV=production
 
 ### Boothfile Commands
 
-| Command | Example | Compiles to |
-|---------|---------|-------------|
-| `run` | `run apt-get update` | `RUN apt-get update` |
-| `setup` | `setup python 3.12` | `RUN python--setup.sh 3.12` |
-| `install` | `install pip django` | `RUN pip--install.sh django` |
-| `copy` | `copy ./config /opt` | `COPY ./config /opt` |
-| `env` | `env DEBUG=true` | `ENV DEBUG=true` |
-| `arg` | `arg VERSION=1.0` | `ARG VERSION=1.0` |
-| `workdir` | `workdir /app` | `WORKDIR /app` |
-| `expose` | `expose 8080` | `EXPOSE 8080` |
-| `label` | `label maintainer="me"` | `LABEL maintainer="me"` |
+| Command   | Example                 | Compiles to                  |
+|-----------|-------------------------|------------------------------|
+| `run`     | `run apt-get update`    | `RUN apt-get update`         |
+| `setup`   | `setup python 3.12`     | `RUN python--setup.sh 3.12`  |
+| `install` | `install pip django`    | `RUN pip--install.sh django` |
+| `copy`    | `copy ./config /opt`    | `COPY ./config /opt`         |
+| `env`     | `env DEBUG=true`        | `ENV DEBUG=true`             |
+| `arg`     | `arg VERSION=1.0`       | `ARG VERSION=1.0`            |
+| `workdir` | `workdir /app`          | `WORKDIR /app`               |
+| `expose`  | `expose 8080`           | `EXPOSE 8080`                |
+| `label`   | `label maintainer="me"` | `LABEL maintainer="me"`      |
 
 ### Multi-line Commands (Heredocs)
 
@@ -525,11 +528,11 @@ The compiler automatically adds a `COPY` to bring your script into the image.
 
 ### CLI Flags
 
-| Flag | Description |
-|------|-------------|
-| `--boothfile <path>` | Use a specific Boothfile |
-| `--emit-dockerfile` | Print generated Dockerfile without building |
-| `--strict` | Treat warnings as errors |
+| Flag                 | Description                                 |
+|----------------------|---------------------------------------------|
+| `--boothfile <path>` | Use a specific Boothfile                    |
+| `--emit-dockerfile`  | Print generated Dockerfile without building |
+| `--strict`           | Treat warnings as errors                    |
 
 ### File Precedence
 
@@ -575,13 +578,14 @@ env DJANGO_SETTINGS_MODULE=myproject.settings
 
 CodingBooth is designed for development environments, not production workloads. Key security aspects:
 
-| Aspect              | Behavior                                                               |
-|---------------------|------------------------------------------------------------------------|
-| **User privileges** | Processes run as unprivileged `coder` user, not root                   |
-| **Sudo access**     | `coder` has passwordless sudo (for installing packages)                |
-| **File ownership**  | Files match your host UID/GID — no root-owned files                    |
-| **Network**         | Full network access by default; use Network Whitelist for restrictions |
-| **DinD mode**       | Requires `--privileged` flag (elevated permissions)                    |
+| Aspect               | Behavior                                                                  |
+|----------------------|---------------------------------------------------------------------------|
+| **User privileges**  | Processes run as unprivileged `coder` user, not root                      |
+| **Sudo access**      | `coder` has passwordless sudo (for installing packages)                   |
+| **File ownership**   | Files match your host UID/GID — no root-owned files                       |
+| **`.booth/` config** | Read-only inside the container by default (`--writable-booth` to opt out) |
+| **Network**          | Full network access by default; use Network Whitelist for restrictions    |
+| **DinD mode**        | Requires `--privileged` flag (elevated permissions)                       |
 
 **Best practices:**
 - Don't run untrusted code in CodingBooth containers
@@ -619,41 +623,41 @@ The `booth` wrapper script is **location-based**: it operates relative to its ow
 
 
 ```
-host                                 # your machine
-  ├── ~/.cache/codingbooth/                # shared binary cache
+host                                     # your machine
+  ├── ~/.cache/codingbooth/              # shared binary cache
   |    └── versions/
-  |         └── 0.13.0/              # version-specific binaries
+  |         └── 0.13.0/                  # version-specific binaries
   |              ├── codingbooth.sha256
-  |              └── codingbooth-*  # platform binaries
-  ├── project/                       # your project folder on the host
-  |    ├── booth                     # booth wrapper script
-  |    ├── .booth                    # booth internal folder
+  |              └── codingbooth-*       # platform binaries
+  ├── project/                           # your project folder on the host
+  |    ├── booth                         # booth wrapper script
+  |    ├── .booth                        # booth internal folder
   |    |    └── tools/
-  |    |         └── codingbooth.lock  # version reference
-  |    ├── ...                       # other project files
+  |    |         └── codingbooth.lock    # version reference
+  |    ├── ...                           # other project files
   ...
 
 container
   ├── home/
   |    ├── coder/
-  |    |    ├── code/                     # your project folder inside the container
-  |    |    |   ├── booth                 # booth wrapper script
-  |    |    |   ├── .booth                # booth internal folder
+  |    |    ├── code/                           # your project folder inside the container
+  |    |    |   ├── booth                       # booth wrapper script
+  |    |    |   ├── .booth                      # booth internal folder
   |    |    |   |    └── tools/
   |    |    |   |         └── codingbooth.lock  # version reference
-  |    |    ├── ...                       # other project files
-  |    ├── ...                            # other home files
+  |    |    ├── ...                             # other project files
+  |    ├── ...                                  # other home files
   ├── etc/
-  |    ├── profile.d/                     # profile script folder
+  |    ├── profile.d/                           # profile script folder
   ├── opt/
   |    ├── codingbooth/
-  |    |    ├── setups/                   # setup script folder
-  |    |    |    ├── ...                  # setup scripts
+  |    |    ├── setups/                         # setup script folder
+  |    |    |    ├── ...                        # setup scripts
   ├── usr/
   |    ├── local/
-  |    |    ├── bin/                      # program file folder
+  |    |    ├── bin/                            # program file folder
   |    ├── share/
-  |    |    ├── startup.d/                # startup script folder
+  |    |    ├── startup.d/                      # startup script folder
   ...
 ```
 
@@ -1204,10 +1208,55 @@ This allows the booth to run Docker commands that execute inside the isolated Di
 - The sidecar approach offers stronger isolation but can be slower and more complex to manage.
 
 > 💡 **Tip:**
-> See `examples/dind-example` for basic DinD usage, or `examples/kind-example` for running Kubernetes with KinD inside the booth.
+> See `examples/workspaces/dind-example` for basic DinD usage, `examples/workspaces/kind-example` for KinD, and `examples/workspaces/firewall-example` for `--sandboxed` egress enforcement.  
+> **Security note (2026-02-06):** `--sandboxed` with `--dind` is **not supported**. The DinD sidecar can bypass the egress firewall by running a privileged container in the shared network namespace. Use `--sandboxed` **without** `--dind` until further research.
 
 
-### 12. Network Whitelist
+### 12. Egress Sandbox (`--sandboxed`)
+
+CodingBooth includes an **egress sandbox** that restricts outbound traffic to an allowlist.  
+When enabled, traffic must pass through an Envoy proxy sidecar and is enforced with firewall rules.
+
+**How It Works**
+- Envoy forward proxy enforces a domain allowlist.
+- iptables rules force all HTTP/HTTPS traffic through the proxy.
+- Default policy is **deny**; only allowlisted domains are reachable.
+
+**Configuration**
+- Enable with:
+  ```bash
+  ./booth --sandboxed
+  ```
+- Policy is provided by **one** of:
+  - `.booth/sandbox/allowlist.txt` (simple allowlist), or
+  - `.booth/sandbox/envoy.yaml` (advanced/custom).
+- These are **mutually exclusive**; if both exist, startup fails with a clear error.
+ - Optional: add extra domains with `sandbox-allowlist` in `.booth/config.toml`:
+  ```toml
+  sandbox-allowlist = [
+    "example.com",
+    "registry.npmjs.org"
+  ]
+  ```
+  This list is merged into the active allowlist (default or file-based). It cannot be used with `sandbox-policy-file`.
+
+**Default Allowlist (embedded)**
+- If `--sandboxed` is enabled and no policy files exist, CodingBooth materializes a default allowlist at:
+  - `.booth/sandbox/allowlist.txt`
+- This default content is embedded in the CLI binary and is based on `docs/implementations/example-allowlist.txt`.
+
+**Important Security Note (2026-02-06)**
+- `--sandboxed` with `--dind` is **not supported** due to a known firewall bypass via privileged DinD containers.
+- Use `--sandboxed` **without** `--dind` until further research.
+
+**Quick Example**
+```bash
+mkdir -p .booth/sandbox
+cp docs/implementations/example-allowlist.txt .booth/sandbox/allowlist.txt
+./booth --sandboxed
+```
+
+### 13. Network Whitelist
 
 CodingBooth includes a **network whitelist** feature that restricts container internet access to only approved domains. This is useful for:
 - Security-conscious environments
@@ -1520,7 +1569,3 @@ Stay in touch or follow updates, insights, and development notes:
 
 > 🙏 Every issue, idea, and pull request — big or small — helps make CodingBooth better for everyone.  
 > Thank you for being part of the community!
-
-
-
-

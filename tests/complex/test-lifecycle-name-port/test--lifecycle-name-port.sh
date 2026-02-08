@@ -105,14 +105,18 @@ else
 fi
 
 # 4) To change port, container must be recreated.
-if run_coding_booth stop --name "$NAME" >/dev/null 2>&1 \
-  && run_coding_booth remove --name "$NAME" >/dev/null 2>&1 \
-  && run_coding_booth --variant base --name "$NAME" --port "$PORT_B" --keep-alive -- 'sleep 1' >/dev/null 2>&1; then
+run_coding_booth stop --name "$NAME" >/dev/null 2>&1 || true
+if ! run_coding_booth remove --name "$NAME" >/dev/null 2>&1; then
+  run_coding_booth remove --force --name "$NAME" >/dev/null 2>&1 || true
+fi
+if run_coding_booth --variant base --name "$NAME" --port "$PORT_B" --keep-alive -- 'sleep 1' >/dev/null 2>&1; then
   ACTUAL_PORT="$(host_port_10000 "$NAME")"
   if [[ "$ACTUAL_PORT" == "$PORT_B" ]] && [[ "$(state_of "$NAME")" == "exited" ]]; then
     print_test_result "true" "$0" "4" "recreate allows UI port override"
   else
     print_test_result "false" "$0" "4" "expected recreated container on port $PORT_B"
+    echo "  Actual port: ${ACTUAL_PORT:-<empty>}"
+    echo "  State: $(state_of "$NAME")"
     FAILED=$((FAILED + 1))
   fi
 else

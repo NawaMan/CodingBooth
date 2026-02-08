@@ -68,6 +68,9 @@ func (ctx AppContext) LibDir() string     { return ctx.values.LibDir }
 
 // derived from DinD
 func (ctx AppContext) CreatedDindNet() bool { return ctx.values.CreatedDindNet }
+func (ctx AppContext) CreatedSandboxNet() bool {
+	return ctx.values.CreatedSandboxNet
+}
 
 // derived from image determination of image
 func (ctx AppContext) RunMode() string   { return ctx.values.RunMode }
@@ -84,6 +87,13 @@ func (ctx AppContext) SilenceBuild() bool { return ctx.values.Config.SilenceBuil
 func (ctx AppContext) Daemon() bool       { return ctx.values.Config.Daemon }
 func (ctx AppContext) Pull() bool         { return ctx.values.Config.Pull }
 func (ctx AppContext) Dind() bool         { return ctx.values.Config.Dind }
+func (ctx AppContext) Sandbox() bool       { return ctx.values.Config.Sandbox }
+func (ctx AppContext) WritableBooth() bool  { return ctx.values.Config.WritableBooth }
+func (ctx AppContext) SandboxAllowlistFile() string {
+	return ctx.values.Config.SandboxAllowlistFile
+}
+func (ctx AppContext) SandboxPolicyFile() string { return ctx.values.Config.SandboxPolicyFile }
+func (ctx AppContext) SandboxAllowlist() []string { return ctx.values.Config.SandboxAllowlist }
 
 // Image Configuration
 func (ctx AppContext) Dockerfile() string     { return ctx.values.Config.Dockerfile }
@@ -104,6 +114,13 @@ func (ctx AppContext) Name() string    { return ctx.values.Config.Name }
 func (ctx AppContext) Port() string    { return ctx.values.Config.Port }
 func (ctx AppContext) EnvFile() string { return ctx.values.Config.EnvFile }
 func (ctx AppContext) Startup() string { return ctx.values.Config.Startup }
+
+// Egress Configuration
+func (ctx AppContext) EgressMode() string          { return ctx.values.Config.Egress.Mode }
+func (ctx AppContext) EgressEnforcement() string   { return ctx.values.Config.Egress.Enforcement }
+func (ctx AppContext) EgressDefault() string       { return ctx.values.Config.Egress.Default }
+func (ctx AppContext) EgressAllowlistFile() string { return ctx.values.Config.Egress.AllowlistFile }
+func (ctx AppContext) EgressPolicyFile() string    { return ctx.values.Config.Egress.PolicyFile }
 
 // derived from all the context processing (IMMUTABLE SNAPSHOTS)
 func (ctx AppContext) CommonArgs() ilist.List[ilist.List[string]] { return ctx.commonArgs }
@@ -141,6 +158,7 @@ func (ctx AppContext) String() string {
 
 	fmt.Fprintf(&str, "# DinD --------------------------\n")
 	fmt.Fprintf(&str, "    CreatedDindNet:   %t\n", ctx.CreatedDindNet())
+	fmt.Fprintf(&str, "    CreatedSandboxNet:%t\n", ctx.CreatedSandboxNet())
 
 	fmt.Fprintf(&str, "# Image -------------------------\n")
 	fmt.Fprintf(&str, "    RunMode:          %q\n", ctx.RunMode())
@@ -164,6 +182,8 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Daemon:           %t\n", ctx.Daemon())
 	fmt.Fprintf(&str, "    Pull:             %t\n", ctx.Pull())
 	fmt.Fprintf(&str, "    Dind:             %t\n", ctx.Dind())
+	fmt.Fprintf(&str, "    Sandbox:          %t\n", ctx.Sandbox())
+	fmt.Fprintf(&str, "    WritableBooth:    %t\n", ctx.WritableBooth())
 
 	fmt.Fprintf(&str, "# Image Configuration -----------\n")
 	fmt.Fprintf(&str, "    Dockerfile:       %q\n", ctx.Dockerfile())
@@ -181,6 +201,16 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Port:             %q\n", ctx.Port())
 	fmt.Fprintf(&str, "    EnvFile:          %q\n", ctx.EnvFile())
 	fmt.Fprintf(&str, "    Startup:          %q\n", ctx.Startup())
+
+	fmt.Fprintf(&str, "# Egress Configuration ----------\n")
+	fmt.Fprintf(&str, "    EgressMode:       %q\n", ctx.EgressMode())
+	fmt.Fprintf(&str, "    EgressEnforcement:%q\n", ctx.EgressEnforcement())
+	fmt.Fprintf(&str, "    EgressDefault:    %q\n", ctx.EgressDefault())
+	fmt.Fprintf(&str, "    EgressAllowlist:  %q\n", ctx.EgressAllowlistFile())
+	fmt.Fprintf(&str, "    EgressPolicy:     %q\n", ctx.EgressPolicyFile())
+	fmt.Fprintf(&str, "    SandboxAllowlist: %q\n", ctx.SandboxAllowlistFile())
+	fmt.Fprintf(&str, "    SandboxPolicy:    %q\n", ctx.SandboxPolicyFile())
+	fmt.Fprintf(&str, "    SandboxAllowlist+: %v\n", ctx.SandboxAllowlist())
 
 	fmt.Fprintf(&str, "# Lists (Immutable) -------------\n")
 	formatList(&str, "CommonArgs", ctx.CommonArgs(), "    ")

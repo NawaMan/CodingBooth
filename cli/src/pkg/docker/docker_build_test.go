@@ -15,6 +15,7 @@ import (
 // TestDockerBuild_Silent tests DockerBuild with SilenceBuild enabled.
 // This test will actually build a Docker image but suppress build output unless it fails.
 func TestDockerBuild_Silent(t *testing.T) {
+	requireDocker(t)
 
 	// Define options
 	flags := docker.DockerFlags{
@@ -51,6 +52,7 @@ CMD ["echo", "Hello"]
 
 // TestDockerBuild_Normal tests DockerBuild with SilenceBuild disabled.
 func TestDockerBuild_Normal(t *testing.T) {
+	requireDocker(t)
 
 	// Define options
 	flags := docker.DockerFlags{

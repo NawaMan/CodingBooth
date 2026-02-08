@@ -44,6 +44,8 @@ func TestIntegration_ReadFromToml(t *testing.T) {
 verbose = true
 project-name = "toml-test-project"
 host-uid = "1002"
+
+sandbox-allowlist-file = ".booth/sandbox/allowlist.txt"
 `
 	tmpfile, err := os.CreateTemp("", "config-*.toml")
 	assert.NoError(t, err)
@@ -64,4 +66,5 @@ host-uid = "1002"
 	assert.True(t, config.Verbose.ValueOr(false))
 	assert.Equal(t, "toml-test-project", config.ProjectName)
 	assert.Equal(t, "1002", config.HostUID)
+	assert.Equal(t, ".booth/sandbox/allowlist.txt", config.SandboxAllowlistFile)
 }

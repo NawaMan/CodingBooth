@@ -47,6 +47,20 @@ func ShowDebugBanner(ctx appctx.AppContext) appctx.AppContext {
 	fmt.Printf("PORT_GENERATED: %t\n", ctx.PortGenerated())
 	fmt.Println()
 	fmt.Printf("DIND:           %t\n", ctx.Dind())
+	fmt.Printf("SANDBOX:        %t\n", ctx.Sandbox())
+	if ctx.Sandbox() {
+		entries, note := effectiveSandboxAllowlist(ctx)
+		fmt.Printf("SANDBOX_ALLOWLIST_FILE:  %s\n", ctx.SandboxAllowlistFile())
+		fmt.Printf("SANDBOX_ALLOWLIST_EXTRA: %v\n", ctx.SandboxAllowlist())
+		if len(entries) > 0 {
+			fmt.Printf("SANDBOX_ALLOWLIST:       %s\n", strings.Join(entries, ", "))
+		} else {
+			fmt.Printf("SANDBOX_ALLOWLIST:       (empty)\n")
+		}
+		if note != "" {
+			fmt.Println(note)
+		}
+	}
 	fmt.Println()
 	fmt.Printf("CONTAINER_ENV_FILE: %s\n", ctx.EnvFile())
 	fmt.Println()
