@@ -45,7 +45,8 @@ type Template struct {
 	Requires []string
 
 	// Parameters
-	Params map[string]Param
+	Params     map[string]Param
+	ParamOrder []string // declaration order from spec.toml
 
 	// Content segments (ordered by Order, tiebreak alphabetically by source)
 	BoothfileSegments []Segment
