@@ -292,17 +292,31 @@ func buildArgLines(params map[string]string) string {
 	return strings.Join(lines, "\n") + "\n\n"
 }
 
-// dedup removes exact duplicate strings from a slice, preserving order.
+// dedup removes duplicate flag-value pairs from a slice, preserving order.
+// Flags like "-v" and "-e" consume the next element as their value,
+// so "-v foo" and "-v bar" are treated as distinct pairs.
 func dedup(items []string) []string {
 	if len(items) == 0 {
 		return nil
 	}
+	// Flags that take a following value argument
+	pairedFlags := map[string]bool{"-v": true, "-e": true, "-p": true, "-l": true}
+
 	seen := make(map[string]bool, len(items))
 	var result []string
-	for _, item := range items {
-		if !seen[item] {
-			seen[item] = true
-			result = append(result, item)
+	for i := 0; i < len(items); i++ {
+		if pairedFlags[items[i]] && i+1 < len(items) {
+			pair := items[i] + "\x00" + items[i+1]
+			if !seen[pair] {
+				seen[pair] = true
+				result = append(result, items[i], items[i+1])
+			}
+			i++ // skip value
+		} else {
+			if !seen[items[i]] {
+				seen[items[i]] = true
+				result = append(result, items[i])
+			}
 		}
 	}
 	return result

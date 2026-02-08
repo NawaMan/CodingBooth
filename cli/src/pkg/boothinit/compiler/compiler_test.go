@@ -427,8 +427,8 @@ func TestCompile_RunArgsCombined(t *testing.T) {
 
 	out, err := Compile(resolved)
 	require.NoError(t, err)
-	// -e appears once (deduped), FOO=1, BAR=2 all present
-	assert.Equal(t, []string{"-e", "FOO=1", "BAR=2"}, out.Config.RunArgs)
+	// Each -e + value is a distinct pair
+	assert.Equal(t, []string{"-e", "FOO=1", "-e", "BAR=2"}, out.Config.RunArgs)
 }
 
 func TestCompile_BuildArgsCombined(t *testing.T) {
@@ -746,8 +746,8 @@ func TestCompile_EndToEnd(t *testing.T) {
 	// Config
 	assert.Equal(t, "bookworm", out.Config.Variant)
 	assert.Equal(t, "8080", out.Config.Port)
-	// RunArgs combined and deduped: -e appears once
-	assert.Equal(t, []string{"-e", "GOPATH=/home/dev/go", "PYTHONPATH=/home/dev"}, out.Config.RunArgs)
+	// RunArgs combined and deduped: each -e + value is a distinct pair
+	assert.Equal(t, []string{"-e", "GOPATH=/home/dev/go", "-e", "PYTHONPATH=/home/dev"}, out.Config.RunArgs)
 
 	// Boothfile: ARG lines + segments sorted
 	require.NotNil(t, out.Boothfile)

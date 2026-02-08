@@ -5,3 +5,9 @@ tags = [
     "ai",
     "claude"
 ]
+
+run-args = [
+    # Claude Code config and credentials (home-seeding: may update tokens/session)
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
+]

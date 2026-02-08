@@ -298,14 +298,14 @@ func TestIntegration_Dryrun_DindFromClaudeCode(t *testing.T) {
 func TestIntegration_Dryrun_RunArgsDeduped(t *testing.T) {
 	out, _ := pipeline(t, "go/python")
 
-	// -e flag appears only once even though both go and python add it
+	// Each -e + value is a distinct pair; go and python have different values so both appear
 	count := 0
 	for _, arg := range out.Config.RunArgs {
 		if arg == "-e" {
 			count++
 		}
 	}
-	assert.Equal(t, 1, count, "-e should appear only once after dedup")
+	assert.Equal(t, 2, count, "-e should appear once per distinct flag-value pair")
 }
 
 func TestIntegration_Dryrun_ConfigTomlContent(t *testing.T) {
