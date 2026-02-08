@@ -433,7 +433,9 @@ The init logic is part of the `codingbooth` binary, so it must be implemented in
 
 **Development override:** Use `--templates-path` to load templates from a local directory (skips download/extraction).
 
-### Suggested Package Structure
+### Package Structure
+
+The init feature lives under `pkg/boothinit/` (not `pkg/init/` to avoid collision with Go's `init` keyword and the existing `booth/init` package which handles app context initialization).
 
 ```
 cmd/
@@ -442,54 +444,63 @@ cmd/
     └── init.go
 
 pkg/
-└── init/
+└── boothinit/
+    ├── output/                    # Phase 1 — Output model and serialization
+    │   ├── model.go               # BoothOutput, ConfigToml, BoothfileContent, StartupContent, FileContent
+    │   ├── config.go              # config.toml serialization (SerializeConfigToml)
+    │   ├── boothfile.go           # Boothfile generation (SerializeBoothfile)
+    │   ├── startup.go             # startup.sh generation (SerializeStartup)
+    │   ├── files.go               # File copy logic (CopyFiles)
+    │   └── writer.go              # Orchestrator (WriteOutput) — writes all files to .booth/
     ├── cache/
-    │   ├── download.go       # Download templates.zip from GitHub
-    │   ├── verify.go         # SHA256 verification
-    │   └── extract.go        # Extract to temp dir
-    ├── output/
-    │   ├── model.go          # Output data structures
-    │   ├── config.go         # config.toml serialization
-    │   ├── boothfile.go      # Boothfile generation
-    │   ├── startup.go        # startup.sh generation
-    │   ├── file.go           # whole file generation
-    │   └── writer.go         # File writing orchestration
+    │   ├── download.go            # Download templates.zip from GitHub
+    │   ├── verify.go              # SHA256 verification
+    │   └── extract.go             # Extract to temp dir
     ├── template/
-    │   ├── model.go          # Template data structures
-    │   ├── loader.go         # TOML parsing and registry
-    │   └── resolve.go        # Template → Output conversion
+    │   ├── model.go               # Template data structures
+    │   ├── loader.go              # TOML parsing and registry
+    │   └── resolve.go             # Template → Output conversion
     ├── cli/
-    │   ├── list.go           # --list command
-    │   ├── search.go         # --search command
-    │   └── select.go         # --select --non-interactive command
+    │   ├── list.go                # list command
+    │   ├── search.go              # search command
+    │   └── select.go              # select --non-interactive command
     ├── quick/
-    │   └── quick.go          # Quick mode UI  (future)
+    │   └── quick.go               # Quick mode UI  (future)
     └── tui/
-        └── app.go            # Advanced mode TUI (using bubbletea)  (future)
+        └── app.go                 # Advanced mode TUI (using bubbletea)  (future)
 ```
+
+#### Output Model Design Notes (Phase 1)
+
+The output data model uses a flat `BoothOutput` struct that holds all generated content:
+
+- **`ConfigToml`** — Scalar fields (`Variant`, `Port`, `Timezone`, `Dind`) and array fields (`Cmds`, `RunArgs`, `BuildArgs`). Only non-empty/non-zero fields are serialized to TOML. `Dind=false` is omitted.
+- **`BoothfileContent`** — Pre-merged content string. The serializer prepends the `# syntax=codingbooth/boothfile:1` header.
+- **`StartupContent`** — Pre-merged content string. The serializer prepends `#!/bin/bash` and `set -e`.
+- **`FileContent`** — A `SourcePath`/`RelPath` pair for file copy operations. Used for `Setups`, `Home`, and `HomeSeed` slices.
+
+`WriteOutput` enforces that `.booth/` must not already exist (safety check per the plan's "new project" constraint). Files are only written when their content is non-empty/non-nil.
 
 ---
 
 ## Implementation Phases
 
-### Phase 1: Booth configuration
+### Phase 1: Booth configuration ✓
 Prompt: Define data model of the output (Booth configurations) and the code to serialize them
 Suggest steps
-- [ ] Define Go structs for output:
-  - `BoothfileContent`
-  - `StartupContent`
-  - `ConfigItems`
-  - `ConfigRunArgs`
-  - `HomeFiles`
-  - `HomeSeedFiles`
-  - `SetupFiles`
-- [ ] Implement serialization to file if exists:
-  - Write `.booth/config.toml`
-  - Write `.booth/Boothfile`
-  - Write `.booth/startup.sh`
-  - Copy files to `.booth/home/` and `.booth/home-seed/`
-  - startup script will be a bash script with shebang and -e flag to terminate on error and call to script specified by the template.
-- [ ] Test with hardcoded data
+- [x] Define Go structs for output:
+  - `BoothOutput` (top-level container)
+  - `ConfigToml` (variant, port, timezone, dind, cmds, run-args, build-args)
+  - `BoothfileContent` (pre-merged content string)
+  - `StartupContent` (pre-merged content string)
+  - `FileContent` (source/relpath pair for setups, home, home-seed)
+- [x] Implement serialization to file if exists:
+  - Write `.booth/config.toml` — `SerializeConfigToml`
+  - Write `.booth/Boothfile` — `SerializeBoothfile` (with syntax header)
+  - Write `.booth/startup.sh` — `SerializeStartup` (with shebang + `set -e`)
+  - Copy files to `.booth/setups/`, `.booth/home/`, `.booth/home-seed/` — `CopyFiles`
+  - `WriteOutput` orchestrates all writes and enforces `.booth/` must not exist
+- [x] Test with hardcoded data (36 unit tests covering all serializers, file copy, and writer orchestration)
 
 ### Phase 2: Template
 Prompt: Define data model of the templates and the code to deserialize them
