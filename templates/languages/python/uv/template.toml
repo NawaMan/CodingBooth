@@ -13,6 +13,5 @@ Boothfile = """
 # This extension enables 'install uv <packages>' in Boothfiles.
 """
 "Boothfile--90" = """
-copy .booth/requirements.txt /tmp/requirements.txt
-run uv pip install -r /tmp/requirements.txt
+run --mount=type=bind,target=/tmp/ctx if [ -f /tmp/ctx/.booth/requirements.txt ]; then uv pip install -r /tmp/ctx/.booth/requirements.txt; else echo "Warning: .booth/requirements.txt not found -- skipping uv pip install"; fi
 """
