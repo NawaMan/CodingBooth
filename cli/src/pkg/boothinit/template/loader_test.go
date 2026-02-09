@@ -526,9 +526,9 @@ func TestLoadRegistry_EmptyExtensions(t *testing.T) {
 	registry, err := LoadRegistry(testdataDir())
 	require.NoError(t, err)
 
-	// Python has no extensions
-	py := registry.ByName["python"]
-	assert.Empty(t, py.Extensions)
+	// Neovim has no extensions
+	nvim := registry.ByName["neovim"]
+	assert.Empty(t, nvim.Extensions)
 }
 
 // --- Duplicate template names ---
@@ -588,6 +588,85 @@ func TestLoadRegistry_SkipsHiddenDirs(t *testing.T) {
 	registry, err := LoadRegistry(tmpDir)
 	require.NoError(t, err)
 	assert.Empty(t, registry.Categories)
+}
+
+// --- Inline extension files ---
+
+func TestLoadRegistry_InlineExtensionFile(t *testing.T) {
+	registry, err := LoadRegistry(testdataDir())
+	require.NoError(t, err)
+
+	// Python now has an inline extension: pip--extension.toml
+	py := registry.ByName["python"]
+	require.Len(t, py.Extensions, 1)
+
+	pip := py.Extensions[0]
+	assert.Equal(t, "pip", pip.Name)
+	assert.Equal(t, "pip requirements", pip.DisplayName)
+	assert.Equal(t, 12, pip.DisplayOrder)
+	assert.Equal(t, false, *pip.AutoSelect)
+	assert.ElementsMatch(t, []string{"python", "packages", "pip"}, pip.Tags)
+}
+
+func TestLoadRegistry_InlineExtensionWithSegments(t *testing.T) {
+	registry, err := LoadRegistry(testdataDir())
+	require.NoError(t, err)
+
+	py := registry.ByName["python"]
+	pip := py.Extensions[0]
+
+	require.Len(t, pip.BoothfileSegments, 1)
+	assert.Equal(t, 90, pip.BoothfileSegments[0].Order)
+	assert.Contains(t, pip.BoothfileSegments[0].Content, "pip install")
+}
+
+func TestLoadRegistry_InlineExtensionConflictWithDir(t *testing.T) {
+	tmpDir := t.TempDir()
+	catDir := filepath.Join(tmpDir, "mycat")
+	tmplDir := filepath.Join(catDir, "mytemplate")
+	extDir := filepath.Join(tmplDir, "myext")
+	require.NoError(t, os.MkdirAll(extDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+		[]byte("display-name = \"MyCat\"\norder = 1\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+		[]byte("display-name = \"MyTemplate\"\ndisplay-order = 1\n"), 0644))
+	// Directory-based extension
+	require.NoError(t, os.WriteFile(filepath.Join(extDir, "template.toml"),
+		[]byte("display-name = \"MyExt Dir\"\ndisplay-order = 1\n"), 0644))
+	// Inline extension with same name
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "myext--extension.toml"),
+		[]byte("display-name = \"MyExt Inline\"\ndisplay-order = 2\n"), 0644))
+
+	_, err := LoadRegistry(tmpDir)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "defined as both a directory and an inline file")
+}
+
+func TestLoadRegistry_InlineExtensionCoexistsWithDirExtension(t *testing.T) {
+	tmpDir := t.TempDir()
+	catDir := filepath.Join(tmpDir, "mycat")
+	tmplDir := filepath.Join(catDir, "mytemplate")
+	extDir := filepath.Join(tmplDir, "dirext")
+	require.NoError(t, os.MkdirAll(extDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+		[]byte("display-name = \"MyCat\"\norder = 1\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+		[]byte("display-name = \"MyTemplate\"\ndisplay-order = 1\n"), 0644))
+	// Directory-based extension
+	require.NoError(t, os.WriteFile(filepath.Join(extDir, "template.toml"),
+		[]byte("display-name = \"Dir Ext\"\ndisplay-order = 2\n"), 0644))
+	// Inline extension with different name
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "inlineext--extension.toml"),
+		[]byte("display-name = \"Inline Ext\"\ndisplay-order = 1\n"), 0644))
+
+	registry, err := LoadRegistry(tmpDir)
+	require.NoError(t, err)
+
+	tmpl := registry.ByName["mytemplate"]
+	require.Len(t, tmpl.Extensions, 2)
+	// Sorted by display-order: inlineext (1), dirext (2)
+	assert.Equal(t, "inlineext", tmpl.Extensions[0].Name)
+	assert.Equal(t, "dirext", tmpl.Extensions[1].Name)
 }
 
 func TestLoadRegistry_SkipsTemplateWithoutSpec(t *testing.T) {
