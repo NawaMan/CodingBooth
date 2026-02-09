@@ -1,0 +1,10 @@
+display-name = "pip requirements"
+display-disc = "Install packages from requirements.txt using pip"
+display-order = 12
+auto-select = false
+tags = ["python", "packages", "pip"]
+
+[segments]
+"Boothfile--90" = """
+run pip install -r /tmp/requirements.txt
+"""

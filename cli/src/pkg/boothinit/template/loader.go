@@ -236,6 +236,9 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		if err != nil {
 			return nil, fmt.Errorf("reading template directory: %w", err)
 		}
+		extNames := make(map[string]bool) // track names to detect conflicts
+
+		// Pass 1: directory-based extensions
 		specialDirs := map[string]bool{"setups": true, "home": true, "home-seed": true}
 		for _, entry := range entries {
 			if !entry.IsDir() || strings.HasPrefix(entry.Name(), ".") || specialDirs[entry.Name()] {
@@ -249,12 +252,83 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 			if ext == nil {
 				continue
 			}
+			extNames[entry.Name()] = true
+			tmpl.Extensions = append(tmpl.Extensions, ext)
+		}
+
+		// Pass 2: inline extension files (<name>--extension.toml)
+		for _, entry := range entries {
+			if entry.IsDir() || !strings.HasSuffix(entry.Name(), "--extension.toml") {
+				continue
+			}
+			extName := strings.TrimSuffix(entry.Name(), "--extension.toml")
+			if extNames[extName] {
+				return nil, fmt.Errorf("extension %q defined as both a directory and an inline file", extName)
+			}
+			extPath := filepath.Join(dir, entry.Name())
+			ext, err := loadExtensionFile(extPath, extName, categoryName)
+			if err != nil {
+				return nil, fmt.Errorf("loading inline extension %q: %w", extName, err)
+			}
 			tmpl.Extensions = append(tmpl.Extensions, ext)
 		}
 
 		slices.SortFunc(tmpl.Extensions, func(a, b *Template) int {
 			return a.DisplayOrder - b.DisplayOrder
 		})
+	}
+
+	return tmpl, nil
+}
+
+// loadExtensionFile loads an extension from an inline <name>--extension.toml file.
+// This is equivalent to a directory-based extension but without file-based segments,
+// setup scripts, or home/home-seed files.
+func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
+	var spec specToml
+	md, err := toml.DecodeFile(filePath, &spec)
+	if err != nil {
+		return nil, fmt.Errorf("parsing %s: %w", filepath.Base(filePath), err)
+	}
+
+	tmpl := &Template{
+		Name:         name,
+		CategoryName: categoryName,
+		DisplayName:  spec.DisplayName,
+		DisplayDesc:  spec.DisplayDesc,
+		DisplayOrder: spec.DisplayOrder,
+		Tags:         spec.Tags,
+		AutoSelect:   spec.AutoSelect,
+		Variant:      spec.Variant,
+		Port:         spec.Port,
+		Timezone:     spec.Timezone,
+		Dind:         spec.Dind,
+		Cmds:         spec.Cmds,
+		BuildArgs:    spec.BuildArgs,
+		RunArgs:      spec.RunArgs,
+		Requires:     spec.Requires,
+	}
+
+	// Convert params, preserving declaration order from TOML
+	if len(spec.Params) > 0 {
+		tmpl.Params = make(map[string]Param, len(spec.Params))
+		for k, v := range spec.Params {
+			tmpl.Params[k] = Param{Default: v.Default, Suggests: v.Suggests}
+		}
+		for _, key := range md.Keys() {
+			if len(key) == 2 && key[0] == "params" {
+				tmpl.ParamOrder = append(tmpl.ParamOrder, key[1])
+			}
+		}
+	}
+
+	// Parse inline segments (no file-based segments for inline extensions)
+	if len(spec.Segments) > 0 {
+		var err error
+		tmpl.BoothfileSegments, tmpl.StartupSegments, err = parseInlineSegments(spec.Segments)
+		if err != nil {
+			return nil, fmt.Errorf("parsing inline segments: %w", err)
+		}
 	}
 
 	return tmpl, nil
