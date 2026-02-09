@@ -46,6 +46,56 @@ function run() {
     "$@" >> $log 2>&1
 }
 
+function booth-collect() {
+    local cmd="$1"
+    cd $prj
+    booth --silence-build -- "$cmd" > "$tmpfile"
+    cd ..
+    cat "$tmpfile" >> $log
+    if [[ "$VERBOSE" == "true" ]]; then
+        cat "$tmpfile"
+    fi
+}
+
+function assert-line() {
+    if [[ "$VERBOSE" == "true" ]]; then echo ""; fi
+
+    TEST_COUNT=$((TEST_COUNT + 1))
+
+    local FILE="${1}"
+    local PREFIX="${2}"
+    local EXPECTED="${3}"
+    local MESSAGE="${4}"
+    echo "" >> $log
+    local width=64
+    local label="${MESSAGE} "
+    local pad_len=$((width - ${#label}))
+    if (( pad_len < 3 )); then pad_len=3; fi
+    local pad=$(printf '%*s' "$pad_len" '' | tr ' ' '.')
+
+    local test="Test ${TEST_COUNT}: ${label}"
+    echo -n "${test}${pad}"
+    if [[ "$VERBOSE" == "true" ]]; then echo ""; else echo -n " "; fi
+
+    echo "## Test ${TEST_COUNT} ###########################" >> $log
+
+    local FOUND
+    FOUND="$(grep "^${PREFIX}" "$FILE" 2>/dev/null | head -1)" || true
+    echo "  assert-line: prefix='${PREFIX}' found='${FOUND}' expected='${PREFIX}${EXPECTED}'" >> $log
+
+    if [[ "${FOUND}" != "${PREFIX}${EXPECTED}" ]]; then
+        FAIL_COUNT=$((FAIL_COUNT + 1))
+        FAIL_TESTS+=("${test}")
+        echo -e "\033[31mFAILED\033[0m"
+
+        echo "  EXPECTED: ${PREFIX}${EXPECTED}"
+        echo "  FOUND   : ${FOUND}"
+        return
+    fi
+    PASS_COUNT=$((PASS_COUNT + 1))
+    echo -e "\033[32mPASSED\033[0m"
+}
+
 function assert-last() {
     if [[ "$VERBOSE" == "true" ]]; then echo ""; fi
 
@@ -89,9 +139,12 @@ function assert-last() {
 function begin() {
     echo "Begin ${testname}" | tee $log
     run rm -Rf $prj
+    mkdir -p "${prj}"
+    tmpfile="$(mktemp)" ; echo "Using temp file: $tmpfile" >> $log
 }
 
 function finally() {
+    rm -f "$tmpfile"
     if [[ "$VERBOSE" == "true" ]]; then echo ""; fi
     if [[ ${FAIL_COUNT} -gt 0 ]]; then
         echo ""

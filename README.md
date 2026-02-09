@@ -2,17 +2,20 @@
 
 **Current Version:** v0.15.0 — [View Changelog](CHANGELOG.md)
 
-CodingBooth delivers fully reproducible, Docker-powered development environments — anywhere, on any machine.
+**CodingBooth** delivers fully reproducible, Docker-powered development environments — anywhere, on any machine.
+
 You’ve containerized your app. You’ve containerized your build.
 But your development environment? Still a mess of system-wide installs, mismatched versions, and onboarding docs no one reads.
 
-**CodingBooth** fixes that.
+**CodingBooth fixes that.**
 
-With CodingBooth, you can run your IDE, shell, or even an entire Linux desktop inside a container — perfectly mapped to your host user (no root-owned files, no permission headaches). Every developer on your team gets the same consistent environment with zero setup friction.
+Run a browser-based VS Code workspace, a Jupyter notebook, or even an entire Linux desktop inside a container — with every file owned by you, not root. Your environment lives with the project, launches in a single command, and works the same on every machine.
 
-Whether you want a browser-based VS Code session, a Jupyter notebook environment, or a complete XFCE/KDE desktop accessible through your browser — the CodingBooth images and launcher script make it effortless.
+New teammate joining? They run one command and get the exact same environment.
+No setup guides. No dependency drift. No “works on my machine.”
 
-**Result:** a clean, consistent, portable development experience that just works.
+**Result:** zero-setup onboarding, portable development environments, and a clean, consistent workspace that just works!
+
 
 # Table of Contents
 - [Quick Try](#quick-try)

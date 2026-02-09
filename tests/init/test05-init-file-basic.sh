@@ -7,5 +7,10 @@ recipe="$prj--recipe.txt"
 echo "java" > "$recipe"
 
 run booth init new $prj --select "@$recipe"
-assert-last "which java || echo 'not found'" "/usr/bin/java" "Java is installed"
+
+booth-collect "
+echo -n '1: ' ; which java || echo 'not found' ;
+"
+
+assert-line "$tmpfile" "1: " "/usr/bin/java" "Java is installed"
 finally

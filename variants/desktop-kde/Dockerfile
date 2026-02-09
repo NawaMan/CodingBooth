@@ -34,6 +34,9 @@ RUN cleanup-after--setup.sh
 # Copy CodingBooth wallpaper
 COPY wallpaper.png /usr/share/backgrounds/codingbooth-wallpaper.png
 
+# Clear the lock
+RUN rm -f /etc/.pwd.lock /etc/passwd.lock /etc/shadow.lock /etc/group.lock
+
 
 CMD ["start-kde"]
 

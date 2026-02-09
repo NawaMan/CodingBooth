@@ -35,4 +35,7 @@ RUN cleanup-after--setup.sh
 RUN cp /usr/share/backgrounds/xfce/xfce-blue.jpg /usr/share/backgrounds/xfce/xfce-original-wallpaper.jpg
 COPY wallpaper.jpg /usr/share/backgrounds/xfce/xfce-blue.jpg
 
+# Clear the lock
+RUN rm -f /etc/.pwd.lock /etc/passwd.lock /etc/shadow.lock /etc/group.lock
+
 CMD ["start-xfce"]

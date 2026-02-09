@@ -6,14 +6,25 @@ begin
 # Create recipe file and serve it via a simple HTTP server
 recipe_dir=$(mktemp -d)
 echo "java" > "$recipe_dir/recipe.txt"
-python3 -m http.server 0 --directory "$recipe_dir" > "$recipe_dir/server.log" 2>&1 &
+python3 -c "
+import http.server, socketserver, os, sys
+os.chdir('$recipe_dir')
+s = socketserver.TCPServer(('',0), http.server.SimpleHTTPRequestHandler)
+open('$recipe_dir/port', 'w').write(str(s.server_address[1]))
+s.serve_forever()
+" &
 server_pid=$!
 sleep 1
-port=$(grep -oP 'port \K[0-9]+' "$recipe_dir/server.log")
+port=$(cat "$recipe_dir/port")
 
 run booth init new $prj --select "@@http://localhost:${port}/recipe.txt"
-assert-last "which java || echo 'not found'" "/usr/bin/java" "Java is installed"
 
 kill $server_pid 2>/dev/null
 rm -rf "$recipe_dir"
+
+booth-collect "
+echo -n '1: ' ; which java || echo 'not found' ;
+"
+
+assert-line "$tmpfile" "1: " "/usr/bin/java" "Java is installed"
 finally
