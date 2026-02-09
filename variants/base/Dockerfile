@@ -143,6 +143,9 @@ COPY --chmod=0644 99z-cb--profile.sh /etc/profile.d/99z-cb--profile.sh
 # Startup file: to be executed at first container start
 COPY --chmod=0755 99z-cb--startup.sh /usr/share/startup.d/99z-cb--startup.sh
 
+# Clear the lock
+RUN rm -f /etc/.pwd.lock /etc/passwd.lock /etc/shadow.lock /etc/group.lock
+
 
 # tini as PID 1, then run booth-entry which execs CMD as 'coder'
 # This is needed as booth-entry ends up running CMD which is a child process,

@@ -113,27 +113,42 @@ fi
 info "4) Ensuring user '$USER_NAME' exists and matches HOST_UID..."
 existing_uid_user="$(getent passwd "$HOST_UID" | cut -d: -f1 || true)"
 if id -u "$USER_NAME" >/dev/null 2>&1; then
+  info "4) - One"
   current_uid="$(id -u "$USER_NAME")"
+  info "4) - Two"
   # minimal additions: detect current primary group name and shell
   current_gid_name="$(id -gn "$USER_NAME")"
+  info "4) - Three"
   current_shell="$(getent passwd "$USER_NAME" | cut -d: -f7 || true)"
+  info "4) - Four"
 
   if [ "$current_uid" != "$HOST_UID" ]; then
+    # Clear the lock
+    sudo rm -f         \
+      /etc/.pwd.lock   \
+      /etc/passwd.lock \
+      /etc/shadow.lock \
+      /etc/group.lock
+    
     # If another user has HOST_UID, move them out of the way
     if [ -n "$existing_uid_user" ] && [ "$existing_uid_user" != "$USER_NAME" ]; then
       temp_uid="$(find_free_uid)"; UserMod -u "$temp_uid" "$existing_uid_user"
     fi
+
+    info "4) - Five"
     UserMod -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
   else
     # Only call usermod if group or shell actually differ (avoid "no changes" noise)
     if [ "$current_gid_name" != "$USER_NAME" ] || [ "$current_shell" != "$USER_SHELL" ]; then
       UserMod -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+      info "4) - Six"
     fi
   fi
 else
   # 'coder' doesn't exist yet; if HOST_UID is already taken, move that user aside
   if [ -n "$existing_uid_user" ] && [ "$existing_uid_user" != "$USER_NAME" ]; then
     temp_uid="$(find_free_uid)"; UserMod -u "$temp_uid" "$existing_uid_user"
+    info "4) - Seven"
   fi
   # Create coder. Reuse existing HOME_DIR if present; otherwise create it (-m).
   if [ -d "$HOME_DIR" ]; then
@@ -142,6 +157,7 @@ else
     useradd -m -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
   fi
 fi
+  info "4) - Eight"
 
 info "5) Fixing ownership for files owned by original UID:GID (skipping $CODE_DIR)..."
 if [ -n "$ORIG_UID" ] && [ "$ORIG_UID" != "$HOST_UID" ]; then

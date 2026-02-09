@@ -112,8 +112,8 @@ func runInitNew(args []string) {
 		os.Exit(1)
 	}
 
-	printSummary(resolved)
 	fmt.Printf("Initialized .booth/ in %s\n", targetPath)
+	printSummary(resolved)
 
 	if flags.start {
 		fmt.Printf("Starting booth in %s ...\n", targetPath)
