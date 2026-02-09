@@ -1,2 +1,0 @@
-copy .booth/requirements.txt /tmp/requirements.txt
-run conda install --yes --prefix /opt/python --file /tmp/requirements.txt
