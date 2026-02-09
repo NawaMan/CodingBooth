@@ -12,7 +12,10 @@ tags = [
 Boothfile = """
 setup conda
 """
-"Boothfile--90" = """
-copy .booth/requirements.txt /tmp/requirements.txt
-run conda install --yes --prefix /opt/python --file /tmp/requirements.txt
+"Boothfile--90" = """ 
+run --mount=type=bind,target=/tmp/ctx                                               \
+    if [ -f /tmp/ctx/.booth/requirements.txt ]; then                                \
+         pip install -r /tmp/ctx/.booth/requirements.txt;                           \
+    else echo "Warning: .booth/requirements.txt not found -- skipping pip install"; \
+    fi
 """

@@ -5,5 +5,4 @@ arg PYTHON_VERSION=3.13.12
 
 setup python ${PYTHON_VERSION}
 setup python-code-extension
-copy .booth/requirements.txt /tmp/requirements.txt
-run pip install -r /tmp/requirements.txt
+run --mount=type=bind,target=/tmp/ctx if [ -f /tmp/ctx/.booth/requirements.txt ]; then pip install -r /tmp/ctx/.booth/requirements.txt; else echo "Warning: .booth/requirements.txt not found -- skipping pip install"; fi

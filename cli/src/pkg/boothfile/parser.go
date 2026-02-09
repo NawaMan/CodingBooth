@@ -195,6 +195,25 @@ func (p *Parser) Parse(r io.Reader) ParseResult {
 	for scanner.Scan() {
 		lineNumber++
 		line := scanner.Text()
+		startLineNumber := lineNumber
+
+		// Handle backslash line continuation:
+		// If a line ends with '\' (ignoring trailing whitespace), the next line
+		// is joined with a single space separating them.
+		for {
+			trimmed := strings.TrimRight(line, " \t")
+			if !strings.HasSuffix(trimmed, `\`) {
+				break
+			}
+			// Strip the trailing backslash and any whitespace before it
+			line = strings.TrimRight(trimmed[:len(trimmed)-1], " \t")
+			if !scanner.Scan() {
+				break
+			}
+			lineNumber++
+			nextLine := strings.TrimLeft(scanner.Text(), " \t")
+			line = line + " " + nextLine
+		}
 
 		// First non-blank, non-comment line must be syntax directive
 		if !syntaxFound {
@@ -202,7 +221,7 @@ func (p *Parser) Parse(r io.Reader) ParseResult {
 			if trimmed == "" {
 				result.Commands = append(result.Commands, Command{
 					Type:       CommandBlank,
-					LineNumber: lineNumber,
+					LineNumber: startLineNumber,
 					Raw:        line,
 				})
 				continue
@@ -213,14 +232,14 @@ func (p *Parser) Parse(r io.Reader) ParseResult {
 				syntaxFound = true
 				if trimmed != SyntaxDirective {
 					result.Errors = append(result.Errors, ParseError{
-						LineNumber: lineNumber,
+						LineNumber: startLineNumber,
 						Message:    fmt.Sprintf("Invalid syntax directive. Expected: %s", SyntaxDirective),
 						Hint:       "The first non-blank line must be exactly: " + SyntaxDirective,
 					})
 				}
 				result.Commands = append(result.Commands, Command{
 					Type:       CommandComment,
-					LineNumber: lineNumber,
+					LineNumber: startLineNumber,
 					Raw:        line,
 				})
 				continue
@@ -228,7 +247,7 @@ func (p *Parser) Parse(r io.Reader) ParseResult {
 
 			// Not a syntax directive - error
 			result.Errors = append(result.Errors, ParseError{
-				LineNumber: lineNumber,
+				LineNumber: startLineNumber,
 				Message:    "Missing syntax directive",
 				Hint:       "Boothfile must start with: " + SyntaxDirective,
 			})
@@ -236,7 +255,7 @@ func (p *Parser) Parse(r io.Reader) ParseResult {
 		}
 
 		// Parse the line
-		cmd, err := p.parseLine(line, lineNumber, scanner, &lineNumber)
+		cmd, err := p.parseLine(line, startLineNumber, scanner, &lineNumber)
 		if err != nil {
 			result.Errors = append(result.Errors, *err)
 			continue
