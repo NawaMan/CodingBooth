@@ -1,0 +1,9 @@
+display-name = "pip requirements"
+display-disc = "Install packages from .booth/requirements.txt using pip"
+display-order = 12
+auto-select = false
+tags = [
+    "python",
+    "packages",
+    "pip"
+]

@@ -1,0 +1,2 @@
+copy .booth/requirements.txt /tmp/requirements.txt
+run pip install -r /tmp/requirements.txt
