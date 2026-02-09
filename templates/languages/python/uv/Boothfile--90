@@ -1,2 +1,0 @@
-copy .booth/requirements.txt /tmp/requirements.txt
-run uv pip install -r /tmp/requirements.txt
