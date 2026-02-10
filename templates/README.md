@@ -8,8 +8,9 @@ merged **globally** and sorted by order number, with alphabetical tiebreak by te
 
 | Segment Key       | Order | Use for                                                  |
 |--------------------|-------|----------------------------------------------------------|
+| `"Boothfile--40"`  | 40    | Infrastructure (desktop environments: xfce, kde, lxqt)   |
 | `Boothfile`        | 50    | Base/independent setups (java, python, go, nodejs, etc.) |
-| `"Boothfile--60"`  | 60    | Setups that depend on a base (kotlin, scala, clojure need java; elixir needs erlang; IDEs need a desktop) |
+| `"Boothfile--60"`  | 60    | Setups that depend on a base (kotlin, scala, clojure need java; elixir needs erlang; IDEs, browsers need a desktop) |
 | `"Boothfile--90"`  | 90    | Post-setup steps (pip/uv/conda install from requirements.txt, etc.) |
 
 **Rule of thumb:** if your setup script assumes another setup has already run
@@ -65,3 +66,32 @@ setup kotlin ${KOTLIN_VERSION}
 
 Scripts that **do** accept a bare positional version (simple `$1` capture without a while loop):
 `python`, `nodejs`, `bun`, `deno`, `ruby`, `neovim`, `jdk`.
+
+## Run Args & Persistent Volumes
+
+Templates can specify `run-args` to add Docker flags when the container starts.
+A common use case is **persistent volumes** for databases so data survives container restarts.
+
+```toml
+# Named Docker volume — data persists across container restarts
+run-args = [
+    "-v", "booth-pgdata:/var/lib/postgresql",
+]
+```
+
+### Database Volume Conventions
+
+| Database   | Volume Name        | Mount Point            |
+|------------|--------------------|------------------------|
+| PostgreSQL | `booth-pgdata`     | `/var/lib/postgresql`  |
+| MySQL      | `booth-mysqldata`  | `/var/lib/mysql`       |
+
+These use **named Docker volumes** (not bind mounts), so Docker manages the storage.
+Data persists even if the container is removed, as long as the volume exists.
+
+To reset a database: `docker volume rm booth-pgdata` (or `booth-mysqldata`).
+
+### Other Run Args Uses
+
+- **Credential seeding**: mount host config files as read-only into `/etc/cb-home-seed/`
+- **Environment variables**: `-e`, `"VAR=value"` for runtime configuration

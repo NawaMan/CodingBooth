@@ -1,0 +1,18 @@
+display-name = "PostgreSQL"
+display-disc = "PostgreSQL relational database"
+display-order = 20
+tags = [
+    "database",
+    "postgresql",
+    "sql"
+]
+
+run-args = [
+    # Persist PostgreSQL data across container restarts
+    "-v", "booth-pgdata:/var/lib/postgresql",
+]
+
+[segments]
+Boothfile = """
+setup postgresql
+"""

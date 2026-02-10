@@ -1,0 +1,15 @@
+display-name = "CLion"
+display-disc = "JetBrains CLion IDE for C/C++"
+display-order = 32
+tags = [
+    "jetbrains",
+    "clion",
+    "ide",
+    "c",
+    "cpp"
+]
+
+[segments]
+"Boothfile--60" = """
+setup jetbrains clion
+"""

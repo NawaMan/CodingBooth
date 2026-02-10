@@ -9,6 +9,6 @@ tags = [
 ]
 
 [segments]
-Boothfile = """
+"Boothfile--40" = """
 setup kde
 """

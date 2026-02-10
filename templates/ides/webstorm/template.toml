@@ -1,0 +1,15 @@
+display-name = "WebStorm"
+display-disc = "JetBrains WebStorm IDE for JavaScript"
+display-order = 28
+tags = [
+    "jetbrains",
+    "webstorm",
+    "ide",
+    "javascript",
+    "web"
+]
+
+[segments]
+"Boothfile--60" = """
+setup jetbrains webstorm
+"""
