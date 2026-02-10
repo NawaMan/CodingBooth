@@ -2,7 +2,10 @@
 
 This file contains a list of changes for each released version.
 
-## Unreleased
+## 0.20.0
+- Init templates
+
+## 0.19.0
 
 ### Added
 - `codingbooth init` command for guided project initialization

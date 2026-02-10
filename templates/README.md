@@ -95,3 +95,103 @@ To reset a database: `docker volume rm booth-pgdata` (or `booth-mysqldata`).
 
 - **Credential seeding**: mount host config files as read-only into `/etc/cb-home-seed/`
 - **Environment variables**: `-e`, `"VAR=value"` for runtime configuration
+
+## Template Reference
+
+All templates and extensions grouped by segment order.
+
+### Order 40 — Infrastructure (desktop environments)
+
+| Template | Display Name |
+|----------|-------------|
+| `desktops/kde` | KDE Plasma |
+| `desktops/lxqt` | LXQt |
+| `desktops/xfce` | XFCE |
+
+### Order 50 — Base setups (languages, tools, databases)
+
+| Template | Display Name |
+|----------|-------------|
+| `databases/mysql` | MySQL |
+| `databases/postgresql` | PostgreSQL |
+| `databases/sqlite` | SQLite |
+| `languages/bun` | Bun |
+| `languages/deno` | Deno |
+| `languages/erlang` | Erlang |
+| `languages/fpc` | Free Pascal |
+| `languages/go` | Go |
+| `languages/haskell` | Haskell |
+| `languages/java` | Java |
+| `languages/lua` | Lua |
+| `languages/nodejs` | Node.js |
+| `languages/php` | PHP |
+| `languages/python` | Python |
+| `languages/r` | R |
+| `languages/ruby` | Ruby |
+| `languages/rust` | Rust |
+| `languages/zig` | Zig |
+| `tools/aws-cli` | AWS CLI |
+| `tools/claude-code` | Claude Code |
+| `tools/dind` | Docker-in-Docker |
+| `tools/docker-buildx` | Docker Buildx |
+| `tools/docker-compose` | Docker Compose |
+| `tools/firebase` | Firebase CLI |
+| `tools/gcloud` | Google Cloud SDK |
+| `tools/gh` | GitHub CLI |
+| `tools/homebrew` | Homebrew |
+| `tools/kind` | kind |
+| `tools/neovim` | Neovim |
+
+### Order 50 — Extensions (run alongside parent)
+
+| Extension | Display Name |
+|-----------|-------------|
+| `gh/copilot--extension` | GitHub Copilot CLI |
+| `go/linter--extension` | Go Linter |
+| `go/vscode-ext--extension` | Go VS Code Extension |
+| `java/gradle--extension` | Gradle |
+| `java/jenv--extension` | jenv |
+| `java/maven--extension` | Maven |
+| `java/vscode-ext--extension` | Java VS Code Extension |
+| `python/conda--extension` | Conda *(also has order 90)* |
+| `python/uv--extension` | uv *(also has order 90)* |
+| `python/vscode-ext--extension` | Python VS Code Extension |
+| `rust/vscode-ext--extension` | Rust VS Code Extension |
+
+### Order 60 — Dependent setups (IDEs, browsers, desktop apps, derived languages)
+
+| Template | Display Name |
+|----------|-------------|
+| `browsers/chromium` | Chromium |
+| `browsers/firefox` | Firefox |
+| `browsers/google-chrome` | Google Chrome |
+| `desktops/gimp` | GIMP |
+| `desktops/inkscape` | Inkscape |
+| `desktops/libreoffice` | LibreOffice |
+| `ides/clion` | CLion |
+| `ides/codeserver` | code-server |
+| `ides/datagrip` | DataGrip |
+| `ides/eclipse` | Eclipse |
+| `ides/goland` | GoLand |
+| `ides/idea` | IntelliJ IDEA |
+| `ides/phpstorm` | PhpStorm |
+| `ides/pycharm` | PyCharm |
+| `ides/rider` | Rider |
+| `ides/rubymine` | RubyMine |
+| `ides/vscode` | VS Code |
+| `ides/webstorm` | WebStorm |
+| `languages/clojure` | Clojure |
+| `languages/elixir` | Elixir |
+| `languages/kotlin` | Kotlin |
+| `languages/scala` | Scala |
+| `tools/codex` | Codex |
+| `tools/notebook` | Jupyter Notebook |
+| `tools/warp` | Warp |
+
+### Order 90 — Post-setup steps
+
+| Extension | Display Name |
+|-----------|-------------|
+| `python/conda--extension` | Conda |
+| `python/pip--extension` | pip requirements |
+| `python/uv--extension` | uv |
