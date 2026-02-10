@@ -1,0 +1,13 @@
+display-name = "Firebase CLI"
+display-disc = "Firebase CLI tools"
+display-order = 54
+tags = [
+    "firebase",
+    "cloud",
+    "cli"
+]
+
+[segments]
+Boothfile = """
+setup firebase
+"""

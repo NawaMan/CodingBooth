@@ -1,0 +1,13 @@
+display-name = "Google Chrome"
+display-disc = "Google Chrome browser (DEB repo)"
+display-order = 14
+tags = [
+    "browser",
+    "chrome",
+    "web"
+]
+
+[segments]
+"Boothfile--60" = """
+setup google-chrome
+"""

@@ -1,0 +1,16 @@
+display-name = "Kotlin"
+display-disc = "Kotlin language"
+display-order = 32
+tags = [
+    "kotlin",
+    "jvm"
+]
+
+[params.KOTLIN_VERSION]
+default = "2.0.20"
+suggests = ["2.0.20", "2.0.0", "1.9.24"]
+
+[segments]
+"Boothfile--60" = """
+setup kotlin --version ${KOTLIN_VERSION}
+"""

@@ -1,0 +1,17 @@
+display-name = "Bun"
+display-disc = "Bun JavaScript runtime and toolkit"
+display-order = 52
+tags = [
+    "bun",
+    "javascript",
+    "typescript"
+]
+
+[params.BUN_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup bun ${BUN_VERSION}
+"""

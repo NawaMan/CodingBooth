@@ -1,0 +1,14 @@
+display-name = "PyCharm"
+display-disc = "JetBrains PyCharm Community"
+display-order = 22
+tags = [
+    "jetbrains",
+    "pycharm",
+    "ide",
+    "python"
+]
+
+[segments]
+"Boothfile--60" = """
+setup pycharm
+"""

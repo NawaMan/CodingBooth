@@ -57,6 +57,17 @@ function booth-collect() {
     fi
 }
 
+function booth-collect-dind() {
+    local cmd="$1"
+    cd $prj
+    booth --silence-build --dind -- "$cmd" > "$tmpfile"
+    cd ..
+    cat "$tmpfile" >> $log
+    if [[ "$VERBOSE" == "true" ]]; then
+        cat "$tmpfile"
+    fi
+}
+
 function assert-line() {
     if [[ "$VERBOSE" == "true" ]]; then echo ""; fi
 
@@ -134,6 +145,17 @@ function assert-last() {
     run cd ..
     PASS_COUNT=$((PASS_COUNT + 1))
     echo -e "\033[32mPASSED\033[0m"
+}
+
+function skip() {
+    local reason="${1:-No reason given}"
+    echo ""
+    echo -e "== \033[33mSKIPPED\033[0m ================================================================"
+    echo "  ${testname}"
+    echo "  Reason: ${reason}"
+    echo "==============================================================================="
+    echo ""
+    exit 2
 }
 
 function begin() {

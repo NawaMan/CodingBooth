@@ -1,0 +1,12 @@
+display-name = "Docker Buildx"
+display-disc = "Docker Buildx plugin"
+display-order = 66
+tags = [
+    "docker",
+    "buildx"
+]
+
+[segments]
+Boothfile = """
+setup docker-buildx
+"""

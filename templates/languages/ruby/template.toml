@@ -1,0 +1,16 @@
+display-name = "Ruby"
+display-disc = "Ruby language"
+display-order = 60
+tags = [
+    "ruby",
+    "scripting"
+]
+
+[params.RUBY_VERSION]
+default = "3.3"
+suggests = ["3.3", "3.2", "3.1"]
+
+[segments]
+Boothfile = """
+setup ruby ${RUBY_VERSION}
+"""

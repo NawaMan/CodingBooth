@@ -1,0 +1,14 @@
+display-name = "KDE Plasma"
+display-disc = "KDE Plasma desktop with VNC/noVNC"
+display-order = 10
+tags = [
+    "desktop",
+    "kde",
+    "plasma",
+    "vnc"
+]
+
+[segments]
+Boothfile = """
+setup kde
+"""

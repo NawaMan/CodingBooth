@@ -1,0 +1,13 @@
+display-name = "Google Cloud SDK"
+display-disc = "Google Cloud SDK (gcloud)"
+display-order = 52
+tags = [
+    "gcloud",
+    "cloud",
+    "cli"
+]
+
+[segments]
+Boothfile = """
+setup gcloud
+"""

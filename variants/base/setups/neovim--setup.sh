@@ -29,8 +29,8 @@ export DEBIAN_FRONTEND=noninteractive
 # Detect architecture
 ARCH=$(dpkg --print-architecture)
 case "$ARCH" in
-    amd64) NVIM_ARCH="linux64" ;;
-    arm64) NVIM_ARCH="linux64" ;;  # Neovim uses linux64 for both
+    amd64) NVIM_ARCH="linux-x86_64" ;;
+    arm64) NVIM_ARCH="linux-arm64" ;;
     *)
         echo "Unsupported architecture: $ARCH"
         exit 1

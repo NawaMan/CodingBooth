@@ -1,0 +1,13 @@
+display-name = "Firefox"
+display-disc = "Firefox browser (Mozillateam PPA)"
+display-order = 12
+tags = [
+    "browser",
+    "firefox",
+    "web"
+]
+
+[segments]
+"Boothfile--60" = """
+setup firefox
+"""

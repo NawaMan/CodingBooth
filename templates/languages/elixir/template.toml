@@ -1,0 +1,17 @@
+display-name = "Elixir"
+display-disc = "Elixir language"
+display-order = 70
+tags = [
+    "elixir",
+    "erlang",
+    "functional"
+]
+
+[params.ELIXIR_VERSION]
+default = "1.19.5"
+suggests = ["1.19.5", "1.18.3", "1.17.3"]
+
+[segments]
+"Boothfile--60" = """
+setup elixir --version ${ELIXIR_VERSION}
+"""

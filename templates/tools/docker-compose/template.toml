@@ -1,0 +1,12 @@
+display-name = "Docker Compose"
+display-disc = "Docker Compose plugin"
+display-order = 64
+tags = [
+    "docker",
+    "compose"
+]
+
+[segments]
+Boothfile = """
+setup docker-compose
+"""

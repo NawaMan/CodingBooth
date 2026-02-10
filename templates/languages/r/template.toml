@@ -1,0 +1,13 @@
+display-name = "R"
+display-disc = "R language for statistical computing"
+display-order = 82
+tags = [
+    "r",
+    "data",
+    "statistics"
+]
+
+[segments]
+Boothfile = """
+setup r-rscript
+"""
