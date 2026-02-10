@@ -1,0 +1,13 @@
+display-name = "LibreOffice"
+display-disc = "LibreOffice office suite"
+display-order = 24
+tags = [
+    "desktop",
+    "libreoffice",
+    "office"
+]
+
+[segments]
+"Boothfile--60" = """
+setup libreoffice
+"""

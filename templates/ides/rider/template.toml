@@ -1,0 +1,15 @@
+display-name = "Rider"
+display-disc = "JetBrains Rider IDE for .NET"
+display-order = 34
+tags = [
+    "jetbrains",
+    "rider",
+    "ide",
+    "dotnet",
+    "csharp"
+]
+
+[segments]
+"Boothfile--60" = """
+setup jetbrains rider
+"""

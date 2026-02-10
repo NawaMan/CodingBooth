@@ -1,0 +1,14 @@
+display-name = "PhpStorm"
+display-disc = "JetBrains PhpStorm IDE for PHP"
+display-order = 30
+tags = [
+    "jetbrains",
+    "phpstorm",
+    "ide",
+    "php"
+]
+
+[segments]
+"Boothfile--60" = """
+setup jetbrains phpstorm
+"""

@@ -1,0 +1,13 @@
+display-name = "GIMP"
+display-disc = "GIMP image editor"
+display-order = 22
+tags = [
+    "desktop",
+    "gimp",
+    "graphics"
+]
+
+[segments]
+"Boothfile--60" = """
+setup gimp
+"""

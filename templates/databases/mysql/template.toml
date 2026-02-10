@@ -1,0 +1,18 @@
+display-name = "MySQL"
+display-disc = "MySQL relational database"
+display-order = 22
+tags = [
+    "database",
+    "mysql",
+    "sql"
+]
+
+run-args = [
+    # Persist MySQL data across container restarts
+    "-v", "booth-mysqldata:/var/lib/mysql",
+]
+
+[segments]
+Boothfile = """
+setup mysql
+"""

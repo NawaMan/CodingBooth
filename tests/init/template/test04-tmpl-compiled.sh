@@ -1,6 +1,5 @@
 #!/bin/bash
 # Template test: Haskell + Free Pascal + Zig (compiled languages)
-# Note: Lua excluded — lua--setup.sh has a readline linker bug that aborts the build.
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
