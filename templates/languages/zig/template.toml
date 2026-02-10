@@ -1,0 +1,17 @@
+display-name = "Zig"
+display-disc = "Zig programming language"
+display-order = 80
+tags = [
+    "zig",
+    "systems",
+    "compiled"
+]
+
+[params.ZIG_VERSION]
+default = "0.15.1"
+suggests = ["0.15.1", "0.14.0", "0.13.0"]
+
+[segments]
+Boothfile = """
+setup zig --zig-version ${ZIG_VERSION}
+"""

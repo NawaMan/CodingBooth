@@ -1,0 +1,21 @@
+display-name = "Conda"
+display-disc = "Conda package and environment manager"
+display-order = 11
+auto-select = false
+tags = [
+    "python",
+    "data",
+    "packages"
+]
+
+[segments]
+Boothfile = """
+setup conda
+"""
+"Boothfile--90" = """ 
+run --mount=type=bind,target=/tmp/ctx                                               \
+    if [ -f /tmp/ctx/.booth/requirements.txt ]; then                                \
+         pip install -r /tmp/ctx/.booth/requirements.txt;                           \
+    else echo "Warning: .booth/requirements.txt not found -- skipping pip install"; \
+    fi
+"""

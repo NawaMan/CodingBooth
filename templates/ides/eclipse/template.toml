@@ -1,0 +1,13 @@
+display-name = "Eclipse"
+display-disc = "Eclipse IDE for Java"
+display-order = 24
+tags = [
+    "eclipse",
+    "ide",
+    "java"
+]
+
+[segments]
+"Boothfile--60" = """
+setup eclipse
+"""

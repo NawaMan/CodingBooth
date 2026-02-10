@@ -1,0 +1,14 @@
+display-name = "code-server"
+display-disc = "VS Code in the browser via code-server"
+display-order = 12
+tags = [
+    "vscode",
+    "codeserver",
+    "ide",
+    "web"
+]
+
+[segments]
+"Boothfile--60" = """
+setup codeserver
+"""

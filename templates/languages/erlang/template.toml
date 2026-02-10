@@ -1,0 +1,17 @@
+display-name = "Erlang"
+display-disc = "Erlang/OTP"
+display-order = 72
+tags = [
+    "erlang",
+    "functional",
+    "distributed"
+]
+
+[params.OTP_VERSION]
+default = "27"
+suggests = ["27", "26", "25"]
+
+[segments]
+Boothfile = """
+setup erlang --otp-version ${OTP_VERSION}
+"""

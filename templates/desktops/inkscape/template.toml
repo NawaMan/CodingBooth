@@ -1,0 +1,13 @@
+display-name = "Inkscape"
+display-disc = "Inkscape vector graphics editor"
+display-order = 20
+tags = [
+    "desktop",
+    "inkscape",
+    "graphics"
+]
+
+[segments]
+"Boothfile--60" = """
+setup inkscape
+"""

@@ -1,0 +1,14 @@
+display-name = "RubyMine"
+display-disc = "JetBrains RubyMine IDE for Ruby"
+display-order = 36
+tags = [
+    "jetbrains",
+    "rubymine",
+    "ide",
+    "ruby"
+]
+
+[segments]
+"Boothfile--60" = """
+setup jetbrains rubymine
+"""

@@ -1,0 +1,14 @@
+display-name = "XFCE"
+display-disc = "XFCE desktop with VNC/noVNC"
+display-order = 14
+tags = [
+    "desktop",
+    "xfce",
+    "lightweight",
+    "vnc"
+]
+
+[segments]
+"Boothfile--40" = """
+setup xfce
+"""

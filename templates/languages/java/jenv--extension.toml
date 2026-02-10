@@ -1,0 +1,13 @@
+display-name = "jenv"
+display-disc = "Java environment manager for multiple JDKs"
+display-order = 20
+auto-select = false
+tags = [
+    "java",
+    "version-manager"
+]
+
+[segments]
+Boothfile = """
+setup jenv
+"""

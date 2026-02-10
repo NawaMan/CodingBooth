@@ -1,0 +1,17 @@
+display-name = "kind"
+display-disc = "Kubernetes in Docker"
+display-order = 60
+tags = [
+    "kubernetes",
+    "docker",
+    "k8s"
+]
+
+[params.KIND_VERSION]
+default = "0.27.0"
+suggests = ["0.27.0", "0.26.0", "0.25.0"]
+
+[segments]
+Boothfile = """
+setup kind --kind-version ${KIND_VERSION}
+"""

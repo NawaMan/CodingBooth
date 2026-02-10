@@ -1,0 +1,25 @@
+display-name = "Go"
+display-disc = "Go language toolchain"
+display-order = 10
+tags = [
+    "go",
+    "golang",
+    "backend"
+]
+
+[params.GO_VERSION]
+default = "1.25.7"
+suggests = [
+    "1.25.7",  "1.25.0",
+    "1.24.13", "1.24.0",
+    "1.23.12", "1.23.0",
+    "1.22.12", "1.22.0",
+    "1.21.13", "1.21.0",
+]
+
+[segments]
+Boothfile = """
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+"""

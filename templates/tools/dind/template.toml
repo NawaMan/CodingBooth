@@ -1,0 +1,13 @@
+display-name = "Docker-in-Docker"
+display-disc = "Docker-in-Docker support"
+display-order = 62
+dind = true
+tags = [
+    "docker",
+    "dind"
+]
+
+[segments]
+Boothfile = """
+setup dind
+"""

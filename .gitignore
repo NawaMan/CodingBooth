@@ -125,3 +125,4 @@ variants/base/_stage/
 /codingbooth
 **/booth
 !/booth
+.booth-test-lock*

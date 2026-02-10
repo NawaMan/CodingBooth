@@ -1,0 +1,14 @@
+display-name = "Go Linter"
+display-disc = "golangci-lint for Go"
+display-order = 1
+auto-select = false
+tags = [
+    "go",
+    "lint",
+    "quality"
+]
+
+[segments]
+Boothfile = """
+install go github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+"""

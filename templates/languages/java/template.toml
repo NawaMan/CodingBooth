@@ -1,0 +1,32 @@
+display-name = "Java"
+display-disc = "JDK with build tools"
+display-order = 30
+tags = [
+    "java",
+    "jvm",
+    "backend",
+    "awesome"
+]
+
+[params.JDK_VERSION]
+default = "25"
+suggests = [
+    "25",
+    "21",
+    "17",
+    "11",
+    "8"
+]
+
+[params.JDK_VENDOR]
+default = "temurin"
+suggests = [
+    "temurin",
+    "corretto",
+    "openjdk"
+]
+
+[segments]
+Boothfile = """
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+"""

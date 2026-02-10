@@ -1,0 +1,15 @@
+display-name = "DataGrip"
+display-disc = "JetBrains DataGrip database IDE"
+display-order = 38
+tags = [
+    "jetbrains",
+    "datagrip",
+    "ide",
+    "database",
+    "sql"
+]
+
+[segments]
+"Boothfile--60" = """
+setup jetbrains datagrip
+"""

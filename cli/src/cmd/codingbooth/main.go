@@ -49,6 +49,9 @@ func main() {
 		case "example":
 			runExample(version)
 			return
+		case "init":
+			runInit()
+			return
 		case "emit-dockerfile":
 			emitDockerfile()
 			return

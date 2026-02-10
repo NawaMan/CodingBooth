@@ -1,0 +1,12 @@
+display-name = "Homebrew"
+display-disc = "Homebrew package manager for Linux"
+display-order = 40
+tags = [
+    "homebrew",
+    "packages"
+]
+
+[segments]
+Boothfile = """
+setup homebrew
+"""

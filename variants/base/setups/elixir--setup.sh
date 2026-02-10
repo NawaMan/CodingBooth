@@ -30,7 +30,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # --- defaults / args ---
-ELIXIR_DEFAULT="1.16.2"     # bump when you want a newer pinned default
+ELIXIR_DEFAULT="1.19.5"     # bump when you want a newer pinned default
 REQ_VER=""
 WITH_PHOENIX=0
 MIX_HOME_DEFAULT="/opt/mix"
@@ -80,11 +80,17 @@ BIN_DIR=/usr/local/bin
 # Clean old shims (idempotent)
 for b in elixir iex mix elixirc; do rm -f "${BIN_DIR}/$b" || true; done
 
+# --- detect OTP major version for the right precompiled asset ---
+OTP_MAJOR=$(erl -noshell -eval 'io:format("~s~n",[erlang:system_info(otp_release)]), halt().' 2>/dev/null || echo "")
+if [[ -z "$OTP_MAJOR" ]]; then
+  echo "❌ Could not detect OTP version from erl"; exit 1
+fi
+
 # --- download precompiled Elixir ---
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-ZIP_URL="https://github.com/elixir-lang/elixir/releases/download/v${ELIX_VER}/Precompiled.zip"
+ZIP_URL="https://github.com/elixir-lang/elixir/releases/download/v${ELIX_VER}/elixir-otp-${OTP_MAJOR}.zip"
 
-echo "⬇️  Downloading Elixir ${ELIX_VER} ..."
+echo "⬇️  Downloading Elixir ${ELIX_VER} (for OTP ${OTP_MAJOR}) ..."
 curl -fsSL "$ZIP_URL" -o "$TMP/elixir.zip"
 
 echo "📦 Installing Elixir ${ELIX_VER} ..."
