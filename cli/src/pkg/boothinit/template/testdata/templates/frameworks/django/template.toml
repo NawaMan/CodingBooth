@@ -1,0 +1,11 @@
+display-name = "Django"
+display-disc = "Django web framework"
+display-order = 10
+tags = ["python", "web"]
+
+requires = ["python"]
+
+[segments]
+Boothfile = """
+install pip django
+"""

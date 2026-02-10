@@ -1,0 +1,13 @@
+display-name = "SQLite"
+display-disc = "SQLite embedded database"
+display-order = 10
+tags = [
+    "database",
+    "sqlite",
+    "embedded"
+]
+
+[segments]
+Boothfile = """
+setup sqlite
+"""

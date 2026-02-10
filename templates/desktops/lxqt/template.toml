@@ -1,0 +1,14 @@
+display-name = "LXQt"
+display-disc = "LXQt lightweight desktop with VNC/noVNC"
+display-order = 12
+tags = [
+    "desktop",
+    "lxqt",
+    "lightweight",
+    "vnc"
+]
+
+[segments]
+"Boothfile--40" = """
+setup lxqt
+"""

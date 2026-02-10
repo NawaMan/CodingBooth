@@ -1,0 +1,14 @@
+display-name = "pip requirements"
+display-disc = "Install packages from .booth/requirements.txt using pip"
+display-order = 12
+auto-select = false
+tags = [
+    "python",
+    "packages",
+    "pip"
+]
+
+[segments]
+"Boothfile--90" = """
+run --mount=type=bind,target=/tmp/ctx if [ -f /tmp/ctx/.booth/requirements.txt ]; then pip install -r /tmp/ctx/.booth/requirements.txt; else echo "Warning: .booth/requirements.txt not found -- skipping pip install"; fi
+"""

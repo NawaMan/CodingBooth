@@ -1,0 +1,14 @@
+display-name = "GoLand"
+display-disc = "JetBrains GoLand IDE for Go"
+display-order = 26
+tags = [
+    "jetbrains",
+    "goland",
+    "ide",
+    "go"
+]
+
+[segments]
+"Boothfile--60" = """
+setup jetbrains goland
+"""

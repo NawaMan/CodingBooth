@@ -1,0 +1,13 @@
+display-name = "Clojure"
+display-disc = "Clojure language"
+display-order = 36
+tags = [
+    "clojure",
+    "jvm",
+    "functional"
+]
+
+[segments]
+"Boothfile--60" = """
+setup clojure
+"""

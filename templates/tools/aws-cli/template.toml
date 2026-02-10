@@ -1,0 +1,13 @@
+display-name = "AWS CLI"
+display-disc = "Amazon Web Services CLI v2"
+display-order = 50
+tags = [
+    "aws",
+    "cloud",
+    "cli"
+]
+
+[segments]
+Boothfile = """
+setup aws-cli
+"""

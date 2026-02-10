@@ -1,0 +1,14 @@
+display-name = "IntelliJ IDEA"
+display-disc = "JetBrains IntelliJ IDEA Community"
+display-order = 20
+tags = [
+    "jetbrains",
+    "idea",
+    "ide",
+    "java"
+]
+
+[segments]
+"Boothfile--60" = """
+setup idea
+"""

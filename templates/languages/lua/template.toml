@@ -1,0 +1,17 @@
+display-name = "Lua"
+display-disc = "Lua scripting language"
+display-order = 76
+tags = [
+    "lua",
+    "scripting",
+    "embedded"
+]
+
+[params.LUA_VERSION]
+default = "5.4"
+suggests = ["5.4", "5.3", "5.2", "5.1"]
+
+[segments]
+Boothfile = """
+setup lua --lua-version ${LUA_VERSION}
+"""

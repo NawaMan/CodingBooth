@@ -1,0 +1,14 @@
+display-name = "GitHub Copilot CLI"
+display-disc = "GitHub Copilot extension for gh"
+display-order = 1
+auto-select = false
+tags = [
+    "github",
+    "ai",
+    "copilot"
+]
+
+[segments]
+Boothfile = """
+setup gh-copilot
+"""

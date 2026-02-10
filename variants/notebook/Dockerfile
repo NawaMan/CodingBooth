@@ -13,4 +13,7 @@ RUN notebook--setup.sh ${NOTEBOOK_PORT}
 RUN bash-nb-kernel--setup.sh
 RUN cleanup-after--setup.sh
 
+# Clear the lock
+RUN rm -f /etc/.pwd.lock /etc/passwd.lock /etc/shadow.lock /etc/group.lock
+
 CMD ["bash","-lc","exec start-notebook"]

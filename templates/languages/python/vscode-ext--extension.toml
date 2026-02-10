@@ -1,0 +1,14 @@
+display-name = "Python VS Code Extension"
+display-disc = "Python language support for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "python",
+    "ide",
+    "vscode",
+]
+
+[segments]
+Boothfile = """
+setup python-code-extension
+"""

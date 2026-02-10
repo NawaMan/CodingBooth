@@ -1,0 +1,13 @@
+display-name = "Warp"
+display-disc = "Warp terminal with AI features"
+display-order = 22
+tags = [
+    "terminal",
+    "warp",
+    "ai"
+]
+
+[segments]
+"Boothfile--60" = """
+setup warp
+"""

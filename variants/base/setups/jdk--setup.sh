@@ -10,9 +10,15 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 # jdk--setup.sh — Install JBang + chosen JDK
 #
 # Vendor selection order:
-#   1) CLI arg #2 (e.g., "graalvm") → sets JBANG_JDK_VENDOR
+#   1) CLI arg #2 (e.g., "corretto") → sets vendor
 #   2) Existing JBANG_JDK_VENDOR env
 #   3) Fallback default: temurin
+#
+# JDK download strategy:
+#   - temurin:  direct download from Adoptium API (fast, reliable)
+#   - corretto: direct download from AWS (fast, reliable)
+#   - others:   fallback to JBang's JDK installer (supports many
+#               vendors but can be flaky)
 #
 # Also supports:
 #   --alternative <PRIORITY>  # update-alternatives priority (default: 20000)
@@ -20,7 +26,8 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 # Usage:
 #   sudo ./jdk--setup.sh
 #   sudo ./jdk--setup.sh 25
-#   sudo ./jdk--setup.sh 25 graalvm
+#   sudo ./jdk--setup.sh 25 corretto
+#   sudo ./jdk--setup.sh 25 openjdk
 #   sudo ./jdk--setup.sh --alternative 30000 25 temurin
 # ---------------------------------------------
 
@@ -54,10 +61,17 @@ while [[ $# -gt 0 ]]; do
       cat <<'USAGE'
 Usage: jdk--setup.sh [--alternative PRIORITY] [JDK_VERSION] [VENDOR]
 
+Supported vendors:
+  temurin   (default) — direct download from Adoptium API
+  corretto            — direct download from AWS
+  Any other vendor supported by JBang (e.g., openjdk, graalvm)
+    will use JBang as a fallback installer.
+
 Examples:
   sudo ./jdk--setup.sh
   sudo ./jdk--setup.sh 25
-  sudo ./jdk--setup.sh 25 graalvm
+  sudo ./jdk--setup.sh 25 corretto
+  sudo ./jdk--setup.sh 25 openjdk
   sudo ./jdk--setup.sh --alternative 30000 25 temurin
 USAGE
       exit 0
@@ -78,10 +92,42 @@ done
 
 # --- Vendor policy ---
 if [[ -n "$CLI_VENDOR" ]]; then
-  export JBANG_JDK_VENDOR="$CLI_VENDOR"
+  ACTIVE_VENDOR="$CLI_VENDOR"
+elif [[ -n "${JBANG_JDK_VENDOR:-}" ]]; then
+  ACTIVE_VENDOR="$JBANG_JDK_VENDOR"
+else
+  ACTIVE_VENDOR="temurin"
 fi
-: "${JBANG_JDK_VENDOR:=temurin}"
-ACTIVE_VENDOR="$JBANG_JDK_VENDOR"
+
+# --- Detect architecture ---
+MACHINE="$(uname -m)"
+case "$MACHINE" in
+  x86_64)  ARCH="x64"    ;;
+  aarch64) ARCH="aarch64" ;;
+  *)       die "Unsupported architecture: $MACHINE" ;;
+esac
+
+# --- Build download URL based on vendor ---
+# Returns a URL for direct download, or "jbang" to signal fallback.
+build_download_url() {
+  local version="$1"
+  local vendor="$2"
+  local arch="$3"
+
+  case "$vendor" in
+    temurin)
+      echo "https://api.adoptium.net/v3/binary/latest/${version}/ga/linux/${arch}/jdk/hotspot/normal/eclipse"
+      ;;
+    corretto)
+      echo "https://corretto.aws/downloads/latest/amazon-corretto-${version}-${arch}-linux-jdk.tar.gz"
+      ;;
+    *)
+      # Love JBang (Thanks Max Rydahl Andersen), but downloading JDK from it outage more than a few times.
+      # So only use JBang for something else.
+      echo "jbang"
+      ;;
+  esac
+}
 
 # --- JBang dirs ---
 export JBANG_DIR=/opt/jbang-home
@@ -89,21 +135,54 @@ export JBANG_CACHE_DIR=/opt/jbang-cache
 mkdir -p "$JBANG_DIR" "$JBANG_CACHE_DIR"
 chmod -R 0777 "$JBANG_DIR" "$JBANG_CACHE_DIR"
 
-# --- Install JBang ---
+# --- Install JBang (still useful as a Java scripting tool) ---
 log "Installing JBang..."
+export JBANG_JDK_VENDOR="$ACTIVE_VENDOR"
 curl -Ls https://sh.jbang.dev | bash -s - app setup
 install -Dm755 "${JBANG_DIR}/bin/jbang" /usr/local/bin/jbang
 
-# --- Install JDK (via JBang) ---
-log "Installing JDK ${JDK_VERSION} (vendor: ${ACTIVE_VENDOR}) via JBang..."
-jbang jdk install "${JDK_VERSION}" || die "JBang failed to install JDK ${JDK_VERSION}"
+# --- Install JDK ---
+JDK_INSTALL_DIR="/opt/jdk-installs/${JDK_VERSION}-${ACTIVE_VENDOR}"
+DOWNLOAD_URL="$(build_download_url "$JDK_VERSION" "$ACTIVE_VENDOR" "$ARCH")"
+
+if [[ "$DOWNLOAD_URL" != "jbang" ]]; then
+  # --- Direct download (temurin, corretto) ---
+  log "Downloading JDK ${JDK_VERSION} (vendor: ${ACTIVE_VENDOR}, arch: ${ARCH})..."
+  log "URL: ${DOWNLOAD_URL}"
+
+  TMP_TARBALL="/tmp/jdk-${JDK_VERSION}-${ACTIVE_VENDOR}.tar.gz"
+  HTTP_CODE="$(curl -fSL -w '%{http_code}' -o "$TMP_TARBALL" "$DOWNLOAD_URL" 2>/dev/null)" \
+    || die "Failed to download JDK ${JDK_VERSION} from ${ACTIVE_VENDOR} (HTTP ${HTTP_CODE:-???})"
+
+  [[ -s "$TMP_TARBALL" ]] || die "Downloaded file is empty"
+
+  log "Extracting JDK..."
+  mkdir -p "$JDK_INSTALL_DIR"
+  tar -xzf "$TMP_TARBALL" -C "$JDK_INSTALL_DIR" --strip-components=1
+  rm -f "$TMP_TARBALL"
+else
+  # --- JBang fallback (openjdk, graalvm, etc.) ---
+  log "⚠️  No direct download available for vendor '${ACTIVE_VENDOR}'. Using JBang as fallback."
+  log "    If this fails, try: temurin or corretto"
+  export JBANG_JDK_VENDOR="$ACTIVE_VENDOR"
+  jbang jdk install "${JDK_VERSION}" || die "JBang failed to install JDK ${JDK_VERSION} (${ACTIVE_VENDOR})"
+
+  JDK_HOME_RAW="$(jbang jdk home "${JDK_VERSION}")"
+  [[ -n "$JDK_HOME_RAW" && -e "$JDK_HOME_RAW" ]] \
+    || die "Could not resolve JDK home for ${JDK_VERSION} (${ACTIVE_VENDOR})."
+
+  # Copy to standard location so the rest of the script works uniformly
+  mkdir -p "$JDK_INSTALL_DIR"
+  cp -a "$(readlink -f "$JDK_HOME_RAW")/." "$JDK_INSTALL_DIR/"
+fi
 
 # --- Resolve JAVA_HOME (canonical path) ---
-# IMPORTANT: canonicalize to avoid pointing at .../jbang-home/currentjdk
-JDK_HOME_RAW="$(jbang jdk home "${JDK_VERSION}")"
-[[ -n "$JDK_HOME_RAW" && -e "$JDK_HOME_RAW" ]] || die "Could not resolve JDK home for ${JDK_VERSION} (${ACTIVE_VENDOR})."
-JDK_HOME="$(readlink -f -- "$JDK_HOME_RAW")"
-[[ -d "$JDK_HOME" ]] || die "Resolved JDK_HOME is not a directory: $JDK_HOME"
+JDK_HOME="$(readlink -f -- "$JDK_INSTALL_DIR")"
+[[ -d "$JDK_HOME" && -x "$JDK_HOME/bin/java" ]] \
+  || die "JDK installation invalid: $JDK_HOME/bin/java not found"
+
+# --- Tell JBang about this JDK so it can use it ---
+jbang jdk install "$JDK_VERSION" "$JDK_HOME" 2>/dev/null || true
 
 # --- Stable symlinks ---
 GENERIC_LINK="/opt/jdk${JDK_VERSION}"
@@ -113,7 +192,10 @@ STATIC_LINK="/opt/jdk"
 log "Creating symlinks: ${GENERIC_LINK}, ${VENDOR_LINK}, and ${STATIC_LINK}"
 
 ln -snf "$JDK_HOME" "$GENERIC_LINK"
-ln -snf "$JDK_HOME" "$VENDOR_LINK"
+# VENDOR_LINK is the install dir itself, create symlink only if different
+if [[ "$(readlink -f "$VENDOR_LINK")" != "$JDK_HOME" ]]; then
+  ln -snf "$JDK_HOME" "$VENDOR_LINK"
+fi
 
 # Ensure STATIC_LINK does not exist before recreating
 if [ -e "$STATIC_LINK" ] || [ -L "$STATIC_LINK" ]; then
@@ -130,18 +212,6 @@ case ":$PATH:" in
   *":$JAVA_HOME/bin:"*) : ;;
   *) export PATH="$PATH:$JAVA_HOME/bin" ;;
 esac
-
-# --- Optional GraalVM extras ---
-if [[ "${ACTIVE_VENDOR}" == "graalvm" ]]; then
-  log "GraalVM selected; attempting to install native-image (optional)..."
-  if command -v gu >/dev/null 2>&1; then
-    gu install native-image || true
-  elif [[ -x "${JAVA_HOME}/bin/gu" ]]; then
-    "${JAVA_HOME}/bin/gu" install native-image || true
-  else
-    log "Graal 'gu' not found; skipping native-image."
-  fi
-fi
 
 # --- Register with update-alternatives (system-wide) ---
 log "Registering JDK ${JDK_VERSION} with update-alternatives (priority ${ALT_PRIO})..."

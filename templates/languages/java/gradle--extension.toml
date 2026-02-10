@@ -1,0 +1,19 @@
+display-name = "Gradle"
+display-disc = "Gradle build tool"
+display-order = 11
+auto-select = false
+tags = [
+    "build", "gradle"
+]
+
+[params.GRADLE_VERSION]
+default = "9.3.1"
+suggests = [
+    "9.3.1", "9.3",
+    "8.14.4",
+]
+
+[segments]
+Boothfile = """
+setup gradle "${GRADLE_VERSION}"
+"""

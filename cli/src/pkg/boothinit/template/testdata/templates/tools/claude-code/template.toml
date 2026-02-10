@@ -1,0 +1,20 @@
+display-name = "Claude Code"
+display-disc = "Anthropic Claude Code assistant"
+display-order = 20
+tags = ["ai", "assistant"]
+
+dind = true
+
+[segments]
+"Boothfile--30" = """
+setup nodejs 20
+"""
+"Boothfile--80" = """
+run npm install -g @anthropic-ai/claude-code
+"""
+"startup--10.sh" = """
+echo "Setting up Claude Code..."
+"""
+"startup--90.sh" = """
+echo "Claude Code ready"
+"""

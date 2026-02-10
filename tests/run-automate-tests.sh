@@ -75,6 +75,17 @@ if ! (cd "$SCRIPT_DIR/complex" && ./run-complex-tests.sh); then
 fi
 echo ""
 
+# Run init tests
+echo "----------------------------------------"
+echo "Running Init Tests"
+echo "----------------------------------------"
+total_suites=$((total_suites + 1))
+if ! (cd "$SCRIPT_DIR/init" && ./run-all-tests.sh "$@"); then
+    failed=1
+    failed_suites+=("init")
+fi
+echo ""
+
 # Summary
 echo "========================================"
 echo "Test Summary"

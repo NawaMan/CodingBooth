@@ -229,7 +229,7 @@ BuildVariant() {
       "${no_cache_arg[@]}" \
       --platform "${PLATFORMS}" \
       -f "${docker_file}" \
-      --build-arg "CB_VERSION_TAG=${version}" \
+      --build-arg "BOOTH_VERSION_TAG=${version}" \
       --build-arg "FINAL_STAGE=base" \
       "${tags_arg[@]}" \
       "${context_dir}" \
@@ -252,7 +252,7 @@ BuildVariant() {
     docker build \
       "${no_cache_arg[@]}" \
       -f "${docker_file}" \
-      --build-arg "CB_VERSION_TAG=${version}" \
+      --build-arg "BOOTH_VERSION_TAG=${version}" \
       "${tags_arg[@]}" \
       "${context_dir}"
   fi

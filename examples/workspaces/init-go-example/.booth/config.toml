@@ -1,0 +1,3 @@
+run-args = [
+    "-e", "GOPROXY=https://proxy.golang.org,direct",
+]
