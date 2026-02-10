@@ -1,0 +1,16 @@
+display-name = "PHP"
+display-disc = "PHP language"
+display-order = 62
+tags = [
+    "php",
+    "web"
+]
+
+[params.PHP_VERSION]
+default = "8.3"
+suggests = ["8.3", "8.2", "8.1"]
+
+[segments]
+Boothfile = """
+setup php --version ${PHP_VERSION}
+"""

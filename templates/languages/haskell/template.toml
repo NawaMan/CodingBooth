@@ -1,0 +1,13 @@
+display-name = "Haskell"
+display-disc = "Haskell language with GHC"
+display-order = 74
+tags = [
+    "haskell",
+    "functional",
+    "compiled"
+]
+
+[segments]
+Boothfile = """
+setup haskell
+"""

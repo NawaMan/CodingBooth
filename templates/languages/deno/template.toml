@@ -1,0 +1,17 @@
+display-name = "Deno"
+display-disc = "Deno JavaScript and TypeScript runtime"
+display-order = 54
+tags = [
+    "deno",
+    "javascript",
+    "typescript"
+]
+
+[params.DENO_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup deno ${DENO_VERSION}
+"""

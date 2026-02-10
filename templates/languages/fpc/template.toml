@@ -1,0 +1,12 @@
+display-name = "Free Pascal"
+display-disc = "Free Pascal compiler"
+display-order = 78
+tags = [
+    "pascal",
+    "compiled"
+]
+
+[segments]
+Boothfile = """
+setup fpc
+"""

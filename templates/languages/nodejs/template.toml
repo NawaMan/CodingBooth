@@ -1,0 +1,17 @@
+display-name = "Node.js"
+display-disc = "Node.js JavaScript runtime"
+display-order = 50
+tags = [
+    "nodejs",
+    "javascript",
+    "backend"
+]
+
+[params.NODE_VERSION]
+default = "22"
+suggests = ["22", "20", "18"]
+
+[segments]
+Boothfile = """
+setup nodejs ${NODE_VERSION}
+"""

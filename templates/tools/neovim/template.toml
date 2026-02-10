@@ -1,0 +1,16 @@
+display-name = "Neovim"
+display-disc = "Neovim text editor"
+display-order = 20
+tags = [
+    "neovim",
+    "editor"
+]
+
+[params.NEOVIM_VERSION]
+default = "stable"
+suggests = ["stable", "nightly"]
+
+[segments]
+Boothfile = """
+setup neovim ${NEOVIM_VERSION}
+"""

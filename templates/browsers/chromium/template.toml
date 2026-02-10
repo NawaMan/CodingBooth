@@ -1,0 +1,13 @@
+display-name = "Chromium"
+display-disc = "Chromium browser (no snap)"
+display-order = 10
+tags = [
+    "browser",
+    "chromium",
+    "web"
+]
+
+[segments]
+"Boothfile--60" = """
+setup chromium-browser
+"""

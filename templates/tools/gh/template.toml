@@ -1,0 +1,13 @@
+display-name = "GitHub CLI"
+display-disc = "GitHub CLI (gh)"
+display-order = 30
+tags = [
+    "github",
+    "cli",
+    "git"
+]
+
+[segments]
+Boothfile = """
+setup gh
+"""
