@@ -1,15 +1,16 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
-display-name = "Zig VS Code Extension"
-display-disc = "Zig language support for VS Code"
+display-name = "Free Pascal VS Code Extension"
+display-disc = "Pascal language support for VS Code"
 display-order = 1
 auto-select = true
 tags = [
-    "zig",
+    "fpc",
+    "pascal",
     "ide",
     "vscode",
 ]
 
 [segments]
 Boothfile = """
-setup zig-code-extension
+setup fpc-code-extension
 """
