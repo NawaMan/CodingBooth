@@ -193,12 +193,13 @@ code-server --extensions-dir "$CODESERVER_EXTENSION_DIR" --list-extensions || tr
 
 echo "[4/9] Create launcher: /usr/local/bin/codeserver"
 export CODESERVER_EXTENSION_DIR
-envsubst '$PASSWORD $CODESERVER_EXTENSION_DIR' > ${STARTER_FILE} <<'LAUNCH'
+envsubst '$CODESERVER_EXTENSION_DIR' > ${STARTER_FILE} <<'LAUNCH'
 #!/usr/bin/env bash
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
 PORT=${1:-10000}
+PASSWORD="${PASSWORD:-}"
 
 # Ensure PATH and /opt/python are active in non-login shells
 source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true

@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/cache"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/compiler"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
@@ -18,26 +19,68 @@ import (
 )
 
 // runInit handles the "init" command and its subcommands.
-func runInit() {
+func runInit(version string) {
 	args := os.Args[2:] // skip "codingbooth" and "init"
 
-	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: missing subcommand")
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth init <new <path>|dryrun> --select <dsl> --templates-path <dir>")
-		os.Exit(1)
+	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
+		printInitHelp()
+		if len(args) == 0 {
+			os.Exit(1)
+		}
+		return
 	}
 
 	subCmd := args[0]
 	switch subCmd {
+	case "list":
+		runInitList(version, args[1:])
+	case "search":
+		runInitSearch(version, args[1:])
 	case "new":
-		runInitNew(args[1:])
+		runInitNew(version, args[1:])
 	case "dryrun":
-		runInitDryrun(args[1:])
+		runInitDryrun(version, args[1:])
 	default:
-		fmt.Fprintf(os.Stderr, "Error: unknown init subcommand: %s\n", subCmd)
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth init <new <path>|dryrun> --select <dsl> --templates-path <dir>")
+		fmt.Fprintf(os.Stderr, "Error: unknown init subcommand: %s\n\n", subCmd)
+		printInitHelp()
 		os.Exit(1)
 	}
+}
+
+func printInitHelp() {
+	fmt.Println(`Usage: codingbooth init <command> [flags]
+
+Commands:
+  list                     List available templates
+  search <term>            Search templates by name or tag
+  new <path>               Create a new booth at the given path
+  dryrun                   Preview what would be generated
+
+Selection:
+  Templates are selected with a DSL passed via --select.
+
+  Format:  name[:param1,param2][+extension]/name2[:params][+ext]
+
+    /         separates templates
+    :         sets parameters (positional, comma-separated)
+    +         adds an extension to the preceding template
+
+  The selection can also be read from a file (@file) or URL (@@url).
+
+Flags:
+  --templates-path <dir>   Use local templates directory (or set CB_TEMPLATES_PATH)
+  --select <dsl>           Template selection DSL (required for new/dryrun)
+  --full                   Show all templates including secondary (for list)
+  --debug                  Print debug output (for new/dryrun)
+  --start                  Start the booth after creation (for new)
+
+Examples:
+  codingbooth init list
+  codingbooth init search python
+  codingbooth init new ./myproject --select "go/python"
+  codingbooth init new ./myproject --select "java:21+maven/postgresql"
+  codingbooth init dryrun --select "go:1.23.0+linter+vscode-ext"
+  codingbooth init new ./myproject --select @selections.txt`)
 }
 
 type initFlags struct {
@@ -45,6 +88,7 @@ type initFlags struct {
 	templatesPath string
 	debug         bool
 	start         bool
+	full          bool
 }
 
 func parseInitFlags(args []string) initFlags {
@@ -69,6 +113,8 @@ func parseInitFlags(args []string) initFlags {
 			flags.debug = true
 		case "--start":
 			flags.start = true
+		case "--full":
+			flags.full = true
 		default:
 			fmt.Fprintf(os.Stderr, "Error: unknown flag: %s\n", args[i])
 			os.Exit(1)
@@ -81,8 +127,78 @@ func parseInitFlags(args []string) initFlags {
 	return flags
 }
 
+// resolveTemplatesPath returns the templates directory path and a cleanup function.
+// If --templates-path or CB_TEMPLATES_PATH is set, it uses that directly.
+// Otherwise, it downloads and extracts templates from the GitHub release cache.
+func resolveTemplatesPath(flags initFlags, version string) (string, func()) {
+	if flags.templatesPath != "" {
+		return flags.templatesPath, func() {}
+	}
+
+	dir, cleanup, err := cache.ResolveTemplatesDir(version)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error resolving templates: %v\n", err)
+		fmt.Fprintln(os.Stderr, "Hint: use --templates-path or set CB_TEMPLATES_PATH for local templates")
+		os.Exit(1)
+	}
+	return dir, cleanup
+}
+
+// runInitList handles: codingbooth init list [--templates-path <dir>] [--full]
+func runInitList(version string, args []string) {
+	flags := parseInitFlags(args)
+	templatesPath, cleanup := resolveTemplatesPath(flags, version)
+	defer cleanup()
+
+	registry, err := tmpl.LoadRegistry(templatesPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
+		os.Exit(1)
+	}
+
+	if !flags.full {
+		registry = registry.FilterPrimary()
+	}
+
+	tmpl.FormatRegistry(os.Stdout, registry)
+
+	if !flags.full {
+		fmt.Println("\nUse --full to see all available templates.")
+	}
+	fmt.Println("Use 'init search <term>' to find templates by name or tag.")
+}
+
+// runInitSearch handles: codingbooth init search <term> [--templates-path <dir>] [--full]
+func runInitSearch(version string, args []string) {
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "Error: 'init search' requires a search term")
+		fmt.Fprintln(os.Stderr, "Usage: codingbooth init search <term> --templates-path <dir>")
+		os.Exit(1)
+	}
+
+	searchTerm := args[0]
+	flags := parseInitFlags(args[1:])
+	templatesPath, cleanup := resolveTemplatesPath(flags, version)
+	defer cleanup()
+
+	registry, err := tmpl.LoadRegistry(templatesPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
+		os.Exit(1)
+	}
+
+	filtered := registry.Search(searchTerm)
+
+	if len(filtered.Categories) == 0 {
+		fmt.Println("No templates found matching:", searchTerm)
+		return
+	}
+
+	tmpl.FormatRegistry(os.Stdout, filtered)
+}
+
 // runInitNew handles: codingbooth init new <path> --select <dsl> [--templates-path <dir>] [--debug]
-func runInitNew(args []string) {
+func runInitNew(version string, args []string) {
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "Error: 'init new' requires a target path")
 		fmt.Fprintln(os.Stderr, "Usage: codingbooth init new <path> --select <dsl> --templates-path <dir>")
@@ -96,10 +212,10 @@ func runInitNew(args []string) {
 		fmt.Fprintln(os.Stderr, "Error: --select is required")
 		os.Exit(1)
 	}
-	if flags.templatesPath == "" {
-		fmt.Fprintln(os.Stderr, "Error: --templates-path is required (template download not yet implemented)")
-		os.Exit(1)
-	}
+
+	templatesPath, cleanup := resolveTemplatesPath(flags, version)
+	defer cleanup()
+	flags.templatesPath = templatesPath
 
 	out, resolved := compileSelection(flags)
 
@@ -125,17 +241,17 @@ func runInitNew(args []string) {
 }
 
 // runInitDryrun handles: codingbooth init dryrun --select <dsl> [--templates-path <dir>] [--debug]
-func runInitDryrun(args []string) {
+func runInitDryrun(version string, args []string) {
 	flags := parseInitFlags(args)
 
 	if flags.selectDSL == "" {
 		fmt.Fprintln(os.Stderr, "Error: --select is required")
 		os.Exit(1)
 	}
-	if flags.templatesPath == "" {
-		fmt.Fprintln(os.Stderr, "Error: --templates-path is required (template download not yet implemented)")
-		os.Exit(1)
-	}
+
+	templatesPath, cleanup := resolveTemplatesPath(flags, version)
+	defer cleanup()
+	flags.templatesPath = templatesPath
 
 	out, resolved := compileSelection(flags)
 

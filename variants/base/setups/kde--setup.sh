@@ -269,6 +269,10 @@ trap 'echo "❌ Error on line $LINENO" >&2; exit 1' ERR
 : "${GEOMETRY:=1280x800}"
 : "${NOVNC_PORT:=10000}"
 : "${VNC_PASSWORD:=}"
+# Map unified PASSWORD to VNC_PASSWORD if VNC_PASSWORD is not explicitly set
+if [[ -z "${VNC_PASSWORD}" && -n "${PASSWORD:-}" ]]; then
+    VNC_PASSWORD="${PASSWORD}"
+fi
 : "${KEYRING_MODE:=basic}"   # basic | disable | keep
 
 # infer VNC port

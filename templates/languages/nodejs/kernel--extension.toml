@@ -1,0 +1,15 @@
+display-name = "Node.js Notebook Kernel"
+display-disc = "tslab Jupyter kernel for JavaScript/TypeScript"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "nodejs",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--60" = """
+setup nodejs-kernel
+"""

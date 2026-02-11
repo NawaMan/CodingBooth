@@ -30,6 +30,7 @@ type specToml struct {
 	DisplayDesc  string               `toml:"display-disc"`
 	DisplayOrder int                  `toml:"display-order"`
 	Tags         []string             `toml:"tags"`
+	Primary      bool                 `toml:"primary"`
 	AutoSelect   *bool                `toml:"auto-select"`
 	Variant      string               `toml:"variant"`
 	Port         string               `toml:"port"`
@@ -162,6 +163,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		DisplayDesc:  spec.DisplayDesc,
 		DisplayOrder: spec.DisplayOrder,
 		Tags:         spec.Tags,
+		Primary:      spec.Primary,
 		AutoSelect:   spec.AutoSelect,
 		Variant:      spec.Variant,
 		Port:         spec.Port,
@@ -298,6 +300,7 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		DisplayDesc:  spec.DisplayDesc,
 		DisplayOrder: spec.DisplayOrder,
 		Tags:         spec.Tags,
+		Primary:      spec.Primary,
 		AutoSelect:   spec.AutoSelect,
 		Variant:      spec.Variant,
 		Port:         spec.Port,

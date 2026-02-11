@@ -82,6 +82,9 @@ RUNTIME OPTIONS:
 
 CONTAINER MODE:
   --daemon               Run the booth container in the background
+  --public               Bind to all interfaces with password authentication.
+                         Password read from .booth/.booth.password (chmod 600, gitignored),
+                         or prompted interactively if not found.
   --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST
   --sandboxed            Enable egress sandbox defaults (proxy + enforcement setup)
   --keep-alive           Do not remove the container when stopped
