@@ -5,10 +5,15 @@
 package init
 
 import (
+	"bufio"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
+
+	"golang.org/x/term"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/defaults"
@@ -58,6 +63,7 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	readFromToml(boundary, &context, configExplicitlySet)
 	readFromArgs(boundary, &context, ilist.NewListFromSlice(args.Slice()[1:]))
 	validateConfig(&context.Config)
+	resolvePassword(&context.Config)
 
 	if context.Config.ProjectName == "" {
 		context.Config.ProjectName = getProjectName(context.Config.Code.ValueOr("."))
@@ -378,6 +384,10 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.WritableBooth = true
 			i++
 
+		case "--public":
+			cfg.Public = true
+			i++
+
 		// Image selection
 		case "--image":
 			v, err := needValue(args, i, arg)
@@ -597,4 +607,128 @@ func fileExists(path string) bool {
 		return false
 	}
 	return !info.IsDir()
+}
+
+// resolvePassword populates config.Password when --public is set.
+// Priority: .booth/.booth.password file → interactive stdin prompt → error.
+func resolvePassword(config *appctx.AppConfig) {
+	if !config.Public {
+		return
+	}
+
+	// Priority 1: .booth/.booth.password file
+	codeDir := config.Code.ValueOr("")
+	if codeDir != "" {
+		passwordFile := filepath.Join(codeDir, ".booth", ".booth.password")
+		if fileExists(passwordFile) {
+			if err := validatePasswordFile(passwordFile, codeDir); err != nil {
+				panic(err)
+			}
+			content, err := os.ReadFile(passwordFile)
+			if err != nil {
+				panic(fmt.Errorf("failed to read password file %q: %w", passwordFile, err))
+			}
+			password := strings.TrimSpace(string(content))
+			if password == "" {
+				panic(fmt.Errorf("password file %q is empty", passwordFile))
+			}
+			config.Password = password
+			return
+		}
+	}
+
+	// Priority 2: interactive stdin prompt
+	password, err := readPasswordFromStdin()
+	if err != nil {
+		panic(fmt.Errorf("--public requires a password but none could be read: %w", err))
+	}
+	password = strings.TrimSpace(password)
+	if password == "" {
+		panic(fmt.Errorf("--public requires a password but received empty input"))
+	}
+	config.Password = password
+}
+
+// readPasswordFromStdin reads a password from stdin.
+// If stdin is a terminal, it prompts interactively (no echo).
+// If stdin is a pipe, it reads the first line.
+func readPasswordFromStdin() (string, error) {
+	if term.IsTerminal(int(os.Stdin.Fd())) {
+		fmt.Fprint(os.Stderr, "Password: ")
+		password, err := term.ReadPassword(int(os.Stdin.Fd()))
+		fmt.Fprintln(os.Stderr) // newline after hidden input
+		if err != nil {
+			return "", fmt.Errorf("failed to read password: %w", err)
+		}
+		return string(password), nil
+	}
+
+	// Piped input: read first line
+	scanner := bufio.NewScanner(os.Stdin)
+	if scanner.Scan() {
+		return scanner.Text(), nil
+	}
+	if err := scanner.Err(); err != nil {
+		return "", err
+	}
+	return "", fmt.Errorf("no input received on stdin")
+}
+
+// validatePasswordFile checks that the password file has safe permissions and is gitignored.
+func validatePasswordFile(passwordFile, codeDir string) error {
+	// Check file permissions (skip on Windows)
+	if runtime.GOOS != "windows" {
+		info, err := os.Stat(passwordFile)
+		if err != nil {
+			return fmt.Errorf("cannot stat password file %q: %w", passwordFile, err)
+		}
+		if info.Mode().Perm()&0077 != 0 {
+			return fmt.Errorf(
+				"password file %q has too-permissive permissions %04o; "+
+					"group and others must have no access. Fix with: chmod 600 %s",
+				passwordFile, info.Mode().Perm(), passwordFile,
+			)
+		}
+	}
+
+	// Check gitignore
+	if err := checkPasswordFileGitignored(passwordFile, codeDir); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// checkPasswordFileGitignored verifies that .booth/.booth.password is gitignored.
+// Skips the check if git is not available or the project is not a git repo.
+func checkPasswordFileGitignored(passwordFile, codeDir string) error {
+	gitPath, err := exec.LookPath("git")
+	if err != nil {
+		// git not installed, skip check
+		return nil
+	}
+
+	// Check if we are in a git repo
+	cmd := exec.Command(gitPath, "-C", codeDir, "rev-parse", "--git-dir")
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	if err := cmd.Run(); err != nil {
+		// Not a git repo, skip check
+		return nil
+	}
+
+	// git check-ignore returns exit 0 if ignored, exit 1 if NOT ignored
+	cmd = exec.Command(gitPath, "-C", codeDir, "check-ignore", "-q", ".booth/.booth.password")
+	cmd.Stdout = nil
+	cmd.Stderr = nil
+	if err := cmd.Run(); err != nil {
+		return fmt.Errorf(
+			"password file %q is NOT gitignored. "+
+				"Add '.booth.password' to .booth/.gitignore before using this feature. "+
+				"Refusing to run to prevent accidental credential exposure",
+			passwordFile,
+		)
+	}
+
+	return nil
 }

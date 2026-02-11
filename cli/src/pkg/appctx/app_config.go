@@ -35,6 +35,12 @@ type AppConfig struct {
 	Dind         bool `toml:"dind,omitempty"          envconfig:"CB_DIND" default:"false"`
 	Sandbox       bool `toml:"sandboxed,omitempty"      envconfig:"CB_SANDBOX" default:"false"`
 	WritableBooth bool `toml:"writable-booth,omitempty" envconfig:"CB_WRITABLE_BOOTH" default:"false"`
+
+	// Public exposes the booth on all interfaces (0.0.0.0) with password auth.
+	// Password is resolved at startup from .booth/.booth.password or interactive stdin.
+	// These are never read from TOML or environment variables.
+	Public   bool   `toml:"-" ignored:"true"`
+	Password string `toml:"-" ignored:"true"`
 	SandboxAllowlistFile string `toml:"sandbox-allowlist-file,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST_FILE"`
 	SandboxPolicyFile    string `toml:"sandbox-policy-file,omitempty"    envconfig:"CB_SANDBOX_POLICY_FILE"`
 	SandboxAllowlist     []string `toml:"sandbox-allowlist,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST"`
@@ -125,6 +131,8 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Dind:             %t\n", config.Dind)
 	fmt.Fprintf(&str, "    Sandbox:          %t\n", config.Sandbox)
 	fmt.Fprintf(&str, "    WritableBooth:    %t\n", config.WritableBooth)
+	fmt.Fprintf(&str, "    Public:           %t\n", config.Public)
+	fmt.Fprintf(&str, "    Password:         %s\n", maskStr(config.Password))
 	fmt.Fprintf(&str, "    SandboxAllowlist: %q\n", config.SandboxAllowlistFile)
 	fmt.Fprintf(&str, "    SandboxPolicy:    %q\n", config.SandboxPolicyFile)
 	fmt.Fprintf(&str, "    SandboxAllowlist+: %v\n", config.SandboxAllowlist)
@@ -165,4 +173,11 @@ func (config AppConfig) String() string {
 	str.WriteString("==================================================================\n")
 
 	return str.String()
+}
+
+func maskStr(s string) string {
+	if s == "" {
+		return "(not set)"
+	}
+	return "(set)"
 }

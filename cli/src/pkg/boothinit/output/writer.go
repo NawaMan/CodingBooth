@@ -23,6 +23,12 @@ func WriteOutput(out *BoothOutput, targetPath string) error {
 		return fmt.Errorf("creating .booth/: %w", err)
 	}
 
+	// Ensure .booth.password is always gitignored
+	gitignoreContent := "# Secrets - never commit\n.booth.password\n\n# Lock file is version-controlled\n# Binaries are in ~/.cache/codingbooth/ (not here)\n"
+	if err := writeFile(filepath.Join(boothDir, ".gitignore"), gitignoreContent, 0644); err != nil {
+		return fmt.Errorf("writing .gitignore: %w", err)
+	}
+
 	if out.Config != nil {
 		content := SerializeConfigToml(out.Config)
 		if content != "" {

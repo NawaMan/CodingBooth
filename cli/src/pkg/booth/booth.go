@@ -295,7 +295,13 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 
 	// Skip port mapping when using shared network namespace sidecars.
 	if !ctx.Dind() && !ctx.Sandbox() {
-		builder.CommonArgs.Append(ilist.NewList[string]("-p", fmt.Sprintf("%d:10000", ctx.PortNumber())))
+		portMapping := formatPortMapping(ctx.Public(), ctx.PortNumber(), 10000)
+		builder.CommonArgs.Append(ilist.NewList[string]("-p", portMapping))
+	}
+
+	// Inject PASSWORD env var into the container when set
+	if ctx.Password() != "" {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "PASSWORD="+ctx.Password()))
 	}
 
 	// Metadata
@@ -363,6 +369,16 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 		return
 	}
 	builder.CommonArgs.Append(ilist.NewList[string]("-v", hostPath+":/home/coder/code/.booth:ro"))
+}
+
+// formatPortMapping returns a Docker port mapping string.
+// When public is false, binds to 127.0.0.1 (localhost only).
+// When public is true, binds to all interfaces (0.0.0.0).
+func formatPortMapping(public bool, hostPort, containerPort int) string {
+	if !public {
+		return fmt.Sprintf("127.0.0.1:%d:%d", hostPort, containerPort)
+	}
+	return fmt.Sprintf("%d:%d", hostPort, containerPort)
 }
 
 func flattenArgs(argsList ilist.List[ilist.List[string]]) []string {
