@@ -1,0 +1,15 @@
+display-name = "Go Notebook Kernel"
+display-disc = "GoNB Jupyter kernel for Go"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "go",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--60" = """
+setup go-kernel
+"""

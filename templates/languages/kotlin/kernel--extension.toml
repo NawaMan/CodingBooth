@@ -1,0 +1,15 @@
+display-name = "Kotlin Notebook Kernel"
+display-disc = "Kotlin Jupyter kernel"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "kotlin",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--60" = """
+setup kotlin-kernel
+"""

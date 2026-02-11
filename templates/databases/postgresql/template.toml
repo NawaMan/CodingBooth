@@ -1,5 +1,4 @@
 display-name = "PostgreSQL"
-primary = true
 display-disc = "PostgreSQL relational database"
 display-order = 20
 tags = [

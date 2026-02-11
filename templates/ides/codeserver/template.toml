@@ -1,5 +1,4 @@
 display-name = "code-server"
-primary = true
 display-disc = "VS Code in the browser via code-server"
 display-order = 12
 tags = [
