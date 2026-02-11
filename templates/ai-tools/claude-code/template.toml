@@ -1,4 +1,5 @@
 display-name = "Claude Code"
+primary = true
 display-disc = "Anthropic Claude Code AI assistant"
 display-order = 10
 tags = [

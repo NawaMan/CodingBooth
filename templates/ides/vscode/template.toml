@@ -1,4 +1,5 @@
 display-name = "VS Code"
+primary = true
 display-disc = "Visual Studio Code desktop IDE"
 display-order = 10
 tags = [

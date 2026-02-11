@@ -1,4 +1,5 @@
 display-name = "Jupyter Notebook"
+primary = true
 display-disc = "JupyterLab notebook server"
 display-order = 24
 tags = [

@@ -1,4 +1,5 @@
 display-name = "Ruby"
+primary = true
 display-disc = "Ruby language"
 display-order = 60
 tags = [

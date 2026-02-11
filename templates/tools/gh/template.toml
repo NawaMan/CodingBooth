@@ -1,4 +1,5 @@
 display-name = "GitHub CLI"
+primary = true
 display-disc = "GitHub CLI (gh)"
 display-order = 30
 tags = [

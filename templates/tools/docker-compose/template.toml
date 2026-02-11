@@ -1,4 +1,5 @@
 display-name = "Docker Compose"
+primary = true
 display-disc = "Docker Compose plugin"
 display-order = 64
 tags = [

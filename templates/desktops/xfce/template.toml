@@ -1,4 +1,5 @@
 display-name = "XFCE"
+primary = true
 display-disc = "XFCE desktop with VNC/noVNC"
 display-order = 14
 tags = [

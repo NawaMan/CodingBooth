@@ -1,4 +1,5 @@
 display-name = "KDE Plasma"
+primary = true
 display-disc = "KDE Plasma desktop with VNC/noVNC"
 display-order = 10
 tags = [

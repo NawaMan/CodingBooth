@@ -1,4 +1,5 @@
 display-name = "Node.js"
+primary = true
 display-disc = "Node.js JavaScript runtime"
 display-order = 50
 tags = [
