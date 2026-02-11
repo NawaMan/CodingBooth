@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# zig-code-extension--setup.sh
+# clojure-code-extension--setup.sh
 # NOTE: This script has not been tested -- no time (sorry). Please report success or failure. :-p
 set -Eeuo pipefail
 
@@ -26,6 +26,6 @@ SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}
 CODE_EXTENSION_LIB=${CODE_EXTENSION_LIB:-code-extension-source.sh}
 source "${SETUP_LIBS_DIR}/${CODE_EXTENSION_LIB}"
 
-install_extensions ziglang.vscode-zig
+install_extensions betterthantomorrow.calva
 
 echo "✅ Extension installation completed."
