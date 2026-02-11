@@ -32,7 +32,7 @@ source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 # ---- Jupyter kernel registration tunables (match code-server) ----
 JUPYTER_KERNEL_NAME="${JUPYTER_KERNEL_NAME:-python}"
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"
-NOTEBOOK_DEFAULT_PORT="${NOTEBOOK_DEFAULT_PORT:-18888}"
+NOTEBOOK_DEFAULT_PORT="${1:-${NOTEBOOK_DEFAULT_PORT:-18888}}"
 
 
 # ---- helper: install + verify Jupyter in venv ----
@@ -127,6 +127,7 @@ cat > ${STARTER_FILE} <<'EOF'
 set -euo pipefail
 
 PORT=${1:-__NOTEBOOK_DEFAULT_PORT__}
+TOKEN="${PASSWORD:-}"
 
 # Make sure non-Python kernels in the venv are visible if present
 export JUPYTER_PATH="__CB_NOTEBOOK_VENV_DIR__/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
@@ -135,7 +136,7 @@ exec "__CB_NOTEBOOK_VENV_DIR__/bin/jupyter-lab" \
   --no-browser \
   --ip=0.0.0.0 \
   --port=$PORT \
-  --ServerApp.token='' \
+  --ServerApp.token="$TOKEN" \
   --ServerApp.custom_display_url="http://localhost:$PORT/lab" \
   --ServerApp.terminado_settings='{"shell_command":["/bin/bash"]}'
 EOF
