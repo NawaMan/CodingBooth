@@ -1,0 +1,14 @@
+display-name = "Zig VS Code Extension"
+display-disc = "Zig language support for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "zig",
+    "ide",
+    "vscode",
+]
+
+[segments]
+Boothfile = """
+setup zig-code-extension
+"""
