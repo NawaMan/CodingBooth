@@ -1,4 +1,5 @@
 display-name = "SQLite"
+primary = true
 display-disc = "SQLite embedded database"
 display-order = 10
 tags = [

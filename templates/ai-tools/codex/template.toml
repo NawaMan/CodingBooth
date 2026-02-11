@@ -1,4 +1,5 @@
 display-name = "Codex"
+primary = true
 display-disc = "OpenAI Codex CLI"
 display-order = 12
 tags = [

@@ -1,4 +1,5 @@
 display-name = "MySQL"
+primary = true
 display-disc = "MySQL relational database"
 display-order = 22
 tags = [

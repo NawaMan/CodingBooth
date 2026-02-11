@@ -1,0 +1,13 @@
+display-name = "Antigravity"
+display-disc = "Antigravity AI assistant (formerly Windsurf)"
+display-order = 14
+tags = [
+    "ai",
+    "antigravity",
+    "google"
+]
+
+[segments]
+"Boothfile--60" = """
+setup antigravity
+"""

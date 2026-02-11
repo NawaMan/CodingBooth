@@ -23,19 +23,23 @@ func runInit() {
 
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "Error: missing subcommand")
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth init <new <path>|dryrun> --select <dsl> --templates-path <dir>")
+		fmt.Fprintln(os.Stderr, "Usage: codingbooth init <list|search <term>|new <path>|dryrun> [flags]")
 		os.Exit(1)
 	}
 
 	subCmd := args[0]
 	switch subCmd {
+	case "list":
+		runInitList(args[1:])
+	case "search":
+		runInitSearch(args[1:])
 	case "new":
 		runInitNew(args[1:])
 	case "dryrun":
 		runInitDryrun(args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "Error: unknown init subcommand: %s\n", subCmd)
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth init <new <path>|dryrun> --select <dsl> --templates-path <dir>")
+		fmt.Fprintln(os.Stderr, "Usage: codingbooth init <list|search <term>|new <path>|dryrun> [flags]")
 		os.Exit(1)
 	}
 }
@@ -45,6 +49,7 @@ type initFlags struct {
 	templatesPath string
 	debug         bool
 	start         bool
+	full          bool
 }
 
 func parseInitFlags(args []string) initFlags {
@@ -69,6 +74,8 @@ func parseInitFlags(args []string) initFlags {
 			flags.debug = true
 		case "--start":
 			flags.start = true
+		case "--full":
+			flags.full = true
 		default:
 			fmt.Fprintf(os.Stderr, "Error: unknown flag: %s\n", args[i])
 			os.Exit(1)
@@ -79,6 +86,74 @@ func parseInitFlags(args []string) initFlags {
 		flags.templatesPath = os.Getenv("CB_TEMPLATES_PATH")
 	}
 	return flags
+}
+
+// runInitList handles: codingbooth init list [--templates-path <dir>] [--full]
+func runInitList(args []string) {
+	flags := parseInitFlags(args)
+	if flags.templatesPath == "" {
+		fmt.Fprintln(os.Stderr, "Error: --templates-path or CB_TEMPLATES_PATH is required (template download not yet implemented)")
+		os.Exit(1)
+	}
+
+	registry, err := tmpl.LoadRegistry(flags.templatesPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
+		os.Exit(1)
+	}
+
+	if !flags.full {
+		registry = registry.FilterPrimary()
+	}
+
+	tmpl.FormatRegistry(os.Stdout, registry)
+
+	if !flags.full {
+		fmt.Println("\nUse --full to see all available templates.")
+	}
+}
+
+// runInitSearch handles: codingbooth init search <term> [--templates-path <dir>] [--full]
+func runInitSearch(args []string) {
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "Error: 'init search' requires a search term")
+		fmt.Fprintln(os.Stderr, "Usage: codingbooth init search <term> --templates-path <dir>")
+		os.Exit(1)
+	}
+
+	searchTerm := args[0]
+	flags := parseInitFlags(args[1:])
+	if flags.templatesPath == "" {
+		fmt.Fprintln(os.Stderr, "Error: --templates-path or CB_TEMPLATES_PATH is required (template download not yet implemented)")
+		os.Exit(1)
+	}
+
+	registry, err := tmpl.LoadRegistry(flags.templatesPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
+		os.Exit(1)
+	}
+
+	filtered := registry.Search(searchTerm)
+	if !flags.full {
+		filtered = filtered.FilterPrimary()
+	}
+
+	if len(filtered.Categories) == 0 {
+		if flags.full {
+			fmt.Println("No templates found matching:", searchTerm)
+		} else {
+			fmt.Println("No primary templates found matching:", searchTerm)
+			fmt.Println("Use --full to search all templates.")
+		}
+		return
+	}
+
+	tmpl.FormatRegistry(os.Stdout, filtered)
+
+	if !flags.full {
+		fmt.Println("\nUse --full to see all matching templates.")
+	}
 }
 
 // runInitNew handles: codingbooth init new <path> --select <dsl> [--templates-path <dir>] [--debug]
@@ -97,7 +172,7 @@ func runInitNew(args []string) {
 		os.Exit(1)
 	}
 	if flags.templatesPath == "" {
-		fmt.Fprintln(os.Stderr, "Error: --templates-path is required (template download not yet implemented)")
+		fmt.Fprintln(os.Stderr, "Error: --templates-path or CB_TEMPLATES_PATH is required (template download not yet implemented)")
 		os.Exit(1)
 	}
 
@@ -133,7 +208,7 @@ func runInitDryrun(args []string) {
 		os.Exit(1)
 	}
 	if flags.templatesPath == "" {
-		fmt.Fprintln(os.Stderr, "Error: --templates-path is required (template download not yet implemented)")
+		fmt.Fprintln(os.Stderr, "Error: --templates-path or CB_TEMPLATES_PATH is required (template download not yet implemented)")
 		os.Exit(1)
 	}
 
