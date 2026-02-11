@@ -1,5 +1,4 @@
 display-name = "Neovim"
-primary = true
 display-disc = "Neovim text editor"
 display-order = 20
 tags = [

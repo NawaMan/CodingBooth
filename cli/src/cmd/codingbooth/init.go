@@ -21,10 +21,12 @@ import (
 func runInit() {
 	args := os.Args[2:] // skip "codingbooth" and "init"
 
-	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: missing subcommand")
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth init <list|search <term>|new <path>|dryrun> [flags]")
-		os.Exit(1)
+	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
+		printInitHelp()
+		if len(args) == 0 {
+			os.Exit(1)
+		}
+		return
 	}
 
 	subCmd := args[0]
@@ -38,10 +40,46 @@ func runInit() {
 	case "dryrun":
 		runInitDryrun(args[1:])
 	default:
-		fmt.Fprintf(os.Stderr, "Error: unknown init subcommand: %s\n", subCmd)
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth init <list|search <term>|new <path>|dryrun> [flags]")
+		fmt.Fprintf(os.Stderr, "Error: unknown init subcommand: %s\n\n", subCmd)
+		printInitHelp()
 		os.Exit(1)
 	}
+}
+
+func printInitHelp() {
+	fmt.Println(`Usage: codingbooth init <command> [flags]
+
+Commands:
+  list                     List available templates
+  search <term>            Search templates by name or tag
+  new <path>               Create a new booth at the given path
+  dryrun                   Preview what would be generated
+
+Selection:
+  Templates are selected with a DSL passed via --select.
+
+  Format:  name[:param1,param2][+extension]/name2[:params][+ext]
+
+    /         separates templates
+    :         sets parameters (positional, comma-separated)
+    +         adds an extension to the preceding template
+
+  The selection can also be read from a file (@file) or URL (@@url).
+
+Flags:
+  --templates-path <dir>   Path to templates directory (or set CB_TEMPLATES_PATH)
+  --select <dsl>           Template selection DSL (required for new/dryrun)
+  --full                   Show all templates including secondary (for list)
+  --debug                  Print debug output (for new/dryrun)
+  --start                  Start the booth after creation (for new)
+
+Examples:
+  codingbooth init list
+  codingbooth init search python
+  codingbooth init new ./myproject --select "go/python"
+  codingbooth init new ./myproject --select "java:21+maven/postgresql"
+  codingbooth init dryrun --select "go:1.23.0+linter+vscode-ext"
+  codingbooth init new ./myproject --select @selections.txt`)
 }
 
 type initFlags struct {
@@ -111,6 +149,7 @@ func runInitList(args []string) {
 	if !flags.full {
 		fmt.Println("\nUse --full to see all available templates.")
 	}
+	fmt.Println("Use 'init search <term>' to find templates by name or tag.")
 }
 
 // runInitSearch handles: codingbooth init search <term> [--templates-path <dir>] [--full]
@@ -135,25 +174,13 @@ func runInitSearch(args []string) {
 	}
 
 	filtered := registry.Search(searchTerm)
-	if !flags.full {
-		filtered = filtered.FilterPrimary()
-	}
 
 	if len(filtered.Categories) == 0 {
-		if flags.full {
-			fmt.Println("No templates found matching:", searchTerm)
-		} else {
-			fmt.Println("No primary templates found matching:", searchTerm)
-			fmt.Println("Use --full to search all templates.")
-		}
+		fmt.Println("No templates found matching:", searchTerm)
 		return
 	}
 
 	tmpl.FormatRegistry(os.Stdout, filtered)
-
-	if !flags.full {
-		fmt.Println("\nUse --full to see all matching templates.")
-	}
 }
 
 // runInitNew handles: codingbooth init new <path> --select <dsl> [--templates-path <dir>] [--debug]

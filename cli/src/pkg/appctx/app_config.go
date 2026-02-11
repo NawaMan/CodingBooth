@@ -28,21 +28,21 @@ type AppConfig struct {
 	// --------------------
 	// Flags
 	// --------------------
-	KeepAlive    bool `toml:"keep-alive,omitempty"    envconfig:"CB_KEEP_ALIVE" default:"false"`
-	SilenceBuild bool `toml:"silence-build,omitempty" envconfig:"CB_SILENCE_BUILD" default:"false"`
-	Daemon       bool `toml:"daemon,omitempty"        envconfig:"CB_DAEMON" default:"false"`
-	Pull         bool `toml:"pull,omitempty"          envconfig:"CB_PULL" default:"false"`
-	Dind         bool `toml:"dind,omitempty"          envconfig:"CB_DIND" default:"false"`
+	KeepAlive     bool `toml:"keep-alive,omitempty"     envconfig:"CB_KEEP_ALIVE" default:"false"`
+	SilenceBuild  bool `toml:"silence-build,omitempty"  envconfig:"CB_SILENCE_BUILD" default:"false"`
+	Daemon        bool `toml:"daemon,omitempty"         envconfig:"CB_DAEMON" default:"false"`
+	Pull          bool `toml:"pull,omitempty"           envconfig:"CB_PULL" default:"false"`
+	Dind          bool `toml:"dind,omitempty"           envconfig:"CB_DIND" default:"false"`
 	Sandbox       bool `toml:"sandboxed,omitempty"      envconfig:"CB_SANDBOX" default:"false"`
 	WritableBooth bool `toml:"writable-booth,omitempty" envconfig:"CB_WRITABLE_BOOTH" default:"false"`
 
 	// Public exposes the booth on all interfaces (0.0.0.0) with password auth.
 	// Password is resolved at startup from .booth/.booth.password or interactive stdin.
 	// These are never read from TOML or environment variables.
-	Public   bool   `toml:"-" ignored:"true"`
-	Password string `toml:"-" ignored:"true"`
-	SandboxAllowlistFile string `toml:"sandbox-allowlist-file,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST_FILE"`
-	SandboxPolicyFile    string `toml:"sandbox-policy-file,omitempty"    envconfig:"CB_SANDBOX_POLICY_FILE"`
+	Public               bool     `toml:"-" ignored:"true"`
+	Password             string   `toml:"-" ignored:"true"`
+	SandboxAllowlistFile string   `toml:"sandbox-allowlist-file,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST_FILE"`
+	SandboxPolicyFile    string   `toml:"sandbox-policy-file,omitempty"    envconfig:"CB_SANDBOX_POLICY_FILE"`
 	SandboxAllowlist     []string `toml:"sandbox-allowlist,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST"`
 
 	// --------------------

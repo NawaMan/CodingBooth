@@ -1,5 +1,4 @@
 display-name = "Chromium"
-primary = true
 display-disc = "Chromium browser (no snap)"
 display-order = 10
 tags = [

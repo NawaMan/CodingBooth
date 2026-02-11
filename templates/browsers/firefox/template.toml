@@ -1,5 +1,4 @@
 display-name = "Firefox"
-primary = true
 display-disc = "Firefox browser (Mozillateam PPA)"
 display-order = 12
 tags = [

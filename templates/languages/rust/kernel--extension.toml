@@ -1,0 +1,15 @@
+display-name = "Rust Notebook Kernel"
+display-disc = "evcxr Jupyter kernel for Rust"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "rust",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--60" = """
+setup rust-kernel
+"""

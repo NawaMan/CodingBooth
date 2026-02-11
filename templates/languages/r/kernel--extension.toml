@@ -1,0 +1,15 @@
+display-name = "R Notebook Kernel"
+display-disc = "IRkernel Jupyter kernel for R"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "r",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--60" = """
+setup r-kernel
+"""
