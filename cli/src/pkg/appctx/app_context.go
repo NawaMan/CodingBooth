@@ -89,6 +89,8 @@ func (ctx AppContext) Pull() bool         { return ctx.values.Config.Pull }
 func (ctx AppContext) Dind() bool         { return ctx.values.Config.Dind }
 func (ctx AppContext) Sandbox() bool       { return ctx.values.Config.Sandbox }
 func (ctx AppContext) WritableBooth() bool  { return ctx.values.Config.WritableBooth }
+func (ctx AppContext) Public() bool         { return ctx.values.Config.Public }
+func (ctx AppContext) Password() string     { return ctx.values.Config.Password }
 func (ctx AppContext) SandboxAllowlistFile() string {
 	return ctx.values.Config.SandboxAllowlistFile
 }
@@ -184,6 +186,8 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Dind:             %t\n", ctx.Dind())
 	fmt.Fprintf(&str, "    Sandbox:          %t\n", ctx.Sandbox())
 	fmt.Fprintf(&str, "    WritableBooth:    %t\n", ctx.WritableBooth())
+	fmt.Fprintf(&str, "    Public:           %t\n", ctx.Public())
+	fmt.Fprintf(&str, "    Password:         %s\n", maskStr(ctx.Password()))
 
 	fmt.Fprintf(&str, "# Image Configuration -----------\n")
 	fmt.Fprintf(&str, "    Dockerfile:       %q\n", ctx.Dockerfile())

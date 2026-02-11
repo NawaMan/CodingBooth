@@ -1,4 +1,5 @@
 display-name = "Go"
+primary = true
 display-disc = "Go language toolchain"
 display-order = 10
 tags = [

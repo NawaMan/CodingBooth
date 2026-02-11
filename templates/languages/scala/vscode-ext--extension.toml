@@ -1,0 +1,15 @@
+# NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+display-name = "Scala VS Code Extension"
+display-disc = "Scala language support for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "scala",
+    "ide",
+    "vscode",
+]
+
+[segments]
+Boothfile = """
+setup scala-code-extension
+"""

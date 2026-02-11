@@ -130,7 +130,7 @@ func startSandboxNetnsOwner(ctx appctx.AppContext, ownerName, netName string, ho
 		return nil
 	}
 
-	portMapping := fmt.Sprintf("%d:10000", hostPort)
+	portMapping := formatPortMapping(ctx.Public(), hostPort, 10000)
 	args := []string{
 		"run", "-d", "--rm",
 		"--cap-add=NET_ADMIN",

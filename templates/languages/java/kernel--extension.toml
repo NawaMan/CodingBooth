@@ -1,0 +1,15 @@
+display-name = "Java Notebook Kernel"
+display-disc = "IJava Jupyter kernel for Java"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "java",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--60" = """
+setup java-kernel
+"""

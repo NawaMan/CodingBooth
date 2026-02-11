@@ -50,7 +50,7 @@ func main() {
 			runExample(version)
 			return
 		case "init":
-			runInit()
+			runInit(version)
 			return
 		case "emit-dockerfile":
 			emitDockerfile()

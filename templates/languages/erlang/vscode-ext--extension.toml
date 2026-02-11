@@ -1,0 +1,15 @@
+# NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+display-name = "Erlang VS Code Extension"
+display-disc = "Erlang language support for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "erlang",
+    "ide",
+    "vscode",
+]
+
+[segments]
+Boothfile = """
+setup erlang-code-extension
+"""

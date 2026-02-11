@@ -1,0 +1,16 @@
+# NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+display-name = "Node.js VS Code Extension"
+display-disc = "Node.js/JavaScript support for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "nodejs",
+    "javascript",
+    "ide",
+    "vscode",
+]
+
+[segments]
+Boothfile = """
+setup nodejs-code-extension
+"""

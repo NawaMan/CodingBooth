@@ -1,4 +1,5 @@
 display-name = "Rust"
+primary = true
 display-disc = "Rust language toolchain"
 display-order = 40
 tags = [

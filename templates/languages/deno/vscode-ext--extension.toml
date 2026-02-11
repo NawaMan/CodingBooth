@@ -1,0 +1,15 @@
+# NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+display-name = "Deno VS Code Extension"
+display-disc = "Deno runtime support for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "deno",
+    "ide",
+    "vscode",
+]
+
+[segments]
+Boothfile = """
+setup deno-code-extension
+"""

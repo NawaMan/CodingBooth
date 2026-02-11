@@ -1,0 +1,15 @@
+# NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+display-name = "Bun VS Code Extension"
+display-disc = "Bun runtime support for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "bun",
+    "ide",
+    "vscode",
+]
+
+[segments]
+Boothfile = """
+setup bun-code-extension
+"""

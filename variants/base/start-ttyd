@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PORT=${1:-10000}
+
+TTYD_ARGS=(-W -i 0.0.0.0 -p "$PORT" --writable)
+
+if [[ -n "${PASSWORD:-}" ]]; then
+    TTYD_ARGS+=(-c "coder:${PASSWORD}")
+fi
+
+exec ttyd "${TTYD_ARGS[@]}" bash -l

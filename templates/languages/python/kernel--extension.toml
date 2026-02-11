@@ -1,0 +1,15 @@
+display-name = "Python Notebook Kernel"
+display-disc = "ipykernel for Python"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "python",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--60" = """
+setup python-kernel
+"""

@@ -152,5 +152,8 @@ RUN rm -f /etc/.pwd.lock /etc/passwd.lock /etc/shadow.lock /etc/group.lock
 #   so we need tini to handle signals properly.
 ENTRYPOINT ["tini","-g","--","/usr/local/bin/booth-entry"]
 
+# start-ttyd wrapper: supports PASSWORD env var for basic auth
+COPY --chmod=0755 start-ttyd /usr/local/bin/start-ttyd
+
 # By default, start ttyd on port 10000 in the home directory (the online terminal)
-CMD ["bash","-lc","exec ttyd -W -i 0.0.0.0 -p 10000 --writable bash -l"]
+CMD ["bash","-lc","exec start-ttyd"]

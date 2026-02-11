@@ -70,7 +70,7 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 	builder.PortGenerated = portGenerated
 
 	if (portGenerated || ctx.Verbose()) && ctx.Cmds().Length() == 0 {
-		printPortBanner(portNumber)
+		printPortBanner(portNumber, ctx.Public())
 	}
 
 	return builder.Build()
@@ -115,13 +115,18 @@ func isPortFree(port int) bool {
 }
 
 // printPortBanner prints the port selection banner.
-func printPortBanner(portNumber int) {
+func printPortBanner(portNumber int, public bool) {
 	fmt.Println()
 	fmt.Println("============================================================")
 	fmt.Println("🚀 BOOTH PORT SELECTED")
 	fmt.Println("============================================================")
 	fmt.Printf("🔌 Using host port: \033[1;32m%d\033[0m -> container: \033[1;34m10000\033[0m\n", portNumber)
-	fmt.Printf("🌐 Open: http://localhost:%d\n", portNumber)
+	if public {
+		fmt.Printf("🌐 Open: http://localhost:%d\n", portNumber)
+		fmt.Println("🔓 PUBLIC: PORT IS OPEN ON ALL INTERFACES (PASSWORD PROTECTED)")
+	} else {
+		fmt.Printf("🌐 Open: http://localhost:%d\n", portNumber)
+	}
 	fmt.Println("============================================================")
 	fmt.Println()
 }

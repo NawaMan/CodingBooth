@@ -1,0 +1,14 @@
+display-name = "Cursor"
+primary = true
+display-disc = "Cursor AI code editor"
+display-order = 16
+tags = [
+    "ai",
+    "cursor",
+    "editor"
+]
+
+[segments]
+"Boothfile--60" = """
+setup cursor
+"""

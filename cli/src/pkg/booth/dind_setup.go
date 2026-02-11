@@ -142,7 +142,7 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 	isDockerDesktop := isDockerDesktop(ctx)
 
 	// Port mapping for the booth container (since booth shares DinD's network)
-	portMapping := fmt.Sprintf("%d:10000", hostPort)
+	portMapping := formatPortMapping(ctx.Public(), hostPort, 10000)
 
 	var args []string
 	if isDockerDesktop {
