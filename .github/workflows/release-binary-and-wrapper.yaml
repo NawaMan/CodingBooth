@@ -129,6 +129,13 @@ jobs:
         run: mv example-list.txt dist/
 
       # ---------------------------------------------------------
+      # Build template artifacts
+      # ---------------------------------------------------------
+      - name: Package templates
+        run: |
+          zip -r dist/templates.zip templates/
+
+      # ---------------------------------------------------------
       # Publish versioned release (binary + examples)
       # ---------------------------------------------------------
       - name: Publish versioned release
