@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/cache"
@@ -237,7 +238,7 @@ func runInitNew(version string, args []string) {
 		return
 	}
 
-	fmt.Printf("\nTo start:  cd %s && codingbooth\n", targetPath)
+	fmt.Printf("\nTo start:  cd %s && %s\n", targetPath, filepath.Base(os.Args[0]))
 }
 
 // runInitDryrun handles: codingbooth init dryrun --select <dsl> [--templates-path <dir>] [--debug]
