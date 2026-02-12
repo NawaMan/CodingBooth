@@ -622,6 +622,56 @@ func TestCompile_ExtensionFilesCollected(t *testing.T) {
 	assert.Equal(t, "lint.sh", out.Setups[0].RelPath)
 }
 
+func TestCompile_InlineFilesPassedThrough(t *testing.T) {
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{
+					Name: "tool",
+					HomeSeed: []tmpl.FileRef{
+						{RelPath: ".config/tool.json", Content: `{"inline": true}`},
+					},
+				},
+				ParamValues: map[string]string{},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	require.Len(t, out.HomeSeed, 1)
+	assert.Equal(t, ".config/tool.json", out.HomeSeed[0].RelPath)
+	assert.Equal(t, `{"inline": true}`, out.HomeSeed[0].Content)
+	assert.Empty(t, out.HomeSeed[0].SourcePath)
+}
+
+func TestCompile_ExtensionInlineFiles(t *testing.T) {
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template:    &tmpl.Template{Name: "parent"},
+				ParamValues: map[string]string{},
+				Extensions: []selection.SelectedExtension{
+					{
+						Extension: &tmpl.Template{
+							Name: "child",
+							HomeSeed: []tmpl.FileRef{
+								{RelPath: ".settings", Content: "ext content"},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	require.Len(t, out.HomeSeed, 1)
+	assert.Equal(t, ".settings", out.HomeSeed[0].RelPath)
+	assert.Equal(t, "ext content", out.HomeSeed[0].Content)
+}
+
 func TestCompile_MultiTemplateFilesCombined(t *testing.T) {
 	resolved := &selection.ResolvedSelection{
 		Templates: []selection.SelectedTemplate{

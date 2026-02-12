@@ -11,17 +11,32 @@ import (
 	"path/filepath"
 )
 
-// CopyFiles copies a list of FileContent entries into the given target directory.
-// Each file's RelPath is resolved relative to targetDir.
+// CopyFiles writes a list of FileContent entries into the given target directory.
+// For entries with Content set, the content is written directly.
+// For entries with SourcePath set, the file is copied from the source.
 // Parent directories are created as needed.
 func CopyFiles(files []FileContent, targetDir string) error {
 	for _, f := range files {
 		dest := filepath.Join(targetDir, f.RelPath)
-		if err := copyFile(f.SourcePath, dest); err != nil {
-			return fmt.Errorf("copying %s to %s: %w", f.SourcePath, dest, err)
+		if f.Content != "" {
+			if err := writeInlineFile(dest, f.Content); err != nil {
+				return fmt.Errorf("writing inline file %s: %w", f.RelPath, err)
+			}
+		} else {
+			if err := copyFile(f.SourcePath, dest); err != nil {
+				return fmt.Errorf("copying %s to %s: %w", f.SourcePath, dest, err)
+			}
 		}
 	}
 	return nil
+}
+
+// writeInlineFile writes inline content to a file, creating parent directories.
+func writeInlineFile(dest, content string) error {
+	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
+		return fmt.Errorf("creating parent dirs: %w", err)
+	}
+	return os.WriteFile(dest, []byte(content), 0644)
 }
 
 // copyFile copies a single file from src to dst, creating parent directories.

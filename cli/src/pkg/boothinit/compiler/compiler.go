@@ -165,13 +165,13 @@ func (c *collector) collectConfig(t *tmpl.Template, source string) error {
 
 func (c *collector) collectFiles(t *tmpl.Template) {
 	for _, f := range t.Setups {
-		c.setups = append(c.setups, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath})
+		c.setups = append(c.setups, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath, Content: f.Content})
 	}
 	for _, f := range t.Home {
-		c.home = append(c.home, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath})
+		c.home = append(c.home, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath, Content: f.Content})
 	}
 	for _, f := range t.HomeSeed {
-		c.homeSeed = append(c.homeSeed, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath})
+		c.homeSeed = append(c.homeSeed, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath, Content: f.Content})
 	}
 }
 

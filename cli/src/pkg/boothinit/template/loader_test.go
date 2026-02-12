@@ -683,3 +683,243 @@ func TestLoadRegistry_SkipsTemplateWithoutSpec(t *testing.T) {
 	require.Len(t, registry.Categories, 1)
 	assert.Empty(t, registry.Categories[0].Templates)
 }
+
+// --- validateFilePath ---
+
+func TestValidateFilePath_ValidSimple(t *testing.T) {
+	assert.NoError(t, validateFilePath("foo.txt"))
+}
+
+func TestValidateFilePath_ValidNested(t *testing.T) {
+	assert.NoError(t, validateFilePath(".claude/settings.json"))
+}
+
+func TestValidateFilePath_ValidDotfile(t *testing.T) {
+	assert.NoError(t, validateFilePath(".bashrc"))
+}
+
+func TestValidateFilePath_Empty(t *testing.T) {
+	err := validateFilePath("")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "empty")
+}
+
+func TestValidateFilePath_Absolute(t *testing.T) {
+	err := validateFilePath("/etc/passwd")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "absolute")
+}
+
+func TestValidateFilePath_DotDotSimple(t *testing.T) {
+	err := validateFilePath("../foo")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "traversal")
+}
+
+func TestValidateFilePath_DotDotNested(t *testing.T) {
+	err := validateFilePath("foo/../../etc/passwd")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "traversal")
+}
+
+func TestValidateFilePath_DotOnly(t *testing.T) {
+	err := validateFilePath(".")
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "current directory")
+}
+
+func TestValidateFilePath_CleanedSafe(t *testing.T) {
+	// foo/bar/../baz cleans to foo/baz — no ".." remains, should be valid
+	assert.NoError(t, validateFilePath("foo/bar/../baz"))
+}
+
+// --- parseInlineFiles ---
+
+func TestParseInlineFiles_Empty(t *testing.T) {
+	files, err := parseInlineFiles(nil)
+	assert.NoError(t, err)
+	assert.Nil(t, files)
+}
+
+func TestParseInlineFiles_SingleFile(t *testing.T) {
+	m := map[string]string{".claude/settings.json": `{"key":"val"}`}
+	files, err := parseInlineFiles(m)
+	require.NoError(t, err)
+	require.Len(t, files, 1)
+	assert.Equal(t, ".claude/settings.json", files[0].RelPath)
+	assert.Equal(t, `{"key":"val"}`, files[0].Content)
+	assert.Empty(t, files[0].SourcePath)
+}
+
+func TestParseInlineFiles_MultipleFilesSorted(t *testing.T) {
+	m := map[string]string{
+		"b.txt": "bbb",
+		"a.txt": "aaa",
+	}
+	files, err := parseInlineFiles(m)
+	require.NoError(t, err)
+	require.Len(t, files, 2)
+	assert.Equal(t, "a.txt", files[0].RelPath)
+	assert.Equal(t, "b.txt", files[1].RelPath)
+}
+
+func TestParseInlineFiles_InvalidPath(t *testing.T) {
+	m := map[string]string{"../escape": "content"}
+	_, err := parseInlineFiles(m)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "traversal")
+}
+
+func TestParseInlineFiles_AbsolutePath(t *testing.T) {
+	m := map[string]string{"/etc/passwd": "content"}
+	_, err := parseInlineFiles(m)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "absolute")
+}
+
+// --- Inline files in templates ---
+
+func TestLoadRegistry_InlineFilesInTemplate(t *testing.T) {
+	tmpDir := t.TempDir()
+	catDir := filepath.Join(tmpDir, "tools")
+	tmplDir := filepath.Join(catDir, "mytool")
+	require.NoError(t, os.MkdirAll(tmplDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+		[]byte("display-name = \"Tools\"\norder = 1\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+		[]byte(`display-name = "MyTool"
+display-order = 1
+
+[files.home-seed]
+".config/mytool/config.json" = '{"setting": true}'
+`), 0644))
+
+	registry, err := LoadRegistry(tmpDir)
+	require.NoError(t, err)
+
+	mytool := registry.ByName["mytool"]
+	require.NotNil(t, mytool)
+	require.Len(t, mytool.HomeSeed, 1)
+	assert.Equal(t, filepath.Join(".config", "mytool", "config.json"), mytool.HomeSeed[0].RelPath)
+	assert.Equal(t, `{"setting": true}`, mytool.HomeSeed[0].Content)
+	assert.Empty(t, mytool.HomeSeed[0].SourcePath)
+}
+
+func TestLoadRegistry_InlineFilesInInlineExtension(t *testing.T) {
+	tmpDir := t.TempDir()
+	catDir := filepath.Join(tmpDir, "tools")
+	tmplDir := filepath.Join(catDir, "parent")
+	require.NoError(t, os.MkdirAll(tmplDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+		[]byte("display-name = \"Tools\"\norder = 1\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+		[]byte("display-name = \"Parent\"\ndisplay-order = 1\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "myext--extension.toml"),
+		[]byte(`display-name = "MyExt"
+display-order = 10
+auto-select = false
+
+[files.home-seed]
+".myconfig" = "default config"
+`), 0644))
+
+	registry, err := LoadRegistry(tmpDir)
+	require.NoError(t, err)
+
+	parent := registry.ByName["parent"]
+	require.Len(t, parent.Extensions, 1)
+	ext := parent.Extensions[0]
+	require.Len(t, ext.HomeSeed, 1)
+	assert.Equal(t, ".myconfig", ext.HomeSeed[0].RelPath)
+	assert.Equal(t, "default config", ext.HomeSeed[0].Content)
+}
+
+func TestLoadRegistry_InlineFilesInvalidPathError(t *testing.T) {
+	tmpDir := t.TempDir()
+	catDir := filepath.Join(tmpDir, "tools")
+	tmplDir := filepath.Join(catDir, "badtool")
+	require.NoError(t, os.MkdirAll(tmplDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+		[]byte("display-name = \"Tools\"\norder = 1\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+		[]byte(`display-name = "BadTool"
+display-order = 1
+
+[files.home-seed]
+"../../etc/passwd" = "hacked"
+`), 0644))
+
+	_, err := LoadRegistry(tmpDir)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "traversal")
+}
+
+func TestLoadRegistry_InlineAndDirFilesMerged(t *testing.T) {
+	tmpDir := t.TempDir()
+	catDir := filepath.Join(tmpDir, "tools")
+	tmplDir := filepath.Join(catDir, "merged")
+	homeSeedDir := filepath.Join(tmplDir, "home-seed")
+	require.NoError(t, os.MkdirAll(homeSeedDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+		[]byte("display-name = \"Tools\"\norder = 1\n"), 0644))
+	// Dir-based home-seed file
+	require.NoError(t, os.WriteFile(filepath.Join(homeSeedDir, ".bashrc"),
+		[]byte("# from dir"), 0644))
+	// Template with inline home-seed file
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+		[]byte(`display-name = "Merged"
+display-order = 1
+
+[files.home-seed]
+".profile" = "# from inline"
+`), 0644))
+
+	registry, err := LoadRegistry(tmpDir)
+	require.NoError(t, err)
+
+	merged := registry.ByName["merged"]
+	require.Len(t, merged.HomeSeed, 2)
+	// Dir-based comes first, inline appended
+	assert.Equal(t, ".bashrc", merged.HomeSeed[0].RelPath)
+	assert.NotEmpty(t, merged.HomeSeed[0].SourcePath) // file-based
+	assert.Equal(t, ".profile", merged.HomeSeed[1].RelPath)
+	assert.Equal(t, "# from inline", merged.HomeSeed[1].Content) // inline
+}
+
+func TestLoadRegistry_InlineFilesAllCategories(t *testing.T) {
+	tmpDir := t.TempDir()
+	catDir := filepath.Join(tmpDir, "tools")
+	tmplDir := filepath.Join(catDir, "allfiles")
+	require.NoError(t, os.MkdirAll(tmplDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+		[]byte("display-name = \"Tools\"\norder = 1\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"),
+		[]byte(`display-name = "AllFiles"
+display-order = 1
+
+[files.setups]
+"my-setup.sh" = "#!/bin/bash\necho setup"
+
+[files.home]
+".vimrc" = "set number"
+
+[files.home-seed]
+".gitconfig" = "[user]\nname = Test"
+`), 0644))
+
+	registry, err := LoadRegistry(tmpDir)
+	require.NoError(t, err)
+
+	tmplObj := registry.ByName["allfiles"]
+	require.Len(t, tmplObj.Setups, 1)
+	assert.Equal(t, "my-setup.sh", tmplObj.Setups[0].RelPath)
+	assert.Equal(t, "#!/bin/bash\necho setup", tmplObj.Setups[0].Content)
+
+	require.Len(t, tmplObj.Home, 1)
+	assert.Equal(t, ".vimrc", tmplObj.Home[0].RelPath)
+	assert.Equal(t, "set number", tmplObj.Home[0].Content)
+
+	require.Len(t, tmplObj.HomeSeed, 1)
+	assert.Equal(t, ".gitconfig", tmplObj.HomeSeed[0].RelPath)
+	assert.Contains(t, tmplObj.HomeSeed[0].Content, "[user]")
+}

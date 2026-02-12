@@ -9,6 +9,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -42,6 +43,13 @@ type specToml struct {
 	Requires     []string             `toml:"requires"`
 	Params       map[string]paramToml `toml:"params"`
 	Segments     map[string]string    `toml:"segments"`
+	Files        filesToml            `toml:"files"`
+}
+
+type filesToml struct {
+	HomeSeed map[string]string `toml:"home-seed"`
+	Home     map[string]string `toml:"home"`
+	Setups   map[string]string `toml:"setups"`
 }
 
 type paramToml struct {
@@ -232,6 +240,11 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		return nil, fmt.Errorf("loading home-seed/: %w", err)
 	}
 
+	// Parse inline files from [files] table and append to directory-based files
+	if err := appendInlineFiles(spec.Files, &tmpl.Setups, &tmpl.Home, &tmpl.HomeSeed); err != nil {
+		return nil, err
+	}
+
 	// Load extensions (subdirectories with template.toml that aren't special dirs)
 	if allowExtensions {
 		entries, err := os.ReadDir(dir)
@@ -332,6 +345,11 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		if err != nil {
 			return nil, fmt.Errorf("parsing inline segments: %w", err)
 		}
+	}
+
+	// Parse inline files (no directory-based files for inline extensions)
+	if err := appendInlineFiles(spec.Files, &tmpl.Setups, &tmpl.Home, &tmpl.HomeSeed); err != nil {
+		return nil, err
 	}
 
 	return tmpl, nil
@@ -459,6 +477,75 @@ func parseSegmentOrder(filename, prefix, suffix string) (int, bool) {
 		return 0, false
 	}
 	return order, true
+}
+
+// validateFilePath checks that a relative path is safe for use as a target file path.
+// It rejects empty paths, absolute paths, paths with ".." components, and paths
+// that clean to "." (the current directory).
+func validateFilePath(relPath string) error {
+	if relPath == "" {
+		return fmt.Errorf("empty file path")
+	}
+	if filepath.IsAbs(relPath) {
+		return fmt.Errorf("absolute path not allowed: %s", relPath)
+	}
+	cleaned := filepath.Clean(relPath)
+	if cleaned == "." {
+		return fmt.Errorf("path resolves to current directory: %s", relPath)
+	}
+	for _, part := range strings.Split(cleaned, string(filepath.Separator)) {
+		if part == ".." {
+			return fmt.Errorf("path traversal not allowed: %s", relPath)
+		}
+	}
+	return nil
+}
+
+// parseInlineFiles converts a map of relative-path → content into validated FileRef slices.
+// Keys are sorted alphabetically for deterministic output.
+func parseInlineFiles(fileMap map[string]string) ([]FileRef, error) {
+	if len(fileMap) == 0 {
+		return nil, nil
+	}
+
+	keys := make([]string, 0, len(fileMap))
+	for k := range fileMap {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+
+	var files []FileRef
+	for _, relPath := range keys {
+		if err := validateFilePath(relPath); err != nil {
+			return nil, fmt.Errorf("invalid file path %q: %w", relPath, err)
+		}
+		files = append(files, FileRef{
+			RelPath: filepath.Clean(relPath),
+			Content: fileMap[relPath],
+		})
+	}
+	return files, nil
+}
+
+// appendInlineFiles parses inline file definitions from the [files] TOML table
+// and appends them to the corresponding file slices.
+func appendInlineFiles(files filesToml, setups, home, homeSeed *[]FileRef) error {
+	inlineSetups, err := parseInlineFiles(files.Setups)
+	if err != nil {
+		return fmt.Errorf("parsing inline setups files: %w", err)
+	}
+	inlineHome, err := parseInlineFiles(files.Home)
+	if err != nil {
+		return fmt.Errorf("parsing inline home files: %w", err)
+	}
+	inlineHomeSeed, err := parseInlineFiles(files.HomeSeed)
+	if err != nil {
+		return fmt.Errorf("parsing inline home-seed files: %w", err)
+	}
+	*setups = append(*setups, inlineSetups...)
+	*home = append(*home, inlineHome...)
+	*homeSeed = append(*homeSeed, inlineHomeSeed...)
+	return nil
 }
 
 // collectFiles recursively collects all files from a directory.

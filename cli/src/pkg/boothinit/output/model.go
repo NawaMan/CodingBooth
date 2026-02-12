@@ -42,9 +42,10 @@ type StartupContent struct {
 }
 
 // FileContent represents a file to be written to a target location.
-// SourcePath is the absolute path to the source file.
+// Either SourcePath (file-based) or Content (inline) is set, not both.
 // RelPath is the path relative to the target directory (e.g., ".config/myapp/config.yaml").
 type FileContent struct {
-	SourcePath string
+	SourcePath string // absolute path to source file (empty for inline)
 	RelPath    string
+	Content    string // inline content (empty for file-based)
 }
