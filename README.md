@@ -89,7 +89,7 @@ To update CodingBooth to the latest version:
 ./booth --pull
 ```
 
-The wrapper script downloads the `codingbooth` binary to `.booth/tools/`. If binaries are already up-to-date, the download is skipped.
+The wrapper script downloads the `codingbooth` binary for your platform to the shared cache. If the binary is already up-to-date, the download is skipped.
 
 > **Note:** The version is a positional argument: `./booth install 0.13.0`, not `./booth install --version 0.13.0`.
 
@@ -405,7 +405,7 @@ my-project/
     ├── home/           # Team-shared home directory files (optional)
     │   └── .config/
     └── tools/          # Managed by booth wrapper (auto-created)
-        └── codingbooth.lock   # Version reference (binaries in shared cache)
+        └── codingbooth.lock   # Version reference (binary in shared cache)
 ```
 
 | File                      | Purpose                                                 |
@@ -415,7 +415,7 @@ my-project/
 | `Dockerfile`              | Custom image build extending a base variant             |
 | `setups/`                 | Custom setup scripts for `setup` command in Boothfile   |
 | `home/`                   | Team-shared dotfiles copied to `/home/coder/` at startup |
-| `tools/codingbooth.lock` | Version lock file; binaries cached in `~/.cache/codingbooth/` |
+| `tools/codingbooth.lock` | Version lock file; binary cached in `~/.cache/codingbooth/` |
 
 > 💡 **Tip:** When both `Boothfile` and `Dockerfile` exist, Boothfile takes precedence. Use `--dockerfile` to force using the Dockerfile.
 
@@ -629,9 +629,9 @@ The `booth` wrapper script is **location-based**: it operates relative to its ow
 host                                     # your machine
   ├── ~/.cache/codingbooth/              # shared binary cache
   |    └── versions/
-  |         └── 0.13.0/                  # version-specific binaries
+  |         └── 0.13.0/                  # version-specific binary
   |              ├── codingbooth.sha256
-  |              └── codingbooth-*       # platform binaries
+  |              └── codingbooth-<os>-<arch>  # binary for current platform
   ├── project/                           # your project folder on the host
   |    ├── booth                         # booth wrapper script
   |    ├── .booth                        # booth internal folder

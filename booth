@@ -358,10 +358,10 @@ Purpose:
   - Binaries are cached in a shared location (default) or per-project.
 
 Wrapper commands:
-  install [VERSION]              Download binaries to shared cache (default)
-  install --cache=shared [VER]   Download binaries to shared cache (explicit)
-  install --cache=local [VER]    Download binaries to .booth/tools/ (project-local)
-  update  [VERSION]              Re-download binaries (force refresh)
+  install [VERSION]              Download binary to shared cache (default)
+  install --cache=shared [VER]   Download binary to shared cache (explicit)
+  install --cache=local [VER]    Download binary to .booth/tools/ (project-local)
+  update  [VERSION]              Re-download binary (force refresh)
   uninstall                      Remove project lock file and local binaries
 
   tools-cache list        Show cached binary versions and sizes
@@ -385,7 +385,8 @@ Cache locations (for --cache=shared):
 
 Notes:
   - Lock file (.booth/tools/codingbooth.lock) is version-controlled
-  - Binaries are auto-downloaded when lock file exists but binary missing
+  - Binary is auto-downloaded when lock file exists but binary missing
+  - Only the current platform's binary is downloaded
   - Use --cache=local for CI/CD or portable/air-gapped environments
   - Set VERBOSE=true for extra logs during install
 
@@ -564,7 +565,7 @@ function get_binary_name() {
     fi
 }
 
-# All supported platforms (5 total)
+# All supported platforms (used by uninstall for cleanup)
 ALL_PLATFORMS=(
     "linux-amd64"
     "linux-arm64"
@@ -803,22 +804,25 @@ GITIGNORE
 GITIGNORE
     fi
 
-    # Clear previous SHA256 file (will rebuild with all binaries)
+    # Clear previous SHA256 file (will rebuild with current platform's entry)
     > "$sha_file"
 
     local current_platform
-    current_platform=$(detect_platform 2>/dev/null || echo "unknown")
+    if ! current_platform=$(detect_platform); then
+        echo "Error: Failed to detect platform" >&2
+        return 1
+    fi
     local download_count=0
     local fail_count=0
 
     if [[ "$CACHE_MODE" == "local" ]]; then
-        echo "Downloading CodingBooth binaries to project (--cache=local)..."
+        echo "Downloading CodingBooth binary to project (--cache=local)..."
     else
-        echo "Downloading CodingBooth binaries to shared cache..."
+        echo "Downloading CodingBooth binary to shared cache..."
         echo "  Cache: $target_dir"
     fi
 
-    for platform in "${ALL_PLATFORMS[@]}"; do
+    for platform in "$current_platform"; do
         local binary_name
         binary_name=$(get_binary_name "$platform")
         local dest="$target_dir/$binary_name"
@@ -911,11 +915,11 @@ GITIGNORE
     done
 
     if [[ $fail_count -gt 0 ]]; then
-        echo "Warning: $fail_count platform(s) failed to download" >&2
+        echo "Error: Failed to download binary for $current_platform" >&2
     fi
 
     if [[ $download_count -eq 0 ]]; then
-        echo "Error: No binaries were downloaded successfully" >&2
+        echo "Error: Binary download failed for $current_platform" >&2
         return 1
     fi
 
@@ -926,13 +930,8 @@ GITIGNORE
         echo "cache=${CACHE_MODE}"
     } > "$lock_file"
 
-    # Touch all binaries to be newer than checksum
-    for platform in "${ALL_PLATFORMS[@]}"; do
-        local binary_name
-        binary_name=$(get_binary_name "$platform")
-        local dest="$target_dir/$binary_name"
-        [[ -f "$dest" ]] && touch "$dest"
-    done
+    # Touch binary to be newer than checksum
+    [[ -f "$dest" ]] && touch "$dest"
 
     echo "CodingBooth installed: downloaded, verified, and installed."
     if [[ "$VERBOSE" == "true" ]]; then
