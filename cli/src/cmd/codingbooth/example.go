@@ -211,17 +211,11 @@ func tryExample(version string) {
 		return
 	}
 
-	// Find current booth root (look for .booth folder)
-	currentBoothRoot := findBoothRoot()
-	if currentBoothRoot != "" {
-		// Check if target is inside current booth
-		if isPathInside(targetPath, currentBoothRoot) {
-			fmt.Fprintf(os.Stderr, "Error: Target path must be outside the current booth folder\n")
-			fmt.Fprintf(os.Stderr, "  Current booth: %s\n", currentBoothRoot)
-			fmt.Fprintf(os.Stderr, "  Target path:   %s\n", targetPath)
-			os.Exit(1)
-			return
-		}
+	// Check if target already has a .booth folder
+	if info, err := os.Stat(filepath.Join(targetPath, ".booth")); err == nil && info.IsDir() {
+		fmt.Fprintf(os.Stderr, "Error: Target path already contains a .booth folder: %s\n", targetPath)
+		os.Exit(1)
+		return
 	}
 
 	// Check if target already exists
@@ -263,36 +257,6 @@ func tryExample(version string) {
 	fmt.Printf("  cd %s\n", targetPath)
 	fmt.Println("  ./booth install")
 	fmt.Println("  ./booth")
-}
-
-func findBoothRoot() string {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return ""
-	}
-
-	dir := cwd
-	for {
-		boothDir := filepath.Join(dir, ".booth")
-		if info, err := os.Stat(boothDir); err == nil && info.IsDir() {
-			return dir
-		}
-
-		parent := filepath.Dir(dir)
-		if parent == dir {
-			break
-		}
-		dir = parent
-	}
-	return ""
-}
-
-func isPathInside(child, parent string) bool {
-	rel, err := filepath.Rel(parent, child)
-	if err != nil {
-		return false
-	}
-	return !strings.HasPrefix(rel, "..") && rel != ".."
 }
 
 func downloadToTemp(url string) (string, error) {
