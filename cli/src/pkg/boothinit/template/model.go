@@ -75,7 +75,9 @@ type Segment struct {
 }
 
 // FileRef references a file to be copied from a template to the output.
+// Either SourcePath (file-based) or Content (inline) is set, not both.
 type FileRef struct {
-	SourcePath string // absolute path to source file
+	SourcePath string // absolute path to source file (empty for inline)
 	RelPath    string // relative path within target directory
+	Content    string // inline content from TOML (empty for file-based)
 }

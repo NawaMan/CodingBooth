@@ -112,3 +112,67 @@ func TestCopyFiles_SourceNotFound(t *testing.T) {
 	err := CopyFiles(files, dstDir)
 	assert.Error(t, err)
 }
+
+// --- Inline content ---
+
+func TestCopyFiles_InlineContent(t *testing.T) {
+	dstDir := t.TempDir()
+	files := []FileContent{
+		{RelPath: "config.json", Content: `{"key": "value"}`},
+	}
+	err := CopyFiles(files, dstDir)
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(filepath.Join(dstDir, "config.json"))
+	require.NoError(t, err)
+	assert.Equal(t, `{"key": "value"}`, string(data))
+}
+
+func TestCopyFiles_InlineContentNested(t *testing.T) {
+	dstDir := t.TempDir()
+	files := []FileContent{
+		{RelPath: ".claude/settings.json", Content: `{"defaultMode": "acceptEdits"}`},
+	}
+	err := CopyFiles(files, dstDir)
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(filepath.Join(dstDir, ".claude", "settings.json"))
+	require.NoError(t, err)
+	assert.Equal(t, `{"defaultMode": "acceptEdits"}`, string(data))
+}
+
+func TestCopyFiles_InlineContentPermissions(t *testing.T) {
+	dstDir := t.TempDir()
+	files := []FileContent{
+		{RelPath: "test.txt", Content: "hello"},
+	}
+	err := CopyFiles(files, dstDir)
+	require.NoError(t, err)
+
+	info, err := os.Stat(filepath.Join(dstDir, "test.txt"))
+	require.NoError(t, err)
+	assert.Equal(t, os.FileMode(0644), info.Mode().Perm())
+}
+
+func TestCopyFiles_MixedSourceAndInline(t *testing.T) {
+	srcDir := t.TempDir()
+	dstDir := t.TempDir()
+
+	srcFile := filepath.Join(srcDir, "from-disk.txt")
+	require.NoError(t, os.WriteFile(srcFile, []byte("disk content"), 0644))
+
+	files := []FileContent{
+		{SourcePath: srcFile, RelPath: "from-disk.txt"},
+		{RelPath: "from-inline.txt", Content: "inline content"},
+	}
+	err := CopyFiles(files, dstDir)
+	require.NoError(t, err)
+
+	data1, err := os.ReadFile(filepath.Join(dstDir, "from-disk.txt"))
+	require.NoError(t, err)
+	assert.Equal(t, "disk content", string(data1))
+
+	data2, err := os.ReadFile(filepath.Join(dstDir, "from-inline.txt"))
+	require.NoError(t, err)
+	assert.Equal(t, "inline content", string(data2))
+}

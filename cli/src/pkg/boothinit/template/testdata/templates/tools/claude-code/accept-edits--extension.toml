@@ -1,0 +1,18 @@
+display-name = "Accept Edits"
+display-disc = "Auto-accept all file operations"
+display-order = 10
+auto-select = false
+tags = ["permissions"]
+
+[files.home-seed]
+".claude/settings.json" = """
+{
+    "permissions": {
+        "allow": [
+            "Edit",
+            "Write",
+            "NotebookEdit"
+        ]
+    }
+}
+"""

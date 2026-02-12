@@ -390,3 +390,22 @@ func TestIntegration_Error_DuplicateTemplate(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "more than once")
 }
+
+// --- Inline files ---
+
+func TestIntegration_InlineFiles_ClaudeCodeAcceptEdits(t *testing.T) {
+	out, targetDir := pipeline(t, "claude-code+accept-edits")
+
+	// Inline home-seed file from accept-edits extension
+	require.Len(t, out.HomeSeed, 1)
+	assert.Equal(t, ".claude/settings.json", out.HomeSeed[0].RelPath)
+	assert.Contains(t, out.HomeSeed[0].Content, "Edit")
+	assert.Contains(t, out.HomeSeed[0].Content, "Write")
+
+	// File written to disk
+	settingsPath := filepath.Join(targetDir, ".booth", "home-seed", ".claude", "settings.json")
+	data, err := os.ReadFile(settingsPath)
+	require.NoError(t, err)
+	assert.Contains(t, string(data), "Edit")
+	assert.Contains(t, string(data), "Write")
+}
