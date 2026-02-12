@@ -4,6 +4,10 @@ set -e
 # Cross-compile the snake game to multiple platforms.
 # The game uses POSIX terminal APIs (termios, poll), so only Unix targets are supported.
 
+# Clean up build artifacts
+rm -rf zig-out
+rm -rf dist
+
 TARGETS=(
     "x86_64-linux-gnu"
     "aarch64-linux-gnu"
@@ -13,6 +17,7 @@ TARGETS=(
     "aarch64-macos"
 )
 
+mkdir -p zig-out
 mkdir -p dist
 
 for target in "${TARGETS[@]}"; do
@@ -27,3 +32,6 @@ done
 echo ""
 echo "Done! Binaries in dist/"
 ls -lh dist/
+
+# Clean up build artifacts
+rm -rf zig-out
