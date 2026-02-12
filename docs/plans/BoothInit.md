@@ -9,7 +9,7 @@ This document outlines the design and implementation plan for the `./booth init`
 - [Template Structure](#template-structure)
 - [File Generation](#file-generation)
 - [Implementation Approach](#implementation-approach)
-- [Implementation Phases](#implementation-phases)
+- [Remaining Phases](#remaining-phases)
 - [Appendix](#appendix)
 
 ## Overview
@@ -460,168 +460,11 @@ The init logic is part of the `codingbooth` binary, so it must be implemented in
 
 **Development override:** Use `--templates-path` to load templates from a local directory (skips download/extraction).
 
-### Package Structure
-
-The init feature lives under `pkg/boothinit/` (not `pkg/init/` to avoid collision with Go's `init` keyword and the existing `booth/init` package which handles app context initialization).
-
-```
-cmd/
-└── codingbooth/
-    ├── main.go                    # "init" case dispatches to runInit()
-    └── init.go                    # runInit(), runInitNew(), runInitDryrun(), compileSelection()
-
-pkg/
-└── boothinit/
-    ├── output/                    # Phase 1 — Output model and serialization
-    │   ├── model.go               # BoothOutput, ConfigToml, BoothfileContent, StartupContent, FileContent
-    │   ├── config.go              # config.toml serialization (SerializeConfigToml)
-    │   ├── boothfile.go           # Boothfile generation (SerializeBoothfile)
-    │   ├── startup.go             # startup.sh generation (SerializeStartup)
-    │   ├── files.go               # File copy logic (CopyFiles)
-    │   └── writer.go              # Orchestrator (WriteOutput) — writes all files to .booth/
-    ├── template/                  # Phase 2 — Template model and loading
-    │   ├── model.go               # TemplateRegistry, Category, Template, Param, Segment, FileRef
-    │   └── loader.go              # LoadRegistry, TOML parsing, segment/extension loading
-    ├── selection/                  # Phase 3 — Selection parsing and resolution
-    │   ├── model.go               # ParsedSelection, ResolvedSelection, SelectedTemplate, SelectMode
-    │   ├── parser.go              # ParseSelectDSL, NormalizeInput, ReadSelectInput
-    │   └── resolver.go            # Resolve (params, extensions, requires validation)
-    ├── compiler/                  # Phase 4 — Template + Selection → Output
-    │   └── compiler.go            # Compile(resolved) → (*BoothOutput, error)
-    ├── cache/                     # Phase 6 (future)
-    │   ├── download.go            # Download templates.zip from GitHub
-    │   ├── verify.go              # SHA256 verification
-    │   └── extract.go             # Extract to temp dir
-    ├── quick/
-    │   └── quick.go               # Quick mode UI  (future)
-    └── tui/
-        └── app.go                 # Advanced mode TUI (using bubbletea)  (future)
-```
-
-#### Output Model Design Notes (Phase 1)
-
-The output data model uses a flat `BoothOutput` struct that holds all generated content:
-
-- **`ConfigToml`** — Scalar fields (`Variant`, `Port`, `Timezone`, `Dind`) and array fields (`Cmds`, `RunArgs`, `BuildArgs`). Only non-empty/non-zero fields are serialized to TOML. `Dind=false` is omitted.
-- **`BoothfileContent`** — Pre-merged content string. The serializer prepends the `# syntax=codingbooth/boothfile:1` header.
-- **`StartupContent`** — Pre-merged content string. The serializer prepends `#!/bin/bash` and `set -e`.
-- **`FileContent`** — A `SourcePath`/`RelPath` pair for file copy operations. Used for `Setups`, `Home`, and `HomeSeed` slices.
-
-`WriteOutput` enforces that `.booth/` must not already exist (safety check per the plan's "new project" constraint). Files are only written when their content is non-empty/non-nil.
-
 ---
 
-## Implementation Phases
+> **Implementation reference:** For technical details on the completed implementation (Phases 1–6), see [../implementations/BOOTHINIT.md](../implementations/BOOTHINIT.md).
 
-### Phase 1: Booth configuration ✓
-Prompt: Define data model of the output (Booth configurations) and the code to serialize them
-Suggest steps
-- [x] Define Go structs for output:
-  - `BoothOutput` (top-level container)
-  - `ConfigToml` (variant, port, timezone, dind, cmds, run-args, build-args)
-  - `BoothfileContent` (pre-merged content string)
-  - `StartupContent` (pre-merged content string)
-  - `FileContent` (source/relpath pair for setups, home, home-seed)
-- [x] Implement serialization to file if exists:
-  - Write `.booth/config.toml` — `SerializeConfigToml`
-  - Write `.booth/Boothfile` — `SerializeBoothfile` (with syntax header)
-  - Write `.booth/startup.sh` — `SerializeStartup` (with shebang + `set -e`)
-  - Copy files to `.booth/setups/`, `.booth/home/`, `.booth/home-seed/` — `CopyFiles`
-  - `WriteOutput` orchestrates all writes and enforces `.booth/` must not exist
-- [x] Test with hardcoded data (36 unit tests covering all serializers, file copy, and writer orchestration)
-
-### Phase 2: Template ✓
-Prompt: Define data model of the templates and the code to deserialize them
-Suggest steps
-- [x] Define Go structs for templates:
-  - `TemplateRegistry` (holds categories and global name→template lookup)
-  - `Category` (from meta.toml: name, display-name, order)
-  - `Template` (from template.toml: metadata, config values, params, segments, files, extensions)
-  - `Param` (default, suggests)
-  - `Segment` (order, content — for Boothfile and startup fragments)
-  - `FileRef` (source-path, rel-path — for setups, home, home-seed files)
-- [x] Implement `LoadRegistry(dir)` loader that reads the full directory tree:
-  - Categories sorted by `order`, templates sorted by `display-order`
-  - Segment files parsed: `Boothfile`/`Boothfile--N` and `startup.sh`/`startup--N.sh` (default order 50)
-  - Special subdirs collected: `setups/`, `home/`, `home-seed/`
-  - Extensions loaded from subdirs with `template.toml` (no further nesting)
-  - Duplicate template names across categories detected and rejected
-  - Optional `*bool` for `dind` and `auto-select` (distinguishes unset vs false)
-- [x] Create test fixture templates (languages/go+linter, python, frameworks/django, tools/neovim, claude-code)
-- [x] Test with local defined template (39 unit tests covering parsing, loading, segments, files, extensions, edge cases)
-
-### Phase 3: Selection ✓
-Prompt: Define data model of the selection and the code construct the data from the CLI
-Suggest steps
-- [x] Define selection data model:
-  - `ParsedSelection` / `ParsedItem` — raw DSL parse result (name, positional params, extensions)
-  - `ResolvedSelection` / `SelectedTemplate` / `SelectedExtension` — validated against registry
-  - `SelectMode` — ExplicitSelect, AutoSelected, DependencySelect
-- [x] Implement DSL parser (`ParseSelectDSL`):
-  - Operator precedence: `/` → `+` → `:` and `,`
-  - Input normalization: whitespace/newlines → `/` separators (heredoc/file compat)
-  - `@file` reading, `@@url` stub
-- [x] Implement resolver (`Resolve`):
-  - Template name lookup, duplicate detection
-  - Positional param → named param mapping (TOML declaration order, falling back to alphabetical)
-  - Auto-select extensions (`auto-select=true`), explicit extension validation
-  - `requires` dependency checking (error if missing)
-- [x] 39 unit tests (parser, resolver, end-to-end parse+resolve)
-
-### Phase 4: Template + Selection → Output Conversion ✓
-Prompt: Implement the function to create output model from template defintion and input section to the output mode.
-Suggest steps
-- [x] Implementing the logic (compiler/compiler.go)
-- [x] hooking it to the CLI -- Add --debug to out the selection and the final output data model as well as the ordering/tiebreaking and template override decision.
-- [x] `--start` flag to chain into `codingbooth run --code <path>` after init
-- [x] Summary output showing selected templates, extensions, and parameters
-- [x] Stdin support (`--select -`) with heredoc
-- [x] Recipe file support (`--select @file`)
-- [x] Whitespace-tolerant DSL parsing (spaces around `+`, continuation lines)
-- [x] TOML declaration order for positional param mapping
-- [x] Real templates: go, python, java (with maven/gradle/jenv/vscode-ext extensions), claude-code
-- [x] Python extensions: uv, conda
-- [x] `uv--install.sh` setup script
-
-**Design notes (Phase 4):**
-- Package: `boothinit/compiler` — `Compile(resolved) → (*BoothOutput, error)`
-- Internal `collector` struct accumulates contributions from all templates + extensions
-- Extension source names use `"parent+ext"` format for error messages and segment tiebreaking
-- Segments: sorted by Order, tiebreak by source name (alphabetical), trailing newlines normalized
-- Params: emitted as `arg NAME=value` directives in Boothfile, sorted alphabetically, before segments
-- Scalars (variant, port, timezone, dind, cmds): match-or-error with source tracking for conflict messages
-- Arrays (run-args, build-args): combined and exact-string deduped preserving order
-- Files (setups, home, home-seed): collected from both templates and extensions
-
-### Phase 5: Other CLI Commands
-Prompt: Implement the rest of the CLI sub items
-Suggest steps
-- [ ] `./booth init --list`
-  - List all templates by category
-  - Show: name, display-name, tags
-- [ ] `./booth init --search "term"`
-  - Prefix match on name, display-name, tags
-  - Show matching templates
-- [ ] Common flags:
-  - `--dryrun` — print what would be generated
-- [ ] The logic to load the template (by version) and save to a central location
-
-### Phase 6: Template Cache & Download
-Prompt: Implement the publication, download and cache. Ensure zip does not contain ../ entry OR symbolic link
-Suggest steps
-- [ ] Implement template publication in the GitHub workflow
-- [ ] Implement template download from GitHub releases:
-  - URL: `https://github.com/NawaMan/CodingBooth/releases/download/<version>/templates.zip`
-  - Download with progress indicator
-- [ ] Implement cache management:
-  - Cache location: `~/.cache/codingbooth/<version>/templates.zip`
-  - Download SHA256 hash file
-  - Verify hash on download and on use
-  - Set permissions to `400`
-- [ ] Implement extraction to temp directory:
-  - Extract to `/tmp/cb-init-<random-uuid>/`
-  - Clean up on completion or error
-- [ ] Support `--templates-path` for local development
+## Remaining Phases
 
 ### Phase 7: Quick Mode UI
 Prompt: Future -- Don't implement
@@ -647,11 +490,6 @@ Prompt: Future -- Don't implement
 
 # Appendix
 - We will need a program to validate the template and run with GitHub action to release. So that we avoid problems like typos, circular dependencies, or missing dependencies.
-- As opinion present, we need to have logging printed out when --verbose.
-- The run-args `-v` and `-e` should be deduplicated. Note that deduplication for these flags is non-trivial since they carry associated values (e.g., `-e KEY=VAL`, `-v src:dst`). Care must be taken to handle these correctly.
-- Tie breaker for same ordering is alphabetical order of the name.
-- Ordering rules for segments require a strict parser with validation.
-- `--select`, stdin, `@file`, and `@@url` input should all share one normalization pipeline for consistent parsing.
 
 ---
 
