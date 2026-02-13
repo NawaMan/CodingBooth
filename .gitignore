@@ -123,6 +123,7 @@ variants/base/_stage/
 
 !/build/
 /codingbooth
+/cli/codingbooth
 **/booth
 !/booth
 .booth-test-lock*
