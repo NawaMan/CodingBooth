@@ -52,19 +52,41 @@ func SerializeConfigToml(cfg *ConfigToml, command, adjustCommand string) string 
 }
 
 // writeStringArray writes a TOML array of strings.
+// Paired flags (e.g., "-v" + "path", "-e" + "VAR=val") are kept on the same line.
 func writeStringArray(b *strings.Builder, key string, values []string) {
 	if len(values) == 1 {
 		fmt.Fprintf(b, "%s = [%q]\n", key, values[0])
 		return
 	}
 
-	fmt.Fprintf(b, "%s = [\n", key)
-	for i, v := range values {
-		if i < len(values)-1 {
-			fmt.Fprintf(b, "    %q,\n", v)
+	// Group values into lines: paired flags stay together, standalone values get their own line.
+	var lines []string
+	for i := 0; i < len(values); i++ {
+		if isPairedFlag(values[i]) && i+1 < len(values) {
+			lines = append(lines, fmt.Sprintf("%q, %q", values[i], values[i+1]))
+			i++ // skip the next value (already consumed)
 		} else {
-			fmt.Fprintf(b, "    %q\n", v)
+			lines = append(lines, fmt.Sprintf("%q", values[i]))
+		}
+	}
+
+	if len(lines) == 1 {
+		fmt.Fprintf(b, "%s = [%s]\n", key, lines[0])
+		return
+	}
+
+	fmt.Fprintf(b, "%s = [\n", key)
+	for i, line := range lines {
+		if i < len(lines)-1 {
+			fmt.Fprintf(b, "    %s,\n", line)
+		} else {
+			fmt.Fprintf(b, "    %s\n", line)
 		}
 	}
 	b.WriteString("]\n")
+}
+
+// isPairedFlag returns true if the string is a flag that takes a subsequent value argument.
+func isPairedFlag(s string) bool {
+	return strings.HasPrefix(s, "-") && !strings.Contains(s, "=")
 }
