@@ -8,7 +8,9 @@ package output
 
 // BoothOutput holds all generated content to be written to .booth/.
 type BoothOutput struct {
-	Config    *ConfigToml
+	Command       string // Exact command used to generate (e.g., "booth init new . --select go")
+	AdjustCommand string // Reformatted command for easy adjustment (--select last)
+	Config        *ConfigToml
 	Boothfile *BoothfileContent
 	Startup   *StartupContent
 	Setups    []FileContent

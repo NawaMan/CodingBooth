@@ -5,6 +5,7 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -39,6 +40,8 @@ func runInit(version string) {
 		runInitSearch(version, args[1:])
 	case "new":
 		runInitNew(version, args[1:])
+	case "adjust":
+		runInitNew(version, append(args[1:], "--overwrite"))
 	case "dryrun":
 		runInitDryrun(version, args[1:])
 	default:
@@ -54,7 +57,8 @@ func printInitHelp() {
 Commands:
   list                     List available templates
   search <term>            Search templates by name or tag
-  new <path>               Create a new booth at the given path
+  new [path]               Create a new booth (default: current directory)
+  adjust [path]            Re-generate booth (overwrites existing files)
   dryrun                   Preview what would be generated
 
 Selection:
@@ -71,25 +75,29 @@ Selection:
 Flags:
   --templates-path <dir>   Use local templates directory (or set CB_TEMPLATES_PATH)
   --select <dsl>           Template selection DSL (required for new/dryrun)
+  --version <ver>          Use templates from a specific release version
   --full                   Show all templates including secondary (for list)
   --debug                  Print debug output (for new/dryrun)
   --start                  Start the booth after creation (for new)
+  --overwrite              Overwrite existing files without prompting (for new)
 
 Examples:
   codingbooth init list
   codingbooth init search python
-  codingbooth init new ./myproject --select "go/python"
+  codingbooth init new --select "go/python"
   codingbooth init new ./myproject --select "java:21+maven/postgresql"
   codingbooth init dryrun --select "go:1.23.0+linter+vscode-ext"
-  codingbooth init new ./myproject --select @selections.txt`)
+  codingbooth init new --select @selections.txt`)
 }
 
 type initFlags struct {
 	selectDSL     string
 	templatesPath string
+	version       string
 	debug         bool
 	start         bool
 	full          bool
+	overwrite     bool
 }
 
 func parseInitFlags(args []string) initFlags {
@@ -116,6 +124,15 @@ func parseInitFlags(args []string) initFlags {
 			flags.start = true
 		case "--full":
 			flags.full = true
+		case "--overwrite":
+			flags.overwrite = true
+		case "--version":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --version requires a value")
+				os.Exit(1)
+			}
+			flags.version = args[i+1]
+			i++
 		default:
 			fmt.Fprintf(os.Stderr, "Error: unknown flag: %s\n", args[i])
 			os.Exit(1)
@@ -131,9 +148,14 @@ func parseInitFlags(args []string) initFlags {
 // resolveTemplatesPath returns the templates directory path and a cleanup function.
 // If --templates-path or CB_TEMPLATES_PATH is set, it uses that directly.
 // Otherwise, it downloads and extracts templates from the GitHub release cache.
+// The --version flag overrides the binary version for template downloads.
 func resolveTemplatesPath(flags initFlags, version string) (string, func()) {
 	if flags.templatesPath != "" {
 		return flags.templatesPath, func() {}
+	}
+
+	if flags.version != "" {
+		version = flags.version
 	}
 
 	dir, cleanup, err := cache.ResolveTemplatesDir(version)
@@ -198,16 +220,15 @@ func runInitSearch(version string, args []string) {
 	tmpl.FormatRegistry(os.Stdout, filtered)
 }
 
-// runInitNew handles: codingbooth init new <path> --select <dsl> [--templates-path <dir>] [--debug]
+// runInitNew handles: codingbooth init new [path] --select <dsl> [--templates-path <dir>] [--debug]
 func runInitNew(version string, args []string) {
-	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: 'init new' requires a target path")
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth init new <path> --select <dsl> --templates-path <dir>")
-		os.Exit(1)
+	targetPath := "."
+	flagArgs := args
+	if len(args) > 0 && !strings.HasPrefix(args[0], "--") {
+		targetPath = args[0]
+		flagArgs = args[1:]
 	}
-
-	targetPath := args[0]
-	flags := parseInitFlags(args[1:])
+	flags := parseInitFlags(flagArgs)
 
 	if flags.selectDSL == "" {
 		fmt.Fprintln(os.Stderr, "Error: --select is required")
@@ -219,9 +240,29 @@ func runInitNew(version string, args []string) {
 	flags.templatesPath = templatesPath
 
 	out, resolved := compileSelection(flags)
+	out.Command = buildInitCommand(targetPath, flags)
+	out.AdjustCommand = buildAdjustCommand(flags)
 
 	if flags.debug {
 		printDebug(resolved, out)
+	}
+
+	// Check for existing files that would be overwritten
+	conflicts := output.FindConflicts(out, targetPath)
+	if len(conflicts) > 0 && !flags.overwrite {
+		fmt.Fprintf(os.Stderr, "The following %d file(s) already exist:\n", len(conflicts))
+		for _, c := range conflicts {
+			rel, _ := filepath.Rel(targetPath, c)
+			fmt.Fprintf(os.Stderr, "  %s\n", rel)
+		}
+		fmt.Fprint(os.Stderr, "\nOverwrite? [y/N] ")
+		reader := bufio.NewReader(os.Stdin)
+		answer, _ := reader.ReadString('\n')
+		answer = strings.TrimSpace(answer)
+		if answer != "y" && answer != "Y" {
+			fmt.Fprintln(os.Stderr, "Aborted.")
+			os.Exit(1)
+		}
 	}
 
 	if err := output.WriteOutput(out, targetPath); err != nil {
@@ -238,7 +279,13 @@ func runInitNew(version string, args []string) {
 		return
 	}
 
-	fmt.Printf("\nTo start:  cd %s && %s\n", targetPath, filepath.Base(os.Args[0]))
+	absTarget, _ := filepath.Abs(targetPath)
+	absCwd, _ := os.Getwd()
+	if absTarget == absCwd {
+		fmt.Printf("\nTo start:  %s\n", filepath.Base(os.Args[0]))
+	} else {
+		fmt.Printf("\nTo start:  cd %s && %s\n", targetPath, filepath.Base(os.Args[0]))
+	}
 }
 
 // runInitDryrun handles: codingbooth init dryrun --select <dsl> [--templates-path <dir>] [--debug]
@@ -255,6 +302,8 @@ func runInitDryrun(version string, args []string) {
 	flags.templatesPath = templatesPath
 
 	out, resolved := compileSelection(flags)
+	out.Command = buildInitCommand("", flags)
+	out.AdjustCommand = buildAdjustCommand(flags)
 
 	if flags.debug {
 		printDebug(resolved, out)
@@ -317,19 +366,19 @@ func compileSelection(flags initFlags) (*output.BoothOutput, *selection.Resolved
 func printDryrun(out *output.BoothOutput) {
 	if out.Config != nil {
 		fmt.Println("=== config.toml ===")
-		fmt.Print(output.SerializeConfigToml(out.Config))
+		fmt.Print(output.SerializeConfigToml(out.Config, out.Command, out.AdjustCommand))
 		fmt.Println()
 	}
 
 	if out.Boothfile != nil {
 		fmt.Println("=== Boothfile ===")
-		fmt.Print(output.SerializeBoothfile(out.Boothfile))
+		fmt.Print(output.SerializeBoothfile(out.Boothfile, out.Command, out.AdjustCommand))
 		fmt.Println()
 	}
 
 	if out.Startup != nil {
 		fmt.Println("=== startup.sh ===")
-		fmt.Print(output.SerializeStartup(out.Startup))
+		fmt.Print(output.SerializeStartup(out.Startup, out.Command, out.AdjustCommand))
 		fmt.Println()
 	}
 
@@ -380,6 +429,35 @@ func printDebug(resolved *selection.ResolvedSelection, out *output.BoothOutput) 
 	fmt.Println()
 
 	printDryrun(out)
+}
+
+// buildInitCommand reconstructs the booth init command string for the generated file headers.
+// targetPath may be empty for dryrun.
+func buildInitCommand(targetPath string, flags initFlags) string {
+	var parts []string
+	parts = append(parts, "booth init")
+	if targetPath != "" && targetPath != "." {
+		parts = append(parts, "new "+targetPath)
+	} else {
+		parts = append(parts, "new")
+	}
+	parts = append(parts, "--select "+flags.selectDSL)
+	if flags.version != "" {
+		parts = append(parts, "--version "+flags.version)
+	}
+	return strings.Join(parts, " ")
+}
+
+// buildAdjustCommand produces the "booth init adjust ..." command string for the
+// generated file headers. It always puts --select last so users can easily edit it.
+func buildAdjustCommand(flags initFlags) string {
+	var parts []string
+	parts = append(parts, "booth init adjust")
+	if flags.version != "" {
+		parts = append(parts, "--version "+flags.version)
+	}
+	parts = append(parts, "--select "+flags.selectDSL)
+	return strings.Join(parts, " ")
 }
 
 // printSummary prints a human-readable summary of the resolved selection.

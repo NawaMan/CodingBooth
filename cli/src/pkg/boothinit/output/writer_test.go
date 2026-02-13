@@ -26,7 +26,7 @@ func TestWriteOutput_CreatesBoothDir(t *testing.T) {
 	assert.True(t, info.IsDir())
 }
 
-func TestWriteOutput_RejectsExistingBoothDir(t *testing.T) {
+func TestWriteOutput_AllowsExistingBoothDir(t *testing.T) {
 	tmpDir := t.TempDir()
 	require.NoError(t, os.MkdirAll(filepath.Join(tmpDir, ".booth"), 0755))
 
@@ -34,8 +34,104 @@ func TestWriteOutput_RejectsExistingBoothDir(t *testing.T) {
 		Config: &ConfigToml{Variant: "base"},
 	}
 	err := WriteOutput(out, tmpDir)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), ".booth/ already exists")
+	require.NoError(t, err)
+
+	// Verify file was written
+	data, err := os.ReadFile(filepath.Join(tmpDir, ".booth", "config.toml"))
+	require.NoError(t, err)
+	assert.Contains(t, string(data), `variant = "base"`)
+}
+
+func TestWriteOutput_OverwritesExistingFiles(t *testing.T) {
+	tmpDir := t.TempDir()
+	boothDir := filepath.Join(tmpDir, ".booth")
+	require.NoError(t, os.MkdirAll(boothDir, 0755))
+
+	// Write an existing config.toml
+	require.NoError(t, os.WriteFile(filepath.Join(boothDir, "config.toml"), []byte("old content"), 0644))
+
+	out := &BoothOutput{
+		Config: &ConfigToml{Variant: "codeserver"},
+	}
+	err := WriteOutput(out, tmpDir)
+	require.NoError(t, err)
+
+	data, err := os.ReadFile(filepath.Join(boothDir, "config.toml"))
+	require.NoError(t, err)
+	assert.Contains(t, string(data), `variant = "codeserver"`)
+	assert.NotContains(t, string(data), "old content")
+}
+
+func TestOutputPaths_Basic(t *testing.T) {
+	out := &BoothOutput{
+		Config: &ConfigToml{Variant: "base"},
+	}
+	paths := OutputPaths(out, "/tmp/proj")
+	assert.Contains(t, paths, "/tmp/proj/.booth/.gitignore")
+	assert.Contains(t, paths, "/tmp/proj/.booth/config.toml")
+	assert.Len(t, paths, 2)
+}
+
+func TestOutputPaths_Full(t *testing.T) {
+	out := &BoothOutput{
+		Config:    &ConfigToml{Variant: "codeserver"},
+		Boothfile: &BoothfileContent{Content: "setup go 1.24\n"},
+		Startup:   &StartupContent{Content: "echo hello\n"},
+		Setups:    []FileContent{{RelPath: "myapp--setup.sh"}},
+		Home:      []FileContent{{RelPath: ".bashrc"}},
+		HomeSeed:  []FileContent{{RelPath: ".config/myapp/config.yaml"}},
+	}
+	paths := OutputPaths(out, "/tmp/proj")
+	assert.Contains(t, paths, "/tmp/proj/.booth/.gitignore")
+	assert.Contains(t, paths, "/tmp/proj/.booth/config.toml")
+	assert.Contains(t, paths, "/tmp/proj/.booth/Boothfile")
+	assert.Contains(t, paths, "/tmp/proj/.booth/startup.sh")
+	assert.Contains(t, paths, "/tmp/proj/.booth/setups/myapp--setup.sh")
+	assert.Contains(t, paths, "/tmp/proj/.booth/home/.bashrc")
+	assert.Contains(t, paths, "/tmp/proj/.booth/home-seed/.config/myapp/config.yaml")
+	assert.Len(t, paths, 7)
+}
+
+func TestOutputPaths_SkipsNilFields(t *testing.T) {
+	out := &BoothOutput{}
+	paths := OutputPaths(out, "/tmp/proj")
+	// Only .gitignore
+	assert.Equal(t, []string{"/tmp/proj/.booth/.gitignore"}, paths)
+}
+
+func TestFindConflicts_NoConflicts(t *testing.T) {
+	tmpDir := t.TempDir()
+	out := &BoothOutput{
+		Config: &ConfigToml{Variant: "base"},
+	}
+	conflicts := FindConflicts(out, tmpDir)
+	assert.Nil(t, conflicts)
+}
+
+func TestFindConflicts_WithConflicts(t *testing.T) {
+	tmpDir := t.TempDir()
+	boothDir := filepath.Join(tmpDir, ".booth")
+	require.NoError(t, os.MkdirAll(boothDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(boothDir, "config.toml"), []byte("old"), 0644))
+
+	out := &BoothOutput{
+		Config:    &ConfigToml{Variant: "base"},
+		Boothfile: &BoothfileContent{Content: "setup go\n"},
+	}
+	conflicts := FindConflicts(out, tmpDir)
+	assert.Len(t, conflicts, 1)
+	assert.Contains(t, conflicts[0], "config.toml")
+}
+
+func TestFindConflicts_EmptyBoothDir(t *testing.T) {
+	tmpDir := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(tmpDir, ".booth"), 0755))
+
+	out := &BoothOutput{
+		Config: &ConfigToml{Variant: "base"},
+	}
+	conflicts := FindConflicts(out, tmpDir)
+	assert.Nil(t, conflicts)
 }
 
 func TestWriteOutput_WritesConfigToml(t *testing.T) {

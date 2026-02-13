@@ -6,7 +6,7 @@
 
 ## Overview
 
-Templates define what gets installed when a user runs `codingbooth init new <path> --select <templates>`. Each template produces Boothfile segments, config settings, and file references that are merged together into a `.booth/` directory.
+Templates define what gets installed when a user runs `codingbooth init new [path] --select <templates>`. Each template produces Boothfile segments, config settings, and file references that are merged together into a `.booth/` directory.
 
 Templates live under the `templates/` directory, organized by category.
 
