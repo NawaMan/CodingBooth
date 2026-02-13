@@ -1,0 +1,9 @@
+# NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+display-name = "pip Config"
+display-disc = "Mount ~/.config/pip from host (read-only home-seeding)"
+auto-select = true
+tags = ["python", "pip", "credential"]
+
+run-args = [
+    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro"
+]

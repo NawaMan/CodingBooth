@@ -1,0 +1,13 @@
+# NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+display-name = "SSH Config"
+display-disc = "Seed ~/.ssh from host (keys and config)"
+display-order = 34
+tags = [
+    "ssh",
+    "credential",
+    "git"
+]
+
+run-args = [
+    "-v", "~/.ssh:/etc/cb-home-seed/.ssh:ro"
+]

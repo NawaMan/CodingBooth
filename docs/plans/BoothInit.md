@@ -118,12 +118,12 @@ SELECT
 ```
 
 The selection DSL is:
-`<name>:<param1>,<param2>+<extension1>+<extension2>/<name2>:<param2-1>,<param2-2>+<extension2-1>+<extension2-2>`
+`<name>:<param1>,<param2>+<extension1>+<extension2>~<exclude>/<name2>:<param2-1>,<param2-2>+<extension2-1>~<exclude>`
 
-**Operator precedence:** Split `/` first, then `+`, then `:` and `,` last.
+**Operator precedence:** Split `/` first, then `~`, then `+`, then `:` and `,` last.
 For heredoc and stdin input, whitespace is normalized before parsing:
-- Spaces around `+` are stripped (e.g., `java + maven` → `java+maven`)
-- Lines starting with `+` are joined to the previous template (continuation lines)
+- Spaces around `+` and `~` are stripped (e.g., `java + maven` → `java+maven`, `firebase ~ credential` → `firebase~credential`)
+- Lines starting with `+` or `~` are joined to the previous template (continuation lines)
 - Remaining whitespace (newlines, tabs, spaces) becomes `/` separators
 
 Note: If `@file` or `@@url` is used, it consumes the entire value — no `/` parsing is applied.

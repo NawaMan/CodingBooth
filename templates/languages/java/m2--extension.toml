@@ -1,0 +1,14 @@
+display-name = "Maven Local Repository"
+display-disc = "Persist ~/.m2 repository cache across container restarts"
+display-order = 9
+auto-select = false
+tags = [
+    "java",
+    "maven",
+    "gradle",
+    "cache"
+]
+
+run-args = [
+    "-v", "$HOME/.m2:/home/coder/.m2"
+]

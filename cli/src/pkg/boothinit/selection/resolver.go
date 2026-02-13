@@ -36,7 +36,7 @@ func Resolve(parsed *ParsedSelection, registry *tmpl.TemplateRegistry) (*Resolve
 			return nil, fmt.Errorf("template %q: %w", pi.Name, err)
 		}
 
-		extensions, err := resolveExtensions(t, pi.Extensions)
+		extensions, err := resolveExtensions(t, pi.Extensions, pi.Excludes)
 		if err != nil {
 			return nil, fmt.Errorf("template %q: %w", pi.Name, err)
 		}
@@ -85,18 +85,38 @@ func resolveParams(t *tmpl.Template, positional []string) (map[string]string, er
 }
 
 // resolveExtensions resolves extension selections, including auto-selected ones.
-func resolveExtensions(t *tmpl.Template, explicit []string) ([]SelectedExtension, error) {
+// Extensions listed in excludes are skipped even if auto-selected.
+func resolveExtensions(t *tmpl.Template, explicit []string, excludes []string) ([]SelectedExtension, error) {
 	extByName := make(map[string]*tmpl.Template, len(t.Extensions))
 	for _, ext := range t.Extensions {
 		extByName[ext.Name] = ext
 	}
 
+	// Build exclude set and validate excluded names exist as extensions
+	excludeSet := make(map[string]bool, len(excludes))
+	for _, excName := range excludes {
+		if _, ok := extByName[excName]; !ok {
+			return nil, fmt.Errorf("unknown extension %q to exclude", excName)
+		}
+		excludeSet[excName] = true
+	}
+
+	// Validate: cannot both include (+) and exclude (~) the same extension
+	for _, extName := range explicit {
+		if excludeSet[extName] {
+			return nil, fmt.Errorf("extension %q is both included (+) and excluded (~)", extName)
+		}
+	}
+
 	selected := make(map[string]bool)
 	var result []SelectedExtension
 
-	// Auto-select extensions
+	// Auto-select extensions (skip excluded ones)
 	for _, ext := range t.Extensions {
 		if ext.AutoSelect != nil && *ext.AutoSelect {
+			if excludeSet[ext.Name] {
+				continue
+			}
 			result = append(result, SelectedExtension{
 				Extension:  ext,
 				SelectMode: AutoSelected,
