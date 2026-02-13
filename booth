@@ -327,7 +327,7 @@ function Main() {
         exit 1
     fi
 
-    actual_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
+    actual_sha256=$(hash_sha256 "$dest" | awk '{gsub(/^\\/, ""); print $1}')
     if [[ "$expected_sha256" != "$actual_sha256" ]]; then
         echo "Binary ($binary_name) failed SHA256 verification."
         echo "Run: $0 update  to restore the official release."
