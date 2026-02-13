@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -255,6 +256,19 @@ func prepareKeepAliveArgs(keepAlive bool) []string {
 	return []string{"--rm"}
 }
 
+func getHostOS() string {
+	switch runtime.GOOS {
+	case "windows":
+		return "WIN"
+	case "linux":
+		return "LIN"
+	case "darwin":
+		return "MAC"
+	default:
+		return runtime.GOOS
+	}
+}
+
 func getDindName(ctx appctx.AppContext) string {
 	return ctx.Name() + "-" + strconv.Itoa(ctx.PortNumber()) + "-dind"
 }
@@ -275,6 +289,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("--name", containerName))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_UID="+ctx.HostUID()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_GID="+ctx.HostGID()))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_OS="+getHostOS()))
 	codePath := normalizeCodePath(ctx.Code())
 	createdAt := time.Now().UTC().Format(time.RFC3339)
 	builder.CommonArgs.Append(ilist.NewList[string]("-v", codePath+":/home/coder/code"))
