@@ -127,6 +127,22 @@ codingbooth init new ./my-project --templates-path templates --select @my-projec
 
 The `@` prefix tells init to read the selection from the file.
 
+### Multiple --select flags
+
+Instead of a single slash-separated string, you can repeat `--select`:
+
+```bash
+codingbooth init new ./my-project --select go --select python --select claude-code
+```
+
+This is equivalent to `--select "go/python/claude-code"`. Each `--select` value is resolved independently, so you can mix sources:
+
+```bash
+codingbooth init new ./my-project --select "go+linter" --select "python:3.13+uv" --select claude-code
+codingbooth init new ./my-project --select @langs.recipe --select @tools.recipe
+codingbooth init new ./my-project --select @base.recipe --select claude-code
+```
+
 ### From stdin (heredoc)
 
 ```bash

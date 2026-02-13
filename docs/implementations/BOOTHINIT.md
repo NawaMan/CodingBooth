@@ -81,11 +81,12 @@ The selection input can come from multiple sources, all normalized to a single D
 | Source | Syntax | Example |
 |--------|--------|---------|
 | Inline | Direct string | `--select go+linter/python:3.13` |
+| Multiple | Repeated flag | `--select go+linter --select python:3.13` |
 | Stdin | `-` | `--select -` (then type or pipe) |
 | File | `@path` | `--select @cool-project.recipe` |
 | URL | `@@url` | `--select @@https://example.com/recipe.txt` |
 
-All sources pass through `ReadSelectInput()` which resolves the source and returns raw text for parsing.
+Each `--select` value is resolved independently through `ReadSelectInput()` (handling `@file`, `@@url`, `-`, or plain DSL), then results are joined with `/`. This means `--select @langs.recipe --select @tools.recipe` works correctly — each file is read separately before combining.
 
 ### 2. DSL Parsing
 
@@ -354,7 +355,7 @@ The `adjust` subcommand is equivalent to `new --overwrite` — it overwrites exi
 
 | Flag | Description |
 |------|-------------|
-| `--select <dsl>` | Template selection (inline, `-` for stdin, `@file`, `@@url`) |
+| `--select <dsl>` | Template selection (repeatable; inline, `-` for stdin, `@file`, `@@url`) |
 | `--templates-path <dir>` | Local templates directory |
 | `--version <ver>` | Use templates from a specific release version |
 | `--start` | Launch `codingbooth run --code <path>` after init |

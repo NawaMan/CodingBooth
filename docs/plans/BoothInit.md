@@ -113,6 +113,12 @@ SELECT
 # Option 4
 ./booth init new ../new-project --select @@url
 
+# Option 5: Multiple --select (each resolved independently, then joined with /)
+./booth init new ../new-project --select go --select python --select claude-code
+
+# Option 6: Multiple --select with mixed sources
+./booth init new ../new-project --select @langs.recipe --select @tools.recipe
+
 # Dry run to preview
 ./booth init dryrun --select python+django
 ```
@@ -126,7 +132,7 @@ For heredoc and stdin input, whitespace is normalized before parsing:
 - Lines starting with `+` or `~` are joined to the previous template (continuation lines)
 - Remaining whitespace (newlines, tabs, spaces) becomes `/` separators
 
-Note: If `@file` or `@@url` is used, it consumes the entire value — no `/` parsing is applied.
+Note: Each `--select` value is resolved independently — `@file` and `@@url` consume their entire value. Multiple `--select` flags can mix sources (e.g., `--select @langs.recipe --select claude-code`).
 
 **Recipe files:** The `@file` syntax allows storing selections in recipe files:
 ```bash
@@ -165,7 +171,7 @@ claude-code
 
 | Flag                      | Description                                                                         |
 |---------------------------|-------------------------------------------------------------------------------------|
-| `--select <names>`        | Slash-separated template names to select – the name must fully match. Error if not. Use `-` to read from stdin. Use `@file` to read from a file (recipe). |
+| `--select <names>`        | Slash-separated template names to select – the name must fully match. Error if not. Repeatable: each value is resolved independently (`@file`, `@@url`, `-`, or inline), then joined with `/`. Use `-` to read from stdin. Use `@file` to read from a file (recipe). |
 | `--templates-path <dir>`  | Load templates from a local directory (skips download/extraction). Required until template download is implemented. Falls back to `CB_TEMPLATES_PATH` env var if not provided. |
 | `--version <ver>`         | Use templates from a specific release version (overrides binary version).            |
 | `--start`                 | After init, immediately start the booth (chains into `codingbooth run --code <path>`). |

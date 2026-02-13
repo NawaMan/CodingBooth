@@ -75,7 +75,7 @@ Selection:
 
 Flags:
   --templates-path <dir>   Use local templates directory (or set CB_TEMPLATES_PATH)
-  --select <dsl>           Template selection DSL (required for new/dryrun)
+  --select <dsl>           Template selection DSL (repeatable; required for new/dryrun)
   --version <ver>          Use templates from a specific release version
   --full                   Show all templates including secondary (for list)
   --debug                  Print debug output (for new/dryrun)
@@ -89,11 +89,13 @@ Examples:
   codingbooth init new ./myproject --select "java:21+maven/postgresql"
   codingbooth init dryrun --select "go:1.23.0+linter+vscode-ext"
   codingbooth init new --select @selections.txt
-  codingbooth init new --select "claude-code~credential"`)
+  codingbooth init new --select "claude-code~credential"
+  codingbooth init new --select go --select python --select claude-code`)
 }
 
 type initFlags struct {
-	selectDSL     string
+	selectDSLs    []string
+	selectDSL     string // resolved: joined from selectDSLs after ReadSelectInput
 	templatesPath string
 	version       string
 	debug         bool
@@ -111,7 +113,7 @@ func parseInitFlags(args []string) initFlags {
 				fmt.Fprintln(os.Stderr, "Error: --select requires a value")
 				os.Exit(1)
 			}
-			flags.selectDSL = args[i+1]
+			flags.selectDSLs = append(flags.selectDSLs, args[i+1])
 			i++
 		case "--templates-path":
 			if i+1 >= len(args) {
@@ -232,10 +234,11 @@ func runInitNew(version string, args []string) {
 	}
 	flags := parseInitFlags(flagArgs)
 
-	if flags.selectDSL == "" {
+	if len(flags.selectDSLs) == 0 {
 		fmt.Fprintln(os.Stderr, "Error: --select is required")
 		os.Exit(1)
 	}
+	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
 
 	templatesPath, cleanup := resolveTemplatesPath(flags, version)
 	defer cleanup()
@@ -294,10 +297,11 @@ func runInitNew(version string, args []string) {
 func runInitDryrun(version string, args []string) {
 	flags := parseInitFlags(args)
 
-	if flags.selectDSL == "" {
+	if len(flags.selectDSLs) == 0 {
 		fmt.Fprintln(os.Stderr, "Error: --select is required")
 		os.Exit(1)
 	}
+	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
 
 	templatesPath, cleanup := resolveTemplatesPath(flags, version)
 	defer cleanup()
@@ -318,20 +322,26 @@ func runInitDryrun(version string, args []string) {
 // compileSelection runs the full pipeline: read input → parse → resolve → compile.
 func compileSelection(flags initFlags) (*output.BoothOutput, *selection.ResolvedSelection) {
 	// Read input (handles -, @file, @@url, plain DSL)
-	selectDSL := flags.selectDSL
-	if selectDSL == "-" {
-		data, err := io.ReadAll(os.Stdin)
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error reading stdin: %v\n", err)
-			os.Exit(1)
+	// Each --select value is resolved individually, then joined with "/".
+	var parts []string
+	for _, dsl := range flags.selectDSLs {
+		if dsl == "-" {
+			data, err := io.ReadAll(os.Stdin)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error reading stdin: %v\n", err)
+				os.Exit(1)
+			}
+			parts = append(parts, string(data))
+		} else {
+			resolved, err := selection.ReadSelectInput(dsl)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error reading selection: %v\n", err)
+				os.Exit(1)
+			}
+			parts = append(parts, resolved)
 		}
-		selectDSL = string(data)
 	}
-	rawInput, err := selection.ReadSelectInput(selectDSL)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading selection: %v\n", err)
-		os.Exit(1)
-	}
+	rawInput := strings.Join(parts, "/")
 
 	// Load templates
 	registry, err := tmpl.LoadRegistry(flags.templatesPath)
