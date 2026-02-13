@@ -25,11 +25,12 @@ type ParsedSelection struct {
 }
 
 // ParsedItem is a single template selection from the DSL.
-// e.g., "go:1.24+linter" → Name="go", Params=["1.24"], Extensions=["linter"]
+// e.g., "go:1.24+linter~credential" → Name="go", Params=["1.24"], Extensions=["linter"], Excludes=["credential"]
 type ParsedItem struct {
 	Name       string
 	Params     []string
 	Extensions []string
+	Excludes   []string // extensions to exclude (from ~ operator)
 }
 
 // ResolvedSelection is a validated selection ready for output generation.

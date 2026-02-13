@@ -8,6 +8,11 @@ tags = [
     "copilot"
 ]
 
+run-args = [
+    # GitHub Copilot credentials (home-seeding: may update tokens)
+    "-v", "~/.config/github-copilot:/etc/cb-home-seed/.config/github-copilot:ro",
+]
+
 [segments]
 Boothfile = """
 setup gh-copilot

@@ -64,11 +64,12 @@ Commands:
 Selection:
   Templates are selected with a DSL passed via --select.
 
-  Format:  name[:param1,param2][+extension]/name2[:params][+ext]
+  Format:  name[:param1,param2][+extension][~exclude]/name2[:params][+ext][~exc]
 
     /         separates templates
     :         sets parameters (positional, comma-separated)
     +         adds an extension to the preceding template
+    ~         excludes an auto-selected extension
 
   The selection can also be read from a file (@file) or URL (@@url).
 
@@ -87,7 +88,8 @@ Examples:
   codingbooth init new --select "go/python"
   codingbooth init new ./myproject --select "java:21+maven/postgresql"
   codingbooth init dryrun --select "go:1.23.0+linter+vscode-ext"
-  codingbooth init new --select @selections.txt`)
+  codingbooth init new --select @selections.txt
+  codingbooth init new --select "claude-code~credential"`)
 }
 
 type initFlags struct {

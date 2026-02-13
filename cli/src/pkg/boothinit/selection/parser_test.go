@@ -186,6 +186,68 @@ func TestParseSelectDSL_EmptyTemplateName(t *testing.T) {
 	assert.Contains(t, err.Error(), "empty template name")
 }
 
+// --- NormalizeInput with ~ ---
+
+func TestNormalizeInput_SpacesAroundTilde(t *testing.T) {
+	assert.Equal(t, "firebase~credential", NormalizeInput("firebase ~ credential"))
+}
+
+func TestNormalizeInput_SpacesAroundTildeWithExtensions(t *testing.T) {
+	assert.Equal(t, "claude-code+accept-edits~credential", NormalizeInput("claude-code + accept-edits ~ credential"))
+}
+
+func TestNormalizeInput_TildeContinuationLine(t *testing.T) {
+	input := "firebase\n  ~ credential"
+	assert.Equal(t, "firebase~credential", NormalizeInput(input))
+}
+
+// --- ParseSelectDSL with ~ ---
+
+func TestParseSelectDSL_WithExclude(t *testing.T) {
+	sel, err := ParseSelectDSL("firebase~credential")
+	require.NoError(t, err)
+	require.Len(t, sel.Items, 1)
+	assert.Equal(t, "firebase", sel.Items[0].Name)
+	assert.Equal(t, []string{"credential"}, sel.Items[0].Excludes)
+	assert.Empty(t, sel.Items[0].Extensions)
+}
+
+func TestParseSelectDSL_WithExtensionAndExclude(t *testing.T) {
+	sel, err := ParseSelectDSL("claude-code+accept-edits~credential")
+	require.NoError(t, err)
+	require.Len(t, sel.Items, 1)
+	assert.Equal(t, "claude-code", sel.Items[0].Name)
+	assert.Equal(t, []string{"accept-edits"}, sel.Items[0].Extensions)
+	assert.Equal(t, []string{"credential"}, sel.Items[0].Excludes)
+}
+
+func TestParseSelectDSL_MultipleExcludes(t *testing.T) {
+	sel, err := ParseSelectDSL("foo~bar~baz")
+	require.NoError(t, err)
+	require.Len(t, sel.Items, 1)
+	assert.Equal(t, "foo", sel.Items[0].Name)
+	assert.Equal(t, []string{"bar", "baz"}, sel.Items[0].Excludes)
+}
+
+func TestParseSelectDSL_EmptyExclude(t *testing.T) {
+	_, err := ParseSelectDSL("firebase~")
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "empty exclusion")
+}
+
+func TestParseSelectDSL_ExcludeInComplexDSL(t *testing.T) {
+	sel, err := ParseSelectDSL("go:1.24+linter/firebase~credential/claude-code")
+	require.NoError(t, err)
+	require.Len(t, sel.Items, 3)
+	assert.Equal(t, "go", sel.Items[0].Name)
+	assert.Equal(t, []string{"linter"}, sel.Items[0].Extensions)
+	assert.Empty(t, sel.Items[0].Excludes)
+	assert.Equal(t, "firebase", sel.Items[1].Name)
+	assert.Equal(t, []string{"credential"}, sel.Items[1].Excludes)
+	assert.Equal(t, "claude-code", sel.Items[2].Name)
+	assert.Empty(t, sel.Items[2].Excludes)
+}
+
 // --- ReadSelectInput ---
 
 func TestReadSelectInput_PlainString(t *testing.T) {

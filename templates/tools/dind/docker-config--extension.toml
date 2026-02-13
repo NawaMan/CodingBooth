@@ -1,0 +1,9 @@
+# NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+display-name = "Docker Config"
+display-disc = "Mount ~/.docker/config.json from host (registry auth for dind)"
+auto-select = true
+tags = ["docker", "credential"]
+
+run-args = [
+    "-v", "~/.docker/config.json:/etc/cb-home-seed/.docker/config.json:ro"
+]

@@ -861,6 +861,9 @@ run-args = [
     # OpenAI Codex
     "-v", "~/.codex:/etc/cb-home-seed/.codex:ro",
 
+    # Firebase CLI
+    "-v", "~/.config/configstore/firebase-tools.json:/etc/cb-home-seed/.config/configstore/firebase-tools.json:ro",
+
     # Neovim config
     "-v", "~/.config/nvim:/etc/cb-home-seed/.config/nvim:ro",
     "-v", "~/.local/share/nvim:/etc/cb-home-seed/.local/share/nvim:ro"

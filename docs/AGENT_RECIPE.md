@@ -64,12 +64,31 @@ java:25,temurin
 
 Both produce the same result. Continuation lines are more readable for multiple extensions.
 
-### Spaces Around `+`
+### Excluding Auto-Selected Extensions
 
-Spaces around `+` are allowed and ignored:
+Some templates have extensions with `auto-select = true` (e.g., `credential` extensions that mount host credentials). These are included by default. To exclude them, use `~`:
+
+**Inline:**
+```
+firebase~credential
+claude-code+accept-edits~credential
+```
+
+**Continuation lines:**
+```
+firebase
+  ~ credential
+```
+
+This is useful when you don't have the credentials on the host, or don't want them mounted into the container.
+
+### Spaces Around `+` and `~`
+
+Spaces around `+` and `~` are allowed and ignored:
 
 ```
 java:25 + maven + gradle        # Same as java:25+maven+gradle
+firebase ~ credential           # Same as firebase~credential
 ```
 
 ### Comments
@@ -94,7 +113,7 @@ This selects:
 - **Go** with default version, plus auto-selected extensions (vscode-ext)
 - **Python 3.13** with uv and vscode-ext extensions
 - **Java 25 (Temurin)** with Maven, plus auto-selected extensions (vscode-ext)
-- **Claude Code** with its credential mounts
+- **Claude Code** with its credential mounts (auto-selected)
 
 ---
 
@@ -144,9 +163,12 @@ Current built-in templates and their parameters:
 
 | Template | Parameters | Extensions |
 |----------|-----------|------------|
-| `claude-code` | (none) | (none) |
+| `claude-code` | (none) | `credential` (auto) |
+| `firebase` | (none) | `credential` (auto) |
+| `gcloud` | (none) | `credential` (auto) |
+| `codex` | (none) | `credential` (auto) |
 
-**Auto-selected extensions** (like `vscode-ext`) are included automatically. You only need to explicitly add non-auto extensions like `maven`, `linter`, `uv`, etc.
+**Auto-selected extensions** (like `vscode-ext` and `credential`) are included automatically. You only need to explicitly add non-auto extensions like `maven`, `linter`, `uv`, etc. To exclude an auto-selected extension, use `~` (e.g., `firebase~credential`).
 
 ---
 
@@ -192,6 +214,15 @@ python
 ```
 
 Uses all defaults: latest Python version, auto-selected vscode-ext.
+
+### Firebase Without Credentials
+
+```
+firebase
+  ~ credential
+```
+
+Selects Firebase CLI tools but excludes the auto-selected credential mount (useful in CI or when credentials aren't available on the host).
 
 ---
 

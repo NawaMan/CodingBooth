@@ -170,6 +170,91 @@ func TestResolve_AutoSelectNotDuplicated(t *testing.T) {
 	require.Len(t, resolved.Templates[0].Extensions, 1)
 }
 
+// --- Exclude resolution ---
+
+func TestResolve_ExcludeAutoSelectedExtension(t *testing.T) {
+	autoSelect := true
+	registry := &tmpl.TemplateRegistry{
+		ByName: map[string]*tmpl.Template{
+			"test": {
+				Name: "test",
+				Extensions: []*tmpl.Template{
+					{Name: "credential", AutoSelect: &autoSelect},
+					{Name: "other", AutoSelect: &autoSelect},
+				},
+			},
+		},
+	}
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "test", Excludes: []string{"credential"}},
+	}}
+
+	resolved, err := Resolve(parsed, registry)
+	require.NoError(t, err)
+	require.Len(t, resolved.Templates[0].Extensions, 1)
+	assert.Equal(t, "other", resolved.Templates[0].Extensions[0].Extension.Name)
+}
+
+func TestResolve_ExcludeAllAutoSelected(t *testing.T) {
+	autoSelect := true
+	registry := &tmpl.TemplateRegistry{
+		ByName: map[string]*tmpl.Template{
+			"test": {
+				Name: "test",
+				Extensions: []*tmpl.Template{
+					{Name: "credential", AutoSelect: &autoSelect},
+				},
+			},
+		},
+	}
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "test", Excludes: []string{"credential"}},
+	}}
+
+	resolved, err := Resolve(parsed, registry)
+	require.NoError(t, err)
+	assert.Empty(t, resolved.Templates[0].Extensions)
+}
+
+func TestResolve_ExcludeUnknownExtension(t *testing.T) {
+	registry := &tmpl.TemplateRegistry{
+		ByName: map[string]*tmpl.Template{
+			"test": {
+				Name:       "test",
+				Extensions: []*tmpl.Template{},
+			},
+		},
+	}
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "test", Excludes: []string{"nonexistent"}},
+	}}
+
+	_, err := Resolve(parsed, registry)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown extension")
+}
+
+func TestResolve_ExcludeAndIncludeSameExtensionError(t *testing.T) {
+	autoSelect := true
+	registry := &tmpl.TemplateRegistry{
+		ByName: map[string]*tmpl.Template{
+			"test": {
+				Name: "test",
+				Extensions: []*tmpl.Template{
+					{Name: "credential", AutoSelect: &autoSelect},
+				},
+			},
+		},
+	}
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "test", Extensions: []string{"credential"}, Excludes: []string{"credential"}},
+	}}
+
+	_, err := Resolve(parsed, registry)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "both included")
+}
+
 // --- Requires validation ---
 
 func TestResolve_RequiresSatisfied(t *testing.T) {

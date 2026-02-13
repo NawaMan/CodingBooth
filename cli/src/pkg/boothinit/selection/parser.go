@@ -36,7 +36,8 @@ func ReadSelectInput(value string) (string, error) {
 }
 
 // NormalizeInput normalizes whitespace in selection input.
-// Spaces around "+" are removed so "java + maven" becomes "java+maven".
+// Spaces around "+" and "~" are removed so "java + maven" becomes "java+maven"
+// and "firebase ~ credential" becomes "firebase~credential".
 // Remaining whitespace (newlines, tabs, multiple spaces) is collapsed
 // and treated as "/" separators, so heredoc and file inputs work the
 // same as inline DSL.
@@ -46,11 +47,16 @@ func NormalizeInput(input string) string {
 		input = strings.ReplaceAll(input, " +", "+")
 		input = strings.ReplaceAll(input, "+ ", "+")
 	}
+	// Remove spaces around "~" so exclusions stay attached to their template
+	for strings.Contains(input, " ~") || strings.Contains(input, "~ ") {
+		input = strings.ReplaceAll(input, " ~", "~")
+		input = strings.ReplaceAll(input, "~ ", "~")
+	}
 	fields := strings.Fields(input)
-	// Join "+"-prefixed fields to the previous field (continuation lines)
+	// Join "+"- or "~"-prefixed fields to the previous field (continuation lines)
 	var merged []string
 	for _, f := range fields {
-		if strings.HasPrefix(f, "+") && len(merged) > 0 {
+		if (strings.HasPrefix(f, "+") || strings.HasPrefix(f, "~")) && len(merged) > 0 {
 			merged[len(merged)-1] += f
 		} else {
 			merged = append(merged, f)
@@ -61,9 +67,9 @@ func NormalizeInput(input string) string {
 
 // ParseSelectDSL parses a --select DSL string into a ParsedSelection.
 //
-// DSL format: name[:p1,p2][+ext1][+ext2]/name2[:p1,p2][+ext1]
+// DSL format: name[:p1,p2][+ext1][+ext2][~exc1][~exc2]/name2[:p1,p2][+ext1][~exc1]
 //
-// Operator precedence: split "/" first, then "+", then ":" and "," last.
+// Operator precedence: split "/" first, then "~", then "+", then ":" and "," last.
 func ParseSelectDSL(input string) (*ParsedSelection, error) {
 	normalized := NormalizeInput(input)
 	parts := strings.Split(normalized, "/")
@@ -88,10 +94,23 @@ func ParseSelectDSL(input string) (*ParsedSelection, error) {
 	return &ParsedSelection{Items: items}, nil
 }
 
-// parseItem parses a single template selection: "name[:p1,p2][+ext1][+ext2]"
+// parseItem parses a single template selection: "name[:p1,p2][+ext1][+ext2][~exc1][~exc2]"
 func parseItem(s string) (ParsedItem, error) {
-	// Split by "+" — first part is template, rest are extensions
-	plusParts := strings.Split(s, "+")
+	// Split by "~" — first part is template[+extensions], rest are exclusions
+	tildeParts := strings.Split(s, "~")
+	basePart := tildeParts[0]
+
+	var excludes []string
+	for _, exc := range tildeParts[1:] {
+		exc = strings.TrimSpace(exc)
+		if exc == "" {
+			return ParsedItem{}, fmt.Errorf("empty exclusion name in %q", s)
+		}
+		excludes = append(excludes, exc)
+	}
+
+	// Split base part by "+" — first part is template, rest are extensions
+	plusParts := strings.Split(basePart, "+")
 	templatePart := plusParts[0]
 
 	var extensions []string
@@ -124,6 +143,7 @@ func parseItem(s string) (ParsedItem, error) {
 		Name:       name,
 		Params:     params,
 		Extensions: extensions,
+		Excludes:   excludes,
 	}, nil
 }
 

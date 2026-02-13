@@ -91,20 +91,22 @@ All sources pass through `ReadSelectInput()` which resolves the source and retur
 
 The parser (`ParseSelectDSL`) applies strict operator precedence to transform the raw DSL string into a structured `ParsedSelection`:
 
-**Operator precedence (split order):** `/` first, then `+`, then `:` and `,` last.
+**Operator precedence (split order):** `/` first, then `~`, then `+`, then `:` and `,` last.
 
 ```
-go:1.25+linter+vscode-ext/python:3.13+uv/claude-code
-│                         │              │
-├─ go                     ├─ python      └─ claude-code
-│  params: [1.25]         │  params: [3.13]
-│  exts: [linter,         │  exts: [uv]
+go:1.25+linter+vscode-ext/firebase~credential/claude-code
+│                         │                    │
+├─ go                     ├─ firebase          └─ claude-code
+│  params: [1.25]         │  excludes:
+│  exts: [linter,         │    [credential]
 │         vscode-ext]     │
 ```
 
+The `~` operator excludes auto-selected extensions. For example, `firebase~credential` selects the `firebase` template but excludes the `credential` extension that would otherwise be auto-selected.
+
 **Input normalization** (for heredoc and file compatibility):
-- Spaces around `+` are stripped: `java + maven` becomes `java+maven`
-- Lines starting with `+` join to the previous template (continuation lines)
+- Spaces around `+` and `~` are stripped: `java + maven` becomes `java+maven`, `firebase ~ credential` becomes `firebase~credential`
+- Lines starting with `+` or `~` join to the previous template (continuation lines)
 - Remaining whitespace (newlines, tabs) becomes `/` separators
 
 ### 3. Template Resolution
@@ -115,8 +117,9 @@ The resolver (`Resolve`) validates the parsed selection against the template reg
 2. **Duplicate detection** — Selecting the same template twice is an error.
 3. **Positional param mapping** — CLI params (`python:3.13`) are mapped to named params (`PYTHON_VERSION=3.13`) using the template's TOML declaration order.
 4. **Auto-select extensions** — Extensions with `auto-select = true` are included automatically.
-5. **Explicit extension validation** — Named extensions must exist on the parent template.
-6. **Dependency checking** — Templates with `requires = [...]` verify their dependencies are selected.
+5. **Exclude filtering** — Extensions listed with `~` are removed from auto-selected results. Excluding an unknown extension name is an error. Including (`+`) and excluding (`~`) the same extension is also an error.
+6. **Explicit extension validation** — Named extensions must exist on the parent template.
+7. **Dependency checking** — Templates with `requires = [...]` verify their dependencies are selected.
 
 The output is a `ResolvedSelection` containing fully qualified `SelectedTemplate` entries with resolved parameter values and extension lists.
 
