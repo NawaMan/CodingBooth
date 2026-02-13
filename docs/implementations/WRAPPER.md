@@ -35,7 +35,7 @@ booth (wrapper)              — Small bash script, committed to repo
     │
 ~/.cache/codingbooth/versions/     — Shared binary cache (default)
     └── 0.13.0/
-        └── codingbooth-*   — Platform-specific binaries
+        └── codingbooth-<os>-<arch>  — Binary for current platform
 ```
 
 | Layer                            | Purpose                              | Version Controlled |
@@ -93,10 +93,10 @@ The wrapper handles these commands:
 
 | Command                            | Description                                      |
 |------------------------------------|--------------------------------------------------|
-| `install [VERSION]`                | Download binaries (skips if already up-to-date)  |
+| `install [VERSION]`                | Download binary for current platform (skips if already up-to-date) |
 | `install --cache=shared [VERSION]` | Download to shared cache (explicit)              |
 | `install --cache=local [VERSION]`  | Download to .booth/tools/                        |
-| `update [VERSION]`                 | Re-download binaries (force refresh)             |
+| `update [VERSION]`                 | Re-download binary (force refresh)               |
 | `uninstall`                        | Remove lock file and local binaries              |
 | `tools-cache list`                 | Show cached versions and sizes                   |
 | `tools-cache clean`                | Interactively remove cached versions             |
@@ -224,12 +224,8 @@ With `--cache=shared` (the default), binaries are stored in a user-level cache:
 ~/.cache/codingbooth/
 └── versions/
     └── 0.13.0/
-        ├── codingbooth.sha256      # SHA256 checksums for all platforms
-        ├── codingbooth-linux-amd64
-        ├── codingbooth-linux-arm64
-        ├── codingbooth-darwin-amd64
-        ├── codingbooth-darwin-arm64
-        └── codingbooth-windows-amd64.exe
+        ├── codingbooth.sha256          # SHA256 checksum for this platform's binary
+        └── codingbooth-linux-amd64     # Binary for current platform (example)
 ```
 
 ### Local Cache Mode
@@ -241,12 +237,8 @@ With `--cache=local`, binaries are stored in the project:
 ├── .gitignore              # Excludes binaries from git
 └── tools/
     ├── codingbooth.lock   # Version metadata with cache=local
-    ├── codingbooth.sha256 # SHA256 checksums for all platforms
-    ├── codingbooth-linux-amd64
-    ├── codingbooth-linux-arm64
-    ├── codingbooth-darwin-amd64
-    ├── codingbooth-darwin-arm64
-    └── codingbooth-windows-amd64.exe
+    ├── codingbooth.sha256 # SHA256 checksum for this platform's binary
+    └── codingbooth-linux-amd64   # Binary for current platform (example)
 ```
 
 ### Lock File Format
@@ -263,12 +255,10 @@ The `cache=` line indicates where binaries are stored:
 
 ### SHA256 File Format
 
-Standard sha256sum format with all platform binaries:
+Standard sha256sum format with the current platform's binary:
 
 ```
 abc123...  codingbooth-linux-amd64
-def456...  codingbooth-linux-arm64
-...
 ```
 
 ### .gitignore
@@ -303,20 +293,23 @@ User runs: ./booth install [VERSION]
     │
     ├─► Fetch version.txt to get actual version number
     │
-    ├─► For each platform:
-    │     ├─► Download .sha256 file
-    │     ├─► If binary exists with matching checksum:
-    │     │     └─► Skip download (already up-to-date)
-    │     ├─► Otherwise:
-    │     │     ├─► Download binary to temp file
-    │     │     ├─► Verify SHA256 matches
-    │     │     ├─► Move to target directory
-    │     │     └─► Set permissions to 755
-    │     └─► Append to combined sha256 file
+    ├─► Detect current platform
+    │
+    ├─► Download .sha256 file for current platform
+    │
+    ├─► If binary exists with matching checksum:
+    │     └─► Skip download (already up-to-date)
+    ├─► Otherwise:
+    │     ├─► Download binary to temp file
+    │     ├─► Verify SHA256 matches
+    │     ├─► Move to target directory
+    │     └─► Set permissions to 744
+    │
+    ├─► Write sha256 file with checksum entry
     │
     ├─► Write lock file with version + timestamp
     │
-    └─► Touch all binaries (newer than sha256 file)
+    └─► Touch binary (newer than sha256 file)
 ```
 
 > **Note:** VERSION is a positional argument, not a flag. Use `./booth install 0.13.0`, not `./booth install --version 0.13.0`.
@@ -403,7 +396,7 @@ fi
 
 ### 3. Download-Time Verification
 
-During installation, each binary is verified against the release's `.sha256` file before being moved into place.
+During installation, the binary is verified against the release's `.sha256` file before being moved into place.
 
 ---
 
@@ -425,8 +418,8 @@ The `find_binary_dir()` function checks:
 2. `~/.cache/codingbooth/versions/<version>/` (shared cache)
 
 This enables:
-- Cloning a repo and running `./booth` immediately (downloads correct version)
-- Team members with different platforms sharing the same lock file
+- Cloning a repo and running `./booth` immediately (downloads the correct binary for the current platform)
+- Team members on different platforms sharing the same lock file
 - Recovery from accidental binary deletion
 - Sharing binaries across multiple projects (with shared cache)
 
@@ -468,20 +461,15 @@ Use `--cache=local` when you need:
 - Air-gapped environments
 - Portable projects (USB drive, shared folder)
 
-### Why Download All Platforms?
+### Why Single-Platform Downloads?
 
-The wrapper downloads binaries for all platforms, not just the current one:
+The wrapper downloads only the binary for the current platform. Originally, all platforms were downloaded because binaries were stored in the git repository for portability. Now that binaries live in a user-level cache (`~/.cache/codingbooth/`), there's no reason to download binaries for other platforms:
 
-**Pros:**
-- Lock file + sha256 work across all team members
-- Clone-and-run works regardless of platform
-- Consistent verification (same sha256 file everywhere)
-
-**Cons:**
-- ~50-100MB total download (vs ~10-20MB for single platform)
-- Slightly longer install time
-
-The trade-off favors team consistency over bandwidth.
+- Each machine only needs its own platform binary
+- Reduces download size from ~50-100MB to ~10-20MB
+- Faster installs
+- The lock file (version-controlled) ensures all team members use the same version
+- Clone-and-run still works: the wrapper auto-downloads the correct binary for the current platform when the lock file exists
 
 ### Why Not Use Package Managers?
 
@@ -507,16 +495,14 @@ The wrapper is intentionally simple bash:
 
 The heavy lifting is in the Go binary; the wrapper just orchestrates.
 
-### Why Touch Binaries After Download?
+### Why Touch Binary After Download?
 
 ```bash
-# Touch all binaries to be newer than checksum
-for platform in "${ALL_PLATFORMS[@]}"; do
-    [[ -f "$dest" ]] && touch "$dest"
-done
+# Touch binary to be newer than checksum
+[[ -f "$dest" ]] && touch "$dest"
 ```
 
-Binary that is newer than the checksum file but its checksum matches is considered untampered as the checksum is committed to the repository so it is trusted.
+A binary that is newer than the checksum file but its checksum matches is considered untampered as the checksum is committed to the repository so it is trusted.
 
 ---
 
