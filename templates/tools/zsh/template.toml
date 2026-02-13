@@ -1,14 +1,8 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
-display-name = "Zsh Config"
-display-disc = "Seed ~/.zshrc and ~/.zshenv from host"
+display-name = "Zsh"
+display-disc = "Zsh shell (use +default to set as default shell)"
 display-order = 32
 tags = [
     "zsh",
-    "shell",
-    "config"
-]
-
-run-args = [
-    "-v", "~/.zshrc:/etc/cb-home-seed/.zshrc:ro",
-    "-v", "~/.zshenv:/etc/cb-home-seed/.zshenv:ro"
+    "shell"
 ]
