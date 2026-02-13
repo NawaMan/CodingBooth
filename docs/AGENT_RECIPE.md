@@ -240,6 +240,26 @@ firebase
 
 Selects Firebase CLI tools but excludes the auto-selected credential mount (useful in CI or when credentials aren't available on the host).
 
+### Zsh as Default Shell
+
+```
+zsh
+  + default
+```
+
+The `zsh` template is a namespace — `+default` sets `USER_SHELL=/bin/zsh` so the booth uses zsh.
+
+**Customizing zsh in the booth:** Don't seed your host `~/.zshrc` directly — it likely references paths and plugins that don't exist in the container. Instead, create a booth-specific config:
+
+- **`.booth/home-seed/.zshrc`** — Place a booth-tailored `.zshrc` here. It gets copied (no-clobber) on first container start, and CodingBooth appends its profile block automatically.
+- **`.booth/startup.sh`** — Append a zsh config segment at startup:
+  ```bash
+  # Append booth-specific zsh config
+  cat "$HOME/code/.booth/zshrc-booth" >> ~/.zshrc
+  ```
+
+The same approach works for `.bashrc` customization.
+
 ---
 
 ## Output

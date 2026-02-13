@@ -1,0 +1,13 @@
+# NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+display-name = "Zsh Default"
+display-disc = "Set zsh as the default shell"
+auto-select = false
+tags = [
+    "zsh",
+    "shell",
+    "default"
+]
+
+run-args = [
+    "-e", "USER_SHELL=/bin/zsh"
+]
