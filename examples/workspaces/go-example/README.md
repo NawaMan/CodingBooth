@@ -2,7 +2,7 @@
 
 Go development environment with Jupyter notebook support using the Go (GoNB) kernel.
 
-**Stack:** Go, gopls, delve, Jupyter Notebook, GoNB kernel, code-server
+**Stack:** Go, gopls, delve, Python, Jupyter Notebook, GoNB kernel, code-server
 
 ## Quick start
 
