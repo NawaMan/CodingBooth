@@ -27,6 +27,9 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     echo ""
     echo "Run './booth help' to see available commands."
     echo ""
+    echo "Try './booth example' to see ready to use example."
+    echo "Or, './booth init'    to quickly start a new project."
+    echo ""
     exit 0
 fi
 

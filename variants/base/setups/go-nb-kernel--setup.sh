@@ -23,9 +23,6 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# This script will always be installed by root.
-HOME=/root
-
 # ---------------- Load environment from profile.d ----------------
 source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
@@ -57,10 +54,10 @@ fi
 
 # ---------------- Install GoNB ----------------
 echo "📦 Installing GoNB kernel binary..."
-go install github.com/janpfeifer/gonb@latest
-go install golang.org/x/tools/cmd/goimports@latest
+sudo -u coder bash -lc "go install github.com/janpfeifer/gonb@latest"
+sudo -u coder bash -lc "go install golang.org/x/tools/cmd/goimports@latest"
 
-GONB_BIN="$(go env GOPATH)/bin/gonb"
+GONB_BIN="/home/coder/go/bin/gonb"
 if [ ! -x "${GONB_BIN}" ]; then
   echo "❌ gonb binary not found at ${GONB_BIN}" >&2
   exit 1
