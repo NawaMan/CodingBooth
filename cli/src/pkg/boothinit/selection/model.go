@@ -24,12 +24,19 @@ type ParsedSelection struct {
 	Items []ParsedItem
 }
 
+// ParsedExtension is a single extension selection from the DSL, with optional params.
+// e.g., "pkg:cowsay,figlet" → Name="pkg", Params=["cowsay", "figlet"]
+type ParsedExtension struct {
+	Name   string
+	Params []string
+}
+
 // ParsedItem is a single template selection from the DSL.
-// e.g., "go:1.24+linter~credential" → Name="go", Params=["1.24"], Extensions=["linter"], Excludes=["credential"]
+// e.g., "go:1.24+linter~credential" → Name="go", Params=["1.24"], Extensions=[{Name:"linter"}], Excludes=["credential"]
 type ParsedItem struct {
 	Name       string
 	Params     []string
-	Extensions []string
+	Extensions []ParsedExtension
 	Excludes   []string // extensions to exclude (from ~ operator)
 }
 
@@ -48,6 +55,7 @@ type SelectedTemplate struct {
 
 // SelectedExtension represents a selected extension within a template.
 type SelectedExtension struct {
-	Extension  *tmpl.Template
-	SelectMode SelectMode
+	Extension   *tmpl.Template
+	ParamValues map[string]string
+	SelectMode  SelectMode
 }

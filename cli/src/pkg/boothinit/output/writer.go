@@ -112,7 +112,7 @@ func WriteOutput(out *BoothOutput, targetPath string) error {
 
 	if len(out.Setups) > 0 {
 		setupsDir := filepath.Join(boothDir, "setups")
-		if err := CopyFiles(out.Setups, setupsDir); err != nil {
+		if err := CopyFilesExecutable(out.Setups, setupsDir); err != nil {
 			return fmt.Errorf("writing setups/: %w", err)
 		}
 	}

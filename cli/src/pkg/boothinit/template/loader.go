@@ -55,6 +55,7 @@ type filesToml struct {
 type paramToml struct {
 	Default  string   `toml:"default"`
 	Suggests []string `toml:"suggests"`
+	Variadic bool     `toml:"variadic"`
 }
 
 // LoadRegistry loads all templates from the given root directory.
@@ -187,7 +188,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 	if len(spec.Params) > 0 {
 		tmpl.Params = make(map[string]Param, len(spec.Params))
 		for k, v := range spec.Params {
-			tmpl.Params[k] = Param{Default: v.Default, Suggests: v.Suggests}
+			tmpl.Params[k] = Param{Default: v.Default, Suggests: v.Suggests, Variadic: v.Variadic}
 		}
 		// Extract declaration order from TOML metadata keys
 		for _, key := range md.Keys() {
@@ -329,7 +330,7 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 	if len(spec.Params) > 0 {
 		tmpl.Params = make(map[string]Param, len(spec.Params))
 		for k, v := range spec.Params {
-			tmpl.Params[k] = Param{Default: v.Default, Suggests: v.Suggests}
+			tmpl.Params[k] = Param{Default: v.Default, Suggests: v.Suggests, Variadic: v.Variadic}
 		}
 		for _, key := range md.Keys() {
 			if len(key) == 2 && key[0] == "params" {

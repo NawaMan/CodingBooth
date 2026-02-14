@@ -16,10 +16,19 @@ import (
 // For entries with SourcePath set, the file is copied from the source.
 // Parent directories are created as needed.
 func CopyFiles(files []FileContent, targetDir string) error {
+	return copyFilesWithMode(files, targetDir, 0644)
+}
+
+// CopyFilesExecutable is like CopyFiles but writes inline files as executable (0755).
+func CopyFilesExecutable(files []FileContent, targetDir string) error {
+	return copyFilesWithMode(files, targetDir, 0755)
+}
+
+func copyFilesWithMode(files []FileContent, targetDir string, inlineMode os.FileMode) error {
 	for _, f := range files {
 		dest := filepath.Join(targetDir, f.RelPath)
 		if f.Content != "" {
-			if err := writeInlineFile(dest, f.Content); err != nil {
+			if err := writeInlineFile(dest, f.Content, inlineMode); err != nil {
 				return fmt.Errorf("writing inline file %s: %w", f.RelPath, err)
 			}
 		} else {
@@ -32,11 +41,11 @@ func CopyFiles(files []FileContent, targetDir string) error {
 }
 
 // writeInlineFile writes inline content to a file, creating parent directories.
-func writeInlineFile(dest, content string) error {
+func writeInlineFile(dest, content string, perm os.FileMode) error {
 	if err := os.MkdirAll(filepath.Dir(dest), 0755); err != nil {
 		return fmt.Errorf("creating parent dirs: %w", err)
 	}
-	return os.WriteFile(dest, []byte(content), 0644)
+	return os.WriteFile(dest, []byte(content), perm)
 }
 
 // copyFile copies a single file from src to dst, creating parent directories.

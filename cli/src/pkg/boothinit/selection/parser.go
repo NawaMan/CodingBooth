@@ -113,13 +113,26 @@ func parseItem(s string) (ParsedItem, error) {
 	plusParts := strings.Split(basePart, "+")
 	templatePart := plusParts[0]
 
-	var extensions []string
+	var extensions []ParsedExtension
 	for _, ext := range plusParts[1:] {
 		ext = strings.TrimSpace(ext)
 		if ext == "" {
 			return ParsedItem{}, fmt.Errorf("empty extension name in %q", s)
 		}
-		extensions = append(extensions, ext)
+		pe := ParsedExtension{}
+		if colonIdx := strings.Index(ext, ":"); colonIdx >= 0 {
+			pe.Name = ext[:colonIdx]
+			paramStr := ext[colonIdx+1:]
+			if paramStr != "" {
+				pe.Params = strings.Split(paramStr, ",")
+			}
+		} else {
+			pe.Name = ext
+		}
+		if pe.Name == "" {
+			return ParsedItem{}, fmt.Errorf("empty extension name in %q", s)
+		}
+		extensions = append(extensions, pe)
 	}
 
 	// Split template part by ":" — name and params
