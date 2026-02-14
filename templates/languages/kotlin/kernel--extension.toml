@@ -10,6 +10,6 @@ tags = [
 ]
 
 [segments]
-"Boothfile--60" = """
+"Boothfile--70" = """
 setup kotlin-nb-kernel
 """

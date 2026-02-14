@@ -10,6 +10,6 @@ tags = [
 ]
 
 [segments]
-"Boothfile--60" = """
-setup r-kernel
+"Boothfile--70" = """
+setup r-nb-kernel
 """

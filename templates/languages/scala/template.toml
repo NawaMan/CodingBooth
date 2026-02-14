@@ -6,6 +6,7 @@ tags = [
     "jvm",
     "functional"
 ]
+requires = ["java"]
 
 [params.SCALA_VERSION]
 default = "3.5.1"
