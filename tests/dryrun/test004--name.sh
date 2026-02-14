@@ -49,7 +49,7 @@ docker \\
     --label 'cb.created-at=XXXXX' \\
     --label 'cb.version=${VERSION}' \\
     --label 'cb.keep-alive=false' \\
-    -p 10000:10000 \\
+    -p 127.0.0.1:10000:10000 \\
     -e 'BOOTH_SETUPS=/opt/codingbooth/setups' \\
     -e 'BOOTH_CONTAINER_NAME=test-container' \\
     -e 'BOOTH_DAEMON=false' \\

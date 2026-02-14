@@ -18,7 +18,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
 fi
 
 # Just check the USAGE section (first 17 lines) - the full help is ~98 lines
-ACTUAL=$(run_coding_booth --help | head -17)
+ACTUAL=$(run_coding_booth --help | head -18)
 
 HERE="$PWD"
 VERSION="$(cat ../../version.txt)"
@@ -38,6 +38,7 @@ USAGE:
   codingbooth remove [--name <name>] [--force]     (remove booth container(s))
   codingbooth prune [--yes]                        (remove stopped booth containers)
   codingbooth example <subcommand>                 (manage examples)
+  codingbooth init <subcommand> [options]           (initialize a new .booth/ project)
   codingbooth emit-dockerfile [options]            (compile Boothfile to Dockerfile)
   codingbooth print-default-allowlist.txt          (print built-in egress allowlist)"
 
