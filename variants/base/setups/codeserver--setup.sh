@@ -153,8 +153,10 @@ chmod 0644 "$PROFILE_FILE"
 source "$PROFILE_FILE" || true
 
 
-# Make it usable right away in THIS shell
-source "${CB_VENV_DIR}/bin/activate"
+# Make it usable right away in THIS shell (if Python was set up)
+if [ -n "${CB_VENV_DIR:-}" ] && [ -f "${CB_VENV_DIR}/bin/activate" ]; then
+  source "${CB_VENV_DIR}/bin/activate"
+fi
 
 
 # 1) Create a shared directory
@@ -206,7 +208,11 @@ source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # ==== Runtime tunables ====
 # Make venv kernels visible to any Jupyter process
-export JUPYTER_PATH="${CB_VENV_DIR}/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
+if [ -n "${CB_VENV_DIR:-}" ]; then
+  export JUPYTER_PATH="${CB_VENV_DIR}/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
+else
+  export JUPYTER_PATH="/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
+fi
 
 # Use the current user's home directory
 CSHOME="${HOME}"
@@ -233,9 +239,14 @@ SETTING_DIR=$CSHOME/.local/share/code-server/User
 SETTINGS_JSON="$SETTING_DIR/settings.json"
 mkdir -p "$SETTING_DIR"
 
+PYTHON_PATH="python3"
+if [ -n "${CB_VENV_DIR:-}" ]; then
+  PYTHON_PATH="${CB_VENV_DIR}/bin/python"
+fi
+
 cat > "$SETTINGS_JSON" <<JSON
 {
-  "python.defaultInterpreterPath": "${CB_VENV_DIR}/bin/python",
+  "python.defaultInterpreterPath": "${PYTHON_PATH}",
   "jupyter.jupyterServerType": "local",
 
   "terminal.integrated.profiles.linux": {

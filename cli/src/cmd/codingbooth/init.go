@@ -76,6 +76,8 @@ Selection:
 Flags:
   --templates-path <dir>   Use local templates directory (or set CB_TEMPLATES_PATH)
   --select <selection>     Template selection DSL (repeatable; required for new/dryrun)
+  --variant <variant>      Set the variant (base, notebook, codeserver, xfce, kde)
+  --cmd <command>          Set the default start command (repeatable; for new/dryrun)
   --version <ver>          Use templates from a specific release version
   --full                   Show all templates including secondary (for list)
   --debug                  Print debug output (for new/dryrun)
@@ -90,12 +92,15 @@ Examples:
   codingbooth init dryrun --select "go:1.23.0+linter+vscode-ext"
   codingbooth init new --select @selections.txt
   codingbooth init new --select "claude-code~credential"
-  codingbooth init new --select go --select python --select claude-code`)
+  codingbooth init new --select go --select python --select claude-code
+  codingbooth init new --select python --cmd bash`)
 }
 
 type initFlags struct {
 	selectDSLs    []string
 	selectDSL     string // resolved: joined from selectDSLs after ReadSelectInput
+	cmds          []string
+	variant       string
 	templatesPath string
 	version       string
 	debug         bool
@@ -130,6 +135,20 @@ func parseInitFlags(args []string) initFlags {
 			flags.full = true
 		case "--overwrite":
 			flags.overwrite = true
+		case "--cmd":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --cmd requires a value")
+				os.Exit(1)
+			}
+			flags.cmds = append(flags.cmds, shellSplit(args[i+1])...)
+			i++
+		case "--variant":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --variant requires a value")
+				os.Exit(1)
+			}
+			flags.variant = args[i+1]
+			i++
 		case "--version":
 			if i+1 >= len(args) {
 				fmt.Fprintln(os.Stderr, "Error: --version requires a value")
@@ -371,6 +390,14 @@ func compileSelection(flags initFlags) (*output.BoothOutput, *selection.Resolved
 		os.Exit(1)
 	}
 
+	// Apply CLI overrides (take precedence over template values)
+	if flags.variant != "" {
+		out.Config.Variant = flags.variant
+	}
+	if len(flags.cmds) > 0 {
+		out.Config.Cmds = flags.cmds
+	}
+
 	return out, resolved
 }
 
@@ -454,6 +481,12 @@ func buildInitCommand(targetPath string, flags initFlags) string {
 		parts = append(parts, "new")
 	}
 	parts = append(parts, "--select "+flags.selectDSL)
+	if flags.variant != "" {
+		parts = append(parts, "--variant "+flags.variant)
+	}
+	for _, cmd := range flags.cmds {
+		parts = append(parts, "--cmd "+cmd)
+	}
 	if flags.version != "" {
 		parts = append(parts, "--version "+flags.version)
 	}
@@ -467,6 +500,12 @@ func buildAdjustCommand(flags initFlags) string {
 	parts = append(parts, "booth init adjust")
 	if flags.version != "" {
 		parts = append(parts, "--version "+flags.version)
+	}
+	if flags.variant != "" {
+		parts = append(parts, "--variant "+flags.variant)
+	}
+	for _, cmd := range flags.cmds {
+		parts = append(parts, "--cmd "+cmd)
 	}
 	parts = append(parts, "--select "+flags.selectDSL)
 	return strings.Join(parts, " ")
@@ -493,4 +532,52 @@ func printSummary(resolved *selection.ResolvedSelection) {
 		}
 	}
 	fmt.Println()
+}
+
+// shellSplit splits a string into words, respecting single quotes, double quotes,
+// and backslash escapes. Unquoted whitespace separates words.
+//
+//	shellSplit(`bash -c 'echo hello world'`)  → ["bash", "-c", "echo hello world"]
+//	shellSplit(`echo "hello world"`)          → ["echo", "hello world"]
+//	shellSplit(`python -c "print(\"hi\")"`)   → ["python", "-c", "print(\"hi\")"]
+//	shellSplit(`bash`)                        → ["bash"]
+func shellSplit(s string) []string {
+	var words []string
+	var current strings.Builder
+	var quote rune // 0 = unquoted, '\'' or '"' = inside that quote
+	escaped := false
+
+	for _, r := range s {
+		if escaped {
+			current.WriteRune(r)
+			escaped = false
+			continue
+		}
+		if r == '\\' && quote != '\'' {
+			// Backslash escapes next char (except inside single quotes, where everything is literal)
+			escaped = true
+			continue
+		}
+		switch {
+		case quote != 0:
+			if r == quote {
+				quote = 0
+			} else {
+				current.WriteRune(r)
+			}
+		case r == '\'' || r == '"':
+			quote = r
+		case r == ' ' || r == '\t':
+			if current.Len() > 0 {
+				words = append(words, current.String())
+				current.Reset()
+			}
+		default:
+			current.WriteRune(r)
+		}
+	}
+	if current.Len() > 0 {
+		words = append(words, current.String())
+	}
+	return words
 }
