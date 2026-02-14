@@ -1,0 +1,16 @@
+# NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+display-name = "Haskell Notebook Kernel"
+display-disc = "IHaskell Jupyter kernel for Haskell"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "haskell",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--70" = """
+setup haskell-nb-kernel
+"""

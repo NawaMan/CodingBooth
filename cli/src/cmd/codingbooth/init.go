@@ -75,7 +75,7 @@ Selection:
 
 Flags:
   --templates-path <dir>   Use local templates directory (or set CB_TEMPLATES_PATH)
-  --select <dsl>           Template selection DSL (repeatable; required for new/dryrun)
+  --select <selection>     Template selection DSL (repeatable; required for new/dryrun)
   --version <ver>          Use templates from a specific release version
   --full                   Show all templates including secondary (for list)
   --debug                  Print debug output (for new/dryrun)

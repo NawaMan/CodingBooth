@@ -1,4 +1,4 @@
-variant="base"
+variant="xfce"
 run-args = [
     # Claude Code credentials (home-seeding)
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",

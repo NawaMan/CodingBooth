@@ -11,5 +11,5 @@ tags = [
 
 [segments]
 "Boothfile--60" = """
-setup kotlin-kernel
+setup kotlin-nb-kernel
 """
