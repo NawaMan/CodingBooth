@@ -5,6 +5,7 @@ tags = [
     "kotlin",
     "jvm"
 ]
+requires = ["java"]
 
 [params.KOTLIN_VERSION]
 default = "2.0.20"

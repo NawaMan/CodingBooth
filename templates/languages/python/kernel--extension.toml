@@ -10,6 +10,6 @@ tags = [
 ]
 
 [segments]
-"Boothfile--60" = """
-setup python-kernel
+"Boothfile--70" = """
+setup python-nb-kernel
 """

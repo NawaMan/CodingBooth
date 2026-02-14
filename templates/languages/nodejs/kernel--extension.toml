@@ -10,6 +10,6 @@ tags = [
 ]
 
 [segments]
-"Boothfile--60" = """
-setup nodejs-kernel
+"Boothfile--70" = """
+setup nodejs-nb-kernel
 """

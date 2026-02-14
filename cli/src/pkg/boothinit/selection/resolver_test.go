@@ -281,6 +281,77 @@ func TestResolve_RequiresNotSatisfied(t *testing.T) {
 	assert.Contains(t, err.Error(), "python")
 }
 
+// --- Extension requires validation ---
+
+func TestResolve_ExtensionRequiresSatisfied(t *testing.T) {
+	registry := &tmpl.TemplateRegistry{
+		ByName: map[string]*tmpl.Template{
+			"haskell": {
+				Name: "haskell",
+				Extensions: []*tmpl.Template{
+					{Name: "kernel", Requires: []string{"notebook"}},
+				},
+			},
+			"notebook": {
+				Name: "notebook",
+			},
+		},
+	}
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "haskell", Extensions: []ParsedExtension{{Name: "kernel"}}},
+		{Name: "notebook"},
+	}}
+
+	resolved, err := Resolve(parsed, registry)
+	require.NoError(t, err)
+	require.Len(t, resolved.Templates, 2)
+	require.Len(t, resolved.Templates[0].Extensions, 1)
+	assert.Equal(t, "kernel", resolved.Templates[0].Extensions[0].Extension.Name)
+}
+
+func TestResolve_ExtensionRequiresNotSatisfied(t *testing.T) {
+	registry := &tmpl.TemplateRegistry{
+		ByName: map[string]*tmpl.Template{
+			"haskell": {
+				Name: "haskell",
+				Extensions: []*tmpl.Template{
+					{Name: "kernel", Requires: []string{"notebook"}},
+				},
+			},
+		},
+	}
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "haskell", Extensions: []ParsedExtension{{Name: "kernel"}}},
+	}}
+
+	_, err := Resolve(parsed, registry)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "requires")
+	assert.Contains(t, err.Error(), "notebook")
+}
+
+func TestResolve_AutoSelectedExtensionRequiresNotSatisfied(t *testing.T) {
+	autoSelect := true
+	registry := &tmpl.TemplateRegistry{
+		ByName: map[string]*tmpl.Template{
+			"haskell": {
+				Name: "haskell",
+				Extensions: []*tmpl.Template{
+					{Name: "kernel", AutoSelect: &autoSelect, Requires: []string{"notebook"}},
+				},
+			},
+		},
+	}
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "haskell"},
+	}}
+
+	_, err := Resolve(parsed, registry)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "requires")
+	assert.Contains(t, err.Error(), "notebook")
+}
+
 // --- Extension param resolution ---
 
 func TestResolve_ExtensionParams(t *testing.T) {

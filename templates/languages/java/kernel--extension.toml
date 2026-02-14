@@ -10,6 +10,6 @@ tags = [
 ]
 
 [segments]
-"Boothfile--60" = """
-setup java-kernel
+"Boothfile--70" = """
+setup java-nb-kernel
 """

@@ -10,6 +10,6 @@ tags = [
 ]
 
 [segments]
-"Boothfile--60" = """
-setup ruby-kernel
+"Boothfile--70" = """
+setup ruby-nb-kernel
 """

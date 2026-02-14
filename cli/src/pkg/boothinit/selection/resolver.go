@@ -50,11 +50,23 @@ func Resolve(parsed *ParsedSelection, registry *tmpl.TemplateRegistry) (*Resolve
 		})
 	}
 
-	// Validate requires
+	// Validate requires (templates)
 	for _, item := range items {
 		for _, req := range item.Template.Requires {
 			if !selectedNames[req] {
 				return nil, fmt.Errorf("template %q requires %q which is not selected", item.Template.Name, req)
+			}
+		}
+	}
+
+	// Validate requires (extensions)
+	for _, item := range items {
+		for _, ext := range item.Extensions {
+			for _, req := range ext.Extension.Requires {
+				if !selectedNames[req] {
+					return nil, fmt.Errorf("extension %q of template %q requires %q which is not selected",
+						ext.Extension.Name, item.Template.Name, req)
+				}
 			}
 		}
 	}
