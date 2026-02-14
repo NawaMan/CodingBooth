@@ -2,18 +2,39 @@
 
 Modern Java development environment with JDK 25 and essential build tools.
 
-**Includes:**
-- JDK 25 (Temurin)
-- Maven 3.9.11 and Gradle
-- jEnv for version management
-- jbang for scripting
-- Eclipse and IntelliJ IDEA (desktop variants)
-- VS Code Java extensions and Jupyter kernel (IDE variants)
+**Stack:** JDK 25, Maven, Gradle, jEnv, jbang, Eclipse, IntelliJ IDEA
 
-**Usage:**
+## Quick start
+
 ```bash
+# 1. Launch the booth
 cd examples/java-example
-workspace
+../../codingbooth
+
+# 2. Inside the booth — build and run the Maven project
+mvn compile
+mvn exec:java
+
+# 3. Try jbang
+jbang -c 'System.out.println("Hello from jbang!")'
+
+# 4. Open Jupyter notebooks
+#    Open Demo-Java.ipynb in VS Code — uses the JJava kernel
+
+# 5. Switch JDK versions
+jenv versions
+jenv local 25
+java -version
 ```
 
-**Purpose:** Standard Java development setup with the latest JDK and popular build tools. Includes Maven project with demo notebooks.
+## What's included
+
+| Tool / Feature     | Details                            |
+|--------------------|------------------------------------|
+| JDK                | 25 (Temurin)                       |
+| Build tools        | Maven, Gradle                      |
+| Version manager    | jEnv                               |
+| Scripting          | jbang                              |
+| Notebooks          | JJava Jupyter kernel               |
+| IDEs (desktop)     | Eclipse, IntelliJ IDEA with Lombok |
+| VS Code extensions | Java language support              |

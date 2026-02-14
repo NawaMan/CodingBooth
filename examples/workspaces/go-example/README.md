@@ -1,30 +1,47 @@
-# Treemoji
+# Treemoji (Go Example)
 
-A tiny, deterministic `tree`-like CLI that adds a bit of joy with emojis. It prints a directory tree (optionally files or directories only), with stable, sorted output.
+A tiny, deterministic `tree`-like CLI with emojis — written in Go.
 
-- Language: Go
-- Binary name: `treemoji`
+**Stack:** Go, gopls, delve
+
+## Quick start
+
+```bash
+# 1. Launch the booth
+cd examples/go-example
+../../codingbooth
+
+# 2. Inside the booth — build the project
+./build.sh
+
+# 3. Run it
+./run-treemoji.sh
+# or directly:
+./bin/treemoji-linux-amd64
+
+# 4. Run the tests
+./run-go-test.sh
+# or:
+go test ./...
+```
 
 ## Features
+
 - Deterministic, stable output (case-insensitive sorted)
 - Optional emoji prefixes for directories/files/symlinks
 - Filter hidden entries (default) or include them with `-a`
 - Directories-only mode with `-d`
 - Limit traversal depth with `-L N`
 
-## Installation
+## Build from source
 
-### From source
 Requires Go 1.21+.
 
 ```bash
-# Clone this repository, then from the project root:
 ./build.sh
 # Or directly with Go tools:
 go build -o bin/treemoji ./cmd/treemoji
 ```
-
-You can move the built binary into your PATH, e.g. `mv bin/treemoji /usr/local/bin/` (may require sudo).
 
 ## Usage
 

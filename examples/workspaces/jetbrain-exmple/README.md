@@ -1,24 +1,49 @@
 # JetBrains Example
 
-Comprehensive JetBrains IDE suite demonstration for desktop WorkSpace environments.
+All major JetBrains IDEs in a single CodingBooth desktop environment.
 
-**Includes:**
-- JDK 24 (Temurin)
-- All major JetBrains IDEs:
-  - IntelliJ IDEA (Java/Kotlin)
-  - PyCharm (Python)
-  - GoLand (Go)
-  - WebStorm (JavaScript/TypeScript)
-  - PhpStorm (PHP)
-  - CLion (C/C++)
-  - Rider (.NET)
-  - RubyMine (Ruby)
-  - DataGrip (Database)
+**Stack:** JDK 24, IntelliJ IDEA, PyCharm, GoLand, WebStorm, PhpStorm, CLion, Rider, RubyMine, DataGrip
 
-**Usage:**
+## Quick start
+
 ```bash
+# 1. Launch the booth (requires a desktop variant)
 cd examples/jetbrain-exmple
-workspace --variant desktop-xfce  # or desktop-kde
+../../codingbooth
+
+# 2. Connect to the desktop via your browser
+#    Open http://localhost:16901 (noVNC)
+
+# 3. Inside the desktop — launch any IDE from the application menu or terminal
+idea         # IntelliJ IDEA
+pycharm      # PyCharm
+goland       # GoLand
+webstorm     # WebStorm
 ```
 
-**Purpose:** Demonstrates the full JetBrains IDE ecosystem within WorkSpace desktop variants. Requires desktop variant (XFCE or KDE). Access via VNC/noVNC for full IDE experience.
+## Included IDEs
+
+| IDE        | Language / Purpose       |
+|------------|--------------------------|
+| IntelliJ   | Java, Kotlin             |
+| PyCharm    | Python                   |
+| GoLand     | Go                       |
+| WebStorm   | JavaScript, TypeScript   |
+| PhpStorm   | PHP                      |
+| CLion      | C, C++                   |
+| Rider      | .NET                     |
+| RubyMine   | Ruby                     |
+| DataGrip   | Database                 |
+
+## Try the demo files
+
+The workspace includes demo files you can open in the matching IDE:
+
+| File                | Open with  |
+|---------------------|------------|
+| `Demo.java`        | IntelliJ   |
+| `Demo.py`          | PyCharm    |
+| `Demo.sh`          | any        |
+| `Demo-Java.ipynb`  | IntelliJ   |
+| `Demo-Python.ipynb` | PyCharm    |
+| `Demo-Bash.ipynb`  | any        |

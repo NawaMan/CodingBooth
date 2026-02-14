@@ -1,19 +1,37 @@
 # Server Example
 
-Simple HTTP server example demonstrating web service hosting in CodingBooth.
+Minimal HTTP server demonstrating port exposure from a CodingBooth.
 
-**Includes:**
-- Basic HTTP server setup
-- Static file serving from `www/` directory
-- Port configuration example
+**Stack:** Python 3.12 (`http.server`)
 
-**Usage:**
+## Quick start
+
 ```bash
-cd examples/server
-workspace
-./start-server.sh    # starts the web server
+# 1. Launch the booth
+cd examples/server-example
+../../codingbooth
+
+# 2. Inside the booth — start the server
+./start-server.sh          # serves www/ on port 8080
+
+# 3. Verify from inside the booth
+curl http://localhost:8080
+
+# 4. Open in your host browser
+#    http://localhost:8080   — you should see the page from www/
+
+# 5. Stop the server
+./stop-server.sh
 ```
 
-**Access:** Open browser to configured port (check `.booth/config.toml` for port settings).
+## How it works
 
-**Purpose:** Minimal example of running a web server inside WorkSpace with proper port exposure.
+`start-server.sh` runs `python -m http.server 8080` serving static files from the `www/` directory.
+The port is forwarded to your host so you can access it from your browser.
+
+## Scripts
+
+| Script             | Description                         |
+|--------------------|-------------------------------------|
+| `start-server.sh` | Starts the HTTP server on port 8080 |
+| `stop-server.sh`  | Stops the server                    |
