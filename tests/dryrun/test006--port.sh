@@ -53,7 +53,7 @@ docker \\
     --label 'cb.created-at=XXXXX' \\
     --label 'cb.version=${VERSION}' \\
     --label 'cb.keep-alive=false' \\
-    -p ${PORT}:10000 \\
+    -p 127.0.0.1:${PORT}:10000 \\
     -e 'BOOTH_SETUPS=/opt/codingbooth/setups' \\
     -e 'BOOTH_CONTAINER_NAME=dryrun' \\
     -e 'BOOTH_DAEMON=false' \\

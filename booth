@@ -21,17 +21,12 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     curl -fsSL -o booth https://github.com/NawaMan/WorkSpace/releases/download/latest/booth
     chmod +x booth
     echo ""
-    echo ""
-    echo ""
     ./booth install
     echo ""
     echo "✅ CodingBooth has been installed."
     echo ""
-    echo ""
-    echo ""
     echo "Run './booth help' to see available commands."
     echo ""
-    ./booth help
     exit 0
 fi
 

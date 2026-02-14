@@ -7,22 +7,10 @@ setup jenv
 
 # Install multiple JDK versions
 setup jdk 8
-setup jdk 9
-setup java-ijava-nb-kernel
-# setup jdk 10          # Not sure why this does not work in Dockerfile ... but works manually
-# setup jdk 11          # Not sure why this does not work in Dockerfile ... but works manually
-# setup jdk 12          # Not sure why this does not work in Dockerfile ... but works manually
-# setup jdk 13          # Not sure why this does not work in Dockerfile ... but works manually
-# setup jdk 14          # Not sure why this does not work in Dockerfile ... but works manually
-# setup jdk 15          # Not sure why this does not work in Dockerfile ... but works manually
-# setup jdk 16          # Not sure why this does not work in Dockerfile ... but works manually
 setup jdk 17
 setup java-ijava-nb-kernel
-# setup jdk 18          # Not sure why this does not work in Dockerfile ... but works manually
-# setup jdk 19          # Not sure why this does not work in Dockerfile ... but works manually
-# setup jdk 20          # Not sure why this does not work in Dockerfile ... but works manually
-# setup jdk 21          # Not sure why this does not work in Dockerfile ... but works manually
-# setup jdk 22          # Not sure why this does not work in Dockerfile ... but works manually
+setup jdk 21
+setup java-ijava-nb-kernel
 setup jdk 23
 setup java-ijava-nb-kernel
 setup jdk 24

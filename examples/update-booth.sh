@@ -23,7 +23,7 @@ updated=0
 for dir in "$SCRIPT_DIR"/*/; do
     [[ ! -d "$dir" ]] && continue
     rm -rf "$dir/.booth/tools"
-    cp ../codingbooth $dir/booth
+    cp ../booth $dir/booth
     echo "Installed tools: $dir"
     : $((updated++))
 done
@@ -32,7 +32,7 @@ done
 if [[ -d "$SCRIPT_DIR/workspaces" ]]; then
     for dir in "$SCRIPT_DIR/workspaces"/*/; do
         rm -rf "$dir/.booth/tools"
-	cp ../codingbooth $dir/booth
+	cp ../booth $dir/booth
         echo "Installed tools: $dir"
         : $((updated++))
     done
