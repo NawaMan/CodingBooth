@@ -30,6 +30,13 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     echo "Try './booth example' to see ready to use example."
     echo "Or, './booth init'    to quickly start a new project."
     echo ""
+    if ! grep -qs 'booth.*shell-config' ~/.bashrc ~/.zshrc ~/.profile 2>/dev/null; then
+        echo "💡 Tip: Add the following to your shell profile (~/.bashrc or ~/.zshrc)"
+        echo "   to use 'booth' as a command from anywhere:"
+        echo ""
+        echo "   eval \"\$(./booth shell-config)\""
+        echo ""
+    fi
     exit 0
 fi
 
@@ -103,8 +110,8 @@ EOF
 ║ BOOTH_IN_BOOTH=true is set, but no port was specified.                    ║
 ║                                                                           ║
 ║ You must specify a different port to avoid conflicts with this container: ║
-║   Current container's host port: ${host_port:-"(not set)"}                ║
-║   Current container's code port: ${code_port}                             ║
+║   Current container's host port: ${host_port:-"(not set)"}                                     ║
+║   Current container's code port: ${code_port}                                     ║
 ║                                                                           ║
 ║ Use one of:                                                               ║
 ║     ./booth --port NEXT ...      (auto-find next available port)          ║
@@ -945,8 +952,10 @@ case "${COMMAND}" in
 esac
 
 # Check for nested booth execution (running booth inside a booth container)
-# This check runs for all commands except help/version/shell-config
-detect_nested_booth "$@"
+# Only warn for 'run' command — other commands (list, init, etc.) are safe inside a container
+if [[ "${COMMAND}" == "run" ]]; then
+    detect_nested_booth "$@"
+fi
 
 # Need curl for install/run/update/uninstall
 if ! command -v curl >/dev/null 2>&1; then

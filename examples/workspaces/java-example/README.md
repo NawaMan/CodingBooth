@@ -1,40 +1,23 @@
 # Java Example
 
-Modern Java development environment with JDK 25 and essential build tools.
+Java development environment with Jupyter notebook support using the JJava kernel.
 
-**Stack:** JDK 25, Maven, Gradle, jEnv, jbang, Eclipse, IntelliJ IDEA
+**Stack:** JDK 25 (Temurin), Jupyter Notebook, JJava kernel
 
 ## Quick start
 
 ```bash
 # 1. Launch the booth
-cd examples/java-example
-../../codingbooth
+cd examples/workspaces/java-example
+booth
 
-# 2. Inside the booth — build and run the Maven project
-mvn compile
-mvn exec:java
-
-# 3. Try jbang
-jbang -c 'System.out.println("Hello from jbang!")'
-
-# 4. Open Jupyter notebooks
-#    Open Demo-Java.ipynb in VS Code — uses the JJava kernel
-
-# 5. Switch JDK versions
-jenv versions
-jenv local 25
-java -version
+# 2. Inside the booth — open VS Code, create a .ipynb file and select the Java kernel
 ```
 
 ## What's included
 
-| Tool / Feature     | Details                            |
-|--------------------|------------------------------------|
-| JDK                | 25 (Temurin)                       |
-| Build tools        | Maven, Gradle                      |
-| Version manager    | jEnv                               |
-| Scripting          | jbang                              |
-| Notebooks          | JJava Jupyter kernel               |
-| IDEs (desktop)     | Eclipse, IntelliJ IDEA with Lombok |
-| VS Code extensions | Java language support              |
+| Component          | Details                              |
+|--------------------|--------------------------------------|
+| Language           | JDK 25 (Temurin)                     |
+| Notebook           | Jupyter with JJava kernel            |
+| VS Code extensions | Java language support                |

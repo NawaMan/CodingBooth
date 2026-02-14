@@ -1,39 +1,25 @@
 # Python Example
 
-Python development environment with demo scripts and Jupyter notebooks.
+Python development environment with Jupyter notebook support using the ipykernel.
 
-**Stack:** Python 3.12, pip, JDK 24, PyCharm, VS Code, Jupyter
+**Stack:** Python 3.13, Jupyter Notebook, ipykernel, XFCE desktop, Claude Code
 
 ## Quick start
 
 ```bash
 # 1. Launch the booth
-cd examples/python-example
-../../codingbooth
+cd examples/workspaces/python-example
+booth
 
-# 2. Inside the booth — run the example script
-python Main.py
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Try the demo scripts
-python Demo.py
-python Demo_PythonCheck.py
-bash example.sh
-
-# 5. Open Jupyter notebooks
-#    Open Demo-Python.ipynb in VS Code
+# 2. Inside the booth — open VS Code, create a .ipynb file and select the Python kernel
 ```
 
 ## What's included
 
-| File                  | What it does                        |
-|-----------------------|-------------------------------------|
-| `Main.py`            | Prints Python version and env check |
-| `Demo.py`            | Demo script                         |
-| `Demo_PythonCheck.py` | Python environment diagnostics      |
-| `example.sh`         | Shell script example                |
-| `Demo-Python.ipynb`  | Jupyter notebook (Python kernel)    |
-| `Demo-Bash.ipynb`    | Jupyter notebook (Bash kernel)      |
-| `requirements.txt`   | pip dependencies                    |
+| Component          | Details                              |
+|--------------------|--------------------------------------|
+| Language           | Python 3.13                          |
+| Notebook           | Jupyter with ipykernel               |
+| VS Code extensions | Python language support              |
+| Desktop            | XFCE                                 |
+| AI                 | Claude Code                          |
