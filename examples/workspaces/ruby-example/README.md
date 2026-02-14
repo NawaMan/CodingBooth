@@ -1,27 +1,23 @@
-# Word Counter
+# Ruby Example
 
-A simple word counting CLI built with Ruby.
+Ruby development environment with Jupyter notebook support using the IRuby kernel.
 
-## Features
-- Count words, lines, and characters in text
-- Read from file or stdin
-- Colorful output using the colorize gem
+**Stack:** Ruby 3.3, Jupyter Notebook, IRuby kernel
 
-## Usage
+## Quick start
 
 ```bash
-ruby src/wordcount.rb file.txt
-echo "hello world" | ruby src/wordcount.rb
+# 1. Launch the booth
+cd examples/workspaces/ruby-example
+booth
+
+# 2. Inside the booth — open VS Code, create a .ipynb file and select the Ruby kernel
 ```
 
-## Development
+## What's included
 
-Run directly:
-```bash
-ruby src/wordcount.rb [file]
-```
-
-Run tests:
-```bash
-ruby test/wordcount_test.rb
-```
+| Component          | Details                              |
+|--------------------|--------------------------------------|
+| Language           | Ruby 3.3                             |
+| Notebook           | Jupyter with IRuby kernel            |
+| VS Code extensions | Ruby language support                |

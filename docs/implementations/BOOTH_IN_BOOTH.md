@@ -179,7 +179,7 @@ export BOOTH_IN_BOOTH=true
 ╔═══════════════════════════════════════════════════════════════════════════╗
 ║                         Port conflict in nested booth                     ║
 ╠═══════════════════════════════════════════════════════════════════════════╣
-║ BOOTH_IN_BOOTH=true is set, but no port was specified.                   ║
+║ BOOTH_IN_BOOTH=true is set, but no port was specified.                    ║
 ║                                                                           ║
 ║ You must specify a different port to avoid conflicts with this container: ║
 ║   Current container's host port: 10000                                    ║

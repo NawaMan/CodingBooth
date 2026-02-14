@@ -1,32 +1,25 @@
-# Fizzbuzz
+# Rust Example
 
-A classic FizzBuzz implementation in Rust.
+Rust development environment with Jupyter notebook support using the evcxr kernel.
 
-## Features
-- Print FizzBuzz for a range of numbers
-- Configurable start and end range
-- Classic rules: Fizz for 3, Buzz for 5, FizzBuzz for both
+**Stack:** Rust (stable), Jupyter Notebook, evcxr kernel, XFCE desktop, Claude Code
 
-## Usage
+## Quick start
 
 ```bash
-cargo run -- 1 15
-cargo run -- 1 100
+# 1. Launch the booth
+cd examples/workspaces/rust-example
+booth
+
+# 2. Inside the booth — open VS Code, create a .ipynb file and select the Rust kernel
 ```
 
-## Development
+## What's included
 
-Build:
-```bash
-cargo build
-```
-
-Run:
-```bash
-cargo run -- [start] [end]
-```
-
-Run tests:
-```bash
-cargo test
-```
+| Component          | Details                              |
+|--------------------|--------------------------------------|
+| Language           | Rust (stable)                        |
+| Notebook           | Jupyter with evcxr kernel            |
+| VS Code extensions | Rust language support                |
+| Desktop            | XFCE                                 |
+| AI                 | Claude Code                          |
