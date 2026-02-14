@@ -563,6 +563,41 @@ func TestCompile_ExtensionSourceName(t *testing.T) {
 	assert.Equal(t, "# go\n# linter\n", out.Boothfile.Content)
 }
 
+func TestCompile_ExtensionParams(t *testing.T) {
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{
+					Name: "deno",
+					BoothfileSegments: []tmpl.Segment{
+						{Order: 50, Content: "setup deno ${DENO_VERSION}\n"},
+					},
+				},
+				ParamValues: map[string]string{"DENO_VERSION": "latest"},
+				Extensions: []selection.SelectedExtension{
+					{
+						Extension: &tmpl.Template{
+							Name: "pkg",
+							BoothfileSegments: []tmpl.Segment{
+								{Order: 60, Content: "install deno-pkg ${DENO_PKGS}\n"},
+							},
+						},
+						ParamValues: map[string]string{"DENO_PKGS": "cowsay,figlet"},
+					},
+				},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	require.NotNil(t, out.Boothfile)
+	assert.Contains(t, out.Boothfile.Content, "arg DENO_PKGS=cowsay,figlet")
+	assert.Contains(t, out.Boothfile.Content, "arg DENO_VERSION=latest")
+	assert.Contains(t, out.Boothfile.Content, "setup deno ${DENO_VERSION}")
+	assert.Contains(t, out.Boothfile.Content, "install deno-pkg ${DENO_PKGS}")
+}
+
 // --- Files ---
 
 func TestCompile_FilesCollected(t *testing.T) {

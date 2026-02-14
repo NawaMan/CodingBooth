@@ -96,7 +96,7 @@ func TestParseSelectDSL_WithExtension(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, sel.Items, 1)
 	assert.Equal(t, "go", sel.Items[0].Name)
-	assert.Equal(t, []string{"linter"}, sel.Items[0].Extensions)
+	assert.Equal(t, []ParsedExtension{{Name: "linter"}}, sel.Items[0].Extensions)
 }
 
 func TestParseSelectDSL_WithParamsAndExtension(t *testing.T) {
@@ -105,14 +105,14 @@ func TestParseSelectDSL_WithParamsAndExtension(t *testing.T) {
 	require.Len(t, sel.Items, 1)
 	assert.Equal(t, "go", sel.Items[0].Name)
 	assert.Equal(t, []string{"1.24"}, sel.Items[0].Params)
-	assert.Equal(t, []string{"linter"}, sel.Items[0].Extensions)
+	assert.Equal(t, []ParsedExtension{{Name: "linter"}}, sel.Items[0].Extensions)
 }
 
 func TestParseSelectDSL_MultipleExtensions(t *testing.T) {
 	sel, err := ParseSelectDSL("go:1.24+linter+proxy")
 	require.NoError(t, err)
 	require.Len(t, sel.Items, 1)
-	assert.Equal(t, []string{"linter", "proxy"}, sel.Items[0].Extensions)
+	assert.Equal(t, []ParsedExtension{{Name: "linter"}, {Name: "proxy"}}, sel.Items[0].Extensions)
 }
 
 func TestParseSelectDSL_MultipleTemplates(t *testing.T) {
@@ -132,7 +132,7 @@ func TestParseSelectDSL_ComplexDSL(t *testing.T) {
 
 	assert.Equal(t, "go", sel.Items[0].Name)
 	assert.Equal(t, []string{"1.24"}, sel.Items[0].Params)
-	assert.Equal(t, []string{"linter"}, sel.Items[0].Extensions)
+	assert.Equal(t, []ParsedExtension{{Name: "linter"}}, sel.Items[0].Extensions)
 
 	assert.Equal(t, "python", sel.Items[1].Name)
 	assert.Equal(t, []string{"3.12"}, sel.Items[1].Params)
@@ -217,7 +217,7 @@ func TestParseSelectDSL_WithExtensionAndExclude(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, sel.Items, 1)
 	assert.Equal(t, "claude-code", sel.Items[0].Name)
-	assert.Equal(t, []string{"accept-edits"}, sel.Items[0].Extensions)
+	assert.Equal(t, []ParsedExtension{{Name: "accept-edits"}}, sel.Items[0].Extensions)
 	assert.Equal(t, []string{"credential"}, sel.Items[0].Excludes)
 }
 
@@ -240,12 +240,60 @@ func TestParseSelectDSL_ExcludeInComplexDSL(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, sel.Items, 3)
 	assert.Equal(t, "go", sel.Items[0].Name)
-	assert.Equal(t, []string{"linter"}, sel.Items[0].Extensions)
+	assert.Equal(t, []ParsedExtension{{Name: "linter"}}, sel.Items[0].Extensions)
 	assert.Empty(t, sel.Items[0].Excludes)
 	assert.Equal(t, "firebase", sel.Items[1].Name)
 	assert.Equal(t, []string{"credential"}, sel.Items[1].Excludes)
 	assert.Equal(t, "claude-code", sel.Items[2].Name)
 	assert.Empty(t, sel.Items[2].Excludes)
+}
+
+// --- ParseSelectDSL with extension params ---
+
+func TestParseSelectDSL_ExtensionWithParams(t *testing.T) {
+	sel, err := ParseSelectDSL("deno+pkg:cowsay,figlet")
+	require.NoError(t, err)
+	require.Len(t, sel.Items, 1)
+	assert.Equal(t, "deno", sel.Items[0].Name)
+	require.Len(t, sel.Items[0].Extensions, 1)
+	assert.Equal(t, "pkg", sel.Items[0].Extensions[0].Name)
+	assert.Equal(t, []string{"cowsay", "figlet"}, sel.Items[0].Extensions[0].Params)
+}
+
+func TestParseSelectDSL_ExtensionWithSingleParam(t *testing.T) {
+	sel, err := ParseSelectDSL("deno+pkg:cowsay")
+	require.NoError(t, err)
+	require.Len(t, sel.Items[0].Extensions, 1)
+	assert.Equal(t, "pkg", sel.Items[0].Extensions[0].Name)
+	assert.Equal(t, []string{"cowsay"}, sel.Items[0].Extensions[0].Params)
+}
+
+func TestParseSelectDSL_ExtensionEmptyParams(t *testing.T) {
+	sel, err := ParseSelectDSL("deno+pkg:")
+	require.NoError(t, err)
+	assert.Equal(t, "pkg", sel.Items[0].Extensions[0].Name)
+	assert.Empty(t, sel.Items[0].Extensions[0].Params)
+}
+
+func TestParseSelectDSL_MixedExtensionsWithAndWithoutParams(t *testing.T) {
+	sel, err := ParseSelectDSL("deno+pkg:cowsay,figlet+vscode-ext")
+	require.NoError(t, err)
+	require.Len(t, sel.Items[0].Extensions, 2)
+	assert.Equal(t, "pkg", sel.Items[0].Extensions[0].Name)
+	assert.Equal(t, []string{"cowsay", "figlet"}, sel.Items[0].Extensions[0].Params)
+	assert.Equal(t, "vscode-ext", sel.Items[0].Extensions[1].Name)
+	assert.Empty(t, sel.Items[0].Extensions[1].Params)
+}
+
+func TestParseSelectDSL_TemplateParamsAndExtensionParams(t *testing.T) {
+	sel, err := ParseSelectDSL("java:21+maven:4.0")
+	require.NoError(t, err)
+	require.Len(t, sel.Items, 1)
+	assert.Equal(t, "java", sel.Items[0].Name)
+	assert.Equal(t, []string{"21"}, sel.Items[0].Params)
+	require.Len(t, sel.Items[0].Extensions, 1)
+	assert.Equal(t, "maven", sel.Items[0].Extensions[0].Name)
+	assert.Equal(t, []string{"4.0"}, sel.Items[0].Extensions[0].Params)
 }
 
 // --- ReadSelectInput ---

@@ -96,6 +96,10 @@ func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
 	for _, ext := range st.Extensions {
 		extSource := source + "+" + ext.Extension.Name
 
+		if err := c.collectParams(ext.ParamValues, extSource); err != nil {
+			return err
+		}
+
 		c.collectSegments(ext.Extension, extSource)
 
 		if err := c.collectConfig(ext.Extension, extSource); err != nil {

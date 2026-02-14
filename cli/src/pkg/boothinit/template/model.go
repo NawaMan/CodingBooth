@@ -66,6 +66,7 @@ type Template struct {
 type Param struct {
 	Default  string
 	Suggests []string
+	Variadic bool // if true, absorbs all remaining positional values joined with ","
 }
 
 // Segment represents an ordered content fragment (Boothfile or startup).

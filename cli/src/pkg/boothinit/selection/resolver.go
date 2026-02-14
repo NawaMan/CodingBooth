@@ -7,6 +7,7 @@ package selection
 import (
 	"fmt"
 	"sort"
+	"strings"
 
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 )
@@ -68,16 +69,35 @@ func Resolve(parsed *ParsedSelection, registry *tmpl.TemplateRegistry) (*Resolve
 func resolveParams(t *tmpl.Template, positional []string) (map[string]string, error) {
 	paramNames := orderedParamNames(t)
 
-	if len(positional) > len(paramNames) {
+	// Check if the last param is variadic
+	lastIsVariadic := false
+	if len(paramNames) > 0 {
+		lastName := paramNames[len(paramNames)-1]
+		if t.Params[lastName].Variadic {
+			lastIsVariadic = true
+		}
+	}
+
+	if !lastIsVariadic && len(positional) > len(paramNames) {
 		return nil, fmt.Errorf("too many parameters: got %d, template has %d", len(positional), len(paramNames))
 	}
 
 	values := make(map[string]string, len(paramNames))
 	for i, name := range paramNames {
-		if i < len(positional) && positional[i] != "" {
-			values[name] = positional[i]
+		isLast := i == len(paramNames)-1
+		if isLast && lastIsVariadic {
+			// Variadic: absorb all remaining positional values joined with ","
+			if i < len(positional) {
+				values[name] = strings.Join(positional[i:], ",")
+			} else {
+				values[name] = t.Params[name].Default
+			}
 		} else {
-			values[name] = t.Params[name].Default
+			if i < len(positional) && positional[i] != "" {
+				values[name] = positional[i]
+			} else {
+				values[name] = t.Params[name].Default
+			}
 		}
 	}
 
@@ -86,7 +106,7 @@ func resolveParams(t *tmpl.Template, positional []string) (map[string]string, er
 
 // resolveExtensions resolves extension selections, including auto-selected ones.
 // Extensions listed in excludes are skipped even if auto-selected.
-func resolveExtensions(t *tmpl.Template, explicit []string, excludes []string) ([]SelectedExtension, error) {
+func resolveExtensions(t *tmpl.Template, explicit []ParsedExtension, excludes []string) ([]SelectedExtension, error) {
 	extByName := make(map[string]*tmpl.Template, len(t.Extensions))
 	for _, ext := range t.Extensions {
 		extByName[ext.Name] = ext
@@ -102,9 +122,9 @@ func resolveExtensions(t *tmpl.Template, explicit []string, excludes []string) (
 	}
 
 	// Validate: cannot both include (+) and exclude (~) the same extension
-	for _, extName := range explicit {
-		if excludeSet[extName] {
-			return nil, fmt.Errorf("extension %q is both included (+) and excluded (~)", extName)
+	for _, pe := range explicit {
+		if excludeSet[pe.Name] {
+			return nil, fmt.Errorf("extension %q is both included (+) and excluded (~)", pe.Name)
 		}
 	}
 
@@ -117,26 +137,36 @@ func resolveExtensions(t *tmpl.Template, explicit []string, excludes []string) (
 			if excludeSet[ext.Name] {
 				continue
 			}
+			paramValues, err := resolveParams(ext, nil)
+			if err != nil {
+				return nil, fmt.Errorf("auto-selected extension %q: %w", ext.Name, err)
+			}
 			result = append(result, SelectedExtension{
-				Extension:  ext,
-				SelectMode: AutoSelected,
+				Extension:   ext,
+				ParamValues: paramValues,
+				SelectMode:  AutoSelected,
 			})
 			selected[ext.Name] = true
 		}
 	}
 
 	// Add explicit extensions
-	for _, extName := range explicit {
-		if selected[extName] {
+	for _, pe := range explicit {
+		if selected[pe.Name] {
 			continue // already auto-selected
 		}
-		ext, ok := extByName[extName]
+		ext, ok := extByName[pe.Name]
 		if !ok {
-			return nil, fmt.Errorf("unknown extension %q", extName)
+			return nil, fmt.Errorf("unknown extension %q", pe.Name)
+		}
+		paramValues, err := resolveParams(ext, pe.Params)
+		if err != nil {
+			return nil, fmt.Errorf("extension %q: %w", pe.Name, err)
 		}
 		result = append(result, SelectedExtension{
-			Extension:  ext,
-			SelectMode: ExplicitSelect,
+			Extension:   ext,
+			ParamValues: paramValues,
+			SelectMode:  ExplicitSelect,
 		})
 	}
 
