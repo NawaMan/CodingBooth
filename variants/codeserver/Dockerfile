@@ -7,7 +7,8 @@ FROM nawaman/codingbooth:base-${BOOTH_VERSION_TAG} AS base
 
 ARG PYTHON_VERSION=3.12
 RUN python--setup.sh ${PYTHON_VERSION}
-RUN codeserver--setup.sh
+ARG CODESERVER_PORT=10000
+RUN codeserver--setup.sh ${CODESERVER_PORT}
 RUN jupyter-code-extension--setup.sh
 RUN bash-code-extension--setup.sh
 RUN bash-nb-kernel--setup.sh

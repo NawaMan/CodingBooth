@@ -20,7 +20,7 @@ setup bun ${CB_BUN_VERSION}
 
 # Python with Jupyter notebooks
 setup python
-setup notebook
+setup notebook 18888
 
 setup claude-code
 setup antigravity
