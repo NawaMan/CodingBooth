@@ -8,8 +8,8 @@ arg RUST_VERSION=stable
 setup xfce
 setup claude-code
 setup python ${PYTHON_VERSION}
-setup python-code-extension
 setup rust ${RUST_VERSION}
-setup rust-code-extension
 setup notebook 18888
+setup python-code-extension
+setup rust-code-extension
 setup rust-nb-kernel

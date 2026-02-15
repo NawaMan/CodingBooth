@@ -6,8 +6,8 @@ arg PYTHON_VERSION=3.13.12
 arg RUBY_VERSION=3.3
 
 setup python ${PYTHON_VERSION}
-setup python-code-extension
 setup ruby ${RUBY_VERSION}
-setup ruby-code-extension
 setup notebook 18888
+setup python-code-extension
+setup ruby-code-extension
 setup ruby-nb-kernel

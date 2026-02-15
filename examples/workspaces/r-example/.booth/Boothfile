@@ -5,8 +5,8 @@
 arg PYTHON_VERSION=3.13.12
 
 setup python ${PYTHON_VERSION}
-setup python-code-extension
 setup r-rscript
-setup r-code-extension
 setup notebook 18888
+setup python-code-extension
+setup r-code-extension
 setup r-nb-kernel

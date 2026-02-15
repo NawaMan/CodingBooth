@@ -32,8 +32,8 @@ base
 | Variant        | Description                        | Default CMD             |
 |----------------|------------------------------------|-------------------------|
 | `base`         | Minimal shell with essential tools | `ttyd` (web terminal)   |
-| `notebook`     | Jupyter Notebook environment       | `jupyter notebook`      |
-| `codeserver`   | Browser-based VS Code              | `code-server`           |
+| `notebook`     | Jupyter Notebook environment       | `start-notebook`        |
+| `codeserver`   | Browser-based VS Code              | `start-codeserver`      |
 | `desktop-xfce` | Lightweight XFCE desktop           | `start-xfce`            |
 | `desktop-kde`  | Feature-rich KDE Plasma desktop    | `start-kde`             |
 
@@ -157,7 +157,7 @@ Runs Jupyter Notebook:
 
 ```dockerfile
 # variants/notebook/Dockerfile
-CMD ["jupyter", "notebook", "--ip=0.0.0.0", "--port=10000", ...]
+CMD ["bash","-lc","exec start-notebook"]
 ```
 
 ### Codeserver Variant
@@ -166,7 +166,7 @@ Runs VS Code in the browser:
 
 ```dockerfile
 # variants/codeserver/Dockerfile
-CMD ["code-server", "--bind-addr", "0.0.0.0:10000", ...]
+CMD ["bash","-lc","exec start-codeserver"]
 ```
 
 ### Desktop Variants
@@ -193,8 +193,8 @@ FROM nawaman/codingbooth:base-${CB_VERSION_TAG}
 # ... add Jupyter
 
 # variants/codeserver/Dockerfile
-FROM nawaman/codingbooth:notebook-${CB_VERSION_TAG}
-# ... add code-server
+FROM nawaman/codingbooth:base-${CB_VERSION_TAG}
+# ... add Python, code-server, Jupyter extensions
 
 # variants/desktop-xfce/Dockerfile
 FROM nawaman/codingbooth:base-${CB_VERSION_TAG}
@@ -248,7 +248,7 @@ User runs: ./booth --variant ide
   5. Container starts with variant's default CMD
      │
   ▼
-VS Code running in browser at localhost:10000
+VS Code (code-server) running in browser at localhost:10000
 ```
 
 ---
