@@ -63,15 +63,19 @@ echo "📦 Installing IHaskell build dependencies..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
-  pkg-config libmagic-dev libzmq5 libzmq3-dev
+  pkg-config libmagic-dev libzmq5 libzmq3-dev libtinfo-dev
 rm -rf /var/lib/apt/lists/*
 
 # ---------------- Install IHaskell ----------------
 echo "📦 Installing IHaskell via cabal..."
 cabal update
-cabal install ihaskell --overwrite-policy=always
+HASKELL_HOME="${HASKELL_HOME:-/opt/haskell-stable}"
+mkdir -p "${HASKELL_HOME}/.cabal/bin"
+cabal install ihaskell --overwrite-policy=always \
+  --installdir="${HASKELL_HOME}/.cabal/bin" \
+  --install-method=copy
 
-IHASKELL_BIN="${HASKELL_HOME:=/opt/haskell-stable}/.cabal/bin/ihaskell"
+IHASKELL_BIN="${HASKELL_HOME}/.cabal/bin/ihaskell"
 if [ ! -x "${IHASKELL_BIN}" ]; then
   echo "❌ ihaskell binary not found at ${IHASKELL_BIN}" >&2
   exit 1

@@ -86,47 +86,58 @@ done
 rm -rf "${TARGET_DIR}"
 mkdir -p "${TARGET_DIR}"
 
-# --- noninteractive ghcup bootstrap vars ---
+# --- noninteractive ghcup bootstrap ---
 export BOOTSTRAP_HASKELL_NONINTERACTIVE=1
-export BOOTSTRAP_HASKELL_MINIMAL=0         # we want Cabal too
-# GHC/Cabal versions
-export BOOTSTRAP_HASKELL_GHC_VERSION="${GHC_VERSION}"
-export BOOTSTRAP_HASKELL_CABAL_VERSION="${CABAL_VERSION}"
-# Stack & HLS toggles
-if [ "$WITH_STACK" -eq 1 ]; then
-  unset BOOTSTRAP_HASKELL_INSTALL_NO_STACK
-else
-  export BOOTSTRAP_HASKELL_INSTALL_NO_STACK=1
-fi
-if [ "$WITH_HLS" -eq 1 ]; then
-  export BOOTSTRAP_HASKELL_INSTALL_HLS=1
-else
-  export BOOTSTRAP_HASKELL_INSTALL_HLS=0
-fi
-# Don’t touch user rc files; we’ll manage PATH ourselves
+export BOOTSTRAP_HASKELL_MINIMAL=1         # only install ghcup itself
 export GHCUP_SKIP_UPDATE_CHECK=1
 
 echo "Installing Haskell via ghcup:"
 echo "  GHC=${GHC_VERSION}, Cabal=${CABAL_VERSION}, Stack=$([ $WITH_STACK -eq 1 ] && echo yes || echo no), HLS=$([ $WITH_HLS -eq 1 ] && echo yes || echo no)"
 
-# --- run ghcup bootstrap (no shell rc changes) ---
-curl -fsSL https://get-ghcup.haskell.org | bash -s -- -d
+# --- bootstrap ghcup only ---
+curl -fsSL https://get-ghcup.haskell.org | bash
+
+GHCUP="${TARGET_DIR}/.ghcup/bin/ghcup"
+if [ ! -x "$GHCUP" ]; then
+  echo "❌ ghcup binary not found at $GHCUP" >&2
+  exit 1
+fi
 
 # --- point to installed ghcup/bin for this shell ---
 export PATH="${TARGET_DIR}/.ghcup/bin:${TARGET_DIR}/.cabal/bin:${PATH}"
 
-# --- if pinned versions were requested, ensure they are the active ones ---
-# (When "recommended", ghcup already set suitable defaults.)
-if [ "$GHC_VERSION" != "recommended" ]; then
-  "${TARGET_DIR}/.ghcup/bin/ghcup" set ghc "${GHC_VERSION}" || true
-fi
-if [ "$CABAL_VERSION" != "recommended" ]; then
-  "${TARGET_DIR}/.ghcup/bin/ghcup" set cabal "${CABAL_VERSION}" || true
+# --- explicitly install GHC and Cabal ---
+echo "📦 Installing GHC ${GHC_VERSION}..."
+"$GHCUP" install ghc "${GHC_VERSION}"
+"$GHCUP" set     ghc "${GHC_VERSION}"
+
+echo "📦 Installing Cabal ${CABAL_VERSION}..."
+"$GHCUP" install cabal "${CABAL_VERSION}"
+"$GHCUP" set     cabal "${CABAL_VERSION}"
+
+if [ "$WITH_STACK" -eq 1 ]; then
+  echo "📦 Installing Stack..."
+  "$GHCUP" install stack
 fi
 
-# --- figure out actual versions chosen ---
-ACTUAL_GHC="$("${TARGET_DIR}/.ghcup/bin/ghcup" whereis ghc --numeric 2>/dev/null || true)"
-ACTUAL_CABAL="$("${TARGET_DIR}/.ghcup/bin/ghcup" whereis cabal --numeric 2>/dev/null || true)"
+if [ "$WITH_HLS" -eq 1 ]; then
+  echo "📦 Installing HLS..."
+  "$GHCUP" install hls
+fi
+
+# --- verify GHC and Cabal are present ---
+if ! "${TARGET_DIR}/.ghcup/bin/ghc" --version >/dev/null 2>&1; then
+  echo "❌ GHC installation failed — ghc not found in ${TARGET_DIR}/.ghcup/bin" >&2
+  exit 1
+fi
+if ! "${TARGET_DIR}/.ghcup/bin/cabal" --version >/dev/null 2>&1; then
+  echo "❌ Cabal installation failed — cabal not found in ${TARGET_DIR}/.ghcup/bin" >&2
+  exit 1
+fi
+
+# --- figure out actual versions installed ---
+ACTUAL_GHC="$("$GHCUP" whereis ghc --numeric 2>/dev/null || true)"
+ACTUAL_CABAL="$("$GHCUP" whereis cabal --numeric 2>/dev/null || true)"
 ACTUAL_STACK=""
 if [ "$WITH_STACK" -eq 1 ]; then
   ACTUAL_STACK="$("${TARGET_DIR}/.ghcup/bin/stack" --numeric-version 2>/dev/null || true)"
@@ -176,9 +187,16 @@ cat >/usr/local/bin/hswrap <<'EOF'
 #!/bin/sh
 # Ensure /opt Haskell toolchain is used even in non-login shells
 HASKELL_HOME="${HASKELL_HOME:-/opt/haskell-stable}"
-export PATH="$HASKELL_HOME/.ghcup/bin:$HASKELL_HOME/.cabal/bin:$PATH"
 tool="$(basename "$0")"
-exec "$(command -v "$tool")" "$@"
+# Look for the real binary in the Haskell directories (not /usr/local/bin where the symlink lives)
+for dir in "$HASKELL_HOME/.ghcup/bin" "$HASKELL_HOME/.cabal/bin"; do
+  if [ -x "$dir/$tool" ]; then
+    export PATH="$HASKELL_HOME/.ghcup/bin:$HASKELL_HOME/.cabal/bin:$PATH"
+    exec "$dir/$tool" "$@"
+  fi
+done
+echo "hswrap: $tool not found in $HASKELL_HOME/.ghcup/bin or $HASKELL_HOME/.cabal/bin" >&2
+exit 1
 EOF
 chmod +x /usr/local/bin/hswrap
 

@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.15.0 — [View Changelog](CHANGELOG.md)
+**Current Version:** v0.25.0 — [View Changelog](docs/CHANGELOG.md)
 
 **CodingBooth** delivers fully reproducible, Docker-powered development environments — anywhere, on any machine.
 

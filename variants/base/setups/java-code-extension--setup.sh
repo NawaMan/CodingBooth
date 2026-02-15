@@ -32,7 +32,6 @@ source "${SETUP_LIBS_DIR}/${CODE_EXTENSION_LIB}"
 
 install_extensions                                      \
     redhat.java                                         \
-    visualstudioexptteam.intellicode-api-usage-examples \
     visualstudioexptteam.vscodeintellicode              \
     vscjava.vscode-gradle                               \
     vscjava.vscode-java-debug                           \

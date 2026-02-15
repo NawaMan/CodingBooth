@@ -7,8 +7,45 @@ arg PYTHON_VERSION=3.13.12
 setup kde
 setup claude-code
 setup haskell
+
+# Workaround for base image 0.25.0 bugs (remove after next base image release):
+# 1. ghcup bootstrap only installed ghcup itself, not GHC/Cabal
+run &&<<END
+export GHCUP_INSTALL_BASE_PREFIX=/opt/haskell/haskell-recommended
+export PATH="/opt/haskell-stable/.ghcup/bin:/opt/haskell-stable/.cabal/bin:$PATH"
+ghcup install ghc recommended
+ghcup set     ghc recommended
+ghcup install cabal recommended
+ghcup set     cabal recommended
+END
+
+# 2. hswrap had infinite recursion via command -v
+run <<END
+cat >/usr/local/bin/hswrap <<'WRAP'
+#!/bin/sh
+HASKELL_HOME="${HASKELL_HOME:-/opt/haskell-stable}"
+tool="$(basename "$0")"
+for dir in "$HASKELL_HOME/.ghcup/bin" "$HASKELL_HOME/.cabal/bin"; do
+  if [ -x "$dir/$tool" ]; then
+    export PATH="$HASKELL_HOME/.ghcup/bin:$HASKELL_HOME/.cabal/bin:$PATH"
+    exec "$dir/$tool" "$@"
+  fi
+done
+echo "hswrap: $tool not found in $HASKELL_HOME/.ghcup/bin or $HASKELL_HOME/.cabal/bin" >&2
+exit 1
+WRAP
+chmod +x /usr/local/bin/hswrap
+END
+
 setup python ${PYTHON_VERSION}
 setup notebook 18888
 setup haskell-code-extension
 setup python-code-extension
+# 3. haskell-nb-kernel: missing libtinfo-dev + cabal installs to wrong dir
+run <<END
+apt-get update && apt-get install -y --no-install-recommends libtinfo-dev && rm -rf /var/lib/apt/lists/*
+mkdir -p /opt/haskell-stable/.cabal/bin
+sed -i 's|cabal install ihaskell --overwrite-policy=always|cabal install ihaskell --overwrite-policy=always --installdir=/opt/haskell-stable/.cabal/bin --install-method=copy|' /opt/codingbooth/setups/haskell-nb-kernel--setup.sh
+END
+
 setup haskell-nb-kernel
