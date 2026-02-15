@@ -164,7 +164,7 @@ echo "     source ${NOTEBOOK_PROFILE_FILE}"
 echo
 echo "Then you can run:"
 echo "  notebook-setup-info"
-echo "  start-notebook      # launches JupyterLab on port 18888"
+echo "  start-notebook      # launches JupyterLab on port ${NOTEBOOK_DEFAULT_PORT}"
 
 echo
 echo "Use it now in this shell (without reopening):"

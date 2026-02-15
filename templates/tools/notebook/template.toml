@@ -10,5 +10,5 @@ tags = [
 
 [segments]
 "Boothfile--60" = """
-setup notebook
+setup notebook 18888
 """

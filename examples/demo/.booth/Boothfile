@@ -29,7 +29,7 @@ setup java-code-extension
 setup go-code-extension
 
 # Jupyter notebooks with language kernels
-setup notebook
+setup notebook 18888
 setup python-nb-kernel
 setup bash-nb-kernel
 setup java-jjava-nb-kernel

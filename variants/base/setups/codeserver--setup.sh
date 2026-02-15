@@ -24,6 +24,7 @@ HOME=/root
 
 PROFILE_FILE="/etc/profile.d/55-cb-codeserver--profile.sh"
 STARTER_FILE=/usr/local/bin/codeserver
+CODESERVER_DEFAULT_PORT="${1:-${CODESERVER_DEFAULT_PORT:-19999}}"
 
 
 # Load python env exported by the base setup
@@ -143,10 +144,11 @@ codeserver_setup_info() {
   fi
 
   _hdr "Quick start"
-  echo "  codeserver 10000   # start on port 10000 (uses current \$PASSWORD if set)"
+  echo "  codeserver __CODESERVER_DEFAULT_PORT__   # start on port __CODESERVER_DEFAULT_PORT__ (uses current \$PASSWORD if set)"
 }
 alias codeserver-setup-info='codeserver_setup_info'
 SH
+sed -i "s#__CODESERVER_DEFAULT_PORT__#${CODESERVER_DEFAULT_PORT}#g" "$PROFILE_FILE"
 chmod 0644 "$PROFILE_FILE"
 
 # Make it available in THIS shell immediately:
@@ -200,7 +202,7 @@ envsubst '$CODESERVER_EXTENSION_DIR' > ${STARTER_FILE} <<'LAUNCH'
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
-PORT=${1:-10000}
+PORT=${1:-__CODESERVER_DEFAULT_PORT__}
 PASSWORD="${PASSWORD:-}"
 
 # Ensure PATH and /opt/python are active in non-login shells
@@ -275,6 +277,8 @@ exec code-server \
     "$CSHOME/code"
 
 LAUNCH
+# Bake in the default port (frozen at install time)
+sed -i "s#__CODESERVER_DEFAULT_PORT__#${CODESERVER_DEFAULT_PORT}#g" "${STARTER_FILE}"
 chmod 755 ${STARTER_FILE}
 
 
