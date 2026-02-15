@@ -103,7 +103,7 @@ The wrapper handles these commands:
 | `tools-cache clean --all`          | Remove all cached versions                       |
 | `tools-cache clean VERSION`        | Remove specific version                          |
 | `run [ARGS...]`                    | Execute binary (after verification)              |
-| `shell-config`                     | Add 'booth' command to your shell (bash/zsh)     |
+| `shell-config [--force]`           | Add 'booth' command to your shell (bash/zsh); `--force` overrides custom `booth()` |
 | `version`                          | Show wrapper and binary versions                 |
 | `help`                             | Show usage information                           |
 
