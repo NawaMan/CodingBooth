@@ -256,12 +256,14 @@ install go github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 
 Segments are the building blocks of the generated Boothfile and startup.sh. When multiple templates are selected, all their segments are merged globally and sorted:
 
-| Order | Purpose | Examples |
-|-------|---------|---------|
-| 40 | Infrastructure (desktops) | `setup xfce`, `setup kde` |
-| 50 | Base setups (default) | `setup go`, `setup python`, `setup jdk` |
-| 60 | Dependent setups | `setup kotlin` (needs Java), IDE setups (need desktop) |
-| 90 | Post-setup steps | `pip install -r requirements.txt` |
+| Order | Purpose                    | Examples                                                          |
+|-------|----------------------------|-------------------------------------------------------------------|
+| 40    | Infrastructure (desktops)  | `setup xfce`, `setup kde`                                        |
+| 50    | Base setups (default)      | `setup go`, `setup python`, `setup jdk`                          |
+| 60    | Dependent setups           | `setup kotlin` (needs Java), `setup codeserver`, `setup notebook` |
+| 65    | Language VS Code extensions | `setup go-code-extension` (needs codeserver/vscode)              |
+| 70    | Notebook kernels           | `setup go-nb-kernel` (needs notebook)                            |
+| 90    | Post-setup steps           | `pip install -r requirements.txt`                                |
 
 **Tiebreaking:** When two segments share the same order, they are sorted alphabetically by source template name (e.g., `go` before `python` at order 50).
 

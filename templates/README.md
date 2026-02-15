@@ -6,12 +6,14 @@ When a template's `[segments]` section defines Boothfile content, the segment ke
 the order in the final generated Boothfile. All segments from all selected templates are
 merged **globally** and sorted by order number, with alphabetical tiebreak by template name.
 
-| Segment Key       | Order | Use for                                                  |
-|--------------------|-------|----------------------------------------------------------|
-| `"Boothfile--40"`  | 40    | Infrastructure (desktop environments: xfce, kde, lxqt)   |
-| `Boothfile`        | 50    | Base/independent setups (java, python, go, nodejs, etc.) |
-| `"Boothfile--60"`  | 60    | Setups that depend on a base (kotlin, scala, clojure need java; elixir needs erlang; IDEs, browsers need a desktop) |
-| `"Boothfile--90"`  | 90    | Post-setup steps (pip/uv/conda install from requirements.txt, etc.) |
+| Segment Key        | Order | Use for                                                                                       |
+|--------------------|-------|-----------------------------------------------------------------------------------------------|
+| `"Boothfile--40"`  | 40    | Infrastructure (desktop environments: xfce, kde, lxqt)                                       |
+| `Boothfile`        | 50    | Base/independent setups (languages, tools, databases)                                        |
+| `"Boothfile--60"`  | 60    | Dependent setups (IDEs: codeserver/vscode; notebook; derived languages: kotlin, scala, etc.) |
+| `"Boothfile--65"`  | 65    | Language VS Code extensions (need codeserver/vscode from order 60)                           |
+| `"Boothfile--70"`  | 70    | Notebook kernels (need notebook from order 60)                                               |
+| `"Boothfile--90"`  | 90    | Post-setup steps (pip/uv/conda install from requirements.txt, etc.)                          |
 
 **Rule of thumb:** if your setup script assumes another setup has already run
 (e.g., `JAVA_HOME` is set, or `cb-has-desktop.sh` passes), use a higher order number.
@@ -102,96 +104,130 @@ All templates and extensions grouped by segment order.
 
 ### Order 40 — Infrastructure (desktop environments)
 
-| Template | Display Name |
-|----------|-------------|
-| `desktops/kde` | KDE Plasma |
-| `desktops/lxqt` | LXQt |
-| `desktops/xfce` | XFCE |
+| Template         | Display Name |
+|------------------|--------------|
+| `desktops/kde`   | KDE Plasma   |
+| `desktops/lxqt`  | LXQt         |
+| `desktops/xfce`  | XFCE         |
 
 ### Order 50 — Base setups (languages, tools, databases)
 
-| Template | Display Name |
-|----------|-------------|
-| `databases/mysql` | MySQL |
-| `databases/postgresql` | PostgreSQL |
-| `databases/sqlite` | SQLite |
-| `languages/bun` | Bun |
-| `languages/deno` | Deno |
-| `languages/erlang` | Erlang |
-| `languages/fpc` | Free Pascal |
-| `languages/go` | Go |
-| `languages/haskell` | Haskell |
-| `languages/java` | Java |
-| `languages/lua` | Lua |
-| `languages/nodejs` | Node.js |
-| `languages/php` | PHP |
-| `languages/python` | Python |
-| `languages/r` | R |
-| `languages/ruby` | Ruby |
-| `languages/rust` | Rust |
-| `languages/zig` | Zig |
-| `tools/aws-cli` | AWS CLI |
-| `tools/claude-code` | Claude Code |
-| `tools/dind` | Docker-in-Docker |
-| `tools/docker-buildx` | Docker Buildx |
-| `tools/docker-compose` | Docker Compose |
-| `tools/firebase` | Firebase CLI |
-| `tools/gcloud` | Google Cloud SDK |
-| `tools/gh` | GitHub CLI |
-| `tools/homebrew` | Homebrew |
-| `tools/kind` | kind |
-| `tools/neovim` | Neovim |
+| Template               | Display Name     |
+|------------------------|------------------|
+| `databases/mysql`      | MySQL            |
+| `databases/postgresql` | PostgreSQL       |
+| `databases/sqlite`     | SQLite           |
+| `languages/bun`        | Bun              |
+| `languages/deno`       | Deno             |
+| `languages/erlang`     | Erlang           |
+| `languages/fpc`        | Free Pascal      |
+| `languages/go`         | Go               |
+| `languages/haskell`    | Haskell          |
+| `languages/java`       | Java             |
+| `languages/lua`        | Lua              |
+| `languages/nodejs`     | Node.js          |
+| `languages/php`        | PHP              |
+| `languages/python`     | Python           |
+| `languages/r`          | R                |
+| `languages/ruby`       | Ruby             |
+| `languages/rust`       | Rust             |
+| `languages/zig`        | Zig              |
+| `tools/aws-cli`        | AWS CLI          |
+| `tools/claude-code`    | Claude Code      |
+| `tools/dind`           | Docker-in-Docker |
+| `tools/docker-buildx`  | Docker Buildx    |
+| `tools/docker-compose` | Docker Compose   |
+| `tools/firebase`       | Firebase CLI     |
+| `tools/gcloud`         | Google Cloud SDK |
+| `tools/gh`             | GitHub CLI       |
+| `tools/homebrew`       | Homebrew         |
+| `tools/kind`           | kind             |
+| `tools/neovim`         | Neovim           |
 
 ### Order 50 — Extensions (run alongside parent)
 
-| Extension | Display Name |
-|-----------|-------------|
-| `gh/copilot--extension` | GitHub Copilot CLI |
-| `go/linter--extension` | Go Linter |
-| `go/vscode-ext--extension` | Go VS Code Extension |
-| `java/gradle--extension` | Gradle |
-| `java/jenv--extension` | jenv |
-| `java/maven--extension` | Maven |
-| `java/vscode-ext--extension` | Java VS Code Extension |
-| `python/conda--extension` | Conda *(also has order 90)* |
-| `python/uv--extension` | uv *(also has order 90)* |
-| `python/vscode-ext--extension` | Python VS Code Extension |
-| `rust/vscode-ext--extension` | Rust VS Code Extension |
+| Extension                  | Display Name                  |
+|----------------------------|-------------------------------|
+| `gh/copilot--extension`    | GitHub Copilot CLI            |
+| `go/linter--extension`     | Go Linter                     |
+| `java/gradle--extension`   | Gradle                        |
+| `java/jenv--extension`     | jenv                          |
+| `java/maven--extension`    | Maven                         |
+| `python/conda--extension`  | Conda *(also has order 90)*   |
+| `python/uv--extension`     | uv *(also has order 90)*      |
 
 ### Order 60 — Dependent setups (IDEs, browsers, desktop apps, derived languages)
 
-| Template | Display Name |
-|----------|-------------|
-| `browsers/chromium` | Chromium |
-| `browsers/firefox` | Firefox |
-| `browsers/google-chrome` | Google Chrome |
-| `desktops/gimp` | GIMP |
-| `desktops/inkscape` | Inkscape |
-| `desktops/libreoffice` | LibreOffice |
-| `ides/clion` | CLion |
-| `ides/codeserver` | code-server |
-| `ides/datagrip` | DataGrip |
-| `ides/eclipse` | Eclipse |
-| `ides/goland` | GoLand |
-| `ides/idea` | IntelliJ IDEA |
-| `ides/phpstorm` | PhpStorm |
-| `ides/pycharm` | PyCharm |
-| `ides/rider` | Rider |
-| `ides/rubymine` | RubyMine |
-| `ides/vscode` | VS Code |
-| `ides/webstorm` | WebStorm |
-| `languages/clojure` | Clojure |
-| `languages/elixir` | Elixir |
-| `languages/kotlin` | Kotlin |
-| `languages/scala` | Scala |
-| `tools/codex` | Codex |
-| `tools/notebook` | Jupyter Notebook |
-| `tools/warp` | Warp |
+| Template                  | Display Name     |
+|---------------------------|------------------|
+| `browsers/chromium`       | Chromium         |
+| `browsers/firefox`        | Firefox          |
+| `browsers/google-chrome`  | Google Chrome    |
+| `desktops/gimp`           | GIMP             |
+| `desktops/inkscape`       | Inkscape         |
+| `desktops/libreoffice`    | LibreOffice      |
+| `ides/clion`              | CLion            |
+| `ides/codeserver`         | code-server      |
+| `ides/datagrip`           | DataGrip         |
+| `ides/eclipse`            | Eclipse          |
+| `ides/goland`             | GoLand           |
+| `ides/idea`               | IntelliJ IDEA    |
+| `ides/phpstorm`           | PhpStorm         |
+| `ides/pycharm`            | PyCharm          |
+| `ides/rider`              | Rider            |
+| `ides/rubymine`           | RubyMine         |
+| `ides/vscode`             | VS Code          |
+| `ides/webstorm`           | WebStorm         |
+| `languages/clojure`       | Clojure          |
+| `languages/elixir`        | Elixir           |
+| `languages/kotlin`        | Kotlin           |
+| `languages/scala`         | Scala            |
+| `tools/codex`             | Codex            |
+| `tools/notebook`          | Jupyter Notebook |
+| `tools/warp`              | Warp             |
+
+### Order 65 — Language VS Code extensions (need codeserver/vscode)
+
+| Extension                         | Display Name                  |
+|-----------------------------------|-------------------------------|
+| `bun/vscode-ext--extension`       | Bun VS Code Extension         |
+| `clojure/vscode-ext--extension`   | Clojure VS Code Extension     |
+| `deno/vscode-ext--extension`      | Deno VS Code Extension        |
+| `elixir/vscode-ext--extension`    | Elixir VS Code Extension      |
+| `erlang/vscode-ext--extension`    | Erlang VS Code Extension      |
+| `fpc/vscode-ext--extension`       | Free Pascal VS Code Extension |
+| `go/vscode-ext--extension`        | Go VS Code Extension          |
+| `haskell/vscode-ext--extension`   | Haskell VS Code Extension     |
+| `java/vscode-ext--extension`      | Java VS Code Extension        |
+| `kotlin/vscode-ext--extension`    | Kotlin VS Code Extension      |
+| `lua/vscode-ext--extension`       | Lua VS Code Extension         |
+| `nodejs/vscode-ext--extension`    | Node.js VS Code Extension     |
+| `php/vscode-ext--extension`       | PHP VS Code Extension         |
+| `python/vscode-ext--extension`    | Python VS Code Extension      |
+| `r/vscode-ext--extension`         | R VS Code Extension           |
+| `ruby/vscode-ext--extension`      | Ruby VS Code Extension        |
+| `rust/vscode-ext--extension`      | Rust VS Code Extension        |
+| `scala/vscode-ext--extension`     | Scala VS Code Extension       |
+| `zig/vscode-ext--extension`       | Zig VS Code Extension         |
+
+### Order 70 — Notebook kernels (need notebook/Jupyter)
+
+| Extension                    | Display Name           |
+|------------------------------|------------------------|
+| `go/kernel--extension`       | Go Notebook Kernel     |
+| `haskell/kernel--extension`  | Haskell Notebook Kernel |
+| `java/kernel--extension`     | Java Notebook Kernel   |
+| `kotlin/kernel--extension`   | Kotlin Notebook Kernel |
+| `nodejs/kernel--extension`   | Node.js Notebook Kernel |
+| `python/kernel--extension`   | Python Notebook Kernel |
+| `r/kernel--extension`        | R Notebook Kernel      |
+| `ruby/kernel--extension`     | Ruby Notebook Kernel   |
+| `rust/kernel--extension`     | Rust Notebook Kernel   |
 
 ### Order 90 — Post-setup steps
 
-| Extension | Display Name |
-|-----------|-------------|
-| `python/conda--extension` | Conda |
-| `python/pip--extension` | pip requirements |
-| `python/uv--extension` | uv |
+| Extension                  | Display Name     |
+|----------------------------|------------------|
+| `python/conda--extension`  | Conda            |
+| `python/pip--extension`    | pip requirements |
+| `python/uv--extension`     | uv               |

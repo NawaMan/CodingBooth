@@ -12,6 +12,6 @@ Browser-based VS Code environment for full-featured development.
 booth --variant codeserver
 ```
 
-**Access:** Open browser to `http://localhost:8080` (default port) for VS Code interface.
+**Access:** Open browser to `http://localhost:10000` (default booth port) for VS Code interface.
 
 **Purpose:** Full IDE experience accessible from any browser, perfect for remote development and consistent environments.

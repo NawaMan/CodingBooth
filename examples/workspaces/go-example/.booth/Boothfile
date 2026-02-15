@@ -8,9 +8,9 @@ arg PYTHON_VERSION=3.13.12
 setup go ${GO_VERSION}                                # GO tool chain
 install go golang.org/x/tools/gopls@latest            # GO language server
 install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
-setup go-code-extension
 setup python ${PYTHON_VERSION}
-setup python-code-extension
 setup codeserver 19999
 setup notebook 18888
+setup go-code-extension
+setup python-code-extension
 setup go-nb-kernel

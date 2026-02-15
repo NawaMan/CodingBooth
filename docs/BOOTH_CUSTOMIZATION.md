@@ -410,12 +410,14 @@ Segments define the Boothfile and startup.sh content that a template contributes
 
 **Segment keys and their order:**
 
-| Key | Order | Purpose |
-|-----|-------|---------|
-| `"Boothfile--40"` | 40 | Infrastructure (desktop environments) |
-| `Boothfile` | 50 | Base setups (languages, standalone tools) — default |
-| `"Boothfile--60"` | 60 | Dependent setups (Kotlin needs Java, IDEs need desktop) |
-| `"Boothfile--90"` | 90 | Post-setup steps (install from requirements.txt) |
+| Key                | Order | Purpose                                                    |
+|--------------------|-------|------------------------------------------------------------|
+| `"Boothfile--40"`  | 40    | Infrastructure (desktop environments)                      |
+| `Boothfile`        | 50    | Base setups (languages, standalone tools) — default        |
+| `"Boothfile--60"`  | 60    | Dependent setups (codeserver, notebook, Kotlin needs Java) |
+| `"Boothfile--65"`  | 65    | Language VS Code extensions (need codeserver/vscode)       |
+| `"Boothfile--70"`  | 70    | Notebook kernels (need notebook/Jupyter)                   |
+| `"Boothfile--90"`  | 90    | Post-setup steps (install from requirements.txt)           |
 
 Startup segments follow the same pattern: `"startup.sh"` (order 50), `"startup--90.sh"` (order 90), etc.
 

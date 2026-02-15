@@ -7,6 +7,6 @@ arg PYTHON_VERSION=3.13.12
 setup aws-cli
 setup claude-code
 setup python ${PYTHON_VERSION}
-setup python-code-extension
 setup antigravity
 setup notebook 18888
+setup python-code-extension

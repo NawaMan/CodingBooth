@@ -10,10 +10,10 @@ arg PYTHON_VERSION=3.13.12
 setup xfce
 setup claude-code
 setup jdk ${JDK_VERSION} ${JDK_VENDOR}
-setup java-code-extension
-setup kotlin-code-extension
 setup python ${PYTHON_VERSION}
-setup python-code-extension
 setup kotlin --version ${KOTLIN_VERSION}
 setup notebook 18888
+setup java-code-extension
+setup kotlin-code-extension
+setup python-code-extension
 setup kotlin-nb-kernel
