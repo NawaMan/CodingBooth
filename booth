@@ -43,6 +43,23 @@ fi
 VERSION=0.8.0
 VERBOSE="${VERBOSE:-true}"
 
+# Resolve script directory (follow symlinks) so all project paths are location-based.
+get_script_dir() {
+    local source="${BASH_SOURCE[0]}"
+    while [[ -L "$source" ]]; do
+        local dir
+        dir="$(cd -P "$(dirname "$source")" && pwd)"
+        source="$(readlink "$source")"
+        [[ "$source" != /* ]] && source="$dir/$source"
+    done
+    cd -P "$(dirname "$source")" && pwd
+}
+
+SCRIPT_DIR="$(get_script_dir)"
+BOOTH_DIR="${SCRIPT_DIR}/.booth"
+TOOLS_DIR="${BOOTH_DIR}/tools"
+LOCK_FILE="${TOOLS_DIR}/codingbooth.lock"
+
 # --- NESTED BOOTH DETECTION ---
 # Detect if running inside a CodingBooth container and prevent accidental nested execution.
 # Users can explicitly allow nested execution by setting BOOTH_IN_BOOTH=true and using a different port.
@@ -202,8 +219,8 @@ find_binary_dir() {
     binary_name=$(get_binary_name "$platform")
 
     # Check local first (for --cache=local mode)
-    if [[ -f ".booth/tools/${binary_name}" ]]; then
-        echo ".booth/tools"
+    if [[ -f "${TOOLS_DIR}/${binary_name}" ]]; then
+        echo "$TOOLS_DIR"
         return 0
     fi
 
@@ -261,19 +278,16 @@ function Main() {
     esac
 
     ### --- RUN MODE --- ###
-    local tools_dir=".booth/tools"
-    local lock_file="$tools_dir/codingbooth.lock"
-
     # Read version and cache mode from lock file
-    if [[ ! -f "$lock_file" ]]; then
+    if [[ ! -f "$LOCK_FILE" ]]; then
         echo "CodingBooth is not installed."
         echo "Please run: $0 install"
         exit 1
     fi
 
     local lock_version lock_cache
-    lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2-)
-    lock_cache=$(grep '^cache=' "$lock_file" 2>/dev/null | cut -d= -f2- || echo "shared")
+    lock_version=$(grep '^version=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2-)
+    lock_cache=$(grep '^cache=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2- || echo "shared")
 
     # Handle legacy lock files without cache= line
     if [[ -z "$lock_cache" ]]; then
@@ -375,7 +389,7 @@ Wrapper commands:
   tools-cache clean VER   Remove specific version
 
   run [ARGS...]           Run booth with ARGS (after integrity checks)
-  shell-config            Add 'booth' command to your shell (bash/zsh)
+  shell-config [--force] Add 'booth' command to your shell (bash/zsh)
   version                 Show version information
   help                    Show this help message
 
@@ -404,7 +418,54 @@ EOF
 }
 
 function ShellConfig() {
-    local booth_func='unalias booth 2>/dev/null; booth() { d="$PWD"; while [[ "$d" != "/" && ! -x "$d/booth" ]]; do d="${d%/*}"; done; if [[ -x "$d/booth" ]]; then "$d/booth" "$@"; else echo "booth not found" >&2; fi; }'
+    local force=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --force|-f) force=true; shift ;;
+            --help|-h)
+                cat <<'EOF'
+Usage: ./booth shell-config [--force]
+
+Options:
+  --force, -f   Add/override booth() even if a custom booth() exists.
+EOF
+                return 0
+                ;;
+            *)
+                echo "Unknown option for shell-config: $1" >&2
+                echo "Usage: ./booth shell-config [--force]" >&2
+                return 1
+                ;;
+        esac
+    done
+
+    local booth_info_url="https://github.com/NawaMan/CodingBooth/blob/latest/docs/troubleshoot/CBT0001-booth-wrapper-not-found.md"
+    local booth_func
+    booth_func=$(cat <<'EOF'
+unalias booth 2>/dev/null
+booth() {
+    local d="$PWD"
+    while :; do
+        if [[ -x "$d/booth" ]]; then
+            "$d/booth" "$@"
+            return $?
+        fi
+        [[ -z "$d" || "$d" == "/" ]] && break
+        d="$(dirname "$d")"
+    done
+
+    echo "CodingBooth wrapper not found in this directory tree." >&2
+    echo "What happened: booth was installed as a shell function, but no project booth script exists in the current path or parents." >&2
+    echo "" >&2
+    echo "More Information: " >&2
+    echo "    https://github.com/NawaMan/CodingBooth/blob/latest/docs/troubleshoot/CBT0001-booth-wrapper-not-found.md" >&2
+    echo "" >&2
+    echo "Install booth in this project folder by running:" >&2
+    echo "> curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash" >&2
+    return 127
+}
+EOF
+)
 
     # All supported shell rc files
     local rc_files=(
@@ -415,7 +476,10 @@ function ShellConfig() {
     )
 
     local added=()
+    local updated=()
+    local forced=()
     local skipped=()
+    local custom_skipped=()
     local not_found=()
 
     for rc_file in "${rc_files[@]}"; do
@@ -424,9 +488,39 @@ function ShellConfig() {
             continue
         fi
 
-        # Check if already configured (idempotent)
-        if grep -q 'booth()' "$rc_file" 2>/dev/null; then
+        # Already has the current function (idempotent)
+        if [[ "$force" != "true" ]] && grep -Fq "More Information: $booth_info_url" "$rc_file" 2>/dev/null; then
             skipped+=("$rc_file")
+            continue
+        fi
+
+        # Upgrade older CodingBooth-managed function if present.
+        if grep -Eq '^# CodingBooth - run .+ from any subdirectory$' "$rc_file" 2>/dev/null; then
+            {
+                echo ""
+                echo "# CodingBooth - run 'booth' from any subdirectory"
+                echo "$booth_func"
+            } >> "$rc_file"
+            if [[ "$force" == "true" ]]; then
+                forced+=("$rc_file")
+            else
+                updated+=("$rc_file")
+            fi
+            continue
+        fi
+
+        # Avoid overriding custom user-defined booth() functions.
+        if grep -q 'booth()' "$rc_file" 2>/dev/null; then
+            if [[ "$force" == "true" ]]; then
+                {
+                    echo ""
+                    echo "# CodingBooth - run 'booth' from any subdirectory"
+                    echo "$booth_func"
+                } >> "$rc_file"
+                forced+=("$rc_file")
+            else
+                custom_skipped+=("$rc_file")
+            fi
             continue
         fi
 
@@ -448,6 +542,20 @@ function ShellConfig() {
         done
     fi
 
+    if [[ ${#updated[@]} -gt 0 ]]; then
+        echo "✓ Updated booth function in:"
+        for f in "${updated[@]}"; do
+            echo "    $f"
+        done
+    fi
+
+    if [[ ${#forced[@]} -gt 0 ]]; then
+        echo "✓ Force-installed booth function in:"
+        for f in "${forced[@]}"; do
+            echo "    $f"
+        done
+    fi
+
     if [[ ${#skipped[@]} -gt 0 ]]; then
         echo "✓ Already configured (skipped):"
         for f in "${skipped[@]}"; do
@@ -455,7 +563,14 @@ function ShellConfig() {
         done
     fi
 
-    if [[ ${#added[@]} -eq 0 && ${#skipped[@]} -eq 0 ]]; then
+    if [[ ${#custom_skipped[@]} -gt 0 ]]; then
+        echo "⚠ Custom booth() detected (not modified):"
+        for f in "${custom_skipped[@]}"; do
+            echo "    $f"
+        done
+    fi
+
+    if [[ ${#added[@]} -eq 0 && ${#updated[@]} -eq 0 && ${#forced[@]} -eq 0 && ${#skipped[@]} -eq 0 && ${#custom_skipped[@]} -eq 0 ]]; then
         echo "No shell config files found."
         echo ""
         echo "You can manually add this to your shell config:"
@@ -464,7 +579,7 @@ function ShellConfig() {
     fi
 
     echo ""
-    if [[ ${#added[@]} -gt 0 ]]; then
+    if [[ ${#added[@]} -gt 0 || ${#updated[@]} -gt 0 || ${#forced[@]} -gt 0 ]]; then
         echo "To activate, restart your terminal or run:"
         echo "  source ~/.bashrc   # for bash"
         echo "  source ~/.zshrc    # for zsh"
@@ -484,16 +599,13 @@ function PrintVersion() {
 EOF
     echo "CodingBooth Wrapper: $VERSION"
 
-    local tools_dir=".booth/tools"
-    local lock_file="$tools_dir/codingbooth.lock"
-
     # Detect current platform
     local platform binary_name
     platform=$(detect_platform 2>/dev/null || echo "unknown")
     binary_name=$(get_binary_name "$platform")
 
     # Check if lock file exists
-    if [[ ! -f "$lock_file" ]]; then
+    if [[ ! -f "$LOCK_FILE" ]]; then
         echo "CodingBooth: not installed"
         echo "Platform: $platform"
         echo "Shared cache: $BOOTH_CACHE_DIR"
@@ -502,8 +614,8 @@ EOF
 
     # Read lock file
     local lock_version lock_cache
-    lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2- || echo "unknown")
-    lock_cache=$(grep '^cache=' "$lock_file" 2>/dev/null | cut -d= -f2- || echo "shared")
+    lock_version=$(grep '^version=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2- || echo "unknown")
+    lock_cache=$(grep '^cache=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2- || echo "shared")
 
     # Find binary
     local binary_dir TOOL
@@ -580,9 +692,9 @@ ALL_PLATFORMS=(
 )
 
 function UninstallBooth() {
-    local tools_dir=".booth/tools"
+    local tools_dir="$TOOLS_DIR"
     local sha_file="$tools_dir/codingbooth.sha256"
-    local lock_file="$tools_dir/codingbooth.lock"
+    local lock_file="$LOCK_FILE"
 
     # Remove local binaries if they exist
     for platform in "${ALL_PLATFORMS[@]}"; do
@@ -594,7 +706,7 @@ function UninstallBooth() {
     rm -f "$sha_file" "$lock_file"
 
     rmdir "$tools_dir" 2>/dev/null || true
-    rmdir ".booth" 2>/dev/null || true
+    rmdir "$BOOTH_DIR" 2>/dev/null || true
 
     echo "CodingBooth has been uninstalled from this project."
     echo "To clean shared cache, run: $0 tools-cache clean"
@@ -767,8 +879,8 @@ function DownloadBooth() {
         exit 1
     fi
 
-    local tools_dir=".booth/tools"
-    local lock_file="$tools_dir/codingbooth.lock"
+    local tools_dir="$TOOLS_DIR"
+    local lock_file="$LOCK_FILE"
 
     REPO_URL="https://github.com/NawaMan/WorkSpace"
     DWLD_URL="${REPO_URL}/releases/download"
@@ -797,13 +909,13 @@ function DownloadBooth() {
 
     # Create .gitignore based on cache mode
     if [[ "$CACHE_MODE" == "local" ]]; then
-        cat > ".booth/.gitignore" <<'GITIGNORE'
+        cat > "${BOOTH_DIR}/.gitignore" <<'GITIGNORE'
 # Binaries excluded - re-download from lock version
 tools/codingbooth-*
 tools/*.sha256
 GITIGNORE
     else
-        cat > ".booth/.gitignore" <<'GITIGNORE'
+        cat > "${BOOTH_DIR}/.gitignore" <<'GITIGNORE'
 # Lock file is version-controlled
 # Binaries are in ~/.cache/codingbooth/ (not here)
 GITIGNORE
@@ -948,7 +1060,7 @@ GITIGNORE
 case "${COMMAND}" in
     version)      PrintVersion ; exit 0 ; ;;
     help)         PrintHelp    ; exit 0 ; ;;
-    shell-config) ShellConfig  ; exit 0 ; ;;
+    shell-config) [[ "${1-}" == "shell-config" ]] && shift ; ShellConfig "$@" ; exit 0 ; ;;
 esac
 
 # Check for nested booth execution (running booth inside a booth container)
