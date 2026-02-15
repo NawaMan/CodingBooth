@@ -2,6 +2,9 @@
 
 This file contains a list of changes for each released version.
 
+## 0.25.0
+- Refine templates and examples
+
 ## 0.22.0
 
 ### Added

@@ -41,6 +41,17 @@ jobs:
       - name: Show version
         run: echo "Publishing CodingBooth for version ${{ steps.get_version.outputs.version }}"
 
+      - name: Verify README version matches version.txt
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.get_version.outputs.version }}"
+          README_VERSION=$(grep -oP '(?<=\*\*Current Version:\*\* v)[^ ]+' README.md)
+          if [ "$VERSION" != "$README_VERSION" ]; then
+            echo "::error::Version mismatch — version.txt: $VERSION, README.md: $README_VERSION"
+            exit 1
+          fi
+          echo "Versions match: $VERSION"
+
       - name: Check if pre-release
         id: check_prerelease
         run: |
@@ -201,3 +212,4 @@ jobs:
             dist/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

@@ -34,6 +34,7 @@ No setup guides. No dependency drift. No “works on my machine.”
 - [Setup Implementation Notes](#setup-implementation-notes)
 - [Troubleshooting](#troubleshooting)
 - [Implementation Documentation](#implementation-documentation)
+- [Developer Setup](#developer-setup)
 - [Community & Feedback](#community--feedback)
 
 ## Quick Try
@@ -1540,6 +1541,18 @@ For deeper technical details on how CodingBooth works internally, see [docs/impl
 - **[Docker-in-Docker](docs/implementations/DIND.md)** — Running Docker inside CodingBooth
 - **[Network Whitelist](docs/implementations/URL_WHITELIST.md)** — Restricting container network access
 - **[Booth-in-Booth](docs/implementations/BOOTH_IN_BOOTH.md)** — Nested booth detection and opt-in mechanism
+
+
+## Developer Setup
+
+If you're contributing to CodingBooth, run the onboarding script to set up git hooks:
+
+```bash
+./on-board-me.sh
+```
+
+This activates a **pre-commit hook** that prevents committing when `version.txt` and `README.md` have mismatched versions.
+The hook only triggers when either file is staged — it won't interfere with unrelated commits.
 
 
 ## Community & Feedback

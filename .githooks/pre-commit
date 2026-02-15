@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Only check when version.txt or README.md is staged
+STAGED=$(git diff --cached --name-only)
+if ! echo "$STAGED" | grep -qE '^(version\.txt|README\.md)$'; then
+  exit 0
+fi
+
+VERSION=$(tr -d ' \t\r\n' < version.txt)
+README_VERSION=$(grep -oP '(?<=\*\*Current Version:\*\* v)[^ ]+' README.md)
+
+if [ "$VERSION" != "$README_VERSION" ]; then
+  echo "ERROR: Version mismatch"
+  echo "  version.txt:  $VERSION"
+  echo "  README.md:    $README_VERSION"
+  echo ""
+  echo "Update README.md to match version.txt before committing."
+  exit 1
+fi
