@@ -23,7 +23,7 @@ HOME=/root
 
 
 PROFILE_FILE="/etc/profile.d/55-cb-codeserver--profile.sh"
-STARTER_FILE=/usr/local/bin/codeserver
+STARTER_FILE=/usr/local/bin/start-codeserver
 CODESERVER_DEFAULT_PORT="${1:-${CODESERVER_DEFAULT_PORT:-19999}}"
 
 
@@ -85,7 +85,7 @@ codeserver_setup_info() {
   local cshome="${CSHOME:-/home/$csuser}"
   local config_file="${CONFIG_FILE:-$cshome/.config/code-server/config.yaml}"
   local ext_dir="${CODESERVER_EXTENSION_DIR:-/usr/local/share/code-server/extensions}"
-  local launcher="${LAUNCHER:-/usr/local/bin/codeserver}"
+  local launcher="${LAUNCHER:-/usr/local/bin/start-codeserver}"
 
   _hdr "code-server"
   if command -v code-server >/dev/null 2>&1; then
@@ -144,7 +144,7 @@ codeserver_setup_info() {
   fi
 
   _hdr "Quick start"
-  echo "  codeserver __CODESERVER_DEFAULT_PORT__   # start on port __CODESERVER_DEFAULT_PORT__ (uses current \$PASSWORD if set)"
+  echo "  start-codeserver __CODESERVER_DEFAULT_PORT__   # start on port __CODESERVER_DEFAULT_PORT__ (uses current \$PASSWORD if set)"
 }
 alias codeserver-setup-info='codeserver_setup_info'
 SH
@@ -195,7 +195,7 @@ code-server --extensions-dir "$CODESERVER_EXTENSION_DIR" \
 code-server --extensions-dir "$CODESERVER_EXTENSION_DIR" --list-extensions || true
 
 
-echo "[4/9] Create launcher: /usr/local/bin/codeserver"
+echo "[4/9] Create launcher: /usr/local/bin/start-codeserver"
 export CODESERVER_EXTENSION_DIR
 envsubst '$CODESERVER_EXTENSION_DIR' > ${STARTER_FILE} <<'LAUNCH'
 #!/usr/bin/env bash
