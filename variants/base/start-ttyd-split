@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+PORT=${1:-10000}
+WEB_SPLIT_ROOT=/usr/local/share/ttyd-split
+NGINX_CONFIG=/tmp/ttyd-split.nginx.conf
+
+SESSION_NAMES=(s1 s2 s3 s4)
+SESSION_PORTS=(10001 10002 10003 10004)
+
+if [[ ! -f "$WEB_SPLIT_ROOT/index.html" ]]; then
+    echo "Missing split UI: $WEB_SPLIT_ROOT/index.html" >&2
+    exit 1
+fi
+
+if [[ ! -f "$WEB_SPLIT_ROOT/nginx.conf.template" ]]; then
+    echo "Missing nginx template: $WEB_SPLIT_ROOT/nginx.conf.template" >&2
+    exit 1
+fi
+
+for i in "${!SESSION_NAMES[@]}"; do
+    session_name="${SESSION_NAMES[$i]}"
+    session_port="${SESSION_PORTS[$i]}"
+
+    ttyd_args=(-W -i 127.0.0.1 -p "$session_port" -b "/$session_name" --writable)
+    if [[ -n "${PASSWORD:-}" ]]; then
+        ttyd_args+=(-c "coder:${PASSWORD}")
+    fi
+
+    ttyd "${ttyd_args[@]}" bash -l &
+done
+
+export PORT
+envsubst '${PORT}' <"$WEB_SPLIT_ROOT/nginx.conf.template" >"$NGINX_CONFIG"
+
+mkdir -p /tmp/nginx/body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
+
+exec nginx -c "$NGINX_CONFIG" -g 'daemon off;'

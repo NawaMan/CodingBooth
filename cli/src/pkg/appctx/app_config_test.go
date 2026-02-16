@@ -57,7 +57,9 @@ func TestAppConfig_Clone(t *testing.T) {
 
 func TestAppConfig_ReadFromEnvVars(t *testing.T) {
 	os.Setenv("CB_COMMON_ARGS", "foo;bar")
+	os.Setenv("CB_WEB_SPLIT", "true")
 	defer os.Unsetenv("CB_COMMON_ARGS")
+	defer os.Unsetenv("CB_WEB_SPLIT")
 
 	config := &AppConfig{}
 	err := ReadFromEnvVars(config)
@@ -70,5 +72,8 @@ func TestAppConfig_ReadFromEnvVars(t *testing.T) {
 	}
 	if config.CommonArgs.At(0) != "foo" || config.CommonArgs.At(1) != "bar" {
 		t.Errorf("Unexpected common args: %v", config.CommonArgs)
+	}
+	if !config.WebSplit {
+		t.Errorf("Expected WebSplit=true, got %t", config.WebSplit)
 	}
 }

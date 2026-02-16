@@ -58,6 +58,7 @@ RUN set -euo pipefail \
   jq     \
   mc     \
   nano   \
+  nginx  \
   tilde  \
   tig    \
   tmux   \
@@ -157,6 +158,10 @@ ENTRYPOINT ["tini","-g","--","/usr/local/bin/booth-entry"]
 
 # start-ttyd wrapper: supports PASSWORD env var for basic auth
 COPY --chmod=0755 start-ttyd /usr/local/bin/start-ttyd
+COPY --chmod=0755 start-ttyd-split /usr/local/bin/start-ttyd-split
+COPY --chmod=0644 web-ttyd-split/index.html /usr/local/share/ttyd-split/index.html
+COPY --chmod=0644 web-ttyd-split/nginx.conf.template /usr/local/share/ttyd-split/nginx.conf.template
+RUN chmod 0755 /usr/local/share/ttyd-split
 
 # By default, start ttyd on port 10000 in the home directory (the online terminal)
 CMD ["bash","-lc","exec start-ttyd"]

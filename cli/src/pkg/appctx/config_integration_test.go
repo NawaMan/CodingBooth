@@ -18,6 +18,7 @@ func TestIntegration_ReadFromEnvVars(t *testing.T) {
 		"CB_VERBOSE":      "true",
 		"CB_PROJECT_NAME": "integration-test-project",
 		"CB_HOST_UID":     "1001",
+		"CB_WEB_SPLIT":    "true",
 	}
 
 	for k, v := range envVars {
@@ -34,6 +35,7 @@ func TestIntegration_ReadFromEnvVars(t *testing.T) {
 
 	// Verify results
 	assert.True(t, config.Verbose.ValueOr(false))
+	assert.True(t, config.WebSplit)
 	assert.Equal(t, "integration-test-project", config.ProjectName)
 	assert.Equal(t, "1001", config.HostUID)
 }
@@ -44,6 +46,7 @@ func TestIntegration_ReadFromToml(t *testing.T) {
 verbose = true
 project-name = "toml-test-project"
 host-uid = "1002"
+web-split = true
 
 sandbox-allowlist-file = ".booth/sandbox/allowlist.txt"
 `
@@ -64,6 +67,7 @@ sandbox-allowlist-file = ".booth/sandbox/allowlist.txt"
 
 	// Verify results
 	assert.True(t, config.Verbose.ValueOr(false))
+	assert.True(t, config.WebSplit)
 	assert.Equal(t, "toml-test-project", config.ProjectName)
 	assert.Equal(t, "1002", config.HostUID)
 	assert.Equal(t, ".booth/sandbox/allowlist.txt", config.SandboxAllowlistFile)

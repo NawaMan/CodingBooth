@@ -1,0 +1,691 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CodingBooth Split Terminal</title>
+  <style>
+    :root {
+      --bg: #0b1018;
+      --panel: #141c27;
+      --panel-edge: #2b3a4d;
+      --text: #e7edf5;
+      --muted: #9badc2;
+      --accent: #2f8dff;
+      --terminal: #0a0e14;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: radial-gradient(circle at 20% 0, #1f2a3a 0%, var(--bg) 45%);
+      color: var(--text);
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+    }
+
+    body.dragging-col {
+      cursor: col-resize;
+      user-select: none;
+    }
+
+    body.dragging-row {
+      cursor: row-resize;
+      user-select: none;
+    }
+
+    body.dragging-col .pane iframe,
+    body.dragging-row .pane iframe {
+      pointer-events: none;
+    }
+
+    .shell {
+      display: grid;
+      grid-template-rows: auto 1fr;
+      height: 100%;
+      min-height: 0;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      background: linear-gradient(180deg, #1a2533 0%, #111a25 100%);
+      border-bottom: 1px solid var(--panel-edge);
+    }
+
+    .title {
+      font-size: 13px;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-right: 8px;
+      white-space: nowrap;
+    }
+
+    .controls {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid var(--panel-edge);
+      background: var(--panel);
+      color: var(--text);
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 12px;
+      padding: 6px 10px;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button.active {
+      border-color: var(--accent);
+      color: white;
+      box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent), transparent 55%);
+    }
+
+    #status {
+      margin-left: auto;
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .grid {
+      --pane-gap: 8px;
+      --gap-half: calc(var(--pane-gap) / 2);
+      --split-x-pct: 50%;
+      --split-y-pct: 50%;
+      padding: 8px;
+      display: grid;
+      gap: var(--pane-gap);
+      min-height: 0;
+      height: 100%;
+      position: relative;
+    }
+
+    .grid.layout-single {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;
+    }
+
+    .grid.layout-hsplit {
+      grid-template-columns: calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half));
+      grid-template-rows: 1fr;
+    }
+
+    .grid.layout-vsplit {
+      grid-template-columns: 1fr;
+      grid-template-rows: calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half));
+    }
+
+    .grid.layout-quad {
+      grid-template-columns: calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half));
+      grid-template-rows: calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half));
+    }
+
+    .grid.layout-left-main {
+      grid-template-columns: calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half));
+      grid-template-rows: calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half));
+    }
+
+    .grid.layout-top-main {
+      grid-template-columns: calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half));
+      grid-template-rows: calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half));
+    }
+
+    .pane {
+      display: none;
+      border: 1px solid var(--panel-edge);
+      border-radius: 10px;
+      overflow: hidden;
+      min-height: 0;
+      background: var(--terminal);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .pane.active {
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+
+    .pane-header {
+      background: #101722;
+      border-bottom: 1px solid var(--panel-edge);
+      color: var(--muted);
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 11px;
+      padding: 6px 10px;
+    }
+
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      background: var(--terminal);
+    }
+
+    .split-handle {
+      position: absolute;
+      z-index: 8;
+      display: none;
+      border-radius: 8px;
+      background: color-mix(in srgb, #152338, transparent 25%);
+      border: 1px solid color-mix(in srgb, var(--panel-edge), transparent 35%);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+      touch-action: none;
+    }
+
+    .split-handle::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      border-radius: 999px;
+      background: color-mix(in srgb, var(--accent), #b5cae9 42%);
+      opacity: 0.95;
+    }
+
+    .split-handle-x {
+      width: 12px;
+      top: 10px;
+      bottom: 10px;
+      left: calc(var(--split-x-pct) - 6px);
+      cursor: col-resize;
+    }
+
+    .split-handle-x::after {
+      width: 2px;
+      height: 34px;
+    }
+
+    .split-handle-y {
+      height: 12px;
+      left: 10px;
+      right: 10px;
+      top: calc(var(--split-y-pct) - 6px);
+      cursor: row-resize;
+    }
+
+    .split-handle-y::after {
+      width: 34px;
+      height: 2px;
+    }
+
+    .grid.show-handle-x .split-handle-x {
+      display: block;
+    }
+
+    .grid.show-handle-y .split-handle-y {
+      display: block;
+    }
+
+    .grid.layout-left-main .split-handle-y {
+      left: calc(var(--split-x-pct) + var(--gap-half));
+      right: 10px;
+    }
+
+    .grid.layout-top-main .split-handle-x {
+      top: calc(var(--split-y-pct) + var(--gap-half));
+      bottom: 10px;
+    }
+
+    .drag-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 20;
+      display: none;
+      background: transparent;
+      touch-action: none;
+    }
+
+    .drag-overlay.active {
+      display: block;
+    }
+
+    .drag-overlay.axis-x {
+      cursor: col-resize;
+    }
+
+    .drag-overlay.axis-y {
+      cursor: row-resize;
+    }
+
+    @media (max-width: 900px) {
+      .toolbar {
+        align-items: flex-start;
+        flex-wrap: wrap;
+      }
+
+      #status {
+        margin-left: 0;
+      }
+
+      .grid.layout-hsplit,
+      .grid.layout-vsplit,
+      .grid.layout-quad,
+      .grid.layout-left-main,
+      .grid.layout-top-main {
+        grid-template-columns: 1fr;
+        grid-template-rows: repeat(4, minmax(0, 1fr));
+      }
+
+      .split-handle {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="toolbar">
+      <span class="title">CodingBooth Split Terminal</span>
+      <div class="controls">
+        <button data-layout="single">Single</button>
+        <button data-layout="hsplit">Split H</button>
+        <button data-layout="vsplit">Split V</button>
+        <button data-layout="quad">Quad</button>
+        <button data-layout="left-main">Left Main</button>
+        <button data-layout="top-main">Top Main</button>
+        <button id="reload">Reload</button>
+      </div>
+      <span id="status">1 session active</span>
+    </header>
+
+    <main id="grid" class="grid layout-single">
+      <section class="pane pane-1" data-pane="1">
+        <div class="pane-header">Session 1</div>
+        <iframe src="/s1/" title="Session 1"></iframe>
+      </section>
+      <section class="pane pane-2" data-pane="2">
+        <div class="pane-header">Session 2</div>
+        <iframe src="/s2/" title="Session 2"></iframe>
+      </section>
+      <section class="pane pane-3" data-pane="3">
+        <div class="pane-header">Session 3</div>
+        <iframe src="/s3/" title="Session 3"></iframe>
+      </section>
+      <section class="pane pane-4" data-pane="4">
+        <div class="pane-header">Session 4</div>
+        <iframe src="/s4/" title="Session 4"></iframe>
+      </section>
+      <div id="handle-x" class="split-handle split-handle-x" aria-hidden="true"></div>
+      <div id="handle-y" class="split-handle split-handle-y" aria-hidden="true"></div>
+    </main>
+  </div>
+  <div id="drag-overlay" class="drag-overlay" aria-hidden="true"></div>
+
+  <script>
+    (() => {
+      const grid = document.getElementById("grid");
+      const status = document.getElementById("status");
+      const panes = Array.from(document.querySelectorAll(".pane"));
+      const handleX = document.getElementById("handle-x");
+      const handleY = document.getElementById("handle-y");
+      const dragOverlay = document.getElementById("drag-overlay");
+      const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"));
+      const reloadButton = document.getElementById("reload");
+      const layoutStorageKey = "cb.webSplit.layout";
+      const splitStorageKey = "cb.webSplit.splits";
+      const modeHashPrefix = "#mode=";
+      const compactQuery = window.matchMedia("(max-width: 900px)");
+
+      const minSplit = 0.2;
+      const maxSplit = 0.8;
+      let dragAxis = null;
+      let dragHandle = null;
+      let activePointerId = null;
+
+      const layouts = {
+        single: [1],
+        hsplit: [1, 2],
+        vsplit: [1, 2],
+        quad: [1, 2, 3, 4],
+        "left-main": [1, 2, 3],
+        "top-main": [1, 2, 3]
+      };
+
+      let currentLayout = "single";
+      const split = loadSplitValues();
+
+      function clamp(value, min, max) {
+        return Math.min(max, Math.max(min, value));
+      }
+
+      function loadSplitValues() {
+        const fallback = { x: 0.5, y: 0.5 };
+        try {
+          const raw = window.localStorage.getItem(splitStorageKey);
+          if (!raw) {
+            return fallback;
+          }
+          const parsed = JSON.parse(raw);
+          if (typeof parsed !== "object" || parsed === null) {
+            return fallback;
+          }
+          const x = Number(parsed.x);
+          const y = Number(parsed.y);
+          return {
+            x: Number.isFinite(x) ? clamp(x, minSplit, maxSplit) : fallback.x,
+            y: Number.isFinite(y) ? clamp(y, minSplit, maxSplit) : fallback.y
+          };
+        } catch (_error) {
+          return fallback;
+        }
+      }
+
+      function saveSplitValues() {
+        try {
+          window.localStorage.setItem(splitStorageKey, JSON.stringify(split));
+        } catch (_error) {
+          // Ignore localStorage write failures (private mode / restricted env).
+        }
+      }
+
+      function loadSavedLayout() {
+        try {
+          const raw = window.localStorage.getItem(layoutStorageKey);
+          if (!raw) {
+            return "";
+          }
+          const mode = raw.trim().toLowerCase();
+          return layouts[mode] ? mode : "";
+        } catch (_error) {
+          return "";
+        }
+      }
+
+      function saveLayout(mode) {
+        try {
+          window.localStorage.setItem(layoutStorageKey, mode);
+        } catch (_error) {
+          // Ignore localStorage write failures (private mode / restricted env).
+        }
+      }
+
+      function applySplitVariables() {
+        grid.style.setProperty("--split-x-pct", (split.x * 100).toFixed(2) + "%");
+        grid.style.setProperty("--split-y-pct", (split.y * 100).toFixed(2) + "%");
+      }
+
+      function setPanePosition(pane, row, column) {
+        pane.style.gridRow = String(row);
+        pane.style.gridColumn = String(column);
+      }
+
+      function layoutHasXSplit(layout) {
+        return layout === "hsplit" || layout === "quad" || layout === "left-main" || layout === "top-main";
+      }
+
+      function layoutHasYSplit(layout) {
+        return layout === "vsplit" || layout === "quad" || layout === "left-main" || layout === "top-main";
+      }
+
+      function parseModeFromHash() {
+        const hash = window.location.hash || "";
+        if (!hash.startsWith(modeHashPrefix)) {
+          return "";
+        }
+
+        try {
+          const mode = decodeURIComponent(hash.slice(modeHashPrefix.length)).trim().toLowerCase();
+          return layouts[mode] ? mode : "";
+        } catch (_error) {
+          return "";
+        }
+      }
+
+      function setHashMode(mode) {
+        const nextHash = modeHashPrefix + encodeURIComponent(mode);
+        if (window.location.hash === nextHash) {
+          return;
+        }
+        const nextUrl = window.location.pathname + window.location.search + nextHash;
+        window.history.replaceState(null, "", nextUrl);
+      }
+
+      function updateGridGeometry(layout) {
+        panes.forEach((pane) => {
+          pane.style.gridRow = "";
+          pane.style.gridColumn = "";
+        });
+
+        if (compactQuery.matches) {
+          grid.style.gridTemplateColumns = "1fr";
+          if (layout === "single") {
+            grid.style.gridTemplateRows = "1fr";
+            setPanePosition(panes[0], 1, 1);
+          } else if (layout === "quad") {
+            grid.style.gridTemplateRows = "repeat(4, minmax(0, 1fr))";
+            panes.forEach((pane, index) => setPanePosition(pane, index + 1, 1));
+          } else if (layout === "left-main" || layout === "top-main") {
+            grid.style.gridTemplateRows = "repeat(3, minmax(0, 1fr))";
+            setPanePosition(panes[0], 1, 1);
+            setPanePosition(panes[1], 2, 1);
+            setPanePosition(panes[2], 3, 1);
+          } else {
+            grid.style.gridTemplateRows = "repeat(2, minmax(0, 1fr))";
+            setPanePosition(panes[0], 1, 1);
+            setPanePosition(panes[1], 2, 1);
+          }
+          return;
+        }
+
+        if (layout === "single") {
+          grid.style.gridTemplateColumns = "1fr";
+          grid.style.gridTemplateRows = "1fr";
+          setPanePosition(panes[0], 1, 1);
+        } else if (layout === "hsplit") {
+          grid.style.gridTemplateColumns =
+            "calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half))";
+          grid.style.gridTemplateRows = "1fr";
+          setPanePosition(panes[0], 1, 1);
+          setPanePosition(panes[1], 1, 2);
+        } else if (layout === "vsplit") {
+          grid.style.gridTemplateColumns = "1fr";
+          grid.style.gridTemplateRows =
+            "calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half))";
+          setPanePosition(panes[0], 1, 1);
+          setPanePosition(panes[1], 2, 1);
+        } else if (layout === "left-main") {
+          grid.style.gridTemplateColumns =
+            "calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half))";
+          grid.style.gridTemplateRows =
+            "calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half))";
+          panes[0].style.gridRow = "1 / span 2";
+          panes[0].style.gridColumn = "1";
+          setPanePosition(panes[1], 1, 2);
+          setPanePosition(panes[2], 2, 2);
+        } else if (layout === "top-main") {
+          grid.style.gridTemplateColumns =
+            "calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half))";
+          grid.style.gridTemplateRows =
+            "calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half))";
+          panes[0].style.gridRow = "1";
+          panes[0].style.gridColumn = "1 / span 2";
+          setPanePosition(panes[1], 2, 1);
+          setPanePosition(panes[2], 2, 2);
+        } else {
+          grid.style.gridTemplateColumns =
+            "calc(var(--split-x-pct) - var(--gap-half)) calc(100% - var(--split-x-pct) - var(--gap-half))";
+          grid.style.gridTemplateRows =
+            "calc(var(--split-y-pct) - var(--gap-half)) calc(100% - var(--split-y-pct) - var(--gap-half))";
+          setPanePosition(panes[0], 1, 1);
+          setPanePosition(panes[1], 1, 2);
+          setPanePosition(panes[2], 2, 1);
+          setPanePosition(panes[3], 2, 2);
+        }
+      }
+
+      function setLayout(layout, options = {}) {
+        const updateHash = options.updateHash !== false;
+        const persistLayout = options.persistLayout !== false;
+        currentLayout = layouts[layout] ? layout : "single";
+        const activePanes = new Set(layouts[currentLayout]);
+
+        grid.className = "grid layout-" + currentLayout;
+
+        const showX = !compactQuery.matches && layoutHasXSplit(currentLayout);
+        const showY = !compactQuery.matches && layoutHasYSplit(currentLayout);
+        grid.classList.toggle("show-handle-x", showX);
+        grid.classList.toggle("show-handle-y", showY);
+
+        panes.forEach((pane, index) => {
+          const paneNumber = index + 1;
+          pane.classList.toggle("active", activePanes.has(paneNumber));
+        });
+
+        updateGridGeometry(currentLayout);
+        applySplitVariables();
+
+        layoutButtons.forEach((button) => {
+          button.classList.toggle("active", button.dataset.layout === currentLayout);
+        });
+
+        const count = activePanes.size;
+        const sessionWord = count === 1 ? "session" : "sessions";
+        const resizeHint = showX || showY ? " \u00b7 drag divider to resize" : "";
+        status.textContent = count + " " + sessionWord + " active" + resizeHint;
+        if (persistLayout) {
+          saveLayout(currentLayout);
+        }
+        if (updateHash) {
+          setHashMode(currentLayout);
+        }
+      }
+
+      function updateSplitFromPointer(event) {
+        const rect = grid.getBoundingClientRect();
+        if (dragAxis === "x" && rect.width > 0) {
+          split.x = clamp((event.clientX - rect.left) / rect.width, minSplit, maxSplit);
+        } else if (dragAxis === "y" && rect.height > 0) {
+          split.y = clamp((event.clientY - rect.top) / rect.height, minSplit, maxSplit);
+        } else {
+          return;
+        }
+
+        applySplitVariables();
+        updateGridGeometry(currentLayout);
+        saveSplitValues();
+      }
+
+      function beginDrag(axis, event) {
+        if (compactQuery.matches) {
+          return;
+        }
+
+        if (axis === "x" && !layoutHasXSplit(currentLayout)) {
+          return;
+        }
+
+        if (axis === "y" && !layoutHasYSplit(currentLayout)) {
+          return;
+        }
+
+        dragAxis = axis;
+        dragHandle = axis === "x" ? handleX : handleY;
+        activePointerId = typeof event.pointerId === "number" ? event.pointerId : null;
+        document.body.classList.add(axis === "x" ? "dragging-col" : "dragging-row");
+        dragOverlay.classList.add("active", axis === "x" ? "axis-x" : "axis-y");
+        if (dragHandle && activePointerId !== null && typeof dragHandle.setPointerCapture === "function") {
+          try {
+            dragHandle.setPointerCapture(activePointerId);
+          } catch (_error) {
+            // Ignore pointer-capture failures.
+          }
+        }
+        event.preventDefault();
+        updateSplitFromPointer(event);
+      }
+
+      function handlePointerMove(event) {
+        if (!dragAxis) {
+          return;
+        }
+
+        if (activePointerId !== null && typeof event.pointerId === "number" && event.pointerId !== activePointerId) {
+          return;
+        }
+
+        updateSplitFromPointer(event);
+      }
+
+      function endDrag() {
+        if (!dragAxis) {
+          return;
+        }
+
+        if (dragHandle && activePointerId !== null && typeof dragHandle.releasePointerCapture === "function") {
+          try {
+            dragHandle.releasePointerCapture(activePointerId);
+          } catch (_error) {
+            // Ignore pointer-release failures.
+          }
+        }
+
+        dragAxis = null;
+        dragHandle = null;
+        activePointerId = null;
+        document.body.classList.remove("dragging-col", "dragging-row");
+        dragOverlay.classList.remove("active", "axis-x", "axis-y");
+      }
+
+      layoutButtons.forEach((button) => {
+        button.addEventListener("click", () => setLayout(button.dataset.layout));
+      });
+
+      handleX.addEventListener("pointerdown", (event) => beginDrag("x", event));
+      handleY.addEventListener("pointerdown", (event) => beginDrag("y", event));
+      dragOverlay.addEventListener("pointermove", handlePointerMove);
+      window.addEventListener("pointermove", handlePointerMove);
+      dragOverlay.addEventListener("pointerup", endDrag);
+      dragOverlay.addEventListener("pointercancel", endDrag);
+      window.addEventListener("pointerup", endDrag);
+      window.addEventListener("pointercancel", endDrag);
+      window.addEventListener("blur", endDrag);
+      window.addEventListener("dragstart", (event) => {
+        if (dragAxis) {
+          event.preventDefault();
+        }
+      });
+
+      if (typeof compactQuery.addEventListener === "function") {
+        compactQuery.addEventListener("change", () => setLayout(currentLayout, { updateHash: false }));
+      } else if (typeof compactQuery.addListener === "function") {
+        compactQuery.addListener(() => setLayout(currentLayout, { updateHash: false }));
+      }
+
+      window.addEventListener("hashchange", () => {
+        const hashMode = parseModeFromHash();
+        const savedMode = loadSavedLayout();
+        setLayout(hashMode || savedMode || "single", { updateHash: false });
+      });
+
+      reloadButton.addEventListener("click", () => {
+        panes.forEach((pane) => {
+          if (!pane.classList.contains("active")) {
+            return;
+          }
+          const iframe = pane.querySelector("iframe");
+          if (iframe && iframe.contentWindow) {
+            iframe.contentWindow.location.reload();
+          }
+        });
+      });
+
+      applySplitVariables();
+      const hashMode = parseModeFromHash();
+      const savedMode = loadSavedLayout();
+      setLayout(hashMode || savedMode || "single", { updateHash: false });
+    })();
+  </script>
+</body>
+</html>

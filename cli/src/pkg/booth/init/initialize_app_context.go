@@ -368,6 +368,10 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.WritableBooth = true
 			i++
 
+		case "--web-split":
+			cfg.WebSplit = true
+			i++
+
 		case "--public":
 			cfg.Public = true
 			i++
