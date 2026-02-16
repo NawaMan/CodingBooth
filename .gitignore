@@ -114,6 +114,8 @@ examples/workspaces/.*.log
 examples/workspaces/*/.cb-tests/*.out
 
 /coding-booth
+/codingcode
+/cli/codingcode
 
 # Build staging directory for documentation files
 variants/base/_stage/
