@@ -79,6 +79,7 @@ RUNTIME OPTIONS:
                          NEXT   : pick the next available free port ≥ 10000
   --env-file <file>      Provide an --env-file to docker run
                          Use 'none' to disable auto-detection of <code>/.env
+                         .booth/.env-local is always included when present (must be gitignored)
 
 CONTAINER MODE:
   --daemon               Run the booth container in the background
@@ -104,6 +105,9 @@ NOTES:
 
   - If --env-file is not provided, a <code>/.env file will be used when present.
     Specify '--env-file none' to disable this behavior.
+
+  - If .booth/.env-local exists, it is always loaded as an env-file (must be gitignored).
+    When combined with --env-file, the --env-file values take priority on conflicts.
 
   - In daemon mode, do not pass commands after '--'. Stop the container with:
         docker stop <container-name>

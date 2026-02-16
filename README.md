@@ -401,6 +401,7 @@ my-project/
     ├── config.toml     # Launcher configuration
     ├── Boothfile       # Simplified build script (optional, preferred)
     ├── Dockerfile      # Custom Docker build (optional, fallback)
+    ├── .env-local      # Personal env vars (optional, gitignored)
     ├── setups/         # Custom setup scripts (optional)
     │   └── myapp--setup.sh
     ├── home/           # Team-shared home directory files (optional)
@@ -414,6 +415,7 @@ my-project/
 | `config.toml`             | Defines variant, ports, run-args, build-args, cmds      |
 | `Boothfile`               | Simplified build script (compiles to Dockerfile)        |
 | `Dockerfile`              | Custom image build extending a base variant             |
+| `.env-local`              | Personal env vars, always loaded, gitignored            |
 | `setups/`                 | Custom setup scripts for `setup` command in Boothfile   |
 | `home/`                   | Team-shared dotfiles copied to `/home/coder/` at startup |
 | `tools/codingbooth.lock` | Version lock file; binary cached in `~/.cache/codingbooth/` |
@@ -991,10 +993,18 @@ These behave exactly like command-line flags passed to booth.
 - Can be overridden with `env-file = "<path>"` in config.toml.
 - To disable, set `env-file = "none"` in config.toml.
 
+#### Local Environment File (.booth/.env-local)
+- Automatically loaded when present — no configuration needed.
+- Intended for **personal secrets** (API keys, tokens, credentials) that should never be committed.
+- **Always gitignored:** `booth init` adds `.env-local` to `.booth/.gitignore`. CodingBooth refuses to run if the file exists but is not gitignored.
+- **Merged with env-file:** When both `.booth/.env-local` and an env-file (`.env` or explicit) exist, both are passed to Docker. The env-file values **take priority** — any variable defined in both files uses the env-file value.
+- Disabling the env-file (`env-file = "none"`) does **not** disable `.env-local` — it is always included when present.
+
 > 🧩 Summary:
-> Configuration layers allow customization at two levels:
+> Configuration layers allow customization at three levels:
 > Build+Image: .booth/config.toml (persistent project defaults)
-> Container Environment: .env (runtime secrets and environment variables)
+> Local Secrets: .booth/.env-local (personal, gitignored, always loaded)
+> Container Environment: .env (runtime secrets and environment variables, overrides .env-local)
 > Together, they give you full control over build, run, and launcher behavior.
 
 
