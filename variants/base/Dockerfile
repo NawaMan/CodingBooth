@@ -133,6 +133,9 @@ COPY --chmod=0644 ./_stage/AGENT.md    /opt/codingbooth/
 COPY ./_stage/variants/ /opt/codingbooth/variants/
 RUN chmod -R a+rX /opt/codingbooth/variants
 
+# TLS reverse proxy (Caddy) - activated by BOOTH_TLS=true (set by --public)
+RUN tls--setup.sh
+
 # Cleanup to reduce image size
 RUN cleanup-after--setup.sh
 

@@ -372,6 +372,22 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.Public = true
 			i++
 
+		case "--tls-cert":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			cfg.TLSCert = v
+			i += 2
+
+		case "--tls-key":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			cfg.TLSKey = v
+			i += 2
+
 		// Image selection
 		case "--image":
 			v, err := needValue(args, i, arg)
@@ -638,6 +654,8 @@ func resolvePassword(config *appctx.AppConfig) {
 // If stdin is a pipe, it reads the first line.
 func readPasswordFromStdin() (string, error) {
 	if term.IsTerminal(int(os.Stdin.Fd())) {
+		fmt.Fprintln(os.Stderr, "Tip: save password to .booth/.booth.password (git ignored) or pipe via stdin to skip this prompt.")
+		fmt.Fprintln(os.Stderr, "Username: coder")
 		fmt.Fprint(os.Stderr, "Password: ")
 		password, err := term.ReadPassword(int(os.Stdin.Fd()))
 		fmt.Fprintln(os.Stderr) // newline after hidden input

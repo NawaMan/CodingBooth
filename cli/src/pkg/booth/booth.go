@@ -131,7 +131,11 @@ func (booth *Booth) runAsDaemon() error {
 		fmt.Println("👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.")
 	}
 
-	fmt.Printf("👉 Visit 'http://localhost:%d'\n", booth.ctx.PortNumber()) // HostPort
+	if booth.ctx.Public() {
+		fmt.Printf("👉 Visit 'https://localhost:%d'\n", booth.ctx.PortNumber())
+	} else {
+		fmt.Printf("👉 Visit 'http://localhost:%d'\n", booth.ctx.PortNumber())
+	}
 	fmt.Printf("👉 To open an interactive shell instead: %s -- bash\n", booth.ctx.ScriptName())
 	fmt.Println("👉 To stop the running container:")
 	fmt.Println()
@@ -310,8 +314,25 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 
 	// Skip port mapping when using shared network namespace sidecars.
 	if !ctx.Dind() && !ctx.Sandbox() {
-		portMapping := formatPortMapping(ctx.Public(), ctx.PortNumber(), 10000)
+		containerPort := 10000
+		if ctx.Public() {
+			containerPort = 10443
+		}
+		portMapping := formatPortMapping(ctx.Public(), ctx.PortNumber(), containerPort)
 		builder.CommonArgs.Append(ilist.NewList[string]("-p", portMapping))
+	}
+
+	// Enable TLS reverse proxy when public
+	if ctx.Public() {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_TLS=true"))
+	}
+
+	// Mount user-provided TLS certificates
+	if ctx.TLSCert() != "" && ctx.TLSKey() != "" {
+		builder.RunArgs.Append(ilist.NewList[string]("-v", ctx.TLSCert()+":/tmp/booth-tls-cert.pem:ro"))
+		builder.RunArgs.Append(ilist.NewList[string]("-v", ctx.TLSKey()+":/tmp/booth-tls-key.pem:ro"))
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_TLS_CERT=/tmp/booth-tls-cert.pem"))
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_TLS_KEY=/tmp/booth-tls-key.pem"))
 	}
 
 	// Inject PASSWORD env var into the container when set

@@ -38,11 +38,13 @@ type AppConfig struct {
 	SandboxEnforcement string `toml:"sandbox-enforcement,omitempty" envconfig:"CB_SANDBOX_ENFORCEMENT"`
 	WritableBooth      bool   `toml:"writable-booth,omitempty"      envconfig:"CB_WRITABLE_BOOTH" default:"false"`
 
-	// Public exposes the booth on all interfaces (0.0.0.0) with password auth.
+	// Public exposes the booth on all interfaces (0.0.0.0) with password auth and HTTPS.
 	// Password is resolved at startup from .booth/.booth.password or interactive stdin.
 	// These are never read from TOML or environment variables.
 	Public               bool     `toml:"-" ignored:"true"`
 	Password             string   `toml:"-" ignored:"true"`
+	TLSCert              string   `toml:"-" ignored:"true"`
+	TLSKey               string   `toml:"-" ignored:"true"`
 	SandboxAllowlistFile string   `toml:"sandbox-allowlist-file,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST_FILE"`
 	SandboxPolicyFile    string   `toml:"sandbox-policy-file,omitempty"    envconfig:"CB_SANDBOX_POLICY_FILE"`
 	SandboxAllowlist     []string `toml:"sandbox-allowlist,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST"`
@@ -132,6 +134,8 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    WritableBooth:     %t\n", config.WritableBooth)
 	fmt.Fprintf(&str, "    Public:            %t\n", config.Public)
 	fmt.Fprintf(&str, "    Password:          %s\n", maskStr(config.Password))
+	fmt.Fprintf(&str, "    TLSCert:           %q\n", config.TLSCert)
+	fmt.Fprintf(&str, "    TLSKey:            %q\n", config.TLSKey)
 	fmt.Fprintf(&str, "    SandboxAllowlist:  %q\n", config.SandboxAllowlistFile)
 	fmt.Fprintf(&str, "    SandboxPolicy:     %q\n", config.SandboxPolicyFile)
 	fmt.Fprintf(&str, "    SandboxAllowlist+: %v\n", config.SandboxAllowlist)
