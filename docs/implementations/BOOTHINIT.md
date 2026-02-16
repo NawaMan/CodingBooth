@@ -7,6 +7,8 @@ Setting up a CodingBooth environment means creating a `.booth/` folder with the 
 
 `booth init` solves this by providing a template-driven project scaffolding system. You select what you need — languages, tools, extensions — and init compiles everything into a ready-to-use `.booth/` configuration. Templates encode best practices (correct segment ordering, proper setup script arguments, volume persistence) so you get a working environment without needing to understand every detail.
 
+Use `booth template list/search/show` to browse available templates before running `init`.
+
 ---
 
 ## Table of Contents
@@ -204,7 +206,8 @@ Each `template.toml` defines:
 
 ```toml
 display-name = "Go"
-display-disc = "Go language toolchain"
+display-disc = "Go toolchain with gopls LSP and Delve debugger"
+display-detail = "Provides a complete Go development environment including the Go compiler, gopls language server for IDE integration, and Delve debugger."
 display-order = 10
 primary = true
 tags = ["go", "golang", "backend"]
@@ -317,27 +320,32 @@ https://github.com/NawaMan/CodingBooth/releases/download/<version>/templates.zip
 
 ## CLI Commands
 
-### List Templates
+### Browse Templates (`booth template`)
+
+Templates can be browsed using the dedicated `booth template` command:
 
 ```bash
-./booth init list          # Primary templates only
-./booth init list --full   # All templates including secondary
+./booth template list                  # Primary templates only
+./booth template list --full           # All templates including secondary
+./booth template search "python"       # Prefix match on name, description, and tags
+./booth template show go               # Detailed info: params, extensions, tags, changes
+./booth template show python+uv        # Show extension details
+./booth template show go --detail      # Include file and segment contents
 ```
 
-### Search Templates
-
-```bash
-./booth init search "python"   # Prefix match on name, display-name, and tags
-```
+The `list` command shows a compact table with names and descriptions, hiding auto-select extensions. The `search` command shows all matching extensions (including auto-select ones with an `(auto)` suffix). The `show` command displays full template detail including parameters, extensions, requirements, tags, auto-select status, and a list of file changes the template contributes. With `--detail`, the actual file contents are shown.
 
 ### Create New Project
 
 ```bash
 ./booth init new --select go+linter/python:3.13+uv/claude-code
 ./booth init new ../my-project --select go+linter/python:3.13+uv/claude-code
+./booth init new --select python --port 10080
+./booth init new --select go --set keep-alive --set name=my-booth
+./booth init new                                  # Empty booth (no templates, just CLI overrides)
 ```
 
-The path defaults to the current directory if omitted.
+The path defaults to the current directory if omitted. Running `init new` without `--select` creates an empty `.booth/` with only CLI overrides applied (e.g., `--variant`, `--port`, `--set`).
 
 ### Re-generate (Adjust)
 
@@ -353,17 +361,29 @@ The `adjust` subcommand is equivalent to `new --overwrite` — it overwrites exi
 ./booth init dryrun --select go+linter/python:3.13
 ```
 
-### Flags
+### Init Flags
 
 | Flag | Description |
 |------|-------------|
 | `--select <dsl>` | Template selection (repeatable; inline, `-` for stdin, `@file`, `@@url`) |
 | `--templates-path <dir>` | Local templates directory |
 | `--version <ver>` | Use templates from a specific release version |
+| `--variant <variant>` | Set the variant (base, notebook, codeserver, xfce, kde) |
+| `--port <port>` | Set port in generated config.toml (e.g., 10000, NEXT, RANDOM) |
+| `--cmd <command>` | Set the default start command (repeatable) |
+| `--set <key=value>` | Set a config.toml value (repeatable; bare key = boolean true) |
 | `--start` | Launch `codingbooth run --code <path>` after init |
 | `--overwrite` | Overwrite existing files without prompting |
 | `--debug` | Print resolved selection and compiled output as JSON |
-| `--full` | Show all templates in list (including non-primary) |
+
+### Template Flags
+
+| Flag | Description |
+|------|-------------|
+| `--templates-path <dir>` | Local templates directory |
+| `--version <ver>` | Use templates from a specific release version |
+| `--full` | Show all templates including secondary (for list/search) |
+| `--detail` | Show file and segment contents (for show) |
 
 ---
 
@@ -382,7 +402,8 @@ The `adjust` subcommand is equivalent to `new --overwrite` — it overwrites exi
 ```
 cli/src/
 ├── cmd/codingbooth/
-│   └── init.go                  # CLI entry point, subcommand routing
+│   ├── init.go                  # CLI entry point for init (new, adjust, dryrun)
+│   └── template.go             # CLI entry point for template (list, search, show)
 │
 └── pkg/boothinit/
     ├── output/                  # Output model and serialization
@@ -397,8 +418,8 @@ cli/src/
     ├── template/                # Template model and loading
     │   ├── model.go             # TemplateRegistry, Category, Template, Param, Segment
     │   ├── loader.go            # LoadRegistry — reads directory tree, TOML parsing
-    │   ├── search.go            # Prefix search on name/display-name/tags
-    │   └── display.go           # Formatted template listing
+    │   ├── search.go            # Prefix search on name/display-name/description/tags
+    │   └── display.go           # Formatted template listing and detail view
     │
     ├── selection/               # Selection parsing and resolution
     │   ├── model.go             # ParsedSelection, ResolvedSelection, SelectMode

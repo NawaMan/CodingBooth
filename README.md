@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.25.0 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.26.0 — [View Changelog](docs/CHANGELOG.md)
 
 **CodingBooth** delivers fully reproducible, Docker-powered development environments — anywhere, on any machine.
 
@@ -158,6 +158,29 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 # Dry-run to see what would be executed
 ./booth --dryrun --verbose
 ```
+
+### Browsing Templates
+
+Use `booth template` to explore available init templates:
+
+```shell
+# List available templates
+./booth template list
+
+# Search by name, description, or tag
+./booth template search python
+
+# Show detailed info about a template
+./booth template show go
+
+# Show extension details
+./booth template show python+uv
+
+# Show full file/segment contents
+./booth template show go --detail
+```
+
+> 💡 **Tip:** Use `--full` with `list` or `search` to include secondary (non-primary) templates.
 
 ## Why CodingBooth?
 
@@ -590,12 +613,11 @@ CodingBooth is designed for development environments, not production workloads. 
 | **Sudo access**      | `coder` has passwordless sudo (for installing packages)                   |
 | **File ownership**   | Files match your host UID/GID — no root-owned files                       |
 | **`.booth/` config** | Read-only inside the container by default (`--writable-booth` to opt out) |
-| **Network**          | Full network access by default; use Network Whitelist for restrictions    |
+| **Network**          | Full network access by default                                            |
 | **DinD mode**        | Requires `--privileged` flag (elevated permissions)                       |
 
 **Best practices:**
 - Don't run untrusted code in CodingBooth containers
-- Use Network Whitelist in security-conscious environments
 - Avoid mounting sensitive host directories beyond what's needed
 - DinD mode grants significant privileges — use only when needed
 
@@ -1225,129 +1247,12 @@ This allows the booth to run Docker commands that execute inside the isolated Di
 - The sidecar approach offers stronger isolation but can be slower and more complex to manage.
 
 > 💡 **Tip:**
-> See `examples/workspaces/dind-example` for basic DinD usage, `examples/workspaces/kind-example` for KinD, and `examples/workspaces/firewall-example` for `--sandboxed` egress enforcement.  
-> **Security note (2026-02-06):** `--sandboxed` with `--dind` is **not supported**. The DinD sidecar can bypass the egress firewall by running a privileged container in the shared network namespace. Use `--sandboxed` **without** `--dind` until further research.
+> See `examples/workspaces/dind-example` for basic DinD usage and `examples/workspaces/kind-example` for KinD.
 
 
-### 12. Egress Sandbox (`--sandboxed`)
+### 12. TLS Support
 
-CodingBooth includes an **egress sandbox** that restricts outbound traffic to an allowlist.  
-When enabled, traffic must pass through an Envoy proxy sidecar and is enforced with firewall rules.
-
-**How It Works**
-- Envoy forward proxy enforces a domain allowlist.
-- iptables rules force all HTTP/HTTPS traffic through the proxy.
-- Default policy is **deny**; only allowlisted domains are reachable.
-
-**Configuration**
-- Enable with:
-  ```bash
-  ./booth --sandboxed
-  ```
-- Policy is provided by **one** of:
-  - `.booth/sandbox/allowlist.txt` (simple allowlist), or
-  - `.booth/sandbox/envoy.yaml` (advanced/custom).
-- These are **mutually exclusive**; if both exist, startup fails with a clear error.
- - Optional: add extra domains with `sandbox-allowlist` in `.booth/config.toml`:
-  ```toml
-  sandbox-allowlist = [
-    "example.com",
-    "registry.npmjs.org"
-  ]
-  ```
-  This list is merged into the active allowlist (default or file-based). It cannot be used with `sandbox-policy-file`.
-
-**Default Allowlist (embedded)**
-- If `--sandboxed` is enabled and no policy files exist, CodingBooth materializes a default allowlist at:
-  - `.booth/sandbox/allowlist.txt`
-- This default content is embedded in the CLI binary and is based on `docs/implementations/example-allowlist.txt`.
-
-**Important Security Note (2026-02-06)**
-- `--sandboxed` with `--dind` is **not supported** due to a known firewall bypass via privileged DinD containers.
-- Use `--sandboxed` **without** `--dind` until further research.
-
-**Quick Example**
-```bash
-mkdir -p .booth/sandbox
-cp docs/implementations/example-allowlist.txt .booth/sandbox/allowlist.txt
-./booth --sandboxed
-```
-
-### 13. Network Whitelist
-
-CodingBooth includes a **network whitelist** feature that restricts container internet access to only approved domains. This is useful for:
-- Security-conscious environments
-- Ensuring containers only access package registries
-- Compliance requirements that limit network access
-
-**How It Works**
-- Uses a lightweight HTTP proxy (tinyproxy) inside the container
-- Only allows connections to whitelisted domains
-- Disabled by default for backwards compatibility
-
-**Enabling Network Whitelist**
-
-First, include the setup in your Dockerfile:
-```dockerfile
-RUN /opt/codingbooth/setups/network-whitelist--setup.sh
-```
-
-Then enable it inside the container:
-```bash
-network-whitelist-enable
-```
-
-**Default Whitelisted Domains**
-
-The following package registries and services are whitelisted by default:
-- **npm:** registry.npmjs.org, npmjs.com, yarnpkg.com
-- **Python:** pypi.org, files.pythonhosted.org
-- **Maven:** repo.maven.apache.org, repo1.maven.org
-- **Go:** proxy.golang.org, sum.golang.org
-- **Rust:** crates.io, static.crates.io
-- **Docker:** registry-1.docker.io, docker.io
-- **GitHub:** github.com, raw.githubusercontent.com
-- **Ubuntu/Debian:** archive.ubuntu.com, security.ubuntu.com
-
-**Adding Custom Domains**
-
-Option 1: Using the CLI command
-```bash
-network-whitelist-add example.com api.example.com
-network-whitelist-reload
-```
-
-Option 2: Edit the whitelist file directly
-```bash
-# Edit ~/.network-whitelist (one domain per line)
-nano ~/.network-whitelist
-network-whitelist-reload
-```
-
-Option 3: Team-shared whitelist via `.booth/home/`
-```
-my-project/
-└── .booth/
-    └── home/
-        └── .network-whitelist    # Team-shared custom domains
-```
-
-**Available Commands**
-
-| Command                     | Description                           |
-|:----------------------------|:--------------------------------------|
-| `network-whitelist-enable`  | Enable network restrictions           |
-| `network-whitelist-disable` | Disable network restrictions          |
-| `network-whitelist-status`  | Show current status and domain counts |
-| `network-whitelist-list`    | List all whitelisted domains          |
-| `network-whitelist-add`     | Add domain(s) to user whitelist       |
-| `network-whitelist-reload`  | Apply whitelist changes               |
-
-> ⚠️ **Note:**
-> The network whitelist only affects HTTP/HTTPS traffic that respects proxy environment variables.
-> Most package managers (npm, pip, maven, etc.) respect these variables automatically.
-
-For detailed documentation including the full default whitelist, troubleshooting, and file locations, see [docs/URL_WHITELIST.md](docs/URL_WHITELIST.md).
+CodingBooth supports self-signed certificate generation for HTTPS access to web-based variants (codeserver, notebook, desktop).
 
 
 ## Setup Implementation Notes
@@ -1544,12 +1449,12 @@ run-args = [
 
 For deeper technical details on how CodingBooth works internally, see [docs/implementations/](docs/implementations/):
 
+- **[Booth Init](docs/implementations/BOOTHINIT.md)** — Template-driven project scaffolding (`booth init` and `booth template`)
 - **[Wrapper](docs/implementations/WRAPPER.md)** — The booth wrapper script that manages binary downloads and verification
 - **[User Permissions](docs/implementations/USER_PERMISSIONS.md)** — UID/GID mapping between host and container
 - **[Desktop + noVNC](docs/implementations/DESKTOP_NOVNC.md)** — VNC server and browser-based desktop access
 - **[Variant Selection](docs/implementations/VARIANTS.md)** — How variants and aliases are resolved
 - **[Docker-in-Docker](docs/implementations/DIND.md)** — Running Docker inside CodingBooth
-- **[Network Whitelist](docs/implementations/URL_WHITELIST.md)** — Restricting container network access
 - **[Booth-in-Booth](docs/implementations/BOOTH_IN_BOOTH.md)** — Nested booth detection and opt-in mechanism
 
 

@@ -2,8 +2,34 @@
 
 This file contains a list of changes for each released version.
 
+## 0.26.0 (unreleased)
+
+- `booth template` command — new top-level command replacing `init list` and `init search`
+  - `booth template list` — compact listing with descriptions (hides auto-select extensions)
+  - `booth template search <term>` — search by name, description, or tag
+  - `booth template show <name>` — detailed view with parameters, extensions, requires, tags, and file changes
+  - `booth template show <name>+<ext>` — show extension details (e.g. `python+uv`)
+  - `booth template show <name> --detail` — show file and segment contents
+  - `--full` flag to include non-primary templates in list/search
+- `booth init --set <key=value>` — set arbitrary config.toml values from the CLI (bare key = boolean true)
+- `booth init new` without `--select` — create an empty booth with only CLI overrides
+- `--port` flag for `init new`/`dryrun` — set port directly in generated config.toml
+- TLS support — self-signed certificate generation for HTTPS access
+- Split-view ttyd — terminal split view mode
+- Excalidraw template — collaborative whiteboard with autostart and expose extensions
+- `.env` file support — load environment variables from `.booth/.env` at startup
+- Template descriptions improved — all templates and extensions have better short and long descriptions
+- Removed egress/network-whitelist configuration (simplified networking)
+
 ## 0.25.0
-- Refine templates and examples
+
+- Deno template with `pkg` extension for third-party module installation
+- Fix `booth install` hang problem (#12)
+- Fix Haskell and Deno template issues
+- Fix for Windows compatibility
+- Improved init security — resolver validates template dependencies
+- Release version protection
+- Refine templates, examples, and documentation
 
 ## 0.22.0
 
