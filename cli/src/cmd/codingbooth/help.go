@@ -19,20 +19,21 @@ func showHelp(version string) {
 	fmt.Printf(`%s — launch a Docker-based development booth (version %s)
 
 USAGE:
-  %s version                              (print the CodingBooth version)
-  %s help                                 (show this help and exit)
-  %s run [options] [--] [command ...]     (run the booth)
-  %s [options] [--] [command ...]         (default action: run)
-  %s list [--running|--stopped] [-q]      (list booth-managed containers)
-  %s start [--name <name>|--code <path>]  (start a stopped keep-alive booth)
-  %s stop [--name <name>] [--force]       (stop a running booth)
-  %s restart [--name <name>]              (restart a running booth)
-  %s remove [--name <name>] [--force]     (remove booth container(s))
-  %s prune [--yes]                        (remove stopped booth containers)
-  %s example <subcommand>                 (manage examples)
-  %s init <subcommand> [options]           (initialize a new .booth/ project)
-  %s emit-dockerfile [options]            (compile Boothfile to Dockerfile)
-  %s print-default-allowlist.txt          (print built-in sandbox allowlist)
+  %s version                                   (print the CodingBooth version)
+  %s help                                      (show this help and exit)
+  %s run [options] [--] [command ...]          (run the booth)
+  %s [options] [--] [command ...]              (default action: run)
+  %s list [--running|--stopped] [--name-only]  (list booth-managed containers)
+  %s start [--name <name>|--code <path>] [-d]  (start a stopped keep-alive booth)
+  %s stop [--name <name>] [-f] [--time <n>]    (stop a running booth)
+  %s restart [--name <name>] [--time <n>]      (restart a running booth)
+  %s remove [--name <name>] [--force]          (remove booth container(s))
+  %s prune [--yes]                             (remove stopped booth containers)
+  %s example <subcommand>                      (manage examples)
+  %s template <subcommand>                     (browse and manage templates)
+  %s init <subcommand> [options]               (initialize a new .booth/ project)
+  %s emit-dockerfile [options]                 (compile Boothfile to Dockerfile)
+  %s print-default-allowlist.txt               (print built-in sandbox allowlist)
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and config file):
   --code <path>          Host code path to mount at /home/coder/code
@@ -80,12 +81,15 @@ RUNTIME OPTIONS:
   --env-file <file>      Provide an --env-file to docker run
                          Use 'none' to disable auto-detection of <code>/.env
                          .booth/.env-local is always included when present (must be gitignored)
+  --startup <command>    Custom startup command to run inside the container
 
 CONTAINER MODE:
   --daemon               Run the booth container in the background
   --public               Bind to all interfaces with password authentication.
                          Password read from .booth/.booth.password (chmod 600, gitignored),
                          or prompted interactively if not found.
+  --tls-cert <path>      TLS certificate file for HTTPS (used with --public)
+  --tls-key <path>       TLS private key file for HTTPS (used with --public)
   --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST
   --sandboxed            Enable sandbox defaults (proxy + enforcement setup)
   --keep-alive           Do not remove the container when stopped
@@ -135,6 +139,7 @@ EXAMPLES:
 `,
 		scriptName,
 		version,
+		scriptName,
 		scriptName,
 		scriptName,
 		scriptName,

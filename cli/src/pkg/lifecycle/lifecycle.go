@@ -83,8 +83,7 @@ func List(args []string, stdout io.Writer, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("list", flag.ContinueOnError)
 	runningOnly := flagSet.Bool("running", false, "Show only running booths")
 	stoppedOnly := flagSet.Bool("stopped", false, "Show only stopped booths")
-	quiet := flagSet.Bool("quiet", false, "Show only container names")
-	flagSet.BoolVar(quiet, "q", false, "Show only container names")
+	nameOnly := flagSet.Bool("name-only", false, "Show only container names")
 	flagSet.SetOutput(stderr)
 
 	if err := flagSet.Parse(args); err != nil {
@@ -113,7 +112,7 @@ func List(args []string, stdout io.Writer, stderr io.Writer) error {
 		return nil
 	}
 
-	if *quiet {
+	if *nameOnly {
 		for _, container := range containers {
 			_, _ = fmt.Fprintln(stdout, container.Name)
 		}
