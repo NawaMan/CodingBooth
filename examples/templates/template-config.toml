@@ -60,6 +60,10 @@
 #                         # If unset, auto-uses "${code}/.env" when it exists
 #                         # Set to "none" to explicitly disable --env-file usage
 #                         # Common keys: PASSWORD, JUPYTER_TOKEN, TZ, HTTP(S)_PROXY, AWS_*, GH_TOKEN
+#
+# Note: .booth/.env-local is always loaded when present (must be gitignored).
+# Use it for personal secrets that should never be committed.
+# When both .env-local and env-file exist, env-file values take priority.
 
 ### -------------------------------------------------------------------------------------
 ### TOML-friendly array fields
