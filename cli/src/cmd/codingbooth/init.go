@@ -77,6 +77,7 @@ Flags:
   --templates-path <dir>   Use local templates directory (or set CB_TEMPLATES_PATH)
   --select <selection>     Template selection DSL (repeatable; required for new/dryrun)
   --variant <variant>      Set the variant (base, notebook, codeserver, xfce, kde)
+  --port <port>            Set port in generated config.toml (e.g., 10000, NEXT, RANDOM)
   --cmd <command>          Set the default start command (repeatable; for new/dryrun)
   --version <ver>          Use templates from a specific release version
   --full                   Show all templates including secondary (for list)
@@ -93,6 +94,7 @@ Examples:
   codingbooth init new --select @selections.txt
   codingbooth init new --select "claude-code~credential"
   codingbooth init new --select go --select python --select claude-code
+  codingbooth init new --select python --port 10080
   codingbooth init new --select python --cmd bash`)
 }
 
@@ -101,6 +103,7 @@ type initFlags struct {
 	selectDSL     string // resolved: joined from selectDSLs after ReadSelectInput
 	cmds          []string
 	variant       string
+	port          string
 	templatesPath string
 	version       string
 	debug         bool
@@ -148,6 +151,13 @@ func parseInitFlags(args []string) initFlags {
 				os.Exit(1)
 			}
 			flags.variant = args[i+1]
+			i++
+		case "--port":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --port requires a value")
+				os.Exit(1)
+			}
+			flags.port = args[i+1]
 			i++
 		case "--version":
 			if i+1 >= len(args) {
@@ -394,6 +404,9 @@ func compileSelection(flags initFlags) (*output.BoothOutput, *selection.Resolved
 	if flags.variant != "" {
 		out.Config.Variant = flags.variant
 	}
+	if flags.port != "" {
+		out.Config.Port = flags.port
+	}
 	if len(flags.cmds) > 0 {
 		out.Config.Cmds = flags.cmds
 	}
@@ -484,6 +497,9 @@ func buildInitCommand(targetPath string, flags initFlags) string {
 	if flags.variant != "" {
 		parts = append(parts, "--variant "+flags.variant)
 	}
+	if flags.port != "" {
+		parts = append(parts, "--port "+flags.port)
+	}
 	for _, cmd := range flags.cmds {
 		parts = append(parts, "--cmd "+cmd)
 	}
@@ -503,6 +519,9 @@ func buildAdjustCommand(flags initFlags) string {
 	}
 	if flags.variant != "" {
 		parts = append(parts, "--variant "+flags.variant)
+	}
+	if flags.port != "" {
+		parts = append(parts, "--port "+flags.port)
 	}
 	for _, cmd := range flags.cmds {
 		parts = append(parts, "--cmd "+cmd)
