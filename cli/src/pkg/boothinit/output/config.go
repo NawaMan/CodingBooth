@@ -6,6 +6,7 @@ package output
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 )
 
@@ -46,6 +47,27 @@ func SerializeConfigToml(cfg *ConfigToml, command, adjustCommand string) string 
 	if len(cfg.RunArgs) > 0 {
 		b.WriteString("\n")
 		writeStringArray(&b, "run-args", cfg.RunArgs)
+	}
+
+	// Write --set overrides as raw TOML key=value pairs
+	if len(cfg.Overrides) > 0 {
+		b.WriteString("\n")
+		keys := make([]string, 0, len(cfg.Overrides))
+		for k := range cfg.Overrides {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			v := cfg.Overrides[k]
+			switch val := v.(type) {
+			case bool:
+				fmt.Fprintf(&b, "%s = %t\n", k, val)
+			case string:
+				fmt.Fprintf(&b, "%s = %q\n", k, val)
+			default:
+				fmt.Fprintf(&b, "%s = %q\n", k, fmt.Sprintf("%v", val))
+			}
+		}
 	}
 
 	return b.String()

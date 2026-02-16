@@ -29,6 +29,10 @@ type ConfigToml struct {
 	Cmds     []string
 	RunArgs  []string
 	BuildArgs []string
+
+	// Overrides holds extra key-value pairs from --set flags.
+	// These are written to config.toml after the known fields above.
+	Overrides map[string]interface{}
 }
 
 // BoothfileContent represents the content of .booth/Boothfile.

@@ -118,6 +118,82 @@ func TestSerializeConfigToml_FullConfig(t *testing.T) {
 	assert.True(t, buildArgsIdx < runArgsIdx, "build-args should come before run-args")
 }
 
+// --set override serialization
+
+func TestSerializeConfigToml_WithBoolOverride(t *testing.T) {
+	cfg := &ConfigToml{
+		Variant:   "base",
+		Overrides: map[string]interface{}{"keep-alive": true},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	assert.Contains(t, result, `variant = "base"`)
+	assert.Contains(t, result, "keep-alive = true")
+}
+
+func TestSerializeConfigToml_WithStringOverride(t *testing.T) {
+	cfg := &ConfigToml{
+		Overrides: map[string]interface{}{"name": "my-booth"},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	assert.Contains(t, result, `name = "my-booth"`)
+}
+
+func TestSerializeConfigToml_WithFalseOverride(t *testing.T) {
+	cfg := &ConfigToml{
+		Overrides: map[string]interface{}{"daemon": false},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	assert.Contains(t, result, "daemon = false")
+}
+
+func TestSerializeConfigToml_OverridesSorted(t *testing.T) {
+	cfg := &ConfigToml{
+		Overrides: map[string]interface{}{
+			"name":       "test",
+			"keep-alive": true,
+			"daemon":     false,
+		},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	daemonIdx := strings.Index(result, "daemon")
+	keepAliveIdx := strings.Index(result, "keep-alive")
+	nameIdx := strings.Index(result, "name")
+	assert.True(t, daemonIdx < keepAliveIdx, "daemon should come before keep-alive")
+	assert.True(t, keepAliveIdx < nameIdx, "keep-alive should come before name")
+}
+
+func TestSerializeConfigToml_OverridesAfterKnownFields(t *testing.T) {
+	cfg := &ConfigToml{
+		Variant:   "base",
+		Port:      "8080",
+		Overrides: map[string]interface{}{"keep-alive": true},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	portIdx := strings.Index(result, "port")
+	keepAliveIdx := strings.Index(result, "keep-alive")
+	assert.True(t, portIdx < keepAliveIdx, "known fields should come before overrides")
+}
+
+func TestSerializeConfigToml_NoOverrides(t *testing.T) {
+	cfg := &ConfigToml{
+		Variant: "base",
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	assert.NotContains(t, result, "keep-alive")
+}
+
+func TestSerializeConfigToml_EmptyOverrides(t *testing.T) {
+	cfg := &ConfigToml{
+		Variant:   "base",
+		Overrides: map[string]interface{}{},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	// Should have no trailing blank line from empty overrides
+	lines := strings.Split(strings.TrimRight(result, "\n"), "\n")
+	lastLine := lines[len(lines)-1]
+	assert.NotEqual(t, "", lastLine, "should not end with blank line from empty overrides")
+}
+
 func TestSerializeConfigToml_ValidToml(t *testing.T) {
 	cfg := &ConfigToml{
 		Variant: "codeserver",

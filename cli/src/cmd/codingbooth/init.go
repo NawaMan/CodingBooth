@@ -84,6 +84,7 @@ Flags:
   --debug                  Print debug output (for new/dryrun)
   --start                  Start the booth after creation (for new)
   --overwrite              Overwrite existing files without prompting (for new)
+  --set <key=value>        Set a config.toml value (repeatable; bare key = true)
 
 Examples:
   codingbooth init list
@@ -95,13 +96,16 @@ Examples:
   codingbooth init new --select "claude-code~credential"
   codingbooth init new --select go --select python --select claude-code
   codingbooth init new --select python --port 10080
-  codingbooth init new --select python --cmd bash`)
+  codingbooth init new --select python --cmd bash
+  codingbooth init new --select go --set keep-alive --set name=my-booth
+  codingbooth init new --select go --set dind --set port=8080`)
 }
 
 type initFlags struct {
 	selectDSLs    []string
 	selectDSL     string // resolved: joined from selectDSLs after ReadSelectInput
 	cmds          []string
+	sets          []string // raw --set key=value strings
 	variant       string
 	port          string
 	templatesPath string
@@ -165,6 +169,13 @@ func parseInitFlags(args []string) initFlags {
 				os.Exit(1)
 			}
 			flags.version = args[i+1]
+			i++
+		case "--set":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --set requires a value")
+				os.Exit(1)
+			}
+			flags.sets = append(flags.sets, args[i+1])
 			i++
 		default:
 			fmt.Fprintf(os.Stderr, "Error: unknown flag: %s\n", args[i])
@@ -262,18 +273,20 @@ func runInitNew(version string, args []string) {
 		flagArgs = args[1:]
 	}
 	flags := parseInitFlags(flagArgs)
-
-	if len(flags.selectDSLs) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: --select is required")
-		os.Exit(1)
-	}
 	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
 
-	templatesPath, cleanup := resolveTemplatesPath(flags, version)
-	defer cleanup()
-	flags.templatesPath = templatesPath
+	var out *output.BoothOutput
+	var resolved *selection.ResolvedSelection
 
-	out, resolved := compileSelection(flags)
+	if len(flags.selectDSLs) == 0 {
+		out, resolved = compileEmpty(flags)
+	} else {
+		templatesPath, cleanup := resolveTemplatesPath(flags, version)
+		defer cleanup()
+		flags.templatesPath = templatesPath
+		out, resolved = compileSelection(flags)
+	}
+
 	out.Command = buildInitCommand(targetPath, flags)
 	out.AdjustCommand = buildAdjustCommand(flags)
 
@@ -325,18 +338,20 @@ func runInitNew(version string, args []string) {
 // runInitDryrun handles: codingbooth init dryrun --select <dsl> [--templates-path <dir>] [--debug]
 func runInitDryrun(version string, args []string) {
 	flags := parseInitFlags(args)
-
-	if len(flags.selectDSLs) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: --select is required")
-		os.Exit(1)
-	}
 	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
 
-	templatesPath, cleanup := resolveTemplatesPath(flags, version)
-	defer cleanup()
-	flags.templatesPath = templatesPath
+	var out *output.BoothOutput
+	var resolved *selection.ResolvedSelection
 
-	out, resolved := compileSelection(flags)
+	if len(flags.selectDSLs) == 0 {
+		out, resolved = compileEmpty(flags)
+	} else {
+		templatesPath, cleanup := resolveTemplatesPath(flags, version)
+		defer cleanup()
+		flags.templatesPath = templatesPath
+		out, resolved = compileSelection(flags)
+	}
+
 	out.Command = buildInitCommand("", flags)
 	out.AdjustCommand = buildAdjustCommand(flags)
 
@@ -346,6 +361,38 @@ func runInitDryrun(version string, args []string) {
 	}
 
 	printDryrun(out)
+}
+
+// compileEmpty produces an empty BoothOutput with only CLI overrides applied.
+// Used when no --select is given (empty booth).
+func compileEmpty(flags initFlags) (*output.BoothOutput, *selection.ResolvedSelection) {
+	out := &output.BoothOutput{
+		Config:    &output.ConfigToml{},
+		Boothfile: &output.BoothfileContent{Content: ""},
+	}
+
+	// Apply CLI overrides
+	if flags.variant != "" {
+		out.Config.Variant = flags.variant
+	}
+	if flags.port != "" {
+		out.Config.Port = flags.port
+	}
+	if len(flags.cmds) > 0 {
+		out.Config.Cmds = flags.cmds
+	}
+
+	// Apply --set overrides
+	if len(flags.sets) > 0 {
+		overrides, err := parseSetOverrides(flags.sets)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing --set: %v\n", err)
+			os.Exit(1)
+		}
+		applySetOverrides(out.Config, overrides)
+	}
+
+	return out, &selection.ResolvedSelection{}
 }
 
 // compileSelection runs the full pipeline: read input → parse → resolve → compile.
@@ -409,6 +456,16 @@ func compileSelection(flags initFlags) (*output.BoothOutput, *selection.Resolved
 	}
 	if len(flags.cmds) > 0 {
 		out.Config.Cmds = flags.cmds
+	}
+
+	// Apply --set overrides (highest precedence)
+	if len(flags.sets) > 0 {
+		overrides, err := parseSetOverrides(flags.sets)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error parsing --set: %v\n", err)
+			os.Exit(1)
+		}
+		applySetOverrides(out.Config, overrides)
 	}
 
 	return out, resolved
@@ -493,7 +550,9 @@ func buildInitCommand(targetPath string, flags initFlags) string {
 	} else {
 		parts = append(parts, "new")
 	}
-	parts = append(parts, "--select "+flags.selectDSL)
+	if flags.selectDSL != "" {
+		parts = append(parts, "--select "+flags.selectDSL)
+	}
 	if flags.variant != "" {
 		parts = append(parts, "--variant "+flags.variant)
 	}
@@ -502,6 +561,9 @@ func buildInitCommand(targetPath string, flags initFlags) string {
 	}
 	for _, cmd := range flags.cmds {
 		parts = append(parts, "--cmd "+cmd)
+	}
+	for _, s := range flags.sets {
+		parts = append(parts, "--set "+s)
 	}
 	if flags.version != "" {
 		parts = append(parts, "--version "+flags.version)
@@ -526,7 +588,12 @@ func buildAdjustCommand(flags initFlags) string {
 	for _, cmd := range flags.cmds {
 		parts = append(parts, "--cmd "+cmd)
 	}
-	parts = append(parts, "--select "+flags.selectDSL)
+	for _, s := range flags.sets {
+		parts = append(parts, "--set "+s)
+	}
+	if flags.selectDSL != "" {
+		parts = append(parts, "--select "+flags.selectDSL)
+	}
 	return strings.Join(parts, " ")
 }
 
@@ -551,6 +618,80 @@ func printSummary(resolved *selection.ResolvedSelection) {
 		}
 	}
 	fmt.Println()
+}
+
+// parseSetOverrides parses --set values into a key-value map.
+// Bare keys (no '=') are treated as boolean true.
+// "key=true" and "key=false" are booleans. All other values are strings.
+func parseSetOverrides(sets []string) (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+	for _, s := range sets {
+		idx := strings.Index(s, "=")
+		if idx < 0 {
+			// bare key → true
+			if err := validateSetKey(s); err != nil {
+				return nil, err
+			}
+			result[s] = true
+			continue
+		}
+		key := s[:idx]
+		value := s[idx+1:]
+		if err := validateSetKey(key); err != nil {
+			return nil, err
+		}
+		switch strings.ToLower(value) {
+		case "true":
+			result[key] = true
+		case "false":
+			result[key] = false
+		default:
+			result[key] = value
+		}
+	}
+	return result, nil
+}
+
+// validateSetKey checks that the key is a plausible config.toml key.
+func validateSetKey(key string) error {
+	if key == "" {
+		return fmt.Errorf("empty key in --set")
+	}
+	if strings.ContainsAny(key, " \t\n\"'=[]{}") {
+		return fmt.Errorf("invalid key %q in --set", key)
+	}
+	return nil
+}
+
+// applySetOverrides applies --set values to the ConfigToml.
+// Known fields are merged into the struct directly.
+// Unknown keys go into the Overrides map.
+func applySetOverrides(cfg *output.ConfigToml, overrides map[string]interface{}) {
+	if cfg.Overrides == nil {
+		cfg.Overrides = make(map[string]interface{})
+	}
+	for key, value := range overrides {
+		switch key {
+		case "variant":
+			if s, ok := value.(string); ok {
+				cfg.Variant = s
+			}
+		case "port":
+			if s, ok := value.(string); ok {
+				cfg.Port = s
+			}
+		case "timezone":
+			if s, ok := value.(string); ok {
+				cfg.Timezone = s
+			}
+		case "dind":
+			if b, ok := value.(bool); ok {
+				cfg.Dind = b
+			}
+		default:
+			cfg.Overrides[key] = value
+		}
+	}
 }
 
 // shellSplit splits a string into words, respecting single quotes, double quotes,
