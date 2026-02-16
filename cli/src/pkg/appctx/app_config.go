@@ -28,13 +28,15 @@ type AppConfig struct {
 	// --------------------
 	// Flags
 	// --------------------
-	KeepAlive     bool `toml:"keep-alive,omitempty"     envconfig:"CB_KEEP_ALIVE" default:"false"`
-	SilenceBuild  bool `toml:"silence-build,omitempty"  envconfig:"CB_SILENCE_BUILD" default:"false"`
-	Daemon        bool `toml:"daemon,omitempty"         envconfig:"CB_DAEMON" default:"false"`
-	Pull          bool `toml:"pull,omitempty"           envconfig:"CB_PULL" default:"false"`
-	Dind          bool `toml:"dind,omitempty"           envconfig:"CB_DIND" default:"false"`
-	Sandbox       bool `toml:"sandboxed,omitempty"      envconfig:"CB_SANDBOX" default:"false"`
-	WritableBooth bool `toml:"writable-booth,omitempty" envconfig:"CB_WRITABLE_BOOTH" default:"false"`
+	KeepAlive          bool   `toml:"keep-alive,omitempty"          envconfig:"CB_KEEP_ALIVE" default:"false"`
+	SilenceBuild       bool   `toml:"silence-build,omitempty"       envconfig:"CB_SILENCE_BUILD" default:"false"`
+	Daemon             bool   `toml:"daemon,omitempty"              envconfig:"CB_DAEMON" default:"false"`
+	Pull               bool   `toml:"pull,omitempty"                envconfig:"CB_PULL" default:"false"`
+	Dind               bool   `toml:"dind,omitempty"                envconfig:"CB_DIND" default:"false"`
+	Sandbox            bool   `toml:"sandboxed,omitempty"           envconfig:"CB_SANDBOX" default:"false"`
+	SandboxMode        string `toml:"sandbox-mode,omitempty"        envconfig:"CB_SANDBOX_MODE"`
+	SandboxEnforcement string `toml:"sandbox-enforcement,omitempty" envconfig:"CB_SANDBOX_ENFORCEMENT"`
+	WritableBooth      bool   `toml:"writable-booth,omitempty"      envconfig:"CB_WRITABLE_BOOTH" default:"false"`
 
 	// Public exposes the booth on all interfaces (0.0.0.0) with password auth.
 	// Password is resolved at startup from .booth/.booth.password or interactive stdin.
@@ -78,11 +80,6 @@ type AppConfig struct {
 	BuildArgs  ilist.SemicolonStringList `toml:"build-args,omitempty"  envconfig:"CB_BUILD_ARGS"`
 	RunArgs    ilist.SemicolonStringList `toml:"run-args,omitempty"    envconfig:"CB_RUN_ARGS"`
 	Cmds       ilist.SemicolonStringList `toml:"cmds,omitempty"        envconfig:"CB_CMDS"`
-
-	// --------------------
-	// Nested TOML configuration
-	// --------------------
-	Egress EgressConfig `toml:"egress,omitempty" ignored:"true"`
 }
 
 // Clone the content of the app config.
@@ -117,58 +114,53 @@ func (config AppConfig) String() string {
 	str.WriteString("==| AppConfig |==================================================\n")
 
 	fmt.Fprintf(&str, "# General configuration ---------\n")
-	fmt.Fprintf(&str, "    Dryrun:           %v\n", config.Dryrun)
-	fmt.Fprintf(&str, "    Verbose:          %v\n", config.Verbose)
-	fmt.Fprintf(&str, "    Config:           %v\n", config.Config)
-	fmt.Fprintf(&str, "    Code:             %v\n", config.Code)
-	fmt.Fprintf(&str, "    Version:          %q\n", config.Version)
+	fmt.Fprintf(&str, "    Dryrun:  %v\n", config.Dryrun)
+	fmt.Fprintf(&str, "    Verbose: %v\n", config.Verbose)
+	fmt.Fprintf(&str, "    Config:  %v\n", config.Config)
+	fmt.Fprintf(&str, "    Code:    %v\n", config.Code)
+	fmt.Fprintf(&str, "    Version: %q\n", config.Version)
 
 	fmt.Fprintf(&str, "# Flags -------------------------\n")
-	fmt.Fprintf(&str, "    KeepAlive:        %t\n", config.KeepAlive)
-	fmt.Fprintf(&str, "    SilenceBuild:     %t\n", config.SilenceBuild)
-	fmt.Fprintf(&str, "    Daemon:           %t\n", config.Daemon)
-	fmt.Fprintf(&str, "    Pull:             %t\n", config.Pull)
-	fmt.Fprintf(&str, "    Dind:             %t\n", config.Dind)
-	fmt.Fprintf(&str, "    Sandbox:          %t\n", config.Sandbox)
-	fmt.Fprintf(&str, "    WritableBooth:    %t\n", config.WritableBooth)
-	fmt.Fprintf(&str, "    Public:           %t\n", config.Public)
-	fmt.Fprintf(&str, "    Password:         %s\n", maskStr(config.Password))
-	fmt.Fprintf(&str, "    SandboxAllowlist: %q\n", config.SandboxAllowlistFile)
-	fmt.Fprintf(&str, "    SandboxPolicy:    %q\n", config.SandboxPolicyFile)
+	fmt.Fprintf(&str, "    KeepAlive:         %t\n", config.KeepAlive)
+	fmt.Fprintf(&str, "    SilenceBuild:      %t\n", config.SilenceBuild)
+	fmt.Fprintf(&str, "    Daemon:            %t\n", config.Daemon)
+	fmt.Fprintf(&str, "    Pull:              %t\n", config.Pull)
+	fmt.Fprintf(&str, "    Dind:              %t\n", config.Dind)
+	fmt.Fprintf(&str, "    Sandbox:           %t\n", config.Sandbox)
+	fmt.Fprintf(&str, "    SandboxMode:       %q\n", config.SandboxMode)
+	fmt.Fprintf(&str, "    SandboxEnforcement:%q\n", config.SandboxEnforcement)
+	fmt.Fprintf(&str, "    WritableBooth:     %t\n", config.WritableBooth)
+	fmt.Fprintf(&str, "    Public:            %t\n", config.Public)
+	fmt.Fprintf(&str, "    Password:          %s\n", maskStr(config.Password))
+	fmt.Fprintf(&str, "    SandboxAllowlist:  %q\n", config.SandboxAllowlistFile)
+	fmt.Fprintf(&str, "    SandboxPolicy:     %q\n", config.SandboxPolicyFile)
 	fmt.Fprintf(&str, "    SandboxAllowlist+: %v\n", config.SandboxAllowlist)
 
 	fmt.Fprintf(&str, "# Image Configuration -----------\n")
-	fmt.Fprintf(&str, "    Dockerfile:       %q\n", config.Dockerfile)
-	fmt.Fprintf(&str, "    Boothfile:        %q\n", config.Boothfile)
-	fmt.Fprintf(&str, "    Image:            %q\n", config.Image)
-	fmt.Fprintf(&str, "    Variant:          %q\n", config.Variant)
-	fmt.Fprintf(&str, "    EmitDockerfile:   %t\n", config.EmitDockerfile)
-	fmt.Fprintf(&str, "    Strict:           %t\n", config.Strict)
+	fmt.Fprintf(&str, "    Dockerfile:     %q\n", config.Dockerfile)
+	fmt.Fprintf(&str, "    Boothfile:      %q\n", config.Boothfile)
+	fmt.Fprintf(&str, "    Image:          %q\n", config.Image)
+	fmt.Fprintf(&str, "    Variant:        %q\n", config.Variant)
+	fmt.Fprintf(&str, "    EmitDockerfile: %t\n", config.EmitDockerfile)
+	fmt.Fprintf(&str, "    Strict:         %t\n", config.Strict)
 
 	fmt.Fprintf(&str, "# Runtime values ----------------\n")
-	fmt.Fprintf(&str, "    ProjectName:      %q\n", config.ProjectName)
-	fmt.Fprintf(&str, "    HostUID:          %q\n", config.HostUID)
-	fmt.Fprintf(&str, "    HostGID:          %q\n", config.HostGID)
-	fmt.Fprintf(&str, "    Timezone:         %q\n", config.Timezone)
+	fmt.Fprintf(&str, "    ProjectName: %q\n", config.ProjectName)
+	fmt.Fprintf(&str, "    HostUID:     %q\n", config.HostUID)
+	fmt.Fprintf(&str, "    HostGID:     %q\n", config.HostGID)
+	fmt.Fprintf(&str, "    Timezone:    %q\n", config.Timezone)
 
 	fmt.Fprintf(&str, "# Container Configuration -------\n")
-	fmt.Fprintf(&str, "    Name:             %q\n", config.Name)
-	fmt.Fprintf(&str, "    Port:             %q\n", config.Port)
-	fmt.Fprintf(&str, "    EnvFile:          %q\n", config.EnvFile)
-	fmt.Fprintf(&str, "    Startup:          %q\n", config.Startup)
+	fmt.Fprintf(&str, "    Name:    %q\n", config.Name)
+	fmt.Fprintf(&str, "    Port:    %q\n", config.Port)
+	fmt.Fprintf(&str, "    EnvFile: %q\n", config.EnvFile)
+	fmt.Fprintf(&str, "    Startup: %q\n", config.Startup)
 
 	fmt.Fprintf(&str, "# TOML-friendly array fields ----\n")
 	formatList(&str, "CommonArgs", config.CommonArgs.List, "    ")
 	formatList(&str, "BuildArgs", config.BuildArgs.List, "    ")
 	formatList(&str, "RunArgs", config.RunArgs.List, "    ")
 	formatList(&str, "Cmds", config.Cmds.List, "    ")
-
-	fmt.Fprintf(&str, "# Egress Configuration ----------\n")
-	fmt.Fprintf(&str, "    Egress.Mode:      %q\n", config.Egress.Mode)
-	fmt.Fprintf(&str, "    Egress.Enforcement:%q\n", config.Egress.Enforcement)
-	fmt.Fprintf(&str, "    Egress.Default:   %q\n", config.Egress.Default)
-	fmt.Fprintf(&str, "    Egress.Allowlist: %q\n", config.Egress.AllowlistFile)
-	fmt.Fprintf(&str, "    Egress.Policy:    %q\n", config.Egress.PolicyFile)
 
 	str.WriteString("==================================================================\n")
 

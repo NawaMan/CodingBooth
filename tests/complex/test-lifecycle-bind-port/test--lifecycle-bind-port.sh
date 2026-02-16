@@ -20,7 +20,7 @@ source ../../common--source.sh
 
 FAILED=0
 NAME="lifecycle-bp-$RANDOM-$RANDOM"
-HOST_DIR="$(mktemp -d /tmp/cb-lifecycle-bind.XXXXXX)"
+HOST_DIR="$(mktemp -d "${SCRIPT_DIR}/.cb-lifecycle-bind.XXXXXX")"
 MARKER_FILE="$HOST_DIR/marker.txt"
 echo "life-cycle-bind-ok" > "$MARKER_FILE"
 

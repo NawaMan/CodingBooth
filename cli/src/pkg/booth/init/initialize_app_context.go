@@ -107,7 +107,7 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 }
 
 func validateConfig(config *appctx.AppConfig) {
-	if err := validateEgressConfig(config); err != nil {
+	if err := validateSandboxConfig(config); err != nil {
 		panic(err)
 	}
 }
@@ -117,25 +117,19 @@ const (
 	defaultSandboxPolicyPath    = ".booth/sandbox/envoy.yaml"
 )
 
-func validateEgressConfig(config *appctx.AppConfig) error {
-	// --sandboxed is a shorthand for egress guardrails.
+func validateSandboxConfig(config *appctx.AppConfig) error {
+	// --sandboxed enables sandbox defaults.
 	if config.Sandbox {
-		if config.Egress.Mode == "" {
-			config.Egress.Mode = "envoy"
+		if config.SandboxMode == "" {
+			config.SandboxMode = "envoy"
 		}
-		if config.Egress.Enforcement == "" {
-			config.Egress.Enforcement = "iptables"
-		}
-		if config.Egress.Default == "" {
-			config.Egress.Default = "deny"
+		if config.SandboxEnforcement == "" {
+			config.SandboxEnforcement = "iptables"
 		}
 	}
 
-	config.Egress.Mode = strings.ToLower(strings.TrimSpace(config.Egress.Mode))
-	config.Egress.Enforcement = strings.ToLower(strings.TrimSpace(config.Egress.Enforcement))
-	config.Egress.Default = strings.ToLower(strings.TrimSpace(config.Egress.Default))
-	config.Egress.AllowlistFile = strings.TrimSpace(config.Egress.AllowlistFile)
-	config.Egress.PolicyFile = strings.TrimSpace(config.Egress.PolicyFile)
+	config.SandboxMode = strings.ToLower(strings.TrimSpace(config.SandboxMode))
+	config.SandboxEnforcement = strings.ToLower(strings.TrimSpace(config.SandboxEnforcement))
 	config.SandboxAllowlistFile = strings.TrimSpace(config.SandboxAllowlistFile)
 	config.SandboxPolicyFile = strings.TrimSpace(config.SandboxPolicyFile)
 	for i := range config.SandboxAllowlist {
@@ -146,29 +140,19 @@ func validateEgressConfig(config *appctx.AppConfig) error {
 		return err
 	}
 
-	if config.Egress.Mode != "" &&
-		config.Egress.Mode != "none" &&
-		config.Egress.Mode != "envoy" &&
-		config.Egress.Mode != "squid" &&
-		config.Egress.Mode != "tinyproxy" {
-		return fmt.Errorf("invalid egress.mode %q (supported: none, envoy, squid, tinyproxy)", config.Egress.Mode)
+	if config.SandboxMode != "" &&
+		config.SandboxMode != "none" &&
+		config.SandboxMode != "envoy" &&
+		config.SandboxMode != "squid" &&
+		config.SandboxMode != "tinyproxy" {
+		return fmt.Errorf("invalid sandbox-mode %q (supported: none, envoy, squid, tinyproxy)", config.SandboxMode)
 	}
 
-	if config.Egress.Enforcement != "" &&
-		config.Egress.Enforcement != "none" &&
-		config.Egress.Enforcement != "iptables" &&
-		config.Egress.Enforcement != "nftables" {
-		return fmt.Errorf("invalid egress.enforcement %q (supported: none, iptables, nftables)", config.Egress.Enforcement)
-	}
-
-	if config.Egress.Default != "" &&
-		config.Egress.Default != "deny" &&
-		config.Egress.Default != "allow" {
-		return fmt.Errorf("invalid egress.default %q (supported: deny, allow)", config.Egress.Default)
-	}
-
-	if config.Egress.AllowlistFile != "" || config.Egress.PolicyFile != "" {
-		return fmt.Errorf("egress.* is no longer supported; use sandbox-allowlist-file or sandbox-policy-file")
+	if config.SandboxEnforcement != "" &&
+		config.SandboxEnforcement != "none" &&
+		config.SandboxEnforcement != "iptables" &&
+		config.SandboxEnforcement != "nftables" {
+		return fmt.Errorf("invalid sandbox-enforcement %q (supported: none, iptables, nftables)", config.SandboxEnforcement)
 	}
 
 	if config.SandboxPolicyFile != "" && len(config.SandboxAllowlist) > 0 {
@@ -204,7 +188,7 @@ func applySandboxPolicyDefaults(config *appctx.AppConfig) error {
 
 	codeDir := config.Code.ValueOr("")
 	if codeDir == "" {
-		return fmt.Errorf("sandbox requires a code directory to resolve egress policy")
+		return fmt.Errorf("sandbox requires a code directory to resolve sandbox policy")
 	}
 
 	allowlistPath := filepath.Join(codeDir, defaultSandboxAllowlistPath)

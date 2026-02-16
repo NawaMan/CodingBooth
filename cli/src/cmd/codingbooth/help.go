@@ -32,7 +32,7 @@ USAGE:
   %s example <subcommand>                 (manage examples)
   %s init <subcommand> [options]           (initialize a new .booth/ project)
   %s emit-dockerfile [options]            (compile Boothfile to Dockerfile)
-  %s print-default-allowlist.txt          (print built-in egress allowlist)
+  %s print-default-allowlist.txt          (print built-in sandbox allowlist)
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before environmental variable and config file):
   --code <path>          Host code path to mount at /home/coder/code
@@ -86,7 +86,7 @@ CONTAINER MODE:
                          Password read from .booth/.booth.password (chmod 600, gitignored),
                          or prompted interactively if not found.
   --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST
-  --sandboxed            Enable egress sandbox defaults (proxy + enforcement setup)
+  --sandboxed            Enable sandbox defaults (proxy + enforcement setup)
   --keep-alive           Do not remove the container when stopped
   --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
 
@@ -109,7 +109,7 @@ NOTES:
 
   - With --dind, a docker:dind sidecar runs on a private network and the main
     container uses DOCKER_HOST=tcp://<sidecar>:2375.
-  - With --sandboxed, booth enables egress policy defaults. If --dind is also set,
+  - With --sandboxed, booth enables sandbox policy defaults. If --dind is also set,
     the existing DinD sidecar network namespace is reused.
 
 EXAMPLES:

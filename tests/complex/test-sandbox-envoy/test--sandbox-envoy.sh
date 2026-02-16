@@ -8,7 +8,8 @@
 
 set -euo pipefail
 
-source ../../common--source.sh
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/../../common--source.sh"
 
 # ---- Config -------------------------------------------------------------------
 CB_SCRIPT="${CB_SCRIPT:-../../../codingbooth}"
@@ -34,13 +35,13 @@ if [[ ! -x "$CB_SCRIPT" ]]; then
 fi
 
 # ---- Test booth -----------------------------------------------------------
-TMPDIR="$(mktemp -d "${TMPDIR:-/tmp}/cb-test-sandbox-envoy.XXXXXX")"
+TEST_DIR="$(mktemp -d "${SCRIPT_DIR}/.cb-test-sandbox-envoy.XXXXXX")"
 cleanup() {
-  rm -rf "$TMPDIR" || true
+  rm -rf "$TEST_DIR" || true
 }
 trap cleanup EXIT
 
-pushd "$TMPDIR" >/dev/null
+pushd "$TEST_DIR" >/dev/null
 
 mkdir -p .booth/sandbox
 cat > .booth/sandbox/envoy.yaml <<'EOF'

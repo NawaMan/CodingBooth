@@ -128,5 +128,7 @@ variants/base/_stage/
 /cli/codingbooth
 **/booth
 !/booth
+!/cli/src/pkg/booth/
+!/cli/src/pkg/booth/**
 .booth-test-lock*
 **/codingbooth.lock

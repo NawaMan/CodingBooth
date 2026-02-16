@@ -35,8 +35,8 @@ func SetupSandbox(ctx appctx.AppContext) appctx.AppContext {
 		return ctx
 	}
 
-	if mode := strings.TrimSpace(strings.ToLower(ctx.EgressMode())); mode != "" && mode != "envoy" {
-		fmt.Fprintf(os.Stderr, "❌ egress mode %q is not implemented yet in sandbox mode.\n", mode)
+	if mode := strings.TrimSpace(strings.ToLower(ctx.SandboxMode())); mode != "" && mode != "envoy" {
+		fmt.Fprintf(os.Stderr, "❌ sandbox mode %q is not implemented yet.\n", mode)
 		os.Exit(1)
 	}
 
@@ -418,7 +418,7 @@ func waitForSandboxProxyReady(ctx appctx.AppContext, netnsOwnerName string) erro
 }
 
 func applySandboxFirewall(ctx appctx.AppContext, netnsOwnerName string) error {
-	if strings.ToLower(strings.TrimSpace(ctx.EgressEnforcement())) != "iptables" {
+	if strings.ToLower(strings.TrimSpace(ctx.SandboxEnforcement())) != "iptables" {
 		return nil
 	}
 

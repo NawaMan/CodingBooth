@@ -82,28 +82,32 @@ func (ctx AppContext) PortGenerated() bool { return ctx.values.PortGenerated }
 func (ctx AppContext) PortNumber() int     { return ctx.values.PortNumber }
 
 // Flags
-func (ctx AppContext) KeepAlive() bool    { return ctx.values.Config.KeepAlive }
-func (ctx AppContext) SilenceBuild() bool { return ctx.values.Config.SilenceBuild }
-func (ctx AppContext) Daemon() bool       { return ctx.values.Config.Daemon }
-func (ctx AppContext) Pull() bool         { return ctx.values.Config.Pull }
-func (ctx AppContext) Dind() bool         { return ctx.values.Config.Dind }
+func (ctx AppContext) KeepAlive() bool     { return ctx.values.Config.KeepAlive }
+func (ctx AppContext) SilenceBuild() bool  { return ctx.values.Config.SilenceBuild }
+func (ctx AppContext) Daemon() bool        { return ctx.values.Config.Daemon }
+func (ctx AppContext) Pull() bool          { return ctx.values.Config.Pull }
+func (ctx AppContext) Dind() bool          { return ctx.values.Config.Dind }
 func (ctx AppContext) Sandbox() bool       { return ctx.values.Config.Sandbox }
-func (ctx AppContext) WritableBooth() bool  { return ctx.values.Config.WritableBooth }
-func (ctx AppContext) Public() bool         { return ctx.values.Config.Public }
-func (ctx AppContext) Password() string     { return ctx.values.Config.Password }
+func (ctx AppContext) SandboxMode() string { return ctx.values.Config.SandboxMode }
+func (ctx AppContext) SandboxEnforcement() string {
+	return ctx.values.Config.SandboxEnforcement
+}
+func (ctx AppContext) WritableBooth() bool { return ctx.values.Config.WritableBooth }
+func (ctx AppContext) Public() bool        { return ctx.values.Config.Public }
+func (ctx AppContext) Password() string    { return ctx.values.Config.Password }
 func (ctx AppContext) SandboxAllowlistFile() string {
 	return ctx.values.Config.SandboxAllowlistFile
 }
-func (ctx AppContext) SandboxPolicyFile() string { return ctx.values.Config.SandboxPolicyFile }
+func (ctx AppContext) SandboxPolicyFile() string  { return ctx.values.Config.SandboxPolicyFile }
 func (ctx AppContext) SandboxAllowlist() []string { return ctx.values.Config.SandboxAllowlist }
 
 // Image Configuration
-func (ctx AppContext) Dockerfile() string     { return ctx.values.Config.Dockerfile }
-func (ctx AppContext) Boothfile() string      { return ctx.values.Config.Boothfile }
-func (ctx AppContext) Image() string          { return ctx.values.Config.Image }
-func (ctx AppContext) Variant() string        { return ctx.values.Config.Variant }
-func (ctx AppContext) EmitDockerfile() bool   { return ctx.values.Config.EmitDockerfile }
-func (ctx AppContext) Strict() bool           { return ctx.values.Config.Strict }
+func (ctx AppContext) Dockerfile() string   { return ctx.values.Config.Dockerfile }
+func (ctx AppContext) Boothfile() string    { return ctx.values.Config.Boothfile }
+func (ctx AppContext) Image() string        { return ctx.values.Config.Image }
+func (ctx AppContext) Variant() string      { return ctx.values.Config.Variant }
+func (ctx AppContext) EmitDockerfile() bool { return ctx.values.Config.EmitDockerfile }
+func (ctx AppContext) Strict() bool         { return ctx.values.Config.Strict }
 
 // Runtime values
 func (ctx AppContext) ProjectName() string { return ctx.values.Config.ProjectName }
@@ -116,13 +120,6 @@ func (ctx AppContext) Name() string    { return ctx.values.Config.Name }
 func (ctx AppContext) Port() string    { return ctx.values.Config.Port }
 func (ctx AppContext) EnvFile() string { return ctx.values.Config.EnvFile }
 func (ctx AppContext) Startup() string { return ctx.values.Config.Startup }
-
-// Egress Configuration
-func (ctx AppContext) EgressMode() string          { return ctx.values.Config.Egress.Mode }
-func (ctx AppContext) EgressEnforcement() string   { return ctx.values.Config.Egress.Enforcement }
-func (ctx AppContext) EgressDefault() string       { return ctx.values.Config.Egress.Default }
-func (ctx AppContext) EgressAllowlistFile() string { return ctx.values.Config.Egress.AllowlistFile }
-func (ctx AppContext) EgressPolicyFile() string    { return ctx.values.Config.Egress.PolicyFile }
 
 // derived from all the context processing (IMMUTABLE SNAPSHOTS)
 func (ctx AppContext) CommonArgs() ilist.List[ilist.List[string]] { return ctx.commonArgs }
@@ -185,6 +182,8 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Pull:             %t\n", ctx.Pull())
 	fmt.Fprintf(&str, "    Dind:             %t\n", ctx.Dind())
 	fmt.Fprintf(&str, "    Sandbox:          %t\n", ctx.Sandbox())
+	fmt.Fprintf(&str, "    SandboxMode:      %q\n", ctx.SandboxMode())
+	fmt.Fprintf(&str, "    SandboxEnforcement:%q\n", ctx.SandboxEnforcement())
 	fmt.Fprintf(&str, "    WritableBooth:    %t\n", ctx.WritableBooth())
 	fmt.Fprintf(&str, "    Public:           %t\n", ctx.Public())
 	fmt.Fprintf(&str, "    Password:         %s\n", maskStr(ctx.Password()))
@@ -206,12 +205,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    EnvFile:          %q\n", ctx.EnvFile())
 	fmt.Fprintf(&str, "    Startup:          %q\n", ctx.Startup())
 
-	fmt.Fprintf(&str, "# Egress Configuration ----------\n")
-	fmt.Fprintf(&str, "    EgressMode:       %q\n", ctx.EgressMode())
-	fmt.Fprintf(&str, "    EgressEnforcement:%q\n", ctx.EgressEnforcement())
-	fmt.Fprintf(&str, "    EgressDefault:    %q\n", ctx.EgressDefault())
-	fmt.Fprintf(&str, "    EgressAllowlist:  %q\n", ctx.EgressAllowlistFile())
-	fmt.Fprintf(&str, "    EgressPolicy:     %q\n", ctx.EgressPolicyFile())
+	fmt.Fprintf(&str, "# Sandbox Configuration ---------\n")
 	fmt.Fprintf(&str, "    SandboxAllowlist: %q\n", ctx.SandboxAllowlistFile())
 	fmt.Fprintf(&str, "    SandboxPolicy:    %q\n", ctx.SandboxPolicyFile())
 	fmt.Fprintf(&str, "    SandboxAllowlist+: %v\n", ctx.SandboxAllowlist())
