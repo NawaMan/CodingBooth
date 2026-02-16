@@ -29,6 +29,7 @@ type managedContainer struct {
 	CodePath  string
 	CreatedAt string
 	KeepAlive bool
+	Daemon    bool
 	Port      string
 }
 
@@ -120,7 +121,7 @@ func List(args []string, stdout io.Writer, stderr io.Writer) error {
 	}
 
 	writer := tabwriter.NewWriter(stdout, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(writer, "NAME\tSTATUS\tVARIANT\tKEEP_ALIVE\tPORT\tCODE PATH\tCREATED")
+	_, _ = fmt.Fprintln(writer, "NAME\tSTATUS\tVARIANT\tPORT\tCODE PATH\tDAEMON\tKEEP_ALIVE\tCREATED")
 	for _, container := range containers {
 		status := "Stopped"
 		if container.State == "running" {
@@ -132,13 +133,14 @@ func List(args []string, stdout io.Writer, stderr io.Writer) error {
 		}
 		_, _ = fmt.Fprintf(
 			writer,
-			"%s\t%s\t%s\t%t\t%s\t%s\t%s\n",
+			"%s\t%s\t%s\t%s\t%s\t%t\t%t\t%s\n",
 			container.Name,
 			status,
 			nonEmpty(container.Variant, "-"),
-			container.KeepAlive,
 			port,
 			nonEmpty(container.CodePath, "-"),
+			container.Daemon,
+			container.KeepAlive,
 			nonEmpty(container.CreatedAt, "-"),
 		)
 	}
@@ -183,14 +185,14 @@ func Stop(args []string, stderr io.Writer) error {
 	name := flagSet.String("name", "", "Container name")
 	force := flagSet.Bool("force", false, "Force stop with SIGKILL")
 	flagSet.BoolVar(force, "f", false, "Force stop with SIGKILL")
-	timeout := flagSet.Int("time", 10, "Seconds to wait before force kill")
+	timeout := flagSet.Int("timeout", 10, "Seconds to wait before force kill")
 	flagSet.SetOutput(stderr)
 
 	if err := flagSet.Parse(args); err != nil {
 		return commandExit(2, "")
 	}
 	if *timeout < 0 {
-		return commandExit(1, "Error: --time must be a non-negative integer.")
+		return commandExit(1, "Error: --timeout must be a non-negative integer.")
 	}
 
 	containers, err := managedContainers(false)
@@ -209,7 +211,7 @@ func Stop(args []string, stderr io.Writer) error {
 		}
 	} else {
 		if err := docker.Docker(docker.DockerFlags{Silent: false}, "stop", ilist.NewList(
-			ilist.NewList("--time", strconv.Itoa(*timeout)),
+			ilist.NewList("--timeout", strconv.Itoa(*timeout)),
 			ilist.NewList(target.Name),
 		)); err != nil {
 			return commandExit(1, fmt.Sprintf("Error: failed to stop %q: %v", target.Name, err))
@@ -229,6 +231,12 @@ func Stop(args []string, stderr io.Writer) error {
 	}
 
 	if err := docker.Docker(docker.DockerFlags{Silent: false}, "rm", ilist.NewList(ilist.NewList(target.Name))); err != nil {
+		// Container may have been auto-removed between the existence check and
+		// the rm call. If it is gone now, treat the stop as successful.
+		gone, existsErr := containerExists(target.Name)
+		if existsErr == nil && !gone {
+			return nil
+		}
 		return commandExit(1, fmt.Sprintf("Error: failed to remove non-keep-alive container %q: %v", target.Name, err))
 	}
 	return nil
@@ -237,14 +245,14 @@ func Stop(args []string, stderr io.Writer) error {
 func Restart(args []string, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("restart", flag.ContinueOnError)
 	name := flagSet.String("name", "", "Container name")
-	timeout := flagSet.Int("time", 10, "Seconds to wait before force kill")
+	timeout := flagSet.Int("timeout", 10, "Seconds to wait before force kill")
 	flagSet.SetOutput(stderr)
 
 	if err := flagSet.Parse(args); err != nil {
 		return commandExit(2, "")
 	}
 	if *timeout < 0 {
-		return commandExit(1, "Error: --time must be a non-negative integer.")
+		return commandExit(1, "Error: --timeout must be a non-negative integer.")
 	}
 
 	containers, err := managedContainers(false)
@@ -258,7 +266,7 @@ func Restart(args []string, stderr io.Writer) error {
 	}
 
 	if err := docker.Docker(docker.DockerFlags{Silent: false}, "restart", ilist.NewList(
-		ilist.NewList("--time", strconv.Itoa(*timeout)),
+		ilist.NewList("--timeout", strconv.Itoa(*timeout)),
 		ilist.NewList(target.Name),
 	)); err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to restart %q: %v", target.Name, err))
@@ -426,6 +434,7 @@ func inspectManagedContainer(name string, flags docker.DockerFlags) (managedCont
 		CodePath:  labels["cb.code-path"],
 		CreatedAt: createdAt,
 		KeepAlive: strings.EqualFold(labels["cb.keep-alive"], "true"),
+		Daemon:    strings.EqualFold(labels["cb.daemon"], "true"),
 		Port:      port,
 	}, nil
 }

@@ -96,7 +96,6 @@ func TestAppContext_ConfigValues(t *testing.T) {
 			Daemon:       true,
 			Pull:         true,
 			Dind:         true,
-			WebSplit:     true,
 			Dockerfile:   "dockerfile",
 			Image:        "image",
 			Variant:      "variant",
@@ -138,9 +137,6 @@ func TestAppContext_ConfigValues(t *testing.T) {
 	}
 	if !ctx.Dind() {
 		t.Error("Dind mismatch")
-	}
-	if !ctx.WebSplit() {
-		t.Error("WebSplit mismatch")
 	}
 	if ctx.Dockerfile() != "dockerfile" {
 		t.Error("DockerFile mismatch")

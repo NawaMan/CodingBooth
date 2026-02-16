@@ -25,8 +25,8 @@ USAGE:
   %s [options] [--] [command ...]              (default action: run)
   %s list [--running|--stopped] [--name-only]  (list booth-managed containers)
   %s start [--name <name>|--code <path>] [-d]  (start a stopped keep-alive booth)
-  %s stop [--name <name>] [-f] [--time <n>]    (stop a running booth)
-  %s restart [--name <name>] [--time <n>]      (restart a running booth)
+  %s stop [--name <name>] [-f] [--timeout <n>]    (stop a running booth)
+  %s restart [--name <name>] [--timeout <n>]      (restart a running booth)
   %s remove [--name <name>] [--force]          (remove booth container(s))
   %s prune [--yes]                             (remove stopped booth containers)
   %s example <subcommand>                      (manage examples)
@@ -94,7 +94,6 @@ CONTAINER MODE:
   --sandboxed            Enable sandbox defaults (proxy + enforcement setup)
   --keep-alive           Do not remove the container when stopped
   --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
-  --web-split            Base variant: force-enable browser split-terminal UI at port 10000 (default)
 
 COMMANDS:
   All arguments after '--' are executed *inside* the container instead of starting

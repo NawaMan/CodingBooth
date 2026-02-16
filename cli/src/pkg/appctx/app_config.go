@@ -37,7 +37,6 @@ type AppConfig struct {
 	SandboxMode        string `toml:"sandbox-mode,omitempty"        envconfig:"CB_SANDBOX_MODE"`
 	SandboxEnforcement string `toml:"sandbox-enforcement,omitempty" envconfig:"CB_SANDBOX_ENFORCEMENT"`
 	WritableBooth      bool   `toml:"writable-booth,omitempty"      envconfig:"CB_WRITABLE_BOOTH" default:"false"`
-	WebSplit           bool   `toml:"web-split,omitempty"           envconfig:"CB_WEB_SPLIT" default:"true"`
 
 	// Public exposes the booth on all interfaces (0.0.0.0) with password auth and HTTPS.
 	// Password is resolved at startup from .booth/.booth.password or interactive stdin.
@@ -133,7 +132,6 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    SandboxMode:       %q\n", config.SandboxMode)
 	fmt.Fprintf(&str, "    SandboxEnforcement:%q\n", config.SandboxEnforcement)
 	fmt.Fprintf(&str, "    WritableBooth:     %t\n", config.WritableBooth)
-	fmt.Fprintf(&str, "    WebSplit:          %t\n", config.WebSplit)
 	fmt.Fprintf(&str, "    Public:            %t\n", config.Public)
 	fmt.Fprintf(&str, "    Password:          %s\n", maskStr(config.Password))
 	fmt.Fprintf(&str, "    TLSCert:           %q\n", config.TLSCert)

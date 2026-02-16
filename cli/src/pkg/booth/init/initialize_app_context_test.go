@@ -142,7 +142,6 @@ func TestReadVerboseDryrunConfigFileAndCode(t *testing.T) {
 func TestParseArgs(t *testing.T) {
 	args := []string{
 		"--daemon",
-		"--web-split",
 		"--image", "my-image",
 		"--pull",
 		"--",
@@ -164,9 +163,6 @@ func TestParseArgs(t *testing.T) {
 
 	if !config.Daemon {
 		t.Error("Expected Daemon to be true")
-	}
-	if !config.WebSplit {
-		t.Error("Expected WebSplit to be true")
 	}
 	if !config.Pull {
 		t.Error("Expected Pull to be true")

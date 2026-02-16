@@ -93,7 +93,6 @@ func (ctx AppContext) SandboxEnforcement() string {
 	return ctx.values.Config.SandboxEnforcement
 }
 func (ctx AppContext) WritableBooth() bool { return ctx.values.Config.WritableBooth }
-func (ctx AppContext) WebSplit() bool      { return ctx.values.Config.WebSplit }
 func (ctx AppContext) Public() bool        { return ctx.values.Config.Public }
 func (ctx AppContext) Password() string    { return ctx.values.Config.Password }
 func (ctx AppContext) TLSCert() string     { return ctx.values.Config.TLSCert }
@@ -188,7 +187,6 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    SandboxMode:      %q\n", ctx.SandboxMode())
 	fmt.Fprintf(&str, "    SandboxEnforcement:%q\n", ctx.SandboxEnforcement())
 	fmt.Fprintf(&str, "    WritableBooth:    %t\n", ctx.WritableBooth())
-	fmt.Fprintf(&str, "    WebSplit:         %t\n", ctx.WebSplit())
 	fmt.Fprintf(&str, "    Public:           %t\n", ctx.Public())
 	fmt.Fprintf(&str, "    Password:         %s\n", maskStr(ctx.Password()))
 	fmt.Fprintf(&str, "    TLSCert:          %q\n", ctx.TLSCert())

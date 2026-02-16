@@ -28,7 +28,7 @@ http {
         listen ${PORT};
         server_name _;
 
-        root /usr/local/share/ttyd-split;
+        root ${WEB_SPLIT_SERVE};
         index index.html;
 
         location /s1/ {

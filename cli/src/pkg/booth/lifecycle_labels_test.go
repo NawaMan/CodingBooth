@@ -30,7 +30,6 @@ func TestPrepareCommonArgs_AddsLifecycleLabels(t *testing.T) {
 	builder.Config.HostUID = "1000"
 	builder.Config.HostGID = "1000"
 	builder.Config.KeepAlive = true
-	builder.Config.WebSplit = true
 	builder.Config.Port = "10000"
 	builder.PortNumber = 10000
 
@@ -40,10 +39,10 @@ func TestPrepareCommonArgs_AddsLifecycleLabels(t *testing.T) {
 	assertContainsArgPair(t, ctx.CommonArgs(), "--label", "cb.project=demo")
 	assertContainsArgPair(t, ctx.CommonArgs(), "--label", "cb.variant=base")
 	assertContainsArgPair(t, ctx.CommonArgs(), "--label", "cb.keep-alive=true")
+	assertContainsArgPair(t, ctx.CommonArgs(), "--label", "cb.daemon=false")
 	assertContainsArgPrefix(t, ctx.CommonArgs(), "--label", "cb.created-at=")
 	assertContainsArgPrefix(t, ctx.CommonArgs(), "--label", "cb.code-path=")
 	assertContainsArgPair(t, ctx.CommonArgs(), "-e", "BOOTH_CODE_PATH="+normalizeCodePath("."))
-	assertContainsArgPair(t, ctx.CommonArgs(), "-e", "BOOTH_WEB_SPLIT=true")
 }
 
 func TestNormalizeCodePath(t *testing.T) {
