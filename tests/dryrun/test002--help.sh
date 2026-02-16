@@ -40,7 +40,7 @@ USAGE:
   codingbooth example <subcommand>                 (manage examples)
   codingbooth init <subcommand> [options]           (initialize a new .booth/ project)
   codingbooth emit-dockerfile [options]            (compile Boothfile to Dockerfile)
-  codingbooth print-default-allowlist.txt          (print built-in egress allowlist)"
+  codingbooth print-default-allowlist.txt          (print built-in sandbox allowlist)"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Help output matches expected"

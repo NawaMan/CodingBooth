@@ -39,7 +39,8 @@ if [[ ! -x "$CB_SCRIPT" ]]; then
 fi
 
 # ---- Test booth -----------------------------------------------------------
-TMPDIR="$(mktemp -d "${TMPDIR:-/tmp}/cb-test.XXXXXX")"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd -P)"
+TMPDIR="$(mktemp -d "${SCRIPT_DIR}/.cb-temp.XXXXXX")"
 cleanup() {
   # Booth container is started with --rm, so nothing to stop.
   rm -rf "$TMPDIR" || true
@@ -62,7 +63,7 @@ run_cb() {
   # We'll pass an explicit image to avoid any build/pull logic, pick a random port to avoid conflicts
   # Note: The script wraps the command in `bash -lc "<cmd>"` internally
   echo -e "${COLOR_BOOTH:-}> codingbooth -- $*${COLOR_RESET:-}" >&2
-  "$CB_SCRIPT" -- "$@"
+  "$CB_SCRIPT" --name "$CONTAINER_NAME" -- "$@"
 }
 
 # ---- Assertions ---------------------------------------------------------------

@@ -45,6 +45,7 @@ docker \\
     --name tests \\
     -e 'HOST_UID=${HOST_UID}' \\
     -e 'HOST_GID=${HOST_GID}' \\
+    -e 'HOST_OS=LIN' \\
     -v ${RESOLVED_WORKSPACE}:/home/coder/code \\
     -w /home/coder/code \\
     --label 'cb.managed=true' \\
@@ -72,6 +73,7 @@ docker \\
     -e 'BOOTH_SCRIPT_DIR=${SCRIPT_DIR}' \\
     -e 'BOOTH_LIB_DIR=${LIB_DIR}' \\
     -e 'BOOTH_KEEP_ALIVE=false' \\
+    -e 'BOOTH_WEB_SPLIT=true' \\
     -e 'BOOTH_SILENCE_BUILD=false' \\
     -e 'BOOTH_PULL=false' \\
     -e 'BOOTH_DIND=false' \\

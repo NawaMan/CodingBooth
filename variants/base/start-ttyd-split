@@ -31,7 +31,11 @@ for i in "${!SESSION_NAMES[@]}"; do
 done
 
 export PORT
+export BOOTH_PROJECT_NAME="${BOOTH_PROJECT_NAME:-CodingBooth}"
+export BOOTH_HOST_PORT="${BOOTH_HOST_PORT:-$PORT}"
 envsubst '${PORT}' <"$WEB_SPLIT_ROOT/nginx.conf.template" >"$NGINX_CONFIG"
+envsubst '${BOOTH_PROJECT_NAME} ${BOOTH_HOST_PORT}' <"$WEB_SPLIT_ROOT/index.html" >"/tmp/ttyd-split-index.html"
+cp /tmp/ttyd-split-index.html "$WEB_SPLIT_ROOT/index.html"
 
 mkdir -p /tmp/nginx/body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
 

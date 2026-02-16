@@ -1,9 +1,11 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>CodingBooth Split Terminal</title>
+  <title>${BOOTH_PROJECT_NAME} (${BOOTH_HOST_PORT})</title>
+  <meta name="booth-project" content="${BOOTH_PROJECT_NAME}">
   <style>
     :root {
       --bg: #0b1018;
@@ -284,17 +286,18 @@
     }
   </style>
 </head>
+
 <body>
   <div class="shell">
     <header class="toolbar">
-      <span class="title">CodingBooth Split Terminal</span>
+      <span class="title">${BOOTH_PROJECT_NAME} (${BOOTH_HOST_PORT})</span>
       <div class="controls">
         <button data-layout="single">Single</button>
-        <button data-layout="hsplit">Split H</button>
-        <button data-layout="vsplit">Split V</button>
-        <button data-layout="quad">Quad</button>
+        <button data-layout="hsplit">Left - Right</button>
         <button data-layout="left-main">Left Main</button>
+        <button data-layout="vsplit">Top - Bottom</button>
         <button data-layout="top-main">Top Main</button>
+        <button data-layout="quad">Quad</button>
         <button id="reload">Reload</button>
       </div>
       <span id="status">1 session active</span>
@@ -333,8 +336,9 @@
       const dragOverlay = document.getElementById("drag-overlay");
       const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"));
       const reloadButton = document.getElementById("reload");
-      const layoutStorageKey = "cb.webSplit.layout";
-      const splitStorageKey = "cb.webSplit.splits";
+      const projectName = (document.querySelector('meta[name="booth-project"]') || {}).content || "default";
+      const layoutStorageKey = "cb.webSplit." + projectName + ".layout";
+      const splitStorageKey = "cb.webSplit." + projectName + ".splits";
       const modeHashPrefix = "#mode=";
       const compactQuery = window.matchMedia("(max-width: 900px)");
 
@@ -688,4 +692,5 @@
     })();
   </script>
 </body>
+
 </html>
