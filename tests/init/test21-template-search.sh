@@ -54,7 +54,7 @@ booth template search toolchain > "$tmpfile" 2>&1
 assert-contains "$tmpfile" "^  go "                  "search: description word finds go"
 
 # Test 7: Search shows auto-select extensions in results
-booth template search "language support" > "$tmpfile" 2>&1
+booth template search vscode > "$tmpfile" 2>&1
 assert-contains "$tmpfile" "vscode-ext"              "search: auto-select ext in results"
 
 finally

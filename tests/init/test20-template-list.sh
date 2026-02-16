@@ -81,13 +81,13 @@ assert-contains "$tmpfile" "^Use --full"             "list: --full hint in foote
 assert-contains "$tmpfile" "template show"           "list: show hint in footer"
 
 # Test 8: Non-primary templates hidden by default
-assert-not-contains "$tmpfile" "^  django"           "list: non-primary django hidden"
+assert-not-contains "$tmpfile" "^  kotlin"           "list: non-primary kotlin hidden"
 
 # Test 9: --full shows non-primary templates
 booth template list --full > "$tmpfile" 2>&1
-assert-contains "$tmpfile" "^  django"               "list --full: django appears"
+assert-contains "$tmpfile" "^  kotlin"               "list --full: kotlin appears"
 
 # Test 10: --full shows more categories
-assert-contains "$tmpfile" "^Frameworks"             "list --full: Frameworks category"
+assert-contains "$tmpfile" "^Databases"              "list --full: Databases category"
 
 finally

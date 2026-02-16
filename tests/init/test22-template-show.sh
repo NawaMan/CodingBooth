@@ -53,8 +53,8 @@ booth template show python+uv --detail > "$tmpfile" 2>&1
 assert-contains "$tmpfile" "    |"                   "show --detail: content lines"
 
 # Test 15: Show template with requires
-booth template show django > "$tmpfile" 2>&1
-assert-contains "$tmpfile" "^Requires: python"       "show: django requires python"
+booth template show kotlin > "$tmpfile" 2>&1
+assert-contains "$tmpfile" "^Requires: java"         "show: kotlin requires java"
 
 # Test 16: Show auto-select extension
 booth template show go+vscode-ext > "$tmpfile" 2>&1
