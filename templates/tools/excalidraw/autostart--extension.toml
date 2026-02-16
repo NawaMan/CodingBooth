@@ -1,0 +1,19 @@
+display-name = "Excalidraw Auto-Start"
+display-disc = "Auto-start Excalidraw in background at container startup"
+display-order = 2
+auto-select = false
+tags = [
+    "excalidraw",
+    "autostart"
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start Excalidraw in background
+PORT=15555
+LOG_FILE="/tmp/excalidraw.log"
+
+nohup serve -s --no-clipboard /opt/excalidraw -l "$PORT" > "$LOG_FILE" 2>&1 &
+
+echo "Excalidraw started on port $PORT (PID $!, log: $LOG_FILE)"
+"""

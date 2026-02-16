@@ -1,0 +1,21 @@
+display-name = "Excalidraw"
+display-disc = "Excalidraw collaborative whiteboard"
+display-order = 26
+tags = [
+    "excalidraw",
+    "whiteboard",
+    "drawing",
+    "collaboration"
+]
+
+[params.EXCALIDRAW_PORT]
+default = "15555"
+suggests = [
+    "15555",
+    "13333",
+]
+
+[segments]
+"Boothfile--60" = """
+setup excalidraw ${EXCALIDRAW_PORT}
+"""
