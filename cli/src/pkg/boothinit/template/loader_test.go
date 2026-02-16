@@ -19,6 +19,16 @@ func testdataDir() string {
 	return filepath.Join(filepath.Dir(currentFile), "testdata", "templates")
 }
 
+func repoTemplatesDir(t *testing.T) string {
+	t.Helper()
+	_, currentFile, _, _ := runtime.Caller(0)
+	dir := filepath.Clean(filepath.Join(filepath.Dir(currentFile), "..", "..", "..", "..", "..", "templates"))
+	if _, err := os.Stat(dir); err != nil {
+		t.Skipf("repository templates directory not found: %s (%v)", dir, err)
+	}
+	return dir
+}
+
 // --- ParseSegmentOrder ---
 
 func TestParseSegmentOrder_BoothfileDefault(t *testing.T) {
@@ -922,4 +932,14 @@ display-order = 1
 	require.Len(t, tmplObj.HomeSeed, 1)
 	assert.Equal(t, ".gitconfig", tmplObj.HomeSeed[0].RelPath)
 	assert.Contains(t, tmplObj.HomeSeed[0].Content, "[user]")
+}
+
+func TestLoadRegistry_RepoCodexRequiresNodejs(t *testing.T) {
+	registry, err := LoadRegistry(repoTemplatesDir(t))
+	require.NoError(t, err)
+
+	codex, ok := registry.ByName["codex"]
+	require.True(t, ok, "codex template should exist")
+	require.NotNil(t, codex)
+	assert.Contains(t, codex.Requires, "nodejs")
 }

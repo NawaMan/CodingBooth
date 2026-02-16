@@ -6,6 +6,7 @@ tags = [
     "ai",
     "openai"
 ]
+requires = ["nodejs"]
 
 [segments]
 "Boothfile--60" = """
