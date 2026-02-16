@@ -1,5 +1,5 @@
 display-name = "uv"
-display-disc = "Fast Python package manager"
+display-disc = "UV fast Python package manager"
 display-order = 10
 auto-select = false
 tags = [

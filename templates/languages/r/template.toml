@@ -1,5 +1,6 @@
 display-name = "R"
-display-disc = "R language for statistical computing"
+display-disc = "R language for statistics and data analysis"
+display-detail = "Installs the R language for statistical computing, data analysis, and visualization. Includes common R packages and development tools."
 display-order = 82
 tags = [
     "r",

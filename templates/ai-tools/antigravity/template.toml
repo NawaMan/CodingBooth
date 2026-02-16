@@ -1,5 +1,6 @@
 display-name = "Antigravity"
 display-disc = "Antigravity AI assistant (formerly Windsurf)"
+display-detail = "Installs Antigravity (formerly Windsurf), an AI coding assistant for development workflows."
 display-order = 14
 tags = [
     "ai",

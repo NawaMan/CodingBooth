@@ -1,6 +1,6 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "Lua VS Code Extension"
-display-disc = "Lua language support for VS Code"
+display-disc = "Lua language support extension for VS Code"
 display-order = 1
 auto-select = true
 tags = [

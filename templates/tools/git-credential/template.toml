@@ -1,6 +1,7 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "Git Credentials"
-display-disc = "Mount ~/.gitconfig from host (read-only home-seeding)"
+display-disc = "Git credential helper for host authentication"
+display-detail = "Mounts host Git credentials and configuration into the container for seamless authentication."
 display-order = 31
 tags = [
     "git",

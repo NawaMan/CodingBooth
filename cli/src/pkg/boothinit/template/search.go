@@ -82,14 +82,21 @@ func (r *TemplateRegistry) FilterPrimary() *TemplateRegistry {
 	return result
 }
 
-// matchesPrefix returns true if the template's name, display-name,
+// matchesPrefix returns true if the template's name, display-name, description,
 // or any tag starts with the given lowercase term (case-insensitive).
+// For descriptions, each word is checked for prefix match to avoid false positives
+// (e.g., "django" should not match search term "go").
 func matchesPrefix(t *Template, lowerTerm string) bool {
 	if strings.HasPrefix(strings.ToLower(t.Name), lowerTerm) {
 		return true
 	}
 	if strings.HasPrefix(strings.ToLower(t.DisplayName), lowerTerm) {
 		return true
+	}
+	for _, word := range strings.Fields(strings.ToLower(t.DisplayDesc)) {
+		if strings.HasPrefix(word, lowerTerm) {
+			return true
+		}
 	}
 	for _, tag := range t.Tags {
 		if strings.HasPrefix(strings.ToLower(tag), lowerTerm) {

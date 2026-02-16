@@ -28,8 +28,9 @@ type metaToml struct {
 
 type specToml struct {
 	DisplayName  string               `toml:"display-name"`
-	DisplayDesc  string               `toml:"display-disc"`
-	DisplayOrder int                  `toml:"display-order"`
+	DisplayDesc   string               `toml:"display-disc"`
+	DisplayDetail string               `toml:"display-detail"`
+	DisplayOrder  int                  `toml:"display-order"`
 	Tags         []string             `toml:"tags"`
 	Primary      bool                 `toml:"primary"`
 	AutoSelect   *bool                `toml:"auto-select"`
@@ -166,22 +167,23 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 	}
 
 	tmpl := &Template{
-		Name:         name,
-		CategoryName: categoryName,
-		DisplayName:  spec.DisplayName,
-		DisplayDesc:  spec.DisplayDesc,
-		DisplayOrder: spec.DisplayOrder,
-		Tags:         spec.Tags,
-		Primary:      spec.Primary,
-		AutoSelect:   spec.AutoSelect,
-		Variant:      spec.Variant,
-		Port:         spec.Port,
-		Timezone:     spec.Timezone,
-		Dind:         spec.Dind,
-		Cmds:         spec.Cmds,
-		BuildArgs:    spec.BuildArgs,
-		RunArgs:      spec.RunArgs,
-		Requires:     spec.Requires,
+		Name:          name,
+		CategoryName:  categoryName,
+		DisplayName:   spec.DisplayName,
+		DisplayDesc:   spec.DisplayDesc,
+		DisplayDetail: spec.DisplayDetail,
+		DisplayOrder:  spec.DisplayOrder,
+		Tags:          spec.Tags,
+		Primary:       spec.Primary,
+		AutoSelect:    spec.AutoSelect,
+		Variant:       spec.Variant,
+		Port:          spec.Port,
+		Timezone:      spec.Timezone,
+		Dind:          spec.Dind,
+		Cmds:          spec.Cmds,
+		BuildArgs:     spec.BuildArgs,
+		RunArgs:       spec.RunArgs,
+		Requires:      spec.Requires,
 	}
 
 	// Convert params, preserving declaration order from TOML
@@ -308,22 +310,23 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 	}
 
 	tmpl := &Template{
-		Name:         name,
-		CategoryName: categoryName,
-		DisplayName:  spec.DisplayName,
-		DisplayDesc:  spec.DisplayDesc,
-		DisplayOrder: spec.DisplayOrder,
-		Tags:         spec.Tags,
-		Primary:      spec.Primary,
-		AutoSelect:   spec.AutoSelect,
-		Variant:      spec.Variant,
-		Port:         spec.Port,
-		Timezone:     spec.Timezone,
-		Dind:         spec.Dind,
-		Cmds:         spec.Cmds,
-		BuildArgs:    spec.BuildArgs,
-		RunArgs:      spec.RunArgs,
-		Requires:     spec.Requires,
+		Name:          name,
+		CategoryName:  categoryName,
+		DisplayName:   spec.DisplayName,
+		DisplayDesc:   spec.DisplayDesc,
+		DisplayDetail: spec.DisplayDetail,
+		DisplayOrder:  spec.DisplayOrder,
+		Tags:          spec.Tags,
+		Primary:       spec.Primary,
+		AutoSelect:    spec.AutoSelect,
+		Variant:       spec.Variant,
+		Port:          spec.Port,
+		Timezone:      spec.Timezone,
+		Dind:          spec.Dind,
+		Cmds:          spec.Cmds,
+		BuildArgs:     spec.BuildArgs,
+		RunArgs:       spec.RunArgs,
+		Requires:      spec.Requires,
 	}
 
 	// Convert params, preserving declaration order from TOML

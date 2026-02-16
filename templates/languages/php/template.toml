@@ -1,5 +1,6 @@
 display-name = "PHP"
-display-disc = "PHP language"
+display-disc = "PHP language with Composer package manager"
+display-detail = "Installs PHP with Composer for dependency management. Supports version pinning via the PHP_VERSION parameter."
 display-order = 62
 tags = [
     "php",

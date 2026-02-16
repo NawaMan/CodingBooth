@@ -34,10 +34,6 @@ func runInit(version string) {
 
 	subCmd := args[0]
 	switch subCmd {
-	case "list":
-		runInitList(version, args[1:])
-	case "search":
-		runInitSearch(version, args[1:])
 	case "new":
 		runInitNew(version, args[1:])
 	case "adjust":
@@ -55,11 +51,11 @@ func printInitHelp() {
 	fmt.Println(`Usage: codingbooth init <command> [flags]
 
 Commands:
-  list                     List available templates
-  search <term>            Search templates by name or tag
   new [path]               Create a new booth (default: current directory)
   adjust [path]            Re-generate booth (overwrites existing files)
   dryrun                   Preview what would be generated
+
+  Use 'codingbooth template list/search/show' to browse available templates.
 
 Selection:
   Templates are selected with a DSL passed via --select.
@@ -80,15 +76,12 @@ Flags:
   --port <port>            Set port in generated config.toml (e.g., 10000, NEXT, RANDOM)
   --cmd <command>          Set the default start command (repeatable; for new/dryrun)
   --version <ver>          Use templates from a specific release version
-  --full                   Show all templates including secondary (for list)
   --debug                  Print debug output (for new/dryrun)
   --start                  Start the booth after creation (for new)
   --overwrite              Overwrite existing files without prompting (for new)
   --set <key=value>        Set a config.toml value (repeatable; bare key = true)
 
 Examples:
-  codingbooth init list
-  codingbooth init search python
   codingbooth init new --select "go/python"
   codingbooth init new ./myproject --select "java:21+maven/postgresql"
   codingbooth init dryrun --select "go:1.23.0+linter+vscode-ext"
@@ -113,6 +106,7 @@ type initFlags struct {
 	debug         bool
 	start         bool
 	full          bool
+	detail        bool
 	overwrite     bool
 }
 
@@ -140,6 +134,8 @@ func parseInitFlags(args []string) initFlags {
 			flags.start = true
 		case "--full":
 			flags.full = true
+		case "--detail":
+			flags.detail = true
 		case "--overwrite":
 			flags.overwrite = true
 		case "--cmd":
@@ -209,59 +205,6 @@ func resolveTemplatesPath(flags initFlags, version string) (string, func()) {
 		os.Exit(1)
 	}
 	return dir, cleanup
-}
-
-// runInitList handles: codingbooth init list [--templates-path <dir>] [--full]
-func runInitList(version string, args []string) {
-	flags := parseInitFlags(args)
-	templatesPath, cleanup := resolveTemplatesPath(flags, version)
-	defer cleanup()
-
-	registry, err := tmpl.LoadRegistry(templatesPath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
-		os.Exit(1)
-	}
-
-	if !flags.full {
-		registry = registry.FilterPrimary()
-	}
-
-	tmpl.FormatRegistry(os.Stdout, registry)
-
-	if !flags.full {
-		fmt.Println("\nUse --full to see all available templates.")
-	}
-	fmt.Println("Use 'init search <term>' to find templates by name or tag.")
-}
-
-// runInitSearch handles: codingbooth init search <term> [--templates-path <dir>] [--full]
-func runInitSearch(version string, args []string) {
-	if len(args) == 0 {
-		fmt.Fprintln(os.Stderr, "Error: 'init search' requires a search term")
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth init search <term> --templates-path <dir>")
-		os.Exit(1)
-	}
-
-	searchTerm := args[0]
-	flags := parseInitFlags(args[1:])
-	templatesPath, cleanup := resolveTemplatesPath(flags, version)
-	defer cleanup()
-
-	registry, err := tmpl.LoadRegistry(templatesPath)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
-		os.Exit(1)
-	}
-
-	filtered := registry.Search(searchTerm)
-
-	if len(filtered.Categories) == 0 {
-		fmt.Println("No templates found matching:", searchTerm)
-		return
-	}
-
-	tmpl.FormatRegistry(os.Stdout, filtered)
 }
 
 // runInitNew handles: codingbooth init new [path] --select <dsl> [--templates-path <dir>] [--debug]

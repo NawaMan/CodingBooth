@@ -1,5 +1,6 @@
 display-name = "Erlang"
-display-disc = "Erlang/OTP"
+display-disc = "Erlang/OTP runtime for concurrent applications"
+display-detail = "Installs the Erlang/OTP platform for building concurrent, fault-tolerant distributed systems."
 display-order = 72
 tags = [
     "erlang",

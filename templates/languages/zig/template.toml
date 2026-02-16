@@ -1,5 +1,6 @@
 display-name = "Zig"
-display-disc = "Zig programming language"
+display-disc = "Zig systems programming language"
+display-detail = "Installs the Zig programming language for systems programming with a focus on safety and performance."
 display-order = 80
 tags = [
     "zig",

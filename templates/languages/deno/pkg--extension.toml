@@ -1,5 +1,5 @@
 display-name = "Deno Packages"
-display-disc = "Install Deno packages (comma-separated)"
+display-disc = "Deno package installer for third-party modules"
 display-order = 10
 auto-select = false
 tags = ["deno", "packages"]

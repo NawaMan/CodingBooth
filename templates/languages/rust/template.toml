@@ -1,6 +1,7 @@
 display-name = "Rust"
 primary = true
-display-disc = "Rust language toolchain"
+display-disc = "Rust toolchain with Cargo and rustup"
+display-detail = "Sets up the Rust development environment with rustup, Cargo package manager, and configurable version. Includes rust-analyzer for IDE integration."
 display-order = 40
 tags = [
     "rust",

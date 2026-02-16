@@ -1,5 +1,5 @@
 display-name = "Gradle"
-display-disc = "Gradle build tool"
+display-disc = "Gradle build tool for Java and JVM projects"
 display-order = 11
 auto-select = false
 tags = [

@@ -1,5 +1,6 @@
 display-name = "Free Pascal"
-display-disc = "Free Pascal compiler"
+display-disc = "Free Pascal compiler and development tools"
+display-detail = "Installs the Free Pascal compiler for Object Pascal development."
 display-order = 78
 tags = [
     "pascal",

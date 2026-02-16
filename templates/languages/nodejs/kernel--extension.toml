@@ -1,5 +1,5 @@
 display-name = "Node.js Notebook Kernel"
-display-disc = "tslab Jupyter kernel for JavaScript/TypeScript"
+display-disc = "Node.js Jupyter notebook kernel (tslab)"
 display-order = 5
 auto-select = false
 requires = ["notebook"]

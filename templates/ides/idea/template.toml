@@ -1,5 +1,6 @@
 display-name = "IntelliJ IDEA"
-display-disc = "JetBrains IntelliJ IDEA Community"
+display-disc = "JetBrains IntelliJ IDEA Community for Java/Kotlin"
+display-detail = "Installs JetBrains IntelliJ IDEA Community Edition for Java, Kotlin, and JVM language development. Requires a desktop variant."
 display-order = 20
 tags = [
     "jetbrains",

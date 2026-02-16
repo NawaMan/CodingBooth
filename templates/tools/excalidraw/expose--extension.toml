@@ -1,5 +1,5 @@
 display-name = "Expose Excalidraw Port"
-display-disc = "Expose Excalidraw port to host"
+display-disc = "Expose Excalidraw port to host network"
 display-order = 1
 auto-select = false
 tags = [

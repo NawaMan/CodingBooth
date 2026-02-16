@@ -1,6 +1,7 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "SSH Config"
-display-disc = "Seed ~/.ssh from host (keys and config)"
+display-disc = "SSH key and config from host for remote access"
+display-detail = "Mounts host SSH keys and configuration into the container for remote server access and Git over SSH."
 display-order = 34
 tags = [
     "ssh",

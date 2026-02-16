@@ -1,5 +1,5 @@
 display-name = "Rust Notebook Kernel"
-display-disc = "evcxr Jupyter kernel for Rust"
+display-disc = "Rust Jupyter notebook kernel (evcxr)"
 display-order = 5
 auto-select = false
 requires = ["notebook"]

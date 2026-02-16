@@ -1,5 +1,6 @@
 display-name = "Bun"
-display-disc = "Bun JavaScript runtime and toolkit"
+display-disc = "Bun fast JavaScript runtime and bundler"
+display-detail = "Installs Bun, a fast all-in-one JavaScript runtime with built-in bundler, transpiler, and package manager."
 display-order = 52
 tags = [
     "bun",

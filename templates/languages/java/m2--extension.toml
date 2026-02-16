@@ -1,5 +1,5 @@
 display-name = "Maven Local Repository"
-display-disc = "Persist ~/.m2 repository cache across container restarts"
+display-disc = "Mount host Maven repository cache (.m2)"
 display-order = 9
 auto-select = false
 tags = [

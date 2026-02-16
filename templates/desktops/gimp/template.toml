@@ -1,5 +1,6 @@
 display-name = "GIMP"
-display-disc = "GIMP image editor"
+display-disc = "GIMP image editor (requires desktop variant)"
+display-detail = "Installs GIMP, the GNU Image Manipulation Program for image editing. Requires a desktop variant to be selected."
 display-order = 22
 tags = [
     "desktop",

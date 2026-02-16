@@ -1,6 +1,6 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "Kotlin VS Code Extension"
-display-disc = "Kotlin language support for VS Code"
+display-disc = "Kotlin language support extension for VS Code"
 display-order = 1
 auto-select = true
 tags = [

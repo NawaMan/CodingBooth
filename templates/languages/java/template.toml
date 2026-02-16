@@ -1,6 +1,7 @@
 display-name = "Java"
 primary = true
-display-disc = "JDK with build tools"
+display-disc = "Java JDK with configurable version and distribution"
+display-detail = "Installs the Java Development Kit (JDK) with configurable version and distribution (default: Temurin). Supports version pinning via JDK_VERSION and JDK_DISTRO parameters."
 display-order = 30
 tags = [
     "java",

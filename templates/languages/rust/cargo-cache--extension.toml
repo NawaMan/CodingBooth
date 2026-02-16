@@ -1,6 +1,6 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "Cargo Cache"
-display-disc = "Persist ~/.cargo registry cache across container restarts"
+display-disc = "Mount host Cargo registry cache"
 auto-select = true
 tags = ["rust", "cargo", "cache"]
 

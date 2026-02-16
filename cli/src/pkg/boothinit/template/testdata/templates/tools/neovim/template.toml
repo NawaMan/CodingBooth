@@ -1,4 +1,5 @@
 display-name = "Neovim"
-display-disc = "Neovim editor"
+display-disc = "Neovim text editor with Lua-based configuration"
+display-detail = "Installs Neovim with full Lua-based configuration support. Includes treesitter and LSP integration for modern editing workflows."
 display-order = 10
 tags = ["editor", "vim"]

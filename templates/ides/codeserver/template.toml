@@ -1,5 +1,6 @@
 display-name = "code-server"
-display-disc = "VS Code in the browser via code-server"
+display-disc = "Browser-based VS Code IDE via code-server"
+display-detail = "Installs code-server, providing a full VS Code experience in the browser with terminal, Git integration, and extension support."
 display-order = 12
 tags = [
     "vscode",

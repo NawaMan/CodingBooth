@@ -1,6 +1,6 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "Zsh Default"
-display-disc = "Set zsh as the default shell"
+display-disc = "Set Zsh as the default login shell"
 auto-select = false
 tags = [
     "zsh",

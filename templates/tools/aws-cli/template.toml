@@ -1,5 +1,6 @@
 display-name = "AWS CLI"
-display-disc = "Amazon Web Services CLI v2"
+display-disc = "Amazon Web Services CLI v2 for cloud management"
+display-detail = "Installs AWS CLI v2 for managing Amazon Web Services resources from the command line."
 display-order = 50
 tags = [
     "aws",

@@ -1,5 +1,6 @@
 display-name = "Lua"
-display-disc = "Lua scripting language"
+display-disc = "Lua scripting language with LuaRocks"
+display-detail = "Installs the Lua scripting language with the LuaRocks package manager."
 display-order = 76
 tags = [
     "lua",

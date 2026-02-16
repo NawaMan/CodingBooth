@@ -1,6 +1,7 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "Zsh"
-display-disc = "Zsh shell (use +default to set as default shell)"
+display-disc = "Zsh shell with Oh My Zsh framework"
+display-detail = "Installs the Zsh shell with Oh My Zsh framework. Use the +default extension to set Zsh as the default login shell."
 display-order = 32
 tags = [
     "zsh",

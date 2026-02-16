@@ -1,5 +1,5 @@
 display-name = "Accept Edits"
-display-disc = "Auto-accept all file operations in Claude Code (no confirmation prompts)"
+display-disc = "Auto-accept all Claude Code file operations"
 display-order = 10
 auto-select = false
 tags = [

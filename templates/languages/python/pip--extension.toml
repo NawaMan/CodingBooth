@@ -1,5 +1,5 @@
 display-name = "pip requirements"
-display-disc = "Install packages from .booth/requirements.txt using pip"
+display-disc = "pip requirements.txt package installation"
 display-order = 12
 auto-select = false
 tags = [

@@ -342,7 +342,7 @@ func TestLoadRegistry_GoTemplate(t *testing.T) {
 	require.NotNil(t, goTmpl)
 
 	assert.Equal(t, "Go", goTmpl.DisplayName)
-	assert.Equal(t, "Go language toolchain", goTmpl.DisplayDesc)
+	assert.Equal(t, "Go toolchain with gopls LSP and Delve debugger", goTmpl.DisplayDesc)
 	assert.Equal(t, 10, goTmpl.DisplayOrder)
 	assert.Equal(t, "languages", goTmpl.CategoryName)
 	assert.ElementsMatch(t, []string{"golang", "backend"}, goTmpl.Tags)

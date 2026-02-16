@@ -1,6 +1,6 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "Ruby VS Code Extension"
-display-disc = "Ruby language support for VS Code"
+display-disc = "Ruby language support extension for VS Code"
 display-order = 1
 auto-select = true
 tags = [

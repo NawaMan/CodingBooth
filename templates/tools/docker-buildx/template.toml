@@ -1,5 +1,6 @@
 display-name = "Docker Buildx"
-display-disc = "Docker Buildx plugin"
+display-disc = "Docker Buildx plugin for advanced image builds"
+display-detail = "Installs the Docker Buildx plugin for advanced image building with multi-platform support."
 display-order = 66
 tags = [
     "docker",

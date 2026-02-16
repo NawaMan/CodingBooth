@@ -1,6 +1,6 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "npm Config"
-display-disc = "Mount ~/.npmrc from host (read-only home-seeding)"
+display-disc = "Mount host npm configuration (.npmrc)"
 auto-select = true
 tags = ["nodejs", "npm", "credential"]
 

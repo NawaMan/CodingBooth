@@ -1,5 +1,6 @@
 display-name = "Django"
-display-disc = "Django web framework"
+display-disc = "Django web framework for Python (requires python)"
+display-detail = "Installs the Django web framework via pip. Requires the python template to be selected."
 display-order = 10
 tags = ["python", "web"]
 

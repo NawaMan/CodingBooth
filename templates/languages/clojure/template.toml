@@ -1,5 +1,6 @@
 display-name = "Clojure"
-display-disc = "Clojure language"
+display-disc = "Clojure language with Leiningen (requires java)"
+display-detail = "Installs Clojure with the Leiningen build tool. Requires the java template for JDK."
 display-order = 36
 tags = [
     "clojure",

@@ -1,5 +1,6 @@
 display-name = "Claude Code"
-display-disc = "Anthropic Claude Code assistant"
+display-disc = "Anthropic Claude Code AI coding assistant"
+display-detail = "Installs Claude Code, Anthropic's AI coding assistant. Requires Node.js which is auto-installed. Enables Docker-in-Docker for container-aware AI assistance."
 display-order = 20
 tags = ["ai", "assistant"]
 

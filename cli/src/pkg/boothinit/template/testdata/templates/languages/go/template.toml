@@ -1,5 +1,6 @@
 display-name = "Go"
-display-disc = "Go language toolchain"
+display-disc = "Go toolchain with gopls LSP and Delve debugger"
+display-detail = "Provides a complete Go development environment including the Go compiler, gopls language server for IDE integration, and Delve debugger. Supports version pinning via the GO_VERSION parameter."
 display-order = 10
 tags = ["golang", "backend"]
 

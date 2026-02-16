@@ -1,5 +1,6 @@
 display-name = "Ruby"
-display-disc = "Ruby language"
+display-disc = "Ruby language with gem package manager"
+display-detail = "Sets up Ruby with the gem package manager and bundler. Supports version pinning via the RUBY_VERSION parameter."
 display-order = 60
 tags = [
     "ruby",

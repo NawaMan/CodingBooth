@@ -1,5 +1,6 @@
 display-name = "Firebase CLI"
-display-disc = "Firebase CLI tools"
+display-disc = "Firebase CLI for Google Cloud app development"
+display-detail = "Installs the Firebase CLI for managing Firebase projects, deploying apps, and running emulators."
 display-order = 54
 tags = [
     "firebase",

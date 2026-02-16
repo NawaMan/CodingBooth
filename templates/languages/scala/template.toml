@@ -1,5 +1,6 @@
 display-name = "Scala"
-display-disc = "Scala language"
+display-disc = "Scala language with sbt build tool (requires java)"
+display-detail = "Installs Scala with the sbt build tool for JVM development. Requires the java template for JDK."
 display-order = 34
 tags = [
     "scala",

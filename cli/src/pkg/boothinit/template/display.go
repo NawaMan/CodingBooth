@@ -10,15 +10,17 @@ import (
 	"strings"
 )
 
-// FormatRegistry writes a formatted listing of templates grouped by category.
+// FormatRegistryList writes a formatted listing of templates grouped by category.
 // Templates are indented with 2 spaces; extensions with 4 spaces and a "+ " prefix.
-// Columns are dynamically aligned based on content widths.
-func FormatRegistry(w io.Writer, registry *TemplateRegistry) {
+// Shows the short description (DisplayDesc) instead of tags.
+// Extensions with auto-select=true show "(auto)" after the description.
+// If includeAutoExtensions is false, auto-select extensions are hidden to keep output compact.
+func FormatRegistryList(w io.Writer, registry *TemplateRegistry, includeAutoExtensions bool) {
 	if len(registry.Categories) == 0 {
 		return
 	}
 
-	nameWidth, displayWidth := computeColumnWidths(registry)
+	nameWidth := computeNameWidth(registry, true)
 
 	for i, cat := range registry.Categories {
 		if i > 0 {
@@ -26,51 +28,180 @@ func FormatRegistry(w io.Writer, registry *TemplateRegistry) {
 		}
 		fmt.Fprintln(w, cat.DisplayName)
 		for _, t := range cat.Templates {
-			fmt.Fprintf(w, "  %-*s  %-*s  %s\n",
+			fmt.Fprintf(w, "  %-*s  %s\n",
 				nameWidth, t.Name,
-				displayWidth, t.DisplayName,
-				formatTags(t.Tags))
+				t.DisplayDesc)
 			for _, ext := range t.Extensions {
-				fmt.Fprintf(w, "    + %-*s  %-*s  %s\n",
+				isAuto := ext.AutoSelect != nil && *ext.AutoSelect
+				if !includeAutoExtensions && isAuto {
+					continue
+				}
+				desc := ext.DisplayDesc
+				if isAuto {
+					desc += " (auto)"
+				}
+				fmt.Fprintf(w, "    + %-*s  %s\n",
 					nameWidth-4, ext.Name,
-					displayWidth, ext.DisplayName,
-					formatTags(ext.Tags))
+					desc)
 			}
 		}
 	}
 }
 
-// formatTags formats a slice of tags as "[tag1, tag2]" or "[]" if empty.
-func formatTags(tags []string) string {
-	if len(tags) == 0 {
-		return "[]"
+// FormatTemplateDetail writes a detailed view of a single template.
+// If detail is true, file/segment contents are shown in full.
+func FormatTemplateDetail(w io.Writer, t *Template, registry *TemplateRegistry, detail bool) {
+	// Header: DisplayName (name)
+	fmt.Fprintf(w, "%s (%s)\n", t.DisplayName, t.Name)
+
+	// Category
+	fmt.Fprintf(w, "Category:    %s\n", t.CategoryName)
+
+	// Auto-select (for extensions)
+	if t.AutoSelect != nil {
+		if *t.AutoSelect {
+			fmt.Fprintln(w, "Auto-select: yes")
+		} else {
+			fmt.Fprintln(w, "Auto-select: no")
+		}
 	}
-	return "[" + strings.Join(tags, ", ") + "]"
+
+	// Short description
+	if t.DisplayDesc != "" {
+		fmt.Fprintf(w, "Description: %s\n", t.DisplayDesc)
+	}
+
+	// Long description
+	if t.DisplayDetail != "" {
+		fmt.Fprintf(w, "\n%s\n", t.DisplayDetail)
+	}
+
+	// Parameters
+	if len(t.Params) > 0 {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Parameters:")
+		paramOrder := t.ParamOrder
+		if len(paramOrder) == 0 {
+			for k := range t.Params {
+				paramOrder = append(paramOrder, k)
+			}
+		}
+		nameW := 0
+		for _, k := range paramOrder {
+			if len(k) > nameW {
+				nameW = len(k)
+			}
+		}
+		for _, k := range paramOrder {
+			p := t.Params[k]
+			line := fmt.Sprintf("  %-*s  default: %s", nameW, k, p.Default)
+			if len(p.Suggests) > 0 {
+				line += fmt.Sprintf("  suggests: %s", strings.Join(p.Suggests, ", "))
+			}
+			fmt.Fprintln(w, line)
+		}
+	}
+
+	// Extensions
+	if len(t.Extensions) > 0 {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Extensions:")
+		nameW := 0
+		for _, ext := range t.Extensions {
+			if len(ext.Name) > nameW {
+				nameW = len(ext.Name)
+			}
+		}
+		for _, ext := range t.Extensions {
+			desc := ext.DisplayDesc
+			if ext.AutoSelect != nil && *ext.AutoSelect {
+				desc += " (auto)"
+			}
+			fmt.Fprintf(w, "  %-*s  %s\n", nameW, ext.Name, desc)
+		}
+	}
+
+	// Requires
+	fmt.Fprintln(w)
+	if len(t.Requires) > 0 {
+		fmt.Fprintf(w, "Requires: %s\n", strings.Join(t.Requires, ", "))
+	} else {
+		fmt.Fprintln(w, "Requires: (none)")
+	}
+
+	// Tags
+	if len(t.Tags) > 0 {
+		fmt.Fprintf(w, "Tags: %s\n", strings.Join(t.Tags, ", "))
+	}
+
+	// File changes
+	changes := collectFileChanges(t)
+	if len(changes) > 0 {
+		fmt.Fprintln(w)
+		fmt.Fprintln(w, "Changes:")
+		for _, c := range changes {
+			fmt.Fprintf(w, "  %s\n", c.label)
+			if detail && c.content != "" {
+				for _, line := range strings.Split(strings.TrimRight(c.content, "\n"), "\n") {
+					fmt.Fprintf(w, "    | %s\n", line)
+				}
+			}
+		}
+	}
 }
 
-// computeColumnWidths computes the max name width and max display-name width
-// across all templates and extensions in the registry. Extension names account
-// for the 4-character indent difference ("    + " vs "  ").
-func computeColumnWidths(registry *TemplateRegistry) (nameWidth, displayWidth int) {
+// fileChange represents a file or segment that a template modifies.
+type fileChange struct {
+	label   string
+	content string
+}
+
+// collectFileChanges gathers all segments and files from a template.
+func collectFileChanges(t *Template) []fileChange {
+	var changes []fileChange
+
+	for _, seg := range t.BoothfileSegments {
+		label := fmt.Sprintf("Boothfile (order %d)", seg.Order)
+		changes = append(changes, fileChange{label, seg.Content})
+	}
+	for _, seg := range t.StartupSegments {
+		label := fmt.Sprintf("startup (order %d)", seg.Order)
+		changes = append(changes, fileChange{label, seg.Content})
+	}
+	for _, f := range t.Setups {
+		label := fmt.Sprintf("setups/%s", f.RelPath)
+		changes = append(changes, fileChange{label, f.Content})
+	}
+	for _, f := range t.Home {
+		label := fmt.Sprintf("home/%s", f.RelPath)
+		changes = append(changes, fileChange{label, f.Content})
+	}
+	for _, f := range t.HomeSeed {
+		label := fmt.Sprintf("home-seed/%s", f.RelPath)
+		changes = append(changes, fileChange{label, f.Content})
+	}
+
+	return changes
+}
+
+// computeNameWidth computes the max name width across all templates and extensions.
+// Extension names account for the 4-character indent difference ("    + " vs "  ").
+// If includeExtensions is false, only template names are considered.
+func computeNameWidth(registry *TemplateRegistry, includeExtensions bool) int {
+	nameWidth := 0
 	for _, cat := range registry.Categories {
 		for _, t := range cat.Templates {
 			if len(t.Name) > nameWidth {
 				nameWidth = len(t.Name)
 			}
-			if len(t.DisplayName) > displayWidth {
-				displayWidth = len(t.DisplayName)
-			}
-			for _, ext := range t.Extensions {
-				// Extensions use "    + " (6 chars) vs templates "  " (2 chars),
-				// so the name needs 4 extra chars to align the display-name column.
-				if len(ext.Name)+4 > nameWidth {
-					nameWidth = len(ext.Name) + 4
-				}
-				if len(ext.DisplayName) > displayWidth {
-					displayWidth = len(ext.DisplayName)
+			if includeExtensions {
+				for _, ext := range t.Extensions {
+					if len(ext.Name)+4 > nameWidth {
+						nameWidth = len(ext.Name) + 4
+					}
 				}
 			}
 		}
 	}
-	return nameWidth, displayWidth
+	return nameWidth
 }

@@ -1,5 +1,6 @@
 display-name = "Kotlin"
-display-disc = "Kotlin language"
+display-disc = "Kotlin language for JVM development (requires java)"
+display-detail = "Installs Kotlin for JVM development. Requires the java template for JDK. Supports version pinning via the KOTLIN_VERSION parameter."
 display-order = 32
 tags = [
     "kotlin",

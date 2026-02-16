@@ -1,5 +1,5 @@
 display-name = "Java Notebook Kernel"
-display-disc = "IJava Jupyter kernel for Java"
+display-disc = "Java Jupyter notebook kernel (IJava)"
 display-order = 5
 auto-select = false
 requires = ["notebook"]

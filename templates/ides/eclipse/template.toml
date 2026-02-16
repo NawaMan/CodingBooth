@@ -1,5 +1,6 @@
 display-name = "Eclipse"
-display-disc = "Eclipse IDE for Java"
+display-disc = "Eclipse IDE for Java and enterprise development"
+display-detail = "Installs Eclipse IDE for Java and enterprise development. Requires a desktop variant."
 display-order = 24
 tags = [
     "eclipse",

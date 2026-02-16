@@ -1,5 +1,6 @@
 display-name = "Google Cloud SDK"
-display-disc = "Google Cloud SDK (gcloud)"
+display-disc = "Google Cloud SDK for GCP service management"
+display-detail = "Installs the Google Cloud SDK (gcloud) for managing Google Cloud Platform resources and services."
 display-order = 52
 tags = [
     "gcloud",

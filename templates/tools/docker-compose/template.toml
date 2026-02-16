@@ -1,5 +1,6 @@
 display-name = "Docker Compose"
-display-disc = "Docker Compose plugin"
+display-disc = "Docker Compose plugin for multi-container apps"
+display-detail = "Installs the Docker Compose plugin for defining and running multi-container Docker applications."
 display-order = 64
 tags = [
     "docker",

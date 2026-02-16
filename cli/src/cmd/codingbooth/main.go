@@ -49,6 +49,9 @@ func main() {
 		case "example":
 			runExample(version)
 			return
+		case "template":
+			runTemplate(version)
+			return
 		case "init":
 			runInit(version)
 			return

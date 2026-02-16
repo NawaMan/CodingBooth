@@ -1,5 +1,6 @@
 display-name = "SQLite"
-display-disc = "SQLite embedded database"
+display-disc = "SQLite embedded database and CLI tools"
+display-detail = "Installs SQLite, a lightweight embedded database engine with command-line tools."
 display-order = 10
 tags = [
     "database",

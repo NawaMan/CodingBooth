@@ -1,5 +1,6 @@
 display-name = "KDE Plasma"
-display-disc = "KDE Plasma desktop with VNC/noVNC"
+display-disc = "KDE Plasma desktop with VNC/noVNC access"
+display-detail = "Provides a KDE Plasma desktop environment accessible via VNC and noVNC in the browser. Supports custom screen resolution via the GEOMETRY environment variable."
 display-order = 10
 tags = [
     "desktop",

@@ -1,5 +1,5 @@
 display-name = "Python Notebook Kernel"
-display-disc = "ipykernel for Python"
+display-disc = "Python Jupyter notebook kernel"
 display-order = 5
 auto-select = false
 requires = ["notebook"]

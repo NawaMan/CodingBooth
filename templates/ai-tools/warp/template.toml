@@ -1,5 +1,6 @@
 display-name = "Warp"
-display-disc = "Warp terminal with AI features"
+display-disc = "Warp terminal with built-in AI features"
+display-detail = "Installs Warp, a modern terminal with built-in AI command assistance and workflow automation."
 display-order = 22
 tags = [
     "terminal",

@@ -1,5 +1,6 @@
 display-name = "Inkscape"
-display-disc = "Inkscape vector graphics editor"
+display-disc = "Inkscape vector graphics editor (requires desktop)"
+display-detail = "Installs Inkscape for vector graphics editing and SVG creation. Requires a desktop variant."
 display-order = 20
 tags = [
     "desktop",

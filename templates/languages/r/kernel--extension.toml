@@ -1,5 +1,5 @@
 display-name = "R Notebook Kernel"
-display-disc = "IRkernel Jupyter kernel for R"
+display-disc = "R Jupyter notebook kernel (IRkernel)"
 display-order = 5
 auto-select = false
 requires = ["notebook"]

@@ -1,5 +1,6 @@
 display-name = "XFCE"
-display-disc = "XFCE desktop with VNC/noVNC"
+display-disc = "XFCE lightweight desktop with VNC/noVNC access"
+display-detail = "Provides a full XFCE desktop environment accessible via VNC and noVNC in the browser. Supports custom screen resolution via the GEOMETRY environment variable."
 display-order = 14
 tags = [
     "desktop",

@@ -1,5 +1,5 @@
 display-name = "Kotlin Notebook Kernel"
-display-disc = "Kotlin Jupyter kernel"
+display-disc = "Kotlin Jupyter notebook kernel"
 display-order = 5
 auto-select = false
 requires = ["notebook"]

@@ -1,5 +1,6 @@
 display-name = "Python"
-display-disc = "Python language"
+display-disc = "Python with pip package manager and venv support"
+display-detail = "Sets up a Python development environment with pip, venv, and configurable version. Supports version pinning via the PYTHON_VERSION parameter."
 display-order = 20
 tags = ["python", "scripting"]
 

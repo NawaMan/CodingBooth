@@ -1,6 +1,6 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "Haskell Notebook Kernel"
-display-disc = "IHaskell Jupyter kernel for Haskell"
+display-disc = "Haskell Jupyter notebook kernel (IHaskell)"
 display-order = 5
 auto-select = false
 requires = ["notebook"]

@@ -1,5 +1,6 @@
 display-name = "MySQL"
-display-disc = "MySQL relational database"
+display-disc = "MySQL database with persistent volume"
+display-detail = "Installs MySQL relational database with a persistent Docker volume for data storage across container restarts."
 display-order = 22
 tags = [
     "database",

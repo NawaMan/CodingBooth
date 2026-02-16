@@ -1,6 +1,6 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "Neovim Config"
-display-disc = "Mount ~/.config/nvim from host (read-only home-seeding)"
+display-disc = "Mount host Neovim configuration files"
 auto-select = true
 tags = [
     "neovim",

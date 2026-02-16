@@ -13,27 +13,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// --- formatTags ---
+// --- computeNameWidth ---
 
-func TestFormatTags_Multiple(t *testing.T) {
-	assert.Equal(t, "[golang, backend]", formatTags([]string{"golang", "backend"}))
-}
-
-func TestFormatTags_Single(t *testing.T) {
-	assert.Equal(t, "[go]", formatTags([]string{"go"}))
-}
-
-func TestFormatTags_Empty(t *testing.T) {
-	assert.Equal(t, "[]", formatTags([]string{}))
-}
-
-func TestFormatTags_Nil(t *testing.T) {
-	assert.Equal(t, "[]", formatTags(nil))
-}
-
-// --- computeColumnWidths ---
-
-func TestComputeColumnWidths_BasicTemplates(t *testing.T) {
+func TestComputeNameWidth_BasicTemplates(t *testing.T) {
 	registry := &TemplateRegistry{
 		Categories: []*Category{
 			{
@@ -44,12 +26,11 @@ func TestComputeColumnWidths_BasicTemplates(t *testing.T) {
 			},
 		},
 	}
-	nameW, displayW := computeColumnWidths(registry)
-	assert.Equal(t, 6, nameW)  // "python" = 6 chars
-	assert.Equal(t, 6, displayW) // "Python" = 6 chars
+	nameW := computeNameWidth(registry, true)
+	assert.Equal(t, 6, nameW) // "python" = 6 chars
 }
 
-func TestComputeColumnWidths_WithExtensions(t *testing.T) {
+func TestComputeNameWidth_WithExtensions(t *testing.T) {
 	registry := &TemplateRegistry{
 		Categories: []*Category{
 			{
@@ -65,33 +46,31 @@ func TestComputeColumnWidths_WithExtensions(t *testing.T) {
 			},
 		},
 	}
-	nameW, displayW := computeColumnWidths(registry)
+	nameW := computeNameWidth(registry, true)
 	// Extension "linter" (6 chars) + 4 indent = 10, vs "go" (2 chars). Max = 10.
 	assert.Equal(t, 10, nameW)
-	assert.Equal(t, 9, displayW) // "Go Linter" = 9 chars
 }
 
-func TestComputeColumnWidths_EmptyRegistry(t *testing.T) {
+func TestComputeNameWidth_EmptyRegistry(t *testing.T) {
 	registry := &TemplateRegistry{}
-	nameW, displayW := computeColumnWidths(registry)
+	nameW := computeNameWidth(registry, true)
 	assert.Equal(t, 0, nameW)
-	assert.Equal(t, 0, displayW)
 }
 
-// --- FormatRegistry ---
+// --- FormatRegistryList ---
 
-func TestFormatRegistry_EmptyRegistry(t *testing.T) {
+func TestFormatRegistryList_EmptyRegistry(t *testing.T) {
 	var buf bytes.Buffer
-	FormatRegistry(&buf, &TemplateRegistry{})
+	FormatRegistryList(&buf, &TemplateRegistry{}, true)
 	assert.Empty(t, buf.String())
 }
 
-func TestFormatRegistry_CategoryHeaders(t *testing.T) {
+func TestFormatRegistryList_CategoryHeaders(t *testing.T) {
 	registry, err := LoadRegistry(testdataDir())
 	require.NoError(t, err)
 
 	var buf bytes.Buffer
-	FormatRegistry(&buf, registry)
+	FormatRegistryList(&buf, registry, false)
 	output := buf.String()
 
 	assert.Contains(t, output, "Languages\n")
@@ -99,12 +78,12 @@ func TestFormatRegistry_CategoryHeaders(t *testing.T) {
 	assert.Contains(t, output, "Tools\n")
 }
 
-func TestFormatRegistry_TemplateNames(t *testing.T) {
+func TestFormatRegistryList_TemplateNames(t *testing.T) {
 	registry, err := LoadRegistry(testdataDir())
 	require.NoError(t, err)
 
 	var buf bytes.Buffer
-	FormatRegistry(&buf, registry)
+	FormatRegistryList(&buf, registry, false)
 	output := buf.String()
 
 	// Template names should appear indented with 2 spaces
@@ -115,57 +94,139 @@ func TestFormatRegistry_TemplateNames(t *testing.T) {
 	assert.Contains(t, output, "  claude-code")
 }
 
-func TestFormatRegistry_ExtensionIndent(t *testing.T) {
+func TestFormatRegistryList_ShowsNonAutoExtensions(t *testing.T) {
 	registry, err := LoadRegistry(testdataDir())
 	require.NoError(t, err)
 
 	var buf bytes.Buffer
-	FormatRegistry(&buf, registry)
+	FormatRegistryList(&buf, registry, false)
 	output := buf.String()
 
-	// Extensions should appear with "    + " prefix
+	// Non-auto extensions should appear even with includeAutoExtensions=false
 	assert.Contains(t, output, "    + linter")
 	assert.Contains(t, output, "    + pip")
 }
 
-func TestFormatRegistry_DisplayNames(t *testing.T) {
-	registry, err := LoadRegistry(testdataDir())
-	require.NoError(t, err)
+func TestFormatRegistryList_HidesAutoExtensions(t *testing.T) {
+	autoTrue := true
+	autoFalse := false
+	registry := &TemplateRegistry{
+		Categories: []*Category{
+			{
+				DisplayName: "Languages",
+				Templates: []*Template{
+					{
+						Name:        "go",
+						DisplayDesc: "Go toolchain",
+						Extensions: []*Template{
+							{Name: "linter", DisplayDesc: "Go linter", AutoSelect: &autoFalse},
+							{Name: "vscode-ext", DisplayDesc: "Go VS Code extension", AutoSelect: &autoTrue},
+						},
+					},
+				},
+			},
+		},
+	}
 
 	var buf bytes.Buffer
-	FormatRegistry(&buf, registry)
+	FormatRegistryList(&buf, registry, false)
 	output := buf.String()
 
-	assert.Contains(t, output, "Go")
-	assert.Contains(t, output, "Python")
-	assert.Contains(t, output, "Django")
-	assert.Contains(t, output, "Neovim")
-	assert.Contains(t, output, "Claude Code")
-	assert.Contains(t, output, "Go Linter")
-	assert.Contains(t, output, "pip requirements")
+	// Non-auto extension should appear
+	assert.Contains(t, output, "    + linter")
+	// Auto-select extension should be hidden
+	assert.NotContains(t, output, "vscode-ext")
 }
 
-func TestFormatRegistry_Tags(t *testing.T) {
-	registry, err := LoadRegistry(testdataDir())
-	require.NoError(t, err)
+func TestFormatRegistryList_ShowsAllExtensionsWhenEnabled(t *testing.T) {
+	autoTrue := true
+	autoFalse := false
+	registry := &TemplateRegistry{
+		Categories: []*Category{
+			{
+				DisplayName: "Languages",
+				Templates: []*Template{
+					{
+						Name:        "go",
+						DisplayDesc: "Go toolchain",
+						Extensions: []*Template{
+							{Name: "linter", DisplayDesc: "Go linter", AutoSelect: &autoFalse},
+							{Name: "vscode-ext", DisplayDesc: "Go VS Code extension", AutoSelect: &autoTrue},
+						},
+					},
+				},
+			},
+		},
+	}
 
 	var buf bytes.Buffer
-	FormatRegistry(&buf, registry)
+	FormatRegistryList(&buf, registry, true)
 	output := buf.String()
 
-	assert.Contains(t, output, "[golang, backend]")
-	assert.Contains(t, output, "[python, scripting]")
-	assert.Contains(t, output, "[python, web]")
-	assert.Contains(t, output, "[editor, vim]")
-	assert.Contains(t, output, "[ai, assistant]")
+	// Both extensions should appear with includeAutoExtensions=true
+	assert.Contains(t, output, "    + linter")
+	assert.Contains(t, output, "    + vscode-ext")
+	assert.Contains(t, output, "Go VS Code extension (auto)")
 }
 
-func TestFormatRegistry_CategoryOrder(t *testing.T) {
+func TestFormatRegistryList_ShowsDescriptions(t *testing.T) {
 	registry, err := LoadRegistry(testdataDir())
 	require.NoError(t, err)
 
 	var buf bytes.Buffer
-	FormatRegistry(&buf, registry)
+	FormatRegistryList(&buf, registry, false)
+	output := buf.String()
+
+	assert.Contains(t, output, "Go toolchain with gopls LSP and Delve debugger")
+	assert.Contains(t, output, "Python with pip package manager and venv support")
+	assert.Contains(t, output, "Anthropic Claude Code AI coding assistant")
+}
+
+func TestFormatRegistryList_NoTags(t *testing.T) {
+	registry, err := LoadRegistry(testdataDir())
+	require.NoError(t, err)
+
+	var buf bytes.Buffer
+	FormatRegistryList(&buf, registry, false)
+	output := buf.String()
+
+	// Tags should NOT appear in the list output
+	assert.NotContains(t, output, "[golang, backend]")
+	assert.NotContains(t, output, "[python, scripting]")
+}
+
+func TestFormatRegistryList_AutoSelectIndicator(t *testing.T) {
+	autoTrue := true
+	registry := &TemplateRegistry{
+		Categories: []*Category{
+			{
+				DisplayName: "Languages",
+				Templates: []*Template{
+					{
+						Name:        "go",
+						DisplayDesc: "Go toolchain",
+						Extensions: []*Template{
+							{Name: "vscode-ext", DisplayDesc: "Go VS Code extension", AutoSelect: &autoTrue},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	var buf bytes.Buffer
+	FormatRegistryList(&buf, registry, true)
+	output := buf.String()
+
+	assert.Contains(t, output, "Go VS Code extension (auto)")
+}
+
+func TestFormatRegistryList_CategoryOrder(t *testing.T) {
+	registry, err := LoadRegistry(testdataDir())
+	require.NoError(t, err)
+
+	var buf bytes.Buffer
+	FormatRegistryList(&buf, registry, false)
 	output := buf.String()
 
 	// Languages (order 1) before Frameworks (order 2) before Tools (order 3)
@@ -177,12 +238,12 @@ func TestFormatRegistry_CategoryOrder(t *testing.T) {
 	assert.True(t, fwIdx < toolIdx, "Frameworks should appear before Tools")
 }
 
-func TestFormatRegistry_TemplateOrderWithinCategory(t *testing.T) {
+func TestFormatRegistryList_TemplateOrderWithinCategory(t *testing.T) {
 	registry, err := LoadRegistry(testdataDir())
 	require.NoError(t, err)
 
 	var buf bytes.Buffer
-	FormatRegistry(&buf, registry)
+	FormatRegistryList(&buf, registry, false)
 	output := buf.String()
 
 	// In Languages: go (order 10) before python (order 20)
@@ -191,12 +252,12 @@ func TestFormatRegistry_TemplateOrderWithinCategory(t *testing.T) {
 	assert.True(t, goIdx < pyIdx, "go should appear before python")
 }
 
-func TestFormatRegistry_BlankLineBetweenCategories(t *testing.T) {
+func TestFormatRegistryList_BlankLineBetweenCategories(t *testing.T) {
 	registry, err := LoadRegistry(testdataDir())
 	require.NoError(t, err)
 
 	var buf bytes.Buffer
-	FormatRegistry(&buf, registry)
+	FormatRegistryList(&buf, registry, false)
 	output := buf.String()
 
 	// There should be a blank line between categories
@@ -204,45 +265,102 @@ func TestFormatRegistry_BlankLineBetweenCategories(t *testing.T) {
 	assert.Contains(t, output, "\n\nTools")
 }
 
-func TestFormatRegistry_SingleCategory(t *testing.T) {
+func TestFormatRegistryList_SingleCategory(t *testing.T) {
 	registry := &TemplateRegistry{
 		Categories: []*Category{
 			{
 				DisplayName: "TestCat",
 				Templates: []*Template{
-					{Name: "item1", DisplayName: "Item One", Tags: []string{"a"}},
+					{Name: "item1", DisplayName: "Item One", DisplayDesc: "First item"},
 				},
 			},
 		},
 	}
 
 	var buf bytes.Buffer
-	FormatRegistry(&buf, registry)
+	FormatRegistryList(&buf, registry, false)
 	output := buf.String()
 
 	assert.Contains(t, output, "TestCat\n")
 	assert.Contains(t, output, "  item1")
-	assert.Contains(t, output, "Item One")
-	assert.Contains(t, output, "[a]")
+	assert.Contains(t, output, "First item")
 	// No leading blank line for first category
 	assert.True(t, strings.HasPrefix(output, "TestCat\n"))
 }
 
-func TestFormatRegistry_EmptyTags(t *testing.T) {
-	registry := &TemplateRegistry{
-		Categories: []*Category{
-			{
-				DisplayName: "Cat",
-				Templates: []*Template{
-					{Name: "notags", DisplayName: "No Tags"},
-				},
-			},
-		},
-	}
+// --- FormatTemplateDetail ---
+
+func TestFormatTemplateDetail_BasicTemplate(t *testing.T) {
+	registry, err := LoadRegistry(testdataDir())
+	require.NoError(t, err)
+
+	goTmpl := registry.ByName["go"]
+	require.NotNil(t, goTmpl)
 
 	var buf bytes.Buffer
-	FormatRegistry(&buf, registry)
+	FormatTemplateDetail(&buf, goTmpl, registry, false)
 	output := buf.String()
 
-	assert.Contains(t, output, "[]")
+	assert.Contains(t, output, "Go (go)")
+	assert.Contains(t, output, "Category:    languages")
+	assert.Contains(t, output, "Description: Go toolchain with gopls LSP and Delve debugger")
+	assert.Contains(t, output, "Provides a complete Go development environment")
+	assert.Contains(t, output, "Parameters:")
+	assert.Contains(t, output, "GO_VERSION")
+	assert.Contains(t, output, "default: 1.24")
+	assert.Contains(t, output, "suggests: 1.22, 1.23, 1.24")
+	assert.Contains(t, output, "Extensions:")
+	assert.Contains(t, output, "linter")
+	assert.Contains(t, output, "Tags: golang, backend")
+}
+
+func TestFormatTemplateDetail_NoParams(t *testing.T) {
+	tmpl := &Template{
+		Name:         "simple",
+		CategoryName: "test",
+		DisplayName:  "Simple",
+		DisplayDesc:  "A simple template",
+	}
+	registry := &TemplateRegistry{}
+
+	var buf bytes.Buffer
+	FormatTemplateDetail(&buf, tmpl, registry, false)
+	output := buf.String()
+
+	assert.Contains(t, output, "Simple (simple)")
+	assert.NotContains(t, output, "Parameters:")
+	assert.NotContains(t, output, "Extensions:")
+	assert.Contains(t, output, "Requires: (none)")
+}
+
+func TestFormatTemplateDetail_WithRequires(t *testing.T) {
+	registry, err := LoadRegistry(testdataDir())
+	require.NoError(t, err)
+
+	django := registry.ByName["django"]
+	require.NotNil(t, django)
+
+	var buf bytes.Buffer
+	FormatTemplateDetail(&buf, django, registry, false)
+	output := buf.String()
+
+	assert.Contains(t, output, "Requires: python")
+}
+
+func TestFormatTemplateDetail_WithDetail(t *testing.T) {
+	tmpl := &Template{
+		Name:          "test",
+		CategoryName:  "testing",
+		DisplayName:   "Test Template",
+		DisplayDesc:   "Short description",
+		DisplayDetail: "This is a longer detailed description of the template.",
+	}
+	registry := &TemplateRegistry{}
+
+	var buf bytes.Buffer
+	FormatTemplateDetail(&buf, tmpl, registry, false)
+	output := buf.String()
+
+	assert.Contains(t, output, "Description: Short description")
+	assert.Contains(t, output, "This is a longer detailed description of the template.")
 }

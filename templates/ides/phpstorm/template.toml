@@ -1,5 +1,6 @@
 display-name = "PhpStorm"
-display-disc = "JetBrains PhpStorm IDE for PHP"
+display-disc = "JetBrains PhpStorm IDE for PHP development"
+display-detail = "Installs JetBrains PhpStorm IDE for PHP development with framework support. Requires a desktop variant."
 display-order = 30
 tags = [
     "jetbrains",

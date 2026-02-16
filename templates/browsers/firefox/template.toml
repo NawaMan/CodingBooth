@@ -1,5 +1,6 @@
 display-name = "Firefox"
-display-disc = "Firefox browser (Mozillateam PPA)"
+display-disc = "Firefox browser for web testing (Mozillateam PPA)"
+display-detail = "Installs Firefox browser via the Mozillateam PPA. Useful for web development testing in desktop variants."
 display-order = 12
 tags = [
     "browser",

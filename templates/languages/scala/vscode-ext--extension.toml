@@ -1,6 +1,6 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "Scala VS Code Extension"
-display-disc = "Scala language support for VS Code"
+display-disc = "Scala language support extension for VS Code (Metals)"
 display-order = 1
 auto-select = true
 tags = [

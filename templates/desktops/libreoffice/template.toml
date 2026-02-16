@@ -1,5 +1,6 @@
 display-name = "LibreOffice"
-display-disc = "LibreOffice office suite"
+display-disc = "LibreOffice office suite (requires desktop variant)"
+display-detail = "Installs LibreOffice office suite for documents, spreadsheets, and presentations. Requires a desktop variant."
 display-order = 24
 tags = [
     "desktop",

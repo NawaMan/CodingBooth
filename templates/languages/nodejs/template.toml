@@ -1,6 +1,7 @@
 display-name = "Node.js"
 primary = true
-display-disc = "Node.js JavaScript runtime"
+display-disc = "Node.js runtime with npm package manager"
+display-detail = "Installs Node.js with npm for JavaScript and TypeScript development. Supports version pinning via the NODEJS_VERSION parameter."
 display-order = 50
 tags = [
     "nodejs",

@@ -1,5 +1,6 @@
 display-name = "PyCharm"
-display-disc = "JetBrains PyCharm Community"
+display-disc = "JetBrains PyCharm Community for Python"
+display-detail = "Installs JetBrains PyCharm Community Edition for Python development. Requires a desktop variant."
 display-order = 22
 tags = [
     "jetbrains",

@@ -1,5 +1,6 @@
 display-name = "Haskell"
-display-disc = "Haskell language with GHC"
+display-disc = "Haskell with GHC compiler and Cabal build system"
+display-detail = "Installs the Haskell GHC compiler and Cabal build system for functional programming development."
 display-order = 74
 tags = [
     "haskell",

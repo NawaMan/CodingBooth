@@ -1,6 +1,7 @@
 display-name = "Codex"
 primary = true
-display-disc = "OpenAI Codex CLI"
+display-disc = "OpenAI Codex CLI for AI-assisted coding"
+display-detail = "Installs OpenAI Codex CLI for AI-assisted coding from the terminal. Requires Node.js which is auto-installed."
 display-order = 12
 tags = [
     "ai",

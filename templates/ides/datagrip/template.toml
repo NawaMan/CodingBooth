@@ -1,5 +1,6 @@
 display-name = "DataGrip"
-display-disc = "JetBrains DataGrip database IDE"
+display-disc = "JetBrains DataGrip database IDE and SQL editor"
+display-detail = "Installs JetBrains DataGrip for database management and SQL development. Requires a desktop variant."
 display-order = 38
 tags = [
     "jetbrains",

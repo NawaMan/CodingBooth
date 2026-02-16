@@ -1,5 +1,6 @@
 display-name = "WebStorm"
-display-disc = "JetBrains WebStorm IDE for JavaScript"
+display-disc = "JetBrains WebStorm IDE for JavaScript/TypeScript"
+display-detail = "Installs JetBrains WebStorm IDE for JavaScript and TypeScript development. Requires a desktop variant."
 display-order = 28
 tags = [
     "jetbrains",

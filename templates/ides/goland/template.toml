@@ -1,5 +1,6 @@
 display-name = "GoLand"
-display-disc = "JetBrains GoLand IDE for Go"
+display-disc = "JetBrains GoLand IDE for Go development"
+display-detail = "Installs JetBrains GoLand IDE for Go development with advanced refactoring and debugging. Requires a desktop variant."
 display-order = 26
 tags = [
     "jetbrains",

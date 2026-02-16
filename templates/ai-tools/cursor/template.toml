@@ -1,6 +1,7 @@
 display-name = "Cursor"
 primary = true
-display-disc = "Cursor AI code editor"
+display-disc = "Cursor AI-powered code editor"
+display-detail = "Installs Cursor, an AI-powered code editor with built-in AI assistance for code generation and editing."
 display-order = 16
 tags = [
     "ai",

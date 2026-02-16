@@ -1,5 +1,6 @@
 display-name = "Jupyter Notebook"
-display-disc = "JupyterLab notebook server"
+display-disc = "JupyterLab notebook server (requires python)"
+display-detail = "Sets up JupyterLab with a Bash kernel for interactive notebook development. Requires the python template. Expose on a configurable port."
 display-order = 24
 requires = ["python"]
 tags = [

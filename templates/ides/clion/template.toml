@@ -1,5 +1,6 @@
 display-name = "CLion"
-display-disc = "JetBrains CLion IDE for C/C++"
+display-disc = "JetBrains CLion IDE for C and C++ development"
+display-detail = "Installs JetBrains CLion IDE for C and C++ development with CMake integration. Requires a desktop variant."
 display-order = 32
 tags = [
     "jetbrains",

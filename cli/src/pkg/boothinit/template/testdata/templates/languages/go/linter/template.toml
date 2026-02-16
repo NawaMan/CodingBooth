@@ -1,5 +1,5 @@
 display-name = "Go Linter"
-display-disc = "golangci-lint for Go"
+display-disc = "golangci-lint for Go code quality analysis"
 display-order = 1
 tags = ["lint", "quality"]
 auto-select = false

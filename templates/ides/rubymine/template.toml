@@ -1,5 +1,6 @@
 display-name = "RubyMine"
-display-disc = "JetBrains RubyMine IDE for Ruby"
+display-disc = "JetBrains RubyMine IDE for Ruby development"
+display-detail = "Installs JetBrains RubyMine IDE for Ruby and Rails development. Requires a desktop variant."
 display-order = 36
 tags = [
     "jetbrains",

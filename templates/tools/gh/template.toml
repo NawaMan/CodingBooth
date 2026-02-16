@@ -1,5 +1,6 @@
 display-name = "GitHub CLI"
-display-disc = "GitHub CLI (gh)"
+display-disc = "GitHub CLI for repository and PR management"
+display-detail = "Installs the GitHub CLI (gh) for managing repositories, pull requests, issues, and GitHub Actions from the terminal."
 display-order = 30
 tags = [
     "github",

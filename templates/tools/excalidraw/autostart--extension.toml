@@ -1,5 +1,5 @@
 display-name = "Excalidraw Auto-Start"
-display-disc = "Auto-start Excalidraw in background at container startup"
+display-disc = "Auto-start Excalidraw server on container boot"
 display-order = 2
 auto-select = false
 tags = [

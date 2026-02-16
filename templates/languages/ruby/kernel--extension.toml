@@ -1,5 +1,5 @@
 display-name = "Ruby Notebook Kernel"
-display-disc = "IRuby Jupyter kernel for Ruby"
+display-disc = "Ruby Jupyter notebook kernel (iruby)"
 display-order = 5
 auto-select = false
 requires = ["notebook"]

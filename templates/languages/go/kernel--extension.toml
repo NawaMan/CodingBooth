@@ -1,5 +1,5 @@
 display-name = "Go Notebook Kernel"
-display-disc = "GoNB Jupyter kernel for Go"
+display-disc = "GoNB Jupyter notebook kernel for Go"
 display-order = 5
 auto-select = false
 requires = ["notebook"]

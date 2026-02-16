@@ -1,5 +1,6 @@
 display-name = "Docker-in-Docker"
-display-disc = "Docker-in-Docker support"
+display-disc = "Docker-in-Docker support for container workflows"
+display-detail = "Enables Docker-in-Docker (DinD) mode so you can build and run Docker containers from inside the booth container."
 display-order = 62
 dind = true
 tags = [

@@ -25,8 +25,9 @@ type Template struct {
 	Name         string // directory name (unique across all categories for top-level templates)
 	CategoryName string // parent category name
 	DisplayName  string // from template.toml display-name
-	DisplayDesc  string // from template.toml display-disc
-	DisplayOrder int    // from template.toml display-order
+	DisplayDesc   string // from template.toml display-disc (short description for list view)
+	DisplayDetail string // from template.toml display-detail (long description for show view)
+	DisplayOrder  int    // from template.toml display-order
 	Tags         []string
 	Primary      bool  // shown by default in list/search; non-primary only shown with --full
 	AutoSelect   *bool // extension only: auto-select when parent is selected
