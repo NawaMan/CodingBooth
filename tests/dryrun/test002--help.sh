@@ -24,23 +24,24 @@ HERE="$PWD"
 VERSION="$(cat ../../version.txt)"
 
 EXPECT="\
-codingbooth — launch a Docker-based development booth (version $VERSION)
+codingbooth $VERSION — launch a Docker-based development booth.
 
 USAGE:
-  codingbooth version                              (print the CodingBooth version)
-  codingbooth help                                 (show this help and exit)
-  codingbooth run [options] [--] [command ...]     (run the booth)
-  codingbooth [options] [--] [command ...]         (default action: run)
-  codingbooth list [--running|--stopped] [-q]      (list booth-managed containers)
-  codingbooth start [--name <name>|--code <path>]  (start a stopped keep-alive booth)
-  codingbooth stop [--name <name>] [--force]       (stop a running booth)
-  codingbooth restart [--name <name>]              (restart a running booth)
-  codingbooth remove [--name <name>] [--force]     (remove booth container(s))
-  codingbooth prune [--yes]                        (remove stopped booth containers)
-  codingbooth example <subcommand>                 (manage examples)
-  codingbooth init <subcommand> [options]           (initialize a new .booth/ project)
-  codingbooth emit-dockerfile [options]            (compile Boothfile to Dockerfile)
-  codingbooth print-default-allowlist.txt          (print built-in sandbox allowlist)"
+  codingbooth [options]                    Run the current booth.
+  codingbooth [options] [-- command ...]   Run the command inside the current booth.
+
+OPTIONS
+  --build-arg <KEY=VAL>   Add a Docker build-arg which customize the booth image.
+  --variant <name>        Prebuilt variant: base | notebook | codeserver | xfce | kde
+  --port <n|RANDOM|NEXT>  Host port → container 10000
+  --daemon                Run the booth in the background
+  --keep-alive            Do not remove the container when stopped
+  --dind                  Enable a Docker-in-Docker sidecar
+  --public                Bind to all interfaces with password authentication
+  --sandboxed             Enable sandbox defaults (proxy + enforcement)
+
+EXAMPLES:
+  codingbooth --variant codeserver"
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Help output matches expected"

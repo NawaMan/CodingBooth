@@ -15,14 +15,18 @@ strip_ansi() { sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g'; }
 ACTUAL=$(run_coding_booth --config test--config.toml --dryrun -p 8080:8080 -p 5000:5000 2>&1 | strip_ansi)
 
 # Test 1: Check that all unique ports are present in DinD sidecar (no duplicates)
-# Expected: -p 127.0.0.1:10000:10000 -p 8080:8080 -p 3000:3000 -p 5000:5000
-if echo "$ACTUAL" | grep "docker:dind" | grep -q "\-p 127\.0\.0\.1:10000:10000 -p 8080:8080 -p 3000:3000 -p 5000:5000"; then
+# Expected: -p 127.0.0.1:10000:10000, -p 8080:8080, -p 3000:3000, -p 5000:5000
+DIND_LINE=$(echo "$ACTUAL" | grep "docker:dind")
+if echo "$DIND_LINE" | grep -q "\-p 127\.0\.0\.1:10000:10000" \
+&& echo "$DIND_LINE" | grep -q "\-p 8080:8080" \
+&& echo "$DIND_LINE" | grep -q "\-p 3000:3000" \
+&& echo "$DIND_LINE" | grep -q "\-p 5000:5000"; then
     print_test_result "true" "$0" "1" "All unique ports present in correct order"
 else
     print_test_result "false" "$0" "1" "All unique ports present in correct order"
-    echo "Expected: -p 127.0.0.1:10000:10000 -p 8080:8080 -p 3000:3000 -p 5000:5000"
+    echo "Expected: -p 127.0.0.1:10000:10000, -p 8080:8080, -p 3000:3000, -p 5000:5000"
     echo "Actual DinD sidecar command:"
-    echo "$ACTUAL" | grep "docker:dind" || echo "(docker:dind line not found)"
+    echo "$DIND_LINE" || echo "(docker:dind line not found)"
     exit 1
 fi
 

@@ -21,7 +21,7 @@ func main() {
 			showVersion(version)
 			return
 		case "--help", "-h", "help":
-			showHelp(version)
+			dispatchHelp(os.Args[2:], version)
 			return
 		case "run":
 			// Keep explicit "run" behavior identical to the implicit default action.

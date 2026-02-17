@@ -18,58 +18,38 @@ import (
 
 // cleanupPreviousBoothInstances cleans up any leftover containers and networks from previous booth runs.
 // This helps prevent port conflicts when restarting the booth.
+// It uses label-based queries to precisely identify sidecars belonging to this project.
 func cleanupPreviousBoothInstances(ctx appctx.AppContext, projectName string) {
 	if ctx.Dryrun() {
 		return
 	}
 
-	// Find and stop/remove any containers matching the project name pattern
-	// This includes both the main booth container and any DinD sidecars
-	patterns := []string{
-		projectName,                    // Main booth container
-		projectName + "-*-dind",        // DinD sidecar containers (e.g., project-10000-dind)
-	}
-
-	for _, pattern := range patterns {
-		// Find containers matching the pattern
-		output, err := exec.Command("docker", "ps", "-aq", "--filter", "name=^"+pattern+"$").Output()
-		if err == nil && len(strings.TrimSpace(string(output))) > 0 {
-			containerIDs := strings.Fields(string(output))
-			for _, id := range containerIDs {
-				if ctx.Verbose() {
-					fmt.Printf("Stopping leftover container: %s\n", id)
-				}
-				exec.Command("docker", "stop", id).Run()
-				exec.Command("docker", "rm", "-f", id).Run()
+	// Find and stop/remove sidecars labeled with cb.parent matching the project name
+	output, err := exec.Command("docker", "ps", "-aq",
+		"--filter", "label=cb.role=sidecar",
+		"--filter", "label=cb.parent="+projectName,
+	).Output()
+	if err == nil && len(strings.TrimSpace(string(output))) > 0 {
+		containerIDs := strings.Fields(string(output))
+		for _, id := range containerIDs {
+			nameOutput, _ := exec.Command("docker", "inspect", "--format", "{{.Name}}", id).Output()
+			containerName := strings.TrimPrefix(strings.TrimSpace(string(nameOutput)), "/")
+			if containerName == "" {
+				containerName = id
 			}
-		}
 
-		// Also check for containers with the pattern (for wildcard matching)
-		if strings.Contains(pattern, "*") {
-			// Use filter with regex-like matching
-			filterPattern := strings.ReplaceAll(pattern, "*", ".*")
-			output, err = exec.Command("docker", "ps", "-aq", "--filter", "name="+filterPattern).Output()
-			if err == nil && len(strings.TrimSpace(string(output))) > 0 {
-				containerIDs := strings.Fields(string(output))
-				for _, id := range containerIDs {
-					// Get container name to log it
-					nameOutput, _ := exec.Command("docker", "inspect", "--format", "{{.Name}}", id).Output()
-					containerName := strings.TrimPrefix(strings.TrimSpace(string(nameOutput)), "/")
-
-					if ctx.Verbose() {
-						fmt.Printf("Stopping leftover container: %s (%s)\n", containerName, id)
-					} else {
-						fmt.Printf("Cleaning up leftover container: %s\n", containerName)
-					}
-					exec.Command("docker", "stop", id).Run()
-					exec.Command("docker", "rm", "-f", id).Run()
-				}
+			if ctx.Verbose() {
+				fmt.Printf("Stopping leftover sidecar: %s (%s)\n", containerName, id)
+			} else {
+				fmt.Printf("Cleaning up leftover sidecar: %s\n", containerName)
 			}
+			exec.Command("docker", "stop", id).Run()
+			exec.Command("docker", "rm", "-f", id).Run()
 		}
 	}
 
 	// Find and remove any networks matching the project name pattern
-	output, err := exec.Command("docker", "network", "ls", "--filter", "name="+projectName, "--format", "{{.Name}}").Output()
+	output, err = exec.Command("docker", "network", "ls", "--filter", "name="+projectName, "--format", "{{.Name}}").Output()
 	if err == nil && len(strings.TrimSpace(string(output))) > 0 {
 		networks := strings.Fields(string(output))
 		for _, network := range networks {
@@ -144,6 +124,7 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 	// Port mapping for the booth container (since booth shares DinD's network)
 	portMapping := formatPortMapping(ctx.Public(), hostPort, 10000)
 
+	parentName := ctx.Name()
 	var args []string
 	if isDockerDesktop {
 		// Docker Desktop: skip cgroup flags + /sys/fs/cgroup mount
@@ -152,6 +133,9 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 			"--name", dindName,
 			"--network", dindNet,
 			"-p", portMapping,
+			"--label", "cb.managed=true",
+			"--label", "cb.role=sidecar",
+			"--label", "cb.parent=" + parentName,
 		}
 	} else {
 		// Native Linux: full flags
@@ -162,6 +146,9 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 			"--name", dindName,
 			"--network", dindNet,
 			"-p", portMapping,
+			"--label", "cb.managed=true",
+			"--label", "cb.role=sidecar",
+			"--label", "cb.parent=" + parentName,
 		}
 	}
 

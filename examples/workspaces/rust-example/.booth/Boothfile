@@ -13,3 +13,4 @@ setup notebook 18888
 setup python-code-extension
 setup rust-code-extension
 setup rust-nb-kernel
+install cargo ripgrep fd-find bat

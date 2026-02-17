@@ -218,6 +218,9 @@ func Stop(args []string, stderr io.Writer) error {
 		}
 	}
 
+	// Stop any sidecar containers (DinD, sandbox) belonging to this booth
+	stopSidecars(target.Name, docker.DockerFlags{Silent: true})
+
 	if target.KeepAlive {
 		return nil
 	}
@@ -304,6 +307,9 @@ func Remove(args []string, stderr io.Writer) error {
 			return commandExit(1, fmt.Sprintf("Error: booth %q is running. Stop it first or use --force.", targetName))
 		}
 
+		// Stop any sidecar containers (DinD, sandbox) belonging to this booth
+		stopSidecars(targetName, docker.DockerFlags{Silent: true})
+
 		dockerArgs := ilist.NewList(ilist.NewList(targetName))
 		if *force {
 			dockerArgs = ilist.NewList(ilist.NewList("--force"), ilist.NewList(targetName))
@@ -356,12 +362,22 @@ func Prune(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) e
 	}
 
 	for _, name := range names {
+		// Stop any sidecar containers belonging to this booth before removing
+		stopSidecars(name, docker.DockerFlags{Silent: true})
+
 		if err := docker.Docker(docker.DockerFlags{Silent: false}, "rm", ilist.NewList(ilist.NewList(name))); err != nil {
 			return commandExit(1, fmt.Sprintf("Error: failed to remove %q: %v", name, err))
 		}
 	}
 
 	_, _ = fmt.Fprintf(stdout, "Removed %d stopped booth container(s).\n", len(names))
+
+	// Clean up any orphaned sidecars whose parent container no longer exists
+	orphanCount := pruneOrphanSidecars(docker.DockerFlags{Silent: true})
+	if orphanCount > 0 {
+		_, _ = fmt.Fprintf(stdout, "Removed %d orphaned sidecar(s).\n", orphanCount)
+	}
+
 	return nil
 }
 
@@ -644,4 +660,62 @@ func readConfirmation(reader io.Reader) (bool, error) {
 
 	answer := strings.ToLower(strings.TrimSpace(line))
 	return answer == "y" || answer == "yes", nil
+}
+
+// stopSidecars stops all sidecar containers labeled with cb.parent matching the given container name.
+// Sidecars are typically started with --rm, so stopping them also removes them.
+func stopSidecars(parentName string, flags docker.DockerFlags) {
+	out, err := docker.DockerOutput(flags, "ps", ilist.NewList(
+		ilist.NewList("-aq"),
+		ilist.NewList("--filter", "label=cb.role=sidecar"),
+		ilist.NewList("--filter", "label=cb.parent="+parentName),
+	))
+	if err != nil || strings.TrimSpace(out) == "" {
+		return
+	}
+
+	for _, id := range nonEmptyLines(out) {
+		_ = docker.Docker(flags, "stop", ilist.NewList(ilist.NewList(id)))
+		_ = docker.Docker(flags, "rm", ilist.NewList(ilist.NewList("-f", id)))
+	}
+}
+
+// pruneOrphanSidecars finds sidecar containers whose parent no longer exists and removes them.
+// Returns the number of orphaned sidecars cleaned up.
+func pruneOrphanSidecars(flags docker.DockerFlags) int {
+	out, err := docker.DockerOutput(flags, "ps", ilist.NewList(
+		ilist.NewList("-aq"),
+		ilist.NewList("--filter", "label=cb.role=sidecar"),
+	))
+	if err != nil || strings.TrimSpace(out) == "" {
+		return 0
+	}
+
+	count := 0
+	for _, id := range nonEmptyLines(out) {
+		// Get the parent name from the sidecar's label
+		labelOut, err := docker.DockerOutput(flags, "inspect", ilist.NewList(
+			ilist.NewList("--format", "{{index .Config.Labels \"cb.parent\"}}"),
+			ilist.NewList(id),
+		))
+		if err != nil {
+			continue
+		}
+		parentName := strings.TrimSpace(labelOut)
+		if parentName == "" {
+			continue
+		}
+
+		// Check if parent container still exists
+		exists, err := containerExists(parentName)
+		if err != nil || exists {
+			continue
+		}
+
+		// Parent is gone — stop and remove the orphaned sidecar
+		_ = docker.Docker(flags, "stop", ilist.NewList(ilist.NewList(id)))
+		_ = docker.Docker(flags, "rm", ilist.NewList(ilist.NewList("-f", id)))
+		count++
+	}
+	return count
 }

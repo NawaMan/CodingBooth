@@ -130,6 +130,7 @@ func startSandboxNetnsOwner(ctx appctx.AppContext, ownerName, netName string, ho
 		return nil
 	}
 
+	parentName := ctx.Name()
 	portMapping := formatPortMapping(ctx.Public(), hostPort, 10000)
 	args := []string{
 		"run", "-d", "--rm",
@@ -137,6 +138,9 @@ func startSandboxNetnsOwner(ctx appctx.AppContext, ownerName, netName string, ho
 		"--name", ownerName,
 		"--network", netName,
 		"-p", portMapping,
+		"--label", "cb.managed=true",
+		"--label", "cb.role=sidecar",
+		"--label", "cb.parent=" + parentName,
 	}
 	for _, port := range extraPorts {
 		args = append(args, "-p", port)
@@ -381,10 +385,14 @@ func startSandboxProxy(ctx appctx.AppContext, proxyName, netnsOwnerName, configP
 		return nil
 	}
 
+	parentName := ctx.Name()
 	args := []string{
 		"run", "-d", "--rm",
 		"--name", proxyName,
 		"--network", fmt.Sprintf("container:%s", netnsOwnerName),
+		"--label", "cb.managed=true",
+		"--label", "cb.role=sidecar",
+		"--label", "cb.parent=" + parentName,
 		"-v", fmt.Sprintf("%s:%s:ro", configPath, sandboxProxyConfigPath),
 		sandboxProxyImage,
 		"-c", sandboxProxyConfigPath,

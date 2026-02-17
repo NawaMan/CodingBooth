@@ -1,3 +1,3 @@
 #!/bin/bash
 echo "=== Testing cowsay ==="
-cowsay "Hello from Deno!"
+deno run -A npm:cowsay "Hello from Deno!"

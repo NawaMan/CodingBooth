@@ -22,7 +22,7 @@ else
     BOOTH="$REPO_ROOT/booth"
 fi
 
-echo "=== Testing Python Version (default 3.12) ==="
+echo "=== Testing Python Version (default 3.13) ==="
 echo ""
 
 # Capture python --version output
@@ -34,10 +34,10 @@ echo ""
 # Validate output contains expected version
 failed=0
 
-if echo "$output" | grep -q "Python 3\.12"; then
-    echo -e "${GREEN}✓${NC} Found 'Python 3.12'"
+if echo "$output" | grep -q "Python 3\.13"; then
+    echo -e "${GREEN}✓${NC} Found 'Python 3.13'"
 else
-    echo -e "${RED}✗${NC} Expected 'Python 3.12' but got: $output"
+    echo -e "${RED}✗${NC} Expected 'Python 3.13' but got: $output"
     failed=1
 fi
 

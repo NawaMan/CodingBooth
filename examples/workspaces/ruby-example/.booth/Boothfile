@@ -11,3 +11,4 @@ setup notebook 18888
 setup python-code-extension
 setup ruby-code-extension
 setup ruby-nb-kernel
+install gem pry colorize

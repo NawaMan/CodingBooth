@@ -50,6 +50,7 @@ docker \\
     --label 'cb.created-at=XXXXX' \\
     --label 'cb.version=${VERSION}' \\
     --label 'cb.keep-alive=false' \\
+    --label 'cb.daemon=false' \\
     -p 127.0.0.1:10000:10000 \\
     -e 'BOOTH_SETUPS=/opt/codingbooth/setups' \\
     -e 'BOOTH_CONTAINER_NAME=test-container' \\
@@ -68,7 +69,6 @@ docker \\
     -e 'BOOTH_SCRIPT_DIR=${SCRIPT_DIR}' \\
     -e 'BOOTH_LIB_DIR=${LIB_DIR}' \\
     -e 'BOOTH_KEEP_ALIVE=false' \\
-    -e 'BOOTH_WEB_SPLIT=true' \\
     -e 'BOOTH_SILENCE_BUILD=false' \\
     -e 'BOOTH_PULL=false' \\
     -e 'BOOTH_DIND=false' \\

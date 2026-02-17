@@ -34,8 +34,11 @@ if [[ ! -x "$CB_SCRIPT" ]]; then
 fi
 
 # ---- Test workspace -----------------------------------------------------------
-TMPDIR="$(mktemp -d "${TMPDIR:-/tmp}/cb-test-env-local.XXXXXX")"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+TMPDIR="$(mktemp -d "${SCRIPT_DIR}/.cb-test-env-local.XXXXXX")"
+CONTAINER_NAME="cb-test-env-local-$$-$RANDOM"
 cleanup() {
+  docker rm -f "$CONTAINER_NAME" >/dev/null 2>&1 || true
   rm -rf "$TMPDIR" || true
 }
 trap cleanup EXIT
@@ -59,8 +62,8 @@ EOF
 # Helper to run booth from the temp workspace
 run_cb() {
   pushd "$TMPDIR" >/dev/null
-  echo -e "${COLOR_BOOTH:-}> codingbooth -- $*${COLOR_RESET:-}" >&2
-  "$CB_SCRIPT" "$@"
+  echo -e "${COLOR_BOOTH:-}> codingbooth --name $CONTAINER_NAME -- $*${COLOR_RESET:-}" >&2
+  "$CB_SCRIPT" --name "$CONTAINER_NAME" "$@"
   popd >/dev/null
 }
 

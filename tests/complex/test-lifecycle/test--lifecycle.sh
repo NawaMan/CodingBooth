@@ -48,7 +48,7 @@ else
 fi
 
 # 2) list --stopped should include the booth name.
-if run_coding_booth list --stopped -q 2>/dev/null | grep -qx "$NAME"; then
+if run_coding_booth list --stopped --name-only 2>/dev/null | grep -qx "$NAME"; then
   print_test_result "true" "$0" "2" "list --stopped includes the keep-alive booth"
 else
   print_test_result "false" "$0" "2" "list --stopped should include booth name"
