@@ -2,19 +2,19 @@
 
 **Current Version:** v0.26.0 — [View Changelog](docs/CHANGELOG.md)
 
-**CodingBooth** delivers fully reproducible, Docker-powered development environments — anywhere, on any machine.
+**CodingBooth** delivers fully reproducible, isolated development environments — anywhere, on any machine.
 
 You’ve containerized your app. You’ve containerized your build.
 But your development environment? Still a mess of system-wide installs, mismatched versions, and onboarding docs no one reads.
 
 **CodingBooth fixes that.**
 
-Run a browser-based VS Code workspace, a Jupyter notebook, or even an entire Linux desktop inside a container — with every file owned by you, not root. Your environment lives with the project, launches in a single command, and works the same on every machine.
+Run a browser-based VS Code workspace, a Jupyter notebook, or even an entire Linux desktop inside a container — with every file owned by you, not root. Your environment lives with the project. **Launching a single command**, and works with the code on every machine.
 
-New teammate joining? They run one command and get the exact same environment.
+New teammate joining? Restart the work on a project after months? Running one command and get the exact same environment.
 No setup guides. No dependency drift. No “works on my machine.”
 
-**Result:** zero-setup onboarding, portable development environments, and a clean, consistent workspace that just works!
+Zero-setup onboarding, portable development environments, and a clean, consistent workspace that just works!
 
 
 # Table of Contents
@@ -36,6 +36,13 @@ No setup guides. No dependency drift. No “works on my machine.”
 - [Implementation Documentation](#implementation-documentation)
 - [Developer Setup](#developer-setup)
 - [Community & Feedback](#community--feedback)
+
+## Demo
+
+
+
+
+
 
 ## Quick Try
 
@@ -80,11 +87,11 @@ Run the wrapper script and follow the instructions.
 To update CodingBooth to the latest version:
 
 ```shell
-# Install/update to a specific version
-./booth install 0.13.0
-
 # Install/update to the latest version
 ./booth install
+
+# Install/update to a specific version
+./booth install 0.26.0
 
 # Pull the latest images (optional, happens automatically if not present)
 ./booth --pull

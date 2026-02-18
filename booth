@@ -34,7 +34,11 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
         echo "💡 Tip: Add the following to your shell profile (~/.bashrc or ~/.zshrc)"
         echo "   to use 'booth' as a command from anywhere:"
         echo ""
-        echo "   eval \"\$(./booth shell-config)\""
+        if [[ "$SHELL" == */bash ]];
+        then RC_FILE="~/.bashrc"
+        else RC_FILE="~/.zshrc"
+        fi
+        echo "   ./booth shell-config && source \"$RC_FILE\""
         echo ""
     fi
     exit 0

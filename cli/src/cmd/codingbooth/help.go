@@ -240,9 +240,9 @@ func showHelpList() {
 USAGE:  %s list [options]
 
 OPTIONS:
-  --running              Show only running containers
-  --stopped              Show only stopped containers
-  --name-only            Print container names only (useful for scripting)
+  --running       Show only running containers
+  --stopped       Show only stopped containers
+  --name-only     Print container names only (useful for scripting)
 `, s, s)
 }
 
@@ -253,9 +253,9 @@ func showHelpStart() {
 USAGE:  %s start [options]
 
 OPTIONS:
-  --name <n>          Container name to start
-  --code <path>          Identify the container by its code path
-  -d                     Start in detached/daemon mode
+  --name <n>      Container name to start
+  --code <path>   Identify the container by its code path
+  -d              Start in detached/daemon mode
 `, s, s)
 }
 
@@ -266,9 +266,9 @@ func showHelpStop() {
 USAGE:  %s stop [options]
 
 OPTIONS:
-  --name <n>          Container name to stop
-  -f                     Force stop (SIGKILL)
-  --time <n>             Seconds to wait before force-killing (default: 10)
+  --name <n>      Container name to stop
+  -f              Force stop (SIGKILL)
+  --time <n>      Seconds to wait before force-killing (default: 10)
 `, s, s)
 }
 
@@ -279,8 +279,8 @@ func showHelpRestart() {
 USAGE:  %s restart [options]
 
 OPTIONS:
-  --name <n>          Container name to restart
-  --time <n>             Seconds to wait before force-killing (default: 10)
+  --name <n>      Container name to restart
+  --time <n>      Seconds to wait before force-killing (default: 10)
 `, s, s)
 }
 
@@ -291,8 +291,8 @@ func showHelpRemove() {
 USAGE:  %s remove [options]
 
 OPTIONS:
-  --name <n>          Container name to remove
-  --force                Force-remove even if running
+  --name <n>      Container name to remove
+  --force         Force-remove even if running
 `, s, s)
 }
 
@@ -303,7 +303,7 @@ func showHelpPrune() {
 USAGE:  %s prune [options]
 
 OPTIONS:
-  --yes                  Skip confirmation prompt
+  --yes           Skip confirmation prompt
 `, s, s)
 }
 

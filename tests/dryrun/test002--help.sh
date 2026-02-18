@@ -18,7 +18,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
 fi
 
 # Just check the USAGE section (first 17 lines) - the full help is ~98 lines
-ACTUAL=$(run_coding_booth --help | head -18)
+ACTUAL=$(run_coding_booth help | head -27)
 
 HERE="$PWD"
 VERSION="$(cat ../../version.txt)"
@@ -35,13 +35,21 @@ OPTIONS
   --variant <name>        Prebuilt variant: base | notebook | codeserver | xfce | kde
   --port <n|RANDOM|NEXT>  Host port → container 10000
   --daemon                Run the booth in the background
-  --keep-alive            Do not remove the container when stopped
   --dind                  Enable a Docker-in-Docker sidecar
   --public                Bind to all interfaces with password authentication
   --sandboxed             Enable sandbox defaults (proxy + enforcement)
 
 EXAMPLES:
-  codingbooth --variant codeserver"
+  codingbooth --variant codeserver       Run the booth to use codeserver on localhost:<port>.
+  codingbooth --daemon --port RANDOM     Run the booth in daemon mode on a random port.
+  codingbooth -- 'mvn install'           Run 'mvn install' inside the booth.
+
+OTHER COMMANDS:
+  LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune
+  PROJECT   | Set up and scaffold new projects | example, init, template
+
+Run 'codingbooth help <command>'   for command-specific help.
+Run 'codingbooth help --detail'    for the full reference."
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Help output matches expected"
