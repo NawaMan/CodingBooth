@@ -125,13 +125,22 @@ if id -u "$USER_NAME" >/dev/null 2>&1; then
       /etc/passwd.lock \
       /etc/shadow.lock \
       /etc/group.lock
-    
+
     # If another user has HOST_UID, move them out of the way
     if [ -n "$existing_uid_user" ] && [ "$existing_uid_user" != "$USER_NAME" ]; then
       temp_uid="$(find_free_uid)"; UserMod -u "$temp_uid" "$existing_uid_user"
     fi
 
+    # Temporarily point home to an empty dir so that usermod's implicit
+    # chown (triggered by -u) does not traverse into bind mounts.
+    # On Docker Desktop for Mac, chown on the host-mounted code dir fails
+    # and causes usermod to exit 12 (E_HOMEDIR).
+    # Step 5 below handles ownership fixup correctly, skipping CODE_DIR.
+    _tmp_home="$(mktemp -d)"
+    usermod -d "$_tmp_home" "$USER_NAME" 2>/dev/null || true
     UserMod -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+    UserMod -d "$HOME_DIR" "$USER_NAME"
+    rmdir "$_tmp_home" 2>/dev/null || true
   else
     # Only call usermod if group or shell actually differ (avoid "no changes" noise)
     if [ "$current_gid_name" != "$USER_NAME" ] || [ "$current_shell" != "$USER_SHELL" ]; then
