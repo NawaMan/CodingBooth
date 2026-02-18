@@ -38,6 +38,7 @@ func (runner *BoothRunner) Run() error {
 	ctx = SetupDind(ctx)
 	ctx = SetupSandbox(ctx)
 	ctx = PrepareRunMode(ctx)
+	ctx = FilterMissingVolumeMounts(ctx)
 	ctx = PrepareCommonArgs(ctx)
 	if err := ensureContainerNameAvailable(ctx); err != nil {
 		return err

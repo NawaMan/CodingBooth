@@ -418,6 +418,58 @@ func formatPortMapping(public bool, hostPort, containerPort int) string {
 	return fmt.Sprintf("%d:%d", hostPort, containerPort)
 }
 
+// FilterMissingVolumeMounts removes -v bind mounts whose host path does not exist.
+// On Mac and Windows, Docker creates an empty directory when the host path is missing,
+// which breaks container startup. This filters those mounts out and logs when verbose.
+func FilterMissingVolumeMounts(ctx appctx.AppContext) appctx.AppContext {
+	builder := ctx.ToBuilder()
+	verbose := ctx.Verbose()
+
+	homeDir, _ := os.UserHomeDir()
+
+	filtered := ilist.NewAppendableList[ilist.List[string]]()
+	ctx.RunArgs().Range(func(_ int, group ilist.List[string]) bool {
+		items := group.Slice()
+		var kept []string
+		for i := 0; i < len(items); i++ {
+			if items[i] == "-v" && i+1 < len(items) {
+				mountSpec := items[i+1]
+				hostPath := mountSpec
+				if idx := strings.Index(mountSpec, ":"); idx >= 0 {
+					hostPath = mountSpec[:idx]
+				}
+
+				// Expand ~ to home directory
+				expandedPath := hostPath
+				if strings.HasPrefix(hostPath, "~/") && homeDir != "" {
+					expandedPath = filepath.Join(homeDir, hostPath[2:])
+				} else if hostPath == "~" && homeDir != "" {
+					expandedPath = homeDir
+				}
+
+				if _, err := os.Stat(expandedPath); err != nil {
+					if verbose {
+						fmt.Printf("   Skipping volume mount: host path does not exist: %s\n", hostPath)
+					}
+					i++ // skip the value
+					continue
+				}
+				kept = append(kept, items[i], items[i+1])
+				i++ // skip the value
+			} else {
+				kept = append(kept, items[i])
+			}
+		}
+		if len(kept) > 0 {
+			filtered.Append(ilist.NewListFromSlice(kept))
+		}
+		return true
+	})
+
+	builder.RunArgs = filtered
+	return builder.Build()
+}
+
 func flattenArgs(argsList ilist.List[ilist.List[string]]) []string {
 	var flattened []string
 	argsList.Range(func(_ int, group ilist.List[string]) bool {
