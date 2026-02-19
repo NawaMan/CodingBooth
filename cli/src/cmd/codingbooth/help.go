@@ -47,8 +47,8 @@ OTHER COMMANDS:
   LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune
   PROJECT   | Set up and scaffold new projects | example, init, template
 
-Run '%s help <command>'   for command-specific help.
-Run '%s help --detail'    for the full reference.
+Run '%s --help <command>'   for command-specific help.
+Run '%s --help --detail'    for the full reference.
 `, s, version, s, s, s, s, s, s, s)
 }
 
