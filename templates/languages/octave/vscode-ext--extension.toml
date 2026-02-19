@@ -1,0 +1,14 @@
+display-name = "Octave VS Code Extension"
+display-disc = "Octave/MATLAB syntax highlighting for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "octave",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup octave-code-extension
+"""

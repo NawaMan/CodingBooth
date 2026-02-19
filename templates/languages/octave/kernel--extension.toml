@@ -1,0 +1,15 @@
+display-name = "Octave Notebook Kernel"
+display-disc = "Octave Jupyter notebook kernel (Calysto)"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "octave",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--70" = """
+setup octave-nb-kernel
+"""

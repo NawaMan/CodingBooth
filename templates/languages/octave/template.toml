@@ -1,0 +1,16 @@
+display-name = "GNU Octave"
+display-disc = "GNU Octave for numerical computation"
+display-detail = "Installs GNU Octave for numerical computing, a free alternative to MATLAB. Includes gnuplot for plotting and development headers for compiling Forge packages."
+display-order = 83
+tags = [
+    "octave",
+    "matlab",
+    "math",
+    "science",
+    "data"
+]
+
+[segments]
+Boothfile = """
+setup octave
+"""

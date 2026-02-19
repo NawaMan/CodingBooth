@@ -129,6 +129,12 @@ set -euo pipefail
 PORT=${1:-__NOTEBOOK_DEFAULT_PORT__}
 TOKEN="${PASSWORD:-}"
 
+# When running as the notebook variant, Jupyter is the primary service
+# and must listen on the booth code port (mapped by Docker).
+if [[ "${BOOTH_VARIANT_TAG:-}" == "notebook" ]]; then
+    PORT=${BOOTH_CODE_PORT:-10000}
+fi
+
 # Make sure non-Python kernels in the venv are visible if present
 export JUPYTER_PATH="__CB_NOTEBOOK_VENV_DIR__/share/jupyter:/usr/local/share/jupyter:/usr/share/jupyter${JUPYTER_PATH:+:$JUPYTER_PATH}"
 
