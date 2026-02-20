@@ -575,11 +575,14 @@ EOF
     fi
 
     if [[ ${#added[@]} -eq 0 && ${#updated[@]} -eq 0 && ${#forced[@]} -eq 0 && ${#skipped[@]} -eq 0 && ${#custom_skipped[@]} -eq 0 ]]; then
-        echo "No shell config files found."
-        echo ""
-        echo "You can manually add this to your shell config:"
-        echo "  $booth_func"
-        exit 1
+        echo "No shell config files found." >&2
+        echo "" >&2
+        echo "You can activate booth in this shell by running:" >&2
+        echo '  eval "$(./booth shell-config)"' >&2
+        echo "" >&2
+        # Output raw function code to stdout so eval "$(./booth shell-config)" works
+        echo "$booth_func"
+        exit 0
     fi
 
     echo ""

@@ -2,10 +2,12 @@
 
 **Current Version:** v0.26.0 — [View Changelog](docs/CHANGELOG.md)
 
+![Works On My Machine](docs/Works-On-My-Machine-small.png)
+
 **CodingBooth** delivers fully reproducible, isolated development environments — anywhere, on any machine.
 
 You’ve containerized your app. You’ve containerized your build.
-But your development environment? Still a mess of system-wide installs, mismatched versions, and onboarding docs no one reads.
+But your development environment? Still a mess of system-wide installs, mismatched versions, and onboarding docs no one reads?
 
 **CodingBooth fixes that.**
 
