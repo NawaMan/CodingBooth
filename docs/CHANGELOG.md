@@ -2,6 +2,9 @@
 
 This file contains a list of changes for each released version.
 
+## 0.27.0 (unreleased)
+- More tempalte
+
 ## 0.26.0 (unreleased)
 
 - `booth template` command — new top-level command replacing `init list` and `init search`

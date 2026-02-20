@@ -17,5 +17,10 @@ set -euo pipefail
 # However, it only does so if the files do not already exist in $HOME.
 # But Firebase installation creates an JSON-empty files there ("{}").
 
-rm -rf ~/.config/configstore/firebase-tools.json
-cp /etc/cb-home-seed/.config/configstore/firebase-tools.json ~/.config/configstore/firebase-tools.json
+SEED="/etc/cb-home-seed/.config/configstore/firebase-tools.json"
+TRGT="~/.config/configstore/firebase-tools.json"
+
+rm -rf "$TRGT"
+if  [[ -f "$SEED" ]]; then
+    cp "$SEED" "$TRGT"
+fi

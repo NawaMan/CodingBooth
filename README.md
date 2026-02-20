@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.26.0 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.27.0 — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -93,7 +93,7 @@ To update CodingBooth to the latest version:
 ./booth install
 
 # Install/update to a specific version
-./booth install 0.26.0
+./booth install 0.27.0
 
 # Pull the latest images (optional, happens automatically if not present)
 ./booth --pull
