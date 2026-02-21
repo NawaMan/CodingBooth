@@ -25,7 +25,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     echo ""
     echo "✅ CodingBooth has been installed."
     echo ""
-    
+
     if grep -qs 'booth()' ~/.bashrc ~/.zshrc ~/.bash_profile ~/.profile 2>/dev/null
         # booth shell function already configured — use 'booth' not './booth'
     then SCRPT=booth
@@ -43,8 +43,8 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
         echo "   to use 'booth' as a command from anywhere:"
         echo ""
         if [[ "$SHELL" == */bash ]];
-        then RC_FILE="~/.bashrc"
-        else RC_FILE="~/.zshrc"
+        then RC_FILE="\$HOME/.bashrc"
+        else RC_FILE="\$HOME/.zshrc"
         fi
         echo "   ./booth shell-config && source \"$RC_FILE\""
     fi
