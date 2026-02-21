@@ -62,7 +62,8 @@ fi
 
 # --- sanity: Erlang present ---
 if ! command -v erl >/dev/null 2>&1; then
-  echo "❌ Erlang/OTP not found (erl). Install it first."; exit 1
+  echo "⚠️  Erlang/OTP not found. Installing automatically..."
+  erlang--setup.sh
 fi
 
 # --- base deps ---

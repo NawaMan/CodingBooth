@@ -44,7 +44,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.8.0
+VERSION=0.9.0
 VERBOSE="${VERBOSE:-true}"
 
 # Resolve script directory (follow symlinks) so all project paths are location-based.
@@ -247,9 +247,38 @@ function Main() {
     ### --- COMMAND DISPATCH --- ###
     case "${COMMAND}" in
         uninstall)      UninstallBooth               ; exit 0 ; ;;
-        install|update)
+        install)
             # Parse --cache= flag
-            shift  # Remove 'install' or 'update'
+            shift  # Remove 'install'
+            local cache_mode="shared"
+            local version_arg=""
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    --cache=*) cache_mode="${1#--cache=}"; shift ;;
+                    --cache)   cache_mode="$2"; shift 2 ;;
+                    -*) echo "Unknown option: $1" >&2; exit 1 ;;
+                    *)  version_arg="$1"; shift ;;
+                esac
+            done
+            # If no version specified and already installed, just print and exit
+            if [[ -z "$version_arg" && -f "$LOCK_FILE" ]]; then
+                local lock_version
+                lock_version=$(grep '^version=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2-)
+                echo "CodingBooth is already installed (version: ${lock_version:-unknown})."
+                echo "Use '$0 update' to update to the latest version."
+                exit 0
+            fi
+            # Validate cache mode
+            if [[ "$cache_mode" != "local" && "$cache_mode" != "shared" ]]; then
+                echo "Error: Invalid cache mode '$cache_mode'. Use 'local' or 'shared'." >&2
+                exit 1
+            fi
+            DownloadBooth "${version_arg:-latest}" "$cache_mode"
+            exit 0
+            ;;
+        update)
+            # Parse --cache= flag
+            shift  # Remove 'update'
             local cache_mode="shared"
             local version_arg="latest"
             while [[ $# -gt 0 ]]; do
@@ -381,10 +410,10 @@ Purpose:
   - Binaries are cached in a shared location (default) or per-project.
 
 Wrapper commands:
-  install [VERSION]              Download binary to shared cache (default)
-  install --cache=shared [VER]   Download binary to shared cache (explicit)
-  install --cache=local [VER]    Download binary to .booth/tools/ (project-local)
-  update  [VERSION]              Re-download binary (force refresh)
+  install [VERSION]              Install binary (skips if already installed)
+  install --cache=shared [VER]   Install to shared cache (explicit)
+  install --cache=local [VER]    Install to .booth/tools/ (project-local)
+  update  [VERSION]              Update binary to latest (or specified) version
   uninstall                      Remove project lock file and local binaries
 
   tools-cache list        Show cached binary versions and sizes
@@ -913,6 +942,40 @@ function DownloadBooth() {
 
     mkdir -p "$target_dir"
     mkdir -p "$tools_dir"  # Always need tools dir for lock file
+
+    # For specific versions (not 'latest'), check if already cached and valid
+    if [[ "$CB_VERSION" != "latest" ]]; then
+        local current_platform_check
+        if current_platform_check=$(detect_platform 2>/dev/null); then
+            local check_binary_name check_dest
+            check_binary_name=$(get_binary_name "$current_platform_check")
+            check_dest="$target_dir/$check_binary_name"
+            if [[ -f "$check_dest" && -f "$sha_file" ]]; then
+                local check_expected check_actual
+                check_expected=$(grep "  ${check_binary_name}\$" "$sha_file" 2>/dev/null | awk '{print $1}')
+                check_actual=$(hash_sha256 "$check_dest" | awk '{gsub(/^\\/, ""); print $1}')
+                if [[ -n "$check_expected" && "$check_expected" == "$check_actual" ]]; then
+                    # Check if this is a version switch
+                    local prev_version=""
+                    if [[ -f "$lock_file" ]]; then
+                        prev_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2-)
+                    fi
+                    if [[ -n "$prev_version" && "$prev_version" != "$actual_version" ]]; then
+                        echo "Switched from $prev_version to $actual_version."
+                    fi
+                    echo "CodingBooth $actual_version is already up-to-date."
+                    # Update lock file to point to this version
+                    {
+                        echo "version=${actual_version}"
+                        echo "downloaded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+                        echo "cache=${CACHE_MODE}"
+                    } > "$lock_file"
+                    [[ -f "$check_dest" ]] && touch "$check_dest"
+                    return 0
+                fi
+            fi
+        fi
+    fi
 
     # Create .gitignore based on cache mode
     if [[ "$CACHE_MODE" == "local" ]]; then
