@@ -41,7 +41,7 @@ Zero-setup onboarding, portable development environments, and a clean, consisten
 
 ## Demo
 
-
+[![Demo](docs/images/CodingBooth-Demo-Preview.gif)](https://youtu.be/Rvv3UcOqv3c)
 
 
 
@@ -75,7 +75,7 @@ Run the following on the project **base folder** to install [CodingBooth Wrapper
 The wrapper allows management of the booth script file.
 
 ```shell
-curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash
+curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash ; ./booth install
 ```
 
 Run the wrapper script and follow the instructions.
