@@ -8,12 +8,12 @@ merged **globally** and sorted by order number, with alphabetical tiebreak by te
 
 | Segment Key        | Order | Use for                                                                                       |
 |--------------------|-------|-----------------------------------------------------------------------------------------------|
-| `"Boothfile--40"`  | 40    | Infrastructure (desktop environments: xfce, kde, lxqt)                                       |
-| `Boothfile`        | 50    | Base/independent setups (languages, tools, databases)                                        |
-| `"Boothfile--60"`  | 60    | Dependent setups (IDEs: codeserver/vscode; notebook; derived languages: kotlin, scala, etc.) |
-| `"Boothfile--65"`  | 65    | Language VS Code extensions (need codeserver/vscode from order 60)                           |
-| `"Boothfile--70"`  | 70    | Notebook kernels (need notebook from order 60)                                               |
-| `"Boothfile--90"`  | 90    | Post-setup steps (pip/uv/conda install from requirements.txt, etc.)                          |
+| `"Boothfile--40"`  | 40    | Infrastructure (desktop environments: xfce, kde, lxqt)                                        |
+| `Boothfile`        | 50    | Base/independent setups (languages, tools, databases)                                         |
+| `"Boothfile--60"`  | 60    | Dependent setups (IDEs: codeserver/vscode; notebook; derived languages: kotlin, scala, etc.)  |
+| `"Boothfile--65"`  | 65    | Language VS Code extensions (need codeserver/vscode from order 60)                            |
+| `"Boothfile--70"`  | 70    | Notebook kernels (need notebook from order 60)                                                |
+| `"Boothfile--90"`  | 90    | Post-setup steps (pip/uv/conda install from requirements.txt, etc.)                           |
 
 **Rule of thumb:** if your setup script assumes another setup has already run
 (e.g., `JAVA_HOME` is set, or `cb-has-desktop.sh` passes), use a higher order number.

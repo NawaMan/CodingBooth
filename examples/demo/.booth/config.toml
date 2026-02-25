@@ -33,5 +33,12 @@ run-args = [
     "-v", "~/.codex:/etc/cb-home-seed/.codex:ro",
 
     # Maven repository
-    "-v", "$HOME/.m2:/home/coder/.m2"
+    "-v", "$HOME/.m2:/home/coder/.m2",
+
+    # Persist PostgreSQL data across container restarts
+    "-v", "booth-pgdata:/var/lib/postgresql",
+
+    # Expose Sales Explorer server port
+    "-p", "13000:13000",
+
 ]

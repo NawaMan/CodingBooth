@@ -43,7 +43,29 @@ Zero-setup onboarding, portable development environments, and a clean, consisten
 
 [![Demo](docs/images/CodingBooth-Demo-Preview.gif)](https://youtu.be/Rvv3UcOqv3c)
 
+### Variants
 
+CodingBooth supports multiple variants — different UIs that share the same underlying environment. Your code, dependencies, and file permissions stay consistent no matter which one you pick. Choose the one that fits your workflow:
+
+**Base** — A minimal terminal session. Ideal for scripting, CLI tools, and lightweight work without a UI overhead.
+
+**Notebook** — Jupyter Lab with multi-language kernels (Python, Bash, Java, and more). Great for data exploration, documentation, and interactive development.
+
+**Code Server** — VS Code running in your browser with full extension support, integrated terminal, and notebook capabilities.
+
+**XFCE Desktop** — A full Linux desktop accessible via your browser. Comes with GUI tools like DBeaver, file managers, and multiple browser windows side by side.
+
+**KDE Desktop** — A feature-rich Linux desktop with KDE Plasma, for those who prefer a more polished graphical environment.
+
+**Command passthrough** — Skip the UI entirely. Run any command inside the container with booth -- <command> and get the result directly in your terminal.
+
+| Base | Notebook | Code Server |
+|:---:|:---:|:---:|
+| [![Base](docs/images/Booth-Base.png)](docs/images/Booth-Base.png) | [![Notebook](docs/images/Booth-NoteBook.png)](docs/images/Booth-NoteBook.png) | [![Code Server](docs/images/Booth-CodeServer.png)](docs/images/Booth-CodeServer.png) |
+| `booth --variant base` | `booth --variant notebook` | `booth --variant codeserver` |
+| XFCE Desktop | KDE Desktop | Bash |
+| [![XFCE](docs/images/Booth-XFCE.png)](docs/images/Booth-XFCE.png) | [![KDE](docs/images/Booth-KDE.png)](docs/images/Booth-KDE.png) | [![Bash](docs/images/Booth-Bash.png)](docs/images/Booth-Bash.png) |
+| `booth --variant desktop-xfce` | `booth --variant desktop-kde` | `booth -- bash` |
 
 
 ## Quick Try
@@ -93,7 +115,7 @@ To update CodingBooth to the latest version:
 ./booth install
 
 # Install/update to a specific version
-./booth install 0.27.0
+./booth install 0.28.0
 
 # Pull the latest images (optional, happens automatically if not present)
 ./booth --pull
@@ -187,6 +209,9 @@ Use `booth template` to explore available init templates:
 
 # Show full file/segment contents
 ./booth template show go --detail
+
+# Show raw code/content of a template
+./booth template cat go
 ```
 
 > 💡 **Tip:** Use `--full` with `list` or `search` to include secondary (non-primary) templates.

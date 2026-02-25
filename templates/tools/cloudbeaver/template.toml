@@ -1,0 +1,33 @@
+display-name = "CloudBeaver"
+display-disc = "Web-based SQL database management GUI"
+display-detail = "Installs CloudBeaver Community Edition, a browser-based database management tool by the DBeaver team. Supports PostgreSQL, MySQL, SQLite, MariaDB, Oracle, SQL Server, ClickHouse, DuckDB, and more. Extracted from the official Docker image — includes its own bundled Java runtime."
+display-order = 28
+tags = [
+    "cloudbeaver",
+    "database",
+    "sql",
+    "gui",
+    "dbeaver"
+]
+
+[params.CLOUDBEAVER_VERSION]
+default = "25.3.5"
+suggests = [
+    "25.3.5",
+    "25.3",
+    "latest",
+]
+
+[params.CLOUDBEAVER_PORT]
+default = "8978"
+suggests = [
+    "8978",
+    "18978",
+]
+
+[segments]
+Boothfile = """
+copy --from=dbeaver/cloudbeaver:${CLOUDBEAVER_VERSION} /opt/cloudbeaver /opt/cloudbeaver
+copy --from=dbeaver/cloudbeaver:${CLOUDBEAVER_VERSION} /opt/java /opt/cloudbeaver-java
+setup cloudbeaver ${CLOUDBEAVER_PORT}
+"""

@@ -1,0 +1,13 @@
+display-name = "Expose CloudBeaver Port"
+display-disc = "Expose CloudBeaver port to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "cloudbeaver",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "8978:8978",
+]

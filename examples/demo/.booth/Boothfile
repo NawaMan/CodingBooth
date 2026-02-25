@@ -33,3 +33,18 @@ setup notebook 18888
 setup python-nb-kernel
 setup bash-nb-kernel
 setup java-jjava-nb-kernel
+
+setup notebook
+
+# Database
+setup postgresql
+
+# SQL GUI
+setup dbeaver
+
+# IDE
+setup jetbrains webstorm
+
+# Sales Explorer — JS app that queries PostgreSQL
+install pip psycopg2-binary matplotlib
+expose 13000

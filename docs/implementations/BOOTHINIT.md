@@ -331,9 +331,10 @@ Templates can be browsed using the dedicated `booth template` command:
 ./booth template show go               # Detailed info: params, extensions, tags, changes
 ./booth template show python+uv        # Show extension details
 ./booth template show go --detail      # Include file and segment contents
+./booth template cat go                # Show raw code/content of a template
 ```
 
-The `list` command shows a compact table with names and descriptions, hiding auto-select extensions. The `search` command shows all matching extensions (including auto-select ones with an `(auto)` suffix). The `show` command displays full template detail including parameters, extensions, requirements, tags, auto-select status, and a list of file changes the template contributes. With `--detail`, the actual file contents are shown.
+The `list` command shows a compact table with names and descriptions, hiding auto-select extensions. The `search` command shows all matching extensions (including auto-select ones with an `(auto)` suffix). The `show` command displays full template detail including parameters, extensions, requirements, tags, auto-select status, and a list of file changes the template contributes. With `--detail`, the actual file contents are shown. The `cat` command outputs the raw content of a template's segments and files.
 
 ### Create New Project
 

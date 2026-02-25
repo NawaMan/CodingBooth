@@ -89,5 +89,10 @@ install_extensions() {
         echo "  ⚠ Not found after install: ${ext}" >&2
       fi
     done
+
+    # Make extension directories writable for non-root runtime user (e.g., coder).
+    # Some extensions create runtime files/dirs inside their own extension folder.
+    find "$dir" -type d -exec chmod a+w {} +
   done
 }
+

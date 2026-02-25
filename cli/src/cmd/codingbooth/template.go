@@ -32,6 +32,8 @@ func runTemplate(version string) {
 		runTemplateSearch(version, args[1:])
 	case "show":
 		runTemplateShow(version, args[1:])
+	case "cat":
+		runTemplateCat(version, args[1:])
 	default:
 		fmt.Fprintf(os.Stderr, "Error: unknown template subcommand: %s\n\n", subCmd)
 		printTemplateHelp()
@@ -46,6 +48,7 @@ Commands:
   list                     List available templates
   search <term>            Search templates by name, description, or tag
   show <name>              Show detailed information about a template
+  cat <name>               Show the code/content of a template
 
 Flags:
   --templates-path <dir>   Use local templates directory (or set CB_TEMPLATES_PATH)
@@ -59,7 +62,8 @@ Examples:
   codingbooth template search python
   codingbooth template show go
   codingbooth template show python+uv
-  codingbooth template show python+uv --detail`)
+  codingbooth template show python+uv --detail
+  codingbooth template cat go`)
 }
 
 // runTemplateList handles: codingbooth template list [--templates-path <dir>] [--full]
@@ -162,4 +166,52 @@ func runTemplateShow(version string, args []string) {
 	}
 
 	tmpl.FormatTemplateDetail(os.Stdout, t, registry, flags.detail)
+}
+
+// runTemplateCat handles: codingbooth template cat <name> [--templates-path <dir>]
+func runTemplateCat(version string, args []string) {
+	if len(args) == 0 {
+		fmt.Fprintln(os.Stderr, "Error: 'template cat' requires a template name")
+		fmt.Fprintln(os.Stderr, "Usage: codingbooth template cat <name>")
+		os.Exit(1)
+	}
+
+	templateName := args[0]
+	flags := parseInitFlags(args[1:])
+	templatesPath, cleanup := resolveTemplatesPath(flags, version)
+	defer cleanup()
+
+	registry, err := tmpl.LoadRegistry(templatesPath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Support "parent+extension" syntax (e.g. "python+uv")
+	if parts := strings.SplitN(templateName, "+", 2); len(parts) == 2 {
+		parent, ok := registry.ByName[parts[0]]
+		if !ok {
+			fmt.Fprintf(os.Stderr, "Error: template %q not found\n", parts[0])
+			fmt.Fprintln(os.Stderr, "Use 'codingbooth template list' to see available templates.")
+			os.Exit(1)
+		}
+		for _, ext := range parent.Extensions {
+			if ext.Name == parts[1] {
+				tmpl.FormatTemplateCat(os.Stdout, ext)
+				return
+			}
+		}
+		fmt.Fprintf(os.Stderr, "Error: extension %q not found in template %q\n", parts[1], parts[0])
+		fmt.Fprintf(os.Stderr, "Use 'codingbooth template show %s' to see available extensions.\n", parts[0])
+		os.Exit(1)
+	}
+
+	t, ok := registry.ByName[templateName]
+	if !ok {
+		fmt.Fprintf(os.Stderr, "Error: template %q not found\n", templateName)
+		fmt.Fprintln(os.Stderr, "Use 'codingbooth template list' to see available templates.")
+		os.Exit(1)
+	}
+
+	tmpl.FormatTemplateCat(os.Stdout, t)
 }

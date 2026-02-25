@@ -55,7 +55,7 @@ Commands:
   adjust [path]            Re-generate booth (overwrites existing files)
   dryrun                   Preview what would be generated
 
-  Use 'codingbooth template list/search/show' to browse available templates.
+  Use 'codingbooth template list/search/show/cat' to browse available templates.
 
 Selection:
   Templates are selected with a DSL passed via --select.

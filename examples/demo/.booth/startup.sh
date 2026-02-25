@@ -78,6 +78,29 @@ elif ! grep -qF "$AGENT_REF" "$CLAUDE_MD"; then
   printf '%s\n\n%s' "$AGENT_REF" "$(cat "$CLAUDE_MD")" > "$CLAUDE_MD"
 fi
 
+# --- Sales Explorer: seed database and start server ---
+SALES_DIR="$HOME/code/sales-explorer"
+if [ -f "$SALES_DIR/init-demo-db.sql" ]; then
+  # Wait for PostgreSQL to be ready (startup script runs earlier)
+  for i in $(seq 1 30); do
+    pg_isready -q 2>/dev/null && break
+    sleep 1
+  done
+
+  # Create demo database if it doesn't exist
+  if ! psql -lqt 2>/dev/null | cut -d \| -f 1 | grep -qw demo; then
+    createdb demo 2>/dev/null || true
+  fi
+
+  # Seed the sales table (idempotent — only inserts if table empty)
+  psql -d demo -f "$SALES_DIR/init-demo-db.sql" 2>/dev/null || true
+
+  # Start the Sales Explorer server
+  if [ -x "$SALES_DIR/start-server.sh" ]; then
+    "$SALES_DIR/start-server.sh"
+  fi
+fi
+
 if [[ "${CB_SILENCE_BUILD:-false}" != "true" ]]; then
   echo "✅ Demo startup complete!"
 fi

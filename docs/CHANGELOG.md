@@ -3,7 +3,8 @@
 This file contains a list of changes for each released version.
 
 ## 0.27.0 (unreleased)
-- More tempalte
+- More templates
+- `booth template cat <name>` — show the raw code/content of a template
 
 ## 0.26.0 (unreleased)
 

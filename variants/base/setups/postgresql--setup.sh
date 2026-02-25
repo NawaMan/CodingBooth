@@ -47,12 +47,30 @@ fi
 
 rm -rf /var/lib/apt/lists/*
 
+# --- build-time: create CodingBooth PostgreSQL config files ---
+CB_PG_CONF_DIR="/opt/codingbooth/postgresql"
+mkdir -p "$CB_PG_CONF_DIR"
+
+cat > "$CB_PG_CONF_DIR/pg_hba.conf" <<'PGHBA'
+# CodingBooth: trust local connections (dev environment)
+local   all   all                 trust
+host    all   all   127.0.0.1/32  trust
+host    all   all   ::1/128       trust
+PGHBA
+
+cat > "$CB_PG_CONF_DIR/postgresql-booth.conf" <<'PGCONF'
+# CodingBooth: PostgreSQL overrides for dev environment
+listen_addresses = 'localhost'
+PGCONF
+
 # --- startup script: init DB cluster and start server ---
 STARTUP_FILE="/usr/share/startup.d/50-cb-postgresql--startup.sh"
 install -d "$(dirname "$STARTUP_FILE")"
 cat >"$STARTUP_FILE" <<'STARTUP'
 #!/usr/bin/env bash
 set -euo pipefail
+
+CB_PG_CONF_DIR="/opt/codingbooth/postgresql"
 
 # Find the installed PG version
 PG_VER=$(pg_config --version 2>/dev/null | grep -oP '\d+' | head -1)
@@ -61,6 +79,16 @@ PG_DATA="/var/lib/postgresql/${PG_VER}/main"
 # Initialize cluster if not exists
 if [ ! -d "$PG_DATA" ] || [ ! -f "$PG_DATA/PG_VERSION" ]; then
   sudo -u postgres /usr/lib/postgresql/${PG_VER}/bin/initdb -D "$PG_DATA" 2>/dev/null || true
+fi
+
+# Apply CodingBooth configs (idempotent)
+if [ -f "$CB_PG_CONF_DIR/pg_hba.conf" ]; then
+  sudo -u postgres cp "$CB_PG_CONF_DIR/pg_hba.conf" "$PG_DATA/pg_hba.conf"
+fi
+if [ -f "$CB_PG_CONF_DIR/postgresql-booth.conf" ] && \
+   ! grep -q "include 'postgresql-booth.conf'" "$PG_DATA/postgresql.conf" 2>/dev/null; then
+  sudo -u postgres cp "$CB_PG_CONF_DIR/postgresql-booth.conf" "$PG_DATA/postgresql-booth.conf"
+  echo "include 'postgresql-booth.conf'" | sudo -u postgres tee -a "$PG_DATA/postgresql.conf" > /dev/null
 fi
 
 # Start server

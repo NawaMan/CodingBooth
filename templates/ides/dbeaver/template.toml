@@ -1,0 +1,23 @@
+display-name = "DBeaver"
+display-disc = "DBeaver Community Edition database GUI"
+display-detail = "Installs DBeaver Community Edition, a free universal database tool supporting PostgreSQL, MySQL, SQLite, MariaDB, Oracle, SQL Server, and many more. Requires a desktop variant."
+display-order = 39
+tags = [
+    "dbeaver",
+    "database",
+    "sql",
+    "gui",
+    "ide"
+]
+
+[params.DBEAVER_VERSION]
+default = "latest"
+suggests = [
+    "latest",
+    "25.3.5",
+]
+
+[segments]
+"Boothfile--60" = """
+setup dbeaver ${DBEAVER_VERSION}
+"""

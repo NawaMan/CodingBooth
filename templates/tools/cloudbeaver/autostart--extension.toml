@@ -1,0 +1,53 @@
+display-name = "CloudBeaver Auto-Start"
+display-disc = "Auto-start CloudBeaver server on container boot"
+display-order = 2
+auto-select = false
+tags = [
+    "cloudbeaver",
+    "autostart"
+]
+
+[segments]
+"startup--70.sh" = """
+# Auto-start CloudBeaver in background
+CB_DIR="/opt/cloudbeaver"
+JAVA_HOME_DIR="/opt/cloudbeaver-java/openjdk"
+PORT=${CB_CLOUDBEAVER_PORT:-8978}
+LOG_FILE="/tmp/cloudbeaver.log"
+
+export PATH="${JAVA_HOME_DIR}/bin:$PATH"
+
+cd "$CB_DIR"
+launcherJar=( server/plugins/org.jkiss.dbeaver.launcher*.jar )
+
+nohup java ${JAVA_OPTS:-} \
+  -Dfile.encoding=UTF-8 \
+  --add-modules=ALL-DEFAULT \
+  --add-opens=java.base/java.io=ALL-UNNAMED \
+  --add-opens=java.base/java.lang=ALL-UNNAMED \
+  --add-opens=java.base/java.lang.reflect=ALL-UNNAMED \
+  --add-opens=java.base/java.net=ALL-UNNAMED \
+  --add-opens=java.base/java.nio=ALL-UNNAMED \
+  --add-opens=java.base/java.nio.charset=ALL-UNNAMED \
+  --add-opens=java.base/java.text=ALL-UNNAMED \
+  --add-opens=java.base/java.time=ALL-UNNAMED \
+  --add-opens=java.base/java.util=ALL-UNNAMED \
+  --add-opens=java.base/java.util.concurrent=ALL-UNNAMED \
+  --add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED \
+  --add-opens=java.base/jdk.internal.vm=ALL-UNNAMED \
+  --add-opens=java.base/jdk.internal.misc=ALL-UNNAMED \
+  --add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
+  --add-opens=java.base/sun.security.ssl=ALL-UNNAMED \
+  --add-opens=java.base/sun.security.action=ALL-UNNAMED \
+  --add-opens=java.base/sun.security.util=ALL-UNNAMED \
+  --add-opens=java.security.jgss/sun.security.jgss=ALL-UNNAMED \
+  --add-opens=java.security.jgss/sun.security.krb5=ALL-UNNAMED \
+  --add-opens=java.sql/java.sql=ALL-UNNAMED \
+  -jar "${launcherJar[0]}" \
+  -product io.cloudbeaver.product.ce.product \
+  -web-config conf/cloudbeaver.conf \
+  -nl en \
+  -registryMultiLanguage > "$LOG_FILE" 2>&1 &
+
+echo "CloudBeaver started on port $PORT (PID $!, log: $LOG_FILE)"
+"""

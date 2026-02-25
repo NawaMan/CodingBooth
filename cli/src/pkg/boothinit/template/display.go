@@ -150,6 +150,28 @@ func FormatTemplateDetail(w io.Writer, t *Template, registry *TemplateRegistry, 
 	}
 }
 
+// FormatTemplateCat writes the raw content of a template's segments and files.
+// Each section is preceded by a header line (e.g., "--- Boothfile ---").
+func FormatTemplateCat(w io.Writer, t *Template) {
+	changes := collectFileChanges(t)
+	if len(changes) == 0 {
+		return
+	}
+	first := true
+	for _, c := range changes {
+		if c.content == "" {
+			continue
+		}
+		if !first {
+			fmt.Fprintln(w)
+		}
+		first = false
+		fmt.Fprintf(w, "--- %s ---\n", c.label)
+		content := strings.TrimRight(c.content, "\n")
+		fmt.Fprintln(w, content)
+	}
+}
+
 // fileChange represents a file or segment that a template modifies.
 type fileChange struct {
 	label   string
