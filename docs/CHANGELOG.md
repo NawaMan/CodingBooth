@@ -2,7 +2,17 @@
 
 This file contains a list of changes for each released version.
 
-## 0.27.0 (unreleased)
+## 0.28.0
+
+- New templates: DBeaver, CloudBeaver (with autostart and expose extensions), PostgreSQL, Remotion
+- `booth template cat <name>` — show the raw code/content of a template
+- `booth install` stays put if already installed at the requested version
+- Variant showcase in README — side-by-side screenshots of Base, Notebook, Code Server, XFCE, KDE, and Bash
+- Sales Explorer demo — full-stack demo with PostgreSQL, Node.js server, and Jupyter notebook
+- Fix Elixir setup script
+- Improved `booth` wrapper script
+
+## 0.27.0
 - More templates
 - `booth template cat <name>` — show the raw code/content of a template
 

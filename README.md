@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.27.0 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.28.0 — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -70,26 +70,9 @@ CodingBooth supports multiple variants — different UIs that share the same und
 
 ## Quick Try
 
-1. Ensure you have Docker installed and running.
-2. Clone this repo.
-3. cd into it and cd further into `examples/go-example` or any other example in that folder.
-4. Run : `../../booth`
-5. Wait for a few minutes (may be more for the first run) and visit `http://localhost:10000`
-6. Select your IDE and start coding! (note: your code will be in `/home/coder/code` folder).
+1. Install : `curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash ; ./booth install`
+2. 
 
-![Select IDE](DesktopRun.png)
-
-### Optional
-7. Inspect `.booth/Dockerfile` and `.booth/config.toml` inside `examples/go-example` and
-    see if you can figure out what they are.
-8. Try other [examples](https://github.com/NawaMan/CodingBooth/tree/latest/examples) or different [variants](https://github.com/NawaMan/CodingBooth/tree/latest?tab=readme-ov-file#available-variants).
-9. Try on your own project,
-  1. Run: `curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash`
-  2. Create `.booth/Dockerfile` and `.booth/config.toml` -- Take inspiration from the existing [examples](https://github.com/NawaMan/CodingBooth/tree/latest/examples).
-
-## For AI Agents
-
-If you're an AI agent (Claude, Copilot, Cursor, GPT, etc.) helping a user with CodingBooth, read [docs/AGENT_SETUP.md](docs/AGENT_SETUP.md).
 
 ## Installation
 
