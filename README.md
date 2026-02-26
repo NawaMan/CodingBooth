@@ -11,9 +11,9 @@ But your development environment? Still a mess of system-wide installs, mismatch
 
 **CodingBooth fixes that.**
 
-Run a browser-based VS Code workspace, a Jupyter notebook, or even an entire Linux desktop inside a container — with every file owned by you, not root. Your environment lives with the project. **Launching a single command**, and works with the code on every machine.
+Run a browser-based VS Code workspace, a Jupyter notebook, or even an entire Linux desktop inside a container — with every file owned by you, not root. Your environment lives with the project. **Launch a single command** and it works with your code on every machine.
 
-New teammate joining? Restart the work on a project after months? Running one command and get the exact same environment.
+New teammate joining? Restart the work on a project after months? Run one command and get the exact same environment.
 No setup guides. No dependency drift. No “works on my machine.”
 
 Zero-setup onboarding, portable development environments, and a clean, consistent workspace that just works!
@@ -33,7 +33,7 @@ That means every file you create or modify inside the container is **owned by yo
 - **Seamless file access** – Create, edit, and delete files inside the container, then use them on the host with no permission issues.  
 - **Team-friendly** – Each developer uses their own UID and GID mapping — no more “root-owned” repositories.  
 - **Project isolation** – Keep toolchains and dependencies inside the container while working directly in your project folder.  
-- **Portable configuration** – `.booth/config.toml` travel with your repository, ensuring consistent setups across machines.
+- **Portable configuration** – `.booth/config.toml` travels with your repository, ensuring consistent setups across machines.
 - **Pre-configured convenience** - multiple pre-configured setups and variants that are ready to use. 
 
 
@@ -56,7 +56,7 @@ Ready to try it? Check out the [Quick Try](#quick-try) section!
 
 Click the image to watch the demo.
 
-In this demo, you can modify/build a snake game using zig, run it inside the container and use the cross-platform binary on the host without having zig toolchain installed on the host.
+In this demo, you can modify/build a snake game using zig, run it inside the container and use the cross-platform binary on the host without having the zig toolchain installed on the host.
 
 ### Variants
 
@@ -80,7 +80,7 @@ CodingBooth supports multiple variants — different UIs that share the same und
 | Notebook                                                                      | Code Server                                                                          |
 |:-----------------------------------------------------------------------------:|:------------------------------------------------------------------------------------:|
 | [![Notebook](docs/images/Booth-NoteBook.png)](docs/images/Booth-NoteBook.png) | [![Code Server](docs/images/Booth-CodeServer.png)](docs/images/Booth-CodeServer.png) | 
-| `booth --variant notebook`                                                    | | `booth --variant codeserver`                                                       |
+| `booth --variant notebook`                                                    | `booth --variant codeserver`                                                        |
 
 | XFCE Desktop                                                                  | KDE Desktop                                                                          |
 |:-----------------------------------------------------------------------------:|:------------------------------------------------------------------------------------:|
@@ -89,19 +89,17 @@ CodingBooth supports multiple variants — different UIs that share the same und
 
 
 # Table of Contents
+- [Why CodingBooth?](#why-codingbooth)
+- [Who Should Use CodingBooth?](#who-should-use-codingbooth)
+- [Quick Demo](#quick-demo)
 - [Quick Try](#quick-try)
-- [For AI Agents](#for-ai-agents)
 - [Installation](#installation)
 - [CLI Usage](#cli-usage)
-- [Why CodingBooth?](#why-codingbooth)
 - [Variants](#variants)
 - [Built-in Tools](#built-in-tools)
-- [Quick Examples](#quick-examples)
 - [Customization](#customization)
-- [Boothfile](#boothfile)
 - [Guarantees & Limits](#guarantees--limits)
 - [How It Works](#how-it-works)
-- [`booth run` Reference](#booth-run-reference)
 - [Setup Implementation Notes](#setup-implementation-notes)
 - [Troubleshooting](#troubleshooting)
 - [Documentation](#documentation)
@@ -113,7 +111,7 @@ CodingBooth supports multiple variants — different UIs that share the same und
 
 ### Try with an example
 
-CodingBooth provides several ready to use examples to get you started.
+CodingBooth provides several ready-to-use examples to get you started.
 
 1. **Install CodingBooth**:
    ```bash
@@ -152,7 +150,7 @@ CodingBooth provides `init` and `template` commands to quickly create a new proj
        ./booth shell-config
    ```
 
-2 **List templates**
+2. **List templates**:
    ```bash
    ./booth template list
    ```
@@ -347,6 +345,10 @@ By default, containers are removed on exit. Use `--keep-alive` to preserve the c
 
 See **[booth lifecycle documentation](docs/BOOTH_LIFECYCLE.md)** for the full guide.
 
+### Further Reading
+
+For a comprehensive reference on `booth run` — including image selection, config files, run modes, ports, Docker-in-Docker, dry-run, and TLS — see **[booth run documentation](docs/BOOTH_RUN.md)**.
+
 
 ## Variants
 
@@ -357,7 +359,7 @@ Each variant comes pre-configured with a curated toolset and a consistent runtim
 
 - **`base`** – A minimal base image with essential shell tools.  
   Ideal for building custom environments, running CLI applications, or lightweight automation tasks.
-  The terminal is expose with [ttyd](https://github.com/tsl0922/ttyd) on port 10000.
+  The terminal is exposed with [ttyd](https://github.com/tsl0922/ttyd) on port 10000.
 
 - **`notebook`** – Includes [Jupyter Notebook](https://jupyter.org/) with Bash and other utilities.  
   Great for data science, analytics, documentation, or interactive scripting workflows.
@@ -368,7 +370,7 @@ Each variant comes pre-configured with a curated toolset and a consistent runtim
 - **[`desktop-xfce`]( https://www.xfce.org  )**, **[`desktop-kde`]( https://kde.org/plasma-desktop)** – Full Linux desktop environments accessible via browser or remote desktop (e.g., [noVNC](https://novnc.com)).  
   Useful for GUI-heavy workflows or running native IDEs like [IntelliJ IDEA](https://www.jetbrains.com/idea/), [PyCharm](https://www.jetbrains.com/pycharm/), or [Eclipse](https://www.eclipse.org) inside Docker.
 
-All variants expose its UI on port 10000 but NEXT and RANDOM can be use. See [Port](#6-ports) for more details. 
+All variants expose their UI on port 10000 but NEXT and RANDOM can be used. See [Port](#6-ports) for more details. 
 
 ### Aliases & Defaults
 
@@ -751,28 +753,10 @@ It's tempting to mount your entire `~/.config` or even `~` into the container. *
 > 🤔 **Reality check:** If you find yourself needing to seed most of your home directory, ask yourself: do you actually need a container? Maybe the friction is telling you something.
 
 
-## `booth run` Reference
-
-`booth run` (or simply `./booth`) starts a containerized development environment. It handles image selection, port mapping, user permissions, and multiple run modes.
-
-For the full reference, see **[booth run documentation](docs/BOOTH_RUN.md)**.
-
-Key topics covered:
-
-- **Image selection** — Repository, variant, version, and precedence rules
-- **Config files** — `.booth/config.toml`, `.env`, `.env-local` and custom argument arrays
-- **Run modes** — Interactive shell, command mode (`-- <cmd>`), silent mode, daemon mode
-- **Ports** — Automatic mapping, fixed ports, `NEXT`, and `RANDOM`
-- **Keep-alive** — Preserve containers for later resumption (see also [Lifecycle](docs/BOOTH_LIFECYCLE.md))
-- **Docker-in-Docker** — Build and run containers inside your booth
-- **Dry-run** — Preview the `docker run` command without executing
-- **TLS** — Self-signed certificates for HTTPS access
-
-
 ## Setup Implementation Notes
 Setup scripts are scripts that install tools and dependencies.
 Not every tool or dependency needs a setup script.
-A basic `apt-get install ....` or `curl ...` can be be used.
+A basic `apt-get install ....` or `curl ...` can be used.
 A setup script may be required, if a tool or dependency requires:
 - user specific configuration
 - custom bash session (such as environmental variables)
