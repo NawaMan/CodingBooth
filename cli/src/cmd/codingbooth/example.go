@@ -255,7 +255,6 @@ func tryExample(version string) {
 	fmt.Printf("\nExample '%s' ready at: %s\n", exampleName, targetPath)
 	fmt.Println("\nTo get started:")
 	fmt.Printf("  cd %s\n", targetPath)
-	fmt.Println("  ./booth install")
 	fmt.Println("  ./booth")
 }
 

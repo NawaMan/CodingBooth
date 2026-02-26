@@ -19,6 +19,75 @@ No setup guides. No dependency drift. No “works on my machine.”
 Zero-setup onboarding, portable development environments, and a clean, consistent workspace that just works!
 
 
+## Why CodingBooth?
+
+When developing inside containers, files you create often end up owned by the container’s user (usually `root`).  
+This leads to frustrating permission issues on the host — you can’t easily edit, remove, or commit those files without resorting to `sudo` or other workarounds.
+
+**CodingBooth** solves this by mapping the container’s user to **your host UID and GID**.  
+That means every file you create or modify inside the container is **owned by you on the host** — just as if it were created directly on your local machine.
+
+
+### What This Gives You
+
+- **Seamless file access** – Create, edit, and delete files inside the container, then use them on the host with no permission issues.  
+- **Team-friendly** – Each developer uses their own UID and GID mapping — no more “root-owned” repositories.  
+- **Project isolation** – Keep toolchains and dependencies inside the container while working directly in your project folder.  
+- **Portable configuration** – `.booth/config.toml` travel with your repository, ensuring consistent setups across machines.
+- **Pre-configured convenience** - multiple pre-configured setups and variants that are ready to use. 
+
+
+## Who Should Use CodingBooth?
+
+CodingBooth provides reproducible, zero-friction development environments for:
+
+- **Development Teams**: Share identical setups to eliminate "works on my machine" issues and onboard instantly.
+- **Multi-Project Developers**: Isolate project dependencies in containers to prevent cross-contamination.
+- **Educators and Students**: Distribute uniform environments so everyone can focus on learning, not troubleshooting installations.
+- **Researchers and Academics**: Pause and resume work months later with guaranteed environment consistency—no rebuilding necessary.
+- **Solo Developers and Hobbyists**: Create portable, self-contained workspaces that run anywhere without bloating your host system.
+
+Ready to try it? Check out the [Quick Try](#quick-try) section!
+
+
+## Quick Demo
+
+[![Demo](docs/images/CodingBooth-Demo-Preview.gif)](https://youtu.be/Rvv3UcOqv3c)
+
+Click the image to watch the demo.
+
+In this demo, you can modify/build a snake game using zig, run it inside the container and use the cross-platform binary on the host without having zig toolchain installed on the host.
+
+### Variants
+
+CodingBooth supports multiple variants — different UIs that share the same underlying environment.
+
+- **Base** — A minimal terminal session.
+- **Notebook** — Jupyter Lab with multi-language kernels (Python, Bash, Java, and more). 
+- **Code Server** — VS Code running in your browser with full extension support.
+- **XFCE Desktop** — A full Linux desktop accessible via your browser. 
+- **KDE Desktop** — A feature-rich Linux desktop with KDE Plasma.
+- **Command passthrough** — Skip the UI entirely. Run any command inside the container with booth `-- <command>` and get the result directly in your terminal.
+
+
+#### Example Screenshots
+
+| Base                                                                          | Bash                                                                                 |
+|:-----------------------------------------------------------------------------:|:------------------------------------------------------------------------------------:|
+| [![Base](docs/images/Booth-Base.png)](docs/images/Booth-Base.png)             | [![Bash](docs/images/Booth-Bash.png)](docs/images/Booth-Bash.png)                    |
+| `booth --variant base`                                                        | `booth -- bash`                                                                      |
+
+| Notebook                                                                      | Code Server                                                                          |
+|:-----------------------------------------------------------------------------:|:------------------------------------------------------------------------------------:|
+| [![Notebook](docs/images/Booth-NoteBook.png)](docs/images/Booth-NoteBook.png) | [![Code Server](docs/images/Booth-CodeServer.png)](docs/images/Booth-CodeServer.png) | 
+| `booth --variant notebook`                                                    | | `booth --variant codeserver`                                                       |
+
+| XFCE Desktop                                                                  | KDE Desktop                                                                          |
+|:-----------------------------------------------------------------------------:|:------------------------------------------------------------------------------------:|
+| [![XFCE](docs/images/Booth-XFCE.png)](docs/images/Booth-XFCE.png)             | [![KDE](docs/images/Booth-KDE.png)](docs/images/Booth-KDE.png)                       | 
+| `booth --variant desktop-xfce`                                                | `booth --variant desktop-kde`                                                        | 
+
+
 # Table of Contents
 - [Quick Try](#quick-try)
 - [For AI Agents](#for-ai-agents)
@@ -32,46 +101,84 @@ Zero-setup onboarding, portable development environments, and a clean, consisten
 - [Boothfile](#boothfile)
 - [Guarantees & Limits](#guarantees--limits)
 - [How It Works](#how-it-works)
-- [`booth` Manual](#booth-manual)
+- [`booth run` Reference](#booth-run-reference)
 - [Setup Implementation Notes](#setup-implementation-notes)
 - [Troubleshooting](#troubleshooting)
-- [Implementation Documentation](#implementation-documentation)
+- [Documentation](#documentation)
 - [Developer Setup](#developer-setup)
 - [Community & Feedback](#community--feedback)
-
-## Demo
-
-[![Demo](docs/images/CodingBooth-Demo-Preview.gif)](https://youtu.be/Rvv3UcOqv3c)
-
-### Variants
-
-CodingBooth supports multiple variants — different UIs that share the same underlying environment. Your code, dependencies, and file permissions stay consistent no matter which one you pick. Choose the one that fits your workflow:
-
-**Base** — A minimal terminal session. Ideal for scripting, CLI tools, and lightweight work without a UI overhead.
-
-**Notebook** — Jupyter Lab with multi-language kernels (Python, Bash, Java, and more). Great for data exploration, documentation, and interactive development.
-
-**Code Server** — VS Code running in your browser with full extension support, integrated terminal, and notebook capabilities.
-
-**XFCE Desktop** — A full Linux desktop accessible via your browser. Comes with GUI tools like DBeaver, file managers, and multiple browser windows side by side.
-
-**KDE Desktop** — A feature-rich Linux desktop with KDE Plasma, for those who prefer a more polished graphical environment.
-
-**Command passthrough** — Skip the UI entirely. Run any command inside the container with booth -- <command> and get the result directly in your terminal.
-
-| Base | Notebook | Code Server |
-|:---:|:---:|:---:|
-| [![Base](docs/images/Booth-Base.png)](docs/images/Booth-Base.png) | [![Notebook](docs/images/Booth-NoteBook.png)](docs/images/Booth-NoteBook.png) | [![Code Server](docs/images/Booth-CodeServer.png)](docs/images/Booth-CodeServer.png) |
-| `booth --variant base` | `booth --variant notebook` | `booth --variant codeserver` |
-| XFCE Desktop | KDE Desktop | Bash |
-| [![XFCE](docs/images/Booth-XFCE.png)](docs/images/Booth-XFCE.png) | [![KDE](docs/images/Booth-KDE.png)](docs/images/Booth-KDE.png) | [![Bash](docs/images/Booth-Bash.png)](docs/images/Booth-Bash.png) |
-| `booth --variant desktop-xfce` | `booth --variant desktop-kde` | `booth -- bash` |
 
 
 ## Quick Try
 
-1. Install : `curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash ; ./booth install`
-2. 
+### Try with an example
+
+CodingBooth provides several ready to use examples to get you started.
+
+1. **Install CodingBooth**:
+   ```bash
+   curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash \
+       ./booth install \
+       ./booth shell-config
+   ```
+
+2. **List available examples**:
+   ```bash
+   ./booth example list
+   ```
+
+3. **Try an example**:
+   ```bash
+   ./booth example try <example-name> <folder>
+   ```
+
+4. **Start the booth**:
+   ```bash
+   cd <folder>
+   ./booth
+   ```
+
+At this point, you can inspect the code, modify it then build and run it.
+
+
+### Try with an init
+
+CodingBooth provides `init` and `template` commands to quickly create a new project.
+
+1. **Install CodingBooth**:
+   ```bash
+   curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash \
+       ./booth install \
+       ./booth shell-config
+   ```
+
+2 **List templates**
+   ```bash
+   ./booth template list
+   ```
+   or
+   ```bash
+   ./booth template list --full
+   ```
+   These would show you the available templates/extensions.
+
+3. **Create a new project**:
+   ```bash
+   ./booth init <project-name> --select templates
+   ```
+
+4. **Start the booth**:
+   ```bash
+   cd <project-name>
+   ./booth
+   ```
+
+Explore more with:
+
+```bash
+./booth template help
+./booth init help
+```
 
 
 ## Installation
@@ -80,7 +187,9 @@ Run the following on the project **base folder** to install [CodingBooth Wrapper
 The wrapper allows management of the booth script file.
 
 ```shell
-curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash ; ./booth install
+curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash \
+    ./booth install \
+    ./booth shell-config
 ```
 
 Run the wrapper script and follow the instructions.
@@ -106,7 +215,7 @@ To update CodingBooth to the latest version:
 
 The wrapper script downloads the `codingbooth` binary for your platform to the shared cache. If the binary is already up-to-date, the download is skipped.
 
-> **Note:** The version is a positional argument: `./booth install 0.13.0`, not `./booth install --version 0.13.0`.
+> **Note:** The version is a positional argument: `./booth install 0.28.0`, not `./booth install --version 0.28.0`.
 
 > **Note:** The `booth` script operates relative to its own location, not the current working directory. This means you can run `/path/to/project/booth` from anywhere and it will correctly find the `.booth/` configuration in the project folder.
 
@@ -199,21 +308,44 @@ Use `booth template` to explore available init templates:
 
 > 💡 **Tip:** Use `--full` with `list` or `search` to include secondary (non-primary) templates.
 
-## Why CodingBooth?
+### Project Scaffolding (`booth init`)
 
-When developing inside containers, files you create often end up owned by the container’s user (usually `root`).  
-This leads to frustrating permission issues on the host — you can’t easily edit, remove, or commit those files without resorting to `sudo` or other workarounds.
+Create a complete `.booth/` configuration from templates — no manual Dockerfile writing needed.
 
-**CodingBooth** solves this by mapping the container’s user to **your host UID and GID**.  
-That means every file you create or modify inside the container is **owned by you on the host** — just as if it were created directly on your local machine.
+```shell
+# Create a polyglot project with IDE support
+./booth init new --select go+linter/python:3.13+uv/claude-code --variant codeserver
+
+# Preview without writing files
+./booth init dryrun --select rust+clippy
+
+# Re-generate after adding a template
+./booth init adjust --select go+linter/python+uv/postgresql
+```
+
+The selection DSL supports templates (`go`), versions (`python:3.13`), extensions (`+uv`), and exclusions (`~credential`). Selections can come from inline strings, recipe files (`@file`), or URLs (`@@url`).
+
+See **[booth init documentation](docs/BOOTH_INIT.md)** for the full guide.
 
 
-### What This Gives You
+### Container Lifecycle (`--keep-alive`)
 
-- **Seamless file access** – Create, edit, and delete files inside the container, then use them on the host with no permission issues.  
-- **Team-friendly** – Each developer uses their own UID and GID mapping — no more “root-owned” repositories.  
-- **Project isolation** – Keep toolchains and dependencies inside the container while working directly in your project folder.  
-- **Portable configuration** – `.booth/config.toml` travel with your repository, ensuring consistent setups across machines.
+By default, containers are removed on exit. Use `--keep-alive` to preserve the container so you can resume later.
+
+```shell
+# Start a persistent booth
+./booth --keep-alive --name myproject
+
+# Resume after exiting
+./booth start myproject
+
+# Manage containers
+./booth list                  # show all booths
+./booth stop myproject        # stop a running booth
+./booth prune --yes           # clean up all stopped booths
+```
+
+See **[booth lifecycle documentation](docs/BOOTH_LIFECYCLE.md)** for the full guide.
 
 
 ## Variants
@@ -373,65 +505,16 @@ These essentials are preinstalled so you can start working immediately — no ex
 > `notebook` adds Jupyter, and `codeserver` adds a web-based IDE.
 > You can also customize your setup by adding additional packages in your Dockerfile.
 
-### Available Setup Scripts
-
-CodingBooth provides ready-to-use setup scripts for common development tools. Add them to your `.booth/Dockerfile`:
-
-```dockerfile
-FROM nawaman/codingbooth:base-latest
-
-# Languages
-RUN python--setup.sh           # Python with pip, venv
-RUN nodejs--setup.sh           # Node.js with npm
-RUN jdk--setup.sh              # Java JDK
-RUN go--setup.sh               # Go language
-
-# Build tools
-RUN mvn--setup.sh              # Apache Maven
-RUN gradle--setup.sh           # Gradle
-
-# Developer tools
-RUN docker-compose--setup.sh   # Docker Compose
-RUN neovim--setup.sh           # Neovim editor
-```
-
-**To see all available scripts:**
-```bash
-# Inside a running container
-ls /opt/codingbooth/setups/
-
-# Or check the repository
-# https://github.com/NawaMan/CodingBooth/tree/main/variants/base/setups
-```
-
-> 💡 **Tip:** Setup scripts handle PATH configuration, environment variables, and any required startup hooks automatically.
-
-
-## Quick Examples
-
-```shell
-./booth -- make test
-```
-
-```shell
-./booth -- 'read -r -p "Press Enter to continue..."'
-```
-
-More examples : https://github.com/NawaMan/WorkSpace/tree/main/examples
-
-
 ## Customization
 
-You can tailor how CodingBooth runs by adjusting configuration files or using runtime flags:
+CodingBooth is highly customizable. You can tailor how your environments run by adjusting configuration files or using runtime flags. 
 
-- **`.booth/config.toml`** – Defines the image name, variant, UID/GID overrides, and default ports.  
-- **Runtime flags** – Options such as `--variant`, `--name`, `--pull`, `--dryrun`, and others can override defaults at launch.
+For a complete guide on how to customize CodingBooth environments, see the following documentation:
 
-> 💡 **Tip:** Configuration precedence follows this order:  
-> **CLI flags → config file → environment variables → built-in defaults.**
-> **Bootstrap note:** `--code` and `--config` are evaluated early (CLI first pass or defaults) and are not overridden by environment variables/TOML configuration file.
+- **[Booth Customization Guide](docs/BOOTH_CUSTOMIZATION.md)**: Covers how to use setup scripts, install scripts, create templates, and share reusable environment recipes.
+- **[Boothfile Reference](docs/plans/Boothfile.md)**: Detailed specification for the simplified, script-like format used to define container environments.
 
-#### The `.booth/` Folder
+### The `.booth/` Folder (Quick Overview)
 
 All booth configuration lives in a single `.booth/` folder in your project root:
 
@@ -443,174 +526,11 @@ my-project/
     ├── Dockerfile      # Custom Docker build (optional, fallback)
     ├── .env-local      # Personal env vars (optional, gitignored)
     ├── setups/         # Custom setup scripts (optional)
-    │   └── myapp--setup.sh
     ├── home/           # Team-shared home directory files (optional)
-    │   └── .config/
     └── tools/          # Managed by booth wrapper (auto-created)
-        └── codingbooth.lock   # Version reference (binary in shared cache)
 ```
 
-| File                      | Purpose                                                 |
-|---------------------------|---------------------------------------------------------|
-| `config.toml`             | Defines variant, ports, run-args, build-args, cmds      |
-| `Boothfile`               | Simplified build script (compiles to Dockerfile)        |
-| `Dockerfile`              | Custom image build extending a base variant             |
-| `.env-local`              | Personal env vars, always loaded, gitignored            |
-| `setups/`                 | Custom setup scripts for `setup` command in Boothfile   |
-| `home/`                   | Team-shared dotfiles copied to `/home/coder/` at startup |
-| `tools/codingbooth.lock` | Version lock file; binary cached in `~/.cache/codingbooth/` |
-
-> 💡 **Tip:** When both `Boothfile` and `Dockerfile` exist, Boothfile takes precedence. Use `--dockerfile` to force using the Dockerfile.
-
-> 🔒 **Read-only by default:** The `.booth/` folder is mounted **read-only** inside the container to prevent accidental or malicious modifications to your configuration. Use `--writable-booth` if you need to edit `.booth/` files from inside the container (e.g., during development).
-
-> ⚠️ **Note on `cmds`:** When you pass commands via CLI (`-- <cmd>`), they **override** the `cmds` in config.toml (they don't append).
-
----
-
-## Boothfile
-
-Boothfile is a simplified, script-like format for defining your container environment. It compiles to a Dockerfile automatically, hiding the boilerplate while preserving full control.
-
-### Why Boothfile?
-
-Instead of writing this Dockerfile:
-
-```dockerfile
-# syntax=docker/dockerfile:1
-ARG BOOTH_VARIANT_TAG=base
-ARG BOOTH_VERSION_TAG=latest
-FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
-SHELL ["/bin/bash","-o","pipefail","-lc"]
-USER root
-WORKDIR /opt/codingbooth/setups
-
-RUN python--setup.sh 3.12
-RUN pip--install.sh django
-ENV APP_ENV=production
-```
-
-Write this Boothfile:
-
-```text
-# syntax=codingbooth/boothfile:1
-
-setup python 3.12
-install pip django
-env APP_ENV=production
-```
-
-### Boothfile Commands
-
-| Command   | Example                 | Compiles to                  |
-|-----------|-------------------------|------------------------------|
-| `run`     | `run apt-get update`    | `RUN apt-get update`         |
-| `setup`   | `setup python 3.12`     | `RUN python--setup.sh 3.12`  |
-| `install` | `install pip django`    | `RUN pip--install.sh django` |
-| `copy`    | `copy ./config /opt`    | `COPY ./config /opt`         |
-| `env`     | `env DEBUG=true`        | `ENV DEBUG=true`             |
-| `arg`     | `arg VERSION=1.0`       | `ARG VERSION=1.0`            |
-| `workdir` | `workdir /app`          | `WORKDIR /app`               |
-| `expose`  | `expose 8080`           | `EXPOSE 8080`                |
-| `label`   | `label maintainer="me"` | `LABEL maintainer="me"`      |
-
-### Multi-line Commands (Heredocs)
-
-Boothfile supports three heredoc modes for multi-line commands:
-
-```text
-# Verbatim - passes through to Docker heredoc
-run <<END
-set -e
-apt-get update
-apt-get install -y curl
-END
-
-# And-join - joins lines with && (fail-fast)
-run &&<<END
-apt-get update
-apt-get install -y curl wget
-rm -rf /var/lib/apt/lists/*
-END
-
-# Semi-join - joins lines with ; (continue on failure)
-run ;<<END
-rm -f /tmp/optional
-echo "done"
-END
-```
-
-### Using Variables
-
-```text
-# syntax=codingbooth/boothfile:1
-
-arg NODE_VERSION=20
-arg PYTHON_VERSION=3.12
-
-setup nodejs ${NODE_VERSION}
-setup python ${PYTHON_VERSION}
-```
-
-Override at build time with `--build-arg NODE_VERSION=22`.
-
-### Custom Setup Scripts
-
-Place custom scripts in `.booth/setups/`:
-
-```
-.booth/
-└── setups/
-    └── myapp--setup.sh
-```
-
-Then use them in your Boothfile:
-
-```text
-setup myapp
-```
-
-The compiler automatically adds a `COPY` to bring your script into the image.
-
-### CLI Flags
-
-| Flag                 | Description                                 |
-|----------------------|---------------------------------------------|
-| `--boothfile <path>` | Use a specific Boothfile                    |
-| `--emit-dockerfile`  | Print generated Dockerfile without building |
-| `--strict`           | Treat warnings as errors                    |
-
-### File Precedence
-
-When no flags are given, CodingBooth looks for files in this order:
-1. `.booth/Boothfile` (preferred)
-2. `.booth/Dockerfile` (fallback)
-
-Use `--dockerfile <path>` to force using a specific Dockerfile.
-
-### Complete Example
-
-```text
-# syntax=codingbooth/boothfile:1
-
-# Data engineering environment
-
-# System dependencies
-run apt-get update && apt-get install -y libpq-dev
-
-# Languages
-setup python 3.12
-setup jdk 21 temurin
-
-# Python packages
-install pip django psycopg2-binary
-
-# Project config
-copy ./config /opt/config
-env DJANGO_SETTINGS_MODULE=myproject.settings
-```
-
-> 📖 For the full Boothfile specification, see [docs/plans/Boothfile.md](docs/plans/Boothfile.md).
+>  **Read-only by default:** The `.booth/` folder is mounted **read-only** inside the container to prevent accidental or malicious modifications to your configuration. Use `--writable-booth` if you need to edit `.booth/` files from inside the container.
 
 ---
 
@@ -653,113 +573,9 @@ JetBrains activation is stored as a machine-specific token. When you run an IDE 
 
 ## How It Works
 
-The `booth` wrapper script is **location-based**: it operates relative to its own location, not the current working directory. This means:
-- Running `./booth` from the project root works as expected
-- Running `/path/to/project/booth` from any directory also works correctly
-- The script always finds `.booth/` in the same directory where `booth` is located
+CodingBooth mirrors your host identity inside the container — you work as yourself, not as root. This results in a seamless development environment with no permission headaches.
 
-1. The launcher passes your **host UID** and **GID** into the container using the environment variables `HOST_UID` and `HOST_GID`.  
-2. Inside the container, the entrypoint script (`booth-entry`) ensures a matching `coder` user and group exist with those IDs.  
-3. The directories `/home/coder` and `/home/coder/code` are owned by that user, ensuring smooth file sharing between host and container.  
-4. Add the user `coder` to sudoers so that it can sudo without needing the password
-5. Prepare `.bashrc` and `.zshrc`
-6. Run startup script (files in `/etc/startup.d`)
-7. All commands run as the unprivileged **`coder`** user, not `cdroot`, preserving security and consistent file ownership.
-
-
-```
-host                                     # your machine
-  ├── ~/.cache/codingbooth/              # shared binary cache
-  |    └── versions/
-  |         └── 0.13.0/                  # version-specific binary
-  |              ├── codingbooth.sha256
-  |              └── codingbooth-<os>-<arch>  # binary for current platform
-  ├── project/                           # your project folder on the host
-  |    ├── booth                         # booth wrapper script
-  |    ├── .booth                        # booth internal folder
-  |    |    └── tools/
-  |    |         └── codingbooth.lock    # version reference
-  |    ├── ...                           # other project files
-  ...
-
-container
-  ├── home/
-  |    ├── coder/
-  |    |    ├── code/                           # your project folder inside the container
-  |    |    |   ├── booth                       # booth wrapper script
-  |    |    |   ├── .booth                      # booth internal folder
-  |    |    |   |    └── tools/
-  |    |    |   |         └── codingbooth.lock  # version reference
-  |    |    ├── ...                             # other project files
-  |    ├── ...                                  # other home files
-  ├── etc/
-  |    ├── profile.d/                           # profile script folder
-  ├── opt/
-  |    ├── codingbooth/
-  |    |    ├── setups/                         # setup script folder
-  |    |    |    ├── ...                        # setup scripts
-  ├── usr/
-  |    ├── local/
-  |    |    ├── bin/                            # program file folder
-  |    ├── share/
-  |    |    ├── startup.d/                      # startup script folder
-  ...
-```
-
----
-
-> 🧠 **In short:**
-> CodingBooth mirrors your host identity inside the container — you work as yourself, not as root.
-
-
-**Result:** seamless dev environment, no permission headaches.
-
-### Data Persistence
-
-Understanding what persists across container restarts is critical:
-
-| Location                          | Persists? | Notes                                               |
-|-----------------------------------|-----------|-----------------------------------------------------|
-| `/home/coder/code/`               | **Yes**   | Bind-mounted from host; this is your project folder |
-| `/home/coder/` (outside `code/`)  | No        | Ephemeral; lost on container restart                |
-| `/opt/`, `/usr/`, `/etc/`         | No        | System directories; lost on restart                 |
-| Installed packages                | No        | Must be in Dockerfile to persist                    |
-
-**What this means:**
-- **Your code is safe** — it lives on the host and is never lost
-- **Home directory customizations** — use `.booth/home/` or `.booth/home-seed/` to persist dotfiles
-- **Installed tools** — add them to your `.booth/Dockerfile` so they're rebuilt each time
-- **Container state** — treat containers as disposable; rebuild rather than modify
-
-> 💡 **Tip:** If you need to persist something outside `/home/coder/code/`, either add it to your Dockerfile or mount an additional volume via `run-args`.
-
----
-
-> 📝 **Technical Note:**
-> CodingBooth uses the Docker CLI (`docker` command) rather than Docker client libraries.
-> This keeps the codebase simple, portable, and easier to maintain while ensuring compatibility across platforms.
-
-### In-Container Documentation
-
-Every CodingBooth container includes documentation and resources at `/opt/codingbooth/`:
-
-```
-/opt/codingbooth/
-├── README.md              # This documentation
-├── LICENSE                # Apache 2.0 License
-├── version.txt            # Current CodingBooth version
-├── AGENT.md               # Instructions for AI agents
-├── variants/              # Dockerfiles for all variants
-│   ├── base/Dockerfile
-│   ├── codeserver/Dockerfile
-│   └── ...
-└── setups/                # Built-in setup scripts
-    ├── python--setup.sh
-    ├── node--setup.sh
-    └── ...
-```
-
-Run `booth--info` inside the container to see a quick overview of your environment.
+To learn more about how CodingBooth achieves this, data persistence rules, and in-container documentation, see the **[How It Works Guide](docs/HOW_IT_WORKS.md)**.
 
 #### For AI Agents
 
@@ -935,341 +751,22 @@ It's tempting to mount your entire `~/.config` or even `~` into the container. *
 > 🤔 **Reality check:** If you find yourself needing to seed most of your home directory, ask yourself: do you actually need a container? Maybe the friction is telling you something.
 
 
-## booth Manual
+## `booth run` Reference
 
-### Feature List
+`booth run` (or simply `./booth`) starts a containerized development environment. It handles image selection, port mapping, user permissions, and multiple run modes.
 
-### 1. Image Selection
+For the full reference, see **[booth run documentation](docs/BOOTH_RUN.md)**.
 
-**Defaults**
-- **Repository:** `nawaman/codingbooth`  
-- **Variant:** `base`  
-- **Version:** `latest`
+Key topics covered:
 
-**Overrides**
-- **Environment variables:** `IMAGE_NAME`, `IMAGE_REPO`, `IMAGE_TAG`, `VARIANT`, `VERSION`  
-- **Configuration file:** `.booth/config.toml`  
-- **CLI options:** `--variant`, `--version`, `--image`, `--dockerfile`
-
-**Precedence**
-Command-line arguments → config file → environment variables → built-in defaults
-
-> **Bootstrap note:** `--code` and `--config` are resolved from CLI (first pass) or defaults, and are not overridden by the config file or environment variables.
-
-
-**Derived Values**
-- `IMAGE_NAME` = `IMAGE_REPO:IMAGE_TAG`  
-- `IMAGE_TAG` = defaults to `${VARIANT}-${VERSION}`  
-
-> 💡 **Tip:**  
-> When both `--image` and `--dockerfile` are provided, `--image` takes precedence.  
-> Use `--dockerfile` when you want to build locally; otherwise, CodingBooth automatically pulls prebuilt images from `nawaman/codingbooth`.
-
-
-### 2. Container Name
-
-**Default**  
-- The container name defaults to a sanitized version of the current folder name.  
-  If the directory name cannot be determined, it falls back to `booth`.
-
-**Overrides**
-- **Environment variable:** `CONTAINER_NAME`  
-- **Configuration file:** `.booth/config.toml`  
-- **CLI option:** `--name <name>`
-
----
-
-> 💡 **Tip:**  
-> Using unique container names helps avoid conflicts when running multiple booth instances simultaneously.
-
-
-### 3. Config Files
-
-CodingBooth supports several configuration files that control how containers are built and launched.  
-These files let you define defaults, environment variables, and runtime parameters without cluttering your CLI commands.
-
-#### **Launcher Config (`.booth/config.toml`)**
-- Loaded after bootstrap flags are determined (`--code`, `--config`) and before full CLI parsing.
-- Defines default values for image selection, user mapping, and runtime behavior.
-- Typical keys include:
-  `variant`, `version`, `image`, `dockerfile`,
-  `name`, `host-uid`, `host-gid`, `port`, `dind`, and others.
-
-##### **Custom Argument Arrays**
-You can define three special arrays in `.booth/config.toml` to customize how the launcher interacts with Docker:
-
-- **`common-args`** – Pre-applied CLI flags merged before command-line parameters.
-  Useful for predefining commonly used options (e.g., extra ports or mounts).
-  ```toml
-  common-args = ["--variant", "codeserver", "--port", "8080"]
-  ```
-
-These behave exactly like command-line flags passed to booth.
-
-- **`build-args`** – Extra args for `docker build` when dockerfile is used.
-  For example, disable caching or pass build-time variables:
-  ```toml
-  build-args = ["--no-cache", "--build-arg", "NODE_VERSION=20"]
-  ```
-- **`run-args`** – Extra args for `docker run`.
-  These are appended automatically at launch:
-  ```toml
-  run-args = ["-e", "TZ=Asia/Bangkok", "-v", "/mnt/data:/data"]
-  ```
-- **`cmds`** – Default command to run inside the container.
-  Note: CLI `-- <cmd>` overrides this (does not append):
-  ```toml
-  cmds = ["bash", "-lc", "make test"]
-  ```
-
-> 💡 Tip:
-> These arrays allow you to version-control useful runtime and build options without hardcoding them into your CLI workflow.
-> Combined with `common-args`, you can achieve fully reproducible builds and launches with zero manual typing.
-
-#### Container Environment File (.env)
-- Passed directly to Docker using the `--env-file` option.
-- Commonly used for credentials or runtime configuration such as: `PASSWORD`, `JUPYTER_TOKEN`, `TZ`, `PROXY`, `ACB_*`, `GH_TOKEN`, etc.
-- Can be overridden with `env-file = "<path>"` in config.toml.
-- To disable, set `env-file = "none"` in config.toml.
-
-#### Local Environment File (.booth/.env-local)
-- Automatically loaded when present — no configuration needed.
-- Intended for **personal secrets** (API keys, tokens, credentials) that should never be committed.
-- **Always gitignored:** `booth init` adds `.env-local` to `.booth/.gitignore`. CodingBooth refuses to run if the file exists but is not gitignored.
-- **Merged with env-file:** When both `.booth/.env-local` and an env-file (`.env` or explicit) exist, both are passed to Docker. The env-file values **take priority** — any variable defined in both files uses the env-file value.
-- Disabling the env-file (`env-file = "none"`) does **not** disable `.env-local` — it is always included when present.
-
-> 🧩 Summary:
-> Configuration layers allow customization at three levels:
-> Build+Image: .booth/config.toml (persistent project defaults)
-> Local Secrets: .booth/.env-local (personal, gitignored, always loaded)
-> Container Environment: .env (runtime secrets and environment variables, overrides .env-local)
-> Together, they give you full control over build, run, and launcher behavior.
-
-
-### 4. Host UID/GID Handling
-
-CodingBooth ensures that all files created inside the container are owned by the same user and group as on your host system.  
-This eliminates the common “root-owned files” problem when developing inside Docker.
-
-**Defaults**
-- Automatically detects and uses your current user and group IDs:
-  ```bash
-  HOST_UID=$(id -u)
-  HOST_GID=$(id -g)
-  ```
-
-### 5. Run Modes
-
-CodingBooth supports multiple run modes to fit different workflows — from one-off commands to long-running containers.
-
-#### **Interactive Shell (Default)**
-- Launches an interactive terminal session inside the container.  
-- The container is removed automatically when you exit.
-  ```bash
-  docker run --rm -it ... $IMAGE_NAME
-  ```
-- Ideal for local development, testing, or exploratory use.
-
-#### Command Mode (-- <cmd>)
-- Executes a specific command inside the container and then exits.
-- Commands are run under a login shell for a consistent environment:
-  ```bash
-  ./booth -- echo "Hello from container"
-  ```
-- **Exit code forwarding:** When a command fails, booth silently exits with the same exit code as the command — no error message is printed. This makes booth behave like a transparent wrapper, ideal for scripting and CI/CD pipelines where you want to check `$?` or let the pipeline fail naturally.
-  ```bash
-  ./booth -- false
-  echo $?  # prints: 1
-  ```
-- Useful for automation, scripting, or CI/CD pipelines.
-
-#### Silent Mode (--silence-build)
-- Suppresses container startup messages for a cleaner output.
-- Ideal when you want commands to appear as if they're running locally:
-  ```bash
-  ./booth --variant base --silence-build -- echo "Hello"
-  # Output: Hello
-  ```
-- Combine with command mode to integrate booth commands into scripts or pipelines where only the command output matters.
-
-> ⚠️ **Note:**  
-> Silent mode only hides startup messages — the container still needs time to build (if using a custom Dockerfile) and start up.  
-> First runs or cold starts may take several seconds to minutes depending on image pull/build requirements.
-  
-#### Daemon Mode (--daemon)
-- Starts the container in the background (detached).
-- For the container variant, the container runs an infinite sleep loop to stay alive.
-- Commonly used for IDE variants (like codeserver or desktop-*) that provide persistent services.
-
-> 💡 **Tip:**  
-> In daemon mode, you can later attach to the container using:
-> `docker exec -it <container_name> bash`
-> Stop it with:
-> `docker stop <container_name>`
-
-### 6. Ports
-CodingBooth automatically manages host ↔ container port mappings for interactive and web-based variants.
-
-**Defaults Behavior**
-For the notebook and codeserver variants, the container exposes port 10000
-- If 10000 is not available, it will try 10001, then 10002, and so on.
-
-**Overrides**
-- You can customize the exposed port via:
-  - Environment variable: CB_PORT
-  - Configuration file: .booth/config.toml
-  - CLI flag: --port <number>
-- The value can beL:
-  - a fixed number (8080), or
-  - NEXT (to find the next available port -- 1000 increment), or
-  - RANDOM (to assign a random open port -- 1000 increment from 10000).
-
-> 💡 Tip:
-> When using multiple booth containers at once, consider setting CB_PORT=NEXT to avoid conflicts automatically.
-
-### 7. Pulling Images
-
-CodingBooth manages Docker image retrieval intelligently to balance performance and consistency.
-
-**Default Behavior**
-- If the specified image does not exist locally, CodingBooth will **automatically pull** it from the configured repository.  
-- If the image is already present, it reuses the local copy for faster startup.
-
-**Forced Pull**
-- Use the `--pull` flag to explicitly fetch the latest image version, even if a local copy exists:
-  ```bash
-  ./booth --pull
-  ```
-> 💡 Tip:
-> Use --pull periodically to ensure your local environment stays in sync with the latest base image, especially when sharing configurations across teams.
-
-
-### 8. Dry-Run Mode
-
-The **dry-run** mode allows you to preview exactly what CodingBooth will execute — without actually starting a container.
-
-**Usage**
-```bash
-./booth --dryrun
-```
-
-**Behavior**
-- Prints the fully assembled docker run ... command that would be executed.
-- No side effects — it does not check Docker status, pull images, or create containers.
-- Useful for debugging configuration issues or verifying CLI overrides before launch.
-
-> 💡 Tip:
-> Combine --dryrun with --verbose to see detailed variable expansion and runtime configuration.
-
-### 9. Keep Alive
-Keep the container around after it stop.
-- By default, once the container stop, it will be removed.
-- By using `--keep-alive`, the container will be kept around.
-- User can re-start the container using: `docker start <container-name>`.
-- To remove the **stop** container use: `docker rm <container-name>`.
-- To save the current state of a container as a new image:
-  ```bash
-  docker commit <container-name> <new-image-name>:<tag>
-  ```
-  > Useful if you made changes inside the container and want to keep them for future use.
-- To save an image to a file (for backup or sharing):
-  ```bash
-  docker save -o <file-name>.tar <image-name>:<tag>
-  ```
-  > Example: `docker save -o myapp.tar my-image:v1`
-- To load a previously saved image file:
-  ```bash
-  docker load -i <file-name>.tar
-  ```
-- To export a container’s filesystem as a .tar file:
-  ```bash
-  docker export -o <file-name>.tar <container-name>
-  ```
-  > This saves the filesystem only (no image metadata or history).
-- To import the exported container back as a new image:
-  ```bash
-  cat <file-name>.tar | docker import - <new-image-name>:<tag>
-  ```
-- There are more things you can do with stopped containers, please consult docker documentation for more information.
-
-### 10. Help
-
-Displays detailed usage information, supported flags, and configuration notes.
-
-**Usage**
-```bash
-./booth --help
-# or
-./booth -h
-```
-
-**Behavior**
-- Prints a full help summary including available variants, runtime options, and examples.
-- Provides hints for environment variables and configuration file structure.
-- Exits immediately after displaying help.
-
-### 11. Docker-in-Docker (DinD) Support
-
-CodingBooth supports **Docker-in-Docker (DinD)** mode, allowing you to build and run Docker containers **from inside your booth container**.  
-This feature is useful for CI/CD pipelines, containerized builds, or development environments that need access to Docker tooling.
-
----
-
-**Behavior**
-- When DinD mode is enabled, the booth container gains access to the host’s Docker daemon or runs its own isolated Docker service.  
-- The mode can operate in one of two styles:
-  1. **Socket sharing (default):** Mounts the host's Docker socket (`/var/run/docker.sock`) for direct access.
-  2. **Sidecar DinD service:** Starts a secondary "sidecar" container running the Docker daemon itself.
-
----
-
-**How It Works (Sidecar Mode)**
-
-When DinD is enabled with the sidecar approach, the launcher:
-
-1. **Creates a dedicated network** — `{container-name}-{port}-dind-net`
-2. **Starts a DinD sidecar** — A `docker:dind` container runs the Docker daemon
-3. **Shares network namespace** — The booth uses `--network container:{dind}` so `localhost` refers to the sidecar
-4. **Configures Docker access** — Sets `DOCKER_HOST=tcp://localhost:2375`
-
-```
-Host
-└── Docker
-    ├── DinD sidecar container
-    │   └── Docker daemon (:2375)
-    │       └── (your containers run here)
-    └── Booth container
-        ├── shares DinD's network (localhost = DinD)
-        └── DOCKER_HOST=tcp://localhost:2375
-```
-
-This allows the booth to run Docker commands that execute inside the isolated DinD environment.
-
----
-
-**Configuration**
-- Enable DinD by setting:
-  ```bash
-  DIND=true
-  ```
-  in your .booth/config.toml file or by passing:
-  ```bash
-  ./booth --dind
-  ```
-- Default behavior (DIND=false) disables Docker access inside the container.
-  
-**Usage Notes**
-- DinD mode may increase resource usage and startup time.
-- The sidecar approach offers stronger isolation but can be slower and more complex to manage.
-
-> 💡 **Tip:**
-> See `examples/workspaces/dind-example` for basic DinD usage and `examples/workspaces/kind-example` for KinD.
-
-
-### 12. TLS Support
-
-CodingBooth supports self-signed certificate generation for HTTPS access to web-based variants (codeserver, notebook, desktop).
+- **Image selection** — Repository, variant, version, and precedence rules
+- **Config files** — `.booth/config.toml`, `.env`, `.env-local` and custom argument arrays
+- **Run modes** — Interactive shell, command mode (`-- <cmd>`), silent mode, daemon mode
+- **Ports** — Automatic mapping, fixed ports, `NEXT`, and `RANDOM`
+- **Keep-alive** — Preserve containers for later resumption (see also [Lifecycle](docs/BOOTH_LIFECYCLE.md))
+- **Docker-in-Docker** — Build and run containers inside your booth
+- **Dry-run** — Preview the `docker run` command without executing
+- **TLS** — Self-signed certificates for HTTPS access
 
 
 ## Setup Implementation Notes
@@ -1285,96 +782,11 @@ A setup script may be required, if a tool or dependency requires:
 ### Setup Files Overview
 
 CodingBooth setup scripts follow a simple pattern that produces **three artifacts**:
+1. **Startup script**: runs once per container start, as the normal user.
+2. **Profile script**: sourced at the beginning of every shell session.
+3. **Starter wrapper**: a user-invoked command wrapper.
 
-1. **Startup script** (runs once per container start, as the normal user)  
-   - Path: `/usr/share/startup.d/<LEVEL>-cb-<thing>--startup.sh`  
-   - Purpose: one-time initialization per container boot (idempotent).  
-   - Example tasks: create user cache dirs, generate config files if missing, first-run migrations.
-
-2. **Profile script** (sourced at the beginning of every shell session)  
-   - Path: `/etc/profile.d/<LEVEL>-cb-<thing>--profile.sh`  
-   - Purpose: lightweight per-shell setup.  
-   - Example tasks: export env vars, update `PATH`, define aliases.
-
-3. **Starter wrapper** (a user-invoked command wrapper)  
-   - Path: `/usr/local/bin/<thing>`  
-   - Purpose: pre-/post-steps around the real tool, then `exec` the tool.  apt
-   - Example tasks: set tool-specific env, ensure background service is running, sanitize args.
-
-> 🧩 **From the template**  
-> - Replace `XXXXXX` with your feature/tool name (e.g., `python`, `codeserver`).  
-> - Adjust `LEVEL` (see **Profile Ordering** below).  
-> - Use `envsubst` placeholders (e.g., `$XXXXXX_VERSION`) to stamp values into generated files.  
-> - Make startup/profile code **idempotent** (safe to run multiple times).
-
----
-
-### Startup/Profile Ordering
-
-Name your scripts using this pattern:  
-`/etc/profile.d/<LEVEL>-cb-<thing>--profile.sh` and `/etc/startup.d/<LEVEL>-cb-<thing>--startup.sh`
-
-Choose `<LEVEL>` from these ranges to keep load order predictable:
-
-| Level Range | Purpose                                                               |
-|-------------|-----------------------------------------------------------------------|
-| **50–54**   | Core CodingBooth base setup                                           |
-| **55–59**   | OS / UI setup (desktop, display, browsers)                            |
-| **60–64**   | Language / platform setup (Python, Java, Node.js, Go, etc.)           |
-| **65–69**   | Language / platform extensions (venv managers, JDK tools, linters)    |
-| **70–74**   | Developer tools (IDEs, editors, notebook servers)                     |
-| **75–79**   | Tool extensions (plugins, kernels, IDE extensions)                    |
-
-> 💡 **Guideline:** Prefer **lower** levels for prerequisites and **higher** levels for dependents.  
-> For example, install Python at **60–64**, then add Jupyter kernels at **75–79**.
-
----
-
-### Setup Pattern & Conventions
-
-**Script naming**
-- Installation script (run as root): `*setup.sh` (placed in a build or image layer)
-- Generated files (by the setup script):  
-  - Startup: `/etc/startup.d/<LEVEL>-cb-<thing>--startup.sh`  
-  - Profile: `/etc/profile.d/<LEVEL>-cb-<thing>--profile.sh`  
-  - Starter: `/usr/local/bin/<thing>`
-
-**Root vs. user**
-- The *setup script itself* runs as **root** (installs packages, writes system files).  
-- **Startup** and **profile** scripts run as the **normal user** at container start or shell login, respectively.
-
-**Idempotence**
-- Startup/profile code must be safe to run multiple times.  
-- Use a sentinel when needed:
-  ```bash
-  SENTINEL="$HOME/.<thing>-startup-done"
-  [[ -f "$SENTINEL" ]] && exit 0
-  touch "$SENTINEL"
-
-**Environment variables**
-- Prefer the CB_* prefix for CodingBooth-specific variables (e.g., CB_PYTHON_HOME).
-- In profile scripts, keep exports lightweight and guarded:
-  ```bash
-  case ":$PATH:" in *":/usr/local/bin:"*) ;; *) export PATH="/usr/local/bin:$PATH";; esac
-  ```
-
-**Starter wrappers**
-- Keep wrapper logic minimal and exec the real binary:
-```bash
-# /usr/local/bin/<thing>
-# pre-steps...
-exec /usr/local/bin/real-<thing> "$@"
-```
-- Exit non-zero on failure; avoid swallowing errors.
-
-**File permissions**
-- Startup: chmod 755
-- Profile: chmod 644
-- Starter: chmod 755
-
-## Custom Setups
-You can create your own setup scripts to install any tool you need.
-Simply copy into your docker image and run it just like other setup scripts.
+For a detailed explanation of script naming conventions, profile ordering, idempotence, and environment variable logic, see the **[Booth Setup Guide](docs/BOOTH_SETUP.md)**.
 
 
 ## Troubleshooting
@@ -1462,11 +874,20 @@ run-args = [
 4. Open a new issue with your config and error message
 
 
-## Implementation Documentation
+## Documentation
+
+User-facing guides:
+
+- **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS
+- **[booth init](docs/BOOTH_INIT.md)** — Template-driven project scaffolding
+- **[booth example](docs/BOOTH_EXAMPLE.md)** — Pre-built example workspaces
+- **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)** — Container lifecycle: keep-alive, start, stop, restart, remove, prune
 
 For deeper technical details on how CodingBooth works internally, see [docs/implementations/](docs/implementations/):
 
 - **[Booth Init](docs/implementations/BOOTHINIT.md)** — Template-driven project scaffolding (`booth init` and `booth template`)
+- **[Booth Lifecycle](docs/implementations/BOOTH_LIFECYCLE.md)** — Container lifecycle management implementation
+- **[Examples](docs/implementations/EXAMPLES.md)** — Examples system and release workflow
 - **[Wrapper](docs/implementations/WRAPPER.md)** — The booth wrapper script that manages binary downloads and verification
 - **[User Permissions](docs/implementations/USER_PERMISSIONS.md)** — UID/GID mapping between host and container
 - **[Desktop + noVNC](docs/implementations/DESKTOP_NOVNC.md)** — VNC server and browser-based desktop access
@@ -1492,29 +913,29 @@ The hook only triggers when either file is staged — it won't interfere with un
 CodingBooth is built to meet **real developer needs** — simple, reproducible, and flexible without unnecessary complexity.  
 Your feedback and contributions help it evolve and stay relevant for everyone.
 
----
-
 ### 🐛 Issues & Contributions
-- Use the **[Issues page](../../issues)** to report bugs, request new features, or suggest improvements.  
-- Pull Requests are always welcome — from fixing typos to adding new setup scripts or container variants.  
-- Have a creative idea, workflow, or enhancement to share? Open an issue or discussion — we’d love to hear it.  
-- Prefer to reach out directly? Feel free to contact me through any of the links below.
 
----
+- **Report Bugs & Request Features:** Use the **[Issues page](../../issues)** to report bugs, request features, or suggest improvements.
+- **Pull Requests:** PRs are always welcome — but I reserve the right to reject any PR that doesn't align with my vision for the project.
+- **Discussions:** Have a creative idea, workflow, or enhancement to share? Open an issue or discussion — we’d love to hear it.
+- **Direct Contact:** Prefer to reach out directly? Feel free to contact me through any of the links below.
 
-### ☕ Support & Appreciation
-If CodingBooth has saved you time, simplified your setup, or made development more enjoyable —  
-you can **[buy me a coffee](https://buymeacoffee.com/NawaMan)** to show your support.  
+### 💖 Support & Appreciation
+
+If CodingBooth has saved you time, simplified your setup, or made development more enjoyable, please consider supporting the project:
+
+- **[Sponsor me on GitHub](https://github.com/sponsors/NawaMan)** ❤️
+- **[Buy me a coffee](https://buymeacoffee.com/NawaMan)** ☕
 
 Your encouragement keeps this project active — and might even help with my kids’ college fund 😄.
 
----
-
 ### 🌐 Connect
+
 Stay in touch or follow updates, insights, and development notes:
-- 🐦 Twitter/X: [@nawaman](https://x.com/nawaman)
-- 💼 LinkedIn: [nawaman](https://www.linkedin.com/in/nawaman/)
-- 📰 Blog: [nawaman.net/blog](https://nawaman.net/blog/)
+
+- 🐦 **Twitter/X:** [@nawaman](https://x.com/nawaman)
+- 💼 **LinkedIn:** [nawaman](https://www.linkedin.com/in/nawaman/)
+- 📰 **Blog:** [nawaman.net/blog](https://nawaman.net/blog/)
 
 ---
 
