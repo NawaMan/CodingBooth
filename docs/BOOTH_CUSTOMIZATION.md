@@ -1,6 +1,6 @@
 # Booth Customization Guide
 
-This guide covers how to customize a CodingBooth environment — from built-in setup scripts to creating your own templates and sharing them as recipes. If you just want to run a booth, see the [CLI Usage](../README.md#cli-usage) section of the README.
+This guide covers how to customize a CodingBooth environment — from built-in setup scripts to creating your own templates and sharing them as recipes. If you just want to run a booth, see the [Common Flags](../README.md#common-flags) section of the README.
 
 ---
 

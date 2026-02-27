@@ -73,7 +73,7 @@ Understanding what persists across container restarts is critical:
 
 **What this means:**
 - **Your code is safe** — it lives on the host and is never lost
-- **Home directory customizations** — use `.booth/home/` or `.booth/home-seed/` to persist dotfiles
+- **Home directory customizations** — use `.booth/home/` or `.booth/home-seed/` to persist dotfiles (see [Home Directory Guide](BOOTH_HOME.md))
 - **Installed tools** — add them to your `.booth/Dockerfile` (or `Boothfile`) so they're rebuilt each time
 - **Container state** — treat containers as disposable; rebuild rather than modify
 
