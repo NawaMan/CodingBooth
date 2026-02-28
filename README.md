@@ -23,12 +23,15 @@ CodingBooth maps the container's user to **your host UID and GID** — every fil
 
 ![Host-vs-Booth](docs/images/Host-vs-Booth.png)
 
+You project files are mounted inside the booth as `/home/coder/coder`. Every thing else in side the booth is isolated from the host and also ephemeral (will be lost when the booth is closed).
+
+
 ### What This Gives You
 
 - **Seamless file access** – Create, edit, and delete files inside the container, then use them on the host with no permission issues.
 - **Team-friendly** – Each developer uses their own UID and GID mapping — no more "root-owned" repositories.
 - **Project isolation** – Keep toolchains and dependencies inside the container while working directly in your project folder.
-- **Portable configuration** – `.booth/config.toml` travels with your repository, ensuring consistent setups across machines.
+- **Portable configuration** – `.booth/**` travels with your repository, ensuring consistent setups across machines.
 - **Pre-configured convenience** - multiple pre-configured setups and variants that are ready to use.
 
 
@@ -40,9 +43,15 @@ CodingBooth provides reproducible, zero-friction development environments for:
 - **Multi-Project Developers**: Isolate project dependencies in containers to prevent cross-contamination.
 - **Educators and Students**: Distribute uniform environments so everyone can focus on learning, not troubleshooting installations.
 - **Researchers and Academics**: Pause and resume work months later with guaranteed environment consistency—no rebuilding necessary.
-- **Solo Developers and Hobbyists**: Create portable, self-contained workspaces that run anywhere without bloating your host system.
+- **Solo Developers and Hobbyists**: Create portable, self-contained workspaces that run anywhere without bloating your host system with less-used tool chains.
 
 Ready to try it? Check out the [Quick Try](#quick-try) section!
+
+## Requirements
+
+- Docker
+- Bash
+- curl
 
 
 ## Quick Demo
@@ -55,7 +64,7 @@ In this demo, you can modify/build a snake game using zig, run it inside the con
 
 ### Variants
 
-CodingBooth supports multiple variants — different UIs that share the same underlying environment.
+CodingBooth supports multiple variants (different UIs that share the same underlying environment).
 
 - **Base** — A minimal terminal session.
 - **Notebook** — Jupyter Lab with multi-language kernels (Python, Bash, Java, and more).
@@ -102,53 +111,61 @@ CodingBooth provides several ready-to-use examples to get you started.
 
 1. **List available examples**:
    ```bash
-   ./booth example list
+   booth example list
    ```
 
 2. **Try an example**:
    ```bash
-   ./booth example try <example-name> <folder>
+   booth example try <example-name> <folder>
    ```
 
 3. **Start the booth**:
    ```bash
    cd <folder>
-   ./booth
+   booth
    ```
 
 At this point, you can inspect the code, modify it then build and run it.
+**NOTE:** Visit http://localhost:10000 in your browser to access the UI (except for command mode).
 
-### Try with an init
+### Try with `booth init ...`
 
 CodingBooth provides `init` and `template` commands to quickly create a new project.
 
 1. **List templates**:
    ```bash
-   ./booth template list
+   booth template list
    ```
 
 2. **Create a new project**:
    ```bash
-   ./booth init <project-name> --select <template-name>
+   booth init <project-name> --select <template-name>
    ```
    For example:
    ```bash
-   ./booth init my-project --select base+python/notebook
+   booth init my-project --select java+maven+m2/scala --select claude-code+auto-accept
    ```
+   This will setup a booth with:
+   - Java
+   - Maven
+   - bind .m2 folder from host
+   - Scala
+   - Claude Code
+   - Claude Code auto accept
 
 3. **Start the booth**:
    ```bash
    cd <project-name>
-   ./booth
+   booth
    ```
 
-Explore more with `./booth template help` and `./booth init help`. See **[booth init documentation](docs/BOOTH_INIT.md)** for the full guide.
+Explore more with `booth template help` and `booth init help`. See **[booth init documentation](docs/BOOTH_INIT.md)** for the full guide.
 
 ### Updating
 
 ```bash
-./booth install             # Update to latest version
-./booth install <version>   # Install a specific version (positional argument)
+booth install             # Update to latest version
+booth install <version>   # Install a specific version (positional argument)
 ```
 
 
@@ -173,7 +190,7 @@ Explore more with `./booth template help` and `./booth init help`. See **[booth 
 ## Common Flags
 
 ```shell
-./booth [flags] [-- command...]
+booth [flags] [-- command...]
 ```
 
 | Flag                 | Description                                                                      |
@@ -200,16 +217,16 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 
 | Command            | What it shows                               |
 |--------------------|---------------------------------------------|
-| `./booth help`     | Wrapper help (install, update, cache, etc.) |
-| `./booth --help`   | Binary help (run flags, variants, etc.)     |
-| `./booth version`  | Wrapper + binary version info               |
-| `./booth --version`| Binary version only                         |
+| `booth help`     | Wrapper help (install, update, cache, etc.) |
+| `booth --help`   | Binary help (run flags, variants, etc.)     |
+| `booth version`  | Wrapper + binary version info               |
+| `booth --version`| Binary version only                         |
 
-### Related Commands
+### Additional Commands
 
-- **Templates & scaffolding:** `./booth template list`, `./booth init` — see **[booth init](docs/BOOTH_INIT.md)**
-- **Container lifecycle:** `./booth start`, `./booth stop`, `./booth list`, `./booth prune` — see **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)**
-- **Examples:** `./booth example list`, `./booth example try` — see **[booth example](docs/BOOTH_EXAMPLE.md)**
+- **Templates & scaffolding:** `booth template list`, `booth init` — see **[booth init](docs/BOOTH_INIT.md)**
+- **Container lifecycle:** `booth start`, `booth stop`, `booth list`, `booth prune` — see **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)**
+- **Examples:** `booth example list`, `booth example try` — see **[booth example](docs/BOOTH_EXAMPLE.md)**
 
 
 ## Command Passthrough
@@ -217,9 +234,9 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 Use `--` to run commands inside the container and exit:
 
 ```shell
-./booth -- make test
-./booth -- echo "Hello from container"
-./booth -- python -c "print('hello')"
+booth -- make test
+booth -- echo "Hello from container"
+booth -- python -c "print('hello')"
 ```
 
 Exit codes are forwarded — booth exits with the same code as the command.
@@ -227,8 +244,8 @@ Exit codes are forwarded — booth exits with the same code as the command.
 Combine with `--silence-build` for clean scripted output:
 
 ```shell
-./booth --silence-build -- echo "Hello"
-# Output: Hello
+> booth --silence-build -- echo "Hello"
+Hello
 ```
 
 
@@ -379,7 +396,7 @@ This usually means the container's user doesn't match your host user. CodingBoot
 id
 
 # Verify booth is passing them correctly
-./booth --dryrun --verbose | grep HOST_UID
+booth --dryrun --verbose | grep HOST_UID
 ```
 
 ### "Port already in use"
@@ -389,10 +406,10 @@ id
 lsof -i :10000
 
 # Use a different port
-./booth --port 10001
+booth --port 10001
 
 # Or let CodingBooth find the next available port
-./booth --port NEXT
+booth --port NEXT
 ```
 
 ### "Container exits immediately"
@@ -404,7 +421,7 @@ Common causes:
 
 ```bash
 # Debug by getting a shell instead
-./booth --variant base
+booth --variant base
 
 # Check container logs
 docker logs <container-name>
