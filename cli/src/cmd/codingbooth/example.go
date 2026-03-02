@@ -296,9 +296,7 @@ func extractZip(zipPath, destPath, stripPrefix string) error {
 	for _, f := range r.File {
 		// Strip the prefix directory
 		name := f.Name
-		if strings.HasPrefix(name, prefix) {
-			name = strings.TrimPrefix(name, prefix)
-		}
+		name = strings.TrimPrefix(name, prefix)
 		if name == "" {
 			continue
 		}

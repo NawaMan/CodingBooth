@@ -47,7 +47,7 @@ The sandbox uses a multi-layer defense approach:
 │  │  │    namespace          │  │  - RBAC domain filter  │  │  │
 │  │  │  - iptables firewall  │  │  - Port 15001          │  │  │
 │  │  └───────────▲───────────┘  └────────────▲───────────┘  │  │
-│  │              │  Shared network namespace  │              │  │
+│  │              │  Shared network namespace │              │  │
 │  │  ┌───────────┴───────────────────────────┴───────────┐  │  │
 │  │  │   Booth Container                                 │  │  │
 │  │  │                                                   │  │  │

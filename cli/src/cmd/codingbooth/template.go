@@ -82,7 +82,10 @@ func runTemplateList(version string, args []string) {
 		registry = registry.FilterPrimary()
 	}
 
-	tmpl.FormatRegistryList(os.Stdout, registry, false) // hide auto-select extensions in list
+	tmpl.FormatRegistryList(os.Stdout, registry, true) // show auto-select extensions in list
+
+	fmt.Println()
+	fmt.Println("  * Auto-selected extension")
 
 	if !flags.full {
 		fmt.Println("\nUse --full to see all available templates.")

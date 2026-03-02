@@ -31,6 +31,7 @@ func TestComputeNameWidth_BasicTemplates(t *testing.T) {
 }
 
 func TestComputeNameWidth_WithExtensions(t *testing.T) {
+	autoSelect := true
 	registry := &TemplateRegistry{
 		Categories: []*Category{
 			{
@@ -40,6 +41,7 @@ func TestComputeNameWidth_WithExtensions(t *testing.T) {
 						DisplayName: "Go",
 						Extensions: []*Template{
 							{Name: "linter", DisplayName: "Go Linter"},
+							{Name: "vscode", DisplayName: "Go VS Code", AutoSelect: &autoSelect},
 						},
 					},
 				},
@@ -47,8 +49,8 @@ func TestComputeNameWidth_WithExtensions(t *testing.T) {
 		},
 	}
 	nameW := computeNameWidth(registry, true)
-	// Extension "linter" (6 chars) + 4 indent = 10, vs "go" (2 chars). Max = 10.
-	assert.Equal(t, 10, nameW)
+	// Extension "vscode" (6) + 1 (auto) + 4 indent = 11. "linter" is 10. Max = 11.
+	assert.Equal(t, 11, nameW)
 }
 
 func TestComputeNameWidth_EmptyRegistry(t *testing.T) {
@@ -165,8 +167,9 @@ func TestFormatRegistryList_ShowsAllExtensionsWhenEnabled(t *testing.T) {
 
 	// Both extensions should appear with includeAutoExtensions=true
 	assert.Contains(t, output, "    + linter")
-	assert.Contains(t, output, "    + vscode-ext")
-	assert.Contains(t, output, "Go VS Code extension (auto)")
+	assert.Contains(t, output, "    + vscode-ext*")
+	assert.Contains(t, output, "Go VS Code extension")
+	assert.NotContains(t, output, "(auto)")
 }
 
 func TestFormatRegistryList_ShowsDescriptions(t *testing.T) {
@@ -218,7 +221,9 @@ func TestFormatRegistryList_AutoSelectIndicator(t *testing.T) {
 	FormatRegistryList(&buf, registry, true)
 	output := buf.String()
 
-	assert.Contains(t, output, "Go VS Code extension (auto)")
+	assert.Contains(t, output, "vscode-ext*")
+	assert.Contains(t, output, "Go VS Code extension")
+	assert.NotContains(t, output, "(auto)")
 }
 
 func TestFormatRegistryList_CategoryOrder(t *testing.T) {

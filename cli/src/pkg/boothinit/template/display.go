@@ -37,11 +37,12 @@ func FormatRegistryList(w io.Writer, registry *TemplateRegistry, includeAutoExte
 					continue
 				}
 				desc := ext.DisplayDesc
+				extName := ext.Name
 				if isAuto {
-					desc += " (auto)"
+					extName += "*"
 				}
 				fmt.Fprintf(w, "    + %-*s  %s\n",
-					nameWidth-4, ext.Name,
+					nameWidth-4, extName,
 					desc)
 			}
 		}
@@ -108,16 +109,21 @@ func FormatTemplateDetail(w io.Writer, t *Template, registry *TemplateRegistry, 
 		fmt.Fprintln(w, "Extensions:")
 		nameW := 0
 		for _, ext := range t.Extensions {
-			if len(ext.Name) > nameW {
-				nameW = len(ext.Name)
+			nameLen := len(ext.Name)
+			if ext.AutoSelect != nil && *ext.AutoSelect {
+				nameLen += 1
+			}
+			if nameLen > nameW {
+				nameW = nameLen
 			}
 		}
 		for _, ext := range t.Extensions {
 			desc := ext.DisplayDesc
+			extName := ext.Name
 			if ext.AutoSelect != nil && *ext.AutoSelect {
-				desc += " (auto)"
+				extName += "*"
 			}
-			fmt.Fprintf(w, "  %-*s  %s\n", nameW, ext.Name, desc)
+			fmt.Fprintf(w, "  %-*s  %s\n", nameW, extName, desc)
 		}
 	}
 
@@ -218,8 +224,12 @@ func computeNameWidth(registry *TemplateRegistry, includeExtensions bool) int {
 			}
 			if includeExtensions {
 				for _, ext := range t.Extensions {
-					if len(ext.Name)+4 > nameWidth {
-						nameWidth = len(ext.Name) + 4
+					extW := len(ext.Name) + 4
+					if ext.AutoSelect != nil && *ext.AutoSelect {
+						extW += 1
+					}
+					if extW > nameWidth {
+						nameWidth = extW
 					}
 				}
 			}

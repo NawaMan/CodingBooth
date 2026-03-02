@@ -23,7 +23,7 @@ CodingBooth maps the container's user to **your host UID and GID** — every fil
 
 ![Host-vs-Booth](docs/images/Host-vs-Booth.png)
 
-You project files are mounted inside the booth as `/home/coder/coder`. Every thing else in side the booth is isolated from the host and also ephemeral (will be lost when the booth is closed).
+Your project files are mounted inside the booth as `/home/coder/code`. Everything else inside the booth is isolated from the host and also ephemeral (will be lost when the booth is closed).
 
 
 ### What This Gives You
@@ -43,11 +43,22 @@ CodingBooth provides reproducible, zero-friction development environments for:
 - **Multi-Project Developers**: Isolate project dependencies in containers to prevent cross-contamination.
 - **Educators and Students**: Distribute uniform environments so everyone can focus on learning, not troubleshooting installations.
 - **Researchers and Academics**: Pause and resume work months later with guaranteed environment consistency—no rebuilding necessary.
-- **Solo Developers and Hobbyists**: Create portable, self-contained workspaces that run anywhere without bloating your host system with less-used tool chains.
+- **Solo Developers and Hobbyists**: Create portable, self-contained workspaces that run anywhere without bloating your host system with less-used toolchains.
 
 Ready to try it? Check out the [Quick Try](#quick-try) section!
 
-## Requirements
+## Support and Requirements
+
+### Support
+
+- Linux
+- MacOS
+- Windows
+
+- x86 64bit
+- ARM 64bit
+
+### Requirements
 
 - Docker
 - Bash
@@ -60,7 +71,7 @@ Ready to try it? Check out the [Quick Try](#quick-try) section!
 
 Click the image to watch the demo.
 
-In this demo, you can modify/build a snake game using zig, run it inside the container and use the cross-platform binary on the host without having the zig toolchain installed on the host.
+In this demo, I show that the project is a Snake game using Zig, but the host does not have the Zig toolchain installed. Once inside the booth, you can modify and build the game using Zig, run it inside the container, and use the resulting cross-platform binary on the host without having the Zig toolchain installed on the host.
 
 ### Variants
 
@@ -125,7 +136,7 @@ CodingBooth provides several ready-to-use examples to get you started.
    booth
    ```
 
-At this point, you can inspect the code, modify it then build and run it.
+At this point, you can inspect the code, modify it, then build and run it.
 **NOTE:** Visit http://localhost:10000 in your browser to access the UI (except for command mode).
 
 ### Try with `booth init ...`
@@ -145,7 +156,7 @@ CodingBooth provides `init` and `template` commands to quickly create a new proj
    ```bash
    booth init my-project --select java+maven+m2/scala --select claude-code+auto-accept
    ```
-   This will setup a booth with:
+   This will set up a booth with:
    - Java
    - Maven
    - bind .m2 folder from host
@@ -317,11 +328,11 @@ my-project/
 
 CodingBooth mirrors your host identity inside the booth — you work as yourself, not as root. This results in a seamless development environment with no permission headaches.
 
-Who ever the user is on your host, the booth will run as `coder` user.
+Whoever the user is on your host, the booth will run as the `coder` user.
 
-Only your project folder is mounted inside the booth as `/home/coder/coder`.
+Only your project folder is mounted inside the booth as `/home/coder/code`.
 
-The files in folder `.booth` will be mounted inside the booth as `/home/coder/code/.booth` but it will be made readonly by default. You can use `--writable-booth` to make it writable.
+The files in the `.booth` folder will be mounted inside the booth as `/home/coder/code/.booth` but will be made read-only by default. You can use `--writable-booth` to make them writable.
 
 To learn more about how CodingBooth achieves this, data persistence rules, and in-container documentation, see the **[How It Works Guide](docs/HOW_IT_WORKS.md)**.
 

@@ -419,10 +419,34 @@ else
   "$VNCBIN" "$DISPLAY" -geometry "$GEOMETRY" -localhost yes "${VNCAUTH_OPTS[@]}"
 fi
 
-# start noVNC in foreground
+# start noVNC in background, monitor VNC server for desktop logout
 echo "🌐 noVNC: http://localhost:${NOVNC_PORT}/vnc.html?autoconnect=1&host=localhost&port=${NOVNC_PORT}&path=websockify&resize=scale"
-trap 'echo; echo "🛑 stopping…"; "$VNCBIN" -kill "$DISPLAY" || true; exit 0' INT TERM
-exec websockify --web=/usr/share/novnc "0.0.0.0:${NOVNC_PORT}" "localhost:${VNC_PORT}"
+websockify --web=/usr/share/novnc "0.0.0.0:${NOVNC_PORT}" "localhost:${VNC_PORT}" &
+WS_PID=$!
+
+cleanup() {
+  echo
+  echo "🛑 stopping…"
+  kill $WS_PID 2>/dev/null || true
+  "$VNCBIN" -kill "$DISPLAY" || true
+  wait $WS_PID 2>/dev/null || true
+  exit 0
+}
+trap cleanup INT TERM
+
+# Wait for VNC server to exit (e.g. desktop logout/shutdown)
+VNC_PIDFILE="${HOME}/.vnc/$(hostname)${DISPLAY}.pid"
+while true; do
+  VNC_PID=$(cat "$VNC_PIDFILE" 2>/dev/null) || break
+  kill -0 "$VNC_PID" 2>/dev/null         || break
+  sleep 2
+done
+
+echo
+echo "🖥️  Desktop session ended."
+kill $WS_PID 2>/dev/null || true
+wait $WS_PID 2>/dev/null || true
+exit 0
 EOF
 chmod 0755 ${STARTER_FILE}
 
