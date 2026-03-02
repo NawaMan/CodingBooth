@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth--shutdown
+#
+# Gracefully shut down the CodingBooth container from within.
+# Sends SIGTERM to all processes owned by the current user, which causes
+# the main service (code-server, VNC, jupyter, ttyd, etc.) to exit,
+# followed by runuser, tini, and the container itself.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+echo "🛑 Shutting down CodingBooth..."
+kill -TERM -1
