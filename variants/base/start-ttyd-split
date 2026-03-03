@@ -30,6 +30,9 @@ for i in "${!SESSION_NAMES[@]}"; do
     ttyd "${ttyd_args[@]}" bash -l &
 done
 
+# Shutdown endpoint — runs booth--shutdown when a WebSocket client connects
+ttyd -i 127.0.0.1 -p 10005 -b /shutdown booth--shutdown &
+
 export PORT
 export BOOTH_CONTAINER_NAME="${BOOTH_CONTAINER_NAME:-CodingBooth}"
 export BOOTH_HOST_PORT="${BOOTH_HOST_PORT:-$PORT}"

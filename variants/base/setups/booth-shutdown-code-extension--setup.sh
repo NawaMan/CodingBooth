@@ -63,14 +63,24 @@ function activate(context) {
   context.subscriptions.push(
     vscode.commands.registerCommand("codingbooth.shutdown", async () => {
       const answer = await vscode.window.showWarningMessage(
-        "Are you sure you want to shut down CodingBooth?",
-        { modal: true },
+        "Shut down this CodingBooth container?",
+        { modal: true, detail: "All terminal sessions will be closed and the container will stop." },
         "Shut Down"
       );
-      if (answer === "Shut Down") {
-        vscode.window.showInformationMessage("Shutting down CodingBooth...");
-        exec("booth--shutdown");
-      }
+      if (answer !== "Shut Down") return;
+
+      vscode.window.withProgress(
+        {
+          location: vscode.ProgressLocation.Notification,
+          title: "Shutting down CodingBooth\u2026",
+          cancellable: false
+        },
+        () => new Promise((resolve) => {
+          exec("booth--shutdown", () => resolve());
+          // Resolve after a timeout in case the process is killed before callback fires
+          setTimeout(resolve, 10000);
+        })
+      );
     })
   );
 

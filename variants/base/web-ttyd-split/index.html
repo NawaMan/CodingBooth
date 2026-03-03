@@ -100,6 +100,131 @@
       white-space: nowrap;
     }
 
+    button.shutdown {
+      border-color: #c0392b;
+      color: #e74c3c;
+      background: rgba(231, 76, 60, 0.08);
+      margin-left: 6px;
+    }
+
+    button.shutdown:hover {
+      background: rgba(231, 76, 60, 0.18);
+    }
+
+    button.shutdown:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    /* ── Shutdown dialog ── */
+    .dialog-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: none;
+      place-items: center;
+      background: rgba(0, 0, 0, 0.55);
+      backdrop-filter: blur(4px);
+    }
+
+    .dialog-overlay.visible {
+      display: grid;
+    }
+
+    .dialog-box {
+      background: #1a2233;
+      border: 1px solid var(--panel-edge);
+      border-radius: 14px;
+      padding: 28px 32px 24px;
+      min-width: 340px;
+      max-width: 420px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+
+    .dialog-icon {
+      font-size: 32px;
+      margin-bottom: 12px;
+      line-height: 1;
+    }
+
+    .dialog-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .dialog-message {
+      font-size: 13px;
+      color: var(--muted);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    .dialog-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .dialog-actions button {
+      min-width: 100px;
+      padding: 8px 18px;
+      font-size: 13px;
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    .btn-cancel {
+      border: 1px solid var(--panel-edge);
+      background: var(--panel);
+      color: var(--text);
+    }
+
+    .btn-cancel:hover {
+      background: #1e2a3a;
+    }
+
+    .btn-danger {
+      border: 1px solid #c0392b;
+      background: #e74c3c;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .btn-danger:hover {
+      background: #c0392b;
+    }
+
+    /* Shutting-down state */
+    .dialog-spinner {
+      display: inline-block;
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(231, 76, 60, 0.25);
+      border-top-color: #e74c3c;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+      margin-bottom: 14px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .dialog-check {
+      display: inline-block;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: rgba(46, 204, 113, 0.15);
+      color: #2ecc71;
+      font-size: 20px;
+      line-height: 36px;
+      margin-bottom: 14px;
+    }
+
     .grid {
       --pane-gap: 8px;
       --gap-half: calc(var(--pane-gap) / 2);
@@ -301,6 +426,7 @@
         <button id="reload">Reload</button>
       </div>
       <span id="status">1 session active</span>
+      <button id="shutdown" class="shutdown" title="Shut down this CodingBooth container">&#x23FB; Shut Down</button>
     </header>
 
     <main id="grid" class="grid layout-single">
@@ -325,6 +451,34 @@
     </main>
   </div>
   <div id="drag-overlay" class="drag-overlay" aria-hidden="true"></div>
+
+  <!-- Shutdown confirmation / progress dialog -->
+  <div id="shutdown-dialog" class="dialog-overlay" aria-hidden="true">
+    <div class="dialog-box">
+      <!-- Confirm state -->
+      <div id="dialog-confirm">
+        <div class="dialog-icon">&#x23FB;</div>
+        <div class="dialog-title">Shut Down CodingBooth?</div>
+        <div class="dialog-message">All terminal sessions will be closed and the container will stop.</div>
+        <div class="dialog-actions">
+          <button class="btn-cancel" id="dialog-cancel">Cancel</button>
+          <button class="btn-danger" id="dialog-proceed">Shut Down</button>
+        </div>
+      </div>
+      <!-- Shutting-down state -->
+      <div id="dialog-progress" style="display:none">
+        <div class="dialog-spinner"></div>
+        <div class="dialog-title">Shutting down&hellip;</div>
+        <div class="dialog-message">The container is stopping.</div>
+      </div>
+      <!-- Stopped state -->
+      <div id="dialog-stopped" style="display:none">
+        <div class="dialog-check">&#x2713;</div>
+        <div class="dialog-title">Container stopped</div>
+        <div class="dialog-message">You can close this tab.</div>
+      </div>
+    </div>
+  </div>
 
   <script>
     (() => {
@@ -683,6 +837,59 @@
             iframe.contentWindow.location.reload();
           }
         });
+      });
+
+      const shutdownButton = document.getElementById("shutdown");
+      const shutdownDialog = document.getElementById("shutdown-dialog");
+      const dialogConfirm = document.getElementById("dialog-confirm");
+      const dialogProgress = document.getElementById("dialog-progress");
+      const dialogStopped = document.getElementById("dialog-stopped");
+      const dialogCancel = document.getElementById("dialog-cancel");
+      const dialogProceed = document.getElementById("dialog-proceed");
+
+      function openShutdownDialog() {
+        dialogConfirm.style.display = "";
+        dialogProgress.style.display = "none";
+        dialogStopped.style.display = "none";
+        shutdownDialog.classList.add("visible");
+        shutdownDialog.setAttribute("aria-hidden", "false");
+      }
+
+      function closeShutdownDialog() {
+        shutdownDialog.classList.remove("visible");
+        shutdownDialog.setAttribute("aria-hidden", "true");
+      }
+
+      function showStopped() {
+        dialogProgress.style.display = "none";
+        dialogStopped.style.display = "";
+        status.textContent = "Container stopped";
+      }
+
+      function performShutdown() {
+        dialogConfirm.style.display = "none";
+        dialogProgress.style.display = "";
+        shutdownButton.disabled = true;
+        shutdownButton.textContent = "\u23FB Shutting down\u2026";
+        status.textContent = "Shutting down\u2026";
+        var wsProto = location.protocol === "https:" ? "wss:" : "ws:";
+        var ws = new WebSocket(wsProto + "//" + location.host + "/shutdown/ws", ["tty"]);
+        ws.onopen = function () {
+          // ttyd spawns the command when it receives a JSON_DATA message
+          // (first byte '{' is the message type identifier)
+          ws.send(JSON.stringify({ columns: 80, rows: 24 }));
+        };
+        ws.onclose = function () { showStopped(); };
+        ws.onerror = function () { showStopped(); };
+      }
+
+      shutdownButton.addEventListener("click", openShutdownDialog);
+      dialogCancel.addEventListener("click", closeShutdownDialog);
+      dialogProceed.addEventListener("click", performShutdown);
+      shutdownDialog.addEventListener("click", (e) => {
+        if (e.target === shutdownDialog && dialogConfirm.style.display !== "none") {
+          closeShutdownDialog();
+        }
       });
 
       applySplitVariables();
