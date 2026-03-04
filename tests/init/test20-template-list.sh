@@ -71,8 +71,8 @@ assert-contains "$tmpfile" "Go toolchain"            "list: go has description"
 # Test 4: Non-auto extension appears in list
 assert-contains "$tmpfile" "    + linter"            "list: linter extension appears"
 
-# Test 5: Auto-select extension is hidden
-assert-not-contains "$tmpfile" "    + vscode-ext"    "list: auto-select vscode-ext hidden"
+# Test 5: Auto-select extension shown with * marker
+assert-contains "$tmpfile" "    + vscode-ext\*"      "list: auto-select vscode-ext shown with *"
 
 # Test 6: Footer hint for --full
 assert-contains "$tmpfile" "^Use --full"             "list: --full hint in footer"

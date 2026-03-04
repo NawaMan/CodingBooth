@@ -48,8 +48,8 @@ OTHER COMMANDS:
   LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune
   PROJECT   | Set up and scaffold new projects | example, init, template
 
-Run 'codingbooth help <command>'   for command-specific help.
-Run 'codingbooth help --detail'    for the full reference."
+Run 'codingbooth --help <command>'   for command-specific help.
+Run 'codingbooth --help --detail'    for the full reference."
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Help output matches expected"

@@ -2,6 +2,18 @@
 
 This file contains a list of changes for each released version.
 
+## 0.29.0
+
+- Booth shutdown — gracefully stop the container from within
+  - `booth--shutdown` command (sends SIGTERM to all user processes)
+  - VS Code / code-server extension: "CodingBooth: Shut Down" command palette entry and status-bar button
+  - Shutdown button in split-view ttyd web UI with confirmation dialog
+  - Desktop variants (XFCE, KDE, LXQT) detect desktop logout and shut down cleanly
+- `booth template list` now shows auto-select extensions with `*` marker instead of `(auto)` suffix
+- Documentation overhaul — new standalone pages: How It Works, Lifecycle, Run, Init, Examples, Home, Setup, Variants, Sandbox implementation
+- Simplified README with links to new doc pages
+- Documentation images
+
 ## 0.28.0
 
 - New templates: DBeaver, CloudBeaver (with autostart and expose extensions), PostgreSQL, Remotion
