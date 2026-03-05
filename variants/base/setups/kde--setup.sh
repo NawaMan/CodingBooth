@@ -368,7 +368,8 @@ fi
 pkill -f kscreenlocker || true
 
 # start noVNC in background, monitor VNC server for desktop logout
-echo "🌐 noVNC: http://localhost:${NOVNC_PORT}/vnc.html?autoconnect=1&host=localhost&port=${NOVNC_PORT}&path=websockify&resize=scale"
+DISPLAY_PORT="${BOOTH_HOST_PORT:-${NOVNC_PORT}}"
+echo "🌐 noVNC: http://localhost:${DISPLAY_PORT}/vnc.html?autoconnect=1&host=localhost&port=${DISPLAY_PORT}&path=websockify&resize=scale"
 websockify --web=/usr/share/novnc "0.0.0.0:${NOVNC_PORT}" "localhost:${VNC_PORT}" &
 WS_PID=$!
 

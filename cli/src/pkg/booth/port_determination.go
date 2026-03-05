@@ -69,7 +69,7 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 	builder.PortNumber = portNumber
 	builder.PortGenerated = portGenerated
 
-	if (portGenerated || ctx.Verbose()) && ctx.Cmds().Length() == 0 {
+	if (portGenerated || portNumber != 10000 || ctx.Verbose()) && ctx.Cmds().Length() == 0 {
 		printPortBanner(portNumber, ctx.Public())
 	}
 
