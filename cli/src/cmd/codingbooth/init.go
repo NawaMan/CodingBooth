@@ -91,7 +91,14 @@ Examples:
   codingbooth init new --select python --port 10080
   codingbooth init new --select python --cmd bash
   codingbooth init new --select go --set keep-alive --set name=my-booth
-  codingbooth init new --select go --set dind --set port=8080`)
+  codingbooth init new --select go --set dind --set port=8080
+
+Package management:
+  codingbooth init new --select "nodejs+npm-pkg:express,typescript"
+  codingbooth init new --select "python+pip-pkg:numpy,pandas"
+  codingbooth init new --select "rust+cargo-pkg:ripgrep,fd-find"
+  codingbooth init new --select "nodejs+npm-install"
+  codingbooth init new --select "java+maven+mvn-install"`)
 }
 
 type initFlags struct {
