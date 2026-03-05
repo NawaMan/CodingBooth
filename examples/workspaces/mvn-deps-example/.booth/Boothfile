@@ -1,0 +1,13 @@
+# syntax=codingbooth/boothfile:1
+
+# Maven Deps Example
+# Pre-downloads Maven dependencies from pom.xml
+
+setup jdk 21
+setup mvn
+run --mount=type=bind,target=/tmp/ctx \
+  if [ -f /tmp/ctx/pom.xml ]; then \
+    mkdir -p /opt/mvn-cache \
+    && cp /tmp/ctx/pom.xml /opt/mvn-cache/ \
+    && cd /opt/mvn-cache && mvn dependency:resolve -B -q; \
+  fi

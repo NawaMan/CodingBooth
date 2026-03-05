@@ -1,0 +1,14 @@
+display-name = "pecl Packages"
+display-disc = "Install PHP extensions via pecl"
+display-order = 10
+auto-select = false
+tags = ["php", "pecl", "packages"]
+
+[params.PECL_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install pecl ${PECL_PKGS}
+"""

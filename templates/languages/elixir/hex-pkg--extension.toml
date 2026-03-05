@@ -1,0 +1,14 @@
+display-name = "hex Packages"
+display-disc = "Install Elixir/Erlang packages globally via mix"
+display-order = 10
+auto-select = false
+tags = ["elixir", "hex", "packages"]
+
+[params.HEX_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install hex ${HEX_PKGS}
+"""

@@ -1,0 +1,15 @@
+display-name = "go mod download"
+display-disc = "Pre-download Go module dependencies into the image"
+display-order = 15
+auto-select = false
+tags = ["go", "packages"]
+
+[segments]
+"Boothfile--90" = """
+run --mount=type=bind,target=/tmp/ctx \
+  if [ -f /tmp/ctx/go.mod ]; then \
+    mkdir -p /opt/go-mod-cache \
+    && cp /tmp/ctx/go.mod /tmp/ctx/go.sum /opt/go-mod-cache/ 2>/dev/null || true \
+    && cd /opt/go-mod-cache && GOPATH=/home/coder/go go mod download; \
+  fi
+"""

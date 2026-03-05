@@ -1,0 +1,14 @@
+display-name = "yarn Packages"
+display-disc = "Install global yarn packages"
+display-order = 11
+auto-select = false
+tags = ["nodejs", "yarn", "packages"]
+
+[params.YARN_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install yarn ${YARN_PKGS}
+"""

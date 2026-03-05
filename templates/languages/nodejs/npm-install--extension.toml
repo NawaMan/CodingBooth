@@ -1,0 +1,23 @@
+display-name = "npm install"
+display-disc = "Pre-install npm dependencies from package.json into the image"
+display-order = 15
+auto-select = false
+tags = ["nodejs", "npm", "packages"]
+
+[segments]
+"Boothfile--90" = """
+run --mount=type=bind,target=/tmp/ctx \
+  if [ -f /tmp/ctx/package.json ]; then \
+    mkdir -p /opt/npm-cache \
+    && cp /tmp/ctx/package.json /opt/npm-cache/ \
+    && cp /tmp/ctx/package-lock.json /opt/npm-cache/ 2>/dev/null || true \
+    && cd /opt/npm-cache && npm install; \
+  fi
+"""
+"startup--60.sh" = """
+# Restore pre-installed node_modules from image cache if missing
+if [ -d /opt/npm-cache/node_modules ] && [ ! -d node_modules ]; then
+  echo "📦 Restoring cached node_modules ..."
+  cp -a /opt/npm-cache/node_modules .
+fi
+"""

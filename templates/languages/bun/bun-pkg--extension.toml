@@ -1,0 +1,14 @@
+display-name = "bun Packages"
+display-disc = "Install global bun packages"
+display-order = 10
+auto-select = false
+tags = ["bun", "packages"]
+
+[params.BUN_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install bun ${BUN_PKGS}
+"""

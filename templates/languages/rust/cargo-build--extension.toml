@@ -1,0 +1,16 @@
+display-name = "cargo fetch"
+display-disc = "Pre-download Cargo dependencies into the image"
+display-order = 15
+auto-select = false
+tags = ["rust", "cargo", "packages"]
+
+[segments]
+"Boothfile--90" = """
+run --mount=type=bind,target=/tmp/ctx \
+  if [ -f /tmp/ctx/Cargo.toml ]; then \
+    mkdir -p /opt/cargo-cache \
+    && cp /tmp/ctx/Cargo.toml /opt/cargo-cache/ \
+    && cp /tmp/ctx/Cargo.lock /opt/cargo-cache/ 2>/dev/null || true \
+    && cd /opt/cargo-cache && cargo fetch; \
+  fi
+"""

@@ -1,0 +1,15 @@
+display-name = "mvn dependency:resolve"
+display-disc = "Pre-download Maven dependencies into the image"
+display-order = 20
+auto-select = false
+tags = ["java", "maven", "packages"]
+
+[segments]
+"Boothfile--90" = """
+run --mount=type=bind,target=/tmp/ctx \
+  if [ -f /tmp/ctx/pom.xml ]; then \
+    mkdir -p /opt/mvn-cache \
+    && cp /tmp/ctx/pom.xml /opt/mvn-cache/ \
+    && cd /opt/mvn-cache && mvn dependency:resolve -B -q; \
+  fi
+"""

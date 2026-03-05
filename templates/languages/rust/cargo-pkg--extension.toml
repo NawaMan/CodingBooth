@@ -1,0 +1,14 @@
+display-name = "cargo Packages"
+display-disc = "Install Rust crates globally via cargo install"
+display-order = 10
+auto-select = false
+tags = ["rust", "cargo", "packages"]
+
+[params.CARGO_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install cargo ${CARGO_PKGS}
+"""

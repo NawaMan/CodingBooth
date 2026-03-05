@@ -224,10 +224,45 @@ All templates and extensions grouped by segment order.
 | `ruby/kernel--extension`     | Ruby Notebook Kernel   |
 | `rust/kernel--extension`     | Rust Notebook Kernel   |
 
+### Order 60 — Package manager extensions (global package installation)
+
+| Extension                       | Display Name     |
+|---------------------------------|------------------|
+| `bun/bun-pkg--extension`        | bun Packages     |
+| `elixir/hex-pkg--extension`     | Hex Packages     |
+| `go/go-pkg--extension`          | Go Packages      |
+| `haskell/cabal-pkg--extension`  | Cabal Packages   |
+| `lua/luarocks-pkg--extension`   | LuaRocks Packages|
+| `nodejs/npm-pkg--extension`     | npm Packages     |
+| `nodejs/yarn-pkg--extension`    | Yarn Packages    |
+| `php/pecl-pkg--extension`       | PECL Packages    |
+| `python/conda-pkg--extension`   | Conda Packages   |
+| `python/pip-pkg--extension`     | pip Packages     |
+| `python/uv-pkg--extension`      | uv Packages      |
+| `ruby/gem-pkg--extension`       | Gem Packages     |
+| `rust/cargo-pkg--extension`     | Cargo Packages   |
+| `tools/brew-pkg`                | brew Packages    |
+
 ### Order 90 — Post-setup steps
 
-| Extension                  | Display Name     |
-|----------------------------|------------------|
-| `python/conda--extension`  | Conda            |
-| `python/pip--extension`    | pip requirements |
-| `python/uv--extension`     | uv               |
+| Extension                             | Display Name              |
+|---------------------------------------|---------------------------|
+| `python/conda--extension`             | Conda                     |
+| `python/pip--extension`               | pip requirements          |
+| `python/uv--extension`                | uv                        |
+
+### Order 90 — Dependency pre-installation (from manifest files)
+
+| Extension                             | Display Name              |
+|---------------------------------------|---------------------------|
+| `bun/bun-install--extension`          | bun install               |
+| `elixir/mix-deps--extension`          | Mix Dependencies          |
+| `go/go-mod--extension`                | Go Modules                |
+| `java/gradle-deps--extension`         | Gradle Dependencies       |
+| `java/mvn-install--extension`         | Maven Dependencies        |
+| `nodejs/npm-install--extension`       | npm install               |
+| `nodejs/pnpm-install--extension`      | pnpm install              |
+| `nodejs/yarn-install--extension`      | Yarn install              |
+| `php/composer-install--extension`     | Composer install          |
+| `ruby/bundle-install--extension`      | Bundle install            |
+| `rust/cargo-build--extension`         | Cargo Build               |

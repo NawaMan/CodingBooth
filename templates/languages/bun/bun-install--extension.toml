@@ -1,0 +1,23 @@
+display-name = "bun install"
+display-disc = "Pre-install bun dependencies from package.json into the image"
+display-order = 15
+auto-select = false
+tags = ["bun", "packages"]
+
+[segments]
+"Boothfile--90" = """
+run --mount=type=bind,target=/tmp/ctx \
+  if [ -f /tmp/ctx/package.json ]; then \
+    mkdir -p /opt/bun-cache \
+    && cp /tmp/ctx/package.json /opt/bun-cache/ \
+    && cp /tmp/ctx/bun.lockb /opt/bun-cache/ 2>/dev/null || true \
+    && cd /opt/bun-cache && bun install; \
+  fi
+"""
+"startup--60.sh" = """
+# Restore pre-installed node_modules from image cache if missing
+if [ -d /opt/bun-cache/node_modules ] && [ ! -d node_modules ]; then
+  echo "📦 Restoring cached node_modules ..."
+  cp -a /opt/bun-cache/node_modules .
+fi
+"""

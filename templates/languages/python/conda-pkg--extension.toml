@@ -1,0 +1,14 @@
+display-name = "conda Packages"
+display-disc = "Install packages via conda"
+display-order = 12
+auto-select = false
+tags = ["python", "conda", "packages"]
+
+[params.CONDA_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install conda ${CONDA_PKGS}
+"""

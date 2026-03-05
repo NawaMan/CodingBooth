@@ -275,6 +275,24 @@ Each `install` command maps to a `*--install.sh` script. For example, `install p
 | `install pecl` | PHP | `pecl install` |
 | `install conan` | C/C++ | `conan install` |
 
+### Installing Packages via Templates
+
+You can also install packages without editing the Boothfile directly — use the **package manager templates** with `booth init`:
+
+```bash
+# Install global npm packages
+./booth init new ../project --select "nodejs+npm-pkg:express,typescript"
+
+# Install global pip packages
+./booth init new ../project --select "python+pip-pkg:flask,httpx"
+
+# Pre-install project dependencies from manifest files
+./booth init new ../project --select "nodejs+npm-install"    # reads package.json at build time
+./booth init new ../project --select "java+maven+mvn-install" # reads pom.xml at build time
+```
+
+See [Package Management Templates](BOOTH_INIT.md#package-management-templates) in the init documentation for the full list.
+
 ### Creating a Custom Install
 
 Place your script in `.booth/setups/` following the naming convention `<name>--install.sh`:

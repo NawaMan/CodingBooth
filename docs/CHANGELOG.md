@@ -2,6 +2,21 @@
 
 This file contains a list of changes for each released version.
 
+## 0.30.0
+
+- Fix noVNC URL in desktop variants (XFCE, KDE, LXQT) to show the actual host port instead of hardcoded container port
+- Port banner now displays when a non-default port is used, not just for auto-generated ports
+- Package manager templates — variadic extensions for installing global packages via `booth init`:
+  npm, yarn, pip, uv, conda, cargo, go, gem, cabal, hex, luarocks, pecl, bun, brew
+  (e.g., `--select nodejs+npm-pkg:express,typescript`)
+- Dependency pre-installation templates — pre-install project dependencies into the Docker image at build time:
+  npm-install, yarn-install, pnpm-install, bun-install, bundle-install, cargo-build, go-mod,
+  mix-deps, composer-install, mvn-install, gradle-deps
+  (e.g., `--select nodejs+npm-install` reads `package.json` during build, restores `node_modules` at startup)
+- New example workspaces: pip-deps-example, npm-deps-example, mvn-deps-example
+- New init tests for package manager templates (test30–test39)
+- Documentation: Package Management Templates section in BOOTH_INIT.md
+
 ## 0.29.0
 
 - Booth shutdown — gracefully stop the container from within

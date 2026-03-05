@@ -1,0 +1,23 @@
+display-name = "mix deps.get"
+display-disc = "Pre-download Elixir/Mix dependencies into the image"
+display-order = 15
+auto-select = false
+tags = ["elixir", "mix", "packages"]
+
+[segments]
+"Boothfile--90" = """
+run --mount=type=bind,target=/tmp/ctx \
+  if [ -f /tmp/ctx/mix.exs ]; then \
+    mkdir -p /opt/mix-cache \
+    && cp /tmp/ctx/mix.exs /opt/mix-cache/ \
+    && cp /tmp/ctx/mix.lock /opt/mix-cache/ 2>/dev/null || true \
+    && cd /opt/mix-cache && mix deps.get; \
+  fi
+"""
+"startup--60.sh" = """
+# Restore pre-fetched deps from image cache if missing
+if [ -d /opt/mix-cache/deps ] && [ ! -d deps ]; then
+  echo "📦 Restoring cached deps ..."
+  cp -a /opt/mix-cache/deps .
+fi
+"""

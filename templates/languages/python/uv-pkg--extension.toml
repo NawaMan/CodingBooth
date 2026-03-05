@@ -1,0 +1,14 @@
+display-name = "uv Packages"
+display-disc = "Install Python packages globally via uv"
+display-order = 11
+auto-select = false
+tags = ["python", "uv", "packages"]
+
+[params.UV_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install uv ${UV_PKGS}
+"""

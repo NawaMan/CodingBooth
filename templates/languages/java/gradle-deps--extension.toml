@@ -1,0 +1,16 @@
+display-name = "gradle dependencies"
+display-disc = "Pre-download Gradle dependencies into the image"
+display-order = 25
+auto-select = false
+tags = ["java", "gradle", "packages"]
+
+[segments]
+"Boothfile--90" = """
+run --mount=type=bind,target=/tmp/ctx \
+  if [ -f /tmp/ctx/build.gradle ] || [ -f /tmp/ctx/build.gradle.kts ]; then \
+    mkdir -p /opt/gradle-cache \
+    && cp -r /tmp/ctx/. /opt/gradle-cache/ \
+    && cd /opt/gradle-cache \
+    && gradle dependencies --no-daemon -q 2>/dev/null || true; \
+  fi
+"""

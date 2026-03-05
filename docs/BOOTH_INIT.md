@@ -22,6 +22,7 @@ Back to [README](../README.md)
 - [Browsing Templates](#browsing-templates)
 - [What Gets Generated](#what-gets-generated)
 - [Common Workflows](#common-workflows)
+- [Package Management Templates](#package-management-templates)
 
 ---
 
@@ -192,7 +193,7 @@ Use `booth template` to explore what's available before running init.
 
 Use `--full` with `list` or `search` to include secondary (non-primary) templates.
 
-There are **58+ templates** across 7 categories: languages, ai-tools, tools, IDEs, desktops, databases, and browsers.
+There are **150+ templates** across 7 categories: languages, ai-tools, tools, IDEs, desktops, databases, and browsers.
 
 ---
 
@@ -278,3 +279,112 @@ Then:
 ```bash
 ./booth init adjust --select go+linter/python:3.13+uv/postgresql
 ```
+
+---
+
+## Package Management Templates
+
+CodingBooth templates include two types of package management extensions: **global tool installation** and **project dependency pre-installation**.
+
+### Global Package Installation
+
+Install tools globally into the image at build time using `install <manager> <packages>`. These are available via variadic parameter extensions:
+
+```bash
+# Install global npm packages
+booth init new --select nodejs+npm-pkg:pnpm,typescript
+
+# Install global pip packages
+booth init new --select python+pip-pkg:numpy,pandas
+
+# Install global cargo crates
+booth init new --select rust+cargo-pkg:ripgrep,fd-find
+```
+
+The full list of package manager extensions:
+
+| Extension | Manager | Example |
+|-----------|---------|---------|
+| `nodejs/npm-pkg` | npm | `nodejs+npm-pkg:pnpm,typescript` |
+| `nodejs/yarn-pkg` | yarn | `nodejs+yarn-pkg:create-react-app` |
+| `bun/bun-pkg` | bun | `bun+bun-pkg:elysia` |
+| `python/pip-pkg` | pip | `python+pip-pkg:numpy,pandas` |
+| `python/uv-pkg` | uv | `python+uv-pkg:ruff,black` |
+| `python/conda-pkg` | conda | `python+conda-pkg:scipy` |
+| `rust/cargo-pkg` | cargo | `rust+cargo-pkg:ripgrep` |
+| `go/go-pkg` | go install | `go+go-pkg:gopls@latest` |
+| `ruby/gem-pkg` | gem | `ruby+gem-pkg:rails,bundler` |
+| `haskell/cabal-pkg` | cabal | `haskell+cabal-pkg:hlint` |
+| `elixir/hex-pkg` | hex | `elixir+hex-pkg:phoenix` |
+| `lua/luarocks-pkg` | luarocks | `lua+luarocks-pkg:luacheck` |
+| `php/pecl-pkg` | pecl | `php+pecl-pkg:redis` |
+| `brew-pkg` | Homebrew | `brew-pkg:htop,tmux` |
+
+These translate to `install <manager> <packages>` in the Boothfile, which runs the corresponding `<manager>--install.sh` script during `docker build`.
+
+### Project Dependency Pre-Installation
+
+Pre-download project dependencies into the image so they're available immediately — no waiting for downloads on every container start.
+
+```bash
+# Pre-install npm dependencies from package.json
+booth init new --select nodejs+npm-install
+
+# Pre-install with pnpm (also installs pnpm globally)
+booth init new --select nodejs+pnpm-install
+
+# Pre-download Maven dependencies
+booth init new --select java+maven+mvn-install
+```
+
+#### How it works
+
+CodingBooth containers bind-mount your project at runtime, so project files aren't available during `docker build`. These templates use Docker BuildKit's `--mount=type=bind` to access your project's manifest files (e.g., `package.json`, `pom.xml`) at build time, then install dependencies into a cache directory inside the image.
+
+**Globally-cached dependencies** (no startup step needed):
+
+These package managers store dependencies in a global cache that persists in the image:
+
+| Extension | Manifest files | Cache location |
+|-----------|---------------|----------------|
+| `go/go-mod` | `go.mod`, `go.sum` | `$GOPATH/pkg/mod/` |
+| `rust/cargo-build` | `Cargo.toml`, `Cargo.lock` | `~/.cargo/registry/` |
+| `java/mvn-install` | `pom.xml` | `~/.m2/repository/` |
+| `java/gradle-deps` | `build.gradle[.kts]` | `~/.gradle/caches/` |
+
+For these, `go build`, `cargo build`, `mvn compile`, or `gradle build` can run immediately without downloading anything.
+
+**Project-local dependencies** (startup copy from cache):
+
+These package managers install into the project directory (e.g., `node_modules/`, `vendor/`). Since the project directory is bind-mounted at runtime, the templates cache dependencies in `/opt/` during build and restore them on first startup via a local filesystem copy (no network needed):
+
+| Extension | Manifest files | Image cache | Restored to |
+|-----------|---------------|-------------|-------------|
+| `nodejs/npm-install` | `package.json`, `package-lock.json` | `/opt/npm-cache/` | `node_modules/` |
+| `nodejs/yarn-install` | `package.json`, `yarn.lock` | `/opt/yarn-cache/` | `node_modules/` |
+| `nodejs/pnpm-install` | `package.json`, `pnpm-lock.yaml` | `/opt/pnpm-cache/` | `node_modules/` |
+| `bun/bun-install` | `package.json`, `bun.lockb` | `/opt/bun-cache/` | `node_modules/` |
+| `ruby/bundle-install` | `Gemfile`, `Gemfile.lock` | `/opt/bundle-cache/` | `vendor/` |
+| `elixir/mix-deps` | `mix.exs`, `mix.lock` | `/opt/mix-cache/` | `deps/` |
+| `php/composer-install` | `composer.json`, `composer.lock` | `/opt/composer-cache/` | `vendor/` |
+
+The startup copy only runs if the target directory doesn't already exist. Once `node_modules/` (or equivalent) is present, the startup script is a no-op.
+
+**Existing pip template** (`python+pip`):
+
+Python's pip installs to system site-packages (not the project directory), so it works directly at build time with no startup step. It reads from `.booth/requirements.txt`:
+
+```bash
+booth init new --select python+pip
+# Then create .booth/requirements.txt with your dependencies
+```
+
+#### When to rebuild
+
+Dependencies are baked into the image. When you change your manifest files (add/remove packages), rebuild the image:
+
+```bash
+booth   # Booth auto-rebuilds when the Boothfile or manifest files change
+```
+
+Between rebuilds, you can still run `npm install`, `pip install`, etc. manually inside the container — those changes apply immediately but won't survive container recreation.

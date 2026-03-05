@@ -1,0 +1,14 @@
+display-name = "npm Packages"
+display-disc = "Install global npm packages"
+display-order = 10
+auto-select = false
+tags = ["nodejs", "npm", "packages"]
+
+[params.NPM_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install npm ${NPM_PKGS}
+"""

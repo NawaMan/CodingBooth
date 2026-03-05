@@ -1,0 +1,16 @@
+display-name = "brew Packages"
+display-disc = "Install packages via Homebrew"
+display-order = 41
+auto-select = false
+tags = ["homebrew", "brew", "packages"]
+
+requires = ["homebrew"]
+
+[params.BREW_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install brew ${BREW_PKGS}
+"""

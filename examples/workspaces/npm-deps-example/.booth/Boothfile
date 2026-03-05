@@ -1,0 +1,13 @@
+# syntax=codingbooth/boothfile:1
+
+# NPM Deps Example
+# Installs npm packages from package.json
+
+setup nodejs 22
+run --mount=type=bind,target=/tmp/ctx \
+  if [ -f /tmp/ctx/package.json ]; then \
+    mkdir -p /opt/npm-cache \
+    && cp /tmp/ctx/package.json /opt/npm-cache/ \
+    && cp /tmp/ctx/package-lock.json /opt/npm-cache/ 2>/dev/null || true \
+    && cd /opt/npm-cache && npm install; \
+  fi

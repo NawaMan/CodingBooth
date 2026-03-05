@@ -1,0 +1,14 @@
+display-name = "cabal Packages"
+display-disc = "Install Haskell packages globally via cabal install"
+display-order = 10
+auto-select = false
+tags = ["haskell", "cabal", "packages"]
+
+[params.CABAL_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install cabal ${CABAL_PKGS}
+"""

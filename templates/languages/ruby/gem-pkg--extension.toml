@@ -1,0 +1,14 @@
+display-name = "gem Packages"
+display-disc = "Install Ruby gems globally"
+display-order = 10
+auto-select = false
+tags = ["ruby", "gem", "packages"]
+
+[params.GEM_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install gem ${GEM_PKGS}
+"""

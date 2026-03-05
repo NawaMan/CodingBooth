@@ -1,0 +1,14 @@
+display-name = "pip Packages"
+display-disc = "Install pip packages globally"
+display-order = 10
+auto-select = false
+tags = ["python", "pip", "packages"]
+
+[params.PIP_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install pip ${PIP_PKGS}
+"""

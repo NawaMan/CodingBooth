@@ -1,0 +1,26 @@
+display-name = "yarn install"
+display-disc = "Pre-install yarn dependencies from package.json into the image"
+display-order = 16
+auto-select = false
+tags = ["nodejs", "yarn", "packages"]
+
+[segments]
+"Boothfile--60" = """
+install npm yarn
+"""
+"Boothfile--90" = """
+run --mount=type=bind,target=/tmp/ctx \
+  if [ -f /tmp/ctx/package.json ]; then \
+    mkdir -p /opt/yarn-cache \
+    && cp /tmp/ctx/package.json /opt/yarn-cache/ \
+    && cp /tmp/ctx/yarn.lock /opt/yarn-cache/ 2>/dev/null || true \
+    && cd /opt/yarn-cache && yarn install; \
+  fi
+"""
+"startup--60.sh" = """
+# Restore pre-installed node_modules from image cache if missing
+if [ -d /opt/yarn-cache/node_modules ] && [ ! -d node_modules ]; then
+  echo "📦 Restoring cached node_modules ..."
+  cp -a /opt/yarn-cache/node_modules .
+fi
+"""

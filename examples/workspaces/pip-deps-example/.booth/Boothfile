@@ -1,0 +1,7 @@
+# syntax=codingbooth/boothfile:1
+
+# Pip Deps Example
+# Installs Python packages from requirements.txt using pip
+
+setup python
+run --mount=type=bind,target=/tmp/ctx if [ -f /tmp/ctx/.booth/requirements.txt ]; then pip install -r /tmp/ctx/.booth/requirements.txt; else echo "Warning: .booth/requirements.txt not found -- skipping pip install"; fi

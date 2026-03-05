@@ -1,0 +1,24 @@
+display-name = "bundle install"
+display-disc = "Pre-install Ruby gem dependencies into the image"
+display-order = 15
+auto-select = false
+tags = ["ruby", "bundler", "packages"]
+
+[segments]
+"Boothfile--90" = """
+run --mount=type=bind,target=/tmp/ctx \
+  if [ -f /tmp/ctx/Gemfile ]; then \
+    mkdir -p /opt/bundle-cache \
+    && cp /tmp/ctx/Gemfile /opt/bundle-cache/ \
+    && cp /tmp/ctx/Gemfile.lock /opt/bundle-cache/ 2>/dev/null || true \
+    && cd /opt/bundle-cache && bundle install --path /opt/bundle-cache/vendor; \
+  fi
+"""
+"startup--60.sh" = """
+# Restore pre-installed gems from image cache if missing
+if [ -d /opt/bundle-cache/vendor ] && [ ! -d vendor/bundle ]; then
+  echo "📦 Restoring cached gems ..."
+  mkdir -p vendor
+  cp -a /opt/bundle-cache/vendor/. vendor/
+fi
+"""

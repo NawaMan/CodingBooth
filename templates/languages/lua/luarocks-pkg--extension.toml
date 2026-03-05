@@ -1,0 +1,14 @@
+display-name = "luarocks Packages"
+display-disc = "Install Lua packages globally via luarocks"
+display-order = 10
+auto-select = false
+tags = ["lua", "luarocks", "packages"]
+
+[params.LUAROCKS_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install luarocks ${LUAROCKS_PKGS}
+"""

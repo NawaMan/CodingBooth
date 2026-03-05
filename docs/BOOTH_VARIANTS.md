@@ -63,8 +63,10 @@ When accessing the desktop through your browser, noVNC supports different resize
 
 To use a specific resize mode, append `&resize=off` or `&resize=scale` to the noVNC URL:
 ```
-http://localhost:10000/vnc.html?autoconnect=1&host=localhost&port=10000&path=websockify&resize=off
+http://localhost:<PORT>/vnc.html?autoconnect=1&host=localhost&port=<PORT>&path=websockify&resize=off
 ```
+
+> **Tip:** `<PORT>` is the host port your booth is mapped to (default 10000, or as configured via `--port` or `config.toml`). The desktop startup message shows the correct URL with the actual port.
 
 > **Tip:** If you set a specific resolution like `1920x1080`, you may want to use `resize=off` to see it at native resolution, or `resize=scale` to fit it within your browser window.
 

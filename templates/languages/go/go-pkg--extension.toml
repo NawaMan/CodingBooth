@@ -1,0 +1,14 @@
+display-name = "go Packages"
+display-disc = "Install Go packages globally via go install"
+display-order = 10
+auto-select = false
+tags = ["go", "packages"]
+
+[params.GO_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install go ${GO_PKGS}
+"""
