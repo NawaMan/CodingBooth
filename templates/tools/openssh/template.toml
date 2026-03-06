@@ -1,0 +1,15 @@
+display-name = "OpenSSH Client"
+display-disc = "SSH client for remote access (ssh, scp, sftp)"
+display-detail = "Installs OpenSSH client tools: ssh, scp, sftp, ssh-keygen, ssh-agent. Use the +server extension to also install the SSH server for inbound access."
+display-order = 35
+tags = [
+    "ssh",
+    "openssh",
+    "remote",
+    "client"
+]
+
+[segments]
+Boothfile = """
+setup openssh
+"""

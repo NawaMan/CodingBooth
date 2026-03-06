@@ -1,0 +1,24 @@
+display-name = "OpenSSH Server"
+display-disc = "SSH server for inbound remote access into the booth"
+display-order = 2
+auto-select = false
+tags = [
+    "ssh",
+    "openssh",
+    "server",
+    "remote"
+]
+
+[params.SSH_PORT]
+default = "2222"
+suggests = [
+    "2222",
+    "2200",
+    "22",
+]
+
+[segments]
+Boothfile = """
+setup opensshd ${SSH_PORT}
+expose ${SSH_PORT}
+"""

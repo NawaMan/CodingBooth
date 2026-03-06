@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.30.0 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.31.0 — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 

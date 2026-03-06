@@ -97,6 +97,7 @@ To reset a database: `docker volume rm booth-pgdata` (or `booth-mysqldata`).
 
 - **Credential seeding**: mount host config files as read-only into `/etc/cb-home-seed/`
 - **Environment variables**: `-e`, `"VAR=value"` for runtime configuration
+- **Port publishing**: `-p`, `"host:container"` for exposing services
 
 ## Template Reference
 
@@ -143,6 +144,7 @@ All templates and extensions grouped by segment order.
 | `tools/homebrew`       | Homebrew         |
 | `tools/kind`           | kind             |
 | `tools/neovim`         | Neovim           |
+| `tools/openssh`        | OpenSSH Client   |
 
 ### Order 50 — Extensions (run alongside parent)
 
@@ -150,6 +152,9 @@ All templates and extensions grouped by segment order.
 |----------------------------|-------------------------------|
 | `gh/copilot--extension`    | GitHub Copilot CLI            |
 | `go/linter--extension`     | Go Linter                     |
+| `openssh/server--extension`| OpenSSH Server                |
+| `openssh/credential--extension` | SSH Credentials          |
+| `openssh/expose--extension`| Expose SSH Port               |
 | `java/gradle--extension`   | Gradle                        |
 | `java/jenv--extension`     | jenv                          |
 | `java/maven--extension`    | Maven                         |

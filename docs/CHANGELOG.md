@@ -2,6 +2,10 @@
 
 This file contains a list of changes for each released version.
 
+## 0.31.0
+
+- OpenSSH template — client (`openssh`) and server (`openssh+server`) with expose and credential extensions
+
 ## 0.30.0
 
 - Fix noVNC URL in desktop variants (XFCE, KDE, LXQT) to show the actual host port instead of hardcoded container port
@@ -15,6 +19,7 @@ This file contains a list of changes for each released version.
   (e.g., `--select nodejs+npm-install` reads `package.json` during build, restores `node_modules` at startup)
 - New example workspaces: pip-deps-example, npm-deps-example, mvn-deps-example
 - New init tests for package manager templates (test30–test39)
+- New init tests for OpenSSH template (test40–test44)
 - Documentation: Package Management Templates section in BOOTH_INIT.md
 
 ## 0.29.0

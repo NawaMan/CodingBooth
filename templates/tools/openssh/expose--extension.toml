@@ -1,0 +1,13 @@
+display-name = "Expose SSH Port"
+display-disc = "Expose SSH port 2222 to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "ssh",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "2222:2222",
+]

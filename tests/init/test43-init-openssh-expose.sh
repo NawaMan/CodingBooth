@@ -1,0 +1,10 @@
+#!/bin/bash
+source "$(dirname "$0")/test-helpers--source.sh"
+
+begin
+run booth init new $prj --select "openssh+server+expose"
+
+config="$prj/.booth/config.toml"
+
+assert-line "$config" '"-p", "2222:' '2222",'                "expose run-args in config"
+finally
