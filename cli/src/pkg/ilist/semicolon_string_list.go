@@ -13,10 +13,10 @@ type SemicolonStringList struct {
 	List[string]
 }
 
-// expandEnv expands environment variables and tilde in a string.
+// ExpandEnv expands environment variables and tilde in a string.
 // - ~ at the start of a string is expanded to $HOME
 // - $VAR and ${VAR} are expanded to their environment values
-func expandEnv(s string) string {
+func ExpandEnv(s string) string {
 	// Expand ~ at the beginning of the string to $HOME
 	if strings.HasPrefix(s, "~/") {
 		s = "$HOME" + s[1:]
@@ -40,7 +40,7 @@ func (s *SemicolonStringList) Decode(value string) error {
 		if p == "" {
 			continue
 		}
-		out = append(out, expandEnv(p))
+		out = append(out, ExpandEnv(p))
 	}
 
 	s.elements = out
@@ -63,7 +63,7 @@ func (s *SemicolonStringList) UnmarshalTOML(data interface{}) error {
 		out := make([]string, 0, len(v))
 		for _, item := range v {
 			if str, ok := item.(string); ok {
-				out = append(out, expandEnv(str))
+				out = append(out, ExpandEnv(str))
 			}
 		}
 		s.elements = out

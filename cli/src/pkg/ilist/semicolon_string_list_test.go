@@ -142,9 +142,9 @@ func TestExpandEnv(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := expandEnv(tt.input)
+			got := ExpandEnv(tt.input)
 			if got != tt.expected {
-				t.Errorf("expandEnv(%q) = %q, want %q", tt.input, got, tt.expected)
+				t.Errorf("ExpandEnv(%q) = %q, want %q", tt.input, got, tt.expected)
 			}
 		})
 	}

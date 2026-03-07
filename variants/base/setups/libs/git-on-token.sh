@@ -4,7 +4,9 @@
 
 set -euo pipefail
 
-echo "[git-on-token] Starting Git setup..."
+log () { [[ "${BOOTH_VERBOSE:-}" == "true" ]] && echo "$@" || true; }
+
+log "[git-on-token] Starting Git setup..."
 
 # ---- Ensure required variables exist ----
 
@@ -31,7 +33,7 @@ command -v gh  >/dev/null 2>&1 || { echo "gh not found"; exit 1; }
 
 # ---- Configure git identity ----
 
-echo "[git-on-token] Configuring git identity"
+log "[git-on-token] Configuring git identity"
 
 git config --global user.name  "$GIT_USER"
 git config --global user.email "$GIT_EMAIL"
@@ -42,13 +44,13 @@ git config --global credential.interactive never
 
 # ---- Setup gh as git credential helper ----
 
-echo "[git-on-token] Configuring gh credential helper"
+log "[git-on-token] Configuring gh credential helper"
 
 gh auth setup-git >/dev/null
 
 # ---- Rewrite SSH GitHub URLs to HTTPS (without modifying repo) ----
 
-echo "[git-on-token] Enabling GitHub SSH → HTTPS rewrite"
+log "[git-on-token] Enabling GitHub SSH → HTTPS rewrite"
 
 git config --global --unset-all url."https://github.com/".insteadOf 2>/dev/null || true
 
@@ -57,7 +59,7 @@ git config --global --add url."https://github.com/".insteadOf ssh://git@github.c
 
 # ---- Validate token works ----
 
-echo "[git-on-token] Validating GitHub authentication"
+log "[git-on-token] Validating GitHub authentication"
 
 if ! gh api user >/dev/null 2>&1; then
     echo "[git-on-token] ERROR: GitHub token invalid"
@@ -65,3 +67,4 @@ if ! gh api user >/dev/null 2>&1; then
 fi
 
 echo "[git-on-token] Git setup complete"
+log  "[git-on-token] Git will now use $GIT_USER<$GIT_EMAIL> for commits."

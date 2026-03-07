@@ -14,6 +14,52 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
 
+// ExpandEnvScalars expands environment variables ($VAR, ${VAR}) and tilde (~)
+// in all scalar string fields of AppConfig.
+// Boolean and array fields are left unchanged (arrays already expand during TOML unmarshaling).
+func (config *AppConfig) ExpandEnvScalars() {
+	expandStr := func(s *string) {
+		if *s != "" {
+			*s = ilist.ExpandEnv(*s)
+		}
+	}
+	expandNillable := func(ns *nillable.NillableString) {
+		if ns.IsSet() {
+			v := ilist.ExpandEnv(ns.ValueOrPanic())
+			*ns = nillable.NewNillableString(v)
+		}
+	}
+
+	// General
+	expandNillable(&config.Code)
+	expandNillable(&config.Version)
+	expandNillable(&config.Config)
+
+	// Image
+	expandStr(&config.Dockerfile)
+	expandStr(&config.Boothfile)
+	expandStr(&config.Image)
+	expandStr(&config.Variant)
+
+	// Runtime
+	expandStr(&config.ProjectName)
+	expandStr(&config.HostUID)
+	expandStr(&config.HostGID)
+	expandStr(&config.Timezone)
+
+	// Container
+	expandStr(&config.Name)
+	expandStr(&config.Port)
+	expandStr(&config.EnvFile)
+	expandStr(&config.Startup)
+
+	// Sandbox
+	expandStr(&config.SandboxMode)
+	expandStr(&config.SandboxEnforcement)
+	expandStr(&config.SandboxAllowlistFile)
+	expandStr(&config.SandboxPolicyFile)
+}
+
 type AppConfig struct {
 
 	// --------------------

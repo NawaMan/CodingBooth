@@ -66,12 +66,22 @@
 # When both .env-local and env-file exist, env-file values take priority.
 
 ### -------------------------------------------------------------------------------------
-### TOML-friendly array fields
+### Environment variable expansion
 ### -------------------------------------------------------------------------------------
-# Environment variables and tilde are automatically expanded in these fields:
+# All string fields (scalar and array) support automatic expansion:
 #   - ~ at the start of a value expands to $HOME
 #   - $VAR and ${VAR} expand to their environment values
 #
+# Examples:
+#   image = "$MY_REGISTRY/codingbooth:$TAG"
+#   project-name = "${PROJECT}"
+#   env-file = "~/projects/.env"
+#
+# Note: Boolean fields (daemon, pull, etc.) do NOT support expansion.
+
+### -------------------------------------------------------------------------------------
+### TOML-friendly array fields
+### -------------------------------------------------------------------------------------
 # Home seeding pattern for credentials:
 #   Mount host files read-only to /etc/cb-home-seed/ and they will be copied
 #   to the user's home at container startup (without overwriting existing files).

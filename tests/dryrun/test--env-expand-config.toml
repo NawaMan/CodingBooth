@@ -1,0 +1,13 @@
+daemon = true
+dind = true
+dockerfile = "$TEST_DOCKERFILE"
+dryrun = true
+env-file = "${TEST_ENV_FILE}"
+keep-alive = true
+name = "$TEST_NAME"
+port = "${TEST_PORT}"
+pull = true
+variant = "$TEST_VARIANT"
+verbose = true
+version = "0.31.0"
+run-args = "-p;10005"
