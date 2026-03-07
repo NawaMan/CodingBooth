@@ -9,5 +9,5 @@ tags = [
 ]
 
 run-args = [
-    "-p", "15555:15555",
+    "-p", "${EXCALIDRAW_PORT}:${EXCALIDRAW_PORT}",
 ]

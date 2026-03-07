@@ -99,6 +99,7 @@ You can define special arrays in `.booth/config.toml` to customize Docker intera
   ```toml
   run-args = ["-e", "TZ=Asia/Bangkok", "-v", "/mnt/data:/data"]
   ```
+  When using `booth init`, these can be set via CLI shorthands: `--expose` (for `-p`), `--env` (for `-e`), and `--mount` (for `-v`).
 
 - **`cmds`** — Default command to run inside the container. CLI `-- <cmd>` overrides this (does not append).
   ```toml
@@ -157,6 +158,12 @@ Pass individual environment variables via Docker run arguments in `config.toml`:
 
 ```toml
 run-args = ["-e", "TZ=Asia/Bangkok", "-e", "DEBUG=true"]
+```
+
+When using `booth init`, you can set these with the `--env` shorthand:
+
+```bash
+booth init new --select python --env TZ=Asia/Bangkok --env DEBUG=true
 ```
 
 These support **variable expansion** — you can reference host environment variables:

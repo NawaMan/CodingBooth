@@ -10,7 +10,7 @@ tags = [
 [segments]
 "startup--65.sh" = """
 # Auto-start Excalidraw in background
-PORT=15555
+PORT=${EXCALIDRAW_PORT}
 LOG_FILE="/tmp/excalidraw.log"
 
 nohup serve -s --no-clipboard /opt/excalidraw -l "$PORT" > "$LOG_FILE" 2>&1 &

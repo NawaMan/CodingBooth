@@ -342,6 +342,7 @@ The `list` command shows a compact table with names and descriptions, hiding aut
 ./booth init new --select go+linter/python:3.13+uv/claude-code
 ./booth init new ../my-project --select go+linter/python:3.13+uv/claude-code
 ./booth init new --select python --port 10080
+./booth init new --select python --expose 8080 --env MY_VAR=hello --mount /data:/app/data
 ./booth init new --select go --set keep-alive --set name=my-booth
 ./booth init new                                  # Empty booth (no templates, just CLI overrides)
 ```
@@ -372,6 +373,9 @@ The `adjust` subcommand is equivalent to `new --overwrite` — it overwrites exi
 | `--variant <variant>` | Set the variant (base, notebook, codeserver, xfce, kde) |
 | `--port <port>` | Set port in generated config.toml (e.g., 10000, NEXT, RANDOM) |
 | `--cmd <command>` | Set the default start command (repeatable) |
+| `--expose <port>` | Expose extra port (-p mapping in run-args; repeatable) |
+| `--env <KEY=VALUE>` | Set container environment variable (-e in run-args; repeatable) |
+| `--mount <host:container>` | Mount volume (-v mapping in run-args; repeatable) |
 | `--set <key=value>` | Set a config.toml value (repeatable; bare key = boolean true) |
 | `--start` | Launch `codingbooth run --code <path>` after init |
 | `--overwrite` | Overwrite existing files without prompting |

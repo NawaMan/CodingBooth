@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/cache"
@@ -75,6 +76,9 @@ Flags:
   --variant <variant>      Set the variant (base, notebook, codeserver, xfce, kde)
   --port <port>            Set port in generated config.toml (e.g., 10000, NEXT, RANDOM)
   --cmd <command>          Set the default start command (repeatable; for new/dryrun)
+  --expose <port>          Expose extra port (-p mapping in run-args; repeatable)
+  --env <KEY=VALUE>        Set container environment variable (-e in run-args; repeatable)
+  --mount <host:container> Mount volume (-v mapping in run-args; repeatable)
   --version <ver>          Use templates from a specific release version
   --debug                  Print debug output (for new/dryrun)
   --start                  Start the booth after creation (for new)
@@ -90,6 +94,10 @@ Examples:
   codingbooth init new --select go --select python --select claude-code
   codingbooth init new --select python --port 10080
   codingbooth init new --select python --cmd bash
+  codingbooth init new --select python --expose 8080
+  codingbooth init new --select nodejs --expose 3000 --expose 5432:5432
+  codingbooth init new --select python --env MY_VAR=hello
+  codingbooth init new --select go --mount /data:/app/data:ro
   codingbooth init new --select go --set keep-alive --set name=my-booth
   codingbooth init new --select go --set dind --set port=8080
 
@@ -105,6 +113,9 @@ type initFlags struct {
 	selectDSLs    []string
 	selectDSL     string // resolved: joined from selectDSLs after ReadSelectInput
 	cmds          []string
+	exposes       []string // --expose port mappings
+	envs          []string // --env environment variables
+	mounts        []string // --mount volume mounts
 	sets          []string // raw --set key=value strings
 	variant       string
 	port          string
@@ -172,6 +183,39 @@ func parseInitFlags(args []string) initFlags {
 				os.Exit(1)
 			}
 			flags.version = args[i+1]
+			i++
+		case "--expose":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --expose requires a value")
+				os.Exit(1)
+			}
+			if err := validateExpose(args[i+1]); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			flags.exposes = append(flags.exposes, args[i+1])
+			i++
+		case "--env":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --env requires a value")
+				os.Exit(1)
+			}
+			if err := validateEnv(args[i+1]); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			flags.envs = append(flags.envs, args[i+1])
+			i++
+		case "--mount":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --mount requires a value")
+				os.Exit(1)
+			}
+			if err := validateMount(args[i+1]); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			flags.mounts = append(flags.mounts, args[i+1])
 			i++
 		case "--set":
 			if i+1 >= len(args) {
@@ -331,6 +375,9 @@ func compileEmpty(flags initFlags) (*output.BoothOutput, *selection.ResolvedSele
 	if len(flags.cmds) > 0 {
 		out.Config.Cmds = flags.cmds
 	}
+	applyExposeFlags(out.Config, flags.exposes)
+	applyEnvFlags(out.Config, flags.envs)
+	applyMountFlags(out.Config, flags.mounts)
 
 	// Apply --set overrides
 	if len(flags.sets) > 0 {
@@ -407,6 +454,9 @@ func compileSelection(flags initFlags) (*output.BoothOutput, *selection.Resolved
 	if len(flags.cmds) > 0 {
 		out.Config.Cmds = flags.cmds
 	}
+	applyExposeFlags(out.Config, flags.exposes)
+	applyEnvFlags(out.Config, flags.envs)
+	applyMountFlags(out.Config, flags.mounts)
 
 	// Apply --set overrides (highest precedence)
 	if len(flags.sets) > 0 {
@@ -512,6 +562,15 @@ func buildInitCommand(targetPath string, flags initFlags) string {
 	for _, cmd := range flags.cmds {
 		parts = append(parts, "--cmd "+cmd)
 	}
+	for _, e := range flags.exposes {
+		parts = append(parts, "--expose "+e)
+	}
+	for _, e := range flags.envs {
+		parts = append(parts, "--env "+e)
+	}
+	for _, m := range flags.mounts {
+		parts = append(parts, "--mount "+m)
+	}
 	for _, s := range flags.sets {
 		parts = append(parts, "--set "+s)
 	}
@@ -538,6 +597,15 @@ func buildAdjustCommand(flags initFlags) string {
 	for _, cmd := range flags.cmds {
 		parts = append(parts, "--cmd "+cmd)
 	}
+	for _, e := range flags.exposes {
+		parts = append(parts, "--expose "+e)
+	}
+	for _, e := range flags.envs {
+		parts = append(parts, "--env "+e)
+	}
+	for _, m := range flags.mounts {
+		parts = append(parts, "--mount "+m)
+	}
 	for _, s := range flags.sets {
 		parts = append(parts, "--set "+s)
 	}
@@ -545,6 +613,89 @@ func buildAdjustCommand(flags initFlags) string {
 		parts = append(parts, "--select "+flags.selectDSL)
 	}
 	return strings.Join(parts, " ")
+}
+
+// validateExpose checks that an --expose value is a valid port or port mapping.
+func validateExpose(expose string) error {
+	parts := strings.Split(expose, ":")
+	switch len(parts) {
+	case 1:
+		if _, err := strconv.Atoi(parts[0]); err != nil {
+			return fmt.Errorf("invalid --expose value %q: port must be a number", expose)
+		}
+	case 2:
+		for _, p := range parts {
+			if _, err := strconv.Atoi(p); err != nil {
+				return fmt.Errorf("invalid --expose value %q: ports must be numbers", expose)
+			}
+		}
+	case 3:
+		// ip:hostPort:containerPort
+		for _, p := range parts[1:] {
+			if _, err := strconv.Atoi(p); err != nil {
+				return fmt.Errorf("invalid --expose value %q: ports must be numbers", expose)
+			}
+		}
+	default:
+		return fmt.Errorf("invalid --expose value %q", expose)
+	}
+	return nil
+}
+
+// applyExposeFlags appends -p port mappings to RunArgs for each --expose value.
+func applyExposeFlags(cfg *output.ConfigToml, exposes []string) {
+	for _, expose := range exposes {
+		mapping := expose
+		if !strings.Contains(expose, ":") {
+			mapping = expose + ":" + expose
+		}
+		cfg.RunArgs = append(cfg.RunArgs, "-p", mapping)
+	}
+}
+
+// validateEnv checks that an --env value is a valid KEY=VALUE or bare KEY.
+func validateEnv(env string) error {
+	if env == "" {
+		return fmt.Errorf("invalid --env value: must not be empty")
+	}
+	key := env
+	if idx := strings.Index(env, "="); idx >= 0 {
+		key = env[:idx]
+	}
+	if key == "" {
+		return fmt.Errorf("invalid --env value %q: key must not be empty", env)
+	}
+	for _, c := range key {
+		if !((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z') || (c >= '0' && c <= '9') || c == '_') {
+			return fmt.Errorf("invalid --env value %q: key contains invalid character %q", env, string(c))
+		}
+	}
+	return nil
+}
+
+// applyEnvFlags appends -e environment variable entries to RunArgs.
+func applyEnvFlags(cfg *output.ConfigToml, envs []string) {
+	for _, env := range envs {
+		cfg.RunArgs = append(cfg.RunArgs, "-e", env)
+	}
+}
+
+// validateMount checks that a --mount value is a valid volume mapping.
+func validateMount(mount string) error {
+	if mount == "" {
+		return fmt.Errorf("invalid --mount value: must not be empty")
+	}
+	if !strings.Contains(mount, ":") {
+		return fmt.Errorf("invalid --mount value %q: must contain host:container", mount)
+	}
+	return nil
+}
+
+// applyMountFlags appends -v volume mount entries to RunArgs.
+func applyMountFlags(cfg *output.ConfigToml, mounts []string) {
+	for _, mount := range mounts {
+		cfg.RunArgs = append(cfg.RunArgs, "-v", mount)
+	}
 }
 
 // printSummary prints a human-readable summary of the resolved selection.

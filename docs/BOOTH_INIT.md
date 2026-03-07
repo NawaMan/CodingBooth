@@ -138,13 +138,13 @@ For readability in files and heredocs:
 
 ## Selection Sources
 
-| Source | Syntax | Example |
-|--------|--------|---------|
-| Inline | Direct string | `--select go+linter/python:3.13` |
-| Multiple flags | Repeated | `--select go+linter --select python:3.13` |
-| File | `@path` | `--select @my-project.recipe` |
-| URL | `@@url` | `--select @@https://example.com/recipe.txt` |
-| Stdin | `-` | `--select -` (type or pipe) |
+| Source         | Syntax        | Example                                      |
+|----------------|---------------|----------------------------------------------|
+| Inline         | Direct string | `--select go+linter/python:3.13`             |
+| Multiple flags | Repeated      | `--select go+linter --select python:3.13`    |
+| File           | `@path`       | `--select @my-project.recipe`                |
+| URL            | `@@url`       | `--select @@https://example.com/recipe.txt`  |
+| Stdin          | `-`           | `--select -` (type or pipe)                  |
 
 Recipe files are plain text with the same DSL syntax — one template per line.
 
@@ -152,18 +152,21 @@ Recipe files are plain text with the same DSL syntax — one template per line.
 
 ## Flags
 
-| Flag | Description |
-|------|-------------|
-| `--select <dsl>` | Template selection (repeatable) |
-| `--variant <name>` | Set variant (base, notebook, codeserver, xfce, kde) |
-| `--port <port>` | Set port in generated config.toml (number, NEXT, RANDOM) |
-| `--cmd <command>` | Set the default start command (repeatable) |
-| `--set <key=value>` | Set a config.toml value (repeatable; bare key = boolean true) |
-| `--version <ver>` | Use templates from a specific release version |
-| `--templates-path <dir>` | Use local templates directory |
-| `--overwrite` | Overwrite existing files without prompting |
-| `--start` | Launch the booth immediately after init |
-| `--debug` | Print resolved selection and compiled output as JSON |
+| Flag                       | Description                                                    |
+|----------------------------|----------------------------------------------------------------|
+| `--select <dsl>`           | Template selection (repeatable)                                |
+| `--variant <name>`         | Set variant (base, notebook, codeserver, xfce, kde)            |
+| `--port <port>`            | Set port in generated config.toml (number, NEXT, RANDOM)       |
+| `--cmd <command>`          | Set the default start command (repeatable)                     |
+| `--expose <port>`          | Expose extra port (-p mapping in run-args; repeatable)         |
+| `--env <KEY=VALUE>`        | Set container environment variable (-e in run-args; repeatable)|
+| `--mount <host:container>` | Mount volume (-v mapping in run-args; repeatable)              |
+| `--set <key=value>`        | Set a config.toml value (repeatable; bare key = boolean true)  |
+| `--version <ver>`          | Use templates from a specific release version                  |
+| `--templates-path <dir>`   | Use local templates directory                                  |
+| `--overwrite`              | Overwrite existing files without prompting                     |
+| `--start`                  | Launch the booth immediately after init                        |
+| `--debug`                  | Print resolved selection and compiled output as JSON           |
 
 ---
 
@@ -251,6 +254,13 @@ Generated files include a header comment showing the exact command used and an `
 ./booth
 ```
 
+### Project with extra ports, env vars, and mounts
+
+```bash
+./booth init new --select nodejs --expose 3000 --env NODE_ENV=development --mount /data:/app/data
+./booth
+```
+
 ### Using a recipe file
 
 Create a `my-project.recipe`:
@@ -303,22 +313,22 @@ booth init new --select rust+cargo-pkg:ripgrep,fd-find
 
 The full list of package manager extensions:
 
-| Extension | Manager | Example |
-|-----------|---------|---------|
-| `nodejs/npm-pkg` | npm | `nodejs+npm-pkg:pnpm,typescript` |
-| `nodejs/yarn-pkg` | yarn | `nodejs+yarn-pkg:create-react-app` |
-| `bun/bun-pkg` | bun | `bun+bun-pkg:elysia` |
-| `python/pip-pkg` | pip | `python+pip-pkg:numpy,pandas` |
-| `python/uv-pkg` | uv | `python+uv-pkg:ruff,black` |
-| `python/conda-pkg` | conda | `python+conda-pkg:scipy` |
-| `rust/cargo-pkg` | cargo | `rust+cargo-pkg:ripgrep` |
-| `go/go-pkg` | go install | `go+go-pkg:gopls@latest` |
-| `ruby/gem-pkg` | gem | `ruby+gem-pkg:rails,bundler` |
-| `haskell/cabal-pkg` | cabal | `haskell+cabal-pkg:hlint` |
-| `elixir/hex-pkg` | hex | `elixir+hex-pkg:phoenix` |
-| `lua/luarocks-pkg` | luarocks | `lua+luarocks-pkg:luacheck` |
-| `php/pecl-pkg` | pecl | `php+pecl-pkg:redis` |
-| `brew-pkg` | Homebrew | `brew-pkg:htop,tmux` |
+| Extension          | Manager    | Example                            |
+|--------------------|------------|------------------------------------|
+| `nodejs/npm-pkg`   | npm        | `nodejs+npm-pkg:pnpm,typescript`   |
+| `nodejs/yarn-pkg`  | yarn       | `nodejs+yarn-pkg:create-react-app` |
+| `bun/bun-pkg`      | bun        | `bun+bun-pkg:elysia`              |
+| `python/pip-pkg`   | pip        | `python+pip-pkg:numpy,pandas`      |
+| `python/uv-pkg`    | uv         | `python+uv-pkg:ruff,black`        |
+| `python/conda-pkg` | conda      | `python+conda-pkg:scipy`          |
+| `rust/cargo-pkg`   | cargo      | `rust+cargo-pkg:ripgrep`          |
+| `go/go-pkg`        | go install | `go+go-pkg:gopls@latest`          |
+| `ruby/gem-pkg`     | gem        | `ruby+gem-pkg:rails,bundler`      |
+| `haskell/cabal-pkg`| cabal      | `haskell+cabal-pkg:hlint`         |
+| `elixir/hex-pkg`   | hex        | `elixir+hex-pkg:phoenix`          |
+| `lua/luarocks-pkg` | luarocks   | `lua+luarocks-pkg:luacheck`       |
+| `php/pecl-pkg`     | pecl       | `php+pecl-pkg:redis`              |
+| `brew-pkg`         | Homebrew   | `brew-pkg:htop,tmux`              |
 
 These translate to `install <manager> <packages>` in the Boothfile, which runs the corresponding `<manager>--install.sh` script during `docker build`.
 
@@ -345,12 +355,12 @@ CodingBooth containers bind-mount your project at runtime, so project files aren
 
 These package managers store dependencies in a global cache that persists in the image:
 
-| Extension | Manifest files | Cache location |
-|-----------|---------------|----------------|
-| `go/go-mod` | `go.mod`, `go.sum` | `$GOPATH/pkg/mod/` |
+| Extension          | Manifest files          | Cache location       |
+|--------------------|-------------------------|----------------------|
+| `go/go-mod`        | `go.mod`, `go.sum`      | `$GOPATH/pkg/mod/`   |
 | `rust/cargo-build` | `Cargo.toml`, `Cargo.lock` | `~/.cargo/registry/` |
-| `java/mvn-install` | `pom.xml` | `~/.m2/repository/` |
-| `java/gradle-deps` | `build.gradle[.kts]` | `~/.gradle/caches/` |
+| `java/mvn-install` | `pom.xml`               | `~/.m2/repository/`  |
+| `java/gradle-deps` | `build.gradle[.kts]`    | `~/.gradle/caches/`  |
 
 For these, `go build`, `cargo build`, `mvn compile`, or `gradle build` can run immediately without downloading anything.
 
@@ -358,15 +368,15 @@ For these, `go build`, `cargo build`, `mvn compile`, or `gradle build` can run i
 
 These package managers install into the project directory (e.g., `node_modules/`, `vendor/`). Since the project directory is bind-mounted at runtime, the templates cache dependencies in `/opt/` during build and restore them on first startup via a local filesystem copy (no network needed):
 
-| Extension | Manifest files | Image cache | Restored to |
-|-----------|---------------|-------------|-------------|
-| `nodejs/npm-install` | `package.json`, `package-lock.json` | `/opt/npm-cache/` | `node_modules/` |
-| `nodejs/yarn-install` | `package.json`, `yarn.lock` | `/opt/yarn-cache/` | `node_modules/` |
-| `nodejs/pnpm-install` | `package.json`, `pnpm-lock.yaml` | `/opt/pnpm-cache/` | `node_modules/` |
-| `bun/bun-install` | `package.json`, `bun.lockb` | `/opt/bun-cache/` | `node_modules/` |
-| `ruby/bundle-install` | `Gemfile`, `Gemfile.lock` | `/opt/bundle-cache/` | `vendor/` |
-| `elixir/mix-deps` | `mix.exs`, `mix.lock` | `/opt/mix-cache/` | `deps/` |
-| `php/composer-install` | `composer.json`, `composer.lock` | `/opt/composer-cache/` | `vendor/` |
+| Extension              | Manifest files                      | Image cache            | Restored to    |
+|------------------------|-------------------------------------|------------------------|----------------|
+| `nodejs/npm-install`   | `package.json`, `package-lock.json` | `/opt/npm-cache/`      | `node_modules/`|
+| `nodejs/yarn-install`  | `package.json`, `yarn.lock`         | `/opt/yarn-cache/`     | `node_modules/`|
+| `nodejs/pnpm-install`  | `package.json`, `pnpm-lock.yaml`    | `/opt/pnpm-cache/`     | `node_modules/`|
+| `bun/bun-install`      | `package.json`, `bun.lockb`         | `/opt/bun-cache/`      | `node_modules/`|
+| `ruby/bundle-install`  | `Gemfile`, `Gemfile.lock`           | `/opt/bundle-cache/`   | `vendor/`      |
+| `elixir/mix-deps`      | `mix.exs`, `mix.lock`               | `/opt/mix-cache/`      | `deps/`        |
+| `php/composer-install` | `composer.json`, `composer.lock`    | `/opt/composer-cache/` | `vendor/`      |
 
 The startup copy only runs if the target directory doesn't already exist. Once `node_modules/` (or equivalent) is present, the startup script is a no-op.
 

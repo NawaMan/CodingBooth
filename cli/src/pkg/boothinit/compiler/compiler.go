@@ -221,7 +221,7 @@ func (c *collector) build() (*output.BoothOutput, error) {
 		Port:      c.port,
 		Timezone:  c.timezone,
 		Cmds:      c.cmds,
-		RunArgs:   dedup(c.runArgs),
+		RunArgs:   expandParams(dedup(c.runArgs), c.params),
 		BuildArgs: dedup(c.buildArgs),
 	}
 	if c.dind != nil {
@@ -322,6 +322,22 @@ func dedup(items []string) []string {
 				result = append(result, items[i])
 			}
 		}
+	}
+	return result
+}
+
+// expandParams replaces ${PARAM} references in string slices with their values.
+func expandParams(items []string, params map[string]string) []string {
+	if len(params) == 0 || len(items) == 0 {
+		return items
+	}
+	result := make([]string, len(items))
+	for i, item := range items {
+		s := item
+		for k, v := range params {
+			s = strings.ReplaceAll(s, "${"+k+"}", v)
+		}
+		result[i] = s
 	}
 	return result
 }
