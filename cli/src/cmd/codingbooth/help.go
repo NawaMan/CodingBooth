@@ -121,8 +121,8 @@ RUNTIME OPTIONS:
                          RANDOM : pick a random free port ≥ 10000
                          NEXT   : pick the next available free port ≥ 10000
   --env-file <file>      Provide an --env-file to docker run
-                         Use 'none' to disable auto-detection of <code>/.env
-                         .booth/.env-local is always included when present (must be gitignored)
+                         Use 'none' to disable env-file loading
+                         .booth/.env is always included when present (must be gitignored)
   --startup <command>    Custom startup command to run inside the container
 
 CONTAINER MODE:
@@ -146,8 +146,8 @@ COMMANDS:
 NOTES:
   - The script checks if the image exists locally; if missing, it pulls automatically.
     Use --pull to always pull even if the image exists.
-  - If --env-file is not provided, <code>/.env is used when present.
-    Use '--env-file none' to disable. .booth/.env-local is always loaded when present.
+  - .booth/.env is always loaded when present (must be gitignored).
+    Use '--env-file <file>' to pass additional env vars, or 'none' to disable.
   - In daemon mode, do not pass commands after '--'.
   - With --dind, a docker:dind sidecar runs on a private network and the main
     container uses DOCKER_HOST=tcp://<sidecar>:2375.
@@ -206,7 +206,7 @@ BUILD OPTIONS (only with --dockerfile):
 RUNTIME OPTIONS:
   --name <container>     Container name (default: inferred from code directory)
   --port <n|RANDOM|NEXT> Host port → container 10000
-  --env-file <file>      Env-file for docker run (use 'none' to disable auto-detection)
+  --env-file <file>      Env-file for docker run (use 'none' to disable)
   --startup <command>    Custom startup command inside the container
 
 CONTAINER MODE:

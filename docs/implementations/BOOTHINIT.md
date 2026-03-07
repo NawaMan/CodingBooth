@@ -149,7 +149,7 @@ The writer (`WriteOutput`) creates the `.booth/` directory and writes all genera
 ├── config.toml          # Runtime configuration (variant, port, run-args, etc.)
 ├── Boothfile            # Build instructions (setup/install commands)
 ├── startup.sh           # Startup script (if any templates contribute startup segments)
-├── .gitignore           # Protects .booth.password and .env-local from accidental commits
+├── .gitignore           # Protects .booth.password and .env from accidental commits
 ├── setups/              # Custom setup scripts from templates
 ├── home/                # Home directory overrides from templates
 └── home-seed/           # Home directory defaults from templates
@@ -393,7 +393,7 @@ The `adjust` subcommand is equivalent to `new --overwrite` — it overwrites exi
 - **Zip Slip protection** — Extraction rejects entries containing `../` path traversal or symbolic links, and verifies all resolved paths stay within the destination directory.
 - **Fresh extraction** — Templates are extracted from the verified zip every time, not from a cached directory that could be tampered with.
 - **Target safety** — `new` prompts for confirmation before overwriting existing files (use `--overwrite` or `adjust` to skip).
-- **Gitignore generation** — Automatically creates `.booth/.gitignore` to protect `.booth.password` and `.env-local` from accidental commits.
+- **Gitignore generation** — Automatically creates `.booth/.gitignore` to protect `.booth.password` and `.env` from accidental commits.
 - **HTTP timeout** — URL fetching (`@@url`) uses a 30-second timeout.
 
 ---

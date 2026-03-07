@@ -314,7 +314,7 @@ my-project/
     ├── config.toml     # Launcher configuration
     ├── Boothfile       # Simplified build script (optional, preferred)
     ├── Dockerfile      # Custom Docker build (optional, fallback)
-    ├── .env-local      # Personal env vars (optional, gitignored)
+    ├── .env            # Personal env vars (optional, gitignored)
     ├── setups/         # Custom setup scripts (optional)
     ├── home/           # Team-shared home directory files (optional)
     └── tools/          # Managed by booth wrapper (auto-created)

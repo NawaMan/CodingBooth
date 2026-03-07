@@ -15,39 +15,31 @@ import (
 )
 
 // ApplyEnvFile applies environment file configuration and returns updated AppContext.
-// When .booth/.env-local exists, it is always included first (must be gitignored).
-// The user's env-file (explicit or auto-detected .env) is included second, so its
-// values take priority over .env-local on conflicts.
+// When .booth/.env exists, it is always included first (must be gitignored).
+// An explicit env-file (from config or CLI) is included second, so its values take
+// priority over .env on conflicts.
+// Note: .env in the project root is NOT auto-detected — it belongs to the application.
 func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
 
-	// Step 1: Apply .booth/.env-local if it exists (always included, independent of env-file setting)
+	// Step 1: Apply .booth/.env if it exists (always included, independent of env-file setting)
 	codeDir := ctx.Code()
 	if codeDir != "" {
-		envLocalFile := filepath.Join(codeDir, ".booth", ".env-local")
-		if fileExists(envLocalFile) {
-			if err := checkEnvLocalGitignored(envLocalFile, codeDir); err != nil {
+		boothEnvFile := filepath.Join(codeDir, ".booth", ".env")
+		if fileExists(boothEnvFile) {
+			if err := checkBoothEnvGitignored(boothEnvFile, codeDir); err != nil {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)
 			}
-			builder.CommonArgs.Append(ilist.NewList[string]("--env-file", envLocalFile))
+			builder.CommonArgs.Append(ilist.NewList[string]("--env-file", boothEnvFile))
 			if ctx.Verbose() {
-				fmt.Printf("Using env-local: %s\n", envLocalFile)
+				fmt.Printf("Using booth env: %s\n", boothEnvFile)
 			}
 		}
 	}
 
-	// Step 2: Apply user's env-file (explicit or auto-detected)
+	// Step 2: Apply user's explicit env-file (if configured)
 	containerEnvFile := ctx.EnvFile()
-
-	// If not set, default to <workspace>/.env when it exists
-	if containerEnvFile == "" {
-		candidate := filepath.Join(codeDir, ".env")
-		if fileExists(candidate) {
-			containerEnvFile = candidate
-			builder.Config.EnvFile = candidate
-		}
-	}
 
 	// Respect the "not used" token
 	if containerEnvFile != "" && containerEnvFile == "-" {
@@ -73,9 +65,9 @@ func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 	return builder.Build()
 }
 
-// checkEnvLocalGitignored verifies that .booth/.env-local is gitignored.
+// checkBoothEnvGitignored verifies that .booth/.env is gitignored.
 // Skips the check if git is not available or the project is not a git repo.
-func checkEnvLocalGitignored(envLocalFile, codeDir string) error {
+func checkBoothEnvGitignored(boothEnvFile, codeDir string) error {
 	gitPath, err := exec.LookPath("git")
 	if err != nil {
 		// git not installed, skip check
@@ -92,15 +84,15 @@ func checkEnvLocalGitignored(envLocalFile, codeDir string) error {
 	}
 
 	// git check-ignore returns exit 0 if ignored, exit 1 if NOT ignored
-	cmd = exec.Command(gitPath, "-C", codeDir, "check-ignore", "-q", ".booth/.env-local")
+	cmd = exec.Command(gitPath, "-C", codeDir, "check-ignore", "-q", ".booth/.env")
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf(
-			"env-local file %q is NOT gitignored. "+
-				"Add '.env-local' to .booth/.gitignore before using this feature. "+
+			"booth env file %q is NOT gitignored. "+
+				"Add '.env' to .booth/.gitignore before using this feature. "+
 				"Refusing to run to prevent accidental credential exposure",
-			envLocalFile,
+			boothEnvFile,
 		)
 	}
 

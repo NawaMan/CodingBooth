@@ -57,13 +57,12 @@
 #                         #   - NEXT   (pick the next free port ≥ 10000)
 #                         #   - RANDOM (pick a random free port > 10000)
 # env-file = ""           # Path to env file passed to `docker run`
-#                         # If unset, auto-uses "${code}/.env" when it exists
-#                         # Set to "none" to explicitly disable --env-file usage
+#                         # Set to "none" to disable env-file loading
 #                         # Common keys: PASSWORD, JUPYTER_TOKEN, TZ, HTTP(S)_PROXY, AWS_*, GH_TOKEN
 #
-# Note: .booth/.env-local is always loaded when present (must be gitignored).
+# Note: .booth/.env is always loaded when present (must be gitignored).
 # Use it for personal secrets that should never be committed.
-# When both .env-local and env-file exist, env-file values take priority.
+# .env in the project root is NOT auto-detected — it belongs to your application.
 
 ### -------------------------------------------------------------------------------------
 ### Environment variable expansion
@@ -107,9 +106,9 @@
 # code = "/home/user/projects/my-app"
 # common-args = ["--port", "RANDOM", "--name", "my-app"]
 
-# # Example 2: Force pull the prebuilt image and disable automatic .env usage
+# # Example 2: Force pull the prebuilt image and use a custom env file
 # pull = true
-# env-file = "none"
+# env-file = ".env.development"
 
 # # Example 3: Local build from a .booth/Dockerfile
 # dockerfile = "./"

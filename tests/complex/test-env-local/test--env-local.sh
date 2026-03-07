@@ -3,12 +3,10 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# Smoke test for .booth/.env-local support
+# Smoke test for .booth/.env support
 # Verifies:
-#   1) .booth/.env-local variables are visible inside container
-#   2) .env values override .env-local values on conflict
-#   3) .env-local is still loaded when env-file is disabled (env-file = "none")
-#   4) Non-conflicting variables from both files are available
+#   1) .booth/.env variables are visible inside container
+#   2) .env is still loaded when env-file is disabled (env-file = "-")
 
 set -euo pipefail
 
@@ -46,15 +44,15 @@ trap cleanup EXIT
 # Initialize a git repo so the gitignore check works
 git init "$TMPDIR" >/dev/null 2>&1
 
-# Create .booth directory with .env-local and .gitignore
+# Create .booth directory with .env and .gitignore
 mkdir -p "$TMPDIR/.booth"
 
 cat > "$TMPDIR/.booth/.gitignore" <<'EOF'
 .booth.password
-.env-local
+.env
 EOF
 
-cat > "$TMPDIR/.booth/.env-local" <<'EOF'
+cat > "$TMPDIR/.booth/.env" <<'EOF'
 LOCAL_SECRET=FromEnvLocal
 SHARED_VAR=LocalValue
 EOF
@@ -63,7 +61,7 @@ EOF
 run_cb() {
   pushd "$TMPDIR" >/dev/null
   echo -e "${COLOR_BOOTH:-}> codingbooth --name $CONTAINER_NAME -- $*${COLOR_RESET:-}" >&2
-  "$CB_SCRIPT" --name "$CONTAINER_NAME" "$@"
+  "$CB_SCRIPT" --name "$CONTAINER_NAME" --version latest "$@"
   popd >/dev/null
 }
 
@@ -95,33 +93,17 @@ assert_eq() {
   fi
 }
 
-# ---- Test 1: .env-local variables are visible ---------------------------------
+# ---- Test 1: .booth/.env variables are visible ------------------------------
 out="$(run_cb -- 'echo $LOCAL_SECRET' 2>/dev/null | tr -d '\r')"
-assert_eq "FromEnvLocal" "$out" ".env-local variable visible in container"
+assert_eq "FromEnvLocal" "$out" ".booth/.env variable visible in container"
 
-# ---- Test 2: .env overrides .env-local on conflict ----------------------------
-cat > "$TMPDIR/.env" <<'EOF'
-SHARED_VAR=EnvOverride
-ENV_ONLY=FromDotEnv
-EOF
-
-out="$(run_cb -- 'echo $SHARED_VAR' 2>/dev/null | tr -d '\r')"
-assert_eq "EnvOverride" "$out" ".env overrides .env-local on conflict"
-
-# ---- Test 3: Non-conflicting variables from both files are available ----------
-out="$(run_cb -- 'echo ${LOCAL_SECRET}-${ENV_ONLY}' 2>/dev/null | tr -d '\r')"
-assert_eq "FromEnvLocal-FromDotEnv" "$out" "Non-conflicting vars from both files available"
-
-# ---- Test 4: .env-local still works when env-file is disabled -----------------
-# Remove .env and use env-file = "none" in config
-rm -f "$TMPDIR/.env"
-
+# ---- Test 2: .booth/.env still works when env-file is disabled --------------
 cat > "$TMPDIR/.booth/config.toml" <<'EOF'
 env-file = "-"
 EOF
 
 out="$(run_cb -- 'echo $LOCAL_SECRET' 2>/dev/null | tr -d '\r')"
-assert_eq "FromEnvLocal" "$out" ".env-local loaded even when env-file disabled"
+assert_eq "FromEnvLocal" "$out" ".booth/.env loaded even when env-file disabled"
 
 # Clean up config for any further tests
 rm -f "$TMPDIR/.booth/config.toml"

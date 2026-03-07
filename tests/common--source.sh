@@ -50,8 +50,24 @@ run_coding_booth() {
     return 1
   fi
 
+  # When running a dev build, default to --version latest so prebuilt images resolve
+  local version_args=()
+  local cb_version
+  cb_version=$("$booth_path" version 2>/dev/null | tail -1 | sed 's/.*: //')
+  if [[ "$cb_version" == "dev" ]]; then
+    # Only inject if the caller didn't already pass --version (before --)
+    local has_version=false
+    for arg in "$@"; do
+      if [[ "$arg" == "--" ]]; then break; fi
+      if [[ "$arg" == "--version" ]]; then has_version=true; break; fi
+    done
+    if [[ "$has_version" == false ]]; then
+      version_args=(--version latest)
+    fi
+  fi
+
   echo -e "${COLOR_BOOTH}> codingbooth $*${COLOR_RESET}" >&2
-  "$booth_path" "$@"
+  "$booth_path" "${version_args[@]}" "$@"
 }
 
 # Normalize output for cross-platform comparison

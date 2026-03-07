@@ -206,7 +206,7 @@ There are **150+ templates** across 7 categories: languages, ai-tools, tools, ID
 ├── config.toml      # Runtime configuration (variant, port, run-args, etc.)
 ├── Boothfile        # Build instructions (compiled from templates)
 ├── startup.sh       # Startup script (if any templates contribute startup segments)
-├── .gitignore       # Protects .booth.password and .env-local
+├── .gitignore       # Protects .booth.password and .env
 ├── setups/          # Custom setup scripts from templates
 ├── home/            # Home directory team files
 └── home-seed/       # Home directory defaults
