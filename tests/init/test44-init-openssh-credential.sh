@@ -6,5 +6,5 @@ run booth init new $prj --select "openssh+credential"
 
 config="$prj/.booth/config.toml"
 
-assert-line "$config" '"-v", "~/.ssh:' '/etc/cb-home-seed/.ssh:ro",'  "credential run-args in config"
+assert-line "$config" 'run-args = ' '["-v", "~/.ssh:/etc/cb-home-seed/.ssh:ro"]'  "credential run-args in config"
 finally

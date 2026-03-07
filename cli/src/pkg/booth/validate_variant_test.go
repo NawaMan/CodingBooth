@@ -80,6 +80,14 @@ func TestValidateVariant(t *testing.T) {
 			wantDesktop:  false,
 		},
 		{
+			name:         "alias terminal -> base",
+			inputVariant: "terminal",
+			wantVariant:  "base",
+			wantNotebook: false,
+			wantVscode:   false,
+			wantDesktop:  false,
+		},
+		{
 			name:         "alias ide -> codeserver",
 			inputVariant: "ide",
 			wantVariant:  "codeserver",
@@ -112,6 +120,54 @@ func TestValidateVariant(t *testing.T) {
 			wantDesktop:  true,
 		},
 	}
+
+	// Separate test for terminal variant setting bash command
+	t.Run("terminal sets bash command when no cmds", func(t *testing.T) {
+		builder := &appctx.AppContextBuilder{
+			CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+			BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+			RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+			Cmds:       ilist.NewAppendableList[ilist.List[string]](),
+		}
+		builder.Config.Variant = "terminal"
+		ctx := builder.Build()
+
+		gotCtx := ValidateVariant(ctx)
+
+		if gotCtx.Variant() != "base" {
+			t.Errorf("variant = %v, want base", gotCtx.Variant())
+		}
+		if gotCtx.Cmds().Length() != 1 {
+			t.Fatalf("Cmds length = %d, want 1", gotCtx.Cmds().Length())
+		}
+		if gotCtx.Cmds().At(0).At(0) != "bash" {
+			t.Errorf("Cmds[0][0] = %v, want bash", gotCtx.Cmds().At(0).At(0))
+		}
+	})
+
+	t.Run("terminal preserves existing cmds", func(t *testing.T) {
+		builder := &appctx.AppContextBuilder{
+			CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+			BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+			RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+			Cmds:       ilist.NewAppendableList[ilist.List[string]](),
+		}
+		builder.Config.Variant = "terminal"
+		builder.Cmds.Append(ilist.NewList[string]("zsh"))
+		ctx := builder.Build()
+
+		gotCtx := ValidateVariant(ctx)
+
+		if gotCtx.Variant() != "base" {
+			t.Errorf("variant = %v, want base", gotCtx.Variant())
+		}
+		if gotCtx.Cmds().Length() != 1 {
+			t.Fatalf("Cmds length = %d, want 1", gotCtx.Cmds().Length())
+		}
+		if gotCtx.Cmds().At(0).At(0) != "zsh" {
+			t.Errorf("Cmds[0][0] = %v, want zsh", gotCtx.Cmds().At(0).At(0))
+		}
+	})
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

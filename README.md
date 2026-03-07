@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.31.0 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.32.0 — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -82,16 +82,17 @@ CodingBooth supports multiple variants (different UIs that share the same underl
 - **Code Server** — VS Code running in your browser with full extension support.
 - **XFCE Desktop** — A full Linux desktop accessible via your browser.
 - **KDE Desktop** — A feature-rich Linux desktop with KDE Plasma.
+- **Terminal** — A direct bash session in your host terminal (no browser UI). Shortcut for `booth -- bash`.
 - **Command passthrough** — Skip the UI entirely. Run any command inside the container with booth `-- <command>` and get the result directly in your terminal.
 
 For detailed variant information, aliases, and desktop configuration, see the **[Variants Guide](docs/BOOTH_VARIANTS.md)**.
 
 #### Example Screenshots
 
-| Base                                                                          | Bash                                                                                 |
+| Base                                                                          | Terminal                                                                             |
 |:-----------------------------------------------------------------------------:|:------------------------------------------------------------------------------------:|
-| [![Base](docs/images/Booth-Base.png)](docs/images/Booth-Base.png)             | [![Bash](docs/images/Booth-Bash.png)](docs/images/Booth-Bash.png)                    |
-| `booth --variant base`                                                        | `booth -- bash`                                                                      |
+| [![Base](docs/images/Booth-Base.png)](docs/images/Booth-Base.png)             | [![Terminal](docs/images/Booth-Bash.png)](docs/images/Booth-Bash.png)                |
+| `booth --variant base`                                                        | `booth --variant terminal`                                                           |
 
 | Notebook                                                                      | Code Server                                                                          |
 |:-----------------------------------------------------------------------------:|:------------------------------------------------------------------------------------:|

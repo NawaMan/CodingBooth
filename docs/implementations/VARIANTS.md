@@ -49,6 +49,7 @@ For convenience, CodingBooth accepts aliases:
 |-----------|----------------|
 | `default` | `base`         |
 | `console` | `base`         |
+| `terminal`| `base` (cmd: bash) |
 | `ide`     | `codeserver`   |
 | `desktop` | `desktop-xfce` |
 | `xfce`    | `desktop-xfce` |
@@ -73,6 +74,9 @@ func ValidateVariant(ctx appctx.AppContext) appctx.AppContext {
         // Valid variants, no change needed
     case "default", "console":
         variant = "base"
+    case "terminal":
+        variant = "base"
+        // Sets cmd to "bash" if no commands provided
     // ... handles other aliases ...
     default:
         // Error handling ...
@@ -141,6 +145,19 @@ Example image names:
 ---
 
 ## Variant-Specific Behavior
+
+### Terminal Alias
+
+The `terminal` alias is a special case — it resolves to the `base` variant but also sets the default command to `bash`. This gives users a direct terminal session in their host terminal, skipping the web-based `ttyd` UI entirely.
+
+Unlike other aliases which are pure name mappings, `terminal` modifies the run behavior:
+
+```
+booth --variant terminal       →  equivalent to:  booth --variant base -- bash
+booth --variant terminal -- zsh  →  user command takes precedence (runs zsh)
+```
+
+Because the variant resolves to `base`, the same Docker image (`nawaman/codingbooth:base-*`) is used. The difference is only in how the container runs — command mode (`COMMAND`) instead of foreground mode (`FOREGROUND`).
 
 ### Base Variant
 
@@ -251,6 +268,25 @@ User runs: ./booth --variant ide
 VS Code (code-server) running in browser at localhost:10000
 ```
 
+```
+User runs: ./booth --variant terminal
+
+  1. CLI parses --variant terminal
+     │
+  2. ValidateVariant() normalizes:
+     │  terminal → base + cmd: bash
+     │
+  3. EnsureDockerImage() constructs image name:
+     │  nawaman/codingbooth:base-latest
+     │
+  4. Docker pulls/builds if needed
+     │
+  5. PrepareRunMode() sees cmd is set → COMMAND mode
+     │
+  ▼
+Interactive bash session in host terminal
+```
+
 ---
 
 ## Error Handling
@@ -260,7 +296,7 @@ Invalid variants produce clear error messages:
 ```bash
 $ ./booth --variant invalid
 Error: unknown --variant 'invalid' (valid: base|notebook|codeserver|desktop-xfce|desktop-kde;
-       aliases: console|ide|desktop|xfce|kde)
+       aliases: console|terminal|ide|desktop|xfce|kde)
 ```
 
 ---

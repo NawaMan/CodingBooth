@@ -19,6 +19,7 @@ Back to [README](../README.md)
 - [Image Selection](#image-selection)
 - [Container Name](#container-name)
 - [Config Files](#config-files)
+- [Environment Variables](#environment-variables)
 - [Host UID/GID Handling](#host-uidgid-handling)
 - [Run Modes](#run-modes)
 - [Ports](#ports)
@@ -106,25 +107,101 @@ You can define special arrays in `.booth/config.toml` to customize Docker intera
 
 > These arrays allow you to version-control runtime and build options without hardcoding them into your CLI workflow.
 
-### Container Environment File (`.env`)
+### Environment Files (`.env`, `.booth/.env-local`)
 
-- Passed directly to Docker using the `--env-file` option.
-- Commonly used for credentials or runtime configuration: `PASSWORD`, `JUPYTER_TOKEN`, `TZ`, `GH_TOKEN`, etc.
-- Override the path with `env-file = "<path>"` in config.toml.
-- Disable with `env-file = "none"` in config.toml.
+See [Environment Variables](#environment-variables) for the full guide on passing env vars into the container, including `.env`, `.booth/.env-local`, `run-args -e`, and Boothfile `env`.
 
-### Local Environment File (`.booth/.env-local`)
+---
 
-- Automatically loaded when present — no configuration needed.
-- Intended for **personal secrets** (API keys, tokens, credentials) that should never be committed.
-- **Always gitignored:** `booth init` adds `.env-local` to `.booth/.gitignore`. CodingBooth refuses to run if the file exists but is not gitignored.
-- **Merged with env-file:** When both files exist, env-file values take priority for any variables defined in both.
-- Disabling the env-file (`env-file = "none"`) does **not** disable `.env-local`.
+## Environment Variables
 
-> **Configuration layers summary:**
-> - **Build + Image:** `.booth/config.toml` (persistent project defaults)
-> - **Local Secrets:** `.booth/.env-local` (personal, gitignored, always loaded)
-> - **Container Environment:** `.env` (runtime secrets, overrides .env-local)
+There are several ways to pass environment variables into the booth container, each suited to different use cases.
+
+### At a Glance
+
+| Method | Where | When Applied | Committed to Git? | Best For |
+|--------|-------|-------------|-------------------|----------|
+| `.booth/.env-local` | `.booth/.env-local` | Runtime (auto) | No (must be gitignored) | Personal secrets (tokens, keys) |
+| `.env` file | Project root | Runtime (auto) | Your choice | Shared runtime config |
+| `env-file` in config | `config.toml` | Runtime | Yes | Custom env file path |
+| `run-args` with `-e` | `config.toml` | Runtime | Yes | Individual vars with expansion |
+| `env` in Boothfile | `Boothfile` | Build time | Yes | Baked-in defaults |
+
+### 1. Local Secrets: `.booth/.env-local`
+
+Automatically loaded when present — no configuration needed. Intended for personal secrets that should never be committed.
+
+```env
+GH_TOKEN=ghp_xxxxxxxxxxxx
+GIT_USER=yourname
+GIT_EMAIL=you@example.com
+```
+
+- **Must be gitignored.** CodingBooth refuses to run if the file exists but is not gitignored. `booth init` adds `.env-local` to `.booth/.gitignore` automatically.
+- Always loaded first (lower priority if the same variable appears in `.env`).
+
+### 2. Project Environment: `.env`
+
+When a `.env` file exists in the project root, CodingBooth auto-detects and includes it via Docker's `--env-file`.
+
+```env
+DATABASE_URL=postgres://localhost:5432/mydb
+NODE_ENV=development
+```
+
+- Values override `.env-local` on conflicts.
+- Override the path with `env-file` in config.toml.
+- Disable with `env-file = "-"` in config.toml.
+
+### 3. Explicit Env File: `env-file` in config.toml
+
+Point to a custom environment file:
+
+```toml
+env-file = "config/dev.env"
+```
+
+This replaces the auto-detected `.env` file (but `.booth/.env-local` is still loaded independently).
+
+### 4. Inline Variables: `run-args` with `-e`
+
+Pass individual environment variables via Docker run arguments in `config.toml`:
+
+```toml
+run-args = ["-e", "TZ=Asia/Bangkok", "-e", "DEBUG=true"]
+```
+
+These support **variable expansion** — you can reference host environment variables:
+
+```toml
+run-args = ["-e", "GH_TOKEN=${GH_TOKEN}"]
+```
+
+`$VAR`, `${VAR}`, and `~` (tilde for home directory) are expanded at config load time using host environment values.
+
+> **Tip:** If the variable is already defined in `.env-local` or `.env`, you don't need to repeat it in `run-args`. The env files pass variables directly to the container.
+
+### 5. Build-Time Variables: `env` in Boothfile
+
+Set environment variables that are baked into the Docker image:
+
+```
+env DJANGO_SETTINGS_MODULE=myproject.settings
+env DEBUG=true
+```
+
+These become part of the image and are available in every container started from it. Use this for defaults that apply to all users of the project.
+
+### Priority Order
+
+When the same variable is defined in multiple places, later sources win:
+
+```
+Boothfile env (build-time, lowest)
+  → .booth/.env-local
+    → .env or env-file
+      → run-args -e (highest at runtime)
+```
 
 ---
 

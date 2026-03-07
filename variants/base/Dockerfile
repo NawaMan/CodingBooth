@@ -133,6 +133,9 @@ COPY --chmod=0644 ./_stage/AGENT.md    /opt/codingbooth/
 # Directories need 0755 for traversal; files inside are still readable
 COPY ./_stage/variants/ /opt/codingbooth/variants/
 RUN chmod -R a+rX /opt/codingbooth/variants
+# Documentation (markdown only, ~300KB)
+COPY ./_stage/docs/ /opt/codingbooth/docs/
+RUN chmod -R a+rX /opt/codingbooth/docs
 
 # TLS reverse proxy (Caddy) - activated by BOOTH_TLS=true (set by --public)
 RUN tls--setup.sh

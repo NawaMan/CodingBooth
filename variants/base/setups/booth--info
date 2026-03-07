@@ -65,6 +65,9 @@ fi
 if [[ -f "$CB_DIR/AGENT.md" ]]; then
   echo "  - AGENT.md         : Instructions for AI agents (also at ~/AGENT.md)"
 fi
+if [[ -d "$CB_DIR/docs" ]]; then
+  echo "  - docs/            : Full documentation (guides, references, implementation details)"
+fi
 if [[ -d "$CB_DIR/variants" ]]; then
   echo "  - variants/        : Dockerfiles for all variants"
 fi

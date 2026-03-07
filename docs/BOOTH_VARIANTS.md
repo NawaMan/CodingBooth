@@ -28,12 +28,15 @@ CodingBooth supports several shortcuts and aliases for variant names:
 |--------------|------------------|
 | default      | base             |
 | console      | base             |
+| terminal     | base (cmd: bash) |
 | ide          | codeserver       |
 | notebook     | notebook         |
 | codeserver   | codeserver       |
 | desktop      | desktop-xfce     |
 | xfce         | desktop-xfce     |
 | kde          | desktop-kde      |
+
+The `terminal` alias resolves to the `base` variant but automatically sets the command to `bash`, giving you a direct terminal session in your host terminal — equivalent to `booth -- bash`. If you pass explicit commands (e.g., `booth --variant terminal -- zsh`), your commands take precedence.
 
 If an unknown value is provided, CodingBooth will exit with an error listing supported variants and aliases.
 
@@ -108,6 +111,8 @@ When all conditions align, paste works directly. When any condition isn't met, t
 - **Web or App Development** – Develop directly in a browser-based IDE using `--variant codeserver`, complete with terminal and Git integration.
 
 - **Lightweight CLI Workflows** – Use `--variant base` for scripting, building, and testing in an isolated but fast shell environment.
+
+- **Direct Terminal Sessions** – Use `--variant terminal` to drop straight into a bash session inside the container, without opening a browser. This is useful for quick tasks, scripting, or when you prefer working in your host terminal rather than a web-based UI.
 
 - **GUI Development Environments** – Run full desktop IDEs or graphical tools using `--variant desktop-*`.
   Perfect for complex projects requiring a windowed environment without polluting your host.

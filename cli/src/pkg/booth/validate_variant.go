@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // ValidateVariant validates and normalizes the variant and returns updated AppContext.
@@ -23,6 +24,11 @@ func ValidateVariant(ctx appctx.AppContext) appctx.AppContext {
 		// Valid variants, no change needed
 	case "default", "console":
 		variant = "base"
+	case "terminal":
+		variant = "base"
+		if ctx.Cmds().Length() == 0 {
+			builder.Cmds.Append(ilist.NewList[string]("bash"))
+		}
 	case "ide":
 		variant = "codeserver"
 	case "desktop":
@@ -31,7 +37,7 @@ func ValidateVariant(ctx appctx.AppContext) appctx.AppContext {
 		variant = "desktop-" + variant
 	default:
 		fmt.Fprintf(os.Stderr, "Error: unknown --variant '%s' (valid: base|notebook|codeserver|desktop-xfce|desktop-kde;\n", variant)
-		fmt.Fprintln(os.Stderr, "       aliases: console|ide|desktop|xfce|kde)")
+		fmt.Fprintln(os.Stderr, "       aliases: console|terminal|ide|desktop|xfce|kde)")
 		os.Exit(1)
 	}
 

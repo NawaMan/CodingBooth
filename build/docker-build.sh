@@ -161,6 +161,13 @@ StageDocsForBase() {
   cp version.txt "$stage_dir/"
   cp docs/AGENT.md "$stage_dir/"
 
+  # Copy docs markdown files (excluding images to keep image small)
+  mkdir -p "$stage_dir/docs"
+  find docs -name '*.md' | while read -r f; do
+    mkdir -p "$stage_dir/$(dirname "$f")"
+    cp "$f" "$stage_dir/$f"
+  done
+
   # Copy all variant Dockerfiles
   for v in "${ALL_VARIANTS[@]}"; do
     mkdir -p "$stage_dir/variants/$v"
