@@ -68,7 +68,7 @@ func TestIntegration_Basic_SingleGo(t *testing.T) {
 	assert.Contains(t, out.Boothfile.Content, "setup go ${GO_VERSION}")
 
 	// No startup from go template alone
-	assert.Nil(t, out.Startup)
+	assert.Empty(t, out.Startups)
 
 	// Files written to disk
 	boothfilePath := filepath.Join(targetDir, ".booth", "Boothfile")
@@ -95,16 +95,23 @@ func TestIntegration_Basic_SinglePython(t *testing.T) {
 	assert.Contains(t, out.Boothfile.Content, "setup python ${PYTHON_VERSION}")
 
 	// Startup from python
-	require.NotNil(t, out.Startup)
-	assert.Contains(t, out.Startup.Content, "Python environment ready")
+	require.NotEmpty(t, out.Startups)
+	var startupContent string
+	for _, s := range out.Startups {
+		startupContent += s.Content
+	}
+	assert.Contains(t, startupContent, "Python environment ready")
 
 	// Home-seed files
 	require.Len(t, out.HomeSeed, 1)
 	assert.Equal(t, ".python_history", out.HomeSeed[0].RelPath)
 
-	// Startup written to disk
-	startupPath := filepath.Join(targetDir, ".booth", "startup.sh")
-	startupBytes, err := os.ReadFile(startupPath)
+	// Startups written to disk
+	startupsDir := filepath.Join(targetDir, ".booth", "startups")
+	entries, err := os.ReadDir(startupsDir)
+	require.NoError(t, err)
+	require.NotEmpty(t, entries)
+	startupBytes, err := os.ReadFile(filepath.Join(startupsDir, entries[0].Name()))
 	require.NoError(t, err)
 	assert.Contains(t, string(startupBytes), "#!/bin/bash")
 	assert.Contains(t, string(startupBytes), "set -e")
@@ -121,7 +128,7 @@ func TestIntegration_Basic_SingleNeovim(t *testing.T) {
 
 	// No params, no boothfile segments, no startup
 	assert.Nil(t, out.Boothfile)
-	assert.Nil(t, out.Startup)
+	assert.Empty(t, out.Startups)
 
 	// Home files
 	require.Len(t, out.Home, 1)
@@ -191,8 +198,12 @@ func TestIntegration_Complex_GoAndPython(t *testing.T) {
 	assert.Contains(t, out.Config.RunArgs, "PYTHONDONTWRITEBYTECODE=1")
 
 	// Startup from python only
-	require.NotNil(t, out.Startup)
-	assert.Contains(t, out.Startup.Content, "Python environment ready")
+	require.NotEmpty(t, out.Startups)
+	var startupContent2 string
+	for _, s := range out.Startups {
+		startupContent2 += s.Content
+	}
+	assert.Contains(t, startupContent2, "Python environment ready")
 
 	// Home-seed from python
 	require.Len(t, out.HomeSeed, 1)
@@ -220,19 +231,22 @@ func TestIntegration_Complex_GoLinterPythonClaudeCode(t *testing.T) {
 	npmIdx := strings.Index(content, "npm install -g @anthropic-ai/claude-code")
 	assert.Greater(t, npmIdx, nodejsIdx, "claude-code segment at order 30 before order 80")
 
-	// Startup merges python and claude-code
-	require.NotNil(t, out.Startup)
-	startup := out.Startup.Content
-	assert.Contains(t, startup, "Setting up Claude Code...")
-	assert.Contains(t, startup, "Python environment ready")
-	assert.Contains(t, startup, "Claude Code ready")
+	// Startups from python and claude-code as individual files
+	require.NotEmpty(t, out.Startups)
+	var allStartupContent string
+	for _, s := range out.Startups {
+		allStartupContent += s.Content
+	}
+	assert.Contains(t, allStartupContent, "Setting up Claude Code...")
+	assert.Contains(t, allStartupContent, "Python environment ready")
+	assert.Contains(t, allStartupContent, "Claude Code ready")
 
-	// claude-code startup--10 before python startup (50) before claude-code startup--90
-	setupIdx := strings.Index(startup, "Setting up Claude Code...")
-	pythonIdx := strings.Index(startup, "Python environment ready")
-	readyIdx := strings.Index(startup, "Claude Code ready")
-	assert.Greater(t, pythonIdx, setupIdx, "startup--10 before python startup at 50")
-	assert.Greater(t, readyIdx, pythonIdx, "python startup at 50 before startup--90")
+	// Verify ordering: files sorted by order number in filename
+	// claude-code startup--10 (order 10) before python (order 50) before claude-code startup--90
+	require.GreaterOrEqual(t, len(out.Startups), 3)
+	assert.Contains(t, out.Startups[0].RelPath, "10-")
+	assert.Contains(t, out.Startups[1].RelPath, "50-")
+	assert.Contains(t, out.Startups[2].RelPath, "90-")
 
 	// Config
 	assert.True(t, out.Config.Dind, "claude-code enables dind")
@@ -329,10 +343,15 @@ func TestIntegration_Dryrun_BoothfileHeader(t *testing.T) {
 	assert.Equal(t, "# syntax=codingbooth/boothfile:1", lines[0])
 }
 
-func TestIntegration_Dryrun_StartupShHeader(t *testing.T) {
+func TestIntegration_Dryrun_StartupFileHeader(t *testing.T) {
 	_, targetDir := pipeline(t, "python")
 
-	startupBytes, err := os.ReadFile(filepath.Join(targetDir, ".booth", "startup.sh"))
+	startupsDir := filepath.Join(targetDir, ".booth", "startups")
+	entries, err := os.ReadDir(startupsDir)
+	require.NoError(t, err)
+	require.NotEmpty(t, entries)
+
+	startupBytes, err := os.ReadFile(filepath.Join(startupsDir, entries[0].Name()))
 	require.NoError(t, err)
 	lines := strings.Split(string(startupBytes), "\n")
 	assert.Equal(t, "#!/bin/bash", lines[0])

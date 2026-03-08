@@ -1,0 +1,11 @@
+display-name = "Playwright Java"
+display-disc = "Playwright Java bindings (com.microsoft.playwright)"
+display-order = 12
+auto-select = false
+tags = [
+    "playwright",
+    "java",
+    "testing",
+]
+
+requires = ["java"]

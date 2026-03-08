@@ -76,7 +76,7 @@ func TestOutputPaths_Full(t *testing.T) {
 	out := &BoothOutput{
 		Config:    &ConfigToml{Variant: "codeserver"},
 		Boothfile: &BoothfileContent{Content: "setup go 1.24\n"},
-		Startup:   &StartupContent{Content: "echo hello\n"},
+		Startups:  []FileContent{{RelPath: "50-myapp--startup.sh", Content: "echo hello\n"}},
 		Setups:    []FileContent{{RelPath: "myapp--setup.sh"}},
 		Home:      []FileContent{{RelPath: ".bashrc"}},
 		HomeSeed:  []FileContent{{RelPath: ".config/myapp/config.yaml"}},
@@ -85,7 +85,7 @@ func TestOutputPaths_Full(t *testing.T) {
 	assert.Contains(t, paths, "/tmp/proj/.booth/.gitignore")
 	assert.Contains(t, paths, "/tmp/proj/.booth/config.toml")
 	assert.Contains(t, paths, "/tmp/proj/.booth/Boothfile")
-	assert.Contains(t, paths, "/tmp/proj/.booth/startup.sh")
+	assert.Contains(t, paths, "/tmp/proj/.booth/startups/50-myapp--startup.sh")
 	assert.Contains(t, paths, "/tmp/proj/.booth/setups/myapp--setup.sh")
 	assert.Contains(t, paths, "/tmp/proj/.booth/home/.bashrc")
 	assert.Contains(t, paths, "/tmp/proj/.booth/home-seed/.config/myapp/config.yaml")
@@ -168,16 +168,16 @@ func TestWriteOutput_WritesBoothfile(t *testing.T) {
 	assert.Contains(t, content, "setup go 1.24")
 }
 
-func TestWriteOutput_WritesStartup(t *testing.T) {
+func TestWriteOutput_WritesStartups(t *testing.T) {
 	tmpDir := t.TempDir()
 	out := &BoothOutput{
-		Config:  &ConfigToml{Variant: "base"},
-		Startup: &StartupContent{Content: "echo hello\n"},
+		Config:   &ConfigToml{Variant: "base"},
+		Startups: []FileContent{{RelPath: "50-test--startup.sh", Content: "echo hello\n"}},
 	}
 	err := WriteOutput(out, tmpDir)
 	require.NoError(t, err)
 
-	path := filepath.Join(tmpDir, ".booth", "startup.sh")
+	path := filepath.Join(tmpDir, ".booth", "startups", "50-test--startup.sh")
 	data, err := os.ReadFile(path)
 	require.NoError(t, err)
 	content := string(data)
@@ -187,14 +187,14 @@ func TestWriteOutput_WritesStartup(t *testing.T) {
 	// Verify executable permission
 	info, err := os.Stat(path)
 	require.NoError(t, err)
-	assert.True(t, info.Mode()&0100 != 0, "startup.sh should be executable")
+	assert.True(t, info.Mode()&0100 != 0, "startup file should be executable")
 }
 
 func TestWriteOutput_SkipsNilFields(t *testing.T) {
 	tmpDir := t.TempDir()
 	out := &BoothOutput{
 		Config: &ConfigToml{Variant: "base"},
-		// Boothfile, Startup, Home, HomeSeed, Setups all nil/empty
+		// Boothfile, Startups, Home, HomeSeed, Setups all nil/empty
 	}
 	err := WriteOutput(out, tmpDir)
 	require.NoError(t, err)
@@ -207,7 +207,7 @@ func TestWriteOutput_SkipsNilFields(t *testing.T) {
 	_, err = os.Stat(filepath.Join(tmpDir, ".booth", "Boothfile"))
 	assert.True(t, os.IsNotExist(err))
 
-	_, err = os.Stat(filepath.Join(tmpDir, ".booth", "startup.sh"))
+	_, err = os.Stat(filepath.Join(tmpDir, ".booth", "startups"))
 	assert.True(t, os.IsNotExist(err))
 
 	_, err = os.Stat(filepath.Join(tmpDir, ".booth", "setups"))
@@ -311,8 +311,8 @@ func TestWriteOutput_FullOutput(t *testing.T) {
 		Boothfile: &BoothfileContent{
 			Content: "setup python 3.12\nsetup jdk 21 temurin\ninstall pip django\n",
 		},
-		Startup: &StartupContent{
-			Content: "/opt/myapp/migrate.sh\n",
+		Startups: []FileContent{
+			{RelPath: "50-myapp--startup.sh", Content: "/opt/myapp/migrate.sh\n"},
 		},
 		Setups: []FileContent{
 			{SourcePath: setupSrc, RelPath: "django--setup.sh"},
@@ -333,7 +333,7 @@ func TestWriteOutput_FullOutput(t *testing.T) {
 	// Verify all files exist
 	assert.FileExists(t, filepath.Join(boothDir, "config.toml"))
 	assert.FileExists(t, filepath.Join(boothDir, "Boothfile"))
-	assert.FileExists(t, filepath.Join(boothDir, "startup.sh"))
+	assert.FileExists(t, filepath.Join(boothDir, "startups", "50-myapp--startup.sh"))
 	assert.FileExists(t, filepath.Join(boothDir, "setups", "django--setup.sh"))
 	assert.FileExists(t, filepath.Join(boothDir, "home", ".gitconfig"))
 	assert.FileExists(t, filepath.Join(boothDir, "home-seed", ".config", "nvim", "init.lua"))
@@ -349,7 +349,7 @@ func TestWriteOutput_FullOutput(t *testing.T) {
 	assert.Contains(t, string(bfData), "setup python 3.12")
 
 	// Verify startup content
-	startupData, _ := os.ReadFile(filepath.Join(boothDir, "startup.sh"))
+	startupData, _ := os.ReadFile(filepath.Join(boothDir, "startups", "50-myapp--startup.sh"))
 	assert.Contains(t, string(startupData), "#!/bin/bash")
 	assert.Contains(t, string(startupData), "/opt/myapp/migrate.sh")
 }

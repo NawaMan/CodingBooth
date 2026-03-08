@@ -237,10 +237,15 @@ func (c *collector) build() (*output.BoothOutput, error) {
 		out.Boothfile = &output.BoothfileContent{Content: content}
 	}
 
-	// Startup
-	startupBody := mergeSegments(c.startupSegs)
-	if startupBody != "" {
-		out.Startup = &output.StartupContent{Content: startupBody}
+	// Startups — emit each segment as a separate file
+	sortSegments(c.startupSegs)
+	for _, seg := range c.startupSegs {
+		name := fmt.Sprintf("%02d-%s--startup.sh", seg.Order, sanitizeName(seg.SourceName))
+		content := strings.TrimRight(seg.Content, "\n") + "\n"
+		out.Startups = append(out.Startups, output.FileContent{
+			RelPath: name,
+			Content: content,
+		})
 	}
 
 	// Files
@@ -251,12 +256,8 @@ func (c *collector) build() (*output.BoothOutput, error) {
 	return out, nil
 }
 
-// mergeSegments sorts by order (tiebreak by source name) and concatenates content.
-func mergeSegments(segs []sourcedSegment) string {
-	if len(segs) == 0 {
-		return ""
-	}
-
+// sortSegments sorts segments by order (tiebreak by source name).
+func sortSegments(segs []sourcedSegment) {
 	slices.SortFunc(segs, func(a, b sourcedSegment) int {
 		if a.Order != b.Order {
 			return a.Order - b.Order
@@ -269,12 +270,27 @@ func mergeSegments(segs []sourcedSegment) string {
 		}
 		return 0
 	})
+}
+
+// mergeSegments sorts by order (tiebreak by source name) and concatenates content.
+func mergeSegments(segs []sourcedSegment) string {
+	if len(segs) == 0 {
+		return ""
+	}
+
+	sortSegments(segs)
 
 	var parts []string
 	for _, seg := range segs {
 		parts = append(parts, strings.TrimRight(seg.Content, "\n"))
 	}
 	return strings.Join(parts, "\n") + "\n"
+}
+
+// sanitizeName converts a source name to a safe filename component.
+// e.g., "excalidraw+autostart" → "excalidraw-autostart"
+func sanitizeName(name string) string {
+	return strings.ReplaceAll(name, "+", "-")
 }
 
 // buildArgLines generates Boothfile ARG directives from params, sorted alphabetically.

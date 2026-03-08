@@ -1,0 +1,15 @@
+display-name = "Playwright VS Code Extension"
+display-disc = "Playwright Test runner and recorder for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "playwright",
+    "testing",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup playwright-code-extension
+"""

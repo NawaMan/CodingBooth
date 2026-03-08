@@ -10,7 +10,7 @@ The `booth` wrapper script is **location-based**: it operates relative to its ow
 3. The directories `/home/coder` and `/home/coder/code` are owned by that user, ensuring smooth file sharing between host and container.  
 4. Add the user `coder` to sudoers so that it can sudo without needing the password
 5. Prepare `.bashrc` and `.zshrc`
-6. Run startup script (files in `/etc/startup.d`)
+6. Run startup scripts (system scripts from `/usr/share/startup.d/`, then user scripts from `.booth/startups/`)
 7. All commands run as the unprivileged **`coder`** user, not `root`, preserving security and consistent file ownership.
 
 ```

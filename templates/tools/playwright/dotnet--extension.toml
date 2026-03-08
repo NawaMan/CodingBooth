@@ -1,0 +1,17 @@
+display-name = "Playwright .NET"
+display-disc = "Playwright .NET bindings (Microsoft.Playwright NuGet package)"
+display-order = 11
+auto-select = false
+tags = [
+    "playwright",
+    "dotnet",
+    "csharp",
+    "testing",
+]
+
+requires = ["dotnet"]
+
+[segments]
+"Boothfile--90" = """
+run dotnet tool install --global Microsoft.Playwright.CLI || true
+"""

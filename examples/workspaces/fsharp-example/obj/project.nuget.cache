@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "T3/rPhowH2E=",
+  "success": true,
+  "projectFilePath": "/home/coder/code/fsharp-example.fsproj",
+  "expectedPackageFiles": [
+    "/opt/nuget-packages/fsharp.core/9.0.303/fsharp.core.9.0.303.nupkg.sha512"
+  ],
+  "logs": []
+}

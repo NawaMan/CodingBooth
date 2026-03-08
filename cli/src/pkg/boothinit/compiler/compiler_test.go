@@ -56,8 +56,9 @@ func TestCompile_SingleTemplateStartup(t *testing.T) {
 
 	out, err := Compile(resolved)
 	require.NoError(t, err)
-	require.NotNil(t, out.Startup)
-	assert.Equal(t, "go version\n", out.Startup.Content)
+	require.Len(t, out.Startups, 1)
+	assert.Equal(t, "50-go--startup.sh", out.Startups[0].RelPath)
+	assert.Equal(t, "go version\n", out.Startups[0].Content)
 }
 
 func TestCompile_SingleTemplateConfig(t *testing.T) {
@@ -96,7 +97,7 @@ func TestCompile_EmptyTemplate(t *testing.T) {
 	out, err := Compile(resolved)
 	require.NoError(t, err)
 	assert.Nil(t, out.Boothfile)
-	assert.Nil(t, out.Startup)
+	assert.Empty(t, out.Startups)
 	require.NotNil(t, out.Config)
 }
 
@@ -106,7 +107,7 @@ func TestCompile_NoTemplates(t *testing.T) {
 	out, err := Compile(resolved)
 	require.NoError(t, err)
 	assert.Nil(t, out.Boothfile)
-	assert.Nil(t, out.Startup)
+	assert.Empty(t, out.Startups)
 	require.NotNil(t, out.Config)
 }
 
@@ -844,8 +845,12 @@ func TestCompile_EndToEnd(t *testing.T) {
 	assert.Contains(t, content, "run apt-get install -y python=${PYTHON_VERSION}")
 	assert.Contains(t, content, "run go install golangci-lint")
 
-	// Startup
-	require.NotNil(t, out.Startup)
-	assert.Contains(t, out.Startup.Content, "go version")
-	assert.Contains(t, out.Startup.Content, "python --version")
+	// Startups
+	require.NotEmpty(t, out.Startups)
+	var startupContents string
+	for _, s := range out.Startups {
+		startupContents += s.Content
+	}
+	assert.Contains(t, startupContents, "go version")
+	assert.Contains(t, startupContents, "python --version")
 }

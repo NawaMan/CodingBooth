@@ -1,0 +1,16 @@
+display-name = "Playwright Python"
+display-disc = "Playwright Python bindings (playwright for Python)"
+display-order = 10
+auto-select = false
+tags = [
+    "playwright",
+    "python",
+    "testing",
+]
+
+requires = ["python"]
+
+[segments]
+"Boothfile--90" = """
+run pip install playwright
+"""

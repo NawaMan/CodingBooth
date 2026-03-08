@@ -354,18 +354,49 @@ if [ -d "/usr/share/startup.d" ] && [ ! -f "$RUN_ONCE_FLAG" ]; then
   touch "$RUN_ONCE_FLAG"
 fi
 
-info "15) Running user custom startup script (from --startup or .booth/startup.sh)"
-# Use BOOTH_STARTUP if set, otherwise check for .booth/startup.sh in code path
-BOOTH_STARTUP_SCRIPT="${BOOTH_STARTUP:-}"
-if [ -z "$BOOTH_STARTUP_SCRIPT" ] && [ -f "$CODE_DIR/.booth/startup.sh" ]; then
-  BOOTH_STARTUP_SCRIPT="$CODE_DIR/.booth/startup.sh"
-fi
-if [ -n "$BOOTH_STARTUP_SCRIPT" ] && [ -f "$BOOTH_STARTUP_SCRIPT" ] && [ -r "$BOOTH_STARTUP_SCRIPT" ]; then
-  info "Running user startup script: $BOOTH_STARTUP_SCRIPT"
+info "15) Running user startup scripts (.booth/startups/ and .booth/startup.sh)"
+STARTUPS_DIR="$CODE_DIR/.booth/startups"
+STARTUP_SH="$CODE_DIR/.booth/startup.sh"
+BOOTH_STARTUP_OVERRIDE="${BOOTH_STARTUP:-}"
+
+# If BOOTH_STARTUP is explicitly set, run only that (override mode)
+if [ -n "$BOOTH_STARTUP_OVERRIDE" ] && [ -f "$BOOTH_STARTUP_OVERRIDE" ] && [ -r "$BOOTH_STARTUP_OVERRIDE" ]; then
+  info "Running override startup script: $BOOTH_STARTUP_OVERRIDE"
   runuser -u "$USER_NAME" -- bash -lc "
     set -euo pipefail
-    source '$BOOTH_STARTUP_SCRIPT'
+    source '$BOOTH_STARTUP_OVERRIDE'
   "
+else
+  # Run startups/ directory scripts in sorted order.
+  # Files without a NN- prefix are treated as order 50.
+  if [ -d "$STARTUPS_DIR" ]; then
+    runuser -u "$USER_NAME" -- bash -lc "
+      set -euo pipefail
+      shopt -s nullglob
+      declare -a _sorted=()
+      for f in '$STARTUPS_DIR'/*--startup.sh; do
+        _base=\$(basename \"\$f\")
+        if [[ \"\$_base\" =~ ^[0-9]{2}- ]]; then
+          _sorted+=(\"\${_base%%--*}|\$f\")
+        else
+          _sorted+=(\"50-\${_base%%--*}|\$f\")
+        fi
+      done
+      IFS=$'\n' _sorted=(\$(sort <<< \"\${_sorted[*]}\")); unset IFS
+      for _entry in \"\${_sorted[@]}\"; do
+        _f=\"\${_entry#*|}\"
+        [ -r \"\$_f\" ] && source \"\$_f\"
+      done
+    "
+  fi
+  # Run startup.sh if it exists (backward compat)
+  if [ -f "$STARTUP_SH" ] && [ -r "$STARTUP_SH" ]; then
+    info "Running legacy startup script: $STARTUP_SH"
+    runuser -u "$USER_NAME" -- bash -lc "
+      set -euo pipefail
+      source '$STARTUP_SH'
+    "
+  fi
 fi
 
 

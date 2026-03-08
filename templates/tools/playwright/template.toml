@@ -1,0 +1,23 @@
+display-name = "Playwright"
+display-disc = "Playwright browser automation and end-to-end testing framework"
+display-detail = "Installs Playwright with Chromium for headless browser testing. Supports Chromium, Firefox, and WebKit browsers. Use extensions to add extra browsers or language bindings for Python, .NET, or Java."
+display-order = 55
+tags = [
+    "playwright",
+    "testing",
+    "e2e",
+    "browser",
+    "automation",
+    "nodejs",
+]
+
+requires = ["nodejs"]
+
+[params.PLAYWRIGHT_BROWSERS]
+default = "chromium"
+suggests = ["chromium", "chromium,firefox", "chromium,firefox,webkit", "all"]
+
+[segments]
+"Boothfile--60" = """
+setup playwright ${PLAYWRIGHT_BROWSERS}
+"""

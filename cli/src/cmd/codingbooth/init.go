@@ -485,9 +485,9 @@ func printDryrun(out *output.BoothOutput) {
 		fmt.Println()
 	}
 
-	if out.Startup != nil {
-		fmt.Println("=== startup.sh ===")
-		fmt.Print(output.SerializeStartup(out.Startup, out.Command, out.AdjustCommand))
+	for _, f := range out.Startups {
+		fmt.Printf("=== startups/%s ===\n", f.RelPath)
+		fmt.Print(output.SerializeStartupFile(f.Content, out.Command, out.AdjustCommand))
 		fmt.Println()
 	}
 

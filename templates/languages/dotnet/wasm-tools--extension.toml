@@ -1,0 +1,14 @@
+display-name = "WASM Tools"
+display-disc = ".NET WebAssembly tools workload (Blazor WASM)"
+display-order = 3
+auto-select = false
+tags = [
+    "dotnet",
+    "wasm",
+    "blazor",
+]
+
+[segments]
+"Boothfile--60" = """
+run dotnet workload install wasm-tools --skip-manifest-update
+"""

@@ -148,7 +148,7 @@ suggests = ["temurin", "corretto", "openjdk"]
 
 ## Inline Segments
 
-Boothfile and startup content is defined inline in `template.toml` under a `[segments]` table. These segments are merged into the final `.booth/Boothfile` and `.booth/startup.sh`.
+Boothfile and startup content is defined inline in `template.toml` under a `[segments]` table. Boothfile segments are merged into `.booth/Boothfile`. Startup segments become individual files in `.booth/startups/` (e.g., `50-go--startup.sh`).
 
 ### Single Boothfile segment (default order 50):
 

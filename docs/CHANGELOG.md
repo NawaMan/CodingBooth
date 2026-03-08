@@ -2,6 +2,17 @@
 
 This file contains a list of changes for each released version.
 
+## 0.32.0
+
+- Modular startup scripts — `booth init` now generates individual files in `.booth/startups/` (e.g., `65-excalidraw-autostart--startup.sh`) instead of a single merged `startup.sh`
+  - User-added `*--startup.sh` files in `startups/` survive `booth init adjust`
+  - Files without a `NN-` prefix default to order 50
+  - Container entrypoint sorts all startup scripts by order prefix
+  - Legacy `.booth/startup.sh` still supported for backward compatibility
+- `--env <KEY=VALUE>` flag — pass environment variables to the container via run-args (repeatable)
+- `--mount <host:container>` flag — mount volumes into the container via run-args (repeatable)
+- Excalidraw template — port parameterization with `+expose` and `+autostart` extensions
+
 ## 0.31.0
 
 - OpenSSH template — client (`openssh`) and server (`openssh+server`) with expose and credential extensions

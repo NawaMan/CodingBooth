@@ -12,7 +12,7 @@ type BoothOutput struct {
 	AdjustCommand string // Reformatted command for easy adjustment (--select last)
 	Config        *ConfigToml
 	Boothfile *BoothfileContent
-	Startup   *StartupContent
+	Startups  []FileContent
 	Setups    []FileContent
 	Home      []FileContent
 	HomeSeed  []FileContent
@@ -38,12 +38,6 @@ type ConfigToml struct {
 // BoothfileContent represents the content of .booth/Boothfile.
 // Content is the raw text of the Boothfile (already merged/ordered segments).
 type BoothfileContent struct {
-	Content string
-}
-
-// StartupContent represents the content of .booth/startup.sh.
-// Content is the raw body of the startup script (already merged/ordered segments).
-type StartupContent struct {
 	Content string
 }
 

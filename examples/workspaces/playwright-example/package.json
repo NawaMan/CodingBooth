@@ -1,0 +1,11 @@
+{
+  "name": "playwright-example",
+  "version": "1.0.0",
+  "description": "A simple Playwright test example for CodingBooth",
+  "scripts": {
+    "test": "npx playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.50.0"
+  }
+}

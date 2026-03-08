@@ -252,8 +252,9 @@ The `zsh` template is a namespace — `+default` sets `USER_SHELL=/bin/zsh` so t
 **Customizing zsh in the booth:** Don't seed your host `~/.zshrc` directly — it likely references paths and plugins that don't exist in the container. Instead, create a booth-specific config:
 
 - **`.booth/home-seed/.zshrc`** — Place a booth-tailored `.zshrc` here. It gets copied (no-clobber) on first container start, and CodingBooth appends its profile block automatically.
-- **`.booth/startup.sh`** — Append a zsh config segment at startup:
+- **`.booth/startups/zsh-config--startup.sh`** — Append a zsh config segment at startup:
   ```bash
+  #!/usr/bin/env bash
   # Append booth-specific zsh config
   cat "$HOME/code/.booth/zshrc-booth" >> ~/.zshrc
   ```

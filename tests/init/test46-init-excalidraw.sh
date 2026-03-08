@@ -30,11 +30,11 @@ run booth init new $prj --select "excalidraw:889+expose"
 config="$prj/.booth/config.toml"
 assert-line "$config" 'run-args = ' '["-p", "889:889"]'  "expose uses custom port 889"
 
-# Test 5: Excalidraw+autostart with default port
+# Test 5: Excalidraw+autostart with default port — startup in startups/
 run rm -Rf $prj
 mkdir -p $prj
 run booth init new $prj --select "excalidraw+autostart"
-startup="$prj/.booth/startup.sh"
+startup="$prj/.booth/startups/65-excalidraw-autostart--startup.sh"
 assert-line "$startup" 'PORT=' '${EXCALIDRAW_PORT}'  "startup uses param reference"
 
 # Test 6: Excalidraw+expose+autostart with custom port — all consistent
@@ -43,7 +43,7 @@ mkdir -p $prj
 run booth init new $prj --select "excalidraw:889+expose+autostart"
 boothfile="$prj/.booth/Boothfile"
 config="$prj/.booth/config.toml"
-startup="$prj/.booth/startup.sh"
+startup="$prj/.booth/startups/65-excalidraw-autostart--startup.sh"
 assert-line "$boothfile" 'arg EXCALIDRAW_PORT=' '889'  "full: Boothfile param is 889"
 assert-line "$config"    'run-args = ' '["-p", "889:889"]'  "full: run-args uses 889"
 assert-line "$startup"   'PORT=' '${EXCALIDRAW_PORT}'  "full: startup uses param reference"

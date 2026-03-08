@@ -1,0 +1,15 @@
+display-name = "C# VS Code Extension"
+display-disc = "C# language support extension for VS Code"
+display-order = 2
+auto-select = true
+tags = [
+    "dotnet",
+    "csharp",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup dotnet-code-extension
+"""

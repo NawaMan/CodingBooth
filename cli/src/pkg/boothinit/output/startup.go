@@ -4,12 +4,12 @@
 
 package output
 
-// SerializeStartup produces the content of a .booth/startup.sh file.
+// SerializeStartupFile produces the content of a .booth/startups/NN-name--startup.sh file.
 // Returns empty string if there is no content.
-func SerializeStartup(sc *StartupContent, command, adjustCommand string) string {
-	if sc == nil || sc.Content == "" {
+func SerializeStartupFile(content, command, adjustCommand string) string {
+	if content == "" {
 		return ""
 	}
 	header := formatGeneratedHeader("#", command, adjustCommand)
-	return "#!/bin/bash\nset -e\n" + header + "\n" + sc.Content
+	return "#!/bin/bash\nset -e\n" + header + "\n" + content
 }
