@@ -16,7 +16,7 @@ fail() { echo -e "${RED}✗${NC} $1"; exit 1; }
 
 echo "=== test001: sandbox envoy policy (non-DinD) ==="
 
-if ../../../codingbooth --variant base --version latest --port 35220 --name sandbox-envoy-example --sandboxed -- ./.cb-tests/test-on-container.sh; then
+if ../../../codingbooth --variant base --version latest --port "${CB_PORT:-50291}" --name sandbox-envoy-example --sandboxed -- ./.cb-tests/test-on-container.sh; then
     pass "Sandbox non-DinD test passed"
 else
     fail "Sandbox non-DinD test failed"

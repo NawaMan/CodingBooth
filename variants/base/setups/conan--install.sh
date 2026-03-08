@@ -29,6 +29,9 @@ fi
 # Verify installation
 conan --version
 
+# Expand comma-separated packages into separate arguments
+set -- $(echo "$@" | tr ',' ' ')
+
 # If packages are specified, download them to cache
 if [ $# -gt 0 ]; then
     echo "📦 Downloading Conan packages to cache..."

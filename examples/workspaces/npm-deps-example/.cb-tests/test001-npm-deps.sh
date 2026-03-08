@@ -30,7 +30,7 @@ failed=0
 
 # Test chalk package
 echo "Testing chalk package..."
-output=$("$BOOTH" --variant base --port 30200 -- 'node -e "require('"'"'chalk'"'"'); console.log('"'"'OK'"'"')"' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50321}" -- 'node -e "require('"'"'chalk'"'"'); console.log('"'"'OK'"'"')"' 2>&1)
 if echo "$output" | grep -q "OK"; then
     echo -e "${GREEN}✓${NC} chalk package is installed and requireable"
 else

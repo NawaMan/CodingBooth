@@ -20,6 +20,9 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+# Expand comma-separated packages into separate arguments
+set -- $(echo "$@" | tr ',' ' ')
+
 if [ ! -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
     echo "brew is not installed."
     /opt/codingbooth/setups/brew--install.sh

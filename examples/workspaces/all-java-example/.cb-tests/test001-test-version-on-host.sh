@@ -20,8 +20,8 @@ echo "=== Testing Java Version ==="
 echo ""
 
 # Capture java -version output (note: java -version outputs to stderr)
-"../../../codingbooth" --variant base --port 10000 -- 'java -version' 2>&1
-output=$("../../../codingbooth" --variant base --port 10000 -- 'java -version' 2>&1)
+"../../../codingbooth" --variant base --port "${CB_PORT:-50011}" -- 'java -version' 2>&1
+output=$("../../../codingbooth" --variant base --port "${CB_PORT:-50011}" -- 'java -version' 2>&1)
 
 echo "$output"
 echo ""

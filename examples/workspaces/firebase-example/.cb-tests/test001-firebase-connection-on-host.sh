@@ -25,6 +25,13 @@ echo ""
 
 # First check if Firebase credentials are available on the host
 echo "Checking for Firebase credentials on host..."
+if [ ! -f "$HOME/.config/configstore/firebase-tools.json" ]; then
+    echo -e "${YELLOW}⚠${NC} Firebase credentials file not found (~/.config/configstore/firebase-tools.json)"
+    echo -e "${YELLOW}⚠${NC} Skipping Firebase connection tests"
+    echo ""
+    echo -e "${YELLOW}Test skipped (no Firebase credentials)${NC}"
+    exit 0
+fi
 if ! firebase login:list 2>&1 | grep -q "Logged in as"; then
     echo -e "${YELLOW}⚠${NC} Firebase credentials not configured on host"
     echo -e "${YELLOW}⚠${NC} Skipping Firebase connection tests"
@@ -48,7 +55,7 @@ echo ""
 
 # Test 2: Firebase connection from inside the container
 echo "Testing Firebase connection from inside container..."
-if ../../../codingbooth --variant base --port 17000 -- ./check-connection.sh; then
+if ../../../codingbooth --variant base --port "${CB_PORT:-50091}" -- ./check-connection.sh; then
     echo -e "${GREEN}✓${NC} Container Firebase connection test passed"
 else
     echo -e "${RED}✗${NC} Container Firebase connection test failed"

@@ -21,6 +21,9 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+# Expand comma-separated packages into separate arguments
+set -- $(echo "$@" | tr ',' ' ')
+
 LUA_HOME="${LUA_HOME:-/opt/lua-stable}"
 LUAROCKS="${LUA_HOME}/bin/luarocks"
 

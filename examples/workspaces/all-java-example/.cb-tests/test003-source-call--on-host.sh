@@ -18,7 +18,7 @@ echo "=== Testing jbang Source Execution ==="
 echo ""
 
 # Run jbang with inline Java source
-output=$("../../../codingbooth" --variant base --port 10200 -- '
+output=$("../../../codingbooth" --variant base --port "${CB_PORT:-50012}" -- '
 cat > /tmp/Test.java << "EOFJAVA"
 import java.nio.file.*;
 import java.util.Arrays;

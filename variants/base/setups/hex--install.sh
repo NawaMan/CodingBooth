@@ -22,6 +22,9 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+# Expand comma-separated packages into separate arguments
+set -- $(echo "$@" | tr ',' ' ')
+
 ELIXIR_HOME="${ELIXIR_HOME:-/opt/elixir-stable}"
 MIX_HOME="${MIX_HOME:-/opt/mix}"
 HEX_HOME="${HEX_HOME:-/opt/hex}"

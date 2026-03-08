@@ -21,6 +21,9 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+# Expand comma-separated packages into separate arguments
+set -- $(echo "$@" | tr ',' ' ')
+
 CONDA_ROOT="/opt/conda"
 CONDA_ENV="/opt/python"
 

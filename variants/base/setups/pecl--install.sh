@@ -21,6 +21,9 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+# Expand comma-separated packages into separate arguments
+set -- $(echo "$@" | tr ',' ' ')
+
 PHP_HOME="${PHP_HOME:-/opt/php-stable}"
 export PATH="$PHP_HOME/bin:$PATH"
 

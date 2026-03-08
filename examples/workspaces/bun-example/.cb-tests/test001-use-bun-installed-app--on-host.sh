@@ -17,7 +17,7 @@ else
     BOOTH="$REPO_ROOT/booth"
 fi
 
-"$BOOTH" --variant base --port 12000 -- "./.cb-tests/inBooth--run-all-tests.sh" 2>&1 | tee "$0.out"
+"$BOOTH" --variant base --port "${CB_PORT:-50031}" -- "./.cb-tests/inBooth--run-all-tests.sh" 2>&1 | tee "$0.out"
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}All tests passed!${NC}"

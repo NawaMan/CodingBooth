@@ -48,7 +48,7 @@ echo ""
 
 # Test 2: gcloud connection from inside the container
 echo "Testing gcloud connection from inside container..."
-if ../../../codingbooth --variant base --port 18000 -- ./check-connection.sh; then
+if ../../../codingbooth --variant base --port "${CB_PORT:-50111}" -- ./check-connection.sh; then
     echo -e "${GREEN}✓${NC} Container gcloud connection test passed"
 else
     echo -e "${RED}✗${NC} Container gcloud connection test failed"

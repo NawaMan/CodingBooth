@@ -28,7 +28,7 @@ echo ""
 
 # Run maven build inside the container
 echo "Running maven build inside container..."
-output=$("$BOOTH" --variant base --port 22100 -- './run-on-container.sh' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50151}" -- './run-on-container.sh' 2>&1)
 
 echo "$output"
 echo ""

@@ -48,7 +48,7 @@ echo ""
 
 # Test 2: AWS connection from inside the container
 echo "Testing AWS connection from inside container..."
-if ../../../codingbooth --variant base --port 11000 -- ./check-connection.sh; then
+if ../../../codingbooth --variant base --port "${CB_PORT:-50021}" -- ./check-connection.sh; then
     echo -e "${GREEN}✓${NC} Container AWS connection test passed"
 else
     echo -e "${RED}✗${NC} Container AWS connection test failed"

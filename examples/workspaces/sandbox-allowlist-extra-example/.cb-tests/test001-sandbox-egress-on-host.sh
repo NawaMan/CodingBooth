@@ -16,7 +16,7 @@ fail() { echo -e "${RED}✗${NC} $1"; exit 1; }
 
 echo "=== test001: sandbox allowlist + extra (non-DinD) ==="
 
-if ../../../codingbooth --variant base --version latest --port 35210 --name sandbox-allowlist-extra-example --sandboxed -- ./.cb-tests/test-on-container.sh; then
+if ../../../codingbooth --variant base --version latest --port "${CB_PORT:-50281}" --name sandbox-allowlist-extra-example --sandboxed -- ./.cb-tests/test-on-container.sh; then
     pass "Sandbox non-DinD test passed"
 else
     fail "Sandbox non-DinD test failed"

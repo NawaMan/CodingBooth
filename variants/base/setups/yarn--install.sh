@@ -20,6 +20,9 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+# Expand comma-separated packages into separate arguments
+set -- $(echo "$@" | tr ',' ' ')
+
 # Install yarn if not present
 if ! command -v yarn &> /dev/null; then
     echo "📦 Installing Yarn..."

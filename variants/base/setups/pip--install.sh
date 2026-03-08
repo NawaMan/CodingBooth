@@ -20,6 +20,9 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+# Expand comma-separated packages into separate arguments
+set -- $(echo "$@" | tr ',' ' ')
+
 if [ ! -x /opt/python/bin/pip ]; then
     echo "❌ Python is not set up. Run python--setup.sh first." >&2
     exit 1

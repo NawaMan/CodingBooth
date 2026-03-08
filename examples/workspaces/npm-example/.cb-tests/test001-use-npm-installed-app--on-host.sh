@@ -24,7 +24,7 @@ else
 fi
 
 # Run inside the container
-"$BOOTH" --variant base --port 28000 -- './.cb-tests/inBooth--run-all-tests.sh' 2>&1 | tee "$0.out"
+"$BOOTH" --variant base --port "${CB_PORT:-50211}" -- './.cb-tests/inBooth--run-all-tests.sh' 2>&1 | tee "$0.out"
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}All tests passed!${NC}"

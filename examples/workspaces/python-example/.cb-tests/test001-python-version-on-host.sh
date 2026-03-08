@@ -26,7 +26,7 @@ echo "=== Testing Python Version (default 3.13) ==="
 echo ""
 
 # Capture python --version output
-output=$("$BOOTH" --variant base --port 31000 -- 'python --version' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50251}" -- 'python --version' 2>&1)
 
 echo "$output"
 echo ""

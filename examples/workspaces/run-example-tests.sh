@@ -17,7 +17,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Default settings
 MAX_PARALLEL=32
 
-EXAMPLE_TIMEOUT=600  # 10 minutes per example
+EXAMPLE_TIMEOUT=900  # 15 minutes per example
 declare -a FILTER_TAGS=()
 declare -a FILTER_EXAMPLES=()
 

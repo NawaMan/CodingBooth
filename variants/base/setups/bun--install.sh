@@ -20,6 +20,9 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
+# Expand comma-separated packages into separate arguments
+set -- $(echo "$@" | tr ',' ' ')
+
 if ! command -v bun &> /dev/null; then
     echo "❌ Bun is not installed. Run bun--setup.sh first." >&2
     exit 1
