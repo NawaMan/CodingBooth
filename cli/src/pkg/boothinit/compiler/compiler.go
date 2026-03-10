@@ -242,6 +242,8 @@ func (c *collector) build() (*output.BoothOutput, error) {
 	for _, seg := range c.startupSegs {
 		name := fmt.Sprintf("%02d-%s--startup.sh", seg.Order, sanitizeName(seg.SourceName))
 		content := strings.TrimRight(seg.Content, "\n") + "\n"
+		// Expand ${PARAM} to ${PARAM:-value} so it's overridable at runtime
+		content = expandParamsWithDefaults(content, c.params)
 		out.Startups = append(out.Startups, output.FileContent{
 			RelPath: name,
 			Content: content,
@@ -340,6 +342,15 @@ func dedup(items []string) []string {
 		}
 	}
 	return result
+}
+
+// expandParamsWithDefaults replaces ${PARAM} references with ${PARAM:-value} in a string.
+// This keeps the variable overridable at runtime while providing a safe default.
+func expandParamsWithDefaults(s string, params map[string]string) string {
+	for k, v := range params {
+		s = strings.ReplaceAll(s, "${"+k+"}", "${"+k+":-"+v+"}")
+	}
+	return s
 }
 
 // expandParams replaces ${PARAM} references in string slices with their values.

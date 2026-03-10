@@ -4,7 +4,7 @@ set -e
 # Adjust with : booth init adjust --select excalidraw:889+expose+autostart
 
 # Auto-start Excalidraw in background
-PORT=${EXCALIDRAW_PORT}
+PORT=${EXCALIDRAW_PORT:-889}
 LOG_FILE="/tmp/excalidraw.log"
 
 nohup serve -s --no-clipboard /opt/excalidraw -l "$PORT" > "$LOG_FILE" 2>&1 &

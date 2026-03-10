@@ -3,6 +3,12 @@
 
 echo "=== Testing PostgreSQL ==="
 
+# PostgreSQL is keg-only in Homebrew — binaries aren't symlinked to the main bin.
+# Add the versioned postgresql bin directory to PATH.
+for pg_dir in /home/linuxbrew/.linuxbrew/opt/postgresql@*/bin; do
+    [ -d "$pg_dir" ] && export PATH="$pg_dir:$PATH" && break
+done
+
 PGDATA="/tmp/test-pg-$$"
 PGLOG="/tmp/test-pg-$$.log"
 

@@ -18,7 +18,7 @@ set -euo pipefail
 # But Firebase installation creates an JSON-empty files there ("{}").
 
 SEED="/etc/cb-home-seed/.config/configstore/firebase-tools.json"
-TRGT="~/.config/configstore/firebase-tools.json"
+TRGT="$HOME/.config/configstore/firebase-tools.json"
 
 rm -rf "$TRGT"
 if  [[ -f "$SEED" ]]; then
