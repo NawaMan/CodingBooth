@@ -136,7 +136,6 @@ CONTAINER MODE:
   --sandboxed            Enable sandbox defaults (proxy + enforcement setup)
   --keep-alive           Do not remove the container when stopped
   --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
-  --web-split            Base variant: force-enable browser split-terminal UI at port 10000 (default)
 
 COMMANDS:
   All arguments after '--' are executed *inside* the container instead of starting
@@ -218,7 +217,6 @@ CONTAINER MODE:
   --sandboxed            Enable sandbox defaults
   --keep-alive           Do not remove container when stopped
   --writable-booth       Allow writing to .booth/ inside the container
-  --web-split            Force-enable browser split-terminal UI (base variant)
 
 COMMANDS:
   Arguments after '--' run inside the container instead of the default service.
