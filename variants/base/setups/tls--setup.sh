@@ -62,7 +62,7 @@ mkdir -p "${CADDY_DATA_DIR}"
 if [[ -n "${BOOTH_TLS_CERT:-}" && -n "${BOOTH_TLS_KEY:-}" ]]; then
     # User-provided certificates
     cat > "${CADDYFILE}" <<CADDY_CONF
-localhost:${TLS_PROXY_PORT} {
+:${TLS_PROXY_PORT} {
     tls ${BOOTH_TLS_CERT} ${BOOTH_TLS_KEY}
     reverse_proxy localhost:${TLS_BACKEND_PORT}
 }
@@ -71,8 +71,10 @@ CADDY_CONF
 else
     # Self-signed certificate (Caddy's internal CA)
     cat > "${CADDYFILE}" <<CADDY_CONF
-localhost:${TLS_PROXY_PORT} {
-    tls internal
+:${TLS_PROXY_PORT} {
+    tls internal {
+        on_demand
+    }
     reverse_proxy localhost:${TLS_BACKEND_PORT}
 }
 CADDY_CONF
