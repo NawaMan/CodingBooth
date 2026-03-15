@@ -15,4 +15,11 @@
 set -euo pipefail
 
 echo "🛑 Shutting down CodingBooth..."
+
+# Write marker so the VS Code extension can detect shutdown has started
+touch /tmp/.booth-shutting-down
+
+# Give the extension a moment to detect the marker and show feedback
+sleep 2
+
 kill -TERM -1

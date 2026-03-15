@@ -57,7 +57,10 @@ JSON
 
   cat > "$tmp/extension/extension.js" <<'JS'
 const vscode = require("vscode");
-const { exec } = require("child_process");
+const { exec, spawn } = require("child_process");
+const fs = require("fs");
+
+const SHUTDOWN_MARKER = "/tmp/.booth-shutting-down";
 
 function activate(context) {
   context.subscriptions.push(
@@ -69,16 +72,45 @@ function activate(context) {
       );
       if (answer !== "Shut Down") return;
 
+      // Launch shutdown detached so it survives even if code-server starts dying
+      const child = spawn("booth--shutdown", [], {
+        detached: true,
+        stdio: "ignore"
+      });
+      child.unref();
+
+      // Show progress and poll for the shutdown marker
       vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
-          title: "Shutting down CodingBooth\u2026",
+          title: "CodingBooth",
           cancellable: false
         },
-        () => new Promise((resolve) => {
-          exec("booth--shutdown", () => resolve());
-          // Resolve after a timeout in case the process is killed before callback fires
-          setTimeout(resolve, 10000);
+        (progress) => new Promise((resolve) => {
+          progress.report({ message: "Shutting down..." });
+
+          function showDoneModal() {
+            resolve();
+            vscode.window.showInformationMessage(
+              "CodingBooth has been shut down.",
+              { modal: true, detail: "This session is no longer active. You can close this browser tab." },
+              "OK"
+            );
+          }
+
+          let elapsed = 0;
+          const interval = setInterval(() => {
+            elapsed += 500;
+            if (fs.existsSync(SHUTDOWN_MARKER)) {
+              clearInterval(interval);
+              showDoneModal();
+              return;
+            }
+            if (elapsed >= 15000) {
+              clearInterval(interval);
+              showDoneModal();
+            }
+          }, 500);
         })
       );
     })
