@@ -209,6 +209,13 @@ export HOME="$HOME_DIR"
 export PATH="$HOME/.local/bin:$PATH"
 cd "$CODE_DIR"
 
+# Configure timezone from TZ env var (set by CLI from host detection)
+if [ -n "${TZ:-}" ] && [ -f "/usr/share/zoneinfo/$TZ" ]; then
+  ln -sf "/usr/share/zoneinfo/$TZ" /etc/localtime
+  echo "$TZ" > /etc/timezone
+  info "Timezone set to $TZ"
+fi
+
 section "Setup user profile/environment"
 
 info "7) Ensuring default dotfiles exist in $HOME_DIR..."

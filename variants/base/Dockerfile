@@ -40,6 +40,7 @@ RUN set -euo pipefail \
   sudo                   \
   tar                    \
   tini                   \
+  tzdata                 \
   ttyd                   \
   unzip                  \
   wget                   \

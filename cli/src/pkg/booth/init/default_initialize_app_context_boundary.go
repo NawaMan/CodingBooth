@@ -8,7 +8,9 @@ import (
 	"fmt"
 	"os"
 	"os/user"
+	"path/filepath"
 	"runtime"
+	"strings"
 	"time"
 
 	"github.com/kelseyhightower/envconfig"
@@ -40,16 +42,25 @@ func (DefaultInitializeAppContextBoundary) DetectTimezone() string {
 
 	// Use Go's time package to detect local timezone
 	now := time.Now()
-	zone, _ := now.Zone()
 
-	// If we can get the IANA timezone name, use it
+	// If we can get the IANA timezone name from Go, use it
 	if loc := now.Location(); loc != nil && loc.String() != "Local" {
 		return loc.String()
 	}
 
-	// Fallback to zone abbreviation (e.g., "EST", "PST")
-	if zone != "" {
-		return zone
+	// Read /etc/timezone (Debian/Ubuntu)
+	if data, err := os.ReadFile("/etc/timezone"); err == nil {
+		if tz := strings.TrimSpace(string(data)); tz != "" {
+			return tz
+		}
+	}
+
+	// Resolve /etc/localtime symlink to extract IANA name (e.g., /usr/share/zoneinfo/America/Toronto)
+	if target, err := filepath.EvalSymlinks("/etc/localtime"); err == nil {
+		const marker = "/zoneinfo/"
+		if idx := strings.Index(target, marker); idx != -1 {
+			return target[idx+len(marker):]
+		}
 	}
 
 	// Ultimate fallback
