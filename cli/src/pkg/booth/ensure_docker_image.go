@@ -26,7 +26,7 @@ func EnsureDockerImage(ctx appctx.AppContext) appctx.AppContext {
 		builder.LocalBuild = false
 	} else {
 		// Normalize DOCKER_FILE
-		dockerFile := normalizeDockerFile(ctx)
+		dockerFile := NormalizeDockerFile(ctx)
 		builder.Config.Dockerfile = dockerFile
 
 		if dockerFile != "" {
@@ -75,9 +75,9 @@ func EnsureDockerImage(ctx appctx.AppContext) appctx.AppContext {
 	return ctx
 }
 
-// normalizeDockerFile normalizes the DOCKER_FILE path, handling Boothfile compilation.
+// NormalizeDockerFile normalizes the DOCKER_FILE path, handling Boothfile compilation.
 // Returns the Dockerfile path (either existing or generated from Boothfile).
-func normalizeDockerFile(ctx appctx.AppContext) string {
+func NormalizeDockerFile(ctx appctx.AppContext) string {
 	// If --dockerfile is explicitly set, use it (takes precedence over Boothfile detection)
 	if ctx.Dockerfile() != "" {
 		dockerFile := ctx.Dockerfile()

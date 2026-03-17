@@ -54,6 +54,8 @@ Command-line arguments > config file > environment variables > built-in defaults
 - `IMAGE_TAG` = defaults to `${VARIANT}-${VERSION}`
 
 > When both `--image` and `--dockerfile` are provided, `--image` takes precedence. Use `--dockerfile` when you want to build locally; otherwise, CodingBooth automatically pulls prebuilt images.
+>
+> **Tip:** Use [`booth build`](BOOTH_BUILD.md) to build and optionally push your booth image to a registry, then run it with `--image`.
 
 ---
 

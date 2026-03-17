@@ -2,6 +2,15 @@
 
 This file contains a list of changes for each released version.
 
+## 0.35.0
+
+- `booth build` command — build booth images and optionally push to a container registry
+  - `--push <registry>` to build and push using `docker build` + `docker push`
+  - `--name <name>` and `--tag <tag>` to customize the image reference
+  - Content-based tagging: default tag is a 24-char SHA-256 hash of Boothfile + build-args + variant + version
+  - Same configuration always produces the same tag for caching and reproducibility
+  - Helpful error messages with `docker login` hints on authentication failures
+
 ## 0.32.0
 
 - Modular startup scripts — `booth init` now generates individual files in `.booth/startups/` (e.g., `65-excalidraw-autostart--startup.sh`) instead of a single merged `startup.sh`

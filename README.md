@@ -237,6 +237,7 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 ### Additional Commands
 
 - **Templates & scaffolding:** `booth template list`, `booth init` — see **[booth init](docs/BOOTH_INIT.md)**
+- **Build & publish:** `booth build`, `booth build --push` — see **[booth build](docs/BOOTH_BUILD.md)**
 - **Container lifecycle:** `booth start`, `booth stop`, `booth list`, `booth prune` — see **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)**
 - **Examples:** `booth example list`, `booth example try` — see **[booth example](docs/BOOTH_EXAMPLE.md)**
 
@@ -370,6 +371,7 @@ User-facing guides:
 
 - **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS
 - **[booth init](docs/BOOTH_INIT.md)** — Template-driven project scaffolding
+- **[booth build](docs/BOOTH_BUILD.md)** — Build and publish booth images to a container registry
 - **[booth example](docs/BOOTH_EXAMPLE.md)** — Pre-built example workspaces
 - **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)** — Container lifecycle: keep-alive, start, stop, restart, remove, prune
 - **[booth variants](docs/BOOTH_VARIANTS.md)** — Variant details, aliases, desktop configuration, clipboard, and use cases

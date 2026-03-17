@@ -44,6 +44,7 @@ EXAMPLES:
   %s -- 'mvn install'           Run 'mvn install' inside the booth.
 
 OTHER COMMANDS:
+  BUILD     | Build and publish booth images   | build
   LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune
   PROJECT   | Set up and scaffold new projects | example, init, template
 
@@ -74,6 +75,7 @@ USAGE:
   %s example <subcommand>                      (manage examples)
   %s template <subcommand>                     (browse and manage templates)
   %s init <subcommand> [options]               (initialize a new .booth/ project)
+  %s build [options]                            (build and optionally push image)
   %s emit-dockerfile [options]                 (compile Boothfile to Dockerfile)
   %s print-default-allowlist.txt               (print built-in sandbox allowlist)
 
@@ -161,7 +163,7 @@ EXAMPLES:
   %s --env-file none --variant notebook
 `,
 		s, version,
-		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
+		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
@@ -335,6 +337,44 @@ Run '%s init help' for available subcommands.
 `, s, s, s)
 }
 
+func showHelpBuild() {
+	s := scriptName()
+	fmt.Printf(`%s build — build a booth image and optionally push to a registry
+
+USAGE:  %s build [options]
+
+OPTIONS:
+  --push <registry>       Build and push to the given registry (e.g. ghcr.io/myteam)
+  --name <name>           Image name (default: project name)
+  --tag <tag>             Image tag (default: content hash, 24 hex chars)
+  --build-arg <KEY=VAL>   Additional Docker build argument (repeatable)
+  --code <path>           Project directory (default: current directory)
+  --variant <variant>     Override variant from config
+  --version <version>     Override CodingBooth version from config
+  --silence-build         Hide build progress; show output only on failure
+  --verbose               Show detailed output
+  --dryrun                Print docker commands without executing
+
+IMAGE NAMING:
+  Local:   <name>:<tag>
+  Push:    <registry>/<name>:<tag>
+
+  When --tag is omitted, a 24-character SHA-256 hash is computed from the
+  Boothfile content, build args, variant, and version. Same inputs always
+  produce the same tag.
+
+EXAMPLES:
+  %s build                                        Build locally
+  %s build --push ghcr.io/myteam                  Build and push
+  %s build --push ghcr.io/myteam --name my-env --tag v1.0
+  %s build --build-arg PYTHON_VERSION=3.13
+
+AUTHENTICATION:
+  Pushing requires prior 'docker login <registry>'. CodingBooth does not
+  manage registry credentials.
+`, s, s, s, s, s, s)
+}
+
 func showHelpEmitDockerfile() {
 	s := scriptName()
 	fmt.Printf(`%s emit-dockerfile — compile Boothfile to Dockerfile
@@ -386,6 +426,8 @@ func dispatchHelp(args []string, version string) {
 			showHelpTemplate()
 		case "init":
 			showHelpInit()
+		case "build":
+			showHelpBuild()
 		case "emit-dockerfile":
 			showHelpEmitDockerfile()
 		default:
