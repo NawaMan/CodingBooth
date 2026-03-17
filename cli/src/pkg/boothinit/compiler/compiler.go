@@ -67,9 +67,10 @@ type collector struct {
 	buildArgs []string
 
 	// files
-	setups   []output.FileContent
-	home     []output.FileContent
-	homeSeed []output.FileContent
+	setups     []output.FileContent
+	home       []output.FileContent
+	homeSeed   []output.FileContent
+	cacheFiles []string
 }
 
 func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
@@ -177,6 +178,7 @@ func (c *collector) collectFiles(t *tmpl.Template) {
 	for _, f := range t.HomeSeed {
 		c.homeSeed = append(c.homeSeed, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath, Content: f.Content})
 	}
+	c.cacheFiles = append(c.cacheFiles, t.CacheFiles...)
 }
 
 func (c *collector) setScalar(current *string, currentSource *string, value, source, field string) error {
@@ -254,6 +256,17 @@ func (c *collector) build() (*output.BoothOutput, error) {
 	out.Setups = c.setups
 	out.Home = c.home
 	out.HomeSeed = c.homeSeed
+
+	// Cache files (dedup, preserve order)
+	if len(c.cacheFiles) > 0 {
+		seen := make(map[string]bool, len(c.cacheFiles))
+		for _, cf := range c.cacheFiles {
+			if !seen[cf] {
+				seen[cf] = true
+				out.Cache = append(out.Cache, output.FileContent{RelPath: cf})
+			}
+		}
+	}
 
 	return out, nil
 }

@@ -45,6 +45,7 @@ type specToml struct {
 	Params       map[string]paramToml `toml:"params"`
 	Segments     map[string]string    `toml:"segments"`
 	Files        filesToml            `toml:"files"`
+	CacheFiles   []string             `toml:"cache-files"`
 }
 
 type filesToml struct {
@@ -248,6 +249,14 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		return nil, err
 	}
 
+	// Validate and assign cache-files
+	for _, cf := range spec.CacheFiles {
+		if err := validateFilePath(cf); err != nil {
+			return nil, fmt.Errorf("invalid cache-files path %q: %w", cf, err)
+		}
+	}
+	tmpl.CacheFiles = spec.CacheFiles
+
 	// Load extensions (subdirectories with template.toml that aren't special dirs)
 	if allowExtensions {
 		entries, err := os.ReadDir(dir)
@@ -355,6 +364,14 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 	if err := appendInlineFiles(spec.Files, &tmpl.Setups, &tmpl.Home, &tmpl.HomeSeed); err != nil {
 		return nil, err
 	}
+
+	// Validate and assign cache-files
+	for _, cf := range spec.CacheFiles {
+		if err := validateFilePath(cf); err != nil {
+			return nil, fmt.Errorf("invalid cache-files path %q: %w", cf, err)
+		}
+	}
+	tmpl.CacheFiles = spec.CacheFiles
 
 	return tmpl, nil
 }

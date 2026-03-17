@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.34.0 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.35.0--rc1 — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -317,10 +317,13 @@ my-project/
     ├── .env            # Personal env vars (optional, gitignored)
     ├── setups/         # Custom setup scripts (optional)
     ├── home/           # Team-shared home directory files (optional)
+    ├── cache/          # Local persistent state (optional, gitignored)
     └── tools/          # Managed by booth wrapper (auto-created)
 ```
 
 >  **Read-only by default:** The `.booth/` folder is mounted **read-only** inside the container to prevent accidental or malicious modifications to your configuration. Use `--writable-booth` if you need to edit `.booth/` files from inside the container.
+>
+>  **Local cache:** The `cache/` directory persists files (like shell history) across container sessions. Its structure mirrors the container filesystem and files are automatically bind-mounted. See **[Local Cache Guide](docs/BOOTH_LOCALCACHE.md)**.
 
 ---
 
@@ -371,6 +374,7 @@ User-facing guides:
 - **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)** — Container lifecycle: keep-alive, start, stop, restart, remove, prune
 - **[booth variants](docs/BOOTH_VARIANTS.md)** — Variant details, aliases, desktop configuration, clipboard, and use cases
 - **[booth home](docs/BOOTH_HOME.md)** — Home directory customization: seeding, overrides, credentials
+- **[booth cache](docs/BOOTH_LOCALCACHE.md)** — Local persistent state: shell history, tool configs across sessions
 
 For deeper technical details on how CodingBooth works internally, see [docs/implementations/](docs/implementations/):
 

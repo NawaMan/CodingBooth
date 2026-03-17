@@ -1,0 +1,8 @@
+display-name = "REPL History"
+display-disc = "Persist Node.js REPL history across sessions"
+display-order = 20
+tags = ["history", "persistence"]
+
+cache-files = [
+    "home/coder/.node_repl_history",
+]

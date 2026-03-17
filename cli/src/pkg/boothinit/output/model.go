@@ -16,6 +16,7 @@ type BoothOutput struct {
 	Setups    []FileContent
 	Home      []FileContent
 	HomeSeed  []FileContent
+	Cache     []FileContent // Files to touch in .booth/cache/ (paths mirror container filesystem)
 }
 
 // ConfigToml represents the content of .booth/config.toml.

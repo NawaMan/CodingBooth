@@ -59,6 +59,9 @@ type Template struct {
 	Home     []FileRef
 	HomeSeed []FileRef
 
+	// Cache files to touch in .booth/cache/ (paths mirror container filesystem)
+	CacheFiles []string
+
 	// Extensions (sub-templates)
 	Extensions []*Template
 }

@@ -52,6 +52,10 @@ func OutputPaths(out *BoothOutput, targetPath string) []string {
 		paths = append(paths, filepath.Join(boothDir, "home-seed", f.RelPath))
 	}
 
+	for _, f := range out.Cache {
+		paths = append(paths, filepath.Join(boothDir, "cache", f.RelPath))
+	}
+
 	return paths
 }
 
@@ -76,8 +80,8 @@ func WriteOutput(out *BoothOutput, targetPath string) error {
 		return fmt.Errorf("creating .booth/: %w", err)
 	}
 
-	// Ensure secrets are always gitignored
-	gitignoreContent := "# Secrets - never commit\n.booth.password\n.env\n\n# Lock file is version-controlled\n# Binaries are in ~/.cache/codingbooth/ (not here)\n"
+	// Ensure secrets and local cache are always gitignored
+	gitignoreContent := "# Secrets - never commit\n.booth.password\n.env\n\n# Local persistent state (not committed)\ncache/\n\n# Lock file is version-controlled\n# Binaries are in ~/.cache/codingbooth/ (not here)\n"
 	if err := writeFile(filepath.Join(boothDir, ".gitignore"), gitignoreContent, 0644); err != nil {
 		return fmt.Errorf("writing .gitignore: %w", err)
 	}
@@ -132,6 +136,14 @@ func WriteOutput(out *BoothOutput, targetPath string) error {
 		}
 	}
 
+	// Touch cache files (no-clobber: skip if file already exists)
+	if len(out.Cache) > 0 {
+		cacheDir := filepath.Join(boothDir, "cache")
+		if err := touchCacheFiles(out.Cache, cacheDir); err != nil {
+			return fmt.Errorf("writing cache/: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -178,6 +190,24 @@ func cleanupGeneratedFiles(dir string) error {
 			if err := os.Remove(path); err != nil {
 				return err
 			}
+		}
+	}
+	return nil
+}
+
+// touchCacheFiles creates empty files in the cache directory (no-clobber).
+// If a file already exists, it is left untouched to preserve user data.
+func touchCacheFiles(files []FileContent, cacheDir string) error {
+	for _, f := range files {
+		path := filepath.Join(cacheDir, f.RelPath)
+		if _, err := os.Stat(path); err == nil {
+			continue // already exists — no-clobber
+		}
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			return err
+		}
+		if err := os.WriteFile(path, []byte{}, 0644); err != nil {
+			return err
 		}
 	}
 	return nil

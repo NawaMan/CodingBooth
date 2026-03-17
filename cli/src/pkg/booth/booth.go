@@ -406,6 +406,123 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 		return
 	}
 	builder.CommonArgs.Append(ilist.NewList[string]("-v", hostPath+":/home/coder/code/.booth:ro"))
+
+	// Mount .booth/cache/ contents into the container based on directory structure.
+	cachePath := filepath.Join(hostPath, "cache")
+	if info, err := os.Stat(cachePath); err == nil && info.IsDir() {
+		if err := validateCacheGitignore(hostPath); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		mounts := collectCacheMounts(cachePath)
+		for _, m := range mounts {
+			builder.CommonArgs.Append(ilist.NewList[string]("-v", m.hostPath+":"+m.containerPath))
+		}
+	}
+}
+
+// cacheMount represents a bind mount derived from .booth/cache/.
+type cacheMount struct {
+	hostPath      string
+	containerPath string
+}
+
+// protectedPaths are container paths that must not be overridden by cache mounts.
+var protectedPaths = []string{
+	"/opt/codingbooth",
+	"/home/coder/code",
+}
+
+// validateCacheGitignore checks that .booth/.gitignore contains a "cache/" entry.
+func validateCacheGitignore(boothDir string) error {
+	gitignorePath := filepath.Join(boothDir, ".gitignore")
+	data, err := os.ReadFile(gitignorePath)
+	if err != nil {
+		return fmt.Errorf(".booth/cache/ exists but .booth/.gitignore is missing — add 'cache/' to .booth/.gitignore")
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "cache/" || line == "cache" {
+			return nil
+		}
+	}
+	return fmt.Errorf(".booth/cache/ exists but is not gitignored — add 'cache/' to .booth/.gitignore")
+}
+
+// collectCacheMounts walks .booth/cache/ and builds bind mount entries.
+// Rules:
+//   - Directory with .mount-this → mount entire directory, stop traversal
+//   - Files in a directory without .mount-this → individual file mounts
+//   - Directories without .mount-this → traverse into them
+func collectCacheMounts(cacheDir string) []cacheMount {
+	var mounts []cacheMount
+	walkCacheDir(cacheDir, cacheDir, &mounts)
+	return mounts
+}
+
+func walkCacheDir(baseDir, dir string, mounts *[]cacheMount) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return
+	}
+
+	// Check for .mount-this marker
+	hasMountMarker := false
+	for _, entry := range entries {
+		if !entry.IsDir() && entry.Name() == ".mount-this" {
+			hasMountMarker = true
+			break
+		}
+	}
+
+	relPath, err := filepath.Rel(baseDir, dir)
+	if err != nil {
+		return
+	}
+
+	if hasMountMarker && relPath != "." {
+		containerPath := "/" + filepath.ToSlash(relPath)
+		if !isProtectedPath(containerPath) {
+			*mounts = append(*mounts, cacheMount{
+				hostPath:      dir,
+				containerPath: containerPath,
+			})
+		}
+		return // stop traversal
+	}
+
+	for _, entry := range entries {
+		if entry.Name() == ".mount-this" {
+			continue
+		}
+		fullPath := filepath.Join(dir, entry.Name())
+		if entry.IsDir() {
+			walkCacheDir(baseDir, fullPath, mounts)
+		} else {
+			// Individual file mount
+			fileRelPath, err := filepath.Rel(baseDir, fullPath)
+			if err != nil {
+				continue
+			}
+			containerPath := "/" + filepath.ToSlash(fileRelPath)
+			if !isProtectedPath(containerPath) {
+				*mounts = append(*mounts, cacheMount{
+					hostPath:      fullPath,
+					containerPath: containerPath,
+				})
+			}
+		}
+	}
+}
+
+func isProtectedPath(containerPath string) bool {
+	for _, p := range protectedPaths {
+		if containerPath == p || strings.HasPrefix(containerPath, p+"/") {
+			fmt.Fprintf(os.Stderr, "Warning: skipping cache mount for protected path %s\n", containerPath)
+			return true
+		}
+	}
+	return false
 }
 
 // formatPortMapping returns a Docker port mapping string.
