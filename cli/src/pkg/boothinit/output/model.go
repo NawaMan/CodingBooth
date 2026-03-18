@@ -17,6 +17,7 @@ type BoothOutput struct {
 	Home      []FileContent
 	HomeSeed  []FileContent
 	Cache     []FileContent // Files to touch in .booth/cache/ (paths mirror container filesystem)
+	CacheDirs []FileContent // Directories to create in .booth/cache/ with .mount-this marker
 }
 
 // ConfigToml represents the content of .booth/config.toml.

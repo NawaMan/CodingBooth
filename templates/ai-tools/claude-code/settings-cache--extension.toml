@@ -1,0 +1,9 @@
+display-name = "Settings Cache"
+display-disc = "Persist Claude Code settings and projects across sessions"
+display-order = 91
+auto-select = true
+tags = ["claude", "persistence", "cache"]
+
+cache-dirs = [
+    "home/coder/.claude",
+]

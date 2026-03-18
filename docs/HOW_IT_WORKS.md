@@ -67,17 +67,31 @@ Understanding what persists across container restarts is critical:
 | Location                          | Persists? | Notes                                               |
 |-----------------------------------|-----------|-----------------------------------------------------|
 | `/home/coder/code/`               | **Yes**   | Bind-mounted from host; this is your project folder |
-| `/home/coder/` (outside `code/`)  | No        | Ephemeral; lost on container restart                |
+| `/home/coder/` (outside `code/`)  | Partial   | Ephemeral by default; use `.booth/cache/` to persist specific files |
 | `/opt/`, `/usr/`, `/etc/`         | No        | System directories; lost on restart                 |
 | Installed packages                | No        | Must be in Dockerfile to persist                    |
 
 **What this means:**
 - **Your code is safe** — it lives on the host and is never lost
 - **Home directory customizations** — use `.booth/home/` or `.booth/home-seed/` to persist dotfiles (see [Home Directory Guide](BOOTH_HOME.md))
+- **Home directory state** — use `.booth/cache/` to persist shell history, tool configs, and other runtime state across sessions (see [Local Cache Guide](BOOTH_LOCALCACHE.md))
 - **Installed tools** — add them to your `.booth/Dockerfile` (or `Boothfile`) so they're rebuilt each time
 - **Container state** — treat containers as disposable; rebuild rather than modify
 
-> 💡 **Tip:** If you need to persist something outside `/home/coder/code/`, either add it to your Boothfile/Dockerfile or mount an additional volume via `run-args` in `config.toml`.
+### Home Directory Seeding
+
+At container startup, `booth-entry` populates the home directory from four sources in order:
+
+1. **`.booth/home-seed/`** — Team defaults (no-clobber: won't overwrite existing files)
+2. **`.booth/home/`** — Team overrides (will overwrite existing files)
+3. **`/etc/cb-home-seed/`** — Host personal defaults (no-clobber)
+4. **`/etc/cb-home/`** — Host personal overrides (will overwrite)
+
+Each source supports fine-grained control with the `.mount-this` marker. A directory containing `.mount-this` is copied as a unit; directories without it copy only individual files and recurse into subdirectories. This allows precise control — for example, seeding only `.credentials.json` from `~/.claude/` without overwriting other cached settings.
+
+See the [Home Directory Guide](BOOTH_HOME.md) for details and examples.
+
+> 💡 **Tip:** If you need to persist something outside `/home/coder/code/`, use `.booth/cache/`, add it to your Boothfile/Dockerfile, or mount an additional volume via `run-args` in `config.toml`.
 
 ---
 

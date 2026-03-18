@@ -144,6 +144,17 @@ The entire `opt/ex-app/` directory is mounted at `/opt/ex-app` in the container,
 
 History and gitconfig are individual file mounts. The PostgreSQL data directory is a whole-directory mount.
 
+### Claude Code settings persistence
+
+```
+.booth/cache/
+  home/coder/
+    .claude/
+      .mount-this
+```
+
+The entire `~/.claude/` directory is mounted as a single bind mount. Claude Code settings, projects, memory, and conversation history all persist across container sessions. Fresh credentials are provided separately via `/etc/cb-home/` override mount (see [Home Directory Guide](BOOTH_HOME.md#fine-grained-copy-with-mount-this)).
+
 ---
 
 ## Implementation Plan
@@ -179,23 +190,35 @@ Thread a new `Cache` field through the existing template pipeline so templates c
 
 | File | Change |
 |------|--------|
-| `cli/src/pkg/boothinit/template/model.go` | Add `Cache []FileRef` to `Template` struct |
-| `cli/src/pkg/boothinit/template/loader.go` | Parse `cache-files = [...]` from `template.toml` into `Cache` field |
-| `cli/src/pkg/boothinit/compiler/compiler.go` | Merge `Cache` refs from all selected templates into `BoothOutput.Cache` |
-| `cli/src/pkg/boothinit/output/model.go` | Add `Cache []FileContent` to `BoothOutput` struct |
-| `cli/src/pkg/boothinit/output/writer.go` | Touch empty files into `.booth/cache/` (mkdir + create, no content) |
+| `cli/src/pkg/boothinit/template/model.go` | Add `CacheFiles []string` and `CacheDirs []string` to `Template` struct |
+| `cli/src/pkg/boothinit/template/loader.go` | Parse `cache-files` and `cache-dirs` from `template.toml` |
+| `cli/src/pkg/boothinit/compiler/compiler.go` | Merge cache refs from all selected templates into `BoothOutput.Cache` and `BoothOutput.CacheDirs` |
+| `cli/src/pkg/boothinit/output/model.go` | Add `Cache []FileContent` and `CacheDirs []FileContent` to `BoothOutput` struct |
+| `cli/src/pkg/boothinit/output/writer.go` | Touch empty files and create directories with `.mount-this` markers |
 
 **Template syntax:**
 
 ```toml
 # In template.toml or extension.toml
+
+# Touch individual empty files (for simple history files)
 cache-files = [
     "home/coder/.bash_history",
     "home/coder/.zsh_history",
 ]
+
+# Create directories with .mount-this marker (for complex tool state)
+cache-dirs = [
+    "home/coder/.claude",
+]
 ```
 
-Each path is relative to `.booth/cache/` and mirrors the container filesystem. The writer creates parent directories and touches empty files. Existing files are left untouched (no-clobber) so user data is never overwritten on `booth init adjust`.
+Each path is relative to `.booth/cache/` and mirrors the container filesystem.
+
+- `cache-files`: Creates parent directories and touches empty files.
+- `cache-dirs`: Creates the directory and a `.mount-this` marker inside it, causing the entire directory to be mounted as a single bind mount.
+
+Existing files and markers are left untouched (no-clobber) so user data is never overwritten on `booth init adjust`.
 
 ### 5. Template: `shell-history`
 
@@ -214,6 +237,24 @@ cache-files = [
 ```
 
 No Boothfile segments or startup scripts needed — bash and zsh already write to `~/.bash_history` and `~/.zsh_history` by default, and the core cache mount maps them automatically.
+
+### 5b. Extension: Claude Code `settings-cache`
+
+**File:** `templates/ai-tools/claude-code/settings-cache--extension.toml`
+
+```toml
+display-name = "Settings Cache"
+display-disc = "Persist Claude Code settings and projects across sessions"
+display-order = 91
+auto-select = true
+tags = ["claude", "persistence", "cache"]
+
+cache-dirs = [
+    "home/coder/.claude",
+]
+```
+
+This creates `.booth/cache/home/coder/.claude/.mount-this`, causing the entire `~/.claude/` directory to be persisted via cache mount. Used in combination with the credential extension which seeds fresh `.credentials.json` via `/etc/cb-home/` override.
 
 ### 6. Cache extensions for existing templates
 

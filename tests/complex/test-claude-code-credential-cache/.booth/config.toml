@@ -1,0 +1,14 @@
+# Test configuration for Claude Code credential + cache interaction
+#
+# Simulates the production setup:
+# - .booth/cache/home/coder/.claude/ (with .mount-this) provides persistent settings
+# - Host .credentials.json mounted via /etc/cb-home/ (override) provides fresh credentials
+
+variant = "base"
+
+run-args = [
+    # Host credential — override path (always overwrites)
+    "-v", "./host-credential/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",
+    # Host .claude.json — seed path (no-clobber)
+    "-v", "./host-credential/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+]

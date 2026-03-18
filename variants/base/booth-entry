@@ -297,6 +297,49 @@ chown "$HOST_UID:$HOST_GID" \
 
 section "Prepare the user's home directory"
 
+# smart_copy: Fine-grained copy with .mount-this support.
+# Usage: smart_copy <source_dir> <dest_dir> <mode>
+#   mode: "seed" (no-clobber) or "override" (always overwrite)
+#
+# If a source directory contains a .mount-this marker, the entire directory
+# is copied as a unit. Otherwise, only individual files are copied and
+# subdirectories are recursed into. This allows precise control over which
+# files get seeded/overridden (matching the .booth/cache/ mount logic).
+smart_copy() {
+  local src="$1" dest="$2" mode="$3"
+
+  [ -d "$src" ] || return 0
+
+  # If .mount-this marker exists, copy entire directory contents
+  if [ -f "$src/.mount-this" ]; then
+    if [ "$mode" = "seed" ]; then
+      cp -rn "$src/." "$dest/" 2>/dev/null || true
+    else
+      cp -r "$src/." "$dest/" 2>/dev/null || true
+    fi
+    return
+  fi
+
+  # No marker: copy individual files, recurse into subdirectories
+  for entry in "$src"/* "$src"/.*; do
+    [ -e "$entry" ] || continue
+    local name
+    name="$(basename "$entry")"
+    case "$name" in .|..|.mount-this) continue ;; esac
+
+    if [ -d "$entry" ]; then
+      mkdir -p "$dest/$name"
+      smart_copy "$entry" "$dest/$name" "$mode"
+    elif [ -f "$entry" ]; then
+      if [ "$mode" = "seed" ]; then
+        cp -n "$entry" "$dest/$name" 2>/dev/null || true
+      else
+        cp "$entry" "$dest/$name" 2>/dev/null || true
+      fi
+    fi
+  done
+}
+
 info "11) Copying project's home-seed folder (team defaults, no-clobber)..."
 BOOTH_HOME_SEED_DIR=""
 if [ -d "$CODE_DIR/.booth/home-seed" ]; then
@@ -304,7 +347,7 @@ if [ -d "$CODE_DIR/.booth/home-seed" ]; then
 fi
 if [ -n "$BOOTH_HOME_SEED_DIR" ]; then
   info "Copying project home-seed files from $BOOTH_HOME_SEED_DIR to $HOME_DIR (no-clobber)..."
-  cp -rn "$BOOTH_HOME_SEED_DIR/." "$HOME_DIR/" 2>/dev/null || true
+  smart_copy "$BOOTH_HOME_SEED_DIR" "$HOME_DIR" seed
 fi
 
 info "11b) Copying project's home folder (team-shared overrides)..."
@@ -314,21 +357,21 @@ if [ -d "$CODE_DIR/.booth/home" ]; then
 fi
 if [ -n "$BOOTH_HOME_DIR" ]; then
   info "Copying project home files from $BOOTH_HOME_DIR to $HOME_DIR (override)..."
-  cp -r "$BOOTH_HOME_DIR/." "$HOME_DIR/" 2>/dev/null || true
+  smart_copy "$BOOTH_HOME_DIR" "$HOME_DIR" override
 fi
 
 info "12) Copying seed files from /etc/cb-home-seed/ to /home/coder (no-clobber)..."
 BOOTH_HOME_SEED="/etc/cb-home-seed"
 if [ -d "$BOOTH_HOME_SEED" ]; then
   info "Copying seed files from $BOOTH_HOME_SEED to $HOME_DIR..."
-  cp -rn "$BOOTH_HOME_SEED/." "$HOME_DIR/" 2>/dev/null || true
+  smart_copy "$BOOTH_HOME_SEED" "$HOME_DIR" seed
 fi
 
 info "13) Copying override files from /etc/cb-home/ to /home/coder (with override)..."
 BOOTH_HOME_OVERRIDE="/etc/cb-home"
 if [ -d "$BOOTH_HOME_OVERRIDE" ]; then
   info "Copying override files from $BOOTH_HOME_OVERRIDE to $HOME_DIR..."
-  cp -r "$BOOTH_HOME_OVERRIDE/." "$HOME_DIR/" 2>/dev/null || true
+  smart_copy "$BOOTH_HOME_OVERRIDE" "$HOME_DIR" override
 fi
 
 # Fix ownership for root-owned files/dirs that were copied in from seed or override

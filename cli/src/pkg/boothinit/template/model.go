@@ -62,6 +62,9 @@ type Template struct {
 	// Cache files to touch in .booth/cache/ (paths mirror container filesystem)
 	CacheFiles []string
 
+	// Cache directories to create in .booth/cache/ with .mount-this marker
+	CacheDirs []string
+
 	// Extensions (sub-templates)
 	Extensions []*Template
 }

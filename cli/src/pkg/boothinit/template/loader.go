@@ -46,6 +46,7 @@ type specToml struct {
 	Segments     map[string]string    `toml:"segments"`
 	Files        filesToml            `toml:"files"`
 	CacheFiles   []string             `toml:"cache-files"`
+	CacheDirs    []string             `toml:"cache-dirs"`
 }
 
 type filesToml struct {
@@ -257,6 +258,14 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 	}
 	tmpl.CacheFiles = spec.CacheFiles
 
+	// Validate and assign cache-dirs
+	for _, cd := range spec.CacheDirs {
+		if err := validateFilePath(cd); err != nil {
+			return nil, fmt.Errorf("invalid cache-dirs path %q: %w", cd, err)
+		}
+	}
+	tmpl.CacheDirs = spec.CacheDirs
+
 	// Load extensions (subdirectories with template.toml that aren't special dirs)
 	if allowExtensions {
 		entries, err := os.ReadDir(dir)
@@ -372,6 +381,14 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		}
 	}
 	tmpl.CacheFiles = spec.CacheFiles
+
+	// Validate and assign cache-dirs
+	for _, cd := range spec.CacheDirs {
+		if err := validateFilePath(cd); err != nil {
+			return nil, fmt.Errorf("invalid cache-dirs path %q: %w", cd, err)
+		}
+	}
+	tmpl.CacheDirs = spec.CacheDirs
 
 	return tmpl, nil
 }

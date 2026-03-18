@@ -100,42 +100,15 @@ envsubst '$CLAUDE_CODE_VERSION' > "${STARTUP_FILE}" <<'EOF'
 set -euo pipefail
 
 # Claude Code startup script
-# Ensures config and credentials from cb-home-seed are properly copied
+# Credential and config seeding is handled by booth-entry's smart_copy.
+# This script only ensures the ~/.claude directory and symlink exist.
 
-CB_SEED_DIR="/etc/cb-home-seed/.claude"
-CB_SEED_JSON="/etc/cb-home-seed/.claude.json"
 CLAUDE_DIR="$HOME/.claude"
-CLAUDE_JSON="$HOME/.claude.json"
-
 mkdir -p "$CLAUDE_DIR"
 
 mkdir -p "/home/coder/.local/bin"
 if [[ ! -e "/home/coder/.local/bin/claude" ]]; then
     ln -s /usr/local/bin/claude "/home/coder/.local/bin/claude"
-fi
-
-# Copy .claude.json config file (contains hasCompletedOnboarding, theme, etc.)
-# This must happen BEFORE claude runs to skip onboarding wizard
-if [[ -f "$CB_SEED_JSON" && ! -f "$CLAUDE_JSON" ]]; then
-    cp "$CB_SEED_JSON" "$CLAUDE_JSON"
-fi
-
-# Copy .claude/ directory contents (credentials, plugins, etc.)
-if [[ -d "$CB_SEED_DIR" ]]; then
-    # Use rsync if available (better merge), otherwise cp
-    if command -v rsync &>/dev/null; then
-        rsync -a --ignore-existing "$CB_SEED_DIR/" "$CLAUDE_DIR/"
-    else
-        # Copy files that don't exist in destination
-        find "$CB_SEED_DIR" -type f | while read -r src; do
-            rel="${src#$CB_SEED_DIR/}"
-            dst="$CLAUDE_DIR/$rel"
-            if [[ ! -f "$dst" ]]; then
-                mkdir -p "$(dirname "$dst")"
-                cp "$src" "$dst"
-            fi
-        done
-    fi
 fi
 EOF
 chmod 755 "${STARTUP_FILE}"

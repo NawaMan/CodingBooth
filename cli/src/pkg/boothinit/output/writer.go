@@ -56,6 +56,10 @@ func OutputPaths(out *BoothOutput, targetPath string) []string {
 		paths = append(paths, filepath.Join(boothDir, "cache", f.RelPath))
 	}
 
+	for _, d := range out.CacheDirs {
+		paths = append(paths, filepath.Join(boothDir, "cache", d.RelPath, ".mount-this"))
+	}
+
 	return paths
 }
 
@@ -144,6 +148,14 @@ func WriteOutput(out *BoothOutput, targetPath string) error {
 		}
 	}
 
+	// Create cache directories with .mount-this markers (no-clobber)
+	if len(out.CacheDirs) > 0 {
+		cacheDir := filepath.Join(boothDir, "cache")
+		if err := touchCacheDirs(out.CacheDirs, cacheDir); err != nil {
+			return fmt.Errorf("writing cache dirs/: %w", err)
+		}
+	}
+
 	return nil
 }
 
@@ -207,6 +219,25 @@ func touchCacheFiles(files []FileContent, cacheDir string) error {
 			return err
 		}
 		if err := os.WriteFile(path, []byte{}, 0644); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// touchCacheDirs creates directories with .mount-this markers in the cache directory (no-clobber).
+// If the .mount-this marker already exists, the directory is left untouched.
+func touchCacheDirs(dirs []FileContent, cacheDir string) error {
+	for _, d := range dirs {
+		dirPath := filepath.Join(cacheDir, d.RelPath)
+		if err := os.MkdirAll(dirPath, 0755); err != nil {
+			return err
+		}
+		markerPath := filepath.Join(dirPath, ".mount-this")
+		if _, err := os.Stat(markerPath); err == nil {
+			continue // already exists — no-clobber
+		}
+		if err := os.WriteFile(markerPath, []byte{}, 0644); err != nil {
 			return err
 		}
 	}

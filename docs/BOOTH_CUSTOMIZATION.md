@@ -504,6 +504,28 @@ Files can target three locations:
 
 Templates can also include file-based content by placing files in `setups/`, `home/`, or `home-seed/` subdirectories alongside `template.toml`.
 
+### Cache Files and Directories
+
+Templates can declare files or directories to persist in `.booth/cache/` across container sessions:
+
+```toml
+# Touch individual empty files (e.g., shell history)
+cache-files = [
+    "home/coder/.bash_history",
+    "home/coder/.zsh_history",
+]
+
+# Create directories with .mount-this marker (for complex tool state)
+cache-dirs = [
+    "home/coder/.claude",
+]
+```
+
+- `cache-files` creates empty files in `.booth/cache/` — mounted individually into the container
+- `cache-dirs` creates directories with a `.mount-this` marker — the entire directory is mounted as a single bind mount
+
+Both use no-clobber: existing files and markers are never overwritten. See the [Local Cache Guide](BOOTH_LOCALCACHE.md) for details on mount rules and the `.mount-this` mechanism.
+
 ---
 
 ## Template Extensions

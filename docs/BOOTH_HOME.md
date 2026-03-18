@@ -99,6 +99,37 @@ The **override** sources use `cp -r` — they always copy, overwriting existing 
 > Use **seed** for fallback defaults — "if no setup script provided this file, use this one."
 > Use **override** for enforced configs — "regardless of what's already there, always use this file."
 
+## Fine-Grained Copy with `.mount-this`
+
+By default, the home copy stages recursively copy individual files. You can control granularity using the `.mount-this` marker — the same mechanism used by [`.booth/cache/`](BOOTH_LOCALCACHE.md):
+
+- **Directory with `.mount-this`** — the entire directory is copied as a unit (like `cp -r` of the whole directory)
+- **Directory without `.mount-this`** — only individual files in that directory are copied, then subdirectories are recursed into
+
+This is useful when a source directory should only contribute specific files rather than replacing an entire target directory. For example, to seed only `.credentials.json` from `~/.claude/` without overwriting other files in `~/.claude/`:
+
+```toml
+# .booth/config.toml — mount only the credential file, not the whole directory
+run-args = [
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",
+]
+```
+
+Since `/etc/cb-home/.claude/` has no `.mount-this` marker, only `.credentials.json` is copied into `~/.claude/` — leaving any other files (settings, projects, history) untouched.
+
+Compare with mounting a directory that has `.mount-this`:
+```
+/etc/cb-home-seed/.myapp/
+    .mount-this          # ← marker present: copy entire directory
+    config.yaml
+    data/
+        cache.db
+```
+
+This copies everything in `.myapp/` (including `data/cache.db`) to `~/.myapp/` as a unit.
+
+---
+
 ## Common Credential Seeding Examples
 
 Here are common credentials you might want to seed from your host:
@@ -128,9 +159,9 @@ run-args = [
     # GitHub Copilot
     "-v", "~/.config/github-copilot:/etc/cb-home-seed/.config/github-copilot:ro",
 
-    # Claude Code
+    # Claude Code (config as seed, credentials as override for freshness)
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
-    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",
 
     # OpenAI Codex
     "-v", "~/.codex:/etc/cb-home-seed/.codex:ro",

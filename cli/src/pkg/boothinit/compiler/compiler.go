@@ -71,6 +71,7 @@ type collector struct {
 	home       []output.FileContent
 	homeSeed   []output.FileContent
 	cacheFiles []string
+	cacheDirs  []string
 }
 
 func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
@@ -179,6 +180,7 @@ func (c *collector) collectFiles(t *tmpl.Template) {
 		c.homeSeed = append(c.homeSeed, output.FileContent{SourcePath: f.SourcePath, RelPath: f.RelPath, Content: f.Content})
 	}
 	c.cacheFiles = append(c.cacheFiles, t.CacheFiles...)
+	c.cacheDirs = append(c.cacheDirs, t.CacheDirs...)
 }
 
 func (c *collector) setScalar(current *string, currentSource *string, value, source, field string) error {
@@ -264,6 +266,17 @@ func (c *collector) build() (*output.BoothOutput, error) {
 			if !seen[cf] {
 				seen[cf] = true
 				out.Cache = append(out.Cache, output.FileContent{RelPath: cf})
+			}
+		}
+	}
+
+	// Cache dirs (dedup, preserve order)
+	if len(c.cacheDirs) > 0 {
+		seen := make(map[string]bool, len(c.cacheDirs))
+		for _, cd := range c.cacheDirs {
+			if !seen[cd] {
+				seen[cd] = true
+				out.CacheDirs = append(out.CacheDirs, output.FileContent{RelPath: cd})
 			}
 		}
 	}

@@ -1,0 +1,11 @@
+variant = "base"
+
+# Mount seed content (no-clobber) — includes .mount-this directory and individual files
+run-args = [
+    "-v", "./seed-content/.testdir:/etc/cb-home-seed/.testdir:ro",
+    "-v", "./seed-content/.testfile-individual:/etc/cb-home-seed/.testfile-individual:ro",
+    "-v", "./seed-content/.testfile-new:/etc/cb-home-seed/.testfile-new:ro",
+    # Mount override content (always overwrite)
+    "-v", "./override-content/.testdir-override:/etc/cb-home/.testdir-override:ro",
+    "-v", "./override-content/.testfile-override:/etc/cb-home/.testfile-override:ro",
+]

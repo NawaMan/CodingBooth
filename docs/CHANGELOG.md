@@ -2,6 +2,20 @@
 
 This file contains a list of changes for each released version.
 
+## 0.36.0
+
+- Fine-grained home copy with `.mount-this` — booth-entry now uses `smart_copy` for all four home directory seeding stages
+  - Directories with `.mount-this` are copied as a unit; without it, only individual files are copied
+  - Backward compatible: existing setups without `.mount-this` behave identically
+  - Matches the `.booth/cache/` mount logic for consistency
+- `cache-dirs` template field — create directories with `.mount-this` markers in `.booth/cache/`
+  - Complementary to existing `cache-files` (which creates individual empty files)
+  - Entire directory is mounted as a single bind mount into the container
+- Claude Code settings cache — persist `~/.claude/` (settings, projects, memory) across sessions
+  - New `settings-cache` extension (auto-selected) creates `.booth/cache/home/coder/.claude/`
+  - Credential extension now mounts only `.credentials.json` via override path for fresh host credentials
+  - Startup script simplified: credential seeding handled by booth-entry's `smart_copy`
+
 ## 0.35.0
 
 - `booth build` command — build booth images and optionally push to a container registry
