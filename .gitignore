@@ -135,3 +135,5 @@ variants/base/_stage/
 **/codingbooth.lock
 
 cli/src/codingbooth
+
+build/logs/

@@ -30,6 +30,8 @@ func (f *stringSliceFlag) Set(value string) error {
 
 // Shell opens a new interactive shell inside a running booth container.
 func Shell(args []string, stderr io.Writer) error {
+	positional, flags := extractPositionalAndFlags(args)
+
 	flagSet := flag.NewFlagSet("shell", flag.ContinueOnError)
 	name := flagSet.String("name", "", "Container name")
 	shell := flagSet.String("shell", "", "Shell to launch (default: container default)")
@@ -39,7 +41,7 @@ func Shell(args []string, stderr io.Writer) error {
 	flagSet.Var(&envVars, "e", "Set environment variable (repeatable)")
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(args); err != nil {
+	if err := flagSet.Parse(flags); err != nil {
 		return commandExit(2, "")
 	}
 
@@ -48,7 +50,7 @@ func Shell(args []string, stderr io.Writer) error {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
 
-	target, err := resolveSingleContainer(containers, *name, "", flagSet.Args(), stateRunning)
+	target, err := resolveSingleContainer(containers, *name, "", positional, stateRunning)
 	if err != nil {
 		return commandExit(1, err.Error())
 	}
@@ -75,7 +77,9 @@ func Shell(args []string, stderr io.Writer) error {
 // Exec runs a command inside a running booth container.
 func Exec(args []string, stderr io.Writer) error {
 	// Split args at "--" to separate flags from the command to execute.
-	flagArgs, cmdArgs := splitAtSeparator(args)
+	beforeSep, cmdArgs := splitAtSeparator(args)
+
+	positional, flags := extractPositionalAndFlags(beforeSep)
 
 	flagSet := flag.NewFlagSet("exec", flag.ContinueOnError)
 	name := flagSet.String("name", "", "Container name")
@@ -86,7 +90,7 @@ func Exec(args []string, stderr io.Writer) error {
 	flagSet.Var(&envVars, "e", "Set environment variable (repeatable)")
 	flagSet.SetOutput(stderr)
 
-	if err := flagSet.Parse(flagArgs); err != nil {
+	if err := flagSet.Parse(flags); err != nil {
 		return commandExit(2, "")
 	}
 
@@ -99,7 +103,7 @@ func Exec(args []string, stderr io.Writer) error {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
 
-	target, err := resolveSingleContainer(containers, *name, "", flagSet.Args(), stateRunning)
+	target, err := resolveSingleContainer(containers, *name, "", positional, stateRunning)
 	if err != nil {
 		return commandExit(1, err.Error())
 	}
@@ -150,6 +154,33 @@ func buildExecFlags(interactive bool, dir string, envVars stringSliceFlag, envfi
 	}
 
 	return execArgs
+}
+
+// extractPositionalAndFlags separates positional arguments from flags.
+// Go's flag.Parse stops at the first positional arg, so flags after a positional
+// arg are never parsed. This function pulls out non-flag args (positional) and
+// returns the remaining flags for flag.Parse.
+// Flags that take a value (-e VAL, --name VAL) consume the next arg.
+func extractPositionalAndFlags(args []string) (positional []string, flags []string) {
+	knownValueFlags := map[string]bool{
+		"-e": true, "--name": true, "--shell": true,
+		"--dir": true, "--envfile": true,
+	}
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if strings.HasPrefix(arg, "-") {
+			flags = append(flags, arg)
+			// If this flag takes a value, consume the next arg too
+			if knownValueFlags[arg] && i+1 < len(args) {
+				i++
+				flags = append(flags, args[i])
+			}
+		} else {
+			positional = append(positional, arg)
+		}
+	}
+	return
 }
 
 // splitAtSeparator splits args into two slices at the first "--" separator.

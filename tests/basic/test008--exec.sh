@@ -45,6 +45,27 @@ function random_free_port() {
 NAME="$(generate_name)"
 PORT="$(random_free_port)"
 
+# Find the codingbooth binary path (for exec/shell which don't need --version)
+BOOTH_BIN=""
+check_dir="$(pwd)"
+for _ in 1 2 3 4 5; do
+  if [[ -x "$check_dir/codingbooth" ]]; then
+    BOOTH_BIN="$check_dir/codingbooth"
+    break
+  fi
+  check_dir="$(dirname "$check_dir")"
+done
+if [[ -z "$BOOTH_BIN" ]]; then
+  echo "ERROR: Could not find codingbooth" >&2
+  exit 1
+fi
+
+# Helper: run codingbooth without --version injection (for exec/shell subcommands)
+run_booth() {
+  echo -e "${COLOR_BOOTH:-}> codingbooth $*${COLOR_RESET:-}" >&2
+  "$BOOTH_BIN" "$@"
+}
+
 # Cleanup
 cleanup() {
   docker stop "$NAME" >/dev/null 2>&1 || true
@@ -72,7 +93,7 @@ fi
 # -------------------------------------------------------
 # Test 1: Basic command execution
 # -------------------------------------------------------
-ACTUAL=$(run_coding_booth exec "$NAME" -- echo hello-from-exec)
+ACTUAL=$(run_booth exec "$NAME" -- echo hello-from-exec)
 if [[ "$ACTUAL" == *"hello-from-exec"* ]]; then
   print_test_result "true" "$0" "1" "Basic exec command"
 else
@@ -83,7 +104,7 @@ fi
 # -------------------------------------------------------
 # Test 2: Exit code forwarding (success)
 # -------------------------------------------------------
-if run_coding_booth exec "$NAME" -- true; then
+if run_booth exec "$NAME" -- true; then
   print_test_result "true" "$0" "2" "Exit code forwarding (success)"
 else
   print_test_result "false" "$0" "2" "Exit code forwarding (success)"
@@ -93,7 +114,7 @@ fi
 # -------------------------------------------------------
 # Test 3: Exit code forwarding (failure)
 # -------------------------------------------------------
-if run_coding_booth exec "$NAME" -- false; then
+if run_booth exec "$NAME" -- false; then
   print_test_result "false" "$0" "3" "Exit code forwarding (failure) - expected non-zero"
   exit 1
 else
@@ -103,7 +124,7 @@ fi
 # -------------------------------------------------------
 # Test 4: -e flag sets environment variable
 # -------------------------------------------------------
-ACTUAL=$(run_coding_booth exec "$NAME" -e TEST_VAR=booth_exec_test -- printenv TEST_VAR)
+ACTUAL=$(run_booth exec "$NAME" -e TEST_VAR=booth_exec_test -- printenv TEST_VAR)
 if [[ "$ACTUAL" == *"booth_exec_test"* ]]; then
   print_test_result "true" "$0" "4" "Environment variable via -e flag"
 else
@@ -118,7 +139,7 @@ ENVFILE="$0.envfile"
 echo "ENVFILE_VAR1=alpha" > "$ENVFILE"
 echo "ENVFILE_VAR2=bravo" >> "$ENVFILE"
 
-ACTUAL=$(run_coding_booth exec "$NAME" --envfile "$ENVFILE" -- printenv ENVFILE_VAR1)
+ACTUAL=$(run_booth exec "$NAME" --envfile "$ENVFILE" -- printenv ENVFILE_VAR1)
 if [[ "$ACTUAL" == *"alpha"* ]]; then
   print_test_result "true" "$0" "5" "Environment variable via --envfile"
 else
@@ -129,7 +150,7 @@ fi
 # -------------------------------------------------------
 # Test 6: --dir flag sets working directory
 # -------------------------------------------------------
-ACTUAL=$(run_coding_booth exec "$NAME" --dir /tmp -- pwd)
+ACTUAL=$(run_booth exec "$NAME" --dir /tmp -- pwd)
 if [[ "$ACTUAL" == *"/tmp"* ]]; then
   print_test_result "true" "$0" "6" "Working directory via --dir flag"
 else

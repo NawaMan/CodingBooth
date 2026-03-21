@@ -18,7 +18,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
 fi
 
 # Just check the USAGE section (first 17 lines) - the full help is ~98 lines
-ACTUAL=$(run_coding_booth help | head -28)
+ACTUAL=$(run_coding_booth help | head -29)
 
 HERE="$PWD"
 VERSION="$(cat ../../version.txt)"
@@ -47,6 +47,7 @@ EXAMPLES:
 OTHER COMMANDS:
   BUILD     | Build and publish booth images   | build
   LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune
+  CONNECT   | Connect to a running booth       | shell, exec
   PROJECT   | Set up and scaffold new projects | example, init, template
 
 Run 'codingbooth --help <command>'   for command-specific help.
