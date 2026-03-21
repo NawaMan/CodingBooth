@@ -75,18 +75,26 @@ cleanup() {
 trap cleanup EXIT
 
 # Start a keep-alive daemon container to exec into
-run_coding_booth --variant base --name "$NAME" --port "$PORT" --daemon --keep-alive -- sleep 120 > "$0.log" 2>&1
+run_coding_booth --variant base --name "$NAME" --port "$PORT" --daemon -- 'sleep 300' > "$0.log" 2>&1
 
-# --- Wait for container to be running (max ~15 seconds) ---
-for i in {1..15}; do
+# --- Wait for container to be fully ready (max ~30 seconds) ---
+# Check both that the container is running AND that booth-entry has finished
+# creating the coder user (otherwise exec runs as UID with "I have no name!").
+for i in {1..30}; do
   if docker inspect --format '{{.State.Running}}' "$NAME" 2>/dev/null | grep -q true; then
-    break
+    if docker exec "$NAME" id coder >/dev/null 2>&1; then
+      break
+    fi
   fi
   sleep 1
 done
 
 if ! docker inspect --format '{{.State.Running}}' "$NAME" 2>/dev/null | grep -q true; then
   print_test_result "false" "$0" "0" "Container '$NAME' failed to start"
+  exit 1
+fi
+if ! docker exec "$NAME" id coder >/dev/null 2>&1; then
+  print_test_result "false" "$0" "0" "Container '$NAME' running but coder user not ready"
   exit 1
 fi
 

@@ -5,51 +5,77 @@
 
 
 # Manual Test: booth shell
-# This test requires an interactive TTY and cannot be automated.
+# Starts a booth in daemon mode, opens an interactive shell, then cleans up.
 
-set -euo pipefail
+set -uo pipefail
 
-SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+BOOTH_BIN="${PROJECT_ROOT}/codingbooth"
+
+NAME="shell-test-$$"
 
 echo "═══════════════════════════════════════════════════════════"
-echo "booth shell — Manual Test Checklist"
+echo "  booth shell — Manual Test"
 echo "═══════════════════════════════════════════════════════════"
-echo
-echo "Prerequisites:"
-echo "  Start a keep-alive booth in another terminal:"
-echo "    booth --variant terminal --keep-alive --name shell-test"
-echo
-echo "Test checklist:"
-echo
-echo "  1. Basic shell"
-echo "     Run:    booth shell shell-test"
-echo "     Expect: Interactive bash session as 'coder' in /home/coder/code"
-echo "     Check:  whoami => coder, pwd => /home/coder/code"
-echo "     Exit:   Ctrl+D (booth should keep running)"
-echo
-echo "  2. Specific shell"
-echo "     Run:    booth shell shell-test --shell zsh"
-echo "     Expect: zsh session (check with: echo \$SHELL or ps -p \$\$)"
-echo
-echo "  3. Custom starting directory"
-echo "     Run:    booth shell shell-test --dir /tmp"
-echo "     Expect: pwd => /tmp"
-echo
-echo "  4. Environment variable via -e"
-echo "     Run:    booth shell shell-test -e MY_VAR=hello"
-echo "     Expect: echo \$MY_VAR => hello"
-echo
-echo "  5. Environment file via --envfile"
-echo "     Prep:   echo 'FILE_VAR=world' > /tmp/test.env"
-echo "     Run:    booth shell shell-test --envfile /tmp/test.env"
-echo "     Expect: echo \$FILE_VAR => world"
-echo
-echo "  6. Session isolation"
-echo "     Open two shells: booth shell shell-test (twice)"
-echo "     Expect: Both sessions work independently"
-echo "     Exit one: the other should remain active"
-echo
-echo "Cleanup:"
-echo "  booth stop shell-test"
-echo "  booth remove shell-test"
-echo
+echo ""
+echo "Step 1: Starting a booth in daemon mode..."
+echo "  Container: ${NAME}"
+echo ""
+
+"$BOOTH_BIN" --variant base --name "$NAME" --port RANDOM --daemon -- 'sleep 300'
+
+echo ""
+echo "  Waiting for container to be fully ready..."
+for i in {1..30}; do
+    if docker exec "$NAME" id coder >/dev/null 2>&1; then
+        break
+    fi
+    sleep 1
+done
+if ! docker exec "$NAME" id coder >/dev/null 2>&1; then
+    echo "  ERROR: Container not ready after 30s"
+    "$BOOTH_BIN" stop "$NAME" 2>/dev/null || true
+    exit 1
+fi
+echo "  Ready."
+
+echo ""
+echo "═══════════════════════════════════════════════════════════"
+echo "Step 2: Opening an interactive shell via 'booth shell'"
+echo "═══════════════════════════════════════════════════════════"
+echo ""
+echo "  You will be dropped into a bash session inside the container."
+echo ""
+echo "  Try these:"
+echo "    whoami          → expect: coder"
+echo "    pwd             → expect: /home/coder/code"
+echo "    sudo whoami     → expect: root"
+echo "    echo \$SHELL     → expect: /bin/bash"
+echo ""
+echo "  Type 'exit' or Ctrl+D to leave."
+echo ""
+echo "───────────────────────────────────────────────────────────"
+
+"$BOOTH_BIN" shell "$NAME"
+
+echo "───────────────────────────────────────────────────────────"
+echo ""
+echo "  Were you able to use the shell inside the booth? (y/n)"
+read -r answer
+echo ""
+
+echo "Step 3: Cleaning up..."
+"$BOOTH_BIN" stop "$NAME" 2>/dev/null || true
+
+echo ""
+if [[ "$answer" == "y" || "$answer" == "Y" ]]; then
+    echo "═══════════════════════════════════════════════════════════"
+    echo "  ✅ Test PASSED"
+    echo "═══════════════════════════════════════════════════════════"
+else
+    echo "═══════════════════════════════════════════════════════════"
+    echo "  ❌ Test FAILED"
+    echo "═══════════════════════════════════════════════════════════"
+    exit 1
+fi

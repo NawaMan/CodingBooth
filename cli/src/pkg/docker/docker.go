@@ -147,7 +147,13 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 	}
 
 	args.Range(func(_ int, group ilist.List[string]) bool {
-		cmdArgs = append(cmdArgs, filterTTYFlags(group.Slice())...)
+		// Only filter TTY flags for "run" — the Docker function auto-adds -i/-t for run.
+		// For "exec", the caller manages TTY flags explicitly via buildExecFlags.
+		if subcommand == "run" {
+			cmdArgs = append(cmdArgs, filterTTYFlags(group.Slice())...)
+		} else {
+			cmdArgs = append(cmdArgs, group.Slice()...)
+		}
 		return true
 	})
 
