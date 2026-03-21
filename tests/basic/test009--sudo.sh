@@ -14,20 +14,19 @@ source ../common--source.sh
 # -------------------------------------------------------
 # Test 1: --sudo true (default) — sudo works
 # -------------------------------------------------------
-ACTUAL=$(run_coding_booth --variant base --sudo true -- sudo touch /opt/test-sudo-true 2>&1) || true
-EXIT_CODE=$(run_coding_booth --variant base --sudo true -- bash -c 'sudo touch /opt/test-sudo-true && echo OK' 2>&1 | tail -1)
+ACTUAL=$(run_coding_booth --variant base --sudo true -- "sudo whoami" 2>&1 | tail -1)
 
-if [[ "$EXIT_CODE" == "OK" ]]; then
+if [[ "$ACTUAL" == "root" ]]; then
   print_test_result "true" "$0" "1" "sudo works with --sudo true"
 else
-  print_test_result "false" "$0" "1" "sudo works with --sudo true (got: $EXIT_CODE)"
+  print_test_result "false" "$0" "1" "sudo works with --sudo true (got: $ACTUAL)"
   exit 1
 fi
 
 # -------------------------------------------------------
 # Test 2: --sudo false — sudo is revoked
 # -------------------------------------------------------
-ACTUAL=$(run_coding_booth --variant base --sudo false -- bash -c 'sudo touch /opt/test-sudo-false 2>&1; echo "EXIT=$?"' 2>&1 | tail -1)
+ACTUAL=$(run_coding_booth --variant base --sudo false -- "sudo whoami 2>&1; echo EXIT=\$?" 2>&1 | tail -1)
 
 if [[ "$ACTUAL" == "EXIT=1" ]]; then
   print_test_result "true" "$0" "2" "sudo fails with --sudo false"
@@ -39,7 +38,7 @@ fi
 # -------------------------------------------------------
 # Test 3: --no-sudo shorthand — sudo is revoked
 # -------------------------------------------------------
-ACTUAL=$(run_coding_booth --variant base --no-sudo -- bash -c 'sudo touch /opt/test-no-sudo 2>&1; echo "EXIT=$?"' 2>&1 | tail -1)
+ACTUAL=$(run_coding_booth --variant base --no-sudo -- "sudo whoami 2>&1; echo EXIT=\$?" 2>&1 | tail -1)
 
 if [[ "$ACTUAL" == "EXIT=1" ]]; then
   print_test_result "true" "$0" "3" "sudo fails with --no-sudo"
