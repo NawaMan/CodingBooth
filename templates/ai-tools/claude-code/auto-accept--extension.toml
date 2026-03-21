@@ -75,7 +75,7 @@ if [ -f "$settings" ] && command -v jq &>/dev/null; then
         done <<< "$protected"
         jq --argjson new_deny "$deny_rules" '
             .permissions.deny = ((.permissions.deny // []) + $new_deny | unique)
-        ' "$settings" > "${settings}.tmp" && mv "${settings}.tmp" "$settings"
+        ' "$settings" > "${settings}.tmp" && command mv "${settings}.tmp" "$settings"
     fi
 fi
 """

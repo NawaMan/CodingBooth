@@ -122,7 +122,8 @@ func printPortBanner(portNumber int, public bool) {
 	fmt.Println("============================================================")
 	if public {
 		fmt.Printf("🔌 Using host port: \033[1;32m%d\033[0m -> container: \033[1;34m10443\033[0m (HTTPS)\n", portNumber)
-		fmt.Printf("🌐 Open: https://localhost:%d\n", portNumber)
+		fmt.Printf("🌐 Open: https://coder@localhost:%d\n", portNumber)
+		fmt.Println("🔑 Login username: coder")
 		fmt.Println("🔓 PUBLIC: PORT IS OPEN ON ALL INTERFACES (PASSWORD + HTTPS)")
 	} else {
 		fmt.Printf("🔌 Using host port: \033[1;32m%d\033[0m -> container: \033[1;34m10000\033[0m\n", portNumber)

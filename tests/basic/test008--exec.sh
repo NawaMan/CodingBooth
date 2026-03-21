@@ -1,0 +1,138 @@
+#!/bin/bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+set -euo pipefail
+
+source ../common--source.sh
+
+function generate_name() {
+  local name
+  while :; do
+    name=$(printf "exec-%04d" $((RANDOM % 10000)))
+    if ! docker inspect "$name" >/dev/null 2>&1; then
+      break
+    fi
+  done
+  echo "$name"
+}
+
+function is_port_free() {
+  local p="$1"
+  if command -v lsof >/dev/null 2>&1; then
+    ! lsof -iTCP:"$p" -sTCP:LISTEN -Pn 2>/dev/null | grep -q .
+  elif command -v ss >/dev/null 2>&1; then
+    ! ss -ltn "( sport = :$p )" 2>/dev/null | grep -q ":$p"
+  else
+    ! (command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$p" >/dev/null 2>&1)
+  fi
+}
+
+function random_free_port() {
+  local port
+  for i in {1..100}; do
+    port=$((50000 + RANDOM % 10001))
+    if is_port_free "$port"; then
+      echo "$port"
+      return 0
+    fi
+  done
+  echo "Failed to find free port in range 50000-60000 after 100 tries" >&2
+  return 1
+}
+
+NAME="$(generate_name)"
+PORT="$(random_free_port)"
+
+# Cleanup
+cleanup() {
+  docker stop "$NAME" >/dev/null 2>&1 || true
+  docker rm   "$NAME" >/dev/null 2>&1 || true
+  rm -f "$0.envfile"
+}
+trap cleanup EXIT
+
+# Start a keep-alive daemon container to exec into
+run_coding_booth --variant base --name "$NAME" --port "$PORT" --daemon --keep-alive -- sleep 120 > "$0.log" 2>&1
+
+# --- Wait for container to be running (max ~15 seconds) ---
+for i in {1..15}; do
+  if docker inspect --format '{{.State.Running}}' "$NAME" 2>/dev/null | grep -q true; then
+    break
+  fi
+  sleep 1
+done
+
+if ! docker inspect --format '{{.State.Running}}' "$NAME" 2>/dev/null | grep -q true; then
+  print_test_result "false" "$0" "0" "Container '$NAME' failed to start"
+  exit 1
+fi
+
+# -------------------------------------------------------
+# Test 1: Basic command execution
+# -------------------------------------------------------
+ACTUAL=$(run_coding_booth exec "$NAME" -- echo hello-from-exec)
+if [[ "$ACTUAL" == *"hello-from-exec"* ]]; then
+  print_test_result "true" "$0" "1" "Basic exec command"
+else
+  print_test_result "false" "$0" "1" "Basic exec command (got: $ACTUAL)"
+  exit 1
+fi
+
+# -------------------------------------------------------
+# Test 2: Exit code forwarding (success)
+# -------------------------------------------------------
+if run_coding_booth exec "$NAME" -- true; then
+  print_test_result "true" "$0" "2" "Exit code forwarding (success)"
+else
+  print_test_result "false" "$0" "2" "Exit code forwarding (success)"
+  exit 1
+fi
+
+# -------------------------------------------------------
+# Test 3: Exit code forwarding (failure)
+# -------------------------------------------------------
+if run_coding_booth exec "$NAME" -- false; then
+  print_test_result "false" "$0" "3" "Exit code forwarding (failure) - expected non-zero"
+  exit 1
+else
+  print_test_result "true" "$0" "3" "Exit code forwarding (failure)"
+fi
+
+# -------------------------------------------------------
+# Test 4: -e flag sets environment variable
+# -------------------------------------------------------
+ACTUAL=$(run_coding_booth exec "$NAME" -e TEST_VAR=booth_exec_test -- printenv TEST_VAR)
+if [[ "$ACTUAL" == *"booth_exec_test"* ]]; then
+  print_test_result "true" "$0" "4" "Environment variable via -e flag"
+else
+  print_test_result "false" "$0" "4" "Environment variable via -e flag (got: $ACTUAL)"
+  exit 1
+fi
+
+# -------------------------------------------------------
+# Test 5: --envfile flag loads variables from file
+# -------------------------------------------------------
+ENVFILE="$0.envfile"
+echo "ENVFILE_VAR1=alpha" > "$ENVFILE"
+echo "ENVFILE_VAR2=bravo" >> "$ENVFILE"
+
+ACTUAL=$(run_coding_booth exec "$NAME" --envfile "$ENVFILE" -- printenv ENVFILE_VAR1)
+if [[ "$ACTUAL" == *"alpha"* ]]; then
+  print_test_result "true" "$0" "5" "Environment variable via --envfile"
+else
+  print_test_result "false" "$0" "5" "Environment variable via --envfile (got: $ACTUAL)"
+  exit 1
+fi
+
+# -------------------------------------------------------
+# Test 6: --dir flag sets working directory
+# -------------------------------------------------------
+ACTUAL=$(run_coding_booth exec "$NAME" --dir /tmp -- pwd)
+if [[ "$ACTUAL" == *"/tmp"* ]]; then
+  print_test_result "true" "$0" "6" "Working directory via --dir flag"
+else
+  print_test_result "false" "$0" "6" "Working directory via --dir flag (got: $ACTUAL)"
+  exit 1
+fi

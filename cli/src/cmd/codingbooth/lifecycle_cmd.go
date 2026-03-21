@@ -35,6 +35,14 @@ func pruneBooths(_ string) {
 	handleLifecycleErr(lifecycle.Prune(os.Args[2:], os.Stdin, os.Stdout, os.Stderr))
 }
 
+func shellBooth(_ string) {
+	handleLifecycleErr(lifecycle.Shell(os.Args[2:], os.Stderr))
+}
+
+func execBooth(_ string) {
+	handleLifecycleErr(lifecycle.Exec(os.Args[2:], os.Stderr))
+}
+
 func handleLifecycleErr(err error) {
 	if err == nil {
 		return

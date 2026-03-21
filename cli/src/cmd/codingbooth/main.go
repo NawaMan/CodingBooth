@@ -46,6 +46,12 @@ func main() {
 		case "prune":
 			pruneBooths(version)
 			return
+		case "shell":
+			shellBooth(version)
+			return
+		case "exec":
+			execBooth(version)
+			return
 		case "example":
 			runExample(version)
 			return

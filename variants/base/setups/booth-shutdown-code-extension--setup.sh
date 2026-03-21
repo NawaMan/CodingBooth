@@ -93,8 +93,7 @@ function activate(context) {
             resolve();
             vscode.window.showInformationMessage(
               "CodingBooth has been shut down.",
-              { modal: true, detail: "This session is no longer active. You can close this browser tab." },
-              "OK"
+              { modal: true, detail: "This session is no longer active. You can close this browser tab." }
             );
           }
 

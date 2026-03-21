@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.36.0 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.37.0--rc1 — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -239,6 +239,7 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 - **Templates & scaffolding:** `booth template list`, `booth init` — see **[booth init](docs/BOOTH_INIT.md)**
 - **Build & publish:** `booth build`, `booth build --push` — see **[booth build](docs/BOOTH_BUILD.md)**
 - **Container lifecycle:** `booth start`, `booth stop`, `booth list`, `booth prune` — see **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)**
+- **Connect to running booth:** `booth shell`, `booth exec` — see **[booth connect](docs/BOOTH_CONNECT.md)**
 - **Examples:** `booth example list`, `booth example try` — see **[booth example](docs/BOOTH_EXAMPLE.md)**
 
 
@@ -374,6 +375,7 @@ User-facing guides:
 - **[booth build](docs/BOOTH_BUILD.md)** — Build and publish booth images to a container registry
 - **[booth example](docs/BOOTH_EXAMPLE.md)** — Pre-built example workspaces
 - **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)** — Container lifecycle: keep-alive, start, stop, restart, remove, prune
+- **[booth connect](docs/BOOTH_CONNECT.md)** — Connect to running booths: open a shell or run commands
 - **[booth variants](docs/BOOTH_VARIANTS.md)** — Variant details, aliases, desktop configuration, clipboard, and use cases
 - **[booth home](docs/BOOTH_HOME.md)** — Home directory customization: seeding, overrides, credentials
 - **[booth cache](docs/BOOTH_LOCALCACHE.md)** — Local persistent state: shell history, tool configs across sessions

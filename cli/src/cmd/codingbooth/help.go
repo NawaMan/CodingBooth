@@ -46,6 +46,7 @@ EXAMPLES:
 OTHER COMMANDS:
   BUILD     | Build and publish booth images   | build
   LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune
+  CONNECT   | Connect to a running booth       | shell, exec
   PROJECT   | Set up and scaffold new projects | example, init, template
 
 Run '%s --help <command>'   for command-specific help.
@@ -72,6 +73,8 @@ USAGE:
   %s restart [--name <n>] [--time <n>]         (restart a running booth)
   %s remove [--name <n>] [--force]             (remove booth container(s))
   %s prune [--yes]                             (remove stopped booth containers)
+  %s shell [--name <n>] [--shell <s>]          (open interactive shell in booth)
+  %s exec [--name <n>] -- <command>            (run a command in booth)
   %s example <subcommand>                      (manage examples)
   %s template <subcommand>                     (browse and manage templates)
   %s init <subcommand> [options]               (initialize a new .booth/ project)
@@ -163,7 +166,7 @@ EXAMPLES:
   %s --env-file none --variant notebook
 `,
 		s, version,
-		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
+		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
@@ -375,6 +378,49 @@ AUTHENTICATION:
 `, s, s, s, s, s, s)
 }
 
+func showHelpShell() {
+	s := scriptName()
+	fmt.Printf(`%s shell — open an interactive shell in a running booth
+
+USAGE:  %s shell [options] [name]
+
+OPTIONS:
+  --name <n>         Container name
+  --shell <shell>    Shell to launch (default: bash)
+  --dir <path>       Starting directory (default: /home/coder/code)
+  -e <VAR=value>     Set environment variable (repeatable)
+  --envfile <path>   Load environment variables from a file
+
+EXAMPLES:
+  %s shell myproject
+  %s shell myproject --shell zsh
+  %s shell myproject --dir /tmp
+  %s shell myproject -e DEBUG=1
+`, s, s, s, s, s, s)
+}
+
+func showHelpExec() {
+	s := scriptName()
+	fmt.Printf(`%s exec — run a command in a running booth
+
+USAGE:  %s exec [options] [name] -- <command>
+
+OPTIONS:
+  --name <n>         Container name
+  --dir <path>       Working directory (default: /home/coder/code)
+  -it                Force interactive mode with TTY
+  -e <VAR=value>     Set environment variable (repeatable)
+  --envfile <path>   Load environment variables from a file
+
+The exit code of the executed command is forwarded to the caller.
+
+EXAMPLES:
+  %s exec myproject -- make test
+  %s exec myproject -e FOO=bar -- env
+  %s exec myproject --dir /tmp -- ls
+`, s, s, s, s, s)
+}
+
 func showHelpEmitDockerfile() {
 	s := scriptName()
 	fmt.Printf(`%s emit-dockerfile — compile Boothfile to Dockerfile
@@ -428,6 +474,10 @@ func dispatchHelp(args []string, version string) {
 			showHelpInit()
 		case "build":
 			showHelpBuild()
+		case "shell":
+			showHelpShell()
+		case "exec":
+			showHelpExec()
 		case "emit-dockerfile":
 			showHelpEmitDockerfile()
 		default:
