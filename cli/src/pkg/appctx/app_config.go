@@ -79,6 +79,7 @@ type AppConfig struct {
 	Daemon             bool   `toml:"daemon,omitempty"              envconfig:"CB_DAEMON" default:"false"`
 	Pull               bool   `toml:"pull,omitempty"                envconfig:"CB_PULL" default:"false"`
 	Dind               bool   `toml:"dind,omitempty"                envconfig:"CB_DIND" default:"false"`
+	Sudo               bool   `toml:"sudo,omitempty"                envconfig:"CB_SUDO" default:"true"`
 	Sandbox            bool   `toml:"sandboxed,omitempty"           envconfig:"CB_SANDBOX" default:"false"`
 	SandboxMode        string `toml:"sandbox-mode,omitempty"        envconfig:"CB_SANDBOX_MODE"`
 	SandboxEnforcement string `toml:"sandbox-enforcement,omitempty" envconfig:"CB_SANDBOX_ENFORCEMENT"`
@@ -174,6 +175,7 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Daemon:            %t\n", config.Daemon)
 	fmt.Fprintf(&str, "    Pull:              %t\n", config.Pull)
 	fmt.Fprintf(&str, "    Dind:              %t\n", config.Dind)
+	fmt.Fprintf(&str, "    Sudo:              %t\n", config.Sudo)
 	fmt.Fprintf(&str, "    Sandbox:           %t\n", config.Sandbox)
 	fmt.Fprintf(&str, "    SandboxMode:       %q\n", config.SandboxMode)
 	fmt.Fprintf(&str, "    SandboxEnforcement:%q\n", config.SandboxEnforcement)

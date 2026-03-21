@@ -37,6 +37,7 @@ type Template struct {
 	Port     string
 	Timezone string
 	Dind     *bool
+	Sudo     *bool
 
 	// Config array values (combine-and-dedup merge strategy)
 	Cmds      []string

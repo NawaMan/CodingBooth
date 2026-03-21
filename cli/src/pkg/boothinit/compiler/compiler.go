@@ -59,6 +59,8 @@ type collector struct {
 	timezoneSource string
 	dind           *bool
 	dindSource     string
+	sudo           *bool
+	sudoSource     string
 	cmds           []string
 	cmdsSource     string
 
@@ -157,6 +159,11 @@ func (c *collector) collectConfig(t *tmpl.Template, source string) error {
 			return err
 		}
 	}
+	if t.Sudo != nil {
+		if err := c.setBool(&c.sudo, &c.sudoSource, *t.Sudo, source, "sudo"); err != nil {
+			return err
+		}
+	}
 	if t.Cmds != nil {
 		if err := c.setSlice(&c.cmds, &c.cmdsSource, t.Cmds, source, "cmds"); err != nil {
 			return err
@@ -230,6 +237,9 @@ func (c *collector) build() (*output.BoothOutput, error) {
 	}
 	if c.dind != nil {
 		cfg.Dind = *c.dind
+	}
+	if c.sudo != nil {
+		cfg.Sudo = c.sudo
 	}
 	out.Config = cfg
 

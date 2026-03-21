@@ -450,6 +450,19 @@ else
 fi
 
 
+section "Sudo access control"
+
+# Revoke sudo access when BOOTH_SUDO=false.
+# This runs AFTER all setup and startup scripts so they can still use sudo during init.
+if [ "${BOOTH_SUDO:-true}" = "false" ]; then
+  info "BOOTH_SUDO=false — revoking passwordless sudo for coder"
+  rm -f /etc/sudoers.d/coder
+  rm -f /etc/sudoers.d/50-cb-base-secure-path
+  rm -f /etc/sudoers.d/tinyproxy-whitelist
+  info "Sudo access revoked for coder user"
+fi
+
+
 section "Execute the requested command"
 
 info "16) Executing the requested command as coder (default to login shell if none provided)"

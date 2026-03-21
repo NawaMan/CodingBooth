@@ -107,11 +107,24 @@ EOF
 
 # ── Status graph ──────────────────────────────────────────────────────
 
+# last_log_line: read last non-empty line from a log file, trimmed to max length.
+last_log_line() {
+    local log_file="$1" max_len="${2:-60}"
+    [[ -f "$log_file" ]] || return
+    local line
+    line=$(tail -1 "$log_file" 2>/dev/null | tr -d '\r')
+    [[ -z "$line" ]] && return
+    if (( ${#line} > max_len )); then
+        line="${line:0:$max_len}..."
+    fi
+    echo -n "$line"
+}
+
 status_icon() {
     case "$1" in
         pending)   echo -ne "${C_WHITE}◯" ;;
-        running)   echo -ne "${C_GREEN}⟳" ;;
-        done)      echo -ne "${C_BLUE}✔" ;;
+        running)   echo -ne "${C_BLUE}⟳" ;;
+        done)      echo -ne "${C_GREEN}✔" ;;
         failed)    echo -ne "${C_RED}✘" ;;
         cancelled) echo -ne "${C_GRAY}—" ;;
     esac
@@ -121,8 +134,8 @@ status_icon() {
 GRAPH_LINES=0
 
 compute_graph_lines() {
-    # CLI + BASE + one line per dependent variant + 1 blank line at end
-    GRAPH_LINES=$(( 2 + ${#VARIANTS_TO_BUILD[@]} + 1 ))
+    # CLI + BASE + one line per dependent variant + 3 footer lines (blank + Logs + Hint)
+    GRAPH_LINES=$(( 2 + ${#VARIANTS_TO_BUILD[@]} + 3 ))
 }
 
 GRAPH_DRAWN=false
@@ -164,12 +177,26 @@ draw_graph() {
     s="${STATUS[cli]}"
     printf "  %-${TOP_PAD}s  " "CLI"
     status_icon "$s"
+    if [[ "$s" == "running" ]]; then
+        local progress
+        progress=$(last_log_line "${LOG_DIR}/cli.log")
+        if [[ -n "$progress" ]]; then
+            printf " ${C_GRAY}%s${C_RESET}" "$progress"
+        fi
+    fi
     printf "\033[K${C_RESET}\n"
 
     # BASE
     s="${STATUS[base]}"
     printf "  %-${TOP_PAD}s  " "BASE"
     status_icon "$s"
+    if [[ "$s" == "running" ]]; then
+        local progress
+        progress=$(last_log_line "${LOG_DIR}/base.log")
+        if [[ -n "$progress" ]]; then
+            printf " ${C_GRAY}%s${C_RESET}" "$progress"
+        fi
+    fi
     printf "\033[K${C_RESET}\n"
 
     # Dependent variants
@@ -177,12 +204,25 @@ draw_graph() {
         s="${STATUS[$v]}"
         local label
         label=$(echo "$v" | tr '[:lower:]-' '[:upper:] ')
-        printf "    ├─ %-${VARIANT_PAD}s  " "$label"
+        local branch="├─"
+        if [[ "$v" == "${VARIANTS_TO_BUILD[-1]}" ]]; then
+            branch="└─"
+        fi
+        printf "    ${branch} %-${VARIANT_PAD}s  " "$label"
         status_icon "$s"
+        if [[ "$s" == "running" ]]; then
+            local progress
+            progress=$(last_log_line "${LOG_DIR}/${v}.log")
+            if [[ -n "$progress" ]]; then
+                printf " ${C_GRAY}%s${C_RESET}" "$progress"
+            fi
+        fi
         printf "\033[K${C_RESET}\n"
     done
 
-    echo ""  # trailing blank line
+    printf "\033[K\n"
+    printf "${C_GRAY}Logs:  ${LOG_DIR}/${C_RESET}\033[K\n"
+    printf "${C_GRAY}Hint:  Ctrl+C to stop   Ctrl+Z to leave this run in the background${C_RESET}\033[K\n"
     GRAPH_DRAWN=true
 }
 
@@ -370,7 +410,7 @@ Main() {
         exit 1
     fi
 
-    echo -e "${C_BLUE}All builds completed successfully.${C_RESET}"
+    echo -e "${C_GREEN}All builds completed successfully.${C_RESET}"
 }
 
 Main "$@"

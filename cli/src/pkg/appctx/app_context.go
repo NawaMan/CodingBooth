@@ -87,6 +87,7 @@ func (ctx AppContext) SilenceBuild() bool  { return ctx.values.Config.SilenceBui
 func (ctx AppContext) Daemon() bool        { return ctx.values.Config.Daemon }
 func (ctx AppContext) Pull() bool          { return ctx.values.Config.Pull }
 func (ctx AppContext) Dind() bool          { return ctx.values.Config.Dind }
+func (ctx AppContext) Sudo() bool          { return ctx.values.Config.Sudo }
 func (ctx AppContext) Sandbox() bool       { return ctx.values.Config.Sandbox }
 func (ctx AppContext) SandboxMode() string { return ctx.values.Config.SandboxMode }
 func (ctx AppContext) SandboxEnforcement() string {
@@ -183,6 +184,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Daemon:           %t\n", ctx.Daemon())
 	fmt.Fprintf(&str, "    Pull:             %t\n", ctx.Pull())
 	fmt.Fprintf(&str, "    Dind:             %t\n", ctx.Dind())
+	fmt.Fprintf(&str, "    Sudo:             %t\n", ctx.Sudo())
 	fmt.Fprintf(&str, "    Sandbox:          %t\n", ctx.Sandbox())
 	fmt.Fprintf(&str, "    SandboxMode:      %q\n", ctx.SandboxMode())
 	fmt.Fprintf(&str, "    SandboxEnforcement:%q\n", ctx.SandboxEnforcement())

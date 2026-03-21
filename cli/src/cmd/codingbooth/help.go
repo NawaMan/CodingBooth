@@ -37,6 +37,8 @@ OPTIONS
   --dind                  Enable a Docker-in-Docker sidecar
   --public                Bind to all interfaces with password authentication
   --sandboxed             Enable sandbox defaults (proxy + enforcement)
+  --sudo <true|false>     Enable/disable sudo access (default: true)
+  --no-sudo               Shorthand for --sudo false
 
 EXAMPLES:
   %s --variant codeserver       Run the booth to use codeserver on localhost:<port>.
@@ -139,6 +141,10 @@ CONTAINER MODE:
   --tls-key <path>       TLS private key file for HTTPS (used with --public)
   --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST
   --sandboxed            Enable sandbox defaults (proxy + enforcement setup)
+  --sudo <true|false>    Enable/disable sudo for the coder user (default: true).
+                         When false, passwordless sudo is revoked after container setup.
+                         Can also be set in config.toml: sudo = false
+  --no-sudo              Shorthand for --sudo false
   --keep-alive           Do not remove the container when stopped
   --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
 
@@ -220,6 +226,8 @@ CONTAINER MODE:
   --tls-key <path>       TLS private key file (used with --public)
   --dind                 Enable Docker-in-Docker sidecar
   --sandboxed            Enable sandbox defaults
+  --sudo <true|false>    Enable/disable sudo (default: true)
+  --no-sudo              Shorthand for --sudo false
   --keep-alive           Do not remove container when stopped
   --writable-booth       Allow writing to .booth/ inside the container
 

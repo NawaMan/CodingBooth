@@ -349,6 +349,24 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.Dind = true
 			i++
 
+		case "--sudo":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			switch strings.ToLower(v) {
+			case "true":
+				cfg.Sudo = true
+			case "false":
+				cfg.Sudo = false
+			default:
+				return fmt.Errorf("--sudo requires 'true' or 'false', got %q", v)
+			}
+			i += 2
+		case "--no-sudo":
+			cfg.Sudo = false
+			i++
+
 		case "--sandboxed":
 			cfg.Sandbox = true
 			i++

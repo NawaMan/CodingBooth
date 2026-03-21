@@ -38,6 +38,7 @@ type specToml struct {
 	Port         string               `toml:"port"`
 	Timezone     string               `toml:"timezone"`
 	Dind         *bool                `toml:"dind"`
+	Sudo         *bool                `toml:"sudo"`
 	Cmds         []string             `toml:"cmds"`
 	BuildArgs    []string             `toml:"build-args"`
 	RunArgs      []string             `toml:"run-args"`
@@ -182,6 +183,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		Port:          spec.Port,
 		Timezone:      spec.Timezone,
 		Dind:          spec.Dind,
+		Sudo:          spec.Sudo,
 		Cmds:          spec.Cmds,
 		BuildArgs:     spec.BuildArgs,
 		RunArgs:       spec.RunArgs,
@@ -341,6 +343,7 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		Port:          spec.Port,
 		Timezone:      spec.Timezone,
 		Dind:          spec.Dind,
+		Sudo:          spec.Sudo,
 		Cmds:          spec.Cmds,
 		BuildArgs:     spec.BuildArgs,
 		RunArgs:       spec.RunArgs,

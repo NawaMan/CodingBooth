@@ -1,0 +1,10 @@
+display-name = "No Sudo"
+display-disc = "Revoke passwordless sudo for the coder user"
+display-detail = "Disables passwordless sudo access for the coder user inside the container. Sudo is revoked at container startup (after all setup scripts have run). Use this for security hardening when you don't trust the code running inside the booth. Can be overridden at runtime with --sudo true."
+display-order = 80
+tags = [
+    "security",
+    "sudo",
+    "hardening"
+]
+sudo = false

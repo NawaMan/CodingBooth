@@ -33,6 +33,9 @@ func SerializeConfigToml(cfg *ConfigToml, command, adjustCommand string) string 
 	if cfg.Dind {
 		fmt.Fprintf(&b, "dind = true\n")
 	}
+	if cfg.Sudo != nil && !*cfg.Sudo {
+		fmt.Fprintf(&b, "sudo = false\n")
+	}
 
 	if len(cfg.Cmds) > 0 {
 		b.WriteString("\n")

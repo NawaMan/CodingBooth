@@ -28,6 +28,7 @@ type ConfigToml struct {
 	Port     string
 	Timezone string
 	Dind     bool
+	Sudo     *bool
 	Cmds     []string
 	RunArgs  []string
 	BuildArgs []string
