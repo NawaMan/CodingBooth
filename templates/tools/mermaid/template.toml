@@ -1,0 +1,30 @@
+display-name = "Mermaid"
+display-disc = "Mermaid diagram CLI and live editor"
+display-detail = "Installs Mermaid CLI (mmdc) for converting .mmd files to images, and a browser-based live editor for interactive diagram creation. Requires Node.js (installed automatically)."
+display-order = 72
+tags = [
+    "mermaid",
+    "diagram",
+    "flowchart",
+    "documentation"
+]
+
+[params.MERMAID_VERSION]
+default = "11.4.2"
+suggests = [
+    "11.4.2",
+    "11.4.1",
+    "11.3.0",
+]
+
+[params.MERMAID_PORT]
+default = "18090"
+suggests = [
+    "18090",
+    "18190",
+]
+
+[segments]
+"Boothfile--60" = """
+setup mermaid ${MERMAID_VERSION} ${MERMAID_PORT}
+"""

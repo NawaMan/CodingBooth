@@ -1,0 +1,23 @@
+display-name = "Freeplane"
+display-disc = "Freeplane mind mapping tool (requires desktop variant)"
+display-detail = "Installs Freeplane mind mapping and knowledge management tool. Requires a desktop variant and Java (installed automatically)."
+display-order = 74
+tags = [
+    "desktop",
+    "freeplane",
+    "mindmap",
+    "diagram"
+]
+
+[params.FREEPLANE_VERSION]
+default = "1.12.8"
+suggests = [
+    "1.12.8",
+    "1.12.7",
+    "1.12.6",
+]
+
+[segments]
+"Boothfile--60" = """
+setup freeplane ${FREEPLANE_VERSION}
+"""

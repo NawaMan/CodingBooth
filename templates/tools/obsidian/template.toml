@@ -1,0 +1,30 @@
+display-name = "Obsidian"
+display-disc = "Obsidian knowledge base and note-taking (requires desktop variant)"
+display-detail = """Installs Obsidian, a powerful knowledge base and note-taking app built on local Markdown files. \
+Downloaded from official GitHub releases at build time. Requires a desktop variant.
+
+⚠️ Obsidian is proprietary software. By selecting this template, you agree to Obsidian's EULA \
+(https://obsidian.md/eula) and Terms of Service (https://obsidian.md/terms). \
+This template only automates installation — it does not redistribute Obsidian binaries. \
+Do NOT publish Docker images with Obsidian pre-installed."""
+display-order = 76
+tags = [
+    "desktop",
+    "obsidian",
+    "notes",
+    "markdown",
+    "knowledge-base"
+]
+
+[params.OBSIDIAN_VERSION]
+default = "1.12.4"
+suggests = [
+    "1.12.4",
+    "1.12.3",
+    "1.11.2",
+]
+
+[segments]
+"Boothfile--60" = """
+setup obsidian ${OBSIDIAN_VERSION}
+"""

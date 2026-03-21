@@ -1,0 +1,19 @@
+display-name = "Mermaid Auto-Start"
+display-disc = "Auto-start Mermaid Live Editor on container boot"
+display-order = 2
+auto-select = false
+tags = [
+    "mermaid",
+    "autostart"
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start Mermaid Live Editor in background
+PORT=${MERMAID_PORT}
+LOG_FILE="/tmp/mermaid.log"
+
+nohup serve -s --no-clipboard /opt/mermaid -l "$PORT" > "$LOG_FILE" 2>&1 &
+
+echo "Mermaid Live Editor started on port $PORT (PID $!, log: $LOG_FILE)"
+"""

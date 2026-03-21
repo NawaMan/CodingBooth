@@ -50,7 +50,7 @@ func DockerBuild(flags DockerFlags, args ilist.List[ilist.List[string]]) error {
 	// Set environment (same as Docker function)
 	env := append(os.Environ(), "MSYS_NO_PATHCONV=1")
 	env = append(env, "FORCE_COLOR=1")
-	env = append(env, "BUILDKIT_COLORS=run=green:warning=yellow:error=red:cancel=cyan")
+	env = append(env, "BUILDKIT_COLORS=run=cyan:warning=yellow:error=red:cancel=green")
 
 	hasTermSet := false
 	for _, e := range env {

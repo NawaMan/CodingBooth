@@ -1,0 +1,13 @@
+display-name = "Expose Mermaid Port"
+display-disc = "Expose Mermaid Live Editor port to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "mermaid",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "${MERMAID_PORT}:${MERMAID_PORT}",
+]

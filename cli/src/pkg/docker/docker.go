@@ -156,7 +156,7 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 	// Set environment for Windows path compatibility and color output
 	env := append(os.Environ(), "MSYS_NO_PATHCONV=1")
 	env = append(env, "FORCE_COLOR=1")
-	env = append(env, "BUILDKIT_COLORS=run=green:warning=yellow:error=red:cancel=cyan")
+	env = append(env, "BUILDKIT_COLORS=run=cyan:warning=yellow:error=red:cancel=green")
 
 	// Ensure TERM is set for color support (if not already set)
 	hasTermSet := false
@@ -295,7 +295,7 @@ func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.Li
 	// Set environment for Windows path compatibility and color output
 	env := append(os.Environ(), "MSYS_NO_PATHCONV=1")
 	env = append(env, "FORCE_COLOR=1")
-	env = append(env, "BUILDKIT_COLORS=run=green:warning=yellow:error=red:cancel=cyan")
+	env = append(env, "BUILDKIT_COLORS=run=cyan:warning=yellow:error=red:cancel=green")
 
 	// Ensure TERM is set for color support (if not already set)
 	hasTermSet := false

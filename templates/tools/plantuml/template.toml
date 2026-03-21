@@ -1,0 +1,30 @@
+display-name = "PlantUML"
+display-disc = "PlantUML diagram generator with CLI and web UI"
+display-detail = "Installs PlantUML CLI for converting .puml files to images, and PlantUML Server for browser-based diagram editing. Requires Java and Graphviz (installed automatically)."
+display-order = 70
+tags = [
+    "plantuml",
+    "diagram",
+    "uml",
+    "documentation"
+]
+
+[params.PLANTUML_VERSION]
+default = "1.2025.2"
+suggests = [
+    "1.2025.2",
+    "1.2025.1",
+    "1.2024.8",
+]
+
+[params.PLANTUML_PORT]
+default = "18080"
+suggests = [
+    "18080",
+    "18180",
+]
+
+[segments]
+"Boothfile--60" = """
+setup plantuml ${PLANTUML_VERSION} ${PLANTUML_PORT}
+"""

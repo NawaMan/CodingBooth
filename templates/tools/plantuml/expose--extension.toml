@@ -1,0 +1,13 @@
+display-name = "Expose PlantUML Port"
+display-disc = "Expose PlantUML Server port to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "plantuml",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "${PLANTUML_PORT}:${PLANTUML_PORT}",
+]

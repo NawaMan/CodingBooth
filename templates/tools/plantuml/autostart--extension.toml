@@ -1,0 +1,21 @@
+display-name = "PlantUML Auto-Start"
+display-disc = "Auto-start PlantUML Server on container boot"
+display-order = 2
+auto-select = false
+tags = [
+    "plantuml",
+    "autostart"
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start PlantUML Server in background
+PORT=${PLANTUML_PORT}
+LOG_FILE="/tmp/plantuml-server.log"
+
+nohup java -jar /opt/plantuml/jetty/jetty-runner.jar \
+  --port "$PORT" \
+  /opt/plantuml/plantuml-server.war > "$LOG_FILE" 2>&1 &
+
+echo "PlantUML Server started on port $PORT (PID $!, log: $LOG_FILE)"
+"""
