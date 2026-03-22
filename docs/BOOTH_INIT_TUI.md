@@ -59,30 +59,32 @@ The output is identical to running `booth init new --select <your-selections>` �
 ══════════════════════════════════════════════════════════════
  CodingBooth Configuration                     [5 selected]
  Variant: codeserver    Port: 10000
+ Languages (1)  Databases (2)  Tools (3)  AI Tools (4)  ...
 ──────────────────────────────────────────────────────────────
- ── Languages ──          │ go
- [x] go                   │ Go programming language
-     [x] *linter          │ ─────────────────────────
-     [ ] air              │ Installs Go toolchain,
-     [ ] protobuf         │ sets up GOPATH, and
- [ ] python               │ configures common tools.
- [ ] nodejs               │
- ── Databases ──          │ Parameters:
- [ ] postgresql           │   GO_VERSION = 1.24.1
- [ ] mysql                │   options: 1.24.1, 1.23.5
- ── Tools ──              │
- [x] docker               │ Extensions:
-     [x] *compose         │   * linter (auto-select)
-     [ ] buildx           │     air
+ [x] go                   │ go
+     [x] *linter          │ Go programming language
+     [ ] air              │ ─────────────────────────
+     [ ] protobuf         │ Installs Go toolchain,
+ [ ] python               │ sets up GOPATH, and
+     [ ] poetry           │ configures common tools.
+     [ ] jupyter          │
+     [ ] *ruff            │ Parameters:
+ [ ] nodejs               │   GO_VERSION = 1.24.1
+     [ ] pnpm             │   options: 1.24.1, 1.23.5
+     [ ] *typescript      │
+ [ ] rust                 │ Extensions:
+     [ ] *clippy          │   * linter (auto-select)
+     [ ] wasm             │     air
 ──────────────────────────────────────────────────────────────
- Auto-selected: go/linter  │  Dependency: docker
- Space: select │ ↑↓: navigate │ Tab: config │ Ctrl+S: save │ Ctrl+Q: quit
+ Auto-selected: go/linter
+ Space: select │ ↑↓: navigate │ ◄►: tab │ Ctrl+S: save │ Ctrl+Q: quit
 ══════════════════════════════════════════════════════════════
 ```
 
 - **Header**: Title and selection count
-- **Config bar**: Variant and port fields (Tab to focus)
-- **Left panel**: Scrollable template tree with checkboxes, grouped by category
+- **Config bar**: Variant and port fields (Tab key to focus)
+- **Tab bar**: One tab per category, sorted by template order. Switch with `←`/`→` or `Ctrl+1`..`Ctrl+9`
+- **Left panel**: Scrollable template/extension list for the active category
 - **Right panel**: Details of the highlighted item (description, parameters, dependencies, extensions)
 - **Footer line 1**: Messages and notifications (auto-select, dependency resolution)
 - **Footer line 2**: Context-sensitive keybinding hints
@@ -99,10 +101,12 @@ Extensions marked with `*` are auto-selected when their parent template is selec
 |-----|--------|
 | `↑` | Move cursor up |
 | `↓` | Move cursor down |
+| `←` / `→` | Switch category tab |
+| `1`..`9` | Jump to category tab by number |
 | `PgUp` | Page up |
 | `PgDn` | Page down |
-| `Home` | Jump to top |
-| `End` | Jump to bottom |
+| `Home` | Jump to top of tab |
+| `End` | Jump to bottom of tab |
 | `Space` | Select / deselect item |
 | `Tab` | Move focus to config fields |
 

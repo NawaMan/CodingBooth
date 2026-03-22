@@ -13,13 +13,12 @@ import (
 
 // toggleSelection handles space-bar toggling with auto-select and dependency cascading.
 func (m *model) toggleSelection() {
-	if len(m.flatItems) == 0 || m.cursor < 0 || m.cursor >= len(m.flatItems) {
+	items := m.activeItems()
+	cursor := m.cursorPos()
+	if len(items) == 0 || cursor < 0 || cursor >= len(items) {
 		return
 	}
-	item := m.flatItems[m.cursor]
-	if item.kind == kindCategory {
-		return
-	}
+	item := items[cursor]
 
 	key := item.key()
 	var notifications []string

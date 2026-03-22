@@ -17,7 +17,6 @@ var (
 	headerStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("39"))
 	sepStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	footerStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
-	categoryStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("213"))
 	cursorStyle      = lipgloss.NewStyle().Background(lipgloss.Color("236"))
 	selectedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("82"))
 	detailTitle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("214"))
@@ -27,6 +26,8 @@ var (
 	normalLabelStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
 	focusValueStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255")).Background(lipgloss.Color("24"))
 	normalValueStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("255"))
+	activeTabStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255")).Background(lipgloss.Color("62")).Padding(0, 1)
+	inactiveTabStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Padding(0, 1)
 )
 
 func (m model) View() string {
@@ -65,6 +66,9 @@ func (m model) View() string {
 	// === Config bar ===
 	configBar := m.renderConfigBar(fullWidth)
 
+	// === Tab bar ===
+	tabBar := m.renderTabBar(fullWidth)
+
 	// === Separator ===
 	sep := sepStyle.Render(strings.Repeat("─", fullWidth))
 
@@ -85,15 +89,30 @@ func (m model) View() string {
 	footer := m.renderFooter(fullWidth)
 
 	// === Scroll indicator in header ===
-	if len(m.flatItems) > contentH {
+	items := m.activeItems()
+	if len(items) > contentH {
+		off := m.scrollOffset()
 		scrollInfo := sepStyle.Render(fmt.Sprintf("  %d-%d of %d",
-			m.scrollOffset+1, min(m.scrollOffset+contentH, len(m.flatItems)), len(m.flatItems)))
+			off+1, min(off+contentH, len(items)), len(items)))
 		header += scrollInfo
 	}
 
-	return header + "\n" + configBar + "\n" + sep + "\n" +
+	return header + "\n" + configBar + "\n" + tabBar + "\n" + sep + "\n" +
 		strings.Join(contentLines, "\n") + "\n" +
 		sep + "\n" + footer
+}
+
+func (m model) renderTabBar(fullWidth int) string {
+	var tabs []string
+	for i, name := range m.tabNames {
+		label := fmt.Sprintf("%s (%d)", name, i+1)
+		if i == m.activeTab {
+			tabs = append(tabs, activeTabStyle.Render(label))
+		} else {
+			tabs = append(tabs, inactiveTabStyle.Render(label))
+		}
+	}
+	return " " + strings.Join(tabs, " ")
 }
 
 func (m model) renderConfigBar(fullWidth int) string {
@@ -130,21 +149,20 @@ func variantDisplay(v string) string {
 func (m model) renderLeftPanel(leftWidth, contentH int) []string {
 	var lines []string
 
-	end := m.scrollOffset + contentH
-	if end > len(m.flatItems) {
-		end = len(m.flatItems)
+	items := m.activeItems()
+	off := m.scrollOffset()
+	cursor := m.cursorPos()
+
+	end := off + contentH
+	if end > len(items) {
+		end = len(items)
 	}
 
-	for i := m.scrollOffset; i < end; i++ {
-		item := m.flatItems[i]
-		isCursor := i == m.cursor && m.focus == focusTree
+	for i := off; i < end; i++ {
+		item := items[i]
+		isCursor := i == cursor && m.focus == focusTree
 
 		switch item.kind {
-		case kindCategory:
-			catLine := categoryStyle.Render("── " + item.categoryName + " ──")
-			catLine = padRight(catLine, leftWidth)
-			lines = append(lines, catLine)
-
 		case kindTemplate:
 			line := m.renderTemplateLine(item, leftWidth, isCursor)
 			lines = append(lines, line)
@@ -231,14 +249,12 @@ func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) stri
 func (m model) renderRightPanel(rightWidth, contentH int) []string {
 	var lines []string
 
-	if m.cursor >= 0 && m.cursor < len(m.flatItems) {
-		item := m.flatItems[m.cursor]
-		switch item.kind {
-		case kindCategory:
-			lines = append(lines, detailTitle.Render(item.categoryName))
-			lines = append(lines, "")
-			lines = append(lines, "Category header")
+	items := m.activeItems()
+	cursor := m.cursorPos()
 
+	if cursor >= 0 && cursor < len(items) {
+		item := items[cursor]
+		switch item.kind {
 		case kindTemplate:
 			lines = m.renderTemplateDetail(item.template, rightWidth)
 
@@ -379,15 +395,15 @@ func (m model) renderFooter(fullWidth int) string {
 	if m.quitting {
 		keys = "  Enter: quit  │  Esc: cancel"
 	} else {
-		keys = "  Space: select  │  ↑↓: navigate  │  Tab: config  │  Ctrl+S: save & init  │  Ctrl+Q: quit"
+		keys = "  Space: select  │  ↑↓: navigate  │  ◄►: tab  │  Tab: config  │  Ctrl+S: save  │  Ctrl+Q: quit"
 		switch m.focus {
 		case focusVariant:
-			keys = "  ◄►: change variant  │  Tab: next field  │  Ctrl+S: save & init  │  Ctrl+Q: quit"
+			keys = "  ◄►: change variant  │  Tab: next field  │  Ctrl+S: save  │  Ctrl+Q: quit"
 		case focusPort:
 			if m.portEditing {
 				keys = "  Type port number  │  Enter: confirm  │  Esc: cancel"
 			} else {
-				keys = "  Enter: edit port  │  Tab: next field  │  Ctrl+S: save & init  │  Ctrl+Q: quit"
+				keys = "  Enter: edit port  │  Tab: next field  │  Ctrl+S: save  │  Ctrl+Q: quit"
 			}
 		}
 	}
@@ -435,12 +451,4 @@ func padRightPlain(s string, width int) string {
 		return s[:width]
 	}
 	return s + strings.Repeat(" ", width-len(s))
-}
-
-func padRight(s string, width int) string {
-	w := lipgloss.Width(s)
-	if w >= width {
-		return s
-	}
-	return s + strings.Repeat(" ", width-w)
 }
