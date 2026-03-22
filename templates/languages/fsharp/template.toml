@@ -1,0 +1,11 @@
+display-name = "F#"
+display-disc = "F# functional language with .NET SDK (requires csharp)"
+display-detail = "F# is a functional-first programming language on the .NET platform (dotnet). Selecting this template ensures the .NET SDK is installed via the csharp template. F# is included in the .NET SDK — this template makes the selection explicit."
+display-order = 36
+tags = [
+    "fsharp",
+    "dotnet",
+    "functional",
+    "backend"
+]
+requires = ["csharp"]

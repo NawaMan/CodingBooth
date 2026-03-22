@@ -53,6 +53,11 @@ type model struct {
 	confirmed    bool
 	quitting     bool // true when showing quit confirmation
 
+	// Search
+	searchQuery   string
+	searchFocused bool
+	searchCursor  int
+
 	// Config fields (generic)
 	stringFields map[string]string // values for string/cycle fields
 	boolFields   map[string]bool   // values for bool fields
@@ -155,7 +160,59 @@ func (m *model) activeItems() []treeItem {
 	if m.activeTab < 0 || m.activeTab >= len(m.tabItems) {
 		return nil
 	}
-	return m.tabItems[m.activeTab]
+	items := m.tabItems[m.activeTab]
+	if m.searchQuery == "" {
+		return items
+	}
+	return m.filterItems(items)
+}
+
+// filterItems returns items matching the search query (case-insensitive).
+// - Template matches → show the template (without non-matching extensions)
+// - Extension matches → show that extension + its parent template
+// - Non-matching extensions are hidden
+// - Templates with no match (and no matching extensions) are hidden
+func (m *model) filterItems(items []treeItem) []treeItem {
+	if m.searchQuery == "" {
+		return items
+	}
+	query := strings.ToLower(m.searchQuery)
+
+	matches := func(item treeItem) bool {
+		var t *tmpl.Template
+		if item.kind == kindTemplate {
+			t = item.template
+		} else {
+			t = item.extension
+		}
+		return strings.Contains(strings.ToLower(t.Name), query) ||
+			strings.Contains(strings.ToLower(t.DisplayName), query) ||
+			strings.Contains(strings.ToLower(t.DisplayDesc), query)
+	}
+
+	// Find which templates have at least one matching extension
+	parentNeeded := make(map[string]bool)
+	for _, item := range items {
+		if item.kind == kindExtension && matches(item) {
+			parentNeeded[item.template.Name] = true
+		}
+	}
+
+	var result []treeItem
+	for _, item := range items {
+		switch item.kind {
+		case kindTemplate:
+			if matches(item) || parentNeeded[item.template.Name] {
+				result = append(result, item)
+			}
+		case kindExtension:
+			if matches(item) {
+				result = append(result, item)
+			}
+		}
+	}
+
+	return result
 }
 
 func (m *model) cursorPos() int {
@@ -208,9 +265,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// String field editing mode
+		// String field editing mode (config tab)
 		if m.editing {
 			return m.handleStringEdit(msg)
+		}
+
+		// Search input mode
+		if m.searchFocused {
+			return m.handleSearchInput(msg)
 		}
 
 		switch msg.String() {
@@ -222,9 +284,14 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+s":
 			m.confirmed = true
 			return m, tea.Quit
+
+		case "tab":
+			m.searchFocused = true
+			m.searchCursor = len(m.searchQuery)
+			return m, nil
 		}
 
-		// Tab switching
+		// Tab switching (digit keys and left/right)
 		if handled, result := m.handleTabSwitch(msg); handled {
 			return result, nil
 		}
@@ -238,6 +305,74 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// handleSearchInput handles keys when the search bar is focused.
+func (m model) handleSearchInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.searchQuery = ""
+		m.searchFocused = false
+		// Reset cursors since filtered items changed
+		m.resetTabCursors()
+		return m, nil
+
+	case "tab", "enter", "down":
+		m.searchFocused = false
+		// Reset cursors since user may have changed search
+		m.resetTabCursors()
+		return m, nil
+
+	case "ctrl+c", "ctrl+q":
+		m.quitting = true
+		m.notification = "Quit without saving? Enter: confirm  │  Esc: cancel"
+		m.searchFocused = false
+		return m, nil
+
+	case "ctrl+s":
+		m.confirmed = true
+		return m, tea.Quit
+
+	case "backspace":
+		if m.searchCursor > 0 && len(m.searchQuery) > 0 {
+			m.searchQuery = m.searchQuery[:m.searchCursor-1] + m.searchQuery[m.searchCursor:]
+			m.searchCursor--
+			m.resetTabCursors()
+		}
+
+	case "left":
+		if m.searchCursor > 0 {
+			m.searchCursor--
+		}
+
+	case "right":
+		if m.searchCursor < len(m.searchQuery) {
+			m.searchCursor++
+		}
+
+	default:
+		ch := msg.String()
+		if len(ch) == 1 && ch[0] >= 32 && ch[0] < 127 {
+			m.searchQuery = m.searchQuery[:m.searchCursor] + ch + m.searchQuery[m.searchCursor:]
+			m.searchCursor++
+			m.resetTabCursors()
+			// Auto-switch to first category tab if on Config tab
+			if m.isConfigTab() && len(m.tabItems) > 1 {
+				m.activeTab = 1
+			}
+		}
+	}
+	return m, nil
+}
+
+// resetTabCursors resets all tab cursors to 0 when search changes.
+func (m *model) resetTabCursors() {
+	for i := range m.tabCursors {
+		m.tabCursors[i] = 0
+	}
+	for i := range m.tabScrollOffs {
+		m.tabScrollOffs[i] = 0
+	}
+}
+
 func (m *model) handleTabSwitch(msg tea.KeyMsg) (bool, tea.Model) {
 	numTabs := len(m.tabItems)
 	if numTabs == 0 {
@@ -245,15 +380,6 @@ func (m *model) handleTabSwitch(msg tea.KeyMsg) (bool, tea.Model) {
 	}
 
 	key := msg.String()
-
-	// 0 through 9
-	for i := 0; i < numTabs && i <= 9; i++ {
-		digit := string(rune('0' + i))
-		if key == digit {
-			m.activeTab = i
-			return true, m
-		}
-	}
 
 	// Left/Right arrows switch tabs
 	switch key {

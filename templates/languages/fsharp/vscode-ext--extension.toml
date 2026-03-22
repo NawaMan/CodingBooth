@@ -1,0 +1,15 @@
+display-name = "F# VS Code Extension"
+display-disc = "Ionide F# language support extension for VS Code"
+display-order = 2
+auto-select = true
+tags = [
+    "fsharp",
+    "ide",
+    "vscode",
+    "ionide",
+]
+
+[segments]
+"Boothfile--65" = """
+setup code-extension ionide.ionide-fsharp
+"""

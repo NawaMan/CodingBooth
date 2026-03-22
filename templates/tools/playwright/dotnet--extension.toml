@@ -9,7 +9,7 @@ tags = [
     "testing",
 ]
 
-requires = ["dotnet"]
+requires = ["csharp"]
 
 [segments]
 "Boothfile--90" = """

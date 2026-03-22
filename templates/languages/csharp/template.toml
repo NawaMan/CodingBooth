@@ -1,0 +1,26 @@
+display-name = "C#"
+primary = true
+display-disc = "C# programming language with .NET SDK"
+display-detail = "Installs the .NET SDK (dotnet) using the official installer with configurable channel version. Includes the dotnet CLI, C# compiler, and NuGet package manager. Telemetry is disabled by default in the container environment."
+display-order = 35
+tags = [
+    "csharp",
+    "dotnet",
+    "backend",
+    "web"
+]
+
+[params.DOTNET_CHANNEL]
+default = "9.0"
+suggests = [
+    "9.0",
+    "8.0",
+    "6.0",
+    "LTS",
+    "current",
+]
+
+[segments]
+Boothfile = """
+setup dotnet --channel ${DOTNET_CHANNEL}
+"""

@@ -65,8 +65,8 @@ func (m model) View() string {
 	}
 	headerLine1 := " " + headerStyle.Render(title) + strings.Repeat(" ", padding) + headerStyle.Render(selInfo)
 
-	// === Header line 2: search (placeholder for now) ===
-	headerLine2 := " " + sepStyle.Render("")
+	// === Header line 2: search bar ===
+	headerLine2 := m.renderSearchBar(fullWidth)
 
 	// === Scroll indicator appended to header ===
 	if !m.isConfigTab() {
@@ -113,7 +113,13 @@ func (m model) View() string {
 func (m model) renderTabBar() string {
 	var tabs []string
 	for i, name := range m.tabNames {
-		label := fmt.Sprintf("%s (%d)", name, i)
+		label := name + " "
+		if m.searchQuery != "" && i > 0 && m.tabItems[i] != nil {
+			mp := &m
+			if len(mp.filterItems(m.tabItems[i])) > 0 {
+				label = name + boldStyle.Render("*")
+			}
+		}
 		if i == m.activeTab {
 			tabs = append(tabs, activeTabStyle.Render(label))
 		} else {
@@ -121,6 +127,39 @@ func (m model) renderTabBar() string {
 		}
 	}
 	return " " + strings.Join(tabs, " ")
+}
+
+func (m model) renderSearchBar(fullWidth int) string {
+	label := normalLabelStyle.Render(" Search:")
+	boxWidth := fullWidth - lipgloss.Width(label) - 3
+
+	query := m.searchQuery
+	if boxWidth < 5 {
+		boxWidth = 5
+	}
+
+	// Truncate query if too long
+	displayQuery := query
+	if len(displayQuery) > boxWidth-2 {
+		displayQuery = displayQuery[len(displayQuery)-boxWidth+2:]
+	}
+
+	if m.searchFocused {
+		content := displayQuery + "▌"
+		if len(content) > boxWidth {
+			content = content[len(content)-boxWidth:]
+		}
+		box := focusValueStyle.Render(" " + content + strings.Repeat(" ", max(0, boxWidth-len(content)-1)))
+		return label + " " + box
+	}
+
+	if query == "" {
+		box := sepStyle.Render(" " + strings.Repeat("·", max(0, boxWidth-1)))
+		return label + " " + box
+	}
+
+	box := normalValueStyle.Render(" " + displayQuery + strings.Repeat(" ", max(0, boxWidth-len(displayQuery)-1)))
+	return label + " " + box
 }
 
 // renderConfigPanel renders the left panel for the Config tab.
@@ -607,14 +646,16 @@ func (m model) renderFooter() string {
 	var keys string
 	if m.quitting {
 		keys = "  Enter: quit  │  Esc: cancel"
+	} else if m.searchFocused {
+		keys = "  Type to search  │  Tab/Enter/↓: go to list  │  Esc: clear  │  Ctrl+S: save  │  Ctrl+Q: quit"
 	} else if m.isConfigTab() {
 		if m.editing {
 			keys = "  Type value  │  Enter/Esc: finish  │  Backspace: delete"
 		} else {
-			keys = "  ↑↓: navigate  │  Space/Enter: toggle/edit  │  ◄►: tab  │  Ctrl+S: save  │  Ctrl+Q: quit"
+			keys = "  ↑↓: navigate  │  Space/Enter: toggle/edit  │  ◄►: tab  │  Tab: search  │  Ctrl+S: save  │  Ctrl+Q: quit"
 		}
 	} else {
-		keys = "  Space: select  │  ↑↓: navigate  │  ◄►: tab  │  Ctrl+S: save  │  Ctrl+Q: quit"
+		keys = "  Space: select  │  ↑↓: navigate  │  ◄►: tab  │  Tab: search  │  Ctrl+S: save  │  Ctrl+Q: quit"
 	}
 	hintsLine := footerStyle.Render(keys)
 

@@ -58,8 +58,8 @@ The output is identical to running `booth init new --select <your-selections>` �
 ```
 ══════════════════════════════════════════════════════════════
  CodingBooth Configuration                     [5 selected]
- Variant: codeserver    Port: 10000
- Languages (1)  Databases (2)  Tools (3)  AI Tools (4)  ...
+ Search: ·····················································
+ Config (0)  Languages (1)  Databases (2)  Tools (3)  ...
 ──────────────────────────────────────────────────────────────
  [x] go                   │ go
      [x] *linter          │ Go programming language
@@ -82,8 +82,8 @@ The output is identical to running `booth init new --select <your-selections>` �
 ```
 
 - **Header**: Title and selection count
-- **Config bar**: Variant and port fields (Tab key to focus)
-- **Tab bar**: One tab per category, sorted by template order. Switch with `←`/`→` or `Ctrl+1`..`Ctrl+9`
+- **Search bar**: Type to filter templates/extensions across all tabs (Tab to focus)
+- **Tab bar**: Tab 0 = Config, Tabs 1..N = categories. Switch with `←`/`→` or `0`..`9`
 - **Left panel**: Scrollable template/extension list for the active category
 - **Right panel**: Details of the highlighted item (description, parameters, dependencies, extensions)
 - **Footer line 1**: Messages and notifications (auto-select, dependency resolution)
@@ -95,30 +95,39 @@ Extensions marked with `*` are auto-selected when their parent template is selec
 
 ## Keybindings
 
+### Search
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Focus the search bar (from content) |
+| Type | Filter templates/extensions by name or description |
+| `Tab` / `Enter` / `↓` | Return to content (keep search text) |
+| `Esc` | Clear search and return to content |
+
 ### Tree Navigation (default focus)
 
 | Key | Action |
 |-----|--------|
 | `↑` | Move cursor up |
 | `↓` | Move cursor down |
-| `←` / `→` | Switch category tab |
-| `1`..`9` | Jump to category tab by number |
+| `←` / `→` | Switch tab |
+| `0`..`9` | Jump to tab by number |
 | `PgUp` | Page up |
 | `PgDn` | Page down |
 | `Home` | Jump to top of tab |
 | `End` | Jump to bottom of tab |
 | `Space` | Select / deselect item |
-| `Tab` | Move focus to config fields |
+| `Tab` | Focus search bar |
 
 ### Config Fields
 
 | Key | Action |
 |-----|--------|
-| `Tab` | Cycle focus: Tree → Variant → Port → Tree |
-| `Shift+Tab` | Cycle focus backwards |
-| `←` / `→` (Variant) | Change variant |
-| `Enter` (Port) | Start editing port |
-| `Esc` (Port editing) | Stop editing port |
+| `↑` / `↓` | Navigate config fields |
+| `Space` / `Enter` | Toggle bool, cycle option, or edit string |
+| `Esc` (when editing) | Finish editing |
+| `←` / `→` | Switch tab |
+| `Tab` | Focus search bar |
 
 ### Global
 
