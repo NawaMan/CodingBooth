@@ -291,7 +291,7 @@ You can also install packages without editing the Boothfile directly — use the
 ./booth init new ../project --select "java+maven+mvn-install" # reads pom.xml at build time
 ```
 
-See [Package Management Templates](BOOTH_INIT.md#package-management-templates) in the init documentation for the full list.
+See [Package Management Templates](BOOTH_CONFIG.md#package-management-templates) in the init documentation for the full list.
 
 ### Creating a Custom Install
 

@@ -12,7 +12,7 @@
 ./booth config --no-tui --select go+linter/python:3.13+uv/claude-code
 ```
 
-For the full TUI guide, see **[booth config — Interactive Configuration](BOOTH_INIT_TUI.md)**.
+For the full TUI guide, see **[booth config — Interactive Configuration](BOOTH_CONFIG_TUI.md)**.
 
 Back to [README](../README.md)
 
@@ -59,7 +59,7 @@ Opens an interactive terminal interface for browsing templates and configuring y
 ./booth config ./existing-project
 ```
 
-See **[booth config — Interactive Configuration](BOOTH_INIT_TUI.md)** for the full TUI guide.
+See **[booth config — Interactive Configuration](BOOTH_CONFIG_TUI.md)** for the full TUI guide.
 
 ### CLI mode (`--no-tui`)
 

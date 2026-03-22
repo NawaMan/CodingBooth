@@ -49,7 +49,7 @@ assert-line "$boothfile" 'run pip install ' 'playwright'  "python extension inst
 # Test 6: Playwright+dotnet extension requires dotnet
 run rm -Rf $prj
 mkdir -p $prj
-run booth init new $prj --select "nodejs/dotnet/playwright+dotnet"
+run booth init new $prj --select "nodejs/csharp/playwright+dotnet"
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" 'run dotnet tool install --global ' 'Microsoft.Playwright.CLI || true'  "dotnet extension installs playwright CLI"
 

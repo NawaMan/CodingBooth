@@ -11,6 +11,7 @@ set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="${SCRIPT_DIR}/logs"
+FAILED_LOG="${SCRIPT_DIR}/run-automate-tests.failed-tests.log"
 
 # ── Suite definitions ────────────────────────────────────────────────
 
@@ -35,9 +36,10 @@ usage() {
 Usage: ./run-automate-tests.sh [options]
 
 Options:
-  --only <suites>   Run only the specified suites (comma-separated)
-  --skip <suites>   Skip the specified suites (comma-separated)
-  -h, --help        Show this help
+  --only <suites>     Run only the specified suites (comma-separated)
+  --skip <suites>     Skip the specified suites (comma-separated)
+  --rerun-failed      Re-run only suites that failed in the last run
+  -h, --help          Show this help
 
 Available suites: unit, basic, dryrun, boothfile, complex, init
 
@@ -45,6 +47,7 @@ Examples:
   ./run-automate-tests.sh --only dryrun
   ./run-automate-tests.sh --only dryrun,init
   ./run-automate-tests.sh --skip basic,complex
+  ./run-automate-tests.sh --rerun-failed
 EOF
 }
 
@@ -57,6 +60,21 @@ while [[ $# -gt 0 ]]; do
         --skip)
             SKIP_SUITES="$2"
             shift 2
+            ;;
+        --rerun-failed)
+            if [[ ! -f "$FAILED_LOG" ]]; then
+                echo "No failed test log found. Run tests first."
+                exit 1
+            fi
+            # Read failed suites from the log (one "suite:test" per line, extract unique suites)
+            ONLY_SUITES=$(cut -d: -f1 "$FAILED_LOG" | sort -u | paste -sd,)
+            if [[ -z "$ONLY_SUITES" ]]; then
+                echo "No failed suites to re-run."
+                exit 0
+            fi
+            echo "Re-running failed suites: $ONLY_SUITES"
+            echo ""
+            shift
             ;;
         -h|--help)
             usage
@@ -160,11 +178,7 @@ sync_counts() {
     # Collect failure lines (trimmed, max 10)
     local failures
     failures=$(echo "$stripped" | grep -E '❌|FAILED' 2>/dev/null | head -10 | while IFS= read -r line; do
-        if (( ${#line} > 70 )); then
-            echo "    ${line:0:70}..."
-        else
-            echo "    ${line}"
-        fi
+        echo "    ${line}"
     done) || true
     FAILURE_LINES[$suite]="$failures"
 }
@@ -375,6 +389,33 @@ done
 # Clean up exit files
 rm -f "${LOG_DIR}"/*.exit
 
+# ── Write failed test log ─────────────────────────────────────────────
+
+# Extract failed test names from each suite's log.
+# Format: suite:test-name (one per line)
+rm -f "$FAILED_LOG"
+for s in "${SUITES[@]}"; do
+    if [[ "${STATUS[$s]}" != "failed" ]]; then
+        continue
+    fi
+    log="${LOG_DIR}/${s}.log"
+    [[ -f "$log" ]] || continue
+
+    stripped=$(sed 's/\x1b\[[0-9;]*m//g' "$log" 2>/dev/null) || stripped=""
+
+    # Extract test names from the "Failed tests:" block at the end of suite logs.
+    # Patterns: "  ❌ test-name" or "  - test-name"
+    echo "$stripped" | grep -E '^\s+(❌|-)' | sed 's/^[[:space:]]*[❌-][[:space:]]*//' | while IFS= read -r tname; do
+        tname=$(echo "$tname" | xargs)  # trim whitespace
+        [[ -n "$tname" ]] && echo "${s}:${tname}"
+    done >> "$FAILED_LOG"
+
+    # If no individual test names found, log the suite itself
+    if [[ ! -f "$FAILED_LOG" ]] || ! grep -q "^${s}:" "$FAILED_LOG" 2>/dev/null; then
+        echo "${s}:" >> "$FAILED_LOG"
+    fi
+done
+
 # ── Summary ──────────────────────────────────────────────────────────
 
 OVERALL_END=$(date +%s)
@@ -399,7 +440,14 @@ echo ""
 
 if [[ "$has_failure" == true ]]; then
     echo -e "${C_RED}Some tests failed. Check logs in ${LOG_DIR}/${C_RESET}"
+    if [[ -f "$FAILED_LOG" ]]; then
+        echo -e "${C_GRAY}Failed tests logged to: ${FAILED_LOG}${C_RESET}"
+        echo -e "${C_GRAY}Re-run with:  ./run-automate-tests.sh --rerun-failed${C_RESET}"
+    fi
     exit 1
 fi
+
+# Clean up failed log on success
+rm -f "$FAILED_LOG"
 
 echo -e "${C_GREEN}All tests passed.${C_RESET}"

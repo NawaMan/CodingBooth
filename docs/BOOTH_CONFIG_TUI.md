@@ -4,7 +4,7 @@
 
 `booth config` provides an interactive terminal interface for configuring a CodingBooth environment. Instead of memorizing template names and DSL syntax, you can visually browse all available templates, select what you need, and generate the `.booth/` configuration in one step.
 
-Back to [README](../README.md) | See also: [booth config reference](BOOTH_INIT.md)
+Back to [README](../README.md) | See also: [booth config reference](BOOTH_CONFIG.md)
 
 ---
 

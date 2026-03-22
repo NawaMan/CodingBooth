@@ -170,7 +170,7 @@ CodingBooth provides `config` and `template` commands to quickly create a new pr
    booth
    ```
 
-Explore more with `booth template help` and `booth config help`. See **[booth config documentation](docs/BOOTH_INIT.md)** for the full guide.
+Explore more with `booth template help` and `booth config help`. See **[booth config documentation](docs/BOOTH_CONFIG.md)** for the full guide.
 
 ### Updating
 
@@ -235,7 +235,7 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 
 ### Additional Commands
 
-- **Templates & scaffolding:** `booth template list`, `booth config` — see **[booth config](docs/BOOTH_INIT.md)**
+- **Templates & scaffolding:** `booth template list`, `booth config` — see **[booth config](docs/BOOTH_CONFIG.md)**
 - **Build & publish:** `booth build`, `booth build --push` — see **[booth build](docs/BOOTH_BUILD.md)**
 - **Container lifecycle:** `booth start`, `booth stop`, `booth list`, `booth prune` — see **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)**
 - **Connect to running booth:** `booth shell`, `booth exec` — see **[booth connect](docs/BOOTH_CONNECT.md)**
@@ -370,7 +370,7 @@ ln -sf /opt/codingbooth/AGENT.md /home/coder/WARP.md        # Warp terminal
 User-facing guides:
 
 - **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS
-- **[booth config](docs/BOOTH_INIT.md)** — Template-driven project scaffolding
+- **[booth config](docs/BOOTH_CONFIG.md)** — Template-driven project scaffolding
 - **[booth build](docs/BOOTH_BUILD.md)** — Build and publish booth images to a container registry
 - **[booth example](docs/BOOTH_EXAMPLE.md)** — Pre-built example workspaces
 - **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)** — Container lifecycle: keep-alive, start, stop, restart, remove, prune
