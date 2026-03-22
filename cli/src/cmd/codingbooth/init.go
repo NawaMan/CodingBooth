@@ -22,6 +22,7 @@ import (
 )
 
 // runInit handles the "init" command and its subcommands.
+// Deprecated: use "booth config" instead.
 func runInit(version string) {
 	args := os.Args[2:] // skip "codingbooth" and "init"
 
@@ -32,6 +33,8 @@ func runInit(version string) {
 		}
 		return
 	}
+
+	fmt.Fprintln(os.Stderr, `Note: "booth init" is deprecated. Use "booth config" instead. It will be removed in a future release.`)
 
 	subCmd := args[0]
 	switch subCmd {
@@ -126,6 +129,8 @@ type initFlags struct {
 	full          bool
 	detail        bool
 	overwrite     bool
+	noTUI         bool
+	dryrun        bool
 }
 
 func parseInitFlags(args []string) initFlags {
@@ -156,6 +161,10 @@ func parseInitFlags(args []string) initFlags {
 			flags.detail = true
 		case "--overwrite":
 			flags.overwrite = true
+		case "--no-tui":
+			flags.noTUI = true
+		case "--dryrun":
+			flags.dryrun = true
 		case "--cmd":
 			if i+1 >= len(args) {
 				fmt.Fprintln(os.Stderr, "Error: --cmd requires a value")
@@ -585,6 +594,79 @@ func buildInitCommand(targetPath string, flags initFlags) string {
 func buildAdjustCommand(flags initFlags) string {
 	var parts []string
 	parts = append(parts, "booth init adjust")
+	if flags.version != "" {
+		parts = append(parts, "--version "+flags.version)
+	}
+	if flags.variant != "" {
+		parts = append(parts, "--variant "+flags.variant)
+	}
+	if flags.port != "" {
+		parts = append(parts, "--port "+flags.port)
+	}
+	for _, cmd := range flags.cmds {
+		parts = append(parts, "--cmd "+cmd)
+	}
+	for _, e := range flags.exposes {
+		parts = append(parts, "--expose "+e)
+	}
+	for _, e := range flags.envs {
+		parts = append(parts, "--env "+e)
+	}
+	for _, m := range flags.mounts {
+		parts = append(parts, "--mount "+m)
+	}
+	for _, s := range flags.sets {
+		parts = append(parts, "--set "+s)
+	}
+	if flags.selectDSL != "" {
+		parts = append(parts, "--select "+flags.selectDSL)
+	}
+	return strings.Join(parts, " ")
+}
+
+// buildConfigCommand reconstructs the "booth config --no-tui ..." command for generated file headers.
+func buildConfigCommand(targetPath string, flags initFlags) string {
+	var parts []string
+	parts = append(parts, "booth config")
+	if targetPath != "" && targetPath != "." {
+		parts = append(parts, targetPath)
+	}
+	parts = append(parts, "--no-tui")
+	if flags.selectDSL != "" {
+		parts = append(parts, "--select "+flags.selectDSL)
+	}
+	if flags.variant != "" {
+		parts = append(parts, "--variant "+flags.variant)
+	}
+	if flags.port != "" {
+		parts = append(parts, "--port "+flags.port)
+	}
+	for _, cmd := range flags.cmds {
+		parts = append(parts, "--cmd "+cmd)
+	}
+	for _, e := range flags.exposes {
+		parts = append(parts, "--expose "+e)
+	}
+	for _, e := range flags.envs {
+		parts = append(parts, "--env "+e)
+	}
+	for _, m := range flags.mounts {
+		parts = append(parts, "--mount "+m)
+	}
+	for _, s := range flags.sets {
+		parts = append(parts, "--set "+s)
+	}
+	if flags.version != "" {
+		parts = append(parts, "--version "+flags.version)
+	}
+	return strings.Join(parts, " ")
+}
+
+// buildConfigAdjustCommand produces the "booth config --no-tui --overwrite ..." command
+// for the generated file headers. Puts --select last for easy editing.
+func buildConfigAdjustCommand(flags initFlags) string {
+	var parts []string
+	parts = append(parts, "booth config --no-tui --overwrite")
 	if flags.version != "" {
 		parts = append(parts, "--version "+flags.version)
 	}

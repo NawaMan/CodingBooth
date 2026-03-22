@@ -1,12 +1,18 @@
-# booth init
+# booth config
 
 > One command. A fully configured development environment.
 
-`booth init` creates a complete `.booth/` configuration — Boothfile, config, startup scripts — from templates. Users can add their own startup scripts to `.booth/startups/` that survive re-generation. No manual Dockerfile writing required.
+`booth config` creates a complete `.booth/` configuration — Boothfile, config, startup scripts — from templates. Browse and select interactively via the TUI, or use `--no-tui` for scripting. Users can add their own startup scripts to `.booth/startups/` that survive re-generation. No manual Dockerfile writing required.
 
 ```bash
-./booth init new --select go+linter/python:3.13+uv/claude-code
+# Interactive TUI
+./booth config
+
+# CLI mode
+./booth config --no-tui --select go+linter/python:3.13+uv/claude-code
 ```
+
+For the full TUI guide, see **[booth config — Interactive Configuration](BOOTH_INIT_TUI.md)**.
 
 Back to [README](../README.md)
 
@@ -15,7 +21,7 @@ Back to [README](../README.md)
 ## Table of Contents
 
 - [Overview](#overview)
-- [Subcommands](#subcommands)
+- [Modes](#modes)
 - [Selection DSL](#selection-dsl)
 - [Selection Sources](#selection-sources)
 - [Flags](#flags)
@@ -30,45 +36,58 @@ Back to [README](../README.md)
 
 Setting up a CodingBooth environment means creating a `.booth/` folder with a Boothfile, config.toml, and possibly startup scripts. For a simple single-language project this is straightforward, but for a polyglot project with multiple languages, AI tools, and IDE extensions, writing it all by hand is tedious.
 
-`booth init` solves this with template-driven scaffolding. You select what you need — languages, tools, extensions — and init compiles everything into a ready-to-use `.booth/` configuration. Templates encode best practices (correct ordering, proper arguments, volume persistence) so you get a working environment without needing to understand every detail.
+`booth config` solves this with template-driven scaffolding. You select what you need — languages, tools, extensions — and config compiles everything into a ready-to-use `.booth/` configuration. Templates encode best practices (correct ordering, proper arguments, volume persistence) so you get a working environment without needing to understand every detail.
 
 For more information on how setup scripts are generated and structured, see the **[Booth Setup Guide](BOOTH_SETUP.md)**.
 
 ---
 
-## Subcommands
+## Modes
 
-### `init new`
+### TUI mode (default)
 
-Create a new booth configuration.
+Opens an interactive terminal interface for browsing templates and configuring your booth. This is the default when you run `booth config`.
 
 ```bash
-# In the current directory
-./booth init new --select python+uv
+# Open TUI from scratch
+./booth config
+
+# Open TUI with templates pre-selected
+./booth config --select go+linter --variant codeserver
+
+# Edit an existing booth — reads .booth/Boothfile and pre-populates the TUI
+./booth config ./existing-project
+```
+
+See **[booth config — Interactive Configuration](BOOTH_INIT_TUI.md)** for the full TUI guide.
+
+### CLI mode (`--no-tui`)
+
+Non-interactive mode for scripting and quick setup.
+
+```bash
+# Create a new booth configuration
+./booth config --no-tui --select python+uv
 
 # In a target directory
-./booth init new ../my-project --select go+linter/python:3.13+uv
+./booth config --no-tui ../my-project --select go+linter/python:3.13+uv
 
 # Empty booth (no templates, just CLI overrides)
-./booth init new --variant codeserver --port 10080
+./booth config --no-tui --variant codeserver --port 10080
 ```
 
-If generated files already exist, init prompts for confirmation before overwriting.
+If generated files already exist, config prompts for confirmation before overwriting. Use `--overwrite` to skip the prompt.
 
-### `init adjust`
+### Dryrun
 
-Re-generate an existing booth configuration. Equivalent to `init new --overwrite` — overwrites files without prompting.
-
-```bash
-./booth init adjust --select python+uv+django
-```
-
-### `init dryrun`
-
-Preview what would be generated without writing any files.
+Preview what would be generated without writing any files. Works in both modes.
 
 ```bash
-./booth init dryrun --select go+linter/python:3.13
+# CLI dryrun
+./booth config --no-tui --dryrun --select go+linter/python:3.13
+
+# TUI dryrun — opens TUI, prints output on confirm instead of writing files
+./booth config --dryrun --select go+linter
 ```
 
 ---
@@ -155,6 +174,8 @@ Recipe files are plain text with the same DSL syntax — one template per line.
 | Flag                       | Description                                                    |
 |----------------------------|----------------------------------------------------------------|
 | `--select <dsl>`           | Template selection (repeatable)                                |
+| `--no-tui`                 | Non-interactive CLI mode                                       |
+| `--dryrun`                 | Preview what would be generated without writing files           |
 | `--variant <name>`         | Set variant (base, notebook, codeserver, xfce, kde)            |
 | `--port <port>`            | Set port in generated config.toml (number, NEXT, RANDOM)       |
 | `--cmd <command>`          | Set the default start command (repeatable)                     |
@@ -164,8 +185,8 @@ Recipe files are plain text with the same DSL syntax — one template per line.
 | `--set <key=value>`        | Set a config.toml value (repeatable; bare key = boolean true)  |
 | `--version <ver>`          | Use templates from a specific release version                  |
 | `--templates-path <dir>`   | Use local templates directory                                  |
-| `--overwrite`              | Overwrite existing files without prompting                     |
-| `--start`                  | Launch the booth immediately after init                        |
+| `--overwrite`              | Overwrite existing files without prompting (`--no-tui` only)   |
+| `--start`                  | Launch the booth immediately after config                      |
 | `--debug`                  | Print resolved selection and compiled output as JSON           |
 
 ---
@@ -202,7 +223,7 @@ There are **150+ templates** across 7 categories: languages, ai-tools, tools, ID
 
 ## What Gets Generated
 
-`booth init` creates a `.booth/` directory with the following structure:
+`booth config` creates a `.booth/` directory with the following structure:
 
 ```
 .booth/
@@ -222,7 +243,7 @@ There are **150+ templates** across 7 categories: languages, ai-tools, tools, ID
 
 Template-generated startup segments are written as individual files in `.booth/startups/`, named `NN-name--startup.sh` where `NN` is the order number.
 
-**Adding your own startup scripts:** Create files matching the `*--startup.sh` pattern in `.booth/startups/`. Files without a `NN-` prefix default to order 50. User-added files (without the `# Generated by:` header) survive `booth init adjust`.
+**Adding your own startup scripts:** Create files matching the `*--startup.sh` pattern in `.booth/startups/`. Files without a `NN-` prefix default to order 50. User-added files (without the `# Generated by:` header) survive re-generation.
 
 **Execution order:** At container start, all `*--startup.sh` files in `startups/` are sourced in sorted order. Files without a number prefix are treated as order 50.
 
@@ -231,8 +252,8 @@ Template-generated startup segments are written as individual files in `.booth/s
 Generated files include a header comment showing the exact command used and an `adjust` command for easy re-generation:
 
 ```bash
-# Generated by: booth init new --select go/python
-# Adjust with : booth init adjust --select go/python
+# Generated by: booth config --no-tui --select go/python
+# Adjust with : booth config --no-tui --overwrite --select go/python
 ```
 
 ---
@@ -242,35 +263,35 @@ Generated files include a header comment showing the exact command used and an `
 ### Quick single-language project
 
 ```bash
-./booth init new --select python+uv
+./booth config --no-tui --select python+uv
 ./booth
 ```
 
 ### Polyglot project with IDE
 
 ```bash
-./booth init new --select go+linter/python:3.13+uv --variant codeserver
+./booth config --no-tui --select go+linter/python:3.13+uv --variant codeserver
 ./booth
 ```
 
 ### Data science environment
 
 ```bash
-./booth init new --select python:3.13+uv+kernel/notebook/postgresql
+./booth config --no-tui --select python:3.13+uv+kernel/notebook/postgresql
 ./booth
 ```
 
 ### Full desktop with AI tools
 
 ```bash
-./booth init new --select java:21+maven/claude-code --variant desktop-xfce
+./booth config --no-tui --select java:21+maven/claude-code --variant desktop-xfce
 ./booth
 ```
 
 ### Project with extra ports, env vars, and mounts
 
 ```bash
-./booth init new --select nodejs --expose 3000 --env NODE_ENV=development --mount /data:/app/data
+./booth config --no-tui --select nodejs --expose 3000 --env NODE_ENV=development --mount /data:/app/data
 ./booth
 ```
 
@@ -294,13 +315,19 @@ claude-code
 Then:
 
 ```bash
-./booth init new --select @my-project.recipe
+./booth config --no-tui --select @my-project.recipe
 ```
 
 ### Re-generate after adding a template
 
 ```bash
-./booth init adjust --select go+linter/python:3.13+uv/postgresql
+./booth config --no-tui --overwrite --select go+linter/python:3.13+uv/postgresql
+```
+
+### Interactive configuration
+
+```bash
+./booth config
 ```
 
 ---
@@ -315,13 +342,13 @@ Install tools globally into the image at build time using `install <manager> <pa
 
 ```bash
 # Install global npm packages
-booth init new --select nodejs+npm-pkg:pnpm,typescript
+booth config --no-tui --select nodejs+npm-pkg:pnpm,typescript
 
 # Install global pip packages
-booth init new --select python+pip-pkg:numpy,pandas
+booth config --no-tui --select python+pip-pkg:numpy,pandas
 
 # Install global cargo crates
-booth init new --select rust+cargo-pkg:ripgrep,fd-find
+booth config --no-tui --select rust+cargo-pkg:ripgrep,fd-find
 ```
 
 The full list of package manager extensions:
@@ -351,13 +378,13 @@ Pre-download project dependencies into the image so they're available immediatel
 
 ```bash
 # Pre-install npm dependencies from package.json
-booth init new --select nodejs+npm-install
+booth config --no-tui --select nodejs+npm-install
 
 # Pre-install with pnpm (also installs pnpm globally)
-booth init new --select nodejs+pnpm-install
+booth config --no-tui --select nodejs+pnpm-install
 
 # Pre-download Maven dependencies
-booth init new --select java+maven+mvn-install
+booth config --no-tui --select java+maven+mvn-install
 ```
 
 #### How it works
@@ -398,7 +425,7 @@ The startup copy only runs if the target directory doesn't already exist. Once `
 Python's pip installs to system site-packages (not the project directory), so it works directly at build time with no startup step. It reads from `.booth/requirements.txt`:
 
 ```bash
-booth init new --select python+pip
+booth config --no-tui --select python+pip
 # Then create .booth/requirements.txt with your dependencies
 ```
 

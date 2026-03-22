@@ -17,7 +17,13 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/tui"
 )
 
-// runConfig handles the "config" command — interactive TUI for booth configuration.
+// runConfig handles the "config" command — booth configuration via TUI or CLI.
+//
+//	booth config                        → TUI (empty)
+//	booth config --select go            → TUI pre-populated
+//	booth config --no-tui --select go   → CLI mode
+//	booth config --dryrun --select go   → TUI, dryrun on confirm
+//	booth config --no-tui --dryrun ...  → CLI dryrun
 func runConfig(version string) {
 	args := os.Args[2:] // skip "codingbooth" and "config"
 
@@ -36,6 +42,84 @@ func runConfig(version string) {
 
 	flags := parseInitFlags(flagArgs)
 
+	if flags.noTUI {
+		runConfigCLI(version, targetPath, flags)
+	} else {
+		runConfigTUI(version, targetPath, flags)
+	}
+}
+
+// runConfigCLI handles non-interactive mode (--no-tui).
+func runConfigCLI(version string, targetPath string, flags initFlags) {
+	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
+
+	var out *output.BoothOutput
+	var resolved *selection.ResolvedSelection
+
+	if len(flags.selectDSLs) == 0 {
+		out, resolved = compileEmpty(flags)
+	} else {
+		templatesPath, cleanup := resolveTemplatesPath(flags, version)
+		defer cleanup()
+		flags.templatesPath = templatesPath
+		out, resolved = compileSelection(flags)
+	}
+
+	out.Command = buildConfigCommand(targetPath, flags)
+	out.AdjustCommand = buildConfigAdjustCommand(flags)
+
+	if flags.debug {
+		printDebug(resolved, out)
+	}
+
+	if flags.dryrun {
+		printDryrun(out)
+		return
+	}
+
+	// Check for existing files that would be overwritten
+	conflicts := output.FindConflicts(out, targetPath)
+	if len(conflicts) > 0 && !flags.overwrite {
+		fmt.Fprintf(os.Stderr, "The following %d file(s) already exist:\n", len(conflicts))
+		for _, c := range conflicts {
+			rel, _ := filepath.Rel(targetPath, c)
+			fmt.Fprintf(os.Stderr, "  %s\n", rel)
+		}
+		fmt.Fprint(os.Stderr, "\nOverwrite? [y/N] ")
+		reader := bufio.NewReader(os.Stdin)
+		answer, _ := reader.ReadString('\n')
+		answer = strings.TrimSpace(answer)
+		if answer != "y" && answer != "Y" {
+			fmt.Fprintln(os.Stderr, "Aborted.")
+			os.Exit(1)
+		}
+	}
+
+	if err := output.WriteOutput(out, targetPath); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Printf("Initialized .booth/ in %s\n", targetPath)
+	printSummary(resolved)
+
+	if flags.start {
+		fmt.Printf("Starting booth in %s ...\n", targetPath)
+		runBooth(version, []string{os.Args[0], "--code", targetPath})
+		return
+	}
+
+	absTarget, _ := filepath.Abs(targetPath)
+	absCwd, _ := os.Getwd()
+	if absTarget == absCwd {
+		fmt.Printf("\nTo start:  %s\n", filepath.Base(os.Args[0]))
+	} else {
+		fmt.Printf("\nTo start:  cd %s && %s\n", targetPath, filepath.Base(os.Args[0]))
+	}
+}
+
+// runConfigTUI handles interactive TUI mode (default).
+func runConfigTUI(version string, targetPath string, flags initFlags) {
 	// Resolve templates
 	templatesPath, cleanup := resolveTemplatesPath(flags, version)
 	defer cleanup()
@@ -137,26 +221,15 @@ func runConfig(version string) {
 		out, resolved = compileSelection(flags)
 	}
 
-	out.Command = buildInitCommand(targetPath, flags)
-	out.AdjustCommand = buildAdjustCommand(flags)
+	out.Command = buildConfigCommand(targetPath, flags)
+	out.AdjustCommand = buildConfigAdjustCommand(flags)
 
-	// Check for conflicts
-	conflicts := output.FindConflicts(out, targetPath)
-	if len(conflicts) > 0 && !flags.overwrite {
-		fmt.Fprintf(os.Stderr, "\nThe following %d file(s) already exist:\n", len(conflicts))
-		for _, c := range conflicts {
-			rel, _ := filepath.Rel(targetPath, c)
-			fmt.Fprintf(os.Stderr, "  %s\n", rel)
-		}
-		fmt.Fprint(os.Stderr, "\nOverwrite? [y/N] ")
-		var answer string
-		fmt.Scanln(&answer)
-		if answer != "y" && answer != "Y" {
-			fmt.Fprintln(os.Stderr, "Aborted.")
-			os.Exit(1)
-		}
+	if flags.dryrun {
+		printDryrun(out)
+		return
 	}
 
+	// Check for conflicts — TUI always overwrites on confirm
 	if err := output.WriteOutput(out, targetPath); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
@@ -210,15 +283,16 @@ func readExistingBooth(targetPath string) initFlags {
 	return initFlags{}
 }
 
-// parseAdjustCommand parses a command string like "booth init adjust --select go/python --variant codeserver"
-// into initFlags.
+// parseAdjustCommand parses a command string like "booth config --no-tui --select go/python"
+// or the legacy "booth init adjust --select go/python --variant codeserver" into initFlags.
 func parseAdjustCommand(cmd string) initFlags {
-	// Split into args, skipping "booth init adjust" prefix
+	// Split into args, skipping command prefix words
 	parts := strings.Fields(cmd)
 	var args []string
 	skip := 0
 	for _, p := range parts {
-		if skip < 3 && (p == "booth" || p == "init" || p == "adjust" || p == "new") {
+		// Skip prefix: "booth init adjust", "booth init new", or "booth config"
+		if skip < 3 && (p == "booth" || p == "init" || p == "adjust" || p == "new" || p == "config") {
 			skip++
 			continue
 		}
@@ -229,9 +303,6 @@ func parseAdjustCommand(cmd string) initFlags {
 		return initFlags{}
 	}
 
-	// Reconstruct quoted --select values that may have been split
-	// The adjust command stores --select as a single value, but it may contain spaces
-	// For safety, just use parseInitFlags which handles all flag parsing
 	return parseInitFlags(args)
 }
 
@@ -353,20 +424,23 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags) *tui.Pr
 func printConfigHelp() {
 	fmt.Println(`Usage: codingbooth config [path] [flags]
 
-Interactive TUI for configuring a CodingBooth environment.
-Browse and select templates, set variant and port, then generate .booth/ files.
+Configure a CodingBooth environment. Opens an interactive TUI by default.
+Use --no-tui for non-interactive CLI mode.
 
 If the target path already contains a .booth/Boothfile, the existing
 configuration is loaded as the baseline. CLI flags override the existing values.
 
 Flags:
-  --select <selection>     Pre-select templates (same DSL as init)
-  --variant <variant>      Pre-set variant
-  --port <port>            Pre-set port
+  --select <selection>     Template selection DSL (repeatable)
+  --no-tui                 Non-interactive CLI mode (requires --select)
+  --dryrun                 Preview what would be generated without writing files
+  --variant <variant>      Set variant (base, notebook, codeserver, xfce, kde)
+  --port <port>            Set port (e.g., 10000, NEXT, RANDOM)
   --templates-path <dir>   Use local templates directory
   --version <ver>          Use templates from a specific release version
-  --overwrite              Overwrite existing files without prompting
+  --overwrite              Overwrite existing files without prompting (--no-tui only)
   --start                  Start the booth after creation
+  --debug                  Print debug output
   --cmd <command>          Set default start command (repeatable)
   --expose <port>          Expose extra port (repeatable)
   --env <KEY=VALUE>        Set environment variable (repeatable)
@@ -376,15 +450,15 @@ Flags:
 TUI Controls:
   ↑↓             Navigate templates
   Space          Select / deselect
-  Tab            Switch between config fields and tree
-  ◄►             Change variant (when focused)
-  Enter          Edit port (when focused)
-  Ctrl+S         Save and run init
+  ←→             Switch tabs
+  Tab            Focus search bar
+  Ctrl+S         Save and generate
   Ctrl+Q/Ctrl+C  Quit (asks for confirmation)
 
 Examples:
-  codingbooth config
-  codingbooth config ./my-project
-  codingbooth config --select go+linter --variant codeserver
-  codingbooth config --port 10080`)
+  codingbooth config                                  # TUI (empty)
+  codingbooth config --select go+linter               # TUI pre-populated
+  codingbooth config --no-tui --select go+linter      # CLI mode
+  codingbooth config --dryrun --select go              # TUI, dryrun on confirm
+  codingbooth config --no-tui --dryrun --select go     # CLI dryrun`)
 }

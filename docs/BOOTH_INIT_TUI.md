@@ -4,7 +4,7 @@
 
 `booth config` provides an interactive terminal interface for configuring a CodingBooth environment. Instead of memorizing template names and DSL syntax, you can visually browse all available templates, select what you need, and generate the `.booth/` configuration in one step.
 
-Back to [README](../README.md) | See also: [booth init](BOOTH_INIT.md)
+Back to [README](../README.md) | See also: [booth config reference](BOOTH_INIT.md)
 
 ---
 
@@ -47,9 +47,9 @@ booth config ./existing-project
 4. **Browse** — Navigate the template tree grouped by category (Languages, Tools, Databases, etc.)
 5. **Select** — Toggle templates and extensions with Space. Dependencies and auto-select extensions are handled automatically
 6. **Configure** — Set variant and port using the config bar at the top
-7. **Save** — Press Ctrl+S to generate `.booth/` files (runs the same pipeline as `booth init new`)
+7. **Save** — Press Ctrl+S to generate `.booth/` files
 
-The output is identical to running `booth init new --select <your-selections>` — same Boothfile, config.toml, startup scripts, and files.
+The output is identical to running `booth config --no-tui --select <your-selections>` — same Boothfile, config.toml, startup scripts, and files.
 
 ---
 
@@ -59,7 +59,7 @@ The output is identical to running `booth init new --select <your-selections>` �
 ══════════════════════════════════════════════════════════════
  CodingBooth Configuration                     [5 selected]
  Search: ·····················································
- Config (0)  Languages (1)  Databases (2)  Tools (3)  ...
+ Config  Languages  Databases  Tools  ...
 ──────────────────────────────────────────────────────────────
  [x] go                   │ go
      [x] *linter          │ Go programming language
@@ -83,7 +83,7 @@ The output is identical to running `booth init new --select <your-selections>` �
 
 - **Header**: Title and selection count
 - **Search bar**: Type to filter templates/extensions across all tabs (Tab to focus)
-- **Tab bar**: Tab 0 = Config, Tabs 1..N = categories. Switch with `←`/`→` or `0`..`9`
+- **Tab bar**: Tab 0 = Config, Tabs 1..N = categories. Switch with `←`/`→`
 - **Left panel**: Scrollable template/extension list for the active category
 - **Right panel**: Details of the highlighted item (description, parameters, dependencies, extensions)
 - **Footer line 1**: Messages and notifications (auto-select, dependency resolution)
@@ -111,7 +111,6 @@ Extensions marked with `*` are auto-selected when their parent template is selec
 | `↑` | Move cursor up |
 | `↓` | Move cursor down |
 | `←` / `→` | Switch tab |
-| `0`..`9` | Jump to tab by number |
 | `PgUp` | Page up |
 | `PgDn` | Page down |
 | `Home` | Jump to top of tab |
@@ -142,7 +141,7 @@ Extensions marked with `*` are auto-selected when their parent template is selec
 
 ## Pre-populating with Flags
 
-`booth config` accepts the same flags as `booth init new`. Pre-passed values appear as initial selections in the TUI:
+`booth config` accepts all configuration flags. Pre-passed values appear as initial selections in the TUI:
 
 ```bash
 # Start with go and python pre-selected
@@ -188,13 +187,16 @@ Deselecting a template also deselects all of its extensions.
 
 | Flag | Description |
 |------|-------------|
-| `--select <dsl>` | Pre-select templates (same DSL as `booth init`; repeatable) |
+| `--select <dsl>` | Pre-select templates (repeatable) |
+| `--no-tui` | Non-interactive CLI mode |
+| `--dryrun` | Preview output without writing files |
 | `--variant <name>` | Pre-set variant |
 | `--port <port>` | Pre-set port |
 | `--templates-path <dir>` | Use local templates directory |
 | `--version <ver>` | Use templates from a specific release version |
-| `--overwrite` | Overwrite existing files without prompting |
+| `--overwrite` | Overwrite existing files without prompting (`--no-tui` only) |
 | `--start` | Start the booth after creation |
+| `--debug` | Print debug output |
 | `--cmd <command>` | Set default start command (repeatable) |
 | `--expose <port>` | Expose extra port (repeatable) |
 | `--env <KEY=VALUE>` | Set environment variable (repeatable) |

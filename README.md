@@ -140,22 +140,22 @@ CodingBooth provides several ready-to-use examples to get you started.
 At this point, you can inspect the code, modify it, then build and run it.
 **NOTE:** Visit http://localhost:10000 in your browser to access the UI (except for command mode).
 
-### Try with `booth init ...`
+### Try with `booth config ...`
 
-CodingBooth provides `init` and `template` commands to quickly create a new project.
+CodingBooth provides `config` and `template` commands to quickly create a new project.
 
 1. **List templates**:
    ```bash
    booth template list
    ```
 
-2. **Create a new project**:
+2. **Create a new project** (interactive TUI):
    ```bash
-   booth init <project-name> --select <template-name>
+   booth config
    ```
-   For example:
+   Or use CLI mode:
    ```bash
-   booth init my-project --select java+maven+m2/scala --select claude-code+auto-accept
+   booth config --no-tui --select java+maven+m2/scala --select claude-code+auto-accept
    ```
    This will set up a booth with:
    - Java
@@ -167,11 +167,10 @@ CodingBooth provides `init` and `template` commands to quickly create a new proj
 
 3. **Start the booth**:
    ```bash
-   cd <project-name>
    booth
    ```
 
-Explore more with `booth template help` and `booth init help`. See **[booth init documentation](docs/BOOTH_INIT.md)** for the full guide.
+Explore more with `booth template help` and `booth config help`. See **[booth config documentation](docs/BOOTH_INIT.md)** for the full guide.
 
 ### Updating
 
@@ -236,7 +235,7 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 
 ### Additional Commands
 
-- **Templates & scaffolding:** `booth template list`, `booth init` — see **[booth init](docs/BOOTH_INIT.md)**
+- **Templates & scaffolding:** `booth template list`, `booth config` — see **[booth config](docs/BOOTH_INIT.md)**
 - **Build & publish:** `booth build`, `booth build --push` — see **[booth build](docs/BOOTH_BUILD.md)**
 - **Container lifecycle:** `booth start`, `booth stop`, `booth list`, `booth prune` — see **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)**
 - **Connect to running booth:** `booth shell`, `booth exec` — see **[booth connect](docs/BOOTH_CONNECT.md)**
@@ -371,7 +370,7 @@ ln -sf /opt/codingbooth/AGENT.md /home/coder/WARP.md        # Warp terminal
 User-facing guides:
 
 - **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS
-- **[booth init](docs/BOOTH_INIT.md)** — Template-driven project scaffolding
+- **[booth config](docs/BOOTH_INIT.md)** — Template-driven project scaffolding
 - **[booth build](docs/BOOTH_BUILD.md)** — Build and publish booth images to a container registry
 - **[booth example](docs/BOOTH_EXAMPLE.md)** — Pre-built example workspaces
 - **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)** — Container lifecycle: keep-alive, start, stop, restart, remove, prune
@@ -382,7 +381,7 @@ User-facing guides:
 
 For deeper technical details on how CodingBooth works internally, see [docs/implementations/](docs/implementations/):
 
-- **[Booth Init](docs/implementations/BOOTHINIT.md)** — Template-driven project scaffolding (`booth init` and `booth template`)
+- **[Booth Init](docs/implementations/BOOTHINIT.md)** — Template-driven project scaffolding (`booth config` and `booth template`)
 - **[Booth Lifecycle](docs/implementations/BOOTH_LIFECYCLE.md)** — Container lifecycle management implementation
 - **[Examples](docs/implementations/EXAMPLES.md)** — Examples system and release workflow
 - **[Wrapper](docs/implementations/WRAPPER.md)** — The booth wrapper script that manages binary downloads and verification
