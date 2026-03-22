@@ -25,6 +25,65 @@ SUITE_RUNNERS=(
     "./run-all-tests.sh"
 )
 
+# ── Parse args ───────────────────────────────────────────────────────
+
+ONLY_SUITES=""
+SKIP_SUITES=""
+
+usage() {
+    cat <<'EOF'
+Usage: ./run-automate-tests.sh [options]
+
+Options:
+  --only <suites>   Run only the specified suites (comma-separated)
+  --skip <suites>   Skip the specified suites (comma-separated)
+  -h, --help        Show this help
+
+Available suites: unit, basic, dryrun, boothfile, complex, init
+
+Examples:
+  ./run-automate-tests.sh --only dryrun
+  ./run-automate-tests.sh --only dryrun,init
+  ./run-automate-tests.sh --skip basic,complex
+EOF
+}
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --only)
+            ONLY_SUITES="$2"
+            shift 2
+            ;;
+        --skip)
+            SKIP_SUITES="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            echo "Unknown option: $1"
+            usage
+            exit 1
+            ;;
+    esac
+done
+
+# Determine which suites to run
+should_run_suite() {
+    local suite="$1"
+    if [[ -n "$ONLY_SUITES" ]]; then
+        # Only run if explicitly listed
+        echo ",$ONLY_SUITES," | grep -q ",$suite," && return 0 || return 1
+    fi
+    if [[ -n "$SKIP_SUITES" ]]; then
+        # Skip if explicitly listed
+        echo ",$SKIP_SUITES," | grep -q ",$suite," && return 1 || return 0
+    fi
+    return 0
+}
+
 # ── State ────────────────────────────────────────────────────────────
 
 declare -A STATUS
@@ -33,7 +92,11 @@ declare -A FAIL_COUNTS
 declare -A FAILURE_LINES
 
 for s in "${SUITES[@]}"; do
-    STATUS[$s]=pending
+    if should_run_suite "$s"; then
+        STATUS[$s]=pending
+    else
+        STATUS[$s]=skipped
+    fi
     PASS_COUNTS[$s]=0
     FAIL_COUNTS[$s]=0
     FAILURE_LINES[$s]=""
@@ -277,6 +340,11 @@ for i in "${!SUITES[@]}"; do
 
     if [[ "$STOP_REQUESTED" == true ]]; then
         break
+    fi
+
+    # Skip suites filtered out by --only/--skip
+    if [[ "${STATUS[$suite]}" == "skipped" ]]; then
+        continue
     fi
 
     STATUS[$suite]=running
