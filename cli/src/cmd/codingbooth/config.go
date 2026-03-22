@@ -74,11 +74,57 @@ func runConfig(version string) {
 		flags.selectDSLs = []string{result.SelectDSL}
 		flags.selectDSL = result.SelectDSL
 	}
-	if result.Variant != "" {
-		flags.variant = result.Variant
+
+	// Apply string fields
+	if v := result.StringFields["variant"]; v != "" {
+		flags.variant = v
 	}
-	if result.Port != "" {
-		flags.port = result.Port
+	if v := result.StringFields["port"]; v != "" {
+		flags.port = v
+	}
+	if v := result.StringFields["version"]; v != "" {
+		flags.version = v
+	}
+
+	// Apply bool fields as --set overrides
+	boolSetKeys := map[string]string{
+		"dind":           "dind",
+		"keep-alive":     "keep-alive",
+		"daemon":         "daemon",
+		"writable-booth": "writable-booth",
+		"public":         "public",
+		"sandboxed":      "sandboxed",
+		"silence-build":  "silence-build",
+		"pull":           "pull",
+		"strict":         "strict",
+		"verbose":        "verbose",
+		"dryrun":         "dryrun",
+		"debug":          "debug",
+	}
+	for tuiKey, setKey := range boolSetKeys {
+		if result.BoolFields[tuiKey] {
+			flags.sets = append(flags.sets, setKey)
+		}
+	}
+
+	// Apply sudo as a tri-state: "" (default/omit), "true", "false"
+	if v := result.StringFields["sudo"]; v != "" {
+		flags.sets = append(flags.sets, "sudo="+v)
+	}
+
+	// Apply remaining string fields as --set overrides
+	stringSetKeys := map[string]string{
+		"name":     "name",
+		"image":    "image",
+		"startup":  "startup",
+		"env-file": "env-file",
+		"tls-cert": "tls-cert",
+		"tls-key":  "tls-key",
+	}
+	for tuiKey, setKey := range stringSetKeys {
+		if v := result.StringFields[tuiKey]; v != "" {
+			flags.sets = append(flags.sets, setKey+"="+v)
+		}
 	}
 
 	// Run the init pipeline
@@ -244,8 +290,34 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags) *tui.Pr
 	pre := &tui.PreSelection{
 		SelectedTemplates: make(map[string]bool),
 		SelectedExts:      make(map[string]map[string]bool),
-		Variant:           flags.variant,
-		Port:              flags.port,
+		StringFields:      make(map[string]string),
+		BoolFields:        make(map[string]bool),
+	}
+
+	// Map CLI flags to TUI string fields
+	if flags.variant != "" {
+		pre.StringFields["variant"] = flags.variant
+	}
+	if flags.port != "" {
+		pre.StringFields["port"] = flags.port
+	}
+	if flags.version != "" {
+		pre.StringFields["version"] = flags.version
+	}
+
+	// Parse --set flags to extract bool/string config values
+	if len(flags.sets) > 0 {
+		overrides, err := parseSetOverrides(flags.sets)
+		if err == nil {
+			for k, v := range overrides {
+				switch val := v.(type) {
+				case bool:
+					pre.BoolFields[k] = val
+				case string:
+					pre.StringFields[k] = val
+				}
+			}
+		}
 	}
 
 	if len(flags.selectDSLs) == 0 {

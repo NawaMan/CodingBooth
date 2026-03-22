@@ -15,18 +15,18 @@ import (
 
 // ConfigResult holds the user's selections from the TUI.
 type ConfigResult struct {
-	Confirmed bool // true if user pressed Ctrl+S, false if quit
-	SelectDSL string
-	Variant   string
-	Port      string
+	Confirmed    bool
+	SelectDSL    string
+	StringFields map[string]string // all string/cycle field values
+	BoolFields   map[string]bool   // all bool field values
 }
 
 // PreSelection holds values pre-populated from CLI flags.
 type PreSelection struct {
 	SelectedTemplates map[string]bool            // template names
 	SelectedExts      map[string]map[string]bool // template name → extension names
-	Variant           string
-	Port              string
+	StringFields      map[string]string          // pre-set string values (variant, port, name, etc.)
+	BoolFields        map[string]bool            // pre-set bool values (dind, keep-alive, etc.)
 }
 
 // RunConfig launches the interactive TUI and returns the user's configuration choices.
@@ -45,9 +45,9 @@ func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection) (*ConfigResul
 	}
 
 	return &ConfigResult{
-		Confirmed: true,
-		SelectDSL: final.buildSelectDSL(),
-		Variant:   final.variant,
-		Port:      final.port,
+		Confirmed:    true,
+		SelectDSL:    final.buildSelectDSL(),
+		StringFields: final.stringFields,
+		BoolFields:   final.boolFields,
 	}, nil
 }

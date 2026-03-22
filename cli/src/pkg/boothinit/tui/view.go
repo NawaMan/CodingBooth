@@ -29,6 +29,7 @@ var (
 	normalValueStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("255"))
 	activeTabStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255")).Background(lipgloss.Color("62")).Padding(0, 1)
 	inactiveTabStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Padding(0, 1)
+	groupHeaderStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("213"))
 )
 
 func (m model) View() string {
@@ -124,49 +125,126 @@ func (m model) renderTabBar() string {
 
 // renderConfigPanel renders the left panel for the Config tab.
 func (m model) renderConfigPanel(leftWidth, contentH int) []string {
-	var lines []string
 	cursor := m.cursorPos()
+	scrollOff := m.tabScrollOffs[0]
 
-	// Variant field
-	{
-		label := "Variant:"
-		value := variantDisplay(m.variant)
-		isCursor := cursor == int(fieldVariant)
+	// Build all config lines (with group headers interleaved)
+	type configLine struct {
+		isGroup bool
+		group   string
+		fieldIdx int
+	}
+	var allLines []configLine
+	lastGroup := ""
+	for i, f := range allConfigFields {
+		if f.Group != lastGroup {
+			allLines = append(allLines, configLine{isGroup: true, group: f.Group})
+			lastGroup = f.Group
+		}
+		allLines = append(allLines, configLine{fieldIdx: i})
+	}
 
-		if isCursor {
-			styled := "  " + focusLabelStyle.Render(label) + "  " + focusValueStyle.Render(" ◄ "+value+" ► ")
-			lines = append(lines, cursorStyle.Render(padStyledRight(styled, leftWidth)))
-		} else {
-			styled := "  " + normalLabelStyle.Render(label) + "  " + normalValueStyle.Render(value)
-			lines = append(lines, padStyledRight(styled, leftWidth))
+	// Map field index to allLines index for scrolling
+	fieldToLineIdx := make([]int, len(allConfigFields))
+	for li, cl := range allLines {
+		if !cl.isGroup {
+			fieldToLineIdx[cl.fieldIdx] = li
 		}
 	}
 
-	// Port field
-	{
-		label := "Port:"
-		value := m.port
-		isCursor := cursor == int(fieldPort)
-
-		if isCursor {
-			displayValue := value
-			if m.portEditing {
-				displayValue = value + "▌"
-			}
-			styled := "  " + focusLabelStyle.Render(label) + "     " + focusValueStyle.Render(" "+displayValue+" ")
-			lines = append(lines, cursorStyle.Render(padStyledRight(styled, leftWidth)))
-		} else {
-			styled := "  " + normalLabelStyle.Render(label) + "     " + normalValueStyle.Render(value)
-			lines = append(lines, padStyledRight(styled, leftWidth))
-		}
+	// Determine visible start line based on scroll offset (which is a field index)
+	visStart := 0
+	if scrollOff >= 0 && scrollOff < len(fieldToLineIdx) {
+		visStart = fieldToLineIdx[scrollOff]
+	}
+	// Show the group header above if the first visible field starts a new group
+	if visStart > 0 && allLines[visStart-1].isGroup {
+		visStart--
 	}
 
-	// Pad remaining
+	var lines []string
+
+	for li := visStart; li < len(allLines) && len(lines) < contentH; li++ {
+		cl := allLines[li]
+		if cl.isGroup {
+			groupLine := groupHeaderStyle.Render("── " + cl.group + " ──")
+			lines = append(lines, padStyledRight(groupLine, leftWidth))
+			continue
+		}
+
+		f := allConfigFields[cl.fieldIdx]
+		isCursor := cl.fieldIdx == cursor
+
+		var line string
+		switch f.Kind {
+		case fieldKindBool:
+			line = m.renderBoolField(f, leftWidth, isCursor)
+		case fieldKindCycle:
+			line = m.renderCycleField(f, leftWidth, isCursor)
+		case fieldKindString:
+			line = m.renderStringField(f, leftWidth, isCursor)
+		}
+		lines = append(lines, line)
+	}
+
 	for len(lines) < contentH {
 		lines = append(lines, strings.Repeat(" ", leftWidth))
 	}
 
 	return lines
+}
+
+func (m model) renderBoolField(f configFieldDef, width int, isCursor bool) string {
+	val := m.boolFields[f.Key]
+	check := "[ ]"
+	if val {
+		check = "[x]"
+	}
+	styledName := boldStyle.Render(f.Label)
+	styled := "  " + check + " " + styledName
+
+	if isCursor {
+		return cursorStyle.Render(padStyledRight(styled, width))
+	}
+	if val {
+		return selectedStyle.Render(padRightPlain("  "+check+" "+f.Label, width))
+	}
+	return padStyledRight(styled, width)
+}
+
+func (m model) renderCycleField(f configFieldDef, width int, isCursor bool) string {
+	val := m.stringFields[f.Key]
+	display := val
+	if display == "" {
+		display = "(default)"
+	}
+
+	if isCursor {
+		styled := "  " + focusLabelStyle.Render(f.Label+":") + "  " + focusValueStyle.Render(" ◄ "+display+" ► ")
+		return cursorStyle.Render(padStyledRight(styled, width))
+	}
+	styled := "  " + normalLabelStyle.Render(f.Label+":") + "  " + normalValueStyle.Render(display)
+	return padStyledRight(styled, width)
+}
+
+func (m model) renderStringField(f configFieldDef, width int, isCursor bool) string {
+	val := m.stringFields[f.Key]
+	display := val
+	if display == "" {
+		display = "(empty)"
+	}
+
+	if isCursor && m.editing {
+		editDisplay := val + "▌"
+		styled := "  " + focusLabelStyle.Render(f.Label+":") + "  " + focusValueStyle.Render(" "+editDisplay+" ")
+		return cursorStyle.Render(padStyledRight(styled, width))
+	}
+	if isCursor {
+		styled := "  " + focusLabelStyle.Render(f.Label+":") + "  " + normalValueStyle.Render(display)
+		return cursorStyle.Render(padStyledRight(styled, width))
+	}
+	styled := "  " + normalLabelStyle.Render(f.Label+":") + "  " + normalValueStyle.Render(display)
+	return padStyledRight(styled, width)
 }
 
 // padStyledRight pads a styled string with spaces to reach the target visual width.
@@ -181,47 +259,66 @@ func padStyledRight(s string, width int) string {
 // renderConfigDetail renders the right panel for the Config tab.
 func (m model) renderConfigDetail(rightWidth, contentH int) []string {
 	var lines []string
-	cursor := m.cursorPos()
-	field := configField(cursor)
 
-	switch field {
-	case fieldVariant:
-		lines = append(lines, detailTitle.Render("Variant"))
+	f := m.currentConfigField()
+	if f != nil {
+		lines = append(lines, detailTitle.Render(f.Label))
 		lines = append(lines, "")
-		lines = append(lines, wrapText("The booth variant determines the UI mode.", rightWidth)...)
-		lines = append(lines, "")
-		lines = append(lines, detailLabel.Render("Available:"))
-		for _, v := range variants {
-			display := v
-			if v == "" {
-				display = "(default) - auto-detect"
-			}
-			marker := "  "
-			if v == m.variant {
-				marker = "> "
-				lines = append(lines, selectedStyle.Render(marker+display))
+
+		// Render detail text, splitting on newlines
+		for _, paragraph := range strings.Split(f.Detail, "\n") {
+			if paragraph == "" {
+				lines = append(lines, "")
 			} else {
-				lines = append(lines, marker+display)
+				lines = append(lines, wrapText(paragraph, rightWidth)...)
 			}
 		}
-		lines = append(lines, "")
-		lines = append(lines, detailLabel.Render("Space/Enter to cycle, ◄► to change tab"))
 
-	case fieldPort:
-		lines = append(lines, detailTitle.Render("Port"))
-		lines = append(lines, "")
-		lines = append(lines, wrapText("The host port for accessing the booth UI.", rightWidth)...)
-		lines = append(lines, "")
-		lines = append(lines, detailLabel.Render("Current: ")+m.port)
-		lines = append(lines, "")
-		lines = append(lines, detailLabel.Render("Special values:"))
-		lines = append(lines, "  NEXT   - next available port")
-		lines = append(lines, "  RANDOM - random available port")
-		lines = append(lines, "")
-		if m.portEditing {
-			lines = append(lines, detailLabel.Render("Editing... Enter to confirm, Esc to cancel"))
-		} else {
-			lines = append(lines, detailLabel.Render("Enter to edit"))
+		// For cycle fields, show available options
+		if f.Kind == fieldKindCycle {
+			lines = append(lines, "")
+			lines = append(lines, detailLabel.Render("Options:"))
+			currentVal := m.stringFields[f.Key]
+			for _, opt := range f.Options {
+				display := opt
+				if display == "" {
+					display = "(default)"
+				}
+				if opt == currentVal {
+					lines = append(lines, selectedStyle.Render("> "+display))
+				} else {
+					lines = append(lines, "  "+display)
+				}
+			}
+		}
+
+		// For bool fields, show current state
+		if f.Kind == fieldKindBool {
+			lines = append(lines, "")
+			if m.boolFields[f.Key] {
+				lines = append(lines, selectedStyle.Render("Currently: ON"))
+			} else {
+				lines = append(lines, detailLabel.Render("Currently: OFF"))
+			}
+			lines = append(lines, "")
+			lines = append(lines, detailLabel.Render("Space/Enter to toggle"))
+		}
+
+		// For string fields, show edit hint
+		if f.Kind == fieldKindString {
+			lines = append(lines, "")
+			val := m.stringFields[f.Key]
+			if val != "" {
+				lines = append(lines, detailLabel.Render("Current: ")+val)
+			} else {
+				lines = append(lines, detailLabel.Render("Current: (empty)"))
+			}
+			lines = append(lines, "")
+			if m.editing {
+				lines = append(lines, detailLabel.Render("Editing... Enter/Esc to finish"))
+			} else {
+				lines = append(lines, detailLabel.Render("Space/Enter to edit"))
+			}
 		}
 	}
 
@@ -511,10 +608,10 @@ func (m model) renderFooter() string {
 	if m.quitting {
 		keys = "  Enter: quit  │  Esc: cancel"
 	} else if m.isConfigTab() {
-		if m.portEditing {
-			keys = "  Type value  │  Enter: confirm  │  Esc: cancel  │  ◄►: tab"
+		if m.editing {
+			keys = "  Type value  │  Enter/Esc: finish  │  Backspace: delete"
 		} else {
-			keys = "  ↑↓: navigate  │  Space/Enter: edit  │  ◄►: tab  │  Ctrl+S: save  │  Ctrl+Q: quit"
+			keys = "  ↑↓: navigate  │  Space/Enter: toggle/edit  │  ◄►: tab  │  Ctrl+S: save  │  Ctrl+Q: quit"
 		}
 	} else {
 		keys = "  Space: select  │  ↑↓: navigate  │  ◄►: tab  │  Ctrl+S: save  │  Ctrl+Q: quit"

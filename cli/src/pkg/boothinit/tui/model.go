@@ -5,7 +5,6 @@
 package tui
 
 import (
-	"fmt"
 	"sort"
 	"strings"
 
@@ -37,17 +36,6 @@ func (ti treeItem) key() string {
 	return ""
 }
 
-var variants = []string{"", "base", "notebook", "codeserver", "desktop-xfce", "desktop-kde", "terminal"}
-
-// configField identifies a field in the Config tab.
-type configField int
-
-const (
-	fieldVariant configField = iota
-	fieldPort
-	configFieldCount // sentinel
-)
-
 type model struct {
 	registry *tmpl.TemplateRegistry
 	selected map[string]bool // key: "tmplName" or "tmplName/extName"
@@ -59,34 +47,38 @@ type model struct {
 	tabItems      [][]treeItem // items per tab (index 0 = nil for Config tab)
 	activeTab     int
 	tabCursors    []int // cursor per tab (tab 0: config field index)
-	tabScrollOffs []int // scroll offset per tab (tab 0: unused)
+	tabScrollOffs []int // scroll offset per tab
 
 	notification string
 	confirmed    bool
 	quitting     bool // true when showing quit confirmation
 
-	// Config fields
-	variant     string
-	variantIdx  int
-	port        string
-	portEditing bool
-	portCursor  int
+	// Config fields (generic)
+	stringFields map[string]string // values for string/cycle fields
+	boolFields   map[string]bool   // values for bool fields
+	cycleIndices map[string]int    // current index for cycle fields
+	editing      bool              // true when editing a string field
+	editCursor   int               // cursor position within the edited string
 }
 
 func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 	m := model{
-		registry: registry,
-		selected: make(map[string]bool),
-		port:     "10000",
+		registry:     registry,
+		selected:     make(map[string]bool),
+		stringFields: make(map[string]string),
+		boolFields:   defaultBoolValues(),
+		cycleIndices: make(map[string]int),
 	}
+
+	// Set string field defaults
+	m.stringFields["port"] = "10000"
 
 	// Tab 0: Config
 	m.tabNames = append(m.tabNames, "Config")
-	m.tabItems = append(m.tabItems, nil) // no tree items for config tab
+	m.tabItems = append(m.tabItems, nil)
 
-	// Tabs 1..N: categories (already sorted by Order in registry)
+	// Tabs 1..N: categories
 	for _, cat := range registry.Categories {
-		// Sort templates by name
 		sortedTemplates := make([]*tmpl.Template, len(cat.Templates))
 		copy(sortedTemplates, cat.Templates)
 		sort.Slice(sortedTemplates, func(i, j int) bool {
@@ -97,7 +89,6 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 		for _, t := range sortedTemplates {
 			items = append(items, treeItem{kind: kindTemplate, template: t})
 
-			// Sort extensions by name
 			sortedExts := make([]*tmpl.Template, len(t.Extensions))
 			copy(sortedExts, t.Extensions)
 			sort.Slice(sortedExts, func(i, j int) bool {
@@ -122,17 +113,25 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 
 	// Apply pre-selections
 	if pre != nil {
-		if pre.Variant != "" {
-			m.variant = pre.Variant
-			for i, v := range variants {
-				if v == pre.Variant {
-					m.variantIdx = i
-					break
-				}
+		for k, v := range pre.StringFields {
+			if v != "" {
+				m.stringFields[k] = v
 			}
 		}
-		if pre.Port != "" {
-			m.port = pre.Port
+		for k, v := range pre.BoolFields {
+			m.boolFields[k] = v
+		}
+		// Sync cycle indices with string values
+		for _, f := range allConfigFields {
+			if f.Kind == fieldKindCycle {
+				val := m.stringFields[f.Key]
+				for i, opt := range f.Options {
+					if opt == val {
+						m.cycleIndices[f.Key] = i
+						break
+					}
+				}
+			}
 		}
 		for tName := range pre.SelectedTemplates {
 			m.selected[tName] = true
@@ -152,7 +151,6 @@ func (m *model) isConfigTab() bool {
 	return m.activeTab == 0
 }
 
-// activeItems returns the items for the currently active tab.
 func (m *model) activeItems() []treeItem {
 	if m.activeTab < 0 || m.activeTab >= len(m.tabItems) {
 		return nil
@@ -174,6 +172,15 @@ func (m *model) scrollOffset() int {
 
 func (m *model) setScrollOffset(v int) {
 	m.tabScrollOffs[m.activeTab] = v
+}
+
+// currentConfigField returns the config field definition at the current cursor position.
+func (m *model) currentConfigField() *configFieldDef {
+	idx := m.cursorPos()
+	if idx >= 0 && idx < len(allConfigFields) {
+		return &allConfigFields[idx]
+	}
+	return nil
 }
 
 func (m model) Init() tea.Cmd {
@@ -201,9 +208,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Port editing mode
-		if m.portEditing {
-			return m.handlePortEdit(msg)
+		// String field editing mode
+		if m.editing {
+			return m.handleStringEdit(msg)
 		}
 
 		switch msg.String() {
@@ -231,7 +238,6 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// handleTabSwitch checks for digit keys and left/right arrow tab switching.
 func (m *model) handleTabSwitch(msg tea.KeyMsg) (bool, tea.Model) {
 	numTabs := len(m.tabItems)
 	if numTabs == 0 {
@@ -242,7 +248,7 @@ func (m *model) handleTabSwitch(msg tea.KeyMsg) (bool, tea.Model) {
 
 	// 0 through 9
 	for i := 0; i < numTabs && i <= 9; i++ {
-		digit := fmt.Sprintf("%d", i)
+		digit := string(rune('0' + i))
 		if key == digit {
 			m.activeTab = i
 			return true, m
@@ -268,30 +274,170 @@ func (m *model) handleTabSwitch(msg tea.KeyMsg) (bool, tea.Model) {
 
 // handleConfigKey handles keys when the Config tab is active.
 func (m model) handleConfigKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	cursor := m.cursorPos()
-	field := configField(cursor)
+	maxIdx := len(allConfigFields) - 1
 
 	switch msg.String() {
 	case "up":
-		if cursor > 0 {
-			m.setCursor(cursor - 1)
+		cur := m.cursorPos()
+		if cur > 0 {
+			m.setCursor(cur - 1)
 		}
 	case "down":
-		if cursor < int(configFieldCount)-1 {
-			m.setCursor(cursor + 1)
+		cur := m.cursorPos()
+		if cur < maxIdx {
+			m.setCursor(cur + 1)
 		}
+	case "pgup":
+		cur := m.cursorPos() - m.contentHeight()
+		if cur < 0 {
+			cur = 0
+		}
+		m.setCursor(cur)
+	case "pgdown":
+		cur := m.cursorPos() + m.contentHeight()
+		if cur > maxIdx {
+			cur = maxIdx
+		}
+		m.setCursor(cur)
+	case "home":
+		m.setCursor(0)
+	case "end":
+		m.setCursor(maxIdx)
 	case " ", "enter":
-		// For variant: cycle forward
-		if field == fieldVariant {
-			m.variantIdx = (m.variantIdx + 1) % len(variants)
-			m.variant = variants[m.variantIdx]
+		f := m.currentConfigField()
+		if f == nil {
+			break
 		}
-		// For port: enter editing mode
-		if field == fieldPort {
-			m.portEditing = true
-			m.portCursor = len(m.port)
+		switch f.Kind {
+		case fieldKindBool:
+			m.boolFields[f.Key] = !m.boolFields[f.Key]
+		case fieldKindCycle:
+			idx := m.cycleIndices[f.Key]
+			idx = (idx + 1) % len(f.Options)
+			m.cycleIndices[f.Key] = idx
+			m.stringFields[f.Key] = f.Options[idx]
+		case fieldKindString:
+			m.editing = true
+			m.editCursor = len(m.stringFields[f.Key])
 		}
 	}
+
+	m.adjustConfigScroll()
+	return m, nil
+}
+
+func (m *model) adjustConfigScroll() {
+	h := m.contentHeight()
+	if h <= 0 {
+		return
+	}
+
+	// Build a mapping from field index to rendered line index (accounting for group headers)
+	lineIdx := 0
+	fieldLinePos := make([]int, len(allConfigFields))
+	lastGroup := ""
+	for i, f := range allConfigFields {
+		if f.Group != lastGroup {
+			lineIdx++ // group header takes a line
+			lastGroup = f.Group
+		}
+		fieldLinePos[i] = lineIdx
+		lineIdx++
+	}
+
+	cur := m.cursorPos()
+	if cur < 0 || cur >= len(fieldLinePos) {
+		return
+	}
+
+	curLine := fieldLinePos[cur]
+	off := m.tabScrollOffs[0]
+	offLine := 0
+	if off >= 0 && off < len(fieldLinePos) {
+		offLine = fieldLinePos[off]
+		// Include group header above if present
+		if off > 0 && allConfigFields[off].Group != allConfigFields[off-1].Group {
+			offLine--
+		}
+	}
+
+	// Scroll up: cursor above visible area
+	if curLine < offLine {
+		// Find the field index whose line position puts cursor at top
+		for i, lp := range fieldLinePos {
+			// Account for group header above this field
+			startLine := lp
+			if i == 0 || allConfigFields[i].Group != allConfigFields[i-1].Group {
+				startLine--
+			}
+			if startLine < 0 {
+				startLine = 0
+			}
+			if lp >= curLine {
+				m.tabScrollOffs[0] = i
+				break
+			}
+			_ = startLine
+		}
+	}
+
+	// Scroll down: cursor below visible area
+	if curLine >= offLine+h {
+		// Find scroll offset that puts cursor line at the bottom of visible area
+		targetTopLine := curLine - h + 1
+		if targetTopLine < 0 {
+			targetTopLine = 0
+		}
+		for i, lp := range fieldLinePos {
+			headerLine := lp
+			if i == 0 || allConfigFields[i].Group != allConfigFields[i-1].Group {
+				headerLine--
+			}
+			if headerLine < 0 {
+				headerLine = 0
+			}
+			if headerLine >= targetTopLine {
+				m.tabScrollOffs[0] = i
+				break
+			}
+		}
+	}
+}
+
+func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	f := m.currentConfigField()
+	if f == nil {
+		m.editing = false
+		return m, nil
+	}
+	val := m.stringFields[f.Key]
+
+	switch msg.String() {
+	case "enter", "esc":
+		m.editing = false
+	case "backspace":
+		if m.editCursor > 0 && len(val) > 0 {
+			val = val[:m.editCursor-1] + val[m.editCursor:]
+			m.editCursor--
+		}
+	case "left":
+		if m.editCursor > 0 {
+			m.editCursor--
+		}
+		// Don't switch tabs while editing
+	case "right":
+		if m.editCursor < len(val) {
+			m.editCursor++
+		}
+		// Don't switch tabs while editing
+	default:
+		ch := msg.String()
+		if len(ch) == 1 && ch[0] >= 32 && ch[0] < 127 {
+			val = val[:m.editCursor] + ch + val[m.editCursor:]
+			m.editCursor++
+		}
+	}
+	m.stringFields[f.Key] = val
 	return m, nil
 }
 
@@ -349,33 +495,6 @@ func (m *model) adjustScroll() {
 		off = cur - h + 1
 	}
 	m.setScrollOffset(off)
-}
-
-func (m model) handlePortEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "enter", "esc":
-		m.portEditing = false
-	case "backspace":
-		if m.portCursor > 0 && len(m.port) > 0 {
-			m.port = m.port[:m.portCursor-1] + m.port[m.portCursor:]
-			m.portCursor--
-		}
-	case "left":
-		if m.portCursor > 0 {
-			m.portCursor--
-		}
-	case "right":
-		if m.portCursor < len(m.port) {
-			m.portCursor++
-		}
-	default:
-		ch := msg.String()
-		if len(ch) == 1 && ((ch[0] >= '0' && ch[0] <= '9') || ch[0] >= 'A') {
-			m.port = m.port[:m.portCursor] + ch + m.port[m.portCursor:]
-			m.portCursor++
-		}
-	}
-	return m, nil
 }
 
 func (m model) contentHeight() int {
