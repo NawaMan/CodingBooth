@@ -6,6 +6,7 @@ package tui
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
@@ -36,16 +37,16 @@ func (ti treeItem) key() string {
 	return ""
 }
 
-// focusArea tracks which part of the TUI has focus.
-type focusArea int
+var variants = []string{"", "base", "notebook", "codeserver", "desktop-xfce", "desktop-kde", "terminal"}
+
+// configField identifies a field in the Config tab.
+type configField int
 
 const (
-	focusTree    focusArea = iota
-	focusVariant
-	focusPort
+	fieldVariant configField = iota
+	fieldPort
+	configFieldCount // sentinel
 )
-
-var variants = []string{"", "base", "notebook", "codeserver", "desktop-xfce", "desktop-kde", "terminal"}
 
 type model struct {
 	registry *tmpl.TemplateRegistry
@@ -53,17 +54,16 @@ type model struct {
 	width    int
 	height   int
 
-	// Tabs — one per category, sorted by category order
-	tabNames       []string     // display names
-	tabItems       [][]treeItem // items per tab
-	activeTab      int
-	tabCursors     []int // cursor per tab
-	tabScrollOffs  []int // scroll offset per tab
+	// Tabs — tab 0 is Config, tabs 1..N are categories (sorted by order)
+	tabNames      []string     // display names (index 0 = "Config")
+	tabItems      [][]treeItem // items per tab (index 0 = nil for Config tab)
+	activeTab     int
+	tabCursors    []int // cursor per tab (tab 0: config field index)
+	tabScrollOffs []int // scroll offset per tab (tab 0: unused)
 
 	notification string
 	confirmed    bool
 	quitting     bool // true when showing quit confirmation
-	focus        focusArea
 
 	// Config fields
 	variant     string
@@ -80,12 +80,30 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 		port:     "10000",
 	}
 
-	// Build per-tab item lists (categories already sorted by Order in registry)
+	// Tab 0: Config
+	m.tabNames = append(m.tabNames, "Config")
+	m.tabItems = append(m.tabItems, nil) // no tree items for config tab
+
+	// Tabs 1..N: categories (already sorted by Order in registry)
 	for _, cat := range registry.Categories {
+		// Sort templates by name
+		sortedTemplates := make([]*tmpl.Template, len(cat.Templates))
+		copy(sortedTemplates, cat.Templates)
+		sort.Slice(sortedTemplates, func(i, j int) bool {
+			return sortedTemplates[i].Name < sortedTemplates[j].Name
+		})
+
 		var items []treeItem
-		for _, t := range cat.Templates {
+		for _, t := range sortedTemplates {
 			items = append(items, treeItem{kind: kindTemplate, template: t})
-			for _, ext := range t.Extensions {
+
+			// Sort extensions by name
+			sortedExts := make([]*tmpl.Template, len(t.Extensions))
+			copy(sortedExts, t.Extensions)
+			sort.Slice(sortedExts, func(i, j int) bool {
+				return sortedExts[i].Name < sortedExts[j].Name
+			})
+			for _, ext := range sortedExts {
 				items = append(items, treeItem{kind: kindExtension, template: t, extension: ext})
 			}
 		}
@@ -95,6 +113,12 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 
 	m.tabCursors = make([]int, len(m.tabItems))
 	m.tabScrollOffs = make([]int, len(m.tabItems))
+
+	// Default to tab 1 (first category)
+	m.activeTab = 1
+	if len(m.tabItems) <= 1 {
+		m.activeTab = 0
+	}
 
 	// Apply pre-selections
 	if pre != nil {
@@ -123,6 +147,11 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 	return m
 }
 
+// isConfigTab returns true if the active tab is the Config tab (tab 0).
+func (m *model) isConfigTab() bool {
+	return m.activeTab == 0
+}
+
 // activeItems returns the items for the currently active tab.
 func (m *model) activeItems() []treeItem {
 	if m.activeTab < 0 || m.activeTab >= len(m.tabItems) {
@@ -131,7 +160,6 @@ func (m *model) activeItems() []treeItem {
 	return m.tabItems[m.activeTab]
 }
 
-// activeCursor returns a pointer to the current tab's cursor.
 func (m *model) cursorPos() int {
 	return m.tabCursors[m.activeTab]
 }
@@ -165,7 +193,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			switch msg.String() {
 			case "enter":
 				return m, tea.Quit
-			case "escape":
+			case "esc":
 				m.quitting = false
 				m.notification = ""
 				return m, nil
@@ -187,34 +215,23 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+s":
 			m.confirmed = true
 			return m, tea.Quit
-
-		case "tab":
-			m.focus = (m.focus + 1) % 3
-			return m, nil
-
-		case "shift+tab":
-			m.focus = (m.focus + 2) % 3 // go backward
-			return m, nil
 		}
 
-		// Tab switching: Ctrl+1 through Ctrl+9
+		// Tab switching
 		if handled, result := m.handleTabSwitch(msg); handled {
 			return result, nil
 		}
 
-		switch m.focus {
-		case focusTree:
-			return m.handleTreeKey(msg)
-		case focusVariant:
-			return m.handleVariantKey(msg)
-		case focusPort:
-			return m.handlePortKey(msg)
+		// Route to active tab handler
+		if m.isConfigTab() {
+			return m.handleConfigKey(msg)
 		}
+		return m.handleTreeKey(msg)
 	}
 	return m, nil
 }
 
-// handleTabSwitch checks for Ctrl+1..Ctrl+9 and left/right arrow tab switching.
+// handleTabSwitch checks for digit keys and left/right arrow tab switching.
 func (m *model) handleTabSwitch(msg tea.KeyMsg) (bool, tea.Model) {
 	numTabs := len(m.tabItems)
 	if numTabs == 0 {
@@ -223,35 +240,59 @@ func (m *model) handleTabSwitch(msg tea.KeyMsg) (bool, tea.Model) {
 
 	key := msg.String()
 
-	// Ctrl+1 through Ctrl+9
-	// Note: terminals often send these as alt+1..alt+9 or special sequences.
-	// Bubbletea may report them differently depending on terminal.
-	// We handle both common representations.
-	for i := 0; i < numTabs && i < 9; i++ {
-		digit := fmt.Sprintf("%d", i+1)
+	// 0 through 9
+	for i := 0; i < numTabs && i <= 9; i++ {
+		digit := fmt.Sprintf("%d", i)
 		if key == digit {
 			m.activeTab = i
 			return true, m
 		}
 	}
 
-	// Left/Right arrows switch tabs when in tree focus
-	if m.focus == focusTree {
-		switch key {
-		case "left":
-			if m.activeTab > 0 {
-				m.activeTab--
-			}
-			return true, m
-		case "right":
-			if m.activeTab < numTabs-1 {
-				m.activeTab++
-			}
-			return true, m
+	// Left/Right arrows switch tabs
+	switch key {
+	case "left":
+		if m.activeTab > 0 {
+			m.activeTab--
 		}
+		return true, m
+	case "right":
+		if m.activeTab < numTabs-1 {
+			m.activeTab++
+		}
+		return true, m
 	}
 
 	return false, m
+}
+
+// handleConfigKey handles keys when the Config tab is active.
+func (m model) handleConfigKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	cursor := m.cursorPos()
+	field := configField(cursor)
+
+	switch msg.String() {
+	case "up":
+		if cursor > 0 {
+			m.setCursor(cursor - 1)
+		}
+	case "down":
+		if cursor < int(configFieldCount)-1 {
+			m.setCursor(cursor + 1)
+		}
+	case " ", "enter":
+		// For variant: cycle forward
+		if field == fieldVariant {
+			m.variantIdx = (m.variantIdx + 1) % len(variants)
+			m.variant = variants[m.variantIdx]
+		}
+		// For port: enter editing mode
+		if field == fieldPort {
+			m.portEditing = true
+			m.portCursor = len(m.port)
+		}
+	}
+	return m, nil
 }
 
 func (m model) handleTreeKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -310,33 +351,9 @@ func (m *model) adjustScroll() {
 	m.setScrollOffset(off)
 }
 
-func (m model) handleVariantKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "left":
-		if m.variantIdx > 0 {
-			m.variantIdx--
-		}
-	case "right":
-		if m.variantIdx < len(variants)-1 {
-			m.variantIdx++
-		}
-	}
-	m.variant = variants[m.variantIdx]
-	return m, nil
-}
-
-func (m model) handlePortKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
-	case "enter":
-		m.portEditing = true
-		m.portCursor = len(m.port)
-	}
-	return m, nil
-}
-
 func (m model) handlePortEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
-	case "enter", "escape":
+	case "enter", "esc":
 		m.portEditing = false
 	case "backspace":
 		if m.portCursor > 0 && len(m.port) > 0 {
@@ -362,7 +379,7 @@ func (m model) handlePortEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) contentHeight() int {
-	h := m.height - 8 // header(1) + config(1) + tabs(1) + sep(2) + footer-message(1) + footer-hints(1) + pad(1)
+	h := m.height - 7 // header(1) + search(1) + tabs(1) + sep(2) + footer-message(1) + footer-hints(1)
 	if h < 1 {
 		return 1
 	}
@@ -379,7 +396,6 @@ func (m model) buildSelectDSL() string {
 			}
 			item := t.Name
 
-			// Collect selected extensions
 			var exts []string
 			for _, ext := range t.Extensions {
 				extKey := t.Name + "/" + ext.Name
@@ -391,7 +407,6 @@ func (m model) buildSelectDSL() string {
 				}
 			}
 
-			// Collect excluded auto-select extensions
 			var excludes []string
 			for _, ext := range t.Extensions {
 				extKey := t.Name + "/" + ext.Name

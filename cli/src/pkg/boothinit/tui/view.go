@@ -17,6 +17,7 @@ var (
 	headerStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("39"))
 	sepStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	footerStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
+	boldStyle        = lipgloss.NewStyle().Bold(true)
 	cursorStyle      = lipgloss.NewStyle().Background(lipgloss.Color("236"))
 	selectedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("82"))
 	detailTitle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("214"))
@@ -54,29 +55,44 @@ func (m model) View() string {
 		}
 	}
 
-	// === Header ===
+	// === Header line 1: title ===
 	title := "CodingBooth Configuration"
 	selInfo := fmt.Sprintf("[%d selected]", selCount)
 	padding := fullWidth - lipgloss.Width(title) - lipgloss.Width(selInfo) - 2
 	if padding < 1 {
 		padding = 1
 	}
-	header := " " + headerStyle.Render(title) + strings.Repeat(" ", padding) + headerStyle.Render(selInfo)
+	headerLine1 := " " + headerStyle.Render(title) + strings.Repeat(" ", padding) + headerStyle.Render(selInfo)
 
-	// === Config bar ===
-	configBar := m.renderConfigBar(fullWidth)
+	// === Header line 2: search (placeholder for now) ===
+	headerLine2 := " " + sepStyle.Render("")
+
+	// === Scroll indicator appended to header ===
+	if !m.isConfigTab() {
+		items := m.activeItems()
+		if len(items) > contentH {
+			off := m.scrollOffset()
+			scrollInfo := sepStyle.Render(fmt.Sprintf("  %d-%d of %d",
+				off+1, min(off+contentH, len(items)), len(items)))
+			headerLine1 += scrollInfo
+		}
+	}
 
 	// === Tab bar ===
-	tabBar := m.renderTabBar(fullWidth)
+	tabBar := m.renderTabBar()
 
 	// === Separator ===
 	sep := sepStyle.Render(strings.Repeat("─", fullWidth))
 
-	// === Left panel ===
-	leftLines := m.renderLeftPanel(leftWidth, contentH)
-
-	// === Right panel ===
-	rightLines := m.renderRightPanel(rightWidth, contentH)
+	// === Content panels ===
+	var leftLines, rightLines []string
+	if m.isConfigTab() {
+		leftLines = m.renderConfigPanel(leftWidth, contentH)
+		rightLines = m.renderConfigDetail(rightWidth, contentH)
+	} else {
+		leftLines = m.renderLeftPanel(leftWidth, contentH)
+		rightLines = m.renderRightPanel(rightWidth, contentH)
+	}
 
 	// === Combine panels ===
 	divider := sepStyle.Render(" │ ")
@@ -86,26 +102,17 @@ func (m model) View() string {
 	}
 
 	// === Footer ===
-	footer := m.renderFooter(fullWidth)
+	footer := m.renderFooter()
 
-	// === Scroll indicator in header ===
-	items := m.activeItems()
-	if len(items) > contentH {
-		off := m.scrollOffset()
-		scrollInfo := sepStyle.Render(fmt.Sprintf("  %d-%d of %d",
-			off+1, min(off+contentH, len(items)), len(items)))
-		header += scrollInfo
-	}
-
-	return header + "\n" + configBar + "\n" + tabBar + "\n" + sep + "\n" +
+	return headerLine1 + "\n" + headerLine2 + "\n" + tabBar + "\n" + sep + "\n" +
 		strings.Join(contentLines, "\n") + "\n" +
 		sep + "\n" + footer
 }
 
-func (m model) renderTabBar(fullWidth int) string {
+func (m model) renderTabBar() string {
 	var tabs []string
 	for i, name := range m.tabNames {
-		label := fmt.Sprintf("%s (%d)", name, i+1)
+		label := fmt.Sprintf("%s (%d)", name, i)
 		if i == m.activeTab {
 			tabs = append(tabs, activeTabStyle.Render(label))
 		} else {
@@ -115,28 +122,126 @@ func (m model) renderTabBar(fullWidth int) string {
 	return " " + strings.Join(tabs, " ")
 }
 
-func (m model) renderConfigBar(fullWidth int) string {
-	// Variant field
-	varLabel := normalLabelStyle.Render("Variant:")
-	varValue := normalValueStyle.Render(variantDisplay(m.variant))
-	if m.focus == focusVariant {
-		varLabel = focusLabelStyle.Render("Variant:")
-		varValue = focusValueStyle.Render(" ◄ " + variantDisplay(m.variant) + " ► ")
-	}
+// renderConfigPanel renders the left panel for the Config tab.
+func (m model) renderConfigPanel(leftWidth, contentH int) []string {
+	var lines []string
+	cursor := m.cursorPos()
 
-	// Port field
-	portLabel := normalLabelStyle.Render("Port:")
-	portValue := normalValueStyle.Render(m.port)
-	if m.focus == focusPort {
-		portLabel = focusLabelStyle.Render("Port:")
-		if m.portEditing {
-			portValue = focusValueStyle.Render(m.port + "▌")
+	// Variant field
+	{
+		label := "Variant:"
+		value := variantDisplay(m.variant)
+		isCursor := cursor == int(fieldVariant)
+
+		if isCursor {
+			styled := "  " + focusLabelStyle.Render(label) + "  " + focusValueStyle.Render(" ◄ "+value+" ► ")
+			lines = append(lines, cursorStyle.Render(padStyledRight(styled, leftWidth)))
 		} else {
-			portValue = focusValueStyle.Render(" " + m.port + " ")
+			styled := "  " + normalLabelStyle.Render(label) + "  " + normalValueStyle.Render(value)
+			lines = append(lines, padStyledRight(styled, leftWidth))
 		}
 	}
 
-	return " " + varLabel + " " + varValue + "    " + portLabel + " " + portValue
+	// Port field
+	{
+		label := "Port:"
+		value := m.port
+		isCursor := cursor == int(fieldPort)
+
+		if isCursor {
+			displayValue := value
+			if m.portEditing {
+				displayValue = value + "▌"
+			}
+			styled := "  " + focusLabelStyle.Render(label) + "     " + focusValueStyle.Render(" "+displayValue+" ")
+			lines = append(lines, cursorStyle.Render(padStyledRight(styled, leftWidth)))
+		} else {
+			styled := "  " + normalLabelStyle.Render(label) + "     " + normalValueStyle.Render(value)
+			lines = append(lines, padStyledRight(styled, leftWidth))
+		}
+	}
+
+	// Pad remaining
+	for len(lines) < contentH {
+		lines = append(lines, strings.Repeat(" ", leftWidth))
+	}
+
+	return lines
+}
+
+// padStyledRight pads a styled string with spaces to reach the target visual width.
+func padStyledRight(s string, width int) string {
+	w := lipgloss.Width(s)
+	if w >= width {
+		return s
+	}
+	return s + strings.Repeat(" ", width-w)
+}
+
+// renderConfigDetail renders the right panel for the Config tab.
+func (m model) renderConfigDetail(rightWidth, contentH int) []string {
+	var lines []string
+	cursor := m.cursorPos()
+	field := configField(cursor)
+
+	switch field {
+	case fieldVariant:
+		lines = append(lines, detailTitle.Render("Variant"))
+		lines = append(lines, "")
+		lines = append(lines, wrapText("The booth variant determines the UI mode.", rightWidth)...)
+		lines = append(lines, "")
+		lines = append(lines, detailLabel.Render("Available:"))
+		for _, v := range variants {
+			display := v
+			if v == "" {
+				display = "(default) - auto-detect"
+			}
+			marker := "  "
+			if v == m.variant {
+				marker = "> "
+				lines = append(lines, selectedStyle.Render(marker+display))
+			} else {
+				lines = append(lines, marker+display)
+			}
+		}
+		lines = append(lines, "")
+		lines = append(lines, detailLabel.Render("Space/Enter to cycle, ◄► to change tab"))
+
+	case fieldPort:
+		lines = append(lines, detailTitle.Render("Port"))
+		lines = append(lines, "")
+		lines = append(lines, wrapText("The host port for accessing the booth UI.", rightWidth)...)
+		lines = append(lines, "")
+		lines = append(lines, detailLabel.Render("Current: ")+m.port)
+		lines = append(lines, "")
+		lines = append(lines, detailLabel.Render("Special values:"))
+		lines = append(lines, "  NEXT   - next available port")
+		lines = append(lines, "  RANDOM - random available port")
+		lines = append(lines, "")
+		if m.portEditing {
+			lines = append(lines, detailLabel.Render("Editing... Enter to confirm, Esc to cancel"))
+		} else {
+			lines = append(lines, detailLabel.Render("Enter to edit"))
+		}
+	}
+
+	// Pad and truncate
+	for i, line := range lines {
+		w := lipgloss.Width(line)
+		if w > rightWidth {
+			lines[i] = line[:rightWidth]
+		} else if w < rightWidth {
+			lines[i] = line + strings.Repeat(" ", rightWidth-w)
+		}
+	}
+	for len(lines) < contentH {
+		lines = append(lines, strings.Repeat(" ", rightWidth))
+	}
+	if len(lines) > contentH {
+		lines = lines[:contentH]
+	}
+
+	return lines
 }
 
 func variantDisplay(v string) string {
@@ -160,20 +265,16 @@ func (m model) renderLeftPanel(leftWidth, contentH int) []string {
 
 	for i := off; i < end; i++ {
 		item := items[i]
-		isCursor := i == cursor && m.focus == focusTree
+		isCursor := i == cursor
 
 		switch item.kind {
 		case kindTemplate:
-			line := m.renderTemplateLine(item, leftWidth, isCursor)
-			lines = append(lines, line)
-
+			lines = append(lines, m.renderTemplateLine(item, leftWidth, isCursor))
 		case kindExtension:
-			line := m.renderExtensionLine(item, leftWidth, isCursor)
-			lines = append(lines, line)
+			lines = append(lines, m.renderExtensionLine(item, leftWidth, isCursor))
 		}
 	}
 
-	// Pad remaining lines
 	for len(lines) < contentH {
 		lines = append(lines, strings.Repeat(" ", leftWidth))
 	}
@@ -191,23 +292,36 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 	name := item.template.Name
 	desc := item.template.DisplayDesc
 
-	plain := check + " " + name
-	remaining := width - len(plain) - 2
+	plainPrefix := check + " " + name
+	remaining := width - len(plainPrefix) - 2
+	descStr := ""
 	if remaining > 3 && len(desc) > 0 {
 		if len(desc) > remaining {
 			desc = desc[:remaining-2] + ".."
 		}
-		plain += "  " + desc
+		descStr = desc
 	}
-	plain = padRightPlain(plain, width)
+
+	styledName := boldStyle.Render(name)
+	line := check + " " + styledName
+	if descStr != "" {
+		line += "  " + detailLabel.Render(descStr)
+	}
+	plainLen := len(plainPrefix)
+	if descStr != "" {
+		plainLen += 2 + len(descStr)
+	}
+	if plainLen < width {
+		line += strings.Repeat(" ", width-plainLen)
+	}
 
 	if isCursor {
-		return cursorStyle.Render(plain)
+		return cursorStyle.Render(line)
 	}
 	if isSelected {
-		return selectedStyle.Render(plain)
+		return selectedStyle.Render(line)
 	}
-	return plain
+	return line
 }
 
 func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) string {
@@ -221,29 +335,41 @@ func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) stri
 	name := item.extension.Name
 	desc := item.extension.DisplayDesc
 
-	// Mark auto-select
 	autoMark := ""
 	if item.extension.AutoSelect != nil && *item.extension.AutoSelect {
 		autoMark = "*"
 	}
 
-	plain := "    " + check + " " + autoMark + name
-	remaining := width - len(plain) - 2
+	plainPrefix := "    " + check + " " + autoMark + name
+	remaining := width - len(plainPrefix) - 2
+	descStr := ""
 	if remaining > 3 && len(desc) > 0 {
 		if len(desc) > remaining {
 			desc = desc[:remaining-2] + ".."
 		}
-		plain += "  " + desc
+		descStr = desc
 	}
-	plain = padRightPlain(plain, width)
+
+	styledName := boldStyle.Render(autoMark + name)
+	line := "    " + check + " " + styledName
+	if descStr != "" {
+		line += "  " + detailLabel.Render(descStr)
+	}
+	plainLen := len(plainPrefix)
+	if descStr != "" {
+		plainLen += 2 + len(descStr)
+	}
+	if plainLen < width {
+		line += strings.Repeat(" ", width-plainLen)
+	}
 
 	if isCursor {
-		return cursorStyle.Render(plain)
+		return cursorStyle.Render(line)
 	}
 	if isSelected {
-		return selectedStyle.Render(plain)
+		return selectedStyle.Render(line)
 	}
-	return plain
+	return line
 }
 
 func (m model) renderRightPanel(rightWidth, contentH int) []string {
@@ -257,13 +383,11 @@ func (m model) renderRightPanel(rightWidth, contentH int) []string {
 		switch item.kind {
 		case kindTemplate:
 			lines = m.renderTemplateDetail(item.template, rightWidth)
-
 		case kindExtension:
 			lines = m.renderExtensionDetail(item, rightWidth)
 		}
 	}
 
-	// Pad and truncate
 	for i, line := range lines {
 		w := lipgloss.Width(line)
 		if w > rightWidth {
@@ -290,16 +414,12 @@ func (m model) renderTemplateDetail(t *tmpl.Template, width int) []string {
 	lines = append(lines, "")
 
 	if t.DisplayDesc != "" {
-		for _, l := range wrapText(t.DisplayDesc, width) {
-			lines = append(lines, l)
-		}
+		lines = append(lines, wrapText(t.DisplayDesc, width)...)
 		lines = append(lines, "")
 	}
 
 	if t.DisplayDetail != "" {
-		for _, l := range wrapText(t.DisplayDetail, width) {
-			lines = append(lines, l)
-		}
+		lines = append(lines, wrapText(t.DisplayDetail, width)...)
 	}
 
 	if len(t.Params) > 0 {
@@ -348,16 +468,12 @@ func (m model) renderExtensionDetail(item treeItem, width int) []string {
 	lines = append(lines, "")
 
 	if ext.DisplayDesc != "" {
-		for _, l := range wrapText(ext.DisplayDesc, width) {
-			lines = append(lines, l)
-		}
+		lines = append(lines, wrapText(ext.DisplayDesc, width)...)
 		lines = append(lines, "")
 	}
 
 	if ext.DisplayDetail != "" {
-		for _, l := range wrapText(ext.DisplayDetail, width) {
-			lines = append(lines, l)
-		}
+		lines = append(lines, wrapText(ext.DisplayDetail, width)...)
 	}
 
 	if ext.AutoSelect != nil && *ext.AutoSelect {
@@ -383,7 +499,7 @@ func (m model) renderExtensionDetail(item treeItem, width int) []string {
 	return lines
 }
 
-func (m model) renderFooter(fullWidth int) string {
+func (m model) renderFooter() string {
 	// Line 1: message/notification
 	messageLine := ""
 	if m.notification != "" {
@@ -394,18 +510,14 @@ func (m model) renderFooter(fullWidth int) string {
 	var keys string
 	if m.quitting {
 		keys = "  Enter: quit  │  Esc: cancel"
-	} else {
-		keys = "  Space: select  │  ↑↓: navigate  │  ◄►: tab  │  Tab: config  │  Ctrl+S: save  │  Ctrl+Q: quit"
-		switch m.focus {
-		case focusVariant:
-			keys = "  ◄►: change variant  │  Tab: next field  │  Ctrl+S: save  │  Ctrl+Q: quit"
-		case focusPort:
-			if m.portEditing {
-				keys = "  Type port number  │  Enter: confirm  │  Esc: cancel"
-			} else {
-				keys = "  Enter: edit port  │  Tab: next field  │  Ctrl+S: save  │  Ctrl+Q: quit"
-			}
+	} else if m.isConfigTab() {
+		if m.portEditing {
+			keys = "  Type value  │  Enter: confirm  │  Esc: cancel  │  ◄►: tab"
+		} else {
+			keys = "  ↑↓: navigate  │  Space/Enter: edit  │  ◄►: tab  │  Ctrl+S: save  │  Ctrl+Q: quit"
 		}
+	} else {
+		keys = "  Space: select  │  ↑↓: navigate  │  ◄►: tab  │  Ctrl+S: save  │  Ctrl+Q: quit"
 	}
 	hintsLine := footerStyle.Render(keys)
 
