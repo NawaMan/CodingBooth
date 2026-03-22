@@ -38,6 +38,8 @@ OPTIONS
   --dind                  Enable a Docker-in-Docker sidecar
   --public                Bind to all interfaces with password authentication
   --sandboxed             Enable sandbox defaults (proxy + enforcement)
+  --sudo <true|false>     Enable/disable sudo access (default: true)
+  --no-sudo               Shorthand for --sudo false
 
 EXAMPLES:
   codingbooth --variant codeserver       Run the booth to use codeserver on localhost:<port>.
@@ -50,8 +52,7 @@ OTHER COMMANDS:
   CONNECT   | Connect to a running booth       | shell, exec
   PROJECT   | Set up and scaffold new projects | example, init, template
 
-Run 'codingbooth --help <command>'   for command-specific help.
-Run 'codingbooth --help --detail'    for the full reference."
+Run 'codingbooth --help <command>'   for command-specific help."
 
 if diff -u <(echo "$EXPECT" | normalize_output) <(echo "$ACTUAL" | normalize_output); then
   print_test_result "true" "$0" "1" "Help output matches expected"
