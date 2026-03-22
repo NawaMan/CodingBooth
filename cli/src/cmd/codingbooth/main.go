@@ -61,6 +61,9 @@ func main() {
 		case "init":
 			runInit(version)
 			return
+		case "config":
+			runConfig(version)
+			return
 		case "build":
 			buildBooth(version)
 			return

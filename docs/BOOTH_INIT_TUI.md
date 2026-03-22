@@ -1,0 +1,234 @@
+# booth config — Interactive Configuration
+
+> Browse templates, select what you need, and generate your booth — all from a single TUI.
+
+`booth config` provides an interactive terminal interface for configuring a CodingBooth environment. Instead of memorizing template names and DSL syntax, you can visually browse all available templates, select what you need, and generate the `.booth/` configuration in one step.
+
+Back to [README](../README.md) | See also: [booth init](BOOTH_INIT.md)
+
+---
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [How It Works](#how-it-works)
+- [TUI Layout](#tui-layout)
+- [Keybindings](#keybindings)
+- [Pre-populating with Flags](#pre-populating-with-flags)
+- [Selection Behavior](#selection-behavior)
+- [Flags](#flags)
+- [Examples](#examples)
+
+---
+
+## Quick Start
+
+```bash
+# Browse and select interactively
+booth config
+
+# Pre-select some templates, then fine-tune in the TUI
+booth config --select go+linter --variant codeserver
+
+# Configure into a specific directory
+booth config ./my-project
+
+# Edit an existing booth — reads .booth/Boothfile and pre-populates the TUI
+booth config ./existing-project
+```
+
+---
+
+## How It Works
+
+1. **Launch** — `booth config` loads all available templates and opens the TUI
+2. **Load existing** — If the target path has a `.booth/Boothfile`, its configuration is loaded as the baseline (existing selections, variant, port, etc. appear pre-checked)
+3. **Override** — CLI flags (`--select`, `--variant`, etc.) override the existing values
+4. **Browse** — Navigate the template tree grouped by category (Languages, Tools, Databases, etc.)
+5. **Select** — Toggle templates and extensions with Space. Dependencies and auto-select extensions are handled automatically
+6. **Configure** — Set variant and port using the config bar at the top
+7. **Save** — Press Ctrl+S to generate `.booth/` files (runs the same pipeline as `booth init new`)
+
+The output is identical to running `booth init new --select <your-selections>` — same Boothfile, config.toml, startup scripts, and files.
+
+---
+
+## TUI Layout
+
+```
+══════════════════════════════════════════════════════════════
+ CodingBooth Configuration                     [5 selected]
+ Variant: codeserver    Port: 10000
+──────────────────────────────────────────────────────────────
+ ── Languages ──          │ go
+ [x] go                   │ Go programming language
+     [x] *linter          │ ─────────────────────────
+     [ ] air              │ Installs Go toolchain,
+     [ ] protobuf         │ sets up GOPATH, and
+ [ ] python               │ configures common tools.
+ [ ] nodejs               │
+ ── Databases ──          │ Parameters:
+ [ ] postgresql           │   GO_VERSION = 1.24.1
+ [ ] mysql                │   options: 1.24.1, 1.23.5
+ ── Tools ──              │
+ [x] docker               │ Extensions:
+     [x] *compose         │   * linter (auto-select)
+     [ ] buildx           │     air
+──────────────────────────────────────────────────────────────
+ Auto-selected: go/linter  │  Dependency: docker
+ Space: select │ ↑↓: navigate │ Tab: config │ Ctrl+S: save │ Ctrl+Q: quit
+══════════════════════════════════════════════════════════════
+```
+
+- **Header**: Title and selection count
+- **Config bar**: Variant and port fields (Tab to focus)
+- **Left panel**: Scrollable template tree with checkboxes, grouped by category
+- **Right panel**: Details of the highlighted item (description, parameters, dependencies, extensions)
+- **Footer line 1**: Messages and notifications (auto-select, dependency resolution)
+- **Footer line 2**: Context-sensitive keybinding hints
+
+Extensions marked with `*` are auto-selected when their parent template is selected.
+
+---
+
+## Keybindings
+
+### Tree Navigation (default focus)
+
+| Key | Action |
+|-----|--------|
+| `↑` | Move cursor up |
+| `↓` | Move cursor down |
+| `PgUp` | Page up |
+| `PgDn` | Page down |
+| `Home` | Jump to top |
+| `End` | Jump to bottom |
+| `Space` | Select / deselect item |
+| `Tab` | Move focus to config fields |
+
+### Config Fields
+
+| Key | Action |
+|-----|--------|
+| `Tab` | Cycle focus: Tree → Variant → Port → Tree |
+| `Shift+Tab` | Cycle focus backwards |
+| `←` / `→` (Variant) | Change variant |
+| `Enter` (Port) | Start editing port |
+| `Esc` (Port editing) | Stop editing port |
+
+### Global
+
+| Key | Action |
+|-----|--------|
+| `Ctrl+S` | Save selection and run init |
+| `Ctrl+Q` / `Ctrl+C` | Quit (asks for confirmation) |
+| `Enter` (when quitting) | Confirm quit |
+| `Esc` (when quitting) | Cancel quit |
+
+---
+
+## Pre-populating with Flags
+
+`booth config` accepts the same flags as `booth init new`. Pre-passed values appear as initial selections in the TUI:
+
+```bash
+# Start with go and python pre-selected
+booth config --select go/python
+
+# Start with variant and port pre-set
+booth config --variant notebook --port 10080
+
+# Combine everything
+booth config --select go+linter --variant codeserver --port 10080 --expose 8080
+```
+
+Flags like `--env`, `--expose`, `--mount`, `--set`, and `--cmd` are passed through to the init pipeline after the TUI completes.
+
+---
+
+## Selection Behavior
+
+### Auto-select Extensions
+
+When you select a template, extensions marked as auto-select are automatically checked. For example, selecting `go` automatically selects its `linter` extension. You can manually deselect these if you don't want them.
+
+### Dependencies
+
+Some templates require others. When you select a template with dependencies:
+- Required templates are automatically selected
+- A notification appears showing what was auto-selected
+- Their auto-select extensions are also included
+
+Example: Selecting `kotlin` automatically selects `java` (its dependency).
+
+### Parent Template
+
+Selecting an extension automatically selects its parent template if it isn't already selected.
+
+### Deselecting
+
+Deselecting a template also deselects all of its extensions.
+
+---
+
+## Flags
+
+| Flag | Description |
+|------|-------------|
+| `--select <dsl>` | Pre-select templates (same DSL as `booth init`; repeatable) |
+| `--variant <name>` | Pre-set variant |
+| `--port <port>` | Pre-set port |
+| `--templates-path <dir>` | Use local templates directory |
+| `--version <ver>` | Use templates from a specific release version |
+| `--overwrite` | Overwrite existing files without prompting |
+| `--start` | Start the booth after creation |
+| `--cmd <command>` | Set default start command (repeatable) |
+| `--expose <port>` | Expose extra port (repeatable) |
+| `--env <KEY=VALUE>` | Set environment variable (repeatable) |
+| `--mount <host:container>` | Mount volume (repeatable) |
+| `--set <key=value>` | Set config.toml value (repeatable) |
+
+---
+
+## Examples
+
+### Interactive from scratch
+
+```bash
+booth config
+```
+
+### Pre-select a data science stack, fine-tune in TUI
+
+```bash
+booth config --select python+uv+kernel/notebook/postgresql
+```
+
+### Configure into a new project directory
+
+```bash
+booth config ./my-new-project --variant codeserver
+```
+
+### Full desktop with AI tools pre-selected
+
+```bash
+booth config --select "java:21+maven/claude-code" --variant desktop-xfce
+```
+
+### Edit an existing booth
+
+If the target path already has `.booth/Boothfile`, the existing configuration is loaded automatically:
+
+```bash
+# Opens TUI with existing selections pre-checked
+booth config ./my-existing-project
+
+# Override the variant while keeping existing template selections
+booth config ./my-existing-project --variant codeserver
+```
+
+The loading priority is:
+1. Existing `.booth/Boothfile` `# Adjust with :` header (baseline)
+2. CLI flags (override the baseline)
+3. TUI changes (final)
