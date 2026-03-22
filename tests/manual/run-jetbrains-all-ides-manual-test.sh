@@ -63,7 +63,7 @@ fi
 echo
 echo "── Step 2: booth start ──────────────────────────────────"
 cd "$TEST_DIR"
-booth start
+"$ROOT_DIR/codingbooth"
 
 echo
 echo "═══════════════════════════════════════════════════════════"

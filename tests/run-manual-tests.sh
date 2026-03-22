@@ -5,11 +5,12 @@
 
 
 # Manual test runner script
-# Runs all manual test suites in the tests/manual directory
+# Auto-discovers and runs all run-*-manual-test.sh scripts in tests/manual/
 
-set -e  # Exit on first failure
+set -e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MANUAL_DIR="$SCRIPT_DIR/manual"
 
 failed=0
 failed_suites=()
@@ -20,63 +21,42 @@ echo "Running All Manual Test Suites"
 echo "========================================"
 echo ""
 
-# Run docker-build-color manual test
-echo "----------------------------------------"
-echo "Running Docker Build Color Manual Test"
-echo "----------------------------------------"
-total_suites=$((total_suites + 1))
-if ! (cd "$SCRIPT_DIR/manual" && ./run-docker-build-color-manual-test.sh); then
-    failed=1
-    failed_suites+=("docker-build-color")
-fi
-echo ""
+for test_file in "$MANUAL_DIR"/run-*-manual-test.sh; do
+    [[ -f "$test_file" ]] || continue
 
-# Run docker-interactive manual test
-echo "----------------------------------------"
-echo "Running Docker Interactive Manual Test"
-echo "----------------------------------------"
-total_suites=$((total_suites + 1))
-if ! (cd "$SCRIPT_DIR/manual" && ./run-docker-interactive-manual-test.sh); then
-    failed=1
-    failed_suites+=("docker-interactive")
-fi
-echo ""
+    name=$(basename "$test_file" .sh)
+    # Strip "run-" prefix and "-manual-test" suffix for display
+    label="${name#run-}"
+    label="${label%-manual-test}"
 
-# Run colored-prompt manual test
-echo "----------------------------------------"
-echo "Running Colored Prompt Manual Test"
-echo "----------------------------------------"
-total_suites=$((total_suites + 1))
-if ! (cd "$SCRIPT_DIR/manual" && ./run-colored-prompt-manual-test.sh); then
-    failed=1
-    failed_suites+=("colored-prompt")
-fi
-echo ""
+    echo "----------------------------------------"
+    echo "Running: $label"
+    echo "----------------------------------------"
+    total_suites=$((total_suites + 1))
 
-# Run lifecycle cross-user manual test
-echo "----------------------------------------"
-echo "Running Lifecycle Cross-User Manual Test"
-echo "----------------------------------------"
-total_suites=$((total_suites + 1))
-if ! (cd "$SCRIPT_DIR/manual" && ./run-lifecycle-cross-user-manual-test.sh); then
-    failed=1
-    failed_suites+=("lifecycle-cross-user")
-fi
-echo ""
+    if (cd "$MANUAL_DIR" && ./"$(basename "$test_file")"); then
+        echo -e "\033[1;32m✔ $label passed\033[0m"
+    else
+        failed=1
+        failed_suites+=("$label")
+        echo -e "\033[1;31m✘ $label FAILED\033[0m"
+    fi
+    echo ""
+done
 
 # Summary
 echo "========================================"
-echo "Test Summary"
+echo "Manual Test Summary"
 echo "========================================"
 num_failed=${#failed_suites[@]}
 
 if [ $failed -eq 0 ]; then
-    echo "✓ All $total_suites manual test suites passed!"
+    echo -e "\033[1;32m✓ All $total_suites manual test suites passed!\033[0m"
 else
-    echo "✗ $num_failed out of $total_suites manual test suites FAILED."
+    echo -e "\033[1;31m✗ $num_failed out of $total_suites manual test suites FAILED.\033[0m"
     echo "Failed suites:"
     for suite in "${failed_suites[@]}"; do
-        echo "  - $suite"
+        echo -e "  \033[1;31m- $suite\033[0m"
     done
 fi
 echo ""
