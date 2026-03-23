@@ -162,7 +162,7 @@ For readability in files and heredocs:
 | Inline         | Direct string | `--select go+linter/python:3.13`             |
 | Multiple flags | Repeated      | `--select go+linter --select python:3.13`    |
 | File           | `@path`       | `--select @my-project.recipe`                |
-| URL            | `@@url`       | `--select @@https://example.com/recipe.txt`  |
+| URL            | `@@url`       | `--select @@https://example.com/my-project-example.recipe` |
 | Stdin          | `-`           | `--select -` (type or pipe)                  |
 
 Recipe files are plain text with the same DSL syntax — one template per line.

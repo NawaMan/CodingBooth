@@ -86,7 +86,7 @@ The selection input can come from multiple sources, all normalized to a single D
 | Multiple | Repeated flag | `--select go+linter --select python:3.13` |
 | Stdin | `-` | `--select -` (then type or pipe) |
 | File | `@path` | `--select @cool-project.recipe` |
-| URL | `@@url` | `--select @@https://example.com/recipe.txt` |
+| URL | `@@url` | `--select @@https://example.com/my-project-example.recipe` |
 
 Each `--select` value is resolved independently through `ReadSelectInput()` (handling `@file`, `@@url`, `-`, or plain DSL), then results are joined with `/`. This means `--select @langs.recipe --select @tools.recipe` works correctly — each file is read separately before combining.
 
