@@ -2,6 +2,26 @@
 
 This file contains a list of changes for each released version.
 
+## 0.37.0
+
+- `booth config` — interactive TUI for configuring booth environments
+  - Browse templates by category, select/deselect with keyboard navigation
+  - Multi-tab layout: templates, config fields (variant, port, name), and preview
+  - Pre-populate with `--select` flags, then fine-tune interactively
+  - Edit existing `.booth/` configurations — reads Boothfile and pre-populates the TUI
+  - `--no-tui` flag for headless/CI usage
+- `booth shell` / `booth exec` — connect to running booths without SSH or extra ports
+  - `booth shell <name>` opens a new interactive shell in a running container
+  - `booth exec <name> -- <command>` runs a one-off command and returns the result
+- New templates: PlantUML, Mermaid, Freeplane, Obsidian (with autostart and expose extensions)
+- `no-sudo` template — revoke passwordless sudo for security hardening
+- C# and F# language templates replace the single `dotnet` template
+- CodeServer extensions: base, bash, and shutdown extensions now included in the notebook variant
+- Test runner overhaul (`run-automate-tests.sh`)
+  - Live status graph with per-suite pass/fail counts and real-time log snippets
+  - `--only`, `--skip`, `--rerun-failed` flags for targeted test runs
+  - Manual tests now discoverable via `run-manual-tests.sh`
+
 ## 0.36.0
 
 - Fine-grained home copy with `.mount-this` — booth-entry now uses `smart_copy` for all four home directory seeding stages
