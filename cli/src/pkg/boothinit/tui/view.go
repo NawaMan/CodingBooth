@@ -559,13 +559,23 @@ func (m model) renderTemplateDetail(t *tmpl.Template, width int) []string {
 	}
 
 	if len(t.Params) > 0 {
+		item := treeItem{kind: kindTemplate, template: t}
+		isSelected := m.selected[t.Name]
 		lines = append(lines, "")
-		lines = append(lines, detailLabel.Render("Parameters:"))
-		for _, name := range orderedParamNames(t) {
-			p := t.Params[name]
-			lines = append(lines, fmt.Sprintf("  %s = %s", name, p.Default))
-			if len(p.Suggests) > 0 {
-				lines = append(lines, fmt.Sprintf("    options: %s", strings.Join(p.Suggests, ", ")))
+		if isSelected && m.paramFocused {
+			lines = append(lines, detailLabel.Render("Parameters:")+"  "+detailLabel.Render("(editing)"))
+			lines = m.renderParamFields(lines, item, t, width)
+		} else if isSelected {
+			lines = append(lines, detailLabel.Render("Parameters:")+"  "+detailLabel.Render("(Enter to edit)"))
+			lines = m.renderParamValues(lines, item, t)
+		} else {
+			lines = append(lines, detailLabel.Render("Parameters:"))
+			for _, name := range orderedParamNames(t) {
+				p := t.Params[name]
+				lines = append(lines, fmt.Sprintf("  %s = %s", name, p.Default))
+				if len(p.Suggests) > 0 {
+					lines = append(lines, fmt.Sprintf("    options: %s", strings.Join(p.Suggests, ", ")))
+				}
 			}
 		}
 	}
@@ -624,11 +634,21 @@ func (m model) renderExtensionDetail(item treeItem, width int) []string {
 	}
 
 	if len(ext.Params) > 0 {
+		extKey := item.template.Name + "/" + ext.Name
+		isSelected := m.selected[extKey]
 		lines = append(lines, "")
-		lines = append(lines, detailLabel.Render("Parameters:"))
-		for _, name := range orderedParamNames(ext) {
-			p := ext.Params[name]
-			lines = append(lines, fmt.Sprintf("  %s = %s", name, p.Default))
+		if isSelected && m.paramFocused {
+			lines = append(lines, detailLabel.Render("Parameters:")+"  "+detailLabel.Render("(editing)"))
+			lines = m.renderParamFields(lines, item, ext, width)
+		} else if isSelected {
+			lines = append(lines, detailLabel.Render("Parameters:")+"  "+detailLabel.Render("(Enter to edit)"))
+			lines = m.renderParamValues(lines, item, ext)
+		} else {
+			lines = append(lines, detailLabel.Render("Parameters:"))
+			for _, name := range orderedParamNames(ext) {
+				p := ext.Params[name]
+				lines = append(lines, fmt.Sprintf("  %s = %s", name, p.Default))
+			}
 		}
 	}
 
@@ -647,31 +667,92 @@ func (m model) renderFooter() string {
 	if m.quitting {
 		keys = "  Enter: quit  │  Esc: cancel"
 	} else if m.searchFocused {
-		keys = "  Type to search  │  Tab/Enter/↓: go to list  │  Esc: clear  │  Ctrl+S: save  │  Ctrl+Q: quit"
+		keys = "  Type to search  │  Tab/Enter/↓: go to list  │  Esc: clear  │  Ctrl+S: save  │  Ctrl+E: exit"
 	} else if m.isConfigTab() {
 		if m.editing {
 			keys = "  Type value  │  Enter/Esc: finish  │  Backspace: delete"
 		} else {
-			keys = "  ↑↓: navigate  │  Space/Enter: toggle/edit  │  ◄►: tab  │  Tab: search  │  Ctrl+S: save  │  Ctrl+Q: quit"
+			keys = "  ↑↓: navigate  │  Space/Enter: toggle/edit  │  ◄►: tab  │  Tab: search  │  Ctrl+S: save  │  Ctrl+E: exit"
 		}
+	} else if m.paramEditing {
+		keys = "  Type value  │  Enter/Tab: accept  │  Esc: cancel  │  Backspace: delete"
+	} else if m.paramFocused {
+		keys = "  ◄►: cycle  │  Enter/Type: custom value  │  ↑↓: param  │  Esc: back to list  │  Ctrl+S: save  │  Ctrl+E: exit"
 	} else {
-		keys = "  Space: select  │  ↑↓: navigate  │  ◄►: tab  │  Tab: search  │  Ctrl+S: save  │  Ctrl+Q: quit"
+		keys = "  Space: select  │  Enter: edit params  │  ↑↓: navigate  │  ◄►: tab  │  Tab: search  │  Ctrl+S: save  │  Ctrl+E: exit"
 	}
 	hintsLine := footerStyle.Render(keys)
 
 	return messageLine + "\n" + hintsLine
 }
 
-// orderedParamNames returns param names in declaration order.
-func orderedParamNames(t *tmpl.Template) []string {
-	if len(t.ParamOrder) > 0 {
-		return t.ParamOrder
+// renderParamValues renders param values as read-only (selected but not focused).
+func (m model) renderParamValues(lines []string, item treeItem, t *tmpl.Template) []string {
+	for _, name := range orderedParamNames(t) {
+		pk := paramKey(item, name)
+		val := m.paramValues[pk]
+		if val == "" {
+			val = t.Params[name].Default
+		}
+		lines = append(lines, fmt.Sprintf("  %s = %s", name, val))
 	}
-	names := make([]string, 0, len(t.Params))
-	for name := range t.Params {
-		names = append(names, name)
+	return lines
+}
+
+// renderParamFields renders editable param fields in the right detail panel.
+func (m model) renderParamFields(lines []string, item treeItem, t *tmpl.Template, width int) []string {
+	paramNames := orderedParamNames(t)
+	for i, name := range paramNames {
+		p := t.Params[name]
+		pk := paramKey(item, name)
+		val := m.paramValues[pk]
+		isFocused := i == m.paramCursorIdx
+
+		if len(p.Suggests) > 0 && !(m.paramEditing && m.paramEditKey == pk) {
+			// Cycle field with suggests
+			display := val
+			if display == "" {
+				display = p.Default
+			}
+			// Check if current value is a custom value (not in suggests)
+			isCustom := true
+			for _, s := range p.Suggests {
+				if s == display {
+					isCustom = false
+					break
+				}
+			}
+			if isCustom && display != "" {
+				display = display + " (custom)"
+			}
+			if isFocused {
+				styled := "  " + focusLabelStyle.Render(name+":") + "  " + focusValueStyle.Render(" ◄ "+display+" ► ")
+				lines = append(lines, styled)
+			} else {
+				styled := "  " + normalLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
+				lines = append(lines, styled)
+			}
+		} else {
+			// String field (no suggests, variadic, or custom edit mode)
+			display := val
+			if display == "" {
+				display = "(empty)"
+			}
+
+			if isFocused && m.paramEditing && m.paramEditKey == pk {
+				editDisplay := val + "▌"
+				styled := "  " + focusLabelStyle.Render(name+":") + "  " + focusValueStyle.Render(" "+editDisplay+" ")
+				lines = append(lines, styled)
+			} else if isFocused {
+				styled := "  " + focusLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
+				lines = append(lines, styled)
+			} else {
+				styled := "  " + normalLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
+				lines = append(lines, styled)
+			}
+		}
 	}
-	return names
+	return lines
 }
 
 func wrapText(text string, width int) []string {

@@ -27,19 +27,31 @@ func (m *model) toggleSelection() {
 		// Deselecting
 		delete(m.selected, key)
 		if item.kind == kindTemplate {
-			// Deselect all extensions of this template
+			// Deselect all extensions of this template and clean up params
+			m.clearParamValues(item.template.Name, item.template)
 			for _, ext := range item.template.Extensions {
-				delete(m.selected, item.template.Name+"/"+ext.Name)
+				extKey := item.template.Name + "/" + ext.Name
+				delete(m.selected, extKey)
+				m.clearParamValues(extKey, ext)
 			}
+		} else {
+			m.clearParamValues(key, item.extension)
+		}
+		// Reset param focus if we were editing this item
+		if m.paramFocused {
+			m.paramFocused = false
+			m.paramEditing = false
 		}
 	} else {
 		// Selecting
 		m.selected[key] = true
 
 		if item.kind == kindExtension {
+			m.initParamDefaults(key, item.extension)
 			// Auto-select parent template if not selected
 			if !m.selected[item.template.Name] {
 				m.selected[item.template.Name] = true
+				m.initParamDefaults(item.template.Name, item.template)
 				notifications = append(notifications, fmt.Sprintf("Auto-selected: %s", item.template.Name))
 				m.selectDependencies(item.template, &notifications)
 				m.autoSelectExtensions(item.template, &notifications)
@@ -52,6 +64,7 @@ func (m *model) toggleSelection() {
 			}
 		} else {
 			// Template selected
+			m.initParamDefaults(key, item.template)
 			m.selectDependencies(item.template, &notifications)
 			m.autoSelectExtensions(item.template, &notifications)
 		}
@@ -74,6 +87,7 @@ func (m *model) selectTemplateByName(name string, notifications *[]string) {
 		return
 	}
 	m.selected[name] = true
+	m.initParamDefaults(name, t)
 	*notifications = append(*notifications, fmt.Sprintf("Dependency: %s", name))
 	m.selectDependencies(t, notifications)
 	m.autoSelectExtensions(t, notifications)
@@ -96,11 +110,30 @@ func (m *model) autoSelectExtensions(t *tmpl.Template, notifications *[]string) 
 			extKey := t.Name + "/" + ext.Name
 			if !m.selected[extKey] {
 				m.selected[extKey] = true
+				m.initParamDefaults(extKey, ext)
 				autoSelected = append(autoSelected, ext.Name)
 			}
 		}
 	}
 	if len(autoSelected) > 0 {
 		*notifications = append(*notifications, fmt.Sprintf("Auto: %s/%s", t.Name, strings.Join(autoSelected, ",")))
+	}
+}
+
+// initParamDefaults populates paramValues with default values for a template/extension.
+// itemKey is the selection key (e.g. "go" or "go/go-pkg").
+func (m *model) initParamDefaults(itemKey string, t *tmpl.Template) {
+	for name, p := range t.Params {
+		pk := itemKey + ":" + name
+		if _, exists := m.paramValues[pk]; !exists {
+			m.paramValues[pk] = p.Default
+		}
+	}
+}
+
+// clearParamValues removes all param values for a given item key.
+func (m *model) clearParamValues(itemKey string, t *tmpl.Template) {
+	for name := range t.Params {
+		delete(m.paramValues, itemKey+":"+name)
 	}
 }

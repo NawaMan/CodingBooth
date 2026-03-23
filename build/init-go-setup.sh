@@ -45,12 +45,13 @@ fi
 echo "📋 Detected OS: $OS_TYPE"
 
 # Check if Go is already installed and at the correct version
+GO_NEEDS_INSTALL=true
 if command -v go &> /dev/null; then
     CURRENT_VERSION=$(go version | awk '{print $3}' | sed 's/go//')
     if [[ "$CURRENT_VERSION" == "$GO_VERSION" ]]; then
         echo "✅ Go ${GO_VERSION} is already installed"
         go version
-        exit 0
+        GO_NEEDS_INSTALL=false
     else
         echo "⚠️  Go is installed but version is ${CURRENT_VERSION}, not ${GO_VERSION}"
         echo "   Proceeding with installation of Go ${GO_VERSION}..."
@@ -62,7 +63,7 @@ fi
 echo ""
 
 # Platform-specific installation
-if [[ "$OS_TYPE" == "linux" ]]; then
+if [[ "$GO_NEEDS_INSTALL" == true ]] && [[ "$OS_TYPE" == "linux" ]]; then
     echo "🐧 Installing Go ${GO_VERSION} on Linux..."
     
     # Determine package manager
@@ -124,7 +125,7 @@ if [[ "$OS_TYPE" == "linux" ]]; then
     # Also add to current session
     export PATH=$PATH:/usr/local/go/bin
     
-elif [[ "$OS_TYPE" == "mac" ]]; then
+elif [[ "$GO_NEEDS_INSTALL" == true ]] && [[ "$OS_TYPE" == "mac" ]]; then
     echo "🍎 Installing Go ${GO_VERSION} on macOS..."
     
     # Determine architecture
@@ -181,11 +182,34 @@ elif [[ "$OS_TYPE" == "mac" ]]; then
     export PATH=$PATH:/usr/local/go/bin
 fi
 
+if [[ "$GO_NEEDS_INSTALL" == true ]]; then
+    echo ""
+    echo "✅ Go ${GO_VERSION} installation complete!"
+    echo ""
+    echo "🔍 Verifying installation..."
+    /usr/local/go/bin/go version
+fi
+
+# Install VHS (terminal GIF recorder for demos) and its dependency ttyd
 echo ""
-echo "✅ Go ${GO_VERSION} installation complete!"
-echo ""
-echo "🔍 Verifying installation..."
-/usr/local/go/bin/go version
+echo "📦 Installing VHS and ttyd..."
+if command -v ttyd &> /dev/null; then
+    echo "✅ ttyd is already installed"
+else
+    if command -v brew &> /dev/null; then
+        brew install ttyd
+        echo "✅ ttyd installed via Homebrew"
+    else
+        echo "⚠️  ttyd not found and Homebrew not available. Install ttyd manually:"
+        echo "   https://github.com/tsl0922/ttyd"
+    fi
+fi
+if command -v vhs &> /dev/null; then
+    echo "✅ VHS is already installed"
+else
+    go install github.com/charmbracelet/vhs@latest
+    echo "✅ VHS installed"
+fi
 
 echo ""
 echo "📝 Note: You may need to restart your shell or run:"

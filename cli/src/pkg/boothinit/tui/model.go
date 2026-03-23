@@ -64,6 +64,16 @@ type model struct {
 	cycleIndices map[string]int    // current index for cycle fields
 	editing      bool              // true when editing a string field
 	editCursor   int               // cursor position within the edited string
+
+	// Template/extension parameter values
+	// Key format: "templateName:PARAM_NAME" or "templateName/extName:PARAM_NAME"
+	paramValues     map[string]string
+	paramFocused    bool   // true when right panel param fields have focus
+	paramEditing    bool   // true when editing a param string value
+	paramEditKey    string // which param is being edited (full key)
+	paramEditCursor int    // cursor position in edited string
+	paramEditPrev   string // previous value before editing (for ESC cancel)
+	paramCursorIdx  int    // which param field in right panel has focus
 }
 
 func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
@@ -73,6 +83,7 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 		stringFields: make(map[string]string),
 		boolFields:   defaultBoolValues(),
 		cycleIndices: make(map[string]int),
+		paramValues:  make(map[string]string),
 	}
 
 	// Set string field defaults
@@ -140,11 +151,28 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 		}
 		for tName := range pre.SelectedTemplates {
 			m.selected[tName] = true
+			// Init default param values for pre-selected templates
+			if t, ok := registry.ByName[tName]; ok {
+				m.initParamDefaults(tName, t)
+			}
 		}
 		for tName, exts := range pre.SelectedExts {
 			for eName := range exts {
 				m.selected[tName+"/"+eName] = true
+				// Init default param values for pre-selected extensions
+				if t, ok := registry.ByName[tName]; ok {
+					for _, ext := range t.Extensions {
+						if ext.Name == eName {
+							m.initParamDefaults(tName+"/"+eName, ext)
+							break
+						}
+					}
+				}
 			}
+		}
+		// Apply pre-selected param values (overriding defaults)
+		for k, v := range pre.ParamValues {
+			m.paramValues[k] = v
 		}
 	}
 
@@ -265,6 +293,16 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		// Param string editing mode (right panel)
+		if m.paramEditing {
+			return m.handleParamStringEdit(msg)
+		}
+
+		// Param focus mode (right panel navigation)
+		if m.paramFocused {
+			return m.handleParamKey(msg)
+		}
+
 		// String field editing mode (config tab)
 		if m.editing {
 			return m.handleStringEdit(msg)
@@ -276,7 +314,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 		switch msg.String() {
-		case "ctrl+c", "ctrl+q":
+		case "ctrl+c", "ctrl+e":
 			m.quitting = true
 			m.notification = "Quit without saving? Enter: confirm  │  Esc: cancel"
 			return m, nil
@@ -321,7 +359,7 @@ func (m model) handleSearchInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.resetTabCursors()
 		return m, nil
 
-	case "ctrl+c", "ctrl+q":
+	case "ctrl+c", "ctrl+e":
 		m.quitting = true
 		m.notification = "Quit without saving? Enter: confirm  │  Esc: cancel"
 		m.searchFocused = false
@@ -567,6 +605,153 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// handleParamKey handles keys when the right panel param fields have focus.
+func (m model) handleParamKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	item, paramNames := m.currentItemParams()
+	if len(paramNames) == 0 {
+		m.paramFocused = false
+		return m, nil
+	}
+
+	var t *tmpl.Template
+	if item.kind == kindExtension {
+		t = item.extension
+	} else {
+		t = item.template
+	}
+
+	switch msg.String() {
+	case "esc":
+		m.paramFocused = false
+		m.paramEditing = false
+		return m, nil
+
+	case "ctrl+c", "ctrl+e":
+		m.paramFocused = false
+		m.quitting = true
+		m.notification = "Quit without saving? Enter: confirm  │  Esc: cancel"
+		return m, nil
+
+	case "ctrl+s":
+		m.confirmed = true
+		return m, tea.Quit
+
+	case "up":
+		if m.paramCursorIdx > 0 {
+			m.paramCursorIdx--
+		}
+		return m, nil
+
+	case "down":
+		if m.paramCursorIdx < len(paramNames)-1 {
+			m.paramCursorIdx++
+		}
+		return m, nil
+
+	case "left", "right":
+		if m.paramCursorIdx >= len(paramNames) {
+			return m, nil
+		}
+		pName := paramNames[m.paramCursorIdx]
+		p := t.Params[pName]
+		pk := paramKey(item, pName)
+
+		if len(p.Suggests) > 0 {
+			// Cycle through suggests with left/right
+			currentVal := m.paramValues[pk]
+			currentIdx := -1
+			for i, s := range p.Suggests {
+				if s == currentVal {
+					currentIdx = i
+					break
+				}
+			}
+			if msg.String() == "right" {
+				if currentIdx < 0 {
+					m.paramValues[pk] = p.Suggests[0]
+				} else if currentIdx < len(p.Suggests)-1 {
+					m.paramValues[pk] = p.Suggests[currentIdx+1]
+				}
+			} else { // left
+				if currentIdx < 0 {
+					m.paramValues[pk] = p.Suggests[len(p.Suggests)-1]
+				} else if currentIdx > 0 {
+					m.paramValues[pk] = p.Suggests[currentIdx-1]
+				}
+			}
+		}
+		return m, nil
+
+	case " ", "enter":
+		if m.paramCursorIdx >= len(paramNames) {
+			return m, nil
+		}
+		pName := paramNames[m.paramCursorIdx]
+		pk := paramKey(item, pName)
+
+		// Enter string edit mode directly
+		m.paramEditing = true
+		m.paramEditKey = pk
+		m.paramEditCursor = len(m.paramValues[pk])
+		m.paramEditPrev = m.paramValues[pk]
+		return m, nil
+
+	default:
+		// Any typing starts custom string edit mode
+		ch := msg.String()
+		if len(ch) == 1 && ch[0] >= 32 && ch[0] < 127 {
+			if m.paramCursorIdx < len(paramNames) {
+				pName := paramNames[m.paramCursorIdx]
+				pk := paramKey(item, pName)
+				m.paramEditPrev = m.paramValues[pk]
+				m.paramEditing = true
+				m.paramEditKey = pk
+				m.paramValues[pk] = ch
+				m.paramEditCursor = 1
+			}
+		}
+		return m, nil
+	}
+
+	return m, nil
+}
+
+// handleParamStringEdit handles typing when editing a param string value.
+func (m model) handleParamStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	val := m.paramValues[m.paramEditKey]
+
+	switch msg.String() {
+	case "enter", "tab":
+		// Accept the edited value
+		m.paramEditing = false
+	case "esc":
+		// Cancel — restore previous value
+		m.paramValues[m.paramEditKey] = m.paramEditPrev
+		m.paramEditing = false
+	case "backspace":
+		if m.paramEditCursor > 0 && len(val) > 0 {
+			val = val[:m.paramEditCursor-1] + val[m.paramEditCursor:]
+			m.paramEditCursor--
+		}
+	case "left":
+		if m.paramEditCursor > 0 {
+			m.paramEditCursor--
+		}
+	case "right":
+		if m.paramEditCursor < len(val) {
+			m.paramEditCursor++
+		}
+	default:
+		ch := msg.String()
+		if len(ch) == 1 && ch[0] >= 32 && ch[0] < 127 {
+			val = val[:m.paramEditCursor] + ch + val[m.paramEditCursor:]
+			m.paramEditCursor++
+		}
+	}
+	m.paramValues[m.paramEditKey] = val
+	return m, nil
+}
+
 func (m model) handleTreeKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
 	case "up":
@@ -586,6 +771,15 @@ func (m model) handleTreeKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 	case " ":
 		m.toggleSelection()
+	case "enter":
+		// Focus right panel for param editing if current item is selected and has params
+		item, paramNames := m.currentItemParams()
+		_ = item
+		if len(paramNames) > 0 && m.selected[item.key()] {
+			m.paramFocused = true
+			m.paramCursorIdx = 0
+			m.paramEditing = false
+		}
 	}
 
 	m.adjustScroll()
@@ -623,6 +817,57 @@ func (m *model) adjustScroll() {
 	m.setScrollOffset(off)
 }
 
+// paramKey builds the paramValues map key for a template or extension param.
+func paramKey(item treeItem, paramName string) string {
+	return item.key() + ":" + paramName
+}
+
+// currentItemParams returns the ordered param names and the template for the current cursor item.
+// Returns nil if the item has no params or is not selected.
+func (m *model) currentItemParams() (treeItem, []string) {
+	items := m.activeItems()
+	cursor := m.cursorPos()
+	if cursor < 0 || cursor >= len(items) {
+		return treeItem{}, nil
+	}
+	item := items[cursor]
+	if !m.selected[item.key()] {
+		// For extensions, also check parent is selected
+		if item.kind == kindExtension && !m.selected[item.template.Name] {
+			return item, nil
+		}
+		if item.kind == kindTemplate {
+			return item, nil
+		}
+	}
+
+	var t *tmpl.Template
+	if item.kind == kindExtension {
+		t = item.extension
+	} else {
+		t = item.template
+	}
+
+	if len(t.Params) == 0 {
+		return item, nil
+	}
+
+	return item, orderedParamNames(t)
+}
+
+// orderedParamNames returns param names in declaration order.
+func orderedParamNames(t *tmpl.Template) []string {
+	if len(t.ParamOrder) > 0 {
+		return t.ParamOrder
+	}
+	names := make([]string, 0, len(t.Params))
+	for name := range t.Params {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	return names
+}
+
 func (m model) contentHeight() int {
 	h := m.height - 7 // header(1) + search(1) + tabs(1) + sep(2) + footer-message(1) + footer-hints(1)
 	if h < 1 {
@@ -641,13 +886,17 @@ func (m model) buildSelectDSL() string {
 			}
 			item := t.Name
 
+			// Append template params as :p1,p2
+			item += m.buildParamDSL(t.Name, t)
+
 			var exts []string
 			for _, ext := range t.Extensions {
 				extKey := t.Name + "/" + ext.Name
 				if m.selected[extKey] {
 					isAutoSelect := ext.AutoSelect != nil && *ext.AutoSelect
 					if !isAutoSelect {
-						exts = append(exts, ext.Name)
+						extDSL := ext.Name + m.buildParamDSL(extKey, ext)
+						exts = append(exts, extDSL)
 					}
 				}
 			}
@@ -673,4 +922,43 @@ func (m model) buildSelectDSL() string {
 	}
 
 	return strings.Join(parts, "/")
+}
+
+// buildParamDSL returns the ":p1,p2" suffix for a template/extension's params.
+// Returns "" if all params are at their default values.
+func (m model) buildParamDSL(itemKey string, t *tmpl.Template) string {
+	if len(t.Params) == 0 {
+		return ""
+	}
+	paramNames := orderedParamNames(t)
+
+	// Collect positional param values
+	var vals []string
+	allDefault := true
+	for _, name := range paramNames {
+		pk := itemKey + ":" + name
+		val := m.paramValues[pk]
+		if val == "" {
+			val = t.Params[name].Default
+		}
+		if val != t.Params[name].Default {
+			allDefault = false
+		}
+		vals = append(vals, val)
+	}
+
+	if allDefault {
+		return ""
+	}
+
+	// Trim trailing default values
+	for len(vals) > 0 && vals[len(vals)-1] == t.Params[paramNames[len(vals)-1]].Default {
+		vals = vals[:len(vals)-1]
+	}
+
+	if len(vals) == 0 {
+		return ""
+	}
+
+	return ":" + strings.Join(vals, ",")
 }

@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
@@ -363,6 +364,7 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags) *tui.Pr
 		SelectedExts:      make(map[string]map[string]bool),
 		StringFields:      make(map[string]string),
 		BoolFields:        make(map[string]bool),
+		ParamValues:       make(map[string]string),
 	}
 
 	// Map CLI flags to TUI string fields
@@ -403,10 +405,16 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags) *tui.Pr
 	}
 
 	for _, item := range parsed.Items {
-		if _, ok := registry.ByName[item.Name]; !ok {
+		t, ok := registry.ByName[item.Name]
+		if !ok {
 			continue
 		}
 		pre.SelectedTemplates[item.Name] = true
+
+		// Map positional params to named params for the template
+		if len(item.Params) > 0 {
+			mapPositionalParams(pre.ParamValues, item.Name, t, item.Params)
+		}
 
 		if len(item.Extensions) > 0 {
 			if pre.SelectedExts[item.Name] == nil {
@@ -414,11 +422,38 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags) *tui.Pr
 			}
 			for _, ext := range item.Extensions {
 				pre.SelectedExts[item.Name][ext.Name] = true
+				// Map positional params for extensions
+				if len(ext.Params) > 0 {
+					for _, tExt := range t.Extensions {
+						if tExt.Name == ext.Name {
+							extKey := item.Name + "/" + ext.Name
+							mapPositionalParams(pre.ParamValues, extKey, tExt, ext.Params)
+							break
+						}
+					}
+				}
 			}
 		}
 	}
 
 	return pre
+}
+
+// mapPositionalParams maps positional param values to named param keys in the paramValues map.
+func mapPositionalParams(paramValues map[string]string, itemKey string, t *tmpl.Template, positional []string) {
+	paramNames := t.ParamOrder
+	if len(paramNames) == 0 {
+		paramNames = make([]string, 0, len(t.Params))
+		for name := range t.Params {
+			paramNames = append(paramNames, name)
+		}
+		sort.Strings(paramNames)
+	}
+	for i, name := range paramNames {
+		if i < len(positional) && positional[i] != "" {
+			paramValues[itemKey+":"+name] = positional[i]
+		}
+	}
 }
 
 func printConfigHelp() {

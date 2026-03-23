@@ -27,6 +27,7 @@ type PreSelection struct {
 	SelectedExts      map[string]map[string]bool // template name → extension names
 	StringFields      map[string]string          // pre-set string values (variant, port, name, etc.)
 	BoolFields        map[string]bool            // pre-set bool values (dind, keep-alive, etc.)
+	ParamValues       map[string]string          // "tmplName:PARAM" or "tmplName/extName:PARAM" → value
 }
 
 // RunConfig launches the interactive TUI and returns the user's configuration choices.
