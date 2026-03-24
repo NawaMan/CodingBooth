@@ -281,6 +281,16 @@ func readExistingBooth(targetPath string) initFlags {
 		line := scanner.Text()
 		linesRead++
 
+		if strings.HasPrefix(line, "# Configured by: ") {
+			cmd := strings.TrimPrefix(line, "# Configured by: ")
+			return parseAdjustCommand(cmd)
+		}
+		if strings.HasPrefix(line, "# Configured by:") {
+			cmd := strings.TrimPrefix(line, "# Configured by:")
+			cmd = strings.TrimSpace(cmd)
+			return parseAdjustCommand(cmd)
+		}
+		// Legacy format: "# Adjust with :"
 		if strings.HasPrefix(line, "# Adjust with : ") {
 			cmd := strings.TrimPrefix(line, "# Adjust with : ")
 			return parseAdjustCommand(cmd)
