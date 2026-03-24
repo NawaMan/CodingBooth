@@ -17,8 +17,9 @@ import (
 type ConfigResult struct {
 	Confirmed    bool
 	SelectDSL    string
-	StringFields map[string]string // all string/cycle field values
-	BoolFields   map[string]bool   // all bool field values
+	StringFields map[string]string   // all string/cycle field values
+	BoolFields   map[string]bool     // all bool field values
+	ListFields   map[string][]string // all list field values (expose, env, mount)
 }
 
 // PreSelection holds values pre-populated from CLI flags.
@@ -27,6 +28,7 @@ type PreSelection struct {
 	SelectedExts      map[string]map[string]bool // template name → extension names
 	StringFields      map[string]string          // pre-set string values (variant, port, name, etc.)
 	BoolFields        map[string]bool            // pre-set bool values (dind, keep-alive, etc.)
+	ListFields        map[string][]string        // pre-set list values (expose, env, mount)
 	ParamValues       map[string]string          // "tmplName:PARAM" or "tmplName/extName:PARAM" → value
 }
 
@@ -50,5 +52,6 @@ func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection) (*ConfigResul
 		SelectDSL:    final.buildSelectDSL(),
 		StringFields: final.stringFields,
 		BoolFields:   final.boolFields,
+		ListFields:   final.listFields,
 	}, nil
 }

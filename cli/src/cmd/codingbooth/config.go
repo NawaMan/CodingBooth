@@ -197,6 +197,17 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 		flags.sets = append(flags.sets, "sudo="+v)
 	}
 
+	// Apply list fields
+	if v := result.ListFields["expose"]; len(v) > 0 {
+		flags.exposes = v
+	}
+	if v := result.ListFields["env"]; len(v) > 0 {
+		flags.envs = v
+	}
+	if v := result.ListFields["mount"]; len(v) > 0 {
+		flags.mounts = v
+	}
+
 	// Apply remaining string fields as --set overrides
 	stringSetKeys := map[string]string{
 		"name":     "name",
@@ -364,6 +375,7 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags) *tui.Pr
 		SelectedExts:      make(map[string]map[string]bool),
 		StringFields:      make(map[string]string),
 		BoolFields:        make(map[string]bool),
+		ListFields:        make(map[string][]string),
 		ParamValues:       make(map[string]string),
 	}
 
@@ -376,6 +388,17 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags) *tui.Pr
 	}
 	if flags.version != "" {
 		pre.StringFields["version"] = flags.version
+	}
+
+	// Map CLI flags to TUI list fields
+	if len(flags.exposes) > 0 {
+		pre.ListFields["expose"] = flags.exposes
+	}
+	if len(flags.envs) > 0 {
+		pre.ListFields["env"] = flags.envs
+	}
+	if len(flags.mounts) > 0 {
+		pre.ListFields["mount"] = flags.mounts
 	}
 
 	// Parse --set flags to extract bool/string config values

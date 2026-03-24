@@ -164,66 +164,48 @@ func (m model) renderSearchBar(fullWidth int) string {
 
 // renderConfigPanel renders the left panel for the Config tab.
 func (m model) renderConfigPanel(leftWidth, contentH int) []string {
+	mp := &m
+	rows := mp.buildConfigRows()
 	cursor := m.cursorPos()
 	scrollOff := m.tabScrollOffs[0]
-
-	// Build all config lines (with group headers interleaved)
-	type configLine struct {
-		isGroup bool
-		group   string
-		fieldIdx int
-	}
-	var allLines []configLine
-	lastGroup := ""
-	for i, f := range allConfigFields {
-		if f.Group != lastGroup {
-			allLines = append(allLines, configLine{isGroup: true, group: f.Group})
-			lastGroup = f.Group
-		}
-		allLines = append(allLines, configLine{fieldIdx: i})
-	}
-
-	// Map field index to allLines index for scrolling
-	fieldToLineIdx := make([]int, len(allConfigFields))
-	for li, cl := range allLines {
-		if !cl.isGroup {
-			fieldToLineIdx[cl.fieldIdx] = li
-		}
-	}
-
-	// Determine visible start line based on scroll offset (which is a field index)
-	visStart := 0
-	if scrollOff >= 0 && scrollOff < len(fieldToLineIdx) {
-		visStart = fieldToLineIdx[scrollOff]
-	}
-	// Show the group header above if the first visible field starts a new group
-	if visStart > 0 && allLines[visStart-1].isGroup {
-		visStart--
+	if scrollOff < 0 {
+		scrollOff = 0
 	}
 
 	var lines []string
 
-	for li := visStart; li < len(allLines) && len(lines) < contentH; li++ {
-		cl := allLines[li]
-		if cl.isGroup {
-			groupLine := groupHeaderStyle.Render("── " + cl.group + " ──")
+	for ri := scrollOff; ri < len(rows) && len(lines) < contentH; ri++ {
+		row := rows[ri]
+		isCursor := ri == cursor
+
+		switch row.kind {
+		case configRowGroup:
+			groupLine := groupHeaderStyle.Render("── " + row.group + " ──")
 			lines = append(lines, padStyledRight(groupLine, leftWidth))
-			continue
-		}
 
-		f := allConfigFields[cl.fieldIdx]
-		isCursor := cl.fieldIdx == cursor
+		case configRowField:
+			f := allConfigFields[row.fieldIdx]
+			var line string
+			switch f.Kind {
+			case fieldKindBool:
+				line = m.renderBoolField(f, leftWidth, isCursor)
+			case fieldKindCycle:
+				line = m.renderCycleField(f, leftWidth, isCursor)
+			case fieldKindString:
+				line = m.renderStringField(f, leftWidth, isCursor)
+			}
+			lines = append(lines, line)
 
-		var line string
-		switch f.Kind {
-		case fieldKindBool:
-			line = m.renderBoolField(f, leftWidth, isCursor)
-		case fieldKindCycle:
-			line = m.renderCycleField(f, leftWidth, isCursor)
-		case fieldKindString:
-			line = m.renderStringField(f, leftWidth, isCursor)
+		case configRowListItem:
+			f := allConfigFields[row.fieldIdx]
+			line := m.renderListItemField(f, row.listIndex, leftWidth, isCursor)
+			lines = append(lines, line)
+
+		case configRowListAdd:
+			f := allConfigFields[row.fieldIdx]
+			line := m.renderListAddRow(f, leftWidth, isCursor)
+			lines = append(lines, line)
 		}
-		lines = append(lines, line)
 	}
 
 	for len(lines) < contentH {
@@ -283,6 +265,38 @@ func (m model) renderStringField(f configFieldDef, width int, isCursor bool) str
 		return cursorStyle.Render(padStyledRight(styled, width))
 	}
 	styled := "  " + normalLabelStyle.Render(f.Label+":") + "  " + normalValueStyle.Render(display)
+	return padStyledRight(styled, width)
+}
+
+func (m model) renderListItemField(f configFieldDef, listIdx int, width int, isCursor bool) string {
+	items := m.listFields[f.Key]
+	val := ""
+	if listIdx >= 0 && listIdx < len(items) {
+		val = items[listIdx]
+	}
+	display := val
+	if display == "" {
+		display = "(empty)"
+	}
+
+	if isCursor && m.editing && m.listEditing && m.listEditIdx == listIdx {
+		editDisplay := val + "▌"
+		styled := "  " + focusLabelStyle.Render(f.Label+":") + "  " + focusValueStyle.Render(" "+editDisplay+" ")
+		return cursorStyle.Render(padStyledRight(styled, width))
+	}
+	if isCursor {
+		styled := "  " + focusLabelStyle.Render(f.Label+":") + "  " + normalValueStyle.Render(display)
+		return cursorStyle.Render(padStyledRight(styled, width))
+	}
+	styled := "  " + normalLabelStyle.Render(f.Label+":") + "  " + normalValueStyle.Render(display)
+	return padStyledRight(styled, width)
+}
+
+func (m model) renderListAddRow(f configFieldDef, width int, isCursor bool) string {
+	styled := "  " + normalLabelStyle.Render(f.Label+":") + "  " + detailLabel.Render("(+ add new)")
+	if isCursor {
+		return cursorStyle.Render(padStyledRight(styled, width))
+	}
 	return padStyledRight(styled, width)
 }
 
@@ -357,6 +371,34 @@ func (m model) renderConfigDetail(rightWidth, contentH int) []string {
 				lines = append(lines, detailLabel.Render("Editing... Enter/Esc to finish"))
 			} else {
 				lines = append(lines, detailLabel.Render("Space/Enter to edit"))
+			}
+		}
+
+		// For list fields, show entries and hints
+		if f.Kind == fieldKindList {
+			items := m.listFields[f.Key]
+			lines = append(lines, "")
+			if len(items) > 0 {
+				lines = append(lines, detailLabel.Render(fmt.Sprintf("Entries (%d):", len(items))))
+				for _, item := range items {
+					lines = append(lines, "  "+item)
+				}
+			} else {
+				lines = append(lines, detailLabel.Render("No entries yet."))
+			}
+			lines = append(lines, "")
+			mp := &m
+			rows := mp.buildConfigRows()
+			row := mp.currentConfigRow(rows)
+			if row != nil && row.kind == configRowListItem {
+				if m.editing && m.listEditing {
+					lines = append(lines, detailLabel.Render("Editing... Enter/Esc to finish"))
+				} else {
+					lines = append(lines, detailLabel.Render("Space/Enter to edit"))
+					lines = append(lines, detailLabel.Render("Delete/Backspace to remove"))
+				}
+			} else {
+				lines = append(lines, detailLabel.Render("Space/Enter to add new entry"))
 			}
 		}
 	}
@@ -672,7 +714,16 @@ func (m model) renderFooter() string {
 		if m.editing {
 			keys = "  Type value  │  Enter/Esc: finish  │  Backspace: delete"
 		} else {
-			keys = "  ↑↓: navigate  │  Space/Enter: toggle/edit  │  ◄►: tab  │  Tab: search  │  Ctrl+S: save  │  Ctrl+E: exit"
+			mp := &m
+			rows := mp.buildConfigRows()
+			row := mp.currentConfigRow(rows)
+			if row != nil && row.kind == configRowListItem {
+				keys = "  ↑↓: navigate  │  Space/Enter: edit  │  Del/BS: remove  │  ◄►: tab  │  Ctrl+S: save  │  Ctrl+E: exit"
+			} else if row != nil && row.kind == configRowListAdd {
+				keys = "  ↑↓: navigate  │  Space/Enter: add new  │  ◄►: tab  │  Ctrl+S: save  │  Ctrl+E: exit"
+			} else {
+				keys = "  ↑↓: navigate  │  Space/Enter: toggle/edit  │  ◄►: tab  │  Tab: search  │  Ctrl+S: save  │  Ctrl+E: exit"
+			}
 		}
 	} else if m.paramEditing {
 		keys = "  Type value  │  Enter/Tab: accept  │  Esc: cancel  │  Backspace: delete"

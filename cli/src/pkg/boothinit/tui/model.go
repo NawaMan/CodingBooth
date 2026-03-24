@@ -59,11 +59,14 @@ type model struct {
 	searchCursor  int
 
 	// Config fields (generic)
-	stringFields map[string]string // values for string/cycle fields
-	boolFields   map[string]bool   // values for bool fields
-	cycleIndices map[string]int    // current index for cycle fields
-	editing      bool              // true when editing a string field
-	editCursor   int               // cursor position within the edited string
+	stringFields map[string]string   // values for string/cycle fields
+	boolFields   map[string]bool     // values for bool fields
+	cycleIndices map[string]int      // current index for cycle fields
+	listFields   map[string][]string // values for list fields (e.g., expose, env, mount)
+	editing      bool                // true when editing a string field
+	editCursor   int                 // cursor position within the edited string
+	listEditing  bool                // true when editing a list item
+	listEditIdx  int                 // index within the list being edited (-1 = none)
 
 	// Template/extension parameter values
 	// Key format: "templateName:PARAM_NAME" or "templateName/extName:PARAM_NAME"
@@ -83,6 +86,7 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 		stringFields: make(map[string]string),
 		boolFields:   defaultBoolValues(),
 		cycleIndices: make(map[string]int),
+		listFields:   make(map[string][]string),
 		paramValues:  make(map[string]string),
 	}
 
@@ -136,6 +140,11 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 		}
 		for k, v := range pre.BoolFields {
 			m.boolFields[k] = v
+		}
+		for k, v := range pre.ListFields {
+			if len(v) > 0 {
+				m.listFields[k] = append([]string{}, v...)
+			}
 		}
 		// Sync cycle indices with string values
 		for _, f := range allConfigFields {
@@ -259,11 +268,67 @@ func (m *model) setScrollOffset(v int) {
 	m.tabScrollOffs[m.activeTab] = v
 }
 
+// configRowKind identifies the type of a config row in the rendered list.
+type configRowKind int
+
+const (
+	configRowGroup    configRowKind = iota // group header
+	configRowField                         // normal field (bool/cycle/string)
+	configRowListItem                      // one entry of a list field
+	configRowListAdd                       // the "(+ add new)" row for a list field
+)
+
+// configRow represents a single visible row in the config panel.
+type configRow struct {
+	kind      configRowKind
+	group     string // for group headers
+	fieldIdx  int    // index into allConfigFields
+	listIndex int    // for list items: index into listFields[key]
+}
+
+// buildConfigRows builds the dynamic list of visible rows for the config panel.
+func (m *model) buildConfigRows() []configRow {
+	var rows []configRow
+	lastGroup := ""
+	for i, f := range allConfigFields {
+		if f.Group != lastGroup {
+			rows = append(rows, configRow{kind: configRowGroup, group: f.Group, fieldIdx: i})
+			lastGroup = f.Group
+		}
+		if f.Kind == fieldKindList {
+			items := m.listFields[f.Key]
+			for li := range items {
+				rows = append(rows, configRow{kind: configRowListItem, fieldIdx: i, listIndex: li})
+			}
+			rows = append(rows, configRow{kind: configRowListAdd, fieldIdx: i})
+		} else {
+			rows = append(rows, configRow{kind: configRowField, fieldIdx: i})
+		}
+	}
+	return rows
+}
+
+// currentConfigRow returns the config row at the current cursor position.
+func (m *model) currentConfigRow(rows []configRow) *configRow {
+	idx := m.cursorPos()
+	if idx >= 0 && idx < len(rows) {
+		return &rows[idx]
+	}
+	return nil
+}
+
 // currentConfigField returns the config field definition at the current cursor position.
 func (m *model) currentConfigField() *configFieldDef {
-	idx := m.cursorPos()
-	if idx >= 0 && idx < len(allConfigFields) {
-		return &allConfigFields[idx]
+	rows := m.buildConfigRows()
+	row := m.currentConfigRow(rows)
+	if row == nil {
+		return nil
+	}
+	if row.kind == configRowGroup {
+		return nil
+	}
+	if row.fieldIdx >= 0 && row.fieldIdx < len(allConfigFields) {
+		return &allConfigFields[row.fieldIdx]
 	}
 	return nil
 }
@@ -438,51 +503,103 @@ func (m *model) handleTabSwitch(msg tea.KeyMsg) (bool, tea.Model) {
 
 // handleConfigKey handles keys when the Config tab is active.
 func (m model) handleConfigKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	maxIdx := len(allConfigFields) - 1
+	rows := m.buildConfigRows()
+	maxIdx := len(rows) - 1
+
+	// Skip group headers when navigating
+	skipGroups := func(pos, dir int) int {
+		for pos >= 0 && pos <= maxIdx && rows[pos].kind == configRowGroup {
+			pos += dir
+		}
+		if pos < 0 {
+			pos = 0
+		}
+		if pos > maxIdx {
+			pos = maxIdx
+		}
+		return pos
+	}
 
 	switch msg.String() {
 	case "up":
 		cur := m.cursorPos()
 		if cur > 0 {
-			m.setCursor(cur - 1)
+			m.setCursor(skipGroups(cur-1, -1))
 		}
 	case "down":
 		cur := m.cursorPos()
 		if cur < maxIdx {
-			m.setCursor(cur + 1)
+			m.setCursor(skipGroups(cur+1, 1))
 		}
 	case "pgup":
 		cur := m.cursorPos() - m.contentHeight()
 		if cur < 0 {
 			cur = 0
 		}
-		m.setCursor(cur)
+		m.setCursor(skipGroups(cur, -1))
 	case "pgdown":
 		cur := m.cursorPos() + m.contentHeight()
 		if cur > maxIdx {
 			cur = maxIdx
 		}
-		m.setCursor(cur)
+		m.setCursor(skipGroups(cur, 1))
 	case "home":
-		m.setCursor(0)
+		m.setCursor(skipGroups(0, 1))
 	case "end":
-		m.setCursor(maxIdx)
+		m.setCursor(skipGroups(maxIdx, -1))
+	case "delete", "backspace":
+		row := m.currentConfigRow(rows)
+		if row != nil && row.kind == configRowListItem {
+			f := allConfigFields[row.fieldIdx]
+			items := m.listFields[f.Key]
+			m.listFields[f.Key] = append(items[:row.listIndex], items[row.listIndex+1:]...)
+			// Clamp cursor after deletion
+			newRows := m.buildConfigRows()
+			if m.cursorPos() >= len(newRows) {
+				m.setCursor(len(newRows) - 1)
+			}
+		}
 	case " ", "enter":
-		f := m.currentConfigField()
-		if f == nil {
+		row := m.currentConfigRow(rows)
+		if row == nil {
 			break
 		}
-		switch f.Kind {
-		case fieldKindBool:
-			m.boolFields[f.Key] = !m.boolFields[f.Key]
-		case fieldKindCycle:
-			idx := m.cycleIndices[f.Key]
-			idx = (idx + 1) % len(f.Options)
-			m.cycleIndices[f.Key] = idx
-			m.stringFields[f.Key] = f.Options[idx]
-		case fieldKindString:
+		switch row.kind {
+		case configRowField:
+			f := allConfigFields[row.fieldIdx]
+			switch f.Kind {
+			case fieldKindBool:
+				m.boolFields[f.Key] = !m.boolFields[f.Key]
+			case fieldKindCycle:
+				idx := m.cycleIndices[f.Key]
+				idx = (idx + 1) % len(f.Options)
+				m.cycleIndices[f.Key] = idx
+				m.stringFields[f.Key] = f.Options[idx]
+			case fieldKindString:
+				m.editing = true
+				m.editCursor = len(m.stringFields[f.Key])
+			}
+		case configRowListItem:
+			f := allConfigFields[row.fieldIdx]
+			m.listEditing = true
+			m.listEditIdx = row.listIndex
 			m.editing = true
-			m.editCursor = len(m.stringFields[f.Key])
+			m.editCursor = len(m.listFields[f.Key][row.listIndex])
+		case configRowListAdd:
+			f := allConfigFields[row.fieldIdx]
+			m.listFields[f.Key] = append(m.listFields[f.Key], "")
+			m.listEditing = true
+			m.listEditIdx = len(m.listFields[f.Key]) - 1
+			m.editing = true
+			m.editCursor = 0
+			// Move cursor to the new list item row (one before the add row)
+			newRows := m.buildConfigRows()
+			for ri, r := range newRows {
+				if r.kind == configRowListItem && r.fieldIdx == row.fieldIdx && r.listIndex == m.listEditIdx {
+					m.setCursor(ri)
+					break
+				}
+			}
 		}
 	}
 
@@ -496,75 +613,31 @@ func (m *model) adjustConfigScroll() {
 		return
 	}
 
-	// Build a mapping from field index to rendered line index (accounting for group headers)
-	lineIdx := 0
-	fieldLinePos := make([]int, len(allConfigFields))
-	lastGroup := ""
-	for i, f := range allConfigFields {
-		if f.Group != lastGroup {
-			lineIdx++ // group header takes a line
-			lastGroup = f.Group
-		}
-		fieldLinePos[i] = lineIdx
-		lineIdx++
-	}
-
+	// Config scroll now uses row indices directly since buildConfigRows() gives
+	// a 1:1 mapping between rows and rendered lines.
+	rows := m.buildConfigRows()
 	cur := m.cursorPos()
-	if cur < 0 || cur >= len(fieldLinePos) {
+	if cur < 0 || cur >= len(rows) {
 		return
 	}
 
-	curLine := fieldLinePos[cur]
 	off := m.tabScrollOffs[0]
-	offLine := 0
-	if off >= 0 && off < len(fieldLinePos) {
-		offLine = fieldLinePos[off]
-		// Include group header above if present
-		if off > 0 && allConfigFields[off].Group != allConfigFields[off-1].Group {
-			offLine--
-		}
+	if off < 0 {
+		off = 0
 	}
 
 	// Scroll up: cursor above visible area
-	if curLine < offLine {
-		// Find the field index whose line position puts cursor at top
-		for i, lp := range fieldLinePos {
-			// Account for group header above this field
-			startLine := lp
-			if i == 0 || allConfigFields[i].Group != allConfigFields[i-1].Group {
-				startLine--
-			}
-			if startLine < 0 {
-				startLine = 0
-			}
-			if lp >= curLine {
-				m.tabScrollOffs[0] = i
-				break
-			}
-			_ = startLine
+	if cur < off {
+		m.tabScrollOffs[0] = cur
+		// Include group header above if present
+		if cur > 0 && rows[cur-1].kind == configRowGroup {
+			m.tabScrollOffs[0] = cur - 1
 		}
 	}
 
 	// Scroll down: cursor below visible area
-	if curLine >= offLine+h {
-		// Find scroll offset that puts cursor line at the bottom of visible area
-		targetTopLine := curLine - h + 1
-		if targetTopLine < 0 {
-			targetTopLine = 0
-		}
-		for i, lp := range fieldLinePos {
-			headerLine := lp
-			if i == 0 || allConfigFields[i].Group != allConfigFields[i-1].Group {
-				headerLine--
-			}
-			if headerLine < 0 {
-				headerLine = 0
-			}
-			if headerLine >= targetTopLine {
-				m.tabScrollOffs[0] = i
-				break
-			}
-		}
+	if cur >= off+h {
+		m.tabScrollOffs[0] = cur - h + 1
 	}
 }
 
@@ -572,13 +645,34 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	f := m.currentConfigField()
 	if f == nil {
 		m.editing = false
+		m.listEditing = false
 		return m, nil
 	}
-	val := m.stringFields[f.Key]
+
+	// Determine which value we're editing
+	var val string
+	if m.listEditing {
+		items := m.listFields[f.Key]
+		if m.listEditIdx >= 0 && m.listEditIdx < len(items) {
+			val = items[m.listEditIdx]
+		}
+	} else {
+		val = m.stringFields[f.Key]
+	}
 
 	switch msg.String() {
 	case "enter", "esc":
 		m.editing = false
+		if m.listEditing {
+			// Remove empty entries on cancel/finish
+			if val == "" {
+				items := m.listFields[f.Key]
+				m.listFields[f.Key] = append(items[:m.listEditIdx], items[m.listEditIdx+1:]...)
+			}
+			m.listEditing = false
+			m.listEditIdx = -1
+		}
+		return m, nil
 	case "backspace":
 		if m.editCursor > 0 && len(val) > 0 {
 			val = val[:m.editCursor-1] + val[m.editCursor:]
@@ -601,7 +695,13 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.editCursor++
 		}
 	}
-	m.stringFields[f.Key] = val
+
+	// Write back the edited value
+	if m.listEditing {
+		m.listFields[f.Key][m.listEditIdx] = val
+	} else {
+		m.stringFields[f.Key] = val
+	}
 	return m, nil
 }
 

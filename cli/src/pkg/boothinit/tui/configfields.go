@@ -11,6 +11,7 @@ const (
 	fieldKindCycle  fieldKind = iota // cycle through options (e.g., variant)
 	fieldKindString                  // editable text (e.g., port, name)
 	fieldKindBool                    // toggle on/off
+	fieldKindList                    // dynamic list of strings (e.g., expose, env, mount)
 )
 
 // configFieldDef defines a single config field.
@@ -72,6 +73,14 @@ var allConfigFields = []configFieldDef{
 		Detail: "TLS certificate file for HTTPS.\nUsed with --public for secure remote access."},
 	{Key: "tls-key", Label: "TLS Key", Group: "Advanced", Kind: fieldKindString,
 		Detail: "TLS private key file for HTTPS.\nUsed with --public for secure remote access."},
+
+	// --- Network & Volumes ---
+	{Key: "expose", Label: "Expose", Group: "Network & Volumes", Kind: fieldKindList,
+		Detail: "Expose extra ports from the container.\nEach entry adds a -p mapping.\n\nExamples:\n  3000       (same port on host)\n  3000:3000  (host:container)\n  5173:5173  (Vite dev server)\n  8080:8080  (API server)"},
+	{Key: "env", Label: "Env", Group: "Network & Volumes", Kind: fieldKindList,
+		Detail: "Set environment variables in the container.\nEach entry adds a -e flag.\n\nExamples:\n  NODE_ENV=development\n  PYTHONDONTWRITEBYTECODE=1\n  CARGO_NET_GIT_FETCH_WITH_CLI=true\n  GEOMETRY=1920x1080\n    (desktop resolution for XFCE/KDE)"},
+	{Key: "mount", Label: "Mount", Group: "Network & Volumes", Kind: fieldKindList,
+		Detail: "Bind mount files or directories.\nEach entry adds a -v flag.\n\nExamples:\n  ~/.m2:/home/coder/.m2\n    (Maven cache)\n  ~/.cargo/registry:/home/coder/.cargo/registry\n    (Cargo cache)\n  ~/.aws:/etc/cb-home-seed/.aws:ro\n    (AWS credentials, read-only)\n  ~/.npmrc:/etc/cb-home-seed/.npmrc:ro\n    (npm config)"},
 
 	// --- Debug ---
 	{Key: "verbose", Label: "Verbose", Group: "Debug", Kind: fieldKindBool,
