@@ -68,11 +68,13 @@ This creates:
 | `codeserver` | Web-based VS Code IDE |
 | `desktop-xfce` | Full Linux desktop (lightweight) |
 | `desktop-kde` | Full Linux desktop (feature-rich) |
+| `default`/`console` | Aliases for `base` |
+| `terminal` | Alias for `base` with direct bash session |
 
 Create or update `.booth/config.toml`:
 
 ```toml
-variant = "codeserver"  # or base, notebook, desktop-xfce, desktop-kde
+variant = "codeserver"  # or base, notebook, desktop-xfce, desktop-kde (aliases: default, console, terminal, xfce, kde)
 ```
 
 ### Step 4: Add Development Tools

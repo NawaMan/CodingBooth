@@ -190,7 +190,7 @@ Deselecting a template also deselects all of its extensions.
 | `--select <dsl>` | Pre-select templates (repeatable) |
 | `--no-tui` | Non-interactive CLI mode |
 | `--dryrun` | Preview output without writing files |
-| `--variant <name>` | Pre-set variant |
+| `--variant <name>` | Pre-set variant (default, console, terminal, base, notebook, codeserver, xfce, kde) |
 | `--port <port>` | Pre-set port |
 | `--templates-path <dir>` | Use local templates directory |
 | `--version <ver>` | Use templates from a specific release version |

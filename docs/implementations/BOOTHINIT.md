@@ -372,7 +372,7 @@ The `adjust` subcommand is equivalent to `new --overwrite` — it overwrites exi
 | `--select <dsl>` | Template selection (repeatable; inline, `-` for stdin, `@file`, `@@url`) |
 | `--templates-path <dir>` | Local templates directory |
 | `--version <ver>` | Use templates from a specific release version |
-| `--variant <variant>` | Set the variant (base, notebook, codeserver, xfce, kde) |
+| `--variant <variant>` | Set the variant (default, console, terminal, base, notebook, codeserver, xfce, kde) |
 | `--port <port>` | Set port in generated config.toml (e.g., 10000, NEXT, RANDOM) |
 | `--cmd <command>` | Set the default start command (repeatable) |
 | `--expose <port>` | Expose extra port (-p mapping in run-args; repeatable) |

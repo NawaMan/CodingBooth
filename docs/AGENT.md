@@ -298,7 +298,7 @@ Agent: "That worked! Let me add it to your Dockerfile so it persists..."
 **Common settings:**
 ```toml
 # Select variant
-variant = "codeserver"    # base, notebook, codeserver, desktop-xfce, desktop-kde
+variant = "codeserver"    # base, notebook, codeserver, desktop-xfce, desktop-kde (aliases: default, console, terminal, xfce, kde)
 
 # Port mapping
 port = 10000              # or "NEXT" or "RANDOM"

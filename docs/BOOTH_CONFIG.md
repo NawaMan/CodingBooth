@@ -176,7 +176,7 @@ Recipe files are plain text with the same DSL syntax — one template per line.
 | `--select <dsl>`           | Template selection (repeatable)                                |
 | `--no-tui`                 | Non-interactive CLI mode                                       |
 | `--dryrun`                 | Preview what would be generated without writing files           |
-| `--variant <name>`         | Set variant (base, notebook, codeserver, xfce, kde)            |
+| `--variant <name>`         | Set variant (default, console, terminal, base, notebook, codeserver, xfce, kde) |
 | `--port <port>`            | Set port in generated config.toml (number, NEXT, RANDOM)       |
 | `--cmd <command>`          | Set the default start command (repeatable)                     |
 | `--expose <port>`          | Expose extra port (-p mapping in run-args; repeatable)         |

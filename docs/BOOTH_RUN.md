@@ -36,8 +36,12 @@ Back to [README](../README.md)
 
 **Defaults**
 - **Repository:** `nawaman/codingbooth`
-- **Variant:** `base`
+- **Variant:** `base` (aliases: `default`, `console`, `terminal`)
 - **Version:** `latest`
+
+**Supported variants:** `base`, `notebook`, `codeserver`, `desktop-xfce` (alias: `xfce`), `desktop-kde` (alias: `kde`).
+Additional aliases: `default`/`console` → base, `terminal` → base with bash, `ide` → codeserver, `desktop` → desktop-xfce.
+See [Variants Guide](BOOTH_VARIANTS.md) for details.
 
 **Overrides**
 - **Environment variables:** `IMAGE_NAME`, `IMAGE_REPO`, `IMAGE_TAG`, `VARIANT`, `VERSION`
@@ -379,7 +383,7 @@ Host
 
 ## TLS Support
 
-CodingBooth supports self-signed certificate generation for HTTPS access to web-based variants (codeserver, notebook, desktop).
+CodingBooth supports self-signed certificate generation for HTTPS access to web-based variants (codeserver, notebook, desktop-xfce, desktop-kde).
 
 ---
 
