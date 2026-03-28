@@ -24,7 +24,7 @@ if [[ ${#test_files[@]} -eq 0 ]]; then
 fi
 
 echo "==============================================================================="
-echo "Running Init Tests"
+echo "Running Config Tests"
 echo "==============================================================================="
 echo "Tests to run: ${#test_files[@]}"
 echo ""
@@ -55,7 +55,7 @@ OVERALL_END=$(date +%s)
 OVERALL_DURATION=$((OVERALL_END - OVERALL_START))
 
 echo "========================================"
-echo "  Init Test Summary"
+echo "  Config Test Summary"
 echo "  Total: ${TEST_COUNT}   Passed: ${PASS_COUNT}   Failed: ${FAIL_COUNT}"
 echo "  Duration: ${OVERALL_DURATION}s"
 echo "========================================"
@@ -70,5 +70,5 @@ if [[ ${FAIL_COUNT} -gt 0 ]]; then
     exit 1
 fi
 
-echo -e "\033[32m  All init tests passed!\033[0m"
+echo -e "\033[32m  All config tests passed!\033[0m"
 echo ""

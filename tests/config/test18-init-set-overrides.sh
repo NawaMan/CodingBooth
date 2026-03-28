@@ -59,6 +59,6 @@ run booth init new $prj --select "go" --set dind --set name=test
 
 configfile="$prj/.booth/config.toml"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" "# Adjust with : booth init adjust " "--set dind --set name=test --select go"  "Adjust command includes --set flags"
+assert-line "$boothfile" "# Configured by: " "booth init adjust --set dind --set name=test --select go"  "Adjust command includes --set flags"
 
 finally

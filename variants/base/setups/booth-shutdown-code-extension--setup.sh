@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # booth-shutdown-code-extension--setup.sh
 #
-# Installs a bundled VS Code / code-server extension that provides:
+# Installs a bundled code-server extension that provides:
 #   - Command palette entry: "CodingBooth: Shut Down"
 #   - Status bar button (power icon) for easy access
 #   - Confirmation dialog before shutdown
@@ -63,6 +63,16 @@ const fs = require("fs");
 const SHUTDOWN_MARKER = "/tmp/.booth-shutting-down";
 
 function activate(context) {
+  const statusBar = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    0
+  );
+  statusBar.text = "$(close) Shut Down";
+  statusBar.tooltip = "Shut down CodingBooth";
+  statusBar.command = "codingbooth.shutdown";
+  statusBar.show();
+  context.subscriptions.push(statusBar);
+
   context.subscriptions.push(
     vscode.commands.registerCommand("codingbooth.shutdown", async () => {
       const answer = await vscode.window.showWarningMessage(
@@ -71,6 +81,9 @@ function activate(context) {
         "Shut Down"
       );
       if (answer !== "Shut Down") return;
+
+      // Hide the shutdown button once confirmed
+      statusBar.hide();
 
       // Launch shutdown detached so it survives even if code-server starts dying
       const child = spawn("booth--shutdown", [], {
@@ -115,15 +128,6 @@ function activate(context) {
     })
   );
 
-  const statusBar = vscode.window.createStatusBarItem(
-    vscode.StatusBarAlignment.Right,
-    0
-  );
-  statusBar.text = "$(close) Shut Down";
-  statusBar.tooltip = "Shut down CodingBooth";
-  statusBar.command = "codingbooth.shutdown";
-  statusBar.show();
-  context.subscriptions.push(statusBar);
 }
 
 function deactivate() {}
@@ -185,23 +189,8 @@ if command -v code-server >/dev/null 2>&1; then
   installed=1
 fi
 
-if command -v code >/dev/null 2>&1; then
-  echo "Installing booth-shutdown extension for VS Code..."
-  cli_bin="$(cli_bin_for_install code)"
-  cli_opts=()
-  if [[ "${EUID}" -eq 0 ]]; then
-    vscode_root_data="/tmp/vscode-root-user-data"
-    mkdir -p "$vscode_root_data"
-    cli_opts=(--no-sandbox --user-data-dir "$vscode_root_data")
-  fi
-  "$cli_bin" "${cli_opts[@]}" --install-extension "$VSIX_PATH" --extensions-dir "$VSCODE_EXTENSION_DIR" --force
-  find "$VSCODE_EXTENSION_DIR" -type d -exec chmod a+w {} +
-  echo "  ✔ Installed for VS Code"
-  installed=1
-fi
-
 rm -f "$VSIX_PATH"
 
 if (( installed == 0 )); then
-  echo "⚠ Neither VS Code nor code-server found; skipping booth-shutdown extension." >&2
+  echo "⚠ code-server not found; skipping booth-shutdown extension." >&2
 fi

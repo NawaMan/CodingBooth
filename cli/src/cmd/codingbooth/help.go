@@ -49,7 +49,7 @@ OTHER COMMANDS:
   BUILD     | Build and publish booth images   | build
   LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune
   CONNECT   | Connect to a running booth       | shell, exec
-  PROJECT   | Set up and scaffold new projects | example, init, template
+  PROJECT   | Set up and scaffold new projects | example, config, template
 
 Run '%s --help <command>'   for command-specific help.
 Run '%s --help --detail'    for the full reference.
@@ -76,10 +76,10 @@ USAGE:
   %s remove [--name <n>] [--force]             (remove booth container(s))
   %s prune [--yes]                             (remove stopped booth containers)
   %s shell [--name <n>] [--shell <s>]          (open interactive shell in booth)
-  %s exec [--name <n>] -- <command>            (run a command in booth)
+  %s exec [--name <n>] -- <command>            (run a command in a running booth)
   %s example <subcommand>                      (manage examples)
   %s template <subcommand>                     (browse and manage templates)
-  %s init <subcommand> [options]               (initialize a new .booth/ project)
+  %s config [path] [options]                    (configure a new or existing .booth/ project)
   %s build [options]                            (build and optionally push image)
   %s emit-dockerfile [options]                 (compile Boothfile to Dockerfile)
   %s print-default-allowlist.txt               (print built-in sandbox allowlist)
@@ -340,11 +340,13 @@ Run '%s template help' for available subcommands.
 
 func showHelpInit() {
 	s := scriptName()
-	fmt.Printf(`%s init — initialize a new .booth/ project
+	fmt.Printf(`%s config — configure a new or existing .booth/ project
 
-USAGE:  %s init <subcommand> [options]
+USAGE:  %s config [path] [options]
 
-Run '%s init help' for available subcommands.
+Run '%s config help' for available options.
+
+Note: "booth init" is deprecated. Use "booth config" instead.
 `, s, s, s)
 }
 
@@ -478,7 +480,7 @@ func dispatchHelp(args []string, version string) {
 			showHelpExample()
 		case "template":
 			showHelpTemplate()
-		case "init":
+		case "init", "config":
 			showHelpInit()
 		case "build":
 			showHelpBuild()

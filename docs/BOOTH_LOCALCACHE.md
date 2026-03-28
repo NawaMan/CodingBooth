@@ -270,7 +270,7 @@ Add `cache-files` extensions to existing language/tool templates. Each extension
 
 Usage: `booth init new --select shell-history/python+repl-history/postgresql+cli-history`
 
-### 7. Init test: `tests/init/test51-init-cache-files.sh`
+### 7. Init test: `tests/config/test51-init-cache-files.sh`
 
 **Pattern:** Uses `test-helpers--source.sh` (same as existing init tests like test47, test48). Runs `booth init` and checks the generated output on the host filesystem — no Docker needed.
 
@@ -284,7 +284,7 @@ Usage: `booth init new --select shell-history/python+repl-history/postgresql+cli
 6. `booth init adjust --select shell-history` does NOT overwrite existing cache files (write content to file, adjust, verify content preserved)
 7. `booth init new --select go` (no cache-files) does NOT create `.booth/cache/` directory
 
-**File:** `tests/init/test51-init-cache-files.sh` (new)
+**File:** `tests/config/test51-init-cache-files.sh` (new)
 
 ### 8. Complex test: `tests/complex/test-cache-mount/`
 
@@ -319,4 +319,4 @@ tests/complex/test-cache-mount/
 - `go build` the CLI
 - Run init tests: `cd tests/init && bash test51-init-cache-files.sh`
 - Run complex test: `cd tests/complex/test-cache-mount && bash test--cache-mount.sh`
-- Run full test suites: `tests/init/run-all-tests.sh` and `tests/complex/run-complex-tests.sh`
+- Run full test suites: `tests/config/run-all-tests.sh` and `tests/complex/run-complex-tests.sh`

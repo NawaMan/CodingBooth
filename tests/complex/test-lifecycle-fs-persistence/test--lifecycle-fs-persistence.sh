@@ -36,6 +36,16 @@ container_state() {
   docker inspect -f '{{.State.Status}}' "$1" 2>/dev/null || true
 }
 
+# Wait for container entrypoint to finish after daemon start.
+wait_exec_ready() {
+  local name="$1"
+  for _ in $(seq 1 10); do
+    if docker exec "$name" bash -lc 'true' >/dev/null 2>&1; then return 0; fi
+    sleep 1
+  done
+  return 1
+}
+
 # 1) run keep-alive in daemon mode, write first pair, then stop.
 if run_coding_booth --variant base --name "$NAME" --daemon --keep-alive -- 'sleep 600' >/dev/null 2>&1 \
   && docker exec "$NAME" bash -lc "echo first > '$TMP_FILE_1' && echo first > '$HOME_FILE_1'" >/dev/null 2>&1 \
@@ -52,7 +62,7 @@ else
 fi
 
 # 2) start and verify first pair exists.
-if run_coding_booth start --name "$NAME" --daemon >/dev/null 2>&1; then
+if run_coding_booth start --name "$NAME" --daemon >/dev/null 2>&1 && wait_exec_ready "$NAME"; then
   if docker exec "$NAME" bash -lc "test -f '$TMP_FILE_1' && test -f '$HOME_FILE_1'" >/dev/null 2>&1; then
     print_test_result "true" "$0" "2" "first /tmp and /home/coder files persist after first start"
   else
@@ -79,7 +89,7 @@ else
 fi
 
 # 4) start again and verify both file pairs.
-if run_coding_booth start --name "$NAME" --daemon >/dev/null 2>&1; then
+if run_coding_booth start --name "$NAME" --daemon >/dev/null 2>&1 && wait_exec_ready "$NAME"; then
   if docker exec "$NAME" bash -lc \
     "test -f '$TMP_FILE_1' && test -f '$HOME_FILE_1' && test -f '$TMP_FILE_2' && test -f '$HOME_FILE_2'" >/dev/null 2>&1; then
     print_test_result "true" "$0" "4" "all files persist across second start"

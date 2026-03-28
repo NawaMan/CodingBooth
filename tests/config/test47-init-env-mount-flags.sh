@@ -66,6 +66,6 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth init new $prj --select "go" --env FOO=bar --mount /data:/data
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" "# Adjust with : booth init adjust " "--env FOO=bar --mount /data:/data --select go"  "Adjust command includes --env and --mount"
+assert-line "$boothfile" "# Configured by: " "booth init adjust --env FOO=bar --mount /data:/data --select go"  "Adjust command includes --env and --mount"
 
 finally

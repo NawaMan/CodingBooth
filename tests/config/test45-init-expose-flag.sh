@@ -43,6 +43,6 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth init new $prj --select "go" --expose 8080
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" "# Adjust with : booth init adjust " "--expose 8080 --select go"  "Adjust command includes --expose"
+assert-line "$boothfile" "# Configured by: " "booth init adjust --expose 8080 --select go"  "Adjust command includes --expose"
 
 finally

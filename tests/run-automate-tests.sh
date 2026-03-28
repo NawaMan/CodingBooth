@@ -15,8 +15,8 @@ FAILED_LOG="${SCRIPT_DIR}/run-automate-tests.failed-tests.log"
 
 # ── Suite definitions ────────────────────────────────────────────────
 
-SUITES=(unit basic dryrun boothfile complex init)
-SUITE_LABELS=("UNIT" "BASIC" "DRYRUN" "BOOTHFILE" "COMPLEX" "INIT")
+SUITES=(unit basic dryrun boothfile complex config)
+SUITE_LABELS=("UNIT" "BASIC" "DRYRUN" "BOOTHFILE" "COMPLEX" "CONFIG")
 SUITE_RUNNERS=(
     "./run-all-go-tests.sh"
     "./run-basic-tests.sh"
@@ -41,11 +41,11 @@ Options:
   --rerun-failed      Re-run only suites that failed in the last run
   -h, --help          Show this help
 
-Available suites: unit, basic, dryrun, boothfile, complex, init
+Available suites: unit, basic, dryrun, boothfile, complex, config
 
 Examples:
   ./run-automate-tests.sh --only dryrun
-  ./run-automate-tests.sh --only dryrun,init
+  ./run-automate-tests.sh --only dryrun,config
   ./run-automate-tests.sh --skip basic,complex
   ./run-automate-tests.sh --rerun-failed
 EOF

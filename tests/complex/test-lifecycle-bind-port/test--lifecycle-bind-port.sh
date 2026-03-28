@@ -104,7 +104,17 @@ else
 fi
 
 # 3) Bound content remains accessible after start.
-if docker exec "$NAME" bash -lc 'test -f /tmp/lifecycle-extra/marker.txt' >/dev/null 2>&1; then
+#    Allow a few seconds for the container entrypoint to finish after daemon start.
+READY=false
+for _ in $(seq 1 10); do
+  if docker exec "$NAME" bash -lc 'true' >/dev/null 2>&1; then
+    READY=true
+    break
+  fi
+  sleep 1
+done
+
+if [[ "$READY" == true ]] && docker exec "$NAME" bash -lc 'test -f /tmp/lifecycle-extra/marker.txt' >/dev/null 2>&1; then
   print_test_result "true" "$0" "3" "bound directory remains mounted and readable"
 else
   print_test_result "false" "$0" "3" "bound directory should remain mounted after start"
