@@ -34,11 +34,13 @@ func (runner *BoothRunner) Run() error {
 	ctx = EnsureDockerImage(ctx)
 	ctx = ApplyEnvFile(ctx)
 	ctx = PortDetermination(ctx)
+	ctx = ResolveRelativePorts(ctx)
 	ctx = ShowDebugBanner(ctx)
 	ctx = SetupDind(ctx)
 	ctx = SetupSandbox(ctx)
 	ctx = PrepareRunMode(ctx)
 	ctx = FilterMissingVolumeMounts(ctx)
+	ctx = PrepareBoothTmp(ctx)
 	ctx = PrepareCommonArgs(ctx)
 	if err := ensureContainerNameAvailable(ctx); err != nil {
 		return err

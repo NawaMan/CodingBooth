@@ -50,7 +50,7 @@ OTHER COMMANDS:
   BUILD     | Build and publish booth images   | build
   LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune
   CONNECT   | Connect to a running booth       | shell, exec
-  PROJECT   | Set up and scaffold new projects | example, init, template
+  PROJECT   | Set up and scaffold new projects | example, config, template
 
 Run 'codingbooth --help <command>'   for command-specific help."
 

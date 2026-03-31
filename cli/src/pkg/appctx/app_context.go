@@ -93,7 +93,8 @@ func (ctx AppContext) SandboxMode() string { return ctx.values.Config.SandboxMod
 func (ctx AppContext) SandboxEnforcement() string {
 	return ctx.values.Config.SandboxEnforcement
 }
-func (ctx AppContext) WritableBooth() bool { return ctx.values.Config.WritableBooth }
+func (ctx AppContext) WritableBooth() bool    { return ctx.values.Config.WritableBooth }
+func (ctx AppContext) LeaveTmpOnExit() bool   { return ctx.values.Config.LeaveTmpOnExit }
 func (ctx AppContext) Public() bool        { return ctx.values.Config.Public }
 func (ctx AppContext) Password() string    { return ctx.values.Config.Password }
 func (ctx AppContext) TLSCert() string     { return ctx.values.Config.TLSCert }

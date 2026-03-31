@@ -85,6 +85,9 @@ func (booth *Booth) runAsCommand() error {
 	// Execute the docker run command
 	err := docker.Docker(flags, "run", args)
 
+	// Cleanup .booth/.tmp/ on exit (unless --leave-tmp-on-exit)
+	cleanupBoothTmp(booth.ctx)
+
 	// Cleanup sandbox/DinD sidecars after command exits.
 	cleanupFlags := flags
 	cleanupFlags.Silent = true
@@ -228,6 +231,9 @@ func (booth *Booth) runAsForeground() error {
 
 	// Execute the docker run command
 	err := docker.Docker(flags, "run", args)
+
+	// Cleanup .booth/.tmp/ on exit (unless --leave-tmp-on-exit)
+	cleanupBoothTmp(booth.ctx)
 
 	// Cleanup sandbox/DinD sidecars after foreground exits.
 	cleanupFlags := flags
@@ -407,6 +413,12 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 		return
 	}
 	builder.CommonArgs.Append(ilist.NewList[string]("-v", hostPath+":/home/coder/code/.booth:ro"))
+
+	// Mount .booth/.tmp/ as writable for runtime state (tcp-tunnels, session metadata, etc.)
+	tmpPath := filepath.Join(hostPath, ".tmp")
+	if info, err := os.Stat(tmpPath); err == nil && info.IsDir() {
+		builder.CommonArgs.Append(ilist.NewList[string]("-v", tmpPath+":/home/coder/code/.booth/.tmp"))
+	}
 
 	// Mount .booth/cache/ contents into the container based on directory structure.
 	cachePath := filepath.Join(hostPath, "cache")

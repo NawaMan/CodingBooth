@@ -698,7 +698,36 @@ func buildConfigAdjustCommand(flags initFlags) string {
 }
 
 // validateExpose checks that an --expose value is a valid port or port mapping.
+// Supported formats:
+//   - PORT                  (e.g., 8080)
+//   - HOST:CONTAINER        (e.g., 18080:8080)
+//   - IP:HOST:CONTAINER     (e.g., 127.0.0.1:18080:8080)
+//   - +OFFSET:CONTAINER     (e.g., +8080:8080 — host port = booth port + offset)
+//   - +OFFSET               (e.g., +8080 — shorthand for +8080:8080)
 func validateExpose(expose string) error {
+	// Handle +OFFSET and +OFFSET:CONTAINER formats
+	if strings.HasPrefix(expose, "+") {
+		offsetPart := expose[1:]
+		parts := strings.Split(offsetPart, ":")
+		switch len(parts) {
+		case 1:
+			// +OFFSET (e.g., +8080)
+			if _, err := strconv.Atoi(parts[0]); err != nil {
+				return fmt.Errorf("invalid --expose value %q: offset after '+' must be a number", expose)
+			}
+		case 2:
+			// +OFFSET:CONTAINER (e.g., +8080:8080)
+			for _, p := range parts {
+				if _, err := strconv.Atoi(p); err != nil {
+					return fmt.Errorf("invalid --expose value %q: ports must be numbers", expose)
+				}
+			}
+		default:
+			return fmt.Errorf("invalid --expose value %q: +OFFSET format supports +OFFSET or +OFFSET:CONTAINER", expose)
+		}
+		return nil
+	}
+
 	parts := strings.Split(expose, ":")
 	switch len(parts) {
 	case 1:
@@ -725,10 +754,19 @@ func validateExpose(expose string) error {
 }
 
 // applyExposeFlags appends -p port mappings to RunArgs for each --expose value.
+// The +OFFSET format is stored literally and resolved at runtime by ResolveRelativePorts.
 func applyExposeFlags(cfg *output.ConfigToml, exposes []string) {
 	for _, expose := range exposes {
 		mapping := expose
-		if !strings.Contains(expose, ":") {
+		if strings.HasPrefix(expose, "+") {
+			// +OFFSET → +OFFSET:OFFSET (e.g., +8080 → +8080:8080)
+			// +OFFSET:CONTAINER → kept as-is
+			offsetPart := expose[1:]
+			if !strings.Contains(offsetPart, ":") {
+				mapping = expose + ":" + offsetPart
+			}
+		} else if !strings.Contains(expose, ":") {
+			// Plain port → PORT:PORT (e.g., 8080 → 8080:8080)
 			mapping = expose + ":" + expose
 		}
 		cfg.RunArgs = append(cfg.RunArgs, "-p", mapping)
