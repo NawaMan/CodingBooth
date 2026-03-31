@@ -12,6 +12,8 @@
 # 3) .booth/.tmp/ is cleaned on exit (default behavior)
 # 4) .booth/.tmp/ is preserved on exit with --leave-tmp-on-exit
 # 5) .booth/.tmp/ is cleaned on next start even if left from previous run
+# 6) --keep-tmp-on-start preserves leftover .booth/.tmp/ from previous run
+# 7) --keep-tmp-on-start still writes new booth-startup.txt
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -92,6 +94,30 @@ if [ -d ".booth/.tmp" ]; then
   fi
 else
   print_test_result "true" "$0" "5" "Next start cleans leftover .booth/.tmp/"
+fi
+
+# Test 6: --keep-tmp-on-start preserves leftover files from previous session
+# First, create a leftover file using --leave-tmp-on-exit
+rm -rf .booth/.tmp
+run_coding_booth --leave-tmp-on-exit -- 'echo previous-session > .booth/.tmp/leftover.txt' >/dev/null 2>&1
+
+# Now start again with --keep-tmp-on-start — leftover.txt should survive
+ACTUAL=$(run_coding_booth --keep-tmp-on-start --leave-tmp-on-exit -- cat .booth/.tmp/leftover.txt 2>/dev/null)
+
+if echo "$ACTUAL" | grep -qF "previous-session"; then
+  print_test_result "true" "$0" "6" "--keep-tmp-on-start preserves leftover files"
+else
+  print_test_result "false" "$0" "6" "--keep-tmp-on-start should preserve leftover files"
+  echo "  Actual: $ACTUAL"
+  FAILED=$((FAILED + 1))
+fi
+
+# Test 7: --keep-tmp-on-start still writes new booth-startup.txt
+if [ -f ".booth/.tmp/booth-startup.txt" ]; then
+  print_test_result "true" "$0" "7" "--keep-tmp-on-start still writes booth-startup.txt"
+else
+  print_test_result "false" "$0" "7" "--keep-tmp-on-start should still write booth-startup.txt"
+  FAILED=$((FAILED + 1))
 fi
 
 # Cleanup

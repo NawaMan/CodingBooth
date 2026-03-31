@@ -39,10 +39,12 @@ func PrepareBoothTmp(ctx appctx.AppContext) appctx.AppContext {
 
 	tmpDir := filepath.Join(boothDir, ".tmp")
 
-	// Empty contents without removing the directory (preserves bind mounts)
-	if entries, err := os.ReadDir(tmpDir); err == nil {
-		for _, entry := range entries {
-			os.RemoveAll(filepath.Join(tmpDir, entry.Name()))
+	// Empty contents unless --keep-tmp-on-start is set
+	if !ctx.KeepTmpOnStart() {
+		if entries, err := os.ReadDir(tmpDir); err == nil {
+			for _, entry := range entries {
+				os.RemoveAll(filepath.Join(tmpDir, entry.Name()))
+			}
 		}
 	}
 

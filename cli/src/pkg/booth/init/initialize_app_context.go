@@ -349,6 +349,10 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.LeaveTmpOnExit = true
 			i++
 
+		case "--keep-tmp-on-start":
+			cfg.KeepTmpOnStart = true
+			i++
+
 		case "--dind":
 			cfg.Dind = true
 			i++

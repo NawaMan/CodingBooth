@@ -124,6 +124,38 @@ Or in `.booth/config.toml`:
 leave-tmp-on-exit = true
 ```
 
-When enabled, `.booth/.tmp/` is left as-is on exit. The contents will still be cleaned on the next booth start.
+When enabled, `.booth/.tmp/` is left as-is on exit. The contents will still be cleaned on the next booth start — unless you also use `--keep-tmp-on-start`.
 
 This is useful when you need to inspect runtime state after a booth exits — tunnel control files, logs, or any artifacts written by your tools during the session.
+
+---
+
+## Debugging: `--keep-tmp-on-start`
+
+By default, `.booth/.tmp/` is emptied on every start. To preserve leftover files from a previous session, use:
+
+```bash
+./booth --keep-tmp-on-start
+```
+
+Or in `.booth/config.toml`:
+
+```toml
+keep-tmp-on-start = true
+```
+
+When enabled, existing files in `.booth/.tmp/` are kept. A new `booth-startup.txt` is still written (overwriting the previous one), but all other files survive.
+
+This is useful when you used `--leave-tmp-on-exit` in the previous session and want to inspect or continue using those files inside the container on the next start.
+
+### Typical debugging workflow
+
+```bash
+# Session 1: leave .tmp/ on exit for inspection
+./booth --leave-tmp-on-exit
+# ... work, create files in .booth/.tmp/, exit ...
+
+# Session 2: keep those files available inside the container
+./booth --keep-tmp-on-start
+# ... inspect .booth/.tmp/ from inside the booth ...
+```
