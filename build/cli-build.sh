@@ -105,13 +105,39 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     fi
 done
 
+# Build booth-ws-bridge (container-only binary, Linux only)
+BRIDGE_NAME="booth-ws-bridge"
+BRIDGE_PLATFORMS=("linux/amd64" "linux/arm64")
+
+echo ""
+echo "🌉 Building ${BRIDGE_NAME} (container binary)..."
+echo ""
+
+for PLATFORM in "${BRIDGE_PLATFORMS[@]}"; do
+    IFS='/' read -r GOOS GOARCH <<< "$PLATFORM"
+    OUTPUT_PATH="${OUTPUT_DIR}/${BRIDGE_NAME}-${GOOS}-${GOARCH}"
+
+    echo -n "   Building ${GOOS}/${GOARCH}... "
+
+    BUILD_OUTPUT=$(CGO_ENABLED=0 GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "-s -w" -o "$OUTPUT_PATH" "$SRC_DIR/booth-ws-bridge" 2>&1) && BUILD_SUCCESS=true || BUILD_SUCCESS=false
+    if $BUILD_SUCCESS; then
+        SIZE=$(du -h "$OUTPUT_PATH" | cut -f1)
+        echo "✅ (${SIZE})"
+        BUILD_COUNT=$((BUILD_COUNT + 1))
+    else
+        echo "❌ FAILED"
+        echo "$BUILD_OUTPUT" | sed 's/^/      /'
+        FAILED_COUNT=$((FAILED_COUNT + 1))
+    fi
+done
+
 echo ""
 echo "=================================="
 echo "📊 Build Summary"
 echo "=================================="
 echo "   Successful: ${BUILD_COUNT}"
 echo "   Failed:     ${FAILED_COUNT}"
-echo "   Total:      ${#PLATFORMS[@]}"
+echo "   Total:      $(( ${#PLATFORMS[@]} + ${#BRIDGE_PLATFORMS[@]} ))"
 echo ""
 
 if [[ $FAILED_COUNT -eq 0 ]]; then

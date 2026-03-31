@@ -37,6 +37,7 @@ if [ -z "${TIP_SHOWN:-}" ]; then
   echo ""
   echo "Handy commands:"
   echo "  booth--info       Show environment info"
+  echo "  booth--expose     Expose a container port to the host"
   echo "  booth--shutdown   Shut down this booth"
   echo "  editor            Text editor (tilde)"
   echo "  explorer          File manager (mc)"

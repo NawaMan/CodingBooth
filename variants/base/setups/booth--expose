@@ -1,0 +1,189 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# booth--expose: Create a TCP tunnel through the booth port.
+#
+# Usage:
+#   booth--expose <container-port> [external-port] [--permanent]
+#
+# Creates a tunnel so a service running inside the container can be
+# accessed from the host without restarting the booth.
+
+set -euo pipefail
+
+TUNNEL_DIR="$HOME/code/.booth/.tmp/tcp-tunnels"
+STARTUP_FILE="$HOME/code/.booth/.tmp/booth-startup.txt"
+CONFIG_FILE="$HOME/code/.booth/config.toml"
+TUNNEL_NGINX_CONF="/tmp/tcp-tunnel-locations.conf"
+
+# --- Usage ---
+usage() {
+    cat >&2 <<'EOF'
+Usage: booth--expose <container-port> [external-port] [--permanent]
+
+Create a TCP tunnel through the booth port.
+
+Arguments:
+  container-port   Port of the service running inside the container (required)
+  external-port    Port on the host to listen on (optional)
+                   Defaults to the same port as container-port
+                   Use +OFFSET for relative to booth port, or a plain number for absolute
+
+Options:
+  --permanent      Save tunnel to .booth/config.toml (requires --writable-booth)
+
+Examples:
+  booth--expose 8080               # host:8080 -> container:8080
+  booth--expose 8080 18080         # host:18080 -> container:8080
+  booth--expose 8080 +8080         # host:<booth-port>+8080 -> container:8080
+  booth--expose 5432 --permanent   # same, but persisted across restarts
+EOF
+    exit 1
+}
+
+# --- Parse args ---
+CONTAINER_PORT=""
+EXTERNAL_PORT=""
+PERMANENT=false
+
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --permanent)
+            PERMANENT=true
+            shift
+            ;;
+        --help|-h)
+            usage
+            ;;
+        *)
+            if [[ -z "$CONTAINER_PORT" ]]; then
+                CONTAINER_PORT="$1"
+            elif [[ -z "$EXTERNAL_PORT" ]]; then
+                EXTERNAL_PORT="$1"
+            else
+                echo "Error: unexpected argument: $1" >&2
+                usage
+            fi
+            shift
+            ;;
+    esac
+done
+
+if [[ -z "$CONTAINER_PORT" ]]; then
+    echo "Error: container-port is required." >&2
+    usage
+fi
+
+# --- Validate container port ---
+if ! [[ "$CONTAINER_PORT" =~ ^[0-9]+$ ]] || [[ "$CONTAINER_PORT" -lt 1 ]] || [[ "$CONTAINER_PORT" -gt 65535 ]]; then
+    echo "Error: invalid container port: $CONTAINER_PORT" >&2
+    exit 1
+fi
+
+# --- Read session metadata ---
+if [[ ! -f "$STARTUP_FILE" ]]; then
+    echo "Error: $STARTUP_FILE not found." >&2
+    echo "       Is this running inside a CodingBooth container?" >&2
+    exit 1
+fi
+
+SESSION_ID=$(grep '^session-id' "$STARTUP_FILE" | cut -d'=' -f2 | tr -d ' ')
+if [[ -z "$SESSION_ID" ]]; then
+    echo "Error: session-id not found in $STARTUP_FILE" >&2
+    exit 1
+fi
+
+BOOTH_PORT="${BOOTH_HOST_PORT:-10000}"
+
+# --- Resolve external port ---
+if [[ -z "$EXTERNAL_PORT" ]]; then
+    # Default: same port number on host
+    EXTERNAL_PORT="$CONTAINER_PORT"
+elif [[ "$EXTERNAL_PORT" =~ ^\+([0-9]+)$ ]]; then
+    # Relative: +OFFSET
+    OFFSET="${BASH_REMATCH[1]}"
+    EXTERNAL_PORT=$((BOOTH_PORT + OFFSET))
+elif ! [[ "$EXTERNAL_PORT" =~ ^[0-9]+$ ]]; then
+    echo "Error: invalid external port: $EXTERNAL_PORT" >&2
+    exit 1
+fi
+
+if [[ "$EXTERNAL_PORT" -lt 1 ]] || [[ "$EXTERNAL_PORT" -gt 65535 ]]; then
+    echo "Error: external port out of range: $EXTERNAL_PORT" >&2
+    exit 1
+fi
+
+# --- Check if tunnel already exists ---
+if [[ -f "$TUNNEL_DIR/$CONTAINER_PORT" ]]; then
+    echo "Error: tunnel for container port $CONTAINER_PORT already exists." >&2
+    echo "       Remove $TUNNEL_DIR/$CONTAINER_PORT to reset." >&2
+    exit 1
+fi
+
+# --- Check if booth-ws-bridge is available ---
+if ! command -v booth-ws-bridge &>/dev/null; then
+    echo "Error: booth-ws-bridge not found." >&2
+    echo "       This CodingBooth image may need to be rebuilt." >&2
+    exit 1
+fi
+
+# --- Start WebSocket-to-TCP bridge ---
+BRIDGE_PORT=$((20000 + CONTAINER_PORT))
+TUNNEL_PATH="/tcp-tunnel-${SESSION_ID}/${CONTAINER_PORT}"
+
+booth-ws-bridge -listen "127.0.0.1:${BRIDGE_PORT}" -target "127.0.0.1:${CONTAINER_PORT}" &
+BRIDGE_PID=$!
+
+# Wait briefly to check it started
+sleep 0.2
+if ! kill -0 "$BRIDGE_PID" 2>/dev/null; then
+    echo "Error: booth-ws-bridge failed to start (bridge port ${BRIDGE_PORT} may be in use)." >&2
+    exit 1
+fi
+
+# --- Add nginx location for the tunnel ---
+cat >> "$TUNNEL_NGINX_CONF" <<NGINX
+location ${TUNNEL_PATH} {
+    proxy_pass http://127.0.0.1:${BRIDGE_PORT};
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade \$http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_read_timeout 24h;
+    proxy_buffering off;
+}
+NGINX
+
+# Reload nginx to pick up new location
+nginx -s reload 2>/dev/null || true
+
+# --- Write control file ---
+mkdir -p "$TUNNEL_DIR"
+echo "$EXTERNAL_PORT" > "$TUNNEL_DIR/$CONTAINER_PORT"
+
+# --- Output ---
+echo "TCP tunnel: host localhost:${EXTERNAL_PORT} -> container localhost:${CONTAINER_PORT}"
+
+if [[ "$PERMANENT" == "true" ]]; then
+    # Check if .booth/ is writable
+    if [[ ! -w "$CONFIG_FILE" ]] && [[ ! -w "$(dirname "$CONFIG_FILE")" ]]; then
+        echo ""
+        echo "Cannot write to $CONFIG_FILE (booth directory is read-only)."
+        echo "Use --writable-booth when starting the booth, or add the tunnel"
+        echo "config to .booth/config.toml manually."
+    else
+        # Append tcp-tunnels section if not present, or add entry
+        if grep -q '^\[tcp-tunnels\]' "$CONFIG_FILE" 2>/dev/null; then
+            # Add entry under existing section
+            sed -i "/^\[tcp-tunnels\]/a ${CONTAINER_PORT} = \"+${CONTAINER_PORT}\"" "$CONFIG_FILE"
+        else
+            # Append new section
+            printf '\n[tcp-tunnels]\n%s = "+%s"\n' "$CONTAINER_PORT" "$CONTAINER_PORT" >> "$CONFIG_FILE"
+        fi
+        echo "Saved to $CONFIG_FILE"
+    fi
+else
+    echo "Note: This tunnel is ephemeral and will not survive a booth restart."
+    echo "      Use --permanent to save to .booth/config.toml."
+fi

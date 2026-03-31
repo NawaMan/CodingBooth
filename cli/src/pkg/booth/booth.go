@@ -6,6 +6,7 @@
 package booth
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -229,8 +230,17 @@ func (booth *Booth) runAsForeground() error {
 		ilist.NewList(booth.ctx.Image()),
 	))
 
+	// Start TCP tunnel watcher (watches .booth/.tmp/tcp-tunnels/ for booth--expose)
+	tunnelCtx, tunnelCancel := context.WithCancel(context.Background())
+	if !booth.ctx.Dryrun() {
+		go StartTcpTunnelWatcher(tunnelCtx, booth.ctx)
+	}
+
 	// Execute the docker run command
 	err := docker.Docker(flags, "run", args)
+
+	// Stop tunnel watcher
+	tunnelCancel()
 
 	// Cleanup .booth/.tmp/ on exit (unless --leave-tmp-on-exit)
 	cleanupBoothTmp(booth.ctx)

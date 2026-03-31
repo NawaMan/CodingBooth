@@ -43,4 +43,7 @@ envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT}' <"$WEB_SPLIT_ROOT/index.ht
 
 mkdir -p /tmp/nginx/body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
 
+# Create empty tunnel config for booth--expose (nginx include)
+touch /tmp/tcp-tunnel-locations.conf
+
 exec nginx -c "$NGINX_CONFIG" -g 'daemon off;'

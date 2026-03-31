@@ -138,6 +138,9 @@ RUN chmod -R a+rX /opt/codingbooth/variants
 COPY ./_stage/docs/ /opt/codingbooth/docs/
 RUN chmod -R a+rX /opt/codingbooth/docs
 
+# WebSocket-to-TCP bridge for booth--expose tunnels
+COPY --chmod=0755 ./_stage/booth-ws-bridge /usr/local/bin/booth-ws-bridge
+
 # TLS reverse proxy (Caddy) - activated by BOOTH_TLS=true (set by --public)
 RUN tls--setup.sh
 
