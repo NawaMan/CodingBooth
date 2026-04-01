@@ -589,7 +589,7 @@ func FilterMissingVolumeMounts(ctx appctx.AppContext) appctx.AppContext {
 		items := group.Slice()
 		var kept []string
 		for i := 0; i < len(items); i++ {
-			if items[i] == "-v" && i+1 < len(items) {
+			if (items[i] == "-v" || items[i] == "--volume") && i+1 < len(items) {
 				mountSpec := items[i+1]
 				hostPath := mountSpec
 				if idx := strings.Index(mountSpec, ":"); idx >= 0 {

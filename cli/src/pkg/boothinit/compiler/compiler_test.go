@@ -776,6 +776,51 @@ func TestDedup_PreservesOrder(t *testing.T) {
 	assert.Equal(t, []string{"c", "a", "b"}, dedup([]string{"c", "a", "b", "a", "c"}))
 }
 
+// --- Dedup with long-form flags ---
+
+func TestDedup_LongFormFlags_Deduped(t *testing.T) {
+	// Identical long-form flag pairs should be deduped
+	result := dedup([]string{"--env", "A=1", "--env", "A=1"})
+	assert.Equal(t, []string{"--env", "A=1"}, result)
+}
+
+func TestDedup_LongFormFlags_DifferentFormNotDeduped(t *testing.T) {
+	// Short-form and long-form of the same flag+value are different pairs and NOT deduped.
+	// This is intentional: templates use -e and users use --env, both must be preserved.
+	result := dedup([]string{"--env", "A=1", "-e", "A=1"})
+	assert.Equal(t, []string{"--env", "A=1", "-e", "A=1"}, result)
+}
+
+func TestDedup_LongFormFlags_NoDups(t *testing.T) {
+	// Distinct long-form pairs should all be preserved
+	result := dedup([]string{"--publish", "8080:8080", "--volume", "/a:/b"})
+	assert.Equal(t, []string{"--publish", "8080:8080", "--volume", "/a:/b"}, result)
+}
+
+func TestDedup_LongFormFlags_DuplicatePublish(t *testing.T) {
+	result := dedup([]string{"--publish", "8080:8080", "--publish", "8080:8080", "--publish", "3000:3000"})
+	assert.Equal(t, []string{"--publish", "8080:8080", "--publish", "3000:3000"}, result)
+}
+
+func TestDedup_LongFormFlags_DuplicateVolume(t *testing.T) {
+	result := dedup([]string{"--volume", "/a:/b", "--volume", "/a:/b"})
+	assert.Equal(t, []string{"--volume", "/a:/b"}, result)
+}
+
+func TestDedup_MixedShortLongFlags_AllDistinct(t *testing.T) {
+	// Mixed short and long forms, all with distinct values, should all be preserved
+	input := []string{"-e", "X=1", "--env", "Y=2", "-p", "80:80", "--publish", "90:90"}
+	result := dedup(input)
+	assert.Equal(t, input, result)
+}
+
+func TestDedup_MixedShortLongFlags_SameValueDifferentForm(t *testing.T) {
+	// Same value but different flag form (short vs long) should both be preserved
+	input := []string{"-v", "/data:/data", "--volume", "/data:/data"}
+	result := dedup(input)
+	assert.Equal(t, input, result, "short-form and long-form with same value should not be deduped against each other")
+}
+
 // --- End-to-end with real registry ---
 
 func TestCompile_EndToEnd(t *testing.T) {

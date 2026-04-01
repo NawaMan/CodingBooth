@@ -753,7 +753,8 @@ func validateExpose(expose string) error {
 	return nil
 }
 
-// applyExposeFlags appends -p port mappings to RunArgs for each --expose value.
+// applyExposeFlags appends --publish port mappings to RunArgs for each --expose value.
+// Uses long-form --publish to distinguish user-set values from template-contributed -p flags.
 // The +OFFSET format is stored literally and resolved at runtime by ResolveRelativePorts.
 func applyExposeFlags(cfg *output.ConfigToml, exposes []string) {
 	for _, expose := range exposes {
@@ -769,7 +770,7 @@ func applyExposeFlags(cfg *output.ConfigToml, exposes []string) {
 			// Plain port → PORT:PORT (e.g., 8080 → 8080:8080)
 			mapping = expose + ":" + expose
 		}
-		cfg.RunArgs = append(cfg.RunArgs, "-p", mapping)
+		cfg.RunArgs = append(cfg.RunArgs, "--publish", mapping)
 	}
 }
 
@@ -793,10 +794,11 @@ func validateEnv(env string) error {
 	return nil
 }
 
-// applyEnvFlags appends -e environment variable entries to RunArgs.
+// applyEnvFlags appends --env environment variable entries to RunArgs.
+// Uses long-form --env to distinguish user-set values from template-contributed -e flags.
 func applyEnvFlags(cfg *output.ConfigToml, envs []string) {
 	for _, env := range envs {
-		cfg.RunArgs = append(cfg.RunArgs, "-e", env)
+		cfg.RunArgs = append(cfg.RunArgs, "--env", env)
 	}
 }
 
@@ -811,10 +813,11 @@ func validateMount(mount string) error {
 	return nil
 }
 
-// applyMountFlags appends -v volume mount entries to RunArgs.
+// applyMountFlags appends --volume mount entries to RunArgs.
+// Uses long-form --volume to distinguish user-set values from template-contributed -v flags.
 func applyMountFlags(cfg *output.ConfigToml, mounts []string) {
 	for _, mount := range mounts {
-		cfg.RunArgs = append(cfg.RunArgs, "-v", mount)
+		cfg.RunArgs = append(cfg.RunArgs, "--volume", mount)
 	}
 }
 

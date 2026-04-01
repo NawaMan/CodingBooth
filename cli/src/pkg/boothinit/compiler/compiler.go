@@ -357,8 +357,11 @@ func dedup(items []string) []string {
 	if len(items) == 0 {
 		return nil
 	}
-	// Flags that take a following value argument
-	pairedFlags := map[string]bool{"-v": true, "-e": true, "-p": true, "-l": true}
+	// Flags that take a following value argument (short and long forms)
+	pairedFlags := map[string]bool{
+		"-v": true, "-e": true, "-p": true, "-l": true,
+		"--volume": true, "--env": true, "--publish": true,
+	}
 
 	seen := make(map[string]bool, len(items))
 	var result []string

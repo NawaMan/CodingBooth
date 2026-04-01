@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/BurntSushi/toml"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
@@ -266,7 +267,9 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 }
 
 // readExistingBooth reads the "# Adjust with :" header from an existing .booth/Boothfile
-// and parses it into initFlags. Returns empty flags if no existing booth is found.
+// and parses it into initFlags. Also reads config.toml to extract user-set run-args
+// (long-form flags like --env, --publish, --volume) back into flags.
+// Returns empty flags if no existing booth is found.
 func readExistingBooth(targetPath string) initFlags {
 	boothfilePath := filepath.Join(targetPath, ".booth", "Boothfile")
 	f, err := os.Open(boothfilePath)
@@ -274,6 +277,8 @@ func readExistingBooth(targetPath string) initFlags {
 		return initFlags{}
 	}
 	defer f.Close()
+
+	var flags initFlags
 
 	scanner := bufio.NewScanner(f)
 	linesRead := 0
@@ -283,26 +288,106 @@ func readExistingBooth(targetPath string) initFlags {
 
 		if strings.HasPrefix(line, "# Configured by: ") {
 			cmd := strings.TrimPrefix(line, "# Configured by: ")
-			return parseAdjustCommand(cmd)
+			flags = parseAdjustCommand(cmd)
+			break
 		}
 		if strings.HasPrefix(line, "# Configured by:") {
 			cmd := strings.TrimPrefix(line, "# Configured by:")
 			cmd = strings.TrimSpace(cmd)
-			return parseAdjustCommand(cmd)
+			flags = parseAdjustCommand(cmd)
+			break
 		}
 		// Legacy format: "# Adjust with :"
 		if strings.HasPrefix(line, "# Adjust with : ") {
 			cmd := strings.TrimPrefix(line, "# Adjust with : ")
-			return parseAdjustCommand(cmd)
+			flags = parseAdjustCommand(cmd)
+			break
 		}
 		if strings.HasPrefix(line, "# Adjust with :") {
 			cmd := strings.TrimPrefix(line, "# Adjust with :")
 			cmd = strings.TrimSpace(cmd)
-			return parseAdjustCommand(cmd)
+			flags = parseAdjustCommand(cmd)
+			break
 		}
 	}
 
-	return initFlags{}
+	// Also read config.toml to extract user-set values from long-form run-args.
+	// Long-form flags (--env, --publish, --volume) are user-set values;
+	// short-form flags (-e, -p, -v) are template-contributed and left alone.
+	extractUserRunArgs(targetPath, &flags)
+
+	return flags
+}
+
+// extractUserRunArgs reads config.toml and extracts user-set run-args
+// (long-form --env, --publish, --volume) back into initFlags.
+func extractUserRunArgs(targetPath string, flags *initFlags) {
+	configPath := filepath.Join(targetPath, ".booth", "config.toml")
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return
+	}
+
+	// Minimal TOML parsing: extract run-args array
+	var cfg struct {
+		RunArgs []string `toml:"run-args"`
+	}
+	if _, err := toml.Decode(string(data), &cfg); err != nil {
+		return
+	}
+
+	// Decompose long-form paired flags back into typed fields
+	for i := 0; i < len(cfg.RunArgs); i++ {
+		flag := cfg.RunArgs[i]
+		if i+1 >= len(cfg.RunArgs) {
+			break
+		}
+		value := cfg.RunArgs[i+1]
+		switch flag {
+		case "--env":
+			if !sliceContains(flags.envs, value) {
+				flags.envs = append(flags.envs, value)
+			}
+			i++
+		case "--publish":
+			// Reverse the expose expansion: PORT:PORT → PORT, +OFFSET:CONTAINER → +OFFSET
+			expose := reverseExposeMapping(value)
+			if !sliceContains(flags.exposes, expose) {
+				flags.exposes = append(flags.exposes, expose)
+			}
+			i++
+		case "--volume":
+			if !sliceContains(flags.mounts, value) {
+				flags.mounts = append(flags.mounts, value)
+			}
+			i++
+		}
+	}
+}
+
+// reverseExposeMapping converts a run-args port mapping back to the --expose form.
+// "8080:8080" → "8080", "+8080:8080" → "+8080", otherwise kept as-is.
+func reverseExposeMapping(mapping string) string {
+	parts := strings.SplitN(mapping, ":", 2)
+	if len(parts) == 2 && parts[0] == parts[1] {
+		return parts[0]
+	}
+	if len(parts) == 2 && strings.HasPrefix(parts[0], "+") {
+		offset := parts[0][1:]
+		if offset == parts[1] {
+			return parts[0]
+		}
+	}
+	return mapping
+}
+
+func sliceContains(s []string, v string) bool {
+	for _, item := range s {
+		if item == v {
+			return true
+		}
+	}
+	return false
 }
 
 // parseAdjustCommand parses a command string like "booth config --no-tui --select go/python"
