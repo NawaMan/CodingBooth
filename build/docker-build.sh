@@ -174,22 +174,6 @@ StageDocsForBase() {
     cp "variants/$v/Dockerfile" "$stage_dir/variants/$v/"
   done
 
-  # Copy booth-ws-bridge binary (detect architecture)
-  local arch
-  arch="$(uname -m)"
-  case "$arch" in
-    x86_64)  arch="amd64" ;;
-    aarch64) arch="arm64" ;;
-  esac
-  local bridge_bin="bin/booth-ws-bridge-linux-${arch}"
-  if [[ -f "$bridge_bin" ]]; then
-    cp "$bridge_bin" "$stage_dir/booth-ws-bridge"
-    chmod 755 "$stage_dir/booth-ws-bridge"
-    Log "Staged booth-ws-bridge from $bridge_bin"
-  else
-    Log "WARNING: $bridge_bin not found — booth--expose will not work in this build"
-  fi
-
   Log "Staged files to $stage_dir"
 }
 

@@ -2,6 +2,21 @@
 
 This file contains a list of changes for each released version.
 
+## 0.39.0
+
+- `booth--expose` — expose container ports to the host at runtime without restarting
+  - `booth--expose 8080` opens host:8080 forwarding to container:8080 via `docker exec` + `socat`
+  - Works in all variants: base, terminal, codeserver, notebook, desktop
+  - Supports explicit port (`8080 18080`), relative port (`8080 +8080`), and default (same port)
+  - `--permanent` flag persists tunnel config to `.booth/config.toml`
+  - Host-side watcher auto-detects tunnel requests via `.booth/.tmp/tcp-tunnels/` control files
+- `.booth/.tmp/` ephemeral directory lifecycle
+  - Wiped and recreated on every booth start, cleaned on exit
+  - `booth-startup.txt` with session metadata written on each start
+  - `--leave-tmp-on-exit` preserves contents for post-mortem debugging
+  - `--keep-tmp-on-start` preserves leftover files from a previous session
+- `socat` added to base image for runtime port tunneling
+
 ## 0.37.0
 
 - `booth config` — interactive TUI for configuring booth environments

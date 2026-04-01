@@ -2,12 +2,12 @@
 
 > Started a server on a new port? Access it from the host without restarting your booth.
 
-`booth--expose` creates a TCP tunnel through the existing booth port, making any internal container port accessible from the host — at runtime, with no container restart.
+`booth--expose` creates a TCP tunnel through the Docker runtime, making any internal container port accessible from the host — at runtime, with no container restart.
 
 ```bash
 # Inside the booth:
 booth--expose 8080
-# → TCP tunnel: host localhost:18080 → container localhost:8080
+# → TCP tunnel: host localhost:8080 → container localhost:8080
 #
 # Note: This tunnel is ephemeral and will not survive a booth restart.
 #       Use --permanent to save to .booth/config.toml.
@@ -33,9 +33,10 @@ Back to [README](../README.md)
 
 Docker port mappings (`-p`) are fixed at container creation. If you start a web server, database, or any service on a port that was not exposed upfront, you normally have to stop and recreate the container with the new port mapping.
 
-`booth--expose` solves this by tunneling TCP traffic through the already-exposed booth port (typically 10000). The running booth process on the host detects the tunnel request and automatically opens a local port that forwards traffic into the container.
+`booth--expose` solves this by tunneling TCP traffic via `docker exec` and `socat`. The running booth process on the host detects the tunnel request and automatically opens a local port that forwards traffic into the container.
 
 - Works for **all TCP traffic** — HTTP, databases, gRPC, raw TCP
+- Works in **all variants** — base, terminal, codeserver, notebook, desktop
 - **No SSH server** required
 - **No extra ports** need to be exposed on the container
 - The host-side booth process sets up the listener **automatically**
@@ -46,20 +47,18 @@ Docker port mappings (`-p`) are fixed at container creation. If you start a web 
 
 Two cooperating pieces:
 
-**Inside the container:** `booth--expose` writes a control file to `.booth/.tmp/tcp-tunnels/` and starts a WebSocket tunnel endpoint on the booth port.
+**Inside the container:** `booth--expose` writes a control file to `.booth/.tmp/tcp-tunnels/`.
 
-**Outside the container:** The running booth process (in foreground mode) watches `.booth/.tmp/tcp-tunnels/` for changes. When a new tunnel is requested, it opens a local port on the host and forwards traffic through a WebSocket connection at a salted path on the booth port.
+**Outside the container:** The running booth process (in foreground mode) watches `.booth/.tmp/tcp-tunnels/` for changes. When a new tunnel is requested, it opens a local port on the host and forwards each connection via `docker exec -i <container> socat STDIO TCP:localhost:<port>`.
 
 ```
-Host                          Container (port 10000)
+Host                          Container
 ┌──────────────┐              ┌──────────────────────┐
-│ localhost:18080 ──WebSocket──→ /tcp-tunnel-<salt>/8080 │
+│ localhost:8080 ──docker exec──→ socat STDIO TCP:8080  │
 │ (auto-created)  │              │         ↓              │
 │                 │              │   localhost:8080       │
 └──────────────┘              └──────────────────────┘
 ```
-
-The WebSocket path includes a random salt (from the session ID in `.booth/.tmp/booth-startup.txt`) to prevent unauthorized access. See [booth tmp](BOOTH_TMP.md) for details on the session ID.
 
 ---
 
@@ -90,17 +89,17 @@ The `+` prefix adds the value to the current booth port. This keeps port assignm
 
 ```bash
 booth--expose 8080
-# Equivalent to: booth--expose 8080 +8080
+# host localhost:8080 → container localhost:8080
 ```
 
-When no external port is specified, it defaults to `+<container-port>`.
+When no external port is specified, it defaults to the same port number.
 
 ### Examples
 
 | Command | Booth Port | Host Port | Container Port |
 |---------|-----------|-----------|----------------|
-| `booth--expose 3000` | 10000 | 13000 | 3000 |
-| `booth--expose 3000 3000` | 10000 | 3000 | 3000 |
+| `booth--expose 3000` | 10000 | 3000 | 3000 |
+| `booth--expose 3000 +3000` | 10000 | 13000 | 3000 |
 | `booth--expose 8080 +8080` | 10000 | 18080 | 8080 |
 | `booth--expose 5432 +5432` | 12000 | 17432 | 5432 |
 | `booth--expose 3000 23000` | 10000 | 23000 | 3000 |
@@ -119,7 +118,7 @@ booth--expose 8080
 
 Output:
 ```
-TCP tunnel: host localhost:18080 → container localhost:8080
+TCP tunnel: host localhost:8080 → container localhost:8080
 Note: This tunnel is ephemeral and will not survive a booth restart.
       Use --permanent to save to .booth/config.toml.
 ```
@@ -172,11 +171,11 @@ CodingBooth has three ways to make container ports accessible. Each serves a dif
 |--------|-------------|-----------------|-----------|
 | `-p` (Docker port mapping) | Container creation | Yes (if keep-alive) | Docker native |
 | `--expose` in `booth config` | Configuration time | Yes | Writes `-p` to run-args |
-| `booth--expose` (TCP tunnel) | Runtime | No (unless `--permanent`) | WebSocket tunnel |
+| `booth--expose` (TCP tunnel) | Runtime | No (unless `--permanent`) | docker exec + socat |
 
 **Use `-p` / `--expose`** when you know the ports upfront. These are Docker-native port mappings — no overhead, full performance.
 
-**Use `booth--expose`** when you discover a port at runtime. It tunnels through the existing booth port, so there is some overhead compared to a native port mapping, but it works without restarting the container.
+**Use `booth--expose`** when you discover a port at runtime. It tunnels via `docker exec`, so there is some overhead compared to a native port mapping, but it works without restarting the container.
 
 > **Tip:** If you find yourself using `booth--expose` for the same port every time, consider adding it to your `config.toml` either with `booth--expose --permanent` or by adding an `--expose` to your `booth config` command.
 
@@ -184,15 +183,15 @@ CodingBooth has three ways to make container ports accessible. Each serves a dif
 
 ## Security
 
-The WebSocket tunnel endpoint uses a **salted path** (`/tcp-tunnel-<session-id>/<port>`) rather than a predictable URL. The session ID is generated randomly on each booth start and is only accessible via the mounted `.booth/.tmp/booth-startup.txt` file.
+The tunnel uses `docker exec` to bridge connections, which requires access to the Docker socket. Only processes that can run `docker exec` on the container (i.e., the host-side booth process) can create tunnels. The tunnel is bound to `localhost` by default, so it is not accessible from other machines.
 
-This prevents someone who can reach the booth port from guessing the tunnel endpoint. However, this is **not a substitute for authentication** — if the booth port is exposed publicly (`--public`), consider whether the tunneled service should also be accessible.
+If the booth port is exposed publicly (`--public`), consider whether the tunneled service should also be accessible.
 
 ---
 
 ## Limitations
 
-- **TCP only** — WebSocket tunnels are TCP-based. UDP protocols are not supported.
+- **TCP only** — `socat` bridges TCP connections. UDP protocols are not supported.
 - **Foreground mode required** — The host-side booth process must be running to watch for tunnel requests and create listeners. This works in foreground mode (the default). For daemon mode, use `-p` / `--expose` at configuration time instead.
-- **Some overhead** — Traffic is proxied through a WebSocket connection rather than a direct port mapping. For most development use cases this is negligible, but high-throughput scenarios may notice latency.
+- **Per-connection overhead** — Each TCP connection spawns a `docker exec` process. For development use (a handful of concurrent connections) this is negligible, but high-throughput scenarios may notice latency.
 - **Port availability** — If the requested host port is already in use, the tunnel fails with an error. Choose a different external port or use `+` syntax for predictable allocation.

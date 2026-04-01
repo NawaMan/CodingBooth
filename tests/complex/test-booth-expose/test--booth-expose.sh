@@ -4,13 +4,15 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# Test: booth--expose TCP tunnel control files
+# Test: booth--expose TCP tunnel
 #
-# Verifies the control file mechanism for TCP tunnels:
+# Verifies the control file mechanism and end-to-end tunnel for TCP tunnels:
 # 1) .booth/.tmp/tcp-tunnels/ can be created inside the container
 # 2) Control files written inside are visible from the host
 # 3) session-id from booth-startup.txt is accessible inside container
 # 4) Control files are cleaned on exit (ephemeral via .booth/.tmp/)
+# 5) With --leave-tmp-on-exit, control file survives exit
+# 6) End-to-end tunnel: booth--expose makes container port accessible on host
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -21,8 +23,10 @@ cd "$SCRIPT_DIR"
 source ../../common--source.sh
 
 FAILED=0
+NAME="test-booth-expose-$$"
 
 cleanup() {
+  run_coding_booth remove --force --name "$NAME" >/dev/null 2>&1 || true
   rm -rf .booth/.tmp
 }
 trap cleanup EXIT
@@ -84,6 +88,62 @@ else
   print_test_result "false" "$0" "4" "--leave-tmp-on-exit should preserve control files"
   echo "  .booth/.tmp/ contents:"
   find .booth/.tmp/ -type f 2>/dev/null || echo "  (no files)"
+  FAILED=$((FAILED + 1))
+fi
+
+# Test 5: socat is available inside the container
+ACTUAL=$(run_coding_booth -- 'command -v socat' 2>/dev/null)
+
+if echo "$ACTUAL" | grep -q "socat"; then
+  print_test_result "true" "$0" "5" "socat is available inside container"
+else
+  print_test_result "false" "$0" "5" "socat should be available inside container"
+  echo "  Actual: $ACTUAL"
+  FAILED=$((FAILED + 1))
+fi
+
+# Test 6: End-to-end tunnel via booth--expose
+# Start a daemon booth with a simple HTTP server, then use booth--expose
+rm -rf .booth/.tmp
+TUNNEL_PORT=18686
+
+run_coding_booth --variant base --name "$NAME" --port "$TUNNEL_PORT" --daemon --keep-alive \
+  -- 'sleep 600' >/dev/null 2>&1
+
+# Wait for container to be ready
+READY=false
+for i in $(seq 1 10); do
+  if docker exec "$NAME" bash -lc 'true' >/dev/null 2>&1; then
+    READY=true
+    break
+  fi
+  sleep 1
+done
+
+if [[ "$READY" != true ]]; then
+  print_test_result "false" "$0" "6" "Daemon booth failed to start for tunnel test"
+  FAILED=$((FAILED + 1))
+  exit $FAILED
+fi
+
+# Start a simple HTTP server inside and run booth--expose
+docker exec -d "$NAME" bash -lc 'echo "tunnel-ok" > /tmp/index.html && cd /tmp && python3 -m http.server 9876 --bind 127.0.0.1 >/dev/null 2>&1'
+sleep 1
+
+# Run booth--expose inside the container
+docker exec "$NAME" bash -lc 'booth--expose 9876' >/dev/null 2>&1
+
+# Wait a moment for the host-side watcher to pick up the control file
+sleep 3
+
+# Try to curl through the tunnel from the host
+TUNNEL_RESULT=$(curl -s --max-time 5 http://localhost:9876 2>/dev/null || echo "TUNNEL_FAILED")
+
+if echo "$TUNNEL_RESULT" | grep -qF "tunnel-ok"; then
+  print_test_result "true" "$0" "6" "End-to-end tunnel works via booth--expose"
+else
+  print_test_result "false" "$0" "6" "End-to-end tunnel should forward traffic to container"
+  echo "  Result: $TUNNEL_RESULT"
   FAILED=$((FAILED + 1))
 fi
 

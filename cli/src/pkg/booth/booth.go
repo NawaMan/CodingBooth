@@ -83,8 +83,21 @@ func (booth *Booth) runAsCommand() error {
 		}),
 	)
 
+	// Start TCP tunnel watcher (watches .booth/.tmp/tcp-tunnels/ for booth--expose)
+	tunnelCtx, tunnelCancel := context.WithCancel(context.Background())
+	if !booth.ctx.Dryrun() {
+		containerName := booth.ctx.Name()
+		if containerName == "" {
+			containerName = booth.ctx.ProjectName()
+		}
+		go StartTcpTunnelWatcher(tunnelCtx, booth.ctx, containerName)
+	}
+
 	// Execute the docker run command
 	err := docker.Docker(flags, "run", args)
+
+	// Stop tunnel watcher
+	tunnelCancel()
 
 	// Cleanup .booth/.tmp/ on exit (unless --leave-tmp-on-exit)
 	cleanupBoothTmp(booth.ctx)
@@ -233,7 +246,11 @@ func (booth *Booth) runAsForeground() error {
 	// Start TCP tunnel watcher (watches .booth/.tmp/tcp-tunnels/ for booth--expose)
 	tunnelCtx, tunnelCancel := context.WithCancel(context.Background())
 	if !booth.ctx.Dryrun() {
-		go StartTcpTunnelWatcher(tunnelCtx, booth.ctx)
+		containerName := booth.ctx.Name()
+		if containerName == "" {
+			containerName = booth.ctx.ProjectName()
+		}
+		go StartTcpTunnelWatcher(tunnelCtx, booth.ctx, containerName)
 	}
 
 	// Execute the docker run command

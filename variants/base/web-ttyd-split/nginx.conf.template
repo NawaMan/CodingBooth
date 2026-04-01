@@ -86,9 +86,6 @@ http {
             proxy_buffering off;
         }
 
-        # Dynamic tunnel locations added by booth--expose
-        include /tmp/tcp-tunnel-locations.conf;
-
         location / {
             try_files $uri $uri/ /index.html;
         }

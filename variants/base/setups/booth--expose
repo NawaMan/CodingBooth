@@ -3,20 +3,19 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# booth--expose: Create a TCP tunnel through the booth port.
+# booth--expose: Create a TCP tunnel to expose a container port on the host.
 #
 # Usage:
 #   booth--expose <container-port> [external-port] [--permanent]
 #
-# Creates a tunnel so a service running inside the container can be
-# accessed from the host without restarting the booth.
+# Writes a control file to .booth/.tmp/tcp-tunnels/ that the host-side
+# booth process watches. The host opens a local listener and forwards
+# each connection via docker exec + socat into the container.
 
 set -euo pipefail
 
 TUNNEL_DIR="$HOME/code/.booth/.tmp/tcp-tunnels"
-STARTUP_FILE="$HOME/code/.booth/.tmp/booth-startup.txt"
 CONFIG_FILE="$HOME/code/.booth/config.toml"
-TUNNEL_NGINX_CONF="/tmp/tcp-tunnel-locations.conf"
 
 # --- Usage ---
 usage() {
@@ -82,19 +81,6 @@ if ! [[ "$CONTAINER_PORT" =~ ^[0-9]+$ ]] || [[ "$CONTAINER_PORT" -lt 1 ]] || [[ 
     exit 1
 fi
 
-# --- Read session metadata ---
-if [[ ! -f "$STARTUP_FILE" ]]; then
-    echo "Error: $STARTUP_FILE not found." >&2
-    echo "       Is this running inside a CodingBooth container?" >&2
-    exit 1
-fi
-
-SESSION_ID=$(grep '^session-id' "$STARTUP_FILE" | cut -d'=' -f2 | tr -d ' ')
-if [[ -z "$SESSION_ID" ]]; then
-    echo "Error: session-id not found in $STARTUP_FILE" >&2
-    exit 1
-fi
-
 BOOTH_PORT="${BOOTH_HOST_PORT:-10000}"
 
 # --- Resolve external port ---
@@ -121,42 +107,6 @@ if [[ -f "$TUNNEL_DIR/$CONTAINER_PORT" ]]; then
     echo "       Remove $TUNNEL_DIR/$CONTAINER_PORT to reset." >&2
     exit 1
 fi
-
-# --- Check if booth-ws-bridge is available ---
-if ! command -v booth-ws-bridge &>/dev/null; then
-    echo "Error: booth-ws-bridge not found." >&2
-    echo "       This CodingBooth image may need to be rebuilt." >&2
-    exit 1
-fi
-
-# --- Start WebSocket-to-TCP bridge ---
-BRIDGE_PORT=$((20000 + CONTAINER_PORT))
-TUNNEL_PATH="/tcp-tunnel-${SESSION_ID}/${CONTAINER_PORT}"
-
-booth-ws-bridge -listen "127.0.0.1:${BRIDGE_PORT}" -target "127.0.0.1:${CONTAINER_PORT}" &
-BRIDGE_PID=$!
-
-# Wait briefly to check it started
-sleep 0.2
-if ! kill -0 "$BRIDGE_PID" 2>/dev/null; then
-    echo "Error: booth-ws-bridge failed to start (bridge port ${BRIDGE_PORT} may be in use)." >&2
-    exit 1
-fi
-
-# --- Add nginx location for the tunnel ---
-cat >> "$TUNNEL_NGINX_CONF" <<NGINX
-location ${TUNNEL_PATH} {
-    proxy_pass http://127.0.0.1:${BRIDGE_PORT};
-    proxy_http_version 1.1;
-    proxy_set_header Upgrade \$http_upgrade;
-    proxy_set_header Connection "upgrade";
-    proxy_read_timeout 24h;
-    proxy_buffering off;
-}
-NGINX
-
-# Reload nginx to pick up new location
-nginx -s reload 2>/dev/null || true
 
 # --- Write control file ---
 mkdir -p "$TUNNEL_DIR"

@@ -49,7 +49,7 @@ session-id = a7f3b2c9e1d6
 - **started-at** — timestamp of this boot (UTC)
 - **session-id** — random identifier unique to this session
 
-The `session-id` is useful for features that need a per-session secret (e.g., salting a URL path to prevent guessing).
+The `session-id` uniquely identifies a booth session. It can be used by features or scripts that need a per-session identifier.
 
 ---
 

@@ -7,21 +7,19 @@ package booth
 import (
 	"context"
 	"fmt"
-	"io"
 	"net"
-	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
-	"github.com/gorilla/websocket"
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 )
 
-// tcpTunnel represents an active tunnel from a host port to a container port via WebSocket.
+// tcpTunnel represents an active tunnel from a host port to a container port via docker exec + socat.
 type tcpTunnel struct {
 	containerPort int
 	externalPort  int
@@ -30,18 +28,15 @@ type tcpTunnel struct {
 }
 
 // StartTcpTunnelWatcher watches .booth/.tmp/tcp-tunnels/ for control files
-// and creates host-side TCP listeners that forward traffic via WebSocket to
-// the container. It runs until the provided context is cancelled.
-func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext) {
+// and creates host-side TCP listeners that forward traffic via docker exec + socat
+// to the container. It runs until the provided context is cancelled.
+func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, containerName string) {
 	codePath := appCtx.Code()
 	if codePath == "" {
 		return
 	}
 
 	tunnelDir := filepath.Join(codePath, ".booth", ".tmp", "tcp-tunnels")
-	startupFile := filepath.Join(codePath, ".booth", ".tmp", "booth-startup.txt")
-
-	boothPort := appCtx.PortNumber()
 	verbose := appCtx.Verbose()
 
 	var mu sync.Mutex
@@ -63,11 +58,6 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext) {
 			return
 
 		case <-ticker.C:
-			sessionID := readSessionID(startupFile)
-			if sessionID == "" {
-				continue
-			}
-
 			entries, err := os.ReadDir(tunnelDir)
 			if err != nil {
 				continue
@@ -106,7 +96,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext) {
 				}
 
 				// Start tunnel
-				tunnel, err := startTunnel(ctx, boothPort, sessionID, containerPort, externalPort, verbose)
+				tunnel, err := startTunnel(ctx, containerName, containerPort, externalPort, verbose)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "  Tunnel error (port %d): %v\n", containerPort, err)
 					continue
@@ -134,23 +124,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext) {
 	}
 }
 
-func readSessionID(startupFile string) string {
-	data, err := os.ReadFile(startupFile)
-	if err != nil {
-		return ""
-	}
-	for _, line := range strings.Split(string(data), "\n") {
-		if strings.HasPrefix(line, "session-id") {
-			parts := strings.SplitN(line, "=", 2)
-			if len(parts) == 2 {
-				return strings.TrimSpace(parts[1])
-			}
-		}
-	}
-	return ""
-}
-
-func startTunnel(parentCtx context.Context, boothPort int, sessionID string, containerPort, externalPort int, verbose bool) (*tcpTunnel, error) {
+func startTunnel(parentCtx context.Context, containerName string, containerPort, externalPort int, verbose bool) (*tcpTunnel, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", externalPort))
 	if err != nil {
 		return nil, fmt.Errorf("cannot listen on port %d: %w", externalPort, err)
@@ -165,19 +139,12 @@ func startTunnel(parentCtx context.Context, boothPort int, sessionID string, con
 		cancel:        cancel,
 	}
 
-	wsPath := fmt.Sprintf("/tcp-tunnel-%s/%d", sessionID, containerPort)
-	wsURL := url.URL{
-		Scheme: "ws",
-		Host:   fmt.Sprintf("localhost:%d", boothPort),
-		Path:   wsPath,
-	}
-
-	go acceptLoop(ctx, listener, wsURL.String(), verbose)
+	go acceptLoop(ctx, listener, containerName, containerPort, verbose)
 
 	return tunnel, nil
 }
 
-func acceptLoop(ctx context.Context, listener net.Listener, wsURL string, verbose bool) {
+func acceptLoop(ctx context.Context, listener net.Listener, containerName string, containerPort int, verbose bool) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -188,59 +155,24 @@ func acceptLoop(ctx context.Context, listener net.Listener, wsURL string, verbos
 				continue
 			}
 		}
-		go handleTunnelConn(ctx, conn, wsURL, verbose)
+		go handleTunnelConn(ctx, conn, containerName, containerPort, verbose)
 	}
 }
 
-func handleTunnelConn(ctx context.Context, tcpConn net.Conn, wsURL string, verbose bool) {
+func handleTunnelConn(ctx context.Context, tcpConn net.Conn, containerName string, containerPort int, verbose bool) {
 	defer tcpConn.Close()
 
-	dialer := websocket.Dialer{}
-	wsConn, _, err := dialer.DialContext(ctx, wsURL, nil)
-	if err != nil {
-		if verbose {
-			fmt.Fprintf(os.Stderr, "  Tunnel WS dial error: %v\n", err)
-		}
-		return
+	cmd := exec.CommandContext(ctx, "docker", "exec", "-i", containerName,
+		"socat", "STDIO", fmt.Sprintf("TCP:localhost:%d", containerPort))
+	cmd.Stdin = tcpConn
+	cmd.Stdout = tcpConn
+	if verbose {
+		cmd.Stderr = os.Stderr
 	}
-	defer wsConn.Close()
 
-	done := make(chan struct{}, 2)
-
-	// TCP -> WS
-	go func() {
-		defer func() { done <- struct{}{} }()
-		buf := make([]byte, 32*1024)
-		for {
-			n, err := tcpConn.Read(buf)
-			if n > 0 {
-				if werr := wsConn.WriteMessage(websocket.BinaryMessage, buf[:n]); werr != nil {
-					return
-				}
-			}
-			if err != nil {
-				return
-			}
+	if err := cmd.Run(); err != nil {
+		if verbose {
+			fmt.Fprintf(os.Stderr, "  Tunnel exec error (port %d): %v\n", containerPort, err)
 		}
-	}()
-
-	// WS -> TCP
-	go func() {
-		defer func() { done <- struct{}{} }()
-		for {
-			_, reader, err := wsConn.NextReader()
-			if err != nil {
-				return
-			}
-			if _, err := io.Copy(tcpConn, reader); err != nil {
-				return
-			}
-		}
-	}()
-
-	// Wait for either direction to finish
-	select {
-	case <-done:
-	case <-ctx.Done():
 	}
 }
