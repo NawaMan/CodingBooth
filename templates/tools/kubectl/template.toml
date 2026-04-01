@@ -1,0 +1,10 @@
+display-name = "Kubectl"
+display-disc = "Kubernetes CLI for cluster management"
+display-detail = "Installs kubectl for managing Kubernetes clusters, deploying applications, and inspecting resources."
+display-order = 56
+tags = ["kubernetes", "k8s", "kubectl", "cloud", "cli"]
+
+[segments]
+Boothfile = """
+setup kubectl
+"""

@@ -1,0 +1,16 @@
+display-name = "Terraform"
+display-disc = "HashiCorp Terraform CLI for infrastructure as code"
+display-detail = "Installs Terraform CLI for defining, provisioning, and managing cloud infrastructure across providers."
+display-order = 55
+tags = [
+    "terraform",
+    "iac",
+    "cloud",
+    "hashicorp",
+    "cli"
+]
+
+[segments]
+Boothfile = """
+setup terraform
+"""

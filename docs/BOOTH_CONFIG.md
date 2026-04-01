@@ -218,7 +218,7 @@ Use `booth template` to explore what's available before running init.
 
 Use `--full` with `list` or `search` to include secondary (non-primary) templates.
 
-There are **150+ templates** across 7 categories: languages, ai-tools, tools, IDEs, desktops, databases, and browsers.
+There are **190+ templates** across 7 categories: languages, ai-tools, tools, IDEs, desktops, databases, and browsers.
 
 ---
 

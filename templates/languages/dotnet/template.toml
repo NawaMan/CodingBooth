@@ -1,0 +1,24 @@
+display-name = ".NET"
+primary = true
+display-disc = ".NET SDK with C# and F# support"
+display-detail = "Sets up a .NET development environment with the SDK, NuGet package manager, and configurable channel version."
+display-order = 35
+tags = [
+    "dotnet",
+    "csharp",
+    "fsharp",
+    "microsoft"
+]
+
+[params.DOTNET_CHANNEL]
+default = "9.0"
+suggests = [
+    "9.0",
+    "8.0",
+    "7.0",
+]
+
+[segments]
+Boothfile = """
+setup dotnet ${DOTNET_CHANNEL}
+"""

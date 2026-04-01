@@ -1,0 +1,17 @@
+display-name = "GitHub Copilot CLI"
+display-disc = "GitHub Copilot CLI extension for terminal assistance"
+display-detail = "Installs the GitHub Copilot CLI extension for gh, providing AI-powered command suggestions and explanations in the terminal."
+display-order = 30
+tags = [
+    "ai",
+    "copilot",
+    "github",
+    "cli"
+]
+requires = ["gh"]
+
+[segments]
+Boothfile = """
+setup gh
+setup gh-copilot
+"""

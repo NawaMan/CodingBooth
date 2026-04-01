@@ -39,7 +39,7 @@ fi
 
 # ===================== Config =====================
 MIRROR="${MIRROR:-https://download.eclipse.org/technology/epp/downloads/release}"
-REL="${REL:-2025-09}"             # e.g. 2025-09
+REL="${REL:-2026-03}"             # e.g. 2026-03
 KIND="${KIND:-java}"              # e.g. java | jee
 ARCH="$(uname -m)"                # use uname -m directly
 INSTALL_DIR="/opt/eclipse-${KIND}-${REL}"

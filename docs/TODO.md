@@ -52,43 +52,48 @@ Need to find a way to fix this. This may involve creating a different type of ho
 Add or improve support for these developer tools and environments:
 
 - [x] `network-whitelist` - Restrict container internet access to whitelisted domains
-- [ ] `aws-cli`
-- [ ] `az-cli`
-- [ ] `bun`
+- [x] `aws-cli`
+- [x] `az-cli` (azure-cli)
+- [x] `bun`
 - [ ] `clang`
 - [ ] `cmake`
-- [ ] `conda`
-- [ ] `deno`
-- [ ] `docker`
-- [ ] `dotnet`
-- [ ] `elixir`
-- [ ] `erlang`
+- [x] `conda`
+- [x] `deno`
+- [x] `docker` (dind)
+- [x] `dotnet`
+- [x] `elixir`
+- [x] `erlang`
 - [ ] `gcc`
-- [ ] `gcloud`
-- [ ] `go`
-- [ ] `haskell`
+- [x] `gcloud`
+- [x] `go`
+- [x] `haskell`
 - [ ] `julia`
-- [ ] `k8s-local`
+- [x] `k8s-local` (kind)
 - [ ] `kafka`
-- [ ] `kotlin`
-- [ ] `kubectl`
-- [ ] `lua`
+- [x] `kotlin`
+- [x] `kubectl`
+- [x] `lua`
 - [ ] `make`
 - [ ] `mongodb`
-- [ ] `mysql`
-- [ ] `nodejs`
+- [x] `mysql`
+- [x] `nodejs`
 - [ ] `ocaml`
-- [ ] `php`
-- [ ] `postgres`
+- [x] `php`
+- [x] `postgres`
 - [ ] `rabbitmq`
 - [ ] `roc`
-- [ ] `r-rscript`
-- [ ] `ruby`
-- [ ] `rust`
+- [x] `r-rscript`
+- [x] `ruby`
+- [x] `rust`
 - [ ] `sbt`
-- [ ] `scala`
+- [x] `scala`
 - [ ] `swift`
-- [ ] `zig`
+- [x] `zig`
+- [x] `terraform`
+- [x] `helm`
+- [x] `aws-sam-cli`
+- [x] `aws-cdk`
+- [x] `gh-copilot`
 
 ---
 

@@ -169,6 +169,12 @@ run-args = [
     # Firebase CLI
     "-v", "~/.config/configstore/firebase-tools.json:/etc/cb-home-seed/.config/configstore/firebase-tools.json:ro",
 
+    # Kubernetes (kubectl, helm)
+    "-v", "~/.kube:/etc/cb-home-seed/.kube:ro",
+
+    # Terraform
+    "-v", "~/.terraformrc:/etc/cb-home-seed/.terraformrc:ro",
+
     # Neovim config
     "-v", "~/.config/nvim:/etc/cb-home-seed/.config/nvim:ro",
     "-v", "~/.local/share/nvim:/etc/cb-home-seed/.local/share/nvim:ro"

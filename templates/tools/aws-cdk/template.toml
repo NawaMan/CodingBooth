@@ -1,0 +1,17 @@
+display-name = "AWS CDK"
+display-disc = "AWS Cloud Development Kit for infrastructure as code"
+display-detail = "Installs AWS CDK CLI for defining cloud infrastructure using familiar programming languages (TypeScript, Python, Java, etc.)."
+display-order = 52
+tags = [
+    "aws",
+    "cdk",
+    "iac",
+    "cloud",
+    "cli"
+]
+requires = ["nodejs"]
+
+[segments]
+Boothfile = """
+setup aws-cdk
+"""

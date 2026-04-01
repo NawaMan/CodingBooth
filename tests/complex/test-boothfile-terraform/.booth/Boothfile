@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Terraform installation via Boothfile
+setup terraform

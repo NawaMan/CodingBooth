@@ -1,0 +1,17 @@
+display-name = "AWS SAM CLI"
+display-disc = "AWS Serverless Application Model CLI for building serverless apps"
+display-detail = "Installs AWS SAM CLI for building, testing, and deploying serverless applications on AWS Lambda, API Gateway, DynamoDB, and more."
+display-order = 51
+tags = [
+    "aws",
+    "sam",
+    "serverless",
+    "lambda",
+    "cloud",
+    "cli"
+]
+
+[segments]
+Boothfile = """
+setup aws-sam-cli
+"""

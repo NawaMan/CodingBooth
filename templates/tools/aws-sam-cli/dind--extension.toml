@@ -1,0 +1,5 @@
+display-name = "Docker-in-Docker (for sam local)"
+display-disc = "Enable DinD for sam local invoke/start-api"
+tags = ["aws", "sam", "dind", "docker"]
+
+dind = true

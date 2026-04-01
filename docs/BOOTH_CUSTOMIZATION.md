@@ -62,6 +62,11 @@ setup nodejs 20
 setup jdk 21 temurin
 setup neovim
 setup claude-code
+setup terraform
+setup aws-cli
+setup azure-cli
+setup kubectl
+setup helm
 ```
 
 Or in a Dockerfile:

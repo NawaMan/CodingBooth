@@ -1,0 +1,15 @@
+display-name = "Azure CLI"
+display-disc = "Microsoft Azure CLI for cloud resource management"
+display-detail = "Installs the Azure CLI (az) for managing Microsoft Azure resources, subscriptions, and services."
+display-order = 53
+tags = [
+    "azure",
+    "cloud",
+    "cli",
+    "microsoft"
+]
+
+[segments]
+Boothfile = """
+setup azure-cli
+"""

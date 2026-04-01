@@ -1,0 +1,10 @@
+display-name = "Helm"
+display-disc = "Kubernetes package manager"
+display-detail = "Installs Helm for managing Kubernetes applications via charts, repositories, and releases."
+display-order = 57
+tags = ["kubernetes", "k8s", "helm", "cloud", "cli"]
+
+[segments]
+Boothfile = """
+setup helm
+"""
