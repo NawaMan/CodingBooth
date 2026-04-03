@@ -3,6 +3,12 @@
 # you may not use this file except in compliance with the License.
 
 
+# ---- QEMU detection ----
+# When cross-building arm64 on amd64 (or vice versa), code-server's bundled
+# Node binary fails with "Invalid ELF image".  Extension installs must be
+# deferred to first launch on real hardware.
+is_qemu() { [ -e /dev/.buildkit_qemu_emulator ]; }
+
 # ---- Extension dirs (overridable) ----
 # Due to the root (build time) and non-root (coder in this case) (at start time) separation,
 #   it is bested to centerize this to the system folder.
@@ -56,6 +62,12 @@ install_extensions() {
   if (( ${#clis[@]} == 0 )); then
     echo "Neither VS Code (code) nor code-server found in PATH." >&2
     return 1
+  fi
+
+  # Under QEMU, code-server's bundled Node cannot run — skip gracefully.
+  if is_qemu; then
+    echo "⚠️  QEMU detected — deferring extension install to first launch." >&2
+    return 0
   fi
 
   # Install each extension to each available CLI

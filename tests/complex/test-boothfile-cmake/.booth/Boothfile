@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: CMake installation via Boothfile
+setup cmake

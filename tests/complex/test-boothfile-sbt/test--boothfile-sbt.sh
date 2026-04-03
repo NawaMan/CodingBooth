@@ -1,0 +1,36 @@
+#!/bin/bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# Test: Boothfile sbt Installation
+#
+# Verifies that a Boothfile with `setup sbt` correctly installs sbt
+# and makes it available in the container.
+# Note: sbt --version is very slow on first run, so we just check the binary.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+source ../../common--source.sh
+
+echo "=== Test: Boothfile sbt Installation ==="
+
+FAILED=0
+
+# Test 1: sbt binary is installed and executable
+ACTUAL=$(run_coding_booth --silence-build -- which sbt 2>/dev/null | head -1)
+
+if echo "$ACTUAL" | grep -qE "/sbt"; then
+    print_test_result "true" "$0" "1" "sbt is installed via Boothfile"
+else
+    print_test_result "false" "$0" "1" "sbt should be installed"
+    echo "  Actual output: $ACTUAL"
+    FAILED=$((FAILED + 1))
+fi
+
+exit $FAILED

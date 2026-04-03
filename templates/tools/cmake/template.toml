@@ -1,0 +1,10 @@
+display-name = "CMake"
+display-disc = "CMake build system generator"
+display-detail = "Installs CMake for building, testing, and packaging C/C++ and other projects."
+display-order = 62
+tags = ["cmake", "build", "cpp", "c"]
+
+[segments]
+Boothfile = """
+setup cmake
+"""

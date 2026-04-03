@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: lazygit installation via Boothfile
+setup lazygit

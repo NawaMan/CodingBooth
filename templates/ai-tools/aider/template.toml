@@ -1,0 +1,15 @@
+display-name = "Aider"
+display-disc = "AI pair programming tool for coding with LLMs"
+display-detail = "Installs Aider, an AI coding assistant that works with LLMs to edit code in your repository. Requires API keys for OpenAI, Anthropic, or other providers."
+display-order = 35
+tags = [
+    "ai",
+    "aider",
+    "coding",
+    "cli"
+]
+
+[segments]
+Boothfile = """
+setup aider
+"""

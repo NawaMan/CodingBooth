@@ -181,12 +181,17 @@ echo "📦 Built extension: $VSIX_PATH"
 installed=0
 
 if command -v code-server >/dev/null 2>&1; then
-  echo "Installing booth-shutdown extension for code-server..."
-  cli_bin="$(cli_bin_for_install code-server)"
-  "$cli_bin" --install-extension "$VSIX_PATH" --extensions-dir "$CODESERVER_EXTENSION_DIR" --force
-  find "$CODESERVER_EXTENSION_DIR" -type d -exec chmod a+w {} +
-  echo "  ✔ Installed for code-server"
-  installed=1
+  if is_qemu; then
+    echo "⚠️  QEMU detected — deferring booth-shutdown extension install to first launch."
+    installed=1   # not an error
+  else
+    echo "Installing booth-shutdown extension for code-server..."
+    cli_bin="$(cli_bin_for_install code-server)"
+    "$cli_bin" --install-extension "$VSIX_PATH" --extensions-dir "$CODESERVER_EXTENSION_DIR" --force
+    find "$CODESERVER_EXTENSION_DIR" -type d -exec chmod a+w {} +
+    echo "  ✔ Installed for code-server"
+    installed=1
+  fi
 fi
 
 rm -f "$VSIX_PATH"

@@ -1,0 +1,2 @@
+# Test config for boothfile-gradle
+variant = "base"

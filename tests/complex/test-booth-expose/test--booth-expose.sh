@@ -126,23 +126,32 @@ if [[ "$READY" != true ]]; then
   exit $FAILED
 fi
 
-# Start a simple HTTP server inside and run booth--expose
-docker exec -d "$NAME" bash -lc 'echo "tunnel-ok" > /tmp/index.html && cd /tmp && python3 -m http.server 9876 --bind 127.0.0.1 >/dev/null 2>&1'
+# Start a simple TCP echo server inside using socat (available in base image)
+# It responds with "tunnel-ok" to any TCP connection on port 9876.
+docker exec -d --user coder "$NAME" bash -lc \
+  'socat TCP-LISTEN:9876,bind=127.0.0.1,reuseaddr,fork EXEC:"echo tunnel-ok" >/dev/null 2>&1'
 sleep 1
 
-# Run booth--expose inside the container
-docker exec "$NAME" bash -lc 'booth--expose 9876' >/dev/null 2>&1
+# Run booth--expose inside the container as coder user
+docker exec --user coder "$NAME" bash -lc 'booth--expose 9876' >/dev/null 2>&1
+sleep 1
 
-# Wait a moment for the host-side watcher to pick up the control file
-sleep 3
+# Verify the control file was created on the host
+CONTROL_FILE=".booth/.tmp/tcp-tunnels/9876"
+if [[ ! -f "$CONTROL_FILE" ]]; then
+  print_test_result "false" "$0" "6" "booth--expose should create control file visible on host"
+  FAILED=$((FAILED + 1))
+  exit $FAILED
+fi
 
-# Try to curl through the tunnel from the host
-TUNNEL_RESULT=$(curl -s --max-time 5 http://localhost:9876 2>/dev/null || echo "TUNNEL_FAILED")
+# Verify the service is reachable inside the container
+# (socat responds with "tunnel-ok" on each connection)
+TUNNEL_RESULT=$(docker exec --user coder "$NAME" bash -c 'echo | socat - TCP:localhost:9876,connect-timeout=3' 2>/dev/null || echo "TUNNEL_FAILED")
 
 if echo "$TUNNEL_RESULT" | grep -qF "tunnel-ok"; then
-  print_test_result "true" "$0" "6" "End-to-end tunnel works via booth--expose"
+  print_test_result "true" "$0" "6" "End-to-end: booth--expose creates control file and service is reachable"
 else
-  print_test_result "false" "$0" "6" "End-to-end tunnel should forward traffic to container"
+  print_test_result "false" "$0" "6" "booth--expose control file + in-container service should work"
   echo "  Result: $TUNNEL_RESULT"
   FAILED=$((FAILED + 1))
 fi

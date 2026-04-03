@@ -1,0 +1,10 @@
+display-name = "Lazydocker"
+display-disc = "Simple terminal UI for Docker management"
+display-detail = "Installs lazydocker, a simple terminal UI for managing Docker containers, images, volumes, and networks."
+display-order = 61
+tags = ["docker", "tui", "cli"]
+
+[segments]
+Boothfile = """
+setup lazydocker
+"""

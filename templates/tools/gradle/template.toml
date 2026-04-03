@@ -1,0 +1,12 @@
+display-name = "Gradle"
+display-disc = "Gradle build tool for JVM projects"
+display-detail = "Installs Gradle build automation tool for Java, Kotlin, Groovy, and other JVM languages."
+display-order = 64
+tags = ["gradle", "build", "java", "jvm"]
+
+requires = ["java"]
+
+[segments]
+Boothfile = """
+setup gradle
+"""

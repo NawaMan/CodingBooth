@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Pulumi installation via Boothfile
+setup pulumi

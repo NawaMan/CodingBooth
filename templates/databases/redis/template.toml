@@ -1,0 +1,19 @@
+display-name = "Redis"
+display-disc = "Redis in-memory store with persistent volume"
+display-detail = "Installs Redis in-memory data store with a persistent Docker volume for data storage across container restarts."
+display-order = 20
+tags = [
+    "database",
+    "redis",
+    "cache"
+]
+
+run-args = [
+    # Persist Redis data across container restarts
+    "-v", "booth-redisdata:/home/coder/.redis",
+]
+
+[segments]
+Boothfile = """
+setup redis
+"""

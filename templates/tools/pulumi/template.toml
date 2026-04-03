@@ -1,0 +1,15 @@
+display-name = "Pulumi"
+display-disc = "Pulumi CLI for infrastructure as code"
+display-detail = "Installs Pulumi CLI for defining, deploying, and managing cloud infrastructure using general-purpose programming languages."
+display-order = 56
+tags = [
+    "pulumi",
+    "iac",
+    "cloud",
+    "cli"
+]
+
+[segments]
+Boothfile = """
+setup pulumi
+"""

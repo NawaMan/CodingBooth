@@ -1,0 +1,12 @@
+display-name = "sbt"
+display-disc = "Scala build tool for JVM projects"
+display-detail = "Installs sbt build tool for Scala, Java, and other JVM languages."
+display-order = 63
+tags = ["scala", "sbt", "build", "jvm"]
+
+requires = ["java"]
+
+[segments]
+Boothfile = """
+setup sbt
+"""

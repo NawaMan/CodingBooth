@@ -187,12 +187,20 @@ else
 fi
 
 # 3) Install future extensions into the shared dir
-code-server --extensions-dir "$CODESERVER_EXTENSION_DIR" \
-  --install-extension ms-toolsai.jupyter \
-  --install-extension ms-python.python
+#    Under QEMU emulation (arm64 cross-build on amd64), code-server's bundled
+#    Node binary fails with "Invalid ELF image".  Skip and defer to first launch.
+if [ -e /dev/.buildkit_qemu_emulator ]; then
+  echo "⚠️  QEMU detected — deferring extension install to first launch."
+else
+  code-server --extensions-dir "$CODESERVER_EXTENSION_DIR" \
+    --install-extension ms-toolsai.jupyter \
+    --install-extension ms-python.python
 
-# Extensions now in $CODESERVER_EXTENSION_DIR
-code-server --extensions-dir "$CODESERVER_EXTENSION_DIR" --list-extensions || true
+  # Extensions now in $CODESERVER_EXTENSION_DIR
+  code-server --extensions-dir "$CODESERVER_EXTENSION_DIR" --list-extensions || true
+  # Mark as done so the startup launcher skips the deferred install
+  touch /usr/local/share/code-server/.extensions-installed
+fi
 
 
 echo "[4/9] Create launcher: /usr/local/bin/start-codeserver"
@@ -263,6 +271,16 @@ JSON
 
 # -------- default shell for everything code-server launches (incl. Jupyter ext) --------
 DEFAULT_SHELL="/bin/bash"
+
+# -------- deferred extension install (arm64 QEMU cross-build) --------
+MARKER="/usr/local/share/code-server/.extensions-installed"
+if [ ! -f "$MARKER" ]; then
+  echo "Installing deferred extensions (first launch) ..."
+  code-server --extensions-dir "$CODESERVER_EXTENSION_DIR" \
+    --install-extension ms-toolsai.jupyter \
+    --install-extension ms-python.python || true
+  touch "$MARKER"
+fi
 
 echo "Starting code-server. This may take sometime ..."
 

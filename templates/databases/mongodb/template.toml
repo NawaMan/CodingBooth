@@ -1,0 +1,19 @@
+display-name = "MongoDB"
+display-disc = "MongoDB database with persistent volume"
+display-detail = "Installs MongoDB document database with a persistent Docker volume for data storage across container restarts."
+display-order = 30
+tags = [
+    "database",
+    "mongodb",
+    "nosql"
+]
+
+run-args = [
+    # Persist MongoDB data across container restarts
+    "-v", "booth-mongodata:/home/coder/.mongodb",
+]
+
+[segments]
+Boothfile = """
+setup mongodb
+"""

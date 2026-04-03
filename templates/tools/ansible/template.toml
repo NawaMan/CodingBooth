@@ -1,0 +1,15 @@
+display-name = "Ansible"
+display-disc = "Ansible automation and configuration management tool"
+display-detail = "Installs Ansible for IT automation, configuration management, and application deployment via playbooks."
+display-order = 65
+tags = [
+    "ansible",
+    "devops",
+    "automation",
+    "cli"
+]
+
+[segments]
+Boothfile = """
+setup ansible
+"""

@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Ansible installation via Boothfile
+setup ansible
