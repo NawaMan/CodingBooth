@@ -94,7 +94,9 @@ func (booth *Booth) runAsCommand() error {
 	}
 
 	// Execute the docker run command
+	LogTimef(os.Stderr, "Info: running container...\n")
 	err := docker.Docker(flags, "run", args)
+	LogTimef(os.Stderr, "Info: container exited.\n")
 
 	// Stop tunnel watcher
 	tunnelCancel()
@@ -140,25 +142,25 @@ func (booth *Booth) runAsDaemon() error {
 		userCmds = append(userCmds, flattenArgs(booth.ctx.Cmds())...)
 	}
 
-	fmt.Println("📦 Running booth in daemon mode.")
+	LogPrintln("📦 Running booth in daemon mode.")
 
 	if booth.ctx.KeepAlive() {
-		fmt.Println("👉 Stop with Ctrl+C. The container will be kept (no --rm).")
+		LogPrintln("👉 Stop with Ctrl+C. The container will be kept (no --rm).")
 	} else {
-		fmt.Println("👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.")
+		LogPrintln("👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.")
 	}
 
 	if booth.ctx.Public() {
-		fmt.Printf("👉 Visit 'https://localhost:%d'\n", booth.ctx.PortNumber())
+		LogPrintf("👉 Visit 'https://localhost:%d'\n", booth.ctx.PortNumber())
 	} else {
-		fmt.Printf("👉 Visit 'http://localhost:%d'\n", booth.ctx.PortNumber())
+		LogPrintf("👉 Visit 'http://localhost:%d'\n", booth.ctx.PortNumber())
 	}
-	fmt.Printf("👉 To open an interactive shell instead: %s -- bash\n", booth.ctx.ScriptName())
-	fmt.Println("👉 To stop the running container:")
+	LogPrintf("👉 To open an interactive shell instead: %s -- bash\n", booth.ctx.ScriptName())
+	LogPrintln("👉 To stop the running container:")
 	fmt.Println()
 	fmt.Printf("      docker stop %s\n", booth.ctx.Name())
 	fmt.Println()
-	fmt.Printf("👉 Container Name: %s\n", booth.ctx.Name())
+	LogPrintf("👉 Container Name: %s\n", booth.ctx.Name())
 	fmt.Print("👉 Container ID: ")
 
 	if booth.ctx.Dryrun() {
@@ -185,6 +187,7 @@ func (booth *Booth) runAsDaemon() error {
 	args = args.ExtendByLists(ilist.NewListFromSlice(extraArgs))
 
 	// Execute the docker run command
+	LogTimef(os.Stderr, "Info: running container...\n")
 	err := docker.Docker(flags, "run", args)
 
 	// If DinD is enabled in daemon mode, inform user how to stop it
@@ -218,13 +221,13 @@ func (booth *Booth) runAsForeground() error {
 	ttyArgs := prepareTtyArgs()
 	keepAliveArgs := prepareKeepAliveArgs(booth.ctx.KeepAlive())
 
-	fmt.Println("📦 Running booth in foreground.")
+	LogPrintln("📦 Running booth in foreground.")
 	if booth.ctx.KeepAlive() {
-		fmt.Println("👉 Stop with Ctrl+C. The container will be kept (no --rm).")
+		LogPrintln("👉 Stop with Ctrl+C. The container will be kept (no --rm).")
 	} else {
-		fmt.Println("👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.")
+		LogPrintln("👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.")
 	}
-	fmt.Printf("👉 To open an interactive shell instead: '%s -- bash'\n", booth.ctx.ScriptName())
+	LogPrintf("👉 To open an interactive shell instead: '%s -- bash'\n", booth.ctx.ScriptName())
 	fmt.Println()
 
 	args := ilist.NewList[ilist.List[string]]()
@@ -254,7 +257,9 @@ func (booth *Booth) runAsForeground() error {
 	}
 
 	// Execute the docker run command
+	LogTimef(os.Stderr, "Info: running container...\n")
 	err := docker.Docker(flags, "run", args)
+	LogTimef(os.Stderr, "Info: container exited.\n")
 
 	// Stop tunnel watcher
 	tunnelCancel()

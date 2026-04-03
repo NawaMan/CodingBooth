@@ -117,18 +117,18 @@ func isPortFree(port int) bool {
 // printPortBanner prints the port selection banner.
 func printPortBanner(portNumber int, public bool) {
 	fmt.Println()
-	fmt.Println("============================================================")
-	fmt.Println("🚀 BOOTH PORT SELECTED")
-	fmt.Println("============================================================")
+	LogPrintln("============================================================")
+	LogPrintln("🚀 BOOTH PORT SELECTED")
+	LogPrintln("============================================================")
 	if public {
-		fmt.Printf("🔌 Using host port: \033[1;32m%d\033[0m -> container: \033[1;34m10443\033[0m (HTTPS)\n", portNumber)
-		fmt.Printf("🌐 Open: https://coder@localhost:%d\n", portNumber)
-		fmt.Println("🔑 Login username: coder")
-		fmt.Println("🔓 PUBLIC: PORT IS OPEN ON ALL INTERFACES (PASSWORD + HTTPS)")
+		LogPrintf("🔌 Using host port: \033[1;32m%d\033[0m -> container: \033[1;34m10443\033[0m (HTTPS)\n", portNumber)
+		LogPrintf("🌐 Open: https://coder@localhost:%d\n", portNumber)
+		LogPrintln("🔑 Login username: coder")
+		LogPrintln("🔓 PUBLIC: PORT IS OPEN ON ALL INTERFACES (PASSWORD + HTTPS)")
 	} else {
-		fmt.Printf("🔌 Using host port: \033[1;32m%d\033[0m -> container: \033[1;34m10000\033[0m\n", portNumber)
-		fmt.Printf("🌐 Open: http://localhost:%d\n", portNumber)
+		LogPrintf("🔌 Using host port: \033[1;32m%d\033[0m -> container: \033[1;34m10000\033[0m\n", portNumber)
+		LogPrintf("🌐 Open: http://localhost:%d\n", portNumber)
 	}
-	fmt.Println("============================================================")
+	LogPrintln("============================================================")
 	fmt.Println()
 }

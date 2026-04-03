@@ -122,7 +122,7 @@ func NormalizeDockerFile(ctx appctx.AppContext) string {
 // Returns the path to the generated Dockerfile.
 func compileBoothfile(ctx appctx.AppContext, boothfilePath string) string {
 	if !ctx.SilenceBuild() {
-		fmt.Fprintf(os.Stderr, "Info: compiling Boothfile '%s'...\n", boothfilePath)
+		LogFprintf(os.Stderr, "Info: compiling Boothfile '%s'...\n", boothfilePath)
 	}
 
 	// Read Boothfile
@@ -221,14 +221,14 @@ func compileBoothfile(ctx appctx.AppContext, boothfilePath string) string {
 // buildLocalImage builds a local Docker image.
 func buildLocalImage(ctx appctx.AppContext) {
 	if !ctx.SilenceBuild() {
-		fmt.Fprintf(os.Stderr, "Info: building local image '%s' from '%s'...\n",
+		LogFprintf(os.Stderr, "Info: building local image '%s' from '%s'...\n",
 			ctx.Image(), ctx.Dockerfile())
 	}
 
 	if ctx.Verbose() {
 		fmt.Println()
-		fmt.Printf("Build local image: %s\n", ctx.Image())
-		fmt.Printf("  - SILENCE_BUILD: %t\n", ctx.SilenceBuild())
+		LogPrintf("Build local image: %s\n", ctx.Image())
+		LogPrintf("  - SILENCE_BUILD: %t\n", ctx.SilenceBuild())
 	}
 
 	// Build arguments
@@ -273,7 +273,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 	if ctx.Pull() {
 		// Always pull when --pull is set
 		if !ctx.SilenceBuild() {
-			fmt.Fprintf(os.Stderr, "Info: pulling image '%s' (forced by --pull)...\n", imageName)
+			LogFprintf(os.Stderr, "Info: pulling image '%s' (forced by --pull)...\n", imageName)
 		}
 		if ctx.Verbose() {
 			fmt.Printf("Pulling image (forced): %s\n", imageName)
@@ -303,7 +303,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 		err := docker.Docker(flags, "image", ilist.NewList(ilist.NewList("inspect", "--format", "{{.Id}}", imageName)))
 		if err != nil {
 			// Image not found locally, pull it
-			fmt.Fprintf(os.Stderr, "Info: pulling image '%s' (not found locally)...\n", imageName)
+			LogFprintf(os.Stderr, "Info: pulling image '%s' (not found locally)...\n", imageName)
 			if ctx.Verbose() {
 				fmt.Printf("Image not found locally. Pulling: %s\n", imageName)
 			}

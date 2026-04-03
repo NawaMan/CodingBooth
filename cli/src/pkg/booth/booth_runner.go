@@ -30,6 +30,7 @@ func NewBoothRunner(ctx appctx.AppContext) *BoothRunner {
 func (runner *BoothRunner) Run() error {
 	// Prepare arguments and determine run mode (matching booth order)
 	ctx := runner.ctx
+	SetLogTime(ctx.LogTime())
 	ctx = ValidateVariant(ctx)
 	ctx = EnsureDockerImage(ctx)
 	ctx = ApplyEnvFile(ctx)

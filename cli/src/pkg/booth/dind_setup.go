@@ -39,9 +39,9 @@ func cleanupPreviousBoothInstances(ctx appctx.AppContext, projectName string) {
 			}
 
 			if ctx.Verbose() {
-				fmt.Printf("Stopping leftover sidecar: %s (%s)\n", containerName, id)
+				LogPrintf("Stopping leftover sidecar: %s (%s)\n", containerName, id)
 			} else {
-				fmt.Printf("Cleaning up leftover sidecar: %s\n", containerName)
+				LogPrintf("Cleaning up leftover sidecar: %s\n", containerName)
 			}
 			exec.Command("docker", "stop", id).Run()
 			exec.Command("docker", "rm", "-f", id).Run()

@@ -86,6 +86,7 @@ type AppConfig struct {
 	WritableBooth      bool   `toml:"writable-booth,omitempty"      envconfig:"CB_WRITABLE_BOOTH" default:"false"`
 	LeaveTmpOnExit     bool   `toml:"leave-tmp-on-exit,omitempty"   envconfig:"CB_LEAVE_TMP_ON_EXIT" default:"false"`
 	KeepTmpOnStart     bool   `toml:"keep-tmp-on-start,omitempty"   envconfig:"CB_KEEP_TMP_ON_START" default:"false"`
+	LogTime            bool   `toml:"log-time,omitempty"            envconfig:"CB_LOG_TIME" default:"false"`
 
 	// Public exposes the booth on all interfaces (0.0.0.0) with password auth and HTTPS.
 	// Password is resolved at startup from .booth/.booth.password or interactive stdin.

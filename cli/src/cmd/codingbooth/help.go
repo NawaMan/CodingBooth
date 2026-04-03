@@ -147,6 +147,7 @@ CONTAINER MODE:
   --no-sudo              Shorthand for --sudo false
   --keep-alive           Do not remove the container when stopped
   --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
+  --log-time             Prefix progress messages with timestamps
 
 COMMANDS:
   All arguments after '--' are executed *inside* the container instead of starting
@@ -230,6 +231,7 @@ CONTAINER MODE:
   --no-sudo              Shorthand for --sudo false
   --keep-alive           Do not remove container when stopped
   --writable-booth       Allow writing to .booth/ inside the container
+  --log-time             Prefix progress messages with timestamps
 
 COMMANDS:
   Arguments after '--' run inside the container instead of the default service.

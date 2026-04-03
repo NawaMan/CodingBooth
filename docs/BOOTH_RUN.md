@@ -256,6 +256,23 @@ Suppresses container startup messages for cleaner output:
 
 > Silent mode only hides startup messages. First runs may still take time for image pull/build.
 
+### Log Time (`--log-time`)
+
+Prefixes progress messages with timestamps, useful for debugging startup timing:
+
+```bash
+./booth --variant codeserver --daemon --log-time
+# [18:04:05] 📦 Running booth in daemon mode.
+# [18:04:05] 👉 Visit 'http://localhost:10000'
+# ...
+```
+
+Can also be set via environment variable (`CB_LOG_TIME=true`) or in `config.toml`:
+
+```toml
+log-time = true
+```
+
 ### Daemon Mode (`--daemon`)
 
 Starts the container in the background (detached). Commonly used for IDE variants that provide persistent services.
