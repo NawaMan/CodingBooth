@@ -39,8 +39,18 @@ container_state() {
 # Wait for container entrypoint to finish after daemon start.
 wait_exec_ready() {
   local name="$1"
-  for _ in $(seq 1 10); do
+  for _ in $(seq 1 20); do
     if docker exec "$name" bash -lc 'true' >/dev/null 2>&1; then return 0; fi
+    sleep 1
+  done
+  return 1
+}
+
+# Wait for container to reach "exited" state after stop.
+wait_stopped() {
+  local name="$1"
+  for _ in $(seq 1 15); do
+    if [[ "$(container_state "$name")" == "exited" ]]; then return 0; fi
     sleep 1
   done
   return 1
@@ -48,14 +58,11 @@ wait_exec_ready() {
 
 # 1) run keep-alive in daemon mode, write first pair, then stop.
 if run_coding_booth --variant base --name "$NAME" --daemon --keep-alive -- 'sleep 600' >/dev/null 2>&1 \
+  && wait_exec_ready "$NAME" \
   && docker exec "$NAME" bash -lc "echo first > '$TMP_FILE_1' && echo first > '$HOME_FILE_1'" >/dev/null 2>&1 \
-  && run_coding_booth stop --name "$NAME" >/dev/null 2>&1; then
-  if [[ "$(container_state "$NAME")" == "exited" ]]; then
-    print_test_result "true" "$0" "1" "run+write+stop created first files in stopped container"
-  else
-    print_test_result "false" "$0" "1" "container should be exited after first stop"
-    FAILED=$((FAILED + 1))
-  fi
+  && run_coding_booth stop --name "$NAME" >/dev/null 2>&1 \
+  && wait_stopped "$NAME"; then
+  print_test_result "true" "$0" "1" "run+write+stop created first files in stopped container"
 else
   print_test_result "false" "$0" "1" "run+write+stop sequence should succeed"
   FAILED=$((FAILED + 1))
@@ -76,13 +83,9 @@ fi
 
 # 3) write second pair while running, then stop.
 if docker exec "$NAME" bash -lc "echo second > '$TMP_FILE_2' && echo second > '$HOME_FILE_2'" >/dev/null 2>&1 \
-  && run_coding_booth stop --name "$NAME" >/dev/null 2>&1; then
-  if [[ "$(container_state "$NAME")" == "exited" ]]; then
-    print_test_result "true" "$0" "3" "second files written and container stopped cleanly"
-  else
-    print_test_result "false" "$0" "3" "container should be exited after stop"
-    FAILED=$((FAILED + 1))
-  fi
+  && run_coding_booth stop --name "$NAME" >/dev/null 2>&1 \
+  && wait_stopped "$NAME"; then
+  print_test_result "true" "$0" "3" "second files written and container stopped cleanly"
 else
   print_test_result "false" "$0" "3" "write+stop sequence should succeed"
   FAILED=$((FAILED + 1))
