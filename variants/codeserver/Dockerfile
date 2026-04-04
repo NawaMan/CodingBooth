@@ -12,6 +12,7 @@ RUN codeserver--setup.sh ${CODESERVER_PORT}
 RUN jupyter-code-extension--setup.sh
 RUN bash-code-extension--setup.sh
 RUN booth-shutdown-code-extension--setup.sh
+RUN booth-restart-code-extension--setup.sh
 RUN bash-nb-kernel--setup.sh
 RUN cleanup-after--setup.sh
 

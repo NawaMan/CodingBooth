@@ -15,6 +15,8 @@ RUN bash-code-extension--setup.sh
 RUN python-code-extension--setup.sh
 RUN jupyter-code-extension--setup.sh
 RUN booth-shutdown-code-extension--setup.sh
+RUN booth-restart-code-extension--setup.sh
+RUN booth-desktop-actions--setup.sh
 RUN python-nb-kernel--setup.sh
 RUN bash-nb-kernel--setup.sh
 

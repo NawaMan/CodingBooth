@@ -12,23 +12,50 @@
 # Boothfile, rebuilding the image if needed, etc.).
 # Then sends SIGTERM to all user processes, causing the container to exit.
 # The host binary detects the marker and starts a fresh container.
+#
+# Flags:
+#   --yes, -y   Skip confirmation prompt
+#   --gui       Use graphical confirmation dialog (zenity/kdialog)
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
 
 YES=false
+GUI=false
 for arg in "$@"; do
     case "$arg" in
         --yes|-y) YES=true ;;
+        --gui)    GUI=true ;;
     esac
 done
 
 if [ "$YES" = false ]; then
-    read -rp "Restart CodingBooth? [y/N]: " answer
-    case "$answer" in
-        [yY]|[yY][eE][sS]) ;;
-        *) echo "Restart cancelled."; exit 0 ;;
-    esac
+    if [ "$GUI" = true ]; then
+        # Try zenity (XFCE/GNOME), then kdialog (KDE)
+        if command -v zenity >/dev/null 2>&1; then
+            zenity --question --title="CodingBooth" \
+                --text="Restart this CodingBooth container?\n\nThe server will restart with updated configuration.\nThis may take some time — please retry after a moment." \
+                --ok-label="Restart" --cancel-label="Cancel" \
+                --width=350 2>/dev/null || { exit 0; }
+        elif command -v kdialog >/dev/null 2>&1; then
+            kdialog --title "CodingBooth" \
+                --yesno "Restart this CodingBooth container?\n\nThe server will restart with updated configuration.\nThis may take some time — please retry after a moment." \
+                --yes-label "Restart" --no-label "Cancel" 2>/dev/null || { exit 0; }
+        else
+            # Fallback to terminal
+            read -rp "Restart CodingBooth? [y/N]: " answer
+            case "$answer" in
+                [yY]|[yY][eE][sS]) ;;
+                *) echo "Restart cancelled."; exit 0 ;;
+            esac
+        fi
+    else
+        read -rp "Restart CodingBooth? [y/N]: " answer
+        case "$answer" in
+            [yY]|[yY][eE][sS]) ;;
+            *) echo "Restart cancelled."; exit 0 ;;
+        esac
+    fi
 fi
 
 echo "🔄 Restarting CodingBooth..."

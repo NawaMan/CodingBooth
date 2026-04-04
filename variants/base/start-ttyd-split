@@ -31,7 +31,10 @@ for i in "${!SESSION_NAMES[@]}"; do
 done
 
 # Shutdown endpoint — runs booth--shutdown when a WebSocket client connects
-ttyd -i 127.0.0.1 -p 10005 -b /shutdown booth--shutdown &
+ttyd -i 127.0.0.1 -p 10005 -b /shutdown booth--shutdown --yes &
+
+# Restart endpoint — runs booth--restart --yes when a WebSocket client connects
+ttyd -i 127.0.0.1 -p 10006 -b /restart booth--restart --yes &
 
 export PORT
 export BOOTH_CONTAINER_NAME="${BOOTH_CONTAINER_NAME:-CodingBooth}"

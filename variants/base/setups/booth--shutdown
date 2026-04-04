@@ -10,9 +10,51 @@
 # Sends SIGTERM to all processes owned by the current user, which causes
 # the main service (code-server, VNC, jupyter, ttyd, etc.) to exit,
 # followed by runuser, tini, and the container itself.
+#
+# Flags:
+#   --yes, -y   Skip confirmation prompt
+#   --gui       Use graphical confirmation dialog (zenity/kdialog)
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
+
+YES=false
+GUI=false
+for arg in "$@"; do
+    case "$arg" in
+        --yes|-y) YES=true ;;
+        --gui)    GUI=true ;;
+    esac
+done
+
+if [ "$YES" = false ]; then
+    if [ "$GUI" = true ]; then
+        # Try zenity (XFCE/GNOME), then kdialog (KDE)
+        if command -v zenity >/dev/null 2>&1; then
+            zenity --question --title="CodingBooth" \
+                --text="Shut down this CodingBooth container?\n\nAll sessions will be closed and the container will stop." \
+                --ok-label="Shut Down" --cancel-label="Cancel" \
+                --width=350 2>/dev/null || { exit 0; }
+        elif command -v kdialog >/dev/null 2>&1; then
+            kdialog --title "CodingBooth" \
+                --yesno "Shut down this CodingBooth container?\n\nAll sessions will be closed and the container will stop." \
+                --yes-label "Shut Down" --no-label "Cancel" 2>/dev/null || { exit 0; }
+        else
+            # Fallback to terminal
+            read -rp "Shut down CodingBooth? [y/N]: " answer
+            case "$answer" in
+                [yY]|[yY][eE][sS]) ;;
+                *) echo "Shutdown cancelled."; exit 0 ;;
+            esac
+        fi
+    else
+        read -rp "Shut down CodingBooth? [y/N]: " answer
+        case "$answer" in
+            [yY]|[yY][eE][sS]) ;;
+            *) echo "Shutdown cancelled."; exit 0 ;;
+        esac
+    fi
+fi
 
 echo "🛑 Shutting down CodingBooth..."
 

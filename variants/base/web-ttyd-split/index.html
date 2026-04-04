@@ -100,6 +100,22 @@
       white-space: nowrap;
     }
 
+    button.restart {
+      border-color: #2980b9;
+      color: #3498db;
+      background: rgba(52, 152, 219, 0.08);
+      margin-left: 6px;
+    }
+
+    button.restart:hover {
+      background: rgba(52, 152, 219, 0.18);
+    }
+
+    button.restart:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
     button.shutdown {
       border-color: #c0392b;
       color: #e74c3c;
@@ -426,6 +442,7 @@
         <button id="reload">Reload</button>
       </div>
       <span id="status">1 session active</span>
+      <button id="restart" class="restart" title="Restart this CodingBooth container (re-reads config)">&#x21BB; Restart</button>
       <button id="shutdown" class="shutdown" title="Shut down this CodingBooth container">&#x23FB; Shut Down</button>
     </header>
 
@@ -451,6 +468,26 @@
     </main>
   </div>
   <div id="drag-overlay" class="drag-overlay" aria-hidden="true"></div>
+
+  <!-- Restart confirmation / progress dialog -->
+  <div id="restart-dialog" class="dialog-overlay" aria-hidden="true">
+    <div class="dialog-box">
+      <div id="restart-dialog-confirm">
+        <div class="dialog-icon">&#x21BB;</div>
+        <div class="dialog-title">Restart CodingBooth?</div>
+        <div class="dialog-message">The server will restart with updated configuration. This may take some time &mdash; please retry after a moment.</div>
+        <div class="dialog-actions">
+          <button class="btn-cancel" id="restart-dialog-cancel">Cancel</button>
+          <button class="btn-danger" id="restart-dialog-proceed" style="border-color:#2980b9;background:#2980b9;">Restart</button>
+        </div>
+      </div>
+      <div id="restart-dialog-progress" style="display:none">
+        <div class="dialog-spinner"></div>
+        <div class="dialog-title">Restarting&hellip;</div>
+        <div class="dialog-message">The server is restarting. This may take some time &mdash; please retry after a moment.</div>
+      </div>
+    </div>
+  </div>
 
   <!-- Shutdown confirmation / progress dialog -->
   <div id="shutdown-dialog" class="dialog-overlay" aria-hidden="true">
@@ -889,6 +926,64 @@
       shutdownDialog.addEventListener("click", (e) => {
         if (e.target === shutdownDialog && dialogConfirm.style.display !== "none") {
           closeShutdownDialog();
+        }
+      });
+
+      // ── Restart ──
+      const restartButton = document.getElementById("restart");
+      const restartDialog = document.getElementById("restart-dialog");
+      const restartDialogConfirm = document.getElementById("restart-dialog-confirm");
+      const restartDialogProgress = document.getElementById("restart-dialog-progress");
+      const restartDialogCancel = document.getElementById("restart-dialog-cancel");
+      const restartDialogProceed = document.getElementById("restart-dialog-proceed");
+
+      function openRestartDialog() {
+        restartDialogConfirm.style.display = "";
+        restartDialogProgress.style.display = "none";
+        restartDialog.classList.add("visible");
+        restartDialog.setAttribute("aria-hidden", "false");
+      }
+
+      function closeRestartDialog() {
+        restartDialog.classList.remove("visible");
+        restartDialog.setAttribute("aria-hidden", "true");
+      }
+
+      function performRestart() {
+        restartDialogConfirm.style.display = "none";
+        restartDialogProgress.style.display = "";
+        restartButton.disabled = true;
+        restartButton.textContent = "\u21BB Restarting\u2026";
+        status.textContent = "Restarting\u2026";
+        var wsProto = location.protocol === "https:" ? "wss:" : "ws:";
+        var ws = new WebSocket(wsProto + "//" + location.host + "/restart/ws", ["tty"]);
+        ws.onopen = function () {
+          ws.send(JSON.stringify({ columns: 80, rows: 24 }));
+        };
+        ws.onclose = function () {
+          restartDialogProgress.style.display = "none";
+          restartDialog.classList.remove("visible");
+          status.textContent = "Restarting\u2026";
+          // Poll for the server to come back
+          var poll = setInterval(function () {
+            fetch("/", { method: "HEAD" }).then(function () {
+              clearInterval(poll);
+              location.reload();
+            }).catch(function () {});
+          }, 2000);
+        };
+        ws.onerror = function () {
+          restartDialog.classList.remove("visible");
+          status.textContent = "Restarting\u2026";
+        };
+      }
+
+      restartButton.addEventListener("click", openRestartDialog);
+      restartDialogCancel.addEventListener("click", closeRestartDialog);
+      restartDialogProceed.addEventListener("click", performRestart);
+      restartDialog.addEventListener("click", (e) => {
+        if (e.target === restartDialog && restartDialogConfirm.style.display !== "none") {
+          closeRestartDialog();
         }
       });
 
