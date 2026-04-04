@@ -218,6 +218,9 @@ booth [flags] [-- command...]
 | `--daemon`           | Run container in background                                                      |
 | `--silence-build`    | Suppress build/startup output                                                    |
 | `--writable-booth`   | Allow writing to `.booth/` inside the container (read-only by default)            |
+| `--log-time`         | Prefix progress messages with timestamps (HH:MM:SS)                              |
+| `--leave-tmp-on-exit`| Preserve `.booth/.tmp/` contents on exit for debugging                            |
+| `--keep-tmp-on-start`| Preserve `.booth/.tmp/` from previous session on start                            |
 | `--dryrun`           | Print docker commands without executing                                          |
 
 Additional Docker pass-through flags (`-e`, `-p`, etc.) can be set via `run-args` in `.booth/config.toml`. For the full flag reference, see **[booth run documentation](docs/BOOTH_RUN.md)**.
@@ -378,6 +381,8 @@ User-facing guides:
 - **[booth variants](docs/BOOTH_VARIANTS.md)** — Variant details, aliases, desktop configuration, clipboard, and use cases
 - **[booth home](docs/BOOTH_HOME.md)** — Home directory customization: seeding, overrides, credentials
 - **[booth cache](docs/BOOTH_LOCALCACHE.md)** — Local persistent state: shell history, tool configs across sessions
+- **[booth expose](docs/BOOTH_EXPOSE.md)** — Runtime port tunneling: expose container ports to the host without restarting
+- **[booth tmp](docs/BOOTH_TMP.md)** — Ephemeral runtime state: `.booth/.tmp/` lifecycle and debugging
 
 For deeper technical details on how CodingBooth works internally, see [docs/implementations/](docs/implementations/):
 

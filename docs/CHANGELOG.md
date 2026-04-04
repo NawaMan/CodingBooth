@@ -10,12 +10,38 @@ This file contains a list of changes for each released version.
   - Supports explicit port (`8080 18080`), relative port (`8080 +8080`), and default (same port)
   - `--permanent` flag persists tunnel config to `.booth/config.toml`
   - Host-side watcher auto-detects tunnel requests via `.booth/.tmp/tcp-tunnels/` control files
+- `booth--restart` — restart the booth from within the container
+  - Re-reads `config.toml`, `Boothfile`, rebuilds image if needed, then launches a fresh container
+  - CLI arguments from the original invocation are preserved
+  - `booth--restart --yes` skips confirmation prompt
+  - Works in foreground and command modes (not daemon)
+  - VS Code / code-server extension: "CodingBooth: Restart" command palette entry
+  - Desktop variants (XFCE, KDE) support restart via desktop actions
+  - Web UI reconnects automatically after restart
 - `.booth/.tmp/` ephemeral directory lifecycle
   - Wiped and recreated on every booth start, cleaned on exit
   - `booth-startup.txt` with session metadata written on each start
   - `--leave-tmp-on-exit` preserves contents for post-mortem debugging
   - `--keep-tmp-on-start` preserves leftover files from a previous session
+- `--log-time` flag — prefix progress messages with timestamps (`HH:MM:SS` format)
+  - Useful for debugging startup timing and tracking operation duration
+  - Also settable via `CB_LOG_TIME=true` environment variable or `log-time = true` in `config.toml`
+- `booth config` improvements
+  - `--env`, `--expose`, and `--mount` flags for setting environment variables, port exposures, and volume mounts
+  - Renamed from `booth init` — all tests and help text updated
+  - First-line output and header formatting improvements
+- New templates — cloud tools, databases, languages, dev tools, and AI assistants:
+  - **Cloud & Infrastructure:** AWS CDK, AWS SAM CLI (with credential and DinD extensions), Azure CLI (with credential extension), Helm, kubectl (with credential extension), Terraform, Pulumi
+  - **Databases:** MongoDB, Redis
+  - **Languages:** .NET (replaces single dotnet template), Julia
+  - **Build tools:** CMake, Gradle, SBT
+  - **Dev tools:** Ansible, Conda, LazyDocker, LazyGit
+  - **AI tools:** Aider, GitHub Copilot, Ollama
+- Fix arm64 QEMU cross-build by deferring code-server extension installs to first launch
 - `socat` added to base image for runtime port tunneling
+- `install.sh` — standalone install script for easy bootstrapping
+- Recipe example added to documentation
+- Variant documentation improvements
 
 ## 0.37.0
 
