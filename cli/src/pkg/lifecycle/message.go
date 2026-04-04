@@ -153,14 +153,56 @@ func displayMessage(target managedContainer, msg boothMessage) (string, error) {
 	switch variant {
 	case "desktop-xfce", "desktop-kde", "desktop":
 		return displayMessageDesktop(target, msg, variant)
+	case "codeserver", "notebook":
+		// The VS Code extension inside the container polls for .msg.json files
+		// and writes .response.json. We just wait for the response file.
+		return waitForResponse(target, msg)
 	default:
-		// For non-desktop variants (base, codeserver, notebook), fall back to
-		// writing the file and waiting for manual response.
 		return "", commandExit(1, fmt.Sprintf(
 			"Error: variant %q does not support interactive message display yet.\n"+
-				"Message written to .booth/.tmp/messages/%s.msg.json\n"+
-				"Respond manually: booth exec --name %s -- booth--message respond %s <answer>",
-			variant, msg.ID, target.Name, msg.ID))
+				"Message written to .booth/.tmp/messages/%s.msg.json",
+			variant, msg.ID))
+	}
+}
+
+// waitForResponse waits for a .response.json file to appear (written by the in-container extension).
+func waitForResponse(target managedContainer, msg boothMessage) (string, error) {
+	msgDir := filepath.Join(target.CodePath, ".booth", ".tmp", "messages")
+	respFile := filepath.Join(msgDir, msg.ID+".response.json")
+
+	// Determine timeout
+	timeout := 10 * time.Minute // default
+	if msg.Expires != "" {
+		expiresAt, err := time.Parse(time.RFC3339, msg.Expires)
+		if err == nil {
+			timeout = time.Until(expiresAt)
+			if timeout <= 0 {
+				return "timeout", nil
+			}
+		}
+	}
+
+	deadline := time.After(timeout)
+	ticker := time.NewTicker(500 * time.Millisecond)
+	defer ticker.Stop()
+
+	fmt.Fprintf(os.Stderr, "Waiting for response (variant: %s)...\n", target.Variant)
+
+	for {
+		select {
+		case <-deadline:
+			return "timeout", nil
+		case <-ticker.C:
+			data, err := os.ReadFile(respFile)
+			if err != nil {
+				continue // Not yet
+			}
+			var resp boothMessageResponse
+			if err := json.Unmarshal(data, &resp); err != nil {
+				continue
+			}
+			return resp.Answer, nil
+		}
 	}
 }
 
