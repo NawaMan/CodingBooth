@@ -35,6 +35,14 @@ func (e *SilentExitError) Error() string {
 	return fmt.Sprintf("exit code %d", e.ExitCode)
 }
 
+// RestartRequestedError signals that the user requested a restart from inside the container.
+// The host binary should re-run the full pipeline (re-reading config, rebuilding if needed).
+type RestartRequestedError struct{}
+
+func (e *RestartRequestedError) Error() string {
+	return "restart requested"
+}
+
 // NewBooth creates a new Booth with the given AppContext.
 func NewBooth(ctx appctx.AppContext) *Booth {
 	return &Booth{ctx: ctx}
@@ -101,6 +109,9 @@ func (booth *Booth) runAsCommand() error {
 	// Stop tunnel watcher
 	tunnelCancel()
 
+	// Check for restart marker before cleanup removes it
+	restartRequested := checkAndCleanRestartMarker(booth.ctx)
+
 	// Cleanup .booth/.tmp/ on exit (unless --leave-tmp-on-exit)
 	cleanupBoothTmp(booth.ctx)
 
@@ -116,6 +127,10 @@ func (booth *Booth) runAsCommand() error {
 		if booth.ctx.CreatedDindNet() {
 			_ = docker.Docker(cleanupFlags, "network", ilist.NewList(ilist.NewList("rm", dindNet)))
 		}
+	}
+
+	if restartRequested {
+		return &RestartRequestedError{}
 	}
 
 	// In command mode, forward exit codes silently (no error message)
@@ -264,6 +279,9 @@ func (booth *Booth) runAsForeground() error {
 	// Stop tunnel watcher
 	tunnelCancel()
 
+	// Check for restart marker before cleanup removes it
+	restartRequested := checkAndCleanRestartMarker(booth.ctx)
+
 	// Cleanup .booth/.tmp/ on exit (unless --leave-tmp-on-exit)
 	cleanupBoothTmp(booth.ctx)
 
@@ -279,6 +297,10 @@ func (booth *Booth) runAsForeground() error {
 		if booth.ctx.CreatedDindNet() {
 			_ = docker.Docker(cleanupFlags, "network", ilist.NewList(ilist.NewList("rm", dindNet)))
 		}
+	}
+
+	if restartRequested {
+		return &RestartRequestedError{}
 	}
 
 	return err
@@ -558,6 +580,29 @@ func walkCacheDir(baseDir, dir string, mounts *[]cacheMount) {
 			}
 		}
 	}
+}
+
+// restartMarkerPath returns the host path of the restart marker file.
+func restartMarkerPath(ctx appctx.AppContext) string {
+	codePath := ctx.Code()
+	if codePath == "" {
+		return ""
+	}
+	return filepath.Join(codePath, ".booth", ".tmp", ".restart-requested")
+}
+
+// checkAndCleanRestartMarker checks if a restart was requested from inside the container.
+// It removes the marker file and returns true if found.
+func checkAndCleanRestartMarker(ctx appctx.AppContext) bool {
+	markerPath := restartMarkerPath(ctx)
+	if markerPath == "" {
+		return false
+	}
+	if _, err := os.Stat(markerPath); err != nil {
+		return false
+	}
+	os.Remove(markerPath)
+	return true
 }
 
 func isProtectedPath(containerPath string) bool {

@@ -26,6 +26,7 @@ Back to [README](../README.md)
 - [Pulling Images](#pulling-images)
 - [Dry-Run Mode](#dry-run-mode)
 - [Keep-Alive](#keep-alive)
+- [Shutdown & Restart](#shutdown--restart)
 - [Docker-in-Docker (DinD)](#docker-in-docker-dind)
 - [TLS Support](#tls-support)
 - [Help](#help)
@@ -357,6 +358,40 @@ Once the container exits, use lifecycle commands to manage it:
 ```
 
 See [Lifecycle](BOOTH_LIFECYCLE.md) for the full set of commands.
+
+---
+
+## Shutdown & Restart
+
+CodingBooth provides commands that can be run **from inside the container** to shut down or restart the booth.
+
+### `booth--shutdown`
+
+Gracefully shut down the container from within.
+
+```bash
+booth--shutdown
+```
+
+### `booth--restart`
+
+Restart the booth from within. The host binary re-runs the full pipeline — re-reading `config.toml`, `Boothfile`, rebuilding the image if needed — then launches a fresh container. CLI arguments from the original invocation are preserved.
+
+```bash
+booth--restart          # prompts for confirmation
+booth--restart --yes    # skip confirmation
+```
+
+This is useful when you have modified `.booth/config.toml` or `.booth/Boothfile` and want to apply the changes without leaving the booth:
+
+```bash
+# Inside the container:
+# 1. Edit configuration (e.g. add a new template or setup)
+# 2. Restart to apply
+booth--restart
+```
+
+> **Note:** `booth--restart` only works in foreground and command run modes, not in daemon mode. For daemon booths, use `booth restart` from the host. See [Lifecycle](BOOTH_LIFECYCLE.md).
 
 ---
 

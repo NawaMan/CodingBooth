@@ -22,4 +22,8 @@ touch /tmp/.booth-shutting-down
 # Give the extension a moment to detect the marker and show feedback
 sleep 2
 
-kill -TERM -1
+# SIGTERM first for graceful shutdown of services, then SIGHUP
+# to bring down interactive shells (which ignore SIGTERM).
+kill -TERM -1 2>/dev/null || true
+sleep 1
+kill -HUP  -1 2>/dev/null || true

@@ -1,0 +1,51 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth--restart
+#
+# Restart the CodingBooth container from within.
+# Writes a restart marker to the shared .booth/.tmp/ mount so the host
+# Go binary knows to re-run the full pipeline (re-reading config.toml,
+# Boothfile, rebuilding the image if needed, etc.).
+# Then sends SIGTERM to all user processes, causing the container to exit.
+# The host binary detects the marker and starts a fresh container.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+YES=false
+for arg in "$@"; do
+    case "$arg" in
+        --yes|-y) YES=true ;;
+    esac
+done
+
+if [ "$YES" = false ]; then
+    read -rp "Restart CodingBooth? [y/N]: " answer
+    case "$answer" in
+        [yY]|[yY][eE][sS]) ;;
+        *) echo "Restart cancelled."; exit 0 ;;
+    esac
+fi
+
+echo "🔄 Restarting CodingBooth..."
+
+# Signal restart to the host Go binary via the shared .booth/.tmp/ mount
+mkdir -p /home/coder/code/.booth/.tmp
+touch /home/coder/code/.booth/.tmp/.restart-requested
+
+# Write marker so the VS Code extension can detect restart has started
+touch /tmp/.booth-restarting
+
+# Give a moment for any extension feedback
+sleep 2
+
+# Terminate all user processes — container will exit
+# SIGTERM first for graceful shutdown of services, then SIGHUP
+# to bring down interactive shells (which ignore SIGTERM).
+kill -TERM -1 2>/dev/null || true
+sleep 1
+kill -HUP  -1 2>/dev/null || true

@@ -123,6 +123,8 @@ Restart a running booth in-place (same container, same configuration).
 ./booth restart --timeout 30 myproject
 ```
 
+> **From inside the container:** Use `booth--restart` to restart with full config re-processing (re-reads `config.toml`, `Boothfile`, rebuilds image if needed). This is different from `booth restart` on the host, which keeps the same container and configuration. See [`booth run` — Shutdown & Restart](BOOTH_RUN.md#shutdown--restart).
+
 ### `remove`
 
 Explicitly delete a booth container.
