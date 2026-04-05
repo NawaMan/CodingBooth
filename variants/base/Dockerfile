@@ -170,5 +170,8 @@ COPY --chmod=0644 web-ttyd-split/index.html /usr/local/share/ttyd-split/index.ht
 COPY --chmod=0644 web-ttyd-split/nginx.conf.template /usr/local/share/ttyd-split/nginx.conf.template
 RUN chmod 0755 /usr/local/share/ttyd-split
 
+# Shared booth message wrapper infrastructure (nginx + overlay for all variants)
+RUN booth-message-wrapper--setup.sh
+
 # By default, start ttyd on port 10000 in the home directory (the online terminal)
 CMD ["bash","-lc","exec start-ttyd"]

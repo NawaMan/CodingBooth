@@ -13,11 +13,11 @@ RUN jupyter-code-extension--setup.sh
 RUN bash-code-extension--setup.sh
 RUN booth-shutdown-code-extension--setup.sh
 RUN booth-restart-code-extension--setup.sh
-RUN booth-message-code-extension--setup.sh
+RUN booth-message-codeserver-wrapped--setup.sh
 RUN bash-nb-kernel--setup.sh
 RUN cleanup-after--setup.sh
 
 # Clear the lock
 RUN rm -f /etc/.pwd.lock /etc/passwd.lock /etc/shadow.lock /etc/group.lock
 
-CMD ["bash","-lc","exec start-codeserver"]
+CMD ["bash","-lc","exec start-codeserver-wrapped"]

@@ -1,0 +1,139 @@
+<!-- Booth Message Overlay — shared across all variants -->
+<style>
+  .msg-overlay {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 10000;
+    justify-content: center; align-items: center;
+  }
+  .msg-overlay.visible { display: flex; }
+  body.msg-active iframe { pointer-events: none; }
+  .msg-stack {
+    display: flex; flex-direction: column; gap: 12px;
+    max-height: 80vh; overflow-y: auto; padding: 20px;
+    width: 100%; max-width: 480px;
+  }
+  .msg-dialog {
+    background: #fff; border-radius: 10px; padding: 20px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    font-family: -apple-system, "Segoe UI", sans-serif;
+  }
+  .msg-dialog h2 { font-size: 15px; color: #333; margin-bottom: 6px; }
+  .msg-dialog p { font-size: 14px; color: #555; margin-bottom: 14px; }
+  .msg-actions { display: flex; gap: 8px; }
+  .msg-btn {
+    padding: 7px 18px; border-radius: 6px; border: 1px solid #ccc;
+    cursor: pointer; font-size: 13px; font-weight: 500;
+  }
+  .msg-btn-yes { background: #2563eb; color: #fff; border-color: #2563eb; }
+  .msg-btn-yes:hover { background: #1d4ed8; }
+  .msg-btn-no { background: #f3f4f6; color: #333; }
+  .msg-btn-no:hover { background: #e5e7eb; }
+  .msg-input {
+    padding: 7px 10px; border: 1px solid #ccc; border-radius: 6px;
+    flex: 1; font-size: 13px;
+  }
+  .msg-btn-submit { background: #2563eb; color: #fff; border-color: #2563eb; }
+</style>
+
+<div class="msg-overlay" id="msg-overlay">
+  <div class="msg-stack" id="msg-dialogs"></div>
+</div>
+
+<script>
+(function() {
+  var overlay = document.getElementById("msg-overlay");
+  var dialogs = document.getElementById("msg-dialogs");
+  var lastMsgIds = "";
+
+  // API base — override via window.BOOTH_MSG_API_BASE if needed
+  var apiBase = window.BOOTH_MSG_API_BASE || "/booth-messages/api";
+
+  function esc(s) {
+    var d = document.createElement("div");
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  function getCookie(name) {
+    var m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
+    return m ? decodeURIComponent(m[1]) : "";
+  }
+
+  function pollMessages() {
+    fetch(apiBase + "/list").then(function(resp) {
+      if (!resp.ok) return;
+      return resp.json();
+    }).then(function(msgs) {
+      if (!msgs || !msgs.length) {
+        overlay.classList.remove("visible");
+        document.body.classList.remove("msg-active");
+        dialogs.innerHTML = "";
+        lastMsgIds = "";
+        return;
+      }
+      var ids = msgs.map(function(m) { return m.id; }).join(",");
+      if (ids === lastMsgIds) return;
+      lastMsgIds = ids;
+
+      overlay.classList.add("visible");
+      document.body.classList.add("msg-active");
+      dialogs.innerHTML = msgs.map(function(m) {
+        var h = '<div class="msg-dialog"><h2>' + esc(m.title) + '</h2><p>' + esc(m.body) + '</p>';
+        if (m.type === "text") {
+          h += '<form class="msg-actions" onsubmit="window._msgRespond(\'' + m.id + '\', this.answer.value); return false;">' +
+            '<input type="text" name="answer" class="msg-input" placeholder="Type response...">' +
+            '<button type="submit" class="msg-btn msg-btn-submit">Send</button></form>';
+        } else if (m.type === "password") {
+          h += '<form class="msg-actions" onsubmit="window._msgRespond(\'' + m.id + '\', this.answer.value); return false;">' +
+            '<input type="password" name="answer" class="msg-input" placeholder="Enter password...">' +
+            '<button type="submit" class="msg-btn msg-btn-submit">Send</button></form>';
+        } else if (m.type === "ok") {
+          h += '<div class="msg-actions">' +
+            '<button class="msg-btn msg-btn-yes" onclick="window._msgRespond(\'' + m.id + '\',\'ok\')">OK</button></div>';
+        } else if (m.type === "choice" && m.options) {
+          h += '<div class="msg-actions" style="flex-wrap:wrap;">';
+          m.options.forEach(function(opt) {
+            h += '<button class="msg-btn msg-btn-no" onclick="window._msgRespond(\'' + m.id + '\',\'' + esc(opt) + '\')">' + esc(opt) + '</button>';
+          });
+          h += '</div>';
+        } else {
+          h += '<div class="msg-actions">' +
+            '<button class="msg-btn msg-btn-yes" onclick="window._msgRespond(\'' + m.id + '\',\'yes\')">Yes</button>' +
+            '<button class="msg-btn msg-btn-no" onclick="window._msgRespond(\'' + m.id + '\',\'no\')">No</button></div>';
+        }
+        return h + '</div>';
+      }).join("");
+    }).catch(function() {});
+  }
+
+  window._msgRespond = function(id, answer) {
+    var headers = { "Content-Type": "application/json" };
+    var xsrf = getCookie("_xsrf");
+    if (xsrf) headers["X-XSRFToken"] = xsrf;
+    fetch(apiBase + "/respond/" + id, {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({ answer: answer })
+    }).then(function() { pollMessages(); });
+  };
+
+  // Reclaim focus from iframes when overlay is visible
+  overlay.addEventListener("click", function() {
+    var input = overlay.querySelector(".msg-input");
+    if (input) input.focus();
+  });
+  window.addEventListener("blur", function() {
+    if (overlay.classList.contains("visible")) {
+      setTimeout(function() {
+        var input = overlay.querySelector(".msg-input");
+        if (input) input.focus();
+      }, 50);
+    }
+  });
+
+  pollMessages();
+  setInterval(pollMessages, 2000);
+})();
+</script>

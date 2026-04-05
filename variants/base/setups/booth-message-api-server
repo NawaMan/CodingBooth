@@ -133,6 +133,4 @@ if [ "${1:-}" = "--handle" ]; then
 fi
 
 # Listen and fork handler per connection
-while true; do
-    socat TCP-LISTEN:"$PORT",reuseaddr SYSTEM:"bash '$0' --handle"
-done
+exec socat TCP-LISTEN:"$PORT",reuseaddr,fork SYSTEM:"bash '$0' --handle"

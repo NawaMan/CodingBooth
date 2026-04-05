@@ -17,7 +17,7 @@ RUN python-code-extension--setup.sh
 RUN jupyter-code-extension--setup.sh
 RUN booth-shutdown-code-extension--setup.sh
 RUN booth-restart-code-extension--setup.sh
-RUN booth-message-code-extension--setup.sh
+RUN booth-message-desktop-wrapped--setup.sh
 RUN booth-desktop-actions--setup.sh
 RUN python-nb-kernel--setup.sh
 RUN bash-nb-kernel--setup.sh
@@ -42,5 +42,5 @@ COPY wallpaper.png /usr/share/backgrounds/codingbooth-wallpaper.png
 RUN rm -f /etc/.pwd.lock /etc/passwd.lock /etc/shadow.lock /etc/group.lock
 
 
-CMD ["start-kde"]
+CMD ["start-kde-wrapped"]
 

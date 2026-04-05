@@ -16,8 +16,7 @@ RUN base-code-extension--setup.sh
 RUN bash-code-extension--setup.sh
 RUN booth-shutdown-code-extension--setup.sh
 RUN booth-restart-code-extension--setup.sh
-RUN booth-message-code-extension--setup.sh
-RUN booth-message-notebook--setup.sh
+RUN booth-message-notebook-wrapped--setup.sh
 
 # Clear the lock
 RUN rm -f /etc/.pwd.lock /etc/passwd.lock /etc/shadow.lock /etc/group.lock
