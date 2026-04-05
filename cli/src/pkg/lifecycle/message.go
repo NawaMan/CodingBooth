@@ -20,12 +20,13 @@ import (
 
 // boothMessage represents a message sent to a booth user.
 type boothMessage struct {
-	ID      string `json:"id"`
-	Title   string `json:"title"`
-	Body    string `json:"body"`
-	Type    string `json:"type"`    // "yes-no" or "text"
-	Created string `json:"created"`
-	Expires string `json:"expires,omitempty"`
+	ID      string   `json:"id"`
+	Title   string   `json:"title"`
+	Body    string   `json:"body"`
+	Type    string   `json:"type"`              // "yes-no", "text", "ok", "choice", "password"
+	Options []string `json:"options,omitempty"`  // for "choice" type
+	Created string   `json:"created"`
+	Expires string   `json:"expires,omitempty"`
 }
 
 // boothMessageResponse represents a user's response to a message.
@@ -56,7 +57,8 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 	name := flagSet.String("name", "", "Container name (default: current directory)")
 	title := flagSet.String("title", "", "Message title")
 	body := flagSet.String("body", "", "Message body")
-	msgType := flagSet.String("type", "yes-no", "Message type: yes-no or text")
+	msgType := flagSet.String("type", "yes-no", "Message type: yes-no, text, ok, choice, password")
+	options := flagSet.String("options", "", "Comma-separated options for 'choice' type")
 	expires := flagSet.String("expires", "", "Expiry duration (e.g., 5m, 1h)")
 	flagSet.SetOutput(stderr)
 
@@ -70,8 +72,12 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 	if *body == "" {
 		return commandExit(1, "Error: --body is required")
 	}
-	if *msgType != "yes-no" && *msgType != "text" {
-		return commandExit(1, "Error: --type must be 'yes-no' or 'text'")
+	validTypes := map[string]bool{"yes-no": true, "text": true, "ok": true, "choice": true, "password": true}
+	if !validTypes[*msgType] {
+		return commandExit(1, "Error: --type must be one of: yes-no, text, ok, choice, password")
+	}
+	if *msgType == "choice" && *options == "" {
+		return commandExit(1, "Error: --options is required for 'choice' type")
 	}
 
 	target, err := resolveMessageTarget(*name)
@@ -89,6 +95,9 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 		Body:    *body,
 		Type:    *msgType,
 		Created: time.Now().UTC().Format(time.RFC3339),
+	}
+	if *options != "" {
+		msg.Options = strings.Split(*options, ",")
 	}
 	if *expires != "" {
 		duration, err := time.ParseDuration(*expires)
@@ -153,15 +162,14 @@ func displayMessage(target managedContainer, msg boothMessage) (string, error) {
 	switch variant {
 	case "desktop-xfce", "desktop-kde", "desktop":
 		return displayMessageDesktop(target, msg, variant)
-	case "codeserver", "notebook":
-		// The VS Code extension inside the container polls for .msg.json files
-		// and writes .response.json. We just wait for the response file.
+	case "codeserver", "notebook", "base", "terminal", "":
+		// The in-container UI (VS Code extension, Jupyter extension, or web overlay)
+		// polls for .msg.json files and writes .response.json.
+		// We just wait for the response file.
 		return waitForResponse(target, msg)
 	default:
-		return "", commandExit(1, fmt.Sprintf(
-			"Error: variant %q does not support interactive message display yet.\n"+
-				"Message written to .booth/.tmp/messages/%s.msg.json",
-			variant, msg.ID))
+		// Unknown variant — still try waiting for response
+		return waitForResponse(target, msg)
 	}
 }
 
@@ -239,16 +247,35 @@ func displayMessageDesktop(target managedContainer, msg boothMessage, variant st
 
 	output = strings.TrimSpace(output)
 
-	if msg.Type == "yes-no" {
+	switch msg.Type {
+	case "yes-no":
 		return interpretYesNoResult(output, err, dialogTool)
+	case "ok":
+		// Info dialog — just acknowledge
+		if err != nil {
+			return "cancelled", nil
+		}
+		return "ok", nil
+	case "choice":
+		// kdialog --menu returns the tag (1, 2, 3...), map back to option text
+		if err != nil {
+			return "cancelled", nil
+		}
+		if dialogTool == "kdialog" {
+			idx := 0
+			fmt.Sscanf(output, "%d", &idx)
+			if idx > 0 && idx <= len(msg.Options) {
+				return msg.Options[idx-1], nil
+			}
+		}
+		return output, nil
+	default:
+		// text, password: output is the user's input
+		if err != nil {
+			return "cancelled", nil
+		}
+		return output, nil
 	}
-
-	// Text type: output is the user's text
-	if err != nil {
-		// User cancelled the dialog
-		return "cancelled", nil
-	}
-	return output, nil
 }
 
 // detectDialogTool checks which dialog tool (zenity or kdialog) is available in the container.
@@ -336,39 +363,90 @@ func isDockerExitError(err error, target **docker.DockerExitError) bool {
 
 // buildZenityArgs builds zenity command arguments for a message.
 func buildZenityArgs(msg boothMessage) []string {
-	if msg.Type == "text" {
+	switch msg.Type {
+	case "text":
 		return []string{
 			"zenity", "--entry",
 			"--title=" + msg.Title,
 			"--text=" + msg.Body,
 			"--width=400",
 		}
-	}
-	// yes-no
-	return []string{
-		"zenity", "--question",
-		"--title=" + msg.Title,
-		"--text=" + msg.Body,
-		"--ok-label=Yes",
-		"--cancel-label=No",
-		"--width=400",
+	case "password":
+		return []string{
+			"zenity", "--password",
+			"--title=" + msg.Title,
+			"--width=400",
+		}
+	case "ok":
+		return []string{
+			"zenity", "--info",
+			"--title=" + msg.Title,
+			"--text=" + msg.Body,
+			"--width=400",
+		}
+	case "choice":
+		args := []string{
+			"zenity", "--list",
+			"--title=" + msg.Title,
+			"--text=" + msg.Body,
+			"--column=Option",
+			"--width=400", "--height=300",
+		}
+		for _, opt := range msg.Options {
+			args = append(args, opt)
+		}
+		return args
+	default:
+		// yes-no
+		return []string{
+			"zenity", "--question",
+			"--title=" + msg.Title,
+			"--text=" + msg.Body,
+			"--ok-label=Yes",
+			"--cancel-label=No",
+			"--width=400",
+		}
 	}
 }
 
 // buildKDialogArgs builds kdialog command arguments for a message.
 func buildKDialogArgs(msg boothMessage) []string {
-	if msg.Type == "text" {
+	switch msg.Type {
+	case "text":
 		return []string{
 			"kdialog",
 			"--title", msg.Title,
 			"--inputbox", msg.Body,
 		}
-	}
-	// yes-no
-	return []string{
-		"kdialog",
-		"--title", msg.Title,
-		"--yesno", msg.Body,
+	case "password":
+		return []string{
+			"kdialog",
+			"--title", msg.Title,
+			"--password", msg.Body,
+		}
+	case "ok":
+		return []string{
+			"kdialog",
+			"--title", msg.Title,
+			"--msgbox", msg.Body,
+		}
+	case "choice":
+		args := []string{
+			"kdialog",
+			"--title", msg.Title,
+			"--menu", msg.Body,
+		}
+		for i, opt := range msg.Options {
+			args = append(args, fmt.Sprintf("%d", i+1), opt)
+		}
+		return args
+	default:
+		// yes-no
+		return []string{
+			"kdialog",
+			"--title", msg.Title,
+			"--yesno", msg.Body,
+		}
 	}
 }
 

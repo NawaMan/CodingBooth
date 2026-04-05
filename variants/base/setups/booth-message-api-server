@@ -1,0 +1,138 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth-message-api-server
+#
+# Minimal HTTP server for booth message API using bash + socat.
+# Serves two endpoints:
+#   GET  /booth-messages/api/list          — list pending messages as JSON
+#   POST /booth-messages/api/respond/<id>  — write response file
+#
+# Usage: booth-message-api-server <port>
+# -----------------------------------------------------------------------------
+
+PORT=${1:-10007}
+MSG_DIR="/home/coder/code/.booth/.tmp/messages"
+
+# Single-request handler — reads HTTP from stdin, writes response to stdout
+handle_request() {
+    local line method path
+    local content_length=0
+
+    # Read request line
+    IFS= read -r line
+    method="${line%% *}"
+    path="${line#* }"
+    path="${path%% *}"
+
+    # Read headers until empty line
+    while IFS= read -r line; do
+        line="${line%$'\r'}"
+        [ -z "$line" ] && break
+        case "${line,,}" in
+            content-length:*)
+                content_length="${line#*: }"
+                content_length="${content_length%$'\r'}"
+                ;;
+        esac
+    done
+
+    # Read body
+    local body=""
+    if [ "$content_length" -gt 0 ] 2>/dev/null; then
+        body=$(head -c "$content_length")
+    fi
+
+    # Route
+    case "$method" in
+        GET)
+            case "$path" in
+                /booth-messages/api/list) handle_list ;;
+                *) send_response 404 '{"error":"not found"}' ;;
+            esac
+            ;;
+        POST)
+            case "$path" in
+                /booth-messages/api/respond/*)
+                    local msg_id="${path##*/}"
+                    handle_respond "$msg_id" "$body"
+                    ;;
+                *) send_response 404 '{"error":"not found"}' ;;
+            esac
+            ;;
+        *) send_response 405 '{"error":"method not allowed"}' ;;
+    esac
+}
+
+handle_list() {
+    local json="["
+    local first=true
+
+    if [ -d "$MSG_DIR" ]; then
+        for f in "$MSG_DIR"/*.msg.json; do
+            [ -f "$f" ] || continue
+            local base_name msg_id
+            base_name=$(basename "$f")
+            msg_id="${base_name%.msg.json}"
+            # Skip if already responded
+            [ -f "$MSG_DIR/${msg_id}.response.json" ] && continue
+            if [ "$first" = true ]; then
+                first=false
+            else
+                json="${json},"
+            fi
+            json="${json}$(cat "$f")"
+        done
+    fi
+
+    json="${json}]"
+    send_response 200 "$json"
+}
+
+handle_respond() {
+    local msg_id="$1"
+    local body="$2"
+
+    mkdir -p "$MSG_DIR"
+
+    # Extract answer from JSON body
+    local answer
+    answer=$(echo "$body" | sed -n 's/.*"answer" *: *"\([^"]*\)".*/\1/p')
+
+    if [ -z "$answer" ]; then
+        send_response 400 '{"error":"missing answer"}'
+        return
+    fi
+
+    printf '{"id":"%s","answer":"%s","answered":"%s"}' \
+        "$msg_id" "$answer" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+        > "$MSG_DIR/${msg_id}.response.json"
+
+    send_response 200 '{"ok":true}'
+}
+
+send_response() {
+    local code="$1"
+    local body="$2"
+    local status_text="OK"
+    [ "$code" = "400" ] && status_text="Bad Request"
+    [ "$code" = "404" ] && status_text="Not Found"
+    [ "$code" = "405" ] && status_text="Method Not Allowed"
+
+    printf "HTTP/1.0 %s %s\r\nContent-Type: application/json\r\nContent-Length: %s\r\nConnection: close\r\n\r\n%s" \
+        "$code" "$status_text" "${#body}" "$body"
+}
+
+# If called with --handle, process a single request
+if [ "${1:-}" = "--handle" ]; then
+    handle_request
+    exit 0
+fi
+
+# Listen and fork handler per connection
+while true; do
+    socat TCP-LISTEN:"$PORT",reuseaddr SYSTEM:"bash '$0' --handle"
+done

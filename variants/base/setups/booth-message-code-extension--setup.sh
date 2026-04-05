@@ -125,28 +125,63 @@ function pollMessages() {
 async function showMessage(msg) {
   let answer;
 
-  if (msg.type === "text") {
-    const input = await vscode.window.showInputBox({
-      title: msg.title,
-      prompt: msg.body,
-      placeHolder: "Type your response...",
-      ignoreFocusOut: true
-    });
-    answer = input !== undefined ? input : "cancelled";
-  } else {
-    // yes-no
-    const choice = await vscode.window.showInformationMessage(
-      msg.body,
-      { modal: true, detail: msg.title },
-      "Yes",
-      "No"
-    );
-    if (choice === "Yes") {
-      answer = "yes";
-    } else if (choice === "No") {
-      answer = "no";
-    } else {
-      answer = "cancelled";
+  switch (msg.type) {
+    case "text": {
+      const input = await vscode.window.showInputBox({
+        title: msg.title,
+        prompt: msg.body,
+        placeHolder: "Type your response...",
+        ignoreFocusOut: true
+      });
+      answer = input !== undefined ? input : "cancelled";
+      break;
+    }
+    case "password": {
+      const input = await vscode.window.showInputBox({
+        title: msg.title,
+        prompt: msg.body,
+        password: true,
+        placeHolder: "Enter password...",
+        ignoreFocusOut: true
+      });
+      answer = input !== undefined ? input : "cancelled";
+      break;
+    }
+    case "ok": {
+      await vscode.window.showInformationMessage(
+        msg.body,
+        { modal: true, detail: msg.title },
+        "OK"
+      );
+      answer = "ok";
+      break;
+    }
+    case "choice": {
+      const options = msg.options || [];
+      const picked = await vscode.window.showQuickPick(options, {
+        title: msg.title,
+        placeHolder: msg.body,
+        ignoreFocusOut: true
+      });
+      answer = picked !== undefined ? picked : "cancelled";
+      break;
+    }
+    default: {
+      // yes-no
+      const choice = await vscode.window.showInformationMessage(
+        msg.body,
+        { modal: true, detail: msg.title },
+        "Yes",
+        "No"
+      );
+      if (choice === "Yes") {
+        answer = "yes";
+      } else if (choice === "No") {
+        answer = "no";
+      } else {
+        answer = "cancelled";
+      }
+      break;
     }
   }
 

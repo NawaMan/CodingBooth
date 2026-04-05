@@ -36,6 +36,9 @@ ttyd -i 127.0.0.1 -p 10005 -b /shutdown booth--shutdown --yes &
 # Restart endpoint — runs booth--restart --yes when a WebSocket client connects
 ttyd -i 127.0.0.1 -p 10006 -b /restart booth--restart --yes &
 
+# Message API server — serves booth message list/respond endpoints
+booth-message-api-server 10007 &
+
 export PORT
 export BOOTH_CONTAINER_NAME="${BOOTH_CONTAINER_NAME:-CodingBooth}"
 export BOOTH_HOST_PORT="${BOOTH_HOST_PORT:-$PORT}"

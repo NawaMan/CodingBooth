@@ -163,6 +163,7 @@ WRAPPER_HTML = r"""<!DOCTYPE html>
 <script>
 var overlay = document.getElementById("overlay");
 var dialogs = document.getElementById("dialogs");
+var lastMsgIds = "";
 
 function getCookie(name) {
   var m = document.cookie.match(new RegExp("(?:^|; )" + name + "=([^;]*)"));
@@ -183,22 +184,39 @@ function poll() {
     if (!msgs || !msgs.length) {
       overlay.classList.remove("visible");
       dialogs.innerHTML = "";
+      lastMsgIds = "";
       return;
     }
+    var ids = msgs.map(function(m) { return m.id; }).join(",");
+    if (ids === lastMsgIds) return;
+    lastMsgIds = ids;
+
     overlay.classList.add("visible");
     dialogs.innerHTML = msgs.map(function(m) {
+      var h = '<div class="dialog"><h2>' + esc(m.title) + '</h2><p>' + esc(m.body) + '</p>';
       if (m.type === "text") {
-        return '<div class="dialog"><h2>' + esc(m.title) + '</h2><p>' + esc(m.body) + '</p>' +
-          '<form class="actions" onsubmit="respond(\'' + m.id + '\', this.answer.value); return false;">' +
-            '<input type="text" name="answer" placeholder="Type response..." autofocus>' +
-            '<button type="submit" class="btn-submit">Send</button>' +
-          '</form></div>';
-      }
-      return '<div class="dialog"><h2>' + esc(m.title) + '</h2><p>' + esc(m.body) + '</p>' +
-        '<div class="actions">' +
+        h += '<form class="actions" onsubmit="respond(\'' + m.id + '\', this.answer.value); return false;">' +
+          '<input type="text" name="answer" placeholder="Type response...">' +
+          '<button type="submit" class="btn-submit">Send</button></form>';
+      } else if (m.type === "password") {
+        h += '<form class="actions" onsubmit="respond(\'' + m.id + '\', this.answer.value); return false;">' +
+          '<input type="password" name="answer" placeholder="Enter password...">' +
+          '<button type="submit" class="btn-submit">Send</button></form>';
+      } else if (m.type === "ok") {
+        h += '<div class="actions">' +
+          '<button class="btn-yes" onclick="respond(\'' + m.id + '\',\'ok\')">OK</button></div>';
+      } else if (m.type === "choice" && m.options) {
+        h += '<div class="actions" style="flex-wrap:wrap;">';
+        m.options.forEach(function(opt) {
+          h += '<button class="btn-no" onclick="respond(\'' + m.id + '\',\'' + esc(opt) + '\')">' + esc(opt) + '</button>';
+        });
+        h += '</div>';
+      } else {
+        h += '<div class="actions">' +
           '<button class="btn-yes" onclick="respond(\'' + m.id + '\',\'yes\')">Yes</button>' +
-          '<button class="btn-no" onclick="respond(\'' + m.id + '\',\'no\')">No</button>' +
-        '</div></div>';
+          '<button class="btn-no" onclick="respond(\'' + m.id + '\',\'no\')">No</button></div>';
+      }
+      return h + '</div>';
     }).join("");
   }).catch(function() {});
 }
