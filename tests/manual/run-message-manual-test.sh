@@ -14,7 +14,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BOOTH_BIN="${PROJECT_ROOT}/codingbooth"
 PLAYGROUND_DIR="${PROJECT_ROOT}/examples/workspaces/empty-example"
 
-TYPES=(yes-no yes-no-cancel text ok choice password toast)
+TYPES=(yes-no yes-no-cancel text ok choice choice-text radio checkbox password toast)
 VARIANTS=()
 SKIP_BUILD=false
 PASSED=0
@@ -167,6 +167,18 @@ for variant in "${VARIANTS[@]}"; do
             choice)
                 send_args+=(--body "Select environment:" --options "staging,production,rollback")
                 expected_pattern="staging|production|rollback|cancelled"
+                ;;
+            choice-text)
+                send_args+=(--body "Select or type a branch:" --options "main,develop,release")
+                expected_pattern=".+"  # any non-empty text (preset or custom)
+                ;;
+            radio)
+                send_args+=(--body "Select log level:" --options "debug,info,warn,error")
+                expected_pattern="debug|info|warn|error|cancelled"
+                ;;
+            checkbox)
+                send_args+=(--body "Select features to enable:" --options "logging,metrics,tracing,profiling")
+                expected_pattern=".+"  # comma-separated selections or "none"
                 ;;
             password)
                 send_args+=(--body "Enter deploy key:")

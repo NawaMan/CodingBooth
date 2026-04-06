@@ -1031,6 +1031,18 @@
       flex: 1; font-size: 13px;
     }
     .msg-btn-submit { background: #2563eb; color: #fff; border-color: #2563eb; }
+    .msg-options-list {
+      display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;
+      font-family: -apple-system, "Segoe UI", sans-serif;
+    }
+    .msg-options-list label {
+      display: flex; align-items: center; gap: 8px;
+      font-size: 13px; color: #333; cursor: pointer; padding: 4px 0;
+    }
+    .msg-options-list input[type="radio"],
+    .msg-options-list input[type="checkbox"] {
+      accent-color: #2563eb; width: 16px; height: 16px; cursor: pointer;
+    }
 
     /* Toast notifications — bottom-right corner, stackable */
     .toast-container {
@@ -1177,6 +1189,31 @@
                 h += '<button class="msg-btn msg-btn-no" onclick="window._msgRespond(\'' + m.id + '\',\'' + esc(opt) + '\')">' + esc(opt) + '</button>';
               });
               h += '</div>';
+            } else if (m.type === "choice-text" && m.options) {
+              h += '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;">';
+              m.options.forEach(function(opt) {
+                h += '<button class="msg-btn msg-btn-no" style="width:100%;text-align:left;" onclick="window._msgRespond(\'' + m.id + '\',\'' + esc(opt) + '\')">' + esc(opt) + '</button>';
+              });
+              h += '</div>';
+              h += '<form class="msg-actions" onsubmit="window._msgRespond(\'' + m.id + '\', this.answer.value); return false;">' +
+                '<input type="text" name="answer" class="msg-input" placeholder="Or type your own...">' +
+                '<button type="submit" class="msg-btn msg-btn-submit">Send</button></form>';
+            } else if (m.type === "radio" && m.options) {
+              h += '<form onsubmit="var r=this.querySelector(\'input[name=radio]:checked\'); if(r) window._msgRespond(\'' + m.id + '\',r.value); return false;">';
+              h += '<div class="msg-options-list">';
+              m.options.forEach(function(opt, i) {
+                h += '<label><input type="radio" name="radio" value="' + esc(opt) + '"' + (i === 0 ? ' checked' : '') + '>' + esc(opt) + '</label>';
+              });
+              h += '</div>';
+              h += '<div class="msg-actions"><button type="submit" class="msg-btn msg-btn-yes">Submit</button></div></form>';
+            } else if (m.type === "checkbox" && m.options) {
+              h += '<form onsubmit="var c=[].slice.call(this.querySelectorAll(\'input[name=chk]:checked\')).map(function(e){return e.value}).join(\',\'); window._msgRespond(\'' + m.id + '\',c||\'none\'); return false;">';
+              h += '<div class="msg-options-list">';
+              m.options.forEach(function(opt) {
+                h += '<label><input type="checkbox" name="chk" value="' + esc(opt) + '">' + esc(opt) + '</label>';
+              });
+              h += '</div>';
+              h += '<div class="msg-actions"><button type="submit" class="msg-btn msg-btn-yes">Submit</button></div></form>';
             } else if (m.type === "yes-no-cancel") {
               h += '<div class="msg-actions">' +
                 '<button class="msg-btn msg-btn-yes" onclick="window._msgRespond(\'' + m.id + '\',\'yes\')">Yes</button>' +

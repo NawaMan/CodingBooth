@@ -52,7 +52,7 @@ booth message send [flags]
 | `--body`        | Message body text                                                  | Yes      |
 | `--type`        | Message type (see [Message Types](#message-types))                 | No (default: `yes-no`) |
 | `--name`        | Target booth name (default: current directory name)                | No       |
-| `--options`     | Comma-separated options for `choice` type                          | Required for `choice` |
+| `--options`     | Comma-separated options (for `choice`, `choice-text`, `radio`, `checkbox`) | Required for those types |
 | `--expires`     | Timeout duration (e.g., `5m`, `1h`). Default: 10m for interactive, 30s for toast | No |
 
 **Output:** Prints the message ID on the first line. For interactive types, prints the user's answer on the second line after they respond (or `timeout` if expired).
@@ -77,19 +77,24 @@ booth message response [--name <booth>] <msg-id>
 
 ## Message Types
 
-| Type             | Buttons / Input            | User Response          | CLI Behavior        |
-|------------------|----------------------------|------------------------|---------------------|
-| `yes-no`         | Yes, No                    | `yes` or `no`          | Blocks until response |
-| `yes-no-cancel`  | Yes, No, Cancel            | `yes`, `no`, or `cancel` | Blocks until response |
-| `ok`             | OK                         | `ok`                   | Blocks until response |
-| `text`           | Text input + Send          | Free-form text         | Blocks until response |
-| `password`       | Password input + Send      | Free-form text (masked)| Blocks until response |
-| `choice`         | One button per option      | Selected option text   | Blocks until response |
-| `toast`          | None (click to dismiss)    | `dismissed` (auto)     | Returns immediately   |
+| Type             | Buttons / Input                  | User Response                  | CLI Behavior        |
+|------------------|----------------------------------|--------------------------------|---------------------|
+| `yes-no`         | Yes, No                          | `yes` or `no`                  | Blocks until response |
+| `yes-no-cancel`  | Yes, No, Cancel                  | `yes`, `no`, or `cancel`       | Blocks until response |
+| `ok`             | OK                               | `ok`                           | Blocks until response |
+| `text`           | Text input + Send                | Free-form text                 | Blocks until response |
+| `password`       | Password input + Send            | Free-form text (masked)        | Blocks until response |
+| `choice`         | One button per option            | Selected option text           | Blocks until response |
+| `choice-text`    | Option buttons + text input      | Selected option or typed text  | Blocks until response |
+| `radio`          | Radio buttons + Submit           | Selected option (single)       | Blocks until response |
+| `checkbox`       | Checkboxes + Submit              | Comma-separated selections     | Blocks until response |
+| `toast`          | None (click to dismiss)          | `dismissed` (auto)             | Returns immediately   |
 
 All interactive types show a centered modal overlay with a semi-transparent backdrop. The iframe (terminal, IDE, desktop) is blocked from interaction while the overlay is visible.
 
 Toast notifications appear in the bottom-right corner without blocking interaction.
+
+**Note:** `choice`, `choice-text`, `radio`, and `checkbox` all require the `--options` flag.
 
 ---
 
@@ -225,6 +230,42 @@ answer=$(booth message send --name dev-booth --title "Environment" \
   --expires 2m | tail -1)
 
 echo "Selected: $answer"
+```
+
+### Choice with custom text input
+
+```bash
+# User can click a preset option or type their own
+answer=$(booth message send --name dev-booth --title "Branch" \
+  --body "Select or type a branch:" \
+  --type choice-text --options "main,develop,release" \
+  --expires 2m | tail -1)
+
+echo "Branch: $answer"
+```
+
+### Radio buttons (single select)
+
+```bash
+answer=$(booth message send --name dev-booth --title "Log Level" \
+  --body "Select log level:" \
+  --type radio --options "debug,info,warn,error" \
+  --expires 2m | tail -1)
+
+echo "Level: $answer"
+```
+
+### Checkboxes (multi-select)
+
+```bash
+# Answer is comma-separated, e.g. "logging,metrics,tracing"
+# Returns "none" if nothing selected
+answer=$(booth message send --name dev-booth --title "Features" \
+  --body "Select features to enable:" \
+  --type checkbox --options "logging,metrics,tracing,profiling" \
+  --expires 2m | tail -1)
+
+echo "Enabled: $answer"
 ```
 
 ### Password prompt

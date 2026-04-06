@@ -70,12 +70,13 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 	if *body == "" {
 		return commandExit(1, "Error: --body is required")
 	}
-	validTypes := map[string]bool{"yes-no": true, "yes-no-cancel": true, "text": true, "ok": true, "choice": true, "password": true, "toast": true}
+	validTypes := map[string]bool{"yes-no": true, "yes-no-cancel": true, "text": true, "ok": true, "choice": true, "choice-text": true, "radio": true, "checkbox": true, "password": true, "toast": true}
 	if !validTypes[*msgType] {
-		return commandExit(1, "Error: --type must be one of: yes-no, yes-no-cancel, text, ok, choice, password, toast")
+		return commandExit(1, "Error: --type must be one of: yes-no, yes-no-cancel, text, ok, choice, choice-text, radio, checkbox, password, toast")
 	}
-	if *msgType == "choice" && *options == "" {
-		return commandExit(1, "Error: --options is required for 'choice' type")
+	optionsRequired := map[string]bool{"choice": true, "choice-text": true, "radio": true, "checkbox": true}
+	if optionsRequired[*msgType] && *options == "" {
+		return commandExit(1, fmt.Sprintf("Error: --options is required for '%s' type", *msgType))
 	}
 
 	target, err := resolveMessageTarget(*name)
