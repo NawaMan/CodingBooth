@@ -198,6 +198,11 @@
             h += '<button class="msg-btn msg-btn-no" onclick="window._msgRespond(\'' + m.id + '\',\'' + esc(opt) + '\')">' + esc(opt) + '</button>';
           });
           h += '</div>';
+        } else if (m.type === "yes-no-cancel") {
+          h += '<div class="msg-actions">' +
+            '<button class="msg-btn msg-btn-yes" onclick="window._msgRespond(\'' + m.id + '\',\'yes\')">Yes</button>' +
+            '<button class="msg-btn msg-btn-no" onclick="window._msgRespond(\'' + m.id + '\',\'no\')">No</button>' +
+            '<button class="msg-btn msg-btn-no" onclick="window._msgRespond(\'' + m.id + '\',\'cancel\')">Cancel</button></div>';
         } else {
           h += '<div class="msg-actions">' +
             '<button class="msg-btn msg-btn-yes" onclick="window._msgRespond(\'' + m.id + '\',\'yes\')">Yes</button>' +

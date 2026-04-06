@@ -14,7 +14,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BOOTH_BIN="${PROJECT_ROOT}/codingbooth"
 PLAYGROUND_DIR="${PROJECT_ROOT}/examples/workspaces/empty-example"
 
-TYPES=(yes-no text ok choice password toast)
+TYPES=(yes-no yes-no-cancel text ok choice password toast)
 VARIANTS=()
 SKIP_BUILD=false
 PASSED=0
@@ -151,6 +151,10 @@ for variant in "${VARIANTS[@]}"; do
             yes-no)
                 send_args+=(--body "Deploy to staging?")
                 expected_pattern="yes|no|cancelled"
+                ;;
+            yes-no-cancel)
+                send_args+=(--body "Save changes before closing?")
+                expected_pattern="yes|no|cancel|cancelled"
                 ;;
             text)
                 send_args+=(--body "Enter version tag:")

@@ -70,9 +70,9 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 	if *body == "" {
 		return commandExit(1, "Error: --body is required")
 	}
-	validTypes := map[string]bool{"yes-no": true, "text": true, "ok": true, "choice": true, "password": true, "toast": true}
+	validTypes := map[string]bool{"yes-no": true, "yes-no-cancel": true, "text": true, "ok": true, "choice": true, "password": true, "toast": true}
 	if !validTypes[*msgType] {
-		return commandExit(1, "Error: --type must be one of: yes-no, text, ok, choice, password, toast")
+		return commandExit(1, "Error: --type must be one of: yes-no, yes-no-cancel, text, ok, choice, password, toast")
 	}
 	if *msgType == "choice" && *options == "" {
 		return commandExit(1, "Error: --options is required for 'choice' type")

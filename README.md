@@ -242,6 +242,7 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 - **Build & publish:** `booth build`, `booth build --push` — see **[booth build](docs/BOOTH_BUILD.md)**
 - **Container lifecycle:** `booth start`, `booth stop`, `booth list`, `booth prune` — see **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)**
 - **Connect to running booth:** `booth shell`, `booth exec` — see **[booth connect](docs/BOOTH_CONNECT.md)**
+- **Messaging:** `booth message send`, `booth message list` — see **[booth message](docs/BOOTH_MESSAGE.md)**
 - **Examples:** `booth example list`, `booth example try` — see **[booth example](docs/BOOTH_EXAMPLE.md)**
 
 
@@ -382,6 +383,7 @@ User-facing guides:
 - **[booth home](docs/BOOTH_HOME.md)** — Home directory customization: seeding, overrides, credentials
 - **[booth cache](docs/BOOTH_LOCALCACHE.md)** — Local persistent state: shell history, tool configs across sessions
 - **[booth expose](docs/BOOTH_EXPOSE.md)** — Runtime port tunneling: expose container ports to the host without restarting
+- **[booth message](docs/BOOTH_MESSAGE.md)** — Send interactive messages and toast notifications to booth users
 - **[booth tmp](docs/BOOTH_TMP.md)** — Ephemeral runtime state: `.booth/.tmp/` lifecycle and debugging
 
 For deeper technical details on how CodingBooth works internally, see [docs/implementations/](docs/implementations/):
