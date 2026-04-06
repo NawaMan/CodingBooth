@@ -1031,17 +1031,54 @@
       flex: 1; font-size: 13px;
     }
     .msg-btn-submit { background: #2563eb; color: #fff; border-color: #2563eb; }
+
+    /* Toast notifications — bottom-right corner, stackable */
+    .toast-container {
+      position: fixed; bottom: 16px; right: 16px;
+      z-index: 10001;
+      display: flex; flex-direction: column-reverse; gap: 8px;
+      max-height: 80vh; overflow-y: auto;
+      pointer-events: none;
+    }
+    .toast {
+      pointer-events: auto;
+      background: #1e293b; color: #f1f5f9; border-radius: 8px;
+      padding: 12px 16px; min-width: 280px; max-width: 380px;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+      font-family: -apple-system, "Segoe UI", sans-serif;
+      cursor: pointer; position: relative;
+      animation: toast-in 0.3s ease-out;
+    }
+    .toast.toast-out { animation: toast-out 0.3s ease-in forwards; }
+    .toast h3 { font-size: 13px; font-weight: 600; margin-bottom: 3px; color: #fff; }
+    .toast p { font-size: 12px; color: #94a3b8; margin: 0; }
+    .toast-progress {
+      position: absolute; bottom: 0; left: 0; height: 3px;
+      background: #3b82f6; border-radius: 0 0 0 8px;
+      transition: width linear;
+    }
+    @keyframes toast-in {
+      from { opacity: 0; transform: translateX(40px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes toast-out {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(40px); }
+    }
   </style>
 
   <div class="msg-overlay" id="msg-overlay">
     <div class="msg-stack" id="msg-dialogs"></div>
   </div>
+  <div class="toast-container" id="toast-container"></div>
 
   <script>
     (function() {
       var overlay = document.getElementById("msg-overlay");
       var dialogs = document.getElementById("msg-dialogs");
+      var toastContainer = document.getElementById("toast-container");
       var lastMsgIds = "";
+      var activeToasts = {};
 
       function esc(s) {
         var d = document.createElement("div");
@@ -1049,26 +1086,79 @@
         return d.innerHTML;
       }
 
+      function respond(id, answer) {
+        fetch("/booth-messages/api/respond/" + id, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answer: answer })
+        });
+      }
+
+      function dismissToast(id, el) {
+        if (!activeToasts[id]) return;
+        delete activeToasts[id];
+        el.classList.add("toast-out");
+        respond(id, "dismissed");
+        setTimeout(function() { el.remove(); }, 300);
+      }
+
+      function showToast(m) {
+        if (activeToasts[m.id]) return;
+
+        var el = document.createElement("div");
+        el.className = "toast";
+        el.innerHTML = '<h3>' + esc(m.title) + '</h3><p>' + esc(m.body) + '</p>' +
+          '<div class="toast-progress"></div>';
+        el.onclick = function() { dismissToast(m.id, el); };
+
+        toastContainer.appendChild(el);
+        activeToasts[m.id] = el;
+
+        var durationMs = 30000;
+        if (m.expires) {
+          var remaining = new Date(m.expires).getTime() - Date.now();
+          if (remaining > 0) durationMs = remaining;
+        }
+
+        var bar = el.querySelector(".toast-progress");
+        bar.style.width = "100%";
+        bar.offsetWidth;
+        bar.style.transitionDuration = durationMs + "ms";
+        bar.style.width = "0%";
+
+        setTimeout(function() { dismissToast(m.id, el); }, durationMs);
+      }
+
       function pollMessages() {
         fetch("/booth-messages/api/list").then(function(resp) {
           if (!resp.ok) return;
           return resp.json();
         }).then(function(msgs) {
-          if (!msgs || !msgs.length) {
+          if (!msgs) return;
+
+          var interactive = [];
+          msgs.forEach(function(m) {
+            if (m.type === "toast") {
+              showToast(m);
+            } else {
+              interactive.push(m);
+            }
+          });
+
+          if (!interactive.length) {
             overlay.classList.remove("visible");
             document.body.classList.remove("msg-active");
             dialogs.innerHTML = "";
             lastMsgIds = "";
             return;
           }
-          // Skip re-render if message IDs haven't changed (preserves input focus)
-          var ids = msgs.map(function(m) { return m.id; }).join(",");
+          var ids = interactive.map(function(m) { return m.id; }).join(",");
           if (ids === lastMsgIds) return;
           lastMsgIds = ids;
 
           overlay.classList.add("visible");
           document.body.classList.add("msg-active");
-          dialogs.innerHTML = msgs.map(function(m) {
+          dialogs.innerHTML = interactive.map(function(m) {
             var h = '<div class="msg-dialog"><h2>' + esc(m.title) + '</h2><p>' + esc(m.body) + '</p>';
             if (m.type === "text") {
               h += '<form class="msg-actions" onsubmit="window._msgRespond(\'' + m.id + '\', this.answer.value); return false;">' +
@@ -1098,11 +1188,8 @@
       }
 
       window._msgRespond = function(id, answer) {
-        fetch("/booth-messages/api/respond/" + id, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ answer: answer })
-        }).then(function() { pollMessages(); });
+        respond(id, answer);
+        setTimeout(pollMessages, 100);
       };
 
       // When overlay is visible, prevent iframes from stealing focus

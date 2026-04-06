@@ -21,7 +21,7 @@ type boothMessage struct {
 	ID      string   `json:"id"`
 	Title   string   `json:"title"`
 	Body    string   `json:"body"`
-	Type    string   `json:"type"`              // "yes-no", "text", "ok", "choice", "password"
+	Type    string   `json:"type"`              // "yes-no", "text", "ok", "choice", "password", "toast"
 	Options []string `json:"options,omitempty"`  // for "choice" type
 	Created string   `json:"created"`
 	Expires string   `json:"expires,omitempty"`
@@ -55,7 +55,7 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 	name := flagSet.String("name", "", "Container name (default: current directory)")
 	title := flagSet.String("title", "", "Message title")
 	body := flagSet.String("body", "", "Message body")
-	msgType := flagSet.String("type", "yes-no", "Message type: yes-no, text, ok, choice, password")
+	msgType := flagSet.String("type", "yes-no", "Message type: yes-no, text, ok, choice, password, toast")
 	options := flagSet.String("options", "", "Comma-separated options for 'choice' type")
 	expires := flagSet.String("expires", "", "Expiry duration (e.g., 5m, 1h)")
 	flagSet.SetOutput(stderr)
@@ -70,9 +70,9 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 	if *body == "" {
 		return commandExit(1, "Error: --body is required")
 	}
-	validTypes := map[string]bool{"yes-no": true, "text": true, "ok": true, "choice": true, "password": true}
+	validTypes := map[string]bool{"yes-no": true, "text": true, "ok": true, "choice": true, "password": true, "toast": true}
 	if !validTypes[*msgType] {
-		return commandExit(1, "Error: --type must be one of: yes-no, text, ok, choice, password")
+		return commandExit(1, "Error: --type must be one of: yes-no, text, ok, choice, password, toast")
 	}
 	if *msgType == "choice" && *options == "" {
 		return commandExit(1, "Error: --options is required for 'choice' type")
@@ -103,6 +103,9 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 			return commandExit(1, fmt.Sprintf("Error: invalid --expires duration: %v", err))
 		}
 		msg.Expires = time.Now().UTC().Add(duration).Format(time.RFC3339)
+	} else if *msgType == "toast" {
+		// Default toast duration: 30 seconds
+		msg.Expires = time.Now().UTC().Add(30 * time.Second).Format(time.RFC3339)
 	}
 
 	// Write message file to .booth/.tmp/messages/
@@ -122,6 +125,11 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 
 	// Print the message ID
 	fmt.Fprintln(stdout, msgID)
+
+	// Toast is fire-and-forget — no response expected
+	if *msgType == "toast" {
+		return nil
+	}
 
 	// Determine display mechanism based on variant
 	answer, err := displayMessage(target, msg)

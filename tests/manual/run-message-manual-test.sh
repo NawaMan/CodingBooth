@@ -14,7 +14,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 BOOTH_BIN="${PROJECT_ROOT}/codingbooth"
 PLAYGROUND_DIR="${PROJECT_ROOT}/examples/workspaces/empty-example"
 
-TYPES=(yes-no text ok choice password)
+TYPES=(yes-no text ok choice password toast)
 VARIANTS=()
 SKIP_BUILD=false
 PASSED=0
@@ -168,43 +168,74 @@ for variant in "${VARIANTS[@]}"; do
                 send_args+=(--body "Enter deploy key:")
                 expected_pattern=".+"  # any non-empty text or "cancelled"
                 ;;
+            toast)
+                send_args+=(--body "Build completed successfully.")
+                expected_pattern=""  # fire-and-forget, no answer expected
+                ;;
         esac
 
-        send_args+=(--expires 2m)
+        if [[ "$msg_type" != "toast" ]]; then
+            send_args+=(--expires 2m)
+        fi
 
         echo "  Sending: booth message send ${send_args[*]}"
         echo ""
 
-        # Send message in background
-        output_file=$(mktemp)
-        "$BOOTH_BIN" message send "${send_args[@]}" > "$output_file" 2>&1 &
-        send_pid=$!
+        if [[ "$msg_type" == "toast" ]]; then
+            # Toast is fire-and-forget — CLI returns immediately
+            echo "  Sending toast (fire-and-forget)..."
+            output_file=$(mktemp)
+            "$BOOTH_BIN" message send "${send_args[@]}" > "$output_file" 2>&1
+            exit_code=$?
+            msg_id=$(head -1 "$output_file")
+            rm -f "$output_file"
 
-        echo "  → Respond in the browser (or VNC desktop). 2 min timeout."
+            echo ""
+            echo "  Message ID: $msg_id"
+            echo "  Exit code:  $exit_code"
 
-        # Wait for the send command to complete
-        wait "$send_pid" 2>/dev/null
-        exit_code=$?
-
-        # Parse output: first line is msg ID, last line is answer
-        msg_id=$(head -1 "$output_file")
-        answer=$(tail -1 "$output_file")
-        rm -f "$output_file"
-
-        echo ""
-        echo "  Message ID: $msg_id"
-        echo "  Answer:     $answer"
-        echo "  Exit code:  $exit_code"
-
-        if [[ "$answer" == "timeout" ]]; then
-            echo "  ⏭  SKIPPED (timed out — user did not respond)"
-            SKIPPED=$((SKIPPED + 1))
-        elif echo "$answer" | grep -qE "^($expected_pattern)$" || [[ -n "$answer" && "$answer" != "Error"* ]]; then
-            echo "  ✅ PASSED"
-            PASSED=$((PASSED + 1))
+            if [[ $exit_code -eq 0 && "$msg_id" == msg-* ]]; then
+                echo "  → Check browser: toast should appear in bottom-right corner."
+                echo "  Press ENTER after visually confirming the toast..."
+                read -r
+                echo "  ✅ PASSED (toast sent, visually confirmed)"
+                PASSED=$((PASSED + 1))
+            else
+                echo "  ❌ FAILED (exit_code=$exit_code, msg_id=$msg_id)"
+                FAILED=$((FAILED + 1))
+            fi
         else
-            echo "  ❌ FAILED (unexpected answer: $answer)"
-            FAILED=$((FAILED + 1))
+            # Interactive message — send in background, wait for user response
+            output_file=$(mktemp)
+            "$BOOTH_BIN" message send "${send_args[@]}" > "$output_file" 2>&1 &
+            send_pid=$!
+
+            echo "  → Respond in the browser (or VNC desktop). 2 min timeout."
+
+            # Wait for the send command to complete
+            wait "$send_pid" 2>/dev/null
+            exit_code=$?
+
+            # Parse output: first line is msg ID, last line is answer
+            msg_id=$(head -1 "$output_file")
+            answer=$(tail -1 "$output_file")
+            rm -f "$output_file"
+
+            echo ""
+            echo "  Message ID: $msg_id"
+            echo "  Answer:     $answer"
+            echo "  Exit code:  $exit_code"
+
+            if [[ "$answer" == "timeout" ]]; then
+                echo "  ⏭  SKIPPED (timed out — user did not respond)"
+                SKIPPED=$((SKIPPED + 1))
+            elif echo "$answer" | grep -qE "^($expected_pattern)$" || [[ -n "$answer" && "$answer" != "Error"* ]]; then
+                echo "  ✅ PASSED"
+                PASSED=$((PASSED + 1))
+            else
+                echo "  ❌ FAILED (unexpected answer: $answer)"
+                FAILED=$((FAILED + 1))
+            fi
         fi
     done
 
