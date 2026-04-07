@@ -61,11 +61,12 @@ RUN set -euo pipefail \
   nano   \
   nginx  \
   socat  \
-  tilde  \
-  tig    \
-  tmux   \
-  tree   \
-  zsh    \
+  tilde    \
+  tig      \
+  tmux     \
+  tree     \
+  whiptail \
+  zsh      \
   ; rm -rf /var/lib/apt/lists/*      \
   ; rm -rf /var/cache/apt/archives/* \
   ; rm -rf /var/cache/apt/archives/partial/*

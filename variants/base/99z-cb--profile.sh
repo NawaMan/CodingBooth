@@ -27,6 +27,29 @@ export EDITOR=${EDITOR:-tilde}
 export TERM=${TERM:-xterm-256color}
 
 
+# ── Pending message notification (before each prompt) ──
+_booth_msg_check() {
+  local msg_dir="${HOME}/code/.booth/.tmp/messages"
+  [[ -d "$msg_dir" ]] || return
+  local count=0
+  for f in "$msg_dir"/*.msg.json; do
+    [[ -f "$f" ]] || continue
+    local base_name="${f##*/}"
+    local msg_id="${base_name%.msg.json}"
+    [[ -f "$msg_dir/${msg_id}.response.json" ]] && continue
+    count=$((count + 1))
+  done
+  if (( count > 0 )); then
+    printf '\033[1;36m[booth] %d pending message(s) — run booth--msg to respond\033[0m\n' "$count"
+  fi
+}
+# Install the hook for both bash and zsh
+if [[ -n "${ZSH_VERSION:-}" ]]; then
+  autoload -Uz add-zsh-hook 2>/dev/null && add-zsh-hook precmd _booth_msg_check
+elif [[ -n "${BASH_VERSION:-}" ]]; then
+  PROMPT_COMMAND="_booth_msg_check${PROMPT_COMMAND:+;$PROMPT_COMMAND}"
+fi
+
 # Welcome message
 # Tip for those who are new to CodingBooth bash
 if [ -z "${TIP_SHOWN:-}" ]; then
@@ -38,6 +61,7 @@ if [ -z "${TIP_SHOWN:-}" ]; then
   echo "Handy commands:"
   echo "  booth--info       Show environment info"
   echo "  booth--expose     Expose a container port to the host"
+  echo "  booth--msg        View and respond to pending messages"
   echo "  booth--restart    Restart this booth (re-reads config)"
   echo "  booth--shutdown   Shut down this booth"
   echo "  editor            Text editor (tilde)"

@@ -150,6 +150,48 @@ booth message send --type toast --title "Step 3" --body "Running tests..."
 
 ---
 
+## Terminal Support
+
+When using the terminal variant (`booth --variant terminal`) or a shell session (`booth -- bash`, `booth shell`), there is no browser UI. Messages are handled via a prompt notification and the `booth--msg` command inside the container.
+
+### Prompt Notification
+
+Before each prompt, a hook checks for pending messages and prints a notification:
+
+```
+[booth] 2 pending message(s) — run booth--msg to respond
+coder@booth:~/code$
+```
+
+This is non-intrusive — it only appears between commands, never mid-typing.
+
+### `booth--msg` Command
+
+Run inside the container to view and respond to messages interactively:
+
+```bash
+booth--msg            # Show and respond to pending messages one by one
+booth--msg list       # List all messages (pending + answered)
+booth--msg dismiss    # Dismiss all pending toasts
+```
+
+Each message type has a terminal-appropriate interaction:
+
+| Type | Terminal Interaction |
+|---|---|
+| `ok` | Press ENTER to acknowledge |
+| `yes-no` | Type `y` or `n` |
+| `yes-no-cancel` | Type `y`, `n`, or `c` |
+| `text` | Type free-form text |
+| `password` | Type text (input hidden) |
+| `choice` | Numbered list, enter a number |
+| `choice-text` | Numbered list or type custom text |
+| `radio` | Numbered list, enter a number |
+| `checkbox` | Numbered list, enter numbers separated by spaces |
+| `toast` | Auto-dismissed (shown briefly then acknowledged) |
+
+---
+
 ## How It Works
 
 ### Architecture
