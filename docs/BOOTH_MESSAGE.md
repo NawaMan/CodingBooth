@@ -184,10 +184,10 @@ Each message type has a terminal-appropriate interaction:
 | `yes-no-cancel` | Type `y`, `n`, or `c` |
 | `text` | Type free-form text |
 | `password` | Type text (input hidden) |
-| `choice` | Numbered list, enter a number |
-| `choice-text` | Numbered list or type custom text |
-| `radio` | Numbered list, enter a number |
-| `checkbox` | Numbered list, enter numbers separated by spaces |
+| `choice` | Inline arrow-key menu |
+| `choice-text` | Inline arrow-key menu + "Type my own" option |
+| `radio` | Inline arrow-key menu |
+| `checkbox` | Inline checklist (arrow keys + SPACE to toggle) |
 | `toast` | Auto-dismissed (shown briefly then acknowledged) |
 
 ---

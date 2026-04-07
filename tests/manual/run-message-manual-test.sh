@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 # Manual Test: booth message send
-# Tests all message types (yes-no, text, ok, choice, password) across variants.
+# Tests all message types across variants.
 # Starts a booth for each variant, sends messages, and verifies responses.
 
 set -uo pipefail
