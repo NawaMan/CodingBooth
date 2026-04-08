@@ -18,7 +18,7 @@ var (
 	sepStyle         = lipgloss.NewStyle().Foreground(lipgloss.Color("240"))
 	footerStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("241"))
 	boldStyle        = lipgloss.NewStyle().Bold(true)
-	cursorStyle      = lipgloss.NewStyle().Background(lipgloss.Color("236"))
+	cursorStyle      = lipgloss.NewStyle().Background(lipgloss.Color("24")).Foreground(lipgloss.Color("255"))
 	selectedStyle    = lipgloss.NewStyle().Foreground(lipgloss.Color("82"))
 	detailTitle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("214"))
 	detailLabel      = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))

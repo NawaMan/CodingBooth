@@ -381,7 +381,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "ctrl+c", "ctrl+e":
 			m.quitting = true
-			m.notification = "Quit without saving? Enter: confirm  │  Esc: cancel"
+			m.notification = "Quit without saving? Press ENTER to quit  │  ESC to go back"
 			return m, nil
 
 		case "ctrl+s":
@@ -426,7 +426,7 @@ func (m model) handleSearchInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "ctrl+c", "ctrl+e":
 		m.quitting = true
-		m.notification = "Quit without saving? Enter: confirm  │  Esc: cancel"
+		m.notification = "Quit without saving? Press ENTER to quit  │  ESC to go back"
 		m.searchFocused = false
 		return m, nil
 
@@ -729,7 +729,7 @@ func (m model) handleParamKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "ctrl+c", "ctrl+e":
 		m.paramFocused = false
 		m.quitting = true
-		m.notification = "Quit without saving? Enter: confirm  │  Esc: cancel"
+		m.notification = "Quit without saving? Press ENTER to quit  │  ESC to go back"
 		return m, nil
 
 	case "ctrl+s":
