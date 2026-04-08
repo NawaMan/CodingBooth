@@ -2,7 +2,7 @@
 
 > Send interactive messages and toast notifications to users inside a running booth.
 
-`booth message` lets you communicate with users inside running booths — show dialogs that require a response, or fire-and-forget toast notifications that auto-dismiss.
+`booth message` lets you communicate with users inside running booths — show dialogs that require a response, or fire-and-forget toast notifications that auto-dismiss. It uses the [booth UI overlay](BOOTH_UI_OVERLAY.md) to render messages on top of the booth's web UI.
 
 ```bash
 # Ask a yes/no question (blocks until user responds)
@@ -23,7 +23,6 @@ Back to [README](../README.md)
 - [Message Types](#message-types)
 - [Flags](#flags)
 - [Toast Notifications](#toast-notifications)
-- [How It Works](#how-it-works)
 - [Examples](#examples)
 
 ---
@@ -32,7 +31,7 @@ Back to [README](../README.md)
 
 Booth messaging provides a way for scripts, CI pipelines, or the host CLI to present interactive UI to users working inside a booth. Messages appear as overlay dialogs on top of the booth's web UI (terminal, VS Code, Jupyter, or desktop).
 
-All variants use the same rendering mechanism — an nginx wrapper that injects an HTML overlay into the page. This means messages look and behave identically across all variants.
+All variants use the shared [booth UI overlay](BOOTH_UI_OVERLAY.md) — an nginx wrapper that injects an HTML overlay into the page. This means messages look and behave identically across all variants.
 
 ---
 
@@ -194,34 +193,20 @@ Each message type has a terminal-appropriate interaction:
 
 ## How It Works
 
-### Architecture
-
-All variants use a unified nginx wrapper pattern:
-
-```
-Browser --> nginx (:10000)
-              |-- /              --> 302 redirect to /booth
-              |-- /booth         --> wrapper HTML (iframe + message overlay)
-              |-- /booth-messages/api/  --> bash+socat API server (:10007)
-              |-- /*             --> inner service (variant-specific port)
-```
-
-The wrapper page embeds the variant's UI in an iframe and injects the message overlay HTML on top. A lightweight API server (bash + socat) handles message listing and response submission.
+Booth messaging uses the [booth UI overlay](BOOTH_UI_OVERLAY.md) infrastructure. See that document for details on the nginx wrapper, iframe embedding, and API server architecture.
 
 ### Message Flow
 
-1. **CLI writes a message file** to `.booth/.tmp/messages/<id>.msg.json` on the host (bind-mounted into the container).
-2. **The overlay JS polls** `GET /booth-messages/api/list` every 2 seconds.
-3. **The API server** reads `.msg.json` files and returns pending (unanswered) messages.
-4. **The overlay renders** the appropriate UI (modal dialog or toast).
-5. **User responds** (clicks a button, submits text, or toast auto-dismisses).
-6. **The overlay POSTs** `POST /booth-messages/api/respond/<id>` with the answer.
-7. **The API server writes** a `.response.json` file.
-8. **The CLI detects** the response file and prints the answer (interactive types only).
+1. **CLI writes** a `.msg.json` file to `.booth/.tmp/messages/` on the host (bind-mounted into the container).
+2. **Overlay JS polls** the API server every 2 seconds for pending messages.
+3. **Overlay renders** the appropriate UI — modal dialog (interactive types) or toast notification.
+4. **User responds** (clicks a button, submits text, or toast auto-dismisses).
+5. **Overlay POSTs** the answer to the API server, which writes a `.response.json` file.
+6. **CLI detects** the response file and prints the answer (interactive types only).
 
 ### File Format
 
-Message file (`.msg.json`):
+Message file (`<id>.msg.json`):
 ```json
 {
   "id": "msg-1234567890",
@@ -233,7 +218,7 @@ Message file (`.msg.json`):
 }
 ```
 
-Response file (`.response.json`):
+Response file (`<id>.response.json`):
 ```json
 {
   "id": "msg-1234567890",
@@ -242,7 +227,7 @@ Response file (`.response.json`):
 }
 ```
 
-Message and response files are stored in `.booth/.tmp/messages/` and are cleaned up automatically when the booth restarts.
+Files are stored in `.booth/.tmp/messages/` and cleaned up automatically when the booth restarts.
 
 ---
 
