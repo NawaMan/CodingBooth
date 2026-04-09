@@ -4,7 +4,7 @@ source "$(dirname "$0")/test-helpers--source.sh"
 begin
 
 # Test 1: Template with startup creates startups/ directory
-run booth init new $prj --select "excalidraw+autostart"
+run booth config $prj --no-tui --select "excalidraw+autostart"
 startups_dir="$prj/.booth/startups"
 TEST_COUNT=$((TEST_COUNT + 1))
 label="startups/ directory created "
@@ -87,7 +87,7 @@ fi
 # Test 7: Multiple startup segments produce multiple files
 run rm -Rf $prj
 mkdir -p $prj
-run booth init new $prj --select "claude-code+auto-accept/excalidraw+autostart"
+run booth config $prj --no-tui --select "claude-code+auto-accept/excalidraw+autostart"
 startups_dir="$prj/.booth/startups"
 file_count=$(ls "$startups_dir"/*--startup.sh 2>/dev/null | wc -l)
 TEST_COUNT=$((TEST_COUNT + 1))
@@ -107,11 +107,11 @@ fi
 # Test 8: Adjust cleans up stale generated files
 run rm -Rf $prj
 mkdir -p $prj
-run booth init new $prj --select "excalidraw+autostart"
+run booth config $prj --no-tui --select "excalidraw+autostart"
 # Verify excalidraw startup exists
 assert-line "$prj/.booth/startups/65-excalidraw-autostart--startup.sh" '#!/bin/bash' ''  "pre-adjust: excalidraw startup exists"
 # Now adjust without excalidraw — the old startup file should be cleaned up
-run booth init adjust $prj --select "go"
+run booth config $prj --no-tui --overwrite --select "go"
 TEST_COUNT=$((TEST_COUNT + 1))
 label="adjust removes stale generated startups "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')
@@ -129,7 +129,7 @@ fi
 # Test 9: Template without startup doesn't create startups/ dir
 run rm -Rf $prj
 mkdir -p $prj
-run booth init new $prj --select "go"
+run booth config $prj --no-tui --select "go"
 TEST_COUNT=$((TEST_COUNT + 1))
 label="no startups/ for template without startup "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')

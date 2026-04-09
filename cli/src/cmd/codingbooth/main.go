@@ -61,9 +61,6 @@ func main() {
 		case "template":
 			runTemplate(version)
 			return
-		case "init":
-			runInit(version)
-			return
 		case "config":
 			runConfig(version)
 			return

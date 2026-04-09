@@ -1,0 +1,8 @@
+display-name = "CLI History"
+display-disc = "Persist Redis CLI history across sessions"
+display-order = 20
+tags = ["history", "persistence"]
+
+cache-files = [
+    "home/coder/.rediscli_history",
+]

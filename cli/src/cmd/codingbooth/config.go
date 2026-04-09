@@ -55,6 +55,9 @@ func runConfig(version string) {
 func runConfigCLI(version string, targetPath string, flags initFlags) {
 	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
 
+	// Read back cache-files/cache-dirs from existing config.toml
+	extractUserRunArgs(targetPath, &flags)
+
 	var out *output.BoothOutput
 	var resolved *selection.ResolvedSelection
 
@@ -320,7 +323,7 @@ func readExistingBooth(targetPath string) initFlags {
 }
 
 // extractUserRunArgs reads config.toml and extracts user-set run-args
-// (long-form --env, --publish, --volume) back into initFlags.
+// (long-form --env, --publish, --volume) and cache-files/cache-dirs back into initFlags.
 func extractUserRunArgs(targetPath string, flags *initFlags) {
 	configPath := filepath.Join(targetPath, ".booth", "config.toml")
 	data, err := os.ReadFile(configPath)
@@ -328,13 +331,18 @@ func extractUserRunArgs(targetPath string, flags *initFlags) {
 		return
 	}
 
-	// Minimal TOML parsing: extract run-args array
 	var cfg struct {
-		RunArgs []string `toml:"run-args"`
+		RunArgs    []string `toml:"run-args"`
+		CacheFiles []string `toml:"cache-files"`
+		CacheDirs  []string `toml:"cache-dirs"`
 	}
 	if _, err := toml.Decode(string(data), &cfg); err != nil {
 		return
 	}
+
+	// Preserve cache-files and cache-dirs from existing config.toml
+	flags.cacheFiles = append(flags.cacheFiles, cfg.CacheFiles...)
+	flags.cacheDirs = append(flags.cacheDirs, cfg.CacheDirs...)
 
 	// Decompose long-form paired flags back into typed fields
 	for i := 0; i < len(cfg.RunArgs); i++ {
@@ -398,8 +406,8 @@ func parseAdjustCommand(cmd string) initFlags {
 	var args []string
 	skip := 0
 	for _, p := range parts {
-		// Skip prefix: "booth init adjust", "booth init new", or "booth config"
-		if skip < 3 && (p == "booth" || p == "init" || p == "adjust" || p == "new" || p == "config") {
+		// Skip prefix: "booth config"
+		if skip < 3 && (p == "booth" || p == "config") {
 			skip++
 			continue
 		}

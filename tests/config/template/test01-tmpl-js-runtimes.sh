@@ -3,7 +3,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "nodejs/bun/deno"
+run booth config $prj --no-tui --select "nodejs/bun/deno"
 
 booth-collect "
 echo -n '1: ' ; command -v node >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

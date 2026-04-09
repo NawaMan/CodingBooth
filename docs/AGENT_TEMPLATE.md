@@ -1,12 +1,12 @@
 # CodingBooth Template Authoring Guide
 
-**Purpose:** Guide for AI agents and developers to create init templates for `codingbooth init`.
+**Purpose:** Guide for AI agents and developers to create init templates for `codingbooth config`.
 
 ---
 
 ## Overview
 
-Templates define what gets installed when a user runs `codingbooth init new [path] --select <templates>`. Each template produces Boothfile segments, config settings, and file references that are merged together into a `.booth/` directory.
+Templates define what gets installed when a user runs `codingbooth config --no-tui [path] --select <templates>`. Each template produces Boothfile segments, config settings, and file references that are merged together into a `.booth/` directory.
 
 Templates live under the `templates/` directory, organized by category.
 
@@ -360,8 +360,8 @@ This ensures Node.js (order 30) is installed before my-tool (order 80), regardle
 - [ ] Add `[segments]` with Boothfile content using `setup`/`install` commands referencing params
 - [ ] Add `run-args` for credentials or environment variables if needed
 - [ ] Create extensions with `auto-select` for common add-ons (e.g., vscode-ext)
-- [ ] Test with `codingbooth init dryrun --templates-path templates --select <name>`
-- [ ] Verify param positional mapping: `codingbooth init dryrun --select "<name>:value1,value2"`
+- [ ] Test with `codingbooth config --no-tui --dryrun --templates-path templates --select <name>`
+- [ ] Verify param positional mapping: `codingbooth config --no-tui --dryrun --select "<name>:value1,value2"`
 
 ---
 
@@ -371,17 +371,17 @@ This ensures Node.js (order 30) is installed before my-tool (order 80), regardle
 
 ```bash
 # Preview what a single template generates
-codingbooth init dryrun --templates-path templates --select "go"
+codingbooth config --no-tui --dryrun --templates-path templates --select "go"
 
 # Preview with params
-codingbooth init dryrun --templates-path templates --select "java:21,corretto"
+codingbooth config --no-tui --dryrun --templates-path templates --select "java:21,corretto"
 
 # Preview with extensions
-codingbooth init dryrun --templates-path templates --select "java:25+maven+gradle"
+codingbooth config --no-tui --dryrun --templates-path templates --select "java:25+maven+gradle"
 
 # Preview multiple templates
-codingbooth init dryrun --templates-path templates --select "go/python/claude-code"
+codingbooth config --no-tui --dryrun --templates-path templates --select "go/python/claude-code"
 
 # Generate for real
-codingbooth init new ./my-project --templates-path templates --select "go/python"
+codingbooth config --no-tui ./my-project --templates-path templates --select "go/python"
 ```

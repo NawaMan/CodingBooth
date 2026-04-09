@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "nodejs+npm-pkg:cowsay"
+run booth config $prj --no-tui --select "nodejs+npm-pkg:cowsay"
 
 booth-collect "
 echo -n '1: ' ; which cowsay 2>&1 ;

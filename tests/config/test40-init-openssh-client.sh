@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "openssh"
+run booth config $prj --no-tui --select "openssh"
 
 boothfile="$prj/.booth/Boothfile"
 

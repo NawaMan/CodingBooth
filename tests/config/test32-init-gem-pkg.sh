@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "ruby+gem-pkg:colorize"
+run booth config $prj --no-tui --select "ruby+gem-pkg:colorize"
 
 booth-collect "
 echo -n '1: ' ; ruby -e \"require 'colorize'; puts 'OK'\" 2>&1 ;

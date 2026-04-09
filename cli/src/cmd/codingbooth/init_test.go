@@ -129,6 +129,20 @@ func TestApplySetOverrides_UnknownField(t *testing.T) {
 	assert.True(t, cfg.Overrides["keep-alive"].(bool))
 }
 
+func TestApplySetOverrides_CacheFiles(t *testing.T) {
+	cfg := &output.ConfigToml{}
+	applySetOverrides(cfg, map[string]interface{}{"cache-files": "home/coder/.custom_history"})
+	assert.Equal(t, []string{"home/coder/.custom_history"}, cfg.CacheFiles)
+	assert.Empty(t, cfg.Overrides)
+}
+
+func TestApplySetOverrides_CacheDirs(t *testing.T) {
+	cfg := &output.ConfigToml{}
+	applySetOverrides(cfg, map[string]interface{}{"cache-dirs": "home/coder/.custom_data"})
+	assert.Equal(t, []string{"home/coder/.custom_data"}, cfg.CacheDirs)
+	assert.Empty(t, cfg.Overrides)
+}
+
 func TestApplySetOverrides_MixedKnownAndUnknown(t *testing.T) {
 	cfg := &output.ConfigToml{}
 	applySetOverrides(cfg, map[string]interface{}{

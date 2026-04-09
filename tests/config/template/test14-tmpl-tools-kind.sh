@@ -4,7 +4,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "dind/kind"
+run booth config $prj --no-tui --select "dind/kind"
 
 booth-collect-dind "
 echo -n '1: ' ; command -v kind    >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

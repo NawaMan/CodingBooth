@@ -24,7 +24,7 @@ echo "JetBrains All IDEs Manual Test"
 echo "═══════════════════════════════════════════════════════════"
 echo
 echo "This will:"
-echo "  1) codingbooth init  — generate Boothfile with all 9 JetBrains IDEs"
+echo "  1) codingbooth config --no-tui  — generate Boothfile with all 9 JetBrains IDEs"
 echo "  2) booth start       — build the Docker image (~5-9 GB of IDE downloads)"
 echo
 echo "Select: $SELECT"
@@ -37,9 +37,9 @@ echo "  60: setup jetbrains ...   (all 9 IDEs)"
 echo
 
 # --- Step 1: init ---
-echo "── Step 1: codingbooth init ─────────────────────────────"
+echo "── Step 1: codingbooth config --no-tui ─────────────────────────────"
 rm -rf "$TEST_DIR"
-cli/codingbooth init new "$TEST_DIR" \
+cli/codingbooth config --no-tui "$TEST_DIR" \
     --select "$SELECT" \
     --templates-path templates
 

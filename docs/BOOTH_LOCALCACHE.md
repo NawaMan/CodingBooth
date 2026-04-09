@@ -23,6 +23,8 @@ Back to [README](../README.md)
 - [Protected Paths](#protected-paths)
 - [Gitignore Requirement](#gitignore-requirement)
 - [Examples](#examples)
+- [Available Cache Templates](#available-cache-templates)
+- [User-Defined Cache in config.toml](#user-defined-cache-in-configtoml)
 - [Implementation Plan](#implementation-plan)
 
 ---
@@ -95,7 +97,7 @@ For example, `.booth/cache/opt/codingbooth/` or `.booth/cache/home/coder/code/` 
 
 If `.booth/cache/` exists, it **must** be listed in `.booth/.gitignore`. CodingBooth checks for this at startup and errors out if the entry is missing. This prevents accidentally committing host-specific cached state.
 
-The generated `.booth/.gitignore` from `booth init` always includes `cache/`. If you created `.booth/` manually, add it yourself:
+The generated `.booth/.gitignore` from `booth config` always includes `cache/`. If you created `.booth/` manually, add it yourself:
 
 ```
 cache/
@@ -154,6 +156,90 @@ History and gitconfig are individual file mounts. The PostgreSQL data directory 
 ```
 
 The entire `~/.claude/` directory is mounted as a single bind mount. Claude Code settings, projects, memory, and conversation history all persist across container sessions. Fresh credentials are provided separately via `/etc/cb-home/` override mount (see [Home Directory Guide](BOOTH_HOME.md#fine-grained-copy-with-mount-this)).
+
+---
+
+## Available Cache Templates
+
+Many templates include built-in cache extensions you can enable during `booth config`:
+
+### Shell & REPL History (`cache-files`)
+
+| Template Selection | What's Cached |
+|--------------------|---------------|
+| `shell-history` | `~/.bash_history`, `~/.zsh_history` |
+| `python+repl-history` | `~/.python_history` |
+| `nodejs+repl-history` | `~/.node_repl_history` |
+| `ruby+repl-history` | `~/.irb_history` |
+
+### Database CLI History
+
+| Template Selection | What's Cached |
+|--------------------|---------------|
+| `postgresql+cli-history` | `~/.psql_history` |
+| `mysql+cli-history` | `~/.mysql_history` |
+| `sqlite+cli-history` | `~/.sqlite_history` |
+| `redis+cli-history` | `~/.rediscli_history` |
+| `mongodb+cli-history` | `~/.mongosh/` (directory) |
+
+### REPL History (`cache-dirs`)
+
+| Template Selection | What's Cached |
+|--------------------|---------------|
+| `elixir+repl-history` | `~/.cache/erlang-history/` |
+| `php+repl-history` | `~/.config/psysh/` |
+
+### IDE & Editor Settings (`cache-dirs`)
+
+| Template Selection | What's Cached |
+|--------------------|---------------|
+| `claude-code+settings-cache` | `~/.claude/` |
+| `codeserver+settings-cache` | `~/.local/share/code-server/` |
+| `neovim+data-cache` | `~/.local/share/nvim/`, `~/.local/state/nvim/` |
+
+### Browser Profiles (`cache-dirs`)
+
+| Template Selection | What's Cached |
+|--------------------|---------------|
+| `firefox+profile-cache` | `~/.mozilla/` (can be large) |
+| `chromium+profile-cache` | `~/.config/chromium/` (can be large) |
+| `google-chrome+profile-cache` | `~/.config/google-chrome/` (can be large) |
+
+> Browser profiles can grow to hundreds of megabytes. These extensions are opt-in and never auto-selected.
+
+Usage example:
+
+```
+booth config --no-tui . --select go/shell-history/python+repl-history/redis+cli-history
+```
+
+---
+
+## User-Defined Cache in config.toml
+
+For tools without a built-in template, you can declare custom cache paths directly in `.booth/config.toml`:
+
+```toml
+cache-files = [
+    "home/coder/.custom_history",
+]
+
+cache-dirs = [
+    "home/coder/.custom_app_data",
+]
+```
+
+Or via CLI:
+
+```
+booth config --no-tui . --select go --set cache-files=home/coder/.custom_history
+booth config --no-tui . --select go --set cache-dirs=home/coder/.custom_app_data
+```
+
+- `cache-files` creates individual empty files that are bind-mounted as files
+- `cache-dirs` creates directories with `.mount-this` markers that are bind-mounted as whole directories
+- These paths are merged with any cache paths from selected templates — duplicates are automatically removed
+- Paths are relative to the container root (e.g., `home/coder/.foo` maps to `/home/coder/.foo`)
 
 ---
 
@@ -218,7 +304,7 @@ Each path is relative to `.booth/cache/` and mirrors the container filesystem.
 - `cache-files`: Creates parent directories and touches empty files.
 - `cache-dirs`: Creates the directory and a `.mount-this` marker inside it, causing the entire directory to be mounted as a single bind mount.
 
-Existing files and markers are left untouched (no-clobber) so user data is never overwritten on `booth init adjust`.
+Existing files and markers are left untouched (no-clobber) so user data is never overwritten on `booth config --no-tui --overwrite`.
 
 ### 5. Template: `shell-history`
 
@@ -268,21 +354,21 @@ Add `cache-files` extensions to existing language/tool templates. Each extension
 | `mysql` | `cli-history` | `templates/databases/mysql/cli-history--extension.toml` | `home/coder/.mysql_history` |
 | `sqlite` | `cli-history` | `templates/databases/sqlite/cli-history--extension.toml` | `home/coder/.sqlite_history` |
 
-Usage: `booth init new --select shell-history/python+repl-history/postgresql+cli-history`
+Usage: `booth config --no-tui --select shell-history/python+repl-history/postgresql+cli-history`
 
 ### 7. Init test: `tests/config/test51-init-cache-files.sh`
 
-**Pattern:** Uses `test-helpers--source.sh` (same as existing init tests like test47, test48). Runs `booth init` and checks the generated output on the host filesystem — no Docker needed.
+**Pattern:** Uses `test-helpers--source.sh` (same as existing init tests like test47, test48). Runs `booth config` and checks the generated output on the host filesystem — no Docker needed.
 
 **Tests:**
 
-1. `booth init new --select shell-history` creates `.booth/cache/home/coder/.bash_history`
-2. `booth init new --select shell-history` creates `.booth/cache/home/coder/.zsh_history`
+1. `booth config --no-tui --select shell-history` creates `.booth/cache/home/coder/.bash_history`
+2. `booth config --no-tui --select shell-history` creates `.booth/cache/home/coder/.zsh_history`
 3. `.booth/.gitignore` contains `cache/`
-4. `booth init new --select python+repl-history` creates `.booth/cache/home/coder/.python_history`
+4. `booth config --no-tui --select python+repl-history` creates `.booth/cache/home/coder/.python_history`
 5. Cache files are empty (zero bytes)
-6. `booth init adjust --select shell-history` does NOT overwrite existing cache files (write content to file, adjust, verify content preserved)
-7. `booth init new --select go` (no cache-files) does NOT create `.booth/cache/` directory
+6. `booth config --no-tui --overwrite --select shell-history` does NOT overwrite existing cache files (write content to file, adjust, verify content preserved)
+7. `booth config --no-tui --select go` (no cache-files) does NOT create `.booth/cache/` directory
 
 **File:** `tests/config/test51-init-cache-files.sh` (new)
 

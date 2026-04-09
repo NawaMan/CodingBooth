@@ -3,7 +3,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "go/rust"
+run booth config $prj --no-tui --select "go/rust"
 
 booth-collect "
 echo -n '1: ' ; command -v go     >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

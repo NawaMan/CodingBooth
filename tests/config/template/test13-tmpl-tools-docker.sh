@@ -4,7 +4,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "dind/docker-compose/docker-buildx"
+run booth config $prj --no-tui --select "dind/docker-compose/docker-buildx"
 
 booth-collect-dind "
 echo -n '1: ' ; command -v docker >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

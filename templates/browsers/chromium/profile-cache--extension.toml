@@ -1,0 +1,8 @@
+display-name = "Profile Cache"
+display-disc = "Persist Chromium profile across sessions (can be large)"
+display-order = 91
+tags = ["persistence", "cache", "browser"]
+
+cache-dirs = [
+    "home/coder/.config/chromium",
+]

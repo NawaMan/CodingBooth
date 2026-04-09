@@ -1,0 +1,9 @@
+display-name = "Data Cache"
+display-disc = "Persist Neovim plugins and state across sessions"
+display-order = 91
+tags = ["persistence", "cache"]
+
+cache-dirs = [
+    "home/coder/.local/share/nvim",
+    "home/coder/.local/state/nvim",
+]

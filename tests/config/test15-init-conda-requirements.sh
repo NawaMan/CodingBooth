@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "python+conda"
+run booth config $prj --no-tui --select "python+conda"
 
 # Create requirements.txt in .booth/
 echo "requests" > "$prj/.booth/requirements.txt"

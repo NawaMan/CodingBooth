@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "rust+cargo-pkg:bat"
+run booth config $prj --no-tui --select "rust+cargo-pkg:bat"
 
 boothfile="$prj/.booth/Boothfile"
 

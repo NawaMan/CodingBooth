@@ -347,8 +347,6 @@ func showHelpInit() {
 USAGE:  %s config [path] [options]
 
 Run '%s config help' for available options.
-
-Note: "booth init" is deprecated. Use "booth config" instead.
 `, s, s, s)
 }
 
@@ -482,7 +480,7 @@ func dispatchHelp(args []string, version string) {
 			showHelpExample()
 		case "template":
 			showHelpTemplate()
-		case "init", "config":
+		case "config":
 			showHelpInit()
 		case "build":
 			showHelpBuild()

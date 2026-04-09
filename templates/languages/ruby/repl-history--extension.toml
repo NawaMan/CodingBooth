@@ -1,0 +1,8 @@
+display-name = "REPL History"
+display-disc = "Persist IRB history across sessions"
+display-order = 20
+tags = ["history", "persistence"]
+
+cache-files = [
+    "home/coder/.irb_history",
+]

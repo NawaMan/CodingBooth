@@ -4,7 +4,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "lxqt"
+run booth config $prj --no-tui --select "lxqt"
 
 booth-collect "
 echo -n '1: ' ; command -v startlxqt   >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

@@ -10,7 +10,7 @@ go:1.24.13+linter
 python:3.12.12+uv
 EOF
 
-run booth init new $prj --select "@$recipe"
+run booth config $prj --no-tui --select "@$recipe"
 
 booth-collect "
 echo -n '1: ' ; java -version 2>&1 | grep -q '\"21' && echo 'java21' || echo 'not found' ;

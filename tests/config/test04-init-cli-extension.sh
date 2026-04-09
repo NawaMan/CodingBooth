@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "java+maven/go+linter/python+uv"
+run booth config $prj --no-tui --select "java+maven/go+linter/python+uv"
 
 booth-collect "
 echo -n '1: ' ; which java           || echo 'not found' ;

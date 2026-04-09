@@ -3,7 +3,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "haskell/fpc/zig"
+run booth config $prj --no-tui --select "haskell/fpc/zig"
 
 booth-collect "
 echo -n '1: ' ; command -v ghc >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

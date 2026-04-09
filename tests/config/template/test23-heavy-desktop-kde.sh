@@ -6,7 +6,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "java:21/kde/idea/pycharm/eclipse/warp"
+run booth config $prj --no-tui --select "java:21/kde/idea/pycharm/eclipse/warp"
 
 booth-collect "
 echo -n '1: ' ; command -v startplasma-x11  >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

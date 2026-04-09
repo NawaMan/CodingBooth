@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "python+uv-pkg:ruff"
+run booth config $prj --no-tui --select "python+uv-pkg:ruff"
 
 boothfile="$prj/.booth/Boothfile"
 

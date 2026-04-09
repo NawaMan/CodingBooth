@@ -5,7 +5,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "r"
+run booth config $prj --no-tui --select "r"
 
 booth-collect "
 echo -n '1: ' ; command -v Rscript >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

@@ -10,7 +10,7 @@ go+linter
 python+uv
 EOF
 
-run booth init new $prj --select "@$recipe"
+run booth config $prj --no-tui --select "@$recipe"
 
 booth-collect "
 echo -n '1: ' ; which java           || echo 'not found' ;

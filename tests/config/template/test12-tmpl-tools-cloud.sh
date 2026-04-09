@@ -4,7 +4,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "nodejs/aws-cli/gcloud/firebase"
+run booth config $prj --no-tui --select "nodejs/aws-cli/gcloud/firebase"
 
 booth-collect "
 echo -n '1: ' ; command -v aws      >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

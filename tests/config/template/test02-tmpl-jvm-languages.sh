@@ -3,7 +3,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "java:21/kotlin/scala/clojure"
+run booth config $prj --no-tui --select "java:21/kotlin/scala/clojure"
 
 booth-collect "
 echo -n '1: ' ; command -v java    >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

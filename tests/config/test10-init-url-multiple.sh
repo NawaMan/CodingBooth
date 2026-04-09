@@ -21,7 +21,7 @@ server_pid=$!
 sleep 1
 port=$(cat "$recipe_dir/port")
 
-run booth init new $prj --select "@@http://localhost:${port}/recipe.txt"
+run booth config $prj --no-tui --select "@@http://localhost:${port}/recipe.txt"
 
 kill $server_pid 2>/dev/null
 rm -rf "$recipe_dir"

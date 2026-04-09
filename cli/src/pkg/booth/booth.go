@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/BurntSushi/toml"
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
@@ -474,6 +475,9 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 		builder.CommonArgs.Append(ilist.NewList[string]("-v", tmpPath+":/home/coder/code/.booth/.tmp"))
 	}
 
+	// Ensure cache files/dirs declared in config.toml exist in .booth/cache/.
+	ensureCacheFromConfig(filepath.Join(codePath, ".booth"))
+
 	// Mount .booth/cache/ contents into the container based on directory structure.
 	cachePath := filepath.Join(hostPath, "cache")
 	if info, err := os.Stat(cachePath); err == nil && info.IsDir() {
@@ -492,6 +496,49 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 type cacheMount struct {
 	hostPath      string
 	containerPath string
+}
+
+// ensureCacheFromConfig reads cache-files and cache-dirs from config.toml
+// and creates the corresponding files/directories in .booth/cache/ if they
+// don't already exist (no-clobber). This allows hand-written config.toml to
+// work without requiring a separate "booth config" step.
+func ensureCacheFromConfig(boothDir string) {
+	configPath := filepath.Join(boothDir, "config.toml")
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		return
+	}
+
+	var cfg struct {
+		CacheFiles []string `toml:"cache-files"`
+		CacheDirs  []string `toml:"cache-dirs"`
+	}
+	if _, err := toml.Decode(string(data), &cfg); err != nil {
+		return
+	}
+
+	if len(cfg.CacheFiles) == 0 && len(cfg.CacheDirs) == 0 {
+		return
+	}
+
+	cacheDir := filepath.Join(boothDir, "cache")
+	for _, cf := range cfg.CacheFiles {
+		path := filepath.Join(cacheDir, cf)
+		if _, err := os.Stat(path); err == nil {
+			continue
+		}
+		os.MkdirAll(filepath.Dir(path), 0755)
+		os.WriteFile(path, []byte{}, 0644)
+	}
+	for _, cd := range cfg.CacheDirs {
+		dirPath := filepath.Join(cacheDir, cd)
+		os.MkdirAll(dirPath, 0755)
+		markerPath := filepath.Join(dirPath, ".mount-this")
+		if _, err := os.Stat(markerPath); err == nil {
+			continue
+		}
+		os.WriteFile(markerPath, []byte{}, 0644)
+	}
 }
 
 // protectedPaths are container paths that must not be overridden by cache mounts.

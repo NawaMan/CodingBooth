@@ -194,6 +194,76 @@ func TestSerializeConfigToml_EmptyOverrides(t *testing.T) {
 	assert.NotEqual(t, "", lastLine, "should not end with blank line from empty overrides")
 }
 
+func TestSerializeConfigToml_CacheFilesSingle(t *testing.T) {
+	cfg := &ConfigToml{
+		CacheFiles: []string{"home/coder/.custom_history"},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	assert.Contains(t, result, `cache-files = ["home/coder/.custom_history"]`)
+}
+
+func TestSerializeConfigToml_CacheFilesMultiple(t *testing.T) {
+	cfg := &ConfigToml{
+		CacheFiles: []string{"home/coder/.bash_history", "home/coder/.zsh_history"},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	assert.Contains(t, result, "cache-files = [")
+	assert.Contains(t, result, `"home/coder/.bash_history"`)
+	assert.Contains(t, result, `"home/coder/.zsh_history"`)
+}
+
+func TestSerializeConfigToml_CacheDirsSingle(t *testing.T) {
+	cfg := &ConfigToml{
+		CacheDirs: []string{"home/coder/.mozilla"},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	assert.Contains(t, result, `cache-dirs = ["home/coder/.mozilla"]`)
+}
+
+func TestSerializeConfigToml_CacheDirsMultiple(t *testing.T) {
+	cfg := &ConfigToml{
+		CacheDirs: []string{"home/coder/.local/share/nvim", "home/coder/.local/state/nvim"},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	assert.Contains(t, result, "cache-dirs = [")
+	assert.Contains(t, result, `"home/coder/.local/share/nvim"`)
+	assert.Contains(t, result, `"home/coder/.local/state/nvim"`)
+}
+
+func TestSerializeConfigToml_CacheFilesAndDirs(t *testing.T) {
+	cfg := &ConfigToml{
+		CacheFiles: []string{"home/coder/.irb_history"},
+		CacheDirs:  []string{"home/coder/.mongosh"},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	assert.Contains(t, result, `cache-files = ["home/coder/.irb_history"]`)
+	assert.Contains(t, result, `cache-dirs = ["home/coder/.mongosh"]`)
+	// cache-files should come before cache-dirs
+	filesIdx := strings.Index(result, "cache-files")
+	dirsIdx := strings.Index(result, "cache-dirs")
+	assert.True(t, filesIdx < dirsIdx, "cache-files should come before cache-dirs")
+}
+
+func TestSerializeConfigToml_CacheBeforeOverrides(t *testing.T) {
+	cfg := &ConfigToml{
+		CacheFiles: []string{"home/coder/.custom"},
+		Overrides:  map[string]interface{}{"keep-alive": true},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	cacheIdx := strings.Index(result, "cache-files")
+	overrideIdx := strings.Index(result, "keep-alive")
+	assert.True(t, cacheIdx < overrideIdx, "cache-files should come before overrides")
+}
+
+func TestSerializeConfigToml_EmptyCacheNotWritten(t *testing.T) {
+	cfg := &ConfigToml{
+		Variant: "base",
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	assert.NotContains(t, result, "cache-files")
+	assert.NotContains(t, result, "cache-dirs")
+}
+
 func TestSerializeConfigToml_ValidToml(t *testing.T) {
 	cfg := &ConfigToml{
 		Variant: "codeserver",

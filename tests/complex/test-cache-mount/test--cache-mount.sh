@@ -33,9 +33,15 @@ mkdir -p .booth/cache/opt/testapp
 echo "" > .booth/cache/opt/testapp/.mount-this
 echo "CACHED_DATA" > .booth/cache/opt/testapp/data.txt
 
+# Ensure .gitignore contains cache/ (required by runtime validation)
+if ! grep -q '^cache/' .booth/.gitignore 2>/dev/null; then
+  echo "cache/" >> .booth/.gitignore
+fi
+
 # Cleanup cache on exit
 cleanup() {
   rm -rf .booth/cache
+  sed -i '/^cache\/$/d' .booth/.gitignore 2>/dev/null || true
 }
 trap cleanup EXIT
 

@@ -106,7 +106,7 @@ You can define special arrays in `.booth/config.toml` to customize Docker intera
   ```toml
   run-args = ["-e", "TZ=Asia/Bangkok", "-v", "/mnt/data:/data"]
   ```
-  When using `booth init`, these can be set via CLI shorthands: `--expose` (for `-p`), `--env` (for `-e`), and `--mount` (for `-v`).
+  When using `booth config`, these can be set via CLI shorthands: `--expose` (for `-p`), `--env` (for `-e`), and `--mount` (for `-v`).
 
 - **`cmds`** — Default command to run inside the container. CLI `-- <cmd>` overrides this (does not append).
   ```toml
@@ -144,7 +144,7 @@ GIT_USER=yourname
 GIT_EMAIL=you@example.com
 ```
 
-- **Must be gitignored.** CodingBooth refuses to run if the file exists but is not gitignored. `booth init` adds `.env` to `.booth/.gitignore` automatically.
+- **Must be gitignored.** CodingBooth refuses to run if the file exists but is not gitignored. `booth config` adds `.env` to `.booth/.gitignore` automatically.
 - Always loaded first (lower priority than explicit `env-file` values on conflicts).
 
 ### 2. Explicit Env File: `env-file` in config.toml
@@ -167,10 +167,10 @@ Pass individual environment variables via Docker run arguments in `config.toml`:
 run-args = ["-e", "TZ=Asia/Bangkok", "-e", "DEBUG=true"]
 ```
 
-When using `booth init`, you can set these with the `--env` shorthand:
+When using `booth config`, you can set these with the `--env` shorthand:
 
 ```bash
-booth init new --select python --env TZ=Asia/Bangkok --env DEBUG=true
+booth config --no-tui --select python --env TZ=Asia/Bangkok --env DEBUG=true
 ```
 
 These support **variable expansion** — you can reference host environment variables:

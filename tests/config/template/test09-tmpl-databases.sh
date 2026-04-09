@@ -3,7 +3,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "sqlite/postgresql/mysql"
+run booth config $prj --no-tui --select "sqlite/postgresql/mysql"
 
 booth-collect "
 echo -n '1: ' ; command -v sqlite3  >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

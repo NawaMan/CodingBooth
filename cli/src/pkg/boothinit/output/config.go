@@ -52,6 +52,16 @@ func SerializeConfigToml(cfg *ConfigToml, command, adjustCommand string) string 
 		writeStringArray(&b, "run-args", cfg.RunArgs)
 	}
 
+	if len(cfg.CacheFiles) > 0 {
+		b.WriteString("\n")
+		writeStringArray(&b, "cache-files", cfg.CacheFiles)
+	}
+
+	if len(cfg.CacheDirs) > 0 {
+		b.WriteString("\n")
+		writeStringArray(&b, "cache-dirs", cfg.CacheDirs)
+	}
+
 	// Write --set overrides as raw TOML key=value pairs
 	if len(cfg.Overrides) > 0 {
 		b.WriteString("\n")

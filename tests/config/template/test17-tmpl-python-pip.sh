@@ -5,7 +5,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "python+pip"
+run booth config $prj --no-tui --select "python+pip"
 
 # Create a minimal requirements.txt so pip has something to install
 mkdir -p "$prj/.booth"

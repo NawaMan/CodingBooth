@@ -4,7 +4,7 @@ source "$(dirname "$0")/test-helpers--source.sh"
 begin
 
 # Test 1: shell-history creates .bash_history cache file
-run booth init new $prj --select "shell-history"
+run booth config $prj --no-tui --select "shell-history"
 TEST_COUNT=$((TEST_COUNT + 1))
 label="shell-history creates .bash_history "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')
@@ -69,7 +69,7 @@ fi
 
 # Test 5: adjust preserves existing cache files (no-clobber)
 echo "EXISTING_HISTORY_LINE" > "$prj/.booth/cache/home/coder/.bash_history"
-run booth init adjust $prj --select "shell-history"
+run booth config $prj --no-tui --overwrite --select "shell-history"
 TEST_COUNT=$((TEST_COUNT + 1))
 label="adjust preserves existing cache files "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')
@@ -89,7 +89,7 @@ fi
 # Test 6: python+repl-history creates .python_history
 run rm -Rf $prj
 mkdir -p $prj
-run booth init new $prj --select "python+repl-history"
+run booth config $prj --no-tui --select "python+repl-history"
 TEST_COUNT=$((TEST_COUNT + 1))
 label="python+repl-history creates .python_history "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')
@@ -107,7 +107,7 @@ fi
 # Test 7: template without cache-files does NOT create cache/ directory
 run rm -Rf $prj
 mkdir -p $prj
-run booth init new $prj --select "go"
+run booth config $prj --no-tui --select "go"
 TEST_COUNT=$((TEST_COUNT + 1))
 label="no cache/ for template without cache-files "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')

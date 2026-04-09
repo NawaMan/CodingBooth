@@ -6,7 +6,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "gh"
+run booth config $prj --no-tui --select "gh"
 
 booth-collect "
 echo -n '1: ' ; command -v gh >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

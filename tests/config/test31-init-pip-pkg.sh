@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "python+pip-pkg:cowsay"
+run booth config $prj --no-tui --select "python+pip-pkg:cowsay"
 
 booth-collect "
 echo -n '1: ' ; python3 -c 'import cowsay; print(\"OK\")' 2>&1 ;

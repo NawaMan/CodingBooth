@@ -4,7 +4,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "nodejs/claude-code/codex"
+run booth config $prj --no-tui --select "nodejs/claude-code/codex"
 
 booth-collect "
 echo -n '1: ' ; command -v claude >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

@@ -1,0 +1,8 @@
+display-name = "Settings Cache"
+display-disc = "Persist code-server settings and extensions across sessions"
+display-order = 91
+tags = ["persistence", "cache"]
+
+cache-dirs = [
+    "home/coder/.local/share/code-server",
+]

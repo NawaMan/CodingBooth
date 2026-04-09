@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "homebrew/brew-pkg:tree"
+run booth config $prj --no-tui --select "homebrew/brew-pkg:tree"
 
 boothfile="$prj/.booth/Boothfile"
 

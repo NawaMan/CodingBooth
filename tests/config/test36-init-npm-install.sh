@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "nodejs+npm-install"
+run booth config $prj --no-tui --select "nodejs+npm-install"
 
 # Create a package.json with express as a dependency
 cat > "$prj/package.json" <<'PACKAGE'

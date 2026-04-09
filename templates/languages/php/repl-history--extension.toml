@@ -1,0 +1,8 @@
+display-name = "REPL History"
+display-disc = "Persist PsySH history across sessions"
+display-order = 20
+tags = ["history", "persistence"]
+
+cache-dirs = [
+    "home/coder/.config/psysh",
+]

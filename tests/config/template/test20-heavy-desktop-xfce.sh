@@ -5,7 +5,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "xfce/vscode/chromium/firefox/google-chrome"
+run booth config $prj --no-tui --select "xfce/vscode/chromium/firefox/google-chrome"
 
 booth-collect "
 echo -n '1: ' ; command -v startxfce4      >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

@@ -4,7 +4,7 @@ source "$(dirname "$0")/test-helpers--source.sh"
 begin
 
 # Test extension params: maven version override
-run booth init new $prj --select "java+maven:3.9"
+run booth config $prj --no-tui --select "java+maven:3.9"
 
 boothfile="$prj/.booth/Boothfile"
 
@@ -14,7 +14,7 @@ assert-line "$boothfile" "setup mvn "        "\${MAVEN_VERSION}" "setup mvn uses
 # Test extension params: gradle version override
 run rm -Rf $prj
 mkdir -p $prj
-run booth init new $prj --select "java+gradle:8.14"
+run booth config $prj --no-tui --select "java+gradle:8.14"
 
 boothfile="$prj/.booth/Boothfile"
 
@@ -23,7 +23,7 @@ assert-line "$boothfile" "arg GRADLE_VERSION=" "8.14"             "GRADLE_VERSIO
 # Test extension with default params (no override)
 run rm -Rf $prj
 mkdir -p $prj
-run booth init new $prj --select "java+maven"
+run booth config $prj --no-tui --select "java+maven"
 
 boothfile="$prj/.booth/Boothfile"
 

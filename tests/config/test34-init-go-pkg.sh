@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "go+go-pkg:gopls@latest"
+run booth config $prj --no-tui --select "go+go-pkg:gopls@latest"
 
 boothfile="$prj/.booth/Boothfile"
 

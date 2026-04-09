@@ -3,7 +3,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "xfce/libreoffice"
+run booth config $prj --no-tui --select "xfce/libreoffice"
 
 booth-collect "
 echo -n '1: ' ; command -v libreoffice >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;

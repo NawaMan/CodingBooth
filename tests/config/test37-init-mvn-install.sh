@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "java+maven+mvn-install"
+run booth config $prj --no-tui --select "java+maven+mvn-install"
 
 boothfile="$prj/.booth/Boothfile"
 

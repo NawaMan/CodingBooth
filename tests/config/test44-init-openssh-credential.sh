@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "openssh+credential"
+run booth config $prj --no-tui --select "openssh+credential"
 
 config="$prj/.booth/config.toml"
 

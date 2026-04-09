@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "nodejs+yarn-pkg:typescript"
+run booth config $prj --no-tui --select "nodejs+yarn-pkg:typescript"
 
 boothfile="$prj/.booth/Boothfile"
 

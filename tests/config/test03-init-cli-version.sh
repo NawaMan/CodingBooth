@@ -2,7 +2,7 @@
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "java:21/go:1.24.13+linter/python:3.12.12+uv"
+run booth config $prj --no-tui --select "java:21/go:1.24.13+linter/python:3.12.12+uv"
 
 booth-collect "
 echo -n '1: ' ; java -version 2>&1 | grep -q '\"21' && echo 'java21' || echo 'not found' ;

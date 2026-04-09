@@ -50,19 +50,30 @@ run_coding_booth() {
     return 1
   fi
 
-  # When running a dev build, default to --version latest so prebuilt images resolve
+  # When running a dev build, default to --version latest so prebuilt images resolve.
+  # Only inject for run-like invocations, not for subcommands like list/start/stop/etc.
   local version_args=()
   local cb_version
   cb_version=$("$booth_path" version 2>/dev/null | tail -1 | sed 's/.*: //')
   if [[ "$cb_version" == "dev" ]]; then
-    # Only inject if the caller didn't already pass --version (before --)
-    local has_version=false
-    for arg in "$@"; do
-      if [[ "$arg" == "--" ]]; then break; fi
-      if [[ "$arg" == "--version" ]]; then has_version=true; break; fi
-    done
-    if [[ "$has_version" == false ]]; then
-      version_args=(--version latest)
+    # Check if the first arg is a non-run subcommand — skip --version injection for those
+    local first_arg="${1:-}"
+    local is_subcommand=false
+    case "$first_arg" in
+      list|start|stop|restart|remove|prune|shell|exec|message|example|template|config|build|version|help|--help|-h)
+        is_subcommand=true ;;
+    esac
+
+    if [[ "$is_subcommand" == false ]]; then
+      # Only inject if the caller didn't already pass --version (before --)
+      local has_version=false
+      for arg in "$@"; do
+        if [[ "$arg" == "--" ]]; then break; fi
+        if [[ "$arg" == "--version" ]]; then has_version=true; break; fi
+      done
+      if [[ "$has_version" == false ]]; then
+        version_args=(--version latest)
+      fi
     fi
   fi
 

@@ -60,7 +60,7 @@ echo "Part 3: no-sudo template"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo
 echo "  8. Init with no-sudo template"
-echo "     Run:    booth init new /tmp/test-no-sudo --select 'go/no-sudo'"
+echo "     Run:    booth config --no-tui /tmp/test-no-sudo --select 'go/no-sudo'"
 echo "     Check:  cat /tmp/test-no-sudo/.booth/config.toml"
 echo "     Expect: Contains 'sudo = false'"
 echo

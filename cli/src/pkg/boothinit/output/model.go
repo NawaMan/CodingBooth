@@ -30,8 +30,14 @@ type ConfigToml struct {
 	Dind     bool
 	Sudo     *bool
 	Cmds     []string
-	RunArgs  []string
+	RunArgs   []string
 	BuildArgs []string
+
+	// CacheFiles lists paths (relative to container root) to touch in .booth/cache/.
+	CacheFiles []string
+	// CacheDirs lists paths (relative to container root) to create as directories
+	// with .mount-this markers in .booth/cache/.
+	CacheDirs []string
 
 	// Overrides holds extra key-value pairs from --set flags.
 	// These are written to config.toml after the known fields above.

@@ -4,7 +4,7 @@ source "$(dirname "$0")/test-helpers--source.sh"
 begin
 
 # Test 1: claude-code+settings-cache creates .mount-this marker
-run booth init new $prj --select "claude-code+settings-cache"
+run booth config $prj --no-tui --select "claude-code+settings-cache"
 TEST_COUNT=$((TEST_COUNT + 1))
 label="settings-cache creates .mount-this marker "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')
@@ -53,7 +53,7 @@ fi
 
 # Test 4: adjust preserves existing .mount-this (no-clobber)
 echo "SHOULD_NOT_BE_OVERWRITTEN" > "$prj/.booth/cache/home/coder/.claude/.mount-this"
-run booth init adjust $prj --select "claude-code+settings-cache"
+run booth config $prj --no-tui --overwrite --select "claude-code+settings-cache"
 TEST_COUNT=$((TEST_COUNT + 1))
 label="adjust preserves existing .mount-this "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')
@@ -73,7 +73,7 @@ fi
 # Test 5: template without cache-dirs does NOT create cache/ directory
 run rm -Rf $prj
 mkdir -p $prj
-run booth init new $prj --select "go"
+run booth config $prj --no-tui --select "go"
 TEST_COUNT=$((TEST_COUNT + 1))
 label="no cache/ for template without cache-dirs "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')

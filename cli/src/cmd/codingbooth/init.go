@@ -21,96 +21,6 @@ import (
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 )
 
-// runInit handles the "init" command and its subcommands.
-// Deprecated: use "booth config" instead.
-func runInit(version string) {
-	args := os.Args[2:] // skip "codingbooth" and "init"
-
-	if len(args) == 0 || args[0] == "help" || args[0] == "--help" || args[0] == "-h" {
-		printInitHelp()
-		if len(args) == 0 {
-			os.Exit(1)
-		}
-		return
-	}
-
-	fmt.Fprintln(os.Stderr, `Note: "booth init" is deprecated. Use "booth config" instead. It will be removed in a future release.`)
-
-	subCmd := args[0]
-	switch subCmd {
-	case "new":
-		runInitNew(version, args[1:])
-	case "adjust":
-		runInitNew(version, append(args[1:], "--overwrite"))
-	case "dryrun":
-		runInitDryrun(version, args[1:])
-	default:
-		fmt.Fprintf(os.Stderr, "Error: unknown init subcommand: %s\n\n", subCmd)
-		printInitHelp()
-		os.Exit(1)
-	}
-}
-
-func printInitHelp() {
-	fmt.Println(`Usage: codingbooth init <command> [flags]
-
-Commands:
-  new [path]               Create a new booth (default: current directory)
-  adjust [path]            Re-generate booth (overwrites existing files)
-  dryrun                   Preview what would be generated
-
-  Use 'codingbooth template list/search/show/cat' to browse available templates.
-
-Selection:
-  Templates are selected with a DSL passed via --select.
-
-  Format:  name[:param1,param2][+extension][~exclude]/name2[:params][+ext][~exc]
-
-    /         separates templates
-    :         sets parameters (positional, comma-separated)
-    +         adds an extension to the preceding template
-    ~         excludes an auto-selected extension
-
-  The selection can also be read from a file (@file) or URL (@@url).
-
-Flags:
-  --templates-path <dir>   Use local templates directory (or set CB_TEMPLATES_PATH)
-  --select <selection>     Template selection DSL (repeatable; required for new/dryrun)
-  --variant <variant>      Set the variant (base, notebook, codeserver, xfce, kde)
-  --port <port>            Set port in generated config.toml (e.g., 10000, NEXT, RANDOM)
-  --cmd <command>          Set the default start command (repeatable; for new/dryrun)
-  --expose <port>          Expose extra port (-p mapping in run-args; repeatable)
-  --env <KEY=VALUE>        Set container environment variable (-e in run-args; repeatable)
-  --mount <host:container> Mount volume (-v mapping in run-args; repeatable)
-  --version <ver>          Use templates from a specific release version
-  --debug                  Print debug output (for new/dryrun)
-  --start                  Start the booth after creation (for new)
-  --overwrite              Overwrite existing files without prompting (for new)
-  --set <key=value>        Set a config.toml value (repeatable; bare key = true)
-
-Examples:
-  codingbooth init new --select "go/python"
-  codingbooth init new ./myproject --select "java:21+maven/postgresql"
-  codingbooth init dryrun --select "go:1.23.0+linter+vscode-ext"
-  codingbooth init new --select @selections.txt
-  codingbooth init new --select "claude-code~credential"
-  codingbooth init new --select go --select python --select claude-code
-  codingbooth init new --select python --port 10080
-  codingbooth init new --select python --cmd bash
-  codingbooth init new --select python --expose 8080
-  codingbooth init new --select nodejs --expose 3000 --expose 5432:5432
-  codingbooth init new --select python --env MY_VAR=hello
-  codingbooth init new --select go --mount /data:/app/data:ro
-  codingbooth init new --select go --set keep-alive --set name=my-booth
-  codingbooth init new --select go --set dind --set port=8080
-
-Package management:
-  codingbooth init new --select "nodejs+npm-pkg:express,typescript"
-  codingbooth init new --select "python+pip-pkg:numpy,pandas"
-  codingbooth init new --select "rust+cargo-pkg:ripgrep,fd-find"
-  codingbooth init new --select "nodejs+npm-install"
-  codingbooth init new --select "java+maven+mvn-install"`)
-}
 
 type initFlags struct {
 	selectDSLs    []string
@@ -120,6 +30,8 @@ type initFlags struct {
 	envs          []string // --env environment variables
 	mounts        []string // --mount volume mounts
 	sets          []string // raw --set key=value strings
+	cacheFiles    []string // cache-files read back from existing config.toml
+	cacheDirs     []string // cache-dirs read back from existing config.toml
 	variant       string
 	port          string
 	templatesPath string
@@ -267,7 +179,7 @@ func resolveTemplatesPath(flags initFlags, version string) (string, func()) {
 	return dir, cleanup
 }
 
-// runInitNew handles: codingbooth init new [path] --select <dsl> [--templates-path <dir>] [--debug]
+// runInitNew handles: codingbooth config --no-tui [path] --select <dsl> [--templates-path <dir>] [--debug]
 func runInitNew(version string, args []string) {
 	targetPath := "."
 	flagArgs := args
@@ -338,7 +250,7 @@ func runInitNew(version string, args []string) {
 	}
 }
 
-// runInitDryrun handles: codingbooth init dryrun --select <dsl> [--templates-path <dir>] [--debug]
+// runInitDryrun handles: codingbooth config --no-tui --dryrun --select <dsl> [--templates-path <dir>] [--debug]
 func runInitDryrun(version string, args []string) {
 	flags := parseInitFlags(args)
 	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
@@ -397,6 +309,9 @@ func compileEmpty(flags initFlags) (*output.BoothOutput, *selection.ResolvedSele
 		}
 		applySetOverrides(out.Config, overrides)
 	}
+	out.Config.CacheFiles = append(out.Config.CacheFiles, flags.cacheFiles...)
+	out.Config.CacheDirs = append(out.Config.CacheDirs, flags.cacheDirs...)
+	mergeConfigCache(out)
 
 	return out, &selection.ResolvedSelection{}
 }
@@ -476,6 +391,9 @@ func compileSelection(flags initFlags) (*output.BoothOutput, *selection.Resolved
 		}
 		applySetOverrides(out.Config, overrides)
 	}
+	out.Config.CacheFiles = append(out.Config.CacheFiles, flags.cacheFiles...)
+	out.Config.CacheDirs = append(out.Config.CacheDirs, flags.cacheDirs...)
+	mergeConfigCache(out)
 
 	return out, resolved
 }
@@ -549,15 +467,13 @@ func printDebug(resolved *selection.ResolvedSelection, out *output.BoothOutput) 
 	printDryrun(out)
 }
 
-// buildInitCommand reconstructs the booth init command string for the generated file headers.
+// buildInitCommand reconstructs the booth config command string for the generated file headers.
 // targetPath may be empty for dryrun.
 func buildInitCommand(targetPath string, flags initFlags) string {
 	var parts []string
-	parts = append(parts, "booth init")
+	parts = append(parts, "booth config --no-tui")
 	if targetPath != "" && targetPath != "." {
-		parts = append(parts, "new "+targetPath)
-	} else {
-		parts = append(parts, "new")
+		parts = append(parts, targetPath)
 	}
 	if flags.selectDSL != "" {
 		parts = append(parts, "--select "+flags.selectDSL)
@@ -589,11 +505,11 @@ func buildInitCommand(targetPath string, flags initFlags) string {
 	return strings.Join(parts, " ")
 }
 
-// buildAdjustCommand produces the "booth init adjust ..." command string for the
+// buildAdjustCommand produces the "booth config --no-tui --overwrite ..." command string for the
 // generated file headers. It always puts --select last so users can easily edit it.
 func buildAdjustCommand(flags initFlags) string {
 	var parts []string
-	parts = append(parts, "booth init adjust")
+	parts = append(parts, "booth config --no-tui --overwrite")
 	if flags.version != "" {
 		parts = append(parts, "--version "+flags.version)
 	}
@@ -912,8 +828,44 @@ func applySetOverrides(cfg *output.ConfigToml, overrides map[string]interface{})
 			if b, ok := value.(bool); ok {
 				cfg.Dind = b
 			}
+		case "cache-files":
+			if s, ok := value.(string); ok {
+				cfg.CacheFiles = append(cfg.CacheFiles, s)
+			}
+		case "cache-dirs":
+			if s, ok := value.(string); ok {
+				cfg.CacheDirs = append(cfg.CacheDirs, s)
+			}
 		default:
 			cfg.Overrides[key] = value
+		}
+	}
+}
+
+// mergeConfigCache merges cache-files and cache-dirs from ConfigToml into
+// BoothOutput.Cache and BoothOutput.CacheDirs, deduplicating against existing entries.
+func mergeConfigCache(out *output.BoothOutput) {
+	if out.Config == nil {
+		return
+	}
+	seen := make(map[string]bool, len(out.Cache))
+	for _, f := range out.Cache {
+		seen[f.RelPath] = true
+	}
+	for _, cf := range out.Config.CacheFiles {
+		if !seen[cf] {
+			seen[cf] = true
+			out.Cache = append(out.Cache, output.FileContent{RelPath: cf})
+		}
+	}
+	seenDirs := make(map[string]bool, len(out.CacheDirs))
+	for _, d := range out.CacheDirs {
+		seenDirs[d.RelPath] = true
+	}
+	for _, cd := range out.Config.CacheDirs {
+		if !seenDirs[cd] {
+			seenDirs[cd] = true
+			out.CacheDirs = append(out.CacheDirs, output.FileContent{RelPath: cd})
 		}
 	}
 }

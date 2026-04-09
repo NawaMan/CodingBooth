@@ -3,7 +3,7 @@
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
-run booth init new $prj --select "xfce/inkscape/gimp"
+run booth config $prj --no-tui --select "xfce/inkscape/gimp"
 
 booth-collect "
 echo -n '1: ' ; command -v inkscape >/dev/null 2>&1 && echo 'OK' || echo 'FAIL' ;
