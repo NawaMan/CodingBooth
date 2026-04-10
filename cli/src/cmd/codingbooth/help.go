@@ -147,6 +147,7 @@ CONTAINER MODE:
   --no-sudo              Shorthand for --sudo false
   --keep-alive           Do not remove the container when stopped
   --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
+  --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)
   --log-time             Prefix progress messages with timestamps
 
 COMMANDS:
@@ -231,6 +232,7 @@ CONTAINER MODE:
   --no-sudo              Shorthand for --sudo false
   --keep-alive           Do not remove container when stopped
   --writable-booth       Allow writing to .booth/ inside the container
+  --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)
   --log-time             Prefix progress messages with timestamps
 
 COMMANDS:

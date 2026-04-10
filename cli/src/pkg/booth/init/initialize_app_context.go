@@ -398,6 +398,9 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 		case "--writable-booth":
 			cfg.WritableBooth = true
 			i++
+		case "--no-writable-booth":
+			cfg.WritableBooth = false
+			i++
 
 
 		case "--public":
