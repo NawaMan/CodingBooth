@@ -1,5 +1,5 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth init adjust --select java
+# Configured by: booth config --no-tui --overwrite --select java
 
 arg JDK_VENDOR=temurin
 arg JDK_VERSION=25

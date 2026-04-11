@@ -1,2 +1,2 @@
-# Configured by: booth init adjust --select java+maven+mvn-install
+# Configured by: booth config --no-tui --overwrite --select java+maven+mvn-install
 

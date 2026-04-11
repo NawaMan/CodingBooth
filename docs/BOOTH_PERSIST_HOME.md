@@ -1,4 +1,6 @@
-# Persist Home Directory
+# Persist Home Directory (Experimental)
+
+> **This feature is experimental.** It works for common use cases but has not been exhaustively tested. Please report issues at https://github.com/NawaMan/CodingBooth/issues
 
 > Keep your IDE settings, browser history, and home directory state across booth sessions.
 
@@ -105,6 +107,32 @@ To manually remove a volume:
 ```bash
 docker volume rm cb-home-my-project
 ```
+
+### Listing volumes
+
+```bash
+booth home-volume-list
+```
+
+Shows all persisted home volumes with their parent container names.
+
+### Export and import
+
+You can back up a home volume to a tar file and restore it later. Note that home volumes can be large (1–3GB for VS Code users, 5GB+ with desktop browser profiles), so this may be slow.
+
+**Export:**
+
+```bash
+booth home-volume-export my-project home-backup.tar.gz
+```
+
+**Import:**
+
+```bash
+booth home-volume-import my-project home-backup.tar.gz
+```
+
+This is useful for backing up before a risky change, migrating to a different container name, or sharing a pre-configured home across machines.
 
 ### Exit warning
 

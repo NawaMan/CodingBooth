@@ -1,2 +1,2 @@
-# Configured by: booth init adjust --select freeplane:1.12.7
+# Configured by: booth config --no-tui --overwrite --select freeplane:1.12.7
 

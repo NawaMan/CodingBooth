@@ -1,2 +1,2 @@
-# Configured by: booth init adjust --select homebrew/brew-pkg:tree
+# Configured by: booth config --no-tui --overwrite --select homebrew/brew-pkg:tree
 

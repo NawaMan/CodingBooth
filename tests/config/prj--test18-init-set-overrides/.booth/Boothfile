@@ -1,5 +1,5 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth init adjust --set dind --set name=test --select go
+# Configured by: booth config --no-tui --overwrite --set dind --set name=test --select go
 
 arg GO_VERSION=1.25.7
 

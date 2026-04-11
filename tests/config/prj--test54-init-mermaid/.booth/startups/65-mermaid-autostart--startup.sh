@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth init adjust --select mermaid:11.4.2,19190+expose+autostart
+# Configured by: booth config --no-tui --overwrite --select mermaid:11.4.2,19190+expose+autostart
 
 # Auto-start Mermaid Live Editor in background
 PORT=${MERMAID_PORT:-19190}

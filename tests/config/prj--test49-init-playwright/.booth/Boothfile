@@ -1,5 +1,5 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth init adjust --select nodejs/playwright
+# Configured by: booth config --no-tui --overwrite --select nodejs/playwright
 
 arg NODE_VERSION=22
 arg PLAYWRIGHT_BROWSERS=chromium

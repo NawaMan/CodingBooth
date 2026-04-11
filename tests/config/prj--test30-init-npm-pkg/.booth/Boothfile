@@ -1,5 +1,5 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth init adjust --select nodejs+npm-pkg:cowsay
+# Configured by: booth config --no-tui --overwrite --select nodejs+npm-pkg:cowsay
 
 arg NODE_VERSION=22
 arg NPM_PKGS=cowsay

@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth init adjust --select plantuml:1.2025.2,19090+expose+autostart
+# Configured by: booth config --no-tui --overwrite --select plantuml:1.2025.2,19090+expose+autostart
 
 # Auto-start PlantUML Server in background
 PORT=${PLANTUML_PORT:-19090}

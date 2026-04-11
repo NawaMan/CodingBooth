@@ -1,2 +1,2 @@
-# Configured by: booth init adjust --select obsidian:1.12.3
+# Configured by: booth config --no-tui --overwrite --select obsidian:1.12.3
 

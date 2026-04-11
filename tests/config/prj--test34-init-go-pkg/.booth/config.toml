@@ -1,2 +1,2 @@
-# Configured by: booth init adjust --select go+go-pkg:gopls@latest
+# Configured by: booth config --no-tui --overwrite --select go+go-pkg:gopls@latest
 

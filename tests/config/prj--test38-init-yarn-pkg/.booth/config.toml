@@ -1,4 +1,4 @@
-# Configured by: booth init adjust --select nodejs+yarn-pkg:typescript
+# Configured by: booth config --no-tui --overwrite --select nodejs+yarn-pkg:typescript
 
 
 run-args = ["-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro"]

@@ -1,4 +1,4 @@
-# Configured by: booth init adjust --env FOO=bar --mount /data:/data --select go
+# Configured by: booth config --no-tui --overwrite --env FOO=bar --mount /data:/data --select go
 
 
 run-args = [

@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth init adjust --select nodejs+npm-install
+# Configured by: booth config --no-tui --overwrite --select nodejs+npm-install
 
 # Restore pre-installed node_modules from image cache if missing
 if [ -d /opt/npm-cache/node_modules ] && [ ! -d node_modules ]; then

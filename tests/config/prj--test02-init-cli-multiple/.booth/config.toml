@@ -1,4 +1,4 @@
-# Configured by: booth init adjust --select java/go/python
+# Configured by: booth config --no-tui --overwrite --select java/go/python
 
 
 run-args = [

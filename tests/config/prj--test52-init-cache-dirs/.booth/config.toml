@@ -1,2 +1,2 @@
-# Configured by: booth init adjust --select go
+# Configured by: booth config --no-tui --overwrite --select go
 

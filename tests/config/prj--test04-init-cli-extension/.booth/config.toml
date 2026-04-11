@@ -1,4 +1,4 @@
-# Configured by: booth init adjust --select java+maven/go+linter/python+uv
+# Configured by: booth config --no-tui --overwrite --select java+maven/go+linter/python+uv
 
 
 run-args = [

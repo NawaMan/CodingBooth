@@ -1,4 +1,4 @@
-# Configured by: booth init adjust --set dind --set name=test --select go
+# Configured by: booth config --no-tui --overwrite --set dind --set name=test --select go
 
 dind = true
 

@@ -1,4 +1,4 @@
-# Configured by: booth init adjust --select @/home/nawa/dev/git2/CodingBooth/tests/config/prj--test06-init-file-multiple--recipe.txt
+# Configured by: booth config --no-tui --overwrite --select @/home/nawa/dev/git2/CodingBooth/tests/config/prj--test06-init-file-multiple--recipe.txt
 
 
 run-args = [

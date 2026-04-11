@@ -1,4 +1,4 @@
-# Configured by: booth init adjust --select python+conda
+# Configured by: booth config --no-tui --overwrite --select python+conda
 
 
 run-args = [

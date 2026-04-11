@@ -1,5 +1,5 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth init adjust --select python+pip
+# Configured by: booth config --no-tui --overwrite --select python+pip
 
 arg PYTHON_VERSION=3.13.12
 

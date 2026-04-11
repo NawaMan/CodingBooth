@@ -1,5 +1,5 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth init adjust --select homebrew/brew-pkg:tree
+# Configured by: booth config --no-tui --overwrite --select homebrew/brew-pkg:tree
 
 arg BREW_PKGS=tree
 

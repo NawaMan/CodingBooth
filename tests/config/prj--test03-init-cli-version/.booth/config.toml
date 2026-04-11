@@ -1,4 +1,4 @@
-# Configured by: booth init adjust --select java:21/go:1.24.13+linter/python:3.12.12+uv
+# Configured by: booth config --no-tui --overwrite --select java:21/go:1.24.13+linter/python:3.12.12+uv
 
 
 run-args = [

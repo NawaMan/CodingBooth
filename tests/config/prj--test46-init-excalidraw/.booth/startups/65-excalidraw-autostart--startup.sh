@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth init adjust --select excalidraw:889+expose+autostart
+# Configured by: booth config --no-tui --overwrite --select excalidraw:889+expose+autostart
 
 # Auto-start Excalidraw in background
 PORT=${EXCALIDRAW_PORT:-889}

@@ -1,4 +1,4 @@
-# Configured by: booth init adjust --select python+pip
+# Configured by: booth config --no-tui --overwrite --select python+pip
 
 
 run-args = [

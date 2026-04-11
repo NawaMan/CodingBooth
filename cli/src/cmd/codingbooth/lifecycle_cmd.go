@@ -47,6 +47,18 @@ func messageBooth(_ string) {
 	handleLifecycleErr(lifecycle.Message(os.Args[2:], os.Stdout, os.Stderr))
 }
 
+func listHomeVolumes(_ string) {
+	handleLifecycleErr(lifecycle.ListHomeVolume(os.Args[2:], os.Stdout, os.Stderr))
+}
+
+func exportHomeVolume(_ string) {
+	handleLifecycleErr(lifecycle.ExportHomeVolume(os.Args[2:], os.Stdout, os.Stderr))
+}
+
+func importHomeVolume(_ string) {
+	handleLifecycleErr(lifecycle.ImportHomeVolume(os.Args[2:], os.Stdout, os.Stderr))
+}
+
 func handleLifecycleErr(err error) {
 	if err == nil {
 		return

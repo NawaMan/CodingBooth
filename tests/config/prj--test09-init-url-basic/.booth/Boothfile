@@ -1,5 +1,5 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth init adjust --select @@http://localhost:33585/recipe.txt
+# Configured by: booth config --no-tui --overwrite --select @@http://localhost:52861/recipe.txt
 
 arg JDK_VENDOR=temurin
 arg JDK_VERSION=25

@@ -1,4 +1,4 @@
-# Configured by: booth init adjust --select python+uv-pkg:ruff
+# Configured by: booth config --no-tui --overwrite --select python+uv-pkg:ruff
 
 
 run-args = [

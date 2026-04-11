@@ -365,6 +365,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	// Persist home directory via a Docker named volume.
 	// Must be mounted BEFORE the code bind mount so /home/coder/code overlays on top.
 	if ctx.PersistHome() {
+		fmt.Fprintln(os.Stderr, "Warning: --persist-home is experimental. Please report issues at https://github.com/NawaMan/CodingBooth/issues")
 		homeVolName := "cb-home-" + containerName
 		ensureHomeVolume(ctx, homeVolName, containerName)
 		builder.CommonArgs.Append(ilist.NewList[string]("-v", homeVolName+":/home/coder"))

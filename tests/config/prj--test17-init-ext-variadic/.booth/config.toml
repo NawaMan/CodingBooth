@@ -1,2 +1,2 @@
-# Configured by: booth init adjust --select deno+pkg:npm:cowsay
+# Configured by: booth config --no-tui --overwrite --select deno+pkg:npm:cowsay
 

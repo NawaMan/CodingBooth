@@ -1,4 +1,4 @@
-# Configured by: booth init adjust --select python+pip-pkg:cowsay
+# Configured by: booth config --no-tui --overwrite --select python+pip-pkg:cowsay
 
 
 run-args = [

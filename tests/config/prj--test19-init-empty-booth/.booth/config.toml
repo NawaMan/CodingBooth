@@ -1,4 +1,4 @@
-# Configured by: booth init adjust --set keep-alive
+# Configured by: booth config --no-tui --overwrite --set keep-alive
 
 
 keep-alive = true
