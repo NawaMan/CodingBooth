@@ -35,9 +35,11 @@ RUN apt-get update        \
 # Cleanup to reduce image size
 RUN cleanup-after--setup.sh
 
-# Replace default wallpaper with CodingBooth wallpaper -- Hacky but can't do it the proper way
-RUN cp /usr/share/backgrounds/xfce/xfce-blue.jpg /usr/share/backgrounds/xfce/xfce-original-wallpaper.jpg
-COPY wallpaper.jpg /usr/share/backgrounds/xfce/xfce-blue.jpg
+# CodingBooth wallpaper: copy to branded path and set as XFCE default via xfconf XML
+COPY wallpaper.jpg /usr/share/backgrounds/codingbooth/wallpaper.jpg
+COPY wallpaper.png /usr/share/backgrounds/codingbooth/wallpaper.png
+COPY xfce-wallpaper--setup.sh /opt/codingbooth/setups/xfce-wallpaper--setup.sh
+RUN xfce-wallpaper--setup.sh
 
 # Clear the lock
 RUN rm -f /etc/.pwd.lock /etc/passwd.lock /etc/shadow.lock /etc/group.lock

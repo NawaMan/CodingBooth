@@ -367,6 +367,11 @@ if command -v kwriteconfig5 >/dev/null 2>&1; then
 fi
 pkill -f kscreenlocker || true
 
+# Apply wallpaper if the setter script exists (runs in background, waits for plasmashell)
+if [[ -x /usr/local/bin/kde-set-wallpaper ]]; then
+  /usr/local/bin/kde-set-wallpaper &
+fi
+
 # start noVNC in background, monitor VNC server for desktop logout
 DISPLAY_PORT="${BOOTH_HOST_PORT:-${NOVNC_PORT}}"
 echo "🌐 noVNC: http://localhost:${DISPLAY_PORT}/vnc.html?autoconnect=1&host=localhost&port=${DISPLAY_PORT}&path=websockify&resize=scale"

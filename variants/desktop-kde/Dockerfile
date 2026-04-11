@@ -35,8 +35,10 @@ RUN apt-get update        \
 # Cleanup to reduce image size
 RUN cleanup-after--setup.sh
 
-# Copy CodingBooth wallpaper
-COPY wallpaper.png /usr/share/backgrounds/codingbooth-wallpaper.png
+# CodingBooth wallpaper: copy to branded path and set as KDE default via autostart
+COPY wallpaper.png /usr/share/backgrounds/codingbooth/wallpaper.png
+COPY kde-wallpaper--setup.sh /opt/codingbooth/setups/kde-wallpaper--setup.sh
+RUN kde-wallpaper--setup.sh
 
 # Clear the lock
 RUN rm -f /etc/.pwd.lock /etc/passwd.lock /etc/shadow.lock /etc/group.lock
