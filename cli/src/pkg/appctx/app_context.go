@@ -97,6 +97,7 @@ func (ctx AppContext) WritableBooth() bool    { return ctx.values.Config.Writabl
 func (ctx AppContext) LeaveTmpOnExit() bool    { return ctx.values.Config.LeaveTmpOnExit }
 func (ctx AppContext) KeepTmpOnStart() bool    { return ctx.values.Config.KeepTmpOnStart }
 func (ctx AppContext) LogTime() bool           { return ctx.values.Config.LogTime }
+func (ctx AppContext) PersistHome() bool       { return ctx.values.Config.PersistHome }
 func (ctx AppContext) Public() bool        { return ctx.values.Config.Public }
 func (ctx AppContext) Password() string    { return ctx.values.Config.Password }
 func (ctx AppContext) TLSCert() string     { return ctx.values.Config.TLSCert }

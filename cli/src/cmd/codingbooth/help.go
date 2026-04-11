@@ -48,6 +48,7 @@ EXAMPLES:
 OTHER COMMANDS:
   BUILD     | Build and publish booth images   | build
   LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune
+  HOME VOL  | Manage persisted home volumes    | home-volume-list, home-volume-export, home-volume-import [Experimental]
   CONNECT   | Connect to a running booth       | shell, exec
   PROJECT   | Set up and scaffold new projects | example, config, template
 
@@ -82,6 +83,9 @@ USAGE:
   %s config [path] [options]                    (configure a new or existing .booth/ project)
   %s build [options]                            (build and optionally push image)
   %s emit-dockerfile [options]                 (compile Boothfile to Dockerfile)
+  %s home-volume-list                          (list persisted home volumes)
+  %s home-volume-export <name> <file>          (export home volume to tar.gz)
+  %s home-volume-import <name> <file>          (import tar.gz into home volume)
   %s print-default-allowlist.txt               (print built-in sandbox allowlist)
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before env and config file):
@@ -146,6 +150,7 @@ CONTAINER MODE:
                          Can also be set in config.toml: sudo = false
   --no-sudo              Shorthand for --sudo false
   --keep-alive           Do not remove the container when stopped
+  --persist-home         [Experimental] Persist /home/coder across sessions using a Docker named volume
   --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
   --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)
   --log-time             Prefix progress messages with timestamps
@@ -174,7 +179,7 @@ EXAMPLES:
   %s --env-file none --variant notebook
 `,
 		s, version,
-		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
+		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
@@ -444,6 +449,40 @@ Use --strict to treat warnings as errors.
 `, s, s)
 }
 
+func showHelpListHomeVolume() {
+	s := scriptName()
+	fmt.Printf(`%s home-volume-list — list persisted home volumes
+
+USAGE:  %s home-volume-list
+
+Lists all Docker volumes created by --persist-home.
+`, s, s)
+}
+
+func showHelpExportHomeVolume() {
+	s := scriptName()
+	fmt.Printf(`%s home-volume-export — export a home volume to a tar.gz file
+
+USAGE:  %s home-volume-export <container-name> <output-file>
+
+Exports the persisted home volume for a booth to a compressed tar file.
+The volume must exist (booth must have been run with --persist-home).
+
+Note: home volumes can be large (1-3GB+ depending on usage).
+`, s, s)
+}
+
+func showHelpImportHomeVolume() {
+	s := scriptName()
+	fmt.Printf(`%s home-volume-import — import a tar.gz file into a home volume
+
+USAGE:  %s home-volume-import <container-name> <input-file>
+
+Imports a compressed tar file into the home volume for a booth.
+Creates the volume if it does not exist.
+`, s, s)
+}
+
 // ---------------------------------------------------------------------------
 // Help dispatcher
 // ---------------------------------------------------------------------------
@@ -492,6 +531,12 @@ func dispatchHelp(args []string, version string) {
 			showHelpExec()
 		case "emit-dockerfile":
 			showHelpEmitDockerfile()
+		case "home-volume-list":
+			showHelpListHomeVolume()
+		case "home-volume-export":
+			showHelpExportHomeVolume()
+		case "home-volume-import":
+			showHelpImportHomeVolume()
 		default:
 			fmt.Fprintf(os.Stderr, "Unknown command: %s\nRun '%s help' for usage.\n",
 				a, scriptName())

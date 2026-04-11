@@ -1,0 +1,5 @@
+# Configured by: booth config --no-tui --overwrite --set dind --set name=test --select go
+
+dind = true
+
+name = "test"

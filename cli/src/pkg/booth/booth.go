@@ -134,6 +134,8 @@ func (booth *Booth) runAsCommand() error {
 		return &RestartRequestedError{}
 	}
 
+	printHomeVolumeWarning(booth.ctx)
+
 	// In command mode, forward exit codes silently (no error message)
 	if exitErr, ok := err.(*docker.DockerExitError); ok {
 		return &SilentExitError{ExitCode: exitErr.ExitCode}
@@ -304,6 +306,8 @@ func (booth *Booth) runAsForeground() error {
 		return &RestartRequestedError{}
 	}
 
+	printHomeVolumeWarning(booth.ctx)
+
 	return err
 }
 
@@ -357,6 +361,17 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_OS="+getHostOS()))
 	codePath := normalizeCodePath(ctx.Code())
 	createdAt := time.Now().UTC().Format(time.RFC3339)
+
+	// Persist home directory via a Docker named volume.
+	// Must be mounted BEFORE the code bind mount so /home/coder/code overlays on top.
+	if ctx.PersistHome() {
+		fmt.Fprintln(os.Stderr, "Warning: --persist-home is experimental. Please report issues at https://github.com/NawaMan/CodingBooth/issues")
+		homeVolName := "cb-home-" + containerName
+		ensureHomeVolume(ctx, homeVolName, containerName)
+		builder.CommonArgs.Append(ilist.NewList[string]("-v", homeVolName+":/home/coder"))
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOME_PERSISTED=true"))
+	}
+
 	builder.CommonArgs.Append(ilist.NewList[string]("-v", codePath+":/home/coder/code"))
 	builder.CommonArgs.Append(ilist.NewList[string]("-w", "/home/coder/code"))
 
@@ -373,6 +388,9 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.version="+ctx.CbVersion()))
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", fmt.Sprintf("cb.keep-alive=%t", ctx.KeepAlive())))
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", fmt.Sprintf("cb.daemon=%t", ctx.Daemon())))
+	if ctx.PersistHome() {
+		builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.persist-home=true"))
+	}
 
 	// Skip port mapping when using shared network namespace sidecars.
 	if !ctx.Dind() && !ctx.Sandbox() {
@@ -650,6 +668,41 @@ func checkAndCleanRestartMarker(ctx appctx.AppContext) bool {
 	}
 	os.Remove(markerPath)
 	return true
+}
+
+// printHomeVolumeWarning prints a notice about the persisted home volume on exit.
+func printHomeVolumeWarning(ctx appctx.AppContext) {
+	if !ctx.PersistHome() {
+		return
+	}
+	containerName := ctx.Name()
+	if containerName == "" {
+		containerName = ctx.ProjectName()
+	}
+	homeVolName := "cb-home-" + containerName
+	fmt.Fprintf(os.Stderr, "Info: Home volume %q persists on disk.\n", homeVolName)
+	fmt.Fprintf(os.Stderr, "      To reclaim space: docker volume rm %s\n", homeVolName)
+	fmt.Fprintf(os.Stderr, "      Or: codingbooth remove %s\n", containerName)
+}
+
+// ensureHomeVolume creates a Docker named volume for persisting /home/coder.
+// docker volume create is idempotent — it succeeds silently if the volume already exists.
+func ensureHomeVolume(ctx appctx.AppContext, volumeName string, containerName string) {
+	flags := docker.DockerFlags{Dryrun: ctx.Dryrun(), Verbose: ctx.Verbose(), Silent: true}
+	_ = docker.Docker(flags, "volume", ilist.NewList(
+		ilist.NewList("create"),
+		ilist.NewList("--label", "cb.managed=true"),
+		ilist.NewList("--label", "cb.parent="+containerName),
+		ilist.NewList(volumeName),
+	))
+}
+
+// removeHomeVolume removes the Docker named volume for a container's persisted home.
+// Fails silently if the volume does not exist.
+func removeHomeVolume(containerName string) {
+	homeVolName := "cb-home-" + containerName
+	flags := docker.DockerFlags{Silent: true}
+	_ = docker.Docker(flags, "volume", ilist.NewList(ilist.NewList("rm", homeVolName)))
 }
 
 func isProtectedPath(containerPath string) bool {

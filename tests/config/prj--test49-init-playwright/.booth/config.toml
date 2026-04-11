@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --select nodejs/playwright
+
+
+run-args = ["-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro"]

@@ -1,0 +1,6 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select excalidraw:889+expose+autostart
+
+arg EXCALIDRAW_PORT=889
+
+setup excalidraw ${EXCALIDRAW_PORT}

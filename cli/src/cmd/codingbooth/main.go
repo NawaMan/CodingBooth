@@ -46,6 +46,15 @@ func main() {
 		case "prune":
 			pruneBooths(version)
 			return
+		case "home-volume-list":
+			listHomeVolumes(version)
+			return
+		case "home-volume-export":
+			exportHomeVolume(version)
+			return
+		case "home-volume-import":
+			importHomeVolume(version)
+			return
 		case "shell":
 			shellBooth(version)
 			return

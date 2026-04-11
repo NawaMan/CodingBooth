@@ -353,6 +353,10 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.KeepTmpOnStart = true
 			i++
 
+		case "--persist-home":
+			cfg.PersistHome = true
+			i++
+
 		case "--dind":
 			cfg.Dind = true
 			i++

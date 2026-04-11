@@ -104,9 +104,10 @@ else
 fi
 
 # 3) Bound content remains accessible after start.
-#    Allow a few seconds for the container entrypoint to finish after daemon start.
+#    On stop/start (keep-alive), the entrypoint does NOT re-run — Docker resumes
+#    the process. Wait for the container to respond to exec.
 READY=false
-for _ in $(seq 1 10); do
+for _ in $(seq 1 30); do
   if docker exec "$NAME" bash -lc 'true' >/dev/null 2>&1; then
     READY=true
     break

@@ -214,6 +214,7 @@ booth [flags] [-- command...]
 | `--`                 | Separator: everything after runs as a command inside the container                |
 | `--dind`             | Enable Docker-in-Docker mode                                                     |
 | `--keep-alive`       | Preserve container after exit (resume with `booth start <name>`)                 |
+| `--persist-home`     | Persist `/home/coder` across sessions using a Docker named volume                |
 | `--sandboxed`        | Restrict outbound network to allowlisted domains                                 |
 | `--daemon`           | Run container in background                                                      |
 | `--silence-build`    | Suppress build/startup output                                                    |
@@ -381,6 +382,7 @@ User-facing guides:
 - **[booth connect](docs/BOOTH_CONNECT.md)** — Connect to running booths: open a shell or run commands
 - **[booth variants](docs/BOOTH_VARIANTS.md)** — Variant details, aliases, desktop configuration, clipboard, and use cases
 - **[booth home](docs/BOOTH_HOME.md)** — Home directory customization: seeding, overrides, credentials
+- **[booth persist-home](docs/BOOTH_PERSIST_HOME.md)** — Persist entire home directory across sessions via Docker volume
 - **[booth cache](docs/BOOTH_LOCALCACHE.md)** — Local persistent state: shell history, tool configs across sessions
 - **[booth expose](docs/BOOTH_EXPOSE.md)** — Runtime port tunneling: expose container ports to the host without restarting
 - **[booth message](docs/BOOTH_MESSAGE.md)** — Send interactive messages and toast notifications to booth users

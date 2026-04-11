@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --select plantuml:1.2025.2,19090+expose+autostart
+
+
+run-args = ["-p", "19090:19090"]

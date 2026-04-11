@@ -87,6 +87,7 @@ type AppConfig struct {
 	LeaveTmpOnExit     bool   `toml:"leave-tmp-on-exit,omitempty"   envconfig:"CB_LEAVE_TMP_ON_EXIT" default:"false"`
 	KeepTmpOnStart     bool   `toml:"keep-tmp-on-start,omitempty"   envconfig:"CB_KEEP_TMP_ON_START" default:"false"`
 	LogTime            bool   `toml:"log-time,omitempty"            envconfig:"CB_LOG_TIME" default:"false"`
+	PersistHome        bool   `toml:"persist-home,omitempty"        envconfig:"CB_PERSIST_HOME" default:"false"`
 
 	// Public exposes the booth on all interfaces (0.0.0.0) with password auth and HTTPS.
 	// Password is resolved at startup from .booth/.booth.password or interactive stdin.

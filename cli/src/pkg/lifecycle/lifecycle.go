@@ -317,6 +317,10 @@ func Remove(args []string, stderr io.Writer) error {
 		if err := docker.Docker(docker.DockerFlags{Silent: false}, "rm", dockerArgs); err != nil {
 			return commandExit(1, fmt.Sprintf("Error: failed to remove %q: %v", targetName, err))
 		}
+
+		// Remove associated home volume (if any). Fails silently if volume does not exist.
+		homeVolName := "cb-home-" + targetName
+		_ = docker.Docker(docker.DockerFlags{Silent: true}, "volume", ilist.NewList(ilist.NewList("rm", homeVolName)))
 	}
 	return nil
 }
@@ -368,6 +372,10 @@ func Prune(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) e
 		if err := docker.Docker(docker.DockerFlags{Silent: false}, "rm", ilist.NewList(ilist.NewList(name))); err != nil {
 			return commandExit(1, fmt.Sprintf("Error: failed to remove %q: %v", name, err))
 		}
+
+		// Remove associated home volume (if any). Fails silently if volume does not exist.
+		homeVolName := "cb-home-" + name
+		_ = docker.Docker(docker.DockerFlags{Silent: true}, "volume", ilist.NewList(ilist.NewList("rm", homeVolName)))
 	}
 
 	_, _ = fmt.Fprintf(stdout, "Removed %d stopped booth container(s).\n", len(names))

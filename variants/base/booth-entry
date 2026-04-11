@@ -340,14 +340,29 @@ smart_copy() {
   done
 }
 
-info "11) Copying project's home-seed folder (team defaults, no-clobber)..."
-BOOTH_HOME_SEED_DIR=""
-if [ -d "$CODE_DIR/.booth/home-seed" ]; then
-  BOOTH_HOME_SEED_DIR="$CODE_DIR/.booth/home-seed"
+# When --persist-home is active (BOOTH_HOME_PERSISTED=true) and the home volume
+# has already been seeded, skip seed (no-clobber) layers to preserve user
+# customizations. Override layers always run to enforce team/image policies.
+SEED_MARKER="$HOME_DIR/.cb-home-seeded"
+HOME_PERSISTED="${BOOTH_HOME_PERSISTED:-false}"
+RUN_SEEDS=true
+if [ "$HOME_PERSISTED" = "true" ] && [ -f "$SEED_MARKER" ]; then
+  RUN_SEEDS=false
+  info "Home volume already seeded (marker exists), skipping seed layers."
 fi
-if [ -n "$BOOTH_HOME_SEED_DIR" ]; then
-  info "Copying project home-seed files from $BOOTH_HOME_SEED_DIR to $HOME_DIR (no-clobber)..."
-  smart_copy "$BOOTH_HOME_SEED_DIR" "$HOME_DIR" seed
+
+if [ "$RUN_SEEDS" = "true" ]; then
+  info "11) Copying project's home-seed folder (team defaults, no-clobber)..."
+  BOOTH_HOME_SEED_DIR=""
+  if [ -d "$CODE_DIR/.booth/home-seed" ]; then
+    BOOTH_HOME_SEED_DIR="$CODE_DIR/.booth/home-seed"
+  fi
+  if [ -n "$BOOTH_HOME_SEED_DIR" ]; then
+    info "Copying project home-seed files from $BOOTH_HOME_SEED_DIR to $HOME_DIR (no-clobber)..."
+    smart_copy "$BOOTH_HOME_SEED_DIR" "$HOME_DIR" seed
+  fi
+else
+  info "11) Skipping project's home-seed folder (home already seeded)."
 fi
 
 info "11b) Copying project's home folder (team-shared overrides)..."
@@ -360,11 +375,15 @@ if [ -n "$BOOTH_HOME_DIR" ]; then
   smart_copy "$BOOTH_HOME_DIR" "$HOME_DIR" override
 fi
 
-info "12) Copying seed files from /etc/cb-home-seed/ to /home/coder (no-clobber)..."
-BOOTH_HOME_SEED="/etc/cb-home-seed"
-if [ -d "$BOOTH_HOME_SEED" ]; then
-  info "Copying seed files from $BOOTH_HOME_SEED to $HOME_DIR..."
-  smart_copy "$BOOTH_HOME_SEED" "$HOME_DIR" seed
+if [ "$RUN_SEEDS" = "true" ]; then
+  info "12) Copying seed files from /etc/cb-home-seed/ to /home/coder (no-clobber)..."
+  BOOTH_HOME_SEED="/etc/cb-home-seed"
+  if [ -d "$BOOTH_HOME_SEED" ]; then
+    info "Copying seed files from $BOOTH_HOME_SEED to $HOME_DIR..."
+    smart_copy "$BOOTH_HOME_SEED" "$HOME_DIR" seed
+  fi
+else
+  info "12) Skipping /etc/cb-home-seed/ (home already seeded)."
 fi
 
 info "13) Copying override files from /etc/cb-home/ to /home/coder (with override)..."
@@ -372,6 +391,12 @@ BOOTH_HOME_OVERRIDE="/etc/cb-home"
 if [ -d "$BOOTH_HOME_OVERRIDE" ]; then
   info "Copying override files from $BOOTH_HOME_OVERRIDE to $HOME_DIR..."
   smart_copy "$BOOTH_HOME_OVERRIDE" "$HOME_DIR" override
+fi
+
+# Mark home as seeded for persist-home volumes (skip seeds on subsequent starts)
+if [ "$HOME_PERSISTED" = "true" ] && [ ! -f "$SEED_MARKER" ]; then
+  touch "$SEED_MARKER"
+  chown "$HOST_UID:$HOST_GID" "$SEED_MARKER"
 fi
 
 # Fix ownership for root-owned files/dirs that were copied in from seed or override
