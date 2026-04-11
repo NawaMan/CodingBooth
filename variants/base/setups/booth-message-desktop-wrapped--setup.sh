@@ -15,7 +15,7 @@ cat > /usr/local/bin/start-xfce-wrapped <<EOF
 set -euo pipefail
 export INNER_PORT=$DESKTOP_INNER_PORT
 export INNER_CMD="NOVNC_PORT=$DESKTOP_INNER_PORT start-xfce"
-export IFRAME_SRC="/vnc.html?autoconnect=true&resize=scale"
+export IFRAME_SRC="/vnc.html?autoconnect=true&resize=remote"
 exec start-booth-wrapped
 EOF
 chmod +x /usr/local/bin/start-xfce-wrapped
@@ -25,7 +25,7 @@ cat > /usr/local/bin/start-kde-wrapped <<EOF
 set -euo pipefail
 export INNER_PORT=$DESKTOP_INNER_PORT
 export INNER_CMD="NOVNC_PORT=$DESKTOP_INNER_PORT start-kde"
-export IFRAME_SRC="/vnc.html?autoconnect=true&resize=scale"
+export IFRAME_SRC="/vnc.html?autoconnect=true&resize=remote"
 exec start-booth-wrapped
 EOF
 chmod +x /usr/local/bin/start-kde-wrapped

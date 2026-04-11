@@ -92,6 +92,10 @@ detect_nested_booth() {
 ║ This is usually accidental - the booth script is visible here because  ║
 ║ your project folder is mounted at /home/coder/code.                    ║
 ║                                                                        ║
+║ To configure this booth (edit .booth/ settings), run:                  ║
+║                                                                        ║
+║     booth config                                                       ║
+║                                                                        ║
 ║ If you intentionally want to run a nested booth (booth-in-booth), set: ║
 ║                                                                        ║
 ║     export BOOTH_IN_BOOTH=true                                         ║
@@ -458,31 +462,8 @@ Help/Version disambiguation:
 EOF
 }
 
-function ShellConfig() {
-    local force=false
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --force|-f) force=true; shift ;;
-            --help|-h)
-                cat <<'EOF'
-Usage: ./booth shell-config [--force]
-
-Options:
-  --force, -f   Add/override booth() even if a custom booth() exists.
-EOF
-                return 0
-                ;;
-            *)
-                echo "Unknown option for shell-config: $1" >&2
-                echo "Usage: ./booth shell-config [--force]" >&2
-                return 1
-                ;;
-        esac
-    done
-
-    local booth_info_url="https://github.com/NawaMan/CodingBooth/blob/latest/docs/troubleshoot/CBT0001-booth-wrapper-not-found.md"
-    local booth_func
-    booth_func=$(cat <<'EOF'
+function ShellConfig__print_func() {
+    cat <<'EOF'
 unalias booth 2>/dev/null
 booth() {
     local d="$PWD"
@@ -506,7 +487,39 @@ booth() {
     return 127
 }
 EOF
-)
+}
+
+function ShellConfig() {
+    local force=false
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --force|-f) force=true; shift ;;
+            --eval|-e)
+                # Output raw function to stdout for eval "$(./booth shell-config --eval)"
+                ShellConfig__print_func
+                return 0
+                ;;
+            --help|-h)
+                cat <<'EOF'
+Usage: ./booth shell-config [--force] [--eval]
+
+Options:
+  --force, -f   Add/override booth() even if a custom booth() exists.
+  --eval,  -e   Print booth() function to stdout (for eval or sourcing).
+EOF
+                return 0
+                ;;
+            *)
+                echo "Unknown option for shell-config: $1" >&2
+                echo "Usage: ./booth shell-config [--force] [--eval]" >&2
+                return 1
+                ;;
+        esac
+    done
+
+    local booth_info_url="https://github.com/NawaMan/CodingBooth/blob/latest/docs/troubleshoot/CBT0001-booth-wrapper-not-found.md"
+    local booth_func
+    booth_func="$(ShellConfig__print_func)"
 
     # All supported shell rc files
     local rc_files=(

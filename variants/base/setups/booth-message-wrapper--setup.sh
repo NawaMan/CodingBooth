@@ -26,6 +26,8 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cp "${SCRIPT_DIR}/booth-message-overlay.html" "${WRAPPER_DIR}/overlay.html"
 cp "${SCRIPT_DIR}/booth-message-api-server" "${WRAPPER_DIR}/booth-message-api-server"
 chmod +x "${WRAPPER_DIR}/booth-message-api-server"
+cp "${SCRIPT_DIR}/booth-lifecycle-watcher" "${WRAPPER_DIR}/booth-lifecycle-watcher"
+chmod +x "${WRAPPER_DIR}/booth-lifecycle-watcher"
 
 # ── Wrapper HTML template ──
 # The variant start script sets IFRAME_SRC before generating the page.
@@ -165,6 +167,9 @@ envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR}' \
 
 # Start the message API server
 "$WRAPPER_DIR/booth-message-api-server" "$API_PORT" &
+
+# Start the lifecycle watcher (polls for shutdown/restart marker files)
+"$WRAPPER_DIR/booth-lifecycle-watcher" &
 
 # Start the inner service
 eval "$INNER_CMD" &

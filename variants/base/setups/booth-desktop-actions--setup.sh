@@ -10,8 +10,6 @@
 # environments (XFCE, KDE, LXQt) call booth--shutdown / booth--restart
 # instead of the real (non-functional) system commands.
 #
-# Also installs .desktop shortcut files for the desktop surface.
-#
 # Must be run as root during image build.
 # -----------------------------------------------------------------------------
 
@@ -104,93 +102,4 @@ if [[ -x /usr/bin/systemctl ]] && ! grep -q 'booth--' /usr/bin/systemctl 2>/dev/
 fi
 
 echo "  ✔ Power action wrappers installed"
-
-# ---------------------------------------------------------------------------
-# 2. Desktop shortcut files (.desktop)
-#
-#    Placed in /usr/share/applications/ so they appear in app menus,
-#    and also copied to the desktop by the profile script.
-# ---------------------------------------------------------------------------
-
-mkdir -p /usr/share/applications
-
-cat > /usr/share/applications/booth-shutdown.desktop <<'DESKTOP'
-[Desktop Entry]
-Type=Application
-Name=Shut Down Booth
-Comment=Shut down this CodingBooth container
-Exec=booth--shutdown --gui
-Icon=system-shutdown
-Terminal=false
-Categories=System;
-DESKTOP
-
-cat > /usr/share/applications/booth-restart.desktop <<'DESKTOP'
-[Desktop Entry]
-Type=Application
-Name=Restart Booth
-Comment=Restart this CodingBooth container (re-reads config)
-Exec=booth--restart --gui
-Icon=view-refresh
-Terminal=false
-Categories=System;
-DESKTOP
-
-echo "  ✔ Desktop shortcut files installed"
-
-# ---------------------------------------------------------------------------
-# 3. Auto-copy shortcuts to desktop on first login
-#
-#    Uses plain executable scripts (not .desktop files) on the Desktop
-#    to avoid XFCE's "Untrusted application launcher" dialog.
-#    The .desktop files in /usr/share/applications/ still provide
-#    app-menu integration.
-# ---------------------------------------------------------------------------
-
-mkdir -p /etc/xdg/autostart
-cat > /etc/xdg/autostart/booth-desktop-shortcuts.desktop <<'AUTOSTART'
-[Desktop Entry]
-Type=Application
-Name=CodingBooth Desktop Shortcuts
-Exec=/usr/local/bin/booth-copy-desktop-shortcuts
-NoDisplay=true
-Hidden=false
-X-GNOME-Autostart-enabled=true
-AUTOSTART
-
-cat > /usr/local/bin/booth-copy-desktop-shortcuts <<'SCRIPT'
-#!/bin/bash
-DESKTOP_DIR="${HOME}/Desktop"
-mkdir -p "$DESKTOP_DIR"
-
-# Create simple executable scripts instead of .desktop files
-# to avoid the "Untrusted application launcher" dialog on XFCE.
-if [[ ! -f "$DESKTOP_DIR/Restart Booth.sh" ]]; then
-  cat > "$DESKTOP_DIR/Restart Booth.sh" <<'SH'
-#!/bin/bash
-exec booth--restart --gui
-SH
-  chmod +x "$DESKTOP_DIR/Restart Booth.sh"
-fi
-
-if [[ ! -f "$DESKTOP_DIR/Shut Down Booth.sh" ]]; then
-  cat > "$DESKTOP_DIR/Shut Down Booth.sh" <<'SH'
-#!/bin/bash
-exec booth--shutdown --gui
-SH
-  chmod +x "$DESKTOP_DIR/Shut Down Booth.sh"
-fi
-
-# Self-disable after first run
-SELF_AUTOSTART="${HOME}/.config/autostart/booth-desktop-shortcuts.desktop"
-if [[ -f "$SELF_AUTOSTART" ]]; then
-  sed -i 's/^Hidden=.*/Hidden=true/; t; $aHidden=true' "$SELF_AUTOSTART" 2>/dev/null || true
-else
-  mkdir -p "$(dirname "$SELF_AUTOSTART")"
-  echo -e "[Desktop Entry]\nHidden=true" > "$SELF_AUTOSTART"
-fi
-SCRIPT
-chmod +x /usr/local/bin/booth-copy-desktop-shortcuts
-
-echo "  ✔ Desktop shortcut auto-copy configured"
 echo "✅ Desktop power actions setup complete"

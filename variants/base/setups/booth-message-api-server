@@ -60,6 +60,12 @@ handle_request() {
                     local msg_id="${path##*/}"
                     handle_respond "$msg_id" "$body"
                     ;;
+                /booth-messages/api/shutdown)
+                    handle_lifecycle_signal ".shutdown-requested"
+                    ;;
+                /booth-messages/api/restart)
+                    handle_lifecycle_signal ".restart-requested"
+                    ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
             ;;
@@ -111,6 +117,14 @@ handle_respond() {
         "$msg_id" "$answer" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
         > "$MSG_DIR/${msg_id}.response.json"
 
+    send_response 200 '{"ok":true}'
+}
+
+handle_lifecycle_signal() {
+    local marker="$1"
+    local tmp_dir="/home/coder/code/.booth/.tmp"
+    mkdir -p "$tmp_dir"
+    touch "$tmp_dir/$marker"
     send_response 200 '{"ok":true}'
 }
 

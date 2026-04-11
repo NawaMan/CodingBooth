@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth-lifecycle-watcher
+#
+# Polls for lifecycle marker files written by the overlay UI via the message
+# API server.  When a marker is found the watcher execs the corresponding
+# booth command and the marker is consumed.
+#
+# Marker files (under .booth/.tmp/):
+#   .shutdown-requested  ->  booth--shutdown --yes
+#   .restart-requested   ->  booth--restart  --yes
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+TMP_DIR="/home/coder/code/.booth/.tmp"
+
+while true; do
+    if [ -f "$TMP_DIR/.shutdown-requested" ]; then
+        rm -f "$TMP_DIR/.shutdown-requested"
+        exec booth--shutdown --yes
+    fi
+    if [ -f "$TMP_DIR/.restart-requested" ]; then
+        rm -f "$TMP_DIR/.restart-requested"
+        exec booth--restart --yes
+    fi
+    sleep 1
+done

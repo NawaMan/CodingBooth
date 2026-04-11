@@ -347,6 +347,8 @@ echo ""
 
 draw_graph
 
+RETRY_SUITES=()
+
 for i in "${!SUITES[@]}"; do
     suite="${SUITES[$i]}"
     dir="${SUITES[$i]}"
@@ -381,10 +383,57 @@ for i in "${!SUITES[@]}"; do
         STATUS[$suite]=done
     else
         STATUS[$suite]=failed
+        RETRY_SUITES+=("$i")
     fi
 
     draw_graph
 done
+
+# ── Automatic retry of failed suites (once) ─────────────────────────
+
+if [[ ${#RETRY_SUITES[@]} -gt 0 && "$STOP_REQUESTED" != true ]]; then
+    echo ""
+    echo -e "${C_BOLD}Retrying ${#RETRY_SUITES[@]} failed suite(s)...${C_RESET}"
+    echo ""
+
+    GRAPH_DRAWN=false
+
+    for i in "${RETRY_SUITES[@]}"; do
+        suite="${SUITES[$i]}"
+        dir="${SUITES[$i]}"
+        runner="${SUITE_RUNNERS[$i]}"
+
+        if [[ "$STOP_REQUESTED" == true ]]; then
+            break
+        fi
+
+        # Reset counts for retry
+        PASS_COUNTS[$suite]=0
+        FAIL_COUNTS[$suite]=0
+        FAILURE_LINES[$suite]=""
+        STATUS[$suite]=running
+        draw_graph
+
+        run_suite "$suite" "$dir" "$runner"
+        poll_suite "$suite"
+
+        exit_file="${LOG_DIR}/${suite}.exit"
+        exit_code=1
+        if [[ -f "$exit_file" ]]; then
+            exit_code=$(cat "$exit_file")
+        fi
+
+        if [[ "$exit_code" == "0" ]] && grep -q '^SKIP:' "${LOG_DIR}/${suite}.log" 2>/dev/null; then
+            STATUS[$suite]=skipped
+        elif [[ "$exit_code" == "0" ]]; then
+            STATUS[$suite]=done
+        else
+            STATUS[$suite]=failed
+        fi
+
+        draw_graph
+    done
+fi
 
 # Clean up exit files
 rm -f "${LOG_DIR}"/*.exit
