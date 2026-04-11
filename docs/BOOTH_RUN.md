@@ -274,6 +274,25 @@ Can also be set via environment variable (`CB_LOG_TIME=true`) or in `config.toml
 log-time = true
 ```
 
+### Session Timers (`--show-run-time`, `--show-count-down`)
+
+Display session timers in the booth UI — elapsed time and/or countdown to a deadline.
+
+```bash
+# Elapsed time from now
+./booth --show-run-time
+
+# Elapsed time from a specific epoch
+./booth --show-run-time $(date +%s)
+
+# Countdown to 2 hours from now
+./booth --show-count-down $(( $(date +%s) + 7200 ))
+```
+
+When the countdown reaches 5 minutes, a warning dialog prompts the user to save their work. At zero, the booth auto-shuts down. Use `--count-down-exit-code <code>` to set the exit code (default: 0).
+
+For full details, color thresholds, and variant-specific behavior, see **[booth runtime](BOOTH_RUNTIME.md)**.
+
 ### Daemon Mode (`--daemon`)
 
 Starts the container in the background (detached). Commonly used for IDE variants that provide persistent services.

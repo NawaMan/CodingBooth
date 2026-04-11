@@ -126,7 +126,10 @@ func (ctx AppContext) Timezone() string    { return ctx.values.Config.Timezone }
 func (ctx AppContext) Name() string    { return ctx.values.Config.Name }
 func (ctx AppContext) Port() string    { return ctx.values.Config.Port }
 func (ctx AppContext) EnvFile() string { return ctx.values.Config.EnvFile }
-func (ctx AppContext) Startup() string { return ctx.values.Config.Startup }
+func (ctx AppContext) Startup() string       { return ctx.values.Config.Startup }
+func (ctx AppContext) ShowRunTime() string       { return ctx.values.Config.ShowRunTime }
+func (ctx AppContext) ShowCountDown() string     { return ctx.values.Config.ShowCountDown }
+func (ctx AppContext) CountDownExitCode() string { return ctx.values.Config.CountDownExitCode }
 
 // derived from all the context processing (IMMUTABLE SNAPSHOTS)
 func (ctx AppContext) CommonArgs() ilist.List[ilist.List[string]] { return ctx.commonArgs }

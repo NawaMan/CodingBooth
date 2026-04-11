@@ -58,6 +58,14 @@ fi
 
 echo "🛑 Shutting down CodingBooth..."
 
+# Determine exit code: marker file takes precedence, then env var, then 0
+EXIT_CODE=0
+if [ -f /tmp/.booth-exit-code ]; then
+    EXIT_CODE=$(cat /tmp/.booth-exit-code 2>/dev/null || echo 0)
+elif [ -n "${BOOTH_COUNT_DOWN_EXIT_CODE:-}" ]; then
+    EXIT_CODE="$BOOTH_COUNT_DOWN_EXIT_CODE"
+fi
+
 # Write marker so the VS Code extension can detect shutdown has started
 touch /tmp/.booth-shutting-down
 
@@ -69,3 +77,5 @@ sleep 2
 kill -TERM -1 2>/dev/null || true
 sleep 1
 kill -HUP  -1 2>/dev/null || true
+
+exit "$EXIT_CODE"

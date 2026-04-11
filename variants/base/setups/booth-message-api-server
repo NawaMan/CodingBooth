@@ -63,6 +63,9 @@ handle_request() {
                 /booth-messages/api/shutdown)
                     handle_lifecycle_signal ".shutdown-requested"
                     ;;
+                /booth-messages/api/countdown-shutdown)
+                    handle_countdown_shutdown
+                    ;;
                 /booth-messages/api/restart)
                     handle_lifecycle_signal ".restart-requested"
                     ;;
@@ -118,6 +121,14 @@ handle_respond() {
         > "$MSG_DIR/${msg_id}.response.json"
 
     send_response 200 '{"ok":true}'
+}
+
+handle_countdown_shutdown() {
+    # Write exit code marker if configured, then trigger shutdown
+    if [ -n "${BOOTH_COUNT_DOWN_EXIT_CODE:-}" ]; then
+        echo "$BOOTH_COUNT_DOWN_EXIT_CODE" > /tmp/.booth-exit-code
+    fi
+    handle_lifecycle_signal ".shutdown-requested"
 }
 
 handle_lifecycle_signal() {

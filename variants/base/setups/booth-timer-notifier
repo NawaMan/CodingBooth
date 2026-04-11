@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth-timer-notifier
+#
+# Background daemon that sends toast messages at countdown thresholds.
+# Reads BOOTH_SHOW_COUNT_DOWN (epoch seconds for shutdown time).
+# Sends toasts at 30m, 15m, 10m, 5m, and 1m remaining.
+# At expiry, sends a persistent "TIME'S UP" toast.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+MSG_DIR="/home/coder/code/.booth/.tmp/messages"
+COUNTDOWN="${BOOTH_SHOW_COUNT_DOWN:-}"
+
+# Nothing to do if no countdown is set
+[[ -z "$COUNTDOWN" ]] && exit 0
+
+mkdir -p "$MSG_DIR"
+
+# Thresholds in seconds (descending) and their labels/colors
+# We track which thresholds have already fired
+declare -A FIRED=()
+THRESHOLDS=(1800 900 600 300 60)
+LABELS=([1800]="30 minutes" [900]="15 minutes" [600]="10 minutes" [300]="5 minutes" [60]="1 minute")
+
+write_toast() {
+    local title="$1" body="$2" expires_sec="${3:-30}"
+    local msg_id="msg-timer-$(date +%s%N)"
+    local created expires
+    created="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    expires="$(date -u -d "+${expires_sec} seconds" +%Y-%m-%dT%H:%M:%SZ 2>/dev/null || date -u +%Y-%m-%dT%H:%M:%SZ)"
+    cat > "${MSG_DIR}/${msg_id}.msg.json" <<EOF
+{"id":"${msg_id}","title":"${title}","body":"${body}","type":"toast","created":"${created}","expires":"${expires}"}
+EOF
+}
+
+fmt_remaining() {
+    local s="$1"
+    local h=$((s / 3600))
+    local m=$(( (s % 3600) / 60 ))
+    local sec=$((s % 60))
+    if (( h > 0 )); then
+        printf '%d:%02d:%02d' "$h" "$m" "$sec"
+    else
+        printf '%02d:%02d' "$m" "$sec"
+    fi
+}
+
+expired=false
+
+while true; do
+    now=$(date +%s)
+    remaining=$((COUNTDOWN - now))
+
+    if (( remaining <= 0 )) && [[ "$expired" == false ]]; then
+        expired=true
+        write_toast "TIME'S UP" "The booth session time has ended." 300
+        # Write exit code marker and trigger shutdown
+        if [[ -n "${BOOTH_COUNT_DOWN_EXIT_CODE:-}" ]]; then
+            echo "$BOOTH_COUNT_DOWN_EXIT_CODE" > /tmp/.booth-exit-code
+        fi
+        sleep 2
+        exec booth--shutdown --yes
+    fi
+
+    [[ "$expired" == true ]] && break
+
+    for threshold in "${THRESHOLDS[@]}"; do
+        if (( remaining <= threshold )) && [[ -z "${FIRED[$threshold]:-}" ]]; then
+            FIRED[$threshold]=1
+            local label="${LABELS[$threshold]}"
+            write_toast "⏱ ${label} remaining" "Booth session ends in ${label}." 25
+        fi
+    done
+
+    sleep 10
+done

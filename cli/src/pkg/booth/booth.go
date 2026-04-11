@@ -458,6 +458,17 @@ builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_SILENCE
 		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_STARTUP="+ctx.Startup()))
 	}
 
+	// Timer displays
+	if ctx.ShowRunTime() != "" {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_SHOW_RUN_TIME="+ctx.ShowRunTime()))
+	}
+	if ctx.ShowCountDown() != "" {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_SHOW_COUNT_DOWN="+ctx.ShowCountDown()))
+	}
+	if ctx.CountDownExitCode() != "" {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_COUNT_DOWN_EXIT_CODE="+ctx.CountDownExitCode()))
+	}
+
 	if !ctx.Pull() {
 		builder.CommonArgs.Append(ilist.NewList[string]("--pull=never"))
 	}
