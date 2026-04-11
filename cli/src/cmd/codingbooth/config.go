@@ -146,6 +146,9 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 	// Build pre-selection from merged flags
 	pre := buildPreSelection(registry, mergedFlags)
 
+	// Pre-populate booth version from target's lock file (falls back to binary version)
+	pre.StringFields["booth-version"] = readLockFileVersion(targetPath, version)
+
 	// Run TUI
 	result, err := tui.RunConfig(registry, pre)
 	if err != nil {
@@ -253,6 +256,16 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 
 	fmt.Printf("\nInitialized .booth/ in %s\n", targetPath)
 	printSummary(resolved)
+
+	// Handle booth version update if changed
+	oldLockVersion := readLockFileVersion(targetPath, "")
+	if newVersion := result.StringFields["booth-version"]; newVersion != "" && newVersion != oldLockVersion {
+		if err := updateBoothLockVersion(targetPath, newVersion); err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: failed to update booth version: %v\n", err)
+		} else {
+			fmt.Printf("\nBooth version updated to %s (will take effect on next run).\n", newVersion)
+		}
+	}
 
 	if flags.start {
 		fmt.Printf("Starting booth in %s ...\n", targetPath)
@@ -580,6 +593,55 @@ func mapPositionalParams(paramValues map[string]string, itemKey string, t *tmpl.
 			paramValues[itemKey+":"+name] = positional[i]
 		}
 	}
+}
+
+// readLockFileVersion reads the version from the target's .booth/tools/codingbooth.lock.
+// Returns fallback if the lock file doesn't exist or can't be parsed.
+func readLockFileVersion(targetPath string, fallback string) string {
+	lockPath := filepath.Join(targetPath, ".booth", "tools", "codingbooth.lock")
+	data, err := os.ReadFile(lockPath)
+	if err != nil {
+		return fallback
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		if strings.HasPrefix(line, "version=") {
+			return strings.TrimPrefix(line, "version=")
+		}
+	}
+	return fallback
+}
+
+// updateBoothLockVersion updates the version in .booth/tools/codingbooth.lock.
+// The lock file format is key=value lines: version, downloaded_at, cache.
+// If the lock file doesn't exist, it creates one with the new version.
+func updateBoothLockVersion(targetPath string, newVersion string) error {
+	lockDir := filepath.Join(targetPath, ".booth", "tools")
+	lockPath := filepath.Join(lockDir, "codingbooth.lock")
+
+	data, err := os.ReadFile(lockPath)
+	if err != nil {
+		// Lock file doesn't exist — create it
+		if err := os.MkdirAll(lockDir, 0755); err != nil {
+			return fmt.Errorf("cannot create tools directory: %w", err)
+		}
+		content := fmt.Sprintf("version=%s\ncache=shared\n", newVersion)
+		return os.WriteFile(lockPath, []byte(content), 0644)
+	}
+
+	lines := strings.Split(string(data), "\n")
+	found := false
+	for i, line := range lines {
+		if strings.HasPrefix(line, "version=") {
+			lines[i] = "version=" + newVersion
+			found = true
+			break
+		}
+	}
+	if !found {
+		return fmt.Errorf("no version= line found in lock file")
+	}
+
+	return os.WriteFile(lockPath, []byte(strings.Join(lines, "\n")), 0644)
 }
 
 func printConfigHelp() {
