@@ -121,10 +121,13 @@ type AppConfig struct {
 	// --------------------
 	// Container configuration
 	// --------------------
-	Name    string `toml:"name,omitempty"      envconfig:"CB_NAME"`
-	Port    string `toml:"port,omitempty"      envconfig:"CB_PORT" default:"NEXT"`
-	EnvFile string `toml:"env-file,omitempty"  envconfig:"CB_ENV_FILE"`
-	Startup string `toml:"startup,omitempty"   envconfig:"CB_STARTUP"`
+	Name          string `toml:"name,omitempty"           envconfig:"CB_NAME"`
+	Port          string `toml:"port,omitempty"           envconfig:"CB_PORT" default:"NEXT"`
+	EnvFile       string `toml:"env-file,omitempty"       envconfig:"CB_ENV_FILE"`
+	Startup       string `toml:"startup,omitempty"        envconfig:"CB_STARTUP"`
+	ShowRunTime          string `toml:"show-run-time,omitempty"           envconfig:"CB_SHOW_RUN_TIME"`
+	ShowCountDown        string `toml:"show-count-down,omitempty"         envconfig:"CB_SHOW_COUNT_DOWN"`
+	CountDownExitCode    string `toml:"count-down-exit-code,omitempty"    envconfig:"CB_COUNT_DOWN_EXIT_CODE"`
 
 	// --------------------
 	// TOML-friendly array fields

@@ -515,6 +515,32 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.Startup = v
 			i += 2
 
+		case "--show-run-time":
+			// Optional value: if next arg is missing or looks like a flag, use "now"
+			if i+1 < args.Length() && args.At(i+1) != "" && !strings.HasPrefix(args.At(i+1), "--") {
+				cfg.ShowRunTime = args.At(i + 1)
+				i += 2
+			} else {
+				cfg.ShowRunTime = "now"
+				i++
+			}
+
+		case "--show-count-down":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			cfg.ShowCountDown = v
+			i += 2
+
+		case "--count-down-exit-code":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			cfg.CountDownExitCode = v
+			i += 2
+
 		case "--":
 			// everything after goes to cmds, overriding any cmds from config
 			cmds = []string{} // Clear existing cmds so CLI overrides config

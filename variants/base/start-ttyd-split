@@ -39,13 +39,18 @@ ttyd -i 127.0.0.1 -p 10006 -b /restart booth--restart --yes &
 # Message API server — serves booth message list/respond endpoints
 booth-message-api-server 10007 &
 
+# Timer notifier — sends toast messages at countdown thresholds
+booth-timer-notifier &
+
 export PORT
 export BOOTH_CONTAINER_NAME="${BOOTH_CONTAINER_NAME:-CodingBooth}"
 export BOOTH_HOST_PORT="${BOOTH_HOST_PORT:-$PORT}"
+export BOOTH_SHOW_RUN_TIME="${BOOTH_SHOW_RUN_TIME:-}"
+export BOOTH_SHOW_COUNT_DOWN="${BOOTH_SHOW_COUNT_DOWN:-}"
 export WEB_SPLIT_SERVE=/tmp/ttyd-split-serve
 mkdir -p "$WEB_SPLIT_SERVE"
 envsubst '${PORT} ${WEB_SPLIT_SERVE}' <"$WEB_SPLIT_ROOT/nginx.conf.template" >"$NGINX_CONFIG"
-envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT}' <"$WEB_SPLIT_ROOT/index.html" >"$WEB_SPLIT_SERVE/index.html"
+envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN}' <"$WEB_SPLIT_ROOT/index.html" >"$WEB_SPLIT_SERVE/index.html"
 
 mkdir -p /tmp/nginx/body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
 

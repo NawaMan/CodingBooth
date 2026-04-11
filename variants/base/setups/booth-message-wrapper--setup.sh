@@ -28,6 +28,8 @@ cp "${SCRIPT_DIR}/booth-message-api-server" "${WRAPPER_DIR}/booth-message-api-se
 chmod +x "${WRAPPER_DIR}/booth-message-api-server"
 cp "${SCRIPT_DIR}/booth-lifecycle-watcher" "${WRAPPER_DIR}/booth-lifecycle-watcher"
 chmod +x "${WRAPPER_DIR}/booth-lifecycle-watcher"
+cp "${SCRIPT_DIR}/booth-timer-notifier" "${WRAPPER_DIR}/booth-timer-notifier"
+chmod +x "${WRAPPER_DIR}/booth-timer-notifier"
 
 # ── Wrapper HTML template ──
 # The variant start script sets IFRAME_SRC before generating the page.
@@ -46,6 +48,10 @@ cat > "${WRAPPER_DIR}/wrapper.html" <<'HTMLEOF'
 </head>
 <body>
 <iframe id="booth-inner" src="${IFRAME_SRC}"></iframe>
+<script>
+window.BOOTH_SHOW_RUN_TIME="${BOOTH_SHOW_RUN_TIME}";
+window.BOOTH_SHOW_COUNT_DOWN="${BOOTH_SHOW_COUNT_DOWN}";
+</script>
 ${OVERLAY_HTML}
 </body>
 </html>
@@ -155,9 +161,11 @@ mkdir -p /tmp/nginx/body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /t
 export BOOTH_CONTAINER_NAME="${BOOTH_CONTAINER_NAME:-CodingBooth}"
 export BOOTH_HOST_PORT="${BOOTH_HOST_PORT:-$OUTER_PORT}"
 export IFRAME_SRC
+export BOOTH_SHOW_RUN_TIME="${BOOTH_SHOW_RUN_TIME:-}"
+export BOOTH_SHOW_COUNT_DOWN="${BOOTH_SHOW_COUNT_DOWN:-}"
 OVERLAY_HTML=$(cat "$WRAPPER_DIR/overlay.html")
 export OVERLAY_HTML
-envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${OVERLAY_HTML}' \
+envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${OVERLAY_HTML}' \
   <"$WRAPPER_DIR/wrapper.html" >"$SERVE_DIR/index.html"
 
 # Generate nginx config
@@ -170,6 +178,9 @@ envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR}' \
 
 # Start the lifecycle watcher (polls for shutdown/restart marker files)
 "$WRAPPER_DIR/booth-lifecycle-watcher" &
+
+# Start the timer notifier (sends toast messages at countdown thresholds)
+"$WRAPPER_DIR/booth-timer-notifier" &
 
 # Start the inner service
 eval "$INNER_CMD" &

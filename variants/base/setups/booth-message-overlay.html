@@ -316,6 +316,30 @@
     font-size: 13px;
   }
 
+  .bl-timer {
+    text-align: center;
+    font-family: "SF Mono", "Cascadia Code", "Consolas", monospace;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 6px 0;
+    letter-spacing: 1px;
+  }
+
+  .bl-timer-white { color: #64748b; }
+  .bl-timer-green { color: #22c55e; }
+  .bl-timer-yellow { color: #facc15; }
+  .bl-timer-orange { color: #fb923c; }
+  .bl-timer-red { color: #f87171; }
+
+  .bl-timer.flash {
+    animation: bl-flash 0.6s ease-in-out infinite;
+  }
+
+  @keyframes bl-flash {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+  }
+
   .bl-fullscreen {
     display: none;
     position: fixed;
@@ -448,10 +472,12 @@
       <button class="bl-collapse-btn" id="bl-toggle" title="Collapse">&#x25BC;</button>
     </div>
     <div class="bl-body" id="bl-body">
-      <button class="bl-btn bl-btn-restart" id="bl-restart-btn">
+      <div class="bl-timer bl-timer-white" id="bl-run-time" style="display:none" title="Total time this booth session has been running"></div>
+      <div class="bl-timer bl-timer-green" id="bl-count-down" style="display:none" title="Time remaining before the booth session ends"></div>
+      <button class="bl-btn bl-btn-restart" id="bl-restart-btn" title="Restart the booth container (re-reads config and rebuilds)">
         <span class="bl-btn-icon">&#x21BB;</span> Restart
       </button>
-      <button class="bl-btn bl-btn-shutdown" id="bl-shutdown-btn">
+      <button class="bl-btn bl-btn-shutdown" id="bl-shutdown-btn" title="Shut down and stop the booth container">
         <span class="bl-btn-icon">&#x23FB;</span> Shut Down
       </button>
     </div>
@@ -564,9 +590,12 @@
         });
 
         if (!interactive.length) {
-          overlay.classList.remove("visible");
-          document.body.classList.remove("msg-active");
-          dialogs.innerHTML = "";
+          // Don't clear if a countdown warning dialog is showing
+          if (!dialogs.querySelector("[id^='bl-warn-']")) {
+            overlay.classList.remove("visible");
+            document.body.classList.remove("msg-active");
+            dialogs.innerHTML = "";
+          }
           lastMsgIds = "";
           return;
         }
@@ -793,5 +822,116 @@
         }
       });
     });
+
+    // --- Timers ---
+    var runTimeEl = document.getElementById("bl-run-time");
+    var countDownEl = document.getElementById("bl-count-down");
+    var showRunTime = (window.BOOTH_SHOW_RUN_TIME || "").trim();
+    var showCountDown = (window.BOOTH_SHOW_COUNT_DOWN || "").trim();
+
+    function fmtTime(totalSec) {
+      var s = Math.abs(Math.floor(totalSec));
+      var h = Math.floor(s / 3600);
+      var m = Math.floor((s % 3600) / 60);
+      var sec = s % 60;
+      var pad = function (n) { return n < 10 ? "0" + n : "" + n; };
+      return h > 0 ? h + ":" + pad(m) + ":" + pad(sec) : pad(m) + ":" + pad(sec);
+    }
+
+    // Run time (count up)
+    if (showRunTime) {
+      var startEpoch = showRunTime === "now"
+        ? Math.floor(Date.now() / 1000)
+        : parseInt(showRunTime, 10);
+      if (!isNaN(startEpoch)) {
+        runTimeEl.style.display = "";
+        setInterval(function () {
+          var elapsed = Math.floor(Date.now() / 1000) - startEpoch;
+          if (elapsed < 0) elapsed = 0;
+          runTimeEl.textContent = fmtTime(elapsed);
+        }, 1000);
+      }
+    }
+
+    // Countdown
+    if (showCountDown) {
+      var endEpoch = parseInt(showCountDown, 10);
+      if (!isNaN(endEpoch)) {
+        countDownEl.style.display = "";
+        var countdownExpired = false;
+        var warnShown = {};
+        var initialRemaining = endEpoch - Math.floor(Date.now() / 1000);
+
+        function showCountdownWarning(id, threshold, title, body, autoDismissSec) {
+          // Skip if the session started with less time than this threshold
+          if (initialRemaining <= threshold) return;
+          if (warnShown[id]) return;
+          warnShown[id] = true;
+          var warnId = "bl-warn-" + id;
+          var overlay = document.getElementById("msg-overlay");
+          var dialogs = document.getElementById("msg-dialogs");
+          var dismissFn = "document.getElementById('" + warnId + "').remove();" +
+            "var d=document.getElementById('msg-dialogs');" +
+            "if(!d.children.length){document.getElementById('msg-overlay').classList.remove('visible');" +
+            "document.body.classList.remove('msg-active');}";
+          var h = '<div class="msg-dialog"><h2>' + title + '</h2>' +
+            '<p>' + body + '</p>' +
+            '<div class="msg-actions">' +
+            '<button class="msg-btn msg-btn-yes" onclick="' + dismissFn + '">OK</button></div></div>';
+          var wrapper = document.createElement("div");
+          wrapper.id = warnId;
+          wrapper.innerHTML = h;
+          dialogs.appendChild(wrapper);
+          overlay.classList.add("visible");
+          document.body.classList.add("msg-active");
+          if (autoDismissSec) {
+            setTimeout(function () {
+              var el = document.getElementById(warnId);
+              if (el) { eval(dismissFn); }
+            }, autoDismissSec * 1000);
+          }
+        }
+
+        setInterval(function () {
+          var remaining = endEpoch - Math.floor(Date.now() / 1000);
+          if (remaining <= 0 && !countdownExpired) {
+            countdownExpired = true;
+            countDownEl.textContent = "TIME'S UP";
+            countDownEl.className = "bl-timer bl-timer-red flash";
+            // Force expand if collapsed
+            if (collapsed) {
+              collapsed = false;
+              localStorage.setItem("booth-lc-collapsed", false);
+              applyCollapsed();
+            }
+            // Auto-shutdown with countdown exit code
+            fetch(apiBase + "/countdown-shutdown", { method: "POST" }).catch(function () {});
+            return;
+          }
+          if (countdownExpired) return;
+          countDownEl.textContent = fmtTime(remaining);
+          // Warning dialogs at thresholds
+          if (remaining <= 900) {
+            showCountdownWarning("15min", 900, "15 Minutes Remaining",
+              "This booth session will end in approximately 15 minutes.", 60);
+          }
+          if (remaining <= 600) {
+            showCountdownWarning("10min", 600, "10 Minutes Remaining",
+              "This booth session will end in approximately 10 minutes. Please save your work.", 0);
+          }
+          if (remaining <= 300) {
+            showCountdownWarning("5min", 300, "5 Minutes Remaining",
+              "This booth session will end in approximately 5 minutes. Please save your work.", 0);
+          }
+          // Color thresholds
+          var cls = "bl-timer ";
+          if (remaining > 900) cls += "bl-timer-green";
+          else if (remaining > 600) cls += "bl-timer-yellow";
+          else if (remaining > 300) cls += "bl-timer-orange";
+          else cls += "bl-timer-red";
+          countDownEl.className = cls;
+        }, 1000);
+      }
+    }
   })();
 </script>
