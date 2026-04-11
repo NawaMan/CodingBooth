@@ -155,6 +155,11 @@ CONTAINER MODE:
   --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)
   --log-time             Prefix progress messages with timestamps
 
+IDLE TIMEOUT:
+  --idle-time <s>[,t]    Prompt after s seconds of idle; auto-shutdown after t seconds
+                         (default t=60) if user does not respond
+  --idle-exit-code <n>   Exit code when booth shuts down due to idle (default: 0)
+
 COMMANDS:
   All arguments after '--' are executed *inside* the container instead of starting
   the default booth service. Example:
@@ -239,6 +244,11 @@ CONTAINER MODE:
   --writable-booth       Allow writing to .booth/ inside the container
   --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)
   --log-time             Prefix progress messages with timestamps
+
+IDLE TIMEOUT:
+  --idle-time <s>[,t]    Prompt after s seconds of idle; auto-shutdown after t seconds
+                         (default t=60) if user does not respond
+  --idle-exit-code <n>   Exit code when booth shuts down due to idle (default: 0)
 
 COMMANDS:
   Arguments after '--' run inside the container instead of the default service.

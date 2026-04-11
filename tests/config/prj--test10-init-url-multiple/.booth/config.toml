@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --select @@http://localhost:51385/recipe.txt
+# Configured by: booth config --no-tui --overwrite --select @@http://localhost:38155/recipe.txt
 
 
 run-args = [

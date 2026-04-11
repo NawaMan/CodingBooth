@@ -488,6 +488,14 @@ if [ "${BOOTH_SUDO:-true}" = "false" ]; then
 fi
 
 
+section "Idle monitor"
+
+if [ "${BOOTH_IDLE_TIME:-0}" -gt 0 ] 2>/dev/null; then
+  info "Starting idle monitor (idle=${BOOTH_IDLE_TIME}s, shutdown=${BOOTH_IDLE_SHUTDOWN_TIME:-60}s)"
+  runuser -u "$USER_NAME" -- booth--idle-monitor &
+fi
+
+
 section "Execute the requested command"
 
 info "16) Executing the requested command as coder (default to login shell if none provided)"

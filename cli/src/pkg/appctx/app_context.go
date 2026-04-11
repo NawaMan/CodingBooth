@@ -98,6 +98,9 @@ func (ctx AppContext) LeaveTmpOnExit() bool    { return ctx.values.Config.LeaveT
 func (ctx AppContext) KeepTmpOnStart() bool    { return ctx.values.Config.KeepTmpOnStart }
 func (ctx AppContext) LogTime() bool           { return ctx.values.Config.LogTime }
 func (ctx AppContext) PersistHome() bool       { return ctx.values.Config.PersistHome }
+func (ctx AppContext) IdleTime() int            { return ctx.values.Config.IdleTime }
+func (ctx AppContext) IdleShutdownTime() int    { return ctx.values.Config.IdleShutdownTime }
+func (ctx AppContext) IdleExitCode() int        { return ctx.values.Config.IdleExitCode }
 func (ctx AppContext) Public() bool        { return ctx.values.Config.Public }
 func (ctx AppContext) Password() string    { return ctx.values.Config.Password }
 func (ctx AppContext) TLSCert() string     { return ctx.values.Config.TLSCert }
@@ -196,6 +199,9 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    SandboxMode:      %q\n", ctx.SandboxMode())
 	fmt.Fprintf(&str, "    SandboxEnforcement:%q\n", ctx.SandboxEnforcement())
 	fmt.Fprintf(&str, "    WritableBooth:    %t\n", ctx.WritableBooth())
+	fmt.Fprintf(&str, "    IdleTime:         %d\n", ctx.IdleTime())
+	fmt.Fprintf(&str, "    IdleShutdownTime: %d\n", ctx.IdleShutdownTime())
+	fmt.Fprintf(&str, "    IdleExitCode:     %d\n", ctx.IdleExitCode())
 	fmt.Fprintf(&str, "    Public:           %t\n", ctx.Public())
 	fmt.Fprintf(&str, "    Password:         %s\n", maskStr(ctx.Password()))
 	fmt.Fprintf(&str, "    TLSCert:          %q\n", ctx.TLSCert())

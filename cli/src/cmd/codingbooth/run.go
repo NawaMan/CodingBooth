@@ -58,6 +58,13 @@ func runBooth(version string, args []string) {
 			continue
 		}
 
+		// Check for idle shutdown
+		if idleErr, ok := err.(*booth.IdleShutdownError); ok {
+			fmt.Fprintf(os.Stderr, "Info: Booth shut down due to idle timeout.\n")
+			os.Exit(idleErr.ExitCode)
+			return
+		}
+
 		if err != nil {
 			// For SilentExitError (from command mode), exit with the code silently
 			// Signal-based exits (128+) are normal shutdowns (e.g. booth--shutdown)

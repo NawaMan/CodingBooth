@@ -88,6 +88,9 @@ type AppConfig struct {
 	KeepTmpOnStart     bool   `toml:"keep-tmp-on-start,omitempty"   envconfig:"CB_KEEP_TMP_ON_START" default:"false"`
 	LogTime            bool   `toml:"log-time,omitempty"            envconfig:"CB_LOG_TIME" default:"false"`
 	PersistHome        bool   `toml:"persist-home,omitempty"        envconfig:"CB_PERSIST_HOME" default:"false"`
+	IdleTime           int    `toml:"idle-time,omitempty"           envconfig:"CB_IDLE_TIME" default:"0"`
+	IdleShutdownTime   int    `toml:"idle-shutdown-time,omitempty"  envconfig:"CB_IDLE_SHUTDOWN_TIME" default:"0"`
+	IdleExitCode       int    `toml:"idle-exit-code,omitempty"      envconfig:"CB_IDLE_EXIT_CODE" default:"0"`
 
 	// Public exposes the booth on all interfaces (0.0.0.0) with password auth and HTTPS.
 	// Password is resolved at startup from .booth/.booth.password or interactive stdin.
@@ -191,6 +194,9 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Password:          %s\n", maskStr(config.Password))
 	fmt.Fprintf(&str, "    TLSCert:           %q\n", config.TLSCert)
 	fmt.Fprintf(&str, "    TLSKey:            %q\n", config.TLSKey)
+	fmt.Fprintf(&str, "    IdleTime:          %d\n", config.IdleTime)
+	fmt.Fprintf(&str, "    IdleShutdownTime:  %d\n", config.IdleShutdownTime)
+	fmt.Fprintf(&str, "    IdleExitCode:      %d\n", config.IdleExitCode)
 	fmt.Fprintf(&str, "    SandboxAllowlist:  %q\n", config.SandboxAllowlistFile)
 	fmt.Fprintf(&str, "    SandboxPolicy:     %q\n", config.SandboxPolicyFile)
 	fmt.Fprintf(&str, "    SandboxAllowlist+: %v\n", config.SandboxAllowlist)

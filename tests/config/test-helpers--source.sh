@@ -160,6 +160,8 @@ function skip() {
 
 function begin() {
     echo "Begin ${testname}" | tee $log
+    # Remove leftover container from a previous run (name derived from project dir)
+    docker rm -f "prj--${testname}" >/dev/null 2>&1 || true
     run rm -Rf $prj
     mkdir -p "${prj}"
     tmpfile="$(mktemp)" ; echo "Using temp file: $tmpfile" >> $log

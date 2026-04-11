@@ -110,8 +110,9 @@ func (booth *Booth) runAsCommand() error {
 	// Stop tunnel watcher
 	tunnelCancel()
 
-	// Check for restart marker before cleanup removes it
+	// Check for restart/idle markers before cleanup removes them
 	restartRequested := checkAndCleanRestartMarker(booth.ctx)
+	idleShutdown := checkAndCleanIdleShutdownMarker(booth.ctx)
 
 	// Cleanup .booth/.tmp/ on exit (unless --leave-tmp-on-exit)
 	cleanupBoothTmp(booth.ctx)
@@ -132,6 +133,10 @@ func (booth *Booth) runAsCommand() error {
 
 	if restartRequested {
 		return &RestartRequestedError{}
+	}
+
+	if idleShutdown {
+		return &IdleShutdownError{ExitCode: booth.ctx.IdleExitCode()}
 	}
 
 	printHomeVolumeWarning(booth.ctx)
@@ -282,8 +287,9 @@ func (booth *Booth) runAsForeground() error {
 	// Stop tunnel watcher
 	tunnelCancel()
 
-	// Check for restart marker before cleanup removes it
+	// Check for restart/idle markers before cleanup removes them
 	restartRequested := checkAndCleanRestartMarker(booth.ctx)
+	idleShutdown := checkAndCleanIdleShutdownMarker(booth.ctx)
 
 	// Cleanup .booth/.tmp/ on exit (unless --leave-tmp-on-exit)
 	cleanupBoothTmp(booth.ctx)
@@ -304,6 +310,10 @@ func (booth *Booth) runAsForeground() error {
 
 	if restartRequested {
 		return &RestartRequestedError{}
+	}
+
+	if idleShutdown {
+		return &IdleShutdownError{ExitCode: booth.ctx.IdleExitCode()}
 	}
 
 	printHomeVolumeWarning(booth.ctx)
@@ -452,6 +462,13 @@ builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_SILENCE
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_ENV_FILE="+ctx.EnvFile()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_UID="+ctx.HostUID()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_GID="+ctx.HostGID()))
+
+	// Idle time monitoring
+	if ctx.IdleTime() > 0 {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_IDLE_TIME=%d", ctx.IdleTime())))
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_IDLE_SHUTDOWN_TIME=%d", ctx.IdleShutdownTime())))
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_IDLE_EXIT_CODE=%d", ctx.IdleExitCode())))
+	}
 
 	// Custom startup script
 	if ctx.Startup() != "" {
@@ -656,6 +673,38 @@ func walkCacheDir(baseDir, dir string, mounts *[]cacheMount) {
 			}
 		}
 	}
+}
+
+// IdleShutdownError signals that the booth was shut down due to idle timeout.
+type IdleShutdownError struct {
+	ExitCode int
+}
+
+func (e *IdleShutdownError) Error() string {
+	return fmt.Sprintf("idle shutdown (exit code %d)", e.ExitCode)
+}
+
+// idleShutdownMarkerPath returns the host path of the idle shutdown marker file.
+func idleShutdownMarkerPath(ctx appctx.AppContext) string {
+	codePath := ctx.Code()
+	if codePath == "" {
+		return ""
+	}
+	return filepath.Join(codePath, ".booth", ".tmp", ".idle-shutdown")
+}
+
+// checkAndCleanIdleShutdownMarker checks if the booth was shut down due to idle timeout.
+// It removes the marker file and returns true if found.
+func checkAndCleanIdleShutdownMarker(ctx appctx.AppContext) bool {
+	markerPath := idleShutdownMarkerPath(ctx)
+	if markerPath == "" {
+		return false
+	}
+	if _, err := os.Stat(markerPath); err != nil {
+		return false
+	}
+	os.Remove(markerPath)
+	return true
 }
 
 // restartMarkerPath returns the host path of the restart marker file.

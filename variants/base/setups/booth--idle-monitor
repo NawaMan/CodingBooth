@@ -1,0 +1,80 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth--idle-monitor
+#
+# Background daemon that prompts the user after BOOTH_IDLE_TIME seconds of
+# inactivity. If the user does not respond within BOOTH_IDLE_SHUTDOWN_TIME
+# seconds, the booth is shut down gracefully via booth--shutdown --yes.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+IDLE_TIME="${BOOTH_IDLE_TIME:-0}"
+SHUTDOWN_TIME="${BOOTH_IDLE_SHUTDOWN_TIME:-60}"
+
+# Exit if idle monitoring is not configured
+if [ "$IDLE_TIME" -le 0 ] 2>/dev/null; then
+    exit 0
+fi
+
+MSG_DIR="/home/coder/code/.booth/.tmp/messages"
+mkdir -p "$MSG_DIR"
+
+log() {
+    echo "[booth--idle-monitor] $(date '+%Y-%m-%dT%H:%M:%S%z') $*" >&2
+}
+
+log "Started: idle=$IDLE_TIME s, shutdown=$SHUTDOWN_TIME s"
+
+while true; do
+    sleep "$IDLE_TIME"
+
+    MSG_ID="idle-$(date +%s%N)"
+    MSG_FILE="$MSG_DIR/$MSG_ID.msg.json"
+    RSP_FILE="$MSG_DIR/$MSG_ID.response.json"
+
+    EXPIRES=$(date -u -d "+${SHUTDOWN_TIME} seconds" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
+           || date -u -v "+${SHUTDOWN_TIME}S" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
+           || "")
+
+    cat > "$MSG_FILE" <<EOJSON
+{
+  "id": "$MSG_ID",
+  "title": "Still using this booth?",
+  "body": "This booth will shut down in $SHUTDOWN_TIME seconds if you do not respond.",
+  "type": "ok",
+  "expires": "$EXPIRES"
+}
+EOJSON
+
+    log "Prompted user (msg=$MSG_ID, expires=$EXPIRES)"
+
+    # Poll for response until shutdown time elapses
+    WAITED=0
+    RESPONDED=false
+    while [ "$WAITED" -lt "$SHUTDOWN_TIME" ]; do
+        if [ -f "$RSP_FILE" ]; then
+            RESPONDED=true
+            break
+        fi
+        sleep 1
+        WAITED=$((WAITED + 1))
+    done
+
+    # Clean up message files
+    rm -f "$MSG_FILE" "$RSP_FILE"
+
+    if [ "$RESPONDED" = true ]; then
+        log "User responded OK, resetting idle timer."
+        continue
+    fi
+
+    log "Idle timeout reached after $((IDLE_TIME + SHUTDOWN_TIME))s total. Shutting down booth."
+    # Write marker so the host can detect idle shutdown and use the configured exit code
+    touch /home/coder/code/.booth/.tmp/.idle-shutdown
+    exec booth--shutdown --yes
+done
