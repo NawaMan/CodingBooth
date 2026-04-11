@@ -26,6 +26,10 @@ type configFieldDef struct {
 
 // allConfigFields defines all config fields in display order.
 var allConfigFields = []configFieldDef{
+	// --- Booth ---
+	{Key: "booth-version", Label: "Booth Version", Group: "Booth", Kind: fieldKindString,
+		Detail: "Version of the CodingBooth CLI tool.\nChange this to upgrade or downgrade the booth binary.\n\nThe new version will be downloaded on the next run.\nUse 'latest' for the most recent release."},
+
 	// --- General ---
 	{Key: "variant", Label: "Variant", Group: "General", Kind: fieldKindCycle,
 		Options: []string{"", "base", "notebook", "codeserver", "desktop-xfce", "desktop-kde", "terminal"},
