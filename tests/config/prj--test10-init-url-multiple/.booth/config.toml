@@ -1,0 +1,7 @@
+# Configured by: booth init adjust --select @@http://localhost:52499/recipe.txt
+
+
+run-args = [
+    "-e", "PYTHONDONTWRITEBYTECODE=1",
+    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro"
+]

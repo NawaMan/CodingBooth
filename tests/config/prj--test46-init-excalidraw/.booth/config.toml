@@ -1,0 +1,4 @@
+# Configured by: booth init adjust --select excalidraw:889+expose+autostart
+
+
+run-args = ["-p", "889:889"]

@@ -1,0 +1,4 @@
+# Configured by: booth init adjust --select openssh+credential
+
+
+run-args = ["-v", "~/.ssh:/etc/cb-home-seed/.ssh:ro"]

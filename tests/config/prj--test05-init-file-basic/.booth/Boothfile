@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth init adjust --select @/home/nawa/dev/git2/CodingBooth/tests/config/prj--test05-init-file-basic--recipe.txt
+
+arg JDK_VENDOR=temurin
+arg JDK_VERSION=25
+
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+setup java-code-extension

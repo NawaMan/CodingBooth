@@ -202,3 +202,9 @@ It's tempting to mount your entire `~/.config` or even `~` into the container. *
 **The philosophy:** Seed the *minimum* credentials needed for your specific workflow. Authentication tokens, SSH keys for git, cloud CLI credentials — yes. Your entire dotfile collection — no.
 
 > **Reality check:** If you find yourself needing to seed most of your home directory, ask yourself: do you actually need a container? Maybe the friction is telling you something.
+
+## Persisting the Entire Home Directory
+
+If you want the home directory to survive across sessions (IDE settings, browser history, app configs), use `--persist-home` instead of seeding. This stores `/home/coder` in a Docker named volume that persists across container exits and restarts.
+
+See [Persist Home Directory](BOOTH_PERSIST_HOME.md) for details.

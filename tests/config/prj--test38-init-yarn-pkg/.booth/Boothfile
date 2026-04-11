@@ -1,0 +1,9 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth init adjust --select nodejs+yarn-pkg:typescript
+
+arg NODE_VERSION=22
+arg YARN_PKGS=typescript
+
+setup nodejs ${NODE_VERSION}
+install yarn ${YARN_PKGS}
+setup nodejs-code-extension

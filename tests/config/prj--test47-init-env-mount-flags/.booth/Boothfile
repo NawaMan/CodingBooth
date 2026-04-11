@@ -1,0 +1,9 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth init adjust --env FOO=bar --mount /data:/data --select go
+
+arg GO_VERSION=1.25.7
+
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+setup go-code-extension

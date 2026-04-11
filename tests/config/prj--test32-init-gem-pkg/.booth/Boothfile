@@ -1,0 +1,9 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth init adjust --select ruby+gem-pkg:colorize
+
+arg GEM_PKGS=colorize
+arg RUBY_VERSION=3.3
+
+setup ruby ${RUBY_VERSION}
+install gem ${GEM_PKGS}
+setup ruby-code-extension

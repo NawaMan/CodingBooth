@@ -207,6 +207,10 @@ When a container is resumed via `start` or `restart`, its configuration is uncha
 - Bind mounts (`-v`)
 - Port mappings (`-p`)
 
+### Home directory persistence
+
+Use `--persist-home` to preserve `/home/coder` (IDE settings, shell history, app configs) across sessions via a Docker named volume. See [Persist Home Directory](BOOTH_PERSIST_HOME.md) for details.
+
 To change these values, remove the container and run a new one:
 
 ```bash

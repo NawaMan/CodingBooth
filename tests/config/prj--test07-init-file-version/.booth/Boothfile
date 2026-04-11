@@ -1,0 +1,20 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth init adjust --select @/home/nawa/dev/git2/CodingBooth/tests/config/prj--test07-init-file-version--recipe.txt
+
+arg GO_VERSION=1.24.13
+arg JDK_VENDOR=temurin
+arg JDK_VERSION=21
+arg PYTHON_VERSION=3.12.12
+
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+install go github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+setup python ${PYTHON_VERSION}
+# uv is already installed by python setup.
+# This extension enables 'install uv <packages>' in Boothfiles.
+setup go-code-extension
+setup java-code-extension
+setup python-code-extension
+run --mount=type=bind,target=/tmp/ctx if [ -f /tmp/ctx/.booth/requirements.txt ]; then uv pip install -r /tmp/ctx/.booth/requirements.txt; else echo "Warning: .booth/requirements.txt not found -- skipping uv pip install"; fi

@@ -146,6 +146,7 @@ CONTAINER MODE:
                          Can also be set in config.toml: sudo = false
   --no-sudo              Shorthand for --sudo false
   --keep-alive           Do not remove the container when stopped
+  --persist-home         Persist /home/coder across sessions using a Docker named volume
   --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
   --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)
   --log-time             Prefix progress messages with timestamps

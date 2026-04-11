@@ -1,0 +1,4 @@
+# Configured by: booth init adjust --select nodejs+npm-install
+
+
+run-args = ["-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro"]

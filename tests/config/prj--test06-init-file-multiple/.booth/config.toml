@@ -1,0 +1,7 @@
+# Configured by: booth init adjust --select @/home/nawa/dev/git2/CodingBooth/tests/config/prj--test06-init-file-multiple--recipe.txt
+
+
+run-args = [
+    "-e", "PYTHONDONTWRITEBYTECODE=1",
+    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro"
+]
