@@ -2,13 +2,13 @@
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
 
-// Package output defines the data model for booth init output and serialization
+// Package output defines the data model for booth config output and serialization
 // to the .booth/ directory structure.
 package output
 
 // BoothOutput holds all generated content to be written to .booth/.
 type BoothOutput struct {
-	Command       string // Exact command used to generate (e.g., "booth init new . --select go")
+	Command       string // Exact command used to generate (e.g., "booth config . --select go")
 	AdjustCommand string // Reformatted command for easy adjustment (--select last)
 	Config        *ConfigToml
 	Boothfile *BoothfileContent

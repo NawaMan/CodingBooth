@@ -412,7 +412,7 @@ func sliceContains(s []string, v string) bool {
 }
 
 // parseAdjustCommand parses a command string like "booth config --no-tui --select go/python"
-// or the legacy "booth init adjust --select go/python --variant codeserver" into initFlags.
+// or the legacy "booth config adjust --select go/python --variant codeserver" into initFlags.
 func parseAdjustCommand(cmd string) initFlags {
 	// Split into args, skipping command prefix words
 	parts := strings.Fields(cmd)

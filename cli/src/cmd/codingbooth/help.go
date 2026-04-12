@@ -357,7 +357,7 @@ Run '%s template help' for available subcommands.
 `, s, s, s)
 }
 
-func showHelpInit() {
+func showHelpConfig() {
 	s := scriptName()
 	fmt.Printf(`%s config — configure a new or existing .booth/ project
 
@@ -532,7 +532,7 @@ func dispatchHelp(args []string, version string) {
 		case "template":
 			showHelpTemplate()
 		case "config":
-			showHelpInit()
+			showHelpConfig()
 		case "build":
 			showHelpBuild()
 		case "shell":
