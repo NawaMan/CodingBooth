@@ -446,6 +446,38 @@
         display: none !important;
       }
     }
+    .cb-fullscreen {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 10003;
+      background: #000;
+      color: #e2e8f0;
+      font-family: -apple-system, "Segoe UI", sans-serif;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .cb-fullscreen.visible {
+      display: flex;
+    }
+
+    .cb-fullscreen .cb-fs-icon {
+      font-size: 48px;
+      color: #4ade80;
+    }
+
+    .cb-fullscreen .cb-fs-title {
+      font-size: 20px;
+      font-weight: 600;
+    }
+
+    .cb-fullscreen .cb-fs-msg {
+      font-size: 14px;
+      color: #94a3b8;
+    }
   </style>
 </head>
 
@@ -538,6 +570,12 @@
         <div class="dialog-message">You can close this tab.</div>
       </div>
     </div>
+  </div>
+
+  <div class="cb-fullscreen" id="cb-fullscreen">
+    <div class="cb-fs-icon">&#x2713;</div>
+    <div class="cb-fs-title">Container stopped</div>
+    <div class="cb-fs-msg">The CodingBooth session has ended. You can close this tab.</div>
   </div>
 
   <script>
@@ -1252,7 +1290,15 @@
             }
             return h + '</div>';
           }).join("");
-        }).catch(function() {});
+        }).catch(function() { msgPollFails++; checkConnectionLost(); });
+      }
+
+      var msgPollFails = 0;
+      function checkConnectionLost() {
+        if (msgPollFails >= 1) {
+          var fs = document.getElementById("cb-fullscreen");
+          if (fs) fs.classList.add("visible");
+        }
       }
 
       window._msgRespond = function(id, answer) {
