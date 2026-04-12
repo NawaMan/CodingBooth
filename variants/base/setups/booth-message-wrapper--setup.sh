@@ -173,6 +173,15 @@ export OUTER_PORT INNER_PORT API_PORT SERVE_DIR
 envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR}' \
   <"$WRAPPER_DIR/nginx.conf.template" >"$NGINX_CONFIG"
 
+# Propagate SIGTERM to all child processes for clean container shutdown
+cleanup() {
+    echo "start-booth-wrapped: received signal, shutting down..."
+    kill $INNER_PID $NGINX_PID 2>/dev/null
+    wait $INNER_PID $NGINX_PID 2>/dev/null
+    exit 0
+}
+trap cleanup SIGTERM SIGINT
+
 # Start the message API server
 "$WRAPPER_DIR/booth-message-api-server" "$API_PORT" &
 
@@ -184,9 +193,18 @@ envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR}' \
 
 # Start the inner service
 eval "$INNER_CMD" &
+INNER_PID=$!
 
-# Start nginx in foreground
-exec nginx -c "$NGINX_CONFIG" -g 'daemon off;'
+# Start nginx in background (so we can monitor the inner service)
+nginx -c "$NGINX_CONFIG" -g 'daemon off;' &
+NGINX_PID=$!
+
+# Wait for the inner service to exit — when it does, shut down the container
+wait $INNER_PID
+echo "start-booth-wrapped: inner service (PID $INNER_PID) exited, shutting down..."
+kill $NGINX_PID 2>/dev/null
+wait $NGINX_PID 2>/dev/null
+exit 0
 STARTEOF
 chmod +x /usr/local/bin/start-booth-wrapped
 
