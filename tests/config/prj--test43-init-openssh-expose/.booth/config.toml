@@ -1,4 +1,0 @@
-# Configured by: booth config --no-tui --overwrite --select openssh+server+expose
-
-
-run-args = ["-p", "2222:2222"]

@@ -1,6 +1,0 @@
-# syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select freeplane:1.12.7
-
-arg FREEPLANE_VERSION=1.12.7
-
-setup freeplane ${FREEPLANE_VERSION}

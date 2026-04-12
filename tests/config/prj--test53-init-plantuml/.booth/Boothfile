@@ -1,7 +1,0 @@
-# syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select plantuml:1.2025.2,19090+expose+autostart
-
-arg PLANTUML_PORT=19090
-arg PLANTUML_VERSION=1.2025.2
-
-setup plantuml ${PLANTUML_VERSION} ${PLANTUML_PORT}

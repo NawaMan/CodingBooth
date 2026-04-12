@@ -1,4 +1,0 @@
-# Configured by: booth config --no-tui --overwrite --select openssh+credential
-
-
-run-args = ["-v", "~/.ssh:/etc/cb-home-seed/.ssh:ro"]

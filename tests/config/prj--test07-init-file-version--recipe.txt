@@ -1,3 +1,0 @@
-java:21
-go:1.24.13+linter
-python:3.12.12+uv

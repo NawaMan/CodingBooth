@@ -17,7 +17,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
     CURRENT_PATH="$(pwd -W)"
 fi
 
-# Just check the USAGE section (first 17 lines) - the full help is ~98 lines
+# Just check the USAGE section - the full help is ~98 lines
 ACTUAL=$(run_coding_booth help | head -30)
 
 HERE="$PWD"

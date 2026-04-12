@@ -1,8 +1,0 @@
-# syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select openssh+server:2200
-
-arg SSH_PORT=2200
-
-setup openssh
-setup opensshd ${SSH_PORT}
-expose ${SSH_PORT}

@@ -11,6 +11,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"strings"
 
 	"golang.org/x/term"
@@ -398,6 +399,40 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 		case "--log-time":
 			cfg.LogTime = true
 			i++
+
+		case "--idle-time":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			parts := strings.SplitN(v, ",", 2)
+			idleTime, err := strconv.Atoi(parts[0])
+			if err != nil || idleTime <= 0 {
+				return fmt.Errorf("--idle-time requires a positive integer, got %q", parts[0])
+			}
+			cfg.IdleTime = idleTime
+			if len(parts) == 2 {
+				shutdownTime, err := strconv.Atoi(parts[1])
+				if err != nil || shutdownTime <= 0 {
+					return fmt.Errorf("--idle-time shutdown time requires a positive integer, got %q", parts[1])
+				}
+				cfg.IdleShutdownTime = shutdownTime
+			} else {
+				cfg.IdleShutdownTime = 60
+			}
+			i += 2
+
+		case "--idle-exit-code":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			code, err := strconv.Atoi(v)
+			if err != nil {
+				return fmt.Errorf("--idle-exit-code requires an integer, got %q", v)
+			}
+			cfg.IdleExitCode = code
+			i += 2
 
 		case "--writable-booth":
 			cfg.WritableBooth = true
