@@ -2,6 +2,40 @@
 
 This file contains a list of changes for each released version.
 
+## 0.41.0
+
+- `--idle-time <s>[,t]` — auto-shutdown after inactivity
+  - Prompts "Still using this booth?" after `s` seconds of no keyboard/mouse activity
+  - Auto-shuts down after `t` seconds if no response (default: 60s)
+  - `--idle-exit-code <n>` — custom exit code on idle shutdown (default: 0)
+  - Activity detection via browser keyboard/mouse events (throttled, once per minute)
+  - Web overlay shows "Container stopped" dialog on idle shutdown
+  - Works across all web variants (codeserver, notebook, xfce, kde); terminal variants shut down directly
+- `--show-run-time` / `--show-count-down` — session timers in the web overlay
+  - Run time: elapsed time since booth start, shown next to Restart/Shutdown buttons
+  - Countdown: time remaining until auto-shutdown, with color-coded warnings at 15/10/5 min
+  - `--count-down-exit-code <n>` — custom exit code when countdown expires
+- `--persist-home` — persist `/home/coder` across sessions using a Docker named volume
+  - `home-volume-list`, `home-volume-export`, `home-volume-import` commands
+- `booth config` version setup — `--version` flag in config sets the CodingBooth version
+- Desktop wallpaper branding for XFCE and KDE variants
+- Renamed `booth init` to `booth config` across all code, tests, examples, and docs
+
+## 0.40.0
+
+- Booth message system — interactive dialogs and toast notifications inside the container
+  - Message types: yes-no, ok, text, password, choice, radio, checkbox, toast
+  - Web overlay with modal dialogs and auto-dismissing toasts
+  - `booth--msg` terminal UI for base variant
+  - HTTP API server for message create/respond
+- Shutdown and restart dialogs with confirmation prompts
+- Web UI overlay with lifecycle panel (Restart / Shut Down buttons)
+- Fine-grained home copy with `.mount-this` markers
+- `cache-dirs` template field for directory-level cache mounts
+- Claude Code settings cache — persist `~/.claude/` across sessions
+- Improved `booth config` TUI quit prompt
+- Documentation: separate overlay and message docs
+
 ## 0.39.0
 
 - `booth--expose` — expose container ports to the host at runtime without restarting
