@@ -575,6 +575,7 @@
     function pollMessages() {
       fetch(apiBase + "/list").then(function (resp) {
         if (!resp.ok) return;
+        pollFails = 0;
         return resp.json();
       }).then(function (msgs) {
         if (!msgs) return;
@@ -661,7 +662,16 @@
           }
           return h + '</div>';
         }).join("");
-      }).catch(function () { });
+      }).catch(function () { pollFails++; checkConnectionLost(); });
+    }
+
+    // Detect container shutdown (e.g. idle timeout) by consecutive poll failures
+    var pollFails = 0;
+    function checkConnectionLost() {
+      if (pollFails >= 3) {
+        var fs = document.getElementById("bl-fullscreen");
+        if (fs) fs.classList.add("visible");
+      }
     }
 
     window._msgRespond = function (id, answer) {

@@ -9,9 +9,13 @@
 # Background daemon that prompts the user after BOOTH_IDLE_TIME seconds of
 # inactivity. If the user does not respond within BOOTH_IDLE_SHUTDOWN_TIME
 # seconds, the booth is shut down gracefully via booth--shutdown --yes.
+#
+# In web variants (codeserver, notebook, desktop), the prompt is shown via
+# the message overlay. In terminal variants (base/console), the booth shuts
+# down directly after the idle period (no interactive prompt).
 # -----------------------------------------------------------------------------
 
-set -euo pipefail
+set -uo pipefail
 
 IDLE_TIME="${BOOTH_IDLE_TIME:-0}"
 SHUTDOWN_TIME="${BOOTH_IDLE_SHUTDOWN_TIME:-60}"
@@ -22,10 +26,22 @@ if [ "$IDLE_TIME" -le 0 ] 2>/dev/null; then
 fi
 
 MSG_DIR="/home/coder/code/.booth/.tmp/messages"
-mkdir -p "$MSG_DIR"
+TMP_DIR="/home/coder/code/.booth/.tmp"
+mkdir -p "$MSG_DIR" "$TMP_DIR"
 
 log() {
     echo "[booth--idle-monitor] $(date '+%Y-%m-%dT%H:%M:%S%z') $*" >&2
+}
+
+do_shutdown() {
+    log "Shutting down booth."
+    touch "$TMP_DIR/.idle-shutdown"
+    touch "$TMP_DIR/.shutdown-requested"
+    # Give the lifecycle watcher a chance to pick it up (web variants)
+    sleep 3
+    # If still alive, the watcher isn't running — shut down directly
+    booth--shutdown --yes
+    exit 0
 }
 
 log "Started: idle=$IDLE_TIME s, shutdown=$SHUTDOWN_TIME s"
@@ -39,7 +55,7 @@ while true; do
 
     EXPIRES=$(date -u -d "+${SHUTDOWN_TIME} seconds" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
            || date -u -v "+${SHUTDOWN_TIME}S" '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
-           || "")
+           || echo "")
 
     cat > "$MSG_FILE" <<EOJSON
 {
@@ -73,8 +89,6 @@ EOJSON
         continue
     fi
 
-    log "Idle timeout reached after $((IDLE_TIME + SHUTDOWN_TIME))s total. Shutting down booth."
-    # Write marker so the host can detect idle shutdown and use the configured exit code
-    touch /home/coder/code/.booth/.tmp/.idle-shutdown
-    exec booth--shutdown --yes
+    log "Idle timeout reached after $((IDLE_TIME + SHUTDOWN_TIME))s total."
+    do_shutdown
 done
