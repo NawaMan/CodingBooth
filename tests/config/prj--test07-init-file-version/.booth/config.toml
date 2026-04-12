@@ -1,7 +1,0 @@
-# Configured by: booth config --no-tui --overwrite --select @/home/nawa/dev/git2/CodingBooth/tests/config/prj--test07-init-file-version--recipe.txt
-
-
-run-args = [
-    "-e", "PYTHONDONTWRITEBYTECODE=1",
-    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro"
-]

@@ -1,4 +1,0 @@
-# Configured by: booth config --no-tui --overwrite --expose +8080 --select go
-
-
-run-args = ["--publish", "+8080:8080"]

@@ -1,9 +1,0 @@
-# syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select python+uv-pkg:ruff
-
-arg PYTHON_VERSION=3.13.12
-arg UV_PKGS=ruff
-
-setup python ${PYTHON_VERSION}
-install uv ${UV_PKGS}
-setup python-code-extension

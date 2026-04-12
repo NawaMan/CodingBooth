@@ -1,7 +1,0 @@
-# Configured by: booth config --no-tui --overwrite --select @@http://localhost:36635/recipe.txt
-
-
-run-args = [
-    "-e", "PYTHONDONTWRITEBYTECODE=1",
-    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro"
-]

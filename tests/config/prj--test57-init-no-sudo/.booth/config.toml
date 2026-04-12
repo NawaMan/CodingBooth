@@ -1,3 +1,0 @@
-# Configured by: booth config --no-tui --overwrite --select go/no-sudo
-
-sudo = false

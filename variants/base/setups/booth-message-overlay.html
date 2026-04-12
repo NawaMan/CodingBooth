@@ -668,7 +668,7 @@
     // Detect container shutdown (e.g. idle timeout) by consecutive poll failures
     var pollFails = 0;
     function checkConnectionLost() {
-      if (pollFails >= 3) {
+      if (pollFails >= 1) {
         var fs = document.getElementById("bl-fullscreen");
         if (fs) fs.classList.add("visible");
       }
@@ -943,5 +943,23 @@
         }, 1000);
       }
     }
+  })();
+
+  // Activity tracker for idle detection — write last-activity timestamp via API
+  (function () {
+    var apiBase = window.BOOTH_MSG_API_BASE || "/booth-messages/api";
+    var lastReport = 0;
+    var THROTTLE = 60000; // report at most once per minute
+    function reportActivity() {
+      var now = Date.now();
+      if (now - lastReport < THROTTLE) return;
+      lastReport = now;
+      fetch(apiBase + "/activity", { method: "POST" }).catch(function () {});
+    }
+    document.addEventListener("keydown", reportActivity, true);
+    document.addEventListener("mousemove", reportActivity, true);
+    document.addEventListener("mousedown", reportActivity, true);
+    document.addEventListener("wheel", reportActivity, true);
+    document.addEventListener("touchstart", reportActivity, true);
   })();
 </script>

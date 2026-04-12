@@ -44,10 +44,30 @@ do_shutdown() {
     exit 0
 }
 
+# Return the epoch timestamp of the most recent user activity.
+# The web overlay reports keyboard/mouse events via the API,
+# which writes the timestamp to .last-activity.
+last_activity() {
+    local f="$TMP_DIR/.last-activity"
+    if [ -f "$f" ]; then
+        cat "$f" 2>/dev/null || echo 0
+    else
+        echo 0
+    fi
+}
+
 log "Started: idle=$IDLE_TIME s, shutdown=$SHUTDOWN_TIME s"
 
 while true; do
+    SLEEP_START=$(date +%s)
     sleep "$IDLE_TIME"
+
+    # Check if there was real activity during the sleep period
+    LAST=$(last_activity)
+    if [ "$LAST" -gt "$SLEEP_START" ]; then
+        log "Activity detected (last=$LAST, sleep_start=$SLEEP_START), resetting timer."
+        continue
+    fi
 
     MSG_ID="idle-$(date +%s%N)"
     MSG_FILE="$MSG_DIR/$MSG_ID.msg.json"

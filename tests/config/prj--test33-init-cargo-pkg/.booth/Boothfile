@@ -1,9 +1,0 @@
-# syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select rust+cargo-pkg:bat
-
-arg CARGO_PKGS=bat
-arg RUST_VERSION=stable
-
-setup rust ${RUST_VERSION}
-install cargo ${CARGO_PKGS}
-setup rust-code-extension
