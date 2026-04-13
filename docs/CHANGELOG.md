@@ -2,6 +2,16 @@
 
 This file contains a list of changes for each released version.
 
+## 0.42.0
+
+- "Container stopped" page now appears on the console (web-ttyd-split) variant
+  - Previously only showed on notebook, codeserver, xfce, and kde variants
+  - Detects connection loss via API poll failures and displays a fullscreen overlay
+- Logout triggers container shutdown in wrapped variants (codeserver, notebook, desktop)
+  - Inner service exit (e.g. user logout) now cleanly shuts down the container
+  - Proper SIGTERM/SIGINT signal propagation to child processes
+- Architecture documentation (`doc/ARCHITECURE.md`)
+
 ## 0.41.0
 
 - `--idle-time <s>[,t]` — auto-shutdown after inactivity
