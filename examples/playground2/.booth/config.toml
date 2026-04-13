@@ -1,3 +1,2 @@
-# Configured by: booth config --no-tui --overwrite --port 10000
+# Configured by: booth config --no-tui --overwrite 
 
-port = "10000"
