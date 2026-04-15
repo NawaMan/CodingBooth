@@ -149,8 +149,11 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 	// Pre-populate booth version from target's lock file (falls back to binary version)
 	pre.StringFields["booth-version"] = readLockFileVersion(targetPath, version)
 
+	// Check if .booth directory is writable
+	warning := checkBoothWritable(targetPath)
+
 	// Run TUI
-	result, err := tui.RunConfig(registry, pre)
+	result, err := tui.RunConfig(registry, pre, warning)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
@@ -642,6 +645,47 @@ func updateBoothLockVersion(targetPath string, newVersion string) error {
 	}
 
 	return os.WriteFile(lockPath, []byte(strings.Join(lines, "\n")), 0644)
+}
+
+// checkBoothWritable checks whether the .booth directory (or its parent) is writable.
+// Returns a warning message if not writable, or "" if writable.
+func checkBoothWritable(targetPath string) string {
+	boothDir := filepath.Join(targetPath, ".booth")
+
+	// If .booth exists, check if it's writable
+	info, err := os.Stat(boothDir)
+	if err == nil {
+		if !info.IsDir() {
+			return fmt.Sprintf("%s exists but is not a directory. Configuration cannot be saved.", boothDir)
+		}
+		// Try writing a temp file to check writability
+		f, err := os.CreateTemp(boothDir, ".write-test-*")
+		if err != nil {
+			absPath, _ := filepath.Abs(boothDir)
+			return fmt.Sprintf("The .booth/ directory is not writable:\n  %s\n\nBy default, .booth/ is mounted read-only inside the container. Changes will not be saved.\n\nTo make it writable, restart with --writable-booth or set writable-booth = true in config.toml.", absPath)
+		}
+		f.Close()
+		os.Remove(f.Name())
+		return ""
+	}
+
+	// .booth doesn't exist — check if parent is writable (we'll need to create .booth)
+	absTarget, _ := filepath.Abs(targetPath)
+	parentInfo, err := os.Stat(absTarget)
+	if err != nil {
+		return fmt.Sprintf("Target directory does not exist:\n  %s\n\nConfiguration cannot be saved.", absTarget)
+	}
+	if !parentInfo.IsDir() {
+		return fmt.Sprintf("Target path is not a directory:\n  %s\n\nConfiguration cannot be saved.", absTarget)
+	}
+
+	// Try creating and removing .booth to test writability
+	err = os.Mkdir(boothDir, 0755)
+	if err != nil {
+		return fmt.Sprintf("Cannot create .booth/ directory in:\n  %s\n\nThe directory may be read-only. Changes will not be saved.\n\nIf running inside a booth, restart with --writable-booth or set writable-booth = true in config.toml.", absTarget)
+	}
+	os.Remove(boothDir)
+	return ""
 }
 
 func printConfigHelp() {

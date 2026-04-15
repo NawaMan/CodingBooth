@@ -53,6 +53,10 @@ type model struct {
 	confirmed    bool
 	quitting     bool // true when showing quit confirmation
 
+	// Warning dialog — shown once at startup (e.g., .booth not writable)
+	warningDialog  bool
+	warningMessage string
+
 	// Search
 	searchQuery   string
 	searchFocused bool
@@ -345,6 +349,18 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case tea.KeyMsg:
+		// Warning dialog mode — must dismiss before using TUI
+		if m.warningDialog {
+			switch msg.String() {
+			case "enter", " ":
+				m.warningDialog = false
+				return m, nil
+			case "esc", "ctrl+c", "ctrl+e":
+				return m, tea.Quit
+			}
+			return m, nil
+		}
+
 		// Quit confirmation mode
 		if m.quitting {
 			switch msg.String() {

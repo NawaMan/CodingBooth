@@ -33,8 +33,13 @@ type PreSelection struct {
 }
 
 // RunConfig launches the interactive TUI and returns the user's configuration choices.
-func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection) (*ConfigResult, error) {
+// If warning is non-empty, it is shown as a dismissable dialog before the TUI starts.
+func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection, warning string) (*ConfigResult, error) {
 	m := newModel(registry, pre)
+	if warning != "" {
+		m.warningDialog = true
+		m.warningMessage = warning
+	}
 
 	p := tea.NewProgram(m, tea.WithAltScreen())
 	result, err := p.Run()

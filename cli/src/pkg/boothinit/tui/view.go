@@ -32,9 +32,25 @@ var (
 	groupHeaderStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("213"))
 )
 
+// warningStyle is used for the warning dialog border and text.
+var (
+	warningBorderStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("214")).
+				Bold(true)
+	warningTextStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("255"))
+	warningHintStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("241"))
+)
+
 func (m model) View() string {
 	if m.width == 0 || m.height == 0 {
 		return "Loading..."
+	}
+
+	// Warning dialog overlay
+	if m.warningDialog {
+		return m.renderWarningDialog()
 	}
 
 	fullWidth := m.width
@@ -804,6 +820,81 @@ func (m model) renderParamFields(lines []string, item treeItem, t *tmpl.Template
 		}
 	}
 	return lines
+}
+
+// renderWarningDialog renders a centered warning dialog overlay.
+func (m model) renderWarningDialog() string {
+	// Dialog box dimensions
+	boxWidth := m.width * 60 / 100
+	if boxWidth < 40 {
+		boxWidth = 40
+	}
+	if boxWidth > m.width-4 {
+		boxWidth = m.width - 4
+	}
+	innerWidth := boxWidth - 4 // 2 border + 2 padding
+
+	// Build dialog content
+	title := "⚠ Warning"
+	msgLines := wrapText(m.warningMessage, innerWidth)
+	hint := "Enter/Space: continue  │  Esc: quit"
+
+	// Dialog lines: border top, title, blank, message lines, blank, hint, border bottom
+	var dialogLines []string
+	dialogLines = append(dialogLines, warningBorderStyle.Render("┌"+strings.Repeat("─", boxWidth-2)+"┐"))
+	dialogLines = append(dialogLines, warningBorderStyle.Render("│")+centerPad(warningBorderStyle.Render(title), boxWidth-2)+warningBorderStyle.Render("│"))
+	dialogLines = append(dialogLines, warningBorderStyle.Render("│")+strings.Repeat(" ", boxWidth-2)+warningBorderStyle.Render("│"))
+	for _, line := range msgLines {
+		padded := " " + warningTextStyle.Render(line)
+		padded = padStyledRight(padded, boxWidth-2)
+		dialogLines = append(dialogLines, warningBorderStyle.Render("│")+padded+warningBorderStyle.Render("│"))
+	}
+	dialogLines = append(dialogLines, warningBorderStyle.Render("│")+strings.Repeat(" ", boxWidth-2)+warningBorderStyle.Render("│"))
+	dialogLines = append(dialogLines, warningBorderStyle.Render("│")+centerPad(warningHintStyle.Render(hint), boxWidth-2)+warningBorderStyle.Render("│"))
+	dialogLines = append(dialogLines, warningBorderStyle.Render("└"+strings.Repeat("─", boxWidth-2)+"┘"))
+
+	dialogHeight := len(dialogLines)
+
+	// Center vertically
+	topPad := (m.height - dialogHeight) / 2
+	if topPad < 0 {
+		topPad = 0
+	}
+	bottomPad := m.height - topPad - dialogHeight
+	if bottomPad < 0 {
+		bottomPad = 0
+	}
+
+	// Center horizontally
+	leftPad := (m.width - boxWidth) / 2
+	if leftPad < 0 {
+		leftPad = 0
+	}
+	prefix := strings.Repeat(" ", leftPad)
+
+	var lines []string
+	for i := 0; i < topPad; i++ {
+		lines = append(lines, "")
+	}
+	for _, dl := range dialogLines {
+		lines = append(lines, prefix+dl)
+	}
+	for i := 0; i < bottomPad; i++ {
+		lines = append(lines, "")
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// centerPad centers styled text within a given width, padding with spaces.
+func centerPad(s string, width int) string {
+	w := lipgloss.Width(s)
+	if w >= width {
+		return s
+	}
+	left := (width - w) / 2
+	right := width - w - left
+	return strings.Repeat(" ", left) + s + strings.Repeat(" ", right)
 }
 
 func wrapText(text string, width int) []string {
