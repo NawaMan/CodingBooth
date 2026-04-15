@@ -1009,11 +1009,8 @@ func (m model) buildSelectDSL() string {
 			for _, ext := range t.Extensions {
 				extKey := t.Name + "/" + ext.Name
 				if m.selected[extKey] {
-					isAutoSelect := ext.AutoSelect != nil && *ext.AutoSelect
-					if !isAutoSelect {
-						extDSL := ext.Name + m.buildParamDSL(extKey, ext)
-						exts = append(exts, extDSL)
-					}
+					extDSL := ext.Name + m.buildParamDSL(extKey, ext)
+					exts = append(exts, extDSL)
 				}
 			}
 

@@ -576,6 +576,20 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags) *tui.Pr
 				}
 			}
 		}
+
+		// Auto-select extensions for pre-selected templates, respecting ~ excludes
+		excludeSet := make(map[string]bool, len(item.Excludes))
+		for _, ex := range item.Excludes {
+			excludeSet[ex] = true
+		}
+		for _, ext := range t.Extensions {
+			if ext.AutoSelect != nil && *ext.AutoSelect && !excludeSet[ext.Name] {
+				if pre.SelectedExts[item.Name] == nil {
+					pre.SelectedExts[item.Name] = make(map[string]bool)
+				}
+				pre.SelectedExts[item.Name][ext.Name] = true
+			}
+		}
 	}
 
 	return pre
