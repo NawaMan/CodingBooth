@@ -419,8 +419,8 @@ func parseAdjustCommand(cmd string) initFlags {
 	var args []string
 	skip := 0
 	for _, p := range parts {
-		// Skip prefix: "booth config"
-		if skip < 3 && (p == "booth" || p == "config") {
+		// Skip prefix: "booth config" or legacy "booth init [adjust|new]"
+		if skip < 3 && (p == "booth" || p == "config" || p == "init" || p == "adjust" || p == "new") {
 			skip++
 			continue
 		}
