@@ -2,6 +2,16 @@
 
 This file contains a list of changes for each released version.
 
+## 0.43.0
+
+- `booth config` TUI warns when `.booth/` directory is not writable
+  - Dismissable dialog shown before TUI interaction begins
+- Fix auto-select extension round-trip in config TUI
+  - Auto-selected extensions (e.g. AWS Credentials) now persist across `booth config` re-opens
+  - Select DSL explicitly includes all selected extensions, including auto-selected ones
+  - Pre-selection correctly auto-selects extensions when loading existing config
+- Fix Boothfile parsing for legacy `init`-style first-line comments
+
 ## 0.42.0
 
 - "Container stopped" page now appears on the console (web-ttyd-split) variant
