@@ -85,6 +85,17 @@
       padding: 6px 10px;
       border-radius: 8px;
       cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    button[data-layout] {
+      padding: 5px 8px;
+    }
+
+    button[data-layout] svg {
+      display: block;
     }
 
     button.active {
@@ -486,12 +497,24 @@
     <header class="toolbar">
       <span class="title">${BOOTH_CONTAINER_NAME} (${BOOTH_HOST_PORT})</span>
       <div class="controls">
-        <button data-layout="single">Single</button>
-        <button data-layout="hsplit">Left - Right</button>
-        <button data-layout="left-main">Left Main</button>
-        <button data-layout="vsplit">Top - Bottom</button>
-        <button data-layout="top-main">Top Main</button>
-        <button data-layout="quad">Quad</button>
+        <button data-layout="single" title="Single">
+          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/></svg>
+        </button>
+        <button data-layout="hsplit" title="Left - Right">
+          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="13" stroke="currentColor" stroke-width="1"/></svg>
+        </button>
+        <button data-layout="left-main" title="Left Main">
+          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="10" y1="1" x2="10" y2="13" stroke="currentColor" stroke-width="1"/><line x1="10" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
+        </button>
+        <button data-layout="vsplit" title="Top - Bottom">
+          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
+        </button>
+        <button data-layout="top-main" title="Top Main">
+          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="1" y1="8" x2="15" y2="8" stroke="currentColor" stroke-width="1"/><line x1="8" y1="8" x2="8" y2="13" stroke="currentColor" stroke-width="1"/></svg>
+        </button>
+        <button data-layout="quad" title="Quad">
+          <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
+        </button>
         <button id="reload">Reload</button>
       </div>
       <span id="status">1 session active</span>
