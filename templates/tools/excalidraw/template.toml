@@ -2,6 +2,7 @@ display-name = "Excalidraw"
 display-disc = "Excalidraw collaborative whiteboard tool"
 display-detail = "Installs Excalidraw, a collaborative whiteboard tool for sketching diagrams and wireframes."
 display-order = 26
+requires = ["nodejs"]
 tags = [
     "excalidraw",
     "whiteboard",

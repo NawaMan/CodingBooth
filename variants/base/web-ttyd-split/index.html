@@ -332,12 +332,93 @@
     }
 
     .pane-header {
+      display: flex;
+      align-items: center;
+      gap: 6px;
       background: #101722;
       border-bottom: 1px solid var(--panel-edge);
       color: var(--muted);
       font-family: "JetBrains Mono", "Fira Code", monospace;
       font-size: 11px;
       padding: 6px 10px;
+    }
+
+    .pane-title {
+      flex: 1;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .proxy-toggle {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px 4px;
+      font-size: 13px;
+      line-height: 1;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+    }
+
+    .proxy-toggle:hover {
+      color: var(--accent);
+      background: rgba(47, 141, 255, 0.1);
+    }
+
+    .proxy-toggle.active-web {
+      color: var(--accent);
+    }
+
+    .proxy-port-input {
+      width: 60px;
+      background: var(--bg);
+      border: 1px solid var(--panel-edge);
+      border-radius: 4px;
+      color: var(--text);
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 11px;
+      padding: 2px 6px;
+      outline: none;
+    }
+
+    .proxy-port-input:focus {
+      border-color: var(--accent);
+    }
+
+    .proxy-port-input::placeholder {
+      color: #556;
+    }
+
+    .proxy-open-tab,
+    .proxy-back-btn {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px 4px;
+      font-size: 11px;
+      line-height: 1;
+      border-radius: 4px;
+    }
+
+    .proxy-open-tab:hover {
+      color: var(--accent);
+      background: rgba(47, 141, 255, 0.1);
+    }
+
+    .proxy-back-btn:hover {
+      color: #e74c3c;
+      background: rgba(231, 76, 60, 0.1);
+    }
+
+    .proxy-warning {
+      color: #facc15;
+      font-size: 11px;
+      cursor: help;
     }
 
     iframe {
@@ -526,20 +607,48 @@
 
     <main id="grid" class="grid layout-single">
       <section class="pane pane-1" data-pane="1">
-        <div class="pane-header">Session 1</div>
-        <iframe src="/s1/" title="Session 1"></iframe>
+        <div class="pane-header">
+          <span class="pane-title">Session 1</span>
+          <button class="proxy-toggle" data-session="1" title="Web view">&#x1F310;</button>
+          <input class="proxy-port-input" data-session="1" type="text" placeholder="port" maxlength="5" style="display:none">
+          <button class="proxy-back-btn" data-session="1" title="Back to terminal" style="display:none">&#x2190;</button>
+          <button class="proxy-open-tab" data-session="1" title="Open in new tab" style="display:none">&#x2197;</button>
+          <span class="proxy-warning" data-session="1" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
+        </div>
+        <iframe src="/s1/" title="Session 1" data-default-src="/s1/"></iframe>
       </section>
       <section class="pane pane-2" data-pane="2">
-        <div class="pane-header">Session 2</div>
-        <iframe src="/s2/" title="Session 2"></iframe>
+        <div class="pane-header">
+          <span class="pane-title">Session 2</span>
+          <button class="proxy-toggle" data-session="2" title="Web view">&#x1F310;</button>
+          <input class="proxy-port-input" data-session="2" type="text" placeholder="port" maxlength="5" style="display:none">
+          <button class="proxy-back-btn" data-session="2" title="Back to terminal" style="display:none">&#x2190;</button>
+          <button class="proxy-open-tab" data-session="2" title="Open in new tab" style="display:none">&#x2197;</button>
+          <span class="proxy-warning" data-session="2" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
+        </div>
+        <iframe src="/s2/" title="Session 2" data-default-src="/s2/"></iframe>
       </section>
       <section class="pane pane-3" data-pane="3">
-        <div class="pane-header">Session 3</div>
-        <iframe src="/s3/" title="Session 3"></iframe>
+        <div class="pane-header">
+          <span class="pane-title">Session 3</span>
+          <button class="proxy-toggle" data-session="3" title="Web view">&#x1F310;</button>
+          <input class="proxy-port-input" data-session="3" type="text" placeholder="port" maxlength="5" style="display:none">
+          <button class="proxy-back-btn" data-session="3" title="Back to terminal" style="display:none">&#x2190;</button>
+          <button class="proxy-open-tab" data-session="3" title="Open in new tab" style="display:none">&#x2197;</button>
+          <span class="proxy-warning" data-session="3" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
+        </div>
+        <iframe src="/s3/" title="Session 3" data-default-src="/s3/"></iframe>
       </section>
       <section class="pane pane-4" data-pane="4">
-        <div class="pane-header">Session 4</div>
-        <iframe src="/s4/" title="Session 4"></iframe>
+        <div class="pane-header">
+          <span class="pane-title">Session 4</span>
+          <button class="proxy-toggle" data-session="4" title="Web view">&#x1F310;</button>
+          <input class="proxy-port-input" data-session="4" type="text" placeholder="port" maxlength="5" style="display:none">
+          <button class="proxy-back-btn" data-session="4" title="Back to terminal" style="display:none">&#x2190;</button>
+          <button class="proxy-open-tab" data-session="4" title="Open in new tab" style="display:none">&#x2197;</button>
+          <span class="proxy-warning" data-session="4" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
+        </div>
+        <iframe src="/s4/" title="Session 4" data-default-src="/s4/"></iframe>
       </section>
       <div id="handle-x" class="split-handle split-handle-x" aria-hidden="true"></div>
       <div id="handle-y" class="split-handle split-handle-y" aria-hidden="true"></div>
@@ -958,6 +1067,150 @@
             iframe.contentWindow.location.reload();
           }
         });
+      });
+
+      // ── Web proxy ──
+      const proxyStorageKey = "cb.webSplit." + projectName + ".proxy";
+
+      function loadProxyState() {
+        try {
+          const raw = window.localStorage.getItem(proxyStorageKey);
+          return raw ? JSON.parse(raw) : {};
+        } catch (_e) {
+          return {};
+        }
+      }
+
+      function saveProxyState(state) {
+        try {
+          window.localStorage.setItem(proxyStorageKey, JSON.stringify(state));
+        } catch (_e) { /* ignore */ }
+      }
+
+      const proxyState = loadProxyState();
+
+      function switchToWebView(sessionNum, port) {
+        const pane = document.querySelector('.pane[data-pane="' + sessionNum + '"]');
+        if (!pane) return;
+
+        const iframe = pane.querySelector("iframe");
+        const title = pane.querySelector(".pane-title");
+        const portInput = pane.querySelector(".proxy-port-input");
+        const backBtn = pane.querySelector(".proxy-back-btn");
+        const openTab = pane.querySelector(".proxy-open-tab");
+        const toggleBtn = pane.querySelector(".proxy-toggle");
+        const warning = pane.querySelector(".proxy-warning");
+
+        iframe.src = "/proxy/" + port + "/";
+        title.textContent = "Web :" + port;
+        portInput.style.display = "none";
+        backBtn.style.display = "";
+        openTab.style.display = "";
+        warning.style.display = "";
+        toggleBtn.classList.add("active-web");
+
+        proxyState[sessionNum] = { port: port };
+        saveProxyState(proxyState);
+      }
+
+      function switchToTerminal(sessionNum) {
+        const pane = document.querySelector('.pane[data-pane="' + sessionNum + '"]');
+        if (!pane) return;
+
+        const iframe = pane.querySelector("iframe");
+        const title = pane.querySelector(".pane-title");
+        const backBtn = pane.querySelector(".proxy-back-btn");
+        const openTab = pane.querySelector(".proxy-open-tab");
+        const toggleBtn = pane.querySelector(".proxy-toggle");
+        const warning = pane.querySelector(".proxy-warning");
+
+        iframe.src = iframe.dataset.defaultSrc;
+        title.textContent = "Session " + sessionNum;
+        backBtn.style.display = "none";
+        openTab.style.display = "none";
+        warning.style.display = "none";
+        toggleBtn.classList.remove("active-web");
+
+        delete proxyState[sessionNum];
+        saveProxyState(proxyState);
+      }
+
+      document.querySelectorAll(".proxy-toggle").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          var session = btn.dataset.session;
+          var pane = btn.closest(".pane");
+          var portInput = pane.querySelector(".proxy-port-input");
+
+          if (btn.classList.contains("active-web")) {
+            portInput.style.display = portInput.style.display === "none" ? "" : "none";
+            if (portInput.style.display !== "none") {
+              portInput.value = proxyState[session] ? proxyState[session].port : "";
+              portInput.focus();
+              portInput.select();
+            }
+          } else {
+            portInput.style.display = portInput.style.display === "none" ? "" : "none";
+            if (portInput.style.display !== "none") {
+              portInput.focus();
+            }
+          }
+        });
+      });
+
+      document.querySelectorAll(".proxy-port-input").forEach(function(input) {
+        input.addEventListener("keydown", function(e) {
+          if (e.key === "Enter") {
+            var port = input.value.trim();
+            var session = input.dataset.session;
+            var portNum = parseInt(port, 10);
+
+            if (!portNum || portNum < 1 || portNum > 65535) {
+              input.style.borderColor = "#e74c3c";
+              setTimeout(function() { input.style.borderColor = ""; }, 1000);
+              return;
+            }
+
+            if (portNum >= 10000 && portNum <= 10007) {
+              input.style.borderColor = "#e74c3c";
+              input.value = "";
+              input.placeholder = "reserved";
+              setTimeout(function() { input.placeholder = "port"; }, 1500);
+              return;
+            }
+
+            switchToWebView(session, port);
+          } else if (e.key === "Escape") {
+            input.style.display = "none";
+          }
+        });
+
+        input.addEventListener("input", function() {
+          input.value = input.value.replace(/\D/g, "");
+        });
+      });
+
+      document.querySelectorAll(".proxy-back-btn").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          switchToTerminal(btn.dataset.session);
+        });
+      });
+
+      document.querySelectorAll(".proxy-open-tab").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          var session = btn.dataset.session;
+          var state = proxyState[session];
+          if (state && state.port) {
+            window.open("/proxy/" + state.port + "/", "_blank");
+          }
+        });
+      });
+
+      // Restore saved proxy states on load
+      Object.keys(proxyState).forEach(function(session) {
+        var data = proxyState[session];
+        if (data && data.port) {
+          switchToWebView(session, data.port);
+        }
       });
 
       const shutdownButton = document.getElementById("shutdown");
