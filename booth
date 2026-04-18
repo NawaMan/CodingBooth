@@ -52,7 +52,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.9.0
+VERSION=0.10.0
 VERBOSE="${VERBOSE:-true}"
 
 # Resolve script directory (follow symlinks) so all project paths are location-based.
@@ -998,15 +998,37 @@ function DownloadBooth() {
         fi
     fi
 
-    # Create .gitignore based on cache mode
+    # Create .gitignore based on cache mode.
+    # Must stay in sync with cli/src/pkg/boothinit/output/writer.go (gitignoreContent)
+    # so secrets / cache/ / .tmp/ stay gitignored regardless of which path wrote last.
     if [[ "$CACHE_MODE" == "local" ]]; then
         cat > "${BOOTH_DIR}/.gitignore" <<'GITIGNORE'
+# Secrets - never commit
+.booth.password
+.env
+
+# Local persistent state (not committed)
+cache/
+
+# Runtime temp files
+.tmp/
+
 # Binaries excluded - re-download from lock version
 tools/codingbooth-*
 tools/*.sha256
 GITIGNORE
     else
         cat > "${BOOTH_DIR}/.gitignore" <<'GITIGNORE'
+# Secrets - never commit
+.booth.password
+.env
+
+# Local persistent state (not committed)
+cache/
+
+# Runtime temp files
+.tmp/
+
 # Lock file is version-controlled
 # Binaries are in ~/.cache/codingbooth/ (not here)
 GITIGNORE
