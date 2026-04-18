@@ -269,16 +269,19 @@ func TestResolve_RequiresSatisfied(t *testing.T) {
 	require.Len(t, resolved.Templates, 2)
 }
 
-func TestResolve_RequiresNotSatisfied(t *testing.T) {
+func TestResolve_RequiresAutoSelectsDependency(t *testing.T) {
 	registry := loadTestRegistry(t)
 	parsed := &ParsedSelection{Items: []ParsedItem{
 		{Name: "django"},
 	}}
 
-	_, err := Resolve(parsed, registry)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "requires")
-	assert.Contains(t, err.Error(), "python")
+	resolved, err := Resolve(parsed, registry)
+	require.NoError(t, err)
+	require.Len(t, resolved.Templates, 2)
+	assert.Equal(t, "django", resolved.Templates[0].Template.Name)
+	assert.Equal(t, ExplicitSelect, resolved.Templates[0].SelectMode)
+	assert.Equal(t, "python", resolved.Templates[1].Template.Name)
+	assert.Equal(t, DependencySelect, resolved.Templates[1].SelectMode)
 }
 
 // --- Extension requires validation ---
@@ -309,7 +312,33 @@ func TestResolve_ExtensionRequiresSatisfied(t *testing.T) {
 	assert.Equal(t, "kernel", resolved.Templates[0].Extensions[0].Extension.Name)
 }
 
-func TestResolve_ExtensionRequiresNotSatisfied(t *testing.T) {
+func TestResolve_ExtensionRequiresAutoSelectsDependency(t *testing.T) {
+	registry := &tmpl.TemplateRegistry{
+		ByName: map[string]*tmpl.Template{
+			"haskell": {
+				Name: "haskell",
+				Extensions: []*tmpl.Template{
+					{Name: "kernel", Requires: []string{"notebook"}},
+				},
+			},
+			"notebook": {
+				Name: "notebook",
+			},
+		},
+	}
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "haskell", Extensions: []ParsedExtension{{Name: "kernel"}}},
+	}}
+
+	resolved, err := Resolve(parsed, registry)
+	require.NoError(t, err)
+	require.Len(t, resolved.Templates, 2)
+	assert.Equal(t, "haskell", resolved.Templates[0].Template.Name)
+	assert.Equal(t, "notebook", resolved.Templates[1].Template.Name)
+	assert.Equal(t, DependencySelect, resolved.Templates[1].SelectMode)
+}
+
+func TestResolve_ExtensionRequiresUnknownTemplate(t *testing.T) {
 	registry := &tmpl.TemplateRegistry{
 		ByName: map[string]*tmpl.Template{
 			"haskell": {
@@ -326,11 +355,37 @@ func TestResolve_ExtensionRequiresNotSatisfied(t *testing.T) {
 
 	_, err := Resolve(parsed, registry)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "requires")
+	assert.Contains(t, err.Error(), "requires unknown template")
 	assert.Contains(t, err.Error(), "notebook")
 }
 
-func TestResolve_AutoSelectedExtensionRequiresNotSatisfied(t *testing.T) {
+func TestResolve_AutoSelectedExtensionRequiresAutoSelectsDependency(t *testing.T) {
+	autoSelect := true
+	registry := &tmpl.TemplateRegistry{
+		ByName: map[string]*tmpl.Template{
+			"haskell": {
+				Name: "haskell",
+				Extensions: []*tmpl.Template{
+					{Name: "kernel", AutoSelect: &autoSelect, Requires: []string{"notebook"}},
+				},
+			},
+			"notebook": {
+				Name: "notebook",
+			},
+		},
+	}
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "haskell"},
+	}}
+
+	resolved, err := Resolve(parsed, registry)
+	require.NoError(t, err)
+	require.Len(t, resolved.Templates, 2)
+	assert.Equal(t, "notebook", resolved.Templates[1].Template.Name)
+	assert.Equal(t, DependencySelect, resolved.Templates[1].SelectMode)
+}
+
+func TestResolve_AutoSelectedExtensionRequiresUnknownTemplate(t *testing.T) {
 	autoSelect := true
 	registry := &tmpl.TemplateRegistry{
 		ByName: map[string]*tmpl.Template{
@@ -348,7 +403,7 @@ func TestResolve_AutoSelectedExtensionRequiresNotSatisfied(t *testing.T) {
 
 	_, err := Resolve(parsed, registry)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "requires")
+	assert.Contains(t, err.Error(), "requires unknown template")
 	assert.Contains(t, err.Error(), "notebook")
 }
 

@@ -379,15 +379,18 @@ func TestIntegration_Error_UnknownTemplate(t *testing.T) {
 	assert.Contains(t, err.Error(), "unknown template")
 }
 
-func TestIntegration_Error_MissingRequires(t *testing.T) {
+func TestIntegration_MissingRequires_AutoSelectsDependency(t *testing.T) {
 	registry := loadRegistry(t)
 	parsed, err := selection.ParseSelectDSL("django")
 	require.NoError(t, err)
 
-	_, err = selection.Resolve(parsed, registry)
-	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "requires")
-	assert.Contains(t, err.Error(), "python")
+	resolved, err := selection.Resolve(parsed, registry)
+	require.NoError(t, err)
+	require.Len(t, resolved.Templates, 2)
+	assert.Equal(t, "django", resolved.Templates[0].Template.Name)
+	assert.Equal(t, selection.ExplicitSelect, resolved.Templates[0].SelectMode)
+	assert.Equal(t, "python", resolved.Templates[1].Template.Name)
+	assert.Equal(t, selection.DependencySelect, resolved.Templates[1].SelectMode)
 }
 
 func TestIntegration_Error_TooManyParams(t *testing.T) {

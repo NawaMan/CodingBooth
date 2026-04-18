@@ -50,22 +50,59 @@ func Resolve(parsed *ParsedSelection, registry *tmpl.TemplateRegistry) (*Resolve
 		})
 	}
 
-	// Validate requires (templates)
-	for _, item := range items {
-		for _, req := range item.Template.Requires {
-			if !selectedNames[req] {
-				return nil, fmt.Errorf("template %q requires %q which is not selected", item.Template.Name, req)
-			}
-		}
-	}
-
-	// Validate requires (extensions)
-	for _, item := range items {
-		for _, ext := range item.Extensions {
-			for _, req := range ext.Extension.Requires {
+	// Auto-select required templates (recursively)
+	for changed := true; changed; {
+		changed = false
+		for _, item := range items {
+			for _, req := range item.Template.Requires {
 				if !selectedNames[req] {
-					return nil, fmt.Errorf("extension %q of template %q requires %q which is not selected",
-						ext.Extension.Name, item.Template.Name, req)
+					t, ok := registry.ByName[req]
+					if !ok {
+						return nil, fmt.Errorf("template %q requires unknown template %q", item.Template.Name, req)
+					}
+					paramValues, err := resolveParams(t, nil)
+					if err != nil {
+						return nil, fmt.Errorf("auto-selected template %q: %w", req, err)
+					}
+					extensions, err := resolveExtensions(t, nil, nil)
+					if err != nil {
+						return nil, fmt.Errorf("auto-selected template %q: %w", req, err)
+					}
+					items = append(items, SelectedTemplate{
+						Template:    t,
+						ParamValues: paramValues,
+						Extensions:  extensions,
+						SelectMode:  DependencySelect,
+					})
+					selectedNames[req] = true
+					changed = true
+				}
+			}
+			for _, ext := range item.Extensions {
+				for _, req := range ext.Extension.Requires {
+					if !selectedNames[req] {
+						t, ok := registry.ByName[req]
+						if !ok {
+							return nil, fmt.Errorf("extension %q of template %q requires unknown template %q",
+								ext.Extension.Name, item.Template.Name, req)
+						}
+						paramValues, err := resolveParams(t, nil)
+						if err != nil {
+							return nil, fmt.Errorf("auto-selected template %q: %w", req, err)
+						}
+						extensions, err := resolveExtensions(t, nil, nil)
+						if err != nil {
+							return nil, fmt.Errorf("auto-selected template %q: %w", req, err)
+						}
+						items = append(items, SelectedTemplate{
+							Template:    t,
+							ParamValues: paramValues,
+							Extensions:  extensions,
+							SelectMode:  DependencySelect,
+						})
+						selectedNames[req] = true
+						changed = true
+					}
 				}
 			}
 		}

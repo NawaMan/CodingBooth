@@ -23,21 +23,12 @@ run booth config $prj --no-tui --select "nodejs/playwright:firefox"
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" 'arg PLAYWRIGHT_BROWSERS=' 'firefox'  "firefox param"
 
-# Test 4: Playwright requires nodejs — error without it
+# Test 4: Playwright requires nodejs — auto-selected when not explicit
 run rm -Rf $prj
 mkdir -p $prj
-if booth config $prj --no-tui --select "playwright" >> $log 2>&1; then
-    TEST_COUNT=$((TEST_COUNT + 1))
-    FAIL_COUNT=$((FAIL_COUNT + 1))
-    FAIL_TESTS+=("Test ${TEST_COUNT}: requires nodejs error")
-    echo "Test ${TEST_COUNT}: requires nodejs error ..................... FAILED"
-    echo "  EXPECTED: error (non-zero exit)"
-    echo "  FOUND   : success (exit 0)"
-else
-    TEST_COUNT=$((TEST_COUNT + 1))
-    PASS_COUNT=$((PASS_COUNT + 1))
-    echo "Test ${TEST_COUNT}: requires nodejs error ..................... PASSED"
-fi
+run booth config $prj --no-tui --select "playwright"
+boothfile="$prj/.booth/Boothfile"
+assert-line "$boothfile" 'arg NODE_VERSION=' '22'  "nodejs auto-selected as dependency"
 
 # Test 5: Playwright+python extension requires python
 run rm -Rf $prj
