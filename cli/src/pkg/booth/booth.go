@@ -387,6 +387,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 
 	if !ctx.WritableBooth() {
 		addReadOnlyBoothDir(builder, codePath)
+		addReadOnlyBoothWrapper(builder, codePath)
 	}
 
 	// Lifecycle management labels used by list/start/stop/restart/remove commands.
@@ -502,6 +503,18 @@ func normalizeCodePath(path string) string {
 		return path
 	}
 	return absPath
+}
+
+func addReadOnlyBoothWrapper(builder *appctx.AppContextBuilder, codePath string) {
+	if codePath == "" {
+		return
+	}
+	hostPath := filepath.Join(codePath, "booth")
+	info, err := os.Stat(hostPath)
+	if err != nil || info.IsDir() {
+		return
+	}
+	builder.CommonArgs.Append(ilist.NewList[string]("-v", hostPath+":/home/coder/code/booth:ro"))
 }
 
 func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
