@@ -9,5 +9,5 @@ port = "${TEST_PORT}"
 pull = true
 variant = "$TEST_VARIANT"
 verbose = true
-version = "0.45.0--rc1"
+version = "0.45.0"
 run-args = "-p;10005"

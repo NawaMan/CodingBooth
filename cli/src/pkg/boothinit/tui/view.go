@@ -256,8 +256,12 @@ func (m model) renderCycleField(f configFieldDef, width int, isCursor bool) stri
 		display = "(default)"
 	}
 
-	if isCursor {
+	if isCursor && m.cycleEditing {
 		styled := "  " + focusLabelStyle.Render(f.Label+":") + "  " + focusValueStyle.Render(" ◄ "+display+" ► ")
+		return cursorStyle.Render(padStyledRight(styled, width))
+	}
+	if isCursor {
+		styled := "  " + focusLabelStyle.Render(f.Label+":") + "  " + normalValueStyle.Render(display)
 		return cursorStyle.Render(padStyledRight(styled, width))
 	}
 	styled := "  " + normalLabelStyle.Render(f.Label+":") + "  " + normalValueStyle.Render(display)
@@ -358,6 +362,12 @@ func (m model) renderConfigDetail(rightWidth, contentH int) []string {
 				} else {
 					lines = append(lines, "  "+display)
 				}
+			}
+			lines = append(lines, "")
+			if m.cycleEditing {
+				lines = append(lines, detailLabel.Render("Editing... ◄► to change, Enter to commit, Esc to cancel"))
+			} else {
+				lines = append(lines, detailLabel.Render("Space/Enter to edit"))
 			}
 		}
 
@@ -729,6 +739,8 @@ func (m model) renderFooter() string {
 	} else if m.isConfigTab() {
 		if m.editing {
 			keys = "  Type value  │  Enter/Esc: finish  │  Backspace: delete"
+		} else if m.cycleEditing {
+			keys = "  ◄►: change  │  Enter: commit  │  Esc: cancel"
 		} else {
 			mp := &m
 			rows := mp.buildConfigRows()

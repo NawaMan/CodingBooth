@@ -71,6 +71,8 @@ type model struct {
 	editCursor   int                 // cursor position within the edited string
 	listEditing  bool                // true when editing a list item
 	listEditIdx  int                 // index within the list being edited (-1 = none)
+	cycleEditing bool                // true when editing a cycle field (Variant, Sudo)
+	cyclePrevIdx int                 // previous cycle index (for ESC cancel)
 
 	// Template/extension parameter values
 	// Key format: "templateName:PARAM_NAME" or "templateName/extName:PARAM_NAME"
@@ -389,6 +391,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleStringEdit(msg)
 		}
 
+		// Cycle field editing mode (config tab)
+		if m.cycleEditing {
+			return m.handleCycleEdit(msg)
+		}
+
 		// Search input mode
 		if m.searchFocused {
 			return m.handleSearchInput(msg)
@@ -587,10 +594,8 @@ func (m model) handleConfigKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			case fieldKindBool:
 				m.boolFields[f.Key] = !m.boolFields[f.Key]
 			case fieldKindCycle:
-				idx := m.cycleIndices[f.Key]
-				idx = (idx + 1) % len(f.Options)
-				m.cycleIndices[f.Key] = idx
-				m.stringFields[f.Key] = f.Options[idx]
+				m.cycleEditing = true
+				m.cyclePrevIdx = m.cycleIndices[f.Key]
 			case fieldKindString:
 				m.editing = true
 				m.editCursor = len(m.stringFields[f.Key])
@@ -717,6 +722,34 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.listFields[f.Key][m.listEditIdx] = val
 	} else {
 		m.stringFields[f.Key] = val
+	}
+	return m, nil
+}
+
+func (m model) handleCycleEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	f := m.currentConfigField()
+	if f == nil || f.Kind != fieldKindCycle {
+		m.cycleEditing = false
+		return m, nil
+	}
+	switch msg.String() {
+	case "enter":
+		m.cycleEditing = false
+	case "esc":
+		m.cycleIndices[f.Key] = m.cyclePrevIdx
+		m.stringFields[f.Key] = f.Options[m.cyclePrevIdx]
+		m.cycleEditing = false
+	case "right", " ", "down":
+		idx := (m.cycleIndices[f.Key] + 1) % len(f.Options)
+		m.cycleIndices[f.Key] = idx
+		m.stringFields[f.Key] = f.Options[idx]
+	case "left", "up":
+		idx := m.cycleIndices[f.Key] - 1
+		if idx < 0 {
+			idx = len(f.Options) - 1
+		}
+		m.cycleIndices[f.Key] = idx
+		m.stringFields[f.Key] = f.Options[idx]
 	}
 	return m, nil
 }

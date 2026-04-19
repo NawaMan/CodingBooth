@@ -1,9 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --port 10000 --select nodejs+npmrc+vscode-ext/bun+vscode-ext/excalidraw+autostart/claude-code+auto-accept+credential+settings-cache
+# Configured by: booth config --no-tui --overwrite --variant notebook --port 10000 --select codeserver+settings-cache
 
+variant = "notebook"
 port = "10000"
-
-run-args = [
-    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
-    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
-    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"
-]

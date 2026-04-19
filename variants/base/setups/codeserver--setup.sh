@@ -168,7 +168,7 @@ chmod 1777 -Rf  "$CODESERVER_EXTENSION_DIR"     # root-writable, others read/exe
 
 # 2) Move what you already installed as root and link it back
 ROOT_CODESERVER_EXTENSION_DIR=/root/.local/share/code-server/extensions
-if [ -d "$ROOT_CODESERVER_EXTENSION_DIR" ]; then
+if [ -d "$ROOT_CODESERVER_EXTENSION_DIR" ] && [ ! -L "$ROOT_CODESERVER_EXTENSION_DIR" ]; then
   mkdir -p "$CODESERVER_EXTENSION_DIR"
   cp -a "$ROOT_CODESERVER_EXTENSION_DIR"/. "$CODESERVER_EXTENSION_DIR"/
   rm -Rf "$ROOT_CODESERVER_EXTENSION_DIR"

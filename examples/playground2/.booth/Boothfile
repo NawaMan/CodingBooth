@@ -1,13 +1,4 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --port 10000 --select nodejs+npmrc+vscode-ext/bun+vscode-ext/excalidraw+autostart/claude-code+auto-accept+credential+settings-cache
+# Configured by: booth config --no-tui --overwrite --variant notebook --port 10000 --select codeserver+settings-cache
 
-arg BUN_VERSION=latest
-arg EXCALIDRAW_PORT=15555
-arg NODE_VERSION=22
-
-setup bun ${BUN_VERSION}
-setup claude-code
-setup nodejs ${NODE_VERSION}
-setup excalidraw ${EXCALIDRAW_PORT}
-setup bun-code-extension
-setup nodejs-code-extension
+setup codeserver 19999

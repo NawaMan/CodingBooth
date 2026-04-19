@@ -104,6 +104,29 @@ http {
             default_type text/html;
         }
 
+        # Booth liveness — proxies to inner service; 2xx/3xx/4xx → 200, 5xx/timeout → unhealthy.
+        location = /__booth/health {
+            access_log off;
+            proxy_pass http://127.0.0.1:${INNER_PORT}/;
+            proxy_connect_timeout 2s;
+            proxy_read_timeout 3s;
+            proxy_intercept_errors on;
+            error_page 301 302 303 304 307 308 400 401 402 403 404 405 406 407 408 409 410 411 412 413 414 415 416 417 418 422 429 =200 @__booth_alive;
+        }
+        location @__booth_alive {
+            internal;
+            default_type text/plain;
+            add_header Cache-Control "no-store" always;
+            return 200 "ok $time_iso8601\n";
+        }
+
+        # Booth metadata — always 200, independent of inner service.
+        location = /__booth/info {
+            access_log off;
+            default_type application/json;
+            return 200 '{"booth":"${BOOTH_CONTAINER_NAME}","variant":"${BOOTH_VARIANT_TAG}","version":"${BOOTH_VERSION_TAG}","port":"${BOOTH_HOST_PORT}"}\n';
+        }
+
         # Message API
         location /booth-messages/api/ {
             proxy_pass http://127.0.0.1:${API_PORT};
@@ -170,7 +193,9 @@ envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${BOOTH_SHOW_
 
 # Generate nginx config
 export OUTER_PORT INNER_PORT API_PORT SERVE_DIR
-envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR}' \
+export BOOTH_VARIANT_TAG="${BOOTH_VARIANT_TAG:-unknown}"
+export BOOTH_VERSION_TAG="${BOOTH_VERSION_TAG:-unknown}"
+envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT}' \
   <"$WRAPPER_DIR/nginx.conf.template" >"$NGINX_CONFIG"
 
 # Propagate SIGTERM to all child processes for clean container shutdown
