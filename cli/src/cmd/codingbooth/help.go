@@ -46,11 +46,12 @@ EXAMPLES:
   %s -- 'mvn install'           Run 'mvn install' inside the booth.
 
 OTHER COMMANDS:
-  BUILD     | Build and publish booth images   | build
-  LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune
-  HOME VOL  | Manage persisted home volumes    | home-volume-list, home-volume-export, home-volume-import [Experimental]
-  CONNECT   | Connect to a running booth       | shell, exec
-  PROJECT   | Set up and scaffold new projects | example, config, template
+  BUILD     | Build and publish booth images   | build                                                                   | docs/BOOTH_BUILD.md
+  LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune                               | docs/BOOTH_LIFECYCLE.md
+  HOME VOL  | Manage persisted home volumes    | home-volume-list, home-volume-export, home-volume-import [Experimental] | docs/BOOTH_HOME.md
+  CONNECT   | Connect to a running booth       | shell, exec                                                             | docs/BOOTH_CONNECT.md
+  MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md
+  PROJECT   | Set up and scaffold new projects | example, config, template                                               | docs/BOOTH_EXAMPLE.md
 
 Run '%s --help <command>'   for command-specific help.
 Run '%s --help --detail'    for the full reference.
