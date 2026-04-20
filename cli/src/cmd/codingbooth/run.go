@@ -34,7 +34,7 @@ func runBooth(version string, args []string) {
 	signal.Ignore(syscall.SIGHUP)
 
 	for {
-		context := boothinit.InitializeAppContext(version, runBoundary{
+		context := initOrExit(version, runBoundary{
 			DefaultInitializeAppContextBoundary: boothinit.DefaultInitializeAppContextBoundary{},
 			args:                                args,
 		})

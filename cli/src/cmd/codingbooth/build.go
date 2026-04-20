@@ -132,7 +132,7 @@ func buildBooth(version string) {
 	}
 
 	// Initialize context to get config values (variant, version, build-args from config.toml)
-	ctx := boothinit.InitializeAppContext(version, buildBoundary{
+	ctx := initOrExit(version, buildBoundary{
 		boothinit.DefaultInitializeAppContextBoundary{},
 		runArgs,
 	})
