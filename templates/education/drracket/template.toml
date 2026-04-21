@@ -1,0 +1,21 @@
+display-name = "DrRacket"
+display-disc = "DrRacket IDE + Racket language (for teaching computer science)"
+display-detail = """Installs the Racket language and its pedagogical IDE DrRacket. Racket is the \
+language behind the landmark textbook \"How to Design Programs\" (HtDP) and the Bootstrap curriculum; \
+DrRacket supports beginner language levels that grow with students. The command-line `racket` REPL \
+works in any variant; the DrRacket GUI needs a desktop variant."""
+display-order = 60
+tags = [
+    "education",
+    "racket",
+    "scheme",
+    "lisp",
+    "ide",
+    "htdp",
+    "functional",
+]
+
+[segments]
+"Boothfile--60" = """
+setup drracket
+"""

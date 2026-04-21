@@ -1,0 +1,22 @@
+display-name = "nbgrader"
+display-disc = "Jupyter assignment creation & auto-grading (requires notebook)"
+display-detail = """Installs nbgrader, a tool for creating and grading Jupyter notebook \
+assignments. Instructors author notebooks with hidden solutions and autograder tests; \
+nbgrader handles distribution to students, automated grading, and feedback. Ships the \
+'Formgrader', 'Create Assignment', and 'Assignment List' JupyterLab extensions. Requires the \
+notebook template (which pulls in python)."""
+display-order = 70
+requires = ["notebook"]
+tags = [
+    "education",
+    "jupyter",
+    "notebook",
+    "grading",
+    "assignments",
+    "classroom",
+]
+
+[segments]
+"Boothfile--70" = """
+setup nbgrader
+"""

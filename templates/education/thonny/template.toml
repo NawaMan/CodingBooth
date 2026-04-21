@@ -1,0 +1,20 @@
+display-name = "Thonny"
+display-disc = "Beginner-friendly Python IDE (requires desktop variant)"
+display-detail = """Installs Thonny, a Python IDE designed for teaching and learning. \
+Features a simple interface, built-in debugger with stepping, variables view, and \
+pip GUI for package management. Widely used in schools and introductory CS courses. \
+Requires the python template and a desktop variant."""
+display-order = 10
+requires = ["python"]
+tags = [
+    "education",
+    "python",
+    "ide",
+    "beginner",
+    "desktop",
+]
+
+[segments]
+"Boothfile--60" = """
+setup thonny
+"""

@@ -1,0 +1,27 @@
+display-name = "Exercism CLI"
+display-disc = "Exercism.org practice exercises CLI for 70+ languages"
+display-detail = """Installs the Exercism CLI, used to download and submit exercises from \
+exercism.org — a free platform with 70+ coding tracks and mentored feedback. After install, \
+run `exercism configure --token=<TOKEN>` once with a token from https://exercism.org/settings/api_cli \
+to authenticate. Works on any variant. No language deps — pairs with any `languages/` template."""
+display-order = 30
+tags = [
+    "education",
+    "practice",
+    "exercism",
+    "cli",
+    "mentoring",
+]
+
+[params.EXERCISM_VERSION]
+default = "3.5.5"
+suggests = [
+    "3.5.5",
+    "3.5.4",
+    "latest",
+]
+
+[segments]
+"Boothfile--60" = """
+setup exercism --version ${EXERCISM_VERSION}
+"""

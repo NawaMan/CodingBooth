@@ -10,6 +10,18 @@
 # inactivity. If the user does not respond within BOOTH_IDLE_SHUTDOWN_TIME
 # seconds, the booth is shut down gracefully via booth--shutdown --yes.
 #
+# Pause / disable:
+#   .booth/.tmp/.idle-pause-until — epoch seconds; while now<value the watchdog
+#                                   holds (time-boxed Pause). When now>=value
+#                                   the file is removed and normal cadence
+#                                   resumes.
+#   .booth/.tmp/.idle-disabled    — presence ⇒ watchdog holds indefinitely
+#                                   (Disabled; only removed by /idle/resume or
+#                                   container restart).
+# These are ephemeral (cleared on container start/exit) and set by the overlay
+# via /booth-messages/api/idle/{pause,disable,resume} or by answering the
+# "Still there?" prompt with Pause / Disable Idle Time instead of "I'm here".
+#
 # In web variants (codeserver, notebook, desktop), the prompt is shown via
 # the message overlay. In terminal variants (base/console), the booth shuts
 # down directly after the idle period (no interactive prompt).
@@ -27,6 +39,9 @@ fi
 
 MSG_DIR="/home/coder/code/.booth/.tmp/messages"
 TMP_DIR="/home/coder/code/.booth/.tmp"
+DISABLE_FILE="$TMP_DIR/.idle-disabled"
+PAUSE_UNTIL_FILE="$TMP_DIR/.idle-pause-until"
+CHECK_INTERVAL=10  # how often pause/disable state is re-sampled during a sleep
 mkdir -p "$MSG_DIR" "$TMP_DIR"
 
 log() {
@@ -56,19 +71,76 @@ last_activity() {
     fi
 }
 
+# True iff a time-boxed Pause is currently in effect.
+pause_active() {
+    if [ -f "$PAUSE_UNTIL_FILE" ]; then
+        local until now
+        until=$(cat "$PAUSE_UNTIL_FILE" 2>/dev/null || echo 0)
+        now=$(date +%s)
+        if [ "$until" -gt "$now" ] 2>/dev/null; then
+            return 0
+        fi
+        # Expired — clean up so state reflects reality.
+        rm -f "$PAUSE_UNTIL_FILE"
+    fi
+    return 1
+}
+
+# True iff Pause or Disabled currently holds the watchdog.
+hold_active() {
+    [ -f "$DISABLE_FILE" ] && return 0
+    pause_active && return 0
+    return 1
+}
+
+# Block until no hold is in effect. Resamples every CHECK_INTERVAL.
+wait_for_hold_release() {
+    while hold_active; do
+        sleep "$CHECK_INTERVAL"
+    done
+}
+
+# Sleep for IDLE_TIME seconds in CHECK_INTERVAL-sized chunks. If a Pause or
+# Disable is set mid-sleep, bail early so the outer loop can re-evaluate.
+# Returns 0 if the full window elapsed without interruption, 1 if interrupted.
+sleep_idle_window() {
+    local elapsed=0
+    while [ "$elapsed" -lt "$IDLE_TIME" ]; do
+        local remaining=$((IDLE_TIME - elapsed))
+        local step="$CHECK_INTERVAL"
+        [ "$step" -gt "$remaining" ] && step="$remaining"
+        sleep "$step"
+        elapsed=$((elapsed + step))
+        if hold_active; then
+            return 1
+        fi
+    done
+    return 0
+}
+
 log "Started: idle=$IDLE_TIME s, shutdown=$SHUTDOWN_TIME s"
 
 while true; do
-    SLEEP_START=$(date +%s)
-    sleep "$IDLE_TIME"
+    # 1) Honor any Pause/Disable hold before starting a new idle window.
+    if hold_active; then
+        wait_for_hold_release
+        continue
+    fi
 
-    # Check if there was real activity during the sleep period
+    # 2) Normal idle countdown, interruptible by Pause/Disable.
+    SLEEP_START=$(date +%s)
+    if ! sleep_idle_window; then
+        continue
+    fi
+
+    # 3) Real activity during the window resets the timer.
     LAST=$(last_activity)
     if [ "$LAST" -gt "$SLEEP_START" ]; then
         log "Activity detected (last=$LAST, sleep_start=$SLEEP_START), resetting timer."
         continue
     fi
 
+    # 4) Prompt the user with Pause/Disable options via the message overlay.
     MSG_ID="idle-$(date +%s%N)"
     MSG_FILE="$MSG_DIR/$MSG_ID.msg.json"
     RSP_FILE="$MSG_DIR/$MSG_ID.response.json"
@@ -82,7 +154,7 @@ while true; do
   "id": "$MSG_ID",
   "title": "Still using this booth?",
   "body": "This booth will shut down in $SHUTDOWN_TIME seconds if you do not respond.",
-  "type": "ok",
+  "type": "idle-prompt",
   "expires": "$EXPIRES"
 }
 EOJSON
@@ -101,11 +173,36 @@ EOJSON
         WAITED=$((WAITED + 1))
     done
 
-    # Clean up message files
+    # Extract the answer before cleaning up
+    ANSWER=""
+    if [ "$RESPONDED" = true ] && [ -f "$RSP_FILE" ]; then
+        ANSWER=$(sed -n 's/.*"answer" *: *"\([^"]*\)".*/\1/p' "$RSP_FILE" 2>/dev/null || echo "")
+    fi
     rm -f "$MSG_FILE" "$RSP_FILE"
 
     if [ "$RESPONDED" = true ]; then
-        log "User responded OK, resetting idle timer."
+        case "$ANSWER" in
+            ok|"I'm here")
+                log "User acknowledged presence, resetting idle timer."
+                ;;
+            pause:*)
+                SECS="${ANSWER#pause:}"
+                if [ "$SECS" -gt 0 ] 2>/dev/null; then
+                    [ "$SECS" -gt 604800 ] && SECS=604800
+                    echo $(( $(date +%s) + SECS )) > "$PAUSE_UNTIL_FILE"
+                    log "User paused idle for ${SECS}s."
+                else
+                    log "Ignoring invalid pause value: $ANSWER"
+                fi
+                ;;
+            disable)
+                touch "$DISABLE_FILE"
+                log "User disabled idle monitoring."
+                ;;
+            *)
+                log "User responded ($ANSWER), resetting idle timer."
+                ;;
+        esac
         continue
     fi
 

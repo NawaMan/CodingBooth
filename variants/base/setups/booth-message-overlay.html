@@ -340,6 +340,129 @@
     50% { opacity: 0.2; }
   }
 
+  /* Idle-monitor status chip */
+  .bl-idle-chip {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: background 0.15s, border-color 0.15s;
+  }
+  .bl-idle-chip.visible { display: flex; }
+  .bl-idle-chip-active {
+    background: #163527;
+    color: #4ade80;
+    border-color: #1e4a36;
+  }
+  .bl-idle-chip-active:hover { background: #1b4432; }
+  .bl-idle-chip-pause {
+    background: #162b43;
+    color: #60a5fa;
+    border-color: #1e3a5f;
+  }
+  .bl-idle-chip-pause:hover { background: #1d3a57; }
+  .bl-idle-chip-disable {
+    background: #3b1c1c;
+    color: #fca5a5;
+    border-color: #7f1d1d;
+    animation: bl-idle-pulse 1.6s ease-in-out infinite;
+  }
+  .bl-idle-chip-disable:hover { background: #5b2424; }
+  @keyframes bl-idle-pulse {
+    0%, 100% { border-color: #7f1d1d; box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.0); }
+    50%      { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25); }
+  }
+
+  /* Chip-click "Idle shutdown" and timeout "Still using this booth?" dialog
+     share this sectioned layout. */
+  .msg-idle-dialog {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 1.25rem 1.5rem;
+    width: 100%;
+    max-width: 460px;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+  .msg-idle-dialog h2 {
+    margin: 0 0 0.5rem;
+    font-size: 18px;
+    font-weight: 500;
+    color: #111827;
+  }
+  .msg-idle-dialog > p {
+    margin: 0 0 1.25rem;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #6b7280;
+  }
+  .msg-idle-dialog > p strong {
+    font-weight: 500;
+    color: #111827;
+  }
+  .msg-idle-section {
+    padding: 12px 0;
+    border-top: 1px solid #e5e7eb;
+  }
+  .msg-idle-section:last-of-type {
+    padding-bottom: 0;
+  }
+  .msg-idle-section h3 {
+    margin: 0 0 2px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #111827;
+  }
+  .msg-idle-section h3.danger { color: #b91c1c; }
+  .msg-idle-section p {
+    margin: 0 0 10px;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #6b7280;
+  }
+  .msg-idle-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .msg-idle-controls input[type="number"] {
+    width: 70px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .msg-idle-controls button {
+    padding: 0 14px;
+    height: 32px;
+    margin-left: auto;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    color: #111827;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .msg-idle-controls button:hover { background: #f3f4f6; }
+  .msg-idle-controls button.danger {
+    border-color: #fecaca;
+    color: #b91c1c;
+  }
+  .msg-idle-controls button.danger:hover { background: #fef2f2; }
+
   .bl-fullscreen {
     display: none;
     position: fixed;
@@ -457,6 +580,9 @@
 <div class="msg-overlay" id="msg-overlay">
   <div class="msg-stack" id="msg-dialogs"></div>
 </div>
+<div class="msg-overlay" id="bl-idle-overlay" style="z-index:10001;">
+  <div class="msg-stack" id="bl-idle-stack"></div>
+</div>
 <div class="toast-container" id="toast-container"></div>
 
 <div class="bl-fullscreen" id="bl-fullscreen">
@@ -474,6 +600,7 @@
     <div class="bl-body" id="bl-body">
       <div class="bl-timer bl-timer-white" id="bl-run-time" style="display:none" title="Total time this booth session has been running"></div>
       <div class="bl-timer bl-timer-green" id="bl-count-down" style="display:none" title="Time remaining before the booth session ends"></div>
+      <div class="bl-idle-chip bl-idle-chip-active" id="bl-idle-chip" title="Idle shutdown is active — click to pause or disable"></div>
       <button class="bl-btn bl-btn-restart" id="bl-restart-btn" title="Restart the booth container (re-reads config and rebuilds)">
         <span class="bl-btn-icon">&#x21BB;</span> Restart
       </button>
@@ -572,6 +699,69 @@
       });
     }
 
+    // Render the "Still there?" idle timeout as a sectioned dialog that mirrors
+    // the chip-click dialog, with a live-counting shutdown-in-N-seconds label.
+    function renderIdlePromptDialog(m) {
+      var customId = "idle-custom-" + m.id;
+      var customSubmit =
+        "(function(){var v=parseInt(document.getElementById('" + customId + "').value,10);" +
+        "if(v>0) window._msgRespond('" + m.id + "','pause:'+(v*60));})()";
+
+      var expiresMs = m.expires ? Date.parse(m.expires) : Date.now();
+      var initialSec = Math.max(0, Math.ceil((expiresMs - Date.now()) / 1000));
+      var initialLabel = initialSec + " second" + (initialSec === 1 ? "" : "s");
+
+      return '<div class="msg-idle-dialog">' +
+        '<h2>' + esc(m.title || "Still using this booth?") + '</h2>' +
+        '<p>This booth will shut down in ' +
+          '<strong data-idle-countdown-ms="' + expiresMs + '">' + initialLabel + '</strong>' +
+          ' if you do not respond.</p>' +
+
+        // Section 1: I'm here (primary acknowledge)
+        '<div class="msg-idle-section">' +
+          '<h3>I&rsquo;m still here</h3>' +
+          '<p>Reset the timer and keep watching for inactivity.</p>' +
+          '<div class="msg-idle-controls">' +
+            '<button onclick="window._msgRespond(\'' + m.id + '\',\'ok\')">I&rsquo;m here</button>' +
+          '</div>' +
+        '</div>' +
+
+        // Section 2: Pause
+        '<div class="msg-idle-section">' +
+          '<h3>Hold off for a while</h3>' +
+          '<p>Running a long build, or stepping away for coffee? Pause this for a while.</p>' +
+          '<form class="msg-idle-controls" onsubmit="' + customSubmit + ';return false;">' +
+            '<input id="' + customId + '" type="number" min="1" max="10080" value="60">' +
+            '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
+            '<button type="submit">Pause</button>' +
+          '</form>' +
+        '</div>' +
+
+        // Section 3: Disable
+        '<div class="msg-idle-section">' +
+          '<h3 class="danger">Turn it off entirely</h3>' +
+          "<p>Cost isn&rsquo;t a concern for this booth. You&rsquo;ll lose the safety net against runaway charges.</p>" +
+          '<div class="msg-idle-controls">' +
+            '<button class="danger" onclick="window._msgRespond(\'' + m.id + '\',\'disable\')">Disable idle shutdown</button>' +
+          '</div>' +
+        '</div>' +
+
+      '</div>';
+    }
+
+    // Update any countdown <strong data-idle-countdown-ms="N"> elements.
+    function tickCountdowns() {
+      var now = Date.now();
+      var nodes = document.querySelectorAll("[data-idle-countdown-ms]");
+      for (var i = 0; i < nodes.length; i++) {
+        var el = nodes[i];
+        var expMs = parseInt(el.getAttribute("data-idle-countdown-ms"), 10);
+        if (!expMs) continue;
+        var remSec = Math.max(0, Math.ceil((expMs - now) / 1000));
+        el.textContent = remSec + " second" + (remSec === 1 ? "" : "s");
+      }
+    }
+
     function pollMessages() {
       fetch(apiBase + "/list").then(function (resp) {
         if (!resp.ok) return;
@@ -607,6 +797,7 @@
         overlay.classList.add("visible");
         document.body.classList.add("msg-active");
         dialogs.innerHTML = interactive.map(function (m) {
+          if (m.type === "idle-prompt") return renderIdlePromptDialog(m);
           var h = '<div class="msg-dialog"><h2>' + esc(m.title) + '</h2><p>' + esc(m.body) + '</p>';
           if (m.type === "text") {
             h += '<form class="msg-actions" onsubmit="window._msgRespond(\'' + m.id + '\', this.answer.value); return false;">' +
@@ -677,6 +868,10 @@
     window._msgRespond = function (id, answer) {
       respond(id, answer);
       setTimeout(pollMessages, 100);
+      // If this was an idle prompt, refresh the chip so the user sees pause/extend reflected.
+      if (typeof id === "string" && id.indexOf("idle-") === 0 && window._boothIdleRefresh) {
+        setTimeout(window._boothIdleRefresh, 300);
+      }
     };
 
     // Reclaim focus from iframes when overlay is visible
@@ -695,6 +890,7 @@
 
     pollMessages();
     setInterval(pollMessages, 2000);
+    setInterval(tickCountdowns, 1000);
   })();
 
   // Lifecycle panel — draggable restart/shutdown
@@ -943,6 +1139,221 @@
         }, 1000);
       }
     }
+  })();
+
+  // Idle-monitor status chip + pause/disable control dialog
+  (function () {
+    var chipEl = document.getElementById("bl-idle-chip");
+    var idleOverlay = document.getElementById("bl-idle-overlay");
+    var idleStack = document.getElementById("bl-idle-stack");
+    var apiBase = window.BOOTH_MSG_API_BASE || "/booth-messages/api";
+
+    var baseIdleSec = parseInt(window.BOOTH_IDLE_TIME || "0", 10) || 0;
+    if (!baseIdleSec) return;  // idle monitoring not armed for this booth
+
+    var state = { disabled: false, pause_until: 0 };
+
+    function fmtDuration(secs) {
+      if (secs <= 0) return "0m";
+      var h = Math.floor(secs / 3600);
+      var m = Math.round((secs % 3600) / 60);
+      if (h > 0 && m > 0) return h + "h " + m + "m";
+      if (h > 0) return h + "h";
+      if (m > 0) return m + "m";
+      return "<1m";
+    }
+
+    function renderChip() {
+      chipEl.classList.remove("bl-idle-chip-active", "bl-idle-chip-pause", "bl-idle-chip-disable");
+      chipEl.classList.add("visible");
+      if (state.disabled) {
+        chipEl.classList.add("bl-idle-chip-disable");
+        chipEl.innerHTML = "&#x23F1; Idle: DISABLED";
+        chipEl.title = "Idle monitoring is disabled — click to resume normal cadence";
+        return;
+      }
+      if (state.pause_until) {
+        var remaining = state.pause_until - Math.floor(Date.now() / 1000);
+        if (remaining > 0) {
+          chipEl.classList.add("bl-idle-chip-pause");
+          chipEl.innerHTML = "&#x23F1; Idle: PAUSE " + fmtDuration(remaining);
+          chipEl.title = "Idle paused (time-boxed) — click to change";
+          return;
+        }
+        state.pause_until = 0;  // fell through the pause window
+      }
+      chipEl.classList.add("bl-idle-chip-active");
+      chipEl.innerHTML = "&#x23F1; Idle: " + fmtDuration(baseIdleSec);
+      chipEl.title = "Idle shutdown after " + fmtDuration(baseIdleSec) + " inactivity — click to pause or disable";
+    }
+
+    function fetchState() {
+      fetch(apiBase + "/idle/state").then(function (r) {
+        return r.ok ? r.json() : null;
+      }).then(function (s) {
+        if (!s || !s.enabled) {
+          chipEl.classList.remove("visible");
+          return;
+        }
+        state.disabled = !!s.disabled;
+        state.pause_until = parseInt(s.pause_until || 0, 10) || 0;
+        renderChip();
+      }).catch(function () {});
+    }
+
+    function closeDialog() {
+      idleStack.innerHTML = "";
+      idleOverlay.classList.remove("visible");
+      // Only drop msg-active if no other message overlay is currently showing.
+      var mo = document.getElementById("msg-overlay");
+      if (!mo || !mo.classList.contains("visible")) {
+        document.body.classList.remove("msg-active");
+      }
+    }
+
+    function postJson(path, body) {
+      var opts = { method: "POST", headers: { "Content-Type": "application/json" } };
+      if (body) opts.body = JSON.stringify(body);
+      return fetch(apiBase + path, opts);
+    }
+
+    function esc(s) {
+      var d = document.createElement("div");
+      d.textContent = s;
+      return d.innerHTML;
+    }
+
+    // Spell duration out in full words for the dialog body copy.
+    function fmtLongDuration(secs) {
+      if (secs <= 0) return "0 minutes";
+      var h = Math.floor(secs / 3600);
+      var m = Math.round((secs % 3600) / 60);
+      var parts = [];
+      if (h > 0) parts.push(h + (h === 1 ? " hour" : " hours"));
+      if (m > 0) parts.push(m + (m === 1 ? " minute" : " minutes"));
+      if (parts.length === 0) return "less than a minute";
+      return parts.join(" ");
+    }
+
+    function openDialog() {
+      var baseLong = fmtLongDuration(baseIdleSec);   // "2 minutes"
+      var baseShort = fmtDuration(baseIdleSec);      // "2m"
+
+      var descHtml;
+      var inHold = state.disabled || state.pause_until;
+      if (state.disabled) {
+        descHtml = "Idle monitoring is currently <strong>disabled</strong>. " +
+          "No shutdown checks run until you resume or the booth restarts.";
+      } else if (state.pause_until) {
+        var remaining = Math.max(0, state.pause_until - Math.floor(Date.now() / 1000));
+        descHtml = "Idle shutdown is <strong>paused</strong> for " +
+          esc(fmtDuration(remaining)) + ". Normal " + esc(baseShort) +
+          " cadence resumes automatically after.";
+      } else {
+        descHtml = "This booth shuts down after <strong>" + esc(baseLong) +
+          "</strong> of keyboard or mouse inactivity, so an idle run doesn't rack up unexpected costs.";
+      }
+
+      var customId = "bl-idle-dialog-pause-input";
+
+      // Section 1: Pause (time-boxed hold)
+      var pauseCopy = inHold
+        ? "Replace the current hold with a new time-boxed pause."
+        : "Running a long build, or stepping away for coffee? Pause this for a while.";
+
+      // Section 1: Close (primary "dismiss and carry on")
+      var closeCopy = inHold
+        ? "Close this without changing the current hold."
+        : "Close this and let the " + esc(baseShort) + " timer keep watching.";
+      var h = '<div class="msg-idle-dialog">' +
+        '<h2>Idle shutdown</h2>' +
+        '<p>' + descHtml + '</p>' +
+
+        '<div class="msg-idle-section">' +
+          '<h3>Got it, carry on</h3>' +
+          '<p>' + closeCopy + '</p>' +
+          '<div class="msg-idle-controls">' +
+            '<button data-action="close">Close</button>' +
+          '</div>' +
+        '</div>' +
+
+        // Section 2: Pause
+        '<div class="msg-idle-section">' +
+          '<h3>Hold off for a while</h3>' +
+          '<p>' + pauseCopy + '</p>' +
+          '<form class="msg-idle-controls" data-form="pause">' +
+            '<input id="' + customId + '" type="number" min="1" max="10080" value="60">' +
+            '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
+            '<button type="submit">Pause</button>' +
+          '</form>' +
+        '</div>';
+
+      // Section 3: Disable (normal state) OR Resume (when already held)
+      if (inHold) {
+        h += '<div class="msg-idle-section">' +
+          '<h3>Back to normal</h3>' +
+          '<p>Resume the regular ' + esc(baseLong) + ' idle shutdown checks.</p>' +
+          '<div class="msg-idle-controls">' +
+            '<button data-action="resume">Resume normal idle</button>' +
+          '</div>' +
+        '</div>';
+      } else {
+        h += '<div class="msg-idle-section">' +
+          '<h3 class="danger">Turn it off entirely</h3>' +
+          "<p>Cost isn&rsquo;t a concern for this booth. You&rsquo;ll lose the safety net against runaway charges.</p>" +
+          '<div class="msg-idle-controls">' +
+            '<button class="danger" data-action="disable">Disable idle shutdown</button>' +
+          '</div>' +
+        '</div>';
+      }
+
+      h += '</div>';
+
+      idleStack.innerHTML = h;
+      idleOverlay.classList.add("visible");
+      document.body.classList.add("msg-active");
+
+      var dialog = idleStack.querySelector(".msg-idle-dialog");
+
+      dialog.querySelector('[data-form="pause"]').addEventListener("submit", function (e) {
+        e.preventDefault();
+        var mins = parseInt(document.getElementById(customId).value, 10);
+        if (!mins || mins <= 0) return;
+        postJson("/idle/pause", { seconds: mins * 60 }).then(function () {
+          closeDialog();
+          fetchState();
+        });
+      });
+
+      var disableBtn = dialog.querySelector('[data-action="disable"]');
+      if (disableBtn) {
+        disableBtn.addEventListener("click", function () {
+          postJson("/idle/disable").then(function () { closeDialog(); fetchState(); });
+        });
+      }
+
+      var resumeBtn = dialog.querySelector('[data-action="resume"]');
+      if (resumeBtn) {
+        resumeBtn.addEventListener("click", function () {
+          postJson("/idle/resume").then(function () { closeDialog(); fetchState(); });
+        });
+      }
+
+      dialog.querySelector('[data-action="close"]').addEventListener("click", closeDialog);
+    }
+
+    idleOverlay.addEventListener("click", function (e) {
+      if (e.target === idleOverlay) closeDialog();
+    });
+    chipEl.addEventListener("click", openDialog);
+
+    window._boothIdleRefresh = fetchState;
+    fetchState();
+    setInterval(fetchState, 30000);
+    // Live countdown when extension is active
+    setInterval(function () {
+      if (state.pause_until && !state.disabled) renderChip();
+    }, 1000);
   })();
 
   // Activity tracker for idle detection — write last-activity timestamp via API

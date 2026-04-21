@@ -1,0 +1,29 @@
+display-name = "BlueJ"
+display-disc = "BlueJ Java teaching IDE (requires desktop variant)"
+display-detail = """Installs BlueJ, a Java IDE designed for teaching object-oriented programming. \
+Developed at King's College London, BlueJ shows classes as UML-like diagrams and lets students \
+interact with objects directly without writing main(). Widely used in introductory Java courses \
+and accompanies the "Objects First with Java" textbook. Requires the java template and a desktop \
+variant."""
+display-order = 40
+requires = ["java"]
+tags = [
+    "education",
+    "java",
+    "ide",
+    "beginner",
+    "oop",
+    "desktop",
+]
+
+[params.BLUEJ_VERSION]
+default = "5.3.0"
+suggests = [
+    "5.3.0",
+    "5.2.1",
+]
+
+[segments]
+"Boothfile--60" = """
+setup bluej ${BLUEJ_VERSION}
+"""

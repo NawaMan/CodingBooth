@@ -1,0 +1,19 @@
+display-name = "Scratch Auto-Start"
+display-disc = "Auto-start Scratch editor on container boot"
+display-order = 2
+auto-select = false
+tags = [
+    "scratch",
+    "autostart",
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start Scratch editor in background
+PORT=${SCRATCH_PORT}
+LOG_FILE="/tmp/scratch.log"
+
+nohup serve -s --no-clipboard /opt/scratch -l "$PORT" > "$LOG_FILE" 2>&1 &
+
+echo "Scratch started on port $PORT (PID $!, log: $LOG_FILE)"
+"""

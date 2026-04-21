@@ -1,0 +1,29 @@
+display-name = "Greenfoot"
+display-disc = "Greenfoot Java teaching IDE for 2D games & simulations (requires desktop variant)"
+display-detail = """Installs Greenfoot, a Java IDE from the BlueJ team at King's College London designed for \
+building interactive 2D games, simulations, and visualizations. Great for introductory programming \
+courses — students write code that controls visible actors on a world. Sister project to BlueJ. \
+Requires the java template and a desktop variant."""
+display-order = 50
+requires = ["java"]
+tags = [
+    "education",
+    "java",
+    "ide",
+    "games",
+    "simulation",
+    "beginner",
+    "desktop",
+]
+
+[params.GREENFOOT_VERSION]
+default = "3.9.0"
+suggests = [
+    "3.9.0",
+    "3.8.2",
+]
+
+[segments]
+"Boothfile--60" = """
+setup greenfoot ${GREENFOOT_VERSION}
+"""

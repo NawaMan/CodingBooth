@@ -1,0 +1,13 @@
+display-name = "Expose Scratch Port"
+display-disc = "Expose Scratch editor port to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "scratch",
+    "port",
+    "network",
+]
+
+run-args = [
+    "-p", "${SCRATCH_PORT}:${SCRATCH_PORT}",
+]

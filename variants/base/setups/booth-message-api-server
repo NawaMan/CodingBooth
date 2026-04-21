@@ -7,9 +7,17 @@
 # booth-message-api-server
 #
 # Minimal HTTP server for booth message API using bash + socat.
-# Serves two endpoints:
+# Endpoints:
 #   GET  /booth-messages/api/list          — list pending messages as JSON
 #   POST /booth-messages/api/respond/<id>  — write response file
+#   POST /booth-messages/api/activity      — touch .last-activity (idle reset)
+#   POST /booth-messages/api/shutdown      — request container shutdown
+#   POST /booth-messages/api/restart       — request container restart
+#   POST /booth-messages/api/countdown-shutdown — timer-driven shutdown
+#   GET  /booth-messages/api/idle/state    — current idle pause/disable state
+#   POST /booth-messages/api/idle/pause    — time-boxed pause {"seconds": N}
+#   POST /booth-messages/api/idle/disable  — disable idle monitoring indefinitely
+#   POST /booth-messages/api/idle/resume   — resume normal idle cadence
 #
 # Usage: booth-message-api-server <port>
 # -----------------------------------------------------------------------------
@@ -51,6 +59,7 @@ handle_request() {
         GET)
             case "$path" in
                 /booth-messages/api/list) handle_list ;;
+                /booth-messages/api/idle/state) handle_idle_state ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
             ;;
@@ -71,6 +80,15 @@ handle_request() {
                     ;;
                 /booth-messages/api/activity)
                     handle_activity
+                    ;;
+                /booth-messages/api/idle/pause)
+                    handle_idle_pause "$body"
+                    ;;
+                /booth-messages/api/idle/disable)
+                    handle_idle_disable
+                    ;;
+                /booth-messages/api/idle/resume)
+                    handle_idle_resume
                     ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
@@ -147,6 +165,63 @@ handle_lifecycle_signal() {
     mkdir -p "$tmp_dir"
     touch "$tmp_dir/$marker"
     send_response 200 '{"ok":true}'
+}
+
+# Idle pause/disable/resume handlers — mirror the lifecycle-signal pattern.
+# State files live under .booth/.tmp/ and are consumed by booth--idle-monitor.
+
+handle_idle_pause() {
+    # Time-boxed pause: accept {"seconds": N} and store now+N in .idle-pause-until.
+    local body="$1"
+    local seconds
+    seconds=$(echo "$body" | sed -n 's/.*"seconds" *: *\([0-9][0-9]*\).*/\1/p')
+    if [ -z "$seconds" ] || [ "$seconds" -le 0 ] 2>/dev/null; then
+        send_response 400 '{"error":"seconds must be a positive integer"}'
+        return
+    fi
+    # Hard cap at 7 days — anything more likely indicates a client bug.
+    if [ "$seconds" -gt 604800 ]; then
+        send_response 400 '{"error":"seconds exceeds 7-day maximum"}'
+        return
+    fi
+    local tmp_dir="/home/coder/code/.booth/.tmp"
+    mkdir -p "$tmp_dir"
+    # Pausing clears an active Disable — they are mutually exclusive.
+    rm -f "$tmp_dir/.idle-disabled"
+    echo $(( $(date +%s) + seconds )) > "$tmp_dir/.idle-pause-until"
+    send_response 200 '{"ok":true}'
+}
+
+handle_idle_disable() {
+    local tmp_dir="/home/coder/code/.booth/.tmp"
+    mkdir -p "$tmp_dir"
+    touch "$tmp_dir/.idle-disabled"
+    # Disabling supersedes any time-boxed Pause; clear it for consistency.
+    rm -f "$tmp_dir/.idle-pause-until"
+    send_response 200 '{"ok":true}'
+}
+
+handle_idle_resume() {
+    local tmp_dir="/home/coder/code/.booth/.tmp"
+    mkdir -p "$tmp_dir"
+    rm -f "$tmp_dir/.idle-disabled" "$tmp_dir/.idle-pause-until"
+    send_response 200 '{"ok":true}'
+}
+
+handle_idle_state() {
+    local tmp_dir="/home/coder/code/.booth/.tmp"
+    local idle_time="${BOOTH_IDLE_TIME:-0}"
+    local shutdown_time="${BOOTH_IDLE_SHUTDOWN_TIME:-60}"
+    local enabled="false"
+    [ "$idle_time" -gt 0 ] 2>/dev/null && enabled="true"
+    local disabled="false"
+    [ -f "$tmp_dir/.idle-disabled" ] && disabled="true"
+    local pause_until=0
+    if [ -f "$tmp_dir/.idle-pause-until" ]; then
+        pause_until=$(cat "$tmp_dir/.idle-pause-until" 2>/dev/null)
+        [ -z "$pause_until" ] && pause_until=0
+    fi
+    send_response 200 "{\"enabled\":$enabled,\"idle_time\":$idle_time,\"shutdown_time\":$shutdown_time,\"disabled\":$disabled,\"pause_until\":$pause_until}"
 }
 
 send_response() {

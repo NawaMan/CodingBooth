@@ -1,0 +1,28 @@
+display-name = "Scratch"
+display-disc = "MIT Scratch 3 visual block-based programming editor (web-served)"
+display-detail = """Builds and serves the open-source Scratch 3 editor locally on a configurable port. \
+Scratch is MIT's visual, block-based programming environment for teaching programming concepts \
+to beginners (ages 8+). Access the editor in a browser at http://localhost:<SCRATCH_PORT>. \
+Works on any variant — no desktop required. Requires Node.js (pulled in via the nodejs template)."""
+display-order = 20
+requires = ["nodejs"]
+tags = [
+    "education",
+    "scratch",
+    "blocks",
+    "visual",
+    "beginner",
+    "kids",
+]
+
+[params.SCRATCH_PORT]
+default = "18601"
+suggests = [
+    "18601",
+    "18602",
+]
+
+[segments]
+"Boothfile--60" = """
+setup scratch ${SCRATCH_PORT}
+"""

@@ -171,6 +171,12 @@ All templates and extensions grouped by segment order.
 | `desktops/gimp`           | GIMP             |
 | `desktops/inkscape`       | Inkscape         |
 | `desktops/libreoffice`    | LibreOffice      |
+| `education/bluej`         | BlueJ            |
+| `education/drracket`      | DrRacket         |
+| `education/exercism`      | Exercism CLI     |
+| `education/greenfoot`     | Greenfoot        |
+| `education/scratch`       | Scratch          |
+| `education/thonny`        | Thonny           |
 | `ides/clion`              | CLion            |
 | `ides/codeserver`         | code-server      |
 | `ides/datagrip`           | DataGrip         |
@@ -219,6 +225,7 @@ All templates and extensions grouped by segment order.
 
 | Extension                    | Display Name           |
 |------------------------------|------------------------|
+| `education/nbgrader`         | nbgrader               |
 | `go/kernel--extension`       | Go Notebook Kernel     |
 | `haskell/kernel--extension`  | Haskell Notebook Kernel |
 | `java/kernel--extension`     | Java Notebook Kernel   |
