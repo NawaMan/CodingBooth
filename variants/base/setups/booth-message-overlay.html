@@ -598,13 +598,13 @@
       <button class="bl-collapse-btn" id="bl-toggle" title="Collapse">&#x25BC;</button>
     </div>
     <div class="bl-body" id="bl-body">
-      <div class="bl-timer bl-timer-white" id="bl-run-time" style="display:none" title="Total time this booth session has been running"></div>
-      <div class="bl-timer bl-timer-green" id="bl-count-down" style="display:none" title="Time remaining before the booth session ends"></div>
-      <div class="bl-idle-chip bl-idle-chip-active" id="bl-idle-chip" title="Idle shutdown is active — click to pause or disable"></div>
-      <button class="bl-btn bl-btn-restart" id="bl-restart-btn" title="Restart the booth container (re-reads config and rebuilds)">
+      <div class="bl-timer bl-timer-white" id="bl-run-time" data-priority="10" style="display:none" title="Total time this booth session has been running"></div>
+      <div class="bl-timer bl-timer-green" id="bl-count-down" data-priority="20" style="display:none" title="Time remaining before the booth session ends"></div>
+      <div class="bl-idle-chip bl-idle-chip-active" id="bl-idle-chip" data-priority="50" title="Idle shutdown is active — click to pause or disable"></div>
+      <button class="bl-btn bl-btn-restart" id="bl-restart-btn" data-priority="90" title="Restart the booth container (re-reads config and rebuilds)">
         <span class="bl-btn-icon">&#x21BB;</span> Restart
       </button>
-      <button class="bl-btn bl-btn-shutdown" id="bl-shutdown-btn" title="Shut down and stop the booth container">
+      <button class="bl-btn bl-btn-shutdown" id="bl-shutdown-btn" data-priority="100" title="Shut down and stop the booth container">
         <span class="bl-btn-icon">&#x23FB;</span> Shut Down
       </button>
     </div>
@@ -946,7 +946,8 @@
     var fullscreen = document.getElementById("bl-fullscreen");
 
     var apiBase = window.BOOTH_MSG_API_BASE || "/booth-messages/api";
-    var pendingAction = null; // "shutdown" or "restart"
+    var pendingAction = null;   // "shutdown" or "restart" (built-in)
+    var pendingConfirm = null;  // {text, yesLabel, yesVariant, progressText, onConfirm} from BoothPanel.confirm()
 
     // --- Collapse / Expand ---
     var collapsed = localStorage.getItem("booth-lc-collapsed") === "true";
@@ -1043,10 +1044,26 @@
 
     confirmNo.addEventListener("click", function () {
       pendingAction = null;
+      pendingConfirm = null;
       showState("buttons");
     });
 
     confirmYes.addEventListener("click", function () {
+      // Plugin-initiated confirm (BoothPanel.confirm) takes precedence over the
+      // built-in shutdown/restart flow when set.
+      if (pendingConfirm) {
+        var c = pendingConfirm;
+        pendingConfirm = null;
+        if (c.progressText) {
+          progressTxt.textContent = c.progressText;
+          showState("progress");
+        }
+        try {
+          if (typeof c.onConfirm === "function") c.onConfirm(panelApi);
+        } catch (e) { console.error("[BoothPanel.confirm] onConfirm failed:", e); }
+        return;
+      }
+
       var action = pendingAction;
       if (!action) return;
       progressTxt.textContent = action === "shutdown" ? "Shutting down\u2026" : "Restarting\u2026";
@@ -1080,6 +1097,93 @@
         }
       });
     });
+
+    // --- BoothPanel: a tiny registry so variants and users can drop in more
+    // buttons / chips / timers without editing overlay.html. Built-in items
+    // keep their own HTML + click handlers; registered items get appended to
+    // #bl-body and the body is sorted by data-priority. Lower number = higher
+    // up the panel (built-ins: run-time=10, countdown=20, idle=50, restart=90,
+    // shutdown=100). Plugins typically pick a gap between these to position.
+    var registered = {};
+    function sortBody() {
+      var items = Array.prototype.slice.call(body.children);
+      items.sort(function (a, b) {
+        var pa = parseInt(a.getAttribute("data-priority") || "50", 10);
+        var pb = parseInt(b.getAttribute("data-priority") || "50", 10);
+        return pa - pb;
+      });
+      items.forEach(function (el) { body.appendChild(el); });
+    }
+    sortBody();
+
+    var panelApi = {
+      // Drop a new element into #bl-body at a given priority and wire it up.
+      register: function (def) {
+        if (!def || !def.id) return null;
+        if (!def.html && !def.element) {
+          console.warn("[BoothPanel.register] needs { id, html | element } —", def.id);
+          return null;
+        }
+        if (registered[def.id]) {
+          registered[def.id].remove();
+          delete registered[def.id];
+        }
+        var el;
+        if (def.element) {
+          el = def.element;
+        } else {
+          var w = document.createElement("div");
+          w.innerHTML = String(def.html).trim();
+          el = w.firstElementChild;
+        }
+        if (!el) return null;
+        el.setAttribute("data-booth-plugin-id", def.id);
+        if (def.priority != null) el.setAttribute("data-priority", String(def.priority));
+        else if (!el.hasAttribute("data-priority")) el.setAttribute("data-priority", "50");
+        body.appendChild(el);
+        sortBody();
+        registered[def.id] = el;
+        if (typeof def.onMount === "function") {
+          try { def.onMount(el, panelApi); }
+          catch (e) { console.error("[BoothPanel]", def.id, "onMount:", e); }
+        }
+        return el;
+      },
+      // Remove a previously-registered plugin by id. Returns true on removal.
+      unregister: function (id) {
+        var el = registered[id];
+        if (!el) return false;
+        el.remove();
+        delete registered[id];
+        return true;
+      },
+      // Plugin-initiated confirm dialog; reuses the built-in confirm DOM.
+      confirm: function (opts) {
+        pendingAction = null;  // take over from any in-flight built-in confirm
+        pendingConfirm = opts || {};
+        confirmTxt.textContent = (opts && opts.text) || "Confirm?";
+        confirmYes.textContent = (opts && opts.yesLabel) || "Yes";
+        confirmYes.className = "bl-btn-yes" +
+          (opts && opts.yesVariant ? " " + opts.yesVariant : "");
+        showState("confirm");
+      },
+      showProgress: function (text) {
+        if (text) progressTxt.textContent = text;
+        showState("progress");
+      },
+      showStopped: function (text) {
+        if (text) stoppedTxt.textContent = text;
+        showState("stopped");
+        fullscreen.classList.add("visible");
+      },
+      // Expose the API base so plugins don't need to guess.
+      apiBase: apiBase
+    };
+    window.BoothPanel = panelApi;
+    // Fire a DOM event so plugin <script>s loaded after this point know when
+    // the registry is available. Plugins can alternatively guard on
+    // `if (window.BoothPanel) { ... }`.
+    document.dispatchEvent(new Event("booth-panel-ready"));
 
     // --- Timers ---
     var runTimeEl = document.getElementById("bl-run-time");

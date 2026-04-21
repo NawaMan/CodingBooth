@@ -20,6 +20,10 @@ set -euo pipefail
 
 WRAPPER_DIR="/usr/local/share/booth-message-wrapper"
 mkdir -p "${WRAPPER_DIR}"
+# Drop-in directory for lifecycle-panel plugins (per-variant or per-environment
+# setup scripts can write `*.js` files here; start-booth-wrapped concatenates
+# them into the wrapper HTML so `BoothPanel.register(...)` calls become live).
+mkdir -p "${WRAPPER_DIR}/plugins"
 
 # ── Copy the shared overlay HTML ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -55,6 +59,7 @@ window.BOOTH_IDLE_TIME="${BOOTH_IDLE_TIME}";
 window.BOOTH_IDLE_SHUTDOWN_TIME="${BOOTH_IDLE_SHUTDOWN_TIME}";
 </script>
 ${OVERLAY_HTML}
+${PLUGINS_HTML}
 </body>
 </html>
 HTMLEOF
@@ -192,7 +197,23 @@ export BOOTH_IDLE_TIME="${BOOTH_IDLE_TIME:-0}"
 export BOOTH_IDLE_SHUTDOWN_TIME="${BOOTH_IDLE_SHUTDOWN_TIME:-60}"
 OVERLAY_HTML=$(cat "$WRAPPER_DIR/overlay.html")
 export OVERLAY_HTML
-envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML}' \
+
+# Concatenate any lifecycle-panel plugin scripts into the wrapper HTML. Each
+# file is wrapped in its own <script> tag so a parse error in one doesn't
+# poison the others. Runs after overlay.html so window.BoothPanel is defined.
+PLUGINS_HTML=""
+if ls "$WRAPPER_DIR/plugins"/*.js >/dev/null 2>&1; then
+  for plugin_file in "$WRAPPER_DIR/plugins"/*.js; do
+    PLUGINS_HTML="${PLUGINS_HTML}
+<!-- booth plugin: $(basename "$plugin_file") -->
+<script>
+$(cat "$plugin_file")
+</script>"
+  done
+fi
+export PLUGINS_HTML
+
+envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML}' \
   <"$WRAPPER_DIR/wrapper.html" >"$SERVE_DIR/index.html"
 
 # Generate nginx config
