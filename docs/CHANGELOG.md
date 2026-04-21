@@ -10,8 +10,9 @@ This file contains a list of changes for each released version.
   - Click the chip for a sectioned "Idle shutdown" dialog: header + description ("shuts down after X minutes... so an idle run doesn't rack up unexpected costs"), then three divider-separated sections — "Hold off for a while" (time-boxed Pause with minute input defaulted to 60), "Turn it off entirely" with danger-styled Disable button (or "Back to normal" with Resume button when already paused/disabled), and "Got it, carry on" with Close
   - Timeout "Still using this booth?" prompt shares the sectioned layout with the chip dialog — same "Hold off for a while" (Pause) + "Turn it off entirely" (Disable) sections, plus an "I'm still here" section in place of "Got it, carry on". Header shows a **live countdown** driven by the message's `expires` timestamp
   - Monitor↔overlay protocol uses semantic answer codes (`ok`, `pause:<seconds>`, `disable`) so custom-minute pauses flow through the same channel as presets
-  - New API endpoints under `/booth-messages/api/idle/`: `state` (GET — returns `{enabled, idle_time, shutdown_time, disabled, pause_until}`), `pause` (POST `{"seconds":N}`, capped 7d), `disable` (POST), `resume` (POST)
-  - State persisted as ephemeral files under `.booth/.tmp/` (`.idle-disabled`, `.idle-pause-until`); container restart always returns to normal cadence
+  - New API endpoints under `/booth-messages/api/idle/`: `state` (GET — returns `{enabled, idle_time, base_idle_time, shutdown_time, disabled, pause_until}`), `pause` (POST `{"seconds":N}`, capped 7d), `disable` (POST), `resume` (POST), `set-time` (POST `{"seconds":N}` — override base idle time for this session; cleared on restart)
+  - "Change the timeout" section in both the chip dialog and the timeout prompt: input the new base in minutes + Apply. Monitor re-reads the effective base each loop tick so changes take effect within ~10 s
+  - State persisted as ephemeral files under `.booth/.tmp/` (`.idle-disabled`, `.idle-pause-until`, `.idle-base-override`); container restart always returns to normal cadence
 
 ## 0.43.0
 

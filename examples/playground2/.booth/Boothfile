@@ -1,4 +1,27 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --variant notebook --port 10000 --select codeserver+settings-cache
+# Configured by: booth config --no-tui --overwrite --variant desktop-xfce --port 10000 --select python+pip-config+vscode-ext/java+vscode-ext/nodejs+npmrc+vscode-ext/notebook/codeserver+settings-cache/thonny/scratch+expose+autostart/exercism/bluej/greenfoot/drracket/nbgrader
 
+arg BLUEJ_VERSION=5.3.0
+arg EXERCISM_VERSION=3.5.5
+arg GREENFOOT_VERSION=3.9.0
+arg JDK_VENDOR=temurin
+arg JDK_VERSION=25
+arg NODE_VERSION=22
+arg PYTHON_VERSION=3.13.12
+arg SCRATCH_PORT=18601
+
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+setup nodejs ${NODE_VERSION}
+setup python ${PYTHON_VERSION}
+setup bluej ${BLUEJ_VERSION}
 setup codeserver 19999
+setup drracket
+setup exercism --version ${EXERCISM_VERSION}
+setup greenfoot ${GREENFOOT_VERSION}
+setup notebook 18888
+setup scratch ${SCRATCH_PORT}
+setup thonny
+setup java-code-extension
+setup nodejs-code-extension
+setup python-code-extension
+setup nbgrader

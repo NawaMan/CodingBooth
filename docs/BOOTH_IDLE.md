@@ -153,6 +153,7 @@ The "Still using this booth?" grace-window prompt reuses the same sectioned layo
 
 - `.idle-disabled` — zero-byte flag. Presence ⇒ disabled.
 - `.idle-pause-until` — single-line file with the epoch second when the time-boxed Pause ends.
+- `.idle-base-override` — single-line integer (seconds) overriding `BOOTH_IDLE_TIME` for this session.
 
 Both are ephemeral. `.booth/.tmp/` is cleared on container start and exit (same treatment as `.shutdown-requested` / `.idle-shutdown`), so **a restart always returns the booth to normal idle cadence** — by design, so a forgotten Disable can't outlive a reboot.
 
@@ -160,12 +161,13 @@ Both are ephemeral. `.booth/.tmp/` is cleared on container start and exit (same 
 
 The chip and dialog are a thin client over four endpoints on the in-container message-API server (proxied through nginx at `/booth-messages/api/idle/`):
 
-| Method | Path             | Body                  | Effect                                                                 |
-|--------|------------------|-----------------------|------------------------------------------------------------------------|
-| GET    | `/idle/state`    | —                     | Returns `{enabled, idle_time, shutdown_time, disabled, pause_until}`   |
-| POST   | `/idle/pause`    | `{"seconds": N}`      | Writes `now + N` to `.idle-pause-until`. Clears any Disable. Capped 7d. |
-| POST   | `/idle/disable`  | —                     | Touches `.idle-disabled`. Clears any active Pause.                     |
-| POST   | `/idle/resume`   | —                     | Removes both marker files.                                             |
+| Method | Path              | Body                  | Effect                                                                          |
+|--------|-------------------|-----------------------|---------------------------------------------------------------------------------|
+| GET    | `/idle/state`     | —                     | Returns `{enabled, idle_time, base_idle_time, shutdown_time, disabled, pause_until}` — `idle_time` is the effective value (override if set, else base). |
+| POST   | `/idle/pause`     | `{"seconds": N}`      | Writes `now + N` to `.idle-pause-until`. Clears any Disable. Capped 7d.         |
+| POST   | `/idle/disable`   | —                     | Touches `.idle-disabled`. Clears any active Pause.                              |
+| POST   | `/idle/resume`    | —                     | Removes both marker files.                                                      |
+| POST   | `/idle/set-time`  | `{"seconds": N}`      | Writes N to `.idle-base-override` — overrides the base idle time for this session. Cleared on restart. Monitor picks up within ~10 s. |
 
 The same endpoints are available to scripts inside the container, so a long-running test can `curl -X POST -d '{"seconds":7200}' localhost:10007/booth-messages/api/idle/pause` to keep the booth alive programmatically.
 

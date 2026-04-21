@@ -10,17 +10,19 @@
 # inactivity. If the user does not respond within BOOTH_IDLE_SHUTDOWN_TIME
 # seconds, the booth is shut down gracefully via booth--shutdown --yes.
 #
-# Pause / disable:
-#   .booth/.tmp/.idle-pause-until — epoch seconds; while now<value the watchdog
-#                                   holds (time-boxed Pause). When now>=value
-#                                   the file is removed and normal cadence
-#                                   resumes.
-#   .booth/.tmp/.idle-disabled    — presence ⇒ watchdog holds indefinitely
-#                                   (Disabled; only removed by /idle/resume or
-#                                   container restart).
-# These are ephemeral (cleared on container start/exit) and set by the overlay
-# via /booth-messages/api/idle/{pause,disable,resume} or by answering the
-# "Still there?" prompt with Pause / Disable Idle Time instead of "I'm here".
+# Runtime state (all ephemeral — cleared on container start/exit):
+#   .booth/.tmp/.idle-pause-until  — epoch seconds; while now<value the watchdog
+#                                    holds (time-boxed Pause). When now>=value
+#                                    the file is removed and normal cadence
+#                                    resumes.
+#   .booth/.tmp/.idle-disabled     — presence ⇒ watchdog holds indefinitely
+#                                    (Disabled; only removed by /idle/resume or
+#                                    container restart).
+#   .booth/.tmp/.idle-base-override — integer seconds overriding BOOTH_IDLE_TIME
+#                                    for the current session (adjust from the
+#                                    dialog). Ignored if absent or non-positive.
+# Set by the overlay via /booth-messages/api/idle/{pause,disable,resume,set-time}
+# or by answering the "Still there?" prompt with Pause / Disable.
 #
 # In web variants (codeserver, notebook, desktop), the prompt is shown via
 # the message overlay. In terminal variants (base/console), the booth shuts
@@ -41,8 +43,25 @@ MSG_DIR="/home/coder/code/.booth/.tmp/messages"
 TMP_DIR="/home/coder/code/.booth/.tmp"
 DISABLE_FILE="$TMP_DIR/.idle-disabled"
 PAUSE_UNTIL_FILE="$TMP_DIR/.idle-pause-until"
-CHECK_INTERVAL=10  # how often pause/disable state is re-sampled during a sleep
+BASE_OVERRIDE_FILE="$TMP_DIR/.idle-base-override"
+CHECK_INTERVAL=10  # how often hold/override state is re-sampled during a sleep
+CURRENT_IDLE_TIME="$IDLE_TIME"  # updated by refresh_idle_time() each tick
 mkdir -p "$MSG_DIR" "$TMP_DIR"
+
+# Refresh CURRENT_IDLE_TIME from the runtime override file if present.
+# Called at the start of each loop iteration and each sleep chunk so a
+# mid-sleep change takes effect within CHECK_INTERVAL seconds.
+refresh_idle_time() {
+    if [ -f "$BASE_OVERRIDE_FILE" ]; then
+        local override
+        override=$(cat "$BASE_OVERRIDE_FILE" 2>/dev/null)
+        if [ -n "$override" ] && [ "$override" -gt 0 ] 2>/dev/null; then
+            CURRENT_IDLE_TIME="$override"
+            return
+        fi
+    fi
+    CURRENT_IDLE_TIME="$IDLE_TIME"
+}
 
 log() {
     echo "[booth--idle-monitor] $(date '+%Y-%m-%dT%H:%M:%S%z') $*" >&2
@@ -100,17 +119,20 @@ wait_for_hold_release() {
     done
 }
 
-# Sleep for IDLE_TIME seconds in CHECK_INTERVAL-sized chunks. If a Pause or
-# Disable is set mid-sleep, bail early so the outer loop can re-evaluate.
+# Sleep for CURRENT_IDLE_TIME seconds in CHECK_INTERVAL-sized chunks. If a
+# Pause/Disable is set mid-sleep, bail early so the outer loop can re-evaluate.
+# The base-override is also re-read each chunk — if the user shortens the
+# window below elapsed, the loop exits and the activity check runs immediately.
 # Returns 0 if the full window elapsed without interruption, 1 if interrupted.
 sleep_idle_window() {
     local elapsed=0
-    while [ "$elapsed" -lt "$IDLE_TIME" ]; do
-        local remaining=$((IDLE_TIME - elapsed))
+    while [ "$elapsed" -lt "$CURRENT_IDLE_TIME" ]; do
+        local remaining=$((CURRENT_IDLE_TIME - elapsed))
         local step="$CHECK_INTERVAL"
         [ "$step" -gt "$remaining" ] && step="$remaining"
         sleep "$step"
         elapsed=$((elapsed + step))
+        refresh_idle_time
         if hold_active; then
             return 1
         fi
@@ -121,13 +143,16 @@ sleep_idle_window() {
 log "Started: idle=$IDLE_TIME s, shutdown=$SHUTDOWN_TIME s"
 
 while true; do
+    # 0) Pick up any runtime override to the base idle time.
+    refresh_idle_time
+
     # 1) Honor any Pause/Disable hold before starting a new idle window.
     if hold_active; then
         wait_for_hold_release
         continue
     fi
 
-    # 2) Normal idle countdown, interruptible by Pause/Disable.
+    # 2) Normal idle countdown, interruptible by Pause/Disable/override.
     SLEEP_START=$(date +%s)
     if ! sleep_idle_window; then
         continue

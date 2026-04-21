@@ -18,6 +18,7 @@
 #   POST /booth-messages/api/idle/pause    — time-boxed pause {"seconds": N}
 #   POST /booth-messages/api/idle/disable  — disable idle monitoring indefinitely
 #   POST /booth-messages/api/idle/resume   — resume normal idle cadence
+#   POST /booth-messages/api/idle/set-time — override base idle time {"seconds": N}
 #
 # Usage: booth-message-api-server <port>
 # -----------------------------------------------------------------------------
@@ -89,6 +90,9 @@ handle_request() {
                     ;;
                 /booth-messages/api/idle/resume)
                     handle_idle_resume
+                    ;;
+                /booth-messages/api/idle/set-time)
+                    handle_idle_set_time "$body"
                     ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
@@ -208,12 +212,41 @@ handle_idle_resume() {
     send_response 200 '{"ok":true}'
 }
 
+handle_idle_set_time() {
+    # Override the base idle time for this session. Writes .idle-base-override;
+    # the monitor re-reads it every ~10s. Cleared on restart.
+    local body="$1"
+    local seconds
+    seconds=$(echo "$body" | sed -n 's/.*"seconds" *: *\([0-9][0-9]*\).*/\1/p')
+    if [ -z "$seconds" ] || [ "$seconds" -le 0 ] 2>/dev/null; then
+        send_response 400 '{"error":"seconds must be a positive integer"}'
+        return
+    fi
+    if [ "$seconds" -gt 604800 ]; then
+        send_response 400 '{"error":"seconds exceeds 7-day maximum"}'
+        return
+    fi
+    local tmp_dir="/home/coder/code/.booth/.tmp"
+    mkdir -p "$tmp_dir"
+    echo "$seconds" > "$tmp_dir/.idle-base-override"
+    send_response 200 '{"ok":true}'
+}
+
 handle_idle_state() {
     local tmp_dir="/home/coder/code/.booth/.tmp"
-    local idle_time="${BOOTH_IDLE_TIME:-0}"
+    local base_idle_time="${BOOTH_IDLE_TIME:-0}"
+    local idle_time="$base_idle_time"
+    # Runtime override replaces the env-var base if present and positive.
+    if [ -f "$tmp_dir/.idle-base-override" ]; then
+        local override
+        override=$(cat "$tmp_dir/.idle-base-override" 2>/dev/null)
+        if [ -n "$override" ] && [ "$override" -gt 0 ] 2>/dev/null; then
+            idle_time="$override"
+        fi
+    fi
     local shutdown_time="${BOOTH_IDLE_SHUTDOWN_TIME:-60}"
     local enabled="false"
-    [ "$idle_time" -gt 0 ] 2>/dev/null && enabled="true"
+    [ "$base_idle_time" -gt 0 ] 2>/dev/null && enabled="true"
     local disabled="false"
     [ -f "$tmp_dir/.idle-disabled" ] && disabled="true"
     local pause_until=0
@@ -221,7 +254,7 @@ handle_idle_state() {
         pause_until=$(cat "$tmp_dir/.idle-pause-until" 2>/dev/null)
         [ -z "$pause_until" ] && pause_until=0
     fi
-    send_response 200 "{\"enabled\":$enabled,\"idle_time\":$idle_time,\"shutdown_time\":$shutdown_time,\"disabled\":$disabled,\"pause_until\":$pause_until}"
+    send_response 200 "{\"enabled\":$enabled,\"idle_time\":$idle_time,\"base_idle_time\":$base_idle_time,\"shutdown_time\":$shutdown_time,\"disabled\":$disabled,\"pause_until\":$pause_until}"
 }
 
 send_response() {

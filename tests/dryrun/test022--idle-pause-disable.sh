@@ -62,12 +62,15 @@ expect_contains "$API" "/booth-messages/api/idle/disable)" \
     "api-server: POST /idle/disable (indefinite) route is registered"
 expect_contains "$API" "/booth-messages/api/idle/resume)" \
     "api-server: POST /idle/resume route is registered"
+expect_contains "$API" "/booth-messages/api/idle/set-time)" \
+    "api-server: POST /idle/set-time (base override) route is registered"
 
 # -- 5-8: API server handlers ------------------------------------------------
 expect_contains "$API" "handle_idle_state()" "api-server: handle_idle_state defined"
 expect_contains "$API" "handle_idle_pause()" "api-server: handle_idle_pause defined"
 expect_contains "$API" "handle_idle_disable()" "api-server: handle_idle_disable defined"
 expect_contains "$API" "handle_idle_resume()" "api-server: handle_idle_resume defined"
+expect_contains "$API" "handle_idle_set_time()" "api-server: handle_idle_set_time defined"
 
 # -- 9-10: API-side state-file writes match monitor's expectations -----------
 expect_contains "$API" ".idle-disabled" \
@@ -90,6 +93,10 @@ expect_contains "$MON" 'DISABLE_FILE="$TMP_DIR/.idle-disabled"' \
     "monitor: declares DISABLE_FILE = .idle-disabled"
 expect_contains "$MON" 'PAUSE_UNTIL_FILE="$TMP_DIR/.idle-pause-until"' \
     "monitor: declares PAUSE_UNTIL_FILE = .idle-pause-until"
+expect_contains "$MON" 'BASE_OVERRIDE_FILE="$TMP_DIR/.idle-base-override"' \
+    "monitor: declares BASE_OVERRIDE_FILE = .idle-base-override"
+expect_contains "$MON" "refresh_idle_time" \
+    "monitor: refreshes idle time from runtime override each tick"
 expect_contains "$MON" "sleep_idle_window" \
     "monitor: uses chunked sleep_idle_window helper"
 
@@ -124,6 +131,10 @@ expect_contains "$OVR" "/idle/disable" \
     "overlay: posts to /idle/disable for disable action"
 expect_contains "$OVR" "/idle/resume" \
     "overlay: posts to /idle/resume for resume action"
+expect_contains "$OVR" "/idle/set-time" \
+    "overlay: posts to /idle/set-time to adjust the base idle timeout"
+expect_contains "$OVR" "Change the timeout" \
+    "overlay: dialog has a \"Change the timeout\" section"
 
 # -- 28-29: chip uses new state field names ---------------------------------
 expect_contains "$OVR" "state.disabled" \

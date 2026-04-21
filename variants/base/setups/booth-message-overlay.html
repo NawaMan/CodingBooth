@@ -702,10 +702,18 @@
     // Render the "Still there?" idle timeout as a sectioned dialog that mirrors
     // the chip-click dialog, with a live-counting shutdown-in-N-seconds label.
     function renderIdlePromptDialog(m) {
-      var customId = "idle-custom-" + m.id;
-      var customSubmit =
-        "(function(){var v=parseInt(document.getElementById('" + customId + "').value,10);" +
+      var pauseInputId = "idle-prompt-pause-" + m.id;
+      var timeoutInputId = "idle-prompt-timeout-" + m.id;
+      var pauseSubmit =
+        "(function(){var v=parseInt(document.getElementById('" + pauseInputId + "').value,10);" +
         "if(v>0) window._msgRespond('" + m.id + "','pause:'+(v*60));})()";
+      var setTimeSubmit =
+        "(function(){var v=parseInt(document.getElementById('" + timeoutInputId + "').value,10);" +
+        "if(v>0) window._idleSetTime(v*60," + JSON.stringify(m.id) + ");})()";
+
+      // Current base idle time in minutes, for the Change-the-timeout input.
+      var baseSec = parseInt(window.BOOTH_IDLE_TIME || "0", 10) || 0;
+      var baseMin = Math.max(1, Math.round(baseSec / 60));
 
       var expiresMs = m.expires ? Date.parse(m.expires) : Date.now();
       var initialSec = Math.max(0, Math.ceil((expiresMs - Date.now()) / 1000));
@@ -726,18 +734,29 @@
           '</div>' +
         '</div>' +
 
-        // Section 2: Pause
+        // Section 2: Pause (time-boxed)
         '<div class="msg-idle-section">' +
           '<h3>Hold off for a while</h3>' +
-          '<p>Running a long build, or stepping away for coffee? Pause this for a while.</p>' +
-          '<form class="msg-idle-controls" onsubmit="' + customSubmit + ';return false;">' +
-            '<input id="' + customId + '" type="number" min="1" max="10080" value="60">' +
+          '<p>Running a long build, or stepping away for coffee? Pause the idle timeout for a while.</p>' +
+          '<form class="msg-idle-controls" onsubmit="' + pauseSubmit + ';return false;">' +
+            '<input id="' + pauseInputId + '" type="number" min="1" max="10080" value="60">' +
             '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
             '<button type="submit">Pause</button>' +
           '</form>' +
         '</div>' +
 
-        // Section 3: Disable
+        // Section 3: Change the base timeout for this session.
+        '<div class="msg-idle-section">' +
+          '<h3>Change the timeout</h3>' +
+          '<p>Use a different inactivity threshold for this booth. Reverts on restart.</p>' +
+          '<form class="msg-idle-controls" onsubmit="' + setTimeSubmit + ';return false;">' +
+            '<input id="' + timeoutInputId + '" type="number" min="1" max="10080" value="' + baseMin + '">' +
+            '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
+            '<button type="submit">Apply</button>' +
+          '</form>' +
+        '</div>' +
+
+        // Section 4: Disable
         '<div class="msg-idle-section">' +
           '<h3 class="danger">Turn it off entirely</h3>' +
           "<p>Cost isn&rsquo;t a concern for this booth. You&rsquo;ll lose the safety net against runaway charges.</p>" +
@@ -874,6 +893,21 @@
       }
     };
 
+    // Used by the idle-prompt's "Change the timeout" form. Applies the new
+    // base, then acknowledges the prompt so the pending shutdown is cancelled.
+    window._idleSetTime = function (seconds, promptId) {
+      var headers = { "Content-Type": "application/json" };
+      var xsrf = getCookie("_xsrf");
+      if (xsrf) headers["X-XSRFToken"] = xsrf;
+      fetch(apiBase + "/idle/set-time", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({ seconds: seconds })
+      }).then(function () {
+        window._msgRespond(promptId, "ok");
+      }).catch(function () {});
+    };
+
     // Reclaim focus from iframes when overlay is visible
     overlay.addEventListener("click", function () {
       var input = overlay.querySelector(".msg-input");
@@ -932,12 +966,34 @@
 
     // --- Drag ---
     var dragState = { active: false, startX: 0, startY: 0 };
-    var pos = JSON.parse(localStorage.getItem("booth-lc-pos") || "null");
-    if (pos) {
-      container.style.left = pos.x + "px";
-      container.style.bottom = "auto";
-      container.style.top = pos.y + "px";
+
+    // Clamp current (x, y) to keep the panel fully in the viewport.
+    // Works whether reading from rect.left or from saved localStorage.
+    function clampPos(x, y) {
+      var maxX = Math.max(0, window.innerWidth  - panel.offsetWidth);
+      var maxY = Math.max(0, window.innerHeight - panel.offsetHeight);
+      return {
+        x: Math.max(0, Math.min(x, maxX)),
+        y: Math.max(0, Math.min(y, maxY))
+      };
     }
+
+    // Apply the saved position (if any), then re-clamp to the current viewport
+    // so a shrunk window or stale localStorage can't leave the panel off-screen.
+    function applyClampedPosition() {
+      var pos = JSON.parse(localStorage.getItem("booth-lc-pos") || "null");
+      var rect = container.getBoundingClientRect();
+      var src = pos || { x: rect.left, y: rect.top };
+      var c = clampPos(src.x, src.y);
+      container.style.left = c.x + "px";
+      container.style.bottom = "auto";
+      container.style.top = c.y + "px";
+      localStorage.setItem("booth-lc-pos", JSON.stringify(c));
+    }
+
+    // Wait for layout before measuring offsetWidth/offsetHeight.
+    requestAnimationFrame(applyClampedPosition);
+    window.addEventListener("resize", applyClampedPosition);
 
     handle.addEventListener("pointerdown", function (e) {
       if (e.target === toggle) return;
@@ -950,15 +1006,11 @@
     });
     handle.addEventListener("pointermove", function (e) {
       if (!dragState.active) return;
-      var x = e.clientX - dragState.startX;
-      var y = e.clientY - dragState.startY;
-      // Clamp to viewport
-      x = Math.max(0, Math.min(x, window.innerWidth - panel.offsetWidth));
-      y = Math.max(0, Math.min(y, window.innerHeight - panel.offsetHeight));
-      container.style.left = x + "px";
+      var c = clampPos(e.clientX - dragState.startX, e.clientY - dragState.startY);
+      container.style.left = c.x + "px";
       container.style.bottom = "auto";
-      container.style.top = y + "px";
-      localStorage.setItem("booth-lc-pos", JSON.stringify({ x: x, y: y }));
+      container.style.top = c.y + "px";
+      localStorage.setItem("booth-lc-pos", JSON.stringify(c));
     });
     handle.addEventListener("pointerup", function () { dragState.active = false; });
     handle.addEventListener("pointercancel", function () { dragState.active = false; });
@@ -1197,6 +1249,14 @@
         }
         state.disabled = !!s.disabled;
         state.pause_until = parseInt(s.pause_until || 0, 10) || 0;
+        // Effective base idle time (reflects any runtime override from /idle/set-time).
+        // Also republish on window so the idle-prompt renderer (in another IIFE)
+        // picks up the same value — otherwise one dialog could show a stale default.
+        var effective = parseInt(s.idle_time || 0, 10);
+        if (effective > 0) {
+          baseIdleSec = effective;
+          window.BOOTH_IDLE_TIME = String(effective);
+        }
         renderChip();
       }).catch(function () {});
     }
@@ -1254,17 +1314,19 @@
           "</strong> of keyboard or mouse inactivity, so an idle run doesn't rack up unexpected costs.";
       }
 
-      var customId = "bl-idle-dialog-pause-input";
+      var pauseId = "bl-idle-dialog-pause-input";
+      var timeoutId = "bl-idle-dialog-timeout-input";
+      var baseMin = Math.max(1, Math.round(baseIdleSec / 60));
 
-      // Section 1: Pause (time-boxed hold)
       var pauseCopy = inHold
         ? "Replace the current hold with a new time-boxed pause."
-        : "Running a long build, or stepping away for coffee? Pause this for a while.";
+        : "Running a long build, or stepping away for coffee? Pause the idle timeout for a while.";
 
-      // Section 1: Close (primary "dismiss and carry on")
       var closeCopy = inHold
         ? "Close this without changing the current hold."
         : "Close this and let the " + esc(baseShort) + " timer keep watching.";
+
+      // Section 1: Close (primary "dismiss and carry on")
       var h = '<div class="msg-idle-dialog">' +
         '<h2>Idle shutdown</h2>' +
         '<p>' + descHtml + '</p>' +
@@ -1277,18 +1339,29 @@
           '</div>' +
         '</div>' +
 
-        // Section 2: Pause
+        // Section 2: Pause (time-boxed)
         '<div class="msg-idle-section">' +
           '<h3>Hold off for a while</h3>' +
           '<p>' + pauseCopy + '</p>' +
           '<form class="msg-idle-controls" data-form="pause">' +
-            '<input id="' + customId + '" type="number" min="1" max="10080" value="60">' +
+            '<input id="' + pauseId + '" type="number" min="1" max="10080" value="60">' +
             '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
             '<button type="submit">Pause</button>' +
           '</form>' +
+        '</div>' +
+
+        // Section 3: Change the base idle timeout for this session.
+        '<div class="msg-idle-section">' +
+          '<h3>Change the timeout</h3>' +
+          '<p>Use a different inactivity threshold for this booth. Reverts on restart.</p>' +
+          '<form class="msg-idle-controls" data-form="set-time">' +
+            '<input id="' + timeoutId + '" type="number" min="1" max="10080" value="' + baseMin + '">' +
+            '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
+            '<button type="submit">Apply</button>' +
+          '</form>' +
         '</div>';
 
-      // Section 3: Disable (normal state) OR Resume (when already held)
+      // Section 4: Disable (normal state) OR Resume (when already held)
       if (inHold) {
         h += '<div class="msg-idle-section">' +
           '<h3>Back to normal</h3>' +
@@ -1317,9 +1390,19 @@
 
       dialog.querySelector('[data-form="pause"]').addEventListener("submit", function (e) {
         e.preventDefault();
-        var mins = parseInt(document.getElementById(customId).value, 10);
+        var mins = parseInt(document.getElementById(pauseId).value, 10);
         if (!mins || mins <= 0) return;
         postJson("/idle/pause", { seconds: mins * 60 }).then(function () {
+          closeDialog();
+          fetchState();
+        });
+      });
+
+      dialog.querySelector('[data-form="set-time"]').addEventListener("submit", function (e) {
+        e.preventDefault();
+        var mins = parseInt(document.getElementById(timeoutId).value, 10);
+        if (!mins || mins <= 0) return;
+        postJson("/idle/set-time", { seconds: mins * 60 }).then(function () {
           closeDialog();
           fetchState();
         });
