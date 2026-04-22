@@ -142,6 +142,17 @@ http {
             proxy_buffering off;
         }
 
+        # Silence JupyterLab's service-worker polling. JupyterLab tries to
+        # fetch /_static/out/browser/serviceWorker.js from the wrapper root
+        # every couple of seconds; the file does not exist (JupyterLab is
+        # only mounted under /lab here), so every poll would otherwise 404
+        # inside the inner Jupyter and flood the container logs. A 204 with
+        # no body is what the browser treats as "nothing to update here".
+        location = /_static/out/browser/serviceWorker.js {
+            access_log off;
+            return 204;
+        }
+
         # Root — redirect to /booth unless _booth_inner is set
         location = / {
             if ($root_action = "proxy") {

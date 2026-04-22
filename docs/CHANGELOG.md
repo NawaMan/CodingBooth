@@ -13,6 +13,16 @@ This file contains a list of changes for each released version.
   - New API endpoints under `/booth-messages/api/idle/`: `state` (GET — returns `{enabled, idle_time, base_idle_time, shutdown_time, disabled, pause_until}`), `pause` (POST `{"seconds":N}`, capped 7d), `disable` (POST), `resume` (POST), `set-time` (POST `{"seconds":N}` — override base idle time for this session; cleared on restart)
   - "Change the timeout" section in both the chip dialog and the timeout prompt: input the new base in minutes + Apply. Monitor re-reads the effective base each loop tick so changes take effect within ~10 s
   - State persisted as ephemeral files under `.booth/.tmp/` (`.idle-disabled`, `.idle-pause-until`, `.idle-base-override`); container restart always returns to normal cadence
+- Boothfile compiler skips `setup` steps the chosen variant already provides
+  - `setup notebook` with `--variant notebook` (and `setup codeserver` with `--variant codeserver`) used to be re-executed on top of the variant base image, paying a full JupyterLab / code-server reinstall for nothing
+  - The compiler now emits a `# skipped: ...` comment in the generated Dockerfile and a warning naming the redundant step; non-variant setups (e.g. `setup codeserver` under `--variant notebook`) still run
+  - Wired through `CompilerOptions.Variant`, populated from the resolved variant at build time
+- `booth_messages` Jupyter server extension removed from the notebook variant
+  - All `/booth-messages/api/*` traffic has been served by the shared bash API server (via nginx) since the wrapper was introduced, so the Jupyter-side handlers were dead code
+  - Notebook startup no longer logs `error adding extension (enabled: True): The module 'booth_messages' could not be found`; `booth-message-notebook-wrapped--setup.sh` now only installs the `start-notebook-wrapped` launcher
+- Wrapper nginx silences JupyterLab's `/_static/out/browser/serviceWorker.js` poll
+  - JupyterLab's frontend polls that path from the wrapper root every ~2 s; the file isn't served (JupyterLab is mounted at `/lab`), so every poll was flooding the container logs with 404s
+  - Added a dedicated `location = /_static/out/browser/serviceWorker.js { return 204; }` rule so the poll is absorbed at nginx instead of reaching the inner server
 
 ## 0.43.0
 

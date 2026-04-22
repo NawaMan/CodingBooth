@@ -598,6 +598,77 @@ setup nodjes
 	})
 }
 
+func TestCompiler_VariantProvidedSetups(t *testing.T) {
+	t.Run("notebook variant skips setup notebook", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
+setup notebook 18888
+setup codeserver 19999
+`
+		parser := NewParser()
+		parseResult := parser.ParseString(content)
+
+		compiler := NewCompilerWithOptions(CompilerOptions{Variant: "notebook"})
+		result := compiler.Compile(parseResult)
+
+		assert.False(t, result.HasErrors())
+		assert.True(t, result.HasWarnings(), "Should warn about redundant setup")
+		assert.Len(t, result.Warnings, 1, "Only notebook is redundant for notebook variant")
+		assert.Contains(t, result.Warnings[0].Message, "setup 'notebook'")
+		assert.Contains(t, result.Warnings[0].Message, "notebook")
+		assert.Contains(t, result.Dockerfile, "# skipped: setup notebook 18888")
+		assert.Contains(t, result.Dockerfile, "RUN codeserver--setup.sh 19999")
+		assert.NotContains(t, result.Dockerfile, "RUN notebook--setup.sh")
+	})
+
+	t.Run("codeserver variant skips setup codeserver", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
+setup notebook 18888
+setup codeserver 19999
+`
+		parser := NewParser()
+		parseResult := parser.ParseString(content)
+
+		compiler := NewCompilerWithOptions(CompilerOptions{Variant: "codeserver"})
+		result := compiler.Compile(parseResult)
+
+		assert.False(t, result.HasErrors())
+		assert.Len(t, result.Warnings, 1)
+		assert.Contains(t, result.Warnings[0].Message, "setup 'codeserver'")
+		assert.Contains(t, result.Dockerfile, "# skipped: setup codeserver 19999")
+		assert.Contains(t, result.Dockerfile, "RUN notebook--setup.sh 18888")
+	})
+
+	t.Run("no variant set means no skip", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
+setup notebook 18888
+`
+		parser := NewParser()
+		parseResult := parser.ParseString(content)
+
+		compiler := NewCompilerWithOptions(CompilerOptions{})
+		result := compiler.Compile(parseResult)
+
+		assert.False(t, result.HasErrors())
+		assert.False(t, result.HasWarnings())
+		assert.Contains(t, result.Dockerfile, "RUN notebook--setup.sh 18888")
+	})
+
+	t.Run("unknown variant means no skip", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
+setup notebook 18888
+`
+		parser := NewParser()
+		parseResult := parser.ParseString(content)
+
+		compiler := NewCompilerWithOptions(CompilerOptions{Variant: "desktop-xfce"})
+		result := compiler.Compile(parseResult)
+
+		assert.False(t, result.HasErrors())
+		assert.False(t, result.HasWarnings())
+		assert.Contains(t, result.Dockerfile, "RUN notebook--setup.sh 18888")
+	})
+}
+
 func TestCompiler_SimilarityScore(t *testing.T) {
 	t.Run("exact match high score", func(t *testing.T) {
 		score := similarityScore("python", "python")

@@ -47,6 +47,41 @@ type CompilerOptions struct {
 	// CustomInstallScripts is a list of custom install script names from .booth/setups/.
 	// These are added to the known scripts for validation.
 	CustomInstallScripts []string
+
+	// Variant is the chosen variant name (e.g., "notebook", "codeserver").
+	// When set, setups that the variant's own Dockerfile already runs are
+	// detected and skipped with a warning, so users don't pay to re-install
+	// packages that are already baked into the variant base image.
+	Variant string
+}
+
+// variantProvidedSetups maps each variant to the setup scripts its
+// own Dockerfile already runs (keep in sync with variants/<name>/Dockerfile).
+// A `setup X` in the user's Boothfile where X is in this list is redundant
+// and is skipped at compile time with a warning.
+var variantProvidedSetups = map[string][]string{
+	"notebook": {
+		"python",
+		"notebook",
+		"bash-nb-kernel",
+		"cleanup-after",
+		"base-code-extension",
+		"bash-code-extension",
+		"booth-shutdown-code-extension",
+		"booth-restart-code-extension",
+		"booth-message-notebook-wrapped",
+	},
+	"codeserver": {
+		"python",
+		"codeserver",
+		"jupyter-code-extension",
+		"bash-code-extension",
+		"booth-shutdown-code-extension",
+		"booth-restart-code-extension",
+		"booth-message-codeserver-wrapped",
+		"bash-nb-kernel",
+		"cleanup-after",
+	},
 }
 
 // Compiler compiles parsed Boothfile commands into a Dockerfile.
@@ -403,6 +438,17 @@ func (c *Compiler) compileSetup(cmd Command) (string, *ParseError) {
 	toolName := cmd.Args[0]
 	scriptArgs := cmd.Args[1:]
 
+	// Skip setups the chosen variant already provides — they just
+	// reinstall on top of the variant base image (e.g. `setup notebook`
+	// when running with `--variant notebook`).
+	if c.isProvidedByVariant(toolName) {
+		c.addWarning(cmd.LineNumber,
+			fmt.Sprintf("setup '%s' is already provided by variant '%s' — skipping", toolName, c.options.Variant),
+			fmt.Sprintf("Remove this line from your Boothfile, or pick a different variant. If you need to re-run '%s--setup.sh' (e.g. different args), rename the step or use a custom setup.", toolName))
+		return fmt.Sprintf("# skipped: setup %s (already provided by variant %s)",
+			strings.Join(cmd.Args, " "), c.options.Variant), nil
+	}
+
 	// Validate script name if we have known scripts configured
 	if c.hasKnownScripts() && !c.isKnownSetupScript(toolName) {
 		// Combine all known setup scripts for suggestion
@@ -423,6 +469,20 @@ func (c *Compiler) compileSetup(cmd Command) (string, *ParseError) {
 	}
 
 	return runCmd, nil
+}
+
+// isProvidedByVariant reports whether the given setup name is already
+// run by the chosen variant's own Dockerfile.
+func (c *Compiler) isProvidedByVariant(toolName string) bool {
+	if c.options.Variant == "" {
+		return false
+	}
+	for _, s := range variantProvidedSetups[c.options.Variant] {
+		if s == toolName {
+			return true
+		}
+	}
+	return false
 }
 
 // compileInstall compiles an install command.

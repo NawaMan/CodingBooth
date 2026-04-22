@@ -28,6 +28,7 @@ TLS_BACKEND_PORT=10000
 # ==== Install Caddy ====
 
 echo "📦 Installing Caddy..."
+CADDY_VERSION=2.11.2
 ARCH=$(dpkg --print-architecture)
 case "$ARCH" in
   amd64) CADDY_ARCH="amd64" ;;
@@ -35,8 +36,11 @@ case "$ARCH" in
   *)     echo "❌ Unsupported architecture: $ARCH"; exit 1 ;;
 esac
 
-curl -fsSL "https://caddyserver.com/api/download?os=linux&arch=${CADDY_ARCH}" \
-  -o /usr/local/bin/caddy
+curl -fsSL --connect-timeout 15 --max-time 300 --retry 3 --retry-delay 5 \
+  "https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_${CADDY_ARCH}.tar.gz" \
+  -o /tmp/caddy.tar.gz
+tar -xzf /tmp/caddy.tar.gz -C /usr/local/bin caddy
+rm /tmp/caddy.tar.gz
 chmod +x /usr/local/bin/caddy
 
 

@@ -173,6 +173,7 @@ func compileBoothfile(ctx appctx.AppContext, boothfilePath string) string {
 		KnownInstallScripts:  builtinInstallScripts,
 		CustomSetupScripts:   customSetupScripts,
 		CustomInstallScripts: customInstallScripts,
+		Variant:              ctx.Variant(),
 	}
 	compiler := boothfile.NewCompilerWithOptions(compilerOpts)
 	compileResult := compiler.Compile(parseResult)
