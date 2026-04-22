@@ -4,6 +4,9 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- Pin Caddy install in `tls--setup.sh` to GitHub releases
+  - `caddyserver.com/api/download` was unreachable during a build and — because the `curl` had no timeout — the `tls--setup.sh` step hung for 40+ minutes before being noticed
+  - Switched to `https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_${CADDY_ARCH}.tar.gz` with `CADDY_VERSION=2.11.2` pinned, `--connect-timeout 15 --max-time 300 --retry 3 --retry-delay 5` so failures surface fast, and a tarball extract instead of a raw binary download
 - Idle-timer Pause and Disable controls in the web overlay
   - Persistent `Idle:` chip in the lifecycle panel whenever `--idle-time` is armed, in three visual states: `Idle: 15m` (green, normal), `Idle: PAUSE 1h 42m` (blue, time-boxed hold with live countdown), `Idle: DISABLED` (red, pulsing — indefinite hold)
   - **Pause** = time-boxed hold that auto-resumes to normal cadence. **Disable** = indefinite hold; only cleared by Resume or a restart
