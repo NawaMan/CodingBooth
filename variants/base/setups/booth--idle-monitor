@@ -158,12 +158,36 @@ while true; do
         continue
     fi
 
-    # 3) Real activity during the window resets the timer.
-    LAST=$(last_activity)
-    if [ "$LAST" -gt "$SLEEP_START" ]; then
-        log "Activity detected (last=$LAST, sleep_start=$SLEEP_START), resetting timer."
-        continue
-    fi
+    # 3) Activity during the window: slide the window so it ends IDLE_TIME
+    # after the most recent activity, not a fresh IDLE_TIME from now. A
+    # fixed reset would double the effective idle when a single event lands
+    # near the start of the window (e.g., the click that opens the booth).
+    hold_break=0
+    while true; do
+        LAST=$(last_activity)
+        [ "$LAST" -le "$SLEEP_START" ] && break
+        NOW=$(date +%s)
+        REMAINING=$(( LAST + CURRENT_IDLE_TIME - NOW ))
+        if [ "$REMAINING" -le 0 ]; then
+            log "Activity at $LAST (sleep_start=$SLEEP_START); already past LAST+IDLE_TIME, proceeding."
+            break
+        fi
+        log "Activity at $LAST (sleep_start=$SLEEP_START); sliding ${REMAINING}s."
+        SLEEP_START="$LAST"
+        elapsed=0
+        while [ "$elapsed" -lt "$REMAINING" ]; do
+            step="$CHECK_INTERVAL"
+            [ "$step" -gt "$((REMAINING - elapsed))" ] && step="$((REMAINING - elapsed))"
+            sleep "$step"
+            elapsed=$((elapsed + step))
+            refresh_idle_time
+            if hold_active; then
+                hold_break=1
+                break 2
+            fi
+        done
+    done
+    [ "$hold_break" = 1 ] && continue
 
     # 4) Prompt the user with Pause/Disable options via the message overlay.
     MSG_ID="idle-$(date +%s%N)"

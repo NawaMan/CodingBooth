@@ -1548,14 +1548,35 @@
     var apiBase = window.BOOTH_MSG_API_BASE || "/booth-messages/api";
     var lastReport = 0;
     var THROTTLE = 60000; // report at most once per minute
+    // Mousemove deadband: sub-threshold drift (table vibration, sensor jitter)
+    // shouldn't reset the idle timer. The anchor only moves when we report, so
+    // sustained creeping motion eventually crosses the threshold; pure jitter
+    // around a point never does. Keys/clicks/wheel/touch stay immediate since
+    // they're hard to trigger accidentally.
+    var MOVE_THRESHOLD_PX = 10;
+    var moveAnchorX = null;
+    var moveAnchorY = null;
     function reportActivity() {
       var now = Date.now();
       if (now - lastReport < THROTTLE) return;
       lastReport = now;
       fetch(apiBase + "/activity", { method: "POST" }).catch(function () {});
     }
+    function onMouseMove(e) {
+      if (moveAnchorX === null) {
+        moveAnchorX = e.clientX;
+        moveAnchorY = e.clientY;
+        return;
+      }
+      var dx = e.clientX - moveAnchorX;
+      var dy = e.clientY - moveAnchorY;
+      if (dx * dx + dy * dy < MOVE_THRESHOLD_PX * MOVE_THRESHOLD_PX) return;
+      moveAnchorX = e.clientX;
+      moveAnchorY = e.clientY;
+      reportActivity();
+    }
     document.addEventListener("keydown", reportActivity, true);
-    document.addEventListener("mousemove", reportActivity, true);
+    document.addEventListener("mousemove", onMouseMove, true);
     document.addEventListener("mousedown", reportActivity, true);
     document.addEventListener("wheel", reportActivity, true);
     document.addEventListener("touchstart", reportActivity, true);
