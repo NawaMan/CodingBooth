@@ -4,6 +4,7 @@ set -euo pipefail
 PORT=${1:-10000}
 WEB_SPLIT_ROOT=/usr/local/share/ttyd-split
 NGINX_CONFIG=/tmp/ttyd-split.nginx.conf
+WRAPPER_DIR=/usr/local/share/booth-message-wrapper
 
 SESSION_NAMES=(s1 s2 s3 s4)
 SESSION_PORTS=(10001 10002 10003 10004)
@@ -30,14 +31,15 @@ for i in "${!SESSION_NAMES[@]}"; do
     ttyd "${ttyd_args[@]}" bash -l &
 done
 
-# Shutdown endpoint — runs booth--shutdown when a WebSocket client connects
-ttyd -i 127.0.0.1 -p 10005 -b /shutdown booth--shutdown --yes &
-
-# Restart endpoint — runs booth--restart --yes when a WebSocket client connects
-ttyd -i 127.0.0.1 -p 10006 -b /restart booth--restart --yes &
-
-# Message API server — serves booth message list/respond endpoints
+# Message API server — serves booth message list/respond endpoints and
+# handles the overlay's POSTs to /restart, /shutdown, /idle/*, and
+# /countdown-shutdown.
 booth-message-api-server 10007 &
+
+# Lifecycle watcher — picks up .restart-requested / .shutdown-requested
+# marker files written by the API server and runs booth--restart /
+# booth--shutdown.
+booth-lifecycle-watcher &
 
 # Timer notifier — sends toast messages at countdown thresholds
 booth-timer-notifier &
@@ -47,10 +49,32 @@ export BOOTH_CONTAINER_NAME="${BOOTH_CONTAINER_NAME:-CodingBooth}"
 export BOOTH_HOST_PORT="${BOOTH_HOST_PORT:-$PORT}"
 export BOOTH_SHOW_RUN_TIME="${BOOTH_SHOW_RUN_TIME:-}"
 export BOOTH_SHOW_COUNT_DOWN="${BOOTH_SHOW_COUNT_DOWN:-}"
+export BOOTH_IDLE_TIME="${BOOTH_IDLE_TIME:-0}"
+export BOOTH_IDLE_SHUTDOWN_TIME="${BOOTH_IDLE_SHUTDOWN_TIME:-60}"
 export WEB_SPLIT_SERVE=/tmp/ttyd-split-serve
 mkdir -p "$WEB_SPLIT_SERVE"
+
+# Inject the shared lifecycle-panel overlay (same file the wrapper variants
+# use) and any registered plugins into index.html, mirroring
+# booth-message-wrapper--setup.sh's start-booth-wrapped behaviour.
+OVERLAY_HTML=$(cat "$WRAPPER_DIR/overlay.html")
+export OVERLAY_HTML
+
+PLUGINS_HTML=""
+if ls "$WRAPPER_DIR/plugins"/*.js >/dev/null 2>&1; then
+  for plugin_file in "$WRAPPER_DIR/plugins"/*.js; do
+    PLUGINS_HTML="${PLUGINS_HTML}
+<!-- booth plugin: $(basename "$plugin_file") -->
+<script>
+$(cat "$plugin_file")
+</script>"
+  done
+fi
+export PLUGINS_HTML
+
 envsubst '${PORT} ${WEB_SPLIT_SERVE}' <"$WEB_SPLIT_ROOT/nginx.conf.template" >"$NGINX_CONFIG"
-envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN}' <"$WEB_SPLIT_ROOT/index.html" >"$WEB_SPLIT_SERVE/index.html"
+envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML}' \
+  <"$WEB_SPLIT_ROOT/index.html" >"$WEB_SPLIT_SERVE/index.html"
 
 mkdir -p /tmp/nginx/body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi
 
