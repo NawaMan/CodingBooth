@@ -1,10 +1,9 @@
-# Configured by: booth config --no-tui --overwrite --variant desktop-xfce --port 10000 --select python+pip-config+vscode-ext/java+vscode-ext/nodejs+npmrc+vscode-ext/notebook/codeserver+settings-cache
+# Configured by: booth config --no-tui --overwrite --variant desktop-xfce --port 10000 --select python+pip-config+vscode-ext/notebook/codeserver+settings-cache
 
 variant = "desktop-xfce"
 port = "10000"
 
 run-args = [
     "-e", "PYTHONDONTWRITEBYTECODE=1",
-    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
-    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro"
+    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro"
 ]

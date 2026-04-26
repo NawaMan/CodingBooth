@@ -1,0 +1,74 @@
+# CodingBooth Features (Brainstorm)
+
+- Containerized, reproducible dev environments per project
+- Host UID/GID mapping — files owned by host user, not root
+- `.booth/` folder travels with the repo (config, Boothfile, Dockerfile, setups, home, cache, tools, .env, .tmp)
+- `.booth/` read-only by default; `--writable-booth` opt-out
+- `coder` user inside container with passwordless sudo
+- 5 UI variants: base (ttyd), codeserver (VS Code in browser), notebook (Jupyter), desktop-xfce, desktop-kde
+- Terminal variant (direct bash) + command passthrough (`booth -- cmd`) with exit-code forwarding
+- Cross-platform: Linux/macOS/Windows, amd64/arm64
+- Docker-in-Docker (`--dind`) via sidecar
+- Sandbox egress filtering (`--sandboxed`) via Envoy + iptables, with domain allowlist
+- Port mapping: explicit / NEXT / RANDOM
+- `booth--expose` — runtime TCP tunnel (host↔container) via socat, explicit/relative/default port, `--permanent` persists to config
+- Web proxy pane — nginx `/proxy/{port}/` with sub_filter + iframe toggle in console UI; X-Frame-Options / CSP stripped; open-in-new-tab button
+- Bind mounts (`-v`) and Docker pass-through args via `run-args` in config
+- Daemon / foreground / command run modes
+- `--keep-alive` to preserve container after exit
+- `--persist-home` — Docker named volume for `/home/coder`
+- `home-volume-list` / `-export` / `-import` commands
+- Lifecycle commands: `list`, `start`, `stop`, `restart`, `remove`, `prune`
+- `booth shell` / `booth exec` — connect to running booths without SSH
+- `booth--restart` from inside the container (rebuilds if needed, preserves CLI args, `--yes`)
+- Session timers: `--show-run-time`, `--show-count-down` with 15/10/5-min color warnings; `--count-down-exit-code`
+- Idle auto-shutdown: `--idle-time <s>[,t]` with "Still using this booth?" prompt; `--idle-exit-code`
+- Idle Pause (time-boxed, live countdown) and Disable (indefinite) via overlay chip + sectioned dialog; change-base-timeout inline; state persisted in `.booth/.tmp/`
+- Activity detection via throttled browser keyboard/mouse events
+- "Container stopped" overlay across all web variants (including console since v0.42)
+- Logout → clean container shutdown in wrapped variants (SIGTERM/SIGINT propagation)
+- Booth messaging system: yes-no / ok / text / password / choice / radio / checkbox / toast
+- `booth message send` / `list` / `response` CLI
+- Shutdown / restart confirmation dialogs with GUI (zenity/kdialog) + web overlay
+- Web UI lifecycle panel (Restart / Shut Down / timers / idle chip)
+- `booth--msg` terminal UI for base variant
+- HTTP message API server (bash + socat) at `/booth-messages/api/`
+- `booth config` — TUI scaffolding from templates (category browsing, multi-tab layout, preview, `--no-tui`, `--select` DSL, edit existing configs)
+- Selection DSL: `go:1.25+linter/python:3.13+uv/notebook`
+- 77+ templates across languages, databases, IDEs, tools, AI tools, browsers, desktops, education
+- Auto-select required extensions; round-trip persistence in TUI
+- `--version` flag in config sets CodingBooth version
+- `booth config --env`, `--expose`, `--mount` flags
+- TUI warns when `.booth/` is unwritable (dismissable dialog)
+- Boothfile DSL (`# syntax=codingbooth/boothfile:1`) with `setup`/`install`/`run`/`env`/`copy`/`expose` commands → compiled to Dockerfile
+- Boothfile compiler skips setups the variant already provides
+- Template merge rules: scalars must agree, arrays dedup, segments ordered (40/50/60/65/70/90)
+- `booth template list` / `help`
+- `booth example list` / `try` — ~45 pre-built workspaces
+- `booth build` / `booth build --push` to container registries
+- Fine-grained home copy with `.mount-this` markers (smart_copy across 4 seeding stages)
+- `cache-dirs` template field for directory-level cache mounts
+- Local cache (`.booth/cache/`) mirrors container FS, auto-bind-mounts (shell history, tool configs)
+- Claude Code `~/.claude/` cache persistence
+- AI-agent onboarding: `/opt/codingbooth/AGENT.md` + symlink examples (CLAUDE.md, COPILOT.md, CURSOR.md, etc.)
+- `.booth/.tmp/` ephemeral runtime dir (wiped on start, cleaned on exit); `--leave-tmp-on-exit` / `--keep-tmp-on-start`
+- `booth-startup.txt` per-session metadata
+- Config precedence: defaults → env vars (`CB_*`) → TOML → CLI flags
+- `--dryrun` and `--verbose` for debugging
+- `--silence-build` for scripted output
+- `--log-time` / `CB_LOG_TIME` timestamps on progress messages
+- Label-based container management (`cb.managed`, `cb.project`, `cb.variant`, `cb.role`, `cb.parent`)
+- Booth-in-booth detection with opt-in mechanism
+- Install / update via `booth install [version]`
+- `booth shell-config` for shell integration
+- Built-in toolset: bash/zsh/tini, curl/wget/httpie, git/gh/tig, nano/tilde/ranger/less, jq/yq/tree, unzip/zip/xz, ca-certificates/locales/sudo, socat
+- Code-server extensions: base, bash, shutdown, restart, message, auto-accept, + per-language
+- Jupyter multi-language kernels (Python, Bash, Java, more)
+- noVNC browser desktop (autoconnect + resize=scale); XFCE / KDE wallpaper branding
+- Desktop actions for shutdown/restart on XFCE/KDE
+- `no-sudo` template for sudo-removal hardening
+- Pre-commit hook from `on-board-me.sh` (version.txt ↔ README.md consistency)
+- `booth--info`, `booth--envs`, `booth--shutdown` in-container helpers
+- `booth-timer-notifier`, `booth-lifecycle-watcher`, `booth--idle-monitor` daemons
+- Friendly init-phase error messages (replaced panic stack traces)
+- TUI cycle-field enter/esc edit mode (parity with string fields)

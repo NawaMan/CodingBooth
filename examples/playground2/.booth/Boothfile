@@ -1,16 +1,9 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --variant desktop-xfce --port 10000 --select python+pip-config+vscode-ext/java+vscode-ext/nodejs+npmrc+vscode-ext/notebook/codeserver+settings-cache
+# Configured by: booth config --no-tui --overwrite --variant desktop-xfce --port 10000 --select python+pip-config+vscode-ext/notebook/codeserver+settings-cache
 
-arg JDK_VENDOR=temurin
-arg JDK_VERSION=25
-arg NODE_VERSION=22
 arg PYTHON_VERSION=3.13.12
 
-setup jdk ${JDK_VERSION} ${JDK_VENDOR}
-setup nodejs ${NODE_VERSION}
 setup python ${PYTHON_VERSION}
 setup codeserver 19999
 setup notebook 18888
-setup java-code-extension
-setup nodejs-code-extension
 setup python-code-extension

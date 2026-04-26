@@ -1,0 +1,57 @@
+# CodingBooth Code Components (Brainstorm)
+
+- `cli/src/cmd/codingbooth/` — command dispatch: `main.go`, `run.go`, `config.go`, `template.go`, `example.go`, `build.go`, `init.go`, `init_guard.go`, `lifecycle_cmd.go`, `emit.go`, `help.go`, `version.go`, `print_default_allowlist.go`
+- `pkg/appctx/` — `AppContext` / `AppContextBuilder` / `AppConfig` (immutable config with pipeline transforms)
+- `pkg/booth/` — orchestration pipeline
+  - `booth.go`, `booth_runner.go` — entry/dispatch
+  - `ensure_docker_image.go` — image build/pull
+  - `apply_env_file.go` — `.env` handling
+  - `port_determination.go`, `resolve_relative_ports.go` — port logic
+  - `build_image.go`, `build_hash.go` — build orchestration + cache hash
+  - `dind_setup.go` — Docker-in-Docker sidecar
+  - `sandbox_setup.go` — Envoy + iptables egress filtering
+  - `tcp_tunnel.go` — booth-expose host-side watcher
+  - `booth_tmp.go` — `.booth/.tmp/` lifecycle
+  - `validate_variant.go` — variant resolution
+  - `debug_banner.go`, `logprint.go` — logging
+  - `init/` — init helpers
+- `pkg/boothfile/` — Boothfile DSL: `parser.go`, `compiler.go`
+- `pkg/boothinit/` — template system
+  - `template/` — `loader.go`, `model.go`, `display.go`, `search.go` + `testdata/`
+  - `selection/` — DSL parser
+  - `compiler/` — template → Dockerfile/Boothfile
+  - `output/` — file emission
+  - `cache/` — template cache
+  - `tui/` — `tui.go`, `model.go`, `view.go`, `configfields.go`, `selection.go`
+- `pkg/docker/` — Docker wrapper: `docker.go`, `docker_build.go`, `docker_buildx.go`, `tty.go`, `print_cmd.go`
+- `pkg/lifecycle/` — `lifecycle.go` (list/start/stop/restart/remove/prune), `connect.go` (shell/exec), `message.go` (message CLI), `home_volume.go` (persist-home volumes)
+- `pkg/ilist/` — functional immutable List[T] / AppendableList[T]
+- `pkg/nillable/` — NillableString / NillableBool
+- `pkg/defaults/` — default config values
+- `variants/base/` — base image: `Dockerfile`, `booth-entry`, `start-ttyd`, `start-ttyd-split`, profile/startup shims
+- `variants/base/web-ttyd-split/` — `index.html` (console UI + overlay + proxy toggle), `nginx.conf.template`
+- `variants/base/setups/` (186 scripts):
+  - Language toolchains (`bun`, `cabal`, `cargo`, `clojure`, `conan`, …)
+  - Cloud (`aws-cli`, `aws-cdk`, `aws-sam-cli`, `azure-cli`, `gcloud`, `firebase`)
+  - IDE/editor (`codeserver`, `bluej`, `neovim`)
+  - AI tools (`claude-code`, `codex`, `aider`, `cursor`, `gh-copilot`, `ollama`, `antigravity`, `warp`)
+  - Browsers (`chromium-browser`)
+  - Databases (`cloudbeaver`)
+  - Build tools (`cmake`, `gradle`, `sbt`, `conda`)
+  - In-container runtime helpers (`booth--expose`, `booth--restart`, `booth--shutdown`, `booth--msg`, `booth--info`, `booth--envs`, `booth--idle-monitor`)
+  - Shared daemons (`booth-timer-notifier`, `booth-lifecycle-watcher`, `booth-message-api-server`)
+  - Wrapper infra (`booth-message-wrapper--setup.sh`, `booth-message-overlay.html`, per-variant `booth-message-{codeserver,notebook,desktop}-wrapped--setup.sh`)
+  - Code-server extensions (`*-code-extension--setup.sh`: base, bash, bun, clojure, codex, booth-message, booth-restart, booth-shutdown, …)
+  - Notebook kernels (`*-nb-kernel--setup.sh`: bash, …)
+  - Desktop bits (`booth-desktop-actions--setup.sh`, VNC helpers, `cb-has-desktop*.sh`)
+  - `cleanup-after--setup.sh`, `no-sudo`, `tls--setup.sh` (with pinned Caddy)
+- `variants/codeserver/`, `variants/notebook/`, `variants/desktop-xfce/`, `variants/desktop-kde/` — per-variant Dockerfiles + start scripts
+- `templates/` — TOML template definitions organized by category: `languages/`, `databases/`, `ides/`, `tools/`, `ai-tools/`, `browsers/`, `desktops/`, `education/` (+ `meta.toml` per dir)
+- `booth` — shell wrapper (install/update/cache/version management, gitignore generation, read-only host-wrapper mount)
+- `install.sh`, `on-board-me.sh` — bootstrap + contributor onboarding (pre-commit hook)
+- `bin/` — compiled multi-platform binaries
+- `build/` — `cli-build.sh`, `docker-build.sh`, `build-all.sh`
+- `tests/` — `unit/`, `basic/`, `boothfile/`, `config/`, `complex/`, `dryrun/`, `manual/`, `extra/`, `logs/`, plus `run-automate-tests.sh`, `run-manual-tests.sh`, `run-example-tests.sh`, `sanity-test.sh`, `common--source.sh`
+- `examples/workspaces/` — ~45 pre-built example projects (go, python, bun, java, aws, gcloud, dind, kind, jetbrain, nodejs, rust, scala, typescript, vim, excalidraw, …)
+- `experiments/`, `doc/`, `docs/` — documentation (BOOTH_*.md user guides + `docs/implementations/` internals + `docs/plans/` + `docs/troubleshoot/`)
+- `version.txt`, `README.md`, `LICENSE`, `codingbooth` (wrapper/binary location)
