@@ -22,7 +22,7 @@ Resolves which `codingbooth` to run, fetches it, verifies it, and keeps the cach
 - Cross-platform binary download (Linux/macOS/Windows × amd64/arm64) with sha256 verification
 - Cache layout: shared (`~/.cache/codingbooth/`, `~/Library/Caches/…`, `%LOCALAPPDATA%\…`) vs local (`.booth/tools/`); selected per-install via `--cache`, recorded in lock file
 - Lock file `.booth/tools/codingbooth.lock` (`version=`, `downloaded_at=`, `cache=`) — version-controlled, pins the binary
-- `.booth/.gitignore` generation — written by `DownloadBooth` (so it lands during `install`/`update`); content varies with cache mode and stays in sync with `cli/src/pkg/boothinit/output/writer.go`
+- `.booth/.gitignore` generation — written by `DownloadBooth` (so it lands during `install`/`update`); content varies with cache mode. **Cross-cutting**: only ~2 of 6 entries are binary-cache related (`tools/codingbooth-*`, `tools/*.sha256` in local mode); the rest (`.booth.password`, `.env`, `cache/`, `.tmp/`) are project-hygiene. Lives here because install/update is the wrapper's natural project-touching moment, but the artifact is also produced by the binary's init path — must stay in sync with `cli/src/pkg/boothinit/output/writer.go`. *[Note: shared concern, revisit if we ever extract project-hygiene as its own layer.]*
 - Install bootstrap (`install.sh`) — standalone one-liner that fetches the wrapper itself
 
 ### A2 — Wrapper-self behavior (everything else the wrapper does on its own)
@@ -72,6 +72,7 @@ Everything the wrapper forwards to, plus the Docker images the binary builds and
 ### Scaffolding & build
 
 - `config` TUI (multi-tab, preview, `--no-tui`, `--select` DSL, `--env`/`--expose`/`--mount`, `--version`)
+- Project init / scaffolding writes `.booth/.gitignore` via `cli/src/pkg/boothinit/output/writer.go`. *[Note: also written by the wrapper's `DownloadBooth` (see A1) — shared artifact, two writers must stay in sync. Revisit later.]*
 - Selection DSL + 77+ templates, auto-select extensions, round-trip persistence
 - TUI unwritable-`.booth/` warning, cycle-field edit mode
 - `template list` / `help`

@@ -325,19 +325,40 @@
     letter-spacing: 1px;
   }
 
-  .bl-timer-white { color: #64748b; }
-  .bl-timer-green { color: #22c55e; }
-  .bl-timer-yellow { color: #facc15; }
-  .bl-timer-orange { color: #fb923c; }
-  .bl-timer-red { color: #f87171; }
+  .bl-timer-white {
+    color: #64748b;
+  }
+
+  .bl-timer-green {
+    color: #22c55e;
+  }
+
+  .bl-timer-yellow {
+    color: #facc15;
+  }
+
+  .bl-timer-orange {
+    color: #fb923c;
+  }
+
+  .bl-timer-red {
+    color: #f87171;
+  }
 
   .bl-timer.flash {
     animation: bl-flash 0.6s ease-in-out infinite;
   }
 
   @keyframes bl-flash {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0.2; }
+
+    0%,
+    100% {
+      opacity: 1;
+    }
+
+    50% {
+      opacity: 0.2;
+    }
   }
 
   /* Idle-monitor status chip */
@@ -356,29 +377,54 @@
     border: 1px solid transparent;
     transition: background 0.15s, border-color 0.15s;
   }
-  .bl-idle-chip.visible { display: flex; }
+
+  .bl-idle-chip.visible {
+    display: flex;
+  }
+
   .bl-idle-chip-active {
     background: #163527;
     color: #4ade80;
     border-color: #1e4a36;
   }
-  .bl-idle-chip-active:hover { background: #1b4432; }
+
+  .bl-idle-chip-active:hover {
+    background: #1b4432;
+  }
+
   .bl-idle-chip-pause {
     background: #162b43;
     color: #60a5fa;
     border-color: #1e3a5f;
   }
-  .bl-idle-chip-pause:hover { background: #1d3a57; }
+
+  .bl-idle-chip-pause:hover {
+    background: #1d3a57;
+  }
+
   .bl-idle-chip-disable {
     background: #3b1c1c;
     color: #fca5a5;
     border-color: #7f1d1d;
     animation: bl-idle-pulse 1.6s ease-in-out infinite;
   }
-  .bl-idle-chip-disable:hover { background: #5b2424; }
+
+  .bl-idle-chip-disable:hover {
+    background: #5b2424;
+  }
+
   @keyframes bl-idle-pulse {
-    0%, 100% { border-color: #7f1d1d; box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.0); }
-    50%      { border-color: #dc2626; box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25); }
+
+    0%,
+    100% {
+      border-color: #7f1d1d;
+      box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.0);
+    }
+
+    50% {
+      border-color: #dc2626;
+      box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.25);
+    }
   }
 
   /* Chip-click "Idle shutdown" and timeout "Still using this booth?" dialog
@@ -393,47 +439,59 @@
     font-family: -apple-system, "Segoe UI", sans-serif;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   }
+
   .msg-idle-dialog h2 {
     margin: 0 0 0.5rem;
     font-size: 18px;
     font-weight: 500;
     color: #111827;
   }
-  .msg-idle-dialog > p {
+
+  .msg-idle-dialog>p {
     margin: 0 0 1.25rem;
     font-size: 14px;
     line-height: 1.6;
     color: #6b7280;
   }
-  .msg-idle-dialog > p strong {
+
+  .msg-idle-dialog>p strong {
     font-weight: 500;
     color: #111827;
   }
+
   .msg-idle-section {
     padding: 12px 0;
     border-top: 1px solid #e5e7eb;
   }
+
   .msg-idle-section:last-of-type {
     padding-bottom: 0;
   }
+
   .msg-idle-section h3 {
     margin: 0 0 2px;
     font-size: 14px;
     font-weight: 500;
     color: #111827;
   }
-  .msg-idle-section h3.danger { color: #b91c1c; }
+
+  .msg-idle-section h3.danger {
+    color: #b91c1c;
+  }
+
   .msg-idle-section p {
     margin: 0 0 10px;
     font-size: 13px;
     line-height: 1.5;
     color: #6b7280;
   }
+
   .msg-idle-controls {
     display: flex;
     align-items: center;
     gap: 8px;
   }
+
   .msg-idle-controls input[type="number"] {
     width: 70px;
     height: 32px;
@@ -443,6 +501,7 @@
     font-size: 13px;
     font-family: inherit;
   }
+
   .msg-idle-controls button {
     padding: 0 14px;
     height: 32px;
@@ -456,12 +515,19 @@
     cursor: pointer;
     font-family: inherit;
   }
-  .msg-idle-controls button:hover { background: #f3f4f6; }
+
+  .msg-idle-controls button:hover {
+    background: #f3f4f6;
+  }
+
   .msg-idle-controls button.danger {
     border-color: #fecaca;
     color: #b91c1c;
   }
-  .msg-idle-controls button.danger:hover { background: #fef2f2; }
+
+  .msg-idle-controls button.danger:hover {
+    background: #fef2f2;
+  }
 
   .bl-fullscreen {
     display: none;
@@ -587,7 +653,7 @@
 
 <div class="bl-fullscreen" id="bl-fullscreen">
   <div class="bl-fs-icon">&#x2713;</div>
-  <div class="bl-fs-title">Container stopped</div>
+  <div class="bl-fs-title">Booth stopped</div>
   <div class="bl-fs-msg">The CodingBooth session has ended. You can close this tab.</div>
 </div>
 
@@ -598,13 +664,18 @@
       <button class="bl-collapse-btn" id="bl-toggle" title="Collapse">&#x25BC;</button>
     </div>
     <div class="bl-body" id="bl-body">
-      <div class="bl-timer bl-timer-white" id="bl-run-time" data-priority="10" style="display:none" title="Total time this booth session has been running"></div>
-      <div class="bl-timer bl-timer-green" id="bl-count-down" data-priority="20" style="display:none" title="Time remaining before the booth session ends"></div>
-      <div class="bl-idle-chip bl-idle-chip-active" id="bl-idle-chip" data-priority="50" title="Idle shutdown is active — click to pause or disable"></div>
-      <button class="bl-btn bl-btn-restart" id="bl-restart-btn" data-priority="90" title="Restart the booth container (re-reads config and rebuilds)">
+      <div class="bl-timer bl-timer-white" id="bl-run-time" data-priority="10" style="display:none"
+        title="Total time this booth session has been running"></div>
+      <div class="bl-timer bl-timer-green" id="bl-count-down" data-priority="20" style="display:none"
+        title="Time remaining before the booth session ends"></div>
+      <div class="bl-idle-chip bl-idle-chip-active" id="bl-idle-chip" data-priority="50"
+        title="Idle shutdown is active — click to pause or disable"></div>
+      <button class="bl-btn bl-btn-restart" id="bl-restart-btn" data-priority="90"
+        title="Restart the booth container (re-reads config and rebuilds)">
         <span class="bl-btn-icon">&#x21BB;</span> Restart
       </button>
-      <button class="bl-btn bl-btn-shutdown" id="bl-shutdown-btn" data-priority="100" title="Shut down and stop the booth container">
+      <button class="bl-btn bl-btn-shutdown" id="bl-shutdown-btn" data-priority="100"
+        title="Shut down and stop the booth container">
         <span class="bl-btn-icon">&#x23FB;</span> Shut Down
       </button>
     </div>
@@ -722,50 +793,50 @@
       return '<div class="msg-idle-dialog">' +
         '<h2>' + esc(m.title || "Still using this booth?") + '</h2>' +
         '<p>This booth will shut down in ' +
-          '<strong data-idle-countdown-ms="' + expiresMs + '">' + initialLabel + '</strong>' +
-          ' if you do not respond.</p>' +
+        '<strong data-idle-countdown-ms="' + expiresMs + '">' + initialLabel + '</strong>' +
+        ' if you do not respond.</p>' +
 
         // Section 1: I'm here (primary acknowledge)
         '<div class="msg-idle-section">' +
-          '<h3>I&rsquo;m still here</h3>' +
-          '<p>Reset the timer and keep watching for inactivity.</p>' +
-          '<div class="msg-idle-controls">' +
-            '<button onclick="window._msgRespond(\'' + m.id + '\',\'ok\')">I&rsquo;m here</button>' +
-          '</div>' +
+        '<h3>I&rsquo;m still here</h3>' +
+        '<p>Reset the timer and keep watching for inactivity.</p>' +
+        '<div class="msg-idle-controls">' +
+        '<button onclick="window._msgRespond(\'' + m.id + '\',\'ok\')">I&rsquo;m here</button>' +
+        '</div>' +
         '</div>' +
 
         // Section 2: Pause (time-boxed)
         '<div class="msg-idle-section">' +
-          '<h3>Hold off for a while</h3>' +
-          '<p>Running a long build, or stepping away for coffee? Pause the idle timeout for a while.</p>' +
-          '<form class="msg-idle-controls" onsubmit="' + pauseSubmit + ';return false;">' +
-            '<input id="' + pauseInputId + '" type="number" min="1" max="10080" value="60">' +
-            '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
-            '<button type="submit">Pause</button>' +
-          '</form>' +
+        '<h3>Hold off for a while</h3>' +
+        '<p>Running a long build, or stepping away for coffee? Pause the idle timeout for a while.</p>' +
+        '<form class="msg-idle-controls" onsubmit="' + pauseSubmit + ';return false;">' +
+        '<input id="' + pauseInputId + '" type="number" min="1" max="10080" value="60">' +
+        '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
+        '<button type="submit">Pause</button>' +
+        '</form>' +
         '</div>' +
 
         // Section 3: Change the base timeout for this session.
         '<div class="msg-idle-section">' +
-          '<h3>Change the timeout</h3>' +
-          '<p>Use a different inactivity threshold for this booth. Reverts on restart.</p>' +
-          '<form class="msg-idle-controls" onsubmit="' + setTimeSubmit + ';return false;">' +
-            '<input id="' + timeoutInputId + '" type="number" min="1" max="10080" value="' + baseMin + '">' +
-            '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
-            '<button type="submit">Apply</button>' +
-          '</form>' +
+        '<h3>Change the timeout</h3>' +
+        '<p>Use a different inactivity threshold for this booth. Reverts on restart.</p>' +
+        '<form class="msg-idle-controls" onsubmit="' + setTimeSubmit + ';return false;">' +
+        '<input id="' + timeoutInputId + '" type="number" min="1" max="10080" value="' + baseMin + '">' +
+        '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
+        '<button type="submit">Apply</button>' +
+        '</form>' +
         '</div>' +
 
         // Section 4: Disable
         '<div class="msg-idle-section">' +
-          '<h3 class="danger">Turn it off entirely</h3>' +
-          "<p>Cost isn&rsquo;t a concern for this booth. You&rsquo;ll lose the safety net against runaway charges.</p>" +
-          '<div class="msg-idle-controls">' +
-            '<button class="danger" onclick="window._msgRespond(\'' + m.id + '\',\'disable\')">Disable idle shutdown</button>' +
-          '</div>' +
+        '<h3 class="danger">Turn it off entirely</h3>' +
+        "<p>Cost isn&rsquo;t a concern for this booth. You&rsquo;ll lose the safety net against runaway charges.</p>" +
+        '<div class="msg-idle-controls">' +
+        '<button class="danger" onclick="window._msgRespond(\'' + m.id + '\',\'disable\')">Disable idle shutdown</button>' +
+        '</div>' +
         '</div>' +
 
-      '</div>';
+        '</div>';
     }
 
     // Update any countdown <strong data-idle-countdown-ms="N"> elements.
@@ -905,7 +976,7 @@
         body: JSON.stringify({ seconds: seconds })
       }).then(function () {
         window._msgRespond(promptId, "ok");
-      }).catch(function () {});
+      }).catch(function () { });
     };
 
     // Reclaim focus from iframes when overlay is visible
@@ -971,7 +1042,7 @@
     // Clamp current (x, y) to keep the panel fully in the viewport.
     // Works whether reading from rect.left or from saved localStorage.
     function clampPos(x, y) {
-      var maxX = Math.max(0, window.innerWidth  - panel.offsetWidth);
+      var maxX = Math.max(0, window.innerWidth - panel.offsetWidth);
       var maxY = Math.max(0, window.innerHeight - panel.offsetHeight);
       return {
         x: Math.max(0, Math.min(x, maxX)),
@@ -1267,7 +1338,7 @@
               applyCollapsed();
             }
             // Auto-shutdown with countdown exit code
-            fetch(apiBase + "/countdown-shutdown", { method: "POST" }).catch(function () {});
+            fetch(apiBase + "/countdown-shutdown", { method: "POST" }).catch(function () { });
             return;
           }
           if (countdownExpired) return;
@@ -1362,7 +1433,7 @@
           window.BOOTH_IDLE_TIME = String(effective);
         }
         renderChip();
-      }).catch(function () {});
+      }).catch(function () { });
     }
 
     function closeDialog() {
@@ -1436,33 +1507,33 @@
         '<p>' + descHtml + '</p>' +
 
         '<div class="msg-idle-section">' +
-          '<h3>Got it, carry on</h3>' +
-          '<p>' + closeCopy + '</p>' +
-          '<div class="msg-idle-controls">' +
-            '<button data-action="close">Close</button>' +
-          '</div>' +
+        '<h3>Got it, carry on</h3>' +
+        '<p>' + closeCopy + '</p>' +
+        '<div class="msg-idle-controls">' +
+        '<button data-action="close">Close</button>' +
+        '</div>' +
         '</div>' +
 
         // Section 2: Pause (time-boxed)
         '<div class="msg-idle-section">' +
-          '<h3>Hold off for a while</h3>' +
-          '<p>' + pauseCopy + '</p>' +
-          '<form class="msg-idle-controls" data-form="pause">' +
-            '<input id="' + pauseId + '" type="number" min="1" max="10080" value="60">' +
-            '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
-            '<button type="submit">Pause</button>' +
-          '</form>' +
+        '<h3>Hold off for a while</h3>' +
+        '<p>' + pauseCopy + '</p>' +
+        '<form class="msg-idle-controls" data-form="pause">' +
+        '<input id="' + pauseId + '" type="number" min="1" max="10080" value="60">' +
+        '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
+        '<button type="submit">Pause</button>' +
+        '</form>' +
         '</div>' +
 
         // Section 3: Change the base idle timeout for this session.
         '<div class="msg-idle-section">' +
-          '<h3>Change the timeout</h3>' +
-          '<p>Use a different inactivity threshold for this booth. Reverts on restart.</p>' +
-          '<form class="msg-idle-controls" data-form="set-time">' +
-            '<input id="' + timeoutId + '" type="number" min="1" max="10080" value="' + baseMin + '">' +
-            '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
-            '<button type="submit">Apply</button>' +
-          '</form>' +
+        '<h3>Change the timeout</h3>' +
+        '<p>Use a different inactivity threshold for this booth. Reverts on restart.</p>' +
+        '<form class="msg-idle-controls" data-form="set-time">' +
+        '<input id="' + timeoutId + '" type="number" min="1" max="10080" value="' + baseMin + '">' +
+        '<span style="font-size:13px;color:#6b7280;">minutes</span>' +
+        '<button type="submit">Apply</button>' +
+        '</form>' +
         '</div>';
 
       // Section 4: Disable (normal state) OR Resume (when already held)
@@ -1471,17 +1542,17 @@
           '<h3>Back to normal</h3>' +
           '<p>Resume the regular ' + esc(baseLong) + ' idle shutdown checks.</p>' +
           '<div class="msg-idle-controls">' +
-            '<button data-action="resume">Resume normal idle</button>' +
+          '<button data-action="resume">Resume normal idle</button>' +
           '</div>' +
-        '</div>';
+          '</div>';
       } else {
         h += '<div class="msg-idle-section">' +
           '<h3 class="danger">Turn it off entirely</h3>' +
           "<p>Cost isn&rsquo;t a concern for this booth. You&rsquo;ll lose the safety net against runaway charges.</p>" +
           '<div class="msg-idle-controls">' +
-            '<button class="danger" data-action="disable">Disable idle shutdown</button>' +
+          '<button class="danger" data-action="disable">Disable idle shutdown</button>' +
           '</div>' +
-        '</div>';
+          '</div>';
       }
 
       h += '</div>';
@@ -1560,7 +1631,7 @@
       var now = Date.now();
       if (now - lastReport < THROTTLE) return;
       lastReport = now;
-      fetch(apiBase + "/activity", { method: "POST" }).catch(function () {});
+      fetch(apiBase + "/activity", { method: "POST" }).catch(function () { });
     }
     function onMouseMove(e) {
       if (moveAnchorX === null) {
