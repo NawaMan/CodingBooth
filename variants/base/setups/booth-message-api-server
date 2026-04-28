@@ -265,8 +265,12 @@ send_response() {
     [ "$code" = "404" ] && status_text="Not Found"
     [ "$code" = "405" ] && status_text="Method Not Allowed"
 
+    # ${#body} counts chars in a UTF-8 locale; HTTP Content-Length needs bytes.
+    local body_bytes
+    body_bytes=$(printf '%s' "$body" | wc -c)
+
     printf "HTTP/1.0 %s %s\r\nContent-Type: application/json\r\nContent-Length: %s\r\nConnection: close\r\n\r\n%s" \
-        "$code" "$status_text" "${#body}" "$body"
+        "$code" "$status_text" "$body_bytes" "$body"
 }
 
 # If called with --handle, process a single request

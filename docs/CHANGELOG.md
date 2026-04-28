@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- Fix UI lockup when a message title or body contains multibyte characters (em-dash, accented letters, CJK, emoji)
+  - `booth-message-api-server` was setting HTTP `Content-Length` from bash's `${#body}`, which counts characters (not bytes) in a UTF-8 locale — an em-dash is 1 char / 3 bytes, so every response containing one was truncated and the browser failed to parse the JSON
+  - The polling failure then triggered the lifecycle overlay's "Container stopped" guard, blanking the entire console even though the container was healthy
+  - `send_response` now sends the byte count via `wc -c`
+- Booth message overlay tolerates transient poll failures instead of locking the UI
+  - "Container stopped" fullscreen previously fired on a single failed `/booth-messages/api/list` poll with no recovery path, even when subsequent polls succeeded
+  - Threshold raised from 1 to 3 consecutive failures (~6 s at the 2 s poll interval) and the overlay auto-hides when polls resume
+  - Recovery is scoped via a `data-poll-driven` marker so a deliberately-shown fullscreen (user-confirmed shutdown, `BoothPanel.showStopped`) is never auto-hidden
+- ttyd terminal panes auto-reconnect on transient websocket drops
+  - `start-ttyd-split` and `start-ttyd` now pass `-r 5` so the ttyd client retries every 5 seconds after a drop
+  - Previously a backgrounded tab or idle timeout left a frozen pane until manual reload; the bash session inside the container survives the drop, so the reconnected ws picks up the same shell
 - Pin Caddy install in `tls--setup.sh` to GitHub releases
   - `caddyserver.com/api/download` was unreachable during a build and — because the `curl` had no timeout — the `tls--setup.sh` step hung for 40+ minutes before being noticed
   - Switched to `https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_${CADDY_ARCH}.tar.gz` with `CADDY_VERSION=2.11.2` pinned, `--connect-timeout 15 --max-time 300 --retry 3 --retry-delay 5` so failures surface fast, and a tarball extract instead of a raw binary download

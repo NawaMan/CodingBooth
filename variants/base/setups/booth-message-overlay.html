@@ -856,6 +856,7 @@
       fetch(apiBase + "/list").then(function (resp) {
         if (!resp.ok) return;
         pollFails = 0;
+        checkConnectionLost();
         return resp.json();
       }).then(function (msgs) {
         if (!msgs) return;
@@ -946,12 +947,21 @@
       }).catch(function () { pollFails++; checkConnectionLost(); });
     }
 
-    // Detect container shutdown (e.g. idle timeout) by consecutive poll failures
+    // Detect container shutdown (e.g. idle timeout) by consecutive poll failures.
+    // Threshold > 1 so a single transient blip (network, API restart, malformed
+    // response) doesn't lock the UI; recovery hides the overlay if polls resume.
+    // data-poll marker scopes the hide so we don't undo a deliberately-shown
+    // fullscreen (e.g. user-confirmed shutdown, BoothPanel.showStopped).
     var pollFails = 0;
     function checkConnectionLost() {
-      if (pollFails >= 1) {
-        var fs = document.getElementById("bl-fullscreen");
-        if (fs) fs.classList.add("visible");
+      var fs = document.getElementById("bl-fullscreen");
+      if (!fs) return;
+      if (pollFails >= 3) {
+        fs.classList.add("visible");
+        fs.dataset.pollDriven = "1";
+      } else if (pollFails === 0 && fs.dataset.pollDriven === "1") {
+        fs.classList.remove("visible");
+        delete fs.dataset.pollDriven;
       }
     }
 

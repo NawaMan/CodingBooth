@@ -23,7 +23,7 @@ for i in "${!SESSION_NAMES[@]}"; do
     session_name="${SESSION_NAMES[$i]}"
     session_port="${SESSION_PORTS[$i]}"
 
-    ttyd_args=(-W -i 127.0.0.1 -p "$session_port" -b "/$session_name" --writable)
+    ttyd_args=(-W -i 127.0.0.1 -p "$session_port" -b "/$session_name" -r 5 --writable)
     if [[ -n "${PASSWORD:-}" ]]; then
         ttyd_args+=(-c "coder:${PASSWORD}")
     fi
