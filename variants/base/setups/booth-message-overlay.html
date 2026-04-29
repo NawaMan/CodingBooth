@@ -641,6 +641,103 @@
       transform: translateX(40px);
     }
   }
+
+  /* Banner notifications — top-centered, non-blocking, explicit OK to dismiss.
+     Lower z-index than modal/idle overlays so a modal still wins focus, but
+     above the iframe so the banner stays visible while the user keeps working.
+     Container is pointer-events:none so the iframe edges remain clickable;
+     only the banner card itself accepts pointer events. */
+  .banner-container {
+    position: fixed;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: calc(100% - 32px);
+    max-width: 480px;
+    pointer-events: none;
+  }
+
+  .banner {
+    pointer-events: auto;
+    background: #fff;
+    color: #111827;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 12px 14px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.18);
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    animation: banner-in 0.25s ease-out;
+  }
+
+  .banner-content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .banner h3 {
+    font-size: 13px;
+    font-weight: 600;
+    margin: 0 0 3px;
+    color: #111827;
+  }
+
+  .banner p {
+    font-size: 13px;
+    color: #4b5563;
+    margin: 0;
+    word-wrap: break-word;
+  }
+
+  .banner-close {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 5px 14px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .banner-close:hover {
+    background: #1d4ed8;
+  }
+
+  .banner.banner-out {
+    animation: banner-out 0.25s ease-in forwards;
+  }
+
+  @keyframes banner-in {
+    from {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes banner-out {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    to {
+      opacity: 0;
+      transform: translateY(-12px);
+    }
+  }
 </style>
 
 <div class="msg-overlay" id="msg-overlay">
@@ -650,6 +747,7 @@
   <div class="msg-stack" id="bl-idle-stack"></div>
 </div>
 <div class="toast-container" id="toast-container"></div>
+<div class="banner-container" id="banner-container"></div>
 
 <div class="bl-fullscreen" id="bl-fullscreen">
   <div class="bl-fs-icon">&#x2713;</div>
@@ -702,8 +800,13 @@
     var overlay = document.getElementById("msg-overlay");
     var dialogs = document.getElementById("msg-dialogs");
     var toastContainer = document.getElementById("toast-container");
+    var bannerContainer = document.getElementById("banner-container");
     var lastMsgIds = "";
     var activeToasts = {};  // id -> element, tracks toasts currently shown
+    // id -> {el, titleEl, bodyEl, title, body} so reconciliation can patch
+    // text in place instead of re-rendering (which would replay the entry
+    // animation every poll and feel jittery).
+    var activeBanners = {};
 
     // API base — override via window.BOOTH_MSG_API_BASE if needed
     var apiBase = window.BOOTH_MSG_API_BASE || "/booth-messages/api";
@@ -757,6 +860,64 @@
 
       // Auto-dismiss when timer expires
       setTimeout(function () { dismissToast(m.id, el); }, durationMs);
+    }
+
+    function dismissBanner(id, el) {
+      if (!activeBanners[id]) return;
+      delete activeBanners[id];
+      el.classList.add("banner-out");
+      respond(id, "ok");
+      setTimeout(function () { el.remove(); }, 250);
+    }
+
+    // Reconciles a banner message with the DOM. New id → create element;
+    // existing id with changed title/body → patch in place; unchanged → no-op.
+    // Removal happens in pollMessages once the id leaves the /list response.
+    function syncBanner(m) {
+      var existing = activeBanners[m.id];
+      var nextTitle = m.title || "";
+      var nextBody = m.body || "";
+      if (existing) {
+        if (existing.title !== nextTitle) {
+          existing.titleEl.textContent = nextTitle;
+          existing.title = nextTitle;
+        }
+        if (existing.body !== nextBody) {
+          existing.bodyEl.textContent = nextBody;
+          existing.body = nextBody;
+        }
+        return;
+      }
+      var el = document.createElement("div");
+      el.className = "banner";
+      el.innerHTML =
+        '<div class="banner-content"><h3></h3><p></p></div>' +
+        '<button class="banner-close" type="button">OK</button>';
+      var titleEl = el.querySelector("h3");
+      var bodyEl = el.querySelector("p");
+      titleEl.textContent = nextTitle;
+      bodyEl.textContent = nextBody;
+      el.querySelector(".banner-close").onclick = function () {
+        dismissBanner(m.id, el);
+      };
+      bannerContainer.appendChild(el);
+      activeBanners[m.id] = {
+        el: el, titleEl: titleEl, bodyEl: bodyEl,
+        title: nextTitle, body: nextBody
+      };
+    }
+
+    // Drop banners whose backing message file is gone (host-side cancel,
+    // adjust-then-respond, or another client posted /respond first).
+    function reapBanners(seenIds) {
+      Object.keys(activeBanners).forEach(function (id) {
+        if (seenIds[id]) return;
+        var entry = activeBanners[id];
+        delete activeBanners[id];
+        if (!entry || !entry.el) return;
+        entry.el.classList.add("banner-out");
+        setTimeout(function () { entry.el.remove(); }, 250);
+      });
     }
 
     function respond(id, answer) {
@@ -861,15 +1022,20 @@
       }).then(function (msgs) {
         if (!msgs) return;
 
-        // Separate toasts from interactive messages
+        // Separate toasts and banners from modal interactive messages.
         var interactive = [];
+        var seenBannerIds = {};
         msgs.forEach(function (m) {
           if (m.type === "toast") {
             showToast(m);
+          } else if (m.type === "banner") {
+            seenBannerIds[m.id] = true;
+            syncBanner(m);
           } else {
             interactive.push(m);
           }
         });
+        reapBanners(seenBannerIds);
 
         if (!interactive.length) {
           // Don't clear if a countdown warning dialog is showing

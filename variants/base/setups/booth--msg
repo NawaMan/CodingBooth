@@ -258,7 +258,10 @@ handle_message() {
   echo ""
 
   case "$msg_type" in
-    ok)
+    ok|banner)
+      # Banners are non-modal in the web overlay; in the terminal we surface
+      # them the same as `ok` — show the text and wait for explicit ENTER so a
+      # later `booth message adjust` still has a live message to update.
       echo -e "  ${BLUE}Press ENTER to acknowledge.${RESET}"
       read -r
       write_response "$msg_id" "ok"

@@ -23,6 +23,7 @@ Back to [README](../README.md)
 - [Message Types](#message-types)
 - [Flags](#flags)
 - [Toast Notifications](#toast-notifications)
+- [Banner Notifications](#banner-notifications)
 - [Examples](#examples)
 
 ---
@@ -53,8 +54,34 @@ booth message send [flags]
 | `--name`        | Target booth name (default: current directory name)                | No       |
 | `--options`     | Comma-separated options (for `choice`, `choice-text`, `radio`, `checkbox`) | Required for those types |
 | `--expires`     | Timeout duration (e.g., `5m`, `1h`). Default: 10m for interactive, 30s for toast | No |
+| `--id`          | Custom message ID (must match `[A-Za-z0-9._-]+`). Lets you target the message later with `booth message adjust`. | No (default: auto-generated) |
 
-**Output:** Prints the message ID on the first line. For interactive types, prints the user's answer on the second line after they respond (or `timeout` if expired).
+**Output:** Prints the message ID on the first line. For interactive types, prints the user's answer on the second line after they respond (or `timeout` if expired). For `toast` and `banner`, the CLI returns immediately after writing the message file.
+
+### `booth message adjust`
+
+Update the title and/or body of an existing message file. Useful for `banner` messages whose content evolves over time (build status, progress, etc.).
+
+```bash
+booth message adjust [--name <booth>] <msg-id> [--title <new>] [--body <new>]
+```
+
+| Flag       | Description                                            | Required |
+|------------|--------------------------------------------------------|----------|
+| `--title`  | New title (omit to keep existing)                      | No       |
+| `--body`   | New body (omit to keep existing)                       | No       |
+| `--name`   | Target booth name (default: current directory name)    | No       |
+
+At least one of `--title` or `--body` must be provided. The overlay reconciles changes on its next poll (≤ 2s).
+
+```bash
+# Send a banner with a deterministic id, then update it as the work progresses
+booth message send --type banner --id ci-status --title "CI" --body "Step 1 of 5"
+booth message adjust ci-status --body "Step 3 of 5"
+booth message adjust ci-status --title "CI complete" --body "All green."
+```
+
+If the user dismisses the banner (clicks OK) before you adjust, the overlay won't re-show it — `adjust` only patches the live state, it doesn't re-publish a dismissed message.
 
 ### `booth message list`
 
@@ -88,10 +115,11 @@ booth message response [--name <booth>] <msg-id>
 | `radio`          | Radio buttons + Submit           | Selected option (single)       | Blocks until response |
 | `checkbox`       | Checkboxes + Submit              | Comma-separated selections     | Blocks until response |
 | `toast`          | None (click to dismiss)          | `dismissed` (auto)             | Returns immediately   |
+| `banner`         | OK button                        | `ok` (when user clicks)        | Returns immediately   |
 
 All interactive types show a centered modal overlay with a semi-transparent backdrop. The iframe (terminal, IDE, desktop) is blocked from interaction while the overlay is visible.
 
-Toast notifications appear in the bottom-right corner without blocking interaction.
+Toast notifications appear in the bottom-right corner without blocking interaction. Banner notifications appear at the top-center, also without blocking interaction, and stay until the user explicitly clicks OK.
 
 **Note:** `choice`, `choice-text`, `radio`, and `checkbox` all require the `--options` flag.
 
@@ -149,6 +177,28 @@ booth message send --type toast --title "Step 3" --body "Running tests..."
 
 ---
 
+## Banner Notifications
+
+Banners are non-blocking notifications that pin to the top-center of the booth UI. Unlike toasts they do **not** auto-dismiss — they stay until the user clicks OK or the host removes the message file.
+
+- **Top-centered** — Stacked vertically, above the iframe.
+- **Persistent** — No timer; the user dismisses explicitly.
+- **No iframe blocking** — The user can keep working while a banner is visible.
+- **Updatable** — Pair `--id <handle>` on `send` with `booth message adjust <handle>` to change the title/body live.
+- **Fire-and-forget** — The CLI returns immediately after writing the message file, the same as toasts.
+
+```bash
+# A simple banner
+booth message send --type banner --title "Maintenance" --body "Disk repacking; expect slower I/O for ~10 min."
+
+# Live-updating banner driven by a build pipeline
+booth message send --type banner --id build --title "Build" --body "Compiling…"
+make build && booth message adjust build --body "Tests…"
+make test  && booth message adjust build --title "Build complete" --body "All green."
+```
+
+---
+
 ## Terminal Support
 
 When using the terminal variant (`booth --variant terminal`) or a shell session (`booth -- bash`, `booth shell`), there is no browser UI. Messages are handled via a prompt notification and the `booth--msg` command inside the container.
@@ -188,6 +238,7 @@ Each message type has a terminal-appropriate interaction:
 | `radio` | Inline arrow-key menu |
 | `checkbox` | Inline checklist (arrow keys + SPACE to toggle) |
 | `toast` | Auto-dismissed (shown briefly then acknowledged) |
+| `banner` | Press ENTER to acknowledge (terminal can't render the floating bar) |
 
 ---
 

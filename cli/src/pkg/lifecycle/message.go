@@ -11,17 +11,21 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
 )
+
+// User-supplied --id values become filenames; restrict to a safe set.
+var safeMessageIDPattern = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
 
 // boothMessage represents a message sent to a booth user.
 type boothMessage struct {
 	ID      string   `json:"id"`
 	Title   string   `json:"title"`
 	Body    string   `json:"body"`
-	Type    string   `json:"type"`              // "yes-no", "text", "ok", "choice", "password", "toast"
+	Type    string   `json:"type"`              // "yes-no", "text", "ok", "choice", "password", "toast", "banner"
 	Options []string `json:"options,omitempty"`  // for "choice" type
 	Created string   `json:"created"`
 	Expires string   `json:"expires,omitempty"`
@@ -55,9 +59,10 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 	name := flagSet.String("name", "", "Container name (default: current directory)")
 	title := flagSet.String("title", "", "Message title")
 	body := flagSet.String("body", "", "Message body")
-	msgType := flagSet.String("type", "yes-no", "Message type: yes-no, text, ok, choice, password, toast")
+	msgType := flagSet.String("type", "yes-no", "Message type: yes-no, text, ok, choice, password, toast, banner")
 	options := flagSet.String("options", "", "Comma-separated options for 'choice' type")
 	expires := flagSet.String("expires", "", "Expiry duration (e.g., 5m, 1h)")
+	id := flagSet.String("id", "", "Custom message ID (used by 'message adjust'; default: auto-generated)")
 	flagSet.SetOutput(stderr)
 
 	if err := flagSet.Parse(args); err != nil {
@@ -70,9 +75,12 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 	if *body == "" {
 		return commandExit(1, "Error: --body is required")
 	}
-	validTypes := map[string]bool{"yes-no": true, "yes-no-cancel": true, "text": true, "ok": true, "choice": true, "choice-text": true, "radio": true, "checkbox": true, "password": true, "toast": true}
+	validTypes := map[string]bool{"yes-no": true, "yes-no-cancel": true, "text": true, "ok": true, "choice": true, "choice-text": true, "radio": true, "checkbox": true, "password": true, "toast": true, "banner": true}
 	if !validTypes[*msgType] {
-		return commandExit(1, "Error: --type must be one of: yes-no, yes-no-cancel, text, ok, choice, choice-text, radio, checkbox, password, toast")
+		return commandExit(1, "Error: --type must be one of: yes-no, yes-no-cancel, text, ok, choice, choice-text, radio, checkbox, password, toast, banner")
+	}
+	if *id != "" && !safeMessageIDPattern.MatchString(*id) {
+		return commandExit(1, "Error: --id must match [A-Za-z0-9._-]+ (it becomes a filename)")
 	}
 	optionsRequired := map[string]bool{"choice": true, "choice-text": true, "radio": true, "checkbox": true}
 	if optionsRequired[*msgType] && *options == "" {
@@ -84,8 +92,11 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 		return err
 	}
 
-	// Generate message ID
-	msgID := fmt.Sprintf("msg-%d", time.Now().UnixNano())
+	// Generate message ID — auto unless the caller supplied one for adjust.
+	msgID := *id
+	if msgID == "" {
+		msgID = fmt.Sprintf("msg-%d", time.Now().UnixNano())
+	}
 
 	// Build message
 	msg := boothMessage{
@@ -120,6 +131,13 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 
 	msgData, _ := json.MarshalIndent(msg, "", "  ")
 	msgFile := filepath.Join(msgDir, msgID+".msg.json")
+	// Reject collisions when --id was explicit so a typo doesn't clobber an
+	// in-flight banner. Auto-generated nano-second IDs effectively never collide.
+	if *id != "" {
+		if _, err := os.Stat(msgFile); err == nil {
+			return commandExit(1, fmt.Sprintf("Error: message %q already exists; use 'booth message adjust %s' to update it", msgID, msgID))
+		}
+	}
 	if err := os.WriteFile(msgFile, msgData, 0644); err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to write message file: %v", err))
 	}
@@ -127,8 +145,8 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 	// Print the message ID
 	fmt.Fprintln(stdout, msgID)
 
-	// Toast is fire-and-forget — no response expected
-	if *msgType == "toast" {
+	// Fire-and-forget types — no response expected, CLI returns immediately.
+	if *msgType == "toast" || *msgType == "banner" {
 		return nil
 	}
 
@@ -316,10 +334,88 @@ func MessageResponse(args []string, stdout io.Writer, stderr io.Writer) error {
 	return nil
 }
 
+// MessageAdjust updates the title and/or body of an existing message file.
+// Useful for live banners whose content evolves (e.g. build progress). Other
+// fields (type, options, expires) are preserved as written.
+func MessageAdjust(args []string, stdout io.Writer, stderr io.Writer) error {
+	flagSet := flag.NewFlagSet("message adjust", flag.ContinueOnError)
+	name := flagSet.String("name", "", "Container name (default: current directory)")
+	title := flagSet.String("title", "", "New title (omit to keep existing)")
+	body := flagSet.String("body", "", "New body (omit to keep existing)")
+	flagSet.SetOutput(stderr)
+
+	if err := flagSet.Parse(args); err != nil {
+		return commandExit(2, "")
+	}
+
+	positional := flagSet.Args()
+	if len(positional) < 1 {
+		return commandExit(1, "Error: usage: booth message adjust [--name <booth>] <msg-id> [--title <new>] [--body <new>]")
+	}
+	msgID := positional[0]
+	if !safeMessageIDPattern.MatchString(msgID) {
+		return commandExit(1, "Error: msg-id must match [A-Za-z0-9._-]+")
+	}
+
+	// Distinguish "flag not passed" from "flag passed as empty string" so the
+	// caller can intentionally clear a field.
+	titleSet, bodySet := false, false
+	flagSet.Visit(func(f *flag.Flag) {
+		switch f.Name {
+		case "title":
+			titleSet = true
+		case "body":
+			bodySet = true
+		}
+	})
+	if !titleSet && !bodySet {
+		return commandExit(1, "Error: at least one of --title or --body must be provided")
+	}
+
+	target, err := resolveMessageTarget(*name)
+	if err != nil {
+		return err
+	}
+	if target.CodePath == "" {
+		return commandExit(1, "Error: booth has no code path")
+	}
+
+	msgDir := filepath.Join(target.CodePath, ".booth", ".tmp", "messages")
+	msgFile := filepath.Join(msgDir, msgID+".msg.json")
+
+	data, err := os.ReadFile(msgFile)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return commandExit(1, fmt.Sprintf("Error: no message with id %q in this booth", msgID))
+		}
+		return commandExit(1, fmt.Sprintf("Error: %v", err))
+	}
+
+	var msg boothMessage
+	if err := json.Unmarshal(data, &msg); err != nil {
+		return commandExit(1, fmt.Sprintf("Error: failed to parse message file: %v", err))
+	}
+
+	if titleSet {
+		msg.Title = *title
+	}
+	if bodySet {
+		msg.Body = *body
+	}
+
+	newData, _ := json.MarshalIndent(msg, "", "  ")
+	if err := os.WriteFile(msgFile, newData, 0644); err != nil {
+		return commandExit(1, fmt.Sprintf("Error: failed to write message file: %v", err))
+	}
+
+	fmt.Fprintln(stdout, msgID)
+	return nil
+}
+
 // Message dispatches message subcommands.
 func Message(args []string, stdout io.Writer, stderr io.Writer) error {
 	if len(args) == 0 {
-		return commandExit(1, "Error: usage: booth message <send|list|response> [options]")
+		return commandExit(1, "Error: usage: booth message <send|adjust|list|response> [options]")
 	}
 
 	subcommand := args[0]
@@ -328,11 +424,13 @@ func Message(args []string, stdout io.Writer, stderr io.Writer) error {
 	switch subcommand {
 	case "send":
 		return MessageSend(subArgs, stdout, stderr)
+	case "adjust":
+		return MessageAdjust(subArgs, stdout, stderr)
 	case "list":
 		return MessageList(subArgs, stdout, stderr)
 	case "response":
 		return MessageResponse(subArgs, stdout, stderr)
 	default:
-		return commandExit(1, fmt.Sprintf("Error: unknown message subcommand %q. Use: send, list, response", subcommand))
+		return commandExit(1, fmt.Sprintf("Error: unknown message subcommand %q. Use: send, adjust, list, response", subcommand))
 	}
 }
