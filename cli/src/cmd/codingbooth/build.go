@@ -93,7 +93,7 @@ func parseBuildArgs() buildOpts {
 			opts.silenceBuild = true
 		default:
 			fmt.Fprintf(os.Stderr, "Error: unknown flag for build: %s\n", args[i])
-			fmt.Fprintln(os.Stderr, "Usage: codingbooth build [--push <registry>] [--name <name>] [--tag <tag>] [--build-arg KEY=VALUE ...] [--code <path>] [--variant <variant>] [--version <version>] [--verbose] [--dryrun]")
+			fmt.Fprintln(os.Stderr, "Usage: booth build [--push <registry>] [--name <name>] [--tag <tag>] [--build-arg KEY=VALUE ...] [--code <path>] [--variant <variant>] [--version <version>] [--verbose] [--dryrun]")
 			os.Exit(1)
 		}
 	}

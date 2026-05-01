@@ -77,7 +77,7 @@ func ExportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 
 	positional := flagSet.Args()
 	if len(positional) < 2 {
-		return commandExit(1, "Usage: codingbooth home-volume-export <container-name> <output-file>\n\nExports the home volume for a booth to a tar.gz file.")
+		return commandExit(1, "Usage: booth home-volume-export <container-name> <output-file>\n\nExports the home volume for a booth to a tar.gz file.")
 	}
 
 	containerName := positional[0]
@@ -131,7 +131,7 @@ func ImportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 
 	positional := flagSet.Args()
 	if len(positional) < 2 {
-		return commandExit(1, "Usage: codingbooth home-volume-import <container-name> <input-file>\n\nImports a tar.gz file into the home volume for a booth.")
+		return commandExit(1, "Usage: booth home-volume-import <container-name> <input-file>\n\nImports a tar.gz file into the home volume for a booth.")
 	}
 
 	containerName := positional[0]

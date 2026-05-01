@@ -77,7 +77,7 @@ func ensureContainerNameAvailable(ctx appctx.AppContext) error {
 	}
 
 	return fmt.Errorf(
-		"container name %q already exists. Choose a different name with --name, or remove the existing one with 'codingbooth remove --name %s' (or 'docker rm -f %s')",
+		"container name %q already exists. Choose a different name with --name, or remove the existing one with 'booth remove --name %s' (or 'docker rm -f %s')",
 		containerName,
 		containerName,
 		containerName,

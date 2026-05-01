@@ -755,7 +755,7 @@ func printHomeVolumeWarning(ctx appctx.AppContext) {
 	homeVolName := "cb-home-" + containerName
 	fmt.Fprintf(os.Stderr, "Info: Home volume %q persists on disk.\n", homeVolName)
 	fmt.Fprintf(os.Stderr, "      To reclaim space: docker volume rm %s\n", homeVolName)
-	fmt.Fprintf(os.Stderr, "      Or: codingbooth remove %s\n", containerName)
+	fmt.Fprintf(os.Stderr, "      Or: booth remove %s\n", containerName)
 }
 
 // ensureHomeVolume creates a Docker named volume for persisting /home/coder.

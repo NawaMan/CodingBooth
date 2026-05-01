@@ -703,7 +703,7 @@ func checkBoothWritable(targetPath string) string {
 }
 
 func printConfigHelp() {
-	fmt.Println(`Usage: codingbooth config [path] [flags]
+	fmt.Println(`Usage: booth config [path] [flags]
 
 Configure a CodingBooth environment. Opens an interactive TUI by default.
 Use --no-tui for non-interactive CLI mode.
@@ -737,9 +737,9 @@ TUI Controls:
   Ctrl+Q/Ctrl+C  Quit (asks for confirmation)
 
 Examples:
-  codingbooth config                                  # TUI (empty)
-  codingbooth config --select go+linter               # TUI pre-populated
-  codingbooth config --no-tui --select go+linter      # CLI mode
-  codingbooth config --dryrun --select go              # TUI, dryrun on confirm
-  codingbooth config --no-tui --dryrun --select go     # CLI dryrun`)
+  booth config                                  # TUI (empty)
+  booth config --select go+linter               # TUI pre-populated
+  booth config --no-tui --select go+linter      # CLI mode
+  booth config --dryrun --select go              # TUI, dryrun on confirm
+  booth config --no-tui --dryrun --select go     # CLI dryrun`)
 }

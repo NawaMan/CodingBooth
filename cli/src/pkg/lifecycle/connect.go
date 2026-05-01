@@ -95,7 +95,7 @@ func Exec(args []string, stderr io.Writer) error {
 	}
 
 	if len(cmdArgs) == 0 {
-		return commandExit(1, "Error: no command specified. Usage: codingbooth exec <name> -- <command>")
+		return commandExit(1, "Error: no command specified. Usage: booth exec <name> -- <command>")
 	}
 
 	containers, err := managedContainers(false)

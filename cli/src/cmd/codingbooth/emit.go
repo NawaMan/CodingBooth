@@ -42,7 +42,7 @@ func emitDockerfile() {
 			strict = true
 		default:
 			fmt.Fprintf(os.Stderr, "Error: unknown option: %s\n", args[i])
-			fmt.Fprintln(os.Stderr, "Usage: codingbooth emit-dockerfile [--code <path>] [--boothfile <path>] [--strict]")
+			fmt.Fprintln(os.Stderr, "Usage: booth emit-dockerfile [--code <path>] [--boothfile <path>] [--strict]")
 			os.Exit(1)
 		}
 	}

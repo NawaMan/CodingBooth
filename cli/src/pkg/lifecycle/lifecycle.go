@@ -301,7 +301,7 @@ func Remove(args []string, stderr io.Writer) error {
 	for _, targetName := range names {
 		container, found := findByName(containers, targetName)
 		if !found {
-			return commandExit(1, fmt.Sprintf("Error: booth %q not found. Use 'codingbooth list' to see available containers.", targetName))
+			return commandExit(1, fmt.Sprintf("Error: booth %q not found. Use 'booth list' to see available containers.", targetName))
 		}
 		if container.State == "running" && !*force {
 			return commandExit(1, fmt.Sprintf("Error: booth %q is running. Stop it first or use --force.", targetName))
@@ -506,7 +506,7 @@ func resolveSingleContainer(containers []managedContainer, name string, codePath
 		}
 		if len(matches) == 0 {
 			if requiredState == stateStopped {
-				return managedContainer{}, fmt.Errorf("Error: no stopped booth found for code path %q. Use 'codingbooth list --stopped'.", normalized)
+				return managedContainer{}, fmt.Errorf("Error: no stopped booth found for code path %q. Use 'booth list --stopped'.", normalized)
 			}
 			return managedContainer{}, fmt.Errorf("Error: no booth found for code path %q.", normalized)
 		}
@@ -531,9 +531,9 @@ func resolveSingleContainer(containers []managedContainer, name string, codePath
 
 	container, found := findByName(containers, targetName)
 	if !found {
-		suggestion := "codingbooth list"
+		suggestion := "booth list"
 		if requiredState == stateStopped {
-			suggestion = "codingbooth list --stopped"
+			suggestion = "booth list --stopped"
 		}
 		return managedContainer{}, fmt.Errorf("Error: booth %q not found. Use '%s' to see available containers.", targetName, suggestion)
 	}
@@ -563,7 +563,7 @@ func resolveRemoveTargets(containers []managedContainer, name string, positional
 
 	defaultName := defaultBoothName()
 	if _, found := findByName(containers, defaultName); !found {
-		return nil, fmt.Errorf("Error: no default booth found for project %q. Use --name or 'codingbooth list'.", defaultName)
+		return nil, fmt.Errorf("Error: no default booth found for project %q. Use --name or 'booth list'.", defaultName)
 	}
 	return []string{defaultName}, nil
 }

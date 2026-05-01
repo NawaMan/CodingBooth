@@ -42,7 +42,7 @@ func runTemplate(version string) {
 }
 
 func printTemplateHelp() {
-	fmt.Println(`Usage: codingbooth template <command> [flags]
+	fmt.Println(`Usage: booth template <command> [flags]
 
 Commands:
   list                     List available templates
@@ -57,13 +57,13 @@ Flags:
   --detail                 Show file and segment contents (for show)
 
 Examples:
-  codingbooth template list
-  codingbooth template list --full
-  codingbooth template search python
-  codingbooth template show go
-  codingbooth template show python+uv
-  codingbooth template show python+uv --detail
-  codingbooth template cat go`)
+  booth template list
+  booth template list --full
+  booth template search python
+  booth template show go
+  booth template show python+uv
+  booth template show python+uv --detail
+  booth template cat go`)
 }
 
 // runTemplateList handles: codingbooth template list [--templates-path <dir>] [--full]
@@ -98,7 +98,7 @@ func runTemplateList(version string, args []string) {
 func runTemplateSearch(version string, args []string) {
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "Error: 'template search' requires a search term")
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth template search <term>")
+		fmt.Fprintln(os.Stderr, "Usage: booth template search <term>")
 		os.Exit(1)
 	}
 
@@ -127,7 +127,7 @@ func runTemplateSearch(version string, args []string) {
 func runTemplateShow(version string, args []string) {
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "Error: 'template show' requires a template name")
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth template show <name>")
+		fmt.Fprintln(os.Stderr, "Usage: booth template show <name>")
 		os.Exit(1)
 	}
 
@@ -147,7 +147,7 @@ func runTemplateShow(version string, args []string) {
 		parent, ok := registry.ByName[parts[0]]
 		if !ok {
 			fmt.Fprintf(os.Stderr, "Error: template %q not found\n", parts[0])
-			fmt.Fprintln(os.Stderr, "Use 'codingbooth template list' to see available templates.")
+			fmt.Fprintln(os.Stderr, "Use 'booth template list' to see available templates.")
 			os.Exit(1)
 		}
 		for _, ext := range parent.Extensions {
@@ -157,14 +157,14 @@ func runTemplateShow(version string, args []string) {
 			}
 		}
 		fmt.Fprintf(os.Stderr, "Error: extension %q not found in template %q\n", parts[1], parts[0])
-		fmt.Fprintf(os.Stderr, "Use 'codingbooth template show %s' to see available extensions.\n", parts[0])
+		fmt.Fprintf(os.Stderr, "Use 'booth template show %s' to see available extensions.\n", parts[0])
 		os.Exit(1)
 	}
 
 	t, ok := registry.ByName[templateName]
 	if !ok {
 		fmt.Fprintf(os.Stderr, "Error: template %q not found\n", templateName)
-		fmt.Fprintln(os.Stderr, "Use 'codingbooth template list' to see available templates.")
+		fmt.Fprintln(os.Stderr, "Use 'booth template list' to see available templates.")
 		os.Exit(1)
 	}
 
@@ -175,7 +175,7 @@ func runTemplateShow(version string, args []string) {
 func runTemplateCat(version string, args []string) {
 	if len(args) == 0 {
 		fmt.Fprintln(os.Stderr, "Error: 'template cat' requires a template name")
-		fmt.Fprintln(os.Stderr, "Usage: codingbooth template cat <name>")
+		fmt.Fprintln(os.Stderr, "Usage: booth template cat <name>")
 		os.Exit(1)
 	}
 
@@ -195,7 +195,7 @@ func runTemplateCat(version string, args []string) {
 		parent, ok := registry.ByName[parts[0]]
 		if !ok {
 			fmt.Fprintf(os.Stderr, "Error: template %q not found\n", parts[0])
-			fmt.Fprintln(os.Stderr, "Use 'codingbooth template list' to see available templates.")
+			fmt.Fprintln(os.Stderr, "Use 'booth template list' to see available templates.")
 			os.Exit(1)
 		}
 		for _, ext := range parent.Extensions {
@@ -205,14 +205,14 @@ func runTemplateCat(version string, args []string) {
 			}
 		}
 		fmt.Fprintf(os.Stderr, "Error: extension %q not found in template %q\n", parts[1], parts[0])
-		fmt.Fprintf(os.Stderr, "Use 'codingbooth template show %s' to see available extensions.\n", parts[0])
+		fmt.Fprintf(os.Stderr, "Use 'booth template show %s' to see available extensions.\n", parts[0])
 		os.Exit(1)
 	}
 
 	t, ok := registry.ByName[templateName]
 	if !ok {
 		fmt.Fprintf(os.Stderr, "Error: template %q not found\n", templateName)
-		fmt.Fprintln(os.Stderr, "Use 'codingbooth template list' to see available templates.")
+		fmt.Fprintln(os.Stderr, "Use 'booth template list' to see available templates.")
 		os.Exit(1)
 	}
 
