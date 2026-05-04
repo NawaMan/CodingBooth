@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodingBooth — Reproducible Dev Environments in Containers</title>
+    <meta name="description" content="CodingBooth delivers fully reproducible, isolated development environments — anywhere, on any machine.">
+    <meta property="og:title" content="CodingBooth">
+    <meta property="og:description" content="Fully reproducible, isolated development environments — anywhere, on any machine.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://codingbooth.io/">
+    <meta property="og:image" content="https://codingbooth.io/images/CodingBooth-Demo-Preview.gif">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%A6%3C/text%3E%3C/svg%3E">
+    <style>
+        :root {
+            --bg: #0d1117;
+            --bg-elev: #161b22;
+            --fg: #e6edf3;
+            --fg-muted: #8b949e;
+            --accent: #58a6ff;
+            --accent-strong: #1f6feb;
+            --border: #30363d;
+            --code-bg: #010409;
+            --success: #3fb950;
+        }
+        * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
+        body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--fg);
+            line-height: 1.6;
+        }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        code, pre {
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        }
+        .container {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+        nav {
+            border-bottom: 1px solid var(--border);
+            background: rgba(13, 17, 23, 0.85);
+            backdrop-filter: blur(8px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 16px;
+            padding-bottom: 16px;
+        }
+        .brand {
+            font-weight: 700;
+            font-size: 18px;
+            color: var(--fg);
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .brand:hover { text-decoration: none; }
+        .brand img {
+            height: 28px;
+            width: 28px;
+            display: block;
+        }
+        .nav-links {
+            display: flex;
+            gap: 24px;
+            font-size: 14px;
+        }
+        .nav-links a { color: var(--fg-muted); }
+        .nav-links a:hover { color: var(--fg); text-decoration: none; }
+        .hero {
+            padding: 80px 0 64px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+        .hero h1 {
+            font-size: clamp(36px, 6vw, 64px);
+            margin: 0 0 16px;
+            letter-spacing: -0.02em;
+            line-height: 1.1;
+        }
+        .hero .tagline {
+            font-size: clamp(18px, 2.5vw, 22px);
+            color: var(--fg-muted);
+            max-width: 720px;
+            margin: 0 auto 40px;
+        }
+        .install-block {
+            display: inline-block;
+            text-align: left;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 16px 20px;
+            font-size: 14px;
+            margin-bottom: 24px;
+            position: relative;
+            max-width: 100%;
+            overflow-x: auto;
+        }
+        .install-block code {
+            color: var(--fg);
+            white-space: pre;
+        }
+        .install-block .prompt { color: var(--fg-muted); user-select: none; }
+        .copy-btn {
+            margin-left: 16px;
+            padding: 4px 10px;
+            background: var(--bg-elev);
+            border: 1px solid var(--border);
+            color: var(--fg-muted);
+            font-size: 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .copy-btn:hover { color: var(--fg); border-color: var(--accent); }
+        .copy-btn.copied { color: var(--success); border-color: var(--success); }
+        .ctas {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-top: 16px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid var(--border);
+            background: var(--bg-elev);
+            color: var(--fg);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .btn:hover { border-color: var(--accent); text-decoration: none; }
+        .btn-primary {
+            background: var(--accent-strong);
+            border-color: var(--accent-strong);
+        }
+        .btn-primary:hover { background: var(--accent); border-color: var(--accent); }
+        section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+        section h2 {
+            font-size: 32px;
+            margin: 0 0 8px;
+            letter-spacing: -0.01em;
+        }
+        section .lead {
+            color: var(--fg-muted);
+            font-size: 17px;
+            margin: 0 0 32px;
+        }
+        .why-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 20px;
+        }
+        .why-card {
+            background: var(--bg-elev);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        .why-card h3 {
+            margin: 0 0 8px;
+            font-size: 17px;
+        }
+        .why-card p {
+            margin: 0;
+            color: var(--fg-muted);
+            font-size: 15px;
+        }
+        .demo {
+            text-align: center;
+        }
+        .demo a { display: inline-block; }
+        .demo img {
+            max-width: 100%;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+        .demo .caption {
+            color: var(--fg-muted);
+            font-size: 14px;
+            margin-top: 12px;
+        }
+        .variants-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 16px;
+        }
+        .variant-card {
+            background: var(--bg-elev);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            overflow: hidden;
+            text-align: center;
+        }
+        .variant-card img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-bottom: 1px solid var(--border);
+        }
+        .variant-card .body {
+            padding: 14px;
+        }
+        .variant-card .name {
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+        .variant-card code {
+            font-size: 13px;
+            color: var(--fg-muted);
+            background: var(--code-bg);
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+        .quickstart-list {
+            counter-reset: step;
+            list-style: none;
+            padding: 0;
+            display: grid;
+            gap: 16px;
+        }
+        .quickstart-list li {
+            counter-increment: step;
+            padding: 18px 22px 18px 56px;
+            background: var(--bg-elev);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            position: relative;
+        }
+        .quickstart-list li::before {
+            content: counter(step);
+            position: absolute;
+            left: 18px;
+            top: 18px;
+            width: 26px;
+            height: 26px;
+            background: var(--accent-strong);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        .quickstart-list .step-title {
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .quickstart-list pre {
+            margin: 8px 0 0;
+            background: var(--code-bg);
+            padding: 12px 14px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        footer {
+            padding: 32px 0;
+            text-align: center;
+            color: var(--fg-muted);
+            font-size: 14px;
+            border-bottom: none;
+        }
+        footer a { color: var(--fg-muted); }
+        footer .footer-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+        @media (max-width: 600px) {
+            .hero { padding: 56px 0 48px; }
+            section { padding: 48px 0; }
+            .nav-links { gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+<nav>
+    <div class="container">
+        <a href="/" class="brand"><img src="images/logo-image.png" alt="">CodingBooth</a>
+        <div class="nav-links">
+            <a href="#why">Why</a>
+            <a href="#demo">Demo</a>
+            <a href="#variants">Variants</a>
+            <a href="#quickstart">Quick start</a>
+            <a href="https://github.com/NawaMan/CodingBooth">GitHub</a>
+        </div>
+    </div>
+</nav>
+
+<header class="hero">
+    <div class="container">
+        <h1>Reproducible dev environments,<br>anywhere.</h1>
+        <p class="tagline">
+            CodingBooth delivers fully reproducible, isolated development environments — anywhere, on any machine.
+            One command. Your code, your UID, your workflow.
+        </p>
+
+        <div class="install-block">
+            <code><span class="prompt">$ </span>curl -fsSL https://codingbooth.io/install.sh | bash</code>
+            <button class="copy-btn" onclick="copyInstall(this)">Copy</button>
+        </div>
+
+        <div class="ctas">
+            <a class="btn btn-primary" href="#quickstart">Get started</a>
+            <a class="btn" href="https://github.com/NawaMan/CodingBooth">View on GitHub</a>
+            <a class="btn" href="https://github.com/NawaMan/CodingBooth/blob/main/CODINGBOOTH.md">User Manual</a>
+        </div>
+    </div>
+</header>
+
+<section id="why">
+    <div class="container">
+        <h2>Why CodingBooth?</h2>
+        <p class="lead">
+            You've containerized your app. You've containerized your build.
+            But your dev environment is still a mess of system-wide installs, mismatched versions, and onboarding docs no one ever revises. CodingBooth fixes that.
+        </p>
+        <div class="why-grid">
+            <div class="why-card">
+                <h3>Files owned by you</h3>
+                <p>The container's user is mapped to your host UID/GID. No more "root-owned" repositories.</p>
+            </div>
+            <div class="why-card">
+                <h3>Project-local config</h3>
+                <p>Everything lives in <code>.booth/</code> in your repo. Onboard a teammate with one command.</p>
+            </div>
+            <div class="why-card">
+                <h3>Six UI variants</h3>
+                <p>Browser-based VS Code, Jupyter Lab, XFCE / KDE desktops, terminal, or pure command passthrough.</p>
+            </div>
+            <div class="why-card">
+                <h3>77+ templates</h3>
+                <p>Languages, cloud CLIs, AI tools, IDE extensions — compose them with a simple selection DSL.</p>
+            </div>
+            <div class="why-card">
+                <h3>Pause &amp; resume, months later</h3>
+                <p>Persistent home volumes and local cache mean your environment is exactly as you left it.</p>
+            </div>
+            <div class="why-card">
+                <h3>Sandboxable</h3>
+                <p>Optional <code>--sandboxed</code> mode restricts egress to allowlisted domains via Envoy + iptables.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="demo">
+    <div class="container demo">
+        <h2>See it in action</h2>
+        <p class="lead">A Snake game in Zig — built and run inside the booth on a host that has no Zig toolchain installed.</p>
+        <a href="https://youtu.be/Rvv3UcOqv3c" target="_blank" rel="noopener">
+            <img src="images/CodingBooth-Demo-Preview.gif" alt="CodingBooth demo">
+        </a>
+        <p class="caption">Click the image to watch the full demo on YouTube.</p>
+    </div>
+</section>
+
+<section id="variants">
+    <div class="container">
+        <h2>Pick your UI</h2>
+        <p class="lead">Same underlying environment, six different presentations.</p>
+        <div class="variants-grid">
+            <div class="variant-card">
+                <img src="images/Booth-Base.png" alt="Base variant">
+                <div class="body">
+                    <div class="name">Base</div>
+                    <code>booth --variant base</code>
+                </div>
+            </div>
+            <div class="variant-card">
+                <img src="images/Booth-Bash.png" alt="Terminal variant">
+                <div class="body">
+                    <div class="name">Terminal</div>
+                    <code>booth --variant terminal</code>
+                </div>
+            </div>
+            <div class="variant-card">
+                <img src="images/Booth-NoteBook.png" alt="Notebook variant">
+                <div class="body">
+                    <div class="name">Jupyter Notebook</div>
+                    <code>booth --variant notebook</code>
+                </div>
+            </div>
+            <div class="variant-card">
+                <img src="images/Booth-CodeServer.png" alt="Code Server variant">
+                <div class="body">
+                    <div class="name">VS Code (codeserver)</div>
+                    <code>booth --variant codeserver</code>
+                </div>
+            </div>
+            <div class="variant-card">
+                <img src="images/Booth-XFCE.png" alt="XFCE Desktop variant">
+                <div class="body">
+                    <div class="name">XFCE Desktop</div>
+                    <code>booth --variant desktop-xfce</code>
+                </div>
+            </div>
+            <div class="variant-card">
+                <img src="images/Booth-KDE.png" alt="KDE Desktop variant">
+                <div class="body">
+                    <div class="name">KDE Desktop</div>
+                    <code>booth --variant desktop-kde</code>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="quickstart">
+    <div class="container">
+        <h2>Quick start</h2>
+        <p class="lead">Three steps to a working booth.</p>
+        <ol class="quickstart-list">
+            <li>
+                <div class="step-title">Install</div>
+                <pre><code>curl -fsSL https://codingbooth.io/install.sh | bash</code></pre>
+            </li>
+            <li>
+                <div class="step-title">Try an example</div>
+                <pre><code>booth example list
+booth example try zig-snake my-snake
+cd my-snake
+booth</code></pre>
+            </li>
+            <li>
+                <div class="step-title">Open the UI</div>
+                <p style="margin: 8px 0 0; color: var(--fg-muted);">
+                    Visit <a href="http://localhost:10000">http://localhost:10000</a> in your browser.
+                </p>
+            </li>
+        </ol>
+        <p style="margin-top: 32px; color: var(--fg-muted);">
+            Or scaffold from scratch with <code>booth config</code>'s interactive TUI — see the
+            <a href="https://github.com/NawaMan/CodingBooth/blob/main/CODINGBOOTH.md">User Manual</a> for the full feature reference.
+        </p>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <div class="footer-links">
+            <a href="https://github.com/NawaMan/CodingBooth">GitHub</a>
+            <a href="https://github.com/NawaMan/CodingBooth/issues">Issues</a>
+            <a href="https://github.com/NawaMan/CodingBooth/releases">Releases</a>
+            <a href="https://github.com/NawaMan/CodingBooth/blob/main/CODINGBOOTH.md">User Manual</a>
+            <a href="https://github.com/sponsors/NawaMan">Sponsor</a>
+        </div>
+        <div>
+            CodingBooth is built and maintained by
+            <a href="https://x.com/nawaman">@nawaman</a>.
+            Apache 2.0 licensed.
+        </div>
+    </div>
+</footer>
+
+<script>
+    function copyInstall(btn) {
+        const text = "curl -fsSL https://codingbooth.io/install.sh | bash";
+        navigator.clipboard.writeText(text).then(() => {
+            btn.textContent = "Copied!";
+            btn.classList.add("copied");
+            setTimeout(() => {
+                btn.textContent = "Copy";
+                btn.classList.remove("copied");
+            }, 1800);
+        });
+    }
+</script>
+
+</body>
+</html>

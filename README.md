@@ -110,9 +110,7 @@ For detailed variant information, aliases, and desktop configuration, see the **
 ### Install CodingBooth
 
 ```bash
-curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash \
-    ./booth install \
-    ./booth shell-config
+curl -fsSL https://raw.githubusercontent.com/NawaMan/CodingBooth/main/install.sh | bash
 ```
 
 > **Note:** The `booth` script operates relative to its own location, not the current working directory. You can run `/path/to/project/booth` from anywhere.
