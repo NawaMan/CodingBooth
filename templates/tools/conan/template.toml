@@ -1,0 +1,10 @@
+display-name = "Conan"
+display-disc = "Conan C/C++ package manager"
+display-detail = "Installs the Conan package manager for C/C++. Use the conan-pkg extension to preload packages into the cache at build time."
+display-order = 70
+tags = ["conan", "cpp", "c", "packages", "build"]
+
+[segments]
+Boothfile = """
+setup conan
+"""

@@ -4,6 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 set -Eeuo pipefail
+trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
 usage() {
   cat <<USAGE
@@ -29,7 +30,10 @@ USAGE
 }
 
 # --- root check ---
-[[ $EUID -eq 0 ]] || { echo "❌ Run as root (use sudo)"; exit 1; }
+[[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
+
+# This script will always be installed by root.
+HOME=/root
 
 # --- defaults & args ---
 LLVM_DEFAULT=18
@@ -54,9 +58,14 @@ done
 
 LLVM_VER="${LLVM_VER_INPUT:-$LLVM_DEFAULT}"
 
+LEVEL=63                          # See README.md - Profile Ordering
+
+PROFILE_FILE="/etc/profile.d/${LEVEL}-cb-clang--profile.sh"
+PROFILE_CC_FILE="/etc/profile.d/${LEVEL}-cb-clang-cc--profile.sh"
+
 # --- distro/codename (Ubuntu/Debian family) ---
 if [ -r /etc/os-release ]; then . /etc/os-release; fi
-CODENAME="${UBUNTU_CODENAME:-$VERSION_CODENAME}"
+CODENAME="${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}"
 [[ -n "$CODENAME" ]] || { echo "❌ Could not determine Ubuntu/Debian codename"; exit 1; }
 
 # --- base deps & repo key ---
@@ -101,21 +110,24 @@ ln -sfn "$LLVM_PREFIX" "${TARGET_DIR}/llvm-prefix"
 ln -sfn "${TARGET_DIR}/llvm-prefix" "$LINK_DIR"
 
 # --- login-shell env (PATH) ---
-cat >/etc/profile.d/99-clang--profile.sh <<'EOF'
-# LLVM/clang under /opt
+cat >"${PROFILE_FILE}" <<'EOF'
+# Profile: LLVM/clang under /opt
 export CLANG_HOME=/opt/clang-stable
-export PATH="$CLANG_HOME/bin:$PATH"
+case ":$PATH:" in
+  *":$CLANG_HOME/bin:"*) ;;
+  *) export PATH="$CLANG_HOME/bin:$PATH";;
+esac
 EOF
-chmod 0644 /etc/profile.d/99-clang--profile.sh
+chmod 0644 "${PROFILE_FILE}"
 
 # --- export CC/CXX by default (opt-out with --no-export-cc) ---
 if [[ $EXPORT_CC -eq 1 ]]; then
-  cat >/etc/profile.d/99-clang-cc--profile.sh <<'EOF'
-# Make clang the default C/C++ compiler for login shells
+  cat >"${PROFILE_CC_FILE}" <<'EOF'
+# Profile: clang as default C/C++ compiler
 export CC=clang
 export CXX=clang++
 EOF
-  chmod 0644 /etc/profile.d/99-clang-cc--profile.sh
+  chmod 0644 "${PROFILE_CC_FILE}"
 fi
 
 # --- system-wide cc/c++ via update-alternatives (default; opt-out with --no-as-default) ---

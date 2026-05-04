@@ -1,0 +1,10 @@
+display-name = "GNU Make"
+display-disc = "GNU Make build automation tool"
+display-detail = "Installs GNU Make from the distro package (fast). Provides a 'gmake' alias for BSD compatibility. For a pinned from-source build, write 'setup make --version <X.Y>' directly in your Boothfile."
+display-order = 65
+tags = ["make", "build", "cpp", "c"]
+
+[segments]
+Boothfile = """
+setup make --from-apt
+"""

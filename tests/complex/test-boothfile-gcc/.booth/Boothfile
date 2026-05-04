@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: GCC toolchain installation via Boothfile
+setup gcc --version 13

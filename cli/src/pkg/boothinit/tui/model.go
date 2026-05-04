@@ -96,8 +96,10 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 		paramValues:  make(map[string]string),
 	}
 
-	// Set string field defaults
-	m.stringFields["port"] = "10000"
+	// No string-field defaults: an unset port (and other unset string fields)
+	// must round-trip as "absent in config.toml" so booth picks the runtime
+	// default. Seeding "10000" here would write port = "10000" to config.toml
+	// even when the user didn't choose it.
 
 	// Tab 0: Config
 	m.tabNames = append(m.tabNames, "Config")

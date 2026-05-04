@@ -1,0 +1,21 @@
+display-name = "GCC (C/C++)"
+display-disc = "GNU Compiler Collection for C and C++"
+display-detail = "Installs GCC (gcc, g++) for C and C++ development. Registered with update-alternatives at priority 50; if Clang is also installed, Clang remains the default but both compilers are usable."
+display-order = 42
+tags = [
+    "gcc",
+    "gnu",
+    "c",
+    "cpp",
+    "systems",
+    "compiled",
+]
+
+[params.GCC_VERSION]
+default = "13"
+suggests = ["13", "12", "11", "14"]
+
+[segments]
+Boothfile = """
+setup gcc --version ${GCC_VERSION}
+"""

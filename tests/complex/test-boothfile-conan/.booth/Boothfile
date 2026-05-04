@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Conan (C/C++ package manager) installation via Boothfile.
+# Conan is a Python package — install Python first, then conan.
+# (The plain `base` variant doesn't pre-install Python, so we have to
+# bring it in explicitly here.)
+setup python 3.13
+setup conan

@@ -119,9 +119,11 @@ All templates and extensions grouped by segment order.
 | `databases/postgresql` | PostgreSQL       |
 | `databases/sqlite`     | SQLite           |
 | `languages/bun`        | Bun              |
+| `languages/clang`      | Clang (C/C++)    |
 | `languages/deno`       | Deno             |
 | `languages/erlang`     | Erlang           |
 | `languages/fpc`        | Free Pascal      |
+| `languages/gcc`        | GCC (C/C++)      |
 | `languages/go`         | Go               |
 | `languages/haskell`    | Haskell          |
 | `languages/java`       | Java             |
@@ -134,7 +136,10 @@ All templates and extensions grouped by segment order.
 | `languages/rust`       | Rust             |
 | `languages/zig`        | Zig              |
 | `tools/aws-cli`        | AWS CLI          |
+| `tools/build-essential`| Build Essentials |
 | `tools/claude-code`    | Claude Code      |
+| `tools/cmake`          | CMake            |
+| `tools/conan`          | Conan            |
 | `tools/dind`           | Docker-in-Docker |
 | `tools/docker-buildx`  | Docker Buildx    |
 | `tools/docker-compose` | Docker Compose   |
@@ -143,6 +148,7 @@ All templates and extensions grouped by segment order.
 | `tools/gh`             | GitHub CLI       |
 | `tools/homebrew`       | Homebrew         |
 | `tools/kind`           | kind             |
+| `tools/make`           | GNU Make         |
 | `tools/neovim`         | Neovim           |
 | `tools/openssh`        | OpenSSH Client   |
 
@@ -202,11 +208,13 @@ All templates and extensions grouped by segment order.
 | Extension                         | Display Name                  |
 |-----------------------------------|-------------------------------|
 | `bun/vscode-ext--extension`       | Bun VS Code Extension         |
+| `clang/vscode-ext--extension`     | Clang VS Code Extension       |
 | `clojure/vscode-ext--extension`   | Clojure VS Code Extension     |
 | `deno/vscode-ext--extension`      | Deno VS Code Extension        |
 | `elixir/vscode-ext--extension`    | Elixir VS Code Extension      |
 | `erlang/vscode-ext--extension`    | Erlang VS Code Extension      |
 | `fpc/vscode-ext--extension`       | Free Pascal VS Code Extension |
+| `gcc/vscode-ext--extension`       | GCC VS Code Extension         |
 | `go/vscode-ext--extension`        | Go VS Code Extension          |
 | `haskell/vscode-ext--extension`   | Haskell VS Code Extension     |
 | `java/vscode-ext--extension`      | Java VS Code Extension        |
@@ -225,6 +233,7 @@ All templates and extensions grouped by segment order.
 
 | Extension                    | Display Name           |
 |------------------------------|------------------------|
+| `clang/kernel--extension`    | C++ Notebook Kernel (xeus-cling, experimental) |
 | `education/nbgrader`         | nbgrader               |
 | `go/kernel--extension`       | Go Notebook Kernel     |
 | `haskell/kernel--extension`  | Haskell Notebook Kernel |
@@ -241,6 +250,7 @@ All templates and extensions grouped by segment order.
 | Extension                       | Display Name     |
 |---------------------------------|------------------|
 | `bun/bun-pkg--extension`        | bun Packages     |
+| `conan/conan-pkg--extension`    | Conan Packages   |
 | `elixir/hex-pkg--extension`     | Hex Packages     |
 | `go/go-pkg--extension`          | Go Packages      |
 | `haskell/cabal-pkg--extension`  | Cabal Packages   |

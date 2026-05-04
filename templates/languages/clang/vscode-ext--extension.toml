@@ -1,0 +1,17 @@
+# NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+display-name = "Clang VS Code Extension"
+display-disc = "clangd-based C/C++ language support and CMake Tools"
+display-order = 1
+auto-select = true
+tags = [
+    "clang",
+    "c",
+    "cpp",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup clang-code-extension
+"""

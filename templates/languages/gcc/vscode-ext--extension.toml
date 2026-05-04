@@ -1,0 +1,17 @@
+# NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+display-name = "GCC VS Code Extension"
+display-disc = "Microsoft C/C++ extension (cpptools) and CMake Tools"
+display-order = 1
+auto-select = true
+tags = [
+    "gcc",
+    "c",
+    "cpp",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup gcc-code-extension
+"""

@@ -1,0 +1,14 @@
+display-name = "Conan Packages"
+display-disc = "Preload Conan packages into the build cache (conan download)"
+display-order = 10
+auto-select = false
+tags = ["conan", "cpp", "c", "packages"]
+
+[params.CONAN_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install conan ${CONAN_PKGS}
+"""

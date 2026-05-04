@@ -1,0 +1,9 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: full C/C++ toolchain in a single Boothfile.
+# Verifies that clang and gcc can coexist (clang wins as default cc/c++)
+# and that cmake + make build a real C++ binary on top.
+setup clang --version 18
+setup gcc --version 13
+setup cmake
+setup make --from-apt

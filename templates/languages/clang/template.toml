@@ -1,0 +1,21 @@
+display-name = "Clang (C/C++)"
+display-disc = "LLVM/Clang toolchain for C and C++"
+display-detail = "Installs LLVM/Clang (clang, clang++, clangd, clang-tidy, clang-format, lld, libc++, libomp). Sets clang as the default C/C++ compiler via update-alternatives. Coexists with GCC."
+display-order = 41
+tags = [
+    "clang",
+    "llvm",
+    "c",
+    "cpp",
+    "systems",
+    "compiled",
+]
+
+[params.LLVM_VERSION]
+default = "18"
+suggests = ["18", "19", "17", "16"]
+
+[segments]
+Boothfile = """
+setup clang --version ${LLVM_VERSION}
+"""

@@ -1,0 +1,10 @@
+display-name = "Build Essentials"
+display-disc = "Standard Linux build toolchain (gcc, g++, make, pkg-config)"
+display-detail = "Installs Ubuntu's build-essential meta-package plus pkg-config. Use this when you just need 'a working toolchain' so pip/cargo/npm can compile native extensions or CMake's find_package can resolve system libraries. For a pinned compiler version, use 'languages/clang' or 'languages/gcc' instead."
+display-order = 60
+tags = ["build-essential", "build", "c", "cpp", "compiled", "toolchain"]
+
+[segments]
+Boothfile = """
+setup build-essential
+"""

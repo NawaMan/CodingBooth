@@ -35,7 +35,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     echo "Run '$SCRPT help' to see available commands."
     echo ""
     echo "Try '$SCRPT example' to see ready to use example."
-    echo "Or, '$SCRPT init'    to quickly start a new project."
+    echo "Or, '$SCRPT config'  to quickly start a new project."
 
     if [[ "$SCRPT" == "./booth" ]]; then
         echo ""

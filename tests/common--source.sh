@@ -81,6 +81,26 @@ run_coding_booth() {
   "$booth_path" "${version_args[@]}" "$@"
 }
 
+# capture_codingbooth: run codingbooth, capture stdout, retry once on
+# empty/failed output. Useful inside full-suite runs where rapid container
+# spin-up/down occasionally produces a transient empty result that succeeds
+# on retry. Stderr is suppressed; pass shell pipeline transforms via $1
+# (e.g. "head -1", "tail -1"). Defaults to "cat".
+#
+# Usage:
+#   ACTUAL=$(capture_codingbooth "head -1" --silence-build -- gcc --version)
+capture_codingbooth() {
+  local pipeline="${1:-cat}"
+  shift
+  local out
+  out=$(run_coding_booth "$@" 2>/dev/null | eval "$pipeline") || out=""
+  if [[ -z "$out" ]]; then
+    sleep 2
+    out=$(run_coding_booth "$@" 2>/dev/null | eval "$pipeline") || out=""
+  fi
+  printf '%s\n' "$out"
+}
+
 # Normalize output for cross-platform comparison
 # - Strips .exe extension from binary name
 # - Converts Windows backslashes to forward slashes

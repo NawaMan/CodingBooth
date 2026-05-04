@@ -1,0 +1,19 @@
+# NOTE: EXPERIMENTAL / UNTESTED -- xeus-cling is upstream-unmaintained and
+# may not build against newer LLVMs. Please report success or failure. :-p
+display-name = "C++ Notebook Kernel (xeus-cling, experimental)"
+display-disc = "Jupyter C++ kernels via xeus-cling (xcpp14/xcpp17/xcpp20)"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "cpp",
+    "c++",
+    "kernel",
+    "notebook",
+    "experimental",
+]
+
+[segments]
+"Boothfile--70" = """
+setup cpp-nb-kernel
+"""

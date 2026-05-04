@@ -4,6 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 set -Eeuo pipefail
+trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
 usage() {
   cat <<USAGE
@@ -26,6 +27,9 @@ USAGE
 # ---- root check ----
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
+# This script will always be installed by root.
+HOME=/root
+
 # ---- defaults / args ----
 MAKE_DEFAULT_VER="4.4.1"   # update when you want a newer pinned default
 REQ_VER=""
@@ -43,6 +47,10 @@ while [[ $# -gt 0 ]]; do
 done
 
 VERSION="${REQ_VER:-$MAKE_DEFAULT_VER}"
+
+LEVEL=66                          # See README.md - Profile Ordering
+
+PROFILE_FILE="/etc/profile.d/${LEVEL}-cb-make--profile.sh"
 
 INSTALL_PARENT=/opt/make
 TARGET_DIR="${INSTALL_PARENT}/make-${VERSION}"
@@ -76,8 +84,7 @@ else
   # ---------- SOURCE BUILD MODE ----------
   apt-get update
   apt-get install -y --no-install-recommends \
-    build-essential curl ca-certificates tar xz-utils \
-    libgmp-dev  # (autoconf uses it on some distros; harmless)
+    build-essential curl ca-certificates tar xz-utils
   # docs require help2man & groff (only if requested)
   if [[ $WITH_DOCS -eq 1 ]]; then
     apt-get install -y --no-install-recommends help2man groff
@@ -99,21 +106,14 @@ else
   rm -rf "$TARGET_DIR"
   mkdir -p "$TARGET_DIR"
 
-  tar -xzf "$TMP/$TARBALL" -f "$TMP/$TARBALL" -C "$TMP"
+  tar -xzf "$TMP/$TARBALL" -C "$TMP"
   SRC_DIR="$(find "$TMP" -maxdepth 1 -type d -name "make-*")"
   cd "$SRC_DIR"
 
   # Configure with prefix to our /opt target
   ./configure --prefix="$TARGET_DIR" >/dev/null
   make -j"$(nproc)" >/dev/null
-
-  if [[ $WITH_DOCS -eq 1 ]]; then
-    make -j"$(nproc)" install >/dev/null
-  else
-    # install binaries only (avoid manpages)
-    make install-binPROGRAMS install-dist_docDATA >/dev/null 2>&1 || true
-    make install >/dev/null
-  fi
+  make install >/dev/null
 
   # BSD-friendly alias
   ln -sfn "$TARGET_DIR/bin/make" "$TARGET_DIR/bin/gmake"
@@ -123,12 +123,15 @@ else
 fi
 
 # ---- login-shell env (just PATH) ----
-cat >/etc/profile.d/99-make--profile.sh <<'EOF'
-# GNU Make under /opt
+cat >"${PROFILE_FILE}" <<'EOF'
+# Profile: GNU Make under /opt
 export MAKE_HOME=/opt/make-stable
-export PATH="$MAKE_HOME/bin:$PATH"
+case ":$PATH:" in
+  *":$MAKE_HOME/bin:"*) ;;
+  *) export PATH="$MAKE_HOME/bin:$PATH";;
+esac
 EOF
-chmod 0644 /etc/profile.d/99-make--profile.sh
+chmod 0644 "${PROFILE_FILE}"
 
 # ---- non-login wrapper ----
 cat >"${BIN_DIR}/makewrap" <<'EOF'
