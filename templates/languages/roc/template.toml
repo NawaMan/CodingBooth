@@ -9,8 +9,8 @@ tags = [
 ]
 
 [params.ROC_VERSION]
-default = "0.0.1"
-suggests = ["0.0.1"]
+default = "alpha4-rolling"
+suggests = ["alpha4-rolling", "alpha3-rolling", "nightly"]
 
 [segments]
 Boothfile = """

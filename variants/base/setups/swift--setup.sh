@@ -39,7 +39,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-VERSION="${REQ_VER:-$SWIFT_DEFAULT_VER}"
+SWIFT_VERSION="${REQ_VER:-$SWIFT_DEFAULT_VER}"
 
 # ---- arch & distro mapping ----
 dpkgArch="$(dpkg --print-architecture)"
@@ -52,15 +52,15 @@ esac
 . /etc/os-release
 CODENAME="${UBUNTU_CODENAME:-$VERSION_CODENAME}"
 case "$CODENAME" in
-  noble|noble-updates|noble-security)  S_UBU="ubuntu24.04";;
-  jammy|jammy-updates|jammy-security)  S_UBU="ubuntu22.04";;
-  focal|focal-updates|focal-security)  S_UBU="ubuntu20.04";;
+  noble|noble-updates|noble-security)  S_UBU="ubuntu24.04"; S_UBU_PATH="ubuntu2404";;
+  jammy|jammy-updates|jammy-security)  S_UBU="ubuntu22.04"; S_UBU_PATH="ubuntu2204";;
+  focal|focal-updates|focal-security)  S_UBU="ubuntu20.04"; S_UBU_PATH="ubuntu2004";;
   *) echo "❌ Unsupported Ubuntu/Debian codename '$CODENAME'. Supported: focal (20.04), jammy (22.04), noble (24.04)."; exit 1;;
 esac
 
 # ---- dirs ----
 INSTALL_PARENT=/opt/swift
-TARGET_DIR="${INSTALL_PARENT}/swift-${VERSION}"
+TARGET_DIR="${INSTALL_PARENT}/swift-${SWIFT_VERSION}"
 LINK_DIR=/opt/swift-stable
 BIN_DIR=/usr/local/bin
 
@@ -70,8 +70,8 @@ apt-get update
 apt-get install -y --no-install-recommends \
   ca-certificates curl xz-utils tar git pkg-config \
   libc6 libstdc++6 libgcc-s1 \
-  libcurl4 libxml2 libedit2 libsqlite3-0 zlib1g tzdata \
-  libbsd0 libatomic1 libicu-dev \
+  libcurl4t64 libxml2 libedit2 libsqlite3-0 zlib1g tzdata \
+  libbsd0 libatomic1 libicu-dev libncurses6 libpython3-dev \
   clang make
 # optional debugger
 if [ "$WITH_LLDB" -eq 1 ]; then
@@ -82,12 +82,12 @@ rm -rf /var/lib/apt/lists/*
 # ---- fetch toolchain tarball ----
 # Official release URL pattern:
 # https://download.swift.org/swift-<ver>-release/<ubuntuXX.XX>/swift-<ver>-RELEASE/swift-<ver>-RELEASE-<ubuntuXX.XX>.tar.gz
-BASE="https://download.swift.org/swift-${VERSION}-release/${S_UBU}/swift-${VERSION}-RELEASE"
-TARBALL="swift-${VERSION}-RELEASE-${S_UBU}.tar.gz"
+BASE="https://download.swift.org/swift-${SWIFT_VERSION}-release/${S_UBU_PATH}/swift-${SWIFT_VERSION}-RELEASE"
+TARBALL="swift-${SWIFT_VERSION}-RELEASE-${S_UBU}.tar.gz"
 URL="${BASE}/${TARBALL}"
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-echo "⬇️  Downloading Swift ${VERSION} for ${S_UBU} (${S_ARCH}) ..."
+echo "⬇️  Downloading Swift ${SWIFT_VERSION} for ${S_UBU} (${S_ARCH}) ..."
 # (The tarball is universal for the Ubuntu variant; arch-specific binaries are inside)
 curl -fL "$URL" -o "$TMP/$TARBALL"
 
@@ -95,7 +95,7 @@ curl -fL "$URL" -o "$TMP/$TARBALL"
 rm -rf "$TARGET_DIR"; mkdir -p "$TARGET_DIR"
 echo "📦 Installing to ${TARGET_DIR} ..."
 tar -xzf "$TMP/$TARBALL" -C "$TMP"
-SRC_DIR="$(find "$TMP" -maxdepth 1 -type d -name "swift-${VERSION}-RELEASE-${S_UBU}" -print -quit)"
+SRC_DIR="$(find "$TMP" -maxdepth 1 -type d -name "swift-${SWIFT_VERSION}-RELEASE-${S_UBU}" -print -quit)"
 [[ -d "$SRC_DIR" ]] || { echo "❌ Extracted toolchain dir not found"; exit 1; }
 # Move contents (usr/lib/swift, usr/bin, etc.) under our /opt target
 mv "$SRC_DIR"/* "$TARGET_DIR"
@@ -128,7 +128,7 @@ for t in swift swiftc swift-package swift-build swift-test; do
 done
 
 # ---- friendly summary ----
-echo "✅ Swift ${VERSION} installed at ${TARGET_DIR} (linked at ${LINK_DIR})."
+echo "✅ Swift ${SWIFT_VERSION} installed at ${TARGET_DIR} (linked at ${LINK_DIR})."
 echo -n "   swift --version → "; "${BIN_DIR}/swift" --version 2>/dev/null || true
 
 cat <<'EON'

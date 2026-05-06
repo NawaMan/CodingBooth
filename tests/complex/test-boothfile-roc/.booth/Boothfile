@@ -1,4 +1,4 @@
 # syntax=codingbooth/boothfile:1
 
 # Test: Roc installation via Boothfile
-setup roc --version 0.0.1
+setup roc --version alpha4-rolling

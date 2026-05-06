@@ -27,7 +27,9 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-ROC_DEFAULT_VER="0.0.1"   # update when you want a newer pinned default
+# Roc uses GitHub release tags as version names. Stable-ish: 'alpha4-rolling'.
+# The rolling 'nightly' tag is also accepted (uses date-stamped 'latest' asset).
+ROC_DEFAULT_VER="alpha4-rolling"
 REQ_VER=""
 DO_VERIFY=0
 
@@ -40,28 +42,20 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# ---- resolve version (supports 'latest') ----
-if [[ -z "$REQ_VER" ]]; then
-  VERSION="$ROC_DEFAULT_VER"
-elif [[ "$REQ_VER" == "latest" ]]; then
-  VERSION="$(curl -fsSL https://api.github.com/repos/roc-lang/roc/releases/latest \
-    | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed -E 's/^v//')"
-  [[ -n "$VERSION" ]] || { echo "❌ Failed to resolve latest Roc version"; exit 1; }
-else
-  VERSION="$REQ_VER"
-fi
+# ---- resolve version ----
+ROC_TAG="${REQ_VER:-$ROC_DEFAULT_VER}"
 
 # ---- arch mapping ----
 dpkgArch="$(dpkg --print-architecture)"
 case "$dpkgArch" in
   amd64)  RARCH="x86_64" ;;
-  arm64)  RARCH="aarch64" ;;
+  arm64)  RARCH="arm64" ;;
   *) echo "❌ Unsupported arch: $dpkgArch (supported: amd64, arm64)"; exit 1 ;;
 esac
 
 # ---- dirs ----
 INSTALL_PARENT=/opt/roc
-TARGET_DIR="${INSTALL_PARENT}/roc-${VERSION}"
+TARGET_DIR="${INSTALL_PARENT}/roc-${ROC_TAG}"
 LINK_DIR=/opt/roc-stable
 BIN_DIR=/usr/local/bin
 
@@ -74,13 +68,19 @@ rm -rf /var/lib/apt/lists/*
 # ---- download & install ----
 rm -rf "$TARGET_DIR"; mkdir -p "$TARGET_DIR/bin"
 
-ASSET="roc_nightly-linux-${RARCH}.tar.gz"
-# Roc releases currently use nightly naming for the binary artifact; keep this pattern.
-URL="https://github.com/roc-lang/roc/releases/download/v${VERSION}/${ASSET}"
+# Roc has two asset-naming schemes:
+#   nightly tag:        roc_nightly-linux_<arch>-latest.tar.gz
+#   named (alphaN-...): roc-linux_<arch>-<tag>.tar.gz
+if [[ "$ROC_TAG" == "nightly" ]]; then
+  ASSET="roc_nightly-linux_${RARCH}-latest.tar.gz"
+else
+  ASSET="roc-linux_${RARCH}-${ROC_TAG}.tar.gz"
+fi
+URL="https://github.com/roc-lang/roc/releases/download/${ROC_TAG}/${ASSET}"
 SHA_URL="${URL}.sha256"
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-echo "⬇️  Downloading Roc ${VERSION} (${RARCH}) ..."
+echo "⬇️  Downloading Roc ${ROC_TAG} (${RARCH}) ..."
 curl -fsSL "$URL" -o "$TMP/$ASSET"
 
 if [[ $DO_VERIFY -eq 1 ]]; then
@@ -122,7 +122,7 @@ chmod +x "${BIN_DIR}/rocwrap"
 ln -sfn "${BIN_DIR}/rocwrap" "${BIN_DIR}/roc"
 
 # ---- friendly summary ----
-echo "✅ Roc ${VERSION} installed at ${TARGET_DIR} (linked at ${LINK_DIR})."
+echo "✅ Roc ${ROC_TAG} installed at ${TARGET_DIR} (linked at ${LINK_DIR})."
 echo -n "   roc --version → "; "${BIN_DIR}/roc" --version 2>/dev/null || true
 
 cat <<'EON'

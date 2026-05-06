@@ -27,7 +27,9 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-OCAML_DEFAULT_VER="5.2.1"
+# 'system' = use distro's pre-built OCaml (fast, ~10s). On Ubuntu noble that's 4.14.x.
+# Specific X.Y.Z = compile that OCaml from source via opam (~5-10 min).
+OCAML_DEFAULT_VER="system"
 REQ_VER="$OCAML_DEFAULT_VER"
 SWITCH_NAME=""            # if empty we'll use "ocaml-<ver>"
 NO_DEFAULT_PACKS=0
@@ -46,9 +48,15 @@ done
 # ---- base deps ----
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y --no-install-recommends \
-  git build-essential m4 pkg-config bubblewrap \
-  opam  # distro opam (Ubuntu 22.04+/Debian 12+)
+if [[ "$REQ_VER" == "system" ]]; then
+  apt-get install -y --no-install-recommends \
+    git build-essential m4 pkg-config bubblewrap \
+    ocaml opam
+else
+  apt-get install -y --no-install-recommends \
+    git build-essential m4 pkg-config bubblewrap \
+    opam
+fi
 rm -rf /var/lib/apt/lists/*
 
 # ---- locations ----
@@ -75,8 +83,13 @@ fi
 
 # create or reuse switch
 if ! opam switch list --short | grep -qx "$SWITCH_NAME"; then
-  echo "📦 Creating switch '$SWITCH_NAME' with OCaml $REQ_VER ..."
-  opam switch create "$SWITCH_NAME" "ocaml-base-compiler.$REQ_VER" -y >/dev/null
+  if [[ "$REQ_VER" == "system" ]]; then
+    echo "📦 Creating switch '$SWITCH_NAME' bound to system OCaml ..."
+    opam switch create "$SWITCH_NAME" --packages=ocaml-system -y >/dev/null
+  else
+    echo "📦 Creating switch '$SWITCH_NAME' with OCaml $REQ_VER (compile from source) ..."
+    opam switch create "$SWITCH_NAME" "ocaml-base-compiler.$REQ_VER" -y >/dev/null
+  fi
 else
   echo "ℹ️ Using existing switch '$SWITCH_NAME'"
 fi
@@ -102,6 +115,10 @@ if [[ -n "$PACKS" ]]; then
   echo "📦 Installing packages into switch '$SWITCH_NAME': $PACKS"
   # Make sure env is set for the switch during install
   eval "$(OPAMROOT=$OPAMROOT opam env --switch="$SWITCH_NAME" --set-switch --shell=sh)"
+  # Cap parallel compile jobs: opam defaults to nproc, which on many-core hosts
+  # spawns dozens of ocamlopt processes (each 2-4 GB) and can exhaust host RAM
+  # during heavy ppx-derived compiles (ocamlformat, ppxlib, etc.).
+  export OPAMJOBS="${OPAMJOBS:-4}"
   opam install -y $PACKS
 fi
 

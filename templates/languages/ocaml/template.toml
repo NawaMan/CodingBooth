@@ -9,8 +9,8 @@ tags = [
 ]
 
 [params.OCAML_VERSION]
-default = "5.2.1"
-suggests = ["5.2.1", "5.1.1", "4.14.2"]
+default = "system"
+suggests = ["system", "5.2.1", "5.1.1", "4.14.2"]
 
 [segments]
 Boothfile = """
