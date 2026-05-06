@@ -1,0 +1,19 @@
+display-name = "Kafka Auto-Start"
+display-disc = "Start the Kafka broker automatically on container boot"
+display-detail = "Installs a startup hook that launches the Kafka broker (KRaft) and creates a dev topic when the container boots."
+display-order = 30
+auto-select = false
+tags = [
+    "kafka",
+    "startup",
+    "daemon",
+]
+
+[params.KAFKA_TOPIC]
+default = "devtopic"
+suggests = ["devtopic"]
+
+[segments]
+"Boothfile--65" = """
+setup kafka-start --topic ${KAFKA_TOPIC}
+"""

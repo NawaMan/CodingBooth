@@ -1,0 +1,5 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: ReScript installation via Boothfile (depends on Node.js)
+setup nodejs 20
+setup rescript --version 11.1.4

@@ -1,0 +1,18 @@
+display-name = "OCaml"
+display-disc = "OCaml compiler with opam package manager"
+display-detail = "Installs OCaml via opam with a shared switch (dune, utop, ocamlformat by default). Switch prefix linked at /opt/ocaml-stable."
+display-order = 75
+tags = [
+    "ocaml",
+    "functional",
+    "compiled",
+]
+
+[params.OCAML_VERSION]
+default = "5.2.1"
+suggests = ["5.2.1", "5.1.1", "4.14.2"]
+
+[segments]
+Boothfile = """
+setup ocaml --version ${OCAML_VERSION}
+"""

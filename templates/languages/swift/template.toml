@@ -1,0 +1,18 @@
+display-name = "Swift"
+display-disc = "Swift programming language toolchain"
+display-detail = "Installs the Swift toolchain (swift, swiftc, swift-package, swift-build, swift-test) under /opt/swift-stable. Server/CLI use only on Linux."
+display-order = 70
+tags = [
+    "swift",
+    "compiled",
+    "apple",
+]
+
+[params.SWIFT_VERSION]
+default = "6.0.1"
+suggests = ["6.0.1", "5.10.1", "5.9.2"]
+
+[segments]
+Boothfile = """
+setup swift --version ${SWIFT_VERSION}
+"""

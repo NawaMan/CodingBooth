@@ -1,0 +1,18 @@
+display-name = "Roc"
+display-disc = "Roc functional programming language"
+display-detail = "Installs the Roc compiler (fast, friendly, functional) from upstream prebuilt binaries. Linked at /opt/roc-stable."
+display-order = 78
+tags = [
+    "roc",
+    "functional",
+    "compiled",
+]
+
+[params.ROC_VERSION]
+default = "0.0.1"
+suggests = ["0.0.1"]
+
+[segments]
+Boothfile = """
+setup roc --version ${ROC_VERSION}
+"""

@@ -1,0 +1,20 @@
+display-name = "Elm"
+display-disc = "Elm functional language for reliable web apps"
+display-detail = "Installs the Elm compiler via npm. Requires Node.js (auto-included). Use with elm-format and elm-test for the full toolchain."
+display-order = 76
+tags = [
+    "elm",
+    "functional",
+    "frontend",
+    "web",
+]
+requires = ["nodejs"]
+
+[params.ELM_VERSION]
+default = "0.19.1"
+suggests = ["0.19.1"]
+
+[segments]
+"Boothfile--60" = """
+setup elm --version ${ELM_VERSION}
+"""

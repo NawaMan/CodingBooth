@@ -1,0 +1,23 @@
+display-name = "RabbitMQ"
+display-disc = "RabbitMQ message broker (AMQP 0-9-1) + management UI"
+display-detail = "Installs RabbitMQ from the distro package and configures a dev user, vhost, and management UI. Data dir: /opt/rabbitmq."
+display-order = 50
+tags = [
+    "rabbitmq",
+    "messaging",
+    "amqp",
+]
+
+run-args = [
+    # Persist RabbitMQ data across container restarts
+    "-v", "booth-rabbitmqdata:/opt/rabbitmq",
+]
+
+[params.RABBIT_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup rabbitmq --version ${RABBIT_VERSION}
+"""

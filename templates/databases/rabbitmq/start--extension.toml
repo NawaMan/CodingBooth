@@ -1,0 +1,27 @@
+display-name = "RabbitMQ Auto-Start"
+display-disc = "Start RabbitMQ automatically on container boot, with a dev user/vhost"
+display-detail = "Installs a startup hook that launches RabbitMQ (detached) and provisions a dev user and vhost when the container boots."
+display-order = 30
+auto-select = false
+tags = [
+    "rabbitmq",
+    "startup",
+    "daemon",
+]
+
+[params.RABBIT_USER]
+default = "devuser"
+suggests = ["devuser"]
+
+[params.RABBIT_PASS]
+default = "devpass"
+suggests = ["devpass"]
+
+[params.RABBIT_VHOST]
+default = "/dev"
+suggests = ["/dev"]
+
+[segments]
+"Boothfile--65" = """
+setup rabbitmq-start --user ${RABBIT_USER} --pass ${RABBIT_PASS} --vhost ${RABBIT_VHOST}
+"""

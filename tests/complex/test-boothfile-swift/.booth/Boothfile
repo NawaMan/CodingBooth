@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Swift installation via Boothfile
+setup swift --version 6.0.1

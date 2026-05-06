@@ -8,23 +8,26 @@ set -Eeuo pipefail
 usage() {
   cat <<USAGE
 Usage:
-  $0 [--port <PORT>] [--advertised-host <HOST>] [--data <DIR>] [--topic <NAME>] [--partitions <N>] [--version <VER>]
+  $0 [--version <VER>] [--port <PORT>] [--advertised-host <HOST>] [--data <DIR>]
 
 Environment overrides:
+  KAFKA_VERSION          (default: 3.7.0)         # Apache Kafka version
   KAFKA_PORT             (default: 9092)
   KAFKA_ADVERTISED_HOST  (default: 127.0.0.1)
   KAFKA_DATA             (default: /opt/kafkadata)
-  KAFKA_TOPIC            (default: devtopic)
-  KAFKA_PARTITIONS       (default: 1)
-  KAFKA_VERSION          (default: 3.7.0)         # Apache Kafka version
   KAFKA_NODE_ID          (default: 1)
   KAFKA_CTRL_PORT        (default: 9093)
   KAFKA_HOME             (default: /opt/kafka)    # install dir symlink
 
 Examples:
   $0
-  KAFKA_ADVERTISED_HOST=host.docker.internal $0 --topic app-events
-  $0 --port 19092 --advertised-host myhost --data /data/kafka --topic foo --partitions 3
+  KAFKA_ADVERTISED_HOST=host.docker.internal $0
+  $0 --port 19092 --advertised-host myhost --data /data/kafka
+
+Notes:
+- Installs Apache Kafka (KRaft mode) and formats storage; broker is NOT started.
+- To auto-start the broker on container boot, also enable the 'start' extension
+  (e.g., 'install kafka+start' or call kafka-start--setup.sh directly).
 USAGE
 }
 
@@ -32,12 +35,10 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (use sudo)"; exit 1; }
 
 # --- defaults ---
+KAFKA_VERSION="${KAFKA_VERSION:-3.7.0}"
 KAFKA_PORT="${KAFKA_PORT:-9092}"
 KAFKA_ADVERTISED_HOST="${KAFKA_ADVERTISED_HOST:-127.0.0.1}"
 KAFKA_DATA="${KAFKA_DATA:-/opt/kafkadata}"
-KAFKA_TOPIC="${KAFKA_TOPIC:-devtopic}"
-KAFKA_PARTITIONS="${KAFKA_PARTITIONS:-1}"
-KAFKA_VERSION="${KAFKA_VERSION:-3.7.0}"
 KAFKA_NODE_ID="${KAFKA_NODE_ID:-1}"
 KAFKA_CTRL_PORT="${KAFKA_CTRL_PORT:-9093}"
 KAFKA_HOME="${KAFKA_HOME:-/opt/kafka}"
@@ -45,12 +46,10 @@ KAFKA_HOME="${KAFKA_HOME:-/opt/kafka}"
 # --- parse args ---
 while [[ $# -gt 0 ]]; do
   case "$1" in
+    --version) shift; KAFKA_VERSION="${1:-}"; shift ;;
     --port) shift; KAFKA_PORT="${1:-}"; shift ;;
     --advertised-host) shift; KAFKA_ADVERTISED_HOST="${1:-}"; shift ;;
     --data) shift; KAFKA_DATA="${1:-}"; shift ;;
-    --topic) shift; KAFKA_TOPIC="${1:-}"; shift ;;
-    --partitions) shift; KAFKA_PARTITIONS="${1:-}"; shift ;;
-    --version) shift; KAFKA_VERSION="${1:-}"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "❌ Unknown arg: $1"; usage; exit 2 ;;
   esac
@@ -78,7 +77,6 @@ fi
 
 # --- directories ---
 mkdir -p "$KAFKA_DATA" /opt/kafkalogs
-touch "$KAFKA_DATA/kafka.log"
 
 # --- config ---
 KAFKA_CONF="$KAFKA_DATA/server.properties"
@@ -115,60 +113,24 @@ if [[ ! -f "${KAFKA_DATA}/logs/meta.properties" ]]; then
   "$KAFKA_HOME/bin/kafka-storage.sh" format -t "$CLUSTER_ID" -c "$KAFKA_CONF"
 fi
 
-# --- helper: wait for port ---
-wait_for_port() {
-  local host="$1" port="$2" tries=60
-  while (( tries-- > 0 )); do
-    if nc -z "$host" "$port" >/dev/null 2>&1; then return 0; fi
-    sleep 0.5
-  done
-  return 1
-}
-
-# --- start server ---
-if pgrep -f "kafka.Kafka" >/dev/null 2>&1; then
-  echo "ℹ Kafka already running, skipping start"
-else
-  echo "▶ Starting Kafka..."
-  nohup "$KAFKA_HOME/bin/kafka-server-start.sh" "$KAFKA_CONF" \
-    > "$KAFKA_DATA/kafka.log" 2>&1 &
-fi
-
-wait_for_port 127.0.0.1 "$KAFKA_PORT" || { echo "❌ Kafka did not become ready"; exit 4; }
-
-# --- create dev topic (idempotent) ---
-if ! "$KAFKA_HOME/bin/kafka-topics.sh" --bootstrap-server "127.0.0.1:${KAFKA_PORT}" --list | grep -qx "$KAFKA_TOPIC"; then
-  "$KAFKA_HOME/bin/kafka-topics.sh" --bootstrap-server "127.0.0.1:${KAFKA_PORT}" \
-    --create --topic "$KAFKA_TOPIC" --partitions "$KAFKA_PARTITIONS" --replication-factor 1
-fi
+# --- profile: expose kafka bin on PATH ---
+cat >/etc/profile.d/65-cb-kafka--profile.sh <<EOF
+# Apache Kafka
+export KAFKA_HOME=${KAFKA_HOME}
+export PATH="\$KAFKA_HOME/bin:\$PATH"
+EOF
+chmod 0644 /etc/profile.d/65-cb-kafka--profile.sh
 
 cat <<EOM
 
-✅ Apache Kafka ready for development (single-node KRaft)
-  Host:                 0.0.0.0
-  Port:                 ${KAFKA_PORT}
-  Advertised host:      ${KAFKA_ADVERTISED_HOST}
-  Data dir:             ${KAFKA_DATA}
-  Controller port:      ${KAFKA_CTRL_PORT} (internal)
-  Node ID:              ${KAFKA_NODE_ID}
-  Topic:                ${KAFKA_TOPIC} (partitions=${KAFKA_PARTITIONS}, rf=1)
-  Kafka version:        ${KAFKA_VERSION}
-  Install (symlink):    ${KAFKA_HOME}
+✅ Apache Kafka ${KAFKA_VERSION} installed (single-node KRaft)
+  Install:        ${KAFKA_HOME}
+  Config:         ${KAFKA_CONF}
+  Data dir:       ${KAFKA_DATA}
+  Default port:   ${KAFKA_PORT}
 
-Produce/consume test:
-  # terminal A
-  ${KAFKA_HOME}/bin/kafka-console-producer.sh --bootstrap-server localhost:${KAFKA_PORT} --topic ${KAFKA_TOPIC}
-  # terminal B
-  ${KAFKA_HOME}/bin/kafka-console-consumer.sh --bootstrap-server localhost:${KAFKA_PORT} --topic ${KAFKA_TOPIC} --from-beginning
-
-List topics:
-  ${KAFKA_HOME}/bin/kafka-topics.sh --bootstrap-server localhost:${KAFKA_PORT} --list
-
-Stop server:
-  ${KAFKA_HOME}/bin/kafka-server-stop.sh
-  # or: pkill -f kafka.Kafka
-
-Logs:
-  tail -f ${KAFKA_DATA}/kafka.log
+The broker is NOT running. To start it:
+  - manually: ${KAFKA_HOME}/bin/kafka-server-start.sh ${KAFKA_CONF}
+  - on container boot: enable the 'kafka+start' extension in your Boothfile
 
 EOM
