@@ -4,10 +4,10 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# Test: Boothfile OCaml Installation
+# Test: Boothfile k3d Installation
 #
-# Verifies that a Boothfile with `setup ocaml --version 5.2.1` installs OCaml
-# (compiler + dune) via opam.
+# Verifies that a Boothfile with `setup k3d` installs the k3d binary.
+# Does not create a cluster (that requires Docker / dind).
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -17,16 +17,16 @@ cd "$SCRIPT_DIR"
 
 source ../../common--source.sh
 
-echo "=== Test: Boothfile OCaml Installation ==="
+echo "=== Test: Boothfile k3d Installation ==="
 
 FAILED=0
 
-ACTUAL=$(run_coding_booth --silence-build -- ocamlc -version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- k3d version 2>/dev/null | head -1)
 
-if echo "$ACTUAL" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+'; then
-    print_test_result "true" "$0" "1" "OCaml is installed via Boothfile"
+if echo "$ACTUAL" | grep -qiE "k3d version"; then
+    print_test_result "true" "$0" "1" "k3d is installed via Boothfile"
 else
-    print_test_result "false" "$0" "1" "OCaml should be installed"
+    print_test_result "false" "$0" "1" "k3d should be installed"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi

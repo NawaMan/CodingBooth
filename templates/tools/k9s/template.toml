@@ -1,0 +1,19 @@
+display-name = "k9s"
+display-disc = "Terminal UI for managing Kubernetes clusters"
+display-detail = "Installs k9s, a TUI that lets you observe and manipulate live Kubernetes resources."
+display-order = 63
+tags = [
+    "kubernetes",
+    "k8s",
+    "tui",
+    "cli",
+]
+
+[params.K9S_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup k9s --version ${K9S_VERSION}
+"""

@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: k9s installation via Boothfile
+setup k9s

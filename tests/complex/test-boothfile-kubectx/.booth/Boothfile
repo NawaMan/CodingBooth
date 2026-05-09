@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: kubectx + kubens installation via Boothfile
+setup kubectx

@@ -3,6 +3,15 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
+# Status: future — moved out of active setups on 2026-05-06.
+# Reason: the boothfile test for OCaml runs heavy ppx-derived opam compiles
+# (ocamlformat, ppxlib, etc.). Even with OPAMJOBS capped (see below), it caused
+# host RAM to run away and crashed the dev machine. Re-enable only after the
+# install path is constrained enough to be safe on a typical workstation
+# (e.g. tighter job cap, swap accounting, or skipping ocamlformat by default).
+# To re-enable: move this script back to variants/base/setups/, restore
+# templates/languages/ocaml/template.toml, and re-add tests/complex/test-boothfile-ocaml/.
+
 set -Eeuo pipefail
 
 usage() {

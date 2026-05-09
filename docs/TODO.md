@@ -68,10 +68,13 @@ Add or improve support for these developer tools and environments:
 - [x] `go`
 - [x] `haskell`
 - [ ] `julia`
-- [x] `k8s-local` (kind)
+- [x] `k3d`
+- [x] `k9s`
 - [ ] `kafka`
+- [x] `kind`
 - [x] `kotlin`
 - [x] `kubectl`
+- [x] `kubectx` + `kubens`
 - [x] `lua`
 - [ ] `make`
 - [ ] `mongodb`

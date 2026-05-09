@@ -1,0 +1,14 @@
+display-name = "kubectx + kubens"
+display-disc = "Quick context and namespace switching for kubectl"
+display-detail = "Installs both kubectx (switch contexts) and kubens (switch namespaces) from ahmetb/kubectx. They ship as a pair upstream and are installed together."
+display-order = 62
+tags = [
+    "kubernetes",
+    "k8s",
+    "cli",
+]
+
+[segments]
+Boothfile = """
+setup kubectx
+"""
