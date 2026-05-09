@@ -1,0 +1,19 @@
+display-name = "DuckDB"
+display-disc = "In-process analytical SQL database"
+display-detail = "Installs the DuckDB CLI, an embeddable column-oriented analytical database. Pairs well with python, r, and notebook for data exploration."
+display-order = 75
+tags = [
+    "database",
+    "sql",
+    "analytics",
+    "cli",
+]
+
+[params.DUCKDB_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup duckdb --version ${DUCKDB_VERSION}
+"""

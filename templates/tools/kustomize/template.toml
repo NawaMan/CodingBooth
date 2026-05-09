@@ -1,0 +1,19 @@
+display-name = "kustomize"
+display-disc = "Template-free YAML customization for Kubernetes"
+display-detail = "Installs kustomize, a Kubernetes-native configuration management tool. Layers patches over base manifests without templating."
+display-order = 58
+tags = [
+    "kubernetes",
+    "k8s",
+    "config",
+    "cli",
+]
+
+[params.KUSTOMIZE_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup kustomize --version ${KUSTOMIZE_VERSION}
+"""

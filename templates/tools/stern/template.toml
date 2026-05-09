@@ -1,0 +1,19 @@
+display-name = "stern"
+display-disc = "Multi-pod and container log tailing for Kubernetes"
+display-detail = "Installs stern, a tool for tailing logs across multiple pods and containers in Kubernetes. Pairs naturally with kubectl, k9s, and kubectx."
+display-order = 64
+tags = [
+    "kubernetes",
+    "k8s",
+    "logs",
+    "cli",
+]
+
+[params.STERN_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup stern --version ${STERN_VERSION}
+"""

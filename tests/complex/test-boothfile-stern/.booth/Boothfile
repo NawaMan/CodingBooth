@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: stern installation via Boothfile
+setup stern

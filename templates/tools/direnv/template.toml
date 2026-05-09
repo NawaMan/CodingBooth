@@ -1,0 +1,18 @@
+display-name = "direnv"
+display-disc = "Per-directory environment variables via .envrc"
+display-detail = "Installs direnv, which loads/unloads environment variables based on the current directory. Pairs well with polyglot toolchains and project-scoped secrets."
+display-order = 36
+tags = [
+    "cli",
+    "env",
+    "shell",
+]
+
+[params.DIRENV_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup direnv --version ${DIRENV_VERSION}
+"""

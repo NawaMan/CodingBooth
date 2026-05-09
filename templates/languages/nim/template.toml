@@ -1,0 +1,18 @@
+display-name = "Nim"
+display-disc = "Statically-typed compiled systems language"
+display-detail = "Installs the Nim compiler (nim, nimble, nimsuggest) under /opt/nim-stable. Tarball release from nim-lang.org."
+display-order = 85
+tags = [
+    "nim",
+    "compiled",
+    "systems",
+]
+
+[params.NIM_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup nim --version ${NIM_VERSION}
+"""

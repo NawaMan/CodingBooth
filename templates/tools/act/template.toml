@@ -1,0 +1,19 @@
+display-name = "act"
+display-disc = "Run GitHub Actions workflows locally"
+display-detail = "Installs act, which executes GitHub Actions workflows locally inside Docker containers. Requires Docker (dind) at runtime."
+display-order = 31
+tags = [
+    "github",
+    "ci",
+    "docker",
+    "cli",
+]
+
+[params.ACT_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup act --version ${ACT_VERSION}
+"""

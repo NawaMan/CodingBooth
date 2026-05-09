@@ -1,0 +1,18 @@
+display-name = "fzf"
+display-disc = "General-purpose command-line fuzzy finder"
+display-detail = "Installs fzf, an interactive fuzzy finder used for files, history, processes, git refs, and more. Single static binary at /usr/local/bin/fzf."
+display-order = 22
+tags = [
+    "cli",
+    "search",
+    "shell",
+]
+
+[params.FZF_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup fzf --version ${FZF_VERSION}
+"""

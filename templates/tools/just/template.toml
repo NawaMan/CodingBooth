@@ -1,0 +1,18 @@
+display-name = "just"
+display-disc = "Command runner for project-scoped recipes (Justfile)"
+display-detail = "Installs just, a handy way to save and run project-specific commands. Like make, but without the build-system semantics."
+display-order = 65
+tags = [
+    "cli",
+    "build",
+    "task",
+]
+
+[params.JUST_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup just --version ${JUST_VERSION}
+"""

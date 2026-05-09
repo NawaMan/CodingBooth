@@ -1,0 +1,19 @@
+display-name = "mkcert"
+display-disc = "Generate locally-trusted development TLS certificates"
+display-detail = "Installs mkcert, which provisions a local CA and issues TLS certs for development. Pairs with the existing tls setup for HTTPS workflows."
+display-order = 37
+tags = [
+    "tls",
+    "ssl",
+    "security",
+    "cli",
+]
+
+[params.MKCERT_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup mkcert --version ${MKCERT_VERSION}
+"""
