@@ -1,0 +1,12 @@
+# syntax=codingbooth/boothfile:1
+# Vaadin Flow example — Java + Spring Boot starter
+
+arg JDK_VERSION=21
+arg JDK_VENDOR=temurin
+arg MAVEN_VERSION=3.9.11
+arg NODE_VERSION=22
+
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+setup mvn ${MAVEN_VERSION}
+setup nodejs ${NODE_VERSION}
+setup java-code-extension

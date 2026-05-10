@@ -1,0 +1,15 @@
+display-name = "Apache HTTP Server"
+display-disc = "Battle-tested web server (apache2)"
+display-detail = "Installs the Apache HTTP Server (apache2). The daemon auto-starts on container boot. To also enable mod_php for serving .php files, hand-edit the Boothfile to 'setup apache --with-php' after generation."
+display-order = 38
+tags = [
+    "web",
+    "server",
+    "http",
+    "lamp",
+]
+
+[segments]
+Boothfile = """
+setup apache
+"""

@@ -1,0 +1,12 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --port 10000 --select python+pip-config+vscode-ext/clang+vscode-ext+kernel/notebook
+
+arg LLVM_VERSION=18
+arg PYTHON_VERSION=3.13.12
+
+setup clang --version ${LLVM_VERSION}
+setup python ${PYTHON_VERSION}
+setup notebook 18888
+setup clang-code-extension
+setup python-code-extension
+setup cpp-nb-kernel

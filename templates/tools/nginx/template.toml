@@ -1,0 +1,16 @@
+display-name = "nginx"
+display-disc = "High-performance reverse proxy and web server"
+display-detail = "Installs nginx. The daemon auto-starts on container boot. To also install php-fpm and route .php files to it via the default site, hand-edit the Boothfile to 'setup nginx --with-php-fpm' after generation."
+display-order = 39
+tags = [
+    "web",
+    "server",
+    "http",
+    "proxy",
+    "lemp",
+]
+
+[segments]
+Boothfile = """
+setup nginx
+"""

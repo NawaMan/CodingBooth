@@ -1,0 +1,7 @@
+# syntax=codingbooth/boothfile:1
+# Flask example — minimal Python web app
+
+arg PYTHON_VERSION=3.13.12
+
+setup python ${PYTHON_VERSION}
+setup python-code-extension

@@ -1,0 +1,7 @@
+# syntax=codingbooth/boothfile:1
+# LAMP example — Linux + Apache + MySQL + PHP, single container
+
+setup php
+setup mysql
+setup apache --with-php
+setup lamp-init

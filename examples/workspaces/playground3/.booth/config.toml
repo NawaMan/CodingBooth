@@ -1,0 +1,2 @@
+# Configured by: booth config --no-tui --overwrite --port 10000 --select python+pip-config+vscode-ext/clang+vscode-ext+kernel/notebook
+

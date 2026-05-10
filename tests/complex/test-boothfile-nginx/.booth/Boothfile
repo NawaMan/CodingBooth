@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: nginx installation via Boothfile
+setup nginx
