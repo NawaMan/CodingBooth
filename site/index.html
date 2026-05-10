@@ -358,7 +358,9 @@
             cursor: pointer;
         }
 
-        .demo-progress:hover { background: #2a3666; }
+        .demo-progress:hover {
+            background: #2a3666;
+        }
 
         .demo-progress-bar {
             height: 100%;
@@ -385,6 +387,7 @@
             display: block;
             width: 100%;
             height: auto;
+            cursor: zoom-in;
             border-bottom: 1px solid var(--border);
         }
 
@@ -405,7 +408,7 @@
             border-radius: 3px;
         }
 
-        .quickstart-list {
+        .quicktry-list {
             counter-reset: step;
             list-style: none;
             padding: 0;
@@ -413,7 +416,7 @@
             gap: 16px;
         }
 
-        .quickstart-list li {
+        .quicktry-list li {
             counter-increment: step;
             padding: 18px 22px 18px 56px;
             background: var(--bg-elev);
@@ -422,7 +425,7 @@
             position: relative;
         }
 
-        .quickstart-list li::before {
+        .quicktry-list li::before {
             content: counter(step);
             position: absolute;
             left: 18px;
@@ -439,12 +442,12 @@
             font-size: 13px;
         }
 
-        .quickstart-list .step-title {
+        .quicktry-list .step-title {
             font-weight: 600;
             margin-bottom: 6px;
         }
 
-        .quickstart-list pre {
+        .quicktry-list pre {
             margin: 8px 0 0;
             background: var(--code-bg);
             padding: 12px 14px;
@@ -508,16 +511,16 @@
             color: var(--light-fg-muted);
         }
 
-        .section-light .quickstart-list li {
+        .section-light .quicktry-list li {
             background: var(--light-bg-elev);
             border-color: var(--light-border);
         }
 
-        .section-light .quickstart-list li p {
+        .section-light .quicktry-list li p {
             color: var(--light-fg-muted) !important;
         }
 
-        .section-light .quickstart-list pre {
+        .section-light .quicktry-list pre {
             background: var(--code-bg);
             color: var(--fg);
             border-color: var(--light-border);
@@ -525,6 +528,138 @@
 
         .section-light p[style] {
             color: var(--light-fg-muted) !important;
+        }
+
+        .overview-figure {
+            position: relative;
+            display: inline-block;
+            max-width: 100%;
+            line-height: 0;
+        }
+
+        .overview-figure img {
+            display: block;
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            border: 1px solid var(--light-border);
+        }
+
+        .region-hot {
+            position: absolute;
+            border: 2px solid transparent;
+            border-radius: 8px;
+            background: transparent;
+            cursor: pointer;
+            transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+            padding: 0;
+            outline: none;
+        }
+
+        .region-hot:hover,
+        .region-hot:focus-visible,
+        .region-hot.is-active {
+            border-color: var(--accent);
+        }
+
+        .region-link {
+            cursor: pointer;
+            border-bottom: 1px dotted rgba(0, 0, 0, 0.25);
+            transition: color 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+            padding: 0 2px;
+            border-radius: 3px;
+        }
+
+        .region-link:hover,
+        .region-link:focus-visible,
+        .region-link.is-active {
+            color: var(--accent-strong);
+            border-bottom-color: var(--accent-strong);
+            background: rgba(252, 150, 47, 0.14);
+            outline: none;
+        }
+
+        .region-link code {
+            font-size: 0.92em;
+        }
+
+        .why-card ul {
+            margin: 8px 0 0;
+            padding-left: 20px;
+        }
+
+        .why-card ul li {
+            margin-bottom: 6px;
+            font-size: 15px;
+        }
+
+        .section-light .why-card ul li {
+            color: var(--light-fg-muted);
+        }
+
+        .section-light .why-card ul li strong,
+        .section-light .why-card p strong {
+            color: var(--light-fg);
+        }
+
+        .why-card p {
+            margin: 12px 0 0;
+            font-size: 15px;
+        }
+
+        .section-light .why-card p {
+            color: var(--light-fg-muted);
+        }
+
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 6, 21, 0.92);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            z-index: 100;
+            cursor: zoom-out;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .lightbox.is-open {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lightbox img {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            background: transparent;
+            border: 1px solid var(--fg-muted);
+            color: var(--fg);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+        }
+
+        .lightbox-close:hover {
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
         @media (max-width: 600px) {
@@ -554,7 +689,9 @@
                 <a href="#why">Why</a>
                 <a href="#demo">Demo</a>
                 <a href="#variants">Variants</a>
-                <a href="#quickstart">Quick start</a>
+                <a href="#quicktry">Quick try</a>
+                <a href="#learn-more">Learn more</a>
+                <a href="#community">Community</a>
                 <a href="https://github.com/NawaMan/CodingBooth">GitHub</a>
             </div>
         </div>
@@ -574,7 +711,8 @@
             </div>
 
             <div class="ctas">
-                <a class="btn btn-primary" href="#quickstart">Get started</a>
+                <a class="btn btn-primary" href="#demo">Demo</a>
+                <a class="btn" href="#quicktry">Quick Try</a>
                 <a class="btn" href="https://github.com/NawaMan/CodingBooth">View on GitHub</a>
                 <a class="btn" href="https://github.com/NawaMan/CodingBooth/blob/main/CODINGBOOTH.md">User Manual</a>
             </div>
@@ -584,16 +722,34 @@
     <section id="coding-booth" class="section-light">
         <div class="container demo">
             <h2>Coding Booth</h2>
-            <img src="images/Overview.png" alt="CodingBooth overview: chaos and conflicts on the left, the booth in the middle, productivity and consistency on the right">
-            <p class="lead" style="margin-top: 32px;">
-                The picture above tells the whole story. On the left, the way dev environments usually go:
-                tangled toolchains, "works on my machine" arguments, a host slowly polluted by every project
-                you've ever touched, and old code you can no longer build. In the middle is the booth — your
-                project plus a small <code>.booth/</code> config that travels with your repo; run
-                <code>./booth</code> and the right environment materializes around your code, owned by your
-                host user and isolated from everything else. On the right is what you get for it: teammates
-                productive in minutes, projects you can park for months and still build, no more conflicts,
-                a clean host, and complex multi-service setups reduced to a one-line declaration.
+            <div class="overview-figure">
+                <img src="images/Overview.png"
+                    alt="CodingBooth overview: chaos and conflicts on the left, the booth in the middle, productivity and consistency on the right">
+                <button type="button" class="region-hot" data-region="left"
+                    aria-label="The old way: chaos and conflicts"
+                    style="left: 2%;  top: 15%; width: 35%; height: 82%;"></button>
+                <button type="button" class="region-hot" data-region="middle" aria-label="The booth"
+                    style="left: 38%; top: 15%; width: 25%; height: 82%;"></button>
+                <button type="button" class="region-hot" data-region="right"
+                    aria-label="The benefits: productivity and consistency"
+                    style="left: 63%; top: 15%; width: 35%; height: 82%;"></button>
+            </div>
+            <p class="lead">
+                <span>
+                    You've containerized your app. You've containerized your build.
+                    But your dev environment is still a mess of system-wide installs, mismatched versions, and
+                    onboarding
+                    docs no one ever revises. CodingBooth fixes that.
+                </span>
+                <span class="region-link" data-region="left" tabindex="0">On the left: tangled toolchains, “works on my
+                    machine” fights, a polluted host from every past project, and old code you can’t build
+                    anymore.</span>
+                <span class="region-link" data-region="middle" tabindex="0">In the middle: booth — just your code + a
+                    tiny <code>.booth/</code> config in the repo. Run <code>./booth</code> and a clean, isolated
+                    environment appears around your project, owned by your user.</span>
+                <span class="region-link" data-region="right" tabindex="0">On the right: teammates productive in
+                    minutes, projects you can revive after months, zero conflicts, a clean host, and complex
+                    multi-service setups reduced to one line.</span>
             </p>
         </div>
     </section>
@@ -601,40 +757,11 @@
     <section id="why">
         <div class="container">
             <h2>Why CodingBooth?</h2>
-            <p class="lead">
-                You've containerized your app. You've containerized your build.
-                But your dev environment is still a mess of system-wide installs, mismatched versions, and onboarding
-                docs no one ever revises. CodingBooth fixes that.
-            </p>
             <div class="why-grid">
-                <div class="why-card">
-                    <h3>Files owned by you</h3>
-                    <p>The container's user is mapped to your host UID/GID. No more "root-owned" repositories.</p>
-                </div>
-                <div class="why-card">
-                    <h3>Setup ships with the code</h3>
-                    <p>Everything lives in <code>.booth/</code> in your repo. Onboard a teammate with one command.</p>
-                </div>
-                <div class="why-card">
-                    <h3>Six UI variants</h3>
-                    <p>Browser-based VS Code, Jupyter Lab, XFCE / KDE desktops, terminal, or pure command passthrough.
-                    </p>
-                </div>
-                <div class="why-card">
-                    <h3>75+ setup templates</h3>
-                    <p>Languages, cloud CLIs, AI tools, IDE extensions — compose them with a simple selection DSL.</p>
-                </div>
-                <div class="why-card">
-                    <h3>Pause &amp; resume, months later</h3>
-                    <p>Persistent home volumes and local cache mean your environment is exactly as you left it.</p>
-                </div>
-                <div class="why-card">
-                    <h3>Sandboxable</h3>
-                    <p>Optional <code>--sandboxed</code> mode restricts egress to allowlisted domains via Envoy +
-                        iptables.</p>
+                <div class="overview-figure">
+                    <img src="images/Benefit & Users.png" alt="Benefits and users" />
                 </div>
             </div>
-        </div>
     </section>
 
     <section id="demo" class="section-light">
@@ -649,27 +776,30 @@
             <div class="demo-bar-row">
                 <button class="demo-ctrl" id="demoPauseBtn" type="button" aria-label="Pause demo" title="Pause">
                     <svg id="demoPauseIcon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                        <rect x="6" y="5" width="4" height="14" rx="1"/>
-                        <rect x="14" y="5" width="4" height="14" rx="1"/>
+                        <rect x="6" y="5" width="4" height="14" rx="1" />
+                        <rect x="14" y="5" width="4" height="14" rx="1" />
                     </svg>
                 </button>
-                <button class="demo-ctrl" id="demoRestartBtn" type="button" aria-label="Restart from beginning" title="Restart">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                        <path d="M3 12a9 9 0 1 0 3-6.7"/>
-                        <polyline points="3 4 3 9 8 9"/>
+                <button class="demo-ctrl" id="demoRestartBtn" type="button" aria-label="Restart from beginning"
+                    title="Restart">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                        stroke-linejoin="round" aria-hidden="true">
+                        <path d="M3 12a9 9 0 1 0 3-6.7" />
+                        <polyline points="3 4 3 9 8 9" />
                     </svg>
                 </button>
                 <div class="demo-progress" aria-hidden="true">
                     <div class="demo-progress-bar" id="demoProgressBar"></div>
                 </div>
             </div>
-            <p class="caption"><a href="https://youtu.be/Rvv3UcOqv3c" target="_blank" rel="noopener">Watch the full demo on YouTube →</a></p>
+            <p class="caption"><a href="https://youtu.be/Rvv3UcOqv3c" target="_blank" rel="noopener">Watch the full demo
+                    on YouTube →</a></p>
         </div>
     </section>
 
     <section id="variants">
         <div class="container">
-            <h2>Pick your UI</h2>
+            <h2>Pick Your UI</h2>
             <p class="lead">Same underlying environment, six different presentations.</p>
             <div class="variants-grid">
                 <div class="variant-card">
@@ -718,11 +848,11 @@
         </div>
     </section>
 
-    <section id="quickstart" class="section-light">
+    <section id="quicktry" class="section-light">
         <div class="container">
-            <h2>Quick start</h2>
+            <h2>Quick Try</h2>
             <p class="lead">Three steps to a working booth.</p>
-            <ol class="quickstart-list">
+            <ol class="quicktry-list">
                 <li>
                     <div class="step-title">Install</div>
                     <pre><code>curl -fsSL https://codingbooth.io/install.sh | bash</code></pre>
@@ -749,6 +879,74 @@ cd my-snake
         </div>
     </section>
 
+    <section id="learn-more">
+        <div class="container">
+            <h2>Learn more</h2>
+            <p class="lead">Deeper guides, reference material, and the full documentation index.</p>
+            <div class="ctas">
+                <a class="btn btn-primary" href="more.html">More about CodingBooth</a>
+                <a class="btn" href="https://github.com/NawaMan/CodingBooth#documentation">Documentation on GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- SYNC: keep this section in sync with the "Community & Feedback" section in /README.md -->
+    <section id="community" class="section-light">
+        <div class="container">
+            <h2>Community &amp; Feedback</h2>
+            <p class="lead">
+                CodingBooth is built to meet <strong>real developer needs</strong> — simple, reproducible,
+                and flexible without unnecessary complexity. Your feedback and contributions help it evolve
+                and stay relevant for everyone.
+            </p>
+            <div class="why-grid">
+                <div class="why-card">
+                    <h3>Issues &amp; Contributions</h3>
+                    <ul>
+                        <li><strong>Report Bugs &amp; Request Features:</strong> Use the
+                            <a href="https://github.com/NawaMan/CodingBooth/issues">Issues page</a> to report
+                            bugs, request features, or suggest improvements.
+                        </li>
+                        <li><strong>Pull Requests:</strong> PRs are always welcome — but I reserve the right
+                            to reject any PR that doesn't align with my vision for the project.</li>
+                        <li><strong>Discussions:</strong> Have a creative idea, workflow, or enhancement to
+                            share? Open an issue or discussion — we'd love to hear it.</li>
+                        <li><strong>Direct Contact:</strong> Prefer to reach out directly? Feel free to
+                            contact me through any of the links below.</li>
+                    </ul>
+                </div>
+                <div class="why-card">
+                    <h3>Support &amp; Appreciation</h3>
+                    <p>If CodingBooth has saved you time, simplified your setup, or made development more
+                        enjoyable, please consider supporting the project:</p>
+                    <ul>
+                        <li><a href="https://github.com/sponsors/NawaMan">Sponsor me on GitHub</a></li>
+                        <li><a href="https://buymeacoffee.com/NawaMan">Buy me a coffee</a></li>
+                    </ul>
+                    <p>Your encouragement keeps this project active — and might even help with my kids'
+                        college fund.</p>
+                </div>
+                <div class="why-card">
+                    <h3>Connect</h3>
+                    <p>Stay in touch or follow updates, insights, and development notes:</p>
+                    <ul>
+                        <li><strong>Twitter/X:</strong> <a href="https://x.com/nawaman">@nawaman</a></li>
+                        <li><strong>LinkedIn:</strong>
+                            <a href="https://www.linkedin.com/in/nawaman/">nawaman</a>
+                        </li>
+                        <li><strong>Blog:</strong> <a href="https://nawaman.net/blog/">nawaman.net/blog</a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <p style="text-align: center; margin-top: 32px; font-style: italic;">
+                Every issue, idea, and pull request — big or small — helps make CodingBooth better for
+                everyone. Thank you for being part of the community!
+            </p>
+        </div>
+    </section>
+    <!-- /SYNC -->
+
     <footer>
         <div class="container">
             <div class="footer-links">
@@ -765,6 +963,11 @@ cd my-snake
             </div>
         </div>
     </footer>
+
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Variant preview">
+        <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close preview">×</button>
+        <img id="lightboxImg" alt="">
+    </div>
 
     <script>
         function copyInstall(btn) {
@@ -824,6 +1027,56 @@ cd my-snake
                 const rect = track.getBoundingClientRect();
                 const fraction = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
                 video.currentTime = fraction * video.duration;
+            });
+        })();
+
+        (function () {
+            const nodes = document.querySelectorAll('[data-region]');
+            if (!nodes.length) return;
+
+            const activate = (region) => {
+                document.querySelectorAll(`[data-region="${region}"]`).forEach(el => el.classList.add('is-active'));
+            };
+            const deactivate = (region) => {
+                document.querySelectorAll(`[data-region="${region}"]`).forEach(el => el.classList.remove('is-active'));
+            };
+
+            nodes.forEach(el => {
+                const region = el.getAttribute('data-region');
+                el.addEventListener('mouseenter', () => activate(region));
+                el.addEventListener('mouseleave', () => deactivate(region));
+                el.addEventListener('focus', () => activate(region));
+                el.addEventListener('blur', () => deactivate(region));
+            });
+        })();
+
+        (function () {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightboxImg');
+            const closeBtn = document.getElementById('lightboxClose');
+            if (!lightbox || !lightboxImg) return;
+
+            const open = (src, alt) => {
+                lightboxImg.src = src;
+                lightboxImg.alt = alt || '';
+                lightbox.classList.add('is-open');
+                document.body.style.overflow = 'hidden';
+            };
+            const close = () => {
+                lightbox.classList.remove('is-open');
+                lightboxImg.src = '';
+                document.body.style.overflow = '';
+            };
+
+            document.querySelectorAll('.variant-card img').forEach(img => {
+                img.addEventListener('click', () => open(img.src, img.alt));
+            });
+
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox || e.target === closeBtn) close();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && lightbox.classList.contains('is-open')) close();
             });
         })();
     </script>

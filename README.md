@@ -543,6 +543,7 @@ JetBrains activation is stored as a machine-specific token. When you run an IDE 
 ---
 
 
+<!-- SYNC: keep this section in sync with the "Community & Feedback" section in /site/index.html (#community) -->
 ## Community & Feedback
 
 CodingBooth is built to meet **real developer needs** — simple, reproducible, and flexible without unnecessary complexity.
@@ -576,3 +577,5 @@ Stay in touch or follow updates, insights, and development notes:
 
 > Every issue, idea, and pull request — big or small — helps make CodingBooth better for everyone.
 > Thank you for being part of the community!
+<!-- /SYNC -->
+
