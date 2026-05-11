@@ -140,3 +140,9 @@ cli/src/codingbooth
 
 build/logs/
 tests/logs/
+
+# VHS tape sandbox: self-contained booth install for recording demos
+site/media/tapes/.sandbox/
+site/media/tapes/*.gif
+site/media/tapes/*.mp4
+site/media/tapes/*.webm
