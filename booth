@@ -52,7 +52,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.10.0
+VERSION=0.11.0
 VERBOSE="${VERBOSE:-true}"
 
 # Resolve script directory (follow symlinks) so all project paths are location-based.
@@ -288,6 +288,20 @@ function Main() {
             DownloadBooth "${version_arg:-latest}" "$cache_mode"
             exit 0
             ;;
+        update-wrapper)
+            shift  # Remove 'update-wrapper'
+            local assume_yes="false"
+            while [[ $# -gt 0 ]]; do
+                case "$1" in
+                    -y|--yes) assume_yes="true"; shift ;;
+                    *) echo "Unknown option: $1" >&2
+                       echo "Usage: $0 update-wrapper [--yes|-y]" >&2
+                       exit 1 ;;
+                esac
+            done
+            UpdateWrapper "$assume_yes"
+            exit 0
+            ;;
         update)
             # Parse --cache= flag
             shift  # Remove 'update'
@@ -426,6 +440,7 @@ Wrapper commands:
   install --cache=shared [VER]   Install to shared cache (explicit)
   install --cache=local [VER]    Install to .booth/tools/ (project-local)
   update  [VERSION]              Update binary to latest (or specified) version
+  update-wrapper [--yes|-y]      Update the 'booth' wrapper script (latest only)
   uninstall                      Remove project lock file and local binaries
 
   tools-cache list        Show cached binary versions and sizes
@@ -922,6 +937,57 @@ function ToolsCacheClean() {
     else
         echo "No version selected."
     fi
+}
+
+function UpdateWrapper() {
+    local assume_yes="${1:-false}"
+
+    # Resolve the on-disk path of this wrapper script (follows symlinks).
+    local source="${BASH_SOURCE[0]}"
+    while [[ -L "$source" ]]; do
+        local link_dir
+        link_dir="$(cd -P "$(dirname "$source")" && pwd)"
+        source="$(readlink "$source")"
+        [[ "$source" != /* ]] && source="$link_dir/$source"
+    done
+    local target_dir target
+    target_dir="$(cd -P "$(dirname "$source")" && pwd)"
+    target="$target_dir/$(basename "$source")"
+
+    if [[ ! -f "$target" ]]; then
+        echo "Error: cannot locate wrapper script at $target" >&2
+        exit 1
+    fi
+    if [[ ! -w "$target" || ! -w "$target_dir" ]]; then
+        echo "Error: $target_dir is not writable" >&2
+        exit 1
+    fi
+
+    echo "This will replace the wrapper at:"
+    echo "    $target"
+    echo "with the latest version, by running:"
+    echo "    curl -fsSL https://codingbooth.io/install.sh | bash"
+    echo ""
+    echo "Current wrapper version: $VERSION"
+    echo ""
+
+    if [[ "$assume_yes" != "true" ]]; then
+        if [[ ! -t 0 ]]; then
+            echo "Error: not connected to a terminal — re-run with --yes to skip the prompt." >&2
+            exit 1
+        fi
+        local reply
+        read -rp "Proceed? [y/N] " reply
+        case "$reply" in
+            y|Y|yes|YES|Yes) ;;
+            *) echo "Cancelled." ; exit 0 ;;
+        esac
+        echo ""
+    fi
+
+    # Run the canonical install command from the wrapper's directory so the new
+    # wrapper lands in the right place.
+    ( cd "$target_dir" && curl -fsSL https://codingbooth.io/install.sh | bash )
 }
 
 function DownloadBooth() {
