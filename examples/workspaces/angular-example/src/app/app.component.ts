@@ -7,7 +7,7 @@ import { Component, signal } from '@angular/core'
     <main style="font-family:system-ui;padding:2rem">
       <h1>Hello from Angular in CodingBooth!</h1>
       <p>Click the button to confirm Angular signals work:</p>
-      <button (click)="count.update((c) => c + 1)">
+      <button (click)="increment()">
         Clicked {{ count() }} time{{ count() === 1 ? '' : 's' }}
       </button>
     </main>
@@ -15,4 +15,7 @@ import { Component, signal } from '@angular/core'
 })
 export class AppComponent {
   count = signal(0)
+  increment() {
+    this.count.update((c) => c + 1)
+  }
 }
