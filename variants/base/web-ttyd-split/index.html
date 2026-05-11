@@ -225,7 +225,8 @@
     }
 
     .proxy-open-tab,
-    .proxy-back-btn {
+    .proxy-back-btn,
+    .proxy-reload {
       background: none;
       border: none;
       color: var(--muted);
@@ -236,7 +237,8 @@
       border-radius: 4px;
     }
 
-    .proxy-open-tab:hover {
+    .proxy-open-tab:hover,
+    .proxy-reload:hover {
       color: var(--accent);
       background: rgba(47, 141, 255, 0.1);
     }
@@ -400,6 +402,7 @@
         <div class="pane-header">
           <span class="pane-title">Session 1</span>
           <button class="proxy-toggle" data-session="1" title="Web view">&#x1F310;</button>
+          <button class="proxy-reload" data-session="1" title="Reload">&#x21BB;</button>
           <input class="proxy-port-input" data-session="1" type="text" placeholder="port" maxlength="5" style="display:none">
           <button class="proxy-back-btn" data-session="1" title="Back to terminal" style="display:none">&#x2190;</button>
           <button class="proxy-open-tab" data-session="1" title="Open in new tab" style="display:none">&#x2197;</button>
@@ -411,6 +414,7 @@
         <div class="pane-header">
           <span class="pane-title">Session 2</span>
           <button class="proxy-toggle" data-session="2" title="Web view">&#x1F310;</button>
+          <button class="proxy-reload" data-session="2" title="Reload">&#x21BB;</button>
           <input class="proxy-port-input" data-session="2" type="text" placeholder="port" maxlength="5" style="display:none">
           <button class="proxy-back-btn" data-session="2" title="Back to terminal" style="display:none">&#x2190;</button>
           <button class="proxy-open-tab" data-session="2" title="Open in new tab" style="display:none">&#x2197;</button>
@@ -422,6 +426,7 @@
         <div class="pane-header">
           <span class="pane-title">Session 3</span>
           <button class="proxy-toggle" data-session="3" title="Web view">&#x1F310;</button>
+          <button class="proxy-reload" data-session="3" title="Reload">&#x21BB;</button>
           <input class="proxy-port-input" data-session="3" type="text" placeholder="port" maxlength="5" style="display:none">
           <button class="proxy-back-btn" data-session="3" title="Back to terminal" style="display:none">&#x2190;</button>
           <button class="proxy-open-tab" data-session="3" title="Open in new tab" style="display:none">&#x2197;</button>
@@ -433,6 +438,7 @@
         <div class="pane-header">
           <span class="pane-title">Session 4</span>
           <button class="proxy-toggle" data-session="4" title="Web view">&#x1F310;</button>
+          <button class="proxy-reload" data-session="4" title="Reload">&#x21BB;</button>
           <input class="proxy-port-input" data-session="4" type="text" placeholder="port" maxlength="5" style="display:none">
           <button class="proxy-back-btn" data-session="4" title="Back to terminal" style="display:none">&#x2190;</button>
           <button class="proxy-open-tab" data-session="4" title="Open in new tab" style="display:none">&#x2197;</button>
@@ -819,6 +825,54 @@
       }
 
       const proxyState = loadProxyState();
+
+      // Inject a baseline light-mode style into same-origin iframes that
+      // haven't declared their own color-scheme. Lets unstyled apps (hello-world
+      // demos) render with a normal white background instead of inheriting the
+      // OS dark-mode default. Apps that opt into a theme (color-scheme meta or
+      // explicit body background) are left alone.
+      function applyIframeFallbackStyle(iframe) {
+        try {
+          const doc = iframe.contentDocument;
+          if (!doc || !doc.head) return;
+          if (doc.querySelector('meta[name="color-scheme"]')) return;
+          const target = doc.body || doc.documentElement;
+          const bg = doc.defaultView.getComputedStyle(target).backgroundColor;
+          if (bg && bg !== "rgba(0, 0, 0, 0)" && bg !== "transparent") return;
+
+          const meta = doc.createElement("meta");
+          meta.setAttribute("name", "color-scheme");
+          meta.setAttribute("content", "light");
+          doc.head.appendChild(meta);
+
+          const style = doc.createElement("style");
+          style.textContent = "html,body{background:#fff;color:#1a1a1a}";
+          doc.head.appendChild(style);
+        } catch (_e) {
+          // Cross-origin iframe — can't (and shouldn't) inject. Silent no-op.
+        }
+      }
+
+      document.querySelectorAll(".pane iframe").forEach(function(iframe) {
+        iframe.addEventListener("load", function() {
+          applyIframeFallbackStyle(iframe);
+        });
+      });
+
+      document.querySelectorAll(".proxy-reload").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          var pane = btn.closest(".pane");
+          var iframe = pane && pane.querySelector("iframe");
+          if (!iframe) return;
+          try {
+            // Same-origin: contentWindow.location.reload() preserves history.
+            iframe.contentWindow.location.reload();
+          } catch (_e) {
+            // Cross-origin: fall back to resetting src to itself.
+            iframe.src = iframe.src;
+          }
+        });
+      });
 
       function switchToWebView(sessionNum, port) {
         const pane = document.querySelector('.pane[data-pane="' + sessionNum + '"]');
