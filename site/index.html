@@ -456,12 +456,28 @@
             border: 1px solid var(--border);
             overflow-x: auto;
             font-size: 13px;
+            position: relative;
         }
 
         .quicktry-list pre code {
             background: transparent;
             color: inherit;
             padding: 0;
+        }
+
+        .quicktry-list pre .copy-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            margin-left: 0;
+            opacity: 0;
+            transition: opacity 0.15s, color 0.15s, border-color 0.15s;
+        }
+
+        .quicktry-list pre:hover .copy-btn,
+        .quicktry-list pre .copy-btn:focus,
+        .quicktry-list pre .copy-btn.copied {
+            opacity: 1;
         }
 
         footer {
@@ -862,11 +878,11 @@
             <ol class="quicktry-list">
                 <li>
                     <div class="step-title">Install</div>
-                    <pre><code>curl -fsSL https://codingbooth.io/install.sh | bash</code></pre>
+                    <pre><button class="copy-btn" type="button" onclick="copyCode(this)">Copy</button><code>curl -fsSL https://codingbooth.io/install.sh | bash</code></pre>
                 </li>
                 <li>
                     <div class="step-title">Try an example</div>
-                    <pre><code>./booth example list
+                    <pre><button class="copy-btn" type="button" onclick="copyCode(this)">Copy</button><code>./booth example list
 ./booth example try zig-snake my-snake
 cd my-snake
 ./booth</code></pre>
@@ -980,6 +996,20 @@ cd my-snake
         function copyInstall(btn) {
             const text = "curl -fsSL https://codingbooth.io/install.sh | bash";
             navigator.clipboard.writeText(text).then(() => {
+                btn.textContent = "Copied!";
+                btn.classList.add("copied");
+                setTimeout(() => {
+                    btn.textContent = "Copy";
+                    btn.classList.remove("copied");
+                }, 1800);
+            });
+        }
+
+        function copyCode(btn) {
+            const pre = btn.closest("pre");
+            const code = pre && pre.querySelector("code");
+            if (!code) return;
+            navigator.clipboard.writeText(code.textContent).then(() => {
                 btn.textContent = "Copied!";
                 btn.classList.add("copied");
                 setTimeout(() => {
