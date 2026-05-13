@@ -10,7 +10,7 @@
 ## Why CodingBooth?
 
 You've containerized your app. You've containerized your build.
-But your development environment? Still a mess of system-wide installs, mismatched versions, and onboarding docs no one ever revises?
+But your development environment? Still a mess of system-wide installs, mismatched versions, and onboarding docs no one ever updates?
 
 **CodingBooth fixes that.**
 
@@ -551,9 +551,9 @@ Your feedback and contributions help it evolve and stay relevant for everyone.
 
 ### Issues & Contributions
 
-- **Report Bugs & Request Features:** Use the **[Issues page](../../issues)** to report bugs, request features, or suggest improvements.
+- **Report Bugs & Request Features:** Use the **[Issues page](https://github.com/NawaMan/CodingBooth/issues)** to report bugs, request features, or suggest improvements.
 - **Pull Requests:** PRs are always welcome — but I reserve the right to reject any PR that doesn't align with my vision for the project.
-- **Discussions:** Have a creative idea, workflow, or enhancement to share? Open an issue or discussion — we'd love to hear it.
+- **Discussions:** Have a creative idea, workflow, or enhancement to share? Open an issue or discussion — I'd love to hear it.
 - **Direct Contact:** Prefer to reach out directly? Feel free to contact me through any of the links below.
 
 ### Support & Appreciation

@@ -1,6 +1,6 @@
 # PERN Example
 
-A modern [PERN](https://www.mongodb.com/resources/languages/pern) stack — Postgres + Express + React + Node — running on a single CodingBooth container.
+A modern PERN stack — Postgres + Express + React + Node — running on a single CodingBooth container.
 
 ## Run
 

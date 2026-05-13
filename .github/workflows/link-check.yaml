@@ -1,0 +1,55 @@
+# Scans Markdown and the public site for broken links using lychee.
+# Triggers on: PRs touching docs / site, weekly schedule, manual dispatch.
+name: Link check
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**/*.md'
+      - 'site/**/*.html'
+      - '.github/workflows/link-check.yaml'
+      - '.lycheeignore'
+  pull_request:
+    paths:
+      - '**/*.md'
+      - 'site/**/*.html'
+      - '.github/workflows/link-check.yaml'
+      - '.lycheeignore'
+  schedule:
+    - cron: '0 6 * * 1' # Mondays at 06:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lychee:
+    name: Run lychee
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Restore lychee cache
+        uses: actions/cache@v4
+        with:
+          path: .lycheecache
+          key: cache-lychee-${{ github.sha }}
+          restore-keys: |
+            cache-lychee-
+
+      - name: Run lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          # --cache + --max-cache-age 1d → re-verify each link at most once a day
+          # --no-progress keeps CI logs clean
+          # mailto: links are skipped by default in lychee 0.24+; no flag needed
+          # --accept lets transient rate-limits (429) through; exclude patterns live in .lycheeignore
+          args: |
+            --cache
+            --max-cache-age 1d
+            --no-progress
+            --accept '200..=299,403,429'
+            './**/*.md'
+            './site/**/*.html'
+          fail: true

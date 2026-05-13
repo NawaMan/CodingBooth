@@ -83,8 +83,6 @@ noVNC does not have direct clipboard integration with your host machine. To copy
    - **To paste into VNC:** Paste text into the panel, then Ctrl+V inside the desktop
    - **To copy from VNC:** Copy text inside the desktop, then copy from the panel to your host
 
-![Clipboard Panel](noVNC-Clipboard.gif)
-
 ## Code Server Notes
 
 ### Clipboard in Terminal

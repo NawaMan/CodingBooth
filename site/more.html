@@ -6,7 +6,32 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>More — CodingBooth</title>
     <meta name="description"
-        content="More about CodingBooth — deeper guides covering variants, configuration, the Boothfile, lifecycle, sidecars, and more.">
+        content="Deeper guides for CodingBooth — variants, booth config, the Boothfile, lifecycle, shell &amp; exec, expose, idle shutdown, Docker-in-Docker, sandbox, desktop & noVNC, and more.">
+    <link rel="canonical" href="https://codingbooth.io/more.html">
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="CodingBooth">
+    <meta property="og:title" content="More about CodingBooth">
+    <meta property="og:description"
+        content="Deeper guides for CodingBooth — variants, config TUI, the Boothfile, lifecycle, sidecars, web overlay, idle shutdown, and more.">
+    <meta property="og:type" content="article">
+    <meta property="og:url" content="https://codingbooth.io/more.html">
+    <meta property="og:image" content="https://codingbooth.io/images/CodingBooth-Demo-Preview.gif">
+    <meta property="og:image:alt"
+        content="CodingBooth: containerized, reproducible dev environments with multiple UI variants.">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@nawaman">
+    <meta name="twitter:creator" content="@nawaman">
+    <meta name="twitter:title" content="More about CodingBooth">
+    <meta name="twitter:description"
+        content="Deeper guides for CodingBooth — variants, config TUI, the Boothfile, lifecycle, sidecars, web overlay, idle shutdown, and more.">
+    <meta name="twitter:image" content="https://codingbooth.io/images/CodingBooth-Demo-Preview.gif">
+    <meta name="twitter:image:alt"
+        content="CodingBooth: containerized, reproducible dev environments with multiple UI variants.">
+
     <link rel="icon" type="image/png" sizes="32x32" href="favicons/favicon-32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="favicons/favicon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon.png">
@@ -55,8 +80,26 @@
         }
 
         code,
-        pre {
+        pre,
+        kbd {
             font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        }
+
+        kbd {
+            font-size: 0.85em;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-bottom-width: 2px;
+            border-radius: 4px;
+            padding: 1px 6px;
+            color: var(--fg);
+            white-space: nowrap;
+        }
+
+        .section-light kbd {
+            background: var(--light-bg-elev);
+            border-color: var(--light-border);
+            color: var(--light-fg);
         }
 
         .container {
@@ -354,6 +397,81 @@
             background: var(--light-border);
         }
 
+        .demo-time {
+            flex: 0 0 auto;
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 12px;
+            font-variant-numeric: tabular-nums;
+            color: var(--fg-muted);
+            user-select: none;
+            min-width: 76px;
+            text-align: right;
+        }
+
+        .section-light .demo-time {
+            color: var(--light-fg-muted);
+        }
+
+        .demo-points {
+            list-style: none;
+            text-align: left;
+            max-width: 780px;
+            margin: 24px auto 0;
+            padding: 0;
+            column-width: 320px;
+            column-gap: 28px;
+            font-size: 14px;
+            line-height: 1.55;
+            color: var(--fg-muted);
+        }
+
+        .demo-points li {
+            margin: 0 0 4px;
+            break-inside: avoid;
+            padding: 3px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .demo-points li.active {
+            background: rgba(252, 150, 47, 0.14);
+            color: var(--fg);
+        }
+
+        .demo-points li.active .ts {
+            color: var(--accent-strong);
+        }
+
+        .section-light .demo-points li.active {
+            background: rgba(252, 150, 47, 0.2);
+            color: var(--light-fg);
+        }
+
+        .demo-points .ts {
+            color: var(--accent);
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 12.5px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            margin-right: 8px;
+            background: transparent;
+            border: 0;
+            padding: 0;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .demo-points .ts:hover,
+        .demo-points .ts:focus-visible {
+            color: var(--accent-strong);
+            text-decoration: underline;
+            outline: none;
+        }
+
+        .section-light .demo-points {
+            color: var(--light-fg-muted);
+        }
+
         .toc {
             padding: 40px 0;
             background: var(--bg-elev);
@@ -443,7 +561,7 @@
 
     <nav>
         <div class="container">
-            <a href="/" class="brand"><img src="images/logo-image.png" alt="">CodingBooth</a>
+            <a href="index.html" class="brand"><img src="images/logo-image.png" alt="">CodingBooth</a>
             <div class="nav-links">
                 <a href="index.html">Home</a>
                 <a href="#how-it-works">How it works</a>
@@ -698,7 +816,31 @@
                         <div class="demo-progress" aria-hidden="true">
                             <div class="demo-progress-bar"></div>
                         </div>
+                        <span class="demo-time" aria-hidden="true">0:00 / 0:00</span>
                     </div>
+                    <ul class="demo-points">
+                        <li><button type="button" class="ts" data-seek="1" title="Jump to 0:01">0:01</button>Create
+                            a fresh project: <code>mkdir my-bun-app && cd my-bun-app</code>.</li>
+                        <li><button type="button" class="ts" data-seek="8" title="Jump to 0:08">0:08</button>Run
+                            <code>booth config</code> to scaffold a <code>.booth/</code> interactively.</li>
+                        <li><button type="button" class="ts" data-seek="12" title="Jump to 0:12">0:12</button>Switch
+                            to the <strong>Config</strong> tab (<kbd>←</kbd>) — global booth settings live here.</li>
+                        <li><button type="button" class="ts" data-seek="16" title="Jump to 0:16">0:16</button>Open
+                            the <strong>Variant</strong> cycle-field (<kbd>Enter</kbd>) and cycle to
+                            <code>codeserver</code> with <kbd>→</kbd> <kbd>→</kbd> <kbd>→</kbd>.</li>
+                        <li><button type="button" class="ts" data-seek="26"
+                                title="Jump to 0:26">0:26</button>Commit (<kbd>Enter</kbd>) — variant captured.</li>
+                        <li><button type="button" class="ts" data-seek="30"
+                                title="Jump to 0:30">0:30</button>Back to <strong>Languages</strong> (<kbd>→</kbd>) —
+                            <kbd>Space</kbd> selects <code>bun</code>, <kbd>Enter</kbd> opens its parameter editor
+                            (<code>BUN_VERSION</code>, <code>BUN_PKGS</code>).</li>
+                        <li><button type="button" class="ts" data-seek="38"
+                                title="Jump to 0:38">0:38</button><kbd>Esc</kbd> leaves the editor (selection
+                            preserved); <kbd>Ctrl+S</kbd> saves.</li>
+                        <li><button type="button" class="ts" data-seek="42"
+                                title="Jump to 0:42">0:42</button>Terminal: <code>.booth/</code> initialized;
+                            Boothfile shows <code>setup bun</code> + <code>setup bun-code-extension</code>.</li>
+                    </ul>
                 </div>
             </div>
         </div>
@@ -1158,6 +1300,13 @@
                 '<rect x="6" y="5" width="4" height="14" rx="1"/>' +
                 '<rect x="14" y="5" width="4" height="14" rx="1"/>';
 
+            function formatTime(sec) {
+                if (!isFinite(sec) || sec < 0) return '0:00';
+                const m = Math.floor(sec / 60);
+                const s = Math.floor(sec % 60);
+                return m + ':' + String(s).padStart(2, '0');
+            }
+
             players.forEach(player => {
                 const video = player.querySelector('video');
                 const row = player.nextElementSibling;
@@ -1167,7 +1316,16 @@
                 const pauseIcon = pauseBtn && pauseBtn.querySelector('svg');
                 const restartBtn = row.querySelector('.demo-restart');
                 const bar = row.querySelector('.demo-progress-bar');
+                const timeEl = row.querySelector('.demo-time');
                 if (!pauseBtn || !pauseIcon || !restartBtn || !bar) return;
+
+                function updateTime() {
+                    if (!timeEl) return;
+                    timeEl.textContent = formatTime(video.currentTime) + ' / ' + formatTime(video.duration);
+                }
+                updateTime();
+                video.addEventListener('loadedmetadata', updateTime);
+                video.addEventListener('durationchange', updateTime);
 
                 function setPaused(isPaused) {
                     player.classList.toggle('is-paused', isPaused);
@@ -1189,6 +1347,7 @@
                 video.addEventListener('pause', () => setPaused(true));
 
                 video.addEventListener('timeupdate', () => {
+                    updateTime();
                     if (!video.duration) return;
                     bar.style.width = (video.currentTime / video.duration * 100) + '%';
                 });
@@ -1200,6 +1359,45 @@
                     const fraction = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
                     video.currentTime = fraction * video.duration;
                 });
+            });
+
+            document.querySelectorAll('.demo-points .ts[data-seek]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const scope = btn.closest('section') || document;
+                    const video = scope.querySelector('.demo-player video');
+                    if (!video) return;
+                    const seek = parseFloat(btn.dataset.seek);
+                    if (!isFinite(seek)) return;
+                    video.currentTime = seek;
+                    video.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            });
+
+            document.querySelectorAll('.demo-points').forEach(list => {
+                const points = Array.from(list.querySelectorAll('li'))
+                    .map(li => {
+                        const btn = li.querySelector('.ts[data-seek]');
+                        return btn ? { seek: parseFloat(btn.dataset.seek), li } : null;
+                    })
+                    .filter(p => p && isFinite(p.seek))
+                    .sort((a, b) => a.seek - b.seek);
+                if (!points.length) return;
+                const scope = list.closest('section') || document;
+                const video = scope.querySelector('.demo-player video');
+                if (!video) return;
+
+                function refresh() {
+                    const t = video.currentTime;
+                    let activeIdx = -1;
+                    for (let i = 0; i < points.length; i++) {
+                        if (points[i].seek <= t) activeIdx = i;
+                        else break;
+                    }
+                    points.forEach((p, i) => p.li.classList.toggle('active', i === activeIdx));
+                }
+                refresh();
+                video.addEventListener('timeupdate', refresh);
+                video.addEventListener('seeked', refresh);
             });
         })();
     </script>

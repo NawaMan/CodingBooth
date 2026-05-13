@@ -1,0 +1,8 @@
+# Patterns lychee should skip when checking links.
+# One regex per line. See: https://lychee.cli.rs/usage/excludes/
+
+# Local-development URLs that only resolve on a running booth.
+^https?://localhost(:\d+)?(/|$)
+
+# LinkedIn returns 403 to non-browser user agents — known false positive.
+^https?://(www\.)?linkedin\.com/

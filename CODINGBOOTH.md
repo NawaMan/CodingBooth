@@ -833,7 +833,7 @@ JetBrains activation is machine-specific. Inside a fresh container, you may be a
 
 ## Community & Feedback
 
-- **Issues & feature requests:** [GitHub Issues](../../issues)
+- **Issues & feature requests:** [GitHub Issues](https://github.com/NawaMan/CodingBooth/issues)
 - **Pull requests** are welcome — but the maintainer reserves the right to reject PRs that don't align with the project's vision
 - **Sponsor:** [GitHub Sponsors](https://github.com/sponsors/NawaMan) · [Buy me a coffee](https://buymeacoffee.com/NawaMan)
 - **Connect:** Twitter/X [@nawaman](https://x.com/nawaman) · [LinkedIn](https://www.linkedin.com/in/nawaman/) · [Blog](https://nawaman.net/blog/)

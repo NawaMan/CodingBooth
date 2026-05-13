@@ -6,13 +6,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CodingBooth — Reproducible Dev Environments in Containers</title>
     <meta name="description"
-        content="CodingBooth delivers fully reproducible, isolated development environments — anywhere, on any machine.">
-    <meta property="og:title" content="CodingBooth">
+        content="CodingBooth delivers fully reproducible, isolated development environments — anywhere, on any machine. One command, your host UID, terminal / VS Code / Jupyter / full Linux desktop variants.">
+    <link rel="canonical" href="https://codingbooth.io/">
+
+    <!-- Open Graph -->
+    <meta property="og:site_name" content="CodingBooth">
+    <meta property="og:title" content="CodingBooth — Reproducible Dev Environments in Containers">
     <meta property="og:description"
-        content="Fully reproducible, isolated development environments — anywhere, on any machine.">
+        content="Fully reproducible, isolated development environments — one command, your host UID, the same setup on every machine.">
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://codingbooth.io/">
     <meta property="og:image" content="https://codingbooth.io/images/CodingBooth-Demo-Preview.gif">
+    <meta property="og:image:alt"
+        content="CodingBooth demo: a Snake game in Zig built and run inside a containerized dev environment.">
+    <meta property="og:locale" content="en_US">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:site" content="@nawaman">
+    <meta name="twitter:creator" content="@nawaman">
+    <meta name="twitter:title" content="CodingBooth — Reproducible Dev Environments in Containers">
+    <meta name="twitter:description"
+        content="Containerized dev environments. One command, your host UID, the same setup on every machine.">
+    <meta name="twitter:image" content="https://codingbooth.io/images/CodingBooth-Demo-Preview.gif">
+    <meta name="twitter:image:alt"
+        content="CodingBooth demo: a Snake game in Zig built and run inside a containerized dev environment.">
     <link rel="icon" type="image/png" sizes="32x32" href="favicons/favicon-32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="favicons/favicon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon.png">
@@ -62,8 +80,26 @@
         }
 
         code,
-        pre {
+        pre,
+        kbd {
             font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        }
+
+        kbd {
+            font-size: 0.85em;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-bottom-width: 2px;
+            border-radius: 4px;
+            padding: 1px 6px;
+            color: var(--fg);
+            white-space: nowrap;
+        }
+
+        .section-light kbd {
+            background: var(--light-bg-elev);
+            border-color: var(--light-border);
+            color: var(--light-fg);
         }
 
         .container {
@@ -384,6 +420,99 @@
             width: 0;
             background: var(--accent);
             transition: width 0.1s linear;
+        }
+
+        .demo-time {
+            flex: 0 0 auto;
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 12px;
+            font-variant-numeric: tabular-nums;
+            color: var(--fg-muted);
+            user-select: none;
+            min-width: 76px;
+            text-align: right;
+        }
+
+        .section-light .demo-time {
+            color: var(--light-fg-muted);
+        }
+
+        .demo-points {
+            list-style: none;
+            text-align: left;
+            max-width: 780px;
+            margin: 24px auto 0;
+            padding: 0;
+            column-width: 320px;
+            column-gap: 28px;
+            font-size: 14px;
+            line-height: 1.55;
+            color: var(--fg-muted);
+        }
+
+        .demo-points li {
+            margin: 0 0 4px;
+            break-inside: avoid;
+            padding: 3px 8px;
+            border-radius: 4px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .demo-points li.active {
+            background: rgba(252, 150, 47, 0.14);
+            color: var(--fg);
+        }
+
+        .demo-points li.active .ts {
+            color: var(--accent-strong);
+        }
+
+        .section-light .demo-points li.active {
+            background: rgba(252, 150, 47, 0.2);
+            color: var(--light-fg);
+        }
+
+        .demo-points .ts {
+            color: var(--accent);
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 12.5px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            margin-right: 8px;
+            background: transparent;
+            border: 0;
+            padding: 0;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+
+        .demo-points .ts:hover,
+        .demo-points .ts:focus-visible {
+            color: var(--accent-strong);
+            text-decoration: underline;
+            outline: none;
+        }
+
+        .demo-points .tag {
+            display: inline-block;
+            font-size: 10.5px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            padding: 1px 6px;
+            border-radius: 3px;
+            margin-right: 6px;
+            vertical-align: 1px;
+            background: var(--bg-elev);
+            color: var(--fg);
+        }
+
+        .section-light .demo-points {
+            color: var(--light-fg-muted);
+        }
+
+        .section-light .demo-points .tag {
+            background: var(--light-border);
+            color: var(--light-fg);
         }
 
         .variants-grid {
@@ -779,7 +908,7 @@
 
     <nav>
         <div class="container">
-            <a href="/" class="brand"><img src="images/logo-image.png" alt="">CodingBooth</a>
+            <a href="index.html" class="brand"><img src="images/logo-image.png" alt="">CodingBooth</a>
             <div class="nav-links">
                 <a href="#why">Why</a>
                 <a href="#demo">Demo</a>
@@ -838,8 +967,7 @@
                 <span>
                     You've containerized your app. You've containerized your build.
                     But your dev environment is still a mess of system-wide installs, mismatched versions, and
-                    onboarding
-                    docs no one ever revises. CodingBooth fixes that.
+                    onboarding docs no one ever updates. CodingBooth fixes that.
                 </span>
                 <span class="region-link" data-region="left" tabindex="0">On the left: tangled toolchains, “works on my
                     machine” fights, a polluted host from every past project, and old code you can’t build
@@ -847,7 +975,7 @@
                 <span class="region-link" data-region="middle" tabindex="0">In the middle: booth — just your code + a
                     tiny <code>.booth/</code> config in the repo. Run <code>./booth</code> and a clean, isolated
                     environment appears around your project, owned by your user.</span>
-                <span class="region-link" data-region="right" tabindex="0">On the right: teammates productive in
+                <span class="region-link" data-region="right" tabindex="0">On the right: teammates become productive in
                     minutes, projects you can revive after months, zero conflicts, a clean host, and complex
                     multi-service setups reduced to one line.</span>
             </p>
@@ -855,18 +983,36 @@
     </section>
 
     <section id="why">
-        <div class="container">
+        <div class="container demo">
             <h2>Why & Who?</h2>
-            <div class="why-grid">
-                <div class="overview-figure">
-                    <img src="images/Benefit & Users.png" alt="Benefits and users" />
-                </div>
+            <div class="overview-figure">
+                <img src="images/Benefit & Users.png"
+                    alt="What CodingBooth gives you on the left, who should use it on the right">
+                <button type="button" class="region-hot" data-region="benefits" aria-label="What this gives you"
+                    style="left: 2%; top: 12%; width: 47%; height: 86%;"></button>
+                <button type="button" class="region-hot" data-region="users" aria-label="Who should use CodingBooth"
+                    style="left: 51%; top: 12%; width: 47%; height: 86%;"></button>
             </div>
+            <p class="lead">
+                <span>
+                    Two ways to think about CodingBooth: the things it gives every developer, and the
+                    people it was built for.
+                </span>
+                <span class="region-link" data-region="benefits" tabindex="0">On the left — what booth gives
+                    you: seamless file ownership via host UID/GID mapping, project isolation,
+                    portable <code>.booth/</code> config that travels with the repo, and a library of
+                    pre-configured setups ready to run.</span>
+                <span class="region-link" data-region="users" tabindex="0">On the right — who it's for:
+                    teams onboarding new developers in minutes, polyglot developers juggling projects without
+                    cross-contamination, educators distributing uniform environments, researchers reviving
+                    work months later, and solo developers keeping their host clean.</span>
+            </p>
+        </div>
     </section>
 
     <section id="demo" class="section-light">
         <div class="container demo">
-            <h2>See it in action</h2>
+            <h2>Demo!</h2>
             <p class="lead">A Snake game in Zig — built and run inside the booth on a host that has no Zig toolchain
                 installed.</p>
             <div class="demo-player" id="demoPlayer">
@@ -891,7 +1037,27 @@
                 <div class="demo-progress" aria-hidden="true">
                     <div class="demo-progress-bar"></div>
                 </div>
+                <span class="demo-time" aria-hidden="true">0:00 / 0:00</span>
             </div>
+            <ul class="demo-points">
+                <li><button type="button" class="ts" data-seek="3" title="Jump to 0:03">0:03</button><span
+                        class="tag">HOST</span>No <code>zig</code> on the host.</li>
+                <li><button type="button" class="ts" data-seek="10" title="Jump to 0:10">0:10</button><span
+                        class="tag">BOOTH</span>Step in — Zig is there. <code>zig build run</code> launches snake.</li>
+                <li><button type="button" class="ts" data-seek="27" title="Jump to 0:27">0:27</button><span
+                        class="tag">BOOTH</span>Ask Claude Code (in-booth) to slow it ~30% and add more cherries.</li>
+                <li><button type="button" class="ts" data-seek="36" title="Jump to 0:36">0:36</button><span
+                        class="tag">BOOTH</span>Diff: <code>INITIAL_SPEED_MS</code> bumped, <code>NUM_FOOD</code> 5 →
+                    100.</li>
+                <li><button type="button" class="ts" data-seek="41" title="Jump to 0:41">0:41</button><span
+                        class="tag">BOOTH</span>Re-run — slower snake, cherry-covered board.</li>
+                <li><button type="button" class="ts" data-seek="55" title="Jump to 0:55">0:55</button><span
+                        class="tag">BOOTH</span><code>build-all.sh</code> — five cross-platform binaries in
+                    <code>dist/</code>.
+                </li>
+                <li><button type="button" class="ts" data-seek="74" title="Jump to 1:14">1:14</button><span
+                        class="tag">HOST</span>Booth-built Mac binary runs on the host. No Zig needed.</li>
+            </ul>
             <p class="caption"><a href="https://youtu.be/Rvv3UcOqv3c" target="_blank" rel="noopener">Watch the full demo
                     on YouTube →</a></p>
         </div>
@@ -973,8 +1139,8 @@ cd my-snake
             </ol>
             <p style="margin-top: 32px; color: var(--fg-muted);">
                 Or scaffold from scratch with <code>booth config</code>'s interactive TUI — see the
-                <a href="https://github.com/NawaMan/CodingBooth/blob/main/CODINGBOOTH.md">User Manual</a> for the full
-                feature reference.
+                <a href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_CONFIG_TUI.md">User Guide</a> for
+                the full feature reference.
             </p>
             <div class="tape-block">
                 <div class="demo-player">
@@ -1000,7 +1166,36 @@ cd my-snake
                     <div class="demo-progress" aria-hidden="true">
                         <div class="demo-progress-bar"></div>
                     </div>
+                    <span class="demo-time" aria-hidden="true">0:00 / 0:00</span>
                 </div>
+                <ul class="demo-points">
+                    <li><button type="button" class="ts" data-seek="1" title="Jump to 0:01">0:01</button>Create a
+                        fresh project: <code>mkdir my-bun-app && cd my-bun-app</code>.</li>
+                    <li><button type="button" class="ts" data-seek="6" title="Jump to 0:06">0:06</button>Run
+                        <code>booth config</code> to scaffold a <code>.booth/</code> interactively.
+                    </li>
+                    <li><button type="button" class="ts" data-seek="12" title="Jump to 0:12">0:12</button>Switch to the
+                        <strong>Config</strong> tab (<kbd>←</kbd>) — global booth settings live here.
+                    </li>
+                    <li><button type="button" class="ts" data-seek="16" title="Jump to 0:16">0:16</button>Open the
+                        <strong>Variant</strong> cycle-field (<kbd>Enter</kbd>) and cycle to <code>codeserver</code>
+                        with <kbd>→</kbd> <kbd>→</kbd> <kbd>→</kbd>.
+                    </li>
+                    <li><button type="button" class="ts" data-seek="26" title="Jump to 0:26">0:26</button>Commit
+                        (<kbd>Enter</kbd>) — variant captured.</li>
+                    <li><button type="button" class="ts" data-seek="30" title="Jump to 0:30">0:30</button>Back to
+                        <strong>Languages</strong> (<kbd>→</kbd>) — <kbd>Space</kbd> selects <code>bun</code>,
+                        <kbd>Enter</kbd> opens its parameter editor (<code>BUN_VERSION</code>,
+                        <code>BUN_PKGS</code>). <kbd>Esc</kbd> leaves the editor (selection preserved);
+                    </li>
+                    <li><button type="button" class="ts" data-seek="37" title="Jump to 0:37">0:37</button>
+                        <kbd>Ctrl+S</kbd> to saves and exits the config TUI.
+                    </li>
+                    <li><button type="button" class="ts" data-seek="42" title="Jump to 0:42">0:42</button>Terminal:
+                        <code>.booth/</code> initialized; Boothfile shows <code>setup bun</code> +
+                        <code>setup bun-code-extension</code>.
+                    </li>
+                </ul>
             </div>
         </div>
     </section>
@@ -1036,7 +1231,7 @@ cd my-snake
                         <li><strong>Pull Requests:</strong> PRs are always welcome — but I reserve the right
                             to reject any PR that doesn't align with my vision for the project.</li>
                         <li><strong>Discussions:</strong> Have a creative idea, workflow, or enhancement to
-                            share? Open an issue or discussion — we'd love to hear it.</li>
+                            share? Open an issue or discussion — I'd love to hear it.</li>
                         <li><strong>Direct Contact:</strong> Prefer to reach out directly? Feel free to
                             contact me through any of the links below.</li>
                     </ul>
@@ -1052,7 +1247,7 @@ cd my-snake
                     <p>Your encouragement keeps this project active — and might even help with my kids'
                         college fund.</p>
                 </div>
-                <div class="why-card">
+                <div class="why-card" id="connect">
                     <h3>Connect</h3>
                     <p>Stay in touch or follow updates, insights, and development notes:</p>
                     <ul>
@@ -1082,9 +1277,12 @@ cd my-snake
                     A hosted version with no install — open a URL and you're in your booth.
                     No Docker on your machine, no setup, just code.
                 </p>
-                <p>
-                    Want to try it early? <a href="#community">Get in touch</a> — happy to onboard you.
-                </p>
+                <p>Want to know when it's ready?</p>
+                <div class="ctas" style="margin-top: 4px;">
+                    <a class="btn btn-primary" href="https://early.codingbooths.online/" target="_blank"
+                        rel="noopener">Get notified by email</a>
+                    <a class="btn" href="#connect">Or reach out directly</a>
+                </div>
             </div>
         </div>
     </section>
@@ -1099,7 +1297,7 @@ cd my-snake
                 <a href="https://github.com/sponsors/NawaMan">Sponsor</a>
             </div>
             <div>
-                © 2026 <a href="https://nawaman.net">NawaMan</a>
+                © 2026 <a href="https://nawaman.net/contact">NawaMan</a>
                 — <a href="https://github.com/NawaMan/CodingBooth/blob/main/LICENSE">Apache 2.0</a>
                 — <a href="https://github.com/NawaMan/CodingBooth">GitHub</a>
             </div>
@@ -1148,6 +1346,13 @@ cd my-snake
                 '<rect x="6" y="5" width="4" height="14" rx="1"/>' +
                 '<rect x="14" y="5" width="4" height="14" rx="1"/>';
 
+            function formatTime(sec) {
+                if (!isFinite(sec) || sec < 0) return '0:00';
+                const m = Math.floor(sec / 60);
+                const s = Math.floor(sec % 60);
+                return m + ':' + String(s).padStart(2, '0');
+            }
+
             players.forEach(player => {
                 const video = player.querySelector('video');
                 const row = player.nextElementSibling;
@@ -1157,7 +1362,16 @@ cd my-snake
                 const pauseIcon = pauseBtn && pauseBtn.querySelector('svg');
                 const restartBtn = row.querySelector('.demo-restart');
                 const bar = row.querySelector('.demo-progress-bar');
+                const timeEl = row.querySelector('.demo-time');
                 if (!pauseBtn || !pauseIcon || !restartBtn || !bar) return;
+
+                function updateTime() {
+                    if (!timeEl) return;
+                    timeEl.textContent = formatTime(video.currentTime) + ' / ' + formatTime(video.duration);
+                }
+                updateTime();
+                video.addEventListener('loadedmetadata', updateTime);
+                video.addEventListener('durationchange', updateTime);
 
                 function setPaused(isPaused) {
                     player.classList.toggle('is-paused', isPaused);
@@ -1179,6 +1393,7 @@ cd my-snake
                 video.addEventListener('pause', () => setPaused(true));
 
                 video.addEventListener('timeupdate', () => {
+                    updateTime();
                     if (!video.duration) return;
                     bar.style.width = (video.currentTime / video.duration * 100) + '%';
                 });
@@ -1190,6 +1405,45 @@ cd my-snake
                     const fraction = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
                     video.currentTime = fraction * video.duration;
                 });
+            });
+
+            document.querySelectorAll('.demo-points .ts[data-seek]').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const scope = btn.closest('section') || document;
+                    const video = scope.querySelector('.demo-player video');
+                    if (!video) return;
+                    const seek = parseFloat(btn.dataset.seek);
+                    if (!isFinite(seek)) return;
+                    video.currentTime = seek;
+                    video.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                });
+            });
+
+            document.querySelectorAll('.demo-points').forEach(list => {
+                const points = Array.from(list.querySelectorAll('li'))
+                    .map(li => {
+                        const btn = li.querySelector('.ts[data-seek]');
+                        return btn ? { seek: parseFloat(btn.dataset.seek), li } : null;
+                    })
+                    .filter(p => p && isFinite(p.seek))
+                    .sort((a, b) => a.seek - b.seek);
+                if (!points.length) return;
+                const scope = list.closest('section') || document;
+                const video = scope.querySelector('.demo-player video');
+                if (!video) return;
+
+                function refresh() {
+                    const t = video.currentTime;
+                    let activeIdx = -1;
+                    for (let i = 0; i < points.length; i++) {
+                        if (points[i].seek <= t) activeIdx = i;
+                        else break;
+                    }
+                    points.forEach((p, i) => p.li.classList.toggle('active', i === activeIdx));
+                }
+                refresh();
+                video.addEventListener('timeupdate', refresh);
+                video.addEventListener('seeked', refresh);
             });
         })();
 

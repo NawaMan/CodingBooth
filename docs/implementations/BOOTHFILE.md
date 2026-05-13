@@ -467,7 +467,7 @@ During normal `codingbooth run`:
 
 ## Related Documentation
 
-- [Boothfile Design Plan](../plans/Boothfile.md) — Original design document
+- [Boothfile Improvements Plan](../plans/Boothfile--improvement.md) — Design notes &amp; deferred items
 - [Variants](VARIANTS.md) — Base image variants
 
 ---

@@ -15,64 +15,74 @@ Set Theme "Catppuccin Mocha"
 Set TypingSpeed 60ms
 Set PlaybackSpeed 1.0
 
-# --- silent setup ---
+# --- silent setup: put the in-repo `booth` on PATH and start from /tmp ---
 Hide
 Type "export PATH=$PWD/.sandbox:$PATH"
 Enter
-Type "cd /tmp && rm -rf cb-demo-deep && mkdir cb-demo-deep && cd cb-demo-deep"
+Type "cd /tmp && rm -rf my-bun-app"
 Enter
 Type "clear"
 Enter
 Show
 
+# --- 0. create and enter a fresh project dir ---
+Type "mkdir my-bun-app"
+Sleep 600ms
+Enter
+Sleep 2.4s
+Type "cd my-bun-app"
+Sleep 600ms
+Enter
+Sleep 3.6s
+
 # --- 1. launch (opens on Languages tab) ---
 Type "booth config"
-Sleep 400ms
+Sleep 800ms
 Enter
-Sleep 2.5s
+Sleep 6s
 
 # --- 2. hop to the Config tab ---
 Left
-Sleep 1.8s
+Sleep 4.4s
 
 # --- 3. variant cycle: navigate, enter cycle-edit, swap, commit ---
 # Cursor starts at the "Booth" group header (auto-skipped on Down);
 # Down 1 → Booth Version, Down 2 → Variant.
 Down 2
-Sleep 1.5s
+Sleep 4s
 Enter                    # enter cycle-edit on Variant
-Sleep 1.6s
+Sleep 4.4s
 Right                    # next variant value
-Sleep 1.4s
+Sleep 4s
 Right                    # one more
-Sleep 1.4s
+Sleep 4s
 Right                    # one more so the change is unmistakable
-Sleep 1.6s
+Sleep 4.4s
 Enter                    # commit
-Sleep 1.6s
+Sleep 5s
 
 # --- 4. back to Languages, select a template, then open its parameter editor ---
 Right
-Sleep 1.4s
+Sleep 4s
 # Cursor is on bun by default (alphabetical, position 0).
 Space                    # SELECT bun — required before Enter will open param edit
-Sleep 1.4s
+Sleep 4s
 Enter                    # open the right-pane param editor
-Sleep 2s
+Sleep 5s
 
 # --- 5. tour the param fields, then back out ---
 Down                     # next param (BUN_PKGS)
-Sleep 1.4s
+Sleep 4s
 Up                       # back to the first param
-Sleep 1.4s
+Sleep 4s
 Escape                   # leave param edit (selection is preserved)
-Sleep 1.4s
+Sleep 4s
 
 # --- 6. save & exit ---
 Ctrl+S
-Sleep 1.5s
+Sleep 4s
 
 # --- 7. show the result ---
 Type "cat .booth/Boothfile 2>/dev/null | head -20"
 Enter
-Sleep 3s
+Sleep 7s
