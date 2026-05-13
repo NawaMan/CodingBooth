@@ -169,6 +169,23 @@
             white-space: pre;
         }
 
+        .requires {
+            color: var(--fg-muted);
+            font-size: 13px;
+            margin: 0 0 20px;
+            letter-spacing: 0.01em;
+        }
+
+        .requires strong {
+            color: var(--fg);
+            font-weight: 600;
+        }
+
+        .requires .dot {
+            opacity: 0.5;
+            margin: 0 8px;
+        }
+
         .install-block .prompt {
             color: var(--fg-muted);
             user-select: none;
@@ -289,7 +306,7 @@
         }
 
         .demo img,
-        .demo video {
+        .demo-player video {
             max-width: 100%;
             border-radius: 8px;
             border: 1px solid var(--border);
@@ -480,6 +497,16 @@
             opacity: 1;
         }
 
+        .tape-block {
+            text-align: center;
+            margin: 32px 0 0;
+        }
+
+        .tape-block .demo-player {
+            max-width: 760px;
+            width: 100%;
+        }
+
         footer {
             padding: 32px 0;
             text-align: center;
@@ -504,6 +531,51 @@
             background: var(--light-bg);
             color: var(--light-fg);
             border-bottom-color: var(--light-border);
+        }
+
+        .callout-card {
+            max-width: 680px;
+            margin: 0 auto;
+            text-align: center;
+            background: var(--bg-elev);
+            border: 1px solid var(--accent);
+            border-radius: 12px;
+            padding: 32px 28px;
+            box-shadow: 0 8px 32px rgba(252, 150, 47, 0.18);
+        }
+
+        .callout-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: var(--accent);
+            color: #000d33;
+            border-radius: 999px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 14px;
+        }
+
+        .callout-card h2 {
+            font-size: 26px;
+            margin: 0 0 12px;
+            text-align: center;
+        }
+
+        .callout-card p {
+            color: var(--fg-muted);
+            margin: 0 auto 12px;
+            max-width: 520px;
+            font-size: 15.5px;
+        }
+
+        .callout-card p:last-child {
+            margin-bottom: 0;
+        }
+
+        .callout-card a {
+            font-weight: 600;
         }
 
         .section-light .lead {
@@ -713,7 +785,7 @@
                 <a href="#demo">Demo</a>
                 <a href="#variants">Variants</a>
                 <a href="#quicktry">Quick try</a>
-                <a href="#learn-more">Learn more</a>
+                <a href="#learn-more">Learn More</a>
                 <a href="#community">Community</a>
                 <a href="https://github.com/NawaMan/CodingBooth">GitHub</a>
             </div>
@@ -732,6 +804,11 @@
                 <code><span class="prompt">$ </span>curl -fsSL https://codingbooth.io/install.sh | bash</code>
                 <button class="copy-btn" onclick="copyInstall(this)">Copy</button>
             </div>
+
+            <p class="requires">
+                Requires <strong>Docker</strong> and <strong>Bash</strong><span class="dot">·</span>Linux, macOS, or
+                Windows
+            </p>
 
             <div class="ctas">
                 <a class="btn btn-primary" href="#demo">Demo</a>
@@ -797,13 +874,13 @@
                     poster="images/CodingBooth-Demo-Preview.gif"></video>
             </div>
             <div class="demo-bar-row">
-                <button class="demo-ctrl" id="demoPauseBtn" type="button" aria-label="Pause demo" title="Pause">
-                    <svg id="demoPauseIcon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                <button class="demo-ctrl demo-pause" type="button" aria-label="Pause demo" title="Pause">
+                    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
                         <rect x="6" y="5" width="4" height="14" rx="1" />
                         <rect x="14" y="5" width="4" height="14" rx="1" />
                     </svg>
                 </button>
-                <button class="demo-ctrl" id="demoRestartBtn" type="button" aria-label="Restart from beginning"
+                <button class="demo-ctrl demo-restart" type="button" aria-label="Restart from beginning"
                     title="Restart">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
                         stroke-linejoin="round" aria-hidden="true">
@@ -812,7 +889,7 @@
                     </svg>
                 </button>
                 <div class="demo-progress" aria-hidden="true">
-                    <div class="demo-progress-bar" id="demoProgressBar"></div>
+                    <div class="demo-progress-bar"></div>
                 </div>
             </div>
             <p class="caption"><a href="https://youtu.be/Rvv3UcOqv3c" target="_blank" rel="noopener">Watch the full demo
@@ -899,12 +976,38 @@ cd my-snake
                 <a href="https://github.com/NawaMan/CodingBooth/blob/main/CODINGBOOTH.md">User Manual</a> for the full
                 feature reference.
             </p>
+            <div class="tape-block">
+                <div class="demo-player">
+                    <video src="media/tapes/config-tui-deep.mp4" autoplay loop muted playsinline preload="metadata"
+                        poster="media/tapes/config-tui-deep.gif"
+                        aria-label="booth config interactive TUI walkthrough"></video>
+                </div>
+                <div class="demo-bar-row">
+                    <button class="demo-ctrl demo-pause" type="button" aria-label="Pause" title="Pause">
+                        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                            <rect x="6" y="5" width="4" height="14" rx="1" />
+                            <rect x="14" y="5" width="4" height="14" rx="1" />
+                        </svg>
+                    </button>
+                    <button class="demo-ctrl demo-restart" type="button" aria-label="Restart from beginning"
+                        title="Restart">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                            <path d="M3 12a9 9 0 1 0 3-6.7" />
+                            <polyline points="3 4 3 9 8 9" />
+                        </svg>
+                    </button>
+                    <div class="demo-progress" aria-hidden="true">
+                        <div class="demo-progress-bar"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </section>
 
     <section id="learn-more">
         <div class="container">
-            <h2>Learn more</h2>
+            <h2>Learn More</h2>
             <p class="lead">Deeper guides, reference material, and the full documentation index.</p>
             <div class="ctas">
                 <a class="btn btn-primary" href="more.html">More about CodingBooth</a>
@@ -970,6 +1073,22 @@ cd my-snake
     </section>
     <!-- /SYNC -->
 
+    <section id="online">
+        <div class="container">
+            <div class="callout-card">
+                <span class="callout-badge">Coming soon</span>
+                <h2>Run CodingBooth Online</h2>
+                <p>
+                    A hosted version with no install — open a URL and you're in your booth.
+                    No Docker on your machine, no setup, just code.
+                </p>
+                <p>
+                    Want to try it early? <a href="#community">Get in touch</a> — happy to onboard you.
+                </p>
+            </div>
+        </div>
+    </section>
+
     <footer>
         <div class="container">
             <div class="footer-links">
@@ -1020,13 +1139,8 @@ cd my-snake
         }
 
         (function () {
-            const player = document.getElementById('demoPlayer');
-            const video = document.getElementById('demoVideo');
-            const pauseBtn = document.getElementById('demoPauseBtn');
-            const pauseIcon = document.getElementById('demoPauseIcon');
-            const restartBtn = document.getElementById('demoRestartBtn');
-            const bar = document.getElementById('demoProgressBar');
-            if (!video || !pauseBtn || !restartBtn || !bar) return;
+            const players = document.querySelectorAll('.demo-player');
+            if (!players.length) return;
 
             const PLAY_ICON =
                 '<polygon points="7,5 19,12 7,19" fill="currentColor"/>';
@@ -1034,36 +1148,48 @@ cd my-snake
                 '<rect x="6" y="5" width="4" height="14" rx="1"/>' +
                 '<rect x="14" y="5" width="4" height="14" rx="1"/>';
 
-            function setPaused(isPaused) {
-                player.classList.toggle('is-paused', isPaused);
-                pauseIcon.innerHTML = isPaused ? PLAY_ICON : PAUSE_ICON;
-                pauseBtn.setAttribute('aria-label', isPaused ? 'Play demo' : 'Pause demo');
-                pauseBtn.title = isPaused ? 'Play' : 'Pause';
-            }
+            players.forEach(player => {
+                const video = player.querySelector('video');
+                const row = player.nextElementSibling;
+                if (!video || !row || !row.classList.contains('demo-bar-row')) return;
 
-            pauseBtn.addEventListener('click', () => {
-                if (video.paused) video.play(); else video.pause();
-            });
+                const pauseBtn = row.querySelector('.demo-pause');
+                const pauseIcon = pauseBtn && pauseBtn.querySelector('svg');
+                const restartBtn = row.querySelector('.demo-restart');
+                const bar = row.querySelector('.demo-progress-bar');
+                if (!pauseBtn || !pauseIcon || !restartBtn || !bar) return;
 
-            restartBtn.addEventListener('click', () => {
-                video.currentTime = 0;
-                video.play();
-            });
+                function setPaused(isPaused) {
+                    player.classList.toggle('is-paused', isPaused);
+                    pauseIcon.innerHTML = isPaused ? PLAY_ICON : PAUSE_ICON;
+                    pauseBtn.setAttribute('aria-label', isPaused ? 'Play' : 'Pause');
+                    pauseBtn.title = isPaused ? 'Play' : 'Pause';
+                }
 
-            video.addEventListener('play', () => setPaused(false));
-            video.addEventListener('pause', () => setPaused(true));
+                pauseBtn.addEventListener('click', () => {
+                    if (video.paused) video.play(); else video.pause();
+                });
 
-            video.addEventListener('timeupdate', () => {
-                if (!video.duration) return;
-                bar.style.width = (video.currentTime / video.duration * 100) + '%';
-            });
+                restartBtn.addEventListener('click', () => {
+                    video.currentTime = 0;
+                    video.play();
+                });
 
-            const track = bar.parentElement;
-            track.addEventListener('click', (e) => {
-                if (!video.duration) return;
-                const rect = track.getBoundingClientRect();
-                const fraction = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
-                video.currentTime = fraction * video.duration;
+                video.addEventListener('play', () => setPaused(false));
+                video.addEventListener('pause', () => setPaused(true));
+
+                video.addEventListener('timeupdate', () => {
+                    if (!video.duration) return;
+                    bar.style.width = (video.currentTime / video.duration * 100) + '%';
+                });
+
+                const track = bar.parentElement;
+                track.addEventListener('click', (e) => {
+                    if (!video.duration) return;
+                    const rect = track.getBoundingClientRect();
+                    const fraction = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+                    video.currentTime = fraction * video.duration;
+                });
             });
         })();
 

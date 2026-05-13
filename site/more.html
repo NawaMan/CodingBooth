@@ -5,7 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>More — CodingBooth</title>
-    <meta name="description" content="More about CodingBooth — deeper guides and reference material.">
+    <meta name="description"
+        content="More about CodingBooth — deeper guides covering variants, configuration, the Boothfile, lifecycle, sidecars, and more.">
     <link rel="icon" type="image/png" sizes="32x32" href="favicons/favicon-32.png">
     <link rel="icon" type="image/png" sizes="192x192" href="favicons/favicon-192.png">
     <link rel="apple-touch-icon" sizes="180x180" href="favicons/apple-touch-icon.png">
@@ -18,11 +19,22 @@
             --fg-muted: #a8b3d1;
             --accent: #fc962f;
             --accent-strong: #e07a14;
+            --strip: #001871;
             --border: #1a2856;
+            --code-bg: #000615;
+            --light-bg: #f4f6fa;
+            --light-bg-elev: #ffffff;
+            --light-fg: #000d33;
+            --light-fg-muted: #4a5568;
+            --light-border: #d8dde6;
         }
 
         * {
             box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
         }
 
         body {
@@ -31,9 +43,6 @@
             background: var(--bg);
             color: var(--fg);
             line-height: 1.6;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
         a {
@@ -45,93 +54,1155 @@
             text-decoration: underline;
         }
 
+        code,
+        pre {
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+        }
+
         .container {
-            max-width: 720px;
+            max-width: 1080px;
             margin: 0 auto;
             padding: 0 24px;
         }
 
+        .top-strip {
+            height: 4px;
+            background: var(--strip);
+        }
+
         nav {
             border-bottom: 1px solid var(--border);
-            padding: 16px 0;
+            background: rgba(0, 13, 51, 0.85);
+            backdrop-filter: blur(8px);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        nav .container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-top: 16px;
+            padding-bottom: 16px;
         }
 
         .brand {
             font-weight: 700;
             font-size: 18px;
             color: var(--fg);
-        }
-
-        main {
-            flex: 1;
-            display: flex;
+            display: inline-flex;
             align-items: center;
-            text-align: center;
-            padding: 80px 0;
+            gap: 10px;
         }
 
-        h1 {
-            font-size: clamp(32px, 5vw, 48px);
+        .brand:hover {
+            text-decoration: none;
+        }
+
+        .brand img {
+            height: 28px;
+            width: 28px;
+            display: block;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 20px;
+            font-size: 14px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: var(--fg-muted);
+        }
+
+        .nav-links a:hover {
+            color: var(--fg);
+            text-decoration: none;
+        }
+
+        .hero {
+            padding: 72px 0 48px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .hero h1 {
+            font-size: clamp(32px, 5vw, 52px);
             margin: 0 0 16px;
             letter-spacing: -0.02em;
+            line-height: 1.1;
         }
 
-        .lead {
+        .hero .tagline {
+            font-size: clamp(16px, 2.2vw, 19px);
             color: var(--fg-muted);
-            font-size: 18px;
-            margin: 0 0 32px;
+            max-width: 720px;
+            margin: 0 auto;
         }
 
-        .back {
+        section {
+            padding: 56px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        section h2 {
+            font-size: 30px;
+            margin: 0 0 24px;
+            letter-spacing: -0.01em;
+            text-align: center;
+        }
+
+        .more-card {
+            text-align: center;
+            max-width: 880px;
+            margin: 0 auto;
+        }
+
+        .more-card .more-figure {
             display: inline-block;
-            padding: 10px 20px;
-            background: var(--accent);
-            color: #000d33;
-            border-radius: 6px;
-            font-weight: 600;
+            max-width: 100%;
+            margin: 0 0 22px;
+            line-height: 0;
         }
 
-        .back:hover {
-            background: var(--accent-strong);
-            color: #ffffff;
+        .more-card .more-figure img {
+            display: block;
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg-elev);
+        }
+
+        .more-card .more-text {
+            color: var(--fg-muted);
+            font-size: 16.5px;
+            margin: 0 auto;
+            max-width: 720px;
+        }
+
+        .more-card .more-text code {
+            font-size: 13.5px;
+            background: var(--code-bg);
+            padding: 1px 6px;
+            border-radius: 3px;
+            color: var(--fg);
+        }
+
+        .more-card .more-link {
+            display: inline-block;
+            margin-top: 16px;
+            font-size: 14px;
+        }
+
+        .more-mock {
+            display: inline-block;
+            text-align: left;
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 18px 22px;
+            margin: 0 0 22px;
+            font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+            font-size: 13.5px;
+            line-height: 1.75;
+            color: var(--fg);
+            max-width: 100%;
+            overflow-x: auto;
+            min-width: min(560px, 100%);
+        }
+
+        .more-mock .prompt {
+            color: var(--accent);
+            user-select: none;
+            margin-right: 6px;
+        }
+
+        .more-mock .comment {
+            color: var(--fg-muted);
+        }
+
+        .more-mock .out {
+            color: var(--fg-muted);
+        }
+
+        .more-mock .kw {
+            color: var(--accent);
+        }
+
+        .section-light {
+            background: var(--light-bg);
+            color: var(--light-fg);
+            border-bottom-color: var(--light-border);
+        }
+
+        .section-light .more-card .more-text {
+            color: var(--light-fg-muted);
+        }
+
+        .section-light .more-card .more-figure img {
+            border-color: var(--light-border);
+            background: var(--light-bg-elev);
+        }
+
+        .section-light .more-card .more-text code {
+            background: var(--light-border);
+            color: var(--light-fg);
+        }
+
+        .section-light .more-mock {
+            border-color: var(--light-border);
+        }
+
+        .tape-block {
+            text-align: center;
+            margin: 28px 0 0;
+        }
+
+        .tape-block .demo-player {
+            display: inline-block;
+            max-width: 760px;
+            width: 100%;
+        }
+
+        .demo-player {
+            display: inline-block;
+            max-width: 100%;
+        }
+
+        .demo-player video {
+            display: block;
+            max-width: 100%;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        .section-light .demo-player video {
+            border-color: var(--light-border);
+        }
+
+        .demo-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 640px;
+            margin: 12px auto 0;
+        }
+
+        .demo-ctrl {
+            width: 28px;
+            height: 28px;
+            flex: 0 0 auto;
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            background: var(--bg-elev);
+            color: var(--fg);
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0;
+        }
+
+        .demo-ctrl:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #000d33;
+        }
+
+        .demo-ctrl svg {
+            width: 12px;
+            height: 12px;
+            display: block;
+        }
+
+        .section-light .demo-ctrl {
+            background: var(--light-bg-elev);
+            border-color: var(--light-border);
+            color: var(--light-fg);
+        }
+
+        .section-light .demo-ctrl:hover {
+            background: var(--accent);
+            border-color: var(--accent);
+            color: #000d33;
+        }
+
+        .demo-progress {
+            flex: 1;
+            height: 8px;
+            background: var(--border);
+            border-radius: 4px;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        .demo-progress:hover {
+            background: #2a3666;
+        }
+
+        .demo-progress-bar {
+            height: 100%;
+            width: 0;
+            background: var(--accent);
+            transition: width 0.1s linear;
+        }
+
+        .section-light .demo-progress {
+            background: var(--light-border);
+        }
+
+        .toc {
+            padding: 40px 0;
+            background: var(--bg-elev);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .toc h2 {
+            font-size: 18px;
+            margin: 0 0 16px;
+            color: var(--fg-muted);
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+            text-align: center;
+        }
+
+        .toc-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 6px 12px;
+            max-width: 1024px;
+            margin: 0 auto;
+        }
+
+        .toc-grid a {
+            color: var(--fg-muted);
+            font-size: 13.5px;
+            padding: 4px 0;
+            text-align: center;
+        }
+
+        .toc-grid a:hover {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 8px;
+            font-size: 14px;
+            color: var(--fg-muted);
+        }
+
+        .back-link:hover {
+            color: var(--accent);
             text-decoration: none;
         }
 
         footer {
-            padding: 24px 0;
+            padding: 32px 0;
             text-align: center;
             color: var(--fg-muted);
             font-size: 14px;
-            border-top: 1px solid var(--border);
+        }
+
+        footer a {
+            color: var(--fg-muted);
+        }
+
+        footer .footer-links {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        @media (max-width: 600px) {
+            .hero {
+                padding: 48px 0 36px;
+            }
+
+            section {
+                padding: 40px 0;
+            }
+
+            .nav-links {
+                gap: 12px;
+            }
         }
     </style>
 </head>
 
 <body>
+
+    <div class="top-strip"></div>
+
     <nav>
         <div class="container">
-            <a href="/" class="brand">CodingBooth</a>
+            <a href="/" class="brand"><img src="images/logo-image.png" alt="">CodingBooth</a>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="#how-it-works">How it works</a>
+                <a href="#variants">Variants</a>
+                <a href="#config">Config</a>
+                <a href="#lifecycle">Lifecycle</a>
+                <a href="#advanced">Advanced</a>
+                <a href="https://github.com/NawaMan/CodingBooth">GitHub</a>
+            </div>
         </div>
     </nav>
 
-    <main>
+    <header class="hero">
         <div class="container">
-            <h1>Under construction</h1>
-            <p class="lead">
-                This page will host deeper guides and reference material. In the meantime,
-                the <a href="https://github.com/NawaMan/CodingBooth#documentation">documentation on GitHub</a>
-                has what you need.
+            <h1>More about CodingBooth</h1>
+            <p class="tagline">
+                A guided tour through the pieces that make a booth — from the wrapper script on disk to
+                the sidecars beside the container — with the picture for each.
             </p>
-            <a class="back" href="index.html">← Back to home</a>
+            <a href="index.html" class="back-link">← Back to home</a>
         </div>
-    </main>
+    </header>
+
+    <section class="toc">
+        <div class="container">
+            <h2>On this page</h2>
+            <div class="toc-grid">
+                <a href="#how-it-works">How it works</a>
+                <a href="#wrapper">The wrapper</a>
+                <a href="#user-permissions">User permissions</a>
+                <a href="#variants">Variants in detail</a>
+                <a href="#booth-run">Running a booth</a>
+                <a href="#commands">Commands</a>
+                <a href="#built-in-tools">Built-in tools</a>
+                <a href="#config">booth config</a>
+                <a href="#config-tui">Config TUI</a>
+                <a href="#boothfile">The Boothfile</a>
+                <a href="#build">Build &amp; publish</a>
+                <a href="#setup-scripts">Setup scripts</a>
+                <a href="#customization">Customization</a>
+                <a href="#tmp">.booth/.tmp/ directory</a>
+                <a href="#home-directory">Home directory</a>
+                <a href="#localcache">Local cache</a>
+                <a href="#persist-home">Persistent home</a>
+                <a href="#lifecycle">Lifecycle</a>
+                <a href="#shell-exec">shell &amp; exec</a>
+                <a href="#message">booth message</a>
+                <a href="#expose">booth expose</a>
+                <a href="#session-timers">Session timers</a>
+                <a href="#idle">Idle auto-shutdown</a>
+                <a href="#health">Health &amp; info</a>
+                <a href="#examples">Examples</a>
+                <a href="#dind">Docker-in-Docker</a>
+                <a href="#sandbox">Sandbox</a>
+                <a href="#booth-in-booth">Booth-in-Booth</a>
+                <a href="#desktop">Desktop &amp; noVNC</a>
+                <a href="#agent">AI agent integration</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="how-it-works" class="section-light">
+        <div class="container">
+            <h2>How it works</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/HowItWorks.png" alt="How CodingBooth works">
+                </div>
+                <p class="more-text">
+                    CodingBooth maps the container's user to <strong>your host UID and GID</strong>, mounts your project
+                    into <code>/home/coder/code</code>, and runs everything as the unprivileged <code>coder</code> user.
+                    Files created inside the booth are owned by you on the host — no <code>root</code>-owned
+                    artifacts, no permission dance.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/HOW_IT_WORKS.md">Read the full guide →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="wrapper">
+        <div class="container">
+            <h2>The wrapper</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Wrapper-Implementation.png" alt="The booth wrapper architecture">
+                </div>
+                <p class="more-text">
+                    The <code>booth</code> script you commit to your repo is a small bash wrapper that downloads,
+                    verifies (SHA-256), pins, and executes the platform-specific <code>codingbooth</code> binary.
+                    A shared cache (<code>~/.cache/codingbooth/</code>) keeps versions reusable across projects.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/implementations/WRAPPER.md">Wrapper
+                    implementation →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="user-permissions" class="section-light">
+        <div class="container">
+            <h2>User permissions</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/UserPermission.png" alt="User permissions in the booth">
+                </div>
+                <p class="more-text">
+                    The booth runs as <code>coder</code> with the same UID/GID as your host user, plus passwordless
+                    <code>sudo</code> when you need it. The <code>.booth/</code> folder is mounted read-only by
+                    default; opt in to writes with <code>--writable-booth</code>, or harden further with the
+                    <code>no-sudo</code> template.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/implementations/USER_PERMISSIONS.md">User
+                    permissions →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="variants">
+        <div class="container">
+            <h2>Variants in detail</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Variant-Details.png" alt="Variants in detail">
+                </div>
+                <p class="more-text">
+                    Five built-in variants share one base image: <strong>base</strong> (ttyd terminal),
+                    <strong>codeserver</strong> (VS Code in the browser), <strong>notebook</strong> (Jupyter Lab
+                    with multi-language kernels), and <strong>desktop-xfce</strong> / <strong>desktop-kde</strong>
+                    (full Linux desktops via noVNC). Same toolchain underneath — different way to drive it.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_VARIANTS.md">Variants guide →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="booth-run" class="section-light">
+        <div class="container">
+            <h2>Running a booth</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/booth-run.png" alt="Running a booth">
+                </div>
+                <p class="more-text">
+                    <code>./booth</code> picks the variant from <code>.booth/config.toml</code>, builds (or reuses)
+                    the image, maps your UID/GID, mounts your code, and launches the UI. Use
+                    <code>--daemon</code> for background, <code>-- &lt;cmd&gt;</code> for command passthrough,
+                    or <code>--keep-alive</code> to keep the container after exit.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_RUN.md">booth run →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="commands">
+        <div class="container">
+            <h2>Commands</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Command.png" alt="Booth commands cheatsheet">
+                </div>
+                <p class="more-text">
+                    One CLI, many verbs: <code>run</code>, <code>config</code>, <code>build</code>,
+                    <code>list</code>, <code>start</code> / <code>stop</code> / <code>restart</code>,
+                    <code>shell</code> / <code>exec</code>, <code>example try</code>, <code>template list</code>,
+                    <code>install</code> / <code>update</code>. Most options also live in
+                    <code>config.toml</code>, so the same setup works across machines without re-typing flags.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/CODINGBOOTH.md">User manual →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="built-in-tools" class="section-light">
+        <div class="container">
+            <h2>Built-in tools</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Built-in Tools.png" alt="Built-in tools available in every booth">
+                </div>
+                <p class="more-text">
+                    Every booth ships with a curated baseline: <code>bash</code>/<code>zsh</code>,
+                    <code>git</code>/<code>gh</code>/<code>tig</code>, <code>curl</code>/<code>wget</code>/<code>httpie</code>,
+                    <code>jq</code>/<code>yq</code>/<code>tree</code>, <code>nano</code>/<code>tilde</code>/<code>ranger</code>/<code>less</code>,
+                    plus <code>tini</code>, <code>socat</code>, locales and CA certs. You build on top — not from
+                    scratch.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section id="config">
+        <div class="container">
+            <h2>booth config</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/BoothInit.png" alt="booth config interactive TUI">
+                </div>
+                <p class="more-text">
+                    <code>booth config</code> scaffolds a complete <code>.booth/</code> from 77+ templates —
+                    languages, IDEs, AI tools, browsers, databases, desktops, education. Browse and pick in the
+                    TUI, or script it with a selection DSL like
+                    <code>go:1.25+linter/python:3.13+uv/claude-code</code>.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_CONFIG.md">booth config guide →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="config-tui" class="section-light">
+        <div class="container">
+            <h2>Config TUI</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-Config.png" alt="booth config interactive TUI">
+                </div>
+                <p class="more-text">
+                    The interactive sibling of <code>booth config --no-tui</code>: a multi-tab terminal UI for
+                    browsing templates by category, previewing what will be emitted, and toggling extensions
+                    with auto-select awareness. Round-trips with <code>.booth/</code> — open it on an existing
+                    project and the current selection is pre-populated.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_CONFIG_TUI.md">Config
+                    TUI →</a>
+                <div class="tape-block">
+                    <div class="demo-player">
+                        <video src="media/tapes/config-tui-deep.mp4" autoplay loop muted playsinline preload="metadata"
+                            poster="media/tapes/config-tui-deep.gif"
+                            aria-label="booth config interactive TUI walkthrough"></video>
+                    </div>
+                    <div class="demo-bar-row">
+                        <button class="demo-ctrl demo-pause" type="button" aria-label="Pause" title="Pause">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <rect x="6" y="5" width="4" height="14" rx="1" />
+                                <rect x="14" y="5" width="4" height="14" rx="1" />
+                            </svg>
+                        </button>
+                        <button class="demo-ctrl demo-restart" type="button" aria-label="Restart from beginning"
+                            title="Restart">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M3 12a9 9 0 1 0 3-6.7" />
+                                <polyline points="3 4 3 9 8 9" />
+                            </svg>
+                        </button>
+                        <div class="demo-progress" aria-hidden="true">
+                            <div class="demo-progress-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="boothfile">
+        <div class="container">
+            <h2>The Boothfile</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/BoothfileImplementation.png" alt="Boothfile compiles to Dockerfile">
+                </div>
+                <p class="more-text">
+                    A declarative, intent-based config that compiles to a standard Dockerfile —
+                    <code>setup</code>, <code>install</code>, <code>run</code>, <code>env</code>, <code>copy</code>,
+                    <code>expose</code>. No more Dockerfile boilerplate, but the generated Dockerfile is always
+                    inspectable.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/implementations/BOOTHFILE.md">Boothfile
+                    implementation →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="build" class="section-light">
+        <div class="container">
+            <h2>Build &amp; publish</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-Build.png" alt="Build and publish a booth image">
+                </div>
+                <p class="more-text">
+                    <code>booth build</code> compiles the Boothfile into a Docker image and (optionally) pushes
+                    it to a registry. The default tag is a content hash of the configuration, so identical
+                    configurations produce identical tags — clean caching, exact reproducibility, and a stable
+                    target for deploy pipelines.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_BUILD.md">booth build →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="setup-scripts">
+        <div class="container">
+            <h2>Setup scripts</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/BoothSetup.png" alt="Setup script pattern">
+                </div>
+                <p class="more-text">
+                    Each <code>*--setup.sh</code> follows a three-artifact pattern: a build-time install, an
+                    on-start <em>startup</em> script, and an on-shell <em>profile</em> script — with
+                    <code>LEVEL</code> ordering (50–79) so language, extension, and tool layers compose in the
+                    right sequence.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_SETUP.md">Booth setup guide →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="customization" class="section-light">
+        <div class="container">
+            <h2>Customization</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Customization.png" alt="Customizing your booth">
+                </div>
+                <p class="more-text">
+                    Everything CodingBooth needs travels with your repo under <code>.booth/</code>:
+                    <code>config.toml</code>, <code>Boothfile</code>, <code>.env</code>,
+                    <code>setups/</code>, <code>startups/</code>, <code>home/</code>, <code>home-seed/</code>,
+                    <code>cache/</code>. Edit by hand, generate via <code>booth config</code>, or mix the two.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_CUSTOMIZATION.md">Customization
+                    guide →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="tmp">
+        <div class="container">
+            <h2>The .booth/.tmp/ directory</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-Tmp.png" alt="The .booth/.tmp/ ephemeral runtime directory">
+                </div>
+                <p class="more-text">
+                    A per-session ephemeral runtime dir: wiped on start, cleaned on exit. Features like
+                    <code>booth--expose</code> drop their control files here; your startup scripts can use
+                    it too. Visible from the host while the booth is running; <code>--leave-tmp-on-exit</code>
+                    and <code>--keep-tmp-on-start</code> preserve contents for debugging.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_TMP.md">booth tmp →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="home-directory" class="section-light">
+        <div class="container">
+            <h2>Home directory</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/HomeDirectoryDocumentation.png" alt="Home directory seeding and persistence">
+                </div>
+                <p class="more-text">
+                    Seed the container's home from four layered sources — team defaults / overrides + host
+                    defaults / overrides — with <code>.mount-this</code> markers for fine-grained control.
+                    Make the whole <code>/home/coder</code> persistent with <code>--persist-home</code> (Docker
+                    named volume), and ship it around with <code>home-volume export/import</code>.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_HOME.md">Home directory →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="localcache">
+        <div class="container">
+            <h2>Local cache</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-LocalCache.png" alt="The .booth/cache/ local cache">
+                </div>
+                <p class="more-text">
+                    <code>.booth/cache/</code> mirrors the container's filesystem layout — anything you drop
+                    here is auto-bind-mounted at the matching path inside the booth. Perfect for shell
+                    history, tool configs, and AI agent caches that should persist across sessions on this
+                    machine. Gitignored, host-local, safe to delete any time.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_LOCALCACHE.md">Local cache
+                    →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="persist-home" class="section-light">
+        <div class="container">
+            <h2>Persistent home</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-Persist-Home.png" alt="Persistent home via Docker named volume">
+                </div>
+                <p class="more-text">
+                    Add <code>--persist-home</code> and <code>/home/coder</code> is backed by a Docker named
+                    volume — IDE settings, browser sessions, shell history all survive exit and rebuild. Manage
+                    volumes with <code>home-volume list / export / import</code> to move state between
+                    machines. <em>Experimental.</em>
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_PERSIST_HOME.md">Persistent
+                    home →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="lifecycle">
+        <div class="container">
+            <h2>Lifecycle</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth - LifeCycle.png" alt="Booth lifecycle">
+                </div>
+                <p class="more-text">
+                    Treat booths like cattle: <code>list</code>, <code>start</code>, <code>stop</code>,
+                    <code>restart</code>, <code>remove</code>, <code>prune</code>. Add session timers
+                    (<code>--show-count-down</code>) and idle auto-shutdown (<code>--idle-time</code>) so an
+                    abandoned booth doesn't quietly burn resources.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_LIFECYCLE.md">Lifecycle guide →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="shell-exec" class="section-light">
+        <div class="container">
+            <h2>shell &amp; exec</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-Connect.png" alt="Connecting to a running booth with shell and exec">
+                </div>
+                <p class="more-text">
+                    Every variant has its own way to spawn extra terminals (Code Server's integrated terminal,
+                    Notebook's Launcher, a desktop terminal emulator). <code>shell</code> and <code>exec</code>
+                    give the <strong>terminal</strong> variant the same capability — and work everywhere else
+                    too. No SSH server, no extra ports; both use <code>docker exec</code> under the hood.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_CONNECT.md">booth connect →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="message">
+        <div class="container">
+            <h2>booth message</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-Message.png" alt="booth message overlay dialogs and toasts">
+                </div>
+                <p class="more-text">
+                    Show overlays, prompts, and toasts inside a running booth's web UI — from scripts, CI,
+                    or another shell. Types: <code>yes-no</code>, <code>ok</code>, <code>text</code>,
+                    <code>password</code>, <code>choice</code>, <code>radio</code>, <code>checkbox</code>,
+                    <code>toast</code>. Same overlay renders identically on terminal, Code Server, Notebook,
+                    and the desktop variants.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_MESSAGE.md">booth message →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="expose" class="section-light">
+        <div class="container">
+            <h2>booth expose</h2>
+            <div class="more-card">
+                <div class="more-mock">
+                    <span class="comment"># Inside the booth, after starting a server on a new port:</span><br>
+                    <span class="prompt">$</span> booth--expose 8080<br>
+                    <span class="out">→ TCP tunnel: host localhost:8080 → container localhost:8080</span><br><br>
+                    <span class="comment"># Save it to .booth/config.toml so it survives restarts</span><br>
+                    <span class="prompt">$</span> booth--expose 8080 --permanent
+                </div>
+                <p class="more-text">
+                    Started a server on a port that wasn't published at <code>docker run</code> time?
+                    <code>booth--expose</code> opens a TCP tunnel <em>at runtime</em> — no container restart,
+                    no port re-mapping. The host-side booth process picks up the request via a control file in
+                    <code>.booth/.tmp/</code> and sets up the listener automatically.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_EXPOSE.md">booth expose →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="session-timers">
+        <div class="container">
+            <h2>Session timers</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-SessionTimers.png" alt="Session timers — run time and count-down">
+                </div>
+                <p class="more-text">
+                    <code>--show-run-time</code> displays elapsed session time next to Restart / Shutdown;
+                    <code>--show-count-down</code> arms a wall-clock budget with a live countdown and color
+                    warnings at 15 / 10 / 5 minutes remaining. <code>--count-down-exit-code</code> lets cron,
+                    CI, or a wrapper distinguish a timeout from a clean exit.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_RUNTIME.md">Session
+                    timers →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="idle" class="section-light">
+        <div class="container">
+            <h2>Idle auto-shutdown</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-Idle.png" alt="Idle auto-shutdown with Pause and Disable controls">
+                </div>
+                <p class="more-text">
+                    <code>--idle-time &lt;s&gt;[,t]</code> arms an in-container watchdog. After <code>s</code>
+                    seconds with no activity it shows a "Still using this booth?" prompt; if no reply within
+                    <code>t</code> seconds the booth shuts itself down. A persistent <code>Idle</code> chip in
+                    the lifecycle panel lets you <strong>Pause</strong> (time-boxed hold) or
+                    <strong>Disable</strong> (indefinite) — so a long compile is never mistaken for an
+                    abandoned session.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_IDLE.md">Idle guide →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="health">
+        <div class="container">
+            <h2>Health &amp; info</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-Health.png" alt="Health and info HTTP endpoints">
+                </div>
+                <p class="more-text">
+                    Wrapped variants (codeserver, notebook, desktop-xfce, desktop-kde) expose two HTTP
+                    endpoints under the reserved <code>/__booth/</code> namespace.
+                    <code>/__booth/health</code> actively probes the inner service every call — so a hung
+                    code-server can't quietly look healthy. <code>/__booth/info</code> returns container
+                    identity (name, variant, version, port). Both are <code>Cache-Control: no-store</code>.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_HEALTH.md">Health &amp;
+                    info →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="examples" class="section-light">
+        <div class="container">
+            <h2>Examples</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/BoothExample.png" alt="Pre-built example workspaces">
+                </div>
+                <p class="more-text">
+                    45+ ready-to-run workspaces: <code>go</code>, <code>python</code>, <code>nodejs</code>,
+                    <code>rust</code>, <code>java</code>, <code>flask</code>, <code>fastapi</code>,
+                    <code>django</code>, <code>nextjs</code>, <code>react</code>, <code>angular</code>,
+                    <code>spring-boot</code>, <code>rails</code>, <code>lamp</code>, <code>lemp</code>,
+                    <code>mern</code>, <code>pern</code>, <code>wordpress</code> — and more. List them with
+                    <code>booth example list</code>; spin one up with <code>booth example try</code>.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_EXAMPLE.md">Examples guide →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="advanced" style="padding-bottom: 24px;">
+        <div class="container">
+            <h2 style="margin-bottom: 8px;">Advanced features</h2>
+            <p style="text-align: center; color: var(--fg-muted); margin: 0 0 16px;">
+                The pieces that show up when one container isn't enough.
+            </p>
+        </div>
+    </section>
+
+    <section id="dind" class="section-light" style="padding-top: 32px;">
+        <div class="container">
+            <h2>Docker-in-Docker</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/DindImplementation.png" alt="Docker-in-Docker via sidecar">
+                </div>
+                <p class="more-text">
+                    Need <code>docker</code>, <code>kind</code>, or <code>k3d</code> <em>inside</em> the booth?
+                    <code>--dind</code> spins up a sibling Docker daemon in a sidecar, linked back via labels —
+                    the booth gets a real Docker socket without polluting the host.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/implementations/DIND.md">DinD
+                    implementation →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="sandbox">
+        <div class="container">
+            <h2>Sandbox</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/SandBox.png" alt="Sandbox egress filtering">
+                </div>
+                <p class="more-text">
+                    <code>--sandboxed</code> routes the booth's egress through an Envoy proxy with a domain
+                    allowlist, enforced by iptables. Useful when you run third-party AI agents or untrusted
+                    code and want to bound where they can phone home.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/implementations/SANDBOX.md">Sandbox
+                    implementation →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="booth-in-booth" class="section-light">
+        <div class="container">
+            <h2>Booth-in-Booth</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-in-Booth.png" alt="Booth-in-Booth nested environments">
+                </div>
+                <p class="more-text">
+                    Open a booth from inside another booth — useful when an outer environment is your "host"
+                    and you want an inner one for a specific task. CodingBooth detects nesting, warns you on
+                    <code>booth run</code>, and routes Docker through the right daemon.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/implementations/BOOTH_IN_BOOTH.md">Booth-in-Booth
+                    →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="desktop">
+        <div class="container">
+            <h2>Desktop &amp; noVNC</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/NoVNC.png" alt="Desktop variants over noVNC">
+                </div>
+                <p class="more-text">
+                    The desktop variants ship a full Linux desktop (<strong>XFCE</strong> or
+                    <strong>KDE Plasma</strong>) accessible from your browser via noVNC — perfect for IDEs that
+                    don't run in a browser (IntelliJ, PyCharm, Eclipse, KiCad). Configure resolution with
+                    <code>GEOMETRY=1920x1080</code> and pick a resize mode (<code>remote</code>,
+                    <code>scale</code>, <code>off</code>).
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/implementations/DESKTOP_NOVNC.md">Desktop
+                    &amp; noVNC →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="agent" class="section-light">
+        <div class="container">
+            <h2>AI agent integration</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/CodingBoothAgent.png" alt="AI agent integration">
+                </div>
+                <p class="more-text">
+                    Every booth includes <code>/opt/codingbooth/AGENT.md</code> — operational instructions for
+                    in-container AI agents — plus a symlink farm (<code>CLAUDE.md</code>, <code>COPILOT.md</code>,
+                    <code>CURSOR.md</code>, …). Templates exist for Claude Code, Codex, Aider, Cursor, GH
+                    Copilot, Ollama, and friends, so adding an agent is one line in <code>booth config</code>.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/AGENT.md">Agent guide →</a>
+            </div>
+        </div>
+    </section>
 
     <footer>
         <div class="container">
-            © 2026 <a href="https://nawaman.net">NawaMan</a>
-            — <a href="https://github.com/NawaMan/CodingBooth/blob/main/LICENSE">Apache 2.0</a>
+            <div class="footer-links">
+                <a href="index.html">Home</a>
+                <a href="https://github.com/NawaMan/CodingBooth">GitHub</a>
+                <a href="https://github.com/NawaMan/CodingBooth/issues">Issues</a>
+                <a href="https://github.com/NawaMan/CodingBooth/releases">Releases</a>
+                <a href="https://github.com/NawaMan/CodingBooth/blob/main/CODINGBOOTH.md">User Manual</a>
+                <a href="https://github.com/sponsors/NawaMan">Sponsor</a>
+            </div>
+            <div>
+                © 2026 <a href="https://nawaman.net">NawaMan</a>
+                — <a href="https://github.com/NawaMan/CodingBooth/blob/main/LICENSE">Apache 2.0</a>
+            </div>
         </div>
     </footer>
+
+    <script>
+        (function () {
+            const players = document.querySelectorAll('.demo-player');
+            if (!players.length) return;
+
+            const PLAY_ICON =
+                '<polygon points="7,5 19,12 7,19" fill="currentColor"/>';
+            const PAUSE_ICON =
+                '<rect x="6" y="5" width="4" height="14" rx="1"/>' +
+                '<rect x="14" y="5" width="4" height="14" rx="1"/>';
+
+            players.forEach(player => {
+                const video = player.querySelector('video');
+                const row = player.nextElementSibling;
+                if (!video || !row || !row.classList.contains('demo-bar-row')) return;
+
+                const pauseBtn = row.querySelector('.demo-pause');
+                const pauseIcon = pauseBtn && pauseBtn.querySelector('svg');
+                const restartBtn = row.querySelector('.demo-restart');
+                const bar = row.querySelector('.demo-progress-bar');
+                if (!pauseBtn || !pauseIcon || !restartBtn || !bar) return;
+
+                function setPaused(isPaused) {
+                    player.classList.toggle('is-paused', isPaused);
+                    pauseIcon.innerHTML = isPaused ? PLAY_ICON : PAUSE_ICON;
+                    pauseBtn.setAttribute('aria-label', isPaused ? 'Play' : 'Pause');
+                    pauseBtn.title = isPaused ? 'Play' : 'Pause';
+                }
+
+                pauseBtn.addEventListener('click', () => {
+                    if (video.paused) video.play(); else video.pause();
+                });
+
+                restartBtn.addEventListener('click', () => {
+                    video.currentTime = 0;
+                    video.play();
+                });
+
+                video.addEventListener('play', () => setPaused(false));
+                video.addEventListener('pause', () => setPaused(true));
+
+                video.addEventListener('timeupdate', () => {
+                    if (!video.duration) return;
+                    bar.style.width = (video.currentTime / video.duration * 100) + '%';
+                });
+
+                const track = bar.parentElement;
+                track.addEventListener('click', (e) => {
+                    if (!video.duration) return;
+                    const rect = track.getBoundingClientRect();
+                    const fraction = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+                    video.currentTime = fraction * video.duration;
+                });
+            });
+        })();
+    </script>
 </body>
 
 </html>

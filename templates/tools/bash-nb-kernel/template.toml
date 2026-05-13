@@ -1,0 +1,20 @@
+display-name = "Bash Notebook Kernel"
+display-disc = "Bash Jupyter notebook kernel (requires notebook)"
+display-detail = """Adds a Bash kernel to JupyterLab so notebook cells can run shell \
+commands directly. Useful for running ad-hoc scripts, exploring system tools, or teaching \
+shell workflows in a notebook. Requires the notebook template (which pulls in python)."""
+display-order = 25
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "bash",
+    "shell",
+    "kernel",
+    "notebook",
+    "jupyter",
+]
+
+[segments]
+"Boothfile--70" = """
+setup bash-nb-kernel
+"""
