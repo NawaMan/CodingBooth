@@ -142,7 +142,10 @@ func TestExpandEnv(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ExpandEnv(tt.input)
+			got, err := ExpandEnv(tt.input)
+			if err != nil {
+				t.Fatalf("ExpandEnv(%q) returned error: %v", tt.input, err)
+			}
 			if got != tt.expected {
 				t.Errorf("ExpandEnv(%q) = %q, want %q", tt.input, got, tt.expected)
 			}

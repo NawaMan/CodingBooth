@@ -14,6 +14,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/nillable"
+	"github.com/nawaman/codingbooth/src/pkg/shellexpand"
 )
 
 func TestApplyEnvFile_DotEnvNotAutoDetected(t *testing.T) {
@@ -99,7 +100,8 @@ func TestApplyEnvFile_Disabled(t *testing.T) {
 // --- .env tests ---
 
 func TestApplyEnvFile_BoothEnv_Only(t *testing.T) {
-	// .booth/.env exists, no user env-file → single --env-file added
+	// .booth/.env exists, no user env-file → single --env-file added pointing
+	// at booth's expanded temp file under .booth/.tmp/.
 	tmpDir := t.TempDir()
 
 	// Create .booth/.env (no git repo → gitignore check is skipped)
@@ -120,16 +122,13 @@ func TestApplyEnvFile_BoothEnv_Only(t *testing.T) {
 	ctx := builder.Build()
 	newCtx := ApplyEnvFile(ctx)
 
-	args := flattenArgs(newCtx.CommonArgs())
-	found := false
-	for i, arg := range args {
-		if arg == "--env-file" && i+1 < len(args) && args[i+1] == boothEnv {
-			found = true
-			break
-		}
+	expanded := expectExpandedEnvArg(t, newCtx, filepath.Join(tmpDir, ".booth", ".tmp"))
+	gotContent, err := os.ReadFile(expanded)
+	if err != nil {
+		t.Fatalf("could not read expanded env file: %v", err)
 	}
-	if !found {
-		t.Errorf("Expected --env-file %s, got args: %v", boothEnv, args)
+	if string(gotContent) != "SECRET=value\n" {
+		t.Errorf("expanded env content = %q, want %q", string(gotContent), "SECRET=value\n")
 	}
 }
 
@@ -161,21 +160,7 @@ func TestApplyEnvFile_BoothEnv_WithDotEnvPresent(t *testing.T) {
 	ctx := builder.Build()
 	newCtx := ApplyEnvFile(ctx)
 
-	args := flattenArgs(newCtx.CommonArgs())
-
-	// Expect only one --env-file flag for .env
-	envFileArgs := []string{}
-	for i, arg := range args {
-		if arg == "--env-file" && i+1 < len(args) {
-			envFileArgs = append(envFileArgs, args[i+1])
-		}
-	}
-	if len(envFileArgs) != 1 {
-		t.Fatalf("Expected 1 --env-file arg (booth env only), got %d: %v", len(envFileArgs), args)
-	}
-	if envFileArgs[0] != boothEnv {
-		t.Errorf("Expected --env-file %s, got %s", boothEnv, envFileArgs[0])
-	}
+	expectExpandedEnvArg(t, newCtx, filepath.Join(tmpDir, ".booth", ".tmp"))
 }
 
 func TestApplyEnvFile_BoothEnv_WithDisabledEnvFile(t *testing.T) {
@@ -201,21 +186,7 @@ func TestApplyEnvFile_BoothEnv_WithDisabledEnvFile(t *testing.T) {
 	ctx := builder.Build()
 	newCtx := ApplyEnvFile(ctx)
 
-	args := flattenArgs(newCtx.CommonArgs())
-
-	// Should have exactly one --env-file for .env
-	envFileArgs := []string{}
-	for i, arg := range args {
-		if arg == "--env-file" && i+1 < len(args) {
-			envFileArgs = append(envFileArgs, args[i+1])
-		}
-	}
-	if len(envFileArgs) != 1 {
-		t.Fatalf("Expected 1 --env-file arg (booth env only), got %d: %v", len(envFileArgs), args)
-	}
-	if envFileArgs[0] != boothEnv {
-		t.Errorf("Expected --env-file %s, got %s", boothEnv, envFileArgs[0])
-	}
+	expectExpandedEnvArg(t, newCtx, filepath.Join(tmpDir, ".booth", ".tmp"))
 }
 
 func TestApplyEnvFile_NoBoothEnv_NoDotEnv(t *testing.T) {
@@ -318,5 +289,159 @@ func TestCheckBoothEnvGitignored_Ignored(t *testing.T) {
 	err := checkBoothEnvGitignored(boothEnv, dir)
 	if err != nil {
 		t.Fatalf("expected nil for gitignored file, got %v", err)
+	}
+}
+
+// expectExpandedEnvArg fails the test unless the context's CommonArgs
+// contains exactly one --env-file <path>, where <path> lives under
+// expectedDir and ends in .expanded. Returns the expanded path so the
+// caller can inspect its contents.
+func expectExpandedEnvArg(t *testing.T, ctx appctx.AppContext, expectedDir string) string {
+	t.Helper()
+	args := flattenArgs(ctx.CommonArgs())
+	var paths []string
+	for i, arg := range args {
+		if arg == "--env-file" && i+1 < len(args) {
+			paths = append(paths, args[i+1])
+		}
+	}
+	if len(paths) != 1 {
+		t.Fatalf("expected exactly 1 --env-file arg, got %d: %v", len(paths), args)
+	}
+	got := paths[0]
+	if filepath.Dir(got) != expectedDir {
+		t.Fatalf("expected --env-file under %s, got %s", expectedDir, got)
+	}
+	if !strings.HasSuffix(got, ".expanded") {
+		t.Fatalf("expected --env-file path ending in .expanded, got %s", got)
+	}
+	if _, err := os.Stat(got); err != nil {
+		t.Fatalf("expanded env file %s missing: %v", got, err)
+	}
+	return got
+}
+
+// --- Expansion behaviour ---
+
+func TestApplyEnvFile_ExpandsTilde(t *testing.T) {
+	tmpDir := t.TempDir()
+	boothDir := filepath.Join(tmpDir, ".booth")
+	if err := os.MkdirAll(boothDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(boothDir, ".env"), []byte("BACKUP=~/data\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("HOME", "/home/cody")
+
+	builder := &appctx.AppContextBuilder{
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+	}
+	builder.Config.Code = nillable.NewNillableString(tmpDir)
+
+	newCtx := ApplyEnvFile(builder.Build())
+	got := expectExpandedEnvArg(t, newCtx, filepath.Join(tmpDir, ".booth", ".tmp"))
+	content, err := os.ReadFile(got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(content) != "BACKUP=/home/cody/data\n" {
+		t.Errorf("got %q, want %q", string(content), "BACKUP=/home/cody/data\n")
+	}
+}
+
+func TestApplyEnvFile_ExpandsDefaultsAndQuotes(t *testing.T) {
+	tmpDir := t.TempDir()
+	boothDir := filepath.Join(tmpDir, ".booth")
+	if err := os.MkdirAll(boothDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	body := strings.Join([]string{
+		`PORT=${APP_PORT:-8080}`,
+		`LITERAL='$KEEP'`,
+		`GREET="hi $USER"`,
+		``,
+	}, "\n")
+	if err := os.WriteFile(filepath.Join(boothDir, ".env"), []byte(body), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	t.Setenv("USER", "cody")
+	os.Unsetenv("APP_PORT")
+
+	builder := &appctx.AppContextBuilder{
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+	}
+	builder.Config.Code = nillable.NewNillableString(tmpDir)
+
+	newCtx := ApplyEnvFile(builder.Build())
+	got := expectExpandedEnvArg(t, newCtx, filepath.Join(tmpDir, ".booth", ".tmp"))
+	content, err := os.ReadFile(got)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "PORT=8080\nLITERAL=$KEEP\nGREET=hi cody\n"
+	if string(content) != want {
+		t.Errorf("got %q, want %q", string(content), want)
+	}
+}
+
+func TestApplyEnvFile_Dryrun_DoesNotWriteTempFile(t *testing.T) {
+	tmpDir := t.TempDir()
+	boothDir := filepath.Join(tmpDir, ".booth")
+	if err := os.MkdirAll(boothDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	boothEnv := filepath.Join(boothDir, ".env")
+	if err := os.WriteFile(boothEnv, []byte("FOO=bar\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	builder := &appctx.AppContextBuilder{
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+	}
+	builder.Config.Code = nillable.NewNillableString(tmpDir)
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+
+	newCtx := ApplyEnvFile(builder.Build())
+	args := flattenArgs(newCtx.CommonArgs())
+	var path string
+	for i, arg := range args {
+		if arg == "--env-file" && i+1 < len(args) {
+			path = args[i+1]
+		}
+	}
+	if path != boothEnv {
+		t.Errorf("dryrun should keep original path, got %s", path)
+	}
+	if _, err := os.Stat(filepath.Join(boothDir, ".tmp")); err == nil {
+		t.Error("dryrun should not create .booth/.tmp/")
+	}
+}
+
+func TestApplyEnvFile_RequiredVarAborts(t *testing.T) {
+	// We can't easily test os.Exit, so verify the underlying parse +
+	// expand error directly via the shellexpand API. The exit path is
+	// exercised by integration tests.
+	tmpDir := t.TempDir()
+	envPath := filepath.Join(tmpDir, "test.env")
+	if err := os.WriteFile(envPath, []byte("DB=${DATABASE_URL:?required for boot}\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	os.Unsetenv("DATABASE_URL")
+	entries, err := shellexpand.ParseEnvFile(envPath)
+	if err != nil {
+		t.Fatalf("unexpected parse error: %v", err)
+	}
+	_, err = shellexpand.ExpandEntries(entries, shellexpand.DefaultLookup, envPath)
+	if err == nil {
+		t.Fatal("expected error, got nil")
+	}
+	if !strings.Contains(err.Error(), "required for boot") {
+		t.Errorf("error %q lacks expected message", err.Error())
+	}
+	if !strings.Contains(err.Error(), envPath) {
+		t.Errorf("error %q lacks source path", err.Error())
 	}
 }

@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- Bash-like variable expansion for `.booth/.env`, `config.toml`, and `CB_*` env vars (see `docs/BOOTH_VARS.md`)
+  - `$VAR`, `${VAR}`, `${VAR:-default}`, `${VAR:?required-message}`, leading `~`, `\$` / `\\` / `\"` / `\~` escapes, and bash-style `"..."` (expanding) / `'...'` (literal) quoting are now resolved by booth before the value reaches docker
+  - `.booth/.env` and `--env-file <path>`: booth now parses the file, expands each value (earlier lines visible to later ones, falling through to host env), and hands docker a `0600` expanded copy under `.booth/.tmp/`. Docker's `--env-file` does not substitute `$VAR` or `~` natively, so without this the values were reaching the container literally
+  - `${VAR:?msg}` aborts booth with a source-located error (e.g. `.booth/.env:12: required for app boot`) before any container is started, instead of producing a silent empty value
+  - CLI `-e KEY=VAL` / `--env KEY=VAL` is intentionally unchanged: the invoking shell has already done its expansion, so booth does not double-expand
+  - The previous `os.ExpandEnv`-based expansion (no quotes, no defaults, no errors) is replaced by `pkg/shellexpand`; existing simple `$VAR` / `~` usages keep working unchanged
 - Fix UI lockup when a message title or body contains multibyte characters (em-dash, accented letters, CJK, emoji)
   - `booth-message-api-server` was setting HTTP `Content-Length` from bash's `${#body}`, which counts characters (not bytes) in a UTF-8 locale — an em-dash is 1 char / 3 bytes, so every response containing one was truncated and the browser failed to parse the JSON
   - The polling failure then triggered the lifecycle overlay's "Container stopped" guard, blanking the entire console even though the container was healthy

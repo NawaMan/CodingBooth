@@ -33,7 +33,6 @@ func (runner *BoothRunner) Run() error {
 	SetLogTime(ctx.LogTime())
 	ctx = ValidateVariant(ctx)
 	ctx = EnsureDockerImage(ctx)
-	ctx = ApplyEnvFile(ctx)
 	ctx = PortDetermination(ctx)
 	ctx = ResolveRelativePorts(ctx)
 	ctx = ShowDebugBanner(ctx)
@@ -42,6 +41,9 @@ func (runner *BoothRunner) Run() error {
 	ctx = PrepareRunMode(ctx)
 	ctx = FilterMissingVolumeMounts(ctx)
 	ctx = PrepareBoothTmp(ctx)
+	// ApplyEnvFile runs after PrepareBoothTmp so the expanded env file we
+	// write into .booth/.tmp/ is not wiped by the start-of-run cleanup.
+	ctx = ApplyEnvFile(ctx)
 	ctx = PrepareCommonArgs(ctx)
 	if err := ensureContainerNameAvailable(ctx); err != nil {
 		return err

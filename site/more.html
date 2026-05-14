@@ -96,7 +96,7 @@
             white-space: nowrap;
         }
 
-        .section-light kbd {
+        section:nth-of-type(even) kbd {
             background: var(--light-bg-elev);
             border-color: var(--light-border);
             color: var(--light-fg);
@@ -275,27 +275,27 @@
             color: var(--accent);
         }
 
-        .section-light {
+        section:nth-of-type(even) {
             background: var(--light-bg);
             color: var(--light-fg);
             border-bottom-color: var(--light-border);
         }
 
-        .section-light .more-card .more-text {
+        section:nth-of-type(even) .more-card .more-text {
             color: var(--light-fg-muted);
         }
 
-        .section-light .more-card .more-figure img {
+        section:nth-of-type(even) .more-card .more-figure img {
             border-color: var(--light-border);
             background: var(--light-bg-elev);
         }
 
-        .section-light .more-card .more-text code {
+        section:nth-of-type(even) .more-card .more-text code {
             background: var(--light-border);
             color: var(--light-fg);
         }
 
-        .section-light .more-mock {
+        section:nth-of-type(even) .more-mock {
             border-color: var(--light-border);
         }
 
@@ -322,7 +322,7 @@
             border: 1px solid var(--border);
         }
 
-        .section-light .demo-player video {
+        section:nth-of-type(even) .demo-player video {
             border-color: var(--light-border);
         }
 
@@ -361,13 +361,13 @@
             display: block;
         }
 
-        .section-light .demo-ctrl {
+        section:nth-of-type(even) .demo-ctrl {
             background: var(--light-bg-elev);
             border-color: var(--light-border);
             color: var(--light-fg);
         }
 
-        .section-light .demo-ctrl:hover {
+        section:nth-of-type(even) .demo-ctrl:hover {
             background: var(--accent);
             border-color: var(--accent);
             color: #000d33;
@@ -393,7 +393,7 @@
             transition: width 0.1s linear;
         }
 
-        .section-light .demo-progress {
+        section:nth-of-type(even) .demo-progress {
             background: var(--light-border);
         }
 
@@ -408,7 +408,7 @@
             text-align: right;
         }
 
-        .section-light .demo-time {
+        section:nth-of-type(even) .demo-time {
             color: var(--light-fg-muted);
         }
 
@@ -442,7 +442,7 @@
             color: var(--accent-strong);
         }
 
-        .section-light .demo-points li.active {
+        section:nth-of-type(even) .demo-points li.active {
             background: rgba(252, 150, 47, 0.2);
             color: var(--light-fg);
         }
@@ -468,7 +468,7 @@
             outline: none;
         }
 
-        .section-light .demo-points {
+        section:nth-of-type(even) .demo-points {
             color: var(--light-fg-muted);
         }
 
@@ -602,6 +602,7 @@
                 <a href="#build">Build &amp; publish</a>
                 <a href="#setup-scripts">Setup scripts</a>
                 <a href="#customization">Customization</a>
+                <a href="#vars">Variable expansion</a>
                 <a href="#tmp">.booth/.tmp/ directory</a>
                 <a href="#home-directory">Home directory</a>
                 <a href="#localcache">Local cache</a>
@@ -623,7 +624,7 @@
         </div>
     </section>
 
-    <section id="how-it-works" class="section-light">
+    <section id="how-it-works">
         <div class="container">
             <h2>How it works</h2>
             <div class="more-card">
@@ -661,7 +662,7 @@
         </div>
     </section>
 
-    <section id="user-permissions" class="section-light">
+    <section id="user-permissions">
         <div class="container">
             <h2>User permissions</h2>
             <div class="more-card">
@@ -700,7 +701,7 @@
         </div>
     </section>
 
-    <section id="booth-run" class="section-light">
+    <section id="booth-run">
         <div class="container">
             <h2>Running a booth</h2>
             <div class="more-card">
@@ -739,7 +740,7 @@
         </div>
     </section>
 
-    <section id="built-in-tools" class="section-light">
+    <section id="built-in-tools">
         <div class="container">
             <h2>Built-in tools</h2>
             <div class="more-card">
@@ -776,7 +777,7 @@
         </div>
     </section>
 
-    <section id="config-tui" class="section-light">
+    <section id="config-tui">
         <div class="container">
             <h2>Config TUI</h2>
             <div class="more-card">
@@ -866,7 +867,7 @@
         </div>
     </section>
 
-    <section id="build" class="section-light">
+    <section id="build">
         <div class="container">
             <h2>Build &amp; publish</h2>
             <div class="more-card">
@@ -904,7 +905,7 @@
         </div>
     </section>
 
-    <section id="customization" class="section-light">
+    <section id="customization">
         <div class="container">
             <h2>Customization</h2>
             <div class="more-card">
@@ -920,6 +921,29 @@
                 <a class="more-link"
                     href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_CUSTOMIZATION.md">Customization
                     guide →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="vars">
+        <div class="container">
+            <h2>Variable expansion</h2>
+            <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-Vars.png" alt="Variable expansion in booth config and .env">
+                </div>
+                <p class="more-text">
+                    Values you write in <code>.booth/.env</code>, <code>.booth/config.toml</code>, and
+                    <code>CB_*</code> env vars are resolved by booth before docker sees them — a small
+                    bash-like subset: <code>$VAR</code>, <code>${VAR:-default}</code>,
+                    <code>${VAR:?required}</code>, leading <code>~</code>, and <code>"..."</code> /
+                    <code>'...'</code> quoting. Docker's own <code>--env-file</code> wouldn't normally
+                    expand any of these, so booth parses <code>.booth/.env</code> first and hands docker
+                    a resolved copy.
+                </p>
+                <a class="more-link"
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_VARS.md">Variable
+                    expansion →</a>
             </div>
         </div>
     </section>
@@ -943,7 +967,7 @@
         </div>
     </section>
 
-    <section id="home-directory" class="section-light">
+    <section id="home-directory">
         <div class="container">
             <h2>Home directory</h2>
             <div class="more-card">
@@ -982,7 +1006,7 @@
         </div>
     </section>
 
-    <section id="persist-home" class="section-light">
+    <section id="persist-home">
         <div class="container">
             <h2>Persistent home</h2>
             <div class="more-card">
@@ -1021,7 +1045,7 @@
         </div>
     </section>
 
-    <section id="shell-exec" class="section-light">
+    <section id="shell-exec">
         <div class="container">
             <h2>shell &amp; exec</h2>
             <div class="more-card">
@@ -1060,7 +1084,7 @@
         </div>
     </section>
 
-    <section id="expose" class="section-light">
+    <section id="expose">
         <div class="container">
             <h2>booth expose</h2>
             <div class="more-card">
@@ -1103,7 +1127,7 @@
         </div>
     </section>
 
-    <section id="idle" class="section-light">
+    <section id="idle">
         <div class="container">
             <h2>Idle auto-shutdown</h2>
             <div class="more-card">
@@ -1145,7 +1169,7 @@
         </div>
     </section>
 
-    <section id="examples" class="section-light">
+    <section id="examples">
         <div class="container">
             <h2>Examples</h2>
             <div class="more-card">
@@ -1175,7 +1199,7 @@
         </div>
     </section>
 
-    <section id="dind" class="section-light" style="padding-top: 32px;">
+    <section id="dind" style="padding-top: 32px;">
         <div class="container">
             <h2>Docker-in-Docker</h2>
             <div class="more-card">
@@ -1213,7 +1237,7 @@
         </div>
     </section>
 
-    <section id="booth-in-booth" class="section-light">
+    <section id="booth-in-booth">
         <div class="container">
             <h2>Booth-in-Booth</h2>
             <div class="more-card">
@@ -1253,7 +1277,7 @@
         </div>
     </section>
 
-    <section id="agent" class="section-light">
+    <section id="agent">
         <div class="container">
             <h2>AI agent integration</h2>
             <div class="more-card">

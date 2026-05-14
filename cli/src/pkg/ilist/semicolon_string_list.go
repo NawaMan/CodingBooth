@@ -5,26 +5,27 @@
 package ilist
 
 import (
-	"os"
+	"fmt"
 	"strings"
+
+	"github.com/nawaman/codingbooth/src/pkg/shellexpand"
 )
 
 type SemicolonStringList struct {
 	List[string]
 }
 
-// ExpandEnv expands environment variables and tilde in a string.
-// - ~ at the start of a string is expanded to $HOME
-// - $VAR and ${VAR} are expanded to their environment values
-func ExpandEnv(s string) string {
-	// Expand ~ at the beginning of the string to $HOME
-	if strings.HasPrefix(s, "~/") {
-		s = "$HOME" + s[1:]
-	} else if s == "~" {
-		s = "$HOME"
-	}
-	// Expand environment variables
-	return os.ExpandEnv(s)
+// ExpandEnv expands a single string with booth's bash-like rules. See
+// docs/BOOTH_VARS.md for the rule set. Returns an error for unsupported
+// operators, unterminated quotes, ${VAR:?} on unset values, etc.
+func ExpandEnv(s string) (string, error) {
+	return shellexpand.Expand(s, shellexpand.DefaultLookup, shellexpand.SourceRef{})
+}
+
+// ExpandEnvWithSource is like ExpandEnv but annotates errors with src so
+// callers can report which TOML field or env var produced the failure.
+func ExpandEnvWithSource(s string, src shellexpand.SourceRef) (string, error) {
+	return shellexpand.Expand(s, shellexpand.DefaultLookup, src)
 }
 
 func (s *SemicolonStringList) Decode(value string) error {
@@ -35,12 +36,18 @@ func (s *SemicolonStringList) Decode(value string) error {
 
 	parts := strings.Split(value, ";")
 	out := make([]string, 0, len(parts))
+	idx := -1
 	for _, p := range parts {
 		p = strings.TrimSpace(p)
 		if p == "" {
 			continue
 		}
-		out = append(out, ExpandEnv(p))
+		idx++
+		expanded, err := ExpandEnvWithSource(p, shellexpand.SourceRef{Field: fmt.Sprintf("[%d]", idx)})
+		if err != nil {
+			return err
+		}
+		out = append(out, expanded)
 	}
 
 	s.elements = out
@@ -53,7 +60,7 @@ func (s *SemicolonStringList) Clone() SemicolonStringList {
 
 // UnmarshalTOML implements the toml.Unmarshaler interface.
 // This allows TOML to decode both string values (semicolon-separated) and arrays into a SemicolonStringList.
-// Environment variables ($VAR, ${VAR}) and tilde (~) are automatically expanded.
+// Environment variables ($VAR, ${VAR}) and tilde (~) are automatically expanded per docs/BOOTH_VARS.md.
 func (s *SemicolonStringList) UnmarshalTOML(data interface{}) error {
 	switch v := data.(type) {
 	case string:
@@ -61,9 +68,13 @@ func (s *SemicolonStringList) UnmarshalTOML(data interface{}) error {
 	case []interface{}:
 		// Handle TOML array
 		out := make([]string, 0, len(v))
-		for _, item := range v {
+		for i, item := range v {
 			if str, ok := item.(string); ok {
-				out = append(out, ExpandEnv(str))
+				expanded, err := ExpandEnvWithSource(str, shellexpand.SourceRef{Field: fmt.Sprintf("[%d]", i)})
+				if err != nil {
+					return err
+				}
+				out = append(out, expanded)
 			}
 		}
 		s.elements = out

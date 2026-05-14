@@ -12,52 +12,80 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/nillable"
+	"github.com/nawaman/codingbooth/src/pkg/shellexpand"
 )
 
-// ExpandEnvScalars expands environment variables ($VAR, ${VAR}) and tilde (~)
-// in all scalar string fields of AppConfig.
-// Boolean and array fields are left unchanged (arrays already expand during TOML unmarshaling).
-func (config *AppConfig) ExpandEnvScalars() {
-	expandStr := func(s *string) {
-		if *s != "" {
-			*s = ilist.ExpandEnv(*s)
+// ExpandEnvScalars expands environment variables, defaults, required-var
+// errors, and tilde in all scalar string fields of AppConfig per
+// docs/BOOTH_VARS.md. Array fields (CommonArgs, BuildArgs, RunArgs, Cmds)
+// are already expanded during TOML/env-var unmarshaling and are not
+// re-touched here.
+func (config *AppConfig) ExpandEnvScalars() error {
+	expandStr := func(field string, s *string) error {
+		if *s == "" {
+			return nil
+		}
+		v, err := shellexpand.Expand(*s, shellexpand.DefaultLookup, shellexpand.SourceRef{Field: field})
+		if err != nil {
+			return err
+		}
+		*s = v
+		return nil
+	}
+	expandNillable := func(field string, ns *nillable.NillableString) error {
+		if !ns.IsSet() {
+			return nil
+		}
+		v, err := shellexpand.Expand(ns.ValueOrPanic(), shellexpand.DefaultLookup, shellexpand.SourceRef{Field: field})
+		if err != nil {
+			return err
+		}
+		*ns = nillable.NewNillableString(v)
+		return nil
+	}
+
+	scalars := []struct {
+		field string
+		ptr   *string
+	}{
+		{"dockerfile", &config.Dockerfile},
+		{"boothfile", &config.Boothfile},
+		{"image", &config.Image},
+		{"variant", &config.Variant},
+		{"project-name", &config.ProjectName},
+		{"host-uid", &config.HostUID},
+		{"host-gid", &config.HostGID},
+		{"timezone", &config.Timezone},
+		{"name", &config.Name},
+		{"port", &config.Port},
+		{"env-file", &config.EnvFile},
+		{"startup", &config.Startup},
+		{"sandbox-mode", &config.SandboxMode},
+		{"sandbox-enforcement", &config.SandboxEnforcement},
+		{"sandbox-allowlist-file", &config.SandboxAllowlistFile},
+		{"sandbox-policy-file", &config.SandboxPolicyFile},
+	}
+	for _, s := range scalars {
+		if err := expandStr(s.field, s.ptr); err != nil {
+			return err
 		}
 	}
-	expandNillable := func(ns *nillable.NillableString) {
-		if ns.IsSet() {
-			v := ilist.ExpandEnv(ns.ValueOrPanic())
-			*ns = nillable.NewNillableString(v)
+
+	nillables := []struct {
+		field string
+		ptr   *nillable.NillableString
+	}{
+		{"code", &config.Code},
+		{"version", &config.Version},
+		{"config", &config.Config},
+	}
+	for _, n := range nillables {
+		if err := expandNillable(n.field, n.ptr); err != nil {
+			return err
 		}
 	}
 
-	// General
-	expandNillable(&config.Code)
-	expandNillable(&config.Version)
-	expandNillable(&config.Config)
-
-	// Image
-	expandStr(&config.Dockerfile)
-	expandStr(&config.Boothfile)
-	expandStr(&config.Image)
-	expandStr(&config.Variant)
-
-	// Runtime
-	expandStr(&config.ProjectName)
-	expandStr(&config.HostUID)
-	expandStr(&config.HostGID)
-	expandStr(&config.Timezone)
-
-	// Container
-	expandStr(&config.Name)
-	expandStr(&config.Port)
-	expandStr(&config.EnvFile)
-	expandStr(&config.Startup)
-
-	// Sandbox
-	expandStr(&config.SandboxMode)
-	expandStr(&config.SandboxEnforcement)
-	expandStr(&config.SandboxAllowlistFile)
-	expandStr(&config.SandboxPolicyFile)
+	return nil
 }
 
 type AppConfig struct {

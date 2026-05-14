@@ -62,7 +62,10 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 
 	readFromEnvVars(boundary, &context)
 	readFromToml(boundary, &context, configExplicitlySet)
-	context.Config.ExpandEnvScalars()
+	if err := context.Config.ExpandEnvScalars(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 	readFromArgs(boundary, &context, ilist.NewListFromSlice(args.Slice()[1:]))
 	validateConfig(&context.Config)
 	resolvePassword(&context.Config)

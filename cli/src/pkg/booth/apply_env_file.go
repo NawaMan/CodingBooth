@@ -9,21 +9,31 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/shellexpand"
 )
 
 // ApplyEnvFile applies environment file configuration and returns updated AppContext.
-// When .booth/.env exists, it is always included first (must be gitignored).
-// An explicit env-file (from config or CLI) is included second, so its values take
-// priority over .env on conflicts.
+//
+// When .booth/.env exists it is always included first (must be gitignored).
+// An explicit env-file (from config or CLI) is included second, so its values
+// take priority over .env on conflicts.
+//
+// Both sources are parsed and expanded by booth (see docs/BOOTH_VARS.md) and
+// the resulting key/value pairs are written to a temp file under
+// .booth/.tmp/ that is handed to docker via --env-file. Docker does not
+// support $VAR / ~ substitution on --env-file values, so the expansion is
+// done by booth before docker sees the file.
+//
 // Note: .env in the project root is NOT auto-detected — it belongs to the application.
 func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
+	codeDir := ctx.Code()
 
 	// Step 1: Apply .booth/.env if it exists (always included, independent of env-file setting)
-	codeDir := ctx.Code()
 	if codeDir != "" {
 		boothEnvFile := filepath.Join(codeDir, ".booth", ".env")
 		if fileExists(boothEnvFile) {
@@ -31,9 +41,14 @@ func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)
 			}
-			builder.CommonArgs.Append(ilist.NewList[string]("--env-file", boothEnvFile))
+			finalPath := mustPrepareExpandedEnvFile(ctx, boothEnvFile, codeDir, "booth")
+			builder.CommonArgs.Append(ilist.NewList[string]("--env-file", finalPath))
 			if ctx.Verbose() {
-				fmt.Printf("Using booth env: %s\n", boothEnvFile)
+				if finalPath == boothEnvFile {
+					fmt.Printf("Using booth env: %s\n", boothEnvFile)
+				} else {
+					fmt.Printf("Using booth env: %s (expanded → %s)\n", boothEnvFile, finalPath)
+				}
 			}
 		}
 	}
@@ -56,13 +71,65 @@ func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 			os.Exit(1)
 		}
 
-		builder.CommonArgs.Append(ilist.NewList[string]("--env-file", containerEnvFile))
+		finalPath := mustPrepareExpandedEnvFile(ctx, containerEnvFile, codeDir, "user")
+		builder.CommonArgs.Append(ilist.NewList[string]("--env-file", finalPath))
 		if ctx.Verbose() {
-			fmt.Printf("Using env-file: %s\n", containerEnvFile)
+			if finalPath == containerEnvFile {
+				fmt.Printf("Using env-file: %s\n", containerEnvFile)
+			} else {
+				fmt.Printf("Using env-file: %s (expanded → %s)\n", containerEnvFile, finalPath)
+			}
 		}
 	}
 
 	return builder.Build()
+}
+
+// mustPrepareExpandedEnvFile parses src, expands values with booth's
+// bash-like rules, and writes the expanded result to a temp file under
+// codeDir/.booth/.tmp/. Returns the path to the temp file. On parse or
+// expansion error, prints a source-located message and exits non-zero
+// before any docker invocation.
+//
+// In dryrun mode the original src path is returned unchanged (booth still
+// parses and validates so that errors surface), and no temp file is
+// written.
+func mustPrepareExpandedEnvFile(ctx appctx.AppContext, src, codeDir, label string) string {
+	entries, err := shellexpand.ParseEnvFile(src)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	expanded, err := shellexpand.ExpandEntries(entries, shellexpand.DefaultLookup, src)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	// Dryrun: keep the original path so the printed docker command is
+	// stable and inspectable. We still validated the file above.
+	if ctx.Dryrun() {
+		return src
+	}
+
+	// Without a codeDir we have no .booth/.tmp/ to write into.
+	if codeDir == "" {
+		return src
+	}
+
+	tmpDir := filepath.Join(codeDir, ".booth", ".tmp")
+	if err := os.MkdirAll(tmpDir, 0755); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to create %s: %v\n", tmpDir, err)
+		os.Exit(1)
+	}
+
+	name := fmt.Sprintf("env-%s-%d.expanded", label, time.Now().UnixNano())
+	dst := filepath.Join(tmpDir, name)
+	if err := os.WriteFile(dst, []byte(shellexpand.FormatEnvFile(expanded)), 0600); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to write %s: %v\n", dst, err)
+		os.Exit(1)
+	}
+	return dst
 }
 
 // checkBoothEnvGitignored verifies that .booth/.env is gitignored.

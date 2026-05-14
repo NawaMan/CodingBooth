@@ -125,6 +125,8 @@ See [Environment Variables](#environment-variables) for the full guide on passin
 
 There are several ways to pass environment variables into the booth container, each suited to different use cases.
 
+> Values written in `.booth/.env`, `config.toml`, and `CB_*` env vars are resolved by booth with a bash-like rule set (`$VAR`, `${VAR:-default}`, `${VAR:?required}`, `~`, `"..."` / `'...'`). See [Variable Expansion](BOOTH_VARS.md) for the full rules and worked examples.
+
 ### At a Glance
 
 | Method | Where | When Applied | Committed to Git? | Best For |
