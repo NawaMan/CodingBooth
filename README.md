@@ -6,6 +6,8 @@
 
 **CodingBooth** delivers fully reproducible, isolated development environments — anywhere, on any machine.
 
+> 🌐 **New here? Start at [codingbooth.io](https://codingbooth.io/)** for a guided tour — demo of the Snake-in-Zig and config TUI walkthroughs, the variant lineup, and a three-step Quick Try. This README is the long-form reference; the site is the friendlier first read.
+
 
 ## Why CodingBooth?
 
@@ -45,7 +47,7 @@ CodingBooth provides reproducible, zero-friction development environments for:
 - **Researchers and Academics**: Pause and resume work months later with guaranteed environment consistency—no rebuilding necessary.
 - **Solo Developers and Hobbyists**: Create portable, self-contained workspaces that run anywhere without bloating your host system with less-used toolchains.
 
-Ready to try it? Check out the [Quick Try](#quick-try) section!
+Ready to try it? Browse the demos at [codingbooth.io](https://codingbooth.io/) or jump straight to the [Quick Try](#quick-try) section below.
 
 ## Support and Requirements
 
