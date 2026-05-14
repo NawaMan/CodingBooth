@@ -217,6 +217,58 @@
             border-radius: 10px;
             border: 1px solid var(--border);
             background: var(--bg-elev);
+            cursor: zoom-in;
+        }
+
+        .lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 6, 21, 0.92);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 32px;
+            z-index: 100;
+            cursor: zoom-out;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+
+        .lightbox.is-open {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lightbox img {
+            max-width: 100%;
+            max-height: 100%;
+            display: block;
+            border-radius: 8px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            background: transparent;
+            border: 1px solid var(--fg-muted);
+            color: var(--fg);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 22px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: inherit;
+        }
+
+        .lightbox-close:hover {
+            border-color: var(--accent);
+            color: var(--accent);
         }
 
         .more-card .more-text {
@@ -238,6 +290,32 @@
             display: inline-block;
             margin-top: 16px;
             font-size: 14px;
+        }
+
+        .top-link {
+            display: inline-block;
+            margin-top: 16px;
+            font-size: 13px;
+            color: var(--fg-muted);
+        }
+
+        .top-link:hover {
+            color: var(--accent);
+            text-decoration: none;
+        }
+
+        .more-link + .top-link {
+            margin-left: 14px;
+            padding-left: 14px;
+            border-left: 1px solid var(--border);
+        }
+
+        section:nth-of-type(even) .top-link {
+            color: var(--light-fg-muted);
+        }
+
+        section:nth-of-type(even) .more-link + .top-link {
+            border-left-color: var(--light-border);
         }
 
         .more-mock {
@@ -480,12 +558,42 @@
 
         .toc h2 {
             font-size: 18px;
-            margin: 0 0 16px;
+            margin: 0 0 12px;
             color: var(--fg-muted);
             font-weight: 600;
             letter-spacing: 0.04em;
             text-transform: uppercase;
             text-align: center;
+        }
+
+        .toc-sort {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin: 0 0 18px;
+            font-size: 12.5px;
+        }
+
+        .toc-sort button {
+            background: transparent;
+            border: 1px solid transparent;
+            color: var(--fg-muted);
+            cursor: pointer;
+            font-family: inherit;
+            font-size: inherit;
+            padding: 3px 10px;
+            border-radius: 999px;
+            transition: color 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+        }
+
+        .toc-sort button:hover {
+            color: var(--accent);
+        }
+
+        .toc-sort button.active {
+            color: var(--fg);
+            background: rgba(252, 150, 47, 0.16);
+            border-color: rgba(252, 150, 47, 0.35);
         }
 
         .toc-grid {
@@ -588,6 +696,10 @@
     <section class="toc">
         <div class="container">
             <h2>On this page</h2>
+            <div class="toc-sort">
+                <button type="button" data-sort="natural" class="active">Reading order</button>
+                <button type="button" data-sort="alpha">A → Z</button>
+            </div>
             <div class="toc-grid">
                 <a href="#how-it-works">How it works</a>
                 <a href="#wrapper">The wrapper</a>
@@ -1088,6 +1200,9 @@
         <div class="container">
             <h2>booth expose</h2>
             <div class="more-card">
+                <div class="more-figure">
+                    <img src="images/Booth-Expose.png" alt="booth expose: runtime TCP tunnel from host to container">
+                </div>
                 <div class="more-mock">
                     <span class="comment"># Inside the booth, after starting a server on a new port:</span><br>
                     <span class="prompt">$</span> booth--expose 8080<br>
@@ -1296,6 +1411,11 @@
         </div>
     </section>
 
+    <div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Image preview">
+        <button type="button" class="lightbox-close" id="lightboxClose" aria-label="Close preview">×</button>
+        <img id="lightboxImg" alt="">
+    </div>
+
     <footer>
         <div class="container">
             <div class="footer-links">
@@ -1422,6 +1542,69 @@
                 refresh();
                 video.addEventListener('timeupdate', refresh);
                 video.addEventListener('seeked', refresh);
+            });
+        })();
+
+        (function () {
+            const grid = document.querySelector('.toc-grid');
+            const sorters = document.querySelectorAll('.toc-sort button');
+            if (!grid || !sorters.length) return;
+            const links = Array.from(grid.querySelectorAll('a'));
+            const original = links.slice();
+
+            function apply(mode) {
+                const ordered = mode === 'alpha'
+                    ? [...links].sort((a, b) => a.textContent.localeCompare(b.textContent))
+                    : original;
+                ordered.forEach(a => grid.appendChild(a));
+                sorters.forEach(b => b.classList.toggle('active', b.dataset.sort === mode));
+            }
+
+            sorters.forEach(b => b.addEventListener('click', () => apply(b.dataset.sort)));
+        })();
+
+        (function () {
+            document.querySelectorAll('.more-card').forEach(card => {
+                const link = document.createElement('a');
+                link.href = '#';
+                link.className = 'top-link';
+                link.textContent = '↑ To top';
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                });
+                card.appendChild(link);
+            });
+        })();
+
+        (function () {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightboxImg');
+            const closeBtn = document.getElementById('lightboxClose');
+            if (!lightbox || !lightboxImg) return;
+
+            const open = (src, alt) => {
+                lightboxImg.src = src;
+                lightboxImg.alt = alt || '';
+                lightbox.classList.add('is-open');
+                document.body.style.overflow = 'hidden';
+            };
+            const close = () => {
+                lightbox.classList.remove('is-open');
+                lightboxImg.src = '';
+                document.body.style.overflow = '';
+            };
+
+            document.querySelectorAll('.more-figure img').forEach(img => {
+                img.title = 'Learn more';
+                img.addEventListener('click', () => open(img.src, img.alt));
+            });
+
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox || e.target === closeBtn) close();
+            });
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && lightbox.classList.contains('is-open')) close();
             });
         })();
     </script>

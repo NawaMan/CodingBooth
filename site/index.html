@@ -779,6 +779,11 @@
             height: auto;
             border-radius: 8px;
             border: 1px solid var(--light-border);
+            cursor: zoom-in;
+        }
+
+        .overview-figure .region-hot {
+            cursor: zoom-in;
         }
 
         .region-hot {
@@ -1304,14 +1309,14 @@ cd my-snake
                 <span class="callout-badge">Coming soon</span>
                 <h2>Run CodingBooth Online</h2>
                 <p>
-                    A hosted version with no install — open a URL and you're in your booth.
+                    A hosted version with no install — open a URL and you're in your booth.<br />
                     No Docker on your machine, no setup, just code.
                 </p>
                 <p>Want to know when it's ready?</p>
                 <div class="ctas" style="margin-top: 4px;">
                     <a class="btn btn-primary" href="https://early.codingbooths.online/" target="_blank"
                         rel="noopener">Get notified by email</a>
-                    <a class="btn" href="#connect">Or reach out directly</a>
+                    <a class="btn" href="#community">Or reach out directly</a>
                 </div>
             </div>
         </div>
@@ -1516,7 +1521,22 @@ cd my-snake
             };
 
             document.querySelectorAll('.variant-card img').forEach(img => {
+                img.title = 'Learn more';
                 img.addEventListener('click', () => open(img.src, img.alt));
+            });
+
+            document.querySelectorAll('.overview-figure img').forEach(img => {
+                img.title = 'Learn more';
+                img.addEventListener('click', () => open(img.src, img.alt));
+            });
+
+            document.querySelectorAll('.overview-figure .region-hot').forEach(btn => {
+                btn.title = 'Learn more';
+                btn.addEventListener('click', () => {
+                    const figure = btn.closest('.overview-figure');
+                    const img = figure && figure.querySelector('img');
+                    if (img) open(img.src, img.alt);
+                });
             });
 
             lightbox.addEventListener('click', (e) => {
