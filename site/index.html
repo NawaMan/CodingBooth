@@ -554,6 +554,18 @@
             border-radius: 3px;
         }
 
+        .variant-card .desc {
+            margin: 12px 0 0;
+            font-size: 13.5px;
+            line-height: 1.5;
+            color: var(--fg-muted);
+            text-align: left;
+        }
+
+        .section-light .variant-card .desc {
+            color: var(--light-fg-muted);
+        }
+
         .quicktry-list {
             counter-reset: step;
             list-style: none;
@@ -1010,7 +1022,76 @@
         </div>
     </section>
 
-    <section id="demo" class="section-light">
+    <section id="variants" class="section-light">
+        <div class="container">
+            <h2>Pick Your UI (Variants)</h2>
+            <p class="lead">
+                Same booth, six different ways to drive it. A <strong>variant</strong> only changes the UI —
+                the container, your code, your toolchain, and your <code>.booth/</code> config stay identical.
+                Pick a shell when you need a prompt, an IDE when you want autocomplete, a notebook for
+                experiments, or a full Linux desktop for windowed apps. Switch with a single
+                <code>--variant</code> flag — no separate environment.
+            </p>
+            <div class="variants-grid">
+                <div class="variant-card">
+                    <img src="images/Booth-Base.png" alt="Base variant">
+                    <div class="body">
+                        <div class="name">Base</div>
+                        <code>booth --variant base</code>
+                        <p class="desc">Minimal browser terminal (ttyd) plus the baseline toolset.
+                            Lightweight starting point for quick CLI work — or a foundation to extend.</p>
+                    </div>
+                </div>
+                <div class="variant-card">
+                    <img src="images/Booth-Bash.png" alt="Terminal variant">
+                    <div class="body">
+                        <div class="name">Terminal</div>
+                        <code>booth --variant terminal</code>
+                        <p class="desc">Skip the browser — drop straight into the booth's shell in your
+                            host terminal. Shortcut for <code>booth -- bash</code>.</p>
+                    </div>
+                </div>
+                <div class="variant-card">
+                    <img src="images/Booth-NoteBook.png" alt="Notebook variant">
+                    <div class="body">
+                        <div class="name">Jupyter Notebook</div>
+                        <code>booth --variant notebook</code>
+                        <p class="desc">JupyterLab with multi-language kernels (Python, Bash, Java, more).
+                            Ideal for experiments, data work, and runnable tutorials.</p>
+                    </div>
+                </div>
+                <div class="variant-card">
+                    <img src="images/Booth-CodeServer.png" alt="Code Server variant">
+                    <div class="body">
+                        <div class="name">VS Code (codeserver)</div>
+                        <code>booth --variant codeserver</code>
+                        <p class="desc">Full browser VS Code with extensions, Git, and an integrated
+                            terminal. Your usual editor without installing anything locally.</p>
+                    </div>
+                </div>
+                <div class="variant-card">
+                    <img src="images/Booth-XFCE.png" alt="XFCE Desktop variant">
+                    <div class="body">
+                        <div class="name">XFCE Desktop</div>
+                        <code>booth --variant desktop-xfce</code>
+                        <p class="desc">A complete Linux desktop in your browser via noVNC. Run native
+                            IDEs (IntelliJ, PyCharm, Eclipse, KiCad) and any windowed app.</p>
+                    </div>
+                </div>
+                <div class="variant-card">
+                    <img src="images/Booth-KDE.png" alt="KDE Desktop variant">
+                    <div class="body">
+                        <div class="name">KDE Desktop</div>
+                        <code>booth --variant desktop-kde</code>
+                        <p class="desc">Same idea as XFCE but with KDE Plasma — a richer desktop feel if
+                            that's your taste.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="demo">
         <div class="container demo">
             <h2>Demo!</h2>
             <p class="lead">A Snake game in Zig — built and run inside the booth on a host that has no Zig toolchain
@@ -1060,57 +1141,6 @@
             </ul>
             <p class="caption"><a href="https://youtu.be/Rvv3UcOqv3c" target="_blank" rel="noopener">Watch the full demo
                     on YouTube →</a></p>
-        </div>
-    </section>
-
-    <section id="variants">
-        <div class="container">
-            <h2>Pick Your UI</h2>
-            <p class="lead">Same underlying environment, six different presentations.</p>
-            <div class="variants-grid">
-                <div class="variant-card">
-                    <img src="images/Booth-Base.png" alt="Base variant">
-                    <div class="body">
-                        <div class="name">Base</div>
-                        <code>booth --variant base</code>
-                    </div>
-                </div>
-                <div class="variant-card">
-                    <img src="images/Booth-Bash.png" alt="Terminal variant">
-                    <div class="body">
-                        <div class="name">Terminal</div>
-                        <code>booth --variant terminal</code>
-                    </div>
-                </div>
-                <div class="variant-card">
-                    <img src="images/Booth-NoteBook.png" alt="Notebook variant">
-                    <div class="body">
-                        <div class="name">Jupyter Notebook</div>
-                        <code>booth --variant notebook</code>
-                    </div>
-                </div>
-                <div class="variant-card">
-                    <img src="images/Booth-CodeServer.png" alt="Code Server variant">
-                    <div class="body">
-                        <div class="name">VS Code (codeserver)</div>
-                        <code>booth --variant codeserver</code>
-                    </div>
-                </div>
-                <div class="variant-card">
-                    <img src="images/Booth-XFCE.png" alt="XFCE Desktop variant">
-                    <div class="body">
-                        <div class="name">XFCE Desktop</div>
-                        <code>booth --variant desktop-xfce</code>
-                    </div>
-                </div>
-                <div class="variant-card">
-                    <img src="images/Booth-KDE.png" alt="KDE Desktop variant">
-                    <div class="body">
-                        <div class="name">KDE Desktop</div>
-                        <code>booth --variant desktop-kde</code>
-                    </div>
-                </div>
-            </div>
         </div>
     </section>
 
@@ -1233,7 +1263,7 @@ cd my-snake
                         <li><strong>Discussions:</strong> Have a creative idea, workflow, or enhancement to
                             share? Open an issue or discussion — I'd love to hear it.</li>
                         <li><strong>Direct Contact:</strong> Prefer to reach out directly? Feel free to
-                            contact me through any of the links below.</li>
+                            contact me through any of the links in the "Contact Me" section (on the right).</li>
                     </ul>
                 </div>
                 <div class="why-card">
@@ -1247,8 +1277,8 @@ cd my-snake
                     <p>Your encouragement keeps this project active — and might even help with my kids'
                         college fund.</p>
                 </div>
-                <div class="why-card" id="connect">
-                    <h3>Connect</h3>
+                <div class="why-card" id="contact-me">
+                    <h3>Contact Me</h3>
                     <p>Stay in touch or follow updates, insights, and development notes:</p>
                     <ul>
                         <li><strong>Twitter/X:</strong> <a href="https://x.com/nawaman">@nawaman</a></li>
