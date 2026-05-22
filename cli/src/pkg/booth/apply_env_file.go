@@ -18,15 +18,17 @@ import (
 
 // ApplyEnvFile applies environment file configuration and returns updated AppContext.
 //
-// When .booth/.env exists it is always included first (must be gitignored).
-// An explicit env-file (from config or CLI) is included second, so its values
-// take priority over .env on conflicts.
+// Layering order (each layer becomes a separate --env-file arg; on a key
+// collision Docker honors the rightmost --env-file, so later layers win):
+//  1. .booth/.env                — base, always included if present (must be gitignored)
+//  2. .booth/.env--<profile>     — one per resolved profile, in apply order
+//  3. user-supplied --env-file   — explicit override, applied last
 //
-// Both sources are parsed and expanded by booth (see docs/BOOTH_VARS.md) and
-// the resulting key/value pairs are written to a temp file under
-// .booth/.tmp/ that is handed to docker via --env-file. Docker does not
-// support $VAR / ~ substitution on --env-file values, so the expansion is
-// done by booth before docker sees the file.
+// Profiles and --env-file are mutually exclusive (enforced at init), so in
+// practice layers 2 and 3 do not coexist.
+//
+// All sources are parsed and expanded by booth (see docs/BOOTH_VARS.md) and
+// written to temp files under .booth/.tmp/ before being handed to Docker.
 //
 // Note: .env in the project root is NOT auto-detected — it belongs to the application.
 func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
@@ -53,7 +55,30 @@ func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 		}
 	}
 
-	// Step 2: Apply user's explicit env-file (if configured)
+	// Step 2: Apply per-profile .env--<name> files in apply order.
+	for _, p := range ctx.Profiles() {
+		if p.EnvPath == "" {
+			continue
+		}
+		if !fileExists(p.EnvPath) {
+			// Discover already verified existence, but guard against
+			// concurrent removal between init and ApplyEnvFile.
+			fmt.Fprintf(os.Stderr, "Error: profile env file disappeared: %s\n", p.EnvPath)
+			os.Exit(1)
+		}
+		label := "profile-" + p.Name
+		finalPath := mustPrepareExpandedEnvFile(ctx, p.EnvPath, codeDir, label)
+		builder.CommonArgs.Append(ilist.NewList[string]("--env-file", finalPath))
+		if ctx.Verbose() {
+			if finalPath == p.EnvPath {
+				fmt.Printf("Using profile env (%s): %s\n", p.Name, p.EnvPath)
+			} else {
+				fmt.Printf("Using profile env (%s): %s (expanded → %s)\n", p.Name, p.EnvPath, finalPath)
+			}
+		}
+	}
+
+	// Step 3: Apply user's explicit env-file (if configured)
 	containerEnvFile := ctx.EnvFile()
 
 	// Respect the "not used" token

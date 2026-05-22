@@ -99,7 +99,7 @@ func RunInitializeAppContext(test *testing.T, input TestInput) TestOutcome {
 		}
 
 		key := kv[:eq]
-		if !strings.HasPrefix(key, "CB_") {
+		if !strings.HasPrefix(key, "CB_") && !strings.HasPrefix(key, "BOOTH_") {
 			continue
 		}
 

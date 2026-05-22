@@ -17,6 +17,7 @@ import (
 	"golang.org/x/term"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/booth/profile"
 	"github.com/nawaman/codingbooth/src/pkg/defaults"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/nillable"
@@ -59,6 +60,11 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 			context.Config.Config = nillable.NewNillableString(configFile)
 		}
 	}
+
+	// Resolve --profile / BOOTH_PROFILES against the .booth/ directory.
+	// This must run after --code is defaulted (Discover needs the code path)
+	// and before TOML loading (which layers profiles on top of the base).
+	resolveAndStoreProfiles(args, &context, configExplicitlySet)
 
 	readFromEnvVars(boundary, &context)
 	readFromToml(boundary, &context, configExplicitlySet)
@@ -334,6 +340,8 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 		case "--config":
 			i += 2
 		case "--code":
+			i += 2
+		case "--profile":
 			i += 2
 		case "--verbose":
 			i++
@@ -623,25 +631,102 @@ func readFromEnvVars(boundary InitializeAppContextBoundary, context *appctx.AppC
 // readFromToml reads configuration from a TOML file and populates the config (overriding existing values).
 // It preserves verbose, dryrun, code, and config.
 // If configExplicitlySet is true, the config file must exist. Otherwise, it's optional.
+//
+// After loading the base config.toml, any resolved profiles (stored on the
+// builder by resolveAndStoreProfiles) are layered on top via MergeProfileToml,
+// in order. Scalars from later profiles overwrite earlier ones; array fields
+// (CommonArgs/BuildArgs/RunArgs/Cmds) concat-and-dedup.
 func readFromToml(boundary InitializeAppContextBoundary, context *appctx.AppContextBuilder, configExplicitlySet bool) {
-	if !context.Config.Config.IsSet() {
+	runPreserveCodeAndConfig(context, func() {
+		// Base config.toml — same behavior as before.
+		if context.Config.Config.IsSet() {
+			cfgFile := context.Config.Config.ValueOrPanic()
+			if _, err := os.Stat(cfgFile); err != nil {
+				if !os.IsNotExist(err) {
+					panic(fmt.Errorf("failed to stat config file %s: %w", cfgFile, err))
+				}
+				// Only panic if the config file was explicitly set by the user
+				if configExplicitlySet {
+					panic(fmt.Errorf("config file %s does not exist", cfgFile))
+				}
+			} else {
+				if err := appctx.ReadFromToml(cfgFile, &context.Config); err != nil {
+					panic(fmt.Errorf("failed to read toml config: %w", err))
+				}
+			}
+		}
+
+		// Profile overlays — each one's config.toml (if any) merged in order.
+		for _, p := range context.Profiles {
+			if p.ConfigPath == "" {
+				continue
+			}
+			if err := appctx.MergeProfileToml(p.ConfigPath, &context.Config); err != nil {
+				panic(fmt.Errorf("failed to merge profile %q config: %w", p.Name, err))
+			}
+		}
+	})
+}
+
+// resolveAndStoreProfiles inspects args and BOOTH_PROFILES to resolve the
+// ordered list of profiles for this run. It stores the result on the
+// builder (as []ProfileEntry) and enforces the mutual-exclusion rules:
+//
+//   - --profile (or BOOTH_PROFILES) combined with explicit --config is rejected.
+//   - --profile (or BOOTH_PROFILES) combined with --env-file is rejected.
+//
+// On any validation failure it prints a user-facing error and exits non-zero.
+func resolveAndStoreProfiles(args ilist.List[string], context *appctx.AppContextBuilder, configExplicitlySet bool) {
+	codePath := context.Config.Code.ValueOr("")
+	available, err := profile.Discover(codePath)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: failed to discover profiles under .booth/: %v\n", err)
+		os.Exit(1)
+	}
+
+	envValue := os.Getenv("BOOTH_PROFILES")
+	resolved, err := profile.Resolve(args, envValue, available)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+	if len(resolved) == 0 {
 		return
 	}
 
-	runPreserveCodeAndConfig(context, func() {
-		cfgFile := context.Config.Config.ValueOrPanic()
-		if _, err := os.Stat(cfgFile); os.IsNotExist(err) {
-			// Only panic if the config file was explicitly set by the user
-			if configExplicitlySet {
-				panic(fmt.Errorf("config file %s does not exist", cfgFile))
-			}
-			// If it's the default config file, just skip reading it
-			return
+	// Mutual exclusion. We only check explicit CLI presence — env vars
+	// like CB_CONFIG / CB_ENV_FILE may persist in the shell across
+	// projects and are not part of the per-invocation declaration.
+	if configExplicitlySet {
+		fmt.Fprintln(os.Stderr, "Error: --profile / BOOTH_PROFILES cannot be combined with --config; pick one.")
+		os.Exit(1)
+	}
+	if hasArgFlag(args, "--env-file") {
+		fmt.Fprintln(os.Stderr, "Error: --profile / BOOTH_PROFILES cannot be combined with --env-file; pick one.")
+		os.Exit(1)
+	}
+
+	entries := make([]appctx.ProfileEntry, 0, len(resolved))
+	for _, name := range resolved {
+		f := available[name]
+		entries = append(entries, appctx.ProfileEntry{
+			Name:       name,
+			ConfigPath: f.ConfigPath,
+			EnvPath:    f.EnvPath,
+		})
+	}
+	context.Profiles = entries
+}
+
+// hasArgFlag reports whether flag appears as an arg in args. Does not
+// validate that a value follows.
+func hasArgFlag(args ilist.List[string], flag string) bool {
+	for i := 0; i < args.Length(); i++ {
+		if args.At(i) == flag {
+			return true
 		}
-		if err := appctx.ReadFromToml(cfgFile, &context.Config); err != nil {
-			panic(fmt.Errorf("failed to read toml config: %w", err))
-		}
-	})
+	}
+	return false
 }
 
 // readVerboseDryrunConfigFileAndCode parses arguments looking for config file and verbosity settings.

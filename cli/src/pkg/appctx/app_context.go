@@ -29,10 +29,13 @@ type AppContext struct {
 	buildArgs  ilist.List[ilist.List[string]]
 	runArgs    ilist.List[ilist.List[string]]
 	cmds       ilist.List[ilist.List[string]]
+
+	profiles []ProfileEntry
 }
 
 // NewAppContext creates a new immutable AppContext with defaults matching booth initialization.
 func NewAppContext(builder *AppContextBuilder) AppContext {
+	profilesCopy := append([]ProfileEntry(nil), builder.Profiles...)
 	return AppContext{
 		values:     *builder.Clone(),
 		dryrun:     builder.Config.Dryrun.ValueOr(false),
@@ -44,6 +47,7 @@ func NewAppContext(builder *AppContextBuilder) AppContext {
 		buildArgs:  builder.BuildArgs.ToList(),
 		runArgs:    builder.RunArgs.ToList(),
 		cmds:       builder.Cmds.ToList(),
+		profiles:   profilesCopy,
 	}
 }
 
@@ -140,6 +144,14 @@ func (ctx AppContext) BuildArgs() ilist.List[ilist.List[string]]  { return ctx.b
 func (ctx AppContext) RunArgs() ilist.List[ilist.List[string]]    { return ctx.runArgs }
 func (ctx AppContext) Cmds() ilist.List[ilist.List[string]]       { return ctx.cmds }
 
+// Profiles returns the resolved profile entries in apply order
+// (later entries override earlier ones). Empty when no profile is selected.
+func (ctx AppContext) Profiles() []ProfileEntry {
+	out := make([]ProfileEntry, len(ctx.profiles))
+	copy(out, ctx.profiles)
+	return out
+}
+
 // ToBuilder converts an immutable AppContext back into a mutable builder.
 func (ctx AppContext) ToBuilder() *AppContextBuilder {
 	b := ctx.values.Clone()
@@ -148,6 +160,8 @@ func (ctx AppContext) ToBuilder() *AppContextBuilder {
 	b.BuildArgs = ctx.buildArgs.ToBuilder()
 	b.RunArgs = ctx.runArgs.ToBuilder()
 	b.Cmds = ctx.cmds.ToBuilder()
+
+	b.Profiles = append([]ProfileEntry(nil), ctx.profiles...)
 
 	return b
 }

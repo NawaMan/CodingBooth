@@ -8,6 +8,15 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
+// ProfileEntry is one resolved profile, in the order it should be applied.
+// Either ConfigPath or EnvPath may be empty if the corresponding file is
+// absent on disk for that profile.
+type ProfileEntry struct {
+	Name       string
+	ConfigPath string
+	EnvPath    string
+}
+
 // AppContextBuilder is a mutable builder for constructing AppContext instances.
 type AppContextBuilder struct {
 
@@ -21,6 +30,10 @@ type AppContextBuilder struct {
 	ScriptName string
 	ScriptDir  string
 	LibDir     string
+
+	// Profiles resolved from --profile / BOOTH_PROFILES, in apply order.
+	// Empty when no profile is selected.
+	Profiles []ProfileEntry
 
 	// derived from variant
 	HasNotebook bool
@@ -57,16 +70,20 @@ func (builder *AppContextBuilder) Build() AppContext {
 
 // Clone the content of the app context builder.
 func (builder *AppContextBuilder) Clone() *AppContextBuilder {
-	copy := *builder
+	copied := *builder
 
-	copy.CommonArgs = cloneAppendableList(builder.CommonArgs)
-	copy.BuildArgs = cloneAppendableList(builder.BuildArgs)
-	copy.RunArgs = cloneAppendableList(builder.RunArgs)
-	copy.Cmds = cloneAppendableList(builder.Cmds)
+	copied.CommonArgs = cloneAppendableList(builder.CommonArgs)
+	copied.BuildArgs = cloneAppendableList(builder.BuildArgs)
+	copied.RunArgs = cloneAppendableList(builder.RunArgs)
+	copied.Cmds = cloneAppendableList(builder.Cmds)
 
-	copy.Config = *builder.Config.Clone()
+	copied.Config = *builder.Config.Clone()
 
-	return &copy
+	if builder.Profiles != nil {
+		copied.Profiles = append([]ProfileEntry(nil), builder.Profiles...)
+	}
+
+	return &copied
 }
 
 // Clone the content of the appendable list.
