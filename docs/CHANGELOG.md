@@ -4,6 +4,30 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- "Wrapper not found" error message shortened to three lines and points at codingbooth.io
+  - Dropped the redundant "What happened:" sentence and the two-paragraph install hint
+  - The "More Information" link now resolves to `https://codingbooth.io/troubleshoot/CBT0001-booth-wrapper-not-found.md` (the doc was moved from `docs/troubleshoot/` to `site/troubleshoot/` so the codingbooth.io host serves it directly)
+  - Final line is a single actionable hint: `To make this directory a booth project, run: booth install`
+- `booth uninstall` gets scope flags for incremental removal
+  - `booth uninstall` (no flags) keeps current behavior — removes only the project binary association (`.booth/tools/` lock + sha + project-local binaries)
+  - `--shared-binary` — also remove the shared-cache binary pinned by this project's lock file (`~/.cache/codingbooth/versions/<v>/`)
+  - `--all-shared-binary` — also remove every version in the shared cache
+  - `--wrapper` — also delete the `./booth` wrapper itself (safe self-delete on Linux/macOS)
+  - `--all` — composite shorthand: shared cache (all versions) + wrapper
+  - `-y` / `--yes` — skip the single all-in-one confirmation prompt; required when stdin isn't a TTY
+  - All scopes compose; one prompt summarises everything before any removal happens
+  - The shell function in `~/.bashrc` / `~/.zshrc` / etc. is **never** touched — when `--wrapper` is used, the success message points the user at the new `# >>> CodingBooth shell function ...` / `# <<< CodingBooth shell function ...` markers and asks them to delete the block manually
+- Shell function bumped to `cb-shell-fn-v3` and now wrapped in explicit BEGIN/END markers
+  - `# >>> CodingBooth shell function (cb-shell-fn-v3) >>>` … `# <<< CodingBooth shell function (cb-shell-fn-v3) <<<` brackets the injected `booth()` definition in rc files
+  - Idempotency detection in `booth shell-config` now greps the BEGIN marker (instead of the troubleshoot URL); the version suffix means future bumps auto-trigger re-injection without `--force`
+  - v2 users (the previous `# cb-shell-fn-v2` comment-only marker) get the new block appended on their next `booth shell-config` via the legacy `# CodingBooth - run …` detection path
+- `booth install` outside a project bootstraps the wrapper in the current directory
+  - Running `booth` from a folder with no booth wrapper in the directory tree previously errored with a "wrapper not found" message and required the user to copy-paste a `curl ... | bash` command from the message — a natural next attempt (`booth install`) was rejected the same way
+  - `booth install` now prompts "install the booth wrapper here?" then (after the wrapper lands) "install the binary now?" — two explicit confirmations, no implicit network fetch
+  - `booth install -y` skips both prompts and runs `https://codingbooth.io/install.sh | bash` directly (wrapper + binary + `shell-config`)
+  - Refuses to clobber if a non-executable file named `booth` already exists in the current directory; refuses to prompt if stdin isn't a TTY (must use `-y`)
+  - Error-message URL and `docs/troubleshoot/CBT0001-booth-wrapper-not-found.md` updated to point at `https://codingbooth.io/install.sh` (the canonical installer)
+  - Shell-function detection in `booth shell-config` switched from grepping the troubleshoot URL to a `# cb-shell-fn-v2` version stamp, so existing users get the new install branch on next `booth shell-config` (no `--force` needed) — they still need to re-source their rc file once for the new function to take effect in the current shell
 - Bash-like variable expansion for `.booth/.env`, `config.toml`, and `CB_*` env vars (see `docs/BOOTH_VARS.md`)
   - `$VAR`, `${VAR}`, `${VAR:-default}`, `${VAR:?required-message}`, leading `~`, `\$` / `\\` / `\"` / `\~` escapes, and bash-style `"..."` (expanding) / `'...'` (literal) quoting are now resolved by booth before the value reaches docker
   - `.booth/.env` and `--env-file <path>`: booth now parses the file, expands each value (earlier lines visible to later ones, falling through to host env), and hands docker a `0600` expanded copy under `.booth/.tmp/`. Docker's `--env-file` does not substitute `$VAR` or `~` natively, so without this the values were reaching the container literally

@@ -8,7 +8,7 @@ set -euo pipefail
 source ../common--source.sh
 
 DOCKERFILE=test--dockerfile
-VERSION_TAG=$(cat ../../version.txt)
+VERSION_TAG=$(get_booth_version)
 
 export VERSION_TAG="$VERSION_TAG"
 envsubst '$VERSION_TAG' > "${DOCKERFILE}" <<'EOF'

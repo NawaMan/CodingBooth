@@ -7,7 +7,8 @@ set -euo pipefail
 
 source ../common--source.sh
 
-WORKSPACE="$(mktemp -d)"
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+WORKSPACE="$(mktemp -d "${SCRIPT_DIR}/.cb-restart.XXXXXX")"
 NAME="restart-test-$RANDOM"
 LOG="$0.log"
 

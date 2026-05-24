@@ -22,7 +22,7 @@ fi
 
 HERE="$CURRENT_PATH"
 VERSION="1.2.3"
-CB_VERSION="$(cat ../../version.txt)"
+CB_VERSION="$(get_booth_version)"
 
 export TIMEZONE="America/Toronto"
 

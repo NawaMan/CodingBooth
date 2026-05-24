@@ -8,7 +8,11 @@ Typical message:
 
 ```text
 CodingBooth wrapper not found in this directory tree.
-What happened: booth was installed as a shell function, but no project booth script exists in the current path or parents.
+More Information: https://codingbooth.io/troubleshoot/CBT0001-booth-wrapper-not-found.md
+To make this directory a booth project, run:
+
+  booth install
+
 ```
 
 ## Why this happens
@@ -38,7 +42,14 @@ cd /path/to/project
 3. If the current folder should become a CodingBooth project, install `booth` there:
 
 ```bash
-curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash
+booth install        # prompts before downloading wrapper, then before installing binary
+booth install -y     # skip prompts and install both immediately
+```
+
+Or run the canonical installer directly:
+
+```bash
+curl -fsSL https://codingbooth.io/install.sh | bash
 ```
 
 ## Verify what `booth` resolves to

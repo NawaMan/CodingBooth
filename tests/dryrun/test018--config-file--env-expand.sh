@@ -17,7 +17,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
 fi
 
 HERE="$CURRENT_PATH"
-VERSION="$(cat ../../version.txt)"
+VERSION="$(get_booth_version)"
 
 function realpath() {
   local target="$1"

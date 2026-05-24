@@ -258,7 +258,11 @@ if [[ $# -eq 0 ]]; then COMMAND="run" ; else COMMAND="$1" ; fi
 function Main() {
     ### --- COMMAND DISPATCH --- ###
     case "${COMMAND}" in
-        uninstall)      UninstallBooth               ; exit 0 ; ;;
+        uninstall)
+            shift  # Remove 'uninstall'
+            UninstallBooth "$@"
+            exit 0
+            ;;
         install)
             # Parse --cache= flag
             shift  # Remove 'install'
@@ -441,7 +445,11 @@ Wrapper commands:
   install --cache=local [VER]    Install to .booth/tools/ (project-local)
   update  [VERSION]              Update binary to latest (or specified) version
   update-wrapper [--yes|-y]      Update the 'booth' wrapper script (latest only)
-  uninstall                      Remove project lock file and local binaries
+  uninstall [SCOPES...] [-y]     Remove this project's booth (interactive by default)
+                                 Scopes: --shared-binary       (also this version's shared cache)
+                                         --all-shared-binary   (also every shared cache version)
+                                         --wrapper             (also delete ./booth wrapper)
+                                         --all                 (everything above)
 
   tools-cache list        Show cached binary versions and sizes
   tools-cache clean       Interactively remove cached versions
@@ -479,6 +487,7 @@ EOF
 
 function ShellConfig__print_func() {
     cat <<'EOF'
+# >>> CodingBooth shell function (cb-shell-fn-v3) >>>
 unalias booth 2>/dev/null
 booth() {
     local d="$PWD"
@@ -491,16 +500,67 @@ booth() {
         d="$(dirname "$d")"
     done
 
+    # No wrapper found in this directory tree.
+    # Special case: `booth install [-y]` bootstraps a wrapper into $PWD.
+    if [[ "${1:-}" == "install" ]]; then
+        local _booth_yes="false"
+        local _booth_arg
+        for _booth_arg in "${@:2}"; do
+            case "$_booth_arg" in
+                -y|--yes) _booth_yes="true" ;;
+            esac
+        done
+
+        if [[ "$_booth_yes" == "true" ]]; then
+            curl -fsSL https://codingbooth.io/install.sh | bash
+            return $?
+        fi
+
+        if [[ ! -t 0 ]]; then
+            echo "Error: not connected to a terminal — re-run with -y to skip prompts." >&2
+            return 1
+        fi
+
+        if [[ -e "./booth" ]]; then
+            echo "Error: a file named 'booth' already exists in $PWD but is not executable." >&2
+            echo "Refusing to overwrite. Inspect it manually or remove it first." >&2
+            return 1
+        fi
+
+        local _booth_reply
+        echo "No CodingBooth wrapper found in this directory tree."
+        echo "Install the booth wrapper in: $PWD"
+        printf "Proceed? [y/N] "
+        read -r _booth_reply
+        case "$_booth_reply" in
+            y|Y|yes|YES|Yes) ;;
+            *) echo "Cancelled." ; return 0 ;;
+        esac
+        echo ""
+
+        curl -fsSL -o booth https://github.com/NawaMan/CodingBooth/releases/download/latest/booth || return $?
+        chmod +x booth
+        echo "✓ Wrapper downloaded to: $PWD/booth"
+        echo ""
+
+        printf "Install the CodingBooth binary now? [Y/n] "
+        read -r _booth_reply
+        case "$_booth_reply" in
+            n|N|no|NO|No) echo "Skipped binary install. Run './booth install' later." ; return 0 ;;
+        esac
+        ./booth install
+        return $?
+    fi
+
     echo "CodingBooth wrapper not found in this directory tree." >&2
-    echo "What happened: booth was installed as a shell function, but no project booth script exists in the current path or parents." >&2
+    echo "More Information: https://codingbooth.io/troubleshoot/CBT0001-booth-wrapper-not-found.md" >&2
+    echo "To make this directory a booth project, run:" >&2
     echo "" >&2
-    echo "More Information: " >&2
-    echo "    https://github.com/NawaMan/CodingBooth/blob/latest/docs/troubleshoot/CBT0001-booth-wrapper-not-found.md" >&2
+    echo "  booth install" >&2
     echo "" >&2
-    echo "Install booth in this project folder by running:" >&2
-    echo "> curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash" >&2
     return 127
 }
+# <<< CodingBooth shell function (cb-shell-fn-v3) <<<
 EOF
 }
 
@@ -532,7 +592,9 @@ EOF
         esac
     done
 
-    local booth_info_url="https://github.com/NawaMan/CodingBooth/blob/latest/docs/troubleshoot/CBT0001-booth-wrapper-not-found.md"
+    # Version stamp of the shell function — bump when ShellConfig__print_func() changes
+    # so that existing rc files get re-injected on next `booth shell-config`.
+    local fn_marker="# >>> CodingBooth shell function (cb-shell-fn-v3) >>>"
     local booth_func
     booth_func="$(ShellConfig__print_func)"
 
@@ -558,7 +620,7 @@ EOF
         fi
 
         # Already has the current function (idempotent)
-        if [[ "$force" != "true" ]] && grep -Fq "More Information: $booth_info_url" "$rc_file" 2>/dev/null; then
+        if [[ "$force" != "true" ]] && grep -Fq "$fn_marker" "$rc_file" 2>/dev/null; then
             skipped+=("$rc_file")
             continue
         fi
@@ -764,24 +826,114 @@ ALL_PLATFORMS=(
 )
 
 function UninstallBooth() {
+    local remove_shared_binary=false
+    local remove_all_shared_binary=false
+    local remove_wrapper=false
+    local assume_yes=false
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --shared-binary)     remove_shared_binary=true; shift ;;
+            --all-shared-binary) remove_all_shared_binary=true; shift ;;
+            --wrapper)           remove_wrapper=true; shift ;;
+            --all)               remove_all_shared_binary=true; remove_wrapper=true; shift ;;
+            -y|--yes)            assume_yes=true; shift ;;
+            *) echo "Unknown option: $1" >&2
+               echo "Usage: $0 uninstall [--shared-binary] [--all-shared-binary] [--wrapper] [--all] [-y]" >&2
+               exit 1 ;;
+        esac
+    done
+
     local tools_dir="$TOOLS_DIR"
     local sha_file="$tools_dir/codingbooth.sha256"
     local lock_file="$LOCK_FILE"
 
-    # Remove local binaries if they exist
+    # Read lock version BEFORE removing it (needed for --shared-binary scope).
+    local lock_version=""
+    if [[ -f "$lock_file" ]]; then
+        lock_version=$(grep '^version=' "$lock_file" 2>/dev/null | cut -d= -f2-)
+    fi
+
+    # Build summary of what will be removed (shown in the confirmation prompt).
+    local -a summary=()
+    summary+=("- Project binary association ($tools_dir lock/sha + project-local binaries)")
+    if [[ "$remove_all_shared_binary" == "true" ]]; then
+        summary+=("- ALL shared-cache binaries ($BOOTH_CACHE_DIR/versions/)")
+    elif [[ "$remove_shared_binary" == "true" ]]; then
+        if [[ -n "$lock_version" ]]; then
+            summary+=("- Shared-cache binary for v$lock_version ($BOOTH_CACHE_DIR/versions/$lock_version/)")
+        else
+            summary+=("- Shared-cache binary (no lock file — nothing to remove)")
+        fi
+    fi
+    if [[ "$remove_wrapper" == "true" ]]; then
+        summary+=("- Wrapper script ($SCRIPT_DIR/booth)")
+    fi
+
+    # Confirmation prompt (single prompt, lists everything).
+    if [[ "$assume_yes" != "true" ]]; then
+        if [[ ! -t 0 ]]; then
+            echo "Error: not connected to a terminal — re-run with -y to skip prompts." >&2
+            exit 1
+        fi
+        echo "Uninstall will remove:"
+        for line in "${summary[@]}"; do echo "  $line"; done
+        echo ""
+        printf "Proceed? [y/N] "
+        local reply
+        read -r reply
+        case "$reply" in
+            y|Y|yes|YES|Yes) ;;
+            *) echo "Cancelled." ; exit 0 ;;
+        esac
+        echo ""
+    fi
+
+    # 1. Project binary association (always).
     for platform in "${ALL_PLATFORMS[@]}"; do
         local binary_name
         binary_name=$(get_binary_name "$platform")
         rm -f "$tools_dir/$binary_name"
     done
-
     rm -f "$sha_file" "$lock_file"
-
     rmdir "$tools_dir" 2>/dev/null || true
     rmdir "$BOOTH_DIR" 2>/dev/null || true
+    echo "✓ Removed project binary association."
 
+    # 2. Shared-cache binary.
+    if [[ "$remove_all_shared_binary" == "true" ]]; then
+        ToolsCacheClean --all || true
+    elif [[ "$remove_shared_binary" == "true" ]]; then
+        if [[ -n "$lock_version" ]]; then
+            ToolsCacheClean "$lock_version" || true
+        else
+            echo "(no lock file — nothing to remove from shared cache)"
+        fi
+    fi
+
+    # 3. Wrapper script (self-delete — safe because the script is already mmap'd).
+    if [[ "$remove_wrapper" == "true" ]]; then
+        local wrapper_path="$SCRIPT_DIR/booth"
+        if [[ -f "$wrapper_path" ]]; then
+            rm -f "$wrapper_path"
+            echo "✓ Removed wrapper: $wrapper_path"
+        fi
+    fi
+
+    echo ""
     echo "CodingBooth has been uninstalled from this project."
-    echo "To clean shared cache, run: $0 tools-cache clean"
+
+    # Shell function is left alone — print manual-cleanup instructions when the
+    # user has asked for a wrapper-or-deeper removal.
+    if [[ "$remove_wrapper" == "true" ]]; then
+        echo ""
+        echo "To also remove the booth shell function, manually delete the block between"
+        echo "the '# >>> CodingBooth shell function ...' and '# <<< CodingBooth shell function ...'"
+        echo "markers in any of these files:"
+        echo "  ~/.bashrc  ~/.zshrc  ~/.bash_profile  ~/.profile"
+    elif [[ "$remove_shared_binary" != "true" && "$remove_all_shared_binary" != "true" ]]; then
+        echo "To clean shared cache, run: $0 tools-cache clean"
+    fi
 }
 
 # Format bytes to human-readable size

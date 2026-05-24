@@ -21,7 +21,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
 fi
 
 HERE="$CURRENT_PATH"
-VERSION="$(cat ../../version.txt)"
+VERSION="$(get_booth_version)"
 
 export TIMEZONE="America/Toronto"
 

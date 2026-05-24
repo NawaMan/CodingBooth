@@ -21,7 +21,7 @@ ACTUAL=$(run_coding_booth --dryrun --pull --variant base -- tree -C)
 ACTUAL=$(printf "%s\n" "$ACTUAL" | head -n 3)
 
 HERE="$CURRENT_PATH"
-VERSION="$(cat ../../version.txt)"
+VERSION="$(get_booth_version)"
 
 EXPECT="\
 docker \\

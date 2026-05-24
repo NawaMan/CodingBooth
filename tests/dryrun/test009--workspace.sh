@@ -29,7 +29,7 @@ export TIMEZONE="America/Toronto"
 ACTUAL=$(run_coding_booth --dryrun --code ${WORKSPACE} --variant base -- sleep 1)
 ACTUAL=$(printf "%s\n" "$ACTUAL")
 
-VERSION="$(cat ../../version.txt)"
+VERSION="$(get_booth_version)"
 
 # Notice that there is not `-rm`
 EXPECT="\

@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.51.0 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.52.0 — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -112,7 +112,7 @@ For detailed variant information, aliases, and desktop configuration, see the **
 ### Install CodingBooth
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/NawaMan/CodingBooth/main/install.sh | bash
+curl -fsSL https://codingbooth.io/install.sh | bash
 ```
 
 > **Note:** The `booth` script operates relative to its own location, not the current working directory. You can run `/path/to/project/booth` from anywhere.

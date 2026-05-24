@@ -21,7 +21,7 @@ fi
 ACTUAL=$(run_coding_booth help | head -31)
 
 HERE="$PWD"
-VERSION="$(cat ../../version.txt)"
+VERSION="$(get_booth_version)"
 
 EXPECT="\
 codingbooth $VERSION — launch a Docker-based development booth.

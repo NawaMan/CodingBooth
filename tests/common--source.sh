@@ -81,6 +81,12 @@ run_coding_booth() {
   "$booth_path" "${version_args[@]}" "$@"
 }
 
+# Get the version reported by the booth binary itself, so tests stay correct
+# even when version.txt has been bumped but the binary hasn't been rebuilt yet.
+get_booth_version() {
+  run_coding_booth version 2>/dev/null | tail -1 | sed 's/.*: //'
+}
+
 # capture_codingbooth: run codingbooth, capture stdout, retry once on
 # empty/failed output. Useful inside full-suite runs where rapid container
 # spin-up/down occasionally produces a transient empty result that succeeds

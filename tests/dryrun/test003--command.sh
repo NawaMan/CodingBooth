@@ -25,7 +25,7 @@ export TIMEZONE="America/Toronto"
 ACTUAL=$(run_coding_booth --variant base --dryrun -- tree -C)
 
 HERE="$CURRENT_PATH"
-VERSION="$(cat ../../version.txt)"
+VERSION="$(get_booth_version)"
 
 EXPECT="\
 docker \\

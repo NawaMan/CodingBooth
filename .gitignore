@@ -146,3 +146,5 @@ site/media/tapes/.sandbox/
 site/media/tapes/*.gif
 site/media/tapes/*.mp4
 site/media/tapes/*.webm
+
+.obsidian/
