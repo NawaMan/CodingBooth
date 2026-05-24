@@ -52,7 +52,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.11.0
+VERSION=0.12.0
 VERBOSE="${VERBOSE:-true}"
 
 # Resolve script directory (follow symlinks) so all project paths are location-based.
