@@ -389,8 +389,12 @@ for i in "${!SUITES[@]}"; do
         exit_code=$(cat "$exit_file")
     fi
 
-    # Check for skip (exit 0 but log contains SKIP)
-    if [[ "$exit_code" == "0" ]] && grep -q '^SKIP:' "${LOG_DIR}/${suite}.log" 2>/dev/null; then
+    # Check for skip: only when the suite has SKIP lines AND nothing
+    # actually passed. A suite where some tests SKIP and others PASS
+    # should report as "done", not "skipped".
+    if [[ "$exit_code" == "0" ]] \
+       && grep -q '^SKIP:' "${LOG_DIR}/${suite}.log" 2>/dev/null \
+       && ! grep -qE '^(PASSED:|✅|PASS)' "${LOG_DIR}/${suite}.log" 2>/dev/null; then
         STATUS[$suite]=skipped
     elif [[ "$exit_code" == "0" ]]; then
         STATUS[$suite]=done
@@ -436,7 +440,9 @@ if [[ ${#RETRY_SUITES[@]} -gt 0 && "$STOP_REQUESTED" != true ]]; then
             exit_code=$(cat "$exit_file")
         fi
 
-        if [[ "$exit_code" == "0" ]] && grep -q '^SKIP:' "${LOG_DIR}/${suite}.log" 2>/dev/null; then
+        if [[ "$exit_code" == "0" ]] \
+           && grep -q '^SKIP:' "${LOG_DIR}/${suite}.log" 2>/dev/null \
+           && ! grep -qE '^(PASSED:|✅|PASS)' "${LOG_DIR}/${suite}.log" 2>/dev/null; then
             STATUS[$suite]=skipped
         elif [[ "$exit_code" == "0" ]]; then
             STATUS[$suite]=done
