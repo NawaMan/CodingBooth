@@ -8,11 +8,44 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
 
 // DefaultRepo is the default Docker repository for CodingBooth images.
 const DefaultRepo = "nawaman/codingbooth"
+
+// repoPattern matches a docker repository reference. The repo value flows
+// verbatim into a generated Dockerfile FROM line and a docker buildx -t
+// argument, so we reject anything outside the docker reference grammar —
+// most importantly newlines, whitespace, and shell metacharacters — to
+// block Dockerfile / argument injection.
+var repoPattern = regexp.MustCompile(`^[a-zA-Z0-9][a-zA-Z0-9._:/-]{0,254}$`)
+
+// ValidateRepo returns nil if repo is a syntactically safe docker repository
+// reference. Used by both the AppContext init path and the standalone
+// emit-dockerfile command before the value reaches the compiler.
+func ValidateRepo(repo string) error {
+	if !repoPattern.MatchString(repo) {
+		return fmt.Errorf("%q is not a valid docker repository reference (allowed: [a-zA-Z0-9._:/-], must start alphanumeric, max 255 chars)", repo)
+	}
+	return nil
+}
+
+// RepoFromEnv reads CB_PREBUILD_REPO, validates it, and returns the value.
+// Returns ("", nil) when the env var is unset — callers fall back to
+// DefaultRepo. Returns ("", err) when the env var is set to a malformed
+// value, so callers can surface a clear error before any image is built.
+func RepoFromEnv() (string, error) {
+	repo := os.Getenv("CB_PREBUILD_REPO")
+	if repo == "" {
+		return "", nil
+	}
+	if err := ValidateRepo(repo); err != nil {
+		return "", err
+	}
+	return repo, nil
+}
 
 // DefaultVariant is the default variant when not specified.
 const DefaultVariant = "base"
@@ -53,6 +86,12 @@ type CompilerOptions struct {
 	// detected and skipped with a warning, so users don't pay to re-install
 	// packages that are already baked into the variant base image.
 	Variant string
+
+	// Repo is the Docker repository for the base image used in the generated
+	// FROM line. Empty string falls back to DefaultRepo. Callers must validate
+	// the value before passing it in — the compiler trusts it and splices it
+	// directly into the Dockerfile.
+	Repo string
 }
 
 // variantProvidedSetups maps each variant to the setup scripts its
@@ -170,15 +209,9 @@ func (c *Compiler) Compile(parseResult ParseResult) CompileResult {
 
 // writePrologue writes the fixed Dockerfile prologue.
 func (c *Compiler) writePrologue(sb *strings.Builder) {
-	// Allow CB_PREBUILD_REPO to override the base image repository. Useful for
-	// local development/testing against a locally-tagged image (e.g.
-	// "cb-local/codingbooth") that doesn't exist on Docker Hub — without this,
-	// BuildKit's `# syntax=` frontend resolves the FROM tag to the upstream
-	// registry digest even when the same tag exists locally, silently masking
-	// any locally-rebuilt base image.
-	repo := DefaultRepo
-	if envRepo := os.Getenv("CB_PREBUILD_REPO"); envRepo != "" {
-		repo = envRepo
+	repo := c.options.Repo
+	if repo == "" {
+		repo = DefaultRepo
 	}
 	prologue := fmt.Sprintf(`# syntax=docker/dockerfile:1.7
 ARG BOOTH_VARIANT_TAG=base

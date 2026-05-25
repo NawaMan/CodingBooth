@@ -18,6 +18,7 @@ import (
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/booth/profile"
+	"github.com/nawaman/codingbooth/src/pkg/boothfile"
 	"github.com/nawaman/codingbooth/src/pkg/defaults"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/nillable"
@@ -34,13 +35,13 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	args := boundary.ArgList()
 
 	// Set default values and effective constants
-	context.PrebuildRepo = "nawaman/codingbooth"
-	// CB_PREBUILD_REPO env override — lets developers/tests point booth at a
-	// locally-tagged base image (e.g. "cb-local/codingbooth") that doesn't
-	// exist on Docker Hub, so BuildKit can't silently swap the FROM digest
-	// for the upstream one.
-	if repo := os.Getenv("CB_PREBUILD_REPO"); repo != "" {
+	context.PrebuildRepo = boothfile.DefaultRepo
+	if repo, err := boothfile.RepoFromEnv(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: invalid CB_PREBUILD_REPO: %v\n", err)
+		os.Exit(1)
+	} else if repo != "" {
 		context.PrebuildRepo = repo
+		fmt.Fprintf(os.Stderr, "Info: CB_PREBUILD_REPO=%q overriding default base image repo %q\n", repo, boothfile.DefaultRepo)
 	}
 	context.CbVersion = version
 	context.SetupsDir = "/opt/codingbooth/setups"

@@ -174,6 +174,7 @@ func compileBoothfile(ctx appctx.AppContext, boothfilePath string) string {
 		CustomSetupScripts:   customSetupScripts,
 		CustomInstallScripts: customInstallScripts,
 		Variant:              ctx.Variant(),
+		Repo:                 ctx.PrebuildRepo(),
 	}
 	compiler := boothfile.NewCompilerWithOptions(compilerOpts)
 	compileResult := compiler.Compile(parseResult)

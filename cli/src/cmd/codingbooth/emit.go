@@ -100,6 +100,11 @@ func emitDockerfile() {
 	builtinSetupsDir := boothfile.FindBuiltinSetupsDir()
 	builtinSetupScripts, builtinInstallScripts := boothfile.ScanSetupsDir(builtinSetupsDir)
 
+	repo, err := boothfile.RepoFromEnv()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: invalid CB_PREBUILD_REPO: %v\n", err)
+		os.Exit(1)
+	}
 	compilerOpts := boothfile.CompilerOptions{
 		CustomSetupsDir:      ".booth/setups",
 		HasCustomSetups:      hasCustomSetups,
@@ -107,6 +112,7 @@ func emitDockerfile() {
 		KnownInstallScripts:  builtinInstallScripts,
 		CustomSetupScripts:   customSetupScripts,
 		CustomInstallScripts: customInstallScripts,
+		Repo:                 repo,
 	}
 	compiler := boothfile.NewCompilerWithOptions(compilerOpts)
 	compileResult := compiler.Compile(parseResult)

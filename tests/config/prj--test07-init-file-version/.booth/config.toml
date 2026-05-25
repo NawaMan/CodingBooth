@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --select @/Users/nawa/dev/git/CodingBooth/tests/config/prj--test07-init-file-version--recipe.txt
+# Configured by: booth config --no-tui --overwrite --select @/home/nawa/dev/git/CodingBooth/tests/config/prj--test07-init-file-version--recipe.txt
 
 
 run-args = [

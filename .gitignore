@@ -83,6 +83,11 @@ tests/basic/test--dockerfile
 tests/dryrun/test--.env
 tests/dryrun/test--config.sh
 tests/dryrun/test--config.toml
+# tests/config/test*.sh writes its `$prj` working dir + recipe input into
+# tests/config/prj--*; these are regenerated every run (and bake the host's
+# absolute path into a header comment), so they shouldn't be tracked.
+tests/config/prj--*/
+tests/config/prj--*--recipe.txt
 **/.Dockerfile.generated
 **/.booth/.tmp/
 

@@ -26,6 +26,12 @@ export HOST_OS
 # the local image under a repo that doesn't exist on Docker Hub
 # (cb-local/codingbooth) sidesteps that resolution.
 #
+# Scoping: the export lives in the test script's process; each test is
+# launched in a subshell by the suite runner, so the override does NOT leak
+# into sibling tests. If a single test needs to revert mid-run (e.g. one
+# build step should use the local image and a later one should hit Docker
+# Hub), call `restore_default_base_image` between them.
+#
 # Usage (call once near the top of the test, after `source ../../common--source.sh`):
 #   use_local_base_image || exit 0    # skips if local image not present
 use_local_base_image() {
@@ -55,6 +61,12 @@ use_local_base_image() {
 
   echo "SKIP: ${img} not built locally; tag a rebuilt base image as cb-local/codingbooth:base-${version} to enable this test." >&2
   return 1
+}
+
+# Counterpart to use_local_base_image — unsets the env var so subsequent
+# booth invocations in the same script fall back to the default Hub repo.
+restore_default_base_image() {
+  unset CB_PREBUILD_REPO
 }
 
 # Colors for output (disabled if not a terminal)
