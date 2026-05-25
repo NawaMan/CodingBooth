@@ -238,6 +238,16 @@ func buildLocalImage(ctx appctx.AppContext) {
 		"-f", ctx.Dockerfile(),
 		"-t", ctx.Image(),
 	)))
+	// Prefer a matching local image as the FROM base over the registry digest.
+	// Without --pull=false, BuildKit always resolves the FROM tag against the
+	// upstream manifest list — even when an identically-tagged local image
+	// exists — which silently masks locally-rebuilt base images during
+	// development/testing.
+	if !ctx.Pull() {
+		args = args.ExtendByLists(ilist.NewList(ilist.NewList(
+			"--pull=false",
+		)))
+	}
 	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
 		"--build-arg", fmt.Sprintf("BOOTH_VARIANT_TAG=%s", ctx.Variant()),
 	)))

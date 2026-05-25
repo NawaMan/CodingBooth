@@ -81,21 +81,29 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- fetch toolchain tarball ----
 # Official release URL pattern:
-# https://download.swift.org/swift-<ver>-release/<ubuntuXX.XX>/swift-<ver>-RELEASE/swift-<ver>-RELEASE-<ubuntuXX.XX>.tar.gz
-BASE="https://download.swift.org/swift-${SWIFT_VERSION}-release/${S_UBU_PATH}/swift-${SWIFT_VERSION}-RELEASE"
-TARBALL="swift-${SWIFT_VERSION}-RELEASE-${S_UBU}.tar.gz"
+#   x86_64:  https://download.swift.org/swift-<ver>-release/<ubuPath>/swift-<ver>-RELEASE/swift-<ver>-RELEASE-<ubuTag>.tar.gz
+#   aarch64: https://download.swift.org/swift-<ver>-release/<ubuPath>-aarch64/swift-<ver>-RELEASE/swift-<ver>-RELEASE-<ubuTag>-aarch64.tar.gz
+# Swift hosts arch-specific tarballs (not "universal"); the path component and
+# tarball name both gain an `-aarch64` suffix on arm64.
+TARBALL_SUFFIX=""
+PATH_SUFFIX=""
+if [[ "$S_ARCH" == "aarch64" ]]; then
+  TARBALL_SUFFIX="-aarch64"
+  PATH_SUFFIX="-aarch64"
+fi
+BASE="https://download.swift.org/swift-${SWIFT_VERSION}-release/${S_UBU_PATH}${PATH_SUFFIX}/swift-${SWIFT_VERSION}-RELEASE"
+TARBALL="swift-${SWIFT_VERSION}-RELEASE-${S_UBU}${TARBALL_SUFFIX}.tar.gz"
 URL="${BASE}/${TARBALL}"
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 echo "⬇️  Downloading Swift ${SWIFT_VERSION} for ${S_UBU} (${S_ARCH}) ..."
-# (The tarball is universal for the Ubuntu variant; arch-specific binaries are inside)
 curl -fL "$URL" -o "$TMP/$TARBALL"
 
 # ---- install ----
 rm -rf "$TARGET_DIR"; mkdir -p "$TARGET_DIR"
 echo "📦 Installing to ${TARGET_DIR} ..."
 tar -xzf "$TMP/$TARBALL" -C "$TMP"
-SRC_DIR="$(find "$TMP" -maxdepth 1 -type d -name "swift-${SWIFT_VERSION}-RELEASE-${S_UBU}" -print -quit)"
+SRC_DIR="$(find "$TMP" -maxdepth 1 -type d -name "swift-${SWIFT_VERSION}-RELEASE-${S_UBU}${TARBALL_SUFFIX}" -print -quit)"
 [[ -d "$SRC_DIR" ]] || { echo "❌ Extracted toolchain dir not found"; exit 1; }
 # Move contents (usr/lib/swift, usr/bin, etc.) under our /opt target
 mv "$SRC_DIR"/* "$TARGET_DIR"

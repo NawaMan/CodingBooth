@@ -24,7 +24,7 @@ TEST_COUNT=$((TEST_COUNT + 1))
 label=".mount-this marker is empty "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')
 echo -n "Test ${TEST_COUNT}: ${label}${pad} "
-marker_size=$(stat -c%s "$prj/.booth/cache/home/coder/.claude/.mount-this" 2>/dev/null || echo "-1")
+marker_size=$(stat -c%s "$prj/.booth/cache/home/coder/.claude/.mount-this" 2>/dev/null || stat -f%z "$prj/.booth/cache/home/coder/.claude/.mount-this" 2>/dev/null || echo "-1")
 if [ "$marker_size" = "0" ]; then
     PASS_COUNT=$((PASS_COUNT + 1))
     echo -e "\033[32mPASSED\033[0m"

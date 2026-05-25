@@ -1,0 +1,7 @@
+# Configured by: booth config --no-tui --overwrite --env FOO=bar --mount /data:/data --select go
+
+
+run-args = [
+    "--env", "FOO=bar",
+    "--volume", "/data:/data"
+]

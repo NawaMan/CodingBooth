@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --select mermaid:11.4.2,19190+expose+autostart
+
+
+run-args = ["-p", "19190:19190"]

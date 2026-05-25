@@ -35,6 +35,13 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 
 	// Set default values and effective constants
 	context.PrebuildRepo = "nawaman/codingbooth"
+	// CB_PREBUILD_REPO env override — lets developers/tests point booth at a
+	// locally-tagged base image (e.g. "cb-local/codingbooth") that doesn't
+	// exist on Docker Hub, so BuildKit can't silently swap the FROM digest
+	// for the upstream one.
+	if repo := os.Getenv("CB_PREBUILD_REPO"); repo != "" {
+		context.PrebuildRepo = repo
+	}
 	context.CbVersion = version
 	context.SetupsDir = "/opt/codingbooth/setups"
 	context.ScriptName = getScriptName(args)

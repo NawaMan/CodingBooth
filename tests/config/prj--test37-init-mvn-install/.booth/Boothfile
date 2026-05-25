@@ -1,0 +1,11 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select java+maven+mvn-install
+
+arg JDK_VENDOR=temurin
+arg JDK_VERSION=25
+arg MAVEN_VERSION=3.9.12
+
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+setup mvn ${MAVEN_VERSION}
+setup java-code-extension
+run --mount=type=bind,target=/tmp/ctx if [ -f /tmp/ctx/pom.xml ]; then mkdir -p /opt/mvn-cache && cp /tmp/ctx/pom.xml /opt/mvn-cache/ && cd /opt/mvn-cache && mvn dependency:resolve -B -q; fi

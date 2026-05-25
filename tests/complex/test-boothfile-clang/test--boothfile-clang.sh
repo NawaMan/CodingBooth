@@ -18,6 +18,11 @@ cd "$SCRIPT_DIR"
 
 source ../../common--source.sh
 
+# Needs a locally-rebuilt base image because the Hub clang--setup.sh tries to
+# install LLVM 18 from apt.llvm.org's snapshot repo, which currently 404s on
+# its own internal version constraint (libllvm18 Breaks llvm-18-dev < 1:18.1.8-8).
+use_local_base_image || exit 0
+
 echo "=== Test: Boothfile Clang Installation ==="
 
 FAILED=0

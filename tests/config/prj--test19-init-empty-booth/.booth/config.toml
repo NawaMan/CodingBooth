@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --set keep-alive
+
+
+keep-alive = true

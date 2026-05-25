@@ -1,0 +1,7 @@
+# Configured by: booth config --no-tui --overwrite --select excalidraw:889+expose+autostart
+
+
+run-args = [
+    "-p", "889:889",
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro"
+]

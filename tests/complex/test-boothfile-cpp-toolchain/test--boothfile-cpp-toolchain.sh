@@ -20,6 +20,10 @@ cd "$SCRIPT_DIR"
 
 source ../../common--source.sh
 
+# Depends on the locally-rebuilt base image (uses clang--setup.sh; the Hub
+# image fails with apt.llvm.org's libllvm18/llvm-18-dev snapshot conflict).
+use_local_base_image || exit 0
+
 echo "=== Test: Boothfile Full C/C++ Toolchain ==="
 
 FAILED=0

@@ -5,6 +5,58 @@
 
 # Common utilities for unit tests
 
+# Host OS tag matching the codingbooth CLI's HOST_OS env var.
+# Tests use this in their expected-output fixtures.
+case "$(uname -s)" in
+  Linux*)               HOST_OS="LIN" ;;
+  Darwin*)              HOST_OS="MAC" ;;
+  MINGW*|MSYS*|CYGWIN*) HOST_OS="WIN" ;;
+  *)                    HOST_OS="$(uname -s)" ;;
+esac
+export HOST_OS
+
+# Opt a test into building against a locally-rebuilt base image instead of the
+# upstream nawaman/codingbooth Hub image. Use this when the test triggers a
+# Boothfile build that relies on a setup-script fix that hasn't shipped to
+# Docker Hub yet (e.g. clang/swift/elm arm64 workarounds).
+#
+# Why this matters: BuildKit's `# syntax=docker/dockerfile:1.7` frontend
+# always resolves a `FROM nawaman/codingbooth:...` tag to the upstream
+# registry digest, even when an identically-named image exists locally. Naming
+# the local image under a repo that doesn't exist on Docker Hub
+# (cb-local/codingbooth) sidesteps that resolution.
+#
+# Usage (call once near the top of the test, after `source ../../common--source.sh`):
+#   use_local_base_image || exit 0    # skips if local image not present
+use_local_base_image() {
+  local version="${1:-}"
+  if [[ -z "$version" ]]; then
+    local booth_path script_dir check_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
+    check_dir="$script_dir"
+    for _ in 1 2 3 4 5; do
+      if [[ -f "$check_dir/codingbooth" && -x "$check_dir/codingbooth" ]]; then
+        booth_path="$check_dir/codingbooth"
+        break
+      fi
+      check_dir="$(dirname "$check_dir")"
+    done
+    if [[ -n "${booth_path:-}" ]]; then
+      version=$("$booth_path" version 2>/dev/null | tail -1 | sed 's/.*: //')
+    fi
+  fi
+  [[ -z "$version" || "$version" == "dev" ]] && version="latest"
+
+  local img="cb-local/codingbooth:base-${version}"
+  if docker image inspect "$img" >/dev/null 2>&1; then
+    export CB_PREBUILD_REPO="cb-local/codingbooth"
+    return 0
+  fi
+
+  echo "SKIP: ${img} not built locally; tag a rebuilt base image as cb-local/codingbooth:base-${version} to enable this test." >&2
+  return 1
+}
+
 # Colors for output (disabled if not a terminal)
 if [[ -t 1 ]]; then
   COLOR_CMD='\033[1;36m'    # Cyan bold for commands
@@ -34,11 +86,14 @@ run_coding_booth() {
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
 
-  # Find codingbooth relative to the test location
+  # Find the codingbooth binary relative to the test location.
+  # Use `-f` before `-x` so we don't accidentally match a directory of the same name
+  # on case-insensitive filesystems (e.g. macOS: -x /path/codingbooth would otherwise
+  # match the CodingBooth project directory itself, since directories are "executable").
   local booth_path=""
   local check_dir="$script_dir"
   for _ in 1 2 3 4 5; do
-    if [[ -x "$check_dir/codingbooth" ]]; then
+    if [[ -f "$check_dir/codingbooth" && -x "$check_dir/codingbooth" ]]; then
       booth_path="$check_dir/codingbooth"
       break
     fi
@@ -78,7 +133,8 @@ run_coding_booth() {
   fi
 
   echo -e "${COLOR_BOOTH}> codingbooth $*${COLOR_RESET}" >&2
-  "$booth_path" "${version_args[@]}" "$@"
+  # Safe expansion: avoids "unbound variable" under `set -u` with Bash 3.2 when the array is empty.
+  "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@"
 }
 
 # Get the version reported by the booth binary itself, so tests stay correct

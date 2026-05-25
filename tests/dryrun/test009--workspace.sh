@@ -45,7 +45,7 @@ docker \\
     --name tests \\
     -e 'HOST_UID=${HOST_UID}' \\
     -e 'HOST_GID=${HOST_GID}' \\
-    -e 'HOST_OS=LIN' \\
+    -e 'HOST_OS=${HOST_OS}' \\
     -v ${RESOLVED_WORKSPACE}:/home/coder/code \\
     -w /home/coder/code \\
     --label 'cb.managed=true' \\

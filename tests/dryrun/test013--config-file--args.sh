@@ -37,7 +37,7 @@ function realpath() {
 }
 
 
-ACTUAL=$(run_coding_booth --verbose --dryrun | grep -E '^[A-Z_]+:' | sort)
+ACTUAL=$(run_coding_booth --verbose --dryrun | grep -E '^[A-Z_]+:' | LC_ALL=C sort)
 
 EXPECT="\
 BUILD_ARGS: 
@@ -103,7 +103,7 @@ EOF
 
 
 
-ACTUAL=$(run_coding_booth --config test--config.toml | grep -E '^[A-Z_]+:' | sort)
+ACTUAL=$(run_coding_booth --config test--config.toml | grep -E '^[A-Z_]+:' | LC_ALL=C sort)
 
 EXPECT="\
 BUILD_ARGS: 

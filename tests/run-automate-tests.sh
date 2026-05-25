@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -6,6 +6,19 @@
 
 # Master test runner script
 # Runs all test suites sequentially with a live status graph.
+
+# Bash 4+ is required (this script uses associative arrays via `declare -A`).
+# macOS ships Bash 3.2 as /bin/bash; re-exec under a newer bash if available.
+if (( BASH_VERSINFO[0] < 4 )); then
+    for _newer_bash in /opt/homebrew/bin/bash /usr/local/bin/bash /opt/local/bin/bash; do
+        if [[ -x "$_newer_bash" ]]; then
+            exec "$_newer_bash" "$0" "$@"
+        fi
+    done
+    echo "ERROR: This script requires Bash 4 or newer (you have ${BASH_VERSION})." >&2
+    echo "       On macOS install a modern bash, e.g.:  brew install bash" >&2
+    exit 1
+fi
 
 set -uo pipefail
 

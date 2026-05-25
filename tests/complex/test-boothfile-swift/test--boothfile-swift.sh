@@ -17,6 +17,10 @@ cd "$SCRIPT_DIR"
 
 source ../../common--source.sh
 
+# Hub swift--setup.sh downloads the x86_64 tarball even on arm64; the local
+# image has a fix that appends -aarch64 to the path/tarball when needed.
+use_local_base_image || exit 0
+
 echo "=== Test: Boothfile Swift Installation ==="
 
 FAILED=0

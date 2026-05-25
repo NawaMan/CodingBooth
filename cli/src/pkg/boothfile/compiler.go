@@ -170,15 +170,25 @@ func (c *Compiler) Compile(parseResult ParseResult) CompileResult {
 
 // writePrologue writes the fixed Dockerfile prologue.
 func (c *Compiler) writePrologue(sb *strings.Builder) {
-	prologue := `# syntax=docker/dockerfile:1.7
+	// Allow CB_PREBUILD_REPO to override the base image repository. Useful for
+	// local development/testing against a locally-tagged image (e.g.
+	// "cb-local/codingbooth") that doesn't exist on Docker Hub — without this,
+	// BuildKit's `# syntax=` frontend resolves the FROM tag to the upstream
+	// registry digest even when the same tag exists locally, silently masking
+	// any locally-rebuilt base image.
+	repo := DefaultRepo
+	if envRepo := os.Getenv("CB_PREBUILD_REPO"); envRepo != "" {
+		repo = envRepo
+	}
+	prologue := fmt.Sprintf(`# syntax=docker/dockerfile:1.7
 ARG BOOTH_VARIANT_TAG=base
 ARG BOOTH_VERSION_TAG=latest
-FROM nawaman/codingbooth:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
+FROM %s:${BOOTH_VARIANT_TAG}-${BOOTH_VERSION_TAG}
 
 ARG BOOTH_VARIANT_TAG=base
 ARG BOOTH_VERSION_TAG=latest
 
-`
+`, repo)
 	sb.WriteString(prologue)
 
 	// If custom setups directory exists, copy it and prepend to PATH

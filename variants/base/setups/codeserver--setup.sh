@@ -273,13 +273,19 @@ JSON
 DEFAULT_SHELL="/bin/bash"
 
 # -------- deferred extension install (arm64 QEMU cross-build) --------
+# The marker file lives under /usr/local/share/code-server/, which is owned
+# by root at image-build time. When the deferred install actually runs at
+# launch (arm64 QEMU case) we may be running as the unprivileged `coder`
+# user, so `touch $MARKER` would fail under `set -e` and crash the launcher.
+# Suppress errors — the marker is only an optimization; missing it just
+# re-attempts the extension install on the next launch.
 MARKER="/usr/local/share/code-server/.extensions-installed"
 if [ ! -f "$MARKER" ]; then
   echo "Installing deferred extensions (first launch) ..."
   code-server --extensions-dir "$CODESERVER_EXTENSION_DIR" \
     --install-extension ms-toolsai.jupyter \
     --install-extension ms-python.python || true
-  touch "$MARKER"
+  touch "$MARKER" 2>/dev/null || true
 fi
 
 echo "Starting code-server. This may take sometime ..."

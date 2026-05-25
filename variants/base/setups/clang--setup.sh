@@ -72,17 +72,29 @@ CODENAME="${UBUNTU_CODENAME:-${VERSION_CODENAME:-}}"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends ca-certificates curl gnupg lsb-release software-properties-common
-install -d /usr/share/keyrings
-curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key -o /usr/share/keyrings/llvm.asc
 
-# --- apt sources for requested LLVM ---
-cat >/etc/apt/sources.list.d/llvm-toolchain.list <<EOF
+# --- pick a package source for LLVM ${LLVM_VER} ---
+# Prefer Ubuntu's own repo when it ships the requested major (e.g. noble has
+# clang-18 at 1:18.1.3 in universe). Falling through to apt.llvm.org is risky
+# because all of its `llvm-toolchain-${CODENAME}{,-${LLVM_VER}}` repos currently
+# ship snapshot builds (1:18.1.8~++20260421...) whose libllvm${LLVM_VER} declares
+# `Breaks: llvm-${LLVM_VER}-dev (< 1:18.1.8-8)` — no llvm-${LLVM_VER}-dev at that
+# threshold actually exists anywhere, so any install that hits the snapshot fails.
+# Capture into a variable first — piping straight into `grep -q` makes grep
+# close stdin early, which under `set -o pipefail` (the Dockerfile's SHELL
+# default) propagates a SIGPIPE failure from `apt-cache madison` and breaks
+# the conditional.
+_CLANG_MADISON=$(apt-cache madison "clang-${LLVM_VER}" 2>/dev/null || true)
+if [[ "$_CLANG_MADISON" == *"ubuntu-ports"* || "$_CLANG_MADISON" == *"archive.ubuntu.com"* ]]; then
+  echo "📦 Using Ubuntu repo for LLVM ${LLVM_VER} (already available in ${CODENAME})"
+else
+  install -d /usr/share/keyrings
+  curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key -o /usr/share/keyrings/llvm.asc
+  cat >/etc/apt/sources.list.d/llvm-toolchain.list <<EOF
 deb [signed-by=/usr/share/keyrings/llvm.asc] http://apt.llvm.org/${CODENAME}/ llvm-toolchain-${CODENAME}-${LLVM_VER} main
-# Fallback (latest track) — harmless if not used
-deb [signed-by=/usr/share/keyrings/llvm.asc] http://apt.llvm.org/${CODENAME}/ llvm-toolchain-${CODENAME} main
 EOF
-
-apt-get update
+  apt-get update
+fi
 
 # --- package set (full but safe) ---
 PKGS=(

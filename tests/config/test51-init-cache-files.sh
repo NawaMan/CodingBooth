@@ -55,8 +55,8 @@ TEST_COUNT=$((TEST_COUNT + 1))
 label="cache files are empty "
 pad=$(printf '%*s' $((64 - ${#label})) '' | tr ' ' '.')
 echo -n "Test ${TEST_COUNT}: ${label}${pad} "
-bash_size=$(stat -c%s "$prj/.booth/cache/home/coder/.bash_history" 2>/dev/null || echo "-1")
-zsh_size=$(stat -c%s "$prj/.booth/cache/home/coder/.zsh_history" 2>/dev/null || echo "-1")
+bash_size=$(stat -c%s "$prj/.booth/cache/home/coder/.bash_history" 2>/dev/null || stat -f%z "$prj/.booth/cache/home/coder/.bash_history" 2>/dev/null || echo "-1")
+zsh_size=$(stat -c%s "$prj/.booth/cache/home/coder/.zsh_history" 2>/dev/null || stat -f%z "$prj/.booth/cache/home/coder/.zsh_history" 2>/dev/null || echo "-1")
 if [ "$bash_size" = "0" ] && [ "$zsh_size" = "0" ]; then
     PASS_COUNT=$((PASS_COUNT + 1))
     echo -e "\033[32mPASSED\033[0m"

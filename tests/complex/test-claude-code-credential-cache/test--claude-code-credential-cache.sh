@@ -37,14 +37,26 @@ echo '{"token":"STALE_CACHED_TOKEN"}' > .booth/cache/home/coder/.claude/.credent
 echo '{"permissions":{"allow":["Bash"]}}' > .booth/cache/home/coder/.claude/settings.json
 echo 'CACHED_PROJECT_DATA' > .booth/cache/home/coder/.claude/projects/my-project.json
 
+# Setup: host credential file the config.toml mounts as the override.
+# host-credential/.claude.json is checked in; .claude/.credentials.json is
+# rebuilt fresh per test run so Test 1 sees the expected token.
+mkdir -p host-credential/.claude
+echo '{"token":"FRESH_HOST_TOKEN_ABC123"}' > host-credential/.claude/.credentials.json
+
 # Ensure .gitignore has cache/ entry (required by cache mount validation)
 echo "cache/" >> .booth/.gitignore
 
 # Cleanup on exit
 cleanup() {
   rm -rf .booth/cache
-  # Remove the cache/ line we added to .gitignore
-  sed -i '/^cache\/$/d' .booth/.gitignore
+  rm -rf host-credential/.claude
+  # Remove the cache/ line we added to .gitignore.
+  # Use a portable in-place sed (BSD/macOS requires an explicit suffix; GNU treats it as the expression).
+  if sed --version >/dev/null 2>&1; then
+    sed -i '/^cache\/$/d' .booth/.gitignore
+  else
+    sed -i '' '/^cache\/$/d' .booth/.gitignore
+  fi
 }
 trap cleanup EXIT
 
