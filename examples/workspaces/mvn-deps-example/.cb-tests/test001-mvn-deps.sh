@@ -32,7 +32,7 @@ failed=0
 echo "Testing maven compile and exec..."
 output=$("$BOOTH" --variant base --port "${CB_PORT:-50331}" -- 'mvn compile -B -q exec:java -Dexec.mainClass=com.example.App' 2>&1)
 
-if echo "$output" | grep -q "Hello from maven"; then
+if grep -q "Hello from maven" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Maven project compiled and ran successfully"
 else
     echo -e "${RED}✗${NC} Maven project failed to compile or run"
@@ -41,7 +41,7 @@ else
 fi
 
 # Check that there are no build errors
-if echo "$output" | grep -q "BUILD FAILURE"; then
+if grep -q "BUILD FAILURE" <<< "$output"; then
     echo -e "${RED}✗${NC} Maven build failed"
     failed=1
 else

@@ -49,7 +49,7 @@ echo "Starting codingbooth..."
 echo "Waiting for npm install to complete..."
 WAIT_COUNT=0
 while true; do
-    if docker logs "$CONTAINER_NAME" 2>&1 | grep -q "npm install completed"; then
+    if grep -q "npm install completed" <<< "$(docker logs "$CONTAINER_NAME" 2>&1)"; then
         break
     fi
     WAIT_COUNT=$((WAIT_COUNT + 1))
@@ -61,7 +61,7 @@ done
 pass "npm install completed"
 
 # Check if booth container is running
-if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+if grep -q "^${CONTAINER_NAME}$" <<< "$(docker ps --format '{{.Names}}')"; then
     pass "Booth started"
 else
     fail "Failed to start booth"

@@ -44,7 +44,7 @@ echo ""
 failed=0
 
 # Check for JDK version line
-if echo "$output" | grep -q "🚀 JDK:"; then
+if grep -q "🚀 JDK:" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found JDK version output"
 else
     echo -e "${RED}✗${NC} Missing JDK version output"
@@ -52,7 +52,7 @@ else
 fi
 
 # Check for CWD line
-if echo "$output" | grep -q "📁 CWD:"; then
+if grep -q "📁 CWD:" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found CWD output"
 else
     echo -e "${RED}✗${NC} Missing CWD output"
@@ -60,7 +60,7 @@ else
 fi
 
 # Check for Args line with expected arguments
-if echo "$output" | grep -q "🔧 Args: \[one, two 2\]"; then
+if grep -q "🔧 Args: \[one, two 2\]" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found correct arguments"
 else
     echo -e "${RED}✗${NC} Missing or incorrect arguments"
@@ -69,7 +69,7 @@ fi
 
 # Check for numbered lines
 for i in 0 1 2; do
-    if echo "$output" | grep -q "line $i"; then
+    if grep -q "line $i" <<< "$output"; then
         echo -e "${GREEN}✓${NC} Found 'line $i'"
     else
         echo -e "${RED}✗${NC} Missing 'line $i'"

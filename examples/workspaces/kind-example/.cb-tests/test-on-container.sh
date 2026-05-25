@@ -40,7 +40,7 @@ echo "Deploying nginx app..."
 pass "App deployed"
 
 # Test 4: Verify pods are running
-if kubectl get pods --context "kind-$CLUSTER_NAME" 2>/dev/null | grep -q "Running"; then
+if grep -q "Running" <<< "$(kubectl get pods --context "kind-$CLUSTER_NAME" 2>/dev/null)"; then
     pass "Pods are running"
 else
     fail "Pods should be running"

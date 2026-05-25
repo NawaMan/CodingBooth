@@ -31,7 +31,7 @@ failed=0
 # Test requests package
 echo "Testing requests package..."
 output=$("$BOOTH" --variant base --port "${CB_PORT:-50232}" -- 'python3 -c "import requests; print('"'"'OK'"'"')"' 2>&1)
-if echo "$output" | grep -q "OK"; then
+if grep -q "OK" <<< "$output"; then
     echo -e "${GREEN}✓${NC} requests package is installed and importable"
 else
     echo -e "${RED}✗${NC} requests package failed to import"
@@ -42,7 +42,7 @@ fi
 # Test flask package
 echo "Testing flask package..."
 output=$("$BOOTH" --variant base --port "${CB_PORT:-50232}" -- 'python3 -c "import flask; print('"'"'OK'"'"')"' 2>&1)
-if echo "$output" | grep -q "OK"; then
+if grep -q "OK" <<< "$output"; then
     echo -e "${GREEN}✓${NC} flask package is installed and importable"
 else
     echo -e "${RED}✗${NC} flask package failed to import"

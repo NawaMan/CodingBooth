@@ -46,7 +46,7 @@ pass "App deployed"
 
 # Test 5: Verify pods are running in todo-app namespace
 echo "Verifying pods are running..."
-if kubectl get pods -n todo-app --context "kind-$CLUSTER_NAME" 2>/dev/null | grep -q "Running"; then
+if grep -q "Running" <<< "$(kubectl get pods -n todo-app --context "kind-$CLUSTER_NAME" 2>/dev/null)"; then
     pass "Pods are running in todo-app namespace"
 else
     fail "Pods should be running in todo-app namespace"

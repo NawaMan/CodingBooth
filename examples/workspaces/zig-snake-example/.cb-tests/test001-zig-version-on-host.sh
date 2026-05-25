@@ -31,7 +31,7 @@ echo ""
 
 failed=0
 
-if echo "$output" | grep -qE '^0\.15\.'; then
+if grep -qE '^0\.15\.' <<< "$output"; then
     echo -e "${GREEN}\xe2\x9c\x93${NC} Found Zig 0.15.x"
 else
     echo -e "${RED}\xe2\x9c\x97${NC} Expected Zig 0.15.x but got: $output"

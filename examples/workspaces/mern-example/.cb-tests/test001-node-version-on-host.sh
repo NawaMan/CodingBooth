@@ -31,7 +31,7 @@ echo ""
 
 failed=0
 
-if echo "$output" | grep -qE '^v22\.'; then
+if grep -qE '^v22\.' <<< "$output"; then
     echo -e "${GREEN}\xe2\x9c\x93${NC} Found Node.js v22"
 else
     echo -e "${RED}\xe2\x9c\x97${NC} Expected Node.js v22 but got: $output"

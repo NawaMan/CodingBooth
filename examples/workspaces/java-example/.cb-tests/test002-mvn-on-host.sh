@@ -38,7 +38,7 @@ failed=0
 
 # Check for successful build/execution output
 # The maven project should output something - check for common patterns
-if echo "$output" | grep -qE "(Hello|BUILD SUCCESS|java|Java)"; then
+if grep -qE "(Hello|BUILD SUCCESS|java|Java)" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Maven execution produced output"
 else
     echo -e "${RED}✗${NC} Maven execution failed or no output"
@@ -46,7 +46,7 @@ else
 fi
 
 # Check that there are no build errors
-if echo "$output" | grep -q "BUILD FAILURE"; then
+if grep -q "BUILD FAILURE" <<< "$output"; then
     echo -e "${RED}✗${NC} Maven build failed"
     failed=1
 else

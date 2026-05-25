@@ -31,7 +31,7 @@ echo ""
 
 failed=0
 
-if echo "$output" | grep -qE '(openjdk|java) 21'; then
+if grep -qE '(openjdk|java) 21' <<< "$output"; then
     echo -e "${GREEN}\xe2\x9c\x93${NC} Found Java 21"
 else
     echo -e "${RED}\xe2\x9c\x97${NC} Expected Java 21 but got: $output"

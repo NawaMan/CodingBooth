@@ -66,14 +66,14 @@ echo "Starting booth with KinD..."
 sleep 3
 
 # Check if booth container is running
-if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+if grep -q "^${CONTAINER_NAME}$" <<< "$(docker ps --format '{{.Names}}')"; then
     pass "Booth started"
 else
     fail "Failed to start booth"
 fi
 
 # Check if DinD sidecar is running (any port)
-if docker ps --format '{{.Names}}' | grep -qE "^${CONTAINER_NAME}-[0-9]+-dind$"; then
+if grep -qE "^${CONTAINER_NAME}-[0-9]+-dind$" <<< "$(docker ps --format '{{.Names}}')"; then
     pass "DinD sidecar running"
 else
     fail "DinD sidecar should be running"

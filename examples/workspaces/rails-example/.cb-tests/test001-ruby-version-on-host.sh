@@ -31,7 +31,7 @@ echo ""
 
 failed=0
 
-if echo "$output" | grep -qE '^ruby 3\.3'; then
+if grep -qE '^ruby 3\.3' <<< "$output"; then
     echo -e "${GREEN}\xe2\x9c\x93${NC} Found Ruby 3.3"
 else
     echo -e "${RED}\xe2\x9c\x97${NC} Expected Ruby 3.3 but got: $output"

@@ -31,7 +31,7 @@ echo ""
 
 failed=0
 
-if echo "$output" | grep -qE '[Oo]ctave'; then
+if grep -qE '[Oo]ctave' <<< "$output"; then
     echo -e "${GREEN}\xe2\x9c\x93${NC} Found Octave"
 else
     echo -e "${RED}\xe2\x9c\x97${NC} Octave not detected in output"

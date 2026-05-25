@@ -32,7 +32,7 @@ echo ""
 
 failed=0
 
-if echo "$output" | grep -q '^cache-ok$'; then
+if grep -q '^cache-ok$' <<< "$output"; then
     echo -e "${GREEN}\xe2\x9c\x93${NC} Booth started and ran command"
 else
     echo -e "${RED}\xe2\x9c\x97${NC} Expected 'cache-ok' in output"

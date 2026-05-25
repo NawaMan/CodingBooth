@@ -34,7 +34,7 @@ echo ""
 # Validate output contains expected pattern
 failed=0
 
-if echo "$output" | grep -q "NVIM"; then
+if grep -q "NVIM" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found 'NVIM'"
 else
     echo -e "${RED}✗${NC} Expected 'NVIM' in output"

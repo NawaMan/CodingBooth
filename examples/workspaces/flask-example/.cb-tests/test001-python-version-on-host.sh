@@ -31,7 +31,7 @@ echo ""
 
 failed=0
 
-if echo "$output" | grep -qE 'Python 3\.13'; then
+if grep -qE 'Python 3\.13' <<< "$output"; then
     echo -e "${GREEN}\xe2\x9c\x93${NC} Found Python 3.13"
 else
     echo -e "${RED}\xe2\x9c\x97${NC} Expected Python 3.13 but got: $output"

@@ -37,7 +37,7 @@ echo ""
 failed=0
 
 # Check for JDK version
-if echo "$output" | grep -q "🚀 JDK:"; then
+if grep -q "🚀 JDK:" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found JDK version in output"
 else
     echo -e "${RED}✗${NC} Missing JDK version in output"
@@ -45,7 +45,7 @@ else
 fi
 
 # Check for current working directory
-if echo "$output" | grep -q "📁 CWD:"; then
+if grep -q "📁 CWD:" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found CWD in output"
 else
     echo -e "${RED}✗${NC} Missing CWD in output"
@@ -53,7 +53,7 @@ else
 fi
 
 # Check for args display
-if echo "$output" | grep -q "🔧 Args:"; then
+if grep -q "🔧 Args:" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found Args in output"
 else
     echo -e "${RED}✗${NC} Missing Args in output"
@@ -61,7 +61,7 @@ else
 fi
 
 # Check for line output (args iteration)
-if echo "$output" | grep -q "line 0:"; then
+if grep -q "line 0:" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found arg iteration output"
 else
     echo -e "${RED}✗${NC} Missing arg iteration output"

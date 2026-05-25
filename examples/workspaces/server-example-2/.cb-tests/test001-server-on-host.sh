@@ -46,7 +46,7 @@ echo "Starting codingbooth..."
 sleep 2
 
 # Check if booth container is running
-if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
+if grep -q "^${CONTAINER_NAME}$" <<< "$(docker ps --format '{{.Names}}')"; then
     pass "Booth started"
 else
     fail "Failed to start booth"

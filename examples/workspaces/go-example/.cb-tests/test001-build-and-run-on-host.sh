@@ -38,7 +38,7 @@ echo ""
 failed=0
 
 # Check for build success message
-if echo "$output" | grep -q "Built:"; then
+if grep -q "Built:" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Build completed successfully"
 else
     echo -e "${RED}✗${NC} Build failed or missing output"
@@ -46,14 +46,14 @@ else
 fi
 
 # Check for tree output (the emoji tree structure)
-if echo "$output" | grep -q "📁"; then
+if grep -q "📁" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found directory emoji in output"
 else
     echo -e "${RED}✗${NC} Missing directory emoji in output"
     failed=1
 fi
 
-if echo "$output" | grep -q "📄"; then
+if grep -q "📄" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found file emoji in output"
 else
     echo -e "${RED}✗${NC} Missing file emoji in output"
@@ -61,7 +61,7 @@ else
 fi
 
 # Check for tree structure characters
-if echo "$output" | grep -q "├─\|└─"; then
+if grep -q "├─\|└─" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found tree structure in output"
 else
     echo -e "${RED}✗${NC} Missing tree structure in output"
@@ -69,7 +69,7 @@ else
 fi
 
 # Check for inBooth tests passed
-if echo "$output" | grep -q "All tests passed!"; then
+if grep -q "All tests passed!" <<< "$output"; then
     echo -e "${GREEN}✓${NC} All inBooth Go tool tests passed"
 else
     echo -e "${RED}✗${NC} Some inBooth Go tool tests failed"

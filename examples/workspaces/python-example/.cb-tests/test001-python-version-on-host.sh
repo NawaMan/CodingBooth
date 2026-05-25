@@ -34,7 +34,7 @@ echo ""
 # Validate output contains expected version
 failed=0
 
-if echo "$output" | grep -q "Python 3\.13"; then
+if grep -q "Python 3\.13" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found 'Python 3.13'"
 else
     echo -e "${RED}✗${NC} Expected 'Python 3.13' but got: $output"

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,6 +11,19 @@
 
 # Test runner script for workspace examples
 # Supports tag filtering and parallel execution
+
+# Bash 4+ is required (uses associative arrays and negative array indices).
+# macOS ships Bash 3.2 as /bin/bash; re-exec under a newer bash if available.
+if (( BASH_VERSINFO[0] < 4 )); then
+    for _newer_bash in /opt/homebrew/bin/bash /usr/local/bin/bash /opt/local/bin/bash; do
+        if [[ -x "$_newer_bash" ]]; then
+            exec "$_newer_bash" "$0" "$@"
+        fi
+    done
+    echo "ERROR: This script requires Bash 4 or newer (you have ${BASH_VERSION})." >&2
+    echo "       On macOS install a modern bash, e.g.:  brew install bash" >&2
+    exit 1
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
@@ -178,6 +191,35 @@ if [ ${#examples[@]} -eq 0 ]; then
     exit 0
 fi
 
+# Pick a timeout command. macOS doesn't ship `timeout`; coreutils provides
+# `gtimeout` when installed via Homebrew. Fall back to a Perl shim (preinstalled
+# on macOS) that preserves the GNU `timeout` exit-code convention (124 on
+# timeout) so the result classifier below still works.
+if command -v timeout >/dev/null 2>&1; then
+    TIMEOUT_CMD=(timeout)
+elif command -v gtimeout >/dev/null 2>&1; then
+    TIMEOUT_CMD=(gtimeout)
+elif command -v perl >/dev/null 2>&1; then
+    TIMEOUT_CMD=(perl -e '
+        my $secs = shift;
+        my $pid = fork();
+        die "fork: $!" unless defined $pid;
+        if ($pid == 0) { exec @ARGV or exit 127; }
+        local $SIG{ALRM} = sub {
+            kill "TERM", $pid;
+            sleep 5;
+            kill "KILL", $pid;
+            exit 124;
+        };
+        alarm $secs;
+        waitpid($pid, 0);
+        exit($? >> 8);
+    ' --)
+else
+    echo "WARNING: no 'timeout', 'gtimeout', or 'perl' found — examples will run without a hang guard." >&2
+    TIMEOUT_CMD=()
+fi
+
 echo "========================================"
 echo "Running Example Tests"
 echo "========================================"
@@ -227,7 +269,11 @@ for example_dir in "${examples[@]}"; do
         echo "========================================"
 
         set +e
-        timeout "$EXAMPLE_TIMEOUT" bash -c "cd '$example_dir' && VARIANT=base CB_PORT=RANDOM ./run-automatic-on-host-test.sh"
+        if [[ ${#TIMEOUT_CMD[@]} -gt 0 ]]; then
+            "${TIMEOUT_CMD[@]}" "$EXAMPLE_TIMEOUT" bash -c "cd '$example_dir' && VARIANT=base CB_PORT=RANDOM ./run-automatic-on-host-test.sh"
+        else
+            bash -c "cd '$example_dir' && VARIANT=base CB_PORT=RANDOM ./run-automatic-on-host-test.sh"
+        fi
         test_exit_code=$?
         set -e
 

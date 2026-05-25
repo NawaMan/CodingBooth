@@ -31,7 +31,7 @@ echo ""
 
 failed=0
 
-if echo "$output" | grep -qE 'claude'; then
+if grep -qE 'claude' <<< "$output"; then
     echo -e "${GREEN}\xe2\x9c\x93${NC} claude CLI is available"
 else
     echo -e "${RED}\xe2\x9c\x97${NC} claude CLI not found"

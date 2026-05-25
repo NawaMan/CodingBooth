@@ -126,7 +126,7 @@
         "net9.0"
       ],
       "sources": {
-        "/opt/dotnet/dotnet-9.0/sdk/9.0.311/FSharp/library-packs": {},
+        "/opt/dotnet/dotnet-9.0/sdk/9.0.314/FSharp/library-packs": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -169,7 +169,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/opt/dotnet/dotnet-9.0/sdk/9.0.311/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/opt/dotnet/dotnet-9.0/sdk/9.0.314/PortableRuntimeIdentifierGraph.json"
       }
     }
   }

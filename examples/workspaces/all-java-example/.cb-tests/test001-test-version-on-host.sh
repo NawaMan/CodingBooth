@@ -29,21 +29,21 @@ echo ""
 # Validate output contains expected patterns
 failed=0
 
-if echo "$output" | grep -qi "openjdk version"; then
+if grep -qi "openjdk version" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found 'openjdk version'"
 else
     echo -e "${RED}✗${NC} Missing 'openjdk version'"
     failed=1
 fi
 
-if echo "$output" | grep -qi "OpenJDK Runtime Environment"; then
+if grep -qi "OpenJDK Runtime Environment" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found 'OpenJDK Runtime Environment'"
 else
     echo -e "${RED}✗${NC} Missing 'OpenJDK Runtime Environment'"
     failed=1
 fi
 
-if echo "$output" | grep -qi "OpenJDK.*Server VM"; then
+if grep -qi "OpenJDK.*Server VM" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found 'OpenJDK Server VM'"
 else
     echo -e "${RED}✗${NC} Missing 'OpenJDK Server VM'"
