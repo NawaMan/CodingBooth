@@ -30,7 +30,7 @@ failed=0
 
 # Test that maven can compile and run the project
 echo "Testing maven compile and exec..."
-output=$("$BOOTH" --variant base --port "${CB_PORT:-50331}" -- 'mvn compile -B -q exec:java -Dexec.mainClass=com.example.App' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50331}" -- 'mvn compile -B -q exec:java -Dexec.mainClass=com.example.App' 2>&1) || true
 
 if grep -q "Hello from maven" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Maven project compiled and ran successfully"

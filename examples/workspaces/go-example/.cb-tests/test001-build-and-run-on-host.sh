@@ -29,7 +29,7 @@ echo ""
 
 # Run build, run, and inBooth tests all in one container session
 echo "Building, running treemoji, and testing Go tools inside container..."
-output=$("$BOOTH" --variant base --port "${CB_PORT:-50121}" -- './build.sh && ./run-treemoji.sh && ./.cb-tests/inBooth--run-all-tests.sh' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50121}" -- './build.sh && ./run-treemoji.sh && ./.cb-tests/inBooth--run-all-tests.sh' 2>&1) || true
 
 echo "$output"
 echo ""

@@ -24,7 +24,7 @@ fi
 echo "=== Testing Node.js Availability (Node.js example) ==="
 echo ""
 
-output=$("$BOOTH" --variant base --port "${CB_PORT:-50511}" -- 'node --version' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50511}" -- 'node --version' 2>&1) || true
 
 echo "$output"
 echo ""

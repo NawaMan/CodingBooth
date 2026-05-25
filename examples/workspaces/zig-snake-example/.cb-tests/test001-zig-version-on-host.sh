@@ -24,7 +24,7 @@ fi
 echo "=== Testing Zig Availability (Snake example) ==="
 echo ""
 
-output=$("$BOOTH" --variant base --port "${CB_PORT:-50601}" -- 'zig version' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50601}" -- 'zig version' 2>&1) || true
 
 echo "$output"
 echo ""

@@ -26,7 +26,7 @@ echo "=== Testing Neovim Exists ==="
 echo ""
 
 # Capture nvim --version output
-output=$("$BOOTH" --variant base --port "${CB_PORT:-50201}" -- 'nvim --version' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50201}" -- 'nvim --version' 2>&1) || true
 
 echo "$output"
 echo ""

@@ -24,7 +24,7 @@ fi
 echo "=== Testing Claude Code Availability ==="
 echo ""
 
-output=$("$BOOTH" --variant base --port "${CB_PORT:-50421}" -- 'command -v claude && claude --version' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50421}" -- 'command -v claude && claude --version' 2>&1) || true
 
 echo "$output"
 echo ""

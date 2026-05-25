@@ -24,7 +24,7 @@ fi
 echo "=== Testing Python Availability (FastAPI example) ==="
 echo ""
 
-output=$("$BOOTH" --variant base --port "${CB_PORT:-50441}" -- 'python --version' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50441}" -- 'python --version' 2>&1) || true
 
 echo "$output"
 echo ""

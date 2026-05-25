@@ -24,7 +24,7 @@ fi
 echo "=== Testing Java Availability (Spring Boot example) ==="
 echo ""
 
-output=$("$BOOTH" --variant base --port "${CB_PORT:-50571}" -- 'java --version' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50571}" -- 'java --version' 2>&1) || true
 
 echo "$output"
 echo ""

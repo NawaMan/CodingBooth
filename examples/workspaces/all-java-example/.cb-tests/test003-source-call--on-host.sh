@@ -35,7 +35,7 @@ class Test {
 }
 EOFJAVA
 jbang --quiet /tmp/Test.java one "two 2"
-' 2>&1)
+' 2>&1) || true
 
 echo "$output"
 echo ""

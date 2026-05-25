@@ -21,7 +21,7 @@ echo ""
 
 # Capture java -version output (note: java -version outputs to stderr)
 "../../../codingbooth" --variant base --port "${CB_PORT:-50011}" -- 'java -version' 2>&1
-output=$("../../../codingbooth" --variant base --port "${CB_PORT:-50011}" -- 'java -version' 2>&1)
+output=$("../../../codingbooth" --variant base --port "${CB_PORT:-50011}" -- 'java -version' 2>&1) || true
 
 echo "$output"
 echo ""

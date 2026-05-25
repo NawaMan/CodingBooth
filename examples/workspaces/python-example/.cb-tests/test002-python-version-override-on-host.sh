@@ -26,7 +26,7 @@ echo "=== Testing Python Version Override (3.13 via --build-arg) ==="
 echo ""
 
 # Capture python --version output with build-arg override
-output=$("$BOOTH" --variant base --port "${CB_PORT:-50252}" --build-arg PY_VERSION=3.13 -- 'python --version' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50252}" --build-arg PY_VERSION=3.13 -- 'python --version' 2>&1) || true
 
 echo "$output"
 echo ""

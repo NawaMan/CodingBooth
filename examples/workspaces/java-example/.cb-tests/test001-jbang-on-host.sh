@@ -28,7 +28,7 @@ echo ""
 
 # Run jbang inside the container
 echo "Running jbang inside container from host..."
-output=$(./run-example-on-host.sh 2>&1)
+output=$(./run-example-on-host.sh 2>&1) || true
 
 echo "$output"
 echo ""

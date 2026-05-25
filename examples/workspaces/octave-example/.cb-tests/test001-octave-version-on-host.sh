@@ -24,7 +24,7 @@ fi
 echo "=== Testing Octave Availability ==="
 echo ""
 
-output=$("$BOOTH" --variant base --port "${CB_PORT:-50521}" -- 'octave --version' 2>&1)
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50521}" -- 'octave --version' 2>&1) || true
 
 echo "$output"
 echo ""
