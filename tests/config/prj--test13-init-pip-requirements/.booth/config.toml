@@ -1,7 +1,0 @@
-# Configured by: booth config --no-tui --overwrite --select python+pip
-
-
-run-args = [
-    "-e", "PYTHONDONTWRITEBYTECODE=1",
-    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro"
-]

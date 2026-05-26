@@ -88,6 +88,8 @@ tests/dryrun/test--config.toml
 # absolute path into a header comment), so they shouldn't be tracked.
 tests/config/prj--*/
 tests/config/prj--*--recipe.txt
+# .NET intermediate build output (csharp-example / fsharp-example)
+**/obj/
 **/.Dockerfile.generated
 **/.booth/.tmp/
 

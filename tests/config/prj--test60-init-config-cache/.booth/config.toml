@@ -1,4 +1,0 @@
-# Configured by: booth config --no-tui --overwrite --set cache-files=home/coder/.bash_history --select shell-history
-
-
-cache-files = ["home/coder/.bash_history"]
