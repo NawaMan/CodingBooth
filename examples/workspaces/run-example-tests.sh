@@ -383,15 +383,15 @@ for example_dir in "${examples[@]}"; do
     result_code=${example_results[$example_name]}
 
     if [ "$result_code" = "0" ]; then
-        printf "  %-30s %-12s %s\n" "$example_name" "$duration_str" "passed"
+        printf "  %-32s %-12s %s\n" "$example_name" "$duration_str" "passed"
     elif [ "$result_code" = "124" ]; then
-        printf "${RED}  %-30s %-12s %s${NC}\n" "$example_name" "$duration_str" "TIMEOUT"
+        printf "${RED}  %-32s %-12s %s${NC}\n" "$example_name" "$duration_str" "TIMEOUT"
     else
-        printf "${RED}  %-30s %-12s %s${NC}\n" "$example_name" "$duration_str" "FAILED"
+        printf "${RED}  %-32s %-12s %s${NC}\n" "$example_name" "$duration_str" "FAILED"
     fi
 done
 echo "------------------------------------------------------"
-printf "  %-30s %-12s\n" "Total (wall clock):" "$(format_duration $OVERALL_DURATION)"
+printf "  %-32s %-12s\n" "Total (wall clock):" "$(format_duration $OVERALL_DURATION)"
 
 echo ""
 echo "======================================================"
@@ -404,9 +404,9 @@ else
     for example_name in "${failed_examples[@]}"; do
         result_code=${example_results[$example_name]}
         if [ "$result_code" = "124" ]; then
-            printf "${RED}  - %-25s %-12s - TIMEOUT - see .%s.log${NC}\n" "$example_name" "($(format_duration ${example_durations[$example_name]}))" "$example_name"
+            printf "${RED}  - %-32s %-12s - TIMEOUT - see .%s.log${NC}\n" "$example_name" "($(format_duration ${example_durations[$example_name]}))" "$example_name"
         else
-            printf "${RED}  - %-25s %-12s - see .%s.log${NC}\n" "$example_name" "($(format_duration ${example_durations[$example_name]}))" "$example_name"
+            printf "${RED}  - %-32s %-12s - see .%s.log${NC}\n" "$example_name" "($(format_duration ${example_durations[$example_name]}))" "$example_name"
         fi
     done
     echo ""
