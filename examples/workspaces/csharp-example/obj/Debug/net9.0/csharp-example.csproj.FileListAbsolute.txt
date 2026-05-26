@@ -1,12 +1,12 @@
-/home/coder/code/obj/Debug/net9.0/csharp-example.GeneratedMSBuildEditorConfig.editorconfig
-/home/coder/code/obj/Debug/net9.0/csharp-example.AssemblyInfoInputs.cache
-/home/coder/code/obj/Debug/net9.0/csharp-example.AssemblyInfo.cs
-/home/coder/code/obj/Debug/net9.0/csharp-example.csproj.CoreCompileInputs.cache
 /home/coder/code/bin/Debug/net9.0/csharp-example
 /home/coder/code/bin/Debug/net9.0/csharp-example.deps.json
 /home/coder/code/bin/Debug/net9.0/csharp-example.runtimeconfig.json
 /home/coder/code/bin/Debug/net9.0/csharp-example.dll
 /home/coder/code/bin/Debug/net9.0/csharp-example.pdb
+/home/coder/code/obj/Debug/net9.0/csharp-example.GeneratedMSBuildEditorConfig.editorconfig
+/home/coder/code/obj/Debug/net9.0/csharp-example.AssemblyInfoInputs.cache
+/home/coder/code/obj/Debug/net9.0/csharp-example.AssemblyInfo.cs
+/home/coder/code/obj/Debug/net9.0/csharp-example.csproj.CoreCompileInputs.cache
 /home/coder/code/obj/Debug/net9.0/csharp-example.dll
 /home/coder/code/obj/Debug/net9.0/refint/csharp-example.dll
 /home/coder/code/obj/Debug/net9.0/csharp-example.pdb
