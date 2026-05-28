@@ -12,15 +12,18 @@ This file contains a list of changes for each released version.
   - `booth uninstall` (no flags) keeps current behavior — removes only the project binary association (`.booth/tools/` lock + sha + project-local binaries)
   - `--shared-binary` — also remove the shared-cache binary pinned by this project's lock file (`~/.cache/codingbooth/versions/<v>/`)
   - `--all-shared-binary` — also remove every version in the shared cache
-  - `--wrapper` — also delete the `./booth` wrapper itself (safe self-delete on Linux/macOS)
-  - `--all` — composite shorthand: shared cache (all versions) + wrapper
+  - `--wrapper` — also delete the `./booth` wrapper itself (safe self-delete on Linux/macOS); now also strips the shell function from rc files since an orphan function pointing at a deleted wrapper would be misleading
+  - `--shell-config` — strip only the booth shell function from `~/.bashrc`, `~/.zshrc`, `~/.bash_profile`, `~/.profile` (writes a `*.booth-bak` backup before mutating)
+  - `--all` — composite shorthand: shared cache (all versions) + wrapper + shell function
   - `-y` / `--yes` — skip the single all-in-one confirmation prompt; required when stdin isn't a TTY
   - All scopes compose; one prompt summarises everything before any removal happens
-  - The shell function in `~/.bashrc` / `~/.zshrc` / etc. is **never** touched — when `--wrapper` is used, the success message points the user at the new `# >>> CodingBooth shell function ...` / `# <<< CodingBooth shell function ...` markers and asks them to delete the block manually
-- Shell function bumped to `cb-shell-fn-v3` and now wrapped in explicit BEGIN/END markers
-  - `# >>> CodingBooth shell function (cb-shell-fn-v3) >>>` … `# <<< CodingBooth shell function (cb-shell-fn-v3) <<<` brackets the injected `booth()` definition in rc files
-  - Idempotency detection in `booth shell-config` now greps the BEGIN marker (instead of the troubleshoot URL); the version suffix means future bumps auto-trigger re-injection without `--force`
-  - v2 users (the previous `# cb-shell-fn-v2` comment-only marker) get the new block appended on their next `booth shell-config` via the legacy `# CodingBooth - run …` detection path
+- Shell function shrunk to a single line, marker bumped to `# booth function v5`
+  - The previous v3 ~75-line fenced block (which inlined the `booth install` bootstrap prompts and the "wrapper not found" troubleshoot text) is replaced with a one-line `booth()` whose only job is to walk up from `$PWD`, exec `./booth`, and otherwise print a one-line install hint. Bootstrap UX moved into `install.sh`; troubleshoot copy moved into the wrapper itself
+  - Idempotency keys off the trailing `# booth function v5` suffix and the count of v5 lines — a single v5 line with no fence/signature/duplicate is "clean" (skipped); anything else triggers cleanup + reinject
+  - `booth shell-config` cleanup now removes every prior shape on each run, so repeated installs converge to exactly one booth function per rc file. Recognised legacy shapes: `# >>> CodingBooth shell function …` … `# <<< …` fenced blocks (v3 and any future fenced version), `# CodingBooth - run '<name>' from any subdirectory` signature blocks (one-liner and multi-line `booth()` / `codingbooth()`, brace-balanced), and any line ending with `# booth function v<N>`
+  - `booth shell-config --uninstall` (`-u`) removes every CodingBooth booth() block from all four rc files without re-adding the function — same cleanup pass, no append
+  - A `<rc-file>.booth-bak` backup is written before any rc file is mutated (install or uninstall)
+  - The wrapper-level help table and the `shell-config --help` text both list the new `--uninstall` and `--eval` flags
 - `booth install` outside a project bootstraps the wrapper in the current directory
   - Running `booth` from a folder with no booth wrapper in the directory tree previously errored with a "wrapper not found" message and required the user to copy-paste a `curl ... | bash` command from the message — a natural next attempt (`booth install`) was rejected the same way
   - `booth install` now prompts "install the booth wrapper here?" then (after the wrapper lands) "install the binary now?" — two explicit confirmations, no implicit network fetch

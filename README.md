@@ -117,6 +117,8 @@ curl -fsSL https://codingbooth.io/install.sh | bash
 
 > **Note:** The `booth` script operates relative to its own location, not the current working directory. You can run `/path/to/project/booth` from anywhere.
 
+For the full install/uninstall reference — shell function, wrapper, binary, `.booth/`, lock file, and shared cache — see **[booth install](docs/BOOTH_INSTALL.md)**.
+
 ### Try with an example
 
 CodingBooth provides several ready-to-use examples to get you started.
@@ -242,6 +244,7 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 
 ### Additional Commands
 
+- **Install & uninstall:** `booth install`, `booth update`, `booth uninstall`, `booth shell-config`, `booth tools-cache` — see **[booth install](docs/BOOTH_INSTALL.md)**
 - **Templates & scaffolding:** `booth template list`, `booth config` — see **[booth config](docs/BOOTH_CONFIG.md)**
 - **Build & publish:** `booth build`, `booth build --push` — see **[booth build](docs/BOOTH_BUILD.md)**
 - **Container lifecycle:** `booth start`, `booth stop`, `booth list`, `booth prune` — see **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)**
@@ -377,6 +380,7 @@ ln -sf /opt/codingbooth/AGENT.md /home/coder/WARP.md        # Warp terminal
 
 User-facing guides:
 
+- **[booth install](docs/BOOTH_INSTALL.md)** — Install and uninstall every layer: shell function, wrapper, binary, `.booth/`, lock file, shared cache
 - **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS
 - **[booth config](docs/BOOTH_CONFIG.md)** — Template-driven project scaffolding
 - **[booth build](docs/BOOTH_BUILD.md)** — Build and publish booth images to a container registry

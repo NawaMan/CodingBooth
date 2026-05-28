@@ -97,13 +97,13 @@ The wrapper handles these commands:
 | `install --cache=shared [VERSION]` | Download to shared cache (explicit)              |
 | `install --cache=local [VERSION]`  | Download to .booth/tools/                        |
 | `update [VERSION]`                 | Re-download binary (force refresh)               |
-| `uninstall`                        | Remove lock file and local binaries              |
+| `uninstall [SCOPES...] [-y]`       | Remove this project's booth (interactive by default). Scopes: `--shared-binary`, `--all-shared-binary`, `--wrapper` (also strips shell function), `--shell-config` (strip shell function only), `--all` (everything) |
 | `tools-cache list`                 | Show cached versions and sizes                   |
 | `tools-cache clean`                | Interactively remove cached versions             |
 | `tools-cache clean --all`          | Remove all cached versions                       |
 | `tools-cache clean VERSION`        | Remove specific version                          |
 | `run [ARGS...]`                    | Execute binary (after verification)              |
-| `shell-config [--force]`           | Add 'booth' command to your shell (bash/zsh); `--force` overrides custom `booth()` |
+| `shell-config [--force\|--uninstall\|--eval]` | Add (or remove) the `booth` shell function in your rc files. `--force` overrides a custom `booth()`; `--uninstall` removes every CodingBooth booth() block; `--eval` prints the function to stdout for `eval "$(./booth shell-config --eval)"` |
 | `version`                          | Show wrapper and binary versions                 |
 | `help`                             | Show usage information                           |
 
