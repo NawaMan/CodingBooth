@@ -47,6 +47,7 @@ ALL_VARIANTS=(
 # Script state (globals)
 PUSH="false"
 NO_CACHE="false"
+SKIP_LOGIN="false"
 VARIANTS_TO_BUILD=()
 
 # ======================
@@ -273,10 +274,11 @@ ParseArgs() {
 
   while [[ $# -gt 0 ]]; do
     case "$1" in
-      --push)       PUSH="true";      shift ;;
-      --no-cache)   NO_CACHE="true";  shift ;;
-      -h|--help)    Usage;            exit 0 ;;
-      *)            positional+=("$1"); shift ;;
+      --push)        PUSH="true";        shift ;;
+      --no-cache)    NO_CACHE="true";    shift ;;
+      --skip-login)  SKIP_LOGIN="true";  shift ;;
+      -h|--help)     Usage;              exit 0 ;;
+      *)             positional+=("$1"); shift ;;
     esac
   done
 
@@ -298,10 +300,14 @@ SetupPushEnvironment() {
     exit 3
   fi
 
-  Log "Logging in to Docker Hub as ${DOCKERHUB_USERNAME}"
-  if ! echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin; then
-    echo "❌ Docker login failed"
-    exit 4
+  if [[ "${SKIP_LOGIN}" == "true" ]]; then
+    Log "Skipping docker login (already performed by caller)"
+  else
+    Log "Logging in to Docker Hub as ${DOCKERHUB_USERNAME}"
+    if ! echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin; then
+      echo "❌ Docker login failed"
+      exit 4
+    fi
   fi
   echo
 
@@ -381,10 +387,11 @@ SignImages() {
 
 Usage() {
   cat <<EOF
-Usage: ./docker-build.sh [--push] [--no-cache] [variant ...]
+Usage: ./docker-build.sh [--push] [--no-cache] [--skip-login] [variant ...]
 Options:
   --push          Build and push using buildx (multi-arch) and sign images with cosign
   --no-cache      Build without using cache
+  --skip-login    Skip 'docker login' (assume caller already logged in). Requires --push.
   -h, --help      Show this help
 
 Variants (if none provided, all are built):

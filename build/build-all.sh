@@ -32,6 +32,7 @@ ALL_DEPENDENT_VARIANTS=(notebook codeserver desktop-xfce desktop-kde)
 DOCKER_FLAGS=()        # flags forwarded to docker-build.sh
 VARIANTS_TO_BUILD=()   # dependent variants (excludes base)
 STOP_REQUESTED=false
+PUSH_REQUESTED=false   # mirror of --push in DOCKER_FLAGS
 
 # Per-step status: pending | running | done | failed | cancelled
 declare -A STATUS
@@ -58,7 +59,7 @@ ParseArgs() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --push)     DOCKER_FLAGS+=("--push");     shift ;;
+            --push)     DOCKER_FLAGS+=("--push"); PUSH_REQUESTED=true; shift ;;
             --no-cache) DOCKER_FLAGS+=("--no-cache");  shift ;;
             -h|--help)  Usage; exit 0 ;;
             *)          positional+=("$1");            shift ;;
@@ -265,6 +266,26 @@ cancel_running() {
     done
 }
 
+# ── Docker login (once, before parallel builds) ───────────────────────
+#
+# Performed once in the parent so concurrent children don't race the macOS
+# keychain credential helper (error -25299: "item already exists").  Children
+# then receive --skip-login.
+docker_login_once() {
+    if [[ -z "${DOCKERHUB_USERNAME:-}" || -z "${DOCKERHUB_TOKEN:-}" ]]; then
+        echo -e "${C_RED}❌ DOCKERHUB_USERNAME and DOCKERHUB_TOKEN must both be set for --push.${C_RESET}"
+        exit 3
+    fi
+
+    echo -e "${C_GRAY}Logging in to Docker Hub as ${DOCKERHUB_USERNAME}...${C_RESET}"
+    if ! echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin >/dev/null; then
+        echo -e "${C_RED}❌ Docker login failed.${C_RESET}"
+        exit 4
+    fi
+
+    DOCKER_FLAGS+=("--skip-login")
+}
+
 # ── Build steps ───────────────────────────────────────────────────────
 
 build_cli() {
@@ -357,6 +378,11 @@ Main() {
 
     echo -e "${C_BOLD}CodingBooth Build${C_RESET}"
     echo ""
+
+    # Log in to Docker Hub once, before any parallel child build attempts it.
+    if [[ "$PUSH_REQUESTED" == true ]]; then
+        docker_login_once
+    fi
 
     draw_graph
 
