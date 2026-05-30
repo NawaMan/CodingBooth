@@ -263,9 +263,9 @@ function Main() {
             UninstallBooth "$@"
             exit 0
             ;;
-        install)
-            # Parse --cache= flag
-            shift  # Remove 'install'
+        install|update)
+            local cmd="$COMMAND"
+            shift
             local cache_mode="shared"
             local version_arg=""
             while [[ $# -gt 0 ]]; do
@@ -276,55 +276,18 @@ function Main() {
                     *)  version_arg="$1"; shift ;;
                 esac
             done
-            # If no version specified and already installed, just print and exit
-            if [[ -z "$version_arg" && -f "$LOCK_FILE" ]]; then
+            if [[ "$cache_mode" != "local" && "$cache_mode" != "shared" ]]; then
+                echo "Error: Invalid cache mode '$cache_mode'. Use 'local' or 'shared'." >&2
+                exit 1
+            fi
+            if [[ "$cmd" == "install" && -z "$version_arg" && -f "$LOCK_FILE" ]]; then
                 local lock_version
                 lock_version=$(grep '^version=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2-)
                 echo "CodingBooth is already installed (version: ${lock_version:-unknown})."
                 echo "Use '$0 update' to update to the latest version."
                 exit 0
             fi
-            # Validate cache mode
-            if [[ "$cache_mode" != "local" && "$cache_mode" != "shared" ]]; then
-                echo "Error: Invalid cache mode '$cache_mode'. Use 'local' or 'shared'." >&2
-                exit 1
-            fi
             DownloadBooth "${version_arg:-latest}" "$cache_mode"
-            exit 0
-            ;;
-        update-wrapper)
-            shift  # Remove 'update-wrapper'
-            local assume_yes="false"
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    -y|--yes) assume_yes="true"; shift ;;
-                    *) echo "Unknown option: $1" >&2
-                       echo "Usage: $0 update-wrapper [--yes|-y]" >&2
-                       exit 1 ;;
-                esac
-            done
-            UpdateWrapper "$assume_yes"
-            exit 0
-            ;;
-        update)
-            # Parse --cache= flag
-            shift  # Remove 'update'
-            local cache_mode="shared"
-            local version_arg="latest"
-            while [[ $# -gt 0 ]]; do
-                case "$1" in
-                    --cache=*) cache_mode="${1#--cache=}"; shift ;;
-                    --cache)   cache_mode="$2"; shift 2 ;;
-                    -*) echo "Unknown option: $1" >&2; exit 1 ;;
-                    *)  version_arg="$1"; shift ;;
-                esac
-            done
-            # Validate cache mode
-            if [[ "$cache_mode" != "local" && "$cache_mode" != "shared" ]]; then
-                echo "Error: Invalid cache mode '$cache_mode'. Use 'local' or 'shared'." >&2
-                exit 1
-            fi
-            DownloadBooth "$version_arg" "$cache_mode"
             exit 0
             ;;
         tools-cache)
@@ -351,11 +314,6 @@ function Main() {
     local lock_version lock_cache
     lock_version=$(grep '^version=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2-)
     lock_cache=$(grep '^cache=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2- || echo "shared")
-
-    # Handle legacy lock files without cache= line
-    if [[ -z "$lock_cache" ]]; then
-        lock_cache="shared"
-    fi
 
     if [[ -z "$lock_version" ]]; then
         echo "Invalid lock file: missing version"
@@ -444,7 +402,6 @@ Wrapper commands:
   install --cache=shared [VER]   Install to shared cache (explicit)
   install --cache=local [VER]    Install to .booth/tools/ (project-local)
   update  [VERSION]              Update binary to latest (or specified) version
-  update-wrapper [--yes|-y]      Update the 'booth' wrapper script (latest only)
   uninstall [SCOPES...] [-y]     Remove this project's booth (interactive by default)
                                  Scopes: --shared-binary       (also this version's shared cache)
                                          --all-shared-binary   (also every shared cache version)
@@ -478,6 +435,8 @@ Notes:
   - Only the current platform's binary is downloaded
   - Use --cache=local for CI/CD or portable/air-gapped environments
   - Set VERBOSE=true for extra logs during install
+  - To update the wrapper itself, re-run:
+      curl -fsSL https://codingbooth.io/install.sh | bash
 
 Help/Version disambiguation:
   ./booth help       Show this wrapper help (install, update, cache commands)
@@ -489,70 +448,18 @@ EOF
 
 function ShellConfig__print_func() {
     cat <<'EOF'
-unalias booth 2>/dev/null; booth() { local d=$PWD; while [[ $d ]]; do [[ -x $d/booth ]] && { "$d/booth" "$@"; return; }; d=${d%/*}; done; echo "No booth wrapper found. Install: curl -fsSL https://codingbooth.io/install.sh | bash" >&2; return 127; } # booth function v5
+unalias booth 2>/dev/null || true; booth() { local d=$PWD; while [[ $d ]]; do [[ -x $d/booth ]] && { "$d/booth" "$@"; return; }; d=${d%/*}; done; echo "No booth wrapper found. Install: curl -fsSL https://codingbooth.io/install.sh | bash" >&2; return 127; } # booth function v6
 EOF
 }
 
-# Remove every prior CodingBooth booth() block from $rc_file so re-running
-# shell-config is idempotent. Handles three legacy shapes:
-#   1. Fenced blocks: '# >>> CodingBooth shell function ...' through '# <<< ...'
-#   2. v5+ one-liners: any line ending with '# booth function vN'
-#   3. Legacy signature comment '# CodingBooth - run ...' followed by an
-#      optional 'unalias booth ...' and a booth()/codingbooth() function
-#      (one-liner or multi-line; tracked via brace balance).
+# Remove every prior booth() one-liner from $rc_file so re-running
+# shell-config is idempotent. Matches the marker comment at end-of-line.
 function ShellConfig__cleanup_rc() {
     local rc="$1"
     [[ -f "$rc" ]] || return 0
 
     cp -p "$rc" "$rc.booth-bak"
-
-    awk '
-        function reset_legacy() { skip = 0; brace = 0; seen_open = 0 }
-        function count_braces(line,   tmp) {
-            tmp = line; n_open  = gsub(/[{]/, "&", tmp)
-            tmp = line; n_close = gsub(/[}]/, "&", tmp)
-        }
-
-        BEGIN { skip = 0; brace = 0; seen_open = 0 }
-
-        # Inside a fenced block — skip until closing fence
-        skip == 3 {
-            if ($0 ~ /^# <<< CodingBooth shell function/) skip = 0
-            next
-        }
-
-        # Inside legacy function body — count braces until balanced
-        skip == 1 {
-            count_braces($0)
-            brace += n_open - n_close
-            if (n_open > 0) seen_open = 1
-            if (seen_open && brace <= 0) reset_legacy()
-            next
-        }
-
-        # Saw legacy signature — waiting for the function definition line
-        skip == 2 {
-            if ($0 ~ /^[[:space:]]*$/) next
-            if ($0 ~ /^unalias[[:space:]]+(booth|codingbooth)/) next
-            if ($0 ~ /^(booth|codingbooth)\(\)/) {
-                skip = 1; brace = 0; seen_open = 0
-                count_braces($0)
-                brace += n_open - n_close
-                if (n_open > 0) seen_open = 1
-                if (seen_open && brace <= 0) reset_legacy()
-                next
-            }
-            # Unrelated line — abandon legacy skip and print it
-            reset_legacy()
-        }
-
-        # Detect starts of skippable regions
-        /^# >>> CodingBooth shell function/        { skip = 3; next }
-        /^# CodingBooth - run .(booth|codingbooth). from any subdirectory$/ { skip = 2; next }
-        /# booth function v[0-9]+[[:space:]]*$/    { next }
-
-        { print }
-    ' "$rc" > "$rc.tmp" && mv "$rc.tmp" "$rc"
+    awk '!/# booth function v[0-9]+[[:space:]]*$/' "$rc" > "$rc.tmp" && mv "$rc.tmp" "$rc"
 }
 
 function ShellConfig() {
@@ -599,7 +506,7 @@ EOF
         local clean=()
         for rc_file in "${rc_files_all[@]}"; do
             [[ -f "$rc_file" ]] || continue
-            if grep -qE '^# >>> CodingBooth shell function|^# CodingBooth - run .+ from any subdirectory$|# booth function v[0-9]+[[:space:]]*$' "$rc_file" 2>/dev/null; then
+            if grep -qE '# booth function v[0-9]+[[:space:]]*$' "$rc_file" 2>/dev/null; then
                 ShellConfig__cleanup_rc "$rc_file"
                 removed+=("$rc_file")
             else
@@ -624,7 +531,7 @@ EOF
 
     # Bump the suffix in ShellConfig__print_func when the emitted line changes
     # so existing rc files get re-injected on next `booth shell-config`.
-    local fn_marker="# booth function v5"
+    local fn_marker="# booth function v6"
     local booth_func
     booth_func="$(ShellConfig__print_func)"
 
@@ -643,21 +550,24 @@ EOF
             continue
         fi
 
-        local had_current=false
-        local had_legacy=false
-        local had_custom=false
-        local v5_count
-        v5_count="$(grep -cE '# booth function v[0-9]+[[:space:]]*$' "$rc_file" 2>/dev/null || echo 0)"
-        [[ "$v5_count" -ge 1 ]] && had_current=true
-        if grep -Eq '^# >>> CodingBooth shell function|^# CodingBooth - run .+ from any subdirectory$' "$rc_file" 2>/dev/null; then
-            had_legacy=true
-        fi
-        [[ "$v5_count" -ge 2 ]] && had_legacy=true
-        if ! $had_current && ! $had_legacy && grep -q 'booth()' "$rc_file" 2>/dev/null; then
+        # Distinguish the CURRENT marker from any older v[0-9]+ marker so the
+        # bump mechanism actually triggers re-injection on outdated rc files.
+        local current_count any_count outdated_count
+        current_count="$(grep -cE "${fn_marker}[[:space:]]*\$" "$rc_file" 2>/dev/null)" || current_count=0
+        any_count="$(grep -cE '# booth function v[0-9]+[[:space:]]*$' "$rc_file" 2>/dev/null)" || any_count=0
+        outdated_count=$((any_count - current_count))
+
+        local had_current=false had_duplicate=false had_outdated=false had_custom=false
+        [[ "$current_count" -ge 1 ]] && had_current=true
+        [[ "$current_count" -ge 2 ]] && had_duplicate=true
+        [[ "$outdated_count" -ge 1 ]] && had_outdated=true
+        if ! $had_current && ! $had_outdated && grep -q 'booth()' "$rc_file" 2>/dev/null; then
             had_custom=true
         fi
 
-        if $had_current && ! $had_legacy && [[ "$force" != "true" ]]; then
+        # Only skip when fully up-to-date: one current marker, no duplicates,
+        # no outdated markers lying around.
+        if $had_current && ! $had_duplicate && ! $had_outdated && [[ "$force" != "true" ]]; then
             skipped+=("$rc_file")
             continue
         fi
@@ -676,7 +586,7 @@ EOF
 
         if [[ "$force" == "true" ]] && ($had_current || $had_custom); then
             forced+=("$rc_file")
-        elif $had_legacy || $had_current; then
+        elif $had_current || $had_outdated; then
             updated+=("$rc_file")
         else
             added+=("$rc_file")
@@ -834,15 +744,6 @@ function get_binary_name() {
     fi
 }
 
-# All supported platforms (used by uninstall for cleanup)
-ALL_PLATFORMS=(
-    "linux-amd64"
-    "linux-arm64"
-    "darwin-amd64"
-    "darwin-arm64"
-    "windows-amd64"
-)
-
 function UninstallBooth() {
     local remove_shared_binary=false
     local remove_all_shared_binary=false
@@ -913,12 +814,7 @@ function UninstallBooth() {
     fi
 
     # 1. Project binary association (always).
-    for platform in "${ALL_PLATFORMS[@]}"; do
-        local binary_name
-        binary_name=$(get_binary_name "$platform")
-        rm -f "$tools_dir/$binary_name"
-    done
-    rm -f "$sha_file" "$lock_file"
+    rm -f "$tools_dir"/codingbooth-* "$tools_dir/booth" "$sha_file" "$lock_file"
     rmdir "$tools_dir" 2>/dev/null || true
     rmdir "$BOOTH_DIR" 2>/dev/null || true
     echo "✓ Removed project binary association."
@@ -954,7 +850,7 @@ function UninstallBooth() {
         local removed_any=false
         for rc_file in "${rc_files_uninstall[@]}"; do
             [[ -f "$rc_file" ]] || continue
-            if grep -qE '^# >>> CodingBooth shell function|^# CodingBooth - run .+ from any subdirectory$|# booth function v[0-9]+[[:space:]]*$' "$rc_file" 2>/dev/null; then
+            if grep -qE '# booth function v[0-9]+[[:space:]]*$' "$rc_file" 2>/dev/null; then
                 ShellConfig__cleanup_rc "$rc_file"
                 echo "✓ Removed booth function from: $rc_file  (backup: $rc_file.booth-bak)"
                 removed_any=true
@@ -1130,68 +1026,9 @@ function ToolsCacheClean() {
     fi
 }
 
-function UpdateWrapper() {
-    local assume_yes="${1:-false}"
-
-    # Resolve the on-disk path of this wrapper script (follows symlinks).
-    local source="${BASH_SOURCE[0]}"
-    while [[ -L "$source" ]]; do
-        local link_dir
-        link_dir="$(cd -P "$(dirname "$source")" && pwd)"
-        source="$(readlink "$source")"
-        [[ "$source" != /* ]] && source="$link_dir/$source"
-    done
-    local target_dir target
-    target_dir="$(cd -P "$(dirname "$source")" && pwd)"
-    target="$target_dir/$(basename "$source")"
-
-    if [[ ! -f "$target" ]]; then
-        echo "Error: cannot locate wrapper script at $target" >&2
-        exit 1
-    fi
-    if [[ ! -w "$target" || ! -w "$target_dir" ]]; then
-        echo "Error: $target_dir is not writable" >&2
-        exit 1
-    fi
-
-    echo "This will replace the wrapper at:"
-    echo "    $target"
-    echo "with the latest version, by running:"
-    echo "    curl -fsSL https://codingbooth.io/install.sh | bash"
-    echo ""
-    echo "Current wrapper version: $VERSION"
-    echo ""
-
-    if [[ "$assume_yes" != "true" ]]; then
-        if [[ ! -t 0 ]]; then
-            echo "Error: not connected to a terminal — re-run with --yes to skip the prompt." >&2
-            exit 1
-        fi
-        local reply
-        read -rp "Proceed? [y/N] " reply
-        case "$reply" in
-            y|Y|yes|YES|Yes) ;;
-            *) echo "Cancelled." ; exit 0 ;;
-        esac
-        echo ""
-    fi
-
-    # Run the canonical install command from the wrapper's directory so the new
-    # wrapper lands in the right place.
-    ( cd "$target_dir" && curl -fsSL https://codingbooth.io/install.sh | bash )
-}
-
 function DownloadBooth() {
     local CB_VERSION=${1:-latest}
     local CACHE_MODE=${2:-shared}
-
-    # Detect common mistake: using --version flag instead of positional argument
-    if [[ "$CB_VERSION" == --* ]]; then
-        echo "Error: Invalid version '$CB_VERSION'" >&2
-        echo "Usage: $0 install [VERSION]" >&2
-        echo "Example: $0 install 0.13.0" >&2
-        exit 1
-    fi
 
     local tools_dir="$TOOLS_DIR"
     local lock_file="$LOCK_FILE"
@@ -1291,16 +1128,11 @@ cache/
 GITIGNORE
     fi
 
-    # Clear previous SHA256 file (will rebuild with current platform's entry)
-    > "$sha_file"
-
     local current_platform
     if ! current_platform=$(detect_platform); then
         echo "Error: Failed to detect platform" >&2
         return 1
     fi
-    local download_count=0
-    local fail_count=0
 
     if [[ "$CACHE_MODE" == "local" ]]; then
         echo "Downloading CodingBooth binary to project (--cache=local)..."
@@ -1309,106 +1141,75 @@ GITIGNORE
         echo "  Cache: $target_dir"
     fi
 
-    for platform in "$current_platform"; do
-        local binary_name
-        binary_name=$(get_binary_name "$platform")
-        local dest="$target_dir/$binary_name"
-        local TOOL_URL="${DWLD_URL}/${CB_VERSION}/${binary_name}"
-        local SHA256_URL="${DWLD_URL}/${CB_VERSION}/${binary_name}.sha256"
+    local binary_name dest TOOL_URL SHA256_URL
+    binary_name=$(get_binary_name "$current_platform")
+    dest="$target_dir/$binary_name"
+    TOOL_URL="${DWLD_URL}/${CB_VERSION}/${binary_name}"
+    SHA256_URL="${DWLD_URL}/${CB_VERSION}/${binary_name}.sha256"
 
-        if [[ "$VERBOSE" == "true" ]]; then
-            echo "  Checking: $binary_name"
-        else
-            echo -n "  $platform ... "
-        fi
+    if [[ "$VERBOSE" == "true" ]]; then
+        echo "  Checking: $binary_name"
+    else
+        echo -n "  $current_platform ... "
+    fi
 
-        local tmpsha256
-        tmpsha256=$(mktemp "/tmp/booth.sha256.XXXXXX")
+    local tmpsha256 expected_sha256
+    tmpsha256=$(mktemp "/tmp/booth.sha256.XXXXXX")
+    if ! curl -fsSLo "$tmpsha256" "$SHA256_URL"; then
+        echo "FAILED (sha256 fetch)"
+        rm -f "$tmpsha256"
+        echo "Error: Failed to download binary for $current_platform" >&2
+        return 1
+    fi
+    expected_sha256=$(awk '{print $1}' "$tmpsha256")
+    rm -f "$tmpsha256"
+    if ! [[ "$expected_sha256" =~ ^[0-9a-fA-F]{64}$ ]]; then
+        echo "FAILED (malformed sha256)"
+        return 1
+    fi
 
-        # Download SHA256 first to check if we need to download the binary
-        if ! curl -fsSLo "$tmpsha256" "$SHA256_URL"; then
-            echo "FAILED (sha256 fetch)"
-            rm -f "$tmpsha256"
-            : $((fail_count++))
-            continue
-        fi
-
-        local expected_sha256
-        expected_sha256=$(awk '{print $1}' "$tmpsha256")
-        if ! [[ "$expected_sha256" =~ ^[0-9a-fA-F]{64}$ ]]; then
-            echo "FAILED (malformed sha256)"
-            rm -f "$tmpsha256"
-            : $((fail_count++))
-            continue
-        fi
-
-        # Check if binary already exists with correct checksum
-        if [[ -f "$dest" ]]; then
-            local existing_sha256
-            existing_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
-            if [[ "$expected_sha256" == "$existing_sha256" ]]; then
-                # Binary already exists and is valid, skip download
-                printf '%s  %s\n' "$expected_sha256" "$binary_name" >> "$sha_file"
-                rm -f "$tmpsha256"
-                : $((download_count++))
-                if [[ "$VERBOSE" != "true" ]]; then
-                    echo "✓ up-to-date"
-                else
-                    echo "  Already up-to-date: $binary_name"
-                fi
-                continue
+    # If existing binary already matches expected SHA, no download needed.
+    local need_download=true
+    if [[ -f "$dest" ]]; then
+        local existing_sha256
+        existing_sha256=$(hash_sha256 "$dest" | awk '{print $1}')
+        if [[ "$expected_sha256" == "$existing_sha256" ]]; then
+            need_download=false
+            if [[ "$VERBOSE" != "true" ]]; then
+                echo "✓ up-to-date"
+            else
+                echo "  Already up-to-date: $binary_name"
             fi
         fi
+    fi
 
-        # Need to download - binary missing or checksum mismatch
+    if $need_download; then
         if [[ "$VERBOSE" == "true" ]]; then
             echo "  Downloading: $binary_name"
         fi
 
-        local tmpfile
+        local tmpfile actual_sha256
         tmpfile=$(mktemp "/tmp/booth.XXXXXX")
-
-        # Download binary
         if ! curl -fsSLo "$tmpfile" "$TOOL_URL"; then
             echo "FAILED (download)"
-            rm -f "$tmpfile" "$tmpsha256"
-            : $((fail_count++))
-            continue
+            rm -f "$tmpfile"
+            return 1
         fi
-
-        # Verify SHA256
-        local actual_sha256
         actual_sha256=$(hash_sha256 "$tmpfile" | awk '{print $1}')
         if [[ "$expected_sha256" != "$actual_sha256" ]]; then
             echo "FAILED (sha256 mismatch)"
-            rm -f "$tmpfile" "$tmpsha256"
-            : $((fail_count++))
-            continue
+            rm -f "$tmpfile"
+            return 1
         fi
-
-        # Install verified binary with 744 permissions
         mv -f "$tmpfile" "$dest"
         chmod 744 "$dest"
-
-        # Append to combined SHA256 file
-        printf '%s  %s\n' "$actual_sha256" "$binary_name" >> "$sha_file"
-
-        rm -f "$tmpsha256"
-        : $((download_count++))
-
         if [[ "$VERBOSE" != "true" ]]; then
             echo "OK"
         fi
-    done
-
-    if [[ $fail_count -gt 0 ]]; then
-        echo "Error: Failed to download binary for $current_platform" >&2
     fi
 
-    if [[ $download_count -eq 0 ]]; then
-        echo "Error: Binary download failed for $current_platform" >&2
-        return 1
-    fi
+    # Write SHA file (single entry, single platform).
+    printf '%s  %s\n' "$expected_sha256" "$binary_name" > "$sha_file"
 
     # Write lock file (always in .booth/tools/)
     {

@@ -1,0 +1,92 @@
+# Test environment for the booth wrapper.
+#
+# Build:
+#   docker build -t booth-wrapper-test tests/wrapper
+#
+# Run (full Docker-in-Docker — requires --privileged):
+#   docker run --rm -it --privileged \
+#     -v "$PWD":/booth:ro -w /work \
+#     booth-wrapper-test
+#
+# Inside the container:
+#   /booth  is the CodingBooth source (read-only — your repo)
+#   /work   is an empty scratch directory — start booth tests here
+#
+# Typical test flow (uses your local wrapper, not the published one):
+#   cp /booth/booth ./booth
+#   ./booth install
+#   ./booth help
+#
+# Or to test the canonical install flow from the public installer:
+#   curl -fsSL https://codingbooth.io/install.sh | bash
+#
+# To skip starting dockerd (wrapper-only tests that never touch Docker),
+# set NO_DIND=1:
+#   docker run --rm -it -e NO_DIND=1 -v "$PWD":/booth:ro -w /work booth-wrapper-test
+
+FROM ubuntu:24.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Core tools. fuse-overlayfs is needed for the nested dockerd to mount images
+# when the host already uses overlay2 (otherwise mounts fail with EINVAL).
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        curl \
+        fuse-overlayfs \
+        git \
+        gnupg \
+        iproute2 \
+        iptables \
+        jq \
+        less \
+        lsb-release \
+        nano \
+        sudo \
+        tilde \
+        tree \
+        unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+# GitHub CLI (official repo)
+RUN install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+         | gpg --dearmor -o /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && chmod go+r /etc/apt/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+         > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update && apt-get install -y --no-install-recommends gh \
+    && rm -rf /var/lib/apt/lists/*
+
+# Docker engine + CLI (official Docker repo)
+RUN install -m 0755 -d /etc/apt/keyrings \
+    && curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
+         | gpg --dearmor -o /etc/apt/keyrings/docker.gpg \
+    && chmod go+r /etc/apt/keyrings/docker.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" \
+         > /etc/apt/sources.list.d/docker.list \
+    && apt-get update && apt-get install -y --no-install-recommends \
+         docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin \
+    && rm -rf /var/lib/apt/lists/*
+
+# Non-root user; member of docker group so it can talk to the in-container daemon.
+# Ubuntu 24.04 ships with a default 'ubuntu' user at uid/gid 1000 — remove it
+# first so we can pin our test user to the same id.
+ARG USER_NAME=tester
+ARG USER_UID=1000
+ARG USER_GID=1000
+RUN (userdel -r ubuntu 2>/dev/null || true) \
+    && groupadd -g ${USER_GID} ${USER_NAME} \
+    && useradd -m -u ${USER_UID} -g ${USER_GID} -s /bin/bash ${USER_NAME} \
+    && usermod -aG docker ${USER_NAME} \
+    && echo "${USER_NAME} ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/${USER_NAME} \
+    && mkdir -p /work && chown ${USER_UID}:${USER_GID} /work
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+USER ${USER_NAME}
+WORKDIR /home/${USER_NAME}
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
+CMD ["bash"]
