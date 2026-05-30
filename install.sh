@@ -10,17 +10,7 @@ set -euo pipefail
 
 curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash
 ./booth install
-./booth shell-config
-
-# Detect current shell
-if [[ -n "${ZSH_VERSION:-}" ]] || [[ "$SHELL" == */zsh ]]; then
-    SHELL_NAME="zsh"
-else
-    SHELL_NAME="bash"
-fi
 
 echo ""
-echo "To start using CodingBooth, restart your $SHELL_NAME session or run:"
-echo ""
-echo "  $SHELL_NAME"
+echo "Use ./booth from this directory, or run it via a full path."
 echo ""

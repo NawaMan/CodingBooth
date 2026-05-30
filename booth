@@ -25,29 +25,10 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     echo ""
     echo "✅ CodingBooth has been installed."
     echo ""
-
-    if grep -qs 'booth()' ~/.bashrc ~/.zshrc ~/.bash_profile ~/.profile 2>/dev/null
-        # booth shell function already configured — use 'booth' not './booth'
-    then SCRPT=booth
-    else SCRPT=./booth
-    fi
-    
-    echo "Run '$SCRPT help' to see available commands."
+    echo "Run './booth help' to see available commands."
     echo ""
-    echo "Try '$SCRPT example' to see ready to use example."
-    echo "Or, '$SCRPT config'  to quickly start a new project."
-
-    if [[ "$SCRPT" == "./booth" ]]; then
-        echo ""
-        echo "💡 Tip: Add the following to your shell profile (~/.bashrc or ~/.zshrc)"
-        echo "   to use 'booth' as a command from anywhere:"
-        echo ""
-        if [[ "$SHELL" == */bash ]];
-        then RC_FILE="\$HOME/.bashrc"
-        else RC_FILE="\$HOME/.zshrc"
-        fi
-        echo "   ./booth shell-config && source \"$RC_FILE\""
-    fi
+    echo "Try './booth example' to see ready to use example."
+    echo "Or, './booth config'  to quickly start a new project."
     echo ""
     exit 0
 fi
@@ -405,8 +386,7 @@ Wrapper commands:
   uninstall [SCOPES...] [-y]     Remove this project's booth (interactive by default)
                                  Scopes: --shared-binary       (also this version's shared cache)
                                          --all-shared-binary   (also every shared cache version)
-                                         --wrapper             (also delete ./booth wrapper + shell function)
-                                         --shell-config        (also remove the booth shell function)
+                                         --wrapper             (also delete ./booth wrapper)
                                          --all                 (everything above)
 
   tools-cache list        Show cached binary versions and sizes
@@ -415,8 +395,6 @@ Wrapper commands:
   tools-cache clean VER   Remove specific version
 
   run [ARGS...]           Run booth with ARGS (after integrity checks)
-  shell-config [--force|--uninstall]
-                          Add (or remove) 'booth' command in your shell (bash/zsh)
   version                 Show version information
   help                    Show this help message
 
@@ -444,210 +422,6 @@ Help/Version disambiguation:
   ./booth version    Show wrapper version + binary version info
   ./booth --version  Show codingbooth binary version only
 EOF
-}
-
-function ShellConfig__print_func() {
-    cat <<'EOF'
-unalias booth 2>/dev/null || true; booth() { local d=$PWD; while [[ $d ]]; do [[ -x $d/booth ]] && { "$d/booth" "$@"; return; }; d=${d%/*}; done; echo "No booth wrapper found. Install: curl -fsSL https://codingbooth.io/install.sh | bash" >&2; return 127; } # booth function v6
-EOF
-}
-
-# Remove every prior booth() one-liner from $rc_file so re-running
-# shell-config is idempotent. Matches the marker comment at end-of-line.
-function ShellConfig__cleanup_rc() {
-    local rc="$1"
-    [[ -f "$rc" ]] || return 0
-
-    cp -p "$rc" "$rc.booth-bak"
-    awk '!/# booth function v[0-9]+[[:space:]]*$/' "$rc" > "$rc.tmp" && mv "$rc.tmp" "$rc"
-}
-
-function ShellConfig() {
-    local force=false
-    local uninstall=false
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --force|-f) force=true; shift ;;
-            --uninstall|-u) uninstall=true; shift ;;
-            --eval|-e)
-                # Output raw function to stdout for eval "$(./booth shell-config --eval)"
-                ShellConfig__print_func
-                return 0
-                ;;
-            --help|-h)
-                cat <<'EOF'
-Usage: ./booth shell-config [--force] [--uninstall] [--eval]
-
-Options:
-  --force, -f       Add/override booth() even if a custom booth() exists.
-  --uninstall, -u   Remove every CodingBooth booth() block from rc files.
-  --eval, -e        Print booth() function to stdout (for eval or sourcing).
-EOF
-                return 0
-                ;;
-            *)
-                echo "Unknown option for shell-config: $1" >&2
-                echo "Usage: ./booth shell-config [--force] [--uninstall] [--eval]" >&2
-                return 1
-                ;;
-        esac
-    done
-
-    # All supported shell rc files
-    local rc_files_all=(
-        "$HOME/.bashrc"
-        "$HOME/.zshrc"
-        "$HOME/.bash_profile"
-        "$HOME/.profile"
-    )
-
-    if [[ "$uninstall" == "true" ]]; then
-        local removed=()
-        local clean=()
-        for rc_file in "${rc_files_all[@]}"; do
-            [[ -f "$rc_file" ]] || continue
-            if grep -qE '# booth function v[0-9]+[[:space:]]*$' "$rc_file" 2>/dev/null; then
-                ShellConfig__cleanup_rc "$rc_file"
-                removed+=("$rc_file")
-            else
-                clean+=("$rc_file")
-            fi
-        done
-
-        if [[ ${#removed[@]} -gt 0 ]]; then
-            echo "✓ Removed booth function from:"
-            for f in "${removed[@]}"; do
-                echo "    $f  (backup: $f.booth-bak)"
-            done
-        fi
-        if [[ ${#removed[@]} -eq 0 ]]; then
-            echo "No CodingBooth booth() blocks found in any rc file."
-        else
-            echo ""
-            echo "Restart your terminal (or source the rc file) to drop the booth function."
-        fi
-        return 0
-    fi
-
-    # Bump the suffix in ShellConfig__print_func when the emitted line changes
-    # so existing rc files get re-injected on next `booth shell-config`.
-    local fn_marker="# booth function v6"
-    local booth_func
-    booth_func="$(ShellConfig__print_func)"
-
-    local rc_files=("${rc_files_all[@]}")
-
-    local added=()
-    local updated=()
-    local forced=()
-    local skipped=()
-    local custom_skipped=()
-    local not_found=()
-
-    for rc_file in "${rc_files[@]}"; do
-        if [[ ! -f "$rc_file" ]]; then
-            not_found+=("$rc_file")
-            continue
-        fi
-
-        # Distinguish the CURRENT marker from any older v[0-9]+ marker so the
-        # bump mechanism actually triggers re-injection on outdated rc files.
-        local current_count any_count outdated_count
-        current_count="$(grep -cE "${fn_marker}[[:space:]]*\$" "$rc_file" 2>/dev/null)" || current_count=0
-        any_count="$(grep -cE '# booth function v[0-9]+[[:space:]]*$' "$rc_file" 2>/dev/null)" || any_count=0
-        outdated_count=$((any_count - current_count))
-
-        local had_current=false had_duplicate=false had_outdated=false had_custom=false
-        [[ "$current_count" -ge 1 ]] && had_current=true
-        [[ "$current_count" -ge 2 ]] && had_duplicate=true
-        [[ "$outdated_count" -ge 1 ]] && had_outdated=true
-        if ! $had_current && ! $had_outdated && grep -q 'booth()' "$rc_file" 2>/dev/null; then
-            had_custom=true
-        fi
-
-        # Only skip when fully up-to-date: one current marker, no duplicates,
-        # no outdated markers lying around.
-        if $had_current && ! $had_duplicate && ! $had_outdated && [[ "$force" != "true" ]]; then
-            skipped+=("$rc_file")
-            continue
-        fi
-
-        if $had_custom && [[ "$force" != "true" ]]; then
-            custom_skipped+=("$rc_file")
-            continue
-        fi
-
-        ShellConfig__cleanup_rc "$rc_file"
-
-        {
-            echo ""
-            echo "$booth_func"
-        } >> "$rc_file"
-
-        if [[ "$force" == "true" ]] && ($had_current || $had_custom); then
-            forced+=("$rc_file")
-        elif $had_current || $had_outdated; then
-            updated+=("$rc_file")
-        else
-            added+=("$rc_file")
-        fi
-    done
-
-    # Report results
-    if [[ ${#added[@]} -gt 0 ]]; then
-        echo "✓ Added booth function to:"
-        for f in "${added[@]}"; do
-            echo "    $f"
-        done
-    fi
-
-    if [[ ${#updated[@]} -gt 0 ]]; then
-        echo "✓ Updated booth function in:"
-        for f in "${updated[@]}"; do
-            echo "    $f"
-        done
-    fi
-
-    if [[ ${#forced[@]} -gt 0 ]]; then
-        echo "✓ Force-installed booth function in:"
-        for f in "${forced[@]}"; do
-            echo "    $f"
-        done
-    fi
-
-    if [[ ${#skipped[@]} -gt 0 ]]; then
-        echo "✓ Already configured (skipped):"
-        for f in "${skipped[@]}"; do
-            echo "    $f"
-        done
-    fi
-
-    if [[ ${#custom_skipped[@]} -gt 0 ]]; then
-        echo "⚠ Custom booth() detected (not modified):"
-        for f in "${custom_skipped[@]}"; do
-            echo "    $f"
-        done
-    fi
-
-    if [[ ${#added[@]} -eq 0 && ${#updated[@]} -eq 0 && ${#forced[@]} -eq 0 && ${#skipped[@]} -eq 0 && ${#custom_skipped[@]} -eq 0 ]]; then
-        echo "No shell config files found." >&2
-        echo "" >&2
-        echo "You can activate booth in this shell by running:" >&2
-        echo '  eval "$(./booth shell-config)"' >&2
-        echo "" >&2
-        # Output raw function code to stdout so eval "$(./booth shell-config)" works
-        echo "$booth_func"
-        exit 0
-    fi
-
-    echo ""
-    if [[ ${#added[@]} -gt 0 || ${#updated[@]} -gt 0 || ${#forced[@]} -gt 0 ]]; then
-        echo "To activate, restart your terminal or run:"
-        echo "  source ~/.bashrc   # for bash"
-        echo "  source ~/.zshrc    # for zsh"
-        echo ""
-    fi
-    echo "Then you can run 'booth' from any subdirectory of a CodingBooth project."
 }
 
 function PrintVersion() {
@@ -748,19 +522,17 @@ function UninstallBooth() {
     local remove_shared_binary=false
     local remove_all_shared_binary=false
     local remove_wrapper=false
-    local remove_shell_config=false
     local assume_yes=false
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --shared-binary)     remove_shared_binary=true; shift ;;
             --all-shared-binary) remove_all_shared_binary=true; shift ;;
-            --wrapper)           remove_wrapper=true; remove_shell_config=true; shift ;;
-            --shell-config)      remove_shell_config=true; shift ;;
-            --all)               remove_all_shared_binary=true; remove_wrapper=true; remove_shell_config=true; shift ;;
+            --wrapper)           remove_wrapper=true; shift ;;
+            --all)               remove_all_shared_binary=true; remove_wrapper=true; shift ;;
             -y|--yes)            assume_yes=true; shift ;;
             *) echo "Unknown option: $1" >&2
-               echo "Usage: $0 uninstall [--shared-binary] [--all-shared-binary] [--wrapper] [--shell-config] [--all] [-y]" >&2
+               echo "Usage: $0 uninstall [--shared-binary] [--all-shared-binary] [--wrapper] [--all] [-y]" >&2
                exit 1 ;;
         esac
     done
@@ -789,9 +561,6 @@ function UninstallBooth() {
     fi
     if [[ "$remove_wrapper" == "true" ]]; then
         summary+=("- Wrapper script ($SCRIPT_DIR/booth)")
-    fi
-    if [[ "$remove_shell_config" == "true" ]]; then
-        summary+=("- Shell function from ~/.bashrc, ~/.zshrc, ~/.bash_profile, ~/.profile")
     fi
 
     # Confirmation prompt (single prompt, lists everything).
@@ -839,34 +608,10 @@ function UninstallBooth() {
         fi
     fi
 
-    # 4. Shell function from rc files.
-    if [[ "$remove_shell_config" == "true" ]]; then
-        local rc_files_uninstall=(
-            "$HOME/.bashrc"
-            "$HOME/.zshrc"
-            "$HOME/.bash_profile"
-            "$HOME/.profile"
-        )
-        local removed_any=false
-        for rc_file in "${rc_files_uninstall[@]}"; do
-            [[ -f "$rc_file" ]] || continue
-            if grep -qE '# booth function v[0-9]+[[:space:]]*$' "$rc_file" 2>/dev/null; then
-                ShellConfig__cleanup_rc "$rc_file"
-                echo "✓ Removed booth function from: $rc_file  (backup: $rc_file.booth-bak)"
-                removed_any=true
-            fi
-        done
-        if [[ "$removed_any" != "true" ]]; then
-            echo "(no booth shell function found in any rc file)"
-        fi
-    fi
-
     echo ""
     echo "CodingBooth has been uninstalled from this project."
 
-    if [[ "$remove_shell_config" == "true" ]]; then
-        echo "Restart your terminal (or source your rc file) to drop the booth function."
-    elif [[ "$remove_shared_binary" != "true" && "$remove_all_shared_binary" != "true" ]]; then
+    if [[ "$remove_shared_binary" != "true" && "$remove_all_shared_binary" != "true" ]]; then
         echo "To clean shared cache, run: $0 tools-cache clean"
     fi
 }
@@ -1227,11 +972,10 @@ GITIGNORE
     fi
 }
 
-# Early handling of version/help/shell-config so they don't require curl
+# Early handling of version/help so they don't require curl
 case "${COMMAND}" in
-    version)      PrintVersion ; exit 0 ; ;;
-    help)         PrintHelp    ; exit 0 ; ;;
-    shell-config) [[ "${1-}" == "shell-config" ]] && shift ; ShellConfig "$@" ; exit 0 ; ;;
+    version) PrintVersion ; exit 0 ; ;;
+    help)    PrintHelp    ; exit 0 ; ;;
 esac
 
 # Check for nested booth execution (running booth inside a booth container)

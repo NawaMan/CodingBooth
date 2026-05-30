@@ -87,11 +87,8 @@ This drops the **wrapper script** (`booth`) in the current directory, downloads 
 | `booth install [version]`    | Download the `codingbooth` binary (positional version argument)      |
 | `booth update [version]`     | Re-download to latest, or to a specific version                      |
 | `booth uninstall`            | Remove project lock file and locally-cached binaries                 |
-| `booth shell-config`         | Emit / install a shell function that walks parents to find a project-local `booth` |
 | `booth tools-cache list`     | Inspect the shared binary cache                                      |
 | `booth tools-cache clean [--all\|VERSION]` | Prune the shared binary cache                          |
-
-`shell-config` accepts `--force` (overwrite existing config) and `--eval` (print to stdout for inline `eval`).
 
 ### Cache layout
 
@@ -116,7 +113,7 @@ Every time you run `booth <something>` that forwards to the binary, the wrapper:
 6. Maintains a `booth` → `codingbooth-<platform>` symlink
 7. `exec`s the binary with your original argv
 
-Subcommands handled entirely by the wrapper (`help`, `version`, `install`, `update`, `uninstall`, `shell-config`, `tools-cache`) skip the gauntlet — they work without network access.
+Subcommands handled entirely by the wrapper (`help`, `version`, `install`, `update`, `uninstall`, `tools-cache`) skip the gauntlet — they work without network access.
 
 For more, see **[Wrapper implementation](docs/implementations/WRAPPER.md)**.
 
@@ -698,7 +695,6 @@ Wrapper-only commands that don't touch the binary at all:
 |----------------------------------------|-------------------------------------------------------------------------------|
 | `booth help`                           | Wrapper help (heredoc; no binary needed)                                      |
 | `booth version`                        | Wrapper banner + version constant; appends binary version when available       |
-| `booth shell-config [--force\|--eval]` | Install or print a shell function that walks parents to find the project `booth` |
 | `booth tools-cache list`               | Inspect the shared binary cache                                               |
 | `booth tools-cache clean [--all\|VERSION]` | Prune the shared binary cache                                              |
 
@@ -782,7 +778,7 @@ run-args = [
 2. `--dryrun` to see the exact Docker command
 3. [GitHub Issues](https://github.com/NawaMan/CodingBooth/issues)
 
-For known issues with stable codes, see [site/troubleshoot/](site/troubleshoot/) (served at `https://codingbooth.io/troubleshoot/`) — e.g., **[CBT0001 — booth-wrapper-not-found](site/troubleshoot/CBT0001-booth-wrapper-not-found.md)**.
+For known issues with stable codes, see [site/troubleshoot/](site/troubleshoot/) (served at `https://codingbooth.io/troubleshoot/`).
 
 
 ## Contributor Tooling

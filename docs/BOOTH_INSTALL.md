@@ -23,42 +23,13 @@ removes the shell function that points at it).
 
 ---
 
-## 1. Shell function
+## 1. Shell convenience (removed)
 
-The shell function is one line in your shell rc files that lets you type
-`booth` from any subdirectory of a project. It walks up from the current
-directory looking for an executable `./booth` wrapper and execs it.
-
-**Install**
-
-```bash
-./booth shell-config              # idempotent; safe to re-run any time
-./booth shell-config --force      # overwrite a custom booth() of your own
-eval "$(./booth shell-config --eval)"   # activate in the current shell only
-```
-
-`shell-config` writes one line to each of `~/.bashrc`, `~/.zshrc`,
-`~/.bash_profile`, `~/.profile` (whichever exist). The line ends with
-`# booth function v5` — that suffix is how `shell-config` recognises its own
-work and stays idempotent on re-runs. A `<rc-file>.booth-bak` backup is written
-before any rc file is modified.
-
-After install, open a new terminal (or `source ~/.bashrc` / `source ~/.zshrc`).
-
-**Uninstall**
-
-```bash
-./booth shell-config --uninstall  # remove the function from all rc files
-booth uninstall --shell-config    # same, scoped via the uninstall command
-```
-
-Both forms run the same cleanup pass and write `.booth-bak` backups. The pass
-recognises and removes every shape the function has had over time (current v5
-one-liner, older v3 fenced block, the original signature-comment + multi-line
-form). Anything unrelated in the rc file is left alone.
-
-See [BOOTH_SETUP.md](BOOTH_SETUP.md#host-side-shell-setup-the-booth-shell-function)
-for the exact contents of the v5 line and the cleanup details.
+Earlier versions of the wrapper shipped a `shell-config` subcommand that
+installed a `booth()` shell function into your rc files, letting you type
+`booth` from any subdirectory. That command has been **removed** — the
+wrapper no longer touches `~/.bashrc` or its siblings. Always invoke `./booth`
+by path, or write your own three-line shell function if you want a shortcut.
 
 ---
 
@@ -294,11 +265,10 @@ booth                # run
 ```bash
 booth update              # binary only — latest
 booth update 0.54.0       # binary only — specific
-booth update-wrapper      # also update the wrapper script (rare)
 ```
 
-If the v5 shell function ever gets superseded (v6, etc.), re-running
-`booth shell-config` will detect the old line and replace it.
+To update the wrapper itself, re-run the installer:
+`curl -fsSL https://codingbooth.io/install.sh | bash`.
 
 ### Remove CodingBooth from one project but keep using it elsewhere
 
@@ -371,12 +341,9 @@ Restart your shell to pick up the missing function.
 | Add CodingBooth to my machine             | `curl -fsSL https://codingbooth.io/install.sh \| bash` |
 | Add CodingBooth to a new project          | `booth install -y && booth config`          |
 | Update the binary                         | `booth update`                              |
-| Update the wrapper                        | `booth update-wrapper`                      |
-| Reinstall the shell function              | `booth shell-config`                        |
-| Activate the shell function in *this* shell | `eval "$(./booth shell-config --eval)"`   |
+| Update the wrapper                        | `curl -fsSL https://codingbooth.io/install.sh \| bash` |
 | Detach this project from CodingBooth      | `booth uninstall`                           |
 | Drop one cached binary version            | `booth tools-cache clean <version>`         |
 | Drop all cached binary versions           | `booth tools-cache clean --all`             |
 | Remove the wrapper from this project      | `booth uninstall --wrapper`                 |
-| Remove the shell function                 | `booth shell-config --uninstall`            |
 | Remove everything                         | `booth uninstall --all -y && rm -rf .booth/` |

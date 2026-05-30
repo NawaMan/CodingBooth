@@ -16,10 +16,9 @@ The wrapper's work splits three ways: things it does *about* the binary (without
 
 ### A1 — Lifecycle
 
-The lifecycle of the wrapper and the binary, all from the wrapper side: lands the wrapper itself (install.sh), wires up shell integration, then resolves which `codingbooth` to run, fetches it, verifies it, pins it, and keeps the cache tidy. None of these subcommands hand control to the binary.
+The lifecycle of the wrapper and the binary, all from the wrapper side: lands the wrapper itself (install.sh), then resolves which `codingbooth` to run, fetches it, verifies it, pins it, and keeps the cache tidy. None of these subcommands hand control to the binary.
 
 - Install bootstrap (`install.sh`) — standalone one-liner that fetches the wrapper itself
-- `booth shell-config [--force|--eval]` — emit / install a shell function that walks parents to find a project-local `booth`
 - `booth install [version]` (`--cache=shared|local`) — download + install the `codingbooth` binary (positional version arg)
 - `booth update [version]` (`--cache=…`) — re-download to latest or specified version
 - `booth uninstall` — remove project lock + local binaries

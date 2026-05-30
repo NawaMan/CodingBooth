@@ -16,11 +16,6 @@ case "$-" in
 esac
 
 
-# ── booth command (walk up to find project booth wrapper) ──
-if [[ -x "$HOME/code/booth" ]]; then
-    eval "$("$HOME/code/booth" shell-config --eval 2>/dev/null)" 2>/dev/null || true
-fi
-
 # Aliases
 alias cp='cp -p'
 alias ls='ls --color=auto'

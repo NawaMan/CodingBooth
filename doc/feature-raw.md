@@ -60,7 +60,6 @@
 - Label-based container management (`cb.managed`, `cb.project`, `cb.variant`, `cb.role`, `cb.parent`)
 - Booth-in-booth detection with opt-in mechanism
 - Install / update via `booth install [version]`
-- `booth shell-config` for shell integration
 - Built-in toolset: bash/zsh/tini, curl/wget/httpie, git/gh/tig, nano/tilde/ranger/less, jq/yq/tree, unzip/zip/xz, ca-certificates/locales/sudo, socat
 - Code-server extensions: base, bash, shutdown, restart, message, auto-accept, + per-language
 - Jupyter multi-language kernels (Python, Bash, Java, more)

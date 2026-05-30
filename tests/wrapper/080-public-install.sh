@@ -28,11 +28,6 @@ fi
 
 echo "=== STEP 4: wrapper runs ==="
 ./booth version 2>&1 | head -10
-
-echo "=== STEP 5: shell-config landed in bashrc ==="
-# The published wrapper may emit any of several historical marker formats.
-# Just verify the function name appears in the rc file at all.
-echo "BOOTH_REF: $(count 'booth' ~/.bashrc)"
 BASH
 )
 
@@ -49,9 +44,4 @@ assert_contains "$LAST_OUTPUT" "version="
 assert_contains "$LAST_OUTPUT" "cache="
 # Wrapper runs and reports a version line.
 assert_contains "$LAST_OUTPUT" "CodingBooth Wrapper:"
-# shell-config succeeded and put a reference to booth into ~/.bashrc.
-assert_contains "$LAST_OUTPUT" "Added booth function to"
-# The grep for 'booth' returns ≥1 (don't pin the exact count — depends on
-# which historical format the published wrapper writes).
-assert_not_contains "$LAST_OUTPUT" "BOOTH_REF: 0"
 pass

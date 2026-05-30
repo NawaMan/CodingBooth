@@ -4,33 +4,21 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
-- "Wrapper not found" error message shortened to three lines and points at codingbooth.io
-  - Dropped the redundant "What happened:" sentence and the two-paragraph install hint
-  - The "More Information" link now resolves to `https://codingbooth.io/troubleshoot/CBT0001-booth-wrapper-not-found.md` (the doc was moved from `docs/troubleshoot/` to `site/troubleshoot/` so the codingbooth.io host serves it directly)
-  - Final line is a single actionable hint: `To make this directory a booth project, run: booth install`
+- **Removed `booth shell-config` and the host-side `booth()` shell function.** Earlier versions of the wrapper shipped a `shell-config` subcommand that wrote a `booth()` one-liner into `~/.bashrc`, `~/.zshrc`, `~/.bash_profile`, and `~/.profile`, letting users type `booth` from any subdirectory of a project. The subcommand, the function it managed, the version-marker bump mechanism, the rc-file cleanup logic, and the `--shell-config` uninstall scope are all gone. Users now always invoke `./booth` by path, or hand-write their own three-line walk-up shell function if they want a shortcut. `install.sh` and the wrapper's pipe-install bootstrap no longer touch rc files.
+- Wrapper trimmed from ~1450 to ~990 lines: legacy v1–v4 rc-file cleanup awk, the `update-wrapper` subcommand, the `ALL_PLATFORMS` uninstall loop, multi-platform sha-file plumbing, and other defensive code for states the wrapper never produced are all removed.
 - `booth uninstall` gets scope flags for incremental removal
   - `booth uninstall` (no flags) keeps current behavior — removes only the project binary association (`.booth/tools/` lock + sha + project-local binaries)
   - `--shared-binary` — also remove the shared-cache binary pinned by this project's lock file (`~/.cache/codingbooth/versions/<v>/`)
   - `--all-shared-binary` — also remove every version in the shared cache
-  - `--wrapper` — also delete the `./booth` wrapper itself (safe self-delete on Linux/macOS); now also strips the shell function from rc files since an orphan function pointing at a deleted wrapper would be misleading
-  - `--shell-config` — strip only the booth shell function from `~/.bashrc`, `~/.zshrc`, `~/.bash_profile`, `~/.profile` (writes a `*.booth-bak` backup before mutating)
-  - `--all` — composite shorthand: shared cache (all versions) + wrapper + shell function
+  - `--wrapper` — also delete the `./booth` wrapper itself (safe self-delete on Linux/macOS)
+  - `--all` — composite shorthand: shared cache (all versions) + wrapper
   - `-y` / `--yes` — skip the single all-in-one confirmation prompt; required when stdin isn't a TTY
   - All scopes compose; one prompt summarises everything before any removal happens
-- Shell function shrunk to a single line, marker bumped to `# booth function v5`
-  - The previous v3 ~75-line fenced block (which inlined the `booth install` bootstrap prompts and the "wrapper not found" troubleshoot text) is replaced with a one-line `booth()` whose only job is to walk up from `$PWD`, exec `./booth`, and otherwise print a one-line install hint. Bootstrap UX moved into `install.sh`; troubleshoot copy moved into the wrapper itself
-  - Idempotency keys off the trailing `# booth function v5` suffix and the count of v5 lines — a single v5 line with no fence/signature/duplicate is "clean" (skipped); anything else triggers cleanup + reinject
-  - `booth shell-config` cleanup now removes every prior shape on each run, so repeated installs converge to exactly one booth function per rc file. Recognised legacy shapes: `# >>> CodingBooth shell function …` … `# <<< …` fenced blocks (v3 and any future fenced version), `# CodingBooth - run '<name>' from any subdirectory` signature blocks (one-liner and multi-line `booth()` / `codingbooth()`, brace-balanced), and any line ending with `# booth function v<N>`
-  - `booth shell-config --uninstall` (`-u`) removes every CodingBooth booth() block from all four rc files without re-adding the function — same cleanup pass, no append
-  - A `<rc-file>.booth-bak` backup is written before any rc file is mutated (install or uninstall)
-  - The wrapper-level help table and the `shell-config --help` text both list the new `--uninstall` and `--eval` flags
 - `booth install` outside a project bootstraps the wrapper in the current directory
   - Running `booth` from a folder with no booth wrapper in the directory tree previously errored with a "wrapper not found" message and required the user to copy-paste a `curl ... | bash` command from the message — a natural next attempt (`booth install`) was rejected the same way
   - `booth install` now prompts "install the booth wrapper here?" then (after the wrapper lands) "install the binary now?" — two explicit confirmations, no implicit network fetch
-  - `booth install -y` skips both prompts and runs `https://codingbooth.io/install.sh | bash` directly (wrapper + binary + `shell-config`)
+  - `booth install -y` skips both prompts and runs `https://codingbooth.io/install.sh | bash` directly (wrapper + binary)
   - Refuses to clobber if a non-executable file named `booth` already exists in the current directory; refuses to prompt if stdin isn't a TTY (must use `-y`)
-  - Error-message URL and `docs/troubleshoot/CBT0001-booth-wrapper-not-found.md` updated to point at `https://codingbooth.io/install.sh` (the canonical installer)
-  - Shell-function detection in `booth shell-config` switched from grepping the troubleshoot URL to a `# cb-shell-fn-v2` version stamp, so existing users get the new install branch on next `booth shell-config` (no `--force` needed) — they still need to re-source their rc file once for the new function to take effect in the current shell
 - Bash-like variable expansion for `.booth/.env`, `config.toml`, and `CB_*` env vars (see `docs/BOOTH_VARS.md`)
   - `$VAR`, `${VAR}`, `${VAR:-default}`, `${VAR:?required-message}`, leading `~`, `\$` / `\\` / `\"` / `\~` escapes, and bash-style `"..."` (expanding) / `'...'` (literal) quoting are now resolved by booth before the value reaches docker
   - `.booth/.env` and `--env-file <path>`: booth now parses the file, expands each value (earlier lines visible to later ones, falling through to host env), and hands docker a `0600` expanded copy under `.booth/.tmp/`. Docker's `--env-file` does not substitute `$VAR` or `~` natively, so without this the values were reaching the container literally
@@ -356,7 +344,6 @@ This file contains a list of changes for each released version.
 ### Changed
 - booth wrapper script now cache the binary per user
 - booth is now location-based, meaning it operates relative to the script's own location (not the current directory) 
-- booth will suggest booth function (shell-config command) that will searc upward from the current DIR until ./booth is found.
 
 ## v0.13.0
 - Mess happens so don't have a coherent items, sorry :-p

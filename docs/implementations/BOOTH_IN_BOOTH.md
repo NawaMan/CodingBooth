@@ -255,7 +255,6 @@ The following wrapper commands bypass the nested booth check entirely:
 |----------------|---------------------------------------------|
 | `help`         | Read-only, informational                    |
 | `version`      | Read-only, informational                    |
-| `shell-config` | Shell configuration, no container involved  |
 
 These are handled early in the wrapper before the detection runs.
 

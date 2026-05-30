@@ -244,7 +244,7 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 
 ### Additional Commands
 
-- **Install & uninstall:** `booth install`, `booth update`, `booth uninstall`, `booth shell-config`, `booth tools-cache` — see **[booth install](docs/BOOTH_INSTALL.md)**
+- **Install & uninstall:** `booth install`, `booth update`, `booth uninstall`, `booth tools-cache` — see **[booth install](docs/BOOTH_INSTALL.md)**
 - **Templates & scaffolding:** `booth template list`, `booth config` — see **[booth config](docs/BOOTH_CONFIG.md)**
 - **Build & publish:** `booth build`, `booth build --push` — see **[booth build](docs/BOOTH_BUILD.md)**
 - **Container lifecycle:** `booth start`, `booth stop`, `booth list`, `booth prune` — see **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)**
