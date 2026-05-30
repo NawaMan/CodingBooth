@@ -73,6 +73,9 @@ func main() {
 		case "config":
 			runConfig(version)
 			return
+		case "tools-cache":
+			runToolsCache()
+			return
 		case "build":
 			buildBooth(version)
 			return

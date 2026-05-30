@@ -3,10 +3,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-
 # CodingBooth Wrapper (booth)
 # Downloads, verifies, and runs the platform-specific CodingBooth binary.
-# Install: curl -fsSL https://github.com/NawaMan/WorkSpace/releases/download/latest/booth | bash
+# Install: curl -fsSL https://codingbooth.io/install.sh | bash
 
 set -euo pipefail
 trap 'status=$?; echo "❌ Error on line $LINENO (exit $status)" >&2; exit "$status"' ERR
@@ -18,34 +17,17 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
       "$0" == "sh"   || "$0" == "-sh"   || "$0" == "/bin/sh"   || \
       "$0" == "zsh"  || "$0" == "-zsh"  || "$0" == "/bin/zsh" ]]; then
     echo "Installing CodingBooth wrapper..."
-    curl -fsSL -o booth https://github.com/NawaMan/WorkSpace/releases/download/latest/booth
-    chmod +x booth
-    echo ""
-    ./booth install
-    echo ""
-    echo "✅ CodingBooth has been installed."
-    echo ""
-    echo "Run './booth help' to see available commands."
-    echo ""
-    echo "Try './booth example' to see ready to use example."
-    echo "Or, './booth config'  to quickly start a new project."
-    echo ""
+    curl -fsSL https://codingbooth.io/install.sh | bash
     exit 0
 fi
 
 VERSION=0.12.0
 VERBOSE="${VERBOSE:-true}"
 
-# Resolve script directory (follow symlinks) so all project paths are location-based.
+# Resolve script directory (follow symlinks) so all project paths are
+# location-based. realpath canonicalises the full path in one call.
 get_script_dir() {
-    local source="${BASH_SOURCE[0]}"
-    while [[ -L "$source" ]]; do
-        local dir
-        dir="$(cd -P "$(dirname "$source")" && pwd)"
-        source="$(readlink "$source")"
-        [[ "$source" != /* ]] && source="$dir/$source"
-    done
-    cd -P "$(dirname "$source")" && pwd
+    dirname "$(realpath "${BASH_SOURCE[0]}")"
 }
 
 SCRIPT_DIR="$(get_script_dir)"
@@ -57,135 +39,57 @@ LOCK_FILE="${TOOLS_DIR}/codingbooth.lock"
 # Detect if running inside a CodingBooth container and prevent accidental nested execution.
 # Users can explicitly allow nested execution by setting BOOTH_IN_BOOTH=true and using a different port.
 detect_nested_booth() {
-    # Check if we're inside a CodingBooth container
-    # Markers: /opt/codingbooth/ directory exists OR BOOTH_CONTAINER_NAME is set
-    if [[ ! -d "/opt/codingbooth" && -z "${BOOTH_CONTAINER_NAME:-}" ]]; then
-        return 0  # Not inside a container, continue normally
-    fi
+    # Markers for being inside a booth: /opt/codingbooth/ dir or BOOTH_CONTAINER_NAME.
+    [[ ! -d "/opt/codingbooth" && -z "${BOOTH_CONTAINER_NAME:-}" ]] && return 0
 
-    # We're inside a CodingBooth container
     if [[ "${BOOTH_IN_BOOTH:-}" != "true" ]]; then
-        cat >&2 <<'EOF'
-╔════════════════════════════════════════════════════════════════════════╗
-║                    Running booth inside a booth container              ║
-╠════════════════════════════════════════════════════════════════════════╣
-║ You appear to be running 'booth' from inside a CodingBooth container.  ║
-║ This is usually accidental - the booth script is visible here because  ║
-║ your project folder is mounted at /home/coder/code.                    ║
-║                                                                        ║
-║ To configure this booth (edit .booth/ settings), run:                  ║
-║                                                                        ║
-║     booth config                                                       ║
-║                                                                        ║
-║ If you intentionally want to run a nested booth (booth-in-booth), set: ║
-║                                                                        ║
-║     export BOOTH_IN_BOOTH=true                                         ║
-║                                                                        ║
-║ AND specify a different port (not the current container's port):       ║
-║                                                                        ║
-║     ./booth --port NEXT ...                                            ║
-║     ./booth --port 11000 ...                                           ║
-║                                                                        ║
-╚════════════════════════════════════════════════════════════════════════╝
+        cat >&2 <<EOF
+Error: Running booth inside a booth container.
+  To configure this booth, run: booth config
+  To launch a nested booth, set BOOTH_IN_BOOTH=true and pass --port <different>.
 EOF
         exit 1
     fi
 
-    # BOOTH_IN_BOOTH=true is set, now check port
+    # Find --port in args.
     local requested_port=""
-    local args=("$@")
-    local i=0
-    while [[ $i -lt ${#args[@]} ]]; do
-        case "${args[$i]}" in
-            --port)
-                if [[ $((i+1)) -lt ${#args[@]} ]]; then
-                    requested_port="${args[$((i+1))]}"
-                fi
-                break
-                ;;
-            --port=*)
-                requested_port="${args[$i]#--port=}"
-                break
-                ;;
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --port=*) requested_port="${1#--port=}"; break ;;
+            --port)   requested_port="${2:-}"; break ;;
+            *) shift ;;
         esac
-        ((i++)) || true
     done
 
-    # Get current container's ports
     local host_port="${BOOTH_HOST_PORT:-}"
     local code_port="${BOOTH_CODE_PORT:-10000}"
 
-    # If no port specified, error out - we need an explicit different port
     if [[ -z "$requested_port" ]]; then
         cat >&2 <<EOF
-╔═══════════════════════════════════════════════════════════════════════════╗
-║                         Port conflict in nested booth                     ║
-╠═══════════════════════════════════════════════════════════════════════════╣
-║ BOOTH_IN_BOOTH=true is set, but no port was specified.                    ║
-║                                                                           ║
-║ You must specify a different port to avoid conflicts with this container: ║
-║   Current container's host port: ${host_port:-"(not set)"}                                     ║
-║   Current container's code port: ${code_port}                                     ║
-║                                                                           ║
-║ Use one of:                                                               ║
-║     ./booth --port NEXT ...      (auto-find next available port)          ║
-║     ./booth --port RANDOM ...    (use a random port)                      ║
-║     ./booth --port 11000 ...     (explicit different port)                ║
-║                                                                           ║
-╚═══════════════════════════════════════════════════════════════════════════╝
+Error: nested booth requires an explicit --port.
+  Current container: host=${host_port:-(not set)}, code=${code_port}
+  Use:  --port NEXT  |  --port RANDOM  |  --port <number>
 EOF
         exit 1
     fi
 
-    # Check if the requested port conflicts with current container's ports
-    # Skip check for NEXT and RANDOM as they will find a different port
     if [[ "$requested_port" != "NEXT" && "$requested_port" != "RANDOM" ]]; then
-        if [[ "$requested_port" == "$host_port" ]]; then
-            cat >&2 <<EOF
-╔═════════════════════════════════════════════════════════════════════════════════╗
-║                         Port conflict in nested booth                           ║
-╠═════════════════════════════════════════════════════════════════════════════════╣
-║ The requested port ($requested_port) conflicts with this container's host port. ║
-║                                                                                 ║
-║ Use a different port:                                                           ║
-║     ./booth --port NEXT ...      (auto-find next available port)                ║
-║     ./booth --port RANDOM ...    (use a random port)                            ║
-║                                                                                 ║
-╚═════════════════════════════════════════════════════════════════════════════════╝
-EOF
-            exit 1
-        fi
-        if [[ "$requested_port" == "$code_port" ]]; then
-            cat >&2 <<EOF
-╔═════════════════════════════════════════════════════════════════════════════════╗
-║                         Port conflict in nested booth                           ║
-╠═════════════════════════════════════════════════════════════════════════════════╣
-║ The requested port ($requested_port) conflicts with this container's code port. ║
-║                                                                                 ║
-║ Use a different port:                                                           ║
-║     ./booth --port NEXT ...      (auto-find next available port)                ║
-║     ./booth --port RANDOM ...    (use a random port)                            ║
-║                                                                                 ║
-╚═════════════════════════════════════════════════════════════════════════════════╝
-EOF
+        if [[ "$requested_port" == "$host_port" || "$requested_port" == "$code_port" ]]; then
+            local kind="host port"
+            [[ "$requested_port" == "$code_port" ]] && kind="code port"
+            echo "Error: --port $requested_port conflicts with this container's $kind." >&2
+            echo "  Use:  --port NEXT  |  --port RANDOM  |  --port <other-number>" >&2
             exit 1
         fi
     fi
-
-    # All checks passed, allow nested execution
-    return 0
 }
 
 # --- CENTRAL CACHE SETUP ---
 # Platform-specific cache directory for shared binary storage
 get_cache_dir() {
     case "$(uname -s)" in
-        Linux*)
-            echo "${XDG_CACHE_HOME:-$HOME/.cache}/codingbooth"
-            ;;
-        Darwin*)
-            echo "$HOME/Library/Caches/codingbooth"
-            ;;
+        Linux*)  echo "${XDG_CACHE_HOME:-$HOME/.cache}/codingbooth" ;;
+        Darwin*) echo "$HOME/Library/Caches/codingbooth"            ;;
         MINGW*|MSYS*|CYGWIN*)
             if [[ -n "${LOCALAPPDATA:-}" ]]; then
                 echo "$LOCALAPPDATA/codingbooth"
@@ -193,9 +97,7 @@ get_cache_dir() {
                 echo "$HOME/AppData/Local/codingbooth"
             fi
             ;;
-        *)
-            echo "${XDG_CACHE_HOME:-$HOME/.cache}/codingbooth"
-            ;;
+        *) echo "${XDG_CACHE_HOME:-$HOME/.cache}/codingbooth" ;;
     esac
 }
 
@@ -269,15 +171,6 @@ function Main() {
                 exit 0
             fi
             DownloadBooth "${version_arg:-latest}" "$cache_mode"
-            exit 0
-            ;;
-        tools-cache)
-            shift  # Remove 'tools-cache'
-            case "${1:-list}" in
-                list)  ToolsCacheList ;;
-                clean) shift; ToolsCacheClean "$@" ;;
-                *)     echo "Unknown tools-cache command: $1" >&2; exit 1 ;;
-            esac
             exit 0
             ;;
         run)            [[ "${1-}" == "run" ]] && shift  ;          ;;
@@ -388,11 +281,6 @@ Wrapper commands:
                                          --all-shared-binary   (also every shared cache version)
                                          --wrapper             (also delete ./booth wrapper)
                                          --all                 (everything above)
-
-  tools-cache list        Show cached binary versions and sizes
-  tools-cache clean       Interactively remove cached versions
-  tools-cache clean --all Remove all cached versions
-  tools-cache clean VER   Remove specific version
 
   run [ARGS...]           Run booth with ARGS (after integrity checks)
   version                 Show version information
@@ -590,10 +478,12 @@ function UninstallBooth() {
 
     # 2. Shared-cache binary.
     if [[ "$remove_all_shared_binary" == "true" ]]; then
-        ToolsCacheClean --all || true
+        rm -rf "$BOOTH_CACHE_DIR/versions"
+        echo "✓ Removed all cached versions ($BOOTH_CACHE_DIR/versions)."
     elif [[ "$remove_shared_binary" == "true" ]]; then
         if [[ -n "$lock_version" ]]; then
-            ToolsCacheClean "$lock_version" || true
+            rm -rf "$BOOTH_CACHE_DIR/versions/$lock_version"
+            echo "✓ Removed cached version $lock_version."
         else
             echo "(no lock file — nothing to remove from shared cache)"
         fi
@@ -616,160 +506,6 @@ function UninstallBooth() {
     fi
 }
 
-# Format bytes to human-readable size
-format_size() {
-    local bytes=$1
-    if command -v numfmt >/dev/null 2>&1; then
-        numfmt --to=iec-i --suffix=B "$bytes" 2>/dev/null || echo "${bytes}B"
-    else
-        # Fallback for systems without numfmt (e.g., macOS)
-        if [[ $bytes -ge 1073741824 ]]; then
-            echo "$(( bytes / 1073741824 ))GiB"
-        elif [[ $bytes -ge 1048576 ]]; then
-            echo "$(( bytes / 1048576 ))MiB"
-        elif [[ $bytes -ge 1024 ]]; then
-            echo "$(( bytes / 1024 ))KiB"
-        else
-            echo "${bytes}B"
-        fi
-    fi
-}
-
-# Get directory size in bytes (portable)
-get_dir_size() {
-    local dir="$1"
-    if [[ "$(uname -s)" == "Darwin" ]]; then
-        # macOS: du -sk gives size in KB
-        local kb
-        kb=$(du -sk "$dir" 2>/dev/null | cut -f1 || echo 0)
-        echo $((kb * 1024))
-    else
-        # Linux: du -sb gives size in bytes
-        du -sb "$dir" 2>/dev/null | cut -f1 || echo 0
-    fi
-}
-
-function ToolsCacheList() {
-    local versions_dir="${BOOTH_CACHE_DIR}/versions"
-
-    echo ""
-    if [[ ! -d "$versions_dir" ]]; then
-        echo "No cached versions found."
-        echo ""
-        echo "Cache location: $BOOTH_CACHE_DIR"
-        return 0
-    fi
-
-    echo "Cached binary versions:"
-    echo ""
-
-    local total_size=0
-    local version_count=0
-
-    for version_dir in "$versions_dir"/*/; do
-        [[ ! -d "$version_dir" ]] && continue
-
-        local version
-        version=$(basename "$version_dir")
-
-        # Calculate size
-        local size_bytes size_human
-        size_bytes=$(get_dir_size "$version_dir")
-        size_human=$(format_size "$size_bytes")
-
-        # List platforms
-        local platforms=()
-        for bin in "$version_dir"/codingbooth-*; do
-            [[ -f "$bin" ]] || continue
-            local name
-            name=$(basename "$bin")
-            name=${name#codingbooth-}
-            name=${name%.exe}
-            platforms+=("$name")
-        done
-
-        printf "  %-12s %10s   [%s]\n" "$version" "$size_human" "${platforms[*]}"
-
-        total_size=$((total_size + size_bytes))
-        : $((version_count++))
-    done
-
-    if [[ $version_count -eq 0 ]]; then
-        echo "  (no versions cached)"
-    fi
-
-    echo ""
-    local total_human
-    total_human=$(format_size "$total_size")
-    echo "Total: $total_human in $version_count version(s)"
-    echo ""
-    echo "Cache location: $BOOTH_CACHE_DIR"
-}
-
-function ToolsCacheClean() {
-    local versions_dir="${BOOTH_CACHE_DIR}/versions"
-
-    if [[ ! -d "$versions_dir" ]]; then
-        echo "No cached versions to clean."
-        return 0
-    fi
-
-    # Parse arguments
-    local clean_all=false
-    local target_version=""
-
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            --all) clean_all=true; shift ;;
-            --unused) echo "Warning: --unused not yet implemented"; shift ;;
-            -*) echo "Unknown option: $1" >&2; exit 1 ;;
-            *) target_version="$1"; shift ;;
-        esac
-    done
-
-    if [[ "$clean_all" == "true" ]]; then
-        local size_before
-        size_before=$(get_dir_size "$versions_dir")
-
-        rm -rf "$versions_dir"
-
-        local size_human
-        size_human=$(format_size "$size_before")
-        echo "Removed all cached versions. Freed $size_human"
-        return 0
-    fi
-
-    if [[ -n "$target_version" ]]; then
-        local target_dir="$versions_dir/$target_version"
-        if [[ ! -d "$target_dir" ]]; then
-            echo "Version $target_version not found in cache."
-            return 1
-        fi
-
-        local size_before
-        size_before=$(get_dir_size "$target_dir")
-
-        rm -rf "$target_dir"
-
-        local size_human
-        size_human=$(format_size "$size_before")
-        echo "Removed version $target_version. Freed $size_human"
-        return 0
-    fi
-
-    # Interactive mode: list and prompt
-    ToolsCacheList
-    echo ""
-    read -rp "Enter version to remove (or 'all' or press Enter to cancel): " choice
-
-    if [[ "$choice" == "all" ]]; then
-        ToolsCacheClean --all
-    elif [[ -n "$choice" ]]; then
-        ToolsCacheClean "$choice"
-    else
-        echo "No version selected."
-    fi
-}
 
 function DownloadBooth() {
     local CB_VERSION=${1:-latest}

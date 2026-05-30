@@ -4,11 +4,14 @@
 # you may not use this file except in compliance with the License.
 
 # CodingBooth Installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/NawaMan/CodingBooth/main/install.sh | bash
+# Usage: curl -fsSL https://codingbooth.io/install.sh | bash
 
 set -euo pipefail
 
-curl -fsSL https://github.com/NawaMan/CodingBooth/releases/download/latest/booth | bash
+# Download (don't pipe-bash) the wrapper. Piping would trigger the wrapper's
+# own pipe-install branch, which delegates back to this script — infinite loop.
+curl -fsSL -o booth https://github.com/NawaMan/CodingBooth/releases/download/latest/booth
+chmod +x booth
 ./booth install
 
 echo ""
