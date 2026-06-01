@@ -8,6 +8,7 @@
 # (or just run this file directly).
 PUBLIC=1
 source "$(dirname "$0")/_lib.sh"
+public_preflight
 
 LAST_OUTPUT=$(run_in_container <<'BASH'
 set -e

@@ -778,8 +778,6 @@ run-args = [
 2. `--dryrun` to see the exact Docker command
 3. [GitHub Issues](https://github.com/NawaMan/CodingBooth/issues)
 
-For known issues with stable codes, see [site/troubleshoot/](site/troubleshoot/) (served at `https://codingbooth.io/troubleshoot/`).
-
 
 ## Contributor Tooling
 

@@ -21,7 +21,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.12.0
+VERSION=0.13.0
 VERBOSE="${VERBOSE:-true}"
 
 # Resolve script directory (follow symlinks) so all project paths are
@@ -45,7 +45,7 @@ detect_nested_booth() {
     if [[ "${BOOTH_IN_BOOTH:-}" != "true" ]]; then
         cat >&2 <<EOF
 Error: Running booth inside a booth container.
-  To configure this booth, run: booth config
+  To configure this booth, run: $0 config
   To launch a nested booth, set BOOTH_IN_BOOTH=true and pass --port <different>.
 EOF
         exit 1
@@ -225,13 +225,6 @@ function Main() {
         exit 1
     fi
 
-    # Ensure binary is newer than checksum
-    if [[ "$dest" -ot "$sha_file" ]]; then
-        echo "Binary appears older than its checksum file."
-        echo "Run: $0 update  to restore the official release."
-        exit 1
-    fi
-
     # Verify SHA256 for this platform's binary
     local expected_sha256 actual_sha256
     expected_sha256=$(grep "  $binary_name\$" "$sha_file" 2>/dev/null | awk '{print $1}')
@@ -351,8 +344,6 @@ EOF
         echo "Cache mode: $lock_cache"
         exit 0
     fi
-
-    [[ ! -x "$TOOL" ]] && chmod +x "$TOOL" 2>/dev/null || true
 
     local TOOL_VERSION
     TOOL_VERSION=$("$TOOL" version 2>/dev/null || echo "unknown")
@@ -514,13 +505,13 @@ function DownloadBooth() {
     local tools_dir="$TOOLS_DIR"
     local lock_file="$LOCK_FILE"
 
-    REPO_URL="https://github.com/NawaMan/WorkSpace"
+    REPO_URL="https://github.com/NawaMan/CodingBooth"
     DWLD_URL="${REPO_URL}/releases/download"
 
     # Download version.txt to get the actual version first
     local actual_version=""
     local VERSION_URL="${DWLD_URL}/${CB_VERSION}/version.txt"
-    if actual_version=$(curl -fsSL "$VERSION_URL" 2>/dev/null | tr -d ' \t\r\n'); then
+    if actual_version=$(curl -fsSL --retry 3 --retry-delay 2 --retry-connrefused "$VERSION_URL" 2>/dev/null | tr -d ' \t\r\n'); then
         [[ "$VERBOSE" == "true" ]] && echo "  Version: $actual_version"
     else
         actual_version="$CB_VERSION"
@@ -566,7 +557,6 @@ function DownloadBooth() {
                         echo "downloaded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
                         echo "cache=${CACHE_MODE}"
                     } > "$lock_file"
-                    [[ -f "$check_dest" ]] && touch "$check_dest"
                     return 0
                 fi
             fi
@@ -636,7 +626,7 @@ GITIGNORE
 
     local tmpsha256 expected_sha256
     tmpsha256=$(mktemp "/tmp/booth.sha256.XXXXXX")
-    if ! curl -fsSLo "$tmpsha256" "$SHA256_URL"; then
+    if ! curl -fsSLo "$tmpsha256" --retry 3 --retry-delay 2 --retry-connrefused "$SHA256_URL"; then
         echo "FAILED (sha256 fetch)"
         rm -f "$tmpsha256"
         echo "Error: Failed to download binary for $current_platform" >&2
@@ -671,7 +661,7 @@ GITIGNORE
 
         local tmpfile actual_sha256
         tmpfile=$(mktemp "/tmp/booth.XXXXXX")
-        if ! curl -fsSLo "$tmpfile" "$TOOL_URL"; then
+        if ! curl -fsSLo "$tmpfile" --retry 3 --retry-delay 2 --retry-connrefused "$TOOL_URL"; then
             echo "FAILED (download)"
             rm -f "$tmpfile"
             return 1
@@ -698,9 +688,6 @@ GITIGNORE
         echo "downloaded_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
         echo "cache=${CACHE_MODE}"
     } > "$lock_file"
-
-    # Touch binary to be newer than checksum
-    [[ -f "$dest" ]] && touch "$dest"
 
     echo "CodingBooth installed: downloaded, verified, and installed."
     if [[ "$VERBOSE" == "true" ]]; then

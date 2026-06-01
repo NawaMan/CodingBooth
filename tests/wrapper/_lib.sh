@@ -83,4 +83,22 @@ fail() {
     exit 1
 }
 
+# PUBLIC tests need codingbooth.io + the release wrapper reachable. Call this
+# at the top of any PUBLIC=1 test; it converts "transient infra failure" into
+# a clean [SKIP] instead of a [FAIL]. Uses exit 77 (autotools "skipped" code)
+# so run-all.sh can distinguish pass / skip / fail.
+public_preflight() {
+    local urls=(
+        https://codingbooth.io/install.sh
+        https://github.com/NawaMan/CodingBooth/releases/download/latest/booth
+    )
+    for url in "${urls[@]}"; do
+        if ! curl -fsS -m 10 -o /dev/null "$url" 2>/dev/null; then
+            printf "%s[SKIP]%s %s — %s unreachable (network/server)\n" \
+                "$_C_DIM" "$_C_OFF" "$TEST_NAME" "$url"
+            exit 77
+        fi
+    done
+}
+
 ensure_image

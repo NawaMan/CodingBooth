@@ -1,24 +1,23 @@
 #!/usr/bin/env bash
 # Run every tests/wrapper/###-*.sh in order. Builds the image if missing.
 # Usage:
-#   tests/wrapper/run-all.sh                 # run all tests (local-source tests)
-#   tests/wrapper/run-all.sh --skip-dind     # skip tests declaring DIND=1
-#   tests/wrapper/run-all.sh --include-public  # also run PUBLIC=1 tests
-#                                            # (hit codingbooth.io, test what's
-#                                            #  published — not your local diff)
-#   tests/wrapper/run-all.sh 001 002         # run only the listed numbers
+#   tests/wrapper/run-all.sh             # run all tests
+#   tests/wrapper/run-all.sh --skip-dind # skip tests declaring DIND=1
+#   tests/wrapper/run-all.sh 001 002     # run only the listed numbers
+#
+# PUBLIC=1 tests are always included; each self-skips at top-of-script if
+# codingbooth.io / GitHub Releases are unreachable, so a transient infra
+# blip becomes [SKIP], not [FAIL].
 set -uo pipefail
 
 SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IMAGE="${BOOTH_TEST_IMAGE:-booth-wrapper-test}"
 
 skip_dind=false
-include_public=false
 filter=()
 for arg in "$@"; do
     case "$arg" in
-        --skip-dind)      skip_dind=true ;;
-        --include-public) include_public=true ;;
+        --skip-dind) skip_dind=true ;;
         *) filter+=("$arg") ;;
     esac
 done
@@ -62,20 +61,15 @@ for test in "${tests[@]}"; do
         continue
     fi
 
-    # PUBLIC=1 tests exercise codingbooth.io / the published wrapper, not your
-    # local changes. Skip by default; only run when --include-public is given.
-    if grep -q '^PUBLIC=1' "$test" && ! $include_public; then
-        printf "[SKIP] %s (public — pass --include-public)\n" "$name"
-        skip=$((skip + 1))
-        continue
-    fi
-
-    if "$test"; then
-        pass=$((pass + 1))
-    else
-        fail=$((fail + 1))
-        failed_names+=("$name")
-    fi
+    # Exit-code convention: 0 = PASS, 77 = SKIP (autotools), other = FAIL.
+    # PUBLIC tests use exit 77 from public_preflight when codingbooth.io or
+    # GitHub Releases are unreachable, so a transient blip becomes SKIP.
+    "$test"; rc=$?
+    case "$rc" in
+        0)  pass=$((pass + 1)) ;;
+        77) skip=$((skip + 1)) ;;
+        *)  fail=$((fail + 1)); failed_names+=("$name") ;;
+    esac
 done
 
 echo ""
