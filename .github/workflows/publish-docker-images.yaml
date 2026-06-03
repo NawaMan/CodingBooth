@@ -1,4 +1,16 @@
 # Builds and pushes Docker images to Docker Hub with cosign signatures.
+#
+# Multi-arch images are built NATIVELY: each architecture is built on a runner
+# of that architecture (no QEMU emulation), pushed by digest, then assembled
+# into the final multi-arch tag and signed in a separate "merge" job.
+#
+# Pipeline:
+#   build-base  (amd64 + arm64, native, push-by-digest)
+#     -> merge-base   (imagetools create + cosign sign)
+#       -> build-variants  (amd64 + arm64 per variant, native, push-by-digest)
+#         -> merge-variants  (imagetools create + cosign sign)
+#           -> integration-tests
+#
 # Triggers on: manual dispatch only.
 name: Publish docker images
 
@@ -11,129 +23,144 @@ env:
 jobs:
 
   # ---------------------------------------------------------
-  # 1. Build the base container FIRST
+  # 1. Build the base container natively, one arch per runner
   # ---------------------------------------------------------
   build-base:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3
-
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-
-      - name: Build & Push base
-        run: ./build/docker-build.sh --push base
+      - name: Build & push base (${{ matrix.arch }}, by digest)
+        run: ./build/docker-build.sh --push --arch ${{ matrix.arch }} base
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
-          COSIGN_PASSWORD:    ${{ secrets.COSIGN_PASSWORD }}
-          COSIGN_KEY:         ${{ secrets.COSIGN_KEY }}
 
+      - name: Upload base digest (${{ matrix.arch }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-base-${{ matrix.arch }}
+          path: build/.digests/base-${{ matrix.arch }}.digest
+          if-no-files-found: error
+          retention-days: 1
 
   # ---------------------------------------------------------
-  # 2. Build all other variants in PARALLEL
+  # 2. Assemble + sign the multi-arch base tag
   # ---------------------------------------------------------
-  build-notebook:
+  merge-base:
     needs: build-base
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
 
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+      - name: Download base digests
+        uses: actions/download-artifact@v4
+        with:
+          pattern: digests-base-*
+          merge-multiple: true
+          path: build/.digests
 
-      - name: Build & Push notebook
-        run: ./build/docker-build.sh --push notebook
+      - name: Merge & sign base
+        run: ./build/docker-build.sh --merge base
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
           COSIGN_PASSWORD:    ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_KEY:         ${{ secrets.COSIGN_KEY }}
 
-
-  build-codeserver:
-    needs: build-base
-    runs-on: ubuntu-latest
+  # ---------------------------------------------------------
+  # 3. Build every other variant natively, one arch per runner
+  #    (variants are FROM nawaman/codingbooth:base-<version>,
+  #     so they need the merged base first)
+  # ---------------------------------------------------------
+  build-variants:
+    needs: merge-base
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [notebook, codeserver, desktop-xfce, desktop-kde]
+        arch: [amd64, arm64]
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3
-
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-
-      - name: Build & Push codeserver
-        run: ./build/docker-build.sh --push codeserver
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
-          COSIGN_PASSWORD:    ${{ secrets.COSIGN_PASSWORD }}
-          COSIGN_KEY:         ${{ secrets.COSIGN_KEY }}
-
-
-  build-desktop-xfce:
-    needs: build-base
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3
-
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
-
-      - name: Build & Push desktop-xfce
-        run: ./build/docker-build.sh --push desktop-xfce
-        env:
-          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-          DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
-          COSIGN_PASSWORD:    ${{ secrets.COSIGN_PASSWORD }}
-          COSIGN_KEY:         ${{ secrets.COSIGN_KEY }}
-
-
-  build-desktop-kde:
-    needs: build-base
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Install cosign
-        uses: sigstore/cosign-installer@v3
-
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
 
       - name: Clean up disk space
+        if: matrix.variant == 'desktop-kde'
         run: |
           sudo apt-get clean
           sudo rm -rf /var/lib/apt/lists/*
           sudo rm -rf /usr/share/dotnet
           sudo rm -rf /opt/ghc
-          sudo rm -rf $AGENT_TOOLSDIRECTORY
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
 
-      - name: Build & Push desktop-kde
-        run: ./build/docker-build.sh --push desktop-kde
+      - name: Build & push ${{ matrix.variant }} (${{ matrix.arch }}, by digest)
+        run: ./build/docker-build.sh --push --arch ${{ matrix.arch }} ${{ matrix.variant }}
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Upload ${{ matrix.variant }} digest (${{ matrix.arch }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: digests-${{ matrix.variant }}-${{ matrix.arch }}
+          path: build/.digests/${{ matrix.variant }}-${{ matrix.arch }}.digest
+          if-no-files-found: error
+          retention-days: 1
+
+  # ---------------------------------------------------------
+  # 4. Assemble + sign each multi-arch variant tag
+  # ---------------------------------------------------------
+  merge-variants:
+    needs: build-variants
+    strategy:
+      fail-fast: false
+      matrix:
+        variant: [notebook, codeserver, desktop-xfce, desktop-kde]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Download ${{ matrix.variant }} digests
+        uses: actions/download-artifact@v4
+        with:
+          pattern: digests-${{ matrix.variant }}-*
+          merge-multiple: true
+          path: build/.digests
+
+      - name: Merge & sign ${{ matrix.variant }}
+        run: ./build/docker-build.sh --merge ${{ matrix.variant }}
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
           COSIGN_PASSWORD:    ${{ secrets.COSIGN_PASSWORD }}
           COSIGN_KEY:         ${{ secrets.COSIGN_KEY }}
 
-
   # ---------------------------------------------------------
-  # 3. Run integration tests after all images are published
+  # 5. Run integration tests after all images are published
   # ---------------------------------------------------------
   integration-tests:
-    needs: [build-base, build-notebook, build-codeserver, build-desktop-xfce, build-desktop-kde]
-    runs-on: ubuntu-latest
+    needs: [merge-base, merge-variants]
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 

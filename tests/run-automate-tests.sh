@@ -7,18 +7,9 @@
 # Master test runner script
 # Runs all test suites sequentially with a live status graph.
 
-# Bash 4+ is required (this script uses associative arrays via `declare -A`).
-# macOS ships Bash 3.2 as /bin/bash; re-exec under a newer bash if available.
-if (( BASH_VERSINFO[0] < 4 )); then
-    for _newer_bash in /opt/homebrew/bin/bash /usr/local/bin/bash /opt/local/bin/bash; do
-        if [[ -x "$_newer_bash" ]]; then
-            exec "$_newer_bash" "$0" "$@"
-        fi
-    done
-    echo "ERROR: This script requires Bash 4 or newer (you have ${BASH_VERSION})." >&2
-    echo "       On macOS install a modern bash, e.g.:  brew install bash" >&2
-    exit 1
-fi
+# Works on Bash 3.2 (the version macOS ships as /bin/bash) and newer.
+# State is kept in plain indexed arrays keyed by each suite's numeric index,
+# so no Bash 4 associative arrays (`declare -A`) are needed.
 
 set -uo pipefail
 
@@ -38,6 +29,19 @@ SUITE_RUNNERS=(
     "./run-complex-tests.sh"
     "./run-all-tests.sh"
 )
+
+# Map a suite name to its numeric index in SUITES (used to key the state
+# arrays below — Bash 3.2 has no associative arrays).
+suite_index() {
+    local target="$1" i
+    for i in "${!SUITES[@]}"; do
+        if [[ "${SUITES[$i]}" == "$target" ]]; then
+            echo "$i"
+            return 0
+        fi
+    done
+    return 1
+}
 
 # ── Parse args ───────────────────────────────────────────────────────
 
@@ -117,20 +121,21 @@ should_run_suite() {
 
 # ── State ────────────────────────────────────────────────────────────
 
-declare -A STATUS
-declare -A PASS_COUNTS
-declare -A FAIL_COUNTS
-declare -A FAILURE_LINES
+# Indexed arrays keyed by suite index (see suite_index()).
+STATUS=()
+PASS_COUNTS=()
+FAIL_COUNTS=()
+FAILURE_LINES=()
 
-for s in "${SUITES[@]}"; do
-    if should_run_suite "$s"; then
-        STATUS[$s]=pending
+for i in "${!SUITES[@]}"; do
+    if should_run_suite "${SUITES[$i]}"; then
+        STATUS[$i]=pending
     else
-        STATUS[$s]=skipped
+        STATUS[$i]=skipped
     fi
-    PASS_COUNTS[$s]=0
-    FAIL_COUNTS[$s]=0
-    FAILURE_LINES[$s]=""
+    PASS_COUNTS[$i]=0
+    FAIL_COUNTS[$i]=0
+    FAILURE_LINES[$i]=""
 done
 
 CURRENT_PID=""
@@ -175,6 +180,8 @@ status_icon() {
 # Count pass/fail from a log file by looking for common test result markers.
 sync_counts() {
     local suite="$1"
+    local idx
+    idx=$(suite_index "$suite") || return
     local log="${LOG_DIR}/${suite}.log"
     [[ -f "$log" ]] || return
 
@@ -185,15 +192,15 @@ sync_counts() {
     local pass fail
     pass=$(echo "$stripped" | grep -cE '✅|PASSED|^ok ' 2>/dev/null) || pass=0
     fail=$(echo "$stripped" | grep -cE '❌|FAILED|^--- FAIL' 2>/dev/null) || fail=0
-    PASS_COUNTS[$suite]=$((pass))
-    FAIL_COUNTS[$suite]=$((fail))
+    PASS_COUNTS[$idx]=$((pass))
+    FAIL_COUNTS[$idx]=$((fail))
 
     # Collect failure lines (trimmed, max 10)
     local failures
     failures=$(echo "$stripped" | grep -E '❌|FAILED' 2>/dev/null | head -10 | while IFS= read -r line; do
         echo "    ${line}"
     done) || true
-    FAILURE_LINES[$suite]="$failures"
+    FAILURE_LINES[$idx]="$failures"
 }
 
 # ── Status graph ─────────────────────────────────────────────────────
@@ -202,13 +209,13 @@ GRAPH_DRAWN=false
 PREV_GRAPH_LINES=0
 
 compute_graph_lines() {
-    local lines=0
-    for s in "${SUITES[@]}"; do
+    local lines=0 i
+    for i in "${!SUITES[@]}"; do
         lines=$((lines + 1))
         # Count failure lines for this suite
-        if [[ -n "${FAILURE_LINES[$s]}" ]]; then
+        if [[ -n "${FAILURE_LINES[$i]}" ]]; then
             local n
-            n=$(echo "${FAILURE_LINES[$s]}" | wc -l)
+            n=$(echo "${FAILURE_LINES[$i]}" | wc -l)
             lines=$((lines + n))
         fi
     done
@@ -232,11 +239,11 @@ draw_graph() {
         label="${SUITE_LABELS[$i]}"
 
         printf "  %-${PAD}s " "$label"
-        status_icon "${STATUS[$s]}"
+        status_icon "${STATUS[$i]}"
 
         # Show pass/fail counts if any activity
-        local p=${PASS_COUNTS[$s]:-0}
-        local f=${FAIL_COUNTS[$s]:-0}
+        local p=${PASS_COUNTS[$i]:-0}
+        local f=${FAIL_COUNTS[$i]:-0}
         total=$(( p + f ))
         if (( total > 0 )); then
             if (( f > 0 )); then
@@ -247,7 +254,7 @@ draw_graph() {
         fi
 
         # Show last log line for running suite
-        if [[ "${STATUS[$s]}" == "running" ]]; then
+        if [[ "${STATUS[$i]}" == "running" ]]; then
             local progress
             progress=$(last_log_line "${LOG_DIR}/${s}.log")
             if [[ -n "$progress" ]]; then
@@ -256,17 +263,17 @@ draw_graph() {
         fi
 
         # Show "skipped" label
-        if [[ "${STATUS[$s]}" == "skipped" ]]; then
+        if [[ "${STATUS[$i]}" == "skipped" ]]; then
             printf " ${C_GRAY}skipped${C_RESET}"
         fi
 
         printf "\033[K${C_RESET}\n"
 
         # Print failure lines below this suite
-        if [[ -n "${FAILURE_LINES[$s]}" ]]; then
+        if [[ -n "${FAILURE_LINES[$i]}" ]]; then
             while IFS= read -r fline; do
                 printf "${C_RED}%s${C_RESET}\033[K\n" "$fline"
-            done <<< "${FAILURE_LINES[$s]}"
+            done <<< "${FAILURE_LINES[$i]}"
         fi
     done
 
@@ -337,9 +344,9 @@ handle_sigint() {
             kill "$CURRENT_PID" 2>/dev/null || true
             wait "$CURRENT_PID" 2>/dev/null || true
         fi
-        for s in "${SUITES[@]}"; do
-            if [[ "${STATUS[$s]}" == "pending" || "${STATUS[$s]}" == "running" ]]; then
-                STATUS[$s]=cancelled
+        for i in "${!SUITES[@]}"; do
+            if [[ "${STATUS[$i]}" == "pending" || "${STATUS[$i]}" == "running" ]]; then
+                STATUS[$i]=cancelled
             fi
         done
         draw_graph
@@ -372,11 +379,11 @@ for i in "${!SUITES[@]}"; do
     fi
 
     # Skip suites filtered out by --only/--skip
-    if [[ "${STATUS[$suite]}" == "skipped" ]]; then
+    if [[ "${STATUS[$i]}" == "skipped" ]]; then
         continue
     fi
 
-    STATUS[$suite]=running
+    STATUS[$i]=running
     draw_graph
 
     run_suite "$suite" "$dir" "$runner"
@@ -395,11 +402,11 @@ for i in "${!SUITES[@]}"; do
     if [[ "$exit_code" == "0" ]] \
        && grep -q '^SKIP:' "${LOG_DIR}/${suite}.log" 2>/dev/null \
        && ! grep -qE '^(PASSED:|✅|PASS)' "${LOG_DIR}/${suite}.log" 2>/dev/null; then
-        STATUS[$suite]=skipped
+        STATUS[$i]=skipped
     elif [[ "$exit_code" == "0" ]]; then
-        STATUS[$suite]=done
+        STATUS[$i]=done
     else
-        STATUS[$suite]=failed
+        STATUS[$i]=failed
         RETRY_SUITES+=("$i")
     fi
 
@@ -425,10 +432,10 @@ if [[ ${#RETRY_SUITES[@]} -gt 0 && "$STOP_REQUESTED" != true ]]; then
         fi
 
         # Reset counts for retry
-        PASS_COUNTS[$suite]=0
-        FAIL_COUNTS[$suite]=0
-        FAILURE_LINES[$suite]=""
-        STATUS[$suite]=running
+        PASS_COUNTS[$i]=0
+        FAIL_COUNTS[$i]=0
+        FAILURE_LINES[$i]=""
+        STATUS[$i]=running
         draw_graph
 
         run_suite "$suite" "$dir" "$runner"
@@ -443,11 +450,11 @@ if [[ ${#RETRY_SUITES[@]} -gt 0 && "$STOP_REQUESTED" != true ]]; then
         if [[ "$exit_code" == "0" ]] \
            && grep -q '^SKIP:' "${LOG_DIR}/${suite}.log" 2>/dev/null \
            && ! grep -qE '^(PASSED:|✅|PASS)' "${LOG_DIR}/${suite}.log" 2>/dev/null; then
-            STATUS[$suite]=skipped
+            STATUS[$i]=skipped
         elif [[ "$exit_code" == "0" ]]; then
-            STATUS[$suite]=done
+            STATUS[$i]=done
         else
-            STATUS[$suite]=failed
+            STATUS[$i]=failed
         fi
 
         draw_graph
@@ -462,8 +469,9 @@ rm -f "${LOG_DIR}"/*.exit
 # Extract failed test names from each suite's log.
 # Format: suite:test-name (one per line)
 rm -f "$FAILED_LOG"
-for s in "${SUITES[@]}"; do
-    if [[ "${STATUS[$s]}" != "failed" ]]; then
+for i in "${!SUITES[@]}"; do
+    s="${SUITES[$i]}"
+    if [[ "${STATUS[$i]}" != "failed" ]]; then
         continue
     fi
     log="${LOG_DIR}/${s}.log"
@@ -495,10 +503,10 @@ echo -e "${C_BOLD}Test Summary${C_RESET}"
 has_failure=false
 total_pass=0
 total_fail=0
-for s in "${SUITES[@]}"; do
-    total_pass=$((total_pass + ${PASS_COUNTS[$s]:-0}))
-    total_fail=$((total_fail + ${FAIL_COUNTS[$s]:-0}))
-    if [[ "${STATUS[$s]}" == "failed" ]]; then
+for i in "${!SUITES[@]}"; do
+    total_pass=$((total_pass + ${PASS_COUNTS[$i]:-0}))
+    total_fail=$((total_fail + ${FAIL_COUNTS[$i]:-0}))
+    if [[ "${STATUS[$i]}" == "failed" ]]; then
         has_failure=true
     fi
 done

@@ -34,13 +34,16 @@ VARIANTS_TO_BUILD=()   # dependent variants (excludes base)
 STOP_REQUESTED=false
 PUSH_REQUESTED=false   # mirror of --push in DOCKER_FLAGS
 
-# Per-step status: pending | running | done | failed | cancelled
-declare -A STATUS
-STATUS[cli]=pending
-STATUS[base]=pending
+# Status files are used instead of associative arrays for bash 3.2 compatibility
+# Status for each step stored in ${LOG_DIR}/${step}.status
+CLI_STATUS="pending"
+BASE_STATUS="pending"
 
-# PIDs of background variant builds
-declare -A PIDS
+# Per-variant PIDs stored in separate variables (bash 3.2 doesn't support associative arrays)
+PIDS_NOTEBOOK=""
+PIDS_CODESERVER=""
+PIDS_DESKTOP_XFCE=""
+PIDS_DESKTOP_KDE=""
 
 # ── ANSI Colors ───────────────────────────────────────────────────────
 
@@ -66,7 +69,7 @@ ParseArgs() {
         esac
     done
 
-    if (( ${#positional[@]} > 0 )); then
+    if [[ ${#positional[@]} -gt 0 ]]; then
         # User specified variants — filter out "base" (always built) and keep the rest
         for v in "${positional[@]}"; do
             if [[ "$v" == "base" ]]; then
@@ -78,11 +81,6 @@ ParseArgs() {
     else
         VARIANTS_TO_BUILD=("${ALL_DEPENDENT_VARIANTS[@]}")
     fi
-
-    # Initialise status for each dependent variant
-    for v in "${VARIANTS_TO_BUILD[@]}"; do
-        STATUS[$v]=pending
-    done
 }
 
 Usage() {
@@ -115,10 +113,22 @@ last_log_line() {
     local line
     line=$(tail -1 "$log_file" 2>/dev/null | tr -d '\r')
     [[ -z "$line" ]] && return
-    if (( ${#line} > max_len )); then
+    if [[ ${#line} -gt $max_len ]]; then
         line="${line:0:$max_len}..."
     fi
     echo -n "$line"
+}
+
+# last_step_counter: extract the most recent BuildKit "N/T" step counter from a
+# docker build log (plain progress prints step headers like "#12 [base 5/17] RUN ...").
+# The counter appears only on the step header, so scan the whole log and take the
+# last one.  Echoes e.g. "5/17", or nothing if the log has no step header yet.
+last_step_counter() {
+    local log_file="$1"
+    [[ -f "$log_file" ]] || return
+    grep -oE '\[[^]]*[0-9]+/[0-9]+\]' "$log_file" 2>/dev/null \
+        | tail -1 \
+        | grep -oE '[0-9]+/[0-9]+'
 }
 
 status_icon() {
@@ -151,23 +161,47 @@ compute_column_widths() {
     local max_total=0 w tmp
 
     # Top-level lines: visual prefix "  " = 2 columns
-    tmp="CLI";  w=$(( 2 + ${#tmp} )); (( w > max_total )) && max_total=$w
-    tmp="BASE"; w=$(( 2 + ${#tmp} )); (( w > max_total )) && max_total=$w
+    tmp="CLI";  w=$(( 2 + ${#tmp} )); [[ $w -gt $max_total ]] && max_total=$w
+    tmp="BASE"; w=$(( 2 + ${#tmp} )); [[ $w -gt $max_total ]] && max_total=$w
 
     # Variant lines: visual prefix "    ├─ " = 7 columns
     for v in "${VARIANTS_TO_BUILD[@]}"; do
         tmp=$(echo "$v" | tr '[:lower:]-' '[:upper:] ')
-        w=$(( 7 + ${#tmp} )); (( w > max_total )) && max_total=$w
+        w=$(( 7 + ${#tmp} )); [[ $w -gt $max_total ]] && max_total=$w
     done
 
     # Pad widths = max_total minus each visual prefix width
     TOP_PAD=$(( max_total - 2 ))
     VARIANT_PAD=$(( max_total - 7 ))
-    (( VARIANT_PAD < 1 )) && VARIANT_PAD=1
+    [[ $VARIANT_PAD -lt 1 ]] && VARIANT_PAD=1
+}
+
+# Get status variable name for a step
+get_status_var() {
+    local step="$1"
+    case "$step" in
+        cli)     echo "$CLI_STATUS" ;;
+        base)    echo "$BASE_STATUS" ;;
+        notebook)     cat "${LOG_DIR}/notebook.status" 2>/dev/null || echo "pending" ;;
+        codeserver)   cat "${LOG_DIR}/codeserver.status" 2>/dev/null || echo "pending" ;;
+        desktop-xfce) cat "${LOG_DIR}/desktop-xfce.status" 2>/dev/null || echo "pending" ;;
+        desktop-kde)  cat "${LOG_DIR}/desktop-kde.status" 2>/dev/null || echo "pending" ;;
+        *)       echo "pending" ;;
+    esac
+}
+
+# Set status variable for a step
+set_status() {
+    local step="$1" status="$2"
+    case "$step" in
+        cli)     CLI_STATUS="$status" ;;
+        base)    BASE_STATUS="$status" ;;
+        *)       echo "$status" > "${LOG_DIR}/${step}.status" ;;
+    esac
 }
 
 draw_graph() {
-    if [[ "$GRAPH_DRAWN" == true ]]; then
+    if [[ "$GRAPH_DRAWN" == "true" ]]; then
         # Move cursor up to overwrite previous graph
         printf '\033[%dA' "$GRAPH_LINES"
     fi
@@ -175,7 +209,7 @@ draw_graph() {
     local s
 
     # CLI
-    s="${STATUS[cli]}"
+    s="$CLI_STATUS"
     printf "  %-${TOP_PAD}s  " "CLI"
     status_icon "$s"
     if [[ "$s" == "running" ]]; then
@@ -188,12 +222,16 @@ draw_graph() {
     printf "\033[K${C_RESET}\n"
 
     # BASE
-    s="${STATUS[base]}"
+    s="$BASE_STATUS"
     printf "  %-${TOP_PAD}s  " "BASE"
     status_icon "$s"
     if [[ "$s" == "running" ]]; then
-        local progress
+        local progress counter
+        counter=$(last_step_counter "${LOG_DIR}/base.log")
         progress=$(last_log_line "${LOG_DIR}/base.log")
+        if [[ -n "$counter" ]]; then
+            printf " ${C_BLUE}[%s]${C_RESET}" "$counter"
+        fi
         if [[ -n "$progress" ]]; then
             printf " ${C_GRAY}%s${C_RESET}" "$progress"
         fi
@@ -202,18 +240,23 @@ draw_graph() {
 
     # Dependent variants
     for v in "${VARIANTS_TO_BUILD[@]}"; do
-        s="${STATUS[$v]}"
+        s=$(get_status_var "$v")
         local label
         label=$(echo "$v" | tr '[:lower:]-' '[:upper:] ')
         local branch="├─"
-        if [[ "$v" == "${VARIANTS_TO_BUILD[-1]}" ]]; then
+        local last_idx=$((${#VARIANTS_TO_BUILD[@]} - 1))
+        if [[ "${VARIANTS_TO_BUILD[$last_idx]}" == "$v" ]]; then
             branch="└─"
         fi
         printf "    ${branch} %-${VARIANT_PAD}s  " "$label"
         status_icon "$s"
         if [[ "$s" == "running" ]]; then
-            local progress
+            local progress counter
+            counter=$(last_step_counter "${LOG_DIR}/${v}.log")
             progress=$(last_log_line "${LOG_DIR}/${v}.log")
+            if [[ -n "$counter" ]]; then
+                printf " ${C_BLUE}[%s]${C_RESET}" "$counter"
+            fi
             if [[ -n "$progress" ]]; then
                 printf " ${C_GRAY}%s${C_RESET}" "$progress"
             fi
@@ -227,7 +270,7 @@ draw_graph() {
     GRAPH_DRAWN=true
 }
 
-# ── Ctrl+C handler ───────────────────────────────────────────────────
+# ── Ctrl+C handler ────────────────────────────────────────────────────
 
 handle_sigint() {
     echo ""
@@ -248,22 +291,41 @@ handle_sigint() {
 }
 
 cancel_running() {
-    # Kill background variant builds
-    for v in "${!PIDS[@]}"; do
-        local pid="${PIDS[$v]}"
-        if kill -0 "$pid" 2>/dev/null; then
-            kill "$pid" 2>/dev/null || true
-            wait "$pid" 2>/dev/null || true
-        fi
-    done
+    # Kill background variant builds by PID variable
+    if [[ -n "$PIDS_NOTEBOOK" ]] && kill -0 "$PIDS_NOTEBOOK" 2>/dev/null; then
+        kill "$PIDS_NOTEBOOK" 2>/dev/null || true
+        wait "$PIDS_NOTEBOOK" 2>/dev/null || true
+    fi
+    if [[ -n "$PIDS_CODESERVER" ]] && kill -0 "$PIDS_CODESERVER" 2>/dev/null; then
+        kill "$PIDS_CODESERVER" 2>/dev/null || true
+        wait "$PIDS_CODESERVER" 2>/dev/null || true
+    fi
+    if [[ -n "$PIDS_DESKTOP_XFCE" ]] && kill -0 "$PIDS_DESKTOP_XFCE" 2>/dev/null; then
+        kill "$PIDS_DESKTOP_XFCE" 2>/dev/null || true
+        wait "$PIDS_DESKTOP_XFCE" 2>/dev/null || true
+    fi
+    if [[ -n "$PIDS_DESKTOP_KDE" ]] && kill -0 "$PIDS_DESKTOP_KDE" 2>/dev/null; then
+        kill "$PIDS_DESKTOP_KDE" 2>/dev/null || true
+        wait "$PIDS_DESKTOP_KDE" 2>/dev/null || true
+    fi
 
-    # Sync final statuses from files, then mark anything not done as cancelled
-    sync_variant_statuses
-    for v in "${!STATUS[@]}"; do
-        if [[ "${STATUS[$v]}" == "pending" || "${STATUS[$v]}" == "running" ]]; then
-            STATUS[$v]=cancelled
+    # Mark anything not done as cancelled
+    for v in "${VARIANTS_TO_BUILD[@]}"; do
+        local status_file="${LOG_DIR}/${v}.status"
+        if [[ -f "$status_file" ]]; then
+            local s
+            s=$(cat "$status_file")
+            if [[ "$s" == "running" || "$s" == "pending" ]]; then
+                echo "cancelled" > "$status_file"
+            fi
         fi
     done
+    if [[ "$CLI_STATUS" == "running" || "$CLI_STATUS" == "pending" ]]; then
+        CLI_STATUS="cancelled"
+    fi
+    if [[ "$BASE_STATUS" == "running" || "$BASE_STATUS" == "pending" ]]; then
+        BASE_STATUS="cancelled"
+    fi
 }
 
 # ── Docker login (once, before parallel builds) ───────────────────────
@@ -289,25 +351,25 @@ docker_login_once() {
 # ── Build steps ───────────────────────────────────────────────────────
 
 build_cli() {
-    STATUS[cli]=running
+    CLI_STATUS="running"
     draw_graph
 
     if "${SCRIPT_DIR}/cli-build.sh" > "${LOG_DIR}/cli.log" 2>&1; then
-        STATUS[cli]=done
+        CLI_STATUS="done"
     else
-        STATUS[cli]=failed
+        CLI_STATUS="failed"
     fi
     draw_graph
 }
 
 build_base() {
-    STATUS[base]=running
+    BASE_STATUS="running"
     draw_graph
 
-    if "${SCRIPT_DIR}/docker-build.sh" "${DOCKER_FLAGS[@]}" base > "${LOG_DIR}/base.log" 2>&1; then
-        STATUS[base]=done
+    if "${SCRIPT_DIR}/docker-build.sh" "${DOCKER_FLAGS[@]+"${DOCKER_FLAGS[@]}"}" base > "${LOG_DIR}/base.log" 2>&1; then
+        BASE_STATUS="done"
     else
-        STATUS[base]=failed
+        BASE_STATUS="failed"
     fi
     draw_graph
 }
@@ -319,43 +381,45 @@ run_variant_bg() {
     local status_file="${LOG_DIR}/${v}.status"
     echo "running" > "$status_file"
 
-    if "${SCRIPT_DIR}/docker-build.sh" "${DOCKER_FLAGS[@]}" "$v" > "${LOG_DIR}/${v}.log" 2>&1; then
+    if "${SCRIPT_DIR}/docker-build.sh" "${DOCKER_FLAGS[@]+"${DOCKER_FLAGS[@]}"}" "$v" > "${LOG_DIR}/${v}.log" 2>&1; then
         echo "done" > "$status_file"
     else
         echo "failed" > "$status_file"
     fi
 }
 
-# Read status from background status files and update STATUS array.
-sync_variant_statuses() {
-    for v in "${VARIANTS_TO_BUILD[@]}"; do
-        local status_file="${LOG_DIR}/${v}.status"
-        if [[ -f "$status_file" ]]; then
-            STATUS[$v]=$(cat "$status_file")
-        fi
-    done
+# Get PID variable name for a variant
+get_pid_var() {
+    local v="$1"
+    case "$v" in
+        notebook)     echo "$PIDS_NOTEBOOK" ;;
+        codeserver)   echo "$PIDS_CODESERVER" ;;
+        desktop-xfce) echo "$PIDS_DESKTOP_XFCE" ;;
+        desktop-kde)  echo "$PIDS_DESKTOP_KDE" ;;
+        *)       echo "" ;;
+    esac
 }
 
 # Poll background builds until all are finished, redrawing the graph.
 poll_variants() {
     while true; do
-        sync_variant_statuses
         draw_graph
 
         # Check if all variants are finished
         local all_done=true
         for v in "${VARIANTS_TO_BUILD[@]}"; do
-            local s="${STATUS[$v]}"
+            local s
+            s=$(get_status_var "$v")
             if [[ "$s" == "running" || "$s" == "pending" ]]; then
                 all_done=false
                 break
             fi
         done
 
-        if [[ "$all_done" == true ]]; then
+        if [[ "$all_done" == "true" ]]; then
             break
         fi
-        if [[ "$STOP_REQUESTED" == true ]]; then
+        if [[ "$STOP_REQUESTED" == "true" ]]; then
             break
         fi
 
@@ -380,7 +444,7 @@ Main() {
     echo ""
 
     # Log in to Docker Hub once, before any parallel child build attempts it.
-    if [[ "$PUSH_REQUESTED" == true ]]; then
+    if [[ "$PUSH_REQUESTED" == "true" ]]; then
         docker_login_once
     fi
 
@@ -388,27 +452,33 @@ Main() {
 
     # ── Step 1: CLI ──
     build_cli
-    if [[ "${STATUS[cli]}" == "failed" ]]; then
+    if [[ "$CLI_STATUS" == "failed" ]]; then
         echo -e "${C_RED}CLI build failed. See ${LOG_DIR}/cli.log${C_RESET}"
         exit 1
     fi
-    if [[ "$STOP_REQUESTED" == true ]]; then exit 1; fi
+    if [[ "$STOP_REQUESTED" == "true" ]]; then exit 1; fi
 
     # ── Step 2: Base ──
     build_base
-    if [[ "${STATUS[base]}" == "failed" ]]; then
+    if [[ "$BASE_STATUS" == "failed" ]]; then
         echo -e "${C_RED}Base build failed. See ${LOG_DIR}/base.log${C_RESET}"
         exit 1
     fi
-    if [[ "$STOP_REQUESTED" == true ]]; then exit 1; fi
+    if [[ "$STOP_REQUESTED" == "true" ]]; then exit 1; fi
 
     # ── Step 3: Remaining variants in parallel ──
-    if (( ${#VARIANTS_TO_BUILD[@]} > 0 )); then
+    if [[ ${#VARIANTS_TO_BUILD[@]} -gt 0 ]]; then
         for v in "${VARIANTS_TO_BUILD[@]}"; do
-            if [[ "$STOP_REQUESTED" == true ]]; then break; fi
-            STATUS[$v]=running
+            if [[ "$STOP_REQUESTED" == "true" ]]; then break; fi
+            echo "running" > "${LOG_DIR}/${v}.status"
             run_variant_bg "$v" &
-            PIDS[$v]=$!
+            # Store PID in the appropriate variable
+            case "$v" in
+                notebook)     PIDS_NOTEBOOK=$! ;;
+                codeserver)   PIDS_CODESERVER=$! ;;
+                desktop-xfce) PIDS_DESKTOP_XFCE=$! ;;
+                desktop-kde)  PIDS_DESKTOP_KDE=$! ;;
+            esac
         done
 
         draw_graph
@@ -420,19 +490,32 @@ Main() {
     # Clean up status files
     rm -f "${LOG_DIR}"/*.status
 
-    # ── Summary ──
+    # ── Summary ───────────────────────────────────────────────────────
+
     echo -e "${C_BOLD}Build Logs:${C_RESET} ${LOG_DIR}/"
     echo ""
 
     local has_failure=false
-    for v in "${!STATUS[@]}"; do
-        if [[ "${STATUS[$v]}" == "failed" ]]; then
+    # Check CLI and base
+    if [[ "$CLI_STATUS" == "failed" ]]; then
+        echo -e "  ${C_RED}FAILED:${C_RESET} cli  →  ${LOG_DIR}/cli.log"
+        has_failure=true
+    fi
+    if [[ "$BASE_STATUS" == "failed" ]]; then
+        echo -e "  ${C_RED}FAILED:${C_RESET} base  →  ${LOG_DIR}/base.log"
+        has_failure=true
+    fi
+    # Check variants
+    for v in "${VARIANTS_TO_BUILD[@]}"; do
+        local s
+        s=$(get_status_var "$v")
+        if [[ "$s" == "failed" ]]; then
             echo -e "  ${C_RED}FAILED:${C_RESET} $v  →  ${LOG_DIR}/${v}.log"
             has_failure=true
         fi
     done
 
-    if [[ "$has_failure" == true ]]; then
+    if [[ "$has_failure" == "true" ]]; then
         exit 1
     fi
 

@@ -186,6 +186,9 @@ else
   chmod 777 /usr/local/share/code-server/extensions/extensions.json
 fi
 
+# Make the parent dir writable for runtime user (coder) to create marker files
+chmod 1777 /usr/local/share/code-server
+
 # 3) Install future extensions into the shared dir
 #    Under QEMU emulation (arm64 cross-build on amd64), code-server's bundled
 #    Node binary fails with "Invalid ELF image".  Skip and defer to first launch.

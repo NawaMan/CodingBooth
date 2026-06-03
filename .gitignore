@@ -146,6 +146,7 @@ variants/base/_stage/
 cli/src/codingbooth
 
 build/logs/
+build/.digests/
 tests/logs/
 
 # VHS tape sandbox: self-contained booth install for recording demos

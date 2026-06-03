@@ -8,7 +8,7 @@ if ! echo "$STAGED" | grep -qE '^(version\.txt|README\.md)$'; then
 fi
 
 VERSION=$(tr -d ' \t\r\n' < version.txt)
-README_VERSION=$(grep -oP '(?<=\*\*Current Version:\*\* v)[^ ]+' README.md)
+README_VERSION=$(sed -n 's/.*\*\*Current Version:\*\* v\([^ ]*\).*/\1/p' README.md)
 
 if [ "$VERSION" != "$README_VERSION" ]; then
   echo "ERROR: Version mismatch"

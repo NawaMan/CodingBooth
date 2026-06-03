@@ -50,23 +50,44 @@ NO_CACHE="false"
 SKIP_LOGIN="false"
 VARIANTS_TO_BUILD=()
 
+# Native multi-arch support.
+#   ARCH set   -> build that single architecture natively and push by digest
+#                 (no tags, no signing — the merge step assembles & signs).
+#   MERGE=true -> assemble previously-pushed per-arch digests into the
+#                 multi-arch tags, then cosign-sign them.
+# When both are empty/false the legacy single-runner path is used, which builds
+# all PLATFORMS at once (emulating the non-native arch under QEMU).
+ARCH=""
+MERGE="false"
+DIGEST_DIR="build/.digests"
+VALID_ARCHES=(amd64 arm64)
+
 # ======================
 #         Main
 # ======================
 Main() {
   ParseArgs "$@"
   ValidateVariants
+  ValidateArch
   SetupPushEnvironment
-  echo
-
-  Log "=== Build ==="
   echo
 
   # Get the version once, reuse for all variants
   local version
   version="$(resolve_version)"
 
+  # Merge mode: assemble per-arch digests into multi-arch tags, then sign.
+  if [[ "${MERGE}" == "true" ]]; then
+    Log "=== Merge Phase ==="
+    echo
+    for v in "${VARIANTS_TO_BUILD[@]}"; do
+      MergeVariant "$v" "${version}"
+    done
+    return 0
+  fi
+
   Log "=== Build Phase ==="
+  echo
 
   # Stage docs if building base variant
   local needs_staging=false
@@ -134,6 +155,21 @@ function select_cosign_key() {
 
     echo "$key_file"
   fi
+}
+
+# Extract the pushed image digest from a `docker buildx build --metadata-file`.
+# Prefers jq; falls back to a grep/sed scan so the script works without jq.
+function extract_digest() {
+  local meta="$1"
+  local d=""
+  if command -v jq >/dev/null 2>&1; then
+    d="$(jq -r '."containerimage.digest" // empty' "$meta" 2>/dev/null || true)"
+  fi
+  if [[ -z "$d" ]]; then
+    d="$(grep -o '"containerimage.digest"[[:space:]]*:[[:space:]]*"[^"]*"' "$meta" 2>/dev/null \
+          | sed -E 's/.*"(sha256:[a-f0-9]+)".*/\1/' | head -n1 || true)"
+  fi
+  echo "$d"
 }
 
 # ======================
@@ -228,10 +264,48 @@ BuildVariant() {
   fi
 
   if [[ "${do_push}" == "true" ]]; then
-    Log "[$variant]: Setting up buildx (driver: docker-container; multi-arch: ${PLATFORMS})"
+    Log "[$variant]: Setting up buildx (driver: docker-container)"
     docker buildx create --use --name ci_builder >/dev/null 2>&1 || docker buildx use ci_builder
     docker buildx inspect --bootstrap >/dev/null
 
+    if [[ -n "${ARCH}" ]]; then
+      # --- Native per-arch build: push by digest only (no tags, no signing). ---
+      # The merge step (--merge) assembles all per-arch digests into the
+      # multi-arch tags and signs them.
+      local platform="linux/${ARCH}"
+      local meta_file
+      meta_file="$(mktemp)"
+
+      Log "[$variant]: Building ${platform} natively (push by digest)"
+      docker buildx build \
+        "${no_cache_arg[@]}" \
+        --platform "${platform}" \
+        -f "${docker_file}" \
+        --build-arg "BOOTH_VERSION_TAG=${version}" \
+        --build-arg "FINAL_STAGE=base" \
+        --output "type=image,name=${IMAGE_NAME},push-by-digest=true,push=true" \
+        --metadata-file "${meta_file}" \
+        "${context_dir}" \
+        --progress=auto
+
+      local digest
+      digest="$(extract_digest "${meta_file}")"
+      rm -f "${meta_file}"
+      [[ -n "${digest}" ]] || Die "[$variant]: failed to capture image digest for ${platform}"
+
+      mkdir -p "${DIGEST_DIR}"
+      local digest_file="${DIGEST_DIR}/${variant}-${ARCH}.digest"
+      echo "${digest}" > "${digest_file}"
+      Log "[$variant]: ${platform} pushed by digest: ${digest}"
+      Log "[$variant]: Wrote ${digest_file}"
+      Log "[$variant]: Done (per-arch). Run with --merge to assemble & sign."
+      echo
+      return 0
+    fi
+
+    # --- Legacy single-runner multi-arch path (non-native arch via QEMU). ---
+    Log "[$variant]: ⚠️  Building all of ${PLATFORMS} on one runner; the non-native arch is emulated under QEMU."
+    Log "[$variant]: For native builds, use --arch <amd64|arm64> per runner, then --merge."
     Log "[$variant]: Building with buildx (push)"
     docker buildx build \
       "${no_cache_arg[@]}" \
@@ -241,7 +315,8 @@ BuildVariant() {
       --build-arg "FINAL_STAGE=base" \
       "${tags_arg[@]}" \
       "${context_dir}" \
-      --push
+      --push \
+      --progress=auto
 
     if [[ ! "$version" =~ --rc([0-9]+)?$ ]]; then
       Log "[$variant]: Calling cosign to sign pushed images for variant '${variant}'"
@@ -262,10 +337,56 @@ BuildVariant() {
       -f "${docker_file}" \
       --build-arg "BOOTH_VERSION_TAG=${version}" \
       "${tags_arg[@]}" \
-      "${context_dir}"
+      "${context_dir}" \
+      --progress=auto
   fi
 
   Log "[$variant]: Done."
+  echo
+}
+
+# Assemble previously-pushed per-arch digests into the multi-arch tags, then sign.
+# Reads ${DIGEST_DIR}/${variant}-<arch>.digest files produced by per-arch builds.
+MergeVariant() {
+  local variant="$1"
+  local version="$2"
+
+  local tags_arg=()
+  tags_arg+=( -t "${IMAGE_NAME}:${variant}-${version}" )
+  if [[ ! "$version" =~ --rc([0-9]+)?$ ]]; then
+    tags_arg+=( -t "${IMAGE_NAME}:${variant}-latest" )
+  fi
+
+  # Collect the per-arch source references (IMAGE_NAME@sha256:...).
+  local sources=()
+  local f digest
+  shopt -s nullglob
+  for f in "${DIGEST_DIR}/${variant}-"*.digest; do
+    digest="$(tr -d ' \t\n\r' < "$f")"
+    [[ -n "$digest" ]] || continue
+    sources+=( "${IMAGE_NAME}@${digest}" )
+  done
+  shopt -u nullglob
+
+  [[ "${#sources[@]}" -gt 0 ]] || \
+    Die "[$variant]: no per-arch digests found in '${DIGEST_DIR}' (expected ${variant}-<arch>.digest). Run the per-arch builds first."
+
+  Log "[$variant]: Merging ${#sources[@]} arch image(s) into multi-arch tags:"
+  local s
+  for s in "${sources[@]}"; do Log "  - ${s}"; done
+
+  docker buildx imagetools create "${tags_arg[@]}" "${sources[@]}"
+
+  if [[ ! "$version" =~ --rc([0-9]+)?$ ]]; then
+    Log "[$variant]: Signing merged manifest tags with cosign"
+    SignImages "${tags_arg[@]}"
+  else
+    Log "[$variant]: Skipping cosign signing for RC version: ${version}"
+  fi
+
+  Log "[$variant]: Pulling merged image for local use"
+  docker pull "${IMAGE_NAME}:${variant}-${version}"
+  Log "[$variant]: Merge done."
   echo
 }
 
@@ -277,6 +398,8 @@ ParseArgs() {
       --push)        PUSH="true";        shift ;;
       --no-cache)    NO_CACHE="true";    shift ;;
       --skip-login)  SKIP_LOGIN="true";  shift ;;
+      --arch)        shift; ARCH="${1:-}"; [[ -n "$ARCH" ]] || Die "--arch requires a value (amd64|arm64)"; shift ;;
+      --merge)       MERGE="true";       shift ;;
       -h|--help)     Usage;              exit 0 ;;
       *)             positional+=("$1"); shift ;;
     esac
@@ -290,7 +413,19 @@ ParseArgs() {
 }
 
 SetupPushEnvironment() {
-  if [[ "${PUSH}" != "true" ]]; then
+  # Registry access is needed whenever we push (build) or merge.
+  local needs_registry="false"
+  [[ "${PUSH}" == "true" || "${MERGE}" == "true" ]] && needs_registry="true"
+
+  # Signing happens only where tags are produced: the merge step, or the
+  # legacy single-runner multi-arch push. Per-arch builds (ARCH set) push by
+  # digest and never sign, so they don't require cosign.
+  local needs_cosign="false"
+  if [[ "${MERGE}" == "true" ]] || { [[ "${PUSH}" == "true" && -z "${ARCH}" ]]; }; then
+    needs_cosign="true"
+  fi
+
+  if [[ "${needs_registry}" != "true" ]]; then
     return 0
   fi
 
@@ -311,12 +446,13 @@ SetupPushEnvironment() {
   fi
   echo
 
-  if ! command -v cosign >/dev/null 2>&1; then
-    Die "cosign not found in PATH but --push was requested. Install cosign to sign images."
+  if [[ "${needs_cosign}" == "true" ]]; then
+    if ! command -v cosign >/dev/null 2>&1; then
+      Die "cosign not found in PATH but signing is required. Install cosign to sign images."
+    fi
+    COSIGN_KEY_REF="$(select_cosign_key)"
+    Log "Cosign: using key reference: ${COSIGN_KEY_REF}"
   fi
-
-  COSIGN_KEY_REF="$(select_cosign_key)"
-  Log "Cosign: using key reference: ${COSIGN_KEY_REF}"
 }
 
 SignImages() {
@@ -387,12 +523,20 @@ SignImages() {
 
 Usage() {
   cat <<EOF
-Usage: ./docker-build.sh [--push] [--no-cache] [--skip-login] [variant ...]
+Usage: ./docker-build.sh [--push] [--arch <a>] [--merge] [--no-cache] [--skip-login] [variant ...]
 Options:
-  --push          Build and push using buildx (multi-arch) and sign images with cosign
+  --push          Build and push using buildx and sign images with cosign
+  --arch <a>      Build a single architecture natively (amd64|arm64) and push by
+                  digest, without tags or signing. Requires --push. Run once per
+                  runner of that architecture, then assemble with --merge.
+  --merge         Assemble per-arch digests (from prior --arch builds) into the
+                  multi-arch tags, then sign them. Mutually exclusive with --arch.
   --no-cache      Build without using cache
-  --skip-login    Skip 'docker login' (assume caller already logged in). Requires --push.
+  --skip-login    Skip 'docker login' (assume caller already logged in).
   -h, --help      Show this help
+
+Without --arch/--merge, --push builds all of '${PLATFORMS}' on one runner,
+emulating the non-native architecture under QEMU (kept for local/standalone use).
 
 Variants (if none provided, all are built):
   base
@@ -409,13 +553,12 @@ Environment:
 Examples:
   ./build/docker-build.sh                   # local build of all variants
   ./build/docker-build.sh base              # build only 'base'
-  ./build/docker-build.sh notebook desktop-xfce
-                                            # build two specific variants
-  ./build/docker-build.sh --push base       # push + sign only 'base' variant
-  COSIGN_KEY_FILE=/path/to/cosign.key ./build/docker-build.sh --push base
-                                            # push + sign using key file
-  COSIGN_KEY="\$(cat cosign.key)" ./build/docker-build.sh --push base
-                                            # push + sign using key from env
+  ./build/docker-build.sh --push base       # legacy multi-arch push + sign (QEMU)
+
+  # Native multi-arch (one build per arch, then merge):
+  ./build/docker-build.sh --push --arch amd64 base   # on an amd64 runner
+  ./build/docker-build.sh --push --arch arm64 base   # on an arm64 runner
+  ./build/docker-build.sh --merge base               # assemble + sign the tags
 EOF
 }
 
@@ -429,6 +572,24 @@ ValidateVariants() {
       exit 2
     fi
   done
+}
+
+ValidateArch() {
+  if [[ "${MERGE}" == "true" && -n "${ARCH}" ]]; then
+    Die "--arch and --merge are mutually exclusive."
+  fi
+
+  [[ -z "${ARCH}" ]] && return 0
+
+  local known found="false"
+  for known in "${VALID_ARCHES[@]}"; do
+    [[ "${known}" == "${ARCH}" ]] && found="true"
+  done
+  [[ "${found}" == "true" ]] || Die "Invalid --arch '${ARCH}'. Supported: ${VALID_ARCHES[*]}."
+
+  if [[ "${PUSH}" != "true" ]]; then
+    Die "--arch requires --push (per-arch builds push by digest)."
+  fi
 }
 
 # --- Entry point ---

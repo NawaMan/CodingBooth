@@ -12,23 +12,27 @@
 # Test runner script for workspace examples
 # Supports tag filtering and parallel execution
 
-# Bash 4+ is required (uses associative arrays and negative array indices).
-# macOS ships Bash 3.2 as /bin/bash; re-exec under a newer bash if available.
+# This script is compatible with macOS's stock Bash 3.2, but prefers a modern
+# bash if one is installed (its `wait -n` makes the parallel scheduler slightly
+# more efficient). Re-exec under a newer bash when available; otherwise continue.
 if (( BASH_VERSINFO[0] < 4 )); then
     for _newer_bash in /opt/homebrew/bin/bash /usr/local/bin/bash /opt/local/bin/bash; do
         if [[ -x "$_newer_bash" ]]; then
             exec "$_newer_bash" "$0" "$@"
         fi
     done
-    echo "ERROR: This script requires Bash 4 or newer (you have ${BASH_VERSION})." >&2
-    echo "       On macOS install a modern bash, e.g.:  brew install bash" >&2
-    exit 1
+fi
+
+# True when running under bash 4.3+ (has `wait -n`).
+HAS_WAIT_N=false
+if (( BASH_VERSINFO[0] > 4 || (BASH_VERSINFO[0] == 4 && BASH_VERSINFO[1] >= 3) )); then
+    HAS_WAIT_N=true
 fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Default settings
-MAX_PARALLEL=32
+MAX_PARALLEL=1
 
 EXAMPLE_TIMEOUT=900  # 15 minutes per example
 declare -a FILTER_TAGS=()
@@ -246,8 +250,13 @@ for example_dir in "${examples[@]}"; do
 
     # Wait if we've hit the parallel limit
     while [ $running_jobs -ge $MAX_PARALLEL ]; do
-        # Wait for any job to finish
-        wait -n 2>/dev/null || true
+        # Wait for any job to finish. `wait -n` (bash 4.3+) blocks until the next
+        # job exits; on bash 3.2 fall back to polling with a short sleep.
+        if [ "$HAS_WAIT_N" = true ]; then
+            wait -n 2>/dev/null || true
+        else
+            sleep 1
+        fi
         # Recount running jobs
         running_jobs=0
         for pid in "${job_pids[@]}"; do
@@ -309,11 +318,12 @@ for example_dir in "${examples[@]}"; do
         done
     ) > "$SCRIPT_DIR/.$example_name.log" 2>&1 &
 
-    job_pids+=($!)
+    last_pid=$!
+    job_pids+=("$last_pid")
     job_examples+=("$example_name")
     running_jobs=$((running_jobs + 1))
 
-    echo "Started example: $example_name (pid: ${job_pids[-1]})"
+    echo "Started example: $example_name (pid: $last_pid)"
 done
 
 echo ""
@@ -327,23 +337,26 @@ wait
 OVERALL_END=$(date +%s)
 OVERALL_DURATION=$((OVERALL_END - OVERALL_START))
 
+# Result/duration accessors. Data lives in per-example files under RESULTS_DIR,
+# so we read on demand instead of caching in associative arrays (bash 4 only).
+get_result() {
+    local f="$RESULTS_DIR/$1.result"
+    [ -f "$f" ] && cat "$f" || echo 1
+}
+get_duration() {
+    local f="$RESULTS_DIR/$1.duration"
+    [ -f "$f" ] && cat "$f" || echo 0
+}
+
 # Collect results
 failed_examples=()
 passed_examples=()
 timeout_examples=()
-declare -A example_durations
-declare -A example_results
 
 for example_dir in "${examples[@]}"; do
     example_name=$(basename "$example_dir")
 
-    # Get result
-    result_file="$RESULTS_DIR/$example_name.result"
-    result_code=1
-    if [ -f "$result_file" ]; then
-        result_code=$(cat "$result_file")
-    fi
-    example_results[$example_name]=$result_code
+    result_code=$(get_result "$example_name")
 
     if [ "$result_code" = "0" ]; then
         passed_examples+=("$example_name")
@@ -352,14 +365,6 @@ for example_dir in "${examples[@]}"; do
         failed_examples+=("$example_name")
     else
         failed_examples+=("$example_name")
-    fi
-
-    # Get duration
-    duration_file="$RESULTS_DIR/$example_name.duration"
-    if [ -f "$duration_file" ]; then
-        example_durations[$example_name]=$(cat "$duration_file")
-    else
-        example_durations[$example_name]=0
     fi
 done
 
@@ -379,8 +384,8 @@ NC='\033[0m' # No Color
 # Show results table
 for example_dir in "${examples[@]}"; do
     example_name=$(basename "$example_dir")
-    duration_str=$(format_duration ${example_durations[$example_name]})
-    result_code=${example_results[$example_name]}
+    duration_str=$(format_duration "$(get_duration "$example_name")")
+    result_code=$(get_result "$example_name")
 
     if [ "$result_code" = "0" ]; then
         printf "  %-32s %-12s %s\n" "$example_name" "$duration_str" "passed"
@@ -402,11 +407,11 @@ else
     echo ""
     echo "Failed examples:"
     for example_name in "${failed_examples[@]}"; do
-        result_code=${example_results[$example_name]}
+        result_code=$(get_result "$example_name")
         if [ "$result_code" = "124" ]; then
-            printf "${RED}  - %-32s %-12s - TIMEOUT - see .%s.log${NC}\n" "$example_name" "($(format_duration ${example_durations[$example_name]}))" "$example_name"
+            printf "${RED}  - %-32s %-12s - TIMEOUT - see .%s.log${NC}\n" "$example_name" "($(format_duration "$(get_duration "$example_name")"))" "$example_name"
         else
-            printf "${RED}  - %-32s %-12s - see .%s.log${NC}\n" "$example_name" "($(format_duration ${example_durations[$example_name]}))" "$example_name"
+            printf "${RED}  - %-32s %-12s - see .%s.log${NC}\n" "$example_name" "($(format_duration "$(get_duration "$example_name")"))" "$example_name"
         fi
     done
     echo ""

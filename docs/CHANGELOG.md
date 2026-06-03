@@ -2,8 +2,15 @@
 
 This file contains a list of changes for each released version.
 
-## Unreleased
+## 0.54.0
 
+- **Native multi-arch image builds — published images are no longer cross-built under QEMU.** Each architecture is now built on a runner of that architecture, eliminating the emulation that silently broke build-time steps on the non-native arch.
+  - The publish pipeline previously ran a single `buildx --platform linux/amd64,linux/arm64` on one amd64 runner, so the arm64 image was assembled under QEMU. `code-server --install-extension` fails under emulation (`Invalid ELF image`), so the codeserver build *skipped* baking its VS Code extensions (and the `.extensions-installed` marker) into the arm64 image, deferring the install to first launch on every Apple-Silicon run.
+  - `docker-build.sh` gains `--arch <amd64|arm64>` (build one arch natively, push by digest) and `--merge` (assemble the per-arch digests into the multi-arch tags with `docker buildx imagetools create`, then cosign-sign). The legacy single-runner `--push` path is kept for local/standalone builds.
+  - `publish-docker-images.yaml` is restructured into native per-arch matrix jobs (`ubuntu-24.04` + `ubuntu-24.04-arm`) feeding `merge` jobs: `build-base → merge-base → build-variants → merge-variants → integration-tests`. Per-arch digests pass between jobs as artifacts.
+- **Fix codeserver crash on hosts whose user is not UID 1000 (e.g. macOS, where the first user is 501).** The launcher aborted with `touch: cannot touch '/usr/local/share/code-server/.extensions-installed': Permission denied`.
+  - `/usr/local/share/code-server` was created at build time owned by the build-time `coder` user (UID 1000) and was not writable by other UIDs. At runtime `booth-entry` remaps `coder` to the host user's UID/GID, so the marker `touch` only succeeded when the host happened to be UID 1000 — i.e. on most Linux hosts but not on macOS. It surfaced together with the QEMU bug above, because the emulated-arch image always took the runtime (deferred) install path.
+  - The shared dir is now `chmod 1777` (sticky bit, like `/tmp`) at build time so any remapped runtime UID can write the marker, and the runtime `touch "$MARKER"` is guarded with `2>/dev/null || true` so a missing optimization marker can never abort the launcher under `set -e`.
 - **Removed `booth shell-config` and the host-side `booth()` shell function.** Earlier versions of the wrapper shipped a `shell-config` subcommand that wrote a `booth()` one-liner into `~/.bashrc`, `~/.zshrc`, `~/.bash_profile`, and `~/.profile`, letting users type `booth` from any subdirectory of a project. The subcommand, the function it managed, the version-marker bump mechanism, the rc-file cleanup logic, and the `--shell-config` uninstall scope are all gone. Users now always invoke `./booth` by path, or hand-write their own three-line walk-up shell function if they want a shortcut. `install.sh` and the wrapper's pipe-install bootstrap no longer touch rc files.
 - Wrapper trimmed from ~1450 to ~990 lines: legacy v1–v4 rc-file cleanup awk, the `update-wrapper` subcommand, the `ALL_PLATFORMS` uninstall loop, multi-platform sha-file plumbing, and other defensive code for states the wrapper never produced are all removed.
 - `booth uninstall` gets scope flags for incremental removal
