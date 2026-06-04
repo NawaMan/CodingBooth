@@ -23,9 +23,29 @@ env:
 jobs:
 
   # ---------------------------------------------------------
+  # 0. Refuse to publish images for pre-release (--rc) versions
+  # ---------------------------------------------------------
+  guard-no-rc:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reject pre-release (--rc) versions
+        run: |
+          set -euo pipefail
+          VERSION=$(tr -d ' \t\r\n' < version.txt)
+          echo "version.txt: $VERSION"
+          if [[ "$VERSION" =~ --rc([0-9]+)?$ ]]; then
+            echo "::error::Refusing to publish Docker images for pre-release version '$VERSION'. Docker publishing is only allowed for stable (non-rc) versions."
+            exit 1
+          fi
+          echo "Stable version — proceeding."
+
+  # ---------------------------------------------------------
   # 1. Build the base container natively, one arch per runner
   # ---------------------------------------------------------
   build-base:
+    needs: guard-no-rc
     strategy:
       fail-fast: false
       matrix:

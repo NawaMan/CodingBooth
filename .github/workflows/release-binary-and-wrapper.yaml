@@ -41,6 +41,16 @@ jobs:
       - name: Show version
         run: echo "Publishing CodingBooth for version ${{ steps.get_version.outputs.version }}"
 
+      - name: Reject pre-release (--rc) versions
+        run: |
+          set -euo pipefail
+          VERSION="${{ steps.get_version.outputs.version }}"
+          if [[ "$VERSION" =~ --rc([0-9]+)?$ ]]; then
+            echo "::error::Refusing to release pre-release version '$VERSION'. Binary releases are only allowed for stable (non-rc) versions."
+            exit 1
+          fi
+          echo "Stable version — proceeding."
+
       - name: Verify README version matches version.txt
         run: |
           set -euo pipefail
@@ -51,19 +61,6 @@ jobs:
             exit 1
           fi
           echo "Versions match: $VERSION"
-
-      - name: Check if pre-release
-        id: check_prerelease
-        run: |
-          if [[ "$VERSION" =~ --rc([0-9]+)?$ ]]; then
-            echo "is_prerelease=true" >> "$GITHUB_OUTPUT"
-            echo "Detected pre-release version: $VERSION"
-          else
-            echo "is_prerelease=false" >> "$GITHUB_OUTPUT"
-            echo "Detected stable version: $VERSION"
-          fi
-        env:
-          VERSION: ${{ steps.get_version.outputs.version }}
 
       # ---------------------------------------------------------
       # Cleanup old untagged releases
@@ -158,7 +155,7 @@ jobs:
             CodingBooth ${{ steps.get_version.outputs.version }}
 
             Multi-platform binaries and example workspaces.
-          prerelease: ${{ steps.check_prerelease.outputs.is_prerelease == 'true' }}
+          prerelease: false
           files: |
             bin/codingbooth-linux-amd64
             bin/codingbooth-linux-amd64.sha256
@@ -182,7 +179,6 @@ jobs:
       # Publish latest release (stable only, replaces on each run)
       # ---------------------------------------------------------
       - name: Publish latest release
-        if: steps.check_prerelease.outputs.is_prerelease == 'false'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: latest
