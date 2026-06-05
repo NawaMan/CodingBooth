@@ -14,6 +14,8 @@ run --mount=type=bind,target=/tmp/ctx \
     mkdir -p /opt/pnpm-cache \
     && cp /tmp/ctx/package.json /opt/pnpm-cache/ \
     && cp /tmp/ctx/pnpm-lock.yaml /opt/pnpm-cache/ 2>/dev/null || true \
+    && cp /tmp/ctx/pnpm-workspace.yaml /opt/pnpm-cache/ 2>/dev/null || true \
+    && cp /tmp/ctx/.npmrc /opt/pnpm-cache/ 2>/dev/null || true \
     && cd /opt/pnpm-cache && pnpm install; \
   fi
 """
