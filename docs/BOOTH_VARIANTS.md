@@ -15,8 +15,9 @@ Each variant comes pre-configured with a curated toolset and a consistent runtim
 - **`codeserver`** – A web-based VS Code environment powered by [`code-server`](https://github.com/coder/code-server).
   Provides a full browser-accessible IDE with Git integration, terminals, and extensions.
 
-- **[`desktop-xfce`]( https://www.xfce.org  )**, **[`desktop-kde`]( https://kde.org/plasma-desktop)** – Full Linux desktop environments accessible via browser or remote desktop (e.g., [noVNC](https://novnc.com)).
+- **[`desktop-xfce`]( https://www.xfce.org  )**, **[`desktop-kde`]( https://kde.org/plasma-desktop)**, **[`desktop-lxqt`]( https://lxqt-project.org )** – Full Linux desktop environments accessible via browser or remote desktop (e.g., [noVNC](https://novnc.com)).
   Useful for GUI-heavy workflows or running native IDEs like [IntelliJ IDEA](https://www.jetbrains.com/idea/), [PyCharm](https://www.jetbrains.com/pycharm/), or [Eclipse](https://www.eclipse.org) inside Docker.
+  `desktop-lxqt` is the lightest of the three — a good choice when you want a desktop with the smallest footprint.
 
 All variants expose their UI on port 10000 but NEXT and RANDOM can be used. See [Port](BOOTH_RUN.md#6-ports) for more details.
 
@@ -35,6 +36,7 @@ CodingBooth supports several shortcuts and aliases for variant names:
 | desktop      | desktop-xfce     |
 | xfce         | desktop-xfce     |
 | kde          | desktop-kde      |
+| lxqt         | desktop-lxqt     |
 
 The `terminal` alias resolves to the `base` variant but automatically sets the command to `bash`, giving you a direct terminal session in your host terminal — equivalent to `booth -- bash`. If you pass explicit commands (e.g., `booth --variant terminal -- zsh`), your commands take precedence.
 
@@ -42,7 +44,7 @@ If an unknown value is provided, CodingBooth will exit with an error listing sup
 
 ## Desktop Configuration
 
-For desktop variants (`desktop-xfce`, `desktop-kde`), you can customize the screen resolution by setting the `GEOMETRY` environment variable.
+For desktop variants (`desktop-xfce`, `desktop-kde`, `desktop-lxqt`), you can customize the screen resolution by setting the `GEOMETRY` environment variable.
 
 **Default:** `1280x800`
 

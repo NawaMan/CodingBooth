@@ -24,7 +24,6 @@ A list of upcoming ideas, improvements, and future goals for the CodingBooth lau
 - [ ] Add desktop icons for IDEs (e.g., VS Code, JetBrains IDEs).
 - [-] Simplify adding Jupyter Notebooks to desktop environments (auto-add like VS Code).
 - [ ] Evaluate using host disk or tmpfs (RAM) for `$HOME` to improve I/O performance.
-- [X] Deprecate one of `KDE` or `LXQt` to reduce maintenance complexity.
 - [ ] Improve container startup speed — some setup tasks run too early (in `STARTUP`).
 - [ ] See if we can sync the setup with GitHub action (just seen it recently that it exists)
 - [X] Install jpterm - for all variants. https://github.com/davidbrochart/jpterm

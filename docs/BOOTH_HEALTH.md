@@ -2,7 +2,7 @@
 
 > Two HTTP endpoints served by the wrapper nginx that let external callers check whether a booth is actually serving — and read basic metadata about it.
 
-Every wrapped booth variant (codeserver, desktop-xfce, desktop-kde, notebook) exposes:
+Every wrapped booth variant (codeserver, desktop-xfce, desktop-kde, desktop-lxqt, notebook) exposes:
 
 - `GET /__booth/health` — liveness probe. 200 when the inner service is reachable, 5xx/timeout when it isn't.
 - `GET /__booth/info` — metadata blob (container name, variant, version, port). Always 200 as long as the wrapper nginx is up.

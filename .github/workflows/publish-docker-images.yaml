@@ -110,7 +110,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [notebook, codeserver, desktop-xfce, desktop-kde]
+        variant: [notebook, codeserver, desktop-xfce, desktop-kde, desktop-lxqt]
         arch: [amd64, arm64]
         include:
           - arch: amd64
@@ -122,7 +122,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Clean up disk space
-        if: matrix.variant == 'desktop-kde'
+        if: matrix.variant == 'desktop-kde' || matrix.variant == 'desktop-lxqt'
         run: |
           sudo apt-get clean
           sudo rm -rf /var/lib/apt/lists/*
@@ -152,7 +152,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [notebook, codeserver, desktop-xfce, desktop-kde]
+        variant: [notebook, codeserver, desktop-xfce, desktop-kde, desktop-lxqt]
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4

@@ -348,7 +348,10 @@
       cursor: row-resize;
     }
 
-    @media (max-width: 900px) {
+    /* Below this width, side-by-side terminals get too cramped, so every
+       column-based layout collapses to a single stacked column. Keep this
+       value in sync with the compactQuery matchMedia() in the script below. */
+    @media (max-width: 600px) {
       .toolbar {
         align-items: flex-start;
         flex-wrap: wrap;
@@ -465,7 +468,8 @@
       const layoutStorageKey = "cb.webSplit." + projectName + ".layout";
       const splitStorageKey = "cb.webSplit." + projectName + ".splits";
       const modeHashPrefix = "#mode=";
-      const compactQuery = window.matchMedia("(max-width: 900px)");
+      // Keep this breakpoint in sync with the @media (max-width: …) rule above.
+      const compactQuery = window.matchMedia("(max-width: 600px)");
 
       const minSplit = 0.2;
       const maxSplit = 0.8;

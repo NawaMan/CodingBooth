@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# Creates start-xfce-wrapped and start-kde-wrapped: nginx wrapper around desktop.
+# Creates start-xfce-wrapped, start-kde-wrapped and start-lxqt-wrapped: nginx wrapper around desktop.
 # The desktop's noVNC+websockify listens on an internal port, nginx on the booth port.
 
 set -euo pipefail
@@ -30,4 +30,14 @@ exec start-booth-wrapped
 EOF
 chmod +x /usr/local/bin/start-kde-wrapped
 
-echo "✅ start-xfce-wrapped and start-kde-wrapped installed."
+cat > /usr/local/bin/start-lxqt-wrapped <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+export INNER_PORT=$DESKTOP_INNER_PORT
+export INNER_CMD="NOVNC_PORT=$DESKTOP_INNER_PORT start-lxqt"
+export IFRAME_SRC="/vnc.html?autoconnect=true&resize=remote"
+exec start-booth-wrapped
+EOF
+chmod +x /usr/local/bin/start-lxqt-wrapped
+
+echo "✅ start-xfce-wrapped, start-kde-wrapped and start-lxqt-wrapped installed."

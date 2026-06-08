@@ -61,6 +61,14 @@ func TestValidateVariant(t *testing.T) {
 			wantVscode:   true,
 			wantDesktop:  true,
 		},
+		{
+			name:         "valid desktop-lxqt",
+			inputVariant: "desktop-lxqt",
+			wantVariant:  "desktop-lxqt",
+			wantNotebook: true,
+			wantVscode:   true,
+			wantDesktop:  true,
+		},
 
 		// Aliases
 		{
@@ -115,6 +123,14 @@ func TestValidateVariant(t *testing.T) {
 			name:         "alias kde -> desktop-kde",
 			inputVariant: "kde",
 			wantVariant:  "desktop-kde",
+			wantNotebook: true,
+			wantVscode:   true,
+			wantDesktop:  true,
+		},
+		{
+			name:         "alias lxqt -> desktop-lxqt",
+			inputVariant: "lxqt",
+			wantVariant:  "desktop-lxqt",
 			wantNotebook: true,
 			wantVscode:   true,
 			wantDesktop:  true,

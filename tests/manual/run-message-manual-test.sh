@@ -25,7 +25,7 @@ usage() {
     echo "Usage: $0 [--variant <name>]... [--skip-build]"
     echo ""
     echo "  --variant <name>   Test specific variant(s). Can be repeated."
-    echo "                     Default: base codeserver notebook desktop-xfce desktop-kde"
+    echo "                     Default: base codeserver notebook desktop-xfce desktop-kde desktop-lxqt"
     echo "  --skip-build       Skip building CLI before testing"
     echo "  --help, -h         Show this help"
     echo ""
@@ -59,7 +59,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ${#VARIANTS[@]} -eq 0 ]]; then
-    VARIANTS=(base codeserver notebook desktop-xfce desktop-kde)
+    VARIANTS=(base codeserver notebook desktop-xfce desktop-kde desktop-lxqt)
 fi
 
 header() {

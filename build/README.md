@@ -62,6 +62,7 @@ Builds Docker images for all CodingBooth variants.
 - `ide-codeserver` - VS Code in browser variant
 - `desktop-xfce` - XFCE desktop environment
 - `desktop-kde` - KDE desktop environment
+- `desktop-lxqt` - LXQt lightweight desktop environment
 
 **Environment variables (for --push):**
 - `DOCKERHUB_USERNAME` - Docker Hub username

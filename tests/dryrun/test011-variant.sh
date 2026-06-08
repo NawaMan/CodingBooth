@@ -32,6 +32,7 @@ VARIANTS=(
   "codeserver:codeserver"
   "desktop-xfce:desktop-xfce"
   "desktop-kde:desktop-kde"
+  "desktop-lxqt:desktop-lxqt"
 
   # aliases
   "default:base"
@@ -39,6 +40,7 @@ VARIANTS=(
   "desktop:desktop-xfce"
   "xfce:desktop-xfce"
   "kde:desktop-kde"
+  "lxqt:desktop-lxqt"
 )
 
 test_num=0

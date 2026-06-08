@@ -28,7 +28,7 @@ usage() {
     echo "Usage: $0 [--variant <name>]... [--duration <label>]... [--skip-build] [--exit-code <code>]"
     echo ""
     echo "  --variant <name>     Test specific variant(s). Can be repeated."
-    echo "                       Default: base codeserver notebook desktop-xfce desktop-kde terminal"
+    echo "                       Default: base codeserver notebook desktop-xfce desktop-kde desktop-lxqt terminal"
     echo "  --duration <label>   Test specific duration(s). Can be repeated."
     echo "                       Options: 15min, 10min, 5min, 0min"
     echo "                       Default: all four"
@@ -90,7 +90,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ ${#VARIANTS[@]} -eq 0 ]]; then
-    VARIANTS=(base codeserver notebook desktop-xfce desktop-kde terminal)
+    VARIANTS=(base codeserver notebook desktop-xfce desktop-kde desktop-lxqt terminal)
 fi
 
 if [[ ${#DURATIONS[@]} -eq 0 ]]; then

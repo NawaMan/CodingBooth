@@ -40,7 +40,7 @@ Back to [README](../README.md)
 - **Variant:** `base` (aliases: `default`, `console`, `terminal`)
 - **Version:** `latest`
 
-**Supported variants:** `base`, `notebook`, `codeserver`, `desktop-xfce` (alias: `xfce`), `desktop-kde` (alias: `kde`).
+**Supported variants:** `base`, `notebook`, `codeserver`, `desktop-xfce` (alias: `xfce`), `desktop-kde` (alias: `kde`), `desktop-lxqt` (alias: `lxqt`).
 Additional aliases: `default`/`console` → base, `terminal` → base with bash, `ide` → codeserver, `desktop` → desktop-xfce.
 See [Variants Guide](BOOTH_VARIANTS.md) for details.
 
@@ -456,7 +456,7 @@ Host
 
 ## TLS Support
 
-CodingBooth supports self-signed certificate generation for HTTPS access to web-based variants (codeserver, notebook, desktop-xfce, desktop-kde).
+CodingBooth supports self-signed certificate generation for HTTPS access to web-based variants (codeserver, notebook, desktop-xfce, desktop-kde, desktop-lxqt).
 
 ---
 

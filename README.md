@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.55.0 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.56.0--rc1 — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -106,6 +106,8 @@ For detailed variant information, aliases, and desktop configuration, see the **
 | [![XFCE](docs/images/Booth-XFCE.png)](docs/images/Booth-XFCE.png)             | [![KDE](docs/images/Booth-KDE.png)](docs/images/Booth-KDE.png)                       |
 | `booth --variant desktop-xfce`                                                | `booth --variant desktop-kde`                                                        |
 
+A lightweight **LXQt** desktop is also available: `booth --variant desktop-lxqt`.
+
 
 ## Quick Try
 
@@ -208,7 +210,7 @@ booth [flags] [-- command...]
 
 | Flag                 | Description                                                                      |
 |----------------------|----------------------------------------------------------------------------------|
-| `--variant <name>`   | Select container variant (base, notebook, codeserver, desktop-xfce, desktop-kde) |
+| `--variant <name>`   | Select container variant (base, notebook, codeserver, desktop-xfce, desktop-kde, desktop-lxqt) |
 | `--port <port>`      | Host port mapping (number, NEXT, or RANDOM)                                      |
 | `--name <name>`      | Set container name                                                               |
 | `--build-arg <arg>`  | Pass build argument to Docker                                                    |

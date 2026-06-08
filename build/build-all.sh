@@ -25,7 +25,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG_DIR="${SCRIPT_DIR}/logs"
 
-ALL_DEPENDENT_VARIANTS=(notebook codeserver desktop-xfce desktop-kde)
+ALL_DEPENDENT_VARIANTS=(notebook codeserver desktop-xfce desktop-kde desktop-lxqt)
 
 # ── State ─────────────────────────────────────────────────────────────
 
@@ -44,6 +44,7 @@ PIDS_NOTEBOOK=""
 PIDS_CODESERVER=""
 PIDS_DESKTOP_XFCE=""
 PIDS_DESKTOP_KDE=""
+PIDS_DESKTOP_LXQT=""
 
 # ── ANSI Colors ───────────────────────────────────────────────────────
 
@@ -96,7 +97,7 @@ Options:
   -h, --help      Show this help
 
 Variants (if none provided, all are built):
-  base, notebook, codeserver, desktop-xfce, desktop-kde
+  base, notebook, codeserver, desktop-xfce, desktop-kde, desktop-lxqt
 
 Logs are written to build/logs/.
 
@@ -186,6 +187,7 @@ get_status_var() {
         codeserver)   cat "${LOG_DIR}/codeserver.status" 2>/dev/null || echo "pending" ;;
         desktop-xfce) cat "${LOG_DIR}/desktop-xfce.status" 2>/dev/null || echo "pending" ;;
         desktop-kde)  cat "${LOG_DIR}/desktop-kde.status" 2>/dev/null || echo "pending" ;;
+        desktop-lxqt) cat "${LOG_DIR}/desktop-lxqt.status" 2>/dev/null || echo "pending" ;;
         *)       echo "pending" ;;
     esac
 }
@@ -308,6 +310,10 @@ cancel_running() {
         kill "$PIDS_DESKTOP_KDE" 2>/dev/null || true
         wait "$PIDS_DESKTOP_KDE" 2>/dev/null || true
     fi
+    if [[ -n "$PIDS_DESKTOP_LXQT" ]] && kill -0 "$PIDS_DESKTOP_LXQT" 2>/dev/null; then
+        kill "$PIDS_DESKTOP_LXQT" 2>/dev/null || true
+        wait "$PIDS_DESKTOP_LXQT" 2>/dev/null || true
+    fi
 
     # Mark anything not done as cancelled
     for v in "${VARIANTS_TO_BUILD[@]}"; do
@@ -396,6 +402,7 @@ get_pid_var() {
         codeserver)   echo "$PIDS_CODESERVER" ;;
         desktop-xfce) echo "$PIDS_DESKTOP_XFCE" ;;
         desktop-kde)  echo "$PIDS_DESKTOP_KDE" ;;
+        desktop-lxqt) echo "$PIDS_DESKTOP_LXQT" ;;
         *)       echo "" ;;
     esac
 }
@@ -478,6 +485,7 @@ Main() {
                 codeserver)   PIDS_CODESERVER=$! ;;
                 desktop-xfce) PIDS_DESKTOP_XFCE=$! ;;
                 desktop-kde)  PIDS_DESKTOP_KDE=$! ;;
+                desktop-lxqt) PIDS_DESKTOP_LXQT=$! ;;
             esac
         done
 

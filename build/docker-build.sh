@@ -7,7 +7,7 @@
 # docker-build.sh - Build and publish CodingBooth Docker images
 #
 # This script builds Docker images for all CodingBooth variants (base, notebook,
-# codeserver, desktop-xfce, desktop-kde) using multi-architecture support.
+# codeserver, desktop-xfce, desktop-kde, desktop-lxqt) using multi-architecture support.
 # It can build locally or push to Docker Hub with cosign signature verification.
 # Run with --help for usage information.
 #
@@ -42,6 +42,7 @@ ALL_VARIANTS=(
   codeserver
   desktop-xfce
   desktop-kde
+  desktop-lxqt
 )
 
 # Script state (globals)
@@ -544,6 +545,7 @@ Variants (if none provided, all are built):
   codeserver
   desktop-xfce
   desktop-kde
+  desktop-lxqt
 
 Environment:
   COSIGN_KEY        Cosign private key content (PEM) stored directly in env; used if set
