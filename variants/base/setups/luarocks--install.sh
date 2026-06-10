@@ -5,8 +5,9 @@
 
 # This script installs LuaRocks packages.
 # It requires lua--setup.sh to have been run first.
-# Usage: luarocks--install.sh <rock> [rock...]
+# Usage: luarocks--install.sh <rock[@version]> [rock[@version]...]
 # Example: luarocks--install.sh busted luasocket
+#          luarocks--install.sh busted@2.0.0
 
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
@@ -32,5 +33,17 @@ if [ ! -x "$LUAROCKS" ]; then
     exit 1
 fi
 
-echo "Installing LuaRocks packages: $*"
-"$LUAROCKS" install "$@"
+# A trailing @version pins the rock (passed as luarocks' positional version arg).
+# Splitting per-rock avoids the ambiguity of a bare positional version when
+# installing multiple rocks at once.
+for spec in "$@"; do
+    rock="${spec%@*}"
+    if [ "$rock" = "$spec" ]; then
+        echo "Installing LuaRocks package: $rock"
+        "$LUAROCKS" install "$rock"
+    else
+        version="${spec##*@}"
+        echo "Installing LuaRocks package: $rock (version $version)"
+        "$LUAROCKS" install "$rock" "$version"
+    fi
+done

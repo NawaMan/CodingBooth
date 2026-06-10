@@ -19,13 +19,14 @@ FAILED_LOG="${SCRIPT_DIR}/run-automate-tests.failed-tests.log"
 
 # ── Suite definitions ────────────────────────────────────────────────
 
-SUITES=(unit basic dryrun boothfile complex config)
-SUITE_LABELS=("UNIT" "BASIC" "DRYRUN" "BOOTHFILE" "COMPLEX" "CONFIG")
+SUITES=(unit basic dryrun boothfile setups complex config)
+SUITE_LABELS=("UNIT" "BASIC" "DRYRUN" "BOOTHFILE" "SETUPS" "COMPLEX" "CONFIG")
 SUITE_RUNNERS=(
     "./run-all-go-tests.sh"
     "./run-basic-tests.sh"
     "./run-dryrun-tests.sh"
     "./run-boothfile-tests.sh"
+    "./run-setups-tests.sh"
     "./run-complex-tests.sh"
     "./run-all-tests.sh"
 )
@@ -58,7 +59,7 @@ Options:
   --rerun-failed      Re-run only suites that failed in the last run
   -h, --help          Show this help
 
-Available suites: unit, basic, dryrun, boothfile, complex, config
+Available suites: unit, basic, dryrun, boothfile, setups, complex, config
 
 Examples:
   ./run-automate-tests.sh --only dryrun
@@ -506,7 +507,12 @@ total_fail=0
 for i in "${!SUITES[@]}"; do
     total_pass=$((total_pass + ${PASS_COUNTS[$i]:-0}))
     total_fail=$((total_fail + ${FAIL_COUNTS[$i]:-0}))
-    if [[ "${STATUS[$i]}" == "failed" ]]; then
+    # Treat a suite as failed if its exit status said so OR it reported any
+    # failing tests in its log. The two signals are computed independently
+    # (exit code vs. log markers); trusting only one let a suite that failed
+    # in its log slip through as "All tests passed". Never contradict the
+    # Failed count we print below.
+    if [[ "${STATUS[$i]}" == "failed" ]] || (( ${FAIL_COUNTS[$i]:-0} > 0 )); then
         has_failure=true
     fi
 done

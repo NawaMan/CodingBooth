@@ -5,8 +5,9 @@
 
 # This script installs Elixir Hex packages/archives globally via Mix.
 # It requires elixir--setup.sh to have been run first.
-# Usage: hex--install.sh <package> [package...]
+# Usage: hex--install.sh <package[@version]> [package[@version]...]
 # Example: hex--install.sh phx_new
+#          hex--install.sh phx_new@1.7.0
 
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
@@ -36,9 +37,17 @@ if ! command -v mix &> /dev/null; then
     exit 1
 fi
 
-for pkg in "$@"; do
-    echo "Installing Hex package: $pkg"
-    HOME="$MIX_HOME" mix archive.install hex "$pkg" --force
+# A trailing @version pins the archive (passed as mix's positional version arg).
+for spec in "$@"; do
+    pkg="${spec%@*}"
+    if [ "$pkg" = "$spec" ]; then
+        echo "Installing Hex package: $pkg"
+        HOME="$MIX_HOME" mix archive.install hex "$pkg" --force
+    else
+        version="${spec##*@}"
+        echo "Installing Hex package: $pkg (version $version)"
+        HOME="$MIX_HOME" mix archive.install hex "$pkg" "$version" --force
+    fi
 done
 
 echo "Hex packages installed to $MIX_HOME."

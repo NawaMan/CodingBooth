@@ -495,9 +495,6 @@ Main() {
         poll_variants
     fi
 
-    # Clean up status files
-    rm -f "${LOG_DIR}"/*.status
-
     # ── Summary ───────────────────────────────────────────────────────
 
     echo -e "${C_BOLD}Build Logs:${C_RESET} ${LOG_DIR}/"
@@ -513,7 +510,8 @@ Main() {
         echo -e "  ${C_RED}FAILED:${C_RESET} base  →  ${LOG_DIR}/base.log"
         has_failure=true
     fi
-    # Check variants
+    # Check variants. Must read the .status files BEFORE cleaning them up,
+    # otherwise get_status_var defaults to "pending" and failures are missed.
     for v in "${VARIANTS_TO_BUILD[@]}"; do
         local s
         s=$(get_status_var "$v")
@@ -522,6 +520,9 @@ Main() {
             has_failure=true
         fi
     done
+
+    # Clean up status files now that the summary has consumed them.
+    rm -f "${LOG_DIR}"/*.status
 
     if [[ "$has_failure" == "true" ]]; then
         exit 1

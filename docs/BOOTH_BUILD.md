@@ -2,7 +2,9 @@
 
 > Build and optionally publish a booth image for sharing or deployment.
 
-`booth build` compiles the Boothfile into a Docker image and optionally pushes it to a container registry. The image tag defaults to a content hash, so identical configurations produce identical tags — enabling caching and reproducibility.
+`booth build` compiles the Boothfile into a Docker image and optionally pushes it to a container registry. The image tag defaults to a content hash, so identical configurations produce identical tags — enabling caching and instruction-level repeatability.
+
+It is also how you create a **fully reproducible** environment: build the image once, store it (by tag or, better, by digest), and reuse *that image* instead of rebuilding. The stored image is the only artifact that freezes every dependency — base image, apt packages, and transitive libraries — byte-for-byte. See [Reproducibility](REPRODUCIBILITY.md) for the full picture and the three tiers of repeatability.
 
 ```bash
 ./booth build                                          # build locally
@@ -101,6 +103,8 @@ This means:
 - **Same config = same tag.** Two machines with identical `.booth/` produce the same hash.
 - **Skip-if-exists.** Before building, check if the image already exists (locally or in registry). If it does, skip the build and print the image name.
 - **Any change = new tag.** Changing the Boothfile or build args produces a different hash, so stale images are never reused.
+
+> **Note:** A matching tag proves the *recipe* is identical, not that the *bytes* are. A later rebuild can resolve unpinned transitive dependencies or apt packages to newer versions under the same tag. For byte-for-byte guarantees, store and reuse the built image rather than rebuilding — see [Reproducibility](REPRODUCIBILITY.md).
 
 ---
 
