@@ -1,0 +1,18 @@
+display-name = "Grok"
+primary = true
+display-disc = "xAI Grok AI for terminal coding assistance and chat"
+display-detail = "Installs a lightweight 'grok' CLI for chatting with Grok models (xAI) directly from the terminal. Uses the official xAI API (OpenAI-compatible). Set XAI_API_KEY to authenticate. Great companion for quick explanations, code reviews, and iteration inside the booth."
+display-order = 18
+tags = [
+    "ai",
+    "grok",
+    "xai",
+    "llm",
+    "chat",
+    "cli"
+]
+
+[segments]
+Boothfile = """
+setup grok
+"""

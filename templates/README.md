@@ -138,6 +138,8 @@ All templates and extensions grouped by segment order.
 | `tools/aws-cli`        | AWS CLI          |
 | `tools/build-essential`| Build Essentials |
 | `tools/claude-code`    | Claude Code      |
+| `tools/grok`           | Grok (xAI)       |
+| `tools/herdr`          | Herdr (agent multiplexer) |
 | `tools/cmake`          | CMake            |
 | `tools/conan`          | Conan            |
 | `tools/dind`           | Docker-in-Docker |
@@ -151,6 +153,7 @@ All templates and extensions grouped by segment order.
 | `tools/make`           | GNU Make         |
 | `tools/neovim`         | Neovim           |
 | `tools/openssh`        | OpenSSH Client   |
+| `tools/vhs`            | VHS (terminal/TUI recorder) |
 
 ### Order 50 — Extensions (run alongside parent)
 

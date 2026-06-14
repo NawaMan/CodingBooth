@@ -1,0 +1,22 @@
+display-name = "VHS"
+display-disc = "Record terminal sessions and TUI demos as GIF/MP4"
+display-detail = "Installs VHS (Charmbracelet), the popular tool for authoring and rendering terminal recordings from .tape scripts. Produces high-quality GIFs and MP4s perfect for documentation and demos. Also installs ffmpeg (required for rendering)."
+display-order = 25
+tags = [
+    "cli",
+    "demo",
+    "recording",
+    "gif",
+    "video",
+    "tui",
+    "docs",
+]
+
+[params.VHS_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup vhs --version ${VHS_VERSION}
+"""

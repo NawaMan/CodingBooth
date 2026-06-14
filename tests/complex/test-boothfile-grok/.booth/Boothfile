@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Grok (xAI) CLI installation via Boothfile
+setup grok
