@@ -1,0 +1,110 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:08.066
+CodingBooth provides isolated, repeatable, and shareable development environments designed to eliminate the classic "Works on My Machine" problem once and for all.
+
+00:00:08.066 --> 00:00:14.485
+This friction occurs when software runs perfectly for the developer who wrote it, but fails inconsistently on another machine.
+
+00:00:14.485 --> 00:00:18.918
+It is a problem driven by environmental drift, usually caused by these hidden culprits:
+
+00:00:18.918 --> 00:00:22.663
+Failed Experiments or Troubleshooting steps that were never reversed.
+
+00:00:22.663 --> 00:00:25.784
+Cross-Project Pollution bleeding over from other projects.
+
+00:00:25.784 --> 00:00:29.769
+Evolutionary Drift as projects evolve but unequally on different machines.
+
+00:00:29.769 --> 00:00:34.138
+AI-driven noise - quick fixes left behind as untracked, undocumented mess.
+
+00:00:34.138 --> 00:00:37.307
+Quick fixes that make it work but were never documented.
+
+00:00:37.307 --> 00:00:40.524
+When the environment is broken, the consequences can be expensive.
+
+00:00:40.524 --> 00:00:45.710
+Apps fail sometimes elsewhere but you can't debug it because it works perfectly on yours.
+
+00:00:45.710 --> 00:00:54.160
+Every time a new developer joins, hours, even days are lost manually installing tools, fighting version conflicts, and debugging environment issues.
+
+00:00:54.160 --> 00:01:00.930
+Your tests become flaky — passing on one run, failing on another — leaving you not quite sure if your code is actually working.
+
+00:01:00.930 --> 00:01:04.219
+Then comes the worst part: unexpected failures in production.
+
+00:01:04.219 --> 00:01:10.149
+Subtle differences might make the app work at first but fail some friday evening when hiting a rare condition.
+
+00:01:10.149 --> 00:01:13.700
+All of this slowly destroys trust in the development process.
+
+00:01:13.700 --> 00:01:15.854
+You start second-guessing everything.
+
+00:01:15.854 --> 00:01:20.860
+You run more tests hoping that more coverage should help but the build runs for hours.
+
+00:01:20.860 --> 00:01:22.024
+Progress slows down.
+
+00:01:22.024 --> 00:01:23.305
+Confidence evaporates.
+
+00:01:23.305 --> 00:01:27.338
+This is the hidden cost every team pays for 'Works on My Machine'."
+
+00:01:27.338 --> 00:01:28.730
+Coding Booth changes that.
+
+00:01:28.730 --> 00:01:33.052
+It uses containers to isolate the development environment from the host.
+
+00:01:33.052 --> 00:01:36.797
+Booth config lives with the code so all team members get the same setting.
+
+00:01:36.797 --> 00:01:39.883
+The environment is re-contructed fresh from the config.
+
+00:01:39.883 --> 00:01:41.454
+No place for drifts to hide.
+
+00:01:41.454 --> 00:01:45.391
+Booth handles the host-container user by matching the user ID and host ID.
+
+00:01:45.391 --> 00:01:52.929
+It provides different user interfaces ranging from terminal to a full Linux desktop to fit your project's needs or your preferences.
+
+00:01:52.929 --> 00:01:54.082
+With CodingBooth, ....
+
+00:01:54.082 --> 00:01:57.038
+Onboarding a new member can be done with minimal efforts.
+
+00:01:57.038 --> 00:02:00.564
+They can start learning the code and even making changes in minutes.
+
+00:02:00.564 --> 00:02:05.653
+You can be confident that if you can development on one machine, the same thing can be done on another.
+
+00:02:05.653 --> 00:02:10.407
+With the development done in the container, your code can stay clean -- no stains or scars.
+
+00:02:10.407 --> 00:02:16.456
+Proper version pinning can be done so the dev environment can be usable even after untouched for months or years.
+
+00:02:16.456 --> 00:02:22.602
+"Booth config" simplies the development environement setup so most tools only need one line of config.
+
+00:02:22.602 --> 00:02:25.972
+All in all, CodingBooth helps with the development environment.
+
+00:02:25.972 --> 00:02:28.700
+Put CodingBooth in your project and Thank me later.
+

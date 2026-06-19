@@ -1,0 +1,56 @@
+WEBVTT
+
+00:00:00.000 --> 00:00:05.721
+CodingBooth improves your and your team’s development experience by eliminating the “it works only on my machine” problem.
+
+00:00:05.721 --> 00:00:09.126
+It does this by creating fully isolated environments for each project.
+
+00:00:09.126 --> 00:00:14.211
+Any activity within the project stays inside its isolated environment and never touches your host system.
+
+00:00:14.211 --> 00:00:19.750
+Each project gets its own dedicated environment, so you can work on multiple projects simultaneously without conflicts.
+
+00:00:19.750 --> 00:00:26.606
+The strong isolation also lets you safely experiment with the project’s environment, without worrying about affecting other projects or your host machine.
+
+00:00:26.606 --> 00:00:30.964
+The booth is created exactly according to its definition, making it fully repeatable.
+
+00:00:30.964 --> 00:00:36.004
+It is spun up when needed and thrown away when done, so you always get the same consistent environment.
+
+00:00:36.004 --> 00:00:39.954
+The definition is stored as plain text, so it can be version controlled.
+
+00:00:39.954 --> 00:00:41.498
+Booths are easily shareable.
+
+00:00:41.498 --> 00:00:45.311
+Because the definition is shareable, team members get identical environments.
+
+00:00:45.311 --> 00:00:53.529
+This enables quick and reliable onboarding while eliminating “it works on my machine” issues.
+
+00:00:53.529 --> 00:00:55.981
+All of this is delivered in a highly usable way.
+
+00:00:55.981 --> 00:01:00.884
+For example, you can interact with the environment through a terminal, or even a full Linux desktop.
+
+00:01:00.884 --> 00:01:05.516
+CodingBooth handles file permissions seamlessly by matching your user ID and group ID.
+
+00:01:05.516 --> 00:01:10.737
+The booth definition is intuitive and comes pre-loaded with useful build-in setups and templates.
+
+00:01:10.737 --> 00:01:13.234
+It also includes an easy-to-use configuration tool.
+
+00:01:13.234 --> 00:01:16.911
+Start using CodingBooth in your project today — and thank me later.
+
+00:01:16.911 --> 00:01:19.000
+Visit codingbooth.io to try
+

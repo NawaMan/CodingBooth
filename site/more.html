@@ -397,6 +397,24 @@
             max-width: 320px;
         }
 
+        .demo-cc span {
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            line-height: 1;
+        }
+
+        .demo-cc.is-off {
+            opacity: 0.45;
+        }
+
+        .short-tape video::cue {
+            background: rgba(0, 6, 21, 0.82);
+            color: #fff;
+            font-size: 0.85em;
+            line-height: 1.3;
+        }
+
         .demo-player {
             display: inline-block;
             max-width: 100%;
@@ -759,9 +777,13 @@
                 <div class="tape-block short-tape">
                     <div class="demo-player">
                         <video src="media/why.mp4" autoplay loop muted playsinline preload="metadata"
-                            aria-label="Why CodingBooth — short video"></video>
+                            aria-label="Why CodingBooth — short video">
+                            <track kind="captions" src="media/why.vtt" srclang="en" label="English" default>
+                        </video>
                     </div>
                     <div class="demo-bar-row">
+                        <button class="demo-ctrl demo-cc" type="button" aria-label="Hide captions"
+                            title="Hide captions"><span>CC</span></button>
                         <button class="demo-ctrl demo-mute" type="button" aria-label="Unmute" title="Unmute">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -826,9 +848,13 @@
                 <div class="tape-block short-tape">
                     <div class="demo-player">
                         <video src="media/how.mp4" autoplay loop muted playsinline preload="metadata"
-                            aria-label="How CodingBooth works — short video"></video>
+                            aria-label="How CodingBooth works — short video">
+                            <track kind="captions" src="media/how.vtt" srclang="en" label="English" default>
+                        </video>
                     </div>
                     <div class="demo-bar-row">
+                        <button class="demo-ctrl demo-cc" type="button" aria-label="Hide captions"
+                            title="Hide captions"><span>CC</span></button>
                         <button class="demo-ctrl demo-mute" type="button" aria-label="Unmute" title="Unmute">
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                                 stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -1655,6 +1681,23 @@
                         setMuted(video.muted);
                     });
                     video.addEventListener('volumechange', () => setMuted(video.muted));
+                }
+
+                const ccBtn = row.querySelector('.demo-cc');
+                if (ccBtn && video.textTracks && video.textTracks.length) {
+                    const track = video.textTracks[0];
+
+                    function setCC(on) {
+                        track.mode = on ? 'showing' : 'hidden';
+                        ccBtn.classList.toggle('is-off', !on);
+                        ccBtn.setAttribute('aria-label', on ? 'Hide captions' : 'Show captions');
+                        ccBtn.title = on ? 'Hide captions' : 'Show captions';
+                    }
+                    setCC(true);
+
+                    ccBtn.addEventListener('click', () => {
+                        setCC(track.mode !== 'showing');
+                    });
                 }
 
                 video.addEventListener('play', () => setPaused(false));
