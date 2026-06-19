@@ -388,6 +388,15 @@
             width: 100%;
         }
 
+        /* Portrait YouTube Shorts (9:16) — keep them from dominating the page */
+        .short-tape .demo-player {
+            max-width: 320px;
+        }
+
+        .short-tape .demo-bar-row {
+            max-width: 320px;
+        }
+
         .demo-player {
             display: inline-block;
             max-width: 100%;
@@ -701,6 +710,8 @@
                 <button type="button" data-sort="alpha">A → Z</button>
             </div>
             <div class="toc-grid">
+                <a href="#video-why">Why? (video)</a>
+                <a href="#video-how">How? (video)</a>
                 <a href="#how-it-works">How it works</a>
                 <a href="#wrapper">The wrapper</a>
                 <a href="#user-permissions">User permissions</a>
@@ -732,6 +743,139 @@
                 <a href="#booth-in-booth">Booth-in-Booth</a>
                 <a href="#desktop">Desktop &amp; noVNC</a>
                 <a href="#agent">AI agent integration</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="video-why">
+        <div class="container">
+            <h2>Why?</h2>
+            <div class="more-card">
+                <p class="more-text">
+                    A short take on the problem CodingBooth solves — why a containerized, reproducible dev
+                    environment beats a host full of system-wide installs, mismatched versions, and onboarding
+                    docs no one keeps current.
+                </p>
+                <div class="tape-block short-tape">
+                    <div class="demo-player">
+                        <video src="media/why.mp4" autoplay loop muted playsinline preload="metadata"
+                            aria-label="Why CodingBooth — short video"></video>
+                    </div>
+                    <div class="demo-bar-row">
+                        <button class="demo-ctrl demo-mute" type="button" aria-label="Unmute" title="Unmute">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"
+                                    stroke="none" />
+                                <line x1="22" y1="9" x2="16" y2="15" />
+                                <line x1="16" y1="9" x2="22" y2="15" />
+                            </svg>
+                        </button>
+                        <button class="demo-ctrl demo-pause" type="button" aria-label="Pause" title="Pause">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <rect x="6" y="5" width="4" height="14" rx="1" />
+                                <rect x="14" y="5" width="4" height="14" rx="1" />
+                            </svg>
+                        </button>
+                        <button class="demo-ctrl demo-restart" type="button" aria-label="Restart from beginning"
+                            title="Restart">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M3 12a9 9 0 1 0 3-6.7" />
+                                <polyline points="3 4 3 9 8 9" />
+                            </svg>
+                        </button>
+                        <div class="demo-progress" aria-hidden="true">
+                            <div class="demo-progress-bar"></div>
+                        </div>
+                        <span class="demo-time" aria-hidden="true">0:00 / 0:00</span>
+                    </div>
+                    <ul class="demo-points">
+                        <li><button type="button" class="ts" data-seek="0" title="Jump to 0:00">0:00</button>The
+                            everyday friction CodingBooth sets out to remove.</li>
+                        <li><button type="button" class="ts" data-seek="18" title="Jump to 0:18">0:18</button>How dev
+                            environments rot: failed experiments, cross-project pollution, version drift, AI-driven
+                            noise.</li>
+                        <li><button type="button" class="ts" data-seek="39" title="Jump to 0:39">0:39</button>What it
+                            costs you — apps that break, painful onboarding, flaky tests.</li>
+                        <li><button type="button" class="ts" data-seek="80" title="Jump to 1:20">1:20</button>The hidden
+                            cost of a messy, drifting setup.</li>
+                        <li><button type="button" class="ts" data-seek="84" title="Jump to 1:24">1:24</button>The fix:
+                            containers plus a portable <code>.booth/</code> config that lives with the repo.</li>
+                        <li><button type="button" class="ts" data-seek="109" title="Jump to 1:49">1:49</button>Onboard in
+                            minutes, reproduce with confidence, pin versions cleanly.</li>
+                        <li><button type="button" class="ts" data-seek="137" title="Jump to 2:17">2:17</button>The
+                            payoff, in one line.</li>
+                    </ul>
+                </div>
+                <a class="more-link" href="https://youtube.com/shorts/gjRgz0RU2wU" target="_blank"
+                    rel="noopener">Watch on YouTube →</a>
+            </div>
+        </div>
+    </section>
+
+    <section id="video-how">
+        <div class="container">
+            <h2>How?</h2>
+            <div class="more-card">
+                <p class="more-text">
+                    A short walkthrough of how a booth comes together in practice — drop a tiny
+                    <code>.booth/</code> config in your repo, run <code>./booth</code>, and a clean, isolated
+                    environment appears around your project.
+                </p>
+                <div class="tape-block short-tape">
+                    <div class="demo-player">
+                        <video src="media/how.mp4" autoplay loop muted playsinline preload="metadata"
+                            aria-label="How CodingBooth works — short video"></video>
+                    </div>
+                    <div class="demo-bar-row">
+                        <button class="demo-ctrl demo-mute" type="button" aria-label="Unmute" title="Unmute">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor"
+                                    stroke="none" />
+                                <line x1="22" y1="9" x2="16" y2="15" />
+                                <line x1="16" y1="9" x2="22" y2="15" />
+                            </svg>
+                        </button>
+                        <button class="demo-ctrl demo-pause" type="button" aria-label="Pause" title="Pause">
+                            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+                                <rect x="6" y="5" width="4" height="14" rx="1" />
+                                <rect x="14" y="5" width="4" height="14" rx="1" />
+                            </svg>
+                        </button>
+                        <button class="demo-ctrl demo-restart" type="button" aria-label="Restart from beginning"
+                            title="Restart">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"
+                                stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <path d="M3 12a9 9 0 1 0 3-6.7" />
+                                <polyline points="3 4 3 9 8 9" />
+                            </svg>
+                        </button>
+                        <div class="demo-progress" aria-hidden="true">
+                            <div class="demo-progress-bar"></div>
+                        </div>
+                        <span class="demo-time" aria-hidden="true">0:00 / 0:00</span>
+                    </div>
+                    <ul class="demo-points">
+                        <li><button type="button" class="ts" data-seek="0" title="Jump to 0:00">0:00</button>How a booth
+                            works — an isolated environment built around your project.</li>
+                        <li><button type="button" class="ts" data-seek="14" title="Jump to 0:14">0:14</button>Each
+                            project gets its own strong isolation — no cross-contamination.</li>
+                        <li><button type="button" class="ts" data-seek="27" title="Jump to 0:27">0:27</button>Spun up on
+                            demand from a stored definition.</li>
+                        <li><button type="button" class="ts" data-seek="40" title="Jump to 0:40">0:40</button>The
+                            definition is easily shared — quick, repeatable setup.</li>
+                        <li><button type="button" class="ts" data-seek="54" title="Jump to 0:54">0:54</button>Delivered
+                            consistently; booth handles the host details for you.</li>
+                        <li><button type="button" class="ts" data-seek="67" title="Jump to 1:07">1:07</button>The
+                            definition captures tools, config, and more.</li>
+                        <li><button type="button" class="ts" data-seek="74" title="Jump to 1:14">1:14</button>Get started
+                            — visit <code>codingbooth.io</code>.</li>
+                    </ul>
+                </div>
+                <a class="more-link" href="https://youtube.com/shorts/6ahi72ym3jk" target="_blank"
+                    rel="noopener">Watch on YouTube →</a>
             </div>
         </div>
     </section>
@@ -1486,6 +1630,32 @@
                     video.currentTime = 0;
                     video.play();
                 });
+
+                const muteBtn = row.querySelector('.demo-mute');
+                if (muteBtn) {
+                    const MUTED_ICON =
+                        '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/>' +
+                        '<line x1="22" y1="9" x2="16" y2="15"/>' +
+                        '<line x1="16" y1="9" x2="22" y2="15"/>';
+                    const SOUND_ICON =
+                        '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" fill="currentColor" stroke="none"/>' +
+                        '<path d="M15.5 8.5a5 5 0 0 1 0 7"/>' +
+                        '<path d="M19 5a10 10 0 0 1 0 14"/>';
+                    const muteIcon = muteBtn.querySelector('svg');
+
+                    function setMuted(isMuted) {
+                        if (muteIcon) muteIcon.innerHTML = isMuted ? MUTED_ICON : SOUND_ICON;
+                        muteBtn.setAttribute('aria-label', isMuted ? 'Unmute' : 'Mute');
+                        muteBtn.title = isMuted ? 'Unmute' : 'Mute';
+                    }
+                    setMuted(video.muted);
+
+                    muteBtn.addEventListener('click', () => {
+                        video.muted = !video.muted;
+                        setMuted(video.muted);
+                    });
+                    video.addEventListener('volumechange', () => setMuted(video.muted));
+                }
 
                 video.addEventListener('play', () => setPaused(false));
                 video.addEventListener('pause', () => setPaused(true));
