@@ -2,6 +2,13 @@
 
 This file contains a list of changes for each released version.
 
+## 0.56.0
+
+- **New `install apt` manager — install Debian/Ubuntu system packages from a Boothfile.** `install apt <pkg>[=<version>]` compiles to `RUN apt--install.sh ...`, alongside the existing language package managers (`install pip`, `install npm`, …). Version pins use apt's native `pkg=version` syntax. The `apt` manager auto-registers from `variants/base/setups/apt--install.sh` — no separate allowlist.
+  - **Reproducible by archive snapshot.** `apt--install.sh` honors an `APT_SNAPSHOT` env var (a UTC `YYYYMMDDTHHMMSSZ` id) and passes `--snapshot` to apt, freezing the whole resolution — transitive dependencies included — to that day's Ubuntu archive (base image is Ubuntu 24.04, where `--snapshot` is auto-supported). With no `APT_SNAPSHOT`, apt resolves against the live archive as usual.
+  - **`booth config` stamps the date.** Generated Boothfiles get an `env APT_SNAPSHOT=<configuration date>` line (UTC, day granularity) so rebuilds stay frozen until the next `booth config`. `CB_APT_SNAPSHOT` overrides the stamped value. See `docs/REPRODUCIBILITY.md` and `docs/BOOTH_INSTALL_APT.md`.
+  - New `apt-example` workspace demonstrates `install apt` + the snapshot freeze; `clang-example` now pulls the header-only `nlohmann/json` C++ library via `install apt`. Complex tests `test-boothfile-apt` and `test-boothfile-apt-snapshot` cover both modes.
+
 ## 0.54.0
 
 - **Native multi-arch image builds — published images are no longer cross-built under QEMU.** Each architecture is now built on a runner of that architecture, eliminating the emulation that silently broke build-time steps on the non-native arch.

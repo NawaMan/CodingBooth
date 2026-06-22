@@ -1,0 +1,13 @@
+# syntax=codingbooth/boothfile:1
+
+# Apt Example
+# Installs system CLI tools with apt on top of the base workspace image.
+#
+# APT_SNAPSHOT freezes the entire apt archive to a point in time, so rebuilds resolve
+# the same versions — including transitive dependencies, not just the packages named
+# below. `booth config` stamps this line with the configuration date automatically;
+# here it is pinned to a fixed snapshot for a reproducible demo. Remove the line to
+# track the live archive instead.
+env APT_SNAPSHOT=20250601T000000Z
+
+install apt jq tree ripgrep

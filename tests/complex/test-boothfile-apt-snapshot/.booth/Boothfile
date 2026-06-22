@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: `install apt` frozen to an Ubuntu archive snapshot via APT_SNAPSHOT.
+# `booth config` normally stamps this line with the configuration date; here it is
+# set explicitly to a fixed past snapshot so the test is deterministic.
+env APT_SNAPSHOT=20250601T000000Z
+
+install apt jq

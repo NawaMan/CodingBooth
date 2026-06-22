@@ -2,3 +2,5 @@ language
 clang
 cpp
 cmake
+apt
+package-manager

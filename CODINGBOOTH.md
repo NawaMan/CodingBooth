@@ -616,7 +616,7 @@ The image's *capability* (Java? Python? VS Code? AI tools?) comes from ~186 buil
 ### Categories of available setups
 
 - **Language toolchains:** bun, cabal, cargo, clojure, conan, go, gradle, java/jdk, kotlin, lua, nodejs, php, python, ruby, rust, sbt, scala, ...
-- **Package install layer:** pip, uv, conda, npm, yarn, bun, deno, go, cargo, gem, brew, cabal, hex, luarocks, pecl, conan
+- **Package install layer:** pip, uv, conda, npm, yarn, bun, deno, go, cargo, gem, brew, cabal, hex, luarocks, pecl, conan, apt (Debian/Ubuntu system packages, with `APT_SNAPSHOT` freeze)
 - **Cloud CLIs:** aws-cli, aws-cdk, aws-sam-cli, azure-cli, gcloud, firebase
 - **IDE / editor:** codeserver, bluej, neovim
 - **AI tools:** claude-code, codex, aider, cursor, gh-copilot, ollama, antigravity, warp

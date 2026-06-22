@@ -7,3 +7,9 @@ arg LLVM_VERSION=18
 setup clang --version ${LLVM_VERSION}
 setup cmake
 setup make --from-apt
+
+# A C++ library installed with apt — header-only nlohmann/json.
+# It lands at /usr/include/nlohmann/json.hpp, so `#include <nlohmann/json.hpp>` just
+# works (no linking, no CMake find_package). Pin reproducibly by adding an
+# `env APT_SNAPSHOT=<id>` line above — see the apt-example workspace.
+install apt nlohmann-json3-dev

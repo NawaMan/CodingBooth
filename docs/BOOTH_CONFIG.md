@@ -427,6 +427,8 @@ The full list of package manager extensions:
 
 These translate to `install <manager> <packages>` in the Boothfile, which runs the corresponding `<manager>--install.sh` script during `docker build`.
 
+> **System packages (apt):** Debian/Ubuntu packages install with `install apt <pkgs>` added directly to the Boothfile — there is no template extension for it. It supports apt's native `pkg=version` pinning and an `APT_SNAPSHOT` archive freeze. See [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md#using-built-in-installs) and [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
+
 ### Project Dependency Pre-Installation
 
 Pre-download project dependencies into the image so they're available immediately — no waiting for downloads on every container start.
