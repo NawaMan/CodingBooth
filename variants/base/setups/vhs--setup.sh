@@ -55,7 +55,11 @@ echo "⬇️  Installing VHS v${VERSION} (${VHS_ARCH}) + ffmpeg ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 curl -fsSL "https://github.com/charmbracelet/vhs/releases/download/v${VERSION}/vhs_${VERSION}_Linux_${VHS_ARCH}.tar.gz" -o "$TMP/vhs.tar.gz"
 tar -xzf "$TMP/vhs.tar.gz" -C "$TMP"
-install -m 755 "$TMP/vhs" /usr/local/bin/vhs
+# Locate the binary: older releases ship a top-level `vhs`, while v0.11.0+
+# nest it under a versioned directory (e.g. vhs_0.11.0_Linux_x86_64/vhs).
+VHS_BIN="$(find "$TMP" -type f -name vhs | head -1)"
+[[ -n "$VHS_BIN" ]] || { echo "❌ vhs binary not found in release archive"; exit 1; }
+install -m 755 "$VHS_BIN" /usr/local/bin/vhs
 
 echo "✅ VHS installed."
 echo -n "   vhs → "; vhs --version 2>/dev/null || true
