@@ -1,0 +1,42 @@
+display-name = "Herdr Auto-Start (experimental)"
+display-disc = "Auto-launch Herdr in the terminal (experimental — clipboard issues)"
+display-detail = "EXPERIMENTAL. Drops the base (terminal) variant straight into Herdr when you open the web terminal. Switches the terminal to single-pane mode (BOOTH_WEB_SPLIT=false) so Herdr — itself a multiplexer — owns the whole screen instead of nesting inside CodingBooth's 4-pane split. Herdr's server persists for the container's lifetime, so the first session starts it and later reconnects attach back to the same session. Known issue: copy/paste (clipboard) does not work reliably in the web terminal yet, which is why this is marked experimental."
+display-order = 2
+auto-select = false
+tags = [
+    "ai",
+    "herdr",
+    "autostart",
+    "terminal",
+    "multiplexer"
+]
+
+# Single full-screen terminal so Herdr owns the screen instead of nesting
+# inside CodingBooth's default 4-pane ttyd split.
+run-args = ["-e", "BOOTH_WEB_SPLIT=false"]
+
+[segments]
+"startup--80.sh" = """
+# Install a profile.d launcher that hands interactive base-variant terminals
+# to Herdr. Runs once per container start (as coder, sudo still available),
+# before ttyd spawns the login shell that sources /etc/profile.d/*.sh.
+PROFILE=/etc/profile.d/99zz-cb-herdr--profile.sh
+sudo tee "$PROFILE" >/dev/null <<'LAUNCHER'
+# CodingBooth: auto-launch Herdr in the terminal.
+# Only for interactive shells attached to a tty.
+case "$-" in *i*) ;; *) return ;; esac
+[ -t 1 ] || return
+# Only the terminal (base) variant; other variants have their own UI.
+[ "${BOOTH_VARIANT_TAG:-base}" = "base" ] || return
+# Avoid recursion: Herdr opens login shells inside its own panes.
+[ -n "${CB_HERDR_ACTIVE:-}" ] && return
+# Only if Herdr is actually installed.
+command -v herdr >/dev/null 2>&1 || return
+# Hand the terminal to Herdr (starts the server on the first session, attaches
+# to it thereafter). Mark the subtree so inner pane shells do not re-launch.
+export CB_HERDR_ACTIVE=1
+printf '\\033[1;33m[booth] Herdr auto-start is EXPERIMENTAL — copy/paste (clipboard) does not work reliably yet.\\033[0m\\n'
+exec herdr
+LAUNCHER
+sudo chmod 0644 "$PROFILE"
+"""

@@ -1,0 +1,11 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant terminal --select clang~vscode-ext/claude-code+auto-accept+credential+settings-cache/herdr
+
+env APT_SNAPSHOT=20260623T000000Z
+
+arg HERDR_VERSION=latest
+arg LLVM_VERSION=18
+
+setup clang --version ${LLVM_VERSION}
+setup claude-code
+setup herdr --version ${HERDR_VERSION}

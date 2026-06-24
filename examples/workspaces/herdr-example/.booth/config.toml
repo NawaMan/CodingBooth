@@ -1,0 +1,8 @@
+# Configured by: booth config --no-tui --overwrite --variant terminal --select clang~vscode-ext/claude-code+auto-accept+credential+settings-cache/herdr
+
+variant = "terminal"
+
+run-args = [
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"
+]
