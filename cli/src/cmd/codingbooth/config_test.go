@@ -7,8 +7,11 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 	"testing"
 
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -63,6 +66,58 @@ func TestSliceContains(t *testing.T) {
 	assert.False(t, sliceContains([]string{"a", "b", "c"}, "d"))
 	assert.False(t, sliceContains(nil, "a"))
 	assert.False(t, sliceContains([]string{}, "a"))
+}
+
+// --- apt snapshot ---
+
+func TestAptSnapshotID_Override(t *testing.T) {
+	t.Setenv("CB_APT_SNAPSHOT", "20250101T120000Z")
+	assert.Equal(t, "20250101T120000Z", aptSnapshotID())
+}
+
+func TestAptSnapshotID_DefaultIsTodayUTCMidnight(t *testing.T) {
+	t.Setenv("CB_APT_SNAPSHOT", "")
+	id := aptSnapshotID()
+	// UTC, day granularity: YYYYMMDDT000000Z
+	assert.Regexp(t, regexp.MustCompile(`^\d{8}T000000Z$`), id)
+}
+
+func TestApplyAptSnapshot_PrependsEnvBeforeContent(t *testing.T) {
+	t.Setenv("CB_APT_SNAPSHOT", "20260601T000000Z")
+	out := &output.BoothOutput{Boothfile: &output.BoothfileContent{Content: "install apt htop\n"}}
+
+	applyAptSnapshot(out)
+
+	assert.Equal(t, "env APT_SNAPSHOT=20260601T000000Z\n\ninstall apt htop\n", out.Boothfile.Content)
+	// env must precede the install line so the ENV is visible to the install RUN.
+	assert.Less(t, strings.Index(out.Boothfile.Content, "APT_SNAPSHOT"),
+		strings.Index(out.Boothfile.Content, "install apt"))
+}
+
+func TestApplyAptSnapshot_NoBoothfileIsNoop(t *testing.T) {
+	t.Setenv("CB_APT_SNAPSHOT", "20260601T000000Z")
+
+	// nil Boothfile
+	out := &output.BoothOutput{}
+	applyAptSnapshot(out)
+	assert.Nil(t, out.Boothfile)
+
+	// empty Boothfile content — nothing to freeze, leave empty
+	out = &output.BoothOutput{Boothfile: &output.BoothfileContent{Content: ""}}
+	applyAptSnapshot(out)
+	assert.Equal(t, "", out.Boothfile.Content)
+}
+
+func TestApplyAptSnapshot_Idempotent(t *testing.T) {
+	t.Setenv("CB_APT_SNAPSHOT", "20260601T000000Z")
+	out := &output.BoothOutput{Boothfile: &output.BoothfileContent{
+		Content: "env APT_SNAPSHOT=20240101T000000Z\n\ninstall apt htop\n",
+	}}
+
+	applyAptSnapshot(out)
+
+	// Existing APT_SNAPSHOT is preserved, not stamped again.
+	assert.Equal(t, "env APT_SNAPSHOT=20240101T000000Z\n\ninstall apt htop\n", out.Boothfile.Content)
 }
 
 // --- extractUserRunArgs ---

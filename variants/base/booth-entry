@@ -84,9 +84,27 @@ info "ORIG_UID=$ORIG_UID ORIG_GID=$ORIG_GID"
 find_free_uid() { local uid=2000; while getent passwd "$uid" >/dev/null 2>&1; do uid=$((uid+1)); done; echo "$uid"; }
 find_free_gid() { local gid=2000; while getent group  "$gid" >/dev/null 2>&1; do gid=$((gid+1)); done; echo "$gid"; }
 
-# Wrappers to hide "no changes" noise while preserving behavior/exit codes
-UserMod()  { usermod "$@" 2> >(grep -v -F "usermod: no changes" >&2) ; }
-GroupMod() { groupmod "$@" 2> >(grep -v -F "groupmod: no changes" >&2) ; }
+# Wrappers around usermod/groupmod that (a) hide benign "no changes" noise and
+# (b) survive lock contention. Both tools take a global lock on /etc/passwd and
+# /etc/group; the several back-to-back calls this script makes can transiently
+# collide and fail with "cannot lock ...; try again later." Under 'set -e' such
+# a failure would abort the entrypoint mid-alignment — and if it hit the home
+# restore below, leave coder's home pointed at a throwaway temp dir. Retry on
+# lock errors only; real failures still surface with their original exit code.
+_mod_retry() {
+  local out rc tries=0
+  while :; do
+    out="$("$@" 2>&1)"; rc=$?
+    [ "$rc" -eq 0 ] && break
+    printf '%s\n' "$out" | grep -qiE 'cannot lock|try again later' || break
+    [ "$tries" -ge 25 ] && break
+    tries=$((tries + 1)); sleep 0.2
+  done
+  printf '%s' "$out" | grep -v -F "no changes" >&2 || true
+  return "$rc"
+}
+UserMod()  { _mod_retry usermod  "$@"; }
+GroupMod() { _mod_retry groupmod "$@"; }
 
 info "1) Ensure '$USER_NAME' group exists (with any GID for now). Prefer HOST_GID if free ..."
 if ! getent group "$USER_NAME" >/dev/null 2>&1; then
@@ -113,9 +131,17 @@ fi
 info "4) Ensuring user '$USER_NAME' exists and matches HOST_UID..."
 existing_uid_user="$(getent passwd "$HOST_UID" | cut -d: -f1 || true)"
 if id -u "$USER_NAME" >/dev/null 2>&1; then
-  current_uid="$(id -u "$USER_NAME")"
-  # minimal additions: detect current primary group name and shell
-  current_gid_name="$(id -gn "$USER_NAME")"
+  current_uid="$(id -u "$USER_NAME" 2>/dev/null || true)"
+  # minimal additions: detect current primary group name and shell.
+  # These MUST stay non-fatal: if a prior start was interrupted mid-alignment
+  # (e.g. an early 'docker stop' after a --daemon run), coder's primary gid can
+  # be left pointing at a group id that no longer has a name entry. 'id -gn'
+  # then fails ("cannot find name for group ID N"), and as a bare assignment
+  # under 'set -e' that would kill the entrypoint on every subsequent start —
+  # an unrecoverable booth. An empty value here is fine: the branches below
+  # treat it as a mismatch and re-assert coder's uid/gid/shell, converging the
+  # account from whatever partial state the interrupted run left behind.
+  current_gid_name="$(id -gn "$USER_NAME" 2>/dev/null || true)"
   current_shell="$(getent passwd "$USER_NAME" | cut -d: -f7 || true)"
 
   if [ "$current_uid" != "$HOST_UID" ]; then
@@ -131,16 +157,32 @@ if id -u "$USER_NAME" >/dev/null 2>&1; then
       temp_uid="$(find_free_uid)"; UserMod -u "$temp_uid" "$existing_uid_user"
     fi
 
-    # Temporarily point home to an empty dir so that usermod's implicit
-    # chown (triggered by -u) does not traverse into bind mounts.
-    # On Docker Desktop for Mac, chown on the host-mounted code dir fails
-    # and causes usermod to exit 12 (E_HOMEDIR).
-    # Step 5 below handles ownership fixup correctly, skipping CODE_DIR.
-    _tmp_home="$(mktemp -d)"
-    usermod -d "$_tmp_home" "$USER_NAME" 2>/dev/null || true
-    UserMod -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
-    UserMod -d "$HOME_DIR" "$USER_NAME"
-    rmdir "$_tmp_home" 2>/dev/null || true
+    # Change coder's uid to the host's. usermod's -u triggers an implicit
+    # recursive chown of the home directory tree.
+    #
+    # On non-Linux hosts (Docker Desktop for Mac, and Windows bind mounts) that
+    # chown hits the host-mounted code dir under $HOME and fails (EPERM), making
+    # usermod exit 12 (E_HOMEDIR). To dodge it we briefly repoint coder's home at
+    # a throwaway dir for the -u, then restore it.
+    #
+    # On Linux we DON'T do that repoint, because it is the source of a nasty
+    # race: if an early 'docker stop' interrupts this block between the repoint
+    # and the restore, /etc/passwd is left with coder's home pointing at a
+    # now-deleted temp dir, and every later start drops the user into that dead
+    # $HOME — login shells and git fail ("Permission denied"), killing the
+    # container under 'set -e'. On Linux the implicit chown is harmless (the bind
+    # mount's files are host-owned, not old-uid-owned, so usermod skips them), so
+    # we change the uid in place with no temp-home and no window to be caught in.
+    # Step 5 below reconciles home ownership regardless of platform.
+    if [ "${HOST_OS:-}" = "LIN" ]; then
+      UserMod -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+    else
+      _tmp_home="$(mktemp -d)"
+      UserMod -d "$_tmp_home" "$USER_NAME" || true
+      UserMod -u "$HOST_UID" -g "$USER_NAME" -s "$USER_SHELL" "$USER_NAME"
+      UserMod -d "$HOME_DIR" "$USER_NAME"
+      rmdir "$_tmp_home" 2>/dev/null || true
+    fi
   else
     # Only call usermod if group or shell actually differ (avoid "no changes" noise)
     if [ "$current_gid_name" != "$USER_NAME" ] || [ "$current_shell" != "$USER_SHELL" ]; then
@@ -160,15 +202,34 @@ else
   fi
 fi
 
-info "5) Fixing ownership for files owned by original UID:GID (skipping $CODE_DIR)..."
-if [ -n "$ORIG_UID" ] && [ "$ORIG_UID" != "$HOST_UID" ]; then
-  info "Changing ownership from UID $ORIG_UID to $HOST_UID..."
-  find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o -user "$ORIG_UID" -exec chown "$HOST_UID" {} + 2>/dev/null || true
+# Self-heal coder's recorded home directory. The uid-alignment block above
+# temporarily points coder's home at a throwaway dir so 'usermod -u' does not
+# recursively chown into bind mounts, then restores it. If an earlier start was
+# interrupted (or lost a usermod lock race) after the uid change but before the
+# restore, /etc/passwd can keep that now-deleted, root-owned temp dir as coder's
+# home. Because the block only runs when the uid differs, the stale home would
+# then survive every stop/start, and runuser/login shells/git would fail with
+# "$HOME" pointing at an inaccessible directory — taking the container down.
+# Reconcile it unconditionally on every start.
+recorded_home="$(getent passwd "$USER_NAME" | cut -d: -f6)"
+if [ "$recorded_home" != "$HOME_DIR" ]; then
+  info "Repairing $USER_NAME home in /etc/passwd: '$recorded_home' -> '$HOME_DIR'"
+  UserMod -d "$HOME_DIR" "$USER_NAME"
 fi
-if [ -n "$ORIG_GID" ] && [ "$ORIG_GID" != "$HOST_GID" ]; then
-  info "Changing group from GID $ORIG_GID to $HOST_GID..."
-  find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o -group "$ORIG_GID" -exec chgrp "$HOST_GID" {} + 2>/dev/null || true
-fi
+
+info "5) Reconciling ownership of $HOME_DIR to $HOST_UID:$HOST_GID (skipping $CODE_DIR)..."
+# Reconcile UNCONDITIONALLY (not just when ORIG_UID/GID differ). Step 4 above
+# changes coder's uid/gid in /etc/passwd atomically, but this chown of the home
+# tree is a separate, slower step. If a previous start aligned the uid but was
+# interrupted before this chown finished — e.g. an early 'docker stop' right
+# after a --daemon run returns — a later start would read the already-aligned
+# uid as ORIG_UID, conclude "no change needed", skip the chown, and leave
+# $HOME_DIR owned by the stale build-time uid. coder then cannot write its own
+# home, so startup hooks (git config, etc.) fail with "Permission denied" under
+# 'set -e' and the container exits. Targeting only files whose owner/group
+# already differs keeps this cheap and idempotent on every start.
+find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o ! -user  "$HOST_UID" -exec chown "$HOST_UID" {} + 2>/dev/null || true
+find "$HOME_DIR" -xdev -path "$CODE_DIR" -prune -o ! -group "$HOST_GID" -exec chgrp "$HOST_GID" {} + 2>/dev/null || true
 
 info "6) For Windows, find all mount point from the host and in each mount point, find all file/folder that is root:root and change them to coder:coder"
 if [ "${HOST_OS:-}" = "WIN" ]; then

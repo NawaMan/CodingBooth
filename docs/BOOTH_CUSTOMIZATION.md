@@ -279,6 +279,15 @@ Each `install` command maps to a `*--install.sh` script. For example, `install p
 | `install luarocks` | Lua | `luarocks install` |
 | `install pecl` | PHP | `pecl install` |
 | `install conan` | C/C++ | `conan install` |
+| `install apt` | Debian/Ubuntu | `apt-get install --no-install-recommends` |
+
+`install apt` installs system packages and accepts apt's native `pkg=version` pin
+(`install apt jq htop=3.0.5-7`). For reproducibility it honors an `APT_SNAPSHOT`
+environment variable: `booth config` stamps the configuration date into the generated
+Boothfile (`env APT_SNAPSHOT=<date>`) so every apt resolution — including transitive
+dependencies — is frozen to that day's archive. A hand-written Boothfile with no
+`APT_SNAPSHOT` resolves against the live archive. See
+[REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
 
 ### Installing Packages via Templates
 

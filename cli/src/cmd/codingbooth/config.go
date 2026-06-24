@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
@@ -51,6 +52,33 @@ func runConfig(version string) {
 	}
 }
 
+// aptSnapshotID returns the Ubuntu archive snapshot id used to freeze `install apt`
+// installs. `booth config` stamps the configuration date (UTC, day granularity) so
+// that apt resolves against a frozen archive on every rebuild. CB_APT_SNAPSHOT
+// overrides the computed value (used by tests and for pinning a specific snapshot).
+func aptSnapshotID() string {
+	if v := os.Getenv("CB_APT_SNAPSHOT"); v != "" {
+		return v
+	}
+	return time.Now().UTC().Format("20060102") + "T000000Z"
+}
+
+// applyAptSnapshot freezes apt installs to the configuration date by prepending an
+// `env APT_SNAPSHOT=<id>` directive to the generated Boothfile. apt--install.sh reads
+// APT_SNAPSHOT and passes --snapshot to apt only when it is set; a hand-written
+// Boothfile (not produced by `booth config`) has no such line, so apt resolves against
+// the live archive. No-op when there is no Boothfile content to freeze, or when an
+// APT_SNAPSHOT directive is already present.
+func applyAptSnapshot(out *output.BoothOutput) {
+	if out == nil || out.Boothfile == nil || out.Boothfile.Content == "" {
+		return
+	}
+	if strings.Contains(out.Boothfile.Content, "APT_SNAPSHOT") {
+		return
+	}
+	out.Boothfile.Content = "env APT_SNAPSHOT=" + aptSnapshotID() + "\n\n" + out.Boothfile.Content
+}
+
 // runConfigCLI handles non-interactive mode (--no-tui).
 func runConfigCLI(version string, targetPath string, flags initFlags) {
 	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
@@ -72,6 +100,7 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 
 	out.Command = buildConfigCommand(targetPath, flags)
 	out.AdjustCommand = buildConfigAdjustCommand(flags)
+	applyAptSnapshot(out)
 
 	if flags.debug {
 		printDebug(resolved, out)
@@ -245,6 +274,7 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 
 	out.Command = buildConfigCommand(targetPath, flags)
 	out.AdjustCommand = buildConfigAdjustCommand(flags)
+	applyAptSnapshot(out)
 
 	if flags.dryrun {
 		printDryrun(out)
