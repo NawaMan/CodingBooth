@@ -6,3 +6,7 @@
 
 # LinkedIn returns 403 to non-browser user agents — known false positive.
 ^https?://(www\.)?linkedin\.com/
+
+# The GeekPresent "tour" deck (geekpresent/ → site/tour/) is a forward reference:
+# it 404s until the deck is built and deployed. Other codingbooth.io links stay checked.
+^https?://(www\.)?codingbooth\.io/tour(/|$)

@@ -1,0 +1,22 @@
+.note * {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    margin-top: 0px;
+    margin-bottom: 15px;
+    font-size: large;
+}
+.note *:nth-child(even) {padding-top: 0px;
+    padding-bottom: 0px;
+    margin-top: 0px;
+    margin-bottom: 15px;
+    background-color: #e8e8e8;
+}
+
+.note *::before {
+    content: " > ";
+    visibility: hidden;
+}
+.note *:hover::before {
+    content: " > ";
+    visibility: visible;
+}

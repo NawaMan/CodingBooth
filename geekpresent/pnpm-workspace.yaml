@@ -1,0 +1,21 @@
+# Single-package repo, but the presence of this file makes pnpm treat the root as
+# a workspace — so it requires a `packages` field. Stock pnpm (e.g. in CI / GitHub
+# Actions) errors with "packages field missing or empty" without it; declare the
+# root itself as the one workspace package.
+packages:
+  - '.'
+
+allowBuilds:
+  esbuild: set this to true or false
+  svelte-preprocess: set this to true or false
+# The CodingBooth base image ships a hardened pnpm that treats "ignored build
+# scripts" as a FATAL error (ERR_PNPM_IGNORED_BUILDS, exit 1) and does not honor
+# onlyBuiltDependencies / allowBuilds for approval. Our deps esbuild and
+# svelte-preprocess carry postinstall scripts that pnpm blocks by default.
+#
+# strictDepBuilds: false downgrades that fatal error back to a warning, so both
+# the build-time `pnpm install` and the runtime verify-deps-before-run check
+# (triggered by `pnpm run` / `pnpm exec`) succeed. The scripts still do NOT run,
+# which keeps the base image's supply-chain hardening intact. esbuild works fine
+# without its postinstall (its platform binary comes via an optionalDependency).
+strictDepBuilds: false

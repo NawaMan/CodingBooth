@@ -1,0 +1,108 @@
+body {
+    margin: 20px;
+}
+
+a[data-tooltip] {
+    position: relative;
+}
+
+a[data-tooltip]::before,
+a[data-tooltip]::after {
+    position: absolute;
+    display: none;
+    opacity: 0;
+}
+
+a[data-tooltip]::before {
+    /*
+     * using data-tooltip instead of title so we
+     * don't have the real tooltip overlapping
+     */
+    content: attr(data-tooltip);
+    background: var(--tooltip-bg, #000000);
+    color: var(--tooltip-fg, #FFFFFF);
+    font-size: 19.5px;
+    padding: 7.5px;
+    border-radius: 7.5px;
+    /* we don't want the text to wrap */
+    white-space: nowrap;
+    text-decoration: none;
+}
+
+a[data-tooltip]::after {
+    width: 0;
+    height: 0;
+    border: 9px solid transparent;
+    content: '';
+}
+
+a[data-tooltip]:hover::before,
+a[data-tooltip]:hover::after {
+    display: block;
+    opacity: 0.85;
+    transition: opacity 2s;
+}
+
+/** positioning **/
+
+/* left tooltip */
+a[data-tooltip][data-placement="left"]::before {
+    top: -25%;
+    right: 100%;
+    margin-right: 15px;
+}
+
+a[data-tooltip][data-placement="left"]::after {
+    border-left-color: var(--tooltip-bg, #000000);
+    border-right: none;
+    top: 50%;
+    right: 100%;
+    margin-top: -9px;
+    margin-right: 6px;
+}
+
+/* right tooltip */
+a[data-tooltip][data-placement="right"]::before {
+    top: -25%;
+    left: 100%;
+    margin-left: 15px;
+}
+
+a[data-tooltip][data-placement="right"]::after {
+    border-right-color: var(--tooltip-bg, #000000);
+    border-left: none;
+    top: 50%;
+    left: 100%;
+    margin-top: -9px;
+    margin-left: 6px;
+}
+
+/* top tooltip */
+a[data-tooltip][data-placement="top"]::before {
+    bottom: 100%;
+    left: 0;
+    margin-bottom: 15px;
+}
+
+a[data-tooltip][data-placement="top"]::after {
+    border-top-color: var(--tooltip-bg, #000000);
+    border-bottom: none;
+    bottom: 100%;
+    left: 15px;
+    margin-bottom: 6px;
+}
+
+/* bottom tooltip */
+a[data-tooltip][data-placement="bottom"]::before {
+    top: 100%;
+    left: 0;
+    margin-top: 15px;
+}
+
+a[data-tooltip][data-placement="bottom"]::after {
+    border-bottom-color: var(--tooltip-bg, #000000);
+    border-top: none;
+    top: 100%;
+    left: 15px;
+    margin-top: 6px;
+}

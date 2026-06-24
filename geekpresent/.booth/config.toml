@@ -1,0 +1,11 @@
+# Configured by: booth config --no-tui --overwrite --variant base --port 31000 --expose 31173:5173 --select nodejs+npmrc+vscode-ext+pnpm-install/claude-code+auto-accept+credential+settings-cache
+
+variant = "base"
+port = "31000"
+
+run-args = [
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",
+    "--publish", "31173:5173"
+]

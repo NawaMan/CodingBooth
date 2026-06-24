@@ -1,0 +1,76 @@
+/*
+  Role tokens — Tier 2, the semantic layer.
+
+  Each role token points at a BASE color from a theme palette (themes.css). This
+  mapping lives here ONCE and is shared by every deck — a theme only redefines the
+  base palette, never this file. Components read these role tokens, never the base
+  palette directly.
+
+  The `var(--BASE, <fallback>)` fallbacks are the canonical DARK values: if a deck
+  sets no theme palette (or never imports this file at all), every role resolves to
+  the original dark look — which is why the existing decks need zero changes. The
+  same dark literals are ALSO duplicated as fallbacks inside each component, so a
+  component is safe even rendered with neither this file nor a theme present.
+
+  Scoped to `.gp-deck` — a marker class a deck puts on its OUTERMOST element (the
+  frame container), alongside its `theme-*` class. Hosting both here means base +
+  roles resolve on the same node and inherit DOWN to the frame, the content box,
+  and every component inside. (They must live on the outer element, not `.content`:
+  custom properties inherit downward only, and the frame/border is a parent of
+  `.content`.)
+
+  All values are 6-digit UPPERCASE hex by convention.
+*/
+
+.gp-deck {
+	/* Canvas / surface */
+	--surface-bg:        var(--PAPER, #181818);
+	--surface-fg:        var(--INK, #C0F1FF);
+	--frame-border:      var(--LINE, #CCCCCC);
+	--page-bg:           var(--BACKDROP, #000000);
+	--page-title-fg:     var(--ACCENT-WARM, #F0A33E);  /* TitlePage / ContentPage titles */
+	--link-fg:           var(--LINK, #1E6FB0);         /* unvisited <a> */
+
+	/* Controls — nav buttons, TOC toggle, mode toggle (CtrlBtn) */
+	--ctrl-bg:           var(--PAPER-RAISED, #181818);
+	--ctrl-fg:           var(--INK-DIM, #333333);
+	/* Prominent (in-page) CtrlBtn — filled accent-blue, white text, eye-catching. */
+	--ctrl-strong-bg:    var(--ACCENT, #2980B9);
+	--ctrl-strong-fg:    var(--ON-ACCENT, #FFFFFF);
+	--ctrl-strong-border:var(--ACCENT, #2980B9);
+	--ctrl-hover-bg:     var(--ACCENT, #2980B9);
+	--ctrl-selected-bg:  var(--ACCENT-2, #00B356);
+	--ctrl-active-shadow:var(--ACCENT, #0056B3);
+	--ctrl-disabled-fg:  var(--INK-DIM, #222222);
+	--on-accent:         var(--ON-ACCENT, #FFFFFF);
+
+	/* Table of Contents popover */
+	--toc-bg:            var(--PANEL, #EEEEEE);
+	--toc-fg:            var(--INK, #111111);
+	--toc-border:        var(--LINE, #CCCCCC);
+	--toc-row-hover-bg:  var(--LINE, #DDDDDD);
+
+	/* Box overlay */
+	--box-bg:            var(--BACKDROP, #000000);
+	--box-border:        var(--ACCENT, #ADD8E6);
+	--box-btn-bg:        var(--ACCENT, #ADD8E6);
+	--box-btn-fg:        var(--ON-ACCENT, #000000);
+
+	/* QuickCode — inline snippet box */
+	--quickcode-bg:      var(--PAPER-RAISED, #111111);
+	--quickcode-fg:      var(--INK, #FFFFFF);
+
+	/* Code title bar (CodeBox / JavaCodeBox) */
+	--code-title-bg:     var(--PAPER-RAISED, #1E1E1E);
+	--code-title-fg:     var(--INK, #FFFFFF);
+	--code-title-border: var(--LINE, #333333);
+
+	/* Accents & inline */
+	--subtitle-rule:     var(--ACCENT, #F0F8FF);
+	--label-fg:          var(--ACCENT, #DEB887);
+	--media-frame:       var(--LINE, #FFFFFF);
+
+	/* Tooltip (kept dark-on-light: inverted from the surface) */
+	--tooltip-bg:        var(--INK, #000000);
+	--tooltip-fg:        var(--PAPER, #FFFFFF);
+}
