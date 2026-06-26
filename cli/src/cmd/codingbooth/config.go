@@ -626,6 +626,10 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags) *tui.Pr
 }
 
 // mapPositionalParams maps positional param values to named param keys in the paramValues map.
+// A trailing variadic param absorbs all remaining positional values (canonicalized:
+// deduped + sorted), matching how the resolver assembles them — so re-opening a
+// booth in the TUI shows the full, canonical package list rather than only the
+// first value.
 func mapPositionalParams(paramValues map[string]string, itemKey string, t *tmpl.Template, positional []string) {
 	paramNames := t.ParamOrder
 	if len(paramNames) == 0 {
@@ -635,8 +639,14 @@ func mapPositionalParams(paramValues map[string]string, itemKey string, t *tmpl.
 		}
 		sort.Strings(paramNames)
 	}
+	lastIsVariadic := len(paramNames) > 0 && t.Params[paramNames[len(paramNames)-1]].Variadic
 	for i, name := range paramNames {
-		if i < len(positional) && positional[i] != "" {
+		isLast := i == len(paramNames)-1
+		if isLast && lastIsVariadic {
+			if i < len(positional) {
+				paramValues[itemKey+":"+name] = selection.CanonicalizeVariadic(positional[i:])
+			}
+		} else if i < len(positional) && positional[i] != "" {
 			paramValues[itemKey+":"+name] = positional[i]
 		}
 	}

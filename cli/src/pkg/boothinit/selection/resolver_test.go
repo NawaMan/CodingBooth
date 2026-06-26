@@ -526,6 +526,34 @@ func TestResolve_VariadicParamWithPrecedingParams(t *testing.T) {
 	assert.Equal(t, "cowsay,figlet", resolved.Templates[0].ParamValues["PKGS"])
 }
 
+func TestResolve_VariadicParamDedupsAndSorts(t *testing.T) {
+	registry := &tmpl.TemplateRegistry{
+		ByName: map[string]*tmpl.Template{
+			"test": {
+				Name:       "test",
+				Params:     map[string]tmpl.Param{"PKGS": {Default: "", Variadic: true}},
+				ParamOrder: []string{"PKGS"},
+			},
+		},
+	}
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "test", Params: []string{"jq", "htop", "jq", "curl", "htop"}},
+	}}
+
+	resolved, err := Resolve(parsed, registry)
+	require.NoError(t, err)
+	// Deduped (one each) and sorted alphabetically.
+	assert.Equal(t, "curl,htop,jq", resolved.Templates[0].ParamValues["PKGS"])
+}
+
+func TestCanonicalizeVariadic(t *testing.T) {
+	assert.Equal(t, "", CanonicalizeVariadic(nil))
+	assert.Equal(t, "", CanonicalizeVariadic([]string{"", "  "}))
+	assert.Equal(t, "curl,htop,jq", CanonicalizeVariadic([]string{"jq", "htop", "jq", "curl"}))
+	// Whitespace is trimmed; version-pinned variants stay distinct.
+	assert.Equal(t, "htop,htop=1.6", CanonicalizeVariadic([]string{" htop ", "htop=1.6", "htop"}))
+}
+
 func TestResolve_NonVariadicTooManyParamsStillErrors(t *testing.T) {
 	registry := &tmpl.TemplateRegistry{
 		ByName: map[string]*tmpl.Template{

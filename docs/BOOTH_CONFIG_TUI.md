@@ -183,6 +183,48 @@ Deselecting a template also deselects all of its extensions.
 
 ---
 
+## Editing Parameters
+
+When a selected template or extension has parameters, press **Enter** on its row
+to move focus to the right panel and edit them.
+
+- **Single-value parameters** (e.g. `GO_VERSION`) — use `◄`/`►` to cycle through
+  suggested values, or just start typing for a custom value. `↑`/`↓` move between
+  parameters. `Esc` returns to the list.
+
+### Package-list parameters
+
+Package parameters that accept multiple values — `apt-pkg`, `npm-pkg`, `pip-pkg`,
+`cargo-pkg`, `go-pkg`, `gem-pkg`, and the other `*-pkg` / install extensions — are
+edited as a **multi-row list** in the right panel, one row per package (the same
+style as the Expose / Env / Mount fields on the Config tab):
+
+```
+Parameters:  (editing)
+  APT_PKGS:
+    • htop
+    • jq
+    (+ add)
+```
+
+- `↑`/`↓` — move between package rows
+- `Space` / `Enter` on **(+ add)** — add a new package, then type its name and press `Enter`
+- `Space` / `Enter` on a package — edit it
+- `Delete` / `Backspace` on a package — remove it
+- `Esc` — return to the template list
+
+Each package is stored as its own entry and compiled into a single install step
+(e.g. `install apt htop jq`). This is exactly equivalent to the CLI form
+`--select apt-pkg:htop,jq`.
+
+You keep your packages in whatever order you add them while editing. On save the
+list is **deduplicated and sorted** into a canonical form (so the generated
+Boothfile is stable regardless of entry order); the same canonicalization applies
+to the CLI and recipe forms. Package install order is not significant to these
+package managers, so this never changes what gets installed.
+
+---
+
 ## Flags
 
 | Flag | Description |

@@ -82,7 +82,16 @@ type model struct {
 	paramEditKey    string // which param is being edited (full key)
 	paramEditCursor int    // cursor position in edited string
 	paramEditPrev   string // previous value before editing (for ESC cancel)
-	paramCursorIdx  int    // which param field in right panel has focus
+	paramCursorIdx  int    // which param row in right panel has focus (index into buildParamRows)
+
+	// Variadic (multi-value) param editing — a single value of a variadic
+	// param edited as one row in the right panel's multi-row list.
+	variadicEditing   bool   // true when editing one value of a variadic param
+	variadicEditKey   string // paramValues key of the variadic param being edited
+	variadicEditIdx   int    // index of the value within the variadic list
+	variadicEditBuf   string // in-progress text for the value being edited
+	variadicEditCur   int    // cursor position within variadicEditBuf
+	variadicEditIsNew bool   // true when adding a new value (ESC discards it)
 }
 
 func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
@@ -376,6 +385,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, nil
 			}
 			return m, nil
+		}
+
+		// Variadic value editing mode (right panel multi-row list)
+		if m.variadicEditing {
+			return m.handleVariadicEdit(msg)
 		}
 
 		// Param string editing mode (right panel)
@@ -771,6 +785,15 @@ func (m model) handleParamKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		t = item.template
 	}
 
+	rows := m.buildParamRows(item, t)
+	if m.paramCursorIdx >= len(rows) {
+		m.paramCursorIdx = len(rows) - 1
+	}
+	if m.paramCursorIdx < 0 {
+		m.paramCursorIdx = 0
+	}
+	row := rows[m.paramCursorIdx]
+
 	switch msg.String() {
 	case "esc":
 		m.paramFocused = false
@@ -794,19 +817,34 @@ func (m model) handleParamKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "down":
-		if m.paramCursorIdx < len(paramNames)-1 {
+		if m.paramCursorIdx < len(rows)-1 {
 			m.paramCursorIdx++
 		}
 		return m, nil
 
+	case "backspace", "delete":
+		// Remove a value from a variadic list.
+		if row.kind == paramRowVariadicValue {
+			pk := paramKey(item, row.param)
+			vals := m.splitVariadic(pk)
+			if row.valueIdx < len(vals) {
+				vals = append(vals[:row.valueIdx], vals[row.valueIdx+1:]...)
+				m.joinVariadic(pk, vals)
+			}
+			// Clamp cursor to the new row count.
+			newRows := m.buildParamRows(item, t)
+			if m.paramCursorIdx >= len(newRows) {
+				m.paramCursorIdx = len(newRows) - 1
+			}
+		}
+		return m, nil
+
 	case "left", "right":
-		if m.paramCursorIdx >= len(paramNames) {
+		if row.kind != paramRowField {
 			return m, nil
 		}
-		pName := paramNames[m.paramCursorIdx]
-		p := t.Params[pName]
-		pk := paramKey(item, pName)
-
+		p := t.Params[row.param]
+		pk := paramKey(item, row.param)
 		if len(p.Suggests) > 0 {
 			// Cycle through suggests with left/right
 			currentVal := m.paramValues[pk]
@@ -834,37 +872,148 @@ func (m model) handleParamKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case " ", "enter":
-		if m.paramCursorIdx >= len(paramNames) {
-			return m, nil
+		switch row.kind {
+		case paramRowField:
+			pk := paramKey(item, row.param)
+			m.paramEditing = true
+			m.paramEditKey = pk
+			m.paramEditCursor = len(m.paramValues[pk])
+			m.paramEditPrev = m.paramValues[pk]
+		case paramRowVariadicValue:
+			pk := paramKey(item, row.param)
+			vals := m.splitVariadic(pk)
+			m.beginVariadicEdit(pk, row.valueIdx, vals[row.valueIdx], false)
+		case paramRowVariadicAdd:
+			pk := paramKey(item, row.param)
+			m.beginVariadicEdit(pk, len(m.splitVariadic(pk)), "", true)
 		}
-		pName := paramNames[m.paramCursorIdx]
-		pk := paramKey(item, pName)
-
-		// Enter string edit mode directly
-		m.paramEditing = true
-		m.paramEditKey = pk
-		m.paramEditCursor = len(m.paramValues[pk])
-		m.paramEditPrev = m.paramValues[pk]
 		return m, nil
 
 	default:
-		// Any typing starts custom string edit mode
+		// Any printable key starts editing the current row.
 		ch := msg.String()
-		if len(ch) == 1 && ch[0] >= 32 && ch[0] < 127 {
-			if m.paramCursorIdx < len(paramNames) {
-				pName := paramNames[m.paramCursorIdx]
-				pk := paramKey(item, pName)
-				m.paramEditPrev = m.paramValues[pk]
-				m.paramEditing = true
-				m.paramEditKey = pk
-				m.paramValues[pk] = ch
-				m.paramEditCursor = 1
-			}
+		if len(ch) != 1 || ch[0] < 32 || ch[0] >= 127 {
+			return m, nil
+		}
+		switch row.kind {
+		case paramRowField:
+			pk := paramKey(item, row.param)
+			m.paramEditPrev = m.paramValues[pk]
+			m.paramEditing = true
+			m.paramEditKey = pk
+			m.paramValues[pk] = ch
+			m.paramEditCursor = 1
+		case paramRowVariadicValue:
+			pk := paramKey(item, row.param)
+			vals := m.splitVariadic(pk)
+			m.beginVariadicEdit(pk, row.valueIdx, vals[row.valueIdx], false)
+			m.variadicEditBuf = ch
+			m.variadicEditCur = 1
+		case paramRowVariadicAdd:
+			pk := paramKey(item, row.param)
+			m.beginVariadicEdit(pk, len(m.splitVariadic(pk)), "", true)
+			m.variadicEditBuf = ch
+			m.variadicEditCur = 1
 		}
 		return m, nil
 	}
+}
 
+// currentParamRow returns the focused row in the right-panel param editor.
+func (m *model) currentParamRow() (paramRow, bool) {
+	item, paramNames := m.currentItemParams()
+	if len(paramNames) == 0 {
+		return paramRow{}, false
+	}
+	var t *tmpl.Template
+	if item.kind == kindExtension {
+		t = item.extension
+	} else {
+		t = item.template
+	}
+	rows := m.buildParamRows(item, t)
+	if m.paramCursorIdx < 0 || m.paramCursorIdx >= len(rows) {
+		return paramRow{}, false
+	}
+	return rows[m.paramCursorIdx], true
+}
+
+// beginVariadicEdit puts the model into single-value edit mode for a variadic
+// param. isNew marks an add (ESC discards rather than reverting).
+func (m *model) beginVariadicEdit(pk string, idx int, val string, isNew bool) {
+	m.variadicEditing = true
+	m.variadicEditKey = pk
+	m.variadicEditIdx = idx
+	m.variadicEditBuf = val
+	m.variadicEditCur = len(val)
+	m.variadicEditIsNew = isNew
+}
+
+// handleVariadicEdit handles typing when editing one value of a variadic param.
+func (m model) handleVariadicEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "enter", "tab":
+		m.commitVariadicEdit()
+	case "esc":
+		// Discard the in-progress edit (a new value is simply dropped).
+		m.endVariadicEdit()
+	case "ctrl+s":
+		m.commitVariadicEdit()
+		m.confirmed = true
+		return m, tea.Quit
+	case "backspace":
+		if m.variadicEditCur > 0 && len(m.variadicEditBuf) > 0 {
+			m.variadicEditBuf = m.variadicEditBuf[:m.variadicEditCur-1] + m.variadicEditBuf[m.variadicEditCur:]
+			m.variadicEditCur--
+		}
+	case "left":
+		if m.variadicEditCur > 0 {
+			m.variadicEditCur--
+		}
+	case "right":
+		if m.variadicEditCur < len(m.variadicEditBuf) {
+			m.variadicEditCur++
+		}
+	default:
+		ch := msg.String()
+		if len(ch) == 1 && ch[0] >= 32 && ch[0] < 127 {
+			m.variadicEditBuf = m.variadicEditBuf[:m.variadicEditCur] + ch + m.variadicEditBuf[m.variadicEditCur:]
+			m.variadicEditCur++
+		}
+	}
 	return m, nil
+}
+
+// commitVariadicEdit writes the edited value back into the variadic list and
+// leaves edit mode, positioning the cursor on the committed value.
+func (m *model) commitVariadicEdit() {
+	pk := m.variadicEditKey
+	wasNew := m.variadicEditIsNew
+	vals := m.splitVariadic(pk)
+	val := strings.TrimSpace(m.variadicEditBuf)
+	if wasNew {
+		if val != "" {
+			vals = append(vals, val)
+		}
+	} else if m.variadicEditIdx < len(vals) {
+		vals[m.variadicEditIdx] = val // blanks are dropped by joinVariadic
+	}
+	m.joinVariadic(pk, vals)
+	if wasNew {
+		// Land back on the trailing "(+ add)" row so the user can keep adding.
+		m.paramCursorIdx = len(m.splitVariadic(pk))
+	}
+	m.endVariadicEdit()
+}
+
+// endVariadicEdit clears the variadic edit state.
+func (m *model) endVariadicEdit() {
+	m.variadicEditing = false
+	m.variadicEditKey = ""
+	m.variadicEditIdx = -1
+	m.variadicEditBuf = ""
+	m.variadicEditCur = 0
+	m.variadicEditIsNew = false
 }
 
 // handleParamStringEdit handles typing when editing a param string value.
@@ -1017,6 +1166,75 @@ func orderedParamNames(t *tmpl.Template) []string {
 	}
 	sort.Strings(names)
 	return names
+}
+
+// paramRowKind identifies a navigable row in the right-panel param editor.
+type paramRowKind int
+
+const (
+	paramRowField         paramRowKind = iota // a single-value param (cycle or string)
+	paramRowVariadicValue                     // one value of a variadic param
+	paramRowVariadicAdd                       // the "(+ add)" pseudo-row for a variadic param
+)
+
+// paramRow is one navigable row in the right-panel param editor. A normal
+// param is a single field row; a variadic param expands into one value row per
+// entry plus a trailing add row (mirroring the Config tab's list fields).
+type paramRow struct {
+	kind     paramRowKind
+	param    string // param name
+	valueIdx int    // index into the variadic value list (paramRowVariadicValue)
+}
+
+// buildParamRows expands a selected item's params into navigable rows. The
+// cursor (paramCursorIdx) indexes into the returned slice.
+func (m *model) buildParamRows(item treeItem, t *tmpl.Template) []paramRow {
+	var rows []paramRow
+	for _, name := range orderedParamNames(t) {
+		if t.Params[name].Variadic {
+			pk := paramKey(item, name)
+			vals := m.splitVariadic(pk)
+			for i := range vals {
+				rows = append(rows, paramRow{kind: paramRowVariadicValue, param: name, valueIdx: i})
+			}
+			rows = append(rows, paramRow{kind: paramRowVariadicAdd, param: name})
+		} else {
+			rows = append(rows, paramRow{kind: paramRowField, param: name})
+		}
+	}
+	return rows
+}
+
+// splitVariadic returns the committed values of a variadic param, parsed from
+// its comma-joined storage. Blank entries are dropped.
+func (m *model) splitVariadic(pk string) []string {
+	raw := m.paramValues[pk]
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	var out []string
+	for _, p := range strings.Split(raw, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// joinVariadic writes a variadic param's values back to comma-joined storage,
+// dropping blanks. An empty list removes the key so it round-trips as default.
+func (m *model) joinVariadic(pk string, vals []string) {
+	clean := make([]string, 0, len(vals))
+	for _, v := range vals {
+		if v = strings.TrimSpace(v); v != "" {
+			clean = append(clean, v)
+		}
+	}
+	if len(clean) == 0 {
+		delete(m.paramValues, pk)
+		return
+	}
+	m.paramValues[pk] = strings.Join(clean, ",")
 }
 
 func (m model) contentHeight() int {

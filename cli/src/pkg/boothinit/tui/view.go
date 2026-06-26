@@ -578,6 +578,7 @@ func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) stri
 
 func (m model) renderRightPanel(rightWidth, contentH int) []string {
 	var lines []string
+	focusLine := -1
 
 	items := m.activeItems()
 	cursor := m.cursorPos()
@@ -586,9 +587,24 @@ func (m model) renderRightPanel(rightWidth, contentH int) []string {
 		item := items[cursor]
 		switch item.kind {
 		case kindTemplate:
-			lines = m.renderTemplateDetail(item.template, rightWidth)
+			lines, focusLine = m.renderTemplateDetail(item.template, rightWidth)
 		case kindExtension:
-			lines = m.renderExtensionDetail(item, rightWidth)
+			lines, focusLine = m.renderExtensionDetail(item, rightWidth)
+		}
+	}
+
+	// When editing params, scroll the panel so the focused row stays visible
+	// (lists of packages can exceed the panel height).
+	if m.paramFocused && focusLine >= 0 && contentH > 0 && len(lines) > contentH {
+		off := 0
+		if focusLine >= contentH {
+			off = focusLine - contentH + 1
+		}
+		if maxOff := len(lines) - contentH; off > maxOff {
+			off = maxOff
+		}
+		if off > 0 {
+			lines = lines[off:]
 		}
 	}
 
@@ -610,8 +626,9 @@ func (m model) renderRightPanel(rightWidth, contentH int) []string {
 	return lines
 }
 
-func (m model) renderTemplateDetail(t *tmpl.Template, width int) []string {
+func (m model) renderTemplateDetail(t *tmpl.Template, width int) ([]string, int) {
 	var lines []string
+	focusLine := -1
 
 	lines = append(lines, detailTitle.Render(t.DisplayName))
 	lines = append(lines, detailLabel.Render(t.CategoryName))
@@ -632,7 +649,7 @@ func (m model) renderTemplateDetail(t *tmpl.Template, width int) []string {
 		lines = append(lines, "")
 		if isSelected && m.paramFocused {
 			lines = append(lines, detailLabel.Render("Parameters:")+"  "+detailLabel.Render("(editing)"))
-			lines = m.renderParamFields(lines, item, t, width)
+			lines, focusLine = m.renderParamFields(lines, item, t, width)
 		} else if isSelected {
 			lines = append(lines, detailLabel.Render("Parameters:")+"  "+detailLabel.Render("(Enter to edit)"))
 			lines = m.renderParamValues(lines, item, t)
@@ -670,12 +687,13 @@ func (m model) renderTemplateDetail(t *tmpl.Template, width int) []string {
 		}
 	}
 
-	return lines
+	return lines, focusLine
 }
 
-func (m model) renderExtensionDetail(item treeItem, width int) []string {
+func (m model) renderExtensionDetail(item treeItem, width int) ([]string, int) {
 	ext := item.extension
 	var lines []string
+	focusLine := -1
 
 	lines = append(lines, detailTitle.Render(ext.DisplayName))
 	lines = append(lines, detailLabel.Render(fmt.Sprintf("Extension of %s", item.template.Name)))
@@ -707,7 +725,7 @@ func (m model) renderExtensionDetail(item treeItem, width int) []string {
 		lines = append(lines, "")
 		if isSelected && m.paramFocused {
 			lines = append(lines, detailLabel.Render("Parameters:")+"  "+detailLabel.Render("(editing)"))
-			lines = m.renderParamFields(lines, item, ext, width)
+			lines, focusLine = m.renderParamFields(lines, item, ext, width)
 		} else if isSelected {
 			lines = append(lines, detailLabel.Render("Parameters:")+"  "+detailLabel.Render("(Enter to edit)"))
 			lines = m.renderParamValues(lines, item, ext)
@@ -720,7 +738,7 @@ func (m model) renderExtensionDetail(item treeItem, width int) []string {
 		}
 	}
 
-	return lines
+	return lines, focusLine
 }
 
 func (m model) renderFooter() string {
@@ -753,10 +771,19 @@ func (m model) renderFooter() string {
 				keys = "  ↑↓: navigate  │  Space/Enter: toggle/edit  │  ◄►: tab  │  Tab: search  │  Ctrl+S: save  │  Ctrl+E: exit"
 			}
 		}
+	} else if m.variadicEditing {
+		keys = "  Type value  │  Enter: accept  │  Esc: cancel  │  Backspace: delete"
 	} else if m.paramEditing {
 		keys = "  Type value  │  Enter/Tab: accept  │  Esc: cancel  │  Backspace: delete"
 	} else if m.paramFocused {
-		keys = "  ◄►: cycle  │  Enter/Type: custom value  │  ↑↓: param  │  Esc: back to list  │  Ctrl+S: save  │  Ctrl+E: exit"
+		mp := &m
+		if row, ok := mp.currentParamRow(); ok && row.kind == paramRowVariadicValue {
+			keys = "  ↑↓: navigate  │  Space/Enter: edit  │  Del/BS: remove  │  Esc: back  │  Ctrl+S: save"
+		} else if ok && row.kind == paramRowVariadicAdd {
+			keys = "  ↑↓: navigate  │  Space/Enter: add new  │  Esc: back  │  Ctrl+S: save"
+		} else {
+			keys = "  ◄►: cycle  │  Enter/Type: custom value  │  ↑↓: param  │  Esc: back to list  │  Ctrl+S: save  │  Ctrl+E: exit"
+		}
 	} else {
 		keys = "  Space: select  │  Enter: edit params  │  ↑↓: navigate  │  ◄►: tab  │  Tab: search  │  Ctrl+S: save  │  Ctrl+E: exit"
 	}
@@ -779,59 +806,105 @@ func (m model) renderParamValues(lines []string, item treeItem, t *tmpl.Template
 }
 
 // renderParamFields renders editable param fields in the right detail panel.
-func (m model) renderParamFields(lines []string, item treeItem, t *tmpl.Template, width int) []string {
-	paramNames := orderedParamNames(t)
-	for i, name := range paramNames {
-		p := t.Params[name]
-		pk := paramKey(item, name)
-		val := m.paramValues[pk]
+// Single-value params render as one row; a variadic param renders as a label
+// header followed by one row per value plus a trailing "(+ add)" row.
+//
+// It returns the appended lines and the absolute line index of the focused row
+// (or -1 if nothing is focused), so the caller can scroll it into view.
+func (m model) renderParamFields(lines []string, item treeItem, t *tmpl.Template, width int) ([]string, int) {
+	rows := m.buildParamRows(item, t)
+	focusLine := -1
+	for i, row := range rows {
 		isFocused := i == m.paramCursorIdx
+		pk := paramKey(item, row.param)
 
-		if len(p.Suggests) > 0 && !(m.paramEditing && m.paramEditKey == pk) {
-			// Cycle field with suggests
-			display := val
-			if display == "" {
-				display = p.Default
+		switch row.kind {
+		case paramRowField:
+			if isFocused {
+				focusLine = len(lines)
 			}
-			// Check if current value is a custom value (not in suggests)
-			isCustom := true
-			for _, s := range p.Suggests {
-				if s == display {
-					isCustom = false
-					break
-				}
+			lines = append(lines, m.renderParamFieldRow(t, row.param, pk, isFocused))
+
+		case paramRowVariadicValue:
+			// Label header before the first value of this param.
+			if i == 0 || rows[i-1].param != row.param {
+				lines = append(lines, "  "+normalLabelStyle.Render(row.param+":"))
 			}
-			if isCustom && display != "" {
-				display = display + " (custom)"
+			vals := m.splitVariadic(pk)
+			text := ""
+			if row.valueIdx < len(vals) {
+				text = vals[row.valueIdx]
 			}
 			if isFocused {
-				styled := "  " + focusLabelStyle.Render(name+":") + "  " + focusValueStyle.Render(" ◄ "+display+" ► ")
-				lines = append(lines, styled)
-			} else {
-				styled := "  " + normalLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
-				lines = append(lines, styled)
+				focusLine = len(lines)
 			}
-		} else {
-			// String field (no suggests, variadic, or custom edit mode)
-			display := val
-			if display == "" {
-				display = "(empty)"
+			if isFocused && m.variadicEditing && !m.variadicEditIsNew && m.variadicEditIdx == row.valueIdx {
+				lines = append(lines, "      "+focusValueStyle.Render(" "+m.variadicEditBuf+"▌ "))
+			} else if isFocused {
+				lines = append(lines, "    "+cursorStyle.Render("• "+text))
+			} else {
+				lines = append(lines, "    "+normalValueStyle.Render("• "+text))
 			}
 
-			if isFocused && m.paramEditing && m.paramEditKey == pk {
-				editDisplay := val + "▌"
-				styled := "  " + focusLabelStyle.Render(name+":") + "  " + focusValueStyle.Render(" "+editDisplay+" ")
-				lines = append(lines, styled)
+		case paramRowVariadicAdd:
+			// Label header when the list is empty (no value rows preceded this).
+			if i == 0 || rows[i-1].param != row.param {
+				lines = append(lines, "  "+normalLabelStyle.Render(row.param+":"))
+			}
+			if isFocused {
+				focusLine = len(lines)
+			}
+			if isFocused && m.variadicEditing && m.variadicEditIsNew {
+				lines = append(lines, "      "+focusValueStyle.Render(" "+m.variadicEditBuf+"▌ "))
 			} else if isFocused {
-				styled := "  " + focusLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
-				lines = append(lines, styled)
+				lines = append(lines, "    "+cursorStyle.Render("(+ add)"))
 			} else {
-				styled := "  " + normalLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
-				lines = append(lines, styled)
+				lines = append(lines, "    "+detailLabel.Render("(+ add)"))
 			}
 		}
 	}
-	return lines
+	return lines, focusLine
+}
+
+// renderParamFieldRow renders a single (non-variadic) param row.
+func (m model) renderParamFieldRow(t *tmpl.Template, name, pk string, isFocused bool) string {
+	p := t.Params[name]
+	val := m.paramValues[pk]
+
+	if len(p.Suggests) > 0 && !(m.paramEditing && m.paramEditKey == pk) {
+		// Cycle field with suggests
+		display := val
+		if display == "" {
+			display = p.Default
+		}
+		isCustom := true
+		for _, s := range p.Suggests {
+			if s == display {
+				isCustom = false
+				break
+			}
+		}
+		if isCustom && display != "" {
+			display = display + " (custom)"
+		}
+		if isFocused {
+			return "  " + focusLabelStyle.Render(name+":") + "  " + focusValueStyle.Render(" ◄ "+display+" ► ")
+		}
+		return "  " + normalLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
+	}
+
+	// String field (no suggests, or custom edit mode)
+	display := val
+	if display == "" {
+		display = "(empty)"
+	}
+	if isFocused && m.paramEditing && m.paramEditKey == pk {
+		return "  " + focusLabelStyle.Render(name+":") + "  " + focusValueStyle.Render(" "+val+"▌ ")
+	}
+	if isFocused {
+		return "  " + focusLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
+	}
+	return "  " + normalLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
 }
 
 // renderWarningDialog renders a centered warning dialog overlay.

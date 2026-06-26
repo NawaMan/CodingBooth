@@ -135,9 +135,13 @@ func resolveParams(t *tmpl.Template, positional []string) (map[string]string, er
 	for i, name := range paramNames {
 		isLast := i == len(paramNames)-1
 		if isLast && lastIsVariadic {
-			// Variadic: absorb all remaining positional values joined with ","
+			// Variadic: absorb all remaining positional values, canonicalized
+			// (deduped + sorted) so the output is stable regardless of input
+			// order. Variadic params are package lists where order is not
+			// significant to the installer, so a canonical form keeps Boothfiles
+			// deterministic across the TUI, CLI, and recipe entry points.
 			if i < len(positional) {
-				values[name] = strings.Join(positional[i:], ",")
+				values[name] = CanonicalizeVariadic(positional[i:])
 			} else {
 				values[name] = t.Params[name].Default
 			}
@@ -151,6 +155,26 @@ func resolveParams(t *tmpl.Template, positional []string) (map[string]string, er
 	}
 
 	return values, nil
+}
+
+// CanonicalizeVariadic dedups (exact match, whitespace-trimmed) and sorts the
+// values of a variadic param, returning them comma-joined. Blank entries are
+// dropped. Order is not significant for the package managers these params feed,
+// so a canonical form keeps the generated Boothfile stable regardless of how
+// (or in what order) the packages were entered.
+func CanonicalizeVariadic(values []string) string {
+	seen := make(map[string]bool, len(values))
+	out := make([]string, 0, len(values))
+	for _, v := range values {
+		v = strings.TrimSpace(v)
+		if v == "" || seen[v] {
+			continue
+		}
+		seen[v] = true
+		out = append(out, v)
+	}
+	sort.Strings(out)
+	return strings.Join(out, ",")
 }
 
 // resolveExtensions resolves extension selections, including auto-selected ones.
