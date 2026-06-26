@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+# Sanity test: install conda <pkg> builds and installs.
+setup conda
+install conda jq

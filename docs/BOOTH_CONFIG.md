@@ -423,11 +423,15 @@ The full list of package manager extensions:
 | `elixir/hex-pkg`   | hex        | `elixir+hex-pkg:phoenix`          |
 | `lua/luarocks-pkg` | luarocks   | `lua+luarocks-pkg:luacheck`       |
 | `php/pecl-pkg`     | pecl       | `php+pecl-pkg:redis`              |
+| `deno/pkg`         | deno add   | `deno+pkg:npm:cowsay`             |
+| `deno/tool`        | deno install | `deno+tool:npm:cowsay`          |
+| `conan/conan-pkg`  | Conan      | `conan+conan-pkg:fmt/10.2.1`      |
 | `brew-pkg`         | Homebrew   | `brew-pkg:htop,tmux`              |
+| `apt-pkg`          | apt        | `apt-pkg:htop,jq`                |
 
 These translate to `install <manager> <packages>` in the Boothfile, which runs the corresponding `<manager>--install.sh` script during `docker build`.
 
-> **System packages (apt):** Debian/Ubuntu packages install with `install apt <pkgs>` added directly to the Boothfile — there is no template extension for it. It supports apt's native `pkg=version` pinning and an `APT_SNAPSHOT` archive freeze. See [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md#using-built-in-installs) and [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
+> **System packages (apt):** `apt-pkg` installs Debian/Ubuntu packages with apt. It supports apt's native `pkg=version` pinning (`apt-pkg:htop,jq=1.6-2.1`) and honors the `APT_SNAPSHOT` archive freeze that `booth config` stamps for reproducible builds. You can also add `install apt <pkgs>` directly to the Boothfile by hand. See [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md#using-built-in-installs) and [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
 
 ### Project Dependency Pre-Installation
 

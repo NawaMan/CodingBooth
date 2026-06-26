@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+# Sanity test: install deno-pkg <pkg> builds and installs.
+setup deno
+install deno-pkg npm:cowsay

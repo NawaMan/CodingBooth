@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+# Sanity test: install npm <pkg> builds and installs.
+setup nodejs 22
+install npm cowsay

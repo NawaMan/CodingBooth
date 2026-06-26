@@ -1,0 +1,14 @@
+display-name = "Deno Tools"
+display-disc = "Install global CLI tools with deno install"
+display-order = 11
+auto-select = false
+tags = ["deno", "tools", "packages"]
+
+[params.DENO_TOOLS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install deno ${DENO_TOOLS}
+"""

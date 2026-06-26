@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+# Sanity test: install bun <pkg> builds and installs.
+setup bun
+install bun cowsay

@@ -1,0 +1,2 @@
+# Test config for install-deno
+variant = "base"

@@ -1,0 +1,15 @@
+display-name = "apt Packages"
+display-disc = "Install Debian/Ubuntu system packages via apt"
+display-detail = "Installs system packages with apt-get during the image build. Supports apt's native pkg=version pinning, and honors the APT_SNAPSHOT archive freeze that `booth config` stamps for reproducible builds."
+display-order = 5
+auto-select = false
+tags = ["apt", "system", "packages"]
+
+[params.APT_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--45" = """
+install apt ${APT_PKGS}
+"""

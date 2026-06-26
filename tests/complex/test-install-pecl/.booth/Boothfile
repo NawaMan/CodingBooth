@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+# Sanity test: install pecl <pkg> builds and installs.
+setup php
+install pecl redis
