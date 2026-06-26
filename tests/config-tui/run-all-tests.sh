@@ -1,0 +1,165 @@
+#!/bin/bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# Runs all config-tui test*.sh scripts (VHS-driven TUI tests).
+#
+# Each test launches the interactive `booth config` TUI under VHS, drives it
+# with keystrokes, and asserts on the generated .booth/ files and captured
+# terminal frame. VHS spawns ttyd + a headless browser per run, so tests run
+# sequentially by default (set PARALLEL>1 to overlap, but expect heavier load).
+#
+# If the VHS toolchain (vhs/ttyd/ffmpeg) or the codingbooth binary is missing,
+# the whole suite reports SKIP and exits 0 so it never breaks CI environments
+# that lack VHS.
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+VERBOSE=""
+PARALLEL="${PARALLEL:-1}"
+for arg in "$@"; do
+    case "$arg" in
+        --verbose) VERBOSE="--verbose" ;;
+        --parallel=*) PARALLEL="${arg#*=}" ;;
+    esac
+done
+
+# ── Availability guard (front-loaded) ───────────────────────────────
+missing=()
+for tool in vhs ttyd ffmpeg; do
+    command -v "$tool" >/dev/null 2>&1 || missing+=("$tool")
+done
+# Find a built codingbooth binary by walking up from here.
+have_binary=false
+dir="$SCRIPT_DIR"
+while [[ "$dir" != "/" ]]; do
+    if [[ -x "$dir/codingbooth" && -d "$dir/templates" ]]; then have_binary=true; break; fi
+    dir="$(dirname "$dir")"
+done
+$have_binary || missing+=("codingbooth-binary")
+
+if [[ ${#missing[@]} -gt 0 ]]; then
+    echo "==============================================================================="
+    echo "Config-TUI Tests"
+    echo "==============================================================================="
+    echo "SKIP: config-tui suite — missing: ${missing[*]}"
+    echo "  These VHS-driven TUI tests require charmbracelet/vhs plus ttyd and ffmpeg,"
+    echo "  and a built ./codingbooth binary (build/cli-build.sh)."
+    exit 0
+fi
+
+# ── Collect tests ───────────────────────────────────────────────────
+declare -a tests=()
+for test_file in "$SCRIPT_DIR"/test*.sh; do
+    name=$(basename "$test_file" .sh)
+    [[ "$name" == "tui-helpers--source" ]] && continue
+    tests+=("$test_file")
+done
+
+TOTAL=${#tests[@]}
+if [[ $TOTAL -eq 0 ]]; then
+    echo "No test files found."
+    exit 0
+fi
+
+echo "==============================================================================="
+echo "Running Config-TUI Tests (VHS)"
+echo "==============================================================================="
+echo "Tests to run: ${TOTAL} (parallelism: ${PARALLEL})"
+echo ""
+
+OVERALL_START=$(date +%s)
+PASS_COUNT=0
+FAIL_COUNT=0
+FAIL_TESTS=()
+
+run_one() {
+    local test_file="$1"
+    local name
+    name=$(basename "$test_file" .sh)
+    local out="${SCRIPT_DIR}/run--${name}.out"
+    if (cd "$SCRIPT_DIR" && bash "$test_file" $VERBOSE) > "$out" 2>&1; then
+        echo 0 > "${out}.exit"
+    else
+        echo 1 > "${out}.exit"
+    fi
+}
+
+print_result() {
+    local test_file="$1"
+    local name
+    name=$(basename "$test_file" .sh)
+    local out="${SCRIPT_DIR}/run--${name}.out"
+    echo "-------------------------------------------------------------------------------"
+    [[ -f "$out" ]] && cat "$out"
+    local exit_code=0
+    [[ -f "${out}.exit" ]] && { exit_code=$(cat "${out}.exit"); rm -f "${out}.exit"; }
+    rm -f "$out"
+    echo ""
+    return "$exit_code"
+}
+
+if [[ "$PARALLEL" -le 1 ]]; then
+    for test_file in "${tests[@]}"; do
+        name=$(basename "$test_file" .sh)
+        echo "Begin $name"
+        run_one "$test_file"
+        if print_result "$test_file"; then
+            PASS_COUNT=$((PASS_COUNT + 1))
+        else
+            FAIL_COUNT=$((FAIL_COUNT + 1))
+            FAIL_TESTS+=("$name")
+        fi
+    done
+else
+    declare -a slot_pids=() slot_files=()
+    qi=0
+    for (( s=0; s<PARALLEL && qi<TOTAL; s++, qi++ )); do
+        echo "Begin $(basename "${tests[$qi]}" .sh)"
+        run_one "${tests[$qi]}" & slot_pids[$s]=$!; slot_files[$s]="${tests[$qi]}"
+    done
+    DONE=0
+    while (( DONE < TOTAL )); do
+        for (( s=0; s<${#slot_pids[@]}; s++ )); do
+            pid=${slot_pids[$s]}; [[ -z "$pid" ]] && continue
+            if ! kill -0 "$pid" 2>/dev/null; then
+                wait "$pid" 2>/dev/null; DONE=$((DONE + 1))
+                if print_result "${slot_files[$s]}"; then
+                    PASS_COUNT=$((PASS_COUNT + 1))
+                else
+                    FAIL_COUNT=$((FAIL_COUNT + 1)); FAIL_TESTS+=("$(basename "${slot_files[$s]}" .sh)")
+                fi
+                if (( qi < TOTAL )); then
+                    echo "Begin $(basename "${tests[$qi]}" .sh)"
+                    run_one "${tests[$qi]}" & slot_pids[$s]=$!; slot_files[$s]="${tests[$qi]}"; qi=$((qi + 1))
+                else
+                    slot_pids[$s]=""; slot_files[$s]=""
+                fi
+            fi
+        done
+        sleep 0.3
+    done
+fi
+
+OVERALL_END=$(date +%s)
+TEST_COUNT=$((PASS_COUNT + FAIL_COUNT))
+
+echo "========================================"
+echo "  Config-TUI Test Summary"
+echo "  Total: ${TEST_COUNT}   Passed: ${PASS_COUNT}   Failed: ${FAIL_COUNT}"
+echo "  Duration: $((OVERALL_END - OVERALL_START))s"
+echo "========================================"
+
+if [[ ${FAIL_COUNT} -gt 0 ]]; then
+    echo ""
+    echo "Failed tests:"
+    for T in "${FAIL_TESTS[@]}"; do
+        echo -e "  ❌ ${T}"
+    done
+    echo ""
+    exit 1
+fi
+
+echo -e "\033[32m  All config-tui tests passed!\033[0m"
+echo ""
