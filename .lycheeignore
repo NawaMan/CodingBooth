@@ -7,6 +7,9 @@
 # LinkedIn returns 403 to non-browser user agents — known false positive.
 ^https?://(www\.)?linkedin\.com/
 
-# The GeekPresent "tour" deck (geekpresent/ → site/tour/) is a forward reference:
-# it 404s until the deck is built and deployed. Other codingbooth.io links stay checked.
-^https?://(www\.)?codingbooth\.io/tour(/|$)
+# The CodingBooth blog lives at codingbooth.io/blog/ and is a separate static site
+# built from geekpresent/ and deployed at publish time — it doesn't exist in this
+# repo, so the nav link to it can't be resolved here. Matches the root-relative nav
+# href and any absolute form; other codingbooth.io / nawaman.net/blog links stay checked.
+^/blog/?$
+codingbooth\.io/blog(/|$)

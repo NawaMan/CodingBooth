@@ -19,12 +19,12 @@ declare const __GEEKPRESENT_SITE_URL__: string;
 export const SITE_URL: string = __GEEKPRESENT_SITE_URL__;
 
 /** Site / brand name — used for og:site_name and as the title fallback. */
-export const SITE_NAME = 'GeekPresent';
+export const SITE_NAME = 'CodingBooth Blog';
 
 /** Default description for pages/decks that don't supply their own. Kept under
     ~160 chars so search engines don't truncate it in results. */
 export const SITE_DESCRIPTION =
-	'Build presentation slides and long-form texts in HTML, CSS and Svelte — each slide a route, each component yours, all in a portable static site.';
+	'Notes from inside the booth — short, focused deep dives into CodingBooth: reproducible, isolated development environments in a Docker container that runs as you.';
 
 /** Path (under the site root) of the default social/OG image. */
 export const OG_IMAGE_PATH = 'og-default.png';
@@ -37,7 +37,7 @@ export const OG_IMAGE_HEIGHT = 630;
 
 /** Alt text describing the default OG image (an a11y + scraper hint). */
 export const OG_IMAGE_ALT =
-	'GeekPresent — presentation slides and long-form texts in HTML, CSS and Svelte.';
+	'The CodingBooth Blog — deep dives into reproducible, isolated development environments.';
 
 /** Join the site base URL with a root-relative path into an absolute URL. Returns
     undefined when no base URL is configured, so the caller omits the tag. */

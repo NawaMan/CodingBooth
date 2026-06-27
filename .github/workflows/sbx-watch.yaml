@@ -1,0 +1,85 @@
+# Watches Docker Sandboxes (sbx) for changes that affect the planned
+# `--sandbox-mode sbx` isolation backend (see docs/plans/Sandbox-Isolation-Modes.md).
+#
+# sbx is pre-1.0 (v0.x) and has already broken its CLI surface once
+# (`sbx run <name>` -> `sbx run --name <name>`). Because the planned integration
+# shells out to that CLI, a breaking change upstream silently breaks us. This job
+# is a tripwire: it compares the latest sbx release against a pinned baseline and
+# opens an issue when they diverge — so we learn at release time, not at impl time.
+#
+# It does NOT gate CI (never fails the build); the issue is the signal.
+# When you've reviewed a change, bump .github/sbx-watch-baseline.txt to silence it
+# until the next release.
+name: sbx readiness watch
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # daily at 06:00 UTC
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/sbx-watch.yaml'
+      - '.github/sbx-watch-baseline.txt'
+      - '.github/sbx-watch-issue.md'
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  watch:
+    name: Check sbx release vs baseline
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      WATCH_REPO: docker/sbx-releases
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compare latest sbx release to pinned baseline
+        run: |
+          set -euo pipefail
+
+          baseline="$(tr -d '[:space:]' < .github/sbx-watch-baseline.txt)"
+
+          latest_json="$(gh api "repos/${WATCH_REPO}/releases/latest")"
+          latest="$(jq -r '.tag_name'  <<<"$latest_json")"
+          rel_url="$(jq -r '.html_url' <<<"$latest_json")"
+          notes="$(jq -r '.body // ""' <<<"$latest_json" | head -c 3500)"
+
+          echo "baseline=$baseline  latest=$latest"
+
+          if [ "$latest" = "$baseline" ]; then
+            echo "sbx unchanged ($baseline) — nothing to do."
+            exit 0
+          fi
+
+          # Did it cross 1.0? That is our "worth implementing" milestone.
+          major="$(sed -E 's/^v?([0-9]+).*/\1/' <<<"$latest")"
+          milestone=""
+          if [ "${major:-0}" -ge 1 ]; then
+            milestone=$'\n> **sbx has reached 1.0+** — this is the readiness milestone for implementing `--sandbox-mode sbx`.\n'
+          fi
+
+          title="sbx watch: new release ${latest} (baseline ${baseline})"
+
+          # Idempotency: don't reopen the same issue on every daily run.
+          existing="$(gh issue list --state open --limit 200 --json title \
+            --jq "[.[] | select(.title==\"$title\")] | length")"
+          if [ "$existing" != "0" ]; then
+            echo "Issue already open for ${latest} — skipping."
+            exit 0
+          fi
+
+          gh label create sbx-watch \
+            --color FBCA04 \
+            --description "Docker Sandboxes (sbx) readiness watch" \
+            --force || true
+
+          export baseline latest rel_url notes milestone
+          body="$(envsubst '${baseline} ${latest} ${rel_url} ${notes} ${milestone}' \
+            < .github/sbx-watch-issue.md)"
+
+          gh issue create --title "$title" --label sbx-watch --body "$body"
+          echo "Opened tracking issue for ${latest}."

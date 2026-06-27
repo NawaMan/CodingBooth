@@ -36,7 +36,7 @@ export interface Page {
 /** Site-wide default document title — the deck/site name used when neither a
     presentation nor a page sets one. The <title> counterpart to the site favicon
     in app.html (which is the global default in the favicon cascade). */
-export const SITE_TITLE = 'GeekPresent';
+export const SITE_TITLE = 'The CodingBooth Blog';
 
 /** Compose the browser-tab <title> from the cascade
 
