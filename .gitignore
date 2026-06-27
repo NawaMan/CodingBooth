@@ -130,8 +130,9 @@ tests/**/.cb-temp.*
 # Build staging directory for documentation files
 variants/base/_stage/
 
-# AI Agent
-.claude
+# AI Agent — ignore local settings/worktrees, but share project skills.
+.claude/*
+!.claude/skills/
 
 !/build/
 /codingbooth
