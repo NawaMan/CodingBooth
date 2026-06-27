@@ -213,7 +213,7 @@ booth [flags] [-- command...]
 | `-v <host:container>`           | Bind mount a file or folder into the container                               |
 | `--`                            | Separator: everything after runs as a command inside the container           |
 | `--dind`                        | Enable Docker-in-Docker mode                                                 |
-| `--sandboxed`                   | Restrict outbound network to allowlisted domains                             |
+| `--egress`                   | Restrict outbound network to allowlisted domains                             |
 | `--keep-alive`                  | Preserve container after exit (resume with `booth start <name>`)             |
 | `--persist-home`                | Persist `/home/coder` across sessions using a Docker named volume            |
 | `--writable-booth`              | Allow writing to `.booth/` inside the container (read-only by default)       |
@@ -337,9 +337,9 @@ For runtime port tunneling without restarting the container, see **[booth expose
 
 Runs a sidecar Docker daemon so processes inside the booth can build and run containers themselves. Requires `--privileged` on the sidecar. See **[DinD](docs/implementations/DIND.md)**.
 
-### Sandbox (`--sandboxed`)
+### Egress (`--egress`)
 
-Restricts outbound network to an allowlist of domains via an Envoy proxy plus iptables egress filter. Useful when running third-party code or letting AI agents loose. The default allowlist can be inspected with `booth print-default-allowlist.txt`. See **[Sandbox](docs/implementations/SANDBOX.md)**.
+Restricts outbound network to an allowlist of domains via an Envoy proxy plus iptables egress filter. Useful when running third-party code or letting AI agents loose. The default allowlist can be inspected with `booth print-default-allowlist.txt`. See **[Egress](docs/implementations/EGRESS.md)**.
 
 ### Booth-in-Booth
 
@@ -478,7 +478,7 @@ Each build computes a hash of inputs (Boothfile / Dockerfile / build args / vari
 | Command                                | Purpose                                                |
 |----------------------------------------|--------------------------------------------------------|
 | `booth emit-dockerfile`                | Print the compiled Dockerfile (for inspection / CI)    |
-| `booth print-default-allowlist.txt`    | Print the default sandbox allowlist                    |
+| `booth print-default-allowlist.txt`    | Print the default egress allowlist                    |
 
 
 ## Scaffolding Projects
@@ -708,14 +708,14 @@ CodingBooth mirrors your host identity inside the booth. Whoever you are on the 
 Only your project folder is mounted inside the booth as `/home/coder/code`.
 The `.booth/` folder is mounted as `/home/coder/code/.booth` and made **read-only by default**; use `--writable-booth` to opt out. The `no-sudo` template removes passwordless sudo if you want a stricter container.
 
-For deeper details — data persistence rules, in-container documentation, UID/GID handling, variant resolution, desktop+noVNC mechanics, sandbox internals, and booth-in-booth — see:
+For deeper details — data persistence rules, in-container documentation, UID/GID handling, variant resolution, desktop+noVNC mechanics, egress internals, and booth-in-booth — see:
 
 - **[How It Works Guide](docs/HOW_IT_WORKS.md)**
 - **[Booth Setup Guide](docs/BOOTH_SETUP.md)**
 - **[User Permissions](docs/implementations/USER_PERMISSIONS.md)**
 - **[Variant Selection](docs/implementations/VARIANTS.md)**
 - **[Desktop + noVNC](docs/implementations/DESKTOP_NOVNC.md)**
-- **[Sandbox](docs/implementations/SANDBOX.md)**
+- **[Egress](docs/implementations/EGRESS.md)**
 - **[Booth-in-Booth](docs/implementations/BOOTH_IN_BOOTH.md)**
 
 
@@ -807,13 +807,13 @@ CodingBooth is built for **development environments**, not production workloads.
 | **File ownership**  | Files match your host UID/GID                                             |
 | **`.booth/` config**| Read-only inside the container by default; `--writable-booth` to opt out  |
 | **Network**         | Full access by default                                                    |
-| **Egress sandbox**  | `--sandboxed` restricts outbound to allowlisted domains via Envoy + iptables |
+| **Egress**          | `--egress` restricts outbound to allowlisted domains via Envoy + iptables |
 | **DinD**            | Requires `--privileged` — elevated permissions; use only when needed      |
 
 **Best practices:**
 - Don't run untrusted code inside CodingBooth
 - Avoid mounting sensitive host directories beyond what's needed
-- Use `--sandboxed` when running third-party or AI-driven code
+- Use `--egress` when running third-party or AI-driven code
 - Keep `.booth/.env` gitignored (the binary enforces this)
 
 ### JetBrains IDE licensing

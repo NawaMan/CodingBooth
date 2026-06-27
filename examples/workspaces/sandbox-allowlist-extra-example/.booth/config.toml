@@ -1,7 +1,0 @@
-variant = "base"
-sandboxed = true
-
-sandbox-allowlist-file = ".booth/sandbox/allowlist.txt"
-sandbox-allowlist = [
-  "example.com"
-]

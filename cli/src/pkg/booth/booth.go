@@ -117,11 +117,11 @@ func (booth *Booth) runAsCommand() error {
 	// Cleanup .booth/.tmp/ on exit (unless --leave-tmp-on-exit)
 	cleanupBoothTmp(booth.ctx)
 
-	// Cleanup sandbox/DinD sidecars after command exits.
+	// Cleanup egress/DinD sidecars after command exits.
 	cleanupFlags := flags
 	cleanupFlags.Silent = true
 	cleanupFlags.Verbose = false
-	cleanupSandboxResources(booth.ctx, &cleanupFlags)
+	cleanupEgressResources(booth.ctx, &cleanupFlags)
 	if booth.ctx.Dind() {
 		dindName := getDindName(booth.ctx)
 		dindNet := getDindNet(booth.ctx)
@@ -214,12 +214,12 @@ func (booth *Booth) runAsDaemon() error {
 	err := docker.Docker(flags, "run", args)
 
 	// If DinD is enabled in daemon mode, inform user how to stop it
-	if booth.ctx.Sandbox() {
-		fmt.Printf("🛡️  Sandbox sidecar running: %s\n", getSandboxProxyName(booth.ctx))
+	if booth.ctx.Egress() {
+		fmt.Printf("🛡️  Egress sidecar running: %s\n", getEgressProxyName(booth.ctx))
 		if booth.ctx.Dind() {
 			fmt.Printf("   Reusing DinD netns owner: %s\n", getDindName(booth.ctx))
 		} else {
-			fmt.Printf("   Netns owner sidecar: %s (network: %s)\n", getSandboxNetnsName(booth.ctx), getSandboxNet(booth.ctx))
+			fmt.Printf("   Netns owner sidecar: %s (network: %s)\n", getEgressNetnsName(booth.ctx), getEgressNet(booth.ctx))
 		}
 	}
 
@@ -294,11 +294,11 @@ func (booth *Booth) runAsForeground() error {
 	// Cleanup .booth/.tmp/ on exit (unless --leave-tmp-on-exit)
 	cleanupBoothTmp(booth.ctx)
 
-	// Cleanup sandbox/DinD sidecars after foreground exits.
+	// Cleanup egress/DinD sidecars after foreground exits.
 	cleanupFlags := flags
 	cleanupFlags.Silent = true
 	cleanupFlags.Verbose = false
-	cleanupSandboxResources(booth.ctx, &cleanupFlags)
+	cleanupEgressResources(booth.ctx, &cleanupFlags)
 	if booth.ctx.Dind() {
 		dindName := getDindName(booth.ctx)
 		dindNet := getDindNet(booth.ctx)
@@ -404,7 +404,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	}
 
 	// Skip port mapping when using shared network namespace sidecars.
-	if !ctx.Dind() && !ctx.Sandbox() {
+	if !ctx.Dind() && !ctx.Egress() {
 		containerPort := 10000
 		if ctx.Public() {
 			containerPort = 10443
@@ -451,11 +451,11 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_SCRIPT_DIR="+ctx.ScriptDir()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_LIB_DIR="+ctx.LibDir()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_KEEP_ALIVE=%t", ctx.KeepAlive())))
-builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_SILENCE_BUILD=%t", ctx.SilenceBuild())))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_SILENCE_BUILD=%t", ctx.SilenceBuild())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_PULL=%t", ctx.Pull())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_DIND=%t", ctx.Dind())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_SUDO=%t", ctx.Sudo())))
-	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_SANDBOX=%t", ctx.Sandbox())))
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_EGRESS=%t", ctx.Egress())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_DOCKERFILE="+ctx.Dockerfile()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_PROJECT_NAME="+ctx.ProjectName()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_TIMEZONE="+ctx.Timezone()))

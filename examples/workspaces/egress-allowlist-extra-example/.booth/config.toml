@@ -1,0 +1,7 @@
+variant = "base"
+egress = true
+
+egress-allowlist-file = ".booth/egress/allowlist.txt"
+egress-allowlist = [
+  "example.com"
+]

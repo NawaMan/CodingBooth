@@ -37,7 +37,7 @@ OPTIONS
   --daemon                Run the booth in the background
   --dind                  Enable a Docker-in-Docker sidecar
   --public                Bind to all interfaces with password authentication
-  --sandboxed             Enable sandbox defaults (proxy + enforcement)
+  --egress                Enable egress defaults (proxy + enforcement)
   --sudo <true|false>     Enable/disable sudo access (default: true)
   --no-sudo               Shorthand for --sudo false
 

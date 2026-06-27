@@ -16,7 +16,7 @@ Back to [README](../README.md)
 |---|---|
 | `.booth/.env` | yes — booth writes an expanded copy to `.booth/.tmp/` and passes that to docker |
 | `--env-file <path>` (explicit) | yes — same mechanism as `.booth/.env` |
-| `config.toml` scalar fields (`image`, `port`, `env-file`, `name`, `timezone`, `dockerfile`, `boothfile`, `variant`, `project-name`, `host-uid`, `host-gid`, `startup`, sandbox-related paths) | yes |
+| `config.toml` scalar fields (`image`, `port`, `env-file`, `name`, `timezone`, `dockerfile`, `boothfile`, `variant`, `project-name`, `host-uid`, `host-gid`, `startup`, egress-related paths) | yes |
 | `config.toml` array fields (`run-args`, `build-args`, `common-args`, `cmds`) | yes — each element |
 | `CB_*` environment variables (string or semicolon list) | yes |
 | CLI `-e KEY=VAL` / `--env KEY=VAL` | **no** — the invoking shell has already done its expansion. Booth passes the value through to docker untouched |

@@ -2,6 +2,18 @@
 
 This file contains a list of changes for each released version.
 
+## 0.57.0
+
+- **Egress filtering — restrict a booth's outbound network to an allowlist of domains.** `--egress` (or `egress = true` in `.booth/config.toml`) routes the container's HTTP/HTTPS traffic through an Envoy forward-proxy sidecar with a domain allowlist, backed by iptables rules that drop any direct egress — a defense-in-depth layer for running third-party AI agents or untrusted dependencies that bounds where they can connect.
+  - Configure the allowlist with `--egress-allowlist-file` (one domain per line; subdomains and ports are matched automatically), `--egress-allowlist` (extra inline domains merged on top), or `--egress-policy-file` (a full custom Envoy config for advanced rules). With none set, a comprehensive built-in allowlist covering common dev services (source control, package managers, registries, CDNs, cloud, AI services) is used.
+  - Not supported together with `--dind` — privileged containers can bypass the firewall in the shared network namespace. New example workspaces `egress-envoy-example` and `egress-allowlist-extra-example`; complex tests under `tests/complex/test-egress-*`. See `docs/implementations/EGRESS.md`.
+- **Config TUI edits package lists as multi-row fields.** Package-list parameters that accept multiple values — `apt-pkg`, `npm-pkg`, `pip-pkg`, `cargo-pkg`, `go-pkg`, `gem-pkg`, and the other `*-pkg` / install extensions — are now edited one row per package in the right panel (the same style as the Expose / Env / Mount fields on the Config tab) instead of as a single comma-joined string.
+  - `↑`/`↓` move between rows; `Space`/`Enter` on **(+ add)** adds a package; `Space`/`Enter` on a package edits it; `Delete`/`Backspace` removes it; `Esc` returns to the template list.
+  - Each package is stored as its own entry and compiled into a single install step (e.g. `install apt htop jq`) — equivalent to the CLI form `--select apt-pkg:htop,jq`. On save the list is deduplicated and sorted into a canonical form so the generated Boothfile is stable regardless of entry order. See `docs/BOOTH_CONFIG_TUI.md`.
+- **`apt-pkg` config extension for system packages.** Debian/Ubuntu packages can now be selected through `booth config` (CLI `apt-pkg:htop,jq` or the TUI) instead of only hand-edited into the Boothfile. Supports apt's native `pkg=version` pinning and honors the `APT_SNAPSHOT` archive freeze that `booth config` stamps for reproducible builds. See `docs/BOOTH_CONFIG.md`.
+- **`deno/tool` config extension** installs global Deno CLI tools via `deno install` (e.g. `deno+tool:npm:cowsay`), alongside the existing `deno/pkg` extension.
+- New config-tui test suite under `tests/config-tui/` (13 scripted TUI scenarios plus shared helpers and a runner), and `install` integration tests covering every package manager under `tests/complex/test-install-*` (apt, brew, bun, cabal, cargo, conan, conda, deno, deno-pkg, gem, go, hex, luarocks, npm, pecl, pip, uv, yarn). New config tests verify each install manager has a selector extension (`test64-all-installs-have-selector`).
+
 ## 0.56.0
 
 - **New `install apt` manager — install Debian/Ubuntu system packages from a Boothfile.** `install apt <pkg>[=<version>]` compiles to `RUN apt--install.sh ...`, alongside the existing language package managers (`install pip`, `install npm`, …). Version pins use apt's native `pkg=version` syntax. The `apt` manager auto-registers from `variants/base/setups/apt--install.sh` — no separate allowlist.
@@ -250,7 +262,7 @@ This file contains a list of changes for each released version.
   - Shutdown button in split-view ttyd web UI with confirmation dialog
   - Desktop variants (XFCE, KDE, LXQT) detect desktop logout and shut down cleanly
 - `booth template list` now shows auto-select extensions with `*` marker instead of `(auto)` suffix
-- Documentation overhaul — new standalone pages: How It Works, Lifecycle, Run, Init, Examples, Home, Setup, Variants, Sandbox implementation
+- Documentation overhaul — new standalone pages: How It Works, Lifecycle, Run, Init, Examples, Home, Setup, Variants, Egress implementation
 - Simplified README with links to new doc pages
 - Documentation images
 
@@ -337,7 +349,7 @@ This file contains a list of changes for each released version.
 - Example recipes in `examples/recipes/`
 
 ### Notes
-- Document that `--sandboxed` with `--dind` is **not supported** due to firewall bypass risk in the shared network namespace.
+- Document that `--egress` with `--dind` is **not supported** due to firewall bypass risk in the shared network namespace.
 
 ## v0.16.0
 - Rename binary from `coding-booth` to `codingbooth`

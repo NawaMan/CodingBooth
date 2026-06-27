@@ -36,7 +36,7 @@ OPTIONS
   --daemon                Run the booth in the background
   --dind                  Enable a Docker-in-Docker sidecar
   --public                Bind to all interfaces with password authentication
-  --sandboxed             Enable sandbox defaults (proxy + enforcement)
+  --egress                Enable egress defaults (proxy + enforcement)
   --sudo <true|false>     Enable/disable sudo access (default: true)
   --no-sudo               Shorthand for --sudo false
 
@@ -87,7 +87,7 @@ USAGE:
   %s home-volume-list                          (list persisted home volumes)
   %s home-volume-export <name> <file>          (export home volume to tar.gz)
   %s home-volume-import <name> <file>          (import tar.gz into home volume)
-  %s print-default-allowlist.txt               (print built-in sandbox allowlist)
+  %s print-default-allowlist.txt               (print built-in egress allowlist)
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before env and config file):
   --code <path>          Host code path to mount at /home/coder/code
@@ -145,7 +145,7 @@ CONTAINER MODE:
   --tls-cert <path>      TLS certificate file for HTTPS (used with --public)
   --tls-key <path>       TLS private key file for HTTPS (used with --public)
   --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST
-  --sandboxed            Enable sandbox defaults (proxy + enforcement setup)
+  --egress               Enable egress defaults (proxy + enforcement setup)
   --sudo <true|false>    Enable/disable sudo for the coder user (default: true).
                          When false, passwordless sudo is revoked after container setup.
                          Can also be set in config.toml: sudo = false
@@ -174,7 +174,7 @@ NOTES:
   - In daemon mode, do not pass commands after '--'.
   - With --dind, a docker:dind sidecar runs on a private network and the main
     container uses DOCKER_HOST=tcp://<sidecar>:2375.
-  - With --sandboxed, booth enables sandbox policy defaults. If --dind is also set,
+  - With --egress, booth enables egress policy defaults. If --dind is also set,
     the existing DinD sidecar network namespace is reused.
 
 EXAMPLES:
@@ -238,7 +238,7 @@ CONTAINER MODE:
   --tls-cert <path>      TLS certificate file (used with --public)
   --tls-key <path>       TLS private key file (used with --public)
   --dind                 Enable Docker-in-Docker sidecar
-  --sandboxed            Enable sandbox defaults
+  --egress               Enable egress defaults
   --sudo <true|false>    Enable/disable sudo (default: true)
   --no-sudo              Shorthand for --sudo false
   --keep-alive           Do not remove container when stopped

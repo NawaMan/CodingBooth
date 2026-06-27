@@ -76,7 +76,7 @@ Names that carry semantics. Several layers of code agree on these, so they quali
 - `cb.managed` — "this container is ours."
 - `cb.project` — project name (defaults to cwd basename).
 - `cb.variant` — `base` / `codeserver` / `notebook` / `desktop-xfce` / `desktop-kde`.
-- `cb.role` — `main` vs sidecar roles (`dind`, `sandbox`, …).
+- `cb.role` — `main` vs sidecar roles (`dind`, `egress`, …).
 - `cb.parent` — sidecar → main container linkage.
 
 ### Filename / path prefixes
@@ -174,7 +174,7 @@ Running instances. Some are scripts from C5; some are external programs the imag
 ### Sidecar containers
 
 - **DinD daemon** (`--dind`) — Docker daemon in a sibling container; linked via `cb.parent`.
-- **Envoy egress proxy** (`--sandboxed`) — domain allowlist enforcement; iptables redirects container traffic through it.
+- **Envoy egress proxy** (`--egress`) — domain allowlist enforcement; iptables redirects container traffic through it.
 
 ### Host-side watchers
 
@@ -198,7 +198,7 @@ In the repo, never shipped to users.
 - **`.githooks/pre-commit`** — enforces `version.txt` ↔ `README.md` consistency.
 - **`build/cli-build.sh`**, **`build/docker-build.sh`**, **`build/build-all.sh`** — release build pipeline.
 - **`tests/`** subtree — `unit/`, `basic/`, `boothfile/`, `config/`, `complex/`, `dryrun/`, `manual/`, `extra/`, `logs/`, plus the `run-*-tests.sh` orchestrators and `common--source.sh`.
-- **`experiments/`** — `test-init-tui`, `tui-go` (sandbox / spike code).
+- **`experiments/`** — `test-init-tui`, `tui-go` (egress / spike code).
 - **`doc/`** — internal brainstorm docs (`feature-raw.md`, `feature-split-1.md`, `component-raw.md`, this file, `ARCHITECURE.md` placeholder). Distinct from `docs/` (user-facing guides), which ships.
 
 ---

@@ -47,15 +47,15 @@ func ShowDebugBanner(ctx appctx.AppContext) appctx.AppContext {
 	fmt.Printf("PORT_GENERATED: %t\n", ctx.PortGenerated())
 	fmt.Println()
 	fmt.Printf("DIND:           %t\n", ctx.Dind())
-	fmt.Printf("SANDBOX:        %t\n", ctx.Sandbox())
-	if ctx.Sandbox() {
-		entries, note := effectiveSandboxAllowlist(ctx)
-		fmt.Printf("SANDBOX_ALLOWLIST_FILE:  %s\n", ctx.SandboxAllowlistFile())
-		fmt.Printf("SANDBOX_ALLOWLIST_EXTRA: %v\n", ctx.SandboxAllowlist())
+	fmt.Printf("EGRESS:        %t\n", ctx.Egress())
+	if ctx.Egress() {
+		entries, note := effectiveEgressAllowlist(ctx)
+		fmt.Printf("EGRESS_ALLOWLIST_FILE:  %s\n", ctx.EgressAllowlistFile())
+		fmt.Printf("EGRESS_ALLOWLIST_EXTRA: %v\n", ctx.EgressAllowlist())
 		if len(entries) > 0 {
-			fmt.Printf("SANDBOX_ALLOWLIST:       %s\n", strings.Join(entries, ", "))
+			fmt.Printf("EGRESS_ALLOWLIST:       %s\n", strings.Join(entries, ", "))
 		} else {
-			fmt.Printf("SANDBOX_ALLOWLIST:       (empty)\n")
+			fmt.Printf("EGRESS_ALLOWLIST:       (empty)\n")
 		}
 		if note != "" {
 			fmt.Println(note)

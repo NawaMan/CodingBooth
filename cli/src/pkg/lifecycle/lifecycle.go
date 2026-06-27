@@ -218,7 +218,7 @@ func Stop(args []string, stderr io.Writer) error {
 		}
 	}
 
-	// Stop any sidecar containers (DinD, sandbox) belonging to this booth
+	// Stop any sidecar containers (DinD, egress) belonging to this booth
 	stopSidecars(target.Name, docker.DockerFlags{Silent: true})
 
 	if target.KeepAlive {
@@ -307,7 +307,7 @@ func Remove(args []string, stderr io.Writer) error {
 			return commandExit(1, fmt.Sprintf("Error: booth %q is running. Stop it first or use --force.", targetName))
 		}
 
-		// Stop any sidecar containers (DinD, sandbox) belonging to this booth
+		// Stop any sidecar containers (DinD, egress) belonging to this booth
 		stopSidecars(targetName, docker.DockerFlags{Silent: true})
 
 		dockerArgs := ilist.NewList(ilist.NewList(targetName))

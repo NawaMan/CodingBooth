@@ -62,7 +62,7 @@ Configure → launch a container. The default verb of the binary; everything els
 - **B1f — Ports**: `--port` (explicit / NEXT / RANDOM)
 - **B1g — Labels**: `cb.managed` / `cb.project` / `cb.variant` / `cb.role` / `cb.parent`
 - **B1h — Logging/debug**: `--dryrun`, `--verbose`, `--silence-build`, `--log-time` (+ `CB_LOG_TIME`)
-- **B1i — Run modes**: `--dind` (sidecar), `--sandboxed` (Envoy + iptables egress filter), booth-in-booth detection + opt-in
+- **B1i — Run modes**: `--dind` (sidecar), `--egress` (Envoy + iptables egress filter), booth-in-booth detection + opt-in
 - **B1j — Home**: `--persist-home` (Docker named volume); `home-volume list` / `-export` / `-import`; smart_copy seeding via *Template* `files.home` / `files.home-seed`
 - **B1k — Cache**: `.booth/cache/` host mirror with auto-bind-mounts; smart_copy + `.mount-this` markers; `cache-files` / `cache-dirs` declared via *Template*; Claude Code `~/.claude/` cache persistence
 - **B1l — Container environment**: env vars that land inside the running booth as regular `$FOO`. Sources: `.booth/.env` (auto-loaded, **gitignore-enforced** via `git check-ignore` — refuses to run otherwise), explicit `--env-file` (CLI / config; `-` sentinel disables), `-e` in `run-args`, `booth config --env`. Layering: `.booth/.env` first, explicit env-file second (overrides on conflict)

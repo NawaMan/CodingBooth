@@ -144,7 +144,7 @@ Batch-remove all stopped booth containers.
 ./booth prune --yes  # skip confirmation
 ```
 
-Also cleans up orphaned sidecar containers (DinD, sandbox) whose parent no longer exists.
+Also cleans up orphaned sidecar containers (DinD, egress) whose parent no longer exists.
 
 ---
 

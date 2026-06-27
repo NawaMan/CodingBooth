@@ -2,21 +2,21 @@
 
 ## Problem
 
-DinD and sandbox sidecars can leak when the parent booth process exits abnormally (crash, SIGKILL, test timeout). Leaked sidecars hold ports indefinitely, causing `NEXT` port selection to skip large ranges.
+DinD and egress sidecars can leak when the parent booth process exits abnormally (crash, SIGKILL, test timeout). Leaked sidecars hold ports indefinitely, causing `NEXT` port selection to skip large ranges.
 
-Observed: 22 orphaned `docker:dind` containers (`*-sandbox-netns`) from integration tests holding ports 11000-32000, forcing `NEXT` to jump to 33000.
+Observed: 22 orphaned `docker:dind` containers (`*-egress-netns`) from integration tests holding ports 11000-32000, forcing `NEXT` to jump to 33000.
 
 ## Current Cleanup Mechanisms
 
 ### 1. Normal exit cleanup (`booth.go`)
-- `cleanupSandboxResources()` stops proxy + netns + removes network.
+- `cleanupEgressResources()` stops proxy + netns + removes network.
 - DinD sidecar is stopped and network removed.
 - **Only runs on graceful exit.** SIGKILL / crash / test timeout = no cleanup.
 
 ### 2. Pre-run cleanup (`cleanupPreviousBoothInstances` in `dind_setup.go`)
 - Runs at DinD setup time, before starting a new booth.
 - Only matches `projectName` and `projectName-*-dind`.
-- **Does not cover sandbox sidecars** (`*-sandbox-netns`, `*-sandbox-proxy`, `*-sandbox-net`).
+- **Does not cover egress sidecars** (`*-egress-netns`, `*-egress-proxy`, `*-egress-net`).
 - Uses Docker `name` filter with `*` wildcard, which does not work as intended (Docker uses substring matching, not glob).
 
 ### 3. `--rm` flag on sidecars
@@ -26,14 +26,14 @@ Observed: 22 orphaned `docker:dind` containers (`*-sandbox-netns`) from integrat
 ## Risks with Current Approach
 
 - **Wrong sidecar killed:** The wildcard-based cleanup in `cleanupPreviousBoothInstances` could match sidecars belonging to a different booth run if project names share a prefix.
-- **Sandbox sidecars never cleaned up:** The pre-run cleanup only targets DinD patterns, completely missing sandbox containers.
+- **Egress sidecars never cleaned up:** The pre-run cleanup only targets DinD patterns, completely missing egress containers.
 - **Integration tests are worst case:** Tests create many sidecars with unique names (timestamps + random suffixes), and if the test process crashes, none get cleaned up.
 
 ## Proposed Fix: Label-Based Ownership
 
 ### Label sidecars with parent identity
 
-When starting any sidecar (DinD, sandbox-netns, sandbox-proxy), add:
+When starting any sidecar (DinD, egress-netns, egress-proxy), add:
 ```
 --label cb.managed=true
 --label cb.role=sidecar
@@ -63,10 +63,10 @@ Could optionally list orphaned sidecars (sidecars whose `cb.parent` container no
 |----------------------|---------------------------------------|--------------------|
 | DinD                 | `{name}-{port}-dind`                  | `dind_setup.go`    |
 | DinD network         | `{name}-{port}-net`                   | `dind_setup.go`    |
-| Sandbox netns owner  | `{name}-{port}-sandbox-netns`         | `sandbox_setup.go` |
-| Sandbox proxy        | `{name}-{port}-sandbox-proxy`         | `sandbox_setup.go` |
-| Sandbox network      | `{name}-{port}-sandbox-net`           | `sandbox_setup.go` |
+| Egress netns owner  | `{name}-{port}-egress-netns`         | `egress_setup.go` |
+| Egress proxy        | `{name}-{port}-egress-proxy`         | `egress_setup.go` |
+| Egress network      | `{name}-{port}-egress-net`           | `egress_setup.go` |
 
 ## Priority
 
-Low-medium. The issue mainly surfaces during development/testing with DinD or sandbox features. Regular (non-DinD, non-sandbox) booth usage is unaffected.
+Low-medium. The issue mainly surfaces during development/testing with DinD or egress features. Regular (non-DinD, non-egress) booth usage is unaffected.

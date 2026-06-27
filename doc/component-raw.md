@@ -9,7 +9,7 @@
   - `port_determination.go`, `resolve_relative_ports.go` — port logic
   - `build_image.go`, `build_hash.go` — build orchestration + cache hash
   - `dind_setup.go` — Docker-in-Docker sidecar
-  - `sandbox_setup.go` — Envoy + iptables egress filtering
+  - `egress_setup.go` — Envoy + iptables egress filtering
   - `tcp_tunnel.go` — booth-expose host-side watcher
   - `booth_tmp.go` — `.booth/.tmp/` lifecycle
   - `validate_variant.go` — variant resolution

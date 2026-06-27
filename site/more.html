@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>More — CodingBooth</title>
     <meta name="description"
-        content="Deeper guides for CodingBooth — variants, booth config, the Boothfile, lifecycle, shell &amp; exec, expose, idle shutdown, Docker-in-Docker, sandbox, desktop & noVNC, and more.">
+        content="Deeper guides for CodingBooth — variants, booth config, the Boothfile, lifecycle, shell &amp; exec, expose, idle shutdown, Docker-in-Docker, egress, desktop & noVNC, and more.">
     <link rel="canonical" href="https://codingbooth.io/more.html">
 
     <!-- Open Graph -->
@@ -757,7 +757,7 @@
                 <a href="#health">Health &amp; info</a>
                 <a href="#examples">Examples</a>
                 <a href="#dind">Docker-in-Docker</a>
-                <a href="#sandbox">Sandbox</a>
+                <a href="#egress">Egress</a>
                 <a href="#booth-in-booth">Booth-in-Booth</a>
                 <a href="#desktop">Desktop &amp; noVNC</a>
                 <a href="#agent">AI agent integration</a>
@@ -1503,20 +1503,20 @@
         </div>
     </section>
 
-    <section id="sandbox">
+    <section id="egress">
         <div class="container">
-            <h2>Sandbox</h2>
+            <h2>Egress</h2>
             <div class="more-card">
                 <div class="more-figure">
-                    <img src="images/SandBox.png" alt="Sandbox egress filtering">
+                    <img src="images/Egress.png" alt="Egress filtering">
                 </div>
                 <p class="more-text">
-                    <code>--sandboxed</code> routes the booth's egress through an Envoy proxy with a domain
+                    <code>--egress</code> routes the booth's egress through an Envoy proxy with a domain
                     allowlist, enforced by iptables. Useful when you run third-party AI agents or untrusted
                     code and want to bound where they can phone home.
                 </p>
                 <a class="more-link"
-                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/implementations/SANDBOX.md">Sandbox
+                    href="https://github.com/NawaMan/CodingBooth/blob/main/docs/implementations/EGRESS.md">Egress
                     implementation →</a>
             </div>
         </div>

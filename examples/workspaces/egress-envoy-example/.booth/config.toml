@@ -1,0 +1,4 @@
+egress = true
+variant = "base"
+
+egress-policy-file = ".booth/egress/envoy.yaml"

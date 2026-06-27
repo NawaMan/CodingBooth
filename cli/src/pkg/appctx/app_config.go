@@ -60,10 +60,10 @@ func (config *AppConfig) ExpandEnvScalars() error {
 		{"port", &config.Port},
 		{"env-file", &config.EnvFile},
 		{"startup", &config.Startup},
-		{"sandbox-mode", &config.SandboxMode},
-		{"sandbox-enforcement", &config.SandboxEnforcement},
-		{"sandbox-allowlist-file", &config.SandboxAllowlistFile},
-		{"sandbox-policy-file", &config.SandboxPolicyFile},
+		{"egress-mode", &config.EgressMode},
+		{"egress-enforcement", &config.EgressEnforcement},
+		{"egress-allowlist-file", &config.EgressAllowlistFile},
+		{"egress-policy-file", &config.EgressPolicyFile},
 	}
 	for _, s := range scalars {
 		if err := expandStr(s.field, s.ptr); err != nil {
@@ -102,34 +102,34 @@ type AppConfig struct {
 	// --------------------
 	// Flags
 	// --------------------
-	KeepAlive          bool   `toml:"keep-alive,omitempty"          envconfig:"CB_KEEP_ALIVE" default:"false"`
-	SilenceBuild       bool   `toml:"silence-build,omitempty"       envconfig:"CB_SILENCE_BUILD" default:"false"`
-	Daemon             bool   `toml:"daemon,omitempty"              envconfig:"CB_DAEMON" default:"false"`
-	Pull               bool   `toml:"pull,omitempty"                envconfig:"CB_PULL" default:"false"`
-	Dind               bool   `toml:"dind,omitempty"                envconfig:"CB_DIND" default:"false"`
-	Sudo               bool   `toml:"sudo,omitempty"                envconfig:"CB_SUDO" default:"true"`
-	Sandbox            bool   `toml:"sandboxed,omitempty"           envconfig:"CB_SANDBOX" default:"false"`
-	SandboxMode        string `toml:"sandbox-mode,omitempty"        envconfig:"CB_SANDBOX_MODE"`
-	SandboxEnforcement string `toml:"sandbox-enforcement,omitempty" envconfig:"CB_SANDBOX_ENFORCEMENT"`
-	WritableBooth      bool   `toml:"writable-booth,omitempty"      envconfig:"CB_WRITABLE_BOOTH" default:"false"`
-	LeaveTmpOnExit     bool   `toml:"leave-tmp-on-exit,omitempty"   envconfig:"CB_LEAVE_TMP_ON_EXIT" default:"false"`
-	KeepTmpOnStart     bool   `toml:"keep-tmp-on-start,omitempty"   envconfig:"CB_KEEP_TMP_ON_START" default:"false"`
-	LogTime            bool   `toml:"log-time,omitempty"            envconfig:"CB_LOG_TIME" default:"false"`
-	PersistHome        bool   `toml:"persist-home,omitempty"        envconfig:"CB_PERSIST_HOME" default:"false"`
-	IdleTime           int    `toml:"idle-time,omitempty"           envconfig:"CB_IDLE_TIME" default:"0"`
-	IdleShutdownTime   int    `toml:"idle-shutdown-time,omitempty"  envconfig:"CB_IDLE_SHUTDOWN_TIME" default:"0"`
-	IdleExitCode       int    `toml:"idle-exit-code,omitempty"      envconfig:"CB_IDLE_EXIT_CODE" default:"0"`
+	KeepAlive         bool   `toml:"keep-alive,omitempty"          envconfig:"CB_KEEP_ALIVE" default:"false"`
+	SilenceBuild      bool   `toml:"silence-build,omitempty"       envconfig:"CB_SILENCE_BUILD" default:"false"`
+	Daemon            bool   `toml:"daemon,omitempty"              envconfig:"CB_DAEMON" default:"false"`
+	Pull              bool   `toml:"pull,omitempty"                envconfig:"CB_PULL" default:"false"`
+	Dind              bool   `toml:"dind,omitempty"                envconfig:"CB_DIND" default:"false"`
+	Sudo              bool   `toml:"sudo,omitempty"                envconfig:"CB_SUDO" default:"true"`
+	Egress            bool   `toml:"egress,omitempty"           envconfig:"CB_EGRESS" default:"false"`
+	EgressMode        string `toml:"egress-mode,omitempty"        envconfig:"CB_EGRESS_MODE"`
+	EgressEnforcement string `toml:"egress-enforcement,omitempty" envconfig:"CB_EGRESS_ENFORCEMENT"`
+	WritableBooth     bool   `toml:"writable-booth,omitempty"      envconfig:"CB_WRITABLE_BOOTH" default:"false"`
+	LeaveTmpOnExit    bool   `toml:"leave-tmp-on-exit,omitempty"   envconfig:"CB_LEAVE_TMP_ON_EXIT" default:"false"`
+	KeepTmpOnStart    bool   `toml:"keep-tmp-on-start,omitempty"   envconfig:"CB_KEEP_TMP_ON_START" default:"false"`
+	LogTime           bool   `toml:"log-time,omitempty"            envconfig:"CB_LOG_TIME" default:"false"`
+	PersistHome       bool   `toml:"persist-home,omitempty"        envconfig:"CB_PERSIST_HOME" default:"false"`
+	IdleTime          int    `toml:"idle-time,omitempty"           envconfig:"CB_IDLE_TIME" default:"0"`
+	IdleShutdownTime  int    `toml:"idle-shutdown-time,omitempty"  envconfig:"CB_IDLE_SHUTDOWN_TIME" default:"0"`
+	IdleExitCode      int    `toml:"idle-exit-code,omitempty"      envconfig:"CB_IDLE_EXIT_CODE" default:"0"`
 
 	// Public exposes the booth on all interfaces (0.0.0.0) with password auth and HTTPS.
 	// Password is resolved at startup from .booth/.booth.password or interactive stdin.
 	// These are never read from TOML or environment variables.
-	Public               bool     `toml:"-" ignored:"true"`
-	Password             string   `toml:"-" ignored:"true"`
-	TLSCert              string   `toml:"-" ignored:"true"`
-	TLSKey               string   `toml:"-" ignored:"true"`
-	SandboxAllowlistFile string   `toml:"sandbox-allowlist-file,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST_FILE"`
-	SandboxPolicyFile    string   `toml:"sandbox-policy-file,omitempty"    envconfig:"CB_SANDBOX_POLICY_FILE"`
-	SandboxAllowlist     []string `toml:"sandbox-allowlist,omitempty" envconfig:"CB_SANDBOX_ALLOWLIST"`
+	Public              bool     `toml:"-" ignored:"true"`
+	Password            string   `toml:"-" ignored:"true"`
+	TLSCert             string   `toml:"-" ignored:"true"`
+	TLSKey              string   `toml:"-" ignored:"true"`
+	EgressAllowlistFile string   `toml:"egress-allowlist-file,omitempty" envconfig:"CB_EGRESS_ALLOWLIST_FILE"`
+	EgressPolicyFile    string   `toml:"egress-policy-file,omitempty"    envconfig:"CB_EGRESS_POLICY_FILE"`
+	EgressAllowlist     []string `toml:"egress-allowlist,omitempty" envconfig:"CB_EGRESS_ALLOWLIST"`
 
 	// --------------------
 	// Image configuration
@@ -152,13 +152,13 @@ type AppConfig struct {
 	// --------------------
 	// Container configuration
 	// --------------------
-	Name          string `toml:"name,omitempty"           envconfig:"CB_NAME"`
-	Port          string `toml:"port,omitempty"           envconfig:"CB_PORT" default:"NEXT"`
-	EnvFile       string `toml:"env-file,omitempty"       envconfig:"CB_ENV_FILE"`
-	Startup       string `toml:"startup,omitempty"        envconfig:"CB_STARTUP"`
-	ShowRunTime          string `toml:"show-run-time,omitempty"           envconfig:"CB_SHOW_RUN_TIME"`
-	ShowCountDown        string `toml:"show-count-down,omitempty"         envconfig:"CB_SHOW_COUNT_DOWN"`
-	CountDownExitCode    string `toml:"count-down-exit-code,omitempty"    envconfig:"CB_COUNT_DOWN_EXIT_CODE"`
+	Name              string `toml:"name,omitempty"           envconfig:"CB_NAME"`
+	Port              string `toml:"port,omitempty"           envconfig:"CB_PORT" default:"NEXT"`
+	EnvFile           string `toml:"env-file,omitempty"       envconfig:"CB_ENV_FILE"`
+	Startup           string `toml:"startup,omitempty"        envconfig:"CB_STARTUP"`
+	ShowRunTime       string `toml:"show-run-time,omitempty"           envconfig:"CB_SHOW_RUN_TIME"`
+	ShowCountDown     string `toml:"show-count-down,omitempty"         envconfig:"CB_SHOW_COUNT_DOWN"`
+	CountDownExitCode string `toml:"count-down-exit-code,omitempty"    envconfig:"CB_COUNT_DOWN_EXIT_CODE"`
 
 	// --------------------
 	// TOML-friendly array fields
@@ -214,9 +214,9 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Pull:              %t\n", config.Pull)
 	fmt.Fprintf(&str, "    Dind:              %t\n", config.Dind)
 	fmt.Fprintf(&str, "    Sudo:              %t\n", config.Sudo)
-	fmt.Fprintf(&str, "    Sandbox:           %t\n", config.Sandbox)
-	fmt.Fprintf(&str, "    SandboxMode:       %q\n", config.SandboxMode)
-	fmt.Fprintf(&str, "    SandboxEnforcement:%q\n", config.SandboxEnforcement)
+	fmt.Fprintf(&str, "    Egress:           %t\n", config.Egress)
+	fmt.Fprintf(&str, "    EgressMode:       %q\n", config.EgressMode)
+	fmt.Fprintf(&str, "    EgressEnforcement:%q\n", config.EgressEnforcement)
 	fmt.Fprintf(&str, "    WritableBooth:     %t\n", config.WritableBooth)
 	fmt.Fprintf(&str, "    Public:            %t\n", config.Public)
 	fmt.Fprintf(&str, "    Password:          %s\n", maskStr(config.Password))
@@ -225,9 +225,9 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    IdleTime:          %d\n", config.IdleTime)
 	fmt.Fprintf(&str, "    IdleShutdownTime:  %d\n", config.IdleShutdownTime)
 	fmt.Fprintf(&str, "    IdleExitCode:      %d\n", config.IdleExitCode)
-	fmt.Fprintf(&str, "    SandboxAllowlist:  %q\n", config.SandboxAllowlistFile)
-	fmt.Fprintf(&str, "    SandboxPolicy:     %q\n", config.SandboxPolicyFile)
-	fmt.Fprintf(&str, "    SandboxAllowlist+: %v\n", config.SandboxAllowlist)
+	fmt.Fprintf(&str, "    EgressAllowlist:  %q\n", config.EgressAllowlistFile)
+	fmt.Fprintf(&str, "    EgressPolicy:     %q\n", config.EgressPolicyFile)
+	fmt.Fprintf(&str, "    EgressAllowlist+: %v\n", config.EgressAllowlist)
 
 	fmt.Fprintf(&str, "# Image Configuration -----------\n")
 	fmt.Fprintf(&str, "    Dockerfile:     %q\n", config.Dockerfile)

@@ -126,7 +126,7 @@ Examples span a wide range of languages, tools, and configurations:
 | Cloud & CI | aws, gcloud, firebase, dind, kind, kind-app |
 | Tools | homebrew, neovim, server, jetbrain |
 | Package managers | pip, npm, conda |
-| Security | sandbox-allowlist-extra, sandbox-envoy, firewall |
+| Security | egress-allowlist-extra, egress-envoy, firewall |
 | Getting started | empty, demo |
 
 The `empty` example provides a minimal starting point — just the booth wrapper and a bare config. The `demo` example is a full showcase with multiple notebooks and a sample application.

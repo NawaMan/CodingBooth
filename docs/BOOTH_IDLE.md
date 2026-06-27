@@ -34,7 +34,7 @@ Back to [README](../README.md)
 Idle shutdown exists for two scenarios:
 
 - **Shared hosts** — a teammate or CI runner forgot to stop their booth; the host is paying for an idle container.
-- **Pay-per-minute compute** — a cloud shell or sandbox where wall-clock time costs money.
+- **Pay-per-minute compute** — a cloud shell or egress where wall-clock time costs money.
 
 The design has three explicit stages so it never kills a session someone is still in:
 

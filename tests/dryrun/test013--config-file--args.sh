@@ -53,6 +53,7 @@ DIND:           false
 DOCKER_FILE:    
 DO_PULL:        false
 DRYRUN:         true
+EGRESS:        false
 HOST_GID:       $HOST_GID
 HOST_PORT:      10000
 HOST_UID:       $HOST_UID
@@ -63,7 +64,6 @@ LOCAL_BUILD:    false
 PORT_GENERATED: true
 PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:   
-SANDBOX:        false
 SCRIPT_DIR:     $(realpath "$HERE/../..")
 SCRIPT_NAME:    codingbooth
 VARIANT:        base
@@ -119,6 +119,7 @@ DIND:           true
 DOCKER_FILE:    test--config.toml
 DO_PULL:        true
 DRYRUN:         true
+EGRESS:        false
 HOST_GID:       $HOST_GID
 HOST_PORT:      10000
 HOST_UID:       $HOST_UID
@@ -129,7 +130,6 @@ LOCAL_BUILD:    true
 PORT_GENERATED: true
 PREBUILD_REPO:  nawaman/codingbooth
 RUN_ARGS:    \"-p\" \"10005\"
-SANDBOX:        false
 SCRIPT_DIR:     $(realpath "$HERE/../..")
 SCRIPT_NAME:    codingbooth
 VARIANT:        base

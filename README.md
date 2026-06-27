@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.57.0--rc1 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.57.0 — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -219,7 +219,7 @@ booth [flags] [-- command...]
 | `--dind`             | Enable Docker-in-Docker mode                                                     |
 | `--keep-alive`       | Preserve container after exit (resume with `booth start <name>`)                 |
 | `--persist-home`     | Persist `/home/coder` across sessions using a Docker named volume                |
-| `--sandboxed`        | Restrict outbound network to allowlisted domains                                 |
+| `--egress`        | Restrict outbound network to allowlisted domains                                 |
 | `--daemon`           | Run container in background                                                      |
 | `--silence-build`    | Suppress build/startup output                                                    |
 | `--writable-booth`   | Allow writing to `.booth/` inside the container (read-only by default)            |
@@ -408,7 +408,7 @@ For deeper technical details on how CodingBooth works internally, see [docs/impl
 - **[Desktop + noVNC](docs/implementations/DESKTOP_NOVNC.md)** — VNC server and browser-based desktop access
 - **[Variant Selection](docs/implementations/VARIANTS.md)** — How variants and aliases are resolved
 - **[Docker-in-Docker](docs/implementations/DIND.md)** — Running Docker inside CodingBooth
-- **[Sandbox](docs/implementations/SANDBOX.md)** — Egress filtering with Envoy proxy and iptables
+- **[Egress](docs/implementations/EGRESS.md)** — Egress filtering with Envoy proxy and iptables
 - **[Booth-in-Booth](docs/implementations/BOOTH_IN_BOOTH.md)** — Nested booth detection and opt-in mechanism
 
 
@@ -528,13 +528,13 @@ CodingBooth is designed for development environments, not production workloads. 
 | **File ownership**   | Files match your host UID/GID — no root-owned files                       |
 | **`.booth/` config** | Read-only inside the container by default (`--writable-booth` to opt out) |
 | **Network**          | Full network access by default                                            |
-| **Egress sandbox**   | Optional `--sandboxed` mode restricts outbound connections to allowlisted domains via Envoy proxy + iptables ([details](docs/implementations/SANDBOX.md)) |
+| **Egress**   | Optional `--egress` mode restricts outbound connections to allowlisted domains via Envoy proxy + iptables ([details](docs/implementations/EGRESS.md)) |
 | **DinD mode**        | Requires `--privileged` flag (elevated permissions)                       |
 
 **Best practices:**
 - Don't run untrusted code in CodingBooth containers
 - Avoid mounting sensitive host directories beyond what's needed
-- Use `--sandboxed` to restrict egress when running third-party or untrusted dependencies
+- Use `--egress` to restrict egress when running third-party or untrusted dependencies
 - DinD mode grants significant privileges — use only when needed
 
 > **Note:** CodingBooth prioritizes developer experience over strict isolation. For production containers or multi-tenant environments, use standard Docker security practices.

@@ -37,7 +37,7 @@ func (runner *BoothRunner) Run() error {
 	ctx = ResolveRelativePorts(ctx)
 	ctx = ShowDebugBanner(ctx)
 	ctx = SetupDind(ctx)
-	ctx = SetupSandbox(ctx)
+	ctx = SetupEgress(ctx)
 	ctx = PrepareRunMode(ctx)
 	ctx = FilterMissingVolumeMounts(ctx)
 	ctx = PrepareBoothTmp(ctx)

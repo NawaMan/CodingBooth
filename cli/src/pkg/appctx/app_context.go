@@ -72,8 +72,8 @@ func (ctx AppContext) LibDir() string     { return ctx.values.LibDir }
 
 // derived from DinD
 func (ctx AppContext) CreatedDindNet() bool { return ctx.values.CreatedDindNet }
-func (ctx AppContext) CreatedSandboxNet() bool {
-	return ctx.values.CreatedSandboxNet
+func (ctx AppContext) CreatedEgressNet() bool {
+	return ctx.values.CreatedEgressNet
 }
 
 // derived from image determination of image
@@ -86,34 +86,34 @@ func (ctx AppContext) PortGenerated() bool { return ctx.values.PortGenerated }
 func (ctx AppContext) PortNumber() int     { return ctx.values.PortNumber }
 
 // Flags
-func (ctx AppContext) KeepAlive() bool     { return ctx.values.Config.KeepAlive }
-func (ctx AppContext) SilenceBuild() bool  { return ctx.values.Config.SilenceBuild }
-func (ctx AppContext) Daemon() bool        { return ctx.values.Config.Daemon }
-func (ctx AppContext) Pull() bool          { return ctx.values.Config.Pull }
-func (ctx AppContext) Dind() bool          { return ctx.values.Config.Dind }
-func (ctx AppContext) Sudo() bool          { return ctx.values.Config.Sudo }
-func (ctx AppContext) Sandbox() bool       { return ctx.values.Config.Sandbox }
-func (ctx AppContext) SandboxMode() string { return ctx.values.Config.SandboxMode }
-func (ctx AppContext) SandboxEnforcement() string {
-	return ctx.values.Config.SandboxEnforcement
+func (ctx AppContext) KeepAlive() bool    { return ctx.values.Config.KeepAlive }
+func (ctx AppContext) SilenceBuild() bool { return ctx.values.Config.SilenceBuild }
+func (ctx AppContext) Daemon() bool       { return ctx.values.Config.Daemon }
+func (ctx AppContext) Pull() bool         { return ctx.values.Config.Pull }
+func (ctx AppContext) Dind() bool         { return ctx.values.Config.Dind }
+func (ctx AppContext) Sudo() bool         { return ctx.values.Config.Sudo }
+func (ctx AppContext) Egress() bool       { return ctx.values.Config.Egress }
+func (ctx AppContext) EgressMode() string { return ctx.values.Config.EgressMode }
+func (ctx AppContext) EgressEnforcement() string {
+	return ctx.values.Config.EgressEnforcement
 }
-func (ctx AppContext) WritableBooth() bool    { return ctx.values.Config.WritableBooth }
-func (ctx AppContext) LeaveTmpOnExit() bool    { return ctx.values.Config.LeaveTmpOnExit }
-func (ctx AppContext) KeepTmpOnStart() bool    { return ctx.values.Config.KeepTmpOnStart }
-func (ctx AppContext) LogTime() bool           { return ctx.values.Config.LogTime }
-func (ctx AppContext) PersistHome() bool       { return ctx.values.Config.PersistHome }
-func (ctx AppContext) IdleTime() int            { return ctx.values.Config.IdleTime }
-func (ctx AppContext) IdleShutdownTime() int    { return ctx.values.Config.IdleShutdownTime }
-func (ctx AppContext) IdleExitCode() int        { return ctx.values.Config.IdleExitCode }
-func (ctx AppContext) Public() bool        { return ctx.values.Config.Public }
-func (ctx AppContext) Password() string    { return ctx.values.Config.Password }
-func (ctx AppContext) TLSCert() string     { return ctx.values.Config.TLSCert }
-func (ctx AppContext) TLSKey() string      { return ctx.values.Config.TLSKey }
-func (ctx AppContext) SandboxAllowlistFile() string {
-	return ctx.values.Config.SandboxAllowlistFile
+func (ctx AppContext) WritableBooth() bool   { return ctx.values.Config.WritableBooth }
+func (ctx AppContext) LeaveTmpOnExit() bool  { return ctx.values.Config.LeaveTmpOnExit }
+func (ctx AppContext) KeepTmpOnStart() bool  { return ctx.values.Config.KeepTmpOnStart }
+func (ctx AppContext) LogTime() bool         { return ctx.values.Config.LogTime }
+func (ctx AppContext) PersistHome() bool     { return ctx.values.Config.PersistHome }
+func (ctx AppContext) IdleTime() int         { return ctx.values.Config.IdleTime }
+func (ctx AppContext) IdleShutdownTime() int { return ctx.values.Config.IdleShutdownTime }
+func (ctx AppContext) IdleExitCode() int     { return ctx.values.Config.IdleExitCode }
+func (ctx AppContext) Public() bool          { return ctx.values.Config.Public }
+func (ctx AppContext) Password() string      { return ctx.values.Config.Password }
+func (ctx AppContext) TLSCert() string       { return ctx.values.Config.TLSCert }
+func (ctx AppContext) TLSKey() string        { return ctx.values.Config.TLSKey }
+func (ctx AppContext) EgressAllowlistFile() string {
+	return ctx.values.Config.EgressAllowlistFile
 }
-func (ctx AppContext) SandboxPolicyFile() string  { return ctx.values.Config.SandboxPolicyFile }
-func (ctx AppContext) SandboxAllowlist() []string { return ctx.values.Config.SandboxAllowlist }
+func (ctx AppContext) EgressPolicyFile() string  { return ctx.values.Config.EgressPolicyFile }
+func (ctx AppContext) EgressAllowlist() []string { return ctx.values.Config.EgressAllowlist }
 
 // Image Configuration
 func (ctx AppContext) Dockerfile() string   { return ctx.values.Config.Dockerfile }
@@ -130,10 +130,10 @@ func (ctx AppContext) HostGID() string     { return ctx.values.Config.HostGID }
 func (ctx AppContext) Timezone() string    { return ctx.values.Config.Timezone }
 
 // Container Configuration
-func (ctx AppContext) Name() string    { return ctx.values.Config.Name }
-func (ctx AppContext) Port() string    { return ctx.values.Config.Port }
-func (ctx AppContext) EnvFile() string { return ctx.values.Config.EnvFile }
-func (ctx AppContext) Startup() string       { return ctx.values.Config.Startup }
+func (ctx AppContext) Name() string              { return ctx.values.Config.Name }
+func (ctx AppContext) Port() string              { return ctx.values.Config.Port }
+func (ctx AppContext) EnvFile() string           { return ctx.values.Config.EnvFile }
+func (ctx AppContext) Startup() string           { return ctx.values.Config.Startup }
 func (ctx AppContext) ShowRunTime() string       { return ctx.values.Config.ShowRunTime }
 func (ctx AppContext) ShowCountDown() string     { return ctx.values.Config.ShowCountDown }
 func (ctx AppContext) CountDownExitCode() string { return ctx.values.Config.CountDownExitCode }
@@ -184,7 +184,7 @@ func (ctx AppContext) String() string {
 
 	fmt.Fprintf(&str, "# DinD --------------------------\n")
 	fmt.Fprintf(&str, "    CreatedDindNet:   %t\n", ctx.CreatedDindNet())
-	fmt.Fprintf(&str, "    CreatedSandboxNet:%t\n", ctx.CreatedSandboxNet())
+	fmt.Fprintf(&str, "    CreatedEgressNet:%t\n", ctx.CreatedEgressNet())
 
 	fmt.Fprintf(&str, "# Image -------------------------\n")
 	fmt.Fprintf(&str, "    RunMode:          %q\n", ctx.RunMode())
@@ -209,9 +209,9 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Pull:             %t\n", ctx.Pull())
 	fmt.Fprintf(&str, "    Dind:             %t\n", ctx.Dind())
 	fmt.Fprintf(&str, "    Sudo:             %t\n", ctx.Sudo())
-	fmt.Fprintf(&str, "    Sandbox:          %t\n", ctx.Sandbox())
-	fmt.Fprintf(&str, "    SandboxMode:      %q\n", ctx.SandboxMode())
-	fmt.Fprintf(&str, "    SandboxEnforcement:%q\n", ctx.SandboxEnforcement())
+	fmt.Fprintf(&str, "    Egress:          %t\n", ctx.Egress())
+	fmt.Fprintf(&str, "    EgressMode:      %q\n", ctx.EgressMode())
+	fmt.Fprintf(&str, "    EgressEnforcement:%q\n", ctx.EgressEnforcement())
 	fmt.Fprintf(&str, "    WritableBooth:    %t\n", ctx.WritableBooth())
 	fmt.Fprintf(&str, "    IdleTime:         %d\n", ctx.IdleTime())
 	fmt.Fprintf(&str, "    IdleShutdownTime: %d\n", ctx.IdleShutdownTime())
@@ -238,10 +238,10 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    EnvFile:          %q\n", ctx.EnvFile())
 	fmt.Fprintf(&str, "    Startup:          %q\n", ctx.Startup())
 
-	fmt.Fprintf(&str, "# Sandbox Configuration ---------\n")
-	fmt.Fprintf(&str, "    SandboxAllowlist: %q\n", ctx.SandboxAllowlistFile())
-	fmt.Fprintf(&str, "    SandboxPolicy:    %q\n", ctx.SandboxPolicyFile())
-	fmt.Fprintf(&str, "    SandboxAllowlist+: %v\n", ctx.SandboxAllowlist())
+	fmt.Fprintf(&str, "# Egress Configuration ---------\n")
+	fmt.Fprintf(&str, "    EgressAllowlist: %q\n", ctx.EgressAllowlistFile())
+	fmt.Fprintf(&str, "    EgressPolicy:    %q\n", ctx.EgressPolicyFile())
+	fmt.Fprintf(&str, "    EgressAllowlist+: %v\n", ctx.EgressAllowlist())
 
 	fmt.Fprintf(&str, "# Lists (Immutable) -------------\n")
 	formatList(&str, "CommonArgs", ctx.CommonArgs(), "    ")

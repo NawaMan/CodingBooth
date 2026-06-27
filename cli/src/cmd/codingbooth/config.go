@@ -217,7 +217,7 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 		"daemon":         "daemon",
 		"writable-booth": "writable-booth",
 		"public":         "public",
-		"sandboxed":      "sandboxed",
+		"egress":         "egress",
 		"silence-build":  "silence-build",
 		"pull":           "pull",
 		"strict":         "strict",

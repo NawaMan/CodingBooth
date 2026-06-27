@@ -50,12 +50,12 @@ var allConfigFields = []configFieldDef{
 		Detail: "Run the booth in the background (detached mode)."},
 	{Key: "sudo", Label: "Sudo", Group: "Container", Kind: fieldKindCycle,
 		Options: []string{"", "true", "false"},
-		Detail: "Enable passwordless sudo for the coder user.\n\n(default) = leave to booth (enabled)\ntrue = explicitly enable\nfalse = explicitly disable"},
+		Detail:  "Enable passwordless sudo for the coder user.\n\n(default) = leave to booth (enabled)\ntrue = explicitly enable\nfalse = explicitly disable"},
 	{Key: "writable-booth", Label: "Writable .booth/", Group: "Container", Kind: fieldKindBool,
 		Detail: "Allow writing to .booth/ inside the container.\nBy default, .booth/ is mounted read-only."},
 	{Key: "public", Label: "Public", Group: "Container", Kind: fieldKindBool,
 		Detail: "Bind to all interfaces with password authentication.\nUseful for accessing the booth from other machines."},
-	{Key: "sandboxed", Label: "Sandboxed", Group: "Container", Kind: fieldKindBool,
+	{Key: "egress", Label: "Egress", Group: "Container", Kind: fieldKindBool,
 		Detail: "Restrict outbound network to allowlisted domains.\nUses Envoy proxy + iptables."},
 
 	// --- Build ---

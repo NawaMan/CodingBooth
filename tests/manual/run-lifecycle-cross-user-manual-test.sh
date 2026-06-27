@@ -87,15 +87,15 @@ GOCACHE=/tmp/go-cache ./build/cli-build.sh >/dev/null
 cp -f ./codingbooth ./examples/playground/codingbooth
 chmod +x ./examples/playground/codingbooth
 
-# Ensure sandbox allowlist exists for playground config
-SANDBOX_ALLOWLIST="$PLAYGROUND_DIR/.booth/sandbox/allowlist.txt"
-if [[ ! -f "$SANDBOX_ALLOWLIST" ]]; then
-  mkdir -p "$(dirname "$SANDBOX_ALLOWLIST")"
-  cat > "$SANDBOX_ALLOWLIST" <<'EOF'
+# Ensure egress allowlist exists for playground config
+EGRESS_ALLOWLIST="$PLAYGROUND_DIR/.booth/egress/allowlist.txt"
+if [[ ! -f "$EGRESS_ALLOWLIST" ]]; then
+  mkdir -p "$(dirname "$EGRESS_ALLOWLIST")"
+  cat > "$EGRESS_ALLOWLIST" <<'EOF'
 pypi.org
 files.pythonhosted.org
 EOF
-  echo "Note: created missing sandbox allowlist at $SANDBOX_ALLOWLIST"
+  echo "Note: created missing egress allowlist at $EGRESS_ALLOWLIST"
 fi
 
 echo "Step B: create keep-alive booth and commit image as current user"

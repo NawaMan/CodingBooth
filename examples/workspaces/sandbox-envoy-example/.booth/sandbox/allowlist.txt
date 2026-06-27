@@ -1,3 +1,0 @@
-# This example uses sandbox-policy-file with envoy.yaml.
-# The allowlist file is not used here.
-

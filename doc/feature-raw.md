@@ -9,7 +9,7 @@
 - Terminal variant (direct bash) + command passthrough (`booth -- cmd`) with exit-code forwarding
 - Cross-platform: Linux/macOS/Windows, amd64/arm64
 - Docker-in-Docker (`--dind`) via sidecar
-- Sandbox egress filtering (`--sandboxed`) via Envoy + iptables, with domain allowlist
+- Egress filtering (`--egress`) via Envoy + iptables, with domain allowlist
 - Port mapping: explicit / NEXT / RANDOM
 - `booth--expose` — runtime TCP tunnel (host↔container) via socat, explicit/relative/default port, `--permanent` persists to config
 - Web proxy pane — nginx `/proxy/{port}/` with sub_filter + iframe toggle in console UI; X-Frame-Options / CSP stripped; open-in-new-tab button
