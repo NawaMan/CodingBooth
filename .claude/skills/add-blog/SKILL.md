@@ -77,16 +77,19 @@ duplicate them. If the same post needs a matching highlight on `site/more.html`,
 same way; otherwise leave `more.html` alone.
 
 ### 4. Verify, then hand off the deploy
-- Build the blog to confirm it prerenders (catches broken imports / orphan slides):
+- Build the blog to confirm it prerenders (catches broken imports / orphan slides) and stage it
+  into `site/blog/`:
   ```bash
-  cd geekpresent
-  GEEKPRESENT_SITE_URL=https://codingbooth.io/blog ./build-static.sh /tmp/blog-check
+  build/build-blog.sh
   ```
-  Sanity-check: the new `welcome`-style slides land under `/tmp/blog-check/<slug>/`, and the
-  index lists the post. (`node_modules` missing? `pnpm install` first.)
-- **Deploying is external** — codingbooth.io is published outside this repo, and the blog is its
-  own static build dropped into the site's `/blog/` folder. Don't try to deploy; tell the user
-  the build command above is what their publish step should run, and remind them to rebuild both
+  This builds the blog (inside the geekpresent booth, with `GEEKPRESENT_SITE_URL=https://codingbooth.io/blog`)
+  and copies the result to `site/blog/`. Sanity-check: the new `welcome`-style slides land under
+  `site/blog/<slug>/`, and the index lists the post.
+- `site/blog/` is **committed** (it's part of the published site, not gitignored) — so after a
+  rebuild, `git add site/blog` and commit the regenerated output along with your source changes.
+- **Deploying is external** — codingbooth.io is published outside this repo. Don't try to deploy;
+  tell the user to run `build/build-blog.sh`, commit the regenerated `site/blog/`, and upload `site/`
+  (which now includes `blog/`), and remind them to rebuild both
   the blog and the front page.
 
 ## Rules
