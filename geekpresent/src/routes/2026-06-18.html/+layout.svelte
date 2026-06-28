@@ -4,6 +4,7 @@
 -->
 <script lang="ts">
 	import TextPage from '$lib/components/TextPage.svelte';
+	import ViewCount from '$lib/components/ViewCount.svelte';
 	import Comments from '$lib/components/Comments.svelte';
 </script>
 
@@ -13,5 +14,6 @@
 	type="article"
 >
 	<slot />
+	<ViewCount />
 	<Comments />
 </TextPage>

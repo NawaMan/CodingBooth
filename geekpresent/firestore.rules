@@ -1,0 +1,33 @@
+// Firestore Security Rules for the CodingBooth blog.
+//
+// Deploy: Firebase console → Firestore Database → Rules → paste this → Publish.
+// (Or `firebase deploy --only firestore:rules` if you wire up the Firebase CLI.)
+//
+// Only the `views` collection is used so far — one doc per page path, holding a
+// single `count` field. Reads are public (to display the badge); writes are locked
+// down to "create with count == 1" or "increment by exactly 1", nothing else. This
+// stops arbitrary data and bulk tampering; pair with App Check to deter scripted
+// increments.
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /views/{page} {
+      allow read: if true;
+
+      allow create: if request.resource.data.keys().hasOnly(['count'])
+                    && request.resource.data.count is int
+                    && request.resource.data.count == 1;
+
+      allow update: if request.resource.data.keys().hasOnly(['count'])
+                    && request.resource.data.count is int
+                    && request.resource.data.count == resource.data.count + 1;
+
+      allow delete: if false;
+    }
+
+    // Everything else is denied by default.
+  }
+}

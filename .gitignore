@@ -157,3 +157,8 @@ site/media/tapes/*.mp4
 site/media/tapes/*.webm
 
 .obsidian/
+
+# Firebase deploy cache / logs
+.firebase/
+firebase-debug.log
+firestore-debug.log

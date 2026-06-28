@@ -1,0 +1,14 @@
+{
+  "hosting": {
+    "site": "codingbooth-blog",
+    "public": "site",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ]
+  },
+  "firestore": {
+    "rules": "geekpresent/firestore.rules"
+  }
+}
