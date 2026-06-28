@@ -5,7 +5,7 @@
 <script lang="ts">
 	import TextPage from '$lib/components/TextPage.svelte';
 	import ViewCount from '$lib/components/ViewCount.svelte';
-	import Comments from '$lib/components/Comments.svelte';
+	import FirebaseComments from '$lib/components/FirebaseComments.svelte';
 </script>
 
 <TextPage
@@ -15,5 +15,5 @@
 >
 	<slot />
 	<ViewCount />
-	<Comments />
+	<FirebaseComments />
 </TextPage>

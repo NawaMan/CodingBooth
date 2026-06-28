@@ -44,3 +44,11 @@ export async function getDb() {
 	const fs = await import(/* @vite-ignore */ `${SDK}/firebase-firestore.js`);
 	return { db: fs.getFirestore(app), fs };
 }
+
+/** Lazily load Firebase Auth and return the auth instance plus the auth module
+ * (GoogleAuthProvider, signInWithPopup, onAuthStateChanged, …). */
+export async function getAuthModule() {
+	const app = await getApp();
+	const authMod = await import(/* @vite-ignore */ `${SDK}/firebase-auth.js`);
+	return { auth: authMod.getAuth(app), authMod };
+}

@@ -14,6 +14,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // The moderator account may delete any comment. email_verified guards against
+    // an unverified token spoofing the address.
+    function isModerator() {
+      return request.auth != null
+          && request.auth.token.email_verified == true
+          && request.auth.token.email == 'nawaman@gmail.com';
+    }
+
     match /views/{page} {
       allow read: if true;
 
@@ -26,6 +34,30 @@ service cloud.firestore {
                     && request.resource.data.count == resource.data.count + 1;
 
       allow delete: if false;
+    }
+
+    // Login-gated blog comments: comments/{pageId}/messages/{messageId}.
+    match /comments/{pageId}/messages/{messageId} {
+      allow read: if true;
+
+      allow create: if request.auth != null
+                    && request.resource.data.keys().hasOnly(['text', 'authorId', 'authorName', 'authorPhoto', 'createdAt'])
+                    && request.resource.data.authorId == request.auth.uid
+                    && request.resource.data.text is string
+                    && request.resource.data.text.size() > 0
+                    && request.resource.data.text.size() <= 2000
+                    && request.resource.data.authorName is string
+                    && request.resource.data.authorName.size() <= 150
+                    && (request.resource.data.authorPhoto == null
+                        || (request.resource.data.authorPhoto is string
+                            && request.resource.data.authorPhoto.size() <= 1000))
+                    && request.resource.data.createdAt == request.time;
+
+      // Comments are immutable once posted (no edit surface to bypass).
+      allow update: if false;
+
+      allow delete: if request.auth != null
+                    && (resource.data.authorId == request.auth.uid || isModerator());
     }
 
     // Everything else is denied by default.

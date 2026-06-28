@@ -10,5 +10,19 @@
   },
   "firestore": {
     "rules": "geekpresent/firestore.rules"
+  },
+  "auth": {
+    "providers": {
+      "googleSignIn": {
+        "oAuthBrandDisplayName": "CodingBooth Blog",
+        "supportEmail": "nawaman@gmail.com"
+      }
+    },
+    "authorizedDomains": [
+      "codingbooth.io",
+      "codingbooth-blog.web.app",
+      "codingbooth-blog.firebaseapp.com",
+      "localhost"
+    ]
   }
 }

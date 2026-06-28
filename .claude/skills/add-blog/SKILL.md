@@ -38,9 +38,9 @@ Mirror an existing article, e.g. `geekpresent/src/routes/2026-06-18.html/`. A po
 folder named by its date, `<date>.html/`, containing:
 - `+layout.js` — exactly `export const prerender = true; export const trailingSlash = "never";`
 - `+layout.svelte` — wraps `<slot/>` in `$lib/components/TextPage.svelte`; pass `title`,
-  `description`, and `type="article"`, and render `<ViewCount />` then `<Comments />` after the
-  `<slot/>` (Firebase view counter + giscus comments — both on by default). Copy an existing one
-  and edit the props.
+  `description`, and `type="article"`, and render `<ViewCount />` then `<FirebaseComments />` after
+  the `<slot/>` (Firebase view counter + login-gated Firebase comments — both on by default). Copy
+  an existing one and edit the props.
 - `+page.svelte` — the article itself: a `<script>` that `import`s any colocated images, then
   plain markup — the `<h1>` **must carry `id="<slug>"`** (the `#<slug>` anchor target), followed by
   `subtitle`/`p`/`h2`/`figure`+`figcaption`/`ul`/`pre><code` — and a scoped
@@ -148,7 +148,7 @@ same way; otherwise leave `more.html` alone.
 
 ## Rules
 - Register each new article's route in `TEXT_ROUTES` (`geekpresent/src/lib/seo/routes.ts`) or it won't appear in the sitemap.
-- **Comments are automatic** — each article layout renders `<Comments />` (giscus, one thread per post via `pathname`). It's configured **once** in `src/lib/components/Comments.svelte` (repo-id / category-id from giscus.app); nothing to do per post. It shows a setup note until those IDs are filled in.
+- **Comments are automatic** — each article layout renders `<FirebaseComments />` (login-gated Firebase Auth + Firestore, one thread per page path). Configured **once** in `src/lib/firebase.ts` + `src/lib/components/FirebaseComments.svelte` (providers list, moderator email), with rules in `geekpresent/firestore.rules`; nothing per post. Sign-in providers must be enabled in the Firebase console + the site's domains added under Authentication → Authorized domains.
 - **View counts are automatic** — each article layout renders `<ViewCount />` (Firebase/Firestore, one counter per page path). Configured **once** in `src/lib/firebase.ts` (web config from the Firebase console), with rules in `geekpresent/firestore.rules`; nothing per post. Renders nothing until Firebase is configured.
 - Reference assets with `import`, colocate per-post images in the post's folder (see `geekpresent/AGENTS.md`).
 - The blog is **static** — no `+server.js` / `load()` / form actions (they won't run on the static host).
