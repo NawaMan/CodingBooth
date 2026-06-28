@@ -9,7 +9,7 @@
     ]
   },
   "firestore": {
-    "rules": "geekpresent/firestore.rules"
+    "rules": "blog/firestore.rules"
   },
   "auth": {
     "providers": {

@@ -1,7 +1,7 @@
 # AGENT.md — CodingBooth "tour" deck (built with GeekPresent)
 
 Guidance for an AI agent helping author CodingBooth's promotional slide deck. The deck is built
-with **GeekPresent** (a copy-and-own SvelteKit slide engine that lives in this `geekpresent/`
+with **GeekPresent** (a copy-and-own SvelteKit slide engine that lives in this `blog/`
 folder) and published **under the existing hand-written site**.
 
 > **Two manuals, don't confuse them.** This file (`AGENT.md`) is the *operations* guide for this
@@ -13,7 +13,7 @@ folder) and published **under the existing hand-written site**.
 
 ## What this is
 
-- `geekpresent/` produces the **`tour` deck**, served at **https://codingbooth.io/tour/**.
+- `blog/` produces the **`tour` deck**, served at **https://codingbooth.io/tour/**.
 - The hand-written site (`../site/index.html`, `../site/more.html`, `../site/media/…`) is
   **separate and must NOT be touched** — do not edit any file under `../site/` except the
   generated `../site/tour/` output folder.
@@ -46,19 +46,19 @@ The build is **NOT automated in CI**. You build it **yourself, locally, through 
 CodingBooth's containerized env carries Node 22 + pnpm, so the host needs nothing installed:
 
 ```bash
-cd geekpresent
-./booth -- ./build-static.sh ./dist tour --force   # build in-container → geekpresent/dist
+cd blog
+./booth -- ./build-static.sh ./dist tour --force   # build in-container → blog/dist
 rm -rf ../site/tour && cp -a dist ../site/tour      # publish to the committed site folder (host-side)
 ```
 
-Why two steps: `booth` only mounts `geekpresent/`, so a container **cannot** write to `../site/`.
+Why two steps: `booth` only mounts `blog/`, so a container **cannot** write to `../site/`.
 Build into `dist/` (inside the mount), then copy to `../site/tour/` on the host (no toolchain
 needed for a copy). An agent may run the build, but flag that it spins a container.
 
 ## Deploy — commit, then manual pull
 
 ```bash
-git add geekpresent site/tour && git commit -m "Update tour deck"
+git add blog site/tour && git commit -m "Update tour deck"
 ```
 
 Deployment is **manual**: a human ssh's into the server and runs `git pull`; the host is

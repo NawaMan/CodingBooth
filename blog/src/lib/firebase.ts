@@ -9,7 +9,7 @@
 //   2. Build → Firestore Database → Create database → production mode → pick a region.
 //   3. Project settings (⚙) → Your apps → Web (</>) → register an app (Hosting NOT
 //      needed) → copy the `firebaseConfig` values into FIREBASE_CONFIG below.
-//   4. Firestore → Rules → paste the contents of `geekpresent/firestore.rules` → Publish.
+//   4. Firestore → Rules → paste the contents of `blog/firestore.rules` → Publish.
 //
 // The apiKey is NOT a secret (it ships in client JS by design); Firestore Security
 // Rules are what protect the data. Until the config is filled in, anything built on

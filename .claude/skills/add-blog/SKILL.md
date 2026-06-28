@@ -1,11 +1,11 @@
 ---
 name: add-blog
-description: Add a new post to the CodingBooth blog and feature it on the front page. Use when the user wants to publish/add a blog post, write a blog article, or update the "latest post" highlight on codingbooth.io. The blog is the GeekPresent project under geekpresent/, served at codingbooth.io/blog/.
+description: Add a new post to the CodingBooth blog and feature it on the front page. Use when the user wants to publish/add a blog post, write a blog article, or update the "latest post" highlight on codingbooth.io. The blog is the GeekPresent project under blog/, served at codingbooth.io/blog/.
 ---
 
 # add-blog — publish a CodingBooth blog post
 
-The CodingBooth blog is a GeekPresent static site under `geekpresent/`, served at
+The CodingBooth blog is a GeekPresent static site under `blog/`, served at
 **codingbooth.io/blog/**. **Each post is a long-form Text article** — one scrollable page
 (GeekPresent's "Text" artifact), *not* a slide deck. A post's route folder is named by its
 **publish date** (`<YYYY-MM-DD>.html/` → page `/blog/<YYYY-MM-DD>.html`); the post's kebab-case
@@ -14,7 +14,7 @@ addresses the page, the slug is a readable anchor. The marketing front page (`si
 features the **latest** post by hand.
 
 The existing posts are the canonical examples to copy:
-`geekpresent/src/routes/2026-05-29.html/` (slug `works-on-my-machine`) and
+`blog/src/routes/2026-05-29.html/` (slug `works-on-my-machine`) and
 `2026-06-18.html/` (slug `four-promises-of-a-booth`) — prose + colocated images + code.
 
 Your job when this skill runs: create the post, list it on the blog index, and update the
@@ -34,7 +34,7 @@ or any build pipeline; the front page is updated by editing HTML.
 ## Steps
 
 ### 1. Create the post (a Text article)
-Mirror an existing article, e.g. `geekpresent/src/routes/2026-06-18.html/`. A post is a route
+Mirror an existing article, e.g. `blog/src/routes/2026-06-18.html/`. A post is a route
 folder named by its date, `<date>.html/`, containing:
 - `+layout.js` — exactly `export const prerender = true; export const trailingSlash = "never";`
 - `+layout.svelte` — wraps `<slot/>` in `$lib/components/TextPage.svelte`; pass `title`,
@@ -67,11 +67,11 @@ newest, so its right slot is empty and its left points at the previous newest:
 on purpose — there's no shared post list.)
 
 Then **register the route for the sitemap**: add `'/<date>.html'` (the page path, **no `#` fragment**)
-to `TEXT_ROUTES` in `geekpresent/src/lib/seo/routes.ts` (each article is a standalone Text, so it
+to `TEXT_ROUTES` in `blog/src/lib/seo/routes.ts` (each article is a standalone Text, so it
 must be listed to reach the sitemap).
 
 ### 2. Update the blog index
-Edit `geekpresent/src/routes/(home)/+page.svelte`. Its layout is, top to bottom: a **fixed intro**
+Edit `blog/src/routes/(home)/+page.svelte`. Its layout is, top to bottom: a **fixed intro**
 paragraph (about CodingBooth + what the blog covers — leave it as is), then the **latest-post
 synopsis**, then the **Posts** list. Make **two** edits for a new post:
 
@@ -132,7 +132,7 @@ same way; otherwise leave `more.html` alone.
   ```bash
   build/build-blog.sh
   ```
-  This builds the blog (inside the geekpresent booth, with `GEEKPRESENT_SITE_URL=https://codingbooth.io/blog`)
+  This builds the blog (inside the blog booth, with `GEEKPRESENT_SITE_URL=https://codingbooth.io/blog`)
   and copies the result to `site/blog/`. Sanity-check: the new article lands at
   `site/blog/<date>.html` (a file; the `#<slug>` is only an anchor), the index lists it, and
   `/<date>.html` appears in `site/blog/sitemap.xml`.
@@ -147,9 +147,9 @@ same way; otherwise leave `more.html` alone.
   the blog and the front page.
 
 ## Rules
-- Register each new article's route in `TEXT_ROUTES` (`geekpresent/src/lib/seo/routes.ts`) or it won't appear in the sitemap.
-- **Comments are automatic** — each article layout renders `<FirebaseComments />` (login-gated Firebase Auth + Firestore, one thread per page path). Configured **once** in `src/lib/firebase.ts` + `src/lib/components/FirebaseComments.svelte` (providers list, moderator email), with rules in `geekpresent/firestore.rules`; nothing per post. Sign-in providers must be enabled in the Firebase console + the site's domains added under Authentication → Authorized domains.
-- **View counts are automatic** — each article layout renders `<ViewCount />` (Firebase/Firestore, one counter per page path). Configured **once** in `src/lib/firebase.ts` (web config from the Firebase console), with rules in `geekpresent/firestore.rules`; nothing per post. Renders nothing until Firebase is configured.
-- Reference assets with `import`, colocate per-post images in the post's folder (see `geekpresent/AGENTS.md`).
+- Register each new article's route in `TEXT_ROUTES` (`blog/src/lib/seo/routes.ts`) or it won't appear in the sitemap.
+- **Comments are automatic** — each article layout renders `<FirebaseComments />` (login-gated Firebase Auth + Firestore, one thread per page path). Configured **once** in `src/lib/firebase.ts` + `src/lib/components/FirebaseComments.svelte` (providers list, moderator email), with rules in `blog/firestore.rules`; nothing per post. Sign-in providers must be enabled in the Firebase console + the site's domains added under Authentication → Authorized domains.
+- **View counts are automatic** — each article layout renders `<ViewCount />` (Firebase/Firestore, one counter per page path). Configured **once** in `src/lib/firebase.ts` (web config from the Firebase console), with rules in `blog/firestore.rules`; nothing per post. Renders nothing until Firebase is configured.
+- Reference assets with `import`, colocate per-post images in the post's folder (see `blog/AGENTS.md`).
 - The blog is **static** — no `+server.js` / `load()` / form actions (they won't run on the static host).
 - Don't over-build. No feeds, manifests, or generators — featuring the latest post is a hand-edit, on purpose.

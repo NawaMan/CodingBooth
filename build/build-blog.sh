@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 #
-# Build the CodingBooth blog (the GeekPresent site under geekpresent/) and stage
+# Build the CodingBooth blog (the GeekPresent site under blog/) and stage
 # it into site/blog/ so it ships with the marketing site to codingbooth.io/blog/.
 #
 # Run from anywhere — it resolves the repo root from its own location:
@@ -24,21 +24,21 @@ echo ">> Building blog (base URL: $BLOG_URL) ..."
 
 # Build the static blog inside the booth (reproducible toolchain). The env var is
 # set inside the container command so build-static.sh inherits it there.
-cd "$ROOT_DIR/geekpresent"
+cd "$ROOT_DIR/blog"
 ./booth -- "rm -rf dist && GEEKPRESENT_SITE_URL=$BLOG_URL ./build-static.sh dist"
 
 # Guard: only replace the staged copy if the build actually produced output, so a
 # failed build can never wipe site/blog and leave nothing (set -e covers the build
 # itself; this catches a silent/empty result).
-if [ ! -f "$ROOT_DIR/geekpresent/dist/index.html" ]; then
-	echo "ERROR: build produced no geekpresent/dist/index.html — aborting; site/blog left untouched." >&2
+if [ ! -f "$ROOT_DIR/blog/dist/index.html" ]; then
+	echo "ERROR: build produced no blog/dist/index.html — aborting; site/blog left untouched." >&2
 	exit 1
 fi
 
 # Stage into the site docroot for the normal site upload.
 echo ">> Staging into site/blog/ ..."
 rm -rf "$ROOT_DIR/site/blog"
-cp -R  "$ROOT_DIR/geekpresent/dist" "$ROOT_DIR/site/blog"
+cp -R  "$ROOT_DIR/blog/dist" "$ROOT_DIR/site/blog"
 
 # Make imported assets sub-path safe. GeekPresent prerenders framework refs
 # (modulepreload/CSS) with relative paths, but assets imported into server-

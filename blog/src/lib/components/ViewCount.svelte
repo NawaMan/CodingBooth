@@ -8,7 +8,7 @@
   (a determined visitor can still inflate it; App Check + the rules limit abuse).
 
   Config + setup live in `$lib/firebase.ts`; the matching Firestore rules are in
-  `geekpresent/firestore.rules`. Until Firebase is configured, this renders nothing.
+  `blog/firestore.rules`. Until Firebase is configured, this renders nothing.
 -->
 <script lang="ts">
 	import { onMount } from 'svelte';

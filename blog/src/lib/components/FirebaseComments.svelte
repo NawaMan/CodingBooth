@@ -4,7 +4,7 @@
   One thread per page (keyed by location.pathname). Visitors must sign in with a
   social provider to post; everyone can read. Authors can delete their own
   comments; the MODERATOR_EMAIL account can delete any. Client-only, so it works
-  on a static host. Rules live in geekpresent/firestore.rules.
+  on a static host. Rules live in blog/firestore.rules.
 
   Enabling a provider takes two things: (1) turn it on in the Firebase console
   (Authentication → Sign-in method) and add the site's domains under Authorized
