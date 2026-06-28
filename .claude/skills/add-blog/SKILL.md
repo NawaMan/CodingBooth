@@ -6,9 +6,16 @@ description: Add a new post to the CodingBooth blog and feature it on the front 
 # add-blog — publish a CodingBooth blog post
 
 The CodingBooth blog is a GeekPresent static site under `geekpresent/`, served at
-**codingbooth.io/blog/**. Each post is its own route folder (a click-through slide deck,
-and/or a long-form Text). The marketing front page (`site/index.html`) features the
-**latest** post by hand.
+**codingbooth.io/blog/**. **Each post is a long-form Text article** — one scrollable page
+(GeekPresent's "Text" artifact), *not* a slide deck. A post's route folder is named by its
+**publish date** (`<YYYY-MM-DD>.html/` → page `/blog/<YYYY-MM-DD>.html`); the post's kebab-case
+**slug** is the `id` on its `<h1>`, so the canonical link is `/blog/<date>.html#<slug>` — the date
+addresses the page, the slug is a readable anchor. The marketing front page (`site/index.html`)
+features the **latest** post by hand.
+
+The existing posts are the canonical examples to copy:
+`geekpresent/src/routes/2026-05-29.html/` (slug `works-on-my-machine`) and
+`2026-06-18.html/` (slug `four-promises-of-a-booth`) — prose + colocated images + code.
 
 Your job when this skill runs: create the post, list it on the blog index, and update the
 front-page highlight to point at it. **Keep it simple.** Where doing something automatically
@@ -19,29 +26,71 @@ or any build pipeline; the front page is updated by editing HTML.
 
 ## Before you start — gather (ask if not given)
 - **Title** of the post.
-- **Slug** — kebab-case, becomes the route folder (`geekpresent/src/routes/<slug>/`). Avoid `home`, `welcome` if taken; check existing route folders.
+- **Date** — `YYYY-MM-DD`; it names the route folder `<date>.html/` (so the page is `/blog/<date>.html`). Check existing folders so two posts don't collide on one date.
+- **Slug** — kebab-case; it becomes the `id` on the article's `<h1>` and the `#<slug>` anchor in links.
 - **One-line teaser** for the index + front page.
-- **Date** (today, `YYYY-MM-DD`).
-- **Content** — the actual points/sections. If the user hasn't supplied them, ask for an outline or write a short draft and confirm before finishing. Don't invent technical claims about CodingBooth; pull from the repo (CODINGBOOTH.md, docs/) or ask.
+- **Content** — the actual prose/sections. If the user hasn't supplied them, ask for an outline or write a short draft and confirm before finishing. Don't invent technical claims about CodingBooth; pull from the repo (CODINGBOOTH.md, docs/) or ask.
 
 ## Steps
 
-### 1. Create the post (a deck)
-Mirror the existing `geekpresent/src/routes/welcome/` post — it's the canonical example.
-Read `geekpresent/AGENTS.md` for the slide mechanics. Each post folder needs:
-- `pages.ts` — the slide list (`{ path, title }[]`).
-- `+layout.svelte` — copy `welcome/+layout.svelte` (it does `setPages(pages)` and wraps `<SlideDeck>`); update the `title`/`description` props. Do **not** re-add a per-deck favicon import — the site default (CodingBooth icon) is used and resolves under the `/blog/` subpath.
+### 1. Create the post (a Text article)
+Mirror an existing article, e.g. `geekpresent/src/routes/2026-06-18.html/`. A post is a route
+folder named by its date, `<date>.html/`, containing:
 - `+layout.js` — exactly `export const prerender = true; export const trailingSlash = "never";`
-- `+page.svelte` — the index redirect (copy `welcome/+page.svelte` verbatim; it's slug-agnostic).
-- One folder per slide: `<name>.html/` with `+page.svelte` (start from `$lib/templates/TitlePage` or `ContentPage`) and the standard `+layout.js`. List every slide in `pages.ts`.
+- `+layout.svelte` — wraps `<slot/>` in `$lib/components/TextPage.svelte`; pass `title`,
+  `description`, and `type="article"`, and render `<Comments />` after the `<slot/>` (the giscus
+  comment thread — on by default). Copy an existing one and edit the props.
+- `+page.svelte` — the article itself: a `<script>` that `import`s any colocated images, then
+  plain markup — the `<h1>` **must carry `id="<slug>"`** (the `#<slug>` anchor target), followed by
+  `subtitle`/`p`/`h2`/`figure`+`figcaption`/`ul`/`pre><code` — and a scoped
+  `<style>` block. Copy the style block from an existing article for consistent typography
+  (headings, links `#7fd9ff`, figures, `.video-aside`, `pre`, `.post-nav`). End with a "Learn More"
+  list and the **footer nav** (below).
+- **Colocate images** in the folder and `import` them (`import img from './pic.png'`); never
+  hardcode `/…` paths. Use a `<pre><code>` block for code (escape `<`/`>`/`&`); avoid Monaco
+  `Code`/`CodeBox` unless you want a CDN dependency.
 
-A long-form **Text** version is optional — only add one if the user asks. Pattern: a `<slug>.html/` route wrapping `$lib/components/TextPage.svelte` (see `geekpresent/AGENTS.md` → "Two kinds of artifact").
+**Footer nav (prev / back / next).** Each article ends with a three-part nav: the *older* post on
+the left, "back to the blog" in the middle, the *newer* post on the right. A new post is the
+newest, so its right slot is empty and its left points at the previous newest:
+```html
+<nav class="post-nav">
+    <a class="nav-prev" href="./<prev-date>.html#<prev-slug>">← <Previous post title></a>
+    <a class="nav-home" href="./">↑ back to the blog</a>
+    <span class="nav-next"></span>
+</nav>
+```
+**Then update the neighbour:** open the *previous* newest article and fill its now-empty
+`<span class="nav-next"></span>` with a link to the new post:
+`<a class="nav-next" href="./<new-date>.html#<new-slug>"><New post title> →</a>`. (Hand-maintained
+on purpose — there's no shared post list.)
 
-### 2. List it on the blog index
-Edit `geekpresent/src/routes/(home)/+page.svelte` — add an `<li>` to `<ul class="posts">`, newest first:
+Then **register the route for the sitemap**: add `'/<date>.html'` (the page path, **no `#` fragment**)
+to `TEXT_ROUTES` in `geekpresent/src/lib/seo/routes.ts` (each article is a standalone Text, so it
+must be listed to reach the sitemap).
+
+### 2. Update the blog index
+Edit `geekpresent/src/routes/(home)/+page.svelte`. Its layout is, top to bottom: a **fixed intro**
+paragraph (about CodingBooth + what the blog covers — leave it as is), then the **latest-post
+synopsis**, then the **Posts** list. Make **two** edits for a new post:
+
+**(a) The latest-post synopsis** (marked `<!-- LATEST -->`, just below the intro). The newest post
+always gets a short synopsis here — replace the label date, title + link, and synopsis:
+```html
+<section class="latest" aria-label="Latest post">
+    <p class="latest-label">Latest post · <D Mon YYYY></p>
+    <h2 class="latest-title"><a href="<date>.html#<slug>"><Post title></a></h2>
+    <p class="latest-synopsis"><2–3 sentence synopsis of the post></p>
+    <p><a class="read-more" href="<date>.html#<slug>">Read the post →</a></p>
+</section>
+```
+
+**(b) The Posts list** (`<ul class="posts">`) — **reverse-chronological (newest first)** and each
+entry **shows its date**. Add the new post as the first `<li>`:
 ```html
 <li>
-    <a href="<slug>/title.html"><Post title></a>
+    <span class="date"><D Mon YYYY></span>
+    <a href="<date>.html#<slug>"><Post title></a>
     <span class="meta"> — <one-line teaser>.</span>
 </li>
 ```
@@ -50,7 +99,7 @@ Edit `geekpresent/src/routes/(home)/+page.svelte` — add an `<li>` to `<ul clas
 Edit `site/index.html`. Find the **From the Blog** section by its marker comment
 `<!-- FROM-THE-BLOG -->`. 
 
-- **If it exists:** replace the featured title, teaser, date, and `/blog/<slug>/title.html` link with the new post.
+- **If it exists:** replace the featured title, teaser, date, and `/blog/<date>.html#<slug>` link with the new post.
 - **If it does NOT exist yet (first run):** add it as a new `<section>` immediately **before**
   `<section id="learn-more">`. Reuse the page's existing classes (`section-light`, `container`,
   `h2`, `lead`, `ctas`, `btn`) so no new CSS is needed:
@@ -62,11 +111,11 @@ Edit `site/index.html`. Find the **From the Blog** section by its marker comment
         <p class="lead">Deep dives into the pieces that make CodingBooth tick.</p>
         <p class="blog-featured">
             <span class="blog-date"><YYYY-MM-DD></span>
-            <a href="/blog/<slug>/title.html"><strong><Post title></strong></a><br>
+            <a href="/blog/<date>.html#<slug>"><strong><Post title></strong></a><br>
             <Post title> — <one-line teaser>.
         </p>
         <div class="ctas">
-            <a class="btn btn-primary" href="/blog/<slug>/title.html">Read the post</a>
+            <a class="btn btn-primary" href="/blog/<date>.html#<slug>">Read the post</a>
             <a class="btn" href="/blog/">All posts</a>
         </div>
     </div>
@@ -77,14 +126,18 @@ duplicate them. If the same post needs a matching highlight on `site/more.html`,
 same way; otherwise leave `more.html` alone.
 
 ### 4. Verify, then hand off the deploy
-- Build the blog to confirm it prerenders (catches broken imports / orphan slides) and stage it
+- Build the blog to confirm it prerenders (catches broken imports / unregistered routes) and stage it
   into `site/blog/`:
   ```bash
   build/build-blog.sh
   ```
   This builds the blog (inside the geekpresent booth, with `GEEKPRESENT_SITE_URL=https://codingbooth.io/blog`)
-  and copies the result to `site/blog/`. Sanity-check: the new `welcome`-style slides land under
-  `site/blog/<slug>/`, and the index lists the post.
+  and copies the result to `site/blog/`. Sanity-check: the new article lands at
+  `site/blog/<date>.html` (a file; the `#<slug>` is only an anchor), the index lists it, and
+  `/<date>.html` appears in `site/blog/sitemap.xml`.
+- **Check the footer nav both ways:** the new post's `← nav-prev` points at the previous newest
+  post, and that previous post's `nav-next →` now points at the new one (the neighbour edit from
+  step 1). A missing/empty slot on either side means the neighbour wasn't wired up.
 - `site/blog/` is **committed** (it's part of the published site, not gitignored) — so after a
   rebuild, `git add site/blog` and commit the regenerated output along with your source changes.
 - **Deploying is external** — codingbooth.io is published outside this repo. Don't try to deploy;
@@ -93,7 +146,8 @@ same way; otherwise leave `more.html` alone.
   the blog and the front page.
 
 ## Rules
-- Keep every slide folder's `pages.ts` entry in sync — a slide folder with no entry is an orphan and breaks the build.
+- Register each new article's route in `TEXT_ROUTES` (`geekpresent/src/lib/seo/routes.ts`) or it won't appear in the sitemap.
+- **Comments are automatic** — each article layout renders `<Comments />` (giscus, one thread per post via `pathname`). It's configured **once** in `src/lib/components/Comments.svelte` (repo-id / category-id from giscus.app); nothing to do per post. It shows a setup note until those IDs are filled in.
 - Reference assets with `import`, colocate per-post images in the post's folder (see `geekpresent/AGENTS.md`).
 - The blog is **static** — no `+server.js` / `load()` / form actions (they won't run on the static host).
 - Don't over-build. No feeds, manifests, or generators — featuring the latest post is a hand-edit, on purpose.

@@ -13,9 +13,14 @@ const pageModules = import.meta.glob<{ pages: Array<Page> }>('/src/routes/*/page
 });
 
 // Standalone (non-deck) content routes: the landing page and the hand-authored
-// Texts. trailingSlash is "never", so '/' is the only one that keeps a trailing
-// slash. Add a new standalone Text route here so it lands in the sitemap.
-const TEXT_ROUTES = ['/'];
+// Texts (each blog post is a Text article). trailingSlash is "never", so '/' is
+// the only one that keeps a trailing slash. Add a new standalone Text route here
+// so it lands in the sitemap.
+const TEXT_ROUTES = [
+	'/',
+	'/2026-06-18.html',
+	'/2026-05-29.html'
+];
 
 /** All prerendered content routes as root-relative paths (e.g. '/slides/title.html'). */
 export function siteRoutes(): string[] {

@@ -40,4 +40,12 @@ echo ">> Staging into site/blog/ ..."
 rm -rf "$ROOT_DIR/site/blog"
 cp -R  "$ROOT_DIR/geekpresent/dist" "$ROOT_DIR/site/blog"
 
+# Make imported assets sub-path safe. GeekPresent prerenders framework refs
+# (modulepreload/CSS) with relative paths, but assets imported into server-
+# rendered Text content come out root-absolute (src="/_app/...") and would 404
+# under codingbooth.io/blog/. Every blog page is flat at /blog/, so rewriting
+# "/_app/ -> "./_app/ is correct for all of them.
+echo ">> Fixing absolute asset paths for the /blog/ sub-path ..."
+find "$ROOT_DIR/site/blog" -name '*.html' -exec sed -i 's#"/_app/#"./_app/#g' {} +
+
 echo "✓ Blog staged at site/blog/  ->  upload it with the site so it serves at $BLOG_URL"

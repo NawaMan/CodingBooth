@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<!-- Site-level favicon (the global default). A presentation overrides it from
+		     its +layout.svelte, and a page from its pages.ts entry — last one wins. -->
+		<link rel="icon" href="./favicon.png" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<link href="./_app/immutable/entry/start.CKlB8cuy.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/fFB4J2BQ.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/2SeSiVKc.js" rel="modulepreload">
+		<link href="./_app/immutable/entry/app.NmCKVNv_.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/oLq5b3kE.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/0.BOPUozVj.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/4.D5PN8_mc.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/BI8pTFbt.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/Bpv16KEt.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/CO7T2bKS.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/7.xdZIAe0e.js" rel="modulepreload">
+		<title>The Four Promises of a Booth</title><!-- HEAD_svelte-3wfwwb_START --><meta name="description" content="A booth makes four promises to every project: strong isolation, exact repeatability, effortless shareability, and real usability. Together they end 'works on my machine'."><meta property="og:title" content="The Four Promises of a Booth"><meta property="og:description" content="A booth makes four promises to every project: strong isolation, exact repeatability, effortless shareability, and real usability. Together they end 'works on my machine'."><meta property="og:type" content="article"><meta property="og:site_name" content="CodingBooth Blog"><meta property="og:url" content="https://codingbooth.io/blog/2026-06-18.html"><meta property="og:image" content="https://codingbooth.io/blog/og-default.png"> <meta property="og:image:alt" content="The CodingBooth Blog — deep dives into reproducible, isolated development environments."> <meta property="og:image:width" content="1200"> <meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="The Four Promises of a Booth"><meta name="twitter:description" content="A booth makes four promises to every project: strong isolation, exact repeatability, effortless shareability, and real usability. Together they end 'works on my machine'."><meta name="twitter:image" content="https://codingbooth.io/blog/og-default.png"> <meta name="twitter:image:alt" content="The CodingBooth Blog — deep dives into reproducible, isolated development environments."><link rel="canonical" href="https://codingbooth.io/blog/2026-06-18.html"><!-- HEAD_svelte-3wfwwb_END -->
+		<link href="./_app/immutable/assets/tooltip.Kkg-oOLO.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/TextPage.CO-5XHW5.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/Comments.CriZJkwK.css" rel="stylesheet">
+		<link href="./_app/immutable/assets/7.CRuUDCX9.css" rel="stylesheet">
+
+		<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Amatic+SC:wght@400;700&display=swap" rel="stylesheet">
+		<link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+	</head>
+	<style>
+
+	</style>
+	<body data-sveltekit-preload-data="hover">
+		<div style="display: contents">          <div class="text-scroll svelte-bzz0p" data-text-scroll><div class="text-page svelte-bzz0p"><p class="dateline svelte-1veon0v" data-svelte-h="svelte-1atwvhe">18 June 2026 · Nawa Man</p> <h1 id="four-promises-of-a-booth" class="svelte-1veon0v" data-svelte-h="svelte-1aisjyf">The Four Promises of a Booth</h1> <p class="subtitle svelte-1veon0v" data-svelte-h="svelte-albyk5">Isolation, repeatability, shareability, and usability — the four things a booth gives every project.</p> <figure class="hero svelte-1veon0v" data-svelte-h="svelte-ugp9w4"><img src="./_app/immutable/assets/Overview.ByqZOl6y.png" alt="Overview of CodingBooth: each project gets its own isolated, reproducible, shareable development environment" class="svelte-1veon0v"> <figcaption class="svelte-1veon0v">One booth per project — declared in the repo, brought up with one command.</figcaption></figure> <p class="svelte-1veon0v" data-svelte-h="svelte-etb8om"><a href="https://codingbooth.io" class="svelte-1veon0v">CodingBooth</a> improves your — and your team&#39;s — development
+	experience by eliminating the “it works only on my machine” problem. It does this by giving every
+	project its own fully isolated environment.</p> <p class="svelte-1veon0v" data-svelte-h="svelte-26kyqq">I&#39;ve written before about
+	<a href="./2026-05-29.html#works-on-my-machine" class="svelte-1veon0v">why the “works on my machine” problem keeps happening</a>.
+	This post takes a different cut: the <strong>four promises</strong> a booth makes to every project
+	it wraps. Get all four at once and the environment stops being a variable.</p> <p class="video-aside svelte-1veon0v" data-svelte-h="svelte-31786m">Prefer to watch? Here&#39;s the same idea as a
+	<a href="https://www.youtube.com/shorts/6ahi72ym3jk" target="_blank" rel="noopener" class="svelte-1veon0v">YouTube Shorts video</a>.</p> <h2 class="svelte-1veon0v" data-svelte-h="svelte-vvs5ey">1. Isolation — What Happens in the Booth Stays in the Booth</h2> <p class="svelte-1veon0v" data-svelte-h="svelte-1dyzlds">Any activity inside a project stays inside its isolated environment and never touches your host
+	system. Each project gets its own dedicated booth, so you can work on several projects at once
+	without conflicts — no shared global runtime, no <code class="svelte-1veon0v">PATH</code> entry bleeding from one project
+	into the next.</p> <p class="svelte-1veon0v" data-svelte-h="svelte-1p944jz">That same isolation is what makes a booth a safe place to experiment. Install a sketchy CLI, let an
+	AI assistant run <code class="svelte-1veon0v">go install that@latest</code>, try a risky upgrade — if it goes wrong, you
+	throw the booth away and start clean. Nothing leaked onto your machine, and no other project
+	noticed.</p> <figure class="svelte-1veon0v" data-svelte-h="svelte-15bq2fs"><img src="./_app/immutable/assets/Host-vs-Booth.bvPxtBY7.png" alt="A messy host machine versus a clean, isolated booth holding only the current project" class="svelte-1veon0v"> <figcaption class="svelte-1veon0v">The blast radius of anything you do lives inside the booth, not on your host.</figcaption></figure> <h2 class="svelte-1veon0v" data-svelte-h="svelte-1xopxlf">2. Repeatability — The Same Environment Every Time</h2> <p class="svelte-1veon0v" data-svelte-h="svelte-8qoh5e">A booth is created exactly according to its definition, which makes it fully repeatable. It&#39;s spun
+	up when you need it and thrown away when you&#39;re done, so you always get the same consistent
+	environment — not “close enough,” but the same image with the same tools at the same versions.</p> <p class="svelte-1veon0v" data-svelte-h="svelte-gxtq2w">Because the definition is plain text living in <code class="svelte-1veon0v">.booth/</code>, it can be version controlled
+	right alongside your code. The environment changes when the repo changes, reviewed in the same pull
+	request as everything else.</p> <pre class="svelte-1veon0v" data-svelte-h="svelte-1is141b"><code class="svelte-1veon0v"># .booth/Boothfile
+setup java+maven
+setup claude-code</code></pre> <p class="svelte-1veon0v" data-svelte-h="svelte-1sw6lcz">Two lines, and the environment is pinned. Run <code class="svelte-1veon0v">./booth</code> today or in two years and you
+	get the same toolchain — no drift, no “it used to build.”</p> <h2 class="svelte-1veon0v" data-svelte-h="svelte-1x1r871">3. Shareability — Onboarding in One Command</h2> <p class="svelte-1veon0v" data-svelte-h="svelte-ee4luk">Because the definition is shareable, every team member gets an identical environment. Clone the
+	repo, run the booth, and you&#39;re at parity with the rest of the team — same versions, same CLIs,
+	same defaults. Onboarding goes from a day of platform-specific debugging to a single command.</p> <pre class="svelte-1veon0v" data-svelte-h="svelte-1q42ygq"><code class="svelte-1veon0v">git clone &lt;repo&gt; &amp;&amp; cd &lt;repo&gt; &amp;&amp; ./booth</code></pre> <p class="svelte-1veon0v" data-svelte-h="svelte-143cfq5">This is the move that actually retires “works on my machine.” The environment isn&#39;t described in an
+	onboarding wiki that nobody updates — it <em class="svelte-1veon0v">is</em> the repo. New teammates, future-you reviving a
+	dormant project, students handed a workshop repo: everyone runs the same booth.</p> <h2 class="svelte-1veon0v" data-svelte-h="svelte-9zu7vy">4. Usability — A Terminal, or a Full Desktop</h2> <p class="svelte-1veon0v" data-svelte-h="svelte-10zrus5">All of this is delivered in a highly usable way. You can interact with the booth through a
+	terminal, browser-based VS Code, a Jupyter notebook, or even a full Linux desktop — same
+	environment underneath, different lens on top.</p> <figure class="svelte-1veon0v" data-svelte-h="svelte-u4cc6g"><img src="./_app/immutable/assets/Variants.DjS8e9TN.png" alt="CodingBooth variants: terminal, browser VS Code, Jupyter notebook, and a full Linux desktop, all sharing one environment" class="svelte-1veon0v"> <figcaption class="svelte-1veon0v">Attach how you like — the variant is just a front-end on the same booth.</figcaption></figure> <p class="svelte-1veon0v" data-svelte-h="svelte-783ivg">CodingBooth also handles file permissions seamlessly by matching your host user ID and group ID.
+	Every file you create or edit inside the booth is owned by <em class="svelte-1veon0v">you</em> on the host — no
+	<code class="svelte-1veon0v">chown</code> dance, no root-owned artifacts left behind.</p> <p class="svelte-1veon0v" data-svelte-h="svelte-j9k5ix">And the booth definition itself is intuitive: it ships pre-loaded with useful built-in setups and
+	templates, plus an easy-to-use configuration tool. You rarely start from a blank file — you pick
+	what you need and let the tool write the <code class="svelte-1veon0v">.booth/</code> folder for you.</p> <pre class="svelte-1veon0v" data-svelte-h="svelte-rh04i5"><code class="svelte-1veon0v">booth config</code></pre> <h2 class="svelte-1veon0v" data-svelte-h="svelte-1jqdazt">Four Promises, One Command</h2> <p class="svelte-1veon0v" data-svelte-h="svelte-9iuqul">Isolation keeps your host clean. Repeatability keeps the environment honest. Shareability gets your
+	whole team to parity. Usability makes it something you actually want to live in. Each one is useful
+	on its own; together they&#39;re what makes “works on my machine” a problem you stop having.</p> <p class="svelte-1veon0v" data-svelte-h="svelte-y3ut4a">Installing CodingBooth is one command:</p> <pre class="svelte-1veon0v" data-svelte-h="svelte-fi3oo8"><code class="svelte-1veon0v">curl -fsSL https://codingbooth.io/install.sh | bash</code></pre> <p class="svelte-1veon0v" data-svelte-h="svelte-i4rcnr">Start using CodingBooth in your project today — and thank me later.</p> <p class="svelte-1veon0v" data-svelte-h="svelte-tecmef">Happy coding!<br>Nawa Man</p> <hr class="svelte-1veon0v"> <h2 class="svelte-1veon0v" data-svelte-h="svelte-smz8fp">Learn More</h2> <ul class="links svelte-1veon0v" data-svelte-h="svelte-814l71"><li class="svelte-1veon0v"><a href="https://codingbooth.io" class="svelte-1veon0v">codingbooth.io</a> — the website</li> <li class="svelte-1veon0v"><a href="https://codingbooth.io/more.html" class="svelte-1veon0v">Deep dive</a> — more about CodingBooth</li> <li class="svelte-1veon0v"><a href="https://github.com/NawaMan/CodingBooth" class="svelte-1veon0v">GitHub</a> — source &amp; issues</li></ul> <nav class="post-nav svelte-1veon0v" data-svelte-h="svelte-70gcj9"><a class="nav-prev svelte-1veon0v" href="./2026-05-29.html#works-on-my-machine">← Ending “It Works on My Machine”</a> <a class="nav-home svelte-1veon0v" href="./">↑ back to the blog</a> <span class="nav-next svelte-1veon0v"></span> </nav>   <section class="comments svelte-z5yyud"><h2 class="svelte-z5yyud" data-svelte-h="svelte-1ygsax0">Comments</h2>  <div></div> </section></div></div> <div class="nav text no-print svelte-13xfmcp"><button  class="svelte-tdu9h5 chrome"><span class="text svelte-tdu9h5">TOP</span> <span class="hover-text svelte-tdu9h5"></span></button></div> 
+			
+			<script>
+				{
+					__sveltekit_1uujjti = {
+						base: new URL(".", location).pathname.slice(0, -1)
+					};
+
+					const element = document.currentScript.parentElement;
+
+					Promise.all([
+						import("./_app/immutable/entry/start.CKlB8cuy.js"),
+						import("./_app/immutable/entry/app.NmCKVNv_.js")
+					]).then(([kit, app]) => {
+						kit.start(app, element, {
+							node_ids: [0, 4, 7],
+							data: [null,null,null],
+							form: null,
+							error: null
+						});
+					});
+				}
+			</script>
+		</div>
+	</body>
+</html>

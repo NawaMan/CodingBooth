@@ -15,7 +15,7 @@
      and description (the rest of the social/canonical tags are derived). -->
 <TextPage
 	title="The CodingBooth Blog — deep dives into reproducible dev environments"
-	description="Notes from inside the booth: short, focused write-ups about CodingBooth — reproducible, isolated development environments in a Docker container that runs as you."
+	description="The CodingBooth blog — feature deep-dives, hands-on examples, and project news for CodingBooth: reproducible, isolated development environments in a Docker container that runs as you."
 >
 	<slot />
 </TextPage>

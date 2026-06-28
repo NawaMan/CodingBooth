@@ -1,37 +1,45 @@
 <!--
   Blog index — served at the site root `/` (i.e. codingbooth.io/blog/).
 
-  Built as a Text artifact (shares the TextPage shell). Its job is to say what
-  the blog is and then list the posts. Each post is its own route folder (a
-  presentation deck or a Text); add a new <li> here when you publish one.
-  Links are relative to `/`, so they resolve to sibling post routes
-  (e.g. /welcome/title.html).
+  Built as a Text artifact (shares the TextPage shell). Layout, top to bottom:
+    1. A short intro to CodingBooth and what this blog covers.
+    2. A synopsis of the LATEST post (update it whenever you publish).
+    3. "Posts" — every article, reverse-chronological, each with its date.
+  Each post is a Text article at `<slug>.html`; links are relative to `/`.
 -->
 <h1>The CodingBooth Blog</h1>
 
-<p class="lede">
-	Notes from inside the booth — short, focused deep dives into the bits and pieces that make
-	CodingBooth tick.
-</p>
-
-<p>
+<p class="intro">
 	<a href="https://codingbooth.io">CodingBooth</a> delivers fully reproducible, isolated
-	development environments in a Docker container that runs as <i>you</i>, with your project
-	files staying yours on the host. This blog takes it apart one piece at a time — a feature,
-	a design decision, or a workflow per post.
+	development environments in a Docker container that runs as <i>you</i>, with your project files
+	staying yours on the host. This blog covers CodingBooth one topic at a time — feature deep-dives,
+	hands-on examples, and project news.
 </p>
 
-<p>
-	Each post comes in two shapes: click through it as a slide deck, or read it as a long-form
-	page. New posts land here over time.
-</p>
+<!-- LATEST: synopsis of the most recent post. Update when you publish a new one. -->
+<section class="latest" aria-label="Latest post">
+	<p class="latest-label">Latest post · 18 Jun 2026</p>
+	<h2 class="latest-title"><a href="2026-06-18.html#four-promises-of-a-booth">The Four Promises of a Booth</a></h2>
+	<p class="latest-synopsis">
+		A booth makes four promises to every project: strong isolation, exact repeatability,
+		effortless shareability, and real usability. Here's what each one means in practice — and
+		why together they end “works on my machine.”
+	</p>
+	<p><a class="read-more" href="2026-06-18.html#four-promises-of-a-booth">Read the post →</a></p>
+</section>
 
 <h2>Posts</h2>
 
 <ul class="posts">
 	<li>
-		<a href="welcome/title.html">Welcome to the CodingBooth Blog</a>
-		<span class="meta"> — what this is, and what's coming.</span>
+		<span class="date">18 Jun 2026</span>
+		<a href="2026-06-18.html#four-promises-of-a-booth">The Four Promises of a Booth</a>
+		<span class="meta"> — isolation, repeatability, shareability, and usability: the four things a booth gives every project.</span>
+	</li>
+	<li>
+		<span class="date">29 May 2026</span>
+		<a href="2026-05-29.html#works-on-my-machine">Ending “It Works on My Machine”</a>
+		<span class="meta"> — why the problem keeps happening, and how a booth ends it.</span>
 	</li>
 </ul>
 
@@ -47,14 +55,43 @@
 		font-size: 2.6em;
 		margin-bottom: 0.2em;
 	}
-	.lede {
-		font-size: 1.25em;
-		font-weight: bold;
+	.intro {
+		font-size: 1.15em;
+		line-height: 1.6;
 		opacity: 0.95;
 	}
 	a {
 		color: #7fd9ff;
 	}
+
+	/* Latest-post synopsis card. */
+	.latest {
+		margin: 1.6em 0;
+		padding: 1.2em 1.4em;
+		border: 1px solid #2a3a40;
+		border-left: 4px solid #7fd9ff;
+		border-radius: 0 8px 8px 0;
+		background: rgba(127, 217, 255, 0.05);
+	}
+	.latest-label {
+		margin: 0;
+		font-size: 0.85em;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		opacity: 0.7;
+	}
+	.latest-title {
+		margin: 0.2em 0 0.4em;
+		font-size: 1.7em;
+	}
+	.latest-synopsis {
+		margin: 0.4em 0 0.8em;
+		line-height: 1.6;
+	}
+	.read-more {
+		font-weight: bold;
+	}
+
 	h2 {
 		margin-top: 1.6em;
 	}
@@ -66,6 +103,13 @@
 		padding: 0.6em 0;
 		border-bottom: 1px solid #2a3a40;
 		font-size: 1.15em;
+	}
+	ul.posts li .date {
+		display: inline-block;
+		min-width: 6.5em;
+		font-family: 'Fira Code', monospace;
+		font-size: 0.8em;
+		opacity: 0.6;
 	}
 	ul.posts li a {
 		font-weight: bold;

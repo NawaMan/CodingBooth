@@ -24,7 +24,7 @@ export const SITE_NAME = 'CodingBooth Blog';
 /** Default description for pages/decks that don't supply their own. Kept under
     ~160 chars so search engines don't truncate it in results. */
 export const SITE_DESCRIPTION =
-	'Notes from inside the booth — short, focused deep dives into CodingBooth: reproducible, isolated development environments in a Docker container that runs as you.';
+	'The CodingBooth blog — feature deep-dives, hands-on examples, and project news for CodingBooth: reproducible, isolated development environments in a Docker container that runs as you.';
 
 /** Path (under the site root) of the default social/OG image. */
 export const OG_IMAGE_PATH = 'og-default.png';
