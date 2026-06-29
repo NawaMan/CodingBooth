@@ -21,6 +21,7 @@ Back to [README](../README.md)
 - [shell](#shell)
 - [exec](#exec)
 - [Target Resolution](#target-resolution)
+- [Run the booth if it is not running](#run-the-booth-if-it-is-not-running)
 - [Common Workflows](#common-workflows)
 - [Differences from docker exec](#differences-from-docker-exec)
 
@@ -34,6 +35,8 @@ Both commands operate on a **running** booth container. Under the hood they use 
 |---------|--------------------------------------|:--------------:|:-------------:|
 | `shell` | Open a new interactive shell session | Yes            | No            |
 | `exec`  | Run a one-off command                | No (by default)| Yes           |
+
+If the target booth is not running, both commands error by default. Pass `--run` to bring it up first — see [Run the booth if it is not running](#run-the-booth-if-it-is-not-running).
 
 ---
 
@@ -54,12 +57,16 @@ The shell launched is the default shell configured for the `coder` user inside t
 ./booth shell myproject --dir /tmp           # start in a specific directory
 ./booth shell myproject -e DEBUG=1           # set an environment variable
 ./booth shell myproject --envfile .env       # load variables from a file
+./booth shell myproject --run                # run the booth first if not running
+./booth shell myproject --run --keep-alive   # ...and leave it running afterwards
 ```
 
 | Flag               | Description                                                           |
 |--------------------|-----------------------------------------------------------------------|
 | `--shell <shell>`  | Shell to launch (default: container's default shell)                  |
 | `--dir <path>`     | Starting directory inside the container (default: `/home/coder/code`) |
+| `--run`            | Run the booth first if it is not already running                      |
+| `--keep-alive`     | With `--run`, leave the booth running after you disconnect            |
 | `-e <VAR=value>`   | Set environment variable for the session                              |
 | `--envfile <path>` | Load environment variables from a file                                |
 | `--name <name>`    | Target container by name                                              |
@@ -92,11 +99,15 @@ Everything after `--` is executed inside the container. The exit code is forward
 ./booth exec myproject -e FOO=bar -- env          # set an environment variable
 ./booth exec myproject --envfile .env -- env       # load variables from a file
 ./booth exec myproject --dir /tmp -- ls           # run command in a specific directory
+./booth exec myproject --run -- make test         # run the booth first if not running
+./booth exec myproject --run --keep-alive -- make test  # ...and leave it running
 ```
 
 | Flag              | Description                                                          |
 |-------------------|----------------------------------------------------------------------|
 | `-it`             | Force interactive mode with TTY (default: non-interactive)           |
+| `--run`           | Run the booth first if it is not already running                     |
+| `--keep-alive`    | With `--run`, leave the booth running after the command finishes     |
 | `-e <VAR=value>`  | Set environment variable for the command                             |
 | `--envfile <path>`| Load environment variables from a file                               |
 | `--dir <path>`    | Working directory inside the container (default: `/home/coder/code`) |
@@ -129,7 +140,53 @@ Both `shell` and `exec` resolve the target container using the same priority as 
 cd ~/projects/app && ./booth shell   # default from current directory
 ```
 
-If the target container is not running, the command exits with an error and suggests using `booth start` first.
+If the target container is not running, the command exits with an error and suggests using `booth run` first — unless you pass `--run`.
+
+---
+
+## Run the booth if it is not running
+
+By default `shell` and `exec` require the booth to already be running. Pass `--run` to bring it up automatically before connecting:
+
+```bash
+./booth shell myproject --run              # run (if needed), then open a shell
+./booth exec  myproject --run -- make test     # run (if needed), then run a command
+```
+
+When `--run` is given, the booth is made available in whatever way is needed:
+
+- If the booth is **already running**, it is used as-is — nothing is restarted.
+- If a **stopped** container exists (e.g. a `--keep-alive` booth that was stopped), it is started (equivalent to `booth start`).
+- If **no container exists**, a new booth is created from the current workspace with `booth run` in daemon mode, exactly as if you had run `booth` here yourself.
+
+In every case a short note is printed to **stderr** and the new booth's startup output is also sent to stderr, so `exec`'s **stdout stays clean** for scripting. `shell`/`exec` then wait for the booth's `coder` user alignment to finish before connecting, so the first command never races container startup.
+
+> **Why this matters:** a normal booth that is stopped is *removed* (only `--keep-alive` booths persist as stopped containers). So "the booth is not running" usually means "there is no container" — and `--run` recreates it from the workspace config rather than failing.
+
+### Cleanup: the booth is brought back down afterwards
+
+A booth that `--run` had to bring up does **not** outlive your session. When you disconnect (the shell exits, or the command finishes), the booth is returned to the state it was in before — so a `--run` session leaves no trace:
+
+| Before connecting        | After disconnecting (default)         |
+|--------------------------|----------------------------------------|
+| Already running          | Still running — never touched          |
+| Stopped (`--keep-alive`) | Stopped again (returned to its state)  |
+| Did not exist            | Removed                                |
+
+Pass **`--keep-alive`** to opt out and leave the booth running after you disconnect:
+
+```bash
+./booth exec myproject --run --keep-alive -- make test   # booth stays up afterwards
+./booth shell myproject --run --keep-alive               # work, exit, booth still running
+```
+
+A booth created with `--run --keep-alive` is created as a `--keep-alive` booth, so it persists across a later `booth stop` just like one you launched directly.
+
+#### Multiple connections are reference-counted
+
+If you open several `--run` sessions on the same booth (e.g. two `booth shell --run` in different terminals), the booth is only brought down when the **last** one disconnects. An earlier session exiting will not pull the booth out from under the others. Passing `--keep-alive` from any session promotes the booth to persistent, so none of the sessions will stop it.
+
+Because running a booth is a side effect (it can build an image and allocate ports), `--run` is opt-in: omit it and a non-running booth remains an error, which keeps `booth exec` predictable in scripts and CI.
 
 ---
 

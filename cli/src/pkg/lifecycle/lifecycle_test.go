@@ -94,3 +94,102 @@ func TestResolveSingleContainerStateValidation(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestConnectPlanRunningWithoutRun(t *testing.T) {
+	containers := []managedContainer{{Name: "demo", State: "running"}}
+
+	target, action, err := connectPlan(containers, "demo", nil, false)
+	if err != nil {
+		t.Fatalf("connectPlan returned error: %v", err)
+	}
+	if target.Name != "demo" {
+		t.Fatalf("target.Name = %q, want %q", target.Name, "demo")
+	}
+	if action != connectUse {
+		t.Fatalf("action = %d, want connectUse for an already-running booth", action)
+	}
+}
+
+func TestConnectPlanStoppedWithoutRun(t *testing.T) {
+	containers := []managedContainer{{Name: "demo", State: "exited"}}
+
+	_, _, err := connectPlan(containers, "demo", nil, false)
+	if err == nil {
+		t.Fatal("expected not-running error for a stopped booth without --run")
+	}
+	if !strings.Contains(err.Error(), "is not running") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestConnectPlanMissingWithoutRun(t *testing.T) {
+	containers := []managedContainer{{Name: "demo", State: "running"}}
+
+	_, _, err := connectPlan(containers, "ghost", nil, false)
+	if err == nil {
+		t.Fatal("expected not-found error for a missing booth without --run")
+	}
+	if !strings.Contains(err.Error(), "not found") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestConnectPlanStoppedWithRun(t *testing.T) {
+	containers := []managedContainer{{Name: "demo", State: "exited"}}
+
+	target, action, err := connectPlan(containers, "demo", nil, true)
+	if err != nil {
+		t.Fatalf("connectPlan returned error: %v", err)
+	}
+	if target.Name != "demo" {
+		t.Fatalf("target.Name = %q, want %q", target.Name, "demo")
+	}
+	if action != connectStart {
+		t.Fatalf("action = %d, want connectStart for a stopped booth with --run", action)
+	}
+}
+
+func TestConnectPlanRunningWithRun(t *testing.T) {
+	containers := []managedContainer{{Name: "demo", State: "running"}}
+
+	_, action, err := connectPlan(containers, "demo", nil, true)
+	if err != nil {
+		t.Fatalf("connectPlan returned error: %v", err)
+	}
+	if action != connectUse {
+		t.Fatalf("action = %d, want connectUse for an already-running booth with --run", action)
+	}
+}
+
+func TestConnectPlanMissingWithRun(t *testing.T) {
+	containers := []managedContainer{{Name: "demo", State: "running"}}
+
+	target, action, err := connectPlan(containers, "ghost", nil, true)
+	if err != nil {
+		t.Fatalf("connectPlan returned error: %v", err)
+	}
+	if action != connectRun {
+		t.Fatalf("action = %d, want connectRun for a missing booth with --run", action)
+	}
+	if target.Name != "ghost" {
+		t.Fatalf("target.Name = %q, want %q (name to run under)", target.Name, "ghost")
+	}
+}
+
+func TestExtractPositionalAndFlagsRun(t *testing.T) {
+	// --run is a boolean flag: it must not swallow the following positional.
+	cases := [][]string{
+		{"myproject", "--run"},
+		{"--run", "myproject"},
+	}
+
+	for _, args := range cases {
+		positional, flags := extractPositionalAndFlags(args)
+		if len(positional) != 1 || positional[0] != "myproject" {
+			t.Fatalf("extractPositionalAndFlags(%v) positional = %v, want [myproject]", args, positional)
+		}
+		if len(flags) != 1 || flags[0] != "--run" {
+			t.Fatalf("extractPositionalAndFlags(%v) flags = %v, want [--run]", args, flags)
+		}
+	}
+}

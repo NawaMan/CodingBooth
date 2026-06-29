@@ -43,6 +43,7 @@ Need to find a way to fix this. This may involve creating a different type of ho
 ## Problems
 - [ ] VS Code hangs sometimes.
 - [ ] Java example: Lombok does not work in VS Code.
+- [ ] `remove`/`stop`/`start`/`restart` ignore flags placed *after* the positional name (e.g. `booth remove myproj --force` does not force) because they use plain `flag.Parse`, which stops at the first positional. `shell`/`exec` already work around this with `extractPositionalAndFlags`; apply the same handling to the other lifecycle commands so flag order doesn't matter.
 - [ ] ...
 
 ---

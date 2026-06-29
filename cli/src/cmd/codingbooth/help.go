@@ -416,15 +416,22 @@ OPTIONS:
   --name <n>         Container name
   --shell <shell>    Shell to launch (default: bash)
   --dir <path>       Starting directory (default: /home/coder/code)
+  --run              Run the booth first if it is not already running
+  --keep-alive       With --run, leave the booth running afterwards
   -e <VAR=value>     Set environment variable (repeatable)
   --envfile <path>   Load environment variables from a file
+
+A booth brought up by --run is stopped again when you disconnect, unless
+--keep-alive is given. A booth that was already running is never stopped.
 
 EXAMPLES:
   %s shell myproject
   %s shell myproject --shell zsh
   %s shell myproject --dir /tmp
   %s shell myproject -e DEBUG=1
-`, s, s, s, s, s, s)
+  %s shell myproject --run
+  %s shell myproject --run --keep-alive
+`, s, s, s, s, s, s, s, s)
 }
 
 func showHelpExec() {
@@ -437,16 +444,22 @@ OPTIONS:
   --name <n>         Container name
   --dir <path>       Working directory (default: /home/coder/code)
   -it                Force interactive mode with TTY
+  --run              Run the booth first if it is not already running
+  --keep-alive       With --run, leave the booth running afterwards
   -e <VAR=value>     Set environment variable (repeatable)
   --envfile <path>   Load environment variables from a file
 
-The exit code of the executed command is forwarded to the caller.
+The exit code of the executed command is forwarded to the caller. A booth
+brought up by --run is stopped again when the command finishes, unless
+--keep-alive is given. A booth that was already running is never stopped.
 
 EXAMPLES:
   %s exec myproject -- make test
   %s exec myproject -e FOO=bar -- env
   %s exec myproject --dir /tmp -- ls
-`, s, s, s, s, s)
+  %s exec myproject --run -- make test
+  %s exec myproject --run --keep-alive -- make test
+`, s, s, s, s, s, s, s)
 }
 
 func showHelpEmitDockerfile() {

@@ -2,6 +2,14 @@
 
 This file contains a list of changes for each released version.
 
+## 0.58.0
+
+- **`shell` and `exec` can bring up a non-running booth with `--run`.** By default `booth shell` and `booth exec` require the target booth to already be running. Passing `--run` makes the booth available first and then connects — so you can jump straight into a booth from its workspace without a separate launch step.
+  - It does whatever is needed: an already-running booth is used as-is; a stopped container (e.g. a `--keep-alive` booth) is started; and when **no container exists** — the common case, since stopping a normal booth removes it — a new one is created from the workspace with `booth run` in daemon mode.
+  - A booth that `--run` brought up does not outlive the session: when you disconnect it is returned to its prior state (a created booth is removed, a stopped `--keep-alive` booth goes back to stopped, an already-running booth is left untouched). Pass `--keep-alive` to leave it running instead — which also creates it as a keep-alive booth so it survives a later `booth stop`. Interrupting with Ctrl+C still tears it down.
+  - Concurrent `--run` sessions on the same booth are reference-counted (tracked under `/run/booth-run/` inside the container): the booth is only brought down when the **last** session disconnects, so one session exiting never kills another's still-attached booth. `--keep-alive` from any session promotes the booth to persistent.
+  - Opt-in by design: without `--run`, a non-running booth stays an error, which keeps `booth exec` predictable in scripts and CI. The booth's startup output goes to stderr so `exec`'s forwarded stdout stays clean, and `shell`/`exec` wait for the container's `coder` user alignment to finish before connecting so the first command never races startup. New unit tests cover the resolve/start/run decisions, and `tests/manual/run-shell-run-manual-test.sh` exercises the real Docker path (run-from-scratch, keep-alive, start-stopped, and concurrent sessions). See `docs/BOOTH_CONNECT.md`.
+
 ## 0.57.0
 
 - **Egress filtering — restrict a booth's outbound network to an allowlist of domains.** `--egress` (or `egress = true` in `.booth/config.toml`) routes the container's HTTP/HTTPS traffic through an Envoy forward-proxy sidecar with a domain allowlist, backed by iptables rules that drop any direct egress — a defense-in-depth layer for running third-party AI agents or untrusted dependencies that bounds where they can connect.
