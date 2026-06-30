@@ -69,6 +69,12 @@ LEVEL=60
 
 PROFILE_FILE="/etc/profile.d/${LEVEL}-cb-playwright--profile.sh"
 
+# Shared, world-readable browser cache so non-root runtime users (e.g. coder)
+# can find the pre-baked browsers. Without this, browsers install under
+# /root/.cache/ms-playwright and are invisible to the runtime user.
+BROWSERS_PATH="/opt/ms-playwright"
+export PLAYWRIGHT_BROWSERS_PATH="${BROWSERS_PATH}"
+
 # ---- install playwright ----
 PW_PKG="playwright"
 if [[ -n "$PW_VERSION" ]]; then
@@ -88,13 +94,19 @@ fi
 BROWSER_LIST="${BROWSERS//,/ }"
 
 echo "📦 Installing browsers: ${BROWSER_LIST}"
+echo "   Browser cache: ${PLAYWRIGHT_BROWSERS_PATH}"
 # Install each browser with system dependencies
 # shellcheck disable=SC2086
 npx playwright install --with-deps $BROWSER_LIST
 
+# Make the shared browser cache world-readable so non-root users can use it.
+chmod -R a+rX "${BROWSERS_PATH}"
+
 # ---- create profile script ----
-cat > "${PROFILE_FILE}" <<'PROF'
+cat > "${PROFILE_FILE}" <<PROF
 # Profile: Playwright
+# Use the shared, world-readable browser cache populated at build time.
+export PLAYWRIGHT_BROWSERS_PATH=${BROWSERS_PATH}
 # Skip browser download on npm install (already installed system-wide)
 export PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 PROF
