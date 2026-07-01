@@ -127,7 +127,7 @@ setup claude-code</code></pre>
 <nav class="post-nav">
 	<a class="nav-prev" href="./2026-05-29.html#works-on-my-machine">← Ending “It Works on My Machine”</a>
 	<a class="nav-home" href="./">↑ back to the blog</a>
-	<span class="nav-next"></span>
+	<a class="nav-next" href="./2026-06-28.html#onboard-quick-onboard-right">Onboard Quick, Onboard Right →</a>
 </nav>
 
 <style>

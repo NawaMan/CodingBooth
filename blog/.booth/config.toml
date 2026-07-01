@@ -1,7 +1,7 @@
-# Configured by: booth config --no-tui --overwrite --variant base --port 31000 --expose 41173:5173 --select nodejs+npmrc+vscode-ext+pnpm-install/claude-code+auto-accept+credential+settings-cache
+# Configured by: booth config --no-tui --overwrite --variant base --port 41000 --expose 41173:5173 --select nodejs+npmrc+vscode-ext+pnpm-install/claude-code+auto-accept+credential+settings-cache
 
 variant = "base"
-port = "31000"
+port = "41000"
 
 run-args = [
     "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",

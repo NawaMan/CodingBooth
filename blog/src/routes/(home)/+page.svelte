@@ -18,19 +18,24 @@
 
 <!-- LATEST: synopsis of the most recent post. Update when you publish a new one. -->
 <section class="latest" aria-label="Latest post">
-	<p class="latest-label">Latest post · 18 Jun 2026</p>
-	<h2 class="latest-title"><a href="2026-06-18.html#four-promises-of-a-booth">The Four Promises of a Booth</a></h2>
+	<p class="latest-label">Latest post · 28 Jun 2026</p>
+	<h2 class="latest-title"><a href="2026-06-28.html#onboard-quick-onboard-right">Onboard Quick, Onboard Right</a></h2>
 	<p class="latest-synopsis">
-		A booth makes four promises to every project: strong isolation, exact repeatability,
-		effortless shareability, and real usability. Here's what each one means in practice — and
-		why together they end “works on my machine.”
+		Onboarding onto a project usually feels simple — until the “good enough” setup starts charging
+		a slow, creeping tax of invisible discrepancies. Getting in fast is only half the job; getting
+		in <em>right</em> is the other half, and neither should rely on luck.
 	</p>
-	<p><a class="read-more" href="2026-06-18.html#four-promises-of-a-booth">Read the post →</a></p>
+	<p><a class="read-more" href="2026-06-28.html#onboard-quick-onboard-right">Read the post →</a></p>
 </section>
 
 <h2>Posts</h2>
 
 <ul class="posts">
+	<li>
+		<span class="date">28 Jun 2026</span>
+		<a href="2026-06-28.html#onboard-quick-onboard-right">Onboard Quick, Onboard Right</a>
+		<span class="meta"> — onboarding fast isn't enough; you have to onboard right, and that shouldn't rely on luck.</span>
+	</li>
 	<li>
 		<span class="date">18 Jun 2026</span>
 		<a href="2026-06-18.html#four-promises-of-a-booth">The Four Promises of a Booth</a>

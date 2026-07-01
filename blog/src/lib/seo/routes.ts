@@ -18,6 +18,7 @@ const pageModules = import.meta.glob<{ pages: Array<Page> }>('/src/routes/*/page
 // so it lands in the sitemap.
 const TEXT_ROUTES = [
 	'/',
+	'/2026-06-28.html',
 	'/2026-06-18.html',
 	'/2026-05-29.html'
 ];
