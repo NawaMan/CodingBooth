@@ -7,10 +7,18 @@
 # LinkedIn returns 403 to non-browser user agents — known false positive.
 ^https?://(www\.)?linkedin\.com/
 
-# The CodingBooth blog lives at codingbooth.io/blog/ and is a separate static site
-# built from blog/ and deployed at publish time — it doesn't exist in this
-# repo, so the nav link to it can't be resolved here. Matches the root-relative nav
-# href (and per-post links like /blog/welcome/title.html) and any absolute form; other
-# codingbooth.io / nawaman.net/blog links stay checked.
+# The CodingBooth blog is built from blog/ into site/blog/ and also deployed at
+# codingbooth.io/blog/. Local root-relative /blog/ links now resolve via --root-dir
+# (see link-check.yaml), so these guard the externally-deployed absolute forms that
+# can't be verified from a checkout. Other codingbooth.io / nawaman.net/blog links
+# stay checked.
 ^/blog(/|$)
 codingbooth\.io/blog(/|$)
+
+# The tour deck is built from blog/ and deployed at codingbooth.io/tour/ at publish
+# time — like the blog, it isn't reachable from a plain checkout.
+codingbooth\.io/tour(/|$)
+
+# Template placeholders like ${rel_url} in issue/workflow templates aren't real
+# links; the URL-encoded "${" is "$%7B". Skip anything containing one.
+\$%7B

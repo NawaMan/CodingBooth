@@ -45,11 +45,16 @@ jobs:
           # --no-progress keeps CI logs clean
           # mailto: links are skipped by default in lychee 0.24+; no flag needed
           # --accept lets transient rate-limits (429) through; exclude patterns live in .lycheeignore
+          # --root-dir site → resolve root-relative links (e.g. /blog/, /favicon.png) against the deployed site root
+          # --exclude-path → site/blog/article.html is a generated SvelteKit fallback (not a navigable page)
+          #   whose absolute /favicon.png only resolves once deployed
           args: |
             --cache
             --max-cache-age 1d
             --no-progress
             --accept '200..=299,403,429'
+            --root-dir site
+            --exclude-path site/blog/article.html
             './**/*.md'
             './site/**/*.html'
           fail: true
