@@ -1,0 +1,22 @@
+display-name = "npm upgrade"
+display-disc = "Upgrade the global npm to a newer version than Node.js bundles"
+display-detail = "Runs `npm install -g npm@NPM_VERSION` at build time so the image ships a newer npm than the one bundled with the selected Node.js. Opt-in: without this extension the bundled npm (the version Node.js was released with) is kept as the reproducible baseline. Pin NPM_VERSION for reproducible builds; the default `latest` floats to the newest published npm at build time."
+display-order = 10
+auto-select = false
+tags = [
+    "nodejs",
+    "npm",
+]
+
+[params.NPM_VERSION]
+default = "latest"
+suggests = [
+    "latest",
+    "11.18.0",
+    "11",
+]
+
+[segments]
+"Boothfile--65" = """
+run npm install -g npm@${NPM_VERSION}
+"""

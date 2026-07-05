@@ -95,7 +95,7 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 		templatesPath, cleanup := resolveTemplatesPath(flags, version)
 		defer cleanup()
 		flags.templatesPath = templatesPath
-		out, resolved = compileSelection(flags)
+		out, resolved = compileSelection(flags, readExistingArgs(targetPath))
 	}
 
 	out.Command = buildConfigCommand(targetPath, flags)
@@ -172,8 +172,9 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 	// Merge: existing booth is the baseline, CLI flags override
 	mergedFlags := mergeFlags(existingFlags, flags)
 
-	// Build pre-selection from merged flags
-	pre := buildPreSelection(registry, mergedFlags)
+	// Build pre-selection from merged flags, overlaying preserved pins so the
+	// TUI shows the real param values from the existing Boothfile.
+	pre := buildPreSelection(registry, mergedFlags, readExistingArgs(targetPath))
 
 	// Pre-populate booth version from target's lock file (falls back to binary version)
 	pre.StringFields["booth-version"] = readLockFileVersion(targetPath, version)
@@ -269,7 +270,7 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 	if flags.selectDSL == "" {
 		out, resolved = compileEmpty(flags)
 	} else {
-		out, resolved = compileSelection(flags)
+		out, resolved = compileSelection(flags, readExistingArgs(targetPath))
 	}
 
 	out.Command = buildConfigCommand(targetPath, flags)
@@ -517,8 +518,11 @@ func mergeFlags(existing, cli initFlags) initFlags {
 	return merged
 }
 
-// buildPreSelection converts CLI flags into a TUI pre-selection.
-func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags) *tui.PreSelection {
+// buildPreSelection converts CLI flags into a TUI pre-selection. existingArgs
+// (param name → value from an existing Boothfile's `arg` lines, may be nil) is
+// overlaid onto the param fields so the TUI displays real pinned values rather
+// than template defaults for anything the selection DSL didn't carry.
+func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags, existingArgs map[string]string) *tui.PreSelection {
 	pre := &tui.PreSelection{
 		SelectedTemplates: make(map[string]bool),
 		SelectedExts:      make(map[string]map[string]bool),
@@ -622,7 +626,43 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags) *tui.Pr
 		}
 	}
 
+	// Overlay preserved pins from the existing Boothfile so pinned params display
+	// their real value instead of the template default. Runs after selections are
+	// known (including auto-selected extensions); only fills fields the DSL left
+	// unset, so an explicit selection value still wins.
+	for name := range pre.SelectedTemplates {
+		t, ok := registry.ByName[name]
+		if !ok {
+			continue
+		}
+		overlayExistingArgs(pre.ParamValues, name, t, existingArgs)
+		for extName := range pre.SelectedExts[name] {
+			for _, ext := range t.Extensions {
+				if ext.Name == extName {
+					overlayExistingArgs(pre.ParamValues, name+"/"+extName, ext, existingArgs)
+					break
+				}
+			}
+		}
+	}
+
 	return pre
+}
+
+// overlayExistingArgs fills param fields (keyed "itemKey:PARAM") from existing
+// Boothfile `arg` values, but only for non-default values not already set by the
+// selection DSL — so the TUI shows a real pin (e.g. PLAYWRIGHT_VERSION=1.58.2)
+// while explicit selection values and defaults are left untouched.
+func overlayExistingArgs(paramValues map[string]string, itemKey string, t *tmpl.Template, existingArgs map[string]string) {
+	for pname, p := range t.Params {
+		key := itemKey + ":" + pname
+		if _, set := paramValues[key]; set {
+			continue
+		}
+		if v, ok := existingArgs[pname]; ok && v != p.Default {
+			paramValues[key] = v
+		}
+	}
 }
 
 // mapPositionalParams maps positional param values to named param keys in the paramValues map.

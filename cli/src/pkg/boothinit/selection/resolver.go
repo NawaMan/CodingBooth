@@ -15,6 +15,16 @@ import (
 // Resolve validates a ParsedSelection against a TemplateRegistry and produces
 // a ResolvedSelection with mapped param values and auto-selected extensions.
 func Resolve(parsed *ParsedSelection, registry *tmpl.TemplateRegistry) (*ResolvedSelection, error) {
+	return ResolveWithOverrides(parsed, registry, nil)
+}
+
+// ResolveWithOverrides is Resolve with a set of preserved param values, keyed by
+// param name. When a param is not set explicitly by the selection, an override
+// (typically read back from an existing Boothfile's `arg` lines) is used instead
+// of the template default — so reconfiguring a booth to add or remove one thing
+// does not silently reset unrelated version pins (e.g. PLAYWRIGHT_VERSION) to
+// their defaults. Explicit selection values always win over overrides.
+func ResolveWithOverrides(parsed *ParsedSelection, registry *tmpl.TemplateRegistry, overrides map[string]string) (*ResolvedSelection, error) {
 	selectedNames := make(map[string]bool)
 
 	// Check for duplicate selections
@@ -32,12 +42,12 @@ func Resolve(parsed *ParsedSelection, registry *tmpl.TemplateRegistry) (*Resolve
 			return nil, fmt.Errorf("unknown template: %q", pi.Name)
 		}
 
-		paramValues, err := resolveParams(t, pi.Params)
+		paramValues, err := resolveParams(t, pi.Params, overrides)
 		if err != nil {
 			return nil, fmt.Errorf("template %q: %w", pi.Name, err)
 		}
 
-		extensions, err := resolveExtensions(t, pi.Extensions, pi.Excludes)
+		extensions, err := resolveExtensions(t, pi.Extensions, pi.Excludes, overrides)
 		if err != nil {
 			return nil, fmt.Errorf("template %q: %w", pi.Name, err)
 		}
@@ -60,11 +70,11 @@ func Resolve(parsed *ParsedSelection, registry *tmpl.TemplateRegistry) (*Resolve
 					if !ok {
 						return nil, fmt.Errorf("template %q requires unknown template %q", item.Template.Name, req)
 					}
-					paramValues, err := resolveParams(t, nil)
+					paramValues, err := resolveParams(t, nil, overrides)
 					if err != nil {
 						return nil, fmt.Errorf("auto-selected template %q: %w", req, err)
 					}
-					extensions, err := resolveExtensions(t, nil, nil)
+					extensions, err := resolveExtensions(t, nil, nil, overrides)
 					if err != nil {
 						return nil, fmt.Errorf("auto-selected template %q: %w", req, err)
 					}
@@ -86,11 +96,11 @@ func Resolve(parsed *ParsedSelection, registry *tmpl.TemplateRegistry) (*Resolve
 							return nil, fmt.Errorf("extension %q of template %q requires unknown template %q",
 								ext.Extension.Name, item.Template.Name, req)
 						}
-						paramValues, err := resolveParams(t, nil)
+						paramValues, err := resolveParams(t, nil, overrides)
 						if err != nil {
 							return nil, fmt.Errorf("auto-selected template %q: %w", req, err)
 						}
-						extensions, err := resolveExtensions(t, nil, nil)
+						extensions, err := resolveExtensions(t, nil, nil, overrides)
 						if err != nil {
 							return nil, fmt.Errorf("auto-selected template %q: %w", req, err)
 						}
@@ -114,8 +124,10 @@ func Resolve(parsed *ParsedSelection, registry *tmpl.TemplateRegistry) (*Resolve
 // resolveParams maps positional CLI params to named template params.
 // Param names follow declaration order from template.toml, falling back to
 // alphabetical order if declaration order is not available.
-// Unspecified params use their default values.
-func resolveParams(t *tmpl.Template, positional []string) (map[string]string, error) {
+// Unspecified params fall back to an override (a preserved value from an
+// existing Boothfile) when one exists for that param name, otherwise to the
+// template default.
+func resolveParams(t *tmpl.Template, positional []string, overrides map[string]string) (map[string]string, error) {
 	paramNames := orderedParamNames(t)
 
 	// Check if the last param is variadic
@@ -142,12 +154,16 @@ func resolveParams(t *tmpl.Template, positional []string) (map[string]string, er
 			// deterministic across the TUI, CLI, and recipe entry points.
 			if i < len(positional) {
 				values[name] = CanonicalizeVariadic(positional[i:])
+			} else if ov, ok := overrides[name]; ok {
+				values[name] = ov
 			} else {
 				values[name] = t.Params[name].Default
 			}
 		} else {
 			if i < len(positional) && positional[i] != "" {
 				values[name] = positional[i]
+			} else if ov, ok := overrides[name]; ok {
+				values[name] = ov
 			} else {
 				values[name] = t.Params[name].Default
 			}
@@ -179,7 +195,7 @@ func CanonicalizeVariadic(values []string) string {
 
 // resolveExtensions resolves extension selections, including auto-selected ones.
 // Extensions listed in excludes are skipped even if auto-selected.
-func resolveExtensions(t *tmpl.Template, explicit []ParsedExtension, excludes []string) ([]SelectedExtension, error) {
+func resolveExtensions(t *tmpl.Template, explicit []ParsedExtension, excludes []string, overrides map[string]string) ([]SelectedExtension, error) {
 	extByName := make(map[string]*tmpl.Template, len(t.Extensions))
 	for _, ext := range t.Extensions {
 		extByName[ext.Name] = ext
@@ -210,7 +226,7 @@ func resolveExtensions(t *tmpl.Template, explicit []ParsedExtension, excludes []
 			if excludeSet[ext.Name] {
 				continue
 			}
-			paramValues, err := resolveParams(ext, nil)
+			paramValues, err := resolveParams(ext, nil, overrides)
 			if err != nil {
 				return nil, fmt.Errorf("auto-selected extension %q: %w", ext.Name, err)
 			}
@@ -232,7 +248,7 @@ func resolveExtensions(t *tmpl.Template, explicit []ParsedExtension, excludes []
 		if !ok {
 			return nil, fmt.Errorf("unknown extension %q", pe.Name)
 		}
-		paramValues, err := resolveParams(ext, pe.Params)
+		paramValues, err := resolveParams(ext, pe.Params, overrides)
 		if err != nil {
 			return nil, fmt.Errorf("extension %q: %w", pe.Name, err)
 		}

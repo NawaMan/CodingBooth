@@ -87,6 +87,46 @@ func TestResolve_TooManyParams(t *testing.T) {
 	assert.Contains(t, err.Error(), "too many parameters")
 }
 
+// --- Param preservation across reconfiguration (overrides) ---
+
+func TestResolveWithOverrides_PreservesUnsetParam(t *testing.T) {
+	registry := loadTestRegistry(t)
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "go"},
+	}}
+
+	// GO_VERSION is not in the selection, but a prior pin is preserved instead
+	// of resetting to the template default (1.24).
+	resolved, err := ResolveWithOverrides(parsed, registry, map[string]string{"GO_VERSION": "1.22"})
+	require.NoError(t, err)
+	assert.Equal(t, "1.22", resolved.Templates[0].ParamValues["GO_VERSION"])
+}
+
+func TestResolveWithOverrides_ExplicitBeatsOverride(t *testing.T) {
+	registry := loadTestRegistry(t)
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "go", Params: []string{"1.25"}},
+	}}
+
+	// An explicit selection value wins over a preserved override.
+	resolved, err := ResolveWithOverrides(parsed, registry, map[string]string{"GO_VERSION": "1.22"})
+	require.NoError(t, err)
+	assert.Equal(t, "1.25", resolved.Templates[0].ParamValues["GO_VERSION"])
+}
+
+func TestResolveWithOverrides_UnrelatedOverrideIgnored(t *testing.T) {
+	registry := loadTestRegistry(t)
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "go"},
+	}}
+
+	// An override keyed to a param this template lacks is ignored; GO_VERSION
+	// falls back to its default.
+	resolved, err := ResolveWithOverrides(parsed, registry, map[string]string{"PYTHON_VERSION": "3.11"})
+	require.NoError(t, err)
+	assert.Equal(t, "1.24", resolved.Templates[0].ParamValues["GO_VERSION"])
+}
+
 func TestResolve_NoParamsTemplate(t *testing.T) {
 	registry := loadTestRegistry(t)
 	parsed := &ParsedSelection{Items: []ParsedItem{

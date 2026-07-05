@@ -17,7 +17,15 @@ requires = ["nodejs"]
 default = "chromium"
 suggests = ["chromium", "chromium,firefox", "chromium,firefox,webkit", "all"]
 
+[params.PLAYWRIGHT_VERSION]
+# Pin the Playwright package version so the pre-baked browsers match the
+# Playwright installed at runtime (e.g. via `npm ci` from package.json).
+# Default `latest` floats to the newest release at build time; pin it for
+# reproducible builds — CLI form: `--select playwright:chromium,1.58.2`.
+default = "latest"
+suggests = ["latest", "1.58.2"]
+
 [segments]
 "Boothfile--60" = """
-setup playwright ${PLAYWRIGHT_BROWSERS}
+setup playwright ${PLAYWRIGHT_BROWSERS} --version ${PLAYWRIGHT_VERSION}
 """

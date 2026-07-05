@@ -2,6 +2,14 @@
 
 This file contains a list of changes for each released version.
 
+## 0.59.0
+
+- **`booth config` preserves pinned param values across reconfiguration.** Previously, reconfiguring a booth (e.g. adding or removing a template/extension) rebuilt the Boothfile entirely from the selection DSL and reset every non-default param — `NODE_VERSION`, `GO_VERSION`, `PYTHON_VERSION`, `PLAYWRIGHT_VERSION`, … — back to its template default, because pins live in the Boothfile's `arg NAME=VALUE` lines and were not carried by the stored selection. Now the resolver reads those `arg` lines back and preserves any non-default pin unless the new selection explicitly overrides it (explicit selection still wins).
+  - This bit the Playwright example concretely: adding an unrelated extension silently reset the pinned Playwright version to `latest`, so the pre-baked browser no longer matched the version `npm ci` installed at runtime and headless launches failed with "Executable doesn't exist".
+  - The config **TUI** now also loads real pinned values from the existing Boothfile into its param fields (instead of showing the template default), so what you see matches what is saved. New `selection.ResolveWithOverrides`; `readExistingArgs`/`overlayExistingArgs` helpers. Tests: `TestResolveWithOverrides_*`, `TestReadExistingArgs_*`, `TestOverlayExistingArgs_*`, `tests/config/test67-config-preserves-pin.sh`, and `tests/config-tui/test14-tui-preserve-pin.sh`. See `docs/BOOTH_CONFIG.md`.
+- **Playwright template gains a `PLAYWRIGHT_VERSION` param.** `setup playwright` already accepted `--version`, but it wasn't reachable through `booth config`, so the version could only be hand-pinned in the Boothfile (and was lost on regeneration). Pin it with `--select playwright:chromium,1.58.2` (browsers stay the first positional; version is second). Default is `latest`; pin it so the pre-baked browsers match the Playwright installed at runtime. Multi-browser selection via the comma-positional CLI form remains a TUI path. Test: `tests/config/test66-init-playwright-version.sh`.
+- **`npm-upgrade` config extension for Node.js.** Opt-in extension that upgrades the global npm to a newer version than Node.js bundles, via `run npm install -g npm@NPM_VERSION` at build time (`--select nodejs+npm-upgrade`, or `nodejs+npm-upgrade:11.18.0` to pin). Off by default — the npm that ships with the selected Node.js stays the reproducible baseline. Test: `tests/config/test65-init-npm-upgrade.sh`.
+
 ## 0.58.0
 
 - **`shell` and `exec` can bring up a non-running booth with `--run`.** By default `booth shell` and `booth exec` require the target booth to already be running. Passing `--run` makes the booth available first and then connects — so you can jump straight into a booth from its workspace without a separate launch step.

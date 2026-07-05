@@ -4,5 +4,9 @@
 
 arg DOTNET_CHANNEL=9.0
 
+# Silence the "verifying workloads" advisory: the sandbox has no workloads to
+# verify and can't reach the NuGet feeds, so the check only prints noise.
+env DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK=1
+
 setup dotnet --channel ${DOTNET_CHANNEL}
 setup dotnet-code-extension

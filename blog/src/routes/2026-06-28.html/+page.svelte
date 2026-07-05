@@ -1,5 +1,6 @@
 <script>
 	import hiddenCosts from './HiddenCostsOfDevelopmentEnvironments.png';
+	import screenshot  from './screenshot.png';
 </script>
 
 <p class="dateline">28 June 2026 · Nawa Man</p>
@@ -7,15 +8,26 @@
 <p class="subtitle">Getting into a project fast is only half the job — getting in <em>right</em> is the other half. Why onboarding shouldn't rely on luck.</p>
 
 <p>
-	Setting up a software development environment often feels deceptively simple. You pull a
-	repository, run a few standard install commands, and start writing code. Depending on how that
-	goes, you usually fall into one of three buckets:
+	When we think about software development, we often think about adding or changing of code and the understanding of the code before that.
+	Setting up the development environment is often overlook until someone on-broard the project who are not familiar with the toolchain.
+	The setup can range from just having the compiler to multiple setup steps and be a simple sentense like "Use python" to super complext make file.
+	Even with an automate installtion script, it is not always up to date and/or work with different environment.
+	There also "multiple project" interferances like version conflict or worst "almost" conflict.
+	Depending on how that goes, you usually fall into one of three buckets:
 </p>
 
 <ul class="buckets">
-	<li><strong>Really Lucky:</strong> Everything works perfectly, and you never have to think about your environment again.</li>
-	<li><strong>A Bit Lucky:</strong> The setup fails immediately. You hit a missing dependency or a hard version conflict right away. It is frustrating, but you are forced to resolve the roadblock before you can start working.</li>
-	<li><strong>Unlucky:</strong> It appears to work.</li>
+	<li><strong>Really Lucky:</strong>
+		Everything works perfectly, and you never have to think about your environment again.
+	</li>
+	<li><strong>A Bit Lucky:</strong>
+		The setup fails immediately. You hit a missing dependency or a hard version conflict right away. 
+		It is frustrating, but you are forced to resolve the roadblock before you can start working.
+		Fixing the problem might not always success so you can't proceed OR it can bring you to the next category "Unlucky".
+	</li>
+	<li><strong>Unlucky:</strong>
+		The setup appears to work so the development proceed while discrepancies are still there waiting to cause problem.
+	</li>
 </ul>
 
 <figure class="hero">
@@ -69,90 +81,18 @@
 	being a variable, so the only thing left to explain a bug is the code itself.
 </p>
 
-<h2>Why It Matters, Project by Project</h2>
+<h2>CodingBooth: Quick and Right OnBoarding with One Command</h2>
 <p>
-	“Quick and right” pays off differently depending on what you're building. Here's what it buys a few
-	common kinds of project — and why the cost of getting it wrong lands hardest there.
-</p>
-
-<h3>Data Science &amp; Notebooks</h3>
-<p>
-	A notebook's output <em>is</em> the deliverable, and that output depends on the exact versions of
-	numpy, pandas, and a stack of native libraries underneath them. A 0.1 bump in a numerical library
-	can quietly change a result. A booth pins the whole stack and ships the Jupyter front-end with it,
-	so a result that reproduces on your machine reproduces on your colleague's — and on the same
-	notebook a year from now.
-</p>
-<pre><code># .booth/Boothfile
-setup python+notebook</code></pre>
-
-<h3>JVM Services</h3>
-<p>
-	“Java is Java” right up until a different JDK <em>vendor</em> or major version changes behavior, or
-	a teammate's Maven build resolves a slightly different dependency tree. For a long-lived service,
-	that's the gap between green CI and a 2 a.m. page. Pinning the JDK and build tool in the booth means
-	the bytecode you build locally is the bytecode that ships.
-</p>
-<pre><code># .booth/Boothfile
-setup java+maven</code></pre>
-
-<h3>Web Frontends</h3>
-<p>
-	Front-end builds are famously sensitive to the Node version and to native modules compiled against
-	it — the classic “delete <code>node_modules</code> and pray” loop. When the runtime is pinned in the
-	booth, the lockfile resolves the same way for everyone, and a new contributor goes from clone to a
-	running dev server without a single version-manager incantation.
-</p>
-
-<h3>Compiled &amp; Systems Languages</h3>
-<p>
-	With Rust, Go, or C/C++, the compiler version isn't a detail — it decides whether the code builds at
-	all, and sometimes how it behaves. Reproducing a teammate's build error is miserable when you can't
-	even be sure you share a compiler. A booth makes the toolchain part of the repo, so “works for me”
-	and “works for you” finally mean the same toolchain.
-</p>
-
-<h3>Apps with Live Services</h3>
-<p>
-	The moment a project needs Postgres, Redis, or Kafka, onboarding stops being about code and starts
-	being about infrastructure — install the engine, match the version, get it running, seed it. A booth
-	brings those services up as part of the environment, pinned to a version, so a new developer gets a
-	working database on the first command instead of a half-day of setup. And because it's isolated, two
-	projects can each run their own Postgres without fighting over a port or a global install.
-</p>
-<pre><code># .booth/Boothfile
-setup postgresql</code></pre>
-
-<h3>Teaching &amp; Workshops</h3>
-<p>
-	Nothing derails a class faster than thirty laptops in thirty slightly different states. When the
-	environment ships with the materials, every student is at parity on minute one — and the grader runs
-	in the same booth the students used, so “it ran in class” and “it passes grading” can't disagree.
-	Onboarding quick keeps the room moving; onboarding right keeps the grades fair.
-</p>
-
-<h3>AI-Assisted Development</h3>
-<p>
-	Handing an AI assistant a shell is exactly the case where isolation earns its keep. Let it run
-	<code>go install that@latest</code> or try a risky upgrade inside the booth, and the blast radius
-	stays in the booth — if it goes wrong, you throw the booth away and start clean, with nothing leaked
-	onto your host. And because the booth is reproducible, whatever the assistant set up is something
-	your teammates can rebuild exactly, not a one-off that lives only on your machine.
-</p>
-<pre><code># .booth/Boothfile
-setup claude-code</code></pre>
-
-<h2>Quick and Right, One Command</h2>
-<p>
-	Quick onboarding gets people working today; right onboarding keeps them — and everyone after them —
-	working without paying the creeping tax. You don't have to choose between the two, and neither should
-	rely on luck or constant vigilance. Declare the environment once in the repo, and every clone after
-	that is both fast and correct by construction.
+	Quick onboarding gets people working today;
+		right onboarding keeps them and everyone after them working without paying the creeping tax.
+	You don't have relia on luck to get both.
+	Declare the environment once in the repo, and every clone after that is both fast and correct by construction.
 </p>
 
 <h2>See It in Action</h2>
 <p>
-	The idea is only convincing if you can run it. Each of these is a ready-made booth you can fetch and
+	The idea is only convincing if you can run it.
+	Each of these is a ready-made booth you can fetch and
 	launch in two commands — <code>booth example try</code> to grab it, then one command to run. Every
 	line of output below is real, captured from an actual run; browse the full set with
 	<code>booth example list</code>.
@@ -166,13 +106,36 @@ setup claude-code</code></pre>
 	.NET version is pinned — so the playground behaves the same for whoever you send it to. That's quick
 	(no install) and right (reproducible) at the same time.
 </p>
-<pre><code>$ ./booth -- ./run-fsharp.sh
-=== A tour of F# in CodingBooth ===
+<pre><code>$ ./booth --silence-build -- ./run-fsharp.sh      # Run `./run-fsharp.sh` inside booth.
 
-Squares of evens (1..20): [4; 16; 36; 64; 100; 144; 196; 256; 324; 400]
-FizzBuzz (1..15): 1 2 Fizz 4 Buzz Fizz 7 8 Fizz Buzz 11 Fizz 13 14 FizzBuzz
-(2 + 3) * (10 - 4) = 30
-First 10 Fibonacci: [0; 1; 1; 2; 3; 5; 8; 13; 21; 34]</code></pre>
+== customers.csv ==
+customer_id,age,annual_income_k,spending_score
+1,25,25,18
+2,28,22,15
+3,23,30,22
+...            # More data
+29,38,57,51
+30,33,51,46
+
+=== Customer analytics (F# in CodingBooth) ===
+Loaded 30 customers from customers.csv
+
+Summary statistics:
+  age               mean=  33.8  min=  22.0  max=  48.0  std=  6.6
+  income (k$)       mean=  55.2  min=  21.0  max=  92.0  std= 24.8
+  spending (1-100)  mean=  50.3  min=  12.0  max=  90.0  std= 26.5
+
+K-means clustering (k=3) on income vs spending:
+  Segment 1: 10 customers | centroid income= 25.5k spending=18.5
+             customers: 1, 2, 3, 4, 5, 6, 7, 8, 9, 10
+  Segment 2: 10 customers | centroid income= 54.6k spending=49.6
+             customers: 21, 22, 23, 24, 25, 26, 27, 28, 29, 30
+  Segment 3: 10 customers | centroid income= 85.6k spending=82.7
+             customers: 11, 12, 13, 14, 15, 16, 17, 18, 19, 20
+
+</code></pre>
+
+You can play around with the code, make changes and rerun, all these <b>without</b> having to install f-sharp (dotnet).
 
 <h3>Skip the dependency hell — <code>playwright</code></h3>
 <p>
@@ -181,16 +144,15 @@ First 10 Fibonacci: [0; 1; 1; 2; 3; 5; 8; 13; 21; 34]</code></pre>
 	<em>pinned to the project's version</em>, so the documented command just runs — and it drives a real
 	browser against real pages, not a mock:
 </p>
-<pre><code>$ ./booth -- ./run-playwright.sh
-  ✓  1 [chromium] › basic browser test (58ms)
-  ✓  2 [chromium] › javascript evaluation (34ms)
-  2 passed (823ms)
-
-$ ./booth -- ./run-screenshot.sh
+<pre><code>$ ./booth -- ./run-screenshot.sh
 Visiting https://news.ycombinator.com/ ...
 Page title: Hacker News
 Screenshot saved to screenshot.png</code></pre>
-<!-- SCREENSHOT (slot in): Hacker News front page captured by headless Chromium inside the booth. -->
+
+<figure>
+	<img src={screenshot} alt="The Screenshot of Hacker News" />
+	<figcaption>The Screenshot of Hacker News.</figcaption>
+</figure>
 
 <h3>The same desktop for everyone — <code>java</code></h3>
 <p>

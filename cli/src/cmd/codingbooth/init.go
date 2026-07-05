@@ -199,7 +199,7 @@ func runInitNew(version string, args []string) {
 		templatesPath, cleanup := resolveTemplatesPath(flags, version)
 		defer cleanup()
 		flags.templatesPath = templatesPath
-		out, resolved = compileSelection(flags)
+		out, resolved = compileSelection(flags, readExistingArgs(targetPath))
 	}
 
 	out.Command = buildInitCommand(targetPath, flags)
@@ -264,7 +264,7 @@ func runInitDryrun(version string, args []string) {
 		templatesPath, cleanup := resolveTemplatesPath(flags, version)
 		defer cleanup()
 		flags.templatesPath = templatesPath
-		out, resolved = compileSelection(flags)
+		out, resolved = compileSelection(flags, nil)
 	}
 
 	out.Command = buildInitCommand("", flags)
@@ -316,8 +316,45 @@ func compileEmpty(flags initFlags) (*output.BoothOutput, *selection.ResolvedSele
 	return out, &selection.ResolvedSelection{}
 }
 
+// readExistingArgs parses `arg NAME=VALUE` lines out of an existing Boothfile at
+// targetPath, returning a param-name → value map. On reconfiguration these are
+// fed to the resolver as overrides so previously-pinned param values (e.g.
+// PLAYWRIGHT_VERSION) survive even when the reconstructed selection DSL does not
+// carry them. Returns nil when there is no existing Boothfile.
+func readExistingArgs(targetPath string) map[string]string {
+	boothfilePath := filepath.Join(targetPath, ".booth", "Boothfile")
+	f, err := os.Open(boothfilePath)
+	if err != nil {
+		return nil
+	}
+	defer f.Close()
+
+	args := make(map[string]string)
+	scanner := bufio.NewScanner(f)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		rest, ok := strings.CutPrefix(line, "arg ")
+		if !ok {
+			continue
+		}
+		name, value, ok := strings.Cut(rest, "=")
+		if !ok {
+			continue
+		}
+		name = strings.TrimSpace(name)
+		if name != "" {
+			args[name] = strings.TrimSpace(value)
+		}
+	}
+	if len(args) == 0 {
+		return nil
+	}
+	return args
+}
+
 // compileSelection runs the full pipeline: read input → parse → resolve → compile.
-func compileSelection(flags initFlags) (*output.BoothOutput, *selection.ResolvedSelection) {
+// overrides preserves existing param values across reconfiguration (may be nil).
+func compileSelection(flags initFlags, overrides map[string]string) (*output.BoothOutput, *selection.ResolvedSelection) {
 	// Read input (handles -, @file, @@url, plain DSL)
 	// Each --select value is resolved individually, then joined with "/".
 	var parts []string
@@ -354,8 +391,8 @@ func compileSelection(flags initFlags) (*output.BoothOutput, *selection.Resolved
 		os.Exit(1)
 	}
 
-	// Resolve against registry
-	resolved, err := selection.Resolve(parsed, registry)
+	// Resolve against registry, preserving existing param pins on reconfiguration
+	resolved, err := selection.ResolveWithOverrides(parsed, registry, overrides)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error resolving selection: %v\n", err)
 		os.Exit(1)

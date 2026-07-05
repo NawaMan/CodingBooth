@@ -5,7 +5,8 @@ set -e
 cd "$(dirname "$0")"
 # Install project deps (node_modules is git-ignored). The browser is pre-baked
 # into the booth image, so no browser is downloaded at runtime.
-npm ci
+# --silent quiets npm's "added N packages" / audit summary; real errors still surface.
+npm ci --silent
 URL="${1:-https://news.ycombinator.com/}"
 OUT="${2:-screenshot.png}"
 node screenshot.js "$URL" "$OUT"

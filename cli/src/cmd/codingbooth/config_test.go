@@ -12,9 +12,55 @@ import (
 	"testing"
 
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
+	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// --- readExistingArgs / overlayExistingArgs (param pin preservation) ---
+
+func TestReadExistingArgs_ParsesArgLinesOnly(t *testing.T) {
+	dir := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, ".booth"), 0o755))
+	content := "# syntax=codingbooth/boothfile:1\n" +
+		"env APT_SNAPSHOT=20260101T000000Z\n" +
+		"arg NODE_VERSION=22\n" +
+		"arg PLAYWRIGHT_VERSION=1.58.2\n" +
+		"setup nodejs ${NODE_VERSION}\n"
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".booth", "Boothfile"), []byte(content), 0o644))
+
+	args := readExistingArgs(dir)
+	assert.Equal(t, "22", args["NODE_VERSION"])
+	assert.Equal(t, "1.58.2", args["PLAYWRIGHT_VERSION"])
+	_, hasEnv := args["APT_SNAPSHOT"]
+	assert.False(t, hasEnv, "env lines must not be read as args")
+}
+
+func TestReadExistingArgs_NoBoothfileReturnsNil(t *testing.T) {
+	assert.Nil(t, readExistingArgs(t.TempDir()))
+}
+
+func TestOverlayExistingArgs_FillsNonDefaultPin(t *testing.T) {
+	tmplT := &tmpl.Template{Params: map[string]tmpl.Param{"PLAYWRIGHT_VERSION": {Default: "latest"}}}
+	pv := map[string]string{}
+	overlayExistingArgs(pv, "playwright", tmplT, map[string]string{"PLAYWRIGHT_VERSION": "1.58.2"})
+	assert.Equal(t, "1.58.2", pv["playwright:PLAYWRIGHT_VERSION"])
+}
+
+func TestOverlayExistingArgs_SkipsDefaultValue(t *testing.T) {
+	tmplT := &tmpl.Template{Params: map[string]tmpl.Param{"NODE_VERSION": {Default: "22"}}}
+	pv := map[string]string{}
+	overlayExistingArgs(pv, "nodejs", tmplT, map[string]string{"NODE_VERSION": "22"})
+	_, ok := pv["nodejs:NODE_VERSION"]
+	assert.False(t, ok, "a value equal to the default is not overlaid")
+}
+
+func TestOverlayExistingArgs_DoesNotOverwriteDSLValue(t *testing.T) {
+	tmplT := &tmpl.Template{Params: map[string]tmpl.Param{"PLAYWRIGHT_VERSION": {Default: "latest"}}}
+	pv := map[string]string{"playwright:PLAYWRIGHT_VERSION": "1.59.0"} // set from the selection DSL
+	overlayExistingArgs(pv, "playwright", tmplT, map[string]string{"PLAYWRIGHT_VERSION": "1.58.2"})
+	assert.Equal(t, "1.59.0", pv["playwright:PLAYWRIGHT_VERSION"], "explicit DSL value must win")
+}
 
 // --- reverseExposeMapping ---
 
