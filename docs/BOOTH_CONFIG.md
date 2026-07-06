@@ -115,7 +115,21 @@ go:1.25
 java:21
 ```
 
-Multiple parameters use commas: `java:21,temurin`
+Multiple parameters use commas: `java:21,temurin`. Comma values are positional —
+`playwright:chromium,1.58.2` sets the browsers (`PLAYWRIGHT_BROWSERS=chromium`)
+and the Playwright package version (`PLAYWRIGHT_VERSION=1.58.2`). Pin the
+Playwright version so the pre-baked browsers match the Playwright that `npm ci`
+installs at runtime; it defaults to `latest`.
+
+Version parameters compile to `arg NAME=VALUE` lines in the generated Boothfile
+(e.g. `python:3.13` → `arg PYTHON_VERSION=3.13`). These pins are **preserved
+across re-generation**: re-running `booth config --overwrite` to add or remove an
+unrelated template keeps every non-default pin already in the Boothfile, unless
+the new selection explicitly overrides it (an explicit `:value` always wins). So
+adding a template no longer silently resets a pinned `NODE_VERSION`,
+`PLAYWRIGHT_VERSION`, etc. back to its template default. The TUI likewise
+pre-loads the real pinned values from the existing Boothfile into its param
+fields.
 
 ### Extensions
 
@@ -379,6 +393,10 @@ Then:
 ./booth config --no-tui --overwrite --select go+linter/python:3.13+uv/postgresql
 ```
 
+Version pins already in the Boothfile are carried over — you don't need to
+re-specify `nodejs:22` or `playwright:chromium,1.58.2` just because you're adding
+`postgresql`. See [Version parameters](#version-parameters).
+
 ### Interactive configuration
 
 ```bash
@@ -432,6 +450,8 @@ The full list of package manager extensions:
 These translate to `install <manager> <packages>` in the Boothfile, which runs the corresponding `<manager>--install.sh` script during `docker build`.
 
 > **System packages (apt):** `apt-pkg` installs Debian/Ubuntu packages with apt. It supports apt's native `pkg=version` pinning (`apt-pkg:htop,jq=1.6-2.1`) and honors the `APT_SNAPSHOT` archive freeze that `booth config` stamps for reproducible builds. You can also add `install apt <pkgs>` directly to the Boothfile by hand. See [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md#using-built-in-installs) and [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
+
+> **Upgrading the bundled npm (`nodejs+npm-upgrade`):** distinct from the `-pkg` extensions, this opt-in extension upgrades the *global npm itself* to a newer version than the selected Node.js bundles — `run npm install -g npm@NPM_VERSION` at build time. Use `--select nodejs+npm-upgrade` for the latest, or `nodejs+npm-upgrade:11.18.0` to pin a version. It's off by default so the npm that ships with Node.js stays the reproducible baseline.
 
 ### Project Dependency Pre-Installation
 

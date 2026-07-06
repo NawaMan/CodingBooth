@@ -88,6 +88,10 @@ tests/dryrun/test--config.toml
 # absolute path into a header comment), so they shouldn't be tracked.
 tests/config/prj--*/
 tests/config/prj--*--recipe.txt
+# Same test working dirs, but when the suite is run from another cwd (e.g. the
+# repo root) the `prj--*` dir lands there instead — ignore it anywhere.
+prj--*/
+prj--*--recipe.txt
 # .NET intermediate build output (csharp-example / fsharp-example)
 **/obj/
 **/.Dockerfile.generated
