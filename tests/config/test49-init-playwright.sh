@@ -7,7 +7,7 @@ begin
 run booth config $prj --no-tui --select "nodejs/playwright"
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" 'arg PLAYWRIGHT_BROWSERS=' 'chromium'  "default browsers is chromium"
-assert-line "$boothfile" 'setup playwright ' '${PLAYWRIGHT_BROWSERS}'  "Boothfile uses param reference"
+assert-line "$boothfile" 'setup playwright ' '${PLAYWRIGHT_BROWSERS} --version ${PLAYWRIGHT_VERSION}'  "Boothfile uses param reference"
 
 # Test 2: Playwright with all browsers (colon param syntax)
 run rm -Rf $prj
