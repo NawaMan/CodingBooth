@@ -32,7 +32,7 @@ USAGE:
 
 OPTIONS
   --build-arg <KEY=VAL>   Add a Docker build-arg which customize the booth image.
-  --variant <name>        Prebuilt variant: base | notebook | codeserver | xfce | kde | lxqt
+  --variant <name>        Prebuilt variant: base | notebook | codeserver | xfce | kde | lxqt | wayland
   --port <n|RANDOM|NEXT>  Host port → container 10000
   --daemon                Run the booth in the background
   --dind                  Enable a Docker-in-Docker sidecar
