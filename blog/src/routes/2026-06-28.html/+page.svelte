@@ -154,32 +154,6 @@ Screenshot saved to screenshot.png</code></pre>
 	<figcaption>The Screenshot of Hacker News.</figcaption>
 </figure>
 
-<h3>The same desktop for everyone — <code>java</code></h3>
-<p>
-	Java onboarding is all sprawl: JDK vendor and version, a Maven that has to match CI, and GUI IDEs that
-	each need installing. This booth brings up a full Linux desktop with Eclipse <em>and</em> IntelliJ IDEA
-	on a pinned JDK and Maven — so everyone lands on the same desk instead of reconciling toolchains for a
-	week.
-</p>
-<pre><code>$ ./booth -- 'java -version; mvn -version'
-openjdk version "25.0.3" 2026-04-21 LTS (Temurin-25.0.3+9)
-Apache Maven 3.9.12</code></pre>
-<!-- SCREENSHOT (slot in): the XFCE desktop with IntelliJ IDEA / Eclipse open. -->
-
-<h3>Credentials that never enter the image — <code>aws</code></h3>
-<p>
-	Cloud work is the riskiest thing to rush: copy a key into an image and it can leak through every push
-	and cache. This booth mounts your host credentials <em>read-only</em> at runtime, so the image stays
-	generic and the secret never leaves your machine — yet the CLI really talks to your account:
-</p>
-<pre><code>$ ./booth -- ./check-connection.sh
-Checking AWS connection...
-✅ AWS connection OK</code></pre>
-<p>
-	That's a real <code>aws sts get-caller-identity</code>, with the AWS CLI pinned to one version for the
-	whole team — quick to onboard, and the dangerous part stays on the host.
-</p>
-
 <h3>A whole stack on your laptop, then gone — <code>kind-app</code></h3>
 <p>
 	The hardest onboarding is the realistic one. This booth bakes Docker-in-Docker, KinD, kubectl, Go, Bun

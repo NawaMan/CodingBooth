@@ -80,12 +80,26 @@ else
   COLOR_RESET=''
 fi
 
+# Emit a command trace to stderr, colorized only when stderr is a terminal.
+# The COLOR_* vars above are chosen from stdout, but the trace goes to stderr:
+# tests capture it with `2>&1` and drop it with a `^> `-anchored match, which an
+# ANSI color prefix would silently defeat.
+# Usage: trace_cmd <sgr-code> <text...>
+trace_cmd() {
+  local sgr="$1"; shift
+  if [[ -t 2 ]]; then
+    printf '\033[%sm%s\033[0m\n' "$sgr" "$*" >&2
+  else
+    printf '%s\n' "$*" >&2
+  fi
+}
+
 # Run a command with visible output of what's being executed
 # Usage: run_cmd <command...>
 # Example: run_cmd ls -la
 # Note: Command trace goes to stderr so it doesn't interfere with captured stdout
 run_cmd() {
-  echo -e "${COLOR_CMD}> $*${COLOR_RESET}" >&2
+  trace_cmd '1;36' "> $*"
   "$@"
 }
 
@@ -144,7 +158,7 @@ run_coding_booth() {
     fi
   fi
 
-  echo -e "${COLOR_BOOTH}> codingbooth $*${COLOR_RESET}" >&2
+  trace_cmd '1;33' "> codingbooth $*"
   # Safe expansion: avoids "unbound variable" under `set -u` with Bash 3.2 when the array is empty.
   "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@"
 }
