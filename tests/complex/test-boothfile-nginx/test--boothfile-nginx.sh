@@ -7,9 +7,11 @@
 # Test: Boothfile nginx Installation
 #
 # Verifies that `setup nginx` installs nginx.
-# `nginx -v` prints "nginx version: nginx/X.Y.Z" to STDERR. We need 2>&1 to
-# capture it, but run_coding_booth also prints its own trace line ("> codingbooth
-# ...") to stderr — so we filter that line out before grabbing the version.
+# `nginx -v` prints "nginx version: nginx/X.Y.Z" to STDERR, so we need 2>&1 to
+# capture it. run_coding_booth also writes its own trace line ("> codingbooth
+# ...") to stderr, so rather than filtering that line out we select the version
+# line positively — the trace says "nginx -v", never "nginx version", and this
+# stays correct no matter what else the build prints to stderr.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -23,7 +25,7 @@ echo "=== Test: Boothfile nginx Installation ==="
 
 FAILED=0
 
-ACTUAL=$(run_coding_booth --silence-build -- nginx -v 2>&1 | grep -v '^> codingbooth' | head -1 || true)
+ACTUAL=$(run_coding_booth --silence-build -- nginx -v 2>&1 | grep -iE 'nginx version' | head -1 || true)
 
 if echo "$ACTUAL" | grep -qiE "nginx[^0-9]*[0-9]+\.[0-9]+\.[0-9]+"; then
     print_test_result "true" "$0" "1" "nginx is installed via Boothfile"
