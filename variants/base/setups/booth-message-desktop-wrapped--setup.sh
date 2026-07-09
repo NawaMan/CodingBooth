@@ -40,4 +40,14 @@ exec start-booth-wrapped
 EOF
 chmod +x /usr/local/bin/start-lxqt-wrapped
 
-echo "✅ start-xfce-wrapped, start-kde-wrapped and start-lxqt-wrapped installed."
+cat > /usr/local/bin/start-wayland-wrapped <<EOF
+#!/usr/bin/env bash
+set -euo pipefail
+export INNER_PORT=$DESKTOP_INNER_PORT
+export INNER_CMD="NOVNC_PORT=$DESKTOP_INNER_PORT start-wayland"
+export IFRAME_SRC="/vnc.html?autoconnect=true&resize=remote"
+exec start-booth-wrapped
+EOF
+chmod +x /usr/local/bin/start-wayland-wrapped
+
+echo "✅ start-xfce-wrapped, start-kde-wrapped, start-lxqt-wrapped and start-wayland-wrapped installed."

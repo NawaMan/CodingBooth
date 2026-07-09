@@ -25,7 +25,7 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG_DIR="${SCRIPT_DIR}/logs"
 
-ALL_DEPENDENT_VARIANTS=(notebook codeserver desktop-xfce desktop-kde desktop-lxqt)
+ALL_DEPENDENT_VARIANTS=(notebook codeserver desktop-xfce desktop-kde desktop-lxqt desktop-wayland)
 
 # ── State ─────────────────────────────────────────────────────────────
 
@@ -188,6 +188,7 @@ get_status_var() {
         desktop-xfce) cat "${LOG_DIR}/desktop-xfce.status" 2>/dev/null || echo "pending" ;;
         desktop-kde)  cat "${LOG_DIR}/desktop-kde.status" 2>/dev/null || echo "pending" ;;
         desktop-lxqt) cat "${LOG_DIR}/desktop-lxqt.status" 2>/dev/null || echo "pending" ;;
+        desktop-wayland) cat "${LOG_DIR}/desktop-wayland.status" 2>/dev/null || echo "pending" ;;
         *)       echo "pending" ;;
     esac
 }

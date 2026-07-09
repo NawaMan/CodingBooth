@@ -20,7 +20,7 @@ func ValidateVariant(ctx appctx.AppContext) appctx.AppContext {
 
 	// Step 1: Normalize variant aliases
 	switch variant {
-	case "base", "notebook", "codeserver", "desktop-xfce", "desktop-kde", "desktop-lxqt":
+	case "base", "notebook", "codeserver", "desktop-xfce", "desktop-kde", "desktop-lxqt", "desktop-wayland":
 		// Valid variants, no change needed
 	case "default", "console":
 		variant = "base"
@@ -33,11 +33,11 @@ func ValidateVariant(ctx appctx.AppContext) appctx.AppContext {
 		variant = "codeserver"
 	case "desktop":
 		variant = "desktop-xfce"
-	case "xfce", "kde", "lxqt":
+	case "xfce", "kde", "lxqt", "wayland":
 		variant = "desktop-" + variant
 	default:
-		fmt.Fprintf(os.Stderr, "Error: unknown --variant '%s' (valid: base|notebook|codeserver|desktop-xfce|desktop-kde|desktop-lxqt;\n", variant)
-		fmt.Fprintln(os.Stderr, "       aliases: console|terminal|ide|desktop|xfce|kde|lxqt)")
+		fmt.Fprintf(os.Stderr, "Error: unknown --variant '%s' (valid: base|notebook|codeserver|desktop-xfce|desktop-kde|desktop-lxqt|desktop-wayland;\n", variant)
+		fmt.Fprintln(os.Stderr, "       aliases: console|terminal|ide|desktop|xfce|kde|lxqt|wayland)")
 		os.Exit(1)
 	}
 

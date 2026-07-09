@@ -19,7 +19,7 @@ A list of upcoming ideas, improvements, and future goals for the CodingBooth lau
 - [x] Try to not have "user-land" setup print anthing (unless error) -- nodejs-example
 - [x] Improve Docker-in-Docker (DinD) integration — ideally without relying on a sidecar container.
 - [x] Add Kubernetes (K8s) support.
-- [ ] Support non-X11 environments (e.g., Unity, Omarchy, Wayland).
+- [~] Support non-X11 environments (e.g., Unity, Omarchy, Wayland). -- `desktop-wayland` variant adds a Wayland-native labwc desktop (wlroots) over wayvnc+noVNC. (Real GNOME-on-Wayland attempted via WebRTC but blocked by headless mutter frame emission; parked on branch wip/desktop-gnome-webrtc.)
 - [-] Rename “variant” to “interface” for clarity: -- NOTE: `variant` is good.
 - [ ] Add desktop icons for IDEs (e.g., VS Code, JetBrains IDEs).
 - [-] Simplify adding Jupyter Notebooks to desktop environments (auto-add like VS Code).

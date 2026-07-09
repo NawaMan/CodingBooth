@@ -2,6 +2,22 @@
 
 This file contains a list of changes for each released version.
 
+## Unreleased
+
+- **New `desktop-wayland` variant (experimental) — a Wayland-native desktop in the browser.** The existing
+  `desktop-xfce`/`desktop-kde`/`desktop-lxqt` variants are X11 (TigerVNC + noVNC);
+  `desktop-wayland` runs [labwc](https://labwc.github.io/) (a wlroots compositor) on the
+  headless wlroots backend and streams it via [wayvnc](https://github.com/any1/wayvnc)
+  (`wlr-screencopy` → RFB) through the **same** websockify + noVNC delivery over the single
+  booth port — only the compositor and VNC server change (TigerVNC/X11 → labwc+wayvnc/Wayland).
+  The wlroots headless backend needs no logind/seat, `wlr-screencopy` reliably captures the
+  session, and existing X11 apps (Firefox/Chrome/VS Code) run via Xwayland. Selected with
+  `--variant wayland` (alias of `desktop-wayland`). No VNC password by default (localhost
+  model, like the other desktop variants); `--public` password auth via wayvnc TLS is a
+  follow-up. New setup `variants/base/setups/wayland--setup.sh`; wrapper `start-wayland-wrapped`;
+  template `templates/desktops/wayland/template.toml`. See `docs/BOOTH_VARIANTS.md` and
+  `variants/desktop-wayland/README.md`.
+
 ## 0.59.0
 
 - **`booth config` preserves pinned param values across reconfiguration.** Previously, reconfiguring a booth (e.g. adding or removing a template/extension) rebuilt the Boothfile entirely from the selection DSL and reset every non-default param — `NODE_VERSION`, `GO_VERSION`, `PYTHON_VERSION`, `PLAYWRIGHT_VERSION`, … — back to its template default, because pins live in the Boothfile's `arg NAME=VALUE` lines and were not carried by the stored selection. Now the resolver reads those `arg` lines back and preserves any non-default pin unless the new selection explicitly overrides it (explicit selection still wins).

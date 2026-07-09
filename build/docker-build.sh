@@ -43,6 +43,7 @@ ALL_VARIANTS=(
   desktop-xfce
   desktop-kde
   desktop-lxqt
+  desktop-wayland
 )
 
 # Script state (globals)
@@ -546,6 +547,7 @@ Variants (if none provided, all are built):
   desktop-xfce
   desktop-kde
   desktop-lxqt
+  desktop-wayland
 
 Environment:
   COSIGN_KEY        Cosign private key content (PEM) stored directly in env; used if set
