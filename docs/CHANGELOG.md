@@ -17,6 +17,15 @@ This file contains a list of changes for each released version.
   follow-up. New setup `variants/base/setups/wayland--setup.sh`; wrapper `start-wayland-wrapped`;
   template `templates/desktops/wayland/template.toml`. See `docs/BOOTH_VARIANTS.md` and
   `variants/desktop-wayland/README.md`.
+- **Fix flaky `setup jdk` builds — JBang no longer pulls its own bootstrap JDK.** `jdk--setup.sh`
+  installed JBang before the JDK, so on a fresh image JBang found no `javac`/`JAVA_HOME` and
+  downloaded a bootstrap JDK from `api.foojay.io` — the exact flaky download the script's
+  direct-download strategy (Temurin/Corretto) exists to avoid. Under `set -o pipefail` a foojay
+  outage aborted the whole build at the `curl … sh.jbang.dev | bash` step. For direct-download
+  vendors the JDK is now installed first and `JAVA_HOME` exported before JBang runs, so JBang
+  reuses it and skips the bootstrap download entirely; JBang-fallback vendors (openjdk, graalvm)
+  are unchanged. The `sh.jbang.dev` fetch also gains `--retry 3`. Fixes `tests/config/test01-init-cli-basic`
+  and `tests/complex/test-boothfile-gradle`. See `variants/base/setups/jdk--setup.sh`.
 
 ## 0.59.0
 

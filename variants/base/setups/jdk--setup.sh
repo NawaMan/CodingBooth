@@ -136,10 +136,17 @@ mkdir -p "$JBANG_DIR" "$JBANG_CACHE_DIR"
 chmod -R 0777 "$JBANG_DIR" "$JBANG_CACHE_DIR"
 
 # --- Install JBang (still useful as a Java scripting tool) ---
-log "Installing JBang..."
-export JBANG_JDK_VENDOR="$ACTIVE_VENDOR"
-curl -Ls https://sh.jbang.dev | bash -s - app setup
-install -Dm755 "${JBANG_DIR}/bin/jbang" /usr/local/bin/jbang
+# NOTE: jbang's bootstrap downloads its own JDK from foojay.io whenever no
+# javac / valid JAVA_HOME is on PATH — the very download this script avoids for
+# the JDK itself (see build_download_url). So for the direct-download vendors we
+# install the JDK FIRST and export JAVA_HOME, then run this so jbang reuses it
+# instead of pulling a (flaky) bootstrap JDK.
+install_jbang() {
+  log "Installing JBang..."
+  export JBANG_JDK_VENDOR="$ACTIVE_VENDOR"
+  curl -Ls --retry 3 --retry-delay 2 https://sh.jbang.dev | bash -s - app setup
+  install -Dm755 "${JBANG_DIR}/bin/jbang" /usr/local/bin/jbang
+}
 
 # --- Install JDK ---
 JDK_INSTALL_DIR="/opt/jdk-installs/${JDK_VERSION}-${ACTIVE_VENDOR}"
@@ -160,8 +167,17 @@ if [[ "$DOWNLOAD_URL" != "jbang" ]]; then
   mkdir -p "$JDK_INSTALL_DIR"
   tar -xzf "$TMP_TARBALL" -C "$JDK_INSTALL_DIR" --strip-components=1
   rm -f "$TMP_TARBALL"
+
+  # Point jbang at the JDK we just installed so its bootstrap skips the
+  # foojay download.
+  export JAVA_HOME="$(readlink -f -- "$JDK_INSTALL_DIR")"
+  export PATH="$JAVA_HOME/bin:$PATH"
+  install_jbang
 else
   # --- JBang fallback (openjdk, graalvm, etc.) ---
+  # No reliable direct download for this vendor, so jbang installs the JDK.
+  # Here jbang must bootstrap its own JDK first (unavoidable for this path).
+  install_jbang
   log "⚠️  No direct download available for vendor '${ACTIVE_VENDOR}'. Using JBang as fallback."
   log "    If this fails, try: temurin or corretto"
   export JBANG_JDK_VENDOR="$ACTIVE_VENDOR"
