@@ -1,0 +1,16 @@
+display-name = "labwc (Wayland) [experimental]"
+display-disc = "Experimental Wayland-native labwc desktop with VNC/noVNC access"
+display-detail = "EXPERIMENTAL — newer and less battle-tested than the X11 desktop variants; prefer desktop-xfce/kde/lxqt for a proven desktop. Provides a lightweight Wayland-native desktop (labwc, a wlroots compositor) accessible via VNC and noVNC in the browser — the Wayland counterpart to the X11 desktop variants. Runs existing X11 apps via Xwayland. Supports custom screen resolution via the GEOMETRY environment variable."
+display-order = 15
+tags = [
+    "desktop",
+    "wayland",
+    "labwc",
+    "lightweight",
+    "vnc"
+]
+
+[segments]
+"Boothfile--40" = """
+setup wayland
+"""

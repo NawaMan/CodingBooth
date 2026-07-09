@@ -19,6 +19,8 @@ Each variant comes pre-configured with a curated toolset and a consistent runtim
   Useful for GUI-heavy workflows or running native IDEs like [IntelliJ IDEA](https://www.jetbrains.com/idea/), [PyCharm](https://www.jetbrains.com/pycharm/), or [Eclipse](https://www.eclipse.org) inside Docker.
   `desktop-lxqt` is the lightest of the three — a good choice when you want a desktop with the smallest footprint.
 
+- **[`desktop-wayland`](https://labwc.github.io/)** *(experimental)* – A **Wayland-native** desktop ([labwc](https://labwc.github.io/), a [wlroots](https://gitlab.freedesktop.org/wlroots/wlroots) compositor) served to the browser via [wayvnc](https://github.com/any1/wayvnc) + [noVNC](https://novnc.com). The forward-looking counterpart to the X11 desktops above; runs existing X11 apps via Xwayland. **Experimental** — newer and less battle-tested than the X11 desktop variants; if you want a proven desktop today, prefer `desktop-xfce`/`desktop-kde`/`desktop-lxqt`.
+
 All variants expose their UI on port 10000 but NEXT and RANDOM can be used. See [Port](BOOTH_RUN.md#6-ports) for more details.
 
 ## Aliases & Defaults
@@ -37,6 +39,7 @@ CodingBooth supports several shortcuts and aliases for variant names:
 | xfce         | desktop-xfce     |
 | kde          | desktop-kde      |
 | lxqt         | desktop-lxqt     |
+| wayland      | desktop-wayland  |
 
 The `terminal` alias resolves to the `base` variant but automatically sets the command to `bash`, giving you a direct terminal session in your host terminal — equivalent to `booth -- bash`. If you pass explicit commands (e.g., `booth --variant terminal -- zsh`), your commands take precedence.
 
@@ -44,7 +47,7 @@ If an unknown value is provided, CodingBooth will exit with an error listing sup
 
 ## Desktop Configuration
 
-For desktop variants (`desktop-xfce`, `desktop-kde`, `desktop-lxqt`), you can customize the screen resolution by setting the `GEOMETRY` environment variable.
+For desktop variants (`desktop-xfce`, `desktop-kde`, `desktop-lxqt`, `desktop-wayland`), you can customize the screen resolution by setting the `GEOMETRY` environment variable.
 
 **Default:** `1280x800`
 

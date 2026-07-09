@@ -31,7 +31,7 @@ USAGE:
 
 OPTIONS
   --build-arg <KEY=VAL>   Add a Docker build-arg which customize the booth image.
-  --variant <name>        Prebuilt variant: base | notebook | codeserver | xfce | kde | lxqt
+  --variant <name>        Prebuilt variant: base | notebook | codeserver | xfce | kde | lxqt | wayland
   --port <n|RANDOM|NEXT>  Host port → container 10000
   --daemon                Run the booth in the background
   --dind                  Enable a Docker-in-Docker sidecar
@@ -115,9 +115,9 @@ IMAGE SELECTION (precedence: --image > --dockerfile > --boothfile > prebuilt):
   --pull                 Always pull the image, even if it exists locally
                          (default: pull only if the image is missing)
   --variant <n>       Prebuilt variant (examples):
-                           base | notebook | codeserver | xfce | kde | lxqt
+                           base | notebook | codeserver | xfce | kde | lxqt | wayland
                          Aliases:
-                           default | ide | desktop | desktop-xfce | desktop-kde | desktop-lxqt
+                           default | ide | desktop | desktop-xfce | desktop-kde | desktop-lxqt | desktop-wayland
   --version <tag>        Prebuilt version tag (default: latest)
   --strict               Treat Boothfile warnings as errors
 
@@ -218,7 +218,7 @@ IMAGE SELECTION (precedence: --image > --dockerfile > --boothfile > prebuilt):
   --dockerfile <path>    Build from a Dockerfile (file or directory)
   --image <n>         Use an existing image (e.g. repo/name:tag)
   --pull                 Always pull the image even if it exists locally
-  --variant <n>       Prebuilt variant: base | notebook | codeserver | xfce | kde | lxqt
+  --variant <n>       Prebuilt variant: base | notebook | codeserver | xfce | kde | lxqt | wayland
   --version <tag>        Prebuilt version tag (default: latest)
   --strict               Treat Boothfile warnings as errors
 

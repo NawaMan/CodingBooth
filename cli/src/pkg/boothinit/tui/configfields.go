@@ -32,8 +32,8 @@ var allConfigFields = []configFieldDef{
 
 	// --- General ---
 	{Key: "variant", Label: "Variant", Group: "General", Kind: fieldKindCycle,
-		Options: []string{"", "base", "notebook", "codeserver", "desktop-xfce", "desktop-kde", "desktop-lxqt", "terminal"},
-		Detail:  "The booth variant determines the UI mode.\n\n(default) = auto-detect from config\nbase = minimal terminal\nnotebook = Jupyter Lab\ncodeserver = VS Code in browser\ndesktop-xfce = XFCE desktop\ndesktop-kde = KDE Plasma desktop\ndesktop-lxqt = LXQt desktop\nterminal = direct bash session"},
+		Options: []string{"", "base", "notebook", "codeserver", "desktop-xfce", "desktop-kde", "desktop-lxqt", "desktop-wayland", "terminal"},
+		Detail:  "The booth variant determines the UI mode.\n\n(default) = auto-detect from config\nbase = minimal terminal\nnotebook = Jupyter Lab\ncodeserver = VS Code in browser\ndesktop-xfce = XFCE desktop\ndesktop-kde = KDE Plasma desktop\ndesktop-lxqt = LXQt desktop\ndesktop-wayland = labwc (Wayland) desktop\nterminal = direct bash session"},
 	{Key: "port", Label: "Port", Group: "General", Kind: fieldKindString,
 		Detail: "Host port for accessing the booth UI.\n\nSpecial values:\n  NEXT   = next available port\n  RANDOM = random available port"},
 	{Key: "name", Label: "Name", Group: "General", Kind: fieldKindString,
