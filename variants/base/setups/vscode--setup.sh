@@ -64,7 +64,9 @@ echo "✅ VS Code installed"
 echo "🔧 Installing Jupyter + Bash kernel…"
 
 pip install --upgrade pip setuptools wheel
-pip install jupyter ipykernel bash_kernel
+# Pin ipykernel <7: ipykernel 7.x hangs the VS Code Jupyter extension
+# (microsoft/vscode-jupyter#17228, still unfixed). Remove the cap once that ships.
+pip install jupyter "ipykernel>=6,<7" bash_kernel
 
 # Register both kernels system-wide
 python -m ipykernel install   --sys-prefix --name=python3 --display-name="Python 3 (${CB_PY_VERSION})"
