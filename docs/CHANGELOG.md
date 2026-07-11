@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth config` no longer silently destroys a hand-written Boothfile / config.toml.** Configuring
+  regenerates both files from scratch, so a hand-written booth — or a generated one that was later
+  hand-edited — lost that content on the next `booth config`, with no warning. The `# Configured by:`
+  header could not prevent this: it survives a hand-edit, so it cannot distinguish "still ours" from
+  "someone edited this". `booth config` now fingerprints (SHA-256) what it writes, recording it in
+  `.booth/.generated`, and compares before overwriting. Content it did not write is protected: the CLI
+  refuses unless given `--overwrite`, and the TUI raises a full-screen confirmation that will not save
+  until the user types `overwrite`. The replaced file is kept as `<name>.bak` (gitignored). A booth
+  generated before `.generated` existed is adopted on its header, so no existing project starts crying
+  wolf. Hand-written booths are the norm — every `examples/workspaces/*` booth is one — so this covers
+  the mainstream case, not an edge case. See `cli/src/pkg/boothinit/output/guard.go`;
+  tests `tests/config/test68-config-guards-handwritten.sh` and
+  `tests/config-tui/test15-tui-overwrite-guard.sh`.
 - **New `desktop-wayland` variant (experimental) — a Wayland-native desktop in the browser.** The existing
   `desktop-xfce`/`desktop-kde`/`desktop-lxqt` variants are X11 (TigerVNC + noVNC);
   `desktop-wayland` runs [labwc](https://labwc.github.io/) (a wlroots compositor) on the

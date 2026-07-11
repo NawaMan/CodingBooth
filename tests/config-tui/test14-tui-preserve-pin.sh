@@ -19,8 +19,11 @@ fi
 # Hand-pin the version directly in the arg line — the comment still says latest.
 sed -i 's/^arg PLAYWRIGHT_VERSION=.*/arg PLAYWRIGHT_VERSION=1.58.2/' "$prj/.booth/Boothfile"
 
-# Reopen the TUI and save without touching the version.
-run-tui save 'Sleep 500ms'
+# Reopen the TUI and save without touching the version. The hand-edit above makes
+# this Boothfile hand-written as far as `booth config` is concerned, so saving now
+# requires typing the overwrite confirmation — otherwise nothing is written and the
+# assertion below would pass merely because the file was never touched.
+run-tui save-confirm 'Sleep 500ms'
 
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" "arg PLAYWRIGHT_VERSION=" "1.58.2" "hand-pinned version survives a TUI reopen+save"
