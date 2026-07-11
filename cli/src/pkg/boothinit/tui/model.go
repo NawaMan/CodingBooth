@@ -16,7 +16,7 @@ import (
 type itemKind int
 
 const (
-	kindTemplate  itemKind = iota
+	kindTemplate itemKind = iota
 	kindExtension
 )
 
@@ -56,6 +56,15 @@ type model struct {
 	// Warning dialog — shown once at startup (e.g., .booth not writable)
 	warningDialog  bool
 	warningMessage string
+
+	// Overwrite confirmation — saving regenerates .booth/ files from scratch, so
+	// when any of them hold hand-written content (drifted, from output.Drifted)
+	// Ctrl+S opens a dialog that will not save until the user types
+	// overwriteConfirmWord. Destroying someone's work should take more than a
+	// reflex keystroke.
+	drifted         []string
+	overwriteDialog bool
+	overwriteInput  string
 
 	// Search
 	searchQuery   string
@@ -374,6 +383,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
+		// Overwrite confirmation — blocks saving until the word is typed in full
+		if m.overwriteDialog {
+			return m.handleOverwriteConfirm(msg)
+		}
+
 		// Quit confirmation mode
 		if m.quitting {
 			switch msg.String() {
@@ -424,8 +438,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 
 		case "ctrl+s":
-			m.confirmed = true
-			return m, tea.Quit
+			return m.requestSave()
 
 		case "tab":
 			m.searchFocused = true
@@ -470,8 +483,7 @@ func (m model) handleSearchInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "ctrl+s":
-		m.confirmed = true
-		return m, tea.Quit
+		return m.requestSave()
 
 	case "backspace":
 		if m.searchCursor > 0 && len(m.searchQuery) > 0 {
@@ -807,8 +819,7 @@ func (m model) handleParamKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "ctrl+s":
-		m.confirmed = true
-		return m, tea.Quit
+		return m.requestSave()
 
 	case "up":
 		if m.paramCursorIdx > 0 {
@@ -959,8 +970,7 @@ func (m model) handleVariadicEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.endVariadicEdit()
 	case "ctrl+s":
 		m.commitVariadicEdit()
-		m.confirmed = true
-		return m, tea.Quit
+		return m.requestSave()
 	case "backspace":
 		if m.variadicEditCur > 0 && len(m.variadicEditBuf) > 0 {
 			m.variadicEditBuf = m.variadicEditBuf[:m.variadicEditCur-1] + m.variadicEditBuf[m.variadicEditCur:]
@@ -1327,4 +1337,56 @@ func (m model) buildParamDSL(itemKey string, t *tmpl.Template) string {
 	}
 
 	return ":" + strings.Join(vals, ",")
+}
+
+// overwriteConfirmWord is what the user must type to save over hand-written
+// content. Deliberately not "y" or "yes" — a reflex keystroke is exactly what
+// this dialog exists to prevent.
+const overwriteConfirmWord = "overwrite"
+
+// requestSave handles Ctrl+S from every mode. Saving regenerates .booth/ files
+// from scratch, so when any of them hold hand-written content it routes through
+// the typed confirmation instead of quitting straight into the write.
+func (m model) requestSave() (tea.Model, tea.Cmd) {
+	if len(m.drifted) > 0 {
+		m.overwriteDialog = true
+		m.overwriteInput = ""
+		return m, nil
+	}
+	m.confirmed = true
+	return m, tea.Quit
+}
+
+// handleOverwriteConfirm drives the typed confirmation. Enter only saves once the
+// word matches exactly; anything else keeps the dialog up, and Esc backs out with
+// the configuration untouched.
+func (m model) handleOverwriteConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch msg.String() {
+	case "esc":
+		m.overwriteDialog = false
+		m.overwriteInput = ""
+		return m, nil
+
+	case "enter":
+		if m.overwriteInput == overwriteConfirmWord {
+			m.confirmed = true
+			return m, tea.Quit
+		}
+		return m, nil
+
+	case "backspace":
+		if len(m.overwriteInput) > 0 {
+			m.overwriteInput = m.overwriteInput[:len(m.overwriteInput)-1]
+		}
+		return m, nil
+
+	case "ctrl+c", "ctrl+e":
+		// Quit without saving — the files stay as the user wrote them.
+		return m, tea.Quit
+	}
+
+	if msg.Type == tea.KeyRunes {
+		m.overwriteInput += string(msg.Runes)
+	}
+	return m, nil
 }

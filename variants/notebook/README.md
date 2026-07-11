@@ -1,10 +1,10 @@
 # IDE Notebook Variant
 
-Browser-based Jupyter Notebook environment for interactive development.
+Browser-based JupyterLab environment for interactive development.
 
 **Includes:**
 - Python 3.12
-- Jupyter Notebook
+- JupyterLab
 - Bash kernel for notebooks
 
 **Usage:**
@@ -12,6 +12,6 @@ Browser-based Jupyter Notebook environment for interactive development.
 booth --variant notebook
 ```
 
-**Access:** Open browser to `http://localhost:10000` (default booth port) for Jupyter interface.
+**Access:** Open browser to `http://localhost:10000` (default booth port) for the JupyterLab interface.
 
 **Purpose:** Ideal for data science, exploratory programming, and interactive documentation.

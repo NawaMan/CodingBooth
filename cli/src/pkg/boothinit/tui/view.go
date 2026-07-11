@@ -43,6 +43,25 @@ var (
 				Foreground(lipgloss.Color("241"))
 )
 
+// dangerStyle is used for the overwrite confirmation dialog — red, not amber,
+// because this one is about to destroy work rather than merely inform.
+var (
+	dangerBorderStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("196")).
+				Bold(true)
+	dangerTitleStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("231")).
+				Background(lipgloss.Color("196")).
+				Bold(true)
+	dangerFileStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("214")).
+			Bold(true)
+	dangerInputStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("231")).
+				Background(lipgloss.Color("52")).
+				Bold(true)
+)
+
 func (m model) View() string {
 	if m.width == 0 || m.height == 0 {
 		return "Loading..."
@@ -51,6 +70,11 @@ func (m model) View() string {
 	// Warning dialog overlay
 	if m.warningDialog {
 		return m.renderWarningDialog()
+	}
+
+	// Overwrite confirmation overlay — shown when saving would destroy hand-written files
+	if m.overwriteDialog {
+		return m.renderOverwriteDialog()
 	}
 
 	fullWidth := m.width
@@ -905,6 +929,87 @@ func (m model) renderParamFieldRow(t *tmpl.Template, name, pk string, isFocused 
 		return "  " + focusLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
 	}
 	return "  " + normalLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
+}
+
+// renderOverwriteDialog renders the confirmation shown when saving would destroy
+// hand-written files. It names every file at risk and will not proceed until the
+// user has typed the confirmation word in full.
+func (m model) renderOverwriteDialog() string {
+	boxWidth := m.width * 70 / 100
+	if boxWidth < 50 {
+		boxWidth = 50
+	}
+	if boxWidth > m.width-4 {
+		boxWidth = m.width - 4
+	}
+	inner := boxWidth - 2
+	innerWidth := boxWidth - 4
+
+	// left-aligned line inside the box
+	line := func(s string) string {
+		return dangerBorderStyle.Render("│") + padStyledRight(" "+s, inner) + dangerBorderStyle.Render("│")
+	}
+	blank := func() string {
+		return dangerBorderStyle.Render("│") + strings.Repeat(" ", inner) + dangerBorderStyle.Render("│")
+	}
+	centered := func(s string) string {
+		return dangerBorderStyle.Render("│") + centerPad(s, inner) + dangerBorderStyle.Render("│")
+	}
+
+	var dl []string
+	dl = append(dl, dangerBorderStyle.Render("┌"+strings.Repeat("─", inner)+"┐"))
+	dl = append(dl, centered(dangerTitleStyle.Render("  ⚠  THIS WILL DESTROY HAND-WRITTEN FILES  ⚠  ")))
+	dl = append(dl, blank())
+
+	for _, l := range wrapText("Saving regenerates .booth/ from your selection. These files were not written by booth config — or were edited afterwards — and will be overwritten:", innerWidth) {
+		dl = append(dl, line(warningTextStyle.Render(l)))
+	}
+	dl = append(dl, blank())
+	for _, name := range m.drifted {
+		dl = append(dl, line("  "+dangerFileStyle.Render(".booth/"+name)))
+	}
+	dl = append(dl, blank())
+	for _, l := range wrapText("A .bak copy of each is kept. Press Esc to back out and nothing is touched.", innerWidth) {
+		dl = append(dl, line(warningHintStyle.Render(l)))
+	}
+	dl = append(dl, blank())
+
+	for _, l := range wrapText("To confirm, type the word \""+overwriteConfirmWord+"\" and press Enter:", innerWidth) {
+		dl = append(dl, line(warningTextStyle.Render(l)))
+	}
+
+	// Input field with cursor
+	field := m.overwriteInput + "█"
+	pad := len(overwriteConfirmWord) + 4 - len([]rune(field))
+	if pad > 0 {
+		field += strings.Repeat(" ", pad)
+	}
+	dl = append(dl, line("  "+dangerInputStyle.Render(" "+field+" ")))
+	dl = append(dl, blank())
+
+	hint := "Enter: overwrite (once typed)  │  Esc: back out  │  Ctrl+C: quit"
+	dl = append(dl, centered(warningHintStyle.Render(hint)))
+	dl = append(dl, dangerBorderStyle.Render("└"+strings.Repeat("─", inner)+"┘"))
+
+	// Center the box
+	topPad := (m.height - len(dl)) / 2
+	if topPad < 0 {
+		topPad = 0
+	}
+	leftPad := (m.width - boxWidth) / 2
+	if leftPad < 0 {
+		leftPad = 0
+	}
+	prefix := strings.Repeat(" ", leftPad)
+
+	var lines []string
+	for i := 0; i < topPad; i++ {
+		lines = append(lines, "")
+	}
+	for _, l := range dl {
+		lines = append(lines, prefix+l)
+	}
+	return strings.Join(lines, "\n")
 }
 
 // renderWarningDialog renders a centered warning dialog overlay.

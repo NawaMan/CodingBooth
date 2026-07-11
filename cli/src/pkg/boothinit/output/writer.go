@@ -85,10 +85,14 @@ func WriteOutput(out *BoothOutput, targetPath string) error {
 	}
 
 	// Ensure secrets and local cache are always gitignored
-	gitignoreContent := "# Secrets - never commit\n.booth.password\n.env\n\n# Local persistent state (not committed)\ncache/\n\n# Runtime temp files\n.tmp/\n\n# Lock file is version-controlled\n# Binaries are in ~/.cache/codingbooth/ (not here)\n"
+	gitignoreContent := "# Secrets - never commit\n.booth.password\n.env\n\n# Local persistent state (not committed)\ncache/\n\n# Runtime temp files\n.tmp/\n\n# Backups of hand-edited files, kept when booth config overwrites them\n*.bak\n\n# Lock file and .generated are version-controlled\n# Binaries are in ~/.cache/codingbooth/ (not here)\n"
 	if err := writeFile(filepath.Join(boothDir, ".gitignore"), gitignoreContent, 0644); err != nil {
 		return fmt.Errorf("writing .gitignore: %w", err)
 	}
+
+	// Fingerprint what we write, so a later run can tell our own output from
+	// content a human has since edited. See guard.go.
+	written := make(map[string]string, len(GuardedFiles))
 
 	if out.Config != nil {
 		content := SerializeConfigToml(out.Config, out.Command, out.AdjustCommand)
@@ -96,6 +100,7 @@ func WriteOutput(out *BoothOutput, targetPath string) error {
 			if err := writeFile(filepath.Join(boothDir, "config.toml"), content, 0644); err != nil {
 				return fmt.Errorf("writing config.toml: %w", err)
 			}
+			written["config.toml"] = hashContent(content)
 		}
 	}
 
@@ -105,7 +110,12 @@ func WriteOutput(out *BoothOutput, targetPath string) error {
 			if err := writeFile(filepath.Join(boothDir, "Boothfile"), content, 0644); err != nil {
 				return fmt.Errorf("writing Boothfile: %w", err)
 			}
+			written["Boothfile"] = hashContent(content)
 		}
+	}
+
+	if err := writeManifest(boothDir, written); err != nil {
+		return fmt.Errorf("writing %s: %w", ManifestName, err)
 	}
 
 	// Always clean up stale generated startup files (from previous selections)

@@ -73,6 +73,13 @@ function require-tui-tools() {
 # ── Tape authoring + run ────────────────────────────────────────────
 # run-tui <mode> <keystrokes...>
 #   mode = "save"  → append Ctrl+S (drive to generation, assert on files)
+#          "save-confirm"
+#                  → append Ctrl+S, then type the overwrite confirmation word.
+#                    Needed whenever .booth/ holds hand-written content: the TUI
+#                    refuses to save over it until the word is typed in full, so a
+#                    plain "save" would silently leave the files untouched — and a
+#                    test asserting "the hand-written value survived" would then
+#                    pass for the wrong reason.
 #          "frame" → leave the TUI displayed (final frame is the TUI), then
 #                    quit without saving (Ctrl+Q, Enter). Used for frame checks.
 #          "raw"   → append nothing; the caller's keystrokes are complete.
@@ -112,6 +119,9 @@ function run-tui() {
         case "$mode" in
             save)
                 printf '%s\n' 'Ctrl+S' 'Sleep 3s'
+                ;;
+            save-confirm)
+                printf '%s\n' 'Ctrl+S' 'Sleep 1s' 'Type "overwrite"' 'Sleep 500ms' 'Enter' 'Sleep 3s'
                 ;;
             frame)
                 # The keystroke state is captured into the stacked frame dump;
