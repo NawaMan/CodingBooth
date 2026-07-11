@@ -80,8 +80,10 @@ if [ ! -x "${VENV_DIR}/bin/python" ]; then
 fi
 
 echo "📦 Installing ipykernel in ${VENV_DIR}..."
+# Pin ipykernel <7: ipykernel 7.x hangs the VS Code Jupyter extension
+# (microsoft/vscode-jupyter#17228, still unfixed). Remove the cap once that ships.
 env PIP_CACHE_DIR="${PIP_CACHE_DIR:-/opt/pip-cache}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
-  "${VENV_DIR}/bin/pip" install -U ipykernel >/dev/null
+  "${VENV_DIR}/bin/pip" install -U "ipykernel>=6,<7" >/dev/null
 
 # ---------------- Register kernelspec ----------------
 KDIR="${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels/${KERNEL_NAME}"

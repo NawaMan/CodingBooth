@@ -30,10 +30,11 @@ SETTINGS="${PCMANFM_DIR}/settings.conf"
 mkdir -p "$PCMANFM_DIR"
 
 # WallpaperMode options: color | stretch | fit | center | tile | zoom
+# zoom = "Zoom the image to fill the entire screen" (keeps aspect ratio, crops overflow)
 cat > "$SETTINGS" <<EOF
 [Desktop]
 Wallpaper=${WALLPAPER}
-WallpaperMode=stretch
+WallpaperMode=zoom
 BgColor=#000000
 ShowWmMenu=false
 EOF

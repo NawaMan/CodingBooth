@@ -42,7 +42,7 @@ ensure_jupyterlab_in_venv() {
 
   env PIP_CACHE_DIR="${PIP_CACHE_DIR:-/opt/pip-cache}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
     python -m pip install -U \
-      "ipykernel>=6"         \
+      "ipykernel>=6,<7"      \
       "jupyter_core>=5"      \
       "jupyter_server>=2"    \
       "jupyterlab_server>=2" \
