@@ -78,39 +78,76 @@ func FindConflicts(out *BoothOutput, targetPath string) []string {
 // WriteOutput writes the complete BoothOutput to the .booth/ directory
 // under the given target path. If .booth/ already exists, files are overwritten.
 func WriteOutput(out *BoothOutput, targetPath string) error {
+	return writeOutput(out, targetPath, nil)
+}
+
+// WriteOutputBeside is WriteOutput, except that for each guarded file named in
+// beside the generated content is written to "<name>.new" and the file itself is
+// left exactly as the user wrote it. Nothing is destroyed and nothing is backed
+// up — the user merges the two halves themselves.
+//
+// This is the useful answer for a hand-written booth, where "overwrite or give
+// up" is a false choice: the generated content is what they wanted, they just
+// need it *next to* their own work rather than on top of it. Same idea as
+// pacnew/rpmnew/dpkg-dist.
+//
+// The rest of the output (setups/, startups/, home/, cache/) lands normally, so
+// merging the .new file is all that remains to complete the reconfigure.
+func WriteOutputBeside(out *BoothOutput, targetPath string, beside []string) error {
+	return writeOutput(out, targetPath, beside)
+}
+
+// writeOutput writes the output, diverting any guarded file named in beside to a
+// "<name>.new" sibling instead of overwriting it.
+func writeOutput(out *BoothOutput, targetPath string, beside []string) error {
 	boothDir := filepath.Join(targetPath, ".booth")
 
 	if err := os.MkdirAll(boothDir, 0755); err != nil {
 		return fmt.Errorf("creating .booth/: %w", err)
 	}
 
+	divert := make(map[string]bool, len(beside))
+	for _, name := range beside {
+		divert[name] = true
+	}
+
 	// Ensure secrets and local cache are always gitignored
-	gitignoreContent := "# Secrets - never commit\n.booth.password\n.env\n\n# Local persistent state (not committed)\ncache/\n\n# Runtime temp files\n.tmp/\n\n# Backups of hand-edited files, kept when booth config overwrites them\n*.bak\n\n# Lock file and .generated are version-controlled\n# Binaries are in ~/.cache/codingbooth/ (not here)\n"
+	gitignoreContent := "# Secrets - never commit\n.booth.password\n.env\n\n# Local persistent state (not committed)\ncache/\n\n# Runtime temp files\n.tmp/\n\n# Transient artifacts of booth config overwriting hand-written files:\n# .bak = what was replaced, .new = generated content awaiting a manual merge\n*.bak\n*.new\n\n# Lock file and .generated are version-controlled\n# Binaries are in ~/.cache/codingbooth/ (not here)\n"
 	if err := writeFile(filepath.Join(boothDir, ".gitignore"), gitignoreContent, 0644); err != nil {
 		return fmt.Errorf("writing .gitignore: %w", err)
 	}
 
 	// Fingerprint what we write, so a later run can tell our own output from
-	// content a human has since edited. See guard.go.
+	// content a human has since edited. See guard.go. A diverted file is NOT
+	// recorded: what sits at the canonical path is still the user's own content,
+	// and must keep reading back as hand-written until they merge.
 	written := make(map[string]string, len(GuardedFiles))
+
+	writeGuarded := func(name, content string) error {
+		if content == "" {
+			return nil
+		}
+		if divert[name] {
+			return writeFile(filepath.Join(boothDir, name+".new"), content, 0644)
+		}
+		if err := writeFile(filepath.Join(boothDir, name), content, 0644); err != nil {
+			return err
+		}
+		written[name] = hashContent(content)
+		return nil
+	}
 
 	if out.Config != nil {
 		content := SerializeConfigToml(out.Config, out.Command, out.AdjustCommand)
-		if content != "" {
-			if err := writeFile(filepath.Join(boothDir, "config.toml"), content, 0644); err != nil {
-				return fmt.Errorf("writing config.toml: %w", err)
-			}
-			written["config.toml"] = hashContent(content)
+		if err := writeGuarded("config.toml", content); err != nil {
+			return fmt.Errorf("writing config.toml: %w", err)
 		}
 	}
 
 	if out.Boothfile != nil {
 		content := SerializeBoothfile(out.Boothfile, out.Command, out.AdjustCommand)
-		if content != "" {
-			if err := writeFile(filepath.Join(boothDir, "Boothfile"), content, 0644); err != nil {
-				return fmt.Errorf("writing Boothfile: %w", err)
-			}
-			written["Boothfile"] = hashContent(content)
+		if err := writeGuarded("Boothfile", content); err != nil {
+			return fmt.Errorf("writing Boothfile: %w", err)
 		}
 	}
 

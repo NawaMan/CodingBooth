@@ -60,6 +60,11 @@ var (
 				Foreground(lipgloss.Color("231")).
 				Background(lipgloss.Color("52")).
 				Bold(true)
+	// The non-destructive choice — green, so the safe way out reads as the way out.
+	safeChoiceStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("231")).
+			Background(lipgloss.Color("28")).
+			Bold(true)
 )
 
 func (m model) View() string {
@@ -958,10 +963,10 @@ func (m model) renderOverwriteDialog() string {
 
 	var dl []string
 	dl = append(dl, dangerBorderStyle.Render("┌"+strings.Repeat("─", inner)+"┐"))
-	dl = append(dl, centered(dangerTitleStyle.Render("  ⚠  THIS WILL DESTROY HAND-WRITTEN FILES  ⚠  ")))
+	dl = append(dl, centered(dangerTitleStyle.Render("  ⚠  THESE FILES ARE HAND-WRITTEN  ⚠  ")))
 	dl = append(dl, blank())
 
-	for _, l := range wrapText("Saving regenerates .booth/ from your selection. These files were not written by booth config — or were edited afterwards — and will be overwritten:", innerWidth) {
+	for _, l := range wrapText("Saving regenerates .booth/ from your selection. These files were not written by booth config — or were edited afterwards — so saving over them would destroy that work:", innerWidth) {
 		dl = append(dl, line(warningTextStyle.Render(l)))
 	}
 	dl = append(dl, blank())
@@ -969,12 +974,19 @@ func (m model) renderOverwriteDialog() string {
 		dl = append(dl, line("  "+dangerFileStyle.Render(".booth/"+name)))
 	}
 	dl = append(dl, blank())
-	for _, l := range wrapText("A .bak copy of each is kept. Press Esc to back out and nothing is touched.", innerWidth) {
-		dl = append(dl, line(warningHintStyle.Render(l)))
+
+	// The safe way out, offered first and bound to the bare Enter key.
+	dl = append(dl, line(safeChoiceStyle.Render(" ENTER ")+"  "+warningTextStyle.Render("Keep them. Write what I generated beside them:")))
+	for _, name := range m.drifted {
+		dl = append(dl, line("         "+dangerFileStyle.Render(".booth/"+name+".new")))
+	}
+	for _, l := range wrapText("Nothing is destroyed — you merge the two by hand.", innerWidth-9) {
+		dl = append(dl, line("         "+warningHintStyle.Render(l)))
 	}
 	dl = append(dl, blank())
 
-	for _, l := range wrapText("To confirm, type the word \""+overwriteConfirmWord+"\" and press Enter:", innerWidth) {
+	// The destructive way out, gated behind typing the word in full.
+	for _, l := range wrapText("To replace them instead (a .bak is kept), type \""+overwriteConfirmWord+"\" and press Enter:", innerWidth) {
 		dl = append(dl, line(warningTextStyle.Render(l)))
 	}
 
@@ -987,7 +999,7 @@ func (m model) renderOverwriteDialog() string {
 	dl = append(dl, line("  "+dangerInputStyle.Render(" "+field+" ")))
 	dl = append(dl, blank())
 
-	hint := "Enter: overwrite (once typed)  │  Esc: back out  │  Ctrl+C: quit"
+	hint := "Enter: keep mine, write .new  │  Esc: back out  │  Ctrl+C: quit"
 	dl = append(dl, centered(warningHintStyle.Render(hint)))
 	dl = append(dl, dangerBorderStyle.Render("└"+strings.Repeat("─", inner)+"┘"))
 
@@ -1026,7 +1038,7 @@ func (m model) renderWarningDialog() string {
 
 	// Build dialog content
 	title := "⚠ Warning"
-	msgLines := wrapText(m.warningMessage, innerWidth)
+	msgLines := wrapParagraphs(m.warningMessage, innerWidth)
 	hint := "Enter/Space: continue  │  Esc: quit"
 
 	// Dialog lines: border top, title, blank, message lines, blank, hint, border bottom
@@ -1085,6 +1097,27 @@ func centerPad(s string, width int) string {
 	left := (width - w) / 2
 	right := width - w - left
 	return strings.Repeat(" ", left) + s + strings.Repeat(" ", right)
+}
+
+// wrapParagraphs wraps text to width while honouring the newlines already in it,
+// so a message can carry blank lines and its own short lines (e.g. a file list).
+// wrapText alone collapses every run of whitespace, newlines included, which
+// flattens a structured message into one blob.
+func wrapParagraphs(text string, width int) []string {
+	var lines []string
+	for _, para := range strings.Split(text, "\n") {
+		if strings.TrimSpace(para) == "" {
+			lines = append(lines, "")
+			continue
+		}
+		// Keep any leading indent — wrapText drops it, which would flatten an
+		// indented file list back into flush-left prose.
+		indent := para[:len(para)-len(strings.TrimLeft(para, " "))]
+		for _, l := range wrapText(para, width-len(indent)) {
+			lines = append(lines, indent+l)
+		}
+	}
+	return lines
 }
 
 func wrapText(text string, width int) []string {

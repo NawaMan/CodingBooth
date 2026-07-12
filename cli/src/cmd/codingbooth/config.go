@@ -115,9 +115,19 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 	// stronger gate than the conflict prompt below, which only asks "does a file
 	// exist?" — regenerating a file we wrote ourselves loses nothing.
 	drifted := output.Drifted(targetPath)
-	if len(drifted) > 0 && !flags.overwrite {
+	if len(drifted) > 0 && !flags.overwrite && !flags.beside {
 		printDriftRefusal(targetPath, drifted)
 		os.Exit(1)
+	}
+
+	// --beside: keep the user's files, write the generated content as <name>.new.
+	if len(drifted) > 0 && flags.beside && !flags.overwrite {
+		if err := output.WriteOutputBeside(out, targetPath, drifted); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		printBesideResult(targetPath, drifted)
+		return
 	}
 
 	// Check for existing files that would be overwritten
@@ -167,7 +177,7 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 }
 
 // printDriftRefusal explains which files hold content `booth config` did not write
-// and why it is stopping, rather than clobbering them.
+// and why it is stopping, rather than clobbering them — then names both ways out.
 func printDriftRefusal(targetPath string, drifted []string) {
 	boothDir := filepath.Join(targetPath, ".booth")
 	fmt.Fprintf(os.Stderr, "Refusing to overwrite hand-written files in %s:\n\n", boothDir)
@@ -176,8 +186,63 @@ func printDriftRefusal(targetPath string, drifted []string) {
 	}
 	fmt.Fprintln(os.Stderr, "\nThese were not written by `booth config`, or were edited afterwards.")
 	fmt.Fprintln(os.Stderr, "Reconfiguring regenerates them from scratch, so any hand-written")
-	fmt.Fprintln(os.Stderr, "content in them would be lost.")
-	fmt.Fprintln(os.Stderr, "\nRe-run with --overwrite to replace them (a .bak copy is kept).")
+	fmt.Fprintln(os.Stderr, "content in them would be lost. Re-run with:")
+	fmt.Fprintln(os.Stderr, "\n  --beside     keep them, write the generated content as <name>.new to merge")
+	fmt.Fprintln(os.Stderr, "  --overwrite  replace them (the replaced file is kept as <name>.bak)")
+}
+
+// handWrittenNotice is the heads-up shown when the config TUI opens on a booth that
+// holds files `booth config` did not write. It is deliberately not a blocker: the
+// user may well be here to look around, and nothing is decided until they save. It
+// exists so that nobody configures an entire booth before discovering that the
+// result cannot simply be written over what they have.
+func handWrittenNotice(drifted []string) string {
+	if len(drifted) == 0 {
+		return ""
+	}
+
+	var b strings.Builder
+	b.WriteString("This booth contains hand-written files:\n\n")
+	for _, name := range drifted {
+		b.WriteString("  .booth/" + name + "\n")
+	}
+	b.WriteString("\nThese were not written by booth config, or were edited afterwards. ")
+	b.WriteString("Configuring regenerates them from your selection, so they cannot simply ")
+	b.WriteString("be written over.\n\n")
+	b.WriteString("Nothing is decided yet. When you save, you choose: keep yours and have the ")
+	b.WriteString("generated content written beside them as .new files to merge, or replace ")
+	b.WriteString("them (the originals are kept as .bak).\n\n")
+	b.WriteString("Go on in and look around — nothing is touched until you save.")
+	return b.String()
+}
+
+// joinWarnings combines the startup warnings that apply, dropping the ones that
+// don't, so the dialog shows every relevant one rather than only the first.
+func joinWarnings(warnings ...string) string {
+	var present []string
+	for _, w := range warnings {
+		if w != "" {
+			present = append(present, w)
+		}
+	}
+	return strings.Join(present, "\n\n")
+}
+
+// printBesideResult tells the user what landed and what is left for them to do.
+// The reconfigure is deliberately incomplete: the generated content is on disk, but
+// only they can decide how it combines with what they wrote.
+func printBesideResult(targetPath string, drifted []string) {
+	boothDir := filepath.Join(targetPath, ".booth")
+	fmt.Printf("Kept your hand-written files in %s and wrote the generated content beside them:\n\n", boothDir)
+	for _, name := range drifted {
+		fmt.Printf("  %s.new\n", name)
+	}
+	fmt.Println("\nNothing of yours was changed. Merge each .new file into its original to")
+	fmt.Println("finish, then delete it. To see what would change:")
+	fmt.Println()
+	for _, name := range drifted {
+		fmt.Printf("  diff %s %s.new\n", filepath.Join(boothDir, name), filepath.Join(boothDir, name))
+	}
 }
 
 // backupDrifted saves a .bak of each hand-written file about to be replaced.
@@ -221,12 +286,14 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 	// Pre-populate booth version from target's lock file (falls back to binary version)
 	pre.StringFields["booth-version"] = readLockFileVersion(targetPath, version)
 
-	// Check if .booth directory is writable
-	warning := checkBoothWritable(targetPath)
-
 	// Files holding hand-written content. Saving regenerates them from scratch, so
-	// the TUI demands a typed confirmation before it will destroy them.
+	// the TUI makes the user choose before it will touch them.
 	drifted := output.Drifted(targetPath)
+
+	// Say so up front, before any time is invested. Learning only at save time that
+	// your Boothfile can't simply be written out means having configured the whole
+	// booth without knowing the result was in question.
+	warning := joinWarnings(checkBoothWritable(targetPath), handWrittenNotice(drifted))
 
 	// Run TUI
 	result, err := tui.RunConfig(registry, pre, warning, drifted)
@@ -325,6 +392,17 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 
 	if flags.dryrun {
 		printDryrun(out)
+		return
+	}
+
+	if result.SaveBeside {
+		// The user kept their hand-written files: write what we generated alongside
+		// as <name>.new and leave theirs untouched, to merge by hand.
+		if err := output.WriteOutputBeside(out, targetPath, drifted); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		printBesideResult(targetPath, drifted)
 		return
 	}
 
@@ -845,9 +923,13 @@ configuration is loaded as the baseline. CLI flags override the existing values.
 
 Configuring regenerates .booth/Boothfile and .booth/config.toml from scratch. If
 either holds hand-written content — never generated by booth config, or generated
-and then edited — it is not overwritten without explicit consent: pass --overwrite
-here, or type the confirmation word in the TUI. The replaced file is kept as
-<name>.bak.
+and then edited — it is not overwritten without explicit consent. You get two
+choices, in the TUI on save or here as flags:
+
+  keep it      the generated content is written beside yours as <name>.new, which
+               you merge by hand (--beside, or Enter in the TUI). Nothing is lost.
+  replace it   yours is replaced, and kept as <name>.bak (--overwrite, or type the
+               confirmation word in the TUI).
 
 Flags:
   --select <selection>     Template selection DSL (repeatable)
@@ -859,6 +941,8 @@ Flags:
   --version <ver>          Use templates from a specific release version
   --overwrite              Overwrite existing files without prompting, including
                            hand-written ones (--no-tui only)
+  --beside                 Keep hand-written files; write the generated content
+                           as <name>.new for you to merge (--no-tui only)
   --start                  Start the booth after creation
   --debug                  Print debug output
   --cmd <command>          Set default start command (repeatable)

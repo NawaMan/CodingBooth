@@ -80,6 +80,9 @@ function require-tui-tools() {
 #                    plain "save" would silently leave the files untouched — and a
 #                    test asserting "the hand-written value survived" would then
 #                    pass for the wrong reason.
+#          "save-beside"
+#                  → append Ctrl+S then a bare Enter: keep the hand-written files
+#                    and write the generated content beside them as <name>.new.
 #          "frame" → leave the TUI displayed (final frame is the TUI), then
 #                    quit without saving (Ctrl+Q, Enter). Used for frame checks.
 #          "raw"   → append nothing; the caller's keystrokes are complete.
@@ -88,6 +91,12 @@ function require-tui-tools() {
 # (e.g. LAUNCH_ARGS=(--select go)). The tape is written with printf (never a
 # heredoc — the dev shell colorizes heredoc/cat output and corrupts the tape).
 LAUNCH_ARGS=()
+#
+# Set DISMISS_WARNING=true when the booth under test raises the startup warning
+# dialog — e.g. it holds hand-written files, or .booth/ is not writable. That
+# dialog swallows every key until it is dismissed, so a test that leaves it up
+# would be driving an unresponsive TUI and quietly assert on nothing.
+DISMISS_WARNING=false
 function run-tui() {
     local mode="$1"; shift
     local tape="${prj}/run.tape"
@@ -113,6 +122,10 @@ function run-tui() {
             "Type \"${launch}\"" \
             'Enter' \
             'Sleep 4s'
+        # Clear the startup warning dialog, if this booth raises one.
+        if [[ "$DISMISS_WARNING" == "true" ]]; then
+            printf '%s\n' 'Enter' 'Sleep 700ms'
+        fi
         # Test-specific keystrokes
         printf '%s\n' "$@"
         # Terminal action by mode
@@ -122,6 +135,11 @@ function run-tui() {
                 ;;
             save-confirm)
                 printf '%s\n' 'Ctrl+S' 'Sleep 1s' 'Type "overwrite"' 'Sleep 500ms' 'Enter' 'Sleep 3s'
+                ;;
+            save-beside)
+                # Ctrl+S then a bare Enter: keep the hand-written files, write the
+                # generated content beside them as <name>.new.
+                printf '%s\n' 'Ctrl+S' 'Sleep 1s' 'Enter' 'Sleep 3s'
                 ;;
             frame)
                 # The keystroke state is captured into the stacked frame dump;
