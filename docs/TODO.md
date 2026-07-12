@@ -38,6 +38,30 @@ Need to find a way to fix this. This may involve creating a different type of ho
 - [ ] Add more tip to 99z-cb-profile.sh - Like those functions after setups (python-info, start-xfce and etc.)
 - [ ] Consider using ubuntu-keyring instead of debian-archive-keyring.
 - [ ] Add `booth-help` command inside the container to show available tools and commands.
+- [ ] Polish the `booth config` hand-off for hand-written files. The feature itself is **done** and is
+      deliberately as far as we go: a hand-written `.booth/Boothfile` is protected, `--beside` (or Enter
+      in the TUI) keeps it and writes the generated content as `Boothfile.new`, and we print a `diff`
+      command. Producing the two files is our job; merging them is the user's. Two cosmetic gaps:
+      - Printed paths are absolute and long — print them relative to the cwd so the command is easy to
+        copy-paste.
+      - `diff` only *shows* the difference. Also suggest a side-by-side merge (`vimdiff`, `code --diff`).
+
+      **Rejected — do not re-propose (investigated 2026-07-11):**
+      - *Storing the last-generated content as a merge base, for a three-way merge.* It does not earn its
+        keep. Boothfiles are tiny (largest in repo: 50 lines; average ~8), so a two-way diff is readable
+        by hand and three-way saves roughly one hunk. Worse, the base does not exist for the dominant
+        case — 230 of 301 tracked booth files are hand-written from scratch and never had a generated
+        predecessor — so the machinery would only help the minority. The "extra hunks" a two-way diff
+        shows are not noise; they are exactly the changes the user just asked for in the TUI. Costs:
+        changes the `.booth/.generated` format, needs diff3 (no Go stdlib; repo runs on 2 deps), and adds
+        an adoption trap — adopting a hand-edited legacy file as its own base makes a later merge *delete*
+        the user's edits.
+      - *Reading the Boothfile back into TUI state so the TUI can represent everything.* Impossible as a
+        total function: the Boothfile DSL (`run`, `copy`, `workdir`, arbitrary shell) is strictly richer
+        than the TUI's vocabulary (template selections + params), so a hand-written `run echo hi` has no
+        template preimage. (Measured: ~99% of *generated* lines can be attributed back to a template
+        segment, because the compiler emits segments verbatim. So a read-only "custom directives,
+        preserved verbatim" panel would be feasible — if it is ever actually wanted.)
 - [ ] ...
 
 ## Problems
