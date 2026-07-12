@@ -21,7 +21,6 @@ import (
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 )
 
-
 type initFlags struct {
 	selectDSLs    []string
 	selectDSL     string // resolved: joined from selectDSLs after ReadSelectInput
@@ -41,6 +40,7 @@ type initFlags struct {
 	full          bool
 	detail        bool
 	overwrite     bool
+	beside        bool // keep hand-written files; write generated content as <name>.new
 	noTUI         bool
 	dryrun        bool
 }
@@ -73,6 +73,8 @@ func parseInitFlags(args []string) initFlags {
 			flags.detail = true
 		case "--overwrite":
 			flags.overwrite = true
+		case "--beside":
+			flags.beside = true
 		case "--no-tui":
 			flags.noTUI = true
 		case "--dryrun":

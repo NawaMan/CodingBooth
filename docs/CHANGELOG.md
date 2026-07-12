@@ -9,13 +9,27 @@ This file contains a list of changes for each released version.
   hand-edited — lost that content on the next `booth config`, with no warning. The `# Configured by:`
   header could not prevent this: it survives a hand-edit, so it cannot distinguish "still ours" from
   "someone edited this". `booth config` now fingerprints (SHA-256) what it writes, recording it in
-  `.booth/.generated`, and compares before overwriting. Content it did not write is protected: the CLI
-  refuses unless given `--overwrite`, and the TUI raises a full-screen confirmation that will not save
-  until the user types `overwrite`. The replaced file is kept as `<name>.bak` (gitignored). A booth
-  generated before `.generated` existed is adopted on its header, so no existing project starts crying
-  wolf. Hand-written booths are the norm — every `examples/workspaces/*` booth is one — so this covers
-  the mainstream case, not an edge case. See `cli/src/pkg/boothinit/output/guard.go`;
-  tests `tests/config/test68-config-guards-handwritten.sh` and
+  `.booth/.generated`, and compares before overwriting. Content it did not write is now protected, and
+  "overwrite or give up" is not the only way out — you get two choices, in the TUI on save or as flags:
+
+  - **Keep yours** (`--beside`, or `Enter` in the TUI): the generated content is written alongside as
+    `<name>.new` and your file is not touched, for you to merge by hand — the same idea as
+    `pacnew`/`rpmnew`/`dpkg-dist`. Nothing is destroyed, and the kept file stays guarded until you
+    actually merge it. This is the TUI's default.
+  - **Replace yours** (`--overwrite`, or type `overwrite` in the TUI): your file is replaced and kept
+    as `<name>.bak`. Destroying work takes more than a reflex keystroke; getting at the generated
+    output does not.
+
+  The config TUI also says so **up front**, in a yellow dialog on open (Enter to continue) — otherwise
+  you would configure an entire booth before discovering, at save time, that the result could not
+  simply be written over what you have. It is a heads-up, not a blocker: nothing is touched until you
+  save, so you are still free to go in and look around.
+
+  `.bak` and `.new` are gitignored. A booth generated before `.generated` existed is adopted on its
+  header, so no existing project starts crying wolf. Hand-written booths are the norm — every
+  `examples/workspaces/*` booth is one — so this covers the mainstream case, not an edge case. See
+  `cli/src/pkg/boothinit/output/guard.go` and `writer.go`; tests
+  `tests/config/test68-config-guards-handwritten.sh` and
   `tests/config-tui/test15-tui-overwrite-guard.sh`.
 - **New `desktop-wayland` variant (experimental) — a Wayland-native desktop in the browser.** The existing
   `desktop-xfce`/`desktop-kde`/`desktop-lxqt` variants are X11 (TigerVNC + noVNC);

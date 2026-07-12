@@ -101,4 +101,23 @@ printf 'variant = "base"\n' > "$configtoml"
 config $prj --no-tui --select go
 says "config.toml" ; check $? "a hand-written config.toml is guarded too"
 
+# ---------------------------------------------------------------------------
+# 6) --beside: keep the hand-written file, write the generated one alongside.
+#    This is the way through that loses nothing — the user merges the two.
+# ---------------------------------------------------------------------------
+run rm -Rf $prj ; mkdir -p "$prj/.booth"
+printf 'setup go\ninstall apt ripgrep\n' > "$boothfile"
+cp "$boothfile" "$original"
+
+config $prj --no-tui --beside --select go
+[[ $code -eq 0 ]] ; check $? "--beside proceeds"
+cmp -s "$boothfile" "$original" ; check $? "the hand-written Boothfile is untouched"
+grep -q "^# Configured by:" "$boothfile.new" ; check $? "the generated content lands as Boothfile.new"
+[[ ! -f "$boothfile.bak" ]] ; check $? "nothing was destroyed, so no .bak was made"
+
+# The kept file must still be guarded next time — writing .new must not bless it
+# as ours, or the next run would clobber it silently.
+config $prj --no-tui --select go
+says "Refusing to overwrite hand-written files" ; check $? "the kept file is still guarded on the next run"
+
 finally

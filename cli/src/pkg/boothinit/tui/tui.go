@@ -20,6 +20,11 @@ type ConfigResult struct {
 	StringFields map[string]string   // all string/cycle field values
 	BoolFields   map[string]bool     // all bool field values
 	ListFields   map[string][]string // all list field values (expose, env, mount)
+
+	// SaveBeside is set when the user kept their hand-written files and asked for
+	// the generated content to land alongside as "<name>.new", to merge by hand.
+	// Only ever set when the booth had hand-written files to begin with.
+	SaveBeside bool
 }
 
 // PreSelection holds values pre-populated from CLI flags.
@@ -37,7 +42,9 @@ type PreSelection struct {
 //
 // drifted names the .booth/ files holding hand-written content (see output.Drifted).
 // Saving regenerates those files from scratch, destroying that content, so when the
-// list is non-empty Ctrl+S will not save until the user types the confirmation word.
+// list is non-empty Ctrl+S opens a dialog rather than saving: the safe default writes
+// the generated content beside them (ConfigResult.SaveBeside), and replacing them
+// outright requires typing the confirmation word.
 func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection, warning string, drifted []string) (*ConfigResult, error) {
 	m := newModel(registry, pre)
 	m.drifted = drifted
@@ -63,5 +70,6 @@ func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection, warning strin
 		StringFields: final.stringFields,
 		BoolFields:   final.boolFields,
 		ListFields:   final.listFields,
+		SaveBeside:   final.saveBeside,
 	}, nil
 }

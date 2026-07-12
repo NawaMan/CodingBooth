@@ -16,6 +16,7 @@ Back to [README](../README.md) | See also: [booth config reference](BOOTH_CONFIG
 - [Keybindings](#keybindings)
 - [Pre-populating with Flags](#pre-populating-with-flags)
 - [Selection Behavior](#selection-behavior)
+- [Saving over Hand-Written Files](#saving-over-hand-written-files)
 - [Flags](#flags)
 - [Examples](#examples)
 
@@ -50,6 +51,8 @@ booth config ./existing-project
 7. **Save** — Press Ctrl+S to generate `.booth/` files
 
 The output is identical to running `booth config --no-tui --select <your-selections>` — same Boothfile, config.toml, startup scripts, and files.
+
+If the booth holds hand-written files, step 2 also raises a warning on open and step 7 asks what to do with them — see [Saving over hand-written files](#saving-over-hand-written-files).
 
 ---
 
@@ -132,7 +135,7 @@ Extensions marked with `*` are auto-selected when their parent template is selec
 
 | Key | Action |
 |-----|--------|
-| `Ctrl+S` | Save selection and run init |
+| `Ctrl+S` | Save selection and run init (on a booth with [hand-written files](#saving-over-hand-written-files), asks first) |
 | `Ctrl+Q` / `Ctrl+C` | Quit (asks for confirmation) |
 | `Enter` (when quitting) | Confirm quit |
 | `Esc` (when quitting) | Cancel quit |
@@ -225,6 +228,83 @@ package managers, so this never changes what gets installed.
 
 ---
 
+## Saving over Hand-Written Files
+
+Saving regenerates `.booth/Boothfile` and `.booth/config.toml` **from scratch** — the TUI does not edit them in place. If either holds hand-written content, saving over it would destroy work the TUI cannot reproduce from your selection. So it won't, not without asking.
+
+A file counts as hand-written if `booth config` never wrote it, or wrote it and a human edited it afterwards. See [BOOTH_CONFIG.md — Hand-Written Files](BOOTH_CONFIG.md#hand-written-files) for how that is detected.
+
+### On open — a heads-up
+
+The TUI tells you as soon as it starts, so you find out *before* configuring rather than after:
+
+```
+┌──────────────────────────────────────────────────┐
+│                   ⚠ Warning                      │
+│                                                  │
+│ This booth contains hand-written files:          │
+│                                                  │
+│   .booth/Boothfile                               │
+│                                                  │
+│ These were not written by booth config, or were  │
+│ edited afterwards. Configuring regenerates them  │
+│ from your selection, so they cannot simply be    │
+│ written over.                                    │
+│                                                  │
+│ Nothing is decided yet. When you save, you       │
+│ choose: keep yours and have the generated        │
+│ content written beside them as .new files to     │
+│ merge, or replace them (the originals are kept   │
+│ as .bak).                                        │
+│                                                  │
+│ Go on in and look around — nothing is touched    │
+│ until you save.                                  │
+│                                                  │
+│        Enter/Space: continue  │  Esc: quit       │
+└──────────────────────────────────────────────────┘
+```
+
+This is a heads-up, not a blocker. Press `Enter` and browse, select, and configure exactly as normal — nothing is written until you save.
+
+### On save — the choice
+
+`Ctrl+S` does not save straight away. It raises:
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│              ⚠  THESE FILES ARE HAND-WRITTEN  ⚠              │
+│                                                              │
+│ Saving regenerates .booth/ from your selection. These files  │
+│ were not written by booth config — or were edited afterwards │
+│ — so saving over them would destroy that work:               │
+│                                                              │
+│   .booth/Boothfile                                           │
+│                                                              │
+│  ENTER   Keep them. Write what I generated beside them:      │
+│          .booth/Boothfile.new                                │
+│          Nothing is destroyed — you merge the two by hand.   │
+│                                                              │
+│ To replace them instead (a .bak is kept), type "overwrite"   │
+│ and press Enter:                                             │
+│    █                                                         │
+│                                                              │
+│   Enter: keep mine, write .new  │  Esc: back out  │  Ctrl+C  │
+└──────────────────────────────────────────────────────────────┘
+```
+
+| Key | Action |
+|-----|--------|
+| `Enter` (empty field) | **Keep your files.** The generated content is written beside them as `<name>.new` for you to merge. Nothing is destroyed. |
+| Type `overwrite`, then `Enter` | **Replace your files.** Each original is kept as `<name>.bak`. |
+| `Esc` | Back out to the TUI. Nothing is touched. |
+| `Ctrl+C` | Quit without saving. |
+
+Typing the word in full is deliberate: destroying someone's work should take more than a reflex keystroke, while merely getting at the generated output should not. A half-typed word does nothing.
+
+The CLI equivalents are `--beside` and `--overwrite`.
+
+---
+
 ## Flags
 
 | Flag | Description |
@@ -236,7 +316,8 @@ package managers, so this never changes what gets installed.
 | `--port <port>` | Pre-set port |
 | `--templates-path <dir>` | Use local templates directory |
 | `--version <ver>` | Use templates from a specific release version |
-| `--overwrite` | Overwrite existing files without prompting (`--no-tui` only) |
+| `--overwrite` | Overwrite existing files without prompting, including [hand-written](#saving-over-hand-written-files) ones (`--no-tui` only) |
+| `--beside` | Keep [hand-written](#saving-over-hand-written-files) files; write the generated content as `<name>.new` to merge (`--no-tui` only) |
 | `--start` | Start the booth after creation |
 | `--debug` | Print debug output |
 | `--cmd <command>` | Set default start command (repeatable) |

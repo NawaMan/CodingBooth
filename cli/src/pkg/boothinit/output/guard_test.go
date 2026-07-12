@@ -120,6 +120,75 @@ func TestWriteManifest_PreservesUntouchedEntries(t *testing.T) {
 	assert.Equal(t, "sha256:bbb", entries["config.toml"])
 }
 
+// --- WriteOutputBeside: keep theirs, write ours alongside ---
+
+func TestWriteOutputBeside_KeepsOriginalAndWritesNew(t *testing.T) {
+	dir := t.TempDir()
+	handwritten := "setup go\ninstall apt ripgrep\n"
+	writeBooth(t, dir, "Boothfile", handwritten)
+
+	out := &BoothOutput{
+		Config:    &ConfigToml{Variant: "base"},
+		Boothfile: &BoothfileContent{Content: "setup go\n"},
+		Command:   "booth config --no-tui --select go",
+	}
+	require.NoError(t, WriteOutputBeside(out, dir, []string{"Boothfile"}))
+
+	boothDir := filepath.Join(dir, ".booth")
+
+	kept, err := os.ReadFile(filepath.Join(boothDir, "Boothfile"))
+	require.NoError(t, err)
+	assert.Equal(t, handwritten, string(kept), "the hand-written file is left exactly as it was")
+
+	generated, err := os.ReadFile(filepath.Join(boothDir, "Boothfile.new"))
+	require.NoError(t, err)
+	assert.Contains(t, string(generated), "# Configured by:", "the generated content lands as .new")
+
+	assert.NoFileExists(t, filepath.Join(boothDir, "Boothfile.bak"),
+		"nothing was destroyed, so nothing needs backing up")
+}
+
+// A diverted file must NOT be recorded in the manifest: the canonical path still
+// holds the user's own content, so it has to keep reading back as hand-written
+// until they actually merge. Recording it would bless their file as ours and let
+// the next run clobber it silently — reintroducing the original bug.
+func TestWriteOutputBeside_DoesNotAdoptTheUsersFile(t *testing.T) {
+	dir := t.TempDir()
+	writeBooth(t, dir, "Boothfile", "setup go\ninstall apt ripgrep\n")
+
+	out := &BoothOutput{
+		Config:    &ConfigToml{Variant: "base"},
+		Boothfile: &BoothfileContent{Content: "setup go\n"},
+	}
+	require.NoError(t, WriteOutputBeside(out, dir, []string{"Boothfile"}))
+
+	assert.Equal(t, []string{"Boothfile"}, Drifted(dir),
+		"the kept file must still be guarded on the next run")
+}
+
+// Non-diverted guarded files are written normally in the same pass — a booth can
+// have a hand-written Boothfile and a config.toml that is still ours.
+func TestWriteOutputBeside_WritesUndriftedFilesNormally(t *testing.T) {
+	dir := t.TempDir()
+	writeBooth(t, dir, "Boothfile", "setup go\n")
+
+	out := &BoothOutput{
+		Config:    &ConfigToml{Variant: "base"},
+		Boothfile: &BoothfileContent{Content: "setup go\n"},
+		Command:   "booth config --no-tui --select go",
+	}
+	require.NoError(t, WriteOutputBeside(out, dir, []string{"Boothfile"}))
+
+	boothDir := filepath.Join(dir, ".booth")
+	assert.FileExists(t, filepath.Join(boothDir, "Boothfile.new"))
+	assert.NoFileExists(t, filepath.Join(boothDir, "config.toml.new"),
+		"config.toml was not hand-written, so it is written in place")
+
+	entries := readManifest(boothDir)
+	assert.Contains(t, entries, "config.toml", "the file we did write is tracked")
+	assert.NotContains(t, entries, "Boothfile", "the file we diverted is not")
+}
+
 // --- BackupDrifted ---
 
 func TestBackupDrifted_KeepsOriginalContent(t *testing.T) {

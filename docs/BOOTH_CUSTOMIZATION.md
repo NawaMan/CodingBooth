@@ -2,6 +2,8 @@
 
 This guide covers how to customize a CodingBooth environment — from built-in setup scripts to creating your own templates and sharing them as recipes. If you just want to run a booth, see the [Common Flags](../README.md#common-flags) section of the README.
 
+> **Hand-writing a Boothfile is fine — and `booth config` will not clobber it.** Much of this guide has you write `.booth/Boothfile` by hand. Because `booth config` regenerates that file from scratch, it treats content it did not write as off-limits: it refuses to overwrite it, and offers to write the generated version beside it as `Boothfile.new` for you to merge instead. See [BOOTH_CONFIG.md — Hand-Written Files](BOOTH_CONFIG.md#hand-written-files).
+
 ---
 
 ## Table of Contents

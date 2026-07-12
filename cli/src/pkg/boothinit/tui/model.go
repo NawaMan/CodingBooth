@@ -59,12 +59,15 @@ type model struct {
 
 	// Overwrite confirmation — saving regenerates .booth/ files from scratch, so
 	// when any of them hold hand-written content (drifted, from output.Drifted)
-	// Ctrl+S opens a dialog that will not save until the user types
-	// overwriteConfirmWord. Destroying someone's work should take more than a
-	// reflex keystroke.
+	// Ctrl+S opens a dialog instead of saving. It offers two ways out: Enter writes
+	// the generated content beside the user's files as "<name>.new" (saveBeside —
+	// destroys nothing, and is the default), while replacing them outright requires
+	// typing overwriteConfirmWord. Destroying someone's work should take more than a
+	// reflex keystroke; merely getting at the generated output should not.
 	drifted         []string
 	overwriteDialog bool
 	overwriteInput  string
+	saveBeside      bool
 
 	// Search
 	searchQuery   string
@@ -1357,8 +1360,10 @@ func (m model) requestSave() (tea.Model, tea.Cmd) {
 	return m, tea.Quit
 }
 
-// handleOverwriteConfirm drives the typed confirmation. Enter only saves once the
-// word matches exactly; anything else keeps the dialog up, and Esc backs out with
+// handleOverwriteConfirm drives the dialog. Enter on an empty field takes the safe
+// path — write the generated content beside the user's files as "<name>.new" and
+// destroy nothing. Enter only *replaces* the files when the field holds the
+// confirmation word exactly. A half-typed word does nothing, and Esc backs out with
 // the configuration untouched.
 func (m model) handleOverwriteConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch msg.String() {
@@ -1368,7 +1373,12 @@ func (m model) handleOverwriteConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "enter":
-		if m.overwriteInput == overwriteConfirmWord {
+		switch m.overwriteInput {
+		case "":
+			m.saveBeside = true
+			m.confirmed = true
+			return m, tea.Quit
+		case overwriteConfirmWord:
 			m.confirmed = true
 			return m, tea.Quit
 		}
