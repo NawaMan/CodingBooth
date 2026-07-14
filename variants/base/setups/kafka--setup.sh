@@ -67,8 +67,15 @@ KAFKA_TGZ="kafka_${SCALA_VER}-${KAFKA_VERSION}.tgz"
 KAFKA_DIR="/opt/kafka_${SCALA_VER}-${KAFKA_VERSION}"
 
 if [[ ! -d "$KAFKA_DIR" ]]; then
-  curl -fsSL "https://downloads.apache.org/kafka/${KAFKA_VERSION}/${KAFKA_TGZ}" -o "/tmp/${KAFKA_TGZ}" \
-    || curl -fsSL "https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/${KAFKA_TGZ}" -o "/tmp/${KAFKA_TGZ}"
+  # downloads.apache.org is a CDN that only carries the *current* release, so it 404s
+  # for any pinned older version — every such build falls through to archive.apache.org,
+  # which is durable but throttled. Fail fast on the CDN (a 404 is not worth retrying)
+  # and retry the archive, which is where the connection resets actually come from.
+  # --retry-all-errors is needed because curl does not count a reset mid-transfer as a
+  # "transient error" for --retry on its own.
+  curl -fsSL --connect-timeout 10 "https://downloads.apache.org/kafka/${KAFKA_VERSION}/${KAFKA_TGZ}" -o "/tmp/${KAFKA_TGZ}" \
+    || curl -fsSL --connect-timeout 10 --retry 5 --retry-delay 3 --retry-all-errors \
+         "https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/${KAFKA_TGZ}" -o "/tmp/${KAFKA_TGZ}"
   mkdir -p "$KAFKA_DIR"
   tar -xzf "/tmp/${KAFKA_TGZ}" -C /opt
   mv "/opt/kafka_${SCALA_VER}-${KAFKA_VERSION}" "$KAFKA_DIR" || true

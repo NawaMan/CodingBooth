@@ -154,7 +154,7 @@ func resolveParams(t *tmpl.Template, positional []string, overrides map[string]s
 			// deterministic across the TUI, CLI, and recipe entry points.
 			if i < len(positional) {
 				values[name] = CanonicalizeVariadic(positional[i:])
-			} else if ov, ok := overrides[name]; ok {
+			} else if ov, ok := overrides[name]; ok && isPin(ov, t.Params[name].Default, overrides) {
 				values[name] = ov
 			} else {
 				values[name] = t.Params[name].Default
@@ -162,7 +162,7 @@ func resolveParams(t *tmpl.Template, positional []string, overrides map[string]s
 		} else {
 			if i < len(positional) && positional[i] != "" {
 				values[name] = positional[i]
-			} else if ov, ok := overrides[name]; ok {
+			} else if ov, ok := overrides[name]; ok && isPin(ov, t.Params[name].Default, overrides) {
 				values[name] = ov
 			} else {
 				values[name] = t.Params[name].Default
@@ -171,6 +171,20 @@ func resolveParams(t *tmpl.Template, positional []string, overrides map[string]s
 	}
 
 	return values, nil
+}
+
+// isPin reports whether an override carried over from an existing Boothfile is a value
+// the user chose, rather than one the previous generation derived.
+//
+// Overrides come from the Boothfile's `arg` lines, which hold resolved values. A default
+// that follows another param ("${SSH_PORT}") therefore arrives as a number, and a plain
+// string comparison against the default cannot tell "the user pinned 2200" from "2200 is
+// what ${SSH_PORT} resolved to last time". Re-resolving the default against those same
+// old args reconstructs the derived value: if the override matches it, it is derived and
+// must be dropped so it re-derives from the new selection — otherwise moving a service
+// port would leave the published host port behind on the port the service used to listen on.
+func isPin(override, dflt string, oldArgs map[string]string) bool {
+	return override != tmpl.ExpandRefs(dflt, oldArgs)
 }
 
 // CanonicalizeVariadic dedups (exact match, whitespace-trimmed) and sorts the

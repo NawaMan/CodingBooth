@@ -1,0 +1,23 @@
+display-name = "Ollama Auto-Start"
+display-disc = "Auto-start the Ollama server on container boot"
+display-detail = "Runs 'ollama serve' in the background when the container boots, so 'ollama pull' and 'ollama run' work immediately instead of failing until you start the server by hand. Binds to 0.0.0.0 so the expose extension can reach it — add that too if you want to call the API from the host."
+display-order = 2
+auto-select = false
+tags = [
+    "ai",
+    "llm",
+    "ollama",
+    "autostart"
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start the Ollama server in background.
+# Bind to 0.0.0.0 (not Ollama's 127.0.0.1 default) so a published port reaches it.
+PORT=${OLLAMA_PORT}
+LOG_FILE="/tmp/ollama.log"
+
+OLLAMA_HOST="0.0.0.0:$PORT" nohup ollama serve > "$LOG_FILE" 2>&1 &
+
+echo "Ollama server started on port $PORT (PID $!, log: $LOG_FILE)"
+"""

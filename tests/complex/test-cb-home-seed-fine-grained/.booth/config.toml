@@ -5,7 +5,10 @@ run-args = [
     "-v", "./seed-content/.testdir:/etc/cb-home-seed/.testdir:ro",
     "-v", "./seed-content/.testfile-individual:/etc/cb-home-seed/.testfile-individual:ro",
     "-v", "./seed-content/.testfile-new:/etc/cb-home-seed/.testfile-new:ro",
+    # Marker-free subtree — smart_copy takes this one as a single recursive cp
+    "-v", "./seed-content/.testdir-plain:/etc/cb-home-seed/.testdir-plain:ro",
     # Mount override content (always overwrite)
     "-v", "./override-content/.testdir-override:/etc/cb-home/.testdir-override:ro",
     "-v", "./override-content/.testfile-override:/etc/cb-home/.testfile-override:ro",
+    "-v", "./override-content/.testdir-plain-override:/etc/cb-home/.testdir-plain-override:ro",
 ]

@@ -7,6 +7,14 @@ Thumbs.db
 .gitignore
 *.log
 
+# --- Booth local cache ---
+# The cache holds whatever the container writes to mounted paths: shell history, browser
+# profiles, and live credentials (~/.claude/.credentials.json arrives via the cb-home
+# override layer). It must never be committed. Booth refuses to start if it is tracked.
+# Spelled out here because the per-project .booth/.gitignore that normally carries this
+# rule is itself covered by the '.gitignore' line above, so it never reaches a clone.
+**/.booth/cache/
+
 # --- Env & secrets ---
 .env
 .env.*

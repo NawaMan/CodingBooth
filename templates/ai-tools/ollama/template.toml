@@ -1,12 +1,18 @@
 display-name = "Ollama"
 display-disc = "Run large language models locally with Ollama"
-display-detail = "Installs Ollama for running open-source LLMs locally. Start with 'ollama serve', then pull and run models like llama3."
+display-detail = "Installs Ollama for running open-source LLMs locally. The server does not run on its own — either start it with 'ollama serve', or add the auto-start extension to have it running on container boot. Then pull and run models like llama3."
 display-order = 40
 tags = [
     "ai",
     "llm",
     "ollama",
     "local"
+]
+
+[params.OLLAMA_PORT]
+default = "11434"
+suggests = [
+    "11434",
 ]
 
 [segments]

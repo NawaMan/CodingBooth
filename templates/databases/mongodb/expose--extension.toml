@@ -1,0 +1,22 @@
+display-name = "Expose MongoDB Port"
+display-disc = "Publish MongoDB (container port 27017) to the host"
+display-detail = "MongoDB already auto-starts on container boot, but it only listens inside the booth. This publishes it so you can point mongosh, Compass, or an app on the host at it. mongodb--setup.sh takes no port argument (27017 is written into its mongod.conf), so MONGODB_PORT is the HOST port mapped to it. Change it if the host already runs a MongoDB on 27017."
+display-order = 1
+auto-select = false
+tags = [
+    "mongodb",
+    "database",
+    "port",
+    "network",
+]
+
+run-args = [
+    "-p", "${MONGODB_PORT}:27017",
+]
+
+[params.MONGODB_PORT]
+default = "27017"
+suggests = [
+    "27017",
+    "27018",
+]

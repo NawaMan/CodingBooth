@@ -456,8 +456,8 @@ func TestResolve_ExtensionParams(t *testing.T) {
 				Name: "deno",
 				Extensions: []*tmpl.Template{
 					{
-						Name:   "pkg",
-						Params: map[string]tmpl.Param{"DENO_PKGS": {Default: "", Variadic: true}},
+						Name:       "pkg",
+						Params:     map[string]tmpl.Param{"DENO_PKGS": {Default: "", Variadic: true}},
 						ParamOrder: []string{"DENO_PKGS"},
 					},
 				},
@@ -481,8 +481,8 @@ func TestResolve_ExtensionParamsDefault(t *testing.T) {
 				Name: "java",
 				Extensions: []*tmpl.Template{
 					{
-						Name:   "maven",
-						Params: map[string]tmpl.Param{"MAVEN_VERSION": {Default: "3.9"}},
+						Name:       "maven",
+						Params:     map[string]tmpl.Param{"MAVEN_VERSION": {Default: "3.9"}},
 						ParamOrder: []string{"MAVEN_VERSION"},
 					},
 				},
@@ -505,8 +505,8 @@ func TestResolve_ExtensionParamsOverride(t *testing.T) {
 				Name: "java",
 				Extensions: []*tmpl.Template{
 					{
-						Name:   "maven",
-						Params: map[string]tmpl.Param{"MAVEN_VERSION": {Default: "3.9"}},
+						Name:       "maven",
+						Params:     map[string]tmpl.Param{"MAVEN_VERSION": {Default: "3.9"}},
 						ParamOrder: []string{"MAVEN_VERSION"},
 					},
 				},
@@ -662,4 +662,54 @@ func TestParseAndResolve_EndToEnd(t *testing.T) {
 
 	// claude-code with no params
 	assert.Equal(t, "claude-code", resolved.Templates[2].Template.Name)
+}
+
+// --- Carried-over Boothfile args: derived values vs. real pins ---
+
+// hostPortTmpl is an expose extension whose host port follows the service port, so its
+// default is a reference and its Boothfile `arg` line holds whatever that resolved to.
+func hostPortTmpl() *tmpl.Template {
+	return &tmpl.Template{
+		Name:       "expose",
+		Params:     map[string]tmpl.Param{"SSH_HOST_PORT": {Default: "${SSH_PORT}"}},
+		ParamOrder: []string{"SSH_HOST_PORT"},
+	}
+}
+
+func TestResolveParams_DerivedOverrideIsDropped(t *testing.T) {
+	// Old Boothfile: sshd on 2200, published on 2200 — the host port was derived. It must
+	// fall back to the reference so it re-derives from the new service port, rather than
+	// freezing at 2200 and publishing a port nothing listens on.
+	values, err := resolveParams(hostPortTmpl(), nil, map[string]string{
+		"SSH_PORT":      "2200",
+		"SSH_HOST_PORT": "2200",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "${SSH_PORT}", values["SSH_HOST_PORT"])
+}
+
+func TestResolveParams_PinnedOverrideIsKept(t *testing.T) {
+	// Old Boothfile: sshd on 22, published on 2222 — 2222 is a choice, not a derivation.
+	values, err := resolveParams(hostPortTmpl(), nil, map[string]string{
+		"SSH_PORT":      "22",
+		"SSH_HOST_PORT": "2222",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "2222", values["SSH_HOST_PORT"])
+}
+
+func TestResolveParams_ExplicitSelectionBeatsCarriedOverArg(t *testing.T) {
+	values, err := resolveParams(hostPortTmpl(), []string{"19000"}, map[string]string{
+		"SSH_PORT":      "22",
+		"SSH_HOST_PORT": "2222",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "19000", values["SSH_HOST_PORT"])
+}
+
+func TestIsPin_PlainDefaultUnaffected(t *testing.T) {
+	// A default with no references behaves exactly as before: equal to the default means
+	// "not a pin"; anything else is a pin worth preserving.
+	assert.False(t, isPin("22", "22", map[string]string{"NODE_VERSION": "22"}))
+	assert.True(t, isPin("1.58.2", "latest", map[string]string{"PLAYWRIGHT_VERSION": "1.58.2"}))
 }

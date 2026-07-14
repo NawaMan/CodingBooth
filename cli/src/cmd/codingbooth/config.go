@@ -81,10 +81,15 @@ func applyAptSnapshot(out *output.BoothOutput) {
 
 // runConfigCLI handles non-interactive mode (--no-tui).
 func runConfigCLI(version string, targetPath string, flags initFlags) {
+	// The existing .booth/ is the baseline and this invocation's flags override
+	// it — the same contract the TUI path uses. Without reading the header back,
+	// a reconfigure that did not restate --select would regenerate an empty
+	// booth, dropping the whole recorded selection while the run-args (which are
+	// recovered from config.toml) survived — a silent, lopsided wipe.
+	//
+	// readExistingBooth also pulls run-args and cache entries out of config.toml.
+	flags = mergeFlags(readExistingBooth(targetPath), flags)
 	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
-
-	// Read back cache-files/cache-dirs from existing config.toml
-	extractUserRunArgs(targetPath, &flags)
 
 	var out *output.BoothOutput
 	var resolved *selection.ResolvedSelection
@@ -600,8 +605,23 @@ func parseAdjustCommand(cmd string) initFlags {
 
 // mergeFlags merges existing booth flags (baseline) with CLI flags (overrides).
 // CLI flags take precedence over existing values.
+//
+// `existing` is parsed from a header that reads "booth config --no-tui
+// --overwrite ...", so it carries flags describing the run that *wrote* the
+// file. Those say nothing about what this run should do — inheriting them would
+// make every subsequent run an overwriting one — so the flags that steer this
+// invocation are taken from the CLI alone.
 func mergeFlags(existing, cli initFlags) initFlags {
 	merged := existing
+
+	merged.noTUI = cli.noTUI
+	merged.overwrite = cli.overwrite
+	merged.beside = cli.beside
+	merged.dryrun = cli.dryrun
+	merged.start = cli.start
+	merged.full = cli.full
+	merged.detail = cli.detail
+	merged.debug = cli.debug
 
 	// CLI overrides
 	if len(cli.selectDSLs) > 0 {
@@ -634,15 +654,6 @@ func mergeFlags(existing, cli initFlags) initFlags {
 	}
 	if cli.version != "" {
 		merged.version = cli.version
-	}
-	if cli.debug {
-		merged.debug = true
-	}
-	if cli.start {
-		merged.start = true
-	}
-	if cli.overwrite {
-		merged.overwrite = true
 	}
 
 	return merged
@@ -783,13 +794,21 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags, existin
 // Boothfile `arg` values, but only for non-default values not already set by the
 // selection DSL — so the TUI shows a real pin (e.g. PLAYWRIGHT_VERSION=1.58.2)
 // while explicit selection values and defaults are left untouched.
+//
+// A default that follows another param ("${SSH_PORT}") reaches the Boothfile as the
+// value it resolved to, so it cannot be recognised as a default by string comparison.
+// Resolving it against the Boothfile's own args reconstructs what it resolved to *then*:
+// a value that matches is derived, and must be left to re-derive from the new selection
+// rather than be frozen as a pin. Without this, moving a service port would leave the
+// published host port behind on the port the service used to listen on.
 func overlayExistingArgs(paramValues map[string]string, itemKey string, t *tmpl.Template, existingArgs map[string]string) {
 	for pname, p := range t.Params {
 		key := itemKey + ":" + pname
 		if _, set := paramValues[key]; set {
 			continue
 		}
-		if v, ok := existingArgs[pname]; ok && v != p.Default {
+		wasDefault := tmpl.ExpandRefs(p.Default, existingArgs)
+		if v, ok := existingArgs[pname]; ok && v != wasDefault {
 			paramValues[key] = v
 		}
 	}

@@ -1,0 +1,16 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select rabbitmq+start+expose:15672,25672
+
+env APT_SNAPSHOT=20260713T000000Z
+
+arg RABBIT_HOST_PORT=15672
+arg RABBIT_MGMTPORT=15672
+arg RABBIT_MGMT_HOST_PORT=25672
+arg RABBIT_PASS=devpass
+arg RABBIT_PORT=5672
+arg RABBIT_USER=devuser
+arg RABBIT_VERSION=latest
+arg RABBIT_VHOST=/dev
+
+setup rabbitmq --version ${RABBIT_VERSION} --port ${RABBIT_PORT} --mgmt-port ${RABBIT_MGMTPORT}
+setup rabbitmq-start --user ${RABBIT_USER} --pass ${RABBIT_PASS} --vhost ${RABBIT_VHOST}

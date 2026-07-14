@@ -899,3 +899,155 @@ func TestCompile_EndToEnd(t *testing.T) {
 	assert.Contains(t, startupContents, "go version")
 	assert.Contains(t, startupContents, "python --version")
 }
+
+// --- Param references (fixpoint expansion) ---
+
+// exposeSelection models "openssh+server:PORT+expose", where the expose extension's
+// host-port param defaults to the port the server actually listens on.
+func exposeSelection(sshPort, hostPortDefault string) *selection.ResolvedSelection {
+	return &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{
+					Name: "openssh",
+					StartupSegments: []tmpl.Segment{
+						{Order: 50, Content: "sshd -p ${SSH_PORT}\n"},
+					},
+				},
+				ParamValues: map[string]string{"SSH_PORT": sshPort},
+				Extensions: []selection.SelectedExtension{
+					{
+						Extension: &tmpl.Template{
+							Name:    "expose",
+							RunArgs: []string{"-p", "${SSH_HOST_PORT}:${SSH_PORT}"},
+						},
+						ParamValues: map[string]string{"SSH_HOST_PORT": hostPortDefault},
+					},
+				},
+			},
+		},
+	}
+}
+
+func TestCompile_ParamRefInDefault_FollowsReferencedParam(t *testing.T) {
+	// openssh+server:2200+expose — host port left at its "${SSH_PORT}" default,
+	// so it must publish 2200:2200, not a stale hardcoded port.
+	out, err := Compile(exposeSelection("2200", "${SSH_PORT}"))
+	require.NoError(t, err)
+	assert.Equal(t, []string{"-p", "2200:2200"}, out.Config.RunArgs)
+	assert.Contains(t, out.Boothfile.Content, "arg SSH_HOST_PORT=2200")
+	assert.Contains(t, out.Boothfile.Content, "arg SSH_PORT=2200")
+}
+
+func TestCompile_ParamRefInDefault_OverriddenHostPort(t *testing.T) {
+	// openssh+server:80+expose:10080 — the host side is overridden, the container
+	// side still follows the service port.
+	out, err := Compile(exposeSelection("80", "10080"))
+	require.NoError(t, err)
+	assert.Equal(t, []string{"-p", "10080:80"}, out.Config.RunArgs)
+}
+
+func TestCompile_ParamRefInDefault_Deterministic(t *testing.T) {
+	// Single-pass expansion over a Go map resolved this correctly only for some
+	// iteration orders. Compile repeatedly: every run must agree.
+	for i := 0; i < 50; i++ {
+		out, err := Compile(exposeSelection("2200", "${SSH_PORT}"))
+		require.NoError(t, err)
+		require.Equal(t, []string{"-p", "2200:2200"}, out.Config.RunArgs)
+	}
+}
+
+func TestCompile_ParamRefInStartupDefault(t *testing.T) {
+	// Startup scripts get ${PARAM:-value}; the value must be a literal, not a
+	// nested ${SSH_PORT} reference.
+	resolved := exposeSelection("2200", "${SSH_PORT}")
+	resolved.Templates[0].Extensions[0].Extension.StartupSegments = []tmpl.Segment{
+		{Order: 60, Content: "echo listening on ${SSH_HOST_PORT}\n"},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	var startups string
+	for _, s := range out.Startups {
+		startups += s.Content
+	}
+	assert.Contains(t, startups, "echo listening on ${SSH_HOST_PORT:-2200}")
+	assert.NotContains(t, startups, "${SSH_PORT}}")
+}
+
+func TestCompile_ParamRefTransitiveChain(t *testing.T) {
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{
+					Name:    "svc",
+					RunArgs: []string{"-e", "C=${C}"},
+				},
+				ParamValues: map[string]string{
+					"A": "8080",
+					"B": "${A}",
+					"C": "${B}",
+				},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"-e", "C=8080"}, out.Config.RunArgs)
+	assert.Contains(t, out.Boothfile.Content, "arg C=8080")
+}
+
+func TestCompile_ParamRefCycle(t *testing.T) {
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{Name: "svc"},
+				ParamValues: map[string]string{
+					"A": "${B}",
+					"B": "${A}",
+				},
+			},
+		},
+	}
+
+	_, err := Compile(resolved)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "circular default")
+	assert.Contains(t, err.Error(), "A -> B -> A")
+}
+
+func TestCompile_ParamRefSelfCycle(t *testing.T) {
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template:    &tmpl.Template{Name: "svc"},
+				ParamValues: map[string]string{"A": "${A}"},
+			},
+		},
+	}
+
+	_, err := Compile(resolved)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "circular default")
+}
+
+func TestCompile_NonParamRefLeftForRuntime(t *testing.T) {
+	// ${HOME} is not a param — it must survive to the output for the shell to expand.
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{
+					Name:    "svc",
+					RunArgs: []string{"-v", "${DATA_DIR}:/data"},
+				},
+				ParamValues: map[string]string{"DATA_DIR": "${HOME}/data"},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	assert.Equal(t, []string{"-v", "${HOME}/data:/data"}, out.Config.RunArgs)
+	assert.Contains(t, out.Boothfile.Content, "arg DATA_DIR=${HOME}/data")
+}

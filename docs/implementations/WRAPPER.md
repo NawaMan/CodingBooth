@@ -262,18 +262,20 @@ abc123...  codingbooth-linux-amd64
 
 ### .gitignore
 
-For shared cache mode:
-```gitignore
-# Lock file is version-controlled
-# Binaries are in ~/.cache/codingbooth/ (not here)
-```
+The wrapper writes `.booth/.gitignore` because it runs before the CLI binary has been
+downloaded. The content does **not** depend on cache mode, and it is **not** the wrapper's to
+choose: it must stay byte-identical to `BoothGitignore` in
+`cli/src/pkg/boothinit/output/gitignore.go`, which `booth config` writes. `TestBoothGitignoreMatchesWrapper`
+diffs the two and fails on any drift.
 
-For local cache mode:
-```gitignore
-# Binaries excluded - re-download from lock version
-tools/codingbooth-*
-tools/*.sha256
-```
+Both writers overwrite the file unconditionally, so a rule that only one of them knows about
+disappears the moment the other runs. That is not theoretical: the `tools/` rules below used to
+be emitted only in local-cache mode, so the first `booth config` in such a project un-ignored
+the downloaded binaries. They are now always present — in shared-cache mode `.booth/tools/`
+holds nothing but the lock file, so they are a harmless no-op.
+
+The `cache/` rule is load-bearing: **booth refuses to start if `.booth/cache/` is not
+gitignored**, because the cache can hold live credentials (see [Local Cache](../BOOTH_LOCALCACHE.md#gitignore-requirement)).
 
 ---
 

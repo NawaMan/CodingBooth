@@ -4,6 +4,177 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The booth now refuses to start unless `.booth/cache/` is gitignored *and* untracked.** The
+  cache is whatever the container writes to the mounted paths, and with `claude-code+settings-cache`
+  that includes a live credential: `~/.claude/` is mounted as a whole directory, so the host token
+  the `/etc/cb-home` override layer copies to `~/.claude/.credentials.json` on every start is
+  written straight back into your project tree, next to `history.jsonl` and the `projects/`
+  transcripts.
+
+  The old check greped `.booth/.gitignore` for a `cache/` line, which cannot see the failure that
+  actually happens: **gitignore does not apply to files git already tracks.** Once a cache file is
+  in the index — force-added, or added before the rule existed — git keeps committing it and the
+  grep still reports green. The check now asks git, and fails two ways: `is NOT gitignored` (add the
+  rule) and `is tracked by git` (`git rm -r --cached .booth/cache`, then **rotate any credential
+  that was committed** — a gitignore rule will not untrack it for you). Projects that are not git
+  repos are unaffected: there is nothing to commit to, so the check is skipped, matching
+  `.booth/.env`.
+
+  `.booth/.gitignore` had two writers — `booth config` and the wrapper script, which has to write it
+  before the CLI binary exists — and they had drifted into twelve variants in the wild. Both now
+  emit one canonical block (`output.BoothGitignore`), pinned by a test that diffs the wrapper's
+  heredoc against the constant. This was not cosmetic: both writers overwrite the file
+  unconditionally, so a rule only one of them knew about vanished as soon as the other ran. The
+  wrapper emitted the `tools/` rules only for `--cache=local`, so the first `booth config` in such a
+  project un-ignored the downloaded binaries; those rules are now always present (a no-op in
+  shared-cache mode, where `tools/` holds nothing but the lock file).
+
+  A cache entry that maps onto a protected container path (`/home/coder/code`, `/opt/codingbooth`)
+  is now an error naming every offender, not a warning that silently drops the mount — as the docs
+  had always claimed. A skipped mount is indistinguishable from a cache that inexplicably does not
+  work.
+
+- **`expose` extensions now have a host port you can move on its own.** The host side and the
+  container side of the published mapping were the same param, so the only way to get off a busy
+  host port was to move the service inside the booth as well. Each `expose` extension now declares
+  its own `*_HOST_PORT` (`SSH_HOST_PORT`, `CLOUDBEAVER_HOST_PORT`, …) defaulting to `"${SVC_PORT}"`
+  — a reference, so `cloudbeaver:25.3.5,9000+expose` still publishes `9000:9000` and the two cannot
+  drift apart, while `cloudbeaver:25.3.5,9000+expose:19000` publishes `19000:9000`. `rabbitmq` takes
+  both of its ports positionally: `rabbitmq+start+expose:15672,25672`. Defaults are unchanged, so
+  existing configs regenerate byte-identically. In the TUI a followed port renders as its resolved
+  value with a `(follows SVC_PORT)` note rather than the raw `${SVC_PORT}`; editing the field shows
+  the reference, so overwriting it is a deliberate pin rather than an accident.
+
+  Param pins carried over from an existing Boothfile now distinguish a value the user *chose* from
+  one the last generation *derived*. `arg` lines hold resolved values, so a followed host port
+  reaches the Boothfile as a number and string comparison alone cannot tell `SSH_HOST_PORT=2200`
+  ("I want 2200") from `SSH_HOST_PORT=2200` ("that is what `${SSH_PORT}` came to"). Re-resolving the
+  default against the Boothfile's own args reconstructs the derived value: a match re-derives from
+  the new selection, anything else is preserved as before. Without it, re-configuring
+  `openssh+server:2200+expose` to `openssh+server:22+expose` published 2200 while sshd listened on
+  22 — the very drift the host-port param exists to prevent.
+
+- **A param default can now reference another param.** Writing `default = "${SVC_PORT}"` used to be
+  a coin flip: param expansion was a single pass over a Go map, so `-p ${SVC_HOST_PORT}:${SVC_PORT}`
+  came out as `8080:8080` or as a dangling `${SVC_PORT}:8080` depending on the run's map iteration
+  order. Param values are now resolved to a fixpoint before anything consumes them, so run-args,
+  `arg` lines and startup scripts all see literals. Circular defaults are a compile error naming the
+  cycle; a reference to a name that is not a param (`${HOME}`) is still passed through untouched for
+  the shell to expand at runtime. This is what lets an `expose` extension carry a host port that
+  *follows* the port the service actually listens on rather than a hardcoded literal.
+
+- **Server templates can now auto-start and publish themselves.** `notebook`, `codeserver` and
+  `ollama` each installed a server and then left it sitting there: `start-notebook` and
+  `start-codeserver` were on `PATH` but nothing called them, and Ollama's startup hook only created
+  `~/.ollama` while its docs told you to run `ollama serve` by hand. Each now gets the
+  `autostart` + `expose` extension pair that `excalidraw`, `mermaid`, `plantuml` and `cloudbeaver`
+  already had — so `--select notebook+autostart+expose` puts JupyterLab on 18888 next to your
+  code-server or desktop, reachable from the host.
+
+  `notebook` and `codeserver` are both a template *and* a variant, and on their own variant the
+  server is already the primary service **on that same port** (JupyterLab on 18888, code-server on
+  19999, each behind the booth's nginx). Auto-starting there would not be merely redundant, it would
+  collide — so both startup scripts bail out on the matching variant. The port is now a param
+  (`NOTEBOOK_PORT`, `CODESERVER_PORT`, `OLLAMA_PORT`) instead of a hardcoded literal.
+
+  `nginx` and `apache` get `expose` only. They already auto-start from their own
+  `/usr/share/startup.d/` hook, but nothing published the port, so the daemon was unreachable from
+  the host. Both serve on container port 80, and the extension maps a host port to it
+  (default 8080) — which also means they cannot share a booth.
+
+- **Java notebook kernels installed nothing on the `base` variant.** All three Java kernel setups
+  (`java-nb-kernel`, `java-ijava-nb-kernel`, `java-jjava-nb-kernel`) opened with a guard that exited 0
+  when `BOOTH_VARIANT_TAG == base`, printing "Variant does not include VS Code (code) or CodeServer" —
+  a message about VS Code, in a Jupyter kernel installer. It was copy-pasted from a VS Code extension
+  setup. None of the other fourteen notebook kernels (bash, python, go, rust, scala, kotlin, …) carry
+  it. The effect was that `java+kernel/notebook` on `base` built successfully and silently produced no
+  Java kernel. The guard is removed; the setups already check what they actually need (python with
+  `jupyter_client`/`jupyter_core`, `javac`, `JAVA_HOME`).
+
+- **`coder` now owns uid 1000 in the base image.** Ubuntu 24.04 (noble) ships a stock `ubuntu` user
+  holding uid/gid 1000, so `free_uid()` handed `coder` 1001 — and 1000 is the uid nearly every Linux
+  host has. `booth-entry` therefore renumbered `coder` and re-owned `$HOME` on *every* start. With
+  large host directories bind-mounted under `/home/coder` (a `~/.m2`, a project tree, a `.booth/cache`)
+  that reconcile was slow enough to look like a hang — booths took minutes to start. The stock `ubuntu`
+  user is deleted at build time, so the uids already agree and the renumber is skipped entirely.
+
+- **Setups retry their network fetches instead of failing the build on a blip.** Two of them pulled
+  from the network with no retry at all, and a single connection reset took the whole image down.
+
+  `go--install.sh` ran `go install` bare. It fetches through proxy.golang.org, which resets connections
+  often enough that this was the single most common cause of a failed build — it took out an entire
+  test suite three times in one day. Go has no retry of its own, so the call is now wrapped in one
+  (3 attempts, backing off). A genuinely broken package still fails, just three attempts later.
+
+  `kafka--setup.sh` fetched from `downloads.apache.org`, a CDN that only carries the *current* release
+  — so it 404s for any pinned older version and every build falls through to `archive.apache.org`,
+  which is durable but throttled. The archive fetch now retries (`--retry-all-errors`, because curl
+  does not treat a reset mid-transfer as retryable on its own); the CDN still fails fast, since a 404
+  is not worth retrying.
+
+- **Credential extensions now seed credentials, not whole application-state directories.**
+  `aws-cli`, `aws-sam-cli`, `azure-cli`, `gcloud`, `kubectl` and `codex` each mounted the tool's entire
+  home directory into `/etc/cb-home-seed`, and every one of them is `auto-select = true`. Because that
+  seed is copied into the container home on every start, the copy swept up whatever else lived there:
+  gcloud writes a log file per invocation (733 of 741 files in a normal `~/.config/gcloud`), `az` writes
+  a telemetry file per invocation and unpacks extensions as full Python packages, kubectl caches a
+  discovery document per cluster, and `~/.codex` keeps a transcript of every conversation. None of it is
+  a credential, and all of it was copied into every container.
+
+  Each now mounts the specific credential and settings files. Mounts whose host path does not exist are
+  already dropped before `docker run` (`FilterMissingVolumeMounts`), so listing paths that only some
+  users have — `application_default_credentials.json`, an SSO session cache, the Windows gcloud layout —
+  costs nothing. What is intentionally left behind is spelled out in each extension's `display-detail`.
+
+  `antigravity` and `cursor` are **not** narrowed: they are VS Code forks that need most of their
+  `User/` directory to stay signed in, so they need cache *exclusion* rather than file selection, which
+  `smart_copy` has no mechanism for yet.
+
+- **Home-seeding no longer forks a subprocess per file.** `booth-entry`'s `smart_copy` walked
+  `/etc/cb-home-seed` and `/etc/cb-home` entry by entry, forking `basename` *and* `cp` for every one,
+  because any directory below might carry a `.mount-this` marker asking to be copied as a unit. No
+  marker ships in any template and host directories never have one, so in practice the walk always ran
+  to the bottom — at roughly 56 files/sec. A booth seeding a real home directory took *minutes* to
+  start, and looked hung.
+
+  A subtree with no marker anywhere below it has nothing that can change the copy's behaviour part-way
+  down, so it is now taken in a single recursive `cp` (`-L`, matching the walk, which tested entries
+  with `[ -f ]` / `[ -d ]` and so copied link targets rather than links). The walk is kept for subtrees
+  that do carry a marker. Copying 20,000 files went from **146s to 0.65s**, with identical output.
+
+- **`booth config --no-tui` now reads the existing booth as its baseline, like the TUI does.** It only
+  ever read `config.toml`'s long-form run-args, never the `# Configured by:` header — so a reconfigure
+  that did not restate `--select` rebuilt from an *empty* selection. The Boothfile escaped by luck (an
+  empty one serializes to nothing, and the writer skips empty content), but `config.toml` was rewritten
+  regardless: `variant`, `port`, `cmds` and every template-contributed run-arg were dropped, while the
+  envs and mounts survived because those are recovered from `config.toml` itself. Losing the `variant`
+  silently rebuilds the booth on the wrong base image. The header is now parsed back as the baseline,
+  so a reconfigure need only state what changes.
+
+  The flags that steer the run — `--overwrite`, `--beside`, `--dryrun`, `--start` — are deliberately
+  *not* inherited: the header records the `--overwrite` that wrote it, so inheriting them would make
+  every later run an overwriting one and quietly disarm the hand-written-file guard.
+
+  Restating a list flag (`--env`, `--mount`, `--expose`) now **replaces** the saved list rather than
+  unioning with it — which is what makes removing an entry possible. Omitting the flag still keeps it.
+
+- **New Java template extensions.** `java/kernel-jjava` installs the JJava notebook kernel
+  (dflib/jjava, Java 11+) as an alternative to `java/kernel`, which installs IJava — pinned at 1.3.0
+  and predating the modern JDKs the template offers. Pick one, not both: they install over the same
+  `java` kernelspec. `java/jbang` pre-warms the jbang dependency cache at build time, so the first
+  jbang run (or Java notebook cell) does not stall on the network.
+
+- **`examples/demo` is now generated by `booth config`** rather than hand-written, so it can be
+  reopened and edited in the config TUI.
+
+  Its `~/.claude` home-seed mount is narrowed to `~/.claude/settings.json` in the process. The mount
+  was labelled "credentials" but seeded the whole directory — 418 MB of conversation transcripts, jobs
+  and file-history — into the container on every start, and because the `claude-code` template
+  bind-mounts `/home/coder/.claude` to the project's `.booth/cache/`, that copy landed in the project
+  tree. Credentials were never the reason it worked: the template already seeds `~/.claude.json` and
+  overrides `~/.claude/.credentials.json`. Seeding an entire application-state directory is the
+  anti-pattern here — mount the credential files, not the app's home.
+
 - **`booth config` no longer silently destroys a hand-written Boothfile / config.toml.** Configuring
   regenerates both files from scratch, so a hand-written booth — or a generated one that was later
   hand-edited — lost that content on the next `booth config`, with no warning. The `# Configured by:`

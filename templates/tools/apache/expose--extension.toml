@@ -1,0 +1,23 @@
+display-name = "Expose Apache Port"
+display-disc = "Publish Apache (container port 80) to the host"
+display-detail = "Apache already auto-starts on container boot, but it only listens inside the booth. This publishes it to the host so you can open it in a browser. It serves on container port 80; APACHE_PORT is the host port to map that to, defaulting to 8080 to stay clear of a web server on the host. Note that apache and nginx both take container port 80 — they cannot run in the same booth."
+display-order = 1
+auto-select = false
+tags = [
+    "apache",
+    "web",
+    "port",
+    "network",
+]
+
+run-args = [
+    "-p", "${APACHE_PORT}:80",
+]
+
+[params.APACHE_PORT]
+default = "8080"
+suggests = [
+    "8080",
+    "8000",
+    "80",
+]

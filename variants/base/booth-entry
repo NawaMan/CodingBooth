@@ -381,11 +381,29 @@ smart_copy() {
     return
   fi
 
-  # No marker: copy individual files, recurse into subdirectories
+  # No marker anywhere below this point, so nothing down there can ask for
+  # different treatment and the walk would only be an expensive way to reproduce
+  # what a single recursive cp already does. Take the whole subtree at once: a
+  # seeded home runs to tens of thousands of entries and the walk forks twice per
+  # entry, which is enough to turn a large seed into a multi-minute startup.
+  #
+  # -L keeps the walk's semantics. The walk tested entries with [ -f ] / [ -d ],
+  # both of which follow symlinks, so it copied link targets as real files and
+  # never the links themselves — which is what a seed wants, since a link's target
+  # generally does not exist inside the container.
+  if [ -z "$(find "$src" -name .mount-this -print -quit 2>/dev/null)" ]; then
+    if [ "$mode" = "seed" ]; then
+      cp -rnL "$src/." "$dest/" 2>/dev/null || true
+    else
+      cp -rL "$src/." "$dest/" 2>/dev/null || true
+    fi
+    return
+  fi
+
+  # A marker lives somewhere below: walk entry by entry so it can be honoured.
   for entry in "$src"/* "$src"/.*; do
     [ -e "$entry" ] || continue
-    local name
-    name="$(basename "$entry")"
+    local name="${entry##*/}"
     case "$name" in .|..|.mount-this) continue ;; esac
 
     if [ -d "$entry" ]; then

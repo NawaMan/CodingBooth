@@ -112,8 +112,7 @@ func writeOutput(out *BoothOutput, targetPath string, beside []string) error {
 	}
 
 	// Ensure secrets and local cache are always gitignored
-	gitignoreContent := "# Secrets - never commit\n.booth.password\n.env\n\n# Local persistent state (not committed)\ncache/\n\n# Runtime temp files\n.tmp/\n\n# Transient artifacts of booth config overwriting hand-written files:\n# .bak = what was replaced, .new = generated content awaiting a manual merge\n*.bak\n*.new\n\n# Lock file and .generated are version-controlled\n# Binaries are in ~/.cache/codingbooth/ (not here)\n"
-	if err := writeFile(filepath.Join(boothDir, ".gitignore"), gitignoreContent, 0644); err != nil {
+	if err := writeFile(filepath.Join(boothDir, ".gitignore"), BoothGitignore, 0644); err != nil {
 		return fmt.Errorf("writing .gitignore: %w", err)
 	}
 

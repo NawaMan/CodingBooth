@@ -1,0 +1,27 @@
+display-name = "code-server Auto-Start"
+display-disc = "Auto-start code-server on container boot"
+display-detail = "Runs 'start-codeserver' in the background when the container boots, so a browser VS Code is serving on CODESERVER_PORT alongside whatever UI the variant provides — an IDE next to a notebook, or on a desktop. On the codeserver variant this is a no-op: code-server is already the primary service there and it occupies the same port, so starting a second one would collide. Pair with the expose extension to reach it from the host. If PASSWORD is set, code-server asks for it; otherwise auth is off."
+display-order = 2
+auto-select = false
+tags = [
+    "vscode",
+    "codeserver",
+    "autostart"
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start code-server in background.
+# The codeserver variant already runs code-server as its primary service on this
+# same port (start-codeserver-wrapped), so starting another one would collide.
+if [ "${BOOTH_VARIANT_TAG:-base}" = "codeserver" ]; then
+  echo "code-server is the primary service of the codeserver variant — auto-start skipped."
+else
+  PORT=${CODESERVER_PORT}
+  LOG_FILE="/tmp/codeserver.log"
+
+  nohup start-codeserver "$PORT" > "$LOG_FILE" 2>&1 &
+
+  echo "code-server started on port $PORT (PID $!, log: $LOG_FILE)"
+fi
+"""

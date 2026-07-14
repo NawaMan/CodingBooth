@@ -1,0 +1,17 @@
+display-name = "Java Notebook Kernel (JJava)"
+display-disc = "Java Jupyter notebook kernel (JJava, Java 11+)"
+display-detail = "Installs the JJava kernel (dflib/jjava) instead of IJava. IJava is pinned at 1.3.0 and predates the modern JDKs this template offers; JJava is the maintained successor and requires Java 11+. Pick this or `kernel`, not both — they install over the same kernelspec (named for the JDK, e.g. `java25`)."
+display-order = 6
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "java",
+    "kernel",
+    "notebook",
+    "jjava"
+]
+
+[segments]
+"Boothfile--70" = """
+setup java-jjava-nb-kernel
+"""

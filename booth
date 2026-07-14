@@ -563,41 +563,43 @@ function DownloadBooth() {
         fi
     fi
 
-    # Create .gitignore based on cache mode.
-    # Must stay in sync with cli/src/pkg/boothinit/output/writer.go (gitignoreContent)
-    # so secrets / cache/ / .tmp/ stay gitignored regardless of which path wrote last.
-    if [[ "$CACHE_MODE" == "local" ]]; then
-        cat > "${BOOTH_DIR}/.gitignore" <<'GITIGNORE'
+    # Write .booth/.gitignore. This runs before the CLI binary exists, which is why the
+    # wrapper carries a copy at all.
+    #
+    # MUST stay byte-identical to BoothGitignore in cli/src/pkg/boothinit/output/gitignore.go
+    # -- TestBoothGitignoreMatchesWrapper reads this heredoc and diffs it against that
+    # constant. `booth config` rewrites this file unconditionally, so a rule that only one
+    # writer knows about gets silently dropped as soon as the other one runs.
+    #
+    # Not conditioned on CACHE_MODE: the tools/ rules used to be emitted only for
+    # --cache=local, so the first `booth config` in such a project un-ignored the downloaded
+    # binaries. In shared-cache mode tools/ holds only the lock file, so they are a no-op.
+    cat > "${BOOTH_DIR}/.gitignore" <<'GITIGNORE'
 # Secrets - never commit
 .booth.password
 .env
 
-# Local persistent state (not committed)
+# Local persistent state (not committed).
+# Holds whatever the container writes to the mounted paths, including live credentials
+# (~/.claude/.credentials.json arrives here via the cb-home override layer).
+# Booth refuses to start if this is tracked by git.
 cache/
 
 # Runtime temp files
 .tmp/
 
-# Binaries excluded - re-download from lock version
+# Transient artifacts of booth config overwriting hand-written files:
+# .bak = what was replaced, .new = generated content awaiting a manual merge
+*.bak
+*.new
+
+# Downloaded binaries - re-fetched from the lock version.
+# Shared cache (the default) keeps them in ~/.cache/codingbooth/; --cache=local puts them here.
 tools/codingbooth-*
 tools/*.sha256
+
+# codingbooth.lock and .generated are version-controlled
 GITIGNORE
-    else
-        cat > "${BOOTH_DIR}/.gitignore" <<'GITIGNORE'
-# Secrets - never commit
-.booth.password
-.env
-
-# Local persistent state (not committed)
-cache/
-
-# Runtime temp files
-.tmp/
-
-# Lock file is version-controlled
-# Binaries are in ~/.cache/codingbooth/ (not here)
-GITIGNORE
-    fi
 
     local current_platform
     if ! current_platform=$(detect_platform); then

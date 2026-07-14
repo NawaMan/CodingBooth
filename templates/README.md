@@ -99,6 +99,95 @@ To reset a database: `docker volume rm booth-pgdata` (or `booth-mysqldata`).
 - **Environment variables**: `-e`, `"VAR=value"` for runtime configuration
 - **Port publishing**: `-p`, `"host:container"` for exposing services
 
+> **Careful with TOML scoping.** `run-args` is a top-level key, so it must appear *before* any
+> `[params.X]` or `[segments]` table header. Put it after one and TOML reads it as a key of that
+> table (`params.X.run-args`) — the loader finds no top-level `run-args` and the flags are silently
+> dropped. The template still compiles; the port just never gets published.
+
+## Server Templates: Auto-Start & Expose
+
+A template that installs a **server** — something that listens on a port — should not start it or
+publish it on its own. Both are opt-in extensions, so a booth that merely *has* the tool doesn't
+pay for a daemon it isn't using.
+
+The convention is two extensions beside the parent, which declares the port as a param:
+
+| File                       | `display-order` | Does                                                    |
+|----------------------------|-----------------|---------------------------------------------------------|
+| `expose--extension.toml`   | 1               | `run-args = ["-p", "${X_HOST_PORT}:${X_PORT}"]` — reach it from the host |
+| `autostart--extension.toml`| 2               | a `"startup--65.sh"` segment that `nohup`s the server    |
+
+Both are `auto-select = false`. `${X_PORT}` in a startup segment compiles to `${X_PORT:-<default>}`,
+so the port stays overridable at runtime; in `run-args` it compiles to the literal value.
+
+### Two ports, two params
+
+`X_PORT` (on the parent) is the port the server **listens on**; `X_HOST_PORT` (on the `expose`
+extension) is the port it is **published on**. The host one defaults to a *reference*, so it follows
+the service and the two cannot drift apart:
+
+```toml
+# tools/cloudbeaver/expose--extension.toml
+run-args = [
+    "-p", "${CLOUDBEAVER_HOST_PORT}:${CLOUDBEAVER_PORT}",
+]
+
+# Host-side port. Defaults to the port the service listens on, so moving the service
+# moves the published port with it. Override only when the host port is already taken.
+[params.CLOUDBEAVER_HOST_PORT]
+default = "${CLOUDBEAVER_PORT}"
+```
+
+`cloudbeaver:25.3.5,9000+expose` then publishes `9000:9000`, and `+expose:19000` publishes
+`19000:9000`. Do **not** hardcode the host port: an earlier round of these extensions published a
+literal `8978`/`2222`, so moving the service port served the tool on one port and published another
+— nothing was listening on the port that got published.
+
+A param default may reference any other param by name, resolved transitively before use; a cycle is
+a config-time error. A `${NAME}` that is not a param (`${HOME}`) is passed through for the shell.
+
+A server whose setup script hardcodes its listening port (`postgresql` is always 5432 inside the
+container) has no `X_PORT` at all — its `expose` extension carries the host port alone, and the
+container side is the literal: `"-p", "${POSTGRES_PORT}:5432"`.
+
+```toml
+# tools/excalidraw/autostart--extension.toml
+[segments]
+"startup--65.sh" = """
+PORT=${EXCALIDRAW_PORT}
+LOG_FILE="/tmp/excalidraw.log"
+
+nohup serve -s --no-clipboard /opt/excalidraw -l "$PORT" > "$LOG_FILE" 2>&1 &
+
+echo "Excalidraw started on port $PORT (PID $!, log: $LOG_FILE)"
+"""
+```
+
+### Guard when the server is also a variant's primary service
+
+`notebook` and `codeserver` are both a template *and* a variant. On their own variant the server is
+already running as the primary service — and on the **same port** the template defaults to (JupyterLab
+on 18888, code-server on 19999, each fronted by the booth's nginx). Auto-starting a second one there
+is not merely redundant, it collides. So the startup segment must bail out on the matching variant:
+
+```bash
+if [ "${BOOTH_VARIANT_TAG:-base}" = "notebook" ]; then
+  echo "JupyterLab is the primary service of the notebook variant — auto-start skipped."
+else
+  ...
+fi
+```
+
+`BOOTH_VARIANT_TAG` is passed into every container as the canonical variant name, so this is the
+test to use whenever a template's behavior depends on which UI the booth is running.
+
+### When the setup script already auto-starts
+
+Some servers (`nginx`, `apache`, `postgresql`, `mysql`, `redis`, `mongodb`) install their own hook
+into `/usr/share/startup.d/` at build time and come up on every boot. Those need **no** `autostart`
+extension — only `expose`, since the daemon is still unreachable from the host without a published
+port. Check the setup script for a `/usr/share/startup.d/` write before adding one.
+
 ## Template Reference
 
 All templates and extensions grouped by segment order.
@@ -165,6 +254,7 @@ All templates and extensions grouped by segment order.
 | `openssh/credential--extension` | SSH Credentials          |
 | `openssh/expose--extension`| Expose SSH Port               |
 | `java/gradle--extension`   | Gradle                        |
+| `java/jbang--extension`    | jbang Warm Cache              |
 | `java/jenv--extension`     | jenv                          |
 | `java/maven--extension`    | Maven                         |
 | `python/conda--extension`  | Conda *(also has order 90)*   |
@@ -240,7 +330,8 @@ All templates and extensions grouped by segment order.
 | `education/nbgrader`         | nbgrader               |
 | `go/kernel--extension`       | Go Notebook Kernel     |
 | `haskell/kernel--extension`  | Haskell Notebook Kernel |
-| `java/kernel--extension`     | Java Notebook Kernel   |
+| `java/kernel--extension`     | Java Notebook Kernel (IJava) |
+| `java/kernel-jjava--extension` | Java Notebook Kernel (JJava, Java 11+) — pick this *or* `java/kernel`, not both |
 | `kotlin/kernel--extension`   | Kotlin Notebook Kernel |
 | `nodejs/kernel--extension`   | Node.js Notebook Kernel |
 | `python/kernel--extension`   | Python Notebook Kernel |

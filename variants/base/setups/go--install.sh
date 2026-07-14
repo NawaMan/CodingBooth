@@ -32,7 +32,21 @@ fi
 # Source go profile to set up GOPATH
 source /etc/profile.d/*-cb-go--profile.sh 2>/dev/null || true
 
-# Install packages as coder user so they go to coder's GOPATH
+# Install packages as coder user so they go to coder's GOPATH.
+#
+# `go install` fetches through proxy.golang.org, which resets connections often enough
+# to fail a build outright — and go has no retry of its own, so a single reset takes the
+# whole image down. Retry with a backoff. A package that is genuinely broken still fails,
+# just three attempts later; a blip no longer costs a rebuild.
 for pkg in "$@"; do
-    sudo -u coder bash -lc "go install '$pkg'"
+    attempt=1
+    until sudo -u coder bash -lc "go install '$pkg'"; do
+        if [ "$attempt" -ge 3 ]; then
+            echo "❌ go install '$pkg' failed after ${attempt} attempts." >&2
+            exit 1
+        fi
+        echo "⚠️  go install '$pkg' failed (attempt ${attempt}); retrying in $((attempt * 5))s..." >&2
+        sleep "$((attempt * 5))"
+        attempt=$((attempt + 1))
+    done
 done

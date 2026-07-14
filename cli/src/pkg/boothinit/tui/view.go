@@ -829,7 +829,8 @@ func (m model) renderParamValues(lines []string, item treeItem, t *tmpl.Template
 		if val == "" {
 			val = t.Params[name].Default
 		}
-		lines = append(lines, fmt.Sprintf("  %s = %s", name, val))
+		display, follows := m.paramDisplay(val)
+		lines = append(lines, fmt.Sprintf("  %s = %s%s", name, display, followsHint(follows)))
 	}
 	return lines
 }
@@ -902,20 +903,27 @@ func (m model) renderParamFieldRow(t *tmpl.Template, name, pk string, isFocused 
 
 	if len(p.Suggests) > 0 && !(m.paramEditing && m.paramEditKey == pk) {
 		// Cycle field with suggests
-		display := val
-		if display == "" {
-			display = p.Default
+		raw := val
+		if raw == "" {
+			raw = p.Default
 		}
-		isCustom := true
-		for _, s := range p.Suggests {
-			if s == display {
-				isCustom = false
-				break
+		display, follows := m.paramDisplay(raw)
+		// A value that follows another param is not a hand-typed custom value —
+		// say which param it tracks instead of labelling it "(custom)".
+		suffix := followsHint(follows)
+		if suffix == "" {
+			isCustom := true
+			for _, s := range p.Suggests {
+				if s == display {
+					isCustom = false
+					break
+				}
+			}
+			if isCustom && display != "" {
+				suffix = " (custom)"
 			}
 		}
-		if isCustom && display != "" {
-			display = display + " (custom)"
-		}
+		display += suffix
 		if isFocused {
 			return "  " + focusLabelStyle.Render(name+":") + "  " + focusValueStyle.Render(" ◄ "+display+" ► ")
 		}
@@ -923,10 +931,13 @@ func (m model) renderParamFieldRow(t *tmpl.Template, name, pk string, isFocused 
 	}
 
 	// String field (no suggests, or custom edit mode)
-	display := val
+	display, follows := m.paramDisplay(val)
 	if display == "" {
 		display = "(empty)"
 	}
+	display += followsHint(follows)
+	// Editing shows the raw value, so a "${SVC_PORT}" reference stays visible and
+	// editable — typing over it is an explicit, deliberate pin.
 	if isFocused && m.paramEditing && m.paramEditKey == pk {
 		return "  " + focusLabelStyle.Render(name+":") + "  " + focusValueStyle.Render(" "+val+"▌ ")
 	}

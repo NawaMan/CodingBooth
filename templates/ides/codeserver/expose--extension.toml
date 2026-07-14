@@ -1,0 +1,19 @@
+display-name = "Expose code-server Port"
+display-disc = "Expose code-server port to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "vscode",
+    "codeserver",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "${CODESERVER_HOST_PORT}:${CODESERVER_PORT}",
+]
+
+# Host-side port. Defaults to the port the service listens on, so moving the service
+# moves the published port with it. Override only when the host port is already taken.
+[params.CODESERVER_HOST_PORT]
+default = "${CODESERVER_PORT}"
