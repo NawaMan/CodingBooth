@@ -1,5 +1,6 @@
 display-name = "Expose SSH Port"
-display-disc = "Expose SSH port 2222 to host network"
+display-disc = "Expose the SSH server port to host network (pair with +server)"
+display-detail = "Publishes SSH_PORT so you can ssh into the booth from the host. REQUIRES the +server extension: SSH_PORT is declared there, so selecting +expose on its own leaves ${SSH_PORT} unresolved in run-args and docker will reject the port mapping at start. Always select them together — openssh+server+expose (or openssh+server:2200+expose to move the port; the published host port follows it). SSH_HOST_PORT overrides the host side alone, for when the host port is taken but the booth's should not move: openssh+server:22+expose:2222."
 display-order = 1
 auto-select = false
 tags = [
@@ -8,6 +9,14 @@ tags = [
     "network"
 ]
 
+# The container side follows SSH_PORT. It used to hardcode 2222, so openssh+server:2200+expose
+# put sshd on 2200 and published 2222 — a port nothing was listening on.
 run-args = [
-    "-p", "2222:2222",
+    "-p", "${SSH_HOST_PORT}:${SSH_PORT}",
 ]
+
+# Host-side port. Defaults to the port sshd listens on, so moving the server moves the
+# published port with it. Override only when the host port is already taken and the booth's
+# should not move: openssh+server:22+expose:2222.
+[params.SSH_HOST_PORT]
+default = "${SSH_PORT}"

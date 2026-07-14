@@ -9,5 +9,10 @@ tags = [
 ]
 
 run-args = [
-    "-p", "${MERMAID_PORT}:${MERMAID_PORT}",
+    "-p", "${MERMAID_HOST_PORT}:${MERMAID_PORT}",
 ]
+
+# Host-side port. Defaults to the port the service listens on, so moving the service
+# moves the published port with it. Override only when the host port is already taken.
+[params.MERMAID_HOST_PORT]
+default = "${MERMAID_PORT}"

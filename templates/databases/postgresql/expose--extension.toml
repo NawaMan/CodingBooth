@@ -1,0 +1,22 @@
+display-name = "Expose PostgreSQL Port"
+display-disc = "Publish PostgreSQL (container port 5432) to the host"
+display-detail = "PostgreSQL already auto-starts on container boot, but it only listens inside the booth. This publishes it so you can point psql, a GUI, or an app on the host at it. postgresql--setup.sh takes no port argument, so the server always listens on 5432 inside the container — POSTGRES_PORT is the HOST port mapped to it. Change it if the host already runs a PostgreSQL on 5432."
+display-order = 1
+auto-select = false
+tags = [
+    "postgresql",
+    "database",
+    "port",
+    "network",
+]
+
+run-args = [
+    "-p", "${POSTGRES_PORT}:5432",
+]
+
+[params.POSTGRES_PORT]
+default = "5432"
+suggests = [
+    "5432",
+    "15432",
+]

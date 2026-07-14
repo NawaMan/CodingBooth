@@ -74,13 +74,43 @@ Non-interactive mode for scripting and quick setup.
 # In a target directory
 ./booth config --no-tui ../my-project --select go+linter/python:3.13+uv
 
-# Empty booth (no templates, just CLI overrides)
+# Empty booth in a fresh directory (no templates, just CLI overrides)
 ./booth config --no-tui --variant codeserver --port 10080
 ```
 
 If files config generated earlier already exist, it prompts for confirmation before overwriting them. Use `--overwrite` to skip the prompt.
 
 If the Boothfile or config.toml is **hand-written**, config refuses outright rather than prompting — re-generating would destroy work it cannot reproduce. See [Hand-Written Files](#hand-written-files).
+
+### Reconfiguring an existing booth
+
+Both modes read an existing `.booth/` as their **baseline**, and the flags of this
+run override it. The baseline comes from the `# Configured by:` header in
+`.booth/Boothfile` (the selection, `--variant`, `--port`, `--cmd`, `--set`) and
+from `.booth/config.toml` (the long-form `--env` / `--volume` / `--publish`
+run-args, plus `cache-files` / `cache-dirs`).
+
+So a reconfigure only has to state what changes:
+
+```bash
+# Add an extension. The variant, ports, envs, mounts and version pins all stay.
+./booth config --no-tui --overwrite --select go+linter/python:3.13+uv
+```
+
+Omitting a flag **keeps** the recorded value; restating a list flag (`--env`,
+`--mount`, `--expose`) **replaces** the whole list rather than adding to it —
+which is how an entry is removed:
+
+```bash
+# Was: --env FOO=1 --env BAR=2. Now only BAR survives.
+./booth config --no-tui --overwrite --env BAR=2
+```
+
+The flags that steer the run itself — `--overwrite`, `--beside`, `--dryrun`,
+`--start` — are never inherited from the header, even though the header records
+the `--overwrite` used to write it. Each run decides those for itself.
+
+To start over rather than reconfigure, delete `.booth/` first.
 
 ### Dryrun
 
@@ -134,6 +164,15 @@ adding a template no longer silently resets a pinned `NODE_VERSION`,
 pre-loads the real pinned values from the existing Boothfile into its param
 fields.
 
+A param whose default follows another param (see [Ports](#ports-which-knob-moves-what))
+is **not** preserved this way when its value was merely derived. `arg` lines hold
+resolved values, so a followed host port reaches the Boothfile as a number and cannot be
+told from a pin by comparing it to `"${SVC_PORT}"`. The old value is re-resolved against
+the Boothfile's own args to reconstruct what the default came to last time: a match is
+derived and re-derives from the new selection, anything else is a real choice and
+survives. So re-configuring `openssh+server:2200+expose` to `openssh+server:22+expose`
+publishes `22:22`, while a pinned `+expose:2222` still publishes `2222` afterwards.
+
 ### Extensions
 
 Append `+` to add extensions:
@@ -143,6 +182,47 @@ python+uv+pip+kernel
 go+linter+vscode-ext
 java+maven+lombok
 ```
+
+Extensions take parameters the same way templates do — positionally, after `:`. The
+service port and the port it is published on are separate params, and they compose:
+
+```
+openssh+server:2200+expose          # sshd on 2200, published on 2200
+openssh+server:22+expose:2222       # sshd on 22, published on 2222
+rabbitmq+start+expose:15672,25672   # AMQP on 15672, management UI on 25672
+```
+
+### Ports: which knob moves what
+
+Every service has exactly one param for the port it *listens* on, and its `expose`
+extension has one for the *host* port it is published on. The host port defaults to
+`"${SERVICE_PORT}"` — a reference, not a copy — so moving the service moves the
+published port with it, and the two cannot drift apart:
+
+| Selection | Publishes |
+|---|---|
+| `cloudbeaver+expose` | `8978:8978` |
+| `cloudbeaver:25.3.5,9000+expose` | `9000:9000` — host follows the service |
+| `cloudbeaver:25.3.5,9000+expose:19000` | `19000:9000` — host overridden alone |
+
+Override the host port only when the host port is taken but the booth's should not
+move. The databases whose server has no port param of its own (`postgresql`, `mysql`,
+`redis`, `mongodb`, `nginx`, `apache` — each listens on its stock port inside the
+container) have only the host-side knob, on the `expose` extension.
+
+A param default may reference another param by name (`default = "${SVC_PORT}"`), and
+references are resolved before anything consumes them, including transitively. A
+circular reference is a config-time error. A `${NAME}` that is not a param — `${HOME}`,
+say — is left alone for the shell to expand at runtime.
+
+### `--expose` is instead of `+expose`, not alongside it
+
+`--expose` **adds** a mapping; it does not replace what the `+expose` extension
+contributes. Selecting `cloudbeaver+expose` *and* passing `--expose 19000:8978` yields
+two `--publish` entries, one of which still binds the port you were trying to avoid.
+Use `+expose:19000` to move the host port, and `--expose` only for what the extension
+cannot express: IP binding (`--expose 127.0.0.1:19000:8978`) or the booth-relative
+`+OFFSET` form.
 
 ### Excluding auto-selected extensions
 

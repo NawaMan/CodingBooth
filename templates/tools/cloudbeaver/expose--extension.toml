@@ -8,6 +8,15 @@ tags = [
     "network"
 ]
 
+# The container side follows CLOUDBEAVER_PORT. It used to hardcode 8978, which meant
+# picking any other port (cloudbeaver:25.3.5,9000) served CloudBeaver on 9000 while
+# publishing 8978 — a port nothing was listening on.
 run-args = [
-    "-p", "8978:8978",
+    "-p", "${CLOUDBEAVER_HOST_PORT}:${CLOUDBEAVER_PORT}",
 ]
+
+# Host-side port. Defaults to the port CloudBeaver listens on, so moving the service moves
+# the published port with it. Override only when the host port is already taken and the
+# booth's should not move: cloudbeaver:25.3.5,9000+expose:19000.
+[params.CLOUDBEAVER_HOST_PORT]
+default = "${CLOUDBEAVER_PORT}"

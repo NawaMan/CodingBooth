@@ -1,6 +1,6 @@
 display-name = "Jupyter Notebook"
 display-disc = "JupyterLab notebook server (requires python)"
-display-detail = "Sets up JupyterLab with a Bash kernel for interactive notebook development. Requires the python template. Expose on a configurable port."
+display-detail = "Sets up JupyterLab with a Bash kernel for interactive notebook development. Requires the python template. Installs a 'start-notebook' launcher; add the auto-start extension to run it on container boot, and the expose extension to reach it from the host."
 display-order = 24
 requires = ["python"]
 tags = [
@@ -9,7 +9,14 @@ tags = [
     "python"
 ]
 
+[params.NOTEBOOK_PORT]
+default = "18888"
+suggests = [
+    "18888",
+    "8888",
+]
+
 [segments]
 "Boothfile--60" = """
-setup notebook 18888
+setup notebook ${NOTEBOOK_PORT}
 """

@@ -17,7 +17,17 @@ run-args = [
 default = "latest"
 suggests = ["latest"]
 
+# rabbitmq--setup.sh accepts --port and --mgmt-port, so these genuinely move the
+# listeners rather than just remapping a host port.
+[params.RABBIT_PORT]
+default = "5672"
+suggests = ["5672", "15672"]
+
+[params.RABBIT_MGMTPORT]
+default = "15672"
+suggests = ["15672", "15673"]
+
 [segments]
 Boothfile = """
-setup rabbitmq --version ${RABBIT_VERSION}
+setup rabbitmq --version ${RABBIT_VERSION} --port ${RABBIT_PORT} --mgmt-port ${RABBIT_MGMTPORT}
 """

@@ -1,0 +1,23 @@
+display-name = "Expose Redis Port"
+display-disc = "Publish Redis (container port 6379) to the host"
+display-detail = "Redis already auto-starts on container boot, but it only listens inside the booth. This publishes it so you can point redis-cli or an app on the host at it. redis--setup.sh takes no port argument, so the server always listens on 6379 inside the container — REDIS_PORT is the HOST port mapped to it. Change it if the host already runs a Redis on 6379."
+display-order = 1
+auto-select = false
+tags = [
+    "redis",
+    "database",
+    "cache",
+    "port",
+    "network",
+]
+
+run-args = [
+    "-p", "${REDIS_PORT}:6379",
+]
+
+[params.REDIS_PORT]
+default = "6379"
+suggests = [
+    "6379",
+    "16379",
+]

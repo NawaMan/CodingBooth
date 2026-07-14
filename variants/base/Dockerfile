@@ -84,7 +84,17 @@ ENV TERM=xterm-256color
 # We need to create a brand new user (+group) so that there is no existing home directory (and possible permission problem that might come with it).
 # We use -M to not create a home directory so that we can avoid getting the skeleton files when the user is created.
 # Then we can create the home directory manually and set the permissions as we want.
+#
+# Ubuntu 24.04 (noble) ships a stock 'ubuntu' user holding uid/gid 1000. Nothing here
+# uses it, but leaving it in place makes free_uid() hand coder 1001 — and 1000 is the
+# uid nearly every Linux host has. booth-entry then has to renumber coder on every
+# single start (step 4), and re-own $HOME to match (step 5). With large host
+# directories bind-mounted under /home/coder — a ~/.m2, a project tree, a .booth/cache
+# — that reconcile is slow enough to look like a hang: booths took minutes to start.
+# Reclaiming 1000 here makes the uids already agree, so the whole renumber is skipped.
 RUN set -euo pipefail \
+  ; if id -u ubuntu       >/dev/null 2>&1; then userdel -r ubuntu 2>/dev/null || userdel ubuntu; fi \
+  ; if getent group ubuntu >/dev/null 2>&1; then groupdel ubuntu || true; fi \
   ; free_uid() { local uid=1000; while getent passwd "$uid" >/dev/null; do uid=$((uid+1)); done; echo "$uid"; } \
   ; free_gid() { local gid=1000; while getent group  "$gid" >/dev/null; do gid=$((gid+1)); done; echo "$gid"; } \
   ; if ! getent group coder >/dev/null;      then gid="$(free_gid)"; groupadd -g    "$gid"                       coder; fi \

@@ -1,0 +1,20 @@
+display-name = "Expose Ollama Port"
+display-disc = "Expose the Ollama API port to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "ai",
+    "llm",
+    "ollama",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "${OLLAMA_HOST_PORT}:${OLLAMA_PORT}",
+]
+
+# Host-side port. Defaults to the port the service listens on, so moving the service
+# moves the published port with it. Override only when the host port is already taken.
+[params.OLLAMA_HOST_PORT]
+default = "${OLLAMA_PORT}"

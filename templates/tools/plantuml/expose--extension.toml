@@ -9,5 +9,10 @@ tags = [
 ]
 
 run-args = [
-    "-p", "${PLANTUML_PORT}:${PLANTUML_PORT}",
+    "-p", "${PLANTUML_HOST_PORT}:${PLANTUML_PORT}",
 ]
+
+# Host-side port. Defaults to the port the service listens on, so moving the service
+# moves the published port with it. Override only when the host port is already taken.
+[params.PLANTUML_HOST_PORT]
+default = "${PLANTUML_PORT}"

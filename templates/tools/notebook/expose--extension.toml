@@ -1,0 +1,19 @@
+display-name = "Expose Notebook Port"
+display-disc = "Expose JupyterLab port to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "jupyter",
+    "notebook",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "${NOTEBOOK_HOST_PORT}:${NOTEBOOK_PORT}",
+]
+
+# Host-side port. Defaults to the port the service listens on, so moving the service
+# moves the published port with it. Override only when the host port is already taken.
+[params.NOTEBOOK_HOST_PORT]
+default = "${NOTEBOOK_PORT}"

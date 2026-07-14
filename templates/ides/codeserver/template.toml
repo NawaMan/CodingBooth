@@ -1,6 +1,6 @@
 display-name = "code-server"
 display-disc = "Browser-based VS Code IDE via code-server"
-display-detail = "Installs code-server, providing a full VS Code experience in the browser with terminal, Git integration, and extension support."
+display-detail = "Installs code-server, providing a full VS Code experience in the browser with terminal, Git integration, and extension support. Installs a 'start-codeserver' launcher; add the auto-start extension to run it on container boot, and the expose extension to reach it from the host."
 display-order = 12
 tags = [
     "vscode",
@@ -9,7 +9,14 @@ tags = [
     "web"
 ]
 
+[params.CODESERVER_PORT]
+default = "19999"
+suggests = [
+    "19999",
+    "8443",
+]
+
 [segments]
 "Boothfile--60" = """
-setup codeserver 19999
+setup codeserver ${CODESERVER_PORT}
 """

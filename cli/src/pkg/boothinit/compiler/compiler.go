@@ -226,13 +226,20 @@ func (c *collector) setSlice(current *[]string, currentSource *string, value []s
 func (c *collector) build() (*output.BoothOutput, error) {
 	out := &output.BoothOutput{}
 
+	// Resolve ${OTHER} references inside param values before anything consumes them,
+	// so every downstream user sees literals regardless of map iteration order.
+	params, err := tmpl.ResolveParamRefs(c.params)
+	if err != nil {
+		return nil, err
+	}
+
 	// Config — always produce one
 	cfg := &output.ConfigToml{
 		Variant:   c.variant,
 		Port:      c.port,
 		Timezone:  c.timezone,
 		Cmds:      c.cmds,
-		RunArgs:   expandParams(dedup(c.runArgs), c.params),
+		RunArgs:   expandParams(dedup(c.runArgs), params),
 		BuildArgs: dedup(c.buildArgs),
 	}
 	if c.dind != nil {
@@ -245,7 +252,7 @@ func (c *collector) build() (*output.BoothOutput, error) {
 
 	// Boothfile
 	boothfileBody := mergeSegments(c.boothfileSegs)
-	argLines := buildArgLines(c.params)
+	argLines := buildArgLines(params)
 	if argLines != "" || boothfileBody != "" {
 		content := argLines + boothfileBody
 		out.Boothfile = &output.BoothfileContent{Content: content}
@@ -257,7 +264,7 @@ func (c *collector) build() (*output.BoothOutput, error) {
 		name := fmt.Sprintf("%02d-%s--startup.sh", seg.Order, sanitizeName(seg.SourceName))
 		content := strings.TrimRight(seg.Content, "\n") + "\n"
 		// Expand ${PARAM} to ${PARAM:-value} so it's overridable at runtime
-		content = expandParamsWithDefaults(content, c.params)
+		content = expandParamsWithDefaults(content, params)
 		out.Startups = append(out.Startups, output.FileContent{
 			RelPath: name,
 			Content: content,

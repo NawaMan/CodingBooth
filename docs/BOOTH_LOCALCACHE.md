@@ -25,7 +25,6 @@ Back to [README](../README.md)
 - [Examples](#examples)
 - [Available Cache Templates](#available-cache-templates)
 - [User-Defined Cache in config.toml](#user-defined-cache-in-configtoml)
-- [Implementation Plan](#implementation-plan)
 
 ---
 
@@ -82,26 +81,39 @@ Mounting individual files is the safe default — it never accidentally override
 
 ## Protected Paths
 
-The following container paths must **not** be overridden. CodingBooth will refuse to mount (and print an error) if `.booth/cache/` contains entries that would map to:
+The following container paths must **not** be overridden. **If `.booth/cache/` contains an entry that maps to one of them, the booth will not start.**
 
 | Path               | Reason                             |
 |--------------------|------------------------------------|
 | `/opt/codingbooth` | CodingBooth's own installation     |
 | `/home/coder/code` | The bind-mounted project directory |
 
-For example, `.booth/cache/opt/codingbooth/` or `.booth/cache/home/coder/code/` will cause an error.
+So `.booth/cache/opt/codingbooth/` or `.booth/cache/home/coder/code/` is an error, and the message names every offending path at once. Booth refuses rather than skipping the entry, because a silently-dropped mount looks exactly like a cache that inexplicably does not work.
 
 ---
 
 ## Gitignore Requirement
 
-If `.booth/cache/` exists, it **must** be listed in `.booth/.gitignore`. CodingBooth checks for this at startup and errors out if the entry is missing. This prevents accidentally committing host-specific cached state.
+**If `.booth/cache/` exists, it must be gitignored. If it is not, the booth will not start.**
+
+This is not housekeeping. The cache is whatever the container writes to the mounted paths, and that can include live secrets — with `claude-code+settings-cache`, the host's `~/.claude/.credentials.json` is copied into `~/.claude/` by the `/etc/cb-home` override layer on every start, and because `~/.claude/` *is* the bind mount, the token is written straight into `.booth/cache/` inside your project. Same story for browser profiles and cloud CLI state.
 
 The generated `.booth/.gitignore` from `booth config` always includes `cache/`. If you created `.booth/` manually, add it yourself:
 
 ```
 cache/
 ```
+
+CodingBooth asks git, not the `.gitignore` file, and refuses to start on either failure:
+
+| Situation | What you get |
+|-----------|--------------|
+| Cache is gitignored | Starts normally |
+| No `cache/` rule anywhere | `is NOT gitignored` — add the rule |
+| Cache files are **tracked** | `is tracked by git` — `git rm -r --cached .booth/cache` |
+| Project is not a git repo | Check skipped (nothing to commit to) |
+
+The tracked case is the one that bites. **A gitignore rule does not untrack a file that is already committed** — git keeps committing it, and a check that only greps `.booth/.gitignore` for `cache/` would report everything as fine while your credentials go into every commit. If you hit it, untrack the files (they stay on disk) and **rotate any credential that was committed**.
 
 ---
 
@@ -241,168 +253,7 @@ booth config --no-tui . --select go --set cache-dirs=home/coder/.custom_app_data
 - These paths are merged with any cache paths from selected templates — duplicates are automatically removed
 - Paths are relative to the container root (e.g., `home/coder/.foo` maps to `/home/coder/.foo`)
 
+
 ---
 
-## Implementation Plan
-
-### 1. Core: gitignore generation
-
-**File:** `cli/src/pkg/boothinit/output/writer.go`
-
-Add `cache/` to the always-generated `.booth/.gitignore` content.
-
-### 2. Core: gitignore validation at startup
-
-**File:** `cli/src/pkg/booth/booth.go`
-
-When `.booth/cache/` exists on the host, verify that `.booth/.gitignore` contains a `cache/` entry. Error out with a clear message if missing.
-
-### 3. Core: cache directory traversal and mount generation
-
-**File:** `cli/src/pkg/booth/booth.go` (or new file `cli/src/pkg/booth/cache_mounts.go`)
-
-After `addReadOnlyBoothDir`, scan `.booth/cache/` if it exists:
-
-- Walk the directory tree top-down
-- Apply the mount rules (`.mount-this` = directory mount, otherwise file mounts)
-- Validate against protected paths (`/opt/codingbooth`, `/home/coder/code`)
-- Append generated `-v` flags to `CommonArgs`
-
-### 4. Template pipeline: cache file support
-
-Thread a new `Cache` field through the existing template pipeline so templates can declare files to touch in `.booth/cache/`. Since cache files are just empty files (no content), use a simple `cache-files` string array in `template.toml`.
-
-**Files to modify:**
-
-| File | Change |
-|------|--------|
-| `cli/src/pkg/boothinit/template/model.go` | Add `CacheFiles []string` and `CacheDirs []string` to `Template` struct |
-| `cli/src/pkg/boothinit/template/loader.go` | Parse `cache-files` and `cache-dirs` from `template.toml` |
-| `cli/src/pkg/boothinit/compiler/compiler.go` | Merge cache refs from all selected templates into `BoothOutput.Cache` and `BoothOutput.CacheDirs` |
-| `cli/src/pkg/boothinit/output/model.go` | Add `Cache []FileContent` and `CacheDirs []FileContent` to `BoothOutput` struct |
-| `cli/src/pkg/boothinit/output/writer.go` | Touch empty files and create directories with `.mount-this` markers |
-
-**Template syntax:**
-
-```toml
-# In template.toml or extension.toml
-
-# Touch individual empty files (for simple history files)
-cache-files = [
-    "home/coder/.bash_history",
-    "home/coder/.zsh_history",
-]
-
-# Create directories with .mount-this marker (for complex tool state)
-cache-dirs = [
-    "home/coder/.claude",
-]
-```
-
-Each path is relative to `.booth/cache/` and mirrors the container filesystem.
-
-- `cache-files`: Creates parent directories and touches empty files.
-- `cache-dirs`: Creates the directory and a `.mount-this` marker inside it, causing the entire directory to be mounted as a single bind mount.
-
-Existing files and markers are left untouched (no-clobber) so user data is never overwritten on `booth config --no-tui --overwrite`.
-
-### 5. Template: `shell-history`
-
-**File:** `templates/tools/shell-history/template.toml` (new)
-
-```toml
-display-name = "Shell History"
-display-disc = "Persist bash and zsh history across sessions"
-display-order = 33
-tags = ["shell", "history", "persistence"]
-
-cache-files = [
-    "home/coder/.bash_history",
-    "home/coder/.zsh_history",
-]
-```
-
-No Boothfile segments or startup scripts needed — bash and zsh already write to `~/.bash_history` and `~/.zsh_history` by default, and the core cache mount maps them automatically.
-
-### 5b. Extension: Claude Code `settings-cache`
-
-**File:** `templates/ai-tools/claude-code/settings-cache--extension.toml`
-
-```toml
-display-name = "Settings Cache"
-display-disc = "Persist Claude Code settings and projects across sessions"
-display-order = 91
-auto-select = true
-tags = ["claude", "persistence", "cache"]
-
-cache-dirs = [
-    "home/coder/.claude",
-]
-```
-
-This creates `.booth/cache/home/coder/.claude/.mount-this`, causing the entire `~/.claude/` directory to be persisted via cache mount. Used in combination with the credential extension which seeds fresh `.credentials.json` via `/etc/cb-home/` override.
-
-### 6. Cache extensions for existing templates
-
-Add `cache-files` extensions to existing language/tool templates. Each extension simply declares the history file to touch. No startup scripts needed — the tools already write to their default history paths.
-
-| Parent template | Extension name | File | Cache file |
-|-----------------|---------------|------|------------|
-| `python` | `repl-history` | `templates/languages/python/repl-history--extension.toml` | `home/coder/.python_history` |
-| `nodejs` | `repl-history` | `templates/languages/nodejs/repl-history--extension.toml` | `home/coder/.node_repl_history` |
-| `postgresql` | `cli-history` | `templates/databases/postgresql/cli-history--extension.toml` | `home/coder/.psql_history` |
-| `mysql` | `cli-history` | `templates/databases/mysql/cli-history--extension.toml` | `home/coder/.mysql_history` |
-| `sqlite` | `cli-history` | `templates/databases/sqlite/cli-history--extension.toml` | `home/coder/.sqlite_history` |
-
-Usage: `booth config --no-tui --select shell-history/python+repl-history/postgresql+cli-history`
-
-### 7. Init test: `tests/config/test51-init-cache-files.sh`
-
-**Pattern:** Uses `test-helpers--source.sh` (same as existing init tests like test47, test48). Runs `booth config` and checks the generated output on the host filesystem — no Docker needed.
-
-**Tests:**
-
-1. `booth config --no-tui --select shell-history` creates `.booth/cache/home/coder/.bash_history`
-2. `booth config --no-tui --select shell-history` creates `.booth/cache/home/coder/.zsh_history`
-3. `.booth/.gitignore` contains `cache/`
-4. `booth config --no-tui --select python+repl-history` creates `.booth/cache/home/coder/.python_history`
-5. Cache files are empty (zero bytes)
-6. `booth config --no-tui --overwrite --select shell-history` does NOT overwrite existing cache files (write content to file, adjust, verify content preserved)
-7. `booth config --no-tui --select go` (no cache-files) does NOT create `.booth/cache/` directory
-
-**File:** `tests/config/test51-init-cache-files.sh` (new)
-
-### 8. Complex test: `tests/complex/test-cache-mount/`
-
-**Pattern:** Uses `common--source.sh` + `run_coding_booth` (same as test-booth-home-seed, test-lifecycle-fs-persistence). Requires Docker — runs an actual container and verifies mount behavior.
-
-**Structure:**
-```
-tests/complex/test-cache-mount/
-  .booth/
-    config.toml           # minimal config (variant = "base")
-    Boothfile             # minimal Dockerfile (FROM nawaman/codingbooth:base-latest)
-    cache/
-      home/coder/
-        .bash_history     # pre-populated with "CACHED_LINE_1"
-      opt/testapp/
-        .mount-this       # directory mount marker
-        data.txt          # pre-populated with "CACHED_DATA"
-  test--cache-mount.sh
-```
-
-**Tests:**
-
-1. `.booth/cache/home/coder/.bash_history` is mounted and readable inside the container at `/home/coder/.bash_history` (content matches "CACHED_LINE_1")
-2. `.booth/cache/opt/testapp/` is mounted as whole directory at `/opt/testapp` (content of `data.txt` matches "CACHED_DATA")
-3. Writing to `/home/coder/.bash_history` inside the container persists to host `.booth/cache/home/coder/.bash_history`
-4. Protected path rejection: `.booth/cache/home/coder/code/` causes an error (test creates the dir, runs booth, asserts non-zero exit)
-
-**File:** `tests/complex/test-cache-mount/test--cache-mount.sh` (new)
-
-### 9. Verification
-
-- `go build` the CLI
-- Run init tests: `cd tests/init && bash test51-init-cache-files.sh`
-- Run complex test: `cd tests/complex/test-cache-mount && bash test--cache-mount.sh`
-- Run full test suites: `tests/config/run-all-tests.sh` and `tests/complex/run-complex-tests.sh`
+Back to [README](../README.md)

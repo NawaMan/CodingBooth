@@ -254,3 +254,36 @@ func TestExtractUserRunArgs_ExposeReverseMapping(t *testing.T) {
 	// 8080:8080 → 8080, +8080:8080 → +8080, 9090:3000 → 9090:3000
 	assert.Equal(t, []string{"8080", "+8080", "9090:3000"}, flags.exposes)
 }
+
+// --- overlayExistingArgs with a following default ("${SSH_PORT}") ---
+
+// sshExpose is the expose extension's host-port param: it follows the port the SSH
+// server listens on, so its Boothfile `arg` line holds a resolved number, not the
+// "${SSH_PORT}" reference the template declares.
+func sshExpose() *tmpl.Template {
+	return &tmpl.Template{Params: map[string]tmpl.Param{"SSH_HOST_PORT": {Default: "${SSH_PORT}"}}}
+}
+
+func TestOverlayExistingArgs_DerivedValueIsNotPinned(t *testing.T) {
+	// Boothfile from "openssh+server:2200+expose": the host port was derived from the
+	// service port, not chosen. Re-configuring must let it re-derive — pinning 2200 here
+	// is what would publish 2200:22 after the service moves to 22.
+	pv := map[string]string{}
+	overlayExistingArgs(pv, "openssh/expose", sshExpose(), map[string]string{
+		"SSH_PORT":      "2200",
+		"SSH_HOST_PORT": "2200",
+	})
+	_, ok := pv["openssh/expose:SSH_HOST_PORT"]
+	assert.False(t, ok, "a derived host port must not be preserved as a pin")
+}
+
+func TestOverlayExistingArgs_PinnedHostPortSurvives(t *testing.T) {
+	// Boothfile from "openssh+server:22+expose:2222": 2222 is a real choice — the host
+	// port the user asked for — and it must survive re-configuration.
+	pv := map[string]string{}
+	overlayExistingArgs(pv, "openssh/expose", sshExpose(), map[string]string{
+		"SSH_PORT":      "22",
+		"SSH_HOST_PORT": "2222",
+	})
+	assert.Equal(t, "2222", pv["openssh/expose:SSH_HOST_PORT"], "an explicit host-port pin must be preserved")
+}

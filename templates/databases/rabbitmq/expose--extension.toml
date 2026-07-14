@@ -1,0 +1,26 @@
+display-name = "Expose RabbitMQ Ports"
+display-disc = "Publish the AMQP port and the management UI to host network"
+display-detail = "Publishes both RABBIT_PORT (AMQP, for clients on the host) and RABBIT_MGMTPORT (the management web UI, which is the one you actually open in a browser). Pair with the +start extension — that is what launches RabbitMQ on boot and provisions the dev user; without it nothing is listening. Each host port follows the port the broker listens on; RABBIT_HOST_PORT and RABBIT_MGMT_HOST_PORT override the host side alone, in that order — rabbitmq+start+expose:15672,25672."
+display-order = 1
+auto-select = false
+tags = [
+    "rabbitmq",
+    "messaging",
+    "port",
+    "network",
+]
+
+run-args = [
+    "-p", "${RABBIT_HOST_PORT}:${RABBIT_PORT}",
+    "-p", "${RABBIT_MGMT_HOST_PORT}:${RABBIT_MGMTPORT}",
+]
+
+# Host-side ports, one per published port, in the order they take positional values:
+# rabbitmq+start+expose:15672,25672. Each defaults to the port the broker listens on, so
+# moving a broker port moves its published port with it; override only when the host port
+# is already taken.
+[params.RABBIT_HOST_PORT]
+default = "${RABBIT_PORT}"
+
+[params.RABBIT_MGMT_HOST_PORT]
+default = "${RABBIT_MGMTPORT}"

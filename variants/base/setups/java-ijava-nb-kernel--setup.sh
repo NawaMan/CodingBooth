@@ -35,11 +35,6 @@ fi
 HOME=/root
 
 
-if [[ "${BOOTH_VARIANT_TAG:-}" == "base" ]]; then
-  echo "Variant does not include VS Code (code) or CodeServer" >&2
-  exit 0
-fi
-
 if [[ "${CB_JDK_VERSION:-}" == "" ]]; then
   echo "JDK is not properly installed (CB_JDK_VERSION is not given)." >&2
   exit 1

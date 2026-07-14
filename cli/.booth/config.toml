@@ -1,0 +1,8 @@
+# Configured by: booth config --no-tui --overwrite --select rabbitmq+start+expose:15672,25672
+
+
+run-args = [
+    "-v", "booth-rabbitmqdata:/opt/rabbitmq",
+    "-p", "15672:5672",
+    "-p", "25672:15672"
+]

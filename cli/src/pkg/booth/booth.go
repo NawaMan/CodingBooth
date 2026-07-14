@@ -9,6 +9,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -540,11 +541,15 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 	// Mount .booth/cache/ contents into the container based on directory structure.
 	cachePath := filepath.Join(hostPath, "cache")
 	if info, err := os.Stat(cachePath); err == nil && info.IsDir() {
-		if err := validateCacheGitignore(hostPath); err != nil {
+		if err := validateCacheGitignore(codePath, cachePath); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
-		mounts := collectCacheMounts(cachePath)
+		mounts, protected := collectCacheMounts(cachePath)
+		if len(protected) > 0 {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedCacheMountsError(protected))
+			os.Exit(1)
+		}
 		for _, m := range mounts {
 			builder.CommonArgs.Append(ilist.NewList[string]("-v", m.hostPath+":"+m.containerPath))
 		}
@@ -606,20 +611,56 @@ var protectedPaths = []string{
 	"/home/coder/code",
 }
 
-// validateCacheGitignore checks that .booth/.gitignore contains a "cache/" entry.
-func validateCacheGitignore(boothDir string) error {
-	gitignorePath := filepath.Join(boothDir, ".gitignore")
-	data, err := os.ReadFile(gitignorePath)
+// validateCacheGitignore enforces that .booth/cache/ is gitignored. The cache holds
+// whatever the container writes to the mounted paths — shell history, browser profiles,
+// and (via the /etc/cb-home override layer) live credentials such as ~/.claude/.credentials.json.
+//
+// It asks git rather than parsing .booth/.gitignore. A "cache/" line in that file says
+// nothing about cache files that are already tracked, and gitignore does not apply to
+// tracked files — so a grep reports "ignored" for a repo that is committing credentials on
+// every commit. "git check-ignore" consults the index, so it reports a cache directory with
+// tracked content as NOT ignored, which is what we want.
+//
+// Skipped when git is unavailable or the project is not a git repo: there is nothing to
+// commit the cache to.
+func validateCacheGitignore(codeDir, cacheDir string) error {
+	gitPath, err := exec.LookPath("git")
 	if err != nil {
-		return fmt.Errorf(".booth/cache/ exists but .booth/.gitignore is missing — add 'cache/' to .booth/.gitignore")
+		return nil
 	}
-	for _, line := range strings.Split(string(data), "\n") {
-		line = strings.TrimSpace(line)
-		if line == "cache/" || line == "cache" {
-			return nil
+	if err := exec.Command(gitPath, "-C", codeDir, "rev-parse", "--git-dir").Run(); err != nil {
+		return nil
+	}
+
+	relPath, err := filepath.Rel(codeDir, cacheDir)
+	if err != nil {
+		relPath = cacheDir
+	}
+	relPath = filepath.ToSlash(relPath)
+
+	// Tracked cache is the dangerous case: adding a gitignore rule will NOT untrack it, so
+	// this needs its own message pointing at the only fix that works.
+	if out, err := exec.Command(gitPath, "-C", codeDir, "ls-files", "--", relPath).Output(); err == nil {
+		if tracked := strings.Fields(string(out)); len(tracked) > 0 {
+			return fmt.Errorf(
+				"%s/ is tracked by git (%d file(s), e.g. %s).\n"+
+					"  Cached files can contain credentials, so this must never be committed.\n"+
+					"  Untrack them (they stay on disk):  git rm -r --cached %s\n"+
+					"  Then make sure '%s/' is gitignored, and rotate any credential that was committed.\n"+
+					"  Refusing to start",
+				relPath, len(tracked), tracked[0], relPath, relPath)
 		}
 	}
-	return fmt.Errorf(".booth/cache/ exists but is not gitignored — add 'cache/' to .booth/.gitignore")
+
+	if err := exec.Command(gitPath, "-C", codeDir, "check-ignore", "-q", relPath).Run(); err != nil {
+		return fmt.Errorf(
+			"%s/ is NOT gitignored.\n"+
+				"  Cached files can contain credentials, so this must never be committed.\n"+
+				"  Add 'cache/' to .booth/.gitignore (or '%s/' to the repo's .gitignore).\n"+
+				"  Refusing to start",
+			relPath, relPath)
+	}
+	return nil
 }
 
 // collectCacheMounts walks .booth/cache/ and builds bind mount entries.
@@ -627,13 +668,16 @@ func validateCacheGitignore(boothDir string) error {
 //   - Directory with .mount-this → mount entire directory, stop traversal
 //   - Files in a directory without .mount-this → individual file mounts
 //   - Directories without .mount-this → traverse into them
-func collectCacheMounts(cacheDir string) []cacheMount {
-	var mounts []cacheMount
-	walkCacheDir(cacheDir, cacheDir, &mounts)
-	return mounts
+//
+// Entries landing on a protected container path are returned separately rather than mounted.
+// They are a misconfiguration the caller refuses to start on: silently dropping them would
+// leave the user with a cache entry that never takes effect and no idea why.
+func collectCacheMounts(cacheDir string) (mounts []cacheMount, protected []string) {
+	walkCacheDir(cacheDir, cacheDir, &mounts, &protected)
+	return mounts, protected
 }
 
-func walkCacheDir(baseDir, dir string, mounts *[]cacheMount) {
+func walkCacheDir(baseDir, dir string, mounts *[]cacheMount, protected *[]string) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return
@@ -655,7 +699,9 @@ func walkCacheDir(baseDir, dir string, mounts *[]cacheMount) {
 
 	if hasMountMarker && relPath != "." {
 		containerPath := "/" + filepath.ToSlash(relPath)
-		if !isProtectedPath(containerPath) {
+		if isProtectedPath(containerPath) {
+			*protected = append(*protected, containerPath)
+		} else {
 			*mounts = append(*mounts, cacheMount{
 				hostPath:      dir,
 				containerPath: containerPath,
@@ -670,7 +716,7 @@ func walkCacheDir(baseDir, dir string, mounts *[]cacheMount) {
 		}
 		fullPath := filepath.Join(dir, entry.Name())
 		if entry.IsDir() {
-			walkCacheDir(baseDir, fullPath, mounts)
+			walkCacheDir(baseDir, fullPath, mounts, protected)
 		} else {
 			// Individual file mount
 			fileRelPath, err := filepath.Rel(baseDir, fullPath)
@@ -678,7 +724,9 @@ func walkCacheDir(baseDir, dir string, mounts *[]cacheMount) {
 				continue
 			}
 			containerPath := "/" + filepath.ToSlash(fileRelPath)
-			if !isProtectedPath(containerPath) {
+			if isProtectedPath(containerPath) {
+				*protected = append(*protected, containerPath)
+			} else {
 				*mounts = append(*mounts, cacheMount{
 					hostPath:      fullPath,
 					containerPath: containerPath,
@@ -781,11 +829,25 @@ func removeHomeVolume(containerName string) {
 func isProtectedPath(containerPath string) bool {
 	for _, p := range protectedPaths {
 		if containerPath == p || strings.HasPrefix(containerPath, p+"/") {
-			fmt.Fprintf(os.Stderr, "Warning: skipping cache mount for protected path %s\n", containerPath)
 			return true
 		}
 	}
 	return false
+}
+
+// protectedCacheMountsError explains cache entries that would mount over a protected
+// container path: the project bind mount, or CodingBooth's own install. Either would break
+// the booth in a way that is hard to trace back to a stray directory under .booth/cache/.
+func protectedCacheMountsError(protected []string) error {
+	var b strings.Builder
+	fmt.Fprintf(&b, ".booth/cache/ maps onto %d protected container path(s):\n", len(protected))
+	for _, p := range protected {
+		fmt.Fprintf(&b, "  %s\t(from .booth/cache%s)\n", p, p)
+	}
+	b.WriteString("  Mounting there would shadow the project directory or CodingBooth's own install.\n")
+	b.WriteString("  Remove or rename those entries under .booth/cache/.\n")
+	b.WriteString("  Refusing to start")
+	return fmt.Errorf("%s", b.String())
 }
 
 // formatPortMapping returns a Docker port mapping string.

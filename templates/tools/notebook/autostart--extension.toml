@@ -1,0 +1,27 @@
+display-name = "Notebook Auto-Start"
+display-disc = "Auto-start JupyterLab on container boot"
+display-detail = "Runs 'start-notebook' in the background when the container boots, so JupyterLab is serving on NOTEBOOK_PORT alongside whatever UI the variant provides — a notebook next to code-server, or on a desktop. On the notebook variant this is a no-op: JupyterLab is already the primary service there and it occupies the same port, so starting a second one would collide. Pair with the expose extension to reach it from the host. If PASSWORD is set, it becomes the JupyterLab token."
+display-order = 2
+auto-select = false
+tags = [
+    "jupyter",
+    "notebook",
+    "autostart"
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start JupyterLab in background.
+# The notebook variant already runs JupyterLab as its primary service on this
+# same port (start-notebook-wrapped), so starting another one would collide.
+if [ "${BOOTH_VARIANT_TAG:-base}" = "notebook" ]; then
+  echo "JupyterLab is the primary service of the notebook variant — auto-start skipped."
+else
+  PORT=${NOTEBOOK_PORT}
+  LOG_FILE="/tmp/notebook.log"
+
+  nohup start-notebook "$PORT" > "$LOG_FILE" 2>&1 &
+
+  echo "JupyterLab started on port $PORT (PID $!, log: $LOG_FILE)"
+fi
+"""

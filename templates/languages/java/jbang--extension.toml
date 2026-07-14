@@ -1,0 +1,15 @@
+display-name = "jbang Warm Cache"
+display-disc = "Pre-warm the jbang dependency cache at build time"
+display-detail = "jbang ships with the JDK setup, but resolves its dependencies on first use. Running a throwaway script at build time moves that download into the image, so the first real jbang run (or Java notebook cell) does not stall on the network."
+display-order = 12
+auto-select = false
+tags = [
+    "java",
+    "jbang",
+    "cache"
+]
+
+[segments]
+Boothfile = """
+run echo 'class Hi { public static void main(String[] args) { System.out.println("Hi"); }}' | jbang -
+"""
