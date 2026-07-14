@@ -190,6 +190,7 @@ service port and the port it is published on are separate params, and they compo
 openssh+server:2200+expose          # sshd on 2200, published on 2200
 openssh+server:22+expose:2222       # sshd on 22, published on 2222
 rabbitmq+start+expose:15672,25672   # AMQP on 15672, management UI on 25672
+rabbitmq+start+expose:+4567         # AMQP published on boothPort + 4567
 ```
 
 ### Ports: which knob moves what
@@ -204,11 +205,27 @@ published port with it, and the two cannot drift apart:
 | `cloudbeaver+expose` | `8978:8978` |
 | `cloudbeaver:25.3.5,9000+expose` | `9000:9000` — host follows the service |
 | `cloudbeaver:25.3.5,9000+expose:19000` | `19000:9000` — host overridden alone |
+| `cloudbeaver+expose:+8978` | `28978:8978` — host relative to a booth port of 20000 |
 
 Override the host port only when the host port is taken but the booth's should not
 move. The databases whose server has no port param of its own (`postgresql`, `mysql`,
 `redis`, `mongodb`, `nginx`, `apache` — each listens on its stock port inside the
 container) have only the host-side knob, on the `expose` extension.
+
+#### Booth-relative host ports
+
+A host port written as `+OFFSET` is **relative to the booth port**: it stays literal in
+`run-args` and is resolved at container start as `boothPort + OFFSET`. With a booth port
+of 20000, `rabbitmq+start+expose:+4567` writes `"-p", "+4567:5672"` and publishes AMQP on
+`24567`. A bare number is still an absolute host port — the `+` is what makes it relative.
+
+This is the same `+OFFSET` form `--expose +4567:5672` and hand-written `run-args` already
+use; the offset belongs on the **host** side only. Because it derives from the booth port,
+two booths of the same project on different ports no longer collide on published ports.
+
+The `+` survives the selection DSL even though `+` also separates extensions: inside a
+param list, a `+` starts an extension only when followed by a letter, and names are never
+digit-initial. So `expose:+4567+start` is a relative port *and* a `+start` extension.
 
 A param default may reference another param by name (`default = "${SVC_PORT}"`), and
 references are resolved before anything consumes them, including transitively. A
@@ -218,11 +235,41 @@ say — is left alone for the shell to expand at runtime.
 ### `--expose` is instead of `+expose`, not alongside it
 
 `--expose` **adds** a mapping; it does not replace what the `+expose` extension
-contributes. Selecting `cloudbeaver+expose` *and* passing `--expose 19000:8978` yields
-two `--publish` entries, one of which still binds the port you were trying to avoid.
-Use `+expose:19000` to move the host port, and `--expose` only for what the extension
-cannot express: IP binding (`--expose 127.0.0.1:19000:8978`) or the booth-relative
-`+OFFSET` form.
+contributes. Selecting `cloudbeaver+expose` *and* passing `--expose 19000:8978` publishes
+container port 8978 twice — on 8978 *and* on 19000 — and the first one stays bound, which
+is the port you were presumably trying to get off. `booth config` says so:
+
+```
+Note: a selected template already publishes container port 8978 as "8978:8978".
+      --expose 19000:8978 adds a second mapping; it does not move the first, which stays bound.
+      To move it, give the expose extension the host port instead (e.g. +expose:19000).
+```
+
+Use `+expose:19000` to move the host port. Reach for `--expose` only for what the
+extension cannot express: IP binding (`--expose 127.0.0.1:19000:8978`), or publishing a
+port no template owns.
+
+### One host port, one mapping
+
+Docker cannot bind a host port twice — it fails the container with `address already in
+use` — so a config that publishes one twice never starts. Two spellings of the same
+mapping are **collapsed** rather than published twice, whether they came from a template
+plus a `--expose` (`cloudbeaver+expose --expose 8978:8978`) or from two templates whose
+ports resolve alike (`nginx+expose/apache+expose`, both `8080:80`). The user-owned
+`--publish` is the form kept, since that is the one re-read into `--expose` on
+reconfigure.
+
+Anything that genuinely *cannot* bind is refused at start, naming both mappings, rather
+than left to docker's `driver failed programming external connectivity`:
+
+```
+Error: host port 8978 is published twice — "8978:8978" (run-args) and "8978:9000" (run-args).
+```
+
+That check runs after `+OFFSET` resolution, so it catches an offset that lands on an
+absolute mapping (`-p 28978:8978` next to `-p +8978:9000` on a booth at 20000), and it
+includes the booth's own port — publishing over it is refused too. Publishing one
+*container* port on two different host ports is legal in docker, so it is left alone.
 
 ### Excluding auto-selected extensions
 

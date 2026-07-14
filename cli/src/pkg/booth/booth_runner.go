@@ -35,6 +35,7 @@ func (runner *BoothRunner) Run() error {
 	ctx = EnsureDockerImage(ctx)
 	ctx = PortDetermination(ctx)
 	ctx = ResolveRelativePorts(ctx)
+	ctx = NormalizePortMappings(ctx)
 	ctx = ShowDebugBanner(ctx)
 	ctx = SetupDind(ctx)
 	ctx = SetupEgress(ctx)

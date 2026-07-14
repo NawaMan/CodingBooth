@@ -14,6 +14,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nawaman/codingbooth/src/pkg/booth"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/cache"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/compiler"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
@@ -301,6 +302,7 @@ func compileEmpty(flags initFlags) (*output.BoothOutput, *selection.ResolvedSele
 	applyExposeFlags(out.Config, flags.exposes)
 	applyEnvFlags(out.Config, flags.envs)
 	applyMountFlags(out.Config, flags.mounts)
+	normalizePublishedPorts(out.Config)
 
 	// Apply --set overrides
 	if len(flags.sets) > 0 {
@@ -420,6 +422,7 @@ func compileSelection(flags initFlags, overrides map[string]string) (*output.Boo
 	applyExposeFlags(out.Config, flags.exposes)
 	applyEnvFlags(out.Config, flags.envs)
 	applyMountFlags(out.Config, flags.mounts)
+	normalizePublishedPorts(out.Config)
 
 	// Apply --set overrides (highest precedence)
 	if len(flags.sets) > 0 {
@@ -726,6 +729,96 @@ func applyExposeFlags(cfg *output.ConfigToml, exposes []string) {
 			mapping = expose + ":" + expose
 		}
 		cfg.RunArgs = append(cfg.RunArgs, "--publish", mapping)
+	}
+}
+
+// normalizePublishedPorts removes a port mapping that run-args publishes twice, and warns
+// about a --expose that adds a second mapping where the user probably meant to move one.
+//
+// Two spellings of one mapping reach run-args easily: a template's short-form "-p" plus
+// the user's long-form "--publish" ("cloudbeaver+expose --expose 8978:8978"), or two
+// templates whose params resolve to the same mapping ("nginx+expose/apache+expose", both
+// 8080:80 — the compiler's own dedup runs before params are expanded, so it sees
+// "${NGINX_PORT}:80" and "${APACHE_PORT}:80" as distinct). Docker refuses to bind one host
+// port twice, so a duplicate is not untidiness: the booth does not start.
+//
+// The long form wins when both spell the same mapping, because it is the user-owned one:
+// `booth config` reads long-form flags back into --expose when re-configuring, so keeping
+// it preserves the request, while the template's short form is re-added by the selection.
+func normalizePublishedPorts(cfg *output.ConfigToml) {
+	publishedLong := make(map[string]bool)
+	for i := 0; i+1 < len(cfg.RunArgs); i++ {
+		if cfg.RunArgs[i] == "--publish" {
+			publishedLong[cfg.RunArgs[i+1]] = true
+		}
+	}
+
+	kept := make([]string, 0, len(cfg.RunArgs))
+	seen := make(map[string]bool)
+	for i := 0; i < len(cfg.RunArgs); i++ {
+		flag := cfg.RunArgs[i]
+		if (flag == "-p" || flag == "--publish") && i+1 < len(cfg.RunArgs) {
+			mapping := cfg.RunArgs[i+1]
+			// Drop a repeat, and drop a short form the user also asked for by hand.
+			if seen[mapping] || (flag == "-p" && publishedLong[mapping]) {
+				i++
+				continue
+			}
+			seen[mapping] = true
+			kept = append(kept, flag, mapping)
+			i++
+			continue
+		}
+		kept = append(kept, flag)
+	}
+	cfg.RunArgs = kept
+
+	warnExposeAddsSecondMapping(cfg)
+}
+
+// warnExposeAddsSecondMapping warns when a --expose flag publishes a container port that a
+// selected template already publishes on a different host port. Docker allows it — one
+// container port can be published on two host ports — but it is rarely what was meant: the
+// template's mapping is still bound, so someone who reached for --expose *because* that
+// host port was taken still cannot start the booth. Moving it is what an expose extension's
+// host-port param is for.
+func warnExposeAddsSecondMapping(cfg *output.ConfigToml) {
+	type sourced struct {
+		mapping string
+		parsed  booth.PortMapping
+	}
+	var fromTemplates, fromUser []sourced
+
+	for i := 0; i+1 < len(cfg.RunArgs); i++ {
+		flag := cfg.RunArgs[i]
+		if flag != "-p" && flag != "--publish" {
+			continue
+		}
+		mapping := cfg.RunArgs[i+1]
+		parsed, ok := booth.ParsePortMapping(mapping)
+		if !ok {
+			continue
+		}
+		if flag == "-p" {
+			fromTemplates = append(fromTemplates, sourced{mapping, parsed})
+		} else {
+			fromUser = append(fromUser, sourced{mapping, parsed})
+		}
+	}
+
+	for _, user := range fromUser {
+		for _, tmplPort := range fromTemplates {
+			sameContainer := user.parsed.Container == tmplPort.parsed.Container
+			sameHost := user.parsed.Raw == tmplPort.parsed.Raw
+			if !sameContainer || sameHost {
+				continue
+			}
+			fmt.Fprintf(os.Stderr,
+				"Note: a selected template already publishes container port %s as %q.\n"+
+					"      --expose %s adds a second mapping; it does not move the first, which stays bound.\n"+
+					"      To move it, give the expose extension the host port instead (e.g. +expose:%d).\n",
+				user.parsed.Container, tmplPort.mapping, user.mapping, user.parsed.Host)
+		}
 	}
 }
 

@@ -69,7 +69,10 @@ func NormalizeInput(input string) string {
 //
 // DSL format: name[:p1,p2][+ext1][+ext2][~exc1][~exc2]/name2[:p1,p2][+ext1][~exc1]
 //
-// Operator precedence: split "/" first, then "~", then "+", then ":" and "," last.
+// Operator precedence: split "/" first, then "~", then "+", then ":" and "," last —
+// except that "+" gives way to ":". Once a ":" has opened a param list, a "+" separates
+// extensions only when a letter follows it, so a param value can hold one: "expose:+4567"
+// is a booth-relative port, not an extension named "4567". See splitExtensions.
 func ParseSelectDSL(input string) (*ParsedSelection, error) {
 	normalized := NormalizeInput(input)
 	parts := strings.Split(normalized, "/")
@@ -94,6 +97,47 @@ func ParseSelectDSL(input string) (*ParsedSelection, error) {
 	return &ParsedSelection{Items: items}, nil
 }
 
+// splitExtensions splits "name[:params][+ext[:params]]..." on the "+" that introduce
+// extensions, leaving any "+" that belongs to a param value in place.
+//
+// A "+" inside a param list is only an extension separator when it introduces an
+// extension *name*, and names are always identifiers — they never start with a digit or
+// a "+". So once a ":" has opened a param list, a "+" followed by anything but a letter
+// is part of the value. That is what lets a port param carry a booth-relative offset
+// ("expose:+4567" → host port = booth port + 4567, resolved at start) and, incidentally,
+// what lets a package param name a package with a "+" in it ("apt-pkg:libstdc++6").
+//
+// Before any ":" every "+" still separates, so a malformed "go++linter" or a trailing
+// "go+" reports an empty extension name exactly as it did before.
+func splitExtensions(basePart string) []string {
+	var parts []string
+	start, inParams := 0, false
+
+	for i := 0; i < len(basePart); i++ {
+		switch basePart[i] {
+		case ':':
+			inParams = true
+		case '+':
+			if inParams && !startsExtensionName(basePart[i+1:]) {
+				continue // part of the param value, not a separator
+			}
+			parts = append(parts, basePart[start:i])
+			start, inParams = i+1, false
+		}
+	}
+	return append(parts, basePart[start:])
+}
+
+// startsExtensionName reports whether s opens with a character an extension name can
+// begin with. Template and extension names are identifiers, so that means a letter.
+func startsExtensionName(s string) bool {
+	if s == "" {
+		return false
+	}
+	c := s[0]
+	return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z')
+}
+
 // parseItem parses a single template selection: "name[:p1,p2][+ext1][+ext2][~exc1][~exc2]"
 func parseItem(s string) (ParsedItem, error) {
 	// Split by "~" — first part is template[+extensions], rest are exclusions
@@ -110,7 +154,7 @@ func parseItem(s string) (ParsedItem, error) {
 	}
 
 	// Split base part by "+" — first part is template, rest are extensions
-	plusParts := strings.Split(basePart, "+")
+	plusParts := splitExtensions(basePart)
 	templatePart := plusParts[0]
 
 	var extensions []ParsedExtension

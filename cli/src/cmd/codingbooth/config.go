@@ -965,7 +965,12 @@ Flags:
   --start                  Start the booth after creation
   --debug                  Print debug output
   --cmd <command>          Set default start command (repeatable)
-  --expose <port>          Expose extra port (repeatable)
+  --expose <port>          Publish an extra port (repeatable). Forms: PORT,
+                           HOST:CONTAINER, IP:HOST:CONTAINER, or +OFFSET:CONTAINER
+                           (host port = booth port + OFFSET). This ADDS a mapping; to
+                           move a port a selected template already publishes, give its
+                           expose extension the host port: +expose:19000, or
+                           +expose:+9000 for a booth-relative one
   --env <KEY=VALUE>        Set environment variable (repeatable)
   --mount <host:container> Mount volume (repeatable)
   --set <key=value>        Set config.toml value (repeatable)
@@ -983,5 +988,9 @@ Examples:
   booth config --select go+linter               # TUI pre-populated
   booth config --no-tui --select go+linter      # CLI mode
   booth config --dryrun --select go              # TUI, dryrun on confirm
-  booth config --no-tui --dryrun --select go     # CLI dryrun`)
+  booth config --no-tui --dryrun --select go     # CLI dryrun
+
+  booth config --select cloudbeaver+expose            # publish it on 8978
+  booth config --select cloudbeaver+expose:19000      # ...on 19000 instead
+  booth config --select rabbitmq+start+expose:+4567   # ...on booth port + 4567`)
 }
