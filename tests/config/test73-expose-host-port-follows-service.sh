@@ -78,6 +78,46 @@ has "$config" '"15672:5672"'  ; check $? "rabbitmq+expose:15672,... publishes AM
 has "$config" '"25672:15672"' ; check $? "rabbitmq+expose:...,25672 publishes the UI on 25672"
 
 # ---------------------------------------------------------------------------
+# A host port may be booth-relative: "+4567" means booth port + 4567, left in
+# run-args as "+4567:5672" and resolved against the booth port at container start
+# (tests/dryrun/test019 covers that resolution). The "+" has to survive the DSL,
+# which splits an item on "+" to find its extensions — it used to read "+4567" as
+# an extension named "4567".
+# ---------------------------------------------------------------------------
+# Start from a clean .booth: the pins the previous block wrote (RABBIT_MGMT_HOST_PORT
+# =25672) are carried over on reconfigure by design, and would mask what is asserted here.
+rm -rf "$prj/.booth"
+boothfile="$prj/.booth/Boothfile"
+
+run booth config $prj --no-tui --overwrite --select "rabbitmq+start+expose:+4567"
+has "$config" '"+4567:5672"'  ; check $? "rabbitmq+expose:+4567 keeps the relative host port"
+has "$config" '"15672:15672"' ; check $? "the un-overridden UI port stays absolute"
+
+# A bare number is still an absolute host port — the "+" is what makes it relative.
+rm -rf "$prj/.booth"
+run booth config $prj --no-tui --overwrite --select "cloudbeaver+expose:19000"
+has   "$config" '"19000:8978"' ; check $? "a bare host port is still absolute"
+! has "$config" '"+'           ; check $? "no relative mapping appears without a '+'"
+
+# An extension after a relative param must still parse as an extension, not as more of
+# the param: "+start" begins with a letter, "+4567" does not. The +start extension is
+# what provisions the dev user, so its RABBIT_USER arg is the proof that it applied.
+rm -rf "$prj/.booth"
+run booth config $prj --no-tui --overwrite --select "rabbitmq+expose:+4567+start"
+has "$config"    '"+4567:5672"'    ; check $? "an extension can follow a relative port param"
+has "$boothfile" 'arg RABBIT_USER=' ; check $? "the +start extension after it still applies"
+
+# The recorded "Configured by" line has to survive a round-trip through the parser —
+# the TUI regenerates its selection from it.
+has "$boothfile" 'rabbitmq+expose:+4567+start' ; check $? "the relative port round-trips into the adjust line"
+
+# The relative value is a choice, not a derivation, so it must survive re-configuration.
+rm -rf "$prj/.booth"
+run booth config $prj --no-tui --overwrite --select "rabbitmq+start+expose:+4567"
+run booth config $prj --no-tui --overwrite --select "rabbitmq+start+expose/go"
+has "$config" '"+4567:5672"' ; check $? "a relative host port survives re-configuration"
+
+# ---------------------------------------------------------------------------
 # The reference itself must never reach the output — an unresolved ${SSH_PORT}
 # in run-args is a port mapping docker rejects at start.
 # ---------------------------------------------------------------------------

@@ -346,3 +346,64 @@ func TestReadSelectInput_URLUnreachable(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "fetching selection URL")
 }
+
+// --- "+" inside a param value (booth-relative ports, packages with a "+") ---
+
+func TestParse_ExtensionParamCarriesRelativePort(t *testing.T) {
+	// "+4567" is an offset from the booth port, resolved at container start. The "+" must
+	// survive the extension split — it used to be read as an extension named "4567".
+	parsed, err := ParseSelectDSL("rabbitmq+start+expose:+4567")
+	require.NoError(t, err)
+	require.Len(t, parsed.Items, 1)
+
+	item := parsed.Items[0]
+	assert.Equal(t, "rabbitmq", item.Name)
+	require.Len(t, item.Extensions, 2)
+	assert.Equal(t, "start", item.Extensions[0].Name)
+	assert.Equal(t, "expose", item.Extensions[1].Name)
+	assert.Equal(t, []string{"+4567"}, item.Extensions[1].Params)
+}
+
+func TestParse_RelativeAndAbsolutePortsCoexist(t *testing.T) {
+	parsed, err := ParseSelectDSL("cloudbeaver:25.3.5,9000+expose:19000")
+	require.NoError(t, err)
+
+	item := parsed.Items[0]
+	assert.Equal(t, []string{"25.3.5", "9000"}, item.Params)
+	require.Len(t, item.Extensions, 1)
+	assert.Equal(t, "expose", item.Extensions[0].Name)
+	assert.Equal(t, []string{"19000"}, item.Extensions[0].Params, "a bare number stays an absolute host port")
+}
+
+func TestParse_ExtensionAfterRelativePortParam(t *testing.T) {
+	// A "+" followed by a letter is still an extension, even inside a param list.
+	parsed, err := ParseSelectDSL("rabbitmq+expose:+4567+start")
+	require.NoError(t, err)
+
+	item := parsed.Items[0]
+	require.Len(t, item.Extensions, 2)
+	assert.Equal(t, "expose", item.Extensions[0].Name)
+	assert.Equal(t, []string{"+4567"}, item.Extensions[0].Params)
+	assert.Equal(t, "start", item.Extensions[1].Name)
+}
+
+func TestParse_TemplateParamCarriesPlus(t *testing.T) {
+	// Falls out of the same rule: a package name containing "+" used to be unparseable.
+	parsed, err := ParseSelectDSL("apt-pkg:libstdc++6")
+	require.NoError(t, err)
+
+	item := parsed.Items[0]
+	assert.Equal(t, "apt-pkg", item.Name)
+	assert.Equal(t, []string{"libstdc++6"}, item.Params)
+	assert.Empty(t, item.Extensions)
+}
+
+func TestParse_MalformedPlusStillErrors(t *testing.T) {
+	// Before a ":" opens a param list, every "+" separates — so these keep reporting an
+	// empty extension name rather than being swallowed into a template name.
+	for _, dsl := range []string{"go++linter", "go+"} {
+		_, err := ParseSelectDSL(dsl)
+		require.Error(t, err, "%q must not parse", dsl)
+		assert.Contains(t, err.Error(), "empty extension name", "%q", dsl)
+	}
+}

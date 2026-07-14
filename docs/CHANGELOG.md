@@ -4,6 +4,41 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A booth no longer generates a config docker refuses to start.** Docker cannot bind one host
+  port twice — it fails the container with `address already in use` — and run-args grew duplicates
+  in two ordinary ways. A template's short-form `-p` plus the user's long-form `--publish` for the
+  same mapping (`cloudbeaver+expose --expose 8978:8978`) were both emitted, because the two flag
+  forms are deliberately not deduped against each other. And two templates could resolve to the
+  same mapping (`nginx+expose/apache+expose`, both `8080:80`) because the compiler's dedup runs
+  *before* params are expanded, so it compares `${NGINX_PORT}:80` against `${APACHE_PORT}:80` and
+  finds them different. Neither combination needed a hand-edited config to reach; both simply did
+  not start.
+
+  Identical mappings are now collapsed (the user-owned `--publish` is the one kept, since it is
+  what `booth config` reads back into `--expose` when re-configuring). Anything that genuinely
+  cannot bind is refused at start with both mappings named, instead of docker's `driver failed
+  programming external connectivity`. That check runs after `+OFFSET` resolution, so it also
+  catches an offset that lands on an absolute mapping, and it accounts for the booth's own port —
+  `--expose 20000:8978` on a booth at 20000 is now an error rather than a mystery. Publishing one
+  *container* port on two host ports stays legal, because docker allows it; but a `--expose` that
+  does so now says that it adds a second mapping rather than moving the first, and points at
+  `+expose:<port>`, which does move it.
+
+- **An expose host port can be booth-relative: `rabbitmq+start+expose:+4567`.** A `+OFFSET` host
+  port stays literal in `run-args` (`"-p", "+4567:5672"`) and resolves at container start as
+  `boothPort + OFFSET`, so a booth on port 20000 publishes AMQP on 24567 — and two booths of the
+  same project on different ports stop colliding on published ports. A bare number is still an
+  absolute host port; the `+` is what makes it relative.
+
+  The resolution itself is not new — `--expose +4567:5672` and hand-written `run-args` have always
+  been rewritten this way, for template-contributed `-p` as much as user-set `--publish`. What was
+  missing was any way to *say* it in a selection: the DSL splits an item on `+` to find its
+  extensions, so `expose:+4567` parsed as an extension named `4567` ("unknown extension"). Inside a
+  param list a `+` now starts an extension only when followed by a letter — names are identifiers
+  and never digit-initial — so `expose:+4567+start` is a relative port *and* a `+start` extension,
+  while a malformed `go++linter` still reports an empty extension name. It also makes
+  `apt-pkg:libstdc++6` parse, which errored out before.
+
 - **The booth now refuses to start unless `.booth/cache/` is gitignored *and* untracked.** The
   cache is whatever the container writes to the mounted paths, and with `claude-code+settings-cache`
   that includes a live credential: `~/.claude/` is mounted as a whole directory, so the host token

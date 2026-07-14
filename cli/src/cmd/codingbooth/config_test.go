@@ -287,3 +287,55 @@ func TestOverlayExistingArgs_PinnedHostPortSurvives(t *testing.T) {
 	})
 	assert.Equal(t, "2222", pv["openssh/expose:SSH_HOST_PORT"], "an explicit host-port pin must be preserved")
 }
+
+// --- normalizePublishedPorts (duplicate/overlapping port mappings) ---
+
+func TestNormalizePublishedPorts_LongFormWinsOverIdenticalShortForm(t *testing.T) {
+	// "cloudbeaver+expose --expose 8978:8978": one mapping, spelled twice. Docker cannot
+	// bind a host port twice, so the booth would not start. The user-owned long form is
+	// the keeper — it is what `booth config` reads back into --expose on reconfigure.
+	cfg := &output.ConfigToml{RunArgs: []string{
+		"-p", "8978:8978",
+		"--publish", "8978:8978",
+	}}
+
+	normalizePublishedPorts(cfg)
+	assert.Equal(t, []string{"--publish", "8978:8978"}, cfg.RunArgs)
+}
+
+func TestNormalizePublishedPorts_CollapsesTwoTemplatesOnTheSameMapping(t *testing.T) {
+	// nginx+expose/apache+expose: the compiler's dedup runs before params are expanded,
+	// so "${NGINX_PORT}:80" and "${APACHE_PORT}:80" both survive as "8080:80".
+	cfg := &output.ConfigToml{RunArgs: []string{
+		"-p", "8080:80",
+		"-p", "8080:80",
+	}}
+
+	normalizePublishedPorts(cfg)
+	assert.Equal(t, []string{"-p", "8080:80"}, cfg.RunArgs)
+}
+
+func TestNormalizePublishedPorts_KeepsDistinctMappingsAndOtherArgs(t *testing.T) {
+	cfg := &output.ConfigToml{RunArgs: []string{
+		"-v", "booth-data:/opt/data",
+		"-p", "5672:5672",
+		"-p", "15672:15672",
+		"--env", "X=1",
+	}}
+	before := append([]string{}, cfg.RunArgs...)
+
+	normalizePublishedPorts(cfg)
+	assert.Equal(t, before, cfg.RunArgs, "nothing to collapse: run-args untouched")
+}
+
+func TestNormalizePublishedPorts_RelativeAndAbsoluteAreNotConfused(t *testing.T) {
+	// "+4567:5672" and "4567:5672" are different mappings — the first claims boothPort+4567.
+	cfg := &output.ConfigToml{RunArgs: []string{
+		"-p", "+4567:5672",
+		"--publish", "4567:5672",
+	}}
+	before := append([]string{}, cfg.RunArgs...)
+
+	normalizePublishedPorts(cfg)
+	assert.Equal(t, before, cfg.RunArgs)
+}
