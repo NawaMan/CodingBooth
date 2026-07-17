@@ -47,6 +47,13 @@ type inspectData struct {
 			HostPort string `json:"HostPort"`
 		} `json:"Ports"`
 	} `json:"NetworkSettings"`
+	// HostConfig.PortBindings retains the configured host ports even when the
+	// container is stopped (NetworkSettings.Ports is often empty then).
+	HostConfig struct {
+		PortBindings map[string][]struct {
+			HostPort string `json:"HostPort"`
+		} `json:"PortBindings"`
+	} `json:"HostConfig"`
 }
 
 type commandError struct {
@@ -436,10 +443,7 @@ func inspectManagedContainer(name string, flags docker.DockerFlags) (managedCont
 		labels = map[string]string{}
 	}
 
-	port := ""
-	if bindings, found := data.NetworkSettings.Ports["10000/tcp"]; found && len(bindings) > 0 {
-		port = bindings[0].HostPort
-	}
+	port := hostPortFromInspect(data)
 
 	containerName := strings.TrimPrefix(data.Name, "/")
 	if containerName == "" {
@@ -461,6 +465,27 @@ func inspectManagedContainer(name string, flags docker.DockerFlags) (managedCont
 		Daemon:    strings.EqualFold(labels["cb.daemon"], "true"),
 		Port:      port,
 	}, nil
+}
+
+// hostPortFromInspect returns the host port mapped to the booth UI container
+// port. Prefers live NetworkSettings, then HostConfig bindings (works for
+// stopped containers). Checks both 10000/tcp (default) and 10443/tcp (public TLS).
+func hostPortFromInspect(data inspectData) string {
+	for _, containerPort := range []string{"10000/tcp", "10443/tcp"} {
+		if bindings, found := data.NetworkSettings.Ports[containerPort]; found && len(bindings) > 0 {
+			if p := strings.TrimSpace(bindings[0].HostPort); p != "" {
+				return p
+			}
+		}
+	}
+	for _, containerPort := range []string{"10000/tcp", "10443/tcp"} {
+		if bindings, found := data.HostConfig.PortBindings[containerPort]; found && len(bindings) > 0 {
+			if p := strings.TrimSpace(bindings[0].HostPort); p != "" {
+				return p
+			}
+		}
+	}
+	return ""
 }
 
 func filterByState(containers []managedContainer, runningOnly bool, stoppedOnly bool) []managedContainer {
