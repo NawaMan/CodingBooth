@@ -180,8 +180,14 @@ run-args = [
   "-e", "WORKSPACE=$HOME/work",
   "-e", "LITERAL='$KEEP_AS_IS'",
   "-e", "REGION=${AWS_REGION:-us-east-1}",
+  # Host side only — container port stays a number. Expanded at booth start.
+  "-p", "${SERVER_PORT:-12345}:1234",
 ]
 ```
+
+The same host-env form is accepted by `booth config --expose` and by an expose
+extension's host-port param (e.g. `postgresql+expose:${POSTGRES_PORT:-15432}`).
+See [Ports: which knob moves what](BOOTH_CONFIG.md#ports-which-knob-moves-what).
 
 ```bash
 # CLI — the invoking shell handles expansion. Booth does not double-expand.

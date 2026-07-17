@@ -206,6 +206,55 @@ func TestApplyExposeFlags_LongForm_OffsetFormat(t *testing.T) {
 	assert.NotContains(t, cfg.RunArgs, "-p")
 }
 
+func TestApplyExposeFlags_HostEnvForm(t *testing.T) {
+	cfg := &output.ConfigToml{}
+	applyExposeFlags(cfg, []string{
+		"${APP_PORT:-3000}",
+		"${SERVER_PORT:-12345}:1234",
+		"127.0.0.1:${HTTP_PORT:-8080}:80",
+	})
+
+	assert.Equal(t, []string{
+		"--publish", "${APP_PORT:-3000}:${APP_PORT:-3000}",
+		"--publish", "${SERVER_PORT:-12345}:1234",
+		"--publish", "127.0.0.1:${HTTP_PORT:-8080}:80",
+	}, cfg.RunArgs)
+}
+
+func TestValidateExpose_HostEnvForm(t *testing.T) {
+	ok := []string{
+		"${APP_PORT}",
+		"${APP_PORT:-3000}",
+		"${SERVER_PORT:-12345}:1234",
+		"${HTTP_PORT}:80",
+		"127.0.0.1:${HTTP_PORT:-8080}:80",
+		// existing forms still accepted
+		"8080",
+		"9090:3000",
+		"127.0.0.1:18080:8080",
+		"+8080",
+		"+3000:5000",
+	}
+	for _, v := range ok {
+		assert.NoError(t, validateExpose(v), "expected valid: %q", v)
+	}
+
+	bad := []string{
+		"${APP_PORT:-abc}",             // default must be digits
+		"${APP_PORT:-}",                // empty default
+		"${1PORT:-3000}",               // name must start with letter or _
+		"8080:${APP_PORT:-3000}",       // env on container side
+		"127.0.0.1:${HTTP_PORT:-8080}", // IP without container
+		"${APP_PORT:-3000}:",           // empty container
+		"${APP_PORT:-3000}:80:extra",   // extra segment
+		"$APP_PORT",                    // braces required
+		"${APP_PORT:-3000",             // unclosed
+	}
+	for _, v := range bad {
+		assert.Error(t, validateExpose(v), "expected invalid: %q", v)
+	}
+}
+
 func TestApplyMountFlags_LongForm(t *testing.T) {
 	cfg := &output.ConfigToml{}
 	applyMountFlags(cfg, []string{"/host/a:/container/a", "/host/b:/container/b"})
