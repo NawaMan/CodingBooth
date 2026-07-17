@@ -413,16 +413,21 @@ func showHelpShell() {
 USAGE:  %s shell [options] [name]
 
 OPTIONS:
-  --name <n>         Container name
-  --shell <shell>    Shell to launch (default: bash)
-  --dir <path>       Starting directory (default: /home/coder/code)
-  --run              Run the booth first if it is not already running
-  --keep-alive       With --run, leave the booth running afterwards
-  -e <VAR=value>     Set environment variable (repeatable)
-  --envfile <path>   Load environment variables from a file
+  --name <n>           Container name
+  --shell <shell>      Shell to launch (default: bash)
+  --dir <path>         Starting directory (default: /home/coder/code)
+  --run                Run the booth first if it is not already running
+  --keep-alive         With --run, leave the booth running afterwards
+  --port <n|NEXT|RANDOM>
+                       With --run, host port when creating a missing booth
+  --accept-existing    Connect even if create flags (e.g. --port) do not match
+  -e <VAR=value>       Set environment variable (repeatable)
+  --envfile <path>     Load environment variables from a file
 
 A booth brought up by --run is stopped again when you disconnect, unless
 --keep-alive is given. A booth that was already running is never stopped.
+Create-intent flags like --port apply only when a booth is created; against an
+existing booth a mismatch fails unless --accept-existing is set.
 
 EXAMPLES:
   %s shell myproject
@@ -431,7 +436,9 @@ EXAMPLES:
   %s shell myproject -e DEBUG=1
   %s shell myproject --run
   %s shell myproject --run --keep-alive
-`, s, s, s, s, s, s, s, s)
+  %s shell myproject --run --port 9000
+  %s shell myproject --port 9000 --accept-existing
+`, s, s, s, s, s, s, s, s, s, s)
 }
 
 func showHelpExec() {
@@ -441,17 +448,22 @@ func showHelpExec() {
 USAGE:  %s exec [options] [name] -- <command>
 
 OPTIONS:
-  --name <n>         Container name
-  --dir <path>       Working directory (default: /home/coder/code)
-  -it                Force interactive mode with TTY
-  --run              Run the booth first if it is not already running
-  --keep-alive       With --run, leave the booth running afterwards
-  -e <VAR=value>     Set environment variable (repeatable)
-  --envfile <path>   Load environment variables from a file
+  --name <n>           Container name
+  --dir <path>         Working directory (default: /home/coder/code)
+  -it                  Force interactive mode with TTY
+  --run                Run the booth first if it is not already running
+  --keep-alive         With --run, leave the booth running afterwards
+  --port <n|NEXT|RANDOM>
+                       With --run, host port when creating a missing booth
+  --accept-existing    Connect even if create flags (e.g. --port) do not match
+  -e <VAR=value>       Set environment variable (repeatable)
+  --envfile <path>     Load environment variables from a file
 
 The exit code of the executed command is forwarded to the caller. A booth
 brought up by --run is stopped again when the command finishes, unless
 --keep-alive is given. A booth that was already running is never stopped.
+Create-intent flags like --port apply only when a booth is created; against an
+existing booth a mismatch fails unless --accept-existing is set.
 
 EXAMPLES:
   %s exec myproject -- make test
@@ -459,7 +471,9 @@ EXAMPLES:
   %s exec myproject --dir /tmp -- ls
   %s exec myproject --run -- make test
   %s exec myproject --run --keep-alive -- make test
-`, s, s, s, s, s, s, s)
+  %s exec myproject --run --port 9000 -- make test
+  %s exec myproject --port 9000 --accept-existing -- make test
+`, s, s, s, s, s, s, s, s, s)
 }
 
 func showHelpEmitDockerfile() {
