@@ -80,7 +80,7 @@ var allConfigFields = []configFieldDef{
 
 	// --- Network & Volumes ---
 	{Key: "expose", Label: "Expose", Group: "Network & Volumes", Kind: fieldKindList,
-		Detail: "Expose extra ports from the container.\nEach entry adds a -p mapping.\n\nExamples:\n  3000       (same port on host)\n  3000:3000  (host:container)\n  5173:5173  (Vite dev server)\n  8080:8080  (API server)"},
+		Detail: "Expose extra ports from the container.\nEach entry adds a -p mapping.\n\nExamples:\n  3000                    (same port on host)\n  3000:3000               (host:container)\n  +8080:8080              (host = booth port + 8080)\n  ${APP_PORT:-3000}:3000  (host from env at start)\n\nOnly the host side may use ${NAME} / ${NAME:-digits};\nthe container port stays a number."},
 	{Key: "env", Label: "Env", Group: "Network & Volumes", Kind: fieldKindList,
 		Detail: "Set environment variables in the container.\nEach entry adds a -e flag.\n\nExamples:\n  NODE_ENV=development\n  PYTHONDONTWRITEBYTECODE=1\n  CARGO_NET_GIT_FETCH_WITH_CLI=true\n  GEOMETRY=1920x1080\n    (desktop resolution for XFCE/KDE)"},
 	{Key: "mount", Label: "Mount", Group: "Network & Volumes", Kind: fieldKindList,
