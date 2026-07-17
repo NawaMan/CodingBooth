@@ -11,6 +11,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -21,6 +22,12 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 )
+
+// hostEnvPortRE matches a host port prefix that booth expands at start from the
+// host environment: ${NAME} or ${NAME:-digits}. Anchored at the start so it can
+// be peeled off before a ":CONTAINER" suffix. Only the host side of a mapping
+// may use this form; the container port stays a number.
+var hostEnvPortRE = regexp.MustCompile(`^\$\{[A-Za-z_][A-Za-z0-9_]*(:-[0-9]+)?\}`)
 
 type initFlags struct {
 	selectDSLs    []string
@@ -657,11 +664,17 @@ func buildConfigAdjustCommand(flags initFlags) string {
 
 // validateExpose checks that an --expose value is a valid port or port mapping.
 // Supported formats:
-//   - PORT                  (e.g., 8080)
-//   - HOST:CONTAINER        (e.g., 18080:8080)
-//   - IP:HOST:CONTAINER     (e.g., 127.0.0.1:18080:8080)
-//   - +OFFSET:CONTAINER     (e.g., +8080:8080 — host port = booth port + offset)
-//   - +OFFSET               (e.g., +8080 — shorthand for +8080:8080)
+//   - PORT                      (e.g., 8080)
+//   - HOST:CONTAINER            (e.g., 18080:8080)
+//   - IP:HOST:CONTAINER         (e.g., 127.0.0.1:18080:8080)
+//   - +OFFSET:CONTAINER         (e.g., +8080:8080 — host port = booth port + offset)
+//   - +OFFSET                   (e.g., +8080 — shorthand for +8080:8080)
+//   - ${NAME}[:CONTAINER]       (host expanded at booth start from the host env)
+//   - ${NAME:-digits}[:CONTAINER]
+//   - IP:${NAME:-digits}:CONTAINER
+//
+// Only the *host* side may use ${NAME} / ${NAME:-digits}. The expression is kept
+// literal in run-args and expanded by shellexpand before docker is invoked.
 func validateExpose(expose string) error {
 	// Handle +OFFSET and +OFFSET:CONTAINER formats
 	if strings.HasPrefix(expose, "+") {
@@ -686,22 +699,28 @@ func validateExpose(expose string) error {
 		return nil
 	}
 
+	// Host-side env form must be recognized before a naive ":" split: ${NAME:-12345}
+	// contains a colon that is part of the default, not a host/container separator.
+	if envAt := strings.Index(expose, "${"); envAt >= 0 {
+		return validateExposeEnvHost(expose, envAt)
+	}
+
 	parts := strings.Split(expose, ":")
 	switch len(parts) {
 	case 1:
-		if _, err := strconv.Atoi(parts[0]); err != nil {
+		if !isNumericPort(parts[0]) {
 			return fmt.Errorf("invalid --expose value %q: port must be a number", expose)
 		}
 	case 2:
 		for _, p := range parts {
-			if _, err := strconv.Atoi(p); err != nil {
+			if !isNumericPort(p) {
 				return fmt.Errorf("invalid --expose value %q: ports must be numbers", expose)
 			}
 		}
 	case 3:
 		// ip:hostPort:containerPort
 		for _, p := range parts[1:] {
-			if _, err := strconv.Atoi(p); err != nil {
+			if !isNumericPort(p) {
 				return fmt.Errorf("invalid --expose value %q: ports must be numbers", expose)
 			}
 		}
@@ -711,9 +730,66 @@ func validateExpose(expose string) error {
 	return nil
 }
 
+// validateExposeEnvHost validates --expose values whose host side is ${NAME} or
+// ${NAME:-digits}. envAt is the index of the "${" in expose.
+func validateExposeEnvHost(expose string, envAt int) error {
+	if envAt > 0 {
+		prefix := expose[:envAt]
+		if !strings.HasSuffix(prefix, ":") {
+			return fmt.Errorf("invalid --expose value %q: host env reference must be the host port", expose)
+		}
+		before := strings.TrimSuffix(prefix, ":")
+		if before == "" {
+			return fmt.Errorf("invalid --expose value %q: empty IP before host env reference", expose)
+		}
+		// Numeric before "${…}" means HOST:${ENV} — env on the container side is not allowed.
+		if isNumericPort(before) {
+			return fmt.Errorf("invalid --expose value %q: only the host side may use ${NAME:-…}; container port must be a number", expose)
+		}
+	}
+
+	rest := expose[envAt:]
+	host := hostEnvPortRE.FindString(rest)
+	if host == "" {
+		return fmt.Errorf("invalid --expose value %q: host port env form must be ${NAME} or ${NAME:-digits}", expose)
+	}
+	after := rest[len(host):]
+	if after == "" {
+		// Bare ${NAME} / ${NAME:-digits}. With an IP prefix, docker still needs :CONTAINER.
+		if envAt > 0 {
+			return fmt.Errorf("invalid --expose value %q: IP:HOST form requires :CONTAINER", expose)
+		}
+		return nil
+	}
+	if !strings.HasPrefix(after, ":") {
+		return fmt.Errorf("invalid --expose value %q: unexpected text after host env reference", expose)
+	}
+	container := after[1:]
+	if !isNumericPort(container) {
+		return fmt.Errorf("invalid --expose value %q: container port must be a number (only the host side may use ${NAME:-…})", expose)
+	}
+	return nil
+}
+
+func isNumericPort(s string) bool {
+	_, err := strconv.Atoi(s)
+	return err == nil
+}
+
+// isExposeHostOnly reports whether s is a host-only form (no container mapping):
+// a bare number, or a full ${NAME} / ${NAME:-digits} expression (nothing after it).
+func isExposeHostOnly(s string) bool {
+	if isNumericPort(s) {
+		return true
+	}
+	m := hostEnvPortRE.FindString(s)
+	return m != "" && m == s
+}
+
 // applyExposeFlags appends --publish port mappings to RunArgs for each --expose value.
 // Uses long-form --publish to distinguish user-set values from template-contributed -p flags.
 // The +OFFSET format is stored literally and resolved at runtime by ResolveRelativePorts.
+// Host-side ${NAME} / ${NAME:-digits} is also stored literally and expanded at booth start.
 func applyExposeFlags(cfg *output.ConfigToml, exposes []string) {
 	for _, expose := range exposes {
 		mapping := expose
@@ -724,10 +800,12 @@ func applyExposeFlags(cfg *output.ConfigToml, exposes []string) {
 			if !strings.Contains(offsetPart, ":") {
 				mapping = expose + ":" + offsetPart
 			}
-		} else if !strings.Contains(expose, ":") {
-			// Plain port → PORT:PORT (e.g., 8080 → 8080:8080)
+		} else if isExposeHostOnly(expose) {
+			// Plain port or bare ${NAME:-digits} → HOST:HOST
+			// (e.g., 8080 → 8080:8080, ${APP_PORT:-3000} → ${APP_PORT:-3000}:${APP_PORT:-3000})
 			mapping = expose + ":" + expose
 		}
+		// else HOST:CONTAINER, IP:HOST:CONTAINER, or ${NAME:-n}:CONTAINER kept as-is
 		cfg.RunArgs = append(cfg.RunArgs, "--publish", mapping)
 	}
 }

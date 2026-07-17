@@ -227,10 +227,35 @@ The `+` survives the selection DSL even though `+` also separates extensions: in
 param list, a `+` starts an extension only when followed by a letter, and names are never
 digit-initial. So `expose:+4567+start` is a relative port *and* a `+start` extension.
 
+#### Host-env host ports
+
+A host port written as `${NAME}` or `${NAME:-digits}` is expanded from the **host
+environment at booth start** (see [Booth Variable Expansion](BOOTH_VARS.md)). The
+expression is stored literally in `run-args`; only the host side may use it — the
+container port stays a number.
+
+```text
+postgresql+expose:${POSTGRES_PORT:-15432}     # -p ${POSTGRES_PORT:-15432}:5432
+--expose '${SERVER_PORT:-12345}:1234'         # free-form publish
+--expose '${APP_PORT:-3000}'                  # bare → HOST:HOST
+```
+
+Quote the value so your shell does not expand it at config time. At start:
+
+```bash
+booth                          # host 15432 → container 5432
+POSTGRES_PORT=25432 booth      # host 25432 → container 5432
+```
+
+This is different from the **booth port** (`--port` / `CB_PORT`), which moves the
+primary UI mapping, not every service publish. To follow the booth port, use
+`+OFFSET`; to override one service's host port from the environment, use
+`${NAME:-digits}`.
+
 A param default may reference another param by name (`default = "${SVC_PORT}"`), and
 references are resolved before anything consumes them, including transitively. A
 circular reference is a config-time error. A `${NAME}` that is not a param — `${HOME}`,
-say — is left alone for the shell to expand at runtime.
+or a host-env port like `${SERVER_PORT:-12345}` — is left alone for expansion at runtime.
 
 ### `--expose` is instead of `+expose`, not alongside it
 
@@ -324,7 +349,7 @@ Recipe files are plain text with the same DSL syntax — one template per line.
 | `--variant <name>`         | Set variant (default, console, terminal, base, notebook, codeserver, xfce, kde) |
 | `--port <port>`            | Set port in generated config.toml (number, NEXT, RANDOM)       |
 | `--cmd <command>`          | Set the default start command (repeatable)                     |
-| `--expose <port>`          | Expose extra port (produces long-form `--publish` in run-args to distinguish from template-contributed `-p`; repeatable) |
+| `--expose <port>`          | Expose extra port (HOST:CONTAINER, +OFFSET, or host-side `${NAME:-digits}`; produces long-form `--publish` in run-args; repeatable) |
 | `--env <KEY=VALUE>`        | Set container environment variable (produces long-form `--env` in run-args to distinguish from template-contributed `-e`; repeatable) |
 | `--mount <host:container>` | Mount volume (produces long-form `--volume` in run-args to distinguish from template-contributed `-v`; repeatable) |
 | `--set <key=value>`        | Set a config.toml value (repeatable; bare key = boolean true)  |

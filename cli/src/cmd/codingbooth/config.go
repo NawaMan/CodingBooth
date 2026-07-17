@@ -966,11 +966,13 @@ Flags:
   --debug                  Print debug output
   --cmd <command>          Set default start command (repeatable)
   --expose <port>          Publish an extra port (repeatable). Forms: PORT,
-                           HOST:CONTAINER, IP:HOST:CONTAINER, or +OFFSET:CONTAINER
-                           (host port = booth port + OFFSET). This ADDS a mapping; to
-                           move a port a selected template already publishes, give its
-                           expose extension the host port: +expose:19000, or
-                           +expose:+9000 for a booth-relative one
+                           HOST:CONTAINER, IP:HOST:CONTAINER, +OFFSET:CONTAINER
+                           (host = booth port + OFFSET), or host-side env form
+                           ${NAME} / ${NAME:-digits}[:CONTAINER] (expanded at
+                           booth start). This ADDS a mapping; to move a port a
+                           selected template already publishes, give its expose
+                           extension the host port: +expose:19000, +expose:+9000,
+                           or +expose:${APP_PORT:-19000}
   --env <KEY=VALUE>        Set environment variable (repeatable)
   --mount <host:container> Mount volume (repeatable)
   --set <key=value>        Set config.toml value (repeatable)
