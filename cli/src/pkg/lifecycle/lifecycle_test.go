@@ -193,3 +193,166 @@ func TestExtractPositionalAndFlagsRun(t *testing.T) {
 		}
 	}
 }
+
+func TestExtractPositionalAndFlagsPort(t *testing.T) {
+	// --port takes a value and must not swallow a later positional.
+	cases := []struct {
+		args       []string
+		positional []string
+		flags      []string
+	}{
+		{[]string{"myproject", "--port", "9000"}, []string{"myproject"}, []string{"--port", "9000"}},
+		{[]string{"--port", "9000", "myproject"}, []string{"myproject"}, []string{"--port", "9000"}},
+		{[]string{"--port", "NEXT", "--run", "myproject"}, []string{"myproject"}, []string{"--port", "NEXT", "--run"}},
+		{[]string{"--accept-existing", "myproject"}, []string{"myproject"}, []string{"--accept-existing"}},
+	}
+
+	for _, tc := range cases {
+		positional, flags := extractPositionalAndFlags(tc.args)
+		if len(positional) != len(tc.positional) || (len(positional) > 0 && positional[0] != tc.positional[0]) {
+			t.Fatalf("extractPositionalAndFlags(%v) positional = %v, want %v", tc.args, positional, tc.positional)
+		}
+		if strings.Join(flags, " ") != strings.Join(tc.flags, " ") {
+			t.Fatalf("extractPositionalAndFlags(%v) flags = %v, want %v", tc.args, flags, tc.flags)
+		}
+	}
+}
+
+func TestIsComparablePort(t *testing.T) {
+	if !isComparablePort("9000") {
+		t.Fatal("numeric port should be comparable")
+	}
+	if isComparablePort("NEXT") || isComparablePort("next") || isComparablePort("RANDOM") {
+		t.Fatal("NEXT/RANDOM should not be comparable")
+	}
+	if isComparablePort("") {
+		t.Fatal("empty port should not be comparable")
+	}
+}
+
+func TestCreateIntentMismatches(t *testing.T) {
+	target := managedContainer{Name: "demo", Port: "8080"}
+
+	// No create flags → no mismatch
+	if got := createIntentMismatches(target, connectCreateOpts{}); len(got) != 0 {
+		t.Fatalf("no flags: mismatches = %v, want none", got)
+	}
+
+	// Matching port → no mismatch
+	if got := createIntentMismatches(target, connectCreateOpts{port: "8080"}); len(got) != 0 {
+		t.Fatalf("matching port: mismatches = %v, want none", got)
+	}
+
+	// NEXT/RANDOM → not asserted
+	if got := createIntentMismatches(target, connectCreateOpts{port: "NEXT"}); len(got) != 0 {
+		t.Fatalf("NEXT: mismatches = %v, want none", got)
+	}
+	if got := createIntentMismatches(target, connectCreateOpts{port: "RANDOM"}); len(got) != 0 {
+		t.Fatalf("RANDOM: mismatches = %v, want none", got)
+	}
+
+	// Wrong port → mismatch
+	got := createIntentMismatches(target, connectCreateOpts{port: "9000"})
+	if len(got) != 1 || !strings.Contains(got[0], "9000") || !strings.Contains(got[0], "8080") {
+		t.Fatalf("wrong port: mismatches = %v", got)
+	}
+
+	// No published port on booth but explicit numeric request → mismatch
+	noPort := managedContainer{Name: "term"}
+	got = createIntentMismatches(noPort, connectCreateOpts{port: "9000"})
+	if len(got) != 1 || !strings.Contains(got[0], "no published host port") {
+		t.Fatalf("empty port: mismatches = %v", got)
+	}
+}
+
+func TestCheckCreateIntentAgainstExisting(t *testing.T) {
+	target := managedContainer{Name: "demo", Port: "8080"}
+	var stderr strings.Builder
+
+	// Fail by default on mismatch
+	err := checkCreateIntentAgainstExisting(target, connectCreateOpts{port: "9000"}, &stderr)
+	if err == nil {
+		t.Fatal("expected mismatch error")
+	}
+	if code := ExitCode(err); code != 1 {
+		t.Fatalf("ExitCode = %d, want 1", code)
+	}
+	if !strings.Contains(err.Error(), "--accept-existing") {
+		t.Fatalf("error should mention --accept-existing: %v", err)
+	}
+
+	// --accept-existing: warn and continue
+	stderr.Reset()
+	err = checkCreateIntentAgainstExisting(target, connectCreateOpts{port: "9000", acceptExisting: true}, &stderr)
+	if err != nil {
+		t.Fatalf("accept-existing should not error: %v", err)
+	}
+	if !strings.Contains(stderr.String(), "Warning:") || !strings.Contains(stderr.String(), "accept-existing") {
+		t.Fatalf("expected warning on stderr, got %q", stderr.String())
+	}
+
+	// Match: quiet success
+	stderr.Reset()
+	err = checkCreateIntentAgainstExisting(target, connectCreateOpts{port: "8080"}, &stderr)
+	if err != nil {
+		t.Fatalf("matching port should not error: %v", err)
+	}
+	if stderr.Len() != 0 {
+		t.Fatalf("matching port should be quiet, got %q", stderr.String())
+	}
+}
+
+func TestBuildConnectRunArgs(t *testing.T) {
+	got := buildConnectRunArgs("demo", true, connectCreateOpts{port: "9000"})
+	want := []string{"run", "--daemon", "--keep-alive", "--name", "demo", "--port", "9000"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("buildConnectRunArgs = %v, want %v", got, want)
+	}
+
+	got = buildConnectRunArgs("", false, connectCreateOpts{})
+	want = []string{"run", "--daemon"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("minimal buildConnectRunArgs = %v, want %v", got, want)
+	}
+
+	got = buildConnectRunArgs("", false, connectCreateOpts{port: "NEXT"})
+	want = []string{"run", "--daemon", "--port", "NEXT"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("NEXT port buildConnectRunArgs = %v, want %v", got, want)
+	}
+}
+
+func TestHostPortFromInspect(t *testing.T) {
+	// Live NetworkSettings wins
+	data := inspectData{}
+	data.NetworkSettings.Ports = map[string][]struct {
+		HostPort string `json:"HostPort"`
+	}{
+		"10000/tcp": {{HostPort: "9000"}},
+	}
+	if got := hostPortFromInspect(data); got != "9000" {
+		t.Fatalf("NetworkSettings port = %q, want 9000", got)
+	}
+
+	// Stopped: fall back to HostConfig
+	data = inspectData{}
+	data.HostConfig.PortBindings = map[string][]struct {
+		HostPort string `json:"HostPort"`
+	}{
+		"10000/tcp": {{HostPort: "8080"}},
+	}
+	if got := hostPortFromInspect(data); got != "8080" {
+		t.Fatalf("HostConfig port = %q, want 8080", got)
+	}
+
+	// Public TLS container port
+	data = inspectData{}
+	data.NetworkSettings.Ports = map[string][]struct {
+		HostPort string `json:"HostPort"`
+	}{
+		"10443/tcp": {{HostPort: "443"}},
+	}
+	if got := hostPortFromInspect(data); got != "443" {
+		t.Fatalf("public TLS port = %q, want 443", got)
+	}
+}

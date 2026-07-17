@@ -22,6 +22,9 @@ Back to [README](../README.md)
 - [exec](#exec)
 - [Target Resolution](#target-resolution)
 - [Run the booth if it is not running](#run-the-booth-if-it-is-not-running)
+  - [Cleanup](#cleanup-the-booth-is-brought-back-down-afterwards)
+  - [Multiple connections](#multiple-connections-are-reference-counted)
+- [Create flags vs an existing booth](#create-flags-vs-an-existing-booth)
 - [Common Workflows](#common-workflows)
 - [Differences from docker exec](#differences-from-docker-exec)
 
@@ -29,20 +32,22 @@ Back to [README](../README.md)
 
 ## Overview
 
-Both commands operate on a **running** booth container. Under the hood they use `docker exec`, so there is nothing to install and no port to expose.
+Both commands connect into a booth with `docker exec` — nothing to install, no SSH, no extra ports.
 
 | Command | Purpose                              | Interactive    | Requires `--` |
 |---------|--------------------------------------|:--------------:|:-------------:|
 | `shell` | Open a new interactive shell session | Yes            | No            |
 | `exec`  | Run a one-off command                | No (by default)| Yes           |
 
-If the target booth is not running, both commands error by default. Pass `--run` to bring it up first — see [Run the booth if it is not running](#run-the-booth-if-it-is-not-running).
+By default the target booth must already be **running**. Pass **`--run`** to start or create it first — see [Run the booth if it is not running](#run-the-booth-if-it-is-not-running).
+
+When creating a booth, create-time flags such as **`--port`** are forwarded to `booth run`. Against an existing booth those flags are a **contract**: a mismatch fails unless you pass **`--accept-existing`** — see [Create flags vs an existing booth](#create-flags-vs-an-existing-booth).
 
 ---
 
 ## `shell`
 
-Open a new interactive shell inside a running booth.
+Open a new interactive shell inside a booth.
 
 ```bash
 ./booth shell myproject
@@ -53,36 +58,40 @@ The shell launched is the default shell configured for the `coder` user inside t
 ### Options
 
 ```bash
-./booth shell myproject --shell zsh          # use a specific shell
-./booth shell myproject --dir /tmp           # start in a specific directory
-./booth shell myproject -e DEBUG=1           # set an environment variable
-./booth shell myproject --envfile .env       # load variables from a file
-./booth shell myproject --run                # run the booth first if not running
-./booth shell myproject --run --keep-alive   # ...and leave it running afterwards
+./booth shell myproject --shell zsh                 # use a specific shell
+./booth shell myproject --dir /tmp                  # start in a specific directory
+./booth shell myproject -e DEBUG=1                  # set an environment variable
+./booth shell myproject --envfile .env              # load variables from a file
+./booth shell myproject --run                       # run the booth first if not running
+./booth shell myproject --run --keep-alive          # ...and leave it running afterwards
+./booth shell myproject --run --port 9000           # create (if needed) on host port 9000
+./booth shell myproject --port 9000 --accept-existing  # attach even if port differs
 ```
 
-| Flag               | Description                                                           |
-|--------------------|-----------------------------------------------------------------------|
-| `--shell <shell>`  | Shell to launch (default: container's default shell)                  |
-| `--dir <path>`     | Starting directory inside the container (default: `/home/coder/code`) |
-| `--run`            | Run the booth first if it is not already running                      |
-| `--keep-alive`     | With `--run`, leave the booth running after you disconnect            |
-| `-e <VAR=value>`   | Set environment variable for the session                              |
-| `--envfile <path>` | Load environment variables from a file                                |
-| `--name <name>`    | Target container by name                                              |
+| Flag                         | Description                                                                 |
+|------------------------------|-----------------------------------------------------------------------------|
+| `--shell <shell>`            | Shell to launch (default: container's default shell)                        |
+| `--dir <path>`               | Starting directory inside the container (default: `/home/coder/code`)       |
+| `--run`                      | Run the booth first if it is not already running                            |
+| `--keep-alive`               | With `--run`, leave the booth running after you disconnect                  |
+| `--port <n\|NEXT\|RANDOM>`   | Host port when **creating** a missing booth; asserted against existing ones |
+| `--accept-existing`          | Connect even if create flags (e.g. `--port`) do not match the booth         |
+| `-e <VAR=value>`             | Set environment variable for the session                                    |
+| `--envfile <path>`           | Load environment variables from a file                                      |
+| `--name <name>`              | Target container by name                                                    |
 
 ### What you get
 
 - A fully interactive terminal session with TTY and stdin attached.
 - The session runs as the `coder` user, in the `/home/coder/code` directory — the same context as the original terminal.
 - Environment variables, installed tools, and filesystem state are shared with the running container.
-- Exiting the shell (Ctrl+D or `exit`) closes only that session; the booth keeps running.
+- Exiting the shell (Ctrl+D or `exit`) closes only that session; the booth keeps running (unless this session brought up an ephemeral booth with `--run` and no `--keep-alive` — see [Cleanup](#cleanup-the-booth-is-brought-back-down-afterwards)).
 
 ---
 
 ## `exec`
 
-Run a command inside a running booth and return the result.
+Run a command inside a booth and return the result.
 
 ```bash
 ./booth exec myproject -- make test
@@ -95,23 +104,27 @@ Everything after `--` is executed inside the container. The exit code is forward
 ### Options
 
 ```bash
-./booth exec myproject -it -- bash                # force interactive + TTY
-./booth exec myproject -e FOO=bar -- env          # set an environment variable
-./booth exec myproject --envfile .env -- env       # load variables from a file
-./booth exec myproject --dir /tmp -- ls           # run command in a specific directory
-./booth exec myproject --run -- make test         # run the booth first if not running
-./booth exec myproject --run --keep-alive -- make test  # ...and leave it running
+./booth exec myproject -it -- bash                       # force interactive + TTY
+./booth exec myproject -e FOO=bar -- env                 # set an environment variable
+./booth exec myproject --envfile .env -- env             # load variables from a file
+./booth exec myproject --dir /tmp -- ls                  # run command in a specific directory
+./booth exec myproject --run -- make test                # run the booth first if not running
+./booth exec myproject --run --keep-alive -- make test   # ...and leave it running
+./booth exec myproject --run --port 9000 -- make test    # create (if needed) on port 9000
+./booth exec myproject --port 9000 --accept-existing -- make test
 ```
 
-| Flag              | Description                                                          |
-|-------------------|----------------------------------------------------------------------|
-| `-it`             | Force interactive mode with TTY (default: non-interactive)           |
-| `--run`           | Run the booth first if it is not already running                     |
-| `--keep-alive`    | With `--run`, leave the booth running after the command finishes     |
-| `-e <VAR=value>`  | Set environment variable for the command                             |
-| `--envfile <path>`| Load environment variables from a file                               |
-| `--dir <path>`    | Working directory inside the container (default: `/home/coder/code`) |
-| `--name <name>`   | Target container by name                                             |
+| Flag                         | Description                                                                 |
+|------------------------------|-----------------------------------------------------------------------------|
+| `-it`                        | Force interactive mode with TTY (default: non-interactive)                  |
+| `--run`                      | Run the booth first if it is not already running                            |
+| `--keep-alive`               | With `--run`, leave the booth running after the command finishes            |
+| `--port <n\|NEXT\|RANDOM>`   | Host port when **creating** a missing booth; asserted against existing ones |
+| `--accept-existing`          | Connect even if create flags (e.g. `--port`) do not match the booth         |
+| `-e <VAR=value>`             | Set environment variable for the command                                    |
+| `--envfile <path>`           | Load environment variables from a file                                      |
+| `--dir <path>`               | Working directory inside the container (default: `/home/coder/code`)        |
+| `--name <name>`              | Target container by name                                                    |
 
 ### Exit codes
 
@@ -140,7 +153,7 @@ Both `shell` and `exec` resolve the target container using the same priority as 
 cd ~/projects/app && ./booth shell   # default from current directory
 ```
 
-If the target container is not running, the command exits with an error and suggests using `booth run` first — unless you pass `--run`.
+If the target container is not running, the command exits with an error — unless you pass `--run`.
 
 ---
 
@@ -149,23 +162,30 @@ If the target container is not running, the command exits with an error and sugg
 By default `shell` and `exec` require the booth to already be running. Pass `--run` to bring it up automatically before connecting:
 
 ```bash
-./booth shell myproject --run              # run (if needed), then open a shell
+./booth shell myproject --run                  # run (if needed), then open a shell
 ./booth exec  myproject --run -- make test     # run (if needed), then run a command
+./booth exec  myproject --run --port 9000 -- make test
 ```
 
 When `--run` is given, the booth is made available in whatever way is needed:
 
-- If the booth is **already running**, it is used as-is — nothing is restarted.
-- If a **stopped** container exists (e.g. a `--keep-alive` booth that was stopped), it is started (equivalent to `booth start`).
-- If **no container exists**, a new booth is created from the current workspace with `booth run` in daemon mode, exactly as if you had run `booth` here yourself.
+| Booth state | What happens |
+|-------------|--------------|
+| **Already running** | Used as-is — nothing is restarted |
+| **Stopped** (e.g. a `--keep-alive` booth that was stopped) | Started (equivalent to `booth start`) |
+| **Does not exist** | Created from the current workspace with `booth run --daemon` |
 
-In every case a short note is printed to **stderr** and the new booth's startup output is also sent to stderr, so `exec`'s **stdout stays clean** for scripting. `shell`/`exec` then wait for the booth's `coder` user alignment to finish before connecting, so the first command never races container startup.
+On create, create-time flags such as **`--port`** and **`--name`** are forwarded to that run (along with **`--keep-alive`** when set), so the booth matches an equivalent `booth run` invocation.
+
+A short note is printed to **stderr**, and the new booth's startup output also goes to stderr, so `exec`'s **stdout stays clean** for scripting. `shell`/`exec` then wait for the booth's `coder` user alignment to finish before connecting, so the first command never races container startup.
 
 > **Why this matters:** a normal booth that is stopped is *removed* (only `--keep-alive` booths persist as stopped containers). So "the booth is not running" usually means "there is no container" — and `--run` recreates it from the workspace config rather than failing.
 
+Because running a booth is a side effect (it can build an image and allocate ports), `--run` is opt-in: omit it and a non-running booth remains an error, which keeps `booth exec` predictable in scripts and CI.
+
 ### Cleanup: the booth is brought back down afterwards
 
-A booth that `--run` had to bring up does **not** outlive your session. When you disconnect (the shell exits, or the command finishes), the booth is returned to the state it was in before — so a `--run` session leaves no trace:
+A booth that `--run` had to bring up does **not** outlive your session. When you disconnect (the shell exits, or the command finishes), the booth is returned to the state it was in before — so a default `--run` session leaves no trace:
 
 | Before connecting        | After disconnecting (default)         |
 |--------------------------|----------------------------------------|
@@ -182,11 +202,51 @@ Pass **`--keep-alive`** to opt out and leave the booth running after you disconn
 
 A booth created with `--run --keep-alive` is created as a `--keep-alive` booth, so it persists across a later `booth stop` just like one you launched directly.
 
-#### Multiple connections are reference-counted
+### Multiple connections are reference-counted
 
 If you open several `--run` sessions on the same booth (e.g. two `booth shell --run` in different terminals), the booth is only brought down when the **last** one disconnects. An earlier session exiting will not pull the booth out from under the others. Passing `--keep-alive` from any session promotes the booth to persistent, so none of the sessions will stop it.
 
-Because running a booth is a side effect (it can build an image and allocate ports), `--run` is opt-in: omit it and a non-running booth remains an error, which keeps `booth exec` predictable in scripts and CI.
+---
+
+## Create flags vs an existing booth
+
+Flags that configure a **new** booth only reconfigure when no container exists. Against a **running or stopped** booth they are a **contract** — fail by default so scripts do not run against the wrong environment.
+
+Today the create flag on `shell` / `exec` is:
+
+| Flag | On create (`--run`, no container) | Against an existing booth |
+|------|----------------------------------|---------------------------|
+| `--port <n>` | Forwarded to `booth run` | Must match the booth's published host port |
+| `--port NEXT` / `RANDOM` | Forwarded to `booth run` | **Not compared** (only meaningful on create) |
+| `--name` / positional | Name used for create and lookup | Target identity (not a mismatch check) |
+| `--keep-alive` | Creates a keep-alive booth | Session policy only — never a mismatch |
+
+### Mismatch policy
+
+| Situation | Default | With `--accept-existing` |
+|-----------|---------|--------------------------|
+| Explicit create flag **matches** the booth | Connect | Connect |
+| Explicit create flag **mismatches** (e.g. `--port 9000` but booth is on `8080`) | **Error** — refuse to connect | Connect with a **warning** on stderr |
+| Symbolic port (`NEXT` / `RANDOM`) | Not compared | Not compared |
+| No create flags | Connect | Connect |
+
+Mismatch checks apply whenever you connect to an **existing** booth — with or without `--run`. They do not reconfigure a live container; they only decide whether connecting is safe.
+
+```bash
+# Create on 9000 if missing; fail if myproject already runs on another port
+./booth exec myproject --run --port 9000 -- make test
+
+# Attach anyway when the existing booth differs
+./booth exec myproject --port 9000 --accept-existing -- make test
+```
+
+Example error (stderr, exit code 1):
+
+```text
+Error: booth "myproject" does not match create flags (--port 9000 requested but booth is on port 8080).
+       Refusing to connect so the command does not run against the wrong environment.
+       Use --accept-existing to connect anyway, or remove the booth and re-run with the desired flags.
+```
 
 ---
 
@@ -222,6 +282,28 @@ make build-all   # takes a while...
 ./booth exec myproject -- python3 --version
 ```
 
+### One-shot: run if needed, then exec
+
+```bash
+# From the project workspace — create/start as needed, tear down after
+./booth exec --run -- make test
+
+# Leave the booth up for later shells
+./booth exec --run --keep-alive -- make test
+./booth shell --run --keep-alive
+```
+
+### Create on a fixed port (or refuse a mismatch)
+
+```bash
+# Prefer host port 9000 when this command creates the booth
+./booth exec myproject --run --port 9000 -- make test
+
+# Scripts that must not silently use the wrong port fail by default;
+# opt in only when attaching to whatever is already there is intentional:
+./booth exec myproject --port 9000 --accept-existing -- make test
+```
+
 ### Use with daemon booths
 
 ```bash
@@ -249,5 +331,6 @@ make build-all   # takes a while...
 | Interactive shell | `docker exec -it <id> bash`  | `booth shell <name>`                        |
 | Environment       | Manual `-e` flags            | Inherits booth environment                  |
 | Env file          | `--env-file <path>`          | `--envfile <path>`                          |
+| Auto start/create | Not available                | `--run` (+ optional create flags / cleanup) |
 
 > **Tip:** If you need raw `docker exec` capabilities not exposed by these commands, you can always fall back to Docker directly. Use `booth list --name-only` to get the container name.

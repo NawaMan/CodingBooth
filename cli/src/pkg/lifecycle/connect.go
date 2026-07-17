@@ -34,6 +34,14 @@ func (f *stringSliceFlag) Set(value string) error {
 	return nil
 }
 
+// connectCreateOpts holds create-time run overrides accepted by shell/exec.
+// These apply only when --run creates a missing booth; against an existing booth
+// they are asserted (fail by default) unless --accept-existing is set.
+type connectCreateOpts struct {
+	port           string // --port (empty if unset)
+	acceptExisting bool   // --accept-existing: connect despite create-intent mismatch
+}
+
 // Shell opens a new interactive shell inside a running booth container.
 func Shell(args []string, stderr io.Writer) error {
 	positional, flags := extractPositionalAndFlags(args)
@@ -45,6 +53,8 @@ func Shell(args []string, stderr io.Writer) error {
 	envfile := flagSet.String("envfile", "", "Load environment variables from a file")
 	run := flagSet.Bool("run", false, "Run the booth first if it is not already running")
 	keepAlive := flagSet.Bool("keep-alive", false, "Keep a booth started by --run running afterwards")
+	port := flagSet.String("port", "", "With --run, host port for a newly created booth (number, NEXT, or RANDOM)")
+	acceptExisting := flagSet.Bool("accept-existing", false, "Connect to an existing booth even if create flags (e.g. --port) do not match")
 	var envVars stringSliceFlag
 	flagSet.Var(&envVars, "e", "Set environment variable (repeatable)")
 	flagSet.SetOutput(stderr)
@@ -53,7 +63,8 @@ func Shell(args []string, stderr io.Writer) error {
 		return commandExit(2, "")
 	}
 
-	target, cleanup, err := resolveConnectTarget(*name, positional, *run, *keepAlive, stderr)
+	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting}
+	target, cleanup, err := resolveConnectTarget(*name, positional, *run, *keepAlive, create, stderr)
 	if err != nil {
 		return err
 	}
@@ -94,6 +105,8 @@ func Exec(args []string, stderr io.Writer) error {
 	envfile := flagSet.String("envfile", "", "Load environment variables from a file")
 	run := flagSet.Bool("run", false, "Run the booth first if it is not already running")
 	keepAlive := flagSet.Bool("keep-alive", false, "Keep a booth started by --run running afterwards")
+	port := flagSet.String("port", "", "With --run, host port for a newly created booth (number, NEXT, or RANDOM)")
+	acceptExisting := flagSet.Bool("accept-existing", false, "Connect to an existing booth even if create flags (e.g. --port) do not match")
 	var envVars stringSliceFlag
 	flagSet.Var(&envVars, "e", "Set environment variable (repeatable)")
 	flagSet.SetOutput(stderr)
@@ -106,7 +119,8 @@ func Exec(args []string, stderr io.Writer) error {
 		return commandExit(1, "Error: no command specified. Usage: booth exec <name> -- <command>")
 	}
 
-	target, cleanup, err := resolveConnectTarget(*name, positional, *run, *keepAlive, stderr)
+	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting}
+	target, cleanup, err := resolveConnectTarget(*name, positional, *run, *keepAlive, create, stderr)
 	if err != nil {
 		return err
 	}
@@ -147,13 +161,17 @@ const (
 // run=true a stopped booth is started and a missing booth is created with
 // `booth run` (in daemon mode) before connecting.
 //
+// Create-intent flags (e.g. --port) are applied only when a new booth is created.
+// Against an existing booth they are asserted: a mismatch fails by default, or
+// connects with a warning when --accept-existing is set.
+//
 // When --run had to change the booth's state to connect (started a stopped one
 // or created a new one) and keepAlive is false, the cleanup stops the booth
 // again so the session leaves no trace: a freshly-created `--rm` booth is
 // removed, and a pre-existing keep-alive booth returns to stopped. A booth that
 // was already running, or keepAlive=true, yields a no-op cleanup. The returned
 // error is already a commandError.
-func resolveConnectTarget(name string, positional []string, run, keepAlive bool, stderr io.Writer) (managedContainer, func(), error) {
+func resolveConnectTarget(name string, positional []string, run, keepAlive bool, create connectCreateOpts, stderr io.Writer) (managedContainer, func(), error) {
 	noCleanup := func() {}
 
 	containers, err := managedContainers(false)
@@ -164,6 +182,14 @@ func resolveConnectTarget(name string, positional []string, run, keepAlive bool,
 	target, action, err := connectPlan(containers, name, positional, run)
 	if err != nil {
 		return managedContainer{}, noCleanup, commandExit(1, err.Error())
+	}
+
+	// Create-intent flags only reconfigure a missing booth. Against an existing
+	// one they are a contract: refuse on mismatch unless the user opts out.
+	if action == connectUse || action == connectStart {
+		if err := checkCreateIntentAgainstExisting(target, create, stderr); err != nil {
+			return managedContainer{}, noCleanup, err
+		}
 	}
 
 	switch action {
@@ -190,7 +216,7 @@ func resolveConnectTarget(name string, positional []string, run, keepAlive bool,
 		}
 
 	case connectRun:
-		created, err := runConnectTarget(name, positional, keepAlive, stderr)
+		created, err := runConnectTarget(name, positional, keepAlive, create, stderr)
 		if err != nil {
 			return managedContainer{}, noCleanup, err
 		}
@@ -202,6 +228,62 @@ func resolveConnectTarget(name string, positional []string, run, keepAlive bool,
 
 	cleanup := registerConnectSession(target.Name, action, keepAlive, stderr)
 	return target, cleanup, nil
+}
+
+// checkCreateIntentAgainstExisting compares explicit create-intent flags against
+// an already-existing booth. Returns a commandError on mismatch unless
+// accept-existing is set (then warns and returns nil). Non-comparable values
+// such as --port NEXT/RANDOM are not asserted.
+func checkCreateIntentAgainstExisting(target managedContainer, create connectCreateOpts, stderr io.Writer) error {
+	mismatches := createIntentMismatches(target, create)
+	if len(mismatches) == 0 {
+		return nil
+	}
+
+	detail := strings.Join(mismatches, "; ")
+	if create.acceptExisting {
+		fmt.Fprintf(stderr, "Warning: booth %q does not match create flags (%s); connecting anyway (--accept-existing).\n", target.Name, detail)
+		return nil
+	}
+
+	return commandExit(1, fmt.Sprintf(
+		"Error: booth %q does not match create flags (%s).\n"+
+			"       Refusing to connect so the command does not run against the wrong environment.\n"+
+			"       Use --accept-existing to connect anyway, or remove the booth and re-run with the desired flags.",
+		target.Name, detail,
+	))
+}
+
+// createIntentMismatches returns human-readable mismatch descriptions for
+// explicit create-intent flags that disagree with the existing booth. Pure for
+// unit tests.
+func createIntentMismatches(target managedContainer, create connectCreateOpts) []string {
+	var mismatches []string
+
+	if create.port != "" && isComparablePort(create.port) {
+		actual := strings.TrimSpace(target.Port)
+		if actual == "" {
+			mismatches = append(mismatches, fmt.Sprintf("--port %s requested but booth has no published host port", create.port))
+		} else if actual != create.port {
+			mismatches = append(mismatches, fmt.Sprintf("--port %s requested but booth is on port %s", create.port, actual))
+		}
+	}
+
+	return mismatches
+}
+
+// isComparablePort reports whether a --port value can be asserted against a
+// live booth. Symbolic NEXT/RANDOM only apply on create.
+func isComparablePort(port string) bool {
+	if port == "" {
+		return false
+	}
+	upper := strings.ToUpper(port)
+	if upper == "NEXT" || upper == "RANDOM" {
+		return false
+	}
+	// Numeric (and any other explicit token users might pass) is comparable.
+	return true
 }
 
 // registerConnectSession wires this shell/exec session into the booth's
@@ -291,7 +373,9 @@ func connectPlan(containers []managedContainer, name string, positional []string
 // container. It shells out to the same executable so the full run pipeline
 // (config, image build, ports, …) is reused verbatim. When keepAlive is set the
 // new booth is created with --keep-alive so it persists across a later stop.
-func runConnectTarget(name string, positional []string, keepAlive bool, stderr io.Writer) (managedContainer, error) {
+// Create-intent flags (e.g. --port) are forwarded so a shell/exec --run create
+// matches an equivalent booth run.
+func runConnectTarget(name string, positional []string, keepAlive bool, create connectCreateOpts, stderr io.Writer) (managedContainer, error) {
 	self, err := os.Executable()
 	if err != nil {
 		return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to locate booth executable: %v", err))
@@ -302,13 +386,7 @@ func runConnectTarget(name string, positional []string, keepAlive bool, stderr i
 		explicitName = positional[0]
 	}
 
-	runArgs := []string{"run", "--daemon"}
-	if keepAlive {
-		runArgs = append(runArgs, "--keep-alive")
-	}
-	if explicitName != "" {
-		runArgs = append(runArgs, "--name", explicitName)
-	}
+	runArgs := buildConnectRunArgs(explicitName, keepAlive, create)
 
 	fmt.Fprintf(stderr, "No running booth found; starting one with 'booth run'...\n")
 
@@ -541,6 +619,23 @@ func buildExecFlags(interactive bool, dir string, envVars stringSliceFlag, envfi
 	return execArgs
 }
 
+// buildConnectRunArgs builds the argv for `booth run` when shell/exec creates a
+// missing booth. Always daemon mode so the process returns and shell/exec can
+// attach. Pure for unit tests.
+func buildConnectRunArgs(explicitName string, keepAlive bool, create connectCreateOpts) []string {
+	runArgs := []string{"run", "--daemon"}
+	if keepAlive {
+		runArgs = append(runArgs, "--keep-alive")
+	}
+	if explicitName != "" {
+		runArgs = append(runArgs, "--name", explicitName)
+	}
+	if create.port != "" {
+		runArgs = append(runArgs, "--port", create.port)
+	}
+	return runArgs
+}
+
 // extractPositionalAndFlags separates positional arguments from flags.
 // Go's flag.Parse stops at the first positional arg, so flags after a positional
 // arg are never parsed. This function pulls out non-flag args (positional) and
@@ -549,7 +644,7 @@ func buildExecFlags(interactive bool, dir string, envVars stringSliceFlag, envfi
 func extractPositionalAndFlags(args []string) (positional []string, flags []string) {
 	knownValueFlags := map[string]bool{
 		"-e": true, "--name": true, "--shell": true,
-		"--dir": true, "--envfile": true,
+		"--dir": true, "--envfile": true, "--port": true,
 	}
 
 	for i := 0; i < len(args); i++ {
@@ -557,7 +652,8 @@ func extractPositionalAndFlags(args []string) (positional []string, flags []stri
 		if strings.HasPrefix(arg, "-") {
 			flags = append(flags, arg)
 			// If this flag takes a value, consume the next arg too
-			if knownValueFlags[arg] && i+1 < len(args) {
+			// (including --flag=value forms, which are a single token).
+			if !strings.Contains(arg, "=") && knownValueFlags[arg] && i+1 < len(args) {
 				i++
 				flags = append(flags, args[i])
 			}
