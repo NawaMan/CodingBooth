@@ -123,6 +123,11 @@ func (ctx AppContext) Variant() string      { return ctx.values.Config.Variant }
 func (ctx AppContext) EmitDockerfile() bool { return ctx.values.Config.EmitDockerfile }
 func (ctx AppContext) Strict() bool         { return ctx.values.Config.Strict }
 
+// derived from variant
+func (ctx AppContext) HasNotebook() bool { return ctx.values.HasNotebook }
+func (ctx AppContext) HasVscode() bool   { return ctx.values.HasVscode }
+func (ctx AppContext) HasDesktop() bool  { return ctx.values.HasDesktop }
+
 // Runtime values
 func (ctx AppContext) ProjectName() string { return ctx.values.Config.ProjectName }
 func (ctx AppContext) HostUID() string     { return ctx.values.Config.HostUID }

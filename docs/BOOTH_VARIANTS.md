@@ -19,13 +19,6 @@ Each variant comes pre-configured with a curated toolset and a consistent runtim
   Useful for GUI-heavy workflows or running native IDEs like [IntelliJ IDEA](https://www.jetbrains.com/idea/), [PyCharm](https://www.jetbrains.com/pycharm/), or [Eclipse](https://www.eclipse.org) inside Docker.
   `desktop-lxqt` is the lightest of the three — a good choice when you want a desktop with the smallest footprint.
 
-  > ⚠️ **Known issue — Jupyter notebooks in VS Code:** Opening a `.ipynb` in the bundled VS Code
-  > (desktop variants) currently **hangs when you run a cell**. This tracks the unfixed upstream bug
-  > [vscode-jupyter#17228](https://github.com/microsoft/vscode-jupyter/issues/17228). The base image
-  > pins `ipykernel<7`, but that alone did not resolve it in testing, so the root cause is still under
-  > investigation. **Workaround:** use the browser-based **`notebook`** variant for notebooks.
-  > Tracked in [TODO](TODO.md).
-
 - **[`desktop-wayland`](https://labwc.github.io/)** *(experimental)* – A **Wayland-native** desktop ([labwc](https://labwc.github.io/), a [wlroots](https://gitlab.freedesktop.org/wlroots/wlroots) compositor) served to the browser via [wayvnc](https://github.com/any1/wayvnc) + [noVNC](https://novnc.com). The forward-looking counterpart to the X11 desktops above; runs existing X11 apps via Xwayland. **Experimental** — newer and less battle-tested than the X11 desktop variants; if you want a proven desktop today, prefer `desktop-xfce`/`desktop-kde`/`desktop-lxqt`.
 
 All variants expose their UI on port 10000 but NEXT and RANDOM can be used. See [Port](BOOTH_RUN.md#6-ports) for more details.

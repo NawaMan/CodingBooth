@@ -52,6 +52,12 @@ for entry in "${VARIANTS[@]}"; do
   ACTUAL=$(run_coding_booth --dryrun --variant "${WANT_VARIANT}" -- sleep 1)
   ACTUAL=$(printf "%s\n" "$ACTUAL")
 
+  # Desktop variants get --shm-size (Chromium/Electron renderer shared memory).
+  SHM=""
+  if [[ "$GOT_VARIANT" == desktop-* ]]; then
+    SHM=$'    --shm-size 1g \\\n'
+  fi
+
   # Notice that there is not `-rm`
   EXPECT="\
 docker \\
@@ -77,7 +83,7 @@ docker \\
     --label 'cb.version=${VERSION}' \\
     --label 'cb.keep-alive=false' \\
     --label 'cb.daemon=false' \\
-    -p 127.0.0.1:10000:10000 \\
+${SHM}    -p 127.0.0.1:10000:10000 \\
     -e 'BOOTH_SETUPS=/opt/codingbooth/setups' \\
     -e 'BOOTH_CONTAINER_NAME=dryrun' \\
     -e 'BOOTH_DAEMON=false' \\

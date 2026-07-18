@@ -65,28 +65,33 @@ Need to find a way to fix this. This may involve creating a different type of ho
 - [ ] ...
 
 ## Problems
-- [ ] VS Code hangs sometimes.
-- [ ] **Jupyter Notebook (`.ipynb`) in VS Code hangs on cell execution.** In the desktop
-      variants (and anywhere the bundled VS Code opens a notebook), the VS Code Jupyter
-      extension (`ms-toolsai.jupyter`) hangs when running cells. Matches upstream
-      [vscode-jupyter#17228](https://github.com/microsoft/vscode-jupyter/issues/17228)
-      ("ipykernel 7 causes notebook execution to hang"); the fix, PR #17411, is a stalled,
-      unmerged draft, so no released extension version fixes it.
-      Investigation so far:
-      - The kernel itself is healthy — it starts and executes fine over a native
-        `jupyter_client` connection, so ports/kernelspecs/ZeroMQ-native are not the issue.
-      - The image shipped `ipykernel` **7.3.0** (installed unpinned). Its `kernel.json`
-        carries ipykernel-7-only fields (`supported_encryption: "curve"`,
-        `kernel_protocol_version: "5.5"`).
-      - Pinned `ipykernel>=6,<7` in `notebook--setup.sh`, `vscode--setup.sh`, and
-        `python-nb-kernel--setup.sh` as a precaution (matches upstream guidance).
-      - **BUT: downgrading a live booth to ipykernel 6.31.0 (fields gone, kernel healthy)
-        did NOT clear the hang.** So ipykernel 7 is not the (whole) root cause — the pin is
-        a mitigation, not a fix. Real cause still unknown.
-      Next steps: capture the extension's live logs *while a cell is actually running*
-      (not just the session header); check `@vscode/zeromq` native module load in the
-      extension host; consider a VS Code 1.128 / extension-version interaction. Workaround
-      today: use the browser-based `notebook` variant for notebooks.
+- [ ] VS Code hangs/crashes sometimes. Some cases were the 64 MB `/dev/shm` renderer crash
+      fixed below (`code: 133`); watch for any that survive that fix.
+- [x] **Jupyter Notebook (`.ipynb`) in VS Code hangs/crashes.** RESOLVED 2026-07-14.
+      The earlier ipykernel-7 / [vscode-jupyter#17228] theory was **wrong**. Verified on a
+      live `desktop-xfce` booth:
+      - Desktop VS Code and `code-server` run the **same** Jupyter extension (2025.9.1) and
+        the **same** ipykernel (6.31.0), yet only desktop VS Code failed — so the extension
+        version was never the difference. The `ipykernel>=6,<7` pins were mitigating a cause
+        that wasn't the cause; they have been removed.
+      - The kernel is healthy: it executes over a native `jupyter_client` connection (`ok`).
+      - The real failure is an **Electron renderer crash** —
+        `CodeWindow: renderer process gone (reason: crashed, code: 133)` in `main.log`. The
+        container's `/dev/shm` defaults to **64 MB**, and Chromium's renderer maps its shared
+        memory there (confirmed: renderer processes hold fds into `/dev/shm`). Rendering a rich
+        notebook (embedded images/widgets) overflows 64 MB and the renderer aborts.
+      - `code-server` is immune — it renders in the **host** browser, which has a normal-sized
+        `/dev/shm`. Bash/Java notebooks survived because their text output stays small.
+      Fix (two complementary changes):
+      - `vscode--setup.sh`: the `code` wrapper now passes `--disable-dev-shm-usage`, so Chromium
+        puts its shared memory under `/tmp` (223 GB free) instead of `/dev/shm`. Verified: with
+        the flag the renderer processes hold 0 fds into `/dev/shm` (4 under `/tmp` instead).
+      - Desktop variants now run with `--shm-size=1g` (`PrepareCommonArgs`, gated on
+        `HasDesktop`), which also protects the desktop's web browser and any other
+        Chromium/Electron app, not just VS Code.
+
+[vscode-jupyter#17228]: https://github.com/microsoft/vscode-jupyter/issues/17228
+
 - [ ] Java example: Lombok does not work in VS Code.
 - [ ] `remove`/`stop`/`start`/`restart` ignore flags placed *after* the positional name (e.g. `booth remove myproj --force` does not force) because they use plain `flag.Parse`, which stops at the first positional. `shell`/`exec` already work around this with `extractPositionalAndFlags`; apply the same handling to the other lifecycle commands so flag order doesn't matter.
 - [ ] ...

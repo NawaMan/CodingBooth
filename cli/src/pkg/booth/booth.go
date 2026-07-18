@@ -404,6 +404,14 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 		builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.persist-home=true"))
 	}
 
+	// Desktop variants run Chromium-based apps (VS Code, browsers) whose renderers
+	// map shared memory in /dev/shm. Docker's default 64 MB is too small and the
+	// renderer aborts ("renderer process gone, code 133") on heavy pages such as
+	// rich notebooks. Give them room.
+	if ctx.HasDesktop() {
+		builder.CommonArgs.Append(ilist.NewList[string]("--shm-size", "1g"))
+	}
+
 	// Skip port mapping when using shared network namespace sidecars.
 	if !ctx.Dind() && !ctx.Egress() {
 		containerPort := 10000

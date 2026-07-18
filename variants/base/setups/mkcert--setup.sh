@@ -44,18 +44,47 @@ apt-get update
 apt-get install -y --no-install-recommends curl ca-certificates libnss3-tools
 rm -rf /var/lib/apt/lists/*
 
+# Last published mkcert release. Also the fallback when the GitHub API is
+# unreachable or rate-limited (unauthenticated api.github.com allows only
+# 60 req/h per IP, which a full build+test run can exhaust).
+FALLBACK_VERSION="1.4.4"
+
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/FiloSottile/mkcert/releases/latest | grep '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/')
+  # `|| true` so a rate-limited/failed API call yields an empty string and we
+  # fall back, instead of aborting the whole setup under `set -e`/pipefail.
+  VERSION=$(curl -fsSL --retry 3 --retry-delay 2 \
+              https://api.github.com/repos/FiloSottile/mkcert/releases/latest 2>/dev/null \
+            | grep '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/' || true)
+  if [[ -z "$VERSION" ]]; then
+    echo "⚠️  Could not resolve latest mkcert from GitHub (rate limit or network); falling back to v${FALLBACK_VERSION}." >&2
+    VERSION="$FALLBACK_VERSION"
+  fi
 else
   VERSION="${REQ_VER#v}"
 fi
 
+if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "❌ Invalid mkcert version resolved: '${VERSION}'" >&2
+  exit 1
+fi
+
 echo "⬇️  Installing mkcert v${VERSION} (${ARCH}) ..."
-curl -fsSL "https://github.com/FiloSottile/mkcert/releases/download/v${VERSION}/mkcert-v${VERSION}-linux-${ARCH}" -o /usr/local/bin/mkcert
+URL="https://github.com/FiloSottile/mkcert/releases/download/v${VERSION}/mkcert-v${VERSION}-linux-${ARCH}"
+if ! curl -fsSL --retry 3 --retry-delay 2 "$URL" -o /usr/local/bin/mkcert; then
+  echo "❌ Failed to download mkcert from ${URL}" >&2
+  exit 1
+fi
 chmod +x /usr/local/bin/mkcert
 
+# Verify the binary actually runs — a truncated or HTML error-page download
+# would otherwise pass silently and fail only much later.
+if ! /usr/local/bin/mkcert -version >/dev/null 2>&1; then
+  echo "❌ mkcert downloaded but is not runnable (bad download?)" >&2
+  exit 1
+fi
+
 echo "✅ mkcert installed."
-echo -n "   mkcert → "; mkcert -version 2>/dev/null || true
+echo -n "   mkcert → "; mkcert -version
 
 cat <<'EON'
 ℹ️ Ready to use:

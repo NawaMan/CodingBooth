@@ -64,9 +64,7 @@ echo "✅ VS Code installed"
 echo "🔧 Installing Jupyter + Bash kernel…"
 
 pip install --upgrade pip setuptools wheel
-# Pin ipykernel <7: ipykernel 7.x hangs the VS Code Jupyter extension
-# (microsoft/vscode-jupyter#17228, still unfixed). Remove the cap once that ships.
-pip install jupyter "ipykernel>=6,<7" bash_kernel
+pip install jupyter "ipykernel>=6" bash_kernel
 
 # Register both kernels system-wide
 python -m ipykernel install   --sys-prefix --name=python3 --display-name="Python 3 (${CB_PY_VERSION})"
@@ -99,9 +97,13 @@ VSCODE_EXTENSION_DIR="${VSCODE_EXTENSION_DIR:-/usr/local/share/code/extensions}"
 DATA_DIR="${HOME}/.vscode-data"
 mkdir -p "${DATA_DIR}"
 
+# --disable-dev-shm-usage: the container's /dev/shm defaults to 64 MB, too small
+# for Chromium's renderer shared memory. Rendering a rich notebook overflows it and
+# the renderer aborts ("renderer process gone, code 133"). Point Chromium at /tmp.
 exec /usr/bin/code                           \
   --no-sandbox                               \
   --disable-gpu                              \
+  --disable-dev-shm-usage                    \
   --password-store=basic                     \
   --user-data-dir="${DATA_DIR}"              \
   --extensions-dir="${VSCODE_EXTENSION_DIR}" \
