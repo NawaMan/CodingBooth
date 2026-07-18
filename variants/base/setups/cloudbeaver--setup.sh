@@ -189,6 +189,11 @@ chmod 755 "${STARTER_FILE}"
 
 # ---- summary ----
 echo ""
+# Register a desktop icon that opens CloudBeaver in a browser (desktop variants only).
+cb-web-icon.sh --id cloudbeaver --name "CloudBeaver" --icon applications-internet \
+  --port-env CLOUDBEAVER_PORT --port "${CLOUDBEAVER_PORT}" \
+  --path / --start start-cloudbeaver
+
 echo "✅ CloudBeaver setup complete."
 echo "   Location:  ${CLOUDBEAVER_DIR}"
 echo "   Port:      ${CLOUDBEAVER_PORT}"

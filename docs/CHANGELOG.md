@@ -4,6 +4,30 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Web apps get a desktop icon that opens them in a browser.** Server-style tools that serve an
+  HTTP UI on an internal port — Jupyter Notebook, CloudBeaver, Scratch — now get a desktop launcher
+  (and, on the Wayland variant, a panel button) that opens the service in a dedicated app-mode
+  browser window. Because the desktop session runs inside the same container, the launcher points
+  straight at `http://localhost:<internal-port>` — no host mapping or proxy. A setup registers one
+  with `cb-web-icon`, which drops the launcher into the same `/etc/skel/Desktop` registry the app
+  icons use; at click time `cb-web-open` resolves the port from its env var (falling back to the
+  default), appends an access token when one is set, starts the service if it is not already
+  listening, and opens it.
+
+  Two launch fixes rode along. On **XFCE**, desktop launchers no longer trip Thunar's "insecure
+  location / Mark Executable" prompt: they are stamped with the `metadata::xfce-exe-checksum` that
+  `libxfce4util`'s trust check expects (the same value "Mark Executable" writes) before the desktop
+  loads. And on **Wayland**, the waybar buttons launch each app's `Exec` directly instead of via
+  `gtk-launch`, which the Wayland image does not ship — so every panel button works, not just the
+  new ones.
+
+- **`mkcert` install survives GitHub rate limits.** A full `--no-cache` build+test run can exhaust
+  the unauthenticated GitHub API/download budget, and `curl --retry` alone does not retry an HTTP
+  429 or 5xx — so the mkcert binary download failed hard and took the booth build (and
+  `test-boothfile-mkcert`) down with it. The GitHub API call and the binary download now pass
+  `--retry-all-errors`, and a download that still fails falls back to the pinned known-good version
+  before giving up.
+
 - **`shell` / `exec` accept create-time `--port` and fail on mismatch by default.** With `--run`, a missing booth is created via `booth run --daemon`, and `--port` (number, `NEXT`, or `RANDOM`) is forwarded so the new booth gets the host UI port you asked for — same for `--name` / `--keep-alive` as before. Against an **existing** booth, an explicit numeric `--port` is a contract: if it does not match the published host port, the command **refuses to connect** (so scripts do not run against the wrong environment). Pass **`--accept-existing`** to connect anyway with a warning on stderr. Symbolic `--port NEXT` / `RANDOM` are only applied on create and are not compared. Unit tests cover the mismatch rules and run-arg construction; complex test `tests/complex/test-connect-run-port/` exercises create, match, refuse, accept-existing, `NEXT`, and ephemeral teardown. See `docs/BOOTH_CONNECT.md`.
 - **Desktop apps now appear as icons on the graphical desktop.** On the XFCE, KDE, and LXQt
   variants, every selected GUI application — VS Code, the JetBrains IDEs, DBeaver, Firefox, Chrome,

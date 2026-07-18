@@ -107,6 +107,10 @@ chmod 755 "${STARTER_FILE}"
 
 # ---- summary ----
 echo ""
+# Register a desktop icon that opens Scratch in a browser (desktop variants only).
+cb-web-icon.sh --id scratch --name "Scratch" --icon applications-internet \
+  --port "${SCRATCH_PORT}" --path / --start start-scratch
+
 echo "✅ Scratch installed."
 echo "   Location: ${SCRATCH_DIR}"
 echo "   Port:     ${SCRATCH_PORT}"

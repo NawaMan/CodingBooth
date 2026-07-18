@@ -124,7 +124,7 @@ mkdir -p "$HOME/.config/waybar"
 
 # The app set is /etc/skel/Desktop — the same registry that seeds ~/Desktop on
 # the icon-based desktops, populated by cb-desktop-icon.sh at build time. Each
-# launcher becomes a button (label = its Name=, click = gtk-launch <id>), so the
+# launcher becomes a button (label = its Name=, click runs its Exec), so the
 # panel automatically tracks whatever GUI apps the booth selected.
 _reg_dir=/etc/skel/Desktop
 _modules='"custom/apps"'
@@ -136,12 +136,17 @@ for _f in "$_reg_dir"/*.desktop; do
   _id="$(basename "$_f" .desktop)"
   _label="$(sed -n 's/^Name=//p' "$_f" | head -1)"
   [ -n "$_label" ] || _label="$_id"
-  # JSON-escape backslashes then double-quotes in the label.
+  # Launch straight from the launcher's Exec (field codes stripped) — the Wayland
+  # image ships no gtk-launch/gio, so we run the command directly via sh -c.
+  _exec="$(sed -n 's/^Exec=//p' "$_f" | head -1 | sed 's/%[a-zA-Z]//g; s/  */ /g; s/ *$//')"
+  [ -n "$_exec" ] || continue
+  # JSON-escape backslashes then double-quotes in label and command.
   _label="${_label//\\/\\\\}"; _label="${_label//\"/\\\"}"
+  _exec="${_exec//\\/\\\\}"; _exec="${_exec//\"/\\\"}"
   _key="app${_idx}"; _idx=$((_idx + 1))
   _modules="${_modules}, \"custom/${_key}\""
   _defs="${_defs},
-  \"custom/${_key}\": { \"format\": \"${_label}\", \"on-click\": \"gtk-launch ${_id}\", \"tooltip\": false }"
+  \"custom/${_key}\": { \"format\": \"${_label}\", \"on-click\": \"${_exec}\", \"tooltip\": false }"
   _style="${_style}#custom-${_key} { padding: 0 12px; }
 "
 done

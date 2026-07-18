@@ -52,7 +52,10 @@ FALLBACK_VERSION="1.4.4"
 if [[ "$REQ_VER" == "latest" ]]; then
   # `|| true` so a rate-limited/failed API call yields an empty string and we
   # fall back, instead of aborting the whole setup under `set -e`/pipefail.
-  VERSION=$(curl -fsSL --retry 3 --retry-delay 2 \
+  # --retry-all-errors so a 429 (rate limit) / 5xx is retried too; plain --retry
+  # only covers connection-level errors, letting an HTTP error through on the
+  # first try.
+  VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
               https://api.github.com/repos/FiloSottile/mkcert/releases/latest 2>/dev/null \
             | grep '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/' || true)
   if [[ -z "$VERSION" ]]; then
@@ -68,11 +71,26 @@ if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
   exit 1
 fi
 
-echo "⬇️  Installing mkcert v${VERSION} (${ARCH}) ..."
-URL="https://github.com/FiloSottile/mkcert/releases/download/v${VERSION}/mkcert-v${VERSION}-linux-${ARCH}"
-if ! curl -fsSL --retry 3 --retry-delay 2 "$URL" -o /usr/local/bin/mkcert; then
-  echo "❌ Failed to download mkcert from ${URL}" >&2
-  exit 1
+# Download the binary, retrying HTTP errors (429/5xx) as well as connection
+# errors. If the resolved version's asset can't be fetched, fall back to the
+# known-good version before giving up — a full build+test run can trip GitHub's
+# rate limit for minutes at a time.
+download_mkcert() {
+  local ver="$1"
+  local url="https://github.com/FiloSottile/mkcert/releases/download/v${ver}/mkcert-v${ver}-linux-${ARCH}"
+  echo "⬇️  Installing mkcert v${ver} (${ARCH}) ..."
+  curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors "$url" -o /usr/local/bin/mkcert
+}
+
+if ! download_mkcert "$VERSION"; then
+  if [[ "$VERSION" != "$FALLBACK_VERSION" ]]; then
+    echo "⚠️  Download of v${VERSION} failed; retrying with fallback v${FALLBACK_VERSION}." >&2
+    VERSION="$FALLBACK_VERSION"
+    download_mkcert "$VERSION" || { echo "❌ Failed to download mkcert (v${VERSION})" >&2; exit 1; }
+  else
+    echo "❌ Failed to download mkcert (v${VERSION})" >&2
+    exit 1
+  fi
 fi
 chmod +x /usr/local/bin/mkcert
 

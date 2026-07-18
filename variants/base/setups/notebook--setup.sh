@@ -167,6 +167,12 @@ echo
 echo "To start using notebook, start a new shell session, OR"
 echo "Load the Notebook helpers into THIS shell (no restart):"
 echo "     source ${NOTEBOOK_PROFILE_FILE}"
+# Register a desktop icon that opens JupyterLab in a browser (desktop variants only).
+cb-web-icon.sh --id notebook --name "Jupyter Notebook" \
+  --icon "${CB_VENV_DIR}/share/icons/hicolor/scalable/apps/jupyterlab.svg" \
+  --port-env NOTEBOOK_PORT --port "${NOTEBOOK_DEFAULT_PORT}" \
+  --path /lab --token-env PASSWORD --start start-notebook
+
 echo
 echo "Then you can run:"
 echo "  notebook-setup-info"

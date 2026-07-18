@@ -332,6 +332,26 @@ INFO
 EOF
 chmod 0644 "${PROFILE_FILE}"
 
+# ---- desktop launcher trust (xfdesktop / Thunar) ----
+# xfdesktop hands .desktop launches to Thunar, whose trust check (in
+# libxfce4util's xfce_g_file_is_trusted) treats anything under $HOME as an
+# "insecure location" and prompts ("… not marked as executable / Mark
+# Executable") until the launcher carries a metadata::xfce-exe-checksum equal to
+# the SHA-256 of its contents — exactly what clicking "Mark Executable" stores.
+# start-xfce's xstartup runs this from inside the session D-Bus before
+# startxfce4, so the launchers are trusted when the desktop loads.
+cat > /usr/local/bin/cb-xfce-trust-icons <<'EOF'
+#!/bin/bash
+command -v gio >/dev/null 2>&1 || exit 0
+shopt -s nullglob
+for f in "$HOME"/Desktop/*.desktop; do
+  chk="$(sha256sum "$f" | awk '{print $1}')"
+  gio set "$f" metadata::xfce-exe-checksum "$chk" 2>/dev/null || true
+done
+exit 0
+EOF
+chmod 0755 /usr/local/bin/cb-xfce-trust-icons
+
 # ---- start-xfce (foreground only) ----
 cat > "${STARTER_FILE}" <<'EOF'
 #!/usr/bin/env bash
@@ -422,7 +442,9 @@ if [[ ! -x "$XSTART" ]]; then
 unset SESSION_MANAGER
 unset DBUS_SESSION_BUS_ADDRESS
 xsetroot -solid grey
-exec dbus-launch --exit-with-session startxfce4
+# Mark ~/Desktop launchers trusted (inside the session bus) before the desktop
+# loads, so xfdesktop/Thunar launch them without the "insecure location" prompt.
+exec dbus-launch --exit-with-session sh -c 'cb-xfce-trust-icons; exec startxfce4'
 XEOF
   chmod +x "$XSTART"
 fi

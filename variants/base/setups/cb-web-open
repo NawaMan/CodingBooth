@@ -1,0 +1,60 @@
+#!/bin/bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+#
+# cb-web-open — open a booth web service (an HTTP server on an internal port) in
+# a browser window. Invoked at click time by the desktop launcher that
+# cb-web-icon.sh registers. Because the desktop session runs inside the same
+# container as the service, http://localhost:<internal-port> reaches it directly
+# — no host port mapping or proxy is involved.
+#
+# Reads /etc/cb-web-services/<id>.conf, which defines:
+#   PORT_ENV      env var that overrides the port at runtime (may be empty)
+#   PORT_DEFAULT  port to use when PORT_ENV is unset/empty
+#   URL_PATH      path to open (e.g. /lab)
+#   TOKEN_ENV     env var holding an access token to append as ?token= (optional)
+#   START_CMD     command that starts the service if it is not already listening
+
+set -u
+
+ID="${1:-}"
+[ -n "$ID" ] || { echo "usage: cb-web-open <service-id>" >&2; exit 2; }
+
+CONF="${CB_WEB_CONF_DIR:-/etc/cb-web-services}/${ID}.conf"
+[ -f "$CONF" ] || { echo "cb-web-open: unknown service '$ID' ($CONF missing)" >&2; exit 1; }
+
+PORT_ENV=""; PORT_DEFAULT=""; URL_PATH="/"; TOKEN_ENV=""; START_CMD=""
+# shellcheck disable=SC1090
+. "$CONF"
+
+# Resolve the port: prefer the runtime env var when it is set and non-empty.
+PORT="$PORT_DEFAULT"
+if [ -n "$PORT_ENV" ] && [ -n "${!PORT_ENV:-}" ]; then
+  PORT="${!PORT_ENV}"
+fi
+
+# Optional access token.
+TOKEN=""
+if [ -n "$TOKEN_ENV" ]; then TOKEN="${!TOKEN_ENV:-}"; fi
+
+URL="http://localhost:${PORT}${URL_PATH}"
+[ -n "$TOKEN" ] && URL="${URL}?token=${TOKEN}"
+
+# Is anything listening on the port yet?
+is_up() { (exec 3<>"/dev/tcp/127.0.0.1/${PORT}") 2>/dev/null; }
+
+if ! is_up && [ -n "$START_CMD" ]; then
+  echo "cb-web-open: ${ID} not running — starting via '${START_CMD}'…" >&2
+  nohup $START_CMD >"/tmp/cb-web-${ID}.log" 2>&1 &
+  for _ in $(seq 1 30); do is_up && break; sleep 1; done
+fi
+
+# Open in a dedicated app-mode window when possible (chromeless), else a normal
+# browser window, else whatever xdg-open resolves.
+if   command -v google-chrome     >/dev/null 2>&1; then exec google-chrome     --app="$URL"
+elif command -v chromium          >/dev/null 2>&1; then exec chromium          --app="$URL"
+elif command -v chromium-browser  >/dev/null 2>&1; then exec chromium-browser  --app="$URL"
+elif command -v firefox           >/dev/null 2>&1; then exec firefox --new-window "$URL"
+else                                                    exec xdg-open "$URL"
+fi
