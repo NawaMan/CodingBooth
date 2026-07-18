@@ -117,23 +117,52 @@ cat > "$HOME/.config/labwc/autostart" <<AUTO
 waybar &
 foot &
 AUTO
-# minimal waybar (panel): workspaces, clock, and an app-launcher button
+# minimal waybar (panel): the wofi app-launcher button plus one pinned launcher
+# button per installed GUI IDE. labwc/swaybg draws no desktop-icon surface, so
+# these panel buttons are the Wayland equivalent of a desktop icon.
 mkdir -p "$HOME/.config/waybar"
-cat > "$HOME/.config/waybar/config.jsonc" <<'BAR'
+
+# Pinned launchers. Each entry is "Label|candidate commands…"; the first command
+# found in PATH is used, and apps that aren't installed are skipped — so the panel
+# always matches what the booth actually has. Add rows here for more apps.
+_cb_apps=(
+  "VS Code|code"
+  "PyCharm|pycharm"
+  "DBeaver|dbeaver-ce dbeaver"
+)
+
+_modules='"custom/apps"'
+_defs='"custom/apps": { "format": "  Apps", "on-click": "wofi --show drun", "tooltip": false }'
+_style=""
+_idx=0
+for _entry in "${_cb_apps[@]}"; do
+  _label="${_entry%%|*}"
+  _cmd=""
+  for _c in ${_entry#*|}; do command -v "$_c" >/dev/null 2>&1 && { _cmd="$_c"; break; }; done
+  [ -n "$_cmd" ] || continue
+  _key="app${_idx}"; _idx=$((_idx + 1))
+  _modules="${_modules}, \"custom/${_key}\""
+  _defs="${_defs},
+  \"custom/${_key}\": { \"format\": \"${_label}\", \"on-click\": \"${_cmd}\", \"tooltip\": false }"
+  _style="${_style}#custom-${_key} { padding: 0 12px; }
+"
+done
+
+cat > "$HOME/.config/waybar/config.jsonc" <<BAR
 {
   "layer": "top", "position": "top", "height": 28,
-  "modules-left": ["custom/apps"],
+  "modules-left": [${_modules}],
   "modules-center": ["clock"],
   "modules-right": ["tray"],
-  "custom/apps": { "format": "  Apps", "on-click": "wofi --show drun", "tooltip": false },
+  ${_defs},
   "clock": { "format": "{:%a %d %b  %H:%M}" }
 }
 BAR
-cat > "$HOME/.config/waybar/style.css" <<'CSS'
+cat > "$HOME/.config/waybar/style.css" <<CSS
 * { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
 window#waybar { background: #22303c; color: #e6edf3; }
 #custom-apps { padding: 0 12px; }
-#clock { padding: 0 12px; }
+${_style}#clock { padding: 0 12px; }
 CSS
 
 cat > "$HOME/.config/labwc/menu.xml" <<'MENU'

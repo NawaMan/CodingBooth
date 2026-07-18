@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --variant xfce --expose 13000 --env GEOMETRY=1920x1080 --env GOOGLE_APPLICATION_CREDENTIALS=/home/coder/.config/gcloud/application_default_credentials.json --env GNOME_KEYRING_CONTROL= --env GNOME_KEYRING_PID= --env SSH_AUTH_SOCK= --mount ~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro --mount ~/.antigravity:/etc/cb-home-seed/.antigravity:ro --mount ~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro --mount ~/.config/github-copilot:/etc/cb-home-seed/.config/github-copilot:ro --mount ~/.claude/settings.json:/etc/cb-home-seed/.claude/settings.json:ro --mount ~/.codex/auth.json:/etc/cb-home-seed/.codex/auth.json:ro --select go:1.25.4+vscode-ext/python:3.12+pip-config+vscode-ext+kernel+pip-pkg:matplotlib,psycopg2-binary/java+vscode-ext+kernel-jjava+m2+maven+gradle+jbang/nodejs:20+npmrc+vscode-ext/postgresql/notebook/bash-nb-kernel/pycharm/dbeaver/claude-code+credential+settings-cache
+# Configured by: booth config --no-tui --overwrite --variant xfce --expose 13000 --env GEOMETRY=1920x1080 --env GOOGLE_APPLICATION_CREDENTIALS=/home/coder/.config/gcloud/application_default_credentials.json --env GNOME_KEYRING_CONTROL= --env GNOME_KEYRING_PID= --env SSH_AUTH_SOCK= --mount ~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro --mount ~/.antigravity:/etc/cb-home-seed/.antigravity:ro --mount ~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro --mount ~/.config/github-copilot:/etc/cb-home-seed/.config/github-copilot:ro --mount ~/.claude/settings.json:/etc/cb-home-seed/.claude/settings.json:ro --mount ~/.codex/auth.json:/etc/cb-home-seed/.codex/auth.json:ro --select go:1.25.4+vscode-ext/python:3.12+pip-config+vscode-ext+pip-pkg:matplotlib,psycopg2-binary/java+vscode-ext+kernel-jjava+m2+maven+gradle+jbang/nodejs:20+npmrc+vscode-ext/postgresql/notebook+autostart/bash-nb-kernel/pycharm/dbeaver/claude-code+credential+settings-cache
 
-env APT_SNAPSHOT=20260713T000000Z
+env APT_SNAPSHOT=20260714T000000Z
 
 arg DBEAVER_VERSION=latest
 arg GO_VERSION=1.25.4
@@ -10,6 +10,7 @@ arg JDK_VENDOR=temurin
 arg JDK_VERSION=25
 arg MAVEN_VERSION=3.9.12
 arg NODE_VERSION=20
+arg NOTEBOOK_PORT=18888
 arg PIP_PKGS=matplotlib,psycopg2-binary
 arg PYTHON_VERSION=3.12
 
@@ -25,7 +26,7 @@ setup nodejs ${NODE_VERSION}
 setup postgresql
 setup python ${PYTHON_VERSION}
 setup dbeaver ${DBEAVER_VERSION}
-setup notebook 18888
+setup notebook ${NOTEBOOK_PORT}
 setup pycharm
 install pip ${PIP_PKGS}
 setup go-code-extension
@@ -34,4 +35,3 @@ setup nodejs-code-extension
 setup python-code-extension
 setup bash-nb-kernel
 setup java-jjava-nb-kernel
-setup python-nb-kernel

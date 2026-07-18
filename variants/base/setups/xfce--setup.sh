@@ -469,6 +469,81 @@ chmod 0755 ${STARTER_FILE}
 rm -Rf ${DESKTOP_FILE}
 ln -s  ${STARTER_FILE} ${DESKTOP_FILE}
 
+# ---- desktop launcher arrangement (top-center) ----
+# Seeded ~/Desktop launchers default to xfdesktop's top-left column flow. This
+# one-shot session script lays them out centered on the top row instead,
+# spreading left/right as more launchers are added. It runs once per home
+# (marker file) so any manual re-arrangement by the user is respected.
+#
+# xfdesktop stores icon positions in a per-size grid rc file named
+# icons.screen0-<W>x<H>.rc where WxH is the workarea minus 16px margins, and it
+# only reads the file at startup — hence the quit/rewrite/relaunch dance.
+# CELL_W=109 is the measured grid cell width for the default 48px icon size.
+cat > /usr/local/bin/cb-xfce-arrange-icons <<'EOF'
+#!/bin/bash
+set -u
+MARKER="$HOME/.config/xfce4/desktop/.cb-icons-arranged"
+[ -f "$MARKER" ] && exit 0
+
+# Wait for xfdesktop and a valid workarea (panel subtracted by the WM).
+WA=""
+for _ in $(seq 1 30); do
+  if pgrep -x xfdesktop >/dev/null; then
+    WA="$(xprop -root _NET_WORKAREA 2>/dev/null | grep -oE '[0-9]+' | head -4 | tr '\n' ' ')"
+    [ -n "$WA" ] && break
+  fi
+  sleep 1
+done
+read -r _WX _WY WW WH <<< "$WA"
+[ -n "${WH:-}" ] || exit 0
+
+shopt -s nullglob
+LAUNCHERS=("$HOME/Desktop/"*.desktop)
+N=${#LAUNCHERS[@]}
+mkdir -p "$HOME/.config/xfce4/desktop"
+if [ "$N" -eq 0 ]; then
+  touch "$MARKER"
+  exit 0
+fi
+
+CELL_W=109
+RC_W=$((WW - 16)); RC_H=$((WH - 16))
+TOTAL=$((RC_W / CELL_W)); [ "$TOTAL" -lt 2 ] && TOTAL=2
+START=$(( (TOTAL - N) / 2 )); [ "$START" -lt 1 ] && START=1
+RC="$HOME/.config/xfce4/desktop/icons.screen0-${RC_W}x${RC_H}.rc"
+
+xfdesktop --quit 2>/dev/null || true
+sleep 1
+
+{
+  printf '[xfdesktop-version-4.10.3+-rcfile_format]\n4.10.3+=true\n'
+  row=0; col=$START
+  for f in "${LAUNCHERS[@]}"; do
+    printf '\n[%s]\nrow=%d\ncol=%d\n' "$f" "$row" "$col"
+    col=$((col + 1))
+    if [ "$col" -ge "$TOTAL" ]; then row=$((row + 1)); col=$START; fi
+  done
+  printf '\n[Trash]\nrow=0\ncol=0\n'
+  printf '\n[/]\nrow=1\ncol=0\n'
+  printf '\n[%s]\nrow=2\ncol=0\n' "$HOME"
+} > "$RC"
+ln -sfn "$RC" "$HOME/.config/xfce4/desktop/icons.screen.latest.rc"
+
+setsid xfdesktop >/dev/null 2>&1 < /dev/null &
+touch "$MARKER"
+EOF
+chmod 0755 /usr/local/bin/cb-xfce-arrange-icons
+
+mkdir -p /etc/xdg/autostart
+cat > /etc/xdg/autostart/cb-xfce-arrange-icons.desktop <<'EOF'
+[Desktop Entry]
+Type=Application
+Name=CodingBooth desktop icon arrangement
+Exec=/usr/local/bin/cb-xfce-arrange-icons
+OnlyShowIn=XFCE;
+NoDisplay=true
+EOF
+
 # ---- keyring behavior (disable | basic | keep) ----
 : "${KEYRING_MODE:=basic}"
 echo "🔒 Configuring GNOME keyring mode: ${KEYRING_MODE}"

@@ -14,7 +14,11 @@ command -v xfce4-session &>/dev/null && exit 0
 command -v startplasma-x11 &>/dev/null && exit 0
 command -v plasmashell &>/dev/null && exit 0
 
-# Wayland-based desktop (future)
+# Wayland-based desktop (wlroots compositors + kiosk)
+command -v labwc &>/dev/null && exit 0
+command -v wayfire &>/dev/null && exit 0
+command -v sway &>/dev/null && exit 0
+command -v weston &>/dev/null && exit 0
 command -v cage &>/dev/null && exit 0
 command -v gamescope &>/dev/null && exit 0
 

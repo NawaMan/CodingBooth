@@ -88,8 +88,10 @@ STARTER_FILE=/usr/local/bin/code
 cat > "$STARTER_FILE" <<'EOF'
 #!/usr/bin/env bash
 
-# Default X server settings.
-export DISPLAY=:1
+# Default X server settings. Respect the session's DISPLAY when set — VNC-based
+# desktops (XFCE/KDE/LXQt) export :1, while the Wayland variant runs Xwayland on
+# :0. Falling back to :1 keeps the old behavior when DISPLAY is unset.
+export DISPLAY="${DISPLAY:-:1}"
 export XAUTHORITY="$HOME/.Xauthority"
 
 VSCODE_EXTENSION_DIR="${VSCODE_EXTENSION_DIR:-/usr/local/share/code/extensions}"
@@ -116,6 +118,19 @@ chmod 755 "$STARTER_FILE"
 # Froce the desktop launcher to use the executor we create.
 if [[ -f /usr/share/applications/code.desktop ]]; then
   sed -i 's#^Exec=.*#Exec=/usr/local/bin/code %F#' /usr/share/applications/code.desktop || true
+fi
+
+# Desktop shortcut: drop a VS Code icon on the desktop for GUI (desktop) variants.
+# Mirrors dbeaver--setup.sh — the launcher goes into /etc/skel/Desktop so that
+# `useradd -m` (booth-entry) seeds it into each user's ~/Desktop. Guarded by
+# cb-has-desktop.sh so any non-desktop caller simply no-ops.
+SCRIPT_DIR="$(dirname "$0")"
+if [[ -f /usr/share/applications/code.desktop ]] \
+   && "$SCRIPT_DIR/cb-has-desktop.sh"; then
+  mkdir -p /etc/skel/Desktop
+  cp /usr/share/applications/code.desktop /etc/skel/Desktop/code.desktop
+  chmod 755 /etc/skel/Desktop/code.desktop
+  echo "✅ VS Code desktop shortcut added to /etc/skel/Desktop"
 fi
 
 echo "✅ VS Code configured to use --no-sandbox by default"

@@ -276,5 +276,14 @@ EOF
 chmod 0644 "$DESKTOP_FILE"
 update-desktop-database /usr/share/applications || true
 
+# Desktop shortcut: drop the IDE icon on the desktop. Mirrors dbeaver--setup.sh —
+# the launcher goes into /etc/skel/Desktop so that `useradd -m` (booth-entry)
+# seeds it into each user's ~/Desktop. This script already exits early above when
+# no desktop environment is present, so no extra guard is needed here.
+mkdir -p /etc/skel/Desktop
+cp "$DESKTOP_FILE" "/etc/skel/Desktop/${IDE}-${VER}.desktop"
+chmod 755 "/etc/skel/Desktop/${IDE}-${VER}.desktop"
+echo "✅ ${PRODUCT} desktop shortcut added to /etc/skel/Desktop"
+
 echo "✅ Installed ${PRODUCT} ${VER}"
 echo "▶ Run via '${IDE}'"

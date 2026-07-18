@@ -465,6 +465,20 @@ else
   info "12) Skipping /etc/cb-home-seed/ (home already seeded)."
 fi
 
+if [ "$RUN_SEEDS" = "true" ]; then
+  info "12b) Seeding desktop launchers from /etc/skel/Desktop (no-clobber)..."
+  # App setups install desktop icons into /etc/skel/Desktop, but the skeleton
+  # never reaches the home through useradd: the project mount pre-creates
+  # $HOME_DIR before useradd runs, so the -m (copy skeleton) branch is never
+  # taken. Seed the launchers explicitly, like the dotfiles above.
+  if [ -d /etc/skel/Desktop ] && [ -n "$(ls -A /etc/skel/Desktop 2>/dev/null)" ]; then
+    mkdir -p "$HOME_DIR/Desktop"
+    smart_copy /etc/skel/Desktop "$HOME_DIR/Desktop" seed
+  fi
+else
+  info "12b) Skipping /etc/skel/Desktop (home already seeded)."
+fi
+
 info "13) Copying override files from /etc/cb-home/ to /home/coder (with override)..."
 BOOTH_HOME_OVERRIDE="/etc/cb-home"
 if [ -d "$BOOTH_HOME_OVERRIDE" ]; then
