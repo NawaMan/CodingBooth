@@ -10,6 +10,12 @@ ARG LOCALE=en_US.UTF-8
 # Safer default shell
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 
+# Force apt onto IPv4. ports.ubuntu.com (the arm64/ports mirror) publishes AAAA
+# records; on build hosts without a working IPv6 route — common for the emulated
+# arm64 leg under QEMU — apt prefers IPv6, stalls, and every package fails to
+# fetch. This drop-in is inherited by all downstream setups and variants.
+RUN echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99-force-ipv4
+
 
 # Setup logs -- setup scripts can use this and user can bind this to host and check the logs.
 RUN touch /tmp/setup.log \

@@ -271,6 +271,25 @@ This file contains a list of changes for each released version.
   are unchanged. The `sh.jbang.dev` fetch also gains `--retry 3`. Fixes `tests/config/test01-init-cli-basic`
   and `tests/complex/test-boothfile-gradle`. See `variants/base/setups/jdk--setup.sh`.
 
+## 0.61.0
+
+- **Every desktop variant now keeps the CodingBooth wallpaper instead of the stock desktop backdrop.**
+  On XFCE, `xfdesktop` overwrote the seeded system default with its built-in `xfce-blue` backdrop on
+  first login, so the brand wallpaper never appeared; the other desktops relied on a system default a
+  first-run session could shadow just as easily. Each variant now re-applies the wallpaper once its
+  session is up, so it wins regardless of first-run behavior — XFCE via `xfconf-query`, KDE via
+  `plasma-apply-wallpaperimage` (falling back to plasmashell scripting over `qdbus`), and LXQt via
+  `pcmanfm-qt --set-wallpaper`, each from an autostart entry; Wayland/labwc already writes `swaybg`
+  into its session autostart on every start. The wallpaper image itself was refreshed. See the
+  `*-wallpaper--setup.sh` scripts under `variants/`.
+
+- **The base image build no longer stalls on IPv6-only mirror lookups.** `ports.ubuntu.com` (the
+  arm64/ports mirror) publishes AAAA records, and on a build host without a working IPv6 route — the
+  common case for the emulated arm64 leg under QEMU — `apt` preferred IPv6, stalled, and reported
+  every package as "unable to locate", aborting the base build. The base image now writes an
+  `Acquire::ForceIPv4` apt drop-in before its first `apt-get`, inherited by every downstream setup and
+  variant, so package fetches use IPv4. See `variants/base/Dockerfile`.
+
 ## 0.59.0
 
 - **`booth config` preserves pinned param values across reconfiguration.** Previously, reconfiguring a booth (e.g. adding or removing a template/extension) rebuilt the Boothfile entirely from the selection DSL and reset every non-default param — `NODE_VERSION`, `GO_VERSION`, `PYTHON_VERSION`, `PLAYWRIGHT_VERSION`, … — back to its template default, because pins live in the Boothfile's `arg NAME=VALUE` lines and were not carried by the stored selection. Now the resolver reads those `arg` lines back and preserves any non-default pin unless the new selection explicitly overrides it (explicit selection still wins).

@@ -623,7 +623,7 @@ The image's *capability* (Java? Python? VS Code? AI tools?) comes from ~186 buil
 - **Browsers / databases / build tools:** chromium-browser; cloudbeaver; cmake
 - **Code-server extensions:** bash, bun, clojure, codex, booth-message, booth-restart, booth-shutdown, ...
 - **Notebook kernels:** bash, ...
-- **Desktop bits:** noVNC, XFCE / KDE wallpaper branding, `cb-has-desktop*.sh`
+- **Desktop bits:** noVNC, XFCE / KDE / LXQt / Wayland wallpaper branding, `cb-has-desktop*.sh`
 - **Hardening / cleanup:** `no-sudo`, `cleanup-after--setup.sh`, `tls--setup.sh` (pinned Caddy)
 
 ### AI agent integration
