@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A host-env expose port can fall back to a booth-relative offset: `${SERVER_PORT:-+300}:1234`.**
+  The two host-side forms now compose. Previously a `${NAME:-default}` fallback had to be a fixed
+  number, so a published port was either env-overridable (`${SERVER_PORT:-12345}`) or booth-relative
+  (`+300`), never both. Now `${SERVER_PORT:-+300}:1234` publishes on `$SERVER_PORT` when the variable
+  is set and on `boothPort + 300` when it is not — a default that follows the booth port so two booths
+  of the same project stop colliding, without baking a fixed host port into the config. It works
+  because `${…}` is expanded at TOML unmarshal, *before* `ResolveRelativePorts` runs: expansion yields
+  `+300:1234`, then the offset step rewrites it against the booth port. Only the config-time validation
+  had to change — it rejected the `+` in the fallback.
+
+  A `+OFFSET` fallback requires an explicit `:CONTAINER`: the bare `HOST:HOST` shorthand would put the
+  `+OFFSET` on the container side too, which is not a port, so `--expose '${SERVER_PORT:-+300}'` is
+  refused with a message pointing at the missing container port.
+
 - **Web apps get a desktop icon that opens them in a browser.** Server-style tools that serve an
   HTTP UI on an internal port — Jupyter Notebook, CloudBeaver, Scratch — now get a desktop launcher
   (and, on the Wayland variant, a panel button) that opens the service in a dedicated app-mode

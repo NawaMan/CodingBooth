@@ -211,12 +211,14 @@ func TestApplyExposeFlags_HostEnvForm(t *testing.T) {
 	applyExposeFlags(cfg, []string{
 		"${APP_PORT:-3000}",
 		"${SERVER_PORT:-12345}:1234",
+		"${SERVER_PORT:-+300}:1234",
 		"127.0.0.1:${HTTP_PORT:-8080}:80",
 	})
 
 	assert.Equal(t, []string{
 		"--publish", "${APP_PORT:-3000}:${APP_PORT:-3000}",
 		"--publish", "${SERVER_PORT:-12345}:1234",
+		"--publish", "${SERVER_PORT:-+300}:1234",
 		"--publish", "127.0.0.1:${HTTP_PORT:-8080}:80",
 	}, cfg.RunArgs)
 }
@@ -226,6 +228,8 @@ func TestValidateExpose_HostEnvForm(t *testing.T) {
 		"${APP_PORT}",
 		"${APP_PORT:-3000}",
 		"${SERVER_PORT:-12345}:1234",
+		"${SERVER_PORT:-+300}:1234",       // booth-relative fallback, explicit container
+		"127.0.0.1:${HTTP_PORT:-+300}:80", // booth-relative fallback with IP
 		"${HTTP_PORT}:80",
 		"127.0.0.1:${HTTP_PORT:-8080}:80",
 		// existing forms still accepted
@@ -242,8 +246,11 @@ func TestValidateExpose_HostEnvForm(t *testing.T) {
 	bad := []string{
 		"${APP_PORT:-abc}",             // default must be digits
 		"${APP_PORT:-}",                // empty default
+		"${APP_PORT:-+}",               // "+" with no offset digits
+		"${SERVER_PORT:-+300}",         // relative fallback needs an explicit :CONTAINER
 		"${1PORT:-3000}",               // name must start with letter or _
 		"8080:${APP_PORT:-3000}",       // env on container side
+		"8080:${APP_PORT:-+300}",       // relative env on container side
 		"127.0.0.1:${HTTP_PORT:-8080}", // IP without container
 		"${APP_PORT:-3000}:",           // empty container
 		"${APP_PORT:-3000}:80:extra",   // extra segment

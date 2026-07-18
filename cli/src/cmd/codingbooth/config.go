@@ -968,11 +968,13 @@ Flags:
   --expose <port>          Publish an extra port (repeatable). Forms: PORT,
                            HOST:CONTAINER, IP:HOST:CONTAINER, +OFFSET:CONTAINER
                            (host = booth port + OFFSET), or host-side env form
-                           ${NAME} / ${NAME:-digits}[:CONTAINER] (expanded at
-                           booth start). This ADDS a mapping; to move a port a
-                           selected template already publishes, give its expose
-                           extension the host port: +expose:19000, +expose:+9000,
-                           or +expose:${APP_PORT:-19000}
+                           ${NAME} / ${NAME:-digits}[:CONTAINER]. The fallback may
+                           itself be booth-relative: ${NAME:-+OFFSET}:CONTAINER
+                           publishes on boothPort+OFFSET when NAME is unset. All
+                           expanded at booth start. This ADDS a mapping; to move a
+                           port a selected template already publishes, give its
+                           expose extension the host port: +expose:19000,
+                           +expose:+9000, or +expose:${APP_PORT:-19000}
   --env <KEY=VALUE>        Set environment variable (repeatable)
   --mount <host:container> Mount volume (repeatable)
   --set <key=value>        Set config.toml value (repeatable)

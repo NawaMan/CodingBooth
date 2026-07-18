@@ -247,10 +247,30 @@ booth                          # host 15432 → container 5432
 POSTGRES_PORT=25432 booth      # host 25432 → container 5432
 ```
 
+**The fallback itself may be booth-relative.** Write `${NAME:-+OFFSET}` and the
+default is not a fixed number but `boothPort + OFFSET` — the env var wins when set,
+otherwise the port follows the booth port (the two host-side forms composed):
+
+```text
+--expose '${SERVER_PORT:-+300}:1234'   # SERVER_PORT if set, else boothPort+300
+```
+
+```bash
+booth --port 10000             # host 10300 → container 1234
+SERVER_PORT=25000 booth        # host 25000 → container 1234
+```
+
+A `+OFFSET` fallback needs an explicit `:CONTAINER`; the bare `HOST:HOST` shorthand
+cannot carry an offset on the container side, so `--expose '${SERVER_PORT:-+300}'`
+is rejected. This works because `${…}` is expanded (at TOML unmarshal) *before*
+`+OFFSET` is resolved against the booth port — expansion yields `+300:1234`, then
+the offset step rewrites it.
+
 This is different from the **booth port** (`--port` / `CB_PORT`), which moves the
 primary UI mapping, not every service publish. To follow the booth port, use
 `+OFFSET`; to override one service's host port from the environment, use
-`${NAME:-digits}`.
+`${NAME:-digits}`; to do both — env override with a booth-relative default — use
+`${NAME:-+OFFSET}`.
 
 A param default may reference another param by name (`default = "${SVC_PORT}"`), and
 references are resolved before anything consumes them, including transitively. A
