@@ -5,6 +5,15 @@ This file contains a list of changes for each released version.
 ## Unreleased
 
 - **`shell` / `exec` accept create-time `--port` and fail on mismatch by default.** With `--run`, a missing booth is created via `booth run --daemon`, and `--port` (number, `NEXT`, or `RANDOM`) is forwarded so the new booth gets the host UI port you asked for — same for `--name` / `--keep-alive` as before. Against an **existing** booth, an explicit numeric `--port` is a contract: if it does not match the published host port, the command **refuses to connect** (so scripts do not run against the wrong environment). Pass **`--accept-existing`** to connect anyway with a warning on stderr. Symbolic `--port NEXT` / `RANDOM` are only applied on create and are not compared. Unit tests cover the mismatch rules and run-arg construction; complex test `tests/complex/test-connect-run-port/` exercises create, match, refuse, accept-existing, `NEXT`, and ephemeral teardown. See `docs/BOOTH_CONNECT.md`.
+- **`booth build` now expands variant aliases, so it works for the configs `booth config` writes.**
+  The variant names the base image tag, and only the canonical names (`base`, `codeserver`,
+  `desktop-xfce`, …) are published — the aliases (`xfce`, `ide`, `desktop`, `console`, …) are expanded
+  by `ValidateVariant` before the tag is assembled. The run path did that; `booth build` never called
+  it, and passed the alias through raw. A project whose `config.toml` says `variant = "xfce"` — which
+  is exactly what `booth config --variant xfce` writes — therefore failed with
+  `nawaman/codingbooth:xfce-<version>: not found` on the `FROM` line, while `booth run` on the same
+  project built fine. An unknown variant is now refused by `booth build` too, rather than handed to
+  docker as a bogus tag.
 
 - **A booth no longer generates a config docker refuses to start.** Docker cannot bind one host
   port twice — it fails the container with `address already in use` — and run-args grew duplicates

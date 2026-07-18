@@ -137,6 +137,10 @@ func buildBooth(version string) {
 		runArgs,
 	})
 
+	// Expand variant aliases (xfce -> desktop-xfce, ide -> codeserver, ...) as the run path
+	// does. The variant names the base image tag, and only the canonical names are published.
+	ctx = booth.ValidateVariant(ctx)
+
 	// Resolve the Boothfile content for hashing
 	codePath := ctx.Code()
 	if codePath == "" {
