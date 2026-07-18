@@ -42,8 +42,11 @@ func (runner *BoothRunner) Run() error {
 	ctx = PrepareRunMode(ctx)
 	ctx = FilterMissingVolumeMounts(ctx)
 	ctx = PrepareBoothTmp(ctx)
-	// ApplyEnvFile runs after PrepareBoothTmp so the expanded env file we
-	// write into .booth/.tmp/ is not wiped by the start-of-run cleanup.
+	// WritePortManifest and ApplyEnvFile both run after PrepareBoothTmp so the
+	// files they write into .booth/.tmp/ are not wiped by the start-of-run
+	// cleanup. WritePortManifest also relies on the port steps above having
+	// resolved every mapping to a concrete host port.
+	ctx = WritePortManifest(ctx)
 	ctx = ApplyEnvFile(ctx)
 	ctx = PrepareCommonArgs(ctx)
 	if err := ensureContainerNameAvailable(ctx); err != nil {

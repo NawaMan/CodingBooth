@@ -14,15 +14,18 @@
 
 set -euo pipefail
 
-TUNNEL_DIR="$HOME/code/.booth/.tmp/tcp-tunnels"
+TMP_DIR="$HOME/code/.booth/.tmp"
+TUNNEL_DIR="$TMP_DIR/tcp-tunnels"
+MANIFEST_FILE="$TMP_DIR/ports.json"
 CONFIG_FILE="$HOME/code/.booth/config.toml"
 
 # --- Usage ---
 usage() {
     cat >&2 <<'EOF'
 Usage: booth--expose <container-port> [external-port] [--permanent]
+       booth--expose list
 
-Create a TCP tunnel through the booth port.
+Create a TCP tunnel through the booth port, or list the booth's ports.
 
 Arguments:
   container-port   Port of the service running inside the container (required)
@@ -33,14 +36,104 @@ Arguments:
 Options:
   --permanent      Save tunnel to .booth/config.toml (requires --writable-booth)
 
+Subcommands:
+  list             Show published ports, runtime tunnels, and listening services
+
 Examples:
   booth--expose 8080               # host:8080 -> container:8080
   booth--expose 8080 18080         # host:18080 -> container:8080
   booth--expose 8080 +8080         # host:<booth-port>+8080 -> container:8080
   booth--expose 5432 --permanent   # same, but persisted across restarts
+  booth--expose list               # what is published and what is listening
 EOF
     exit 1
 }
+
+# --- List: published ports (manifest) + runtime tunnels + listening services ---
+#
+# Combines three sources from inside the container:
+#   - the run-time manifest .booth/.tmp/ports.json  (what the host publishes)
+#   - the runtime tunnels    .booth/.tmp/tcp-tunnels (what booth--expose opened)
+#   - `ss -tlnp`             (what is actually listening, and which process)
+# so a port shows its host mapping (if any), whether it is serving, and the app.
+expose_list() {
+    # Map listening container ports -> process name. `ss -p` only names the
+    # caller's own processes, so we read as coder first (names user services like
+    # jupyter/node/code-server) and then, if available, as root to fill in any
+    # still-unnamed ports. Every listening port is recorded ("-" until named) so
+    # internal-only services still show up.
+    declare -A LISTEN_PROC
+    gather_ss() {
+        local out local_addr port proc name
+        out="$("$@" -H -tlnp 2>/dev/null || true)"
+        while read -r _state _rq _sq local_addr _peer proc; do
+            [[ -z "$local_addr" ]] && continue
+            port="${local_addr##*:}"
+            [[ "$port" =~ ^[0-9]+$ ]] || continue
+            [[ -z "${LISTEN_PROC[$port]:-}" ]] && LISTEN_PROC["$port"]="-"
+            name="$(printf '%s' "$proc" | grep -oP '\("\K[^"]+' | head -1 || true)"
+            [[ -n "$name" ]] && LISTEN_PROC["$port"]="$name"
+        done <<< "$out"
+        return 0
+    }
+    gather_ss ss
+    if command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then
+        gather_ss sudo ss
+    fi
+
+    printf '%-9s %-22s %-5s %-11s %-7s %s\n' CONTAINER HOST PROTO KIND STATUS SERVER
+
+    declare -A SHOWN  # container ports already printed, so ss-only rows don't repeat
+
+    # 1. Published ports from the manifest.
+    if [[ -f "$MANIFEST_FILE" ]] && command -v jq >/dev/null 2>&1; then
+        local cport ip hport proto source kind host status server
+        while IFS=$'\t' read -r cport ip hport proto source; do
+            [[ -z "$cport" ]] && continue
+            # host_ip is coalesced in jq below; keep these as belt-and-suspenders.
+            [[ -z "$ip" || "$ip" == "null" ]] && ip="0.0.0.0"
+            [[ -z "$proto" || "$proto" == "null" ]] && proto="tcp"
+            kind="published"
+            [[ "$source" == *"front door"* ]] && kind="front door"
+            host="${ip}:${hport}"
+            if [[ -n "${LISTEN_PROC[$cport]:-}" ]]; then
+                status="up"; server="${LISTEN_PROC[$cport]}"
+            else
+                status="DOWN"; server="-"
+            fi
+            printf '%-9s %-22s %-5s %-11s %-7s %s\n' "$cport" "$host" "$proto" "$kind" "$status" "$server"
+            SHOWN["$cport"]=1
+            # Coalesce host_ip (omitted for wildcard binds) so no @tsv field is
+            # empty — a tab IFS would otherwise collapse it and shift the columns.
+        done < <(jq -r '.published[] | [.container_port, (.host_ip // "0.0.0.0"), .host_port, (.proto // "tcp"), .source] | @tsv' "$MANIFEST_FILE" 2>/dev/null)
+    fi
+
+    # 2. Runtime tunnels.
+    if [[ -d "$TUNNEL_DIR" ]]; then
+        local f cport ext server
+        for f in "$TUNNEL_DIR"/*; do
+            [[ -f "$f" ]] || continue
+            cport="$(basename "$f")"
+            [[ "$cport" =~ ^[0-9]+$ ]] || continue
+            ext="$(tr -d '[:space:]' < "$f")"
+            server="${LISTEN_PROC[$cport]:-"-"}"
+            printf '%-9s %-22s %-5s %-11s %-7s %s\n' "$cport" "127.0.0.1:${ext}" tcp tunnel up "$server"
+            SHOWN["$cport"]=1
+        done
+    fi
+
+    # 3. Listening ports that are neither published nor tunneled (internal only).
+    local p
+    for p in "${!LISTEN_PROC[@]}"; do
+        [[ -n "${SHOWN[$p]:-}" ]] && continue
+        printf '%-9s %-22s %-5s %-11s %-7s %s\n' "$p" "-" tcp internal up "${LISTEN_PROC[$p]}"
+    done | sort -n
+}
+
+if [[ "${1:-}" == "list" || "${1:-}" == "ls" ]]; then
+    expose_list
+    exit 0
+fi
 
 # --- Parse args ---
 CONTAINER_PORT=""

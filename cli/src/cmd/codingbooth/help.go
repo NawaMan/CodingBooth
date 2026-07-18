@@ -51,6 +51,7 @@ OTHER COMMANDS:
   HOME VOL  | Manage persisted home volumes    | home-volume-list, home-volume-export, home-volume-import [Experimental] | docs/BOOTH_HOME.md
   CONNECT   | Connect to a running booth       | shell, exec                                                             | docs/BOOTH_CONNECT.md
   MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md
+  EXPOSE    | Inspect a booth's ports          | expose list                                                             | docs/BOOTH_EXPOSE.md
   PROJECT   | Set up and scaffold new projects | example, config, template                                               | docs/BOOTH_EXAMPLE.md
 
 Run '%s --help <command>'   for command-specific help.
@@ -79,6 +80,7 @@ USAGE:
   %s prune [--yes]                             (remove stopped booth containers)
   %s shell [--name <n>] [--shell <s>]          (open interactive shell in booth)
   %s exec [--name <n>] -- <command>            (run a command in a running booth)
+  %s expose list [--name <n>]                  (list a booth's published ports)
   %s example <subcommand>                      (manage examples)
   %s template <subcommand>                     (browse and manage templates)
   %s config [path] [options]                    (configure a new or existing .booth/ project)
@@ -185,7 +187,7 @@ EXAMPLES:
   %s --env-file none --variant notebook
 `,
 		s, version,
-		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
+		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
@@ -476,6 +478,31 @@ EXAMPLES:
 `, s, s, s, s, s, s, s, s, s)
 }
 
+func showHelpExpose() {
+	s := scriptName()
+	fmt.Printf(`%s expose — inspect the ports a booth publishes
+
+USAGE:  %s expose list [name] [--name <n>]
+
+Lists, for a running booth, the ports reachable from the host: the booth front
+door, any published (-p) ports, and any runtime tunnels opened with
+booth--expose. Each row shows the container port, the host binding, its kind,
+and whether it is actually bound (confirmed against 'docker port'). With no
+name, the booth for the current directory is used.
+
+The source of truth is the run-time manifest .booth/.tmp/ports.json; when it is
+absent (e.g. an older booth), the live 'docker port' view is used instead.
+
+Inside a booth, 'booth--expose list' shows the same ports plus which process is
+listening on each — including internal-only services that are not published.
+
+EXAMPLES:
+  %s expose list
+  %s expose list demo
+  %s expose list --name demo
+`, s, s, s, s, s)
+}
+
 func showHelpEmitDockerfile() {
 	s := scriptName()
 	fmt.Printf(`%s emit-dockerfile — compile Boothfile to Dockerfile
@@ -567,6 +594,8 @@ func dispatchHelp(args []string, version string) {
 			showHelpShell()
 		case "exec":
 			showHelpExec()
+		case "expose":
+			showHelpExpose()
 		case "emit-dockerfile":
 			showHelpEmitDockerfile()
 		case "home-volume-list":

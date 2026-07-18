@@ -64,6 +64,9 @@ func main() {
 		case "message":
 			messageBooth(version)
 			return
+		case "expose":
+			exposeBooth(version)
+			return
 		case "example":
 			runExample(version)
 			return

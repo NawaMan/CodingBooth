@@ -18,7 +18,7 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
 fi
 
 # Just check the USAGE section - the full help is ~98 lines
-ACTUAL=$(run_coding_booth help | head -31)
+ACTUAL=$(run_coding_booth help | head -32)
 
 HERE="$PWD"
 VERSION="$(get_booth_version)"
@@ -52,6 +52,7 @@ OTHER COMMANDS:
   HOME VOL  | Manage persisted home volumes    | home-volume-list, home-volume-export, home-volume-import [Experimental] | docs/BOOTH_HOME.md
   CONNECT   | Connect to a running booth       | shell, exec                                                             | docs/BOOTH_CONNECT.md
   MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md
+  EXPOSE    | Inspect a booth's ports          | expose list                                                             | docs/BOOTH_EXPOSE.md
   PROJECT   | Set up and scaffold new projects | example, config, template                                               | docs/BOOTH_EXAMPLE.md
 
 Run 'codingbooth --help <command>'   for command-specific help."

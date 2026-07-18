@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **List a booth's ports, from either side.** `booth expose list` (host) reports every
+  port a booth publishes — the front door, published `-p` ports, and runtime tunnels — and
+  confirms each against `docker port`. Inside a booth, `booth--expose list` shows the same
+  ports plus which process is listening on each (from `ss`), including internal-only services
+  that are not published. Both read a new run-time manifest, `.booth/.tmp/ports.json`, written
+  by the run pipeline after the ports are resolved; when it is absent (an older booth) the host
+  command falls back to the live `docker port` view. See `docs/BOOTH_EXPOSE.md`.
+
 - **A host-env expose port can fall back to a booth-relative offset: `${SERVER_PORT:-+300}:1234`.**
   The two host-side forms now compose. Previously a `${NAME:-default}` fallback had to be a fixed
   number, so a published port was either env-overridable (`${SERVER_PORT:-12345}`) or booth-relative

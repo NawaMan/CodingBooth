@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --variant xfce --expose 13000 --env GEOMETRY=1920x1080 --env GOOGLE_APPLICATION_CREDENTIALS=/home/coder/.config/gcloud/application_default_credentials.json --env GNOME_KEYRING_CONTROL= --env GNOME_KEYRING_PID= --env SSH_AUTH_SOCK= --mount ~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro --mount ~/.antigravity:/etc/cb-home-seed/.antigravity:ro --mount ~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro --mount ~/.config/github-copilot:/etc/cb-home-seed/.config/github-copilot:ro --mount ~/.claude/settings.json:/etc/cb-home-seed/.claude/settings.json:ro --mount ~/.codex/auth.json:/etc/cb-home-seed/.codex/auth.json:ro --select go:1.25.4+vscode-ext/python:3.12+pip-config+vscode-ext+pip-pkg:matplotlib,psycopg2-binary/java+vscode-ext+kernel-jjava+m2+maven+gradle+jbang/nodejs:20+npmrc+vscode-ext/postgresql/notebook+autostart/bash-nb-kernel/pycharm/dbeaver/claude-code+credential+settings-cache
+# Configured by: booth config --no-tui --overwrite --variant xfce --expose 13000 --env GEOMETRY=1920x1080 --env GOOGLE_APPLICATION_CREDENTIALS=/home/coder/.config/gcloud/application_default_credentials.json --env GNOME_KEYRING_CONTROL= --env GNOME_KEYRING_PID= --env SSH_AUTH_SOCK= --mount ~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro --mount ~/.antigravity:/etc/cb-home-seed/.antigravity:ro --mount ~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro --mount ~/.config/github-copilot:/etc/cb-home-seed/.config/github-copilot:ro --mount ~/.claude/settings.json:/etc/cb-home-seed/.claude/settings.json:ro --mount ~/.codex/auth.json:/etc/cb-home-seed/.codex/auth.json:ro --select go:1.25.4+vscode-ext/python:3.12+pip-config+vscode-ext+pip-pkg:matplotlib,psycopg2-binary/java+vscode-ext+kernel-jjava+m2+maven+gradle+jbang/nodejs:20+npmrc+vscode-ext/postgresql/notebook+expose:${NOTEBOOK_PORT:-+8888}+autostart/bash-nb-kernel/pycharm/dbeaver/claude-code+credential+settings-cache
 
 variant = "xfce"
 
@@ -8,6 +8,7 @@ run-args = [
     "-v", "$HOME/.m2:/home/coder/.m2",
     "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
     "-v", "booth-pgdata:/var/lib/postgresql",
+    "-p", "${NOTEBOOK_PORT:-+8888}:18888",
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
     "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",
     "--publish", "13000:13000",

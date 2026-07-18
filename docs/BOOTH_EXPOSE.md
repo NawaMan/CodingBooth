@@ -23,6 +23,7 @@ Back to [README](../README.md)
 - [How It Works](#how-it-works)
 - [Port Syntax](#port-syntax)
 - [Ephemeral vs Permanent](#ephemeral-vs-permanent)
+- [Listing ports](#listing-ports)
 - [Relationship to -p and --expose](#relationship-to--p-and---expose)
 - [Security](#security)
 - [Limitations](#limitations)
@@ -160,6 +161,64 @@ You can also add tunnel configurations directly to `.booth/config.toml`:
 ```
 
 These tunnels activate automatically on every booth start. If a host port is unavailable, the tunnel is skipped with a warning — the booth start is not blocked.
+
+---
+
+## Listing ports
+
+Two commands report what a booth exposes and where — one from the host, one from
+inside the booth. They read the same run-time manifest (`.booth/.tmp/ports.json`,
+written when the booth starts) plus the live runtime tunnels, so both sides agree
+on the mappings; each then adds what only its vantage point can see.
+
+### From the host: `booth expose list`
+
+Shows every port the booth publishes to the host — the booth front door, any
+published (`-p`) ports, and any runtime tunnels — and confirms each against
+`docker port` (the `LIVE` column). With no name, the booth for the current
+directory is used.
+
+```bash
+booth expose list                 # the current directory's booth
+booth expose list demo            # a booth by name
+booth expose list --name demo
+```
+
+```
+CONTAINER  HOST             PROTO  KIND        LIVE  SOURCE
+10000      127.0.0.1:11000  tcp    front door  yes   booth front door
+13000      0.0.0.0:13000    tcp    published   yes   published (-p)
+18888      0.0.0.0:19888    tcp    published   yes   published (-p)
+5432       127.0.0.1:5432   tcp    tunnel      yes   booth--expose
+```
+
+If the manifest is absent (an older booth, or one brought up with `docker
+start`), the live `docker port` view is used instead — the mappings still show,
+just without their `SOURCE` labels.
+
+### From inside the booth: `booth--expose list`
+
+Shows the same published ports and tunnels, and adds — from `ss` — **which
+process is listening** on each port and whether it is actually up. It also
+surfaces **internal-only** services that are listening but not published to the
+host (a good way to discover a port worth `booth--expose`-ing).
+
+```bash
+booth--expose list
+```
+
+```
+CONTAINER HOST                   PROTO KIND        STATUS  SERVER
+10000     127.0.0.1:11000        tcp   front door  up      nginx
+13000     0.0.0.0:13000          tcp   published   up      node
+18888     0.0.0.0:19888          tcp   published   up      jupyter-lab
+5432      127.0.0.1:5432         tcp   tunnel      up      -
+10099     -                      tcp   internal    up      websockify
+```
+
+A `SERVER` of `-` means the process is owned by another user and `ss` could not
+name it; a `KIND` of `internal` with no `HOST` means the service listens inside
+the container but is not published to the host.
 
 ---
 

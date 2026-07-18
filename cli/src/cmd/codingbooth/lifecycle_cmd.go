@@ -47,6 +47,10 @@ func messageBooth(_ string) {
 	handleLifecycleErr(lifecycle.Message(os.Args[2:], os.Stdout, os.Stderr))
 }
 
+func exposeBooth(_ string) {
+	handleLifecycleErr(lifecycle.Expose(os.Args[2:], os.Stdout, os.Stderr))
+}
+
 func listHomeVolumes(_ string) {
 	handleLifecycleErr(lifecycle.ListHomeVolume(os.Args[2:], os.Stdout, os.Stderr))
 }
