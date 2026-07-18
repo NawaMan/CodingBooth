@@ -31,6 +31,9 @@ apt-get update
 apt-get install -y --no-install-recommends inkscape
 rm -rf /var/lib/apt/lists/*
 
+# Register an Inkscape desktop icon (no-ops on non-desktop variants).
+cb-desktop-icon.sh inkscape
+
 INSTALLED_VERSION=$(inkscape --version 2>/dev/null | head -1 || echo "unknown")
 echo ""
 echo "✅ Inkscape installed."

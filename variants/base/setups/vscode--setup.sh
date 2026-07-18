@@ -120,18 +120,8 @@ if [[ -f /usr/share/applications/code.desktop ]]; then
   sed -i 's#^Exec=.*#Exec=/usr/local/bin/code %F#' /usr/share/applications/code.desktop || true
 fi
 
-# Desktop shortcut: drop a VS Code icon on the desktop for GUI (desktop) variants.
-# Mirrors dbeaver--setup.sh — the launcher goes into /etc/skel/Desktop so that
-# `useradd -m` (booth-entry) seeds it into each user's ~/Desktop. Guarded by
-# cb-has-desktop.sh so any non-desktop caller simply no-ops.
-SCRIPT_DIR="$(dirname "$0")"
-if [[ -f /usr/share/applications/code.desktop ]] \
-   && "$SCRIPT_DIR/cb-has-desktop.sh"; then
-  mkdir -p /etc/skel/Desktop
-  cp /usr/share/applications/code.desktop /etc/skel/Desktop/code.desktop
-  chmod 755 /etc/skel/Desktop/code.desktop
-  echo "✅ VS Code desktop shortcut added to /etc/skel/Desktop"
-fi
+# Register a VS Code desktop icon (no-ops on non-desktop variants).
+cb-desktop-icon.sh code.desktop
 
 echo "✅ VS Code configured to use --no-sandbox by default"
 echo "✅ Environment prepared for Jupyter notebooks + Bash kernel"

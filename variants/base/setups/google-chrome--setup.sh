@@ -71,3 +71,6 @@ update-alternatives --install /usr/bin/x-www-browser x-www-browser /usr/local/bi
 update-alternatives --set                            x-www-browser /usr/local/bin/google-chrome || true
 
 echo "✅ Google Chrome set as the default Web Browser (x-www-browser)"
+
+# Register a Google Chrome desktop icon (no-ops on non-desktop variants).
+cb-desktop-icon.sh google-chrome.desktop

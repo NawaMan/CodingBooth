@@ -31,6 +31,9 @@ apt-get update
 apt-get install -y --no-install-recommends gimp
 rm -rf /var/lib/apt/lists/*
 
+# Register a GIMP desktop icon (no-ops on non-desktop variants).
+cb-desktop-icon.sh gimp
+
 INSTALLED_VERSION=$(gimp --version 2>/dev/null | head -1 || echo "unknown")
 echo ""
 echo "✅ GIMP installed."

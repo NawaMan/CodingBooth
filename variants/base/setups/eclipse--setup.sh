@@ -206,6 +206,11 @@ chmod 0644 "${DESKTOP_FILE}"
 command -v update-desktop-database >/dev/null 2>&1 && \
   update-desktop-database /usr/share/applications || true
 
+# Register an Eclipse desktop icon (no-ops on non-desktop variants).
+if [[ "${INCLUDE_SKEL}" == "1" ]]; then
+  cb-desktop-icon.sh "${DESKTOP_FILE}"
+fi
+
 echo
 echo "✅ Eclipse installed at: ${INSTALL_DIR}"
 echo "▶ Canonical starter:     ${STARTER_FILE}"

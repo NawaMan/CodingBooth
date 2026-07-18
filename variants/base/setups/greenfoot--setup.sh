@@ -80,6 +80,8 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- summary ----
 echo ""
+# Register a Greenfoot desktop icon (no-ops on non-desktop variants).
+cb-desktop-icon.sh greenfoot
 echo "✅ Greenfoot installed."
 echo "   Version: ${GREENFOOT_VERSION}"
 echo ""

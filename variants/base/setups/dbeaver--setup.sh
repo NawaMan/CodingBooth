@@ -69,13 +69,8 @@ rm -f "$DEB_FILE"
 rm -rf /var/lib/apt/lists/*
 
 # ---- desktop shortcut ----
-DESKTOP_FILE_SRC="/usr/share/applications/dbeaver-ce.desktop"
-if [[ -f "$DESKTOP_FILE_SRC" ]]; then
-  # Create desktop shortcut for all users
-  mkdir -p /etc/skel/Desktop
-  cp "$DESKTOP_FILE_SRC" /etc/skel/Desktop/
-  chmod 755 /etc/skel/Desktop/dbeaver-ce.desktop
-fi
+# Register the DBeaver desktop icon (no-ops on non-desktop variants).
+cb-desktop-icon.sh dbeaver-ce.desktop
 
 # ---- summary ----
 INSTALLED_VERSION=$(dbeaver-ce --version 2>/dev/null || dpkg -s dbeaver-ce 2>/dev/null | grep '^Version:' | cut -d' ' -f2 || echo "$DBEAVER_VERSION")

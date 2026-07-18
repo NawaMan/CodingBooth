@@ -82,3 +82,6 @@ rm -f /etc/apt/sources.list.d/debian-bookworm.list
 rm -f /etc/apt/apt.conf.d/99default-release
 apt-get update
 echo "🧹 Cleaned up Debian repos; system back to Ubuntu-only."
+
+# Register a Chromium desktop icon (no-ops on non-desktop variants).
+cb-desktop-icon.sh chromium.desktop

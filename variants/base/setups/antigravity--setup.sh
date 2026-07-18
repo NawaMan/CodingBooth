@@ -62,6 +62,9 @@ if [[ -f "$DESKTOP_FILE" ]]; then
   sed -i 's|Exec=/usr/share/antigravity/antigravity|Exec=/usr/bin/antigravity|g' "$DESKTOP_FILE"
 fi
 
+# Register an Antigravity desktop icon (no-ops on non-desktop variants).
+cb-desktop-icon.sh antigravity.desktop
+
 echo ""
 echo "Antigravity installed successfully!"
 echo "  Binary:  ${ANTIGRAVITY_NEW_BIN}"

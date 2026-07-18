@@ -99,3 +99,6 @@ if [[ "$current" != "/usr/local/bin/google-chrome" ]]; then
 else
   echo "ℹ️ Chrome already the default; Firefox registered with lower priority."
 fi
+
+# Register a Firefox desktop icon (no-ops on non-desktop variants).
+cb-desktop-icon.sh firefox

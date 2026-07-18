@@ -319,6 +319,24 @@ INFO
 EOF
 chmod 0644 "${PROFILE_FILE}"
 
+# ---- desktop launcher trust (pcmanfm-qt / libfm-qt) ----
+# pcmanfm-qt flags every ~/Desktop launcher with an "untrusted" emblem and asks
+# to confirm before running, until the launcher is marked trusted. libfm-qt
+# stores that trust as the GIO metadata attribute metadata::trusted, which must
+# be set *before* the desktop renders (setting it afterwards does not refresh the
+# emblem). start-lxqt's xstartup runs this from inside the session D-Bus, just
+# before startlxqt launches the pcmanfm-qt desktop.
+cat > /usr/local/bin/cb-lxqt-trust-icons <<'EOF'
+#!/bin/bash
+command -v gio >/dev/null 2>&1 || exit 0
+shopt -s nullglob
+for f in "$HOME"/Desktop/*.desktop; do
+  gio set "$f" metadata::trusted true 2>/dev/null || true
+done
+exit 0
+EOF
+chmod 0755 /usr/local/bin/cb-lxqt-trust-icons
+
 # ---- start-lxqt ----
 cat > /usr/local/bin/start-lxqt <<'EOF'
 #!/usr/bin/env bash
@@ -407,7 +425,9 @@ if [[ ! -x "$XSTART" ]]; then
 unset SESSION_MANAGER
 unset DBUS_SESSION_BUS_ADDRESS
 xsetroot -solid grey
-exec dbus-launch --exit-with-session startlxqt
+# Mark ~/Desktop launchers trusted (inside the session bus) before the desktop
+# renders, so pcmanfm-qt shows no "untrusted launcher" emblem / prompt.
+exec dbus-launch --exit-with-session sh -c 'cb-lxqt-trust-icons; exec startlxqt'
 XEOF
   chmod +x "$XSTART"
 fi

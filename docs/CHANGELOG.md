@@ -5,6 +5,24 @@ This file contains a list of changes for each released version.
 ## Unreleased
 
 - **`shell` / `exec` accept create-time `--port` and fail on mismatch by default.** With `--run`, a missing booth is created via `booth run --daemon`, and `--port` (number, `NEXT`, or `RANDOM`) is forwarded so the new booth gets the host UI port you asked for — same for `--name` / `--keep-alive` as before. Against an **existing** booth, an explicit numeric `--port` is a contract: if it does not match the published host port, the command **refuses to connect** (so scripts do not run against the wrong environment). Pass **`--accept-existing`** to connect anyway with a warning on stderr. Symbolic `--port NEXT` / `RANDOM` are only applied on create and are not compared. Unit tests cover the mismatch rules and run-arg construction; complex test `tests/complex/test-connect-run-port/` exercises create, match, refuse, accept-existing, `NEXT`, and ephemeral teardown. See `docs/BOOTH_CONNECT.md`.
+- **Desktop apps now appear as icons on the graphical desktop.** On the XFCE, KDE, and LXQt
+  variants, every selected GUI application — VS Code, the JetBrains IDEs, DBeaver, Firefox, Chrome,
+  Chromium, GIMP, Inkscape, LibreOffice, Obsidian, Eclipse, Antigravity, Thonny, BlueJ, Greenfoot —
+  drops a launcher on the desktop that runs on double-click. On XFCE the icons are laid out
+  top-centre, spreading left and right as more are added; the Wayland (labwc) variant draws no icon
+  surface, so each app becomes a button on the waybar panel instead. A setup registers its launcher
+  by calling `cb-desktop-icon <app>`, which copies the matching `.desktop` into `/etc/skel/Desktop`;
+  `booth-entry` seeds that directory into each user's `~/Desktop`, and both the XFCE arrangement and
+  the Wayland panel derive their app list from it, so one registry drives every variant.
+
+- **Three fixes made those launchers actually work.** `cb-has-desktop.sh` now recognises labwc (and
+  the other wlroots compositors), so desktop-only setups such as PyCharm and DBeaver install on the
+  Wayland variant instead of silently skipping. The VS Code launcher wrapper no longer hard-codes
+  `DISPLAY=:1`; it honours the session's display — `:0` (Xwayland) on Wayland, `:1` (VNC) elsewhere —
+  so clicking VS Code opens it rather than failing to find a display. And on LXQt, `~/Desktop`
+  launchers are marked trusted (`gio set … metadata::trusted`) before the pcmanfm-qt desktop renders,
+  so they no longer carry an "untrusted" emblem or ask for confirmation on first launch.
+
 - **`booth build` now expands variant aliases, so it works for the configs `booth config` writes.**
   The variant names the base image tag, and only the canonical names (`base`, `codeserver`,
   `desktop-xfce`, …) are published — the aliases (`xfce`, `ide`, `desktop`, `console`, …) are expanded

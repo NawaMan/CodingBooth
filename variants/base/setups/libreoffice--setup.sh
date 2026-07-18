@@ -31,6 +31,9 @@ apt-get update
 apt-get install -y --no-install-recommends libreoffice
 rm -rf /var/lib/apt/lists/*
 
+# Register a LibreOffice desktop icon (the Start Center; no-ops off-desktop).
+cb-desktop-icon.sh libreoffice-startcenter.desktop
+
 INSTALLED_VERSION=$(libreoffice --version 2>/dev/null | head -1 || echo "unknown")
 echo ""
 echo "✅ LibreOffice installed."

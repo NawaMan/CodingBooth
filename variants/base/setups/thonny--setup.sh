@@ -43,6 +43,8 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- summary ----
 echo ""
+# Register a Thonny desktop icon (no-ops on non-desktop variants).
+cb-desktop-icon.sh thonny
 echo "✅ Thonny installed."
 echo -n "   thonny → "; thonny --version 2>/dev/null || true
 echo ""

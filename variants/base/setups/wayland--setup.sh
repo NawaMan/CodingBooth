@@ -118,35 +118,34 @@ waybar &
 foot &
 AUTO
 # minimal waybar (panel): the wofi app-launcher button plus one pinned launcher
-# button per installed GUI IDE. labwc/swaybg draws no desktop-icon surface, so
-# these panel buttons are the Wayland equivalent of a desktop icon.
+# button per registered desktop app. labwc/swaybg draws no desktop-icon surface,
+# so these panel buttons are the Wayland equivalent of a desktop icon.
 mkdir -p "$HOME/.config/waybar"
 
-# Pinned launchers. Each entry is "Label|candidate commands…"; the first command
-# found in PATH is used, and apps that aren't installed are skipped — so the panel
-# always matches what the booth actually has. Add rows here for more apps.
-_cb_apps=(
-  "VS Code|code"
-  "PyCharm|pycharm"
-  "DBeaver|dbeaver-ce dbeaver"
-)
-
+# The app set is /etc/skel/Desktop — the same registry that seeds ~/Desktop on
+# the icon-based desktops, populated by cb-desktop-icon.sh at build time. Each
+# launcher becomes a button (label = its Name=, click = gtk-launch <id>), so the
+# panel automatically tracks whatever GUI apps the booth selected.
+_reg_dir=/etc/skel/Desktop
 _modules='"custom/apps"'
 _defs='"custom/apps": { "format": "  Apps", "on-click": "wofi --show drun", "tooltip": false }'
 _style=""
 _idx=0
-for _entry in "${_cb_apps[@]}"; do
-  _label="${_entry%%|*}"
-  _cmd=""
-  for _c in ${_entry#*|}; do command -v "$_c" >/dev/null 2>&1 && { _cmd="$_c"; break; }; done
-  [ -n "$_cmd" ] || continue
+shopt -s nullglob
+for _f in "$_reg_dir"/*.desktop; do
+  _id="$(basename "$_f" .desktop)"
+  _label="$(sed -n 's/^Name=//p' "$_f" | head -1)"
+  [ -n "$_label" ] || _label="$_id"
+  # JSON-escape backslashes then double-quotes in the label.
+  _label="${_label//\\/\\\\}"; _label="${_label//\"/\\\"}"
   _key="app${_idx}"; _idx=$((_idx + 1))
   _modules="${_modules}, \"custom/${_key}\""
   _defs="${_defs},
-  \"custom/${_key}\": { \"format\": \"${_label}\", \"on-click\": \"${_cmd}\", \"tooltip\": false }"
+  \"custom/${_key}\": { \"format\": \"${_label}\", \"on-click\": \"gtk-launch ${_id}\", \"tooltip\": false }"
   _style="${_style}#custom-${_key} { padding: 0 12px; }
 "
 done
+shopt -u nullglob
 
 cat > "$HOME/.config/waybar/config.jsonc" <<BAR
 {

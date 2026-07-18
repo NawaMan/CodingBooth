@@ -153,6 +153,8 @@ update-desktop-database /usr/share/applications 2>/dev/null || true
 
 # ---- summary ----
 echo ""
+# Register an Obsidian desktop icon (no-ops on non-desktop variants).
+cb-desktop-icon.sh obsidian.desktop
 echo "✅ Obsidian installed."
 echo "   Version:  ${OBSIDIAN_VERSION}"
 echo "   Location: ${OBSIDIAN_DIR}/squashfs-root/"

@@ -72,6 +72,8 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- summary ----
 echo ""
+# Register a BlueJ desktop icon (no-ops on non-desktop variants).
+cb-desktop-icon.sh bluej
 echo "✅ BlueJ installed."
 echo "   Version: ${BLUEJ_VERSION}"
 echo ""
