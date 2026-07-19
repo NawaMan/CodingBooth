@@ -1,5 +1,5 @@
 # Configured by: booth config --no-tui --overwrite --port 10000 --select python~pip-config~vscode-ext/shell-history/claude-code~credential~settings-cache/antigravity~credential
 
-port = "10000"
+port = "NEXT:10000"
 
 run-args = ["-e", "PYTHONDONTWRITEBYTECODE=1"]

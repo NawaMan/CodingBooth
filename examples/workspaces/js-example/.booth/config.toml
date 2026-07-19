@@ -8,6 +8,6 @@ run-args = [
     "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
     "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",
 
-    "-p", "3000:3000",   # API server - this can be removed if you don't want API to be accessible outside of the container.
-    "-p", "5173:5173"    # Vite dev server
+    "-p", "+-7000:3000",   # API server - this can be removed if you don't want API to be accessible outside of the container.
+    "-p", "+-4827:5173"    # Vite dev server
 ]

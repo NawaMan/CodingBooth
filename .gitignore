@@ -104,6 +104,8 @@ prj--*--recipe.txt
 **/obj/
 **/.Dockerfile.generated
 **/.booth/.tmp/
+# Generated at booth run time (e.g. egress/envoy.generated.yaml, codingbooth.lock).
+**/.booth/tools/
 
 playground/
 
