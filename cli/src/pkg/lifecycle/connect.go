@@ -73,7 +73,7 @@ func Shell(args []string, stderr io.Writer) error {
 	defer stopCleanupSignalWatch()
 
 	// Build docker exec args
-	execArgs := buildExecFlags(true, *dir, envVars, *envfile)
+	execArgs := buildExecFlags(true, false, *dir, envVars, *envfile)
 
 	// Container name
 	execArgs = append(execArgs, ilist.NewList(target.Name))
@@ -102,6 +102,8 @@ func Exec(args []string, stderr io.Writer) error {
 	name := flagSet.String("name", "", "Container name")
 	dir := flagSet.String("dir", "", "Working directory inside the container")
 	interactive := flagSet.Bool("it", false, "Force interactive mode with TTY")
+	daemon := flagSet.Bool("daemon", false, "Run the command detached; return immediately without its output or exit code")
+	flagSet.BoolVar(daemon, "d", false, "Run the command detached")
 	envfile := flagSet.String("envfile", "", "Load environment variables from a file")
 	run := flagSet.Bool("run", false, "Run the booth first if it is not already running")
 	keepAlive := flagSet.Bool("keep-alive", false, "Keep a booth started by --run running afterwards")
@@ -119,6 +121,10 @@ func Exec(args []string, stderr io.Writer) error {
 		return commandExit(1, "Error: no command specified. Usage: booth exec <name> -- <command>")
 	}
 
+	if err := checkDaemonCompatibility(*daemon, *interactive, *run, *keepAlive); err != nil {
+		return err
+	}
+
 	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting}
 	target, cleanup, err := resolveConnectTarget(*name, positional, *run, *keepAlive, create, stderr)
 	if err != nil {
@@ -128,8 +134,16 @@ func Exec(args []string, stderr io.Writer) error {
 	stopCleanupSignalWatch := watchSignalsForCleanup(cleanup)
 	defer stopCleanupSignalWatch()
 
+	if *daemon && !*keepAlive && isEphemeral(target.Name) {
+		return commandExit(1, fmt.Sprintf(
+			"Error: booth %q is ephemeral: it is stopped once the last session leaves, which would kill the detached command.\n"+
+				"       Re-run with --keep-alive to keep the booth (and the command) alive.",
+			target.Name,
+		))
+	}
+
 	// Build docker exec args
-	execArgs := buildExecFlags(*interactive, *dir, envVars, *envfile)
+	execArgs := buildExecFlags(*interactive, *daemon, *dir, envVars, *envfile)
 
 	// Container name
 	execArgs = append(execArgs, ilist.NewList(target.Name))
@@ -139,6 +153,25 @@ func Exec(args []string, stderr io.Writer) error {
 
 	if err := docker.Docker(docker.DockerFlags{Silent: false}, "exec", ilist.NewList(execArgs...)); err != nil {
 		return forwardExitCode("exec", target.Name, err)
+	}
+	return nil
+}
+
+// checkDaemonCompatibility rejects --daemon combinations that cannot do what the
+// user asked. Detaching means docker returns as soon as the command starts, so
+// there is no stream to attach a TTY to (-it), and a booth this session would
+// tear down on return (--run without --keep-alive) would kill the very command
+// that was detached to outlive it. Pure for unit tests.
+func checkDaemonCompatibility(daemon, interactive, run, keepAlive bool) error {
+	if !daemon {
+		return nil
+	}
+	if interactive {
+		return commandExit(2, "Error: --daemon cannot be combined with -it: a detached command has no terminal to attach to.")
+	}
+	if run && !keepAlive {
+		return commandExit(2, "Error: --daemon with --run requires --keep-alive.\n"+
+			"       Without it the booth is stopped as soon as exec returns, killing the detached command.")
 	}
 	return nil
 }
@@ -637,11 +670,14 @@ func waitForBoothReady(containerName string) error {
 // buildExecFlags constructs the common docker exec flags for both shell and exec.
 
 // buildExecFlags constructs the common docker exec flags for both shell and exec.
-func buildExecFlags(interactive bool, dir string, envVars stringSliceFlag, envfile string) []ilist.List[string] {
+func buildExecFlags(interactive, daemon bool, dir string, envVars stringSliceFlag, envfile string) []ilist.List[string] {
 	var execArgs []ilist.List[string]
 
-	// TTY flags
-	if interactive && docker.HasInteractiveTTY() {
+	// Detached: docker returns as soon as the command is started, so no stream
+	// attachment (and no TTY) makes sense alongside it.
+	if daemon {
+		execArgs = append(execArgs, ilist.NewList("-d"))
+	} else if interactive && docker.HasInteractiveTTY() {
 		execArgs = append(execArgs, ilist.NewList("-it"))
 	} else if interactive {
 		execArgs = append(execArgs, ilist.NewList("-i"))

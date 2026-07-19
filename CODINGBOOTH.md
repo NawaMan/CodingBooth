@@ -435,8 +435,9 @@ Inside the booth, the **Idle Pause/Disable chip** in the web UI lets users pause
 Attach to a running booth without SSH:
 
 ```bash
-booth shell                  # interactive shell
-booth exec <cmd> [args...]   # run a single command
+booth shell                      # interactive shell
+booth exec <cmd> [args...]       # run a single command
+booth exec --daemon -- <cmd>     # start a command in the background and return
 ```
 
 See **[booth connect](docs/BOOTH_CONNECT.md)**.

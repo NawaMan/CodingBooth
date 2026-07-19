@@ -7,6 +7,8 @@ package lifecycle
 import (
 	"strings"
 	"testing"
+
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 func TestReadConfirmation(t *testing.T) {
@@ -397,5 +399,56 @@ func TestNewlyCreatedContainer(t *testing.T) {
 	)
 	if _, err := newlyCreatedContainer(pre, postMulti); err == nil {
 		t.Error("expected error when multiple new containers appeared")
+	}
+}
+
+func TestBuildExecFlagsDaemon(t *testing.T) {
+	got := flattenExecFlags(buildExecFlags(false, true, "", nil, ""))
+	want := []string{"-d", "-u", "coder", "-w", "/home/coder/code"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("daemon buildExecFlags = %v, want %v", got, want)
+	}
+
+	// Detach wins over any stream attachment; the rest of the flags still apply.
+	got = flattenExecFlags(buildExecFlags(true, true, "/tmp", stringSliceFlag{"FOO=bar"}, ""))
+	want = []string{"-d", "-u", "coder", "-w", "/tmp", "-e", "FOO=bar"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("daemon+interactive buildExecFlags = %v, want %v", got, want)
+	}
+
+	// Without --daemon nothing changes.
+	got = flattenExecFlags(buildExecFlags(false, false, "", nil, ""))
+	want = []string{"-u", "coder", "-w", "/home/coder/code"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("plain buildExecFlags = %v, want %v", got, want)
+	}
+}
+
+func flattenExecFlags(lists []ilist.List[string]) []string {
+	var out []string
+	for _, list := range lists {
+		out = append(out, list.Slice()...)
+	}
+	return out
+}
+
+func TestCheckDaemonCompatibility(t *testing.T) {
+	tests := []struct {
+		name                           string
+		daemon, interactive, run, keep bool
+		wantErr                        bool
+	}{
+		{name: "no daemon is always fine", daemon: false, interactive: true, run: true},
+		{name: "daemon alone", daemon: true},
+		{name: "daemon with -it", daemon: true, interactive: true, wantErr: true},
+		{name: "daemon with --run alone", daemon: true, run: true, wantErr: true},
+		{name: "daemon with --run --keep-alive", daemon: true, run: true, keep: true},
+		{name: "daemon with --keep-alive only", daemon: true, keep: true},
+	}
+	for _, test := range tests {
+		err := checkDaemonCompatibility(test.daemon, test.interactive, test.run, test.keep)
+		if (err != nil) != test.wantErr {
+			t.Fatalf("%s: checkDaemonCompatibility err = %v, wantErr %v", test.name, err, test.wantErr)
+		}
 	}
 }

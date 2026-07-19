@@ -108,6 +108,7 @@ Everything after `--` is executed inside the container. The exit code is forward
 ./booth exec myproject -e FOO=bar -- env                 # set an environment variable
 ./booth exec myproject --envfile .env -- env             # load variables from a file
 ./booth exec myproject --dir /tmp -- ls                  # run command in a specific directory
+./booth exec myproject --daemon -- ./watch.sh            # start it in the background, return now
 ./booth exec myproject --run -- make test                # run the booth first if not running
 ./booth exec myproject --run --keep-alive -- make test   # ...and leave it running
 ./booth exec myproject --run --port 9000 -- make test    # create (if needed) on port 9000
@@ -117,6 +118,7 @@ Everything after `--` is executed inside the container. The exit code is forward
 | Flag                         | Description                                                                 |
 |------------------------------|-----------------------------------------------------------------------------|
 | `-it`                        | Force interactive mode with TTY (default: non-interactive)                  |
+| `--daemon`, `-d`             | Start the command detached and return immediately (see [Detached commands](#detached-commands)) |
 | `--run`                      | Run the booth first if it is not already running                            |
 | `--keep-alive`               | With `--run`, leave the booth running after the command finishes            |
 | `--port <n\|NEXT\|RANDOM>`   | Host port when **creating** a missing booth; asserted against existing ones |
@@ -136,6 +138,31 @@ echo $?   # 0 if the file exists, 1 if not
 ```
 
 This makes `exec` suitable for scripting and CI pipelines.
+
+### Detached commands
+
+`--daemon` (`-d`) starts the command inside the booth and returns immediately, leaving it running in the background:
+
+```bash
+./booth exec myproject --daemon -- bash -c './server >/tmp/server.log 2>&1'
+./booth exec myproject -- tail -f /tmp/server.log   # check on it later
+```
+
+What you trade away is the result. Because `exec` returns before the command finishes:
+
+- **No output** is streamed back — redirect to a file inside the container if you want to keep it.
+- **No exit code** is forwarded. `booth exec --daemon` exits `0` when the command was *started*, which says nothing about whether it succeeded.
+
+Two combinations are refused rather than silently doing the wrong thing:
+
+| Combination | Why it fails |
+|---|---|
+| `--daemon -it` | A detached command has no terminal to attach to. |
+| `--daemon --run` without `--keep-alive` | The booth would be stopped as soon as `exec` returns, killing the command that was detached to outlive it. |
+
+The same reasoning applies to a booth an earlier `--run` left ephemeral: `--daemon` against one fails unless `--keep-alive` is given, since the next session to leave would take the booth — and the detached command — down with it.
+
+The detached command shares the booth's lifetime, not `exec`'s: stopping or removing the booth stops it too.
 
 ---
 

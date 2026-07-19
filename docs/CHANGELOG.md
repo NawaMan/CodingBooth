@@ -4,6 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth exec` accepts `--daemon` (`-d`) to start a command detached.**
+  The command is started inside the booth and `exec` returns immediately, so long-running things
+  (a dev server, a watcher, a build daemon) can be launched without holding the terminal:
+  `booth exec myproject --daemon -- bash -c './server >/tmp/server.log 2>&1'`. Detaching trades away
+  the result — no output is streamed back and the command's exit code is not forwarded, so `exec`
+  exits `0` once the command has *started*; redirect output inside the container to keep it. Two
+  combinations are refused rather than silently misbehaving: `--daemon -it` (a detached command has
+  no terminal to attach to) and `--daemon --run` without `--keep-alive` (the booth would be stopped
+  the moment `exec` returns, killing the command that was detached to outlive it). The same check
+  applies to a booth an earlier `--run` left ephemeral. `booth shell` is unaffected — detaching an
+  interactive shell has no meaning.
+
 - **The default container name auto-suffixes with the port on collision instead of failing.**
   Running the same project twice used to error (`container name "myproj" already exists`). Now the
   first booth keeps the stable folder-derived name (`myproj`) and a second concurrent booth of the

@@ -459,6 +459,7 @@ OPTIONS:
   --name <n>           Container name
   --dir <path>         Working directory (default: /home/coder/code)
   -it                  Force interactive mode with TTY
+  --daemon, -d         Run the command detached and return immediately
   --run                Run the booth first if it is not already running
   --keep-alive         With --run, leave the booth running afterwards
   --port <n|NEXT|RANDOM>
@@ -473,15 +474,22 @@ brought up by --run is stopped again when the command finishes, unless
 Create-intent flags like --port apply only when a booth is created; against an
 existing booth a mismatch fails unless --accept-existing is set.
 
+--daemon starts the command in the background and returns at once: nothing is
+streamed back and the command's exit code is not forwarded (exec exits 0 if the
+command was started). Redirect output inside the container to keep it. It cannot
+be combined with -it, and with --run it requires --keep-alive — otherwise the
+booth would be stopped on return, killing the detached command.
+
 EXAMPLES:
   %s exec myproject -- make test
   %s exec myproject -e FOO=bar -- env
   %s exec myproject --dir /tmp -- ls
+  %s exec myproject --daemon -- bash -c './server >/tmp/server.log 2>&1'
   %s exec myproject --run -- make test
   %s exec myproject --run --keep-alive -- make test
   %s exec myproject --run --port 9000 -- make test
   %s exec myproject --port 9000 --accept-existing -- make test
-`, s, s, s, s, s, s, s, s, s)
+`, s, s, s, s, s, s, s, s, s, s)
 }
 
 func showHelpExpose() {

@@ -165,3 +165,40 @@ else
   print_test_result "false" "$0" "6" "Working directory via --dir flag (got: $ACTUAL)"
   exit 1
 fi
+
+# -------------------------------------------------------
+# Test 7: --daemon detaches and returns immediately
+# -------------------------------------------------------
+DAEMON_FLAG=/tmp/booth-exec-daemon-flag
+run_booth exec "$NAME" --daemon -- bash -c "sleep 2; echo detached-ok > $DAEMON_FLAG"
+
+# Must have returned before the command finished.
+if docker exec "$NAME" test -f "$DAEMON_FLAG"; then
+  print_test_result "false" "$0" "7" "--daemon returned only after the command finished"
+  exit 1
+fi
+
+for _ in $(seq 1 20); do
+  docker exec "$NAME" test -f "$DAEMON_FLAG" && break
+  sleep 1
+done
+ACTUAL=$(docker exec "$NAME" cat "$DAEMON_FLAG" 2>/dev/null || true)
+if [[ "$ACTUAL" == *"detached-ok"* ]]; then
+  print_test_result "true" "$0" "7" "Detached command via --daemon"
+else
+  print_test_result "false" "$0" "7" "Detached command via --daemon (got: $ACTUAL)"
+  exit 1
+fi
+
+# -------------------------------------------------------
+# Test 8: --daemon rejects incompatible combinations
+# -------------------------------------------------------
+if run_booth exec "$NAME" --daemon -it -- true 2>/dev/null; then
+  print_test_result "false" "$0" "8" "--daemon -it should be rejected"
+  exit 1
+fi
+if run_booth exec "$NAME" --daemon --run -- true 2>/dev/null; then
+  print_test_result "false" "$0" "8" "--daemon --run without --keep-alive should be rejected"
+  exit 1
+fi
+print_test_result "true" "$0" "8" "--daemon rejects -it and --run without --keep-alive"
