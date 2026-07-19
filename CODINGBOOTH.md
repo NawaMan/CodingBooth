@@ -599,9 +599,11 @@ The image's *capability* (Java? Python? VS Code? AI tools?) comes from ~186 buil
 
 | Artifact          | Path                                                       | Runs as / when                          |
 |-------------------|------------------------------------------------------------|-----------------------------------------|
-| Startup script    | `/usr/share/startup.d/<LEVEL>-cb-<name>--startup.sh`       | `coder` user, container start, idempotent |
+| Startup script    | `/usr/share/startup.d/<LEVEL>-cb-<name>--startup.sh`       | `coder` user, container start, idempotent, non-fatal |
 | Profile script    | `/etc/profile.d/<LEVEL>-cb-<name>--profile.sh`             | Every shell                             |
 | Starter wrapper   | `/usr/local/bin/<name>`                                    | When the user invokes the tool          |
+
+Startup scripts run before the user's command under `set -euo pipefail`, so a non-zero exit takes the whole booth down — for every user, over a tool most of them never touch. A setup that cannot complete must be skipped, not fatal. See **[Startup Script](docs/BOOTH_CUSTOMIZATION.md#1-startup-script)** for the rule and its two footguns (git repo discovery, absent tools).
 
 `<LEVEL>` orders execution:
 

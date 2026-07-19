@@ -138,6 +138,21 @@ touch "$SENTINEL"
 
 Startup scripts must be **idempotent** — the container may be stopped and restarted, so the script runs again each time. Use sentinel files to guard expensive operations.
 
+Startup scripts must also **never abort the container**. They run before the user's command, under `set -euo pipefail`, and a non-zero exit takes the whole booth down — so a booth fails to start for every user, over a tool most of them never touch. A convenience that cannot be set up should be skipped, not fatal: let it fail at the moment the user reaches for it.
+
+```bash
+# Wrong -- no token means no booth, for everyone.
+[ -n "$MYTOOL_TOKEN" ] || { echo "MYTOOL_TOKEN not set"; exit 1; }
+
+# Right -- skip the setup; `mytool` reports the missing token when actually used.
+[ -n "$MYTOOL_TOKEN" ] || { echo "MYTOOL_TOKEN not set -- skipping." >&2; exit 0; }
+```
+
+Two footguns worth calling out specifically:
+
+- **`git` does repo discovery before every subcommand**, including `git config --global`, which needs no repo at all. If the workspace `.git` is a dangling gitfile — a **git worktree** or **submodule** whose real git dir is outside the mount — *any* git call from the workspace exits `128`. Run git from `/` (the only directory with no possible `.git` ancestor) when the command does not need the repo: `(cd / && git config --global ...) || true`.
+- **Assume the tool may be absent.** Guard with `command -v <tool> >/dev/null 2>&1 || exit 0` rather than assuming a variant ships it.
+
 #### 2. Profile Script
 
 **Path:** `/etc/profile.d/<LEVEL>-cb-<name>--profile.sh`

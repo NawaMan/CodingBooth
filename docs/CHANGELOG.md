@@ -4,6 +4,27 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A booth on a git worktree (or submodule) now starts.**
+  The base image installs a `git lg` convenience alias at container start. Git runs repo discovery
+  before *every* subcommand — including `git config --global`, which needs no repo — so in a
+  workspace whose `.git` is a dangling gitfile (a worktree or submodule, whose real git dir lives
+  outside the mount) that alias exited `128`. Under `set -euo pipefail` it took the entrypoint with
+  it, and the booth died before running anything: not the user's command, not `.booth/startup.sh`,
+  not a build. `booth exec --run -- echo hello` failed with `did not become ready in time` and a
+  container `Exited (128)`. The alias is now guarded — skipped when git is absent, run from `/`
+  (the only directory with no possible `.git` ancestor) otherwise, and never fatal.
+
+- **Removed the unused `variants/base/setups/libs/git-on-token.sh`.**
+  It configured git identity and a `gh` credential helper from `GH_TOKEN`, but had no callers
+  anywhere in the repo. It also carried the same startup-fatal hazards described above — unguarded
+  `git config --global` calls plus `exit 1` on a missing or invalid token — so wiring it in as-is
+  would have prevented the booth from starting for any user without GitHub credentials. Removed
+  rather than repaired, since nothing used it.
+
+  Note this makes the booth *start* on a worktree; it does not make git *work* inside one. The
+  parent repo's `.git/worktrees/<name>` is still outside the mount, so in-booth `git status`,
+  `lazygit`, and `gh` will not find the repo. Full worktree support is a separate change.
+
 - **`booth exec` accepts `--daemon` (`-d`) to start a command detached.**
   The command is started inside the booth and `exec` returns immediately, so long-running things
   (a dev server, a watcher, a build daemon) can be launched without holding the terminal:
