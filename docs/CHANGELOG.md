@@ -4,6 +4,37 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The default container name auto-suffixes with the port on collision instead of failing.**
+  Running the same project twice used to error (`container name "myproj" already exists`). Now the
+  first booth keeps the stable folder-derived name (`myproj`) and a second concurrent booth of the
+  same project auto-falls back to `myproj-<port>` — no extra flags, and the port is already unique
+  because `--port` defaults to `NEXT`. The stable base name stays with the first booth, so no-argument
+  lifecycle commands (`booth stop` / `remove` / `restart`) still target it. This applies only to the
+  derived default name; an **explicit** `--name` remains a contract that errors on collision (use a
+  `{project}-{port}` placeholder when you want an explicit-but-unique name).
+
+- **`--port NEXT` / `RANDOM` can start from a chosen base: `NEXT:<base>` / `RANDOM:<base>`.**
+  Both symbolic port modes previously always scanned from 10000; now an optional `:base` suffix
+  moves the starting point, e.g. `--port NEXT:20000` picks the first free port ≥ 20000 and
+  `--port RANDOM:20000` a random free one ≥ 20000 (still stepping by 1000). `NEXT` is unchanged and
+  equals `NEXT:10000`. This lets related projects claim separate, predictable port bands while still
+  auto-avoiding collisions. `<base>` is validated 1–65535; a malformed base is a clear error. The
+  `:base` forms remain create-only symbolic values, so `exec`/`shell --run --port NEXT:20000` is not
+  asserted against an existing booth's port.
+
+- **`--name` accepts `{port}` / `{project}` / `{variant}` placeholders, resolved after port
+  selection.** Running several booths of the same project used to collide on the container name
+  (it defaults to the folder name) even when `--port NEXT` avoided the port collision — you had to
+  hand-pick a port and thread it into `--name` yourself (`PORT=12000 booth --port $PORT --name gp$PORT`).
+  Now the name can follow the auto-picked port: `booth --port NEXT --name '{project}-{port}'` picks a
+  free port and names the container `myproj-12000` in one command, so a second run lands on
+  `myproj-13000` with no collision on either axis. The template is stored literally (so
+  `name = "{project}-{port}"` in `config.toml` re-resolves every run) and expanded in the run pipeline
+  right after `PortDetermination`; literal characters that are not Docker-name-safe are replaced with
+  `-`. It mirrors how booth-relative `+OFFSET` publishes let service ports follow the booth port. Works
+  through `booth exec`/`shell --run` too: because the resolved name is only known after the run, the
+  created container is located by diffing the booth set before and after.
+
 - **List a booth's ports, from either side.** `booth expose list` (host) reports every
   port a booth publishes — the front door, published `-p` ports, and runtime tunnels — and
   confirms each against `docker port`. Inside a booth, `booth--expose list` shows the same

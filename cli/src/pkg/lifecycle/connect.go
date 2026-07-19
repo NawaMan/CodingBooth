@@ -53,7 +53,7 @@ func Shell(args []string, stderr io.Writer) error {
 	envfile := flagSet.String("envfile", "", "Load environment variables from a file")
 	run := flagSet.Bool("run", false, "Run the booth first if it is not already running")
 	keepAlive := flagSet.Bool("keep-alive", false, "Keep a booth started by --run running afterwards")
-	port := flagSet.String("port", "", "With --run, host port for a newly created booth (number, NEXT, or RANDOM)")
+	port := flagSet.String("port", "", "With --run, host port for a newly created booth (number, NEXT[:base], or RANDOM[:base])")
 	acceptExisting := flagSet.Bool("accept-existing", false, "Connect to an existing booth even if create flags (e.g. --port) do not match")
 	var envVars stringSliceFlag
 	flagSet.Var(&envVars, "e", "Set environment variable (repeatable)")
@@ -105,7 +105,7 @@ func Exec(args []string, stderr io.Writer) error {
 	envfile := flagSet.String("envfile", "", "Load environment variables from a file")
 	run := flagSet.Bool("run", false, "Run the booth first if it is not already running")
 	keepAlive := flagSet.Bool("keep-alive", false, "Keep a booth started by --run running afterwards")
-	port := flagSet.String("port", "", "With --run, host port for a newly created booth (number, NEXT, or RANDOM)")
+	port := flagSet.String("port", "", "With --run, host port for a newly created booth (number, NEXT[:base], or RANDOM[:base])")
 	acceptExisting := flagSet.Bool("accept-existing", false, "Connect to an existing booth even if create flags (e.g. --port) do not match")
 	var envVars stringSliceFlag
 	flagSet.Var(&envVars, "e", "Set environment variable (repeatable)")
@@ -216,7 +216,7 @@ func resolveConnectTarget(name string, positional []string, run, keepAlive bool,
 		}
 
 	case connectRun:
-		created, err := runConnectTarget(name, positional, keepAlive, create, stderr)
+		created, err := runConnectTarget(name, positional, keepAlive, create, containers, stderr)
 		if err != nil {
 			return managedContainer{}, noCleanup, err
 		}
@@ -278,8 +278,14 @@ func isComparablePort(port string) bool {
 	if port == "" {
 		return false
 	}
-	upper := strings.ToUpper(port)
-	if upper == "NEXT" || upper == "RANDOM" {
+	// NEXT / RANDOM — with or without a ":base" suffix — are create-only symbolic
+	// values; they resolve to a concrete port at run time and cannot be asserted
+	// against an existing booth.
+	keyword := strings.ToUpper(port)
+	if before, _, found := strings.Cut(port, ":"); found {
+		keyword = strings.ToUpper(before)
+	}
+	if keyword == "NEXT" || keyword == "RANDOM" {
 		return false
 	}
 	// Numeric (and any other explicit token users might pass) is comparable.
@@ -375,7 +381,13 @@ func connectPlan(containers []managedContainer, name string, positional []string
 // new booth is created with --keep-alive so it persists across a later stop.
 // Create-intent flags (e.g. --port) are forwarded so a shell/exec --run create
 // matches an equivalent booth run.
-func runConnectTarget(name string, positional []string, keepAlive bool, create connectCreateOpts, stderr io.Writer) (managedContainer, error) {
+//
+// preRun is the set of managed booths that existed before the run; it lets us
+// identify the container the run just created by set difference. This matters
+// when --name carries a placeholder template (e.g. '{project}-{port}'): the
+// resolved name is only known after the run, so we cannot look it up by the
+// literal flag value.
+func runConnectTarget(name string, positional []string, keepAlive bool, create connectCreateOpts, preRun []managedContainer, stderr io.Writer) (managedContainer, error) {
 	self, err := os.Executable()
 	if err != nil {
 		return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to locate booth executable: %v", err))
@@ -407,9 +419,15 @@ func runConnectTarget(name string, positional []string, keepAlive bool, create c
 	}
 
 	var target managedContainer
-	if explicitName != "" {
+	switch {
+	case strings.Contains(explicitName, "{"):
+		// A placeholder template (e.g. '{project}-{port}') resolves to a concrete
+		// name only inside the run. Identify the container the run just created by
+		// diffing against the booths that existed before it.
+		target, err = newlyCreatedContainer(preRun, containers)
+	case explicitName != "":
 		target, err = resolveSingleContainer(containers, explicitName, "", nil, stateRunning)
-	} else {
+	default:
 		cwd, cwdErr := os.Getwd()
 		if cwdErr != nil {
 			return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to determine working directory: %v", cwdErr))
@@ -424,6 +442,38 @@ func runConnectTarget(name string, positional []string, keepAlive bool, create c
 		return managedContainer{}, err
 	}
 	return target, nil
+}
+
+// newlyCreatedContainer returns the single running booth present in postRun but
+// absent from preRun — the one the just-completed `booth run` created. It is used
+// when --name is a placeholder template, so the resolved name is not known in
+// advance. An unambiguous single new booth is required; anything else is an error
+// (the caller cannot safely guess which container to connect to).
+func newlyCreatedContainer(preRun, postRun []managedContainer) (managedContainer, error) {
+	existing := make(map[string]bool, len(preRun))
+	for _, c := range preRun {
+		existing[c.Name] = true
+	}
+
+	var created []managedContainer
+	for _, c := range postRun {
+		if !existing[c.Name] && c.State == "running" {
+			created = append(created, c)
+		}
+	}
+
+	switch len(created) {
+	case 1:
+		return created[0], nil
+	case 0:
+		return managedContainer{}, errors.New("Error: the booth was created but no new running container was found to connect to")
+	default:
+		names := make([]string, len(created))
+		for i, c := range created {
+			names[i] = c.Name
+		}
+		return managedContainer{}, fmt.Errorf("Error: could not identify the newly created booth (multiple appeared: %s)", strings.Join(names, ", "))
+	}
 }
 
 // stopBoothQuietly tears a booth down by shelling out to `booth stop`, which

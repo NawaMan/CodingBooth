@@ -74,7 +74,59 @@ The container name defaults to a sanitized version of the current folder name. I
 - **Configuration file:** `.booth/config.toml`
 - **CLI option:** `--name <name>`
 
-> Using unique container names helps avoid conflicts when running multiple booth instances simultaneously.
+### Auto-suffix on collision
+
+When the default (folder-derived) name is **already in use**, booth does not fail —
+it automatically appends the resolved host port, so a second booth of the same
+project gets a unique name without any extra flags:
+
+```bash
+~/myproj $ ./booth          # container: myproj
+~/myproj $ ./booth          # 'myproj' taken → container: myproj-12000
+```
+
+The **stable base name stays with the first booth**, so no-argument lifecycle
+commands keep targeting it:
+
+```bash
+~/myproj $ ./booth stop            # stops 'myproj' (the first)
+~/myproj $ ./booth stop myproj-12000   # stop the second explicitly
+```
+
+Auto-suffix applies only to the derived default name. An **explicit** `--name`
+is a contract: if the name you asked for is taken, booth errors rather than
+silently renaming. Use a [placeholder](#name-placeholders) template (e.g.
+`--name '{project}-{port}'`) when you want an explicit name that is still unique.
+
+### Name placeholders
+
+The name may contain `{…}` placeholders that are expanded **after** the port is
+chosen, so a name can follow an auto-picked port:
+
+| Placeholder | Expands to |
+|-------------|------------|
+| `{port}`    | the resolved host port (e.g. `12000`) |
+| `{project}` | the sanitized project name (folder-derived) |
+| `{variant}` | the variant name (e.g. `base`, `codeserver`) |
+
+Because `{port}` is resolved after port selection, it pairs with `--port NEXT`
+(or `RANDOM`) to give both a unique port **and** a matching unique name in one
+command — the recommended way to run several booths of the same project:
+
+```bash
+./booth --port NEXT --name '{project}-{port}'
+# picks a free port (say 12000) → container "myproj-12000"
+
+./booth --port NEXT --name '{project}-{port}'   # again, in another terminal
+# picks 13000 → container "myproj-13000" — no --name / --port collision
+```
+
+The template is stored literally, so setting it once in `.booth/config.toml`
+(`name = "{project}-{port}"`) re-resolves on every run. Characters that are not
+Docker-name-safe in the literal parts of the template are replaced with `-`.
+
+> **Quote the value** (`'{project}-{port}'`) so your shell does not try to
+> interpret the braces.
 
 ---
 
@@ -321,10 +373,24 @@ The container exposes port 10000. If that port is unavailable, it tries 10001, 1
 
 The value can be:
 - A fixed number (`8080`)
-- `NEXT` — find the next available port (1000 increment)
+- `NEXT` — find the next available port (1000 increment from 10000)
 - `RANDOM` — assign a random open port (1000 increment from 10000)
+- `NEXT:<base>` — like `NEXT`, but start scanning from `<base>` instead of 10000
+- `RANDOM:<base>` — like `RANDOM`, but pick from ports at or above `<base>`
 
-> When running multiple booths at once, use `--port NEXT` to avoid conflicts automatically.
+```bash
+./booth --port NEXT          # first free port ≥ 10000
+./booth --port NEXT:20000    # first free port ≥ 20000
+./booth --port RANDOM:20000  # random free port ≥ 20000
+```
+
+`<base>` is any port in 1–65535 (it need not be a multiple of 1000; scanning then
+steps by 1000 from that base). `NEXT` is exactly `NEXT:10000`.
+
+> When running multiple booths at once, use `--port NEXT` to avoid conflicts
+> automatically. Give related projects their own ranges with `NEXT:<base>` (e.g.
+> one project on `NEXT:20000`, another on `NEXT:30000`) so their auto-picked
+> ports stay in separate, predictable bands.
 
 ---
 

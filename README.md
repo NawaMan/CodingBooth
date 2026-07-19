@@ -211,8 +211,8 @@ booth [flags] [-- command...]
 | Flag                 | Description                                                                      |
 |----------------------|----------------------------------------------------------------------------------|
 | `--variant <name>`   | Select container variant (base, notebook, codeserver, desktop-xfce, desktop-kde, desktop-lxqt) |
-| `--port <port>`      | Host port mapping (number, NEXT, or RANDOM)                                      |
-| `--name <name>`      | Set container name                                                               |
+| `--port <port>`      | Host port mapping (number, `NEXT[:base]`, or `RANDOM[:base]`)                    |
+| `--name <name>`      | Set container name (supports `{port}` / `{project}` / `{variant}` placeholders)  |
 | `--build-arg <arg>`  | Pass build argument to Docker                                                    |
 | `-v <host:container>`| Bind mount a file or folder into the container                                   |
 | `--`                 | Separator: everything after runs as a command inside the container                |
@@ -448,7 +448,16 @@ booth --port 10001
 
 # Or let CodingBooth find the next available port
 booth --port NEXT
+
+# ...starting the search from a chosen base
+booth --port NEXT:20000
 ```
+
+> **Running several booths of the same project?** Just run `booth` again — the port
+> auto-advances (`--port` defaults to `NEXT`) and the container name auto-suffixes
+> with the port on collision (`myproj` → `myproj-12000`). For an explicit unique
+> name use a placeholder: `booth --name '{project}-{port}'`.
+> See [booth run](docs/BOOTH_RUN.md#ports).
 
 ### "Container exits immediately"
 

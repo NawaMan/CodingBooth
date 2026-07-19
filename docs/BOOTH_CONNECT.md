@@ -177,6 +177,12 @@ When `--run` is given, the booth is made available in whatever way is needed:
 
 On create, create-time flags such as **`--port`** and **`--name`** are forwarded to that run (along with **`--keep-alive`** when set), so the booth matches an equivalent `booth run` invocation.
 
+`--name` accepts the same `{port}` / `{project}` / `{variant}` placeholders as `booth run` (see [Container Name](BOOTH_RUN.md#name-placeholders)). Combined with `--port NEXT`, this creates a uniquely named, non-colliding booth in one command — `exec` connects to the resolved container even though its final name is only known after the run:
+
+```bash
+./booth exec --port NEXT --name '{project}-{port}' --run -- ./dev-run.sh
+```
+
 A short note is printed to **stderr**, and the new booth's startup output also goes to stderr, so `exec`'s **stdout stays clean** for scripting. `shell`/`exec` then wait for the booth's `coder` user alignment to finish before connecting, so the first command never races container startup.
 
 > **Why this matters:** a normal booth that is stopped is *removed* (only `--keep-alive` booths persist as stopped containers). So "the booth is not running" usually means "there is no container" — and `--run` recreates it from the workspace config rather than failing.

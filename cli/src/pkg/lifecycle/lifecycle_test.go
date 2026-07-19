@@ -225,6 +225,9 @@ func TestIsComparablePort(t *testing.T) {
 	if isComparablePort("NEXT") || isComparablePort("next") || isComparablePort("RANDOM") {
 		t.Fatal("NEXT/RANDOM should not be comparable")
 	}
+	if isComparablePort("NEXT:20000") || isComparablePort("random:30000") {
+		t.Fatal("NEXT:base/RANDOM:base should not be comparable")
+	}
 	if isComparablePort("") {
 		t.Fatal("empty port should not be comparable")
 	}
@@ -354,5 +357,45 @@ func TestHostPortFromInspect(t *testing.T) {
 	}
 	if got := hostPortFromInspect(data); got != "443" {
 		t.Fatalf("public TLS port = %q, want 443", got)
+	}
+}
+
+func TestNewlyCreatedContainer(t *testing.T) {
+	pre := []managedContainer{
+		{Name: "myproj-10000", State: "running"},
+		{Name: "other", State: "running"},
+	}
+
+	// Exactly one new running booth appeared.
+	post := append([]managedContainer{}, pre...)
+	post = append(post, managedContainer{Name: "myproj-11000", State: "running"})
+	got, err := newlyCreatedContainer(pre, post)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.Name != "myproj-11000" {
+		t.Errorf("got %q, want myproj-11000", got.Name)
+	}
+
+	// No new running booth -> error.
+	if _, err := newlyCreatedContainer(pre, pre); err == nil {
+		t.Error("expected error when no new container appeared")
+	}
+
+	// A new booth that is not running is ignored -> treated as none.
+	postStopped := append([]managedContainer{}, pre...)
+	postStopped = append(postStopped, managedContainer{Name: "myproj-11000", State: "created"})
+	if _, err := newlyCreatedContainer(pre, postStopped); err == nil {
+		t.Error("expected error when the only new container is not running")
+	}
+
+	// Multiple new running booths -> ambiguous error.
+	postMulti := append([]managedContainer{}, pre...)
+	postMulti = append(postMulti,
+		managedContainer{Name: "myproj-11000", State: "running"},
+		managedContainer{Name: "myproj-12000", State: "running"},
+	)
+	if _, err := newlyCreatedContainer(pre, postMulti); err == nil {
+		t.Error("expected error when multiple new containers appeared")
 	}
 }

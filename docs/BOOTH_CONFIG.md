@@ -367,7 +367,7 @@ Recipe files are plain text with the same DSL syntax — one template per line.
 | `--no-tui`                 | Non-interactive CLI mode                                       |
 | `--dryrun`                 | Preview what would be generated without writing files           |
 | `--variant <name>`         | Set variant (default, console, terminal, base, notebook, codeserver, xfce, kde) |
-| `--port <port>`            | Set port in generated config.toml (number, NEXT, RANDOM)       |
+| `--port <port>`            | Set port in generated config.toml (number, NEXT[:base], RANDOM[:base]) |
 | `--cmd <command>`          | Set the default start command (repeatable)                     |
 | `--expose <port>`          | Expose extra port (HOST:CONTAINER, +OFFSET, or host-side `${NAME:-digits}`; produces long-form `--publish` in run-args; repeatable) |
 | `--env <KEY=VALUE>`        | Set container environment variable (produces long-form `--env` in run-args to distinguish from template-contributed `-e`; repeatable) |

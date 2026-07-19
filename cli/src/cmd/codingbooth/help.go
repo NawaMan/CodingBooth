@@ -32,7 +32,7 @@ USAGE:
 OPTIONS
   --build-arg <KEY=VAL>   Add a Docker build-arg which customize the booth image.
   --variant <name>        Prebuilt variant: base | notebook | codeserver | xfce | kde | lxqt | wayland
-  --port <n|RANDOM|NEXT>  Host port → container 10000
+  --port <n|RANDOM|NEXT>  Host port → container 10000 (NEXT/RANDOM accept :base)
   --daemon                Run the booth in the background
   --dind                  Enable a Docker-in-Docker sidecar
   --public                Bind to all interfaces with password authentication
@@ -130,10 +130,15 @@ BUILD OPTIONS (only when using --dockerfile):
 
 RUNTIME OPTIONS:
   --name <container>     Container name (default: inferred from code directory)
+                         Placeholders expand after port selection:
+                         {port} {project} {variant}
+                         e.g. --port NEXT --name '{project}-{port}'
   --port <n|RANDOM|NEXT> Host port → container 10000
-                         n      : any valid TCP port (1–65535)
-                         RANDOM : pick a random free port ≥ 10000
-                         NEXT   : pick the next available free port ≥ 10000
+                         n           : any valid TCP port (1–65535)
+                         RANDOM       : pick a random free port ≥ 10000
+                         NEXT         : pick the next free port ≥ 10000
+                         NEXT:<base>  : next free port ≥ base (e.g. NEXT:20000)
+                         RANDOM:<base>: random free port ≥ base
   --env-file <file>      Provide an --env-file to docker run
                          Use 'none' to disable env-file loading
                          .booth/.env is always included when present (must be gitignored)
@@ -230,7 +235,8 @@ BUILD OPTIONS (only with --dockerfile):
 
 RUNTIME OPTIONS:
   --name <container>     Container name (default: inferred from code directory)
-  --port <n|RANDOM|NEXT> Host port → container 10000
+                         Supports {port} {project} {variant} placeholders
+  --port <n|RANDOM|NEXT> Host port → container 10000 (NEXT/RANDOM accept :base)
   --env-file <file>      Env-file for docker run (use 'none' to disable)
   --startup <command>    Custom startup command inside the container
 

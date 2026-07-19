@@ -34,6 +34,15 @@ func (runner *BoothRunner) Run() error {
 	ctx = ValidateVariant(ctx)
 	ctx = EnsureDockerImage(ctx)
 	ctx = PortDetermination(ctx)
+	ctx = ResolveNamePlaceholders(ctx)
+	// Finalize the container name (and auto-suffix a colliding default) BEFORE the
+	// name is consumed: sidecar names (DinD/egress), run args, and the port manifest
+	// all read ctx.Name() below, so the final value must be settled here.
+	newCtx, err := EnsureContainerName(ctx)
+	if err != nil {
+		return err
+	}
+	ctx = newCtx
 	ctx = ResolveRelativePorts(ctx)
 	ctx = NormalizePortMappings(ctx)
 	ctx = ShowDebugBanner(ctx)
@@ -49,45 +58,96 @@ func (runner *BoothRunner) Run() error {
 	ctx = WritePortManifest(ctx)
 	ctx = ApplyEnvFile(ctx)
 	ctx = PrepareCommonArgs(ctx)
-	if err := ensureContainerNameAvailable(ctx); err != nil {
-		return err
-	}
 
 	// Create booth with prepared context and run
 	booth := NewBooth(ctx)
 	return booth.Run(ctx.RunMode())
 }
 
-func ensureContainerNameAvailable(ctx appctx.AppContext) error {
+// EnsureContainerName settles the final container name and guarantees it does not
+// collide with an existing container.
+//
+//   - Free name → used as-is.
+//   - A taken name that is just the derived project default (the user did not pick
+//     a specific one) auto-falls back to "<name>-<port>", so running the same
+//     project again does not collide — the port is unique, and the stable base name
+//     stays with the first booth. See resolveUniqueName for the decision logic.
+//   - A taken name the user chose explicitly is a contract: a collision is an error.
+func EnsureContainerName(ctx appctx.AppContext) (appctx.AppContext, error) {
+	name := ctx.Name()
+	if name == "" {
+		name = ctx.ProjectName()
+	}
+
+	final, suffixed, err := resolveUniqueName(name, ctx.ProjectName(), ctx.PortNumber(), func(candidate string) (bool, error) {
+		return containerNameTaken(ctx, candidate)
+	})
+	if err != nil {
+		return ctx, err
+	}
+	if suffixed {
+		// Informational only, and to stderr so a `booth -- cmd` run keeps stdout clean.
+		fmt.Fprintf(os.Stderr, "ℹ️  Booth %q already exists; using %q for this instance.\n", name, final)
+	}
+	if final == ctx.Name() {
+		return ctx, nil
+	}
+	builder := ctx.ToBuilder()
+	builder.Config.Name = final
+	return builder.Build(), nil
+}
+
+// resolveUniqueName decides the final container name given a taken-ness checker.
+// It is pure except for the injected checker, so the decision is unit-testable.
+// Returns the chosen name and whether it was auto-suffixed.
+func resolveUniqueName(name, projectName string, port int, isTaken func(string) (bool, error)) (string, bool, error) {
+	taken, err := isTaken(name)
+	if err != nil {
+		return "", false, err
+	}
+	if !taken {
+		return name, false, nil
+	}
+
+	// Only the derived default name auto-suffixes; an explicit name stays a contract.
+	if name == projectName {
+		suffixed := fmt.Sprintf("%s-%d", name, port)
+		takenToo, err := isTaken(suffixed)
+		if err != nil {
+			return "", false, err
+		}
+		if !takenToo {
+			return suffixed, true, nil
+		}
+		return "", false, fmt.Errorf(
+			"container names %q and %q both already exist. Choose a name with --name, or remove one with 'booth remove --name %s'",
+			name, suffixed, suffixed,
+		)
+	}
+
+	return "", false, fmt.Errorf(
+		"container name %q already exists. Choose a different name with --name, or remove the existing one with 'booth remove --name %s' (or 'docker rm -f %s')",
+		name, name, name,
+	)
+}
+
+// containerNameTaken reports whether a container with the given name already exists.
+func containerNameTaken(ctx appctx.AppContext, name string) (bool, error) {
 	flags := docker.DockerFlags{
 		Dryrun:  ctx.Dryrun(),
 		Verbose: ctx.Verbose(),
 		Silent:  true,
 	}
 
-	containerName := ctx.Name()
-	if containerName == "" {
-		containerName = ctx.ProjectName()
-	}
-
 	output, err := docker.DockerOutput(flags, "ps", ilist.NewList(
 		ilist.NewList("-a"),
-		ilist.NewList("--filter", "name=^"+containerName+"$"),
+		ilist.NewList("--filter", "name=^"+name+"$"),
 		ilist.NewList("--format", "{{.Names}}"),
 	))
 	if err != nil {
-		return fmt.Errorf("failed to check container name availability: %w", err)
+		return false, fmt.Errorf("failed to check container name availability: %w", err)
 	}
-	if strings.TrimSpace(output) == "" {
-		return nil
-	}
-
-	return fmt.Errorf(
-		"container name %q already exists. Choose a different name with --name, or remove the existing one with 'booth remove --name %s' (or 'docker rm -f %s')",
-		containerName,
-		containerName,
-		containerName,
-	)
+	return strings.TrimSpace(output) != "", nil
 }
 
 // PrepareRunMode determines the run mode and stores it in the context.
