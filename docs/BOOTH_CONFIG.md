@@ -413,9 +413,25 @@ Error parsing --set: unknown --set key "persist-hom": booth does not read that f
 The same applies to the value's type — `--set idle-time=soon` is refused, because an
 integer key holding a string produces a `config.toml` booth cannot load at all.
 
-A few settings (`public`, `tls-cert`, `tls-key`) are accepted but warn: they are
-start-time flags that booth never reads back from a file, so the key is written and
-then ignored. Pass them to `booth` itself instead.
+### Exposure and TLS are start-time only
+
+`public`, `tls-cert` and `tls-key` are **not** config.toml settings. They are real —
+`booth --public --tls-cert cert.pem --tls-key key.pem` binds the booth on all
+interfaces behind a password over HTTPS — but booth reads them only as flags, never
+from a file, so they are not something `booth config` can store:
+
+```bash
+booth --public                                   # this works
+booth config --no-tui --set public               # this does not — warns, and is ignored
+```
+
+That is deliberate. `config.toml` is committed, so a stored `public = true` would
+expose the booth on every machine that clones the project, while the password it
+requires lives in `.booth/.booth.password`, which is gitignored and therefore absent
+for everyone but you.
+
+`booth config` has no fields for these, and a value recorded by an older version is
+dropped on the next reconfigure with a note.
 
 ---
 

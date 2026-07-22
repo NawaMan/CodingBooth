@@ -155,6 +155,15 @@ func TestDropUnknownSets_KeepsKnownDropsStale(t *testing.T) {
 	assert.Equal(t, []string{"keep-alive", "timezone=Asia/Bangkok"}, kept)
 }
 
+func TestDropUnknownSets_DropsKeysBoothNeverReadsFromFile(t *testing.T) {
+	// public/tls-cert/tls-key are real settings, but start-time only — booth does
+	// not read them from a file. The config TUI offered them until that was found
+	// out, so booths configured before then still record them; re-emitting the
+	// line on every reconfigure would keep a setting that never takes effect.
+	kept := dropUnknownSets([]string{"public", "tls-cert=/tmp/a.pem", "keep-alive"}, ".booth/Boothfile")
+	assert.Equal(t, []string{"keep-alive"}, kept)
+}
+
 func TestDropUnknownSets_LeavesEmptyAlone(t *testing.T) {
 	assert.Empty(t, dropUnknownSets(nil, ".booth/Boothfile"))
 }

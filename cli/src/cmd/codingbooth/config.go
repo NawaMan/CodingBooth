@@ -471,7 +471,6 @@ var (
 		"keep-alive",
 		"daemon",
 		"writable-booth",
-		"public",
 		"egress",
 		"silence-build",
 		"pull",
@@ -487,8 +486,6 @@ var (
 		"image",
 		"startup",
 		"env-file",
-		"tls-cert",
-		"tls-key",
 		"sudo",
 	}
 
@@ -598,7 +595,14 @@ func dropUnknownSets(sets []string, source string) []string {
 	kept := make([]string, 0, len(sets))
 	for _, set := range sets {
 		key, _, _ := strings.Cut(set, "=")
-		if _, known := schema[key]; known {
+
+		// Dropped on two counts: the key is not one booth knows at all, or it is
+		// known but never read back from a file (public, tls-cert, tls-key). The
+		// config TUI offered those three until it was found they take no effect,
+		// so booths configured before that still record them. Keeping them would
+		// re-emit a line booth ignores, on every reconfigure, forever.
+		spec, known := schema[key]
+		if known && spec.Read {
 			kept = append(kept, set)
 			continue
 		}

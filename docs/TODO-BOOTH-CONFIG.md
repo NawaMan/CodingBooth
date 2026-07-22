@@ -30,7 +30,7 @@ The gaps in §4 and §5 are *missing features*. §1–§3 are **defects**, and �
 data on a no-op save, so it outranks any amount of field-table expansion.
 
 - [x] **§1** — TUI save drops `cmds`, `timezone`, `persist-home`, `idle-*`, `sudo=false`, … — **fixed**
-- [ ] **§2** — `Public` / `TLS Cert` / `TLS Key` TUI fields do nothing
+- [x] **§2** — `Public` / `TLS Cert` / `TLS Key` TUI fields do nothing — **fixed** (fields removed)
 - [x] **§3** — `--set` accepts any key; integer keys produce an unloadable config.toml — **fixed**
 - [ ] **§4** — add the missing config.toml fields to the TUI (needs `fieldKindInt` first)
 - [ ] **§5** — decide whether the TUI gets a raw-Boothfile escape hatch
@@ -101,6 +101,15 @@ it is only the write-back that discards them.
 ---
 
 ## 2. Dead fields — written to config.toml, never read back
+
+> **FIXED — the three TUI fields are removed.** The *feature* was never in question:
+> `booth --public --tls-cert ... --tls-key ...` works and is untouched. What was
+> wrong is that `booth config` offered to persist a start-time-only setting, writing
+> a `public = true` that booth ignores. Persisting it is also the wrong shape:
+> `config.toml` is committed, so a stored `public = true` would expose the booth for
+> everyone who clones, while the password it needs lives in a gitignored file they do
+> not have. Values recorded by older versions are now dropped on the next
+> reconfigure with a note. The rest of this section is the record of what went wrong.
 
 `Public`, `Password`, `TLSCert` and `TLSKey` are declared `toml:"-" ignored:"true"` in
 [`cli/src/pkg/appctx/app_config.go:126-129`](../cli/src/pkg/appctx/app_config.go) —
@@ -207,7 +216,7 @@ Three are benign, five are not:
 | `env`, `expose`, `mount` | fine — they compile into `run-args` |
 | `booth-version` | fine — writes to the lock file, not config.toml |
 | `debug` | ~~junk~~ — **fixed with §3**: it is a `booth config` flag, not an `AppConfig` key, so it now steers the run (`flags.debug`, printing the resolved selection) instead of being written into config.toml as a line nothing reads |
-| `public`, `tls-cert`, `tls-key` | dead — see §2 |
+| `public`, `tls-cert`, `tls-key` | ~~dead~~ — **fixed with §2**: the fields are removed; these stay start-time flags |
 
 The `run-args` restriction to `--env` / `--publish` / `--volume` is documented as
 intentional (short-form = template-owned, see
