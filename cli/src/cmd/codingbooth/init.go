@@ -7,6 +7,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -15,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/booth"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/cache"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/compiler"
@@ -982,47 +984,118 @@ func printSummary(resolved *selection.ResolvedSelection) {
 	fmt.Println()
 }
 
-// parseSetOverrides parses --set values into a key-value map.
-// Bare keys (no '=') are treated as boolean true.
-// "key=true" and "key=false" are booleans. All other values are strings.
+// parseSetOverrides parses --set values into a key-value map, typed to match
+// what booth will decode the key as. Bare keys (no '=') are boolean true.
+//
+// The value's Go type here decides the TOML shape written to config.toml, so it
+// has to match the field it lands in. Writing every value as a string — which is
+// what this used to do — produced `idle-time = "30"` against an int field, and a
+// config.toml booth refuses to load at all:
+//
+//	failed to read toml config: toml: line 6 (last key "idle-time"):
+//	incompatible types: TOML value has type string; destination has type integer
+//
+// Keys are checked against the same schema, so a typo is refused up front rather
+// than written out and silently ignored at every subsequent start.
 func parseSetOverrides(sets []string) (map[string]interface{}, error) {
+	schema := appctx.ConfigKeys()
 	result := make(map[string]interface{})
+
 	for _, s := range sets {
-		idx := strings.Index(s, "=")
-		if idx < 0 {
-			// bare key → true
-			if err := validateSetKey(s); err != nil {
-				return nil, err
-			}
-			result[s] = true
-			continue
-		}
-		key := s[:idx]
-		value := s[idx+1:]
-		if err := validateSetKey(key); err != nil {
+		key, rawValue, hasValue := strings.Cut(s, "=")
+
+		spec, err := lookupSetKey(schema, key)
+		if err != nil {
 			return nil, err
 		}
-		switch strings.ToLower(value) {
-		case "true":
+
+		if !hasValue {
+			// A bare key means "turn it on", which only reads as an intent for a
+			// boolean. For anything else the value is missing, not implied.
+			if spec.Kind != appctx.KeyBool {
+				return nil, fmt.Errorf("--set %s requires a value: %s is a %s", key, key, spec.Kind)
+			}
 			result[key] = true
-		case "false":
-			result[key] = false
-		default:
-			result[key] = value
+			continue
 		}
+
+		value, err := coerceSetValue(spec, rawValue)
+		if err != nil {
+			return nil, err
+		}
+
+		// A list key accumulates across repeats rather than overwriting, so
+		// `--set cache-files=a --set cache-files=b` keeps both.
+		if spec.Kind == appctx.KeyList {
+			existing, _ := result[key].([]string)
+			result[key] = append(existing, value.([]string)...)
+			continue
+		}
+		result[key] = value
 	}
+
 	return result, nil
 }
 
-// validateSetKey checks that the key is a plausible config.toml key.
-func validateSetKey(key string) error {
+// lookupSetKey resolves a --set key against the config schema, rejecting
+// anything booth would not recognise.
+func lookupSetKey(schema map[string]appctx.KeySpec, key string) (appctx.KeySpec, error) {
 	if key == "" {
-		return fmt.Errorf("empty key in --set")
+		return appctx.KeySpec{}, fmt.Errorf("empty key in --set")
 	}
 	if strings.ContainsAny(key, " \t\n\"'=[]{}") {
-		return fmt.Errorf("invalid key %q in --set", key)
+		return appctx.KeySpec{}, fmt.Errorf("invalid key %q in --set", key)
 	}
-	return nil
+
+	spec, known := schema[key]
+	if !known {
+		msg := fmt.Sprintf("unknown --set key %q: booth does not read that from config.toml", key)
+		if suggestion := appctx.SuggestConfigKey(key); suggestion != "" {
+			msg += fmt.Sprintf("\n       Did you mean %q?", suggestion)
+		}
+		msg += "\n       Run `booth --help` for the settings a booth can hold."
+		return appctx.KeySpec{}, errors.New(msg)
+	}
+
+	// Known, but never read back from a file. Writing it yields a line that
+	// looks effective and is ignored at every start, so say so instead of
+	// letting the user find out from behaviour that never changes.
+	if !spec.Read {
+		fmt.Fprintf(os.Stderr,
+			"Warning: %q is not read from config.toml — it only takes effect as a start-time flag (booth --%s).\n"+
+				"         The key will be written, but booth will ignore it.\n", key, key)
+	}
+
+	return spec, nil
+}
+
+// coerceSetValue converts a raw --set value into the Go type matching the key's
+// TOML shape, so the serializer emits `30` rather than `"30"`.
+func coerceSetValue(spec appctx.KeySpec, raw string) (interface{}, error) {
+	switch spec.Kind {
+	case appctx.KeyBool:
+		switch strings.ToLower(raw) {
+		case "true", "":
+			return true, nil
+		case "false":
+			return false, nil
+		default:
+			return nil, fmt.Errorf("--set %s=%s: %s is a boolean, expected true or false", spec.Key, raw, spec.Key)
+		}
+
+	case appctx.KeyInt:
+		n, err := strconv.Atoi(raw)
+		if err != nil {
+			return nil, fmt.Errorf("--set %s=%s: %s is an integer", spec.Key, raw, spec.Key)
+		}
+		return n, nil
+
+	case appctx.KeyList:
+		return []string{raw}, nil
+
+	default:
+		return raw, nil
+	}
 }
 
 // applySetOverrides applies --set values to the ConfigToml.
@@ -1051,16 +1124,26 @@ func applySetOverrides(cfg *output.ConfigToml, overrides map[string]interface{})
 				cfg.Dind = b
 			}
 		case "cache-files":
-			if s, ok := value.(string); ok {
-				cfg.CacheFiles = append(cfg.CacheFiles, s)
-			}
+			cfg.CacheFiles = append(cfg.CacheFiles, asStringList(value)...)
 		case "cache-dirs":
-			if s, ok := value.(string); ok {
-				cfg.CacheDirs = append(cfg.CacheDirs, s)
-			}
+			cfg.CacheDirs = append(cfg.CacheDirs, asStringList(value)...)
 		default:
 			cfg.Overrides[key] = value
 		}
+	}
+}
+
+// asStringList normalises a --set value that feeds a list key. Repeats arrive
+// already accumulated as []string; a bare string is what the callers that build
+// override maps by hand (the tests, and buildPreSelection) still pass.
+func asStringList(value interface{}) []string {
+	switch v := value.(type) {
+	case []string:
+		return v
+	case string:
+		return []string{v}
+	default:
+		return nil
 	}
 }
 

@@ -31,7 +31,7 @@ data on a no-op save, so it outranks any amount of field-table expansion.
 
 - [x] **§1** — TUI save drops `cmds`, `timezone`, `persist-home`, `idle-*`, `sudo=false`, … — **fixed**
 - [ ] **§2** — `Public` / `TLS Cert` / `TLS Key` TUI fields do nothing
-- [ ] **§3** — `--set` accepts any key; integer keys produce an unloadable config.toml
+- [x] **§3** — `--set` accepts any key; integer keys produce an unloadable config.toml — **fixed**
 - [ ] **§4** — add the missing config.toml fields to the TUI (needs `fieldKindInt` first)
 - [ ] **§5** — decide whether the TUI gets a raw-Boothfile escape hatch
 
@@ -125,6 +125,14 @@ flow) or remove the fields and say so in the docs.
 
 ## 3. `--set` is unvalidated and cannot write integers
 
+> **FIXED.** `--set` is now typed and validated against a schema reflected from
+> `AppConfig` (`pkg/appctx/config_keys.go` — `ConfigKeys()`), which is also the
+> single source of truth §4 should build on. Integer keys write unquoted, list keys
+> accumulate across repeats, unknown keys are refused with a "did you mean"
+> suggestion, and the `toml:"-"` keys are accepted with a warning that booth will
+> not read them back. The rest of this section is kept as the record of what went
+> wrong.
+
 `parseSetOverrides` classifies every value as `bool` or `string` only, and no key is
 checked against `AppConfig`. Two consequences:
 
@@ -169,15 +177,18 @@ honored keys read by two *separate* ad-hoc structs — `ensureCacheFromConfig`
 absent from `AppConfig` entirely. The true surface is **47 keys across three readers**,
 with no single source of truth.
 
-- [ ] Consolidate the three readers, or at least document `AppConfig` + the two cache
+- [x] Consolidate the three readers, or at least document `AppConfig` + the two cache
       keys as *the* list. Any future "validate `--set` keys" work must consult all
-      three or it will reject two valid keys.
+      three or it will reject two valid keys. — **done**: `appctx.ConfigKeys()`
+      reflects over `AppConfig` and folds in the two cache keys explicitly, so there
+      is now one answer to "what may appear in a config.toml". The two ad-hoc
+      readers still exist; they are just no longer the only record of those keys.
 
 ### The 28 keys booth reads that the TUI cannot set
 
 | Group | Missing keys | Type note |
 |---|---|---|
-| Idle / countdown | `idle-time`, `idle-shutdown-time`, `idle-exit-code`, `show-run-time`, `show-count-down`, `count-down-exit-code` | first three are `int` → need `fieldKindInt`; the last three are `string` despite sounding numeric |
+| Idle / countdown | `idle-time`, `idle-shutdown-time`, `idle-exit-code`, `show-run-time`, `show-count-down`, `count-down-exit-code` | first three are `int` → need `fieldKindInt` (writing them is safe now that §3 is fixed); the last three are `string` despite sounding numeric |
 | Egress detail | `egress-mode`, `egress-enforcement`, `egress-allowlist`, `egress-allowlist-file`, `egress-policy-file` | `egress-allowlist` is `[]string` → `fieldKindList`; only the on/off toggle exists today |
 | Home / tmp | `persist-home`, `leave-tmp-on-exit`, `keep-tmp-on-start` | bool |
 | Identity / runtime | `project-name`, `host-uid`, `host-gid`, `timezone`, `log-time` | |
@@ -195,7 +206,7 @@ Three are benign, five are not:
 |---|---|
 | `env`, `expose`, `mount` | fine — they compile into `run-args` |
 | `booth-version` | fine — writes to the lock file, not config.toml |
-| `debug` | junk — writes `debug = true` into config.toml ([`config.go:345`](../cli/src/cmd/codingbooth/config.go)); it is a `booth config` flag, not an `AppConfig` key, and nothing reads it |
+| `debug` | ~~junk~~ — **fixed with §3**: it is a `booth config` flag, not an `AppConfig` key, so it now steers the run (`flags.debug`, printing the resolved selection) instead of being written into config.toml as a line nothing reads |
 | `public`, `tls-cert`, `tls-key` | dead — see §2 |
 
 The `run-args` restriction to `--env` / `--publish` / `--volume` is documented as

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/BurntSushi/toml"
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
@@ -45,6 +46,15 @@ func runConfig(version string) {
 	}
 
 	flags := parseInitFlags(flagArgs)
+
+	// Check what was typed on the command line before doing anything with it.
+	// These settings are only consumed at the far end of the pipeline, so without
+	// this a mistyped --set in TUI mode surfaces after the whole booth has been
+	// configured and saved — the one moment the answer is least welcome.
+	if _, err := parseSetOverrides(flags.sets); err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing --set: %v\n", err)
+		os.Exit(1)
+	}
 
 	if flags.noTUI {
 		runConfigCLI(version, targetPath, flags)
@@ -349,6 +359,13 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 	flags.envs = result.ListFields["env"]
 	flags.mounts = result.ListFields["mount"]
 
+	// The TUI's Debug box steers this run, like --debug does; it is not a booth
+	// setting and has no config.toml key. It used to be written out as one, which
+	// produced a `debug = true` line nothing has ever read.
+	if result.BoolFields["debug"] {
+		flags.debug = true
+	}
+
 	// Apply bool fields as --set overrides
 	for _, key := range tuiBoolSetKeys {
 		if result.BoolFields[key] {
@@ -377,6 +394,10 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 	out.Command = buildConfigCommand(targetPath, flags)
 	out.AdjustCommand = buildConfigAdjustCommand(flags)
 	applyAptSnapshot(out)
+
+	if flags.debug {
+		printDebug(resolved, out)
+	}
 
 	if flags.dryrun {
 		printDryrun(out)
@@ -457,7 +478,6 @@ var (
 		"strict",
 		"verbose",
 		"dryrun",
-		"debug",
 	}
 
 	// "sudo" is a tri-state cycle field ("" / "true" / "false"), so it is carried as
@@ -556,7 +576,37 @@ func readExistingBooth(targetPath string) initFlags {
 	// short-form flags (-e, -p, -v) are template-contributed and left alone.
 	extractUserRunArgs(targetPath, &flags)
 
+	// Settings recorded in the header are history, not intent. A key this booth
+	// records may no longer be one booth reads — `--set debug` was written by the
+	// config TUI for as long as it treated debug as a config value — and refusing
+	// the whole run over it would leave an existing booth impossible to
+	// reconfigure. A key typed on the command line right now is different: that is
+	// someone's intent, and a typo there is still refused outright.
+	flags.sets = dropUnknownSets(flags.sets, boothfilePath)
+
 	return flags
+}
+
+// dropUnknownSets removes --set entries whose key booth no longer reads, saying
+// so once per key. Applied only to settings recovered from an existing booth.
+func dropUnknownSets(sets []string, source string) []string {
+	if len(sets) == 0 {
+		return sets
+	}
+
+	schema := appctx.ConfigKeys()
+	kept := make([]string, 0, len(sets))
+	for _, set := range sets {
+		key, _, _ := strings.Cut(set, "=")
+		if _, known := schema[key]; known {
+			kept = append(kept, set)
+			continue
+		}
+		fmt.Fprintf(os.Stderr,
+			"Note: ignoring %q recorded in %s — booth does not read that from config.toml.\n",
+			key, source)
+	}
+	return kept
 }
 
 // extractUserRunArgs reads config.toml and extracts user-set run-args
