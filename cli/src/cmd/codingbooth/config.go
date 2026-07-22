@@ -349,15 +349,24 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 		flags.selectDSLs = []string{result.SelectDSL}
 	}
 
-	// Apply string fields
+	// Apply the fields carried on dedicated initFlags rather than as --set —
+	// see tuiFlagCarriedKeys.
 	flags.variant = result.StringFields["variant"]
 	flags.port = result.StringFields["port"]
-	flags.version = result.StringFields["version"]
+	flags.cmds = result.ListFields["cmds"]
+	flags.cacheFiles = result.ListFields["cache-files"]
+	flags.cacheDirs = result.ListFields["cache-dirs"]
 
-	// Apply list fields
+	// Apply TUI-only list fields. These compile into run-args rather than
+	// carrying a config.toml key of their own.
 	flags.exposes = result.ListFields["expose"]
 	flags.envs = result.ListFields["env"]
 	flags.mounts = result.ListFields["mount"]
+
+	// Templates Version steers which release this run compiles from; it is not a
+	// booth setting. The config.toml `version` key — the image tag — is a
+	// separate field and rides along with the --set keys below.
+	flags.version = result.StringFields["templates-version"]
 
 	// The TUI's Debug box steers this run, like --debug does; it is not a booth
 	// setting and has no config.toml key. It used to be written out as one, which
@@ -366,18 +375,31 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 		flags.debug = true
 	}
 
-	// Apply bool fields as --set overrides
-	for _, key := range tuiBoolSetKeys {
-		if result.BoolFields[key] {
-			flags.sets = append(flags.sets, key)
+	// Re-emit every remaining key the TUI renders as a --set. The key set and the
+	// shape of each key come from the field table itself (tui.RenderedConfigKeys),
+	// so a field added there is written back without touching this loop — the
+	// hand-kept copy that used to live here is precisely what drifted.
+	for _, key := range tui.SortedRenderedConfigKeys() {
+		if tuiFlagCarriedKeys[key] {
+			continue
 		}
-	}
-
-	// Apply string fields as --set overrides. "sudo" rides along here as a
-	// tri-state cycle field: "" (default/omit), "true", "false".
-	for _, key := range tuiStringSetKeys {
-		if v := result.StringFields[key]; v != "" {
-			flags.sets = append(flags.sets, key+"="+v)
+		switch tui.RenderedConfigKeys()[key] {
+		case tui.ConfigFieldToggle:
+			if result.BoolFields[key] {
+				flags.sets = append(flags.sets, key)
+			}
+		case tui.ConfigFieldScalar:
+			// Cycle fields ride here too: "sudo" is tri-state, so "" means
+			// "unset" and only a non-empty value is written.
+			if v := result.StringFields[key]; v != "" {
+				flags.sets = append(flags.sets, key+"="+v)
+			}
+		case tui.ConfigFieldList:
+			for _, v := range result.ListFields[key] {
+				if v != "" {
+					flags.sets = append(flags.sets, key+"="+v)
+				}
+			}
 		}
 	}
 
@@ -455,59 +477,54 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 	}
 }
 
-// tuiBoolSetKeys and tuiStringSetKeys are the config.toml keys the config TUI
-// renders as fields, and so the keys its result speaks for. A save strips exactly
-// these from the baseline and re-derives them from the TUI result; every other key
-// the booth holds is carried through untouched, because the TUI never showed it and
-// therefore has no opinion about it.
+// tuiFlagCarriedKeys are config.toml keys the TUI renders that this command
+// carries on a dedicated initFlags field instead of as a --set entry. They reach
+// config.toml through the compile step (out.Config.Variant, .Cmds, .CacheFiles,
+// …), so writing them as --set as well would emit each one twice — and for the
+// cache keys applySetOverrides *appends*, so the duplicate would accumulate on
+// every save.
 //
-// Keep these in step with allConfigFields in pkg/boothinit/tui/configfields.go. A key
-// listed here but not rendered can never be set again once cleared; a key rendered
-// but not listed cannot be turned off, since the baseline's copy would survive the
-// strip and be written back out.
-var (
-	tuiBoolSetKeys = []string{
-		"dind",
-		"keep-alive",
-		"daemon",
-		"writable-booth",
-		"egress",
-		"silence-build",
-		"pull",
-		"strict",
-		"verbose",
-		"dryrun",
-	}
+// The TUI still speaks for them: they are stripped from the baseline like every
+// other rendered key, just re-applied through their flag.
+var tuiFlagCarriedKeys = map[string]bool{
+	"variant":     true,
+	"port":        true,
+	"cmds":        true,
+	"cache-files": true,
+	"cache-dirs":  true,
+}
 
-	// "sudo" is a tri-state cycle field ("" / "true" / "false"), so it is carried as
-	// a string rather than a bool — see triStateSetKeys.
-	tuiStringSetKeys = []string{
-		"name",
-		"image",
-		"startup",
-		"env-file",
-		"sudo",
+// triStateSetKeys are config keys booth decodes as booleans but the TUI renders
+// as a cycle, which it reads from and writes to StringFields. A --set value for
+// one of these arrives as a Go bool and has to be spelled back out as a string,
+// or the cycle field comes up empty — and empty means "default", which for sudo
+// is *enabled*. An explicit `--set sudo=false` would silently turn back into
+// passwordless sudo.
+//
+// Derived rather than listed: a cycle field over a bool key is exactly this
+// case, and the field table already knows which those are.
+func triStateSetKeys() map[string]bool {
+	schema := appctx.ConfigKeys()
+	tri := make(map[string]bool)
+	for key, role := range tui.RenderedConfigKeys() {
+		if role == tui.ConfigFieldScalar && schema[key].Kind == appctx.KeyBool {
+			tri[key] = true
+		}
 	}
-
-	// triStateSetKeys are rendered as cycle fields, which the TUI reads from and
-	// writes to StringFields. A --set value for one of these arrives as a Go bool
-	// and has to be spelled back out as a string, or the cycle field comes up empty
-	// — and empty means "default", which for sudo is *enabled*. An explicit
-	// `--set sudo=false` would silently turn back into passwordless sudo.
-	triStateSetKeys = map[string]bool{"sudo": true}
-)
+	return tri
+}
 
 // dropTUIOwnedSets removes the --set entries the TUI is authoritative for, leaving
 // the ones it does not render. The result is the part of the baseline that a save
 // must preserve verbatim.
+//
+// The owned set comes from the field table, so a key gains and loses its place
+// here by being added to or removed from the TUI. Hand-listing it was how the
+// two fell out of step: a key listed but not rendered can never be set again
+// once cleared, and a key rendered but not listed cannot be turned off, because
+// the baseline's copy survives the strip and is written straight back out.
 func dropTUIOwnedSets(sets []string) []string {
-	owned := make(map[string]bool, len(tuiBoolSetKeys)+len(tuiStringSetKeys))
-	for _, key := range tuiBoolSetKeys {
-		owned[key] = true
-	}
-	for _, key := range tuiStringSetKeys {
-		owned[key] = true
-	}
+	owned := tui.RenderedConfigKeys()
 
 	var kept []string
 	for _, set := range sets {
@@ -515,7 +532,7 @@ func dropTUIOwnedSets(sets []string) []string {
 		if idx := strings.Index(set, "="); idx >= 0 {
 			key = set[:idx]
 		}
-		if owned[key] {
+		if _, isOwned := owned[key]; isOwned {
 			continue
 		}
 		kept = append(kept, set)
@@ -790,7 +807,7 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags, existin
 		pre.StringFields["port"] = flags.port
 	}
 	if flags.version != "" {
-		pre.StringFields["version"] = flags.version
+		pre.StringFields["templates-version"] = flags.version
 	}
 
 	// Map CLI flags to TUI list fields
@@ -803,9 +820,19 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags, existin
 	if len(flags.mounts) > 0 {
 		pre.ListFields["mount"] = flags.mounts
 	}
+	if len(flags.cmds) > 0 {
+		pre.ListFields["cmds"] = flags.cmds
+	}
+	if len(flags.cacheFiles) > 0 {
+		pre.ListFields["cache-files"] = flags.cacheFiles
+	}
+	if len(flags.cacheDirs) > 0 {
+		pre.ListFields["cache-dirs"] = flags.cacheDirs
+	}
 
-	// Parse --set flags to extract bool/string config values
+	// Parse --set flags to extract config values
 	if len(flags.sets) > 0 {
+		triState := triStateSetKeys()
 		overrides, err := parseSetOverrides(flags.sets)
 		if err == nil {
 			for k, v := range overrides {
@@ -813,13 +840,19 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags, existin
 				case bool:
 					// A tri-state field reads its value from StringFields, so a
 					// bool has to be spelled out to reach it at all.
-					if triStateSetKeys[k] {
+					if triState[k] {
 						pre.StringFields[k] = strconv.FormatBool(val)
 						continue
 					}
 					pre.BoolFields[k] = val
+				case int:
+					// Int fields are edited as text and written back through the
+					// typed --set path, which restores the integer shape.
+					pre.StringFields[k] = strconv.Itoa(val)
 				case string:
 					pre.StringFields[k] = val
+				case []string:
+					pre.ListFields[k] = append(pre.ListFields[k], val...)
 				}
 			}
 		}

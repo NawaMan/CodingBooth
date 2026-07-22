@@ -1153,6 +1153,15 @@ func mergeConfigCache(out *output.BoothOutput) {
 	if out.Config == nil {
 		return
 	}
+
+	// A cache entry reaches out.Config from two directions on a reconfigure: it
+	// was read back out of the existing config.toml into flags, and it is also
+	// in the "Configured by" header as a `--set cache-files=...`, which
+	// applySetOverrides appends. Both are correct on their own; together they
+	// write the entry twice, and the file grows another copy on every save.
+	out.Config.CacheFiles = dedupeStrings(out.Config.CacheFiles)
+	out.Config.CacheDirs = dedupeStrings(out.Config.CacheDirs)
+
 	seen := make(map[string]bool, len(out.Cache))
 	for _, f := range out.Cache {
 		seen[f.RelPath] = true
@@ -1221,4 +1230,22 @@ func shellSplit(s string) []string {
 		words = append(words, current.String())
 	}
 	return words
+}
+
+// dedupeStrings returns the input with later duplicates removed, keeping the
+// first occurrence so the original order survives.
+func dedupeStrings(values []string) []string {
+	if len(values) < 2 {
+		return values
+	}
+	seen := make(map[string]bool, len(values))
+	out := values[:0:0]
+	for _, v := range values {
+		if seen[v] {
+			continue
+		}
+		seen[v] = true
+		out = append(out, v)
+	}
+	return out
 }

@@ -627,7 +627,7 @@ func (m model) handleConfigKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			case fieldKindCycle:
 				m.cycleEditing = true
 				m.cyclePrevIdx = m.cycleIndices[f.Key]
-			case fieldKindString:
+			case fieldKindString, fieldKindInt:
 				m.editing = true
 				m.editCursor = len(m.stringFields[f.Key])
 			}
@@ -742,7 +742,7 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Don't switch tabs while editing
 	default:
 		ch := msg.String()
-		if len(ch) == 1 && ch[0] >= 32 && ch[0] < 127 {
+		if len(ch) == 1 && ch[0] >= 32 && ch[0] < 127 && acceptsEditChar(f.Kind, ch[0]) {
 			val = val[:m.editCursor] + ch + val[m.editCursor:]
 			m.editCursor++
 		}
@@ -755,6 +755,19 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.stringFields[f.Key] = val
 	}
 	return m, nil
+}
+
+// acceptsEditChar reports whether a typed character belongs in this field.
+//
+// Int fields take digits and a leading minus only. The restriction is at the
+// keystroke rather than at save time because a non-numeric value has nowhere
+// good to go: `idle-time = "soon"` fails the TOML decode and takes the whole
+// booth with it, and refusing it at Ctrl+S would mean losing every other edit.
+func acceptsEditChar(kind fieldKind, ch byte) bool {
+	if kind != fieldKindInt {
+		return true
+	}
+	return (ch >= '0' && ch <= '9') || ch == '-'
 }
 
 func (m model) handleCycleEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {

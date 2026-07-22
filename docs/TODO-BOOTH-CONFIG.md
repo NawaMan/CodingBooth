@@ -32,7 +32,7 @@ data on a no-op save, so it outranks any amount of field-table expansion.
 - [x] **§1** — TUI save drops `cmds`, `timezone`, `persist-home`, `idle-*`, `sudo=false`, … — **fixed**
 - [x] **§2** — `Public` / `TLS Cert` / `TLS Key` TUI fields do nothing — **fixed** (fields removed)
 - [x] **§3** — `--set` accepts any key; integer keys produce an unloadable config.toml — **fixed**
-- [ ] **§4** — add the missing config.toml fields to the TUI (needs `fieldKindInt` first)
+- [x] **§4** — 30 config.toml keys had no TUI field — **fixed** (field table generated from the schema)
 - [ ] **§5** — decide whether the TUI gets a raw-Boothfile escape hatch
 
 ---
@@ -168,6 +168,36 @@ the TUI and `--set` — writing them at all breaks the booth. The TUI will need 
 
 ## 4. config.toml keys with no TUI field
 
+> **FIXED via option 2 below.** The field table is now generated: each field
+> carries a label and its help text, and its *shape* is resolved from
+> `appctx.ConfigKeys()` at build time. All 30 missing keys have fields, int keys
+> got `fieldKindInt` (digits only, written unquoted through the typed `--set`
+> path), and list keys got a real write-back. `cmd/codingbooth` no longer keeps
+> its own copy of the key set — it asks `tui.RenderedConfigKeys()`, which is what
+> drifted before. `TestFieldTableCoversSchema` fails on any AppConfig key that is
+> neither rendered nor recorded in `unrenderedKeys` with a reason.
+>
+> Two things surfaced while wiring it up:
+>
+> - The **`version` collision**. The TUI's "Version" field was labelled and
+>   documented as the prebuilt image tag, but has always been wired to
+>   `--version` — the *template release* this configure run compiles from — and
+>   never wrote the `version` key at all. Same family as §2: a field describing a
+>   setting it does not write. Split into **Templates Version** (TUI-only,
+>   accurate label) and **Image Version** (the real `version` key).
+> - **Cache lists grew on every reconfigure** — a pre-existing defect on the
+>   `--no-tui` path, not a TUI one. A cache entry reaches the regenerated file
+>   both from the existing `config.toml` and from the `--set cache-files=…` in
+>   the `Configured by:` header, so it was written twice, then four times, then
+>   eight. Deduped in `mergeConfigCache`; covered by
+>   `tests/config/test76-reconfigure-cache-no-growth.sh`.
+>
+> Covered by `tests/config-tui/test17-tui-covers-schema-keys.sh` — these keys are
+> now keys the TUI *owns*, so a save strips and re-derives them, which is a
+> stronger claim than §1's pass-through: a pre-population gap would delete the
+> value rather than leave it alone. The rest of this section is the record of
+> what was missing.
+
 ### Where the authoritative list lives
 
 Booth does **not** read whatever happens to be in `config.toml`. It decodes into the
@@ -176,14 +206,14 @@ and BurntSushi's decoder only fills fields that exist. The returned `MetaData` i
 discarded, so unknown keys are dropped silently — no error at read time, no warning at
 write time. That is why §3's bogus key sails through both ends.
 
-Reflecting over `AppConfig` yields **49 fields: 45 live TOML keys + 4 tagged `toml:"-"`**
+Reflecting over `AppConfig` yields **50 fields: 46 live TOML keys + 4 tagged `toml:"-"`**
 (the dead ones from §2).
 
 **The struct is not the whole truth, though.** `cache-files` and `cache-dirs` are real,
 honored keys read by two *separate* ad-hoc structs — `ensureCacheFromConfig`
 ([`pkg/booth/booth.go:584-589`](../cli/src/pkg/booth/booth.go)) and `extractUserRunArgs`
 ([`cmd/codingbooth/config.go:516-519`](../cli/src/cmd/codingbooth/config.go)) — and are
-absent from `AppConfig` entirely. The true surface is **47 keys across three readers**,
+absent from `AppConfig` entirely. The true surface is **48 keys across three readers**,
 with no single source of truth.
 
 - [x] Consolidate the three readers, or at least document `AppConfig` + the two cache
@@ -215,6 +245,7 @@ Three are benign, five are not:
 |---|---|
 | `env`, `expose`, `mount` | fine — they compile into `run-args` |
 | `booth-version` | fine — writes to the lock file, not config.toml |
+| `version` | ~~fine~~ — **not fine**: labelled and documented as the prebuilt image tag, but wired to `--version`, the template release. Fixed with §4: split into `templates-version` (TUI-only) and `version` (the real key) |
 | `debug` | ~~junk~~ — **fixed with §3**: it is a `booth config` flag, not an `AppConfig` key, so it now steers the run (`flags.debug`, printing the resolved selection) instead of being written into config.toml as a line nothing reads |
 | `public`, `tls-cert`, `tls-key` | ~~dead~~ — **fixed with §2**: the fields are removed; these stay start-time flags |
 
@@ -234,6 +265,7 @@ TUI-unreachable. They survive a TUI save today only because templates re-emit th
    off `AppConfig` reflection plus per-key display metadata, so the two cannot drift
    again. The current drift happened precisely because the list is hand-maintained in
    a second place ([`tui/configfields.go:28`](../cli/src/pkg/boothinit/tui/configfields.go)).
+   *(This is what shipped — see the note at the top of this section.)*
 
 ---
 
