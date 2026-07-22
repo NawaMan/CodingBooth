@@ -52,7 +52,7 @@ if [[ "$CB_JDK_VERSION" =~ ^[0-9]+$ ]] && [ "$CB_JDK_VERSION" -lt 11 ]; then
 fi
 
 # ---------------- Source helpful profiles ----------------
-source /etc/profile.d/53-cb-python--profile.sh
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 source /etc/profile.d/60-cb-jdk--profile.sh
 
 # ---------------- Defaults / Tunables ----------------

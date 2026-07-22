@@ -5,6 +5,10 @@
 # Setup jenv first
 setup jenv
 
+# Jupyter is required by java-ijava-nb-kernel below
+setup python
+setup notebook 18888
+
 # Install multiple JDK versions
 setup jdk 8
 setup jdk 17

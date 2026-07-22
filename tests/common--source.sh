@@ -172,19 +172,36 @@ get_booth_version() {
 # capture_codingbooth: run codingbooth, capture stdout, retry once on
 # empty/failed output. Useful inside full-suite runs where rapid container
 # spin-up/down occasionally produces a transient empty result that succeeds
-# on retry. Stderr is suppressed; pass shell pipeline transforms via $1
-# (e.g. "head -1", "tail -1"). Defaults to "cat".
+# on retry. Pass shell pipeline transforms via $1 (e.g. "head -1", "tail -1").
+# Defaults to "cat".
+#
+# Stderr is discarded by default. Set CB_STDERR_LOG to a writable file path to
+# append it instead — worth doing for tests whose booth run includes an image
+# build, since a build failure otherwise leaves no trace of *why* it failed.
+# Each attempt is preceded by a marker line so the two retries stay separable.
+# The caller is responsible for creating the log's parent directory.
 #
 # Usage:
 #   ACTUAL=$(capture_codingbooth "head -1" --silence-build -- gcc --version)
 capture_codingbooth() {
   local pipeline="${1:-cat}"
   shift
+  local errdest="${CB_STDERR_LOG:-/dev/null}"
   local out
-  out=$(run_coding_booth "$@" 2>/dev/null | eval "$pipeline") || out=""
+
+  _capture_attempt() {
+    local n="$1"; shift
+    if [[ "$errdest" != "/dev/null" ]]; then
+      echo "=== capture_codingbooth attempt ${n}: codingbooth $* ===" >>"$errdest"
+    fi
+  }
+
+  _capture_attempt 1 "$@"
+  out=$(run_coding_booth "$@" 2>>"$errdest" | eval "$pipeline") || out=""
   if [[ -z "$out" ]]; then
     sleep 2
-    out=$(run_coding_booth "$@" 2>/dev/null | eval "$pipeline") || out=""
+    _capture_attempt 2 "$@"
+    out=$(run_coding_booth "$@" 2>>"$errdest" | eval "$pipeline") || out=""
   fi
   printf '%s\n' "$out"
 }

@@ -1,4 +1,5 @@
 # Configured by: booth config --no-tui --overwrite --expose 3000
 
+dind = true
 
 run-args = ["--publish", "+-7000:3000"]
