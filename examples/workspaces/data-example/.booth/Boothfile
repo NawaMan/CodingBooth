@@ -1,0 +1,20 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant xfce --port NEXT:24000 --expose +3000:13000 --select python:3.12+pip-pkg:matplotlib,psycopg2-binary/nodejs:20/postgresql/notebook+expose:+8888+autostart/dbeaver
+
+env APT_SNAPSHOT=20260722T000000Z
+
+arg DBEAVER_VERSION=latest
+arg NODE_VERSION=20
+arg NOTEBOOK_HOST_PORT=+8888
+arg NOTEBOOK_PORT=18888
+arg PIP_PKGS=matplotlib,psycopg2-binary
+arg PYTHON_VERSION=3.12
+
+setup nodejs ${NODE_VERSION}
+setup postgresql
+setup python ${PYTHON_VERSION}
+setup dbeaver ${DBEAVER_VERSION}
+setup notebook ${NOTEBOOK_PORT}
+install pip ${PIP_PKGS}
+setup nodejs-code-extension
+setup python-code-extension

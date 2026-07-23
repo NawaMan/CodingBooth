@@ -1,0 +1,35 @@
+{
+    "folders": {},
+    "connections": {
+        "postgresql-local-demo": {
+            "provider": "postgresql",
+            "driver": "postgres-jdbc",
+            "name": "Demo PostgreSQL",
+            "save-password": true,
+            "show-system-objects": false,
+            "read-only": false,
+            "configuration": {
+                "host": "localhost",
+                "port": "5432",
+                "database": "demo",
+                "user": "coder",
+                "password": "",
+                "url": "jdbc:postgresql://localhost:5432/demo",
+                "configurationType": "MANUAL",
+                "type": "dev",
+                "auth-model": "native"
+            }
+        }
+    },
+    "connection-types": {
+        "dev": {
+            "name": "Development",
+            "color": "255,255,255",
+            "description": "Regular development database",
+            "auto-commit": true,
+            "confirm-execute": false,
+            "confirm-data-change": false,
+            "auto-close-transactions": true
+        }
+    }
+}

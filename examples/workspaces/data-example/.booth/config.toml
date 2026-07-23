@@ -1,0 +1,13 @@
+# Configured by: booth config --no-tui --overwrite --variant xfce --port NEXT:24000 --expose +3000:13000 --select python:3.12+pip-pkg:matplotlib,psycopg2-binary/nodejs:20/postgresql/notebook+expose:+8888+autostart/dbeaver
+
+variant = "xfce"
+port = "NEXT:24000"
+
+run-args = [
+    "-e", "PYTHONDONTWRITEBYTECODE=1",
+    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
+    "-v", "booth-pgdata:/var/lib/postgresql",
+    "-p", "+8888:18888",
+    "--publish", "+3000:13000"
+]
