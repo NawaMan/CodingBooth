@@ -18,7 +18,7 @@ Notes:
 - Installs Herdr (agent multiplexer / "tmux for AI agents") as a single static binary.
 - Binary name: herdr
 - See: https://herdr.dev/
-- Perfect companion for claude-code, codex, aider, grok, etc.
+- Perfect companion for claude-code, codex, aider, grok, oh-my-pi, etc.
 USAGE
 }
 
@@ -64,7 +64,7 @@ cat <<'EON'
 - Start / attach:           herdr
 - Create new workspace:     (inside herdr) Ctrl+A c  or use the UI
 - See panes + agent status: built-in sidebar shows agent state
-- Works great with:         claude-code, codex, aider, grok, etc.
+- Works great with:         claude-code, codex, aider, grok, oh-my-pi, etc.
 - Docs & more:              https://herdr.dev/
 
 Herdr runs a lightweight background server + TUI inside your terminal.

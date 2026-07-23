@@ -1,0 +1,9 @@
+display-name = "Settings Cache"
+display-disc = "Persist Oh My Pi settings and sessions across booth restarts"
+display-order = 91
+auto-select = true
+tags = ["oh-my-pi", "omp", "persistence", "cache"]
+
+cache-dirs = [
+    "home/coder/.omp",
+]

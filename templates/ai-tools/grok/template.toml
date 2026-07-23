@@ -1,18 +1,23 @@
-display-name = "Grok"
+display-name = "Grok Build"
 primary = true
-display-disc = "xAI Grok AI for terminal coding assistance and chat"
-display-detail = "Installs a lightweight 'grok' CLI for chatting with Grok models (xAI) directly from the terminal. Uses the official xAI API (OpenAI-compatible). Set XAI_API_KEY to authenticate. Great companion for quick explanations, code reviews, and iteration inside the booth."
+display-disc = "xAI Grok Build coding agent CLI"
+display-detail = "Installs the official xAI Grok Build coding agent (binary: grok; alias: agent). Interactive TUI for complex coding work powered by Grok. Authenticate with 'grok login' (seeds ~/.grok/auth.json) or GROK_DEPLOYMENT_KEY. Pair with the credential extension to reuse host auth inside the booth."
 display-order = 18
 tags = [
     "ai",
     "grok",
     "xai",
     "llm",
-    "chat",
-    "cli"
+    "coding-agent",
+    "cli",
+    "tui"
 ]
+
+[params.GROK_VERSION]
+default = "latest"
+suggests = ["latest"]
 
 [segments]
 Boothfile = """
-setup grok
+setup grok --version ${GROK_VERSION}
 """

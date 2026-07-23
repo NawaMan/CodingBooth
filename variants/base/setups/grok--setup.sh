@@ -8,236 +8,144 @@ set -Eeuo pipefail
 usage() {
   cat <<USAGE
 Usage:
-  $0
+  $0 [--version <X.Y.Z>|latest] [--channel <stable|alpha|enterprise>]
 
 Examples:
-  $0                         # install grok CLI (no version pinning needed)
+  $0                              # install latest stable Grok Build
+  $0 --version 0.2.111            # pin a specific version
+  $0 --channel alpha              # install latest from the alpha channel
 
 Notes:
-- Installs a lightweight 'grok' command-line client for xAI Grok models.
-- Talks directly to the official xAI API (https://api.x.ai).
-- Authenticates via the XAI_API_KEY environment variable (recommended).
-- Also checks common credential file locations on startup.
-- See: https://x.ai/ and https://console.x.ai/
+- Installs the official xAI Grok Build coding agent CLI (binary: grok).
+- Also installs the 'agent' alias (same binary), matching the upstream installer.
+- Auth: run 'grok login' once, or seed ~/.grok/auth.json from the host.
+- Env: GROK_DEPLOYMENT_KEY or tokens in ~/.grok/auth.json.
+- See: https://x.ai/cli  and  https://x.ai/news/grok-build-cli
 USAGE
 }
 
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
+REQ_VER="latest"
+CHANNEL="stable"
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --version) shift; REQ_VER="${1:-latest}"; shift ;;
+    --channel) shift; CHANNEL="${1:-stable}"; shift ;;
+    -h|--help) usage; exit 0 ;;
+    *) echo "❌ Unknown arg: $1" >&2; usage; exit 2 ;;
+  esac
+done
+
+case "$CHANNEL" in
+  stable|alpha|enterprise) ;;
+  *) echo "❌ Unknown channel: $CHANNEL (want stable|alpha|enterprise)" >&2; exit 2 ;;
+esac
+
+dpkgArch="$(dpkg --print-architecture)"
+case "$dpkgArch" in
+  amd64) GROK_ARCH="x86_64" ;;
+  arm64) GROK_ARCH="aarch64" ;;
+  *) echo "❌ Unsupported arch: $dpkgArch (need amd64 or arm64)"; exit 1 ;;
+esac
+
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
-apt-get install -y --no-install-recommends curl ca-certificates jq
+apt-get install -y --no-install-recommends curl ca-certificates
 rm -rf /var/lib/apt/lists/*
+
+BASE_URL_PRIMARY="https://x.ai/cli"
+BASE_URL_FALLBACK="https://storage.googleapis.com/grok-build-public-artifacts/cli"
+
+# Prefer Cloudflare-fronted x.ai; fall back to direct GCS if unreachable.
+if curl -fsSL --connect-timeout 10 --max-time 30 "${BASE_URL_PRIMARY}/${CHANNEL}" >/tmp/cb-grok-channel.txt 2>/dev/null; then
+  BASE_URL="$BASE_URL_PRIMARY"
+else
+  echo "Note: ${BASE_URL_PRIMARY} unreachable, falling back to GCS."
+  BASE_URL="$BASE_URL_FALLBACK"
+  curl -fsSL --connect-timeout 10 --max-time 30 "${BASE_URL}/${CHANNEL}" >/tmp/cb-grok-channel.txt
+fi
+
+if [[ "$REQ_VER" == "latest" ]]; then
+  VERSION="$(tr -d '[:space:]\r' </tmp/cb-grok-channel.txt)"
+else
+  VERSION="${REQ_VER#v}"
+fi
+rm -f /tmp/cb-grok-channel.txt
+
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9._]+)?$ ]]; then
+  echo "❌ Invalid Grok version: $VERSION" >&2
+  exit 1
+fi
+
+ARTIFACT_URL="${BASE_URL}/grok-${VERSION}-linux-${GROK_ARCH}"
+echo "⬇️  Installing Grok Build v${VERSION} (linux-${GROK_ARCH}, channel=${CHANNEL}) ..."
+TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
+curl -fsSL --connect-timeout 10 --speed-limit 1024 --speed-time 30 \
+  -o "$TMP/grok" "$ARTIFACT_URL"
+chmod +x "$TMP/grok"
+
+# Sanity-check the binary before replacing anything.
+if ! "$TMP/grok" --version </dev/null >/dev/null 2>&1; then
+  echo "❌ Downloaded grok failed to run; aborting install." >&2
+  exit 1
+fi
+
+install -m 755 "$TMP/grok" /usr/local/bin/grok
+# Upstream installer also exposes 'agent' as an alias of the same binary.
+ln -sfn /usr/local/bin/grok /usr/local/bin/agent
 
 STARTUP_FILE="/usr/share/startup.d/70-cb-grok--startup.sh"
 PROFILE_FILE="/etc/profile.d/70-cb-grok--profile.sh"
 
-# Install the grok wrapper CLI (self-contained bash + curl + jq)
-cat > /usr/local/bin/grok <<'GROKCLI'
-#!/usr/bin/env bash
-# grok — lightweight CLI for xAI Grok (https://x.ai)
-# Copyright 2025-2026 : Nawa Manusitthipol (for CodingBooth packaging)
-set -euo pipefail
-
-# Resolve API key (env var takes precedence, then common file locations)
-API_KEY="${XAI_API_KEY:-${XAI_KEY:-}}"
-
-if [[ -z "$API_KEY" ]]; then
-    for f in \
-        "$HOME/.config/xai/key" \
-        "$HOME/.config/xai/api_key" \
-        "$HOME/.xai/key" \
-        "$HOME/.xai/api_key" \
-        "$HOME/.xai/credentials" \
-        "/etc/cb-home-seed/.config/xai/key" \
-        "/etc/cb-home-seed/.xai/key"
-    do
-        if [[ -f "$f" ]]; then
-            API_KEY="$(tr -d ' \t\n\r' < "$f" 2>/dev/null || true)"
-            [[ -n "$API_KEY" ]] && break
-        fi
-    done
-fi
-
-MODEL="${GROK_MODEL:-grok-3-latest}"
-API_URL="https://api.x.ai/v1/chat/completions"
-
-usage() {
-    cat <<EOF
-grok — chat with Grok (xAI)
-
-Usage:
-  grok "your prompt here"          # one-shot question / coding help
-  echo "explain this" | grok       # read prompt from stdin
-  grok                             # interactive REPL (type 'exit' or Ctrl-D to quit)
-
-Environment:
-  XAI_API_KEY     Your xAI API key (recommended)
-  GROK_MODEL      Model to use (default: grok-3-latest)
-                  Common values: grok-3-latest, grok-2-latest, grok-2-1212
-
-Get a key: https://console.x.ai/
-
-Inside a CodingBooth you can also pass it at launch:
-  XAI_API_KEY=sk-... booth
-  # or put it in .booth/.env and it will be picked up
-EOF
-}
-
-if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
-    usage
-    exit 0
-fi
-
-if [[ -z "$API_KEY" ]]; then
-    echo "❌ No xAI API key found." >&2
-    echo "" >&2
-    echo "Set it one of these ways:" >&2
-    echo "  export XAI_API_KEY=sk-..." >&2
-    echo "  XAI_API_KEY=sk-... grok \"hello\"" >&2
-    echo "" >&2
-    echo "Or store it in a file (will be picked up automatically):" >&2
-    echo "  mkdir -p ~/.config/xai && echo 'sk-xxx' > ~/.config/xai/key" >&2
-    echo "" >&2
-    echo "To make it available inside the booth, add to .booth/.env or use:" >&2
-    echo "  booth --env XAI_API_KEY=sk-..." >&2
-    echo "" >&2
-    usage >&2
-    exit 1
-fi
-
-call_api() {
-    local prompt="$1"
-    local payload
-    payload=$(jq -nc \
-        --arg model "$MODEL" \
-        --arg content "$prompt" \
-        '{
-            model: $model,
-            messages: [ { role: "user", content: $content } ],
-            temperature: 0.7,
-            max_tokens: 4096
-        }')
-
-    curl -sS "$API_URL" \
-        -H "Content-Type: application/json" \
-        -H "Authorization: Bearer $API_KEY" \
-        -d "$payload" | \
-    jq -r '
-        if .error then
-            "ERROR: " + (.error.message // .error | tostring)
-        else
-            .choices[0].message.content // "No response"
-        end
-    '
-}
-
-# One-shot mode (argument or stdin)
-if [[ $# -ge 1 ]]; then
-    call_api "$*"
-    exit 0
-fi
-
-# If stdin is not a tty, treat as one-shot from pipe
-if [[ ! -t 0 ]]; then
-    prompt="$(cat)"
-    [[ -n "$prompt" ]] && call_api "$prompt"
-    exit 0
-fi
-
-# Interactive REPL
-echo "grok (${MODEL}) — xAI Grok chat  (type 'exit' or Ctrl-D to quit)"
-echo "────────────────────────────────────────────────────────────────"
-while IFS= read -r -p "grok> " line; do
-    line="${line#"${line%%[![:space:]]*}"}"   # trim leading
-    line="${line%"${line##*[![:space:]]}"}"   # trim trailing
-    [[ -z "$line" ]] && continue
-    [[ "$line" == "exit" || "$line" == "quit" ]] && break
-    echo
-    call_api "$line"
-    echo
-done
-echo "bye 👋"
-GROKCLI
-
-chmod 755 /usr/local/bin/grok
-
-# ---- Create startup file (runs on container start as the coder user) ----
+# ---- Startup: ensure ~/.grok exists (credential seed is handled by booth-entry) ----
 cat > "${STARTUP_FILE}" <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Grok (xAI) startup script
-# Seeds credentials from cb-home-seed into the user's home if present.
-# The grok CLI will automatically discover keys in:
-#   ~/.config/xai/key
-#   ~/.xai/key
-#   and respects XAI_API_KEY env var.
+# Grok Build startup script
+# Credential/config seeding is handled by booth-entry's smart_copy from
+# /etc/cb-home-seed/.grok/ (see the credential extension). This only ensures
+# the config directory exists so first-run login works cleanly.
 
-SEED_DIR="/etc/cb-home-seed"
-
-copy_if_missing() {
-    local src="$1"
-    local dst="$2"
-    if [[ -e "$src" && ! -e "$dst" ]]; then
-        mkdir -p "$(dirname "$dst")"
-        cp -a "$src" "$dst"
-        # tighten perms on key-like files
-        if [[ "$dst" == *key* || "$dst" == *credential* || "$dst" == *api* ]]; then
-            chmod 600 "$dst" 2>/dev/null || true
-        fi
-    fi
-}
-
-# Seed possible credential/config locations (no-clobber)
-copy_if_missing "$SEED_DIR/.config/xai"          "$HOME/.config/xai"
-copy_if_missing "$SEED_DIR/.xai"                 "$HOME/.xai"
-
-# If a top-level key file exists in seed but not yet in home config, help populate
-if [[ -f "$SEED_DIR/xai.key" && ! -f "$HOME/.config/xai/key" ]]; then
-    mkdir -p "$HOME/.config/xai"
-    cp -a "$SEED_DIR/xai.key" "$HOME/.config/xai/key"
-    chmod 600 "$HOME/.config/xai/key" 2>/dev/null || true
-fi
+mkdir -p "$HOME/.grok"
 EOF
 chmod 755 "${STARTUP_FILE}"
 
-# ---- Create profile file ----
-cat > "${PROFILE_FILE}" <<'EOF'
-# Profile: Grok CLI (xAI)
-#   grok "explain bubble sort in Rust"
-#   grok                 # start interactive chat
-#   GROK_MODEL=grok-2-latest grok "quick question"
+# ---- Profile: short usage hint ----
+cat > "${PROFILE_FILE}" <<EOF
+# Profile: Grok Build (xAI) v${VERSION}
+#   grok                 # interactive coding agent TUI
+#   grok "fix a bug"  # one-shot prompt
+#   grok login           # authenticate (or seed ~/.grok/auth.json)
+#   agent                # alias for grok
 #
-# Set your key via env (or store in ~/.config/xai/key):
-#   export XAI_API_KEY=sk-...
+# Auth via ~/.grok/auth.json (from 'grok login') or GROK_DEPLOYMENT_KEY.
+# Docs: https://x.ai/cli
 EOF
 chmod 644 "${PROFILE_FILE}"
 
 echo ""
-echo "✅ Grok CLI installed."
-echo "   Binary:  /usr/local/bin/grok"
+echo "✅ Grok Build installed."
+echo "   Version: ${VERSION}"
+echo "   Binary:  /usr/local/bin/grok  (alias: /usr/local/bin/agent)"
 echo "   Startup: ${STARTUP_FILE}"
 echo "   Profile: ${PROFILE_FILE}"
 echo ""
-echo "Usage examples:"
-echo "  grok \"write a python one-liner to sum a list\""
-echo "  grok                           # interactive"
-echo "  GROK_MODEL=grok-2-latest grok \"hello\""
+echo "Usage:"
+echo "  grok                  # interactive"
+echo "  grok \"explain this\"   # one-shot"
+echo "  grok login            # authenticate"
 echo ""
-echo "=== Authentication ==="
-echo "Set XAI_API_KEY (preferred):"
-echo "  export XAI_API_KEY=sk-..."
-echo "  # or pass at launch: XAI_API_KEY=sk-... booth"
-echo ""
-echo "Or store in a file (auto-detected by the grok CLI):"
-echo "  mkdir -p ~/.config/xai && echo 'sk-xxx' > ~/.config/xai/key"
-echo ""
-echo "To seed credentials from your host machine, add to .booth/config.toml:"
+echo "=== Credential Seeding ==="
+echo "To reuse credentials from the host, add to .booth/config.toml:"
 echo ""
 echo '  run-args = ['
-echo '      # xAI / Grok credentials'
-echo '      "-v", "~/.config/xai:/etc/cb-home-seed/.config/xai:ro",'
-echo '      "-v", "~/.xai:/etc/cb-home-seed/.xai:ro"'
+echo '      # Grok Build auth + settings (not sessions/downloads/worktrees)'
+echo '      "-v", "~/.grok/auth.json:/etc/cb-home-seed/.grok/auth.json:ro",'
+echo '      "-v", "~/.grok/config.toml:/etc/cb-home-seed/.grok/config.toml:ro"'
 echo '  ]'
+echo ""
+echo "Or pass a deployment key at launch:"
+echo "  GROK_DEPLOYMENT_KEY=... booth"
 echo ""
