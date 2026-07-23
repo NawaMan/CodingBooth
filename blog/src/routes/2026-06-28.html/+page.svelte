@@ -1,6 +1,8 @@
 <script>
-	import hiddenCosts from './HiddenCostsOfDevelopmentEnvironments.png';
-	import screenshot  from './screenshot.png';
+	import hiddenCosts   from './HiddenCostsOfDevelopmentEnvironments.png';
+	import screenshot    from './screenshot.png';
+	import dataDesktop   from './data-desktop.jpg';
+	import dataDashboard from './data-dashboard.jpg';
 </script>
 
 <p class="dateline">28 June 2026 · Nawa Man</p>
@@ -154,6 +156,35 @@ Screenshot saved to screenshot.png</code></pre>
 	<figcaption>The Screenshot of Hacker News.</figcaption>
 </figure>
 
+<h3>The system-library dance, done once — <code>systemlib</code></h3>
+<p>
+	The hard part of C and C++ isn't the compiler — it's the libraries. You need the right
+	<code>libxxx-dev</code> packages so the headers <em>and</em> the shared objects are present, you
+	need the build to find and link them, and you need everyone on the <em>same</em> versions or you
+	get an "undefined reference" on one machine and a subtly different bug on another. A booth bakes the
+	libraries in, pinned, so the build just resolves them:
+</p>
+<pre><code>$ ./booth -- ./run-linkcheck.sh
+-- Found CURL: /usr/lib/x86_64-linux-gnu/libcurl.so (found version "8.5.0")
+-- Found SQLite3: /usr/lib/x86_64-linux-gnu/libsqlite3.so (found version "3.45.1")
+[100%] Built target linkcheck
+
+URL                                              RESULT STATUS
+------------------------------------------------ ------ ------
+https://www.iana.org/                            ALIVE  200
+https://www.google.com/                          ALIVE  200
+https://www.google.com/this-page-does-not-exist  DEAD   DEAD: HTTP 404
+https://this-host-does-not-exist-9x8y7z.invalid  DEAD   DEAD: Couldn't resolve host name
+
+Summary: 2 alive, 2 dead. Recorded 4 rows to linkcheck.db</code></pre>
+<p>
+	The program is a link checker: it reads a list of URLs, checks each one with <em>libcurl</em>, and
+	records every result — URL, timestamp, status — into a <em>SQLite</em> database. Two real system
+	libraries, installed with <code>apt</code> and linked by CMake's <code>find_package</code> — exactly
+	the part header-only libraries let you skip. Nothing lands on your host, and the pinned
+	<code>APT_SNAPSHOT</code> means the same library versions build for everyone, every time.
+</p>
+
 <h3>A whole stack on your laptop, then gone — <code>kind-app</code></h3>
 <p>
 	The hardest onboarding is the realistic one. This booth bakes Docker-in-Docker, KinD, kubectl, Go, Bun
@@ -174,6 +205,34 @@ kind-control-plane   Ready   control-plane   87s   v1.32.2</code></pre>
 <p>
 	The cluster lives <em>inside</em> the booth, so tearing it down is just stopping the booth — your host
 	is left exactly as clean as it started.
+</p>
+
+<h3>Batteries included, GUIs and all — <code>data</code></h3>
+<p>
+	A data project is a pile of separate installs that all have to agree: a database, a SQL client,
+	Python with the right libraries, a notebook server. This booth bakes the whole workbench —
+	<em>PostgreSQL, DBeaver, JupyterLab, Python with matplotlib and psycopg2, and a small web
+	dashboard</em> — and wires every one of them to the <em>same</em> seeded dataset. It's the
+	<code>kind-app</code> idea made graphical: instead of a cluster on the command line, one command opens
+	a full desktop in your browser with the tools already running.
+</p>
+<pre><code>$ ./booth        # opens an XFCE desktop in your browser</code></pre>
+<figure>
+	<img src={dataDesktop} alt="An XFCE desktop running in the browser, with DBeaver, JupyterLab, Visual Studio Code, Firefox and Chrome all sitting on the CodingBooth wallpaper" />
+	<figcaption>One command, a whole desktop of tools — DBeaver, JupyterLab and VS Code, all in the browser.</figcaption>
+</figure>
+<p>
+	DBeaver opens with its connection to the demo database <em>already configured</em>; JupyterLab is up
+	with a notebook that queries the data and charts it with matplotlib; and a Sales Explorer dashboard
+	is serving live rows straight from PostgreSQL. One dataset, seen through every lens at once:
+</p>
+<figure>
+	<img src={dataDashboard} alt="The Sales Explorer web dashboard: filters, summary stat cards, and two bar charts of revenue and quantity by category, all drawn from the seeded PostgreSQL data" />
+	<figcaption>The Sales Explorer dashboard — real rows from the booth's PostgreSQL, charted in the browser.</figcaption>
+</figure>
+<p>
+	Stop the booth and the whole workbench — database, notebook, dashboard, every GUI — is gone, with
+	nothing left installed on your host.
 </p>
 
 <p>Installing CodingBooth is one command:</p>
