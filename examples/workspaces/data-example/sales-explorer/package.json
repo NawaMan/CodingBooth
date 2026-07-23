@@ -1,0 +1,14 @@
+{
+    "name": "sales-explorer",
+    "private": true,
+    "version": "0.1.0",
+    "description": "Sales Explorer — query and chart PostgreSQL sales data",
+    "main": "server.js",
+    "scripts": {
+        "start": "node server.js"
+    },
+    "dependencies": {
+        "express": "^4.21.2",
+        "pg": "^8.13.3"
+    }
+}
