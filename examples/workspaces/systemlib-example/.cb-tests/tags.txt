@@ -1,0 +1,9 @@
+language
+clang
+cpp
+cmake
+apt
+package-manager
+system-library
+libcurl
+sqlite

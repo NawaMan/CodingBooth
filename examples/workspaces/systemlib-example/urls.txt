@@ -1,0 +1,10 @@
+# One URL per line. Blank lines and lines starting with '#' are ignored.
+# Results depend on the live network, so they will vary run to run — that's the
+# point of a link checker. Two entries are deliberately dead: one returns an HTTP
+# error, and the last uses the reserved .invalid TLD so it always fails DNS.
+
+https://example.com/
+https://www.iana.org/
+https://www.google.com/
+https://www.google.com/this-page-does-not-exist-9x8y7z
+https://this-host-does-not-exist-9x8y7z.invalid/
