@@ -1,0 +1,9 @@
+{
+  "name": "polyglot-js",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Playwright JavaScript binding — polyglot example",
+  "dependencies": {
+    "playwright": "1.58.0"
+  }
+}

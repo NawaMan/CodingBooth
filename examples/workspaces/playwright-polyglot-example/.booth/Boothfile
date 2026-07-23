@@ -1,0 +1,33 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select nodejs/python/java+maven/dotnet/go/playwright:chromium,1.58.0+java+dotnet
+
+env APT_SNAPSHOT=20260722T000000Z
+
+arg DOTNET_CHANNEL=9.0
+arg GO_VERSION=1.25.7
+arg JDK_VENDOR=temurin
+arg JDK_VERSION=25
+arg MAVEN_VERSION=3.9.12
+arg NODE_VERSION=22
+arg PLAYWRIGHT_BROWSERS=chromium
+arg PLAYWRIGHT_VERSION=1.58.0
+arg PYTHON_VERSION=3.13.12
+
+# Five language toolchains in one booth.
+setup dotnet ${DOTNET_CHANNEL}
+setup go ${GO_VERSION}
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+setup mvn ${MAVEN_VERSION}
+setup nodejs ${NODE_VERSION}
+setup python ${PYTHON_VERSION}
+
+# Playwright + the pre-baked Chromium, pinned. The Node binding installs the browser
+# into the shared cache (~/.cache/ms-playwright); the Python/Java/.NET bindings below
+# are pinned to the same version so they reuse it instead of downloading their own.
+setup playwright ${PLAYWRIGHT_BROWSERS} --version ${PLAYWRIGHT_VERSION}
+
+# Python binding, pinned to the same Playwright version.
+run pip install playwright==${PLAYWRIGHT_VERSION}
+
+# .NET Playwright CLI (points .NET projects at the shared browser cache).
+run dotnet tool install --global Microsoft.Playwright.CLI || true
