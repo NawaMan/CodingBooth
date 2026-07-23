@@ -2,12 +2,17 @@
 
 Findings from an audit of the configuration feature (2026-07-22, against `v0.63.0` /
 commit `715dd3a6`). The question asked was: *does the config TUI support everything a
-Boothfile / config.toml can express?* It does not — the TUI reaches well under half of
-`config.toml`, none of the Boothfile directly, and along the way it **destroys**
-settings it does not know about.
+Boothfile / config.toml can express?* It did not — the TUI reached well under half of
+`config.toml`, none of the Boothfile directly, and along the way it **destroyed**
+settings it did not know about.
 
 Every claim below was verified against the built `./codingbooth` binary; the TUI ones
 were driven with VHS, the same way `tests/config-tui/` does.
+
+**Status:** all five sections are closed. Four were fixed; §5 was answered rather
+than fixed — the audit's framing of it was wrong, and the section now records why.
+Each one keeps the original finding below its resolution, since the reasoning is
+what makes the outcome useful.
 
 Back to [TODO](TODO.md) | See also: [booth config](BOOTH_CONFIG.md), [config TUI](BOOTH_CONFIG_TUI.md)
 
@@ -20,20 +25,24 @@ Back to [TODO](TODO.md) | See also: [booth config](BOOTH_CONFIG.md), [config TUI
 - [2. Dead fields — written to config.toml, never read back](#2-dead-fields--written-to-configtoml-never-read-back)
 - [3. `--set` is unvalidated and cannot write integers](#3---set-is-unvalidated-and-cannot-write-integers)
 - [4. config.toml keys with no TUI field](#4-configtoml-keys-with-no-tui-field)
-- [5. The TUI cannot express the Boothfile at all](#5-the-tui-cannot-express-the-boothfile-at-all)
+- [5. The TUI cannot express the Boothfile — and should not](#5-the-tui-cannot-express-the-boothfile--and-should-not)
 
 ---
 
 ## Priority
 
-The gaps in §4 and §5 are *missing features*. §1–§3 are **defects**, and §1 loses user
-data on a no-op save, so it outranks any amount of field-table expansion.
+§1–§3 were **defects**, and §1 lost user data on a no-op save, so it outranked any
+amount of field-table expansion. §4 was a *missing feature*. §5 was filed as the
+largest gap of the three and turned out not to be a gap at all — see the section.
+
+All five are now closed; the follow-up §5 spun out is tracked on its own.
 
 - [x] **§1** — TUI save drops `cmds`, `timezone`, `persist-home`, `idle-*`, `sudo=false`, … — **fixed**
 - [x] **§2** — `Public` / `TLS Cert` / `TLS Key` TUI fields do nothing — **fixed** (fields removed)
 - [x] **§3** — `--set` accepts any key; integer keys produce an unloadable config.toml — **fixed**
 - [x] **§4** — 30 config.toml keys had no TUI field — **fixed** (field table generated from the schema)
-- [ ] **§5** — decide whether the TUI gets a raw-Boothfile escape hatch
+- [x] **§5** — raw-Boothfile escape hatch — **won't fix**: declarative editor, procedural
+      file; the seam is a boundary, not a gap. Follow-up spun out: project-local templates
 
 ---
 
@@ -269,7 +278,16 @@ TUI-unreachable. They survive a TUI save today only because templates re-emit th
 
 ---
 
-## 5. The TUI cannot express the Boothfile at all
+## 5. The TUI cannot express the Boothfile — and should not
+
+> **WON'T FIX — this is a boundary, not a gap.** The section was written as
+> though the TUI ought to reach the Boothfile and merely lacked the widgets. It
+> cannot, and the reason is not expressiveness. The two halves of a booth are
+> different kinds of thing, and the audit had mistaken the seam between them for
+> a hole. The reasoning is kept below because the conclusion is only useful with
+> it.
+
+### The observation
 
 The Boothfile parser accepts `run`, `copy`, `env`, `workdir`, `expose`, `label`, `arg`,
 `setup` and `install` — [`cli/src/pkg/boothfile/parser.go:423-447`](../cli/src/pkg/boothfile/parser.go).
@@ -277,18 +295,67 @@ The TUI's entire Boothfile surface is **template selection plus template paramet
 it compiles templates and emits nothing else. There is no way, from the TUI, to add:
 
 - an ad-hoc `run` / `copy` / `workdir` / `label` / build-time `env` line
-- a `setup <script>` pointing at a hand-written `.booth/setups/` script
 - an `install <mgr> <pkgs>` for a manager with no `*-pkg` extension
 - a `.booth/startups/*--startup.sh` script (they survive regeneration, but cannot be authored)
 
-This is the structural gap. As soon as a project needs one custom build step the user
-hand-edits the Boothfile — and drift detection then locks them out of the TUI's write
-path for good (`.new` / `.bak` merge only, see
-[BOOTH_CONFIG.md](BOOTH_CONFIG.md#hand-written-files)). The TUI is effectively a
-one-way door: good for greenfield, unusable as the ongoing editor for any booth that
-has outgrown templates.
+### Why no escape hatch works
 
-Worth considering: a "raw Boothfile lines" block the compiler appends verbatim and the
-TUI round-trips, so hand-written additions stop counting as drift. That is a design
-decision, not a missing widget, which is why it sits last here despite being the
-largest gap.
+`config.toml` is a set of settings: unordered, each key independent, every one
+meaningful on its own. The Boothfile is a **program**: `run apt-get install X`
+before `setup go` and after it are different builds. The TUI is a declarative
+editor, and it is a good one — §4 made it complete over `config.toml` precisely
+because that half *is* a set of independent facts.
+
+A procedural line has one property the declarative model has nowhere to store:
+**where it goes**. The obvious escape hatch — a "raw Boothfile lines" block the
+compiler emits verbatim and the TUI round-trips — founders on exactly that. The
+block has to sit somewhere, and any fixed position is a guess about a build step
+whose whole meaning is its position. Worse, the position is not even stable:
+select one more template next month and the resolver reorders what precedes the
+block, so the same preserved text silently becomes a different program. Round-
+tripping preserves the characters and loses the semantics, which is the failure
+mode that looks like it works.
+
+Every variant of the idea has the same shape. Making the TUI *author* `run`
+lines does not help either — it would be reimplementing a text editor inside a
+template picker, badly, for a file the user's own editor already handles.
+
+### So the drift lockout is correct
+
+As soon as a project needs one custom build step the user hand-edits the
+Boothfile, and drift detection then restricts them to `.new` / `.bak` merges
+(see [BOOTH_CONFIG.md](BOOTH_CONFIG.md#hand-written-files)). The original text
+called this a one-way door and counted it as part of the gap.
+
+It is the honest behaviour. If a hand-edited procedural file cannot be
+regenerated without losing the edits — and per the argument above it cannot —
+then refusing to overwrite it is right. Softening the lockout would not recover
+the edits; it would only lose them more quietly.
+
+### What the declarative half *can* hold: a name
+
+It cannot hold a sequence, but it can hold a **named unit**, and that mechanism
+already exists. `.booth/setups/<name>--setup.sh` is copied into the image and
+put on `PATH` ([`pkg/boothfile/compiler.go:57`](../cli/src/pkg/boothfile/compiler.go)),
+and a `setup <name>` line resolves to it. The procedural part lives in a shell
+script — a procedural tool for a procedural job — and the declarative part
+refers to it by name, ordered by the same dependency rules as everything else.
+
+What is missing is only that a project cannot contribute such a unit to the
+picker: [`LoadRegistry`](../cli/src/pkg/boothinit/template/loader.go) reads
+exactly one templates directory, so a hand-written setup script can be *written*
+but never *selected*.
+
+That is the shape of a real follow-up — project-local templates under
+`.booth/templates/`, merged into the registry so a local unit gets a name,
+dependencies and params like any other. It is a feature on its own merits
+(registry merge, name-collision rules, how a local template interacts with
+drift), not a way of closing this section, and it should be scoped as one.
+
+### The boundary, stated
+
+The config TUI owns `config.toml`, completely as of §4. It owns the Boothfile
+only while that file is purely template-generated. Once a booth needs a custom
+build step, the Boothfile is the user's, and the TUI stops writing it.
+
+That is a property of the design, not a defect in it.
