@@ -25,6 +25,7 @@ Back to [README](../README.md)
 - [Selection DSL](#selection-dsl)
 - [Selection Sources](#selection-sources)
 - [Flags](#flags)
+- [Setting config values](#setting-config-values)
 - [Browsing Templates](#browsing-templates)
 - [What Gets Generated](#what-gets-generated)
 - [Hand-Written Files](#hand-written-files)
@@ -372,13 +373,65 @@ Recipe files are plain text with the same DSL syntax — one template per line.
 | `--expose <port>`          | Expose extra port (HOST:CONTAINER, +OFFSET, or host-side `${NAME:-digits}`; produces long-form `--publish` in run-args; repeatable) |
 | `--env <KEY=VALUE>`        | Set container environment variable (produces long-form `--env` in run-args to distinguish from template-contributed `-e`; repeatable) |
 | `--mount <host:container>` | Mount volume (produces long-form `--volume` in run-args to distinguish from template-contributed `-v`; repeatable) |
-| `--set <key=value>`        | Set a config.toml value (repeatable; bare key = boolean true)  |
+| `--set <key=value>`        | Set a config.toml value (repeatable; bare key = boolean true). See [Setting config values](#setting-config-values) |
 | `--version <ver>`          | Use templates from a specific release version                  |
 | `--templates-path <dir>`   | Use local templates directory                                  |
 | `--overwrite`              | Overwrite existing files without prompting — including [hand-written](#hand-written-files) ones, which are kept as `<name>.bak` (`--no-tui` only) |
 | `--beside`                 | Keep [hand-written](#hand-written-files) files; write the generated content next to them as `<name>.new` to merge by hand (`--no-tui` only) |
 | `--start`                  | Launch the booth immediately after config                      |
 | `--debug`                  | Print resolved selection and compiled output as JSON           |
+
+---
+
+## Setting config values
+
+`--set` writes a key into the generated `config.toml`. The value is written in the
+shape that key expects, so it lands in the booth as the right type:
+
+```bash
+booth config --no-tui --select go \
+    --set persist-home \                # bare key → boolean true
+    --set keep-alive=false \            # explicit boolean
+    --set timezone=Asia/Bangkok \       # string
+    --set idle-time=30 \                # integer — written unquoted
+    --set egress-allowlist=example.com  # list — repeat the flag to add more
+```
+
+A bare key means "turn this on", which only reads as an intent for a boolean —
+`--set timezone` is an error, not an empty string.
+
+### Keys are checked
+
+Only keys booth actually reads are accepted. A typo is refused up front rather than
+written into `config.toml` and silently ignored at every start afterwards:
+
+```
+Error parsing --set: unknown --set key "persist-hom": booth does not read that from config.toml
+       Did you mean "persist-home"?
+```
+
+The same applies to the value's type — `--set idle-time=soon` is refused, because an
+integer key holding a string produces a `config.toml` booth cannot load at all.
+
+### Exposure and TLS are start-time only
+
+`public`, `tls-cert` and `tls-key` are **not** config.toml settings. They are real —
+`booth --public --tls-cert cert.pem --tls-key key.pem` binds the booth on all
+interfaces behind a password over HTTPS — but booth reads them only as flags, never
+from a file, so they are not something `booth config` can store:
+
+```bash
+booth --public                                   # this works
+booth config --no-tui --set public               # this does not — warns, and is ignored
+```
+
+That is deliberate. `config.toml` is committed, so a stored `public = true` would
+expose the booth on every machine that clones the project, while the password it
+requires lives in `.booth/.booth.password`, which is gitignored and therefore absent
+for everyone but you.
+
+`booth config` has no fields for these, and a value recorded by an older version is
+dropped on the next reconfigure with a note.
 
 ---
 

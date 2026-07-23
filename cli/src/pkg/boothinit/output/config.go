@@ -75,6 +75,12 @@ func SerializeConfigToml(cfg *ConfigToml, command, adjustCommand string) string 
 			switch val := v.(type) {
 			case bool:
 				fmt.Fprintf(&b, "%s = %t\n", k, val)
+			case int:
+				// Unquoted: these land in integer fields, and a quoted number
+				// fails the TOML decode outright rather than coercing.
+				fmt.Fprintf(&b, "%s = %d\n", k, val)
+			case []string:
+				writeStringArray(&b, k, val)
 			case string:
 				fmt.Fprintf(&b, "%s = %q\n", k, val)
 			default:

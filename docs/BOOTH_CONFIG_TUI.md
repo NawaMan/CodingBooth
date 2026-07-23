@@ -13,6 +13,7 @@ Back to [README](../README.md) | See also: [booth config reference](BOOTH_CONFIG
 - [Quick Start](#quick-start)
 - [How It Works](#how-it-works)
 - [TUI Layout](#tui-layout)
+- [The Config Tab](#the-config-tab)
 - [Keybindings](#keybindings)
 - [Pre-populating with Flags](#pre-populating-with-flags)
 - [Selection Behavior](#selection-behavior)
@@ -93,6 +94,55 @@ If the booth holds hand-written files, step 2 also raises a warning on open and 
 - **Footer line 2**: Context-sensitive keybinding hints
 
 Extensions marked with `*` are auto-selected when their parent template is selected.
+
+---
+
+## The Config Tab
+
+Tab 0 holds the settings that end up in `.booth/config.toml`, grouped and
+scrollable. Every setting a booth can hold has a field here, with three
+deliberate exceptions listed below.
+
+| Group | Settings |
+|---|---|
+| Booth | Booth Version |
+| General | Variant, Port, Name, Templates Version |
+| Container | Docker-in-Docker, Keep Alive, Daemon, Sudo, Writable `.booth/`, Persist Home, Project Name, Timezone, Host UID, Host GID |
+| Egress | Egress, Egress Mode, Egress Enforcement, Egress Allowlist, Egress Allowlist File, Egress Policy File |
+| Build | Silence Build, Always Pull, Strict, Emit Dockerfile, Dockerfile, Boothfile, Build Args, Common Args |
+| Advanced | Image, Image Version, Startup Command, Env File, Commands |
+| Network & Volumes | Expose, Env, Mount |
+| Cache | Cache Files, Cache Dirs |
+| Session | Idle Time, Idle Shutdown Time, Idle Exit Code, Show Run Time, Show Count Down, Count Down Exit Code |
+| Temp Files | Leave Tmp On Exit, Keep Tmp On Start |
+| Debug | Verbose, Dry Run, Log Time, Debug |
+
+Four fields are not `config.toml` settings and are not written to it:
+
+- **Booth Version** writes the `.booth/` lock file — which CLI binary the booth runs.
+- **Templates Version** picks the release whose templates *this configure run*
+  compiles from. It is recorded in the `Configured by:` header, not as a setting.
+  (**Image Version**, under Advanced, is the separate `version` key: which
+  prebuilt booth image to run.)
+- **Debug** prints the resolved selection for this run, like `--debug`.
+- **Expose / Env / Mount** compile into `run-args` — see
+  [run-args ownership](BOOTH_CONFIG.md#run-args-ownership-convention).
+
+And three settings are deliberately absent:
+
+- **`--public` / `--tls-cert` / `--tls-key`** are start-time only. `config.toml`
+  is committed, so a stored `public = true` would expose the booth for everyone
+  who clones it, while the password it requires lives in a gitignored file they
+  do not have. Booth never reads these from a file.
+- **`config` / `code`** name *which* booth to read and configure. They are
+  arguments to the run, not settings inside it.
+- **`run-args`** is compiled from Expose / Env / Mount; a raw field would fight them.
+
+The field list is generated from the settings booth actually reads, so it cannot
+fall behind: a setting added to booth has no field until one is written for it,
+and a setting removed from booth loses its field automatically. A save rewrites
+`config.toml` from scratch but only speaks for the keys on this tab — anything
+else the booth holds is carried through untouched.
 
 ---
 

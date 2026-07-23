@@ -4,6 +4,30 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The config TUI now has a field for every setting a booth can hold.**
+  It reached 18 of the 48 keys a `config.toml` may contain; the other 30 — `idle-time`,
+  `persist-home`, `timezone`, `project-name`, the egress detail keys, `cmds`, the cache
+  lists, and the rest — were reachable only by hand-editing or `--set`. All of them have
+  fields now, grouped into Container, Egress, Build, Cache, Session and Temp Files
+  sections. Integer settings get a digits-only editor and are written unquoted, which
+  they have to be: `idle-time = "30"` fails the TOML decode and takes the whole booth
+  with it.
+
+  The field list is no longer hand-kept. It is generated from the settings booth actually
+  reads, so a setting added to booth has no field until one is written for it (a test
+  says so), and one removed from booth loses its field automatically. The hand-kept copy
+  is what drifted before — and while it was adrift, a TUI save deleted the settings it
+  had fallen behind on.
+
+  Two things this surfaced. The **Version** field was labelled and documented as the
+  prebuilt image tag but had always been wired to `--version`, the *template release* the
+  configure run compiles from — it never wrote the `version` key at all. It is now
+  **Templates Version**, with **Image Version** alongside it for the real setting. And
+  reconfiguring a booth **grew its cache lists**: a `cache-files` entry was applied both
+  from the existing `config.toml` and from the `Configured by:` header, so it doubled on
+  every save. Both fixed. See
+  [booth config — the Config tab](BOOTH_CONFIG_TUI.md#the-config-tab).
+
 - **A booth on a git worktree (or submodule) now starts.**
   The base image installs a `git lg` convenience alias at container start. Git runs repo discovery
   before *every* subcommand — including `git config --global`, which needs no repo — so in a

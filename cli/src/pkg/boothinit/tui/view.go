@@ -236,7 +236,7 @@ func (m model) renderConfigPanel(leftWidth, contentH int) []string {
 				line = m.renderBoolField(f, leftWidth, isCursor)
 			case fieldKindCycle:
 				line = m.renderCycleField(f, leftWidth, isCursor)
-			case fieldKindString:
+			case fieldKindString, fieldKindInt:
 				line = m.renderStringField(f, leftWidth, isCursor)
 			}
 			lines = append(lines, line)
@@ -413,8 +413,11 @@ func (m model) renderConfigDetail(rightWidth, contentH int) []string {
 		}
 
 		// For string fields, show edit hint
-		if f.Kind == fieldKindString {
+		if f.Kind == fieldKindString || f.Kind == fieldKindInt {
 			lines = append(lines, "")
+			if f.Kind == fieldKindInt {
+				lines = append(lines, detailLabel.Render("Digits only."))
+			}
 			val := m.stringFields[f.Key]
 			if val != "" {
 				lines = append(lines, detailLabel.Render("Current: ")+val)

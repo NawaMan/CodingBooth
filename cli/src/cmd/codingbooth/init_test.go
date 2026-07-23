@@ -100,6 +100,83 @@ func TestParseSetOverrides_MultipleValues(t *testing.T) {
 	assert.Equal(t, "test", result["name"])
 }
 
+// parseSetOverrides — typing against the config schema.
+//
+// The Go type here decides the TOML shape written to config.toml. An integer key
+// carried as a string produced `idle-time = "30"`, which booth then refused to
+// decode at all — the booth was unstartable until the line was removed by hand.
+
+func TestParseSetOverrides_IntegerKeyIsAnInt(t *testing.T) {
+	result, err := parseSetOverrides([]string{"idle-time=30"})
+	assert.NoError(t, err)
+	assert.Equal(t, 30, result["idle-time"], "an int-typed key must not be carried as a string")
+}
+
+func TestParseSetOverrides_IntegerKeyRejectsNonNumber(t *testing.T) {
+	_, err := parseSetOverrides([]string{"idle-time=soon"})
+	assert.Error(t, err)
+}
+
+func TestParseSetOverrides_UnknownKeyIsRejected(t *testing.T) {
+	_, err := parseSetOverrides([]string{"totally-bogus-key=42"})
+	assert.Error(t, err, "an unknown key would be written and then silently ignored forever")
+}
+
+func TestParseSetOverrides_TypoSuggestsTheRealKey(t *testing.T) {
+	_, err := parseSetOverrides([]string{"persist-hom"})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "persist-home")
+}
+
+func TestParseSetOverrides_BareKeyRejectedForNonBool(t *testing.T) {
+	// "turn it on" only reads as an intent for a boolean; for a string the value
+	// is missing rather than implied.
+	_, err := parseSetOverrides([]string{"timezone"})
+	assert.Error(t, err)
+}
+
+func TestParseSetOverrides_BooleanKeyRejectsNonBool(t *testing.T) {
+	_, err := parseSetOverrides([]string{"dind=maybe"})
+	assert.Error(t, err)
+}
+
+func TestParseSetOverrides_ListKeyAccumulates(t *testing.T) {
+	result, err := parseSetOverrides([]string{"egress-allowlist=a.com", "egress-allowlist=b.com"})
+	assert.NoError(t, err)
+	assert.Equal(t, []string{"a.com", "b.com"}, result["egress-allowlist"])
+}
+
+func TestDropUnknownSets_KeepsKnownDropsStale(t *testing.T) {
+	// Settings recovered from an existing booth's header are history, not intent.
+	// `--set debug` was written by the config TUI for as long as it treated debug
+	// as a config value, so refusing the run over it would leave those booths
+	// impossible to reconfigure.
+	kept := dropUnknownSets([]string{"keep-alive", "debug", "timezone=Asia/Bangkok"}, ".booth/Boothfile")
+	assert.Equal(t, []string{"keep-alive", "timezone=Asia/Bangkok"}, kept)
+}
+
+func TestDropUnknownSets_DropsKeysBoothNeverReadsFromFile(t *testing.T) {
+	// public/tls-cert/tls-key are real settings, but start-time only — booth does
+	// not read them from a file. The config TUI offered them until that was found
+	// out, so booths configured before then still record them; re-emitting the
+	// line on every reconfigure would keep a setting that never takes effect.
+	kept := dropUnknownSets([]string{"public", "tls-cert=/tmp/a.pem", "keep-alive"}, ".booth/Boothfile")
+	assert.Equal(t, []string{"keep-alive"}, kept)
+}
+
+func TestDropUnknownSets_LeavesEmptyAlone(t *testing.T) {
+	assert.Empty(t, dropUnknownSets(nil, ".booth/Boothfile"))
+}
+
+func TestParseSetOverrides_UnreadKeyIsAcceptedNotRejected(t *testing.T) {
+	// `public` is tagged toml:"-" — booth never reads it from a file. It is still
+	// a real setting reachable as a start-time flag, and the config TUI offers it,
+	// so rejecting it would break saving. It warns instead.
+	result, err := parseSetOverrides([]string{"public"})
+	assert.NoError(t, err)
+	assert.Equal(t, true, result["public"])
+}
+
 // applySetOverrides
 
 func TestApplySetOverrides_KnownField_Variant(t *testing.T) {
