@@ -234,7 +234,11 @@ All templates and extensions grouped by segment order.
 | `tools/aws-cli`        | AWS CLI          |
 | `tools/build-essential`| Build Essentials |
 | `tools/claude-code`    | Claude Code      |
-| `tools/grok`           | Grok (xAI)       |
+| `ai-tools/opencode`    | OpenCode         |
+| `ai-tools/gemini-cli`  | Gemini CLI       |
+| `ai-tools/grok`        | Grok Build (xAI) |
+| `ai-tools/oh-my-pi`    | Oh My Pi (omp)   |
+| `ai-tools/goose`       | Goose            |
 | `tools/herdr`          | Herdr (agent multiplexer) |
 | `tools/cmake`          | CMake            |
 | `tools/conan`          | Conan            |

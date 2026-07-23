@@ -1,0 +1,10 @@
+display-name = "Goose Extensions"
+display-disc = "Mount host Goose MCP extensions / recipes"
+display-detail = "Seeds host Goose extension-related files under `~/.config/goose/extensions` when present. Opt-in — not credentials."
+display-order = 92
+auto-select = false
+tags = ["goose", "plugins", "mcp", "extensions"]
+
+run-args = [
+    "-v", "~/.config/goose/extensions:/etc/cb-home-seed/.config/goose/extensions:ro",
+]

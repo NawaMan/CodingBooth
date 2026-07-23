@@ -145,6 +145,7 @@ tests/**/.cb-temp.*
 variants/base/_stage/
 
 # AI Agent — ignore local settings/worktrees, but share project skills.
+/worktree/
 .claude/*
 !.claude/skills/
 

@@ -1,7 +1,7 @@
 display-name = "Herdr"
 primary = true
 display-disc = "Agent multiplexer (tmux for AI coding agents)"
-display-detail = "Installs Herdr, a terminal-native multiplexer designed for running and managing multiple AI coding agents side-by-side. Provides persistent workspaces, tabs, panes, mouse support, and built-in awareness of agent state (working, blocked, idle, done). Pairs perfectly with claude-code, codex, aider, grok, and similar tools."
+display-detail = "Installs Herdr, a terminal-native multiplexer designed for running and managing multiple AI coding agents side-by-side. Provides persistent workspaces, tabs, panes, mouse support, and built-in awareness of agent state (working, blocked, idle, done). Pairs perfectly with claude-code, codex, aider, grok, oh-my-pi, and similar tools."
 display-order = 24
 tags = [
     "ai",

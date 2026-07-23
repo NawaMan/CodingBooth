@@ -1,0 +1,10 @@
+display-name = "Settings Cache"
+display-disc = "Persist OpenCode config and session data across booth restarts"
+display-order = 91
+auto-select = true
+tags = ["opencode", "persistence", "cache"]
+
+cache-dirs = [
+    "home/coder/.config/opencode",
+    "home/coder/.local/share/opencode",
+]

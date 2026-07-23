@@ -80,4 +80,45 @@ has   "$config" '"~/.codex/auth.json:/etc/cb-home-seed/.codex/auth.json:ro"'    
 has   "$config" '"~/.codex/config.toml:/etc/cb-home-seed/.codex/config.toml:ro"' ; check $? "codex seeds config.toml"
 ! has "$config" '"~/.codex:/etc/cb-home-seed/.codex:ro"'                         ; check $? "codex does not seed all of ~/.codex"
 
+# ---------------------------------------------------------------------------
+# grok — auth + settings, not sessions/worktrees/downloads
+# ---------------------------------------------------------------------------
+run booth config $prj --no-tui --overwrite --select "grok+credential"
+has   "$config" '"~/.grok/auth.json:/etc/cb-home-seed/.grok/auth.json:ro"'     ; check $? "grok seeds auth.json"
+has   "$config" '"~/.grok/config.toml:/etc/cb-home-seed/.grok/config.toml:ro"' ; check $? "grok seeds config.toml"
+! has "$config" '"~/.grok:/etc/cb-home-seed/.grok:ro"'                         ; check $? "grok does not seed all of ~/.grok"
+
+# ---------------------------------------------------------------------------
+# oh-my-pi — agent.db + config.yml, not sessions/logs/natives
+# ---------------------------------------------------------------------------
+run booth config $prj --no-tui --overwrite --select "oh-my-pi+credential"
+has   "$config" '"~/.omp/agent/agent.db:/etc/cb-home-seed/.omp/agent/agent.db:ro"'     ; check $? "oh-my-pi seeds agent.db"
+has   "$config" '"~/.omp/agent/config.yml:/etc/cb-home-seed/.omp/agent/config.yml:ro"' ; check $? "oh-my-pi seeds config.yml"
+! has "$config" '"~/.omp:/etc/cb-home-seed/.omp:ro"'                                   ; check $? "oh-my-pi does not seed all of ~/.omp"
+
+# ---------------------------------------------------------------------------
+# opencode — auth + config, not full share/config trees
+# ---------------------------------------------------------------------------
+run booth config $prj --no-tui --overwrite --select "opencode+credential"
+has   "$config" '"~/.local/share/opencode/auth.json:/etc/cb-home-seed/.local/share/opencode/auth.json:ro"' ; check $? "opencode seeds auth.json"
+has   "$config" '"~/.config/opencode/opencode.json:/etc/cb-home-seed/.config/opencode/opencode.json:ro"'   ; check $? "opencode seeds opencode.json"
+! has "$config" '"~/.config/opencode:/etc/cb-home-seed/.config/opencode:ro"'                               ; check $? "opencode does not seed all of ~/.config/opencode"
+! has "$config" '"~/.local/share/opencode:/etc/cb-home-seed/.local/share/opencode:ro"'                     ; check $? "opencode does not seed all of share/opencode"
+
+# ---------------------------------------------------------------------------
+# gemini-cli — settings + oauth only, not whole ~/.gemini (Antigravity lives there)
+# ---------------------------------------------------------------------------
+run booth config $prj --no-tui --overwrite --select "gemini-cli+credential"
+has   "$config" '"~/.gemini/settings.json:/etc/cb-home-seed/.gemini/settings.json:ro"'         ; check $? "gemini-cli seeds settings.json"
+has   "$config" '"~/.gemini/oauth_creds.json:/etc/cb-home-seed/.gemini/oauth_creds.json:ro"' ; check $? "gemini-cli seeds oauth_creds.json"
+! has "$config" '"~/.gemini:/etc/cb-home-seed/.gemini:ro"'                                     ; check $? "gemini-cli does not seed all of ~/.gemini"
+
+# ---------------------------------------------------------------------------
+# goose — config + secrets, not whole ~/.config/goose
+# ---------------------------------------------------------------------------
+run booth config $prj --no-tui --overwrite --select "goose+credential"
+has   "$config" '"~/.config/goose/config.yaml:/etc/cb-home-seed/.config/goose/config.yaml:ro"'   ; check $? "goose seeds config.yaml"
+has   "$config" '"~/.config/goose/secrets.yaml:/etc/cb-home-seed/.config/goose/secrets.yaml:ro"' ; check $? "goose seeds secrets.yaml"
+! has "$config" '"~/.config/goose:/etc/cb-home-seed/.config/goose:ro"'                           ; check $? "goose does not seed all of ~/.config/goose"
+
 finally

@@ -1,0 +1,11 @@
+display-name = "Grok Build Plugins"
+display-disc = "Mount host Grok plugins and skills"
+display-detail = "Seeds host-installed Grok Build plugins and user skills into the booth. Mounts `~/.grok/installed-plugins` and `~/.grok/skills` only — not `marketplace-cache/` (re-fetched on demand), `sessions/`, `worktrees/`, or `downloads/`. Opt-in: host plugin trees can be large and are not credentials."
+display-order = 92
+auto-select = false
+tags = ["grok", "xai", "plugins", "skills"]
+
+run-args = [
+    "-v", "~/.grok/installed-plugins:/etc/cb-home-seed/.grok/installed-plugins:ro",
+    "-v", "~/.grok/skills:/etc/cb-home-seed/.grok/skills:ro",
+]

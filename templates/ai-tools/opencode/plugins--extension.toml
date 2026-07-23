@@ -1,0 +1,12 @@
+display-name = "OpenCode Plugins"
+display-disc = "Mount host OpenCode plugins, skills, and agents"
+display-detail = "Seeds host plugin-style content from `~/.config/opencode/plugins`, `skills`, and `agents`. Opt-in: not credentials, and trees can grow with third-party packages."
+display-order = 92
+auto-select = false
+tags = ["opencode", "plugins", "skills"]
+
+run-args = [
+    "-v", "~/.config/opencode/plugins:/etc/cb-home-seed/.config/opencode/plugins:ro",
+    "-v", "~/.config/opencode/skills:/etc/cb-home-seed/.config/opencode/skills:ro",
+    "-v", "~/.config/opencode/agents:/etc/cb-home-seed/.config/opencode/agents:ro",
+]

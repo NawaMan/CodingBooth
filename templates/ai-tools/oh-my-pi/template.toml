@@ -1,0 +1,25 @@
+display-name = "Oh My Pi"
+primary = true
+display-disc = "Oh My Pi (omp) terminal AI coding agent"
+display-detail = "Installs Oh My Pi (omp), a terminal-native AI coding agent with LSP-aware edits, hashline patches, subagents, debugger (DAP), browser tools, and 40+ model providers. Binary: omp. Authenticate inside the TUI with /login, or seed host credentials via the credential extension. API keys via env (ANTHROPIC_API_KEY, OPENAI_API_KEY, XAI_API_KEY, …) also work."
+display-order = 20
+tags = [
+    "ai",
+    "oh-my-pi",
+    "omp",
+    "pi",
+    "coding-agent",
+    "llm",
+    "cli",
+    "tui",
+    "lsp"
+]
+
+[params.OH_MY_PI_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup oh-my-pi --version ${OH_MY_PI_VERSION}
+"""
