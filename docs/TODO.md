@@ -98,6 +98,16 @@ Need to find a way to fix this. This may involve creating a different type of ho
 
 ---
 
+## Binary companions (libraries that need a separate tool binary)
+
+Libraries whose package install alone is not enough — they also need a companion
+CLI or engine (`protoc`, parser generators, ffmpeg, graphviz, browser drivers,
+ORM CLIs, …). C/C++ `lib-*` / `*-dev` is a separate track.
+
+Full audit and priority shortlist: **[TODO-BINARY_COMPANIONS.md](TODO-BINARY_COMPANIONS.md)**.
+
+---
+
 ## Additional Setups
 Add or improve support for these developer tools and environments:
 
