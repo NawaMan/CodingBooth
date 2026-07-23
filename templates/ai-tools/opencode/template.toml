@@ -1,0 +1,23 @@
+display-name = "OpenCode"
+primary = true
+display-disc = "Open multi-provider AI coding agent (TUI)"
+display-detail = "Installs OpenCode (anomalyco/SST), the most popular open-source terminal coding agent. Provider-agnostic (75+ backends including local Ollama), LSP-aware, and Claude Code–class TUI. Binary: opencode. Authenticate with /connect or seed host auth via the credential extension."
+display-order = 15
+tags = [
+    "ai",
+    "opencode",
+    "coding-agent",
+    "cli",
+    "tui",
+    "open-source",
+    "multi-provider"
+]
+
+[params.OPENCODE_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+Boothfile = """
+setup opencode --version ${OPENCODE_VERSION}
+"""

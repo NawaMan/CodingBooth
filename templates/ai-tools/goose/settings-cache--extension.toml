@@ -1,0 +1,9 @@
+display-name = "Settings Cache"
+display-disc = "Persist Goose config and state across booth restarts"
+display-order = 91
+auto-select = true
+tags = ["goose", "persistence", "cache"]
+
+cache-dirs = [
+    "home/coder/.config/goose",
+]

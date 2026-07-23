@@ -1,0 +1,10 @@
+display-name = "Gemini CLI Extensions"
+display-disc = "Mount host Gemini CLI extensions"
+display-detail = "Seeds host-installed Gemini CLI extensions from `~/.gemini/extensions` when present. Opt-in — not credentials."
+display-order = 92
+auto-select = false
+tags = ["gemini", "plugins", "extensions"]
+
+run-args = [
+    "-v", "~/.gemini/extensions:/etc/cb-home-seed/.gemini/extensions:ro",
+]

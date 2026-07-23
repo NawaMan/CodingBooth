@@ -1,0 +1,23 @@
+display-name = "Gemini CLI"
+primary = true
+display-disc = "Google Gemini terminal AI coding agent"
+display-detail = "Installs Google's Gemini CLI (@google/gemini-cli). Terminal-native agent for Gemini models. Requires Node.js (auto via requires). Auth with GEMINI_API_KEY / GOOGLE_API_KEY or OAuth login. Note: Google access tiers change over time — API keys are the most portable option inside a booth. Pairs with the credential extension for host settings."
+display-order = 17
+tags = [
+    "ai",
+    "gemini",
+    "google",
+    "coding-agent",
+    "cli",
+    "tui"
+]
+requires = ["nodejs"]
+
+[params.GEMINI_CLI_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+"Boothfile--60" = """
+setup gemini-cli ${GEMINI_CLI_VERSION}
+"""

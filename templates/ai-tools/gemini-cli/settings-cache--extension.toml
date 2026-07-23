@@ -1,0 +1,9 @@
+display-name = "Settings Cache"
+display-disc = "Persist Gemini CLI settings across booth restarts"
+display-order = 91
+auto-select = true
+tags = ["gemini", "persistence", "cache"]
+
+cache-dirs = [
+    "home/coder/.gemini",
+]
