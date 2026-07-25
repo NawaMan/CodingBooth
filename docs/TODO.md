@@ -3,6 +3,10 @@
 This is where dreams begin. ✨  
 A list of upcoming ideas, improvements, and future goals for the CodingBooth launcher.
 
+Status markers: `[ ]` open · `[x]` done · `[~]` partial · `[-]` rejected/abandoned ·
+`[?]` **to relook later** — still has value, but the direction is unclear or it is not a priority yet.
+A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re-propose it as new.
+
 ---
 
 ## Code Features
@@ -62,6 +66,44 @@ Need to find a way to fix this. This may involve creating a different type of ho
         template preimage. (Measured: ~99% of *generated* lines can be attributed back to a template
         segment, because the compiler emits segments verbatim. So a read-only "custom directives,
         preserved verbatim" panel would be feasible — if it is ever actually wanted.)
+- [ ] **Persist browser bookmarks & history** — carry an in-container browser profile across sessions.
+      Desktop variants ship real browsers (`templates/browsers/`), but each run starts from a blank
+      profile, so bookmarks, history, and logins are thrown away every time.
+      Approach: reuse the cache-mount mechanism rather than inventing storage — `cache_files` entries in
+      `.booth/config.toml` already bind host paths into `/home/coder` (`cli/src/pkg/booth/cache_mounts.go`,
+      documented in `docs/BOOTH_CUSTOMIZATION.md`). Ship it as a `profile-cache--extension.toml` on each
+      browser template so it is an opt-in checkbox, the same shape as
+      `templates/ai-tools/claude-code/settings-cache--extension.toml`.
+      Open questions: cache the whole profile directory or only `Bookmarks` + `History`? The full directory
+      drags in lock files, disk cache, and session state that misbehave when restored into a fresh
+      container. Also decide whether this is worth doing at all once `--persist-home` is in play, since
+      that already preserves the profile wholesale.
+- [~] **Shell history across sessions** — half done. `.bash_history` / `.zsh_history` already survive if
+      the user hand-writes them into `cache_files` (`docs/BOOTH_CUSTOMIZATION.md`), and `--persist-home`
+      preserves them wholesale. Missing: a first-class opt-in, so nobody has to know the incantation.
+      Approach: a `shell-history--extension.toml` (or a base-level config default) that adds those two
+      files to `cache_files` — no new mechanism, just a named handle on the existing one.
+      Open questions: default-on or opt-in? Shell history is the single most likely place for a secret to
+      leak into a cache directory that is then reused and possibly committed.
+- [ ] **Live list of examples** — `booth example list` is pinned to the binary's own version. It fetches
+      `example-list.txt` from the GitHub release tagged with the running binary's version
+      (`cli/src/cmd/codingbooth/example.go`) and caches it at
+      `~/.cache/codingbooth/versions/<tag>/example-list.txt`. An older binary therefore can never see
+      examples published since it shipped, and the cache has no expiry.
+      Approach: resolve a `latest` tag (or read the list off the repo's default branch) instead of the
+      pinned tag, with the pinned release as the offline fallback; add a TTL or `--refresh` so the cache
+      can be invalidated. The release side already builds the asset
+      (`.github/workflows/release-binary-and-wrapper.yaml`), so this is a fetch-path change only.
+      Open questions: does "live" mean the CLI, or a rendered list on the website (`site/`)? If both, the
+      generated `example-list.txt` is the shared source and the site should consume the same asset.
+- [ ] **Live list of templates** — same defect, same fix, different path: `booth template list` resolves
+      through `cache.ResolveTemplatesDir(version)` (`cli/src/cmd/codingbooth/init.go`), which unpacks the
+      templates bundle for the binary's pinned version. New templates are invisible to an older binary.
+      Approach: share whatever tag-resolution and cache-invalidation the examples list lands on — these two
+      should not grow separate mechanisms. `--templates-path` / `CB_TEMPLATES_PATH` stays the local override.
+      Open questions: a template list is only useful if `booth init` can then *resolve* those templates, so
+      "live listing" probably implies fetching a live bundle too — decide whether that is in scope or
+      whether the list should mark newer entries as "requires booth >= X".
 - [ ] ...
 
 ## Problems
@@ -95,6 +137,46 @@ Need to find a way to fix this. This may involve creating a different type of ho
 - [ ] Java example: Lombok does not work in VS Code.
 - [ ] `remove`/`stop`/`start`/`restart` ignore flags placed *after* the positional name (e.g. `booth remove myproj --force` does not force) because they use plain `flag.Parse`, which stops at the first positional. `shell`/`exec` already work around this with `extractPositionalAndFlags`; apply the same handling to the other lifecycle commands so flag order doesn't matter.
 - [ ] ...
+
+---
+
+## Parked — to relook later
+
+Work that exists outside `main` and still has value, but is blocked on an undecided question or simply
+isn't a priority. Audited 2026-07-25. Everything *not* listed here was checked and is already in `main`
+— see the note at the end.
+
+- [?] **`--sandbox` / `--sandbox-mode` isolation** — branch `DockerSandbox` (v0.58.0-rc1, 2026-06-28).
+      The tip commit's own message says *"Left at adding tests."*
+      Adds `cli/src/pkg/booth/sandbox_setup.go`, wiring in `cli/src/pkg/booth/init/initialize_app_context.go`,
+      a `--sandbox` entry in `help.go`, `tests/dryrun/test024--sandbox.sh`, and home-seed
+      `.claude/settings.json` for two examples. The design doc `docs/plans/Sandbox-Isolation-Modes.md` is
+      already on `main`; the implementation is not.
+      **Parked deliberately: the isolation model has an open concern.** Do not merge, and do not delete the
+      branch, until that is settled. Note it sits beside the shipped `dind_setup.go` / `egress_setup.go`,
+      so any revisit should say how the three isolation surfaces compose rather than adding a fourth.
+
+- [?] **A `templates/frameworks/` tier (django, spring)** — `stash@{0}`, from the since-deleted
+      `feature/BoothDesign` worktree (Feb 2026).
+      Most of the stash is dead: it is written in the old `spec.toml` format, and `main` has **zero**
+      `spec.toml` files (the format is now `template.toml` + `*--extension.toml`). Its go, java, python, and
+      maven specs are all superseded — maven now lives as
+      `templates/languages/java/maven--extension.toml`.
+      The one idea that did *not* land: a **framework** category. `main` has `languages`, `tools`,
+      `ides`, `browsers`, `databases`, `desktops`, `ai-tools`, `education` — but no framework tier, so
+      django and spring have no home.
+      Approach if revisited: write `templates/frameworks/{django,spring}/template.toml` fresh in the current
+      format and drop the stash — replaying it would cost more than it returns.
+      Open question: is "framework" a new top-level category, or just extensions hanging off the language
+      template (`python/django--extension.toml`)? The latter matches how maven attached to java.
+
+**Audit note (2026-07-25).** Branches `main-backup`, `backup`, `LifeCycle`, `recovered-booth-init`, and
+`template-backup` were compared against `main` by content, not by commit — `main`'s history was rewritten
+by the retime tooling, so ahead/behind counts are meaningless there. All of their work is present in
+`main` under the current naming (`cli/src/cmd/coding-booth/` → `cli/src/cmd/codingbooth/`,
+`booth/runinit/` → `boothinit/`, `docs/implementations/URL_WHITELIST.md` → `EGRESS.md`). The only file
+absent from `main` is `variants/base/setups/libs/git-on-token.sh`, deleted on purpose in commit `95ef5cb0`
+("drop unused git-on-token.sh"). Nothing is lost; those branches are safe to delete.
 
 ---
 
