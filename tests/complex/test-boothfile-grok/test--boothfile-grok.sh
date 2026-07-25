@@ -4,11 +4,11 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# Test: Boothfile Grok (xAI) Installation
+# Test: Boothfile Grok Build (xAI) Installation
 #
-# Verifies that `setup grok` installs the lightweight grok CLI wrapper for
-# xAI Grok models. We test `grok --help` because it succeeds without an
-# XAI_API_KEY (the CLI prints usage and exits 0 for --help).
+# Verifies that `setup grok` installs the official xAI Grok Build coding agent
+# (binary: grok). We test `grok --help` because it succeeds without auth
+# (prints usage and exits 0 for --help).
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -18,14 +18,15 @@ cd "$SCRIPT_DIR"
 
 source ../../common--source.sh
 
-echo "=== Test: Boothfile Grok (xAI) Installation ==="
+echo "=== Test: Boothfile Grok Build (xAI) Installation ==="
 
 FAILED=0
 
-# grok --help prints usage without requiring an API key
+# grok --help prints usage without requiring login / an API key
 ACTUAL=$(run_coding_booth --silence-build -- grok --help 2>&1 | head -5) || true
 
-if echo "$ACTUAL" | grep -qiE "grok.*xai|chat with Grok|xAI Grok"; then
+# Current Grok Build CLI banners as "Grok Build TUI"; also accept older strings.
+if echo "$ACTUAL" | grep -qiE "Grok Build|Grok Build TUI|grok.*xai|xAI Grok|chat with Grok"; then
     print_test_result "true" "$0" "1" "grok CLI is installed via Boothfile"
 else
     print_test_result "false" "$0" "1" "grok CLI should be installed"
