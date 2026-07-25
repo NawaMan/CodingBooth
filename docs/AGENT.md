@@ -309,6 +309,11 @@ run-args = ["-e", "TZ=UTC", "-e", "MY_VAR=value"]
 # Extra volumes
 run-args = ["-v", "/host/path:/container/path"]
 
+# Bind mounts (-v / --volume) whose host path does not exist are skipped at runtime.
+# Named Docker volumes (bare names like "myvol:/data") are never skipped.
+# Missing host paths are logged to stderr so multi-OS credential paths are safe:
+# list Linux, macOS, and Windows locations; only existing ones are mounted.
+
 # Default command
 cmds = ["bash", "-lc", "npm start"]
 

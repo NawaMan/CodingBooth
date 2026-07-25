@@ -868,56 +868,177 @@ func formatPortMapping(public bool, hostPort, containerPort int) string {
 	return fmt.Sprintf("%d:%d", hostPort, containerPort)
 }
 
-// FilterMissingVolumeMounts removes -v bind mounts whose host path does not exist.
+// FilterMissingVolumeMounts removes -v/--volume bind mounts whose host path does not exist.
 // On Mac and Windows, Docker creates an empty directory when the host path is missing,
-// which breaks container startup. This filters those mounts out and logs when verbose.
+// which breaks container startup. Named volumes and non-path sources are left untouched.
+// Applies to both RunArgs and CommonArgs (e.g. TLS cert mounts added in PrepareCommonArgs).
 func FilterMissingVolumeMounts(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
-	verbose := ctx.Verbose()
-
 	homeDir, _ := os.UserHomeDir()
+	builder.RunArgs = filterMissingVolumeMountGroups(ctx.RunArgs(), homeDir)
+	builder.CommonArgs = filterMissingVolumeMountGroups(ctx.CommonArgs(), homeDir)
+	return builder.Build()
+}
 
+func filterMissingVolumeMountGroups(args ilist.List[ilist.List[string]], homeDir string) *ilist.AppendableList[ilist.List[string]] {
 	filtered := ilist.NewAppendableList[ilist.List[string]]()
-	ctx.RunArgs().Range(func(_ int, group ilist.List[string]) bool {
+	args.Range(func(_ int, group ilist.List[string]) bool {
 		items := group.Slice()
-		var kept []string
-		for i := 0; i < len(items); i++ {
-			if (items[i] == "-v" || items[i] == "--volume") && i+1 < len(items) {
-				mountSpec := items[i+1]
-				hostPath := mountSpec
-				if idx := strings.Index(mountSpec, ":"); idx >= 0 {
-					hostPath = mountSpec[:idx]
-				}
-
-				// Expand ~ to home directory
-				expandedPath := hostPath
-				if strings.HasPrefix(hostPath, "~/") && homeDir != "" {
-					expandedPath = filepath.Join(homeDir, hostPath[2:])
-				} else if hostPath == "~" && homeDir != "" {
-					expandedPath = homeDir
-				}
-
-				if _, err := os.Stat(expandedPath); err != nil {
-					if verbose {
-						fmt.Printf("   Skipping volume mount: host path does not exist: %s\n", hostPath)
-					}
-					i++ // skip the value
-					continue
-				}
-				kept = append(kept, items[i], items[i+1])
-				i++ // skip the value
-			} else {
-				kept = append(kept, items[i])
-			}
-		}
+		kept := filterMissingVolumeMountItems(items, homeDir)
 		if len(kept) > 0 {
 			filtered.Append(ilist.NewListFromSlice(kept))
 		}
 		return true
 	})
+	return filtered
+}
 
-	builder.RunArgs = filtered
-	return builder.Build()
+func filterMissingVolumeMountItems(items []string, homeDir string) []string {
+	var kept []string
+	for i := 0; i < len(items); i++ {
+		flag := items[i]
+		if !isVolumeFlag(flag) || i+1 >= len(items) {
+			kept = append(kept, flag)
+			continue
+		}
+
+		mountSpec := items[i+1]
+		source := volumeSource(mountSpec)
+
+		// Named volumes and other non-path sources must not be existence-checked.
+		if !isBindMountSource(source) {
+			kept = append(kept, flag, mountSpec)
+			i++
+			continue
+		}
+
+		expandedPath := expandHostPath(source, homeDir)
+		if _, err := os.Stat(expandedPath); err != nil {
+			fmt.Fprintf(os.Stderr, "   Skipping volume mount: host path does not exist: %s\n", source)
+			i++ // skip the value
+			continue
+		}
+
+		// Prefer the expanded absolute host path so Docker does not see a raw "~".
+		if expandedPath != source {
+			mountSpec = expandedPath + mountSpec[len(source):]
+		}
+		kept = append(kept, flag, mountSpec)
+		i++ // skip the value
+	}
+	return kept
+}
+
+func isVolumeFlag(flag string) bool {
+	return flag == "-v" || flag == "--volume"
+}
+
+// volumeSource returns the host/source side of a Docker -v/--volume mount spec.
+// Handles Windows drive-letter paths (C:\...:/container:ro) correctly so the first
+// colon after the drive letter is not treated as the host/container separator.
+func volumeSource(spec string) string {
+	if spec == "" {
+		return ""
+	}
+
+	// Windows absolute path: X:\... or X:/...
+	if isWindowsDrivePath(spec) {
+		// Linux containers: host ends at ":/" (container path is always absolute Unix).
+		if i := strings.Index(spec[2:], ":/"); i >= 0 {
+			return spec[:2+i]
+		}
+		// Windows containers: C:\host:D:\container or C:\host:C:\container
+		if i := indexWindowsPathSeparatorColon(spec, 2); i >= 0 {
+			return spec[:i]
+		}
+		return spec
+	}
+
+	// UNC host paths: \\server\share\path:/container
+	if strings.HasPrefix(spec, `\\`) || strings.HasPrefix(spec, "//") {
+		if i := strings.Index(spec[2:], ":/"); i >= 0 {
+			return spec[:2+i]
+		}
+		if i := strings.Index(spec[2:], ":"); i >= 0 {
+			return spec[:2+i]
+		}
+		return spec
+	}
+
+	// Unix / relative / named-volume: first colon separates source from target.
+	if i := strings.Index(spec, ":"); i >= 0 {
+		return spec[:i]
+	}
+	return spec
+}
+
+// isWindowsDrivePath reports whether s starts with a Windows drive absolute path (C:\ or C:/).
+func isWindowsDrivePath(s string) bool {
+	return len(s) >= 3 && isDriveLetter(s[0]) && s[1] == ':' && (s[2] == '\\' || s[2] == '/')
+}
+
+func isDriveLetter(b byte) bool {
+	return (b >= 'A' && b <= 'Z') || (b >= 'a' && b <= 'z')
+}
+
+// indexWindowsPathSeparatorColon finds a colon that starts another Windows path (":X:\" or ":X:/").
+func indexWindowsPathSeparatorColon(spec string, start int) int {
+	for i := start; i+2 < len(spec); i++ {
+		if spec[i] == ':' && isDriveLetter(spec[i+1]) && spec[i+2] == ':' {
+			// Pattern ":C:" — check following separator if present
+			if i+3 < len(spec) && (spec[i+3] == '\\' || spec[i+3] == '/') {
+				return i
+			}
+		}
+	}
+	return -1
+}
+
+// isBindMountSource reports whether source looks like a host filesystem path.
+// Bare names without path separators are treated as Docker named volumes.
+func isBindMountSource(source string) bool {
+	if source == "" {
+		return false
+	}
+	if source == "~" || strings.HasPrefix(source, "~/") || strings.HasPrefix(source, `~\`) {
+		return true
+	}
+	if isWindowsDrivePath(source) {
+		return true
+	}
+	if strings.HasPrefix(source, "/") || strings.HasPrefix(source, `\`) {
+		return true
+	}
+	if strings.HasPrefix(source, "./") || strings.HasPrefix(source, `.\`) ||
+		strings.HasPrefix(source, "../") || strings.HasPrefix(source, `..\`) {
+		return true
+	}
+	// Relative path containing a separator (e.g. "subdir/data") is a bind mount.
+	if strings.ContainsAny(source, `/\`) {
+		return true
+	}
+	// "." or ".." alone are host paths.
+	if source == "." || source == ".." {
+		return true
+	}
+	return false
+}
+
+// expandHostPath expands a leading ~ to the user home directory.
+func expandHostPath(path, homeDir string) string {
+	if homeDir == "" {
+		return path
+	}
+	if path == "~" {
+		return homeDir
+	}
+	if strings.HasPrefix(path, "~/") {
+		return filepath.Join(homeDir, path[2:])
+	}
+	if strings.HasPrefix(path, `~\`) {
+		return filepath.Join(homeDir, path[2:])
+	}
+	return path
 }
 
 func flattenArgs(argsList ilist.List[ilist.List[string]]) []string {

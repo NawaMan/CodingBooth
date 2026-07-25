@@ -4,6 +4,7 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Harden cross-platform volume bind filtering.** Missing host bind-mount paths (`-v` / `--volume`) are skipped at runtime so Docker Desktop does not create empty directories for OS-specific credential locations. Windows drive-letter specs parse correctly, named volumes are preserved, CommonArgs (e.g. TLS cert mounts) are included, and skips are reported on stderr. See `docs/BOOTH_HOME.md`.
 - **The config TUI now has a field for every setting a booth can hold.**
   It reached 18 of the 48 keys a `config.toml` may contain; the other 30 — `idle-time`,
   `persist-home`, `timezone`, `project-name`, the egress detail keys, `cmds`, the cache

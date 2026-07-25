@@ -49,7 +49,6 @@ func (runner *BoothRunner) Run() error {
 	ctx = SetupDind(ctx)
 	ctx = SetupEgress(ctx)
 	ctx = PrepareRunMode(ctx)
-	ctx = FilterMissingVolumeMounts(ctx)
 	ctx = PrepareBoothTmp(ctx)
 	// WritePortManifest and ApplyEnvFile both run after PrepareBoothTmp so the
 	// files they write into .booth/.tmp/ are not wiped by the start-of-run
@@ -58,6 +57,8 @@ func (runner *BoothRunner) Run() error {
 	ctx = WritePortManifest(ctx)
 	ctx = ApplyEnvFile(ctx)
 	ctx = PrepareCommonArgs(ctx)
+	// After PrepareCommonArgs so TLS/common mounts are also filtered.
+	ctx = FilterMissingVolumeMounts(ctx)
 
 	// Create booth with prepared context and run
 	booth := NewBooth(ctx)

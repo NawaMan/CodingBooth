@@ -162,7 +162,10 @@ run-args = [
 
     # Cloud CLI (pick what you need)
     "-v", "~/.aws:/etc/cb-home-seed/.aws:ro",
+    # Linux / macOS
     "-v", "~/.config/gcloud:/etc/cb-home-seed/.config/gcloud:ro",
+    # Windows (skipped automatically if the path does not exist)
+    "-v", "~/AppData/Roaming/gcloud:/etc/cb-home-seed/.config/gcloud:ro",
 
     # AI coding assistants (pick what you need)
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
@@ -170,6 +173,11 @@ run-args = [
     "-v", "~/.codex:/etc/cb-home-seed/.codex:ro"
 ]
 ```
+
+> **Missing host paths:** CodingBooth skips `-v` / `--volume` bind mounts when the host
+> path does not exist (and prints a short notice on stderr). Named volumes are kept.
+> That lets you list several OS-specific credential paths without Docker Desktop creating
+> empty directories for the ones that are not present on this machine.
 
 ### Custom Port
 

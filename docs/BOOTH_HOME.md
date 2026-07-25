@@ -182,6 +182,12 @@ run-args = [
 ```
 
 > **Tip:** Only include the credentials you actually need. Each mount adds startup overhead.
+>
+> **Missing host paths are skipped.** Bind mounts (`-v` / `--volume`) whose host path does not
+> exist are dropped at runtime (with a notice on stderr). Named Docker volumes are never
+> skipped. You can list Linux, macOS, and Windows credential locations together; only paths
+> that exist on this machine are passed to Docker, so Docker Desktop will not create empty
+> host directories for the others.
 
 ## Why You Shouldn't Seed Everything
 
