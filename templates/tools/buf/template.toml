@@ -1,0 +1,22 @@
+display-name = "Buf"
+display-disc = "Modern Protobuf toolchain (lint, break, generate)"
+display-detail = "Installs the Buf CLI from GitHub releases (pin via BUF_VERSION). Provides buf lint/breaking/generate without requiring Go or npm on the host. Does not install protoc or language plugins — select the protobuf template (and plugins) when you need a local protoc-based pipeline."
+display-order = 53
+tags = [
+    "buf",
+    "protobuf",
+    "protoc",
+    "grpc",
+    "codegen",
+    "lint",
+    "cli",
+]
+
+[params.BUF_VERSION]
+default = "latest"
+suggests = ["latest", "1.72.0"]
+
+[segments]
+"Boothfile--60" = """
+setup buf --version ${BUF_VERSION}
+"""

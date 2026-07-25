@@ -1,0 +1,26 @@
+display-name = "Selenium drivers"
+display-disc = "Chrome for Testing + chromedriver (and optional geckodriver)"
+display-detail = "Installs Selenium browser drivers and Chrome for Testing under /opt/selenium (on PATH). Does not install language bindings — pair with python+pip-pkg:selenium or nodejs+npm-pkg:selenium-webdriver. Default browser is chromium; use firefox or all for geckodriver too. Ubuntu apt chromium/firefox are snap stubs and are not used."
+display-order = 54
+tags = [
+    "selenium",
+    "testing",
+    "e2e",
+    "browser",
+    "automation",
+    "chromedriver",
+    "webdriver",
+]
+
+[params.SELENIUM_BROWSERS]
+default = "chromium"
+suggests = ["chromium", "firefox", "all"]
+
+[params.SELENIUM_CHROME_VERSION]
+default = "Stable"
+suggests = ["Stable", "latest"]
+
+[segments]
+"Boothfile--60" = """
+setup selenium ${SELENIUM_BROWSERS} --chrome-version ${SELENIUM_CHROME_VERSION}
+"""

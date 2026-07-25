@@ -1,0 +1,24 @@
+display-name = "Puppeteer"
+display-disc = "Headless Chrome automation for Node.js"
+display-detail = "Installs the Puppeteer npm package and pre-downloads Chrome for Testing into a shared cache at /opt/puppeteer (PUPPETEER_CACHE_DIR). Installs Chromium system libraries for headless runs. Requires Node.js. Prefer Playwright when you need multi-browser or multi-language support."
+display-order = 54
+tags = [
+    "puppeteer",
+    "testing",
+    "e2e",
+    "browser",
+    "automation",
+    "chromium",
+    "nodejs",
+]
+
+requires = ["nodejs"]
+
+[params.PUPPETEER_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+"Boothfile--60" = """
+setup puppeteer --version ${PUPPETEER_VERSION}
+"""

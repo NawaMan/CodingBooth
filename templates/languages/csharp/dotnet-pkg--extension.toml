@@ -1,0 +1,21 @@
+display-name = ".NET Tools"
+display-disc = "Install global .NET tools via dotnet tool install"
+display-detail = "Installs NuGet-distributed .NET global tools into ~/.dotnet/tools (on PATH via the csharp/.NET profile). Use package IDs such as dotnet-ef for Entity Framework CLI, csharpier for formatting, or any other `dotnet tool install --global` package. Pin with package@version (e.g. dotnet-ef@8.0.11)."
+display-order = 10
+auto-select = false
+tags = [
+    "dotnet",
+    "csharp",
+    "tools",
+    "packages",
+    "ef",
+]
+
+[params.DOTNET_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--60" = """
+install dotnet ${DOTNET_PKGS}
+"""

@@ -289,6 +289,7 @@ Each `install` command maps to a `*--install.sh` script. For example, `install p
 | `install deno` | Deno | `deno install` |
 | `install go` | Go | `go install` (as coder user) |
 | `install cargo` | Rust | `cargo install` (as coder user) |
+| `install dotnet` | .NET | `dotnet tool install --global` (as coder user); pin with `tool@version` |
 | `install gem` | Ruby | `gem install` |
 | `install brew` | Homebrew | `brew install` |
 | `install cabal` | Haskell | `cabal install` |

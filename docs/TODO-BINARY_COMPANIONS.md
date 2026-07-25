@@ -49,6 +49,7 @@ The config TUI already exposes package installs (see
 | `python+pip-pkg` | pip | `python+pip-pkg:grpcio-tools` |
 | `go+go-pkg` | `go install` | `go+go-pkg:…/protoc-gen-go@latest` |
 | `rust+cargo-pkg` | cargo | `rust+cargo-pkg:sqlx-cli` |
+| `csharp+dotnet-pkg` / `dotnet+dotnet-pkg` | `dotnet tool install --global` | `csharp+dotnet-pkg:dotnet-ef` |
 | (+ yarn / bun / uv / conda / gem / …) | | |
 
 **Nuance:** installing the *language library* via pip/npm still does **not** pull
@@ -101,18 +102,25 @@ booth config --no-tui \
 | Item | Status |
 |---|---|
 | **Playwright** browsers | ✅ `setup playwright` + `templates/tools/playwright/` |
+| **Puppeteer** browsers | ✅ `setup puppeteer` + `templates/tools/puppeteer/` (`PUPPETEER_CACHE_DIR=/opt/puppeteer`) |
+| **Cypress** binary | ✅ `setup cypress` + `templates/tools/cypress/` (`CYPRESS_CACHE_FOLDER=/opt/cypress`) |
+| **Selenium** drivers | ✅ `setup selenium` + `templates/tools/selenium/` (Chrome for Testing + chromedriver; optional geckodriver) |
 | **Mermaid CLI** | ✅ `templates/tools/mermaid/` (also installable via npm) |
 | **PlantUML** (+ graphviz) | ✅ product setup installs graphviz |
 | **Remotion** / **VHS** (+ ffmpeg) | ✅ product setups install ffmpeg |
+| **ffmpeg** (standalone) | ✅ `templates/tools/ffmpeg/` (`install apt ffmpeg`) |
+| **Graphviz** (standalone) | ✅ `templates/tools/graphviz/` (`install apt graphviz`) |
+| **protoc** / Protocol Buffers | ✅ `templates/tools/protobuf/` (+ `go` extension for plugins) |
+| **Buf CLI** | ✅ `setup buf` + `templates/tools/buf/` (GitHub release binary) |
 
 ### Still awkward — not cleanly covered by `*-pkg` (only remaining urgency)
 
 | Item | Why `*-pkg` is not enough | Suggested urgency |
 |---|---|---|
-| **Puppeteer / Cypress browsers** | npm installs the package; browser binary is a second step (Playwright-shaped) | medium — only if demand appears |
-| **Selenium drivers** | apt fragile (snap transitions); geckodriver often missing | medium |
+| **Puppeteer / Cypress browsers** | ✅ dedicated setups (Playwright-shaped shared caches) | done |
+| **Selenium drivers** | ✅ Chrome for Testing + chromedriver (not apt snap stubs); optional geckodriver | done |
 | **JACC** | not a normal apt/npm/go package — usually a manual jar | medium (named example; rare) |
-| **`dotnet ef`** | csharp/dotnet template exists; no generic `dotnet tool install` / `dotnet-pkg` extension | medium |
+| **`dotnet ef`** | ✅ `csharp+dotnet-pkg:dotnet-ef` / `install dotnet dotnet-ef` | done |
 | **wkhtmltopdf**, **avro-tools** | not reliably in this Ubuntu’s apt | low–medium |
 | **GraalVM / native-image**, **Android SDK** | full toolchains | high *if* wanted; big projects |
 | **CUDA** | host/device dependent | out of scope for normal templates |
@@ -155,7 +163,7 @@ in a few places:
 | **PlantUML** | `dot` (**graphviz**) + Java | setup installs Graphviz automatically |
 | **Remotion** | `ffmpeg` + Chromium deps | setup installs both |
 | **VHS** | `ffmpeg` | setup installs ffmpeg |
-| **gRPC / protobuf** (sample only) | `protoc` + language plugins | Sketched in `experiments/tui-go/data.go` — **no real setup/template**; **not urgent** because `apt-pkg` + `go-pkg` cover the common path |
+| **gRPC / protobuf** | `protoc` + language plugins | ✅ `templates/tools/protobuf/` (+ `go` extension); also still via `apt-pkg` + `go-pkg` |
 
 Shared companions (ffmpeg, graphviz) are also reachable without those product
 templates via `apt-pkg` (see table above).
@@ -164,25 +172,32 @@ templates via `apt-pkg` (see table above).
 
 ## Priority shortlist (after re-rank)
 
-Original P0/P1 items (protoc, buf, antlr, standalone ffmpeg/graphviz) are
-**demoted**: they install via existing TUI managers.
+`*-pkg` still covers install *capability* for protoc/buf/ffmpeg/graphviz, but
+**first-class TUI templates are the product aim** (discoverability, `requires`
+edges, pin-friendly defaults). The rest of the catalog follows in phases.
 
-| Priority | Item | Why still on the list |
+| Priority | Item | Status |
 |---|---|---|
-| **P0 (optional sugar only)** | Convenience templates / `requires` edges for protoc+plugins, buf | Discoverability; fresher pins than apt; **not** a capability gap |
-| **P1 (if demand)** | Puppeteer / Cypress / Selenium browser+driver stacks | Multi-step binary download; Playwright pattern already exists |
-| **P1 (if demand)** | `dotnet tool` / `dotnet-pkg` extension | Closes `dotnet ef` and similar without a one-off template per tool |
-| **P2** | JACC, avro-tools, wkhtmltopdf | Rare or awkward packaging |
-| **Parked** | GraalVM, Android SDK, CUDA | Large / host-specific; only if product direction asks |
+| **Phase 1** | Convenience templates: `protobuf`, `buf`, `ffmpeg`, `graphviz` + Go protoc plugins | ✅ Done (`templates/tools/{protobuf,buf,ffmpeg,graphviz}/`, `buf--setup.sh`) |
+| **Phase 2** | `dotnet tool` / `dotnet-pkg` extension | ✅ Done (`install dotnet` + `csharp`/`dotnet`+`dotnet-pkg`) |
+| **Phase 3** | Puppeteer → Cypress → Selenium browser+driver stacks | ✅ Done (`setup puppeteer` / `cypress` / `selenium`) |
+| **Phase 4** | Docs catalog: “library X → also select Y” | Pending — product docs, not only this TODO |
+| **P2** | JACC, avro-tools, wkhtmltopdf | Parked until demand |
+| **Parked** | GraalVM, Android SDK, CUDA | Large / host-specific |
 
-Actionable outcomes under the new rule:
+Actionable outcomes:
 
-- [ ] **Do not** rush dedicated protoc/buf/ffmpeg/graphviz templates solely for
-      installability — document the `*-pkg` recipes instead if users ask
-- [ ] Consider dedicated setups only when install needs **more than a package
-      name** (browser downloads, multi-step toolchains, non-registry binaries)
-- [ ] Optional later: agent/docs catalog of “library X → also select Y” for
-      discoverability without new templates
+- [x] Phase 1 — dedicated `protobuf` / `buf` / `ffmpeg` / `graphviz` templates
+      (apt for protoc/ffmpeg/graphviz; official GitHub binary for buf; Go plugins
+      as `protobuf+go`)
+- [x] Phase 2 — `dotnet-pkg` generic extension (`install dotnet` /
+      `dotnet tool install --global`; e.g. `csharp+dotnet-pkg:dotnet-ef`)
+- [x] Phase 3 — Puppeteer / Cypress / Selenium setups (shared browser caches
+      + Chrome for Testing / chromedriver; not apt snap stubs)
+- [ ] Phase 4 — agent/docs catalog of “library X → also select Y”
+- [ ] Consider more dedicated setups only when install needs **more than a
+      package name** (browser downloads, multi-step toolchains, non-registry
+      binaries)
 
 ---
 
@@ -190,9 +205,9 @@ Actionable outcomes under the new rule:
 
 | Library / ecosystem package | Needs separate binary | TUI path today | Urgent template? |
 |---|---|---|---|
-| `grpc` / `grpcio` / `@grpc/grpc-js` / `google.golang.org/grpc` | **`protoc`** + plugins | `apt-pkg:protobuf-compiler` + lang plugins via go/npm/pip | No |
-| `protobuf` / … | **`protoc`** | same | No |
-| `buf` / Connect-RPC | **`buf`** CLI | `go-pkg` or `npm-pkg:@bufbuild/buf` | No |
+| `grpc` / `grpcio` / `@grpc/grpc-js` / `google.golang.org/grpc` | **`protoc`** + plugins | `protobuf` template + `protobuf+go`; also `apt-pkg` + go/npm/pip | Done (Go plugins); others later |
+| `protobuf` / … | **`protoc`** | `protobuf` template or `apt-pkg:protobuf-compiler` | Done |
+| `buf` / Connect-RPC | **`buf`** CLI | `buf` template; also `go-pkg` / `npm-pkg:@bufbuild/buf` | Done |
 | Apache Thrift libs | **`thrift`** | `apt-pkg:thrift-compiler` | No |
 | FlatBuffers libs | **`flatc`** | `apt-pkg:flatbuffers-compiler` | No |
 | Cap’n Proto libs | **`capnp`** | `apt-pkg:capnproto` | No |
@@ -220,9 +235,9 @@ Actionable outcomes under the new rule:
 | Library | Needs separate binary | Booth / TUI status | Urgent template? |
 |---|---|---|---|
 | **playwright** | Browser binaries | ✅ dedicated setup | Done |
-| **puppeteer** | Chromium download | npm package only; second step | Maybe |
-| **selenium** | drivers + browser | apt partial/fragile | Maybe |
-| **cypress** | cached Electron/browser | npm package only; second step | Maybe |
+| **puppeteer** | Chromium download | ✅ `setup puppeteer` + shared `/opt/puppeteer` cache | Done |
+| **selenium** | drivers + browser | ✅ `setup selenium` (Chrome for Testing + chromedriver) | Done |
+| **cypress** | cached Electron/browser | ✅ `setup cypress` + shared `/opt/cypress` cache | Done |
 
 ---
 
@@ -230,13 +245,13 @@ Actionable outcomes under the new rule:
 
 | Library / package | Needs separate binary | TUI path today | Urgent template? |
 |---|---|---|---|
-| **remotion** / **vhs** | `ffmpeg` (+ Chromium for remotion) | ✅ product setups; also `apt-pkg:ffmpeg` | Done / No |
-| **moviepy** / **pydub** | `ffmpeg` | `apt-pkg:ffmpeg` | No |
+| **remotion** / **vhs** | `ffmpeg` (+ Chromium for remotion) | ✅ product setups; also `ffmpeg` template / `apt-pkg:ffmpeg` | Done / No |
+| **moviepy** / **pydub** | `ffmpeg` | `ffmpeg` template or `apt-pkg:ffmpeg` | Done (standalone template) |
 | **weasyprint** / **pdfkit** / wkhtmltopdf wrappers | **`wkhtmltopdf`** etc. | not reliably in apt | Maybe |
 | **pandoc** filters | **`pandoc`** | `apt-pkg:pandoc` | No |
 | **mermaid-cli** | Chromium often | ✅ mermaid template; or npm | Done / No |
-| **plantuml** | graphviz | ✅ setup; also `apt-pkg:graphviz` | Done / No |
-| graphviz language bindings | **`dot`** | `apt-pkg:graphviz` | No |
+| **plantuml** | graphviz | ✅ setup; also `graphviz` template / `apt-pkg:graphviz` | Done / No |
+| graphviz language bindings | **`dot`** | `graphviz` template or `apt-pkg:graphviz` | Done (standalone template) |
 
 ---
 
@@ -247,7 +262,7 @@ Actionable outcomes under the new rule:
 | **Prisma** | **`prisma` CLI** | `npm-pkg:prisma` | No |
 | **diesel** | **`diesel_cli`** | `cargo-pkg` | No |
 | **sqlx** | **`sqlx-cli`** | `cargo-pkg` | No |
-| **Entity Framework** | **`dotnet ef`** | no `dotnet-pkg` extension | Maybe (generic dotnet tools) |
+| **Entity Framework** | **`dotnet ef`** | `csharp+dotnet-pkg:dotnet-ef` / `install dotnet dotnet-ef` | Done |
 | Flyway / Liquibase / goose / dbmate / atlas | their CLIs | mix of go/apt/manual | case-by-case |
 
 ---

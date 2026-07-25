@@ -1,0 +1,6 @@
+# syntax=codingbooth/boothfile:1
+# Phase 2: install global .NET tools via install dotnet (dotnet tool install --global).
+# dotnet--install.sh is under .booth/setups/ until it ships in the Hub base image.
+
+setup dotnet --channel 9.0
+install dotnet dotnet-ef

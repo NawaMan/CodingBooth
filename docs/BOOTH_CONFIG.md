@@ -742,6 +742,8 @@ The full list of package manager extensions:
 | `python/conda-pkg` | conda      | `python+conda-pkg:scipy`          |
 | `rust/cargo-pkg`   | cargo      | `rust+cargo-pkg:ripgrep`          |
 | `go/go-pkg`        | go install | `go+go-pkg:gopls@latest`          |
+| `csharp/dotnet-pkg`| dotnet tool| `csharp+dotnet-pkg:dotnet-ef`     |
+| `dotnet/dotnet-pkg`| dotnet tool| `dotnet+dotnet-pkg:dotnet-ef@8.0.11` |
 | `ruby/gem-pkg`     | gem        | `ruby+gem-pkg:rails,bundler`      |
 | `haskell/cabal-pkg`| cabal      | `haskell+cabal-pkg:hlint`         |
 | `elixir/hex-pkg`   | hex        | `elixir+hex-pkg:phoenix`          |

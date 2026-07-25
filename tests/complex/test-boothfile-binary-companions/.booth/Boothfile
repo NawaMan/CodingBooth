@@ -1,0 +1,14 @@
+# syntax=codingbooth/boothfile:1
+
+# Phase 1 binary companions — same install lines the config templates emit.
+# buf--setup.sh is supplied under .booth/setups/ until the base image ships it.
+
+install apt ffmpeg
+install apt graphviz
+install apt protobuf-compiler
+
+setup buf --version latest
+
+setup go 1.25.7
+install go google.golang.org/protobuf/cmd/protoc-gen-go@latest
+install go google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
