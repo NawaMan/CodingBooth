@@ -98,9 +98,10 @@ The wrapper handles these commands:
 | `install --cache=local [VERSION]`  | Download to .booth/tools/                        |
 | `update [VERSION]`                 | Re-download binary (force refresh)               |
 | `uninstall [SCOPES...] [-y]`       | Remove this project's booth (interactive by default). Scopes: `--shared-binary`, `--all-shared-binary`, `--wrapper`, `--all` (everything) |
-| `shell-config install`             | Install central wrapper + `booth()` into bash/zsh/fish (idempotent) |
+| `shell-config` / `shell-config install` | Install central wrapper + `booth()` into bash/zsh/fish (idempotent; bare `shell-config` = install) |
 | `shell-config uninstall`           | Remove marked shell block and central wrapper    |
 | `shell-config status`              | Show whether shell-config is installed           |
+| `create <dir>`                     | `mkdir <dir>` and `booth install` inside it      |
 | `run [ARGS...]`                    | Execute binary (after verification)              |
 | `version`                          | Show wrapper and binary versions                 |
 | `help`                             | Show usage information                           |
@@ -125,9 +126,16 @@ marked `booth()` function into the user's shell startup files:
 | Windows  | `%LOCALAPPDATA%\codingbooth\booth` |
 
 The function walks up from `$PWD` looking for an executable `./booth`. If found, it runs that
-project wrapper (location-based paths stay correct). If not, it runs the central wrapper.
-Commands that need a project `.booth/` fail with the usual messages when only the central
-wrapper is available — that is intentional. Markers make the block easy to spot and delete:
+project wrapper. When the project root is **above** `$PWD` and the user did not already pass
+`--code`, the function appends `--code <project-root>` so the binary mounts and names the
+container after the project (not the subdirectory). If no project booth is found, it runs the
+central wrapper.
+
+**`booth install` via the central wrapper** copies this script to `$PWD/booth`, then re-execs
+that project wrapper so `.booth/tools/` is created in the project directory (not next to the
+central copy). Project wrappers keep location-based install into their own `SCRIPT_DIR`.
+
+Markers make the block easy to spot and delete:
 
 ```bash
 # >>> codingbooth shell-config begin >>>

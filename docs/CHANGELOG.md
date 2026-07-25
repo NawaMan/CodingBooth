@@ -444,6 +444,23 @@ This file contains a list of changes for each released version.
   `shell-config status` reports install state. The one-liner installer now runs
   `shell-config install` after `booth install`.
 
+- **Central `booth install` copies `./booth` into `$PWD` before installing.**
+  Invoking install via the central wrapper (shell-config fallback) used to write
+  `.booth/` next to the central script. It now places a project wrapper in the
+  current directory, re-execs that wrapper, and installs the lock/binary there.
+  The shell `booth()` function also appends `--code <project-root>` when walk-up
+  finds a project booth above `$PWD` (so subdir runs name/mount the project, not
+  the subdir). **0.14.2:** install/update always target `$PWD` even when a parent
+  `./booth` exists (walk-up no longer steals install into the parent).
+  **0.14.3:** fish installs to `~/.config/fish/functions/booth.fish` (autoload);
+  when `--code <dir>` is given, the shell function prefers `<dir>/booth` so the
+  lock next to that project wrapper is used (not a parent `./booth`).
+  **0.14.4:** fish no longer uses `cd` inside command substitutions (fish does
+  not run those in a subshell), so `booth` from a project subdirectory no longer
+  leaves the shell sitting in the project root.
+  **0.14.5:** `./booth shell-config` defaults to install; new `./booth create <dir>`
+  creates the directory and runs install inside it.
+
 ## 0.61.0
 
 - **Every desktop variant now keeps the CodingBooth wallpaper instead of the stock desktop backdrop.**

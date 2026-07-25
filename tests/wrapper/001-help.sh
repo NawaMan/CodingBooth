@@ -12,7 +12,8 @@ BASH
 assert_contains "$LAST_OUTPUT" "Wrapper commands:"
 assert_contains "$LAST_OUTPUT" "install [VERSION]"
 assert_contains "$LAST_OUTPUT" "uninstall"
-assert_contains "$LAST_OUTPUT" "shell-config install"
+assert_contains "$LAST_OUTPUT" "shell-config"
+assert_contains "$LAST_OUTPUT" "create <dir>"
 # tools-cache moved to the binary; update-wrapper is gone.
 assert_not_contains "$LAST_OUTPUT" "tools-cache"
 assert_not_contains "$LAST_OUTPUT" "update-wrapper"

@@ -21,7 +21,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.14.0
+VERSION=0.14.5
 VERBOSE="${VERBOSE:-true}"
 
 # Resolve this wrapper's absolute path (follow symlinks). All project paths are
@@ -165,6 +165,10 @@ function Main() {
                 echo "Error: Invalid cache mode '$cache_mode'. Use 'local' or 'shared'." >&2
                 exit 1
             fi
+            # install/update always target $PWD (copy ./booth there if needed, then re-exec).
+            local -a install_forward=(--cache="$cache_mode")
+            [[ -n "$version_arg" ]] && install_forward+=("$version_arg")
+            ensure_project_wrapper_for_install "$cmd" "${install_forward[@]}"
             if [[ "$cmd" == "install" && -z "$version_arg" && -f "$LOCK_FILE" ]]; then
                 local lock_version
                 lock_version=$(grep '^version=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2-)
@@ -276,9 +280,10 @@ Wrapper commands:
                                          --all-shared-binary   (also every shared cache version)
                                          --wrapper             (also delete ./booth wrapper)
                                          --all                 (everything above)
-  shell-config install           Install central wrapper + booth() in bash/zsh/fish
+  shell-config [install]         Install central wrapper + booth() in bash/zsh/fish
   shell-config uninstall         Remove shell function block and central wrapper
   shell-config status            Show shell-config install state
+  create <dir>                   mkdir <dir>, install booth into it (wrapper + binary)
 
   run [ARGS...]           Run booth with ARGS (after integrity checks)
   version                 Show version information
@@ -723,11 +728,60 @@ get_central_booth_path() {
     echo "$(get_data_dir)/booth"
 }
 
+# install/update always target the current directory: ensure $PWD/booth exists
+# (copy this script there if we are not already that file) and re-exec so
+# location-based .booth/tools lands next to it.
+#
+# Why not only central? Shell-config walk-up can run a *parent* ./booth install
+# (e.g. /work/booth while cwd is /work/proj) and would otherwise install into
+# the parent. Install means "this folder".
+#
+# Usage: ensure_project_wrapper_for_install <install|update> [args...]
+# Returns if already running as $PWD/booth; otherwise re-execs.
+ensure_project_wrapper_for_install() {
+    local cmd="$1"
+    shift
+
+    local project_dir project_booth self_real project_real=""
+    project_dir="$(pwd -P)"
+    project_booth="${project_dir}/booth"
+    self_real="$(realpath "$WRAPPER_SELF")"
+
+    if [[ -e "$project_booth" ]]; then
+        if [[ ! -f "$project_booth" ]]; then
+            echo "Error: $project_booth exists and is not a regular file." >&2
+            exit 1
+        fi
+        if [[ ! -x "$project_booth" ]]; then
+            echo "Error: $project_booth exists and is not executable." >&2
+            echo "Remove or rename it, then re-run: booth $cmd" >&2
+            exit 1
+        fi
+        project_real="$(realpath "$project_booth")"
+        if [[ "$self_real" == "$project_real" ]]; then
+            return 0
+        fi
+    fi
+
+    cp -f "$WRAPPER_SELF" "$project_booth"
+    chmod 755 "$project_booth"
+    echo "✓ Project wrapper: $project_booth"
+
+    exec "$project_booth" "$cmd" "$@"
+}
+
 # Rc / conf files that receive the marked shell-config block.
+# Fish uses functions/booth.fish (autoload); conf.d path is also listed so an
+# older conf.d install is cleaned up by uninstall.
 shell_config_targets() {
     echo "$HOME/.bashrc"
     echo "$HOME/.zshrc"
+    echo "${XDG_CONFIG_HOME:-$HOME/.config}/fish/functions/booth.fish"
     echo "${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/codingbooth.fish"
+}
+
+fish_booth_function_path() {
+    echo "${XDG_CONFIG_HOME:-$HOME/.config}/fish/functions/booth.fish"
 }
 
 # Escape a path for single-quoted shell embedding (bash/zsh/fish).
@@ -745,15 +799,70 @@ emit_bash_zsh_shell_config_block() {
     qcentral="$(shell_single_quote "$central")"
     cat <<EOF
 ${SHELL_CONFIG_BEGIN}
-# CodingBooth: type \`booth\` from any directory. Walks up for a project ./booth;
-# falls back to the central wrapper. Delete this whole block to uninstall.
+# CodingBooth: type \`booth\` from any directory.
+# - --code <dir>: use <dir>/booth if present (lock lives with that wrapper)
+# - install/update: always this directory (\$PWD), never a parent booth
+# - else walk up for ./booth; from a subdir append --code <project>
+# - else central wrapper
 booth() {
-  local _cb_dir _cb_central
+  local _cb_dir _cb_central _cb_arg _cb_has_code _cb_code="" _cb_take=false _cb_code_abs
   _cb_central='${qcentral}'
+
+  for _cb_arg in "\$@"; do
+    if \$_cb_take; then
+      _cb_code="\$_cb_arg"
+      _cb_take=false
+      continue
+    fi
+    case "\$_cb_arg" in
+      --code=*) _cb_code="\${_cb_arg#--code=}" ;;
+      --code)   _cb_take=true ;;
+    esac
+  done
+  if [[ -n "\$_cb_code" ]]; then
+    if _cb_code_abs="\$(cd "\$_cb_code" 2>/dev/null && pwd -P)"; then
+      if [[ -x "\$_cb_code_abs/booth" && -f "\$_cb_code_abs/booth" ]]; then
+        "\$_cb_code_abs/booth" "\$@"
+        return \$?
+      fi
+    fi
+  fi
+
+  case "\${1:-}" in
+    install|update|create)
+      if [[ -x "\$PWD/booth" && -f "\$PWD/booth" ]]; then
+        "\$PWD/booth" "\$@"
+      elif [[ -x "\$_cb_central" ]]; then
+        "\$_cb_central" "\$@"
+      else
+        echo "CodingBooth: no ./booth here and central wrapper missing: \$_cb_central" >&2
+        return 1
+      fi
+      return \$?
+      ;;
+  esac
+
   _cb_dir="\$PWD"
   while true; do
     if [[ -x "\$_cb_dir/booth" && -f "\$_cb_dir/booth" ]]; then
-      "\$_cb_dir/booth" "\$@"
+      _cb_dir="\$(cd "\$_cb_dir" && pwd -P)"
+      case "\${1:-}" in
+        uninstall|version|help|shell-config)
+          "\$_cb_dir/booth" "\$@"
+          return \$?
+          ;;
+      esac
+      _cb_has_code=false
+      for _cb_arg in "\$@"; do
+        case "\$_cb_arg" in
+          --code|--code=*) _cb_has_code=true; break ;;
+        esac
+      done
+      if ! \$_cb_has_code && [[ "\$(pwd -P)" != "\$_cb_dir" ]]; then
+        "\$_cb_dir/booth" "\$@" --code "\$_cb_dir"
+      else
+        "\$_cb_dir/booth" "\$@"
+      fi
       return \$?
     fi
     case "\$_cb_dir" in
@@ -774,26 +883,92 @@ EOF
 }
 
 # Write the fish function body (with markers) to stdout.
+# Installed as ~/.config/fish/functions/booth.fish so fish autoloads it.
 emit_fish_shell_config_block() {
     local central="$1"
     local qcentral
     qcentral="$(shell_single_quote "$central")"
     cat <<EOF
 ${SHELL_CONFIG_BEGIN}
-# CodingBooth: type \`booth\` from any directory. Walks up for a project ./booth;
-# falls back to the central wrapper. Delete this whole block to uninstall.
+# CodingBooth: type \`booth\` from any directory.
+# - --code <dir>: use <dir>/booth if present (lock lives with that wrapper)
+# - install/update: always this directory, never a parent booth
+# - else walk up for ./booth; from a subdir append --code <project>
+# - else central wrapper
 function booth
+    # NOTE: fish command substitutions are NOT subshells — never use \`cd\` inside
+    # (...); it would change the caller's working directory. Use realpath instead.
     set -l _cb_central '${qcentral}'
-    set -l _cb_dir (pwd)
+    set -l _cb_code ''
+    set -l _cb_take 0
+    for _cb_arg in \$argv
+        if test \$_cb_take -eq 1
+            set _cb_code \$_cb_arg
+            set _cb_take 0
+            continue
+        end
+        switch \$_cb_arg
+            case '--code=*'
+                set _cb_code (string replace -- '--code=' '' \$_cb_arg)
+            case '--code'
+                set _cb_take 1
+        end
+    end
+    if test -n "\$_cb_code"
+        set -l _cb_code_abs (realpath "\$_cb_code" 2>/dev/null)
+        if test -n "\$_cb_code_abs"; and test -x "\$_cb_code_abs/booth"; and test -f "\$_cb_code_abs/booth"
+            "\$_cb_code_abs/booth" \$argv
+            return \$status
+        end
+    end
+    if set -q argv[1]
+        switch \$argv[1]
+            case install update create
+                if test -x "./booth"; and test -f "./booth"
+                    ./booth \$argv
+                else if test -x "\$_cb_central"
+                    "\$_cb_central" \$argv
+                else
+                    echo "CodingBooth: no ./booth here and central wrapper missing: \$_cb_central" >&2
+                    return 1
+                end
+                return \$status
+        end
+    end
+    set -l _cb_dir (pwd -P)
     while true
         if test -x "\$_cb_dir/booth"; and test -f "\$_cb_dir/booth"
-            "\$_cb_dir/booth" \$argv
+            set -l _cb_resolved (realpath "\$_cb_dir" 2>/dev/null)
+            if test -n "\$_cb_resolved"
+                set _cb_dir \$_cb_resolved
+            end
+            if set -q argv[1]
+                switch \$argv[1]
+                    case uninstall version help shell-config
+                        "\$_cb_dir/booth" \$argv
+                        return \$status
+                end
+            end
+            set -l _cb_has_code 0
+            for _cb_arg in \$argv
+                switch \$_cb_arg
+                    case '--code' '--code=*'
+                        set _cb_has_code 1
+                        break
+                end
+            end
+            set -l _cb_cwd (pwd -P)
+            if test \$_cb_has_code -eq 0; and test "\$_cb_cwd" != "\$_cb_dir"
+                "\$_cb_dir/booth" \$argv --code \$_cb_dir
+            else
+                "\$_cb_dir/booth" \$argv
+            end
             return \$status
         end
         if test "\$_cb_dir" = /
             break
         end
-        set _cb_dir (dirname "\$_cb_dir")
+        set _cb_dir (dirname \$_cb_dir)
     end
     if not test -x "\$_cb_central"
         echo "CodingBooth: no project booth above \$PWD and central wrapper missing:" >&2
@@ -890,22 +1065,30 @@ ShellConfigInstall() {
     install_marked_block "$HOME/.zshrc" "$bash_block"
     echo "✓ zsh:  $HOME/.zshrc"
 
-    # fish
-    local fish_conf
-    fish_conf="${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/codingbooth.fish"
-    install_marked_block "$fish_conf" "$fish_block"
-    echo "✓ fish: $fish_conf"
+    # fish (autoload path — more reliable than conf.d alone)
+    local fish_fn
+    fish_fn="$(fish_booth_function_path)"
+    install_marked_block "$fish_fn" "$fish_block"
+    echo "✓ fish: $fish_fn"
+    # Drop legacy conf.d snippet if present (superseded by functions/booth.fish).
+    local fish_legacy
+    fish_legacy="${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/codingbooth.fish"
+    if [[ -f "$fish_legacy" ]]; then
+        remove_marked_block "$fish_legacy"
+        rmdir "$(dirname "$fish_legacy")" 2>/dev/null || true
+        echo "✓ fish: removed legacy $fish_legacy"
+    fi
 
     rm -f "$bash_block" "$fish_block"
 
     echo ""
     echo "Shell function installed (idempotent). Open a new shell or:"
     echo "  source ~/.bashrc    # or ~/.zshrc"
-    echo "  # fish picks up conf.d automatically in new sessions"
+    echo "  # fish autoloads ~/.config/fish/functions/booth.fish"
     echo ""
     echo "Type 'booth' from any directory: walks up for a project wrapper,"
-    echo "else uses the central one. Project commands still need a project"
-    echo "./booth (and .booth/); help/version work from the central wrapper."
+    echo "or uses --code <dir>/booth when you pass --code. install/update always"
+    echo "target \$PWD. help/version work from central alone."
 }
 
 ShellConfigUninstall() {
@@ -959,7 +1142,7 @@ ShellConfigStatus() {
 }
 
 ShellConfigCommand() {
-    local sub="${1:-}"
+    local sub="${1:-install}"
     case "$sub" in
         install)
             ShellConfigInstall
@@ -970,28 +1153,49 @@ ShellConfigCommand() {
         status)
             ShellConfigStatus
             ;;
-        help|-h|--help|"")
+        help|-h|--help)
             cat <<EOF
-Usage: ./$(basename "$0") shell-config <install|uninstall|status>
+Usage: ./$(basename "$0") shell-config [install|uninstall|status|help]
 
   install     Copy this wrapper to the OS data dir and install booth()
-              into ~/.bashrc, ~/.zshrc, and fish conf.d (idempotent).
+              into ~/.bashrc, ~/.zshrc, and fish functions (default if omitted).
   uninstall   Remove the marked shell block and the central wrapper.
   status      Show whether the function and central wrapper are installed.
 
-The function walks up from \$PWD looking for a project ./booth; if none is
-found it runs the central wrapper. Commands that need a project .booth/ fail
-with the usual messages — that is intentional.
+./booth shell-config   is the same as   ./booth shell-config install
 EOF
-            [[ -z "$sub" ]] && return 1
             return 0
             ;;
         *)
             echo "Unknown shell-config command: $sub" >&2
-            echo "Use: shell-config install | uninstall | status | help" >&2
+            echo "Use: shell-config [install] | uninstall | status | help" >&2
             return 1
             ;;
     esac
+}
+
+# Create a directory and install CodingBooth into it (project wrapper + binary).
+# Usage: booth create <dir> [install-args...]
+# Example: booth create myapp
+#          booth create myapp --cache=local 0.63.0
+CreateBooth() {
+    local dir="${1:-}"
+    if [[ -z "$dir" ]]; then
+        echo "Usage: ./$(basename "$0") create <dir> [install options...]" >&2
+        echo "  Creates <dir> (if needed) and runs booth install inside it." >&2
+        return 1
+    fi
+    shift
+
+    if [[ -e "$dir" && ! -d "$dir" ]]; then
+        echo "Error: $dir exists and is not a directory." >&2
+        return 1
+    fi
+
+    mkdir -p "$dir"
+    # Install targets $PWD of the child process → lands in <dir>.
+    # Re-exec via this same wrapper so ensure_project_wrapper copies booth there.
+    (cd "$dir" && exec "$WRAPPER_SELF" install "$@")
 }
 
 # Early handling of version/help/shell-config so they don't require curl
@@ -1011,10 +1215,18 @@ if [[ "${COMMAND}" == "run" ]]; then
     detect_nested_booth "$@"
 fi
 
-# Need curl for install/run/update/uninstall
+# Need curl for install/run/update/uninstall/create
 if ! command -v curl >/dev/null 2>&1; then
     echo "Error: curl is required but was not found." >&2
     exit 1
 fi
+
+case "${COMMAND}" in
+    create)
+        shift
+        CreateBooth "$@"
+        exit $?
+        ;;
+esac
 
 Main "$@"

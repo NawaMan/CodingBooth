@@ -20,8 +20,8 @@ central="$HOME/.local/share/codingbooth/booth"
 grep -qxF '# >>> codingbooth shell-config begin >>>' "$HOME/.bashrc"
 grep -qxF '# <<< codingbooth shell-config end <<<' "$HOME/.bashrc"
 grep -qxF '# >>> codingbooth shell-config begin >>>' "$HOME/.zshrc"
-grep -qxF '# >>> codingbooth shell-config begin >>>' "$HOME/.config/fish/conf.d/codingbooth.fish"
-grep -q "function booth" "$HOME/.config/fish/conf.d/codingbooth.fish"
+grep -qxF '# >>> codingbooth shell-config begin >>>' "$HOME/.config/fish/functions/booth.fish"
+grep -q "function booth" "$HOME/.config/fish/functions/booth.fish"
 
 # --- idempotent: second install keeps a single block ---
 ./booth shell-config install
