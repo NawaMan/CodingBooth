@@ -109,7 +109,9 @@ Full audit and priority shortlist: **[TODO-BINARY_COMPANIONS.md](TODO-BINARY_COM
 - [x] Phase 1 — TUI templates: `protobuf` (+ Go plugins), `buf`, `ffmpeg`, `graphviz`
 - [x] Phase 2 — `dotnet-pkg` (`install dotnet` / `csharp+dotnet-pkg:dotnet-ef`)
 - [x] Phase 3 — Puppeteer / Cypress / Selenium stacks
-- [ ] Phase 4 — Docs “library X → also select Y”---
+- [x] Phase 4 — Docs “library X → also select Y” ([BOOTH_CONFIG.md](BOOTH_CONFIG.md#binary-companions--library-x--also-select-y))
+
+---
 
 ## Additional Setups
 Add or improve support for these developer tools and environments:

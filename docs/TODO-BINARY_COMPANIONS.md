@@ -181,7 +181,7 @@ edges, pin-friendly defaults). The rest of the catalog follows in phases.
 | **Phase 1** | Convenience templates: `protobuf`, `buf`, `ffmpeg`, `graphviz` + Go protoc plugins | ✅ Done (`templates/tools/{protobuf,buf,ffmpeg,graphviz}/`, `buf--setup.sh`) |
 | **Phase 2** | `dotnet tool` / `dotnet-pkg` extension | ✅ Done (`install dotnet` + `csharp`/`dotnet`+`dotnet-pkg`) |
 | **Phase 3** | Puppeteer → Cypress → Selenium browser+driver stacks | ✅ Done (`setup puppeteer` / `cypress` / `selenium`) |
-| **Phase 4** | Docs catalog: “library X → also select Y” | Pending — product docs, not only this TODO |
+| **Phase 4** | Docs catalog: “library X → also select Y” | ✅ Done — [BOOTH_CONFIG.md](BOOTH_CONFIG.md#binary-companions--library-x--also-select-y) |
 | **P2** | JACC, avro-tools, wkhtmltopdf | Parked until demand |
 | **Parked** | GraalVM, Android SDK, CUDA | Large / host-specific |
 
@@ -194,7 +194,9 @@ Actionable outcomes:
       `dotnet tool install --global`; e.g. `csharp+dotnet-pkg:dotnet-ef`)
 - [x] Phase 3 — Puppeteer / Cypress / Selenium setups (shared browser caches
       + Chrome for Testing / chromedriver; not apt snap stubs)
-- [ ] Phase 4 — agent/docs catalog of “library X → also select Y”
+- [x] Phase 4 — product docs catalog of “library X → also select Y”
+      ([BOOTH_CONFIG.md](BOOTH_CONFIG.md#binary-companions--library-x--also-select-y);
+      pointer from [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md))
 - [ ] Consider more dedicated setups only when install needs **more than a
       package name** (browser downloads, multi-step toolchains, non-registry
       binaries)

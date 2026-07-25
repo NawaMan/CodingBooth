@@ -23,6 +23,11 @@ This file contains a list of changes for each released version.
   geckodriver). Avoids Ubuntu snap-stub packages for chromium/firefox. See
   `docs/TODO-BINARY_COMPANIONS.md`.
 
+- **Binary companions docs catalog (Phase 4).** [BOOTH_CONFIG.md](BOOTH_CONFIG.md#binary-companions--library-x--also-select-y)
+  lists “library X → also select Y” for dedicated templates and `*-pkg` recipes
+  (protoc, buf, ffmpeg, browsers, ORM CLIs, …), with a pointer from
+  [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md).
+
 - **Harden cross-platform volume bind filtering.** Missing host bind-mount paths (`-v` / `--volume`) are skipped at runtime so Docker Desktop does not create empty directories for OS-specific credential locations. Windows drive-letter specs parse correctly, named volumes are preserved, CommonArgs (e.g. TLS cert mounts) are included, and skips are reported on stderr. See `docs/BOOTH_HOME.md`.
 - **The config TUI now has a field for every setting a booth can hold.**
   It reached 18 of the 48 keys a `config.toml` may contain; the other 30 — `idle-time`,

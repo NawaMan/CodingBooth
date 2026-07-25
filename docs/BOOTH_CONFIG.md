@@ -32,6 +32,7 @@ Back to [README](../README.md)
 - [Run-Args Ownership Convention](#run-args-ownership-convention)
 - [Common Workflows](#common-workflows)
 - [Package Management Templates](#package-management-templates)
+- [Binary companions — library X → also select Y](#binary-companions--library-x--also-select-y)
 
 ---
 
@@ -827,3 +828,102 @@ booth   # Booth auto-rebuilds when the Boothfile or manifest files change
 ```
 
 Between rebuilds, you can still run `npm install`, `pip install`, etc. manually inside the container — those changes apply immediately but won't survive container recreation.
+
+---
+
+## Binary companions — library X → also select Y
+
+Some language libraries need a **separate tool binary** that the package install
+does not pull in. Selecting `python+pip-pkg:grpcio` installs the Python package;
+it does **not** install `protoc`. Same pattern for browser automation, media
+tooling, and ORM CLIs.
+
+Use this catalog when a dependency works on your laptop but the booth is missing
+a CLI or engine. Prefer a **dedicated template** when one exists (discoverable in
+the TUI, pin-friendly, `requires` edges). Fall back to a `*-pkg` selection when
+the companion is a normal package-manager install.
+
+Full audit and implementation notes: [TODO-BINARY_COMPANIONS.md](TODO-BINARY_COMPANIONS.md).
+
+### Dedicated templates (preferred when listed)
+
+| You need | Select | What you get |
+|---|---|---|
+| **protoc** (Protocol Buffers compiler) | `protobuf` | apt `protobuf-compiler` |
+| **Go protoc plugins** | `protobuf+go` (or `go/protobuf+go`) | `protoc-gen-go` + `protoc-gen-go-grpc` (auto-pulls go) |
+| **Buf CLI** | `buf` or `buf:1.72.0` | official release binary via `setup buf` |
+| **ffmpeg** (standalone) | `ffmpeg` | apt `ffmpeg` (Remotion/VHS still install their own) |
+| **Graphviz** / `dot` | `graphviz` | apt `graphviz` (PlantUML still installs its own) |
+| **Playwright** browsers | `playwright` | browsers under `/opt/ms-playwright` |
+| **Puppeteer** Chromium | `puppeteer` | shared `PUPPETEER_CACHE_DIR=/opt/puppeteer` |
+| **Cypress** binary | `cypress` | shared `CYPRESS_CACHE_FOLDER=/opt/cypress` |
+| **Selenium** drivers | `selenium` or `selenium:all` | Chrome for Testing + chromedriver (+ geckodriver for `all`) |
+| **.NET global tools** (e.g. `dotnet ef`) | `csharp+dotnet-pkg:dotnet-ef` | `dotnet tool install --global` |
+| **Mermaid CLI** | `mermaid` | dedicated template (also via npm) |
+| **PlantUML** | `plantuml` | CLI + server; pulls Graphviz |
+| **Remotion** / **VHS** | `remotion` / `vhs` | product setups (include ffmpeg as needed) |
+
+```bash
+# gRPC / protobuf with Go plugins + modern Buf workflow
+booth config --no-tui --select go/protobuf+go/buf
+
+# Entity Framework CLI on C#
+booth config --no-tui --select csharp+dotnet-pkg:dotnet-ef
+
+# Headless browser stacks
+booth config --no-tui --select puppeteer
+booth config --no-tui --select cypress
+booth config --no-tui --select selenium
+```
+
+### Library → companion (`*-pkg` recipes)
+
+When there is no dedicated template, or you prefer a one-line package install:
+
+| Library / ecosystem package | Also select | Notes |
+|---|---|---|
+| `grpc` / `grpcio` / `@grpc/grpc-js` / `google.golang.org/grpc` | `protobuf` **or** `apt-pkg:protobuf-compiler` + language plugins | Prefer `protobuf` + `protobuf+go` for Go |
+| Python gRPC plugins only | `python+pip-pkg:grpcio-tools` | Still needs `protoc` itself |
+| Connect-RPC / Buf workflows | `buf` **or** `go+go-pkg:…/buf@latest` / `nodejs+npm-pkg:@bufbuild/buf` | Prefer `buf` template |
+| Apache Thrift | `apt-pkg:thrift-compiler` | |
+| FlatBuffers | `apt-pkg:flatbuffers-compiler` | |
+| Cap’n Proto | `apt-pkg:capnproto` | |
+| OpenAPI generators | `nodejs+npm-pkg:@openapitools/openapi-generator-cli` or go-pkg oapi-codegen | |
+| GraphQL codegen | `nodejs+npm-pkg:@graphql-codegen/cli` | |
+| grpcurl | `go+go-pkg:github.com/fullstorydev/grpcurl/cmd/grpcurl@latest` | |
+| ANTLR runtimes | `apt-pkg:antlr4` | apt may lag upstream |
+| JavaCC | `apt-pkg:javacc` | |
+| Bison / Flex | `apt-pkg:bison,flex` | |
+| tree-sitter CLI | `rust+cargo-pkg:tree-sitter-cli` | |
+| moviepy / pydub / similar | `ffmpeg` **or** `apt-pkg:ffmpeg` | Prefer `ffmpeg` template |
+| Graphviz language bindings | `graphviz` **or** `apt-pkg:graphviz` | Prefer `graphviz` template |
+| pandoc filters | `apt-pkg:pandoc` | |
+| Prisma | `nodejs+npm-pkg:prisma` | runtime `@prisma/client` is a project dep |
+| diesel / sqlx CLIs | `rust+cargo-pkg:diesel_cli` / `sqlx-cli` | diesel may need cargo features |
+| Entity Framework | `csharp+dotnet-pkg:dotnet-ef` | pin with `dotnet-ef@8.0.11` |
+| wasm-pack | `rust+cargo-pkg:wasm-pack` | |
+| Puppeteer (project dep only) | still select `puppeteer` for browsers | npm package alone is not enough |
+| Cypress (project dep only) | still select `cypress` for the binary | same |
+| Selenium language bindings | `selenium` + `python+pip-pkg:selenium` or `nodejs+npm-pkg:selenium-webdriver` | drivers ≠ bindings |
+
+```bash
+# Older style: pure *-pkg, no dedicated protobuf/buf templates
+booth config --no-tui \
+  --select go+go-pkg:google.golang.org/protobuf/cmd/protoc-gen-go@latest,google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest \
+  --select apt-pkg:protobuf-compiler
+
+# Media libs that shell out to ffmpeg
+booth config --no-tui --select python+pip-pkg:moviepy/ffmpeg
+```
+
+### Rule of thumb
+
+1. **Codegen** (`.proto`, thrift, grammars) → need a CLI on `PATH`.
+2. **Embedded engines** (browsers, ffmpeg, graphviz) → need a system or cached binary.
+3. **ORM / schema CLIs** (Prisma, `diesel_cli`, `dotnet ef`) → separate from the runtime package.
+
+It does **not** apply when the package only needs `lib*-dev` (C/C++ track) or already
+**vendors** its binary inside `node_modules` / a wheel after install.
+
+C/C++ `lib-*` / `*-dev` packages and full toolchains (GraalVM, Android SDK, CUDA) are
+out of scope here — see [TODO-BINARY_COMPANIONS.md](TODO-BINARY_COMPANIONS.md).

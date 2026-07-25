@@ -325,6 +325,12 @@ You can also install packages without editing the Boothfile directly — use the
 
 See [Package Management Templates](BOOTH_CONFIG.md#package-management-templates) in the config documentation for the full list.
 
+**Binary companions:** installing a language library often still needs a separate
+CLI or engine (`protoc`, browsers, ffmpeg, `dotnet ef`, …). Prefer a dedicated
+template when one exists (`protobuf`, `buf`, `ffmpeg`, `puppeteer`, …); otherwise
+use the matching `*-pkg` recipe. Catalog: [Binary companions — library X → also
+select Y](BOOTH_CONFIG.md#binary-companions--library-x--also-select-y).
+
 ### Creating a Custom Install
 
 Place your script in `.booth/setups/` following the naming convention `<name>--install.sh`:
