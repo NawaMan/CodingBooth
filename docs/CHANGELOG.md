@@ -423,6 +423,27 @@ This file contains a list of changes for each released version.
   are unchanged. The `sh.jbang.dev` fetch also gains `--retry 3`. Fixes `tests/config/test01-init-cli-basic`
   and `tests/complex/test-boothfile-gradle`. See `variants/base/setups/jdk--setup.sh`.
 
+## 0.64.0
+
+- **`booth shell-config` restores the shell convenience layer (bash, zsh, fish).**
+  `shell-config install` copies the wrapper to an OS data directory
+  (`~/.local/share/codingbooth/booth` on Linux, Application Support on macOS,
+  LocalAppData on Windows) and installs an idempotent, marker-fenced `booth()`
+  function into `~/.bashrc`, `~/.zshrc`, and fish `conf.d/codingbooth.fish`.
+  The function walks up from `$PWD` for a project `./booth` and falls back to
+  the central wrapper; project commands without a project still fail with the
+  usual messages. Markers:
+
+  ```
+  # >>> codingbooth shell-config begin >>>
+  ...
+  # <<< codingbooth shell-config end <<<
+  ```
+
+  `shell-config uninstall` removes the block and the central copy;
+  `shell-config status` reports install state. The one-liner installer now runs
+  `shell-config install` after `booth install`.
+
 ## 0.61.0
 
 - **Every desktop variant now keeps the CodingBooth wallpaper instead of the stock desktop backdrop.**

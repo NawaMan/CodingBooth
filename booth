@@ -21,19 +21,21 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.13.0
+VERSION=0.14.0
 VERBOSE="${VERBOSE:-true}"
 
-# Resolve script directory (follow symlinks) so all project paths are
-# location-based. realpath canonicalises the full path in one call.
-get_script_dir() {
-    dirname "$(realpath "${BASH_SOURCE[0]}")"
-}
-
-SCRIPT_DIR="$(get_script_dir)"
+# Resolve this wrapper's absolute path (follow symlinks). All project paths are
+# location-based relative to the script, not the current working directory.
+WRAPPER_SELF="$(realpath "${BASH_SOURCE[0]}")"
+SCRIPT_DIR="$(dirname "$WRAPPER_SELF")"
 BOOTH_DIR="${SCRIPT_DIR}/.booth"
 TOOLS_DIR="${BOOTH_DIR}/tools"
 LOCK_FILE="${TOOLS_DIR}/codingbooth.lock"
+
+# Markers for the shell-config block written into bash/zsh/fish rc files.
+# Users can delete everything between these two lines (inclusive) by hand.
+SHELL_CONFIG_BEGIN='# >>> codingbooth shell-config begin >>>'
+SHELL_CONFIG_END='# <<< codingbooth shell-config end <<<'
 
 # --- NESTED BOOTH DETECTION ---
 # Detect if running inside a CodingBooth container and prevent accidental nested execution.
@@ -274,6 +276,9 @@ Wrapper commands:
                                          --all-shared-binary   (also every shared cache version)
                                          --wrapper             (also delete ./booth wrapper)
                                          --all                 (everything above)
+  shell-config install           Install central wrapper + booth() in bash/zsh/fish
+  shell-config uninstall         Remove shell function block and central wrapper
+  shell-config status            Show shell-config install state
 
   run [ARGS...]           Run booth with ARGS (after integrity checks)
   version                 Show version information
@@ -697,10 +702,307 @@ GITIGNORE
     fi
 }
 
-# Early handling of version/help so they don't require curl
+# --- SHELL-CONFIG (central wrapper + bash/zsh/fish function) ---
+# OS-sensible data dir for the central copy of this wrapper script.
+get_data_dir() {
+    case "$(uname -s)" in
+        Linux*)  echo "${XDG_DATA_HOME:-$HOME/.local/share}/codingbooth" ;;
+        Darwin*) echo "$HOME/Library/Application Support/codingbooth" ;;
+        MINGW*|MSYS*|CYGWIN*)
+            if [[ -n "${LOCALAPPDATA:-}" ]]; then
+                echo "$LOCALAPPDATA/codingbooth"
+            else
+                echo "$HOME/AppData/Local/codingbooth"
+            fi
+            ;;
+        *) echo "${XDG_DATA_HOME:-$HOME/.local/share}/codingbooth" ;;
+    esac
+}
+
+get_central_booth_path() {
+    echo "$(get_data_dir)/booth"
+}
+
+# Rc / conf files that receive the marked shell-config block.
+shell_config_targets() {
+    echo "$HOME/.bashrc"
+    echo "$HOME/.zshrc"
+    echo "${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/codingbooth.fish"
+}
+
+# Escape a path for single-quoted shell embedding (bash/zsh/fish).
+shell_single_quote() {
+    local s="$1"
+    # 'foo'bar' -> 'foo'\''bar'
+    printf "%s" "${s//\'/\'\\\'\'}"
+}
+
+# Write the bash/zsh function body (with markers) to stdout.
+# $1 = absolute path to the central booth wrapper.
+emit_bash_zsh_shell_config_block() {
+    local central="$1"
+    local qcentral
+    qcentral="$(shell_single_quote "$central")"
+    cat <<EOF
+${SHELL_CONFIG_BEGIN}
+# CodingBooth: type \`booth\` from any directory. Walks up for a project ./booth;
+# falls back to the central wrapper. Delete this whole block to uninstall.
+booth() {
+  local _cb_dir _cb_central
+  _cb_central='${qcentral}'
+  _cb_dir="\$PWD"
+  while true; do
+    if [[ -x "\$_cb_dir/booth" && -f "\$_cb_dir/booth" ]]; then
+      "\$_cb_dir/booth" "\$@"
+      return \$?
+    fi
+    case "\$_cb_dir" in
+      /) break ;;
+    esac
+    _cb_dir="\$(dirname "\$_cb_dir")"
+  done
+  if [[ ! -x "\$_cb_central" ]]; then
+    echo "CodingBooth: no project booth above \$PWD and central wrapper missing:" >&2
+    echo "  \$_cb_central" >&2
+    echo "Re-run: ./booth shell-config install   (or codingbooth.io/install.sh)" >&2
+    return 1
+  fi
+  "\$_cb_central" "\$@"
+}
+${SHELL_CONFIG_END}
+EOF
+}
+
+# Write the fish function body (with markers) to stdout.
+emit_fish_shell_config_block() {
+    local central="$1"
+    local qcentral
+    qcentral="$(shell_single_quote "$central")"
+    cat <<EOF
+${SHELL_CONFIG_BEGIN}
+# CodingBooth: type \`booth\` from any directory. Walks up for a project ./booth;
+# falls back to the central wrapper. Delete this whole block to uninstall.
+function booth
+    set -l _cb_central '${qcentral}'
+    set -l _cb_dir (pwd)
+    while true
+        if test -x "\$_cb_dir/booth"; and test -f "\$_cb_dir/booth"
+            "\$_cb_dir/booth" \$argv
+            return \$status
+        end
+        if test "\$_cb_dir" = /
+            break
+        end
+        set _cb_dir (dirname "\$_cb_dir")
+    end
+    if not test -x "\$_cb_central"
+        echo "CodingBooth: no project booth above \$PWD and central wrapper missing:" >&2
+        echo "  \$_cb_central" >&2
+        echo "Re-run: ./booth shell-config install   (or codingbooth.io/install.sh)" >&2
+        return 1
+    end
+    "\$_cb_central" \$argv
+end
+${SHELL_CONFIG_END}
+EOF
+}
+
+# Remove a marked block from a file (idempotent: no-op if missing).
+remove_marked_block() {
+    local target="$1"
+    [[ -f "$target" ]] || return 0
+    if ! grep -qxF "$SHELL_CONFIG_BEGIN" "$target" 2>/dev/null; then
+        return 0
+    fi
+    local tmp
+    tmp="$(mktemp)"
+    awk -v b="$SHELL_CONFIG_BEGIN" -v e="$SHELL_CONFIG_END" '
+        $0 == b { skip=1; next }
+        $0 == e { skip=0; next }
+        !skip { print }
+    ' "$target" > "$tmp"
+    mv "$tmp" "$target"
+}
+
+# Install or replace a marked block in a target file (idempotent).
+# $1 = target path, $2 = path to file containing the full block (with markers).
+install_marked_block() {
+    local target="$1"
+    local block_file="$2"
+    local dir
+    dir="$(dirname "$target")"
+    mkdir -p "$dir"
+
+    local tmp
+    tmp="$(mktemp)"
+
+    if [[ -f "$target" ]] && grep -qxF "$SHELL_CONFIG_BEGIN" "$target" 2>/dev/null; then
+        # Replace existing block in place.
+        awk -v b="$SHELL_CONFIG_BEGIN" -v e="$SHELL_CONFIG_END" -v bf="$block_file" '
+            $0 == b {
+                while ((getline line < bf) > 0) print line
+                close(bf)
+                skip=1
+                next
+            }
+            $0 == e { skip=0; next }
+            !skip { print }
+        ' "$target" > "$tmp"
+    else
+        # Append (create file if needed). Preserve prior content.
+        if [[ -f "$target" && -s "$target" ]]; then
+            cat "$target" > "$tmp"
+            # Ensure a separating newline before the block.
+            if [[ -n "$(tail -c 1 "$tmp" 2>/dev/null || true)" ]]; then
+                echo >> "$tmp"
+            fi
+            echo >> "$tmp"
+        else
+            : > "$tmp"
+        fi
+        cat "$block_file" >> "$tmp"
+        echo >> "$tmp"
+    fi
+    mv "$tmp" "$target"
+}
+
+ShellConfigInstall() {
+    local central data_dir
+    data_dir="$(get_data_dir)"
+    central="$(get_central_booth_path)"
+
+    mkdir -p "$data_dir"
+    cp -f "$WRAPPER_SELF" "$central"
+    chmod 755 "$central"
+    echo "✓ Central wrapper: $central"
+
+    local bash_block fish_block
+    bash_block="$(mktemp)"
+    fish_block="$(mktemp)"
+    emit_bash_zsh_shell_config_block "$central" > "$bash_block"
+    emit_fish_shell_config_block "$central" > "$fish_block"
+
+    # bash
+    install_marked_block "$HOME/.bashrc" "$bash_block"
+    echo "✓ bash: $HOME/.bashrc"
+
+    # zsh
+    install_marked_block "$HOME/.zshrc" "$bash_block"
+    echo "✓ zsh:  $HOME/.zshrc"
+
+    # fish
+    local fish_conf
+    fish_conf="${XDG_CONFIG_HOME:-$HOME/.config}/fish/conf.d/codingbooth.fish"
+    install_marked_block "$fish_conf" "$fish_block"
+    echo "✓ fish: $fish_conf"
+
+    rm -f "$bash_block" "$fish_block"
+
+    echo ""
+    echo "Shell function installed (idempotent). Open a new shell or:"
+    echo "  source ~/.bashrc    # or ~/.zshrc"
+    echo "  # fish picks up conf.d automatically in new sessions"
+    echo ""
+    echo "Type 'booth' from any directory: walks up for a project wrapper,"
+    echo "else uses the central one. Project commands still need a project"
+    echo "./booth (and .booth/); help/version work from the central wrapper."
+}
+
+ShellConfigUninstall() {
+    local target
+    while IFS= read -r target; do
+        if [[ -f "$target" ]] && grep -qxF "$SHELL_CONFIG_BEGIN" "$target" 2>/dev/null; then
+            remove_marked_block "$target"
+            echo "✓ Removed block from $target"
+        else
+            echo "  (no block in $target)"
+        fi
+    done < <(shell_config_targets)
+
+    local central data_dir
+    central="$(get_central_booth_path)"
+    data_dir="$(get_data_dir)"
+    if [[ -f "$central" ]]; then
+        rm -f "$central"
+        echo "✓ Removed central wrapper: $central"
+    else
+        echo "  (no central wrapper at $central)"
+    fi
+    # Remove data dir only if empty (do not touch shared binary cache).
+    rmdir "$data_dir" 2>/dev/null || true
+
+    echo ""
+    echo "Shell-config uninstalled. Restart your shell (or unsource) to drop 'booth'."
+}
+
+ShellConfigStatus() {
+    local central
+    central="$(get_central_booth_path)"
+    echo "Central wrapper: $central"
+    if [[ -x "$central" ]]; then
+        echo "  status: present"
+    elif [[ -e "$central" ]]; then
+        echo "  status: exists but not executable"
+    else
+        echo "  status: missing"
+    fi
+    echo ""
+    echo "Shell rc blocks:"
+    local target
+    while IFS= read -r target; do
+        if [[ -f "$target" ]] && grep -qxF "$SHELL_CONFIG_BEGIN" "$target" 2>/dev/null; then
+            echo "  [installed] $target"
+        else
+            echo "  [absent]    $target"
+        fi
+    done < <(shell_config_targets)
+}
+
+ShellConfigCommand() {
+    local sub="${1:-}"
+    case "$sub" in
+        install)
+            ShellConfigInstall
+            ;;
+        uninstall)
+            ShellConfigUninstall
+            ;;
+        status)
+            ShellConfigStatus
+            ;;
+        help|-h|--help|"")
+            cat <<EOF
+Usage: ./$(basename "$0") shell-config <install|uninstall|status>
+
+  install     Copy this wrapper to the OS data dir and install booth()
+              into ~/.bashrc, ~/.zshrc, and fish conf.d (idempotent).
+  uninstall   Remove the marked shell block and the central wrapper.
+  status      Show whether the function and central wrapper are installed.
+
+The function walks up from \$PWD looking for a project ./booth; if none is
+found it runs the central wrapper. Commands that need a project .booth/ fail
+with the usual messages — that is intentional.
+EOF
+            [[ -z "$sub" ]] && return 1
+            return 0
+            ;;
+        *)
+            echo "Unknown shell-config command: $sub" >&2
+            echo "Use: shell-config install | uninstall | status | help" >&2
+            return 1
+            ;;
+    esac
+}
+
+# Early handling of version/help/shell-config so they don't require curl
 case "${COMMAND}" in
     version) PrintVersion ; exit 0 ; ;;
     help)    PrintHelp    ; exit 0 ; ;;
+    shell-config)
+        shift
+        ShellConfigCommand "$@"
+        exit $?
+        ;;
 esac
 
 # Check for nested booth execution (running booth inside a booth container)

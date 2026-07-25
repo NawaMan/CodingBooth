@@ -17,19 +17,44 @@ is short. This document walks through all six from the user's point of view.
 
 The layers stack. The shell function finds the wrapper; the wrapper finds (or
 downloads) the binary; the binary reads `.booth/` to know what to build and
-run. Each layer can be installed or removed without affecting the others —
-except where it would leave an obvious orphan (e.g. removing the wrapper also
-removes the shell function that points at it).
+run. Each layer can be installed or removed without affecting the others.
+Shell-config is user-scoped: uninstalling a project's `./booth` does **not**
+strip `booth()` from your rc files (you may have other projects).
 
 ---
 
-## 1. Shell convenience (removed)
+## 1. Shell convenience (`booth shell-config`)
 
-Earlier versions of the wrapper shipped a `shell-config` subcommand that
-installed a `booth()` shell function into your rc files, letting you type
-`booth` from any subdirectory. That command has been **removed** — the
-wrapper no longer touches `~/.bashrc` or its siblings. Always invoke `./booth`
-by path, or write your own three-line shell function if you want a shortcut.
+Install a central copy of the wrapper and a `booth()` function so you can type
+`booth` from any directory. The function walks up from `$PWD` for a project
+`./booth` and falls back to the central wrapper. Project commands still need a
+project booth (and `.booth/`); without one they fail with the usual messages.
+
+```bash
+./booth shell-config install     # idempotent; bash + zsh + fish
+./booth shell-config status
+./booth shell-config uninstall   # removes marked block + central wrapper
+```
+
+| Shell | Startup file |
+|-------|----------------|
+| bash  | `~/.bashrc` |
+| zsh   | `~/.zshrc` |
+| fish  | `~/.config/fish/conf.d/codingbooth.fish` |
+
+The block is fenced so you can delete it by hand:
+
+```bash
+# >>> codingbooth shell-config begin >>>
+...
+# <<< codingbooth shell-config end <<<
+```
+
+Central wrapper locations: Linux `~/.local/share/codingbooth/booth`, macOS
+`~/Library/Application Support/codingbooth/booth`, Windows
+`%LOCALAPPDATA%\codingbooth\booth`. The one-liner installer runs
+`shell-config install` after `booth install`. Open a new shell (or `source`
+your rc file) after install.
 
 ---
 
@@ -69,14 +94,12 @@ chmod +x booth
 **Uninstall**
 
 ```bash
-booth uninstall --wrapper        # delete ./booth and strip the shell function
+booth uninstall --wrapper        # delete ./booth (project wrapper only)
 rm ./booth                        # just delete the file
 ```
 
-`--wrapper` also strips the shell function from rc files, because a function
-pointing at a deleted wrapper would print the "not found" hint every time
-you tab-complete. If you want to keep the shell function for other projects,
-use `rm ./booth` directly.
+`--wrapper` removes this project's wrapper only. It does **not** strip the
+user-level shell function; use `booth shell-config uninstall` for that.
 
 See [docs/implementations/WRAPPER.md](implementations/WRAPPER.md) for the
 internals of the wrapper script.
@@ -304,13 +327,14 @@ booth uninstall --all -y
 #   - project binary association (lock + sha + local binaries)
 #   - every cached binary version (shared cache)
 #   - ./booth wrapper
-#   - shell function from all rc files (because --wrapper implies it)
+# Does NOT remove shell-config (user-level). For that:
+booth shell-config uninstall
 
 # Then, if you want the project config gone too:
 rm -rf .booth/
 ```
 
-Restart your shell to pick up the missing function.
+Restart your shell after `shell-config uninstall` to drop the `booth` function.
 
 ---
 
@@ -318,7 +342,9 @@ Restart your shell to pick up the missing function.
 
 ```
 ~/                                    ← user home
-├── .bashrc, .zshrc, .bash_profile, .profile     [layer 1: shell function]
+├── .bashrc, .zshrc                              [layer 1: shell function]
+├── .config/fish/conf.d/codingbooth.fish         [layer 1: fish]
+├── .local/share/codingbooth/booth               [layer 1: central wrapper] (Linux)
 ├── .cache/codingbooth/versions/<v>/              [layer 6: shared cache]   (Linux)
 └── Library/Caches/codingbooth/versions/<v>/     [layer 6: shared cache]   (macOS)
 

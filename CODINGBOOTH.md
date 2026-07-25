@@ -87,8 +87,10 @@ This drops the **wrapper script** (`booth`) in the current directory, downloads 
 | `booth install [version]`    | Download the `codingbooth` binary (positional version argument)      |
 | `booth update [version]`     | Re-download to latest, or to a specific version                      |
 | `booth uninstall`            | Remove project lock file and locally-cached binaries                 |
-| `booth tools-cache list`     | Inspect the shared binary cache                                      |
-| `booth tools-cache clean [--all\|VERSION]` | Prune the shared binary cache                          |
+| `booth shell-config install` | Central wrapper + `booth()` in bash/zsh/fish (walk-up + fallback)    |
+| `booth shell-config uninstall` | Remove shell function block and central wrapper                    |
+| `booth tools-cache list`     | Inspect the shared binary cache (Go binary)                          |
+| `booth tools-cache clean [--all\|VERSION]` | Prune the shared binary cache (Go binary)              |
 
 ### Cache layout
 
@@ -113,7 +115,7 @@ Every time you run `booth <something>` that forwards to the binary, the wrapper:
 6. Maintains a `booth` → `codingbooth-<platform>` symlink
 7. `exec`s the binary with your original argv
 
-Subcommands handled entirely by the wrapper (`help`, `version`, `install`, `update`, `uninstall`, `tools-cache`) skip the gauntlet — they work without network access.
+Subcommands handled entirely by the wrapper (`help`, `version`, `install`, `update`, `uninstall`, `shell-config`) skip the gauntlet — they work without network access. `tools-cache` is handled by the Go binary after the gauntlet.
 
 For more, see **[Wrapper implementation](docs/implementations/WRAPPER.md)**.
 

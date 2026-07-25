@@ -98,13 +98,45 @@ The wrapper handles these commands:
 | `install --cache=local [VERSION]`  | Download to .booth/tools/                        |
 | `update [VERSION]`                 | Re-download binary (force refresh)               |
 | `uninstall [SCOPES...] [-y]`       | Remove this project's booth (interactive by default). Scopes: `--shared-binary`, `--all-shared-binary`, `--wrapper`, `--all` (everything) |
-| `tools-cache list`                 | Show cached versions and sizes                   |
-| `tools-cache clean`                | Interactively remove cached versions             |
-| `tools-cache clean --all`          | Remove all cached versions                       |
-| `tools-cache clean VERSION`        | Remove specific version                          |
+| `shell-config install`             | Install central wrapper + `booth()` into bash/zsh/fish (idempotent) |
+| `shell-config uninstall`           | Remove marked shell block and central wrapper    |
+| `shell-config status`              | Show whether shell-config is installed           |
 | `run [ARGS...]`                    | Execute binary (after verification)              |
 | `version`                          | Show wrapper and binary versions                 |
 | `help`                             | Show usage information                           |
+
+> **Note:** `tools-cache` is handled by the Go binary (passthrough), not the wrapper.
+
+### Shell-config
+
+`shell-config install` places a copy of the wrapper in the OS data directory and writes a
+marked `booth()` function into the user's shell startup files:
+
+| Shell | File |
+|-------|------|
+| bash  | `~/.bashrc` |
+| zsh   | `~/.zshrc` |
+| fish  | `~/.config/fish/conf.d/codingbooth.fish` |
+
+| Platform | Central wrapper |
+|----------|-----------------|
+| Linux    | `~/.local/share/codingbooth/booth` (or `$XDG_DATA_HOME/codingbooth/booth`) |
+| macOS    | `~/Library/Application Support/codingbooth/booth` |
+| Windows  | `%LOCALAPPDATA%\codingbooth\booth` |
+
+The function walks up from `$PWD` looking for an executable `./booth`. If found, it runs that
+project wrapper (location-based paths stay correct). If not, it runs the central wrapper.
+Commands that need a project `.booth/` fail with the usual messages when only the central
+wrapper is available — that is intentional. Markers make the block easy to spot and delete:
+
+```bash
+# >>> codingbooth shell-config begin >>>
+booth() { ... }
+# <<< codingbooth shell-config end <<<
+```
+
+Re-running `install` replaces the block in place (one copy only). `uninstall` removes the
+markers and the central file without touching project wrappers or the shared binary cache.
 
 Default command (no arguments): `run`
 

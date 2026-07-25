@@ -13,7 +13,9 @@ set -euo pipefail
 curl -fsSL -o booth https://github.com/NawaMan/CodingBooth/releases/download/latest/booth
 chmod +x booth
 ./booth install
+./booth shell-config install
 
 echo ""
-echo "Use ./booth from this directory, or run it via a full path."
+echo "Use ./booth from this project, or type 'booth' after opening a new shell"
+echo "(shell-config installs a function that finds the nearest project wrapper)."
 echo ""
