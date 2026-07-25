@@ -1,6 +1,6 @@
 # Clang Example
 
-C/C++ development environment with the LLVM/Clang toolchain and CMake.
+This example is a C/C++ development environment with the LLVM/Clang toolchain and CMake. `src/primes.cpp` runs a prime sieve and, in `--json` mode, serializes the primes with the apt-installed `nlohmann/json` library, built via CMake and Make. Reproducibility: the LLVM/Clang version and the apt archive are pinned, so the toolchain and libraries stay deterministic across rebuilds. C++ builds are notoriously sensitive to which compiler and which library headers happen to be on a machine — pin both and "works on my machine" stops being a gamble. Rebuild next month or on a colleague's laptop and you get the identical Clang major and the identical `nlohmann/json`, so a green build today stays a green build tomorrow.
 
 **Stack:** Clang/LLVM, CMake, Make
 

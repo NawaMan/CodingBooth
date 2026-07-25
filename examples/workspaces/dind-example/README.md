@@ -1,7 +1,6 @@
 # Docker-in-Docker (DinD) Example
 
-Run Docker inside CodingBooth without exposing your host's Docker socket.
-This example demonstrates Docker-in-Docker — build images, run containers, and manage Docker workloads entirely inside an isolated booth. Your host Docker stays untouched, no socket sharing required, and everything cleans up when you stop the booth.
+This example runs a full Docker engine inside a CodingBooth without ever touching your host's Docker socket. With `dind = true`, a DinD sidecar container runs its own Docker daemon, and `start-server.sh` builds an image and runs a Python `http.server` container on port 8080, all nested inside the booth. Because the containers live in a nested daemon rather than on your host, you get full `docker build`/`docker run` without the classic escape hatch of bind-mounting `/var/run/docker.sock` — which effectively hands the container root on your machine. Experiment as recklessly as you like: fill the image cache, wedge the daemon, spawn a swarm of containers, then throw it all away by simply stopping the booth, with your host Docker never touched. That's the safe way to let an AI agent or a CI script drive Docker.
 
 ## Table of Contents
 

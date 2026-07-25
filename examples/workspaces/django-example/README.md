@@ -1,6 +1,6 @@
 # Django Example
 
-A minimal [Django](https://www.djangoproject.com/) web app running inside a CodingBooth workspace.
+This example is a minimal Django web app running inside a CodingBooth workspace. Its two view functions serve an HTML greeting at `/` and a JSON `{"status": "ok", "message": "pong"}` response at `/api/ping`, backed by a local SQLite database. It showcases reproducibility: the Python interpreter and the exact Django version are pinned inside the booth, so the app you run today is the same app a teammate runs six months from now. There is no "works on my machine" and no dependency drift — clone the workspace and the runtime materializes exactly as specified, on any host, every single time.
 
 ## Run
 

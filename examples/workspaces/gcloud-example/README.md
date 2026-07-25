@@ -1,6 +1,6 @@
 # Google Cloud Example
 
-This example demonstrates using `cb-home-seed` to mount Google Cloud credentials from your host machine into the container.
+This example is a booth preconfigured for Google Cloud development with the gcloud CLI. Your host `~/.config/gcloud` is mounted into the container so `gcloud auth list` and `gcloud config list` work as soon as the booth starts. Seeding the host gcloud credentials means the CLI and SDKs are authenticated the moment the booth opens — no `gcloud auth login` dance inside the container, no service-account JSON checked into the repo. Your logins stay on the host where they belong and the booth just borrows them, so onboarding to a GCP project is "launch the booth" rather than a page of setup steps. Nothing secret ends up in git or in an image you might later share.
 
 ## Prerequisites
 

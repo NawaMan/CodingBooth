@@ -1,6 +1,6 @@
 # Vaadin Example
 
-A minimal [Vaadin Flow](https://vaadin.com/flow) app — write the UI in pure Java, Vaadin handles the browser side — running inside a CodingBooth workspace.
+This example is a minimal Vaadin Flow app where the entire UI is written in pure Java and Vaadin drives the browser side, running inside a CodingBooth workspace. The demo renders a heading and a button that, on each click, pushes a "Clicked N times" notification to the page over Vaadin's server bridge with zero handwritten JavaScript. It showcases how much fiddly setup the booth absorbs: Vaadin quietly needs a full JDK, Maven, and a Node.js frontend toolchain, and lining all three up by hand is exactly the kind of yak-shave that stops people from ever trying the framework. Here they arrive pre-provisioned and pre-agreed, so you go from zero to a live server-driven UI without touching npm, nvm, or a JDK installer.
 
 ## Run
 

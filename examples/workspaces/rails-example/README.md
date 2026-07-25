@@ -1,6 +1,6 @@
 # Rails Example
 
-A starting point for [Ruby on Rails](https://rubyonrails.org/) on Postgres inside a CodingBooth workspace.
+This example is a starting point for Ruby on Rails on Postgres inside a CodingBooth workspace. Rather than committing a scaffold, it has you run `rails new` once against the auto-started Postgres and boot the standard Rails welcome page at port 3000. It showcases how batteries-included the booth is: Ruby, a running Postgres, and the Rails gem are all provisioned together, with the database already up before you type a command. What is normally an afternoon of installing Postgres, matching a Ruby version, and wiring the two together collapses into a single `booth run` — the entire Rails development stack is there, waiting to be scaffolded into.
 
 Unlike most other examples, this one **does not commit the full Rails scaffold** — `rails new` generates 50+ files, most of which are templated identically per project. Instead, the Boothfile installs Ruby + Postgres + Rails as a gem, and the workflow is "scaffold once, then build your app".
 

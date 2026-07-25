@@ -1,13 +1,6 @@
 # Data Example — a whole data workbench, with GUIs
 
-A single CodingBooth container that stands up an entire **data-analysis workbench** at
-once — a database, a notebook, and two GUIs — all wired to the *same* seeded dataset.
-It is the graphical sibling of the [`kind-app`](../kind-app-example) example: where that one
-gives you a whole Kubernetes stack on the command line, this one gives you a whole data
-stack you drive from a **desktop in your browser**.
-
-Everything below is pre-installed, pinned, and thrown away when you stop the booth. Nothing
-lands on your host — no PostgreSQL, no DBeaver, no Python packages, no Node.
+This example is a single CodingBooth container that stands up an entire graphical data-analysis workbench at once. It seeds a Postgres `demo` database with a ~50-row `sales` table and exposes that one dataset through four lenses: a DBeaver SQL client pre-wired on an XFCE browser desktop, a JupyterLab notebook that charts it with matplotlib, and a Node/Express "Sales Explorer" dashboard with Chart.js filters. It showcases just how much a single booth can bundle: a whole analysis stack — Postgres, DBeaver, JupyterLab, a web dashboard, and Python — comes up together and is driven from a desktop inside your browser. It is the graphical sibling of the [`kind-app`](../kind-app-example) example: where that one hands you a full Kubernetes stack on the command line, this one hands you a full data stack with GUIs. Everything is pre-installed, pinned, and thrown away when you stop the booth — no PostgreSQL, no DBeaver, no Python packages, and no Node ever touch your host.
 
 ## What's inside
 

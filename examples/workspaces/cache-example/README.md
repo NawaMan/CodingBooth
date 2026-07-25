@@ -1,6 +1,6 @@
 # Cache Example
 
-This example demonstrates how to persist files and directories across container restarts using `.booth/cache/`.
+This example demonstrates how to persist files and directories across container restarts using `.booth/cache/`. It was configured with `cache-files` and `cache-dirs` plus the shell-history template, so writing to `~/.my_app_history`, `~/.my_app_data/`, and your shell history all survive an exit and relaunch. Persistence / cache: selected files persist across restarts via `.booth/cache/` bind-mounts that stay on this machine. Containers are ephemeral by nature, yet the things you actually want to keep — shell history, app data, local notes — survive every `exit` and relaunch without leaking into the repo or your host home. You choose exactly which files and directories endure, and because `.booth/cache/` is gitignored, that state stays private to your machine.
 
 ## Setup
 

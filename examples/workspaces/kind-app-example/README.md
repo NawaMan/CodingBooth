@@ -1,7 +1,6 @@
 # TODO App on KIND - Full-Stack Kubernetes Example
 
-A real-world TODO application deployed to KIND (Kubernetes IN Docker), demonstrating microservices architecture with React, Go, and PostgreSQL.
-Run a production-style Kubernetes stack on your laptop with zero host setup. This example boots a complete KIND cluster inside CodingBooth and deploys a real microservices TODO app (React + Go + PostgreSQL) with one command flow — build, deploy, port-forward, iterate. Every dependency (kubectl, kind, Docker tooling, runtimes) is baked into the workspace so your whole team gets the same cluster, same tool versions, same results—and when you’re done, teardown is clean: stop the booth and everything disappears.
+This example deploys a real full-stack microservices TODO app to a Kubernetes cluster running inside a CodingBooth. One command flow (`start-cluster.sh`, `build.sh`, `deploy-app.sh`, `access-app.sh`) spins up a KinD cluster and deploys a React + Vite frontend, a Go REST/WebSocket API, a Go export service, and PostgreSQL, then port-forwards the UI to `http://localhost:3000`. The entire cluster and its microservices run nested inside the booth, so a production-style Kubernetes stack — frontend, two Go services, and a database wired together with real manifests — comes up on any laptop with zero host setup. A new teammate goes from `git clone` to a running, seeded, port-forwarded app in one command flow instead of a day of installing tools and chasing version drift, and everyone runs the exact same kubectl, kind, and runtime versions. When they're done, stopping the booth erases the whole cluster cleanly — nothing to uninstall, nothing left polluting the host.
 
 ## Table of Contents
 

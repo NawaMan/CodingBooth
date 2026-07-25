@@ -1,6 +1,6 @@
 # LEMP Example
 
-A canonical [LEMP](https://en.wikipedia.org/wiki/LAMP_%28software_bundle%29#Variants) stack — Linux + nginx + MySQL + PHP-FPM — running on a single CodingBooth container.
+This example is a canonical LEMP stack — Linux, nginx, MySQL, and PHP-FPM — running on a single CodingBooth container. nginx hands requests to php-fpm, which renders a page showing one seeded row pulled from a `lemp_demo` MySQL database. It showcases how much a single booth bundles: nginx, php-fpm, and MySQL run together in one container, each auto-starting and pre-wired so the path from web server to PHP to database works out of the box. Standing this up by hand normally means three separate services and a pile of socket-and-config glue; here it is one command and one throwaway container that leaves your host untouched.
 
 ## Run
 

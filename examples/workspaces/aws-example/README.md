@@ -1,7 +1,6 @@
 # AWS Cloud Development Example
 
-Develop and deploy to AWS from an isolated, reproducible CodingBooth environment.
-This example demonstrates AWS CLI integration — your credentials stay safe on your host while the booth gets everything it needs to interact with AWS services. Every team member gets the same AWS tooling, same SDK versions, and project-specific configuration without polluting their host setup.
+This example is an isolated, reproducible booth for developing against AWS with the AWS CLI. Host `~/.aws` is mounted read-only into the booth via the `cb-home-seed` pattern so commands like `aws sts get-caller-identity` work immediately, with an included Jupyter notebook walking through operations. Your real credentials are seeded read-only from the host rather than copied into the repo, so the AWS CLI is authenticated the instant the booth starts while your secret keys never enter the project tree or git history. The container works against a throwaway copy — it can't corrupt or leak your host `~/.aws` — so you can let an agent or a teammate's booth run real AWS commands without ever pasting keys into a Dockerfile, an env file, or a shared image. Project-specific profile and region live in a committed config, so the whole team targets the same account the same way, minus the secrets.
 
 ## Table of Contents
 

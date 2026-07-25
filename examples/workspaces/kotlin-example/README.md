@@ -1,6 +1,6 @@
 # Kotlin Example
 
-A Kotlin program that compiles to a runnable JAR, plus Python and a Kotlin notebook kernel for exploration.
+This example is a Kotlin workspace that compiles to a runnable JAR, paired with a matched JVM and a Kotlin notebook kernel for exploration. The bundled `Fibonacci.kt` takes a count and prints that many numbers of the Fibonacci sequence, labeling each one as `F(index) = value`. The quiet win here is version compatibility done right: the Kotlin compiler and the Temurin JDK are pinned to releases that are known to agree. Kotlin is picky about which JVM bytecode targets it supports, and a mismatched compiler and JDK surfaces as baffling "unsupported class file version" or target errors that have nothing to do with your code. This booth removes that whole failure class — and because both versions are overridable via `KOTLIN_VERSION` and `JDK_VERSION` build args, you can bump either one deliberately while still starting from a known-good pairing.
 
 **Stack:** Kotlin 2.0, JDK 21 (Temurin), Python 3.13, Jupyter, XFCE desktop, Claude Code
 

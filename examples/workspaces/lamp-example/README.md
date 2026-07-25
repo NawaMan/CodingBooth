@@ -1,6 +1,6 @@
 # LAMP Example
 
-A canonical [LAMP](https://en.wikipedia.org/wiki/LAMP_%28software_bundle%29) stack — Linux + Apache + MySQL + PHP — running on a single CodingBooth container.
+This example is a canonical LAMP stack — Linux, Apache, MySQL, and PHP — running on a single CodingBooth container. Apache serves a PHP page that connects to a `lamp_demo` MySQL database and renders one seeded row ("Hi from MySQL!"). It showcases how much a single booth bundles: Apache, MySQL, and PHP all run together inside one container, wired up and auto-starting, while your host stays completely free of a web server or database. This is the classic stack that used to mean XAMPP installers and system services you could never fully uninstall — here it is one disposable container you simply throw away when you're done.
 
 ## Run
 

@@ -1,6 +1,6 @@
 # Java Example
 
-Java development environment with Jupyter notebook support using the JJava kernel.
+This example is a batteries-included JVM workspace built around JDK 25. The bundled `Person.java` uses Lombok's `@Value` to define an immutable person type and prints a formatted greeting for a sample person ("Hello, Peter Parker (18)!"), with matching notebooks running the same code interactively. This is the batteries-included JVM story at its fullest: JDK 25, Maven, the JJava notebook kernel, and full IDEs (Eclipse/IntelliJ) all come up together in a single launch. Setting up any one of those by hand is a chore; getting all of them to agree on the same JDK is the kind of afternoon nobody wants. Here you skip it entirely — build with Maven, prototype in a notebook, or open a real IDE, all against one consistent Java 25, from the moment the booth starts.
 
 **Stack:** JDK 25 (Temurin), Jupyter Notebook, JJava kernel
 

@@ -1,8 +1,6 @@
 # System Library Example — link checker in C++
 
-A small C++ program that **links two real system libraries** — libcurl and SQLite —
-installed with `apt`. It reads a list of URLs, checks each one with libcurl, and records
-the result in a SQLite database: **URL, timestamp, and status**.
+This example is a small C++ link checker that links two real system libraries — libcurl and SQLite — installed with `apt`. `src/linkcheck.cpp` reads a list of URLs, checks each one with libcurl (following redirects and classifying ALIVE/DEAD), records the URL, timestamp, and status into a SQLite database, then reads the rows back. Precise version compatibility: it depends on real system libraries whose development headers and shared objects must both be present and matched for CMake's `find_package` to configure and link. This is the honest version of C/C++ dependency pain — the `libxxx-dev` dance where a missing header or mismatched `.so` breaks the build in ways that have nothing to do with your code. In a booth it's declared once, snapshot-pinned so the exact library versions install every time, and nothing lands on your host — the linking headache becomes a one-line, reproducible detail.
 
 This is the honest version of the "dependency" pain. The hard part of C/C++ isn't the
 compiler — it's the `libxxx-dev` dance: installing the right development packages so the

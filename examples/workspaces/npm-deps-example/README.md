@@ -1,6 +1,6 @@
 # NPM Deps Example
 
-Demonstrates pre-installing npm dependencies at booth-build time so the first run inside the booth doesn't hit the network.
+This example pre-installs npm dependencies at booth-build time so the first run inside the booth doesn't hit the network. The Boothfile mounts `package.json` during the build and runs `npm install` to fetch chalk and warm the cache before launch. Pre-baked deps: npm install runs at build time so node_modules is warmed before your first run. The moment the booth opens, `npm test` just works — no cold install, no registry round-trips, no "works on my machine" drift between contributors. Onboarding and CI start from a fully warmed cache every single time.
 
 **Stack:** Node.js 22, npm
 

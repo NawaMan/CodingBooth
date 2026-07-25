@@ -1,6 +1,6 @@
 # MERN Example
 
-A canonical [MERN](https://en.wikipedia.org/wiki/MEAN_%28solution_stack%29#MERN) stack — MongoDB + Express + React + Node — running on a single CodingBooth container.
+This example is a canonical MERN stack — MongoDB, Express, React, and Node — running on a single CodingBooth container. An Express/Mongoose API seeds one item into MongoDB and serves it at `GET /api/items`, which a React and Vite client fetches and lists in the browser. It showcases how much a single booth bundles: MongoDB, Express, React, and Node — a full-stack JavaScript setup end to end — all live in one container. The database, API, and frontend toolchain arrive together and leave together, so trying the whole stack costs a single command and none of the usual local-install cleanup.
 
 ## Run
 

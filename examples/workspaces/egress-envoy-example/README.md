@@ -1,6 +1,6 @@
 # Egress Envoy Policy Example
 
-This example demonstrates `--egress` with a custom Envoy policy file.
+This example is a network-egress-controlled booth whose allowlist comes from a hand-authored Envoy policy. With `egress = true` and `egress-policy-file = ".booth/egress/envoy.yaml"`, the custom Envoy RBAC config allows pypi.org while blocking example.com and any direct-connect bypass. Because a hand-authored Envoy policy is the single source of truth (backed by iptables rules that force traffic through the proxy), you control exactly which hosts the container may reach by editing one reviewable, committable file. When the built-in allowlist isn't expressive enough, you drop down to raw Envoy RBAC and shape egress precisely — then the whole team's booths enforce that identical policy. It's deny-by-default networking you can code-review like any other config, which is exactly what you want before turning an AI agent or untrusted dependency loose with a shell.
 
 **Security note (2026-02-06):** `--egress` with `--dind` is **not supported**.  
 DinD can bypass the egress firewall by running a privileged container in the shared network namespace. Use `--egress` **without** `--dind` until further research.

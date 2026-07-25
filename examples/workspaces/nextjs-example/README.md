@@ -1,6 +1,6 @@
 # Next.js Example
 
-A minimal [Next.js 15](https://nextjs.org/) App Router demo running inside a CodingBooth workspace.
+This example is a minimal Next.js 15 App Router demo running inside a CodingBooth workspace. It serves a server-rendered page at `/` and a JSON `pong` from a Route Handler at `/api/ping`. It showcases CodingBooth's port exposure: a single forwarded port carries both the server-rendered page and its API route out of the container to your host browser. The whole Next.js app — SSR and backend handler together — behaves exactly as if it were running natively on your machine, while actually living in a disposable, isolated container.
 
 ## Run
 

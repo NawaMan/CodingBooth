@@ -1,6 +1,6 @@
 # KinD (Kubernetes in Docker) Example
 
-Run a full Kubernetes cluster inside a CodingBooth using KinD and DinD (Docker in Docker).
+This example runs a full Kubernetes cluster entirely inside a CodingBooth using KinD on top of Docker-in-Docker. `start-cluster.sh` creates a KinD cluster in the DinD sidecar and `deploy-app.sh` deploys a sample nginx app on NodePort 30080 (plus a buildable hello-service on 30081), reachable from your host browser. The whole cluster — control plane, nodes, and pods — is nested inside the booth, so you get a throwaway Kubernetes environment without installing kind, kubectl, or a single container runtime on your own machine. Kick the tires on manifests, ingress, and NodePorts, then delete the entire cluster by stopping the booth — no lingering `~/.kube` config, no orphaned Docker networks, no "why is my laptop running eight etcd pods" surprise later. It's a real cluster you can be genuinely careless with.
 
 ## Quick start
 

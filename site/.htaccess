@@ -1,0 +1,19 @@
+# codingbooth.io — Apache config (DreamHost)
+#
+# Short, user-friendly download links for example workspaces.
+# The actual zips live on GitHub Releases; these rules 302-redirect to them so
+# nothing has to be stored or re-uploaded on the web host.
+#
+#   https://codingbooth.io/examples/aws-example.zip
+#       -> https://github.com/NawaMan/CodingBooth/releases/latest/download/aws-example.zip
+#
+#   https://codingbooth.io/examples/0.63.0/aws-example.zip   (pin a specific version)
+#       -> https://github.com/NawaMan/CodingBooth/releases/download/0.63.0/aws-example.zip
+
+RewriteEngine On
+
+# Versioned form: /examples/<version>/<name>.zip  (more specific — must come first)
+RewriteRule ^examples/([0-9][^/]*)/(.+\.zip)$ https://github.com/NawaMan/CodingBooth/releases/download/$1/$2 [R=302,L]
+
+# Latest form: /examples/<name>.zip  -> newest stable release asset
+RewriteRule ^examples/(.+\.zip)$ https://github.com/NawaMan/CodingBooth/releases/latest/download/$1 [R=302,L]

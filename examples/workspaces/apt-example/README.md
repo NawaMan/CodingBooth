@@ -1,7 +1,6 @@
 # Apt Example
 
-Demonstrates installing **Debian/Ubuntu system packages** with `install apt`, frozen to
-an Ubuntu archive snapshot for reproducible rebuilds.
+This example installs Debian/Ubuntu system packages with `install apt` on top of the base booth. It installs jq, tree, and ripgrep while pinning `APT_SNAPSHOT=20250601T000000Z` to freeze the entire Ubuntu archive to a point in time. Reproducibility: an apt archive snapshot freezes the whole package set — including transitive dependencies you never named — so every rebuild resolves identical versions. Pinning one package version isn't enough, because the live archive keeps moving underneath you and a bare version pin stops resolving once a newer build lands; freezing the snapshot keeps the entire dependency graph installable for years. Build the image today or next spring and you get byte-for-byte the same system packages — the honest reproducibility apt normally can't promise.
 
 **Stack:** base workspace + apt-installed CLI tools
 

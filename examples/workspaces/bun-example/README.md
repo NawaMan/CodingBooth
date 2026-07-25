@@ -1,6 +1,6 @@
 # Greeter
 
-A simple greeting CLI built with Bun and TypeScript.
+This example is a simple greeting CLI built with Bun and TypeScript. `src/greeter.ts` greets a name passed on the command line, prints the current time, and offers optional colorized output, with a matching `bun test` suite. Host stays clean: Bun and any global CLI tools install in the booth, not on your host. Give Bun a spin — a fast, still-evolving runtime — without committing it to your machine or having it sit alongside your Node setup. Everything lives in the booth, so evaluating a new toolchain costs you nothing on cleanup and never touches your day-to-day environment.
 
 ## Features
 - Greet someone by name

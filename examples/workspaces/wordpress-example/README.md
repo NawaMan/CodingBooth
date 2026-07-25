@@ -1,6 +1,6 @@
 # WordPress Example
 
-A self-contained [WordPress](https://wordpress.org/) install — PHP + Apache (mod_php) + MySQL — running on a single CodingBooth container.
+This example is a self-contained WordPress install — PHP, Apache with mod_php, and MySQL — running on a single CodingBooth container. On boot it serves WordPress core's web installer at port 8080 against an auto-created `wordpress` MySQL database, ready for you to complete the famous five-minute setup. It showcases pre-baked dependencies: WordPress core is downloaded into the image at build time and PHP, Apache, and MySQL all come up together, so the very first boot drops you straight onto the famous installer with nothing left to fetch. There is no download-unzip-configure dance and no LAMP stack to assemble by hand — a complete, ready-to-run WordPress environment materializes from a single command.
 
 ## Run
 

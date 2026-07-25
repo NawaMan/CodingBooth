@@ -1,6 +1,6 @@
 # Spring Boot Example
 
-A minimal [Spring Boot](https://spring.io/projects/spring-boot) web app running inside a CodingBooth workspace.
+This example is a minimal Spring Boot web app running inside a CodingBooth workspace. A single `@RestController` serves a plain-text greeting at `/` and a JSON `pong` map at `/api/ping`. It showcases precise version compatibility: a matched Temurin 21 JDK and Maven are pinned together, and Java builds are unforgiving when a toolchain drifts. The booth guarantees the two agree, so you never hit the classic "unsupported class file version" wall or a wrong-JDK build failure — the exact toolchain the project expects is simply present.
 
 ## Run
 

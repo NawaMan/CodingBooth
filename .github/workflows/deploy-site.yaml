@@ -1,0 +1,69 @@
+# Deploys the codingbooth.io site by pulling the latest main into the
+# DreamHost checkout over SSH. See docs/DEPLOY_SITE.md for one-time setup.
+#
+# The site lives in this repo under site/ (with symlinks up to ../docs/images
+# and ../install.sh), so DreamHost holds a full clone and its web root serves
+# the site/ subdirectory.
+#
+# The checkout is a read-only MIRROR of origin/main — it never has local commits
+# worth keeping. We therefore `fetch` + `reset --hard origin/main` rather than
+# `git pull`: the public history is periodically force-pushed (the retiming
+# workflow), which makes pulls fail with "divergent branches / need to specify
+# how to reconcile". A hard reset mirrors any history, forced or not.
+name: Deploy Site to codingbooth.io
+
+on:
+  push:
+    branches: [main]
+    # Only redeploy when something the site actually serves changes.
+    paths:
+      - 'site/**'
+      - 'docs/images/**'   # site/images is a symlink to ../docs/images
+      - 'install.sh'       # site/install.sh is a symlink to ../install.sh
+      - '.github/workflows/deploy-site.yaml'
+  workflow_dispatch: {}     # allow manual "Run workflow"
+
+# Never run two deploys at once; if a newer push arrives, drop the older run.
+concurrency:
+  group: deploy-site
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Pull latest on DreamHost over SSH
+        env:
+          SSH_KEY: ${{ secrets.DREAMHOST_SSH_KEY }}
+          SSH_HOST: ${{ secrets.DREAMHOST_HOST }}
+          SSH_USER: ${{ secrets.DREAMHOST_USER }}
+          SSH_PORT: ${{ secrets.DREAMHOST_PORT }}   # optional; defaults to 22
+          DEPLOY_PATH: ${{ secrets.DREAMHOST_PATH }}
+        run: |
+          set -euo pipefail
+
+          # Safe no-op until the secrets are configured, so merging this
+          # workflow before setup does not produce a red failing run.
+          if [ -z "${SSH_HOST:-}" ] || [ -z "${SSH_USER:-}" ] || \
+             [ -z "${DEPLOY_PATH:-}" ] || [ -z "${SSH_KEY:-}" ]; then
+            echo "DreamHost deploy secrets not set — skipping."
+            echo "See docs/DEPLOY_SITE.md to configure DREAMHOST_SSH_KEY / HOST / USER / PATH."
+            exit 0
+          fi
+
+          PORT="${SSH_PORT:-22}"
+
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # Trust the host key on first contact (TOFU). To pin it instead,
+          # pre-populate ~/.ssh/known_hosts from a secret — see the deploy doc.
+          ssh-keyscan -p "$PORT" -H "$SSH_HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+          echo "Deploying to ${SSH_USER}@${SSH_HOST}:${DEPLOY_PATH} (port ${PORT})"
+          # Mirror origin/main exactly — survives force-pushed (retimed) history.
+          ssh -i ~/.ssh/deploy_key -p "$PORT" -o IdentitiesOnly=yes \
+            "${SSH_USER}@${SSH_HOST}" \
+            "cd '${DEPLOY_PATH}' && git fetch --prune origin && git reset --hard origin/main && echo 'Deployed commit:' && git rev-parse --short HEAD"
+
+          rm -f ~/.ssh/deploy_key

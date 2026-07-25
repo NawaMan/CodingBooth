@@ -1,6 +1,6 @@
 # MEAN Example
 
-A canonical [MEAN](https://en.wikipedia.org/wiki/MEAN_%28solution_stack%29) stack — MongoDB + Express + Angular + Node — running on a single CodingBooth container.
+This example is a canonical MEAN stack — MongoDB, Express, Angular, and Node — running on a single CodingBooth container. An Express/Mongoose API seeds one item into MongoDB and serves it at `GET /api/items`, which an Angular client fetches and lists in the browser. It showcases how much a single booth bundles: MongoDB, Express, Angular, and Node — a full four-tier JavaScript stack — all live in one container. There is no separate database to install and babysit and no Node version to juggle; the entire MEAN stack comes up together and vanishes cleanly the moment you stop the booth.
 
 ## Run
 

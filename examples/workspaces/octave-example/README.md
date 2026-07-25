@@ -1,6 +1,6 @@
 # Octave Example
 
-GNU Octave development environment with Jupyter notebook support using the Calysto Octave kernel.
+This example is a GNU Octave environment with the Calysto Octave notebook kernel and gnuplot preconfigured. The bundled `example.m` fits a linear regression to generated data and then runs a tour of matrix operations — determinant, inverse, and eigenvalue decomposition — printing each result. The showcase is how complete the numerical stack is out of the box: GNU Octave, the Calysto Octave kernel, and the gnuplot plotting backend are all installed and wired together. That last piece matters — getting inline plots to actually render in a notebook usually means matching a kernel to a working graphics backend, which is exactly where these setups fall apart. Here matrix math and inline figures both work the moment you launch, so you get a MATLAB-compatible scratchpad for linear algebra and visualization with nothing left to configure.
 
 **Stack:** GNU Octave, Python 3.13, Jupyter Notebook, Calysto Octave Kernel
 

@@ -1,6 +1,6 @@
 # React Example
 
-A minimal [React](https://react.dev/) + [Vite](https://vitejs.dev/) app running inside a CodingBooth workspace.
+This example is a minimal React and Vite app running inside a CodingBooth workspace. The bundled component renders a button that increments and displays a click counter via React's useState hook. It showcases CodingBooth's port exposure: the Vite dev server runs inside the container yet is bound and mapped so it answers at `localhost` in your everyday browser, hot-reload and all. You get the full container-isolated toolchain with none of the friction — no guessing at container IPs and no config edits to escape the sandbox, the dev server is simply there on the host.
 
 ## Run
 

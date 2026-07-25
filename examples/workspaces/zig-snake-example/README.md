@@ -1,6 +1,6 @@
 # Snake — A Terminal Game in Zig
 
-A classic terminal snake game built inside [CodingBooth](https://github.com/NawaMan/CodingBooth), no Zig installation required.
+This example is a classic terminal Snake game written in Zig, built and played entirely inside [CodingBooth](https://github.com/NawaMan/CodingBooth) with no Zig installation on the host. `zig build run` compiles and launches the single-file `src/main.zig` game (arrow / WASD controls), and `build-all.sh` cross-compiles native binaries for six targets — x86_64 and aarch64 Linux (gnu and musl) plus Intel and Apple-Silicon macOS. Batteries-included and standardized to Linux: it builds and plays with no Zig on the host, yet still cross-compiles to many targets from one booth. Clone, run `./booth`, and you are playing a game compiled from source without ever installing a toolchain — then `build-all.sh` hands you native binaries for six OS/architecture combinations from that same environment. One standardized Linux booth becomes a portable build farm you can run the outputs of directly on your own machine.
 
 ## Prerequisites
 

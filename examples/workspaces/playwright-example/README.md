@@ -1,6 +1,6 @@
 # Playwright Example
 
-A browser-automation testing environment with [Playwright](https://playwright.dev) and headless Chromium.
+This example is a ready-to-run browser-automation environment built on Playwright and headless Chromium. `run-playwright.sh` runs the sample Playwright test suite and `run-screenshot.sh` drives Chromium to a real page (Hacker News by default) and saves a screenshot, using the browser already baked into the image. Node.js, Playwright, and a version-pinned Chromium are baked into the booth image up front, so the first test run is as fast as the hundredth — no multi-hundred-megabyte browser download, no flaky "installing Chromium" step that stalls behind a proxy or on a fresh CI runner. Every developer and every pipeline drives byte-for-byte the same browser build, which is the difference between "works on my machine" and screenshots that actually match. It's browser automation that's reproducible and offline-ready out of the box.
 
 **Stack:** Node.js 22, Playwright, Chromium
 

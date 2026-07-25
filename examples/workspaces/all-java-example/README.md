@@ -1,6 +1,6 @@
 # All Java Example
 
-Comprehensive Java development environment with multiple JDK versions and build tools.
+This example is a comprehensive Java development environment bundling multiple JDK versions and build tools. It installs JDKs 8, 9, 17, 21, 23, 24, and 25 switchable via jEnv, plus Maven, Gradle, and jbang, and a Lombok-based sample project you can build and test on any of them. Try / compare side-by-side: seven JDKs live in one container so you can build and test the same code across Java versions. Switch from JDK 8 to 25 with a single `jenv local` and re-run — perfect for verifying a library works on every version you support, or reproducing a bug that only shows up on one. No juggling SDKMAN installs or separate machines: every JDK, plus Maven, Gradle, and jbang, is right there for instant version-by-version comparison.
 
 **Stack:** JDK 8/9/17-25, jEnv, Maven, Gradle, jbang, Eclipse, IntelliJ IDEA, Lombok
 

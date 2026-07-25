@@ -1,7 +1,6 @@
 # JavaScript / TypeScript Example
 
-A "Time App" that demonstrates client-server development inside a CodingBooth,
-with a React + Vite frontend and an Express API backend.
+This example is a full client-server "Time App" built and run entirely inside a CodingBooth. `start-server.sh` launches an Express API on port 3000 (serving `/api/time`) alongside a React + Vite dev client on port 5173, showing live client and server clocks side by side. The booth forwards both ports straight to your host browser, and it ships with Node, Bun, and Deno already installed — so you can restart the API under a different runtime with a single flag (`--runtime=bun`, `--runtime=deno`) and watch the very same TypeScript serve requests on each. Comparing runtimes or checking that your code is portable across them normally means three installs and version-manager juggling on your host; here it's one booth, one flag, and zero cleanup afterward.
 
 **Stack:** Node.js, Bun, Deno, TypeScript, React, Vite, Express
 

@@ -1,6 +1,6 @@
 # PERN Example
 
-A modern PERN stack — Postgres + Express + React + Node — running on a single CodingBooth container.
+This example is a modern PERN stack — Postgres, Express, React, and Node — running on a single CodingBooth container. An Express API creates and seeds an `items` table in Postgres and serves it at `GET /api/items`, which a React and Vite client fetches and lists in the browser. It showcases how much a single booth bundles: Postgres, Express, React, and Node — database, API, and frontend — all run inside one container. Postgres is already up and seeded before you start, so there is nothing to provision or tear down; the whole stack is disposable and self-contained, and your host never sees a database.
 
 ## Run
 

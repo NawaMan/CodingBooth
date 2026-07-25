@@ -1,6 +1,6 @@
 # JetBrains Example
 
-All major JetBrains IDEs in a single CodingBooth desktop environment.
+This example bundles a full lineup of JetBrains IDEs into a single CodingBooth desktop environment. It installs nine JetBrains IDEs — IntelliJ IDEA, PyCharm, GoLand, WebStorm, PhpStorm, CLion, Rider, RubyMine, and DataGrip — on a JDK 24 KDE desktop reached over noVNC, with matching demo files to open in each. Multiple things bundled: a whole set of JetBrains IDEs plus a JDK arrive together in one desktop booth. Instead of downloading, licensing, and separately installing nine different IDEs — each gigabytes in size — you open one booth in your browser and every JetBrains tool is already there. It turns "which IDE handles this language?" into a non-question: the full lineup, plus a working JDK and desktop, is a single launch away.
 
 **Stack:** JDK 24, IntelliJ IDEA, PyCharm, GoLand, WebStorm, PhpStorm, CLion, Rider, RubyMine, DataGrip
 

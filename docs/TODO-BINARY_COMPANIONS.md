@@ -1,26 +1,31 @@
 # TODO — libraries that need a separate binary companion
 
 Findings from an audit of setups / templates / extensions (2026-07-22, against
-`v0.63.0` / commit `715dd3a6`). The question asked was: *which libraries end up
-needing a separate tool binary installation* — not `lib-*` / `*-dev` for C/C++
-(those stay on the apt / build-essential track), but companion CLIs and engines
-like gRPC codegen (`protoc`) or parser generators (JACC).
+`v0.63.0` / commit `715dd3a6`), with urgency re-ranked (2026-07-23) against what
+the **config TUI already installs** via package-manager extensions.
 
-Plain `install pip|npm|go|cargo|gem|…` will **not** pull these companions.
-There is no automated "package X → needs binary Y" map in the repo today —
-only hard-coded setups that already know their own companions (playwright,
-plantuml, remotion, vhs).
+The question asked was: *which libraries end up needing a separate tool binary
+installation* — not `lib-*` / `*-dev` for C/C++ (those stay on the apt /
+build-essential track), but companion CLIs and engines like gRPC codegen
+(`protoc`) or parser generators (JACC).
+
+**Urgency rule (owner, 2026-07-23):** if the companion binary can already be
+installed through the config TUI’s existing `*-pkg` managers (`apt-pkg`,
+`npm-pkg`, `pip-pkg`, `go-pkg`, `cargo-pkg`, …), it is **not urgent** to add a
+dedicated setup/template. Dedicated templates remain optional sugar
+(discoverability, fresher pins, `requires` edges) — not a capability gap.
 
 Back to [TODO](TODO.md) | See also: [setups](BOOTH_SETUP.md), [customization](BOOTH_CUSTOMIZATION.md),
-[agent setup recipe](AGENT_SETUP.md)
+[booth config package managers](BOOTH_CONFIG.md), [agent setup recipe](AGENT_SETUP.md)
 
 ---
 
 ## Table of Contents
 
+- [Urgency by TUI installability](#urgency-by-tui-installability)
 - [Rule of thumb](#rule-of-thumb)
-- [Already handled in booth](#already-handled-in-booth)
-- [Priority shortlist](#priority-shortlist)
+- [Already handled as dedicated setups](#already-handled-as-dedicated-setups)
+- [Priority shortlist (after re-rank)](#priority-shortlist-after-re-rank)
 - [1. IDL / codegen](#1-idl--codegen)
 - [2. Parser generators](#2-parser-generators)
 - [3. Browser automation](#3-browser-automation)
@@ -32,10 +37,92 @@ Back to [TODO](TODO.md) | See also: [setups](BOOTH_SETUP.md), [customization](BO
 
 ---
 
+## Urgency by TUI installability
+
+The config TUI already exposes package installs (see
+[BOOTH_CONFIG.md](BOOTH_CONFIG.md) “package manager extensions”):
+
+| Extension | Manager | Example |
+|---|---|---|
+| `apt-pkg` | apt | `apt-pkg:ffmpeg,graphviz,protobuf-compiler` |
+| `nodejs+npm-pkg` | npm | `nodejs+npm-pkg:prisma,@bufbuild/buf` |
+| `python+pip-pkg` | pip | `python+pip-pkg:grpcio-tools` |
+| `go+go-pkg` | `go install` | `go+go-pkg:…/protoc-gen-go@latest` |
+| `rust+cargo-pkg` | cargo | `rust+cargo-pkg:sqlx-cli` |
+| (+ yarn / bun / uv / conda / gem / …) | | |
+
+**Nuance:** installing the *language library* via pip/npm still does **not** pull
+the companion. Example: `python+pip-pkg:grpcio` does not install `protoc`. The
+user must also select `apt-pkg:protobuf-compiler` (and any plugins). So the soft
+problem for `*-pkg`-reachable items is **discoverability**, not capability.
+
+Rough split of the catalog (~34 items):
+
+| Bucket | Count | Meaning |
+|---|---|---|
+| Installable via existing `*-pkg` | ~22 | **Not urgent** as dedicated templates |
+| Already have a dedicated setup/template | 2+ | Playwright, Mermaid (+ Remotion/VHS/PlantUML bundling companions) |
+| Not cleanly reachable via `*-pkg` | ~10 | Only real remaining template/setup candidates |
+
+### Not urgent — companion already installable via TUI `*-pkg`
+
+| Companion | How today (config TUI / CLI) | Caveats |
+|---|---|---|
+| **protoc** | `apt-pkg:protobuf-compiler` | Ubuntu often ships an older protoc (e.g. 3.21.x) |
+| gRPC C++ plugin | `apt-pkg:protobuf-compiler-grpc` | |
+| **protoc-gen-go** / go-grpc | `go+go-pkg:google.golang.org/protobuf/cmd/protoc-gen-go@latest`, `…/protoc-gen-go-grpc@latest` | Needs `go` template selected |
+| **buf** | `go+go-pkg:github.com/bufbuild/buf/cmd/buf@latest` **or** `nodejs+npm-pkg:@bufbuild/buf` | |
+| grpcurl | `go+go-pkg:github.com/fullstorydev/grpcurl/cmd/grpcurl@latest` | |
+| thrift / flatc / capnp | `apt-pkg:thrift-compiler`, `flatbuffers-compiler`, `capnproto` | |
+| openapi-generator-cli | `nodejs+npm-pkg:@openapitools/openapi-generator-cli` | |
+| oapi-codegen | `go+go-pkg:…/oapi-codegen@latest` | |
+| graphql-codegen | `nodejs+npm-pkg:@graphql-codegen/cli` | |
+| **antlr4** / javacc | `apt-pkg:antlr4`, `javacc` | apt versions can lag (antlr 4.9-class) |
+| bison / flex | `apt-pkg:bison,flex` | |
+| tree-sitter CLI | `rust+cargo-pkg:tree-sitter-cli` (or npm) | |
+| **ffmpeg** | `apt-pkg:ffmpeg` | Standalone template not needed for install |
+| **graphviz** | `apt-pkg:graphviz` | Same |
+| pandoc | `apt-pkg:pandoc` | |
+| prisma CLI | `nodejs+npm-pkg:prisma` | Runtime `@prisma/client` is a project dep |
+| diesel_cli / sqlx-cli | `rust+cargo-pkg:diesel_cli`, `sqlx-cli` | diesel may need cargo features |
+| wasm-pack | `rust+cargo-pkg:wasm-pack` | |
+| Python protoc plugin | `python+pip-pkg:grpcio-tools` | Still needs `protoc` itself via apt |
+
+Example gRPC booth **without** a new template:
+
+```bash
+booth config --no-tui \
+  --select go+go-pkg:google.golang.org/protobuf/cmd/protoc-gen-go@latest,google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest \
+  --select apt-pkg:protobuf-compiler
+```
+
+### Already have dedicated setup / template
+
+| Item | Status |
+|---|---|
+| **Playwright** browsers | ✅ `setup playwright` + `templates/tools/playwright/` |
+| **Mermaid CLI** | ✅ `templates/tools/mermaid/` (also installable via npm) |
+| **PlantUML** (+ graphviz) | ✅ product setup installs graphviz |
+| **Remotion** / **VHS** (+ ffmpeg) | ✅ product setups install ffmpeg |
+
+### Still awkward — not cleanly covered by `*-pkg` (only remaining urgency)
+
+| Item | Why `*-pkg` is not enough | Suggested urgency |
+|---|---|---|
+| **Puppeteer / Cypress browsers** | npm installs the package; browser binary is a second step (Playwright-shaped) | medium — only if demand appears |
+| **Selenium drivers** | apt fragile (snap transitions); geckodriver often missing | medium |
+| **JACC** | not a normal apt/npm/go package — usually a manual jar | medium (named example; rare) |
+| **`dotnet ef`** | csharp/dotnet template exists; no generic `dotnet tool install` / `dotnet-pkg` extension | medium |
+| **wkhtmltopdf**, **avro-tools** | not reliably in this Ubuntu’s apt | low–medium |
+| **GraalVM / native-image**, **Android SDK** | full toolchains | high *if* wanted; big projects |
+| **CUDA** | host/device dependent | out of scope for normal templates |
+
+---
+
 ## Rule of thumb
 
-A library needs a **separate binary install** (and often its own setup/template
-or an explicit `install apt` / `setup`) when:
+A library needs a **separate binary install** (and often an explicit
+`install apt` / `*-pkg` / `setup`) when:
 
 1. **Codegen** — `.proto` / `.thrift` / `.fbs` / `.g4` / grammar files need a CLI
    to produce sources.
@@ -50,169 +137,165 @@ It does **not** count when:
 - the package **vendors** its binary inside `node_modules` / a wheel and works
   after install alone
 
+It is **not urgent to template** when:
+
+- the companion is already a normal **`apt-pkg` / `npm-pkg` / `go-pkg` /
+  `cargo-pkg` / `pip-pkg`** name the user can select in the config TUI today
+
 ---
 
-## Already handled in booth
+## Already handled as dedicated setups
 
-CodingBooth already encodes the companion-binary pattern in a few places:
+CodingBooth already encodes multi-step companion installs (beyond plain `*-pkg`)
+in a few places:
 
 | Package / tool | Separate binary(ies) | How booth handles it today |
 |---|---|---|
-| **Playwright** (`npm` / multi-lang) | Chromium / Firefox / WebKit browser builds | `variants/base/setups/playwright--setup.sh` + `templates/tools/playwright/` (`npx playwright install --with-deps`) |
-| **PlantUML** | `dot` (**graphviz**) + Java | `plantuml--setup.sh` installs Graphviz automatically |
-| **Remotion** | `ffmpeg` + Chromium deps | `remotion--setup.sh` installs both |
-| **VHS** | `ffmpeg` | `vhs--setup.sh` installs ffmpeg |
-| **gRPC / protobuf** (planned only) | `protoc` + language plugins | Sketched in `experiments/tui-go/data.go` (`protobuf` tool + `go` extension `Requires: ["protobuf"]`) — **no real setup/template yet** |
+| **Playwright** | Chromium / Firefox / WebKit browser builds | `playwright--setup.sh` + template (`npx playwright install --with-deps`) |
+| **PlantUML** | `dot` (**graphviz**) + Java | setup installs Graphviz automatically |
+| **Remotion** | `ffmpeg` + Chromium deps | setup installs both |
+| **VHS** | `ffmpeg` | setup installs ffmpeg |
+| **gRPC / protobuf** (sample only) | `protoc` + language plugins | Sketched in `experiments/tui-go/data.go` — **no real setup/template**; **not urgent** because `apt-pkg` + `go-pkg` cover the common path |
 
-Shared companions (ffmpeg, graphviz) are only reachable today by selecting the
-product that bundles them (Remotion/VHS/PlantUML). A user who only wants
-`pip install moviepy` or `pip install graphviz` still has no first-class path.
+Shared companions (ffmpeg, graphviz) are also reachable without those product
+templates via `apt-pkg` (see table above).
 
 ---
 
-## Priority shortlist
+## Priority shortlist (after re-rank)
 
-| Priority | Item | Why |
+Original P0/P1 items (protoc, buf, antlr, standalone ffmpeg/graphviz) are
+**demoted**: they install via existing TUI managers.
+
+| Priority | Item | Why still on the list |
 |---|---|---|
-| **P0** | **protoc + language plugins** | Classic gRPC case; already sketched in sample TUI data; Go/Python/Java/Node all hit it |
-| **P0** | **buf** | Modern replacement path for many protoc workflows |
-| **P1** | **antlr4 / javacc / jacc** | Parser-generator case (JACC was a named example); Java-heavy |
-| **P1** | **ffmpeg** as a standalone template | Shared by many libs; currently only via remotion/vhs |
-| **P1** | **graphviz** as a standalone template | Same; currently only via plantuml |
-| **P2** | **prisma**, **grpcurl**, **flatc / thrift** | Common but more niche |
-| **P2** | **puppeteer / selenium** driver stacks | Browser automation outside Playwright |
+| **P0 (optional sugar only)** | Convenience templates / `requires` edges for protoc+plugins, buf | Discoverability; fresher pins than apt; **not** a capability gap |
+| **P1 (if demand)** | Puppeteer / Cypress / Selenium browser+driver stacks | Multi-step binary download; Playwright pattern already exists |
+| **P1 (if demand)** | `dotnet tool` / `dotnet-pkg` extension | Closes `dotnet ef` and similar without a one-off template per tool |
+| **P2** | JACC, avro-tools, wkhtmltopdf | Rare or awkward packaging |
+| **Parked** | GraalVM, Android SDK, CUDA | Large / host-specific; only if product direction asks |
 
-Actionable outcomes for this list:
+Actionable outcomes under the new rule:
 
-- [ ] Real **templates/setups** for the P0 set (`protobuf` / `buf`), with
-      `requires` edges like the experimental TUI's `go+protobuf → protobuf`
-- [ ] Standalone **ffmpeg** and **graphviz** tool templates (P1), so ad-hoc
-      media / diagram work does not need Remotion / VHS / PlantUML
-- [ ] Optional: a living catalog section in agent docs once P0 exists
+- [ ] **Do not** rush dedicated protoc/buf/ffmpeg/graphviz templates solely for
+      installability — document the `*-pkg` recipes instead if users ask
+- [ ] Consider dedicated setups only when install needs **more than a package
+      name** (browser downloads, multi-step toolchains, non-registry binaries)
+- [ ] Optional later: agent/docs catalog of “library X → also select Y” for
+      discoverability without new templates
 
 ---
 
 ## 1. IDL / codegen
 
-| Library / ecosystem package | Needs separate binary | Notes |
-|---|---|---|
-| `grpc` / `grpcio` / `@grpc/grpc-js` / `google.golang.org/grpc` | **`protoc`** + plugins (`protoc-gen-go`, `protoc-gen-go-grpc`, `grpc_tools_node_protoc_plugin`, `protoc-gen-grpc-java`, …) | Classic split: runtime lib vs codegen toolchain |
-| `protobuf` / `google.protobuf` / `google.golang.org/protobuf` | **`protoc`** | Same story |
-| `buf` clients / Connect-RPC stacks | **`buf`** CLI (often replaces raw protoc) | |
-| Apache Thrift language libs | **`thrift`** compiler | |
-| FlatBuffers language libs | **`flatc`** | |
-| Cap’n Proto language libs | **`capnp`** compiler | |
-| Avro language libs | **`avro-tools`** (or language-specific generators) | |
-| OpenAPI client/server generators | **`openapi-generator`**, **`swagger-codegen`**, **`oapi-codegen`**, **`openapi-typescript`**, … | Generator is a separate CLI |
-| GraphQL codegen stacks | **`graphql-codegen`**, **`apollo` CLI**, **`gqlgen`**, … | |
-| gRPC reflection / debug | **`grpcurl`**, **`grpcui`**, **`grpc_cli`** | Ops binaries, not the lib |
-
-**Booth gap:** no `protobuf` / `protoc` / `buf` setup or template (only the
-experimental TUI sample in `experiments/tui-go/data.go`).
+| Library / ecosystem package | Needs separate binary | TUI path today | Urgent template? |
+|---|---|---|---|
+| `grpc` / `grpcio` / `@grpc/grpc-js` / `google.golang.org/grpc` | **`protoc`** + plugins | `apt-pkg:protobuf-compiler` + lang plugins via go/npm/pip | No |
+| `protobuf` / … | **`protoc`** | same | No |
+| `buf` / Connect-RPC | **`buf`** CLI | `go-pkg` or `npm-pkg:@bufbuild/buf` | No |
+| Apache Thrift libs | **`thrift`** | `apt-pkg:thrift-compiler` | No |
+| FlatBuffers libs | **`flatc`** | `apt-pkg:flatbuffers-compiler` | No |
+| Cap’n Proto libs | **`capnp`** | `apt-pkg:capnproto` | No |
+| Avro libs | **`avro-tools`** | usually jar download | Maybe (awkward) |
+| OpenAPI generators | generator CLIs | npm/go packages for most | No |
+| GraphQL codegen | CLIs | `npm-pkg` | No |
+| grpcurl / grpcui | ops CLIs | `go-pkg` for grpcurl | No |
 
 ---
 
 ## 2. Parser generators
 
-| Library / tool | Needs separate binary | Notes |
-|---|---|---|
-| **JACC** (Java LALR) | **`jacc`** binary | Named example: jar/lib usage still needs the generator CLI |
-| JavaCC / JJTree | **`javacc`** | |
-| ANTLR (Java/Python/… runtimes) | **`antlr4`** / `antlr-4.x-complete.jar` | Runtime jar ≠ grammar compiler |
-| Tree-sitter language crates/bindings | **`tree-sitter` CLI** (for grammar codegen) | |
-| PEG / packrat tools | language-specific CLIs | Same pattern |
-| Bison/Flex-driven stacks | **`bison`**, **`flex`** | *Tools*, not `lib*`; Ruby’s own build already uses bison in `ruby--setup.sh` |
-
-These are almost never satisfied by “install the language package alone.”
+| Library / tool | Needs separate binary | TUI path today | Urgent template? |
+|---|---|---|---|
+| **JACC** | **`jacc`** binary | none standard | Only if someone needs it |
+| JavaCC / JJTree | **`javacc`** | `apt-pkg:javacc` | No |
+| ANTLR runtimes | **`antlr4`** | `apt-pkg:antlr4` (may be old) | No (unless pin to latest jar) |
+| Tree-sitter bindings | **`tree-sitter` CLI** | cargo/npm | No |
+| Bison/Flex stacks | **`bison`**, **`flex`** | `apt-pkg` | No |
 
 ---
 
 ## 3. Browser automation
 
-| Library | Needs separate binary | Booth status |
-|---|---|---|
-| **playwright** (JS / Py / .NET / Java) | Browser binaries | ✅ setup + template |
-| **puppeteer** / **puppeteer-core** | Chromium (or `PUPPETEER_EXECUTABLE_PATH`) | ❌ no dedicated setup |
-| **selenium** | **chromedriver** / **geckodriver** / browser | ❌ |
-| **cypress** | Own cached Electron/browser binary | ❌ |
+| Library | Needs separate binary | Booth / TUI status | Urgent template? |
+|---|---|---|---|
+| **playwright** | Browser binaries | ✅ dedicated setup | Done |
+| **puppeteer** | Chromium download | npm package only; second step | Maybe |
+| **selenium** | drivers + browser | apt partial/fragile | Maybe |
+| **cypress** | cached Electron/browser | npm package only; second step | Maybe |
 
 ---
 
 ## 4. Media / document tooling
 
-| Library / package | Needs separate binary | Booth status |
-|---|---|---|
-| **remotion** | `ffmpeg` + Chromium | ✅ |
-| **vhs** | `ffmpeg` | ✅ |
-| **moviepy** / **imageio-ffmpeg** / **pydub** | `ffmpeg` | ❌ if only `pip install moviepy` |
-| **weasyprint** / **pdfkit** / **wkhtmltopdf** wrappers | **`wkhtmltopdf`** or similar | ❌ |
-| **pandoc** Python/filters | **`pandoc`** (+ often TeX) | ❌ |
-| **mermaid-cli** (`@mermaid-js/mermaid-cli`) | Chromium (via puppeteer) | ❌ |
-| **plantuml** | **graphviz** (`dot`) | ✅ (bundled in plantuml setup) |
-| Python/JS **graphviz** bindings | **`dot`** | ❌ without plantuml |
+| Library / package | Needs separate binary | TUI path today | Urgent template? |
+|---|---|---|---|
+| **remotion** / **vhs** | `ffmpeg` (+ Chromium for remotion) | ✅ product setups; also `apt-pkg:ffmpeg` | Done / No |
+| **moviepy** / **pydub** | `ffmpeg` | `apt-pkg:ffmpeg` | No |
+| **weasyprint** / **pdfkit** / wkhtmltopdf wrappers | **`wkhtmltopdf`** etc. | not reliably in apt | Maybe |
+| **pandoc** filters | **`pandoc`** | `apt-pkg:pandoc` | No |
+| **mermaid-cli** | Chromium often | ✅ mermaid template; or npm | Done / No |
+| **plantuml** | graphviz | ✅ setup; also `apt-pkg:graphviz` | Done / No |
+| graphviz language bindings | **`dot`** | `apt-pkg:graphviz` | No |
 
 ---
 
 ## 5. Schema / ORM CLIs
 
-| Library / package | Needs separate binary | Notes |
-|---|---|---|
-| **Prisma** (`@prisma/client`) | **`prisma` CLI** | Generate / migrate live outside the runtime package |
-| **diesel** (Rust) | **`diesel_cli`** | |
-| **sqlx** (Rust) | **`sqlx-cli`** | |
-| **Entity Framework** | **`dotnet ef`** | |
-| **Flyway / Liquibase / goose / dbmate** | their own CLIs | Migration tools, not runtime libs |
-| **atlas** / **golang-migrate** | their own CLIs | |
+| Library / package | Needs separate binary | TUI path today | Urgent template? |
+|---|---|---|---|
+| **Prisma** | **`prisma` CLI** | `npm-pkg:prisma` | No |
+| **diesel** | **`diesel_cli`** | `cargo-pkg` | No |
+| **sqlx** | **`sqlx-cli`** | `cargo-pkg` | No |
+| **Entity Framework** | **`dotnet ef`** | no `dotnet-pkg` extension | Maybe (generic dotnet tools) |
+| Flyway / Liquibase / goose / dbmate / atlas | their CLIs | mix of go/apt/manual | case-by-case |
 
 ---
 
 ## 6. Other common companions
 
-| Library / package | Needs separate binary | Notes |
-|---|---|---|
-| **wasm** toolchains | **`wasm-pack`**, **`wasmtime`**, **`wasmer`**, **`wasm-opt`** | Beyond rustc’s wasm32 target alone |
-| **protocol simulation / mocks** | **`wiremock`**, **`mockserver`**, **`grpc-wiremock`** | Often separate processes |
-| **native image / AOT helpers** | **`native-image`** (GraalVM) | Separate from the JDK |
-| **Android / mobile** | **SDK / emulator / platform-tools** | Far beyond a language package |
-| **CUDA / GPU ML** | **CUDA toolkit**, drivers | Host/device dependent; not a simple template |
+| Library / package | Needs separate binary | TUI path today | Urgent template? |
+|---|---|---|---|
+| **wasm** toolchains | wasm-pack, etc. | cargo for wasm-pack | No for wasm-pack |
+| **native-image** (GraalVM) | GraalVM | none | Only if product wants it |
+| **Android / mobile** | SDK / emulator | none | Parked |
+| **CUDA / GPU ML** | toolkit / drivers | host-dependent | Out of scope |
 
 ---
 
 ## Suggested implementation shape
 
-When turning an item from this list into booth support, prefer the pattern
-already used by playwright / plantuml / remotion / vhs:
+When an item **does** need more than `*-pkg` (browser download, non-registry
+binary, multi-step toolchain), prefer the pattern already used by playwright /
+plantuml / remotion / vhs:
 
 1. **`variants/base/setups/<name>--setup.sh`** — installs the binary (and only
    the real companions it needs), pin-friendly via version args.
 2. **`templates/tools/<name>/template.toml`** — selectable from `booth config`,
    with params for version / optional plugins.
-3. **Language extensions with `requires`** — e.g. a Go `protobuf` extension that
-   requires the top-level `protobuf` tool (as sketched in
-   `experiments/tui-go/data.go`), so selecting the language plugin also pulls
-   the shared compiler.
-4. **Do not bury shared engines** only inside product setups. If ffmpeg or
-   graphviz is a companion for many libraries, give them a **standalone** tool
-   template; product setups can still install them for convenience, or
-   eventually `require` the standalone tool.
+3. **Language extensions with `requires`** — optional sugar so selecting a
+   language plugin also pulls a shared tool (as sketched in
+   `experiments/tui-go/data.go`).
+4. **Do not** invent a template solely because `apt-pkg:foo` works — document
+   the package name instead.
 
-Checklist for a new companion template:
+Checklist for a new companion template (only when `*-pkg` is insufficient):
 
-- [ ] Setup script installs the binary under a stable path / `PATH` entry
-- [ ] Version is pin-able (arg / template param), default documented
+- [ ] Setup does something a package manager install cannot (extra download,
+      drivers, multi-binary orchestration)
+- [ ] Version is pin-able; default documented
 - [ ] Language plugins (if any) are separate extensions with `requires`
 - [ ] At least one config or complex test proves the binary is on `PATH`
-- [ ] README / display-detail states the companion relationship clearly
+- [ ] display-detail states the companion relationship clearly
 
 ---
 
 ## Out of scope
 
-- **`lib-*` / `*-dev` C/C++ packages** — handled separately (apt / build-essential
-  track); not listed here.
-- **Vendored binaries** that already ship inside the language package install
-  and work with no extra step.
-- **Full product coverage** of every row above — this file is a discovery
-  backlog, not a commitment to ship every entry. Start with the [priority
-  shortlist](#priority-shortlist).
+- **`lib-*` / `*-dev` C/C++ packages** — separate track; not listed as urgent
+  binary companions.
+- **Vendored binaries** that already ship inside the language package install.
+- **Full product coverage** of every row — discovery backlog only.
+- **Items already installable via TUI `*-pkg`** — not urgent for dedicated
+  templates; see [Urgency by TUI installability](#urgency-by-tui-installability).
 )

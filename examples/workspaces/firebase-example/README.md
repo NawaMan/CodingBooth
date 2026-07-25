@@ -1,6 +1,6 @@
 # Firebase Example
 
-This example demonstrates using `cb-home-seed` to mount Firebase credentials from your host machine into the container.
+This example is a booth preconfigured for Firebase development with the Firebase CLI. Your host Firebase CLI credentials (`~/.config/configstore/firebase-tools.json`) are mounted read-only and seeded into the container, so `firebase login:list` and `firebase projects:list` work right away. The credentials are seeded read-only from the host rather than committed, so `firebase deploy`, `projects:list`, and the rest are authenticated the instant the booth starts — no re-login, no token pasted into the project. Your Firebase login lives on the host and the booth simply borrows a copy, keeping it out of git and out of any image you build or share. Onboarding a teammate to the project becomes "open the booth" instead of walking them through `firebase login` and hoping they don't commit the token.
 
 ## Prerequisites
 

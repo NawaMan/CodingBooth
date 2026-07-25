@@ -1,11 +1,6 @@
 # Playwright Polyglot Example — one browser, five languages
 
-The same Playwright script, written in **JavaScript, Python, Java, C#/.NET, and Go**,
-all driving the **same pinned Chromium** — the one pre-baked into the booth image. Each
-one opens **its own language's official website**, saves a screenshot to
-`shots/<language>.png`, runs a little JavaScript inside the browser (summing 1..10), and
-prints `TITLE|SUM` — the live page's title, and `55` as proof it executed JavaScript in
-the page. Five languages, one browser, five real screenshots.
+This example runs the same Playwright script implemented in five languages — JavaScript, Python, Java, C#/.NET, and Go — inside one booth. `run-polyglot.sh` runs all five, and each opens its own language's official website, saves a screenshot to `shots/<language>.png`, executes JavaScript in the page (summing 1..10 to 55), and prints the page title as proof. The four official bindings are pinned to Playwright 1.58 and share one pre-baked Chromium, so this is the rare place you can watch the identical browser automation run in five languages side by side without five separate browser downloads or five mismatched engine versions muddying the comparison. If you're deciding which language to standardize your end-to-end tests on, or porting a suite from one stack to another, this is the honest apples-to-apples bake-off — same page, same browser build, same steps, only the language changes. The whole polyglot toolchain and its shared browser are baked into the image, so anyone on the team gets the identical five-way setup from one booth.
 
 This is the point Playwright makes that's easy to miss: the browser is the hard,
 environment-sensitive part, and it is **managed and version-pinned by Playwright itself**.

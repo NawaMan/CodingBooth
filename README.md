@@ -144,6 +144,8 @@ CodingBooth provides several ready-to-use examples to get you started.
 At this point, you can inspect the code, modify it, then build and run it.
 **NOTE:** Visit http://localhost:10000 in your browser to access the UI (except for command mode).
 
+Not sure which example to start from? See **[What Each Example Demonstrates](docs/EXAMPLES_ADVANTAGES.md)** — a catalog of every workspace in `examples/workspaces/` and the specific CodingBooth advantage each one showcases.
+
 ### Try with `booth config ...`
 
 CodingBooth provides `config` and `template` commands to quickly create a new project.
@@ -403,6 +405,8 @@ For deeper technical details on how CodingBooth works internally, see [docs/impl
 - **[Booth Init](docs/implementations/BOOTHINIT.md)** — Template-driven project scaffolding (`booth config` and `booth template`)
 - **[Booth Lifecycle](docs/implementations/BOOTH_LIFECYCLE.md)** — Container lifecycle management implementation
 - **[Examples](docs/implementations/EXAMPLES.md)** — Examples system and release workflow
+- **[What Each Example Demonstrates](docs/EXAMPLES_ADVANTAGES.md)** — Every example workspace and the advantage it showcases
+- **[Deploying the Site](docs/DEPLOY_SITE.md)** — How codingbooth.io is published (auto-deploy to DreamHost, short example links)
 - **[Wrapper](docs/implementations/WRAPPER.md)** — The booth wrapper script that manages binary downloads and verification
 - **[User Permissions](docs/implementations/USER_PERMISSIONS.md)** — UID/GID mapping between host and container
 - **[Desktop + noVNC](docs/implementations/DESKTOP_NOVNC.md)** — VNC server and browser-based desktop access

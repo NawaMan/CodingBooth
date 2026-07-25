@@ -1,6 +1,6 @@
 # Flask Example
 
-A minimal [Flask](https://flask.palletsprojects.com/) web app running inside a CodingBooth workspace.
+This example is a minimal Flask web app running inside a CodingBooth workspace. It defines two routes: an HTML greeting at `/` and a JSON `pong` response at `/api/ping`, served on port 5555. It showcases reproducibility: Python and Flask are both pinned in the booth, so the same versions come up on your laptop, a colleague's machine, and CI alike. There is no virtualenv to bootstrap and no system Python to fight — the environment is fixed by the workspace, not by whatever happens to be installed on the host.
 
 ## Run
 

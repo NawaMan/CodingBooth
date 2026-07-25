@@ -1,6 +1,6 @@
 # Neovim Example
 
-This example demonstrates using `.booth/home/` to share team-wide neovim configuration.
+This example demonstrates using `.booth/home/` to share a team-wide neovim configuration. It ships an `init.lua` and Lua modules under `.booth/home/.config/nvim/` that are copied into `/home/coder/` at container startup, so `nvim` launches with the same setup for everyone. Team config sharing: the `.booth/home` neovim config travels with the repo, so every teammate gets an identical editor setup automatically. No dotfile repos to clone, no "install these plugins first" onboarding steps, no drift between one developer's Neovim and the next — the config is version-controlled right alongside the code it edits. Update `init.lua`, commit, and the whole team's editor updates on their next booth start, while personal overrides remain possible via `cb-home-seed`.
 
 ## What's Included
 
