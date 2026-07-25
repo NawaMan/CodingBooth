@@ -289,6 +289,7 @@ Each `install` command maps to a `*--install.sh` script. For example, `install p
 | `install deno` | Deno | `deno install` |
 | `install go` | Go | `go install` (as coder user) |
 | `install cargo` | Rust | `cargo install` (as coder user) |
+| `install dotnet` | .NET | `dotnet tool install --global` (as coder user); pin with `tool@version` |
 | `install gem` | Ruby | `gem install` |
 | `install brew` | Homebrew | `brew install` |
 | `install cabal` | Haskell | `cabal install` |
@@ -323,6 +324,12 @@ You can also install packages without editing the Boothfile directly — use the
 ```
 
 See [Package Management Templates](BOOTH_CONFIG.md#package-management-templates) in the config documentation for the full list.
+
+**Binary companions:** installing a language library often still needs a separate
+CLI or engine (`protoc`, browsers, ffmpeg, `dotnet ef`, …). Prefer a dedicated
+template when one exists (`protobuf`, `buf`, `ffmpeg`, `puppeteer`, …); otherwise
+use the matching `*-pkg` recipe. Catalog: [Binary companions — library X → also
+select Y](BOOTH_CONFIG.md#binary-companions--library-x--also-select-y).
 
 ### Creating a Custom Install
 

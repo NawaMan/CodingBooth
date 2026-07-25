@@ -1,0 +1,23 @@
+display-name = "Cypress"
+display-disc = "End-to-end testing with a pre-baked Cypress binary"
+display-detail = "Installs the Cypress npm package and downloads its Electron/browser binary into a shared cache at /opt/cypress (CYPRESS_CACHE_FOLDER). Installs Linux GUI libraries Cypress needs. Requires Node.js. Use `cypress run` for headless CI; interactive `cypress open` needs a display (desktop variant)."
+display-order = 54
+tags = [
+    "cypress",
+    "testing",
+    "e2e",
+    "browser",
+    "automation",
+    "nodejs",
+]
+
+requires = ["nodejs"]
+
+[params.CYPRESS_VERSION]
+default = "latest"
+suggests = ["latest"]
+
+[segments]
+"Boothfile--60" = """
+setup cypress --version ${CYPRESS_VERSION}
+"""

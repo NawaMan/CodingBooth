@@ -1,0 +1,16 @@
+display-name = "ffmpeg"
+display-disc = "Multimedia encoder, decoder, and converter CLI"
+display-detail = "Installs ffmpeg from the distro packages so video/audio tooling (moviepy, pydub, custom pipelines) can find it on PATH. Remotion and VHS already pull ffmpeg for their own setups; select this template when you need the binary on its own without those products."
+display-order = 57
+tags = [
+    "ffmpeg",
+    "video",
+    "audio",
+    "media",
+    "cli",
+]
+
+[segments]
+"Boothfile--45" = """
+install apt ffmpeg
+"""

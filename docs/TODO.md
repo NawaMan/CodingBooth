@@ -106,6 +106,11 @@ ORM CLIs, …). C/C++ `lib-*` / `*-dev` is a separate track.
 
 Full audit and priority shortlist: **[TODO-BINARY_COMPANIONS.md](TODO-BINARY_COMPANIONS.md)**.
 
+- [x] Phase 1 — TUI templates: `protobuf` (+ Go plugins), `buf`, `ffmpeg`, `graphviz`
+- [x] Phase 2 — `dotnet-pkg` (`install dotnet` / `csharp+dotnet-pkg:dotnet-ef`)
+- [x] Phase 3 — Puppeteer / Cypress / Selenium stacks
+- [x] Phase 4 — Docs “library X → also select Y” ([BOOTH_CONFIG.md](BOOTH_CONFIG.md#binary-companions--library-x--also-select-y))
+
 ---
 
 ## Additional Setups

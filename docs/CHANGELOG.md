@@ -4,6 +4,30 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Binary companion templates (Phase 1).** Selectable tools for companions that used
+  to need raw `*-pkg` knowledge: `protobuf` (apt `protobuf-compiler` / `protoc`, with a
+  `go` extension for `protoc-gen-go` and `protoc-gen-go-grpc`), `buf` (official GitHub
+  release binary via `setup buf`), standalone `ffmpeg`, and standalone `graphviz`.
+  Remotion/VHS/PlantUML still install their own companions. See
+  `docs/TODO-BINARY_COMPANIONS.md`.
+
+- **`dotnet-pkg` / `install dotnet` (Phase 2 binary companions).** Global .NET tools
+  via `dotnet tool install --global`, selectable as `csharp+dotnet-pkg:dotnet-ef` (also
+  under the `dotnet` template). Pins with `package@version`. Closes the Entity Framework
+  CLI gap without a one-off template per tool. See `docs/TODO-BINARY_COMPANIONS.md`.
+
+- **Browser companion stacks (Phase 3 binary companions).** Playwright-shaped setups for
+  tools that need a second-step browser/driver download: `puppeteer` (shared
+  `PUPPETEER_CACHE_DIR=/opt/puppeteer`), `cypress` (shared `CYPRESS_CACHE_FOLDER=/opt/cypress`),
+  and `selenium` (Chrome for Testing + chromedriver under `/opt/selenium`; optional
+  geckodriver). Avoids Ubuntu snap-stub packages for chromium/firefox. See
+  `docs/TODO-BINARY_COMPANIONS.md`.
+
+- **Binary companions docs catalog (Phase 4).** [BOOTH_CONFIG.md](BOOTH_CONFIG.md#binary-companions--library-x--also-select-y)
+  lists “library X → also select Y” for dedicated templates and `*-pkg` recipes
+  (protoc, buf, ffmpeg, browsers, ORM CLIs, …), with a pointer from
+  [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md).
+
 - **Harden cross-platform volume bind filtering.** Missing host bind-mount paths (`-v` / `--volume`) are skipped at runtime so Docker Desktop does not create empty directories for OS-specific credential locations. Windows drive-letter specs parse correctly, named volumes are preserved, CommonArgs (e.g. TLS cert mounts) are included, and skips are reported on stderr. See `docs/BOOTH_HOME.md`.
 - **The config TUI now has a field for every setting a booth can hold.**
   It reached 18 of the 48 keys a `config.toml` may contain; the other 30 — `idle-time`,

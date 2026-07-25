@@ -1,0 +1,17 @@
+display-name = "Protocol Buffers"
+display-disc = "protoc compiler for Protocol Buffer codegen"
+display-detail = "Installs the Protocol Buffers compiler (`protoc`) via apt (`protobuf-compiler`). Language plugins are separate extensions (start with Go). Pair with the buf template for the modern Buf workflow, or with apt-pkg / go-pkg / pip-pkg for extra plugins. Ubuntu's protoc may lag upstream; pin a fresher build later if you need it."
+display-order = 52
+tags = [
+    "protobuf",
+    "protoc",
+    "grpc",
+    "codegen",
+    "idl",
+    "cli",
+]
+
+[segments]
+"Boothfile--45" = """
+install apt protobuf-compiler
+"""

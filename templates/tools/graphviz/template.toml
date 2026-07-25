@@ -1,0 +1,16 @@
+display-name = "Graphviz"
+display-disc = "Graph visualization tools (dot and friends)"
+display-detail = "Installs Graphviz from the distro packages so diagram and language bindings that shell out to `dot` work. PlantUML already installs Graphviz for its own setup; select this template when you need Graphviz on its own."
+display-order = 58
+tags = [
+    "graphviz",
+    "dot",
+    "diagram",
+    "visualization",
+    "cli",
+]
+
+[segments]
+"Boothfile--45" = """
+install apt graphviz
+"""

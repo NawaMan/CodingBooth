@@ -1,0 +1,19 @@
+display-name = "Go protoc plugins"
+display-disc = "protoc-gen-go and protoc-gen-go-grpc"
+display-order = 10
+auto-select = false
+tags = [
+    "protobuf",
+    "protoc",
+    "go",
+    "grpc",
+    "codegen",
+]
+
+requires = ["go"]
+
+[segments]
+"Boothfile--60" = """
+install go google.golang.org/protobuf/cmd/protoc-gen-go@latest
+install go google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+"""
