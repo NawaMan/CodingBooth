@@ -9,6 +9,10 @@ This file contains a list of changes for each released version.
   user-settings, XFCE keyboard shortcuts, and Starship prompt — all
   `shared-files`/`shared-dirs` only. Docs list explicit non-goals (IDE extension
   stores, JetBrains licenses, credentials, shell history).
+- **DBeaver drivers and SQL scripts as separate shared extensions.**
+  `dbeaver+drivers-shared` mounts `DBeaverData/drivers/` (durable JARs, distinct
+  from connections). `dbeaver+scripts-shared` mounts project `Scripts/`. Sample
+  gitignore for drivers jars.
 
 - **`.booth/shared/` — team/git live state.** First-class bind mounts for selected
   paths outside `/home/coder/code` that are **meant to be committed** (mirror of

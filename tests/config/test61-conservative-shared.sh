@@ -29,7 +29,7 @@ assert_file() {
 
 run rm -Rf "$prj" ; mkdir -p "$prj"
 run booth config "$prj" --no-tui --select \
-  "codeserver+settings-shared+keybindings-shared+snippets-shared/neovim+config-shared/notebook+lab-settings-shared/xfce+keyboard-shortcuts-shared/zsh+starship-shared/dbeaver+connections-shared"
+  "codeserver+settings-shared+keybindings-shared+snippets-shared/neovim+config-shared/notebook+lab-settings-shared/xfce+keyboard-shortcuts-shared/zsh+starship-shared/dbeaver+connections-shared+drivers-shared+scripts-shared"
 
 assert_file "$prj/.booth/shared/home/coder/.local/share/code-server/User/settings.json" \
   "codeserver settings.json"
@@ -47,6 +47,10 @@ assert_file "$prj/.booth/shared/home/coder/.config/starship.toml" \
   "starship.toml"
 assert_file "$prj/.booth/shared/home/coder/.local/share/DBeaverData/workspace6/General/.dbeaver/data-sources.json" \
   "dbeaver data-sources"
+assert_file "$prj/.booth/shared/home/coder/.local/share/DBeaverData/drivers/.mount-this" \
+  "dbeaver drivers dir"
+assert_file "$prj/.booth/shared/home/coder/.local/share/DBeaverData/workspace6/General/Scripts/.mount-this" \
+  "dbeaver Scripts dir"
 
 TEST_COUNT=$((TEST_COUNT + 1))
 if [ -d "$prj/.booth/cache" ]; then

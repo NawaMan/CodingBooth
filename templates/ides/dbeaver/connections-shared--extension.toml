@@ -1,9 +1,10 @@
 display-name = "Connections Shared"
 display-disc = "Team-share DBeaver data-sources.json via git (.booth/shared)"
-display-detail = """Live-bind-mounts DBeaver data-sources.json under .booth/shared/ for host/port/database/user definitions only. Never commit passwords, tokens, or save-password=true blobs — leave password empty and use host home-seed for credentials. Does not share full DBeaverData (may hold secure storage)."""
+display-detail = """Live-bind-mounts DBeaver data-sources.json under .booth/shared/ for host/port/database/user definitions only. Never commit passwords, tokens, or save-password=true blobs — leave password empty and use host home-seed for credentials. Does NOT include JDBC drivers (+drivers-shared) or SQL Scripts (+scripts-shared) or full DBeaverData/secure storage."""
 display-order = 92
-tags = ["persistence", "shared", "database", "dbeaver", "git", "no-secrets"]
+tags = ["persistence", "shared", "database", "dbeaver", "connections", "git", "no-secrets"]
 
 shared-files = [
     "home/coder/.local/share/DBeaverData/workspace6/General/.dbeaver/data-sources.json",
 ]
+

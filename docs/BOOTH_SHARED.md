@@ -166,9 +166,24 @@ bookmark bar. Edit the setup scripts under `variants/base/setups/` for your team
 | `codeserver+snippets-shared` | `User/snippets/` | snippets | secrets in snippet bodies |
 | `neovim+config-shared` | `~/.config/nvim/` | init.lua / Lua config | API tokens, credential files |
 | `notebook+lab-settings-shared` | `~/.jupyter/lab/user-settings/` | Lab UI prefs | cookies, GitHub tokens |
-| `dbeaver+connections-shared` | DBeaver `data-sources.json` | host/port/db/user | **passwords**, secure storage |
+| `dbeaver+connections-shared` | `…/.dbeaver/data-sources.json` | host/port/db/user | **passwords**, secure storage |
+| `dbeaver+drivers-shared` | `…/DBeaverData/drivers/` | JDBC JARs (durable) | n/a (bulky; often gitignore jars) |
+| `dbeaver+scripts-shared` | `…/workspace6/General/Scripts/` | saved SQL in DBeaver | credentials in SQL |
 | `zsh+starship-shared` | `~/.config/starship.toml` | prompt theme | API keys in custom modules |
 | `xfce+keyboard-shortcuts-shared` | XFCE keyboard xfconf XML | desktop shortcuts | full session / other xfce4 trees |
+
+### DBeaver: three separate concerns
+
+| Extension | Path | Git? |
+|-----------|------|------|
+| **connections** | `.dbeaver/data-sources.json` | Yes — **no passwords** |
+| **drivers** | `DBeaverData/drivers/` | Durable mount; **gitignore JARs** by default (see `docs/samples/dbeaver-drivers.gitignore`) |
+| **scripts** | `workspace6/General/Scripts/` | Yes — team SQL; or keep scripts under project `sql/` instead |
+
+**Settings (UI prefs):** live under `workspace6/` (Eclipse-style metadata), mixed with
+state. **Do not** share the whole workspace by default (secrets/noise). Prefer
+connections + scripts + drivers; leave general UI prefs ephemeral or use
+`--persist-home` for a personal booth.
 
 All use `shared-files` / `shared-dirs` only (**not** `cache-*`). Prefer **host seed**
 for credentials (`/etc/cb-home-seed`). Prefer **project files** for lint/CI config

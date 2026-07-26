@@ -1,0 +1,10 @@
+display-name = "Drivers Shared"
+display-disc = "Durable DBeaver JDBC drivers via git host path (.booth/shared) — not connections"
+display-detail = """Live-bind-mounts ~/.local/share/DBeaverData/drivers/ under .booth/shared/ so auto-downloaded JDBC JARs survive booth restarts without re-download. Separate from +connections-shared (data-sources.json). Drivers are usually not secrets but are bulky — prefer durable local/team disk over committing jars (use a .gitignore under drivers/ if the project is git-tracked). Does not use cache. Does not share secure credential stores."""
+display-order = 93
+tags = ["persistence", "shared", "database", "dbeaver", "drivers", "git", "no-secrets"]
+
+# Distinct from connections: jars live next to workspace6/, not under .dbeaver/
+shared-dirs = [
+    "home/coder/.local/share/DBeaverData/drivers",
+]
