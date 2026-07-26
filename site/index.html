@@ -289,6 +289,98 @@
             color: #ffffff;
         }
 
+        /* --- From the Blog ------------------------------------------------ */
+
+        /* Latest post: fixed-width date card + (title, abstract). */
+        .blog-latest {
+            display: grid;
+            grid-template-columns: 92px 1fr;
+            gap: 24px;
+            align-items: start;
+            text-align: left;
+        }
+
+        .blog-datecard {
+            background: var(--bg-elev);
+            color: var(--fg);
+            border-left: 4px solid var(--accent);
+            border-radius: 10px;
+            padding: 14px 6px 16px;
+            text-align: center;
+            line-height: 1.1;
+        }
+
+        .blog-datecard:hover {
+            border-left-color: var(--accent-strong);
+            text-decoration: none;
+        }
+
+        .blog-day {
+            display: block;
+            font-size: 34px;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .blog-month {
+            display: block;
+            margin-top: 5px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .blog-year {
+            display: block;
+            margin-top: 7px;
+            font-size: 12px;
+            color: var(--fg-muted);
+        }
+
+        .blog-latest-title {
+            font-size: 22px;
+            margin: 0 0 10px;
+        }
+
+        .blog-abstract {
+            margin: 0;
+            color: var(--fg-muted);
+            font-size: 15.5px;
+            line-height: 1.7;
+        }
+
+        /* Earlier posts: date + title on one line, one-liner underneath. */
+        .blog-earlier {
+            list-style: none;
+            margin: 32px 0 0;
+            padding: 0;
+            text-align: left;
+        }
+
+        .blog-earlier li {
+            border-top: 1px solid var(--border);
+            padding: 14px 0 0;
+            margin-top: 14px;
+        }
+
+        .blog-earlier-date {
+            color: var(--fg-muted);
+            font-size: 13px;
+            font-variant-numeric: tabular-nums;
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+
+        .blog-earlier p {
+            margin: 4px 0 0;
+            color: var(--fg-muted);
+            font-size: 14.5px;
+        }
+
+        .blog-more svg {
+            width: 15px;
+            height: 15px;
+        }
+
         section {
             padding: 64px 0;
             border-bottom: 1px solid var(--border);
@@ -723,6 +815,21 @@
             color: var(--light-fg-muted);
         }
 
+        /* The callout card keeps its dark panel look inside a light section. */
+        .section-light .callout-card {
+            color: var(--fg);
+        }
+
+        .section-light .blog-abstract,
+        .section-light .blog-earlier-date,
+        .section-light .blog-earlier p {
+            color: var(--light-fg-muted);
+        }
+
+        .section-light .blog-earlier li {
+            border-top-color: var(--light-border);
+        }
+
         .section-light .why-card,
         .section-light .variant-card {
             background: var(--light-bg-elev);
@@ -915,6 +1022,15 @@
             .nav-links {
                 gap: 16px;
             }
+
+            .blog-latest {
+                grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .blog-datecard {
+                width: 92px;
+            }
         }
     </style>
 </head>
@@ -967,7 +1083,63 @@
         </div>
     </header>
 
-    <section id="coding-booth" class="section-light">
+    <!-- FROM-THE-BLOG: latest post, hand-maintained by the blog-publish skill. -->
+    <section id="from-the-blog" class="section-light">
+        <div class="container">
+            <h2>From the Blog</h2>
+
+            <!-- Latest post: date card + title/abstract. -->
+            <div class="blog-latest">
+                <a class="blog-datecard" href="/blog/2026-06-28.html#onboard-quick-onboard-right"
+                    aria-label="28 June 2026">
+                    <span class="blog-day">28</span>
+                    <span class="blog-month">June</span>
+                    <span class="blog-year">2026</span>
+                </a>
+                <div>
+                    <h3 class="blog-latest-title">
+                        <a href="/blog/2026-06-28.html#onboard-quick-onboard-right">Onboard Quick, Onboard Right</a>
+                    </h3>
+                    <p class="blog-abstract">
+                        Setting up a project usually feels simple — pull the repo, run a few installs, start writing
+                        code. When it appears to work, most of us stop right there, and that is exactly where the cost
+                        hides: not an upfront roadblock, but the slow, creeping tax of invisible discrepancies. A minor
+                        compiler version, a globally installed package that quietly alters behaviour, a toolchain update
+                        that breaks an older codebase months later. None of it stops you on day one — it surfaces as
+                        mysterious bugs in review and broken builds in CI. Onboarding fast is only half the job;
+                        onboarding right is the other half, and neither should rely on luck.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Earlier posts: date + title, then a one-liner. -->
+            <ul class="blog-earlier">
+                <li>
+                    <span class="blog-earlier-date">18 Jun 2026</span>
+                    <a href="/blog/2026-06-18.html#four-promises-of-a-booth">The Four Promises of a Booth</a>
+                    <p>Isolation, repeatability, shareability, and usability — the four things a booth gives every
+                        project.</p>
+                </li>
+                <li>
+                    <span class="blog-earlier-date">29 May 2026</span>
+                    <a href="/blog/2026-05-29.html#works-on-my-machine">Ending “It Works on My Machine”</a>
+                    <p>Why the problem keeps happening, and how a booth ends it.</p>
+                </li>
+            </ul>
+
+            <div class="ctas">
+                <a class="btn btn-primary blog-more" href="/blog/">More posts
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"
+                        stroke-linejoin="round" aria-hidden="true">
+                        <line x1="4" y1="12" x2="19" y2="12" />
+                        <polyline points="13 6 19 12 13 18" />
+                    </svg>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section id="coding-booth">
         <div class="container demo">
             <h2>Coding Booth</h2>
             <div class="overview-figure">
@@ -1001,7 +1173,7 @@
         </div>
     </section>
 
-    <section id="why">
+    <section id="why" class="section-light">
         <div class="container demo">
             <h2>Why & Who?</h2>
             <div class="overview-figure">
@@ -1029,7 +1201,7 @@
         </div>
     </section>
 
-    <section id="variants" class="section-light">
+    <section id="variants">
         <div class="container">
             <h2>Pick Your UI (Variants)</h2>
             <p class="lead">
@@ -1098,7 +1270,7 @@
         </div>
     </section>
 
-    <section id="demo">
+    <section id="demo" class="section-light">
         <div class="container demo">
             <h2>Demo!</h2>
             <p class="lead">A Snake game in Zig — built and run inside the booth on a host that has no Zig toolchain
@@ -1151,7 +1323,7 @@
         </div>
     </section>
 
-    <section id="quicktry" class="section-light">
+    <section id="quicktry">
         <div class="container">
             <h2>Quick Try</h2>
             <p class="lead">Three steps to a working booth.</p>
@@ -1237,24 +1409,7 @@ cd my-snake
         </div>
     </section>
 
-    <!-- FROM-THE-BLOG: latest post, hand-maintained by the add-blog skill. -->
-    <section id="from-the-blog">
-        <div class="container">
-            <h2>From the Blog</h2>
-            <p class="lead">Deep dives into the pieces that make CodingBooth tick.</p>
-            <p class="blog-featured">
-                <span class="blog-date" style="opacity: 0.7; font-size: 0.9em;">2026-06-28</span><br>
-                <a href="/blog/2026-06-28.html#onboard-quick-onboard-right"><strong>Onboard Quick, Onboard Right</strong></a><br>
-                Onboarding fast isn't enough — you have to onboard right, and that shouldn't rely on luck.
-            </p>
-            <div class="ctas">
-                <a class="btn btn-primary" href="/blog/2026-06-28.html#onboard-quick-onboard-right">Read the post</a>
-                <a class="btn" href="/blog/">All posts</a>
-            </div>
-        </div>
-    </section>
-
-    <section id="learn-more">
+    <section id="learn-more" class="section-light">
         <div class="container">
             <h2>Learn More</h2>
             <p class="lead">Deeper guides, reference material, and the full documentation index.</p>
@@ -1266,7 +1421,7 @@ cd my-snake
     </section>
 
     <!-- SYNC: keep this section in sync with the "Community & Feedback" section in /README.md -->
-    <section id="community" class="section-light">
+    <section id="community">
         <div class="container">
             <h2>Community &amp; Feedback</h2>
             <p class="lead">
@@ -1322,7 +1477,7 @@ cd my-snake
     </section>
     <!-- /SYNC -->
 
-    <section id="online">
+    <section id="online" class="section-light">
         <div class="container">
             <div class="callout-card">
                 <span class="callout-badge">Coming soon</span>
