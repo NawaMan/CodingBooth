@@ -1,0 +1,9 @@
+display-name = "Extensions Shared"
+display-disc = "Team-share Chrome extensions via git (.booth/shared) — not cache"
+display-detail = """Live-bind-mounts ~/.chrome-data/Default/Extensions/ under .booth/shared/ so installed extensions (CRX unpacked dirs) survive and can be committed. Does NOT use .booth/cache. Does not mount Local Extension Settings (often holds secrets). If you also use +bookmarks-shared or +settings-shared, Default/ already contains Extensions — this path is for extensions-only without mounting the whole profile. Extension updates/version skew across machines may need reinstall."""
+display-order = 94
+tags = ["persistence", "shared", "browser", "extensions", "plugins", "git"]
+
+shared-dirs = [
+    "home/coder/.chrome-data/Default/Extensions",
+]

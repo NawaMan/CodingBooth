@@ -87,6 +87,34 @@ run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select "firefox+bookmarks-shared"
 assert_file "$prj/.booth/shared/home/coder/.mozilla/firefox/.mount-this" "firefox+bookmarks-shared creates firefox dir"
 
+# Test 12c: chrome settings/extensions shared (not cache)
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "google-chrome+settings-shared+extensions-shared"
+assert_file "$prj/.booth/shared/home/coder/.chrome-data/Default/.mount-this" "chrome+settings-shared creates Default"
+assert_file "$prj/.booth/shared/home/coder/.chrome-data/Default/Extensions/.mount-this" "chrome+extensions-shared creates Extensions"
+# Must not create cache entries for these
+if [ -d "$prj/.booth/cache/home/coder/.chrome-data" ]; then
+  FAIL_COUNT=$((FAIL_COUNT + 1)); TEST_COUNT=$((TEST_COUNT + 1))
+  echo -e "Test ${TEST_COUNT}: chrome settings/ext must not use cache ........ \033[31mFAILED\033[0m"
+  FAIL_TESTS+=("chrome settings/ext must not use cache")
+else
+  TEST_COUNT=$((TEST_COUNT + 1)); PASS_COUNT=$((PASS_COUNT + 1))
+  echo -e "Test ${TEST_COUNT}: chrome settings/ext must not use cache ........ \033[32mPASSED\033[0m"
+fi
+
+# Test 12d: firefox settings/extensions shared (not cache)
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "firefox+settings-shared+extensions-shared"
+assert_file "$prj/.booth/shared/home/coder/.mozilla/firefox/.mount-this" "firefox+settings-shared creates firefox dir"
+if [ -d "$prj/.booth/cache/home/coder/.mozilla" ]; then
+  FAIL_COUNT=$((FAIL_COUNT + 1)); TEST_COUNT=$((TEST_COUNT + 1))
+  echo -e "Test ${TEST_COUNT}: firefox settings/ext must not use cache ....... \033[31mFAILED\033[0m"
+  FAIL_TESTS+=("firefox settings/ext must not use cache")
+else
+  TEST_COUNT=$((TEST_COUNT + 1)); PASS_COUNT=$((PASS_COUNT + 1))
+  echo -e "Test ${TEST_COUNT}: firefox settings/ext must not use cache ....... \033[32mPASSED\033[0m"
+fi
+
 # Test 13: codeserver+settings-shared creates shared settings.json
 run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select "codeserver+settings-shared"

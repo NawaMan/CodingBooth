@@ -1,0 +1,9 @@
+display-name = "Extensions Shared"
+display-disc = "Team-share Chromium extensions via git (.booth/shared) — not cache"
+display-detail = """Live-bind-mounts ~/.chrome-data/Default/Extensions/ under .booth/shared/ (same path as Chrome). shared only — not .booth/cache. Does not mount Local Extension Settings (secrets)."""
+display-order = 94
+tags = ["persistence", "shared", "browser", "extensions", "plugins", "git"]
+
+shared-dirs = [
+    "home/coder/.chrome-data/Default/Extensions",
+]

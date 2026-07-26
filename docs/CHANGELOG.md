@@ -29,6 +29,11 @@ This file contains a list of changes for each released version.
   (`Invalid mkcert version resolved: 'eyes'`) and `setup buf` during complex
   tests. Parsing now extracts the `tag_name` key with `grep -oE`, and mkcert/buf
   fall back to a known-good pin when resolution still fails.
+- **Browser settings and extensions via shared (not cache).** Opt-in
+  `+settings-shared` and `+extensions-shared` for Google Chrome, Chromium, and
+  Firefox — all use `shared-dirs` under `.booth/shared/` only. Chrome family:
+  settings → `Default/`, extensions → `Default/Extensions/`. Firefox: whole
+  `~/.mozilla/firefox/` (profile holds prefs and add-ons).
 
 - **Binary companion templates (Phase 1).** Selectable tools for companions that used
   to need raw `*-pkg` knowledge: `protobuf` (apt `protobuf-compiler` / `protoc`, with a

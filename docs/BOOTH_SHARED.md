@@ -103,81 +103,91 @@ The following container paths must not be overridden. If `.booth/shared/` would 
 **Good candidates**
 
 - Small text/JSON configs the whole team should share
-- Chrome/Chromium **Bookmarks** (not History, not the full profile)
+- Chrome/Chromium **Bookmarks**, **Preferences**, **Extensions/** (under shared, not cache)
+- Firefox **profile tree** (bookmarks, prefs, add-ons under `~/.mozilla/firefox/`)
 - code-server / VS Code **`User/settings.json`**
 - DBeaver **`data-sources.json`** without passwords
 
-**Keep out**
+**Keep out of shared (and never use cache for team state)**
 
-- Cookies, login sessions, OAuth tokens
-- Full browser profiles (`~/.mozilla`, `~/.chrome-data` wholesale)
+- Cookies, login sessions, OAuth tokens, extension *storage* secrets
 - Shell history, package caches
 - Database passwords inside connection files
-- Large binary SQLite history databases (poor merges)
 
-For full browser profiles or IDE extension stores, use **`+profile-cache` / `+settings-cache`** (local) or **`--persist-home`**.
+**Local-only** full browser profiles stay on **`+profile-cache`** (`.booth/cache/`,
+gitignored) or **`--persist-home`**. Team-facing browser state uses **shared only**.
 
 ---
 
 ## Available Shared Templates
 
+### Browsers (all `shared-dirs` / `shared-files` — **no cache**)
+
+| Selection | Path under `.booth/shared/` | Notes |
+|-----------|----------------------------|--------|
+| `google-chrome+bookmarks-shared` | `…/.chrome-data/Default/` | Bookmarks; dir mount |
+| `google-chrome+settings-shared` | `…/.chrome-data/Default/` | Preferences etc.; same as bookmarks |
+| `google-chrome+extensions-shared` | `…/.chrome-data/Default/Extensions/` | CRX trees only (not Local Extension Settings) |
+| `chromium+bookmarks-shared` | same Default/ as Chrome | Same wrapper data dir |
+| `chromium+settings-shared` | same Default/ | |
+| `chromium+extensions-shared` | same Extensions/ | |
+| `firefox+bookmarks-shared` | `…/.mozilla/firefox/` | places.sqlite + profile |
+| `firefox+settings-shared` | `…/.mozilla/firefox/` | prefs.js etc. |
+| `firefox+extensions-shared` | `…/.mozilla/firefox/` | add-ons live in the profile |
+
+Selecting bookmarks **or** settings for Chrome is enough for both (same `Default/`).
+Selecting bookmarks **or** settings **or** extensions for Firefox is enough for all
+three (same `firefox/` tree). Extensions-only Chrome mount is for sharing add-ons
+without the rest of `Default/`.
+
+### Other tools
+
 | Template selection | Shared path |
 |--------------------|-------------|
-| `google-chrome+bookmarks-shared` | `~/.chrome-data/Default/` (**directory**) |
-| `chromium+bookmarks-shared` | `~/.chrome-data/Default/` (**directory**, same path as Chrome) |
-| `firefox+bookmarks-shared` | `~/.mozilla/firefox/` (**directory**) |
 | `codeserver+settings-shared` | `~/.local/share/code-server/User/settings.json` |
-| `dbeaver+connections-shared` | `~/.local/share/DBeaverData/workspace6/General/.dbeaver/data-sources.json` |
+| `dbeaver+connections-shared` | `…/DBeaverData/…/data-sources.json` |
 
 All are **opt-in** (`auto-select = false`).
 
 ```bash
 booth config --no-tui . \
-  --select google-chrome+bookmarks-shared/dbeaver+connections-shared/codeserver+settings-shared
+  --select google-chrome+bookmarks-shared+extensions-shared/firefox+settings-shared
 ```
 
-**Chrome data dir note:** CodingBooth’s Chrome/Chromium wrappers set `--user-data-dir=~/.chrome-data`. Shared and profile-cache paths use that directory, not `~/.config/google-chrome`.
+**Chrome data dir note:** wrappers set `--user-data-dir=~/.chrome-data` (not
+`~/.config/google-chrome`).
 
-### Chrome / Chromium (directory mount required)
+### Chrome / Chromium (directory mounts)
 
-Chrome **and** CodingBooth’s Chromium wrapper both use
-`--user-data-dir=~/.chrome-data`. They share the same `Default/` tree — so
-`google-chrome+bookmarks-shared` and `chromium+bookmarks-shared` declare the
-**same** `shared-dirs` path.
+Chrome and Chromium share `~/.chrome-data`. Bookmarks/settings need **`Default/`**
+(rename-safe). Extensions alone can use **`Default/Extensions/`**. Do not use
+`cache-dirs` for team sharing.
 
-Chrome/Chromium save bookmarks by writing `Bookmarks.tmp` then **renaming** over
-`Bookmarks`. A **file** bind-mount of `Bookmarks` alone is detached by that
-rename. Extensions use `shared-dirs` for `…/Default/`.
+`Default/` can grow cookies and Local Storage. Prefer a `.gitignore` that keeps
+only what you intend to commit (`Bookmarks`, `Preferences`, `Extensions/`, …).
 
-`Default/` can also grow cookies, Local Storage, etc. Put a `.gitignore` that
-keeps only `Bookmarks` / `Bookmarks.bak` before committing.
+### Firefox (directory mount)
 
-### Firefox (directory mount required)
-
-Firefox profiles live under `~/.mozilla/firefox/<id>.default-release/` with a
-random id and a `profiles.ini`. Mount the whole `firefox/` directory so first
-launch can create `profiles.ini` + profile in place. Bookmarks live in
-`places.sqlite` (binary; also holds history).
+Mount **`~/.mozilla/firefox/`** so first run can create `profiles.ini` and a
+profile. Bookmarks (`places.sqlite`), settings (`prefs.js`), and extensions all
+live under that tree — one shared dir covers them.
 
 ### Test checklist (desktop)
 
-| Browser | Install | Shared path | Host check after bookmark |
-|---------|---------|-------------|---------------------------|
-| Chrome | `setup google-chrome` | `.booth/shared/…/.chrome-data/Default/` | `Bookmarks` mtime updates |
-| Chromium | `setup chromium-browser` | same as Chrome | same |
-| Firefox | `setup firefox` | `.booth/shared/…/.mozilla/firefox/` | `**/places.sqlite` mtime updates |
+| Browser | Install | Shared | Host check |
+|---------|---------|--------|------------|
+| Chrome | `setup google-chrome` | `Default/` and/or `Default/Extensions/` | `Bookmarks` / `Preferences` / `Extensions/*` mtime |
+| Chromium | `setup chromium-browser` | same paths | same |
+| Firefox | `setup firefox` | `…/.mozilla/firefox/` | `**/places.sqlite`, prefs, `**/extensions` |
 
-Launch via the desktop icon / wrapper (not a host browser). Restart the booth
-(not only the browser) to confirm persistence.
+Launch via the desktop icon / wrapper. Restart the **booth** to confirm.
 
 **First commit workflow (Chrome/Chromium):**
 
-1. Select `google-chrome+bookmarks-shared` (or chromium) and start a desktop
-   booth with a CLI that implements `.booth/shared/`.
-2. Open the browser (wrapper → `~/.chrome-data`).
-3. Add bookmarks; they land under
-   `.booth/shared/home/coder/.chrome-data/Default/Bookmarks`.
-4. Commit `Bookmarks` only (sample `.gitignore` under that directory).
+1. Select `google-chrome+bookmarks-shared` (and optionally `+extensions-shared`).
+2. Start a desktop booth with a CLI that implements `.booth/shared/`.
+3. Change settings / install an extension / add bookmarks.
+4. Commit only the paths you want under `.booth/shared/…/Default/`.
 
 ---
 

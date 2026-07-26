@@ -1,6 +1,6 @@
 display-name = "Bookmarks Shared"
 display-disc = "Team-share Chrome profile Default/ via git (.booth/shared)"
-display-detail = """Live-bind-mounts ~/.chrome-data/Default/ under .booth/shared/ so Chrome can rename Bookmarks in place (a single-file mount of Bookmarks breaks: Chrome writes Bookmarks.tmp then renames). Prefer committing only Bookmarks (+ Bookmarks.bak) via a .gitignore inside the shared Default dir — cookies/logins may also appear under Default; do not commit secrets. Full local profiles: +profile-cache or --persist-home."""
+display-detail = """Live-bind-mounts ~/.chrome-data/Default/ under .booth/shared/ so Chrome can rename Bookmarks in place (a single-file mount of Bookmarks breaks: Chrome writes Bookmarks.tmp then renames). Prefer committing only Bookmarks (+ Bookmarks.bak) via a .gitignore inside the shared Default dir — cookies/logins may also appear under Default; do not commit secrets. Uses .booth/shared only (not cache). Local-only full profile: +profile-cache or --persist-home."""
 display-order = 92
 tags = ["persistence", "shared", "browser", "bookmarks", "git"]
 

@@ -1,0 +1,10 @@
+display-name = "Settings Shared"
+display-disc = "Team-share Chrome settings via git (.booth/shared) — not cache"
+display-detail = """Live-bind-mounts ~/.chrome-data/Default/ under .booth/shared/ so Preferences and other settings survive restarts and can be committed. Same Default/ tree as +bookmarks-shared (directory mount required; Preferences renames). Does NOT use .booth/cache. Avoid committing cookies/logins — use a tight .gitignore. Local-only full profile: +profile-cache (cache) or --persist-home."""
+display-order = 93
+tags = ["persistence", "shared", "browser", "settings", "git"]
+
+# shared only — never cache-dirs
+shared-dirs = [
+    "home/coder/.chrome-data/Default",
+]

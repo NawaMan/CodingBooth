@@ -1,0 +1,9 @@
+display-name = "Settings Shared"
+display-disc = "Team-share Firefox prefs/settings via git (.booth/shared) — not cache"
+display-detail = """Live-bind-mounts ~/.mozilla/firefox/ under .booth/shared/ so profiles.ini, prefs.js, and related settings survive restarts and can be committed. Same tree as +bookmarks-shared (profile id is random on first run). shared only — not .booth/cache. Do not commit logins/cookies; places.sqlite also holds history."""
+display-order = 93
+tags = ["persistence", "shared", "browser", "settings", "git", "firefox"]
+
+shared-dirs = [
+    "home/coder/.mozilla/firefox",
+]
