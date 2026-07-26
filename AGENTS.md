@@ -64,11 +64,13 @@ surprise; if the approach has to change, re-propose the delta.
 - They explicitly skip it ("just implement", "no plan", "don't discuss")
 - Mechanical follow-through of an **already-agreed** plan (the next step of work already green-lit)
 - A skill's **own** gate already covers the same wait — but **not every skill menu is enough**.
-  - `land-branch`: preflight report *as* Problem · Diagnostic · Approach, then wait (replaces a
-    second copy of the form).
-  - `pick-todo`: the menu only chooses *which* feature. After the pick you **still** post
+  - `todo-add`: recording an idea is not implementation; no proposal gate (but do not build).
+  - `todo-pick`: the menu only chooses *which* feature. After the pick you **still** post
     Problem · Diagnostic · Approach and wait — a one-line pitch is not a plan.
-  - `todo`: recording an idea is not implementation; no proposal gate (but do not build).
+  - `work-start`: its step 2 *is* the form, posted before the worktree exists (replaces a second
+    copy of it).
+  - `work-finish`: preflight report *as* Problem · Diagnostic · Approach, then wait (replaces a
+    second copy of the form).
 
 This is Rule 0 under *Rules you must follow*. **Rule 0b (worktree isolation) is not skipped by a
 green light** — it is a separate pre-edit check. Skills that implement things restate both at the
@@ -170,7 +172,8 @@ ln -sfn "$(pwd)/worktree" ~/.grok/worktrees/git-codingbooth
 
 When the user asks for “a session”, “a worktree”, or a feature checkout: run the recipe above
 (or confirm `worktree/<name>` already exists and is linked), then work **inside** that folder.
-Keep `/worktree/` in `.gitignore`.
+Prefer the **`work-start`** skill — it judges whether the task really is *work*, folds in the
+Rule 0 proposal, and ends with you inside the worktree. Keep `/worktree/` in `.gitignore`.
 
 **Default for feature work: use a linked worktree** (`worktree/<name>` + branch `<name>`) — this
 is **Rule 0b**, not a soft preference. Unless the user says otherwise ("here", "on main", "no
@@ -184,9 +187,9 @@ cd worktree/<name>
 ```
 
 Prefer a short name from the task (`mnemonic-underline`). Tell the user the path and branch. Do
-**not** use the agent CLI's own worktree feature (see above). `pick-todo` asks, and defaults the
-answer to worktree. Do **not** invent a worktree for pure Q&A, docs-only nits the user wants on
-main, or a one-line fix they explicitly want in place.
+**not** use the agent CLI's own worktree feature (see above). `todo-pick` asks, and defaults the
+answer to worktree — hand the setup itself to `work-start`. Do **not** invent a worktree for pure
+Q&A, docs-only nits the user wants on main, or a one-line fix they explicitly want in place.
 
 **Pre-edit self-check (feature work) — fail closed:**
 
@@ -197,7 +200,7 @@ main, or a one-line fix they explicitly want in place.
 ### Landing a worktree's branch into main
 
 Merging is a deliberate act, same bar as any commit/push (Rule 8) — only when the user asks to
-land/merge a worktree's work, never on your own initiative. Prefer the **`land-branch`** skill.
+land/merge a worktree's work, never on your own initiative. Prefer the **`work-finish`** skill.
 Summary of the procedure:
 
 1. **In the main clone**, stash anything uncommitted so main is clean before the merge
@@ -270,7 +273,7 @@ Still **do not** `git commit`, `git push`, or open the PR unless the user asks (
 or switching the branch is the exception.
 
 If you are on a normal day-to-day clone of `main` (no `worktree/<name>` path) and the change is
-**feature work** (multi-file behaviour, anything `pick-todo` would offer), **Rule 0b applies** —
+**feature work** (multi-file behaviour, anything `todo-pick` would offer), **Rule 0b applies** —
 create the worktree recipe above before the first write; opt out only when the user says so. Skip
 isolation for pure Q&A, tiny docs/typo fixes, or an explicit "do it here / on main". **"Go ahead"
 on a plan is not an opt-out.**
@@ -283,16 +286,19 @@ The recurring jobs are also shipped as **skills** in `.claude/skills/`, each a c
 in a working, tested artifact. Prefer the skill when one matches; come back here for the prose and
 the background. Implementation skills still obey **Proposal before code** (Rule 0) and **feature
 work in a linked worktree** (Rule 0b) — restate both at the top when a skill is loaded alone.
-`pick-todo`'s menu is only the first gate (which feature); after the pick it still requires the full
-form. `land-branch` folds the form into its preflight report.
+`todo-pick`'s menu is only the first gate (which feature); after the pick it still requires the full
+form. `work-start` and `work-finish` are the bookends of a session and each *performs* the form
+rather than skipping it — `work-start` as its proposal step, `work-finish` as its preflight report.
 
 | skill | use it when |
 | --- | --- |
-| `land-branch` | merging a worktree's branch into main — preflight, rebase, tests, `--no-ff`, cleanup |
-| `pick-todo` | "what's next?" — shortlist open `docs/TODO.md` items, user picks, then build |
-| `todo` | record an idea in `docs/TODO.md` only — never implement |
-| `add-blog` | publish a CodingBooth blog post under `blog/` and update the front-page highlight |
-| `add-setup` | add a tool to `variants/base/setups/` — script, `template.toml`, complex + config tests, CHANGELOG |
+| `blog-add` | start a blog post under `blog/` as an unpublished draft — reachable by URL, listed nowhere |
+| `blog-publish` | make a draft the latest post — rename to the publish date, wire prev/next, index + front page |
+| `setup-add` | add a tool to `variants/base/setups/` — script, `template.toml`, complex + config tests, CHANGELOG |
+| `todo-add` | record an idea in `docs/TODO.md` only — never implement |
+| `todo-pick` | "what's next?" — shortlist open `docs/TODO.md` items, user picks, then build |
+| `work-start` | beginning a sizable task — judge it *is* work, propose, then create the worktree + branch |
+| `work-finish` | merging a worktree's branch into main — preflight, rebase, tests, `--no-ff`, cleanup |
 
 ---
 
@@ -317,7 +323,8 @@ form. `land-branch` folds the form into its preflight report.
    said "here" / "on main" / "no worktree"; or you are already inside a linked worktree.
 
    **"Go ahead" on a plan is not permission to edit main.** It authorises the *work*, not the
-   *checkout*. Full recipe: *Quick start* → *Session = linked worktree + branch*.
+   *checkout*. Full recipe: *Quick start* → *Session = linked worktree + branch*; executable form:
+   the **`work-start`** skill, which also folds in the Rule 0 proposal.
 1. **Prefer the smallest honest verification.** Match tests to the change (Go unit tests vs a
    targeted shell test vs a full image rebuild). Do not claim "done" without the check that would
    catch the bug class you touched.

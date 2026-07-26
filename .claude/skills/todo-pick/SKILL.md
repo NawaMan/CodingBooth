@@ -1,5 +1,5 @@
 ---
-name: pick-todo
+name: todo-pick
 description: Study the project and docs/TODO.md, propose a few open features worth building next — each with a one-sentence approach — let the user choose, then build the one they pick. Use when the user asks "what should I work on / build next", "pick a feature", "what's next in the TODO", or otherwise wants options rather than a specific task.
 ---
 

@@ -1,5 +1,5 @@
 ---
-name: land-branch
+name: work-finish
 description: Land a worktree's feature branch into main — preflight, rebase, tests, --no-ff merge, then delete the worktree/branch. Use when the user says "land this", "merge the branch", "merge into main", or asks to finish a worktree session. Never pushes.
 ---
 

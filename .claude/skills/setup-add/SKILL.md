@@ -1,5 +1,5 @@
 ---
-name: add-setup
+name: setup-add
 description: Add a new setup script to variants/base/setups/ in the house style — the script, its template.toml so it is selectable in `booth config`, its complex + config tests, and the CHANGELOG entry. Use when the user wants a new tool installable in a booth ("add a setup for X", "make X available in booths", "add X to the catalog").
 ---
 

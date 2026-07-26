@@ -273,6 +273,12 @@ componentization style. If it wraps Monaco (`Code`/`JavaCode`), remember Monaco 
   When you add a presentation, its slides are picked up by the sitemap automatically (it reads every
   `pages.ts`); a brand-new standalone Text route must be added to `TEXT_ROUTES` in
   `src/lib/seo/routes.ts`.
+- **An unlinked route still ships.** `prerender.entries` defaults to `['*']`, so every static route
+  is prerendered whether or not anything links to it. That's what makes an *unpublished* Text
+  possible: leave it out of `TEXT_ROUTES` and every link list, and it is reachable at its exact URL
+  but absent from the sitemap and the site's navigation. Pass `noindex` on its `TextPage` to also
+  emit `<meta name="robots" content="noindex">` (`TextPage` forwards the prop to `Seo`). The blog
+  uses exactly this for draft posts — see the repo's `blog-add` / `blog-publish` skills.
 - **`name` ending in `.html` is intentional.** Route folders are literally `title.html/`, so the URL is
   `/slides/title.html`. Don't "fix" it.
 - **No `pnpm install` purge in CI sandboxes.** If `pnpm install` wants to wipe `node_modules`, prefer

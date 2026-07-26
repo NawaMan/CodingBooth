@@ -39,10 +39,15 @@
 	export let imageAlt: string | undefined = undefined;
 	/** OpenGraph type — 'website' for the landing page, 'article' for a long-form Text. */
 	export let type: 'website' | 'article' = 'website';
+	/** Ask search engines not to index this Text. Set on an UNPUBLISHED post: the
+	    route still prerenders and is reachable at its exact URL, but it is absent
+	    from the sitemap and every link list, so noindex is the last piece that
+	    keeps a draft out of search results. Dropped when the post is published. */
+	export let noindex = false;
 </script>
 
 <!-- Seo emits the <title> + full SEO/social metadata for this Text. -->
-<Seo {title} {description} {image} {imageAlt} {type} />
+<Seo {title} {description} {image} {imageAlt} {type} {noindex} />
 
 <div class="text-scroll" data-text-scroll>
 	<div class="text-page">
