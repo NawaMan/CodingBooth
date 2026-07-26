@@ -292,6 +292,7 @@ form. `land-branch` folds the form into its preflight report.
 | `pick-todo` | "what's next?" — shortlist open `docs/TODO.md` items, user picks, then build |
 | `todo` | record an idea in `docs/TODO.md` only — never implement |
 | `add-blog` | publish a CodingBooth blog post under `blog/` and update the front-page highlight |
+| `add-setup` | add a tool to `variants/base/setups/` — script, `template.toml`, complex + config tests, CHANGELOG |
 
 ---
 
