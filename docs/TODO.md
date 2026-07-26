@@ -66,12 +66,43 @@ Need to find a way to fix this. This may involve creating a different type of ho
         template preimage. (Measured: ~99% of *generated* lines can be attributed back to a template
         segment, because the compiler emits segments verbatim. So a read-only "custom directives,
         preserved verbatim" panel would be feasible — if it is ever actually wanted.)
-- [x] **Persist browser bookmarks & history** — partially done.
-      - Local full profiles: `+profile-cache` (cache; Chrome/Chromium fixed to `~/.chrome-data`) and
+- [x] **Persist browser bookmarks & history** — largely done (see [BOOTH_SHARED.md](BOOTH_SHARED.md)).
+      - Local full profiles: `+profile-cache` (cache; Chrome/Chromium → `~/.chrome-data`) and
         `--persist-home`.
-      - Team/git bookmarks (not history): `.booth/shared/` + `google-chrome+bookmarks-shared` /
-        `chromium+bookmarks-shared` ([BOOTH_SHARED.md](BOOTH_SHARED.md)).
-      Still open: Firefox shared bookmarks; sharing History SQLite via git (not recommended).
+      - Team/git: `.booth/shared/` + `+bookmarks-shared` / `+settings-shared` / `+extensions-shared`
+        for Chrome, Chromium, Firefox; drivers need jars **and** `drivers.xml` registry.
+      Deliberate non-goal: sharing History SQLite via git (personal noise, bad merges).
+- [ ] **Shared-state catalog polish (no secrets)** — `.booth/shared` is in; fill remaining safe
+      opt-ins and examples so other sessions don't re-derive the map.
+      Decision: prefer **shared** for team non-secret state; **cache** for personal bulk; **host
+      seed** for credentials; never share whole homes or password stores.
+      Approach: more `*--extension.toml` `shared-files`/`shared-dirs` only (mirror existing
+      dbeaver/codeserver/browser extensions); sample gitignores under `docs/samples/`; optional
+      example workspace wiring. Docs stay the source of truth in `BOOTH_SHARED.md`.
+      Open backlog (conservative):
+      - **Neovim polish** — sample `.gitignore` for shared `~/.config/nvim/` (ignore lazy/plugin
+        noise, spell, personal paths); optional share of lockfile only (`lazy-lock.json`); wire
+        `neovim+config-shared` into playground / a small example. Do **not** share
+        `~/.local/share/nvim` (that stays `+data-cache`).
+      - **code-server+tasks-shared** — `User/tasks.json` only (no env secrets in tasks).
+      - **Desktop keybindings** — KDE/LXQt one-file shortcuts shared (like `xfce+keyboard-shortcuts-shared`).
+      - **File-manager bookmark for the project** — add a Places / sidebar entry for
+        `/home/coder/code` (the bind-mounted project) in the desktop file browser (Thunar /
+        pcmanfm-qt / Dolphin). Not a web-browser bookmark; not shared-state of random host
+        paths. Approach: seed GTK bookmarks (`~/.config/gtk-3.0/bookmarks` →
+        `file:///home/coder/code Project` or folder name) and/or desktop-specific places via
+        home-seed or a small setup/startup on xfce/lxqt/kde; optional `shared-files` only if
+        teams want to commit custom Places lists (usually a fixed seed is enough).
+        Open questions: default-on for all desktop variants vs opt-in template extension;
+        label text (`code` vs project folder name from `CB_PROJECT_NAME`).
+      - **API client collections** — Bruno/Insomnia collections dir without env/secret files (or
+        keep collections in the project tree).
+      - **CloudBeaver connection defs** — only if a stable path exists and passwords stay out
+        (audit before shipping).
+      - **TUI clarity** — surface Shared group / collapse overlapping browser paths
+        (bookmarks+settings both use Chrome `Default/`) so users don't double-select needlessly.
+      Explicit non-goals: JetBrains full config/license; Warp/AI credentials; shell history;
+        cookies; whole `~/.config`; VS Code extension stores / globalStorage.
 - [~] **Shell history across sessions** — half done. `.bash_history` / `.zsh_history` already survive if
       the user hand-writes them into `cache_files` (`docs/BOOTH_CUSTOMIZATION.md`), and `--persist-home`
       preserves them wholesale. Missing: a first-class opt-in, so nobody has to know the incantation.
