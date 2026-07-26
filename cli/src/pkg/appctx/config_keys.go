@@ -61,6 +61,8 @@ type KeySpec struct {
 var extraConfigKeys = []KeySpec{
 	{Key: "cache-files", Kind: KeyList, Read: true},
 	{Key: "cache-dirs", Kind: KeyList, Read: true},
+	{Key: "shared-files", Kind: KeyList, Read: true},
+	{Key: "shared-dirs", Kind: KeyList, Read: true},
 }
 
 // ConfigKeys returns every key a .booth/config.toml may hold, keyed by name.

@@ -217,6 +217,18 @@ func TestApplySetOverrides_CacheDirs(t *testing.T) {
 	cfg := &output.ConfigToml{}
 	applySetOverrides(cfg, map[string]interface{}{"cache-dirs": "home/coder/.custom_data"})
 	assert.Equal(t, []string{"home/coder/.custom_data"}, cfg.CacheDirs)
+}
+
+func TestApplySetOverrides_SharedFiles(t *testing.T) {
+	cfg := &output.ConfigToml{}
+	applySetOverrides(cfg, map[string]interface{}{"shared-files": "home/coder/.chrome-data/Default/Bookmarks"})
+	assert.Equal(t, []string{"home/coder/.chrome-data/Default/Bookmarks"}, cfg.SharedFiles)
+}
+
+func TestApplySetOverrides_SharedDirs(t *testing.T) {
+	cfg := &output.ConfigToml{}
+	applySetOverrides(cfg, map[string]interface{}{"shared-dirs": "home/coder/.config/myapp"})
+	assert.Equal(t, []string{"home/coder/.config/myapp"}, cfg.SharedDirs)
 	assert.Empty(t, cfg.Overrides)
 }
 

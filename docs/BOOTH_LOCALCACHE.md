@@ -214,10 +214,12 @@ Many templates include built-in cache extensions you can enable during `booth co
 | Template Selection | What's Cached |
 |--------------------|---------------|
 | `firefox+profile-cache` | `~/.mozilla/` (can be large) |
-| `chromium+profile-cache` | `~/.config/chromium/` (can be large) |
-| `google-chrome+profile-cache` | `~/.config/google-chrome/` (can be large) |
+| `chromium+profile-cache` | `~/.chrome-data/` (can be large; wrapper `--user-data-dir`) |
+| `google-chrome+profile-cache` | `~/.chrome-data/` (can be large; wrapper `--user-data-dir`) |
 
 > Browser profiles can grow to hundreds of megabytes. These extensions are opt-in and never auto-selected.
+>
+> For **team-shared bookmarks** (git-friendly, not full profiles), see [Shared State](BOOTH_SHARED.md) and `+bookmarks-shared`.
 
 Usage example:
 

@@ -66,18 +66,12 @@ Need to find a way to fix this. This may involve creating a different type of ho
         template preimage. (Measured: ~99% of *generated* lines can be attributed back to a template
         segment, because the compiler emits segments verbatim. So a read-only "custom directives,
         preserved verbatim" panel would be feasible — if it is ever actually wanted.)
-- [ ] **Persist browser bookmarks & history** — carry an in-container browser profile across sessions.
-      Desktop variants ship real browsers (`templates/browsers/`), but each run starts from a blank
-      profile, so bookmarks, history, and logins are thrown away every time.
-      Approach: reuse the cache-mount mechanism rather than inventing storage — `cache_files` entries in
-      `.booth/config.toml` already bind host paths into `/home/coder` (`cli/src/pkg/booth/cache_mounts.go`,
-      documented in `docs/BOOTH_CUSTOMIZATION.md`). Ship it as a `profile-cache--extension.toml` on each
-      browser template so it is an opt-in checkbox, the same shape as
-      `templates/ai-tools/claude-code/settings-cache--extension.toml`.
-      Open questions: cache the whole profile directory or only `Bookmarks` + `History`? The full directory
-      drags in lock files, disk cache, and session state that misbehave when restored into a fresh
-      container. Also decide whether this is worth doing at all once `--persist-home` is in play, since
-      that already preserves the profile wholesale.
+- [x] **Persist browser bookmarks & history** — partially done.
+      - Local full profiles: `+profile-cache` (cache; Chrome/Chromium fixed to `~/.chrome-data`) and
+        `--persist-home`.
+      - Team/git bookmarks (not history): `.booth/shared/` + `google-chrome+bookmarks-shared` /
+        `chromium+bookmarks-shared` ([BOOTH_SHARED.md](BOOTH_SHARED.md)).
+      Still open: Firefox shared bookmarks; sharing History SQLite via git (not recommended).
 - [~] **Shell history across sessions** — half done. `.bash_history` / `.zsh_history` already survive if
       the user hand-writes them into `cache_files` (`docs/BOOTH_CUSTOMIZATION.md`), and `--persist-home`
       preserves them wholesale. Missing: a first-class opt-in, so nobody has to know the incantation.

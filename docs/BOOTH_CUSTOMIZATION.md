@@ -564,6 +564,25 @@ cache-dirs = [
 
 Both use no-clobber: existing files and markers are never overwritten. See the [Local Cache Guide](BOOTH_LOCALCACHE.md) for details on mount rules and the `.mount-this` mechanism.
 
+### Shared Files and Directories (team / git)
+
+The same layout works under `.booth/shared/` for **git-friendly** team state — live bind mounts that teammates can commit:
+
+```toml
+shared-files = [
+    "home/coder/.chrome-data/Default/Bookmarks",
+    "home/coder/.local/share/code-server/User/settings.json",
+]
+
+shared-dirs = [
+    "home/coder/.config/myapp/snippets",
+]
+```
+
+- `shared-files` / `shared-dirs` create paths under `.booth/shared/` (no-clobber)
+- Unlike cache, **shared is meant to be versioned** — do not put secrets there
+- See the [Shared State Guide](BOOTH_SHARED.md)
+
 ---
 
 ## Template Extensions

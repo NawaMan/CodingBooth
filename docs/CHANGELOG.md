@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`.booth/shared/` — team/git live state.** First-class bind mounts for selected
+  paths outside `/home/coder/code` that are **meant to be committed** (mirror of
+  `.booth/cache/` layout, opposite git policy). Config keys `shared-files` /
+  `shared-dirs`; docs in [BOOTH_SHARED.md](BOOTH_SHARED.md). Opt-in extensions:
+  `google-chrome+bookmarks-shared`, `chromium+bookmarks-shared`,
+  `firefox+bookmarks-shared`, `codeserver+settings-shared`,
+  `dbeaver+connections-shared`.
+- **Chrome/Chromium `+profile-cache` paths fixed** to `~/.chrome-data` (matches the
+  setup wrappers’ `--user-data-dir`), not `~/.config/google-chrome` /
+  `~/.config/chromium`.
+- **Chrome bookmarks shared as `Default/` directory, not a single Bookmarks file.**
+  Chrome renames `Bookmarks.tmp` → `Bookmarks`, which detaches a file bind-mount;
+  bookmarks never reached the host. Docs + extensions updated; shared walker skips
+  non-container paths (e.g. `README.md` under `.booth/shared/`).
 - **Fix Google Chrome setup key import in Docker builds.** Overwriting an existing
   apt keyring with `gpg --dearmor -o` without `--batch --yes` prompts on `/dev/tty`
   (missing in BuildKit), which aborted `setup google-chrome` with curl (23).

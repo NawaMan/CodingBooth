@@ -176,9 +176,15 @@ var fieldDisplays = []fieldDisplay{
 
 	// --- Cache ---
 	{Key: "cache-files", Label: "Cache Files", Group: "Cache",
-		Detail: "Files kept in the local build cache so a rebuild does\nnot re-download them.\n\nEach entry is a path relative to the code directory."},
+		Detail: "Container paths (relative to /) kept in the local\n.booth/cache/ bind mounts — host-only, gitignored.\n\nExamples:\n  home/coder/.bash_history\n  home/coder/.claude"},
 	{Key: "cache-dirs", Label: "Cache Dirs", Group: "Cache",
-		Detail: "Directories kept in the local build cache.\n\nEach entry is a path relative to the code directory."},
+		Detail: "Container directories kept under .booth/cache/ as whole-dir\nbind mounts (local only, gitignored).\n\nExamples:\n  home/coder/.mozilla\n  home/coder/.chrome-data"},
+
+	// --- Shared (team / git) ---
+	{Key: "shared-files", Label: "Shared Files", Group: "Shared",
+		Detail: "Container paths kept under .booth/shared/ as live bind\nmounts. Intended for git — team-shared state.\n\nExamples:\n  home/coder/.chrome-data/Default/Bookmarks\n  home/coder/.local/share/code-server/User/settings.json\n\nDo not put secrets or passwords here."},
+	{Key: "shared-dirs", Label: "Shared Dirs", Group: "Shared",
+		Detail: "Container directories kept under .booth/shared/ as whole-dir\nbind mounts. Intended for git — team-shared state.\n\nDo not put secrets, cookies, or full browser profiles."},
 
 	// --- Session ---
 	{Key: "idle-time", Label: "Idle Time", Group: "Session",

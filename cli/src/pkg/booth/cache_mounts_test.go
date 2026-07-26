@@ -117,3 +117,28 @@ func TestProtectedCacheMountsError_NamesPathAndRemedy(t *testing.T) {
 		}
 	}
 }
+
+func TestProtectedPathMountsError_SharedKind(t *testing.T) {
+	err := protectedPathMountsError("shared", []string{"/home/coder/code"})
+	msg := err.Error()
+	for _, want := range []string{"/home/coder/code", ".booth/shared/home/coder/code", "Refusing to start"} {
+		if !strings.Contains(msg, want) {
+			t.Errorf("error message should mention %q, got:\n%s", want, msg)
+		}
+	}
+}
+
+func TestIsMountableContainerPath(t *testing.T) {
+	cases := map[string]bool{
+		"/home/coder/.chrome-data/Default/Bookmarks": true,
+		"/opt/foo":     true,
+		"/README.md":   false,
+		"/shared-note": false,
+		"/":            false,
+	}
+	for p, want := range cases {
+		if got := isMountableContainerPath(p); got != want {
+			t.Errorf("isMountableContainerPath(%q) = %v, want %v", p, got, want)
+		}
+	}
+}

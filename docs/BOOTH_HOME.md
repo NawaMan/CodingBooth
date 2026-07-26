@@ -189,6 +189,12 @@ run-args = [
 > that exist on this machine are passed to Docker, so Docker Desktop will not create empty
 > host directories for the others.
 
+## Live Team State (`.booth/shared/`)
+
+Home seed and override are **copy-in** mechanisms: edits inside the booth do not write back to the project. When the team needs a **live** bind mount of a file outside `/home/coder/code` that **is** committed (bookmarks, editor settings, DB connection defs), use [`.booth/shared/`](BOOTH_SHARED.md) instead (`shared-files` / `shared-dirs`).
+
+---
+
 ## Why You Shouldn't Seed Everything
 
 It's tempting to mount your entire `~/.config` or even `~` into the container. **Don't.**

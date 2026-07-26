@@ -61,6 +61,8 @@ cat /home/coder/code/.booth/Dockerfile  # What's already configured?
 │   ├── setups/                # Custom setup scripts (you create these)
 │   ├── home/                  # Files copied to ~ (override mode)
 │   ├── home-seed/             # Files copied to ~ (no-clobber mode)
+│   ├── cache/                 # Local-only bind mounts (gitignored)
+│   ├── shared/                # Team/git bind mounts (commit these)
 │   └── startup.sh             # Custom startup hook (runs as user)
 
 /opt/codingbooth/              # CodingBooth resources

@@ -69,11 +69,13 @@ type collector struct {
 	buildArgs []string
 
 	// files
-	setups     []output.FileContent
-	home       []output.FileContent
-	homeSeed   []output.FileContent
-	cacheFiles []string
-	cacheDirs  []string
+	setups      []output.FileContent
+	home        []output.FileContent
+	homeSeed    []output.FileContent
+	cacheFiles  []string
+	cacheDirs   []string
+	sharedFiles []string
+	sharedDirs  []string
 }
 
 func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
@@ -188,6 +190,8 @@ func (c *collector) collectFiles(t *tmpl.Template) {
 	}
 	c.cacheFiles = append(c.cacheFiles, t.CacheFiles...)
 	c.cacheDirs = append(c.cacheDirs, t.CacheDirs...)
+	c.sharedFiles = append(c.sharedFiles, t.SharedFiles...)
+	c.sharedDirs = append(c.sharedDirs, t.SharedDirs...)
 }
 
 func (c *collector) setScalar(current *string, currentSource *string, value, source, field string) error {
@@ -296,6 +300,35 @@ func (c *collector) build() (*output.BoothOutput, error) {
 				out.CacheDirs = append(out.CacheDirs, output.FileContent{RelPath: cd})
 			}
 		}
+	}
+
+	// Shared files (dedup, preserve order) — also record on Config so config.toml
+	// documents the selection and ensureSharedFromConfig can re-materialize.
+	if len(c.sharedFiles) > 0 {
+		seen := make(map[string]bool, len(c.sharedFiles))
+		var files []string
+		for _, sf := range c.sharedFiles {
+			if !seen[sf] {
+				seen[sf] = true
+				files = append(files, sf)
+				out.Shared = append(out.Shared, output.FileContent{RelPath: sf})
+			}
+		}
+		cfg.SharedFiles = files
+	}
+
+	// Shared dirs (dedup, preserve order)
+	if len(c.sharedDirs) > 0 {
+		seen := make(map[string]bool, len(c.sharedDirs))
+		var dirs []string
+		for _, sd := range c.sharedDirs {
+			if !seen[sd] {
+				seen[sd] = true
+				dirs = append(dirs, sd)
+				out.SharedDirs = append(out.SharedDirs, output.FileContent{RelPath: sd})
+			}
+		}
+		cfg.SharedDirs = dirs
 	}
 
 	return out, nil

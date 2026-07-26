@@ -43,6 +43,8 @@ type initFlags struct {
 	sets          []string // raw --set key=value strings
 	cacheFiles    []string // cache-files read back from existing config.toml
 	cacheDirs     []string // cache-dirs read back from existing config.toml
+	sharedFiles   []string // shared-files read back from existing config.toml
+	sharedDirs    []string // shared-dirs read back from existing config.toml
 	variant       string
 	port          string
 	templatesPath string
@@ -326,7 +328,10 @@ func compileEmpty(flags initFlags) (*output.BoothOutput, *selection.ResolvedSele
 	}
 	out.Config.CacheFiles = append(out.Config.CacheFiles, flags.cacheFiles...)
 	out.Config.CacheDirs = append(out.Config.CacheDirs, flags.cacheDirs...)
+	out.Config.SharedFiles = append(out.Config.SharedFiles, flags.sharedFiles...)
+	out.Config.SharedDirs = append(out.Config.SharedDirs, flags.sharedDirs...)
 	mergeConfigCache(out)
+	mergeConfigShared(out)
 
 	return out, &selection.ResolvedSelection{}
 }
@@ -446,7 +451,10 @@ func compileSelection(flags initFlags, overrides map[string]string) (*output.Boo
 	}
 	out.Config.CacheFiles = append(out.Config.CacheFiles, flags.cacheFiles...)
 	out.Config.CacheDirs = append(out.Config.CacheDirs, flags.cacheDirs...)
+	out.Config.SharedFiles = append(out.Config.SharedFiles, flags.sharedFiles...)
+	out.Config.SharedDirs = append(out.Config.SharedDirs, flags.sharedDirs...)
 	mergeConfigCache(out)
+	mergeConfigShared(out)
 
 	return out, resolved
 }
@@ -491,6 +499,28 @@ func printDryrun(out *output.BoothOutput) {
 		fmt.Println("=== home-seed/ ===")
 		for _, f := range out.HomeSeed {
 			fmt.Printf("  %s (from %s)\n", f.RelPath, f.SourcePath)
+		}
+		fmt.Println()
+	}
+
+	if len(out.Cache) > 0 || len(out.CacheDirs) > 0 {
+		fmt.Println("=== cache/ ===")
+		for _, f := range out.Cache {
+			fmt.Printf("  %s\n", f.RelPath)
+		}
+		for _, d := range out.CacheDirs {
+			fmt.Printf("  %s/ (.mount-this)\n", d.RelPath)
+		}
+		fmt.Println()
+	}
+
+	if len(out.Shared) > 0 || len(out.SharedDirs) > 0 {
+		fmt.Println("=== shared/ ===")
+		for _, f := range out.Shared {
+			fmt.Printf("  %s\n", f.RelPath)
+		}
+		for _, d := range out.SharedDirs {
+			fmt.Printf("  %s/ (.mount-this)\n", d.RelPath)
 		}
 		fmt.Println()
 	}
@@ -1127,6 +1157,10 @@ func applySetOverrides(cfg *output.ConfigToml, overrides map[string]interface{})
 			cfg.CacheFiles = append(cfg.CacheFiles, asStringList(value)...)
 		case "cache-dirs":
 			cfg.CacheDirs = append(cfg.CacheDirs, asStringList(value)...)
+		case "shared-files":
+			cfg.SharedFiles = append(cfg.SharedFiles, asStringList(value)...)
+		case "shared-dirs":
+			cfg.SharedDirs = append(cfg.SharedDirs, asStringList(value)...)
 		default:
 			cfg.Overrides[key] = value
 		}
@@ -1180,6 +1214,38 @@ func mergeConfigCache(out *output.BoothOutput) {
 		if !seenDirs[cd] {
 			seenDirs[cd] = true
 			out.CacheDirs = append(out.CacheDirs, output.FileContent{RelPath: cd})
+		}
+	}
+}
+
+// mergeConfigShared merges shared-files and shared-dirs from ConfigToml into
+// BoothOutput.Shared and BoothOutput.SharedDirs (same double-source dedupe as cache).
+func mergeConfigShared(out *output.BoothOutput) {
+	if out.Config == nil {
+		return
+	}
+
+	out.Config.SharedFiles = dedupeStrings(out.Config.SharedFiles)
+	out.Config.SharedDirs = dedupeStrings(out.Config.SharedDirs)
+
+	seen := make(map[string]bool, len(out.Shared))
+	for _, f := range out.Shared {
+		seen[f.RelPath] = true
+	}
+	for _, sf := range out.Config.SharedFiles {
+		if !seen[sf] {
+			seen[sf] = true
+			out.Shared = append(out.Shared, output.FileContent{RelPath: sf})
+		}
+	}
+	seenDirs := make(map[string]bool, len(out.SharedDirs))
+	for _, d := range out.SharedDirs {
+		seenDirs[d.RelPath] = true
+	}
+	for _, sd := range out.Config.SharedDirs {
+		if !seenDirs[sd] {
+			seenDirs[sd] = true
+			out.SharedDirs = append(out.SharedDirs, output.FileContent{RelPath: sd})
 		}
 	}
 }

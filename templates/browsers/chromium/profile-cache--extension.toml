@@ -4,5 +4,6 @@ display-order = 91
 tags = ["persistence", "cache", "browser"]
 
 cache-dirs = [
-    "home/coder/.config/chromium",
+    "home/coder/.chrome-data",
 ]
+
