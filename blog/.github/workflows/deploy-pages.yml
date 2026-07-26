@@ -32,8 +32,29 @@ jobs:
         with:
           version: 9
 
-      - name: Build
+      # TWO builds, and the order is forced rather than wasteful.
+      #
+      # The social cards are screenshots OF the built deck, and each slide's `og:image` tag is
+      # baked into its PRERENDERED HTML. So: build once to have something to photograph, take
+      # the photographs, then build again so the tags and the PNGs are in the output. There is
+      # no single-pass version of that — the second build is what puts the cards in the HTML.
+      - name: Build (first pass — gives the capture something to photograph)
         run: pnpm install && pnpm build
+
+      # Regenerates static/og/ — one PNG per slide, gitignored, so nothing is ever committed.
+      # It also wires each slide's `image:` into pages.ts, here in the ephemeral CI workspace:
+      # a slide added since the last run gets its card automatically, and a slide whose `image`
+      # an author set BY HAND is never overwritten (see utils/wire-og.mjs).
+      #
+      # Chrome and python3 are both preinstalled on ubuntu-latest. If a slide fails to capture,
+      # the script exits non-zero and the deploy fails — deliberately: a blank card is worse
+      # than no card, and the failure mode here is silent (a blank slide still yields a
+      # perfectly plausible PNG).
+      - name: Capture social cards
+        run: utils/capture-slides.sh --og
+
+      - name: Build (second pass — bakes og:image in and copies the cards into the site)
+        run: pnpm build
 
       # Requires Pages to be enabled once: Settings -> Pages -> Source: GitHub Actions
       # (or: gh api --method POST repos/<owner>/<repo>/pages -f build_type=workflow).

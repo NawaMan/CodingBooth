@@ -27,6 +27,8 @@
 	--ACCENT-WARM:  #F0A33E;  /* warm complement to ACCENT (titles) */
 	--ON-ACCENT:    #FFFFFF;  /* text over an accent fill           */
 	--BACKDROP:     #000000;  /* letterbox + box overlay surface    */
+	--SCRIM:        #0C0F13F2;/* 8-digit: full-canvas dim (Overview)*/
+	--DANGER:       #E5484D;  /* error / danger accent (Callout)    */
 
 	/* Role deviations: keep the classic light-blue box chrome in dark. */
 	--box-border:   #ADD8E6;
@@ -47,6 +49,8 @@
 	--ACCENT-WARM:  #6EE7A0;  /* titles — bright green (replaces dark's amber)    */
 	--ON-ACCENT:    #06210F;  /* text over an accent fill                        */
 	--BACKDROP:     #000000;  /* letterbox + box overlay surface                 */
+	--SCRIM:        #04120AF2;/* 8-digit: full-canvas dim (Overview)             */
+	--DANGER:       #F2686C;  /* error / danger accent — lifted to read on green */
 
 	/* Role deviations: keep the box chrome in a light mint so overlays read. */
 	--box-border:   #8FE3AE;
@@ -78,4 +82,7 @@
 	--ACCENT-WARM:  #B5712A;  /* deeper orange, readable on light paper */
 	--ON-ACCENT:    #FFFFFF;
 	--BACKDROP:     #E7DFCC;
+	--SCRIM:        #EFE9DAF2;/* 8-digit: full-canvas dim (Overview) — LIGHT here, so
+	                             the grid's own INK/LINE roles keep reading on it */
+	--DANGER:       #C4342B;  /* deeper red, readable on light paper */
 }

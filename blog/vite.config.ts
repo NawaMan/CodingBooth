@@ -1,5 +1,6 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
+import { adjustSavePlugin } from './src/lib/adjust/devSavePlugin';
 
 // Absolute site base URL for SEO/social metadata (og:url, og:image, canonical,
 // sitemap). Consistent with the other GEEKPRESENT_* build vars in svelte.config.js.
@@ -16,7 +17,9 @@ const SITE_URL = (rawSiteUrl === undefined ? DEFAULT_SITE_URL : rawSiteUrl)
 
 export default defineConfig({
 	plugins: [
-		sveltekit()
+		sveltekit(),
+		// Dev-only: ADJUST SAVE (Block patches) and ViewSource SAVE (full +page.svelte).
+		adjustSavePlugin()
 	],
 	// Inject the base URL as a string literal into BOTH the SSR/prerender output and
 	// the client bundle, so prerendered pages carry absolute metadata with no
@@ -25,7 +28,15 @@ export default defineConfig({
 		__GEEKPRESENT_SITE_URL__: JSON.stringify(SITE_URL)
 	},
 	server: {
-		host: '0.0.0.0'
+		host: '0.0.0.0',
+		// Don't recurse the file-watcher into pnpm's content-addressed store or the
+		// nested agent worktrees (worktree/<name>/, each with its OWN .pnpm-store).
+		// The booth bind-mounts the whole project into the container, so without this
+		// Vite tries to watch hundreds of thousands of store files and dies with
+		// `ENOSPC: System limit for number of file watchers reached`.
+		watch: {
+			ignored: ['**/.pnpm-store/**', '**/worktree/**']
+		}
 	},
 	optimizeDeps: {
         exclude: ["codemirror", "@codemirror/language-javascript"],

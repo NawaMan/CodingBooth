@@ -1,5 +1,6 @@
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
+	import { mnMarkup } from '$lib/chrome/mnemonicCore';
 
     export let text       = 'Btn';
     export let hoverText  = '';
@@ -10,12 +11,19 @@
 	   frame. In-page buttons leave it false and get the prominent, eye-catching
 	   look by default — so a slide author doesn't have to opt in. */
 	export let chrome     = false;
+	/** Optional letter to underline in `text` / `hoverText` (chrome keyboard mnemonics). */
+	export let mnemonic   = '';
 
 	onMount(() => {
 		if (!hoverText) {
 			hoverText = text;
 		}
 	});
+
+	// Contiguous HTML so the letter is not split from the rest of the word in the
+	// a11y tree (see mnMarkup). Plain text when no mnemonic.
+	$: textHtml = mnemonic ? mnMarkup(text, mnemonic) : '';
+	$: hoverHtml = mnemonic ? mnMarkup(hoverText || text, mnemonic) : '';
 </script>
 
 <style>
@@ -33,6 +41,9 @@
 		text-justify: center;
 		text-align: center;
 		font-weight: bold;
+		/* Keep the label on ONE line — a chrome button squeezed narrow (the tool bar's
+		   "FITTED (Z)" chip, a pager's "PREV") must never wrap a key hint under the word. */
+		white-space: nowrap;
 
 		/* Default (in-page) look: prominent / eye-catching — a filled accent-blue
 		   button with white text, so it reads clearly as a clickable affordance
@@ -98,14 +109,36 @@
 	button.hidden {
 		display: none;
 	}
+	/* Mnemonic underline — shared look with the ☰ menu's `.tool-mn`. */
+	:global(.chrome-mn) {
+		text-decoration: underline;
+		text-underline-offset: 0.18em;
+		text-decoration-thickness: 1px;
+	}
 </style>
 
+<!-- When a mnemonic splits the label across a span, set aria-label to the full
+     word so the accessible name stays "Table of Contents" (not a letter-split
+     reading). Visual underline is decorative. -->
 <button
 	disabled={isDisabled}
 	class:chrome={chrome}
 	class:selected={isSelected}
 	class:hidden={!isVisible}
+	aria-label={mnemonic ? text : undefined}
 	on:click>
-	<span class="text"      >{text}</span>
-	<span class="hover-text">{hoverText}</span>
+	<span class="text" aria-hidden={mnemonic ? 'true' : undefined}>
+		{#if mnemonic}
+			{@html textHtml}
+		{:else}
+			{text}
+		{/if}
+	</span>
+	<span class="hover-text" aria-hidden={mnemonic ? 'true' : undefined}>
+		{#if mnemonic}
+			{@html hoverHtml}
+		{:else}
+			{hoverText}
+		{/if}
+	</span>
 </button>
