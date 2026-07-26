@@ -1,0 +1,9 @@
+display-name = "Lab Settings Shared"
+display-disc = "Team-share JupyterLab user-settings via git (.booth/shared)"
+display-detail = """Live-bind-mounts ~/.jupyter/lab/user-settings/ for team UI/editor prefs. Do not commit tokens, GitHub credentials, or server secrets into these JSON files. Does not share notebooks (those live in the project) or full ~/.jupyter (may hold cookies)."""
+display-order = 92
+tags = ["persistence", "shared", "jupyter", "notebook", "git", "no-secrets"]
+
+shared-dirs = [
+    "home/coder/.jupyter/lab/user-settings",
+]

@@ -1,0 +1,9 @@
+display-name = "Config Shared"
+display-disc = "Team-share Neovim config via git (.booth/shared) — conservative"
+display-detail = """Live-bind-mounts ~/.config/nvim/ for team init.lua and Lua modules. Commit only config; strip plugin local state. Do not put API tokens, machine-local absolute paths to secrets, or credential files in this tree. For host personal config without git, use the existing +config host-seed mount instead."""
+display-order = 92
+tags = ["persistence", "shared", "neovim", "git", "no-secrets"]
+
+shared-dirs = [
+    "home/coder/.config/nvim",
+]

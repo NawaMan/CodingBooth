@@ -157,12 +157,32 @@ bookmark bar. Edit the setup scripts under `variants/base/setups/` for your team
 | [`docs/samples/browser-shared-chrome-Default.gitignore`](samples/browser-shared-chrome-Default.gitignore) | `.booth/shared/…/.chrome-data/Default/` |
 | [`docs/samples/browser-shared-firefox.gitignore`](samples/browser-shared-firefox.gitignore) | `.booth/shared/…/.mozilla/firefox/` |
 
-### Other tools
+### Editors & tools (shared only — **no secrets**)
 
-| Template selection | Shared path |
-|--------------------|-------------|
-| `codeserver+settings-shared` | `~/.local/share/code-server/User/settings.json` |
-| `dbeaver+connections-shared` | `…/DBeaverData/…/data-sources.json` |
+| Selection | Path | Share | Never share |
+|-----------|------|-------|-------------|
+| `codeserver+settings-shared` | `User/settings.json` | team editor prefs | tokens, proxy passwords in settings |
+| `codeserver+keybindings-shared` | `User/keybindings.json` | keybindings | — |
+| `codeserver+snippets-shared` | `User/snippets/` | snippets | secrets in snippet bodies |
+| `neovim+config-shared` | `~/.config/nvim/` | init.lua / Lua config | API tokens, credential files |
+| `notebook+lab-settings-shared` | `~/.jupyter/lab/user-settings/` | Lab UI prefs | cookies, GitHub tokens |
+| `dbeaver+connections-shared` | DBeaver `data-sources.json` | host/port/db/user | **passwords**, secure storage |
+| `zsh+starship-shared` | `~/.config/starship.toml` | prompt theme | API keys in custom modules |
+| `xfce+keyboard-shortcuts-shared` | XFCE keyboard xfconf XML | desktop shortcuts | full session / other xfce4 trees |
+
+All use `shared-files` / `shared-dirs` only (**not** `cache-*`). Prefer **host seed**
+for credentials (`/etc/cb-home-seed`). Prefer **project files** for lint/CI config
+when the setting is really project-scoped.
+
+### Explicitly out of scope (conservative)
+
+| State | Why not shared |
+|-------|----------------|
+| code-server / VS Code **extensions** + **globalStorage** | large; often holds tokens |
+| JetBrains full config / license | versioned product dirs; licenses; secrets |
+| Warp / cloud CLI credentials | secrets — use credential seed extensions |
+| Shell history, browser cookies, password DBs | secrets / personal |
+| Whole `~/.config` or whole home | too broad; “works on my machine” |
 
 ### Example workspace
 
