@@ -1,0 +1,9 @@
+display-name = "Snippets Shared"
+display-disc = "Team-share code-server User/snippets via git (.booth/shared)"
+display-detail = """Live-bind-mounts User/snippets/ for team code snippets. Snippets should not hold secrets. Does not share extensions or globalStorage."""
+display-order = 94
+tags = ["persistence", "shared", "vscode", "code-server", "git", "no-secrets"]
+
+shared-dirs = [
+    "home/coder/.local/share/code-server/User/snippets",
+]

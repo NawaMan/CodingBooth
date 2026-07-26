@@ -1,0 +1,20 @@
+display-name = "Drivers Shared"
+display-disc = "Durable DBeaver JDBC drivers + registry (not connections)"
+display-detail = """Live-bind-mounts two paths under .booth/shared/ (not cache):
+
+1) ~/.local/share/DBeaverData/drivers/ — downloaded JDBC JARs
+2) ~/.local/share/DBeaverData/workspace6/.metadata/.config/ — includes drivers.xml (driver registry)
+
+JARs alone are not enough: DBeaver records installed drivers in workspace
+.metadata/.config/drivers.xml. Without that file, a restart still prompts to re-download
+even when jars remain on disk. Separate from +connections-shared and +scripts-shared.
+JARs are bulky — prefer durable disk; gitignore jars (docs/samples/dbeaver-drivers.gitignore).
+Do not share full DBeaverData or secure credential stores."""
+display-order = 93
+tags = ["persistence", "shared", "database", "dbeaver", "drivers", "git", "no-secrets"]
+
+shared-dirs = [
+    "home/coder/.local/share/DBeaverData/drivers",
+    # Driver Manager registry (drivers.xml). Required so DBeaver reuses jars after restart.
+    "home/coder/.local/share/DBeaverData/workspace6/.metadata/.config",
+]

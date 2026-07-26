@@ -1,0 +1,9 @@
+display-name = "Keybindings Shared"
+display-disc = "Team-share code-server keybindings.json via git (.booth/shared)"
+display-detail = """Live-bind-mounts User/keybindings.json only. Safe team defaults (no secrets). Does not share extensions, globalStorage, state DB, or tokens — use +settings-cache only for local full IDE state."""
+display-order = 93
+tags = ["persistence", "shared", "vscode", "code-server", "git", "no-secrets"]
+
+shared-files = [
+    "home/coder/.local/share/code-server/User/keybindings.json",
+]

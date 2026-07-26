@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Conservative team shared configs (no secrets).** Additional `shared-*`
+  extensions for code-server keybindings/snippets, Neovim config, JupyterLab
+  user-settings, XFCE keyboard shortcuts, and Starship prompt — all
+  `shared-files`/`shared-dirs` only. Docs list explicit non-goals (IDE extension
+  stores, JetBrains licenses, credentials, shell history).
+- **DBeaver drivers and SQL scripts as separate shared extensions.**
+  `dbeaver+drivers-shared` mounts `DBeaverData/drivers/` **and**
+  `workspace6/.metadata/.config/` (for `drivers.xml` registry — jars alone still
+  re-download). `dbeaver+scripts-shared` mounts project `Scripts/`. Sample
+  gitignores for driver jars / metadata config.
+
 - **`.booth/shared/` — team/git live state.** First-class bind mounts for selected
   paths outside `/home/coder/code` that are **meant to be committed** (mirror of
   `.booth/cache/` layout, opposite git policy). Config keys `shared-files` /

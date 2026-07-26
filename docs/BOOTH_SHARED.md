@@ -157,12 +157,51 @@ bookmark bar. Edit the setup scripts under `variants/base/setups/` for your team
 | [`docs/samples/browser-shared-chrome-Default.gitignore`](samples/browser-shared-chrome-Default.gitignore) | `.booth/shared/…/.chrome-data/Default/` |
 | [`docs/samples/browser-shared-firefox.gitignore`](samples/browser-shared-firefox.gitignore) | `.booth/shared/…/.mozilla/firefox/` |
 
-### Other tools
+### Editors & tools (shared only — **no secrets**)
 
-| Template selection | Shared path |
-|--------------------|-------------|
-| `codeserver+settings-shared` | `~/.local/share/code-server/User/settings.json` |
-| `dbeaver+connections-shared` | `…/DBeaverData/…/data-sources.json` |
+| Selection | Path | Share | Never share |
+|-----------|------|-------|-------------|
+| `codeserver+settings-shared` | `User/settings.json` | team editor prefs | tokens, proxy passwords in settings |
+| `codeserver+keybindings-shared` | `User/keybindings.json` | keybindings | — |
+| `codeserver+snippets-shared` | `User/snippets/` | snippets | secrets in snippet bodies |
+| `neovim+config-shared` | `~/.config/nvim/` | init.lua / Lua config | API tokens, credential files |
+| `notebook+lab-settings-shared` | `~/.jupyter/lab/user-settings/` | Lab UI prefs | cookies, GitHub tokens |
+| `dbeaver+connections-shared` | `…/.dbeaver/data-sources.json` | host/port/db/user | **passwords**, secure storage |
+| `dbeaver+drivers-shared` | `…/DBeaverData/drivers/` | JDBC JARs (durable) | n/a (bulky; often gitignore jars) |
+| `dbeaver+scripts-shared` | `…/workspace6/General/Scripts/` | saved SQL in DBeaver | credentials in SQL |
+| `zsh+starship-shared` | `~/.config/starship.toml` | prompt theme | API keys in custom modules |
+| `xfce+keyboard-shortcuts-shared` | XFCE keyboard xfconf XML | desktop shortcuts | full session / other xfce4 trees |
+
+### DBeaver: separate concerns
+
+| Extension | Path | Git? |
+|-----------|------|------|
+| **connections** | `.dbeaver/data-sources.json` | Yes — **no passwords** |
+| **drivers** | `DBeaverData/drivers/` **and** `workspace6/.metadata/.config/` (for `drivers.xml`) | Durable mount; **gitignore JARs**; keep `drivers.xml` |
+| **scripts** | `workspace6/General/Scripts/` | Yes — team SQL; or keep scripts under project `sql/` instead |
+
+**Why drivers need two paths:** JARs land in `drivers/`, but DBeaver records
+“which libraries belong to which driver” in
+`workspace6/.metadata/.config/drivers.xml`. Sharing only the jars still forces a
+re-download prompt on the next cold home.
+
+**Settings (UI prefs):** other files under `workspace6/.metadata/` are mixed state.
+**Do not** share the whole workspace by default. Prefer connections + drivers +
+scripts; use `--persist-home` for a personal full UI state.
+
+All use `shared-files` / `shared-dirs` only (**not** `cache-*`). Prefer **host seed**
+for credentials (`/etc/cb-home-seed`). Prefer **project files** for lint/CI config
+when the setting is really project-scoped.
+
+### Explicitly out of scope (conservative)
+
+| State | Why not shared |
+|-------|----------------|
+| code-server / VS Code **extensions** + **globalStorage** | large; often holds tokens |
+| JetBrains full config / license | versioned product dirs; licenses; secrets |
+| Warp / cloud CLI credentials | secrets — use credential seed extensions |
+| Shell history, browser cookies, password DBs | secrets / personal |
+| Whole `~/.config` or whole home | too broad; “works on my machine” |
 
 ### Example workspace
 

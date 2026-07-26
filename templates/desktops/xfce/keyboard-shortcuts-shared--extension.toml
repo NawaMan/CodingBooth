@@ -1,0 +1,9 @@
+display-name = "Keyboard Shortcuts Shared"
+display-disc = "Team-share XFCE keyboard shortcuts via git (.booth/shared)"
+display-detail = """Live-bind-mounts the XFCE keyboard-shortcuts xfconf XML only. Safe team keybindings for the lab desktop. Does not share full xfce4 config, sessions, or anything with credentials."""
+display-order = 92
+tags = ["persistence", "shared", "desktop", "xfce", "git", "no-secrets"]
+
+shared-files = [
+    "home/coder/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml",
+]

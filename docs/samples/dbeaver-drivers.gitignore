@@ -1,0 +1,5 @@
+# Sample .gitignore for .booth/shared/home/coder/.local/share/DBeaverData/drivers/
+# Keep the mount durable on disk; usually do NOT commit JARs (repo bloat).
+*
+!.gitignore
+!.mount-this
