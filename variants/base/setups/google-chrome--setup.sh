@@ -28,10 +28,18 @@ export DEBIAN_FRONTEND=noninteractive
 echo "🔧 Installing Google Chrome (DEB repo, no snap)…"
 
 # add Google’s key + repo (idempotent)
+# Desktop base images often already ship this keyring. Overwriting with
+# `gpg --dearmor -o existing.gpg` (no --batch/--yes) prompts on /dev/tty, which
+# does not exist in Docker builds → "cannot open '/dev/tty'" and curl (23).
+# Fetch to a temp file and dearmor with --batch --yes (stdin/stdout).
 install -d -m 0755 /etc/apt/keyrings
-curl -fsSL https://dl.google.com/linux/linux_signing_key.pub \
-  | gpg --dearmor -o /etc/apt/keyrings/google-linux-signing-keyring.gpg
-chmod 0644 /etc/apt/keyrings/google-linux-signing-keyring.gpg
+KEYRING=/etc/apt/keyrings/google-linux-signing-keyring.gpg
+TMP_KEY="$(mktemp)"
+curl -fsSL --retry 5 --retry-delay 2 --retry-all-errors \
+  https://dl.google.com/linux/linux_signing_key.pub -o "${TMP_KEY}"
+gpg --batch --yes --dearmor < "${TMP_KEY}" > "${KEYRING}"
+chmod 0644 "${KEYRING}"
+rm -f "${TMP_KEY}"
 
 arch="$(dpkg --print-architecture)"   # amd64 or arm64
 cat > /etc/apt/sources.list.d/google-chrome.list <<EOF

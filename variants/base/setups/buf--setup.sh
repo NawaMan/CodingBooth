@@ -51,15 +51,28 @@ apt-get update
 apt-get install -y --no-install-recommends curl ca-certificates
 rm -rf /var/lib/apt/lists/*
 
+# Known-good pin when the GitHub API is rate-limited or returns minified JSON
+# that older parsers mis-read (see mkcert--setup.sh for the "eyes" failure mode).
+FALLBACK_VERSION="1.50.0"
+
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/bufbuild/buf/releases/latest \
-    | grep '"tag_name"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+  # Match the tag_name *key* only — never sed the whole JSON line (minified
+  # payloads put everything on one line; greedy sed grabs the last quote).
+  VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
+              https://api.github.com/repos/bufbuild/buf/releases/latest 2>/dev/null \
+            | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
+            | head -1 \
+            | sed -E 's/.*"v?([^"]+)".*/\1/' || true)
+  if [[ -z "$VERSION" ]] || ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "⚠️  Could not resolve latest buf from GitHub (got '${VERSION:-empty}'); falling back to v${FALLBACK_VERSION}." >&2
+    VERSION="$FALLBACK_VERSION"
+  fi
 else
   VERSION="${REQ_VER#v}"
 fi
 
-if [[ -z "${VERSION}" ]]; then
-  echo "❌ Could not resolve buf version" >&2
+if [[ -z "${VERSION}" ]] || ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+  echo "❌ Could not resolve buf version (got '${VERSION:-empty}')" >&2
   exit 1
 fi
 

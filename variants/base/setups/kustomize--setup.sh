@@ -46,7 +46,7 @@ apt-get install -y --no-install-recommends curl ca-certificates tar
 rm -rf /var/lib/apt/lists/*
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL "https://api.github.com/repos/kubernetes-sigs/kustomize/releases?per_page=30" | grep '"tag_name"' | grep 'kustomize/v' | head -1 | sed -E 's|.*"kustomize/v([^"]+)".*|\1|')
+  VERSION=$(curl -fsSL "https://api.github.com/repos/kubernetes-sigs/kustomize/releases?per_page=30" | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"kustomize/v[^"]+"' | head -1 | sed -E 's|.*"kustomize/v([^"]+)".*|\1|')
 else
   VERSION="${REQ_VER#v}"
 fi

@@ -4,6 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fix Google Chrome setup key import in Docker builds.** Overwriting an existing
+  apt keyring with `gpg --dearmor -o` without `--batch --yes` prompts on `/dev/tty`
+  (missing in BuildKit), which aborted `setup google-chrome` with curl (23).
+
+- **Fix GitHub “latest” version resolution under minified API JSON.** Several setup
+  scripts used `grep '"tag_name"' | sed 's/.*"v?\([^"]+\)".*/\1/'`, which on a
+  single-line (minified) release payload captures the *last* quoted token — often
+  the reactions key `"eyes"` — instead of the tag. That broke `setup mkcert`
+  (`Invalid mkcert version resolved: 'eyes'`) and `setup buf` during complex
+  tests. Parsing now extracts the `tag_name` key with `grep -oE`, and mkcert/buf
+  fall back to a known-good pin when resolution still fails.
+
 - **Binary companion templates (Phase 1).** Selectable tools for companions that used
   to need raw `*-pkg` knowledge: `protobuf` (apt `protobuf-compiler` / `protoc`, with a
   `go` extension for `protoc-gen-go` and `protoc-gen-go-grpc`), `buf` (official GitHub

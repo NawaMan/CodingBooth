@@ -55,11 +55,19 @@ if [[ "$REQ_VER" == "latest" ]]; then
   # --retry-all-errors so a 429 (rate limit) / 5xx is retried too; plain --retry
   # only covers connection-level errors, letting an HTTP error through on the
   # first try.
+  #
+  # Extract the tag_name *key* with grep -oE — do NOT use
+  #   grep '"tag_name"' | sed 's/.*"v?\([^"]+\)".*/\1/'
+  # on a whole JSON line. Minified GitHub API payloads put the entire object on
+  # one line; the greedy sed then captures the *last* quoted token (often the
+  # reactions key "eyes"), producing nonsense versions like 'eyes'.
   VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
               https://api.github.com/repos/FiloSottile/mkcert/releases/latest 2>/dev/null \
-            | grep '"tag_name"' | sed -E 's/.*"v?([^"]+)".*/\1/' || true)
-  if [[ -z "$VERSION" ]]; then
-    echo "⚠️  Could not resolve latest mkcert from GitHub (rate limit or network); falling back to v${FALLBACK_VERSION}." >&2
+            | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
+            | head -1 \
+            | sed -E 's/.*"v?([^"]+)".*/\1/' || true)
+  if [[ -z "$VERSION" ]] || ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "⚠️  Could not resolve latest mkcert from GitHub (got '${VERSION:-empty}'); falling back to v${FALLBACK_VERSION}." >&2
     VERSION="$FALLBACK_VERSION"
   fi
 else
@@ -67,7 +75,7 @@ else
 fi
 
 if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "❌ Invalid mkcert version resolved: '${VERSION}'" >&2
+  echo "❌ Invalid mkcert version: '${VERSION}'" >&2
   exit 1
 fi
 

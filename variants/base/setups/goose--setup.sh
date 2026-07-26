@@ -50,7 +50,8 @@ REPO="aaif-goose/goose"
 if [[ "$REQ_VER" == "latest" ]]; then
   # Prefer the stable tag pointer when available; else latest release.
   VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
-    | grep -m1 '"tag_name"' \
+    | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
+    | head -1 \
     | sed -E 's/.*"v?([^"]+)".*/\1/')
   RELEASE_TAG="v${VERSION}"
   # If a floating "stable" release exists, use it for the download URL.

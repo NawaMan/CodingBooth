@@ -45,7 +45,7 @@ apt-get install -y --no-install-recommends curl ca-certificates
 rm -rf /var/lib/apt/lists/*
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/k3d-io/k3d/releases/latest | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/')
+  VERSION=$(curl -fsSL https://api.github.com/repos/k3d-io/k3d/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/')
 else
   VERSION="${REQ_VER#v}"
 fi
