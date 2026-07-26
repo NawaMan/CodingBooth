@@ -34,6 +34,11 @@ This file contains a list of changes for each released version.
   Firefox — all use `shared-dirs` under `.booth/shared/` only. Chrome family:
   settings → `Default/`, extensions → `Default/Extensions/`. Firefox: whole
   `~/.mozilla/firefox/` (profile holds prefs and add-ons).
+- **Browser managed-policies extensions + sample gitignores.**
+  `+managed-policies` runs `chrome-managed-policies` / `firefox-managed-policies`
+  setups (enterprise JSON under `/etc/…`). Sample `.gitignore` files under
+  `docs/samples/` for Chrome `Default/` and Firefox `firefox/`. Example workspace:
+  `examples/workspaces/browser-shared-example/`.
 
 - **Binary companion templates (Phase 1).** Selectable tools for companions that used
   to need raw `*-pkg` knowledge: `protobuf` (apt `protobuf-compiler` / `protoc`, with a

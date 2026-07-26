@@ -1,0 +1,24 @@
+# Sample .gitignore for .booth/shared/home/coder/.mozilla/firefox/
+# Copy into the shared firefox/ tree when committing team state.
+# Profiles are named by Firefox (e.g. *.default-release/); paths below are globs.
+
+*
+!.gitignore
+!.mount-this
+!profiles.ini
+!installs.ini
+!*.default*/
+!*.default*/**
+
+# Drop noisy / sensitive pieces even inside the profile
+**/*cookies*
+**/logins.json
+**/key4.db
+**/cert9.db
+**/storage/**
+**/cache2/**
+**/startupCache/**
+**/shader-cache/**
+**/datareporting/**
+**/saved-telemetry-pings/**
+**/*parentlock*

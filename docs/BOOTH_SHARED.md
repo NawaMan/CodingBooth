@@ -140,12 +140,34 @@ Selecting bookmarks **or** settings **or** extensions for Firefox is enough for 
 three (same `firefox/` tree). Extensions-only Chrome mount is for sharing add-ons
 without the rest of `Default/`.
 
+### Managed policies (build-time, not shared/cache)
+
+| Selection | Effect |
+|-----------|--------|
+| `google-chrome+managed-policies` / `chromium+managed-policies` | `setup chrome-managed-policies` → `/etc/opt/chrome/policies/managed/` |
+| `firefox+managed-policies` | `setup firefox-managed-policies` → `/etc/firefox/policies/policies.json` |
+
+Sample policies disable password manager / sync-friendly sign-in and enable the
+bookmark bar. Edit the setup scripts under `variants/base/setups/` for your team.
+
+### Sample gitignores
+
+| File | Use under |
+|------|-----------|
+| [`docs/samples/browser-shared-chrome-Default.gitignore`](samples/browser-shared-chrome-Default.gitignore) | `.booth/shared/…/.chrome-data/Default/` |
+| [`docs/samples/browser-shared-firefox.gitignore`](samples/browser-shared-firefox.gitignore) | `.booth/shared/…/.mozilla/firefox/` |
+
 ### Other tools
 
 | Template selection | Shared path |
 |--------------------|-------------|
 | `codeserver+settings-shared` | `~/.local/share/code-server/User/settings.json` |
 | `dbeaver+connections-shared` | `…/DBeaverData/…/data-sources.json` |
+
+### Example workspace
+
+[`examples/workspaces/browser-shared-example/`](../examples/workspaces/browser-shared-example/) —
+XFCE + Chrome + Firefox, shared dirs, sample gitignores, managed-policies setups.
 
 All are **opt-in** (`auto-select = false`).
 

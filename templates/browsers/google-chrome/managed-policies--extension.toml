@@ -1,0 +1,10 @@
+display-name = "Managed Policies"
+display-disc = "Team Chrome enterprise policies at build time (not cache / not shared)"
+display-detail = """Runs setup chrome-managed-policies to install sample managed JSON under /etc/opt/chrome/policies/managed/ (and Chromium path when present). Enforced defaults: bookmark bar, no password manager, no browser sign-in/sync. Use +extensions-shared for git CRX trees; use this for admin policy. Not live under .booth/shared."""
+display-order = 95
+tags = ["browser", "chrome", "policy", "team"]
+
+[segments]
+"Boothfile--65" = """
+setup chrome-managed-policies
+"""

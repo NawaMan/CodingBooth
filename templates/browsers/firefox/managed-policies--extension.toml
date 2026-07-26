@@ -1,0 +1,10 @@
+display-name = "Managed Policies"
+display-disc = "Team Firefox enterprise policies at build time (not cache / not shared)"
+display-detail = """Runs setup firefox-managed-policies → /etc/firefox/policies/policies.json. Sample: bookmarks toolbar, no password manager, no telemetry. Distinct from +extensions-shared (profile add-ons in git)."""
+display-order = 95
+tags = ["browser", "firefox", "policy", "team"]
+
+[segments]
+"Boothfile--65" = """
+setup firefox-managed-policies
+"""
