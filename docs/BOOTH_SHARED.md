@@ -172,18 +172,22 @@ bookmark bar. Edit the setup scripts under `variants/base/setups/` for your team
 | `zsh+starship-shared` | `~/.config/starship.toml` | prompt theme | API keys in custom modules |
 | `xfce+keyboard-shortcuts-shared` | XFCE keyboard xfconf XML | desktop shortcuts | full session / other xfce4 trees |
 
-### DBeaver: three separate concerns
+### DBeaver: separate concerns
 
 | Extension | Path | Git? |
 |-----------|------|------|
 | **connections** | `.dbeaver/data-sources.json` | Yes — **no passwords** |
-| **drivers** | `DBeaverData/drivers/` | Durable mount; **gitignore JARs** by default (see `docs/samples/dbeaver-drivers.gitignore`) |
+| **drivers** | `DBeaverData/drivers/` **and** `workspace6/.metadata/.config/` (for `drivers.xml`) | Durable mount; **gitignore JARs**; keep `drivers.xml` |
 | **scripts** | `workspace6/General/Scripts/` | Yes — team SQL; or keep scripts under project `sql/` instead |
 
-**Settings (UI prefs):** live under `workspace6/` (Eclipse-style metadata), mixed with
-state. **Do not** share the whole workspace by default (secrets/noise). Prefer
-connections + scripts + drivers; leave general UI prefs ephemeral or use
-`--persist-home` for a personal booth.
+**Why drivers need two paths:** JARs land in `drivers/`, but DBeaver records
+“which libraries belong to which driver” in
+`workspace6/.metadata/.config/drivers.xml`. Sharing only the jars still forces a
+re-download prompt on the next cold home.
+
+**Settings (UI prefs):** other files under `workspace6/.metadata/` are mixed state.
+**Do not** share the whole workspace by default. Prefer connections + drivers +
+scripts; use `--persist-home` for a personal full UI state.
 
 All use `shared-files` / `shared-dirs` only (**not** `cache-*`). Prefer **host seed**
 for credentials (`/etc/cb-home-seed`). Prefer **project files** for lint/CI config

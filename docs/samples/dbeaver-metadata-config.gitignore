@@ -1,0 +1,6 @@
+# For .booth/shared/.../workspace6/.metadata/.config/
+# Keep driver registry; drop unrelated Eclipse prefs that may appear later.
+*
+!.gitignore
+!.mount-this
+!drivers.xml

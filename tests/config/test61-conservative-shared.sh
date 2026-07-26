@@ -49,6 +49,8 @@ assert_file "$prj/.booth/shared/home/coder/.local/share/DBeaverData/workspace6/G
   "dbeaver data-sources"
 assert_file "$prj/.booth/shared/home/coder/.local/share/DBeaverData/drivers/.mount-this" \
   "dbeaver drivers dir"
+assert_file "$prj/.booth/shared/home/coder/.local/share/DBeaverData/workspace6/.metadata/.config/.mount-this" \
+  "dbeaver drivers.xml config dir"
 assert_file "$prj/.booth/shared/home/coder/.local/share/DBeaverData/workspace6/General/Scripts/.mount-this" \
   "dbeaver Scripts dir"
 

@@ -10,9 +10,10 @@ This file contains a list of changes for each released version.
   `shared-files`/`shared-dirs` only. Docs list explicit non-goals (IDE extension
   stores, JetBrains licenses, credentials, shell history).
 - **DBeaver drivers and SQL scripts as separate shared extensions.**
-  `dbeaver+drivers-shared` mounts `DBeaverData/drivers/` (durable JARs, distinct
-  from connections). `dbeaver+scripts-shared` mounts project `Scripts/`. Sample
-  gitignore for drivers jars.
+  `dbeaver+drivers-shared` mounts `DBeaverData/drivers/` **and**
+  `workspace6/.metadata/.config/` (for `drivers.xml` registry — jars alone still
+  re-download). `dbeaver+scripts-shared` mounts project `Scripts/`. Sample
+  gitignores for driver jars / metadata config.
 
 - **`.booth/shared/` — team/git live state.** First-class bind mounts for selected
   paths outside `/home/coder/code` that are **meant to be committed** (mirror of
