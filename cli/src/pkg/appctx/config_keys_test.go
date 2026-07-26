@@ -46,7 +46,7 @@ func TestConfigKeys_IncludesKeysReadOutsideAppConfig(t *testing.T) {
 	// and any validation built on it would reject two perfectly valid keys.
 	keys := ConfigKeys()
 
-	for _, key := range []string{"cache-files", "cache-dirs"} {
+	for _, key := range []string{"cache-files", "cache-dirs", "shared-files", "shared-dirs"} {
 		spec, ok := keys[key]
 		assert.True(t, ok, "%s is read from config.toml and must be known", key)
 		assert.Equal(t, KeyList, spec.Kind)

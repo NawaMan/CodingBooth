@@ -75,6 +75,7 @@ Understanding what persists across container restarts is critical:
 - **Your code is safe** — it lives on the host and is never lost
 - **Home directory customizations** — use `.booth/home/` or `.booth/home-seed/` to persist dotfiles (see [Home Directory Guide](BOOTH_HOME.md))
 - **Home directory state** — use `.booth/cache/` to persist shell history, tool configs, and other runtime state across sessions (see [Local Cache Guide](BOOTH_LOCALCACHE.md))
+- **Team-shared live state** — use `.booth/shared/` for git-friendly bind mounts (bookmarks, editor settings, DB connections) (see [Shared State Guide](BOOTH_SHARED.md))
 - **Installed tools** — add them to your `.booth/Dockerfile` (or `Boothfile`) so they're rebuilt each time
 - **Container state** — treat containers as disposable; rebuild rather than modify
 

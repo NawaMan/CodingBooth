@@ -356,6 +356,8 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 	flags.cmds = result.ListFields["cmds"]
 	flags.cacheFiles = result.ListFields["cache-files"]
 	flags.cacheDirs = result.ListFields["cache-dirs"]
+	flags.sharedFiles = result.ListFields["shared-files"]
+	flags.sharedDirs = result.ListFields["shared-dirs"]
 
 	// Apply TUI-only list fields. These compile into run-args rather than
 	// carrying a config.toml key of their own.
@@ -487,11 +489,13 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 // The TUI still speaks for them: they are stripped from the baseline like every
 // other rendered key, just re-applied through their flag.
 var tuiFlagCarriedKeys = map[string]bool{
-	"variant":     true,
-	"port":        true,
-	"cmds":        true,
-	"cache-files": true,
-	"cache-dirs":  true,
+	"variant":      true,
+	"port":         true,
+	"cmds":         true,
+	"cache-files":  true,
+	"cache-dirs":   true,
+	"shared-files": true,
+	"shared-dirs":  true,
 }
 
 // triStateSetKeys are config keys booth decodes as booleans but the TUI renders
@@ -631,7 +635,7 @@ func dropUnknownSets(sets []string, source string) []string {
 }
 
 // extractUserRunArgs reads config.toml and extracts user-set run-args
-// (long-form --env, --publish, --volume) and cache-files/cache-dirs back into initFlags.
+// (long-form --env, --publish, --volume) and cache/shared path lists back into initFlags.
 func extractUserRunArgs(targetPath string, flags *initFlags) {
 	configPath := filepath.Join(targetPath, ".booth", "config.toml")
 	data, err := os.ReadFile(configPath)
@@ -640,17 +644,21 @@ func extractUserRunArgs(targetPath string, flags *initFlags) {
 	}
 
 	var cfg struct {
-		RunArgs    []string `toml:"run-args"`
-		CacheFiles []string `toml:"cache-files"`
-		CacheDirs  []string `toml:"cache-dirs"`
+		RunArgs     []string `toml:"run-args"`
+		CacheFiles  []string `toml:"cache-files"`
+		CacheDirs   []string `toml:"cache-dirs"`
+		SharedFiles []string `toml:"shared-files"`
+		SharedDirs  []string `toml:"shared-dirs"`
 	}
 	if _, err := toml.Decode(string(data), &cfg); err != nil {
 		return
 	}
 
-	// Preserve cache-files and cache-dirs from existing config.toml
+	// Preserve cache/shared path lists from existing config.toml
 	flags.cacheFiles = append(flags.cacheFiles, cfg.CacheFiles...)
 	flags.cacheDirs = append(flags.cacheDirs, cfg.CacheDirs...)
+	flags.sharedFiles = append(flags.sharedFiles, cfg.SharedFiles...)
+	flags.sharedDirs = append(flags.sharedDirs, cfg.SharedDirs...)
 
 	// Decompose long-form paired flags back into typed fields
 	for i := 0; i < len(cfg.RunArgs); i++ {
@@ -828,6 +836,12 @@ func buildPreSelection(registry *tmpl.TemplateRegistry, flags initFlags, existin
 	}
 	if len(flags.cacheDirs) > 0 {
 		pre.ListFields["cache-dirs"] = flags.cacheDirs
+	}
+	if len(flags.sharedFiles) > 0 {
+		pre.ListFields["shared-files"] = flags.sharedFiles
+	}
+	if len(flags.sharedDirs) > 0 {
+		pre.ListFields["shared-dirs"] = flags.sharedDirs
 	}
 
 	// Parse --set flags to extract config values

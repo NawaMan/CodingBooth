@@ -48,6 +48,8 @@ type specToml struct {
 	Files        filesToml            `toml:"files"`
 	CacheFiles   []string             `toml:"cache-files"`
 	CacheDirs    []string             `toml:"cache-dirs"`
+	SharedFiles  []string             `toml:"shared-files"`
+	SharedDirs   []string             `toml:"shared-dirs"`
 }
 
 type filesToml struct {
@@ -268,6 +270,22 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 	}
 	tmpl.CacheDirs = spec.CacheDirs
 
+	// Validate and assign shared-files
+	for _, sf := range spec.SharedFiles {
+		if err := validateFilePath(sf); err != nil {
+			return nil, fmt.Errorf("invalid shared-files path %q: %w", sf, err)
+		}
+	}
+	tmpl.SharedFiles = spec.SharedFiles
+
+	// Validate and assign shared-dirs
+	for _, sd := range spec.SharedDirs {
+		if err := validateFilePath(sd); err != nil {
+			return nil, fmt.Errorf("invalid shared-dirs path %q: %w", sd, err)
+		}
+	}
+	tmpl.SharedDirs = spec.SharedDirs
+
 	// Load extensions (subdirectories with template.toml that aren't special dirs)
 	if allowExtensions {
 		entries, err := os.ReadDir(dir)
@@ -392,6 +410,22 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		}
 	}
 	tmpl.CacheDirs = spec.CacheDirs
+
+	// Validate and assign shared-files
+	for _, sf := range spec.SharedFiles {
+		if err := validateFilePath(sf); err != nil {
+			return nil, fmt.Errorf("invalid shared-files path %q: %w", sf, err)
+		}
+	}
+	tmpl.SharedFiles = spec.SharedFiles
+
+	// Validate and assign shared-dirs
+	for _, sd := range spec.SharedDirs {
+		if err := validateFilePath(sd); err != nil {
+			return nil, fmt.Errorf("invalid shared-dirs path %q: %w", sd, err)
+		}
+	}
+	tmpl.SharedDirs = spec.SharedDirs
 
 	return tmpl, nil
 }

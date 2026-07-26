@@ -66,6 +66,12 @@ type Template struct {
 	// Cache directories to create in .booth/cache/ with .mount-this marker
 	CacheDirs []string
 
+	// Shared files to touch in .booth/shared/ (git-friendly live bind mounts)
+	SharedFiles []string
+
+	// Shared directories to create in .booth/shared/ with .mount-this marker
+	SharedDirs []string
+
 	// Extensions (sub-templates)
 	Extensions []*Template
 }

@@ -62,6 +62,16 @@ func SerializeConfigToml(cfg *ConfigToml, command, adjustCommand string) string 
 		writeStringArray(&b, "cache-dirs", cfg.CacheDirs)
 	}
 
+	if len(cfg.SharedFiles) > 0 {
+		b.WriteString("\n")
+		writeStringArray(&b, "shared-files", cfg.SharedFiles)
+	}
+
+	if len(cfg.SharedDirs) > 0 {
+		b.WriteString("\n")
+		writeStringArray(&b, "shared-dirs", cfg.SharedDirs)
+	}
+
 	// Write --set overrides as raw TOML key=value pairs
 	if len(cfg.Overrides) > 0 {
 		b.WriteString("\n")

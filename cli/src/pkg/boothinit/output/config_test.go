@@ -244,6 +244,19 @@ func TestSerializeConfigToml_CacheFilesAndDirs(t *testing.T) {
 	assert.True(t, filesIdx < dirsIdx, "cache-files should come before cache-dirs")
 }
 
+func TestSerializeConfigToml_SharedFilesAndDirs(t *testing.T) {
+	cfg := &ConfigToml{
+		SharedFiles: []string{"home/coder/.chrome-data/Default/Bookmarks"},
+		SharedDirs:  []string{"home/coder/.config/myapp"},
+	}
+	result := SerializeConfigToml(cfg, "", "")
+	assert.Contains(t, result, `shared-files = ["home/coder/.chrome-data/Default/Bookmarks"]`)
+	assert.Contains(t, result, `shared-dirs = ["home/coder/.config/myapp"]`)
+	filesIdx := strings.Index(result, "shared-files")
+	dirsIdx := strings.Index(result, "shared-dirs")
+	assert.True(t, filesIdx < dirsIdx, "shared-files should come before shared-dirs")
+}
+
 func TestSerializeConfigToml_CacheBeforeOverrides(t *testing.T) {
 	cfg := &ConfigToml{
 		CacheFiles: []string{"home/coder/.custom"},

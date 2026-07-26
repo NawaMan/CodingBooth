@@ -1,0 +1,14 @@
+# Configured by: booth config for browser-shared-example
+# Template idea:
+#   google-chrome+bookmarks-shared+settings-shared+extensions-shared+managed-policies
+#   firefox+bookmarks-shared+settings-shared+extensions-shared+managed-policies
+# All live state is .booth/shared (not cache).
+
+variant = "xfce"
+port = "NEXT:25000"
+
+shared-dirs = [
+    "home/coder/.chrome-data/Default",
+    "home/coder/.chrome-data/Default/Extensions",
+    "home/coder/.mozilla/firefox",
+]

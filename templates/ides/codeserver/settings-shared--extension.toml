@@ -1,0 +1,9 @@
+display-name = "Settings Shared"
+display-disc = "Team-share code-server settings.json via git (.booth/shared)"
+display-detail = "Live-bind-mounts ~/.local/share/code-server/User/settings.json under .booth/shared/ so the team can commit editor settings. Does not share extensions or the whole User directory — use +settings-cache for local full IDE state."
+display-order = 92
+tags = ["persistence", "shared", "vscode", "code-server", "git"]
+
+shared-files = [
+    "home/coder/.local/share/code-server/User/settings.json",
+]

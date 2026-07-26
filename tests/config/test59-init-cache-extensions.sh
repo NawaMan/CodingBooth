@@ -62,14 +62,67 @@ run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select "firefox+profile-cache"
 assert_file "$prj/.booth/cache/home/coder/.mozilla/.mount-this" "firefox+profile-cache creates .mozilla dir"
 
-# Test 9: chromium+profile-cache creates chromium dir
+# Test 9: chromium+profile-cache creates .chrome-data dir (wrapper user-data-dir)
 run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select "chromium+profile-cache"
-assert_file "$prj/.booth/cache/home/coder/.config/chromium/.mount-this" "chromium+profile-cache creates chromium dir"
+assert_file "$prj/.booth/cache/home/coder/.chrome-data/.mount-this" "chromium+profile-cache creates .chrome-data dir"
 
-# Test 10: google-chrome+profile-cache creates google-chrome dir
+# Test 10: google-chrome+profile-cache creates .chrome-data dir
 run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select "google-chrome+profile-cache"
-assert_file "$prj/.booth/cache/home/coder/.config/google-chrome/.mount-this" "google-chrome+profile-cache creates dir"
+assert_file "$prj/.booth/cache/home/coder/.chrome-data/.mount-this" "google-chrome+profile-cache creates .chrome-data dir"
+
+# Test 11: google-chrome+bookmarks-shared creates shared Default/ dir (rename-safe)
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "google-chrome+bookmarks-shared"
+assert_file "$prj/.booth/shared/home/coder/.chrome-data/Default/.mount-this" "google-chrome+bookmarks-shared creates Default dir"
+
+# Test 12: chromium+bookmarks-shared creates shared Default/ dir
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "chromium+bookmarks-shared"
+assert_file "$prj/.booth/shared/home/coder/.chrome-data/Default/.mount-this" "chromium+bookmarks-shared creates Default dir"
+
+# Test 12b: firefox+bookmarks-shared creates shared firefox/ dir
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "firefox+bookmarks-shared"
+assert_file "$prj/.booth/shared/home/coder/.mozilla/firefox/.mount-this" "firefox+bookmarks-shared creates firefox dir"
+
+# Test 12c: chrome settings/extensions shared (not cache)
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "google-chrome+settings-shared+extensions-shared"
+assert_file "$prj/.booth/shared/home/coder/.chrome-data/Default/.mount-this" "chrome+settings-shared creates Default"
+assert_file "$prj/.booth/shared/home/coder/.chrome-data/Default/Extensions/.mount-this" "chrome+extensions-shared creates Extensions"
+# Must not create cache entries for these
+if [ -d "$prj/.booth/cache/home/coder/.chrome-data" ]; then
+  FAIL_COUNT=$((FAIL_COUNT + 1)); TEST_COUNT=$((TEST_COUNT + 1))
+  echo -e "Test ${TEST_COUNT}: chrome settings/ext must not use cache ........ \033[31mFAILED\033[0m"
+  FAIL_TESTS+=("chrome settings/ext must not use cache")
+else
+  TEST_COUNT=$((TEST_COUNT + 1)); PASS_COUNT=$((PASS_COUNT + 1))
+  echo -e "Test ${TEST_COUNT}: chrome settings/ext must not use cache ........ \033[32mPASSED\033[0m"
+fi
+
+# Test 12d: firefox settings/extensions shared (not cache)
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "firefox+settings-shared+extensions-shared"
+assert_file "$prj/.booth/shared/home/coder/.mozilla/firefox/.mount-this" "firefox+settings-shared creates firefox dir"
+if [ -d "$prj/.booth/cache/home/coder/.mozilla" ]; then
+  FAIL_COUNT=$((FAIL_COUNT + 1)); TEST_COUNT=$((TEST_COUNT + 1))
+  echo -e "Test ${TEST_COUNT}: firefox settings/ext must not use cache ....... \033[31mFAILED\033[0m"
+  FAIL_TESTS+=("firefox settings/ext must not use cache")
+else
+  TEST_COUNT=$((TEST_COUNT + 1)); PASS_COUNT=$((PASS_COUNT + 1))
+  echo -e "Test ${TEST_COUNT}: firefox settings/ext must not use cache ....... \033[32mPASSED\033[0m"
+fi
+
+# Test 13: codeserver+settings-shared creates shared settings.json
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "codeserver+settings-shared"
+assert_file "$prj/.booth/shared/home/coder/.local/share/code-server/User/settings.json" "codeserver+settings-shared creates settings.json"
+
+# Test 14: dbeaver+connections-shared creates shared data-sources.json
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "dbeaver+connections-shared"
+assert_file "$prj/.booth/shared/home/coder/.local/share/DBeaverData/workspace6/General/.dbeaver/data-sources.json" "dbeaver+connections-shared creates data-sources.json"
 
 finally

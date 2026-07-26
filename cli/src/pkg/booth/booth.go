@@ -555,10 +555,31 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 		}
 		mounts, protected := collectCacheMounts(cachePath)
 		if len(protected) > 0 {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedCacheMountsError(protected))
+			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedPathMountsError("cache", protected))
 			os.Exit(1)
 		}
 		for _, m := range mounts {
+			builder.CommonArgs.Append(ilist.NewList[string]("-v", m.hostPath+":"+m.containerPath))
+		}
+	}
+
+	// Ensure shared files/dirs declared in config.toml exist in .booth/shared/.
+	ensureSharedFromConfig(filepath.Join(codePath, ".booth"))
+
+	// Mount .booth/shared/ contents (git-friendly team state). Same layout rules
+	// as cache, but intentionally NOT gitignored — live edits land in the repo.
+	// Skip doc files at the tree root (e.g. README.md → would mount as /README.md).
+	sharedPath := filepath.Join(hostPath, "shared")
+	if info, err := os.Stat(sharedPath); err == nil && info.IsDir() {
+		mounts, protected := collectCacheMounts(sharedPath)
+		if len(protected) > 0 {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", protectedPathMountsError("shared", protected))
+			os.Exit(1)
+		}
+		for _, m := range mounts {
+			if !isMountableContainerPath(m.containerPath) {
+				continue
+			}
 			builder.CommonArgs.Append(ilist.NewList[string]("-v", m.hostPath+":"+m.containerPath))
 		}
 	}
@@ -588,22 +609,45 @@ func ensureCacheFromConfig(boothDir string) {
 	if _, err := toml.Decode(string(data), &cfg); err != nil {
 		return
 	}
+	materializePathMounts(filepath.Join(boothDir, "cache"), cfg.CacheFiles, cfg.CacheDirs)
+}
 
-	if len(cfg.CacheFiles) == 0 && len(cfg.CacheDirs) == 0 {
+// ensureSharedFromConfig reads shared-files and shared-dirs from config.toml
+// and creates the corresponding files/directories in .booth/shared/ if they
+// don't already exist (no-clobber). Same shape as cache, but for git-friendly
+// team-shared state.
+func ensureSharedFromConfig(boothDir string) {
+	configPath := filepath.Join(boothDir, "config.toml")
+	data, err := os.ReadFile(configPath)
+	if err != nil {
 		return
 	}
 
-	cacheDir := filepath.Join(boothDir, "cache")
-	for _, cf := range cfg.CacheFiles {
-		path := filepath.Join(cacheDir, cf)
+	var cfg struct {
+		SharedFiles []string `toml:"shared-files"`
+		SharedDirs  []string `toml:"shared-dirs"`
+	}
+	if _, err := toml.Decode(string(data), &cfg); err != nil {
+		return
+	}
+	materializePathMounts(filepath.Join(boothDir, "shared"), cfg.SharedFiles, cfg.SharedDirs)
+}
+
+// materializePathMounts creates empty files and .mount-this dirs under baseDir (no-clobber).
+func materializePathMounts(baseDir string, files, dirs []string) {
+	if len(files) == 0 && len(dirs) == 0 {
+		return
+	}
+	for _, cf := range files {
+		path := filepath.Join(baseDir, cf)
 		if _, err := os.Stat(path); err == nil {
 			continue
 		}
 		os.MkdirAll(filepath.Dir(path), 0755)
 		os.WriteFile(path, []byte{}, 0644)
 	}
-	for _, cd := range cfg.CacheDirs {
-		dirPath := filepath.Join(cacheDir, cd)
+	for _, cd := range dirs {
+		dirPath := filepath.Join(baseDir, cd)
 		os.MkdirAll(dirPath, 0755)
 		markerPath := filepath.Join(dirPath, ".mount-this")
 		if _, err := os.Stat(markerPath); err == nil {
@@ -843,19 +887,41 @@ func isProtectedPath(containerPath string) bool {
 	return false
 }
 
-// protectedCacheMountsError explains cache entries that would mount over a protected
+// isMountableContainerPath reports whether a shared/cache tree entry should be
+// bind-mounted. Docs left under .booth/shared/ (README.md, …) would otherwise
+// map to "/"-rooted paths like /README.md.
+func isMountableContainerPath(containerPath string) bool {
+	trimmed := strings.TrimPrefix(containerPath, "/")
+	if trimmed == "" {
+		return false
+	}
+	first, _, _ := strings.Cut(trimmed, "/")
+	switch first {
+	case "home", "opt", "etc", "usr", "var", "tmp", "root":
+		return true
+	default:
+		return false
+	}
+}
+
+// protectedPathMountsError explains cache/shared entries that would mount over a protected
 // container path: the project bind mount, or CodingBooth's own install. Either would break
-// the booth in a way that is hard to trace back to a stray directory under .booth/cache/.
-func protectedCacheMountsError(protected []string) error {
+// the booth in a way that is hard to trace back to a stray directory under .booth/<kind>/.
+func protectedPathMountsError(kind string, protected []string) error {
 	var b strings.Builder
-	fmt.Fprintf(&b, ".booth/cache/ maps onto %d protected container path(s):\n", len(protected))
+	fmt.Fprintf(&b, ".booth/%s/ maps onto %d protected container path(s):\n", kind, len(protected))
 	for _, p := range protected {
-		fmt.Fprintf(&b, "  %s\t(from .booth/cache%s)\n", p, p)
+		fmt.Fprintf(&b, "  %s\t(from .booth/%s%s)\n", p, kind, p)
 	}
 	b.WriteString("  Mounting there would shadow the project directory or CodingBooth's own install.\n")
-	b.WriteString("  Remove or rename those entries under .booth/cache/.\n")
+	fmt.Fprintf(&b, "  Remove or rename those entries under .booth/%s/.\n", kind)
 	b.WriteString("  Refusing to start")
 	return fmt.Errorf("%s", b.String())
+}
+
+// protectedCacheMountsError is retained for tests and callers that still name "cache".
+func protectedCacheMountsError(protected []string) error {
+	return protectedPathMountsError("cache", protected)
 }
 
 // formatPortMapping returns a Docker port mapping string.

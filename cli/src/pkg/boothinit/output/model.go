@@ -18,6 +18,8 @@ type BoothOutput struct {
 	HomeSeed  []FileContent
 	Cache     []FileContent // Files to touch in .booth/cache/ (paths mirror container filesystem)
 	CacheDirs []FileContent // Directories to create in .booth/cache/ with .mount-this marker
+	Shared    []FileContent // Files to touch in .booth/shared/ (git-friendly, live bind mounts)
+	SharedDirs []FileContent // Directories to create in .booth/shared/ with .mount-this marker
 }
 
 // ConfigToml represents the content of .booth/config.toml.
@@ -38,6 +40,13 @@ type ConfigToml struct {
 	// CacheDirs lists paths (relative to container root) to create as directories
 	// with .mount-this markers in .booth/cache/.
 	CacheDirs []string
+
+	// SharedFiles lists paths (relative to container root) to touch in .booth/shared/.
+	// Unlike cache, shared is intended to be committed and shared with the team.
+	SharedFiles []string
+	// SharedDirs lists paths (relative to container root) to create as directories
+	// with .mount-this markers in .booth/shared/.
+	SharedDirs []string
 
 	// Overrides holds extra key-value pairs from --set flags.
 	// These are written to config.toml after the known fields above.

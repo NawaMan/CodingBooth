@@ -1,0 +1,9 @@
+display-name = "Extensions Shared"
+display-disc = "Team-share Firefox extensions via git (.booth/shared) — not cache"
+display-detail = """Live-bind-mounts ~/.mozilla/firefox/ under .booth/shared/ so extension files and extensions.json under each profile survive and can be committed. Firefox stores add-ons inside the profile directory (random id); mounting the whole firefox/ tree is required. shared only — not .booth/cache. Same path as +bookmarks-shared / +settings-shared — select any one if you want the full profile tree in git."""
+display-order = 94
+tags = ["persistence", "shared", "browser", "extensions", "plugins", "git", "firefox"]
+
+shared-dirs = [
+    "home/coder/.mozilla/firefox",
+]

@@ -47,6 +47,7 @@ host                                                container
 - [Run Modes](#run-modes)
 - [Persistent Home](#persistent-home)
 - [Local Cache](#local-cache)
+- [Shared State (Team / Git)](#shared-state-team--git)
 - [Container Lifecycle](#container-lifecycle)
 - [Session Timers](#session-timers)
 - [Idle Auto-Shutdown](#idle-auto-shutdown)
@@ -379,6 +380,16 @@ For seeding rules, dotfiles, credentials, and home-directory precedence, see **[
 - Claude Code's `~/.claude/` is persisted via this mechanism out of the box.
 
 See **[booth cache](docs/BOOTH_LOCALCACHE.md)**.
+
+
+## Shared State (Team / Git)
+
+`.booth/shared/` is the same bind-mount layout as local cache, but **intended to be committed**. Live edits outside `/home/coder/code` (Chrome bookmarks, code-server settings, DBeaver connections) write into the project tree for teammates to pull.
+
+- Templates declare `shared-files` and `shared-dirs` (opt-in extensions such as `google-chrome+bookmarks-shared`).
+- **Do not put secrets** in shared — passwords, cookies, and full browser profiles belong in cache, home-seed, or host mounts instead.
+
+See **[booth shared](docs/BOOTH_SHARED.md)**.
 
 
 ## Container Lifecycle

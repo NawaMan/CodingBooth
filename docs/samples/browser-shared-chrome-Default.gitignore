@@ -1,0 +1,13 @@
+# Sample .gitignore for .booth/shared/home/coder/.chrome-data/Default/
+# Copy next to Bookmarks when committing team browser state.
+# Prefer +bookmarks-shared / +settings-shared / +extensions-shared (shared only — not cache).
+
+*
+!.gitignore
+!.mount-this
+!Bookmarks
+!Bookmarks.bak
+!Preferences
+!Secure Preferences
+!Extensions/
+!Extensions/**

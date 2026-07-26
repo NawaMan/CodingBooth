@@ -60,6 +60,14 @@ func OutputPaths(out *BoothOutput, targetPath string) []string {
 		paths = append(paths, filepath.Join(boothDir, "cache", d.RelPath, ".mount-this"))
 	}
 
+	for _, f := range out.Shared {
+		paths = append(paths, filepath.Join(boothDir, "shared", f.RelPath))
+	}
+
+	for _, d := range out.SharedDirs {
+		paths = append(paths, filepath.Join(boothDir, "shared", d.RelPath, ".mount-this"))
+	}
+
 	return paths
 }
 
@@ -199,6 +207,22 @@ func writeOutput(out *BoothOutput, targetPath string, beside []string) error {
 		cacheDir := filepath.Join(boothDir, "cache")
 		if err := touchCacheDirs(out.CacheDirs, cacheDir); err != nil {
 			return fmt.Errorf("writing cache dirs/: %w", err)
+		}
+	}
+
+	// Touch shared files (no-clobber: skip if file already exists)
+	if len(out.Shared) > 0 {
+		sharedDir := filepath.Join(boothDir, "shared")
+		if err := touchCacheFiles(out.Shared, sharedDir); err != nil {
+			return fmt.Errorf("writing shared/: %w", err)
+		}
+	}
+
+	// Create shared directories with .mount-this markers (no-clobber)
+	if len(out.SharedDirs) > 0 {
+		sharedDir := filepath.Join(boothDir, "shared")
+		if err := touchCacheDirs(out.SharedDirs, sharedDir); err != nil {
+			return fmt.Errorf("writing shared dirs/: %w", err)
 		}
 	}
 
