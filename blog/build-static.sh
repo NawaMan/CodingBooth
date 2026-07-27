@@ -182,7 +182,7 @@ if [ ! -d "$TMP/$ROUTE" ] && [ ! -f "$TMP/$ROUTE" ]; then
 	echo "       Available routes:" >&2
 	( cd "$TMP" && find . -maxdepth 1 -mindepth 1 \
 		\( -type d -o -name '*.html' \) -not -name '_app' \
-		-not -name 'article.html' -not -name 'index.html' \
+		-not -name '404.html' -not -name 'index.html' \
 		| sed 's|^\./|         |' ) >&2
 	exit 1
 fi
@@ -191,7 +191,7 @@ echo ">> assembling '$ROUTE' -> $OUT"
 
 # Shared runtime + site-wide assets the route depends on.
 cp -a "$TMP/_app"          "$OUT/"
-cp -a "$TMP/article.html"  "$OUT/" 2>/dev/null || true   # SPA fallback
+cp -a "$TMP/404.html"      "$OUT/" 2>/dev/null || true   # SPA fallback (svelte.config.js)
 [ -e "$TMP/fonts" ]        && cp -a "$TMP/fonts"       "$OUT/"
 [ -e "$TMP/favicon.png" ]  && cp -a "$TMP/favicon.png" "$OUT/"
 cp -a "$TMP/.nojekyll"     "$OUT/" 2>/dev/null || true
