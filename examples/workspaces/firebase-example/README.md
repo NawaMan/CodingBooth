@@ -16,13 +16,17 @@ firebase login
 
 ## How It Works
 
-The `.booth/config.toml` mounts Firebase-related config directories read-only to `/etc/cb-home-seed/`.
-At container startup, these are copied to `/home/coder/.config/`.
+The `.booth/config.toml` mounts the host Firebase credential **file** read-only to
+`/etc/cb-home-seed/.../firebase-tools.json` (`firebase+credential`). At container
+startup, booth seeds that file into `~/.config/configstore/`. The Firebase setup's
+startup also **replaces an empty or `{}` placeholder** (firebase-tools often writes
+one before a real login), so host credentials still win without clobbering a real
+in-container login.
 
 This means:
 - Your host credentials stay protected (read-only mount)
 - The container gets a writable copy
-- Firebase CLI works out of the box
+- Firebase CLI works out of the box even when a stub `{}` file already exists
 
 ## Try It
 
@@ -45,8 +49,7 @@ firebase projects:list
 
 | Host Path | Container Path | Notes |
 |-----------|----------------|-------|
-| `~/.config/gcloud/` | `/home/coder/.config/gcloud/` | For GCP integration |
-| `~/.config/configstore/` | `/home/coder/.config/configstore/` | Firebase CLI state |
+| `~/.config/configstore/firebase-tools.json` | `/etc/cb-home-seed/.config/configstore/firebase-tools.json` (then seeded to `~`) | Firebase CLI credentials; `:ro` host mount |
 
 ## Security Notes
 

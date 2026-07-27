@@ -166,7 +166,8 @@ run-args = [
     # OpenAI Codex
     "-v", "~/.codex:/etc/cb-home-seed/.codex:ro",
 
-    # Firebase CLI
+    # Firebase CLI (seed path; startup also replaces empty / "{}" placeholders
+    # that firebase-tools often creates before a real login — see setup firebase)
     "-v", "~/.config/configstore/firebase-tools.json:/etc/cb-home-seed/.config/configstore/firebase-tools.json:ro",
 
     # Kubernetes (kubectl, helm)
