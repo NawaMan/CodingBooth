@@ -6,18 +6,18 @@
 		     its +layout.svelte, and a page from its pages.ts entry — last one wins. -->
 		<link rel="icon" href="/favicon.png" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
-		<link href="./_app/immutable/entry/start.C90Vwm6N.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/DQHLXtQI.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/D8soNPW8.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/ChiAHJBj.js" rel="modulepreload">
-		<link href="./_app/immutable/entry/app.TZfHUgyC.js" rel="modulepreload">
+		<link href="./_app/immutable/entry/start.-841t46C.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/1uewk3dT.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/BOuHh0Wg.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/BaRhSXzg.js" rel="modulepreload">
+		<link href="./_app/immutable/entry/app.DmvffTP6.js" rel="modulepreload">
 		<link href="./_app/immutable/chunks/C1FmrZbK.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/BYTzUE67.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/C2wVgHyJ.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/BiKRxWXi.js" rel="modulepreload">
-		<link href="./_app/immutable/nodes/0.42fU0FjY.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/DQAriVOY.js" rel="modulepreload">
-		<link href="./_app/immutable/chunks/YopDNezg.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/ypV8qHiV.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/DBrzAVXA.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/D3CrFLJO.js" rel="modulepreload">
+		<link href="./_app/immutable/nodes/0.DJO9SBnb.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/dUejP41I.js" rel="modulepreload">
+		<link href="./_app/immutable/chunks/CnZK-Dmb.js" rel="modulepreload">
 		
 		<link href="./_app/immutable/assets/tooltip.Kkg-oOLO.css" rel="stylesheet">
 
@@ -29,18 +29,24 @@
 
 	</style>
 	<body data-sveltekit-preload-data="hover">
+		<!-- Looking for the slide's text and not finding it? That is expected, not a broken
+		     server or build. SlideDeck gates SSR, so this document is only a shell — slides
+		     render on the client, and no page's HTML ever contains its own content.
+		     To check a slide without a browser: fetch the module the dev server compiles
+		     (/src/routes/<deck>/<name>.html/+page.svelte), or run `pnpm test`, whose
+		     tests/*.ssr.test.ts project renders through svelte/server and is the real proof. -->
 		<div style="display: contents">
 			<script>
 				{
-					__sveltekit_j3sbhs = {
+					__sveltekit_1httyv0 = {
 						base: ""
 					};
 
 					const element = document.currentScript.parentElement;
 
 					Promise.all([
-						import("./_app/immutable/entry/start.C90Vwm6N.js"),
-						import("./_app/immutable/entry/app.TZfHUgyC.js")
+						import("./_app/immutable/entry/start.-841t46C.js"),
+						import("./_app/immutable/entry/app.DmvffTP6.js")
 					]).then(([kit, app]) => {
 						kit.start(app, element);
 					});
