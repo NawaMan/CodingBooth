@@ -4,6 +4,21 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Project-local templates, extensions, and recipes.** A booth can ship its own
+  catalog under `.booth/templates/` (same category/`template.toml` /
+  `*--extension.toml` layout as the stock tree). `booth config` (CLI + TUI) and
+  `booth template list|show|…` load them automatically and **merge** them into the
+  stock registry: same name → **local wins** with a stderr warning
+  (`project template "go" overrides built-in …`). Bare recipe names resolve to
+  `.booth/recipes/<name>.recipe` (`.recipe` appended when missing). Path-shaped
+  `@` refs (`/…`, `./…`, `../…`, `~/…`, `C:\…`) and URLs (`@https://…` or `@@…`,
+  with bare `@@host/path` assuming `https://`) still work. Missing recipe or
+  unknown template/extension remains a hard error. Docs:
+  [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md). Tests:
+  `tests/config/test82-project-local-templates-and-recipes.sh` (config/dryrun) and
+  `tests/complex/test-project-local/` (config + image build; markers
+  `CB_DETECT_{TEMPLATE,EXTENSION,SETUP}_v1`).
+
 - **Firebase host credentials win over empty/`{}` placeholders.** The
   `setup firebase` startup copies
   `/etc/cb-home-seed/.config/configstore/firebase-tools.json` into the home when

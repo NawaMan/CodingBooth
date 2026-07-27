@@ -107,6 +107,15 @@ prj--*--recipe.txt
 # Generated at booth run time (e.g. egress/envoy.generated.yaml, codingbooth.lock).
 **/.booth/tools/
 
+# tests/complex/test-project-local runs `booth config` each time; ignore that
+# output. Fixtures stay tracked: templates/, setups/local-hand--setup.sh.
+tests/complex/test-project-local/.booth/Boothfile
+tests/complex/test-project-local/.booth/config.toml
+tests/complex/test-project-local/.booth/.generated
+tests/complex/test-project-local/.booth/.gitignore
+tests/complex/test-project-local/.booth/setups/localgadget--setup.sh
+tests/complex/test-project-local/.booth/setups/localgadget-widget--setup.sh
+
 playground/
 
 demos/.Trash-1000/

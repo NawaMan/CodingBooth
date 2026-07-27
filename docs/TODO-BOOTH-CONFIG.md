@@ -42,7 +42,7 @@ All five are now closed; the follow-up §5 spun out is tracked on its own.
 - [x] **§3** — `--set` accepts any key; integer keys produce an unloadable config.toml — **fixed**
 - [x] **§4** — 30 config.toml keys had no TUI field — **fixed** (field table generated from the schema)
 - [x] **§5** — raw-Boothfile escape hatch — **won't fix**: declarative editor, procedural
-      file; the seam is a boundary, not a gap. Follow-up spun out: project-local templates
+      file; the seam is a boundary, not a gap. Follow-up (project-local templates) **done**.
 
 ---
 
@@ -341,16 +341,12 @@ and a `setup <name>` line resolves to it. The procedural part lives in a shell
 script — a procedural tool for a procedural job — and the declarative part
 refers to it by name, ordered by the same dependency rules as everything else.
 
-What is missing is only that a project cannot contribute such a unit to the
-picker: [`LoadRegistry`](../cli/src/pkg/boothinit/template/loader.go) reads
-exactly one templates directory, so a hand-written setup script can be *written*
-but never *selected*.
-
-That is the shape of a real follow-up — project-local templates under
-`.booth/templates/`, merged into the registry so a local unit gets a name,
-dependencies and params like any other. It is a feature on its own merits
-(registry merge, name-collision rules, how a local template interacts with
-drift), not a way of closing this section, and it should be scoped as one.
+~~What is missing is only that a project cannot contribute such a unit to the
+picker…~~ **Done (project-local templates):** `.booth/templates/` is merged into
+the stock registry via `LoadMergedRegistry` — local names override with a
+warning; DSL + TUI pick them up. Project recipes live under `.booth/recipes/`
+(`@name` → that tree). See [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md) and
+CHANGELOG Unreleased.
 
 ### The boundary, stated
 
