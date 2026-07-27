@@ -85,10 +85,11 @@ The selection input can come from multiple sources, all normalized to a single D
 | Inline | Direct string | `--select go+linter/python:3.13` |
 | Multiple | Repeated flag | `--select go+linter --select python:3.13` |
 | Stdin | `-` | `--select -` (then type or pipe) |
-| File | `@path` | `--select @cool-project.recipe` |
-| URL | `@@url` | `--select @@https://example.com/my-project-example.recipe` |
+| Project recipe | `@name` | `--select @fullstack` → `<project>/.booth/recipes/fullstack.recipe` |
+| Path | `@/…` `@./…` `@~/…` | `--select @./cool-project.recipe` |
+| URL | `@@url` or `@https://…` | `--select @@codingbooth.io/r.recipe` (assumes `https://` if no scheme) |
 
-Each `--select` value is resolved independently through `ReadSelectInput()` (handling `@file`, `@@url`, `-`, or plain DSL), then results are joined with `/`. This means `--select @langs.recipe --select @tools.recipe` works correctly — each file is read separately before combining.
+Each `--select` value is resolved independently through `ReadSelectInputWithProject()` (handling bare `@name` under `.booth/recipes/`, path-shaped `@`, `@@url`, `-`, or plain DSL), then results are joined with `/`. Project-local templates under `.booth/templates/` are merged into the stock registry (local name wins + warning).
 
 ### 2. DSL Parsing
 

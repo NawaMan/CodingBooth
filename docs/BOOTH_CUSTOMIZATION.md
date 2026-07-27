@@ -372,7 +372,8 @@ Writing `.booth/` configuration by hand is manageable for simple projects. But f
 
 ### Template Structure
 
-Templates live under `templates/` organized by category:
+Stock templates live under `templates/` (or the release bundle / `--templates-path`)
+organized by category:
 
 ```
 templates/
@@ -398,6 +399,47 @@ order = 1
 ```
 
 Categories are displayed in `order` sequence. They exist for organizational purposes — template names are globally unique across all categories.
+
+### Project-local templates and extensions
+
+A project can own templates (and their extensions) under **`.booth/templates/`**,
+using the same layout as the stock catalog. `booth config` (CLI and TUI) and
+`booth template list|show|search|cat` load them **automatically** from the config
+target (or the current directory for `template` subcommands) and merge them into
+the stock registry.
+
+```
+my-project/
+└── .booth/
+    └── templates/
+        └── project/                 # any category name
+            ├── meta.toml
+            └── myapp/
+                ├── template.toml
+                ├── fancy--extension.toml
+                └── setups/          # optional — written into .booth/setups/ on config
+                    └── myapp--setup.sh
+```
+
+```bash
+# Select a project-only template (DSL + TUI both see it)
+booth config --no-tui . --select myapp+fancy
+```
+
+**Name collision:** template names are global. If a local template reuses a stock
+name (e.g. local `go`), the **project version wins** and CodingBooth prints a
+warning on stderr:
+
+```text
+Warning: project template "go" overrides built-in (category "languages" → "project")
+```
+
+Override is **full template replace**: the local entry replaces the stock one
+including its extensions. There is no partial “add one extension to stock `go`”
+overlay in this release.
+
+**Missing names:** selecting a template or extension that is neither stock nor
+project-local is a hard error (`unknown template` / `unknown extension`).
 
 ### Writing a Template
 
@@ -749,12 +791,45 @@ The parser normalizes this multiline format into the standard DSL before parsing
 
 ### Using Recipes
 
-```bash
-# Use a recipe file
-./booth config --no-tui ../my-project --select @cool-project.recipe
+**Bare name → project recipes dir.** After `@`, if the remainder is not path-shaped
+and not a URL, it resolves under the **config target**:
 
-# Preview what a recipe would generate
-./booth config --no-tui --dryrun --select @cool-project.recipe
+```text
+@fullstack              →  <project>/.booth/recipes/fullstack.recipe
+@fullstack.recipe       →  <project>/.booth/recipes/fullstack.recipe
+@team/api               →  <project>/.booth/recipes/team/api.recipe
+```
+
+(`.recipe` is appended when the base name has no extension.)
+
+**Path-shaped `@`** (read that path as-is, after expanding `~`):
+
+| Form | Example |
+|------|---------|
+| Absolute | `@/home/me/shared/stack.recipe` |
+| Relative | `@./stack.recipe`, `@../team/stack.recipe` |
+| Home | `@~/shared/stack.recipe` |
+| Windows drive | `@C:\booth\stack.recipe`, `@D:/r.recipe` |
+| URL on single `@` | `@https://example.com/stack.recipe` |
+
+**`@@` is always a URL.** If there is no scheme, `https://` is assumed:
+
+```bash
+booth config --no-tui . --select @@https://codingbooth.io/recipe/cool-app.recipe
+booth config --no-tui . --select @@codingbooth.io/recipe/cool-app.recipe   # same, + https://
+```
+
+Missing recipes hard-error with the resolved path in the message.
+
+```bash
+# Project-local recipe (committed under .booth/recipes/)
+./booth config --no-tui ../my-project --select @fullstack
+
+# Explicit path (cwd-relative or absolute)
+./booth config --no-tui ../my-project --select @./cool-project.recipe
+
+# Preview
+./booth config --no-tui ../my-project --dryrun --select @fullstack
 
 # Pipe a recipe via stdin
 cat cool-project.recipe | ./booth config --no-tui ../my-project --select -
@@ -770,7 +845,11 @@ RECIPE
 
 ### Creating and Sharing Recipes
 
-Create a `.recipe` file in your project or examples directory:
+Create a recipe under the project:
+
+```text
+my-project/.booth/recipes/fullstack.recipe
+```
 
 ```text
 # fullstack.recipe — Full-stack web development environment
@@ -785,12 +864,12 @@ claude-code
 ```
 
 Share it by:
-- Committing it to your repository.
-- Hosting it at a URL and using `@@url`: `./booth config --no-tui ../project --select @@https://example.com/fullstack.recipe`.
-- Including it in the `examples/recipes/` directory for team reference.
+- Committing `.booth/recipes/` with the project.
+- Hosting it at a URL and using `@@url` (or `@@host/path` for HTTPS).
+- Pointing teammates at an explicit path: `@./shared/stack.recipe`.
 
 **Tips for good recipes:**
 - Use explicit versions for reproducibility (`python:3.13` not just `python`).
 - Include only what the project needs — templates are composable, not cumulative.
 - Name the file descriptively: `data-science.recipe`, `go-microservice.recipe`.
-- Add context in the filename or a companion README — recipe files don't support comments.
+- Recipes can select project-local templates the same way as stock ones.

@@ -1,0 +1,16 @@
+# Project-local template used by tests/complex/test-project-local.
+# Emits a unique Boothfile marker and installs two setups:
+#   - localgadget       (shipped under this template's setups/)
+#   - local-hand        (hand-placed under .booth/setups/ — pure local setup)
+display-name = "Local Gadget"
+display-disc = "Complex-test project-local template"
+display-order = 1
+primary = true
+tags = ["test", "local", "project-local"]
+
+[segments]
+Boothfile = """
+# CB_DETECT_TEMPLATE_v1
+setup localgadget
+setup local-hand
+"""

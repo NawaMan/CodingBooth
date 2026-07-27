@@ -39,7 +39,7 @@ func ResolveWithOverrides(parsed *ParsedSelection, registry *tmpl.TemplateRegist
 	for _, pi := range parsed.Items {
 		t, ok := registry.ByName[pi.Name]
 		if !ok {
-			return nil, fmt.Errorf("unknown template: %q", pi.Name)
+			return nil, fmt.Errorf("unknown template: %q (not in built-in catalog or .booth/templates/)", pi.Name)
 		}
 
 		paramValues, err := resolveParams(t, pi.Params, overrides)
@@ -260,7 +260,7 @@ func resolveExtensions(t *tmpl.Template, explicit []ParsedExtension, excludes []
 		}
 		ext, ok := extByName[pe.Name]
 		if !ok {
-			return nil, fmt.Errorf("unknown extension %q", pe.Name)
+			return nil, fmt.Errorf("unknown extension %q", pe.Name) // parent may be stock or project-local
 		}
 		paramValues, err := resolveParams(ext, pe.Params, overrides)
 		if err != nil {

@@ -215,7 +215,7 @@ func runInitNew(version string, args []string) {
 		templatesPath, cleanup := resolveTemplatesPath(flags, version)
 		defer cleanup()
 		flags.templatesPath = templatesPath
-		out, resolved = compileSelection(flags, readExistingArgs(targetPath))
+		out, resolved = compileSelection(flags, targetPath, readExistingArgs(targetPath))
 	}
 
 	out.Command = buildInitCommand(targetPath, flags)
@@ -268,6 +268,8 @@ func runInitNew(version string, args []string) {
 
 // runInitDryrun handles: codingbooth config --no-tui --dryrun --select <dsl> [--templates-path <dir>] [--debug]
 func runInitDryrun(version string, args []string) {
+	// Dryrun has no project path argument; use cwd so local recipes/templates still resolve.
+	targetPath := "."
 	flags := parseInitFlags(args)
 	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
 
@@ -280,7 +282,7 @@ func runInitDryrun(version string, args []string) {
 		templatesPath, cleanup := resolveTemplatesPath(flags, version)
 		defer cleanup()
 		flags.templatesPath = templatesPath
-		out, resolved = compileSelection(flags, nil)
+		out, resolved = compileSelection(flags, targetPath, nil)
 	}
 
 	out.Command = buildInitCommand("", flags)
@@ -373,9 +375,10 @@ func readExistingArgs(targetPath string) map[string]string {
 }
 
 // compileSelection runs the full pipeline: read input → parse → resolve → compile.
+// projectRoot is the config target (for .booth/templates and .booth/recipes).
 // overrides preserves existing param values across reconfiguration (may be nil).
-func compileSelection(flags initFlags, overrides map[string]string) (*output.BoothOutput, *selection.ResolvedSelection) {
-	// Read input (handles -, @file, @@url, plain DSL)
+func compileSelection(flags initFlags, projectRoot string, overrides map[string]string) (*output.BoothOutput, *selection.ResolvedSelection) {
+	// Read input (handles -, @recipe, @@url, plain DSL)
 	// Each --select value is resolved individually, then joined with "/".
 	var parts []string
 	for _, dsl := range flags.selectDSLs {
@@ -387,7 +390,7 @@ func compileSelection(flags initFlags, overrides map[string]string) (*output.Boo
 			}
 			parts = append(parts, string(data))
 		} else {
-			resolved, err := selection.ReadSelectInput(dsl)
+			resolved, err := selection.ReadSelectInputWithProject(dsl, projectRoot)
 			if err != nil {
 				fmt.Fprintf(os.Stderr, "Error reading selection: %v\n", err)
 				os.Exit(1)
@@ -397,8 +400,8 @@ func compileSelection(flags initFlags, overrides map[string]string) (*output.Boo
 	}
 	rawInput := strings.Join(parts, "/")
 
-	// Load templates
-	registry, err := tmpl.LoadRegistry(flags.templatesPath)
+	// Load stock templates, merge project-local .booth/templates/ (local wins + warn)
+	registry, err := tmpl.LoadMergedRegistry(flags.templatesPath, projectRoot, os.Stderr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
 		os.Exit(1)

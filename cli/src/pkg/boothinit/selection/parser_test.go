@@ -347,6 +347,66 @@ func TestReadSelectInput_URLUnreachable(t *testing.T) {
 	assert.Contains(t, err.Error(), "fetching selection URL")
 }
 
+func TestReadSelectInput_ProjectRecipeBareName(t *testing.T) {
+	project := t.TempDir()
+	recipes := filepath.Join(project, ".booth", "recipes")
+	require.NoError(t, os.MkdirAll(recipes, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(recipes, "fullstack.recipe"), []byte("go\npython\n"), 0644))
+
+	result, err := ReadSelectInputWithProject("@fullstack", project)
+	require.NoError(t, err)
+	assert.Equal(t, "go\npython\n", result)
+
+	// Explicit .recipe suffix also works
+	result, err = ReadSelectInputWithProject("@fullstack.recipe", project)
+	require.NoError(t, err)
+	assert.Equal(t, "go\npython\n", result)
+}
+
+func TestReadSelectInput_ProjectRecipeMissing(t *testing.T) {
+	project := t.TempDir()
+	_, err := ReadSelectInputWithProject("@missing", project)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "recipe \"missing\" not found")
+	assert.Contains(t, err.Error(), filepath.Join(project, ".booth", "recipes", "missing.recipe"))
+}
+
+func TestReadSelectInput_RelativePathStillWorks(t *testing.T) {
+	tmpDir := t.TempDir()
+	filePath := filepath.Join(tmpDir, "custom.recipe")
+	require.NoError(t, os.WriteFile(filePath, []byte("rust\n"), 0644))
+
+	// Explicit path forms bypass .booth/recipes/
+	result, err := ReadSelectInputWithProject("@"+filePath, t.TempDir())
+	require.NoError(t, err)
+	assert.Equal(t, "rust\n", result)
+}
+
+func TestNormalizeRecipeURL(t *testing.T) {
+	assert.Equal(t, "https://codingbooth.io/r.recipe", normalizeRecipeURL("codingbooth.io/r.recipe"))
+	assert.Equal(t, "https://codingbooth.io/r.recipe", normalizeRecipeURL("https://codingbooth.io/r.recipe"))
+	assert.Equal(t, "http://example.com/x", normalizeRecipeURL("http://example.com/x"))
+}
+
+func TestIsPathShaped(t *testing.T) {
+	assert.True(t, isPathShaped("/abs/path"))
+	assert.True(t, isPathShaped("./rel"))
+	assert.True(t, isPathShaped("../up"))
+	assert.True(t, isPathShaped("~/home"))
+	assert.True(t, isPathShaped("C:\\Windows\\r.recipe"))
+	assert.True(t, isPathShaped("D:/booth/r.recipe"))
+	assert.True(t, isPathShaped("https://example.com/r.recipe"))
+	assert.False(t, isPathShaped("fullstack"))
+	assert.False(t, isPathShaped("fullstack.recipe"))
+	assert.False(t, isPathShaped("team/api"))
+}
+
+func TestEnsureRecipeSuffix(t *testing.T) {
+	assert.Equal(t, "fullstack.recipe", ensureRecipeSuffix("fullstack"))
+	assert.Equal(t, "fullstack.recipe", ensureRecipeSuffix("fullstack.recipe"))
+	assert.Equal(t, "team/api.recipe", ensureRecipeSuffix("team/api"))
+}
+
 // --- "+" inside a param value (booth-relative ports, packages with a "+") ---
 
 func TestParse_ExtensionParamCarriesRelativePort(t *testing.T) {

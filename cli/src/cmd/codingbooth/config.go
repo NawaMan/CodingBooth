@@ -111,7 +111,7 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 		templatesPath, cleanup := resolveTemplatesPath(flags, version)
 		defer cleanup()
 		flags.templatesPath = templatesPath
-		out, resolved = compileSelection(flags, readExistingArgs(targetPath))
+		out, resolved = compileSelection(flags, targetPath, readExistingArgs(targetPath))
 	}
 
 	out.Command = buildConfigCommand(targetPath, flags)
@@ -282,8 +282,8 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 	defer cleanup()
 	flags.templatesPath = templatesPath
 
-	// Load registry
-	registry, err := tmpl.LoadRegistry(flags.templatesPath)
+	// Load stock + project-local .booth/templates/ (local overrides with warning)
+	registry, err := tmpl.LoadMergedRegistry(flags.templatesPath, targetPath, os.Stderr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
 		os.Exit(1)
@@ -412,7 +412,7 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 	if flags.selectDSL == "" {
 		out, resolved = compileEmpty(flags)
 	} else {
-		out, resolved = compileSelection(flags, readExistingArgs(targetPath))
+		out, resolved = compileSelection(flags, targetPath, readExistingArgs(targetPath))
 	}
 
 	out.Command = buildConfigCommand(targetPath, flags)

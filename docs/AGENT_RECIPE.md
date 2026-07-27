@@ -12,8 +12,12 @@ A recipe is a text file that defines which templates, parameters, and extensions
 # Instead of this:
 codingbooth config --no-tui ./my-project --select "go/python:3.13+uv/java:25,temurin+maven/claude-code"
 
-# Write a recipe file and use this:
-codingbooth config --no-tui ./my-project --select @my-project.recipe
+# Prefer a project recipe under .booth/recipes/ (bare @name):
+#   ./my-project/.booth/recipes/my-project.recipe
+codingbooth config --no-tui ./my-project --select @my-project
+
+# Or an explicit path:
+codingbooth config --no-tui ./my-project --select @./my-project.recipe
 ```
 
 ---
@@ -300,10 +304,13 @@ codingbooth config --no-tui ./my-project --select @recipe.txt --start
 
 ## Recipe File Conventions
 
-- File extension: `.recipe` (recommended, but any extension works)
-- Location: alongside the project, or in a shared `examples/recipes/` directory
+- File extension: `.recipe` (auto-appended for bare `@name` when missing)
+- **Default location:** `<project>/.booth/recipes/<name>.recipe` — use `@name`
+- Explicit paths: `@./file.recipe`, `@/abs/path.recipe`, `@~/…`
+- URLs: `@@https://…` or `@@host/path` (HTTPS assumed without a scheme)
 - One template per line for readability
 - Use continuation lines (`+ extension`) for multiple extensions
+- Recipes can select project-local templates from `.booth/templates/`
 - Recipes can be version-controlled and shared across teams
 
 ---
@@ -314,6 +321,7 @@ codingbooth config --no-tui ./my-project --select @recipe.txt --start
 - [ ] Check available templates: `codingbooth config --no-tui --dryrun --select <name>`
 - [ ] Specify version parameters where defaults won't do
 - [ ] Add extensions explicitly (auto-selected ones are included automatically)
-- [ ] Preview with `codingbooth config --no-tui --dryrun --select @recipe.txt`
+- [ ] Save under `.booth/recipes/<name>.recipe`
+- [ ] Preview with `codingbooth config --no-tui ./my-project --dryrun --select @name`
 - [ ] Verify the generated Boothfile and config.toml look correct
-- [ ] Save the recipe alongside the project for team use
+- [ ] Commit `.booth/recipes/` (and `.booth/templates/` if used) with the project

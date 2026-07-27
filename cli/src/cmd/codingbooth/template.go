@@ -12,6 +12,16 @@ import (
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 )
 
+// loadTemplatesForCLI loads the stock catalog and merges .booth/templates from cwd
+// (when present) so `booth template list|show|…` sees project-local units.
+func loadTemplatesForCLI(templatesPath string) (*tmpl.TemplateRegistry, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		cwd = "."
+	}
+	return tmpl.LoadMergedRegistry(templatesPath, cwd, os.Stderr)
+}
+
 // runTemplate handles the "template" command and its subcommands.
 func runTemplate(version string) {
 	args := os.Args[2:] // skip "codingbooth" and "template"
@@ -72,7 +82,7 @@ func runTemplateList(version string, args []string) {
 	templatesPath, cleanup := resolveTemplatesPath(flags, version)
 	defer cleanup()
 
-	registry, err := tmpl.LoadRegistry(templatesPath)
+	registry, err := loadTemplatesForCLI(templatesPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
 		os.Exit(1)
@@ -107,7 +117,7 @@ func runTemplateSearch(version string, args []string) {
 	templatesPath, cleanup := resolveTemplatesPath(flags, version)
 	defer cleanup()
 
-	registry, err := tmpl.LoadRegistry(templatesPath)
+	registry, err := loadTemplatesForCLI(templatesPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
 		os.Exit(1)
@@ -136,7 +146,7 @@ func runTemplateShow(version string, args []string) {
 	templatesPath, cleanup := resolveTemplatesPath(flags, version)
 	defer cleanup()
 
-	registry, err := tmpl.LoadRegistry(templatesPath)
+	registry, err := loadTemplatesForCLI(templatesPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
 		os.Exit(1)
@@ -184,7 +194,7 @@ func runTemplateCat(version string, args []string) {
 	templatesPath, cleanup := resolveTemplatesPath(flags, version)
 	defer cleanup()
 
-	registry, err := tmpl.LoadRegistry(templatesPath)
+	registry, err := loadTemplatesForCLI(templatesPath)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
 		os.Exit(1)

@@ -349,15 +349,20 @@ For readability in files and heredocs:
 
 ## Selection Sources
 
-| Source         | Syntax        | Example                                      |
-|----------------|---------------|----------------------------------------------|
-| Inline         | Direct string | `--select go+linter/python:3.13`             |
-| Multiple flags | Repeated      | `--select go+linter --select python:3.13`    |
-| File           | `@path`       | `--select @my-project.recipe`                |
-| URL            | `@@url`       | `--select @@https://example.com/my-project-example.recipe` |
-| Stdin          | `-`           | `--select -` (type or pipe)                  |
+| Source           | Syntax        | Example                                      |
+|------------------|---------------|----------------------------------------------|
+| Inline           | Direct string | `--select go+linter/python:3.13`             |
+| Multiple flags   | Repeated      | `--select go+linter --select python:3.13`    |
+| Project recipe   | `@name`       | `--select @fullstack` → `.booth/recipes/fullstack.recipe` |
+| Path             | `@/…` `@./…` `@~/…` | `--select @./shared/stack.recipe`      |
+| URL              | `@@url`       | `--select @@codingbooth.io/r.recipe` (HTTPS if no scheme) |
+| Stdin            | `-`           | `--select -` (type or pipe)                  |
 
 Recipe files are plain text with the same DSL syntax — one template per line.
+Bare `@name` looks under the config target’s `.booth/recipes/` (`.recipe` is
+appended when missing). Path-shaped refs and `@@` URLs bypass that directory.
+Project templates under `.booth/templates/` are merged into the catalog
+automatically (local name overrides stock with a warning).
 
 ---
 
@@ -673,7 +678,7 @@ When this config is loaded in the TUI:
 
 ### Using a recipe file
 
-Create a `my-project.recipe`:
+Create `<project>/.booth/recipes/my-project.recipe` (or any path-shaped `@` ref):
 
 ```
 go:1.25
@@ -691,7 +696,8 @@ claude-code
 Then:
 
 ```bash
-./booth config --no-tui --select @my-project.recipe
+./booth config --no-tui ./my-project --select @my-project
+# or: --select @./path/to/my-project.recipe
 ```
 
 ### Re-generate after adding a template

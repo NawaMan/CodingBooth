@@ -8,29 +8,36 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"time"
 )
 
-// ReadSelectInput resolves a --select value to its raw content.
-//   - "@filename" reads from a file
-//   - "@@url" fetches from a URL
-//   - anything else is returned as-is
+// ReadSelectInput resolves a --select value to its raw content with projectRoot ".".
+// Prefer ReadSelectInputWithProject when the config target directory is known.
 //
 // Stdin ("-") should be handled by the caller before calling this function.
 func ReadSelectInput(value string) (string, error) {
+	return ReadSelectInputWithProject(value, ".")
+}
+
+// ReadSelectInputWithProject resolves a --select value to its raw content.
+//
+//   - "@@…" is always a URL. If the remainder has no scheme, https:// is assumed
+//     (e.g. @@codingbooth.io/r.recipe → https://codingbooth.io/r.recipe).
+//   - "@…" is a recipe reference:
+//     - path-shaped (/…, ./…, ../…, ~/…, C:\…, or containing ://) → read that path/URL
+//     - otherwise → <projectRoot>/.booth/recipes/<name>.recipe
+//       (.recipe is appended when the name has no extension)
+//   - anything else is returned as-is (plain DSL)
+//
+// projectRoot is the booth project directory (config target), not necessarily cwd.
+// Stdin ("-") should be handled by the caller before calling this function.
+func ReadSelectInputWithProject(value, projectRoot string) (string, error) {
 	if strings.HasPrefix(value, "@@") {
-		url := strings.TrimPrefix(value, "@@")
-		return fetchURL(url)
+		return fetchURL(normalizeRecipeURL(strings.TrimPrefix(value, "@@")))
 	}
 	if strings.HasPrefix(value, "@") {
-		filename := strings.TrimPrefix(value, "@")
-		data, err := os.ReadFile(filename)
-		if err != nil {
-			return "", fmt.Errorf("reading selection file %q: %w", filename, err)
-		}
-		return string(data), nil
+		return readRecipeRef(strings.TrimPrefix(value, "@"), projectRoot)
 	}
 	return value, nil
 }
