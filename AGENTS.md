@@ -203,6 +203,12 @@ Merging is a deliberate act, same bar as any commit/push (Rule 8) — only when 
 land/merge a worktree's work, never on your own initiative. Prefer the **`work-finish`** skill.
 Summary of the procedure:
 
+0. **Preflight (read-only), including a gap audit** — git shape (clean main, behind/ahead,
+   merge-tree) **and** land-time **gaps** only: (1) tests that should exist but do not,
+   (2) docs not updated for user-visible behaviour, (3) experiments not concluded,
+   (4) accidental changes. If none: say **`No gaps.`** only — no checklist walkthrough. If
+   some: list them plainly and **wait** (close gaps vs land as-is). Do not auto-fix.
+   "Not yet committed" is a process step, not a gap. Full text: `work-finish` skill step 0b.
 1. **In the main clone**, stash anything uncommitted so main is clean before the merge
    (`git stash push -u -m "land-<branch>"` — skip if main is already clean).
 2. **In the worktree**, rebase the feature branch onto main: `git rebase main`. Resolve conflicts.

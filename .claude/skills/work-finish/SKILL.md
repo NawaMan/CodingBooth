@@ -1,6 +1,6 @@
 ---
 name: work-finish
-description: Land a worktree's feature branch into main — preflight, rebase, tests, --no-ff merge, then delete the worktree/branch. Use when the user says "land this", "merge the branch", "merge into main", or asks to finish a worktree session. Never pushes.
+description: Land a worktree's feature branch into main — preflight (gap audit: missing tests, stale docs, unfinished experiments, accidental changes), wait for close-gaps vs land-as-is, rebase, tests, --no-ff merge, then delete the worktree/branch. Use when the user says "land this", "merge the branch", "merge into main", or asks to finish a worktree session. Never pushes.
 ---
 
 # Land a worktree's branch into main
@@ -15,10 +15,11 @@ different: it now runs automatically as the final step, once the merge itself ha
 safe — see step 7.
 
 **This skill's own Proposal before code gate** (replaces the generic `AGENTS.md` form — do not
-stack both): after the read-only preflight below, report as **Problem · Diagnostic · Approach**
-(what is being landed, clean/behind/conflict verdict, the exact rebase→test→`--no-ff` plan) and
-**wait** before stash / rebase / merge. The user's original "land this" is not enough once
-preflight can change the plan (conflicts, dirty main, branch behind).
+stack both): after the read-only preflight below (including the **gap audit**), report as
+**Problem · Diagnostic · Approach** — git shape, **any gaps** (owner definition below), and the
+exact rebase→test→`--no-ff` plan (or "close gaps first, then land") — and **wait** before stash /
+rebase / merge / gap-closing edits. The user's original "land this" is not enough once preflight
+can change the plan (conflicts, dirty main, branch behind, open gaps).
 
 ## 0. Preflight — establish the shape before touching anything
 
@@ -32,9 +33,7 @@ git log --oneline <branch>..main      # is the branch behind? (non-empty ⇒ reb
 git merge-tree --write-tree main <branch> >/dev/null; echo $?   # 0 = clean, 1 = conflicts
 ```
 
-`merge-tree` is a genuine dry run — it writes nothing to the index or working tree. Fold the
-verdict into the **Problem · Diagnostic · Approach** report and **wait** before step 1; "this will
-conflict" is much cheaper said now than mid-rebase.
+`merge-tree` is a genuine dry run — it writes nothing to the index or working tree.
 
 **Check where the worktree actually lives.** It must be `<repo>/worktree/<name>` — a linked
 worktree whose `.git` is a *file* containing `gitdir: …`. If an agent CLI put it somewhere else
@@ -48,6 +47,52 @@ mkdir -p worktree
 git worktree add worktree/<name> <branch>     # same branch, documented location
 test -f worktree/<name>/.git && echo OK       # a FILE, not a directory
 ```
+
+**Land process (not a "gap"):** if the worktree has intentional uncommitted work and
+`main..<branch>` is empty, say clearly that a **commit on the feature branch is required before
+merge** — separate from the gap audit. If there is nothing to land (no commits and no intentional
+work), stop and do not invent a merge.
+
+### 0b. Gap audit (read-only, then tell the user)
+
+**Owner definition of a gap at land time** — only these four. Do not redefine "gap" as "not yet
+committed" or as a full polish wishlist.
+
+Against the branch diff (`git diff main...<branch>` and any uncommitted work intended to land),
+mark each **ok**, **gap**, or **n/a** (one line why):
+
+| Gap | Meaning | How to look |
+| --- | --- | --- |
+| **1. Tests that should have been added but were not** | Behaviour changed and no matching test (or no plan in re-verify) would catch the bug class. | Diff touches CLI / setup / wrapper / logic → expect Go and/or shell test under `tests/` or `*_test.go`. Rule 1. |
+| **2. Documents that have not been updated** | User-visible behaviour changed but product docs / CHANGELOG / TODO checkbox lag. | `docs/BOOTH_*.md`, `docs/CHANGELOG.md` Unreleased, example READMEs if the change is about an example; TODO `[x]` if the work came from TODO. Rule 3. |
+| **3. Experiments that were not concluded** | Scratch, spike, half-wired path, or open design left in the tree as if finished. | `experiments/`, WIP comments, disabled tests, "parked" branches of code, TODO/FIXME that block the claim of done, half-added templates/setups with no way to use them. |
+| **4. Accidental changes** | Diff noise not part of the feature. | Unrelated file churn, debug prints, local paths, commented-out experiments, drive-by renames, mixed-in work from another task, secrets, generated junk that should not land. |
+
+**Also list, but not as gaps:** pure process notes (must commit first; branch behind main; main
+dirty with *other* work that must not be merged by accident).
+
+**Do not** auto-fix gaps.
+
+**Reporting gaps — keep it short:**
+
+- **No gaps** → say only **`No gaps.`** (or “No gap.”). Do **not** walk the four rows, do not
+  justify each “ok”, do not restate the checklist.
+- **One or more gaps** → list each gap in plain language (what / why it counts). Skip categories
+  that are fine; no full matrix of ok/n/a.
+
+In **Approach**, if there **are** gaps, offer both paths and **wait**:
+
+1. **Close the gaps** — user says e.g. "close the gaps", "fix tests/docs", "finish experiments",
+   "drop the accidental bits"; then edit/commit on the feature branch, re-check, and only then
+   continue from step 1.
+2. **Land as-is** — user says e.g. "land as-is", "finish as is", "merge anyway", "skip gaps";
+   then proceed with known gaps left in place (re-mention only if re-verify fails).
+
+If **no gaps**, Approach is only the land plan (commit if needed → rebase → test → merge); still
+**wait** for green light on that plan (git shape may still need a decision).
+
+Fold git verdict **and** the gap line into **Problem · Diagnostic · Approach**, then **wait**
+before step 1.
 
 ## 1. Stash main only if it is dirty
 
