@@ -66,8 +66,10 @@
 		onclose?: () => void;
 		/** DOM id for the root layer. */
 		id?: string;
-		/** Extra class(es) for the root layer. NOTE: a slide's own <style> is scoped, so a
-		    class defined there will NOT match — use global CSS or a :global(...) block. */
+		/** Extra class(es) for the root layer. NOTE: a slide's own style block is scoped, so
+		    a class defined there will NOT match — use global CSS or a :global(...) block.
+		    (Do not write the tag name literally in this comment: svelte-check's tag scanner
+		    reads it as a real opener and reports the script as never closed.) */
 		class?: string;
 		/** Extra inline CSS appended to the banner. */
 		style?: string;

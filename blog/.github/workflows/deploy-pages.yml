@@ -25,10 +25,10 @@ jobs:
 
     steps:
       - name: Check out the code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@v6
         with:
           version: 9
 
@@ -60,13 +60,23 @@ jobs:
       # (or: gh api --method POST repos/<owner>/<repo>/pages -f build_type=workflow).
       # Without it, this step fails with "Get Pages site failed ... Not Found".
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v6
 
+      # include-hidden-files IS REQUIRED HERE — do not drop it.
+      #
+      # From v5 this action's tar step adds `--exclude=.[^/]*` unless the input is
+      # true, which strips every top-level dotfile out of the artifact. `docs/`
+      # ships `.nojekyll`, and it is load-bearing: SvelteKit emits `_app/`, and
+      # without that file GitHub Pages runs Jekyll, which skips `_`-prefixed
+      # directories. The deploy would still report success while every script and
+      # stylesheet on the live site 404s. (v3 and earlier excluded only .git and
+      # .github, so this was free before.)
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: 'docs'
+          include-hidden-files: true
 
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5

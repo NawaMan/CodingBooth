@@ -223,7 +223,10 @@
 		dirty = false;
 	}
 
-	/** Force the buffer to `next` and clear dirty (REFRESH from disk). */
+	/**
+	 * Force the buffer to `next` and clear dirty (REFRESH from disk).
+	 * @param {string} next
+	 */
 	export function setValue(next) {
 		// @ts-ignore
 		if (editor) editor.setValue(next);

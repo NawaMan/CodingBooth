@@ -256,17 +256,21 @@ are load-bearing when you touch anything nearby:
    the booth's control port **+173**, so this blog's stock URL is `http://localhost:41173/`.
    Confirm with `./booth list` and tell the user the full URL. **A server you started only to
    verify your own change is transient — stop it when the check is done** (`./booth stop --name
-   <booth>`), rather than leaving it for the user. Tests and static builds go through the booth
-   too (`./booth exec --run -- pnpm test`, `./booth exec --run -- ./build-static.sh dist`). The
+   <booth>`), rather than leaving it for the user. Type-checks and static builds go through the
+   booth too (`./booth exec --run -- pnpm run check`, `./booth exec --run -- ./build-static.sh
+   dist`). The
    published site is built by `build/build-blog.sh` at the repo root, which wraps exactly that and
    stages the result into `site/blog/`. **Worktrees work** (CodingBooth >= 0.63.0): run the same
    command from the worktree with no flags — it gets its own booth and ports. Git does **not**
    work *inside* a worktree booth (`fatal: not a git repository`), because the worktree's `.git`
    is a pointer into the main repo's `.git`, which the container doesn't mount. Known and
    harmless: run git on the host.
-7. **Verify before declaring done.** Cover the change with a test (`tests/*.test.ts`, or
-   `tests/*.ssr.test.ts` for prerender behavior) and/or have the user check the slide in dev. The
-   build is static, so also sanity-check it isn't relying on any server feature.
+7. **Verify before declaring done.** This copy of the framework carries **no test suite** — we
+   trust GeekPresent, which is where the framework's own tests live and run. So verification here
+   is: `pnpm run check` clean, the static build green, and the affected page eyeballed in dev. The
+   build is static, so also sanity-check it isn't relying on any server feature. Upstream test
+   files cited elsewhere in this document (`tests/…`) name *GeekPresent's* suite, not this repo's —
+   they are pointers to where a behaviour is pinned upstream, not files you will find here.
 
 ---
 

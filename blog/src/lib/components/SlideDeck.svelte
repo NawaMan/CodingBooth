@@ -579,9 +579,8 @@
 	function printFocusables(): HTMLElement[] {
 		const sub = chromeOverlay?.querySelector('.print-sub');
 		if (!sub) return [];
-		return [...sub.querySelectorAll('button')].filter(
-			(el): el is HTMLElement => el instanceof HTMLElement && !(el as HTMLButtonElement).disabled
-		);
+		// querySelectorAll('button') is already HTMLButtonElement[] — no predicate needed.
+		return [...sub.querySelectorAll('button')].filter((el) => !el.disabled);
 	}
 
 	function focusToolbarEl(el: HTMLElement | null | undefined) {
