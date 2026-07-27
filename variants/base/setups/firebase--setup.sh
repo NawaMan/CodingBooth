@@ -55,20 +55,45 @@ echo "• Installing Firebase CLI (firebase-tools) ..."
 npm install -g firebase-tools
 
 # ---- startup script for credential seeding ----
+# booth-entry already smart_copy's /etc/cb-home-seed in seed (no-clobber) mode.
+# Firebase CLI often creates ~/.config/configstore/firebase-tools.json as "{}"
+# (or empty) before a real login — that placeholder blocks the seed copy.
+# This startup re-applies the host credential file when the dest is missing,
+# empty, or only "{}". A real login in the container is left alone.
 STARTUP_FILE="/usr/share/startup.d/60-cb-firebase--startup.sh"
 cat > "${STARTUP_FILE}" <<'STARTUP'
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Firebase CLI startup script
-# Copies credentials from cb-home-seed if available
+# Firebase CLI credentials from host home-seed.
+# Overwrite dest only when missing / empty / placeholder "{}" so a real
+# in-container login is not clobbered, but host creds still win over stubs.
 
-CB_SEED_DIR="/etc/cb-home-seed/.config/configstore"
-FIREBASE_CONFIG_DIR="$HOME/.config/configstore"
+# CB_FIREBASE_SEED_FILE is for unit tests; production leaves the default.
+SEED_FILE="${CB_FIREBASE_SEED_FILE:-/etc/cb-home-seed/.config/configstore/firebase-tools.json}"
+DEST_DIR="${HOME}/.config/configstore"
+DEST_FILE="${DEST_DIR}/firebase-tools.json"
 
-if [[ -d "$CB_SEED_DIR" && ! -d "$FIREBASE_CONFIG_DIR" ]]; then
-    mkdir -p "$FIREBASE_CONFIG_DIR"
-    cp -r "$CB_SEED_DIR/." "$FIREBASE_CONFIG_DIR/"
+if [[ ! -f "$SEED_FILE" ]]; then
+  exit 0
+fi
+
+need_copy=false
+if [[ ! -f "$DEST_FILE" ]]; then
+  need_copy=true
+elif [[ ! -s "$DEST_FILE" ]]; then
+  need_copy=true
+else
+  # Whitespace-only "{}" is Firebase's unauthenticated placeholder.
+  content="$(tr -d '[:space:]' <"$DEST_FILE" 2>/dev/null || true)"
+  if [[ "$content" == "{}" ]]; then
+    need_copy=true
+  fi
+fi
+
+if [[ "$need_copy" == true ]]; then
+  mkdir -p "$DEST_DIR"
+  cp "$SEED_FILE" "$DEST_FILE"
 fi
 STARTUP
 chmod 755 "${STARTUP_FILE}"
@@ -92,10 +117,14 @@ EON
 
 echo ""
 echo "=== Credential Seeding ==="
-echo "To reuse Firebase credentials from host, add to .booth/config.toml:"
+echo "To reuse Firebase credentials from host, add to .booth/config.toml"
+echo "(or select firebase+credential in booth config):"
 echo ""
 echo '  run-args = ['
-echo '      # Firebase CLI credentials'
-echo '      "-v", "~/.config/configstore:/etc/cb-home-seed/.config/configstore:ro"'
+echo '      # Firebase CLI credentials (file mount; matches firebase+credential)'
+echo '      "-v", "~/.config/configstore/firebase-tools.json:/etc/cb-home-seed/.config/configstore/firebase-tools.json:ro"'
 echo '  ]'
+echo ""
+echo "Startup overwrites an empty or \"{}\" placeholder in the container with"
+echo "the host file; a real login already in the container is left alone."
 echo ""

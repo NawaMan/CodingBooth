@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Firebase host credentials win over empty/`{}` placeholders.** The
+  `setup firebase` startup copies
+  `/etc/cb-home-seed/.config/configstore/firebase-tools.json` into the home when
+  the destination is missing, empty, or only `{}` (firebase-tools often creates
+  that stub before login). A real login in the container is not overwritten.
+  Documented mount path matches `firebase+credential` (single file). Fixes the
+  firebase example when home-seed no-clobber would otherwise skip the host file.
+
 - **Conservative team shared configs (no secrets).** Additional `shared-*`
   extensions for code-server keybindings/snippets, Neovim config, JupyterLab
   user-settings, XFCE keyboard shortcuts, and Starship prompt — all
