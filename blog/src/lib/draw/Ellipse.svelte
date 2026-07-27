@@ -177,6 +177,14 @@
 			get dirty() {
 				return liveTag !== sourceTag;
 			},
+			get sourceBox() {
+				return {
+					x: finite(x),
+					y: finite(y),
+					width: Math.max(0, finite(width)),
+					height: Math.max(0, finite(height))
+				};
+			},
 			get drawEdit() {
 				return drawSecs ? drawApi : null;
 			},

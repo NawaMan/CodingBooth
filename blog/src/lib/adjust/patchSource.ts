@@ -43,10 +43,14 @@ export interface LayoutChange {
 	//      multi-line tags, and extra props.
 	//
 	//   2. LITERAL (Draw shapes): give the whole `oldTag`/`newTag` opening tag and
-	//      the first exact occurrence of oldTag is swapped for newTag. Draw emits
-	//      its shapes' source tags in the same canonical order it serializes here,
-	//      so the old tag matches the source line byte-for-byte. Curves/Lines/Arcs
-	//      have no box geometry, so this is the only way to save them.
+	//      the first exact occurrence of oldTag is swapped for newTag. Point shapes
+	//      (Line/Curve/Arc/Path/Polyline) have no box geometry, so this is the only
+	//      way to save them.
+	//      A byte compare is fragile, and BOX shapes routinely lose it: boxTag()
+	//      emits the cosmetic attrs BEFORE x/y/width/height, while a hand-written
+	//      <Rect>/<Ellipse> almost always leads with the geometry the way a Block
+	//      does. So Rect/Ellipse send `before`/`after` as WELL as the tags, and a
+	//      literal miss falls through to mode 1 rather than reporting not-found.
 	//
 	//   3. INSERT (FREEZE): give `insert` — markup that is not in the file at all yet
 	//      and has to be ADDED. This is the one mode with no target tag to find, and
@@ -352,15 +356,25 @@ export function patchSlideSource(source: string, changes: LayoutChange[]): Patch
 				continue;
 			}
 			const at = current.indexOf(change.oldTag);
-			if (at === -1) {
-				// The canonical tag isn't in the file — geometry via expressions, a
-				// reformatted tag, or a tag in another file. Nothing to rewrite.
+			if (at !== -1) {
+				current = current.slice(0, at) + change.newTag + current.slice(at + change.oldTag.length);
+				patched.push(change);
+				continue;
+			}
+			// The canonical tag isn't in the file. For a BOX shape that is usually
+			// not "unpatchable" — just written in a different attribute order than
+			// the serializer emits. boxTag() puts the cosmetic attrs BEFORE
+			// x/y/width/height, while a hand-written tag almost always leads with
+			// the geometry (as a Block does), and a byte compare cannot see past
+			// that. Those changes also carry structured geometry, so fall through
+			// to the same order-independent attribute rewrite Blocks use, which
+			// preserves the author's ordering, spacing, and multi-line layout.
+			// Point shapes (Line/Curve/Arc/Path/Polyline) have no box, send no
+			// geometry, and correctly stop here.
+			if (!change.after) {
 				unmatched.push({ ...change, reason: 'not-found' });
 				continue;
 			}
-			current = current.slice(0, at) + change.newTag + current.slice(at + change.oldTag.length);
-			patched.push(change);
-			continue;
 		}
 
 		// New markup (FREEZE): nothing to find, something to add.

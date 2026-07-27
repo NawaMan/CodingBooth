@@ -77,6 +77,15 @@ export async function saveAdjust(): Promise<SaveResult> {
 		.map((e) => ({ kind: e.kind, name: e.name || undefined, before: e.before, after: e.after }));
 	const drawChanges = [...get(shapeChanges).values()]
 		.filter((e) => e.dirty)
-		.map((e) => ({ kind: e.kind, name: e.name || undefined, oldTag: e.oldTag, newTag: e.newTag }));
+		.map((e) => ({
+			kind: e.kind,
+			name: e.name || undefined,
+			oldTag: e.oldTag,
+			newTag: e.newTag,
+			// Present for box shapes only; the patcher uses them as the fallback
+			// when the literal tag isn't found.
+			before: e.before,
+			after: e.after
+		}));
 	return post([...blockChanges, ...drawChanges]);
 }

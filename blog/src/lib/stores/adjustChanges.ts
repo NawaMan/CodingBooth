@@ -85,6 +85,13 @@ export interface ShapeChangeEntry {
 	oldTag: string;
 	/** Opening tag with live geometry (what to write). */
 	newTag: string;
+	/** BOX shapes (Rect/Ellipse) only — geometry at mount and now, so the patcher
+	    can fall back to Block's order-independent attribute rewrite when the
+	    literal tag isn't a byte match. Point shapes (Line/Curve/Arc/Path/Polyline)
+	    have no x/y/width/height box and leave these undefined, so they stay
+	    literal-only. See patchSlideSource. */
+	before?: Geometry;
+	after?: Geometry;
 }
 
 const shapes = writable<Map<string, ShapeChangeEntry>>(new Map());

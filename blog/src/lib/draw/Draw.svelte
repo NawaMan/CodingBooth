@@ -311,7 +311,11 @@
 				name: b.name,
 				dirty: b.dirty,
 				oldTag: b.sourceSnippet,
-				newTag: b.snippet
+				newTag: b.snippet,
+				// Box shapes also travel as structured geometry, so SAVE can still
+				// place them when the serialized tag isn't a byte match for source.
+				before: b.sourceBox,
+				after: { x: b.x, y: b.y, width: b.width, height: b.height }
 			}))
 		]);
 	});

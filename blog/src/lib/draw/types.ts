@@ -316,6 +316,12 @@ export interface BlockShapeRegistration {
 	y: number;
 	width: number;
 	height: number;
+	/** The box as AUTHORED, straight off the props — the `before` the dev-save
+	 *  patcher matches on when the serialized tag isn't a byte-for-byte match for
+	 *  the source (an author who wrote x/y/width/height before the cosmetic attrs
+	 *  rather than after, which is how most hand-written tags read). Distinct from
+	 *  x/y/width/height above, which follow the drag. */
+	readonly sourceBox: { x: number; y: number; width: number; height: number };
 }
 
 /** Canvas size (and, in ADJUST mode, the editing/selection surface) shared
