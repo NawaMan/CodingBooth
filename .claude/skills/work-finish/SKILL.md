@@ -197,3 +197,24 @@ what is unmerged or uncommitted and let the user decide. Never reach for `--forc
 past that refusal.
 
 Then **stop**. Say explicitly that nothing was pushed, and that the worktree/branch are gone.
+
+## 8. Session close line (required when the land is complete)
+
+When **all of** the following are true:
+
+1. **Gaps** — there were **no open gaps** at land time, **or** every gap was **closed** before
+   merge (not “land as-is” with known leftovers), and
+2. **Merge** — `git merge --no-ff` succeeded, and
+3. **Cleanup** — worktree remove + branch `-d` succeeded (or the user already had no worktree),
+
+…end the report with an **explicit done signal** so the user knows they can walk away. Use plain
+language, for example:
+
+> **All done.** Gaps closed, branch merged into local `main`, worktree/branch removed. Nothing
+> was pushed. **You can close this session.**
+
+Optional one-liners after that (push still pending, unrelated dirty files on main) are fine; do
+**not** bury the “session can be closed” line.
+
+**Do not** use that line if: re-verify failed; merge failed; cleanup refused; or the user chose
+**land as-is** with remaining gaps (say what is left instead).
