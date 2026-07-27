@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 #
-# prepare-youtube.sh — fetch a YouTube thumbnail and generate a QR code so a
-# slide can use the <YouTube> component right away.
+# prepare-youtube.sh — fetch a YouTube thumbnail so a slide can use the <YouTube>
+# component right away.
 #
-# Assets are colocated: the two files are written into the page's own folder
-# (next to its +page.svelte), not into static/:
+# Assets are colocated: written into the page's own folder (next to its
+# +page.svelte), not into static/:
 #     <name>-TN.png     the video thumbnail (PNG)
-#     <name>-QR.png     a QR code linking to the video
+#     <name>-QR.png     a QR code linking to the video — ONLY if qrencode is installed,
+#                       and no longer needed: <YouTube> encodes the watch URL itself
+#                       (via $lib/components/QRCode.svelte), so the code can never drift
+#                       from the video. Pass it as {qr} only to pin an existing slide's
+#                       exact pixels.
 #
 # and it prints the import + usage snippet to drop into that page.
 #
@@ -19,7 +23,7 @@
 #
 # [dest-dir] defaults to the current directory; [name] defaults to the video id.
 #
-# Requires: curl, qrencode, and one of: ffmpeg | gm | convert | djpeg.
+# Requires: curl, and one of: ffmpeg | gm | convert | djpeg.  (qrencode: optional.)
 
 set -euo pipefail
 
@@ -53,8 +57,10 @@ esac
 URL="https://www.youtube.com/watch?v=$VID"
 
 # --- deps -----------------------------------------------------------------
-command -v curl     >/dev/null 2>&1 || die "curl is required"
-command -v qrencode >/dev/null 2>&1 || die "qrencode is required (e.g. apt install qrencode)"
+# qrencode is no longer required: <YouTube> encodes the QR from the watch URL at
+# render time. We still write the PNG when the binary happens to be around, for
+# slides that were built against it.
+command -v curl >/dev/null 2>&1 || die "curl is required"
 
 mkdir -p "$DEST_DIR"
 THUMB="$DEST_DIR/$NAME-TN.png"
@@ -88,20 +94,27 @@ to_png() {
 to_png "$tmp_jpg" "$THUMB" || die "No JPG->PNG converter found (install ffmpeg, graphicsmagick, or imagemagick)"
 echo "→ wrote $THUMB"
 
-# --- 3. QR code linking to the video --------------------------------------
-qrencode -o "$QR" -s 8 -m 1 "$URL"
-echo "→ wrote $QR"
+# --- 3. QR code linking to the video (optional, legacy) --------------------
+if command -v qrencode >/dev/null 2>&1; then
+	qrencode -o "$QR" -s 8 -m 1 "$URL"
+	echo "→ wrote $QR (optional — <YouTube> encodes this itself)"
+else
+	echo "→ skipped the QR png (qrencode not installed; <YouTube> encodes it itself)"
+fi
 
 # --- 4. tell the user how to use it ---------------------------------------
 cat <<EOF
 
-✅ Done. Assets written next to your page. Use them like this:
+✅ Done. Asset written next to your page. Use it like this:
 
     <script>
       import YouTube   from '\$lib/components/YouTube.svelte';
       import thumbnail from './$NAME-TN.png';
-      import qr        from './$NAME-QR.png';
     </script>
 
-    <YouTube {thumbnail} {qr} alt="..." youtubeId="$VID" width="600px" />
+    <YouTube {thumbnail} alt="..." youtubeId="$VID" width="600px" />
+
+The QR overlay is encoded from the watch URL at render time, so it can never drift
+from the video. To pin an existing slide's exact pixels instead, import the PNG and
+pass it: <YouTube {thumbnail} {qr} ... />
 EOF

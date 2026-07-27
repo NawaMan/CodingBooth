@@ -18,7 +18,7 @@
 	$: mapH = Math.round(MAP_W / (width / height));
 </script>
 
-<div class="map no-print" style="width:{MAP_W}px; height:{mapH}px;">
+<div class="map gp-chrome no-print" style="width:{MAP_W}px; height:{mapH}px;">
 	<div
 		class="view"
 		style="left:{rect.left * 100}%; top:{rect.top * 100}%; width:{rect.width * 100}%; height:{rect.height * 100}%;"

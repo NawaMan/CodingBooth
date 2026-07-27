@@ -17,6 +17,23 @@
 
 	export let shadowOpacity: number              = 0.8;
 	export let onClick      : (() => void) | null = null;
+	/** Extra "is this click inside me" test, OR'd with the normal DOM-containment
+	    check — for content a consumer has reparented OUTSIDE this box's own subtree
+	    (e.g. Code.svelte moves Monaco into an unscaled `position: fixed` layer so its
+	    own hit-testing isn't broken by the deck's canvas scale; that content is no
+	    longer a DOM descendant of `boxEl`, so a click on it would otherwise read as
+	    "outside" and immediately collapse the box it visually belongs to). */
+	export let containsExternal: ((target: EventTarget | null) => boolean) | null = null;
+
+	/** Inline style for the root element, applied last so it wins. */
+	export let style: string = '';
+	/** DOM id for the root element. */
+	export let id: string = '';
+	/** Extra class(es) for the root element. NOTE: a slide's own style block is scoped, so a
+	    class defined there will NOT match — use global CSS (global.css / roles.css / a
+	    :global(...) block) or a utility class. See AGENTS.md. */
+	let klass: string = '';
+	export { klass as class };
 
 	// The visible box. Clicks inside it are left alone (select / copy / drag);
 	// the box only closes on CLOSE, Escape, or a click outside it.
@@ -33,9 +50,10 @@
 	}
 
 	function handleOutsideClick(event: MouseEvent) {
-		if (expanded && boxEl && !boxEl.contains(event.target as Node)) {
-			collapse();
-		}
+		if (!expanded || !boxEl) return;
+		if (boxEl.contains(event.target as Node)) return;
+		if (containsExternal && containsExternal(event.target)) return;
+		collapse();
 	}
 
 	let outsideListening = false;
@@ -70,8 +88,9 @@
 </script>
 
 <div
-	class="parent {expanded ? 'expanded' : ''}"
-	style="--custom-top: {top}; --custom-left: {left}; --custom-bottom: {bottom}; --custom-right: {right}; --shadow-opacity: {shadowOpacity}; --scrollable: {scrollable ? 'scroll' : 'hidden'};"
+	class="parent {expanded ? 'expanded' : ''} {klass}"
+	id={id || undefined}
+	style="--custom-top: {top}; --custom-left: {left}; --custom-bottom: {bottom}; --custom-right: {right}; --shadow-opacity: {shadowOpacity}; --scrollable: {scrollable ? 'scroll' : 'hidden'}; {style}"
 >
 	<!-- svelte-ignore a11y-click-events-have-key-events a11y-no-noninteractive-element-interactions -->
 	<div
@@ -106,6 +125,16 @@
 		bottom: var(--custom-bottom, auto);
 		right: var(--custom-right, auto);
 		transform: translate(-50%, -50%);
+	}
+
+	/* When open, the modal (and its full-canvas dimming backdrop — the 9999px
+	   box-shadow on .img-box below) must sit ABOVE every page component, including
+	   in-slide chrome that carries its own z-index (e.g. the KeyframeStudio panel and
+	   ghost labels at z-index:50). A slide author can't reach inside here to fix the
+	   stacking, so the open Box owns it. Only when expanded, so a collapsed 0×0 Box
+	   never needlessly raises itself. */
+	.parent.expanded {
+		z-index: 1000;
 	}
 
     .parent .link a {

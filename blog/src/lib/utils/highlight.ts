@@ -35,10 +35,14 @@ function getHighlighter(): Promise<HighlighterCore> {
 }
 
 // Heavier grammars (svelte pulls in ts/js) are loaded on demand, so the common
-// css-snippet path stays light and the svelte grammar only ships when the </> Source
-// viewer is actually opened. Each lang loads at most once.
+// css-snippet path stays light and each grammar only ships when a slide that uses
+// it actually renders. Each lang loads at most once.
 const langLoaders: Record<string, () => Promise<unknown>> = {
 	svelte: () => import('shiki/langs/svelte.mjs'),
+	javascript: () => import('shiki/langs/javascript.mjs'),
+	python: () => import('shiki/langs/python.mjs'),
+	go: () => import('shiki/langs/go.mjs'),
+	bash: () => import('shiki/langs/bash.mjs'),
 };
 const langLoaded: Record<string, Promise<void>> = {};
 
@@ -62,4 +66,46 @@ export async function highlightToHtml(code: string, lang = 'css'): Promise<strin
 	await ensureLang(highlighter, lang);
 	const useLang = highlighter.getLoadedLanguages().includes(lang) ? lang : 'css';
 	return highlighter.codeToHtml(code, { lang: useLang, theme: THEME });
+}
+
+/** One themed token: the text run and the colour Shiki assigned it. `bold`/`italic`
+    are decoded from Shiki's `fontStyle` bitmask so a caller can render them without
+    importing Shiki's own types. */
+export interface CodeToken {
+	content: string;
+	color?: string;
+	bold?: boolean;
+	italic?: boolean;
+}
+
+// Shiki's FontStyle bitmask (Italic = 1, Bold = 2, Underline = 4). Decoded here so
+// the value never leaks past this module.
+const FONT_ITALIC = 1;
+const FONT_BOLD = 2;
+
+/**
+ * Highlight `code` and return its tokens grouped BY LINE — one array of
+ * {@link CodeToken} per source line — rather than one HTML blob. This is what a
+ * component that owns its own per-line markup (line numbers, a diff gutter, a
+ * reveal) needs: it can colour each line's text while wrapping the line however it
+ * likes. Same lazy-grammar path as {@link highlightToHtml}; anything not loadable
+ * falls back to css.
+ *
+ * The returned array has exactly one entry per line of `code` (splitting on `\n`),
+ * so a caller can zip it with its own line list. On any failure it rejects, and the
+ * caller keeps its plain-text fallback — the QuickCode contract.
+ */
+export async function highlightToLines(code: string, lang = 'css'): Promise<CodeToken[][]> {
+	const highlighter = await getHighlighter();
+	await ensureLang(highlighter, lang);
+	const useLang = highlighter.getLoadedLanguages().includes(lang) ? lang : 'css';
+	const { tokens } = highlighter.codeToTokens(code, { lang: useLang, theme: THEME });
+	return tokens.map((line) =>
+		line.map((t) => ({
+			content: t.content,
+			color: t.color,
+			bold: ((t.fontStyle ?? 0) & FONT_BOLD) !== 0,
+			italic: ((t.fontStyle ?? 0) & FONT_ITALIC) !== 0
+		}))
+	);
 }

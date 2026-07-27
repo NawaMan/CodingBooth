@@ -16,6 +16,12 @@
 
 	</style>
 	<body data-sveltekit-preload-data="hover">
+		<!-- Looking for the slide's text and not finding it? That is expected, not a broken
+		     server or build. SlideDeck gates SSR, so this document is only a shell — slides
+		     render on the client, and no page's HTML ever contains its own content.
+		     To check a slide without a browser: fetch the module the dev server compiles
+		     (/src/routes/<deck>/<name>.html/+page.svelte), or run `pnpm test`, whose
+		     tests/*.ssr.test.ts project renders through svelte/server and is the real proof. -->
 		<div style="display: contents">%sveltekit.body%</div>
 	</body>
 </html>

@@ -24,11 +24,21 @@
     export let revealedLines: Array<number> = [1];
     export let fontSize:      number = 20;
 
+    /** Inline style for the root element, applied last so it wins. */
+    export let style: string = '';
+    /** DOM id for the root element. */
+    export let id: string = '';
+    /** Extra class(es) for the root element. NOTE: a slide's own style block is scoped, so a
+        class defined there will NOT match — use global CSS (global.css / roles.css / a
+        :global(...) block) or a utility class. See AGENTS.md. */
+    let klass: string = '';
+    export { klass as class };
+
     // The box is 975px tall; the title bar (when present) takes 60px.
     $: editorHeight = title ? '915px' : '975px';
 </script>
 
-<Box bind:expanded={expanded} width={1500} height={975}>
+<Box {style} {id} class={klass} bind:expanded={expanded} width={1500} height={975}>
     {#if title}
         <div class="code-title">{title}</div>
     {/if}

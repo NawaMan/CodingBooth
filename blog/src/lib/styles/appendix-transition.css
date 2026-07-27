@@ -1,0 +1,76 @@
+/*
+  Appendix view transitions — the motion that says "we stepped out of the talk".
+
+  An appendix is a detour, and the animation is the sentence that tells the audience
+  so: going IN we travel DOWN to it, and coming back we travel UP to where the talk
+  paused. As when scrolling down a page, travelling down means the content moves up —
+  the deck rises out of view, the appendix comes up from below — and the return is the
+  exact mirror. Paging WITHIN the appendix is ordinary sideways paging, because that is
+  ordinary reading; only entering and leaving are vertical, so the vertical axis means
+  exactly one thing.
+
+  Mechanics (the same ones the Transition deck uses — see routes/transition/
+  view-transitions.css): deckNav wraps the goto() in document.startViewTransition()
+  and, for its duration, sets two attributes on <html>:
+
+    data-vt-kind = 'appendix-in' | 'appendix-out' | 'appendix-step'
+    data-vt      = 'forward' | 'back'
+
+  in / out ignore the direction on purpose: leaving an appendix is the same gesture
+  whether the speaker pressed RETURN, Backspace, PREV off the front, or NEXT off the
+  end. It is the appendix closing, not a direction of travel. Only `appendix-step`,
+  which IS a direction of travel, reads data-vt.
+
+  These rules live in a plain global stylesheet, not a Svelte <style> — a scoped
+  block would mangle the ::view-transition pseudo-elements, which belong to the
+  document rather than to any component. Imported by AppendixPage and AppendixLink,
+  so a deck gets them exactly when it has an appendix; inert until deckNav sets the
+  attributes, and a browser without the API simply navigates instantly.
+*/
+
+/* Shared timing. Slower than a page-turn (a detour should read as a detour), quick
+   enough not to make the speaker wait. */
+html[data-vt-kind^="appendix"]::view-transition-old(root),
+html[data-vt-kind^="appendix"]::view-transition-new(root) {
+	animation-duration: 550ms;
+	animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+	animation-fill-mode: both;
+}
+
+/* ── in: we travel DOWN into the appendix. Think of scrolling down a long page —
+      to move down, the content moves UP: the talk rises out of view and the appendix
+      comes up from below to meet you. ─────────────────────────────────────────── */
+html[data-vt-kind="appendix-in"]::view-transition-old(root) { animation-name: appendix-deck-up; }
+html[data-vt-kind="appendix-in"]::view-transition-new(root) { animation-name: appendix-from-below; }
+
+@keyframes appendix-deck-up    { to   { transform: translateY(-100%); opacity: 0.25; } }
+@keyframes appendix-from-below { from { transform: translateY(100%);  opacity: 0.25; } }
+
+/* ── out: the exact mirror — we travel back UP. The appendix sinks away below and
+      the slide that called it drops back down into place. ─────────────────────── */
+html[data-vt-kind="appendix-out"]::view-transition-old(root) { animation-name: appendix-down; }
+html[data-vt-kind="appendix-out"]::view-transition-new(root) { animation-name: appendix-deck-from-above; }
+
+@keyframes appendix-down            { to   { transform: translateY(100%);  opacity: 0.25; } }
+@keyframes appendix-deck-from-above { from { transform: translateY(-100%); opacity: 0.25; } }
+
+/* ── step: paging within the appendix. Sideways, like the rest of the deck — you
+      are reading, not travelling. ─────────────────────────────────────────────── */
+html[data-vt-kind="appendix-step"][data-vt="forward"]::view-transition-old(root) { animation-name: appendix-step-exit-left; }
+html[data-vt-kind="appendix-step"][data-vt="forward"]::view-transition-new(root) { animation-name: appendix-step-enter-right; }
+html[data-vt-kind="appendix-step"][data-vt="back"]::view-transition-old(root)    { animation-name: appendix-step-exit-right; }
+html[data-vt-kind="appendix-step"][data-vt="back"]::view-transition-new(root)    { animation-name: appendix-step-enter-left; }
+
+@keyframes appendix-step-exit-left   { to   { transform: translateX(-100%); opacity: 0.25; } }
+@keyframes appendix-step-enter-right { from { transform: translateX(100%);  opacity: 0.25; } }
+@keyframes appendix-step-exit-right  { to   { transform: translateX(100%);  opacity: 0.25; } }
+@keyframes appendix-step-enter-left  { from { transform: translateX(-100%); opacity: 0.25; } }
+
+/* Motion is the whole point here, so there is nothing to soften — for a viewer who
+   asked for no motion, the navigation simply happens. */
+@media (prefers-reduced-motion: reduce) {
+	html[data-vt-kind^="appendix"]::view-transition-old(root),
+	html[data-vt-kind^="appendix"]::view-transition-new(root) {
+		animation: none;
+	}
+}

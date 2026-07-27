@@ -39,6 +39,17 @@
 	export let imageAlt: string | undefined = undefined;
 	/** OpenGraph type — 'website' for the landing page, 'article' for a long-form Text. */
 	export let type: 'website' | 'article' = 'website';
+
+	/** Inline style for the page root, applied last so it wins. */
+	export let style: string = '';
+	/** DOM id for the page root. */
+	export let id: string = '';
+	/** Extra class(es) for the page root. NOTE: a page's own style block is scoped, so a
+	    class defined there will NOT match — use global CSS (global.css / roles.css / a
+	    :global(...) block) or a utility class. See AGENTS.md. */
+	let klass: string = '';
+	export { klass as class };
+
 	/** Ask search engines not to index this Text. Set on an UNPUBLISHED post: the
 	    route still prerenders and is reachable at its exact URL, but it is absent
 	    from the sitemap and every link list, so noindex is the last piece that
@@ -50,7 +61,8 @@
 <Seo {title} {description} {image} {imageAlt} {type} {noindex} />
 
 <div class="text-scroll" data-text-scroll>
-	<div class="text-page">
+	<!-- The page box is the flowing column, not the scroll container around it. -->
+	<div class="text-page {klass}" id={id || undefined} style={style || undefined}>
 		<slot />
 	</div>
 </div>
