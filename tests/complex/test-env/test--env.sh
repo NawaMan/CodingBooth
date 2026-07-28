@@ -3,9 +3,9 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# Smoke test for env-file passthrough and booth mount
+# Smoke test for project-root .env handling and the booth mount
 # Verifies:
-#   1) .env -> SECRET is visible inside container
+#   1) a project-root .env is NOT auto-imported (only .booth/.env is)
 #   2) data.txt is present and readable inside container
 #   3) source data.txt -> PUBLIC variable becomes available
 
@@ -83,20 +83,38 @@ fail() {
   print_test_result "false" "$0" "$total_checks" "$*"
 }
 
-# 1) SECRET from .env is visible
-out="$(run_cb 'echo $SECRET' | tr -d '\r')"
-[[ "$out" == "Boo" ]] || fail "SECRET expected 'Boo', got: '$out'"
-pass "SECRET from .env visible in container"
+# 1) A project-root .env is NOT auto-imported.
+#
+# Only `.booth/.env` is loaded automatically (docs/BOOTH_RUN.md → "Local Secrets"),
+# and that file carries a guarantee a bare .env cannot: booth refuses to run unless
+# it is gitignored. A project-root .env is commonly committed — sometimes with real
+# values by accident — so it is deliberately left alone rather than injected into
+# every booth. Opt in explicitly with `env-file = ".env"` in .booth/config.toml.
+#
+# This asserts the *absence* of that import, so the day someone adds bare-.env
+# auto-loading, this test says so instead of the behaviour arriving silently.
+out="$(run_cb 'echo "SECRET=[${SECRET:-}]"' | tr -d '\r')"
+if [[ "$out" == "SECRET=[]" ]]; then
+  pass "project-root .env is not auto-imported"
+else
+  fail "project-root .env should not be auto-imported, got: '$out'"
+fi
 
 # 2) data.txt is present
 out="$(run_cb 'cat data.txt' | tr -d '\r')"
-[[ "$out" == "PUBLIC=Yo" ]] || fail "data.txt content mismatch, got: '$out'"
-pass "data.txt present in booth mount"
+if [[ "$out" == "PUBLIC=Yo" ]]; then
+  pass "data.txt present in booth mount"
+else
+  fail "data.txt content mismatch, got: '$out'"
+fi
 
 # 3) source data.txt -> PUBLIC available
 out="$(run_cb 'source data.txt; echo $PUBLIC' | tr -d '\r')"
-[[ "$out" == "Yo" ]] || fail "PUBLIC expected 'Yo' after sourcing, got: '$out'"
-pass "Sourcing data.txt exposes PUBLIC"
+if [[ "$out" == "Yo" ]]; then
+  pass "Sourcing data.txt exposes PUBLIC"
+else
+  fail "PUBLIC expected 'Yo' after sourcing, got: '$out'"
+fi
 
 popd >/dev/null
 

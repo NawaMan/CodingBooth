@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`test-env` now runs, and pins that a project-root `.env` is not imported.** The
+  directory is `test-env/` but its script was named `test--workspace-env.sh`, and
+  discovery expects `test--<dirname>.sh` — so it had never run since it was added in
+  January, which only became visible once skipped tests started being reported. Its
+  first assertion expected a project-root `.env` to be auto-loaded; that is not the
+  design (only `.booth/.env` is, and it must be gitignored — a bare `.env` is often
+  committed, sometimes with real values). The assertion is now inverted: it asserts
+  the variable does **not** reach the container, so bare-`.env` auto-loading cannot
+  be introduced silently. Use `env-file = ".env"` in `.booth/config.toml` to opt in.
+
+  Its assertion harness was also broken — `[[ … ]] || fail` followed by an
+  unconditional `pass`, so a failing check printed both ❌ and ✅ and the file
+  reported four checks for three assertions. Each is now a plain `if/else`.
+
 - **Test captures no longer lose booth's output to SIGPIPE.** `X=$(booth … | head -1)`
   under `set -o pipefail` let `head` close the pipe as soon as it had its line;
   booth took SIGPIPE, the pipeline went non-zero, and the capture collapsed to `""`.
