@@ -21,7 +21,8 @@ echo "=== Test: Boothfile DuckDB Installation ==="
 
 FAILED=0
 
-ACTUAL=$(run_coding_booth --silence-build -- duckdb --version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- duckdb --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "v?[0-9]+\.[0-9]+\.[0-9]+"; then
     print_test_result "true" "$0" "1" "duckdb is installed via Boothfile"

@@ -188,6 +188,11 @@ get_booth_version() {
 # on retry. Pass shell pipeline transforms via $1 (e.g. "head -1", "tail -1").
 # Defaults to "cat".
 #
+# The transform is applied to booth's *captured* output, never to a live pipe —
+# see the note at the capture below. Callers writing their own capture should do
+# the same: `X=$(run_coding_booth …)` first, then trim, rather than
+# `X=$(run_coding_booth … | head -1)`.
+#
 # Stderr is discarded by default. Set CB_STDERR_LOG to a writable file path to
 # append it instead — worth doing for tests whose booth run includes an image
 # build, since a build failure otherwise leaves no trace of *why* it failed.
@@ -209,12 +214,20 @@ capture_codingbooth() {
     fi
   }
 
+  # Capture booth's output in full, THEN apply the pipeline to the captured text.
+  # Never pipe booth straight into "$pipeline": an early-exiting consumer such as
+  # `head -1` closes the pipe as soon as it has its line, booth takes SIGPIPE, and
+  # under `set -o pipefail` the whole capture collapses to "". That race is timing
+  # dependent, so it only fires on a loaded machine — the failure then looks like
+  # flakiness and the retry below hides it instead of fixing it.
   _capture_attempt 1 "$@"
-  out=$(run_coding_booth "$@" 2>>"$errdest" | eval "$pipeline") || out=""
+  out=$(run_coding_booth "$@" 2>>"$errdest") || out=""
+  out=$(printf '%s\n' "$out" | eval "$pipeline")
   if [[ -z "$out" ]]; then
     sleep 2
     _capture_attempt 2 "$@"
-    out=$(run_coding_booth "$@" 2>>"$errdest" | eval "$pipeline") || out=""
+    out=$(run_coding_booth "$@" 2>>"$errdest") || out=""
+    out=$(printf '%s\n' "$out" | eval "$pipeline")
   fi
   printf '%s\n' "$out"
 }

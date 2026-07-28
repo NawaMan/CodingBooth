@@ -23,7 +23,8 @@ echo "=== Test: Boothfile Grok Build (xAI) Installation ==="
 FAILED=0
 
 # grok --help prints usage without requiring login / an API key
-ACTUAL=$(run_coding_booth --silence-build -- grok --help 2>&1 | head -5) || true
+ACTUAL=$(run_coding_booth --silence-build -- grok --help 2>&1) || true
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -5)
 
 # Current Grok Build CLI banners as "Grok Build TUI"; also accept older strings.
 if echo "$ACTUAL" | grep -qiE "Grok Build|Grok Build TUI|grok.*xai|xAI Grok|chat with Grok"; then

@@ -22,7 +22,8 @@ echo "=== Test: Boothfile kubectl Installation ==="
 FAILED=0
 
 # Test 1: kubectl is installed and accessible
-ACTUAL=$(run_coding_booth --silence-build -- kubectl version --client 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- kubectl version --client 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "Client Version"; then
     print_test_result "true" "$0" "1" "kubectl is installed via Boothfile"
@@ -33,7 +34,8 @@ else
 fi
 
 # Test 2: kubectl help is available
-HELP_OUTPUT=$(run_coding_booth --silence-build -- kubectl help 2>/dev/null | head -5)
+HELP_OUTPUT=$(run_coding_booth --silence-build -- kubectl help 2>/dev/null)
+HELP_OUTPUT=$(printf '%s\n' "$HELP_OUTPUT" | head -5)
 
 if echo "$HELP_OUTPUT" | grep -qE "kubectl"; then
     print_test_result "true" "$0" "2" "kubectl help is available"

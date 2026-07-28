@@ -22,7 +22,8 @@ echo "=== Test: Boothfile Azure CLI Installation ==="
 FAILED=0
 
 # Test 1: az --version output contains "azure-cli"
-ACTUAL=$(run_coding_booth --silence-build -- az --version 2>/dev/null | head -5)
+ACTUAL=$(run_coding_booth --silence-build -- az --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -5)
 
 if echo "$ACTUAL" | grep -qi "azure-cli"; then
     print_test_result "true" "$0" "1" "Azure CLI is installed via Boothfile"
@@ -33,7 +34,8 @@ else
 fi
 
 # Test 2: az help output contains subcommands
-HELP_OUTPUT=$(run_coding_booth --silence-build -- az help 2>/dev/null | head -20) || true
+HELP_OUTPUT=$(run_coding_booth --silence-build -- az help 2>/dev/null) || true
+HELP_OUTPUT=$(printf '%s\n' "$HELP_OUTPUT" | head -20)
 
 if echo "$HELP_OUTPUT" | grep -qiE "group|Commands"; then
     print_test_result "true" "$0" "2" "Azure CLI subcommands are available"

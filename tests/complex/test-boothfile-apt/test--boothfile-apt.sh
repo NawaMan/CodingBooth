@@ -70,7 +70,8 @@ fi
 use_local_base_image || exit $FAILED
 
 # Test 3: the package actually installs (apt-get install runs in the build)
-ACTUAL=$(run_coding_booth --silence-build -- jq --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- jq --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "^jq-"; then
     print_test_result "true" "$0" "3" "install apt jq makes jq available"
 else

@@ -22,7 +22,8 @@ echo "=== Test: Boothfile AWS SAM CLI Installation ==="
 FAILED=0
 
 # Test 1: SAM CLI is installed and accessible
-ACTUAL=$(run_coding_booth --silence-build -- sam --version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- sam --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "SAM CLI"; then
     print_test_result "true" "$0" "1" "AWS SAM CLI is installed via Boothfile"
