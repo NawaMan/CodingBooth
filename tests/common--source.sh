@@ -172,6 +172,28 @@ run_coding_booth() {
   fi
 
   trace_cmd '1;33' "> codingbooth $*"
+
+  # Optional forensics (CB_DIAG_LOG). Tests capture booth with `2>/dev/null`, so a
+  # run that intermittently produces nothing leaves no evidence of why — the test
+  # either sees an empty string or, with no `||` guard, `set -e` kills the script
+  # and the suite prints `FAILED:` with no output at all. When CB_DIAG_LOG is set,
+  # record the command, its exit code, and a copy of stderr the caller's redirect
+  # cannot reach.
+  #
+  # Deliberately leaves stdout ALONE. Buffering booth's stdout through a variable
+  # or a process substitution can itself truncate or drop output, which is the very
+  # symptom being investigated — a diagnostic that can cause the bug it is hunting
+  # is worse than none. Only stderr is teed, so the worst case is a few missing log
+  # lines, never missing test data.
+  if [[ -n "${CB_DIAG_LOG:-}" ]]; then
+    local _rc=0
+    printf '%s  === codingbooth %s\n' "$(date '+%H:%M:%S')" "$*" >>"$CB_DIAG_LOG"
+    "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@" \
+      2> >(tee -a "$CB_DIAG_LOG" >&2) || _rc=$?
+    printf '%s  --- rc=%s\n' "$(date '+%H:%M:%S')" "$_rc" >>"$CB_DIAG_LOG"
+    return $_rc
+  fi
+
   # Safe expansion: avoids "unbound variable" under `set -u` with Bash 3.2 when the array is empty.
   "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@"
 }

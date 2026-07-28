@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Booth call trace for the complex suite (`CB_DIAG_LOG`).** Complex tests capture
+  booth with `2>/dev/null`, so a run that intermittently returns nothing left no
+  evidence: the suite printed `FAILED:` with no output and there was nothing to
+  diagnose from. `run_coding_booth` now records the command, its exit code, and a
+  copy of stderr whenever `CB_DIAG_LOG` is set, and the complex runner points it at
+  `tests/logs/complex-booth-calls.log` by default (`CB_DIAG_LOG=/dev/null` opts out).
+
+  Stdout is deliberately left untouched — buffering it through a variable or a
+  process substitution can itself drop output, which is the exact symptom under
+  investigation, so only stderr is teed. The worst case is a few missing log lines,
+  never missing test data. This is instrumentation, not a fix: booth occasionally
+  returning nothing under full-suite load is still unexplained, and the intent is
+  that the next occurrence explains itself rather than being retried away.
+
 - **`test-env` now runs, and pins that a project-root `.env` is not imported.** The
   directory is `test-env/` but its script was named `test--workspace-env.sh`, and
   discovery expects `test--<dirname>.sh` — so it had never run since it was added in

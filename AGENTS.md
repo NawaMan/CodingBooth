@@ -88,6 +88,7 @@ Node/pnpm — here the product *is* the booth tooling.
 | Go unit tests | `(cd cli && go test ./...)` |
 | Focused package tests | `(cd cli && go test ./src/pkg/booth/ -count=1)` |
 | Shell automate suite (subset / as needed) | `tests/run-automate-tests.sh` (long; prefer targeted tests under `tests/…`) |
+| Why did a booth call return nothing? | `tests/logs/complex-booth-calls.log` — the complex suite traces every booth call's command, exit code, and stderr (tests themselves discard stderr). Set `CB_DIAG_LOG=<path>` to trace any suite; `CB_DIAG_LOG=/dev/null` to opt out. |
 | Rebuild base/variant images | `./build/docker-build.sh base` (or listed variants) — only when the change needs a new image |
 | Wrapper smoke tests | scripts under `tests/wrapper/` |
 | Blog (`blog/` is GeekPresent) | follow `blog/AGENTS.md` if present; otherwise treat as a nested site |
