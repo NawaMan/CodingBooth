@@ -54,4 +54,12 @@ rm -rf bun.zip "bun-linux-${BUN_ARCH}"
 echo "• Verifying installation..."
 bun --version
 
+# npm packages installed through bun ship `#!/usr/bin/env node` shims, so they fail
+# on a bun-only image. Bun runs those scripts fine, so stand in for node — but only
+# when there is no real Node, so nodejs--setup.sh is never shadowed.
+if ! command -v node >/dev/null 2>&1; then
+  ln -sfn "$INSTALL_DIR/bun" "$INSTALL_DIR/node"
+  echo "• Linked node -> bun (no separate Node.js present)"
+fi
+
 echo "✅ Bun installed to ${INSTALL_DIR}"

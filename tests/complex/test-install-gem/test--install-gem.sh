@@ -58,7 +58,7 @@ fi
 use_local_base_image || exit $FAILED
 
 # Test 2: the package actually installs and is usable
-ACTUAL=$(run_coding_booth --silence-build -- bash -lc 'gem list colorize 2>/dev/null | grep colorize' 2>/dev/null) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- 'gem list colorize 2>/dev/null | grep colorize' 2>/dev/null) || ACTUAL=""
 if echo "$ACTUAL" | grep -qE 'colorize'; then
     print_test_result "true" "$0" "2" "colorize gem is listed"
 else

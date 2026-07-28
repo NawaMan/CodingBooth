@@ -58,7 +58,7 @@ fi
 use_local_base_image || exit $FAILED
 
 # Test 2: the package actually installs and is usable
-ACTUAL=$(run_coding_booth --silence-build -- bash -lc 'conan list "fmt/*" 2>/dev/null | grep -i fmt' 2>/dev/null) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- 'conan list "fmt/*" 2>/dev/null | grep -i fmt' 2>/dev/null) || ACTUAL=""
 if echo "$ACTUAL" | grep -qE 'fmt'; then
     print_test_result "true" "$0" "2" "fmt package is in the cache"
 else

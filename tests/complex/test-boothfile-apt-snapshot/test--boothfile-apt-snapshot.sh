@@ -79,7 +79,7 @@ else
 fi
 
 # Test 3: apt registered the package (dpkg status confirms a real apt install).
-ACTUAL=$(run_coding_booth --silence-build -- bash -c 'dpkg -s jq 2>/dev/null | grep -c "install ok installed"' 2>/dev/null | tail -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- 'dpkg -s jq 2>/dev/null | grep -c "install ok installed"' 2>/dev/null | tail -1) || ACTUAL=""
 if [[ "$ACTUAL" == "1" ]]; then
     print_test_result "true" "$0" "3" "jq is registered as installed by apt"
 else

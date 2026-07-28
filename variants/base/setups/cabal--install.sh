@@ -36,4 +36,8 @@ echo "Updating cabal package index..."
 cabal update
 
 echo "Installing Haskell packages: $*"
-cabal install --installdir=/usr/local/bin "$@"
+# --install-method=copy puts the real executable in /usr/local/bin. The default
+# (symlink) points into root's cabal store under /root, which mode-0700 /root makes
+# unreadable for the coder user the booth actually runs as — the binary then looks
+# like a dangling symlink at runtime.
+cabal install --installdir=/usr/local/bin --install-method=copy --overwrite-policy=always "$@"

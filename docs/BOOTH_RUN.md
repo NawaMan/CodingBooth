@@ -293,6 +293,30 @@ Executes a specific command inside the container and exits. Commands run under a
 ./booth -- make test
 ```
 
+**Everything after `--` is one shell command line, not an argument list.** The arguments are
+joined with spaces and handed to `bash -lc` inside the container, so the container's shell — not
+your host shell — does the final parsing.
+
+Shell operators therefore work, as long as your host shell doesn't eat them first:
+
+```bash
+./booth -- echo hi '>' out.txt        # '>' quoted on the host, redirects in the container
+./booth -- 'ls | wc -l'               # pipeline runs in the container
+```
+
+The flip side: **quoting does not survive the join**, so an argument containing spaces is
+re-split. Wrap the whole thing in one quoted argument when the command has its own quoting:
+
+```bash
+./booth -- python -c "print('hi there')"     # ✗ breaks: becomes  python -c print('hi there')
+./booth -- 'python -c "print(1 + 1)"'        # ✓ quote the entire command line
+```
+
+> `booth exec` is the other way round — it passes the arguments straight to `docker exec` with no
+> shell in between, so quoting survives but operators like `|` and `>` do **not**. Use
+> `booth exec <name> -- bash -c '<line>'` when you need a shell there. See
+> [BOOTH_CONNECT.md](BOOTH_CONNECT.md).
+
 Exit codes are forwarded — booth exits with the same code as the command:
 
 ```bash

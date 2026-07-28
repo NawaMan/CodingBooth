@@ -34,12 +34,27 @@ fi
 
 for ext in "$@"; do
     echo "Installing PECL extension: $ext"
-    pecl install "$ext" || true
-    # Enable the extension
-    PHP_EXT_DIR="$(php -i | grep '^extension_dir' | cut -d' ' -f3)"
-    if [ -f "${PHP_EXT_DIR}/${ext}.so" ]; then
-        echo "extension=${ext}.so" > "/etc/php/$(php -r 'echo PHP_MAJOR_VERSION.".".PHP_MINOR_VERSION;')/mods-available/${ext}.ini" 2>/dev/null || true
+    # No `|| true`: pecl builds from source, and a failed build (a missing compiler,
+    # say) must fail the image rather than produce a booth where the extension is
+    # quietly absent.
+    pecl install "$ext"
+
+    PHP_EXT_DIR="$(php -i | awk -F' => ' '/^extension_dir/ {print $2; exit}')"
+    if [ ! -f "${PHP_EXT_DIR}/${ext}.so" ]; then
+        echo "pecl reported success but ${ext}.so is not in ${PHP_EXT_DIR}" >&2
+        exit 1
     fi
+
+    # Enable it in the directory this PHP actually scans. The old code wrote into
+    # /etc/php/<ver>/mods-available, which nothing reads without a2enmod-style
+    # symlinking, so the extension stayed unloaded even when it had built fine.
+    SCAN_DIR="$(php -i | awk -F' => ' '/^Scan this dir for additional .ini files/ {print $2; exit}')"
+    if [ -z "$SCAN_DIR" ] || [ ! -d "$SCAN_DIR" ]; then
+        echo "Could not determine PHP's additional-.ini scan directory" >&2
+        exit 1
+    fi
+    echo "extension=${ext}.so" > "${SCAN_DIR}/${ext}.ini"
+    echo "  enabled via ${SCAN_DIR}/${ext}.ini"
 done
 
-echo "PECL extensions installed. You may need to enable them in php.ini."
+echo "PECL extensions installed."

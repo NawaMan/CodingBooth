@@ -76,7 +76,11 @@ apt-get install -y --no-install-recommends \
   "lua${LUA_VERSION}" "liblua${LUA_VERSION}-dev"
 
 if [[ $WITH_LUAROCKS -eq 1 ]]; then
-  apt-get install -y --no-install-recommends luarocks
+  # build-essential is not optional here: most rocks worth installing (busted pulls
+  # luasystem, for one) carry a C component, and with no compiler luarocks fails while
+  # probing for system libraries — "Could not find library file for RT" rather than
+  # anything mentioning a missing gcc.
+  apt-get install -y --no-install-recommends luarocks build-essential
 fi
 
 if [[ $WITH_LUAJIT -eq 1 ]]; then
