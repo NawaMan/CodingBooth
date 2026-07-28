@@ -127,6 +127,7 @@ should_run_suite() {
 STATUS=()
 PASS_COUNTS=()
 FAIL_COUNTS=()
+SKIP_COUNTS=()
 FAILURE_LINES=()
 
 for i in "${!SUITES[@]}"; do
@@ -137,6 +138,7 @@ for i in "${!SUITES[@]}"; do
     fi
     PASS_COUNTS[$i]=0
     FAIL_COUNTS[$i]=0
+    SKIP_COUNTS[$i]=0
     FAILURE_LINES[$i]=""
 done
 
@@ -179,7 +181,12 @@ status_icon() {
     esac
 }
 
-# Count pass/fail from a log file by looking for common test result markers.
+# Count pass/fail/skip from a log file by looking for common test result markers.
+#
+# Skips are counted and reported, never folded into the pass tally. A test that
+# gates itself off (e.g. use_local_base_image with no locally-rebuilt base) exits 0
+# and its remaining checks simply never print — so without a visible skip count the
+# suite total silently shrinks and a run with whole tests disabled still reads green.
 sync_counts() {
     local suite="$1"
     local idx
@@ -191,11 +198,14 @@ sync_counts() {
     # Strip ANSI escape codes first — test output is colorized.
     local stripped
     stripped=$(sed 's/\x1b\[[0-9;]*m//g' "$log" 2>/dev/null) || stripped=""
-    local pass fail
+    local pass fail skip
     pass=$(echo "$stripped" | grep -cE '✅|PASSED|^ok ' 2>/dev/null) || pass=0
     fail=$(echo "$stripped" | grep -cE '❌|FAILED|^--- FAIL' 2>/dev/null) || fail=0
+    # [[:space:]] rather than \s — BSD grep (macOS) does not honour \s.
+    skip=$(echo "$stripped" | grep -cE '^[[:space:]]*(SKIP:|--- SKIP|--- Skipping:)' 2>/dev/null) || skip=0
     PASS_COUNTS[$idx]=$((pass))
     FAIL_COUNTS[$idx]=$((fail))
+    SKIP_COUNTS[$idx]=$((skip))
 
     # Collect failure lines (trimmed, max 10)
     local failures
@@ -246,6 +256,7 @@ draw_graph() {
         # Show pass/fail counts if any activity
         local p=${PASS_COUNTS[$i]:-0}
         local f=${FAIL_COUNTS[$i]:-0}
+        local k=${SKIP_COUNTS[$i]:-0}
         total=$(( p + f ))
         if (( total > 0 )); then
             if (( f > 0 )); then
@@ -253,6 +264,10 @@ draw_graph() {
             else
                 printf " ${C_GREEN}%d${C_RESET}/%d" "$p" "$total"
             fi
+        fi
+        # Skips ride alongside the tally so a shrinking denominator is visible.
+        if (( k > 0 )); then
+            printf " ${C_GRAY}(%d skipped)${C_RESET}" "$k"
         fi
 
         # Show last log line for running suite
@@ -436,6 +451,7 @@ if [[ ${#RETRY_SUITES[@]} -gt 0 && "$STOP_REQUESTED" != true ]]; then
         # Reset counts for retry
         PASS_COUNTS[$i]=0
         FAIL_COUNTS[$i]=0
+        SKIP_COUNTS[$i]=0
         FAILURE_LINES[$i]=""
         STATUS[$i]=running
         draw_graph
@@ -505,9 +521,11 @@ echo -e "${C_BOLD}Test Summary${C_RESET}"
 has_failure=false
 total_pass=0
 total_fail=0
+total_skip=0
 for i in "${!SUITES[@]}"; do
     total_pass=$((total_pass + ${PASS_COUNTS[$i]:-0}))
     total_fail=$((total_fail + ${FAIL_COUNTS[$i]:-0}))
+    total_skip=$((total_skip + ${SKIP_COUNTS[$i]:-0}))
     # Treat a suite as failed if its exit status said so OR it reported any
     # failing tests in its log. The two signals are computed independently
     # (exit code vs. log markers); trusting only one let a suite that failed
@@ -518,8 +536,15 @@ for i in "${!SUITES[@]}"; do
     fi
 done
 
-echo "  Total: $((total_pass + total_fail))   Passed: ${total_pass}   Failed: ${total_fail}   Duration: ${OVERALL_DURATION}s"
+echo "  Total: $((total_pass + total_fail))   Passed: ${total_pass}   Failed: ${total_fail}   Skipped: ${total_skip}   Duration: ${OVERALL_DURATION}s"
 echo ""
+
+# A skipped test is a test that did not run — say so on an otherwise green run, so
+# "All tests passed" can never be read as "everything was checked".
+if [[ "$has_failure" != true ]] && (( total_skip > 0 )); then
+    echo -e "${C_GRAY}${total_skip} test(s) skipped — not run, not verified. Check logs in ${LOG_DIR}/ for the reason.${C_RESET}"
+    echo ""
+fi
 
 if [[ "$has_failure" == true ]]; then
     echo -e "${C_RED}Some tests failed. Check logs in ${LOG_DIR}/${C_RESET}"

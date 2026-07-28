@@ -4,6 +4,64 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Six install managers were broken; the skipped tests had been hiding them.**
+  - `install deno …` — Deno 2 requires `--global` to install a *command* (permission
+    flags are global-only), so every `install deno` failed the build. The manager now
+    supplies `--global` unless the caller already passed it (`--global` or a short
+    bundle like `-Agf`). Project dependencies are unaffected — those go through
+    `install deno-pkg`, which uses `deno add`.
+  - `install luarocks …` — looked for luarocks under `/opt/lua-stable/bin`, but
+    `setup lua` installs it from apt to `/usr/bin/luarocks`; no `/opt/lua-stable`
+    exists at all, so the manager aborted every time. It now resolves luarocks from
+    `PATH`, still honouring `LUA_HOME` when that really holds one.
+  - `install pecl …` — `setup php` never installed `php-pear`, so no `pecl` binary
+    existed; the setup's own `command -v pecl || true` swallowed it and advertised
+    pecl anyway. `php-pear` is now part of the package set.
+  - `install cabal …` — installed as root with cabal's default symlink method, so
+    `/usr/local/bin/<tool>` pointed into `/root/.local/state/cabal/store/…`, which is
+    unreadable for the `coder` user the booth runs as — the tool appeared as a
+    dangling symlink. Now uses `--install-method=copy`.
+  - `install conan …` — downloaded into root's `/root/.conan2`, invisible to `coder`,
+    so the cache always looked empty. Now downloads as `coder`, and a failed download
+    fails the build instead of being swallowed by `|| true`.
+  - `install bun …` — `bun add -g` puts shims in `~/.bun/bin`, which is not on `PATH`,
+    so the package installed and the command was still not found; they are now
+    symlinked into `/usr/local/bin`. `setup bun` additionally links `node -> bun` when
+    no real Node is present, since npm packages ship `#!/usr/bin/env node` shims that
+    otherwise fail on a bun-only image (a genuine Node install is never shadowed).
+
+- **Nineteen complex tests were never actually running.** `test-install-*`,
+  `test-boothfile-apt`, and `test-boothfile-apt-snapshot` wrote their build-half
+  check as `-- bash -lc '<cmd>'`. Everything after `--` is joined into one shell
+  command line, so that flattened to `bash -lc <cmd>` — running `<cmd>`'s first
+  word with `$0` set to the second, which fails quietly rather than loudly. The
+  checks are now passed as a single quoted argument (`-- '<cmd>'`), which is also
+  what `tests/basic` already did. The CLI is unchanged: the space-join is the
+  documented `--` contract, and `tests/basic/test001--command.sh` depends on it to
+  get a redirect inside the container. `install-pip` / `install-uv` additionally
+  asserted the wrong CLI — PyPI's `cowsay` needs `-t`. **Once running, 13 of the 19
+  pass and 6 fail on real defects in the install managers** (`deno`, `luarocks`,
+  `pecl` fail the build outright; `cabal` leaves a dangling symlink into `/root`;
+  `bun` puts binaries outside `PATH`; `conan` leaves an empty cache). Those are
+  left failing deliberately — they are the breakage the skipped tests were hiding.
+
+- **The `cb-local` test gate no longer goes stale.** `build/build-all.sh` now tags
+  `cb-local/codingbooth:base-<version>` after a successful base build. That tag is
+  what `use_local_base_image` gates on; it was applied by hand, so every version
+  bump silently disabled the 23 tests that depend on it.
+
+- **Skipped tests are reported instead of vanishing.** `tests/run-automate-tests.sh`
+  counts skips per suite, shows them beside the pass tally, and prints a
+  `Skipped: N` line in the summary. A self-gating test exits 0 and its remaining
+  checks never print, so the totals used to just shrink — a run with 35 checks
+  disabled still read `All tests passed`.
+
+- **Documented how `--` is parsed.** [BOOTH_RUN.md](BOOTH_RUN.md#command-mode----cmd)
+  now spells out that `booth -- …` is one shell command line (operators work,
+  quoting does not survive) while `booth exec … -- …` is the opposite (argv passed
+  straight to `docker exec`, no shell). The README's
+  `booth -- python -c "print('hello')"` example was broken by this and is fixed.
+
 - **Project-local templates, extensions, and recipes.** A booth can ship its own
   catalog under `.booth/templates/` (same category/`template.toml` /
   `*--extension.toml` layout as the stock tree). `booth config` (CLI + TUI) and

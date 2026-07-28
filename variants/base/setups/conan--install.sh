@@ -34,10 +34,16 @@ set -- $(echo "$@" | tr ',' ' ')
 
 # If packages are specified, download them to cache
 if [ $# -gt 0 ]; then
+    # Download as coder, not root: the Conan cache lives in $HOME/.conan2, and a
+    # root-owned /root/.conan2 is invisible to the coder user the booth runs as —
+    # the packages would be "installed" into a cache nobody ever reads.
+    CONAN_BIN="$(command -v conan)"
     echo "📦 Downloading Conan packages to cache..."
     for pkg in "$@"; do
         echo "  Downloading $pkg..."
-        conan download "$pkg" -r conancenter || true
+        # No `|| true` — a package that fails to download must fail the build rather
+        # than leave an empty cache behind a green image.
+        sudo -u coder -H "$CONAN_BIN" download "$pkg" -r conancenter
     done
 fi
 

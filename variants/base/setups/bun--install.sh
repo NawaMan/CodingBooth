@@ -30,3 +30,14 @@ fi
 
 # Install global packages as coder user to avoid permission issues
 sudo -u coder bun add -g "$@"
+
+# `bun add -g` drops command shims in ~/.bun/bin, which is not on PATH — the package
+# installs "successfully" and the command is then not found. Expose them the same way
+# every other install manager here does: symlink into /usr/local/bin.
+BUN_BIN_DIR="$(sudo -u coder -H bash -lc 'echo "$HOME/.bun/bin"')"
+if [ -d "$BUN_BIN_DIR" ]; then
+    for f in "$BUN_BIN_DIR"/*; do
+        [ -e "$f" ] || continue
+        ln -sfn "$f" "/usr/local/bin/$(basename "$f")"
+    done
+fi

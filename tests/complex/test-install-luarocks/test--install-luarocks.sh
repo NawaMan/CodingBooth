@@ -58,7 +58,7 @@ fi
 use_local_base_image || exit $FAILED
 
 # Test 2: the package actually installs and is usable
-ACTUAL=$(run_coding_booth --silence-build -- bash -lc 'luarocks list 2>/dev/null | grep -i busted' 2>/dev/null) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- 'luarocks list 2>/dev/null | grep -i busted' 2>/dev/null) || ACTUAL=""
 if echo "$ACTUAL" | grep -qE 'busted'; then
     print_test_result "true" "$0" "2" "busted rock is listed"
 else

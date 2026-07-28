@@ -108,6 +108,19 @@ run_cmd() {
 # Example: run_coding_booth --variant base -- echo hello
 # The path to codingbooth is auto-detected relative to the test script
 # Note: Command trace goes to stderr so it doesn't interfere with captured stdout
+#
+# Quoting after `--`: everything after `--` is joined with spaces into ONE shell
+# command line and run via `bash -lc` in the container (see docs/BOOTH_RUN.md).
+# Argument boundaries do NOT survive that join, so pass the command as a single
+# quoted argument:
+#
+#     run_coding_booth -- 'cowsay hello'                       # ✓
+#     run_coding_booth -- 'gem list colorize | grep colorize'  # ✓ (pipeline in container)
+#     run_coding_booth -- bash -lc 'cowsay hello'              # ✗ flattens to: bash -lc cowsay hello
+#
+# The third form silently runs `cowsay` with $0="hello" instead of failing loudly,
+# which is how it went unnoticed in 19 tests. There is no need to add your own
+# `bash -lc` — the wrapper already supplies a login shell.
 run_coding_booth() {
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"

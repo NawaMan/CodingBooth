@@ -25,11 +25,17 @@ fi
 # Expand comma-separated packages into separate arguments
 set -- $(echo "$@" | tr ',' ' ')
 
-LUA_HOME="${LUA_HOME:-/opt/lua-stable}"
-LUAROCKS="${LUA_HOME}/bin/luarocks"
+# lua--setup.sh installs LuaRocks from apt (/usr/bin/luarocks) and exposes it on
+# PATH — there is no /opt/lua-stable tree. Honour an explicit LUA_HOME when it
+# really holds a luarocks, otherwise just resolve it from PATH.
+if [ -n "${LUA_HOME:-}" ] && [ -x "${LUA_HOME}/bin/luarocks" ]; then
+    LUAROCKS="${LUA_HOME}/bin/luarocks"
+else
+    LUAROCKS="$(command -v luarocks || true)"
+fi
 
-if [ ! -x "$LUAROCKS" ]; then
-    echo "LuaRocks not found at $LUAROCKS. Run lua--setup.sh first." >&2
+if [ -z "$LUAROCKS" ] || [ ! -x "$LUAROCKS" ]; then
+    echo "LuaRocks not found on PATH${LUA_HOME:+ or in $LUA_HOME/bin}. Run lua--setup.sh first." >&2
     exit 1
 fi
 

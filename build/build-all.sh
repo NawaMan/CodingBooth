@@ -369,12 +369,26 @@ build_cli() {
     draw_graph
 }
 
+# Tag the freshly-built base as the "locally rebuilt" image the complex tests gate on
+# (tests/common--source.sh → use_local_base_image). The gate exists so those tests skip
+# on a machine that never rebuilt the base — but the tag used to be applied by hand, so
+# it went stale at every version bump and the tests silently stopped running. Tagging it
+# here keeps the gate tracking the build that is actually under test.
+tag_local_base() {
+    local version
+    version="$(tr -d ' \t\n\r' < version.txt 2>/dev/null)"
+    [[ -z "$version" ]] && return 0
+    docker tag "nawaman/codingbooth:base-${version}" "cb-local/codingbooth:base-${version}" \
+        >> "${LOG_DIR}/base.log" 2>&1 || true
+}
+
 build_base() {
     BASE_STATUS="running"
     draw_graph
 
     if "${SCRIPT_DIR}/docker-build.sh" "${DOCKER_FLAGS[@]+"${DOCKER_FLAGS[@]}"}" base > "${LOG_DIR}/base.log" 2>&1; then
         BASE_STATUS="done"
+        tag_local_base
     else
         BASE_STATUS="failed"
     fi

@@ -36,6 +36,20 @@ if ! command -v deno &> /dev/null; then
     exit 1
 fi
 
+# Deno 2 split `deno install` in two: bare form adds project dependencies, and
+# installing a *command* now requires --global (permission flags are global-only).
+# A Boothfile `install deno …` is always the command form — project dependencies go
+# through deno-pkg--install.sh — so default to --global when the caller didn't say.
+has_global=0
+for arg in "$@"; do
+    case "$arg" in
+        --global) has_global=1; break ;;
+        --*)      ;;                       # other long flag; not a short bundle
+        -*g*)     has_global=1; break ;;   # short bundle carrying g, e.g. -Agf
+    esac
+done
+[ "$has_global" -eq 0 ] && set -- --global "$@"
+
 # Install as coder user so scripts go to ~/.deno/bin
 echo "📦 Installing: deno install $*"
 sudo -u coder bash -lc "deno install $*"

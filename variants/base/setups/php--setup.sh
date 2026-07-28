@@ -73,8 +73,11 @@ if [[ $is_ubuntu -eq 1 ]]; then
 fi
 
 # ---- build the package list for the requested version ----
-# Core CLI + dev tools
-PKGS=( "php${PHP_VER}-cli" "php${PHP_VER}-dev" "php${PHP_VER}-opcache" "php${PHP_VER}-readline" )
+# Core CLI + dev tools. php-pear supplies the `pecl` command: without it the pecl
+# lookup below silently falls through its `|| true` and `install pecl <ext>` can
+# never work, even though this setup advertises pecl. build-essential supplies the
+# make/gcc that pecl needs — it builds every extension from source.
+PKGS=( "php${PHP_VER}-cli" "php${PHP_VER}-dev" "php${PHP_VER}-opcache" "php${PHP_VER}-readline" "php-pear" "build-essential" )
 
 # FPM (optional)
 [[ $WITH_FPM -eq 1 ]] && PKGS+=( "php${PHP_VER}-fpm" )

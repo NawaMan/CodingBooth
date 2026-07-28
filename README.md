@@ -264,8 +264,13 @@ Use `--` to run commands inside the container and exit:
 ```shell
 booth -- make test
 booth -- echo "Hello from container"
-booth -- python -c "print('hello')"
+booth -- 'python -c "print(1 + 1)"'
 ```
+
+Everything after `--` is one shell command line run under the container's login shell, so shell
+operators work but quoting does not survive — wrap a command that carries its own quotes in a
+single quoted argument, as in the third example. Details in
+[docs/BOOTH_RUN.md](docs/BOOTH_RUN.md#command-mode----cmd).
 
 Exit codes are forwarded — booth exits with the same code as the command.
 

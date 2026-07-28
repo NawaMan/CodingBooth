@@ -58,7 +58,7 @@ fi
 use_local_base_image || exit $FAILED
 
 # Test 2: the package actually installs and is usable
-ACTUAL=$(run_coding_booth --silence-build -- bash -lc 'cat /home/coder/deno.json* 2>/dev/null | grep -i cowsay' 2>/dev/null) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- 'cat /home/coder/deno.json* 2>/dev/null | grep -i cowsay' 2>/dev/null) || ACTUAL=""
 if echo "$ACTUAL" | grep -qE 'cowsay'; then
     print_test_result "true" "$0" "2" "cowsay added to deno.json"
 else

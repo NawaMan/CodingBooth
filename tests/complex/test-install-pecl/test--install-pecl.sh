@@ -58,7 +58,7 @@ fi
 use_local_base_image || exit $FAILED
 
 # Test 2: the package actually installs and is usable
-ACTUAL=$(run_coding_booth --silence-build -- bash -lc 'php -m 2>/dev/null | grep -i redis' 2>/dev/null) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- 'php -m 2>/dev/null | grep -i redis' 2>/dev/null) || ACTUAL=""
 if echo "$ACTUAL" | grep -qE 'redis'; then
     print_test_result "true" "$0" "2" "redis extension is loaded"
 else
