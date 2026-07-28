@@ -22,7 +22,8 @@ echo "=== Test: Boothfile Conda Installation ==="
 FAILED=0
 
 # Test 1: conda is installed and shows version
-ACTUAL=$(run_coding_booth --silence-build -- conda --version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- conda --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "conda"; then
     print_test_result "true" "$0" "1" "Conda is installed via Boothfile"
@@ -33,7 +34,8 @@ else
 fi
 
 # Test 2: python is available and shows Python 3
-PYTHON_OUTPUT=$(run_coding_booth --silence-build -- python --version 2>/dev/null | head -1)
+PYTHON_OUTPUT=$(run_coding_booth --silence-build -- python --version 2>/dev/null)
+PYTHON_OUTPUT=$(printf '%s\n' "$PYTHON_OUTPUT" | head -1)
 
 if echo "$PYTHON_OUTPUT" | grep -qE "Python 3"; then
     print_test_result "true" "$0" "2" "Python 3 is available via Conda"

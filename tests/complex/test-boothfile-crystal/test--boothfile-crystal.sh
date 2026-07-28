@@ -21,7 +21,8 @@ echo "=== Test: Boothfile Crystal Installation ==="
 
 FAILED=0
 
-ACTUAL=$(run_coding_booth --silence-build -- crystal --version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- crystal --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qiE "crystal[^0-9]*[0-9]+\.[0-9]+\.[0-9]+"; then
     print_test_result "true" "$0" "1" "Crystal is installed via Boothfile"

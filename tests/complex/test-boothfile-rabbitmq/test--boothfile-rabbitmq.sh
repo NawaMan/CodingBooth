@@ -22,7 +22,8 @@ echo "=== Test: Boothfile RabbitMQ Installation ==="
 
 FAILED=0
 
-ACTUAL=$(run_coding_booth --silence-build -- ls /usr/sbin/rabbitmq-server 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- ls /usr/sbin/rabbitmq-server 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE '/rabbitmq-server$'; then
     print_test_result "true" "$0" "1" "RabbitMQ is installed via Boothfile"

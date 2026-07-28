@@ -22,7 +22,8 @@ echo "=== Test: Boothfile Helm Installation ==="
 FAILED=0
 
 # Test 1: helm is installed and version is accessible
-ACTUAL=$(run_coding_booth --silence-build -- helm version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- helm version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "Version"; then
     print_test_result "true" "$0" "1" "Helm is installed via Boothfile"

@@ -22,7 +22,8 @@ echo "=== Test: Boothfile Terraform Installation ==="
 FAILED=0
 
 # Test 1: Terraform is installed and accessible
-ACTUAL=$(run_coding_booth --silence-build -- terraform --version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- terraform --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "Terraform v"; then
     print_test_result "true" "$0" "1" "Terraform is installed via Boothfile"

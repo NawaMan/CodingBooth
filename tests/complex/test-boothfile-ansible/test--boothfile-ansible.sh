@@ -22,7 +22,8 @@ echo "=== Test: Boothfile Ansible Installation ==="
 FAILED=0
 
 # Test 1: Ansible is installed and accessible
-ACTUAL=$(run_coding_booth --silence-build -- ansible --version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- ansible --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "ansible"; then
     print_test_result "true" "$0" "1" "Ansible is installed via Boothfile"

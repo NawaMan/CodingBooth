@@ -22,7 +22,8 @@ echo "=== Test: Boothfile GCC Installation ==="
 FAILED=0
 
 # Test 1: gcc is installed at the requested version
-ACTUAL=$(run_coding_booth --silence-build -- gcc --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- gcc --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "gcc.* 13\."; then
     print_test_result "true" "$0" "1" "GCC 13 is installed"
 else
@@ -32,7 +33,8 @@ else
 fi
 
 # Test 2: g++ is installed at the requested version
-ACTUAL=$(run_coding_booth --silence-build -- g++ --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- g++ --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "g\+\+.* 13\."; then
     print_test_result "true" "$0" "2" "G++ 13 is installed"
 else

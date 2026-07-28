@@ -22,7 +22,8 @@ echo "=== Test: Boothfile Node.js Installation ==="
 FAILED=0
 
 # Test 1: Node.js is installed and accessible
-ACTUAL=$(run_coding_booth --silence-build -- node --version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- node --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "v[0-9]+\."; then
     print_test_result "true" "$0" "1" "Node.js is installed via Boothfile"
@@ -42,7 +43,8 @@ else
 fi
 
 # Test 3: npm is also available
-NPM_OUTPUT=$(run_coding_booth --silence-build -- npm --version 2>/dev/null | head -1) || true
+NPM_OUTPUT=$(run_coding_booth --silence-build -- npm --version 2>/dev/null) || true
+NPM_OUTPUT=$(printf '%s\n' "$NPM_OUTPUT" | head -1)
 
 if echo "$NPM_OUTPUT" | grep -qE "^[0-9]+\."; then
     print_test_result "true" "$0" "3" "npm is available with Node.js"

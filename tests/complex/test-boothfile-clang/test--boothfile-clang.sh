@@ -28,7 +28,8 @@ echo "=== Test: Boothfile Clang Installation ==="
 FAILED=0
 
 # Test 1: clang is installed
-ACTUAL=$(run_coding_booth --silence-build -- clang --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- clang --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "clang version 18"; then
     print_test_result "true" "$0" "1" "Clang 18 is installed"
 else
@@ -38,7 +39,8 @@ else
 fi
 
 # Test 2: clang++ is installed
-ACTUAL=$(run_coding_booth --silence-build -- clang++ --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- clang++ --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "clang version 18"; then
     print_test_result "true" "$0" "2" "Clang++ 18 is installed"
 else
@@ -48,7 +50,8 @@ else
 fi
 
 # Test 3: clangd is installed (used by IDE/LSP integrations)
-ACTUAL=$(run_coding_booth --silence-build -- clangd --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- clangd --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "clangd"; then
     print_test_result "true" "$0" "3" "clangd is installed"
 else
@@ -58,7 +61,8 @@ else
 fi
 
 # Test 4: clang is registered as the default cc (via update-alternatives)
-ACTUAL=$(run_coding_booth --silence-build -- 'cc --version' 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- 'cc --version' 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "clang"; then
     print_test_result "true" "$0" "4" "Clang is the default 'cc' compiler"
 else

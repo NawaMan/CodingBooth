@@ -25,7 +25,8 @@ echo "=== Test: Boothfile nginx Installation ==="
 
 FAILED=0
 
-ACTUAL=$(run_coding_booth --silence-build -- nginx -v 2>&1 | grep -iE 'nginx version' | head -1 || true)
+ACTUAL=$(run_coding_booth --silence-build -- nginx -v 2>&1)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | grep -iE 'nginx version' | head -1 || true)
 
 if echo "$ACTUAL" | grep -qiE "nginx[^0-9]*[0-9]+\.[0-9]+\.[0-9]+"; then
     print_test_result "true" "$0" "1" "nginx is installed via Boothfile"

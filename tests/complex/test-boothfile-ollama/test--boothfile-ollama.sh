@@ -24,7 +24,8 @@ FAILED=0
 # Test 1: Ollama is installed and accessible
 # Note: ollama --version prints a warning when no server is running,
 # so we capture both stdout and stderr
-ACTUAL=$(run_coding_booth --silence-build -- ollama --version 2>&1 | head -1) || true
+ACTUAL=$(run_coding_booth --silence-build -- ollama --version 2>&1) || true
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qiE "ollama|Warning:.*Ollama"; then
     print_test_result "true" "$0" "1" "Ollama is installed via Boothfile"

@@ -22,7 +22,8 @@ echo "=== Test: Boothfile Herdr Installation ==="
 FAILED=0
 
 # herdr --version or --help both work for a basic presence check.
-ACTUAL=$(run_coding_booth --silence-build -- herdr --version 2>/dev/null || run_coding_booth --silence-build -- herdr --help 2>/dev/null | head -1) || true
+ACTUAL=$(run_coding_booth --silence-build -- herdr --version 2>/dev/null || run_coding_booth --silence-build -- herdr --help 2>/dev/null) || true
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qiE "herdr|agent|multiplexer"; then
     print_test_result "true" "$0" "1" "herdr is installed via Boothfile"

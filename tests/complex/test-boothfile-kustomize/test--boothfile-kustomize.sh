@@ -23,7 +23,8 @@ echo "=== Test: Boothfile kustomize Installation ==="
 
 FAILED=0
 
-ACTUAL=$(run_coding_booth --silence-build -- kustomize version 2>/dev/null | head -3)
+ACTUAL=$(run_coding_booth --silence-build -- kustomize version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -3)
 
 if echo "$ACTUAL" | grep -qiE "v?[0-9]+\.[0-9]+\.[0-9]+"; then
     print_test_result "true" "$0" "1" "kustomize is installed via Boothfile"

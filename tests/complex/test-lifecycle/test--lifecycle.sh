@@ -48,7 +48,10 @@ else
 fi
 
 # 2) list --stopped should include the booth name.
-if run_coding_booth list --stopped --name-only 2>/dev/null | grep -qx "$NAME"; then
+# Captured first: `grep -q` exits at the first match, which would SIGPIPE booth and
+# (under pipefail) turn a found name into a false negative on a loaded machine.
+STOPPED_LIST=$(run_coding_booth list --stopped --name-only 2>/dev/null) || STOPPED_LIST=""
+if printf '%s\n' "$STOPPED_LIST" | grep -qx "$NAME"; then
   print_test_result "true" "$0" "2" "list --stopped includes the keep-alive booth"
 else
   print_test_result "false" "$0" "2" "list --stopped should include booth name"

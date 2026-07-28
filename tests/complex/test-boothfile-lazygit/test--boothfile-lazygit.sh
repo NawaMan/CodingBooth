@@ -22,7 +22,8 @@ echo "=== Test: Boothfile lazygit Installation ==="
 FAILED=0
 
 # Test 1: lazygit is installed and accessible
-ACTUAL=$(run_coding_booth --silence-build -- lazygit --version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- lazygit --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "version="; then
     print_test_result "true" "$0" "1" "lazygit is installed via Boothfile"

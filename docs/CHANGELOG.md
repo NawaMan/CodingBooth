@@ -4,6 +4,24 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Test captures no longer lose booth's output to SIGPIPE.** `X=$(booth … | head -1)`
+  under `set -o pipefail` let `head` close the pipe as soon as it had its line;
+  booth took SIGPIPE, the pipeline went non-zero, and the capture collapsed to `""`.
+  Where the call site had a `|| X=""` guard the test failed with an empty
+  `Actual output:`; where it had none, `set -e` killed the script outright and the
+  suite reported `FAILED:` with no output at all. It is a race, so it only landed on
+  a loaded machine — which is why it read as flakiness for so long, and why
+  `capture_codingbooth`'s retry papered over it instead of fixing it.
+
+  All 66 affected call sites now capture booth's output first and apply the
+  transform afterwards, and `capture_codingbooth` does the same internally, so its
+  21 callers are covered too. `test-lifecycle`'s `grep -qx` probe got the same
+  treatment — an early-exiting `grep` could turn a listed booth into a false
+  negative. Consumers that drain stdin (`tail`, `tr`, `grep -v`, `grep -c`) were
+  never affected and are unchanged. Regression test:
+  `tests/dryrun/test028--capture-no-sigpipe.sh`, which forces the losing side of the
+  race deterministically rather than waiting for load to expose it.
+
 - **Six install managers were broken; the skipped tests had been hiding them.**
   - `install deno …` — Deno 2 requires `--global` to install a *command* (permission
     flags are global-only), so every `install deno` failed the build. The manager now

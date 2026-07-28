@@ -69,7 +69,8 @@ use_local_base_image || exit $FAILED
 
 # Test 2: the package installs from the frozen snapshot (build runs
 # `apt-get install --snapshot <id>` and must succeed).
-ACTUAL=$(run_coding_booth --silence-build -- jq --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- jq --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "^jq-"; then
     print_test_result "true" "$0" "2" "install apt jq makes jq available under snapshot pin"
 else

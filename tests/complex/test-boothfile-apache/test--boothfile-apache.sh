@@ -21,7 +21,8 @@ echo "=== Test: Boothfile Apache Installation ==="
 
 FAILED=0
 
-ACTUAL=$(run_coding_booth --silence-build -- apache2 -v 2>/dev/null | head -1 || true)
+ACTUAL=$(run_coding_booth --silence-build -- apache2 -v 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1 || true)
 
 if echo "$ACTUAL" | grep -qiE "apache[^0-9]*[0-9]+\.[0-9]+\.[0-9]+"; then
     print_test_result "true" "$0" "1" "Apache is installed via Boothfile"

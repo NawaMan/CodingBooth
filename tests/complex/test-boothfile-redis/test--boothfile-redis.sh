@@ -22,7 +22,8 @@ echo "=== Test: Boothfile Redis Installation ==="
 FAILED=0
 
 # Test 1: redis-server is installed and accessible
-ACTUAL=$(run_coding_booth --silence-build -- redis-server --version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- redis-server --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "v="; then
     print_test_result "true" "$0" "1" "redis-server is installed via Boothfile"

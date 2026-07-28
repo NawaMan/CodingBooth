@@ -23,7 +23,8 @@ echo "=== Test: Boothfile build-essential Installation ==="
 FAILED=0
 
 # Test 1: gcc is available (apt default version)
-ACTUAL=$(run_coding_booth --silence-build -- gcc --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- gcc --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "gcc"; then
     print_test_result "true" "$0" "1" "gcc is installed via build-essential"
 else
@@ -33,7 +34,8 @@ else
 fi
 
 # Test 2: g++ is available
-ACTUAL=$(run_coding_booth --silence-build -- g++ --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- g++ --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "g\+\+"; then
     print_test_result "true" "$0" "2" "g++ is installed via build-essential"
 else
@@ -43,7 +45,8 @@ else
 fi
 
 # Test 3: make is available
-ACTUAL=$(run_coding_booth --silence-build -- make --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- make --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "GNU Make"; then
     print_test_result "true" "$0" "3" "make is installed via build-essential"
 else
@@ -53,7 +56,8 @@ else
 fi
 
 # Test 4: pkg-config is available (the bridge to system libraries)
-ACTUAL=$(run_coding_booth --silence-build -- pkg-config --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- pkg-config --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "^[0-9]+\."; then
     print_test_result "true" "$0" "4" "pkg-config is installed"
 else

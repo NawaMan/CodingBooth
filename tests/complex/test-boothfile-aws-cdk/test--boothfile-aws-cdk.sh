@@ -22,7 +22,8 @@ echo "=== Test: Boothfile AWS CDK Installation ==="
 FAILED=0
 
 # Test 1: CDK is installed and shows a version number
-ACTUAL=$(run_coding_booth --silence-build -- cdk --version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- cdk --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "[0-9]+\.[0-9]+\.[0-9]+"; then
     print_test_result "true" "$0" "1" "AWS CDK is installed via Boothfile"

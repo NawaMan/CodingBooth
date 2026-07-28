@@ -22,7 +22,8 @@ echo "=== Test: Boothfile Pulumi Installation ==="
 FAILED=0
 
 # Test 1: Pulumi is installed and accessible
-ACTUAL=$(run_coding_booth --silence-build -- pulumi version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- pulumi version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "v[0-9]+\.[0-9]+\.[0-9]+"; then
     print_test_result "true" "$0" "1" "Pulumi is installed via Boothfile"

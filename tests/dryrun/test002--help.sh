@@ -18,7 +18,8 @@ if [[ "$OSTYPE" == "msys" || "$OSTYPE" == "cygwin" ]]; then
 fi
 
 # Just check the USAGE section - the full help is ~98 lines
-ACTUAL=$(run_coding_booth help | head -32)
+ACTUAL=$(run_coding_booth help)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -32)
 
 HERE="$PWD"
 VERSION="$(get_booth_version)"

@@ -21,7 +21,8 @@ echo "=== Test: Boothfile act Installation ==="
 
 FAILED=0
 
-ACTUAL=$(run_coding_booth --silence-build -- act --version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- act --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qiE "act[^0-9]*v?[0-9]+\.[0-9]+\.[0-9]+"; then
     print_test_result "true" "$0" "1" "act is installed via Boothfile"

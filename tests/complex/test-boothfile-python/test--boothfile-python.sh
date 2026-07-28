@@ -22,7 +22,8 @@ echo "=== Test: Boothfile Python Installation ==="
 FAILED=0
 
 # Test 1: Python is installed and accessible
-ACTUAL=$(run_coding_booth --silence-build -- python3 --version 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- python3 --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "Python 3\."; then
     print_test_result "true" "$0" "1" "Python is installed via Boothfile"
@@ -42,7 +43,8 @@ else
 fi
 
 # Test 3: pip is also available (setup script should include it)
-PIP_OUTPUT=$(run_coding_booth --silence-build -- pip3 --version 2>/dev/null | head -1) || true
+PIP_OUTPUT=$(run_coding_booth --silence-build -- pip3 --version 2>/dev/null) || true
+PIP_OUTPUT=$(printf '%s\n' "$PIP_OUTPUT" | head -1)
 
 if echo "$PIP_OUTPUT" | grep -qE "pip [0-9]+\.[0-9]+"; then
     print_test_result "true" "$0" "3" "pip is available with Python"

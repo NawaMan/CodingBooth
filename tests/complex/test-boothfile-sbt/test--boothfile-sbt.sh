@@ -23,7 +23,8 @@ echo "=== Test: Boothfile sbt Installation ==="
 FAILED=0
 
 # Test 1: sbt binary is installed and executable
-ACTUAL=$(run_coding_booth --silence-build -- which sbt 2>/dev/null | head -1)
+ACTUAL=$(run_coding_booth --silence-build -- which sbt 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE "/sbt"; then
     print_test_result "true" "$0" "1" "sbt is installed via Boothfile"

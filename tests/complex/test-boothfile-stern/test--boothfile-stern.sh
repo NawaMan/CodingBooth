@@ -21,7 +21,8 @@ echo "=== Test: Boothfile stern Installation ==="
 
 FAILED=0
 
-ACTUAL=$(run_coding_booth --silence-build -- stern --version 2>/dev/null | head -3)
+ACTUAL=$(run_coding_booth --silence-build -- stern --version 2>/dev/null)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -3)
 
 if echo "$ACTUAL" | grep -qiE "version[^0-9]*v?[0-9]+\.[0-9]+\.[0-9]+"; then
     print_test_result "true" "$0" "1" "stern is installed via Boothfile"

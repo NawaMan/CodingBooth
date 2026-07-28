@@ -22,7 +22,8 @@ echo "=== Test: Boothfile Conan Installation ==="
 FAILED=0
 
 # Test 1: conan is installed
-ACTUAL=$(run_coding_booth --silence-build -- conan --version 2>/dev/null | head -1) || ACTUAL=""
+ACTUAL=$(run_coding_booth --silence-build -- conan --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 if echo "$ACTUAL" | grep -qE "Conan version"; then
     print_test_result "true" "$0" "1" "Conan is installed"
 else
