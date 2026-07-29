@@ -24,6 +24,18 @@ echo "============================================================"
 echo "Running Complex Tests"
 echo "============================================================"
 
+# Record every booth invocation's command, exit code, and stderr for this suite.
+# Complex tests discard booth's stderr (`2>/dev/null`), so when a run intermittently
+# returns nothing the suite reports `FAILED:` with no output and nothing to go on.
+# This is the trace that makes the next such failure explain itself.
+# Opt out with CB_DIAG_LOG=/dev/null; point it elsewhere to relocate the log.
+if [[ -z "${CB_DIAG_LOG:-}" ]]; then
+  export CB_DIAG_LOG="${SCRIPT_DIR}/../logs/complex-booth-calls.log"
+  mkdir -p "$(dirname "$CB_DIAG_LOG")"
+  : >"$CB_DIAG_LOG"
+  echo "Booth call trace: ${CB_DIAG_LOG}"
+fi
+
 if ! command -v docker >/dev/null 2>&1; then
   echo "SKIP: Docker is not installed or not in PATH"
   exit 0
