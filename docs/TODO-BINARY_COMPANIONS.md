@@ -45,9 +45,9 @@ The config TUI already exposes package installs (see
 | Extension | Manager | Example |
 |---|---|---|
 | `apt-pkg` | apt | `apt-pkg:ffmpeg,graphviz,protobuf-compiler` |
-| `nodejs+npm-pkg` | npm | `nodejs+npm-pkg:prisma,@bufbuild/buf` |
+| `nodejs+npm-pkg` | npm | `nodejs+npm-pkg:prisma,"@bufbuild/buf"` |
 | `python+pip-pkg` | pip | `python+pip-pkg:grpcio-tools` |
-| `go+go-pkg` | `go install` | `go+go-pkg:…/protoc-gen-go@latest` |
+| `go+go-pkg` | `go install` | `go+go-pkg:"…/protoc-gen-go@latest"` |
 | `rust+cargo-pkg` | cargo | `rust+cargo-pkg:sqlx-cli` |
 | `csharp+dotnet-pkg` / `dotnet+dotnet-pkg` | `dotnet tool install --global` | `csharp+dotnet-pkg:dotnet-ef` |
 | (+ yarn / bun / uv / conda / gem / …) | | |
@@ -71,13 +71,13 @@ Rough split of the catalog (~34 items):
 |---|---|---|
 | **protoc** | `apt-pkg:protobuf-compiler` | Ubuntu often ships an older protoc (e.g. 3.21.x) |
 | gRPC C++ plugin | `apt-pkg:protobuf-compiler-grpc` | |
-| **protoc-gen-go** / go-grpc | `go+go-pkg:google.golang.org/protobuf/cmd/protoc-gen-go@latest`, `…/protoc-gen-go-grpc@latest` | Needs `go` template selected |
-| **buf** | `go+go-pkg:github.com/bufbuild/buf/cmd/buf@latest` **or** `nodejs+npm-pkg:@bufbuild/buf` | |
-| grpcurl | `go+go-pkg:github.com/fullstorydev/grpcurl/cmd/grpcurl@latest` | |
+| **protoc-gen-go** / go-grpc | `go+go-pkg:"google.golang.org/protobuf/cmd/protoc-gen-go@latest"`, `"…/protoc-gen-go-grpc@latest"` | Needs `go` template selected |
+| **buf** | `go+go-pkg:"github.com/bufbuild/buf/cmd/buf@latest"` **or** `nodejs+npm-pkg:"@bufbuild/buf"` | |
+| grpcurl | `go+go-pkg:"github.com/fullstorydev/grpcurl/cmd/grpcurl@latest"` | |
 | thrift / flatc / capnp | `apt-pkg:thrift-compiler`, `flatbuffers-compiler`, `capnproto` | |
-| openapi-generator-cli | `nodejs+npm-pkg:@openapitools/openapi-generator-cli` | |
-| oapi-codegen | `go+go-pkg:…/oapi-codegen@latest` | |
-| graphql-codegen | `nodejs+npm-pkg:@graphql-codegen/cli` | |
+| openapi-generator-cli | `nodejs+npm-pkg:"@openapitools/openapi-generator-cli"` | |
+| oapi-codegen | `go+go-pkg:"…/oapi-codegen@latest"` | |
+| graphql-codegen | `nodejs+npm-pkg:"@graphql-codegen/cli"` | |
 | **antlr4** / javacc | `apt-pkg:antlr4`, `javacc` | apt versions can lag (antlr 4.9-class) |
 | bison / flex | `apt-pkg:bison,flex` | |
 | tree-sitter CLI | `rust+cargo-pkg:tree-sitter-cli` (or npm) | |
@@ -93,7 +93,7 @@ Example gRPC booth **without** a new template:
 
 ```bash
 booth config --no-tui \
-  --select go+go-pkg:google.golang.org/protobuf/cmd/protoc-gen-go@latest,google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest \
+  --select 'go+go-pkg:"google.golang.org/protobuf/cmd/protoc-gen-go@latest","google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest"' \
   --select apt-pkg:protobuf-compiler
 ```
 
@@ -209,7 +209,7 @@ Actionable outcomes:
 |---|---|---|---|
 | `grpc` / `grpcio` / `@grpc/grpc-js` / `google.golang.org/grpc` | **`protoc`** + plugins | `protobuf` template + `protobuf+go`; also `apt-pkg` + go/npm/pip | Done (Go plugins); others later |
 | `protobuf` / … | **`protoc`** | `protobuf` template or `apt-pkg:protobuf-compiler` | Done |
-| `buf` / Connect-RPC | **`buf`** CLI | `buf` template; also `go-pkg` / `npm-pkg:@bufbuild/buf` | Done |
+| `buf` / Connect-RPC | **`buf`** CLI | `buf` template; also `go-pkg` / `npm-pkg:"@bufbuild/buf"` | Done |
 | Apache Thrift libs | **`thrift`** | `apt-pkg:thrift-compiler` | No |
 | FlatBuffers libs | **`flatc`** | `apt-pkg:flatbuffers-compiler` | No |
 | Cap’n Proto libs | **`capnp`** | `apt-pkg:capnproto` | No |

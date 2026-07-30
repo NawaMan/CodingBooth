@@ -48,18 +48,11 @@ func ReadSelectInputWithProject(value, projectRoot string) (string, error) {
 // Remaining whitespace (newlines, tabs, multiple spaces) is collapsed
 // and treated as "/" separators, so heredoc and file inputs work the
 // same as inline DSL.
+//
+// Whitespace inside a quoted param value is left alone -- a quoted value is one
+// value, not two items. See quoting.go.
 func NormalizeInput(input string) string {
-	// Remove spaces around "+" so extensions stay attached to their template
-	for strings.Contains(input, " +") || strings.Contains(input, "+ ") {
-		input = strings.ReplaceAll(input, " +", "+")
-		input = strings.ReplaceAll(input, "+ ", "+")
-	}
-	// Remove spaces around "~" so exclusions stay attached to their template
-	for strings.Contains(input, " ~") || strings.Contains(input, "~ ") {
-		input = strings.ReplaceAll(input, " ~", "~")
-		input = strings.ReplaceAll(input, "~ ", "~")
-	}
-	fields := strings.Fields(input)
+	fields := fieldsUnquoted(stripSpacesAroundOperators(input))
 	// Join "+"- or "~"-prefixed fields to the previous field (continuation lines)
 	var merged []string
 	for _, f := range fields {
@@ -72,6 +65,50 @@ func NormalizeInput(input string) string {
 	return strings.Join(merged, "/")
 }
 
+// stripSpacesAroundOperators drops the whitespace that sits next to a "+" or a
+// "~" and collapses every other run to a single space, so the caller can split
+// on whitespace. Runs inside a quoted value are kept verbatim.
+func stripSpacesAroundOperators(input string) string {
+	out := make([]byte, 0, len(input))
+	quote := byte(0)
+
+	for i := 0; i < len(input); i++ {
+		c := input[i]
+
+		if quote != 0 {
+			out = append(out, c)
+			if c == quote {
+				quote = 0
+			}
+			continue
+		}
+		if c == '"' || c == '\'' {
+			quote = c
+			out = append(out, c)
+			continue
+		}
+		if !isDSLSpace(c) {
+			out = append(out, c)
+			continue
+		}
+
+		// A whitespace run touching an operator on either side belongs to that
+		// operator ("java:25,temurin\n  + maven"), so it goes away entirely.
+		end := i
+		for end < len(input) && isDSLSpace(input[end]) {
+			end++
+		}
+		prevIsOp := len(out) > 0 && isDSLOperator(out[len(out)-1])
+		nextIsOp := end < len(input) && isDSLOperator(input[end])
+		if !prevIsOp && !nextIsOp {
+			out = append(out, ' ')
+		}
+		i = end - 1
+	}
+
+	return string(out)
+}
+
 // ParseSelectDSL parses a --select DSL string into a ParsedSelection.
 //
 // DSL format: name[:p1,p2][+ext1][+ext2][~exc1][~exc2]/name2[:p1,p2][+ext1][~exc1]
@@ -80,9 +117,13 @@ func NormalizeInput(input string) string {
 // except that "+" gives way to ":". Once a ":" has opened a param list, a "+" separates
 // extensions only when a letter follows it, so a param value can hold one: "expose:+4567"
 // is a booth-relative port, not an extension named "4567". See splitExtensions.
+//
+// No separator at any of those levels separates inside a quoted param value, which is
+// how a value that is itself made of separators — a Go module path — is written:
+// go+go-pkg:"github.com/pocketbase/pocketbase/examples/base@latest". See quoting.go.
 func ParseSelectDSL(input string) (*ParsedSelection, error) {
 	normalized := NormalizeInput(input)
-	parts := strings.Split(normalized, "/")
+	parts := splitUnquoted(normalized, '/')
 
 	var items []ParsedItem
 	for _, part := range parts {
@@ -116,12 +157,25 @@ func ParseSelectDSL(input string) (*ParsedSelection, error) {
 //
 // Before any ":" every "+" still separates, so a malformed "go++linter" or a trailing
 // "go+" reports an empty extension name exactly as it did before.
+//
+// Inside a quoted value that heuristic does not apply at all: a quoted "+" is part of
+// the value whatever follows it.
 func splitExtensions(basePart string) []string {
 	var parts []string
 	start, inParams := 0, false
+	quote := byte(0)
 
 	for i := 0; i < len(basePart); i++ {
-		switch basePart[i] {
+		c := basePart[i]
+		if quote != 0 {
+			if c == quote {
+				quote = 0
+			}
+			continue
+		}
+		switch c {
+		case '"', '\'':
+			quote = c
 		case ':':
 			inParams = true
 		case '+':
@@ -148,7 +202,7 @@ func startsExtensionName(s string) bool {
 // parseItem parses a single template selection: "name[:p1,p2][+ext1][+ext2][~exc1][~exc2]"
 func parseItem(s string) (ParsedItem, error) {
 	// Split by "~" — first part is template[+extensions], rest are exclusions
-	tildeParts := strings.Split(s, "~")
+	tildeParts := splitUnquoted(s, '~')
 	basePart := tildeParts[0]
 
 	var excludes []string
@@ -175,7 +229,7 @@ func parseItem(s string) (ParsedItem, error) {
 			pe.Name = ext[:colonIdx]
 			paramStr := ext[colonIdx+1:]
 			if paramStr != "" {
-				pe.Params = strings.Split(paramStr, ",")
+				pe.Params = unquoteAll(splitUnquoted(paramStr, ','))
 			}
 		} else {
 			pe.Name = ext
@@ -193,7 +247,7 @@ func parseItem(s string) (ParsedItem, error) {
 		name = templatePart[:colonIdx]
 		paramStr := templatePart[colonIdx+1:]
 		if paramStr != "" {
-			params = strings.Split(paramStr, ",")
+			params = unquoteAll(splitUnquoted(paramStr, ','))
 		}
 	} else {
 		name = templatePart

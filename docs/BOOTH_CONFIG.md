@@ -339,12 +339,47 @@ This selects:
 - Notebook variant
 - Claude Code AI assistant
 
+### Quoting values that contain separators
+
+A param value that holds a `/` has to be quoted, or the `/` starts a new
+template. Go module paths are the usual case:
+
+```bash
+# Right
+booth config --no-tui --select 'go+go-pkg:"github.com/fullstorydev/grpcurl/cmd/grpcurl@latest"'
+
+# Wrong — selects go, then templates named "fullstorydev", "grpcurl", "cmd", …
+booth config --no-tui --select go+go-pkg:github.com/fullstorydev/grpcurl/cmd/grpcurl@latest
+```
+
+The ambiguity is real, not an oversight: `go:1.25.7/claude-code` has the same
+shape, and there the `/` genuinely does separate two templates. Quotes are how
+you say which one you mean.
+
+Either `"` or `'` works — pick the one that gets past your shell. Wrapping the
+whole selection in single quotes and using `"` inside, as above, is the form
+`booth config` writes into the generated headers.
+
+Each value in a list is quoted on its own; the commas between them still
+separate:
+
+```bash
+booth config --no-tui --select 'nodejs+npm-pkg:"@types/node","@types/react"'
+```
+
+Only param values are quotable — template and extension names never need it.
+And only values that need it: `go:1.25.7`, `cloudbeaver+expose:+19000` and
+`apt+apt-pkg:libstdc++6` all stay plain, because a `+` inside a param list
+already stays with the value unless a letter follows it, and only the first `:`
+of an item separates (`deno+deno-pkg:jsr:@luca` needs nothing).
+
 ### Whitespace rules
 
 For readability in files and heredocs:
 - Spaces around `+` and `~` are allowed: `java + maven` works
 - Lines starting with `+` or `~` continue the previous template
 - Remaining whitespace becomes `/` separators
+- Whitespace inside a quoted value is part of the value
 
 ---
 
@@ -759,12 +794,17 @@ The full list of package manager extensions:
 | `php/pecl-pkg`     | pecl       | `php+pecl-pkg:redis`              |
 | `deno/pkg`         | deno add   | `deno+pkg:npm:cowsay`             |
 | `deno/tool`        | deno install | `deno+tool:npm:cowsay`          |
-| `conan/conan-pkg`  | Conan      | `conan+conan-pkg:fmt/10.2.1`      |
+| `conan/conan-pkg`  | Conan      | `conan+conan-pkg:"fmt/10.2.1"`    |
 | `brew-pkg`         | Homebrew   | `brew-pkg:htop,tmux`              |
 | `apt-pkg`          | apt        | `apt-pkg:htop,jq`                |
 | `code-ext-pkg`     | VS Code / code-server | `code-ext-pkg:elixir-lsp.elixir-ls` |
 
 These translate to `install <manager> <packages>` in the Boothfile, which runs the corresponding `<manager>--install.sh` script during `docker build`.
+
+> **Package names with a `/`** — Go module paths, scoped npm names, Conan
+> `name/version` refs — must be quoted, or the `/` reads as a template separator:
+> `--select 'go+go-pkg:"github.com/user/tool@latest"'`. See
+> [Quoting values that contain separators](#quoting-values-that-contain-separators).
 
 > **Editor extensions (`code-ext-pkg`):** bakes any VS Code / code-server extension
 > into the image by marketplace id, for anything the curated per-language extensions
@@ -974,13 +1014,13 @@ When there is no dedicated template, or you prefer a one-line package install:
 |---|---|---|
 | `grpc` / `grpcio` / `@grpc/grpc-js` / `google.golang.org/grpc` | `protobuf` **or** `apt-pkg:protobuf-compiler` + language plugins | Prefer `protobuf` + `protobuf+go` for Go |
 | Python gRPC plugins only | `python+pip-pkg:grpcio-tools` | Still needs `protoc` itself |
-| Connect-RPC / Buf workflows | `buf` **or** `go+go-pkg:…/buf@latest` / `nodejs+npm-pkg:@bufbuild/buf` | Prefer `buf` template |
+| Connect-RPC / Buf workflows | `buf` **or** `go+go-pkg:"…/buf@latest"` / `nodejs+npm-pkg:"@bufbuild/buf"` | Prefer `buf` template |
 | Apache Thrift | `apt-pkg:thrift-compiler` | |
 | FlatBuffers | `apt-pkg:flatbuffers-compiler` | |
 | Cap’n Proto | `apt-pkg:capnproto` | |
-| OpenAPI generators | `nodejs+npm-pkg:@openapitools/openapi-generator-cli` or go-pkg oapi-codegen | |
-| GraphQL codegen | `nodejs+npm-pkg:@graphql-codegen/cli` | |
-| grpcurl | `go+go-pkg:github.com/fullstorydev/grpcurl/cmd/grpcurl@latest` | |
+| OpenAPI generators | `nodejs+npm-pkg:"@openapitools/openapi-generator-cli"` or go-pkg oapi-codegen | |
+| GraphQL codegen | `nodejs+npm-pkg:"@graphql-codegen/cli"` | |
+| grpcurl | `go+go-pkg:"github.com/fullstorydev/grpcurl/cmd/grpcurl@latest"` | |
 | ANTLR runtimes | `apt-pkg:antlr4` | apt may lag upstream |
 | JavaCC | `apt-pkg:javacc` | |
 | Bison / Flex | `apt-pkg:bison,flex` | |
@@ -999,7 +1039,7 @@ When there is no dedicated template, or you prefer a one-line package install:
 ```bash
 # Older style: pure *-pkg, no dedicated protobuf/buf templates
 booth config --no-tui \
-  --select go+go-pkg:google.golang.org/protobuf/cmd/protoc-gen-go@latest,google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest \
+  --select 'go+go-pkg:"google.golang.org/protobuf/cmd/protoc-gen-go@latest","google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest"' \
   --select apt-pkg:protobuf-compiler
 
 # Media libs that shell out to ffmpeg
