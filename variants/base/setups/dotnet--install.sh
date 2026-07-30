@@ -21,13 +21,24 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-if [ $# -eq 0 ]; then
-    echo "Usage: $0 <tool[@version]> [tool[@version]...]" >&2
-    exit 1
-fi
+case "${1:-}" in
+    -h|--help)
+        echo "Usage: $0 <tool[@version]> [tool[@version]...]"
+        exit 0
+        ;;
+esac
 
 # Expand comma-separated packages into separate arguments
 set -- $(echo "$@" | tr ',' ' ')
+
+# No dotnet tools requested is a no-op, not an error: the *-pkg templates emit
+# `install dotnet ${..._PKGS}` with the package list defaulting to empty, so
+# failing here would break the image build of every project that selects the
+# extension without naming packages.
+if [ $# -eq 0 ]; then
+    echo "ℹ️  No dotnet tools requested; nothing to install."
+    exit 0
+fi
 
 DOTNET_ROOT="${DOTNET_ROOT:-/opt/dotnet-stable}"
 DOTNET_BIN="${DOTNET_BIN:-$DOTNET_ROOT/dotnet}"

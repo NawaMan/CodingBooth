@@ -19,17 +19,27 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-if [ $# -eq 0 ]; then
-    echo "Usage: $0 [deno install args...]" >&2
-    echo "Examples:" >&2
-    echo "  $0 -A -n cowsay https://deno.land/x/cowsay/mod.ts" >&2
-    echo "  $0 -Agf jsr:@luca/flag@1" >&2
-    echo "  $0 -A npm:cowsay" >&2
-    exit 1
-fi
+case "${1:-}" in
+    -h|--help)
+        echo "Usage: $0 [deno install args...]"
+        echo "Examples:"
+        echo "  $0 -A -n cowsay https://deno.land/x/cowsay/mod.ts"
+        echo "  $0 -Agf jsr:@luca/flag@1"
+        echo "  $0 -A npm:cowsay"
+        exit 0
+        ;;
+esac
 
 # Expand comma-separated packages into separate arguments
 set -- $(echo "$@" | tr ',' ' ')
+
+# No tools requested is a no-op, not an error: the deno tool--extension emits
+# `install deno ${DENO_TOOLS}` with the list defaulting to empty, so failing here
+# would break the image build of every project that selects it without naming tools.
+if [ $# -eq 0 ]; then
+    echo "ℹ️  No Deno tools requested; nothing to install."
+    exit 0
+fi
 
 if ! command -v deno &> /dev/null; then
     echo "❌ Deno is not installed. Run deno--setup.sh first." >&2

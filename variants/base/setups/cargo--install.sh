@@ -24,20 +24,15 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-if [ $# -eq 0 ]; then
-    echo "Usage: $0 [cargo-flags...] <crate> [crate...]" >&2
-    exit 1
-fi
+case "${1:-}" in
+    -h|--help)
+        echo "Usage: $0 [cargo-flags...] <crate> [crate...]"
+        exit 0
+        ;;
+esac
 
 # Expand comma-separated packages into separate arguments
 set -- $(echo "$@" | tr ',' ' ')
-
-# Path to the cargo binary used for the presence check (overridable for testing).
-CARGO_BIN="${CARGO_BIN:-/opt/rust/cargo/bin/cargo}"
-if [ ! -x "$CARGO_BIN" ]; then
-    echo "❌ Rust is not installed. Run rust--setup.sh first." >&2
-    exit 1
-fi
 
 # Separate cargo flags (any leading-dash token, e.g. --locked) from crate specs,
 # so the flags can be applied to every `cargo install` in this line.
@@ -50,8 +45,20 @@ for arg in "$@"; do
     esac
 done
 
+# No crates requested is a no-op, not an error: the *-pkg templates emit
+# `install cargo ${..._PKGS}` with the package list defaulting to empty, so
+# failing here would break the image build of every project that selects the
+# extension without naming packages. Checked before the toolchain probe so that
+# `install cargo --locked ${CARGO_PKGS}` -- flags but no crates -- is a no-op too.
 if [ ${#SPECS[@]} -eq 0 ]; then
-    echo "Usage: $0 [cargo-flags...] <crate> [crate...]" >&2
+    echo "ℹ️  No crates requested; nothing to install."
+    exit 0
+fi
+
+# Path to the cargo binary used for the presence check (overridable for testing).
+CARGO_BIN="${CARGO_BIN:-/opt/rust/cargo/bin/cargo}"
+if [ ! -x "$CARGO_BIN" ]; then
+    echo "❌ Rust is not installed. Run rust--setup.sh first." >&2
     exit 1
 fi
 

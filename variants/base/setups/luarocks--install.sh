@@ -17,13 +17,24 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-if [ $# -eq 0 ]; then
-    echo "Usage: $0 <rock> [rock...]" >&2
-    exit 1
-fi
+case "${1:-}" in
+    -h|--help)
+        echo "Usage: $0 <rock> [rock...]"
+        exit 0
+        ;;
+esac
 
 # Expand comma-separated packages into separate arguments
 set -- $(echo "$@" | tr ',' ' ')
+
+# No rocks requested is a no-op, not an error: the *-pkg templates emit
+# `install luarocks ${..._PKGS}` with the package list defaulting to empty, so
+# failing here would break the image build of every project that selects the
+# extension without naming packages.
+if [ $# -eq 0 ]; then
+    echo "ℹ️  No rocks requested; nothing to install."
+    exit 0
+fi
 
 # lua--setup.sh installs LuaRocks from apt (/usr/bin/luarocks) and exposes it on
 # PATH — there is no /opt/lua-stable tree. Honour an explicit LUA_HOME when it

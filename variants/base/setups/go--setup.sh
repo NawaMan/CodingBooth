@@ -83,6 +83,12 @@ case ":$PATH:" in
 esac
 
 export GOPATH="$HOME/go"
+
+# Point GOBIN at the directory PATH was just given, so packages installed by
+# go--install.sh (e.g. the go-pkg template's GO_PKGS) are discoverable by name
+# and not only via PATH. Same value as the GOPATH/bin default, but explicit, so
+# tooling that reads GOBIN -- editors, the VS Code Go extension -- finds them too.
+export GOBIN="$GOPATH/bin"
 EOF
 chmod 644 "${PROFILE_FILE}"
 

@@ -12,6 +12,9 @@ SRC_DIR="./src/cmd"
 OUTPUT_DIR="../bin"
 VERSION_FILE="../version.txt"
 
+# Resolve build/ before changing directory, so sibling scripts stay reachable
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
 # Change to cli directory where go.mod is located (from build/ go up one level)
 cd "$(dirname "$0")/../cli" || exit 1
 
@@ -32,6 +35,12 @@ fi
 
 echo "🔨 Building ${APP_NAME} v${VERSION}"
 echo "=================================="
+echo ""
+
+# Refresh the embedded built-in script list so `setup`/`install` name validation
+# matches what the base image actually ships.
+echo "🧾 Refreshing embedded built-in script list..."
+"${SCRIPT_DIR}/gen-builtin-scripts.sh"
 echo ""
 
 # Download dependencies
