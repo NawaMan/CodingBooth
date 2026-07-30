@@ -32,6 +32,7 @@ Back to [README](../README.md)
 - [Run-Args Ownership Convention](#run-args-ownership-convention)
 - [Common Workflows](#common-workflows)
 - [Package Management Templates](#package-management-templates)
+- [Editor Extensions](#editor-extensions)
 - [Binary companions — library X → also select Y](#binary-companions--library-x--also-select-y)
 
 ---
@@ -761,12 +762,95 @@ The full list of package manager extensions:
 | `conan/conan-pkg`  | Conan      | `conan+conan-pkg:fmt/10.2.1`      |
 | `brew-pkg`         | Homebrew   | `brew-pkg:htop,tmux`              |
 | `apt-pkg`          | apt        | `apt-pkg:htop,jq`                |
+| `code-ext-pkg`     | VS Code / code-server | `code-ext-pkg:elixir-lsp.elixir-ls` |
 
 These translate to `install <manager> <packages>` in the Boothfile, which runs the corresponding `<manager>--install.sh` script during `docker build`.
+
+> **Editor extensions (`code-ext-pkg`):** bakes any VS Code / code-server extension
+> into the image by marketplace id, for anything the curated per-language extensions
+> don't cover. See [Editor Extensions](#editor-extensions) below.
 
 > **System packages (apt):** `apt-pkg` installs Debian/Ubuntu packages with apt. It supports apt's native `pkg=version` pinning (`apt-pkg:htop,jq=1.6-2.1`) and honors the `APT_SNAPSHOT` archive freeze that `booth config` stamps for reproducible builds. You can also add `install apt <pkgs>` directly to the Boothfile by hand. See [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md#using-built-in-installs) and [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
 
 > **Upgrading the bundled npm (`nodejs+npm-upgrade`):** distinct from the `-pkg` extensions, this opt-in extension upgrades the *global npm itself* to a newer version than the selected Node.js bundles — `run npm install -g npm@NPM_VERSION` at build time. Use `--select nodejs+npm-upgrade` for the latest, or `nodejs+npm-upgrade:11.18.0` to pin a version. It's off by default so the npm that ships with Node.js stays the reproducible baseline.
+
+### Editor Extensions
+
+VS Code / code-server extensions come two ways, and the curated way is the one to
+reach for first.
+
+**Curated, per language — `<language>+vscode-ext`.** Each language template that has
+a well-known extension ships one, auto-selected, pinning an id that is known to
+resolve. Nothing to type but the language:
+
+```bash
+booth config --no-tui --variant codeserver --select "elixir"          # +vscode-ext is auto-selected
+booth config --no-tui --variant codeserver --select "go/rust/python"  # one per language
+```
+
+Each compiles to `setup <language>-code-extension` in the Boothfile. If an editor
+isn't in the image, the setup skips itself quietly, so a language selection stays
+valid on a variant with no IDE.
+
+**Arbitrary, by id — `code-ext-pkg`.** For anything not covered by a curated
+extension, name the marketplace id directly:
+
+```bash
+booth config --no-tui --variant codeserver --select "code-ext-pkg:eamodio.gitlens"
+booth config --no-tui --variant codeserver --select "code-ext-pkg:eamodio.gitlens,esbenp.prettier-vscode"
+booth config --no-tui --variant codeserver --select "code-ext-pkg:eamodio.gitlens@15.6.0"   # pinned
+```
+
+This compiles to `install code-extension ${CODE_EXT_PKGS}` at Boothfile order 65 —
+the same slot as the curated extensions, after the editor is installed. The two mix
+freely: `--select "elixir+vscode-ext/code-ext-pkg:eamodio.gitlens"`.
+
+Three things to know about ids:
+
+- **Which registry an id resolves against depends on your variant.** code-server
+  queries [Open VSX](https://open-vsx.org); desktop VS Code queries the
+  [Microsoft Marketplace](https://marketplace.visualstudio.com). The publisher
+  namespaces are independent, so the same extension often has a different id on each
+  — ElixirLS is `elixir-lsp.elixir-ls` on Open VSX and `JakeBecker.elixir-ls` on the
+  Marketplace — and Microsoft-licensed ones (`ms-dotnettools.*`, `ms-vscode.cpptools`)
+  are absent from Open VSX entirely. Look your id up on the registry your variant
+  uses, per the table below.
+- A trailing `@version` pins the release; without one you get whatever is latest at
+  build time. See [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
+- An id that fails to install **fails the build**, unlike the curated extensions,
+  which warn and carry on. You named it explicitly, so a silent no-op would hand you
+  an image missing the extension you asked for.
+
+#### Which editor gets the extension
+
+Both, when both are there. code-server and desktop VS Code keep separate extension
+trees and separate CLIs, and every install path here — curated and arbitrary alike —
+installs into each one it finds. Which one a booth has, and therefore **which
+registry your ids must come from**, comes from its variant:
+
+| Variant | Editor | Registry for ids | Where extensions land |
+|---------|--------|------------------|-----------------------|
+| `codeserver` | code-server | Open VSX | `/usr/local/share/code-server/extensions` |
+| `desktop-xfce` / `-kde` / `-lxqt` / `-wayland` | desktop VS Code | MS Marketplace | `/usr/local/share/code/extensions` |
+| `base`, `notebook` | none | — | build stops with a message |
+
+The curated `<language>+vscode-ext` extensions already handle this split for you —
+`elixir+vscode-ext` installs `elixir-lsp.elixir-ls` on code-server and
+`JakeBecker.elixir-ls` on desktop VS Code, both the real ElixirLS. `code-ext-pkg`
+takes ids verbatim, so on a mixed image (`setup codeserver` *and* `setup vscode` on a
+base build) an id must resolve on both registries or the build fails. Real variants
+carry exactly one editor, so this only comes up if you install both by hand.
+
+So `code-ext-pkg` needs *an* editor, not a specific one: any of the five variants
+above, or `setup codeserver` / `setup vscode` in the Boothfile on a bare `base`
+build. This is also why `code-ext-pkg` is a top-level template rather than an
+extension hanging off `codeserver` — desktop variants have an editor without that
+template ever being selected, and requiring it would mean installing a second,
+browser-based editor just to name an extension.
+
+> On a bare `base` build, `setup vscode` currently needs `setup python` before it —
+> it installs Jupyter and a Bash kernel with pip. The desktop variants don't hit this
+> because their desktop setup installs python first.
 
 ### Project Dependency Pre-Installation
 

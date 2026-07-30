@@ -91,6 +91,12 @@ tests/basic/test--dockerfile
 tests/dryrun/test--.env
 tests/dryrun/test--config.sh
 tests/dryrun/test--config.toml
+# test018--config-file--env-expand.sh writes these two with a heredoc on every run
+# and reads back only what it just wrote — they are outputs, not fixtures. They were
+# tracked for 46 commits, dirtying `git status` at every version bump (the heredoc
+# interpolates `version = "$VERSION"`) and leaking into unrelated commits.
+tests/dryrun/test--env-expand-config.toml
+tests/dryrun/test--env-expand-unset-config.toml
 # tests/config/test*.sh writes its `$prj` working dir + recipe input into
 # tests/config/prj--*; these are regenerated every run (and bake the host's
 # absolute path into a header comment), so they shouldn't be tracked.

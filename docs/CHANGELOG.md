@@ -16,6 +16,73 @@ This file contains a list of changes for each released version.
   usable binary still hard-errors. Only `config` gets the offer. Covered by
   `tests/wrapper/052-config-offer-install.sh`.
 
+- **Any VS Code / code-server extension, by id (`install code-extension` /
+  `code-ext-pkg`).** Editor extensions were curated-only: a language either had a
+  `<lang>-code-extension--setup.sh` pinning one known-good id, or you were out of
+  luck. There is now an escape hatch beside the curated set — name the marketplace
+  id and it gets baked into the image:
+
+  ```text
+  setup codeserver
+  install code-extension elixir-lsp.elixir-ls ms-python.python
+  install code-extension eamodio.gitlens@15.6.0     # pinned
+  ```
+
+  or through `booth config`, via the new `code-ext-pkg` template (IDEs tab, beside
+  `codeserver`): `--select "code-ext-pkg:eamodio.gitlens,esbenp.prettier-vscode"`. It
+  compiles to Boothfile order 65 — the same slot as the curated `+vscode-ext`
+  extensions, after the editor is installed — so the two mix freely
+  (`elixir+vscode-ext/code-ext-pkg:eamodio.gitlens`). A trailing `@version` pins the
+  release. The curated extensions remain the recommended path where one exists: a
+  user shouldn't have to know an id to get a working editor.
+
+  Extensions install into **every editor present**, not one: code-server and desktop
+  VS Code keep separate extension trees and separate CLIs, and which one a booth has
+  depends on its variant — code-server on the `codeserver` variant, desktop VS Code
+  on all four desktop variants (each runs `vscode--setup.sh`). That is also why
+  `code-ext-pkg` is a top-level template rather than an extension of `codeserver`:
+  hanging it there would make a desktop-variant user install a second, browser-based
+  editor just to name an extension.
+
+  Unlike the curated setups, which log a warning and carry on, a bad id here
+  **fails the build**. You named it explicitly, so a silent no-op would hand back an
+  image quietly missing the extension you asked for — exactly the failure mode that
+  hid the elixir bug below. The build also stops, with a message saying so, when no
+  editor is in the image to install into. Failure modes are covered hermetically in
+  `tests/setups/test--code-extension-install.sh` (12 checks, no build required) and
+  end-to-end in `tests/complex/test-boothfile-code-extension/`.
+
+- **The Elixir VS Code extension never installed — and the two editors don't share a
+  registry.** `elixir-code-extension--setup.sh` asked for `JakeBecker.elixir-ls`, the
+  *Microsoft Marketplace* id for ElixirLS. code-server resolves against Open VSX,
+  where that id 404s. Because `install_extensions` logs a warning and returns
+  success, the build passed and the booth came up with no Elixir support at all.
+
+  Swapping in the Open VSX id (`elixir-lsp.elixir-ls`) fixes code-server and breaks
+  the desktop variants, because there is no id that is right for both: on the
+  Marketplace `elixir-lsp.elixir-ls` resolves to "ElixirLS Fork: **DEPRECATED**"
+  v0.3.9999, a stub whose own description says to use `JakeBecker.elixir-ls`. So the
+  wrong id there doesn't fail — it installs the wrong package.
+
+  `libs/code-extension-source.sh` therefore gains two entry points beside the
+  existing one, which is unchanged:
+
+  ```bash
+  install_extensions             mads-hartmann.bash-ide-vscode  # same id on both
+  install_codeserver_extensions  elixir-lsp.elixir-ls           # Open VSX id
+  install_vscode_extensions      JakeBecker.elixir-ls           # Marketplace id
+  ```
+
+  Each per-editor call is a quiet no-op when that editor isn't in the image, so they
+  are safe on every variant. All 36 curated ids were then audited against **both**
+  registries. Besides elixir, three are Marketplace-only and had been failing
+  silently on code-server since they were written — `ms-dotnettools.csharp` (dotnet),
+  `ms-vscode.cpptools` (gcc), `visualstudioexptteam.vscodeintellicode` (java). Those
+  are now scoped with `install_vscode_extensions`, which makes the limitation
+  explicit and drops a spurious warning from every code-server build; choosing Open
+  VSX substitutes for code-server is left open in `docs/TODO.md`. Everything else
+  differs only by ordinary version drift.
+
 - **Booth call trace for the complex suite (`CB_DIAG_LOG`).** Complex tests capture
   booth with `2>/dev/null`, so a run that intermittently returns nothing left no
   evidence: the suite printed `FAILED:` with no output and there was nothing to

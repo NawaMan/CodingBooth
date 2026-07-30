@@ -29,7 +29,11 @@ CODE_EXTENSION_LIB=${CODE_EXTENSION_LIB:-code-extension-source.sh}
 source "${SETUP_LIBS_DIR}/${CODE_EXTENSION_LIB}"
 
 install_extensions \
-  ms-vscode.cpptools \
   ms-vscode.cmake-tools
+
+# Marketplace-only: ms-vscode.cpptools is Microsoft-licensed and is not published to
+# Open VSX. code-server users get C/C++ support from clang-code-extension's
+# llvm-vs-code-extensions.vscode-clangd, which is on both registries. See docs/TODO.md.
+install_vscode_extensions ms-vscode.cpptools
 
 echo "✅ Extension installation completed."
