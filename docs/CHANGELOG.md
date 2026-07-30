@@ -4,6 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Wrapper `0.15.0` — `booth config` offers to install when the project has no
+  binary yet.** Typing `booth config` in a folder (or under a parent) that has
+  no `codingbooth.lock` used to either hard-error or — worse — open the TUI
+  via a *foreign* wrapper that already had a lock (e.g.
+  `../CodingBooth/booth config` from an empty project). The offer is keyed on
+  **the project tree** (`$PWD` and parents: executable `./booth` *and*
+  `codingbooth.lock` — a bare lock under e.g. `~/.booth` does not count), not
+  on the invoked wrapper’s own lock. On a TTY: *Install and continue? [Y/n]* →
+  install into `$PWD` (shared cache) and re-run `config`. Non-TTY with no
+  usable binary still hard-errors. Only `config` gets the offer. Covered by
+  `tests/wrapper/052-config-offer-install.sh`.
+
 - **Booth call trace for the complex suite (`CB_DIAG_LOG`).** Complex tests capture
   booth with `2>/dev/null`, so a run that intermittently returns nothing left no
   evidence: the suite printed `FAILED:` with no output and there was nothing to

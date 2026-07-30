@@ -21,7 +21,7 @@ if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
     exit 0
 fi
 
-VERSION=0.14.0
+VERSION=0.15.0
 VERBOSE="${VERBOSE:-true}"
 
 # Resolve this wrapper's absolute path (follow symlinks). All project paths are
@@ -184,7 +184,31 @@ function Main() {
     esac
 
     ### --- RUN MODE --- ###
-    # Read version and cache mode from lock file
+    # `config` is about *this project directory*, not about whichever wrapper was
+    # invoked. e.g. `../OtherRepo/booth config` from an empty folder must still
+    # offer to install into $PWD when this tree (or a parent) has no lock —
+    # even if OtherRepo already has a binary lock next to its wrapper.
+    if [[ "$COMMAND" == "config" ]]; then
+        if ! find_project_install_dir >/dev/null; then
+            if [[ -t 0 ]]; then
+                OfferInstallForConfig "$@"
+                # Accept either re-execs via $PWD/booth or returns after an
+                # in-process install when we already are that wrapper.
+            else
+                # Non-TTY: only hard-error when *this* wrapper also has no
+                # binary (can't run config at all). Otherwise fall through and
+                # run config via the foreign wrapper's binary.
+                if [[ ! -f "$LOCK_FILE" ]]; then
+                    echo "CodingBooth is not installed."
+                    echo "Please run: $0 install"
+                    echo "(Or re-run booth config in a terminal to be prompted to install here.)"
+                    exit 1
+                fi
+            fi
+        fi
+    fi
+
+    # Read version and cache mode from lock file (location-based: next to this wrapper)
     if [[ ! -f "$LOCK_FILE" ]]; then
         echo "CodingBooth is not installed."
         echo "Please run: $0 install"
@@ -306,6 +330,8 @@ Notes:
   - Set VERBOSE=true for extra logs during install
   - To update the wrapper itself, re-run:
       curl -fsSL https://codingbooth.io/install.sh | bash
+  - booth config with no install prompts (TTY only) to install here
+    and continue; non-interactive shells must run install first
 
 Help/Version disambiguation:
   ./booth help       Show this wrapper help (install, update, cache commands)
@@ -726,6 +752,92 @@ get_data_dir() {
 
 get_central_booth_path() {
     echo "$(get_data_dir)/booth"
+}
+
+# Walk $PWD and parents for a real project install: executable ./booth *and*
+# .booth/tools/codingbooth.lock. Used by `config` so a foreign wrapper with
+# its own lock does not skip the "install here?" offer for an empty folder.
+#
+# Lock alone is not enough — e.g. a stale ~/.booth/tools/codingbooth.lock from
+# an old install would otherwise suppress the offer for every directory under
+# $HOME. Matches shell-config's idea of a project booth (wrapper + lock).
+# Prints the project root on success; returns 1 if none.
+find_project_install_dir() {
+    local dir
+    dir="$(pwd -P)"
+    while true; do
+        if [[ -f "${dir}/booth" && -x "${dir}/booth" \
+              && -f "${dir}/.booth/tools/codingbooth.lock" ]]; then
+            printf '%s\n' "$dir"
+            return 0
+        fi
+        case "$dir" in
+            /) return 1 ;;
+        esac
+        dir="$(dirname "$dir")"
+    done
+}
+
+# When `booth config` is run without a project install in $PWD (or a parent),
+# offer to install into $PWD (shared cache, same as bare `install`) and then
+# continue with config. Only config gets this prompt. Caller only invokes this
+# on a TTY; non-TTY is handled in Main.
+#
+# On accept:
+#   - If this process is already $PWD/booth: DownloadBooth in-process, return
+#     so Main can continue (lock now exists beside this wrapper).
+#   - Otherwise (central / other-repo / parent wrapper): ensure $PWD/booth,
+#     run install there, exec `$PWD/booth config …`.
+# On decline: exit 1 (do not open config without an explicit install choice).
+OfferInstallForConfig() {
+    cat <<EOF
+CodingBooth is not installed in this project.
+Install here (shared cache) and continue with config?
+EOF
+    printf "Install and continue? [Y/n] "
+    local reply
+    read -r reply || true
+    case "${reply}" in
+        ""|y|Y|yes|YES|Yes) ;;
+        *)
+            echo "Cancelled."
+            exit 1
+            ;;
+    esac
+    echo ""
+
+    local project_dir project_booth self_real project_real=""
+    project_dir="$(pwd -P)"
+    project_booth="${project_dir}/booth"
+    self_real="$(realpath "$WRAPPER_SELF")"
+
+    if [[ -e "$project_booth" ]]; then
+        if [[ ! -f "$project_booth" ]]; then
+            echo "Error: $project_booth exists and is not a regular file." >&2
+            exit 1
+        fi
+        if [[ ! -x "$project_booth" ]]; then
+            echo "Error: $project_booth exists and is not executable." >&2
+            echo "Remove or rename it, then re-run: booth config" >&2
+            exit 1
+        fi
+        project_real="$(realpath "$project_booth")"
+    else
+        cp -f "$WRAPPER_SELF" "$project_booth"
+        chmod 755 "$project_booth"
+        echo "✓ Project wrapper: $project_booth"
+        project_real="$(realpath "$project_booth")"
+    fi
+
+    if [[ "$self_real" == "$project_real" ]]; then
+        # Already the project wrapper — install in-process, then Main continues.
+        DownloadBooth "latest" "shared" || exit $?
+        return 0
+    fi
+
+    # Foreign wrapper (central, other repo, parent): install into $PWD, re-run.
+    "$project_booth" install || exit $?
+    exec "$project_booth" "$@"
 }
 
 # install/update always target the current directory: ensure $PWD/booth exists

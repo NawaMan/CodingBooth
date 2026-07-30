@@ -108,6 +108,19 @@ The wrapper handles these commands:
 
 > **Note:** `tools-cache` is handled by the Go binary (passthrough), not the wrapper.
 
+### Offer install on `config`
+
+If the command is `config` and neither `$PWD` nor any parent is a real project
+install (executable `./booth` **and** `.booth/tools/codingbooth.lock`), a TTY
+session prompts to install into `$PWD` (shared cache) and continues with the
+original `config` args. A lock file alone does not count — a leftover
+`~/.booth/tools/codingbooth.lock` must not suppress the offer for every folder
+under `$HOME`. Keyed on the **project tree**, not the invoked wrapper:
+`../OtherRepo/booth config` from an empty folder still offers. Central / foreign
+wrappers copy `./booth` into `$PWD` first (same as `install`). Non-TTY callers
+without a usable binary still get the hard “run `install`” error. Other binary
+commands never offer this.
+
 ### Shell-config
 
 `shell-config install` places a copy of the wrapper in the OS data directory and writes a
