@@ -51,13 +51,61 @@ cli_bin_for_install() {
 }
 
 # ---- Function: install to all available CLIs ----
-install_extensions() {
-  local -a exts=("$@")
-  local -a clis=()
+# ---- The two editors do NOT share a registry ----
+# Desktop VS Code resolves against the Microsoft Marketplace (its product.json
+# serviceUrl); code-server resolves against Open VSX. The publisher namespaces are
+# independent, so the correct id for the *same* extension is often different, and an
+# id can be absent from one registry entirely:
+#
+#   ElixirLS   elixir-lsp.elixir-ls on Open VSX;  JakeBecker.elixir-ls on the
+#              Marketplace — where elixir-lsp.elixir-ls is a DEPRECATED stub, so
+#              the wrong id installs the wrong package rather than failing.
+#   C#         ms-dotnettools.csharp is Marketplace-only (Microsoft-licensed).
+#
+# Use install_extensions for ids that are the same on both, and the per-editor
+# functions below when they diverge. Naming an id an editor cannot resolve is not
+# an error here — this function warns and carries on (see docs/TODO.md).
 
-  # Discover available CLIs
-  command -v code        >/dev/null 2>&1 && clis+=("code")
-  command -v code-server >/dev/null 2>&1 && clis+=("code-server")
+# install_extensions <ids...>
+#   Install into every editor found. For ids that resolve on both registries.
+install_extensions() {
+  local found=""
+  command -v code        >/dev/null 2>&1 && found="${found} code"
+  command -v code-server >/dev/null 2>&1 && found="${found} code-server"
+  _install_extensions_into "${found}" "$@"
+}
+
+# install_vscode_extensions <ids...>
+#   Desktop VS Code only — ids as published on the Microsoft Marketplace.
+#   A no-op when the image has no `code` (e.g. the codeserver variant).
+install_vscode_extensions() {
+  if ! command -v code >/dev/null 2>&1; then
+    echo "VS Code (code) not installed — skipping VS Code-only extensions: $*" >&2
+    return 0
+  fi
+  _install_extensions_into "code" "$@"
+}
+
+# install_codeserver_extensions <ids...>
+#   code-server only — ids as published on Open VSX.
+#   A no-op when the image has no code-server (e.g. the desktop variants).
+install_codeserver_extensions() {
+  if ! command -v code-server >/dev/null 2>&1; then
+    echo "code-server not installed — skipping code-server-only extensions: $*" >&2
+    return 0
+  fi
+  _install_extensions_into "code-server" "$@"
+}
+
+# _install_extensions_into "<cli> [<cli>]" <ids...>
+#   Shared machinery for the three entry points above. The CLI list is one
+#   space-separated argument (CLI names contain no spaces), which keeps the ids in
+#   "$@" where the original loop expects them. Behavior is otherwise unchanged from
+#   the single-function install_extensions this was factored out of.
+_install_extensions_into() {
+  # shellcheck disable=SC2206  # deliberate word-split of the CLI list
+  local -a clis=($1); shift
+  local -a exts=("$@")
 
   if (( ${#clis[@]} == 0 )); then
     echo "Neither VS Code (code) nor code-server found in PATH." >&2

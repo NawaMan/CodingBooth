@@ -332,6 +332,69 @@ All templates and extensions grouped by segment order.
 | `rust/vscode-ext--extension`      | Rust VS Code Extension        |
 | `scala/vscode-ext--extension`     | Scala VS Code Extension       |
 | `zig/vscode-ext--extension`       | Zig VS Code Extension         |
+| `ides/code-ext-pkg`               | VS Code Extensions *(any id — top-level template, not a `+ext`)* |
+
+Each `<lang>/vscode-ext--extension` pins one known-good extension id for its
+language and compiles to `setup <lang>-code-extension`. `ides/code-ext-pkg` is the
+escape hatch beside them: a variadic list of arbitrary Open VSX ids compiling to
+`install code-extension <ids>`. Add a curated extension when a language has an
+obvious one — a user shouldn't have to know an id to get a working editor — and
+leave `code-ext-pkg` for the long tail.
+
+`code-ext-pkg` is a **top-level template, not an extension of `codeserver`**, and
+deliberately so: an editor is not always supplied by that template. `code-server`
+comes from the `codeserver` variant, and desktop VS Code is baked into all four
+desktop variants (`RUN vscode--setup.sh` in each of their Dockerfiles) — in neither
+case is the `codeserver` template selected. Hanging the id list off it would force
+users on a desktop variant to install a second, browser-based editor just to name an
+extension. Both installers instead resolve at build time: `cb-has-vscode.sh` for
+presence, then install into whichever of `code` / `code-server` exists — both, when
+both do. Same reason the curated `<lang>/vscode-ext` extensions work unchanged on
+codeserver and desktop alike.
+
+#### The two editors do not share a registry
+
+This is the trap to know about before writing a `*-code-extension--setup.sh`:
+
+| Editor | Registry | Ships with |
+|--------|----------|------------|
+| code-server | [Open VSX](https://open-vsx.org) | the `codeserver` variant |
+| desktop VS Code | [Microsoft Marketplace](https://marketplace.visualstudio.com) | all four desktop variants |
+
+The publisher namespaces are independent, so **the same extension often has a
+different id on each**, and an id can be missing from one — or, worse, resolve there
+to a different package. ElixirLS is both:
+
+| id | Open VSX | Marketplace |
+|----|----------|-------------|
+| `elixir-lsp.elixir-ls` | ElixirLS 0.31.1 ✅ | "ElixirLS Fork: **DEPRECATED**" 0.3.9999 ❌ |
+| `JakeBecker.elixir-ls` | — ❌ | ElixirLS 0.31.1 ✅ |
+
+So the lib offers three entry points; pick by where the id resolves:
+
+```bash
+install_extensions             mads-hartmann.bash-ide-vscode  # same id on both
+install_codeserver_extensions  elixir-lsp.elixir-ls           # Open VSX id
+install_vscode_extensions      JakeBecker.elixir-ls           # Marketplace id
+```
+
+The per-editor calls are quiet no-ops when that editor isn't in the image, so they
+are safe on every variant. Marketplace-only extensions (`ms-dotnettools.csharp`,
+`ms-vscode.cpptools`, `visualstudioexptteam.vscodeintellicode` — all
+Microsoft-licensed) belong in `install_vscode_extensions`; that leaves code-server
+without them, which is a real gap tracked in `docs/TODO.md`.
+
+Verify a new id on **both** registries before adding it — a failed install only
+warns, so a wrong id yields an image quietly missing the extension, and a
+wrong-but-resolving id yields one carrying the wrong package:
+
+```bash
+curl -s -o /dev/null -w '%{http_code}\n' https://open-vsx.org/api/<pub>/<name>
+curl -s -X POST https://marketplace.visualstudio.com/_apis/public/gallery/extensionquery \
+  -H 'Content-Type: application/json' \
+  -H 'Accept: application/json;api-version=3.0-preview.1' \
+  -d '{"filters":[{"criteria":[{"filterType":7,"value":"<pub>.<name>"}]}],"flags":914}'
+```
 
 ### Order 70 — Notebook kernels (need notebook/Jupyter)
 

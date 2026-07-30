@@ -1,0 +1,29 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Boothfile `install code-extension` — arbitrary VS Code / code-server
+# extension by Open VSX id.
+#
+# `install code-extension` needs an editor to install into, and the base variant
+# ships none, so pull both in. Installing BOTH is the point: an extension must land
+# in whichever editor is present, and the two live in different extension dirs with
+# different CLIs. Real booths get one or the other from their variant — code-server
+# from the codeserver variant, desktop VS Code from all four desktop variants — and
+# neither of those paths selects a template, so only a base build can exercise both
+# at once. On a real variant these two lines are unnecessary.
+# `setup vscode` installs Jupyter + a Bash kernel with pip, and the base image has
+# no python at all. The desktop variants never hit this because xfce--setup.sh runs
+# python--setup.sh itself before VS Code; a bare base build has to ask.
+setup python
+
+setup codeserver
+setup vscode
+
+# `bmewburn.vscode-intelephense-client` would need PHP; pick something small and
+# dependency-free so the test measures the install path, not the extension.
+install code-extension mads-hartmann.bash-ide-vscode
+
+# Rides along on the same build: the curated path, pinning the id that was wrong
+# (JakeBecker.elixir-ls is the Microsoft Marketplace id and 404s on Open VSX).
+# `install_extensions` warns and carries on when an id fails, so only an assertion
+# on the installed list catches a regression here.
+setup elixir-code-extension

@@ -26,6 +26,11 @@ SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}
 CODE_EXTENSION_LIB=${CODE_EXTENSION_LIB:-code-extension-source.sh}
 source "${SETUP_LIBS_DIR}/${CODE_EXTENSION_LIB}"
 
-install_extensions ms-dotnettools.csharp
+# Marketplace-only: ms-dotnettools.csharp is Microsoft-licensed and is not published
+# to Open VSX, so code-server cannot install it. Scoping it to VS Code makes that
+# explicit instead of warning on every code-server build. code-server is left with no
+# C# extension — picking a substitute (the community rebuild muhammad-sammy.csharp is
+# the usual candidate) is an open decision, see docs/TODO.md.
+install_vscode_extensions ms-dotnettools.csharp
 
 echo "✅ Extension installation completed."

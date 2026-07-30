@@ -298,6 +298,35 @@ Each `install` command maps to a `*--install.sh` script. For example, `install p
 | `install pecl` | PHP | `pecl install` |
 | `install conan` | C/C++ | `conan install` |
 | `install apt` | Debian/Ubuntu | `apt-get install --no-install-recommends` |
+| `install code-extension` | VS Code / code-server | `--install-extension` by Open VSX id; pin with `id@version` |
+
+`install code-extension` bakes any editor extension into the image by marketplace
+id, and is the escape hatch beside the curated per-language extensions
+(`setup elixir-code-extension`, `setup go-code-extension`, …). Reach for the curated
+one when it exists — it pins an id that is known to resolve — and use this for
+anything not yet covered:
+
+```text
+setup codeserver
+install code-extension elixir-lsp.elixir-ls ms-python.python
+install code-extension eamodio.gitlens@15.6.0     # pinned
+```
+
+Which registry an id resolves against depends on the editor: code-server queries
+[Open VSX](https://open-vsx.org), desktop VS Code queries the
+[Microsoft Marketplace](https://marketplace.visualstudio.com). The publisher
+namespaces are independent, so the same extension often has a different id on each
+(ElixirLS is `elixir-lsp.elixir-ls` on Open VSX and `JakeBecker.elixir-ls` on the
+Marketplace), and Microsoft-licensed extensions (`ms-dotnettools.*`,
+`ms-vscode.cpptools`) are absent from Open VSX entirely. Look the id up on the
+registry your variant uses — code-server for the `codeserver` variant, the
+Marketplace for the desktop variants.
+
+Unlike the curated setups, which log a warning and carry on, an id that fails to
+install **fails the build** — you named it explicitly, so a silent no-op would hand
+you an image missing the extension you asked for. The line also needs an editor in
+the image: use the `codeserver` or a desktop variant, or `setup codeserver` /
+`setup vscode` earlier in the Boothfile.
 
 `install apt` installs system packages and accepts apt's native `pkg=version` pin
 (`install apt jq htop=3.0.5-7`). For reproducibility it honors an `APT_SNAPSHOT`

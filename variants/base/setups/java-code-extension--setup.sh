@@ -30,9 +30,13 @@ SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}
 CODE_EXTENSION_LIB=${CODE_EXTENSION_LIB:-code-extension-source.sh}
 source "${SETUP_LIBS_DIR}/${CODE_EXTENSION_LIB}"
 
+# Marketplace-only: visualstudioexptteam.vscodeintellicode is Microsoft-licensed and
+# is not published to Open VSX. It is AI-assisted completion polish, not part of the
+# Java language support proper, so code-server simply goes without. See docs/TODO.md.
+install_vscode_extensions visualstudioexptteam.vscodeintellicode
+
 install_extensions                                      \
     redhat.java                                         \
-    visualstudioexptteam.vscodeintellicode              \
     vscjava.vscode-gradle                               \
     vscjava.vscode-java-debug                           \
     vscjava.vscode-java-dependency                      \

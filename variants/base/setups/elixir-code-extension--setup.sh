@@ -4,7 +4,6 @@
 # you may not use this file except in compliance with the License.
 
 # elixir-code-extension--setup.sh
-# NOTE: This script has not been tested -- no time (sorry). Please report success or failure. :-p
 set -Eeuo pipefail
 
 if [[ ${EUID} -ne 0 ]]; then
@@ -26,6 +25,14 @@ SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}
 CODE_EXTENSION_LIB=${CODE_EXTENSION_LIB:-code-extension-source.sh}
 source "${SETUP_LIBS_DIR}/${CODE_EXTENSION_LIB}"
 
-install_extensions JakeBecker.elixir-ls
+# ElixirLS ships under a different publisher on each registry, and neither id works
+# on the other editor:
+#   Open VSX (code-server)  elixir-lsp.elixir-ls  — the real thing; JakeBecker 404s
+#   Marketplace (VS Code)   JakeBecker.elixir-ls  — the real thing; elixir-lsp there
+#                           is "ElixirLS Fork: DEPRECATED", a 0.3.9999 stub whose own
+#                           description says to use JakeBecker instead
+# So a single install_extensions call cannot be right for both.
+install_codeserver_extensions elixir-lsp.elixir-ls
+install_vscode_extensions     JakeBecker.elixir-ls
 
 echo "✅ Extension installation completed."

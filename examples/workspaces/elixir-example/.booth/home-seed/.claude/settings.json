@@ -1,0 +1,41 @@
+{
+    "permissions": {
+        "allow": [
+            "Bash",
+            "Edit",
+            "Write",
+            "Read",
+            "Glob",
+            "Grep",
+            "NotebookEdit",
+            "WebFetch",
+            "WebSearch",
+            "TodoWrite",
+            "TaskCreate",
+            "TaskUpdate",
+            "mcp__*"
+        ],
+        "deny": [
+            "Bash(git push --force*)",
+            "Bash(git push * --force*)",
+            "Bash(git reset --hard*)",
+            "Bash(git clean -f*)",
+            "Bash(git checkout -- .)",
+            "Bash(git checkout -- .*)",
+            "Bash(git branch -D*)",
+            "Bash(git restore .)",
+            "Bash(git restore -- .)",
+            "Bash(git restore --staged *)",
+            "Bash(git push * --delete*)",
+            "Bash(git push * :*)",
+            "Bash(git stash clear)",
+            "Bash(rm -rf /*)",
+            "Bash(rm -rf /)",
+            "Bash(chmod 777 *)",
+            "Bash(curl *|bash*)",
+            "Bash(wget *|bash*)",
+            "Bash(curl *| bash*)",
+            "Bash(wget *| bash*)"
+        ]
+    }
+}

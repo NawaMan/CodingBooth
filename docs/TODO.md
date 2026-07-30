@@ -277,6 +277,50 @@ Add or improve support for these developer tools and environments:
 
 ## Code Extensions
 - [ ] Add code extensions for each supported setup (e.g., language-specific IDE plugins or VS Code extensions).
+      The arbitrary escape hatch now exists (`install code-extension <id>` / `code-ext-pkg`), so this item
+      is only about *curated* coverage: a user shouldn't need to know a marketplace id to get a working
+      editor for a language the catalog already installs. New ids must be checked against Open VSX
+      (`curl -s -o /dev/null -w '%{http_code}' https://open-vsx.org/api/<pub>/<name>`) — code-server does
+      not query the Microsoft Marketplace, and the publisher frequently differs between the two.
+- [ ] code-server has no C#, C/C++, or IntelliCode extension. Three curated ids are Microsoft-licensed and
+      Marketplace-only, so Open VSX has nothing to resolve and code-server users go without. They are now
+      scoped with `install_vscode_extensions` (explicit, and no longer a warning on every code-server
+      build), but that only documents the gap — it doesn't close it. Each needs its own decision, and
+      each substitute must be verified on Open VSX first:
+      - `ms-dotnettools.csharp` (`dotnet-code-extension`) — candidate: the community rebuild
+        `muhammad-sammy.csharp`. Weigh trusting a third-party rebuild of a Microsoft extension.
+      - `ms-vscode.cpptools` (`gcc-code-extension`) — `clang-code-extension` already installs
+        `llvm-vs-code-extensions.vscode-clangd`, which is on both registries; possibly just point
+        code-server users at that rather than duplicating it.
+      - `visualstudioexptteam.vscodeintellicode` (`java-code-extension`) — AI completion polish, not
+        language support. Probably fine to leave code-server without it permanently.
+- [ ] A failed extension install is invisible. `libs/code-extension-source.sh`'s `install_extensions` logs
+      `⚠ Failed to install` and returns 0, so the build passes and the booth comes up without the
+      extension — which is how the `JakeBecker.elixir-ls` bug survived unnoticed. The new
+      `code-extension--install.sh` is strict, but the 33 curated setups are not. Making them strict is not
+      obviously right: they are auto-selected, so one dead id would break every build that touches that
+      language. A middle path (summarise misses at the end of the build, or a `booth doctor` check) is
+      probably the answer. Note a wrong id does not always *fail*: `elixir-lsp.elixir-ls` resolves on the
+      Marketplace to a deprecated stub, so the check has to be "did I get the right package", not just
+      "did something install".
+- [ ] `install code-extension` requires every editor in the image to accept the id, so a
+      Marketplace-only or Open-VSX-only id fails the build on an image carrying both editors. Real
+      variants ship exactly one editor, so nothing hits this today — but the curated setups solved the
+      same problem with per-editor calls, and the arbitrary path has no equivalent. Either relax to
+      "installed into at least one editor" or give the Boothfile a per-editor form
+      (`install code-extension --vscode <id>` / `--codeserver <id>`).
+- [ ] `setup vscode` fails on a bare base variant. `vscode--setup.sh` installs Jupyter and a Bash kernel
+      with `pip` (line 66), and the base image ships no python at all — the build dies with
+      `pip: command not found` after VS Code is already installed. The desktop variants never hit it
+      because `xfce--setup.sh:31` runs `python--setup.sh` itself first, so the dependency is real but
+      invisible. Either declare it (guard + a clear "run `setup python` first" message) or have the
+      script install python itself, the way xfce does.
+- [ ] The QEMU deferral is a no-op. `install_extensions` prints "deferring extension install to first
+      launch" under `/dev/.buildkit_qemu_emulator` and returns — but nothing ever installs them later.
+      Only `codeserver--setup.sh`'s launcher has a deferred path, and its list is hardcoded to
+      `ms-toolsai.jupyter` + `ms-python.python`. So an arm64 cross-build silently ships without any
+      language extensions. Fix shape: have `install_extensions` append its ids to a manifest
+      (e.g. `/usr/local/share/code-server/.extensions-deferred`) that the launcher drains on first launch.
 
 ---
 
