@@ -61,8 +61,8 @@ git add README.md version.txt
 git commit -m "0.65.0"
 ```
 
-Commit message is **the bare version, nothing else** — that is the house convention
-(`git log` shows `0.64.0`, `0.65.0--rc`). No prefix, no body.
+Commit message is **the bare version, nothing else, verbatim** — no prefix, no body. `0.65.0` for a
+release, `0.66.0--rc1` for a bump. Copy the string `set-version.sh` was given, suffix and all.
 
 The commit touches **only** `version.txt` and `README.md`. Verified against history: `1eb2846d`
 (`0.64.0`) and `27a3eab6` (`0.65.0--rc`) are both exactly those two files. If `git diff --cached`
@@ -90,10 +90,11 @@ Next **minor**, rc1 — `0.65.0` → `0.66.0--rc1`. (A patch-level reopen would 
 ```bash
 ./build/set-version.sh 0.66.0--rc1
 git add README.md version.txt
-git commit -m "0.66.0--rc"
+git commit -m "0.66.0--rc1"
 ```
 
-Note the message drops the `1`: history uses `0.65.0--rc` for version `0.65.0--rc1`. Match that.
+The message is the **exact version string**, `1` included — `0.66.0--rc1`, not `0.66.0--rc`.
+(Some older history shows a truncated `0.65.0--rc`. That is not the convention; do not copy it.)
 
 **Do not push this one.** It ends the run one commit ahead of origin, deliberately. Say so
 explicitly in the report, because "ahead 1" otherwise reads like an oversight.
@@ -133,9 +134,16 @@ Two details that make step 1 non-negotiable:
   slower and the reason extension installs get deferred there. **Do not publish images from the
   workstation as part of a release.** Local `--push` is for pre-release/RC smoke testing only.
 
-Its variant matrix is `notebook, codeserver, desktop-xfce, desktop-kde, desktop-lxqt` — note
-`desktop-wayland` is **not** in it, though `build/build-all.sh` builds it locally. If a release is
-expected to publish wayland, that gap is real and worth raising rather than assuming.
+Its variant matrix is `notebook, codeserver, desktop-xfce, desktop-kde, desktop-lxqt,
+desktop-wayland` — the same seven images `build/build-all.sh` produces locally, base included. If
+that ever diverges again, a release will quietly publish fewer variants than were tested; the matrix
+appears twice in `publish-docker-images.yaml` (build and merge) and both must list the same set.
+
+Disk headroom on the runners is the thing most likely to bite a desktop variant: the images are
+4–5.7GB and only `desktop-kde`, `desktop-lxqt` and `desktop-wayland` get the "Clean up disk space"
+step. `desktop-xfce` is excluded despite being *larger* than lxqt, so that list is reactive rather
+than principled — if a desktop build starts failing on space, that condition is the first thing to
+widen.
 
 Should you want a local publish anyway (outside a release), one behaviour to know:
 `docker-build.sh` skips cosign signing for `--rc` versions but still *requires* a signing key in
