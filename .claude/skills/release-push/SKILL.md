@@ -12,13 +12,19 @@ version.txt/README.md: X.Y.Z--rcN → X.Y.Z   → commit "X.Y.Z"        → git 
                        X.Y.Z      → X.(Y+1).0--rc1 → commit "X.(Y+1).0--rc"  → NO push
 ```
 
-The asymmetry is the point: the release lands on the remote, the reopening stays local so the next
-cycle's first real commit carries it up.
+**Why push at all: the actual release runs in GitHub Actions, off the pushed non-rc version.**
+Nothing is released from the workstation. Two workflows read `version.txt` out of `origin/main`, and
+both **refuse to run on a `--rc` version**. So pushing the non-rc commit is what makes a release
+possible; the workflows are then run to perform it. See *The GitHub Actions release* below.
+
+**That is also why step 3's bump is not pushed.** The workflows check out `main` at dispatch time and
+read whatever `version.txt` says *then*. Push `X.(Y+1).0--rc1` before they have run and their
+`--rc` guards reject the release. The local-only bump keeps `origin/main` sitting on the release
+version for as long as the release needs it. The asymmetry is a constraint, not a style choice.
 
 **"push" here means `git push origin main` — not a Docker image publish.** Both are called "push"
-around this project and the two got confused once already. Publishing images is
-`./build/build-all.sh --push`, a separate ~1h act with its own decision (see *Images* below). If the
-user's wording is ambiguous, ask which — do not infer from the word alone.
+around this project and the two got genuinely confused once. If the user's wording is ambiguous, ask
+which — do not infer from the word alone.
 
 ## 0. Preflight — read-only, then report
 
@@ -74,6 +80,10 @@ remote. This is the only push in the skill.
 
 ## 3. Bump to the next rc, commit, do NOT push
 
+**Order matters:** the release workflows must have been dispatched (or at least the user must be
+done with `origin/main` on the release version) before this is pushed — see the asymmetry note at the
+top. Committing locally is always safe; pushing is what would break the guards.
+
 Next **minor**, rc1 — `0.65.0` → `0.66.0--rc1`. (A patch-level reopen would be
 `0.65.1--rc1`; only do that if the user says so.)
 
@@ -90,24 +100,47 @@ explicitly in the report, because "ahead 1" otherwise reads like an oversight.
 
 ## 4. Report
 
-State the two commits, that the release was pushed and the bump was not, and the final
-`ahead 1`. Then stop.
+State the two commits, that the release was pushed and the bump was not, and the final `ahead 1`.
 
-## Images — deliberately not part of this skill
+Then say plainly **what has and has not happened**: the release version is on `origin/main`, and the
+two GitHub Actions workflows are now *eligible* but have **not** run — they are manual dispatch. Ask
+whether to trigger them (`gh workflow run "Release CodingBooth"` /
+`gh workflow run "Publish docker images"`), or leave that to the user. Do not imply a release is in
+flight when nothing has been dispatched. Then stop.
 
-Publishing `nawaman/codingbooth:*` is a separate act: `./build/build-all.sh --push` (add
-`--no-cache` for a clean rebuild), roughly an hour for all seven variants.
+## The GitHub Actions release
 
-**It must run while `version.txt` still says the release version**, i.e. between steps 2 and 3 — the
-version is baked into the image tags. Running it after step 3 publishes `0.66.0--rc1` images, not
-the release.
+Two workflows do the release. **Both are `workflow_dispatch` only — pushing does not start them.**
+The push makes them *able* to run; someone still has to run them, from the Actions tab or
+`gh workflow run`. Do not tell the user a release is underway just because the push succeeded.
 
-One behaviour worth knowing: `docker-build.sh` **skips cosign signing for `--rc` versions** but
-still *requires* a signing key in preflight regardless (`needs_cosign` is true whenever `--push` is
-given). So a non-rc release build is the one that actually signs, and it needs
+| Workflow | File | Produces |
+|----------|------|----------|
+| **Release CodingBooth** | `release-binary-and-wrapper.yaml` | GitHub release: multi-platform binaries, the wrapper, examples, SHA256 checksums |
+| **Publish docker images** | `publish-docker-images.yaml` | `nawaman/codingbooth:*` multi-arch images, cosign-signed, plus integration tests |
+
+Both read `version.txt` from the checked-out `main`, and both **reject `--rc`** — the docker one via
+a dedicated `guard-no-rc` job, the release one via a `Reject pre-release` step. That is the entire
+reason the release commit has to reach `origin/main` before either can run.
+
+Two details that make step 1 non-negotiable:
+
+- **`Release CodingBooth` verifies `README.md` matches `version.txt`** and fails on a mismatch. This
+  is why `set-version.sh` (which writes both) is mandatory and hand-editing one file is not an option.
+- **`Publish docker images` builds natively per-architecture** — amd64 and arm64 each on their own
+  runner, pushed by digest, then merged into the multi-arch tag and signed. A local
+  `./build/build-all.sh --push` cannot match that: it cross-builds arm64 under QEMU, which is both
+  slower and the reason extension installs get deferred there. **Do not publish images from the
+  workstation as part of a release.** Local `--push` is for pre-release/RC smoke testing only.
+
+Its variant matrix is `notebook, codeserver, desktop-xfce, desktop-kde, desktop-lxqt` — note
+`desktop-wayland` is **not** in it, though `build/build-all.sh` builds it locally. If a release is
+expected to publish wayland, that gap is real and worth raising rather than assuming.
+
+Should you want a local publish anyway (outside a release), one behaviour to know:
+`docker-build.sh` skips cosign signing for `--rc` versions but still *requires* a signing key in
+preflight whenever `--push` is given (`needs_cosign` is true on push regardless), so it needs
 `COSIGN_KEY_FILE`/`COSIGN_KEY` resolvable plus `COSIGN_PASSWORD` if the key is encrypted.
-
-If the user wants images too, do it between steps 2 and 3 and say so; otherwise leave it alone.
 
 ## CHANGELOG — check, don't assume
 
