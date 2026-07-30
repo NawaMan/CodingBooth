@@ -4,6 +4,9 @@ name: Release CodingBooth
 
 on:
   workflow_dispatch:
+  # Callable from `release-all.yaml`, which must grant contents: write --
+  # a caller caps a callee's permissions, it cannot widen them.
+  workflow_call:
 
 permissions:
   contents: write

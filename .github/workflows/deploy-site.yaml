@@ -22,6 +22,7 @@ on:
       - 'install.sh'       # site/install.sh is a symlink to ../install.sh
       - '.github/workflows/deploy-site.yaml'
   workflow_dispatch: {}     # allow manual "Run workflow"
+  workflow_call: {}         # callable as the last step of `release-all.yaml`
 
 # Never run two deploys at once; if a newer push arrives, drop the older run.
 concurrency:

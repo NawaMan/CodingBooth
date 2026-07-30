@@ -16,6 +16,10 @@ name: Publish docker images
 
 on:
   workflow_dispatch:
+  # Callable so `release-all.yaml` can sequence this ahead of the GitHub release.
+  # Local reusable workflows run at the caller's commit, so a chained release stays
+  # pinned to the version.txt that was current when it was dispatched.
+  workflow_call:
 
 env:
   DOCKER_BUILDKIT: "1"

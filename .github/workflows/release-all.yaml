@@ -1,0 +1,54 @@
+# Runs the whole release, in order, as one run.
+#
+#   publish-docker-images  →  release-binary-and-wrapper  →  deploy-site
+#
+# Each step is a reusable workflow that is still independently dispatchable on its
+# own; this file only sequences them. `needs:` gives real fail-fast: the GitHub
+# release is not created unless the images published AND their integration tests
+# passed, and the site is not redeployed unless the release was created.
+#
+# Why this exists rather than chaining with `workflow_run`: a local reusable
+# workflow (`./.github/workflows/…`) runs at the *caller's* commit, so the entire
+# chain is pinned to the version.txt that was current when it was dispatched.
+# `workflow_run` instead re-resolves the default branch each hop, so pushing the
+# next `X.Y.Z--rc1` bump mid-chain would trip the downstream `--rc` guards. The
+# release flow deliberately leaves that bump committed-but-unpushed (see the
+# `release-push` skill), and this keeps that from being load-bearing.
+#
+# Dispatch this only when version.txt is a stable (non-rc) version — every step
+# guards on that and will fail the run otherwise.
+#
+# Triggers on: manual dispatch only.
+name: Release everything
+
+on:
+  workflow_dispatch:
+
+# A caller caps its callees' permissions and cannot widen them, so the token
+# release-binary-and-wrapper needs has to be granted here.
+permissions:
+  contents: write
+
+jobs:
+
+  # 1. Multi-arch images to Docker Hub, cosign-signed, then integration tests.
+  #    Secrets: COSIGN_KEY, COSIGN_PASSWORD, DOCKERHUB_USERNAME, DOCKERHUB_TOKEN.
+  images:
+    uses: ./.github/workflows/publish-docker-images.yaml
+    secrets: inherit
+
+  # 2. GitHub release: binaries for every platform, the wrapper, examples, SHA256s.
+  #    Runs only if the images published and their integration tests passed.
+  release:
+    needs: images
+    uses: ./.github/workflows/release-binary-and-wrapper.yaml
+    secrets: inherit
+
+  # 3. Publish the site. Secrets: DREAMHOST_HOST/PORT/USER/PATH/SSH_KEY.
+  #    Note deploy-site declares `concurrency: deploy-site` with
+  #    cancel-in-progress, which still applies here — a site deploy triggered by a
+  #    concurrent push to site/** will cancel this one, or be cancelled by it.
+  site:
+    needs: release
+    uses: ./.github/workflows/deploy-site.yaml
+    secrets: inherit
