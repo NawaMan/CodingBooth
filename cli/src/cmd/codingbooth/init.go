@@ -562,7 +562,7 @@ func buildInitCommand(targetPath string, flags initFlags) string {
 		parts = append(parts, targetPath)
 	}
 	if flags.selectDSL != "" {
-		parts = append(parts, "--select "+flags.selectDSL)
+		parts = append(parts, selectArg(flags.selectDSL))
 	}
 	if flags.variant != "" {
 		parts = append(parts, "--variant "+flags.variant)
@@ -621,7 +621,7 @@ func buildAdjustCommand(flags initFlags) string {
 		parts = append(parts, "--set "+s)
 	}
 	if flags.selectDSL != "" {
-		parts = append(parts, "--select "+flags.selectDSL)
+		parts = append(parts, selectArg(flags.selectDSL))
 	}
 	return strings.Join(parts, " ")
 }
@@ -635,7 +635,7 @@ func buildConfigCommand(targetPath string, flags initFlags) string {
 	}
 	parts = append(parts, "--no-tui")
 	if flags.selectDSL != "" {
-		parts = append(parts, "--select "+flags.selectDSL)
+		parts = append(parts, selectArg(flags.selectDSL))
 	}
 	if flags.variant != "" {
 		parts = append(parts, "--variant "+flags.variant)
@@ -694,7 +694,7 @@ func buildConfigAdjustCommand(flags initFlags) string {
 		parts = append(parts, "--set "+s)
 	}
 	if flags.selectDSL != "" {
-		parts = append(parts, "--select "+flags.selectDSL)
+		parts = append(parts, selectArg(flags.selectDSL))
 	}
 	return strings.Join(parts, " ")
 }

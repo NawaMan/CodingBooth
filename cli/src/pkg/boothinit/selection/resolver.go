@@ -28,18 +28,19 @@ func ResolveWithOverrides(parsed *ParsedSelection, registry *tmpl.TemplateRegist
 	selectedNames := make(map[string]bool)
 
 	// Check for duplicate selections
-	for _, pi := range parsed.Items {
+	for i, pi := range parsed.Items {
 		if selectedNames[pi.Name] {
-			return nil, fmt.Errorf("template %q selected more than once", pi.Name)
+			return nil, fmt.Errorf("template %q selected more than once%s", pi.Name, quoteHint(parsed.Items, i))
 		}
 		selectedNames[pi.Name] = true
 	}
 
 	var items []SelectedTemplate
-	for _, pi := range parsed.Items {
+	for i, pi := range parsed.Items {
 		t, ok := registry.ByName[pi.Name]
 		if !ok {
-			return nil, fmt.Errorf("unknown template: %q (not in built-in catalog or .booth/templates/)", pi.Name)
+			return nil, fmt.Errorf("unknown template: %q (not in built-in catalog or .booth/templates/)%s",
+				pi.Name, quoteHint(parsed.Items, i))
 		}
 
 		paramValues, err := resolveParams(t, pi.Params, overrides)
@@ -119,6 +120,39 @@ func ResolveWithOverrides(parsed *ParsedSelection, registry *tmpl.TemplateRegist
 	}
 
 	return &ResolvedSelection{Templates: items}, nil
+}
+
+// quoteHint returns advice to quote a param value when the item at idx looks like
+// a fragment of one rather than a template someone meant to select.
+//
+// An unquoted "/" inside a param value splits the selection, so
+// "go+go-pkg:github.com/user/tool@latest" arrives here as the template go plus the
+// templates "user" and "tool@latest" — reported as unknown or, when a path repeats
+// a segment, as selected twice. Neither message says anything about the "/" that
+// caused it, which is the one thing worth saying. The signal is that some earlier
+// item carried params at all: without a param list open, a "/" is simply a
+// separator and the name really is wrong.
+func quoteHint(items []ParsedItem, idx int) string {
+	for i := 0; i < idx; i++ {
+		if hasParams(items[i]) {
+			return "\n  A \"/\" inside a param value has to be quoted, or it separates templates:" +
+				"\n    --select 'go+go-pkg:\"github.com/user/tool@latest\"'"
+		}
+	}
+	return ""
+}
+
+// hasParams reports whether an item or any of its extensions was given params.
+func hasParams(item ParsedItem) bool {
+	if len(item.Params) > 0 {
+		return true
+	}
+	for _, ext := range item.Extensions {
+		if len(ext.Params) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // resolveParams maps positional CLI params to named template params.

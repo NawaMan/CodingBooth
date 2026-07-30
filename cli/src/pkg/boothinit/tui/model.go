@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 )
 
@@ -1318,6 +1319,13 @@ func (m model) buildSelectDSL() string {
 
 // buildParamDSL returns the ":p1,p2" suffix for a template/extension's params.
 // Returns "" if all params are at their default values.
+//
+// Values are quoted on the way out when their text would otherwise read as DSL
+// punctuation. A Go module path is all slashes, and an unquoted slash starts a
+// new template — without this, saving a booth that pins GO_PKGS produced a DSL
+// that could not be read back ("template \"pocketbase\" selected more than
+// once"). Comparisons against the default use the raw value, so quoting cannot
+// turn a default into a pin.
 func (m model) buildParamDSL(itemKey string, t *tmpl.Template) string {
 	if len(t.Params) == 0 {
 		return ""
@@ -1352,7 +1360,18 @@ func (m model) buildParamDSL(itemKey string, t *tmpl.Template) string {
 		return ""
 	}
 
-	return ":" + strings.Join(vals, ",")
+	quoted := make([]string, len(vals))
+	for i, v := range vals {
+		if t.Params[paramNames[i]].Variadic {
+			// A variadic value is already a comma-joined list, so each element is
+			// quoted on its own and the commas between them keep separating.
+			quoted[i] = selection.QuoteVariadic(v)
+		} else {
+			quoted[i] = selection.QuoteParam(v)
+		}
+	}
+
+	return ":" + strings.Join(quoted, ",")
 }
 
 // overwriteConfirmWord is what the user must type to save over hand-written

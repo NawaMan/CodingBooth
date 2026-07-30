@@ -4,6 +4,30 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A select-DSL param value can hold a `/`, by quoting it.** A Go module path is
+  nothing but slashes, and the DSL splits on `/` before anything else, so a package
+  pinned through a param never survived the round trip: `booth config` on a booth
+  carrying `arg GO_PKGS=github.com/pocketbase/pocketbase/examples/base@latest` died
+  with `template "pocketbase" selected more than once` — the TUI writes pinned args
+  back into the DSL, and re-parsing read the module path as one template per path
+  segment. The documented CLI form was broken the same way
+  (`--select go+go-pkg:google.golang.org/protobuf/cmd/protoc-gen-go@latest` selects
+  templates named `protobuf`, `cmd` and `grpc`), as were scoped npm names and Conan
+  `name/version` refs. Write such a value quoted — `--select
+  'go+go-pkg:"github.com/user/tool@latest"'`, either quote character — and inside the
+  quotes nothing separates anything: `/`, `~`, `+`, `,` and whitespace are all part of
+  the value, at every level of the split, and the quotes are stripped at the leaves so
+  nothing reaches the Boothfile wearing them. Only values that *need* quoting get it,
+  so existing headers are byte-for-byte unchanged; `+` in particular is left alone,
+  since it already stays with the value unless a letter follows it (`expose:+9000`,
+  `apt-pkg:libstdc++6`). An unquoted `/` still splits — `go:1.25.7/claude-code` has
+  the same shape and there it must — but the resolver now says so, adding a quoting
+  hint to its "unknown template" and "selected more than once" errors when a param
+  list was open earlier in the selection. Covered by
+  `tests/config-tui/test18-tui-slash-pin.sh` (the TUI reopen+save path) and
+  `tests/config/test85-select-quoted-param.sh` (the CLI form and the header round
+  trip).
+
 ## 0.65.0
 
 - **`setup`/`install` name validation now works outside the repo.** The Boothfile

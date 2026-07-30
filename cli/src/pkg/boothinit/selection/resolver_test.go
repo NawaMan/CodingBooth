@@ -636,6 +636,47 @@ func TestResolve_DuplicateSelection(t *testing.T) {
 	_, err := Resolve(parsed, registry)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "more than once")
+	// No param list anywhere, so a quoting hint would be noise.
+	assert.NotContains(t, err.Error(), "has to be quoted")
+}
+
+// An unquoted "/" in a param value shreds the selection into one item per path
+// segment, and what comes out ("unknown template", or "selected more than once"
+// when a path repeats a segment) says nothing about the "/". Hint at it.
+func TestResolve_UnquotedSlashHint(t *testing.T) {
+	registry := loadTestRegistry(t)
+
+	// The shape of "go+go-pkg:github.com/pocketbase/pocketbase/examples/base@latest".
+	parsed, err := ParseSelectDSL("go:1.24/pocketbase/pocketbase/examples")
+	require.NoError(t, err)
+
+	_, err = Resolve(parsed, registry)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "more than once")
+	assert.Contains(t, err.Error(), "has to be quoted")
+}
+
+func TestResolve_UnquotedSlashHintOnUnknownTemplate(t *testing.T) {
+	registry := loadTestRegistry(t)
+	parsed, err := ParseSelectDSL("go:1.24/nonexistent")
+	require.NoError(t, err)
+
+	_, err = Resolve(parsed, registry)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown template")
+	assert.Contains(t, err.Error(), "has to be quoted")
+}
+
+// A wrong name with no params in play gets the plain message.
+func TestResolve_NoQuotingHintWithoutParams(t *testing.T) {
+	registry := loadTestRegistry(t)
+	parsed, err := ParseSelectDSL("go/nonexistent")
+	require.NoError(t, err)
+
+	_, err = Resolve(parsed, registry)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unknown template")
+	assert.NotContains(t, err.Error(), "has to be quoted")
 }
 
 // --- End-to-end parse + resolve ---

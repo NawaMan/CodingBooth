@@ -717,8 +717,10 @@ func sliceContains(s []string, v string) bool {
 // parseAdjustCommand parses a command string like "booth config --no-tui --select go/python"
 // or the legacy "booth config adjust --select go/python --variant codeserver" into initFlags.
 func parseAdjustCommand(cmd string) initFlags {
-	// Split into args, skipping command prefix words
-	parts := strings.Fields(cmd)
+	// Split into args, skipping command prefix words. Quote-aware, so a --select
+	// whose param values are quoted arrives as one argument with its DSL quotes
+	// intact — see selectheader.go.
+	parts := headerFields(cmd)
 	var args []string
 	skip := 0
 	for _, p := range parts {
@@ -1158,5 +1160,9 @@ Examples:
 
   booth config --select cloudbeaver+expose            # publish it on 8978
   booth config --select cloudbeaver+expose:19000      # ...on 19000 instead
-  booth config --select rabbitmq+start+expose:+4567   # ...on booth port + 4567`)
+  booth config --select rabbitmq+start+expose:+4567   # ...on booth port + 4567
+
+  # A param value holding a "/" must be quoted, or the "/" starts a new template
+  booth config --select 'go+go-pkg:"github.com/user/tool@latest"'
+  booth config --select 'nodejs+npm-pkg:"@types/node","@types/react"'`)
 }
