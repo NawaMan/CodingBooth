@@ -67,4 +67,29 @@ else
     FAILED=$((FAILED + 1))
 fi
 
+# Test 3: GOBIN is exported and points where `install go` puts binaries.
+# PATH alone is not enough — tooling that reads GOBIN rather than scanning PATH
+# (the VS Code Go extension, `go install` itself when re-run) needs the variable
+# set, and its absence is invisible until such a tool silently looks elsewhere.
+# Rides this build rather than paying for its own.
+ACTUAL=$(run_coding_booth --silence-build -- 'echo "$GOBIN"' 2>/dev/null | tail -1) || ACTUAL=""
+if [[ "$ACTUAL" == "/home/coder/go/bin" ]]; then
+    print_test_result "true" "$0" "3" "GOBIN is exported as \$GOPATH/bin"
+else
+    print_test_result "false" "$0" "3" "GOBIN should be exported as /home/coder/go/bin"
+    echo "  Actual output: $ACTUAL"
+    FAILED=$((FAILED + 1))
+fi
+
+# Test 4: and the installed binary really is in that directory, so GOBIN is not
+# merely set to a plausible-looking path that nothing writes to.
+ACTUAL=$(run_coding_booth --silence-build -- 'ls "$GOBIN" 2>/dev/null | grep -cx hey' 2>/dev/null | tail -1) || ACTUAL=""
+if [[ "$ACTUAL" == "1" ]]; then
+    print_test_result "true" "$0" "4" "the installed binary is in \$GOBIN"
+else
+    print_test_result "false" "$0" "4" "the installed binary should be in \$GOBIN"
+    echo "  Actual output: $ACTUAL"
+    FAILED=$((FAILED + 1))
+fi
+
 exit $FAILED
