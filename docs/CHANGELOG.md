@@ -4,6 +4,8 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+## 0.65.0
+
 - **`setup`/`install` name validation now works outside the repo.** The Boothfile
   compiler learned the set of built-in script names by *scanning*
   `variants/base/setups/`, found by walking up from the binary or the cwd. That
