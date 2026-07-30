@@ -4,6 +4,37 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`setup`/`install` name validation now works outside the repo.** The Boothfile
+  compiler learned the set of built-in script names by *scanning*
+  `variants/base/setups/`, found by walking up from the binary or the cwd. That
+  directory only exists in a checkout, so every booth run from a real project — the
+  normal case — silently validated nothing: a typo'd `setup pyhton` produced no
+  warning, just a build that failed later inside Docker. The list is now generated
+  into `cli/src/pkg/boothfile/builtin-scripts.txt` by `build/gen-builtin-scripts.sh`
+  (wired into `build/cli-build.sh`, so it cannot drift from what the base image
+  ships) and embedded in the binary. Expect "Unknown setup script" / "Unknown install
+  script" warnings — with a did-you-mean suggestion — in places that were previously
+  quiet. Covered by `cli/src/pkg/boothfile/builtin_scripts_test.go`.
+
+- **An empty package list is a no-op, not a build failure.** Every `*-pkg` template
+  emits `install <manager> ${..._PKGS}` with the list defaulting to empty, so
+  selecting `apt-pkg` (or `pip-pkg`, `code-ext-pkg`, …) in `booth config` without
+  naming a package handed the install script zero arguments — and each one treated
+  that as a usage error and killed the image build. All 17 `*--install.sh` scripts now
+  report `ℹ️ No … requested; nothing to install.` and exit 0. Naming *nothing* is not
+  the same as naming something broken: an unresolvable package or extension id is
+  still a hard error. They also accept `-h`/`--help` explicitly, which is now the only
+  way to get the usage text. `tests/setups/test--install-empty-args.sh` runs every
+  `*--install.sh` in the directory, so a new manager is covered without editing it.
+
+- **`GOBIN` is exported in Go booths.** `go--setup.sh` set `GOPATH` and put
+  `$GOPATH/bin` on `PATH`, but left `GOBIN` unset. Tooling that reads the variable
+  rather than scanning `PATH` — the VS Code Go extension, `go install` when re-run —
+  therefore looked elsewhere, and packages installed by `install go` (the `go-pkg`
+  template) were discoverable by path but not by that tooling. Same value as the
+  `GOPATH/bin` default, now explicit. Asserted in `tests/complex/test-install-go/`,
+  which already builds a Go booth, rather than paying for a separate image.
+
 - **Wrapper `0.15.0` — `booth config` offers to install when the project has no
   binary yet.** Typing `booth config` in a folder (or under a parent) that has
   no `codingbooth.lock` used to either hard-error or — worse — open the TUI

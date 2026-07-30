@@ -19,12 +19,32 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-if [ $# -eq 0 ] || [ -z "$1" ]; then
-    echo "Usage: $0 <pkg1,pkg2,...>" >&2
-    echo "Examples:" >&2
-    echo "  $0 npm:cowsay" >&2
-    echo "  $0 npm:cowsay,npm:figlet" >&2
-    exit 1
+case "${1:-}" in
+    -h|--help)
+        echo "Usage: $0 <pkg1,pkg2,...>"
+        echo "Examples:"
+        echo "  $0 npm:cowsay"
+        echo "  $0 npm:cowsay,npm:figlet"
+        exit 0
+        ;;
+esac
+
+# Split and trim the comma list up front, so an absent, empty or comma-only list
+# is settled before the Deno probe.
+IFS=',' read -ra RAW_PKGS <<< "${1:-}"
+PKGS=()
+for pkg in ${RAW_PKGS[@]+"${RAW_PKGS[@]}"}; do
+    pkg=$(echo "$pkg" | xargs) # trim whitespace
+    [ -n "$pkg" ] && PKGS+=("$pkg")
+done
+
+# No packages requested is a no-op, not an error: the deno pkg--extension emits
+# `install deno-pkg ${DENO_PKGS}` with the list defaulting to empty, so failing
+# here would break the image build of every project that selects it without
+# naming packages.
+if [ ${#PKGS[@]} -eq 0 ]; then
+    echo "ℹ️  No Deno packages requested; nothing to install."
+    exit 0
 fi
 
 if ! command -v deno &> /dev/null; then
@@ -32,12 +52,7 @@ if ! command -v deno &> /dev/null; then
     exit 1
 fi
 
-# Split comma-separated packages and install each
-IFS=',' read -ra PKGS <<< "$1"
 for pkg in "${PKGS[@]}"; do
-    pkg=$(echo "$pkg" | xargs) # trim whitespace
-    if [ -n "$pkg" ]; then
-        echo "📦 Installing: deno add $pkg"
-        sudo -u coder bash -lc "cd /home/coder && deno add $pkg"
-    fi
+    echo "📦 Installing: deno add $pkg"
+    sudo -u coder bash -lc "cd /home/coder && deno add $pkg"
 done

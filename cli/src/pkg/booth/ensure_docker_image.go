@@ -162,9 +162,9 @@ func compileBoothfile(ctx appctx.AppContext, boothfilePath string) string {
 	// Scan for custom scripts
 	customSetupScripts, customInstallScripts := boothfile.ScanSetupsDir(customSetupsDir)
 
-	// Scan for built-in scripts (if we can find the directory)
+	// Built-in scripts come from the embedded list, plus the source tree when present
 	builtinSetupsDir := boothfile.FindBuiltinSetupsDir()
-	builtinSetupScripts, builtinInstallScripts := boothfile.ScanSetupsDir(builtinSetupsDir)
+	builtinSetupScripts, builtinInstallScripts := boothfile.KnownBuiltinScripts(builtinSetupsDir)
 
 	compilerOpts := boothfile.CompilerOptions{
 		CustomSetupsDir:      ".booth/setups",

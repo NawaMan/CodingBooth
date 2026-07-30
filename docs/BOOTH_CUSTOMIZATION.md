@@ -328,6 +328,14 @@ you an image missing the extension you asked for. The line also needs an editor 
 the image: use the `codeserver` or a desktop variant, or `setup codeserver` /
 `setup vscode` earlier in the Boothfile.
 
+**Every install script shares two behaviours.** Passing no packages is a **no-op**, not
+an error — it prints `ℹ️ No … requested; nothing to install.` and exits 0. This matters
+because the `*-pkg` templates emit `install <manager> ${..._PKGS}` with the list
+defaulting to empty, so selecting one in `booth config` without naming a package must
+not kill the build. Naming *nothing* is not the same as naming something broken: an
+unresolvable package still fails the build. And `-h` / `--help` prints usage and exits
+0, which is the only way to get the usage text.
+
 `install apt` installs system packages and accepts apt's native `pkg=version` pin
 (`install apt jq htop=3.0.5-7`). For reproducibility it honors an `APT_SNAPSHOT`
 environment variable: `booth config` stamps the configuration date into the generated

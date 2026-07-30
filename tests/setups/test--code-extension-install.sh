@@ -172,13 +172,18 @@ assert_fails "install that never lands is caught" \
 assert_fails "one bad id in a list fails the run" \
     "Failed to install: bogus.nope" "elixir-lsp.elixir-ls,bogus.nope"
 
-# 11. No arguments → usage, non-zero.
+# 11. No arguments → no-op, zero exit. CODE_EXT_PKGS defaults to "" in
+#     templates/ides/code-ext-pkg, so `install code-extension ${CODE_EXT_PKGS}`
+#     reaches here with no ids whenever that template is selected without naming
+#     any, and a hard failure would break the image build. Naming nothing is not
+#     the same as naming something broken: an unresolvable id is still a hard
+#     error (tests 7-10), as is a missing editor (test 12).
 TEST_NUM=$((TEST_NUM + 1))
 OUT=$(run_ext_install) && RC=0 || RC=$?
-if [[ $RC -ne 0 ]] && echo "$OUT" | grep -qF "Usage:"; then
-    print_test_result "true" "$0" "$TEST_NUM" "no arguments prints usage and fails"
+if [[ $RC -eq 0 ]] && echo "$OUT" | grep -qF "nothing to install"; then
+    print_test_result "true" "$0" "$TEST_NUM" "no arguments is a no-op"
 else
-    print_test_result "false" "$0" "$TEST_NUM" "no arguments prints usage and fails"
+    print_test_result "false" "$0" "$TEST_NUM" "no arguments is a no-op"
     echo "  actual: exit $RC"
     echo "$OUT" | sed 's/^/          /'
     ALL_PASSED=false

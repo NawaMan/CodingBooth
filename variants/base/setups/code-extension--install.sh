@@ -35,18 +35,30 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-if [ $# -eq 0 ] || [ -z "$1" ]; then
-    echo "Usage: $0 <publisher.name>[@<version>] [more...]" >&2
-    echo "Example: $0 elixir-lsp.elixir-ls" >&2
-    echo "         $0 elixir-lsp.elixir-ls ms-python.python" >&2
-    exit 1
-fi
+case "${1:-}" in
+    -h|--help)
+        echo "Usage: $0 <publisher.name>[@<version>] [more...]"
+        echo "Example: $0 elixir-lsp.elixir-ls"
+        echo "         $0 elixir-lsp.elixir-ls ms-python.python"
+        exit 0
+        ;;
+esac
 
 # This script always runs as root during the build.
 HOME=/root
 
 # Expand comma-separated ids into separate arguments.
 set -- $(echo "$@" | tr ',' ' ')
+
+# No ids requested is a no-op, not an error: the code-ext-pkg template emits
+# `install code-extension ${CODE_EXT_PKGS}` with the list defaulting to empty, so
+# failing here would break the image build of every project that selects it
+# without naming ids. Naming nothing is not the same as naming something broken --
+# an unresolvable id is still the hard error described above.
+if [ $# -eq 0 ]; then
+    echo "ℹ️  No extension ids requested; nothing to install."
+    exit 0
+fi
 
 SETUP_DIR="$(dirname "$0")"
 SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}

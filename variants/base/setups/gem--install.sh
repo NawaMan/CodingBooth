@@ -16,13 +16,24 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-if [ $# -eq 0 ]; then
-    echo "Usage: $0 <gem> [gem...]" >&2
-    exit 1
-fi
+case "${1:-}" in
+    -h|--help)
+        echo "Usage: $0 <gem> [gem...]"
+        exit 0
+        ;;
+esac
 
 # Expand comma-separated packages into separate arguments
 set -- $(echo "$@" | tr ',' ' ')
+
+# No gems requested is a no-op, not an error: the *-pkg templates emit
+# `install gem ${..._PKGS}` with the package list defaulting to empty, so
+# failing here would break the image build of every project that selects the
+# extension without naming packages.
+if [ $# -eq 0 ]; then
+    echo "ℹ️  No gems requested; nothing to install."
+    exit 0
+fi
 
 if [ ! -x /opt/rbenv/shims/gem ]; then
     echo "❌ Ruby is not installed. Run ruby--setup.sh first." >&2
