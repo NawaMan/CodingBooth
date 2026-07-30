@@ -5,17 +5,23 @@ description: Cut a release from the current --rc version — drop the rc suffix 
 
 # Cut a release and reopen the tree
 
-Four steps, in order. Two commits, exactly one push.
+Two commits, exactly one push, and one dispatch that needs its own yes.
 
 ```
-version.txt/README.md: X.Y.Z--rcN → X.Y.Z   → commit "X.Y.Z"        → git push origin main
-                       X.Y.Z      → X.(Y+1).0--rc1 → commit "X.(Y+1).0--rc"  → NO push
+1. version.txt/README.md: X.Y.Z--rcN → X.Y.Z    → commit "X.Y.Z"
+2.                                               → git push origin main
+3. version.txt/README.md: X.Y.Z → X.(Y+1).0--rc1 → commit "X.(Y+1).0--rc1"  → NO push
+4. report
+5. offer to dispatch `Release everything`, wait for a yes, then watch it
 ```
+
+Steps 1–4 are recoverable — two local commits and a push. **Step 5 is not**: it publishes Docker
+images, cuts a GitHub release, and deploys the live site. Treat them as different kinds of act.
 
 **Why push at all: the actual release runs in GitHub Actions, off the pushed non-rc version.**
-Nothing is released from the workstation. Two workflows read `version.txt` out of `origin/main`, and
-both **refuse to run on a `--rc` version**. So pushing the non-rc commit is what makes a release
-possible; the workflows are then run to perform it. See *The GitHub Actions release* below.
+Nothing is released from the workstation. The workflows read `version.txt` out of `origin/main` and
+**refuse to run on a `--rc` version**. So pushing the non-rc commit is what makes a release
+*possible*; step 5 is what performs it. See *The GitHub Actions release* below.
 
 **That is also why step 3's bump is not pushed.** The workflows check out `main` at dispatch time and
 read whatever `version.txt` says *then*. Push `X.(Y+1).0--rc1` before they have run and their
@@ -103,26 +109,77 @@ explicitly in the report, because "ahead 1" otherwise reads like an oversight.
 
 State the two commits, that the release was pushed and the bump was not, and the final `ahead 1`.
 
-Then say plainly **what has and has not happened**: the release version is on `origin/main`, and the
-two GitHub Actions workflows are now *eligible* but have **not** run — they are manual dispatch. Ask
-whether to trigger them (`gh workflow run "Release CodingBooth"` /
-`gh workflow run "Publish docker images"`), or leave that to the user. Do not imply a release is in
-flight when nothing has been dispatched. Then stop.
+Then say plainly **what has and has not happened**: the release version is on `origin/main`, so the
+`Release everything` workflow is now *eligible* — but nothing has run, because it is manual dispatch.
+Do not imply a release is in flight when nothing has been dispatched.
+
+## 5. Offer to dispatch `Release everything` — then watch it
+
+**Never dispatch without an explicit go-ahead.** Steps 1–4 leave a state that is recoverable: two
+local commits and one push. This step is not — it publishes Docker images, creates a GitHub release,
+and deploys the live site. Offer it, name what it will publish, and wait. "Cut a release" earlier in
+the conversation is not consent for this; ask again here.
+
+Preconditions (steps 1–2 establish them; step 3 preserves them by not pushing):
+
+```bash
+git show origin/main:version.txt      # must be the non-rc release version
+```
+
+Every job guards on that, so a `--rc` here fails the run rather than publishing something wrong.
+
+```bash
+gh workflow run "Release everything" --ref main
+sleep 5                                # dispatch is async; the run is not queryable instantly
+RUN=$(gh run list --workflow="Release everything" --limit 1 \
+        --json databaseId --jq '.[0].databaseId')
+gh run watch "$RUN" --exit-status      # non-zero if the run fails
+```
+
+`gh workflow run` does **not** print the run id, hence the look-up. Prefer
+`gh run watch --exit-status` over polling `gh run list`: it is the only form that lets you tell a red
+run from a green one instead of merely reporting "dispatched".
+
+Because `release-all.yaml` calls local reusable workflows, the whole chain is pinned to the commit it
+was dispatched against. Pushing the step-3 bump while it runs cannot break it — but there is still no
+reason to, so leave it local.
+
+**If the run fails, say which job died and what is already public.** The chain is
+`images → release → site` with `needs:`, so a failure stops what follows but does not undo what
+preceded:
+
+| Failed job | Already published | Notes |
+|------------|-------------------|-------|
+| `images` | possibly some image tags | It pushes per-arch by digest, then merges and signs. A late failure (e.g. its integration tests) means signed multi-arch tags are already on Docker Hub. |
+| `release` | all images | GitHub release absent or partial. Re-dispatching republishes the images too — harmless but slow. |
+| `site` | images + GitHub release | Only the site is stale. Dispatch `Deploy Site to codingbooth.io` alone instead of the whole chain. |
+
+Never re-dispatch on the user's behalf after a failure. Report and ask.
+
+**Do not push the step-3 bump as part of this step.** Reopening the tree stays a separate act, so the
+release and the next cycle never collapse into one irreversible command.
 
 ## The GitHub Actions release
 
-Two workflows do the release. **Both are `workflow_dispatch` only — pushing does not start them.**
-The push makes them *able* to run; someone still has to run them, from the Actions tab or
-`gh workflow run`. Do not tell the user a release is underway just because the push succeeded.
+**Everything here is `workflow_dispatch` only — pushing does not start any of it.** The push makes
+them *able* to run; step 5 runs them. Do not tell the user a release is underway just because the
+push succeeded.
 
 | Workflow | File | Produces |
 |----------|------|----------|
+| **Release everything** | `release-all.yaml` | Nothing itself — sequences the three below with `needs:`, so each waits on the previous succeeding. **Dispatch this one.** |
+| **Publish docker images** | `publish-docker-images.yaml` | `nawaman/codingbooth:*` multi-arch images for all 7 variants, cosign-signed, plus integration tests |
 | **Release CodingBooth** | `release-binary-and-wrapper.yaml` | GitHub release: multi-platform binaries, the wrapper, examples, SHA256 checksums |
-| **Publish docker images** | `publish-docker-images.yaml` | `nawaman/codingbooth:*` multi-arch images, cosign-signed, plus integration tests |
+| **Deploy Site to codingbooth.io** | `deploy-site.yaml` | The site, over SSH to DreamHost |
 
-Both read `version.txt` from the checked-out `main`, and both **reject `--rc`** — the docker one via
-a dedicated `guard-no-rc` job, the release one via a `Reject pre-release` step. That is the entire
-reason the release commit has to reach `origin/main` before either can run.
+The three are each still individually dispatchable — `release-all.yaml` only sequences them, and is
+the right thing to dispatch for a release. Reach for an individual one when re-running a single
+failed step (see the table in step 5).
+
+The image and release workflows read `version.txt` from the checked-out `main` and both **reject
+`--rc`** — the docker one via a dedicated `guard-no-rc` job, the release one via a
+`Reject pre-release` step. That is the entire reason the release commit has to reach `origin/main`
+first.
 
 Two details that make step 1 non-negotiable:
 
