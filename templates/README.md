@@ -314,23 +314,31 @@ All templates and extensions grouped by segment order.
 | `bun/vscode-ext--extension`       | Bun VS Code Extension         |
 | `clang/vscode-ext--extension`     | Clang VS Code Extension       |
 | `clojure/vscode-ext--extension`   | Clojure VS Code Extension     |
+| `crystal/vscode-ext--extension`   | Crystal VS Code Extension     |
 | `deno/vscode-ext--extension`      | Deno VS Code Extension        |
 | `elixir/vscode-ext--extension`    | Elixir VS Code Extension      |
+| `elm/vscode-ext--extension`       | Elm VS Code Extension         |
 | `erlang/vscode-ext--extension`    | Erlang VS Code Extension      |
 | `fpc/vscode-ext--extension`       | Free Pascal VS Code Extension |
+| `fsharp/vscode-ext--extension`    | F# VS Code Extension (Ionide) |
 | `gcc/vscode-ext--extension`       | GCC VS Code Extension         |
 | `go/vscode-ext--extension`        | Go VS Code Extension          |
 | `haskell/vscode-ext--extension`   | Haskell VS Code Extension     |
 | `java/vscode-ext--extension`      | Java VS Code Extension        |
+| `julia/vscode-ext--extension`     | Julia VS Code Extension       |
 | `kotlin/vscode-ext--extension`    | Kotlin VS Code Extension      |
 | `lua/vscode-ext--extension`       | Lua VS Code Extension         |
+| `nim/vscode-ext--extension`       | Nim VS Code Extension         |
 | `nodejs/vscode-ext--extension`    | Node.js VS Code Extension     |
 | `php/vscode-ext--extension`       | PHP VS Code Extension         |
 | `python/vscode-ext--extension`    | Python VS Code Extension      |
 | `r/vscode-ext--extension`         | R VS Code Extension           |
+| `rescript/vscode-ext--extension`  | ReScript VS Code Extension    |
+| `roc/vscode-ext--extension`       | Roc VS Code Extension *(unofficial; opt-in)* |
 | `ruby/vscode-ext--extension`      | Ruby VS Code Extension        |
 | `rust/vscode-ext--extension`      | Rust VS Code Extension        |
 | `scala/vscode-ext--extension`     | Scala VS Code Extension       |
+| `swift/vscode-ext--extension`     | Swift VS Code Extension       |
 | `zig/vscode-ext--extension`       | Zig VS Code Extension         |
 | `ides/code-ext-pkg`               | VS Code Extensions *(any id — top-level template, not a `+ext`)* |
 

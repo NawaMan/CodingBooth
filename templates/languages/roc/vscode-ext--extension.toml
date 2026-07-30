@@ -1,0 +1,20 @@
+display-name = "Roc VS Code Extension"
+display-disc = "Roc language support extension for VS Code (unofficial)"
+display-detail = """Installs the only published Roc extension for VS Code / code-server. \
+Unlike every other language's VS Code extension in this catalog, this one is opt-in rather \
+than auto-selected: Roc has no first-party extension, and the only one available is \
+third-party and named "unofficial" by its own author. It works and is on both registries, \
+but making an individual's extension the silent default for every Roc booth is a different \
+proposition from doing so with, say, rust-analyzer. Select it explicitly if you want it."""
+display-order = 1
+auto-select = false
+tags = [
+    "roc",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup roc-code-extension
+"""

@@ -1,0 +1,14 @@
+display-name = "Nim VS Code Extension"
+display-disc = "Nim language support extension for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "nim",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup nim-code-extension
+"""

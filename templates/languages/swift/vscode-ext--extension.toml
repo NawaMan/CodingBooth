@@ -1,0 +1,14 @@
+display-name = "Swift VS Code Extension"
+display-disc = "Swift language support extension for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "swift",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup swift-code-extension
+"""

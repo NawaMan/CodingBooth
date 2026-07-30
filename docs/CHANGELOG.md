@@ -16,6 +16,50 @@ This file contains a list of changes for each released version.
   usable binary still hard-errors. Only `config` gets the offer. Covered by
   `tests/wrapper/052-config-offer-install.sh`.
 
+- **Every language now has a VS Code extension, and F# builds again.** A survey of all 32
+  language templates found 24 with a curated extension and 8 without. crystal, elm, julia,
+  nim, rescript, roc and swift now have one, each id verified present on **both** Open VSX
+  and the Marketplace so a single `install_extensions` call covers code-server and desktop
+  VS Code:
+
+  | Language | Extension |
+  |----------|-----------|
+  | crystal  | `crystal-lang-tools.crystal-lang` |
+  | elm      | `elmtooling.elm-ls-vscode` |
+  | julia    | `julialang.language-julia` |
+  | nim      | `nimsaem.nimvscode` |
+  | rescript | `chenglou92.rescript-vscode` |
+  | roc      | `IvanDemchenko.roc-lang-unofficial` |
+  | swift    | `swiftlang.swift-vscode` |
+
+  The eighth, **fsharp, had an extension that had never worked**: it emitted
+  `setup code-extension ionide.ionide-fsharp`, and no `code-extension--setup.sh` exists.
+  An unknown setup script is only a *warning*, so the `RUN` was emitted anyway and the
+  build died at `code-extension--setup.sh: not found`. Being `auto-select = true`, that
+  broke every `--select fsharp` from 48157fb4 until now. It gets a real
+  `fsharp-code-extension--setup.sh` rather than the new `install code-extension` escape
+  hatch, deliberately: that path is strict, and a strict install behind an auto-selected
+  extension means one registry hiccup breaks every build touching the language.
+
+  `roc` is the one language extension shipped **opt-in** (`auto-select = false`). Roc has
+  no first-party extension and the only published one is third-party and self-described as
+  unofficial — fine to offer, but a different proposition from making it the silent default
+  the way rust-analyzer is.
+
+  A fourth Marketplace-only id also turned up, `vscjava.vscode-lombok` (java), missed by the
+  earlier audit because it sat behind a line continuation. Scoped to
+  `install_vscode_extensions` like the other three; recorded in `docs/TODO.md`.
+
+  Two data-driven tests now cover the whole catalog rather than a hand-picked list, so a new
+  language extension is covered with no edit:
+  - `tests/config/test84-init-language-code-extensions.sh` — 94 checks over all 31 language
+    extensions: the setup script each one names exists, the selection compiles with no
+    unknown-script warning, and the auto-select contract holds (roc opt-in, the rest on).
+    This is the check that was missing; reintroducing the fsharp bug fails it on two counts.
+  - `tests/setups/test--code-extension-setups.sh` — runs all 41 `*-code-extension--setup.sh`
+    with both editor CLIs stubbed and asserts each exits 0 having installed at least one id.
+    Catches the silent-no-op class the elixir and fsharp bugs both belonged to.
+
 - **Any VS Code / code-server extension, by id (`install code-extension` /
   `code-ext-pkg`).** Editor extensions were curated-only: a language either had a
   `<lang>-code-extension--setup.sh` pinning one known-good id, or you were out of

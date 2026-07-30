@@ -276,17 +276,22 @@ Add or improve support for these developer tools and environments:
 ---
 
 ## Code Extensions
-- [ ] Add code extensions for each supported setup (e.g., language-specific IDE plugins or VS Code extensions).
+- [x] Add code extensions for each supported setup. Surveyed all 32 language templates: 24 had one, 8 did
+      not. crystal, elm, julia, nim, rescript, roc and swift gained curated extensions (all ids verified on
+      both registries); fsharp had one that had never worked. `dotnet` still has no `vscode-ext` of its own —
+      its setup is reachable only via `csharp+vscode-ext`, and is Marketplace-only anyway, so it is covered
+      by the code-server gap item below rather than being a separate hole. Remaining candidates would be
+      languages outside `templates/languages/` (e.g. Racket via `education/drracket`).
       The arbitrary escape hatch now exists (`install code-extension <id>` / `code-ext-pkg`), so this item
       is only about *curated* coverage: a user shouldn't need to know a marketplace id to get a working
       editor for a language the catalog already installs. New ids must be checked against Open VSX
       (`curl -s -o /dev/null -w '%{http_code}' https://open-vsx.org/api/<pub>/<name>`) — code-server does
       not query the Microsoft Marketplace, and the publisher frequently differs between the two.
-- [ ] code-server has no C#, C/C++, or IntelliCode extension. Three curated ids are Microsoft-licensed and
-      Marketplace-only, so Open VSX has nothing to resolve and code-server users go without. They are now
-      scoped with `install_vscode_extensions` (explicit, and no longer a warning on every code-server
-      build), but that only documents the gap — it doesn't close it. Each needs its own decision, and
-      each substitute must be verified on Open VSX first:
+- [ ] code-server has no C#, C/C++, IntelliCode, or Lombok extension. Four curated ids are Marketplace-only,
+      so Open VSX has nothing to resolve and code-server users go without. They are now scoped with
+      `install_vscode_extensions` (explicit, and no longer a warning on every code-server build), but that
+      only documents the gap — it doesn't close it. Each needs its own decision, and each substitute must be
+      verified on Open VSX first:
       - `ms-dotnettools.csharp` (`dotnet-code-extension`) — candidate: the community rebuild
         `muhammad-sammy.csharp`. Weigh trusting a third-party rebuild of a Microsoft extension.
       - `ms-vscode.cpptools` (`gcc-code-extension`) — `clang-code-extension` already installs
@@ -294,6 +299,9 @@ Add or improve support for these developer tools and environments:
         code-server users at that rather than duplicating it.
       - `visualstudioexptteam.vscodeintellicode` (`java-code-extension`) — AI completion polish, not
         language support. Probably fine to leave code-server without it permanently.
+      - `vscjava.vscode-lombok` (`java-code-extension`) — never published to Open VSX, so Lombok annotations
+        go unresolved in code-server. `redhat.java` still works; whether that is acceptable depends on how
+        much Lombok the Java examples use.
 - [ ] A failed extension install is invisible. `libs/code-extension-source.sh`'s `install_extensions` logs
       `⚠ Failed to install` and returns 0, so the build passes and the booth comes up without the
       extension — which is how the `JakeBecker.elixir-ls` bug survived unnoticed. The new

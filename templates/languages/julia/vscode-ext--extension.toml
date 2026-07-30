@@ -1,0 +1,14 @@
+display-name = "Julia VS Code Extension"
+display-disc = "Julia language support extension for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "julia",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup julia-code-extension
+"""

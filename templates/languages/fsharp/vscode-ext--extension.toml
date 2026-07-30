@@ -11,5 +11,5 @@ tags = [
 
 [segments]
 "Boothfile--65" = """
-setup code-extension ionide.ionide-fsharp
+setup fsharp-code-extension
 """

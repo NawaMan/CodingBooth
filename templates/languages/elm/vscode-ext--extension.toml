@@ -1,0 +1,14 @@
+display-name = "Elm VS Code Extension"
+display-disc = "Elm language support extension for VS Code (Elm LS)"
+display-order = 1
+auto-select = true
+tags = [
+    "elm",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup elm-code-extension
+"""

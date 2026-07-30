@@ -1,0 +1,14 @@
+display-name = "ReScript VS Code Extension"
+display-disc = "ReScript language support extension for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "rescript",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup rescript-code-extension
+"""

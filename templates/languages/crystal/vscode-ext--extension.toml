@@ -1,0 +1,14 @@
+display-name = "Crystal VS Code Extension"
+display-disc = "Crystal language support extension for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "crystal",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup crystal-code-extension
+"""
