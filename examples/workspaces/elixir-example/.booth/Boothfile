@@ -1,10 +1,12 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --variant codeserver --select elixir+vscode-ext+repl-history/claude-code+auto-accept+credential+settings-cache
+# Configured by: booth config --no-tui --overwrite --variant desktop-xfce --select elixir+vscode-ext+repl-history/codeserver/claude-code+auto-accept+credential+settings-cache
 
 env APT_SNAPSHOT=20260730T000000Z
 
+arg CODESERVER_PORT=19999
 arg ELIXIR_VERSION=1.19.5
 
 setup claude-code
+setup codeserver ${CODESERVER_PORT}
 setup elixir --version ${ELIXIR_VERSION}
 setup elixir-code-extension
