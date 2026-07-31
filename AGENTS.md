@@ -215,15 +215,17 @@ Summary of the procedure:
 2. **In the worktree**, rebase the feature branch onto main: `git rebase main`. Resolve conflicts.
    If the rebase touched covered code, re-run the relevant tests (Go unit tests and/or targeted
    shell tests) in that worktree **before** merging.
-3. **From the main clone**, `git merge --no-ff <branch>`. Always a real merge commit — **never
-   squash** and never fast-forward-only — so the worktree's commit history is kept.
+3. **From the main clone**, `git merge --no-ff <branch>` — a real merge commit, so the worktree's
+   commit history is kept. **Never squash.** *Exception:* if the branch is exactly **one** commit
+   (`git rev-list --count main..<branch>` = 1), a plain fast-forward `git merge <branch>` is fine —
+   there is no history to preserve. Two or more commits ⇒ `--no-ff`.
 4. If step 1 stashed anything, `git stash apply <sha>` (not `pop`), confirm, then `git stash drop
    <sha>`.
 5. **Clean up the worktree and branch** as part of landing: stop any booth *you* started for that
    worktree, then from the main clone `git worktree remove worktree/<name>` and `git branch -d
    <name>` — both **without** `--force`.
 
-**Never push** as part of landing. `git merge --no-ff` only ever touches the local `main` —
+**Never push** as part of landing. The merge in step 3 only ever touches the local `main` —
 pushing is its own explicit ask (Rule 8).
 
 ### Cleaning up after a session

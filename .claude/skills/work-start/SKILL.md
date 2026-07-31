@@ -151,8 +151,8 @@ Tell the user, plainly:
   (Rule 8; creating the worktree branch is the one exception);
 - that they can open `worktree/<name>` in GitKraken or an editor, and that if they'd rather run a
   fresh agent inside the session they can start one from that folder;
-- that the session ends with **`work-finish`**, which rebases, tests, merges `--no-ff`, and removes
-  the worktree and branch.
+- that the session ends with **`work-finish`**, which rebases, tests, merges (`--no-ff`, or a
+  fast-forward if the branch is a single commit), and removes the worktree and branch.
 
 Then start the approved work — in that folder, and only there.
 

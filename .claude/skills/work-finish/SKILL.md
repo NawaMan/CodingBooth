@@ -1,6 +1,6 @@
 ---
 name: work-finish
-description: Land a worktree's feature branch into main — preflight (gap audit: missing tests, stale docs, unfinished experiments, accidental changes), wait for close-gaps vs land-as-is, rebase, tests, --no-ff merge, then delete the worktree/branch. Use when the user says "land this", "merge the branch", "merge into main", or asks to finish a worktree session. Never pushes.
+description: Land a worktree's feature branch into main — preflight (gap audit: missing tests, stale docs, unfinished experiments, accidental changes), wait for close-gaps vs land-as-is, rebase, tests, --no-ff merge (fast-forward allowed for a single-commit branch), then delete the worktree/branch. Use when the user says "land this", "merge the branch", "merge into main", or asks to finish a worktree session. Never pushes.
 ---
 
 # Land a worktree's branch into main
@@ -9,7 +9,7 @@ The prose version is `AGENTS.md` → *Landing a worktree's branch into main*. Th
 form. `$ARGUMENTS` is the branch (default: the branch checked out in the worktree you are in).
 
 **Merging is a deliberate act — Rule 8.** Only run this when the user asks to land/merge, never on
-your own initiative, and never because "the change is done". **Never push** — `git merge --no-ff`
+your own initiative, and never because "the change is done". **Never push** — the merge in step 4
 only ever touches the local `main`; pushing is its own explicit ask. Cleanup (worktree + branch) is
 different: it now runs automatically as the final step, once the merge itself has made the work
 safe — see step 7.
@@ -17,7 +17,8 @@ safe — see step 7.
 **This skill's own Proposal before code gate** (replaces the generic `AGENTS.md` form — do not
 stack both): after the read-only preflight below (including the **gap audit**), report as
 **Problem · Diagnostic · Approach** — git shape, **any gaps** (owner definition below), and the
-exact rebase→test→`--no-ff` plan (or "close gaps first, then land") — and **wait** before stash /
+exact rebase→test→merge plan, naming which merge form step 4 will use (or "close gaps first, then
+land") — and **wait** before stash /
 rebase / merge / gap-closing edits. The user's original "land this" is not enough once preflight
 can change the plan (conflicts, dirty main, branch behind, open gaps).
 
@@ -145,9 +146,23 @@ cd <main-clone>
 git merge --no-ff <branch>
 ```
 
-Always a real merge commit. **Never** `--squash`, never `--ff-only` — the branch's history is the
-point. Write the message to a file and pass `-F <file>`; `-F -` (heredoc on stdin) fails with
-`could not read file '-'` in some environments.
+A real merge commit, so the branch's history is kept. **Never** `--squash` — squashing is what
+destroys that history.
+
+**Single-commit exception.** If `git log --oneline main..<branch>` (step 0) shows exactly **one**
+commit, a plain fast-forward is fine — there is no multi-commit history to preserve, and a merge
+commit would only wrap a single commit in a second one:
+
+```bash
+git rev-list --count main..<branch>    # 1 ⇒ fast-forward is allowed
+git merge <branch>                     # plain merge; after the rebase this fast-forwards
+```
+
+Two or more commits ⇒ back to `--no-ff`, no judgement call. When you take the exception, say so in
+the step 6 report ("single commit, fast-forwarded") so the missing merge commit is never a surprise.
+
+For the `--no-ff` path, write the message to a file and pass `-F <file>`; `-F -` (heredoc on stdin)
+fails with `could not read file '-'` in some environments.
 
 ## 5. Restore the stash, if step 1 took one
 
@@ -204,7 +219,8 @@ When **all of** the following are true:
 
 1. **Gaps** — there were **no open gaps** at land time, **or** every gap was **closed** before
    merge (not “land as-is” with known leftovers), and
-2. **Merge** — `git merge --no-ff` succeeded, and
+2. **Merge** — the merge succeeded (`--no-ff`, or a fast-forward under the single-commit
+   exception), and
 3. **Cleanup** — worktree remove + branch `-d` succeeded (or the user already had no worktree),
 
 …end the report with an **explicit done signal** so the user knows they can walk away. Use plain
