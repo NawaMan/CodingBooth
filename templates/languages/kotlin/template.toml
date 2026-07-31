@@ -9,8 +9,8 @@ tags = [
 requires = ["java"]
 
 [params.KOTLIN_VERSION]
-default = "2.0.20"
-suggests = ["2.0.20", "2.0.0", "1.9.24"]
+default = "latest"
+suggests = ["latest", "2.0.20", "2.0.0", "1.9.24"]
 
 [segments]
 "Boothfile--60" = """

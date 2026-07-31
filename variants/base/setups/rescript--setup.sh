@@ -28,8 +28,10 @@ USAGE
 
 HOME=/root
 
-RESCRIPT_DEFAULT_VER="11.1.4"
-REQ_VER="$RESCRIPT_DEFAULT_VER"
+RESCRIPT_DEFAULT_VER="11.1.4"   # kept as the --version fallback
+REQ_VER="latest"                # no version given means "the current release";
+                                # npm's own 'latest' dist-tag decides, and for
+                                # rescript that tag points at a stable release.
 
 while [[ $# -gt 0 ]]; do
   case "$1" in

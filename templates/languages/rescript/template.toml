@@ -12,8 +12,8 @@ tags = [
 requires = ["nodejs"]
 
 [params.RESCRIPT_VERSION]
-default = "11.1.4"
-suggests = ["11.1.4", "11.0.1", "10.1.4"]
+default = "latest"
+suggests = ["latest", "11.1.4", "11.0.1", "10.1.4"]
 
 [segments]
 "Boothfile--60" = """
