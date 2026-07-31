@@ -12,6 +12,5 @@ requires = ["gh"]
 
 [segments]
 Boothfile = """
-setup gh
 setup gh-copilot
 """

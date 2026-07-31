@@ -1,6 +1,6 @@
 display-name = "GitHub CLI"
 display-disc = "GitHub CLI for repository and PR management"
-display-detail = "Installs the GitHub CLI (gh) for managing repositories, pull requests, issues, and GitHub Actions from the terminal."
+display-detail = "Installs the GitHub CLI (gh) for managing repositories, pull requests, issues, and GitHub Actions from the terminal. Supports version pinning via the GH_VERSION parameter; the default 'latest' tracks the cli.github.com apt repo."
 display-order = 30
 tags = [
     "github",
@@ -8,7 +8,11 @@ tags = [
     "git"
 ]
 
+[params.GH_VERSION]
+default = "latest"
+suggests = ["latest", "2.97.0", "2.96.0", "2.95.0", "2.94.0", "2.93.0"]
+
 [segments]
 Boothfile = """
-setup gh
+setup gh --version ${GH_VERSION}
 """

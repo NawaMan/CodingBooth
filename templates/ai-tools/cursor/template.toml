@@ -1,7 +1,7 @@
 display-name = "Cursor"
 primary = true
 display-disc = "Cursor AI-powered code editor"
-display-detail = "Installs Cursor, an AI-powered code editor with built-in AI assistance for code generation and editing."
+display-detail = "Installs Cursor, an AI-powered code editor with built-in AI assistance for code generation and editing. Requires a desktop variant; skipped elsewhere. Cursor's download URLs embed a build commit rather than a plain version, so there is no version pin — CURSOR_TRACK picks the release track instead."
 display-order = 16
 tags = [
     "ai",
@@ -9,7 +9,11 @@ tags = [
     "editor"
 ]
 
+[params.CURSOR_TRACK]
+default = "stable"
+suggests = ["stable", "latest"]
+
 [segments]
 "Boothfile--60" = """
-setup cursor
+setup cursor --track ${CURSOR_TRACK}
 """
