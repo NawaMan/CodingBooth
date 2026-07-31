@@ -46,6 +46,14 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# "apt"/"latest" as the version selects the distro package — the same thing
+# --from-apt does, but sayable through a single version knob so a template can
+# offer "the distro build" and "pin 4.4.1" in one parameter.
+if [[ "$REQ_VER" == "apt" || "$REQ_VER" == "latest" ]]; then
+  FROM_APT=1
+  REQ_VER=""
+fi
+
 VERSION="${REQ_VER:-$MAKE_DEFAULT_VER}"
 
 LEVEL=66                          # See README.md - Profile Ordering

@@ -17,7 +17,7 @@ assert-line "$boothfile" "arg GO_PKGS=" "github.com/pocketbase/pocketbase/exampl
 # Whole-line prefix: the go template emits three `install go` lines and assert-line
 # takes the first match.
 assert-line "$boothfile" 'install go ${GO_PKGS}' ""                                              "install go line"
-assert-line "$boothfile" "setup claude-code"  ""                                                 "second template still selected"
+assert-line "$boothfile" "setup claude-code" ' ${CLAUDE_CODE_VERSION}'                                               "second template still selected"
 
 # The header keeps the DSL shell-quoted, so it is both re-runnable and readable back.
 assert-line "$boothfile" '# Configured by: booth config --no-tui --overwrite --select ' \
@@ -30,7 +30,7 @@ assert-line "$boothfile" '# Configured by: booth config --no-tui --overwrite --s
 run booth config $prj --no-tui --overwrite
 
 assert-line "$boothfile" "arg GO_PKGS=" "github.com/pocketbase/pocketbase/examples/base@latest" "GO_PKGS survives reconfigure"
-assert-line "$boothfile" "setup claude-code"  ""                                                 "second template survives reconfigure"
+assert-line "$boothfile" "setup claude-code" ' ${CLAUDE_CODE_VERSION}'                                               "second template survives reconfigure"
 
 # --- Several quoted packages in one list --------------------------------------
 run booth config $prj --no-tui --overwrite --select 'go+go-pkg:"github.com/a/b@v1","github.com/c/d@v2"'

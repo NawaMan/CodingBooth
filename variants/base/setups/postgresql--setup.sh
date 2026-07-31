@@ -33,6 +33,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# "latest" means "whatever the distro ships" — same as passing nothing. Without
+# this it would reach apt as the literal package name "postgresql-latest".
+[[ "$PG_VERSION" == "latest" ]] && PG_VERSION=""
+
 export DEBIAN_FRONTEND=noninteractive
 echo "📦 Installing PostgreSQL ..."
 apt-get update

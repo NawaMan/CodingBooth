@@ -15,7 +15,11 @@ suggests = [
     "11434",
 ]
 
+[params.OLLAMA_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup ollama
+setup ollama --version ${OLLAMA_VERSION}
 """

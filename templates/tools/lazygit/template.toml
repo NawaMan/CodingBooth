@@ -4,7 +4,11 @@ display-detail = "Installs lazygit, a simple terminal UI for git commands, makin
 display-order = 60
 tags = ["git", "tui", "cli"]
 
+[params.LAZYGIT_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup lazygit
+setup lazygit --version ${LAZYGIT_VERSION}
 """

@@ -9,7 +9,11 @@ tags = [
     "cli"
 ]
 
+[params.PULUMI_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup pulumi
+setup pulumi --version ${PULUMI_VERSION}
 """

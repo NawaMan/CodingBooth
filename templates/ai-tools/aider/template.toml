@@ -9,7 +9,11 @@ tags = [
     "cli"
 ]
 
+[params.AIDER_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup aider
+setup aider --version ${AIDER_VERSION}
 """

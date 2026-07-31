@@ -13,7 +13,11 @@ run-args = [
     "-v", "booth-pgdata:/var/lib/postgresql",
 ]
 
+[params.PG_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup postgresql
+setup postgresql --version ${PG_VERSION}
 """

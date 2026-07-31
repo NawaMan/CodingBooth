@@ -4,7 +4,11 @@ display-detail = "Installs lazydocker, a simple terminal UI for managing Docker 
 display-order = 61
 tags = ["docker", "tui", "cli"]
 
+[params.LAZYDOCKER_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup lazydocker
+setup lazydocker --version ${LAZYDOCKER_VERSION}
 """

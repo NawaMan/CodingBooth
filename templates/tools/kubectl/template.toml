@@ -4,7 +4,11 @@ display-detail = "Installs kubectl for managing Kubernetes clusters, deploying a
 display-order = 56
 tags = ["kubernetes", "k8s", "kubectl", "cloud", "cli"]
 
+[params.KUBECTL_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup kubectl
+setup kubectl --version ${KUBECTL_VERSION}
 """

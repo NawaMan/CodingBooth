@@ -45,6 +45,7 @@ setup conda
 setup cpp-nb-kernel
 setup crystal
 setup crystal-code-extension
+setup cursor
 setup cypress
 setup dbeaver
 setup deno

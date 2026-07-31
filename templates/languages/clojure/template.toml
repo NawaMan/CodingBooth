@@ -9,7 +9,11 @@ tags = [
 ]
 requires = ["java"]
 
+[params.CLOJURE_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 "Boothfile--60" = """
-setup clojure
+setup clojure --version ${CLOJURE_VERSION}
 """

@@ -6,7 +6,11 @@ tags = ["gradle", "build", "java", "jvm"]
 
 requires = ["java"]
 
+[params.GRADLE_VERSION]
+default = "9.6.1"
+suggests = ["9.6.1", "9.3.1", "8.14.3"]
+
 [segments]
 Boothfile = """
-setup gradle
+setup gradle ${GRADLE_VERSION}
 """

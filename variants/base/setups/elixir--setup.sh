@@ -30,8 +30,8 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # --- defaults / args ---
-ELIXIR_DEFAULT="1.19.5"     # bump when you want a newer pinned default
-REQ_VER=""
+ELIXIR_DEFAULT="1.19.5"     # fallback when 'latest' cannot be resolved
+REQ_VER="latest"            # no version given means "the current release"
 WITH_PHOENIX=0
 MIX_HOME_DEFAULT="/opt/mix"
 HEX_HOME_DEFAULT="/opt/hex"
@@ -54,8 +54,14 @@ if [[ -z "$REQ_VER" ]]; then
   ELIX_VER="$ELIXIR_DEFAULT"
 elif [[ "$REQ_VER" == "latest" ]]; then
   ELIX_VER="$(curl -fsSL https://api.github.com/repos/elixir-lang/elixir/releases/latest \
-    | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//')"
-  [[ -n "$ELIX_VER" ]] || { echo "❌ Failed to resolve latest Elixir version"; exit 1; }
+    | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//' || true)"
+  if [[ -z "$ELIX_VER" ]]; then
+    # Unauthenticated GitHub API calls are rate-limited (60/hr per IP), so a busy
+    # CI host can fail to resolve. Degrade to the pinned default rather than
+    # failing a build that only wanted "something current".
+    echo "⚠️  Could not resolve the latest Elixir release; using ${ELIXIR_DEFAULT}."
+    ELIX_VER="$ELIXIR_DEFAULT"
+  fi
 else
   ELIX_VER="$REQ_VER"
 fi

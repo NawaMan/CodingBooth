@@ -42,6 +42,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# "latest" means "whatever the distro ships" — same as passing nothing. Without
+# this it would reach apt as the literal package pin "fpc=latest*".
+[[ "$FPC_VER" == "latest" ]] && FPC_VER=""
+
 # ---- base deps ----
 export DEBIAN_FRONTEND=noninteractive
 apt-get update

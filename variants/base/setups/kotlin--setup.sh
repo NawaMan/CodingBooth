@@ -28,8 +28,8 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "Run as root (use sudo)"; exit 1; }
 
 # ---- defaults / args ----
-KOTLIN_DEFAULT_VER="2.0.20"
-REQ_VER=""
+KOTLIN_DEFAULT_VER="2.0.20"   # fallback when 'latest' cannot be resolved
+REQ_VER="latest"              # no version given means "the current release"
 WITH_NATIVE=0
 KONAN_DIR_DEFAULT="/opt/konan"
 KONAN_DIR="$KONAN_DIR_DEFAULT"
@@ -48,8 +48,13 @@ done
 if [[ -z "$REQ_VER" ]]; then
   KVER="$KOTLIN_DEFAULT_VER"
 elif [[ "$REQ_VER" == "latest" ]]; then
-  KVER="$(curl -fsSL https://api.github.com/repos/JetBrains/kotlin/releases/latest | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//')"
-  [[ -n "$KVER" ]] || { echo "Failed to resolve latest Kotlin version"; exit 1; }
+  KVER="$(curl -fsSL https://api.github.com/repos/JetBrains/kotlin/releases/latest | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//' || true)"
+  if [[ -z "$KVER" ]]; then
+    # See elixir--setup.sh: the GitHub API is rate-limited, so degrade to the
+    # pinned default instead of failing the build.
+    echo "⚠️  Could not resolve the latest Kotlin release; using ${KOTLIN_DEFAULT_VER}."
+    KVER="$KOTLIN_DEFAULT_VER"
+  fi
 else
   KVER="$REQ_VER"
 fi

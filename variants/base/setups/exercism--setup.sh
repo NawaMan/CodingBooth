@@ -28,10 +28,11 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-REQ_VER="3.5.5"
+EXERCISM_DEFAULT_VER="3.5.5"   # fallback when 'latest' cannot be resolved
+REQ_VER="latest"               # no version given means "the current release"
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --version) shift; REQ_VER="${1:-3.5.5}"; shift ;;
+    --version) shift; REQ_VER="${1:-latest}"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "❌ Unknown arg: $1" >&2; usage; exit 2 ;;
   esac
@@ -53,7 +54,13 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/exercism/cli/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/')
+  VERSION=$(curl -fsSL https://api.github.com/repos/exercism/cli/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/' || true)
+  if [[ -z "$VERSION" ]]; then
+    # See elixir--setup.sh: the GitHub API is rate-limited, so degrade to the
+    # pinned default instead of failing the build.
+    echo "⚠️  Could not resolve the latest Exercism release; using ${EXERCISM_DEFAULT_VER}."
+    VERSION="$EXERCISM_DEFAULT_VER"
+  fi
 else
   VERSION="$REQ_VER"
 fi

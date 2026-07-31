@@ -13,7 +13,11 @@ run-args = [
     "-v", "booth-mongodata:/home/coder/.mongodb",
 ]
 
+[params.MONGO_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup mongodb
+setup mongodb --version ${MONGO_VERSION}
 """

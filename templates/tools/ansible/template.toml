@@ -9,7 +9,11 @@ tags = [
     "cli"
 ]
 
+[params.ANSIBLE_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup ansible
+setup ansible --version ${ANSIBLE_VERSION}
 """

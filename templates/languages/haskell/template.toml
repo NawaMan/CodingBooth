@@ -8,7 +8,11 @@ tags = [
     "compiled"
 ]
 
+[params.GHC_VERSION]
+default = "recommended"
+suggests = ["recommended", "latest"]
+
 [segments]
 Boothfile = """
-setup haskell
+setup haskell --ghc-version ${GHC_VERSION}
 """

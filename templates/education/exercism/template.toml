@@ -14,8 +14,9 @@ tags = [
 ]
 
 [params.EXERCISM_VERSION]
-default = "3.5.5"
+default = "latest"
 suggests = [
+    "latest",
     "3.5.5",
     "3.5.4",
     "latest",

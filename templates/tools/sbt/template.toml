@@ -6,7 +6,11 @@ tags = ["scala", "sbt", "build", "jvm"]
 
 requires = ["java"]
 
+[params.SBT_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup sbt
+setup sbt --version ${SBT_VERSION}
 """
