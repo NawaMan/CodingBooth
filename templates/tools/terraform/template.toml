@@ -10,7 +10,11 @@ tags = [
     "cli"
 ]
 
+[params.TERRAFORM_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup terraform
+setup terraform --version ${TERRAFORM_VERSION}
 """

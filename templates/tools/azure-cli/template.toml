@@ -9,7 +9,11 @@ tags = [
     "microsoft"
 ]
 
+[params.AZURE_CLI_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup azure-cli
+setup azure-cli --version ${AZURE_CLI_VERSION}
 """

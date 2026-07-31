@@ -4,7 +4,11 @@ display-detail = "Installs Helm for managing Kubernetes applications via charts,
 display-order = 57
 tags = ["kubernetes", "k8s", "helm", "cloud", "cli"]
 
+[params.HELM_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup helm
+setup helm --version ${HELM_VERSION}
 """

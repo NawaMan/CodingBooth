@@ -37,6 +37,10 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
+# "latest" means "whatever the Google Cloud repo serves" — same as passing
+# nothing. Without this it would reach apt as the pin "google-cloud-cli=latest".
+[[ "$REQ_VERSION" == "latest" ]] && REQ_VERSION=""
+
 # ---- base deps ----
 export DEBIAN_FRONTEND=noninteractive
 apt-get update

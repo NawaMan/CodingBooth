@@ -8,7 +8,11 @@ tags = [
     "cli"
 ]
 
+[params.AWS_CLI_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup aws-cli
+setup aws-cli --version ${AWS_CLI_VERSION}
 """

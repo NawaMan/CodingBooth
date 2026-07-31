@@ -8,7 +8,11 @@ tags = [
     "cli"
 ]
 
+[params.GCLOUD_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup gcloud
+setup gcloud --version ${GCLOUD_VERSION}
 """

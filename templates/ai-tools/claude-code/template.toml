@@ -8,7 +8,11 @@ tags = [
     "claude"
 ]
 
+[params.CLAUDE_CODE_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup claude-code
+setup claude-code ${CLAUDE_CODE_VERSION}
 """

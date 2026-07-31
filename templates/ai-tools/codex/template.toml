@@ -9,7 +9,11 @@ tags = [
 ]
 requires = ["nodejs"]
 
+[params.CODEX_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 "Boothfile--60" = """
-setup codex
+setup codex ${CODEX_VERSION}
 """

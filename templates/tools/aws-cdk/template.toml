@@ -11,7 +11,11 @@ tags = [
 ]
 requires = ["nodejs"]
 
+[params.AWS_CDK_VERSION]
+default = "latest"
+suggests = ["latest"]
+
 [segments]
 Boothfile = """
-setup aws-cdk
+setup aws-cdk --version ${AWS_CDK_VERSION}
 """
