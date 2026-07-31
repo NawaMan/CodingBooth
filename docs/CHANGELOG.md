@@ -4,6 +4,120 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`setup gh <version>` now actually pins.** `gh--setup.sh` read `GH_VERSION="${1:-latest}"`
+  on line 18 and never referenced it again — it unconditionally added the cli.github.com apt
+  repo and ran `apt-get install -y gh`, so `setup gh 2.63.2` silently installed whatever the
+  repo happened to be serving. A version argument now installs that exact release's `.deb`
+  from `github.com/cli/cli/releases` (the apt repo only carries recent builds, so it cannot
+  serve an older pin), while the default `latest` keeps the existing apt path byte-for-byte
+  unchanged — `setup gh` with no argument behaves exactly as before, including in
+  `tests/complex/test-boothfile-gh-copilot`. The script also accepts the `--version <ver>`
+  flag form used by most other tool setups, and tolerates a leading `v`. `templates/tools/gh`
+  now exposes the knob as `GH_VERSION`, so `booth config --select gh:2.97.0` reaches it —
+  before, a working pin would still have been unreachable from the TUI.
+
+- **The `cursor` template now has a setup script to call.** `templates/ai-tools/cursor`
+  emitted `setup cursor`, but no `cursor--setup.sh` had ever existed — not in any variant, not
+  anywhere in git history. Selecting Cursor scaffolded a Boothfile that failed the Boothfile
+  compiler's name check and could never have built. `variants/base/setups/cursor--setup.sh`
+  installs Cursor's official `.deb` (amd64 and arm64), resolved through
+  `cursor.com/api/download`, and wraps `/usr/bin/cursor` with `--no-sandbox` the same way
+  `antigravity--setup.sh` does, because Chromium's sandbox needs privileges a booth does not
+  grant. The shipped `.desktop` entries are re-pointed at that wrapper, so launching from the
+  desktop menu gets the same treatment as launching from a shell. Like Antigravity, it is
+  skipped on non-desktop variants. Cursor's download URLs embed a build commit rather than a
+  plain version, so there is no version to pin: `CURSOR_TRACK` selects the release track
+  (`stable`, `latest`), and `--deb-url` takes one exact build for anyone who resolves it
+  themselves. The credential extension now also seeds `~/.config/Cursor` (Linux, macOS and
+  Windows paths) — Cursor is a VS Code fork whose sign-in lives there, so mounting only
+  `~/.cursor` never kept a session.
+
+- **No version named now means "the current release" for four more setups.** `elixir`, `exercism`,
+  `kotlin` and `rescript` all *accepted* `latest` but defaulted to a constant that only moved when
+  someone remembered to bump it; they now default to `latest` in both the setup script and the
+  template. Two others were examined and deliberately left pinned: `elm`, because npm's `latest`
+  dist-tag for it points at the prerelease `0.19.2-0`, and `scala`, because `lampepfl/dotty` marks
+  its LTS line as the GitHub "latest release", so tracking it would *downgrade* the default from
+  3.5.1 to 3.3.8. Both reasons are recorded in
+  [`EXAMPLES.md`](../EXAMPLES.md#known-imperfections) rather than left for the next person to
+  rediscover.
+
+- **Resolving `latest` no longer fails a build when the GitHub API is unreachable.** `elixir`,
+  `exercism` and `kotlin` called `api.github.com` and exited non-zero if it returned nothing —
+  and unauthenticated calls are rate-limited to 60/hour per IP, so a busy CI host could break a
+  build that had merely declined to name a version. They now warn and fall back to their pinned
+  constant. The other `latest`-resolving setups still fail hard; that is pre-existing and is
+  written down as a known imperfection rather than quietly fixed everywhere.
+
+- **`EXAMPLES.md` gained a Known Imperfections section.** Nine limitations stated plainly instead
+  of smoothed over: that `latest` and reproducibility are in genuine tension and only an image
+  digest resolves it; the 18 setups whose default cannot track upstream at all; that a setup's
+  default and its template's default are separate values that already disagree (`go` 1.25.3 vs
+  1.25.7, `jdk` 21 vs 25, `nodejs` 20 vs 22) with nothing keeping them in sync; that `latest` puts
+  a rate-limited network call on the build path; that apt version pins are ephemeral; that all 41
+  VS Code extension setups and 14 of 17 notebook kernels have no version knob at all; and that
+  `mvn`'s frozen default has already fallen off Apache's primary CDN.
+
+- **Every setup that accepts a version now has a template that passes one.** 27 templates gained a
+  version parameter, closing the gap where a working `--version` flag was unreachable from
+  `booth config` and the TUI: `aider`, `ansible`, `aws-cdk`, `aws-cli`, `aws-sam-cli`, `azure-cli`,
+  `claude-code`, `clojure`, `cmake`, `codex`, `fpc`, `gcloud`, `gradle`, `haskell`, `helm`,
+  `kubectl`, `lazydocker`, `lazygit`, `make`, `mongodb`, `ollama`, `postgresql`, `pulumi`, `redis`,
+  `sbt`, `terraform` — so `booth config --select terraform:1.9.8` now reaches
+  `setup terraform --version 1.9.8`. Where the setup resolves `latest` at build time the parameter
+  defaults to `latest`, so an unspecified version still means "current release" rather than a pin
+  that ages. Four setups are deliberately left out, each for a stated reason (`firebase`'s
+  `--node-version` is not a Firebase version; the desktop templates' knob is the Python template's;
+  `dotnet`'s channel and SDK version are either/or; the conda extension's name would collide) —
+  see [`EXAMPLES.md`](../EXAMPLES.md#reaching-the-knob-from-booth-config).
+
+- **`latest` is now a valid version for four apt-backed setups.** `fpc`, `postgresql` and `gcloud`
+  built the value straight into a package name, so `--version latest` would have asked apt for
+  `postgresql-latest` or the pin `google-cloud-cli=latest` and failed; it now means the same thing as
+  passing nothing — whatever the repo currently serves. `make` gained `--version apt` (and `latest`)
+  as a synonym for `--from-apt`, so the distro build and a pinned from-source build are sayable
+  through one knob instead of two mutually exclusive flags. Passing a concrete version to any of the
+  four behaves exactly as before.
+
+- **Selecting `gh-copilot` no longer silently unpins `gh`.** Its Boothfile segment emitted
+  `setup gh` on top of the `requires = ["gh"]` that already pulls the GitHub CLI template in. With
+  `GH_VERSION` now exposed that duplicate was actively harmful: the generated Boothfile ran
+  `setup gh --version 2.97.0` and then a bare `setup gh` immediately after, so the second install
+  overwrote the pinned one with whatever the apt repo served. The redundant line is gone; `requires`
+  already guarantees it.
+
+- **New guard: a template cannot name a setup that does not exist.**
+  `tests/config/test86-all-setups-exist.sh` asserts that every `setup <name>` emitted by any
+  template has a matching `variants/base/setups/<name>--setup.sh` — the mirror of test64, which
+  already guarded the same thing for `install` backends. It is what the `cursor` gap needed:
+  verified to fail on exactly that template with the script removed, and to pass with it in
+  place (182 setup names checked).
+
+- **New guard: a declared param cannot go unused.**
+  `tests/config/test88-all-params-are-wired.sh` asserts that every `[params.X]` a template
+  declares is referenced as `${X}` somewhere in that template's directory (directory, not file,
+  because a parent may declare a param its extensions consume — `ollama` declares `OLLAMA_PORT`
+  for its expose and autostart extensions). An unreferenced param is worse than a missing one:
+  `booth config` shows the knob and writes `arg X=<value>` into the Boothfile, and nothing
+  consumes it, so the user's choice is silently dropped. That is exactly the shape of a dropped
+  `--version ${X_VERSION}`, and no other suite would notice. Verified by deleting the reference
+  from `tools/gh` and watching test 117 fail; 152 params checked.
+
+- **`cursor` and `gh` gained a config test.** `tests/config/test87-init-cursor-gh.sh` covers what
+  the two fixes above actually produce: cursor's `CURSOR_TRACK` default and pin, its four
+  credential mounts across the three host layouts, gh's `GH_VERSION` default and pin, and — the
+  regression that prompted it — that selecting `gh-copilot` emits exactly one `setup gh`, the
+  pinned one. Verified by restoring the duplicate `setup gh` and watching tests 13 and 15 fail.
+
+- **New top-level [`EXAMPLES.md`](../EXAMPLES.md).** One page from a cold start to a running
+  example: install, `booth example list`, `booth example try`, the full catalog grouped by
+  kind, and a walk-through of `elixir`, `data`, and `kind`. It states plainly that the printed
+  list is the authoritative one and that the document's copy is a snapshot. It also carries a
+  survey of **which setups support version pinning** — exact pin, series-level pin, or no knob
+  at all — including the setups whose working version argument no `template.toml` exposes yet
+  (`helm`, `terraform`, `gradle`, the JetBrains IDEs, and ~20 more), so the gap is written
+  down rather than rediscovered.
+
 - **A select-DSL param value can hold a `/`, by quoting it.** A Go module path is
   nothing but slashes, and the DSL splits on `/` before anything else, so a package
   pinned through a param never survived the round trip: `booth config` on a booth

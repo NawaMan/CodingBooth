@@ -144,7 +144,7 @@ CodingBooth provides several ready-to-use examples to get you started.
 At this point, you can inspect the code, modify it, then build and run it.
 **NOTE:** Visit http://localhost:10000 in your browser to access the UI (except for command mode).
 
-Not sure which example to start from? See **[What Each Example Demonstrates](docs/EXAMPLES_ADVANTAGES.md)** — a catalog of every workspace in `examples/workspaces/` and the specific CodingBooth advantage each one showcases.
+Not sure which example to start from? See **[Examples](EXAMPLES.md)** — the full catalog, grouped and with a walk-through of three that show the range. For the specific CodingBooth advantage each workspace showcases, see **[What Each Example Demonstrates](docs/EXAMPLES_ADVANTAGES.md)**.
 
 ### Try with `booth config ...`
 
@@ -389,6 +389,7 @@ ln -sf /opt/codingbooth/AGENT.md /home/coder/WARP.md        # Warp terminal
 
 User-facing guides:
 
+- **[Examples](EXAMPLES.md)** — Install, run your first example, the full catalog, and which setups support version pinning
 - **[booth install](docs/BOOTH_INSTALL.md)** — Install and uninstall every layer: shell function, wrapper, binary, `.booth/`, lock file, shared cache
 - **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS
 - **[booth config](docs/BOOTH_CONFIG.md)** — Template-driven project scaffolding
