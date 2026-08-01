@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select claude-code+auto-accept+credential+settings-cache
+
+env APT_SNAPSHOT=20260801T000000Z
+
+arg CLAUDE_CODE_VERSION=latest
+
+setup claude-code ${CLAUDE_CODE_VERSION}

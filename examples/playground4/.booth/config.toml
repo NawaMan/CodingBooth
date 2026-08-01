@@ -1,0 +1,7 @@
+# Configured by: booth config --no-tui --overwrite --select claude-code+auto-accept+credential+settings-cache
+
+
+run-args = [
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"
+]

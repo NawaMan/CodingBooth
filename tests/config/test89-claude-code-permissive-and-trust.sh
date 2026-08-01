@@ -53,7 +53,31 @@ run booth config $prj --no-tui --overwrite --select "claude-code+auto-accept"
 # The permission set still says what it is meant to say
 # ---------------------------------------------------------------------------
 has "$settings" '"Bash"'                    ; check $? "seeds the permissive allow list"
-has "$settings" '"Bash(git push --force*)"' ; check $? "keeps force-push denied"
+# Force push has four spellings and the guard only ever caught the long one, so
+# each is pinned: `-f` ran unblocked in a booth (proved against `git reset --hard`
+# as a control), and `+refspec` means the same thing with no flag at all. Both
+# positions matter — a flag can trail the remote as easily as precede it.
+has "$settings" '"Bash(git push --force*)"'   ; check $? "keeps --force denied"
+has "$settings" '"Bash(git push * --force*)"' ; check $? "keeps trailing --force denied"
+has "$settings" '"Bash(git push -f*)"'        ; check $? "keeps -f denied"
+has "$settings" '"Bash(git push * -f*)"'      ; check $? "keeps trailing -f denied"
+has "$settings" '"Bash(git push +*)"'         ; check $? "keeps +refspec force denied"
+has "$settings" '"Bash(git push * +*)"'       ; check $? "keeps trailing +refspec force denied"
+
+# The template carries this file as a TOML string, so nothing on the way out
+# validates it as JSON. Drop the last entry of the allow or deny list by hand and
+# the one above it keeps its comma, shipping a settings.json Claude Code cannot
+# read — which is how removing the curl-pipe rules nearly went out. Full parse
+# where jq exists; the trailing-comma check is the portable floor, and it is the
+# failure hand-edits actually produce.
+function settings_is_valid_json() {
+    if command -v jq >/dev/null 2>&1; then
+        jq -e . "$settings" >/dev/null 2>&1
+    else
+        ! tr -d ' \n\t' < "$settings" | grep -q ',[]}]'
+    fi
+}
+settings_is_valid_json ; check $? "seeded settings.json is valid JSON"
 
 # ---------------------------------------------------------------------------
 # ... without the rule Claude Code rejects
@@ -64,7 +88,20 @@ has "$settings" '"Bash(git push --force*)"' ; check $? "keeps force-push denied"
 # booth and the elixir example — so assert on every checked-in copy, not only the
 # one this test generates. Anchored to a whole line so that prose mentioning the
 # rule (this file, the template's own comment, the CHANGELOG) is not a match.
-! grep -rqE '^[[:space:]]*"mcp__\*",?[[:space:]]*$' "$(dirname "$0")/../.." 2>/dev/null
+#
+# Scans git's index rather than walking the directory, because the tree holds
+# more than this checkout: `worktree/` nests other branches' working copies, and
+# a branch that predates the fix still has the rule in its own templates/. A
+# directory walk read those as if they were ours and failed the suite from main
+# while passing from inside a worktree, which is a property of where the test ran
+# and not of what is committed. The index also excludes tests/logs/ and the
+# prj--*/ scratch that config tests leave behind mid-run.
+function repo_has_bare_mcp_wildcard() {
+    local root
+    root="$(cd "$(dirname "$0")/../.." && pwd)" || return 1
+    git -C "$root" grep -qIE '^[[:space:]]*"mcp__\*",?[[:space:]]*$' -- ':!tests/config/test89*' 2>/dev/null
+}
+! repo_has_bare_mcp_wildcard
 check $? "no bare mcp__* wildcard anywhere in the repo"
 
 # ---------------------------------------------------------------------------

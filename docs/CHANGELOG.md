@@ -4,6 +4,41 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The force-push guard only ever blocked one of the four ways to force-push.** Accept Edits denied
+  `git push --force*` in both flag positions and stopped there, so `git push -f` — the spelling
+  most people actually type — went straight through. Confirmed in a booth rather than reasoned
+  about, using `git reset --hard` as a control: that came back `PERMISSION-BLOCKED` while
+  `git push -f nosuchremote master` came back `RAN`, failing only because the remote did not
+  exist. The same probe turned up a fourth spelling nothing covered: `git push origin +master`
+  forces via the refspec's `+` prefix, with no flag for a pattern to match. The list now pins all
+  four, each in both positions, since a flag trails the remote as readily as it precedes it.
+  Re-verified end to end: `-f` before and after the remote, `+refspec` with and without a remote,
+  all blocked — and a plain `git push origin master` still runs, so the added patterns do not
+  catch ordinary pushes. `tests/config/test89` asserts each rule. Note this leaves
+  `--force-with-lease` denied along with the rest: it is the *safe* rewrite, and deny beats allow
+  in Claude Code, so permitting it means narrowing the `--force*` pattern rather than adding an
+  allow entry — worth deciding deliberately rather than by accident.
+
+- **Accept Edits stopped blocking `curl … | bash`, which is how CodingBooth itself is installed.**
+  The seeded deny list carried `curl *|bash*`, `wget *|bash*`, both spaced variants, and
+  `chmod 777 *`. They read like safety rules; they were not. `Bash` is on the allow list, so
+  `curl -o /tmp/i.sh URL && bash /tmp/i.sh` was never blocked, and `chmod 777 *` does not match
+  `chmod -R 777 .` — the rules blocked a *spelling*, not a capability, and anything willing to
+  use a different one walked straight past. Nor were they catching accidents: nobody pipes a
+  remote script to a shell by mistake. What they did reliably block was the project's own
+  documentation — `AGENT_SETUP.md` installs the booth wrapper with `curl -fsSL … | bash`, and
+  `AGENT.md`'s setup-script template opens with the same line, so an agent following either got
+  a refusal. (The `What NOT to Do` row naming `curl | bash` is about *persistence*, not safety:
+  every other row in that table is, and the sentence after it explicitly permits ephemeral
+  installs for experimentation.) Removed from all four copies of the list — the template plus
+  the `blog`, `elixir-example` and `playground4` booths that carry hand-written duplicates.
+  What stays is the part that earns its place: the git working-tree destroyers and the `rm -rf`
+  guards are **anti-accident, not anti-adversary**. An agent reaching for `git reset --hard` to
+  tidy up is a real failure mode, and the rule catches the spelling it actually uses. Removing
+  the last entry of a list also leaves the one above it holding a comma, which would ship a
+  `settings.json` Claude Code cannot parse — it nearly did here — so `tests/config/test89` now
+  asserts the generated file is valid JSON, verified by reintroducing the comma.
+
 - **A booth no longer asks whether you trust your own project, every single start.** Claude Code
   gates a folder behind "Quick safety check: Is this a project you created or one you trust?"
   before it will work in it. That gate is not a permission rule, so nothing in the Accept Edits

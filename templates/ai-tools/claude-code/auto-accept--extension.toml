@@ -35,6 +35,10 @@ tags = [
         "deny": [
             "Bash(git push --force*)",
             "Bash(git push * --force*)",
+            "Bash(git push -f*)",
+            "Bash(git push * -f*)",
+            "Bash(git push +*)",
+            "Bash(git push * +*)",
             "Bash(git reset --hard*)",
             "Bash(git clean -f*)",
             "Bash(git checkout -- .)",
@@ -47,12 +51,7 @@ tags = [
             "Bash(git push * :*)",
             "Bash(git stash clear)",
             "Bash(rm -rf /*)",
-            "Bash(rm -rf /)",
-            "Bash(chmod 777 *)",
-            "Bash(curl *|bash*)",
-            "Bash(wget *|bash*)",
-            "Bash(curl *| bash*)",
-            "Bash(wget *| bash*)"
+            "Bash(rm -rf /)"
         ]
     }
 }
