@@ -4,6 +4,41 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Booths started at the same time no longer fight over the same port.** Port selection was
+  check-then-use: `isPortFree` bound the port, closed it immediately, and handed the number
+  back — then `docker run -p 127.0.0.1:<port>` claimed it seconds later, after name
+  resolution, sidecar startup and manifest writes had each made their own docker calls. And
+  the default port spec is `NEXT`, which hands every caller the *first* free slot, so two
+  booths starting together were not merely at risk of picking the same number, they were
+  steered onto it. The loser died with `Bind for 127.0.0.1:11000 failed: port is already
+  allocated` — exit 125 and no output whatsoever, which is why this had only ever been seen
+  from the outside as booths intermittently returning nothing under a parallel test run.
+  Measured on this machine, eight booths started simultaneously: **6 of 8 failed**.
+  The fix is in two parts, because one alone is not enough. The socket found during the scan
+  is now *held* rather than closed, so the port stays genuinely busy while the booth prepares
+  (6/8 → 2-3/8). It cannot cover the rest: docker has to bind the port, so the listener must
+  be released before `docker run`, and that call takes ~200ms to reach the networking step —
+  a window another booth can still scan through. So the chosen port is also recorded as a
+  claim file under `<tmp>/codingbooth-ports/`, which other booths consult during their own
+  scan and which is dropped once the container is up. A claim older than 60s is ignored, so a
+  booth killed mid-launch parks a port for a minute at most, and an unusable claim directory
+  degrades to the held-socket behaviour instead of refusing to start. Eight and sixteen
+  booths started simultaneously now succeed on distinct ports, **0 failures** across four
+  runs. An explicit `--port` is untouched: it is a contract, so a conflict there still fails
+  loudly rather than quietly moving.
+
+- **`test-boothfile-aws-cdk` was failing on output that matched.** The test greps `cdk --help`
+  for `synth|deploy`; both words are right there in the output it printed on failure. The bug
+  was the plumbing: `echo "$VAR" | grep -q PATTERN` under `set -o pipefail`. `grep -q` exits at
+  the first match, bash's `echo` builtin writes in buffer-sized chunks, and the write after the
+  pipe closes takes SIGPIPE — so the pipeline reports 141 and the `if` takes the else branch
+  even though the text matched. It is purely a function of payload size: measured at 4KB it
+  never fires, at 60KB it always does, and `cdk --help` is 10,564 bytes — right in the
+  coin-flip band, 16 spurious failures in 40 runs. Matching with a here-string instead has no
+  writer process to kill. Of the 318 other `echo "$X" | grep -q` sites in the suite this was
+  the only one grepping an untruncated multi-KB dump; the rest compare small captures, and
+  `grok`/`herdr` — the only other tests reading a full `--help` — pipe through `head` first.
+
 - **Every booth can now read its own Markdown.** `viewmd`
   ([MarkDownViewer](https://github.com/NawaMan/MarkDownViewer)) is installed into the base
   image by `variants/base/setups/viewmd--setup.sh`, so all variants inherit it — a single Go

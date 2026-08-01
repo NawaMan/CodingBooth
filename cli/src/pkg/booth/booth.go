@@ -53,6 +53,17 @@ func NewBooth(ctx appctx.AppContext) *Booth {
 // Run executes the booth based on the provided run mode.
 // The AppContext should already be prepared with all necessary arguments.
 func (booth *Booth) Run(runMode string) error {
+	// Hand the port back to the OS: the container is about to publish it, and
+	// docker cannot bind a port this process is still holding. Every path below
+	// ends in a `docker run` that maps it. Sidecars that publish the port earlier
+	// (DinD, egress) release it themselves.
+	//
+	// The on-disk claim outlives the listener on purpose — it is what keeps another
+	// booth off this port while docker works its way to the bind — and is dropped
+	// once the run returns and the container owns the port for real.
+	releasePortReservation()
+	defer releasePortClaim()
+
 	// Execute based on run mode
 	switch runMode {
 	case "DAEMON":

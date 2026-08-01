@@ -131,6 +131,9 @@ func startEgressNetnsOwner(ctx appctx.AppContext, ownerName, netName string, hos
 	}
 
 	parentName := ctx.Name()
+	// This sidecar owns the network namespace, so it publishes the booth port.
+	// Release the reservation or its -p mapping cannot bind.
+	releasePortReservation()
 	portMapping := formatPortMapping(ctx.Public(), hostPort, 10000)
 	args := []string{
 		"run", "-d", "--rm",

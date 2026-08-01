@@ -11,6 +11,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 )
@@ -42,11 +43,13 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 			break
 		}
 		// Generate random ports in increments of portScanStep from base (e.g. 10000, 11000, 12000, ...).
-		portNumber, portGenerated = findRandomPort(base)
+		var listener net.Listener
+		portNumber, listener, portGenerated = findRandomPort(base)
 		if !portGenerated {
 			fmt.Fprintf(os.Stderr, "Error: unable to find a free RANDOM port at or above %d.\n", base)
 			os.Exit(1)
 		}
+		holdPortReservation(listener)
 
 	case "NEXT":
 		// In dryrun mode, avoid binding sockets so tests remain deterministic in restricted environments.
@@ -55,11 +58,13 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 			break
 		}
 		// Find next available port starting from base in increments of portScanStep.
-		portNumber, portGenerated = findNextPort(base)
+		var listener net.Listener
+		portNumber, listener, portGenerated = findNextPort(base)
 		if !portGenerated {
 			fmt.Fprintf(os.Stderr, "Error: unable to find the NEXT free port at or above %d.\n", base)
 			os.Exit(1)
 		}
+		holdPortReservation(listener)
 
 	default:
 		// User-specified port: validate it
@@ -114,8 +119,30 @@ func parseSymbolicPort(spec string) (keyword string, base int, err error) {
 	return name, b, nil
 }
 
+// portReservation holds the socket for the port NEXT / RANDOM picked, from the
+// moment it is chosen until the container that publishes it is started.
+//
+// Without it, port selection was check-then-use: bind, close immediately, hand the
+// number back — and only seconds later does `docker run -p 127.0.0.1:<port>` claim
+// it. Everything in between (name resolution, sidecar startup, manifest writes)
+// makes several docker calls, so the gap is roughly 1-3 seconds. NEXT hands every
+// caller the *first* free port, so two booths starting together do not merely risk
+// the same number, they are steered onto it, and the loser dies with
+// "Bind for 127.0.0.1:<port> failed: port is already allocated" — exit 125 and no
+// output at all, which is how this surfaced: as booths intermittently producing
+// nothing under a parallel test run.
+//
+// Keeping the listener open makes the port genuinely busy for that whole window,
+// so a second booth's scan skips it and moves to the next slot. It is released
+// immediately before the port is published; see releasePortReservation.
+var (
+	portReservationMutex sync.Mutex
+	portReservation      net.Listener
+)
+
 // findRandomPort finds a random free port at or above base in increments of portScanStep.
-func findRandomPort(base int) (int, bool) {
+// The returned listener is a live reservation on that port; the caller owns it.
+func findRandomPort(base int) (int, net.Listener, bool) {
 	numSlots := (65000-base)/portScanStep + 1
 	if numSlots < 1 {
 		numSlots = 1
@@ -126,35 +153,94 @@ func findRandomPort(base int) (int, bool) {
 		if port > 65535 {
 			continue
 		}
-		if isPortFree(port) {
-			return port, true
+		if listener, ok := reservePort(port); ok {
+			return port, listener, true
 		}
 	}
 
-	return 0, false
+	return 0, nil, false
 }
 
 // findNextPort finds the next free port at or above base in increments of portScanStep.
-func findNextPort(base int) (int, bool) {
+// The returned listener is a live reservation on that port; the caller owns it.
+func findNextPort(base int) (int, net.Listener, bool) {
 	for port := base; port <= 65535; port += portScanStep {
-		if isPortFree(port) {
-			return port, true
+		if listener, ok := reservePort(port); ok {
+			return port, listener, true
 		}
 	}
-	return 0, false
+	return 0, nil, false
 }
 
-// isPortFree checks if a port is available.
-func isPortFree(port int) bool {
-	// Try to listen on the port
+// reservePort takes a port for this booth, on both signals that matter: the socket
+// itself, and the on-disk claim that covers the stretch where the socket has been
+// handed to docker but docker has not bound it yet (see port_claim.go). On success
+// the returned listener is still open and the claim is recorded.
+func reservePort(port int) (net.Listener, bool) {
+	// A booth already inside `docker run` for this port has closed its listener, so
+	// the port reads as bindable. Only its claim reveals it.
+	if portIsClaimed(port) {
+		return nil, false
+	}
+	listener, ok := bindPort(port)
+	if !ok {
+		return nil, false
+	}
+	if !claimPort(port) {
+		// Another booth claimed it between the check above and now.
+		listener.Close()
+		return nil, false
+	}
+	return listener, true
+}
+
+// bindPort binds the port and returns the still-open listener. A closed listener
+// would only prove the port was free a moment ago; holding it open is what keeps
+// the port ours until the container takes it.
+func bindPort(port int) (net.Listener, bool) {
 	addr := fmt.Sprintf(":%d", port)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		// Port is in use
+		return nil, false
+	}
+	return listener, true
+}
+
+// isPortFree reports whether a port can be bound right now, releasing it again
+// straight away. Only meaningful as an observation — use reservePort when the
+// answer has to still be true a moment later.
+func isPortFree(port int) bool {
+	listener, ok := bindPort(port)
+	if !ok {
 		return false
 	}
 	listener.Close()
 	return true
+}
+
+// holdPortReservation parks the reservation until the container is started,
+// replacing (and closing) any reservation already held.
+func holdPortReservation(listener net.Listener) {
+	portReservationMutex.Lock()
+	defer portReservationMutex.Unlock()
+	if portReservation != nil && portReservation != listener {
+		_ = portReservation.Close()
+	}
+	portReservation = listener
+}
+
+// releasePortReservation frees the held port so docker can bind it. It must be
+// called before anything publishes the booth port — the booth container itself, or
+// a DinD/egress sidecar that publishes it on the booth's behalf. Idempotent, and a
+// no-op when no port was reserved (an explicit --port, or --dryrun).
+func releasePortReservation() {
+	portReservationMutex.Lock()
+	defer portReservationMutex.Unlock()
+	if portReservation != nil {
+		_ = portReservation.Close()
+		portReservation = nil
+	}
 }
 
 // printPortBanner prints the port selection banner.

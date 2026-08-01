@@ -21,11 +21,19 @@ echo "=== Test: Boothfile AWS CDK Installation ==="
 
 FAILED=0
 
+# Match with a here-string, never `echo "$X" | grep -q`. `grep -q` exits at the
+# first match, and bash's `echo` builtin writes its argument in buffer-sized
+# chunks — so on anything past a few KB the next write lands on a closed pipe,
+# echo dies of SIGPIPE (141), and `set -o pipefail` reports the whole pipeline as
+# a failure even though the text matched. `cdk --help` is ~10KB, right at the size
+# where that race is a coin flip: measured 16 failures in 40 runs. A here-string
+# has no writer process to kill.
+
 # Test 1: CDK is installed and shows a version number
 ACTUAL=$(run_coding_booth --silence-build -- cdk --version 2>/dev/null)
 ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
-if echo "$ACTUAL" | grep -qE "[0-9]+\.[0-9]+\.[0-9]+"; then
+if grep -qE "[0-9]+\.[0-9]+\.[0-9]+" <<<"$ACTUAL"; then
     print_test_result "true" "$0" "1" "AWS CDK is installed via Boothfile"
 else
     print_test_result "false" "$0" "1" "AWS CDK should be installed"
@@ -36,7 +44,7 @@ fi
 # Test 2: CDK help includes synth or deploy commands
 HELP_OUTPUT=$(run_coding_booth --silence-build -- cdk --help 2>&1) || true
 
-if echo "$HELP_OUTPUT" | grep -qE "synth|deploy"; then
+if grep -qE "synth|deploy" <<<"$HELP_OUTPUT"; then
     print_test_result "true" "$0" "2" "AWS CDK help includes synth/deploy commands"
 else
     print_test_result "false" "$0" "2" "AWS CDK help should include synth/deploy commands"

@@ -118,6 +118,11 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 		fmt.Printf("Starting DinD sidecar: %s\n", dindName)
 	}
 
+	// With DinD the booth shares the sidecar's network namespace, so it is the
+	// sidecar that publishes the booth port. Release the reservation here or its
+	// own -p mapping cannot bind.
+	releasePortReservation()
+
 	// Detect if running on Docker Desktop
 	isDockerDesktop := isDockerDesktop(ctx)
 
