@@ -133,8 +133,14 @@ echo "=== Credential Seeding ==="
 echo "To reuse credentials from host, add to .booth/config.toml:"
 echo ""
 echo '  run-args = ['
-echo '      # Claude Code config and credentials (home-seeding: may update tokens/session)'
+echo '      # Claude Code config (home-seeding: onboarding state, theme, etc.)'
 echo '      "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",'
-echo '      "-v", "~/.claude:/etc/cb-home-seed/.claude:ro"'
+echo '      # Claude Code credentials (home-override: always use fresh host credentials)'
+echo '      "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"'
 echo '  ]'
+echo ""
+echo "Seed the single credential file, not the whole ~/.claude: that directory also"
+echo "holds session history and project state, which do not belong in a booth. And"
+echo "seed it through /etc/cb-home (override), not /etc/cb-home-seed (no-clobber),"
+echo "so a refreshed host token reaches the booth instead of losing to a stale copy."
 echo ""

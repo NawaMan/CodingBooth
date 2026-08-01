@@ -4,6 +4,57 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A booth no longer asks whether you trust your own project, every single start.** Claude Code
+  gates a folder behind "Quick safety check: Is this a project you created or one you trust?"
+  before it will work in it. That gate is not a permission rule, so nothing in the Accept Edits
+  allow list could ever have suppressed it — it is project state, recorded per path in
+  `~/.claude.json` as `projects[<dir>].hasTrustDialogAccepted`. The settings cache persists
+  `~/.claude/`, a *directory*; `.claude.json` is a file sitting beside it, outside the mount. So
+  every start reseeded it from the host, whose copy records trust for host paths and has never
+  heard of `/home/coder/code`: the booth's own "yes, I trust this folder" was written and then
+  dropped at shutdown, and the prompt came back forever. The Accept Edits startup segment now
+  stamps the flag into the seeded copy, beside the `jq` patch that already injects `rm -rf` deny
+  rules for detected mounts — the same seed-then-amend shape, pointed at a second file. Stamped at
+  run time rather than shipped in the seeded content because the path isn't knowable earlier:
+  `CODE_NAME` can move the code directory, so the segment takes it from its own cwd. It steps
+  aside when `~/.claude.json` is a bind mount, because then `cache/` or `shared/` owns the file and
+  a persisted copy already carries the answer. Deliberately narrow: no `permissions.defaultMode` —
+  the existing allow list already suppresses the prompts it covers (verified: `Bash` runs
+  unprompted inside a booth), so setting a mode would change behaviour that works.
+  `tests/config/test89` guards the emitted script and
+  `tests/complex/test-claude-code-trust-stamp` guards the runtime result, including the
+  step-aside; both verified by reintroducing the regression.
+
+- **The Accept Edits extension no longer opens every session with a warning modal.** Its seeded
+  `.claude/settings.json` listed `"mcp__*"` under `permissions.allow`, which Claude Code rejects —
+  a glob is permitted only in the tool position, after a literal `mcp__<server>__` prefix. The rule
+  therefore never allowed anything, and worse, it raised a blocking "Settings Warning" prompt that
+  had to be dismissed on *every* launch before the session could start: an extension whose whole
+  purpose is removing friction was adding a keystroke to each run. Dropped, with the reason
+  recorded in the template — allowing an MCP server means naming it. The rule had been hand-copied
+  into two other settings files, `blog/.booth/` and the shipped `elixir-example` workspace, so
+  `booth example try elixir` handed every new user the same modal; both got the same fix. The
+  second copy only surfaced because `tests/config/test89` asserts repo-wide rather than only on
+  what it generates — worth remembering the next time a rule is duplicated by hand. Deny and ask
+  rules accept wildcards anywhere, so the deny list is untouched.
+
+- **Seeded credentials are now readable by the booth user.** Selecting `claude-code` auto-selects
+  both its credential extension (which drops `~/.claude/.credentials.json` in through
+  `/etc/cb-home`) and its settings cache (which bind-mounts `~/.claude` from `.booth/cache/`).
+  booth-entry's copy runs as root, so the credential landed `root:root 0600` — and its blanket
+  ownership sweep, `find "$HOME_DIR" -xdev -user root`, stops at the boundary of that bind mount
+  and never reached it. The mount was present and the file was there, but `claude` runs as
+  `coder` and got "Permission denied" reading its own credentials, so every booth fell back to
+  an interactive login. booth-entry now hands over ownership of exactly what each seed/override
+  layer copied, walking the *source* tree so the cost tracks the size of the layer rather than
+  whatever the cache has accumulated. The same defect silently applied to `gemini-cli`, `goose`,
+  `grok`, `oh-my-pi` and `opencode`, whose credential seeds also target a directory their own
+  settings-cache extension mounts. `tests/complex/test-claude-code-credential-ownership` guards
+  it; the existing `test-claude-code-credential-cache` could not, because it pre-creates the
+  cached credential file on the host and `cp` over an existing file keeps that file's owner.
+  `claude-code--setup.sh` also stopped advertising the old `~/.claude:/etc/cb-home-seed/.claude`
+  recipe, which seeds session history along with the credential and, being no-clobber, loses a
+  refreshed host token to the stale cached copy.
 - **Booths started at the same time no longer fight over the same port.** Port selection was
   check-then-use: `isPortFree` bound the port, closed it immediately, and handed the number
   back — then `docker run -p 127.0.0.1:<port>` claimed it seconds later, after name

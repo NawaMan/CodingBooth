@@ -419,6 +419,31 @@ smart_copy() {
   done
 }
 
+# chown_copied: hand the user everything a seed/override layer just placed in $HOME_DIR.
+# Usage: chown_copied <source_dir> <dest_dir>
+#
+# smart_copy runs as root, so every file it creates is born root-owned. The blanket
+# `find "$HOME_DIR" -xdev ... -user root` after the copies cannot reach all of them:
+# cache and shared mounts (.booth/cache/home/coder/.claude, say) are separate
+# filesystems and -xdev stops at their boundary. A credential seeded into one —
+# ~/.claude/.credentials.json, mode 600 — stayed root:root, so the tool that reads
+# it as coder got "Permission denied" and the mount looked present but unusable.
+#
+# Walk the SOURCE, not the destination: the cost then tracks the size of the seed
+# rather than the size of whatever the cache has accumulated (a cached ~/.m2 is
+# orders of magnitude bigger than the layer being copied over it). -L matches the
+# `cp -L` in smart_copy, which materializes link targets as real files.
+chown_copied() {
+  local src="$1" dest="$2"
+
+  [ -d "$src" ] || return 0
+  [ -d "$dest" ] || return 0
+
+  ( cd "$src" && find -L . -mindepth 1 -printf '%P\0' 2>/dev/null ) \
+    | ( cd "$dest" && xargs -0 -r chown -h "$HOST_UID:$HOST_GID" -- 2>/dev/null ) \
+    || true
+}
+
 # When --persist-home is active (BOOTH_HOME_PERSISTED=true) and the home volume
 # has already been seeded, skip seed (no-clobber) layers to preserve user
 # customizations. Override layers always run to enforce team/image policies.
@@ -439,6 +464,7 @@ if [ "$RUN_SEEDS" = "true" ]; then
   if [ -n "$BOOTH_HOME_SEED_DIR" ]; then
     info "Copying project home-seed files from $BOOTH_HOME_SEED_DIR to $HOME_DIR (no-clobber)..."
     smart_copy "$BOOTH_HOME_SEED_DIR" "$HOME_DIR" seed
+    chown_copied "$BOOTH_HOME_SEED_DIR" "$HOME_DIR"
   fi
 else
   info "11) Skipping project's home-seed folder (home already seeded)."
@@ -452,6 +478,7 @@ fi
 if [ -n "$BOOTH_HOME_DIR" ]; then
   info "Copying project home files from $BOOTH_HOME_DIR to $HOME_DIR (override)..."
   smart_copy "$BOOTH_HOME_DIR" "$HOME_DIR" override
+  chown_copied "$BOOTH_HOME_DIR" "$HOME_DIR"
 fi
 
 if [ "$RUN_SEEDS" = "true" ]; then
@@ -460,6 +487,7 @@ if [ "$RUN_SEEDS" = "true" ]; then
   if [ -d "$BOOTH_HOME_SEED" ]; then
     info "Copying seed files from $BOOTH_HOME_SEED to $HOME_DIR..."
     smart_copy "$BOOTH_HOME_SEED" "$HOME_DIR" seed
+    chown_copied "$BOOTH_HOME_SEED" "$HOME_DIR"
   fi
 else
   info "12) Skipping /etc/cb-home-seed/ (home already seeded)."
@@ -474,6 +502,7 @@ if [ "$RUN_SEEDS" = "true" ]; then
   if [ -d /etc/skel/Desktop ] && [ -n "$(ls -A /etc/skel/Desktop 2>/dev/null)" ]; then
     mkdir -p "$HOME_DIR/Desktop"
     smart_copy /etc/skel/Desktop "$HOME_DIR/Desktop" seed
+    chown_copied /etc/skel/Desktop "$HOME_DIR/Desktop"
   fi
 else
   info "12b) Skipping /etc/skel/Desktop (home already seeded)."
@@ -484,6 +513,7 @@ BOOTH_HOME_OVERRIDE="/etc/cb-home"
 if [ -d "$BOOTH_HOME_OVERRIDE" ]; then
   info "Copying override files from $BOOTH_HOME_OVERRIDE to $HOME_DIR..."
   smart_copy "$BOOTH_HOME_OVERRIDE" "$HOME_DIR" override
+  chown_copied "$BOOTH_HOME_OVERRIDE" "$HOME_DIR"
 fi
 
 # Mark home as seeded for persist-home volumes (skip seeds on subsequent starts)

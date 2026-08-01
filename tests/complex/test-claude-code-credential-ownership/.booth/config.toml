@@ -1,0 +1,16 @@
+# Test configuration for credential ownership inside a cache-mounted directory.
+#
+# This is the shape the claude-code template generates by default: the
+# credential extension drops a file into ~/.claude, and the auto-selected
+# settings-cache extension bind-mounts that same directory from .booth/cache/.
+# The copy runs as root, so the copied file has to be handed back to the booth
+# user or the tool that reads it cannot open its own credentials.
+
+variant = "base"
+
+run-args = [
+    # Override path (always overwrites) — mode 0600, as real credentials are.
+    "-v", "./host-credential/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",
+    # Seed path (no-clobber) — the shape gemini-cli/goose/grok/opencode use.
+    "-v", "./host-credential/.claude/seeded-secret.json:/etc/cb-home-seed/.claude/seeded-secret.json:ro",
+]
