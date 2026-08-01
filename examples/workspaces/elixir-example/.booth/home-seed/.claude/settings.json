@@ -12,8 +12,7 @@
             "WebSearch",
             "TodoWrite",
             "TaskCreate",
-            "TaskUpdate",
-            "mcp__*"
+            "TaskUpdate"
         ],
         "deny": [
             "Bash(git push --force*)",
