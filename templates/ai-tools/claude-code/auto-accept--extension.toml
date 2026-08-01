@@ -8,6 +8,12 @@ tags = [
     "edits"
 ]
 
+# No blanket MCP allow rule. Claude Code rejects a bare "mcp__*" in `allow` — a glob is
+# permitted only in the tool position, after a literal mcp__<server>__ prefix — so the rule
+# never took effect and instead raised a "Settings Warning" modal that had to be dismissed
+# before the session could start, on every single launch. Allowing a server means naming it:
+# add "mcp__<server>__*" to a project's own .claude/settings.json. Deny and ask rules still
+# accept wildcards anywhere, so the deny list below is unaffected.
 [files.home-seed]
 ".claude/settings.json" = """
 {
@@ -24,8 +30,7 @@ tags = [
             "WebSearch",
             "TodoWrite",
             "TaskCreate",
-            "TaskUpdate",
-            "mcp__*"
+            "TaskUpdate"
         ],
         "deny": [
             "Bash(git push --force*)",

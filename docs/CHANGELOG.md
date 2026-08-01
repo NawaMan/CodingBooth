@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The Accept Edits extension no longer opens every session with a warning modal.** Its seeded
+  `.claude/settings.json` listed `"mcp__*"` under `permissions.allow`, which Claude Code rejects —
+  a glob is permitted only in the tool position, after a literal `mcp__<server>__` prefix. The rule
+  therefore never allowed anything, and worse, it raised a blocking "Settings Warning" prompt that
+  had to be dismissed on *every* launch before the session could start: an extension whose whole
+  purpose is removing friction was adding a keystroke to each run. Dropped, with the reason
+  recorded in the template — allowing an MCP server means naming it. `blog/.booth/` carried a
+  hand-copied duplicate of the same list and got the same fix. Deny and ask rules accept wildcards
+  anywhere, so the deny list is untouched.
+
 - **Seeded credentials are now readable by the booth user.** Selecting `claude-code` auto-selects
   both its credential extension (which drops `~/.claude/.credentials.json` in through
   `/etc/cb-home`) and its settings cache (which bind-mounts `~/.claude` from `.booth/cache/`).
