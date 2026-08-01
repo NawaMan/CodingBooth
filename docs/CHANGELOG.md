@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Every booth can now read its own Markdown.** `viewmd`
+  ([MarkDownViewer](https://github.com/NawaMan/MarkDownViewer)) is installed into the base
+  image by `variants/base/setups/viewmd--setup.sh`, so all variants inherit it — a single Go
+  binary that serves a folder of `*.md` files to a browser with a file tree and GitHub-flavoured
+  rendering. It already knows about booths: `viewmd --md README.md --expose` calls
+  `booth--expose` itself, so the page is reachable from the host without any extra wiring. The
+  setup script follows the usual shape — `--version <X.Y.Z>|latest`, defaulting to `latest` with
+  a pinned fallback when the rate-limited GitHub API cannot answer — and additionally verifies
+  the downloaded binary against the release's `SHA256SUMS`, failing the build on a mismatch. It
+  is listed in the login welcome message next to `editor` and `explorer`, because a tool nobody
+  is told about is a tool nobody uses. `tests/basic/test016--viewmd.sh` guards all four
+  properties: on PATH, runs, advertised in the welcome, and actually answers HTTP 200 for a
+  served folder.
+
 - **`setup gh <version>` now actually pins.** `gh--setup.sh` read `GH_VERSION="${1:-latest}"`
   on line 18 and never referenced it again — it unconditionally added the cli.github.com apt
   repo and ran `apt-get install -y gh`, so `setup gh 2.63.2` silently installed whatever the

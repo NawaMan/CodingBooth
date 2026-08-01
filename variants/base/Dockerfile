@@ -161,6 +161,9 @@ RUN chmod -R a+rX /opt/codingbooth/docs
 # TLS reverse proxy (Caddy) - activated by BOOTH_TLS=true (set by --public)
 RUN tls--setup.sh
 
+# Markdown viewer (viewmd) - every booth can serve a folder of .md files to a browser
+RUN viewmd--setup.sh
+
 # Cleanup to reduce image size
 RUN cleanup-after--setup.sh
 

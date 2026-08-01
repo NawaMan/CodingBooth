@@ -299,7 +299,7 @@ These essentials are preinstalled so you can start working immediately — no ex
   `git`, `gh` (GitHub CLI), `tig`
 
 - **Editors & File Browsers**
-  `nano`, `tilde`, `ranger`, `less`
+  `nano`, `tilde`, `ranger`, `less`, `viewmd` (Markdown viewer in a browser)
 
 - **Data Processing & Formatting**
   `jq`, `yq`, `tree`

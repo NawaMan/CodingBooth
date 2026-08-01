@@ -203,6 +203,7 @@ setup terraform
 setup thonny
 setup tls
 setup vhs
+setup viewmd
 setup vscode
 setup warp
 setup wayland

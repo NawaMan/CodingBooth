@@ -134,6 +134,7 @@ if [ -z "${TIP_SHOWN:-}" ]; then
   echo "  booth--shutdown   Shut down this booth"
   echo "  editor            Text editor (tilde)"
   echo "  explorer          File manager (mc)"
+  echo "  viewmd            Markdown viewer in your browser"
   echo ""
   echo "Want a different UI? Exit and rerun booth with --variant codeserver or --variant desktop-xfce"
   echo ""
