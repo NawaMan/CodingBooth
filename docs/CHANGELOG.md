@@ -4,6 +4,23 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Seeded credentials are now readable by the booth user.** Selecting `claude-code` auto-selects
+  both its credential extension (which drops `~/.claude/.credentials.json` in through
+  `/etc/cb-home`) and its settings cache (which bind-mounts `~/.claude` from `.booth/cache/`).
+  booth-entry's copy runs as root, so the credential landed `root:root 0600` — and its blanket
+  ownership sweep, `find "$HOME_DIR" -xdev -user root`, stops at the boundary of that bind mount
+  and never reached it. The mount was present and the file was there, but `claude` runs as
+  `coder` and got "Permission denied" reading its own credentials, so every booth fell back to
+  an interactive login. booth-entry now hands over ownership of exactly what each seed/override
+  layer copied, walking the *source* tree so the cost tracks the size of the layer rather than
+  whatever the cache has accumulated. The same defect silently applied to `gemini-cli`, `goose`,
+  `grok`, `oh-my-pi` and `opencode`, whose credential seeds also target a directory their own
+  settings-cache extension mounts. `tests/complex/test-claude-code-credential-ownership` guards
+  it; the existing `test-claude-code-credential-cache` could not, because it pre-creates the
+  cached credential file on the host and `cp` over an existing file keeps that file's owner.
+  `claude-code--setup.sh` also stopped advertising the old `~/.claude:/etc/cb-home-seed/.claude`
+  recipe, which seeds session history along with the credential and, being no-clobber, loses a
+  refreshed host token to the stale cached copy.
 - **Booths started at the same time no longer fight over the same port.** Port selection was
   check-then-use: `isPortFree` bound the port, closed it immediately, and handed the number
   back — then `docker run -p 127.0.0.1:<port>` claimed it seconds later, after name
