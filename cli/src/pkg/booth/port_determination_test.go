@@ -57,7 +57,12 @@ func TestFindNextPort_SkipsOccupied(t *testing.T) {
 	// Hold the base and the very next slot open, so the scan must skip BOTH occupied
 	// ports and land on base+2*step. Uses an OS-assigned base so no fixed port is
 	// assumed free.
-	lnBase, err := net.Listen("tcp", ":0")
+	//
+	// Occupy on 127.0.0.1, the address the booth publishes on and the one bindPort
+	// probes. A wildcard listener would not simulate the real conflict: on macOS a
+	// loopback bind slips past a wildcard holder, so the scan would read the port as
+	// free — the very asymmetry this test must not paper over.
+	lnBase, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Skipf("could not bind an ephemeral port: %v", err)
 	}
@@ -69,7 +74,7 @@ func TestFindNextPort_SkipsOccupied(t *testing.T) {
 
 	// Occupy base+step too. If it happens to be taken already, that only reinforces
 	// the "must skip" expectation, so a bind failure here is not fatal.
-	if lnNext, err := net.Listen("tcp", fmt.Sprintf(":%d", base+portScanStep)); err == nil {
+	if lnNext, err := net.Listen("tcp", fmt.Sprintf("127.0.0.1:%d", base+portScanStep)); err == nil {
 		defer lnNext.Close()
 	}
 
@@ -98,8 +103,10 @@ func TestFindNextPort_SkipsOccupied(t *testing.T) {
 
 func TestFindRandomPort_AvoidsOccupiedBase(t *testing.T) {
 	// Occupy the base slot, then confirm RANDOM never hands it back and still returns
-	// a free, correctly-aligned port at or above the base.
-	lnBase, err := net.Listen("tcp", ":0")
+	// a free, correctly-aligned port at or above the base. Occupy on 127.0.0.1 to
+	// match the address the booth publishes on and bindPort probes (see
+	// TestFindNextPort_SkipsOccupied).
+	lnBase, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		t.Skipf("could not bind an ephemeral port: %v", err)
 	}

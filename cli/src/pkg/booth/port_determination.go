@@ -197,8 +197,18 @@ func reservePort(port int) (net.Listener, bool) {
 // bindPort binds the port and returns the still-open listener. A closed listener
 // would only prove the port was free a moment ago; holding it open is what keeps
 // the port ours until the container takes it.
+//
+// The probe binds 127.0.0.1, not the wildcard ":port", because that is the address
+// the booth publishes on: `docker run -p 127.0.0.1:<port>:10000` (see
+// formatPortMapping). It has to be the same address, or the scan does not measure
+// what it thinks. On macOS/BSD a wildcard listener (with SO_REUSEADDR, which Go
+// sets) can bind 0.0.0.0:<port> even while docker already holds 127.0.0.1:<port>,
+// so probing the wildcard reported an occupied port as free — NEXT then handed it
+// straight back and `docker run` died with "port is already allocated". Binding
+// 127.0.0.1 instead fails whenever loopback OR the wildcard is already taken, on
+// both macOS and Linux, which is exactly the conflict docker itself would hit.
 func bindPort(port int) (net.Listener, bool) {
-	addr := fmt.Sprintf(":%d", port)
+	addr := fmt.Sprintf("127.0.0.1:%d", port)
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
 		// Port is in use

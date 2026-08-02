@@ -70,7 +70,9 @@ rm -f test--tmp-conflict3.toml
 # Test 4: the same mapping twice is redundant, not conflicting — collapse it and run.
 printf 'variant = "base"\nport = "20000"\nrun-args = ["-p", "8978:8978", "--publish", "8978:8978"]\n' > test--tmp-conflict4.toml
 ACTUAL=$(run_coding_booth --config test--tmp-conflict4.toml --dryrun -- echo test 2>&1 | strip_ansi || true)
-COUNT=$(echo "$ACTUAL" | grep -o -- '-p 8978:8978\|--publish 8978:8978' | wc -l)
+# grep -c, not `wc -l`: macOS `wc -l` pads its count with leading spaces ("   1"),
+# which would never string-equal "1" below and failed the test on every Mac.
+COUNT=$(echo "$ACTUAL" | grep -c -- '-p 8978:8978\|--publish 8978:8978')
 
 if [ "$COUNT" = "1" ] && ! echo "$ACTUAL" | grep -qF 'published twice'; then
   print_test_result "true" "$0" "4" "An identical mapping twice is deduped, not refused"

@@ -17,6 +17,8 @@ cd "$SCRIPT_DIR"
 
 source ../../common--source.sh
 
+require_amd64_for_chrome || exit 0
+
 echo "=== Test: Boothfile Puppeteer Installation ==="
 
 FAILED=0

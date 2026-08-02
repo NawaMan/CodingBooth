@@ -69,6 +69,24 @@ restore_default_base_image() {
   unset CB_PREBUILD_REPO
 }
 
+# Guard for browser tests (selenium, puppeteer). Google publishes no linux-arm64
+# build of Chrome for Testing, so when Docker builds for arm64 — the default on
+# Apple Silicon — the setup either cannot install a browser (selenium: build fails)
+# or installs an amd64 one that will not launch in the arm64 container (puppeteer:
+# "rosetta error: failed to open elf at /lib64/ld-linux-x86-64.so.2"). The setup and
+# the test are both correct; the upstream browser simply is not there. Returns 0 on
+# an amd64 Docker host so the caller proceeds, and 1 after printing a SKIP line so
+# the caller can `require_amd64_for_chrome || exit 0`.
+require_amd64_for_chrome() {
+  local arch
+  arch="$(docker version --format '{{.Server.Arch}}' 2>/dev/null || true)"
+  if [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
+    echo "SKIP: Chrome for Testing has no linux-arm64 build; run on an amd64 Docker host to exercise this test."
+    return 1
+  fi
+  return 0
+}
+
 # Colors for output (disabled if not a terminal)
 if [[ -t 1 ]]; then
   COLOR_CMD='\033[1;36m'    # Cyan bold for commands
