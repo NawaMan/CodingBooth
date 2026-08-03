@@ -87,20 +87,44 @@ if ! command -v java >/dev/null 2>&1; then
   exit 1
 fi
 
-JETTY_VERSION="12.0.16"
-JETTY_DIR="/opt/plantuml/jetty"
-if [[ ! -d "$JETTY_DIR" ]]; then
-  echo "• Downloading Jetty Runner ..."
-  mkdir -p "$JETTY_DIR"
-  curl -fsSL -o "${JETTY_DIR}/jetty-runner.jar" \
-    "https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-runner/${JETTY_VERSION}/jetty-runner-${JETTY_VERSION}.jar" \
-    || {
-      # Fallback: use jetty-home
-      echo "• Jetty runner not available, using standalone runner ..."
-      curl -fsSL -o "${JETTY_DIR}/jetty-runner.jar" \
-        "https://repo1.maven.org/maven2/org/eclipse/jetty/ee10/jetty-ee10-runner/${JETTY_VERSION}/jetty-ee10-runner-${JETTY_VERSION}.jar"
-    }
+# Jetty **11**, and a real distribution rather than jetty-runner. Both details are
+# load-bearing, and the previous combination (jetty-runner 12.0.16) served
+# `503 Service Unavailable` forever — the war never deployed, so the server bound
+# its port in ~1s and then answered nothing. Measured, not guessed:
+#
+#   jetty-runner 12.0.16 (as shipped)  → 503 forever
+#   jetty-ee10 / ee9 / ee8 runner 12   → 503 forever
+#   jetty-home 12 + ee9 modules        → 503 forever
+#   jetty-runner 11.0.24               → deploys, renders SVG, but the JSP editor
+#                                        dies with "No InstanceManager set"
+#   jetty-home 11.0.24 + jsp module    → HTTP 200 in ~2s, Monaco editor, renders ✅
+#
+# The war is `web-app 5.0` (Jakarta EE 9), which is Jetty 11 natively; Jetty 12's
+# "ee9" is a compatibility layer and is not the same thing. The `jsp` module is
+# what supplies the Jasper InstanceManager the editor JSPs need — jetty-runner
+# has no way to set one up, which is why the distribution is used instead.
+JETTY_VERSION="11.0.24"
+JETTY_HOME="/opt/plantuml/jetty-home"
+JETTY_BASE="/opt/plantuml/jetty-base"
+if [[ ! -d "$JETTY_HOME" ]]; then
+  echo "• Downloading Jetty ${JETTY_VERSION} ..."
+  mkdir -p "$JETTY_HOME"
+  TMP_JETTY="$(mktemp)"
+  curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors -o "$TMP_JETTY" \
+    "https://repo1.maven.org/maven2/org/eclipse/jetty/jetty-home/${JETTY_VERSION}/jetty-home-${JETTY_VERSION}.tar.gz"
+  tar xzf "$TMP_JETTY" -C "$JETTY_HOME" --strip-components=1
+  rm -f "$TMP_JETTY"
 fi
+
+echo "• Configuring Jetty base ..."
+mkdir -p "$JETTY_BASE"
+( cd "$JETTY_BASE" && java -jar "${JETTY_HOME}/start.jar" \
+    --add-modules=server,http,deploy,jsp,annotations,websocket-jakarta \
+    --approve-all-licenses >/dev/null )
+
+# Deployed as ROOT so the UI lives at / — the desktop launcher opens the bare
+# host:port with no path.
+cp -f "$PLANTUML_SERVER_WAR" "${JETTY_BASE}/webapps/ROOT.war"
 
 # ---- create CLI wrapper ----
 cat > "${CLI_FILE}" <<'CLI'
@@ -118,9 +142,8 @@ set -euo pipefail
 PORT=${1:-__PLANTUML_PORT__}
 
 echo "Starting PlantUML Server on http://localhost:$PORT ..."
-exec java -jar /opt/plantuml/jetty/jetty-runner.jar \
-  --port "$PORT" \
-  /opt/plantuml/plantuml-server.war
+cd /opt/plantuml/jetty-base
+exec java -jar /opt/plantuml/jetty-home/start.jar "jetty.http.port=$PORT"
 STARTER
 sed -i "s/__PLANTUML_PORT__/${PLANTUML_PORT}/g" "${STARTER_FILE}"
 chmod 755 "${STARTER_FILE}"
@@ -129,7 +152,18 @@ chmod 755 "${STARTER_FILE}"
 echo ""
 # Register a desktop icon that opens the PlantUML server in a browser
 # (desktop variants only).
-cb-web-icon.sh --id plantuml --name "PlantUML" --icon applications-internet \
+# PlantUML's own favicon lives at the root of the war; extract it so the launcher
+# carries upstream's mark instead of a generic globe. Falls back to a themed icon
+# when the war layout changes or unzip is unavailable.
+ICON="applications-graphics"
+if command -v unzip >/dev/null 2>&1 \
+   && unzip -p "$PLANTUML_SERVER_WAR" favicon.ico > "${PLANTUML_DIR}/favicon.ico" 2>/dev/null \
+   && [ -s "${PLANTUML_DIR}/favicon.ico" ]; then
+  ICON="${PLANTUML_DIR}/favicon.ico"
+else
+  rm -f "${PLANTUML_DIR}/favicon.ico"
+fi
+cb-web-icon.sh --id plantuml --name "PlantUML" --icon "$ICON" \
   --port "${PLANTUML_PORT}" --path / --start start-plantuml
 
 echo "✅ PlantUML installed."

@@ -21,6 +21,7 @@ RUN booth-shutdown-code-extension--setup.sh
 RUN booth-restart-code-extension--setup.sh
 RUN booth-message-desktop-wrapped--setup.sh
 RUN booth-desktop-actions--setup.sh
+RUN viewmd-desktop-icon--setup.sh
 RUN python-nb-kernel--setup.sh
 RUN bash-nb-kernel--setup.sh
 

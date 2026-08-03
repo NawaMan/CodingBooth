@@ -491,11 +491,17 @@ chmod 0755 ${STARTER_FILE}
 rm -Rf ${DESKTOP_FILE}
 ln -s  ${STARTER_FILE} ${DESKTOP_FILE}
 
-# ---- desktop launcher arrangement (top-center) ----
-# Seeded ~/Desktop launchers default to xfdesktop's top-left column flow. This
-# one-shot session script lays them out centered on the top row instead,
-# spreading left/right as more launchers are added. It runs once per home
-# (marker file) so any manual re-arrangement by the user is respected.
+# ---- desktop launcher arrangement (top-left, growing right) ----
+# Seeded ~/Desktop launchers default to xfdesktop's top-left *column* flow, which
+# stacks them down the left edge. This one-shot session script lays them along the
+# top *row* instead, starting at the left and growing rightwards, wrapping to the
+# next row when the row fills. It runs once per home (marker file) so any manual
+# re-arrangement by the user is respected.
+#
+# Column 0 is left to xfdesktop's own Trash / Filesystem / Home icons, so the
+# launchers start at column 1. Centering was tried first and read badly: the whole
+# row shifted every time a launcher was added or removed, so no icon kept a stable
+# position between booths.
 #
 # xfdesktop stores icon positions in a per-size grid rc file named
 # icons.screen0-<W>x<H>.rc where WxH is the workarea minus 16px margins, and it
@@ -531,7 +537,10 @@ fi
 CELL_W=109
 RC_W=$((WW - 16)); RC_H=$((WH - 16))
 TOTAL=$((RC_W / CELL_W)); [ "$TOTAL" -lt 2 ] && TOTAL=2
-START=$(( (TOTAL - N) / 2 )); [ "$START" -lt 1 ] && START=1
+# Column 0 belongs to Trash / Filesystem / Home (written at the bottom of this
+# file), so the first launcher column is 1. Fixed, not derived from N, so adding
+# a launcher appends on the right instead of shifting every existing icon.
+START=1
 RC="$HOME/.config/xfce4/desktop/icons.screen0-${RC_W}x${RC_H}.rc"
 
 xfdesktop --quit 2>/dev/null || true

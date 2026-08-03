@@ -4,6 +4,72 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The PlantUML server never worked — it answered `503` forever, and the icon made that
+  visible.** Reported as "PlantUML does not start when I click", and the click was not the
+  problem: `start-plantuml` bound its port in ~1s, so `cb-web-open`'s liveness check passed
+  and it opened a browser onto an app that was not there. The war never deployed. Established
+  by measurement, not reading — every combination was timed to first `HTTP 200`:
+
+  | attempt | result |
+  |---|---|
+  | `jetty-runner` 12.0.16 (as shipped) | 503 forever |
+  | `jetty-ee10` / `ee9` / `ee8` runner 12.0.16 | 503 forever |
+  | `jetty-home` 12.0.16 + ee9 modules | 503 forever |
+  | `jetty-runner` 11.0.24 | deploys, renders SVG, JSP editor dies: *No InstanceManager set* |
+  | **`jetty-home` 11.0.24 + `jsp` module** | **HTTP 200 in ~2s, Monaco editor, renders** ✅ |
+
+  Two things were wrong at once. The war is `web-app 5.0` (Jakarta EE 9), which is **Jetty 11**
+  natively — Jetty 12's "ee9" is a compatibility layer, not the same thing. And `jetty-runner`
+  cannot supply the Jasper `InstanceManager` the editor's JSPs need, so even on 11 it served
+  diagrams but not the UI; the full distribution's `jsp` module does. Jetty's own errors were
+  invisible throughout because the war ships no SLF4J provider, so deployment failures went to a
+  NOP logger — the diagnosis needed one bolted on. PlantUML's built-in `-picoweb` was evaluated
+  and rejected: it renders correctly but exposes only a rendering API, so adopting it would have
+  quietly traded the editor away. Verified end to end through the edited setup: click → start →
+  `HTTP 200` in ~1s → `<title>PlantUML Server</title>` → SVG renders.
+
+- **Web-app launchers now carry the app's own artwork instead of a generic globe.** `cb-web-icon`
+  treats an `--icon` that names an existing *file* as artwork: it copies it to
+  `/usr/share/codingbooth/icons/<id>.<ext>` and references it by absolute path (which the
+  desktop-entry spec allows, and the Jupyter launcher already did). The copy is the point — the
+  source often sits in a build tree a later cleanup deletes, and an `Icon=` pointing at a deleted
+  file renders blank. Each setup picks its own: **Excalidraw** takes upstream's `favicon.svg`
+  (scalable, preferred over the raster candidates), **Scratch** its `favicon.ico`, and **PlantUML**
+  has its favicon extracted from the war with `unzip`. Every one falls back to a themed icon
+  (`x-office-drawing`, `applications-education`, `applications-graphics`) if the layout ever
+  shifts, so a missing asset can never fail an install. **Mermaid** keeps a themed icon by design:
+  its editor page is authored by the setup rather than taken from a Mermaid build, so there is no
+  upstream mark to borrow.
+
+- **viewmd gets a desktop icon, and starts on click.** Registered from a new
+  `viewmd-desktop-icon--setup.sh` rather than from `viewmd--setup.sh`, because of *when* each runs:
+  viewmd is installed into the **base** image, where no desktop exists, so `cb-web-icon` would
+  correctly no-op there and the icon would never reach any variant. The four desktop Dockerfiles run
+  the new setup after their DE is in place. It also installs `start-viewmd`, which serves the
+  project mount (`/home/coder/code`, falling back to `$HOME` when a booth has no code directory) on
+  viewmd's own port 8765. Verified in a desktop image: descriptor, launcher, `/etc/skel/Desktop`
+  entry, and a simulated click on a stopped service returning `HTTP 200`.
+
+  Worth stating plainly, since it prompted the question: **click-to-start already worked** for every
+  web launcher. `cb-web-open` checks the port, runs `START_CMD` when nothing is listening, waits for
+  it, then opens the browser — confirmed against a stopped service. Nothing needed changing;
+  PlantUML only looked like a click problem because it started and then served 503.
+
+- **Desktop icons now start at the top-left and grow right, not from the centre.** Centring
+  re-derived the starting column from the number of launchers, so *every* icon shifted whenever one
+  was added or removed and nothing kept a stable position between booths. The row now starts at a
+  fixed column 1 — column 0 stays reserved for xfdesktop's own Trash / Filesystem / Home — and
+  appends rightwards, wrapping to column 1 of the next row. Verified by running the arrangement
+  script against a mocked X server: launchers land at columns 1,2,3…; a 12-icon narrow screen wraps
+  to row 1 col 1 and never collides with column 0; and adding a launcher leaves the existing ones
+  exactly where they were. Note the arrangement is one-shot per home (a marker file preserves manual
+  re-arrangement), so an existing booth keeps its current layout.
+
+  `tests/config/test90` covers viewmd now too (7 services). Extending it surfaced a flaw in the
+  guard itself: it located the registration with an unanchored `grep`, which matched
+  `cb-web-icon.sh` in a *comment* rather than the call, and the new setup — which explains itself in
+  its header — was the first file to expose it. Now anchored to the start of a line.
+
 - **One flaky test cost a 28-minute re-run of 116 that had nothing wrong with them.** The release
   pipeline's `integration-tests` was a single job running three suites as sequential steps, so any
   failure meant re-running all of it. That is not hypothetical: the 0.67.0 run failed with

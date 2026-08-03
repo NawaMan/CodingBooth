@@ -56,7 +56,10 @@ for script in "$root"/variants/base/setups/*--setup.sh; do
     [[ "$skip" == "true" ]] && continue
 
     found=$((found + 1))
-    call="$(joined "$script" | grep -m1 'cb-web-icon.sh' || true)"
+    # Anchored to the start of a line so a mention of cb-web-icon.sh in a comment
+    # is not mistaken for the call — viewmd-desktop-icon--setup.sh explains itself
+    # in its header and tripped exactly that.
+    call="$(joined "$script" | grep -m1 -E '^[[:space:]]*cb-web-icon\.sh' || true)"
 
     [[ -n "$call" ]]; assert-true "$?" "${name} registers a desktop icon"
     [[ -n "$call" ]] || continue
@@ -74,7 +77,7 @@ done
 
 # The derivation must keep finding services; a rename that silently empties the
 # candidate list would turn this whole guard into a no-op that always passes.
-(( found >= 6 )); assert-true "$?" "web-UI server setups found (${found} >= 6)"
+(( found >= 7 )); assert-true "$?" "web-UI server setups found (${found} >= 7)"
 
 # Ids key /etc/cb-web-services/<id>.conf — a duplicate would overwrite a descriptor.
 [[ -z "$(sort <<<"$ids" | uniq -d | tr -d '[:space:]')" ]]

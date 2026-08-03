@@ -117,7 +117,16 @@ chmod 755 "${STARTER_FILE}"
 # ---- summary ----
 echo ""
 # Register a desktop icon that opens Excalidraw in a browser (desktop variants only).
-cb-web-icon.sh --id excalidraw --name "Excalidraw" --icon applications-internet \
+# Prefer Excalidraw's own artwork over a generic globe: upstream ships these under
+# public/, which the build copies into the served directory. Ordered best-first
+# (scalable before raster); falls back to a themed drawing icon if the build
+# layout ever changes, so this can never fail the install.
+ICON="x-office-drawing"
+for candidate in favicon.svg maskable_icon_x512.png apple-touch-icon.png favicon-32x32.png favicon.ico; do
+  found="$(find "$EXCALIDRAW_DIR" -maxdepth 2 -name "$candidate" -print -quit 2>/dev/null || true)"
+  if [ -n "$found" ]; then ICON="$found"; break; fi
+done
+cb-web-icon.sh --id excalidraw --name "Excalidraw" --icon "$ICON" \
   --port "${EXCALIDRAW_PORT}" --path / --start start-excalidraw
 
 echo "✅ Excalidraw installed."

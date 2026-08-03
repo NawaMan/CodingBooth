@@ -117,7 +117,14 @@ chmod 755 "${STARTER_FILE}"
 # ---- summary ----
 echo ""
 # Register a desktop icon that opens Scratch in a browser (desktop variants only).
-cb-web-icon.sh --id scratch --name "Scratch" --icon applications-internet \
+# scratch-gui ships static/favicon.ico, which the build copies into the served
+# directory; fall back to a themed icon if that ever moves.
+ICON="applications-education"
+for candidate in favicon.svg favicon.png favicon.ico; do
+  found="$(find "$SCRATCH_DIR" -maxdepth 2 -name "$candidate" -print -quit 2>/dev/null || true)"
+  if [ -n "$found" ]; then ICON="$found"; break; fi
+done
+cb-web-icon.sh --id scratch --name "Scratch" --icon "$ICON" \
   --port "${SCRATCH_PORT}" --path / --start start-scratch
 
 echo "✅ Scratch installed."

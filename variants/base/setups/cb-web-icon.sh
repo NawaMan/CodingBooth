@@ -46,6 +46,28 @@ done
 # Web-service icons only make sense where a desktop environment exists.
 "$SCRIPT_DIR/cb-has-desktop.sh" || exit 0
 
+# An --icon naming an existing *file* is the app's own artwork — whatever its
+# install dropped on disk (Excalidraw's favicon.svg, a favicon extracted from a
+# war). Copy it somewhere stable and reference it by absolute path, which the
+# desktop-entry spec allows and the Jupyter launcher already relies on. Anything
+# else is passed through as a themed icon name.
+#
+# The copy matters: the source may live in a build tree that a later cleanup
+# step removes, and an Icon= pointing at a deleted file renders as a blank.
+if [ -f "$ICON" ]; then
+  CB_ICON_DIR="${CB_ICON_DIR:-/usr/share/codingbooth/icons}"
+  mkdir -p "$CB_ICON_DIR"
+  icon_ext="${ICON##*.}"
+  case "$icon_ext" in
+    svg|png|ico|xpm|jpg|jpeg) : ;;
+    *) icon_ext="png" ;;   # unknown extension: GdkPixbuf sniffs content anyway
+  esac
+  cp -f "$ICON" "${CB_ICON_DIR}/${ID}.${icon_ext}"
+  chmod 0644 "${CB_ICON_DIR}/${ID}.${icon_ext}"
+  ICON="${CB_ICON_DIR}/${ID}.${icon_ext}"
+  echo "🎨 icon installed: ${ICON}"
+fi
+
 # Descriptor consumed by cb-web-open at click time.
 CB_WEB_CONF_DIR="${CB_WEB_CONF_DIR:-/etc/cb-web-services}"
 mkdir -p "$CB_WEB_CONF_DIR"

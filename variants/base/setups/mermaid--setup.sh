@@ -171,7 +171,10 @@ chmod 755 "${STARTER_FILE}"
 echo ""
 # Register a desktop icon that opens the Mermaid Live Editor in a browser
 # (desktop variants only).
-cb-web-icon.sh --id mermaid --name "Mermaid" --icon applications-internet \
+# No upstream artwork to borrow here: the editor page is authored by this script
+# rather than taken from a Mermaid build, so nothing ships an icon. A themed
+# diagram icon is at least honest about what the launcher opens.
+cb-web-icon.sh --id mermaid --name "Mermaid" --icon applications-graphics \
   --port "${MERMAID_PORT}" --path / --start start-mermaid
 
 echo "✅ Mermaid installed."
