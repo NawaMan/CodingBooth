@@ -4,6 +4,32 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Half the web-UI tools never got the desktop icon the feature promised.** `cb-web-icon` landed
+  wired into exactly three setups — Jupyter Notebook, CloudBeaver and Scratch — and the other three
+  web servers in the catalog were simply never hooked up. **Excalidraw**, **Mermaid** and
+  **PlantUML** each installed a `start-<name>` launcher and served an HTTP UI, but on the desktop
+  variants nothing pointed at them: no icon, no waybar button, and no `/etc/cb-web-services`
+  descriptor at all. Only someone who already knew the starter name could reach them. Excalidraw is
+  the sharpest case, since it is a near-clone of `scratch--setup.sh` — which registers its icon
+  correctly — so the omission was a copy that stopped one line short. All three now register a
+  launcher the same way. Verified by running the three registrations against a stock
+  `desktop-xfce` image: each writes its descriptor, its `/usr/share/applications/<id>-web.desktop`,
+  and lands in the `/etc/skel/Desktop` registry alongside the app icons.
+
+  What let it slip is that **nothing tested this path** — no test anywhere referenced `cb-web-icon`
+  or `cb-web-open`, so three missing icons cost nothing. `tests/config/test90` closes that, and it
+  *derives* the set it checks rather than listing it: a setup that installs a
+  `/usr/local/bin/start-<name>` and documents an `http://localhost:` URL is a web-UI server and
+  must register an icon, minus the desktop environments themselves (XFCE, KDE, LXQt, Wayland),
+  which match the shape but host the icons rather than needing one. So the next web tool added is
+  covered on arrival instead of waiting for someone to notice. It also asserts each icon's
+  `--start` names the starter that same setup installs — an icon that launches a command nothing
+  provides is worse than no icon — that ids stay unique, since they key
+  `/etc/cb-web-services/<id>.conf` and a collision would silently overwrite a descriptor, and that
+  the derivation still finds at least six services, so a rename cannot quietly empty the candidate
+  list and turn the whole guard into a no-op that always passes. Confirmed to fail by removing the
+  Excalidraw registration again.
+
 - **The wrapper test suite could not run on a Mac, and nothing ran it anywhere else.** All 21
   non-DinD tests in `tests/wrapper/` died in the shared helper with `privileged[@]: unbound
   variable` — bash 3.2, which is what macOS ships as `/bin/bash`, treats `"${empty[@]}"` as unset

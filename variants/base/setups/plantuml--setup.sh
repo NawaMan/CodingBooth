@@ -127,6 +127,11 @@ chmod 755 "${STARTER_FILE}"
 
 # ---- summary ----
 echo ""
+# Register a desktop icon that opens the PlantUML server in a browser
+# (desktop variants only).
+cb-web-icon.sh --id plantuml --name "PlantUML" --icon applications-internet \
+  --port "${PLANTUML_PORT}" --path / --start start-plantuml
+
 echo "✅ PlantUML installed."
 echo "   Version:    ${PLANTUML_VERSION}"
 echo "   CLI:        ${CLI_FILE}"

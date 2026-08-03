@@ -169,6 +169,11 @@ chmod 755 "${STARTER_FILE}"
 
 # ---- summary ----
 echo ""
+# Register a desktop icon that opens the Mermaid Live Editor in a browser
+# (desktop variants only).
+cb-web-icon.sh --id mermaid --name "Mermaid" --icon applications-internet \
+  --port "${MERMAID_PORT}" --path / --start start-mermaid
+
 echo "✅ Mermaid installed."
 echo "   CLI Version: ${MERMAID_VERSION}"
 echo "   CLI:         mmdc"

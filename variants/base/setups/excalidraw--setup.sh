@@ -107,6 +107,10 @@ chmod 755 "${STARTER_FILE}"
 
 # ---- summary ----
 echo ""
+# Register a desktop icon that opens Excalidraw in a browser (desktop variants only).
+cb-web-icon.sh --id excalidraw --name "Excalidraw" --icon applications-internet \
+  --port "${EXCALIDRAW_PORT}" --path / --start start-excalidraw
+
 echo "✅ Excalidraw installed."
 echo "   Version:  ${EXCALIDRAW_VERSION}"
 echo "   Location: ${EXCALIDRAW_DIR}"
