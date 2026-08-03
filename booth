@@ -170,10 +170,20 @@ function Main() {
             [[ -n "$version_arg" ]] && install_forward+=("$version_arg")
             ensure_project_wrapper_for_install "$cmd" "${install_forward[@]}"
             if [[ "$cmd" == "install" && -z "$version_arg" && -f "$LOCK_FILE" ]]; then
-                local lock_version
+                local lock_version lock_cache install_platform
                 lock_version=$(grep '^version=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2-)
-                echo "CodingBooth is already installed (version: ${lock_version:-unknown})."
-                echo "Use '$0 update' to update to the latest version."
+                install_platform=$(detect_platform 2>/dev/null || echo "unknown")
+                if find_binary_dir "$lock_version" "$install_platform" >/dev/null 2>&1; then
+                    echo "CodingBooth is already installed (version: ${lock_version:-unknown})."
+                    echo "Use '$0 update' to update to the latest version."
+                    exit 0
+                fi
+                # Lock file exists but the binary is missing (e.g. cleared cache or a
+                # fresh checkout). Install the pinned version, like the run-mode
+                # auto-download does, instead of falsely reporting "already installed".
+                lock_cache=$(grep '^cache=' "$LOCK_FILE" 2>/dev/null | cut -d= -f2- || echo "$cache_mode")
+                echo "CodingBooth ${lock_version:-unknown} is registered but its binary is missing; installing..."
+                DownloadBooth "${lock_version:-latest}" "${lock_cache:-$cache_mode}"
                 exit 0
             fi
             DownloadBooth "${version_arg:-latest}" "$cache_mode"

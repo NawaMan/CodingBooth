@@ -24,6 +24,19 @@ This file contains a list of changes for each released version.
   which can only come from the archive. Documented as an amd64/i386-only guarantee in
   REPRODUCIBILITY.md (a Mac-built booth is Tier 1 for apt, not Tier 2) and in BOOTH_INSTALL_APT.md.
 
+- **`booth install` reported "already installed" even when the binary was missing.** The install
+  path short-circuited on the mere presence of the lock file, so a project whose lock pointed at a
+  version that was no longer in the cache (cleared cache, fresh checkout of a tree that commits the
+  lock) got *"CodingBooth is already installed … use update"* — while `booth version` for the same
+  project correctly reported `(binary missing)` and a plain `booth <cmd>` auto-downloaded it. Only
+  `install` was fooled. It now mirrors the run-mode auto-download: it checks `find_binary_dir` for
+  the pinned version/platform and only claims "already installed" when the binary is actually
+  present; otherwise it downloads the pinned version (honoring the lock's cache mode) instead of
+  telling the user to run `update`. Verified end to end on macOS — install, nuke the cached
+  version, `booth install` now re-fetches it; and re-running with the binary present still
+  short-circuits without downloading. `tests/wrapper/014-install-when-binary-missing.sh` pins the
+  new path; `011-install-idempotent.sh` still guards the already-installed case.
+
 - **The force-push guard only ever blocked one of the four ways to force-push.** Accept Edits denied
   `git push --force*` in both flag positions and stopped there, so `git push -f` — the spelling
   most people actually type — went straight through. Confirmed in a booth rather than reasoned
