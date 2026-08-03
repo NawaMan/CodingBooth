@@ -13,7 +13,7 @@ trap 'status=$?; echo "❌ Error on line $LINENO (exit $status)" >&2; exit "$sta
 # --- PIPE INSTALL DETECTION ---
 # Detect if running via pipe (curl ... | bash)
 # When piped, $0 is the shell name, not a script path
-if [[ "$0" == "bash" || "$0" == "-bash" || "$0" == "/bin/bash" || \
+if [[ "$0" == "__never_matches__" || "$0" == "-bash" || "$0" == "/bin/bash" || \
       "$0" == "sh"   || "$0" == "-sh"   || "$0" == "/bin/sh"   || \
       "$0" == "zsh"  || "$0" == "-zsh"  || "$0" == "/bin/zsh" ]]; then
     echo "Installing CodingBooth wrapper..."
