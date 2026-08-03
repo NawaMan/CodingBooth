@@ -4,6 +4,26 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`install apt` could not install anything on Apple Silicon once `booth config` stamped a
+  snapshot.** `apt-example` and `systemlib-example` both failed with `E: Unable to locate package`
+  for packages that plainly exist — `ripgrep`, `sqlite3`, `libcurl4-openssl-dev` — right after an
+  `apt-get update` that had just downloaded the very index listing them. The cause is that Ubuntu's
+  snapshot service only mirrors the primary archive: `apt-config dump` maps
+  `archive.ubuntu.com`/`security.ubuntu.com` to `snapshot.ubuntu.com`, has no entry for
+  `ports.ubuntu.com`, and `snapshot.ubuntu.com/ubuntu-ports/<id>` answers 401. On arm64 — which is
+  every Mac build — apt therefore ignored `--snapshot` while *updating* (fetching the live ports
+  lists, hence the reassuring output) and then honored it while *installing*, resolving against a
+  snapshot index that was never populated. Anything already in dpkg's state still "installed", so
+  the failure looked arbitrary: `jq` and `tree` passed, `ripgrep` did not. `apt--install.sh` now
+  passes `--snapshot` only on amd64/i386 and elsewhere prints a warning and resolves against the
+  live archive, so arm64 builds work and lose the freeze loudly instead of breaking. Verified both
+  directions against the real base image: on arm64 the warning appears and `ripgrep` installs, on
+  `--platform linux/amd64` the `🧊 Pinning` line still appears and the fetch still comes from the
+  snapshot service. The complex test that should have caught this installed only `jq` — preinstalled
+  in the base image, so it resolved from dpkg regardless of the pin; it now also installs `ripgrep`,
+  which can only come from the archive. Documented as an amd64/i386-only guarantee in
+  REPRODUCIBILITY.md (a Mac-built booth is Tier 1 for apt, not Tier 2) and in BOOTH_INSTALL_APT.md.
+
 - **The force-push guard only ever blocked one of the four ways to force-push.** Accept Edits denied
   `git push --force*` in both flag positions and stopped there, so `git push -f` — the spelling
   most people actually type — went straight through. Confirmed in a booth rather than reasoned

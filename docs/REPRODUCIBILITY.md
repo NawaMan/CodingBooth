@@ -138,6 +138,7 @@ The base image is Ubuntu 24.04, where `--snapshot` is auto-supported (no apt con
 
 - **Pin the date, not each package.** With a frozen index, `install apt qrencode imagemagick` (no version pins) is already deterministic. Explicit `pkg=version` pins then act only as documentation and as a tripwire that fails loudly if a snapshot bump changes the version.
 - **Trade-off:** a frozen snapshot stops receiving security updates until you bump the date — which is the correct behaviour, since updates become a deliberate, reviewable change rather than silent drift.
+- **amd64/i386 only.** Ubuntu's snapshot service mirrors the primary archive (`archive.ubuntu.com`, `security.ubuntu.com`) and nothing else. Every other architecture — notably **arm64, which is what you get on Apple Silicon** — installs from `ports.ubuntu.com`, which has no snapshots. There, `install apt` prints a warning, drops the pin, and resolves against the live archive so the build still succeeds; the packages are current rather than frozen. A booth built on an Apple Silicon Mac is therefore Tier 1 for apt even with `APT_SNAPSHOT` set. Build the image on amd64 (or `--platform linux/amd64`) if the freeze has to hold.
 
 **Global alternative: freeze the whole build.** `APT_SNAPSHOT` only covers `install apt` lines. To freeze *every* apt operation in a custom setup script too, point the apt sources at the snapshot once at build time. On Ubuntu 24.04 (deb822 format) this rewrites `/etc/apt/sources.list.d/ubuntu.sources`:
 
@@ -151,6 +152,7 @@ sed -i -E \
 ```
 
 - **Ubuntu needs no expiry override.** Ubuntu archive `Release` files carry no `Valid-Until` field, so snapshot pins do not need `Acquire::Check-Valid-Until=false` (that is a Debian-only requirement).
+- **Same amd64/i386 limit.** The rewrite above matches `archive`/`security.ubuntu.com`, so on arm64 (sources point at `ports.ubuntu.com`) it is a silent no-op — the build keeps using the live archive.
 
 ### Lock the whole tree — commit a lockfile
 

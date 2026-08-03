@@ -5,4 +5,7 @@
 # set explicitly to a fixed past snapshot so the test is deterministic.
 env APT_SNAPSHOT=20250601T000000Z
 
-install apt jq
+# ripgrep is deliberately a package the base image does *not* already carry: jq alone
+# would install trivially from dpkg's existing state even if the snapshot pin resolved
+# against an empty index, which is exactly how a broken pin once slipped through.
+install apt jq ripgrep

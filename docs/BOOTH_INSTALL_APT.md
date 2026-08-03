@@ -26,16 +26,27 @@ expansion). Core:
 ```bash
 SNAPSHOT_ARGS=()
 if [ -n "${APT_SNAPSHOT:-}" ]; then
-    SNAPSHOT_ARGS=(--snapshot "${APT_SNAPSHOT}")
+    case "$(dpkg --print-architecture)" in
+        amd64|i386) SNAPSHOT_ARGS=(--snapshot "${APT_SNAPSHOT}") ;;
+        *)          : ;;   # warn; snapshot service does not cover ports.ubuntu.com
+    esac
 fi
 apt-get update "${SNAPSHOT_ARGS[@]}"
 apt-get install -y --no-install-recommends "${SNAPSHOT_ARGS[@]}" "$@"
 rm -rf /var/lib/apt/lists/*
 ```
 
-- `APT_SNAPSHOT` set → `--snapshot <id>` on both `update` and `install` (whole archive,
-  incl. transitive deps, frozen to that instant). Base is Ubuntu 24.04, where
-  `--snapshot` is auto-supported.
+- `APT_SNAPSHOT` set, amd64/i386 → `--snapshot <id>` on both `update` and `install`
+  (whole archive, incl. transitive deps, frozen to that instant). Base is Ubuntu 24.04,
+  where `--snapshot` is auto-supported.
+- `APT_SNAPSHOT` set, any other arch → warn and drop the pin. `apt-config dump` has a
+  snapshot host mapping for `archive.ubuntu.com`/`security.ubuntu.com` only, and
+  `snapshot.ubuntu.com/ubuntu-ports/<id>` answers 401 — there is no ports snapshot to
+  point at. Left in, `--snapshot` is worse than useless: `apt-get update` silently
+  fetches the *live* ports lists while `apt-get install` resolves against the empty
+  snapshot index, so every package that isn't already in dpkg's state fails with
+  `E: Unable to locate package`. Dropping the pin degrades reproducibility (Tier 2 → 1)
+  but keeps arm64 builds — every Apple Silicon build — working.
 - `APT_SNAPSHOT` empty/unset → no `--snapshot`; apt resolves against the live archive
   (its default). This is the "not from config" path.
 
@@ -88,6 +99,8 @@ install `RUN` lines, so the script sees it. Verified end-to-end: generated Docke
 3. `APT_SNAPSHOT` covers only `install apt` lines; apt in custom setup scripts needs the
    global sources rewrite (documented as the Tier 2 "global alternative").
 4. PPAs / third-party repos aren't covered by the Ubuntu snapshot service.
+5. Neither is anything outside amd64/i386 — arm64 (Apple Silicon) builds from
+   `ports.ubuntu.com` and gets the live archive with a warning, not a frozen one.
 
 ## Tests
 

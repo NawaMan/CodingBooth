@@ -18,7 +18,7 @@
 # freezing transitive dependencies too. `booth config` stamps APT_SNAPSHOT with the
 # configuration date. When APT_SNAPSHOT is empty/unset (e.g. a hand-written Boothfile),
 # no --snapshot is passed and apt resolves against the live archive, as it does by
-# default.
+# default. The pin applies on amd64/i386 only — see the SNAPSHOT_ARGS block below.
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -51,10 +51,30 @@ export DEBIAN_FRONTEND=noninteractive
 
 # Freeze the archive to a snapshot when APT_SNAPSHOT is set; otherwise let apt
 # resolve against the live archive (no --snapshot).
+#
+# Ubuntu's snapshot service only mirrors the primary archive (archive/security.ubuntu.com,
+# i.e. amd64 and i386) — snapshot.ubuntu.com refuses the ports paths, and apt ships no
+# Acquire::Snapshots::URI::Host entry for ports.ubuntu.com. On every other architecture
+# (arm64 on Apple Silicon, armhf, ppc64el, riscv64, s390x) apt's sources point at
+# ports.ubuntu.com, so `--snapshot` silently fetches nothing during `update` and then
+# resolves `install` against an empty index: every not-yet-installed package fails with
+# "E: Unable to locate package". Drop the pin there and warn, so the build still works
+# against the live archive instead of breaking.
 SNAPSHOT_ARGS=()
 if [ -n "${APT_SNAPSHOT:-}" ]; then
-    echo "🧊 Pinning apt to snapshot ${APT_SNAPSHOT}"
-    SNAPSHOT_ARGS=(--snapshot "${APT_SNAPSHOT}")
+    ARCH="$(dpkg --print-architecture)"
+    case "$ARCH" in
+        amd64|i386)
+            echo "🧊 Pinning apt to snapshot ${APT_SNAPSHOT}"
+            SNAPSHOT_ARGS=(--snapshot "${APT_SNAPSHOT}")
+            ;;
+        *)
+            echo "⚠️  APT_SNAPSHOT=${APT_SNAPSHOT} ignored on ${ARCH}: Ubuntu's snapshot"
+            echo "    service covers only the primary archive (amd64/i386); ${ARCH} installs"
+            echo "    from ports.ubuntu.com, which has no snapshots. Resolving against the"
+            echo "    live archive — this build is not frozen in time."
+            ;;
+    esac
 fi
 
 apt-get update "${SNAPSHOT_ARGS[@]}"

@@ -12,6 +12,11 @@
 #   1. The ENV APT_SNAPSHOT directive is emitted before the RUN apt--install.sh line
 #      (so the script sees it at build time)
 #   2. The package actually installs from the frozen snapshot in a real build
+#   3. A package the base image does not already ship (ripgrep) installs too — the pin
+#      must resolve against a real index, not silently against an empty one. On
+#      architectures the snapshot service does not cover (anything but amd64/i386,
+#      i.e. ports.ubuntu.com) apt--install.sh drops the pin and uses the live archive;
+#      the install must still succeed there.
 #
 # Test 1 is docker-free (emit-dockerfile only). Tests 2-3 build a real image and run
 # only when a locally-rebuilt base image is present, because apt--install.sh is new
@@ -85,6 +90,19 @@ if [[ "$ACTUAL" == "1" ]]; then
     print_test_result "true" "$0" "3" "jq is registered as installed by apt"
 else
     print_test_result "false" "$0" "3" "jq should be registered as installed by apt"
+    echo "  Actual output: $ACTUAL"
+    FAILED=$((FAILED + 1))
+fi
+
+# Test 4: a package the base image does NOT already ship installs too. jq and friends
+# are preinstalled, so they resolve from dpkg's state even when the archive index is
+# empty; ripgrep can only come from the archive, so this is what actually proves the
+# snapshot (or its documented fallback) resolves against a real index.
+ACTUAL=$(run_coding_booth --silence-build -- rg --version 2>/dev/null | head -1) || ACTUAL=""
+if echo "$ACTUAL" | grep -qE "^ripgrep "; then
+    print_test_result "true" "$0" "4" "install apt ripgrep resolves a package not already in the image"
+else
+    print_test_result "false" "$0" "4" "install apt ripgrep should resolve a package not already in the image"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
