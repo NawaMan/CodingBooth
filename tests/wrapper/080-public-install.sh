@@ -32,12 +32,17 @@ echo "=== STEP 4: wrapper runs ==="
 BASH
 )
 
-# Pipe-install detection fired in the downloaded wrapper.
-assert_contains "$LAST_OUTPUT" "Installing CodingBooth wrapper..."
+# The installer ran to its own last line. This used to assert "Installing
+# CodingBooth wrapper..." — the wrapper's pipe-install branch — but that branch
+# is unreachable from this flow by design: install.sh fetches the wrapper with
+# `curl -o` precisely so piping it does not delegate back here in a loop. The
+# branch itself is real and still worth covering; it needs a test that pipes the
+# *wrapper*, not the installer.
+assert_contains "$LAST_OUTPUT" "Use ./booth from this project"
 # The downloaded wrapper successfully installed a binary.
 assert_contains "$LAST_OUTPUT" "CodingBooth installed:"
-# The wrapper's own success banner.
-assert_contains "$LAST_OUTPUT" "CodingBooth has been installed"
+# install.sh's second step ran too, not just the download.
+assert_contains "$LAST_OUTPUT" "Shell function installed"
 # Wrapper file is on disk and executable.
 assert_contains "$LAST_OUTPUT" "WRAPPER: OK"
 # Lock file is present with a sane cache mode.

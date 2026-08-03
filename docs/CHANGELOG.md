@@ -15,7 +15,12 @@ This file contains a list of changes for each released version.
   is held out of it, because it measures what is deployed at codingbooth.io rather than the
   checkout and so can go red for reasons no commit here caused; `run-all.sh` gained the
   `--include-public` opt-in its own test headers had always documented but nothing implemented.
-  Naming a public test by number still runs it.
+  Naming a public test by number still runs it. That test was itself failing, and had been since
+  `7fbab00d` slimmed the wrapper in May: it asserted two lines that commit deleted — the
+  pipe-install banner, which the published `install.sh` cannot reach because it fetches the wrapper
+  with `curl -o` rather than piping it, and a `✅ CodingBooth has been installed.` banner that no
+  longer exists anywhere. Both are replaced by assertions on what the flow prints now, including
+  the `shell-config` step that nothing checked. The full suite is 22/22 with `--include-public`.
 
 - **`install apt` could not install anything on Apple Silicon once `booth config` stamped a
   snapshot.** `apt-example` and `systemlib-example` both failed with `E: Unable to locate package`
