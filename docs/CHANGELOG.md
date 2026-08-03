@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The wrapper test suite could not run on a Mac, and nothing ran it anywhere else.** All 21
+  non-DinD tests in `tests/wrapper/` died in the shared helper with `privileged[@]: unbound
+  variable` — bash 3.2, which is what macOS ships as `/bin/bash`, treats `"${empty[@]}"` as unset
+  under `set -u`, so `run_in_container` aborted before reaching docker. `_lib.sh` now uses the
+  `${arr[@]+"${arr[@]}"}` guard already used in ten other places in the tree. With that fixed the
+  suite is wired into CI: a new `wrapper-tests.yaml` workflow builds the test image (Buildx with a
+  GitHub Actions layer cache) and runs the suite on any push or PR touching `booth` or
+  `tests/wrapper/**` — the first workflow in the repo that runs tests at all. `080-public-install`
+  is held out of it, because it measures what is deployed at codingbooth.io rather than the
+  checkout and so can go red for reasons no commit here caused; `run-all.sh` gained the
+  `--include-public` opt-in its own test headers had always documented but nothing implemented.
+  Naming a public test by number still runs it.
+
 - **`install apt` could not install anything on Apple Silicon once `booth config` stamped a
   snapshot.** `apt-example` and `systemlib-example` both failed with `E: Unable to locate package`
   for packages that plainly exist — `ripgrep`, `sqlite3`, `libcurl4-openssl-dev` — right after an

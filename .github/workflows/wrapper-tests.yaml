@@ -1,0 +1,69 @@
+# Runs the booth wrapper test suite (tests/wrapper/) in a container.
+#
+# What this actually covers: the `booth` wrapper in THIS checkout, driving the
+# published CodingBooth binary. The tests `cp /booth/booth ./booth` and then run
+# install / uninstall / version / passthrough against it, so a wrapper
+# regression fails here while the binary itself is treated as a payload — it is
+# downloaded from GitHub Releases the same way a user's machine would.
+#
+# The suite builds its own Ubuntu image (docker-ce, gh, a non-root tester user)
+# and runs each test in a fresh container off it. One test (040-list-empty)
+# starts a nested dockerd and needs --privileged, which works on the Actions
+# runners because they are full VMs rather than containers.
+#
+# PUBLIC=1 tests are excluded: they measure what is deployed at codingbooth.io,
+# so they can go red for reasons no commit in this repo caused. Run those by
+# hand with `tests/wrapper/run-all.sh --include-public`.
+#
+# Triggers on: push touching the wrapper or its tests, same-path PRs, manual dispatch.
+name: Wrapper tests
+
+on:
+  push:
+    paths:
+      - 'booth'
+      - 'tests/wrapper/**'
+      - '.github/workflows/wrapper-tests.yaml'
+  pull_request:
+    paths:
+      - 'booth'
+      - 'tests/wrapper/**'
+      - '.github/workflows/wrapper-tests.yaml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Supersede in-flight runs for the same branch — the suite pulls release
+# binaries over the network, so there is no point racing two of them.
+concurrency:
+  group: wrapper-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wrapper:
+    name: tests/wrapper
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Built through Buildx with a GitHub Actions layer cache: the image
+      # installs docker-ce and gh from apt, which is minutes cold and seconds
+      # warm. `load: true` puts it in the local daemon under the tag run-all.sh
+      # expects, so the suite finds it and skips its own build.
+      - name: Build test image
+        uses: docker/build-push-action@v6
+        with:
+          context: tests/wrapper
+          file: tests/wrapper/dockerfile
+          tags: booth-wrapper-test
+          load: true
+          cache-from: type=gha,scope=wrapper-tests
+          cache-to: type=gha,scope=wrapper-tests,mode=max
+
+      - name: Run suite
+        run: tests/wrapper/run-all.sh

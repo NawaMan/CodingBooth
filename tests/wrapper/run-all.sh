@@ -1,23 +1,29 @@
 #!/usr/bin/env bash
 # Run every tests/wrapper/###-*.sh in order. Builds the image if missing.
 # Usage:
-#   tests/wrapper/run-all.sh             # run all tests
-#   tests/wrapper/run-all.sh --skip-dind # skip tests declaring DIND=1
-#   tests/wrapper/run-all.sh 001 002     # run only the listed numbers
+#   tests/wrapper/run-all.sh                  # run all local tests
+#   tests/wrapper/run-all.sh --skip-dind      # skip tests declaring DIND=1
+#   tests/wrapper/run-all.sh --include-public # also run tests declaring PUBLIC=1
+#   tests/wrapper/run-all.sh 001 002          # run only the listed numbers
 #
-# PUBLIC=1 tests are always included; each self-skips at top-of-script if
-# codingbooth.io / GitHub Releases are unreachable, so a transient infra
-# blip becomes [SKIP], not [FAIL].
+# PUBLIC=1 tests exercise what is CURRENTLY PUBLISHED on codingbooth.io, not the
+# wrapper in this checkout, so they can go red for reasons no commit here caused.
+# They are opt-in via --include-public (which is what their own headers have
+# always documented). Naming one explicitly by number runs it regardless. Once
+# included, each self-skips at top-of-script when codingbooth.io / GitHub
+# Releases are unreachable, so a transient infra blip becomes [SKIP], not [FAIL].
 set -uo pipefail
 
 SCRIPT_DIR="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 IMAGE="${BOOTH_TEST_IMAGE:-booth-wrapper-test}"
 
 skip_dind=false
+include_public=false
 filter=()
 for arg in "$@"; do
     case "$arg" in
-        --skip-dind) skip_dind=true ;;
+        --skip-dind)      skip_dind=true ;;
+        --include-public) include_public=true ;;
         *) filter+=("$arg") ;;
     esac
 done
@@ -46,17 +52,27 @@ for test in "${tests[@]}"; do
     number="${name%%-*}"
 
     # Filter by explicit list.
+    named=false
     if [[ ${#filter[@]} -gt 0 ]]; then
         match=false
         for f in "${filter[@]}"; do
             [[ "$number" == "$f" || "$name" == *"$f"* ]] && match=true
         done
         if ! $match; then continue; fi
+        named=true
     fi
 
     # Skip DinD tests if requested — detected by the test declaring DIND=1.
     if $skip_dind && grep -q '^DIND=1' "$test"; then
         printf "[SKIP] %s\n" "$name"
+        skip=$((skip + 1))
+        continue
+    fi
+
+    # PUBLIC tests are opt-in — they measure the deployed site, not this
+    # checkout. Asking for one by number counts as opting in.
+    if ! $include_public && ! $named && grep -q '^PUBLIC=1' "$test"; then
+        printf "[SKIP] %s — public (opt in with --include-public)\n" "$name"
         skip=$((skip + 1))
         continue
     fi
