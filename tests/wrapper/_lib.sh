@@ -39,7 +39,9 @@ run_in_container() {
         privileged=(--privileged)
         nodind=0
     fi
-    docker run --rm -i "${privileged[@]}" \
+    # ${arr[@]+"${arr[@]}"} — bash 3.2 (macOS) treats "${empty[@]}" as unset
+    # under `set -u`; without the guard every non-DIND test dies here.
+    docker run --rm -i ${privileged[@]+"${privileged[@]}"} \
         -e "NO_DIND=$nodind" \
         -v "$REPO_ROOT":/booth:ro \
         -w /work \
