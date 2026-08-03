@@ -41,7 +41,16 @@ rm -rf /var/lib/apt/lists/*
 REPO_DIR=/opt/kubectx
 if [[ ! -d "$REPO_DIR/.git" ]]; then
   echo "⬇️  Cloning ahmetb/kubectx ..."
-  git clone --depth 1 https://github.com/ahmetb/kubectx "$REPO_DIR"
+  # github.com intermittently answers 429/503 during a full build sweep and git
+  # has no --retry of its own. Clear the partial clone before retrying — git
+  # refuses to clone into a non-empty directory.
+  for attempt in 1 2 3; do
+    if git clone --depth 1 https://github.com/ahmetb/kubectx "$REPO_DIR"; then break; fi
+    if [ "$attempt" = 3 ]; then echo "❌ kubectx clone failed after 3 attempts"; exit 1; fi
+    echo "  ⚠️  clone failed — retrying in $((attempt * 5))s ..."
+    rm -rf "$REPO_DIR"
+    sleep $((attempt * 5))
+  done
 else
   echo "ℹ️ Reusing existing $REPO_DIR"
 fi

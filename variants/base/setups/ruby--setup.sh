@@ -39,8 +39,21 @@ rm -rf /var/lib/apt/lists/*
 
 # Install rbenv and ruby-build
 echo "📦 Installing rbenv..."
-git clone https://github.com/rbenv/rbenv.git /opt/rbenv
-git clone https://github.com/rbenv/ruby-build.git /opt/rbenv/plugins/ruby-build
+# github.com intermittently answers 429/503 during a full build sweep and git has
+# no --retry of its own, so retry with backoff. Clear the partial clone first —
+# git refuses to clone into a non-empty directory.
+clone_with_retry() {
+  local url="$1" dest="$2" attempt
+  for attempt in 1 2 3; do
+    if git clone "$url" "$dest"; then return 0; fi
+    if [ "$attempt" = 3 ]; then echo "❌ clone of $url failed after 3 attempts"; return 1; fi
+    echo "  ⚠️  clone failed — retrying in $((attempt * 5))s ..."
+    rm -rf "$dest"
+    sleep $((attempt * 5))
+  done
+}
+clone_with_retry https://github.com/rbenv/rbenv.git      /opt/rbenv
+clone_with_retry https://github.com/rbenv/ruby-build.git /opt/rbenv/plugins/ruby-build
 
 export RBENV_ROOT="/opt/rbenv"
 export PATH="/opt/rbenv/bin:/opt/rbenv/shims:$PATH"

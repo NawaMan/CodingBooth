@@ -21,7 +21,16 @@ JENV_BIN="${JENV_ROOT}/bin/jenv"
 
 # install jenv to ~/.jenv (idempotent)
 if [ ! -x "${JENV_BIN}" ]; then
-  git clone --depth=1 https://github.com/jenv/jenv.git "${JENV_ROOT}"
+  # github.com intermittently answers 429/503 during a full build sweep and git
+  # has no --retry of its own. Clear the partial clone before retrying — git
+  # refuses to clone into a non-empty directory.
+  for attempt in 1 2 3; do
+    if git clone --depth=1 https://github.com/jenv/jenv.git "${JENV_ROOT}"; then break; fi
+    if [ "$attempt" = 3 ]; then echo "❌ jenv clone failed after 3 attempts"; exit 1; fi
+    echo "  ⚠️  clone failed — retrying in $((attempt * 5))s ..."
+    rm -rf "${JENV_ROOT}"
+    sleep $((attempt * 5))
+  done
 fi
 
 case ":$PATH:" in

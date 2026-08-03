@@ -9,7 +9,12 @@
 #     -> merge-base   (imagetools create + cosign sign)
 #       -> build-variants  (amd64 + arm64 per variant, native, push-by-digest)
 #         -> merge-variants  (imagetools create + cosign sign)
-#           -> integration-tests
+#           -> go-integration-tests
+#           -> basic-tests
+#           -> complex-tests  (4 shards, in parallel)
+#
+# The three test jobs are independent and run concurrently; they are split rather
+# than sequential steps of one job so a failure can be re-run on its own.
 #
 # Triggers on: manual dispatch only.
 name: Publish docker images
@@ -181,8 +186,19 @@ jobs:
 
   # ---------------------------------------------------------
   # 5. Run integration tests after all images are published
+  #
+  # Split into separate jobs, and the complex suite sharded, so that "Re-run
+  # failed jobs" re-runs only what failed. As one job this was ~28min, of which
+  # the complex suite alone was ~23min, and a single flaky test meant paying all
+  # 28min again. Every recorded failure of this stage has been a transient
+  # network error (429/502/503) in exactly one test, so the retry path is the
+  # one that matters.
+  #
+  # `fail-fast: false` keeps a failing shard from cancelling its siblings —
+  # otherwise a re-run of the failed shard tells you nothing about the tests that
+  # were killed mid-flight.
   # ---------------------------------------------------------
-  integration-tests:
+  go-integration-tests:
     needs: [merge-base, merge-variants]
     runs-on: ubuntu-24.04
     steps:
@@ -199,8 +215,41 @@ jobs:
       - name: Go Integration tests
         run: cd tests/unit && ./run-go-integration-tests.sh
 
+  basic-tests:
+    needs: [merge-base, merge-variants]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.1'
+
+      - name: Build CLI
+        run: ./build/cli-build.sh
+
       - name: Basic tests
         run: cd tests/basic && ./run-basic-tests.sh
 
+  complex-tests:
+    needs: [merge-base, merge-variants]
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    name: complex-tests (shard ${{ matrix.shard }}/4)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24.1'
+
+      - name: Build CLI
+        run: ./build/cli-build.sh
+
       - name: Complex tests
-        run: cd tests/complex && ./run-complex-tests.sh
+        run: cd tests/complex && ./run-complex-tests.sh --shard ${{ matrix.shard }}/4

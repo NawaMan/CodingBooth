@@ -92,7 +92,17 @@ if [ -x "${CB_PYENV_ROOT}/bin/pyenv" ]; then
   echo "ℹ️  Found existing pyenv at ${CB_PYENV_ROOT} — reusing."
 else
   echo "⬇️  Installing pyenv to ${CB_PYENV_ROOT} ..."
-  git clone --depth 1 https://github.com/pyenv/pyenv.git "$CB_PYENV_ROOT"
+  # github.com intermittently answers 429/503 during a full build sweep, and git
+  # has no --retry of its own (curl calls elsewhere use --retry-all-errors). A
+  # single blip here failed the whole image build. Clear the partial clone before
+  # retrying — git refuses to clone into a non-empty directory.
+  for attempt in 1 2 3; do
+    if git clone --depth 1 https://github.com/pyenv/pyenv.git "$CB_PYENV_ROOT"; then break; fi
+    if [ "$attempt" = 3 ]; then echo "❌ pyenv clone failed after 3 attempts"; exit 1; fi
+    echo "  ⚠️  clone failed — retrying in $((attempt * 5))s ..."
+    rm -rf "$CB_PYENV_ROOT"
+    sleep $((attempt * 5))
+  done
 fi
 
 # Make pyenv available in this shell

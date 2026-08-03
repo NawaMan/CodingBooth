@@ -4,6 +4,52 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **One flaky test cost a 28-minute re-run of 116 that had nothing wrong with them.** The release
+  pipeline's `integration-tests` was a single job running three suites as sequential steps, so any
+  failure meant re-running all of it. That is not hypothetical: the 0.67.0 run failed with
+  **115/116 complex tests passing**, the one casualty being `test-boothfile-bash-nb-kernel`, whose
+  image build died on `git clone https://github.com/pyenv/pyenv.git` returning **HTTP 503**. It is
+  the norm, not the exception — every recorded failure of this stage is the same shape: runs
+  `30166469987` and `30149483477` (`test-boothfile-grok`), `28998933234` (`test-boothfile-mkcert`),
+  `28282865658` (`test-boothfile-build-essential`), and `29706988370`, which took out six tests at
+  once. Scanning those logs for causes turns up **only** 429/502/503 — not one logic failure in the
+  set.
+
+  So the job is now **three jobs** — `go-integration-tests`, `basic-tests`, and `complex-tests`
+  sharded four ways — and "Re-run failed jobs" re-runs only what broke. The complex suite is ~23min
+  of the ~28min total, so it is the only part worth sharding; the other two are 33s and 87s. Shards
+  are round-robin over the sorted test list, which needs no per-test timing table to maintain and
+  measures out at 8.5/5.5/4.9/4.2 min against the 0.67.0 run's real durations. `fail-fast: false`
+  keeps a failing shard from cancelling its siblings — otherwise the re-run tells you nothing about
+  the tests that were killed mid-flight. Wall clock drops from ~28min to ~11min, and the price of a
+  flake drops from 28min to one shard.
+
+  `run-complex-tests.sh` grew the selection to make that possible: `--shard N/M`, explicit test
+  names, `--list`, and `--no-retry`. A failing run now prints the exact command to re-run just the
+  failures. `tests/config/test91` guards the part that can silently rot — that shards are an **exact
+  partition** at 2/3/4/5/8 shards wide, since a test that lands in no shard is never run and CI
+  stays green while covering less than it claims — plus balance and every rejection path, because a
+  typo in the CI matrix silently reinterpreted as "run everything" would be worse than an error.
+
+  **On the flakiness itself**, two changes. The runner now retries a failed test **once, and only
+  when its output matches a transient-network signature** (429/502/503/504, rate limit, connection
+  reset, DNS failure, TLS timeout). A real assertion failure still fails on the first attempt — this
+  buys reliability without the usual cost of blanket retries, which is that genuine bugs get papered
+  over. Retries are counted and reported even on a green run, so a suite that only stays green by
+  retrying says so out loud. And the actual 503 got fixed at the source: **seven `git clone` calls
+  across six setups had no retry at all** — `python` (the pyenv clone that broke 0.67.0), `ruby`,
+  `jenv`, `kubectx`, `excalidraw` and `scratch`. Each now retries three times with backoff, clearing
+  the partial clone first, since git refuses to clone into a non-empty directory. Verified against a
+  stub `git` under `set -Eeuo pipefail` with an `ERR` trap: transient-then-success exits 0 without
+  tripping the trap, and a persistent failure still exits 1 with a clear message.
+
+  Not addressed here, and worth a decision: **89 of the 97 setups that use `curl` pass no `--retry`
+  at all** (`mkcert` is the model, with `--retry-all-errors` and a pinned fallback). The runner-level
+  retry covers them in CI, but nothing covers a user's own build. Related: the 429s specifically come
+  from the unauthenticated GitHub API budget being shared per runner IP and exhausted mid-sweep;
+  passing a token via BuildKit secrets would raise it from 60/hr to 5000/hr, but that puts a
+  credential into the image build path and needs deciding rather than defaulting.
+
 - **Half the web-UI tools never got the desktop icon the feature promised.** `cb-web-icon` landed
   wired into exactly three setups — Jupyter Notebook, CloudBeaver and Scratch — and the other three
   web servers in the catalog were simply never hooked up. **Excalidraw**, **Mermaid** and
