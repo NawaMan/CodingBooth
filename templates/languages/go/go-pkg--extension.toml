@@ -1,5 +1,11 @@
 display-name = "go Packages"
 display-disc = "Install Go packages globally via go install"
+display-detail = """Installs Go command-line tools with `go install` into coder's GOPATH bin, which the Go profile \
+puts on PATH. Name the package that holds the command, not the repository root. A version suffix \
+is mandatory here — the build installs from outside any module, where `go install` refuses a bare \
+module path — so the unpinned form is `@latest`: `golang.org/x/tools/gopls@latest` tracks the \
+newest release, `golang.org/x/tools/gopls@v0.16.1` pins one, and a branch or commit works too \
+(`github.com/go-delve/delve/cmd/dlv@master`)."""
 display-order = 10
 auto-select = false
 tags = ["go", "packages"]

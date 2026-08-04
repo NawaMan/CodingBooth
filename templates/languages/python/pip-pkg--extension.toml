@@ -1,5 +1,10 @@
 display-name = "pip Packages"
 display-disc = "Install pip packages globally"
+display-detail = """Installs Python packages globally into the booth's Python (/opt/python) with pip. Each entry is \
+one requirement: a multi-clause range like `>=24,<25` cannot be written here, because the comma is \
+what separates entries. Application dependencies belong in your project's lockfile; this is for \
+tools you want on PATH. Unversioned takes the newest release, PEP 440's `==` pins one: `black`, or \
+`black==24.4.2`."""
 display-order = 10
 auto-select = false
 tags = ["python", "pip", "packages"]

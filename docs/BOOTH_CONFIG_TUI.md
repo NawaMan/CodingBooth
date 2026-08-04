@@ -186,6 +186,7 @@ else the booth holds is carried through untouched.
 | Key | Action |
 |-----|--------|
 | `Ctrl+S` | Save selection and run init (on a booth with [hand-written files](#saving-over-hand-written-files), asks first) |
+| Terminal paste (`Ctrl+Shift+V`, middle-click) | Insert clipboard text into the focused text field — search, config strings, [parameters](#editing-parameters) |
 | `Ctrl+Q` / `Ctrl+C` | Quit (asks for confirmation) |
 | `Enter` (when quitting) | Confirm quit |
 | `Esc` (when quitting) | Cancel quit |
@@ -275,6 +276,25 @@ list is **deduplicated and sorted** into a canonical form (so the generated
 Boothfile is stable regardless of entry order); the same canonicalization applies
 to the CLI and recipe forms. Package install order is not significant to these
 package managers, so this never changes what gets installed.
+
+**Paste works in every text field** — package rows, single-value parameters, the
+string fields on the Config tab, and the search bar. Paste with your terminal's
+own shortcut (usually `Ctrl+Shift+V`, or middle-click on X11); a module path copied
+from a browser does not have to be retyped. Whatever whitespace came along with the
+copy is dropped, so a copied *line* pastes as a value rather than as a value plus a
+stray newline. A paste that holds several comma-separated packages
+(`gopls@latest,dlv@latest`) becomes several rows, because a comma is what separates
+entries.
+
+**How to write a version is on the page.** Each install extension's description
+names its own pin syntax and shows both forms — unversioned and pinned — because
+they differ per package manager (`black` / `black==24.4.2` for pip, `ripgrep` /
+`ripgrep@14.1.0` for cargo, `rails` / `rails:7.1.3` for gem). `go-pkg` is the one
+with no unversioned form at all: `go install` refuses a bare module path, so the
+floating form is `golang.org/x/tools/gopls@latest`. The description stays on screen
+while the field is focused, so it is readable exactly when you are typing a value.
+See [REPRODUCIBILITY.md — Tier 1](REPRODUCIBILITY.md#tier-1--pin-versions-convenience)
+for the whole table.
 
 ---
 

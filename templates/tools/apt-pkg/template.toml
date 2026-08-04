@@ -1,6 +1,10 @@
 display-name = "apt Packages"
 display-disc = "Install Debian/Ubuntu system packages via apt"
-display-detail = "Installs system packages with apt-get during the image build. Supports apt's native pkg=version pinning, and honors the APT_SNAPSHOT archive freeze that `booth config` stamps for reproducible builds."
+display-detail = """Installs system packages with apt-get during the image build, and honors the APT_SNAPSHOT archive \
+freeze that `booth config` stamps into the Boothfile — that snapshot, not a per-package pin, is \
+what makes an apt install reproducible: it freezes dependencies too, where an exact pin stops \
+resolving as soon as a rebuild lands upstream. Unversioned takes whatever the archive currently \
+offers, `pkg=version` pins a full Debian version string: `jq`, or `htop=3.0.5-7`."""
 display-order = 5
 auto-select = false
 tags = ["apt", "system", "packages"]

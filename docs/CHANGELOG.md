@@ -4,6 +4,47 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **You could not paste into the config TUI, and nothing said so.** Reported against
+  `go-pkg`'s package field, where the value being typed is a module path copied from a
+  browser — the worst possible thing to retype. Every text field tested
+  `len(msg.String()) == 1` before accepting a character, and a paste is not one character:
+  Bubble Tea enables bracketed paste by default, so the clipboard arrives as a single
+  `KeyRunes` message whose `String()` is deliberately wrapped in `[...]` (so key bindings
+  cannot match a paste). Both halves of the test failed and the paste was dropped silently.
+  Driving the real TUI through a PTY found a second shape with the same fate: Bubble Tea
+  coalesces "the longest sequence of runes that are not control characters" from one read
+  into **one** `KeyRunes` with no paste flag, so a terminal without bracketed paste, an
+  `xdotool type`, a laggy link, or a multi-rune IME commit also lost everything but nothing.
+  One `typedText` helper now answers "what text does this key contribute" for all six input
+  sites — search bar, config string/int/list fields, single-value params, variadic package
+  rows, and the overwrite confirmation — and the payload is filtered to printable ASCII, so
+  the newline that comes with a copied *line* cannot end up inside a Boothfile value. Int
+  fields keep filtering per character, so a pasted `30 minutes` still becomes `30` rather
+  than a `config.toml` that will not decode. Pasting `gopls@latest,dlv@latest` into one
+  package row yields two rows, which falls out of the comma-joined storage. Verified in a
+  real terminal: a bracketed paste written to a PTY in one chunk lands in `GO_PKGS` and saves
+  as `arg GO_PKGS=golang.org/x/tools/gopls@v0.16.1`.
+
+- **Every package-install page now shows how to write a version — and how to write one
+  without.** `go-pkg` and its 18 siblings offered a `*_PKGS` field with no hint of the syntax
+  it expects, and that syntax is not shared: `@` for npm/bun/yarn/deno/code-extension (their
+  own), `@` for cargo/dotnet/hex/luarocks (a CodingBooth convention the install script
+  rewrites into `--version`), `==` for pip/uv, `=` for conda/apt, `:` for gem, `-` for
+  cabal/pecl, `/` for conan. Each page's description now ends with the two forms side by side
+  (`ripgrep`, or `ripgrep@14.1.0`) — last, so they stay on screen when the panel scrolls to
+  keep the focused field visible. The three pages with no unversioned form say so plainly:
+  `go install` refuses a bare module path (so the floating form is `@latest`), a Conan
+  reference *is* name plus version, and `deno add` needs an `npm:`/`jsr:` prefix. Written from
+  an audit of what each `*--install.sh` actually runs, not from the manager's documentation.
+
+- **`install pecl redis-6.0.2` could never have worked.** The documented `-version` pin fed
+  the whole spec back as the shared-object and ini basename, so pecl built `redis.so` while
+  the script demanded `redis-6.0.2.so` and failed the image on its own post-install check.
+  It now strips a suffix that looks like a version or a PECL state tag (`-6.0.2`, `-beta`)
+  for those names only, leaving a name that merely contains a hyphen alone; the `.so` check
+  stays, so a wrong guess still fails loudly instead of installing something unloaded.
+  `tests/setups/test--pecl-install.sh` pins both directions with a stubbed `pecl`.
+
 - **The PlantUML server never worked — it answered `503` forever, and the icon made that
   visible.** Reported as "PlantUML does not start when I click", and the click was not the
   problem: `start-plantuml` bound its port in ~1s, so `cb-web-open`'s liveness check passed

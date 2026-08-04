@@ -5,8 +5,8 @@
 
 # This script installs PHP PECL extensions.
 # It requires php--setup.sh to have been run first.
-# Usage: pecl--install.sh <extension> [extension...]
-# Example: pecl--install.sh redis xdebug
+# Usage: pecl--install.sh <extension[-version]> [extension[-version]...]
+# Example: pecl--install.sh redis xdebug-3.3.2
 
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
@@ -18,7 +18,7 @@ fi
 
 case "${1:-}" in
     -h|--help)
-        echo "Usage: $0 <extension> [extension...]"
+        echo "Usage: $0 <extension[-version]> [extension[-version]...]"
         exit 0
         ;;
 esac
@@ -43,12 +43,23 @@ if ! command -v pecl &> /dev/null; then
     exit 1
 fi
 
-for ext in "$@"; do
-    echo "Installing PECL extension: $ext"
+for spec in "$@"; do
+    # The version is part of the *request*, never part of the extension name:
+    # `pecl install redis-6.0.2` builds redis.so. Checking for redis-6.0.2.so
+    # failed every pinned install, which is why the pin was undocumented. Strip
+    # only a suffix that looks like a version or a PECL state tag, so a name that
+    # happens to contain a hyphen is left alone; a wrong guess still fails loudly
+    # on the .so check below rather than installing something unloaded.
+    ext="$spec"
+    if [[ "$spec" =~ ^(.+)-([0-9].*|alpha|beta|devel|snapshot|stable)$ ]]; then
+        ext="${BASH_REMATCH[1]}"
+    fi
+
+    echo "Installing PECL extension: $spec"
     # No `|| true`: pecl builds from source, and a failed build (a missing compiler,
     # say) must fail the image rather than produce a booth where the extension is
     # quietly absent.
-    pecl install "$ext"
+    pecl install "$spec"
 
     PHP_EXT_DIR="$(php -i | awk -F' => ' '/^extension_dir/ {print $2; exit}')"
     if [ ! -f "${PHP_EXT_DIR}/${ext}.so" ]; then

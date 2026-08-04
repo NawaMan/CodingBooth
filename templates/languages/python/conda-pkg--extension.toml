@@ -1,5 +1,9 @@
 display-name = "conda Packages"
 display-disc = "Install packages via conda"
+display-detail = """Installs packages with conda into the booth's Python environment. Reach for it when you need \
+conda's prebuilt native stacks; otherwise pip or uv is lighter. A channel can be named inline \
+(`conda-forge::numpy`). Unversioned takes the newest build, and conda pins with a single `=` \
+rather than pip's `==`: `jq`, or `numpy=1.26.4`."""
 display-order = 12
 auto-select = false
 tags = ["python", "conda", "packages"]

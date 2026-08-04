@@ -1,14 +1,14 @@
 display-name = "VS Code Extensions"
 display-disc = "Install any VS Code / code-server extension by marketplace id"
-display-detail = """Bakes arbitrary editor extensions into the image by Open VSX id \
-(publisher.name, optionally publisher.name@version). This is the escape hatch beside the \
-curated per-language extensions (elixir+vscode-ext, go+vscode-ext, ...): reach for those \
-first when one exists, and use this for anything not yet covered. Ids resolve against \
-open-vsx.org — the registry code-server queries — not the Microsoft Marketplace, so a \
-publisher name copied from the Marketplace often will not resolve (ElixirLS is \
-elixir-lsp.elixir-ls here, JakeBecker.elixir-ls there). An id that fails to install fails \
-the build. Needs an editor in the image: the codeserver or desktop variant, or the \
-codeserver / vscode template."""
+display-detail = """Bakes arbitrary editor extensions into the image by Open VSX id (publisher.name). \
+This is the escape hatch beside the curated per-language extensions (elixir+vscode-ext, \
+go+vscode-ext, ...): reach for those first when one exists, and use this for anything not yet \
+covered. Ids resolve against open-vsx.org — the registry code-server queries — not the Microsoft \
+Marketplace, so a publisher name copied from the Marketplace often will not resolve (ElixirLS is \
+elixir-lsp.elixir-ls here, JakeBecker.elixir-ls there). An id that fails to install fails the \
+build. Needs an editor in the image: the codeserver or desktop variant, or the codeserver / vscode \
+template. Unversioned takes the newest release and `@version` pins one: \
+`mads-hartmann.bash-ide-vscode`, or `eamodio.gitlens@15.6.0`."""
 display-order = 6
 auto-select = false
 tags = [

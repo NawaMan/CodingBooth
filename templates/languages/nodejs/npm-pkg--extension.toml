@@ -1,5 +1,9 @@
 display-name = "npm Packages"
 display-disc = "Install global npm packages"
+display-detail = """Installs global npm packages (`npm install -g`); their binaries land on PATH. Scoped packages keep \
+their leading @ (`@angular/cli`). Unversioned takes the `latest` dist-tag, and npm's own specifier \
+pins or floats it — tags and ranges included: `typescript`, or `typescript@5.4.5` (also \
+`typescript@next`, `typescript@^5`)."""
 display-order = 10
 auto-select = false
 tags = ["nodejs", "npm", "packages"]

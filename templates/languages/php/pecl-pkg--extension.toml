@@ -1,5 +1,9 @@
 display-name = "pecl Packages"
 display-disc = "Install PHP extensions via pecl"
+display-detail = """Compiles PHP extensions from source with `pecl install` and enables each one through its own .ini \
+in the directory this PHP scans; a failed build fails the image rather than leaving the extension \
+quietly missing. Unversioned takes the newest release, and pecl pins with a hyphen — state tags \
+work the same way: `redis`, or `redis-6.0.2` (also `redis-beta`)."""
 display-order = 10
 auto-select = false
 tags = ["php", "pecl", "packages"]

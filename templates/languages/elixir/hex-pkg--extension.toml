@@ -1,5 +1,9 @@
 display-name = "hex Packages"
 display-disc = "Install Elixir/Erlang packages globally via mix"
+display-detail = """Installs Mix archives from hex.pm with `mix archive.install`, giving you global mix tasks. Only \
+packages published as archives can be installed this way — an ordinary library like `jason` has \
+none and belongs in your project's mix.exs. Unversioned takes the newest release, `pkg@version` \
+pins one (translated into the positional version mix expects): `phx_new`, or `phx_new@1.7.14`."""
 display-order = 10
 auto-select = false
 tags = ["elixir", "hex", "packages"]

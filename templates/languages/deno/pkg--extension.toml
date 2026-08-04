@@ -1,5 +1,10 @@
 display-name = "Deno Packages"
 display-disc = "Deno package installer for third-party modules"
+display-detail = """Records third-party modules in /home/coder/deno.json with `deno add`, so your code can import them \
+by bare specifier — this adds importable dependencies, not global commands. Every entry needs its \
+registry prefix; an unprefixed name is not accepted. Unversioned takes the newest release and \
+`@version` pins one: `npm:cowsay`, or `npm:cowsay@1.6.0` (JSR reads `jsr:@std/yaml`, \
+`jsr:@std/[email protected]`)."""
 display-order = 10
 auto-select = false
 tags = ["deno", "packages"]

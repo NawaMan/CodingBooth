@@ -1,5 +1,10 @@
 display-name = "Conan Packages"
 display-disc = "Preload Conan packages into the build cache (conan download)"
+display-detail = """Prefetches C/C++ recipes into the Conan cache with `conan download` from conancenter, so a later \
+`conan install` resolves offline — it does not place headers or libraries anywhere by itself. A \
+Conan reference is name plus version, so unlike the other package lists there is no unversioned \
+form; a user/channel or recipe revision may be appended: `fmt/10.1.1`, `boost/1.83.0`, \
+`fmt/10.1.1@user/channel`."""
 display-order = 10
 auto-select = false
 tags = ["conan", "cpp", "c", "packages"]

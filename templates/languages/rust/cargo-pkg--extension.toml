@@ -1,5 +1,10 @@
 display-name = "cargo Packages"
 display-disc = "Install Rust crates globally via cargo install"
+display-detail = """Installs Rust binaries with `cargo install` into ~/.cargo/bin. An entry starting with a dash is \
+passed to cargo as a flag rather than a crate, which is how `--locked` gets in — add it as its own \
+entry to build against each crate's published Cargo.lock. Unversioned takes the newest published \
+release, `crate@version` pins one (booth translates that `@` into cargo's own `--version`, so a \
+requirement like `^14` resolves too): `ripgrep`, or `ripgrep@14.1.0`."""
 display-order = 10
 auto-select = false
 tags = ["rust", "cargo", "packages"]

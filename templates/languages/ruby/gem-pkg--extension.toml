@@ -1,5 +1,9 @@
 display-name = "gem Packages"
 display-disc = "Install Ruby gems globally"
+display-detail = """Installs Ruby gems globally with `gem install --no-document`. Each entry becomes its own `gem \
+install`, so a separate `-v` flag has nothing to attach to — RubyGems' colon form is the pin that \
+works here. Unversioned takes the newest release, `gem:version` pins one, and a requirement \
+operator is allowed: `colorize`, or `rails:7.1.3` (also `rails:~>7.1`)."""
 display-order = 10
 auto-select = false
 tags = ["ruby", "gem", "packages"]

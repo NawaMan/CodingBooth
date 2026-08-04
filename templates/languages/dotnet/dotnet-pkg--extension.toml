@@ -1,6 +1,10 @@
 display-name = ".NET Tools"
 display-disc = "Install global .NET tools via dotnet tool install"
-display-detail = "Installs NuGet-distributed .NET global tools into ~/.dotnet/tools (on PATH via the .NET profile). Use package IDs such as dotnet-ef for Entity Framework CLI, csharpier for formatting, or any other `dotnet tool install --global` package. Pin with package@version (e.g. dotnet-ef@8.0.11). Same extension as under the C# template."
+display-detail = """Installs NuGet-distributed .NET global tools into ~/.dotnet/tools (on PATH via the .NET profile) — \
+dotnet-ef for the Entity Framework CLI, csharpier for formatting, or any other `dotnet tool \
+install --global` package. Same extension as under the C# template. Unversioned takes the newest \
+release, `package@version` pins one, which booth translates into dotnet's own `--version`: \
+`dotnet-ef`, or `dotnet-ef@8.0.11`."""
 display-order = 10
 auto-select = false
 tags = [

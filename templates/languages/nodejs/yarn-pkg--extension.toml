@@ -1,5 +1,9 @@
 display-name = "yarn Packages"
 display-disc = "Install global yarn packages"
+display-detail = """Installs global packages with `yarn global add` — Yarn 1 classic, bootstrapped through npm during \
+the build. Prefer the npm extension unless you specifically want Yarn's global store. Unversioned \
+takes the newest release, `pkg@version` pins one, same specifier syntax as npm: `cowsay`, or \
+`cowsay@1.6.0`."""
 display-order = 11
 auto-select = false
 tags = ["nodejs", "yarn", "packages"]

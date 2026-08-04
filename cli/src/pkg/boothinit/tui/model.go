@@ -466,7 +466,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // handleSearchInput handles keys when the search bar is focused.
 func (m model) handleSearchInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
+	switch keyName(msg) {
 	case "esc":
 		m.searchQuery = ""
 		m.searchFocused = false
@@ -507,10 +507,9 @@ func (m model) handleSearchInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 
 	default:
-		ch := msg.String()
-		if len(ch) == 1 && ch[0] >= 32 && ch[0] < 127 {
-			m.searchQuery = m.searchQuery[:m.searchCursor] + ch + m.searchQuery[m.searchCursor:]
-			m.searchCursor++
+		if ins := typedText(msg); ins != "" {
+			m.searchQuery = m.searchQuery[:m.searchCursor] + ins + m.searchQuery[m.searchCursor:]
+			m.searchCursor += len(ins)
 			m.resetTabCursors()
 			// Auto-switch to first category tab if on Config tab
 			if m.isConfigTab() && len(m.tabItems) > 1 {
@@ -713,7 +712,7 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		val = m.stringFields[f.Key]
 	}
 
-	switch msg.String() {
+	switch keyName(msg) {
 	case "enter", "esc":
 		m.editing = false
 		if m.listEditing {
@@ -742,10 +741,9 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		}
 		// Don't switch tabs while editing
 	default:
-		ch := msg.String()
-		if len(ch) == 1 && ch[0] >= 32 && ch[0] < 127 && acceptsEditChar(f.Kind, ch[0]) {
-			val = val[:m.editCursor] + ch + val[m.editCursor:]
-			m.editCursor++
+		if ins := acceptsEditText(f.Kind, typedText(msg)); ins != "" {
+			val = val[:m.editCursor] + ins + val[m.editCursor:]
+			m.editCursor += len(ins)
 		}
 	}
 
@@ -768,7 +766,25 @@ func acceptsEditChar(kind fieldKind, ch byte) bool {
 	if kind != fieldKindInt {
 		return true
 	}
+	return isIntEditChar(ch)
+}
+
+// isIntEditChar reports whether ch belongs in an int field.
+func isIntEditChar(ch byte) bool {
 	return (ch >= '0' && ch <= '9') || ch == '-'
+}
+
+// acceptsEditText filters typed or pasted text down to what this field accepts.
+//
+// A paste is filtered per character rather than accepted or refused whole: the
+// int-field rule above exists so `idle-time` cannot be handed a value TOML
+// refuses to decode, and a paste is exactly as capable of carrying one as a
+// keystroke is.
+func acceptsEditText(kind fieldKind, s string) string {
+	if kind != fieldKindInt {
+		return s
+	}
+	return filterBytes(s, isIntEditChar)
 }
 
 func (m model) handleCycleEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
@@ -823,7 +839,7 @@ func (m model) handleParamKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 	row := rows[m.paramCursorIdx]
 
-	switch msg.String() {
+	switch keyName(msg) {
 	case "esc":
 		m.paramFocused = false
 		m.paramEditing = false
@@ -918,9 +934,9 @@ func (m model) handleParamKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	default:
-		// Any printable key starts editing the current row.
-		ch := msg.String()
-		if len(ch) != 1 || ch[0] < 32 || ch[0] >= 127 {
+		// Any printable key — or a paste — starts editing the current row.
+		ch := typedText(msg)
+		if ch == "" {
 			return m, nil
 		}
 		switch row.kind {
@@ -930,18 +946,18 @@ func (m model) handleParamKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.paramEditing = true
 			m.paramEditKey = pk
 			m.paramValues[pk] = ch
-			m.paramEditCursor = 1
+			m.paramEditCursor = len(ch)
 		case paramRowVariadicValue:
 			pk := paramKey(item, row.param)
 			vals := m.splitVariadic(pk)
 			m.beginVariadicEdit(pk, row.valueIdx, vals[row.valueIdx], false)
 			m.variadicEditBuf = ch
-			m.variadicEditCur = 1
+			m.variadicEditCur = len(ch)
 		case paramRowVariadicAdd:
 			pk := paramKey(item, row.param)
 			m.beginVariadicEdit(pk, len(m.splitVariadic(pk)), "", true)
 			m.variadicEditBuf = ch
-			m.variadicEditCur = 1
+			m.variadicEditCur = len(ch)
 		}
 		return m, nil
 	}
@@ -979,7 +995,7 @@ func (m *model) beginVariadicEdit(pk string, idx int, val string, isNew bool) {
 
 // handleVariadicEdit handles typing when editing one value of a variadic param.
 func (m model) handleVariadicEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
+	switch keyName(msg) {
 	case "enter", "tab":
 		m.commitVariadicEdit()
 	case "esc":
@@ -1002,10 +1018,9 @@ func (m model) handleVariadicEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.variadicEditCur++
 		}
 	default:
-		ch := msg.String()
-		if len(ch) == 1 && ch[0] >= 32 && ch[0] < 127 {
-			m.variadicEditBuf = m.variadicEditBuf[:m.variadicEditCur] + ch + m.variadicEditBuf[m.variadicEditCur:]
-			m.variadicEditCur++
+		if ins := typedText(msg); ins != "" {
+			m.variadicEditBuf = m.variadicEditBuf[:m.variadicEditCur] + ins + m.variadicEditBuf[m.variadicEditCur:]
+			m.variadicEditCur += len(ins)
 		}
 	}
 	return m, nil
@@ -1047,7 +1062,7 @@ func (m *model) endVariadicEdit() {
 func (m model) handleParamStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	val := m.paramValues[m.paramEditKey]
 
-	switch msg.String() {
+	switch keyName(msg) {
 	case "enter", "tab":
 		// Accept the edited value
 		m.paramEditing = false
@@ -1069,10 +1084,9 @@ func (m model) handleParamStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.paramEditCursor++
 		}
 	default:
-		ch := msg.String()
-		if len(ch) == 1 && ch[0] >= 32 && ch[0] < 127 {
-			val = val[:m.paramEditCursor] + ch + val[m.paramEditCursor:]
-			m.paramEditCursor++
+		if ins := typedText(msg); ins != "" {
+			val = val[:m.paramEditCursor] + ins + val[m.paramEditCursor:]
+			m.paramEditCursor += len(ins)
 		}
 	}
 	m.paramValues[m.paramEditKey] = val
@@ -1398,7 +1412,7 @@ func (m model) requestSave() (tea.Model, tea.Cmd) {
 // confirmation word exactly. A half-typed word does nothing, and Esc backs out with
 // the configuration untouched.
 func (m model) handleOverwriteConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	switch msg.String() {
+	switch keyName(msg) {
 	case "esc":
 		m.overwriteDialog = false
 		m.overwriteInput = ""
@@ -1427,8 +1441,11 @@ func (m model) handleOverwriteConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, tea.Quit
 	}
 
-	if msg.Type == tea.KeyRunes {
-		m.overwriteInput += string(msg.Runes)
+	// A pasted confirmation word arrives with whatever whitespace was copied with
+	// it; "overwrite\n" is not the confirmation word, and the dialog would sit
+	// there refusing Enter with no way to see why.
+	if ins := typedText(msg); ins != "" {
+		m.overwriteInput += ins
 	}
 	return m, nil
 }

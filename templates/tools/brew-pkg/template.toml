@@ -1,5 +1,9 @@
 display-name = "brew Packages"
 display-disc = "Install packages via Homebrew"
+display-detail = """Installs packages from Homebrew (linuxbrew) as the coder user; pulls in the homebrew template. \
+Homebrew has no version argument, so the plain name is the normal form and the only pin is a \
+versioned formula Homebrew itself publishes — an arbitrary version is not a formula, so `[email \
+protected]` fails: `jq`, or `node@20` / `postgresql@15`."""
 display-order = 41
 auto-select = false
 tags = ["homebrew", "brew", "packages"]

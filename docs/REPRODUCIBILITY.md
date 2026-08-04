@@ -105,10 +105,12 @@ Add an explicit version to any `install` line. The syntax is the package manager
 | `cargo`, `hex`, `luarocks` | `@` | `install cargo ripgrep@14.1.0` |
 | `brew` | `@` (versioned formulae only) | `install brew node@20` |
 | `apt` | `=` | `install apt htop=3.0.5-7` |
+| `dotnet` | `@` | `install dotnet dotnet-ef@8.0.11` |
+| `code-extension` | `@` | `install code-extension eamodio.gitlens@15.6.0` |
 
 Notes:
 
-- **`cargo`, `hex`, and `luarocks`** use a CodingBooth-normalized `name@version` form, translated to each tool's native flag/argument under the hood. A token with no `@` installs the latest version, exactly as before.
+- **`cargo`, `dotnet`, `hex`, and `luarocks`** use a CodingBooth-normalized `name@version` form, translated to each tool's native flag/argument under the hood. A token with no `@` installs the latest version, exactly as before.
 - **`brew`** can only pin to versioned formulae that Homebrew ships (`node@20`, `postgresql@15`); arbitrary version pinning is not supported by Homebrew.
 - Language registries (PyPI, npm, crates.io, the Go proxy, Hackage, hex.pm, RubyGems) are **immutable** — a pinned version stays installable indefinitely, so no snapshot is needed. (`conda`, `luarocks`, and `pecl` have weaker delete guarantees.)
 - **`apt` is the exception:** the live archive keeps only the *current* version in its pool, so an `apt` pin like `htop=3.0.5-7` stops resolving once a newer build lands. A bare `=` pin is therefore convenience/documentation only — to make `apt` actually reproducible, combine it with an `APT_SNAPSHOT` (Tier 2 below), which `booth config` sets for you.

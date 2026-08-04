@@ -1,5 +1,10 @@
 display-name = "uv Packages"
 display-disc = "Install Python packages globally via uv"
+display-detail = """Installs Python packages globally into the booth's Python (/opt/python) with `uv pip install` — \
+the same PyPI packages as the pip extension, resolved considerably faster. Each entry is one \
+requirement, so a multi-clause range like `>=24,<25` cannot be written here (the comma separates \
+entries). Unversioned takes the newest release, PEP 440's `==` pins one: `black`, or \
+`black==24.4.2`."""
 display-order = 11
 auto-select = false
 tags = ["python", "uv", "packages"]

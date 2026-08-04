@@ -1,5 +1,10 @@
 display-name = "cabal Packages"
 display-disc = "Install Haskell packages globally via cabal install"
+display-detail = """Installs Haskell executables with `cabal install` after a `cabal update`, copied into \
+/usr/local/bin. Everything builds from source, so expect a slow first image build. Constraint \
+syntax (`hlint >= 3.8`) needs embedded spaces and cannot be an entry. Unversioned takes the newest \
+release, and cabal pins with a hyphen as part of the package id rather than an `@`: `hlint`, or \
+`hlint-3.8`."""
 display-order = 10
 auto-select = false
 tags = ["haskell", "cabal", "packages"]

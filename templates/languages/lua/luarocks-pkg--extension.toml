@@ -1,5 +1,8 @@
 display-name = "luarocks Packages"
 display-disc = "Install Lua packages globally via luarocks"
+display-detail = """Installs Lua rocks system-wide with `luarocks install`. Unversioned takes the newest release, \
+`rock@version` pins one — booth translates that `@` into the positional version luarocks expects, \
+so include the rockspec revision to name an exact rock: `busted`, or `busted@2.2.0-1`."""
 display-order = 10
 auto-select = false
 tags = ["lua", "luarocks", "packages"]

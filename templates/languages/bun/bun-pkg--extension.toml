@@ -1,5 +1,8 @@
 display-name = "bun Packages"
 display-disc = "Install global bun packages"
+display-detail = """Installs global packages with `bun add -g`, then symlinks their binaries into /usr/local/bin so \
+they are on PATH for every user. Unversioned takes the newest release and `pkg@version` pins one — \
+bun reads npm's specifier syntax, so tags and ranges work too: `cowsay`, or `cowsay@1.6.0`."""
 display-order = 10
 auto-select = false
 tags = ["bun", "packages"]
