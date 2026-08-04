@@ -68,6 +68,7 @@ type model struct {
 	drifted         []string
 	overwriteDialog bool
 	overwriteInput  string
+	overwriteCursor int // cursor position within overwriteInput
 	saveBeside      bool
 
 	// Search
@@ -482,6 +483,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 // handleSearchInput handles keys when the search bar is focused.
 func (m model) handleSearchInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if pos, moved := moveTextCursor(keyName(msg), m.searchCursor, len(m.searchQuery)); moved {
+		m.searchCursor = pos
+		return m, nil
+	}
+
 	switch keyName(msg) {
 	case "esc":
 		m.searchQuery = ""
@@ -508,16 +514,6 @@ func (m model) handleSearchInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			m.searchQuery = m.searchQuery[:m.searchCursor-1] + m.searchQuery[m.searchCursor:]
 			m.searchCursor--
 			m.resetTabCursors()
-		}
-
-	case "left":
-		if m.searchCursor > 0 {
-			m.searchCursor--
-		}
-
-	case "right":
-		if m.searchCursor < len(m.searchQuery) {
-			m.searchCursor++
 		}
 
 	default:
@@ -743,6 +739,13 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		val = m.stringFields[f.Key]
 	}
 
+	// Moving the cursor changes nothing to write back, so it answers first — and
+	// while an edit is open the arrows belong to the text, not to the tab bar.
+	if pos, moved := moveTextCursor(keyName(msg), m.editCursor, len(val)); moved {
+		m.editCursor = pos
+		return m, nil
+	}
+
 	switch keyName(msg) {
 
 	case "enter", "esc":
@@ -762,16 +765,6 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			val = val[:m.editCursor-1] + val[m.editCursor:]
 			m.editCursor--
 		}
-	case "left":
-		if m.editCursor > 0 {
-			m.editCursor--
-		}
-		// Don't switch tabs while editing
-	case "right":
-		if m.editCursor < len(val) {
-			m.editCursor++
-		}
-		// Don't switch tabs while editing
 	default:
 		if ins := acceptsEditText(f.Kind, typedText(msg)); ins != "" {
 			val = val[:m.editCursor] + ins + val[m.editCursor:]
@@ -1004,6 +997,11 @@ func (m *model) beginVariadicEdit(pk string, idx int, val string, isNew bool) {
 
 // handleVariadicEdit handles typing when editing one value of a variadic param.
 func (m model) handleVariadicEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if pos, moved := moveTextCursor(keyName(msg), m.variadicEditCur, len(m.variadicEditBuf)); moved {
+		m.variadicEditCur = pos
+		return m, nil
+	}
+
 	switch keyName(msg) {
 	case "enter", "tab":
 		m.commitVariadicEdit()
@@ -1019,14 +1017,6 @@ func (m model) handleVariadicEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.variadicEditCur > 0 && len(m.variadicEditBuf) > 0 {
 			m.variadicEditBuf = m.variadicEditBuf[:m.variadicEditCur-1] + m.variadicEditBuf[m.variadicEditCur:]
 			m.variadicEditCur--
-		}
-	case "left":
-		if m.variadicEditCur > 0 {
-			m.variadicEditCur--
-		}
-	case "right":
-		if m.variadicEditCur < len(m.variadicEditBuf) {
-			m.variadicEditCur++
 		}
 	default:
 		if ins := typedText(msg); ins != "" {
@@ -1073,6 +1063,11 @@ func (m *model) endVariadicEdit() {
 func (m model) handleParamStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	val := m.paramValues[m.paramEditKey]
 
+	if pos, moved := moveTextCursor(keyName(msg), m.paramEditCursor, len(val)); moved {
+		m.paramEditCursor = pos
+		return m, nil
+	}
+
 	switch keyName(msg) {
 	case "enter", "tab":
 		// Accept the edited value
@@ -1090,14 +1085,6 @@ func (m model) handleParamStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if m.paramEditCursor > 0 && len(val) > 0 {
 			val = val[:m.paramEditCursor-1] + val[m.paramEditCursor:]
 			m.paramEditCursor--
-		}
-	case "left":
-		if m.paramEditCursor > 0 {
-			m.paramEditCursor--
-		}
-	case "right":
-		if m.paramEditCursor < len(val) {
-			m.paramEditCursor++
 		}
 	default:
 		if ins := typedText(msg); ins != "" {
@@ -1436,6 +1423,7 @@ func (m model) requestSave() (tea.Model, tea.Cmd) {
 	if len(m.drifted) > 0 {
 		m.overwriteDialog = true
 		m.overwriteInput = ""
+		m.overwriteCursor = 0
 		return m, nil
 	}
 	m.confirmed = true
@@ -1448,10 +1436,16 @@ func (m model) requestSave() (tea.Model, tea.Cmd) {
 // confirmation word exactly. A half-typed word does nothing, and Esc backs out with
 // the configuration untouched.
 func (m model) handleOverwriteConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	if pos, moved := moveTextCursor(keyName(msg), m.overwriteCursor, len(m.overwriteInput)); moved {
+		m.overwriteCursor = pos
+		return m, nil
+	}
+
 	switch keyName(msg) {
 	case "esc":
 		m.overwriteDialog = false
 		m.overwriteInput = ""
+		m.overwriteCursor = 0
 		return m, nil
 
 	case "enter":
@@ -1467,8 +1461,9 @@ func (m model) handleOverwriteConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "backspace":
-		if len(m.overwriteInput) > 0 {
-			m.overwriteInput = m.overwriteInput[:len(m.overwriteInput)-1]
+		if m.overwriteCursor > 0 && len(m.overwriteInput) > 0 {
+			m.overwriteInput = m.overwriteInput[:m.overwriteCursor-1] + m.overwriteInput[m.overwriteCursor:]
+			m.overwriteCursor--
 		}
 		return m, nil
 
@@ -1481,7 +1476,8 @@ func (m model) handleOverwriteConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// it; "overwrite\n" is not the confirmation word, and the dialog would sit
 	// there refusing Enter with no way to see why.
 	if ins := typedText(msg); ins != "" {
-		m.overwriteInput += ins
+		m.overwriteInput = m.overwriteInput[:m.overwriteCursor] + ins + m.overwriteInput[m.overwriteCursor:]
+		m.overwriteCursor += len(ins)
 	}
 	return m, nil
 }

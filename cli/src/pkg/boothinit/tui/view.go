@@ -199,11 +199,14 @@ func (m model) renderSearchBar(fullWidth int) string {
 	}
 
 	if m.searchFocused {
-		content := displayQuery + "▌"
-		if len(content) > boxWidth {
-			content = content[len(content)-boxWidth:]
-		}
-		box := focusValueStyle.Render(" " + content + strings.Repeat(" ", max(0, boxWidth-len(content)-1)))
+		// The box holds a leading space, the visible text and the caret, so the text
+		// window is two columns narrower — and it follows the cursor rather than the
+		// end of the query, or Home in a long query would scroll the caret off-screen.
+		visible, cursor := windowAround(query, m.searchCursor, boxWidth-2)
+		content := caretText(visible, cursor)
+		// lipgloss.Width, not len: the block cursor carries escape codes that cost
+		// bytes and no columns, and counting them would eat the box's padding.
+		box := focusValueStyle.Render(" " + content + strings.Repeat(" ", max(0, boxWidth-lipgloss.Width(content)-1)))
 		return label + " " + box
 	}
 
@@ -314,7 +317,7 @@ func (m model) renderStringField(f configFieldDef, width int, isCursor bool) str
 	}
 
 	if isCursor && m.editing {
-		editDisplay := val + "▌"
+		editDisplay := caretText(val, m.editCursor)
 		styled := "  " + focusLabelStyle.Render(f.Label+":") + "  " + focusValueStyle.Render(" "+editDisplay+" ")
 		return cursorStyle.Render(padStyledRight(styled, width))
 	}
@@ -338,7 +341,7 @@ func (m model) renderListItemField(f configFieldDef, listIdx int, width int, isC
 	}
 
 	if isCursor && m.editing && m.listEditing && m.listEditIdx == listIdx {
-		editDisplay := val + "▌"
+		editDisplay := caretText(val, m.editCursor)
 		styled := "  " + focusLabelStyle.Render(f.Label+":") + "  " + focusValueStyle.Render(" "+editDisplay+" ")
 		return cursorStyle.Render(padStyledRight(styled, width))
 	}
@@ -979,7 +982,7 @@ func (m model) renderParamFields(lines []string, item treeItem, t *tmpl.Template
 			}
 			rowAt[len(lines)] = i
 			if isFocused && m.variadicEditing && !m.variadicEditIsNew && m.variadicEditIdx == row.valueIdx {
-				lines = append(lines, "      "+focusValueStyle.Render(" "+m.variadicEditBuf+"▌ "))
+				lines = append(lines, "      "+focusValueStyle.Render(" "+caretText(m.variadicEditBuf, m.variadicEditCur)+" "))
 			} else if isFocused {
 				lines = append(lines, "    "+cursorStyle.Render("• "+text))
 			} else {
@@ -996,7 +999,7 @@ func (m model) renderParamFields(lines []string, item treeItem, t *tmpl.Template
 			}
 			rowAt[len(lines)] = i
 			if isFocused && m.variadicEditing && m.variadicEditIsNew {
-				lines = append(lines, "      "+focusValueStyle.Render(" "+m.variadicEditBuf+"▌ "))
+				lines = append(lines, "      "+focusValueStyle.Render(" "+caretText(m.variadicEditBuf, m.variadicEditCur)+" "))
 			} else if isFocused {
 				lines = append(lines, "    "+cursorStyle.Render("(+ add)"))
 			} else {
@@ -1029,7 +1032,7 @@ func (m model) renderParamFieldRow(t *tmpl.Template, name, pk string, isFocused 
 	// Editing shows the raw value, so a "${SVC_PORT}" reference stays visible and
 	// editable — typing over it is an explicit, deliberate pin.
 	if isFocused && m.paramEditing && m.paramEditKey == pk {
-		return "  " + focusLabelStyle.Render(name+":") + "  " + focusValueStyle.Render(" "+val+"▌ ")
+		return "  " + focusLabelStyle.Render(name+":") + "  " + focusValueStyle.Render(" "+caretText(val, m.paramEditCursor)+" ")
 	}
 	if isFocused {
 		return "  " + focusLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
@@ -1092,8 +1095,8 @@ func (m model) renderOverwriteDialog() string {
 	}
 
 	// Input field with cursor
-	field := m.overwriteInput + "█"
-	pad := len(overwriteConfirmWord) + 4 - len([]rune(field))
+	field := caretText(m.overwriteInput, m.overwriteCursor)
+	pad := len(overwriteConfirmWord) + 4 - lipgloss.Width(field)
 	if pad > 0 {
 		field += strings.Repeat(" ", pad)
 	}

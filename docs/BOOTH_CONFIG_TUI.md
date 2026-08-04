@@ -154,8 +154,29 @@ else the booth holds is carried through untouched.
 |-----|--------|
 | `Tab` | Focus the search bar (from content) |
 | Type | Filter templates/extensions by name or description |
+| `←` / `→` / `Home` / `End` | Move the cursor within the query (see [Text fields](#text-fields)) |
 | `Tab` / `Enter` / `↓` | Return to content (keep search text) |
 | `Esc` | Clear search and return to content |
+
+### Text fields
+
+Every text box in the TUI — the search bar, a Config string or list entry, a
+[parameter](#editing-parameters) value, a package row, and the
+[overwrite confirmation](#saving-over-hand-written-files) — takes the same four
+keys, so a value can be fixed in place instead of retyped:
+
+| Key | Action |
+|-----|--------|
+| `←` / `→` | Move the cursor one character |
+| `Home` | Jump to the start of the value |
+| `End` | Jump to the end of the value |
+| `Backspace` | Delete the character before the cursor |
+
+Typing and pasting both insert at the cursor, which is drawn the way a terminal
+draws its own — a **reversed block on the character it is on**, and on the blank
+cell past the end of the value. While a field is open the
+arrows belong to the text — they do not switch tabs until the edit is finished
+with `Enter` or `Esc`.
 
 ### Tree Navigation (default focus)
 
@@ -177,6 +198,7 @@ else the booth holds is carried through untouched.
 |-----|--------|
 | `↑` / `↓` | Navigate config fields |
 | `Space` / `Enter` | Toggle bool, cycle option, or edit string |
+| `←` / `→` / `Home` / `End` (when editing) | Move the cursor within the value (see [Text fields](#text-fields)) |
 | `Esc` (when editing) | Finish editing |
 | `←` / `→` | Switch tab |
 | `Tab` | Focus search bar |

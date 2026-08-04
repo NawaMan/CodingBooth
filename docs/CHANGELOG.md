@@ -4,6 +4,46 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Every text box in the config TUI now takes `←`, `→`, `Home` and `End`, and draws
+  its caret where the cursor actually is.** A mistyped module path had to be
+  retyped from the mistake onward, because the cursor could only ever sit at the end
+  of what was typed.
+
+  Half of that was invisible rather than missing: four of the six text fields already
+  moved a cursor on `←`/`→` and already inserted at it, but **every one of them drew
+  the caret glued to the end of the value**. Moving the cursor therefore looked like
+  nothing had happened, and the next character appeared somewhere the caret said it
+  would not. `caretText` now draws the cursor at the cursor, at all six sites, as a
+  **reversed cell** — the way a terminal draws its own — covering the character it is
+  on, or the blank cell past the end of the value. Reversing a cell that is already
+  there means the text does not shift as the cursor walks it, which a glyph wedged
+  between two characters would have done.
+
+  The reverse is written as `\x1b[7m` … `\x1b[27m` by hand rather than through a
+  lipgloss style, because a style ends its output with a full reset: that would also
+  drop the background the field is painted with and leave the rest of the row
+  unstyled. `27` turns off reverse and nothing else. Two padding calculations — the
+  search box and the confirmation field — counted the value with `len` and now use
+  `lipgloss.Width`, since those escapes cost bytes and no columns.
+
+  The keys themselves come from one `moveTextCursor` helper rather than four copies of
+  the same switch, the same way one `typedText` already answers "what text does this
+  key contribute" for all six fields: a field cannot grow its own idea of Home if there
+  is only one. It answers before the field's own switch does, so an open edit claims
+  `←`/`→` from the tab bar for as long as it is open — that was already true, and now
+  `Home`/`End` cannot fall through to "jump to the first row" either.
+
+  Two fields gained more than movement. The **search bar** is the only one drawn in a
+  box of fixed width, and it used to window on the end of the query; `windowAround` now
+  windows on the cursor, so `Home` in a long query brings the head of it — and the caret
+  — back into view instead of scrolling both off the left edge. The **overwrite
+  confirmation** had no cursor at all: characters appended and Backspace only ever ate
+  the last one. Typing that word in full is the only way past that dialog, so mistyping
+  it has to be fixable in place.
+
+  Positions are byte offsets, which stays correct because every one of these fields
+  already filters its input to printable ASCII — one byte, one column.
+
 - **The config TUI takes the mouse now: click a tab, a row, a checkbox, a parameter;
   scroll with the wheel.** No flag — `booth config` asks the terminal for mouse
   reporting and handles clicks and the wheel; motion and releases are ignored, since a

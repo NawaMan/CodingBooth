@@ -110,6 +110,10 @@ func TestRenderParamFieldRow_EditingShowsRawReference(t *testing.T) {
 	pk := paramKey(item, "SVC_HOST_PORT")
 	m.paramEditing = true
 	m.paramEditKey = pk
+	// Opening the editor puts the cursor at the end of the value, and the block
+	// cursor reverses the cell it is on — parked anywhere else it would split the
+	// reference with escape codes and this substring check would miss it.
+	m.paramEditCursor = len("${SVC_PORT}")
 
 	row := m.renderParamFieldRow(ext, "SVC_HOST_PORT", pk, true)
 	if !strings.Contains(row, "${SVC_PORT}") {
