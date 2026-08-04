@@ -204,6 +204,7 @@ setup thonny
 setup tls
 setup vhs
 setup viewmd
+setup viewmd-desktop-icon
 setup vscode
 setup warp
 setup wayland
