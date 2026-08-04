@@ -53,7 +53,11 @@ func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection, warning strin
 		m.warningMessage = warning
 	}
 
-	p := tea.NewProgram(m, tea.WithAltScreen())
+	// Mouse cell motion is the lightest reporting mode that still delivers clicks
+	// and the wheel; motion events are ignored. Enabling it hands the mouse to the
+	// TUI, so a terminal's own click-drag text selection needs Shift while this is
+	// up — which is what the footer and BOOTH_CONFIG_TUI.md say.
+	p := tea.NewProgram(m, tea.WithAltScreen(), tea.WithMouseCellMotion())
 	result, err := p.Run()
 	if err != nil {
 		return nil, fmt.Errorf("TUI error: %w", err)

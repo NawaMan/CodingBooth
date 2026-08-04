@@ -137,7 +137,7 @@ func TestRenderParamFieldRow_FollowedValueIsNotCustom(t *testing.T) {
 func TestRenderParamValues_ResolvesReference(t *testing.T) {
 	m, item, ext := exposeModel("80", "${SVC_PORT}")
 
-	lines := m.renderParamValues(nil, item, ext)
+	lines, _ := m.renderParamValues(nil, item, ext)
 	joined := strings.Join(lines, "\n")
 	if !strings.Contains(joined, "SVC_HOST_PORT = 80 (follows SVC_PORT)") {
 		t.Errorf("read-only view should resolve the reference, got %q", joined)

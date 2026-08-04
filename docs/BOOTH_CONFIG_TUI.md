@@ -14,7 +14,7 @@ Back to [README](../README.md) | See also: [booth config reference](BOOTH_CONFIG
 - [How It Works](#how-it-works)
 - [TUI Layout](#tui-layout)
 - [The Config Tab](#the-config-tab)
-- [Keybindings](#keybindings)
+- [Keybindings](#keybindings) · [Mouse](#mouse)
 - [Pre-populating with Flags](#pre-populating-with-flags)
 - [Selection Behavior](#selection-behavior)
 - [Saving over Hand-Written Files](#saving-over-hand-written-files)
@@ -190,6 +190,73 @@ else the booth holds is carried through untouched.
 | `Ctrl+Q` / `Ctrl+C` | Quit (asks for confirmation) |
 | `Enter` (when quitting) | Confirm quit |
 | `Esc` (when quitting) | Cancel quit |
+
+### Mouse
+
+The mouse is live — no flag, nothing to turn on:
+
+| Click | Action |
+|-------|--------|
+| A tab | Switch to it |
+| The search box | Focus it |
+| A template / extension **row** | Move the cursor there (the right panel follows) |
+| The row's `[ ]` **marker** | Select or deselect it — the marker is the mouse's `Space` |
+| A **config field** | Bool flips, cycle opens for stepping, string or list entry opens for editing, `(+ add new)` adds one |
+| A **parameter** in the right panel | Focus the parameter editor on that row; on a package list's `(+ add)` it starts a new entry straight away |
+| The `◄` / `►` of a focused parameter | Step to the previous / next suggested value — the arrows appear once the row is focused |
+| A footer **button** | `[ Save (Ctrl+S) ]` writes the booth; `[ Cancel (Ctrl+E) ]` asks first (below) |
+| **Wheel** | Scroll the list, or walk the rows of a focused parameter list |
+
+Clicking away from a field you were editing **keeps** what you typed, exactly as
+`Enter` would. The two dialogs are deliberately not clickable in the same way: the
+startup warning is dismissed by a click, but the
+[overwrite confirmation](#saving-over-hand-written-files) ignores the mouse
+entirely — it exists to make destroying hand-written files take more than a reflex,
+and a stray click is precisely a reflex.
+
+#### Save and Cancel
+
+The bottom-right of the footer carries the two buttons that end a session:
+
+```
+  Space: select  │  Enter: edit params  │  ↑↓: navigate      [ Save (Ctrl+S) ]  [ Cancel (Ctrl+E) ]
+```
+
+While a cancel waits on an answer, the same corner holds the reply:
+
+```
+ Quit without saving? Press ENTER to quit  │  ESC to go back
+  Enter: quit  │  Esc: cancel                                   [ Discard (ENTER) ]  [ Back (ESC) ]
+```
+
+`Save` is `Ctrl+S`: it writes `.booth/` and exits — and on a booth with
+[hand-written files](#saving-over-hand-written-files) it opens the same typed
+confirmation the key does, because a button is not a way around that guard.
+
+`Cancel` is `Ctrl+E`. It **asks before discarding anything — but only when there is
+something to discard.** On a session you have not changed, it just leaves: opening
+the TUI to look at a booth and closing it again costs one click, not two. "Changed"
+is measured against the state the TUI opened with, so selecting a template and
+deselecting it again really is no change, and values pre-filled by
+[flags](#pre-populating-with-flags) are not your edits. A value you are still typing
+counts as unsaved work, so it asks.
+
+When it does ask, the pair becomes `[ Discard (ENTER) ]` and `[ Back (ESC) ]`, so
+the mouse that raised the question can answer it; `Enter` and `Esc` do the same.
+Until you answer, nothing is written and nothing is lost — and while the question is
+up, a click anywhere *other* than those two buttons is ignored, so a stray click
+cannot throw a configuration away.
+
+Both keys work from anywhere, including while a field is being edited: `Ctrl+S`
+commits what you typed and saves, `Ctrl+E` weighs it and asks.
+
+On a terminal too narrow to hold them, the buttons are left out rather than drawn
+somewhere misleading; `Ctrl+S` and `Ctrl+E` work either way.
+
+**The trade:** while the TUI is up it owns the mouse, so your terminal's own
+click-drag text selection does not work. Hold **Shift** and drag to select text
+the terminal's way (this is how most terminals bypass mouse reporting). The TUI
+says so in the footer when it opens.
 
 ---
 

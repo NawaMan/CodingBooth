@@ -4,6 +4,73 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The config TUI takes the mouse now: click a tab, a row, a checkbox, a parameter;
+  scroll with the wheel.** No flag — `booth config` asks the terminal for mouse
+  reporting and handles clicks and the wheel; motion and releases are ignored, since a
+  release would double-handle every click and there is nothing here to drag.
+  Hit-testing needed no new bookkeeping, because the screen is a fixed stack of rows
+  (`contentHeight()` subtracts exactly the seven it is not) and **both left panels
+  already render one line per row** — `buildConfigRows` makes group headers rows, so a
+  click is `rows[scrollOff + y - 4]` with no guessing. The one panel that does not work
+  that way is the right one, where wrapped description text of unpredictable length sits
+  above interleaved label headers and value rows: rather than reconstruct that in the
+  handler — a second copy of the arithmetic, and the copy is what drifts — the detail
+  renderers now hand back the line→row map they filled while drawing, re-keyed by the
+  same scroll offset that moved the lines. Same for the tab bar (`tabLabels` draws it and
+  hit-tests it) and the `◄ ►` arrows, whose columns are derived from the very string the
+  row renders.
+
+  **The footer now carries `[ Save (Ctrl+S) ]` and `[ Cancel (Ctrl+E) ]`**, flush right on the hint
+  row, which is also where the `Ctrl+S` / `Ctrl+E` hints used to be spelled out — the
+  buttons name both the action and its key, so repeating them only crowded the row. Save
+  is the same code path as the key, including the typed confirmation on a booth with
+  hand-written files: a button must not become a way around that guard. Cancel asks
+  first, and asks *in place* — the pair becomes `[ Discard (ENTER) ]` and `[ Back (ESC) ]`,
+  so the mouse that raised the question can answer it instead of sending the user to the
+  keyboard mid-gesture, and while it stands a click anywhere else is ignored so a stray
+  one cannot discard a configuration. Clicking Save mid-edit commits what was typed
+  rather than saving the state from before it. Too narrow a terminal drops the buttons
+  rather than drawing them somewhere wrong; the keys are unaffected.
+
+  **Cancel only asks when there is something to lose.** Closing a booth you only
+  opened to look at used to cost a confirmation about discarding nothing. Whether there
+  is anything to discard is answered by comparing the editable state — selections, param
+  values, config fields — against a snapshot taken when the TUI opened, *after* `--select`
+  and the other flags were applied, so pre-filled values are not counted as the user's
+  edits. A `dirty` flag flipped at each mutation was the obvious alternative and the wrong
+  one: every future handler would have to remember it, and the one that forgot would make
+  the TUI lie about unsaved work. Comparing cannot forget, and it buys a property a flag
+  could not — selecting a template and deselecting it again is genuinely no change, so it
+  does not ask. A half-typed value has not reached the maps yet, so it counts as unsaved
+  on its own.
+
+  That uncovered a gap while wiring it: `Ctrl+S` and `Ctrl+E` were **swallowed inside
+  every text field** — they fell through to the "insert a character" branch, so the only
+  ways out of an edit were Enter and Esc, even though the footer buttons beside them
+  worked. Both keys now reach their handlers from inside an edit, whatever the cursor
+  resolves to: Ctrl+S commits what was typed and saves, Ctrl+E weighs it and asks.
+
+  Where a click and a keypress mean the same thing they now *are* the same thing:
+  `activateConfigRow` is what Space does to a config row, `stepSuggest` is what the arrow
+  keys do to a suggested value, and both are called from the mouse — so neither input can
+  drift into meaning something the other does not. Deliberate asymmetries: clicking a
+  **row** only moves the cursor while clicking its `[ ]` **marker** selects, so reading a
+  description cannot silently change a selection; clicking away from an edit **keeps**
+  what was typed, as Enter would, rather than stranding the TUI in edit mode with the
+  next keystroke going somewhere invisible; the startup warning dismisses on a click, but
+  the overwrite confirmation ignores the mouse entirely, because it exists to make
+  destroying hand-written files cost more than a reflex.
+
+  **The trade, stated up front:** owning the mouse costs the terminal's own click-drag
+  text selection, so the footer says so on open and points at Shift+drag. Verified in a
+  real terminal by writing SGR mouse sequences (`ESC[<0;x;yM` — byte-identical to a real
+  click, since the TUI requests `1006`) into a PTY: a booth selected, its package list
+  filled and its `GO_VERSION` stepped from `1.25.7` to `1.25.0` by clicks alone, then
+  saved and read back from the generated Boothfile. VHS has no mouse, which is why the
+  proof is a PTY. 22 unit tests cover the rest, several asserting against `View()` itself
+  so that adding a header line breaks the row map loudly instead of shifting every click
+  by one.
+
 - **You could not paste into the config TUI, and nothing said so.** Reported against
   `go-pkg`'s package field, where the value being typed is a module path copied from a
   browser — the worst possible thing to retype. Every text field tested

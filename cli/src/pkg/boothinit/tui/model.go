@@ -105,6 +105,10 @@ type model struct {
 	variadicEditBuf   string // in-progress text for the value being edited
 	variadicEditCur   int    // cursor position within variadicEditBuf
 	variadicEditIsNew bool   // true when adding a new value (ESC discards it)
+
+	// baseline is the editable state as the TUI opened, after any --select flags
+	// were applied: what "nothing changed" means for this session.
+	baseline configSnapshot
 }
 
 func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
@@ -214,6 +218,17 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 			m.paramValues[k] = v
 		}
 	}
+
+	// Say the mouse is live, and say the price of it. Taking over mouse reporting
+	// stops the terminal's own click-drag text selection, and "I can no longer
+	// copy out of this screen" deserves an answer before it becomes a question.
+	// The first action that has something to report replaces this.
+	m.notification = "Mouse: click rows, markers and tabs; wheel scrolls  │  hold Shift to select text"
+
+	// Taken last, so pre-selected templates and flag values are part of "unchanged"
+	// — the user did not do those, and cancelling right after opening should not
+	// pretend they have work to lose.
+	m.baseline = m.snapshot()
 
 	return m
 }
@@ -374,6 +389,9 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.height = msg.Height
 		return m, nil
 
+	case tea.MouseMsg:
+		return m.handleMouse(msg)
+
 	case tea.KeyMsg:
 		// Warning dialog mode — must dismiss before using TUI
 		if m.warningDialog {
@@ -437,9 +455,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch msg.String() {
 		case "ctrl+c", "ctrl+e":
-			m.quitting = true
-			m.notification = "Quit without saving? Press ENTER to quit  │  ESC to go back"
-			return m, nil
+			return m.requestCancel()
 
 		case "ctrl+s":
 			return m.requestSave()
@@ -481,10 +497,8 @@ func (m model) handleSearchInput(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case "ctrl+c", "ctrl+e":
-		m.quitting = true
-		m.notification = "Quit without saving? Press ENTER to quit  │  ESC to go back"
 		m.searchFocused = false
-		return m, nil
+		return m.requestCancel()
 
 	case "ctrl+s":
 		return m.requestSave()
@@ -614,49 +628,57 @@ func (m model) handleConfigKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 			}
 		}
 	case " ", "enter":
-		row := m.currentConfigRow(rows)
-		if row == nil {
-			break
-		}
-		switch row.kind {
-		case configRowField:
-			f := allConfigFields[row.fieldIdx]
-			switch f.Kind {
-			case fieldKindBool:
-				m.boolFields[f.Key] = !m.boolFields[f.Key]
-			case fieldKindCycle:
-				m.cycleEditing = true
-				m.cyclePrevIdx = m.cycleIndices[f.Key]
-			case fieldKindString, fieldKindInt:
-				m.editing = true
-				m.editCursor = len(m.stringFields[f.Key])
-			}
-		case configRowListItem:
-			f := allConfigFields[row.fieldIdx]
-			m.listEditing = true
-			m.listEditIdx = row.listIndex
-			m.editing = true
-			m.editCursor = len(m.listFields[f.Key][row.listIndex])
-		case configRowListAdd:
-			f := allConfigFields[row.fieldIdx]
-			m.listFields[f.Key] = append(m.listFields[f.Key], "")
-			m.listEditing = true
-			m.listEditIdx = len(m.listFields[f.Key]) - 1
-			m.editing = true
-			m.editCursor = 0
-			// Move cursor to the new list item row (one before the add row)
-			newRows := m.buildConfigRows()
-			for ri, r := range newRows {
-				if r.kind == configRowListItem && r.fieldIdx == row.fieldIdx && r.listIndex == m.listEditIdx {
-					m.setCursor(ri)
-					break
-				}
-			}
+		if row := m.currentConfigRow(rows); row != nil {
+			m.activateConfigRow(*row)
 		}
 	}
 
 	m.adjustConfigScroll()
 	return m, nil
+}
+
+// activateConfigRow does what Space or Enter does to a config row: a bool flips, a
+// cycle opens for stepping, a string or list entry opens for editing, and the add
+// row appends an entry and edits it.
+//
+// Shared with the mouse, so a click on a row and a keypress on it cannot come to
+// mean two different things.
+func (m *model) activateConfigRow(row configRow) {
+	switch row.kind {
+	case configRowField:
+		f := allConfigFields[row.fieldIdx]
+		switch f.Kind {
+		case fieldKindBool:
+			m.boolFields[f.Key] = !m.boolFields[f.Key]
+		case fieldKindCycle:
+			m.cycleEditing = true
+			m.cyclePrevIdx = m.cycleIndices[f.Key]
+		case fieldKindString, fieldKindInt:
+			m.editing = true
+			m.editCursor = len(m.stringFields[f.Key])
+		}
+	case configRowListItem:
+		f := allConfigFields[row.fieldIdx]
+		m.listEditing = true
+		m.listEditIdx = row.listIndex
+		m.editing = true
+		m.editCursor = len(m.listFields[f.Key][row.listIndex])
+	case configRowListAdd:
+		f := allConfigFields[row.fieldIdx]
+		m.listFields[f.Key] = append(m.listFields[f.Key], "")
+		m.listEditing = true
+		m.listEditIdx = len(m.listFields[f.Key]) - 1
+		m.editing = true
+		m.editCursor = 0
+		// Move the cursor to the new list item row (one before the add row).
+		newRows := m.buildConfigRows()
+		for ri, r := range newRows {
+			if r.kind == configRowListItem && r.fieldIdx == row.fieldIdx && r.listIndex == m.listEditIdx {
+				m.setCursor(ri)
+				break
+			}
+		}
+	}
 }
 
 func (m *model) adjustConfigScroll() {
@@ -694,6 +716,15 @@ func (m *model) adjustConfigScroll() {
 }
 
 func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// Leaving and saving must work from inside an edit whatever the cursor resolves
+	// to — the footer buttons are always live, so their keys are too.
+	switch keyName(msg) {
+	case "ctrl+s":
+		return m.requestSave()
+	case "ctrl+c", "ctrl+e":
+		return m.requestCancel()
+	}
+
 	f := m.currentConfigField()
 	if f == nil {
 		m.editing = false
@@ -713,6 +744,7 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	}
 
 	switch keyName(msg) {
+
 	case "enter", "esc":
 		m.editing = false
 		if m.listEditing {
@@ -847,9 +879,7 @@ func (m model) handleParamKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 
 	case "ctrl+c", "ctrl+e":
 		m.paramFocused = false
-		m.quitting = true
-		m.notification = "Quit without saving? Press ENTER to quit  │  ESC to go back"
-		return m, nil
+		return m.requestCancel()
 
 	case "ctrl+s":
 		return m.requestSave()
@@ -887,32 +917,11 @@ func (m model) handleParamKey(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if row.kind != paramRowField {
 			return m, nil
 		}
-		p := t.Params[row.param]
-		pk := paramKey(item, row.param)
-		if len(p.Suggests) > 0 {
-			// Cycle through suggests with left/right
-			currentVal := m.paramValues[pk]
-			currentIdx := -1
-			for i, s := range p.Suggests {
-				if s == currentVal {
-					currentIdx = i
-					break
-				}
-			}
-			if msg.String() == "right" {
-				if currentIdx < 0 {
-					m.paramValues[pk] = p.Suggests[0]
-				} else if currentIdx < len(p.Suggests)-1 {
-					m.paramValues[pk] = p.Suggests[currentIdx+1]
-				}
-			} else { // left
-				if currentIdx < 0 {
-					m.paramValues[pk] = p.Suggests[len(p.Suggests)-1]
-				} else if currentIdx > 0 {
-					m.paramValues[pk] = p.Suggests[currentIdx-1]
-				}
-			}
+		dir := 1
+		if keyName(msg) == "left" {
+			dir = -1
 		}
+		m.stepSuggest(t, row.param, paramKey(item, row.param), dir)
 		return m, nil
 
 	case " ", "enter":
@@ -1004,6 +1013,8 @@ func (m model) handleVariadicEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "ctrl+s":
 		m.commitVariadicEdit()
 		return m.requestSave()
+	case "ctrl+c", "ctrl+e":
+		return m.requestCancel()
 	case "backspace":
 		if m.variadicEditCur > 0 && len(m.variadicEditBuf) > 0 {
 			m.variadicEditBuf = m.variadicEditBuf[:m.variadicEditCur-1] + m.variadicEditBuf[m.variadicEditCur:]
@@ -1070,6 +1081,11 @@ func (m model) handleParamStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		// Cancel — restore previous value
 		m.paramValues[m.paramEditKey] = m.paramEditPrev
 		m.paramEditing = false
+	case "ctrl+s":
+		m.paramEditing = false
+		return m.requestSave()
+	case "ctrl+c", "ctrl+e":
+		return m.requestCancel()
 	case "backspace":
 		if m.paramEditCursor > 0 && len(val) > 0 {
 			val = val[:m.paramEditCursor-1] + val[m.paramEditCursor:]
@@ -1388,10 +1404,30 @@ func (m model) buildParamDSL(itemKey string, t *tmpl.Template) string {
 	return ":" + strings.Join(quoted, ",")
 }
 
+// quitPromptMessage is the confirmation shown before leaving without saving. Both
+// keys and the footer's Discard / Back buttons answer it.
+const quitPromptMessage = "Quit without saving? Press ENTER to quit  │  ESC to go back"
+
 // overwriteConfirmWord is what the user must type to save over hand-written
 // content. Deliberately not "y" or "yes" — a reflex keystroke is exactly what
 // this dialog exists to prevent.
 const overwriteConfirmWord = "overwrite"
+
+// requestCancel handles Ctrl+E / the Cancel button from every mode.
+//
+// It only asks when leaving would lose something: on an untouched session — opened
+// and closed, or every change undone by hand — the question has no stakes and no
+// answer worth typing, so it quits. Any in-progress edit is committed first, so
+// what the user typed is what gets weighed rather than the state before it.
+func (m model) requestCancel() (tea.Model, tea.Cmd) {
+	m.commitActiveEdit()
+	if !m.hasUnsavedChanges() {
+		return m, tea.Quit
+	}
+	m.quitting = true
+	m.notification = quitPromptMessage
+	return m, nil
+}
 
 // requestSave handles Ctrl+S from every mode. Saving regenerates .booth/ files
 // from scratch, so when any of them hold hand-written content it routes through

@@ -67,6 +67,23 @@ var (
 			Bold(true)
 )
 
+// Footer buttons — how a mouse saves or leaves. Green keeps the work, red throws it
+// away, grey merely asks: the colour says which is which before the label is read.
+var (
+	saveButtonStyle = lipgloss.NewStyle().
+			Foreground(lipgloss.Color("231")).
+			Background(lipgloss.Color("28")).
+			Bold(true)
+	cancelButtonStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("231")).
+				Background(lipgloss.Color("240")).
+				Bold(true)
+	discardButtonStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("231")).
+				Background(lipgloss.Color("124")).
+				Bold(true)
+)
+
 func (m model) View() string {
 	if m.width == 0 || m.height == 0 {
 		return "Loading..."
@@ -82,16 +99,8 @@ func (m model) View() string {
 		return m.renderOverwriteDialog()
 	}
 
-	fullWidth := m.width
-	leftWidth := fullWidth * 55 / 100
-	if leftWidth < 30 {
-		leftWidth = 30
-	}
-	rightWidth := fullWidth - leftWidth - 3
-	if rightWidth < 20 {
-		rightWidth = 20
-	}
-	contentH := m.contentHeight()
+	l := m.layout()
+	fullWidth, leftWidth, rightWidth, contentH := l.fullWidth, l.leftWidth, l.rightWidth, l.contentH
 
 	// Count selections
 	selCount := 0
@@ -137,7 +146,7 @@ func (m model) View() string {
 		rightLines = m.renderConfigDetail(rightWidth, contentH)
 	} else {
 		leftLines = m.renderLeftPanel(leftWidth, contentH)
-		rightLines = m.renderRightPanel(rightWidth, contentH)
+		rightLines = m.renderRightPanel(rightWidth, contentH).lines
 	}
 
 	// === Combine panels ===
@@ -155,15 +164,15 @@ func (m model) View() string {
 		sep + "\n" + footer
 }
 
+// renderTabBar draws the tab bar from tabLabels, which is also what a click is
+// hit-tested against — one description of where each tab sits.
 func (m model) renderTabBar() string {
-	var tabs []string
-	for i, name := range m.tabNames {
-		label := name + " "
-		if m.searchQuery != "" && i > 0 && m.tabItems[i] != nil {
-			mp := &m
-			if len(mp.filterItems(m.tabItems[i])) > 0 {
-				label = name + boldStyle.Render("*")
-			}
+	labels := m.tabLabels()
+	tabs := make([]string, 0, len(labels))
+	for i, t := range labels {
+		label := t.name + " "
+		if t.starred {
+			label = t.name + boldStyle.Render("*")
 		}
 		if i == m.activeTab {
 			tabs = append(tabs, activeTabStyle.Render(label))
@@ -608,9 +617,22 @@ func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) stri
 	return line
 }
 
-func (m model) renderRightPanel(rightWidth, contentH int) []string {
+// rightPanel is what the right panel drew: the lines now on screen, and which
+// param row each of those lines belongs to.
+//
+// The map is filled by the same pass that renders the rows and is re-keyed by the
+// same scroll offset that moved them, so a click can only ever resolve to a row
+// the panel is actually showing. Recomputing the layout in the mouse handler
+// instead would be a second copy of this arithmetic, and the copy is what drifts.
+type rightPanel struct {
+	lines      []string
+	paramRowAt map[int]int // screen line within the panel → index into buildParamRows
+}
+
+func (m model) renderRightPanel(rightWidth, contentH int) rightPanel {
 	var lines []string
 	focusLine := -1
+	var rowAt map[int]int
 
 	items := m.activeItems()
 	cursor := m.cursorPos()
@@ -619,16 +641,16 @@ func (m model) renderRightPanel(rightWidth, contentH int) []string {
 		item := items[cursor]
 		switch item.kind {
 		case kindTemplate:
-			lines, focusLine = m.renderTemplateDetail(item.template, rightWidth)
+			lines, focusLine, rowAt = m.renderTemplateDetail(item.template, rightWidth)
 		case kindExtension:
-			lines, focusLine = m.renderExtensionDetail(item, rightWidth)
+			lines, focusLine, rowAt = m.renderExtensionDetail(item, rightWidth)
 		}
 	}
 
 	// When editing params, scroll the panel so the focused row stays visible
 	// (lists of packages can exceed the panel height).
+	off := 0
 	if m.paramFocused && focusLine >= 0 && contentH > 0 && len(lines) > contentH {
-		off := 0
 		if focusLine >= contentH {
 			off = focusLine - contentH + 1
 		}
@@ -655,12 +677,22 @@ func (m model) renderRightPanel(rightWidth, contentH int) []string {
 		lines = lines[:contentH]
 	}
 
-	return lines
+	// Re-key the row map onto the lines that survived scrolling and truncation.
+	visible := make(map[int]int, len(rowAt))
+	for line, row := range rowAt {
+		if screen := line - off; screen >= 0 && screen < len(lines) {
+			visible[screen] = row
+		}
+	}
+	return rightPanel{lines: lines, paramRowAt: visible}
 }
 
-func (m model) renderTemplateDetail(t *tmpl.Template, width int) ([]string, int) {
+// renderTemplateDetail draws a template's detail panel. It returns the lines, the
+// index of the focused param row (or -1), and which line each param row occupies.
+func (m model) renderTemplateDetail(t *tmpl.Template, width int) ([]string, int, map[int]int) {
 	var lines []string
 	focusLine := -1
+	var rowAt map[int]int
 
 	lines = append(lines, detailTitle.Render(t.DisplayName))
 	lines = append(lines, detailLabel.Render(t.CategoryName))
@@ -681,10 +713,10 @@ func (m model) renderTemplateDetail(t *tmpl.Template, width int) ([]string, int)
 		lines = append(lines, "")
 		if isSelected && m.paramFocused {
 			lines = append(lines, detailLabel.Render("Parameters:")+"  "+detailLabel.Render("(editing)"))
-			lines, focusLine = m.renderParamFields(lines, item, t, width)
+			lines, focusLine, rowAt = m.renderParamFields(lines, item, t, width)
 		} else if isSelected {
 			lines = append(lines, detailLabel.Render("Parameters:")+"  "+detailLabel.Render("(Enter to edit)"))
-			lines = m.renderParamValues(lines, item, t)
+			lines, rowAt = m.renderParamValues(lines, item, t)
 		} else {
 			lines = append(lines, detailLabel.Render("Parameters:"))
 			for _, name := range orderedParamNames(t) {
@@ -719,13 +751,16 @@ func (m model) renderTemplateDetail(t *tmpl.Template, width int) ([]string, int)
 		}
 	}
 
-	return lines, focusLine
+	return lines, focusLine, rowAt
 }
 
-func (m model) renderExtensionDetail(item treeItem, width int) ([]string, int) {
+// renderExtensionDetail draws an extension's detail panel, with the same param-row
+// line map renderTemplateDetail returns.
+func (m model) renderExtensionDetail(item treeItem, width int) ([]string, int, map[int]int) {
 	ext := item.extension
 	var lines []string
 	focusLine := -1
+	var rowAt map[int]int
 
 	lines = append(lines, detailTitle.Render(ext.DisplayName))
 	lines = append(lines, detailLabel.Render(fmt.Sprintf("Extension of %s", item.template.Name)))
@@ -757,10 +792,10 @@ func (m model) renderExtensionDetail(item treeItem, width int) ([]string, int) {
 		lines = append(lines, "")
 		if isSelected && m.paramFocused {
 			lines = append(lines, detailLabel.Render("Parameters:")+"  "+detailLabel.Render("(editing)"))
-			lines, focusLine = m.renderParamFields(lines, item, ext, width)
+			lines, focusLine, rowAt = m.renderParamFields(lines, item, ext, width)
 		} else if isSelected {
 			lines = append(lines, detailLabel.Render("Parameters:")+"  "+detailLabel.Render("(Enter to edit)"))
-			lines = m.renderParamValues(lines, item, ext)
+			lines, rowAt = m.renderParamValues(lines, item, ext)
 		} else {
 			lines = append(lines, detailLabel.Render("Parameters:"))
 			for _, name := range orderedParamNames(ext) {
@@ -770,7 +805,7 @@ func (m model) renderExtensionDetail(item treeItem, width int) ([]string, int) {
 		}
 	}
 
-	return lines, focusLine
+	return lines, focusLine, rowAt
 }
 
 func (m model) renderFooter() string {
@@ -780,12 +815,14 @@ func (m model) renderFooter() string {
 		messageLine = " " + notifyStyle.Render(m.notification)
 	}
 
-	// Line 2: keybinding hints
+	// Line 2: keybinding hints, with the footer buttons flush right. Ctrl+S and
+	// Ctrl+E are no longer spelled out here — the buttons carry both the action and
+	// its key, and repeating them only crowded the row.
 	var keys string
 	if m.quitting {
 		keys = "  Enter: quit  │  Esc: cancel"
 	} else if m.searchFocused {
-		keys = "  Type to search  │  Tab/Enter/↓: go to list  │  Esc: clear  │  Ctrl+S: save  │  Ctrl+E: exit"
+		keys = "  Type to search  │  Tab/Enter/↓: go to list  │  Esc: clear"
 	} else if m.isConfigTab() {
 		if m.editing {
 			keys = "  Type value  │  Enter/Esc: finish  │  Backspace: delete"
@@ -796,11 +833,11 @@ func (m model) renderFooter() string {
 			rows := mp.buildConfigRows()
 			row := mp.currentConfigRow(rows)
 			if row != nil && row.kind == configRowListItem {
-				keys = "  ↑↓: navigate  │  Space/Enter: edit  │  Del/BS: remove  │  ◄►: tab  │  Ctrl+S: save  │  Ctrl+E: exit"
+				keys = "  ↑↓: navigate  │  Space/Enter: edit  │  Del/BS: remove  │  ◄►: tab"
 			} else if row != nil && row.kind == configRowListAdd {
-				keys = "  ↑↓: navigate  │  Space/Enter: add new  │  ◄►: tab  │  Ctrl+S: save  │  Ctrl+E: exit"
+				keys = "  ↑↓: navigate  │  Space/Enter: add new  │  ◄►: tab"
 			} else {
-				keys = "  ↑↓: navigate  │  Space/Enter: toggle/edit  │  ◄►: tab  │  Tab: search  │  Ctrl+S: save  │  Ctrl+E: exit"
+				keys = "  ↑↓: navigate  │  Space/Enter: toggle/edit  │  ◄►: tab  │  Tab: search"
 			}
 		}
 	} else if m.variadicEditing {
@@ -810,22 +847,85 @@ func (m model) renderFooter() string {
 	} else if m.paramFocused {
 		mp := &m
 		if row, ok := mp.currentParamRow(); ok && row.kind == paramRowVariadicValue {
-			keys = "  ↑↓: navigate  │  Space/Enter: edit  │  Del/BS: remove  │  Esc: back  │  Ctrl+S: save"
+			keys = "  ↑↓: navigate  │  Space/Enter: edit  │  Del/BS: remove  │  Esc: back"
 		} else if ok && row.kind == paramRowVariadicAdd {
-			keys = "  ↑↓: navigate  │  Space/Enter: add new  │  Esc: back  │  Ctrl+S: save"
+			keys = "  ↑↓: navigate  │  Space/Enter: add new  │  Esc: back"
 		} else {
-			keys = "  ◄►: cycle  │  Enter/Type: custom value  │  ↑↓: param  │  Esc: back to list  │  Ctrl+S: save  │  Ctrl+E: exit"
+			keys = "  ◄►: cycle  │  Enter/Type: custom value  │  ↑↓: param  │  Esc: back to list"
 		}
 	} else {
-		keys = "  Space: select  │  Enter: edit params  │  ↑↓: navigate  │  ◄►: tab  │  Tab: search  │  Ctrl+S: save  │  Ctrl+E: exit"
+		keys = "  Space: select  │  Enter: edit params  │  ↑↓: navigate  │  ◄►: tab  │  Tab: search"
 	}
-	hintsLine := footerStyle.Render(keys)
 
-	return messageLine + "\n" + hintsLine
+	return messageLine + "\n" + m.renderFooterHints(keys)
 }
 
-// renderParamValues renders param values as read-only (selected but not focused).
-func (m model) renderParamValues(lines []string, item treeItem, t *tmpl.Template) []string {
+// renderFooterHints lays the key hints from the left and the buttons flush right.
+//
+// When the two would collide the hints give way: every hint has a key behind it
+// that works whether or not it is on screen, while the buttons are the only way a
+// mouse can save or leave.
+func (m model) renderFooterHints(keys string) string {
+	buttons := m.footerButtons()
+	if len(buttons) == 0 {
+		return footerStyle.Render(keys)
+	}
+
+	// Cutting the hints mid-list leaves the separator that was introducing the hint
+	// that no longer fits; drop it rather than trail a "│" into empty space.
+	keys = strings.TrimRight(truncateCols(keys, buttons[0].start-1), " │")
+	line := footerStyle.Render(keys)
+	col := lipgloss.Width(keys)
+	for _, b := range buttons {
+		if b.start > col {
+			line += strings.Repeat(" ", b.start-col)
+			col = b.start
+		}
+		line += b.style().Render(b.label)
+		col += b.width
+	}
+	return line
+}
+
+// truncateCols cuts s to at most cols columns, on a rune boundary — the hints hold
+// "│" and "◄►", so cutting bytes would leave a broken rune on screen.
+func truncateCols(s string, cols int) string {
+	if cols <= 0 {
+		return ""
+	}
+	if lipgloss.Width(s) <= cols {
+		return s
+	}
+	out := make([]rune, 0, cols)
+	width := 0
+	for _, r := range s {
+		w := lipgloss.Width(string(r))
+		if width+w > cols {
+			break
+		}
+		out = append(out, r)
+		width += w
+	}
+	return string(out)
+}
+
+// renderParamValues renders param values as read-only (selected but not focused),
+// and reports which param row each line stands for.
+//
+// A click has to be able to *enter* the editor, not only move around inside one,
+// so these lines are clickable too: one line per param, pointing at that param's
+// first row — the value row of a single-value param, the first entry (or the add
+// row) of a package list.
+func (m model) renderParamValues(lines []string, item treeItem, t *tmpl.Template) ([]string, map[int]int) {
+	rows := m.buildParamRows(item, t)
+	firstRow := make(map[string]int, len(rows))
+	for i, row := range rows {
+		if _, seen := firstRow[row.param]; !seen {
+			firstRow[row.param] = i
+		}
+	}
+
+	rowAt := make(map[int]int, len(rows))
 	for _, name := range orderedParamNames(t) {
 		pk := paramKey(item, name)
 		val := m.paramValues[pk]
@@ -833,20 +933,25 @@ func (m model) renderParamValues(lines []string, item treeItem, t *tmpl.Template
 			val = t.Params[name].Default
 		}
 		display, follows := m.paramDisplay(val)
+		if row, ok := firstRow[name]; ok {
+			rowAt[len(lines)] = row
+		}
 		lines = append(lines, fmt.Sprintf("  %s = %s%s", name, display, followsHint(follows)))
 	}
-	return lines
+	return lines, rowAt
 }
 
 // renderParamFields renders editable param fields in the right detail panel.
 // Single-value params render as one row; a variadic param renders as a label
 // header followed by one row per value plus a trailing "(+ add)" row.
 //
-// It returns the appended lines and the absolute line index of the focused row
-// (or -1 if nothing is focused), so the caller can scroll it into view.
-func (m model) renderParamFields(lines []string, item treeItem, t *tmpl.Template, width int) ([]string, int) {
+// It returns the appended lines, the absolute line index of the focused row (or -1
+// if nothing is focused) so the caller can scroll it into view, and which line
+// each row landed on so a click can find it.
+func (m model) renderParamFields(lines []string, item treeItem, t *tmpl.Template, width int) ([]string, int, map[int]int) {
 	rows := m.buildParamRows(item, t)
 	focusLine := -1
+	rowAt := make(map[int]int, len(rows))
 	for i, row := range rows {
 		isFocused := i == m.paramCursorIdx
 		pk := paramKey(item, row.param)
@@ -856,6 +961,7 @@ func (m model) renderParamFields(lines []string, item treeItem, t *tmpl.Template
 			if isFocused {
 				focusLine = len(lines)
 			}
+			rowAt[len(lines)] = i
 			lines = append(lines, m.renderParamFieldRow(t, row.param, pk, isFocused))
 
 		case paramRowVariadicValue:
@@ -871,6 +977,7 @@ func (m model) renderParamFields(lines []string, item treeItem, t *tmpl.Template
 			if isFocused {
 				focusLine = len(lines)
 			}
+			rowAt[len(lines)] = i
 			if isFocused && m.variadicEditing && !m.variadicEditIsNew && m.variadicEditIdx == row.valueIdx {
 				lines = append(lines, "      "+focusValueStyle.Render(" "+m.variadicEditBuf+"▌ "))
 			} else if isFocused {
@@ -887,6 +994,7 @@ func (m model) renderParamFields(lines []string, item treeItem, t *tmpl.Template
 			if isFocused {
 				focusLine = len(lines)
 			}
+			rowAt[len(lines)] = i
 			if isFocused && m.variadicEditing && m.variadicEditIsNew {
 				lines = append(lines, "      "+focusValueStyle.Render(" "+m.variadicEditBuf+"▌ "))
 			} else if isFocused {
@@ -896,7 +1004,7 @@ func (m model) renderParamFields(lines []string, item treeItem, t *tmpl.Template
 			}
 		}
 	}
-	return lines, focusLine
+	return lines, focusLine, rowAt
 }
 
 // renderParamFieldRow renders a single (non-variadic) param row.
@@ -905,30 +1013,9 @@ func (m model) renderParamFieldRow(t *tmpl.Template, name, pk string, isFocused 
 	val := m.paramValues[pk]
 
 	if len(p.Suggests) > 0 && !(m.paramEditing && m.paramEditKey == pk) {
-		// Cycle field with suggests
-		raw := val
-		if raw == "" {
-			raw = p.Default
-		}
-		display, follows := m.paramDisplay(raw)
-		// A value that follows another param is not a hand-typed custom value —
-		// say which param it tracks instead of labelling it "(custom)".
-		suffix := followsHint(follows)
-		if suffix == "" {
-			isCustom := true
-			for _, s := range p.Suggests {
-				if s == display {
-					isCustom = false
-					break
-				}
-			}
-			if isCustom && display != "" {
-				suffix = " (custom)"
-			}
-		}
-		display += suffix
+		display := m.cycleParamDisplay(t, name, pk)
 		if isFocused {
-			return "  " + focusLabelStyle.Render(name+":") + "  " + focusValueStyle.Render(" ◄ "+display+" ► ")
+			return "  " + focusLabelStyle.Render(name+":") + "  " + focusValueStyle.Render(cycleArrowsAround(display))
 		}
 		return "  " + normalLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
 	}
