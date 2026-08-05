@@ -4,6 +4,8 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+## 0.68.1
+
 - **`curl … /booth | bash` hands off to the installer again.** The piped install
   aborted with `BASH_SOURCE[0]: unbound variable` instead, for anyone following the
   one-liner in `docs/AGENT_SETUP.md`. Shipped in 0.68.0; 0.67.0 and earlier are fine.
@@ -19,6 +21,8 @@ This file contains a list of changes for each released version.
   "${BASH_SOURCE[0]}"`, to resolve its own location — reads an unset element under
   `set -u` and kills the script. The handoff branch is first in the file precisely so
   that path resolution never runs on a `$0` that is not a path.
+
+## 0.68.0
 
 - **Every text box in the config TUI now takes `←`, `→`, `Home` and `End`, and draws
   its caret where the cursor actually is.** A mistyped module path had to be
@@ -167,6 +171,8 @@ This file contains a list of changes for each released version.
   for those names only, leaving a name that merely contains a hyphen alone; the `.so` check
   stays, so a wrong guess still fails loudly instead of installing something unloaded.
   `tests/setups/test--pecl-install.sh` pins both directions with a stubbed `pecl`.
+
+## 0.67.0
 
 - **Puppeteer and Selenium now work on Apple Silicon, and Chrome says why it cannot.** Both
   setups were hard-wired to Chrome for Testing, which Google builds for `linux64` only — the
@@ -441,6 +447,8 @@ This file contains a list of changes for each released version.
   version, `booth install` now re-fetches it; and re-running with the binary present still
   short-circuits without downloading. `tests/wrapper/014-install-when-binary-missing.sh` pins the
   new path; `011-install-idempotent.sh` still guards the already-installed case.
+
+## 0.66.0
 
 - **The force-push guard only ever blocked one of the four ways to force-push.** Accept Edits denied
   `git push --force*` in both flag positions and stopped there, so `git push -f` — the spelling
