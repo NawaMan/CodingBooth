@@ -17,9 +17,52 @@ fi
 HOME=/root
 
 
-arch="$(dpkg --print-architecture)"   # arm64
+arch="$(dpkg --print-architecture)"   # amd64 or arm64
 if [[ "$arch" == "arm64" ]]; then
-  echo "Chrom installation is not supported."
+  # Google ships no linux-arm64 build of Chrome — not in the DEB repo, and not
+  # in Chrome for Testing. There is nothing to install and nothing we can do
+  # about it here, so warn and carry on: a missing browser must not take the
+  # whole build down when every other setup in the booth is fine.
+  cat >&2 <<'WARN'
+
+⚠️  Google Chrome is not available on arm64 — skipping.
+
+    Google publishes no linux/arm64 build of Chrome (the DEB repo and Chrome
+    for Testing are both x86-64 only), and this booth is being built for arm64
+    — the default on Apple Silicon. The rest of the booth is unaffected.
+
+    What to use instead:
+      • setup chromium-browser  — Chromium, same engine, arm64 build available.
+                                  Also provides a `google-chrome` command.
+      • setup firefox           — Firefox, arm64 build available.
+      • Google Chrome on your Mac — run it against the port your booth exposes
+                                  and test the real thing in the real browser.
+
+WARN
+
+  # A runtime warning beats "command not found" for anyone who types
+  # google-chrome or clicks a .desktop entry. Never clobber a real wrapper:
+  # chromium-browser--setup.sh installs a working one at this same path.
+  if [[ -e /usr/local/bin/google-chrome ]]; then
+    echo "   (/usr/local/bin/google-chrome already provided by another setup — left as is.)" >&2
+  else
+    cat >/usr/local/bin/google-chrome <<'STUB'
+#!/usr/bin/env bash
+# Placeholder installed by google-chrome--setup.sh on arm64, where Google
+# publishes no Linux build of Chrome. Explains itself instead of failing silently.
+cat >&2 <<'MSG'
+google-chrome is not installed: Google publishes no linux/arm64 build of Chrome,
+and this booth runs on arm64 (the default on Apple Silicon).
+
+Use instead:
+  chromium        — same engine, arm64 build      (booth config: chromium)
+  firefox         — arm64 build                   (booth config: firefox)
+  Google Chrome on your host Mac, pointed at the port this booth exposes.
+MSG
+exit 127
+STUB
+    chmod 0755 /usr/local/bin/google-chrome
+  fi
   exit 0
 fi
 

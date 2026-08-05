@@ -8,6 +8,16 @@ tags = [
     "web"
 ]
 
+unsupported-arch = ["arm64"]
+unsupported-arch-note = """\
+Google publishes no linux/arm64 build of Chrome, so it cannot be installed in a \
+booth built on Apple Silicon. The booth still builds — the setup warns and skips \
+— but Chrome will not be in it.
+
+Use "chromium" instead: same engine, arm64 build available, and it provides a \
+google-chrome command. Or "firefox". To test in Chrome itself, run Google Chrome \
+on your Mac against the port your booth exposes."""
+
 [segments]
 "Boothfile--60" = """
 setup google-chrome

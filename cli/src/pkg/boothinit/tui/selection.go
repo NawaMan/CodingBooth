@@ -65,6 +65,14 @@ func (m *model) toggleSelection() {
 		} else {
 			// Template selected
 			m.initParamDefaults(key, item.template)
+			// Lead with the bad news: this one cannot install on this machine's
+			// architecture, so say so at the moment of choosing rather than
+			// leaving it to be discovered in a booth that is missing the tool.
+			if item.template.UnsupportedOn(m.hostArch) {
+				notifications = append(notifications,
+					fmt.Sprintf("⚠ %s has no %s build — it will NOT be installed (see the panel on the right)",
+						item.template.Name, m.hostArch))
+			}
 			m.selectDependencies(item.template, &notifications)
 			m.autoSelectExtensions(item.template, &notifications)
 		}

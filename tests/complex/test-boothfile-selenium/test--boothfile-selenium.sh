@@ -6,8 +6,11 @@
 # -----------------------------------------------------------------------------
 # Test: Boothfile Selenium drivers installation
 #
-# Verifies setup selenium installs Chrome for Testing + chromedriver under
-# /opt/selenium and that both report versions on PATH.
+# Verifies setup selenium installs a browser + chromedriver under /opt/selenium
+# and that both report versions on PATH. On amd64 that browser is Chrome for
+# Testing; on arm64, where Google publishes no build, it is Debian's Chromium.
+# The assertions below accept either — what matters is that `chrome` and
+# `chromedriver` work, which is the contract the setup promises.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -17,11 +20,14 @@ cd "$SCRIPT_DIR"
 
 source ../../common--source.sh
 
-require_amd64_for_chrome || exit 0
-
 echo "=== Test: Boothfile Selenium Drivers Installation ==="
 
 FAILED=0
+
+# On arm64 the setup reaches for cb-install-chromium.sh, which lives in the base
+# image — so this has to build against a locally rebuilt base rather than the
+# published one. Skip cleanly when there isn't one.
+use_local_base_image || exit $FAILED
 export CB_STDERR_LOG="${SCRIPT_DIR}/.test-stderr.log"
 : >"$CB_STDERR_LOG"
 

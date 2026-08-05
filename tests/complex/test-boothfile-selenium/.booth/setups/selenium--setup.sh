@@ -27,8 +27,8 @@ Notes:
 - Does NOT install language bindings (use pip-pkg:selenium, npm-pkg:selenium-webdriver, …)
 - Ubuntu's apt chromium/firefox packages are snap stubs — we use Chrome for Testing
   and official geckodriver instead
-- Chrome for Testing publishes linux64 only; on aarch64 we install chromedriver via
-  npm @puppeteer/browsers when Node is available
+- Chrome for Testing publishes linux64 only; on aarch64 we install Debian
+  Bookworm's chromium + chromium-driver instead (same engine, arm64 build)
 USAGE
 }
 
@@ -142,25 +142,31 @@ install_chrome_for_testing() {
     return 0
   fi
 
-  # aarch64: Chrome for Testing has no linux-arm64 builds; use @puppeteer/browsers.
-  if ! command -v npm >/dev/null 2>&1; then
-    echo "❌ Chrome for Testing has no linux-arm64 build, and Node.js/npm is not available"
-    echo "   to fall back on @puppeteer/browsers. Install nodejs or run on amd64."
-    exit 1
-  fi
-  echo "• aarch64: installing chrome + chromedriver via @puppeteer/browsers ..."
-  local tag="${version_label}"
-  [[ "$tag" == "Stable" || "$tag" == "latest" || "$tag" == "stable" ]] && tag="stable"
-  npx -y @puppeteer/browsers install "chrome@${tag}" --path "${INSTALL_ROOT}/puppeteer-browsers"
-  npx -y @puppeteer/browsers install "chromedriver@${tag}" --path "${INSTALL_ROOT}/puppeteer-browsers"
+  # aarch64: Chrome for Testing publishes no linux-arm64 build — not through the
+  # CDN and not through @puppeteer/browsers, which fetches from the same place.
+  # Debian Bookworm does build chromium and chromium-driver for arm64, and a
+  # matched pair of those is exactly what Selenium needs.
+  echo ""
+  echo "⚠️  arm64: Chrome for Testing has no linux-arm64 build (${version_label} ignored)."
+  echo "    Using Debian Bookworm's Chromium + chromium-driver instead — same"
+  echo "    engine, and Selenium drives them through the usual chromedriver."
+  echo ""
+  cb-install-chromium.sh --with-driver
+
   local chrome_bin driver_bin
-  chrome_bin="$(find "${INSTALL_ROOT}/puppeteer-browsers" -type f -name chrome | head -1)"
-  driver_bin="$(find "${INSTALL_ROOT}/puppeteer-browsers" -type f -name chromedriver | head -1)"
-  [[ -n "$chrome_bin" ]] || { echo "❌ chrome not found via @puppeteer/browsers"; exit 1; }
-  [[ -n "$driver_bin" ]] || { echo "❌ chromedriver not found via @puppeteer/browsers"; exit 1; }
-  chmod a+x "$chrome_bin" "$driver_bin"
-  ln -sfn "$chrome_bin" "${BIN_DIR}/chrome"
-  ln -sfn "$chrome_bin" "${BIN_DIR}/google-chrome"
+  chrome_bin="$(command -v chromium || command -v chromium-browser || true)"
+  driver_bin="$(command -v chromedriver || true)"
+  [[ -n "$chrome_bin" ]] || { echo "❌ chromium not found after install"; exit 1; }
+  [[ -n "$driver_bin" ]] || { echo "❌ chromedriver not found after install"; exit 1; }
+
+  # Selenium code and the `chrome` command both expect --no-sandbox in a
+  # container; wrap rather than symlink so callers need no extra flags.
+  cat >"${BIN_DIR}/chrome" <<EOF
+#!/usr/bin/env bash
+exec "${chrome_bin}" --no-sandbox --disable-dev-shm-usage "\$@"
+EOF
+  chmod 0755 "${BIN_DIR}/chrome"
+  ln -sfn "${BIN_DIR}/chrome" "${BIN_DIR}/google-chrome"
   ln -sfn "$driver_bin" "${BIN_DIR}/chromedriver"
 }
 

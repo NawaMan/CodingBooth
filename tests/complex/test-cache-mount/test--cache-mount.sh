@@ -41,7 +41,7 @@ fi
 # Cleanup cache on exit
 cleanup() {
   rm -rf .booth/cache
-  sed -i '/^cache\/$/d' .booth/.gitignore 2>/dev/null || true
+  sed_inplace '/^cache\/$/d' .booth/.gitignore 2>/dev/null || true
 }
 trap cleanup EXIT
 

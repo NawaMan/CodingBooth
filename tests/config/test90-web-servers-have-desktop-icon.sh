@@ -67,11 +67,12 @@ for script in "$root"/variants/base/setups/*--setup.sh; do
     # The icon must launch the starter this same setup installs, or clicking it
     # opens a service nothing ever starts.
     want="$(basename "$starter")"
-    got="$(sed -n 's/.*--start[ =]\+\([^ ]*\).*/\1/p' <<<"$call")"
+    # [ =][ =]* rather than [ =]\+ — BSD sed (macOS) reads \+ as a literal plus.
+    got="$(sed -n 's/.*--start[ =][ =]*\([^ ]*\).*/\1/p' <<<"$call")"
     [[ "$got" == "$want" ]]
     assert-true "$?" "${name} icon starts ${want}"
 
-    id="$(sed -n 's/.*--id[ =]\+\([^ ]*\).*/\1/p' <<<"$call")"
+    id="$(sed -n 's/.*--id[ =][ =]*\([^ ]*\).*/\1/p' <<<"$call")"
     ids+="${id}"$'\n'
 done
 

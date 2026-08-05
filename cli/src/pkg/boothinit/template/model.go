@@ -32,6 +32,15 @@ type Template struct {
 	Primary      bool  // shown by default in list/search; non-primary only shown with --full
 	AutoSelect   *bool // extension only: auto-select when parent is selected
 
+	// Architectures this template cannot install on, as dpkg names ("arm64",
+	// "amd64"). Selecting it there still builds — the setup warns and skips
+	// rather than failing — but the tool will not be in the booth, so the TUI
+	// and `booth template show` say so up front.
+	UnsupportedArch []string
+	// Human-readable reason + what to do instead, shown wherever the template
+	// is flagged. Required when UnsupportedArch is set (guarded by a test).
+	UnsupportedArchNote string
+
 	// Config scalar values (match-or-error merge strategy)
 	Variant  string
 	Port     string

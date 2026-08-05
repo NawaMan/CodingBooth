@@ -30,6 +30,10 @@ var (
 	activeTabStyle   = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255")).Background(lipgloss.Color("62")).Padding(0, 1)
 	inactiveTabStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("245")).Padding(0, 1)
 	groupHeaderStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("213"))
+	// Templates with no build on this architecture — amber, the same tone the
+	// warning dialog uses, because this informs rather than destroys.
+	archWarnStyle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("214"))
+	archWarnTitleStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("232")).Background(lipgloss.Color("214"))
 )
 
 // warningStyle is used for the warning dialog border and text.
@@ -540,7 +544,15 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 	name := item.template.Name
 	desc := item.template.DisplayDesc
 
-	plainPrefix := check + " " + name
+	// Marker for templates with no build on this architecture. Kept ASCII on
+	// purpose: the padding below counts bytes, so a multi-byte glyph here would
+	// misalign every row.
+	mark := "  "
+	if item.template.UnsupportedOn(m.hostArch) {
+		mark = "! "
+	}
+
+	plainPrefix := check + " " + mark + name
 	remaining := width - len(plainPrefix) - 2
 	descStr := ""
 	if remaining > 3 && len(desc) > 0 {
@@ -551,7 +563,11 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 	}
 
 	styledName := boldStyle.Render(name)
-	line := check + " " + styledName
+	styledMark := mark
+	if mark != "  " {
+		styledMark = archWarnStyle.Render(mark)
+	}
+	line := check + " " + styledMark + styledName
 	if descStr != "" {
 		line += "  " + detailLabel.Render(descStr)
 	}
@@ -701,6 +717,10 @@ func (m model) renderTemplateDetail(t *tmpl.Template, width int) ([]string, int,
 	lines = append(lines, detailLabel.Render(t.CategoryName))
 	lines = append(lines, "")
 
+	// Above the description, not below it: someone scanning this panel to decide
+	// whether to tick the box needs to see "this will not install" first.
+	lines = append(lines, m.renderArchWarning(t, width)...)
+
 	if t.DisplayDesc != "" {
 		lines = append(lines, wrapText(t.DisplayDesc, width)...)
 		lines = append(lines, "")
@@ -755,6 +775,31 @@ func (m model) renderTemplateDetail(t *tmpl.Template, width int) ([]string, int,
 	}
 
 	return lines, focusLine, rowAt
+}
+
+// renderArchWarning returns the "no build for this architecture" block for a
+// template, or nil when the template installs fine here. Selecting such a
+// template is allowed — the booth still builds, the setup warns and skips — so
+// this explains the trade rather than forbidding it.
+func (m model) renderArchWarning(t *tmpl.Template, width int) []string {
+	if !t.UnsupportedOn(m.hostArch) {
+		return nil
+	}
+
+	var lines []string
+	lines = append(lines, archWarnTitleStyle.Render(fmt.Sprintf(" ⚠  Not available on %s ", m.hostArch)))
+	lines = append(lines, "")
+
+	note := t.UnsupportedArchNote
+	if note == "" {
+		note = fmt.Sprintf("%s has no %s build and will not be installed. "+
+			"The booth still builds without it.", t.Name, m.hostArch)
+	}
+	for _, l := range wrapParagraphs(note, width) {
+		lines = append(lines, archWarnStyle.Render(l))
+	}
+	lines = append(lines, "")
+	return lines
 }
 
 // renderExtensionDetail draws an extension's detail panel, with the same param-row

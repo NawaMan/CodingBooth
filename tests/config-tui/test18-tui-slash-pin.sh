@@ -19,8 +19,12 @@ if [[ ! -f "$prj/.booth/Boothfile" ]]; then
 fi
 
 # Hand-pin the package directly in the arg line — the comment still says nothing.
-sed -i 's|^arg GO_PKGS=.*|arg GO_PKGS=github.com/pocketbase/pocketbase/examples/base@latest|' \
+sed-inplace 's|^arg GO_PKGS=.*|arg GO_PKGS=github.com/pocketbase/pocketbase/examples/base@latest|' \
     "$prj/.booth/Boothfile"
+# Only meaningful if the pin actually landed — see test14 for what a silent seed
+# failure does to the assertions below.
+grep -q '^arg GO_PKGS=github\.com/pocketbase/' "$prj/.booth/Boothfile" \
+    || skip "seed step did not pin GO_PKGS"
 
 # Reopen the TUI and save without touching anything. The hand-edit makes this
 # Boothfile hand-written as far as `booth config` is concerned, so the TUI opens

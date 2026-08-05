@@ -95,6 +95,13 @@ If the booth holds hand-written files, step 2 also raises a warning on open and 
 
 Extensions marked with `*` are auto-selected when their parent template is selected.
 
+A template marked with `!` has no build for your machine's architecture — for example
+`google-chrome` on Apple Silicon, since Google publishes no linux/arm64 Chrome. You can still
+select it and the booth still builds: the setup prints a warning and skips rather than failing,
+so one absent tool never takes down a build in which everything else succeeded. The right panel
+opens with what is missing and what to use instead, and selecting it repeats that in the footer.
+Templates with a working arm64 build — `chromium`, `firefox`, `playwright` — are not marked.
+
 ---
 
 ## The Config Tab

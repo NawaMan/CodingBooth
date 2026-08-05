@@ -168,6 +168,91 @@ This file contains a list of changes for each released version.
   stays, so a wrong guess still fails loudly instead of installing something unloaded.
   `tests/setups/test--pecl-install.sh` pins both directions with a stubbed `pecl`.
 
+- **Puppeteer and Selenium now work on Apple Silicon, and Chrome says why it cannot.** Both
+  setups were hard-wired to Chrome for Testing, which Google builds for `linux64` only — the
+  API's stable channel lists `linux64, mac-arm64, mac-x64, win32, win64` and nothing else for
+  Linux. On an arm64 Docker host that meant Selenium failed the build outright and Puppeteer
+  installed an x86-64 binary that died with `rosetta error: failed to open elf` on first launch.
+  Selenium's `aarch64` branch claimed to route around it via `@puppeteer/browsers`, but that
+  fetches from the same CDN, so it was dead code that could never have worked. Debian Bookworm
+  *does* build `chromium` and `chromium-driver` for arm64, so on arm64 both setups now use those
+  instead: Puppeteer gets `PUPPETEER_EXECUTABLE_PATH` and skips the pointless download, Selenium
+  gets a matched chromium + chromedriver pair behind the usual `chrome` / `chromedriver` names.
+  Same engine, no API change, and the two complex tests that were skipping on every Mac now run.
+  The Bookworm repo dance — add, pin `APT::Default-Release` to Ubuntu, install, remove, refresh —
+  moved into `cb-install-chromium.sh` so `chromium-browser`, `selenium` and `puppeteer` cannot
+  drift apart on the pinning or the cleanup.
+
+  Google Chrome itself has no such fallback — Chromium is a different browser, not a build of
+  Chrome — so `google-chrome--setup.sh` keeps skipping on arm64, but it no longer does it
+  silently. It printed `Chrom installation is not supported.` and `exit 0`, which meant the image
+  built green and the missing browser surfaced only when someone tried to run it. It now explains
+  what happened, why, and the three ways forward (`chromium`, `firefox`, or Chrome on the host
+  Mac against the port the booth exposes), and leaves a `/usr/local/bin/google-chrome` stub that
+  repeats it at runtime instead of `command not found`. The stub never overwrites a real wrapper,
+  so selecting `chromium` alongside it still wins.
+
+  **The principle: a tool upstream never built for your architecture warns, it does not fail.**
+  One absent browser must not take down a build in which every other setup succeeded.
+
+- **`booth config` says up front which tools cannot install on your machine.** Templates declare
+  `unsupported-arch` + `unsupported-arch-note` in `template.toml`; the TUI marks those rows with
+  `!`, opens the detail panel with an amber *Not available on arm64* block, and warns on select —
+  while still allowing the selection, because the booth does build without it. `booth template
+  show` prints the same note. Only `google-chrome` is flagged today; `chromium`, `firefox` and
+  `playwright` all have arm64 builds and are deliberately not. Guarded by
+  `test92-arch-unsupported-is-declared.sh`, which also holds the warn-don't-fail rule above.
+
+- **`build-all.sh` printed `✔ BASE` and `All builds completed successfully` over a base image it
+  never rebuilt.** On macOS every local build had been a silent no-op: `docker-build.sh` expands
+  `"${no_cache_arg[@]}"`, and when `--no-cache` is absent that array is empty — which bash 4.4+
+  (every Linux) expands to zero words but bash 3.2, the bash macOS ships, rejects as an *unbound
+  variable* under `set -u`. The build aborted at that line. Two things then hid it: the abort left
+  the previous image tagged and dated as if current, and the `trap 'CleanupStaging' EXIT` ended the
+  script with the cleanup's status rather than the failure's, so the caller saw exit 0. Found only
+  because a newly added setup script kept coming back `command not found` inside a booth built from
+  an image that had, in fact, not changed in a day.
+
+  The array expansions now use `${arr[@]+"${arr[@]}"}` (the idiom `build-all.sh` already used for
+  `DOCKER_FLAGS`). The status masking is fixed with a `BUILD_COMPLETED` flag rather than the
+  obvious `trap 'rc=$?; …; exit $rc'` — measured, not assumed: on bash 3.2 a *fatal* shell error
+  runs the EXIT trap with `$?` still `0`, so re-raising `$?` would have kept reporting success for
+  precisely the failure class that caused this. A build that does not reach the end of the function
+  now cannot exit 0.
+
+- **The whole `CONFIG-TUI` suite was dead on macOS — 18 tests reporting as product bugs.** The VHS
+  runner shelled out to `timeout 120 vhs …`, and `timeout` is GNU coreutils: macOS ships neither it
+  nor Homebrew's `gtimeout` by default. It exited 127, vhs never started, no frame was ever
+  captured, and every test then failed asserting on files that nothing had written. The suite's
+  own dependency gate checked `vhs`, `ttyd` and `ffmpeg` but not `timeout`, so it ran instead of
+  skipping. Now resolved through `run-with-timeout`, which prefers `timeout`, then `gtimeout`, and
+  otherwise runs unguarded — a bash watchdog was written first and backed out after measurement:
+  it needs the command backgrounded, and a backgrounded vhs cannot reach ttyd
+  (`net::ERR_CONNECTION_REFUSED`), so the guard broke the thing it was guarding.
+
+  That left 2 of 18 failing — `test14-tui-preserve-pin` and `test18-tui-slash-pin` — which looked
+  like a param-pin data-loss bug in `booth config` and were not: **both were the same BSD/GNU
+  divergence one layer down, in the tests' own fixtures.** Each seeds its scenario by hand-pinning
+  a value with `sed -i 's/…/…/' Boothfile`. BSD sed reads the *script* as `-i`'s backup suffix and
+  the filename as the script, exits 1, and changes nothing — so the pin under test was never
+  written, and the assertion that it "survived a save" failed against a file that had never held
+  it. Instrumenting the binary settled it: `existingArgs` reached `buildPreSelection` with
+  `PLAYWRIGHT_VERSION:latest`, never `1.58.2`. The pin-preservation code was working the whole
+  time, and a manual non-TUI reconfigure preserved `1.58.2` correctly.
+
+  Both now use a `sed-inplace` helper that picks the GNU or BSD form by feature detection, and —
+  more importantly — **assert that the seed landed** before testing anything. A fixture step that
+  can fail silently makes the test that follows meaningless in whichever direction the bug
+  happens to push it. The same bare `sed -i` in `test-cache-mount`'s cleanup was fixed with the
+  matching `sed_inplace` helper in `tests/common--source.sh`.
+
+- **Seven `CONFIG` tests failed on macOS and passed on Linux, for the same reason twice over.**
+  `test90-web-servers-have-desktop-icon.sh` used `\+` inside a basic `sed` regex — a GNU
+  extension that BSD `sed` reads as a literal plus — so the substitution never matched and every
+  `--start` lookup came back empty. The `--id` lookup had it too, which meant the "web-service ids
+  are unique" assertion had been silently checking nothing on macOS. Both switched to the portable
+  `[ =][ =]*`.
+
 - **The PlantUML server never worked — it answered `503` forever, and the icon made that
   visible.** Reported as "PlantUML does not start when I click", and the click was not the
   problem: `start-plantuml` bound its port in ~1s, so `cb-web-open`'s liveness check passed

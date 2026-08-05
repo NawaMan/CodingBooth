@@ -70,6 +70,47 @@ function require-tui-tools() {
     fi
 }
 
+# In-place sed that works on both GNU and BSD.
+#
+# GNU sed takes `-i` with no argument; BSD/macOS sed requires a suffix and
+# otherwise swallows the *script* as the backup extension, then tries to read the
+# filename as the script — "unterminated substitute pattern", exit 1, file
+# untouched. test14 and test18 seed their fixture with one of these and did not
+# check the exit status, so on macOS they asserted that a pin survived a save
+# when the pin had never been written. Detected by feature, not by uname.
+function sed-inplace() {
+    local script="$1" file="$2"
+    if sed --version >/dev/null 2>&1; then
+        sed -i "$script" "$file"
+    else
+        sed -i '' "$script" "$file"
+    fi
+}
+
+# Run a command under a wall-clock limit, portably.
+#
+# `timeout` is GNU coreutils and macOS ships neither it nor Homebrew's
+# `gtimeout` by default. The bare `timeout 120 vhs ...` this replaced failed
+# with "command not found" (127), so vhs never ran, no frame was captured, and
+# all 18 tests failed on assertions about files nothing had written — a
+# toolchain gap wearing the costume of 18 product bugs.
+#
+# With no timeout binary the command runs unguarded, deliberately. A bash
+# watchdog was tried first and had to be backed out: it needs the command in
+# the background, and a backgrounded vhs cannot reach ttyd
+# ("net::ERR_CONNECTION_REFUSED") — the guard broke the thing it guarded.
+# `brew install coreutils` restores the limit here via gtimeout.
+function run-with-timeout() {
+    local secs="$1"; shift
+    if command -v timeout >/dev/null 2>&1; then
+        timeout "$secs" "$@"
+    elif command -v gtimeout >/dev/null 2>&1; then
+        gtimeout "$secs" "$@"
+    else
+        "$@"
+    fi
+}
+
 # ── Tape authoring + run ────────────────────────────────────────────
 # run-tui <mode> <keystrokes...>
 #   mode = "save"  → append Ctrl+S (drive to generation, assert on files)
@@ -156,7 +197,7 @@ function run-tui() {
     cat "$tape" >> "$log"
     echo "=== vhs run ===" >> "$log"
 
-    ( cd "$prj" && timeout 120 vhs "$tape" ) >> "$log" 2>&1
+    ( cd "$prj" && run-with-timeout 120 vhs "$tape" ) >> "$log" 2>&1
     local rc=$?
     if [[ $rc -ne 0 ]]; then
         echo "  WARN: vhs exited with code ${rc}" >> "$log"

@@ -18,28 +18,10 @@ HOME=/root
 
 export DEBIAN_FRONTEND=noninteractive
 
-UBUNTU_CODENAME="$(. /etc/os-release && echo "${VERSION_CODENAME:-noble}")"
-ARCH="$(dpkg --print-architecture)"   # amd64 or arm64
-echo "🔧 Installing Chromium (no Snap) on Ubuntu ${UBUNTU_CODENAME} for ${ARCH}…"
-
-# --- Add Debian Bookworm repos (with signed-by) ---
-install -d -m 0755 /etc/apt/sources.list.d
-cat >/etc/apt/sources.list.d/debian-bookworm.list <<'EOF'
-deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian bookworm main
-deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://deb.debian.org/debian bookworm-updates main
-deb [arch=amd64,arm64 signed-by=/usr/share/keyrings/debian-archive-keyring.gpg] http://security.debian.org/debian-security bookworm-security main
-EOF
-chmod 0644 /etc/apt/sources.list.d/debian-bookworm.list
-
-# --- Prefer Ubuntu by default; only pull what we target from Bookworm ---
-cat >/etc/apt/apt.conf.d/99default-release <<EOF
-APT::Default-Release "${UBUNTU_CODENAME}";
-EOF
-
-apt-get update
-
-# --- Install Chromium FROM Debian Bookworm (pulling its deps) ---
-apt-get install -y --no-install-recommends -t bookworm chromium
+# Chromium comes from Debian Bookworm (Ubuntu's is a snap stub). The repo
+# pinning and cleanup live in cb-install-chromium.sh so selenium and puppeteer
+# can reuse the same install on arm64 without duplicating it.
+cb-install-chromium.sh
 
 # Discover chromium binary
 CHROMIUM_BIN="$(command -v chromium || command -v chromium-browser || true)"
@@ -47,7 +29,6 @@ if [[ -z "$CHROMIUM_BIN" ]]; then
   echo "❌ Could not find chromium binary after installation" >&2
   exit 1
 fi
-echo "✅ Chromium installed at: $CHROMIUM_BIN"
 
 # --- Chrome-compatible wrapper (no-sandbox for containers) ---
 cat >/usr/local/bin/google-chrome <<EOF
@@ -76,12 +57,6 @@ update-alternatives --install /usr/bin/x-www-browser x-www-browser /usr/local/bi
 update-alternatives --set                            x-www-browser /usr/local/bin/google-chrome || true
 
 echo "✅ Chromium set as the default Web Browser (x-www-browser)"
-
-# --- IMPORTANT: Remove Debian to avoid future conflicts ---
-rm -f /etc/apt/sources.list.d/debian-bookworm.list
-rm -f /etc/apt/apt.conf.d/99default-release
-apt-get update
-echo "🧹 Cleaned up Debian repos; system back to Ubuntu-only."
 
 # Register a Chromium desktop icon (no-ops on non-desktop variants).
 cb-desktop-icon.sh chromium.desktop

@@ -72,6 +72,20 @@ func FormatTemplateDetail(w io.Writer, t *Template, registry *TemplateRegistry, 
 		fmt.Fprintf(w, "Description: %s\n", t.DisplayDesc)
 	}
 
+	// No build for this machine's architecture — before the long description, so
+	// it is not missed by anyone skimming to decide whether to use the template.
+	if t.UnsupportedOn(HostArch()) {
+		fmt.Fprintf(w, "\n⚠  Not available on %s\n", HostArch())
+		note := t.UnsupportedArchNote
+		if note == "" {
+			note = fmt.Sprintf("%s has no %s build and will not be installed. "+
+				"The booth still builds without it.", t.Name, HostArch())
+		}
+		for _, line := range strings.Split(note, "\n") {
+			fmt.Fprintf(w, "   %s\n", line)
+		}
+	}
+
 	// Long description
 	if t.DisplayDetail != "" {
 		fmt.Fprintf(w, "\n%s\n", t.DisplayDetail)

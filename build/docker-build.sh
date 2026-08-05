@@ -104,8 +104,17 @@ Main() {
     StageDocsForBase
   fi
 
-  # Ensure cleanup happens even on error
-  trap 'CleanupStaging' EXIT
+  # Ensure cleanup happens even on error.
+  #
+  # BUILD_COMPLETED gates the exit status, and it has to be a flag rather than
+  # `trap 'rc=$?; ...; exit $rc'`: on a *fatal* shell error (an unbound variable,
+  # a syntax error) bash 3.2 — what macOS ships — runs the EXIT trap with $? still
+  # 0, so re-raising $? reports success for exactly the failures that skip the
+  # code that would have set a status. A build that aborts before reaching the
+  # end of this function must never exit 0; build-all.sh reads that status to
+  # decide between ✔ and ✘, and once printed a ✔ over an image it never rebuilt.
+  BUILD_COMPLETED=false
+  trap 'CleanupStaging; [[ "${BUILD_COMPLETED}" == "true" ]] || exit 1' EXIT
 
   for v in "${VARIANTS_TO_BUILD[@]}"; do
     BuildVariant "$v" "${version}" "${PUSH}" "${NO_CACHE}"
@@ -113,6 +122,7 @@ Main() {
 
   # Cleanup staging (also called by trap, but explicit is clearer)
   CleanupStaging
+  BUILD_COMPLETED=true
   trap - EXIT
 }
 
@@ -259,7 +269,10 @@ BuildVariant() {
   [[ -d "${context_dir}" ]] || Die "Context dir not found: ${context_dir}"
   [[ -f "${docker_file}" ]] || Die "Dockerfile not found: ${docker_file}"
 
-  # Optional args
+  # Optional args. Expanded below as ${no_cache_arg[@]+"${no_cache_arg[@]}"}:
+  # macOS ships bash 3.2, where "${arr[@]}" on an *empty* array counts as an
+  # unbound variable under `set -u` and aborts the build. bash 4.4+ (every
+  # Linux) treats it as zero words, which is why this only ever bit on a Mac.
   local no_cache_arg=()
   if [[ "${no_cache}" == "true" ]]; then
     no_cache_arg+=( --no-cache )
@@ -280,7 +293,7 @@ BuildVariant() {
 
       Log "[$variant]: Building ${platform} natively (push by digest)"
       docker buildx build \
-        "${no_cache_arg[@]}" \
+        ${no_cache_arg[@]+"${no_cache_arg[@]}"} \
         --platform "${platform}" \
         -f "${docker_file}" \
         --build-arg "BOOTH_VERSION_TAG=${version}" \
@@ -310,7 +323,7 @@ BuildVariant() {
     Log "[$variant]: For native builds, use --arch <amd64|arm64> per runner, then --merge."
     Log "[$variant]: Building with buildx (push)"
     docker buildx build \
-      "${no_cache_arg[@]}" \
+      ${no_cache_arg[@]+"${no_cache_arg[@]}"} \
       --platform "${PLATFORMS}" \
       -f "${docker_file}" \
       --build-arg "BOOTH_VERSION_TAG=${version}" \
@@ -335,7 +348,7 @@ BuildVariant() {
     Log "[$variant]: Local build (plain 'docker build')"
     export DOCKER_BUILDKIT=1
     docker build \
-      "${no_cache_arg[@]}" \
+      ${no_cache_arg[@]+"${no_cache_arg[@]}"} \
       -f "${docker_file}" \
       --build-arg "BOOTH_VERSION_TAG=${version}" \
       "${tags_arg[@]}" \

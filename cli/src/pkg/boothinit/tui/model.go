@@ -43,6 +43,13 @@ type model struct {
 	width    int
 	height   int
 
+	// Architecture this booth will be built for, in dpkg names. A few templates
+	// have no build for some architectures (Google publishes no linux/arm64
+	// Chrome, say). Selecting one is allowed — the booth still builds, the setup
+	// warns and skips — but the tool will be missing, so the list marks it, the
+	// detail pane explains it, and selecting it says so.
+	hostArch string
+
 	// Tabs — tab 0 is Config, tabs 1..N are categories (sorted by order)
 	tabNames      []string     // display names (index 0 = "Config")
 	tabItems      [][]treeItem // items per tab (index 0 = nil for Config tab)
@@ -115,6 +122,7 @@ type model struct {
 func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 	m := model{
 		registry:     registry,
+		hostArch:     tmpl.HostArch(),
 		selected:     make(map[string]bool),
 		stringFields: make(map[string]string),
 		boolFields:   defaultBoolValues(),

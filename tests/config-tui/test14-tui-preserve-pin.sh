@@ -17,7 +17,12 @@ if [[ ! -f "$prj/.booth/Boothfile" ]]; then
 fi
 
 # Hand-pin the version directly in the arg line — the comment still says latest.
-sed -i 's/^arg PLAYWRIGHT_VERSION=.*/arg PLAYWRIGHT_VERSION=1.58.2/' "$prj/.booth/Boothfile"
+sed-inplace 's/^arg PLAYWRIGHT_VERSION=.*/arg PLAYWRIGHT_VERSION=1.58.2/' "$prj/.booth/Boothfile"
+# The assertion below is only meaningful if the pin actually landed. A seed step
+# that fails silently turns this into a test that always passes, or — as it did
+# on macOS — always fails for a reason that has nothing to do with the product.
+grep -q '^arg PLAYWRIGHT_VERSION=1\.58\.2$' "$prj/.booth/Boothfile" \
+    || skip "seed step did not pin PLAYWRIGHT_VERSION"
 
 # Reopen the TUI and save without touching the version. The hand-edit above makes
 # this Boothfile hand-written as far as `booth config` is concerned, so the TUI now

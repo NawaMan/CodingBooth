@@ -69,22 +69,33 @@ restore_default_base_image() {
   unset CB_PREBUILD_REPO
 }
 
-# Guard for browser tests (selenium, puppeteer). Google publishes no linux-arm64
-# build of Chrome for Testing, so when Docker builds for arm64 — the default on
-# Apple Silicon — the setup either cannot install a browser (selenium: build fails)
-# or installs an amd64 one that will not launch in the arm64 container (puppeteer:
-# "rosetta error: failed to open elf at /lib64/ld-linux-x86-64.so.2"). The setup and
-# the test are both correct; the upstream browser simply is not there. Returns 0 on
-# an amd64 Docker host so the caller proceeds, and 1 after printing a SKIP line so
-# the caller can `require_amd64_for_chrome || exit 0`.
-require_amd64_for_chrome() {
+# In-place sed that works on both GNU and BSD.
+#
+# GNU sed takes `-i` with no argument; BSD/macOS sed requires a suffix and
+# otherwise swallows the *script* as the backup extension, then tries to read the
+# filename as the script — "sed: 1: \"file\": unterminated substitute pattern",
+# exit 1, file untouched. Tests that ignored that exit status went on to assert
+# on an edit that never happened. Detected by feature, not by uname, so a GNU sed
+# installed on a Mac still takes the GNU branch.
+sed_inplace() {
+  local script="$1" file="$2"
+  if sed --version >/dev/null 2>&1; then
+    sed -i "$script" "$file"
+  else
+    sed -i '' "$script" "$file"
+  fi
+}
+
+# Architecture the Docker daemon builds for — "amd64" or "arm64" (arm64 is the
+# default on Apple Silicon). Browser tests need it because Google publishes no
+# linux-arm64 build of Chrome for Testing: on arm64 the selenium and puppeteer
+# setups fall back to Debian Bookworm's Chromium, so the browser is in a
+# different place even though both setups work. Echoes "" if docker is absent.
+docker_server_arch() {
   local arch
   arch="$(docker version --format '{{.Server.Arch}}' 2>/dev/null || true)"
-  if [[ "$arch" == "arm64" || "$arch" == "aarch64" ]]; then
-    echo "SKIP: Chrome for Testing has no linux-arm64 build; run on an amd64 Docker host to exercise this test."
-    return 1
-  fi
-  return 0
+  [[ "$arch" == "aarch64" ]] && arch="arm64"
+  echo "$arch"
 }
 
 # Colors for output (disabled if not a terminal)

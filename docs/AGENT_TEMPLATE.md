@@ -125,6 +125,32 @@ install go golang.org/x/tools/gopls@latest
 | `build-args`    | []string   | Config: Docker build arguments                           |
 | `run-args`      | []string   | Config: Docker run arguments (flag-value pairs deduped)  |
 | `requires`      | []string   | Other template names that must also be selected          |
+| `unsupported-arch`      | []string | Architectures with no build (`"arm64"`, `"amd64"`)  |
+| `unsupported-arch-note` | string   | Why, and what to use instead — required with the above |
+
+### Templates with no build on some architecture
+
+A few tools have no upstream build for an architecture — Google publishes no
+linux/arm64 Chrome, so `google-chrome` cannot install in a booth built on Apple
+Silicon. Declare it:
+
+```toml
+unsupported-arch = ["arm64"]
+unsupported-arch-note = """\
+Google publishes no linux/arm64 build of Chrome... Use "chromium" instead."""
+```
+
+This does **not** block selection. The booth still builds — the setup script is
+expected to print a warning and `exit 0` rather than fail, so one missing tool
+never takes down a build in which everything else succeeded. What the metadata
+buys is that nobody finds out afterwards: `booth config` marks the row with `!`,
+explains it in the detail panel, and warns when the box is ticked, and
+`booth template show` prints the note.
+
+Both keys go together — a declaration without a note falls back to a generic
+sentence that says something is missing but not what to do instead. The
+`tests/config/test92-arch-unsupported-is-declared.sh` guard enforces the pair,
+and that arch bail-outs in setup scripts exit 0 with an explanation.
 
 ### Parameters
 
