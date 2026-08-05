@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`curl … /booth | bash` hands off to the installer again.** The piped install
+  aborted with `BASH_SOURCE[0]: unbound variable` instead, for anyone following the
+  one-liner in `docs/AGENT_SETUP.md`. Shipped in 0.68.0; 0.67.0 and earlier are fine.
+
+  The wrapper spots a piped invocation by comparing `$0` against the shell names,
+  because piped there is no script path to compare. The bare `bash` arm of that
+  comparison had been replaced with a placeholder that can never match — a debugging
+  edit that rode along, unnoticed, with the commit adding the test for it. `sh` and
+  `zsh` still matched, so the only form that broke was the one every doc advertises.
+
+  Falling past the handoff is not a graceful degradation: piped, `$0` is `bash` and
+  `BASH_SOURCE` is empty, so the next thing the wrapper does — `realpath
+  "${BASH_SOURCE[0]}"`, to resolve its own location — reads an unset element under
+  `set -u` and kills the script. The handoff branch is first in the file precisely so
+  that path resolution never runs on a `$0` that is not a path.
+
 - **Every text box in the config TUI now takes `←`, `→`, `Home` and `End`, and draws
   its caret where the cursor actually is.** A mistyped module path had to be
   retyped from the mistake onward, because the cursor could only ever sit at the end
