@@ -29,7 +29,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-VIEWMD_DEFAULT_VER="0.2.0"   # fallback when 'latest' cannot be resolved
+VIEWMD_DEFAULT_VER="0.5.0"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"             # no version given means "the current release"
 while [[ $# -gt 0 ]]; do
   case "$1" in

@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+## 0.70.0
+
+- **A build that cannot reach the GitHub API installs viewmd 0.5.0, not 0.2.0.**
+  `viewmd--setup.sh` asks the GitHub releases API to resolve `latest` and falls back to a
+  pinned default when the answer comes back empty. That call is anonymous and rate-limited,
+  so the fallback is an ordinary outcome on a busy runner rather than an edge case — and the
+  pin had stayed at `0.2.0` while upstream reached `0.5.0`, so those builds quietly produced a
+  booth three minor versions behind, announced only by the one warning line in the build log.
+
+  The pin is now `0.5.0`. Checked against the release rather than against the tag name: both
+  `viewmd-linux-amd64` and `viewmd-linux-arm64` download at `v0.5.0`, both match the
+  `SHA256SUMS` entry the script's `awk` looks for, and the binary reports `0.5.0`.
+
 ## 0.69.0
 
 - **Puppeteer and Selenium now work on Apple Silicon, and Chrome says why it cannot.** Both
