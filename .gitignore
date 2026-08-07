@@ -84,6 +84,11 @@ examples/java-example/.settings/org.eclipse.jdt.core.prefs
 examples/java-example/.settings/org.eclipse.m2e.core.prefs
 examples/java-example/.settings/
 examples/go-example/bin/
+# PocketBase writes its SQLite database, uploads and logs into pb_data/ on
+# first run, and the example's README builds the server in place. Both are
+# outputs of running the example, not part of it.
+examples/workspaces/pocketbase-example/pb_data/
+examples/workspaces/pocketbase-example/tripboard
 runner/.workspace/
 
 tests/basic/test*.sh.log

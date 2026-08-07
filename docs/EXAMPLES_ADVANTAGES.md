@@ -145,6 +145,10 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 - **server-example-2** — the same, but `port = "NEXT:10000"` auto-picks the next free host port for
   conflict-free forwarding. *(Secondary: persists shell history + settings cache across restarts.)*
 - **react-example** — Vite bound to `0.0.0.0` with port 5173 mapped to the host.
+- **pocketbase-example** — one Go binary serves a calendar, a REST API *and* PocketBase's admin UI
+  on 8090, all reached from the host browser through a single mapped port. *(Secondary:
+  reproducibility — the Go toolchain is pinned in the Boothfile, PocketBase in `go.mod`, and the
+  schema is Go migrations, so a fresh clone builds an identical database.)*
 - *(Also strongly present in fastapi, nextjs, js, and every full-stack example above.)*
 
 ## 🔐 Credential seeding — host creds without secrets in the repo
@@ -252,6 +256,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | pip-deps-example | Pre-baked deps |
 | playwright-example | Batteries-included / pre-baked Chromium |
 | playwright-polyglot-example | Try / compare side-by-side (5 languages) |
+| pocketbase-example | Port exposure (app + admin UI) |
 | python-example | Notebook / multi-kernel |
 | rails-example | Batteries-included |
 | react-example | Port exposure |

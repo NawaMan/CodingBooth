@@ -1,0 +1,11 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --expose +-1910:8090 --select go+vscode-ext
+
+env APT_SNAPSHOT=20260807T000000Z
+
+arg GO_VERSION=1.25.7
+
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+setup go-code-extension

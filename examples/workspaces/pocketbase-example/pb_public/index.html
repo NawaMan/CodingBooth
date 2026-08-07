@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tripboard</title>
+<style>
+  :root {
+    --bg: #f6f7f9;  --panel: #ffffff;  --ink: #1b1f24;  --muted: #6b7480;
+    --line: #dfe3e8; --grid: #edf0f3;
+    --flight: #3b7ddd; --train: #2f9e6f; --bus: #b8791f;
+    --hotel: #7a5cd6; --activity: #d1567b; --other: #6b7480;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171b; --panel: #1c2026; --ink: #e8eaed; --muted: #98a1ad;
+      --line: #2c333b; --grid: #232930;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 1.5rem 1.25rem 3rem;
+    background: var(--bg); color: var(--ink);
+    font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  header { max-width: 62rem; margin: 0 auto 1.25rem; }
+  h1 { margin: 0 0 .15rem; font-size: 1.5rem; letter-spacing: -.01em; }
+  .sub { color: var(--muted); font-size: .9rem; }
+  .sub a { color: inherit; }
+  main { max-width: 62rem; margin: 0 auto; }
+
+  .ruler, .day { display: grid; grid-template-columns: 6.5rem 1fr; align-items: stretch; }
+  .ruler { color: var(--muted); font-size: .72rem; margin-bottom: .25rem; }
+  .ruler .track { position: relative; height: 1rem; }
+  .ruler span { position: absolute; transform: translateX(-50%); }
+
+  .day { border-top: 1px solid var(--line); }
+  .day:last-child { border-bottom: 1px solid var(--line); }
+  .date { padding: .55rem .75rem .55rem 0; font-size: .82rem; color: var(--muted); }
+  .date b { display: block; color: var(--ink); font-size: .95rem; font-weight: 600; }
+
+  /* The 24-hour track. Every block is placed by percentage, so one day is one
+     row whatever its width on screen. */
+  .track {
+    position: relative; padding: .35rem 0;
+    background-image: repeating-linear-gradient(
+      to right, var(--grid) 0 1px, transparent 1px calc(100% / 8));
+  }
+  .ev {
+    position: absolute; height: 1.55rem; border-radius: .3rem;
+    padding: 0 .4rem; font-size: .76rem; line-height: 1.55rem;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    color: #fff; background: var(--other); border: 1px solid transparent;
+    cursor: pointer;
+  }
+  .ev:hover { filter: brightness(1.08); }
+  .ev.flight { background: var(--flight); }
+  .ev.train { background: var(--train); }
+  .ev.bus { background: var(--bus); }
+  .ev.hotel { background: var(--hotel); }
+  .ev.activity { background: var(--activity); }
+  /* Not booked yet: an outline instead of a fill, so the trip shows what is
+     still undecided rather than pretending it is settled. */
+  .ev.tentative {
+    background: transparent; color: var(--ink);
+    border: 1px dashed currentColor; opacity: .85;
+  }
+  .ev.flight.tentative { color: var(--flight); }
+  .ev.train.tentative { color: var(--train); }
+  .ev.bus.tentative { color: var(--bus); }
+  .ev.hotel.tentative { color: var(--hotel); }
+  .ev.activity.tentative { color: var(--activity); }
+  /* A block cut by midnight: square off the edge the day does not own. */
+  .ev.cut-left { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+  .ev.cut-right { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+  /* Something with no duration — a dinner, a meeting point — is a dot rather
+     than a block, placed at the time it happens. */
+  .ev.moment {
+    width: .65rem; min-width: .65rem; height: .65rem;
+    padding: 0; border-radius: 50%; margin-top: .45rem;
+  }
+  /* A dot has no width to carry a dashed edge or a label, so a tentative one
+     stays filled — outlined it would be an almost invisible ring. */
+  .ev.moment.tentative { background: currentColor; border-style: solid; }
+
+  aside {
+    max-width: 62rem; margin: 1.25rem auto 0; padding: 1rem 1.15rem;
+    background: var(--panel); border: 1px solid var(--line); border-radius: .5rem;
+  }
+  aside h2 { margin: 0 0 .5rem; font-size: 1.05rem; }
+  aside dl { display: grid; grid-template-columns: 7rem 1fr; gap: .3rem 1rem; margin: 0; }
+  aside dt { color: var(--muted); font-size: .82rem; }
+  aside dd { margin: 0; }
+  .empty { color: var(--muted); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Tripboard</h1>
+  <p class="sub" id="range">Loading the trip…</p>
+  <p class="sub">
+    Records live in PocketBase — edit them in the
+    <a href="/_/">admin UI</a>, or read them raw from
+    <a href="/api/collections/trip_events/records?sort=starts_at">the REST API</a>.
+  </p>
+</header>
+
+<main id="cal"></main>
+<aside id="detail" hidden></aside>
+
+<script>
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+// PocketBase hands back "2026-09-14 09:40:00.000Z"; one character makes it a
+// date the browser will parse.
+const parse = (s) => (s ? new Date(s.replace(" ", "T")) : null);
+
+// Read the UTC face of the clock, never the local one: these are the trip's
+// own wall-clock times, and shifting them into the reader's timezone would
+// move a 09:40 flight for anyone not in London in winter.
+const hhmm = (d) =>
+  String(d.getUTCHours()).padStart(2, "0") + ":" +
+  String(d.getUTCMinutes()).padStart(2, "0");
+
+const dayMonth = (d) =>
+  d.toLocaleDateString("en", { day: "numeric", month: "short", timeZone: "UTC" });
+
+const dayLabel = (iso) => {
+  const d = new Date(iso + "T00:00:00.000Z");
+  return {
+    weekday: d.toLocaleDateString("en", { weekday: "short", timeZone: "UTC" }),
+    date: d.toLocaleDateString("en", { day: "numeric", month: "short", timeZone: "UTC" }),
+  };
+};
+
+// Events that share a day get their own row when — and only when — they
+// actually overlap in time. Two things at opposite ends of the day sit on the
+// same line, which keeps a quiet day one line tall.
+function assignLanes(placed) {
+  const lanes = [];
+  for (const p of placed) {
+    let lane = lanes.findIndex((end) => p.from >= end);
+    if (lane === -1) { lane = lanes.length; lanes.push(0); }
+    lanes[lane] = p.to;
+    p.lane = lane;
+  }
+  return Math.max(1, lanes.length);
+}
+
+function renderRuler() {
+  const track = document.createElement("div");
+  track.className = "track";
+  for (let h = 0; h <= 24; h += 3) {
+    const tick = document.createElement("span");
+    tick.style.left = (h / 24) * 100 + "%";
+    tick.textContent = String(h).padStart(2, "0");
+    track.append(tick);
+  }
+  const row = document.createElement("div");
+  row.className = "ruler";
+  row.append(document.createElement("div"), track);
+  return row;
+}
+
+function renderDay(day) {
+  const start = new Date(day.date + "T00:00:00.000Z").getTime();
+  const end = start + DAY_MS;
+
+  const placed = day.events.map((ev) => {
+    const from = parse(ev.starts_at).getTime();
+    const to = ev.ends_at ? parse(ev.ends_at).getTime() : from;
+    return { ev, from: Math.max(from, start), to: Math.min(to, end),
+             cutLeft: from < start, cutRight: to > end, moment: to === from };
+  });
+  const laneCount = assignLanes(placed);
+
+  const track = document.createElement("div");
+  track.className = "track";
+  track.style.height = laneCount * 1.85 + 0.7 + "rem";
+
+  for (const p of placed) {
+    const block = document.createElement("button");
+    block.className = "ev " + p.ev.kind +
+      (p.ev.certainty === "tentative" ? " tentative" : "") +
+      (p.cutLeft ? " cut-left" : "") + (p.cutRight ? " cut-right" : "") +
+      (p.moment ? " moment" : "");
+    block.style.left = ((p.from - start) / DAY_MS) * 100 + "%";
+    if (!p.moment) {
+      block.style.width = ((p.to - p.from) / DAY_MS) * 100 + "%";
+    }
+    block.style.top = p.lane * 1.85 + 0.35 + "rem";
+    block.textContent = p.moment ? "" : p.ev.title;
+    block.title = p.ev.title;
+    block.onclick = () => showDetail(p.ev);
+    track.append(block);
+  }
+
+  const { weekday, date } = dayLabel(day.date);
+  const label = document.createElement("div");
+  label.className = "date";
+  label.innerHTML = `<b>${date}</b>${weekday}`;
+
+  const row = document.createElement("div");
+  row.className = "day";
+  row.append(label, track);
+  return row;
+}
+
+function showDetail(ev) {
+  const from = parse(ev.starts_at), to = parse(ev.ends_at);
+  // Times alone are enough while an event stays inside one day. Once it does
+  // not — a hotel night, a flight over midnight — the day has to be said, or
+  // "15:00 – 11:00" reads as a booking that ends before it starts.
+  const sameDay = to && from.toISOString().slice(0, 10) === to.toISOString().slice(0, 10);
+  const when = !to ? hhmm(from)
+    : sameDay ? `${hhmm(from)} – ${hhmm(to)}`
+    : `${dayMonth(from)} ${hhmm(from)} – ${dayMonth(to)} ${hhmm(to)}`;
+  const where = [ev.location, ev.location_end].filter(Boolean).join(" → ");
+
+  const rows = [
+    ["When", when],
+    ["Kind", ev.kind + (ev.certainty === "tentative" ? " · not booked yet" : "")],
+    ["Where", where],
+    ["Reference", ev.confirmation],
+  ].filter(([, v]) => v);
+
+  const detail = document.getElementById("detail");
+  detail.hidden = false;
+  detail.replaceChildren();
+
+  const title = document.createElement("h2");
+  title.textContent = ev.title;          // text, not markup: a record is data
+  detail.append(title);
+
+  const dl = document.createElement("dl");
+  for (const [key, value] of rows) {
+    const dt = document.createElement("dt"); dt.textContent = key;
+    const dd = document.createElement("dd"); dd.textContent = value;
+    dl.append(dt, dd);
+  }
+  detail.append(dl);
+
+  if (ev.notes) {
+    // notes is PocketBase's editor field, so it really is HTML — the only
+    // value on this page that is.
+    const notes = document.createElement("div");
+    notes.innerHTML = ev.notes;
+    detail.append(notes);
+  }
+}
+
+fetch("/api/trip")
+  .then((r) => r.json())
+  .then((trip) => {
+    const cal = document.getElementById("cal");
+    if (!trip.days.length) {
+      document.getElementById("range").textContent =
+        "No events yet — add one in the admin UI at /_/.";
+      return;
+    }
+    document.getElementById("range").textContent =
+      `${dayLabel(trip.start).date} – ${dayLabel(trip.end).date} 2026 · ` +
+      `${trip.days.length} days. Pick a block for the details.`;
+    cal.append(renderRuler());
+    for (const day of trip.days) cal.append(renderDay(day));
+  })
+  .catch(() => {
+    document.getElementById("range").innerHTML =
+      `<span class="empty">Could not reach /api/trip — is the server running?</span>`;
+  });
+</script>
+
+</body>
+</html>

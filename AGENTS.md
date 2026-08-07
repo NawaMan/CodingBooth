@@ -121,6 +121,48 @@ containers named after the project folder. Rules:
 folders, so each worktree gets its own booth name (the folder name). When multiple booths share a
 code path, `booth exec` may require `--name` — pick the one you started, or ask.
 
+### Authoring a `.booth/` — generate it, never hand-write it
+
+Any `.booth/Boothfile` + `config.toml` you create in this repo — an example workspace, a
+`tests/complex/` fixture, a booth for a consumer project — must be **`booth config` output**. Typing
+them by hand produces a booth that `booth config` classifies as hand-written and then refuses to
+regenerate: `--no-tui` aborts unless given `--overwrite` or `--beside`, and the TUI opens behind a
+blocking warning dialog and will not save until "overwrite" is typed in full. That is the right
+treatment for a user's own edits and the wrong one for something we ship. The mechanism, and the
+two ways through it:
+**[booth config → Hand-Written Files](docs/BOOTH_CONFIG.md#hand-written-files)**.
+
+```bash
+export CB_TEMPLATES_PATH="$PWD/templates"        # local templates; a --rc version has no release to fetch
+(cd "$WS" && "$REPO/codingbooth" config --no-tui --overwrite \
+    --select 'go+vscode-ext' --expose '+-1910:8090')
+rm -f "$WS/.booth"/*.bak                          # only if it replaced something
+```
+
+Rules that follow from it:
+
+- **Commit three files**, not two: `Boothfile`, `config.toml`, **and `.booth/.generated`** — the
+  fingerprint sidecar is what makes the guard work after a clone. Without it a file is only
+  *adopted* on its header, and any later hand-edit goes undetected.
+- **Run it from inside `$WS`, not with the path as an argument.** The target path lands verbatim in
+  the `# Configured by:` header, which is how `server-example` ended up shipping an absolute
+  `/home/nawa/...` path in a committed file.
+- **Don't restate a value that equals the template default** (`--select go:1.25.7` when the go
+  template already defaults to 1.25.7). The TUI writes the pin as an `arg` line and drops it from
+  the header's DSL, so a first open-and-save produces a spurious diff. The pin stays visible either
+  way — it is the `arg GO_VERSION=` line.
+- **Then prove the round trip**, because "it generated" and "the TUI reproduces it" are different
+  claims: re-run `booth config --no-tui --overwrite` with no flags and `cmp` both files against
+  their previous content. Identical means the header is a complete baseline. To drive the real TUI,
+  the `tests/config-tui/` harness does it (needs `vhs`, `ttyd`, `ffmpeg`).
+- **Reach for a flag, not an editor,** for everything the generated files hold: `--expose`,
+  `--env`, `--mount`, `--cmd`, `--variant`, `--port`, and `--set` for any other `config.toml` key.
+  One hand-edit afterwards and the fingerprint no longer matches — which is exactly the state you
+  were avoiding. (`booth config --help` lists them all.)
+
+Everything else under `.booth/` (`setups/`, `startups/`, `home/`) is yours to write by hand — those
+are copied, not regenerated, and survive a reconfigure untouched.
+
 ### Session = linked worktree + branch (GitKraken-visible)
 
 **This is the only setup for isolated agent sessions on this project.** One session folder, one

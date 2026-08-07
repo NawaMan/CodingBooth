@@ -4,6 +4,56 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **New `pocketbase-example`: a trip calendar with a database, a REST API and an admin UI out of
+  one `go build`.** PocketBase is used the way it is meant to be used from Go — as a library the
+  program embeds, not a binary it downloads — so `main.go` gets the collections, the generated REST
+  API and the admin UI for free and adds one route of its own. The example is *Tripboard*: five
+  invented days in Portugal, drawn as one 24-hour row per day, where a hotel night is cut at
+  midnight and each day keeps the half it owns. That cut happens in Go (`trip.go`), which is the
+  point of the custom `/api/trip` route: the built-in `/api/collections/trip_events/records`
+  returns the same records, just not arranged the way a calendar reads them.
+
+  Nothing is carried in a database file. The schema and the demo trip are Go migrations under
+  `internal/migrations/`, so deleting `pb_data/` and restarting rebuilds the trip identically — and
+  the repo has no `pb_data` to go stale. The Go toolchain is pinned in the Boothfile, PocketBase
+  (`v0.39.9`) in `go.mod`, and container port 8090 is mapped to host 8090, so the calendar and the
+  admin UI at `/_/` both open in the host browser with no port plumbing.
+
+  Its `.booth/Boothfile` and `config.toml` are `booth config` output rather than hand-written, and
+  ship with the `.booth/.generated` fingerprint beside them, so `booth config` opens the example in
+  its TUI instead of guarding it as hand-authored — and an open-and-save with no edits reproduces
+  both files byte for byte.
+
+- **Both agent manuals now say how to author a Boothfile that `booth config` will still open.**
+  `docs/AGENT.md` — the copy baked into every image at `/opt/codingbooth/AGENT.md` — described a
+  world of `.booth/Dockerfile` and never mentioned `booth config`, so an agent following it wrote
+  the Boothfile by hand. That is a one-way door: the fingerprint in `.booth/.generated` stops
+  matching, and from then on `--no-tui` refuses to run without `--overwrite` while the TUI opens
+  behind a warning dialog that will not save until the user types "overwrite" in full. It now leads
+  with *Change the Environment (Boothfile / config.toml)*: regenerate from the `# Configured by:`
+  line at the top of the Boothfile, carry the whole `--select` forward (it replaces rather than
+  merges, so an omitted template is a tool that silently disappears), and hand the command to the
+  user — `booth config` is host-side, and there is no CLI inside the container (only the `booth--*`
+  helpers; the in-booth way to see what is installable is `ls /opt/codingbooth/setups/`).
+
+  The rest of the file was brought forward with it, because half a correction is worse than none:
+  *Add a Built-in Tool*, *Add a Simple apt Package* (now `--select apt-pkg:htop,jq`), *Experiment
+  Before Committing* and the decision tree all handed out `.booth/Dockerfile` recipes, and *Modify
+  Runtime Config* told the reader to edit `config.toml` by hand — the exact move the guard punishes;
+  it now maps each setting to the flag that writes it. *Create a Custom Setup Script* gains the part
+  that was missing entirely: a script in `.booth/setups/` needs a `setup <tool>` line, and the way to
+  get one without hand-editing is a project-local template under `.booth/templates/`, which keeps the
+  booth generated. `.booth/Dockerfile` is documented as what it actually is — a still-supported
+  fallback used only when no Boothfile exists, with the Boothfile winning (and saying so) when both
+  are present. The file tree, the "What NOT to Do" table, Troubleshooting and the closing checklist
+  were corrected to match.
+
+  `AGENTS.md` gains the repo-side rule — anything we *ship* with a `.booth/` (example workspaces,
+  `tests/complex/` fixtures) must be generated, commit `.generated` as the third file, run from
+  inside the workspace so an absolute path does not land in the committed header, avoid restating
+  a value that equals the template default, and prove the round trip rather than assume it. The
+  `setup-work` skill's workspace anatomy now matches.
+
 - **A password-protected base UI now asks for the password on its own page, with the username
   already filled in.** `--public` sets `PASSWORD`, and the four terminal panes were protected by
   ttyd's own HTTP Basic auth (`-c coder:$PASSWORD`). That means the browser's native credential
