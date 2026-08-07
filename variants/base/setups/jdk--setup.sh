@@ -237,13 +237,22 @@ update-alternatives --install /usr/bin/jar    jar    "${GENERIC_LINK}/bin/jar"  
 update-alternatives --install /usr/bin/jcmd   jcmd   "${GENERIC_LINK}/bin/jcmd"   "${ALT_PRIO}"
 update-alternatives --install /usr/bin/jps    jps    "${GENERIC_LINK}/bin/jps"    "${ALT_PRIO}"
 update-alternatives --install /usr/bin/jstack jstack "${GENERIC_LINK}/bin/jstack" "${ALT_PRIO}"
+# keytool and jarsigner are the signing pair. They belong here for the same reason
+# java and javac do: /etc/profile.d is not read by the non-login shell that
+# `booth -- ./script.sh` runs in, so PATH alone does not reach them, and anything
+# that signs an artifact (an Android APK, a JAR, a self-signed TLS cert) then
+# fails with "keytool: command not found" in scripts while working interactively.
+update-alternatives --install /usr/bin/keytool   keytool   "${GENERIC_LINK}/bin/keytool"   "${ALT_PRIO}"
+update-alternatives --install /usr/bin/jarsigner jarsigner "${GENERIC_LINK}/bin/jarsigner" "${ALT_PRIO}"
 # Force-select our entries (best-effort for non-JDK tools)
-update-alternatives --set java   "${GENERIC_LINK}/bin/java"
-update-alternatives --set javac  "${GENERIC_LINK}/bin/javac"  || true
-update-alternatives --set jar    "${GENERIC_LINK}/bin/jar"    || true
-update-alternatives --set jcmd   "${GENERIC_LINK}/bin/jcmd"   || true
-update-alternatives --set jps    "${GENERIC_LINK}/bin/jps"    || true
-update-alternatives --set jstack "${GENERIC_LINK}/bin/jstack" || true
+update-alternatives --set java      "${GENERIC_LINK}/bin/java"
+update-alternatives --set javac     "${GENERIC_LINK}/bin/javac"     || true
+update-alternatives --set jar       "${GENERIC_LINK}/bin/jar"       || true
+update-alternatives --set jcmd      "${GENERIC_LINK}/bin/jcmd"      || true
+update-alternatives --set jps       "${GENERIC_LINK}/bin/jps"       || true
+update-alternatives --set jstack    "${GENERIC_LINK}/bin/jstack"    || true
+update-alternatives --set keytool   "${GENERIC_LINK}/bin/keytool"   || true
+update-alternatives --set jarsigner "${GENERIC_LINK}/bin/jarsigner" || true
 
 # --- System-wide profile for future shells ---
 log "Writing ${PROFILE_FILE} ..."

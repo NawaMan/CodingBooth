@@ -1,0 +1,44 @@
+display-name = "Android SDK"
+display-disc = "Android command-line SDK: sdkmanager, adb, platform and build tools"
+display-detail = """Installs the Android SDK command-line tools under /opt/android-sdk and, through them, \
+platform-tools (adb), a platform (android.jar) and build-tools (aapt2, d8, apksigner, zipalign) — \
+everything needed to compile and sign an APK without Android Studio. Licenses are accepted \
+non-interactively at build time. The versions are pinned so an image rebuild cannot silently change \
+the toolchain under the app. The emulator is deliberately not included: it is a multi-gigabyte \
+download, so it lives on the `emulator` extension."""
+display-order = 66
+tags = [
+    "android",
+    "mobile",
+    "sdk",
+    "apk",
+]
+
+requires = ["java"]
+
+# Google publishes platform-tools, build-tools and the emulator for linux x86_64
+# only. The setup warns and skips on arm64 rather than failing the build, so the
+# image still comes up — just without the SDK.
+unsupported-arch = ["arm64"]
+unsupported-arch-note = """\
+Google ships the Android SDK platform and build tools for linux x86_64 only. On arm64 the \
+booth still builds, but the SDK is skipped and no APK can be built in it."""
+
+[params.ANDROID_CMDLINE_TOOLS]
+default = "11076708"
+suggests = ["11076708", "10406996"]
+
+[params.ANDROID_API]
+default = "34"
+suggests = ["36", "35", "34", "33"]
+
+[params.ANDROID_BUILD_TOOLS]
+default = "34.0.0"
+suggests = ["36.0.0", "35.0.0", "34.0.0", "33.0.2"]
+
+# Order 60: sdkmanager is a Java program, so this must run after `setup jdk`
+# lands JAVA_HOME at order 50.
+[segments]
+"Boothfile--60" = """
+setup android-sdk --cmdline-tools ${ANDROID_CMDLINE_TOOLS} --api ${ANDROID_API} --build-tools ${ANDROID_BUILD_TOOLS}
+"""

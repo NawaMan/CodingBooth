@@ -1,0 +1,17 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant xfce --port 50411 --select java:17/android-sdk+emulator+kvm
+
+env APT_SNAPSHOT=20260807T000000Z
+
+arg ANDROID_API=34
+arg ANDROID_BUILD_TOOLS=34.0.0
+arg ANDROID_CMDLINE_TOOLS=11076708
+arg ANDROID_IMAGE_ABI=x86_64
+arg ANDROID_IMAGE_TAG=default
+arg JDK_VENDOR=temurin
+arg JDK_VERSION=17
+
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+setup android-sdk --cmdline-tools ${ANDROID_CMDLINE_TOOLS} --api ${ANDROID_API} --build-tools ${ANDROID_BUILD_TOOLS}
+setup android-emulator --api ${ANDROID_API} --tag ${ANDROID_IMAGE_TAG} --abi ${ANDROID_IMAGE_ABI}
+setup java-code-extension

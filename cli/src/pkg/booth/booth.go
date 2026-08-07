@@ -1126,3 +1126,81 @@ func flattenArgs(argsList ilist.List[ilist.List[string]]) []string {
 	})
 	return flattened
 }
+
+// FilterMissingDevices drops `--device` run-args whose host device node does not
+// exist, warning instead of letting the booth fail to start.
+//
+// This is the same contract FilterMissingVolumeMounts applies to bind mounts, and
+// it exists for the same reason: run-args are emitted unconditionally by whatever
+// template selected them, but whether a device is present is a property of the
+// host, not of the project. `docker run --device /dev/kvm` on a host without KVM
+// — Docker Desktop on macOS, a Linux box with virtualization disabled in BIOS, a
+// nested VM without nested virt — fails before the container is created:
+//
+//	docker: Error response from daemon: error gathering device information ...
+//	no such file or directory
+//
+// A selected template must never be able to stop the booth from starting. It
+// degrades with a warning instead, the way google-chrome--setup.sh skips on arm64.
+func FilterMissingDevices(ctx appctx.AppContext) appctx.AppContext {
+	builder := ctx.ToBuilder()
+	builder.RunArgs = filterMissingDeviceGroups(ctx.RunArgs())
+	builder.CommonArgs = filterMissingDeviceGroups(ctx.CommonArgs())
+	return builder.Build()
+}
+
+func filterMissingDeviceGroups(args ilist.List[ilist.List[string]]) *ilist.AppendableList[ilist.List[string]] {
+	filtered := ilist.NewAppendableList[ilist.List[string]]()
+	args.Range(func(_ int, group ilist.List[string]) bool {
+		kept := filterMissingDeviceItems(group.Slice())
+		if len(kept) > 0 {
+			filtered.Append(ilist.NewListFromSlice(kept))
+		}
+		return true
+	})
+	return filtered
+}
+
+func filterMissingDeviceItems(items []string) []string {
+	var kept []string
+	for i := 0; i < len(items); i++ {
+		flag := items[i]
+		if flag != "--device" || i+1 >= len(items) {
+			kept = append(kept, flag)
+			continue
+		}
+
+		spec := items[i+1]
+		hostPath := deviceHostPath(spec)
+
+		// Only an absolute host path can be checked. Anything else is passed
+		// through untouched rather than guessed at.
+		if !strings.HasPrefix(hostPath, "/") {
+			kept = append(kept, flag, spec)
+			i++
+			continue
+		}
+
+		if _, err := os.Stat(hostPath); err != nil {
+			fmt.Fprintf(os.Stderr, "⚠️  Skipping device: not present on this host: %s\n", hostPath)
+			if hostPath == "/dev/kvm" {
+				fmt.Fprintf(os.Stderr, "   The Android emulator will need '-accel off' (software emulation, much slower).\n")
+			}
+			i++ // skip the value
+			continue
+		}
+
+		kept = append(kept, flag, spec)
+		i++ // skip the value
+	}
+	return kept
+}
+
+// deviceHostPath returns the host side of a Docker --device spec.
+// Forms: "/dev/kvm", "/dev/kvm:/dev/kvm", "/dev/kvm:/dev/kvm:rwm".
+func deviceHostPath(spec string) string {
+	if idx := strings.Index(spec, ":"); idx >= 0 {
+		return spec[:idx]
+	}
+	return spec
+}

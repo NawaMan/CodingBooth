@@ -103,6 +103,10 @@ for readability — `booth example list` itself prints a flat alphabetical list.
 `js` · `kotlin` · `nodejs` · `octave` · `php` · `python` · `rlang` · `ruby` · `rust` · `zig` ·
 `zig-snake`
 
+### Mobile
+
+`android`
+
 ### Web frameworks & full stacks
 
 `angular` · `django` · `fastapi` · `flask` · `lamp` · `lemp` · `mean` · `mern` · `nextjs` · `pern` ·

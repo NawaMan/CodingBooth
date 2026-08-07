@@ -290,6 +290,7 @@ All templates and extensions grouped by segment order.
 
 | Template                  | Display Name     |
 |---------------------------|------------------|
+| `tools/android-sdk`       | Android SDK      |
 | `browsers/chromium`       | Chromium         |
 | `browsers/firefox`        | Firefox          |
 | `browsers/google-chrome`  | Google Chrome    |
@@ -321,6 +322,24 @@ All templates and extensions grouped by segment order.
 | `tools/codex`             | Codex            |
 | `tools/notebook`          | Jupyter Notebook |
 | `tools/warp`              | Warp             |
+
+### Order 62 — Android emulator (needs the Android SDK from order 60)
+
+| Extension                            | Display Name      |
+|--------------------------------------|-------------------|
+| `android-sdk/emulator--extension`    | Android Emulator  |
+
+`android-sdk/kvm--extension` is listed nowhere above because it emits no Boothfile
+segment at all — it is `run-args` (`--device /dev/kvm`) plus a `startup--45.sh` hook.
+It is `auto-select = false` simply because it is useless without the emulator; it is
+safe to select on any host, since `FilterMissingDevices` drops a `--device` whose host
+node is absent with a warning instead of letting `docker run` fail.
+
+That filter is the rule to rely on when a template needs host hardware: **a selected
+template must never stop the booth from starting.** Ask for the device in `run-args`
+and let it be dropped, rather than trying to detect the host at config time — there is
+no host-OS guard in the template system, and `unsupported-arch` only distinguishes
+amd64 from arm64, which is a different question from "does this machine have KVM".
 
 ### Order 65 — Language VS Code extensions (need codeserver/vscode)
 

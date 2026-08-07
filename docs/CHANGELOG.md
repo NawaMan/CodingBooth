@@ -69,6 +69,93 @@ This file contains a list of changes for each released version.
   lists them as catalog-authoring references instead of filing them under "helping users", which
   had been steering agents away from the guides for this repo's own `templates/` tree.
 
+- **`keytool` and `jarsigner` now work in scripts, not just interactive shells.** `jdk--setup.sh`
+  registered java, javac, jar, jcmd, jps and jstack with `update-alternatives` but not the signing
+  pair, leaving them reachable only through the `JAVA_HOME/bin` that `/etc/profile.d` adds. A login
+  shell reads that file; `booth -- ./build.sh` does not, since it runs via `runuser -u coder --`.
+  So anything that signed an artifact from a script — an Android APK, a JAR, a self-signed TLS
+  cert — failed with `keytool: command not found` while working perfectly when typed by hand, which
+  is the worst version of this bug: it only appears in automation. Both are now registered
+  alongside the rest. New `tests/complex/test-boothfile-jdk-tools` asserts all eight tools resolve
+  in a non-login shell, that `keytool` executes, and that it can actually produce a keystore.
+
+- **A selected template can no longer stop a booth from starting by asking for hardware the host
+  does not have.** `FilterMissingDevices` drops a `--device` run-arg whose host node is absent,
+  with a warning, exactly as `FilterMissingVolumeMounts` already did for bind mounts whose host
+  path is missing. Before this, `--device /dev/kvm` on a machine without KVM — Docker Desktop on
+  macOS, virtualization disabled in BIOS, a nested VM without nested virt — failed in `docker run`
+  before the container existed (`error gathering device information ... no such file or
+  directory`), which is a hard stop rather than a degradation. Only the missing flag/value pair is
+  dropped; the rest of the run-args are untouched.
+
+  This generalizes beyond Android: any template asking for `/dev/dri`, a serial device, or a GPU
+  now degrades the same way. It is the run-args counterpart of the rule the setup scripts already
+  follow when they warn and skip on an unsupported architecture.
+
+- **Android is now something a booth can be configured for, rather than hand-written.** There was
+  no Android anything in the catalog — a project that needed to build an APK had to hand-roll the
+  whole thing in its `Boothfile`: fetch the command-line tools zip, move it to the
+  `cmdline-tools/latest/` path `sdkmanager` insists on, pipe `yes` at the license prompts, then
+  install platform-tools, a platform and build-tools by hand. `setup android-sdk` does that, with
+  `ANDROID_CMDLINE_TOOLS`, `ANDROID_API` and `ANDROID_BUILD_TOOLS` as args so a rebuild cannot
+  silently move the toolchain under the app. It `requires` java, because `sdkmanager` is a Java
+  program and the failure otherwise is an unhelpful one at build time.
+
+  The emulator is a separate `+emulator` extension rather than part of the SDK: the system image
+  is multiple gigabytes, and building an APK never needs it. It also installs the X11, GL and
+  audio client libraries the emulator binary links against even under `-no-window`, without which
+  it dies at load time long before reading an AVD. That list includes `libpng16` and `libxkbfile`,
+  which are easy to miss: they are pulled in by the Qt libraries the emulator bundles, so a
+  headless `-no-window` boot succeeds without them and only `emulator -version` — or anything
+  touching the UI path — fails, with `libpng16.so.16: cannot open shared object file`.
+
+  On a desktop variant the emulator extension also installs an **Android Emulator** desktop icon
+  and Development menu entry, backed by a `cb-android-emulator` launcher. A bare `emulator` with
+  no AVD does nothing useful and an unaccelerated one exits with an error, so a naive launcher
+  would look like a double-click that did nothing; this one creates an AVD on first run (deriving
+  the package spec from whichever system image is installed, so it follows `ANDROID_API`) and
+  chooses hardware or software acceleration from whether `/dev/kvm` is usable. It runs in a
+  terminal so first-run AVD creation and any failure are visible.
+
+  The AVD is created against a device profile (`pixel_6`, overridable with `CB_AVD_DEVICE`) rather
+  than `avdmanager`'s bare defaults, which are actively broken for an emulator: with no `-d` it
+  writes `hw.mainKeys=yes`, meaning "this device has physical Back/Home keys, so do not draw the
+  on-screen navigation bar". An emulator window has no physical keys, so nothing draws them and
+  nothing responds — the app cannot be left. The same defaults give a 320x640 mdpi screen, far
+  below what Android 14's system UI expects, and `hw.keyboard=no`, so the host keyboard never
+  reaches the guest. The launcher fixes all three and names the software rasterizer explicitly,
+  since a booth has no GPU for `auto` to find.
+
+  `+kvm` is the third piece, and it is safe to select anywhere: a host without `/dev/kvm` now
+  drops the device with a warning (see the `FilterMissingDevices` entry above) rather than failing
+  `docker run`. It is off by default only because it is useless without the emulator. Notably it
+  carries **no** host-specific gid. The device node keeps its host `root:kvm 0660` ownership
+  inside the container, which `coder` cannot open; the obvious fix is `--group-add <the host's kvm
+  gid>`, which is unportable and fails silently on any other machine. Instead a `startup--45.sh`
+  hook relaxes the mode container-side, which is safe because `/dev` in a container is a private
+  tmpfs — verified: the host's node is still `660 root:kvm` afterwards.
+
+  Without KVM the emulator does not fall back on its own, it refuses to start outright (`x86_64
+  emulation currently requires hardware acceleration!`); `-accel off -gpu swiftshader_indirect`
+  runs it in software. Measured on the example: boot to `sys.boot_completed` takes ~20s with KVM
+  and ~258s without, and the APK installs and reaches the foreground either way — so an
+  unaccelerated emulator is viable for a one-shot check and miserable for an edit-run loop.
+
+  Google publishes the platform tools, build tools and emulator for linux x86_64 only, so both
+  setups warn and skip on arm64 rather than failing the build, and both templates carry
+  `unsupported-arch`.
+
+  New `examples/workspaces/android-example` builds a signed, verifying APK from a one-Activity
+  app using `aapt2`/`javac`/`d8`/`apksigner` directly — no Gradle, and so no network — which
+  makes it a real test of the toolchain rather than of the package mirror. It passes
+  `--min-sdk-version`/`--target-sdk-version` to `aapt2 link` explicitly, which the Android Gradle
+  Plugin would otherwise inject from `build.gradle`: undeclared, `targetSdkVersion` falls back to
+  `minSdkVersion` and then to 1, and Android 14+ refuses to install anything targeting below API
+  23 with *"app isn't compatible with your phone"* — a message that sounds like an ABI mismatch
+  and is really a deprecation floor. Nothing else catches it, because such an APK still builds,
+  signs, verifies under v1/v2/v3, and installs fine on the emulator; the example's test asserts
+  both values are present.
+
 ## 0.70.0
 
 - **A build that cannot reach the GitHub API installs viewmd 0.5.0, not 0.2.0.**

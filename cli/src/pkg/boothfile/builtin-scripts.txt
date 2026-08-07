@@ -4,6 +4,8 @@
 # Format: "setup <name>" or "install <name>", one per line.
 setup act
 setup aider
+setup android-emulator
+setup android-sdk
 setup ansible
 setup antigravity
 setup apache

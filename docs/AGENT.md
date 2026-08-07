@@ -316,6 +316,13 @@ run-args = ["-v", "/host/path:/container/path"]
 # Missing host paths are logged to stderr so multi-OS credential paths are safe:
 # list Linux, macOS, and Windows locations; only existing ones are mounted.
 
+# Devices
+run-args = ["--device", "/dev/kvm"]
+
+# --device follows the same rule: a device node that is not present on the host is
+# dropped with a warning rather than failing `docker run`, so asking for hardware a
+# machine may not have can never stop the booth from starting.
+
 # Default command
 cmds = ["bash", "-lc", "npm start"]
 

@@ -1,0 +1,6 @@
+# Configured by: booth config --no-tui --overwrite --variant xfce --port 50411 --select java:17/android-sdk+emulator+kvm
+
+variant = "xfce"
+port = "50411"
+
+run-args = ["--device", "/dev/kvm"]

@@ -59,6 +59,9 @@ func (runner *BoothRunner) Run() error {
 	ctx = PrepareCommonArgs(ctx)
 	// After PrepareCommonArgs so TLS/common mounts are also filtered.
 	ctx = FilterMissingVolumeMounts(ctx)
+	// Same contract for devices: a template that asks for hardware this host does
+	// not have degrades with a warning rather than stopping the booth from starting.
+	ctx = FilterMissingDevices(ctx)
 
 	// Create booth with prepared context and run
 	booth := NewBooth(ctx)

@@ -179,6 +179,14 @@ run-args = [
 > That lets you list several OS-specific credential paths without Docker Desktop creating
 > empty directories for the ones that are not present on this machine.
 
+> **Missing devices:** the same applies to `--device`. A device whose host node is not
+> present is dropped with a warning instead of failing the run — `docker run --device
+> /dev/kvm` on a machine without KVM aborts before the container exists, which would let a
+> template stop the booth from starting on someone else's hardware. Only the missing
+> flag and its value are dropped; the rest of `run-args` is untouched. So
+> `run-args = ["--device", "/dev/kvm"]` is safe to commit: it accelerates the Android
+> emulator where KVM exists and quietly does nothing where it does not.
+
 ### Custom Port
 
 ```toml

@@ -1,0 +1,40 @@
+display-name = "Android Emulator"
+display-disc = "Emulator binary plus an AOSP system image, so an APK can be run and not merely built"
+display-detail = """Adds the Android emulator and a system image, turning a build-only booth into one that can \
+actually run the app. This is a multi-gigabyte download and is off by default for that reason. \
+The image tag defaults to `default` (plain AOSP) rather than `google_apis`: nothing in a booth \
+normally needs Play services, and it is substantially smaller.
+
+On a desktop variant it installs an "Android Emulator" desktop icon and Development menu entry \
+(and a `cb-android-emulator` command everywhere else) that creates an AVD on first run and picks \
+the acceleration mode for you, so the launcher works rather than exiting with an error nobody \
+sees.
+
+Hardware acceleration is a separate, runtime concern — see the `kvm` extension. Without /dev/kvm \
+the emulator does not fall back on its own, it refuses to start; pass `-accel off` to run in \
+software emulation instead, which works but is slow enough to hurt."""
+display-order = 1
+auto-select = false
+tags = [
+    "android",
+    "emulator",
+    "mobile",
+]
+
+unsupported-arch = ["arm64"]
+unsupported-arch-note = "The Linux Android emulator is published for x86_64 only."
+
+[params.ANDROID_IMAGE_TAG]
+default = "default"
+suggests = ["default", "google_apis", "google_apis_playstore"]
+
+[params.ANDROID_IMAGE_ABI]
+default = "x86_64"
+suggests = ["x86_64"]
+
+# Order 62: after the SDK at 60 (this drives its sdkmanager), before the
+# VS Code extension band at 65.
+[segments]
+"Boothfile--62" = """
+setup android-emulator --api ${ANDROID_API} --tag ${ANDROID_IMAGE_TAG} --abi ${ANDROID_IMAGE_ABI}
+"""

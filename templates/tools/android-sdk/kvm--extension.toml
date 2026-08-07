@@ -1,0 +1,51 @@
+display-name = "KVM Acceleration"
+display-disc = "Pass /dev/kvm into the booth so the emulator runs at hardware speed"
+display-detail = """Hands the host's KVM device to the booth, which is what makes the Android emulator usable: \
+without it the emulator refuses to start at all (`x86_64 emulation currently requires hardware \
+acceleration!`) and only runs under an explicit `-accel off`, in software, slowly.
+
+Safe to select anywhere. On a host with no /dev/kvm — Docker Desktop on macOS, a Linux box with \
+virtualization disabled in BIOS, a nested VM without nested virtualization — the booth still \
+starts: the device is dropped with a warning at start rather than failing `docker run`. On \
+Windows, Docker Desktop's WSL2 backend often does have /dev/kvm (Windows 11 enables nested \
+virtualization by default), so this may simply work there; `ls /dev/kvm` inside WSL is the check.
+
+It is off by default only because it is useless without the emulator, not because it is risky.
+
+Nothing host-specific is needed beyond the device itself. The device node keeps the host's \
+root:kvm 0660 ownership inside the container, which the booth user cannot open, so a startup hook \
+relaxes the mode. That is safe: /dev in a container is a private tmpfs, so the change applies to \
+the container's own node and never touches the host's."""
+display-order = 2
+auto-select = false
+tags = [
+    "android",
+    "emulator",
+    "kvm",
+    "acceleration",
+]
+
+run-args = [
+    "--device", "/dev/kvm",
+]
+
+# Runs as coder at booth start, before sudo revocation, so `sudo` is available
+# here even when BOOTH_SUDO=false.
+[segments]
+"startup--45.sh" = """
+if [ -e /dev/kvm ]; then
+  if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
+    echo "KVM: /dev/kvm is already accessible — emulator will be hardware-accelerated."
+  elif sudo -n chmod 0666 /dev/kvm 2>/dev/null; then
+    # The node inherits the host's root:kvm 0660, which coder is not a member of.
+    # /dev is a container-private tmpfs, so this does not affect the host.
+    echo "KVM: relaxed /dev/kvm permissions for the booth user (container-local)."
+  else
+    echo "KVM: /dev/kvm present but not writable, and sudo is unavailable."
+    echo "     The emulator will need '-accel off' (software emulation, much slower)."
+  fi
+else
+  echo "KVM: /dev/kvm not present — was the booth started without the kvm run-args?"
+  echo "     The emulator will need '-accel off' (software emulation, much slower)."
+fi
+"""

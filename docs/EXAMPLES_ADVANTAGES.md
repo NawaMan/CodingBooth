@@ -55,6 +55,11 @@ The advantages, in CodingBooth's own vocabulary:
   bundled Erlang/OTP, avoiding BEAM version-mismatch pain.
 - **kotlin-example** — a matched Kotlin 2.0.20 compiler on Temurin JDK 21 (compiler and JDK must
   agree), all overridable via build args.
+- **android-example** — the Android SDK is four separately versioned pieces (command-line tools, a
+  platform, build-tools, and a JDK under them) behind an SDK manager that will not proceed until
+  licenses are accepted by hand. All four are pinned build args here, licenses are accepted at image
+  build time, and the APK builds with no Gradle and no network — so a green build proves the
+  toolchain, not the package mirror.
 - **spring-boot-example** — pinned JDK 21 + Maven 3.9.11 that must line up to build Spring Boot 3.4.
 - **systemlib-example** — links real system libraries (libcurl, SQLite) whose headers *and* shared
   objects must both be present for CMake's `find_package`, with the exact library versions pinned by
@@ -197,6 +202,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | Example | Primary advantage |
 |---|---|
 | all-java-example | Try / compare side-by-side (7 JDKs) |
+| android-example | Precise version compatibility |
 | angular-example | Host stays clean |
 | apt-example | Reproducibility (archive snapshot) |
 | aws-example | Credential seeding |

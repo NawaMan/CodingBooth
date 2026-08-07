@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+setup jdk 17 temurin
+setup android-sdk --cmdline-tools 11076708 --api 34 --build-tools 34.0.0
