@@ -78,12 +78,17 @@ KJSON
 chmod -R a+rX "${KDIR}" 2>/dev/null || true
 
 # ---------------- Configure gnuplot for inline plotting ----------------
-# The octave_kernel defaults to fltk which requires a display server.
-# In containers (notebook variant), gnuplot is the correct backend.
+# In containers (notebook variant) there is no display server, so gnuplot is
+# the graphics toolkit to draw with. But the toolkit name alone is not enough:
+# octave_kernel only captures figures and returns them as notebook images when
+# the backend starts with "inline". A bare 'gnuplot' means "draw live", and
+# with no display gnuplot falls back to its ASCII "dumb" terminal, which lands
+# in the cell as unreadable text art. 'inline:gnuplot' picks the toolkit *and*
+# keeps inline capture on, so cells get a real PNG.
 JUPYTER_CONFIG_DIR="${JUPYTER_KERNEL_PREFIX}/etc/jupyter"
 mkdir -p "${JUPYTER_CONFIG_DIR}"
 cat > "${JUPYTER_CONFIG_DIR}/octave_kernel_config.py" <<'PYCONF'
-c.OctaveKernel.plot_settings = dict(backend='gnuplot')
+c.OctaveKernel.plot_settings = dict(backend='inline:gnuplot', format='png')
 PYCONF
 chmod 0644 "${JUPYTER_CONFIG_DIR}/octave_kernel_config.py"
 
