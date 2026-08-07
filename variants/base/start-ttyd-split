@@ -19,6 +19,44 @@ if [[ ! -f "$WEB_SPLIT_ROOT/nginx.conf.template" ]]; then
     exit 1
 fi
 
+if [[ ! -f "$WEB_SPLIT_ROOT/login.html" ]]; then
+    echo "Missing login page: $WEB_SPLIT_ROOT/login.html" >&2
+    exit 1
+fi
+
+# ---- Session gate -----------------------------------------------------------
+#
+# With a PASSWORD set, the panes used to be protected by ttyd's own HTTP Basic
+# auth, which meant the browser's native credential dialog — a dialog whose
+# username box is the browser's, always empty, and impossible to prefill from
+# here. So the gate moved up to nginx: a random per-start token in a cookie,
+# handed out by /booth-messages/api/login once the password checks out, and
+# nginx replays the ttyd credential upstream so the pane never sees a 401.
+#
+# With no PASSWORD the map collapses to "default 1" and every gate in the
+# config is dead weight — the UI is open exactly as it was before.
+if [[ -n "${PASSWORD:-}" ]]; then
+    BOOTH_AUTH_TOKEN=$(head -c 32 /dev/urandom | od -An -tx1 | tr -d ' \n')
+    AUTH_MAP="map \$cookie_booth_auth \$booth_auth_ok {
+        default              0;
+        \"${BOOTH_AUTH_TOKEN}\" 1;
+    }"
+    TTYD_AUTH_HEADER="proxy_set_header Authorization \"Basic $(printf '%s' "coder:${PASSWORD}" | base64 -w0)\";"
+
+    # Read by booth-message-api-server when it mints the cookie.
+    export BOOTH_AUTH_TOKEN
+    export BOOTH_AUTH_USER=coder
+    # Caddy terminates TLS in front of us on 10443, so nginx only ever sees
+    # plain HTTP — BOOTH_TLS is the only signal that the browser is on HTTPS.
+    export BOOTH_AUTH_COOKIE_SECURE=$([[ "${BOOTH_TLS:-}" == "true" ]] && echo true || echo false)
+else
+    AUTH_MAP="map \$cookie_booth_auth \$booth_auth_ok {
+        default 1;
+    }"
+    TTYD_AUTH_HEADER=""
+fi
+export AUTH_MAP TTYD_AUTH_HEADER
+
 for i in "${!SESSION_NAMES[@]}"; do
     session_name="${SESSION_NAMES[$i]}"
     session_port="${SESSION_PORTS[$i]}"
@@ -72,7 +110,8 @@ $(cat "$plugin_file")
 fi
 export PLUGINS_HTML
 
-envsubst '${PORT} ${WEB_SPLIT_SERVE}' <"$WEB_SPLIT_ROOT/nginx.conf.template" >"$NGINX_CONFIG"
+envsubst '${PORT} ${WEB_SPLIT_SERVE} ${AUTH_MAP} ${TTYD_AUTH_HEADER}' <"$WEB_SPLIT_ROOT/nginx.conf.template" >"$NGINX_CONFIG"
+envsubst '${BOOTH_CONTAINER_NAME}' <"$WEB_SPLIT_ROOT/login.html" >"$WEB_SPLIT_SERVE/login.html"
 envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML}' \
   <"$WEB_SPLIT_ROOT/index.html" >"$WEB_SPLIT_SERVE/index.html"
 

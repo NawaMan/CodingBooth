@@ -4,6 +4,40 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A password-protected base UI now asks for the password on its own page, with the username
+  already filled in.** `--public` sets `PASSWORD`, and the four terminal panes were protected by
+  ttyd's own HTTP Basic auth (`-c coder:$PASSWORD`). That means the browser's native credential
+  dialog — and its username box belongs to the browser, starts empty, and cannot be prefilled by
+  anything the server sends. The only way to fill it in was to know that the answer is always
+  `coder`, which is why the CLI printed `https://coder@localhost:PORT` and a `Login username:`
+  line: an attempt to seed that dialog through the URL, which browsers increasingly flag as a
+  phishing pattern.
+
+  The gate moved up to nginx. `start-ttyd-split` mints 32 random bytes per container start and
+  bakes them into the generated config as the one accepted value of a `booth_auth` cookie; `/`,
+  the panes, and `/proxy/{port}/` redirect to `/login` without it, and the booth-message API
+  answers 401 (a redirect would hand the overlay's `fetch` the login page as "JSON"). `/login`
+  serves a booth-styled form with the username prefilled — editable, since only `coder` is
+  accepted but pretending the field is decorative would be worse — posting to a new
+  `/booth-messages/api/login`, which checks the password and sets the cookie. nginx replays
+  `Authorization: Basic …` toward each ttyd, so the panes keep their own credential on
+  10001–10004 while the browser never sees a 401 and never opens the native dialog.
+
+  Two things this turned up. `absolute_redirect off` is not optional: nginx builds `Location`
+  from the port it listens on, so the gate was sending browsers to `localhost:10000` — the
+  container-internal port — instead of the published one, which is broken for every booth and
+  doubly so behind the Caddy TLS proxy on 10443. And `map_hash_bucket_size 128` has to be
+  declared before any `map` block: a 64-character token does not fit the default 64-byte bucket,
+  and nginx rejects the directive as a duplicate if a `map` has already been parsed.
+
+  It also closes a hole that predates it. `/booth-messages/api/` was never behind ttyd's auth, so
+  on a `--public` booth anyone who could reach the port could `POST .../shutdown` with no
+  password at all. It is gated now.
+
+  Unchanged where there is no password: the map collapses to `default 1`, every gate is a no-op,
+  `/login` bounces to `/`, and nothing is injected upstream. `tests/basic/test018--base-ui-login.sh`
+  drives the real `--public` path end to end — TLS included — through all eight behaviours.
+
 - **Octave notebook plots come back as images instead of ASCII art.** The Octave kernel was
   configured with `plot_settings = dict(backend='gnuplot')`, on the reading that `backend` names
   the Octave graphics toolkit. It does not. In `octave_kernel`, `backend` selects the *delivery*

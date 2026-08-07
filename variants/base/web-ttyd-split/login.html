@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in — ${BOOTH_CONTAINER_NAME}</title>
+  <style>
+    :root {
+      --bg: #0b1018;
+      --panel: #141c27;
+      --panel-edge: #2b3a4d;
+      --text: #e7edf5;
+      --muted: #9badc2;
+      --accent: #2f8dff;
+      --danger: #ff6b6b;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: radial-gradient(circle at 20% 0, #1f2a3a 0%, var(--bg) 45%);
+      color: var(--text);
+      font-family: "IBM Plex Sans", "Segoe UI", sans-serif;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 360px;
+      background: var(--panel);
+      border: 1px solid var(--panel-edge);
+      border-radius: 10px;
+      padding: 28px 26px 24px;
+      box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    .title {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 4px;
+    }
+
+    .booth {
+      font-size: 20px;
+      font-weight: 600;
+      margin: 0 0 22px;
+      word-break: break-all;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin: 0 0 6px;
+    }
+
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      margin-bottom: 16px;
+      background: #0a0e14;
+      color: var(--text);
+      border: 1px solid var(--panel-edge);
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    button {
+      width: 100%;
+      padding: 10px 12px;
+      background: var(--accent);
+      color: #fff;
+      border: 1px solid var(--accent);
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .error {
+      display: none;
+      margin: 14px 0 0;
+      font-size: 13px;
+      color: var(--danger);
+    }
+
+    .error.shown {
+      display: block;
+    }
+  </style>
+</head>
+
+<body>
+  <form class="card" id="login-form" autocomplete="on">
+    <p class="title">Coding Booth</p>
+    <p class="booth">${BOOTH_CONTAINER_NAME}</p>
+
+    <label for="username">Username</label>
+    <input id="username" name="username" type="text" value="coder" autocomplete="username" spellcheck="false"
+      autocapitalize="none">
+
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" autofocus>
+
+    <button type="submit" id="submit">Sign in</button>
+    <p class="error" id="error"></p>
+  </form>
+
+  <script>
+    (function () {
+      // A pane whose session expired gets redirected here inside its iframe.
+      // Take over the whole window instead of rendering a login card in a pane.
+      if (window.top !== window.self) {
+        window.top.location = '/login';
+        return;
+      }
+
+      var form = document.getElementById('login-form');
+      var username = document.getElementById('username');
+      var password = document.getElementById('password');
+      var submit = document.getElementById('submit');
+      var error = document.getElementById('error');
+
+      function fail(message) {
+        error.textContent = message;
+        error.classList.add('shown');
+        submit.disabled = false;
+        password.value = '';
+        password.focus();
+      }
+
+      // Base64 so the password survives the trip as an opaque token: the
+      // receiving end is a bash server that pulls the field out with sed, and
+      // quotes or backslashes in a JSON string would derail it.
+      function encode(value) {
+        return btoa(String.fromCharCode.apply(null, new TextEncoder().encode(value)));
+      }
+
+      form.addEventListener('submit', function (event) {
+        event.preventDefault();
+        error.classList.remove('shown');
+        submit.disabled = true;
+
+        fetch('/booth-messages/api/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username_b64: encode(username.value),
+            password_b64: encode(password.value)
+          })
+        }).then(function (response) {
+          if (response.ok) {
+            window.location.replace('/');
+            return;
+          }
+          fail(response.status === 401
+            ? 'Wrong username or password.'
+            : 'Sign-in failed (' + response.status + ').');
+        }).catch(function () {
+          fail('Could not reach the booth.');
+        });
+      });
+    })();
+  </script>
+</body>
+
+</html>

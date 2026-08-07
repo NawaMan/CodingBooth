@@ -261,8 +261,11 @@ func printPortBanner(portNumber int, public bool) {
 	LogPrintln("============================================================")
 	if public {
 		LogPrintf("🔌 Using host port: \033[1;32m%d\033[0m -> container: \033[1;34m10443\033[0m (HTTPS)\n", portNumber)
-		LogPrintf("🌐 Open: https://coder@localhost:%d\n", portNumber)
-		LogPrintln("🔑 Login username: coder")
+		// Plain URL: the booth's own login page prefills the username now, so
+		// the "coder@" form is no longer needed to seed the browser's dialog —
+		// and browsers flag embedded credentials as a phishing smell.
+		LogPrintf("🌐 Open: https://localhost:%d\n", portNumber)
+		LogPrintln("🔑 Login username: coder (prefilled)")
 		LogPrintln("🔓 PUBLIC: PORT IS OPEN ON ALL INTERFACES (PASSWORD + HTTPS)")
 	} else {
 		LogPrintf("🔌 Using host port: \033[1;32m%d\033[0m -> container: \033[1;34m10000\033[0m\n", portNumber)

@@ -5,9 +5,12 @@
 package booth
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"net"
 	"os"
+	"strings"
 	"testing"
 	"time"
 )
@@ -246,5 +249,68 @@ func TestPortClaim_StaleClaimIsIgnored(t *testing.T) {
 
 	if portIsClaimed(port) {
 		t.Errorf("a claim older than the TTL still blocks port %d", port)
+	}
+}
+
+// capturePortBanner runs printPortBanner with stdout redirected and returns
+// what it printed.
+func capturePortBanner(t *testing.T, portNumber int, public bool) string {
+	t.Helper()
+
+	oldStdout := os.Stdout
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("cannot create a pipe: %v", err)
+	}
+	os.Stdout = writer
+
+	printPortBanner(portNumber, public)
+
+	writer.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	if _, err := io.Copy(&buf, reader); err != nil {
+		t.Fatalf("cannot read the captured banner: %v", err)
+	}
+	return buf.String()
+}
+
+// The public banner points at the booth's own login page, which prefills the
+// username itself. It must not fall back to the "coder@host" URL form: that
+// only ever existed to seed the browser's native Basic-auth dialog, which the
+// booth no longer shows, and browsers read embedded credentials as phishing.
+func TestPrintPortBanner_PublicURLHasNoEmbeddedCredential(t *testing.T) {
+	const port = 19443
+	output := capturePortBanner(t, port, true)
+
+	wantURL := fmt.Sprintf("https://localhost:%d", port)
+	if !strings.Contains(output, wantURL) {
+		t.Errorf("public banner should offer %q, got: %q", wantURL, output)
+	}
+
+	if strings.Contains(output, "coder@") {
+		t.Errorf("public banner still embeds a credential in the URL, got: %q", output)
+	}
+
+	// The username is still worth stating — it is the one value the login page
+	// accepts, and a user who clears the field needs to know what to retype.
+	if !strings.Contains(output, "coder") {
+		t.Errorf("public banner should still name the 'coder' username, got: %q", output)
+	}
+}
+
+// The non-public banner is plain HTTP with no credential of any kind.
+func TestPrintPortBanner_NonPublicIsUnauthenticated(t *testing.T) {
+	const port = 10000
+	output := capturePortBanner(t, port, false)
+
+	wantURL := fmt.Sprintf("http://localhost:%d", port)
+	if !strings.Contains(output, wantURL) {
+		t.Errorf("non-public banner should offer %q, got: %q", wantURL, output)
+	}
+
+	if strings.Contains(output, "Login username") || strings.Contains(output, "coder@") {
+		t.Errorf("non-public banner should not mention credentials, got: %q", output)
 	}
 }

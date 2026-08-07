@@ -187,6 +187,7 @@ ENTRYPOINT ["tini","-g","--","/usr/local/bin/booth-entry"]
 COPY --chmod=0755 start-ttyd /usr/local/bin/start-ttyd
 COPY --chmod=0755 start-ttyd-split /usr/local/bin/start-ttyd-split
 COPY --chmod=0644 web-ttyd-split/index.html /usr/local/share/ttyd-split/index.html
+COPY --chmod=0644 web-ttyd-split/login.html /usr/local/share/ttyd-split/login.html
 COPY --chmod=0644 web-ttyd-split/nginx.conf.template /usr/local/share/ttyd-split/nginx.conf.template
 RUN chmod 0755 /usr/local/share/ttyd-split
 

@@ -28,6 +28,7 @@ Back to [README](../README.md)
 - [Keep-Alive](#keep-alive)
 - [Shutdown & Restart](#shutdown--restart)
 - [Docker-in-Docker (DinD)](#docker-in-docker-dind)
+- [Public Access (`--public`)](#public-access---public)
 - [TLS Support](#tls-support)
 - [Help](#help)
 
@@ -541,6 +542,37 @@ Host
 ```
 
 > See `examples/workspaces/dind-example` for basic DinD usage and `examples/workspaces/kind-example` for KinD.
+
+---
+
+## Public Access (`--public`)
+
+By default a booth listens on `127.0.0.1` only — nothing outside your machine can reach it. `--public` binds it to every interface instead, and turns on password authentication and HTTPS together, because an open port without both would be an open shell.
+
+```bash
+./booth --public
+```
+
+The password is read from `.booth/.booth.password` (mode `600`, gitignored), or prompted for if that file is missing. It is never written to `config.toml`.
+
+### Signing in
+
+A booth started with `--public` greets you with its own sign-in page rather than the browser's built-in credential popup:
+
+```
+🌐 Open: https://localhost:19443
+🔑 Login username: coder (prefilled)
+```
+
+**The username is always `coder`**, and the page fills it in for you — you only type the password. The field stays editable, but `coder` is the sole account a booth accepts.
+
+A few things worth knowing:
+
+- **The session lasts as long as the booth does.** Signing in sets a cookie tied to a token the booth generates at startup, so restarting a booth signs you out everywhere.
+- **The certificate is self-signed** unless you pass `--tls-cert` / `--tls-key`, so expect a browser warning on first visit.
+- **Everything behind the front door is protected**, including the terminal panes and the booth's own control API — not just the landing page.
+
+> `--public` exposes your development environment to your whole network. Use a password you would not mind an attacker seeing attempts against, prefer a real certificate over the self-signed one, and shut the booth down when you are done with it.
 
 ---
 

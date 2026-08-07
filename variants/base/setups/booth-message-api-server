@@ -19,6 +19,7 @@
 #   POST /booth-messages/api/idle/disable  — disable idle monitoring indefinitely
 #   POST /booth-messages/api/idle/resume   — resume normal idle cadence
 #   POST /booth-messages/api/idle/set-time — override base idle time {"seconds": N}
+#   POST /booth-messages/api/login         — trade the password for a session cookie
 #
 # Usage: booth-message-api-server <port>
 # -----------------------------------------------------------------------------
@@ -93,6 +94,9 @@ handle_request() {
                     ;;
                 /booth-messages/api/idle/set-time)
                     handle_idle_set_time "$body"
+                    ;;
+                /booth-messages/api/login)
+                    handle_login "$body"
                     ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
@@ -257,11 +261,46 @@ handle_idle_state() {
     send_response 200 "{\"enabled\":$enabled,\"idle_time\":$idle_time,\"base_idle_time\":$base_idle_time,\"shutdown_time\":$shutdown_time,\"disabled\":$disabled,\"pause_until\":$pause_until}"
 }
 
+# Trades the booth password for the session cookie the nginx gate checks.
+# BOOTH_AUTH_TOKEN is minted per container start by start-ttyd-split; when it is
+# absent there is no password on this booth and nothing to hand out.
+handle_login() {
+    local body="$1"
+
+    if [ -z "${BOOTH_AUTH_TOKEN:-}" ] || [ -z "${PASSWORD:-}" ]; then
+        send_response 404 '{"error":"login not enabled"}'
+        return
+    fi
+
+    # Fields arrive base64-encoded so that quotes and backslashes in a password
+    # cannot break this sed out of the JSON string it is reading.
+    local user_b64 pass_b64 given_user given_pass
+    user_b64=$(printf '%s' "$body" | sed -n 's/.*"username_b64" *: *"\([A-Za-z0-9+/=]*\)".*/\1/p')
+    pass_b64=$(printf '%s' "$body" | sed -n 's/.*"password_b64" *: *"\([A-Za-z0-9+/=]*\)".*/\1/p')
+    given_user=$(printf '%s' "$user_b64" | base64 -d 2>/dev/null || true)
+    given_pass=$(printf '%s' "$pass_b64" | base64 -d 2>/dev/null || true)
+
+    if [ "$given_user" != "${BOOTH_AUTH_USER:-coder}" ] || [ "$given_pass" != "$PASSWORD" ]; then
+        # Costs a wrong guess a second. socat forks per connection, so this
+        # slows an attacker down without stalling anyone else's requests.
+        sleep 1
+        send_response 401 '{"error":"invalid credentials"}'
+        return
+    fi
+
+    local cookie="Set-Cookie: booth_auth=${BOOTH_AUTH_TOKEN}; Path=/; HttpOnly; SameSite=Strict"
+    [ "${BOOTH_AUTH_COOKIE_SECURE:-false}" = "true" ] && cookie="${cookie}; Secure"
+
+    send_response 200 '{"ok":true}' "$cookie"
+}
+
 send_response() {
     local code="$1"
     local body="$2"
+    local extra_headers="${3:-}"
     local status_text="OK"
     [ "$code" = "400" ] && status_text="Bad Request"
+    [ "$code" = "401" ] && status_text="Unauthorized"
     [ "$code" = "404" ] && status_text="Not Found"
     [ "$code" = "405" ] && status_text="Method Not Allowed"
 
@@ -269,8 +308,10 @@ send_response() {
     local body_bytes
     body_bytes=$(printf '%s' "$body" | wc -c)
 
-    printf "HTTP/1.0 %s %s\r\nContent-Type: application/json\r\nContent-Length: %s\r\nConnection: close\r\n\r\n%s" \
-        "$code" "$status_text" "$body_bytes" "$body"
+    [ -n "$extra_headers" ] && extra_headers="${extra_headers}"$'\r\n'
+
+    printf "HTTP/1.0 %s %s\r\nContent-Type: application/json\r\nContent-Length: %s\r\n%sConnection: close\r\n\r\n%s" \
+        "$code" "$status_text" "$body_bytes" "$extra_headers" "$body"
 }
 
 # If called with --handle, process a single request

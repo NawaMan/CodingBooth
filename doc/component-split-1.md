@@ -186,7 +186,8 @@ Browser-rendered surface served from inside the booth. Cross-listed with C5 wher
 
 - **`booth-message-overlay.html`** — shared overlay CSS/JS (modal/toast/banner primitives). Loaded by every web variant. Source: `variants/base/setups/booth-message-overlay.html`. Cross-listed: C5.
 - **`web-ttyd-split/index.html`** — base variant console UI: terminal split + overlay + proxy toggle (globe button).
-- **`web-ttyd-split/nginx.conf.template`** — nginx template with `/`, `/booth`, `/booth-messages/api/`, catch-all proxy, and `/proxy/{port}/` regex location.
+- **`web-ttyd-split/login.html`** — base variant login page, served at `/login` when `PASSWORD` is set. Prefills the username with `coder`; posts the credential to `/booth-messages/api/login` to obtain the `booth_auth` cookie.
+- **`web-ttyd-split/nginx.conf.template`** — nginx template with `/`, `/booth`, `/booth-messages/api/`, catch-all proxy, and `/proxy/{port}/` regex location. Also carries the session gate (see C9).
 - **Per-variant wrapper integration** — output of the `booth-message-*-wrapped--setup.sh` trio: per-variant `start-*-wrapped` launcher + nginx config + `_booth_inner=1` redirect handling. Cross-listed: C5.
 - **localStorage keys** — `cb.webSplit.{project}.proxy` and friends; cross-tab UI state convention (lightweight identifier, could also live in C3).
 
@@ -201,6 +202,16 @@ In the repo, never shipped to users.
 - **`experiments/`** — `test-init-tui`, `tui-go` (egress / spike code).
 - **`doc/`** — internal brainstorm docs (`feature-raw.md`, `feature-split-1.md`, `component-raw.md`, this file, `ARCHITECURE.md` placeholder). Distinct from `docs/` (user-facing guides), which ships.
 
+## C9 — Base UI session gate
+
+Only active when `PASSWORD` is set (the CLI injects it for `--public`). With no password every piece below collapses to a no-op and the UI is open, exactly as an unauthenticated booth has always been.
+
+- **`booth_auth` cookie** — the session credential. Value is 32 random bytes, hex-encoded, minted once per container start by `start-ttyd-split`. `HttpOnly`, `SameSite=Strict`, plus `Secure` when `BOOTH_TLS=true`. Restarting a booth invalidates outstanding sessions.
+- **`$booth_auth_ok`** — nginx map over `$cookie_booth_auth`. `default 0` plus the one live token when a password is set; the whole map is replaced by `default 1` when there is none. Requires `map_hash_bucket_size 128`, declared *before* any `map` block — nginx rejects a later one as a duplicate, and a 64-character token does not fit the default bucket.
+- **Gate placement** — `/`, `/s1..s4/` and `/proxy/{port}/` redirect to `/login`; `/booth-messages/api/` returns 401 instead, because the overlay reaches it with `fetch` and a redirect would hand it the login page as "JSON". `/login` and `/booth-messages/api/login` are the two ungated paths.
+- **`absolute_redirect off`** — mandatory. nginx would otherwise build the gate's `Location` from the port it listens on (10000, or 10443 behind Caddy) rather than the published host port, sending the browser to a port that is not there.
+- **Upstream credential** — nginx injects `Authorization: Basic base64(coder:$PASSWORD)` toward each ttyd. ttyd keeps its own `-c` credential, so the panes are still protected on 10001–10004, but the browser never receives ttyd's 401 and therefore never opens the native Basic-auth dialog — which is the point: that dialog's username box cannot be prefilled by a server.
+- **`POST /booth-messages/api/login`** — handled by `booth-message-api-server`. Fields arrive base64-encoded so quoting in a password cannot break the bash JSON parsing. Compares against `$PASSWORD`, sleeps 1s on a miss, replies `Set-Cookie` on a match.
 ---
 
 ## Open questions
