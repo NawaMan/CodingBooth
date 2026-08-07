@@ -80,6 +80,13 @@ This file contains a list of changes for each released version.
   Off by default: at ~2.8 GB it is by far the largest cache extension, against kilobytes for shell
   history.
 
+  Covered by `tests/complex/test-avd-persistence`, which is host-side and starts the booth twice —
+  the only way to prove state survived, since a test running inside one container cannot observe
+  the next one. It writes a marker on the device, stops with `cb-android-emulator-stop`, destroys
+  the container, and reads the marker back from a fresh one. That is the assertion that matters:
+  if the stop command ever stops saving, every in-booth test still passes while users silently
+  lose their device on each restart.
+
 - **A password-protected base UI now asks for the password on its own page, with the username
   already filled in.** `--public` sets `PASSWORD`, and the four terminal panes were protected by
   ttyd's own HTTP Basic auth (`-c coder:$PASSWORD`). That means the browser's native credential
