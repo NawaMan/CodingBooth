@@ -213,7 +213,17 @@ past that refusal.
 
 Then **stop**. Say explicitly that nothing was pushed, and that the worktree/branch are gone.
 
-## 8. Session close line (required when the land is complete)
+## 8. Closing verdict — always last, always short
+
+**Detail first, verdict last.** Explain as much as the land genuinely needs — what you found, what
+you fixed, what surprised you — but that all goes *above*. The report **ends** with a few glanceable
+lines: can the user walk away, or what is still open. They read the tail first and act on it; the
+detail above is there for when they don't follow or don't buy it.
+
+Nothing goes after the verdict. No recap, no "let me know if…", no restated caveats — anything
+worth saying belongs above it.
+
+### When the land is complete
 
 When **all of** the following are true:
 
@@ -229,8 +239,26 @@ language, for example:
 > **All done.** Gaps closed, branch merged into local `main`, worktree/branch removed. Nothing
 > was pushed. **You can close this session.**
 
-Optional one-liners after that (push still pending, unrelated dirty files on main) are fine; do
-**not** bury the “session can be closed” line.
+Loose ends worth flagging (push still pending, unrelated dirty files on main) go **in** that block
+as their own bullets — never trailing after it.
 
 **Do not** use that line if: re-verify failed; merge failed; cleanup refused; or the user chose
-**land as-is** with remaining gaps (say what is left instead).
+**land as-is** with remaining gaps.
+
+### When it is *not* fully done
+
+Same place, same brevity — a one-line verdict, then **short bullets: one line each, no paragraphs,
+no rationale**. Enough for the user to decide at a glance whether to close, or to scroll up:
+
+> **Not done — 2 things left.**
+> - `docs/BOOTH_EXPOSE.md` still documents the old flag name
+> - `experiments/tunnel-spike/` is half-wired and should be dropped or finished
+
+Rules for that list:
+
+- **One line per item**, phrased as the thing that is missing — not a story about why.
+- **Only genuinely open items.** Anything already agreed as out of scope is not a leftover.
+- **Say what state the tree is in** in the verdict line — merged with gaps, or not merged at all —
+  so "not done" is never ambiguous about whether `main` moved.
+- If the user chose **land as-is**, this list *is* the record of what they accepted; keep it even
+  though the merge succeeded.
