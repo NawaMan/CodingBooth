@@ -1,0 +1,45 @@
+display-name = "AVD Cache"
+display-disc = "Persist the emulator's virtual device across booth restarts"
+display-detail = """Keeps ~/.android in .booth/cache/, so the emulator's virtual device survives container \
+recreation: installed apps, settings, signed-in sessions and test data are still there next time, \
+and the adb authorization key stops resetting. Without this the AVD is rebuilt on every booth \
+start and the device remembers nothing.
+
+The second win is speed. Restoring a saved device takes seconds where a cold boot takes half a \
+minute — measured on this example: 26-38s cold, 7-16s restored.
+
+STOP THE EMULATOR WITH `cb-android-emulator-stop`. This is the part that is easy to get wrong. \
+The emulator does not reliably write a Quick Boot snapshot on its own way out — neither \
+`adb emu kill` nor a SIGTERM leaves one, so the next start restores whatever snapshot was written \
+last and silently rolls back everything since. The stop command saves first, then kills. Closing \
+the booth without it loses the session's device state.
+
+Sized differently from the other cache extensions. Shell history is kilobytes; this is around \
+2.8 GB once state has been saved — roughly 450 MB of device disk plus a ~2.3 GB RAM snapshot, \
+which is what buys the fast restore.
+
+This is deliberately .booth/cache/ and not .booth/shared/: cache is local to your machine and \
+gitignored, shared is committed for the team. A virtual device is per-developer, disposable, and \
+far too large to belong in a repository. Nothing about the emulator is worth sharing — the AVD is \
+reproducible from the Boothfile, which is the part that is already committed. The size is a cost \
+on your disk and your backups, never on the repo, and it is why this is off by default. Delete \
+.booth/cache/home/coder/.android at any time to reclaim it; the next start rebuilds a clean \
+device.
+
+Safe against stale devices: the launcher stamps each AVD with the recipe that built it and \
+recreates it when that recipe changes, so a device built by an older launcher cannot outlive a \
+fix to it. It also clears the lock files a container exit leaves behind, without which the next \
+start refuses with "a snapshot operation is pending"."""
+display-order = 3
+auto-select = false
+tags = [
+    "android",
+    "emulator",
+    "avd",
+    "cache",
+    "persistence",
+]
+
+cache-dirs = [
+    "home/coder/.android",
+]

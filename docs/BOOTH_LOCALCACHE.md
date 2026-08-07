@@ -221,6 +221,20 @@ Many templates include built-in cache extensions you can enable during `booth co
 >
 > For **team-shared bookmarks** (git-friendly, not full profiles), see [Shared State](BOOTH_SHARED.md) and `+bookmarks-shared`.
 
+### Android Virtual Device (`cache-dirs`)
+
+| Template Selection | What's Cached |
+|--------------------|---------------|
+| `android-sdk+emulator+avd-cache` | `~/.android/` (~2.8 GB — see below) |
+
+The largest cache extension by a wide margin, and the only one with a shutdown requirement.
+
+- **Size.** Roughly 450 MB of device disk plus a ~2.3 GB RAM snapshot. The snapshot is what makes a restore take seconds instead of half a minute (measured: 26–38s cold, 7–16s restored), so it is the cost of the feature rather than waste.
+- **Stop with `cb-android-emulator-stop`.** The emulator does not reliably save a Quick Boot snapshot on its own way out — neither `adb emu kill` nor a SIGTERM leaves one — so the next start restores the previously saved snapshot and silently rolls back the session. The stop command saves first, then kills.
+- **Stale locks are handled for you.** A container exit is always an unclean exit as far as the emulator is concerned, and it leaves `avd/running/` and `*.lock` behind. Cached, those would block every later start with *"a snapshot operation is pending and timeout has expired"*. The launcher clears them before starting.
+
+Delete `.booth/cache/home/coder/.android` at any time to reclaim the space; the next start builds a clean device.
+
 Usage example:
 
 ```

@@ -72,10 +72,25 @@ If you ever do get stuck in an app, `adb` is the way out:
 ```bash
 adb shell input keyevent KEYCODE_HOME
 adb shell am force-stop com.example.hello
-adb emu kill                              # shut the emulator down
+cb-android-emulator-stop                  # shut the emulator down
 ```
 
-Note that `~/.android` is not persisted, so the AVD is recreated on each booth start and the device does not remember installed apps or settings between sessions. Recreation takes a few seconds.
+### Keeping the device between sessions
+
+As configured, `~/.android` is not persisted: the AVD is rebuilt on each booth start (a few seconds) and the device remembers nothing between sessions. Add the `avd-cache` extension to change that:
+
+```bash
+booth config --overwrite --variant xfce --select java:17/android-sdk+emulator+kvm+avd-cache
+```
+
+Then installed apps, settings and signed-in sessions survive a restart, and starting the emulator becomes a restore rather than a boot — 7–16s against 26–38s cold.
+
+Two things to know before enabling it:
+
+- **Stop with `cb-android-emulator-stop`.** The emulator does not reliably save a Quick Boot snapshot on its own way out, so `adb emu kill` — or just closing the booth — restores the previously saved state and silently discards the session. The stop command saves first.
+- **It is about 2.8 GB** in `.booth/cache/`, mostly the RAM snapshot that makes the fast restore possible. That is local and gitignored, never committed; `rm -rf .booth/cache/home/coder/.android` reclaims it and gives you a clean device next start.
+
+It is off by default for that size, which is why this example does not ship with it. See [Local Cache](../../../docs/BOOTH_LOCALCACHE.md).
 
 The window can take a minute to appear — longer without KVM. Once it is up:
 

@@ -183,7 +183,53 @@ else
     echo "  ✅ nothing from com.example.hello in the crash buffer"
 fi
 
+echo "=== Stop command ==="
+if command -v cb-android-emulator-stop >/dev/null 2>&1; then
+    echo "  ✅ cb-android-emulator-stop is on PATH"
+else
+    echo "  ❌ cb-android-emulator-stop is missing — device state could not be saved"
+    FAILED=1
+fi
+
+echo "=== Recipe stamp ==="
+STAMP="$HOME/.android/avd/${AVD_NAME}.avd/.cb-recipe"
+if [[ -s "$STAMP" ]]; then
+    echo "  ✅ AVD carries a recipe stamp ($(cat "$STAMP"))"
+else
+    echo "  ❌ no recipe stamp — a cached AVD could outlive a launcher fix"
+    FAILED=1
+fi
+
 echo "=== Shut the emulator down ==="
+adb emu kill >/dev/null 2>&1 || true
+sleep 3
+
+# The stamp only earns its keep if a stale one forces a rebuild. Without this the
+# avd-cache extension would preserve a broken device forever — which is exactly
+# how an AVD built before the device-profile fix would have kept its unusable
+# hw.mainKeys=yes. Cheap to check: corrupt the stamp and restart.
+echo "=== Stale stamp forces a rebuild ==="
+printf '0:stale-device:stale-image\n' > "$STAMP"
+CB_AVD_NAME="$AVD_NAME" nohup cb-android-emulator \
+    -no-window -no-audio -no-snapshot -no-metrics > /tmp/emulator-rebuild.log 2>&1 &
+REBUILT=""
+for _ in $(seq 1 30); do
+    [[ "$(cat "$STAMP" 2>/dev/null)" != "0:stale-device:stale-image" ]] && { REBUILT=1; break; }
+    sleep 5
+done
+if [[ -n "$REBUILT" ]]; then
+    echo "  ✅ stale stamp triggered a rebuild (now $(cat "$STAMP"))"
+    if grep -qE '^hw\.mainKeys *= *no' "$AVD_CONFIG"; then
+        echo "  ✅ the rebuilt AVD has the corrected profile"
+    else
+        echo "  ❌ the rebuilt AVD is still misconfigured"
+        FAILED=1
+    fi
+else
+    echo "  ❌ a stale stamp did not trigger a rebuild"
+    grep -m2 -i "recipe" /tmp/emulator-rebuild.log || true
+    FAILED=1
+fi
 adb emu kill >/dev/null 2>&1 || true
 
 echo "=== Total: $(( $(date +%s) - START ))s ==="

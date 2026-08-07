@@ -54,6 +54,32 @@ This file contains a list of changes for each released version.
   a value that equals the template default, and prove the round trip rather than assume it. The
   `setup-work` skill's workspace anatomy now matches.
 
+- **The Android emulator can keep its device between booth restarts.** New `avd-cache` extension
+  puts `~/.android` in `.booth/cache/`, so installed apps, settings and signed-in sessions survive
+  container recreation instead of being rebuilt from scratch every start — and a restore takes
+  7–16s where a cold boot takes 26–38s.
+
+  Three things had to come with it, each found by testing rather than by reading:
+
+  - **Stopping is not symmetrical with starting.** The emulator does not reliably write a Quick
+    Boot snapshot on its own way out: measured here, neither `adb emu kill` nor a SIGTERM leaves
+    one behind. The device then restores from whatever snapshot was written last and silently
+    rolls back the session — persistence that looks like it works and does not. New
+    `cb-android-emulator-stop` saves state first, then kills, and the extension's docs lead with
+    it.
+  - **Cached lock files are worse than no cache.** The emulator records a running instance in
+    `avd/running/` and takes `*.lock` files beside the AVD, and a container exit is always an
+    unclean exit as far as it is concerned. Cached, that stale lock made every subsequent start
+    fail with `A snapshot operation for 'booth' is pending and timeout has expired` — a dead
+    emulator holding the door shut. The launcher now clears them before starting.
+  - **A cached AVD must not outlive a fix to the launcher.** Creating the AVD only when absent is
+    fine while `~/.android` is ephemeral; cached, it means "create once, ever". An AVD built
+    before the device-profile fix would have kept its unusable `hw.mainKeys=yes` forever. Each AVD
+    now carries a stamp of the recipe that built it and is recreated when that recipe changes.
+
+  Off by default: at ~2.8 GB it is by far the largest cache extension, against kilobytes for shell
+  history.
+
 - **A password-protected base UI now asks for the password on its own page, with the username
   already filled in.** `--public` sets `PASSWORD`, and the four terminal panes were protected by
   ttyd's own HTTP Basic auth (`-c coder:$PASSWORD`). That means the browser's native credential
