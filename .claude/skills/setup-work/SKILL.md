@@ -148,7 +148,8 @@ Copy the shape of a small existing one (`zig-example` is a good model):
 examples/workspaces/<name>-example/
 ├── .booth/
 │   ├── config.toml                 # variant = "base"  (unless the tool needs an IDE/desktop)
-│   └── Boothfile                   # setup <name> …
+│   ├── Boothfile                   # setup <name> …
+│   └── .generated                  # fingerprint of the two above — commit it
 ├── .cb-tests/
 │   ├── tags.txt                    # one tag per line; runner filters on these
 │   ├── test001-<thing>--on-host.sh # starts the booth, runs the in-booth suite
@@ -156,6 +157,19 @@ examples/workspaces/<name>-example/
 ├── README.md                       # what it demonstrates, how to run it
 └── <a small real project>          # source the tool actually operates on
 ```
+
+**Generate the two `.booth/` files; do not type them.** A hand-written pair is guarded as
+hand-written forever after — the TUI opens it behind a warning dialog and `booth config` will not
+reconfigure it without `--overwrite`. Ship what `booth config` writes, `.generated` included:
+
+```bash
+(cd "$WS" && "$REPO/codingbooth" config --no-tui --overwrite --select "<name>" --templates-path "$REPO/templates")
+rm -f "$WS/.booth"/*.bak
+```
+
+Run it from *inside* `$WS` — a path passed as an argument is echoed into the committed
+`# Configured by:` header. Full rules, including the round-trip check: **AGENTS.md → Authoring a
+`.booth/`**.
 
 Run it with the shared runner:
 
