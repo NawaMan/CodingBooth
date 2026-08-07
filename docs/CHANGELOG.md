@@ -4,6 +4,26 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **New `pocketbase-example`: a trip calendar with a database, a REST API and an admin UI out of
+  one `go build`.** PocketBase is used the way it is meant to be used from Go — as a library the
+  program embeds, not a binary it downloads — so `main.go` gets the collections, the generated REST
+  API and the admin UI for free and adds one route of its own. The example is *Tripboard*: five
+  invented days in Portugal, drawn as one 24-hour row per day, where a hotel night is cut at
+  midnight and each day keeps the half it owns. That cut happens in Go (`trip.go`), which is the
+  point of the custom `/api/trip` route: the built-in `/api/collections/trip_events/records`
+  returns the same records, just not arranged the way a calendar reads them.
+
+  Nothing is carried in a database file. The schema and the demo trip are Go migrations under
+  `internal/migrations/`, so deleting `pb_data/` and restarting rebuilds the trip identically — and
+  the repo has no `pb_data` to go stale. The Go toolchain is pinned in the Boothfile, PocketBase
+  (`v0.39.9`) in `go.mod`, and container port 8090 is mapped to host 8090, so the calendar and the
+  admin UI at `/_/` both open in the host browser with no port plumbing.
+
+  Its `.booth/Boothfile` and `config.toml` are `booth config` output rather than hand-written, and
+  ship with the `.booth/.generated` fingerprint beside them, so `booth config` opens the example in
+  its TUI instead of guarding it as hand-authored — and an open-and-save with no edits reproduces
+  both files byte for byte.
+
 - **A password-protected base UI now asks for the password on its own page, with the username
   already filled in.** `--public` sets `PASSWORD`, and the four terminal panes were protected by
   ttyd's own HTTP Basic auth (`-c coder:$PASSWORD`). That means the browser's native credential

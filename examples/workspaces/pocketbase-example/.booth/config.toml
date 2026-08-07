@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --expose +-1910:8090 --select go+vscode-ext
+
+
+run-args = ["--publish", "+-1910:8090"]

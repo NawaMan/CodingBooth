@@ -110,7 +110,7 @@ for readability — `booth example list` itself prints a flat alphabetical list.
 ### Web frameworks & full stacks
 
 `angular` · `django` · `fastapi` · `flask` · `lamp` · `lemp` · `mean` · `mern` · `nextjs` · `pern` ·
-`rails` · `react` · `spring-boot` · `vaadin` · `wordpress`
+`pocketbase` · `rails` · `react` · `spring-boot` · `vaadin` · `wordpress`
 
 ### Data & notebooks
 
