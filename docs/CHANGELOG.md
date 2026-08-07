@@ -4,6 +4,37 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Octave notebook plots come back as images instead of ASCII art.** The Octave kernel was
+  configured with `plot_settings = dict(backend='gnuplot')`, on the reading that `backend` names
+  the Octave graphics toolkit. It does not. In `octave_kernel`, `backend` selects the *delivery*
+  mode, and only a value starting with `inline` turns on figure capture — everything else means
+  "draw live and send nothing back". With no display server in the notebook variant, drawing live
+  put gnuplot on its `dumb` terminal, so `plot(x, y)` returned several hundred lines of `#` and
+  `+` text art in place of a figure, preceded by the `using the gnuplot graphics toolkit is
+  discouraged` banner. The setting is now `dict(backend='inline:gnuplot', format='png')`, which
+  picks the same toolkit *and* keeps capture on: cells now carry a real `image/png`.
+
+  The warning banner had a second cause. `octave--setup.sh` wrote its `graphics_toolkit` and
+  `warning ("off", …)` defaults to `/etc/octave/octaverc`, which Octave never reads — its
+  system-wide startup file is the one under `octave-config -p LOCALSTARTUPFILEDIR`. That file is
+  now the one that carries the settings (via a guarded block sourcing `/etc/octave/octaverc`, so
+  there is still one obvious file to edit), and it silences `Octave:gnuplot-graphics` rather than
+  the unrelated id it named before. It also stopped forcing gnuplot unconditionally: on a desktop
+  variant with a real `DISPLAY` and the qt toolkit present, Octave's own default is left alone.
+
+  Fixing the built-ins was not enough on its own: `octave-example` carried verbatim copies of all
+  three octave scripts in its `.booth/setups/`, and the compiler prepends that directory to `PATH`,
+  so the copies — not the built-ins — were what the example actually ran. `.booth/setups/` is for
+  scripts an example genuinely adds (`lamp-init--setup.sh`, `wp-init--setup.sh`, …); these were
+  leftovers from an editing session, committed alongside a `.Trash-1000/` folder, Jupyter
+  checkpoints and an `octave-workspace` dump in the same sweep. All of it is now gone, so the
+  example runs the real setups, and `.gitignore` covers the artifacts so they cannot drift back in.
+
+  A `test-boothfile-octave-nb-kernel` complex test now drives a plotting cell against the kernel
+  over the real Jupyter protocol and asserts the reply is an `image/png` with no text art and no
+  warning. The kernelspec-only check the other notebook kernels use passes just fine while plots
+  are unreadable, which is how this survived.
+
 ## 0.70.0
 
 - **A build that cannot reach the GitHub API installs viewmd 0.5.0, not 0.2.0.**

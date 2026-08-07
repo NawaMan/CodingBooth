@@ -1,0 +1,9 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Octave Jupyter kernel installation via Boothfile.
+# Matches what `booth config --select octave-nb-kernel` would emit:
+# octave-nb-kernel requires notebook (which requires python) and octave.
+setup python
+setup notebook
+setup octave
+setup octave-nb-kernel

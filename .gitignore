@@ -126,6 +126,14 @@ playground/
 
 demos/.Trash-1000/
 
+# Artifacts a booth writes into a mounted workspace. These reached
+# examples/workspaces/octave-example once already: the desktop trash folder from
+# deleting a file in the file manager, Jupyter's autosave copies, and the binary
+# variable dump octave-cli drops on exit.
+.Trash-*/
+.ipynb_checkpoints/
+octave-workspace
+
 # Virtual environments (Python)
 venv/
 ENV/
