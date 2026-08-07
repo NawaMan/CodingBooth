@@ -1,6 +1,17 @@
 # CodingBooth Template Authoring Guide
 
-**Purpose:** Guide for AI agents and developers to create init templates for `codingbooth config`.
+**Purpose:** the `template.toml` / `*--extension.toml` **schema** — every key the loader accepts,
+what it does, and how selections merge. Reference material for the `templates/` tree in this repo.
+
+> **Working on the catalog?** The **`setup-work` skill** is the workflow that uses this file —
+> adding, modifying, or fixing a setup, template, or extension, including how to try a change
+> without rebuilding an image.
+>
+> | Also see | For |
+> | --- | --- |
+> | `templates/README.md` | which segment **order band** to use, and the per-order catalogue of existing patterns |
+> | `docs/BOOTH_SETUP.md` | the setup **scripts** a template's Boothfile calls |
+> | `docs/AGENT_RECIPE.md` | recipe files (`--select @name`) |
 
 ---
 
@@ -16,28 +27,22 @@ Templates live under the `templates/` directory, organized by category.
 
 ```
 templates/
-├── languages/                    # Category
-│   ├── meta.toml                 # Category metadata
-│   ├── go/                       # Template (name = "go")
-│   │   ├── template.toml        # Template spec + inline segments (required)
-│   │   ├── linter/              # Extension (name = "linter")
-│   │   │   └── template.toml
-│   │   └── vscode-ext/          # Extension (name = "vscode-ext")
-│   │       └── template.toml
+├── languages/                          # Category
+│   ├── meta.toml                       # Category metadata
+│   ├── go/                             # Template (name = "go")
+│   │   ├── template.toml               # Template spec + inline segments (required)
+│   │   ├── linter--extension.toml      # Extension (name = "linter")
+│   │   └── vscode-ext--extension.toml  # Extension (name = "vscode-ext")
 │   ├── python/
 │   │   ├── template.toml
-│   │   ├── home-seed/           # Files copied to ~ (no-clobber)
-│   │   ├── uv/                  # Extension
-│   │   │   └── template.toml
-│   │   └── vscode-ext/
-│   │       └── template.toml
+│   │   ├── home-seed/                  # Files copied to ~ (no-clobber)
+│   │   ├── uv--extension.toml
+│   │   └── vscode-ext--extension.toml
 │   └── java/
 │       ├── template.toml
-│       ├── maven/               # Extension with its own params
-│       │   └── template.toml
-│       └── vscode-ext/
-│           └── template.toml
-└── tools/                       # Another category
+│       ├── maven--extension.toml       # Extension with its own params
+│       └── vscode-ext--extension.toml
+└── tools/                              # Another category
     ├── meta.toml
     └── claude-code/
         └── template.toml
@@ -45,7 +50,8 @@ templates/
 
 **Key rules:**
 - Template name = folder name (must be unique across ALL categories)
-- Extensions are subdirectories of a template with their own `template.toml`
+- Extensions are `<name>--extension.toml` files beside the parent's `template.toml`
+  (a subdirectory with its own `template.toml` also works — see *Extensions*)
 - Special subdirectories (`setups/`, `home/`, `home-seed/`) are for files, not extensions
 
 ---
@@ -113,20 +119,83 @@ install go golang.org/x/tools/gopls@latest
 | Field           | Type       | Description                                              |
 |-----------------|------------|----------------------------------------------------------|
 | `display-name`  | string     | Human-readable name                                      |
-| `display-disc`  | string     | Short description                                        |
+| `display-disc`  | string     | Short description — the list view                        |
+| `display-detail`| string     | Long description — the TUI detail pane / `template show` |
 | `display-order` | int        | Sort order within category (lower = first)               |
 | `tags`          | []string   | Searchable tags                                          |
+| `primary`       | bool       | Show in list/search by default; others need `--full`     |
 | `auto-select`   | bool       | Extension only: auto-include when parent selected        |
 | `variant`       | string     | Config: booth variant                                    |
 | `port`          | string     | Config: port mapping                                     |
 | `timezone`      | string     | Config: timezone                                         |
 | `dind`          | bool       | Config: Docker-in-Docker                                 |
+| `sudo`          | bool       | Config: give the booth user passwordless sudo            |
 | `cmds`          | []string   | Config: default commands                                 |
 | `build-args`    | []string   | Config: Docker build arguments                           |
 | `run-args`      | []string   | Config: Docker run arguments (flag-value pairs deduped)  |
 | `requires`      | []string   | Other template names that must also be selected          |
+| `cache-files`   | []string   | Files to persist in `.booth/cache/` (see below)          |
+| `cache-dirs`    | []string   | Directories to persist in `.booth/cache/`                |
+| `shared-files`  | []string   | Files to bind-mount live from `.booth/shared/`           |
+| `shared-dirs`   | []string   | Directories to bind-mount live from `.booth/shared/`     |
 | `unsupported-arch`      | []string | Architectures with no build (`"arm64"`, `"amd64"`)  |
 | `unsupported-arch-note` | string   | Why, and what to use instead — required with the above |
+
+Scalars merge **match-or-error** across selected templates; arrays **combine and dedup**.
+
+### Cache and shared paths
+
+Both take paths that **mirror the container filesystem**, without a leading slash — so the booth
+user's home is `home/coder/…`. The difference is intent:
+
+- **`cache-*`** — machine-local state that should survive a rebuild but is not worth committing:
+  REPL history, a tool's settings dir. Materialised under `.booth/cache/`.
+- **`shared-*`** — state you *want* in git so a team shares it: editor settings, DB connections,
+  keyboard shortcuts. Materialised under `.booth/shared/` as a live bind mount.
+
+```toml
+# templates/languages/python/repl-history--extension.toml
+cache-files = [
+    "home/coder/.python_history",
+]
+
+# templates/ides/codeserver/settings-shared--extension.toml
+shared-files = [
+    "home/coder/.local/share/code-server/User/settings.json",
+]
+```
+
+Directories get a `.mount-this` marker so the booth knows to mount them. Full behaviour:
+`docs/BOOTH_LOCALCACHE.md` and `docs/BOOTH_SHARED.md`.
+
+### Inline files — `[files.*]`
+
+Ships a file's **content** from the template itself, keyed by its relative path. This is how an
+inline extension carries a script or a config without needing a directory:
+
+```toml
+[files.setups]
+"deno-pkg--install.sh" = """
+#!/bin/bash
+set -Eeuo pipefail
+...
+"""
+
+[files.home-seed]
+".claude/settings.json" = """
+{ "permissions": { "allow": ["Bash", "Edit"] } }
+"""
+```
+
+| Table              | Lands in            | Mode                        |
+|--------------------|---------------------|-----------------------------|
+| `[files.setups]`   | `.booth/setups/`    | —                           |
+| `[files.home]`     | `.booth/home/`      | copied to `~` (override)    |
+| `[files.home-seed]`| `.booth/home-seed/` | copied to `~` (no-clobber)  |
+
+The directory equivalents (`setups/`, `home/`, `home-seed/` next to `template.toml`) do the same
+thing from real files — see *File Directories* below. Directory-based files are unavailable to
+inline `*--extension.toml` extensions; use `[files.*]` there.
 
 ### Templates with no build on some architecture
 
@@ -169,6 +238,25 @@ suggests = ["temurin", "corretto", "openjdk"]
 **Positional mapping:** When a user writes `java:25,corretto`, the values are mapped to params in **declaration order** in template.toml. In the example above, `25` maps to `JDK_VERSION` and `corretto` maps to `JDK_VENDOR`.
 
 **Naming:** Use explicit, prefixed names (e.g., `GO_VERSION`, `PYTHON_VERSION`) to avoid collisions across templates.
+
+**Variadic params:** the **last** declared param may set `variadic = true` to absorb every remaining
+positional value, joined with `,`. Without it, passing more values than there are params is an
+error (`too many parameters: got 3, template has 2`). This is how package-list templates take an
+open-ended selection:
+
+```toml
+# templates/tools/apt-pkg/template.toml
+[params.APT_PKGS]
+default  = ""
+variadic = true
+```
+
+```bash
+booth config --no-tui --select "apt-pkg:jq,ripgrep,htop"   # APT_PKGS=htop,jq,ripgrep
+```
+
+Values are **deduped and sorted** into a canonical form, so the same set produces the same Boothfile
+whether it came from the TUI, `--select`, or a recipe. Only the last param may be variadic.
 
 ---
 
@@ -264,22 +352,65 @@ Templates can include files to copy into the generated `.booth/`:
 
 ## Extensions
 
-Extensions are subdirectories of a template with their own `template.toml`:
+An extension is a sub-template of a template — "X support for language Y" is almost always an
+extension rather than a template of its own. It is selected with `+` (`go+linter`,
+`java:25,temurin+maven+gradle`), shares the parent's parameters, and is listed as a sub-item in the
+selection summary.
+
+### Inline form — `<name>--extension.toml` (use this)
+
+A single file next to the parent's `template.toml`. **This is what the catalog uses** — every one
+of the extensions in `templates/` is written this way:
+
+```
+templates/languages/go/
+├── template.toml                 # the parent
+├── linter--extension.toml        # → extension "linter"
+├── kernel--extension.toml        # → extension "kernel"
+├── go-pkg--extension.toml        # → extension "go-pkg"
+└── vscode-ext--extension.toml    # → extension "vscode-ext"
+```
+
+The extension's name is the filename with `--extension.toml` stripped. The body is the same schema
+as a `template.toml`, minus file-based segments and file directories — an inline extension carries
+its content in `[segments]` and `[files]`:
+
+```toml
+# templates/languages/go/linter--extension.toml
+display-name   = "golangci-lint"
+display-disc   = "Fast Go linters runner"
+display-order  = 20
+auto-select    = false
+
+[segments]
+"Boothfile--60" = """
+setup golangci-lint
+"""
+```
+
+### Directory form (legacy, still supported)
+
+A subdirectory holding its own `template.toml`. The loader accepts it, and it is the only form that
+can carry **file-based** segments and `setups/` / `home/` / `home-seed/` directories of its own.
+Nothing in the catalog uses it today — prefer the inline form unless you need those files.
 
 ```
 go/
-├── template.toml          # Includes [segments] with Boothfile content
-├── linter/                # Extension
-│   └── template.toml     # Must have auto-select field; includes [segments]
-└── vscode-ext/            # Extension
+├── template.toml
+└── linter/
     └── template.toml
 ```
 
-**auto-select behavior:**
-- `auto-select = true` — Included automatically when parent is selected (e.g., vscode-ext)
-- `auto-select = false` — Must be explicitly selected with `+` syntax (e.g., `java+maven`)
+Defining the same extension name **both** ways is an error:
+`extension "linter" defined as both a directory and an inline file`.
 
-Extensions share the parent's parameters and are listed as sub-items in the selection summary.
+### auto-select behavior
+
+- `auto-select = true` — included automatically when the parent is selected (e.g. `vscode-ext`)
+- `auto-select = false` — must be selected explicitly with `+` (e.g. `java+maven`)
+
+An extension may also declare `requires` — e.g. a notebook kernel sets `requires = ["notebook"]`, so
+selecting it without the notebook variant is an error rather than a silent no-op.
 
 ---
 
@@ -321,7 +452,7 @@ setup rust ${RUST_VERSION}
 
 ### Template with Auto-select Extension
 
-**`templates/languages/rust/vscode-ext/template.toml`:**
+**`templates/languages/rust/vscode-ext--extension.toml`:**
 ```toml
 display-name = "Rust VS Code Extension"
 display-disc = "rust-analyzer for VS Code"
@@ -385,9 +516,25 @@ This ensures Node.js (order 30) is installed before my-tool (order 80), regardle
 - [ ] Add params with explicit prefixed names (e.g., `TOOL_VERSION`)
 - [ ] Add `[segments]` with Boothfile content using `setup`/`install` commands referencing params
 - [ ] Add `run-args` for credentials or environment variables if needed
-- [ ] Create extensions with `auto-select` for common add-ons (e.g., vscode-ext)
+- [ ] Create extensions as `<name>--extension.toml`, with `auto-select` for common add-ons (e.g. vscode-ext)
 - [ ] Test with `codingbooth config --no-tui --dryrun --templates-path templates --select <name>`
 - [ ] Verify param positional mapping: `codingbooth config --no-tui --dryrun --select "<name>:value1,value2"`
+- [ ] Re-run the catalog guards (below)
+
+### Catalog guards
+
+Four tests in `tests/config/` enforce invariants across the whole catalog. They are cheap, need no
+Docker, and are the fastest way to catch a template that looks fine on its own:
+
+| Guard | Enforces |
+| --- | --- |
+| `test86-all-setups-exist.sh` | every `setup <name>` a template emits has a `<name>--setup.sh` |
+| `test88-all-params-are-wired.sh` | every declared `[params.X]` is referenced as `${X}` in that template's directory |
+| `test90-web-servers-have-desktop-icon.sh` | a template starting a web server registers a desktop icon |
+| `test92-arch-unsupported-is-declared.sh` | `unsupported-arch` carries a note, and setups bail out with exit 0 |
+
+A declared-but-unreferenced param is the nastiest of these: `booth config` shows the knob, writes
+`arg X=<value>`, and nothing consumes it — the user's choice is silently dropped.
 
 ---
 

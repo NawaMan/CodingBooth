@@ -35,6 +35,40 @@ This file contains a list of changes for each released version.
   warning. The kernelspec-only check the other notebook kernels use passes just fine while plots
   are unreadable, which is how this survived.
 
+- **Catalog authoring is one skill now — `setup-work` — and it covers fixing, not just adding.**
+  `setup-add` only ever described the five files a *new* setup needs, but the catalog's real
+  traffic is edits: version bumps, exposing a knob, arch bail-outs, a guard that was missing.
+  `setup-work` keeps the add path and adds a modify path (a version bump is three edits — script
+  default, `[params]` default, `suggests` — or the pin silently does nothing) and a fix path (a
+  symptom-to-layer table, because the same "tool is missing" reports as a bad `LEVEL`, an absent
+  guard, or an unreferenced param depending on which layer broke).
+
+  It also writes down the loop nobody had written down: a setup script copied to a project's
+  `.booth/setups/` overrides the image's, so a script change can be exercised against the
+  *released* base image without rebuilding anything, and `--dryrun --templates-path` answers every
+  param and ordering question with no Docker at all. Each change gets a folder the user can open —
+  a new `examples/workspaces/<name>-example` when they want one, the existing workspace that
+  already reproduces a bug when there is one, a throwaway otherwise — and the skill names that
+  folder every turn. Tests are held to `docs/TODO-SETUP_PROOF.md`'s standard (make the tool do the
+  work) rather than the `--version` grep the old skill taught. `setup-add` stays as a pointer.
+
+- **The catalog's authoring docs no longer describe a repo that does not exist.**
+  `docs/AGENT_TEMPLATE.md` documented extensions only as subdirectories, a form the catalog uses
+  zero times against 194 inline `<name>--extension.toml` files, and omitted ten keys the loader
+  accepts — including `display-detail`, which 225 templates set, and `variadic`, `primary`,
+  `sudo`, `[files.*]`, and the `cache-*` / `shared-*` pairs. `docs/BOOTH_SETUP.md` gave the
+  startup path as `/etc/startup.d/` in two places and `/usr/share/startup.d/` in a third; 41
+  setups use the latter and none use the former. Both are corrected, and `BOOTH_SETUP.md` gains a
+  reference for the shared helpers that were documented nowhere — `skip-setup.sh`, `cb-has-*.sh`,
+  `code-extension-source.sh`, and the `cb-web-icon.sh` / `cb-desktop-icon.sh` pair that 26 setups
+  call and `test90` enforces.
+
+  The four docs now point at each other and say which is which — patterns
+  (`templates/README.md`, which nothing in the repo linked to), schema
+  (`AGENT_TEMPLATE.md`), scripts (`BOOTH_SETUP.md`), recipes (`AGENT_RECIPE.md`) — and `AGENTS.md`
+  lists them as catalog-authoring references instead of filing them under "helping users", which
+  had been steering agents away from the guides for this repo's own `templates/` tree.
+
 ## 0.70.0
 
 - **A build that cannot reach the GitHub API installs viewmd 0.5.0, not 0.2.0.**

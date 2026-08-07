@@ -1,5 +1,18 @@
 # Setup Implementation Notes
 
+Conventions for the setup scripts in `variants/base/setups/` — the trio of artifacts they produce,
+the ordering levels, and the shared helpers they reuse.
+
+> **Working on the catalog?** This file is the *reference*. The **`setup-work` skill** is the
+> workflow that uses it — adding, modifying, or fixing a setup, template, or extension, including
+> how to try a change without rebuilding an image.
+>
+> | Also see | For |
+> | --- | --- |
+> | `templates/README.md` | Boothfile segment order bands, arg style, run-args, autostart + expose |
+> | `docs/AGENT_TEMPLATE.md` | the `template.toml` / `*--extension.toml` schema |
+> | `docs/BOOTH_CUSTOMIZATION.md` | the *user* side — custom setups in a project's `.booth/setups/` |
+
 CodingBooth setup scripts follow a simple pattern that produces **three artifacts**:
 
 1. **Startup script** (runs once per container start, as the normal user)  
@@ -28,7 +41,7 @@ CodingBooth setup scripts follow a simple pattern that produces **three artifact
 ### Startup/Profile Ordering
 
 Name your scripts using this pattern:  
-`/etc/profile.d/<LEVEL>-cb-<thing>--profile.sh` and `/etc/startup.d/<LEVEL>-cb-<thing>--startup.sh`
+`/etc/profile.d/<LEVEL>-cb-<thing>--profile.sh` and `/usr/share/startup.d/<LEVEL>-cb-<thing>--startup.sh`
 
 Choose `<LEVEL>` from these ranges to keep load order predictable:
 
@@ -51,7 +64,7 @@ Choose `<LEVEL>` from these ranges to keep load order predictable:
 **Script naming**
 - Installation script (run as root): `*setup.sh` (placed in a build or image layer)
 - Generated files (by the setup script):  
-  - Startup: `/etc/startup.d/<LEVEL>-cb-<thing>--startup.sh`  
+  - Startup: `/usr/share/startup.d/<LEVEL>-cb-<thing>--startup.sh`  
   - Profile: `/etc/profile.d/<LEVEL>-cb-<thing>--profile.sh`  
   - Starter: `/usr/local/bin/<thing>`
 
@@ -88,6 +101,87 @@ exec /usr/local/bin/real-<thing> "$@"
 - Startup: `chmod 755`
 - Profile: `chmod 644`
 - Starter: `chmod 755`
+
+---
+
+## Shared helpers
+
+`variants/base/setups/` ships helpers that setup scripts are expected to reuse rather than
+reimplement. The whole directory is copied to `/opt/codingbooth/setups/` (which is on `PATH`), so a
+script reaches a sibling through its own directory:
+
+```bash
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+```
+
+### Bailing out when a prerequisite is missing — `libs/skip-setup.sh`
+
+A setup that is only meaningful alongside another tool (a VS Code extension, a notebook kernel, a
+desktop app) must exit **gracefully** when its host is absent, or it takes down every build of a
+variant that does not have that host.
+
+```bash
+source "$SCRIPT_DIR/libs/skip-setup.sh"
+if ! "$SCRIPT_DIR/cb-has-vscode.sh"; then
+    skip_setup "$SCRIPT_NAME" "code-server/VSCode not installed"
+fi
+```
+
+`skip_setup` prints `SKIP: <script> - <reason>` and exits **0** under a Dockerfile build (no TTY) so
+the build continues, or **42** interactively to signal "not applicable" to the caller. Never
+`exit 1` for a condition that just means "not for this variant".
+
+### Detecting what the image has
+
+| Helper | Returns 0 when |
+| --- | --- |
+| `cb-has-vscode.sh` | VS Code or code-server is installed |
+| `cb-has-desktop.sh` | a desktop environment is **installed** (X11/VNC, XFCE, KDE, Wayland) |
+| `cb-has-desktop-running.sh` | a desktop is **currently running** (checks processes, not packages) |
+
+Use `cb-has-desktop.sh` at build time and `cb-has-desktop-running.sh` from startup scripts.
+
+### VS Code extensions — `libs/code-extension-source.sh`
+
+```bash
+source "$SCRIPT_DIR/libs/code-extension-source.sh"
+install_extensions golang.go
+```
+
+It installs into both `code` and `code-server` (which do **not** share an extension registry or
+marketplace), and defers the install to first launch under QEMU, where code-server's bundled Node
+fails with `Invalid ELF image` on a cross-architecture build.
+
+### Desktop icons — `cb-desktop-icon.sh` and `cb-web-icon.sh`
+
+`/etc/skel/Desktop` is the single registry of "apps to surface on the desktop": `booth-entry` seeds
+it into each user's `~/Desktop` on XFCE/KDE/LXQt, and the Wayland variant turns each entry into a
+waybar panel button. Do not write into it directly — go through a helper, and both behaviours come
+for free. Both no-op off-desktop.
+
+**A GUI app** that already ships a `.desktop` launcher. Each argument may be a path to a `.desktop`
+file, a basename in `/usr/share/applications`, or a bare app token it resolves for you. Unresolvable
+apps are logged and skipped, never fatal — so it is safe to call unconditionally:
+
+```bash
+cb-desktop-icon.sh chromium.desktop      # basename
+cb-desktop-icon.sh bluej                 # app token
+```
+
+**A web service** (an HTTP server on an internal port). This also writes
+`/etc/cb-web-services/<id>.conf`, the descriptor `cb-web-open` reads to resolve the URL at click
+time:
+
+```bash
+cb-web-icon.sh --id excalidraw --name "Excalidraw" --icon "$ICON" \
+               --port-env EXCALIDRAW_PORT --port 16000
+```
+
+`tests/config/test90-web-servers-have-desktop-icon.sh` guards that every template starting a web
+server registers an icon this way.
+
+---
 
 ## Custom Setups
 You can create your own setup scripts to install any tool you need.

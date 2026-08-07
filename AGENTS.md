@@ -12,7 +12,18 @@ agents working on the codebase.
 | --- | --- |
 | **This file (`AGENTS.md`)** | Agents editing *this* git repo |
 | `docs/AGENT.md` | Agents running *inside* a booth container |
-| `docs/AGENT_SETUP.md` / `AGENT_TEMPLATE.md` / `AGENT_RECIPE.md` | Helping *users* set up or author booths |
+| `docs/AGENT_SETUP.md` | Helping *users* stand up a booth in their own project |
+
+**Authoring the catalog** — setups, templates, and extensions — has its own set of references. They
+describe `variants/base/setups/` and `templates/` in *this* repo, so they are repo work, not user
+docs. Start from the **`setup-work`** skill, which is the workflow; these are what it draws on:
+
+| Doc | Covers |
+| --- | --- |
+| `docs/BOOTH_SETUP.md` | setup script conventions — the startup/profile/starter trio, LEVEL ordering, shared helpers (`skip-setup`, `cb-has-*`, `cb-*-icon`) |
+| `templates/README.md` | template *patterns* — Boothfile order bands, arg style, run-args and volumes, autostart + expose, per-order catalogue |
+| `docs/AGENT_TEMPLATE.md` | template *schema* — every `template.toml` / `*--extension.toml` key, params, merge rules, catalog guards |
+| `docs/AGENT_RECIPE.md` | recipe files (`--select @name`) |
 
 ---
 
@@ -303,7 +314,8 @@ rather than skipping it — `work-start` as its proposal step, `work-finish` as 
 | --- | --- |
 | `blog-add` | start a blog post under `blog/` as an unpublished draft — reachable by URL, listed nowhere |
 | `blog-publish` | make a draft the latest post — rename to the publish date, wire prev/next, index + front page |
-| `setup-add` | add a tool to `variants/base/setups/` — script, `template.toml`, complex + config tests, CHANGELOG |
+| `setup-work` | add, modify, or fix a setup / template / extension — with a workspace to try it in |
+| `setup-add` | thin pointer to `setup-work` (kept so the old name still resolves) |
 | `todo-add` | record an idea in `docs/TODO.md` only — never implement |
 | `todo-pick` | "what's next?" — shortlist open `docs/TODO.md` items, user picks, then build |
 | `work-start` | beginning a sizable task — judge it *is* work, propose, then create the worktree + branch |
@@ -353,8 +365,10 @@ rather than skipping it — `work-start` as its proposal step, `work-finish` as 
 - **CLI:** Go under `cli/src/` (`pkg/booth`, lifecycle, config TUI, …). Built via `./build/cli-build.sh`.
 - **Wrapper:** root `booth` shell script (install, shell-config, create, pin binary).
 - **Variants:** `variants/{base,codeserver,notebook,desktop-*}/` — Docker images; base holds most
-  `setups/*--setup.sh`.
-- **Templates:** `templates/**/**.toml` — declarative pieces for `booth config` / Boothfile generation.
+  `setups/*--setup.sh`. Conventions: `docs/BOOTH_SETUP.md`.
+- **Templates:** `templates/**/**.toml` — declarative pieces for `booth config` / Boothfile
+  generation. Extensions are `<name>--extension.toml` beside a parent `template.toml`. Patterns:
+  `templates/README.md`; schema: `docs/AGENT_TEMPLATE.md`.
 - **Tests:** `tests/` (unit, config, complex, wrapper, …).
 - **Examples:** `examples/workspaces/`.
 - **Product TODOs:** `docs/TODO.md` plus specialized lists (`docs/TODO-BINARY_COMPANIONS.md`,

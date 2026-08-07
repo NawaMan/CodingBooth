@@ -1,5 +1,20 @@
 # Template Authoring Guidelines
 
+**Purpose:** the *patterns* — which Boothfile segment order band a template belongs in, how it
+should take arguments, run-args and volume conventions, the autostart + expose pair for servers, and
+a per-order catalogue of what already exists. Read this before adding a template, so the new one
+lands in the same band as its neighbours.
+
+> **Working on the catalog?** The **`setup-work` skill** is the workflow that uses this file —
+> adding, modifying, or fixing a setup, template, or extension, including how to try a change
+> without rebuilding an image.
+>
+> | Also see | For |
+> | --- | --- |
+> | `docs/AGENT_TEMPLATE.md` | the `template.toml` / `*--extension.toml` **schema** — every key |
+> | `docs/BOOTH_SETUP.md` | the setup **scripts** a Boothfile calls, and their shared helpers |
+> | `docs/AGENT_RECIPE.md` | recipe files (`--select @name`) |
+
 ## Segment Ordering
 
 When a template's `[segments]` section defines Boothfile content, the segment key controls
