@@ -1,4 +1,6 @@
-# Configured by: booth config for browser-shared-example
+# Hand-written, on purpose — do not add a "# Configured by:" line here. That prefix is
+# how `booth config` recognises its own output, so a prose line starting with it makes the
+# tool adopt this file and overwrite it without warning.
 # Template idea:
 #   google-chrome+bookmarks-shared+settings-shared+extensions-shared+managed-policies
 #   firefox+bookmarks-shared+settings-shared+extensions-shared+managed-policies
