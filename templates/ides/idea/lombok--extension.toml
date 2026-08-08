@@ -1,0 +1,24 @@
+display-name = "Lombok for IntelliJ"
+display-disc = "Lombok plugin for IntelliJ IDEA"
+display-detail = """Installs the Lombok plugin, the IntelliJ counterpart to the `lombok-eclipse` \
+setup. IDEA Community does not bundle it, so without it the IDE marks every getter that @Value or \
+@Data generates as an unresolved symbol — in a project that compiles perfectly well from Maven. \
+Compiles to `setup lombok-idea`, which is the whole reason this exists: Lombok's marketplace id is \
+the two-word, misspelled "Lombook Plugin", and only its numeric form (6317) survives a template \
+param, so selecting it through `jetbrains-plugin-pkg` leaves a bare number in the Boothfile that \
+tells its reader nothing. Note that Lombok also needs annotation processing enabled per project \
+(.idea/compiler.xml), which a booth-level setup cannot own."""
+display-order = 4
+auto-select = false
+tags = [
+    "jetbrains",
+    "idea",
+    "java",
+    "lombok",
+    "ide",
+]
+
+[segments]
+"Boothfile--70" = """
+setup lombok-idea
+"""

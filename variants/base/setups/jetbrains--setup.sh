@@ -86,6 +86,7 @@ HOME=/root
 SCRIPT_NAME="$(basename "$0")"
 SCRIPT_DIR="$(dirname "$0")"
 source "$SCRIPT_DIR/libs/skip-setup.sh"
+source "$SCRIPT_DIR/libs/jetbrains-source.sh"
 if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
     skip_setup "$SCRIPT_NAME" "desktop environment not available"
 fi
@@ -242,6 +243,13 @@ chmod -R go-w "$INSTALL_DIR"
 # -------- atomically update the stable symlink --------
 ln -sfn "$INSTALL_DIR" "$LINK_DIR"
 
+# -------- point the IDE at an image-level plugin dir --------
+# The default plugin dir lives in the user's home, which the container recreates per
+# run — so a plugin baked in at build time would be gone by first launch. With this,
+# `install jetbrains-plugin` can put plugins in the image like any other tool, and a
+# plugin the user installs from the IDE's marketplace UI lands beside them.
+PLUGINS_DIR="$(jb_ensure_plugins_path "$INSTALL_DIR")"
+
 # optional: clean old backup if everything looks good
 rm -rf "${INSTALL_DIR}.bak" 2>/dev/null || true
 
@@ -281,3 +289,4 @@ cb-desktop-icon.sh "$DESKTOP_FILE"
 
 echo "✅ Installed ${PRODUCT} ${VER}"
 echo "▶ Run via '${IDE}'"
+echo "🧩 Plugins dir: ${PLUGINS_DIR}  (add plugins with: install jetbrains-plugin <id>)"

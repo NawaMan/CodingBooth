@@ -21,3 +21,10 @@ booth
 | Language           | JDK 25 (Temurin)                     |
 | Notebook           | Jupyter with JJava kernel            |
 | VS Code extensions | Java language support                |
+| IntelliJ plugins   | Lombok (`idea+lombok`)               |
+| IntelliJ SDK       | `temurin-25`, registered by `jetbrains-jdk` |
+
+> IntelliJ IDEA Community no longer bundles the Lombok plugin, so without it the IDE flags every
+> getter `@Value` generates as unresolved — in a project that compiles fine from Maven. It comes
+> from `setup lombok-idea`, the counterpart to `setup lombok-eclipse`. `jetbrains-plugin-pkg` is
+> selected too but left empty: it is the escape hatch for any other plugin you want baked in.

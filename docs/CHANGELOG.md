@@ -4,6 +4,104 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`idea+skip-first-run` pre-answers the modals that block a fresh booth's first IDE launch.**
+  Opening IntelliJ in a new container meant clicking through up to four dialogs over noVNC — and
+  because the container home is recreated per run, it was every start, not once. The opt-in
+  extension seeds three of them: the **Third-Party Plugins Notice** (`updates.xml` →
+  `THIRD_PARTY_PLUGINS_ALLOWED`), **Trust and Open Project** (`trusted-paths.xml`, the workspace
+  path only — never the "trust all projects in this folder" checkbox, since that prompt exists to
+  stop untrusted project code executing), and **Data Sharing** (`consentOptions/accepted`,
+  recorded as *declined*). After it, first launch shows one dialog instead of four.
+
+  The **User Agreement is deliberately left alone**, and the extension is **off by default** for
+  the same reason: accepting a licence for someone at image-build time is a legal act, not a
+  configuration default. You opt in; the EULA still gets a human.
+
+  Every value was **measured, not derived** — an IDE was clicked through by hand and its config
+  tree diffed across a clean exit. This matters more than it sounds: an earlier hand-written
+  attempt put the EULA key in `~/.java/.userPrefs/jetbrains/privacy_policy/` at version `2.1`,
+  and the real record turned out to be version `1.0` in a Java Preferences node whose name is
+  character-encoded. Nothing here would have been got right by reasoning about it.
+  `tests/setups/test--jetbrains-first-run-setup.sh` pins all three, including an assertion that
+  no EULA acceptance is ever written.
+
+- **IntelliJ now sees every JDK in the image, not just the one `JAVA_HOME` points at.**
+  `setup jetbrains-jdk` writes a `jdk.table.xml` naming all of them — six, in
+  `all-java-example` — and is auto-selected with the `idea` template. To be precise about what
+  this does and does not fix: a JetBrains IDE *does* auto-detect the `JAVA_HOME` JDK, so a
+  single-JDK booth already resolves a Maven project without this (measured on IDEA IC 2025.2.3,
+  which detects `/opt/jdk25` and names it `temurin-25` by itself). What it adds is the other
+  five, and a table that does not depend on `JAVA_HOME` aiming at the right JDK or on the IDE's
+  naming convention continuing to match what projects ask for.
+
+  Two details carry the whole feature:
+
+  - **The names are not free choice.** SDKs are registered as `<vendor>-<major>` — `temurin-25`,
+    `corretto-17` — which is what a JetBrains IDE calls a JDK it finds by itself, and therefore
+    what projects already carry in `.idea/misc.xml`. `examples/workspaces/java-example` has asked
+    for `project-jdk-name="temurin-25"` since it was committed; matching the convention is what
+    makes it resolve without touching the project. The JDKs are also linked into `~/.jdks`, one
+    of the dirs the IDE scans, so its own detection agrees with the table instead of offering a
+    duplicate entry for the same JDK.
+  - **Java 8 needs a different table.** It has no module image, so the Java 9+ shape — `jrt://`
+    class roots and per-module `src.zip` source roots — describes nothing that exists on a pre-9
+    JDK. Those get `jar://` roots for `jre/lib` and `jre/lib/ext` and a flat `src.zip` instead.
+    (The IDE re-derives roots at runtime, so this is about handing it a table that is correct for
+    the JDK it names rather than about resolution failing outright.)
+
+  Unlike plugins, this cannot live in the image: the SDK table is per-user config, and the
+  container home is recreated per run. It is written to `/etc/cb-home-seed`, which `booth-entry`
+  copies into the home **no-clobber** — so it appears in a fresh container, and a user who edits
+  their SDK list from Project Structure keeps their version from then on. Selecting an IDE
+  without Java, or Java without an IDE, both stay valid: the setup skips. Coverage is
+  `tests/setups/test--jetbrains-jdk-setup.sh` (hermetic, 18 cases, including the Java 8 branch)
+  and `tests/config/test96-init-jetbrains-jdk.sh`.
+
+- **JetBrains IDE plugins can now be baked into the image, by id, for every IDE in it.**
+  `install jetbrains-plugin <id> [more...]` is the `*--install.sh` sibling of
+  `install code-extension`, and `jetbrains-plugin-pkg` makes it selectable:
+  `--select "idea/jetbrains-plugin-pkg:IdeaVIM,6317"`. Until now the only route was
+  `setup jetbrains-plugin <ide> "<plugin>"`, which names exactly one IDE and one plugin and
+  defers the install to a startup script that re-runs on every container start — so a booth
+  needed network at launch to open its IDE with the plugins it was configured for. That path
+  still works; this one puts the plugins in the image.
+
+  What made it possible is that a JetBrains IDE's plugin dir can be moved out of the user's
+  home: `jetbrains--setup.sh` now writes `idea.plugins.path=/opt/jetbrains-plugins/<product>`
+  into the install's `bin/idea.properties`, so a plugin installed at build time survives into a
+  container whose home is recreated per run — and the IDE's own headless `installPlugins`
+  honours it, so the plugin the user installs from the marketplace UI at runtime lands beside
+  the baked ones. The new `libs/jetbrains-source.sh` holds the discovery both scripts share
+  (IDEs from `product-info.json`, plugin dir, marketplace build id), and `cb-has-jetbrains.sh`
+  joins `cb-has-vscode.sh` / `cb-has-desktop.sh` as a guard.
+
+  Three behaviours are deliberate, and each is one the VS Code sibling gets to skip:
+
+  - **Both id forms are accepted.** A plugin page carries an xmlId and a number; the IDE's
+    installer answers `unknown plugins` for a number, so numeric ids are resolved through the
+    marketplace API first. This is not a convenience — Lombok's xmlId is the two-word,
+    misspelled `Lombook Plugin`, and a space cannot travel through a whitespace-split template
+    param, so `6317` is the *only* way to name it from `booth config`.
+  - **Unpinned installs and `@version` installs take different routes.** `installPlugins` picks
+    a compatible build and pulls in dependencies but has no version argument, so a pin is
+    fetched from the marketplace directly — exact, and resolving nothing.
+  - **A plugin that fits none of the IDEs in the image is the failure, not one that fits only
+    some.** `org.jetbrains.plugins.go` has no IntelliJ IDEA Community build; a booth with IDEA
+    and PyCharm may legitimately take a plugin into one of them. Landing nowhere fails the
+    build. And with no JetBrains IDE at all the install *skips* rather than failing, because
+    `jetbrains--setup.sh` itself skips on a non-desktop variant — the ids are not at fault.
+
+  Lombok itself gets a curated `setup lombok-idea` (selected as `idea+lombok`), the counterpart
+  to the `lombok-eclipse` that already existed, rather than being named by id. That is not
+  ceremony: reaching it through the generic param leaves `arg JETBRAINS_PLUGIN_PKGS=6317` in the
+  Boothfile, a bare number that tells its reader nothing, because the spaced xmlId cannot survive
+  an unquoted template expansion. A curated script *can* pass it whole, so the installer now
+  splits comma lists without re-splitting an argument that already arrived intact.
+  `examples/workspaces/java-example` uses it, and keeps `jetbrains-plugin-pkg` selected but empty
+  so the escape hatch is visible where anyone would look for it. Coverage is
+  `tests/setups/test--jetbrains-plugin-install.sh` (hermetic, 19 cases, no Docker) and
+  `tests/config/test95-init-jetbrains-plugin-pkg.sh`.
+
 - **Desktop icons — and where you put them — now survive a restart, on XFCE and LXQt.**
   `xfce+desktop-icons-cache` / `+desktop-icons-shared` and the matching `lxqt+…` pair mount two
   things as one feature: `~/Desktop`, which is the launcher set, and the desktop environment's own
@@ -49,6 +147,7 @@ This file contains a list of changes for each released version.
   `Sales-Explorer.ipynb` also ships with its outputs cleared — it was carrying 250 KB of base64
   PNGs from someone's *Run All*, which is a quarter of a megabyte of diff noise for charts the
   notebook draws in a second.
+
 
 - **Flutter is now something a booth can be configured for, and with it Dart — which the catalog
   had no route to at all.** `setup flutter` installs the SDK under `/usr/local/flutter-<version>`
