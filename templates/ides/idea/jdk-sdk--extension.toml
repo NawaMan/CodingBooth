@@ -1,0 +1,25 @@
+display-name = "IntelliJ JDK Registration"
+display-disc = "Register the image's JDKs as SDKs in IntelliJ"
+display-detail = """Writes a jdk.table.xml naming every JDK in the image. A JetBrains IDE \
+auto-detects the JDK on JAVA_HOME by itself, so a single-JDK booth already opens a Java project \
+fine — what it misses is the rest: a booth can install six, and only one is on JAVA_HOME. SDKs are named \
+<vendor>-<major> (temurin-25, corretto-17), matching what the IDE calls a JDK it finds itself, so \
+a project whose .idea/misc.xml already names one resolves without editing. The table is seeded \
+into the home rather than baked into the image, and seeding is no-clobber: change the SDK list \
+from Project Structure and your version sticks. Auto-selected, because registering an SDK is \
+configuration rather than a decision anyone needs to weigh. With no JDK in the image it does \
+nothing."""
+display-order = 2
+auto-select = true
+tags = [
+    "jetbrains",
+    "idea",
+    "java",
+    "jdk",
+    "ide",
+]
+
+[segments]
+"Boothfile--70" = """
+setup jetbrains-jdk
+"""
