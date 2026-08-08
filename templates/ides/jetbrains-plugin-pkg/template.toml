@@ -1,0 +1,32 @@
+display-name = "JetBrains Plugins"
+display-disc = "Install any JetBrains IDE plugin by marketplace id"
+display-detail = """Bakes plugins into the image for every JetBrains IDE it contains (IntelliJ IDEA, \
+PyCharm, GoLand, ...), by id from plugins.jetbrains.com. This is the build-time counterpart to \
+`setup jetbrains-plugin`, which names one IDE and one plugin and reinstalls it at every container \
+start; here the plugins are already in the image and no network is needed to open the IDE. Ids come \
+in two forms and both work: the xmlId from the plugin page ("IdeaVIM", \
+"izhangzhihao.rainbow.brackets") and the number in its URL (6317) — prefer the number when the \
+xmlId contains a space, since ids are split on whitespace and Lombok's really is "Lombook Plugin". \
+Unversioned takes the newest release compatible with the IDE and pulls in the plugins it depends \
+on; `@version` pins one exactly and resolves nothing: `IdeaVIM`, or `IdeaVIM@2.31.0`. A plugin need \
+not exist for every IDE in the image (many are IDEA Ultimate only) — landing in one is enough, \
+landing in none fails the build. Needs a JetBrains IDE, so a desktop variant: with no IDE in the \
+image this is skipped, not an error."""
+display-order = 7
+auto-select = false
+tags = [
+    "jetbrains",
+    "idea",
+    "plugins",
+    "ide",
+    "packages",
+]
+
+[params.JETBRAINS_PLUGIN_PKGS]
+default = ""
+variadic = true
+
+[segments]
+"Boothfile--70" = """
+install jetbrains-plugin ${JETBRAINS_PLUGIN_PKGS}
+"""
