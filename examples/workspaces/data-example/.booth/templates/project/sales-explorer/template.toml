@@ -1,0 +1,19 @@
+# Project-local template: the Sales Explorer dashboard's desktop icon.
+#
+# It exists so the `setup sales-explorer-icon` line is *generated* rather than
+# hand-typed into the Boothfile. Without it, adding the icon would drift the
+# Boothfile away from its `# Configured by:` line and `booth config` (TUI or
+# CLI) could no longer round-trip this project.
+#
+# The setup script itself is hand-placed in .booth/setups/ — it belongs to this
+# workspace, so the template only has to name it.
+display-name = "Sales Explorer"
+display-disc = "Desktop icon that builds, starts and opens the dashboard on port 13000"
+display-order = 1
+primary = true
+tags = ["project", "desktop", "web"]
+
+[segments]
+Boothfile = """
+setup sales-explorer-icon
+"""

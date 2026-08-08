@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth config --no-tui --overwrite --variant xfce --port NEXT:24000 --expose +3000:13000 --select python:3.12+pip-pkg:matplotlib,psycopg2-binary/nodejs:20/postgresql/notebook+expose:+8888+autostart/dbeaver
+# Configured by: booth config --no-tui --overwrite --variant xfce --port NEXT:24000 --expose +3000:13000 --select python:3.12+pip-pkg:matplotlib,psycopg2-binary/nodejs:20/postgresql/notebook+expose:+8888+autostart/dbeaver/sales-explorer
 
 # Auto-start JupyterLab in background.
 # The notebook variant already runs JupyterLab as its primary service on this

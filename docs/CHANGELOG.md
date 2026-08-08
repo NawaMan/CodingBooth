@@ -4,6 +4,27 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`data-example`'s Sales Explorer dashboard now waits to be asked.** It used to be started for
+  everyone by `.booth/startup.sh`, whether or not anyone opened it. Now nothing listens on port
+  13000 until its **desktop icon** is clicked, and that click does the whole job: `npm install` if
+  `node_modules` is missing, start the server, open it in a browser window. It is registered
+  through `cb-web-icon.sh` — the same helper that puts JupyterLab on the desktop — so `cb-web-open`
+  handles the start-if-not-listening step from the descriptor, and `start-sales-explorer` does the
+  same thing from a shell. Boot now only waits for PostgreSQL and seeds the `demo` database.
+
+  Making that icon selectable is the more reusable part. A setup script hand-referenced from a
+  generated Boothfile drifts it away from its `# Configured by:` line, and `booth config` then
+  refuses to touch the file — the project stops opening in the config TUI. So the `setup` line is
+  *generated*, by a project-local template in `.booth/templates/project/sales-explorer/` that names
+  the hand-placed `.booth/setups/sales-explorer-icon--setup.sh`. It shows up in the TUI and in
+  `--select` under "This project", and a flagless `booth config` re-derives the whole selection
+  from the existing `.booth/` and reproduces both files byte for byte. This is the first example to
+  use the mechanism `docs/AGENT.md` describes.
+
+  `Sales-Explorer.ipynb` also ships with its outputs cleared — it was carrying 250 KB of base64
+  PNGs from someone's *Run All*, which is a quarter of a megabyte of diff noise for charts the
+  notebook draws in a second.
+
 - **Flutter is now something a booth can be configured for, and with it Dart — which the catalog
   had no route to at all.** `setup flutter` installs the SDK under `/usr/local/flutter-<version>`
   behind a `flutter-current` symlink, so the last install wins without rewriting the profile, and
