@@ -74,6 +74,10 @@ setup exercism
 setup firebase
 setup firefox
 setup firefox-managed-policies
+setup flutter
+setup flutter-android
+setup flutter-code-extension
+setup flutter-linux-desktop
 setup fpc
 setup fpc-code-extension
 setup freeplane

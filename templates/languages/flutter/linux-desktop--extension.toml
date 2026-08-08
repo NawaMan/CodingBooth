@@ -1,0 +1,30 @@
+display-name = "Flutter Linux Desktop Target"
+display-disc = "Native toolchain and GTK headers so `flutter build linux` works"
+display-detail = """Adds what Flutter's Linux desktop target compiles against — clang, cmake, ninja, pkg-config, \
+the GTK 3 development headers and the Linux engine artifacts — and clears the Linux toolchain \
+warning from `flutter doctor`.
+
+A built Linux app is a GUI binary, so running it needs a desktop variant (or DISPLAY pointed at \
+an X server). It still *builds* on the base variant, which is the usual case in CI.
+
+The libstdc++ development package is resolved at build time rather than pinned: Flutter's own \
+docs name libstdc++-12-dev, but the package number follows the distro's default GCC, so a pin \
+would rot on the next base bump."""
+display-order = 2
+auto-select = false
+tags = [
+    "flutter",
+    "dart",
+    "linux",
+    "desktop",
+    "gtk",
+]
+
+unsupported-arch = ["arm64"]
+unsupported-arch-note = "The Flutter SDK is published for linux x86_64 only."
+
+# Order 60: after Flutter itself, which lands in the base band at 50.
+[segments]
+"Boothfile--60" = """
+setup flutter-linux-desktop
+"""

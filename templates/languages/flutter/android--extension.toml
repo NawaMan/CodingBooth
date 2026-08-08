@@ -1,0 +1,39 @@
+display-name = "Flutter Android Target"
+display-disc = "Wires Flutter to the Android SDK so `flutter build apk` works"
+display-detail = """Points Flutter at the Android SDK and precaches the Android engine artifacts, turning a \
+web-only Flutter booth into one that builds APKs.
+
+It sets ANDROID_SDK_ROOT/ANDROID_HOME rather than running `flutter config --android-sdk`, which \
+would write to the *build-time root user's* settings file and be invisible to the booth user. The \
+values land in a drop-in the `flutter` and `dart` wrappers read, so a non-login shell — \
+`booth -- ./build.sh` — sees the SDK too, not just an interactive login.
+
+It also installs the Android platform Flutter actually compiles against, read from the installed \
+Flutter SDK rather than pinned here. The Android SDK's own default API level trails what current \
+Flutter wants, so without this the Gradle task fails with "Flutter requires Android SDK <N>" on \
+stock defaults. Your `ANDROID_API` pin is untouched — this only ever adds a platform.
+
+Selecting this pulls in the Android SDK (and, through it, a JDK). To actually run the app rather \
+than only build it, also select the Android SDK's `emulator` extension, and `kvm` if the host has \
+hardware virtualisation."""
+display-order = 1
+auto-select = false
+tags = [
+    "flutter",
+    "dart",
+    "android",
+    "mobile",
+    "apk",
+]
+
+requires = ["android-sdk"]
+
+unsupported-arch = ["arm64"]
+unsupported-arch-note = "Both the Flutter SDK and the Android SDK are published for linux x86_64 only."
+
+# Order 67: after Flutter itself (the base band at 50), the Android SDK (60) and
+# the emulator (62), all of which this reads.
+[segments]
+"Boothfile--67" = """
+setup flutter-android
+"""

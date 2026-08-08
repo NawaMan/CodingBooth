@@ -1,0 +1,9 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select flutter
+
+env APT_SNAPSHOT=20260807T000000Z
+
+arg FLUTTER_VERSION=latest
+
+setup flutter --version ${FLUTTER_VERSION}
+setup flutter-code-extension

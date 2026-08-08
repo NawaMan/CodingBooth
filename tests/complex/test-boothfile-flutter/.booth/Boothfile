@@ -1,0 +1,7 @@
+# syntax=codingbooth/boothfile:1
+
+# flutter--setup.sh is not in any published base image yet, so a copy lives in
+# .booth/setups/ — a project's setups dir shadows the image's, which is what
+# lets this test run against the *released* base image instead of needing a
+# local rebuild. Keep the copy byte-identical to variants/base/setups/.
+setup flutter --version latest

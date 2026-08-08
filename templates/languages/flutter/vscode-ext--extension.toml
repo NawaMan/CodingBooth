@@ -1,0 +1,15 @@
+display-name = "Flutter VS Code Extension"
+display-disc = "Dart and Flutter language support extensions for VS Code"
+display-order = 3
+auto-select = true
+tags = [
+    "flutter",
+    "dart",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup flutter-code-extension
+"""

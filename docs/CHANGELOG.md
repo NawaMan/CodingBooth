@@ -4,6 +4,76 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Flutter is now something a booth can be configured for, and with it Dart — which the catalog
+  had no route to at all.** `setup flutter` installs the SDK under `/usr/local/flutter-<version>`
+  behind a `flutter-current` symlink, so the last install wins without rewriting the profile, and
+  both `flutter` and `dart` land on `PATH`. `FLUTTER_VERSION` defaults to `latest`, resolved from
+  Google's own release manifest rather than a hard-coded URL: `current_release.stable` is a build
+  hash, so it is looked up in the release list to get the version and the archive path, and an
+  unknown pin fails with the eight most recent stables printed rather than a 404. The engine
+  artifacts are precached at build time, so a booth starts ready instead of stalling on a
+  several-hundred-megabyte download the first time anyone types `flutter`.
+
+  The web target needs nothing else — `flutter build web` compiles, and
+  `flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0` is reachable at
+  `/proxy/8080/` on the booth port, in the existing web pane. Android and Linux desktop each need
+  more than the SDK, so they are extensions rather than weight everybody pays for: `+android`
+  (`requires` the Android SDK, and through it a JDK) and `+linux-desktop` (clang, cmake, ninja,
+  pkg-config, GTK 3 headers). `+vscode-ext` is auto-selected and carries `Dart-Code.dart-code` and
+  `Dart-Code.flutter`. Deliberately, `flutter` itself requires **nothing**: forcing a JDK and a
+  multi-gigabyte Android SDK on someone who wants `flutter build web` is the wrong default.
+
+  Two failures worth naming, because neither is visible from a `--version` check:
+
+  - **The SDK is a git checkout.** Installed by root and run as `coder`, git refuses it with
+    `detected dubious ownership` and the flutter tool dies before it does anything —
+    `git config --system --add safe.directory` is the whole fix, and it has to come before the
+    first run.
+  - **The tool writes back into its own tree** (`bin/cache`) at runtime, and `chown coder` is the
+    *wrong* repair. `booth-entry` remaps `coder`'s UID to the host user's at container start, so a
+    build-time owner only matches by luck — the same trap that made `/usr/local/share/code-server`
+    work on most Linux hosts and fail on macOS. Mode bits are UID-agnostic, so this follows conda,
+    code-server and cypress in using them.
+
+    The permission pass has to be the **last** thing each of these setups does, which is worth
+    stating because getting it wrong fails in the least helpful way available. Every `flutter`
+    invocation can rewrite `bin/cache` — even `flutter --version`, which re-runs
+    `update_engine_version.sh` — so a version echo in a summary block after the `chmod` leaves
+    `engine.stamp` root-owned at `0644`. At runtime the tool regenerates that stamp with `mv`,
+    and `mv` over an unwritable target does not fail: it *asks* ("overriding mode 0644"), on a
+    stdin nothing will ever answer. The booth hangs forever, with no error and no output.
+
+  Android configuration goes through env vars in a `/etc/cb-flutter.d/` drop-in rather than
+  `flutter config --android-sdk`, which writes to the *build-time root user's* settings file and
+  would be invisible to the person who needs it. The `flutter` and `dart` wrappers source that
+  directory, so a non-login shell — `booth -- ./build.sh`, which never reads `/etc/profile.d` —
+  sees the SDK too. Add-ons contribute a drop-in instead of the wrapper knowing about them.
+
+  `+android` also had to solve two things that only appear when you actually run `flutter build
+  apk`, both of which made the stock-defaults booth build nothing:
+
+  - **The Android SDK's default API level trails what Flutter compiles against.** `android-sdk`
+    defaults to API 34; Flutter 3.44.9 compiles against 36, and Gradle stops with `Flutter requires
+    Android SDK 36`. The number is read out of the installed Flutter SDK
+    (`FlutterExtension.kt`'s `compileSdkVersion`) and that platform installed if absent, rather
+    than pinned here where it would rot on the next Flutter release. An `ANDROID_API` pin is left
+    alone — this only ever adds a platform.
+  - **Gradle installs SDK components on demand, into a directory that was read-only.**
+    `android-sdk--setup.sh` leaves its tree at `a+rX`, which is right for its own aapt2/d8 path but
+    makes the NDK install AGP triggers fail with `The SDK directory is not writable`, killing the
+    build during project configuration. `+android` relaxes the tree, deliberately in *its* setup
+    rather than in `android-sdk--setup.sh`: it is a cost of the Gradle path, so only booths that
+    opted into it pay, and the Android SDK keeps the tighter mode for everyone else.
+
+  Verified end to end rather than by `--version`: the same app builds for web (`main.dart.js`),
+  Android (`app-debug.apk`) and Linux desktop (a native binary), and `flutter test` drives a
+  headless render. Note the first `flutter build apk` downloads the NDK and CMake, so it is
+  several minutes; later builds are not.
+
+  `unsupported-arch = ["arm64"]` throughout, checked against Google's manifest rather than assumed:
+  across 728 releases every `dart_sdk_arch` is `x64`, and no arm64 stable Linux build has ever been
+  published. As with the Android SDK, the setup warns and exits 0 rather than failing the build.
+
 ## 0.71.0
 
 - **Examples no longer ship the author's home directory, and two more are `booth config`-openable.**

@@ -1,0 +1,40 @@
+display-name = "Flutter"
+display-disc = "Flutter SDK for building apps from one Dart codebase — brings Dart with it"
+display-detail = """Installs the Flutter SDK under /usr/local/flutter-<version>, with the Dart SDK it bundles, \
+so both `flutter` and `dart` are on PATH. The engine artifacts are fetched at build time rather \
+than on first use, so a booth starts ready instead of stalling on a several-hundred-megabyte \
+download the first time anyone types `flutter`.
+
+The web target works out of the box: `flutter build web` compiles, and \
+`flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0` is reachable at `/proxy/8080/` \
+on the booth port, in the web pane. Android and Linux desktop each need more than the SDK, so \
+they are separate extensions rather than weight everybody pays for.
+
+This is also the only route to Dart in the catalog. Do not pair it with a standalone Dart SDK — \
+two Darts on PATH is a version-skew trap, and Flutter pins the one it ships with."""
+display-order = 44
+tags = [
+    "flutter",
+    "dart",
+    "mobile",
+    "web",
+    "ui",
+]
+
+# Google publishes the Flutter SDK for linux x86_64 only — checked against their
+# own release manifest, in which every stable release carries dart_sdk_arch
+# "x64" and no arm64 stable build has ever appeared. The setup warns and skips
+# on arm64 rather than failing the build, so the image still comes up.
+unsupported-arch = ["arm64"]
+unsupported-arch-note = """\
+Google ships the Flutter SDK for linux x86_64 only. On arm64 the booth still builds, but Flutter \
+is skipped and no Flutter app can be built in it."""
+
+[params.FLUTTER_VERSION]
+default = "latest"
+suggests = ["latest", "3.44.9", "3.41.9", "3.38.10", "3.35.7"]
+
+[segments]
+Boothfile = """
+setup flutter --version ${FLUTTER_VERSION}
+"""
