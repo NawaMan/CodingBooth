@@ -29,7 +29,7 @@ assert_file() {
 
 run rm -Rf "$prj" ; mkdir -p "$prj"
 run booth config "$prj" --no-tui --select \
-  "codeserver+settings-shared+keybindings-shared+snippets-shared/neovim+config-shared/notebook+lab-settings-shared/xfce+keyboard-shortcuts-shared/zsh+starship-shared/dbeaver+connections-shared+drivers-shared+scripts-shared"
+  "codeserver+settings-shared+keybindings-shared+snippets-shared/neovim+config-shared/notebook+lab-settings-shared/xfce+keyboard-shortcuts-shared+desktop-icons-shared/lxqt+desktop-icons-shared/zsh+starship-shared/dbeaver+connections-shared+drivers-shared+scripts-shared"
 
 assert_file "$prj/.booth/shared/home/coder/.local/share/code-server/User/settings.json" \
   "codeserver settings.json"
@@ -43,6 +43,14 @@ assert_file "$prj/.booth/shared/home/coder/.jupyter/lab/user-settings/.mount-thi
   "jupyter lab user-settings"
 assert_file "$prj/.booth/shared/home/coder/.config/xfce4/xfconf/xfce-perchannel-xml/xfce4-keyboard-shortcuts.xml" \
   "xfce keyboard shortcuts"
+# Desktop icons: the launcher set and the layout are two mounts of one feature,
+# so assert both — sharing only ~/Desktop loses the positions it exists to keep.
+assert_file "$prj/.booth/shared/home/coder/Desktop/.mount-this" \
+  "desktop icons Desktop dir"
+assert_file "$prj/.booth/shared/home/coder/.config/xfce4/desktop/.mount-this" \
+  "xfce desktop icon layout dir"
+assert_file "$prj/.booth/shared/home/coder/.config/pcmanfm-qt/.mount-this" \
+  "lxqt desktop icon layout dir"
 assert_file "$prj/.booth/shared/home/coder/.config/starship.toml" \
   "starship.toml"
 assert_file "$prj/.booth/shared/home/coder/.local/share/DBeaverData/workspace6/General/.dbeaver/data-sources.json" \

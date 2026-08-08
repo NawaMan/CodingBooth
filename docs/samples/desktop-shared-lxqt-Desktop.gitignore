@@ -1,0 +1,16 @@
+# Sample .gitignore for .booth/shared/home/coder/Desktop/
+# Copy here when committing team desktop icons with +desktop-icons-shared.
+#
+# Deny-all is deliberate. Launchers the booth image ships (code.desktop,
+# firefox.desktop, google-chrome.desktop, viewmd-web.desktop, …) are re-seeded
+# from /etc/skel/Desktop on every start, and that seed is NO-CLOBBER: once a
+# copy is committed here, the image's own updated version can never replace it.
+# Commit only launchers your team wrote, and let the image own the rest.
+
+*
+!.gitignore
+!.mount-this
+
+# Un-ignore your own launchers explicitly, e.g.:
+# !team-runbook.desktop
+# !staging-console.desktop

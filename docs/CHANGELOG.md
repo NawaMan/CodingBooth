@@ -4,6 +4,31 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Desktop icons — and where you put them — now survive a restart, on XFCE and LXQt.**
+  `xfce+desktop-icons-cache` / `+desktop-icons-shared` and the matching `lxqt+…` pair mount two
+  things as one feature: `~/Desktop`, which is the launcher set, and the desktop environment's own
+  layout file, which is where each icon sits. Both desktops write that layout themselves —
+  xfdesktop on every drag, pcmanfm-qt when the desktop process exits — so the mount is the entire
+  mechanism; no script arranges anything.
+
+  The pairing with the existing seed is what makes this better than `--persist-home` for the
+  purpose. Launchers from `/etc/skel/Desktop` are re-seeded no-clobber on *every* start, so a
+  rebuilt image's new icon appears and takes a free slot while icons you placed stay put.
+  `--persist-home` stops seeding after the first run, so a new icon never shows up at all.
+
+  Cache and shared are the same mount with different git posture: `.booth/cache/` is local and
+  gitignored, `.booth/shared/` is committed. Four sample gitignores ship for the shared side,
+  because `~/Desktop` is not as safe to commit as it looks — the image's own launchers land in it
+  on every start, and committing one freezes a stale copy forever against the no-clobber seed.
+
+  **KDE is deliberately absent.** Plasma keeps the whole desktop layout in a single `~/.config`
+  file that KConfig rewrites by rename, and every route into a mount fails on that: a file bind
+  mount gets `EBUSY`, a symlink is replaced by the first save, and copying the file in and
+  mirroring it back is actively destructive — Plasma regenerates the layout at session start, and
+  the mirror then overwrites the good saved copy with the regenerated one. `--persist-home`
+  remains the answer on KDE. The Wayland variant has no desktop icons at all (`/etc/skel/Desktop`
+  becomes waybar buttons there), so nothing to persist.
+
 - **`data-example`'s Sales Explorer dashboard now waits to be asked.** It used to be started for
   everyone by `.booth/startup.sh`, whether or not anyone opened it. Now nothing listens on port
   13000 until its **desktop icon** is clicked, and that click does the whole job: `npm install` if

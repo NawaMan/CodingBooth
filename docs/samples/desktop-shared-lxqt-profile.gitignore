@@ -1,0 +1,16 @@
+# Sample .gitignore for .booth/shared/home/coder/.config/pcmanfm-qt/
+# Copy here when committing a team icon layout with +desktop-icons-shared.
+#
+# The pcmanfm-qt profile holds the desktop icon positions the extension is for,
+# but also a record of recently opened files — personal browsing history that
+# does not belong in a shared repository. Commit the layout, not the history.
+
+*
+!.gitignore
+!.mount-this
+!lxqt/
+lxqt/*
+!lxqt/desktop-items-*.conf
+
+# File-manager preferences — uncomment if the team wants them shared too.
+# !lxqt/settings.conf

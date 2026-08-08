@@ -1,0 +1,12 @@
+display-name = "Desktop Icons Shared"
+display-disc = "Team-share desktop icons and their layout via git (.booth/shared)"
+display-detail = """Live-bind-mounts ~/Desktop and ~/.config/xfce4/desktop under .booth/shared/ so a team can commit a desktop layout. Two things to know before selecting it. First, launchers the image ships (code, firefox, google-chrome, …) are re-seeded into ~/Desktop on every start and would be committed too — where the no-clobber seed then freezes a stale copy forever; use docs/samples/desktop-shared-xfce-Desktop.gitignore, which ignores everything and lets you un-ignore just your own launchers. Second, xfdesktop names its layout file after the workarea size, so a shared layout only applies to teammates running the same GEOMETRY; others simply get the default arrangement. Local-only alternative: +desktop-icons-cache."""
+display-order = 93
+tags = ["persistence", "shared", "desktop", "xfce", "icons", "git"]
+
+# Directory mounts: xfdesktop rewrites the whole layout rc in place, and ~/Desktop
+# gains and loses launchers as setups change — neither survives file-level mounts.
+shared-dirs = [
+    "home/coder/Desktop",
+    "home/coder/.config/xfce4/desktop",
+]

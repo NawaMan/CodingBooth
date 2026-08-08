@@ -105,6 +105,19 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
         `~/.local/share/nvim` (that stays `+data-cache`).
       - **code-server+tasks-shared** — `User/tasks.json` only (no env secrets in tasks).
       - **Desktop keybindings** — KDE/LXQt one-file shortcuts shared (like `xfce+keyboard-shortcuts-shared`).
+      - **KDE desktop icon positions** — the one desktop the icon-persistence extensions skip.
+        XFCE and LXQt ship `+desktop-icons-cache` / `+desktop-icons-shared`; KDE has no route,
+        and the reason is worth not re-deriving. Plasma keeps the whole desktop layout in
+        `~/.config/plasma-org.kde.plasma.desktop-appletsrc`, which KConfig rewrites by rename.
+        Measured, all three obvious routes fail: a file bind mount rejects the rename with
+        `EBUSY` (so every save is silently lost); a symlink into a mounted dir is replaced by
+        the first save when its target starts empty — and the target *must* start empty,
+        because Plasma has not written the file yet when startup hooks run; and copy-in +
+        mirror-back is worse than nothing, since Plasma regenerates the layout at session start
+        and the mirror then overwrites the good saved copy with the regenerated one.
+        `--persist-home` works (it keeps the whole home, so nothing is regenerated).
+        A real fix likely means `kde--setup.sh` teaching Plasma to keep the layout elsewhere —
+        an image change, not a template one.
       - **File-manager bookmark for the project** — add a Places / sidebar entry for
         `/home/coder/code` (the bind-mounted project) in the desktop file browser (Thunar /
         pcmanfm-qt / Dolphin). Not a web-browser bookmark; not shared-state of random host

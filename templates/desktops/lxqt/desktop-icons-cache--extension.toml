@@ -1,0 +1,12 @@
+display-name = "Desktop Icons Cache"
+display-disc = "Keep desktop icons and their positions across sessions (local only)"
+display-detail = """Bind-mounts ~/Desktop and ~/.config/pcmanfm-qt under .booth/cache/ so both the launcher set and where each icon sits survive a restart. Launchers the image ships are still re-seeded from /etc/skel/Desktop on every start (no-clobber), so a rebuilt image's new icons appear without disturbing icons you placed. Note that pcmanfm-qt writes positions when the desktop process exits rather than on each drag, so let the booth stop cleanly — a hard kill loses the moves made since the last save. Local to this host and gitignored — for the team/git version use +desktop-icons-shared."""
+display-order = 91
+tags = ["persistence", "cache", "desktop", "lxqt", "icons"]
+
+# Two mounts, one feature: the launcher set, and the pcmanfm-qt profile that
+# records each icon's position (desktop-items-*.conf).
+cache-dirs = [
+    "home/coder/Desktop",
+    "home/coder/.config/pcmanfm-qt",
+]

@@ -1,0 +1,12 @@
+display-name = "Desktop Icons Cache"
+display-disc = "Keep desktop icons and their positions across sessions (local only)"
+display-detail = """Bind-mounts ~/Desktop and ~/.config/xfce4/desktop under .booth/cache/ so both the launcher set and where each icon sits survive a restart. xfdesktop writes icon positions itself when you drag one, straight into the mount. Launchers the image ships are still re-seeded from /etc/skel/Desktop on every start (no-clobber), so a rebuilt image's new icons appear and land in a free cell without disturbing icons you placed. Local to this host and gitignored — for the team/git version use +desktop-icons-shared."""
+display-order = 91
+tags = ["persistence", "cache", "desktop", "xfce", "icons"]
+
+# Two mounts, one feature: the launcher set, and the grid positions xfdesktop
+# records for it. Caching only the first loses the layout on every restart.
+cache-dirs = [
+    "home/coder/Desktop",
+    "home/coder/.config/xfce4/desktop",
+]

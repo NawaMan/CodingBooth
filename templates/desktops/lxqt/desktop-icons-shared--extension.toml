@@ -1,0 +1,12 @@
+display-name = "Desktop Icons Shared"
+display-disc = "Team-share desktop icons and their layout via git (.booth/shared)"
+display-detail = """Live-bind-mounts ~/Desktop and ~/.config/pcmanfm-qt under .booth/shared/ so a team can commit a desktop layout. pcmanfm-qt stores positions as plain pixel coordinates, so a shared layout carries across resolutions better than XFCE's. Two things to know. Launchers the image ships are re-seeded into ~/Desktop on every start and would be committed too, where the no-clobber seed then freezes a stale copy — use docs/samples/desktop-shared-lxqt-Desktop.gitignore. And the profile dir also holds recent-files.conf (personal browsing history); docs/samples/desktop-shared-lxqt-profile.gitignore keeps it out. Positions are flushed when the desktop process exits, so stop the booth cleanly. Local-only alternative: +desktop-icons-cache."""
+display-order = 93
+tags = ["persistence", "shared", "desktop", "lxqt", "icons", "git"]
+
+# Directory mounts: pcmanfm-qt rewrites its profile files in place, and ~/Desktop
+# gains and loses launchers as setups change — neither survives file-level mounts.
+shared-dirs = [
+    "home/coder/Desktop",
+    "home/coder/.config/pcmanfm-qt",
+]

@@ -125,4 +125,17 @@ run rm -Rf $prj ; mkdir -p $prj
 run booth config $prj --no-tui --select "dbeaver+connections-shared"
 assert_file "$prj/.booth/shared/home/coder/.local/share/DBeaverData/workspace6/General/.dbeaver/data-sources.json" "dbeaver+connections-shared creates data-sources.json"
 
+# Test 15: xfce+desktop-icons-cache mounts both the launcher set and the layout.
+# Two dirs, one feature — caching only ~/Desktop loses the positions on restart.
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "xfce+desktop-icons-cache"
+assert_file "$prj/.booth/cache/home/coder/Desktop/.mount-this" "xfce+desktop-icons-cache creates Desktop dir"
+assert_file "$prj/.booth/cache/home/coder/.config/xfce4/desktop/.mount-this" "xfce+desktop-icons-cache creates xfce layout dir"
+
+# Test 16: lxqt+desktop-icons-cache — same pairing, pcmanfm-qt profile for the layout
+run rm -Rf $prj ; mkdir -p $prj
+run booth config $prj --no-tui --select "lxqt+desktop-icons-cache"
+assert_file "$prj/.booth/cache/home/coder/Desktop/.mount-this" "lxqt+desktop-icons-cache creates Desktop dir"
+assert_file "$prj/.booth/cache/home/coder/.config/pcmanfm-qt/.mount-this" "lxqt+desktop-icons-cache creates pcmanfm-qt dir"
+
 finally

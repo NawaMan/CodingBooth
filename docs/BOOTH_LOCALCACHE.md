@@ -209,6 +209,25 @@ Many templates include built-in cache extensions you can enable during `booth co
 | `codeserver+settings-cache` | `~/.local/share/code-server/` |
 | `neovim+data-cache` | `~/.local/share/nvim/`, `~/.local/state/nvim/` |
 
+### Desktop Icons (`cache-dirs`)
+
+| Template Selection | What's Cached |
+|--------------------|---------------|
+| `xfce+desktop-icons-cache` | `~/Desktop/`, `~/.config/xfce4/desktop/` |
+| `lxqt+desktop-icons-cache` | `~/Desktop/`, `~/.config/pcmanfm-qt/` |
+
+Keeps both the launcher set and where each icon sits. Launchers the image ships are
+still re-seeded from `/etc/skel/Desktop` on every start (no-clobber), so a rebuilt
+image's new icons appear and take a free slot without disturbing icons you placed —
+which `--persist-home` does *not* do, since it skips seeding after the first run.
+
+On LXQt, pcmanfm-qt writes positions when the desktop process exits rather than on
+each drag, so stop the booth cleanly. There is no KDE equivalent: Plasma stores the
+layout in a single `~/.config` file it rewrites by rename, which defeats a bind
+mount, a symlink, and a copy-back mirror alike. Use `--persist-home` there.
+
+For the team/git version of either, see [Shared State](BOOTH_SHARED.md).
+
 ### Browser Profiles (`cache-dirs`)
 
 | Template Selection | What's Cached |

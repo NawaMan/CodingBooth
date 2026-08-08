@@ -1,0 +1,15 @@
+# Sample .gitignore for .booth/shared/home/coder/.config/xfce4/desktop/
+# Copy here when committing a team icon layout with +desktop-icons-shared.
+#
+# xfdesktop stores positions in icons.screen0-<W>x<H>.rc, named after the
+# workarea — so a committed layout applies only to teammates on the same
+# GEOMETRY. That is fine: anyone on another resolution just gets the default
+# arrangement instead. Commit the rc files you want to share.
+
+# Absolute container path inside a symlink — meaningless in a teammate's checkout.
+icons.screen.latest.rc
+
+# Let cb-xfce-arrange-icons lay out a tidy default for teammates whose
+# resolution has no rc file here. Committing the marker suppresses that and
+# leaves their icons wherever xfdesktop happens to drop them.
+.cb-icons-arranged

@@ -150,12 +150,33 @@ without the rest of `Default/`.
 Sample policies disable password manager / sync-friendly sign-in and enable the
 bookmark bar. Edit the setup scripts under `variants/base/setups/` for your team.
 
+### Desktop icons (`shared-dirs`)
+
+| Selection | Path under `.booth/shared/` | Notes |
+|-----------|----------------------------|--------|
+| `xfce+desktop-icons-shared` | `…/Desktop/`, `…/.config/xfce4/desktop/` | Layout file is named after the workarea, so it applies only to teammates on the same `GEOMETRY`; others get the default arrangement |
+| `lxqt+desktop-icons-shared` | `…/Desktop/`, `…/.config/pcmanfm-qt/` | Positions are plain pixel coordinates, so they carry across resolutions |
+
+Both mount `~/Desktop` itself, and the image's own launchers are re-seeded into it on
+every start — committing those freezes a stale copy, because the seed is no-clobber.
+Use the sample gitignores below and commit only launchers your team wrote.
+
+**No KDE equivalent.** Plasma keeps the desktop layout in a single `~/.config` file it
+rewrites by rename. A file bind mount fails (`EBUSY`), a symlink is replaced by the
+first save, and a copy-back mirror is worse than nothing — Plasma regenerates the
+layout at session start and the mirror then overwrites the good saved copy with it.
+`--persist-home` is the working answer for KDE.
+
 ### Sample gitignores
 
 | File | Use under |
 |------|-----------|
 | [`docs/samples/browser-shared-chrome-Default.gitignore`](samples/browser-shared-chrome-Default.gitignore) | `.booth/shared/…/.chrome-data/Default/` |
 | [`docs/samples/browser-shared-firefox.gitignore`](samples/browser-shared-firefox.gitignore) | `.booth/shared/…/.mozilla/firefox/` |
+| [`docs/samples/desktop-shared-xfce-Desktop.gitignore`](samples/desktop-shared-xfce-Desktop.gitignore) | `.booth/shared/…/Desktop/` (XFCE) |
+| [`docs/samples/desktop-shared-xfce-layout.gitignore`](samples/desktop-shared-xfce-layout.gitignore) | `.booth/shared/…/.config/xfce4/desktop/` |
+| [`docs/samples/desktop-shared-lxqt-Desktop.gitignore`](samples/desktop-shared-lxqt-Desktop.gitignore) | `.booth/shared/…/Desktop/` (LXQt) |
+| [`docs/samples/desktop-shared-lxqt-profile.gitignore`](samples/desktop-shared-lxqt-profile.gitignore) | `.booth/shared/…/.config/pcmanfm-qt/` |
 
 ### Editors & tools (shared only — **no secrets**)
 
