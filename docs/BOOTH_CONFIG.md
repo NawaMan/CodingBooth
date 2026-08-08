@@ -798,6 +798,7 @@ The full list of package manager extensions:
 | `brew-pkg`         | Homebrew   | `brew-pkg:htop,tmux`              |
 | `apt-pkg`          | apt        | `apt-pkg:htop,jq`                |
 | `code-ext-pkg`     | VS Code / code-server | `code-ext-pkg:elixir-lsp.elixir-ls` |
+| `jetbrains-plugin-pkg` | JetBrains IDEs | `jetbrains-plugin-pkg:IdeaVIM`    |
 
 These translate to `install <manager> <packages>` in the Boothfile, which runs the corresponding `<manager>--install.sh` script during `docker build`.
 
@@ -809,6 +810,10 @@ These translate to `install <manager> <packages>` in the Boothfile, which runs t
 > **Editor extensions (`code-ext-pkg`):** bakes any VS Code / code-server extension
 > into the image by marketplace id, for anything the curated per-language extensions
 > don't cover. See [Editor Extensions](#editor-extensions) below.
+
+> **IDE plugins (`jetbrains-plugin-pkg`):** the same idea for the JetBrains IDEs —
+> bakes any plugin from plugins.jetbrains.com into the image. See
+> [JetBrains IDE Plugins](#jetbrains-ide-plugins) below.
 
 > **System packages (apt):** `apt-pkg` installs Debian/Ubuntu packages with apt. It supports apt's native `pkg=version` pinning (`apt-pkg:htop,jq=1.6-2.1`) and honors the `APT_SNAPSHOT` archive freeze that `booth config` stamps for reproducible builds. You can also add `install apt <pkgs>` directly to the Boothfile by hand. See [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md#using-built-in-installs) and [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
 
@@ -891,6 +896,114 @@ browser-based editor just to name an extension.
 > On a bare `base` build, `setup vscode` currently needs `setup python` before it —
 > it installs Jupyter and a Bash kernel with pip. The desktop variants don't hit this
 > because their desktop setup installs python first.
+
+### JetBrains IDE JDKs
+
+A JetBrains IDE auto-detects the JDK that `JAVA_HOME` points at, so a booth with a
+single JDK already opens a Java project fine. What it does *not* do is find the others:
+a booth can install six, and only one is on `JAVA_HOME`. So `idea` carries an
+auto-selected `jdk-sdk` extension that registers every JDK in the image:
+
+```bash
+booth config --no-tui --variant xfce --select "java/idea"           # jdk-sdk is auto-selected
+booth config --no-tui --variant xfce --select "java/idea~jdk-sdk"   # opt out
+```
+
+This compiles to `setup jetbrains-jdk` at Boothfile order 70, after both the JDK and
+the IDE. SDKs are named `<vendor>-<major>` (`temurin-25`, `corretto-17`) — the name the
+IDE gives a JDK it discovers itself, and the name a project's `.idea/misc.xml` already
+refers to, so an existing project resolves without being edited.
+
+The table is written to `/etc/cb-home-seed`, not into the image, because it is per-user
+config and the container home is recreated per run. Seeding is **no-clobber**: change
+the SDK list from File → Project Structure → SDKs and your version survives every
+restart. Selecting an IDE with no Java, or Java with no IDE, stays valid — the setup
+skips.
+
+### JetBrains IDE Plugins
+
+The JetBrains IDEs (IntelliJ IDEA, PyCharm, GoLand, ...) come with no plugins beyond
+the bundled set — notably **not** Lombok, which IDEA Community stopped bundling.
+`jetbrains-plugin-pkg` bakes any plugin from
+[plugins.jetbrains.com](https://plugins.jetbrains.com) into the image:
+
+```bash
+booth config --no-tui --variant xfce --select "idea/jetbrains-plugin-pkg:IdeaVIM"
+booth config --no-tui --variant xfce --select "idea/jetbrains-plugin-pkg:IdeaVIM,6317"
+booth config --no-tui --variant xfce --select "idea/jetbrains-plugin-pkg:IdeaVIM@2.31.0"   # pinned
+```
+
+This compiles to `install jetbrains-plugin ${JETBRAINS_PLUGIN_PKGS}` at Boothfile
+order 70, after the IDE is installed. Plugins land in
+`/opt/jetbrains-plugins/<product>/`, which the IDE is pointed at with
+`idea.plugins.path` — an image-level dir rather than the user's home, because the
+container home is recreated per run.
+
+**Curated first, where one exists.** `idea+lombok` compiles to `setup lombok-idea` — the
+counterpart to `setup lombok-eclipse` — and is the way to get Lombok, rather than naming
+its id. Reach for `jetbrains-plugin-pkg` for anything without a curated script of its own;
+the two mix freely.
+
+Three things to know about ids:
+
+- **Both id forms work.** A plugin page carries an xmlId (`IdeaVIM`,
+  `izhangzhihao.rainbow.brackets`) and a number in its URL (`6317`). Use the number
+  when the xmlId contains a space — through a Boothfile the param expands unquoted, so
+  the shell splits on whitespace before the installer sees it, and Lombok's xmlId really
+  is the two-word, misspelled `Lombook Plugin`. (A curated setup calling the installer
+  directly can pass such an id whole, which is what `lombok-idea` does.)
+- **A plugin need not exist for every IDE in the image.** Many are IntelliJ IDEA
+  Ultimate only, and asking for one in Community is a 404 rather than a mistake.
+  Landing in at least one IDE is a success; landing in none fails the build.
+- **`@version` pins, and gives up dependency resolution.** Unpinned ids go through
+  the IDE's own installer, which picks the newest compatible build and pulls in the
+  plugins this one depends on. A pinned id is fetched from the marketplace directly,
+  which resolves nothing — name its dependencies too. See
+  [REPRODUCIBILITY.md](REPRODUCIBILITY.md).
+
+With no JetBrains IDE in the image the install skips rather than failing, so the
+selection stays valid on a variant that has no IDE to receive it.
+
+> **Plugins not published by JetBrains raise a modal on first launch.** The IDE shows a
+> "Third-Party Plugins Notice" listing them, and waits for Accept before it opens. That
+> is the IDE's own trust prompt and it appears however the plugin was installed — it is
+> not something baking the plugin in avoids. Plugins whose vendor *is* JetBrains, Lombok
+> among them, do not trigger it. To pre-answer it, see
+> [Skipping the first-run prompts](#skipping-the-first-run-prompts).
+
+### Skipping the first-run prompts
+
+A fresh container means clicking through up to four JetBrains dialogs before the IDE is
+usable — and since the home is recreated per run, that is every start. `idea+skip-first-run`
+seeds the answers to three of them:
+
+```bash
+booth config --no-tui --variant xfce --select "java/idea+skip-first-run"
+```
+
+| Prompt | What is seeded |
+| --- | --- |
+| Third-Party Plugins Notice | `options/updates.xml` → `THIRD_PARTY_PLUGINS_ALLOWED=true` |
+| Trust and Open Project | `options/trusted-paths.xml` → the workspace path only |
+| Data Sharing | `consentOptions/accepted` → **declined** |
+
+Two deliberate limits. The **User Agreement is not answered** — accepting a licence on your
+behalf at image-build time is a legal act rather than a configuration default, so that one
+dialog still appears and a human still clicks it. And the extension is **off by default**
+for the same reason: these are consent decisions, so you opt in rather than having them
+made for you.
+
+Trust is scoped to the workspace path, never the "trust all projects in this folder"
+checkbox — the prompt exists to stop untrusted project code from executing, and the booth's
+own project is the only thing its author vouched for. Pass a different path as an argument
+to `setup jetbrains-first-run` if your project lives elsewhere.
+
+Everything is seeded no-clobber, so changing any of it in the IDE sticks.
+
+> There is also an older `setup jetbrains-plugin <ide> "<plugin>"`, which installs one
+> plugin into one IDE at *container start* instead of at build time. It still works,
+> but it re-downloads on every start and needs network at runtime;
+> `jetbrains-plugin-pkg` is the one to reach for.
 
 ### Project Dependency Pre-Installation
 

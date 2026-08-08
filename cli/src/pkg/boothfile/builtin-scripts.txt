@@ -113,6 +113,8 @@ setup java-nb-kernel
 setup jdk
 setup jenv
 setup jetbrains
+setup jetbrains-first-run
+setup jetbrains-jdk
 setup jetbrains-plugin
 setup julia
 setup julia-code-extension
@@ -135,6 +137,7 @@ setup lazydocker
 setup lazygit
 setup libreoffice
 setup lombok-eclipse
+setup lombok-idea
 setup lua
 setup lua-code-extension
 setup lua-nb-kernel
@@ -232,6 +235,7 @@ install dotnet
 install gem
 install go
 install hex
+install jetbrains-plugin
 install luarocks
 install npm
 install pecl

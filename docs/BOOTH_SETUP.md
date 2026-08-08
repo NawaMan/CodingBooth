@@ -137,6 +137,7 @@ the build continues, or **42** interactively to signal "not applicable" to the c
 | Helper | Returns 0 when |
 | --- | --- |
 | `cb-has-vscode.sh` | VS Code or code-server is installed |
+| `cb-has-jetbrains.sh` | a JetBrains IDE is installed (any `/opt/*/product-info.json`) |
 | `cb-has-desktop.sh` | a desktop environment is **installed** (X11/VNC, XFCE, KDE, Wayland) |
 | `cb-has-desktop-running.sh` | a desktop is **currently running** (checks processes, not packages) |
 
@@ -152,6 +153,20 @@ install_extensions golang.go
 It installs into both `code` and `code-server` (which do **not** share an extension registry or
 marketplace), and defers the install to first launch under QEMU, where code-server's bundled Node
 fails with `Invalid ELF image` on a cross-architecture build.
+
+### JetBrains IDEs — `libs/jetbrains-source.sh`
+
+```bash
+source "$SCRIPT_DIR/libs/jetbrains-source.sh"
+jb_ides                                  # "<ide><TAB><install-dir>" per IDE found
+jb_ensure_plugins_path "$INSTALL_DIR"    # point the IDE at /opt/jetbrains-plugins/<product>
+jb_build_id "$INSTALL_DIR"               # IC-252.26830.84, what the marketplace asks for
+jb_resolve_id 6317                       # numeric marketplace id -> xmlId
+```
+
+Everything is read from the `product-info.json` each IDE ships. Plugins go to an image-level dir
+rather than `~/.local/share/JetBrains/`, because the container home is recreated per run — a
+plugin installed into `$HOME` at build time is gone before anyone opens the IDE.
 
 ### Desktop icons — `cb-desktop-icon.sh` and `cb-web-icon.sh`
 
