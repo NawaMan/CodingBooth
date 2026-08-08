@@ -1,0 +1,8 @@
+desktop
+gui
+database
+postgresql
+notebook
+web
+nodejs
+stack

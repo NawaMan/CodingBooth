@@ -148,6 +148,12 @@ This file contains a list of changes for each released version.
   PNGs from someone's *Run All*, which is a quarter of a megabyte of diff noise for charts the
   notebook draws in a second.
 
+  The example now has a host test, which it never had: one booth asserts the launcher is on the
+  desktop, the descriptor carries the start command, **nothing** answers on 13000 at boot, and the
+  starter then serves seeded rows. The boot assertion watches the port for fifteen seconds rather
+  than curling it once — a restored autostart spawns the server and returns, so a single curl races
+  node's bind and a connection refusal is indistinguishable from "never started". Written the
+  cheap way, that assertion passed against a deliberately restored autostart.
 
 - **Flutter is now something a booth can be configured for, and with it Dart — which the catalog
   had no route to at all.** `setup flutter` installs the SDK under `/usr/local/flutter-<version>`
