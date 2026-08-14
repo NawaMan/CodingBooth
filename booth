@@ -111,6 +111,25 @@ get_cache_version_dir() {
     echo "${BOOTH_CACHE_DIR}/versions/${version}"
 }
 
+# Undo the eager `mkdir -p` of a shared-cache version dir when the download that
+# created it fails. DownloadBooth makes the directory before it touches the
+# network, so every failure after that point (offline, 404, bad checksum) used to
+# leave an empty versions/<version>/ behind. The binary lookup ignores such a dir
+# -- find_binary_dir tests for the binary file, not the directory -- so it is
+# litter rather than breakage, but it reads like a corrupt install.
+#
+# rmdir, not rm -rf, on purpose: it removes only an *empty* directory, so a dir
+# holding a partial artifact, or one that predates this run, is left untouched.
+# Only ours to remove in shared mode; in --cache=local the target is the
+# project's own .booth/tools/.
+discard_empty_cache_dir() {
+    local dir="$1" created="$2" cache_mode="$3"
+    if [[ "$created" != "true" || "$cache_mode" == "local" ]]; then
+        return 0
+    fi
+    rmdir "$dir" 2>/dev/null || true
+}
+
 # Find binary directory: local first, then shared cache
 # Returns directory path on stdout, returns 0 if found, 1 if not found
 find_binary_dir() {
@@ -563,6 +582,19 @@ function DownloadBooth() {
         actual_version="$CB_VERSION"
     fi
 
+    # The fallback above is right for a pinned version -- "0.71.0" resolves to
+    # itself -- but wrong for "latest", which is a moving alias, not a version.
+    # Letting it through keys the shared cache on versions/latest/ (a directory no
+    # real lock version ever matches) and writes `version=latest` into the lock
+    # file, which pins nothing. An empty body is equally unusable. Both mean the
+    # same thing: we do not know what to install, so stop before creating anything.
+    if [[ -z "$actual_version" || "$actual_version" == "latest" ]]; then
+        echo "Error: Could not resolve which version '$CB_VERSION' refers to." >&2
+        echo "       The release's version.txt was unreachable or empty." >&2
+        echo "       Check your network, or pin a version: $0 ${COMMAND:-install} <version>" >&2
+        return 1
+    fi
+
     # Determine target directory based on cache mode
     local target_dir sha_file
     if [[ "$CACHE_MODE" == "local" ]]; then
@@ -572,6 +604,11 @@ function DownloadBooth() {
         target_dir="$(get_cache_version_dir "$actual_version")"
         sha_file="$target_dir/codingbooth.sha256"
     fi
+
+    # Remember whether the version dir is ours, so a failure below can take back
+    # exactly what this run created and nothing else.
+    local target_dir_created=false
+    [[ -d "$target_dir" ]] || target_dir_created=true
 
     mkdir -p "$target_dir"
     mkdir -p "$tools_dir"  # Always need tools dir for lock file
@@ -650,6 +687,7 @@ GITIGNORE
     local current_platform
     if ! current_platform=$(detect_platform); then
         echo "Error: Failed to detect platform" >&2
+        discard_empty_cache_dir "$target_dir" "$target_dir_created" "$CACHE_MODE"
         return 1
     fi
 
@@ -678,12 +716,14 @@ GITIGNORE
         echo "FAILED (sha256 fetch)"
         rm -f "$tmpsha256"
         echo "Error: Failed to download binary for $current_platform" >&2
+        discard_empty_cache_dir "$target_dir" "$target_dir_created" "$CACHE_MODE"
         return 1
     fi
     expected_sha256=$(awk '{print $1}' "$tmpsha256")
     rm -f "$tmpsha256"
     if ! [[ "$expected_sha256" =~ ^[0-9a-fA-F]{64}$ ]]; then
         echo "FAILED (malformed sha256)"
+        discard_empty_cache_dir "$target_dir" "$target_dir_created" "$CACHE_MODE"
         return 1
     fi
 
@@ -712,12 +752,14 @@ GITIGNORE
         if ! curl -fsSLo "$tmpfile" --retry 3 --retry-delay 2 --retry-connrefused "$TOOL_URL"; then
             echo "FAILED (download)"
             rm -f "$tmpfile"
+            discard_empty_cache_dir "$target_dir" "$target_dir_created" "$CACHE_MODE"
             return 1
         fi
         actual_sha256=$(hash_sha256 "$tmpfile" | awk '{print $1}')
         if [[ "$expected_sha256" != "$actual_sha256" ]]; then
             echo "FAILED (sha256 mismatch)"
             rm -f "$tmpfile"
+            discard_empty_cache_dir "$target_dir" "$target_dir_created" "$CACHE_MODE"
             return 1
         fi
         mv -f "$tmpfile" "$dest"
