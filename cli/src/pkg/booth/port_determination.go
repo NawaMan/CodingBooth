@@ -84,11 +84,42 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 	builder.PortNumber = portNumber
 	builder.PortGenerated = portGenerated
 
+	offsetBase, err := parseOffsetBase(ctx.OffsetBase(), portNumber)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+	builder.OffsetBaseNumber = offsetBase
+
 	if (portGenerated || portNumber != defaultPortBase || ctx.Verbose()) && ctx.Cmds().Length() == 0 {
 		printPortBanner(portNumber, ctx.Public())
 	}
 
 	return builder.Build()
+}
+
+// parseOffsetBase resolves what a "+OFFSET" host port counts from. An empty spec
+// means the booth port — the local default, which keeps two booths of one project
+// off each other's published ports. A number replaces it outright, for a booth
+// that owns the whole port range and so wants its services at a fixed base rather
+// than wherever the front door landed.
+//
+// Zero is deliberately legal, where a port of 0 would not be: it makes "+8090"
+// resolve to 8090, so a template written in offsets publishes at its stock ports
+// without having to be rewritten.
+func parseOffsetBase(spec string, boothPort int) (int, error) {
+	spec = strings.TrimSpace(spec)
+	if spec == "" {
+		return boothPort, nil
+	}
+	base, err := strconv.Atoi(spec)
+	if err != nil {
+		return 0, fmt.Errorf("Error: --offset-base must be a number (got '%s').", spec)
+	}
+	if base < 0 || base > 65535 {
+		return 0, fmt.Errorf("Error: --offset-base must be between 0 and 65535 (got '%s').", spec)
+	}
+	return base, nil
 }
 
 // parseSymbolicPort parses a NEXT / RANDOM port spec, optionally suffixed with

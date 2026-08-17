@@ -193,7 +193,7 @@ service port and the port it is published on are separate params, and they compo
 openssh+server:2200+expose          # sshd on 2200, published on 2200
 openssh+server:22+expose:2222       # sshd on 22, published on 2222
 rabbitmq+start+expose:15672,25672   # AMQP on 15672, management UI on 25672
-rabbitmq+start+expose:+4567         # AMQP published on boothPort + 4567
+rabbitmq+start+expose:+4567         # AMQP published on offsetBase + 4567
 ```
 
 ### Ports: which knob moves what
@@ -208,7 +208,7 @@ published port with it, and the two cannot drift apart:
 | `cloudbeaver+expose` | `8978:8978` |
 | `cloudbeaver:25.3.5,9000+expose` | `9000:9000` — host follows the service |
 | `cloudbeaver:25.3.5,9000+expose:19000` | `19000:9000` — host overridden alone |
-| `cloudbeaver+expose:+8978` | `28978:8978` — host relative to a booth port of 20000 |
+| `cloudbeaver+expose:+8978` | `28978:8978` — host relative to an offset base of 20000 |
 
 Override the host port only when the host port is taken but the booth's should not
 move. The databases whose server has no port param of its own (`postgresql`, `mysql`,
@@ -217,14 +217,35 @@ container) have only the host-side knob, on the `expose` extension.
 
 #### Booth-relative host ports
 
-A host port written as `+OFFSET` is **relative to the booth port**: it stays literal in
-`run-args` and is resolved at container start as `boothPort + OFFSET`. With a booth port
-of 20000, `rabbitmq+start+expose:+4567` writes `"-p", "+4567:5672"` and publishes AMQP on
-`24567`. A bare number is still an absolute host port — the `+` is what makes it relative.
+A host port written as `+OFFSET` is **relative to the offset base**: it stays literal in
+`run-args` and is resolved at container start as `offsetBase + OFFSET`. The base is the
+**booth port** unless the booth sets one of its own — see *Moving the base* below. With a
+booth port of 20000 and no base set, `rabbitmq+start+expose:+4567` writes `"-p",
+"+4567:5672"` and publishes AMQP on `24567`. A bare number is still an absolute host port —
+the `+` is what makes it relative.
 
 This is the same `+OFFSET` form `--expose +4567:5672` and hand-written `run-args` already
 use; the offset belongs on the **host** side only. Because it derives from the booth port,
 two booths of the same project on different ports no longer collide on published ports.
+
+##### Moving the base
+
+`--offset-base <n>` (also `CB_OFFSET_BASE`, or `offset-base` in `config.toml`) decides what
+`+OFFSET` counts from, without touching the booth port. Following the booth port is the
+right default when several booths share a host and their published ports have to stay out
+of each other's way. It is the wrong one for a booth that owns the machine: there the port
+range is all its own and the front door sits wherever the platform put it, so services
+should count from a base you chose.
+
+```bash
+booth --port 443 --offset-base 20000   # front door on 443, +4567 publishes on 24567
+booth --offset-base 0                  # +8090 publishes on 8090 — offsets are absolute
+```
+
+A base of `0` is legal (a booth *port* of 0 is not) and is the way to make a config written
+in offsets publish at stock ports unchanged. The duplicate-host-port check below runs after
+resolution either way, so a moved base that lands a service on the booth's own port is
+still refused rather than handed to docker.
 
 The `+` survives the selection DSL even though `+` also separates extensions: inside a
 param list, a `+` starts an extension only when followed by a letter, and names are never
@@ -250,12 +271,13 @@ booth                          # host 15432 → container 5432
 POSTGRES_PORT=25432 booth      # host 25432 → container 5432
 ```
 
-**The fallback itself may be booth-relative.** Write `${NAME:-+OFFSET}` and the
-default is not a fixed number but `boothPort + OFFSET` — the env var wins when set,
-otherwise the port follows the booth port (the two host-side forms composed):
+**The fallback itself may be base-relative.** Write `${NAME:-+OFFSET}` and the
+default is not a fixed number but `offsetBase + OFFSET` — the env var wins when set,
+otherwise the port follows the base, which is the booth port unless `--offset-base`
+moved it (the two host-side forms composed):
 
 ```text
---expose '${SERVER_PORT:-+300}:1234'   # SERVER_PORT if set, else boothPort+300
+--expose '${SERVER_PORT:-+300}:1234'   # SERVER_PORT if set, else offsetBase+300
 ```
 
 ```bash
@@ -266,13 +288,15 @@ SERVER_PORT=25000 booth        # host 25000 → container 1234
 A `+OFFSET` fallback needs an explicit `:CONTAINER`; the bare `HOST:HOST` shorthand
 cannot carry an offset on the container side, so `--expose '${SERVER_PORT:-+300}'`
 is rejected. This works because `${…}` is expanded (at TOML unmarshal) *before*
-`+OFFSET` is resolved against the booth port — expansion yields `+300:1234`, then
+`+OFFSET` is resolved against the offset base — expansion yields `+300:1234`, then
 the offset step rewrites it.
 
-This is different from the **booth port** (`--port` / `CB_PORT`), which moves the
-primary UI mapping, not every service publish. To follow the booth port, use
-`+OFFSET`; to override one service's host port from the environment, use
-`${NAME:-digits}`; to do both — env override with a booth-relative default — use
+Three knobs, three jobs. The **booth port** (`--port` / `CB_PORT`) moves the primary
+UI mapping, not every service publish. The **offset base** (`--offset-base` /
+`CB_OFFSET_BASE`) moves what every `+OFFSET` counts from, without touching the booth
+port. And a **host-env port** overrides one service alone. So: to follow the base,
+use `+OFFSET`; to override one service's host port from the environment, use
+`${NAME:-digits}`; to do both — env override with a base-relative default — use
 `${NAME:-+OFFSET}`.
 
 A param default may reference another param by name (`default = "${SVC_PORT}"`), and

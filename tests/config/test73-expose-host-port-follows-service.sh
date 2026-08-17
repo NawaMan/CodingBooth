@@ -78,9 +78,10 @@ has "$config" '"15672:5672"'  ; check $? "rabbitmq+expose:15672,... publishes AM
 has "$config" '"25672:15672"' ; check $? "rabbitmq+expose:...,25672 publishes the UI on 25672"
 
 # ---------------------------------------------------------------------------
-# A host port may be booth-relative: "+4567" means booth port + 4567, left in
-# run-args as "+4567:5672" and resolved against the booth port at container start
-# (tests/dryrun/test019 covers that resolution). The "+" has to survive the DSL,
+# A host port may be base-relative: "+4567" means offset base + 4567, left in
+# run-args as "+4567:5672" and resolved against the base at container start — the
+# booth port unless --offset-base moved it (tests/dryrun/test019 and test030 cover
+# both resolutions). The "+" has to survive the DSL,
 # which splits an item on "+" to find its extensions — it used to read "+4567" as
 # an extension named "4567".
 # ---------------------------------------------------------------------------

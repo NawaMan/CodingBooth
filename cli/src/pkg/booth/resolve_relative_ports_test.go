@@ -93,13 +93,22 @@ func TestResolveRelativeMapping_Invalid(t *testing.T) {
 	}
 }
 
+// buildCtxWithRunArgs builds a context whose offset base is the booth port —
+// what PortDetermination settles on when offset-base is unset.
 func buildCtxWithRunArgs(boothPort int, args ...string) appctx.AppContext {
+	return buildCtxWithOffsetBase(boothPort, boothPort, args...)
+}
+
+// buildCtxWithOffsetBase builds a context whose offset base has been moved off
+// the booth port, as --offset-base does.
+func buildCtxWithOffsetBase(boothPort, offsetBase int, args ...string) appctx.AppContext {
 	builder := &appctx.AppContextBuilder{
-		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
-		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
-		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
-		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
-		PortNumber: boothPort,
+		CommonArgs:       ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:        ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:          ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:             ilist.NewAppendableList[ilist.List[string]](),
+		PortNumber:       boothPort,
+		OffsetBaseNumber: offsetBase,
 	}
 	builder.Config.Code = nillable.NewNillableString("/tmp/test")
 
@@ -180,6 +189,37 @@ func TestResolveRelativePorts_MixedArgs(t *testing.T) {
 	args := flattenRunArgs(newCtx)
 
 	expected := []string{"-e", "FOO=BAR", "-p", "18080:8080", "-v", "/a:/b", "-p", "3000:3000"}
+	if len(args) != len(expected) {
+		t.Fatalf("Expected %v, got %v", expected, args)
+	}
+	for i := range expected {
+		if args[i] != expected[i] {
+			t.Errorf("args[%d] = %q, want %q", i, args[i], expected[i])
+		}
+	}
+}
+
+// An offset base of its own is what a cloud booth uses: the front door sits on a
+// fixed port it did not choose, and services still want to land where the base
+// says.
+func TestResolveRelativePorts_OffsetBaseOverridesBoothPort(t *testing.T) {
+	ctx := buildCtxWithOffsetBase(8443, 20000, "-p", "+90:8090")
+	newCtx := ResolveRelativePorts(ctx)
+	args := flattenRunArgs(newCtx)
+
+	if len(args) != 2 || args[0] != "-p" || args[1] != "20090:8090" {
+		t.Errorf("Expected [-p 20090:8090], got %v", args)
+	}
+}
+
+// Base 0 turns every +OFFSET into the port it names, so templates written in
+// offsets publish at their stock ports without being rewritten.
+func TestResolveRelativePorts_ZeroOffsetBaseIsAbsolute(t *testing.T) {
+	ctx := buildCtxWithOffsetBase(8443, 0, "-p", "+8090:8090", "--publish=+5432:5432")
+	newCtx := ResolveRelativePorts(ctx)
+	args := flattenRunArgs(newCtx)
+
+	expected := []string{"-p", "8090:8090", "--publish=5432:5432"}
 	if len(args) != len(expected) {
 		t.Fatalf("Expected %v, got %v", expected, args)
 	}

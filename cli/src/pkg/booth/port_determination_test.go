@@ -56,6 +56,41 @@ func TestParseSymbolicPort(t *testing.T) {
 	}
 }
 
+func TestParseOffsetBase(t *testing.T) {
+	const boothPort = 20000
+
+	tests := []struct {
+		name    string
+		spec    string
+		want    int
+		wantErr bool
+	}{
+		{"unset follows the booth port", "", boothPort, false},
+		{"blank follows the booth port", "  ", boothPort, false},
+		{"a base of its own replaces it", "30000", 30000, false},
+		// 0 is legal here where it is not for --port: it makes "+8090" resolve to
+		// 8090, i.e. offsets become the absolute ports they name.
+		{"zero is a base, not an error", "0", 0, false},
+		{"a base below the booth port is fine", "1000", 1000, false},
+		{"65535 is the ceiling", "65535", 65535, false},
+		{"non-numeric is rejected", "NEXT", 0, true},
+		{"negative is rejected", "-1", 0, true},
+		{"out of range is rejected", "70000", 0, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseOffsetBase(tt.spec, boothPort)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("parseOffsetBase(%q, %d) err = %v, wantErr %v", tt.spec, boothPort, err, tt.wantErr)
+			}
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("parseOffsetBase(%q, %d) = %d, want %d", tt.spec, boothPort, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestFindNextPort_SkipsOccupied(t *testing.T) {
 	// Hold the base and the very next slot open, so the scan must skip BOTH occupied
 	// ports and land on base+2*step. Uses an OS-assigned base so no fixed port is

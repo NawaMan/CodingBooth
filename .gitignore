@@ -64,10 +64,16 @@ target/
 build/
 cmake-build-*/
 
-# --- Node (if you add web bits later) ---
+# --- Node ---
 node_modules/
 dist/
 build/
+# The blog is a SvelteKit site built with pnpm. .svelte-kit/ is regenerated on
+# every build, and .pnpm-store/ is pnpm's content-addressable package store
+# (~130 MB across ~6.8k files). Both are outputs of building the blog, not
+# part of it.
+.svelte-kit/
+.pnpm-store/
 
 # Cosign / key material
 cosign.key

@@ -158,9 +158,10 @@ default = "${CLOUDBEAVER_PORT}"
 literal `8978`/`2222`, so moving the service port served the tool on one port and published another
 — nothing was listening on the port that got published.
 
-A host port may also be given as `+OFFSET`, which is **relative to the booth port**: it stays in
-`run-args` as `"-p", "+4567:5672"` and is resolved at container start as `boothPort + OFFSET`
-(`ResolveRelativePorts`). `rabbitmq+start+expose:+4567` on a booth at 20000 publishes AMQP on 24567.
+A host port may also be given as `+OFFSET`, which is **relative to the offset base**: it stays in
+`run-args` as `"-p", "+4567:5672"` and is resolved at container start as `offsetBase + OFFSET`
+(`ResolveRelativePorts`). The base is the booth port unless the booth sets `--offset-base`, so
+`rabbitmq+start+expose:+4567` on a booth at 20000 publishes AMQP on 24567.
 Nothing is needed in the template for this — the compiler substitutes the param value verbatim, so
 any host-port param accepts it. It is the host side only; a `+OFFSET` on the container side would
 tell the server to listen on a port that does not exist.

@@ -1131,10 +1131,12 @@ Flags:
   --cmd <command>          Set default start command (repeatable)
   --expose <port>          Publish an extra port (repeatable). Forms: PORT,
                            HOST:CONTAINER, IP:HOST:CONTAINER, +OFFSET:CONTAINER
-                           (host = booth port + OFFSET), or host-side env form
-                           ${NAME} / ${NAME:-digits}[:CONTAINER]. The fallback may
-                           itself be booth-relative: ${NAME:-+OFFSET}:CONTAINER
-                           publishes on boothPort+OFFSET when NAME is unset. All
+                           (host = offset base + OFFSET; the base is the booth
+                           port unless the booth sets --offset-base), or host-side
+                           env form ${NAME} / ${NAME:-digits}[:CONTAINER]. The
+                           fallback may itself be relative:
+                           ${NAME:-+OFFSET}:CONTAINER publishes on
+                           offsetBase+OFFSET when NAME is unset. All
                            expanded at booth start. This ADDS a mapping; to move a
                            port a selected template already publishes, give its
                            expose extension the host port: +expose:19000,
@@ -1160,7 +1162,7 @@ Examples:
 
   booth config --select cloudbeaver+expose            # publish it on 8978
   booth config --select cloudbeaver+expose:19000      # ...on 19000 instead
-  booth config --select rabbitmq+start+expose:+4567   # ...on booth port + 4567
+  booth config --select rabbitmq+start+expose:+4567   # ...on offset base + 4567
 
   # A param value holding a "/" must be quoted, or the "/" starts a new template
   booth config --select 'go+go-pkg:"github.com/user/tool@latest"'

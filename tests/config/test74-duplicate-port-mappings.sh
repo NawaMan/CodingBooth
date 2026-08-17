@@ -61,7 +61,7 @@ run booth config $prj --no-tui --overwrite --select "nginx+expose/apache+expose"
 [[ "$(count "$config" '"8080:80"')" == "1" ]] ; check $? "two templates on one mapping publish it once"
 
 # ---------------------------------------------------------------------------
-# Both spellings of a booth-relative mapping collapse the same way.
+# Both spellings of a base-relative mapping collapse the same way.
 # ---------------------------------------------------------------------------
 rm -rf "$prj/.booth"
 run booth config $prj --no-tui --overwrite --select "cloudbeaver+expose:+8978" --expose "+8978:8978"
