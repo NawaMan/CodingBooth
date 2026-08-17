@@ -456,6 +456,12 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_CONTAINER_NAME="+ctx.Name()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_DAEMON=%t", ctx.Daemon())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_PORT="+strconv.Itoa(ctx.PortNumber())))
+	// Only when the base has been moved off the booth port. booth--expose reads
+	// BOOTH_HOST_PORT when this is absent, which is the same answer — so the
+	// unset case adds nothing to every booth's environment.
+	if ctx.OffsetBaseNumber() != ctx.PortNumber() {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_OFFSET_BASE="+strconv.Itoa(ctx.OffsetBaseNumber())))
+	}
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_IMAGE_NAME="+ctx.Image()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_RUNMODE="+ctx.RunMode()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_VARIANT_TAG="+ctx.Variant()))

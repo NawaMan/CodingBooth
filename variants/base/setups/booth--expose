@@ -31,7 +31,9 @@ Arguments:
   container-port   Port of the service running inside the container (required)
   external-port    Port on the host to listen on (optional)
                    Defaults to the same port as container-port
-                   Use +OFFSET for relative to booth port, or a plain number for absolute
+                   Use +OFFSET for relative to the offset base (the booth port,
+                   unless the booth was started with --offset-base), or a plain
+                   number for absolute
 
 Options:
   --permanent      Save tunnel to .booth/config.toml (requires --writable-booth)
@@ -42,7 +44,7 @@ Subcommands:
 Examples:
   booth--expose 8080               # host:8080 -> container:8080
   booth--expose 8080 18080         # host:18080 -> container:8080
-  booth--expose 8080 +8080         # host:<booth-port>+8080 -> container:8080
+  booth--expose 8080 +8080         # host:<offset-base>+8080 -> container:8080
   booth--expose 5432 --permanent   # same, but persisted across restarts
   booth--expose list               # what is published and what is listening
 EOF
@@ -174,7 +176,10 @@ if ! [[ "$CONTAINER_PORT" =~ ^[0-9]+$ ]] || [[ "$CONTAINER_PORT" -lt 1 ]] || [[ 
     exit 1
 fi
 
-BOOTH_PORT="${BOOTH_HOST_PORT:-10000}"
+# What a +OFFSET counts from. The host sets BOOTH_OFFSET_BASE only when the base
+# has been moved off the booth port (--offset-base); otherwise the booth port is
+# the base, which is what BOOTH_HOST_PORT holds.
+OFFSET_BASE="${BOOTH_OFFSET_BASE:-${BOOTH_HOST_PORT:-10000}}"
 
 # --- Resolve external port ---
 if [[ -z "$EXTERNAL_PORT" ]]; then
@@ -183,7 +188,7 @@ if [[ -z "$EXTERNAL_PORT" ]]; then
 elif [[ "$EXTERNAL_PORT" =~ ^\+([0-9]+)$ ]]; then
     # Relative: +OFFSET
     OFFSET="${BASH_REMATCH[1]}"
-    EXTERNAL_PORT=$((BOOTH_PORT + OFFSET))
+    EXTERNAL_PORT=$((OFFSET_BASE + OFFSET))
 elif ! [[ "$EXTERNAL_PORT" =~ ^[0-9]+$ ]]; then
     echo "Error: invalid external port: $EXTERNAL_PORT" >&2
     exit 1

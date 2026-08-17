@@ -34,14 +34,20 @@ ensure_image() {
 # Run a script (passed on stdin) inside a fresh container, return its stdout.
 # Stderr passes through to the test's stderr for visibility.
 run_in_container() {
-    local privileged=() nodind=1
+    local privileged=() nodind=1 network=()
     if [[ "${DIND:-0}" = "1" ]]; then
         privileged=(--privileged)
         nodind=0
     fi
+    # Tests that assert on offline behaviour set NETWORK=none before calling;
+    # the container then has no route out and every curl in the wrapper fails.
+    if [[ -n "${NETWORK:-}" ]]; then
+        network=(--network "$NETWORK")
+    fi
     # ${arr[@]+"${arr[@]}"} — bash 3.2 (macOS) treats "${empty[@]}" as unset
     # under `set -u`; without the guard every non-DIND test dies here.
     docker run --rm -i ${privileged[@]+"${privileged[@]}"} \
+        ${network[@]+"${network[@]}"} \
         -e "NO_DIND=$nodind" \
         -v "$REPO_ROOT":/booth:ro \
         -w /work \

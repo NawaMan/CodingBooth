@@ -250,7 +250,7 @@ func NormalizePortMappings(ctx appctx.AppContext) appctx.AppContext {
 		}
 		fmt.Fprintln(os.Stderr,
 			"Docker cannot bind one host port twice. Move one of them — an expose extension takes\n"+
-				"a host port directly (e.g. cloudbeaver+expose:19000, or +expose:+9000 for booth-relative).")
+				"a host port directly (e.g. cloudbeaver+expose:19000, or +expose:+9000 for base-relative).")
 		os.Exit(1)
 	}
 

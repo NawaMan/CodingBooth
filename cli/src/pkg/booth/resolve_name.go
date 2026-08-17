@@ -25,8 +25,8 @@ import (
 //	booth --port NEXT --name '{project}-{port}'   ->  myproj-12000
 //
 // so several booths of the same project no longer collide on the container name,
-// mirroring how booth-relative `+OFFSET` publishes let their ports follow the
-// booth port. The template is stored literally in config.toml and expanded here,
+// mirroring how base-relative `+OFFSET` publishes let their ports follow the
+// offset base, which is the booth port by default. The template is stored literally in config.toml and expanded here,
 // so a stored `name = "{project}-{port}"` re-resolves on every run.
 //
 // Names without a `{` are left untouched — the common case pays nothing.
