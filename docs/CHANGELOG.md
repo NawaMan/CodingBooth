@@ -4,6 +4,29 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`--offset-base` unpins `+OFFSET` host ports from the booth port.** A published port written
+  as `+4567` has always resolved to `boothPort + 4567`, and locally that is the whole point: the
+  booth port is the one number that already differs between two booths of the same project, so
+  tying every service to it is what keeps them off each other's published ports. A booth alone on
+  a cloud host has no such collision to dodge, and its front door sits on a port it did not pick —
+  443, or whatever the platform assigned — so counting service ports from it lands them nowhere in
+  particular.
+
+  The base is now a setting of its own: `--offset-base <n>`, `CB_OFFSET_BASE`, or `offset-base` in
+  `config.toml`. Unset, it *is* the booth port, so nothing about an existing booth changes.
+  `booth --port 443 --offset-base 20000` puts the UI on 443 and publishes `+4567` on 24567.
+
+  **A base of `0` is legal**, where a booth *port* of 0 is not: it makes each `+OFFSET` resolve to
+  the offset itself, which is how a config written entirely in offsets publishes at stock ports
+  without being rewritten.
+
+  Both resolvers moved together — the host-side one in `ResolveRelativePorts`, and `booth--expose`
+  inside the container, which reads a new `BOOTH_OFFSET_BASE`. That variable is exported **only**
+  when the base has actually been moved; otherwise `booth--expose` falls back to `BOOTH_HOST_PORT`
+  and gets the same answer, so an ordinary booth's environment is unchanged. The duplicate-host-port
+  check still runs after resolution, so a moved base that lands a service on the booth's own port is
+  refused by name rather than handed to docker.
+
 - **`idea+skip-first-run` pre-answers the modals that block a fresh booth's first IDE launch.**
   Opening IntelliJ in a new container meant clicking through up to four dialogs over noVNC — and
   because the container home is recreated per run, it was every start, not once. The opt-in

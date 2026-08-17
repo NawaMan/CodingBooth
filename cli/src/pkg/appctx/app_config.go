@@ -58,6 +58,7 @@ func (config *AppConfig) ExpandEnvScalars() error {
 		{"timezone", &config.Timezone},
 		{"name", &config.Name},
 		{"port", &config.Port},
+		{"offset-base", &config.OffsetBase},
 		{"env-file", &config.EnvFile},
 		{"startup", &config.Startup},
 		{"egress-mode", &config.EgressMode},
@@ -152,8 +153,14 @@ type AppConfig struct {
 	// --------------------
 	// Container configuration
 	// --------------------
-	Name              string `toml:"name,omitempty"           envconfig:"CB_NAME"`
-	Port              string `toml:"port,omitempty"           envconfig:"CB_PORT" default:"NEXT"`
+	Name string `toml:"name,omitempty"           envconfig:"CB_NAME"`
+	Port string `toml:"port,omitempty"           envconfig:"CB_PORT" default:"NEXT"`
+	// OffsetBase is what a "+OFFSET" host port counts from. Empty means the booth
+	// port, which is what keeps two local booths of one project off each other's
+	// published ports. A cloud booth owns the whole port range and puts its front
+	// door on a fixed number, so there it is set to a base of its own — and "0"
+	// makes every "+OFFSET" resolve to the offset itself, i.e. an absolute port.
+	OffsetBase        string `toml:"offset-base,omitempty"    envconfig:"CB_OFFSET_BASE"`
 	EnvFile           string `toml:"env-file,omitempty"       envconfig:"CB_ENV_FILE"`
 	Startup           string `toml:"startup,omitempty"        envconfig:"CB_STARTUP"`
 	ShowRunTime       string `toml:"show-run-time,omitempty"           envconfig:"CB_SHOW_RUN_TIME"`
@@ -244,10 +251,11 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Timezone:    %q\n", config.Timezone)
 
 	fmt.Fprintf(&str, "# Container Configuration -------\n")
-	fmt.Fprintf(&str, "    Name:    %q\n", config.Name)
-	fmt.Fprintf(&str, "    Port:    %q\n", config.Port)
-	fmt.Fprintf(&str, "    EnvFile: %q\n", config.EnvFile)
-	fmt.Fprintf(&str, "    Startup: %q\n", config.Startup)
+	fmt.Fprintf(&str, "    Name:       %q\n", config.Name)
+	fmt.Fprintf(&str, "    Port:       %q\n", config.Port)
+	fmt.Fprintf(&str, "    OffsetBase: %q\n", config.OffsetBase)
+	fmt.Fprintf(&str, "    EnvFile:    %q\n", config.EnvFile)
+	fmt.Fprintf(&str, "    Startup:    %q\n", config.Startup)
 
 	fmt.Fprintf(&str, "# TOML-friendly array fields ----\n")
 	formatList(&str, "CommonArgs", config.CommonArgs.List, "    ")

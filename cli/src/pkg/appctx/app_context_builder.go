@@ -58,6 +58,9 @@ type AppContextBuilder struct {
 	// derived from port determination
 	PortGenerated bool
 	PortNumber    int
+	// OffsetBaseNumber is the resolved base for "+OFFSET" host ports: the
+	// configured offset-base when there is one, else the booth port.
+	OffsetBaseNumber int
 
 	// Configurable
 	Config AppConfig

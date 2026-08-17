@@ -85,6 +85,11 @@ func (ctx AppContext) ImageMode() string { return ctx.values.ImageMode }
 func (ctx AppContext) PortGenerated() bool { return ctx.values.PortGenerated }
 func (ctx AppContext) PortNumber() int     { return ctx.values.PortNumber }
 
+// OffsetBaseNumber is what a "+OFFSET" host port counts from — the configured
+// offset-base, or the booth port when none is set. Valid only after
+// PortDetermination has run.
+func (ctx AppContext) OffsetBaseNumber() int { return ctx.values.OffsetBaseNumber }
+
 // Flags
 func (ctx AppContext) KeepAlive() bool    { return ctx.values.Config.KeepAlive }
 func (ctx AppContext) SilenceBuild() bool { return ctx.values.Config.SilenceBuild }
@@ -137,6 +142,7 @@ func (ctx AppContext) Timezone() string    { return ctx.values.Config.Timezone }
 // Container Configuration
 func (ctx AppContext) Name() string              { return ctx.values.Config.Name }
 func (ctx AppContext) Port() string              { return ctx.values.Config.Port }
+func (ctx AppContext) OffsetBase() string        { return ctx.values.Config.OffsetBase }
 func (ctx AppContext) EnvFile() string           { return ctx.values.Config.EnvFile }
 func (ctx AppContext) Startup() string           { return ctx.values.Config.Startup }
 func (ctx AppContext) ShowRunTime() string       { return ctx.values.Config.ShowRunTime }
@@ -199,6 +205,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "# Port --------------------------\n")
 	fmt.Fprintf(&str, "    PortGenerated:    %t\n", ctx.PortGenerated())
 	fmt.Fprintf(&str, "    PortNumber:       %d\n", ctx.PortNumber())
+	fmt.Fprintf(&str, "    OffsetBaseNumber: %d\n", ctx.OffsetBaseNumber())
 
 	fmt.Fprintf(&str, "# General configuration ---------\n")
 	fmt.Fprintf(&str, "    Dryrun:           %t\n", ctx.Dryrun())
@@ -240,6 +247,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "# Container Configuration -------\n")
 	fmt.Fprintf(&str, "    Name:             %q\n", ctx.Name())
 	fmt.Fprintf(&str, "    Port:             %q\n", ctx.Port())
+	fmt.Fprintf(&str, "    OffsetBase:       %q\n", ctx.OffsetBase())
 	fmt.Fprintf(&str, "    EnvFile:          %q\n", ctx.EnvFile())
 	fmt.Fprintf(&str, "    Startup:          %q\n", ctx.Startup())
 
