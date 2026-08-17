@@ -151,8 +151,8 @@ func ParseSelectDSL(input string) (*ParsedSelection, error) {
 // A "+" inside a param list is only an extension separator when it introduces an
 // extension *name*, and names are always identifiers — they never start with a digit or
 // a "+". So once a ":" has opened a param list, a "+" followed by anything but a letter
-// is part of the value. That is what lets a port param carry a booth-relative offset
-// ("expose:+4567" → host port = booth port + 4567, resolved at start) and, incidentally,
+// is part of the value. That is what lets a port param carry a base-relative offset
+// ("expose:+4567" → host port = offset base + 4567, resolved at start) and, incidentally,
 // what lets a package param name a package with a "+" in it ("apt-pkg:libstdc++6").
 //
 // Before any ":" every "+" still separates, so a malformed "go++linter" or a trailing

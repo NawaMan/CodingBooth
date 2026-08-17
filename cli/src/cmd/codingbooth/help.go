@@ -139,6 +139,9 @@ RUNTIME OPTIONS:
                          NEXT         : pick the next free port ≥ 10000
                          NEXT:<base>  : next free port ≥ base (e.g. NEXT:20000)
                          RANDOM:<base>: random free port ≥ base
+  --offset-base <n>      What a +OFFSET host port counts from (default: the booth
+                         port, so published ports follow it). Use 0 to make every
+                         +OFFSET an absolute port.
   --env-file <file>      Provide an --env-file to docker run
                          Use 'none' to disable env-file loading
                          .booth/.env is always included when present (must be gitignored)
@@ -237,6 +240,7 @@ RUNTIME OPTIONS:
   --name <container>     Container name (default: inferred from code directory)
                          Supports {port} {project} {variant} placeholders
   --port <n|RANDOM|NEXT> Host port → container 10000 (NEXT/RANDOM accept :base)
+  --offset-base <n>      Base for +OFFSET host ports (default: the booth port)
   --env-file <file>      Env-file for docker run (use 'none' to disable)
   --startup <command>    Custom startup command inside the container
 

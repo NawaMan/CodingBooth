@@ -14,10 +14,16 @@ import (
 )
 
 // ResolveRelativePorts resolves +OFFSET port mappings in RunArgs to absolute ports.
-// For example, if the booth port is 10000 and run-args contains "-p +8080:8080",
+// For example, if the offset base is 10000 and run-args contains "-p +8080:8080",
 // it becomes "-p 18080:8080".
+//
+// The base is the booth port unless offset-base says otherwise (see
+// parseOffsetBase). Following the booth port is what a local run wants — two
+// booths of one project land on different booth ports and so on different
+// published ports. A booth alone on a cloud host has no such collision to dodge
+// and a front door it does not choose, so it sets a base of its own instead.
 func ResolveRelativePorts(ctx appctx.AppContext) appctx.AppContext {
-	boothPort := ctx.PortNumber()
+	offsetBase := ctx.OffsetBaseNumber()
 	runArgs := ctx.RunArgs()
 
 	result := ilist.NewAppendableList[ilist.List[string]]()
@@ -31,7 +37,7 @@ func ResolveRelativePorts(ctx appctx.AppContext) appctx.AppContext {
 			if prevWasPort {
 				prevWasPort = false
 				if strings.HasPrefix(arg, "+") {
-					if mapped, ok := resolveRelativeMapping(arg, boothPort); ok {
+					if mapped, ok := resolveRelativeMapping(arg, offsetBase); ok {
 						newArgs.Append(mapped)
 						changed = true
 						return true
@@ -50,14 +56,14 @@ func ResolveRelativePorts(ctx appctx.AppContext) appctx.AppContext {
 			// Handle -p=+OFFSET:CONTAINER and --publish=+OFFSET:CONTAINER
 			if strings.HasPrefix(arg, "-p=+") {
 				value := strings.TrimPrefix(arg, "-p=")
-				if mapped, ok := resolveRelativeMapping(value, boothPort); ok {
+				if mapped, ok := resolveRelativeMapping(value, offsetBase); ok {
 					newArgs.Append("-p=" + mapped)
 					changed = true
 					return true
 				}
 			} else if strings.HasPrefix(arg, "--publish=+") {
 				value := strings.TrimPrefix(arg, "--publish=")
-				if mapped, ok := resolveRelativeMapping(value, boothPort); ok {
+				if mapped, ok := resolveRelativeMapping(value, offsetBase); ok {
 					newArgs.Append("--publish=" + mapped)
 					changed = true
 					return true
@@ -81,9 +87,10 @@ func ResolveRelativePorts(ctx appctx.AppContext) appctx.AppContext {
 	return builder.Build()
 }
 
-// resolveRelativeMapping resolves a +OFFSET:CONTAINER mapping to an absolute port mapping.
-// Returns the resolved mapping and true if successful.
-func resolveRelativeMapping(mapping string, boothPort int) (string, bool) {
+// resolveRelativeMapping resolves a +OFFSET:CONTAINER mapping against the offset
+// base to an absolute port mapping. Returns the resolved mapping and true if
+// successful.
+func resolveRelativeMapping(mapping string, offsetBase int) (string, bool) {
 	if !strings.HasPrefix(mapping, "+") {
 		return "", false
 	}
@@ -98,6 +105,6 @@ func resolveRelativeMapping(mapping string, boothPort int) (string, bool) {
 		return "", false
 	}
 
-	hostPort := boothPort + offset
+	hostPort := offsetBase + offset
 	return fmt.Sprintf("%d:%s", hostPort, parts[1]), true
 }

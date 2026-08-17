@@ -417,6 +417,40 @@ steps by 1000 from that base). `NEXT` is exactly `NEXT:10000`.
 > one project on `NEXT:20000`, another on `NEXT:30000`) so their auto-picked
 > ports stay in separate, predictable bands.
 
+### The offset base
+
+A published port written as `+OFFSET` is not an absolute host port — it is resolved
+at start against the **offset base** (see
+[Booth Config → Booth-relative host ports](BOOTH_CONFIG.md#booth-relative-host-ports)).
+That base is the booth port by default, which is what makes the whole scheme work
+locally: the booth port is the one number that already differs between two booths of
+the same project, so every service moves with it and nothing collides.
+
+That default stops making sense where the booth is alone on the machine. A cloud
+booth has the entire port range to itself and its front door on a port someone else
+picked — 443, or whatever the platform assigns — so counting service ports from it
+lands them somewhere arbitrary. `--offset-base` sets the base directly and leaves the
+booth port alone:
+
+- CLI flag: `--offset-base <n>`
+- Environment variable: `CB_OFFSET_BASE`
+- Configuration file: `offset-base` in `.booth/config.toml`
+
+```bash
+./booth --port 20000                      # +4567 → 24567 (base = the booth port)
+./booth --port 443 --offset-base 20000    # +4567 → 24567, booth still on 443
+./booth --offset-base 0                   # +8090 → 8090 — offsets become absolute
+```
+
+`<n>` is 0–65535. **Zero is deliberately allowed** where a booth port of 0 is not: it
+makes each `+OFFSET` resolve to the offset itself, so a config written in offsets
+publishes at stock ports without being rewritten.
+
+Nothing else changes: the booth's own port is still `--port`, published ports are
+still checked for collisions after resolution (including against the booth port,
+which a moved base can now reach), and `booth--expose +OFFSET` inside the container
+uses the same base.
+
 ---
 
 ## Pulling Images

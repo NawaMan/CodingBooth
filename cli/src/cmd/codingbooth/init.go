@@ -29,8 +29,9 @@ import (
 // host environment: ${NAME}, ${NAME:-digits}, or ${NAME:-+OFFSET}. Anchored at the
 // start so it can be peeled off before a ":CONTAINER" suffix. Only the host side of
 // a mapping may use this form; the container port stays a number. A "+OFFSET"
-// fallback is booth-relative: it expands to "+OFFSET" and ResolveRelativePorts then
-// rewrites it to boothPort+OFFSET, so the default follows the booth port.
+// fallback is base-relative: it expands to "+OFFSET" and ResolveRelativePorts then
+// rewrites it to offsetBase+OFFSET, so the default follows the offset base (the
+// booth port, unless --offset-base moved it).
 var hostEnvPortRE = regexp.MustCompile(`^\$\{[A-Za-z_][A-Za-z0-9_]*(:-\+?[0-9]+)?\}`)
 
 type initFlags struct {
@@ -704,17 +705,17 @@ func buildConfigAdjustCommand(flags initFlags) string {
 //   - PORT                      (e.g., 8080)
 //   - HOST:CONTAINER            (e.g., 18080:8080)
 //   - IP:HOST:CONTAINER         (e.g., 127.0.0.1:18080:8080)
-//   - +OFFSET:CONTAINER         (e.g., +8080:8080 — host port = booth port + offset)
+//   - +OFFSET:CONTAINER         (e.g., +8080:8080 — host port = offset base + offset)
 //   - +OFFSET                   (e.g., +8080 — shorthand for +8080:8080)
 //   - ${NAME}[:CONTAINER]       (host expanded at booth start from the host env)
 //   - ${NAME:-digits}[:CONTAINER]
-//   - ${NAME:-+OFFSET}:CONTAINER (fallback is booth-relative: boothPort + OFFSET)
+//   - ${NAME:-+OFFSET}:CONTAINER (fallback is base-relative: offsetBase + OFFSET)
 //   - IP:${NAME:-digits}:CONTAINER
 //
 // Only the *host* side may use ${NAME} / ${NAME:-digits} / ${NAME:-+OFFSET}. The
 // expression is kept literal in run-args and expanded by shellexpand before docker
 // is invoked; a "+OFFSET" fallback is then resolved by ResolveRelativePorts. A
-// booth-relative fallback needs an explicit container port — the bare HOST:HOST
+// base-relative fallback needs an explicit container port — the bare HOST:HOST
 // shorthand cannot carry an offset on the container side.
 func validateExpose(expose string) error {
 	// Handle +OFFSET and +OFFSET:CONTAINER formats
@@ -800,7 +801,7 @@ func validateExposeEnvHost(expose string, envAt int) error {
 		if envAt > 0 {
 			return fmt.Errorf("invalid --expose value %q: IP:HOST form requires :CONTAINER", expose)
 		}
-		// A booth-relative fallback (${NAME:-+OFFSET}) cannot fill a bare HOST:HOST
+		// A base-relative fallback (${NAME:-+OFFSET}) cannot fill a bare HOST:HOST
 		// shorthand: the container side would inherit the "+OFFSET" and stop being a
 		// number. Require an explicit container port.
 		if strings.Contains(host, ":-+") {

@@ -548,6 +548,14 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.Port = v
 			i += 2
 
+		case "--offset-base":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			cfg.OffsetBase = v
+			i += 2
+
 		case "--env-file":
 			v, err := needValue(args, i, arg)
 			if err != nil {

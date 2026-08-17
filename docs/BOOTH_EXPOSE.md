@@ -76,7 +76,7 @@ booth--expose 8080 18080
 # host localhost:18080 → container localhost:8080
 ```
 
-### Relative to booth port (`+`)
+### Relative to the offset base (`+`)
 
 ```bash
 booth--expose 8080 +8080
@@ -84,7 +84,18 @@ booth--expose 8080 +8080
 # If booth port is 12000: host localhost:20080 → container localhost:8080
 ```
 
-The `+` prefix adds the value to the current booth port. This keeps port assignments predictable regardless of which port the booth is running on.
+The `+` prefix adds the value to the **offset base**, which is the booth port unless the booth was
+started with `--offset-base` (see [Booth Run → Ports](BOOTH_RUN.md#ports)). Following the booth port
+keeps port assignments predictable regardless of which port the booth is running on — two booths of
+the same project sit on different booth ports and so tunnel to different host ports.
+
+A booth that owns the whole host — a cloud one, typically — has no such collision to dodge and a
+front door on a port it did not choose, so it sets a base of its own instead:
+
+```bash
+booth --port 443 --offset-base 20000
+# inside: booth--expose 8080 +8080  → host localhost:28080 → container localhost:8080
+```
 
 ### Default (no external port)
 
@@ -97,13 +108,17 @@ When no external port is specified, it defaults to the same port number.
 
 ### Examples
 
-| Command | Booth Port | Host Port | Container Port |
-|---------|-----------|-----------|----------------|
+| Command | Offset Base | Host Port | Container Port |
+|---------|-------------|-----------|----------------|
 | `booth--expose 3000` | 10000 | 3000 | 3000 |
 | `booth--expose 3000 +3000` | 10000 | 13000 | 3000 |
 | `booth--expose 8080 +8080` | 10000 | 18080 | 8080 |
 | `booth--expose 5432 +5432` | 12000 | 17432 | 5432 |
+| `booth--expose 8080 +8080` | 0 (`--offset-base 0`) | 8080 | 8080 |
 | `booth--expose 3000 23000` | 10000 | 23000 | 3000 |
+
+The offset base is the booth port unless `--offset-base` moved it, so the first four rows are also
+"booth port 10000 / 10000 / 10000 / 12000".
 
 ---
 
