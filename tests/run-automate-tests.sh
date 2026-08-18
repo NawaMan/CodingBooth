@@ -243,7 +243,7 @@ draw_graph() {
         printf '\033[%dA' "$PREV_GRAPH_LINES"
     fi
 
-    local s label total
+    local s label total i
     local PAD=12
 
     for i in "${!SUITES[@]}"; do
