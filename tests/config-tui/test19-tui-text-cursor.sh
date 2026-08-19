@@ -12,7 +12,11 @@ source "$(dirname "$0")/tui-helpers--source.sh"
 
 begin
 
-# Left switches to the Config tab; Down×4 lands on Name (a free-text field).
+# Left switches to the Config tab; Down×5 lands on Name (a free-text field).
+# The stops are Booth Version, Variant, Port, Offset Base, Name — "Offset Base"
+# was added between Port and Name, so Down×4 now stops there instead and the
+# frame reads "Offset Base:" rather than "Name:". Adding a field above Name means
+# bumping both counts below.
 #
 # The cursor is a reversed cell, not a glyph, so it costs the value no columns and
 # the captured frame — which VHS dumps as plain text, styling and all discarded —
@@ -21,7 +25,7 @@ begin
 # proves the model agrees with it.
 run-tui frame \
     'Left' 'Sleep 500ms' \
-    'Down' 'Down' 'Down' 'Down' 'Sleep 400ms' \
+    'Down' 'Down' 'Down' 'Down' 'Down' 'Sleep 400ms' \
     'Enter' 'Sleep 400ms' \
     'Type "bth"' 'Sleep 400ms' \
     'Left' 'Left' 'Sleep 400ms'
@@ -33,7 +37,7 @@ assert-frame "Name:   bth" "The block cursor takes no column of its own inside t
 # moved back out there.
 run-tui save \
     'Left' 'Sleep 500ms' \
-    'Down' 'Down' 'Down' 'Down' 'Sleep 400ms' \
+    'Down' 'Down' 'Down' 'Down' 'Down' 'Sleep 400ms' \
     'Enter' 'Sleep 400ms' \
     'Type "bth"' 'Sleep 400ms' \
     'Left' 'Left' 'Sleep 300ms' \
