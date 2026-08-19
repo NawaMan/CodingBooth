@@ -95,17 +95,26 @@ function sed-inplace() {
 # all 18 tests failed on assertions about files nothing had written — a
 # toolchain gap wearing the costume of 18 product bugs.
 #
-# With no timeout binary the command runs unguarded, deliberately. A bash
-# watchdog was tried first and had to be backed out: it needs the command in
-# the background, and a backgrounded vhs cannot reach ttyd
+# A bash watchdog was tried first and had to be backed out: it needs the command
+# in the background, and a backgrounded vhs cannot reach ttyd
 # ("net::ERR_CONNECTION_REFUSED") — the guard broke the thing it guarded.
-# `brew install coreutils` restores the limit here via gtimeout.
+#
+# perl's alarm+exec has neither problem. `exec` *replaces* the perl process with
+# the command, so vhs keeps the foreground terminal it needs, while the alarm
+# timer — a process property that survives exec — delivers SIGALRM at the
+# deadline and kills it. macOS ships /usr/bin/perl, so this needs no install.
+# Running unguarded was the previous fallback and it does not fail safe: one
+# wedged vhs hangs the whole suite forever and leaks its ttyd, which is how a
+# backlog of 779 stray ttyd processes accumulated and started wedging runs that
+# would otherwise have passed.
 function run-with-timeout() {
     local secs="$1"; shift
     if command -v timeout >/dev/null 2>&1; then
         timeout "$secs" "$@"
     elif command -v gtimeout >/dev/null 2>&1; then
         gtimeout "$secs" "$@"
+    elif command -v perl >/dev/null 2>&1; then
+        perl -e 'alarm shift @ARGV; exec @ARGV or exit 127' "$secs" "$@"
     else
         "$@"
     fi
@@ -197,11 +206,28 @@ function run-tui() {
     cat "$tape" >> "$log"
     echo "=== vhs run ===" >> "$log"
 
+    # vhs starts ttyd itself and is supposed to stop it again, but a vhs that dies
+    # on the timeout above — or crashes — never gets that far, and the orphan sits
+    # in the process table holding a port forever. They accumulate across runs
+    # until new ones cannot start and tests that have nothing wrong with them wedge.
+    # Reap by difference so only ttyd processes this call created are killed;
+    # anything already running (another suite, the user's own) is left alone.
+    local ttyd_before
+    ttyd_before=" $(pgrep ttyd 2>/dev/null | tr '\n' ' ') "
+
     ( cd "$prj" && run-with-timeout 120 vhs "$tape" ) >> "$log" 2>&1
     local rc=$?
     if [[ $rc -ne 0 ]]; then
         echo "  WARN: vhs exited with code ${rc}" >> "$log"
     fi
+
+    local ttyd_pid
+    for ttyd_pid in $(pgrep ttyd 2>/dev/null); do
+        case "$ttyd_before" in
+            *" ${ttyd_pid} "*) : ;;                      # pre-existing, not ours
+            *) kill "$ttyd_pid" 2>/dev/null || : ;;
+        esac
+    done
 
     # Strip ANSI from the captured frame for stable grep-based assertions.
     if [[ -f "${prj}/frame.txt" ]]; then
