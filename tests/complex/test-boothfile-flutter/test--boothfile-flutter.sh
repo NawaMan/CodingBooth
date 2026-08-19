@@ -83,6 +83,17 @@ fi
 # when no local one is tagged.
 use_local_base_image || exit $FAILED
 
+# flutter--setup.sh gates itself on amd64 — Google publishes the Linux SDK for
+# x86_64 only (dart_sdk_arch is "x64" and there has never been a linux-arm64
+# stable build), so on arm64 it warns and installs nothing by design. flutter and
+# dart are then legitimately absent, so skip rather than report a failure for a
+# documented no-op.
+SERVER_ARCH="$(docker_server_arch)"
+if [[ "$SERVER_ARCH" != "amd64" ]]; then
+    echo "SKIP: Flutter's Linux SDK is published for x86_64 only; docker builds for '${SERVER_ARCH}' here." >&2
+    exit $FAILED
+fi
+
 # Test 3: dart compiles and runs a program. This is the functional bar: a Dart
 # SDK that landed on PATH but cannot read its own snapshot, or a flutter tool
 # git refuses to look at, both pass `command -v` and fail here.

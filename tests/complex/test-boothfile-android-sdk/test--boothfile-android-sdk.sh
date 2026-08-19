@@ -80,6 +80,16 @@ fi
 # into the base image. Skip (reporting the emit results) when one isn't present.
 use_local_base_image || exit $FAILED
 
+# android-sdk--setup.sh gates itself on amd64 — Google publishes the cmdline-tools
+# for linux x86_64 only, so on arm64 it warns and installs nothing by design. The
+# tools these tests assert on are then legitimately absent, so skip rather than
+# report a failure for a documented no-op.
+SERVER_ARCH="$(docker_server_arch)"
+if [[ "$SERVER_ARCH" != "amd64" ]]; then
+    echo "SKIP: Android SDK is published for linux x86_64 only; docker builds for '${SERVER_ARCH}' here." >&2
+    exit $FAILED
+fi
+
 # Test 3: the SDK tools resolve in a NON-LOGIN shell. This is the regression that
 # matters: /etc/profile.d is not sourced by `booth -- cmd`, so a setup that wires
 # PATH only through profile.d passes interactively and fails in every script.
