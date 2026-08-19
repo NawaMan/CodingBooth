@@ -214,11 +214,20 @@ run_coding_booth() {
   # symptom being investigated — a diagnostic that can cause the bug it is hunting
   # is worse than none. Only stderr is teed, so the worst case is a few missing log
   # lines, never missing test data.
+  # stderr goes through a temp file rather than `2> >(tee ...)`. Process
+  # substitution opens /dev/fd/N, which a sandboxed run cannot read, so the
+  # tee form failed the call outright — a diagnostic that breaks the command
+  # it is tracing. The temp file buffers stderr until the command exits
+  # instead of streaming it; the log content is identical either way.
   if [[ -n "${CB_DIAG_LOG:-}" ]]; then
-    local _rc=0
+    local _rc=0 _errfile
+    _errfile=$(mktemp "${TMPDIR:-/tmp}/cb-diag-stderr.XXXXXX")
     printf '%s  === codingbooth %s\n' "$(date '+%H:%M:%S')" "$*" >>"$CB_DIAG_LOG"
     "$booth_path" ${version_args[@]+"${version_args[@]}"} "$@" \
-      2> >(tee -a "$CB_DIAG_LOG" >&2) || _rc=$?
+      2>"$_errfile" || _rc=$?
+    cat "$_errfile" >>"$CB_DIAG_LOG"
+    cat "$_errfile" >&2
+    rm -f "$_errfile"
     printf '%s  --- rc=%s\n' "$(date '+%H:%M:%S')" "$_rc" >>"$CB_DIAG_LOG"
     return $_rc
   fi
