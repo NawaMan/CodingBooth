@@ -23,6 +23,7 @@ Back to [README](../README.md)
 - [Host UID/GID Handling](#host-uidgid-handling)
 - [Run Modes](#run-modes)
 - [Ports](#ports)
+- [Opening the browser](#opening-the-browser)
 - [Pulling Images](#pulling-images)
 - [Dry-Run Mode](#dry-run-mode)
 - [Keep-Alive](#keep-alive)
@@ -450,6 +451,42 @@ Nothing else changes: the booth's own port is still `--port`, published ports ar
 still checked for collisions after resolution (including against the booth port,
 which a moved base can now reach), and `booth--expose +OFFSET` inside the container
 uses the same base.
+
+### Opening the browser
+
+A booth that serves a UI opens it in your default browser once the port actually
+answers. This is on by default, in both foreground and daemon mode.
+
+- CLI flag: `--no-browser` (or `--browser` to force it back on for one run)
+- Environment variable: `CB_BROWSER=false`
+- Configuration file: `browser = false` in `.booth/config.toml`
+
+```bash
+./booth --variant codeserver              # opens http://localhost:<port> when it is up
+./booth --variant codeserver --no-browser # prints the URL and leaves it to you
+```
+
+**Waiting for the port is the point.** `docker run -p` publishes the host port the
+moment the container is created, so the port accepts connections well before
+anything inside is listening — a browser opened on that signal lands on a reset
+connection. Booth polls its own URL and opens only once it gets an HTTP response,
+which is the first moment there is a page to show. In foreground mode the wait runs
+alongside the container and is dropped as soon as it exits; in daemon mode `booth`
+returns once the page is open.
+
+**A booth given a command never opens a browser.** `-- bash` and `--variant terminal`
+(which is `base` plus a `bash` command) run in the terminal booth was launched from
+and serve no page, so there is nothing to open.
+
+Anything that stops the browser opening is a warning, never a failure: the booth
+keeps running and the URL is printed to open by hand. That covers a host with no
+graphical session — on Linux, no `DISPLAY` and no `WAYLAND_DISPLAY`, which is the
+usual shape of a booth run over SSH — and a host with no opener installed.
+
+The opener is chosen per platform: `open` on macOS, `url.dll,FileProtocolHandler` on
+Windows, and `xdg-open` with fallbacks (`gio`, `gnome-open`, `kde-open`,
+`x-www-browser`, …) elsewhere. On WSL the Windows browser is used, via `wslview` or
+PowerShell. `$BROWSER` is honored where it is set, and is tried first.
 
 ---
 

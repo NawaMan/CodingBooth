@@ -242,6 +242,14 @@ func (booth *Booth) runAsDaemon() error {
 		fmt.Printf("   Stop with:  docker stop %s && docker network rm %s\n", dindName, dindNet)
 	}
 
+	// `docker run -d` returns as soon as the container is created, so unlike
+	// foreground mode there is nothing left running to wait alongside — the
+	// wait happens here, and daemon mode returns once the booth is up and its
+	// page is open. Skipped when the run itself failed: there is no booth.
+	if err == nil && shouldOpenBrowser(booth.ctx) {
+		OpenBoothInBrowser(context.Background(), booth.ctx)
+	}
+
 	return err
 }
 
@@ -291,6 +299,16 @@ func (booth *Booth) runAsForeground() error {
 		go StartTcpTunnelWatcher(tunnelCtx, booth.ctx, containerName)
 	}
 
+	// Open the booth's UI once it actually answers. `docker run` below blocks
+	// for the life of the container, so the wait has to run alongside it — and
+	// be cancelled when the container exits, or a booth that dies during
+	// startup leaves a goroutine polling a port nothing is on.
+	browserCtx, browserCancel := context.WithCancel(context.Background())
+	defer browserCancel()
+	if shouldOpenBrowser(booth.ctx) {
+		go OpenBoothInBrowser(browserCtx, booth.ctx)
+	}
+
 	// Execute the docker run command
 	LogTimef(os.Stderr, "Info: running container...\n")
 	err := docker.Docker(flags, "run", args)
@@ -298,6 +316,7 @@ func (booth *Booth) runAsForeground() error {
 
 	// Stop tunnel watcher
 	tunnelCancel()
+	browserCancel()
 
 	// Check for restart/idle markers before cleanup removes them
 	restartRequested := checkAndCleanRestartMarker(booth.ctx)

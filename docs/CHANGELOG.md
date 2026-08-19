@@ -4,6 +4,31 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A booth that serves a UI now opens it in your browser.** The port was printed and left
+  there; every start ended with the same copy-paste. Booth now opens `http://localhost:<port>`
+  itself, in foreground and daemon mode alike, and is off by a flag — `--no-browser`,
+  `CB_BROWSER=false`, or `browser = false` in `config.toml` (`--browser` forces it back on for
+  one run).
+
+  **It waits for the port to actually answer.** `docker run -p` publishes the host port when the
+  container is *created*, so the port accepts connections long before anything inside is
+  listening — opening on that signal lands the browser on a reset connection, which is the
+  failure this feature would otherwise be famous for. Booth polls its own URL and opens on the
+  first HTTP response (any status: code-server and Jupyter both answer the front door with a
+  redirect to a login page). In foreground mode the wait runs alongside the container and is
+  dropped the moment it exits, so a booth that dies during startup does not leave a goroutine
+  polling a dead port.
+
+  **A booth given a command never opens one.** `-- bash` and `--variant terminal` — the same
+  thing, since the variant resolves to `base` plus a `bash` command — run in the terminal booth
+  was launched from and serve no page. The command list, not the variant, is what decides.
+
+  Opening is cross-platform and never fatal: `open` on macOS, `url.dll,FileProtocolHandler` on
+  Windows, `xdg-open` and its fallbacks elsewhere, the Windows browser via `wslview`/PowerShell
+  under WSL, and `$BROWSER` first wherever it is set. A host with no graphical session (on Linux,
+  no `DISPLAY` and no `WAYLAND_DISPLAY` — the usual shape of a booth over SSH) or no opener
+  installed gets a warning naming the URL, and the booth carries on.
+
 - **`--offset-base` unpins `+OFFSET` host ports from the booth port.** A published port written
   as `+4567` has always resolved to `boothPort + 4567`, and locally that is the whole point: the
   booth port is the one number that already differs between two booths of the same project, so

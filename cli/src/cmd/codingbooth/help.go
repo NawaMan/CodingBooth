@@ -34,6 +34,7 @@ OPTIONS
   --variant <name>        Prebuilt variant: base | notebook | codeserver | xfce | kde | lxqt | wayland
   --port <n|RANDOM|NEXT>  Host port → container 10000 (NEXT/RANDOM accept :base)
   --daemon                Run the booth in the background
+  --no-browser            Do not open the booth UI in a browser when it comes up
   --dind                  Enable a Docker-in-Docker sidecar
   --public                Bind to all interfaces with password authentication
   --egress                Enable egress defaults (proxy + enforcement)
@@ -161,6 +162,13 @@ CONTAINER MODE:
                          Can also be set in config.toml: sudo = false
   --no-sudo              Shorthand for --sudo false
   --keep-alive           Do not remove the container when stopped
+  --browser              Open the booth UI in your default browser once its port
+                         answers. On by default; a booth given a command
+                         (-- bash, or --variant terminal) serves no page and
+                         never opens one.
+                         Can also be set in config.toml (browser = false) or
+                         with CB_BROWSER=false
+  --no-browser           Shorthand for browser = false, for this run only
   --persist-home         [Experimental] Persist /home/coder across sessions using a Docker named volume
   --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
   --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)
@@ -254,6 +262,8 @@ CONTAINER MODE:
   --sudo <true|false>    Enable/disable sudo (default: true)
   --no-sudo              Shorthand for --sudo false
   --keep-alive           Do not remove container when stopped
+  --browser              Open the booth UI in a browser once its port answers (default)
+  --no-browser           Never open a browser (also: browser = false, CB_BROWSER=false)
   --writable-booth       Allow writing to .booth/ inside the container
   --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)
   --log-time             Prefix progress messages with timestamps
