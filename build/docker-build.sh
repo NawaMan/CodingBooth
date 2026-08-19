@@ -440,6 +440,14 @@ SetupPushEnvironment() {
     needs_cosign="true"
   fi
 
+  # RC versions are never signed — every signing site guards on the same
+  # `--rc` pattern and logs "Skipping cosign signing for RC version". Demanding
+  # cosign and a key here anyway made `--push` on an RC die in setup for a
+  # signature it was never going to produce.
+  if [[ "$(resolve_version)" =~ --rc([0-9]+)?$ ]]; then
+    needs_cosign="false"
+  fi
+
   if [[ "${needs_registry}" != "true" ]]; then
     return 0
   fi
