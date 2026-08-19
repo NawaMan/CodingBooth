@@ -25,7 +25,10 @@ fi
 BASH
 )
 
-before="${LAST_OUTPUT#*=== BEFORE ===}"; before="${before%%./booth uninstall*}"
+# Trim on the AFTER banner: the heredoc is never echoed, so trimming at
+# `./booth uninstall` matched nothing and left the AFTER section inside
+# `before` — the scoping this line claims to do was never happening.
+before="${LAST_OUTPUT#*=== BEFORE ===}"; before="${before%%=== AFTER ===*}"
 after="${LAST_OUTPUT##*=== AFTER ===}"
 
 assert_contains "$before" "0.52.0"
