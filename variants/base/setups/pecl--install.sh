@@ -59,7 +59,19 @@ for spec in "$@"; do
     # No `|| true`: pecl builds from source, and a failed build (a missing compiler,
     # say) must fail the image rather than produce a booth where the extension is
     # quietly absent.
-    pecl install "$spec"
+    #
+    # `pecl install <name>` resolves the release through the channel's REST API.
+    # pecl.php.net serves those responses gzip-encoded and PEAR's downloader does
+    # not decode them, so the parse dies with "XML Error: 'Not well-formed
+    # (invalid token)' on line '1'" and the install reports "No releases available
+    # for package" — which reads as if the package had been withdrawn rather than
+    # merely unread. Fetching the release tarball by URL skips the REST path
+    # entirely. The channel is still tried first, so an environment with a PEAR
+    # that handles gzip keeps its dependency resolution; the URL is the fallback.
+    if ! pecl install "$spec"; then
+        echo "Channel install failed for '$spec'; retrying via direct download." >&2
+        pecl install "https://pecl.php.net/get/${spec}"
+    fi
 
     PHP_EXT_DIR="$(php -i | awk -F' => ' '/^extension_dir/ {print $2; exit}')"
     if [ ! -f "${PHP_EXT_DIR}/${ext}.so" ]; then
