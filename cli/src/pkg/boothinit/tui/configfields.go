@@ -94,6 +94,12 @@ var fieldDisplays = []fieldDisplay{
 		Detail: "Preserve container after exit.\nResume later with: booth start <name>"},
 	{Key: "daemon", Label: "Daemon", Group: "Container",
 		Detail: "Run the booth in the background (detached mode)."},
+	// Tri-state like Sudo, and for the same reason: the booth default is ON, so
+	// a plain on/off toggle could never write the "off" the user asked for —
+	// an unticked box and an untouched setting look identical on save.
+	{Key: "browser", Label: "Open Browser", Group: "Container",
+		Options: []string{"", "true", "false"},
+		Detail:  "Open the booth UI in your browser once its port\nanswers.\n\n(default) = leave to booth (enabled)\ntrue = explicitly enable\nfalse = never open a browser\n\nNo effect on a booth given a command\n(-- bash, or variant 'terminal'): it serves no page."},
 	{Key: "sudo", Label: "Sudo", Group: "Container",
 		Options: []string{"", "true", "false"},
 		Detail:  "Enable passwordless sudo for the coder user.\n\n(default) = leave to booth (enabled)\ntrue = explicitly enable\nfalse = explicitly disable"},

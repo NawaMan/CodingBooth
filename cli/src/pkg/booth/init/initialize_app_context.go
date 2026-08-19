@@ -365,6 +365,17 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.KeepAlive = true
 			i++
 
+		// The browser opens by default for a booth that serves a UI. Both
+		// spellings are here because config.toml and CB_BROWSER can turn it off
+		// project-wide, and a single run has to be able to say otherwise.
+		case "--browser":
+			cfg.Browser = true
+			i++
+
+		case "--no-browser":
+			cfg.Browser = false
+			i++
+
 		case "--leave-tmp-on-exit":
 			cfg.LeaveTmpOnExit = true
 			i++

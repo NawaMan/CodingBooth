@@ -94,6 +94,7 @@ func (ctx AppContext) OffsetBaseNumber() int { return ctx.values.OffsetBaseNumbe
 func (ctx AppContext) KeepAlive() bool    { return ctx.values.Config.KeepAlive }
 func (ctx AppContext) SilenceBuild() bool { return ctx.values.Config.SilenceBuild }
 func (ctx AppContext) Daemon() bool       { return ctx.values.Config.Daemon }
+func (ctx AppContext) Browser() bool      { return ctx.values.Config.Browser }
 func (ctx AppContext) Pull() bool         { return ctx.values.Config.Pull }
 func (ctx AppContext) Dind() bool         { return ctx.values.Config.Dind }
 func (ctx AppContext) Sudo() bool         { return ctx.values.Config.Sudo }
@@ -218,6 +219,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    KeepAlive:        %t\n", ctx.KeepAlive())
 	fmt.Fprintf(&str, "    SilenceBuild:     %t\n", ctx.SilenceBuild())
 	fmt.Fprintf(&str, "    Daemon:           %t\n", ctx.Daemon())
+	fmt.Fprintf(&str, "    Browser:          %t\n", ctx.Browser())
 	fmt.Fprintf(&str, "    Pull:             %t\n", ctx.Pull())
 	fmt.Fprintf(&str, "    Dind:             %t\n", ctx.Dind())
 	fmt.Fprintf(&str, "    Sudo:             %t\n", ctx.Sudo())

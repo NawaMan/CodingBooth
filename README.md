@@ -223,6 +223,7 @@ booth [flags] [-- command...]
 | `--persist-home`     | Persist `/home/coder` across sessions using a Docker named volume                |
 | `--egress`        | Restrict outbound network to allowlisted domains                                 |
 | `--daemon`           | Run container in background                                                      |
+| `--no-browser`       | Do not open the booth UI in a browser when it comes up (on by default)           |
 | `--silence-build`    | Suppress build/startup output                                                    |
 | `--writable-booth`   | Allow writing to `.booth/` inside the container (read-only by default)            |
 | `--show-run-time [epoch]` | Display elapsed session time in the lifecycle panel ([details](docs/BOOTH_RUNTIME.md)) |
