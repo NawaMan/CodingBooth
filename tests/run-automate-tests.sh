@@ -19,17 +19,17 @@ FAILED_LOG="${SCRIPT_DIR}/run-automate-tests.failed-tests.log"
 
 # ── Suite definitions ────────────────────────────────────────────────
 
-SUITES=(unit basic dryrun boothfile setups complex config config-tui)
-SUITE_LABELS=("UNIT" "BASIC" "DRYRUN" "BOOTHFILE" "SETUPS" "COMPLEX" "CONFIG" "CONFIG-TUI")
+SUITES=(unit basic dryrun boothfile setups config config-tui complex)
+SUITE_LABELS=("UNIT" "BASIC" "DRYRUN" "BOOTHFILE" "SETUPS" "CONFIG" "CONFIG-TUI" "COMPLEX")
 SUITE_RUNNERS=(
     "./run-all-go-tests.sh"
     "./run-basic-tests.sh"
     "./run-dryrun-tests.sh"
     "./run-boothfile-tests.sh"
     "./run-setups-tests.sh"
+    "./run-all-tests.sh"
+    "./run-all-tests.sh"
     "./run-complex-tests.sh"
-    "./run-all-tests.sh"
-    "./run-all-tests.sh"
 )
 
 # Map a suite name to its numeric index in SUITES (used to key the state
