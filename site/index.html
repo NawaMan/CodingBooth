@@ -697,6 +697,12 @@
             margin-bottom: 6px;
         }
 
+        .quicktry-list .step-note {
+            margin: 8px 0 0;
+            font-size: 13px;
+            color: var(--fg-muted);
+        }
+
         .quicktry-list pre {
             margin: 8px 0 0;
             background: var(--code-bg);
@@ -1331,6 +1337,9 @@
                 <li>
                     <div class="step-title">Install</div>
                     <pre><button class="copy-btn" type="button" onclick="copyCode(this)">Copy</button><code>curl -fsSL https://codingbooth.io/install.sh | bash</code></pre>
+                    <p class="step-note">Undo it any time with <code>booth uninstall</code> — see <a
+                            href="https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_INSTALL.md">install
+                            &amp; uninstall</a> for every layer.</p>
                 </li>
                 <li>
                     <div class="step-title">Try an example</div>
