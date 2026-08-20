@@ -4,6 +4,8 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+## 0.73.0
+
 - **A booth that serves a UI now opens it in your browser.** The port was printed and left
   there; every start ended with the same copy-paste. Booth now opens `http://localhost:<port>`
   itself, in foreground and daemon mode alike, and is off by a flag — `--no-browser`,
@@ -51,6 +53,8 @@ This file contains a list of changes for each released version.
   and gets the same answer, so an ordinary booth's environment is unchanged. The duplicate-host-port
   check still runs after resolution, so a moved base that lands a service on the booth's own port is
   refused by name rather than handed to docker.
+
+## 0.72.0
 
 - **`idea+skip-first-run` pre-answers the modals that block a fresh booth's first IDE launch.**
   Opening IntelliJ in a new container meant clicking through up to four dialogs over noVNC — and
