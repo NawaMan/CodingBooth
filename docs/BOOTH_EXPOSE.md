@@ -24,6 +24,7 @@ Back to [README](../README.md)
 - [Port Syntax](#port-syntax)
 - [Ephemeral vs Permanent](#ephemeral-vs-permanent)
 - [Listing ports](#listing-ports)
+- [The other direction: reaching a service on the host](#the-other-direction-reaching-a-service-on-the-host)
 - [Relationship to -p and --expose](#relationship-to--p-and---expose)
 - [Security](#security)
 - [Limitations](#limitations)
@@ -234,6 +235,58 @@ CONTAINER HOST                   PROTO KIND        STATUS  SERVER
 A `SERVER` of `-` means the process is owned by another user and `ss` could not
 name it; a `KIND` of `internal` with no `HOST` means the service listens inside
 the container but is not published to the host.
+
+---
+
+## The other direction: reaching a service on the host
+
+Everything above carries a port **out** of the booth. Going the other way — a
+booth talking to a database, an API, or a language server that runs on your
+host — needs no tunnel and no configuration: the host is always reachable at
+`host.docker.internal`.
+
+```bash
+# Inside the booth, against a PostgREST on the host's port 3000:
+curl http://host.docker.internal:3000/
+
+# Or a PostgreSQL on 5432:
+psql -h host.docker.internal -p 5432 -U postgres
+```
+
+Every booth is started with that name mapped to the host, so the same command
+works on Linux, macOS, and Windows. `booth--info` reports what it resolves to,
+along with the host's own address on its network:
+
+```
+=== Host Access ===
+
+Host:     host.docker.internal -> 192.168.65.254
+Host IP:  192.168.1.42  ($BOOTH_HOST_IP -- the host's address on its own network)
+```
+
+Two variables carry the same facts for scripts, and both show up in `booth--envs`:
+
+| Variable | What it holds |
+|---|---|
+| `BOOTH_HOST_NAME` | The name to dial — always `host.docker.internal` |
+| `BOOTH_HOST_IP` | The host's IPv4 address on its own network. Unset if the host has none (no interface up beyond loopback) |
+
+Prefer `BOOTH_HOST_NAME`. `BOOTH_HOST_IP` is the address the *rest of the
+network* uses to reach your machine — the one to hand to a colleague, or to put
+in a config that has to name an address rather than a host — and it changes when
+you move between networks, while the name does not.
+
+**The service must not be bound to `127.0.0.1` only.** A host-local bind is
+unreachable from inside any container; the service has to listen on `0.0.0.0`
+(or on the host's LAN address). This is the single most common reason a host
+service "cannot be reached" from a booth. For PostgREST that is
+`server-host = "0.0.0.0"`; for a dev server it is usually `--host 0.0.0.0`.
+
+**Under `--egress`** the booth's traffic goes through the egress proxy, which
+allows only what its policy allows. The host alias is set up the same way (on
+the sidecar that owns the network namespace), but reaching a host service still
+requires the egress allowlist to permit it — that restriction is the point of
+running with `--egress`.
 
 ---
 

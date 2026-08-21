@@ -53,6 +53,7 @@ docker \\
     --label 'cb.keep-alive=true' \\
     --label 'cb.daemon=false' \\
     -p 127.0.0.1:10000:10000 \\
+    --add-host host.docker.internal:host-gateway \\
     -e 'BOOTH_SETUPS=/opt/codingbooth/setups' \\
     -e 'BOOTH_CONTAINER_NAME=dryrun' \\
     -e 'BOOTH_DAEMON=false' \\
@@ -82,6 +83,8 @@ docker \\
     -e 'BOOTH_ENV_FILE=' \\
     -e 'BOOTH_HOST_UID=${HOST_UID}' \\
     -e 'BOOTH_HOST_GID=${HOST_GID}' \\
+    -e 'BOOTH_HOST_NAME=host.docker.internal' \\
+    -e 'BOOTH_HOST_IP=XXXXX' \\
     '--pull=never' \\
     -e 'TZ=America/Toronto' \\
     nawaman/codingbooth:base-${VERSION} \\

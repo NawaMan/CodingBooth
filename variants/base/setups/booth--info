@@ -51,6 +51,38 @@ echo -e "${GREEN}/home/coder/code${RESET}        - Your project directory (mount
 echo -e "${GREEN}/opt/codingbooth/setups${RESET} - Available setup scripts"
 
 echo ""
+echo -e "${BOLD}=== Host Access ===${RESET}"
+echo ""
+
+# The name the host answers to from in here. Resolve it rather than trusting the
+# variable: on Docker Desktop the name exists even without the --add-host the
+# booth passes, and the resolved address is the one that will actually be dialed.
+HOST_NAME="${BOOTH_HOST_NAME:-host.docker.internal}"
+HOST_NAME_ADDR="$(getent hosts "$HOST_NAME" 2>/dev/null | awk '{print $1; exit}' || true)"
+
+if [[ -n "$HOST_NAME_ADDR" ]]; then
+  echo -e "${CYAN}Host:${RESET}     ${GREEN}${HOST_NAME}${RESET} -> ${HOST_NAME_ADDR}"
+else
+  echo -e "${CYAN}Host:${RESET}     ${HOST_NAME} (not resolvable -- host services unreachable by name)"
+fi
+
+# The host's own address on its network, as the host sees it. Unset when the
+# host had nothing but loopback at launch.
+if [[ -n "${BOOTH_HOST_IP:-}" ]]; then
+  echo -e "${CYAN}Host IP:${RESET}  ${BOOTH_HOST_IP}  (\$BOOTH_HOST_IP -- the host's address on its own network)"
+fi
+
+echo ""
+echo "Reach a service running on the host, e.g. one on port 3000:"
+echo ""
+echo "  curl http://${HOST_NAME}:3000/"
+echo ""
+echo "The service must be listening on all interfaces (0.0.0.0), not only on"
+echo "127.0.0.1 -- a host-local bind is not reachable from inside a container."
+echo "For the reverse direction -- a port in here, reachable on the host -- see"
+echo "booth--expose."
+
+echo ""
 echo -e "${BOLD}=== Documentation ===${RESET}"
 echo ""
 echo "Available documentation in /opt/codingbooth/:"

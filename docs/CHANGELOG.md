@@ -4,6 +4,32 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A booth can reach services on the host now — and `booth--info` says how.** The tunnel story
+  was one-directional: `booth--expose` carries a container port out to the host, but a booth that
+  wanted to talk to a PostgREST, a database, or a language server running *on* the host had
+  nothing to dial. Docker Desktop happens to resolve `host.docker.internal` on its own, so the
+  trick worked on macOS and Windows by accident and was never mentioned anywhere; on native Linux
+  the name does not exist unless the run asks for it, so the same command failed. Every booth is
+  now started with `--add-host host.docker.internal:host-gateway`, which makes the name work the
+  same way on all three platforms.
+
+  Two variables carry the facts to scripts: `BOOTH_HOST_NAME` (the name to dial) and
+  `BOOTH_HOST_IP` (the host's own IPv4 address on its network — the one to hand to someone else,
+  or to put in a config that wants an address rather than a name). The address is resolved on the
+  host at launch by asking the kernel which source address it would use to reach the outside
+  world; a firewall that refuses even that unsent UDP connect falls back to scanning the
+  interfaces, and a machine with nothing but loopback simply leaves the variable unset. Both show
+  up in `booth--envs`, and `booth--info` gained a **Host Access** section that resolves the name
+  and prints what it points at, with the caveat that matters: a host service bound to `127.0.0.1`
+  only is unreachable from inside any container — it has to listen on `0.0.0.0`.
+
+  Under `--dind` and `--egress` the booth borrows a sidecar's network namespace, and docker
+  rejects `--add-host` on a container that does that ("conflicting options: custom host-to-IP
+  mapping and the network mode") — passing it there would not merely lose host access, the booth
+  would fail to start. In those modes the alias is set on the sidecar that owns the namespace
+  instead, which the booth then shares. Egress policy still applies: the name resolves, but the
+  allowlist decides whether the connection goes through.
+
 - **A slow link no longer looks like a wedged `claude-code` install — and the binary is
   actually verified now.** `claude-code--setup.sh` fetched the ~330MB binary with a bare
   `curl -fsSL`: no `--connect-timeout`, no `--speed-limit`/`--speed-time`, no `--retry`, no
