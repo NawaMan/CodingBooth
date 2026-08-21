@@ -4,6 +4,45 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A slow link no longer looks like a wedged `claude-code` install — and the binary is
+  actually verified now.** `claude-code--setup.sh` fetched the ~330MB binary with a bare
+  `curl -fsSL`: no `--connect-timeout`, no `--speed-limit`/`--speed-time`, no `--retry`, no
+  `-C -`. Without any timeout a half-open connection hangs the build forever rather than
+  failing, a single transient reset or GCS 5xx costs the whole `RUN` layer, and `-s` silences
+  the progress meter so BuildKit printed `Downloading from ...` and then nothing at all. On a
+  slow link that step legitimately runs for the best part of an hour and is indistinguishable
+  from a hang; the natural response is `^C`, which discards the layer and restarts from byte
+  zero. The transfer now aborts if it genuinely stalls (under 1KB/s for 60s) rather than
+  hanging, retries with resume so a reset partway does not repay the whole 330MB, starts from
+  a clean path so `-C -` cannot trip over a stale complete file and take a 416, and names the
+  size up front so the wait is legible. The two small metadata fetches got timeouts and
+  retries as well.
+
+  Separately, the manifest lookup read `."linux-arm64".checksum` when the platforms live
+  under a `platforms` object, so it always came back empty. The bash-regex fallback that would
+  have covered for it only runs when `jq` is absent — and `jq` ships in the base image — so
+  the empty checksum reached a `[[ -n "$CHECKSUM" ]]` guard that read it as "this manifest
+  carries no checksum" and skipped verification. Every build since has installed an unverified
+  binary. The path is fixed, the guard is now a hard failure rather than a silent skip, and
+  the fallback learned to read `size` too. Verification is what makes resuming a partial
+  download safe, so the two fixes belong together.
+
+- **The JDK download got the same treatment.** `jdk--setup.sh` fetched its ~180MB tarball with
+  a bare `curl -fSL ... 2>/dev/null` — same missing timeouts, stall detection, retries and
+  resume as `claude-code--setup.sh`, and the `2>/dev/null` discarded curl's progress meter *and*
+  the `-S` error text it was there to show, so several minutes passed with nothing on stdout.
+  It now names the tarball size before starting (a best-effort `HEAD` — a failed probe just
+  omits the line), aborts a genuinely dead transfer instead of hanging, and retries with resume.
+  `--no-progress-meter` replaces the blanket `2>/dev/null`, so real errors and retry notices
+  reach the log while the meter still stays out of it. The download starts from a clean path so
+  `-C -` cannot trip over a stale complete file and take a 416. The jbang bootstrap fetch got
+  connect and total timeouts too.
+
+  The size probe lowercases headers before matching rather than using awk's `IGNORECASE`, which
+  is a gawk extension: Ubuntu ships mawk, and while HTTP/2 lowercases header names, an HTTP/1.1
+  vendor sends `Content-Length` — under mawk that combination would have silently produced no
+  size at all. Verified against both temurin and corretto with the base image's own mawk.
+
 - **The test suites no longer open browsers.** Opening the booth's UI is on by default, so
   every suite that starts a UI booth threw a window at whoever ran it — and, in daemon mode,
   waited for the port to answer first. `CB_BROWSER=false` is now set by
