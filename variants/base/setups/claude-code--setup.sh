@@ -49,39 +49,69 @@ cd /tmp
 
 # Resolve version (same as official script - always use latest for most up-to-date installer)
 echo "Fetching latest version..."
-VERSION=$(curl -fsSL "${GCS_BUCKET}/latest")
+VERSION=$(curl -fsSL --connect-timeout 10 --max-time 60 \
+    --retry 5 --retry-delay 3 --retry-all-errors "${GCS_BUCKET}/latest")
 echo "Version: ${VERSION}"
 
 # Download manifest and extract checksum
 echo "Fetching manifest..."
-MANIFEST=$(curl -fsSL "${GCS_BUCKET}/${VERSION}/manifest.json")
+MANIFEST=$(curl -fsSL --connect-timeout 10 --max-time 60 \
+    --retry 5 --retry-delay 3 --retry-all-errors "${GCS_BUCKET}/${VERSION}/manifest.json")
 
 CHECKSUM=""
+SIZE=""
 if command -v jq &>/dev/null; then
-    CHECKSUM=$(echo "$MANIFEST" | jq -r ".\"${PLATFORM}\".checksum // empty")
+    # The platforms live under a "platforms" object, not at the top level. Reading
+    # them from the root yields empty — and since jq is present in the base image,
+    # the regex fallback never ran to cover for it, so every build installed an
+    # unverified binary.
+    CHECKSUM=$(echo "$MANIFEST" | jq -r ".platforms.\"${PLATFORM}\".checksum // empty")
+    SIZE=$(echo "$MANIFEST" | jq -r ".platforms.\"${PLATFORM}\".size // empty")
 else
     # Fallback: extract checksum using bash regex (from official script)
     MANIFEST_NORMALIZED=$(echo "$MANIFEST" | tr -d '\n\r\t' | sed 's/ \+/ /g')
     if [[ $MANIFEST_NORMALIZED =~ \"$PLATFORM\"[^}]*\"checksum\"[[:space:]]*:[[:space:]]*\"([a-f0-9]{64})\" ]]; then
         CHECKSUM="${BASH_REMATCH[1]}"
     fi
+    if [[ $MANIFEST_NORMALIZED =~ \"$PLATFORM\"[^}]*\"size\"[[:space:]]*:[[:space:]]*([0-9]+) ]]; then
+        SIZE="${BASH_REMATCH[1]}"
+    fi
+fi
+
+if [[ -z "$CHECKSUM" ]]; then
+    echo "❌ No checksum for '${PLATFORM}' in the manifest; refusing to install unverified." >&2
+    exit 1
 fi
 
 # Download binary
 BINARY_URL="${GCS_BUCKET}/${VERSION}/${PLATFORM}/claude"
 BINARY_FILE="claude-${VERSION}-${PLATFORM}"
-echo "Downloading from ${BINARY_URL}..."
-curl -fsSL -o "$BINARY_FILE" "$BINARY_URL"
+# The binary is ~330MB. Say so: on a slow link this single step runs for the best
+# part of an hour, and a quiet curl makes that indistinguishable from a hang.
+if [[ -n "$SIZE" ]]; then
+    echo "Downloading from ${BINARY_URL} ($((SIZE / 1024 / 1024)) MB)..."
+else
+    echo "Downloading from ${BINARY_URL}..."
+fi
+# Start clean so -C - is purely a resume-across-retries mechanism: against a
+# stale complete file the range request would come back 416 and -f would fail.
+# A run that dies between the download and the mv below leaves exactly that.
+rm -f "$BINARY_FILE"
+# --speed-limit/--speed-time abort a transfer that has genuinely died rather than
+# hanging on it forever; a slow-but-moving link stays under the threshold and is
+# left alone. -C - resumes across retries so a reset partway does not restart
+# 330MB from zero. The checksum below is what makes resuming safe.
+curl -fsSL --connect-timeout 10 --speed-limit 1024 --speed-time 60 \
+    --retry 5 --retry-delay 3 --retry-all-errors -C - \
+    -o "$BINARY_FILE" "$BINARY_URL"
 
 # Verify checksum
-if [[ -n "$CHECKSUM" ]]; then
-    echo "Verifying checksum..."
-    echo "$CHECKSUM  $BINARY_FILE" | sha256sum -c - || {
-        echo "Checksum verification failed!"
-        rm -f "$BINARY_FILE"
-        exit 1
-    }
-fi
+echo "Verifying checksum..."
+echo "$CHECKSUM  $BINARY_FILE" | sha256sum -c - || {
+    echo "Checksum verification failed!"
+    rm -f "$BINARY_FILE"
+    exit 1
+}
 
 chmod +x "$BINARY_FILE"
 
