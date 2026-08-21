@@ -163,10 +163,13 @@ fi
 # ---------------------------------------------------------------------------
 set +e
 # Capture stderr separately so we can assert the warning; stdout is the command.
-ACCEPT_STDOUT="$(run_coding_booth exec --name "$NAME" --port "$PORT_B" --accept-existing -- whoami 2>/tmp/cb-connect-accept-$$.err)"
+# Via TMPDIR, not /tmp by name: where /tmp is not writable the redirect fails
+# before booth even runs, and the test reads a warning it never captured.
+ACCEPT_ERR="$(mktemp "${TMPDIR:-/tmp}/cb-connect-accept.XXXXXX")"
+ACCEPT_STDOUT="$(run_coding_booth exec --name "$NAME" --port "$PORT_B" --accept-existing -- whoami 2>"$ACCEPT_ERR")"
 ACCEPT_EXIT=$?
-ACCEPT_STDERR="$(cat /tmp/cb-connect-accept-$$.err 2>/dev/null || true)"
-rm -f /tmp/cb-connect-accept-$$.err
+ACCEPT_STDERR="$(cat "$ACCEPT_ERR" 2>/dev/null || true)"
+rm -f "$ACCEPT_ERR"
 set -e
 
 if [[ $ACCEPT_EXIT -eq 0 ]] \
