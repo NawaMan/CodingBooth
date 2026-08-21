@@ -31,6 +31,13 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# No example opens the host's browser. A booth that serves a UI opens its page by
+# default, so a run of the whole tree — dozens of booths, several at a time —
+# would bury whoever started it in windows. The handful of tests that start a
+# UI booth pass --no-browser themselves, so running one on its own is quiet too;
+# this covers the rest.
+export CB_BROWSER=false
+
 # Default settings
 MAX_PARALLEL=1
 

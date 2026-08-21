@@ -15,6 +15,17 @@ case "$(uname -s)" in
 esac
 export HOST_OS
 
+# A booth that serves a UI opens it in the host's browser by default, and in
+# daemon mode the run does not return until the port answers. Neither belongs in
+# a test: a suite would throw a window at whoever is running it, once per booth,
+# and pay the wait for a page nothing is going to look at.
+#
+# Set here rather than per test so it covers a test run on its own as well as one
+# run by a suite; the suite runners set it too, for the few tests that do not
+# source this file. Only basic/test019--browser-open.sh unsets it — the default
+# is the thing it tests.
+export CB_BROWSER=false
+
 # Opt a test into building against a locally-rebuilt base image instead of the
 # upstream nawaman/codingbooth Hub image. Use this when the test triggers a
 # Boothfile build that relies on a setup-script fix that hasn't shipped to

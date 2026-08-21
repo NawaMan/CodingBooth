@@ -17,6 +17,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="${SCRIPT_DIR}/logs"
 FAILED_LOG="${SCRIPT_DIR}/run-automate-tests.failed-tests.log"
 
+# No suite opens the host's browser. A booth that serves a UI opens its page by
+# default, so a full run would throw a window at whoever started it — once per
+# booth — and, in daemon mode, wait for the port to answer before returning.
+# Inherited by every suite, including the ones whose tests do not source
+# common--source.sh (which sets the same thing for a test run on its own).
+export CB_BROWSER=false
+
 # ── Suite definitions ────────────────────────────────────────────────
 
 SUITES=(unit basic dryrun boothfile setups config config-tui complex)
