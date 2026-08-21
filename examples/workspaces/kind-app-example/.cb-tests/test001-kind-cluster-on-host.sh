@@ -60,7 +60,7 @@ sleep 1
 
 # Start booth in daemon mode
 echo "Starting booth with KinD..."
-../../../codingbooth --keep-alive --daemon --variant base --port "${CB_PORT:-50171}" --name "$CONTAINER_NAME"
+../../../codingbooth --no-browser --keep-alive --daemon --variant base --port "${CB_PORT:-50171}" --name "$CONTAINER_NAME"
 
 # Wait for booth to be ready (up to 60 seconds)
 echo "Waiting for booth container to start..."

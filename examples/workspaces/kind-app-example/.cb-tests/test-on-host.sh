@@ -37,7 +37,7 @@ echo
 
 # Start booth in daemon mode
 echo "Starting booth with KinD..."
-../../codingbooth --keep-alive --daemon > /dev/null 2>&1 || true
+../../codingbooth --no-browser --keep-alive --daemon > /dev/null 2>&1 || true
 
 # Wait for booth to be ready
 sleep 3

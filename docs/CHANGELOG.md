@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The test suites no longer open browsers.** Opening the booth's UI is on by default, so
+  every suite that starts a UI booth threw a window at whoever ran it — and, in daemon mode,
+  waited for the port to answer first. `CB_BROWSER=false` is now set by
+  `tests/run-automate-tests.sh`, by `tests/common--source.sh` (so a single test run on its own
+  is quiet too), and by the config/config-tui runners whose tests do not source it; the example
+  tests that start a UI booth pass `--no-browser`. `tests/basic/test019--browser-open.sh` unsets
+  it — the default is what that test checks.
+
 ## 0.73.0
 
 - **A booth that serves a UI now opens it in your browser.** The port was printed and left

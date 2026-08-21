@@ -37,7 +37,7 @@ echo
 
 # Test 1: Start booth in daemon mode
 echo "Starting codingbooth in daemon mode..."
-../../../codingbooth --daemon > /dev/null 2>&1 || true
+../../../codingbooth --no-browser --daemon > /dev/null 2>&1 || true
 sleep 2
 
 # Check if booth container is running

@@ -25,6 +25,13 @@ set -euo pipefail
 
 source ../common--source.sh
 
+# Everything else in the suite runs with CB_BROWSER=false, set by the runners and
+# by common--source.sh so a suite never opens windows on whoever started it. This
+# test is the exception: opening by default is what it checks, and an inherited
+# "off" would turn cases 1, 2 and 6 green for the wrong reason. Each case below
+# sets the switch it is testing, so nothing here relies on the ambient value.
+unset CB_BROWSER
+
 function generate_name() {
   local name
   while :; do

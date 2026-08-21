@@ -16,6 +16,10 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Never open the host's browser: a booth that serves a UI does so by default.
+# These tests do not source common--source.sh, which sets it everywhere else.
+export CB_BROWSER=false
+
 VERBOSE=""
 PARALLEL="${PARALLEL:-1}"
 for arg in "$@"; do
