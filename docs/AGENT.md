@@ -523,10 +523,21 @@ build-args = ["--build-arg", "NODE_VERSION=20"]
 
 ## Action: Find Information About the Environment
 
-**Quick overview:** Run `booth--info` to see version, variant, and key paths:
+**Quick overview:** Run `booth--info` to see version, variant, key paths, and how to reach the host:
 ```bash
 booth--info
 ```
+
+**Talking to a service on the host** — a database, an API, a language server running outside the
+booth — needs no tunnel: the host is always reachable at `host.docker.internal`
+(also in `$BOOTH_HOST_NAME`; the host's own network address is in `$BOOTH_HOST_IP`).
+
+```bash
+curl http://host.docker.internal:3000/          # a host service on port 3000
+```
+
+The service must listen on `0.0.0.0`, not only on `127.0.0.1` — a host-local bind is unreachable
+from inside any container. See [BOOTH_EXPOSE.md](BOOTH_EXPOSE.md) for both directions.
 
 **Read setup scripts** to understand paths, env vars, and configuration:
 ```bash

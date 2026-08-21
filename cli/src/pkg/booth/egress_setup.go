@@ -140,6 +140,9 @@ func startEgressNetnsOwner(ctx appctx.AppContext, ownerName, netName string, hos
 		"--cap-add=NET_ADMIN",
 		"--name", ownerName,
 		"--network", netName,
+		// The booth shares this namespace, so the host alias must live here —
+		// docker refuses --add-host on a container that borrows a netns.
+		"--add-host", hostGatewayMapping,
 		"-p", portMapping,
 		"--label", "cb.managed=true",
 		"--label", "cb.role=sidecar",

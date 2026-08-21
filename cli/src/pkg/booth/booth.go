@@ -8,6 +8,7 @@ package booth
 import (
 	"context"
 	"fmt"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -21,6 +22,18 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"golang.org/x/term"
+)
+
+const (
+	// hostGatewayName is the hostname a booth uses to reach the host it runs on.
+	// It is Docker's own convention — Docker Desktop provides it out of the box —
+	// so a command that works in a booth works in any other container too.
+	hostGatewayName = "host.docker.internal"
+
+	// hostGatewayMapping is that name pinned to docker's "host-gateway" magic
+	// value, which the daemon resolves to the host's address on the container
+	// network. Passed as --add-host.
+	hostGatewayMapping = hostGatewayName + ":host-gateway"
 )
 
 type Booth struct {
@@ -379,6 +392,72 @@ func getHostOS() string {
 	}
 }
 
+// getHostIP returns the host's primary IPv4 address — the one a service bound
+// to a real interface answers on, and the one to hand to someone else on the
+// network. Returns "" when the host has no such address, in which case
+// BOOTH_HOST_IP is left unset and host.docker.internal still works.
+func getHostIP() string {
+	if ip := hostIPByRoute(); ip != "" {
+		return ip
+	}
+	return hostIPByInterface()
+}
+
+// hostIPByRoute asks the kernel which source address it would use to reach the
+// outside world. The UDP "dial" is address selection only: no packets leave the
+// machine and no server has to answer — but a firewall or sandbox can still
+// refuse the connect, hence the interface scan behind it.
+func hostIPByRoute() string {
+	conn, err := net.Dial("udp4", "8.8.8.8:80")
+	if err != nil {
+		return ""
+	}
+	defer func() { _ = conn.Close() }()
+
+	addr, ok := conn.LocalAddr().(*net.UDPAddr)
+	if !ok || !isUsableHostIP(addr.IP) {
+		return ""
+	}
+	return addr.IP.String()
+}
+
+// hostIPByInterface picks the first IPv4 address on an interface that is up and
+// is not the loopback — the answer for a host with no default route (an offline
+// laptop still on its LAN, an air-gapped build machine).
+func hostIPByInterface() string {
+	interfaces, err := net.Interfaces()
+	if err != nil {
+		return ""
+	}
+	for _, iface := range interfaces {
+		if iface.Flags&net.FlagUp == 0 || iface.Flags&net.FlagLoopback != 0 {
+			continue
+		}
+		addrs, err := iface.Addrs()
+		if err != nil {
+			continue
+		}
+		for _, addr := range addrs {
+			ipNet, ok := addr.(*net.IPNet)
+			if ok && isUsableHostIP(ipNet.IP) {
+				return ipNet.IP.To4().String()
+			}
+		}
+	}
+	return ""
+}
+
+// isUsableHostIP accepts an IPv4 address that names the host somewhere a
+// container could dial. Loopback names only the host itself, and a link-local
+// 169.254.x.x address is what an interface falls back to when it has no
+// configuration at all — neither is worth reporting as "the host".
+func isUsableHostIP(ip net.IP) bool {
+	if ip == nil || ip.To4() == nil {
+		return false
+	}
+	return !ip.IsLoopback() && !ip.IsLinkLocalUnicast()
+}
+
 func getDindName(ctx appctx.AppContext) string {
 	return ctx.Name() + "-" + strconv.Itoa(ctx.PortNumber()) + "-dind"
 }
@@ -452,6 +531,15 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 		builder.CommonArgs.Append(ilist.NewList[string]("-p", portMapping))
 	}
 
+	// Let the booth reach services running on the host by name. Docker Desktop
+	// resolves host.docker.internal on its own; native Linux does not, so the
+	// alias has to be asked for. Docker rejects --add-host when the network
+	// namespace belongs to another container, so under --dind/--egress the same
+	// flag is set on the sidecar that owns the namespace instead.
+	if !ctx.Dind() && !ctx.Egress() {
+		builder.CommonArgs.Append(ilist.NewList[string]("--add-host", hostGatewayMapping))
+	}
+
 	// Enable TLS reverse proxy when public
 	if ctx.Public() {
 		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_TLS=true"))
@@ -508,6 +596,16 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_ENV_FILE="+ctx.EnvFile()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_UID="+ctx.HostUID()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_GID="+ctx.HostGID()))
+
+	// How to reach the host from inside. The name always works (see --add-host
+	// above); the address is the host's own LAN IP, which is what a service
+	// bound to a specific interface answers on — and what you would hand to
+	// someone else on the network. Absent when the host has no address beyond
+	// its loopback, in which case the name is still the way in.
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_NAME="+hostGatewayName))
+	if hostIP := getHostIP(); hostIP != "" {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_IP="+hostIP))
+	}
 
 	// Idle time monitoring
 	if ctx.IdleTime() > 0 {

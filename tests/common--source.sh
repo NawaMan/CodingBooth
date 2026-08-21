@@ -309,6 +309,7 @@ capture_codingbooth() {
 # - Removes single quotes around Windows paths in -v mounts
 # - Normalizes MSYS paths (/c/Users → C:/Users)
 # - Masks UID/GID values to XXXXX for environment independence
+# - Masks BOOTH_HOST_IP, which is whatever address the host running the test has
 normalize_output() {
     sed -E \
         -e 's/workspace\.exe/workspace/g' \
@@ -320,6 +321,7 @@ normalize_output() {
         -e "s/HOST_GID=[0-9]+/HOST_GID=XXXXX/g" \
         -e "s/HOST_UID:[[:space:]]+[0-9]+/HOST_UID:       XXXXX/g" \
         -e "s/HOST_GID:[[:space:]]+[0-9]+/HOST_GID:       XXXXX/g" \
+        -e "s/BOOTH_HOST_IP=[0-9.]+/BOOTH_HOST_IP=XXXXX/g" \
         -e "s/cb\.created-at=[0-9T:-]+Z/cb.created-at=XXXXX/g"
 }
 
