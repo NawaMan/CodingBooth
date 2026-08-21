@@ -12,6 +12,15 @@ This file contains a list of changes for each released version.
   tests that start a UI booth pass `--no-browser`. `tests/basic/test019--browser-open.sh` unsets
   it — the default is what that test checks.
 
+- **Host-side test scratch files go through `TMPDIR`.** `basic/test012--booth-health.sh` wrote
+  curl's response body to `/tmp/health.$$` by name. Where `/tmp` is not writable — a sandboxed
+  shell, a hardened CI image — curl still fetched the page and still printed its status through
+  `-w`, but exited 23 on the failed write, so the `|| echo "000"` fallback appended to a status
+  already on stdout: `200` became `200000`, every probe missed, and a healthy booth timed out
+  after 90s. The failure then reported `last=` empty, because the variable it printed is only
+  assigned on success. Fixed both, and the same `/tmp`-by-name capture in
+  `complex/test-connect-run-port`.
+
 ## 0.73.0
 
 - **A booth that serves a UI now opens it in your browser.** The port was printed and left

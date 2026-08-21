@@ -15,9 +15,20 @@ NAME="health-test-$RANDOM"
 PORT=""
 LOG="$0.log"
 
+# Scratch files for curl's response bodies. Honour TMPDIR rather than writing to
+# /tmp by name: where /tmp is not writable (a sandboxed shell, a hardened CI
+# image) curl still *fetches* the page and still prints its status through -w,
+# but exits 23 on the failed write. The `|| echo "000"` below then appends to a
+# status that is already on stdout — "200" becomes "200000", every probe misses,
+# and a perfectly healthy booth times out after 90s.
+TMP_DIR="$(mktemp -d "${TMPDIR:-/tmp}/cb-booth-health.XXXXXX")"
+HEALTH_FILE="$TMP_DIR/health"
+INFO_FILE="$TMP_DIR/info"
+
 cleanup() {
   docker stop "$NAME" >/dev/null 2>&1 || true
   docker rm -f "$NAME" >/dev/null 2>&1 || true
+  rm -rf "$TMP_DIR"
 }
 trap cleanup EXIT
 
@@ -57,22 +68,24 @@ INFO_URL="http://127.0.0.1:$PORT/__booth/info"
 
 HEALTH_BODY=""
 HEALTH_CODE=""
+RESP=""
 for i in {1..90}; do
-  RESP=$(curl -s -o /tmp/health.$$ -w '%{http_code}' --max-time 4 "$HEALTH_URL" 2>/dev/null || echo "000")
+  RESP=$(curl -s -o "$HEALTH_FILE" -w '%{http_code}' --max-time 4 "$HEALTH_URL" 2>/dev/null || echo "000")
   if [[ "$RESP" == "200" ]]; then
     HEALTH_CODE="$RESP"
-    HEALTH_BODY=$(cat /tmp/health.$$)
+    HEALTH_BODY=$(cat "$HEALTH_FILE")
     break
   fi
   sleep 1
 done
-rm -f /tmp/health.$$
 
 # Test 1: /__booth/health returns 200
 if [[ "$HEALTH_CODE" == "200" ]]; then
   print_test_result "true" "$0" "1" "/__booth/health returned 200 on port $PORT"
 else
-  print_test_result "false" "$0" "1" "/__booth/health did not reach 200 within timeout (last=$HEALTH_CODE)"
+  # Report the last response, not HEALTH_CODE — that is only ever assigned on
+  # success, so it printed an empty "last=" on exactly the runs that needed it.
+  print_test_result "false" "$0" "1" "/__booth/health did not reach 200 within timeout (last=$RESP)"
   exit 1
 fi
 
@@ -85,9 +98,8 @@ else
 fi
 
 # Test 3: /__booth/info returns 200 JSON
-INFO_CODE=$(curl -s -o /tmp/info.$$ -w '%{http_code}' --max-time 4 "$INFO_URL" 2>/dev/null || echo "000")
-INFO_BODY=$(cat /tmp/info.$$ 2>/dev/null || echo "")
-rm -f /tmp/info.$$
+INFO_CODE=$(curl -s -o "$INFO_FILE" -w '%{http_code}' --max-time 4 "$INFO_URL" 2>/dev/null || echo "000")
+INFO_BODY=$(cat "$INFO_FILE" 2>/dev/null || echo "")
 
 if [[ "$INFO_CODE" == "200" ]]; then
   print_test_result "true" "$0" "3" "/__booth/info returned 200"
