@@ -41,8 +41,15 @@ if [ ! -x /usr/local/go-current/bin/go ]; then
     exit 1
 fi
 
-# Source go profile to set up GOPATH
-source /etc/profile.d/*-cb-go--profile.sh 2>/dev/null || true
+# Source go profile to set up GOPATH.
+# A loop rather than `source <glob>`: an unmatched glob stays literal, and a
+# `source` that cannot find its file is fatal under bash 3.2 before the
+# `|| true` is ever reached. The loop also does the right thing if the glob ever
+# matches more than one profile.
+for go_profile in /etc/profile.d/*-cb-go--profile.sh; do
+    [ -f "$go_profile" ] && source "$go_profile" 2>/dev/null || true
+done
+unset go_profile
 
 # Install packages as coder user so they go to coder's GOPATH.
 #

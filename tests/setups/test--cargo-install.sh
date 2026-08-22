@@ -13,7 +13,7 @@
 # (see docs/REPRODUCIBILITY.md — --locked pins the whole dependency tree).
 #
 # The script requires root and an installed cargo; we satisfy those with
-# fakeroot + a CARGO_BIN override pointing at a stub, so nothing real is built.
+# a faked EUID + a CARGO_BIN override pointing at a stub, so nothing real is built.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -25,17 +25,6 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CARGO_SCRIPT="$REPO_ROOT/variants/base/setups/cargo--install.sh"
 
-# The script guards on EUID==0 (it runs `sudo -u coder`). Run it under fakeroot
-# when we are not already root; skip cleanly if neither is available.
-ROOT_RUN=()
-if [ "$EUID" -ne 0 ]; then
-    if command -v fakeroot >/dev/null 2>&1; then
-        ROOT_RUN=(fakeroot)
-    else
-        echo "SKIP: needs root or fakeroot to satisfy cargo--install.sh's root check"
-        exit 0
-    fi
-fi
 
 # Stub directory: a `sudo` that echoes the command it was asked to run, and a
 # `cargo` that just exists (so the CARGO_BIN presence check passes).

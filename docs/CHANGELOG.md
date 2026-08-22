@@ -4,6 +4,45 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **JetBrains IDEs started through their booth shim were missing the JDK and Python environment.**
+  The starter `jetbrains--setup.sh` generates carried a stray double quote:
+  `source /etc/profile.d/60-cb-jdk--profile.sh"    2>/dev/null || true`. The unbalanced quote glued
+  that line to the next one, so the shim ran a single `source` of a bogus path containing a newline
+  — and `2>/dev/null || true` swallowed the failure. Neither profile was ever loaded, silently,
+  for every IDE launched that way. Both lines are fixed and guarded.
+
+- **The setup-script tests no longer skip on macOS — and eleven of them were skipping.** Each of
+  those tests runs an install/setup script that opens with `[[ $EUID -eq 0 ]] || exit`, and reached
+  for `fakeroot` to satisfy it. macOS ships no `fakeroot`, so all eleven printed `SKIP` and exited
+  0, and the suite still reported itself green — 204 assertions that nobody was running, on a
+  machine where no CI runs them either. Nothing privileged was ever needed: the tests stub `sudo`
+  and the tool binary and assert on the command line the script emits. bash takes `EUID` from the
+  environment when one is present, so `env EUID=0` satisfies the guard with no privilege and no
+  dependency. `fakeroot`'s other trick, faking `chown`, was never used by any of the eleven.
+
+  Clearing the guard exposed six real failures underneath, all of them differences between the
+  bash 5 + GNU userland a booth runs and the bash 3.2 + BSD userland macOS provides:
+
+  - `"${arr[@]}"` on an **empty** array is "unbound" under `set -u` in bash 3.2, which aborted
+    `cargo--install.sh`, `code-extension--install.sh`, `codex-code-extension--setup.sh` and
+    `libs/code-extension-source.sh`. Now written `${arr[@]+"${arr[@]}"}`, the same form
+    `docker-build.sh` already used for this exact reason.
+  - `date +%s%3N` is a GNU extension; BSD `date` copies the letter through, handing JetBrains
+    `…:17873317983N` as a millisecond timestamp. It now falls back to whole seconds ×1000.
+  - `wc -l` output is padded on BSD (`·······1`), and a test compared it as a string.
+
+  The suite now passes 13/13 on both macOS and Linux — the same result on both platforms for the
+  first time.
+
+- **An optional `source` is guarded rather than trusted to fail quietly.** 26 setup scripts wrote
+  `source /etc/profile.d/…  2>/dev/null || true` to mean "load this if it is there". Bash 3.2
+  treats a `source` that cannot find its file as fatal and exits the shell *before* the `|| true`
+  is consulted, so on a Mac host those scripts died where bash 5 sails through. They now test with
+  `-f` first; `go--install.sh`, which sourced a glob, loops over the matches instead. The three
+  scripts that genuinely *require* the JDK profile still source it unguarded, so a missing profile
+  stays a loud failure rather than becoming a silent misconfiguration. The convention is written
+  down in `docs/BOOTH_SETUP.md`.
+
 - **The code-server download is bounded too — the third one of these.** `codeserver--setup.sh`
   handed the whole job to coder's `install.sh`, which fetches the ~224MB `.deb` with a bare
   `curl -#fL -C -`: no connect timeout, no stall detection, no retry. A connection that crawls at a

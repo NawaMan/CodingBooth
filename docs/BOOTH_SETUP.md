@@ -102,6 +102,28 @@ exec /usr/local/bin/real-<thing> "$@"
 - Profile: `chmod 644`
 - Starter: `chmod 755`
 
+**Sourcing a profile that may not be there**
+
+Guard an optional `source` with `-f`. Do **not** rely on `2>/dev/null || true` alone:
+
+```bash
+# Right
+[ -f /etc/profile.d/53-cb-python--profile.sh ] \
+    && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+
+# Wrong — exits the script under bash 3.2, before `|| true` is consulted
+source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+```
+
+Bash 3.2 — what macOS ships — treats a `source` that cannot find its file as fatal and exits the
+shell; bash 5, which every booth runs, carries on and lets `|| true` do its job. The two agree in
+production and disagree the moment a test runs the script on a Mac host, where the profile does not
+exist. The same applies to a glob (`source /etc/profile.d/*-cb-go--profile.sh`): an unmatched glob
+stays literal and is just as fatal, so loop over the matches and `-f` each one.
+
+A profile the script genuinely *requires* is a different case — source it unguarded and let the
+failure be loud (`java-nb-kernel--setup.sh` does this with the JDK profile).
+
 ---
 
 ## Shared helpers

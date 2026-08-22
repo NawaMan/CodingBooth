@@ -41,15 +41,19 @@ install_into_cli() {
     cli_opts=(--no-sandbox --user-data-dir "$vscode_root_data")
   fi
 
+  # ${cli_opts[@]+"..."}: cli_opts is empty for every CLI but root-run `code`,
+  # and under `set -u` bash 3.2 (macOS) treats a plain "${cli_opts[@]}" on an
+  # empty array as unbound and aborts. Booths run bash 5; this shows only when a
+  # test runs the script on a Mac host.
   echo "Installing ${EXT_ID} via ${bin} (extensions dir: ${dir})..."
-  if "$bin" "${cli_opts[@]}" --extensions-dir "$dir" --install-extension "$EXT_ID"; then
+  if "$bin" ${cli_opts[@]+"${cli_opts[@]}"} --extensions-dir "$dir" --install-extension "$EXT_ID"; then
     echo "  ✔ Install command succeeded"
   else
     echo "  ⚠ Install command failed for ${cli}" >&2
     return 1
   fi
 
-  if "$bin" "${cli_opts[@]}" --extensions-dir "$dir" --list-extensions | grep -qx "$EXT_ID"; then
+  if "$bin" ${cli_opts[@]+"${cli_opts[@]}"} --extensions-dir "$dir" --list-extensions | grep -qx "$EXT_ID"; then
     echo "  ✔ Verified: ${EXT_ID}"
     return 0
   fi

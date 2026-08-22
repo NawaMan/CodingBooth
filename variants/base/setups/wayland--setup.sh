@@ -36,7 +36,7 @@ SETUPS_DIR=${SETUPS_DIR:-/opt/codingbooth/setups}
 # Python for shared desktop bits (kernels etc.), mirrors the other desktop setups.
 PY_VERSION=${1:-3.12}
 "${SETUPS_DIR}/python--setup.sh" "${PY_VERSION}"
-source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+[ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 export DEBIAN_FRONTEND=noninteractive
 apt-get update

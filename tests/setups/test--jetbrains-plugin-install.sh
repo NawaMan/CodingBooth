@@ -24,7 +24,7 @@
 #   - an idea.plugins.path already in idea.properties is honoured
 #   - an IDE reached through both /opt/<ide> and /opt/<ide>-<version> is visited once
 #
-# The script requires root; we satisfy that with fakeroot, and point the fake /opt
+# The script requires root; we satisfy that with a faked EUID, and point the fake /opt
 # and the plugin dir at a temp tree so nothing real is touched.
 # -----------------------------------------------------------------------------
 
@@ -45,16 +45,6 @@ for tool in jq unzip; do
     fi
 done
 
-# The script guards on EUID==0; run under fakeroot when not already root.
-ROOT_RUN=()
-if [ "$EUID" -ne 0 ]; then
-    if command -v fakeroot >/dev/null 2>&1; then
-        ROOT_RUN=(fakeroot)
-    else
-        echo "SKIP: needs root or fakeroot to satisfy jetbrains-plugin--install.sh's root check"
-        exit 0
-    fi
-fi
 
 STUB=$(mktemp -d)
 trap "rm -rf $STUB" EXIT

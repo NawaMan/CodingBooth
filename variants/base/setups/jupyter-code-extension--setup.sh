@@ -26,7 +26,13 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
 # ---------------- Load environment from profile.d ----------------
 # These set: PY_STABLE, PY_STABLE_VERSION, PY_SERIES, VENV_SERIES_DIR, PATH tweaks, etc.
-source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+# Guarded with -f rather than relying on `2>/dev/null || true` to swallow a
+# missing file: bash 3.2 — what macOS ships — treats a `source` that cannot find
+# its file as fatal and exits the shell outright, before the `|| true` is ever
+# consulted. Booths run bash 5, where the old form was harmless; the difference
+# only surfaces when a test runs this script on a Mac host.
+[ -f /etc/profile.d/53-cb-python--profile.sh ] \
+    && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 SETUP_LIBS_DIR=${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}
 CODE_EXTENSION_LIB=${CODE_EXTENSION_LIB:-code-extension-source.sh}

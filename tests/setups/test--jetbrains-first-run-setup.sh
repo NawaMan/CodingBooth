@@ -34,15 +34,6 @@ if ! command -v jq >/dev/null 2>&1; then
     exit 0
 fi
 
-ROOT_RUN=()
-if [ "$EUID" -ne 0 ]; then
-    if command -v fakeroot >/dev/null 2>&1; then
-        ROOT_RUN=(fakeroot)
-    else
-        echo "SKIP: needs root or fakeroot to satisfy the script's root check"
-        exit 0
-    fi
-fi
 
 STUB=$(mktemp -d)
 trap "rm -rf $STUB" EXIT

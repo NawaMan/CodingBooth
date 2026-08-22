@@ -47,7 +47,7 @@ fi
 
 
 # ---------------- Source helpful profiles ----------------
-source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+[ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 source /etc/profile.d/60-cb-jdk--profile.sh
 
 # ---------------- Defaults / Tunables ----------------

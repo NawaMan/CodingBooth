@@ -11,7 +11,7 @@
 # error fails the image build of every project that selects the extension without
 # naming packages. Each install script must therefore exit 0 and install nothing.
 #
-# The scripts are run for real, under fakeroot, with every package manager
+# The scripts are run for real, under a faked EUID, with every package manager
 # stubbed by a recorder on PATH. A stub that gets invoked appends to a marker
 # file, so "installed nothing" is asserted directly rather than inferred from the
 # exit code. Nothing real is installed and the host is untouched.
@@ -33,16 +33,6 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SETUPS_DIR="$REPO_ROOT/variants/base/setups"
 
-# The scripts guard on EUID==0. Run under fakeroot when we are not root.
-ROOT_RUN=()
-if [ "$EUID" -ne 0 ]; then
-    if command -v fakeroot >/dev/null 2>&1; then
-        ROOT_RUN=(fakeroot)
-    else
-        echo "SKIP: needs root or fakeroot to satisfy the install scripts' root check"
-        exit 0
-    fi
-fi
 
 STUB=$(mktemp -d)
 MARKER="$STUB/invoked.log"

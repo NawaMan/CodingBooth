@@ -20,7 +20,7 @@
 #   - an install that "succeeds" but never lands is also a hard failure
 #   - no editor in the image is a hard failure, not a silent skip
 #
-# The script requires root; we satisfy that with fakeroot, and point both
+# The script requires root; we satisfy that with a faked EUID, and point both
 # extension dirs at a temp tree so nothing real is touched.
 # -----------------------------------------------------------------------------
 
@@ -34,16 +34,6 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SETUPS_DIR="$REPO_ROOT/variants/base/setups"
 EXT_SCRIPT="$SETUPS_DIR/code-extension--install.sh"
 
-# The script guards on EUID==0; run under fakeroot when not already root.
-ROOT_RUN=()
-if [ "$EUID" -ne 0 ]; then
-    if command -v fakeroot >/dev/null 2>&1; then
-        ROOT_RUN=(fakeroot)
-    else
-        echo "SKIP: needs root or fakeroot to satisfy code-extension--install.sh's root check"
-        exit 0
-    fi
-fi
 
 STUB=$(mktemp -d)
 trap "rm -rf $STUB" EXIT

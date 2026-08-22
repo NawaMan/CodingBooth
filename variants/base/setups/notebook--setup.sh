@@ -26,7 +26,7 @@ STARTER_FILE=/usr/local/bin/start-notebook
 NOTEBOOK_PROFILE_FILE=/etc/profile.d/70-cb-notebook--profile.sh
 
 # Load python env exported by the base setup
-source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+[ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 
 # ---- Jupyter kernel registration tunables (match code-server) ----

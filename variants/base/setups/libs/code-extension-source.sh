@@ -135,15 +135,20 @@ _install_extensions_into() {
       cli_opts=(--no-sandbox --user-data-dir "$vscode_root_data")
     fi
 
+    # cli_opts is empty for every CLI but root-run `code`, and the
+    # ${cli_opts[@]+"..."} form is what makes that safe: under `set -u` bash 3.2
+    # — what macOS ships — a plain "${cli_opts[@]}" on an empty array counts as
+    # an unbound variable and aborts. Booths run bash 5, so this only shows when
+    # a test runs this script on a Mac host.
     echo "Installing extensions via ${cli_bin} (extensions dir: ${dir})..."
     for ext in "${exts[@]}"; do
-      if "$cli_bin" "${cli_opts[@]}" --extensions-dir "$dir" --install-extension "$ext"; then
+      if "$cli_bin" ${cli_opts[@]+"${cli_opts[@]}"} --extensions-dir "$dir" --install-extension "$ext"; then
         echo "  ✔ ${ext}"
       else
         echo "  ⚠ Failed to install: ${ext}" >&2
       fi
 
-      if "$cli_bin" "${cli_opts[@]}" --extensions-dir "$dir" --list-extensions | grep -qx "$ext"; then
+      if "$cli_bin" ${cli_opts[@]+"${cli_opts[@]}"} --extensions-dir "$dir" --list-extensions | grep -qx "$ext"; then
         echo "  ✔ Verified: ${ext}"
       else
         echo "  ⚠ Not found after install: ${ext}" >&2

@@ -21,7 +21,7 @@
 #   - the JDKs are also linked into the seed's ~/.jdks, where the IDE looks by itself
 #   - no IDE, or no JDK, is a skip rather than a failure
 #
-# The script requires root; fakeroot satisfies that, and every path it touches is
+# The script requires root; a faked EUID satisfies that, and every path it touches is
 # redirected into a temp tree.
 # -----------------------------------------------------------------------------
 
@@ -40,15 +40,6 @@ if ! command -v jq >/dev/null 2>&1; then
     exit 0
 fi
 
-ROOT_RUN=()
-if [ "$EUID" -ne 0 ]; then
-    if command -v fakeroot >/dev/null 2>&1; then
-        ROOT_RUN=(fakeroot)
-    else
-        echo "SKIP: needs root or fakeroot to satisfy jetbrains-jdk--setup.sh's root check"
-        exit 0
-    fi
-fi
 
 STUB=$(mktemp -d)
 trap "rm -rf $STUB" EXIT
