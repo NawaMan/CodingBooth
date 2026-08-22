@@ -106,6 +106,13 @@ booth crash / kill -9
 
 The directory contents are emptied rather than the directory itself being deleted and recreated. This keeps any bind mounts pointing to `.booth/.tmp/` intact.
 
+**Clear it the same way if you clear it yourself.** `.booth/.tmp/` is a bind-mount source — booth mounts it writable over the otherwise read-only `.booth/`. Deleting the directory (`rm -rf .booth/.tmp`) and starting a booth immediately afterwards can leave Docker Desktop's file sharing holding a stale handle for that path: the mount silently does not take effect, the container sees the read-only `.booth/` underneath, and the first write inside fails with `Read-only file system`. It is a race, so it shows up as an intermittent failure rather than a reliable one. Empty the contents instead, and the directory keeps its identity:
+
+```bash
+# Instead of: rm -rf .booth/.tmp
+find .booth/.tmp -mindepth 1 -delete
+```
+
 On exit, the contents are cleaned by default. On a crash or forced kill, the startup cleanup acts as a safety net.
 
 ---

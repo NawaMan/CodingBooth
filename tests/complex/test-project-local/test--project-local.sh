@@ -47,7 +47,7 @@ chmod +x .booth/templates/project/localgadget/setups/localgadget--setup.sh
 # template-emitted setups are recreated below.
 rm -f .booth/Boothfile .booth/config.toml .booth/.generated
 rm -f .booth/setups/localgadget--setup.sh .booth/setups/localgadget-widget--setup.sh
-rm -rf .booth/.tmp
+reset_booth_tmp
 
 # --- Step 1: Generate .booth from project-local template + extension -------------
 # Overwrite any prior generated Boothfile/config from earlier runs.
