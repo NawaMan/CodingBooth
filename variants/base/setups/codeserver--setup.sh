@@ -37,9 +37,84 @@ CODESERVER_EXTENSION_DIR=/usr/local/share/code-server/extensions
 PASSWORD="${PASSWORD:-}"  # empty => no password
 
 
+# Install code-server through coder's own install.sh, but fetch the package
+# ourselves first.
+#
+# Their installer downloads the ~230MB .deb with a bare `curl -#fL -C -`: no
+# connect timeout, no stall detection, no retry. A connection that crawls at a
+# few KB/s is therefore never abandoned — it is ridden until GitHub hangs up,
+# which cost one build three minutes to gain 0.2% of the file and then failed
+# the whole image with `curl: (18) Transferred a partial file`.
+#
+# Their fetch() reuses "$CACHE_DIR/<file>" whenever it already exists, so the
+# fix is to put the file there with a download that gives up on a dead
+# connection quickly and resumes on the next attempt. install.sh then prints
+# "+ Reusing …" and goes straight to dpkg and its postinstall.
+install_code_server() {
+  local version arch cache_dir deb url size
+
+  # The version is resolved the way install.sh resolves it — our filename has to
+  # be the one it will look for, or the pre-fetch buys nothing. Best-effort: if
+  # this does not produce a version, fall back to the plain installer, which is
+  # what ran here before. A failed probe must never be worse than not probing.
+  version="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+      --connect-timeout 10 --max-time 30 \
+      https://github.com/coder/code-server/releases/latest 2>/dev/null \
+    | sed -n 's|.*/tag/v||p')" || true
+
+  if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "⚠️  Could not resolve the latest code-server version; using install.sh as-is."
+    curl -fsSL --connect-timeout 10 --retry 3 --retry-delay 5 --retry-all-errors \
+      https://code-server.dev/install.sh | sh
+    return
+  fi
+
+  arch="$(dpkg --print-architecture)"
+  cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/code-server"
+  deb="${cache_dir}/code-server_${version}_${arch}.deb"
+  url="https://github.com/coder/code-server/releases/download/v${version}/code-server_${version}_${arch}.deb"
+
+  mkdir -p "$cache_dir"
+
+  # Name the size first. This step legitimately runs for several minutes, and a
+  # quiet curl makes that indistinguishable from a hang — the natural response
+  # (^C) discards the RUN layer and restarts from zero. Best-effort: a failed
+  # probe just means no size. Lowercase first, since HTTP/2 sends header names
+  # lowercased but HTTP/1.1 sends "Content-Length" and mawk has no IGNORECASE;
+  # keep the last value, as the redirect hops carry a content-length of 0.
+  size="$(curl -fsIL --connect-timeout 10 --max-time 30 "$url" 2>/dev/null \
+    | tr -d '\r' | tr 'A-Z' 'a-z' \
+    | awk '/^content-length:/{n=$2} END{print n}')" || true
+
+  if [[ "$size" =~ ^[0-9]+$ ]] && (( size > 0 )); then
+    echo "Downloading code-server ${version} for ${arch} ($((size / 1024 / 1024)) MB)…"
+  else
+    echo "Downloading code-server ${version} for ${arch}…"
+  fi
+
+  # Start clean so -C - is purely a resume-across-retries mechanism: against a
+  # stale complete file the range request would come back 416 and -f would fail.
+  rm -f "${deb}.incomplete"
+  # --speed-limit/--speed-time abort a transfer that has genuinely died rather
+  # than hanging on it; a slow-but-moving link stays under the threshold and is
+  # left alone. -C - resumes across retries, so a reset partway does not repay
+  # the whole package from zero.
+  curl -fL --progress-bar --connect-timeout 10 \
+    --speed-limit 1024 --speed-time 60 \
+    --retry 5 --retry-delay 5 --retry-all-errors -C - \
+    -o "${deb}.incomplete" "$url"
+  mv "${deb}.incomplete" "$deb"
+
+  # --version pins the installer to the package just fetched, so it reuses the
+  # file instead of resolving "latest" a second time and possibly landing on a
+  # newer release than the one in the cache.
+  curl -fsSL --connect-timeout 10 --retry 3 --retry-delay 5 --retry-all-errors \
+    https://code-server.dev/install.sh | sh -s -- --version "$version"
+}
+
 echo "[1/9] Install code-server…"
 if ! command -v code-server >/dev/null 2>&1; then
-  curl -fsSL https://code-server.dev/install.sh | sh
+  install_code_server
 fi
 command -v code-server >/dev/null
 
