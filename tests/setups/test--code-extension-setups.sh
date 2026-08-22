@@ -39,16 +39,6 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SETUPS_DIR="$REPO_ROOT/variants/base/setups"
 
-# The scripts guard on EUID==0; run under fakeroot when not already root.
-ROOT_RUN=()
-if [ "$EUID" -ne 0 ]; then
-    if command -v fakeroot >/dev/null 2>&1; then
-        ROOT_RUN=(fakeroot)
-    else
-        echo "SKIP: needs root or fakeroot to satisfy the setups' root check"
-        exit 0
-    fi
-fi
 
 STUB=$(mktemp -d)
 trap "rm -rf $STUB" EXIT

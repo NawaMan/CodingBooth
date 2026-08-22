@@ -27,15 +27,6 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 SETUPS_DIR="$REPO_ROOT/variants/base/setups"
 
-ROOT_RUN=()
-if [ "$EUID" -ne 0 ]; then
-    if command -v fakeroot >/dev/null 2>&1; then
-        ROOT_RUN=(fakeroot)
-    else
-        echo "SKIP: needs root or fakeroot to satisfy lombok-idea--setup.sh's root check"
-        exit 0
-    fi
-fi
 
 STUB=$(mktemp -d)
 trap "rm -rf $STUB" EXIT
@@ -69,8 +60,10 @@ OUT=$(${ROOT_RUN[@]+"${ROOT_RUN[@]}"} bash "$STUB/lombok-idea--setup.sh" < /dev/
 check "the setup exits 0" "$([ $RC -eq 0 ] && echo true || echo false)" "$OUT"
 
 ARGC=$(wc -l < "$STUB/argv.txt" 2>/dev/null || echo 0)
+# -eq, not =: BSD wc pads its count ("       1"), so a string compare reports a
+# single argument as a mismatch on macOS while passing on GNU coreutils.
 check "exactly one argument is passed" \
-      "$([ "$ARGC" = "1" ] && echo true || echo false)" \
+      "$([ "$ARGC" -eq 1 ] && echo true || echo false)" \
       "argv: $(cat "$STUB/argv.txt" 2>/dev/null)"
 
 check "that argument is Lombok's xmlId" \

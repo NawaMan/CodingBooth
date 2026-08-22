@@ -31,7 +31,7 @@ SETUPS_DIR=${SETUPS_DIR:-/opt/codingbooth/setups}
 "${SETUPS_DIR}/python--setup.sh" "${PY_VERSION}"
 
 # Load python env exported by the base setup
-source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+[ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # Profile snippet this script will write to (used later)
 PROFILE_FILE="/etc/profile.d/55-cb-desktop-xfce--profile.sh"

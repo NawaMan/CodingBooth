@@ -65,14 +65,20 @@ fi
 # Install crates as coder user so they go to coder's ~/.cargo/bin
 # Explicitly unset CARGO_HOME to use default ~/.cargo
 # A trailing @version pins the crate (translated to cargo's --version flag).
+#
+# The trailing dash in the FLAGS expansion below is load-bearing: with no flags
+# given, FLAGS is an empty array, and under `set -u` bash 3.2 — what macOS ships
+# — counts that as an unbound variable and aborts. Booths run bash 5, where it
+# expands to nothing; the difference only shows when a test runs this script on
+# a Mac host.
 for spec in "${SPECS[@]}"; do
     crate="${spec%@*}"
     if [ "$crate" = "$spec" ]; then
         echo "📦 Installing $crate..."
-        sudo -u coder bash -lc "unset CARGO_HOME; cargo install '$crate' ${FLAGS[*]}"
+        sudo -u coder bash -lc "unset CARGO_HOME; cargo install '$crate' ${FLAGS[*]-}"
     else
         version="${spec##*@}"
         echo "📦 Installing $crate (version $version)..."
-        sudo -u coder bash -lc "unset CARGO_HOME; cargo install '$crate' --version '$version' ${FLAGS[*]}"
+        sudo -u coder bash -lc "unset CARGO_HOME; cargo install '$crate' --version '$version' ${FLAGS[*]-}"
     fi
 done

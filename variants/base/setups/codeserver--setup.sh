@@ -28,7 +28,7 @@ CODESERVER_DEFAULT_PORT="${1:-${CODESERVER_DEFAULT_PORT:-19999}}"
 
 
 # Load python env exported by the base setup
-source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+[ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # Extensions
 CODESERVER_EXTENSION_DIR=/usr/local/share/code-server/extensions
@@ -292,7 +292,7 @@ PORT=${1:-__CODESERVER_DEFAULT_PORT__}
 PASSWORD="${PASSWORD:-}"
 
 # Ensure PATH and /opt/python are active in non-login shells
-source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+[ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # ==== Runtime tunables ====
 # Make venv kernels visible to any Jupyter process

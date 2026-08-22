@@ -24,7 +24,7 @@ echo all > /etc/gcrypt/hwf.deny
 
 # ---------------- Load environment from profile.d ----------------
 # These set: PY_STABLE, PY_STABLE_VERSION, PY_SERIES, VENV_SERIES_DIR, PATH tweaks, etc.
-source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+[ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 PROFILE_FILE="/etc/profile.d/70-cb-vscode-jupyter--profile.sh"
 

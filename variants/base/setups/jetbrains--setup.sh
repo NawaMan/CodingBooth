@@ -92,8 +92,8 @@ if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
 fi
 
 # --- Load booth JDK/Python env if available ---
-source /etc/profile.d/60-cb-jdk--profile.sh    2>/dev/null || true
-source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+[ -f /etc/profile.d/60-cb-jdk--profile.sh    ] && source /etc/profile.d/60-cb-jdk--profile.sh    2>/dev/null || true
+[ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 ARCH_RAW="$(uname -m)"
 case "$ARCH_RAW" in
@@ -259,8 +259,8 @@ cat > "${STARTER_FILE}" <<EOF
 #!/usr/bin/env bash
 set -Eeuo pipefail
 BASE_DIR="\$(cd "\$(dirname "\$0")" && pwd)"
-source /etc/profile.d/60-cb-jdk--profile.sh"    2>/dev/null || true
-source /etc/profile.d/53-cb-python--profile.sh" 2>/dev/null || true
+[ -f /etc/profile.d/60-cb-jdk--profile.sh    ] && source /etc/profile.d/60-cb-jdk--profile.sh    2>/dev/null || true
+[ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 exec "\${BASE_DIR}/bin/${IDE}" "\$@"
 EOF
 chmod 0755 "${STARTER_FILE}"

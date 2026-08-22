@@ -12,7 +12,7 @@
 # a positional argument) and the per-rock splitting of comma lists.
 #
 # The script requires root and an installed luarocks; we satisfy those with
-# fakeroot + a LUA_HOME override pointing at a stub, so nothing real runs.
+# a faked EUID + a LUA_HOME override pointing at a stub, so nothing real runs.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -24,16 +24,6 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 LUAROCKS_SCRIPT="$REPO_ROOT/variants/base/setups/luarocks--install.sh"
 
-# The script guards on EUID==0; run under fakeroot when not already root.
-ROOT_RUN=()
-if [ "$EUID" -ne 0 ]; then
-    if command -v fakeroot >/dev/null 2>&1; then
-        ROOT_RUN=(fakeroot)
-    else
-        echo "SKIP: needs root or fakeroot to satisfy luarocks--install.sh's root check"
-        exit 0
-    fi
-fi
 
 # Stub: a `luarocks` at LUA_HOME/bin/luarocks (the absolute path the script
 # builds) that echoes the command it was asked to run.

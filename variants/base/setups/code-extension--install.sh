@@ -103,11 +103,16 @@ for cli in "${CLIS[@]}"; do
         CLI_OPTS=(--no-sandbox --user-data-dir "$VSCODE_ROOT_DATA")
     fi
 
+    # CLI_OPTS is empty for every CLI but root-run `code`, and the
+    # ${CLI_OPTS[@]+"..."} form is what makes that safe: under `set -u` bash 3.2
+    # — what macOS ships — a plain "${CLI_OPTS[@]}" on an empty array counts as
+    # an unbound variable and aborts. Booths run bash 5, so this only shows when
+    # a test runs this script on a Mac host.
     echo "🧩 Installing extensions via ${CLI_BIN} (extensions dir: ${DIR}) ..."
     for ext in "$@"; do
         [ -n "$ext" ] || continue
 
-        if ! "$CLI_BIN" "${CLI_OPTS[@]}" --extensions-dir "$DIR" --install-extension "$ext"; then
+        if ! "$CLI_BIN" ${CLI_OPTS[@]+"${CLI_OPTS[@]}"} --extensions-dir "$DIR" --install-extension "$ext"; then
             echo "  ❌ Failed to install: ${ext} (via ${cli})" >&2
             FAILED+=("${ext} (${cli})")
             continue
@@ -116,7 +121,7 @@ for cli in "${CLIS[@]}"; do
         # `--install-extension` can report success for an id that never landed, so
         # confirm against the installed list. The list carries no @version suffix.
         ext_id="${ext%@*}"
-        if "$CLI_BIN" "${CLI_OPTS[@]}" --extensions-dir "$DIR" --list-extensions \
+        if "$CLI_BIN" ${CLI_OPTS[@]+"${CLI_OPTS[@]}"} --extensions-dir "$DIR" --list-extensions \
             | grep -qix "$ext_id"; then
             echo "  ✔ ${ext}"
         else

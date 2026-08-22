@@ -26,6 +26,30 @@ export HOST_OS
 # is the thing it tests.
 export CB_BROWSER=false
 
+# How tests/setups/* run an install or setup script that insists on being root.
+#
+# Those scripts open with `[[ $EUID -eq 0 ]] || exit`, because inside a booth
+# they run as root and hand the real work to `sudo -u coder`. A test running one
+# on the host is not root — and does not need to be: it stubs `sudo` and the tool
+# binary, then asserts on the command line the script emits. Nothing privileged
+# is ever attempted, so the guard is the only thing in the way.
+#
+# bash takes EUID from the environment when one is present (checked on the 3.2
+# macOS ships and the 5.2 in the image), so `env EUID=0` satisfies that guard
+# with no privilege at all. It replaces fakeroot, which did the same job by
+# faking uid 0 but is a package macOS does not have — so every one of these
+# tests skipped on a Mac, and the suite still reported itself green.
+#
+# Use at the call site. The +"..." form is required: under bash 3.2, "${arr[@]}"
+# on an *empty* array counts as unbound and `set -u` kills the test.
+#
+#     ${ROOT_RUN[@]+"${ROOT_RUN[@]}"} bash "$SCRIPT" ...
+#
+ROOT_RUN=()
+if [ "$EUID" -ne 0 ]; then
+    ROOT_RUN=(env EUID=0)
+fi
+
 # Opt a test into building against a locally-rebuilt base image instead of the
 # upstream nawaman/codingbooth Hub image. Use this when the test triggers a
 # Boothfile build that relies on a setup-script fix that hasn't shipped to

@@ -120,7 +120,17 @@ done < <(jb_ides)
 # the alternative ships their usage statistics without them choosing to.
 CONSENT_DIR="${HOME_SEED_DIR}/.local/share/JetBrains/consentOptions"
 mkdir -p "$CONSENT_DIR"
-printf 'rsch.send.usage.stat:1.1:0:%s' "$(date +%s%3N)" > "${CONSENT_DIR}/accepted"
+
+# The fourth field is a millisecond timestamp. %3N is a GNU date extension: BSD
+# date does not implement %N and copies the letter through, so `date +%s%3N`
+# yields "1787331798N" there and JetBrains is handed a field it cannot parse.
+# Booths run GNU coreutils, so the fast path is the normal one; the fallback
+# keeps the file well-formed anywhere else, at whole-second resolution.
+CONSENT_STAMP="$(date +%s%3N 2>/dev/null || true)"
+if ! [[ "$CONSENT_STAMP" =~ ^[0-9]+$ ]]; then
+    CONSENT_STAMP="$(date +%s)000"
+fi
+printf 'rsch.send.usage.stat:1.1:0:%s' "$CONSENT_STAMP" > "${CONSENT_DIR}/accepted"
 chmod 0644 "${CONSENT_DIR}/accepted"
 echo "🧩 data sharing: declined (rsch.send.usage.stat)"
 

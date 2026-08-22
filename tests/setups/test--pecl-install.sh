@@ -16,7 +16,7 @@
 # this script used to do, which is why the documented `-version` pin never
 # worked. A name that merely contains a hyphen must survive untouched.
 #
-# The script requires root and an installed pecl; we satisfy those with fakeroot
+# The script requires root and an installed pecl; we satisfy those with a faked EUID
 # plus a PHP_HOME override pointing at the stubs, so nothing real runs.
 # -----------------------------------------------------------------------------
 
@@ -29,16 +29,6 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 PECL_SCRIPT="$REPO_ROOT/variants/base/setups/pecl--install.sh"
 
-# The script guards on EUID==0; run under fakeroot when not already root.
-ROOT_RUN=()
-if [ "$EUID" -ne 0 ]; then
-    if command -v fakeroot >/dev/null 2>&1; then
-        ROOT_RUN=(fakeroot)
-    else
-        echo "SKIP: needs root or fakeroot to satisfy pecl--install.sh's root check"
-        exit 0
-    fi
-fi
 
 STUB=$(mktemp -d)
 trap "rm -rf $STUB" EXIT

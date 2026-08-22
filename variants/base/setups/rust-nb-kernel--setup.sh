@@ -27,7 +27,7 @@ fi
 HOME=/root
 
 # ---------------- Load environment from profile.d ----------------
-source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+[ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # Load Rust/Cargo environment
 [ -f /root/.cargo/env ] && source /root/.cargo/env

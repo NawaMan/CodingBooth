@@ -12,7 +12,7 @@
 # positional argument, not a flag) and comma-list splitting.
 #
 # The script requires root and an installed mix; we satisfy those with
-# fakeroot + an ELIXIR_HOME override pointing at a stub, so nothing real runs.
+# a faked EUID + an ELIXIR_HOME override pointing at a stub, so nothing real runs.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -24,16 +24,6 @@ source ../common--source.sh
 REPO_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 HEX_SCRIPT="$REPO_ROOT/variants/base/setups/hex--install.sh"
 
-# The script guards on EUID==0; run under fakeroot when not already root.
-ROOT_RUN=()
-if [ "$EUID" -ne 0 ]; then
-    if command -v fakeroot >/dev/null 2>&1; then
-        ROOT_RUN=(fakeroot)
-    else
-        echo "SKIP: needs root or fakeroot to satisfy hex--install.sh's root check"
-        exit 0
-    fi
-fi
 
 # Stub: a `mix` (on ELIXIR_HOME/bin, which the script prepends to PATH) that
 # echoes the command it was asked to run.

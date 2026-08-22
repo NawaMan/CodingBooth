@@ -28,7 +28,7 @@ fi
 HOME=/root
 
 # ---------------- Load environment from profile.d ----------------
-source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
+[ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
 # ---------------- Defaults / Tunables ----------------
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"
