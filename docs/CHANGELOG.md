@@ -4,6 +4,28 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The code-server download is bounded too — the third one of these.** `codeserver--setup.sh`
+  handed the whole job to coder's `install.sh`, which fetches the ~224MB `.deb` with a bare
+  `curl -#fL -C -`: no connect timeout, no stall detection, no retry. A connection that crawls at a
+  few KB/s is therefore never abandoned — it is ridden until GitHub hangs up, which cost one build
+  three minutes to gain 0.2% of the file and then failed the whole image with
+  `curl: (18) Transferred a partial file`. Since that curl lives in *their* script, our flags
+  cannot reach it.
+  
+  Their `fetch()` reuses `$CACHE_DIR/<file>` whenever it already exists, so the package is now
+  fetched first, into exactly that path, with the same bounds as the claude-code and JDK downloads:
+  connect timeout, `--speed-limit`/`--speed-time` so a dead connection is dropped in a minute
+  instead of ridden for three, and `--retry` with `-C -` so an interrupted transfer resumes rather
+  than repaying 224MB. `install.sh` then prints `+ Reusing …` and goes straight to `dpkg`. The size
+  is named up front, because a quarter-gigabyte download that prints nothing for fourteen minutes
+  is indistinguishable from a hang — and the natural response, `^C`, discards the layer.
+  
+  The version is resolved first (the same redirect probe `install.sh` uses) so the cached filename
+  matches what it will look for, and `--version` pins it to that release rather than letting it
+  resolve "latest" a second time. A failed probe falls back to the plain installer, so the floor is
+  the old behaviour, never worse. Verified end to end on a slow link: 224MB in fourteen minutes,
+  followed by `+ Reusing ~/.cache/code-server/code-server_4.133.0_arm64.deb`.
+
 - **A booth can reach services on the host now — and `booth--info` says how.** The tunnel story
   was one-directional: `booth--expose` carries a container port out to the host, but a booth that
   wanted to talk to a PostgREST, a database, or a language server running *on* the host had
