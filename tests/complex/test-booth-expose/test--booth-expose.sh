@@ -27,15 +27,15 @@ NAME="test-booth-expose-$$"
 
 cleanup() {
   run_coding_booth remove --force --name "$NAME" >/dev/null 2>&1 || true
-  rm -rf .booth/.tmp
+  reset_booth_tmp
 }
 trap cleanup EXIT
 
 # Ensure clean state
-rm -rf .booth/.tmp
+reset_booth_tmp
 
 # Test 1: session-id is accessible inside container
-ACTUAL=$(run_coding_booth -- cat .booth/.tmp/booth-startup.txt 2>/dev/null)
+ACTUAL=$(run_coding_booth -- cat .booth/.tmp/booth-startup.txt 2>/dev/null) || true
 
 if echo "$ACTUAL" | grep -q "^session-id = "; then
   print_test_result "true" "$0" "1" "session-id accessible inside container"
@@ -46,7 +46,7 @@ else
 fi
 
 # Test 2: Create tcp-tunnels control file inside container and read it back
-ACTUAL=$(run_coding_booth -- 'mkdir -p .booth/.tmp/tcp-tunnels && echo tunnel-test > .booth/.tmp/tcp-tunnels/8080 && cat .booth/.tmp/tcp-tunnels/8080' 2>/dev/null)
+ACTUAL=$(run_coding_booth -- 'mkdir -p .booth/.tmp/tcp-tunnels && echo tunnel-test > .booth/.tmp/tcp-tunnels/8080 && cat .booth/.tmp/tcp-tunnels/8080' 2>/dev/null) || true
 
 if echo "$ACTUAL" | grep -qF 'tunnel-test'; then
   print_test_result "true" "$0" "2" "TCP tunnel control file created and read inside container"
@@ -72,8 +72,10 @@ else
 fi
 
 # Test 4: With --leave-tmp-on-exit, control file survives exit
-rm -rf .booth/.tmp
-run_coding_booth --leave-tmp-on-exit -- 'mkdir -p .booth/.tmp/tcp-tunnels && echo tunnel-3000 > .booth/.tmp/tcp-tunnels/3000' >/dev/null 2>&1
+reset_booth_tmp
+booth_step 4 "booth run writing a control file with --leave-tmp-on-exit" \
+  --leave-tmp-on-exit -- 'mkdir -p .booth/.tmp/tcp-tunnels && echo tunnel-3000 > .booth/.tmp/tcp-tunnels/3000' \
+  || FAILED=$((FAILED + 1))
 
 if [ -f ".booth/.tmp/tcp-tunnels/3000" ]; then
   CONTENT=$(command cat .booth/.tmp/tcp-tunnels/3000)
@@ -92,7 +94,7 @@ else
 fi
 
 # Test 5: socat is available inside the container
-ACTUAL=$(run_coding_booth -- 'command -v socat' 2>/dev/null)
+ACTUAL=$(run_coding_booth -- 'command -v socat' 2>/dev/null) || true
 
 if echo "$ACTUAL" | grep -q "socat"; then
   print_test_result "true" "$0" "5" "socat is available inside container"
@@ -104,11 +106,12 @@ fi
 
 # Test 6: End-to-end tunnel via booth--expose
 # Start a daemon booth with a simple HTTP server, then use booth--expose
-rm -rf .booth/.tmp
+reset_booth_tmp
 TUNNEL_PORT=18686
 
-run_coding_booth --variant base --name "$NAME" --port "$TUNNEL_PORT" --daemon --keep-alive \
-  -- 'sleep 600' >/dev/null 2>&1
+booth_step 6 "daemon booth for the end-to-end tunnel" \
+  --variant base --name "$NAME" --port "$TUNNEL_PORT" --daemon --keep-alive -- 'sleep 600' \
+  || FAILED=$((FAILED + 1))
 
 # Wait for container to be ready
 READY=false

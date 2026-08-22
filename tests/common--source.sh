@@ -50,6 +50,61 @@ if [ "$EUID" -ne 0 ]; then
     ROOT_RUN=(env EUID=0)
 fi
 
+# Clear .booth/.tmp/ between booth runs — the contents, never the directory.
+#
+# `rm -rf .booth/.tmp` looks equivalent and is not. That directory is a bind
+# mount source (booth mounts it writable over the read-only .booth/), and
+# deleting it immediately before `docker run` leaves Docker Desktop's file
+# sharing holding a stale handle for the path: the -v mount silently does not
+# take effect, the container sees the read-only .booth/ underneath instead, and
+# the first write inside fails with "Read-only file system". It is a race, so it
+# reproduces as an intermittent failure — a 2-second pause between the delete
+# and the run is enough to hide it again.
+#
+# Booth itself never removes this directory: PrepareBoothTmp empties it at start
+# and cleanupBoothTmp empties it at exit, both leaving the directory in place.
+# Tests should clear it the same way the product does.
+#
+# Usage (from a test's own project directory):
+#     reset_booth_tmp            # ./.booth/.tmp
+#     reset_booth_tmp "$DIR"     # $DIR/.booth/.tmp
+reset_booth_tmp() {
+  local base="${1:-.}"
+  local tmp_dir="${base}/.booth/.tmp"
+  [ -d "${base}/.booth" ] || return 0
+  mkdir -p "$tmp_dir"
+  find "$tmp_dir" -mindepth 1 -delete 2>/dev/null || true
+  return 0
+}
+
+# Run a booth whose output the test does not assert on — a setup step rather
+# than a measurement.
+#
+# The tempting form is `run_coding_booth … >/dev/null 2>&1`, and it fails badly:
+# under `set -euo pipefail` a booth that exits non-zero kills the script on that
+# line, with its diagnosis already discarded down /dev/null. What the operator
+# sees is every test *before* that point printing ✅ and the script exiting 1 —
+# "all tests passed and the test failed" — with no clue which line died.
+#
+# This reports the failure as a failed test, with the booth's own output, and
+# lets the caller decide whether to continue.
+#
+# Usage:
+#     booth_step 4 "booth run with --leave-tmp-on-exit" --leave-tmp-on-exit -- 'cmd' \
+#         || FAILED=$((FAILED + 1))
+booth_step() {
+  local num="$1" desc="$2"
+  shift 2
+  local out rc=0
+  out="$(run_coding_booth "$@" 2>&1)" || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    print_test_result "false" "$0" "$num" "$desc (booth exited $rc)"
+    printf '%s\n' "$out" | tail -20 | sed 's/^/  /'
+    return 1
+  fi
+  return 0
+}
+
 # Opt a test into building against a locally-rebuilt base image instead of the
 # upstream nawaman/codingbooth Hub image. Use this when the test triggers a
 # Boothfile build that relies on a setup-script fix that hasn't shipped to

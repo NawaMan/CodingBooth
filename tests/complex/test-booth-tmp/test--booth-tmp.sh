@@ -26,10 +26,10 @@ source ../../common--source.sh
 FAILED=0
 
 # Ensure clean state
-rm -rf .booth/.tmp
+reset_booth_tmp
 
 # Test 1: .booth/.tmp/booth-startup.txt is created on booth start
-ACTUAL=$(run_coding_booth -- cat .booth/.tmp/booth-startup.txt 2>/dev/null)
+ACTUAL=$(run_coding_booth -- cat .booth/.tmp/booth-startup.txt 2>/dev/null) || true
 
 if echo "$ACTUAL" | grep -q "^started-at = "; then
   print_test_result "true" "$0" "1" "booth-startup.txt contains started-at"
@@ -66,8 +66,10 @@ else
 fi
 
 # Test 4: --leave-tmp-on-exit preserves .booth/.tmp/
-rm -rf .booth/.tmp
-run_coding_booth --leave-tmp-on-exit -- echo "leave-tmp-test" >/dev/null 2>&1
+reset_booth_tmp
+booth_step 4 "booth run with --leave-tmp-on-exit" \
+  --leave-tmp-on-exit -- echo "leave-tmp-test" \
+  || FAILED=$((FAILED + 1))
 
 if [ -f ".booth/.tmp/booth-startup.txt" ]; then
   print_test_result "true" "$0" "4" "--leave-tmp-on-exit preserves booth-startup.txt"
@@ -80,7 +82,7 @@ fi
 
 # Test 5: Next start cleans up leftover .booth/.tmp/ from previous run
 # (The .booth/.tmp/ from test 4 should still be present)
-ACTUAL=$(run_coding_booth -- cat .booth/.tmp/booth-startup.txt 2>/dev/null)
+ACTUAL=$(run_coding_booth -- cat .booth/.tmp/booth-startup.txt 2>/dev/null) || true
 
 # After this run exits, .booth/.tmp/ should be cleaned again (no --leave-tmp-on-exit)
 if [ -d ".booth/.tmp" ]; then
@@ -98,11 +100,13 @@ fi
 
 # Test 6: --keep-tmp-on-start preserves leftover files from previous session
 # First, create a leftover file using --leave-tmp-on-exit
-rm -rf .booth/.tmp
-run_coding_booth --leave-tmp-on-exit -- 'echo previous-session > .booth/.tmp/leftover.txt' >/dev/null 2>&1
+reset_booth_tmp
+booth_step 5 "booth run seeding a leftover file" \
+  --leave-tmp-on-exit -- 'echo previous-session > .booth/.tmp/leftover.txt' \
+  || FAILED=$((FAILED + 1))
 
 # Now start again with --keep-tmp-on-start — leftover.txt should survive
-ACTUAL=$(run_coding_booth --keep-tmp-on-start --leave-tmp-on-exit -- cat .booth/.tmp/leftover.txt 2>/dev/null)
+ACTUAL=$(run_coding_booth --keep-tmp-on-start --leave-tmp-on-exit -- cat .booth/.tmp/leftover.txt 2>/dev/null) || true
 
 if echo "$ACTUAL" | grep -qF "previous-session"; then
   print_test_result "true" "$0" "6" "--keep-tmp-on-start preserves leftover files"
@@ -121,6 +125,6 @@ else
 fi
 
 # Cleanup
-rm -rf .booth/.tmp
+reset_booth_tmp
 
 exit $FAILED
