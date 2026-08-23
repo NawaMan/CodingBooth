@@ -67,7 +67,7 @@ trap cleanup EXIT
     --templates-path "$REPO_ROOT/templates" >/dev/null 2>&1
 
 # Test 1: the code directory is stamped trusted
-ACTUAL=$(run_coding_booth -- 'jq -r ".projects[\"/home/coder/code\"].hasTrustDialogAccepted" ~/.claude.json' 2>/dev/null | tr -d '\r\n')
+ACTUAL=$(run_coding_booth -- 'jq -r ".projects[\"/home/coder/code\"].hasTrustDialogAccepted" ~/.claude.json' 2>/dev/null | tr -d '\r\n') || true
 
 if [[ "$ACTUAL" == "true" ]]; then
   print_test_result "true" "$0" "1" "code directory stamped trusted"
@@ -80,7 +80,7 @@ fi
 
 # Test 2: idempotent — the stamp is re-applied on every start, so a second run is
 # still trusted even though the seeded .claude.json arrives fresh from the host.
-ACTUAL=$(run_coding_booth -- 'jq -r ".projects[\"/home/coder/code\"].hasTrustDialogAccepted" ~/.claude.json' 2>/dev/null | tr -d '\r\n')
+ACTUAL=$(run_coding_booth -- 'jq -r ".projects[\"/home/coder/code\"].hasTrustDialogAccepted" ~/.claude.json' 2>/dev/null | tr -d '\r\n') || true
 
 if [[ "$ACTUAL" == "true" ]]; then
   print_test_result "true" "$0" "2" "still trusted on a second start"
@@ -101,7 +101,8 @@ mkdir -p .booth/cache/home/coder
 echo '{"cacheSentinel":true}' > .booth/cache/home/coder/.claude.json
 echo "cache/" > .booth/.gitignore
 
-run_coding_booth -- 'true' >/dev/null 2>&1
+booth_step 3 "booth run with .claude.json as a cache mount" -- 'true' \
+  || FAILED=$((FAILED + 1))
 ACTUAL=$(cat .booth/cache/home/coder/.claude.json | tr -d '\r\n')
 EXPECTED='{"cacheSentinel":true}'
 
