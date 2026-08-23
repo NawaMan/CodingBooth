@@ -70,6 +70,54 @@ This file contains a list of changes for each released version.
   build, redirected stderr — since the one case `go test` cannot exercise is the one where the line
   is drawn.
 
+- **A quiet test suite no longer looks like a hung one either.** The same problem, one level up:
+  three runners have long stretches where they print nothing at all.
+  `tests/config/run-all-tests.sh` holds a parallel test's output back until it finishes;
+  `tests/config-tui/run-all-tests.sh` waits on a VHS recording — ttyd, a headless browser, then an
+  encode; and `examples/workspaces/run-example-tests.sh` sends every example to `.<example>.log` and
+  then blocks on `wait`, which for an example that builds a booth image from scratch can be fifteen
+  minutes of a completely still terminal between "Started example" and the summary table.
+
+  Each now draws one line, in place, and erases it before anything else is printed:
+
+  ```
+  Started example: django-example (pid: 54120)
+  ⠹ 1 running · django-example 6m02s  — #8 184.3 Collecting numpy
+  ```
+
+  The new `tests/progress--source.sh` is the shared piece — `progress_draw`, `progress_clear`,
+  `progress_elapsed`, `progress_tail` — and it follows the same rules as the CLI's build line
+  deliberately: drawn on the controlling terminal rather than stdout, so a captured log or a CI
+  transcript is byte-for-byte what it was; nothing drawn for the first second, so a suite of fast
+  tests does not flicker; and `CB_NO_TEST_PROGRESS=1` to turn it off. Where the runner has one, the
+  detail after the em dash is the last line of the busiest test's log — the build step it is sitting
+  on, which is the actual answer to "is this stuck?".
+
+  `tests/config/test98-suite-progress-line.sh` pins the two failures that would otherwise go
+  unnoticed: that an inactive line writes nothing at all — a stray escape code in a captured log is
+  invisible until it corrupts a fixture comparison — and that what is drawn is always erased.
+
+  With no terminal nothing is drawn and the config runner keeps printing its `--heartbeat` report,
+  which is the only signal a CI log ever had. And because two writers on one line is garbage, a
+  runner that owns the terminal line runs its children with `CB_NO_BUILD_PROGRESS=1`: the booth
+  build underneath stays silent and is reported through the line instead. The complex suite is
+  unchanged — it streams each test live and draws nothing itself, so booth's own build line is what
+  shows there.
+
+- **The config suite can be narrowed, and `--verbose` no longer eats its own log.** 95 tests is a
+  long way to go to re-check one, so the runner takes `--only <glob>` (repeatable), `--jobs N`, and
+  `--heartbeat SECS`, and `--help` now lists them.
+
+  `--verbose` also stopped silencing the image build: on a run that is sitting on one, the build is
+  the only thing worth showing, and it is what the operator asked for by typing the flag.
+
+  The dangerous one was quieter. A test's `finally` cats its own log back out on a `--verbose`
+  failure, and the runner used to capture that same test's console output into the same file —
+  `cat file >> file`, which never reaches EOF. One `--verbose` run of a failing test grew a 362GB
+  log and killed bash with an xrealloc overflow. The runner now captures into `out--<name>.log`,
+  kept separate from the test's own `log--<name>.log`, and the cat goes through a snapshot so the
+  same mistake cannot be made by hand either.
+
 - **JetBrains IDEs started through their booth shim were missing the JDK and Python environment.**
   The starter `jetbrains--setup.sh` generates carried a stray double quote:
   `source /etc/profile.d/60-cb-jdk--profile.sh"    2>/dev/null || true`. The unbalanced quote glued
