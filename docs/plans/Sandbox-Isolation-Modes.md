@@ -48,10 +48,11 @@ needs a rework — hence largest effort and lowest priority.
 
 ## Why `sbx` and `kata` are experimental
 
-- **`sbx`** — pre-1.0 (`v0.33.0`, Jun 2026) despite the "GA" framing; actively breaking its CLI
-  (`sbx run <name>` → `sbx run --name <name>`); still fixing core daemon hangs. Since the
-  integration shells out to that CLI, upstream breakage breaks us. Also: don't bundle the binary
-  (proprietary, no redistribution grant) — detect + delegate only.
+- **`sbx`** — pre-1.0 (`v0.39.0`, Aug 2026) despite the "GA" framing; actively breaking its CLI
+  (`sbx run <name>` → `sbx run --name <name>`, `sbx policy set-default` → `sbx policy init`); still
+  fixing core daemon hangs. Six releases landed between v0.33.0 and v0.39.0 without reaching 1.0.
+  Since the integration shells out to that CLI, upstream breakage breaks us. Also: don't bundle the
+  binary (proprietary, no redistribution grant) — detect + delegate only.
 - **`kata`** — the mechanism is mature, but *our* integration (KVM detection + VM networking) is
   unproven. Experimental until validated.
 
@@ -78,6 +79,13 @@ modes) or swaps the launcher (sbx). Reuses the `docker` package for runtime mode
   real feature unlock with no microVM required.
 - **Allowlist as shared source of truth**: the `--egress` allowlist could feed both Envoy (container
   mode) and a microVM/sandbox network policy — one `allowlist.txt`, multiple enforcement backends.
+- **sbx credentials are not environment variables** (since sbx v0.35.0): sbx used to pick up keys
+  like `ANTHROPIC_API_KEY` from the host environment and inject them; it no longer does, and
+  authenticates only from its own keychain or OAuth. A booth passes credentials exactly the way sbx
+  stopped accepting, so delegating to it would silently leave the agent unauthenticated. Whatever
+  `SetupSandbox` does for sbx has to reach the keychain — `sbx secret import` — which makes
+  credentials part of the integration rather than something inherited for free. This does not
+  affect the runtime modes, where the container is still ours and `-e` still works.
 
 ## Plan
 
