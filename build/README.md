@@ -102,3 +102,14 @@ Public key for verifying Docker image signatures. This is used to verify that pu
 # Verify an image signature
 cosign verify --key ./build/cosign.pub nawaman/codingbooth:base-latest
 ```
+
+Signing happens in the merge step of `Publish docker images`, once per multi-arch tag, and is
+skipped for `--rc` versions by design — a pre-release image is deliberately unsigned.
+
+**Releases up to and including 0.74.0 are not signed.** `docker-build.sh` passed
+`cosign sign --upload=false`, which computes a signature and never uploads it, so the command above
+answered `no signatures found` for every image published before that was fixed. Releases from
+0.75.0 on sign themselves; an already-published release is signed retroactively by dispatching the
+`Sign published images` workflow with its version. That attaches signatures to the existing digests
+— nothing is rebuilt and no image changes, because a signature is a separate `sha256-<digest>.sig`
+artifact stored alongside the image it refers to.

@@ -1,0 +1,214 @@
+# Signs Docker images that are ALREADY published, without rebuilding them.
+#
+# Why this exists: `docker-build.sh` ran `cosign sign --upload=false` from its
+# first commit, which computes a signature and then throws it away. So every
+# release up to and including 0.74.0 published unsigned images while logging
+# that it signed them, and the command build/README.md documents —
+#
+#     cosign verify --key ./build/cosign.pub nawaman/codingbooth:base-latest
+#
+# — answered "no signatures found". The flag is gone now, so releases from
+# 0.75.0 on sign themselves; this workflow is how the ones already out there get
+# fixed.
+#
+# Nothing is rebuilt and no image changes. A cosign signature is a separate
+# artifact stored at `sha256-<digest>.sig` beside the image it refers to, so
+# signing an existing digest only adds that tag. The images keep the exact
+# bytes, digests and tags they already have.
+#
+# It is also the cheapest way to prove the credential path works. Signing is the
+# one step of a release that has never actually run, and finding out that the
+# Docker Hub token cannot write a signature tag is much better here than in the
+# middle of cutting the next release.
+#
+# Triggers on: manual dispatch only.
+name: Sign published images
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Released version to sign, e.g. 0.74.0 (must be non-rc and already published)'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  sign:
+    name: Sign published images
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+
+      # Same rule the publish workflow enforces, for the same reason:
+      # docker-build.sh deliberately does not sign --rc versions, so signing one
+      # here would quietly contradict that policy rather than complete it.
+      - name: Reject pre-release (--rc) versions
+        run: |
+          set -euo pipefail
+          VERSION='${{ inputs.version }}'
+          echo "requested: $VERSION"
+          if [[ "$VERSION" =~ --rc([0-9]+)?$ ]]; then
+            echo "::error::Refusing to sign pre-release version '$VERSION'. Released images only; --rc builds are deliberately unsigned."
+            exit 1
+          fi
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::'$VERSION' is not an X.Y.Z version."
+            exit 1
+          fi
+
+      - name: Log in to Docker Hub
+        run: |
+          set -euo pipefail
+          echo "${{ secrets.DOCKERHUB_TOKEN }}" \
+            | docker login -u "${{ secrets.DOCKERHUB_USERNAME }}" --password-stdin
+
+      - name: Sign each published variant
+        env:
+          COSIGN_KEY:      ${{ secrets.COSIGN_KEY }}
+          COSIGN_PASSWORD: ${{ secrets.COSIGN_PASSWORD }}
+          VERSION:         ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+
+          IMAGE="nawaman/codingbooth"
+
+          # Kept in step with the matrices in publish-docker-images.yaml, which
+          # lists the six non-base variants twice (build and merge). This is a
+          # third copy of that set: if a variant is ever added there and not
+          # here, it silently goes unsigned.
+          VARIANTS=(base notebook codeserver desktop-xfce desktop-kde desktop-lxqt desktop-wayland)
+
+          summary() { echo "$*" >> "$GITHUB_STEP_SUMMARY"; }
+
+          # resolve_digest <ref> — prints the digest; 0 found, 1 absent, 2 gave up.
+          #
+          # A throttled registry and a missing tag look identical from the
+          # outside: `imagetools inspect` exits 1 with empty stdout for both.
+          # Reporting a 429 as "not published" would be a confident wrong answer
+          # about whether a release exists, so the two are told apart by what the
+          # registry actually said, and transients are retried. Docker Hub 429s
+          # readily — this was found by rate-limiting a test run into that state.
+          #
+          # `imagetools inspect` rather than `cosign triangulate`: triangulate
+          # does the same job but is deprecated in cosign v3, and cosign-installer
+          # tracks the latest release, so it could disappear without warning.
+          resolve_digest() {
+            local ref="$1" out attempt=1
+            while (( attempt <= 4 )); do
+              if out="$(docker buildx imagetools inspect "$ref" --format '{{.Manifest.Digest}}' 2>&1)"; then
+                printf '%s' "$out"
+                return 0
+              fi
+              if grep -qEi '429|Too Many Requests|50[0-9]|timeout|temporarily|connection reset|EOF' <<<"$out"; then
+                echo "  transient registry error (attempt ${attempt}/4): $(head -1 <<<"$out")" >&2
+                sleep $(( attempt * 10 ))
+                attempt=$(( attempt + 1 ))
+                continue
+              fi
+              return 1
+            done
+            return 2
+          }
+
+          summary "## Signing \`${IMAGE}\` @ ${VERSION}"
+          summary ""
+          summary "| variant | digest | result |"
+          summary "|---|---|---|"
+
+          failed=0
+          declare -a SIGNED_SHAS=()
+
+          for variant in "${VARIANTS[@]}"; do
+            ref="${IMAGE}:${variant}-${VERSION}"
+            echo "::group::${ref}"
+
+            # Pin the signature to a digest rather than a tag: a digest cannot be
+            # re-pointed underneath us, and it is what the summary reports anyway.
+            rc=0
+            sha="$(resolve_digest "$ref")" || rc=$?
+            if (( rc == 1 )); then
+              echo "::error::${ref} is not published."
+              summary "| \`${variant}\` | — | ❌ not published |"
+              failed=1; SIGNED_SHAS+=(""); echo "::endgroup::"; continue
+            elif (( rc == 2 )); then
+              echo "::error::${ref}: registry kept returning transient errors; could not check."
+              summary "| \`${variant}\` | — | ⚠️ registry unreachable |"
+              failed=1; SIGNED_SHAS+=(""); echo "::endgroup::"; continue
+            fi
+
+            digest="${IMAGE}@${sha}"
+            SIGNED_SHAS+=("$sha")
+            echo "digest: ${digest}"
+
+            # Re-runs must be safe. A second `cosign sign` appends another
+            # signature layer rather than failing, so an already-verifiable image
+            # is left alone instead of accumulating duplicates.
+            if cosign verify --key ./build/cosign.pub "$digest" >/dev/null 2>&1; then
+              echo "already signed — skipping"
+              summary "| \`${variant}\` | \`${sha}\` | ➖ already signed |"
+              echo "::endgroup::"; continue
+            fi
+
+            if ! cosign sign --yes --key env://COSIGN_KEY "$digest"; then
+              echo "::error::cosign sign failed for ${ref}"
+              summary "| \`${variant}\` | \`${sha}\` | ❌ sign failed |"
+              failed=1; echo "::endgroup::"; continue
+            fi
+
+            # Verify with the public key that ships in the repo — the same command
+            # build/README.md tells users to run. Signing without checking the
+            # result is how this problem went unnoticed in the first place.
+            if cosign verify --key ./build/cosign.pub "$digest" >/dev/null 2>&1; then
+              echo "signed and verified"
+              summary "| \`${variant}\` | \`${sha}\` | ✅ signed |"
+            else
+              echo "::error::${ref} was signed but does not verify against build/cosign.pub"
+              summary "| \`${variant}\` | \`${sha}\` | ❌ signed, fails verify |"
+              failed=1
+            fi
+
+            echo "::endgroup::"
+          done
+
+          # Coverage of the -latest tags.
+          #
+          # A signature is attached to a digest, so every tag pointing at that
+          # digest is covered by the one signature. When -latest still points at
+          # this release it is covered; when it has moved on to a later version,
+          # that is reported rather than treated as a failure. Folded into this
+          # step because it reuses resolve_digest, and a bash function does not
+          # survive a step boundary.
+          echo "::group::-latest coverage"
+          summary ""
+          summary "### \`-latest\` tags"
+          summary ""
+
+          for i in "${!VARIANTS[@]}"; do
+            variant="${VARIANTS[$i]}"
+            versioned="${SIGNED_SHAS[$i]}"
+            latest="$(resolve_digest "${IMAGE}:${variant}-latest" || true)"
+
+            if [[ -z "$versioned" ]]; then
+              summary "- \`${variant}-latest\` — skipped (${VERSION} was not signed)"
+            elif [[ -z "$latest" ]]; then
+              summary "- \`${variant}-latest\` — not published"
+            elif [[ "$latest" == "$versioned" ]]; then
+              summary "- \`${variant}-latest\` — same digest as ${VERSION}, covered ✅"
+            else
+              summary "- \`${variant}-latest\` — points at a different digest (\`${latest}\`), **not covered by this run**"
+            fi
+          done
+          echo "::endgroup::"
+
+          summary ""
+          if (( failed )); then
+            summary "**Some variants were not signed — see the log.**"
+            exit 1
+          fi
+          summary "All ${#VARIANTS[@]} variants verify against \`build/cosign.pub\`."
