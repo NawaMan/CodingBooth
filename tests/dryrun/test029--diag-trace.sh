@@ -88,7 +88,8 @@ fi
 # Test 5: it stays opt-in — nothing is written when CB_DIAG_LOG is unset.
 unset CB_DIAG_LOG
 : >"$DIAG_LOG"
-run_coding_booth version >/dev/null 2>&1
+booth_step 5 "booth version run with CB_DIAG_LOG unset" version \
+    || FAILED=$((FAILED + 1))
 if [[ ! -s "$DIAG_LOG" ]]; then
     print_test_result "true" "$0" "5" "no trace is written when CB_DIAG_LOG is unset"
 else
