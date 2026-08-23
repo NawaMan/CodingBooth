@@ -126,7 +126,7 @@ IMAGE SELECTION (precedence: --image > --dockerfile > --boothfile > prebuilt):
 
 BUILD OPTIONS (only when using --dockerfile):
   --build-arg <KEY=VAL>  Add a Docker build-arg (repeatable)
-  --silence-build        Hide build progress; show output only on failure
+  --silence-build        Hide build output; show a status line, log on failure
   NOTE: Build args are ignored when using prebuilt images or --image.
 
 RUNTIME OPTIONS:
@@ -242,7 +242,7 @@ IMAGE SELECTION (precedence: --image > --dockerfile > --boothfile > prebuilt):
 
 BUILD OPTIONS (only with --dockerfile):
   --build-arg <KEY=VAL>  Add a Docker build-arg (repeatable)
-  --silence-build        Hide build progress; show output only on failure
+  --silence-build        Hide build output; show a status line, log on failure
 
 RUNTIME OPTIONS:
   --name <container>     Container name (default: inferred from code directory)
@@ -404,7 +404,7 @@ OPTIONS:
   --code <path>           Project directory (default: current directory)
   --variant <variant>     Override variant from config
   --version <version>     Override CodingBooth version from config
-  --silence-build         Hide build progress; show output only on failure
+  --silence-build         Hide build output; show a status line, log on failure
   --verbose               Show detailed output
   --dryrun                Print docker commands without executing
 

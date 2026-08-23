@@ -69,12 +69,22 @@ func DockerBuild(flags DockerFlags, args ilist.List[ilist.List[string]]) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 
+	// stderr still lands in the buffer verbatim for the failure path; progress
+	// reads it on the way past to draw one transient line on the terminal.
+	// Deferred LIFO: the line is erased first, and only then is a terminal that
+	// buildProgressOut had to open for it handed back.
+	progressOut, releaseProgressOut := buildProgressOut()
+	defer releaseProgressOut()
+
 	var stderrBuf bytes.Buffer
-	cmd.Stderr = &stderrBuf
+	progress := newBuildProgress(&stderrBuf, progressOut)
+	defer progress.Close()
+	cmd.Stderr = progress
 
 	// Run the build
 	if err := cmd.Run(); err != nil {
-		// Build failed - display captured stderr
+		// Build failed - wipe the status line, then display captured stderr
+		progress.Close()
 		fmt.Fprintln(os.Stderr)
 		fmt.Fprintln(os.Stderr, "❌ Docker build failed!")
 		fmt.Fprintln(os.Stderr, "---- Build output ----")
@@ -87,6 +97,8 @@ func DockerBuild(flags DockerFlags, args ilist.List[ilist.List[string]]) error {
 		return fmt.Errorf("docker build failed: %w", err)
 	}
 
-	// Build succeeded - stderr is discarded
+	// Build succeeded - the status line is wiped and stderr is discarded
+	progress.Close()
+
 	return nil
 }

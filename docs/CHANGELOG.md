@@ -26,6 +26,50 @@ This file contains a list of changes for each released version.
   it lists, the way the real one does, and a second case asserts that an id which never lands still
   warns — loosening the match must not make the verification vacuous.
 
+- **A silenced build no longer looks like a hung terminal.** `--silence-build` hides BuildKit's
+  output so a booth launch is not buried under it, but a step can be quiet for a very long time. On
+  a base build, `RUN codeserver--setup.sh` spends about eight minutes inside one 224 MB `curl`
+  without printing a byte, and `RUN vscode--setup.sh` another ten on pip wheels — eighteen minutes
+  of a motionless terminal, which is indistinguishable from a hang. The complex test suite silences
+  every build, so it reads as stuck at exactly that point.
+
+  A silenced build now draws one line, in place, and erases it when the build ends:
+
+  ```
+  ⠹ 7m29s  [3/6] RUN codeserver--setup.sh  — Downloading code-server 4.133.0 for arm64 (224 MB)…
+  ```
+
+  The step being built, how long that step has been running, and its most recent output line. The
+  clock is driven by a ticker rather than by arriving output, so it keeps moving through the silent
+  stretch that made this necessary, and a `curl` progress meter — one `\r`-rewritten line that can
+  reach megabytes before its newline — leaves the last real message standing instead of scrolling
+  garbage. Nothing survives the build: the scrollback stays as clean as it was, and the full log is
+  still printed verbatim on failure.
+
+  The line follows the terminal rather than stderr, which is what makes it reach the place that
+  needed it most. A complex test runs `codingbooth --silence-build … 2>/dev/null`, and the suite
+  pipes each test through `tee` — stderr is never a terminal there, so a line drawn on stderr would
+  have gone to /dev/null and the suite would have kept looking hung. When stderr is redirected the
+  line is drawn on the controlling terminal instead:
+
+  ```
+  --- Running: test-boothfile-conda ---
+  === Test: Boothfile Conda Installation ===
+  ⠹ 3m18s  [4/7] RUN conda--setup.sh  — Preparing transaction: ...done
+  ```
+
+  and the ✅ lines land on it once the build is over, exactly as they do today.
+
+  This is safe because of what the line is: transient, and on a stream nobody is capturing. The
+  redirect still receives byte-for-byte what it received before — a captured log, a `CB_DIAG_LOG`
+  trace, an expected-output fixture, a diff. What it needs is somebody watching, so it is drawn only
+  while stdin or stdout is still a terminal: a daemonised run, a cron job, or CI has none and stays
+  as silent as before, and `CB_NO_BUILD_PROGRESS=1` turns it off on a terminal too.
+
+  `tests/manual/run-build-progress-manual-test.sh` shows all three paths — quiet build, failed
+  build, redirected stderr — since the one case `go test` cannot exercise is the one where the line
+  is drawn.
+
 - **JetBrains IDEs started through their booth shim were missing the JDK and Python environment.**
   The starter `jetbrains--setup.sh` generates carried a stray double quote:
   `source /etc/profile.d/60-cb-jdk--profile.sh"    2>/dev/null || true`. The unbalanced quote glued
