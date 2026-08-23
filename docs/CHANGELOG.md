@@ -4,6 +4,8 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+## 0.74.0
+
 - **The Kafka install looked like a dead build for twenty-four minutes.** `test-boothfile-kafka`
   sat at one line, and the line said the download had failed:
 
