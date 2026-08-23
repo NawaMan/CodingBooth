@@ -503,6 +503,12 @@ SignImages() {
     return 0
   fi
 
+  # The signature is uploaded to the registry, which is the whole point: it lands
+  # as a `sha256-<digest>.sig` tag beside the image, and that is what
+  # `cosign verify --key ./build/cosign.pub <image>` reads (see build/README.md).
+  # This ran with `--upload=false` from the first commit of this script, so every
+  # release logged "signing", signed nothing anyone could reach, and the documented
+  # verify command answered "no signatures found".
   Log "Cosign: signing the following tags (cosign will resolve digests):"
   local tag
   for tag in "${tags[@]}"; do
@@ -513,7 +519,7 @@ SignImages() {
     if [[ "${VERBOSE:-false}" == "true" ]]; then
       Log "Cosign: signing tag ${tag} with key ${COSIGN_KEY_REF}"
       COSIGN_PASSWORD="${COSIGN_PASSWORD:-}" \
-      cosign sign --yes --upload=false --key "${COSIGN_KEY_REF}" "${tag}" || \
+      cosign sign --yes --key "${COSIGN_KEY_REF}" "${tag}" || \
         Die "cosign sign failed for image tag: ${tag}"
     else
       Log "Cosign: signing tag ${tag}"
@@ -525,7 +531,7 @@ SignImages() {
       while (( attempt <= max_attempts )); do
         err_out="$(
           COSIGN_PASSWORD="${COSIGN_PASSWORD:-}" \
-          cosign sign --yes --upload=false --key "${COSIGN_KEY_REF}" "${tag}" 2>&1 >/dev/null
+          cosign sign --yes --key "${COSIGN_KEY_REF}" "${tag}" 2>&1 >/dev/null
         )" && break
 
         if (( attempt == max_attempts )); then

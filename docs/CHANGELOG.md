@@ -4,6 +4,26 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The published images were never actually signed.** `docker-build.sh` ran
+  `cosign sign --yes --upload=false`, which computes a signature and then does not upload it, so no
+  `sha256-<digest>.sig` ever reached the registry. Every release logged "Cosign: signing tag …" and
+  signed nothing anyone could reach, while `build/README.md` told people to run:
+
+  ```
+  cosign verify --key ./build/cosign.pub nawaman/codingbooth:base-latest
+  ```
+
+  which answered `Error: no signatures found`. The flag has been there since the first commit of
+  that script, so this covers every release to date, 0.74.0 included.
+
+  `--upload=false` is dropped, so the signature lands beside the image and the documented verify
+  command works. Nothing else changes: signing still happens only where tags are produced (the merge
+  step), still skips `--rc` versions, and still retries for registry propagation — the merge job
+  already runs `docker login`, and cosign reads those same credentials.
+
+  The images published for 0.74.0 are unaffected and remain unsigned; the next release is the first
+  that can be verified.
+
 ## 0.74.0
 
 - **The Kafka install looked like a dead build for twenty-four minutes.** `test-boothfile-kafka`
