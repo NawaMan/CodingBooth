@@ -134,7 +134,7 @@ var fieldDisplays = []fieldDisplay{
 
 	// --- Build ---
 	{Key: "silence-build", Label: "Silence Build", Group: "Build",
-		Detail: "Hide build progress output.\nShow output only on failure."},
+		Detail: "Hide build output.\nA single line shows the step being built and how long\nit has been running, and is erased when the build ends.\n\nThe full log is still printed on failure."},
 	{Key: "pull", Label: "Always Pull", Group: "Build",
 		Detail: "Always pull the image, even if it exists locally."},
 	{Key: "strict", Label: "Strict", Group: "Build",

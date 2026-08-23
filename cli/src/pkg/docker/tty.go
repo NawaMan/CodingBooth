@@ -27,6 +27,12 @@ func IsStdoutTTY() bool {
 	return IsTTY(os.Stdout.Fd())
 }
 
+// IsStderrTTY returns true if stderr is connected to a terminal. Build progress
+// is drawn there, so a redirected stderr means no progress line.
+func IsStderrTTY() bool {
+	return IsTTY(os.Stderr.Fd())
+}
+
 // HasInteractiveTTY returns true if both stdin and stdout are connected to a terminal.
 // This is the recommended check before using -it flags with docker run.
 func HasInteractiveTTY() bool {

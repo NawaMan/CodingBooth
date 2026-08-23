@@ -337,6 +337,34 @@ Suppresses container startup messages for cleaner output:
 
 > Silent mode only hides startup messages. First runs may still take time for image pull/build.
 
+While a build is running on a terminal, silent mode still draws a single line —
+the step being built, how long it has been running, and that step's latest
+output:
+
+```
+⠹ 7m29s  [3/6] RUN codeserver--setup.sh  — Downloading code-server 4.133.0 for arm64 (224 MB)…
+```
+
+The line is redrawn in place and erased when the build ends, so nothing is left
+in the scrollback. It matters because a step can be quiet for a very long time —
+that `codeserver--setup.sh` download prints nothing for about eight minutes — and
+a terminal showing nothing at all is indistinguishable from a hung one.
+
+The line follows the terminal, not stderr. Redirect stderr — `2>/dev/null`, a
+log file, a pipe into `tee` — and the line is drawn on the terminal itself
+instead, so a build still shows a pulse when its output is being captured. This
+is what a test suite looks like: `tests/complex/run-complex-tests.sh` silences
+every build and captures every stream, and used to sit there for twenty minutes
+with nothing on screen between one test's result and the next.
+
+Redirected output is unaffected: the line lives on the terminal, so `2>file`
+receives exactly the bytes it received before, and a captured log or an
+expected-output fixture never sees it.
+
+Nothing is drawn when no standard stream is a terminal — a daemonised run, a
+cron job, CI — and `CB_NO_BUILD_PROGRESS=1` turns it off on a terminal too. On
+failure the full build log is printed, exactly as before.
+
 ### Log Time (`--log-time`)
 
 Prefixes progress messages with timestamps, useful for debugging startup timing:
