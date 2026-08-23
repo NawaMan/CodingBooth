@@ -114,6 +114,38 @@ To reset a database: `docker volume rm booth-pgdata` (or `booth-mysqldata`).
 - **Environment variables**: `-e`, `"VAR=value"` for runtime configuration
 - **Port publishing**: `-p`, `"host:container"` for exposing services
 
+### Credential Seeding Across Platforms
+
+A tool almost never keeps its config in the same place on all three hosts. Write **one `-v` per
+platform, all pointing at the same container target** — the Linux path the tool reads inside the
+booth — and let the mount filter pick:
+
+```toml
+run-args = [
+    # Linux (XDG)
+    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
+    # macOS
+    "-v", "~/Library/Application Support/pip:/etc/cb-home-seed/.config/pip:ro",
+    # Windows
+    "-v", "~/AppData/Roaming/pip:/etc/cb-home-seed/.config/pip:ro",
+]
+```
+
+`FilterMissingVolumeMounts` resolves this before `docker run`:
+
+- a mount whose host path does not exist is dropped, so the other platforms' entries cost nothing;
+- **only the first surviving mount for a target is kept.** Docker rejects a second mount on the same
+  target with `Duplicate mount point` and refuses to start the container, so two of the alternatives
+  existing at once — easy on a Mac, where a tool may write both `~/.config/X` and
+  `~/Library/Application Support/X` — must not reach it. Order the list so the most authoritative
+  path for each platform comes first;
+- the "skipping" notice is printed **once per target, and only when every alternative is missing**.
+  One notice naming what was tried is a fact; one per platform is noise on every single run.
+
+Do not try to detect the host OS at config time — there is no host-OS guard in the template system.
+Ask for all of them and let the filter decide, the same way `android-sdk/kvm--extension` asks for
+`/dev/kvm` and lets `FilterMissingDevices` drop it.
+
 > **Careful with TOML scoping.** `run-args` is a top-level key, so it must appear *before* any
 > `[params.X]` or `[segments]` table header. Put it after one and TOML reads it as a key of that
 > table (`params.X.run-args`) — the loader finds no top-level `run-args` and the flags are silently

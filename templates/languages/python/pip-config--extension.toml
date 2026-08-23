@@ -1,9 +1,15 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "pip Config"
 display-disc = "Mount host pip configuration and credentials"
+display-detail = "Seeds pip.conf from the host, so index URLs and private-registry credentials work inside the booth. pip keeps its per-user config in a different place on each platform -- ~/.config/pip on Linux, ~/Library/Application Support/pip on macOS, ~/AppData/Roaming/pip on Windows -- so all three are listed and whichever exists is mounted to the Linux location pip reads inside the container. Mounts whose host path does not exist are dropped before the container starts, so the entries for the other platforms cost nothing. The legacy ~/.pip/pip.conf is not seeded; move it to the location for your platform, or add the mount yourself."
 auto-select = true
 tags = ["python", "pip", "credential"]
 
 run-args = [
-    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro"
+    # Linux (XDG)
+    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
+    # macOS
+    "-v", "~/Library/Application Support/pip:/etc/cb-home-seed/.config/pip:ro",
+    # Windows
+    "-v", "~/AppData/Roaming/pip:/etc/cb-home-seed/.config/pip:ro",
 ]

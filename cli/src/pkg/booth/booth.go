@@ -1094,6 +1094,10 @@ func filterMissingVolumeMountGroups(args ilist.List[ilist.List[string]], homeDir
 }
 
 func filterMissingVolumeMountItems(items []string, homeDir string) []string {
+	alt := indexVolumeAlternatives(items, homeDir)
+	mounted := make(map[string]bool) // targets already given a host path
+	reported := make(map[string]bool)
+
 	var kept []string
 	for i := 0; i < len(items); i++ {
 		flag := items[i]
@@ -1112,12 +1116,24 @@ func filterMissingVolumeMountItems(items []string, homeDir string) []string {
 			continue
 		}
 
+		target := volumeTarget(mountSpec)
 		expandedPath := expandHostPath(source, homeDir)
 		if _, err := os.Stat(expandedPath); err != nil {
-			fmt.Fprintf(os.Stderr, "   Skipping volume mount: host path does not exist: %s\n", source)
+			if !alt.satisfied[target] && !reported[target] {
+				reported[target] = true
+				fmt.Fprint(os.Stderr, missingVolumeMountNotice(target, alt.candidates[target]))
+			}
 			i++ // skip the value
 			continue
 		}
+
+		// Docker rejects two mounts on the same target ("Duplicate mount point"), so
+		// only the first alternative that exists may be kept.
+		if mounted[target] {
+			i++ // skip the value
+			continue
+		}
+		mounted[target] = true
 
 		// Prefer the expanded absolute host path so Docker does not see a raw "~".
 		if expandedPath != source {
@@ -1127,6 +1143,60 @@ func filterMissingVolumeMountItems(items []string, homeDir string) []string {
 		i++ // skip the value
 	}
 	return kept
+}
+
+// volumeAlternatives indexes the bind mounts in one argument group by container
+// target: which host paths were offered for it, and whether any of them exists.
+//
+// Templates that seed host credentials list one entry per platform for the *same*
+// target -- ~/.config/X on Linux, ~/Library/Application Support/X on macOS,
+// ~/AppData/Roaming/X on Windows. All but one are missing by design, so reporting
+// each of them turns a normal run into a wall of warnings. Two of them existing at
+// once is the more serious case: Docker refuses a duplicate mount point outright,
+// which would stop the booth from starting.
+type volumeAlternatives struct {
+	candidates map[string][]string // target -> host paths offered, in order
+	satisfied  map[string]bool     // target -> at least one of them exists
+}
+
+func indexVolumeAlternatives(items []string, homeDir string) volumeAlternatives {
+	alt := volumeAlternatives{
+		candidates: make(map[string][]string),
+		satisfied:  make(map[string]bool),
+	}
+	for i := 0; i+1 < len(items); i++ {
+		if !isVolumeFlag(items[i]) {
+			continue
+		}
+		mountSpec := items[i+1]
+		i++ // skip the value
+
+		source := volumeSource(mountSpec)
+		if !isBindMountSource(source) {
+			continue
+		}
+		target := volumeTarget(mountSpec)
+		alt.candidates[target] = append(alt.candidates[target], source)
+		if _, err := os.Stat(expandHostPath(source, homeDir)); err == nil {
+			alt.satisfied[target] = true
+		}
+	}
+	return alt
+}
+
+// missingVolumeMountNotice words the skip for one target. A single candidate names
+// the path the user wrote; several candidates are a per-platform list, so naming
+// only the first would point at the wrong operating system's path.
+func missingVolumeMountNotice(target string, candidates []string) string {
+	if len(candidates) <= 1 {
+		source := target
+		if len(candidates) == 1 {
+			source = candidates[0]
+		}
+		return fmt.Sprintf("   Skipping volume mount: host path does not exist: %s\n", source)
+	}
+	return fmt.Sprintf("   Skipping volume mount: no host path exists for %s (tried: %s)\n",
+		target, strings.Join(candidates, ", "))
 }
 
 func isVolumeFlag(flag string) bool {
@@ -1170,6 +1240,32 @@ func volumeSource(spec string) string {
 		return spec[:i]
 	}
 	return spec
+}
+
+// volumeTarget returns the container side of a Docker -v/--volume mount spec, with
+// any option suffix (":ro") removed. Booth runs Linux containers, so the target is
+// an absolute Unix path; the Windows-container form is handled for completeness.
+func volumeTarget(spec string) string {
+	source := volumeSource(spec)
+	if len(spec) <= len(source)+1 {
+		return ""
+	}
+	rest := spec[len(source)+1:]
+
+	if isWindowsDrivePath(rest) {
+		if i := indexWindowsPathSeparatorColon(rest, 2); i >= 0 {
+			return rest[:i]
+		}
+		if i := strings.Index(rest[2:], ":"); i >= 0 {
+			return rest[:2+i]
+		}
+		return rest
+	}
+
+	if i := strings.Index(rest, ":"); i >= 0 {
+		return rest[:i]
+	}
+	return rest
 }
 
 // isWindowsDrivePath reports whether s starts with a Windows drive absolute path (C:\ or C:/).

@@ -196,6 +196,99 @@ func TestVolumeSource_DoesNotTreatDriveLetterAsUnixSplit(t *testing.T) {
 	}
 }
 
+func TestVolumeTarget(t *testing.T) {
+	tests := []struct {
+		name string
+		spec string
+		want string
+	}{
+		{"UnixWithMode", "/home/u/.config/gh:/etc/seed/gh:ro", "/etc/seed/gh"},
+		{"UnixNoMode", "~/.config/gh:/etc/seed/gh", "/etc/seed/gh"},
+		{"MacAppSupport", "/Users/u/Library/Application Support/pip:/etc/seed/.config/pip:ro", "/etc/seed/.config/pip"},
+		{"WindowsSource", `C:\Users\u\AppData\Roaming\pip:/etc/seed/.config/pip:ro`, "/etc/seed/.config/pip"},
+		{"NamedVolume", "myvol:/data:ro", "/data"},
+		{"SourceOnly", "/only/source", ""},
+		{"Empty", "", ""},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := volumeTarget(tt.spec); got != tt.want {
+				t.Fatalf("volumeTarget(%q) = %q, want %q", tt.spec, got, tt.want)
+			}
+		})
+	}
+}
+
+// The credential templates offer one host path per platform for the same container
+// target. Exactly one of them normally exists, and Docker refuses a duplicate mount
+// point -- so at most one may survive, whichever one that is.
+func TestFilterMissingVolumeMountItems_PerPlatformAlternatives(t *testing.T) {
+	home := t.TempDir()
+	macPath := filepath.Join(home, "Library", "Application Support", "pip")
+	if err := os.MkdirAll(macPath, 0o755); err != nil {
+		t.Fatal(err)
+	}
+
+	items := []string{
+		"-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
+		"-v", "~/Library/Application Support/pip:/etc/cb-home-seed/.config/pip:ro",
+		"-v", "~/AppData/Roaming/pip:/etc/cb-home-seed/.config/pip:ro",
+	}
+
+	got := filterMissingVolumeMountItems(items, home)
+
+	want := []string{"-v", macPath + ":/etc/cb-home-seed/.config/pip:ro"}
+	if len(got) != len(want) {
+		t.Fatalf("expected only the existing alternative kept; got: %v", got)
+	}
+	if !containsPair(got, want[0], want[1]) {
+		t.Fatalf("expected %v; got: %v", want, got)
+	}
+}
+
+// Two alternatives existing at once used to reach Docker as a duplicate mount point,
+// which fails the run outright. The first one wins and the rest are dropped.
+func TestFilterMissingVolumeMountItems_DropsDuplicateTargets(t *testing.T) {
+	home := t.TempDir()
+	for _, dir := range []string{
+		filepath.Join(home, ".config", "Cursor"),
+		filepath.Join(home, "Library", "Application Support", "Cursor"),
+	} {
+		if err := os.MkdirAll(dir, 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	items := []string{
+		"-v", "~/.config/Cursor:/etc/cb-home-seed/.config/Cursor:ro",
+		"-v", "~/Library/Application Support/Cursor:/etc/cb-home-seed/.config/Cursor:ro",
+	}
+
+	got := filterMissingVolumeMountItems(items, home)
+
+	if len(got) != 2 {
+		t.Fatalf("expected a single mount for one target; got: %v", got)
+	}
+	first := filepath.Join(home, ".config", "Cursor") + ":/etc/cb-home-seed/.config/Cursor:ro"
+	if !containsPair(got, "-v", first) {
+		t.Fatalf("expected the first existing alternative kept; got: %v", got)
+	}
+}
+
+func TestMissingVolumeMountNotice(t *testing.T) {
+	single := missingVolumeMountNotice("/etc/seed/gh", []string{"~/.config/gh"})
+	if !strings.Contains(single, "host path does not exist: ~/.config/gh") {
+		t.Fatalf("single-candidate notice should name the path; got: %q", single)
+	}
+
+	many := missingVolumeMountNotice("/etc/seed/.config/pip", []string{"~/.config/pip", "~/AppData/Roaming/pip"})
+	if !strings.Contains(many, "/etc/seed/.config/pip") ||
+		!strings.Contains(many, "~/.config/pip") ||
+		!strings.Contains(many, "~/AppData/Roaming/pip") {
+		t.Fatalf("multi-candidate notice should name the target and every path tried; got: %q", many)
+	}
+}
+
 func flattenArgGroups(args ilist.List[ilist.List[string]]) []string {
 	var out []string
 	args.Range(func(_ int, group ilist.List[string]) bool {
