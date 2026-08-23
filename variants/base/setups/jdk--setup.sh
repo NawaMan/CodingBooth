@@ -144,7 +144,8 @@ chmod -R 0777 "$JBANG_DIR" "$JBANG_CACHE_DIR"
 install_jbang() {
   log "Installing JBang..."
   export JBANG_JDK_VENDOR="$ACTIVE_VENDOR"
-  curl -Ls --retry 3 --retry-delay 2 https://sh.jbang.dev | bash -s - app setup
+  curl -Ls --connect-timeout 10 --max-time 60 --retry 3 --retry-delay 2 \
+    https://sh.jbang.dev | bash -s - app setup
   install -Dm755 "${JBANG_DIR}/bin/jbang" /usr/local/bin/jbang
 }
 
@@ -158,7 +159,33 @@ if [[ "$DOWNLOAD_URL" != "jbang" ]]; then
   log "URL: ${DOWNLOAD_URL}"
 
   TMP_TARBALL="/tmp/jdk-${JDK_VERSION}-${ACTIVE_VENDOR}.tar.gz"
-  HTTP_CODE="$(curl -fSL -w '%{http_code}' -o "$TMP_TARBALL" "$DOWNLOAD_URL" 2>/dev/null)" \
+
+  # A JDK tarball is ~180MB, which on a slow link is several silent minutes with
+  # nothing on stdout — indistinguishable from a wedged build, and the natural
+  # response (^C) discards the RUN layer and restarts from zero. Name the size
+  # first so the wait is legible. Best-effort: a failed probe just means no size.
+  # Lowercase first: HTTP/2 headers arrive lowercased but HTTP/1.1 sends
+  # "Content-Length", and mawk (Ubuntu's default) has no IGNORECASE. Keep the
+  # last value in the chain — the redirect hops carry a content-length of 0.
+  SIZE="$(curl -fsIL --connect-timeout 10 --max-time 30 "$DOWNLOAD_URL" 2>/dev/null \
+    | tr -d '\r' | tr 'A-Z' 'a-z' \
+    | awk '/^content-length:/{n=$2} END{print n}')" || true
+  if [[ "$SIZE" =~ ^[0-9]+$ && "$SIZE" -gt 0 ]]; then
+    log "Size: $((SIZE / 1024 / 1024)) MB"
+  fi
+
+  # Start clean so -C - is purely a resume-across-retries mechanism: against a
+  # stale complete file the range request would come back 416 and -f would fail.
+  rm -f "$TMP_TARBALL"
+  # --speed-limit/--speed-time abort a transfer that has genuinely died instead of
+  # hanging on it forever; a slow-but-moving link stays well above the floor.
+  # -C - resumes across retries so a reset partway does not repay the whole 180MB.
+  # --no-progress-meter replaces the old 2>/dev/null: it keeps the meter out of the
+  # build log while letting real errors and retry notices through.
+  HTTP_CODE="$(curl -fSL --no-progress-meter \
+      --connect-timeout 10 --speed-limit 1024 --speed-time 60 \
+      --retry 5 --retry-delay 3 --retry-all-errors -C - \
+      -w '%{http_code}' -o "$TMP_TARBALL" "$DOWNLOAD_URL")" \
     || die "Failed to download JDK ${JDK_VERSION} from ${ACTIVE_VENDOR} (HTTP ${HTTP_CODE:-???})"
 
   [[ -s "$TMP_TARBALL" ]] || die "Downloaded file is empty"
