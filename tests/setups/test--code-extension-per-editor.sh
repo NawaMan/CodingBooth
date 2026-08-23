@@ -21,6 +21,10 @@
 # sent to the wrong editor yields a booth missing the extension and a green build.
 # That is exactly how the elixir id went unnoticed, hence a test rather than trust.
 #
+# It also pins the post-install verification the lib does, which must match the id
+# case-insensitively: real desktop VS Code lowercases the ids it reports, so the
+# `code` stub below does too.
+#
 # Both CLIs are stubbed and both extension dirs redirected, so nothing real runs.
 # -----------------------------------------------------------------------------
 
@@ -58,7 +62,30 @@ case "$ACT" in
 esac
 EOF
 chmod +x "$STUB/bin/code-server"
-cp "$STUB/bin/code-server" "$STUB/bin/code"
+
+# Desktop VS Code lowercases every id it reports from --list-extensions, while
+# code-server hands back the publisher's own casing. That difference is not
+# cosmetic: it is what the lib's verification has to survive, so the `code` stub
+# reproduces it rather than echoing back what it was given. What it *records* stays
+# verbatim, so the assertions below still read the id as it was asked for.
+cat > "$STUB/bin/code" << 'EOF'
+#!/bin/bash
+DIR=""; ACT=""; ID=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --extensions-dir)    DIR="$2"; shift 2 ;;
+    --install-extension) ACT=install; ID="$2"; shift 2 ;;
+    --list-extensions)   ACT=list; shift ;;
+    *) shift ;;
+  esac
+done
+DB="$DIR/installed.txt"; touch "$DB"
+case "$ACT" in
+  install) grep -qx "$ID" "$DB" || echo "$ID" >> "$DB" ;;
+  list)    tr '[:upper:]' '[:lower:]' < "$DB" ;;
+esac
+EOF
+chmod +x "$STUB/bin/code"
 
 ALL_PASSED=true
 TEST_NUM=0
@@ -73,8 +100,10 @@ run_lib() {
     HOME="$STUB" \
     VSCODE_EXTENSION_DIR="$STUB/ext-code" \
     CODESERVER_EXTENSION_DIR="$STUB/ext-code-server" \
-        bash -c "source '$LIB'; $*" >/dev/null 2>&1 || true
+        bash -c "source '$LIB'; $*" > "$STUB/out.txt" 2>&1 || true
 }
+
+lib_output() { cat "$STUB/out.txt" 2>/dev/null || true; }
 
 installed_in() {  # installed_in code|code-server
     local dir="$STUB/ext-code"
@@ -152,6 +181,45 @@ if [[ "$(installed_in code-server)" == "shared.ext" && -z "$(installed_in code)"
 else
     print_test_result "false" "$0" "$TEST_NUM" "install_extensions should install into the one editor present"
     echo "  actual: code='$(installed_in code)' code-server='$(installed_in code-server)'"
+    ALL_PASSED=false
+fi
+
+# 8. A mixed-case id verifies on `code`. VS Code lowercases what it lists, so a
+#    case-sensitive match reported "Not found after install: JakeBecker.elixir-ls"
+#    on the line after announcing the install had succeeded — for every mixed-case
+#    id in the catalog, of which there are plenty (Dart-Code.dart-code,
+#    REditorSupport.r, JakeBecker.elixir-ls). Nothing was actually broken, which is
+#    the problem: a warning that cries wolf on a healthy build trains you to skip
+#    the one that matters.
+TEST_NUM=$((TEST_NUM + 1))
+run_lib "$STUB/bin-code-only" "install_vscode_extensions JakeBecker.elixir-ls"
+if grep -q "Verified: JakeBecker.elixir-ls" <<< "$(lib_output)" \
+   && ! grep -q "Not found after install" <<< "$(lib_output)"; then
+    print_test_result "true" "$0" "$TEST_NUM" "a mixed-case id verifies rather than warning"
+else
+    print_test_result "false" "$0" "$TEST_NUM" "a mixed-case id should verify rather than warning"
+    echo "  actual output: $(lib_output)"
+    ALL_PASSED=false
+fi
+
+# 9. ...and verification is not thereby made vacuous: an id that never lands still
+#    warns. This is the check that caught the elixir bug in the first place, so
+#    loosening the match must not cost it.
+mkdir -p "$STUB/bin-noop"
+cat > "$STUB/bin-noop/code" << 'STUBEOF'
+#!/bin/bash
+# Accepts the install, records nothing — an id that resolves and then isn't there.
+exit 0
+STUBEOF
+chmod +x "$STUB/bin-noop/code"
+
+TEST_NUM=$((TEST_NUM + 1))
+run_lib "$STUB/bin-noop" "install_vscode_extensions Ghost.Vanishes"
+if grep -q "Not found after install: Ghost.Vanishes" <<< "$(lib_output)"; then
+    print_test_result "true" "$0" "$TEST_NUM" "an id that never lands still warns"
+else
+    print_test_result "false" "$0" "$TEST_NUM" "an id that never lands should still warn"
+    echo "  actual output: $(lib_output)"
     ALL_PASSED=false
 fi
 

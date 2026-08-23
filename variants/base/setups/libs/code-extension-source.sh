@@ -148,7 +148,13 @@ _install_extensions_into() {
         echo "  ⚠ Failed to install: ${ext}" >&2
       fi
 
-      if "$cli_bin" ${cli_opts[@]+"${cli_opts[@]}"} --extensions-dir "$dir" --list-extensions | grep -qx "$ext"; then
+      # Match case-insensitively. Desktop VS Code lowercases the id it reports,
+      # so `JakeBecker.elixir-ls` comes back as `jakebecker.elixir-ls` and a
+      # case-sensitive match warned "not found" one line after reporting the
+      # install succeeded — for every mixed-case id, of which the catalog has
+      # plenty. code-server preserves the publisher's casing, so only the `code`
+      # CLI was affected. `code-extension--install.sh` already matches this way.
+      if "$cli_bin" ${cli_opts[@]+"${cli_opts[@]}"} --extensions-dir "$dir" --list-extensions | grep -qix "$ext"; then
         echo "  ✔ Verified: ${ext}"
       else
         echo "  ⚠ Not found after install: ${ext}" >&2
