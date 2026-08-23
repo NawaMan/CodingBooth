@@ -46,7 +46,15 @@ jobs:
           latest_json="$(gh api "repos/${WATCH_REPO}/releases/latest")"
           latest="$(jq -r '.tag_name'  <<<"$latest_json")"
           rel_url="$(jq -r '.html_url' <<<"$latest_json")"
-          notes="$(jq -r '.body // ""' <<<"$latest_json" | head -c 3500)"
+          # Capture in full, then trim -- never `jq ... | head -c`. head exits as
+          # soon as it has its bytes and closes the pipe; jq, still writing a
+          # release body that can run to several KB, takes EPIPE and exits 2, and
+          # `set -o pipefail` then kills this step. It is a race, so it failed on
+          # roughly every other daily run while the watch itself was working fine.
+          # Trimming in bash is also character-safe: `head -c` cuts by byte and can
+          # split a multi-byte character in half on its way into the issue body.
+          notes="$(jq -r '.body // ""' <<<"$latest_json")"
+          notes="${notes:0:3500}"
 
           echo "baseline=$baseline  latest=$latest"
 
