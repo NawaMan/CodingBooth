@@ -4,6 +4,28 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Extension installs stopped crying wolf.** `libs/code-extension-source.sh` verifies each
+  extension against the editor's own installed list after installing it — the check that caught
+  elixir asking for a Marketplace id on Open VSX. It matched case-sensitively, and desktop VS Code
+  lowercases every id it reports, so `JakeBecker.elixir-ls` came back as `jakebecker.elixir-ls` and
+  the script warned:
+
+  ```
+    ✔ JakeBecker.elixir-ls
+    ⚠ Not found after install: JakeBecker.elixir-ls
+  ```
+
+  one line after announcing the install had succeeded. Nothing was broken, which is the problem: it
+  fired for every mixed-case id in the catalog — `Dart-Code.dart-code`, `REditorSupport.r`,
+  `JakeBecker.elixir-ls` — on every desktop build, training the eye to skip the one warning that
+  would have meant something. code-server preserves the publisher's casing, so only the `code` CLI
+  was affected. The match is now `grep -qix`, which is what the newer
+  `code-extension--install.sh` already did.
+
+  `test--code-extension-per-editor.sh` pins it from both sides: its `code` stub now lowercases what
+  it lists, the way the real one does, and a second case asserts that an id which never lands still
+  warns — loosening the match must not make the verification vacuous.
+
 - **JetBrains IDEs started through their booth shim were missing the JDK and Python environment.**
   The starter `jetbrains--setup.sh` generates carried a stray double quote:
   `source /etc/profile.d/60-cb-jdk--profile.sh"    2>/dev/null || true`. The unbalanced quote glued
