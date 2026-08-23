@@ -38,6 +38,29 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # this covers the rest.
 export CB_BROWSER=false
 
+# One self-erasing line for the stretch where this runner has nothing to say.
+#
+# Every example's output goes to .<example>.log, so between "Started example: X"
+# and the summary table this script prints nothing at all -- and an example can
+# legitimately take fifteen minutes, because it builds a booth image from
+# scratch. That silence is indistinguishable from a hang. The line reports which
+# examples are running, for how long, and the last line of the busiest one's log,
+# then erases itself. See tests/progress--source.sh; CB_NO_TEST_PROGRESS=1 turns
+# it off, and with no terminal nothing is drawn.
+#
+# Guarded: the helper lives in the tests tree, and an examples tree copied out of
+# the repo on its own should still run.
+if [[ -f "$SCRIPT_DIR/../../tests/progress--source.sh" ]]; then
+    source "$SCRIPT_DIR/../../tests/progress--source.sh"
+    progress_init || true
+else
+    PROGRESS_ACTIVE=false
+    progress_clear() { :; }
+    progress_draw() { :; }
+    progress_tail() { :; }
+    progress_elapsed_var() { printf -v "$1" '%ds' "$(( $3 - $2 ))"; }
+fi
+
 # Default settings
 MAX_PARALLEL=1
 
@@ -74,6 +97,9 @@ while [[ $# -gt 0 ]]; do
             echo "  --max-parallel <n>    Maximum parallel examples (default: 32)"
             echo "  --timeout <seconds>   Timeout per example in seconds (default: 600 = 10 min)"
             echo "  --help, -h            Show this help message"
+            echo ""
+            echo "While examples run, a single self-erasing line reports what is in flight"
+            echo "and what its log last said. CB_NO_TEST_PROGRESS=1 turns it off."
             echo ""
             echo "Examples:"
             echo "  $0                              # Run all tests"
@@ -245,12 +271,51 @@ OVERALL_START=$(date +%s)
 
 # Create temp directory for results
 RESULTS_DIR=$(mktemp -d)
-trap "rm -rf $RESULTS_DIR" EXIT
+trap 'progress_clear; rm -rf "$RESULTS_DIR"' EXIT
+
+# What is in flight, on one line that erases itself: the running examples with
+# their own clocks, and the last line of the longest-running one's log -- which
+# during a booth build is the build step, i.e. the answer to "is this stuck?".
+#
+# The log tail costs a `tail`, so it is refreshed once a second rather than every
+# frame.
+_EX_DETAIL=""
+_EX_DETAIL_AT=-1
+
+draw_in_flight() {
+    [ "$PROGRESS_ACTIVE" = true ] || return 0
+
+    local now line="" count=0 oldest="" oldest_start=0 i el
+    now=$(date +%s)
+
+    for (( i=0; i<${#job_pids[@]}; i++ )); do
+        kill -0 "${job_pids[$i]}" 2>/dev/null || continue
+        count=$(( count + 1 ))
+        progress_elapsed_var el "${job_starts[$i]}" "$now"
+        line+="${job_examples[$i]} ${el} · "
+        if (( oldest_start == 0 || job_starts[$i] < oldest_start )); then
+            oldest_start=${job_starts[$i]}
+            oldest="${job_examples[$i]}"
+        fi
+    done
+
+    (( count == 0 )) && return 0
+    line="${count} running · ${line% · }"
+
+    if [[ -n "$oldest" ]] && (( SECONDS != _EX_DETAIL_AT )); then
+        _EX_DETAIL=$(progress_tail "$SCRIPT_DIR/.${oldest}.log" 90)
+        _EX_DETAIL_AT=$SECONDS
+    fi
+    [[ -n "$_EX_DETAIL" ]] && line+="  — ${_EX_DETAIL}"
+
+    progress_draw "$line"
+}
 
 # Run examples in parallel with limit
 running_jobs=0
 declare -a job_pids=()
 declare -a job_examples=()
+declare -a job_starts=()
 
 for example_dir in "${examples[@]}"; do
     example_name=$(basename "$example_dir")
@@ -259,7 +324,14 @@ for example_dir in "${examples[@]}"; do
     while [ $running_jobs -ge $MAX_PARALLEL ]; do
         # Wait for any job to finish. `wait -n` (bash 4.3+) blocks until the next
         # job exits; on bash 3.2 fall back to polling with a short sleep.
-        if [ "$HAS_WAIT_N" = true ]; then
+        #
+        # With a line to draw we poll either way: `wait -n` would block for the
+        # whole of an example, and a clock that only moves when a job finishes is
+        # not a clock.
+        if [ "$PROGRESS_ACTIVE" = true ]; then
+            draw_in_flight
+            sleep 0.25
+        elif [ "$HAS_WAIT_N" = true ]; then
             wait -n 2>/dev/null || true
         else
             sleep 1
@@ -276,6 +348,11 @@ for example_dir in "${examples[@]}"; do
     # Start example in background with timeout
     (
         start_time=$(date +%s)
+
+        # This runner owns the terminal line; a booth build inside the example
+        # would otherwise draw its own on top of it. The build output still goes
+        # to this example's log, which is where the line reads its detail from.
+        export CB_NO_BUILD_PROGRESS=1
 
         test_runner="$example_dir/run-automatic-on-host-test.sh"
         test_count=$(find "$example_dir" "$example_dir/.cb-tests" -maxdepth 1 -name "test0*.sh" 2>/dev/null | wc -l)
@@ -328,17 +405,33 @@ for example_dir in "${examples[@]}"; do
     last_pid=$!
     job_pids+=("$last_pid")
     job_examples+=("$example_name")
+    job_starts+=("$(date +%s)")
     running_jobs=$((running_jobs + 1))
 
+    progress_clear
     echo "Started example: $example_name (pid: $last_pid)"
 done
 
+progress_clear
 echo ""
 echo "Waiting for all examples to complete..."
 echo ""
 
-# Wait for all jobs
+# Wait for all jobs. Polled rather than a bare `wait` when there is a line to
+# draw: this is the longest silence in the run, and the one worth reporting.
+if [ "$PROGRESS_ACTIVE" = true ]; then
+    while :; do
+        still_running=false
+        for pid in "${job_pids[@]}"; do
+            kill -0 "$pid" 2>/dev/null && { still_running=true; break; }
+        done
+        [ "$still_running" = true ] || break
+        draw_in_flight
+        sleep 0.25
+    done
+fi
 wait
+progress_clear
 
 # Record overall end time
 OVERALL_END=$(date +%s)

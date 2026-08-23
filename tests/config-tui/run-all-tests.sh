@@ -13,12 +13,23 @@
 # If the VHS toolchain (vhs/ttyd/ffmpeg) or the codingbooth binary is missing,
 # the whole suite reports SKIP and exits 0 so it never breaks CI environments
 # that lack VHS.
+#
+# On a terminal, the test currently recording is reported on a single self-erasing
+# line; CB_NO_TEST_PROGRESS=1 turns that off, and without a terminal nothing is
+# drawn at all.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Never open the host's browser: a booth that serves a UI does so by default.
 # These tests do not source common--source.sh, which sets it everywhere else.
 export CB_BROWSER=false
+
+# A VHS run spawns ttyd and a headless browser, records, then encodes -- tens of
+# seconds during which this runner has nothing to print. The transient line (see
+# progress--source.sh) is what tells the operator which test that is and how long
+# it has been going. It draws only on a terminal and leaves nothing behind.
+source "${SCRIPT_DIR}/../progress--source.sh"
+progress_init || true
 
 VERBOSE=""
 PARALLEL="${PARALLEL:-1}"
@@ -83,7 +94,9 @@ run_one() {
     local name
     name=$(basename "$test_file" .sh)
     local out="${SCRIPT_DIR}/run--${name}.out"
-    if (cd "$SCRIPT_DIR" && bash "$test_file" $VERBOSE) > "$out" 2>&1; then
+    # CB_NO_BUILD_PROGRESS: this runner owns the terminal line; a child drawing
+    # its own on top of it would leave both illegible.
+    if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 bash "$test_file" $VERBOSE) > "$out" 2>&1; then
         echo 0 > "${out}.exit"
     else
         echo 1 > "${out}.exit"
@@ -95,6 +108,7 @@ print_result() {
     local name
     name=$(basename "$test_file" .sh)
     local out="${SCRIPT_DIR}/run--${name}.out"
+    progress_clear
     echo "-------------------------------------------------------------------------------"
     [[ -f "$out" ]] && cat "$out"
     local exit_code=0
@@ -104,11 +118,54 @@ print_result() {
     return "$exit_code"
 }
 
+# What a VHS test is doing, on one self-erasing line. The last line of the test's
+# own output is the useful half -- it says whether VHS is still recording, still
+# encoding, or the assertions have started. Refreshed once a second, since it
+# costs a `tail`.
+_TUI_DETAIL=""
+_TUI_DETAIL_AT=-1
+
+draw_running() {
+    [ "$PROGRESS_ACTIVE" = true ] || return 0
+
+    local names="$1" started="$2" out="$3" el
+    progress_elapsed_var el "$started" "$(date +%s)"
+
+    if [[ -n "$out" ]] && (( SECONDS != _TUI_DETAIL_AT )); then
+        _TUI_DETAIL=$(progress_tail "$out" 80)
+        _TUI_DETAIL_AT=$SECONDS
+        # A test's own first line is `Begin <testname>`, which this line already
+        # carries. Echoing it back spends half the row repeating the name until
+        # the test says something of its own.
+        [[ "$_TUI_DETAIL" == "Begin "* ]] && _TUI_DETAIL=""
+    fi
+
+    if [[ -n "$_TUI_DETAIL" ]]; then
+        progress_draw "${names} ${el}  — ${_TUI_DETAIL}"
+    else
+        progress_draw "${names} ${el}"
+    fi
+}
+
 if [[ "$PARALLEL" -le 1 ]]; then
     for test_file in "${tests[@]}"; do
         name=$(basename "$test_file" .sh)
+        progress_clear
         echo "Begin $name"
-        run_one "$test_file"
+
+        # Backgrounded only so this loop stays awake to redraw the line; it is
+        # still one test at a time, and the wait below is the same barrier the
+        # foreground call was.
+        started=$(date +%s)
+        _TUI_DETAIL=""          # the previous test's last line is not this one's
+        run_one "$test_file" &
+        run_pid=$!
+        while kill -0 "$run_pid" 2>/dev/null; do
+            draw_running "$name" "$started" "${SCRIPT_DIR}/run--${name}.out"
+            sleep 0.2
+        done
+        wait "$run_pid" 2>/dev/null
+
         if print_result "$test_file"; then
             PASS_COUNT=$((PASS_COUNT + 1))
         else
@@ -119,7 +176,9 @@ if [[ "$PARALLEL" -le 1 ]]; then
 else
     declare -a slot_pids=() slot_files=()
     qi=0
+    PAR_START=$(date +%s)
     for (( s=0; s<PARALLEL && qi<TOTAL; s++, qi++ )); do
+        progress_clear
         echo "Begin $(basename "${tests[$qi]}" .sh)"
         run_one "${tests[$qi]}" & slot_pids[$s]=$!; slot_files[$s]="${tests[$qi]}"
     done
@@ -135,6 +194,7 @@ else
                     FAIL_COUNT=$((FAIL_COUNT + 1)); FAIL_TESTS+=("$(basename "${slot_files[$s]}" .sh)")
                 fi
                 if (( qi < TOTAL )); then
+                    progress_clear
                     echo "Begin $(basename "${tests[$qi]}" .sh)"
                     run_one "${tests[$qi]}" & slot_pids[$s]=$!; slot_files[$s]="${tests[$qi]}"; qi=$((qi + 1))
                 else
@@ -142,9 +202,18 @@ else
                 fi
             fi
         done
+
+        running=0
+        for (( s=0; s<${#slot_pids[@]}; s++ )); do
+            [[ -n "${slot_pids[$s]}" ]] && running=$(( running + 1 ))
+        done
+        (( running > 0 )) && draw_running "${running} recording" "$PAR_START" ""
+
         sleep 0.3
     done
 fi
+
+progress_clear
 
 OVERALL_END=$(date +%s)
 TEST_COUNT=$((PASS_COUNT + FAIL_COUNT))

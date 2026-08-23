@@ -21,6 +21,16 @@ FAIL_TESTS=()
 VERBOSE=false
 for arg in "$@"; do case "$arg" in --verbose) VERBOSE=true ;; esac ;done
 
+# --silence-build hides the image build, which is where a slow test's minutes go.
+# Quiet is right for a normal run -- a passing test should print its assertions, not
+# a Dockerfile -- but under --verbose the build is precisely what was asked for: it
+# is the only thing on screen between "Begin" and the first assertion.
+#
+# The +"..." form is required: under the bash 3.2 macOS ships, "${arr[@]}" on an
+# empty array counts as unbound.
+BUILD_ARGS=(--silence-build)
+if [[ "$VERBOSE" == "true" ]]; then BUILD_ARGS=(); fi
+
 function booth() {
     local dir
     dir="$(pwd)"
@@ -48,8 +58,11 @@ function run() {
 
 function booth-collect() {
     local cmd="$1"
+    if [[ "$VERBOSE" == "true" ]]; then
+        echo "  > booth ${BUILD_ARGS[@]+${BUILD_ARGS[@]} }-- ${cmd}"
+    fi
     cd $prj
-    booth --silence-build -- "$cmd" > "$tmpfile"
+    booth ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} -- "$cmd" > "$tmpfile"
     cd ..
     cat "$tmpfile" >> $log
     if [[ "$VERBOSE" == "true" ]]; then
@@ -59,8 +72,11 @@ function booth-collect() {
 
 function booth-collect-dind() {
     local cmd="$1"
+    if [[ "$VERBOSE" == "true" ]]; then
+        echo "  > booth ${BUILD_ARGS[@]+${BUILD_ARGS[@]} }--dind -- ${cmd}"
+    fi
     cd $prj
-    booth --silence-build --dind -- "$cmd" > "$tmpfile"
+    booth ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} --dind -- "$cmd" > "$tmpfile"
     cd ..
     cat "$tmpfile" >> $log
     if [[ "$VERBOSE" == "true" ]]; then
@@ -179,13 +195,22 @@ function finally() {
         echo ""
         echo "Failed tests:"
         for T in "${FAIL_TESTS[@]}"; do
-            echo -e "  \u274c ${T}"
+            echo "  ❌ ${T}"
         done
 
         if [[ "${VERBOSE}" == "true" ]]; then
             echo ""
             echo "= Full log ======================================="
-            cat "$log"
+            # Through a snapshot, never `cat "$log"` straight. A caller that has
+            # redirected this test's stdout *into* $log -- which the suite runner
+            # used to do -- turns a direct cat into `cat file >> file`: it reads back
+            # what it just wrote and never reaches EOF. One --verbose run of a
+            # failing test grew a 362GB log that way before bash died on it. The
+            # runner now captures elsewhere; the snapshot keeps this safe for anyone
+            # who runs a test by hand with their own redirect.
+            local snapshot="${log}.snapshot"
+            cp "$log" "$snapshot" 2>/dev/null && cat "$snapshot"
+            rm -f "$snapshot"
             echo "--------------------------------------------------"
         else
             echo ""
