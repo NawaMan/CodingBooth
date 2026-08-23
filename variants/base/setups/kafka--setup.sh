@@ -67,18 +67,79 @@ KAFKA_TGZ="kafka_${SCALA_VER}-${KAFKA_VERSION}.tgz"
 KAFKA_DIR="/opt/kafka_${SCALA_VER}-${KAFKA_VERSION}"
 
 if [[ ! -d "$KAFKA_DIR" ]]; then
-  # downloads.apache.org is a CDN that only carries the *current* release, so it 404s
-  # for any pinned older version — every such build falls through to archive.apache.org,
-  # which is durable but throttled. Fail fast on the CDN (a 404 is not worth retrying)
-  # and retry the archive, which is where the connection resets actually come from.
-  # --retry-all-errors is needed because curl does not count a reset mid-transfer as a
-  # "transient error" for --retry on its own.
-  curl -fsSL --connect-timeout 10 "https://downloads.apache.org/kafka/${KAFKA_VERSION}/${KAFKA_TGZ}" -o "/tmp/${KAFKA_TGZ}" \
-    || curl -fsSL --connect-timeout 10 --retry 5 --retry-delay 3 --retry-all-errors \
-         "https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/${KAFKA_TGZ}" -o "/tmp/${KAFKA_TGZ}"
-  mkdir -p "$KAFKA_DIR"
-  tar -xzf "/tmp/${KAFKA_TGZ}" -C /opt
-  mv "/opt/kafka_${SCALA_VER}-${KAFKA_VERSION}" "$KAFKA_DIR" || true
+  CDN_URL="https://downloads.apache.org/kafka/${KAFKA_VERSION}/${KAFKA_TGZ}"
+  ARCHIVE_URL="https://archive.apache.org/dist/kafka/${KAFKA_VERSION}/${KAFKA_TGZ}"
+  TGZ="/tmp/${KAFKA_TGZ}"
+
+  echo "Fetching Apache Kafka ${KAFKA_VERSION}…"
+
+  # downloads.apache.org is a CDN that only carries the *current* release, so it
+  # 404s for any pinned older version. That 404 is an expected, handled outcome
+  # on this path — so its stderr is swallowed. Left visible it becomes the last
+  # line the step ever prints, and the build progress line then displays a fatal
+  # -looking error for the entire length of a download that is working fine.
+  if curl -fsSL --connect-timeout 10 --max-time 900 \
+       --speed-limit 1024 --speed-time 60 \
+       --retry 3 --retry-delay 3 --retry-all-errors \
+       "$CDN_URL" -o "${TGZ}.part" 2>/dev/null; then
+    mv "${TGZ}.part" "$TGZ"
+  else
+    echo "  downloads.apache.org carries only current releases and has no ${KAFKA_VERSION}; using archive.apache.org."
+
+    # Name the size before starting. The archive is durable but heavily
+    # throttled — measured at ~80 KB/s for a ~113 MB tarball, i.e. north of
+    # twenty minutes — and an unannounced twenty-minute silence is what gets a
+    # working build Ctrl+C'd. Best-effort: a failed probe just means no size.
+    # Lowercase first, since HTTP/2 sends header names lowercased but HTTP/1.1
+    # sends "Content-Length" and mawk has no IGNORECASE; keep the last value, as
+    # the redirect hops carry a content-length of 0.
+    TOTAL="$(curl -fsIL --connect-timeout 10 --max-time 30 "$ARCHIVE_URL" 2>/dev/null \
+      | tr -d '\r' | tr 'A-Z' 'a-z' \
+      | awk '/^content-length:/{n=$2} END{print n}')" || true
+    [[ "$TOTAL" =~ ^[0-9]+$ ]] || TOTAL=0
+
+    if (( TOTAL > 0 )); then
+      echo "  ${KAFKA_TGZ} is $((TOTAL / 1024 / 1024)) MB from a throttled host; this legitimately takes tens of minutes."
+    fi
+
+    # Start clean so -C - is purely a resume-across-retries mechanism: against a
+    # stale complete file the range request would come back 416 and -f would fail.
+    rm -f "${TGZ}.part"
+
+    # --speed-limit/--speed-time abort a transfer that has genuinely died rather
+    # than hanging on it; the archive's ~80 KB/s sits far above the 1 KB/s floor
+    # and is left alone. -C - resumes across retries, so a reset at minute twenty
+    # does not repay the whole tarball from zero. --max-time is the outer bound
+    # this fetch never had: without it a wedged socket blocks the build forever.
+    curl -fsSL --connect-timeout 10 --max-time 3600 \
+      --speed-limit 1024 --speed-time 60 \
+      --retry 5 --retry-delay 5 --retry-all-errors -C - \
+      "$ARCHIVE_URL" -o "${TGZ}.part" &
+    CURL_PID=$!
+
+    # curl's own --progress-bar is useless here: it rewrites a single line with
+    # \r and no newline, and the build progress reader keeps only what follows
+    # the last \r on a completed line (see cli/src/pkg/docker/build_progress.go).
+    # Nothing it draws ever reaches the status line. So emit our own heartbeat —
+    # newline-terminated, and therefore the one thing that does advance it.
+    while kill -0 "$CURL_PID" 2>/dev/null; do
+      sleep 30
+      kill -0 "$CURL_PID" 2>/dev/null || break
+      GOT="$(stat -c %s "${TGZ}.part" 2>/dev/null || echo 0)"
+      if (( TOTAL > 0 )); then
+        echo "  … $((GOT / 1024 / 1024)) MB of $((TOTAL / 1024 / 1024)) MB ($((GOT * 100 / TOTAL))%)"
+      else
+        echo "  … $((GOT / 1024 / 1024)) MB"
+      fi
+    done
+
+    # Let curl's exit status fail the step under `set -e`; a partial tarball must
+    # never be handed to tar as if it were the real thing.
+    wait "$CURL_PID"
+    mv "${TGZ}.part" "$TGZ"
+  fi
+
+  tar -xzf "$TGZ" -C /opt
   ln -snf "$KAFKA_DIR" "$KAFKA_HOME"
 fi
 

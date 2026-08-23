@@ -4,6 +4,47 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The Kafka install looked like a dead build for twenty-four minutes.** `test-boothfile-kafka`
+  sat at one line, and the line said the download had failed:
+
+  ```
+  ⠹ 17m26s  [2/2] RUN kafka--setup.sh --version 3.7.0  — curl: (22) The requested URL returned error: 404
+  ```
+
+  Nothing was wrong. `kafka--setup.sh` tries `downloads.apache.org` first and falls back to
+  `archive.apache.org`, and that 404 is the *handled* first attempt — it can never succeed, because
+  the CDN carries only current releases (today 4.1.2, 4.2.1, 4.3.1) and the default is pinned at
+  3.7.0. Even Apache's own `closer.lua` mirror redirector sends 3.7.0 to the archive, so there is no
+  faster source for it. The archive is durable but throttled: measured at ~80 KB/s against a
+  119,028,138-byte tarball, which is a legitimate twenty-four-minute download.
+
+  The fallback `curl` was `-fsSL`, so it printed nothing for those twenty-four minutes, and the
+  build progress line keeps the step's most recent output line until a newer one arrives. The stale
+  404 therefore stayed on screen for the whole download — a working build wearing a fatal error.
+  The obvious reach, `curl --progress-bar`, does not help: it rewrites one line with `\r` and no
+  newline, and `build_progress.go` keeps only what follows the last `\r` on a *completed* line, so
+  none of its meter ever reaches the status line.
+
+  Three changes, no new default version:
+
+  - The primary attempt's stderr is swallowed. That 404 is expected control flow on this path, and
+    leaving it visible only ever mislabels the step that follows.
+  - The fallback names the size up front and then emits its own newline-terminated heartbeat every
+    30s, which is the one thing that does advance the progress line:
+
+    ```
+    ⠹ 8m26s  [2/2] RUN kafka--setup.sh --version 3.7.0  — … 42 MB of 113 MB (37%)
+    ```
+
+  - The fallback gets the bounds it never had: `--max-time`, `--speed-limit`/`--speed-time` so a
+    genuinely dead socket is abandoned instead of ridden forever, and `-C -` onto a `.part` file so
+    a reset at minute twenty does not repay the tarball from zero. The tarball is moved into place
+    only after `curl` exits clean, so a partial download can no longer reach `tar`.
+
+  This also drops a `mkdir -p "$KAFKA_DIR"` followed by `mv "$KAFKA_DIR" "$KAFKA_DIR" || true` — the
+  extract path already lands on exactly that directory, so the move was a no-op whose `|| true` was
+  there to hide it failing against itself.
+
 - **Extension installs stopped crying wolf.** `libs/code-extension-source.sh` verifies each
   extension against the editor's own installed list after installing it — the check that caught
   elixir asking for a Marketplace id on Open VSX. It matched case-sensitively, and desktop VS Code
