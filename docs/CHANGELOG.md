@@ -145,6 +145,28 @@ This file contains a list of changes for each released version.
   unchanged — it streams each test live and draws nothing itself, so booth's own build line is what
   shows there.
 
+- **One credential path per platform, and only one of them mounted.** A template that seeds a host
+  tool's configuration has to name a different path on each platform — pip keeps its per-user config
+  in `~/.config/pip` on Linux, `~/Library/Application Support/pip` on macOS and
+  `~/AppData/Roaming/pip` on Windows — so the natural spelling is three `-v` entries pointing at one
+  container target, letting `FilterMissingVolumeMounts` drop the ones whose host path is absent.
+  Two things went wrong with that.
+
+  Where two alternatives both existed — easy on a Mac, where a tool may write both `~/.config/X` and
+  `~/Library/Application Support/X` — both survived the filter, and Docker then refused to start the
+  container at all: `Duplicate mount point`. A template written the obvious way could stop a booth
+  from running. Where none existed, the run printed one "Skipping volume mount" line per platform,
+  every time, for a mount nobody had asked about.
+
+  The filter now indexes bind mounts by container target. The first alternative that exists is kept
+  and the rest are dropped, so the duplicate never reaches Docker; and the skip is reported once per
+  target, naming what was tried — `no host path exists for /etc/cb-home-seed/.config/pip (tried:
+  ~/.config/pip, ~/Library/Application Support/pip, ~/AppData/Roaming/pip)` — rather than once per
+  candidate. A single-candidate mount is reported exactly as before. `pip Config` is the first
+  template to use the pattern and `templates/README.md` writes it down, including the part that
+  matters: order the alternatives so the most authoritative path for each platform comes first,
+  because first-that-exists is what wins.
+
 - **The config suite can be narrowed, and `--verbose` no longer eats its own log.** 95 tests is a
   long way to go to re-check one, so the runner takes `--only <glob>` (repeatable), `--jobs N`, and
   `--heartbeat SECS`, and `--help` now lists them.
