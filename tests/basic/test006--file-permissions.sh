@@ -22,37 +22,8 @@ function generate_name() {
   echo "$name"
 }
 
-function is_port_free() {
-  local p="$1"
-
-  # Prefer lsof (macOS + Linux); fall back to ss; fall back to nc
-  if command -v lsof >/dev/null 2>&1; then
-    ! lsof -iTCP:"$p" -sTCP:LISTEN -Pn 2>/dev/null | grep -q .
-  elif command -v ss >/dev/null 2>&1; then
-    ! ss -ltn "( sport = :$p )" 2>/dev/null | grep -q ":$p"
-  else
-    ! (command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$p" >/dev/null 2>&1)
-  fi
-}
-
-function random_free_port() {
-  local port
-  local i
-
-  for i in {1..100}; do
-    port=$((40000 + RANDOM % 10001))  # Range 40000-50000 to avoid collision with other tests
-    if is_port_free "$port"; then
-      echo "$port"
-      return 0
-    fi
-  done
-
-  echo "Failed to find free port in range 40000-50000 after 100 tries" >&2
-  return 1
-}
-
 NAME="$(generate_name)"
-PORT="$(random_free_port)"
+PORT="$(pick_free_port)"
 HOST_FILE="host-created-file.txt"
 CONTAINER_FILE="container-created-file.txt"
 EXPECTED_UID=$(id -u)

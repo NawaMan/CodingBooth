@@ -43,43 +43,19 @@ function generate_name() {
   echo "$name"
 }
 
-function is_port_free() {
-  local p="$1"
-  if command -v lsof >/dev/null 2>&1; then
-    ! lsof -iTCP:"$p" -sTCP:LISTEN -Pn 2>/dev/null | grep -q .
-  elif command -v ss >/dev/null 2>&1; then
-    ! ss -ltn "( sport = :$p )" 2>/dev/null | grep -q ":$p"
-  else
-    ! (command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$p" >/dev/null 2>&1)
-  fi
-}
-
-# A base port whose booth port AND its +OFFSET published port are both free, so
-# neither the booth itself nor the offset mapping collides with something else.
-function base_port_with_free_offset() {
-  local port i
-  for i in {1..100}; do
-    port=$((50000 + RANDOM % 10001))
-    if is_port_free "$port" && is_port_free $((port + OFFSET)); then
-      echo "$port"
-      return 0
-    fi
-  done
-  echo "Failed to find a free base port whose +$OFFSET is also free" >&2
-  return 1
-}
-
 # An offset base for a booth already sitting on $1. Its +OFFSET port must be
 # free, must not be the booth's own port (booth refuses to publish over it), and
 # must differ from what the booth port would have produced — otherwise test 2
 # cannot tell a moved base from the default one.
+#
+# pick_free_port (common--source.sh) supplies a base whose +OFFSET is bindable;
+# the two inequalities are this test's own and are checked on top of it.
 function offset_base_away_from_booth_port() {
   local booth_port="$1" base i
   for i in {1..100}; do
-    base=$((30000 + RANDOM % 10001))
+    base="$(pick_free_port "$OFFSET")" || return 1
     if [[ "$base" != "$booth_port" ]] \
-       && [[ $((base + OFFSET)) != "$booth_port" ]] \
-       && is_port_free $((base + OFFSET)); then
+       && [[ $((base + OFFSET)) != "$booth_port" ]]; then
       echo "$base"
       return 0
     fi
@@ -113,7 +89,9 @@ function published_host_port() {
 }
 
 NAME="$(generate_name)"
-PORT="$(base_port_with_free_offset)"
+# The booth port and its +OFFSET published port must both be bindable, so
+# neither the booth nor the offset mapping collides with something else.
+PORT="$(pick_free_port "$OFFSET")"
 EXPECTED=$((PORT + OFFSET))
 CONFIG="test013--tmp-${NAME}.toml"
 
@@ -157,7 +135,7 @@ docker rm -f "$NAME" >/dev/null 2>&1 || true
 
 # --- Test 2: offset-base set — the fallback follows the base instead ----------
 
-PORT2="$(base_port_with_free_offset)"
+PORT2="$(pick_free_port "$OFFSET")"
 BASE2="$(offset_base_away_from_booth_port "$PORT2")"
 EXPECTED2=$((BASE2 + OFFSET))
 NOT_EXPECTED2=$((PORT2 + OFFSET))

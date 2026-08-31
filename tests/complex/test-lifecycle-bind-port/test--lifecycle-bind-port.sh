@@ -30,29 +30,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-is_port_free() {
-  local port="$1"
-  if command -v lsof >/dev/null 2>&1; then
-    ! lsof -iTCP:"$port" -sTCP:LISTEN -Pn 2>/dev/null | grep -q .
-  elif command -v ss >/dev/null 2>&1; then
-    ! ss -ltn "( sport = :$port )" 2>/dev/null | grep -q ":$port"
-  else
-    ! (command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" >/dev/null 2>&1)
-  fi
-}
-
-random_free_port() {
-  local p
-  for _ in {1..100}; do
-    p=$((50000 + RANDOM % 10000))
-    if is_port_free "$p"; then
-      echo "$p"
-      return 0
-    fi
-  done
-  return 1
-}
-
 host_port() {
   local name="$1"
   local container_port="$2"
@@ -65,8 +42,10 @@ has_bind() {
   docker inspect -f '{{range .HostConfig.Binds}}{{println .}}{{end}}' "$name" 2>/dev/null | grep -q "^${bind_prefix}"
 }
 
-UI_PORT="$(random_free_port)"
-EXTRA_PORT="$(random_free_port)"
+# Both are published on the same container (--port UI_PORT, -p EXTRA_PORT:12345),
+# so they have to differ or docker is asked to bind one host port twice.
+UI_PORT="$(pick_free_port)"
+EXTRA_PORT="$(pick_free_port_other_than "$UI_PORT")"
 BIND_ARG="${HOST_DIR}:/tmp/lifecycle-extra"
 
 diag() { sed 's/^/    /' >&2; }

@@ -30,29 +30,6 @@ cleanup() {
 }
 trap cleanup EXIT
 
-is_port_free() {
-  local port="$1"
-  if command -v lsof >/dev/null 2>&1; then
-    ! lsof -iTCP:"$port" -sTCP:LISTEN -Pn 2>/dev/null | grep -q .
-  elif command -v ss >/dev/null 2>&1; then
-    ! ss -ltn "( sport = :$port )" 2>/dev/null | grep -q ":$port"
-  else
-    ! (command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" >/dev/null 2>&1)
-  fi
-}
-
-random_free_port() {
-  local p
-  for _ in {1..100}; do
-    p=$((50000 + RANDOM % 10000))
-    if is_port_free "$p"; then
-      echo "$p"
-      return 0
-    fi
-  done
-  return 1
-}
-
 host_port_10000() {
   docker inspect -f '{{(index (index .HostConfig.PortBindings "10000/tcp") 0).HostPort}}' "$1" 2>/dev/null || true
 }
@@ -82,11 +59,8 @@ wait_coder_ready() {
   return 1
 }
 
-PORT_A="$(random_free_port)"
-PORT_B="$(random_free_port)"
-while [[ "$PORT_B" == "$PORT_A" ]]; do
-  PORT_B="$(random_free_port)"
-done
+PORT_A="$(pick_free_port)"
+PORT_B="$(pick_free_port_other_than "$PORT_A")"
 
 # ---------------------------------------------------------------------------
 # 1) exec --run --keep-alive --port creates a booth on that host port
