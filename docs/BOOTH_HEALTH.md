@@ -2,12 +2,15 @@
 
 > Two HTTP endpoints served by the wrapper nginx that let external callers check whether a booth is actually serving — and read basic metadata about it.
 
-Every wrapped booth variant (codeserver, desktop-xfce, desktop-kde, desktop-lxqt, notebook) exposes:
+Every booth variant exposes:
 
-- `GET /__booth/health` — liveness probe. 200 when the inner service is reachable, 5xx/timeout when it isn't.
+- `GET /__booth/health` — liveness probe. 200 when the service behind nginx is reachable, 5xx/timeout when it isn't.
+
+Every wrapped variant (codeserver, desktop-xfce, desktop-kde, desktop-lxqt, notebook) additionally exposes:
+
 - `GET /__booth/info` — metadata blob (container name, variant, version, port). Always 200 as long as the wrapper nginx is up.
 
-Both endpoints are served by the shared wrapper nginx template, so adding a variant that uses `start-booth-wrapped` gets them for free. The terminal-only (ttyd-split) variant does not wrap an inner web service and does not expose these endpoints.
+For the wrapped variants both endpoints come from the shared wrapper nginx template, so adding a variant that uses `start-booth-wrapped` gets them for free. The terminal-only (ttyd-split) variant serves `/__booth/health` from its own template, probing session 1's ttyd; it has no inner web service to describe, so it does not serve `/__booth/info`.
 
 Back to [README](../README.md)
 
@@ -26,7 +29,9 @@ Back to [README](../README.md)
 
 ## Why not just check the port?
 
-A bare `curl http://localhost:PORT/` may return 200 even when the booth is not truly ready — for example, an nginx overlay can serve static files while the inner service behind it is crashed, not yet started, or hung. A dedicated health endpoint:
+A bare `curl http://localhost:PORT/` may return 200 even when the booth is not truly ready — and on every variant, it does. nginx answers the root itself, without touching the service behind it: the terminal UI's root is a file on disk, and a wrapped variant's is a bare `return 302 /booth`. Both come back the instant nginx binds, while ttyd or code-server is still starting, so a page opened on that signal fills its frames with nginx's 502 instead.
+
+A dedicated health endpoint:
 
 - Proves the HTTP response came from the booth's own wrapper nginx (the `/__booth/*` namespace is reserved).
 - Actively probes the inner service on every request, so it will fail when the inner is down.
@@ -62,6 +67,7 @@ Format: `ok <ISO-8601 UTC timestamp>\n`. The timestamp is regenerated on every r
 
 - `Cache-Control: no-store`
 - `Content-Type: text/plain`
+- `X-Booth-Instance: <hex>` — identifies this container start. Sent on the 502/504 responses too (`always`). Ports get reused, so this is how a browser tab tells the booth it was served by from whatever booth is on that port now; the UI's readiness gate reloads itself when it stops matching. A restart mints a new one.
 
 **Probe details:**
 
@@ -147,6 +153,8 @@ For desktop variants, the wrapper's inner service is a noVNC / web-VNC front-end
 
 A future per-variant probe can address this (e.g. TCP-connect to the VNC socket, or call a desktop-internal endpoint). For now, treat desktop health as "the web front-end is up" rather than "the desktop session is interactive".
 
+The desktop variants also return the wrong *body*. `error_page` can only intercept the statuses listed above, and noVNC answers the probe with a 200 — so nginx passes its page straight through, and the response is ~5 KB of `text/html` rather than `ok <timestamp>`. The status is still correct (200 up, 502/504 down), so callers that check the status — `booth run`'s wait and `booth-ready.js` — work as documented; only a caller parsing the body would be surprised. The wrapped variants whose inner service answers with a redirect (codeserver, notebook) are unaffected.
+
 `codeserver` and `notebook` variants do not have this limitation — their inner service is the application itself, so a reachable inner means the application is actually answering.
 
 ---
@@ -158,5 +166,12 @@ The endpoints are defined in the shared wrapper nginx template:
 - Template source: [`variants/base/setups/booth-message-wrapper--setup.sh`](../variants/base/setups/booth-message-wrapper--setup.sh)
 - Rendered at container start by `start-booth-wrapped` using `envsubst` against the runtime environment.
 - Inner service URL is `http://127.0.0.1:${INNER_PORT}/`, where `INNER_PORT` is set by the variant-specific `start-<variant>-wrapped` script.
+
+For the terminal (ttyd-split) variant:
+
+- Template source: [`variants/base/web-ttyd-split/nginx.conf.template`](../variants/base/web-ttyd-split/nginx.conf.template), rendered by `start-ttyd-split`.
+- It probes `http://127.0.0.1:10001/s1` — session 1's ttyd, at the un-slashed base path. ttyd answers that with an empty 302, which the `error_page` list turns into this endpoint's own `ok` body; asking for `/s1/` would get a 200 instead, and `error_page` cannot intercept a 200, so the whole terminal page would come back as the health response.
+
+**Who reads it:** `booth run` waits on this endpoint before opening a browser, and every variant's UI polls it to decide when to load its frames (`variants/base/setups/booth-ready.js`). Both exist because the root cannot answer the question.
 
 Test: [`tests/basic/test012--booth-health.sh`](../tests/basic/test012--booth-health.sh) starts a codeserver booth, polls `/__booth/health` until 200, and asserts the `/__booth/info` payload shape.

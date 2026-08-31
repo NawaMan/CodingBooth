@@ -98,6 +98,23 @@ mkdir -p "$WEB_SPLIT_SERVE"
 OVERLAY_HTML=$(cat "$WRAPPER_DIR/overlay.html")
 export OVERLAY_HTML
 
+# Identity for this container start. A booth is reached by port, and ports get
+# reused: stop one booth, start another on the same port, and a browser tab left
+# open from the first still shows its page. The page carries this id and the
+# readiness gate reloads the page when the booth answering stops matching it.
+# Regenerated per start, so a restart counts as a new instance too.
+BOOTH_INSTANCE_ID=$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')
+export BOOTH_INSTANCE_ID
+
+# The readiness gate goes in <head>, so it is already polling before the panes
+# it gates are parsed. The instance id is declared just ahead of it, in its own
+# script, so the gate can read it on its very first probe.
+BOOTH_READY_JS="<script>window.BOOTH_INSTANCE_ID=\"${BOOTH_INSTANCE_ID}\";</script>
+<script>
+$(cat "$WRAPPER_DIR/booth-ready.js")
+</script>"
+export BOOTH_READY_JS
+
 PLUGINS_HTML=""
 if ls "$WRAPPER_DIR/plugins"/*.js >/dev/null 2>&1; then
   for plugin_file in "$WRAPPER_DIR/plugins"/*.js; do
@@ -110,9 +127,9 @@ $(cat "$plugin_file")
 fi
 export PLUGINS_HTML
 
-envsubst '${PORT} ${WEB_SPLIT_SERVE} ${AUTH_MAP} ${TTYD_AUTH_HEADER}' <"$WEB_SPLIT_ROOT/nginx.conf.template" >"$NGINX_CONFIG"
+envsubst '${PORT} ${WEB_SPLIT_SERVE} ${AUTH_MAP} ${TTYD_AUTH_HEADER} ${BOOTH_INSTANCE_ID}' <"$WEB_SPLIT_ROOT/nginx.conf.template" >"$NGINX_CONFIG"
 envsubst '${BOOTH_CONTAINER_NAME}' <"$WEB_SPLIT_ROOT/login.html" >"$WEB_SPLIT_SERVE/login.html"
-envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML}' \
+envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML} ${BOOTH_READY_JS}' \
   <"$WEB_SPLIT_ROOT/index.html" >"$WEB_SPLIT_SERVE/index.html"
 
 mkdir -p /tmp/nginx/body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi

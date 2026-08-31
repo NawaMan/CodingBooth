@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${BOOTH_CONTAINER_NAME} (${BOOTH_HOST_PORT})</title>
   <meta name="booth-project" content="${BOOTH_CONTAINER_NAME}">
+  ${BOOTH_READY_JS}
   <style>
     :root {
       --bg: #0b1018;
@@ -411,7 +412,7 @@
           <button class="proxy-open-tab" data-session="1" title="Open in new tab" style="display:none">&#x2197;</button>
           <span class="proxy-warning" data-session="1" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
-        <iframe src="/s1/" title="Session 1" data-default-src="/s1/"></iframe>
+        <iframe title="Session 1" data-default-src="/s1/"></iframe>
       </section>
       <section class="pane pane-2" data-pane="2">
         <div class="pane-header">
@@ -423,7 +424,7 @@
           <button class="proxy-open-tab" data-session="2" title="Open in new tab" style="display:none">&#x2197;</button>
           <span class="proxy-warning" data-session="2" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
-        <iframe src="/s2/" title="Session 2" data-default-src="/s2/"></iframe>
+        <iframe title="Session 2" data-default-src="/s2/"></iframe>
       </section>
       <section class="pane pane-3" data-pane="3">
         <div class="pane-header">
@@ -435,7 +436,7 @@
           <button class="proxy-open-tab" data-session="3" title="Open in new tab" style="display:none">&#x2197;</button>
           <span class="proxy-warning" data-session="3" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
-        <iframe src="/s3/" title="Session 3" data-default-src="/s3/"></iframe>
+        <iframe title="Session 3" data-default-src="/s3/"></iframe>
       </section>
       <section class="pane pane-4" data-pane="4">
         <div class="pane-header">
@@ -447,7 +448,7 @@
           <button class="proxy-open-tab" data-session="4" title="Open in new tab" style="display:none">&#x2197;</button>
           <span class="proxy-warning" data-session="4" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
-        <iframe src="/s4/" title="Session 4" data-default-src="/s4/"></iframe>
+        <iframe title="Session 4" data-default-src="/s4/"></iframe>
       </section>
       <div id="handle-x" class="split-handle split-handle-x" aria-hidden="true"></div>
       <div id="handle-y" class="split-handle split-handle-y" aria-hidden="true"></div>
@@ -830,6 +831,18 @@
 
       const proxyState = loadProxyState();
 
+      // A pane's target, recorded on the frame and only loaded while the booth
+      // is answering. nginx serves this page before the ttyd processes behind
+      // it are listening, so a frame pointed at /s1/ too early shows nginx's
+      // 502 rather than a terminal; the readiness gate below loads it, and
+      // loads it again whenever the booth comes back. See booth-ready.js.
+      function setPaneSrc(iframe, src) {
+        iframe.dataset.boothSrc = src;
+        if (window.BoothReady && window.BoothReady.isUp()) {
+          iframe.src = src;
+        }
+      }
+
       // Inject a baseline light-mode style into same-origin iframes that
       // haven't declared their own color-scheme. Lets unstyled apps (hello-world
       // demos) render with a normal white background instead of inheriting the
@@ -890,7 +903,7 @@
         const toggleBtn = pane.querySelector(".proxy-toggle");
         const warning = pane.querySelector(".proxy-warning");
 
-        iframe.src = "/proxy/" + port + "/";
+        setPaneSrc(iframe, "/proxy/" + port + "/");
         title.textContent = "Web :" + port;
         portInput.style.display = "none";
         backBtn.style.display = "";
@@ -913,7 +926,7 @@
         const toggleBtn = pane.querySelector(".proxy-toggle");
         const warning = pane.querySelector(".proxy-warning");
 
-        iframe.src = iframe.dataset.defaultSrc;
+        setPaneSrc(iframe, iframe.dataset.defaultSrc);
         title.textContent = "Session " + sessionNum;
         backBtn.style.display = "none";
         openTab.style.display = "none";
@@ -1000,6 +1013,16 @@
         if (data && data.port) {
           switchToWebView(session, data.port);
         }
+      });
+
+      // Load the panes once the booth answers, and reload them every time it
+      // comes back — a booth--restart restarts ttyd under this very tab, and
+      // without this the panes would sit on the 502 it left behind.
+      window.BoothReady.onUp(function () {
+        panes.forEach(function (pane) {
+          const iframe = pane.querySelector("iframe");
+          iframe.src = iframe.dataset.boothSrc || iframe.dataset.defaultSrc;
+        });
       });
 
       applySplitVariables();

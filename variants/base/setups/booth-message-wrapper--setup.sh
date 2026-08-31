@@ -28,6 +28,7 @@ mkdir -p "${WRAPPER_DIR}/plugins"
 # ── Copy the shared overlay HTML ──
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cp "${SCRIPT_DIR}/booth-message-overlay.html" "${WRAPPER_DIR}/overlay.html"
+cp "${SCRIPT_DIR}/booth-ready.js" "${WRAPPER_DIR}/booth-ready.js"
 cp "${SCRIPT_DIR}/booth-message-api-server" "${WRAPPER_DIR}/booth-message-api-server"
 chmod +x "${WRAPPER_DIR}/booth-message-api-server"
 cp "${SCRIPT_DIR}/booth-lifecycle-watcher" "${WRAPPER_DIR}/booth-lifecycle-watcher"
@@ -44,6 +45,7 @@ cat > "${WRAPPER_DIR}/wrapper.html" <<'HTMLEOF'
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${BOOTH_CONTAINER_NAME} (${BOOTH_HOST_PORT})</title>
+${BOOTH_READY_JS}
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; background: #111; }
@@ -51,8 +53,19 @@ cat > "${WRAPPER_DIR}/wrapper.html" <<'HTMLEOF'
 </style>
 </head>
 <body>
-<iframe id="booth-inner" src="${IFRAME_SRC}"></iframe>
+<iframe id="booth-inner" data-booth-src="${IFRAME_SRC}"></iframe>
 <script>
+// The frame is loaded by the readiness gate, not by the markup: nginx answers
+// on this port before the inner service does, so a frame that loads with the
+// page shows nginx's 502. This also re-runs whenever the booth comes back, so a
+// booth--restart reloads the frame instead of leaving the error page behind.
+// See booth-ready.js.
+(function () {
+  var inner = document.getElementById("booth-inner");
+  window.BoothReady.onUp(function () {
+    inner.src = inner.dataset.boothSrc;
+  });
+})();
 window.BOOTH_SHOW_RUN_TIME="${BOOTH_SHOW_RUN_TIME}";
 window.BOOTH_SHOW_COUNT_DOWN="${BOOTH_SHOW_COUNT_DOWN}";
 window.BOOTH_IDLE_TIME="${BOOTH_IDLE_TIME}";
@@ -114,6 +127,11 @@ http {
         # Booth liveness — proxies to inner service; 2xx/3xx/4xx → 200, 5xx/timeout → unhealthy.
         location = /__booth/health {
             access_log off;
+            # Which booth is answering — see the page's readiness gate. Ports get
+            # reused, so a tab left open from a booth that has since been
+            # replaced needs to notice it is driving a stranger. `always` so the
+            # id rides the 502 as well.
+            add_header X-Booth-Instance "${BOOTH_INSTANCE_ID}" always;
             proxy_pass http://127.0.0.1:${INNER_PORT}/;
             proxy_connect_timeout 2s;
             proxy_read_timeout 3s;
@@ -124,6 +142,9 @@ http {
             internal;
             default_type text/plain;
             add_header Cache-Control "no-store" always;
+            # add_header does not inherit into a named location that sets any of
+            # its own, so the instance id is repeated rather than shared.
+            add_header X-Booth-Instance "${BOOTH_INSTANCE_ID}" always;
             return 200 "ok $time_iso8601\n";
         }
 
@@ -209,6 +230,23 @@ export BOOTH_IDLE_SHUTDOWN_TIME="${BOOTH_IDLE_SHUTDOWN_TIME:-60}"
 OVERLAY_HTML=$(cat "$WRAPPER_DIR/overlay.html")
 export OVERLAY_HTML
 
+# Identity for this container start. A booth is reached by port, and ports get
+# reused: stop one booth, start another on the same port, and a browser tab left
+# open from the first still shows its page. The page carries this id and the
+# readiness gate reloads the page when the booth answering stops matching it.
+# Regenerated per start, so a restart counts as a new instance too.
+BOOTH_INSTANCE_ID=$(head -c 16 /dev/urandom | od -An -tx1 | tr -d ' \n')
+export BOOTH_INSTANCE_ID
+
+# The readiness gate goes in <head>, so it is already polling before the frame
+# it gates is parsed. The instance id is declared just ahead of it, in its own
+# script, so the gate can read it on its very first probe.
+BOOTH_READY_JS="<script>window.BOOTH_INSTANCE_ID=\"${BOOTH_INSTANCE_ID}\";</script>
+<script>
+$(cat "$WRAPPER_DIR/booth-ready.js")
+</script>"
+export BOOTH_READY_JS
+
 # Concatenate any lifecycle-panel plugin scripts into the wrapper HTML. Each
 # file is wrapped in its own <script> tag so a parse error in one doesn't
 # poison the others. Runs after overlay.html so window.BoothPanel is defined.
@@ -224,14 +262,14 @@ $(cat "$plugin_file")
 fi
 export PLUGINS_HTML
 
-envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML}' \
+envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML} ${BOOTH_READY_JS}' \
   <"$WRAPPER_DIR/wrapper.html" >"$SERVE_DIR/index.html"
 
 # Generate nginx config
 export OUTER_PORT INNER_PORT API_PORT SERVE_DIR
 export BOOTH_VARIANT_TAG="${BOOTH_VARIANT_TAG:-unknown}"
 export BOOTH_VERSION_TAG="${BOOTH_VERSION_TAG:-unknown}"
-envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT}' \
+envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT} ${BOOTH_INSTANCE_ID}' \
   <"$WRAPPER_DIR/nginx.conf.template" >"$NGINX_CONFIG"
 
 # Propagate SIGTERM to all child processes for clean container shutdown

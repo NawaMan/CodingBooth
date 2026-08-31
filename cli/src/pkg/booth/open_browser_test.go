@@ -140,6 +140,58 @@ func TestWaitForBoothServing_NginxAheadOfService(t *testing.T) {
 	}
 }
 
+// TestWaitForBoothServing_ProbesHealthNotRoot is the failure this wait was
+// getting wrong: nginx answers the booth's root itself — a file on disk for the
+// split UI, a bare `return 302 /booth` for the wrapper variants — the instant it
+// binds, with the service behind it still starting. Probing the root therefore
+// says "up" while every frame on the page it opens fills with nginx's 502.
+func TestWaitForBoothServing_ProbesHealthNotRoot(t *testing.T) {
+	var serviceUp atomic.Bool
+	var rootProbes atomic.Int32
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != boothHealthPath {
+			// nginx's own answer, which never depends on the service behind it.
+			rootProbes.Add(1)
+			http.Redirect(w, r, "/booth", http.StatusFound)
+			return
+		}
+		if !serviceUp.Load() {
+			w.WriteHeader(http.StatusBadGateway)
+			return
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	if waitForBoothServing(context.Background(), server.URL, 400*time.Millisecond) {
+		t.Error("waitForBoothServing() = true while only nginx was answering")
+	}
+	if got := rootProbes.Load(); got != 0 {
+		t.Errorf("the wait probed the root %d times — it must ask the health endpoint", got)
+	}
+
+	serviceUp.Store(true)
+	if !waitForBoothServing(context.Background(), server.URL, 5*time.Second) {
+		t.Error("waitForBoothServing() = false once the service behind nginx was up")
+	}
+}
+
+func TestBoothHealthURL(t *testing.T) {
+	tests := []struct{ boothURL, want string }{
+		{"http://localhost:10000", "http://localhost:10000/__booth/health"},
+		// A trailing slash must not double up into //__booth/health.
+		{"http://localhost:10000/", "http://localhost:10000/__booth/health"},
+		{"https://localhost:10443", "https://localhost:10443/__booth/health"},
+	}
+
+	for _, tt := range tests {
+		if got := boothHealthURL(tt.boothURL); got != tt.want {
+			t.Errorf("boothHealthURL(%q) = %q, want %q", tt.boothURL, got, tt.want)
+		}
+	}
+}
+
 func TestWaitForBoothServing_CancelledWhenBoothExits(t *testing.T) {
 	// Nothing is listening here, so the wait can only end by cancellation.
 	waitCtx, cancel := context.WithCancel(context.Background())

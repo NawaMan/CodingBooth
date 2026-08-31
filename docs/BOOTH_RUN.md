@@ -494,13 +494,23 @@ answers. This is on by default, in both foreground and daemon mode.
 ./booth --variant codeserver --no-browser # prints the URL and leaves it to you
 ```
 
-**Waiting for the port is the point.** `docker run -p` publishes the host port the
+**Waiting for the booth is the point.** `docker run -p` publishes the host port the
 moment the container is created, so the port accepts connections well before
 anything inside is listening — a browser opened on that signal lands on a reset
-connection. Booth polls its own URL and opens only once it gets an HTTP response,
-which is the first moment there is a page to show. In foreground mode the wait runs
-alongside the container and is dropped as soon as it exits; in daemon mode `booth`
-returns once the page is open.
+connection. Waiting for the front page is not enough either: every variant is
+fronted by nginx, and nginx answers its own root (a file on disk for the terminal
+UI, a redirect for the wrapped variants) the instant it binds, while ttyd or
+code-server behind it is still starting.
+
+So booth polls [`/__booth/health`](BOOTH_HEALTH.md), the one endpoint that proxies
+through to that service, and opens only once it answers. In foreground mode the wait
+runs alongside the container and is dropped as soon as it exits; in daemon mode
+`booth` returns once the page is open.
+
+The booth's own UI polls the same endpoint, so a page that is open before the booth
+is ready — or is still open across a `booth restart` — shows a "starting the booth"
+panel and loads its terminals or editor when they are actually there, rather than
+nginx's `502 Bad Gateway`.
 
 **A booth given a command never opens a browser.** `-- bash` and `--variant terminal`
 (which is `base` plus a `bash` command) run in the terminal booth was launched from

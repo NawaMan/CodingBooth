@@ -16,6 +16,7 @@ Back to [README](../README.md)
 - [Architecture](#architecture)
 - [Wrapper Page](#wrapper-page)
 - [Nginx Configuration](#nginx-configuration)
+- [Readiness Gate](#readiness-gate)
 - [API Server](#api-server)
 - [Overlay HTML Injection](#overlay-html-injection)
 - [Adding a Variant](#adding-a-variant)
@@ -94,12 +95,77 @@ Nginx serves as the single entry point for the booth's browser UI. Its routing r
 |------|----------|
 | `/` | Redirects to `/booth` (unless `?_booth_inner=1` is set, which proxies to the inner service — used by the iframe itself) |
 | `/booth` | Serves the wrapper HTML page |
+| `/__booth/health`, `/__booth/info` | Liveness probe and metadata — see [BOOTH_HEALTH.md](BOOTH_HEALTH.md) |
 | `/booth-messages/api/*` | Proxies to the API server |
 | Everything else | Proxies to the inner service with WebSocket support |
+
+Note what this table means for readiness: `/` and `/booth` are answered by nginx
+alone. They come back the moment nginx binds, with the inner service still starting,
+so neither is evidence that the booth is up — which is what the readiness gate below
+exists for.
 
 The `_booth_inner` query parameter prevents redirect loops — when the iframe loads `/`, it includes this parameter so nginx proxies directly to the inner service instead of redirecting back to `/booth`.
 
 WebSocket support is enabled for all proxied requests to the inner service, which is required by VS Code, Jupyter, and desktop VNC connections.
+
+---
+
+## Readiness Gate
+
+nginx binds the booth's port before the inner service is listening, so a wrapper page
+that loads its iframe with the page shows nginx's `502 Bad Gateway` rather than the
+variant's UI. The same gap reopens later: `booth restart` restarts the inner service
+under a tab that is already open.
+
+`booth-ready.js` closes both. It is injected into `<head>` — by `start-booth-wrapped`
+for the wrapped variants and by `start-ttyd-split` for the terminal UI, from the one
+copy at `variants/base/setups/booth-ready.js` — and polls `/__booth/health` until the
+inner service answers. The page holds its frames back until then, showing a small
+"starting the booth" panel instead.
+
+Pages use it through one call:
+
+```js
+BoothReady.onUp(function () { iframe.src = wherever; });
+```
+
+`onUp` fires on every transition to serving, the first one included, so the same
+handler does the initial load and every reload after a restart. `BoothReady.isUp()`
+reports the current state for code deciding whether to point a frame somewhere right
+now. Because the frames are loaded by script rather than markup, a gated `<iframe>`
+carries its target in a data attribute (`data-booth-src` on the wrapper page,
+`data-default-src` on the terminal UI's panes) and has no `src` of its own.
+
+### Booth identity
+
+Readiness is not enough on its own, because a booth is reached by port and ports get
+reused. Stop one booth, start another on the same port, and the browser hands the URL
+to a tab that is already open — which still shows the first booth's page, now driving
+a booth that never served it. A terminal UI left over from a base booth asks a
+notebook booth for `/s1/` and gets Jupyter's 404; readiness alone reports "up" and
+loads it anyway.
+
+So each container start mints a random `BOOTH_INSTANCE_ID`. It goes two places:
+
+- into the page, as `window.BOOTH_INSTANCE_ID`, declared just ahead of the gate;
+- onto every `/__booth/health` response, as the `X-Booth-Instance` header — with
+  `always`, so it rides the 502 too and a swap is caught before the new booth has
+  finished starting.
+
+Every probe compares them. A mismatch means this page belongs to a booth that is
+gone, so the gate navigates to the booth's root — the one address every variant
+answers for itself — rather than reloading in place, since the path in the bar
+belongs to the booth that left.
+
+Both ids must be well-formed hex for a mismatch to count. An image too old to send
+the header, or a template that failed to substitute, leaves the check switched off
+rather than reloading on a loop; a `sessionStorage` guard backs that up by allowing
+at most one reload per booth.
+
+A restart mints a new id as well, so `booth restart` reloads the page outright
+instead of only its frames. That is the more correct outcome — the page is
+regenerated from the booth's current configuration — and the pane layout survives in
+`localStorage`.
 
 ---
 
