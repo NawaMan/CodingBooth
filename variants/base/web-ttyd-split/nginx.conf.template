@@ -64,6 +64,48 @@ http {
             proxy_buffering off;
         }
 
+        # Booth liveness — proxies to session 1's ttyd; 2xx/3xx/4xx → 200,
+        # 5xx/timeout → unhealthy. It has to reach past nginx to mean anything:
+        # nginx serves this page from disk the moment it starts, while the ttyd
+        # processes behind it are still binding, so "the port answers" is not
+        # "the booth is up". See BOOTH_HEALTH.md.
+        #
+        # Ungated on purpose. The CLI probes this before a browser is opened,
+        # let alone a session cookie minted, and an "ok" gives away only that a
+        # booth is serving here — which the redirect to /login already does.
+        location = /__booth/health {
+            access_log off;
+            # Which booth is answering. A booth is reached by port, and ports get
+            # reused: stop one booth and start another on the same port and a
+            # browser tab left open from the first is still showing its page,
+            # now driving a booth that never served it. The page carries this id
+            # and reloads itself when it stops matching. `always` so the id is
+            # on the 502 too — the swap is worth catching before the new booth
+            # has finished starting.
+            add_header X-Booth-Instance "${BOOTH_INSTANCE_ID}" always;
+            # The un-slashed base path on purpose: ttyd answers it with an empty
+            # 302 to /s1/, which the error_page list below turns into this
+            # endpoint's own "ok" body. Asking for /s1/ would get a 200 instead,
+            # and error_page cannot intercept a 200 — the whole 700 KB terminal
+            # page would be returned as the health response, on every poll.
+            proxy_pass http://127.0.0.1:10001/s1;
+            ${TTYD_AUTH_HEADER}
+            proxy_connect_timeout 2s;
+            proxy_read_timeout 3s;
+            proxy_intercept_errors on;
+            error_page 301 302 303 304 307 308 400 401 402 403 404 405 406 407 408 409 410 411 412 413 414 415 416 417 418 422 429 =200 @__booth_alive;
+        }
+
+        location @__booth_alive {
+            internal;
+            default_type text/plain;
+            add_header Cache-Control "no-store" always;
+            # add_header does not inherit into a named location that sets any of
+            # its own, so the instance id is repeated rather than shared.
+            add_header X-Booth-Instance "${BOOTH_INSTANCE_ID}" always;
+            return 200 "ok $time_iso8601\n";
+        }
+
         location /s1/ {
             if ($booth_auth_ok = 0) {
                 return 302 /login;

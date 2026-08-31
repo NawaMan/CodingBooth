@@ -31,7 +31,17 @@ const (
 	// browserProbeTimeout bounds one probe. The target is on loopback, so a
 	// probe that has not answered in this long is a booth that is not up yet.
 	browserProbeTimeout = 3 * time.Second
+
+	// boothHealthPath is the readiness endpoint every variant's nginx serves
+	// (see BOOTH_HEALTH.md). It proxies to the service behind nginx, which is
+	// the only thing that answers the question the wait is asking.
+	boothHealthPath = "/__booth/health"
 )
+
+// boothHealthURL is the readiness endpoint on a booth's front door.
+func boothHealthURL(boothURL string) string {
+	return strings.TrimSuffix(boothURL, "/") + boothHealthPath
+}
 
 // BoothURL is the address this run's booth UI answers on.
 func BoothURL(ctx appctx.AppContext) string {
@@ -93,17 +103,23 @@ func warnBrowser(url, format string, a ...any) {
 	fmt.Fprintf(os.Stderr, "   Open %s yourself.\n", url)
 }
 
-// waitForBoothServing polls the booth's own URL until it answers, and reports
-// whether it did before the timeout (or the wait being cancelled).
+// waitForBoothServing polls the booth's readiness endpoint until it answers,
+// and reports whether it did before the timeout (or the wait being cancelled).
 //
 // A TCP connect is not enough to tell. `docker run -p` publishes the host port
 // the moment the container is created, so the port accepts connections long
 // before anything inside the container is listening — a browser opened on that
 // signal lands on a connection reset, which is exactly the "opened too early"
-// failure this is meant to avoid. Docker's proxy only fails once it tries to
-// reach the container, so an HTTP response — any status, including the 302 to
-// a login page that code-server and Jupyter answer with — is the first signal
-// that there is a page to show.
+// failure this is meant to avoid.
+//
+// Neither is the booth's front page. Every variant is fronted by nginx (see
+// BOOTH_UI_OVERLAY.md), and nginx answers the root itself, without touching the
+// service behind it: the split UI's root is a file on disk, and the wrapper
+// variants' is a bare `return 302 /booth`. Both come back the instant nginx
+// binds, while ttyd or code-server is still starting — so the browser opens on
+// a page whose frames then fill with nginx's 502. /__booth/health is the one
+// endpoint that proxies through to that service, so it is the only answer that
+// means the booth is up.
 func waitForBoothServing(waitCtx context.Context, url string, timeout time.Duration) bool {
 	client := &http.Client{
 		Timeout: browserProbeTimeout,
@@ -120,10 +136,11 @@ func waitForBoothServing(waitCtx context.Context, url string, timeout time.Durat
 	defer client.CloseIdleConnections()
 
 	deadline := time.Now().Add(timeout)
+	healthURL := boothHealthURL(url)
 	announced := false
 
 	for {
-		if boothIsServing(waitCtx, client, url) {
+		if boothIsServing(waitCtx, client, healthURL) {
 			return true
 		}
 		if waitCtx.Err() != nil || time.Now().After(deadline) {
@@ -143,14 +160,18 @@ func waitForBoothServing(waitCtx context.Context, url string, timeout time.Durat
 	}
 }
 
-// boothIsServing reports whether one probe of the URL found a page to show.
+// boothIsServing reports whether one probe of the URL found a booth to show.
 //
-// Nearly any status counts — a booth's front door answers 302 to its login page
-// and may answer 401 or 404 depending on the variant, and all of those are a
-// booth that is up. The exception is the gateway errors: every variant is
-// fronted by nginx proxying to the service behind it (see BOOTH_UI_OVERLAY.md),
-// and nginx answers long before that service does. A 502 is that gap, which is
-// the same "opened too early" landing this wait exists to avoid.
+// Nearly any status counts: /__booth/health normalizes every non-5xx answer it
+// gets from the service behind nginx to 200. The exception is the gateway
+// errors, which are nginx reporting it could not reach that service — the gap
+// this wait exists to sit out.
+//
+// A booth from an image too old to serve the endpoint falls back to whatever
+// answers the path instead. For the wrapper variants that is the catch-all
+// proxy, which is the right answer by accident; for the terminal variant it is
+// the front page from disk, which is the old too-early behaviour. Neither is
+// worse than not waiting, and an image and its CLI normally ship together.
 func boothIsServing(waitCtx context.Context, client *http.Client, url string) bool {
 	req, err := http.NewRequestWithContext(waitCtx, http.MethodGet, url, nil)
 	if err != nil {

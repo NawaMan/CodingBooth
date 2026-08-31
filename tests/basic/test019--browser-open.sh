@@ -7,12 +7,16 @@
 # Test: a booth that serves a UI opens it in the host's browser.
 #
 #   1) a UI booth opens the browser, on its own URL
-#   2) it waits for the port to answer first — the booth is up by then
+#   2) it waits for the booth itself — not just nginx — to answer first
+#   8) ...and the readiness endpoint it waits on was already ok by then
 #   3) --no-browser opens nothing
 #   4) CB_BROWSER=false opens nothing
 #   5) browser = false in config.toml opens nothing...
 #   6) ...and --browser overrides it for the one run
 #   7) a booth given a command (-- …) serves no page, so it opens nothing
+#
+# Case 8 is numbered last but runs with case 2: both interrogate the booth that
+# case 1 opened, and each later case replaces that container with its own.
 #
 # $BROWSER stands in for the real thing: it is the first opener booth tries on
 # any Unix host, so pointing it at a script records the open without a window
@@ -43,32 +47,8 @@ function generate_name() {
   echo "$name"
 }
 
-function is_port_free() {
-  local p="$1"
-  if command -v lsof >/dev/null 2>&1; then
-    ! lsof -iTCP:"$p" -sTCP:LISTEN -Pn 2>/dev/null | grep -q .
-  elif command -v ss >/dev/null 2>&1; then
-    ! ss -ltn "( sport = :$p )" 2>/dev/null | grep -q ":$p"
-  else
-    ! (command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$p" >/dev/null 2>&1)
-  fi
-}
-
-function random_free_port() {
-  local port
-  for i in {1..100}; do
-    port=$((40000 + RANDOM % 10001))
-    if is_port_free "$port"; then
-      echo "$port"
-      return 0
-    fi
-  done
-  echo "Failed to find free port in range 40000-50000 after 100 tries" >&2
-  return 1
-}
-
 NAME="$(generate_name)"
-PORT="$(random_free_port)"
+PORT="$(pick_free_port)"
 WORK="$(mktemp -d)"
 LOG="$0.log"
 : > "$LOG"
@@ -114,14 +94,26 @@ else
   exit 1
 fi
 
-# The wait is the feature: a published port accepts connections long before the
-# booth answers on it, so by the time the browser was handed the URL there must
-# already be a page there.
-CODE="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://localhost:$PORT/" 2>/dev/null || echo "000")"
-if [[ "$CODE" =~ ^(200|301|302|401|403)$ ]]; then
-  print_test_result "true" "$0" "2" "The booth was already answering ($CODE) when the browser was opened"
+# The wait is the feature, and what it waits on is the point. A published port
+# accepts connections long before anything inside is listening; nginx then
+# answers this variant's root from a file on disk the instant it binds, with the
+# ttyd processes behind it still starting. So the assertion is on /s1/ — the
+# pane the opened page actually loads — and on the readiness endpoint booth
+# waits for. Asserting on '/' would pass with all four panes showing a 502.
+PANE="$(curl -s -o /dev/null -w '%{http_code}' --max-time 10 "http://localhost:$PORT/s1/" 2>/dev/null || echo "000")"
+if [[ "$PANE" =~ ^(200|301|302|401|403)$ ]]; then
+  print_test_result "true" "$0" "2" "The booth's terminal was already answering ($PANE) when the browser was opened"
 else
-  print_test_result "false" "$0" "2" "The booth should have been answering when opened, got '$CODE'"
+  print_test_result "false" "$0" "2" "The booth's terminal should have been answering when opened, got '$PANE'"
+  tail -30 "$LOG" >&2
+  exit 1
+fi
+
+HEALTH="$(curl -s --max-time 10 "http://localhost:$PORT/__booth/health" 2>/dev/null || echo "")"
+if [[ "$HEALTH" =~ ^ok\  ]]; then
+  print_test_result "true" "$0" "8" "The readiness endpoint booth waits on was already ok ($HEALTH)"
+else
+  print_test_result "false" "$0" "8" "/__booth/health should have been ok when the browser opened, got '${HEALTH:0:80}'"
   tail -30 "$LOG" >&2
   exit 1
 fi
