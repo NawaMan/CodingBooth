@@ -33,27 +33,25 @@ cleanup() {
 }
 trap cleanup EXIT
 
-is_port_free() {
-  local port="$1"
-  if command -v lsof >/dev/null 2>&1; then
-    ! lsof -iTCP:"$port" -sTCP:LISTEN -Pn 2>/dev/null | grep -q .
-  elif command -v ss >/dev/null 2>&1; then
-    ! ss -ltn "( sport = :$port )" 2>/dev/null | grep -q ":$port"
-  else
-    ! (command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" >/dev/null 2>&1)
-  fi
-}
-
 host_port_10000() {
   docker inspect -f '{{(index (index .HostConfig.PortBindings "10000/tcp") 0).HostPort}}' "$1" 2>/dev/null || true
 }
 
-# Find a 1000-aligned base in [40000, 60000] where base, base+1000, and base+2000
-# are all free, so the scan has room to advance deterministically.
+# Find a 1000-aligned base where base, base+1000, and base+2000 are all free, so
+# the scan has room to advance deterministically.
+#
+# The window is [20000, 30000] rather than [40000, 60000]: this host hands out
+# ephemeral ports from 32768 up, so the old window sat entirely inside a range
+# the kernel could assign from under the test between the check and the bind.
+# port_is_bindable (common--source.sh) closes the other half of that hole by
+# binding the port rather than looking for a listener — a port held by an
+# outbound connection is never in LISTEN state.
+#
+# The scan stays deterministic and 1000-aligned; only where it looks changed.
 find_free_base() {
   local b
-  for b in $(seq 40000 1000 60000); do
-    if is_port_free "$b" && is_port_free "$((b + 1000))" && is_port_free "$((b + 2000))"; then
+  for b in $(seq 20000 1000 30000); do
+    if port_is_bindable "$b" && port_is_bindable "$((b + 1000))" && port_is_bindable "$((b + 2000))"; then
       echo "$b"
       return 0
     fi

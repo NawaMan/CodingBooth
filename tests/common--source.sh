@@ -68,6 +68,218 @@ fi
 # Usage (from a test's own project directory):
 #     reset_booth_tmp            # ./.booth/.tmp
 #     reset_booth_tmp "$DIR"     # $DIR/.booth/.tmp
+# ── Picking a port a test can actually bind ──────────────────────────────────
+#
+# The usual "is this port free?" check looks for a listener, and that misses the
+# thing most likely to take a port out from under a test: the kernel. Every
+# outbound connection is assigned an ephemeral port, and one sitting in
+# ESTABLISHED or TIME_WAIT is invisible to `lsof -sTCP:LISTEN` while still making
+# the bind fail. basic/test003 lost a run to exactly that —
+#
+#   failed to bind host port 127.0.0.1:39386/tcp: address already in use
+#
+# — on a port the check had just called free.
+#
+# Two changes fix it. Candidates come from *below* the ephemeral range, so the
+# kernel will never hand one out on its own; and a candidate is confirmed by
+# binding it rather than by looking for a listener, which is the same question
+# docker is about to ask.
+
+# ephemeral_port_floor is the lowest port the kernel assigns on its own.
+ephemeral_port_floor() {
+  local floor=""
+
+  if [[ -r /proc/sys/net/ipv4/ip_local_port_range ]]; then
+    floor=$(awk '{print $1}' /proc/sys/net/ipv4/ip_local_port_range 2>/dev/null || true)
+  elif command -v sysctl >/dev/null 2>&1; then
+    floor=$(sysctl -n net.inet.ip.portrange.first 2>/dev/null || true)
+  fi
+
+  # Linux's default, and below macOS's 49152 — safe either way if the lookup
+  # gave us nothing usable.
+  case "$floor" in
+    ""|*[!0-9]*) floor=32768 ;;
+  esac
+  echo "$floor"
+}
+
+# port_is_bindable reports whether 127.0.0.1:<port> can be bound right now.
+port_is_bindable() {
+  local port="$1"
+
+  if command -v python3 >/dev/null 2>&1; then
+    # A bind with no listen and no connect leaves nothing behind when it closes,
+    # so asking this question does not itself make the port unavailable.
+    if python3 -c '
+import socket, sys
+sock = socket.socket()
+try:
+    sock.bind(("127.0.0.1", int(sys.argv[1])))
+except OSError:
+    sys.exit(1)
+finally:
+    sock.close()
+' "$port" 2>/dev/null; then
+      return 0
+    fi
+    return 1
+  fi
+
+  # No python3: fall back to looking for a listener. Weaker — it cannot see a
+  # port held by something that never listened — but picking below the ephemeral
+  # range has already ruled out the case that fallback would miss.
+  if command -v lsof >/dev/null 2>&1; then
+    ! lsof -iTCP:"$port" -sTCP:LISTEN -Pn 2>/dev/null | grep -q .
+  elif command -v ss >/dev/null 2>&1; then
+    ! ss -ltn "( sport = :$port )" 2>/dev/null | grep -q ":$port"
+  else
+    ! (command -v nc >/dev/null 2>&1 && nc -z 127.0.0.1 "$port" >/dev/null 2>&1)
+  fi
+}
+
+# pick_free_port prints a port this host will let the caller bind.
+#
+# Extra arguments are offsets that must be bindable too, for a test that needs a
+# port and something at a fixed distance above it — an expose offset, or room
+# for a scan to advance into:
+#
+#     PORT="$(pick_free_port)"          # just the one
+#     PORT="$(pick_free_port 300)"      # PORT and PORT+300
+#     PORT="$(pick_free_port 1000 2000)"
+#
+# The whole span stays below the ephemeral floor, not just its first port.
+pick_free_port() {
+  local floor low high span port index offset reach ok
+  floor=$(ephemeral_port_floor)
+
+  # The furthest above the port itself the caller needs.
+  reach=0
+  for offset in "$@"; do
+    (( offset > reach )) && reach=$offset
+  done
+
+  # Above the registered-service crowd, below the ephemeral range.
+  low=20000
+  high=$((floor - 1 - reach))
+  if (( high <= low )); then
+    # A host tuned to hand out ephemeral ports from very low down, or a caller
+    # reaching so far up that nothing fits underneath. Take the old window
+    # rather than nothing, and let the bind check carry it.
+    low=30000
+    high=$((40000 - reach))
+  fi
+  span=$((high - low + 1))
+
+  for index in {1..100}; do
+    port=$((low + RANDOM % span))
+    ok=true
+    if ! port_is_bindable "$port"; then
+      ok=false
+    else
+      for offset in "$@"; do
+        if ! port_is_bindable $((port + offset)); then
+          ok=false
+          break
+        fi
+      done
+    fi
+    if [[ "$ok" == true ]]; then
+      echo "$port"
+      return 0
+    fi
+  done
+
+  echo "Failed to find a free port in $low-$high after 100 tries" >&2
+  return 1
+}
+
+# pick_free_port_other_than prints a free port that is none of the ports given.
+#
+# Picking a port does not reserve it, and nothing stops two calls to
+# pick_free_port from landing on the same number — so a test that needs two
+# ports to differ has to say so. What goes wrong when it does not depends on the
+# test: two booths racing for one port, one container asked to publish the same
+# host port twice, or a case that quietly proves nothing because the "other"
+# port was the same one.
+#
+#     PORT_A="$(pick_free_port)"
+#     PORT_B="$(pick_free_port_other_than "$PORT_A")"
+pick_free_port_other_than() {
+  local port taken index distinct
+
+  for index in {1..100}; do
+    port="$(pick_free_port)" || return 1
+
+    distinct=true
+    for taken in "$@"; do
+      if [[ "$port" == "$taken" ]]; then
+        distinct=false
+        break
+      fi
+    done
+
+    if [[ "$distinct" == true ]]; then
+      echo "$port"
+      return 0
+    fi
+  done
+
+  echo "Failed to find a free port distinct from: $*" >&2
+  return 1
+}
+
+# ── Android emulator tests: capable by default, off by exception ─────────────
+#
+# These are opt-*out*. A machine that can run them should: a test nobody ever
+# turns on is a test nobody notices rotting, and the emulator claims are exactly
+# the ones no other test can see — a booth that stops persisting its device fails
+# nothing, it just quietly loses the device on every restart.
+#
+# Booting Android is minutes rather than seconds, so the two places that make it
+# a bad trade are named rather than assumed:
+#
+#   CB_ANDROID_EMULATOR_TEST=1   run it here regardless (what the docs have
+#                                always said, and still true)
+#   CB_ANDROID_EMULATOR_TEST=0   never run it here
+#   unset                        run it when this host can
+
+# can_use_kvm reports whether this host can hardware-accelerate the emulator.
+#
+# Presence is not enough — /dev/kvm is root:kvm, so a user outside that group
+# sees the node and still cannot open it.
+can_use_kvm() {
+  [[ -c /dev/kvm && -r /dev/kvm && -w /dev/kvm ]]
+}
+
+# android_emulator_test_enabled reports whether an emulator test should run here,
+# printing the reason when it should not.
+android_emulator_test_enabled() {
+  case "${CB_ANDROID_EMULATOR_TEST:-}" in
+    1|true|yes|on)
+      return 0
+      ;;
+    0|false|no|off)
+      echo "SKIP: CB_ANDROID_EMULATOR_TEST is off." >&2
+      return 1
+      ;;
+  esac
+
+  # CI is the standard signal every runner sets. Checked here rather than in a
+  # workflow file so a suite added to CI later is off by default instead of
+  # discovering the cost the hard way.
+  if [[ -n "${CI:-}" ]]; then
+    echo "SKIP: running under CI — set CB_ANDROID_EMULATOR_TEST=1 to run the emulator test here anyway." >&2
+    return 1
+  fi
+
+  if ! can_use_kvm; then
+    echo "SKIP: no usable /dev/kvm — the emulator falls back to software and boots roughly 13x slower. Set CB_ANDROID_EMULATOR_TEST=1 to run anyway." >&2
+    return 1
+  fi
+
+  return 0
+}
+
 reset_booth_tmp() {
   local base="${1:-.}"
   local tmp_dir="${base}/.booth/.tmp"
