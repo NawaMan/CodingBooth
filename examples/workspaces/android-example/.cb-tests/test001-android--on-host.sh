@@ -32,9 +32,28 @@ fi
 # silent no-op that exits 0 in two seconds. One pre-joined string has nothing to
 # lose.
 IN_BOOTH_CMD="./.cb-tests/inBooth--run-all-tests.sh"
-if [[ "${CB_ANDROID_EMULATOR_TEST:-0}" == "1" ]]; then
-    IN_BOOTH_CMD="CB_ANDROID_EMULATOR_TEST=1 $IN_BOOTH_CMD"
-fi
+
+# Decide here and pass the answer in, rather than letting the booth decide again
+# from different inputs. The host is where the interesting signals live — whether
+# this is CI, and whether the user asked either way — and the value is always
+# explicit so the in-booth script never has to guess.
+#
+# Opt-out, not opt-in: the emulator test runs on a machine that can afford it.
+# /dev/kvm is checked on the host because the booth is configured with
+# `--device /dev/kvm`, so what the host has is what the booth gets.
+EMULATOR=1
+case "${CB_ANDROID_EMULATOR_TEST:-}" in
+    1|true|yes|on)  ;;
+    0|false|no|off) EMULATOR=0 ;;
+    *)
+        if [[ -n "${CI:-}" ]]; then
+            EMULATOR=0
+        elif [[ ! -c /dev/kvm || ! -r /dev/kvm || ! -w /dev/kvm ]]; then
+            EMULATOR=0
+        fi
+        ;;
+esac
+IN_BOOTH_CMD="CB_ANDROID_EMULATOR_TEST=$EMULATOR $IN_BOOTH_CMD"
 
 "$BOOTH" --port "${CB_PORT:-50411}" -- "$IN_BOOTH_CMD" 2>&1 | tee "$0.out"
 # PIPESTATUS[0], not $? — after a pipe, $? is tee's status, which is 0 even when
