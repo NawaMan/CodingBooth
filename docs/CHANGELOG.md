@@ -4,6 +4,138 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The browser opened onto `502 Bad Gateway`.** `booth run` waits for the booth to answer before
+  handing the URL to a browser, and the wait was asking the wrong door. It probed the booth's root,
+  which nginx answers by itself — the terminal UI's root is a file on disk, and a wrapped variant's
+  is a bare `return 302 /booth`. Both come back the instant nginx binds, with ttyd or code-server
+  behind it still starting, so the wait ended early and the page that opened filled its frames with
+  nginx's error page.
+
+  Measured on a notebook booth: nginx answered at 1.44s, JupyterLab at 3.41s. Every run had a
+  two-second window in which the browser could open on nothing. The terminal variant has the same
+  gap, narrower — its four panes point at `/s1/`…`/s4/`, so it shows the 502 four times over.
+
+  The wait now probes [`/__booth/health`](BOOTH_HEALTH.md), which proxies through to the service
+  behind nginx and is the only answer that means the booth is up. That endpoint existed already, on
+  the wrapped variants; the terminal variant now serves it too, probing session 1's ttyd. The same
+  booth now opens at 3.55s — after JupyterLab, not before it.
+
+  A host-side wait only covers startup, so the booth's own UI now polls the same endpoint. A page
+  opened before the booth is ready, or still open across a `booth restart`, shows a "starting the
+  booth" panel and loads its terminals or editor once they are actually there, instead of leaving
+  nginx's error page on screen. Shared by every variant as
+  `variants/base/setups/booth-ready.js`; see [BOOTH_UI_OVERLAY.md](BOOTH_UI_OVERLAY.md).
+
+- **The Android emulator tests were opt-in, so they never ran.** `test-avd-persistence` and the
+  android-example's `inBooth-test003` both required `CB_ANDROID_EMULATOR_TEST=1`, and nothing in the
+  repo ever set it — no runner, no workflow. A full `run-automate-tests.sh` reported them as skipped
+  and moved on.
+
+  That is the wrong default for these two in particular. `test-avd-persistence` covers the one claim
+  about `avd-cache` that nothing else can see: the emulator does not write a Quick Boot snapshot on
+  its own way out, so if `cb-android-emulator-stop` ever stops saving, every other test still passes
+  and users simply lose their device on each restart, with no error anywhere.
+
+  They are now opt-**out**. They run wherever the environment can afford it, and the places that
+  cannot are named rather than assumed — under CI, and on a host without usable `/dev/kvm`, where
+  software emulation turns a ~20s boot into ~258s. `CB_ANDROID_EMULATOR_TEST=0` turns them off
+  anywhere; `=1` still forces them on exactly as documented, so nothing that worked before changed.
+
+  `CI` is checked inside the test rather than set in a workflow, so a suite added to CI later is off
+  by default instead of discovering the cost the hard way. The KVM probe tests `-r` and `-w` on
+  `/dev/kvm`, not merely that the node exists: it is `root:kvm`, so a user outside that group can see
+  it and still not open it.
+
+  Turning it on found it already broken, which is the argument for the change in one line. Its first
+  real run failed on
+
+  ```
+  /system/bin/sh: can't create /sdcard/cb-persist.txt: Operation not permitted
+  ```
+
+  The default image is API 34, and from API 30 on scoped storage blocks `adb shell` from writing to
+  `/sdcard` at all. Note which half failed: `cb-android-emulator-stop` still reported `State saved`,
+  so the behaviour under test was fine and only the test's own marker location had rotted. The marker
+  moved to `/data/local/tmp`, writable by the shell user and on the same userdata partition the
+  snapshot captures, so it probes persistence just as well. All four cases pass now, including the
+  one that matters — device state surviving into a brand new container.
+
+- **`basic/test003` failed on a port nothing was using.** A run died on
+
+  ```
+  failed to bind host port 127.0.0.1:39386/tcp: address already in use
+  ```
+
+  after its own check had just called 39386 free. The check looked for a *listener*, and the thing
+  holding the port was not one: every outbound connection is assigned an ephemeral port, and one in
+  ESTABLISHED or TIME_WAIT is invisible to `lsof -sTCP:LISTEN` while still making the bind fail. The
+  test picked from 30000-40000 and this host's ephemeral range starts at 32768, so most of the
+  window it drew from was a range the kernel could hand out from under it.
+
+  `pick_free_port` in `tests/common--source.sh` replaces it, and changes both halves: candidates come
+  from below the ephemeral floor (read from `ip_local_port_range`, or `net.inet.ip.portrange.first`
+  on macOS), so the kernel will not hand one out on its own; and a candidate is confirmed by binding
+  it, which is the question docker is about to ask, rather than by looking for a listener.
+
+  All fifteen tests that pick a port now use it, and their own copies are gone. Only test003 had been
+  seen to fail, but its 30000-40000 window was the *least* exposed of them: the 40000-50000 and
+  50000-60000 ranges the others drew from sit entirely inside the ephemeral range, so they were
+  losing the same coin flip on every run and had simply not come up tails yet.
+
+  Two needed more than a single port, and `pick_free_port` takes offsets for them — the whole span
+  stays below the ephemeral floor, not just its first port:
+
+  ```
+  PORT="$(pick_free_port 300)"        # basic/test013: the booth port and its +300 published port
+  ```
+
+  `complex/test-port-next-skip` keeps its deterministic 1000-aligned scan and just moved window,
+  from [40000, 60000] to [20000, 30000], with the bind check underneath it.
+
+  Three tests that need two ports were not asking for two *different* ones — picking a port does not
+  reserve it, so nothing stopped two calls from landing on the same number. What that would have
+  broken differs by test: `basic/test012` starts its base booth while the codeserver booth is still
+  running, so a shared port fails to bind; `complex/test-lifecycle-bind-port` publishes both on the
+  same container, so it would ask docker to bind one host port twice; and
+  `complex/test-lifecycle-name-port` uses the second as the "some other port" its override cases
+  override with, so an equal pair would have passed while demonstrating nothing.
+  `pick_free_port_other_than` states the requirement instead:
+
+  ```
+  PORT_A="$(pick_free_port)"
+  PORT_B="$(pick_free_port_other_than "$PORT_A")"
+  ```
+
+  None of this was written down anywhere, which is why every test had reinvented it wrongly. There is
+  now a `tests/README.md`: what the nine suites are and how they differ, the port rules above with
+  the reasoning, and the two `set -euo pipefail` traps that silently skip a case rather than failing
+  — a bare test as the last line of a loop body, and a failing pipeline inside `$( )`. Both were
+  found in this repo's own tests, each having hidden a case that never ran while the suite still
+  reported green.
+
+  Nine `test-add-*` skills go with it, one per suite, each covering that suite's naming, discovery
+  glob, helper library and assertion vocabulary — they differ more than they look, with three
+  separate helper libraries between them — and each opening by naming the cases that belong to a
+  cheaper sibling instead.
+
+- **A booth's page outlived the booth it came from.** Run a booth, close it, run a different variant
+  on the same port, and the browser hands the reused URL to the tab that is still open — which is
+  still showing the first booth's page. Nothing on it belongs to what is now on that port. The
+  terminal UI's panes ask a notebook booth for `/s1/` and get Jupyter's 404 framed inside the
+  terminal chrome; the readiness check above makes it worse on its own, because the notebook *is*
+  serving, so the gate reports "up" and loads the wrong paths with confidence.
+
+  Readiness cannot answer this — the question is not whether a booth is up but *which* booth is.
+  So each container start now mints a random `BOOTH_INSTANCE_ID`, baked into the page it serves and
+  stamped on every `/__booth/health` response as `X-Booth-Instance`. When the two stop matching, the
+  page is from a booth that is gone, and the UI navigates to the current booth's root instead of
+  driving a stranger. Both ids must be well-formed for a mismatch to count, so an older image or a
+  template that failed to substitute switches the check off rather than reloading on a loop.
+
+  A restart mints a new id too, so `booth restart` now reloads the page rather than only its frames
+  — the page is regenerated from the booth's current configuration, and the pane layout is in
+  `localStorage`, so it survives.
+
 - **The published images were never actually signed.** `docker-build.sh` ran
   `cosign sign --yes --upload=false`, which computes a signature and then does not upload it, so no
   `sha256-<digest>.sig` ever reached the registry. Every release logged "Cosign: signing tag …" and

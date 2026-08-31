@@ -99,6 +99,7 @@ Node/pnpm — here the product *is* the booth tooling.
 | Go unit tests | `(cd cli && go test ./...)` |
 | Focused package tests | `(cd cli && go test ./src/pkg/booth/ -count=1)` |
 | Shell automate suite (subset / as needed) | `tests/run-automate-tests.sh` (long; prefer targeted tests under `tests/…`) |
+| Writing or changing a shell test | read `tests/README.md` first — which suite, which helper library, how to pick a port, and the `set -e` traps that silently skip a case |
 | Why did a booth call return nothing? | `tests/logs/complex-booth-calls.log` — the complex suite traces every booth call's command, exit code, and stderr (tests themselves discard stderr). Set `CB_DIAG_LOG=<path>` to trace any suite; `CB_DIAG_LOG=/dev/null` to opt out. |
 | Rebuild base/variant images | `./build/docker-build.sh base` (or listed variants) — only when the change needs a new image |
 | Wrapper smoke tests | scripts under `tests/wrapper/` |
@@ -358,10 +359,25 @@ rather than skipping it — `work-start` as its proposal step, `work-finish` as 
 | `blog-publish` | make a draft the latest post — rename to the publish date, wire prev/next, index + front page |
 | `setup-work` | add, modify, or fix a setup / template / extension — with a workspace to try it in |
 | `setup-add` | thin pointer to `setup-work` (kept so the old name still resolves) |
+| `test-add-unit` | a Go unit test in `cli/src/` — pure logic; the first choice whenever it fits |
+| `test-add-dryrun` | `tests/dryrun/` — what the CLI *would* run, via `--dryrun`; no container |
+| `test-add-boothfile` | `tests/boothfile/` — the Dockerfile a Boothfile emits; no image built |
+| `test-add-setups` | `tests/setups/` — a real setup script with its tools stubbed |
+| `test-add-basic` | `tests/basic/` — one real booth, started and asserted on |
+| `test-add-complex` | `tests/complex/` — a multi-step lifecycle, in its own directory |
+| `test-add-config` | `tests/config/` — `booth config` / `init` non-interactively (own helper lib) |
+| `test-add-config-tui` | `tests/config-tui/` — the interactive TUI, driven by VHS keystrokes |
+| `test-add-wrapper` | `tests/wrapper/` — the `booth` wrapper script, inside a container |
 | `todo-add` | record an idea in `docs/TODO.md` only — never implement |
 | `todo-pick` | "what's next?" — shortlist open `docs/TODO.md` items, user picks, then build |
 | `work-start` | beginning a sizable task — judge it *is* work, propose, then create the worktree + branch |
 | `work-finish` | merging a worktree's branch into main — preflight, rebase, tests, `--no-ff`, cleanup |
+
+The nine `test-add-*` skills are one per suite, listed above roughly cheapest-first. Pick by what the
+assertion needs, not by what the change touched: prefer a Go unit test, then an output-only suite
+(`dryrun`, `boothfile`, `setups`), and only start a container when the behaviour is inside one. Each
+skill opens by naming the cases that belong to a sibling instead. `tests/README.md` is the shared
+half they all point at — port picking, the `set -euo pipefail` traps, cleanup.
 
 ---
 
