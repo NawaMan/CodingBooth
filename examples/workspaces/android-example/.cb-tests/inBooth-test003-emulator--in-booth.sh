@@ -8,10 +8,12 @@
 #
 # GATED, and deliberately so. Booting Android is slow enough to dominate an
 # otherwise ~1-minute example run: measured here, ~20s with KVM and ~258s
-# without (software emulation is roughly 13x slower to boot). So this runs only
-# when asked:
+# without (software emulation is roughly 13x slower to boot). So it runs by
+# default only where that is cheap — KVM present, not under CI — and is
+# turned off explicitly rather than left off by default:
 #
-#   CB_ANDROID_EMULATOR_TEST=1 ./run-automatic-on-host-test.sh
+#   CB_ANDROID_EMULATOR_TEST=0 ./run-automatic-on-host-test.sh   # skip it
+#   CB_ANDROID_EMULATOR_TEST=1 ./run-automatic-on-host-test.sh   # force it
 #
 # It adapts to the host rather than requiring KVM: with /dev/kvm it boots
 # hardware-accelerated, without it falls back to -accel off. The fallback is not
@@ -24,10 +26,28 @@ set -uo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
-if [[ "${CB_ANDROID_EMULATOR_TEST:-0}" != "1" ]]; then
-    echo "SKIP: emulator test not enabled (set CB_ANDROID_EMULATOR_TEST=1 to run it)."
-    exit 0
-fi
+# Opt-out, not opt-in: a booth that can afford this should run it. =1 forces it
+# on, =0 turns it off, and unset means "run if this booth can" — which is CI off,
+# and off where /dev/kvm is not usable, since software emulation turns a ~20s
+# boot into ~258s. The on-host runner normally decides and passes an explicit
+# value; this stands on its own for anyone running the script directly.
+case "${CB_ANDROID_EMULATOR_TEST:-}" in
+    1|true|yes|on)  ;;
+    0|false|no|off)
+        echo "SKIP: CB_ANDROID_EMULATOR_TEST is off."
+        exit 0
+        ;;
+    *)
+        if [[ -n "${CI:-}" ]]; then
+            echo "SKIP: running under CI — set CB_ANDROID_EMULATOR_TEST=1 to run it here anyway."
+            exit 0
+        fi
+        if [[ ! -c /dev/kvm || ! -r /dev/kvm || ! -w /dev/kvm ]]; then
+            echo "SKIP: no usable /dev/kvm in this booth — the emulator would boot roughly 13x slower. Set CB_ANDROID_EMULATOR_TEST=1 to run anyway."
+            exit 0
+        fi
+        ;;
+esac
 
 if ! command -v emulator >/dev/null 2>&1; then
     echo "SKIP: no emulator in this booth — reconfigure with +emulator to enable it."

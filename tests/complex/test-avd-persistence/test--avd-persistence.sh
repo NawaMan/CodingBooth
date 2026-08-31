@@ -17,8 +17,12 @@
 # still passes and users simply lose their device on each restart, with no error
 # anywhere. Hence: write a marker, stop properly, restart, read it back.
 #
-# GATED. Two Android boots is minutes, not seconds:
-#   CB_ANDROID_EMULATOR_TEST=1 ./test--avd-persistence.sh
+# Two Android boots is minutes, not seconds — but this runs by default on a host
+# that can afford it, because a test nobody turns on is a test nobody notices
+# rotting, and the claim above is invisible to everything else. It gates itself
+# off under CI and on a host without usable KVM; CB_ANDROID_EMULATOR_TEST=0 turns
+# it off anywhere, =1 forces it on. See android_emulator_test_enabled in
+# tests/common--source.sh.
 # -----------------------------------------------------------------------------
 
 set -uo pipefail
@@ -30,10 +34,7 @@ source ../../common--source.sh
 
 echo "=== Test: avd-cache persists the device across booth restarts ==="
 
-if [[ "${CB_ANDROID_EMULATOR_TEST:-0}" != "1" ]]; then
-    echo "SKIP: set CB_ANDROID_EMULATOR_TEST=1 to run (two Android boots)."
-    exit 0
-fi
+android_emulator_test_enabled || exit 0
 
 use_local_base_image || exit 0
 
@@ -73,6 +74,11 @@ else
     exit 1
 fi
 
+# /data/local/tmp, not /sdcard: from API 30 on, scoped storage means `adb shell`
+# cannot write to /sdcard at all ("Operation not permitted") without rooting the
+# device first. /data/local/tmp is writable by the shell user and lives on the
+# same userdata partition the snapshot captures, so it probes persistence just
+# as well. The default image here is API 34.
 MARKER="cb-persist-$$"
 
 # --- session 1: boot, write a marker, stop the documented way -----------------
@@ -84,8 +90,8 @@ for i in \$(seq 1 60); do
     [ "\$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ] && break
     sleep 5
 done
-adb shell 'echo ${MARKER} > /sdcard/cb-persist.txt'
-adb shell cat /sdcard/cb-persist.txt | tr -d '\r'
+adb shell 'echo ${MARKER} > /data/local/tmp/cb-persist.txt'
+adb shell cat /data/local/tmp/cb-persist.txt | tr -d '\r'
 cb-android-emulator-stop
 EOF
 chmod +x "$PRJ/s1.sh"
@@ -110,7 +116,7 @@ for i in $(seq 1 60); do
     [ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" = 1 ] && break
     sleep 5
 done
-echo "MARKER_READBACK=$(adb shell cat /sdcard/cb-persist.txt 2>/dev/null | tr -d '\r')"
+echo "MARKER_READBACK=$(adb shell cat /data/local/tmp/cb-persist.txt 2>/dev/null | tr -d '\r')"
 adb emu kill >/dev/null 2>&1
 EOF
 chmod +x "$PRJ/s2.sh"

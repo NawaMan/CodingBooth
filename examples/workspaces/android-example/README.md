@@ -149,10 +149,13 @@ Google publishes the Android platform tools, build tools and emulator for **linu
 
 This launches the booth and runs `.cb-tests/inBooth-*` inside it: that the SDK tools resolve in a **non-login** shell, that they execute, and that `build-apk.sh` produces an APK carrying `classes.dex`, `resources.arsc`, a verifying signature, the expected package name, and a `minSdk`/`targetSdk` pair a real device will accept.
 
-The emulator test is **opt-in**, because booting Android takes longer than everything else here combined:
+The emulator test runs too, wherever that is cheap — booting Android takes longer than everything
+else here combined, so it turns itself off under CI and on a host without usable `/dev/kvm`. Turn it
+off or force it on explicitly:
 
 ```bash
-CB_ANDROID_EMULATOR_TEST=1 ./run-automatic-on-host-test.sh
+CB_ANDROID_EMULATOR_TEST=0 ./run-automatic-on-host-test.sh   # skip the emulator
+CB_ANDROID_EMULATOR_TEST=1 ./run-automatic-on-host-test.sh   # run it regardless
 ```
 
-That adds `inBooth-test003`, which boots the emulator, `adb install`s the APK, launches it, and asserts `MainActivity` reached the foreground with nothing in the crash buffer — the one thing a successful build genuinely cannot tell you. It picks hardware acceleration or `-accel off` based on whether `/dev/kvm` is usable, so it runs either way.
+That is `inBooth-test003`, which boots the emulator, `adb install`s the APK, launches it, and asserts `MainActivity` reached the foreground with nothing in the crash buffer — the one thing a successful build genuinely cannot tell you. It picks hardware acceleration or `-accel off` based on whether `/dev/kvm` is usable, so it runs either way.
