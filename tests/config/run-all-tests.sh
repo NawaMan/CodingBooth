@@ -127,6 +127,11 @@ PASS_COUNT=0
 FAIL_COUNT=0
 FAIL_TESTS=()
 
+# Retried tests are collected in a file rather than an array: the parallel path
+# runs each test in a background subshell, and an array there would not survive.
+RETRIED_LIST="$(mktemp)"
+trap 'rm -f "$RETRIED_LIST"' EXIT
+
 # ── Sequential tests (booth-collect: uses Docker ports) ─────────────
 
 for test_file in "${seq_tests[@]}"; do
@@ -134,11 +139,24 @@ for test_file in "${seq_tests[@]}"; do
     echo "-------------------------------------------------------------------------------"
 
     seq_start=$(date +%s)
-    if (cd "$SCRIPT_DIR" && bash "$test_file" $VERBOSE); then
+    seq_rc=0
+    (cd "$SCRIPT_DIR" && bash "$test_file" $VERBOSE) || seq_rc=$?
+    if (( seq_rc == 0 )); then
         PASS_COUNT=$((PASS_COUNT + 1))
-    else
+    elif (( seq_rc == 2 )); then
+        # `skip` — a missing prerequisite, not something a retry would fix.
         FAIL_COUNT=$((FAIL_COUNT + 1))
         FAIL_TESTS+=("$name")
+    else
+        echo "⚠️  FAILED: ${name} — retrying once"
+        printf '%s\n' "$name" >> "$RETRIED_LIST"
+        if (cd "$SCRIPT_DIR" && bash "$test_file" $VERBOSE); then
+            echo "✅ PASSED after retry: ${name}"
+            PASS_COUNT=$((PASS_COUNT + 1))
+        else
+            FAIL_COUNT=$((FAIL_COUNT + 1))
+            FAIL_TESTS+=("$name")
+        fi
     fi
     echo "   (${name}: $(( $(date +%s) - seq_start ))s)"
     echo ""
@@ -169,7 +187,33 @@ run_one() {
     local out
     out=$(capture_file "$test_file")
 
-    if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 bash "$test_file" $VERBOSE) > "$out" 2>&1; then
+    local rc=0
+    (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 bash "$test_file" $VERBOSE) > "$out" 2>&1 || rc=$?
+
+    # 2 is `skip` from test-helpers--source.sh — a missing prerequisite, which a
+    # second attempt cannot change. Only a real failure is worth retrying. (The
+    # recorded code stays 0/1 exactly as before; classifying skips is a separate
+    # question this change does not touch.)
+    if (( rc == 0 )); then
+        echo 0 > "${out}.exit"
+        return
+    fi
+    if (( rc == 2 )); then
+        echo 1 > "${out}.exit"
+        return
+    fi
+
+    # Retry once, immediately. The retry is unconditional rather than gated on
+    # recognising a transient: tests run the booth with --silence-build, so an
+    # archive 503 never reaches this runner as text it could match on.
+    #
+    # This runs in a background subshell, so the fact of a retry is recorded in a
+    # file — an array assignment here would not survive back to the parent.
+    echo "" >> "$out"
+    echo "⚠️  First attempt failed — retrying once." >> "$out"
+    printf '%s\n' "$(basename "$test_file" .sh)" >> "$RETRIED_LIST"
+
+    if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 bash "$test_file" $VERBOSE) >> "$out" 2>&1; then
         echo 0 > "${out}.exit"
     else
         echo 1 > "${out}.exit"
@@ -356,6 +400,12 @@ TEST_COUNT=$((PASS_COUNT + FAIL_COUNT))
 echo "========================================"
 echo "  Config Test Summary"
 echo "  Total: ${TEST_COUNT}   Passed: ${PASS_COUNT}   Failed: ${FAIL_COUNT}"
+# A pass that needed a second attempt is still a flake. Report it, or retrying
+# quietly converts a real intermittent fault into a green suite.
+if [[ -s "$RETRIED_LIST" ]]; then
+    echo "  ⚠️  Retried after a first-attempt failure: $(wc -l < "$RETRIED_LIST" | tr -d ' ')"
+    sed 's/^/    - /' "$RETRIED_LIST"
+fi
 echo "  Duration: ${OVERALL_DURATION}s (sequential=${#seq_tests[@]}, parallel=${#par_tests[@]}x${PARALLEL})"
 echo "========================================"
 

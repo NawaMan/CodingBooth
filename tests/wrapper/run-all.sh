@@ -46,6 +46,7 @@ pass=0
 fail=0
 skip=0
 failed_names=()
+retried_names=()   # passed or failed, but only after a second attempt
 
 for test in "${tests[@]}"; do
     name="$(basename "${test%.sh}")"
@@ -81,6 +82,20 @@ for test in "${tests[@]}"; do
     # PUBLIC tests use exit 77 from public_preflight when codingbooth.io or
     # GitHub Releases are unreachable, so a transient blip becomes SKIP.
     "$test"; rc=$?
+
+    # Retry a real failure once, immediately. 77 is SKIP and 0 is PASS, so
+    # neither is retried — only an actual failure. A transient (a registry blip,
+    # an unreachable archive) should not cost the whole suite, and the evidence
+    # for one is usually inside the container where this runner cannot see it.
+    if (( rc != 0 && rc != 77 )); then
+        printf "⚠️  FAILED: %s — retrying once\n" "$name"
+        retried_names+=("$name")
+        "$test"; rc=$?
+        if (( rc == 0 )); then
+            printf "✅ PASSED after retry: %s\n" "$name"
+        fi
+    fi
+
     case "$rc" in
         0)  pass=$((pass + 1)) ;;
         77) skip=$((skip + 1)) ;;
@@ -91,6 +106,12 @@ done
 echo ""
 echo "==========================="
 printf "PASS: %d   FAIL: %d   SKIP: %d\n" "$pass" "$fail" "$skip"
+# A pass that needed a second attempt is still a flake — say so rather than
+# letting the retry quietly turn an intermittent fault into a green run.
+if (( ${#retried_names[@]} > 0 )); then
+    printf "⚠️  Retried after a first-attempt failure: %d\n" "${#retried_names[@]}"
+    for n in "${retried_names[@]}"; do printf "  - %s\n" "$n"; done
+fi
 if (( fail > 0 )); then
     printf "Failed:\n"
     for n in "${failed_names[@]}"; do printf "  - %s\n" "$n"; done
