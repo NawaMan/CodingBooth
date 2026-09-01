@@ -51,17 +51,85 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/ollama/ollama/releases/latest | grep '"tag_name"' | sed -E 's/.*"v([^"]+)".*/\1/')
+  # Unauthenticated api.github.com is rate limited to 60 requests/hour/IP. When
+  # that limit is hit the body is a JSON error, no tag_name matches, and VERSION
+  # comes back empty — which used to build the URL ".../download/v/ollama-..."
+  # and fail as a 404 much later, naming a file rather than the real cause.
+  VERSION=$(curl -fsSL --connect-timeout 10 --max-time 30 \
+    --retry 3 --retry-delay 3 --retry-all-errors \
+    https://api.github.com/repos/ollama/ollama/releases/latest \
+    | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/')
 else
   VERSION="$REQ_VER"
+fi
+
+if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+  echo "❌ Could not resolve an Ollama version (got: '${VERSION:-<empty>}')." >&2
+  echo "   api.github.com may be rate limiting this host; pin one with --version <X.Y.Z>." >&2
+  exit 1
 fi
 
 # ---- download and install ----
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 TARBALL_URL="https://github.com/ollama/ollama/releases/download/v${VERSION}/ollama-linux-${ARCH}.tar.zst"
+TARBALL="$TMP/ollama.tar.zst"
 echo "⬇️  Installing Ollama v${VERSION} (${ARCH}) ..."
-curl -fsSL "$TARBALL_URL" -o "$TMP/ollama.tar.zst"
-tar --zstd -xf "$TMP/ollama.tar.zst" -C "$TMP"
+
+# Name the size before starting. This tarball is ~1.4 GB and pulls at roughly
+# 1 MB/s, so it is a legitimate twenty-plus-minute download — and the line above
+# was the last thing this step printed for all of it. A build that prints
+# nothing for twenty minutes is indistinguishable from a hung one, and the
+# natural response (^C) discards the RUN layer and restarts from zero.
+# Best-effort: a failed probe just means no size. Lowercase first, since HTTP/2
+# sends header names lowercased but HTTP/1.1 sends "Content-Length" and mawk has
+# no IGNORECASE; keep the last value, as the redirect hops carry a length of 0.
+TOTAL="$(curl -fsIL --connect-timeout 10 --max-time 30 "$TARBALL_URL" 2>/dev/null \
+  | tr -d '\r' | tr 'A-Z' 'a-z' \
+  | awk '/^content-length:/{n=$2} END{print n}')" || true
+[[ "$TOTAL" =~ ^[0-9]+$ ]] || TOTAL=0
+
+if (( TOTAL > 0 )); then
+  echo "   ollama-linux-${ARCH}.tar.zst is $((TOTAL / 1024 / 1024)) MB; this takes tens of minutes."
+fi
+
+# Start clean so -C - is purely a resume-across-retries mechanism: against a
+# stale complete file the range request would come back 416 and -f would fail.
+rm -f "${TARBALL}.part"
+
+# The original fetch had no bounds at all: no connect timeout, no stall
+# detection, no retry, no resume. --speed-limit/--speed-time abandon a transfer
+# that has genuinely died rather than riding it until the far end hangs up;
+# a slow-but-moving link stays under the threshold and is left alone. -C -
+# resumes across retries, so a reset at minute twenty does not repay 1.4 GB
+# from zero. --max-time is the outer bound past which something is truly wrong.
+curl -fsSL --connect-timeout 10 --max-time 3600 \
+  --speed-limit 1024 --speed-time 60 \
+  --retry 5 --retry-delay 5 --retry-all-errors -C - \
+  "$TARBALL_URL" -o "${TARBALL}.part" &
+CURL_PID=$!
+
+# curl's own --progress-bar is useless here: it rewrites a single line with \r
+# and no newline, and the build progress reader keeps only what follows the last
+# \r on a *completed* line (see cli/src/pkg/docker/build_progress.go). None of
+# its meter ever reaches the status line. So emit our own heartbeat —
+# newline-terminated, and therefore the one thing that does advance it.
+while kill -0 "$CURL_PID" 2>/dev/null; do
+  sleep 30
+  kill -0 "$CURL_PID" 2>/dev/null || break
+  GOT="$(stat -c %s "${TARBALL}.part" 2>/dev/null || echo 0)"
+  if (( TOTAL > 0 )); then
+    echo "   … $((GOT / 1024 / 1024)) MB of $((TOTAL / 1024 / 1024)) MB ($((GOT * 100 / TOTAL))%)"
+  else
+    echo "   … $((GOT / 1024 / 1024)) MB"
+  fi
+done
+
+# Let curl's exit status fail the step under `set -e`; a partial tarball must
+# never be handed to tar as if it were the real thing.
+wait "$CURL_PID"
+mv "${TARBALL}.part" "$TARBALL"
+
+tar --zstd -xf "$TARBALL" -C "$TMP"
 
 # Install the ollama binary (it's in bin/ inside the tarball)
 install -m 755 "$TMP/bin/ollama" /usr/local/bin/ollama
