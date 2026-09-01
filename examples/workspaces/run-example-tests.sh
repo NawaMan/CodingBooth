@@ -228,34 +228,50 @@ if [ ${#examples[@]} -eq 0 ]; then
     exit 0
 fi
 
-# Pick a timeout command. macOS doesn't ship `timeout`; coreutils provides
-# `gtimeout` when installed via Homebrew. Fall back to a Perl shim (preinstalled
-# on macOS) that preserves the GNU `timeout` exit-code convention (124 on
-# timeout) so the result classifier below still works.
-if command -v timeout >/dev/null 2>&1; then
-    TIMEOUT_CMD=(timeout)
-elif command -v gtimeout >/dev/null 2>&1; then
-    TIMEOUT_CMD=(gtimeout)
-elif command -v perl >/dev/null 2>&1; then
-    TIMEOUT_CMD=(perl -e '
-        my $secs = shift;
-        my $pid = fork();
-        die "fork: $!" unless defined $pid;
-        if ($pid == 0) { exec @ARGV or exit 127; }
-        local $SIG{ALRM} = sub {
-            kill "TERM", $pid;
-            sleep 5;
-            kill "KILL", $pid;
-            exit 124;
-        };
-        alarm $secs;
-        waitpid($pid, 0);
-        exit($? >> 8);
-    ' --)
-else
-    echo "WARNING: no 'timeout', 'gtimeout', or 'perl' found — examples will run without a hang guard." >&2
-    TIMEOUT_CMD=()
-fi
+# Hand-rolled timeout wrapper, used instead of `timeout`/`gtimeout`/a Perl
+# shim: those only ever signal the direct child, so a `docker buildx build`
+# (or any other grandchild) the wrapped command starts survives the kill,
+# keeps running in the background past the declared timeout, and keeps
+# writing to the example's log after it's already been reported as TIMEOUT
+# and the runner has moved on to the next example -- burning CPU/network that
+# the next example needs, and in a few observed cases finishing successfully
+# minutes later even though the example was recorded as a false TIMEOUT.
+#
+# `set -m` makes each backgrounded command its own process group leader, so
+# `kill -<signal> -- "-$pid"` (negative pid) reaches that whole group -- the
+# command and everything it spawned -- not just the top process.
+run_with_timeout() {
+    local secs="$1"; shift
+    local flag="${TMPDIR:-/tmp}/cb-timeout-$$-$RANDOM"
+    rm -f "$flag"
+
+    set -m
+    "$@" &
+    local cmd_pid=$!
+    (
+        sleep "$secs"
+        : > "$flag"
+        kill -TERM -- "-$cmd_pid" 2>/dev/null
+        sleep 5
+        kill -KILL -- "-$cmd_pid" 2>/dev/null
+    ) &
+    local watcher_pid=$!
+
+    wait "$cmd_pid" 2>/dev/null
+    local exit_code=$?
+
+    # The command is done (naturally or via the watcher's kill); stop the
+    # watcher so it can't fire later against a reused pid.
+    kill "$watcher_pid" 2>/dev/null
+    wait "$watcher_pid" 2>/dev/null
+    set +m
+
+    if [ -e "$flag" ]; then
+        rm -f "$flag"
+        return 124
+    fi
+    return $exit_code
+}
 
 echo "========================================"
 echo "Running Example Tests"
@@ -362,11 +378,7 @@ for example_dir in "${examples[@]}"; do
         echo "========================================"
 
         set +e
-        if [[ ${#TIMEOUT_CMD[@]} -gt 0 ]]; then
-            "${TIMEOUT_CMD[@]}" "$EXAMPLE_TIMEOUT" bash -c "cd '$example_dir' && VARIANT=base CB_PORT=RANDOM ./run-automatic-on-host-test.sh"
-        else
-            bash -c "cd '$example_dir' && VARIANT=base CB_PORT=RANDOM ./run-automatic-on-host-test.sh"
-        fi
+        run_with_timeout "$EXAMPLE_TIMEOUT" bash -c "cd '$example_dir' && VARIANT=base CB_PORT=RANDOM ./run-automatic-on-host-test.sh"
         test_exit_code=$?
         set -e
 

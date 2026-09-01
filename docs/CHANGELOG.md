@@ -158,6 +158,44 @@ This file contains a list of changes for each released version.
   — the page is regenerated from the booth's current configuration, and the pane layout is in
   `localStorage`, so it survives.
 
+- **The Ollama install had no bounds and no voice.** `test-boothfile-ollama` sat on one line for
+  twenty-eight minutes:
+
+  ```
+  ⠋ 28m09s  [3/3] RUN ollama--setup.sh  — ⬇️  Installing Ollama v0.32.15 (arm64) ...
+  ```
+
+  That `echo` was the last thing the step printed, and the `curl` after it was
+  `curl -fsSL "$TARBALL_URL" -o "$TMP/ollama.tar.zst"` — no connect timeout, no stall detection, no
+  retry, no resume, no progress. `ollama-linux-arm64.tar.zst` is 1,543,177,713 bytes and GitHub
+  serves it at roughly 1 MB/s, so twenty-eight minutes was the job very nearly finished, not a hang.
+  A wedged socket, on the other hand, would have blocked the build indefinitely, and any reset would
+  have repaid the whole 1471 MB from zero.
+
+  The download now names its size up front, emits a newline-terminated heartbeat every 30s — the
+  only kind the build progress line can display, since `curl --progress-bar` rewrites one line with
+  `\r` and `build_progress.go` keeps only what follows the last `\r` on a *completed* line — and
+  carries the bounds it never had: `--max-time`, `--speed-limit`/`--speed-time`, and `-C -` onto a
+  `.part` file that is moved into place only after `curl` exits clean.
+
+  ```
+  ⠋ 12m40s  [3/3] RUN ollama--setup.sh  — … 700 MB of 1471 MB (47%)
+  ```
+
+  Version resolution was unbounded too, and silently produced nonsense. Unauthenticated
+  `api.github.com` allows 60 requests/hour/IP; over that limit the body is a JSON error, nothing
+  matches `tag_name`, and `VERSION` came back empty — building `.../download/v/ollama-linux-arm64.tar.zst`
+  and failing as a 404 that named a file instead of the real cause. It is now bounded, retried, and
+  validated, and says what to do (`--version <X.Y.Z>`).
+
+- **The Ollama test was not testing the Ollama setup.** `tests/complex/test-boothfile-ollama/` ships
+  its own `.booth/setups/ollama--setup.sh`. A Boothfile `setup ollama` line compiles to a bare
+  `RUN ollama--setup.sh` (`compiler.go:509`) and `.booth/setups` is prepended to `PATH`
+  (`compiler.go:230`) — so the project-local copy shadows `variants/base/setups/`, and the test has
+  been exercising a private duplicate rather than the catalog script it claims to cover. The two had
+  already drifted apart in how they parse `tag_name`. Both now carry the same fixed download and are
+  byte-for-byte identical, which removes the drift but not the shadowing.
+
 - **The published images were never actually signed.** `docker-build.sh` ran
   `cosign sign --yes --upload=false`, which computes a signature and then does not upload it, so no
   `sha256-<digest>.sig` ever reached the registry. Every release logged "Cosign: signing tag …" and
