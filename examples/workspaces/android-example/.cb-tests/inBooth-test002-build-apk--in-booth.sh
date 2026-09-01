@@ -8,6 +8,14 @@
 
 set -euo pipefail
 
+# Same arch gate as inBooth-test001: no Android SDK means no android.jar, and
+# build-apk.sh cannot produce anything without it.
+DPKG_ARCH="$(dpkg --print-architecture 2>/dev/null || true)"
+if [[ "$DPKG_ARCH" != "amd64" ]]; then
+    echo "SKIP: Android SDK is unsupported on '${DPKG_ARCH:-unknown}' (Google publishes it for linux x86_64 only)."
+    exit 0
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
