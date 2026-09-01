@@ -33,6 +33,8 @@ DOCKER_FLAGS=()        # flags forwarded to docker-build.sh
 VARIANTS_TO_BUILD=()   # dependent variants (excludes base)
 STOP_REQUESTED=false
 PUSH_REQUESTED=false   # mirror of --push in DOCKER_FLAGS
+NO_CACHE_REQUESTED=false  # mirror of --no-cache; drives the pre-build cache prune
+PRUNE_REQUESTED=true      # --no-prune opts out of that prune
 
 # Status files are used instead of associative arrays for bash 3.2 compatibility
 # Status for each step stored in ${LOG_DIR}/${step}.status
@@ -64,7 +66,8 @@ ParseArgs() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
             --push)     DOCKER_FLAGS+=("--push"); PUSH_REQUESTED=true; shift ;;
-            --no-cache) DOCKER_FLAGS+=("--no-cache");  shift ;;
+            --no-cache) DOCKER_FLAGS+=("--no-cache"); NO_CACHE_REQUESTED=true; shift ;;
+            --no-prune) PRUNE_REQUESTED=false;         shift ;;
             -h|--help)  Usage; exit 0 ;;
             *)          positional+=("$1");            shift ;;
         esac
@@ -93,7 +96,9 @@ parallel.  A live status graph is displayed during the build.
 
 Options:
   --push          Forward to docker-build.sh (push + sign)
-  --no-cache      Forward to docker-build.sh (no layer cache)
+  --no-cache      Forward to docker-build.sh (no layer cache). Also discards the
+                  build cache first — see --no-prune.
+  --no-prune      Keep the existing build cache even with --no-cache.
   -h, --help      Show this help
 
 Variants (if none provided, all are built):
@@ -355,6 +360,34 @@ docker_login_once() {
     DOCKER_FLAGS+=("--skip-login")
 }
 
+# ── Build cache prune ─────────────────────────────────────────────────
+#
+# --no-cache means every layer is rebuilt from scratch, so nothing already in the
+# build cache will be read — but buildkit still *writes* a full fresh set on the
+# way through. Run that a few times and the cache is the largest thing on the
+# disk: this repo reached 536 GB of it, most of a 1.1 TB root filesystem, which
+# is what prompted this.
+#
+# So --no-cache now discards the cache before building rather than piling another
+# copy on top of it. It only ever removes cache — never images, containers or
+# volumes — and cache is rebuildable by definition. The cost is that any *other*
+# project's next build is cold too, which is why --no-prune exists.
+prune_build_cache() {
+    local before after
+    before=$(docker system df --format '{{.Type}}\t{{.Size}}' 2>/dev/null | awk -F'\t' '$1=="Build Cache"{print $2}')
+
+    echo -e "${C_GRAY}Pruning the Docker build cache (--no-cache would not reuse it anyway)...${C_RESET}"
+    if ! docker buildx prune --force --all > "${LOG_DIR}/prune.log" 2>&1; then
+        echo -e "${C_RED}Warning: could not prune the build cache; see ${LOG_DIR}/prune.log${C_RESET}"
+        echo ""
+        return 0
+    fi
+
+    after=$(docker system df --format '{{.Type}}\t{{.Size}}' 2>/dev/null | awk -F'\t' '$1=="Build Cache"{print $2}')
+    echo -e "${C_GRAY}Build cache: ${before:-unknown} -> ${after:-unknown}${C_RESET}"
+    echo ""
+}
+
 # ── Build steps ───────────────────────────────────────────────────────
 
 build_cli() {
@@ -464,6 +497,12 @@ Main() {
 
     echo -e "${C_BOLD}CodingBooth Build${C_RESET}"
     echo ""
+
+    # Before anything is built: a --no-cache run cannot use the existing cache,
+    # so carrying it through the run only costs disk.
+    if [[ "$NO_CACHE_REQUESTED" == "true" && "$PRUNE_REQUESTED" == "true" ]]; then
+        prune_build_cache
+    fi
 
     # Log in to Docker Hub once, before any parallel child build attempts it.
     if [[ "$PUSH_REQUESTED" == "true" ]]; then
