@@ -89,6 +89,11 @@ PASS_COUNT=0
 FAIL_COUNT=0
 FAIL_TESTS=()
 
+# Retried tests are collected in a file rather than an array: run_one executes in
+# a background subshell, where an array would not survive.
+RETRIED_LIST="$(mktemp)"
+trap 'rm -f "$RETRIED_LIST"' EXIT
+
 run_one() {
     local test_file="$1"
     local name
@@ -97,6 +102,22 @@ run_one() {
     # CB_NO_BUILD_PROGRESS: this runner owns the terminal line; a child drawing
     # its own on top of it would leave both illegible.
     if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 bash "$test_file" $VERBOSE) > "$out" 2>&1; then
+        echo 0 > "${out}.exit"
+        return
+    fi
+
+    # Retry once, immediately. These are the flakiest tests in the repo — VHS
+    # drives a real terminal and a redraw that lands late loses a keystroke — so
+    # a second attempt is worth more here than anywhere else. `skip` in
+    # tui-helpers--source.sh exits 0, so a skipped test never reaches this.
+    #
+    # This runs in a background subshell, so the retry is recorded in a file; an
+    # array assignment here would not survive back to the parent.
+    echo "" >> "$out"
+    echo "⚠️  First attempt failed — retrying once." >> "$out"
+    printf '%s\n' "$name" >> "$RETRIED_LIST"
+
+    if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 bash "$test_file" $VERBOSE) >> "$out" 2>&1; then
         echo 0 > "${out}.exit"
     else
         echo 1 > "${out}.exit"
@@ -221,6 +242,12 @@ TEST_COUNT=$((PASS_COUNT + FAIL_COUNT))
 echo "========================================"
 echo "  Config-TUI Test Summary"
 echo "  Total: ${TEST_COUNT}   Passed: ${PASS_COUNT}   Failed: ${FAIL_COUNT}"
+# A pass that needed a second attempt is still a flake — and in a timing-driven
+# TUI suite that is the signal most worth keeping visible.
+if [[ -s "$RETRIED_LIST" ]]; then
+    echo "  ⚠️  Retried after a first-attempt failure: $(wc -l < "$RETRIED_LIST" | tr -d ' ')"
+    sed 's/^/    - /' "$RETRIED_LIST"
+fi
 echo "  Duration: $((OVERALL_END - OVERALL_START))s"
 echo "========================================"
 

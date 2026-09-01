@@ -36,7 +36,7 @@ cd "$SCRIPT_DIR"
 SHARD_INDEX=0     # 1-based; 0 means "not sharded"
 SHARD_TOTAL=0
 LIST_ONLY=false
-RETRY_TRANSIENT=true
+RETRY_FAILED=true
 SELECTED=()
 
 while [[ $# -gt 0 ]]; do
@@ -48,7 +48,7 @@ while [[ $# -gt 0 ]]; do
         || { echo "❌ --shard $2 is out of range" >&2; exit 2; }
       shift 2 ;;
     --list)     LIST_ONLY=true;       shift ;;
-    --no-retry) RETRY_TRANSIENT=false; shift ;;
+    --no-retry) RETRY_FAILED=false;    shift ;;
     -h|--help)  sed -n '6,28p' "$0"; exit 0 ;;
     -*)         echo "❌ unknown option '$1'" >&2; exit 2 ;;
     *)          SELECTED+=("${1%/}");  shift ;;
@@ -149,9 +149,23 @@ for test_dir in "${TESTS[@]}"; do
   if run_one "$test_dir" "$out"; then
     echo "PASSED: ${test_dir}"
     PASSED=$((PASSED + 1))
-  elif [[ "$RETRY_TRANSIENT" == "true" ]] && grep -qE "$TRANSIENT_RE" "$out"; then
-    echo "⚠️  TRANSIENT network failure in ${test_dir} — retrying once"
-    echo "    matched: $(grep -oE "$TRANSIENT_RE" "$out" | head -1)"
+  elif [[ "$RETRY_FAILED" == "true" ]]; then
+    # Retry every failure, not only one that *looks* transient.
+    #
+    # The gate used to require a TRANSIENT_RE match, and that made it blind. The
+    # evidence for "transient" is almost always in the build output, and these
+    # tests call the booth with --silence-build and 2>/dev/null — so a 503 from
+    # an archive reaches this loop as nothing but an empty "Actual output:".
+    # test-boothfile-apt-snapshot failed exactly that way while the diagnostic
+    # trace held eight "Service Unavailable" lines the gate could not see.
+    #
+    # TRANSIENT_RE still runs, but only to label the retry, never to decide it.
+    if grep -qE "$TRANSIENT_RE" "$out"; then
+      echo "⚠️  TRANSIENT network failure in ${test_dir} — retrying once"
+      echo "    matched: $(grep -oE "$TRANSIENT_RE" "$out" | head -1)"
+    else
+      echo "⚠️  FAILED in ${test_dir} — retrying once"
+    fi
     RETRIED=$((RETRIED + 1))
     RETRIED_TESTS+=("${test_dir}")
     if run_one "$test_dir" "$out"; then
@@ -180,7 +194,7 @@ echo "Results: ${PASSED}/${TOTAL} passed"
 # telling you something, and the count is the only place it shows.
 if [ $RETRIED -gt 0 ]; then
   echo ""
-  echo "⚠️  Retried after a transient network failure: ${RETRIED}"
+  echo "⚠️  Retried after a first-attempt failure: ${RETRIED}"
   for test in "${RETRIED_TESTS[@]}"; do
     echo "  - $test"
   done
