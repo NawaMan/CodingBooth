@@ -127,6 +127,13 @@ RETRIED=0
 FAILED_TESTS=()
 RETRIED_TESTS=()
 
+# "<seconds> <test-dir>" per test, for the slowest-tests report at the end.
+#
+# This suite had no timing at all, which made its cost invisible: the only way to
+# find what was slow was to derive it from timestamps in the booth-call trace,
+# and that misses image build time entirely — which is most of it.
+DURATIONS=()
+
 # run-one <test-dir> <output-file> — stream the test live and capture it for the
 # transient check. `pipefail` makes the pipeline carry the test's exit code.
 run_one() {
@@ -144,6 +151,7 @@ for test_dir in "${TESTS[@]}"; do
 
   echo ""
   echo "--- Running: ${test_dir} ---"
+  test_started=$(date +%s)
   out="$(mktemp)"
 
   if run_one "$test_dir" "$out"; then
@@ -182,6 +190,10 @@ for test_dir in "${TESTS[@]}"; do
     FAILED_TESTS+=("${test_dir}")
   fi
 
+  test_elapsed=$(( $(date +%s) - test_started ))
+  echo "   (${test_dir}: ${test_elapsed}s)"
+  DURATIONS+=("${test_elapsed} ${test_dir}")
+
   rm -f "$out"
 done
 
@@ -198,6 +210,20 @@ if [ $RETRIED -gt 0 ]; then
   for test in "${RETRIED_TESTS[@]}"; do
     echo "  - $test"
   done
+fi
+
+# The distribution here is heavily skewed — a handful of tests that build a
+# toolchain from source dominate the run — so the slowest few are worth seeing on
+# every run, not just when someone goes looking.
+if [ ${#DURATIONS[@]} -gt 0 ]; then
+  echo ""
+  echo "Slowest tests:"
+  printf '%s\n' "${DURATIONS[@]}" | sort -rn | head -10 | while read -r secs name; do
+    printf '  %5ss  %s\n' "$secs" "$name"
+  done
+  echo ""
+  printf '  total: %ss across %s tests\n' \
+    "$(printf '%s\n' "${DURATIONS[@]}" | awk '{s+=$1} END{print s}')" "${#DURATIONS[@]}"
 fi
 
 if [ $FAILED -eq 0 ]; then
