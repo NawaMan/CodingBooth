@@ -160,6 +160,89 @@ pause_on_error() {
 }
 trap pause_on_error ERR
 
+# When this container's own architecture doesn't match the physical CPU under it
+# (e.g. an amd64 booth forced with --platform on Apple Silicon), every process
+# in it — including this one — is transparently re-executed through a foreign-
+# arch translator. That is normally invisible, but the emulator embeds its own
+# QEMU-based hypervisor plus a Qt GUI, both of which make low-level syscalls
+# (thread/futex extensions, ptrace) that neither translation backend fully
+# implements — confirmed here as three distinct failures: an unimplemented-
+# syscall abort under Rosetta, a ptrace ENOSYS abort under QEMU, and a hang
+# resolving the virtual modem's address in between. It does not just run slowly
+# under a second layer of translation, it does not run at all, so this is worth
+# catching before spending a minute creating an AVD and booting toward a crash.
+#
+# This deliberately does not try to name which backend (Rosetta vs QEMU) is
+# active: from inside the container the two are indistinguishable. binfmt_misc
+# is not exposed to the container at all under either one (confirmed: the
+# directory itself does not exist), and `ps aux` shows every process wrapped in
+# a literal /usr/bin/qemu-x86_64 interpreter under BOTH — that name is Docker
+# Desktop's generic label for cross-arch translation, not evidence of which
+# engine is doing it. /sys/module/rosetta is the only signal that held up under
+# direct testing, but it stayed present even after switching Docker Desktop's
+# setting to QEMU and restarting, so it only proves "this Mac's Docker Desktop
+# has cross-arch translation available," not which engine is currently active —
+# which, for deciding whether the emulator can run, is the only thing that
+# actually matters.
+# CB_ROSETTA_MARKER overrides the path checked, purely so
+# tests/setups/test--android-emulator-arch-guard.sh can simulate both states
+# hermetically — normal runs never set it, so this checks the real path.
+detect_cpu_translation() {
+  [ -e "${CB_ROSETTA_MARKER:-/sys/module/rosetta}" ]
+}
+
+if detect_cpu_translation; then
+  # A project can opt into naming its own real-device helper here rather than
+  # this shared script guessing at one — only mentioned when it actually
+  # exists, since this launcher is shared by projects that may not have one.
+  DEVICE_CONNECT_SCRIPT=""
+  for candidate in "$PWD/device-connect.sh" "$HOME/code/device-connect.sh"; do
+    if [ -x "$candidate" ]; then
+      DEVICE_CONNECT_SCRIPT="$candidate"
+      break
+    fi
+  done
+
+  cat <<EOM
+❌ The Android emulator cannot run here.
+
+This container's own architecture doesn't match the real CPU underneath it —
+every process, including this one, is being transparently re-executed through
+Docker Desktop's amd64-on-Apple-Silicon translation.
+
+Building and signing an APK is unaffected by this, and so is testing on a REAL
+device over adb — only the emulator's own embedded hypervisor and GUI hit
+syscalls this translation cannot provide. This is a structural limitation of
+running amd64 under translation on Apple Silicon, not something a flag here
+can fix.
+EOM
+
+  if [ -n "$DEVICE_CONNECT_SCRIPT" ]; then
+    cat <<EOM
+
+Pair and connect to a real device instead:
+  $DEVICE_CONNECT_SCRIPT <ip> <pairing-port> <pairing-code> [connect-port]
+EOM
+  else
+    cat <<EOM
+
+If this project's example ships a real-device helper script, check its README
+for details on the confirmed failure modes and how to use it.
+EOM
+  fi
+
+  cat <<EOM
+
+Set CB_ANDROID_EMULATOR_FORCE=1 to attempt it anyway.
+EOM
+  if [ "${CB_ANDROID_EMULATOR_FORCE:-0}" != "1" ]; then
+    pause_on_error
+    exit 1
+  fi
+  echo ""
+  echo "CB_ANDROID_EMULATOR_FORCE=1 is set — attempting to launch anyway ..."
+fi
+
 # Derive the package spec from whatever image is actually installed, so this
 # keeps working when the booth is configured for a different API level:
 #   /opt/android-sdk/system-images/android-34/default/x86_64

@@ -3,4 +3,14 @@
 variant = "xfce"
 port = "50411"
 
-run-args = ["--device", "/dev/kvm"]
+# Android's SDK/build-tools/emulator are published for linux x86_64 only.
+# Forcing linux/amd64 here is what makes them install at all on an arm64 host
+# (Apple Silicon, arm64 Linux) — see the README's Architecture note. On a real
+# amd64 host this is a no-op (already matches), so it is safe to leave on by
+# default rather than something every user has to discover and add themselves.
+#
+# CB_ANDROID_PLATFORM overrides it — e.g. an arm64 CI runner can set
+# CB_ANDROID_PLATFORM=linux/arm64 to cancel the forcing and get the fast native
+# skip back, rather than paying for a full uncached emulated rebuild.
+run-args   = ["--device", "/dev/kvm", "--platform", "${CB_ANDROID_PLATFORM:-linux/amd64}"]
+build-args = ["--platform", "${CB_ANDROID_PLATFORM:-linux/amd64}"]
