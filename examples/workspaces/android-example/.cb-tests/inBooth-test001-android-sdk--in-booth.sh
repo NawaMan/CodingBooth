@@ -12,6 +12,16 @@
 
 set -euo pipefail
 
+# Google ships the Android SDK for linux x86_64 only; android-sdk--setup.sh
+# warns and skips rather than failing the build on other architectures (see
+# the "Architecture note" in this example's README). Nothing below would be
+# present in that case, so skip rather than reporting a false failure.
+DPKG_ARCH="$(dpkg --print-architecture 2>/dev/null || true)"
+if [[ "$DPKG_ARCH" != "amd64" ]]; then
+    echo "SKIP: Android SDK is unsupported on '${DPKG_ARCH:-unknown}' (Google publishes it for linux x86_64 only)."
+    exit 0
+fi
+
 echo "=== Android SDK on a non-login shell ==="
 
 FAILED=0
