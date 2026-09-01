@@ -53,7 +53,7 @@ Gradle is what a real Android project uses, and nothing here stops you adding it
 
 ## Running the app in the emulator
 
-The emulator and an AOSP system image are included, so this works out of the box.
+The emulator and an AOSP system image are included, so this works out of the box — **except under CPU translation** (an amd64 booth forced with `--platform` on Apple Silicon). `cb-android-emulator` detects that case itself and refuses with a clear explanation and a pointer to `device-connect.sh` instead of crashing; see the [Architecture note](#architecture-note) for why, and the section below for testing on a real device instead.
 
 ### The easy way — the desktop icon
 
@@ -139,7 +139,27 @@ Nothing host-specific is needed beyond the device itself. The node keeps its hos
 
 ## Architecture note
 
-Google publishes the Android platform tools, build tools and emulator for **linux x86_64 only**. On an arm64 host (Apple Silicon, arm64 Linux) the booth still builds, but the SDK setup warns and skips, and no APK can be built in it.
+Google publishes the Android platform tools, build tools and emulator for **linux x86_64 only**. To make this work out of the box on an arm64 host too (Apple Silicon, arm64 Linux), `.booth/config.toml` forces `--platform linux/amd64` on both `run-args` and `build-args` by default, via Docker's own amd64 emulation (Docker Desktop on Apple Silicon supports this through QEMU or the faster Rosetta option). On a real amd64 host (Linux or Windows, Intel/AMD) this is a no-op — it already matches, so nothing changes there. This has been verified end-to-end for `sdkmanager`/`aapt2`/`d8`/`apksigner` and a real `build-apk.sh` run; it's just a full, uncached rebuild the first time under emulation, so expect that one run to take several minutes longer than native. **Building an APK on Apple Silicon is fully solved this way, with no config changes needed.**
+
+The default is driven by `${CB_ANDROID_PLATFORM:-linux/amd64}`, so set the `CB_ANDROID_PLATFORM` environment variable to override it — e.g. on an arm64 CI runner, `CB_ANDROID_PLATFORM=linux/arm64` cancels the forcing and restores the fast native skip (a few seconds) instead of paying for a full uncached emulated rebuild (which risks tripping `run-example-tests.sh`'s default 900s per-example timeout).
+
+The Android **emulator** is a different story and does not work under this workaround, confirmed with three separate crashes across both Docker Desktop backends: under Rosetta it aborts on an unimplemented Linux syscall deep in the emulator's own virtualization runtime; under QEMU it aborts on `ptrace` (`ENOSYS`) inside the Qt GUI's sandboxing layer; and even when it doesn't hard-crash, it can hang resolving the virtual modem's IPv6 loopback address instead of booting. All three point at the same root cause — the emulator does its own low-level, hypervisor-style systems programming that neither translation backend fully implements — so this isn't a tunable setting, it's a hard wall. `+kvm` doesn't help either, since there is no real KVM to hand through on macOS. The emulator setup itself is still installed unconditionally, though — real amd64 Linux/Windows hosts can use it fine — but `cb-android-emulator` now detects this exact situation at launch and refuses with a clear explanation instead of crashing, rather than silently failing in a way that looks like a bug. When it finds `device-connect.sh` in the project (as this example does), it names it directly in that message so the real-device workaround below is one line away, not a README search. The detection doesn't try to name which backend is active — from inside the container Rosetta and QEMU are indistinguishable (`binfmt_misc` isn't exposed to the container under either one, and both wrap every process in an identically-named interpreter) — it just checks for Docker Desktop's Apple Silicon translation support being present at all, which was confirmed to hold under both backend settings.
+
+**The practical workaround is a real device over Wi-Fi debugging instead of the emulator** — `adb` already works fine under the `--platform linux/amd64` build, and a real phone doesn't need any virtualization at all. From inside the booth:
+
+```bash
+./device-connect.sh <ip> <pairing-port> <pairing-code> [connect-port]
+```
+
+The one gotcha that cost real time working this out: Android's Wireless debugging screen has **two different ports for the same IP**, and it's easy to keep reading the wrong one. "Pair device with pairing code" opens a **temporary** pairing session (IP:port + a 6-digit code) that expires in roughly a minute — use it once with `adb pair`. The **main** Wireless debugging screen (the one you land on before tapping "Pair device...") separately shows a **persistent** `IP address & Port` line with no code next to it — that's the one `adb connect` actually uses, and it's stable across reconnects. Once paired, you don't need a new code again unless the booth container itself gets recreated (a `--run` without `--keep-alive` tears the container down afterward, which wipes its adb identity); use `codingbooth exec --run --keep-alive -- ...` to keep the pairing valid across multiple commands. After that:
+
+```bash
+adb connect <ip>:<persistent-port>
+adb install -r build/hello.apk
+adb shell monkey -p com.example.hello -c android.intent.category.LAUNCHER 1
+```
+
+This has been verified end-to-end: built, installed, and launched `hello.apk` on real hardware from a booth running on Apple Silicon, with `dumpsys activity activities` confirming `.MainActivity` as the resumed foreground activity.
 
 ## Tests
 
