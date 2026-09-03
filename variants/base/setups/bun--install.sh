@@ -10,6 +10,16 @@
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
+# cb_retry retries the network-bound install below past a transient registry
+# error (a 5xx, a dropped connection) and nothing else, so a bad package name
+# still fails on the first attempt. The lib sits beside this script both in the
+# image (/opt/codingbooth/setups/) and in the repo, so a host-run test finds it.
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/retry-source.sh" ]; then
+    SETUP_LIBS_DIR="$(dirname "$0")/libs"
+fi
+source "${SETUP_LIBS_DIR}/retry-source.sh"
+
 if [ "$EUID" -ne 0 ]; then
     echo "❌ This script must be run as root (use sudo)" >&2
     exit 1
@@ -40,7 +50,7 @@ if ! command -v bun &> /dev/null; then
 fi
 
 # Install global packages as coder user to avoid permission issues
-sudo -u coder bun add -g "$@"
+cb_retry sudo -u coder bun add -g "$@"
 
 # `bun add -g` drops command shims in ~/.bun/bin, which is not on PATH — the package
 # installs "successfully" and the command is then not found. Expose them the same way

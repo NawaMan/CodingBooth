@@ -59,9 +59,20 @@ DB="$DIR/installed.txt"; touch "$DB"
 case "$ACT" in
   install)
     base="${ID%@*}"
+    # Every attempt is counted, per id and per extensions dir, so a test can assert
+    # how many times the script retried a given install.
+    N_FILE="$DIR/attempts-$base.txt"
+    N=$(cat "$N_FILE" 2>/dev/null || echo 0); N=$((N + 1)); echo "$N" > "$N_FILE"
     case "$base" in
       bogus.*) echo "Extension '$base' not found." >&2; exit 1 ;;
       ghost.*) echo "STUB_INSTALL $ID"; exit 0 ;;
+      flaky.*)
+        # The registry is down for the first FLAKY_FAILS attempts, then recovers.
+        if [ "$N" -le "${FLAKY_FAILS:-1}" ]; then
+          echo "Error while installing extensions: Server returned 503" >&2
+          exit 1
+        fi
+        ;;
     esac
     grep -qx "$base" "$DB" || echo "$base" >> "$DB"
     echo "STUB_INSTALL $ID"
@@ -80,7 +91,22 @@ run_ext_install() {
     SETUP_LIBS_DIR="$SETUPS_DIR/libs" \
     VSCODE_EXTENSION_DIR="$STUB/ext-code" \
     CODESERVER_EXTENSION_DIR="$STUB/ext-code-server" \
+    FLAKY_FAILS="${FLAKY_FAILS:-1}" \
+    CB_RETRY_ATTEMPTS="${CB_RETRY_ATTEMPTS:-3}" \
+    CB_RETRY_DELAY=0 \
         ${ROOT_RUN[@]+"${ROOT_RUN[@]}"} bash "$EXT_SCRIPT" "$@" 2>&1
+}
+
+# Attempt counts and installed lists persist in the stub dirs; clear them so each
+# retry test starts from a registry that has not been called yet.
+reset_stub_state() {
+    rm -f "$STUB"/ext-code/attempts-*.txt "$STUB"/ext-code-server/attempts-*.txt
+    rm -f "$STUB"/ext-code/installed.txt "$STUB"/ext-code-server/installed.txt
+}
+
+# How many times the stub was asked to install $1 into desktop VS Code's dir.
+attempts_for() {
+    cat "$STUB/ext-code/attempts-$1.txt" 2>/dev/null || echo 0
 }
 
 # Same, but with an empty PATH prefix so neither editor is found.
@@ -191,6 +217,80 @@ else
     echo "$OUT" | sed 's/^/          /'
     ALL_PASSED=false
 fi
+
+# ── Retrying a transient registry error ──────────────────────────────────────
+# `--install-extension` talks to a registry mid-build, and neither CLI retries. A
+# Marketplace 503 once failed five consecutive image builds of
+# tests/complex/test-boothfile-code-extension while the Open VSX half of the same
+# run succeeded every time. cb_retry (libs/retry-source.sh)
+# retries those, and only those: a rejected id must still fail on the first call,
+# or every typo'd id costs the build the full backoff before saying so.
+
+# 13-14. A 503 that clears on the second attempt installs, and says it retried.
+reset_stub_state
+FLAKY_FAILS=1
+assert_ok "a transient 503 is retried and the install succeeds" \
+    "✔ flaky.ext" flaky.ext
+reset_stub_state
+assert_ok "the retry is reported" "retrying in" flaky.ext
+
+# 15. Two failures still clear, because the default is three attempts.
+reset_stub_state
+FLAKY_FAILS=2
+assert_ok "two transient 503s still clear inside the attempt budget" \
+    "✔ flaky.ext" flaky.ext
+
+# 16. The retry is bounded: a registry that never recovers fails the build after
+#     CB_RETRY_ATTEMPTS calls, not forever.
+reset_stub_state
+FLAKY_FAILS=99
+TEST_NUM=$((TEST_NUM + 1))
+OUT=$(run_ext_install flaky.ext) && RC=0 || RC=$?
+N=$(attempts_for flaky.ext)
+if [[ $RC -ne 0 ]] && [[ "$N" == "3" ]]; then
+    print_test_result "true" "$0" "$TEST_NUM" "a registry that never recovers fails after 3 attempts"
+else
+    print_test_result "false" "$0" "$TEST_NUM" "a registry that never recovers fails after 3 attempts"
+    echo "  expected: non-zero exit after exactly 3 attempts"
+    echo "  actual:   exit $RC after $N attempts"
+    echo "$OUT" | sed 's/^/          /'
+    ALL_PASSED=false
+fi
+FLAKY_FAILS=1
+
+# 17. A rejected id is NOT retried — it reads the same on every attempt, so the
+#     hard error stays immediate.
+reset_stub_state
+TEST_NUM=$((TEST_NUM + 1))
+OUT=$(run_ext_install bogus.nope) && RC=0 || RC=$?
+N=$(attempts_for bogus.nope)
+if [[ $RC -ne 0 ]] && [[ "$N" == "1" ]] && ! echo "$OUT" | grep -qF "retrying in"; then
+    print_test_result "true" "$0" "$TEST_NUM" "a rejected id fails on the first attempt, unretried"
+else
+    print_test_result "false" "$0" "$TEST_NUM" "a rejected id fails on the first attempt, unretried"
+    echo "  expected: non-zero exit after exactly 1 attempt, with no retry notice"
+    echo "  actual:   exit $RC after $N attempts"
+    echo "$OUT" | sed 's/^/          /'
+    ALL_PASSED=false
+fi
+
+# 18. Nor is an install that reports success but never lands: the verify step
+#     catches it, and re-running the install would not change the outcome.
+reset_stub_state
+TEST_NUM=$((TEST_NUM + 1))
+OUT=$(run_ext_install ghost.vanishes) && RC=0 || RC=$?
+N=$(attempts_for ghost.vanishes)
+if [[ $RC -ne 0 ]] && [[ "$N" == "1" ]]; then
+    print_test_result "true" "$0" "$TEST_NUM" "an install that never lands is not retried"
+else
+    print_test_result "false" "$0" "$TEST_NUM" "an install that never lands is not retried"
+    echo "  expected: non-zero exit after exactly 1 attempt"
+    echo "  actual:   exit $RC after $N attempts"
+    echo "$OUT" | sed 's/^/          /'
+    ALL_PASSED=false
+fi
+
+reset_stub_state
 
 if [[ "$ALL_PASSED" != "true" ]]; then
     exit 1

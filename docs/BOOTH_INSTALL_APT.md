@@ -31,10 +31,16 @@ if [ -n "${APT_SNAPSHOT:-}" ]; then
         *)          : ;;   # warn; snapshot service does not cover ports.ubuntu.com
     esac
 fi
-apt-get update "${SNAPSHOT_ARGS[@]}"
-apt-get install -y --no-install-recommends "${SNAPSHOT_ARGS[@]}" "$@"
+cb_retry apt-get update "${SNAPSHOT_ARGS[@]}"
+cb_retry apt-get install -y --no-install-recommends "${SNAPSHOT_ARGS[@]}" "$@"
 rm -rf /var/lib/apt/lists/*
 ```
+
+- `cb_retry` (`setups/libs/retry-source.sh`, shared by every `*--install.sh`) reruns the
+  call while the failure looks transient — a mirror 5xx, a dropped connection, a DNS
+  blip — three attempts with a growing backoff. `E: Unable to locate package` and its
+  kin are *not* retried: they read the same on every attempt, so a typo'd package name
+  still fails the build immediately rather than after the full backoff.
 
 - `APT_SNAPSHOT` set, amd64/i386 → `--snapshot <id>` on both `update` and `install`
   (whole archive, incl. transitive deps, frozen to that instant). Base is Ubuntu 24.04,

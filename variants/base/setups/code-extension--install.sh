@@ -112,7 +112,10 @@ for cli in "${CLIS[@]}"; do
     for ext in "$@"; do
         [ -n "$ext" ] || continue
 
-        if ! "$CLI_BIN" ${CLI_OPTS[@]+"${CLI_OPTS[@]}"} --extensions-dir "$DIR" --install-extension "$ext"; then
+        # cb_retry retries only a transient registry error (a 5xx, a dropped
+        # connection); a bad id still fails on the first attempt, which is what
+        # keeps the hard-error promise above fast.
+        if ! cb_retry "$CLI_BIN" ${CLI_OPTS[@]+"${CLI_OPTS[@]}"} --extensions-dir "$DIR" --install-extension "$ext"; then
             echo "  ❌ Failed to install: ${ext} (via ${cli})" >&2
             FAILED+=("${ext} (${cli})")
             continue

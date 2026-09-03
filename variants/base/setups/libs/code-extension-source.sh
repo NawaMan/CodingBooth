@@ -97,6 +97,18 @@ install_codeserver_extensions() {
   _install_extensions_into "code-server" "$@"
 }
 
+# ---- Retrying the install call ----
+# `--install-extension` reaches out to a registry mid-build and neither CLI retries,
+# so a Marketplace 503 once failed five consecutive image builds of
+# tests/complex/test-boothfile-code-extension while the Open VSX half of the same
+# run succeeded every time. cb_retry (libs/retry-source.sh) retries exactly the
+# failures a later attempt can clear; a rejected id still fails on the first call,
+# which is what keeps `code-extension--install.sh`'s hard error immediate.
+#
+# BASH_SOURCE rather than SETUP_LIBS_DIR: this lib is sourced from ~40 curated
+# setups that never set that variable, and its sibling is always beside it.
+source "$(dirname "${BASH_SOURCE[0]}")/retry-source.sh"
+
 # _install_extensions_into "<cli> [<cli>]" <ids...>
 #   Shared machinery for the three entry points above. The CLI list is one
 #   space-separated argument (CLI names contain no spaces), which keeps the ids in
@@ -142,7 +154,10 @@ _install_extensions_into() {
     # a test runs this script on a Mac host.
     echo "Installing extensions via ${cli_bin} (extensions dir: ${dir})..."
     for ext in "${exts[@]}"; do
-      if "$cli_bin" ${cli_opts[@]+"${cli_opts[@]}"} --extensions-dir "$dir" --install-extension "$ext"; then
+      # Retried on a transient registry error. This path only warns on failure,
+      # so an unretried 5xx would ship a booth quietly missing the extension and
+      # a green build — the harder failure of the two to notice.
+      if cb_retry "$cli_bin" ${cli_opts[@]+"${cli_opts[@]}"} --extensions-dir "$dir" --install-extension "$ext"; then
         echo "  ✔ ${ext}"
       else
         echo "  ⚠ Failed to install: ${ext}" >&2

@@ -4,6 +4,33 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A registry having a bad minute failed the whole image build.** A Microsoft Marketplace `503`
+  failed five consecutive builds of `tests/complex/test-boothfile-code-extension` while the Open VSX
+  half of the same run succeeded every time; the suite's own retry, three minutes later, passed
+  clean. Nothing was wrong with the Boothfile, the id, or the image — the marketplace was briefly
+  down, and neither `code --install-extension` nor any of the package managers retries on its own.
+
+  A new `variants/base/setups/libs/retry-source.sh` supplies `cb_retry`, and every `*--install.sh`
+  now routes its network-bound call through it: `apt`, `pip`, `uv`, `npm`, `yarn`, `bun`, `deno`,
+  `deno-pkg`, `gem`, `cargo`, `brew`, `conda`, `cabal`, `conan`, `hex`, `luarocks`, `dotnet`, `pecl`,
+  and both editor paths for `code-extension`. Three attempts with a growing backoff, and the
+  command's own exit status and error output are passed through unchanged.
+
+  It retries **only** what a second attempt can plausibly clear — an HTTP 5xx or 429, a dropped
+  connection, a DNS blip, in the wording each ecosystem happens to use. A rejected package still
+  fails on the very first call: `Unable to locate package`, `No matching distribution`, `404 Not
+  Found` and their kin read the same on every attempt, so retrying them would only make each typo
+  cost the full backoff before the build says so — and `install code-extension` promises a fast hard
+  error on a bad id. Output streams live through the retry rather than being buffered, so a long
+  `cargo install` still shows progress.
+
+  `go--install.sh` keeps the hand-rolled retry it already had for `proxy.golang.org`, and
+  `jetbrains-plugin--install.sh` uses curl's own `--retry`; both are declared as such in
+  `tests/setups/test--install-retry.sh`, which asserts that every *other* install script routes
+  through `cb_retry` — so a newly added one is covered without editing the test. `mvn--setup.sh` and
+  `gradle--setup.sh` picked up the `--retry 5 --retry-delay 3 --retry-all-errors` that the rest of
+  the download-based setups already used.
+
 - **`android-example` was unusable on Apple Silicon, and the emulator crashed cryptically when
   forced.** `android-sdk--setup.sh` warns and skips the entire SDK on arm64 — correct, since Google
   only publishes it for linux x86_64 — but that made the example's SDK, build-tools, and `adb` all

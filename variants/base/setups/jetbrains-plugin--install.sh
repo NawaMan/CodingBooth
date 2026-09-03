@@ -130,7 +130,10 @@ install_pinned() {
     url="${url}&build=${build_id}&version=${version}"
 
     stage="$(mktemp -d)"
-    if ! curl -fsSL -o "${stage}/plugin.zip" "$url"; then
+    # --retry-all-errors so a marketplace 5xx is retried, not just a dropped
+    # connection; a genuinely bad id still 404s out after the attempts.
+    if ! curl -fsSL --retry 3 --retry-delay 3 --retry-all-errors --connect-timeout 10 \
+            -o "${stage}/plugin.zip" "$url"; then
         rm -rf "$stage"
         return 1
     fi
