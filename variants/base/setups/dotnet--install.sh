@@ -16,6 +16,16 @@
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 
+# cb_retry retries the network-bound install below past a transient registry
+# error (a 5xx, a dropped connection) and nothing else, so a bad package name
+# still fails on the first attempt. The lib sits beside this script both in the
+# image (/opt/codingbooth/setups/) and in the repo, so a host-run test finds it.
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/retry-source.sh" ]; then
+    SETUP_LIBS_DIR="$(dirname "$0")/libs"
+fi
+source "${SETUP_LIBS_DIR}/retry-source.sh"
+
 if [ "$EUID" -ne 0 ]; then
     echo "❌ This script must be run as root (use sudo)" >&2
     exit 1
@@ -53,7 +63,7 @@ for spec in "$@"; do
     tool="${spec%@*}"
     if [ "$tool" = "$spec" ]; then
         echo "📦 Installing .NET tool: $tool"
-        sudo -u coder env \
+        cb_retry sudo -u coder env \
             DOTNET_ROOT="$DOTNET_ROOT" \
             DOTNET_CLI_TELEMETRY_OPTOUT=1 \
             DOTNET_NOLOGO=1 \
@@ -63,7 +73,7 @@ for spec in "$@"; do
     else
         version="${spec##*@}"
         echo "📦 Installing .NET tool: $tool (version $version)"
-        sudo -u coder env \
+        cb_retry sudo -u coder env \
             DOTNET_ROOT="$DOTNET_ROOT" \
             DOTNET_CLI_TELEMETRY_OPTOUT=1 \
             DOTNET_NOLOGO=1 \

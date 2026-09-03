@@ -11,6 +11,16 @@
 set -Eeuo pipefail
 trap 'echo "Error on line $LINENO"; exit 1' ERR
 
+# cb_retry retries the network-bound install below past a transient registry
+# error (a 5xx, a dropped connection) and nothing else, so a bad package name
+# still fails on the first attempt. The lib sits beside this script both in the
+# image (/opt/codingbooth/setups/) and in the repo, so a host-run test finds it.
+SETUP_LIBS_DIR="${SETUP_LIBS_DIR:-/opt/codingbooth/setups/libs}"
+if [ ! -r "${SETUP_LIBS_DIR}/retry-source.sh" ]; then
+    SETUP_LIBS_DIR="$(dirname "$0")/libs"
+fi
+source "${SETUP_LIBS_DIR}/retry-source.sh"
+
 if [ "$EUID" -ne 0 ]; then
     echo "This script must be run as root (use sudo)" >&2
     exit 1
@@ -68,9 +78,9 @@ for spec in "$@"; do
     # merely unread. Fetching the release tarball by URL skips the REST path
     # entirely. The channel is still tried first, so an environment with a PEAR
     # that handles gzip keeps its dependency resolution; the URL is the fallback.
-    if ! pecl install "$spec"; then
+    if ! cb_retry pecl install "$spec"; then
         echo "Channel install failed for '$spec'; retrying via direct download." >&2
-        pecl install "https://pecl.php.net/get/${spec}"
+        cb_retry pecl install "https://pecl.php.net/get/${spec}"
     fi
 
     PHP_EXT_DIR="$(php -i | awk -F' => ' '/^extension_dir/ {print $2; exit}')"

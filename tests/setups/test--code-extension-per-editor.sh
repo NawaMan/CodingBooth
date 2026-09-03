@@ -57,7 +57,22 @@ while [[ $# -gt 0 ]]; do
 done
 DB="$DIR/installed.txt"; touch "$DB"
 case "$ACT" in
-  install) grep -qx "$ID" "$DB" || echo "$ID" >> "$DB" ;;
+  install)
+    # Attempts are counted so a test can see a retry happen. `flaky.*` stands in
+    # for a registry that is down: it 503s for the first FLAKY_FAILS calls (0 by
+    # default, so every other test sees an install that just works).
+    N_FILE="$DIR/attempts-$ID.txt"
+    N=$(cat "$N_FILE" 2>/dev/null || echo 0); N=$((N + 1)); echo "$N" > "$N_FILE"
+    case "$ID" in
+      flaky.*)
+        if [ "$N" -le "${FLAKY_FAILS:-0}" ]; then
+          echo "Error while installing extensions: Server returned 503" >&2
+          exit 1
+        fi
+        ;;
+    esac
+    grep -qx "$ID" "$DB" || echo "$ID" >> "$DB"
+    ;;
   list)    cat "$DB" ;;
 esac
 EOF
@@ -96,10 +111,13 @@ TEST_NUM=0
 run_lib() {
     local path_prefix="$1"; shift
     rm -f "$STUB/ext-code/installed.txt" "$STUB/ext-code-server/installed.txt"
+    rm -f "$STUB"/ext-code/attempts-*.txt "$STUB"/ext-code-server/attempts-*.txt
     PATH="${path_prefix}:/usr/bin:/bin" \
     HOME="$STUB" \
     VSCODE_EXTENSION_DIR="$STUB/ext-code" \
     CODESERVER_EXTENSION_DIR="$STUB/ext-code-server" \
+    FLAKY_FAILS="${FLAKY_FAILS:-0}" \
+    CB_RETRY_DELAY=0 \
         bash -c "source '$LIB'; $*" > "$STUB/out.txt" 2>&1 || true
 }
 
@@ -220,6 +238,27 @@ if grep -q "Not found after install: Ghost.Vanishes" <<< "$(lib_output)"; then
 else
     print_test_result "false" "$0" "$TEST_NUM" "an id that never lands should still warn"
     echo "  actual output: $(lib_output)"
+    ALL_PASSED=false
+fi
+
+# 10. A transient registry error is retried here too. This path only *warns* on a
+#     failed install, so an unretried 503 hands back a booth quietly missing the
+#     extension and a green build — the failure mode this whole file exists to
+#     guard against. A Marketplace 503 really did fail five consecutive image
+#     builds of tests/complex/test-boothfile-code-extension; on that path the
+#     build stopped, on this one it would not have.
+TEST_NUM=$((TEST_NUM + 1))
+FLAKY_FAILS=1
+run_lib "$STUB/bin-cs-only" "install_codeserver_extensions flaky.ext"
+FLAKY_FAILS=0
+if [[ "$(installed_in code-server)" == "flaky.ext" ]] \
+   && grep -q "Verified: flaky.ext" <<< "$(lib_output)" \
+   && ! grep -q "Failed to install" <<< "$(lib_output)"; then
+    print_test_result "true" "$0" "$TEST_NUM" "a transient 503 is retried rather than warned past"
+else
+    print_test_result "false" "$0" "$TEST_NUM" "a transient 503 should be retried rather than warned past"
+    echo "  actual: code-server='$(installed_in code-server)'"
+    echo "$(lib_output)" | sed 's/^/          /'
     ALL_PASSED=false
 fi
 

@@ -328,13 +328,23 @@ you an image missing the extension you asked for. The line also needs an editor 
 the image: use the `codeserver` or a desktop variant, or `setup codeserver` /
 `setup vscode` earlier in the Boothfile.
 
-**Every install script shares two behaviours.** Passing no packages is a **no-op**, not
+**Every install script shares three behaviours.** Passing no packages is a **no-op**, not
 an error — it prints `ℹ️ No … requested; nothing to install.` and exits 0. This matters
 because the `*-pkg` templates emit `install <manager> ${..._PKGS}` with the list
 defaulting to empty, so selecting one in `booth config` without naming a package must
 not kill the build. Naming *nothing* is not the same as naming something broken: an
 unresolvable package still fails the build. And `-h` / `--help` prints usage and exits
 0, which is the only way to get the usage text.
+
+The third is a **retry on a transient registry error**. Package managers reach out to a
+registry mid-build and most have no retry of their own, so one bad minute upstream — an
+HTTP 5xx, a dropped connection, a DNS blip — failed a build that had nothing wrong with
+it. Every install script now routes its network call through `cb_retry`
+(`variants/base/setups/libs/retry-source.sh`): three attempts with a growing backoff,
+announced in the build log, with the manager's own output and exit status passed through
+unchanged. A **rejected package is not retried** — `Unable to locate package`, `No
+matching distribution`, `404 Not Found` read the same on every attempt, so a typo'd name
+still fails on the first call rather than after the full backoff.
 
 `install apt` installs system packages and accepts apt's native `pkg=version` pin
 (`install apt jq htop=3.0.5-7`). For reproducibility it honors an `APT_SNAPSHOT`
