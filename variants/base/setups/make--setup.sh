@@ -105,9 +105,9 @@ else
   ALT_URL="https://ftpmirror.gnu.org/make/${TARBALL}"
 
   echo "⬇️  Downloading GNU Make ${VERSION} ..."
-  if ! curl -fsSL "$URL" -o "$TMP/$TARBALL"; then
+  if ! curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$URL" -o "$TMP/$TARBALL"; then
     echo "   Primary mirror failed, trying fallback mirror..."
-    curl -fsSL "$ALT_URL" -o "$TMP/$TARBALL"
+    curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$ALT_URL" -o "$TMP/$TARBALL"
   fi
 
   echo "📦 Building GNU Make ${VERSION} ..."

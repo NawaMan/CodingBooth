@@ -66,7 +66,7 @@ if [[ "$ARCH" == "arm64" || "$ARCH" == "aarch64" ]] && [[ "$ELM_PKG_VER" == "0.1
   apt-get update >/dev/null
   apt-get install -y --no-install-recommends libatomic1
   TMP="$(mktemp -d)"
-  curl -fL http://ports.ubuntu.com/ubuntu-ports/pool/main/libf/libffi/libffi7_3.3-4_arm64.deb \
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fL http://ports.ubuntu.com/ubuntu-ports/pool/main/libf/libffi/libffi7_3.3-4_arm64.deb \
     -o "$TMP/libffi7.deb"
   dpkg -i "$TMP/libffi7.deb"
   # The official elm npm wrapper resolves to "binary-for-linux-undefined.gz"
@@ -74,7 +74,7 @@ if [[ "$ARCH" == "arm64" || "$ARCH" == "aarch64" ]] && [[ "$ELM_PKG_VER" == "0.1
   # armhf (32-bit) build, which fails on a 64-bit aarch64 container.
   # jbelbruno/Elm_Compiler_0.19.1_for_aarch64 provides a true ARMv8 aarch64
   # build of the elm 0.19.1 compiler.
-  curl -fL https://github.com/jbelbruno/Elm_Compiler_0.19.1_for_aarch64/releases/download/v0.19.1/elm.gz \
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fL https://github.com/jbelbruno/Elm_Compiler_0.19.1_for_aarch64/releases/download/v0.19.1/elm.gz \
     -o "$TMP/elm.gz"
   gunzip -f "$TMP/elm.gz"
   install -m 0755 "$TMP/elm" /usr/local/bin/elm

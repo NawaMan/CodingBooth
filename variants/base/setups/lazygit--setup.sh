@@ -49,7 +49,7 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/')
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/')
 else
   VERSION="$REQ_VER"
 fi
@@ -57,7 +57,7 @@ fi
 # ---- install lazygit ----
 echo "⬇️  Installing lazygit v${VERSION} (${ARCH}) ..."
 TMP_DIR=$(mktemp -d)
-curl -fsSL "https://github.com/jesseduffield/lazygit/releases/download/v${VERSION}/lazygit_${VERSION}_Linux_${ARCH}.tar.gz" -o "${TMP_DIR}/lazygit.tar.gz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://github.com/jesseduffield/lazygit/releases/download/v${VERSION}/lazygit_${VERSION}_Linux_${ARCH}.tar.gz" -o "${TMP_DIR}/lazygit.tar.gz"
 tar -xzf "${TMP_DIR}/lazygit.tar.gz" -C "${TMP_DIR}"
 install -m 755 "${TMP_DIR}/lazygit" /usr/local/bin/lazygit
 rm -rf "${TMP_DIR}"

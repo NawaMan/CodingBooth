@@ -48,7 +48,7 @@ done
 if [[ -z "$REQ_VER" ]]; then
   KVER="$KOTLIN_DEFAULT_VER"
 elif [[ "$REQ_VER" == "latest" ]]; then
-  KVER="$(curl -fsSL https://api.github.com/repos/JetBrains/kotlin/releases/latest | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//' || true)"
+  KVER="$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/JetBrains/kotlin/releases/latest | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//' || true)"
   if [[ -z "$KVER" ]]; then
     # See elixir--setup.sh: the GitHub API is rate-limited, so degrade to the
     # pinned default instead of failing the build.
@@ -94,7 +94,7 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 K_ZIP_URL="https://github.com/JetBrains/kotlin/releases/download/v${KVER}/kotlin-compiler-${KVER}.zip"
 
 echo "Downloading Kotlin compiler ${KVER} ..."
-curl -fsSL "$K_ZIP_URL" -o "$TMP/kotlin.zip"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$K_ZIP_URL" -o "$TMP/kotlin.zip"
 
 echo "Installing Kotlin compiler ${KVER} ..."
 rm -rf "$KOTLIN_DIR"
@@ -109,7 +109,7 @@ ln -sfn "$KOTLIN_DIR" "$KOTLIN_LINK"
 if [[ $WITH_NATIVE -eq 1 ]]; then
   KN_TGZ_URL="https://github.com/JetBrains/kotlin/releases/download/v${KVER}/kotlin-native-linux-${KN_ARCH}-${KVER}.tar.gz"
   echo "Downloading Kotlin/Native ${KVER} (${KN_ARCH}) ..."
-  curl -fsSL "$KN_TGZ_URL" -o "$TMP/konan.tgz"
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$KN_TGZ_URL" -o "$TMP/konan.tgz"
 
   echo "Installing Kotlin/Native ${KVER} ..."
   rm -rf "$KN_DIR"

@@ -84,7 +84,7 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 CLT_URL="https://dl.google.com/android/repository/commandlinetools-linux-${CMDLINE_TOOLS}_latest.zip"
 
 echo "Downloading Android command-line tools ${CMDLINE_TOOLS} ..."
-curl -fsSL "$CLT_URL" -o "$TMP/cmdline-tools.zip"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$CLT_URL" -o "$TMP/cmdline-tools.zip"
 
 echo "Installing Android command-line tools ..."
 # sdkmanager insists on living at cmdline-tools/latest/; the zip unpacks to a

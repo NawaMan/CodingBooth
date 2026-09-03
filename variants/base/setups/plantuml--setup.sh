@@ -73,12 +73,12 @@ fi
 mkdir -p "$PLANTUML_DIR"
 
 echo "• Downloading PlantUML ${PLANTUML_VERSION} ..."
-curl -fsSL -o "$PLANTUML_JAR" \
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$PLANTUML_JAR" \
   "https://github.com/plantuml/plantuml/releases/download/v${PLANTUML_VERSION}/plantuml-${PLANTUML_VERSION}.jar"
 
 # ---- download PlantUML Server war ----
 echo "• Downloading PlantUML Server ${PLANTUML_VERSION} ..."
-curl -fsSL -o "$PLANTUML_SERVER_WAR" \
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$PLANTUML_SERVER_WAR" \
   "https://github.com/plantuml/plantuml-server/releases/download/v${PLANTUML_VERSION}/plantuml-v${PLANTUML_VERSION}.war"
 
 # ---- install Jetty for serving the war ----

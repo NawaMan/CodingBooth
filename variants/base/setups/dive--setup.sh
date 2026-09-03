@@ -45,14 +45,14 @@ apt-get install -y --no-install-recommends curl ca-certificates tar
 rm -rf /var/lib/apt/lists/*
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/wagoodman/dive/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/wagoodman/dive/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
 else
   VERSION="${REQ_VER#v}"
 fi
 
 echo "⬇️  Installing dive v${VERSION} (${ARCH}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-curl -fsSL "https://github.com/wagoodman/dive/releases/download/v${VERSION}/dive_${VERSION}_linux_${ARCH}.tar.gz" -o "$TMP/dive.tar.gz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://github.com/wagoodman/dive/releases/download/v${VERSION}/dive_${VERSION}_linux_${ARCH}.tar.gz" -o "$TMP/dive.tar.gz"
 tar -xzf "$TMP/dive.tar.gz" -C "$TMP"
 install -m 755 "$TMP/dive" /usr/local/bin/dive
 

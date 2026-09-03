@@ -95,7 +95,17 @@ echo "Installing Haskell via ghcup:"
 echo "  GHC=${GHC_VERSION}, Cabal=${CABAL_VERSION}, Stack=$([ $WITH_STACK -eq 1 ] && echo yes || echo no), HLS=$([ $WITH_HLS -eq 1 ] && echo yes || echo no)"
 
 # --- bootstrap ghcup only ---
-curl -fsSL https://get-ghcup.haskell.org | bash
+# Staged to a file rather than piped: a retried transfer restarts from the
+# beginning, so a consumer already reading the stream would see the truncated
+# first attempt followed by the whole body. Downloading first removes that hazard
+# and lets --retry-all-errors cover a registry 5xx.
+# Piping an installer into a shell is the worst case for that: bash executes what
+# it has already read, so a mid-transfer failure runs half the installer and the
+# retry then runs all of it.
+GHCUP_INSTALLER="$(mktemp)"
+curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors -o "$GHCUP_INSTALLER" https://get-ghcup.haskell.org
+bash "$GHCUP_INSTALLER"
+rm -f "$GHCUP_INSTALLER"
 
 GHCUP="${TARGET_DIR}/.ghcup/bin/ghcup"
 if [ ! -x "$GHCUP" ]; then

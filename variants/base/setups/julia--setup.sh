@@ -50,7 +50,7 @@ TAR_URL="https://julialang-s3.julialang.org/bin/linux/${SHORT_ARCH}/${MAJOR}.${M
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 echo "⬇️  Downloading Julia ${JULIA_VERSION} (${FULL_ARCH}) ..."
-curl -fsSL "$TAR_URL" -o "$TMP/julia.tar.gz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$TAR_URL" -o "$TMP/julia.tar.gz"
 
 echo "📦 Extracting to /opt/julia-${JULIA_VERSION} ..."
 rm -rf "/opt/julia-${JULIA_VERSION}"

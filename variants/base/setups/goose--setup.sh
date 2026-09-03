@@ -49,13 +49,13 @@ rm -rf /var/lib/apt/lists/*
 REPO="aaif-goose/goose"
 if [[ "$REQ_VER" == "latest" ]]; then
   # Prefer the stable tag pointer when available; else latest release.
-  VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
     | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
     | head -1 \
     | sed -E 's/.*"v?([^"]+)".*/\1/')
   RELEASE_TAG="v${VERSION}"
   # If a floating "stable" release exists, use it for the download URL.
-  if curl -fsSL --head "https://github.com/${REPO}/releases/download/stable/download_cli.sh" >/dev/null 2>&1; then
+  if curl --retry 3 --retry-delay 2 -fsSL --head "https://github.com/${REPO}/releases/download/stable/download_cli.sh" >/dev/null 2>&1; then
     # Still pin reported version from latest for profile text; download via stable assets.
     USE_STABLE_TAG=1
   else
@@ -82,7 +82,7 @@ fi
 
 echo "⬇️  Installing Goose CLI v${VERSION} (${FILE}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-curl -fsSL --connect-timeout 10 --speed-limit 1024 --speed-time 30 \
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL --connect-timeout 10 --speed-limit 1024 --speed-time 30 \
   -o "$TMP/goose.tar.bz2" "$URL"
 tar -xjf "$TMP/goose.tar.bz2" -C "$TMP"
 

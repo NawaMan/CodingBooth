@@ -85,7 +85,7 @@ if [ -x "${CONDA_PREFIX}/bin/conda" ]; then
   echo "Found existing conda at ${CONDA_PREFIX} - reusing."
 else
   echo "Downloading Miniforge for ${MARCH}..."
-  curl -fsSL -o /tmp/miniforge.sh \
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o /tmp/miniforge.sh \
     "https://github.com/conda-forge/miniforge/releases/latest/download/Miniforge3-Linux-${MARCH}.sh"
 
   INSTALL_FLAGS="-b -p ${CONDA_PREFIX}"

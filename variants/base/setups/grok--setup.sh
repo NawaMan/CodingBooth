@@ -58,12 +58,12 @@ BASE_URL_PRIMARY="https://x.ai/cli"
 BASE_URL_FALLBACK="https://storage.googleapis.com/grok-build-public-artifacts/cli"
 
 # Prefer Cloudflare-fronted x.ai; fall back to direct GCS if unreachable.
-if curl -fsSL --connect-timeout 10 --max-time 30 "${BASE_URL_PRIMARY}/${CHANNEL}" >/tmp/cb-grok-channel.txt 2>/dev/null; then
+if curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL --connect-timeout 10 --max-time 30 "${BASE_URL_PRIMARY}/${CHANNEL}" >/tmp/cb-grok-channel.txt 2>/dev/null; then
   BASE_URL="$BASE_URL_PRIMARY"
 else
   echo "Note: ${BASE_URL_PRIMARY} unreachable, falling back to GCS."
   BASE_URL="$BASE_URL_FALLBACK"
-  curl -fsSL --connect-timeout 10 --max-time 30 "${BASE_URL}/${CHANNEL}" >/tmp/cb-grok-channel.txt
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL --connect-timeout 10 --max-time 30 "${BASE_URL}/${CHANNEL}" >/tmp/cb-grok-channel.txt
 fi
 
 if [[ "$REQ_VER" == "latest" ]]; then
@@ -81,7 +81,7 @@ fi
 ARTIFACT_URL="${BASE_URL}/grok-${VERSION}-linux-${GROK_ARCH}"
 echo "⬇️  Installing Grok Build v${VERSION} (linux-${GROK_ARCH}, channel=${CHANNEL}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-curl -fsSL --connect-timeout 10 --speed-limit 1024 --speed-time 30 \
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL --connect-timeout 10 --speed-limit 1024 --speed-time 30 \
   -o "$TMP/grok" "$ARTIFACT_URL"
 chmod +x "$TMP/grok"
 

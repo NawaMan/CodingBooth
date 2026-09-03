@@ -34,8 +34,14 @@ echo "🔧 Installing Visual Studio Code (no snap)…"
 
 # add Microsoft’s key
 install -d -m 0755 /etc/apt/keyrings
-curl -fsSL https://packages.microsoft.com/keys/microsoft.asc \
-  | gpg --dearmor --yes -o /etc/apt/keyrings/packages.microsoft.gpg
+# Staged to a file rather than piped: a retried transfer restarts from the
+# beginning, so a consumer already reading the stream would see the truncated
+# first attempt followed by the whole body. Downloading first removes that hazard
+# and lets --retry-all-errors cover a registry 5xx.
+MS_KEY="$(mktemp)"
+curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors -o "$MS_KEY" https://packages.microsoft.com/keys/microsoft.asc
+gpg --dearmor --yes -o /etc/apt/keyrings/packages.microsoft.gpg < "$MS_KEY"
+rm -f "$MS_KEY"
 chmod 0644 /etc/apt/keyrings/packages.microsoft.gpg
 
 # clean old repo entries

@@ -38,7 +38,7 @@ GO_TARBALL="go${GO_VERSION}.linux-${GO_ARCH}.tar.gz"
 GO_URL="https://go.dev/dl/${GO_TARBALL}"
 
 echo "📦 Downloading Go ${GO_VERSION} from ${GO_URL}..."
-curl -fsSL -o "/tmp/${GO_TARBALL}" "${GO_URL}"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "/tmp/${GO_TARBALL}" "${GO_URL}"
 
 echo "📂 Extracting to /usr/local ..."
 # Clean only the temporary /usr/local/go extraction dir (not versions)

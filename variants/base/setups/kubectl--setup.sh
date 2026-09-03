@@ -53,7 +53,7 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://dl.k8s.io/release/stable.txt)
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://dl.k8s.io/release/stable.txt)
   VERSION="${VERSION#v}"
 else
   VERSION="$REQ_VER"
@@ -61,7 +61,7 @@ fi
 
 # ---- install kubectl ----
 echo "⬇️  Installing kubectl v${VERSION} (${ARCH}) ..."
-curl -fsSL "https://dl.k8s.io/release/v${VERSION}/bin/linux/${ARCH}/kubectl" -o /usr/local/bin/kubectl
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://dl.k8s.io/release/v${VERSION}/bin/linux/${ARCH}/kubectl" -o /usr/local/bin/kubectl
 chmod 755 /usr/local/bin/kubectl
 
 # ---- bash completion ----

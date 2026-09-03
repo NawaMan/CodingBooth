@@ -72,7 +72,7 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 SCALA_TGZ_URL="https://github.com/lampepfl/dotty/releases/download/${SCALA_VER}/scala3-${SCALA_VER}.tar.gz"
 
 echo "⬇️  Downloading Scala ${SCALA_VER} ..."
-curl -fsSL "$SCALA_TGZ_URL" -o "$TMP/scala.tgz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$SCALA_TGZ_URL" -o "$TMP/scala.tgz"
 
 echo "📦 Installing Scala ${SCALA_VER} ..."
 rm -rf "$SCALA_DIR"
@@ -88,7 +88,7 @@ ln -sfn "$SCALA_DIR" "$LINK_DIR"
 # Official static launcher
 CS_URL="https://github.com/coursier/launchers/raw/master/cs-${CS_ARCH}-pc-linux.gz"
 echo "⬇️  Installing Coursier launcher ..."
-curl -fsSL "$CS_URL" -o "$TMP/cs.gz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$CS_URL" -o "$TMP/cs.gz"
 gunzip -f "$TMP/cs.gz"
 install -Dm755 "$TMP/cs" "${BIN_DIR}/cs"
 

@@ -53,7 +53,7 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/helm/helm/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/')
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/helm/helm/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/')
 else
   VERSION="$REQ_VER"
 fi
@@ -61,7 +61,7 @@ fi
 # ---- install helm ----
 echo "⬇️  Installing Helm v${VERSION} (${ARCH}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-curl -fsSL "https://get.helm.sh/helm-v${VERSION}-linux-${ARCH}.tar.gz" -o "$TMP/helm.tar.gz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://get.helm.sh/helm-v${VERSION}-linux-${ARCH}.tar.gz" -o "$TMP/helm.tar.gz"
 
 echo "📦 Extracting ..."
 tar -xzf "$TMP/helm.tar.gz" -C "$TMP"

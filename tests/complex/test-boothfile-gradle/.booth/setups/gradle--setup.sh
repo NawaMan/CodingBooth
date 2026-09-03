@@ -33,14 +33,16 @@ sha_url="${download_url}.sha256"
 
 echo "Locating Gradle ${GRADLE_VERSION}..."
 # HEAD check (fast fail if unreachable)
-curl -fsIL "$download_url" >/dev/null
+curl --retry 3 --retry-delay 2 -fsIL "$download_url" >/dev/null
 
 # --- Download archive ---
 echo "Downloading: $download_url"
-curl -fsSL "$download_url" -o /tmp/gradle.zip
+curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors --connect-timeout 10 \
+     "$download_url" -o /tmp/gradle.zip
 
 # --- Verify SHA-256 if available ---
-if curl -fsSL "$sha_url" -o /tmp/gradle.zip.sha256 2>/dev/null; then
+if curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors --connect-timeout 10 \
+        "$sha_url" -o /tmp/gradle.zip.sha256 2>/dev/null; then
   echo "Verifying checksum..."
   expected="$(cut -d' ' -f1 /tmp/gradle.zip.sha256)"
   actual="$(sha256sum /tmp/gradle.zip | awk '{print $1}')"

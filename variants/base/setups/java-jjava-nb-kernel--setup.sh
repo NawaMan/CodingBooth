@@ -95,7 +95,7 @@ JJAVA_TAG="${JJAVA_VERSION#v}"
 
 ZIP_URL="https://github.com/dflib/jjava/releases/download/${JJAVA_TAG}/jjava-${JJAVA_TAG}-kernelspec.zip"
 echo "⬇️  Downloading JJava ${JJAVA_TAG} …"
-curl -fsSL "${ZIP_URL}" -o "${TMPDIR}/jjava-kernelspec.zip"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${ZIP_URL}" -o "${TMPDIR}/jjava-kernelspec.zip"
 
 unzip -q -o "${TMPDIR}/jjava-kernelspec.zip" -d "${TMPDIR}"
 

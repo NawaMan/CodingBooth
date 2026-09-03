@@ -44,7 +44,14 @@ apt-get install -y --no-install-recommends curl ca-certificates apt-transport-ht
 
 # ---- add Microsoft apt repo ----
 install -d /usr/share/keyrings
-curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft.gpg
+# Staged to a file rather than piped: a retried transfer restarts from the
+# beginning, so a consumer already reading the stream would see the truncated
+# first attempt followed by the whole body. Downloading first removes that hazard
+# and lets --retry-all-errors cover a registry 5xx.
+MS_KEY="$(mktemp)"
+curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors -o "$MS_KEY" https://packages.microsoft.com/keys/microsoft.asc
+gpg --dearmor -o /usr/share/keyrings/microsoft.gpg < "$MS_KEY"
+rm -f "$MS_KEY"
 
 DISTRO=$(lsb_release -cs 2>/dev/null || echo "jammy")
 echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/azure-cli/ $DISTRO main" \

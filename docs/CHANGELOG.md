@@ -4,6 +4,36 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The same outage would have taken out a third of the catalog's downloads.** The retry above
+  covers the package managers; `curl` needed nothing built, because `--retry` already handles the
+  failures that matter — 408, 429, 5xx and connection/timeout errors. The gap was that only 18 of
+  the catalog's 169 network calls passed it. All 169 do now.
+
+  Two flag sets, chosen per call site rather than pasted uniformly. A plain download gets
+  `--retry 5 --retry-delay 3 --retry-all-errors`. A probe, an optional fetch, or a call whose
+  failure feeds a fallback gets `--retry 3 --retry-delay 2` and deliberately **no**
+  `--retry-all-errors`, so a 404 still fails on the first call and the fallback fires as fast as it
+  did before — `mkcert--setup.sh` dropping to its pinned version, `grok--setup.sh` to its secondary
+  URL, `jetbrains--setup.sh` treating a missing `.sha` as optional.
+
+  Fourteen call sites piped curl straight into a consumer, which a retry quietly breaks: curl
+  restarts a retried transfer from the beginning, so anything already reading the stream gets the
+  truncated first attempt *and then* the whole body. Harmless for `| sed` taking one match, not
+  harmless for `| gpg --dearmor` (a corrupt keyring), `| dd of=` (a corrupt file), or `| bash`,
+  which executes what it has already read — a mid-transfer failure runs half an installer and the
+  retry then runs all of it. Those now download to a temp file first and feed the file: the apt
+  signing keys for Azure CLI, Google Cloud, VS Code, MongoDB, Redis and Docker Compose; the GitHub
+  CLI keyring (`-o` instead of `| dd of=`); and the ghcup, uv, rustup, Homebrew, code-server and
+  **jbang** installers.
+
+  Homebrew's was the worst of them: `bash -c "$(curl ...)"` discards curl's exit status entirely, so
+  a transfer that died half way still yielded the bytes received and bash ran that truncated
+  installer as if nothing were wrong. It now fails the setup instead.
+
+  `tests/setups/test--curl-retry.sh` asserts both rules over every setup script — every network curl
+  carries `--retry`, and none is piped into `bash`, `sh`, `gpg` or `dd` — so a newly added setup is
+  covered the moment it lands.
+
 - **A registry having a bad minute failed the whole image build.** A Microsoft Marketplace `503`
   failed five consecutive builds of `tests/complex/test-boothfile-code-extension` while the Open VSX
   half of the same run succeeded every time; the suite's own retry, three minutes later, passed

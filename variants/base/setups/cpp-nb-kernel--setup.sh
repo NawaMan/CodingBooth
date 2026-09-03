@@ -70,7 +70,7 @@ if [[ -z "$MAMBA_BIN" ]]; then
   apt-get install -y --no-install-recommends curl ca-certificates tar bzip2
   rm -rf /var/lib/apt/lists/*
 
-  curl -fsSL "https://micro.mamba.pm/api/micromamba/${MM_ARCH}/latest" \
+  curl --retry 3 --retry-delay 2 -fsSL "https://micro.mamba.pm/api/micromamba/${MM_ARCH}/latest" \
     | tar -xj -C /tmp bin/micromamba
   install -m 0755 /tmp/bin/micromamba /usr/local/bin/micromamba
   MAMBA_BIN=/usr/local/bin/micromamba

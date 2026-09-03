@@ -114,7 +114,13 @@ eval "$("$CB_PYENV_ROOT/bin/pyenv" init -)"
 if ! command -v uv >/dev/null 2>&1; then
   echo "⬇️  Installing uv (prebuilt Python manager) ..."
   INSTALL_DIR="/usr/local/uv"
-  curl -LsSf https://astral.sh/uv/install.sh | env UV_UNMANAGED_INSTALL="$INSTALL_DIR" sh
+  # Staged to a file rather than piped into sh: a retried transfer restarts from
+  # the beginning, and a shell reading the stream would run the truncated first
+  # attempt and then the whole script again.
+  UV_INSTALLER="$(mktemp)"
+  curl -LsSf --retry 5 --retry-delay 3 --retry-all-errors -o "$UV_INSTALLER" https://astral.sh/uv/install.sh
+  env UV_UNMANAGED_INSTALL="$INSTALL_DIR" sh "$UV_INSTALLER"
+  rm -f "$UV_INSTALLER"
 
   # Add uv to PATH (handles both $INSTALL_DIR and $INSTALL_DIR/bin layouts)
   if [ -x "$INSTALL_DIR/uv" ]; then

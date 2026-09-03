@@ -25,7 +25,7 @@ if [[ $# -ge 1 && ! "$1" =~ ^-- ]]; then
 fi
 
 # Determine latest version for the major
-NODE_VERSION=$(curl -fsSL "https://nodejs.org/dist/latest-v${NODE_MAJOR}.x/" | grep -oP 'node-v\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
+NODE_VERSION=$(curl --retry 3 --retry-delay 2 -fsSL "https://nodejs.org/dist/latest-v${NODE_MAJOR}.x/" | grep -oP 'node-v\K[0-9]+\.[0-9]+\.[0-9]+' | head -1)
 if [[ -z "$NODE_VERSION" ]]; then
   echo "❌ Could not determine latest Node.js v${NODE_MAJOR} version"
   exit 1
@@ -47,7 +47,7 @@ echo "• Installing Node.js v${NODE_VERSION} (${NODE_ARCH}) to ${INSTALL_DIR}"
 
 # Download and extract
 cd /tmp
-curl -fsSL -o "$NODE_TARBALL" "$NODE_URL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$NODE_TARBALL" "$NODE_URL"
 tar -xJf "$NODE_TARBALL"
 cp -r "node-v${NODE_VERSION}-linux-${NODE_ARCH}"/{bin,lib,include,share} "$INSTALL_DIR"/
 rm -rf "$NODE_TARBALL" "node-v${NODE_VERSION}-linux-${NODE_ARCH}"

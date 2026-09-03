@@ -51,10 +51,10 @@ WARP_URL="https://releases.warp.dev/stable/v0.2024.11.12.08.02.stable_02/${WARP_
 echo "Downloading Warp for ${WARP_ARCH}..."
 
 # Try the releases URL, fall back to app.warp.dev
-if ! curl -fsSL -o "$WARP_DEB" "$WARP_URL" 2>/dev/null; then
+if ! curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$WARP_DEB" "$WARP_URL" 2>/dev/null; then
     echo "Trying alternative download..."
     # Warp also provides downloads via their website
-    curl -fsSL -o "$WARP_DEB" "https://app.warp.dev/download?package=deb" || {
+    curl --retry 3 --retry-delay 2 -fsSL -o "$WARP_DEB" "https://app.warp.dev/download?package=deb" || {
         echo "ERROR: Failed to download Warp"
         exit 1
     }

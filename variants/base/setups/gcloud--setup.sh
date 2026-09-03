@@ -48,7 +48,14 @@ apt-get install -y --no-install-recommends curl ca-certificates apt-transport-ht
 
 # ---- add Google apt repo ----
 install -d /usr/share/keyrings
-curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg
+# Staged to a file rather than piped: a retried transfer restarts from the
+# beginning, so a consumer already reading the stream would see the truncated
+# first attempt followed by the whole body. Downloading first removes that hazard
+# and lets --retry-all-errors cover a registry 5xx.
+GOOGLE_KEY="$(mktemp)"
+curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors -o "$GOOGLE_KEY" https://packages.cloud.google.com/apt/doc/apt-key.gpg
+gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg < "$GOOGLE_KEY"
+rm -f "$GOOGLE_KEY"
 echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" \
   > /etc/apt/sources.list.d/google-cloud-sdk.list
 

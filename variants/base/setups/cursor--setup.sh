@@ -24,7 +24,7 @@ Examples:
 Notes:
 - Cursor's download URLs embed a build commit, so there is no version-only
   URL to pin against. To pin a build, resolve it once and pass --deb-url:
-    curl -fsSL 'https://www.cursor.com/api/download?platform=linux-x64&releaseTrack=stable'
+    curl --retry 3 --retry-delay 2 -fsSL 'https://www.cursor.com/api/download?platform=linux-x64&releaseTrack=stable'
   and take the "debUrl" field from the JSON.
 - Requires a desktop environment; skipped on non-desktop variants.
 - This script only automates download and installation from Cursor's official

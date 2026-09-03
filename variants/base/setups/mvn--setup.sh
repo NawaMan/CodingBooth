@@ -35,18 +35,20 @@ archive_url="${ARCHIVE_BASE}/${MAVEN_VERSION}/binaries/${tarball}"
 # Pick a working URL (prefer primary, fall back to archive)
 echo "Locating Apache Maven ${MAVEN_VERSION}..."
 DOWNLOAD_URL="$primary_url"
-if ! curl -fsIL "$DOWNLOAD_URL" >/dev/null 2>&1; then
+if ! curl --retry 3 --retry-delay 2 -fsIL "$DOWNLOAD_URL" >/dev/null 2>&1; then
   echo "Primary mirror does not have ${MAVEN_VERSION}; using archive."
   DOWNLOAD_URL="$archive_url"
 fi
 
 # --- Download tarball ---
 echo "Downloading: $DOWNLOAD_URL"
-curl -fsSL "$DOWNLOAD_URL" -o /tmp/maven.tar.gz
+curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors --connect-timeout 10 \
+     "$DOWNLOAD_URL" -o /tmp/maven.tar.gz
 
 # --- Verify SHA-512 if available ---
 sha_url="${DOWNLOAD_URL}.sha512"
-if curl -fsSL "$sha_url" -o /tmp/maven.tar.gz.sha512 2>/dev/null; then
+if curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors --connect-timeout 10 \
+        "$sha_url" -o /tmp/maven.tar.gz.sha512 2>/dev/null; then
   echo "Verifying checksum..."
   expected="$(cut -d' ' -f1 /tmp/maven.tar.gz.sha512)"
   actual="$(sha512sum /tmp/maven.tar.gz | awk '{print $1}')"

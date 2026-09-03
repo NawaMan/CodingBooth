@@ -81,10 +81,10 @@ SHA_URL="${URL}.sha256"
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 echo "⬇️  Downloading Roc ${ROC_TAG} (${RARCH}) ..."
-curl -fsSL "$URL" -o "$TMP/$ASSET"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$URL" -o "$TMP/$ASSET"
 
 if [[ $DO_VERIFY -eq 1 ]]; then
-  if curl -fsSL "$SHA_URL" -o "$TMP/$ASSET.sha256"; then
+  if curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$SHA_URL" -o "$TMP/$ASSET.sha256"; then
     echo "🔐 Verifying checksum ..."
     ( cd "$TMP" && sha256sum -c "$ASSET.sha256" )
   else

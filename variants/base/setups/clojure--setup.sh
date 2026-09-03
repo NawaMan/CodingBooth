@@ -49,7 +49,7 @@ if [[ -z "$REQ_VER" ]]; then
   CLJ_VER="$CLJ_DEFAULT_VER"
 elif [[ "$REQ_VER" == "latest" ]]; then
   # Clojure releases are on GitHub
-  CLJ_VER="$(curl -fsSL https://api.github.com/repos/clojure/brew-install/releases/latest | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//')"
+  CLJ_VER="$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/clojure/brew-install/releases/latest | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//')"
   [[ -n "$CLJ_VER" ]] || { echo "Failed to resolve latest Clojure version"; exit 1; }
 else
   CLJ_VER="$REQ_VER"
@@ -82,7 +82,7 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 CLJ_URL="https://download.clojure.org/install/linux-install-${CLJ_VER}.sh"
 
 echo "Downloading Clojure CLI ${CLJ_VER} ..."
-curl -fsSL "$CLJ_URL" -o "$TMP/install.sh"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$CLJ_URL" -o "$TMP/install.sh"
 chmod +x "$TMP/install.sh"
 
 echo "Installing Clojure CLI ${CLJ_VER} ..."
@@ -98,7 +98,7 @@ ln -sfn "$TARGET_DIR" "$LINK_DIR"
 # ---- Leiningen (optional) ----
 if [[ $WITH_LEIN -eq 1 ]]; then
   echo "Installing Leiningen ..."
-  curl -fsSL https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein -o "${BIN_DIR}/lein"
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein -o "${BIN_DIR}/lein"
   chmod +x "${BIN_DIR}/lein"
   # Pre-download leiningen jar
   HOME=/tmp "${BIN_DIR}/lein" version || true

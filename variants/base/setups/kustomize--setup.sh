@@ -46,14 +46,14 @@ apt-get install -y --no-install-recommends curl ca-certificates tar
 rm -rf /var/lib/apt/lists/*
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL "https://api.github.com/repos/kubernetes-sigs/kustomize/releases?per_page=30" | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"kustomize/v[^"]+"' | head -1 | sed -E 's|.*"kustomize/v([^"]+)".*|\1|')
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL "https://api.github.com/repos/kubernetes-sigs/kustomize/releases?per_page=30" | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"kustomize/v[^"]+"' | head -1 | sed -E 's|.*"kustomize/v([^"]+)".*|\1|')
 else
   VERSION="${REQ_VER#v}"
 fi
 
 echo "⬇️  Installing kustomize v${VERSION} (${ARCH}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-curl -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${VERSION}/kustomize_v${VERSION}_linux_${ARCH}.tar.gz" -o "$TMP/kustomize.tar.gz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://github.com/kubernetes-sigs/kustomize/releases/download/kustomize%2Fv${VERSION}/kustomize_v${VERSION}_linux_${ARCH}.tar.gz" -o "$TMP/kustomize.tar.gz"
 tar -xzf "$TMP/kustomize.tar.gz" -C "$TMP"
 install -m 755 "$TMP/kustomize" /usr/local/bin/kustomize
 

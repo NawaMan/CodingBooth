@@ -81,7 +81,7 @@ URL="https://github.com/bufbuild/buf/releases/download/v${VERSION}/${ASSET}"
 
 echo "⬇️  Installing buf v${VERSION} (${ASSET_OS}-${ASSET_ARCH}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-curl -fsSL "$URL" -o "$TMP/buf"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$URL" -o "$TMP/buf"
 install -m 755 "$TMP/buf" /usr/local/bin/buf
 
 echo "✅ buf installed."

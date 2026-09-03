@@ -54,7 +54,7 @@ for url in \
     "https://keys.openpgp.org/vks/v1/by-fingerprint/${MOZILLATEAM_KEY_ID}"
 do
   echo "ℹ️ Fetching Mozillateam signing key from ${url%%\?*} ..."
-  if curl -fsSL --max-time 30 "${url}" -o "${TMP_ASC}" && \
+  if curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL --max-time 30 "${url}" -o "${TMP_ASC}" && \
      [[ -s "${TMP_ASC}" ]] && \
      grep -q 'BEGIN PGP PUBLIC KEY BLOCK' "${TMP_ASC}"; then
     fetched=1

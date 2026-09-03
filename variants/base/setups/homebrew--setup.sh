@@ -12,7 +12,20 @@ apt-get install -y build-essential
 
 function install-homebrew() {
     export NONINTERACTIVE=1
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+    # Staged to a file rather than run out of a command substitution. `bash -c
+    # "$(curl ...)"` hides curl's exit status: a transfer that dies half way still
+    # yields the bytes received so far, and bash runs that truncated installer as
+    # if nothing were wrong. Downloading first makes a failed fetch a failed setup.
+    local installer
+    installer="$(mktemp)"
+    if ! curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors -o "$installer" \
+            https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh; then
+        echo "❌ Failed to download the Homebrew installer" >&2
+        rm -f "$installer"
+        return 1
+    fi
+    /bin/bash "$installer"
+    rm -f "$installer"
 }
 sudo -u coder bash -c "$(declare -f install-homebrew); install-homebrew"
 

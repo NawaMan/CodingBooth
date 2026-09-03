@@ -53,8 +53,14 @@ apt-get update
 apt-get install -y --no-install-recommends gnupg curl
 
 # Add MongoDB signing key
-curl -fsSL "https://www.mongodb.org/static/pgp/server-${MAJOR_MINOR}.asc" \
-  | gpg --dearmor -o /usr/share/keyrings/mongodb-server-${MAJOR_MINOR}.gpg
+# Staged to a file rather than piped: a retried transfer restarts from the
+# beginning, so a consumer already reading the stream would see the truncated
+# first attempt followed by the whole body. Downloading first removes that hazard
+# and lets --retry-all-errors cover a registry 5xx.
+MONGO_KEY="$(mktemp)"
+curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors -o "$MONGO_KEY" "https://www.mongodb.org/static/pgp/server-${MAJOR_MINOR}.asc"
+gpg --dearmor -o /usr/share/keyrings/mongodb-server-${MAJOR_MINOR}.gpg < "$MONGO_KEY"
+rm -f "$MONGO_KEY"
 
 # Add MongoDB apt source
 echo "deb [arch=${ARCH} signed-by=/usr/share/keyrings/mongodb-server-${MAJOR_MINOR}.gpg] https://repo.mongodb.org/apt/ubuntu jammy/mongodb-org/${MAJOR_MINOR} multiverse" \

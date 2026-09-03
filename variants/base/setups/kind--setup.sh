@@ -56,14 +56,14 @@ rm -rf /var/lib/apt/lists/*
 # ---- install kubectl ----
 echo "⬇️  Installing kubectl ($KUBECTL_VERSION, $KUBECTL_ARCH) ..."
 if [[ "$KUBECTL_VERSION" == "stable" ]]; then
-  KUBECTL_VERSION=$(curl -fsSL https://dl.k8s.io/release/stable.txt)
+  KUBECTL_VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://dl.k8s.io/release/stable.txt)
 fi
-curl -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${KUBECTL_ARCH}/kubectl" -o /usr/local/bin/kubectl
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://dl.k8s.io/release/${KUBECTL_VERSION}/bin/linux/${KUBECTL_ARCH}/kubectl" -o /usr/local/bin/kubectl
 chmod +x /usr/local/bin/kubectl
 
 # ---- install kind ----
 echo "⬇️  Installing kind v${KIND_VERSION} ($KIND_ARCH) ..."
-curl -fsSL "https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-linux-${KIND_ARCH}" -o /usr/local/bin/kind
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-linux-${KIND_ARCH}" -o /usr/local/bin/kind
 chmod +x /usr/local/bin/kind
 
 # ---- bash completion ----

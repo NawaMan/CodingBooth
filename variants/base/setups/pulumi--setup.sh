@@ -54,7 +54,7 @@ rm -rf /var/lib/apt/lists/*
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
   echo "🔍 Resolving latest Pulumi version ..."
-  VERSION="$(curl -fsSL https://www.pulumi.com/latest-version)"
+  VERSION="$(curl --retry 3 --retry-delay 2 -fsSL https://www.pulumi.com/latest-version)"
   if [[ -z "$VERSION" ]]; then
     echo "❌ Failed to resolve latest Pulumi version"; exit 1
   fi
@@ -71,7 +71,7 @@ TAR_URL="https://get.pulumi.com/releases/sdk/pulumi-v${VERSION}-linux-${ARCH}.ta
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 echo "⬇️  Downloading Pulumi ${VERSION} (${ARCH}) ..."
-curl -fsSL "$TAR_URL" -o "$TMP/pulumi.tar.gz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$TAR_URL" -o "$TMP/pulumi.tar.gz"
 
 echo "📦 Extracting to /opt/pulumi ..."
 rm -rf /opt/pulumi

@@ -61,22 +61,42 @@ EOF
 cat > "$STUB/bin/curl" << 'EOF'
 #!/bin/bash
 args="$*"
+
+# Resolve -o the way real curl does, before dispatching: the destination is a
+# property of the invocation, not of which URL it names. The installer fetch is
+# downloaded to a file rather than piped into sh (a retried transfer restarts from
+# the beginning, so a shell reading the stream would run the partial first attempt
+# and then the whole script), and the package download always was -- so both
+# branches have to honour it.
+out=""; prev=""
+for a in "$@"; do
+  [ "$prev" = "-o" ] && out="$a"
+  prev="$a"
+done
+
+# emit <text> -- writes the response *body*, which goes to the -o file when there
+# is one and to stdout otherwise, as curl does.
+emit() {
+  if [ -n "$out" ]; then printf '%s' "$1" > "$out"; else printf '%s' "$1"; fi
+}
+
 case "$args" in
   *releases/latest*)
+    # The version probe is `-o /dev/null -w '%{url_effective}'`: what it reads is
+    # the -w report, not the body, and curl writes that to stdout however -o is
+    # set. So this branch deliberately does not use emit.
     printf '%s' "${CB_FAKE_LATEST_URL}"
     ;;
   *code-server.dev/install.sh*)
-    printf '%s\n' 'echo "INSTALLER_ARGS=$*"'
+    # A fake installer that echoes the arguments it was handed, which is how
+    # test 2 sees --version.
+    emit 'echo "INSTALLER_ARGS=$*"
+'
     ;;
   *" -o "*)
     # The package download. Told apart by -o rather than by curl's flag
     # spelling, so tightening the real flags does not silently reroute this
     # stub into the wrong branch.
-    out=""; prev=""
-    for a in "$@"; do
-      [ "$prev" = "-o" ] && out="$a"
-      prev="$a"
-    done
     [ -n "$out" ] && : > "$out"
     ;;
   *)

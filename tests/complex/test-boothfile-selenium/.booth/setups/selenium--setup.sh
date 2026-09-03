@@ -107,7 +107,7 @@ install_chrome_for_testing() {
 
   if [[ -n "${CFT_PLATFORM}" ]]; then
     local json url_chrome url_driver ver
-    json="$(curl -fsSL https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json)"
+    json="$(curl --retry 3 --retry-delay 2 -fsSL https://googlechromelabs.github.io/chrome-for-testing/last-known-good-versions-with-downloads.json)"
     if [[ "${version_label}" == "Stable" || "${version_label}" == "latest" || "${version_label}" == "stable" ]]; then
       ver="$(echo "$json" | jq -r '.channels.Stable.version')"
       url_chrome="$(echo "$json" | jq -r --arg p "$CFT_PLATFORM" '.channels.Stable.downloads.chrome[] | select(.platform==$p) | .url')"
@@ -121,8 +121,8 @@ install_chrome_for_testing() {
 
     local tmp
     tmp="$(mktemp -d)"
-    curl -fsSL "$url_chrome" -o "$tmp/chrome.zip"
-    curl -fsSL "$url_driver" -o "$tmp/chromedriver.zip"
+    curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$url_chrome" -o "$tmp/chrome.zip"
+    curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$url_driver" -o "$tmp/chromedriver.zip"
     unzip -q "$tmp/chrome.zip" -d "${INSTALL_ROOT}"
     unzip -q "$tmp/chromedriver.zip" -d "${INSTALL_ROOT}"
     rm -rf "$tmp"
@@ -173,10 +173,10 @@ EOF
 install_geckodriver() {
   echo "⬇️  Installing geckodriver ..."
   local tag url tmp
-  tag="$(curl -fsSL https://api.github.com/repos/mozilla/geckodriver/releases/latest | jq -r '.tag_name')"
+  tag="$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/mozilla/geckodriver/releases/latest | jq -r '.tag_name')"
   url="https://github.com/mozilla/geckodriver/releases/download/${tag}/geckodriver-${tag}-${GECKO_ASSET}.tar.gz"
   tmp="$(mktemp -d)"
-  curl -fsSL "$url" -o "$tmp/geckodriver.tgz"
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$url" -o "$tmp/geckodriver.tgz"
   tar -xzf "$tmp/geckodriver.tgz" -C "$tmp"
   install -m 755 "$tmp/geckodriver" "${BIN_DIR}/geckodriver"
   rm -rf "$tmp"

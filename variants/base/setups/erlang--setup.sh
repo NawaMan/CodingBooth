@@ -90,7 +90,7 @@ rm -rf /var/lib/apt/lists/*
 # --- rebar3 (optional) ---
 if [[ "$WITH_REBAR3" -eq 1 ]]; then
   echo "📦 Installing rebar3 ..."
-  curl -fsSL https://github.com/erlang/rebar3/releases/latest/download/rebar3 -o /usr/local/bin/rebar3
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL https://github.com/erlang/rebar3/releases/latest/download/rebar3 -o /usr/local/bin/rebar3
   chmod +x /usr/local/bin/rebar3
 fi
 

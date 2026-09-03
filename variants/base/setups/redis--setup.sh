@@ -46,8 +46,14 @@ apt-get update
 apt-get install -y --no-install-recommends gnupg curl lsb-release
 
 # Add Redis signing key
-curl -fsSL https://packages.redis.io/gpg \
-  | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+# Staged to a file rather than piped: a retried transfer restarts from the
+# beginning, so a consumer already reading the stream would see the truncated
+# first attempt followed by the whole body. Downloading first removes that hazard
+# and lets --retry-all-errors cover a registry 5xx.
+REDIS_KEY="$(mktemp)"
+curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors -o "$REDIS_KEY" https://packages.redis.io/gpg
+gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg < "$REDIS_KEY"
+rm -f "$REDIS_KEY"
 
 # Add Redis apt source
 echo "deb [arch=${ARCH} signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" \

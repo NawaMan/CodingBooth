@@ -46,14 +46,14 @@ apt-get install -y --no-install-recommends curl ca-certificates tar ffmpeg
 rm -rf /var/lib/apt/lists/*
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/charmbracelet/vhs/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/charmbracelet/vhs/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
 else
   VERSION="${REQ_VER#v}"
 fi
 
 echo "⬇️  Installing VHS v${VERSION} (${VHS_ARCH}) + ffmpeg ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-curl -fsSL "https://github.com/charmbracelet/vhs/releases/download/v${VERSION}/vhs_${VERSION}_Linux_${VHS_ARCH}.tar.gz" -o "$TMP/vhs.tar.gz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://github.com/charmbracelet/vhs/releases/download/v${VERSION}/vhs_${VERSION}_Linux_${VHS_ARCH}.tar.gz" -o "$TMP/vhs.tar.gz"
 tar -xzf "$TMP/vhs.tar.gz" -C "$TMP"
 # Locate the binary: older releases ship a top-level `vhs`, while v0.11.0+
 # nest it under a versioned directory (e.g. vhs_0.11.0_Linux_x86_64/vhs).
