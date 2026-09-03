@@ -56,7 +56,7 @@ rm -rf /var/lib/apt/lists/*
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
   echo "🔍 Resolving latest sbt version ..."
-  VERSION="$(curl -s https://api.github.com/repos/sbt/sbt/releases/latest | jq -r '.tag_name' | sed 's/^v//')"
+  VERSION="$(curl --retry 3 --retry-delay 2 -s https://api.github.com/repos/sbt/sbt/releases/latest | jq -r '.tag_name' | sed 's/^v//')"
   if [[ -z "$VERSION" || "$VERSION" == "null" ]]; then
     echo "❌ Failed to resolve latest sbt version"; exit 1
   fi
@@ -73,7 +73,7 @@ TARBALL_URL="https://github.com/sbt/sbt/releases/download/v${VERSION}/sbt-${VERS
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 echo "⬇️  Downloading sbt ${VERSION} ..."
-curl -fsSL "$TARBALL_URL" -o "$TMP/sbt.tgz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$TARBALL_URL" -o "$TMP/sbt.tgz"
 
 echo "📦 Extracting to /opt/sbt ..."
 rm -rf /opt/sbt

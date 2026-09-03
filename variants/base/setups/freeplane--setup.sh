@@ -57,7 +57,7 @@ rm -rf /var/lib/apt/lists/*
 DEB_FILE="/tmp/freeplane_${FREEPLANE_VERSION}.deb"
 
 echo "• Downloading Freeplane ${FREEPLANE_VERSION} ..."
-curl -fsSL -o "$DEB_FILE" \
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$DEB_FILE" \
   "https://github.com/freeplane/freeplane/releases/download/release-${FREEPLANE_VERSION}/freeplane_${FREEPLANE_VERSION}~upstream-1_all.deb"
 
 echo "• Installing Freeplane ..."

@@ -117,7 +117,7 @@ mkdir -p "$OBSIDIAN_DIR"
 
 echo "• Downloading Obsidian ${OBSIDIAN_VERSION} (${ARCH_RAW}) ..."
 echo "  From: ${DOWNLOAD_URL}"
-curl -fsSL -o "${OBSIDIAN_DIR}/${APPIMAGE_NAME}" "$DOWNLOAD_URL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "${OBSIDIAN_DIR}/${APPIMAGE_NAME}" "$DOWNLOAD_URL"
 chmod 755 "${OBSIDIAN_DIR}/${APPIMAGE_NAME}"
 
 # ---- extract AppImage (avoids FUSE requirement at runtime) ----

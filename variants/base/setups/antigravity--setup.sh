@@ -33,7 +33,7 @@ apt-get install -y curl gnupg apt-transport-https
 
 # Add Antigravity GPG key
 mkdir -p /etc/apt/keyrings
-curl -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
+curl --retry 3 --retry-delay 2 -fsSL https://us-central1-apt.pkg.dev/doc/repo-signing-key.gpg | \
   gpg --dearmor --yes -o /etc/apt/keyrings/antigravity-repo-key.gpg
 
 # Add Antigravity APT repository

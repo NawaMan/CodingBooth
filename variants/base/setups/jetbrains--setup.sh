@@ -204,10 +204,10 @@ fi
 
 # --- Fetch ---
 echo "Download from: $URL"
-curl -fsSL -o "$TMP_TGZ" "$URL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$TMP_TGZ" "$URL"
 
 # checksum (if available)
-if curl -fsSL -o "$TMP_SHA" "$SHA_URL" 2>/dev/null; then
+if curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$TMP_SHA" "$SHA_URL" 2>/dev/null; then
   echo "Verifying checksum..."
   expected="$(awk '{print $1}' "$TMP_SHA")"
   actual="$(sha256sum "$TMP_TGZ" | awk '{print $1}')"

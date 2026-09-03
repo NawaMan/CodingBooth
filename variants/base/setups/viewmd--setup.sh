@@ -63,7 +63,7 @@ fi
 
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/NawaMan/MarkDownViewer/releases/latest \
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/NawaMan/MarkDownViewer/releases/latest \
             | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 \
             | sed -E 's/.*"v([^"]+)".*/\1/' || true)
   if [[ -z "$VERSION" ]]; then
@@ -87,7 +87,7 @@ curl -fsSL --connect-timeout 15 --max-time 300 --retry 3 --retry-delay 5 \
 # Verify against the release's SHA256SUMS. A release that predates the checksum
 # file leaves nothing to check, so warn rather than fail; a checksum that is
 # present and wrong is fatal.
-if curl -fsSL "${BASE_URL}/SHA256SUMS" -o "${TMP_DIR}/SHA256SUMS" 2>/dev/null; then
+if curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${BASE_URL}/SHA256SUMS" -o "${TMP_DIR}/SHA256SUMS" 2>/dev/null; then
   EXPECTED=$(awk -v asset="$ASSET" '$2 == asset || $2 == "*"asset {print $1}' "${TMP_DIR}/SHA256SUMS" | head -1)
   if [[ -n "$EXPECTED" ]]; then
     ACTUAL=$(sha256sum "${TMP_DIR}/viewmd" | awk '{print $1}')

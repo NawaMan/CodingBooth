@@ -50,7 +50,7 @@ else
 fi
 
 echo "Downloading from ${NVIM_URL}..."
-curl -fsSL -o nvim.tar.gz "$NVIM_URL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o nvim.tar.gz "$NVIM_URL"
 
 # Extract to /opt/nvim
 echo "Extracting to /opt/nvim..."

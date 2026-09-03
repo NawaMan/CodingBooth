@@ -48,7 +48,7 @@ rm -rf /var/lib/apt/lists/*
 
 REPO="can1357/oh-my-pi"
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
     | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' \
     | head -1 \
     | sed -E 's/.*"v?([^"]+)".*/\1/')
@@ -65,7 +65,7 @@ BINARY="omp-linux-${OMP_ARCH}"
 URL="https://github.com/${REPO}/releases/download/v${VERSION}/${BINARY}"
 echo "⬇️  Installing Oh My Pi (omp) v${VERSION} (${BINARY}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-curl -fsSL --connect-timeout 10 --speed-limit 1024 --speed-time 30 \
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL --connect-timeout 10 --speed-limit 1024 --speed-time 30 \
   -o "$TMP/omp" "$URL"
 chmod +x "$TMP/omp"
 

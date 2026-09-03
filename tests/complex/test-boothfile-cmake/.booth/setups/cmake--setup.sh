@@ -57,7 +57,7 @@ rm -rf /var/lib/apt/lists/*
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
   echo "🔍 Resolving latest CMake version ..."
-  VERSION="$(curl -s https://api.github.com/repos/Kitware/CMake/releases/latest | jq -r '.tag_name' | sed 's/^v//')"
+  VERSION="$(curl --retry 3 --retry-delay 2 -s https://api.github.com/repos/Kitware/CMake/releases/latest | jq -r '.tag_name' | sed 's/^v//')"
   if [[ -z "$VERSION" || "$VERSION" == "null" ]]; then
     echo "❌ Failed to resolve latest CMake version"; exit 1
   fi
@@ -74,7 +74,7 @@ TARBALL_URL="https://github.com/Kitware/CMake/releases/download/v${VERSION}/cmak
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 echo "⬇️  Downloading CMake ${VERSION} (${ARCH}) ..."
-curl -fsSL "$TARBALL_URL" -o "$TMP/cmake.tar.gz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$TARBALL_URL" -o "$TMP/cmake.tar.gz"
 
 echo "📦 Extracting to /opt/cmake ..."
 rm -rf /opt/cmake

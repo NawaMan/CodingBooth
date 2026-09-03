@@ -49,7 +49,7 @@ apt-get install -y --no-install-recommends \
 rm -rf /var/lib/apt/lists/*
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/crystal-lang/crystal/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/crystal-lang/crystal/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
 else
   VERSION="${REQ_VER#v}"
 fi
@@ -62,7 +62,7 @@ BIN_DIR=/usr/local/bin
 echo "⬇️  Installing Crystal ${VERSION} (${C_ARCH}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 TARBALL="crystal-${VERSION}-1-linux-${C_ARCH}.tar.gz"
-curl -fsSL "https://github.com/crystal-lang/crystal/releases/download/${VERSION}/${TARBALL}" -o "$TMP/$TARBALL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://github.com/crystal-lang/crystal/releases/download/${VERSION}/${TARBALL}" -o "$TMP/$TARBALL"
 tar -xzf "$TMP/$TARBALL" -C "$TMP"
 
 SRC_DIR="$(find "$TMP" -maxdepth 1 -type d -name "crystal-${VERSION}-1" -print -quit)"

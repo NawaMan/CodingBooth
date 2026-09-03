@@ -44,7 +44,7 @@ fi
 
 # Download and extract
 cd /tmp
-curl -fsSL -o bun.zip "$BUN_URL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o bun.zip "$BUN_URL"
 unzip -o bun.zip
 cp "bun-linux-${BUN_ARCH}/bun" "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/bun"

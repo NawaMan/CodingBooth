@@ -59,7 +59,7 @@ DOWNLOAD_URL="https://www.bluej.org/download/files/BlueJ-linux-${BLUEJ_DEB_TAG}.
 
 echo "• Downloading BlueJ ${BLUEJ_VERSION} ..."
 echo "  From: ${DOWNLOAD_URL}"
-curl -fsSL -o "$DEB_FILE" "$DOWNLOAD_URL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$DEB_FILE" "$DOWNLOAD_URL"
 
 # ---- install BlueJ ----
 echo "• Installing BlueJ ..."

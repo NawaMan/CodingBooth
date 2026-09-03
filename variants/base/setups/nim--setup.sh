@@ -49,7 +49,7 @@ rm -rf /var/lib/apt/lists/*
 if [[ "$REQ_VER" == "latest" ]]; then
   # Nim doesn't publish GitHub Releases; nim-lang.org/channels/stable is the
   # canonical pointer that choosenim uses internally. Returns just "X.Y.Z\n".
-  VERSION=$(curl -fsSL https://nim-lang.org/channels/stable | tr -d '[:space:]')
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://nim-lang.org/channels/stable | tr -d '[:space:]')
   VERSION="${VERSION#v}"
 else
   VERSION="${REQ_VER#v}"
@@ -63,7 +63,7 @@ BIN_DIR=/usr/local/bin
 echo "⬇️  Installing Nim ${VERSION} (${N_ARCH}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 TARBALL="nim-${VERSION}-linux_${N_ARCH}.tar.xz"
-curl -fsSL "https://nim-lang.org/download/${TARBALL}" -o "$TMP/$TARBALL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://nim-lang.org/download/${TARBALL}" -o "$TMP/$TARBALL"
 tar -xJf "$TMP/$TARBALL" -C "$TMP"
 
 SRC_DIR="$(find "$TMP" -maxdepth 1 -type d -name "nim-${VERSION}" -print -quit)"

@@ -73,7 +73,7 @@ TMP="/tmp"
 download_one() {
   local name="$1"
   echo "Attempting download: ${BASE_URL}/${name}"
-  curl -fsSL "${BASE_URL}/${name}" -o "${TMP}/${name}"
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${BASE_URL}/${name}" -o "${TMP}/${name}"
 }
 
 if ! download_one "$fname_new"; then
@@ -93,7 +93,7 @@ fi
 PUBKEY="RWSGOq2NVecA2UPNdBUZykf1CCb147pkmdtYxgb3Ti+JO/wCYvhbAb/U"
 if [ "$NO_VERIFY" -eq 0 ]; then
   echo "Verifying minisign signature..."
-  if curl -fsSL "${BASE_URL}/${FILENAME}.minisig" -o "${TMP}/${FILENAME}.minisig"; then
+  if curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${BASE_URL}/${FILENAME}.minisig" -o "${TMP}/${FILENAME}.minisig"; then
     minisign -Vm "${TMP}/${FILENAME}" -P "$PUBKEY" -x "${TMP}/${FILENAME}.minisig"
   else
     echo "⚠️  Signature file not found; proceeding without verification."

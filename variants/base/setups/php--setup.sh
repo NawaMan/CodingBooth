@@ -163,7 +163,7 @@ ln -sfn "${BIN_DIR}/phpwrap" "${BIN_DIR}/php"
 # ---- Composer (optional) ----
 if [[ $WITH_COMPOSER -eq 1 ]]; then
   echo "⬇️  Installing Composer ..."
-  curl -fsSL https://getcomposer.org/installer -o /tmp/composer-setup.php
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL https://getcomposer.org/installer -o /tmp/composer-setup.php
   # You can add signature verification here if you like (sha384)
   php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
   rm -f /tmp/composer-setup.php

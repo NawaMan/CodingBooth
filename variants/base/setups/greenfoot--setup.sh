@@ -67,7 +67,7 @@ DOWNLOAD_URL="https://www.greenfoot.org/download/files/Greenfoot-linux-${GREENFO
 
 echo "• Downloading Greenfoot ${GREENFOOT_VERSION} ..."
 echo "  From: ${DOWNLOAD_URL}"
-curl -fsSL -o "$DEB_FILE" "$DOWNLOAD_URL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$DEB_FILE" "$DOWNLOAD_URL"
 
 # ---- install Greenfoot ----
 echo "• Installing Greenfoot ..."

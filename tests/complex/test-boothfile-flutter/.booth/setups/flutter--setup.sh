@@ -76,7 +76,7 @@ rm -rf /var/lib/apt/lists/*
 # ---- resolve the version ----
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 echo "Resolving Flutter ${REQ_VERSION} ..."
-curl -fsSL "$RELEASES_URL" -o "$TMP/releases.json"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$RELEASES_URL" -o "$TMP/releases.json"
 
 if [[ "$REQ_VERSION" == "latest" ]]; then
   # current_release.stable is a build hash, not a version -- it has to be looked
@@ -104,7 +104,7 @@ INSTALL_DIR="/usr/local/flutter-${VERSION}"
 
 # ---- download + install ----
 echo "Downloading Flutter ${VERSION} ..."
-curl -fsSL "${BASE_URL}/${ARCHIVE}" -o "$TMP/flutter.tar.xz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${BASE_URL}/${ARCHIVE}" -o "$TMP/flutter.tar.xz"
 
 echo "Installing Flutter to ${INSTALL_DIR} ..."
 # The tarball unpacks to a plain 'flutter/', so extract to a scratch dir and

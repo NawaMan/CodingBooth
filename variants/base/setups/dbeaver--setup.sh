@@ -57,7 +57,7 @@ fi
 
 echo "• Downloading DBeaver CE (${DBEAVER_VERSION}) ..."
 DEB_FILE="/tmp/dbeaver-ce.deb"
-curl -fsSL -o "$DEB_FILE" "$DEB_URL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$DEB_FILE" "$DEB_URL"
 
 echo "• Installing DBeaver CE ..."
 apt-get update

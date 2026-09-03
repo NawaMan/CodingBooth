@@ -84,7 +84,7 @@ export DEBIAN_FRONTEND=noninteractive
 mkdir -p "${WORKDIR}"
 ZIP_URL="https://github.com/SpencerPark/IJava/releases/download/v${IJAVA_VERSION}/ijava-${IJAVA_VERSION}.zip"
 echo "⬇️  Downloading IJava ${IJAVA_VERSION} …"
-curl -fsSL "${ZIP_URL}" -o "${TMPDIR}/ijava.zip"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${ZIP_URL}" -o "${TMPDIR}/ijava.zip"
 unzip -q -o "${TMPDIR}/ijava.zip" -d "${TMPDIR}"
 
 INSTALL_PY="$(find "${TMPDIR}" -maxdepth 2 -type f -name 'install.py' -print -quit || true)"

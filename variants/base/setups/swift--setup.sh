@@ -97,7 +97,7 @@ URL="${BASE}/${TARBALL}"
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 echo "⬇️  Downloading Swift ${SWIFT_VERSION} for ${S_UBU} (${S_ARCH}) ..."
-curl -fL "$URL" -o "$TMP/$TARBALL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fL "$URL" -o "$TMP/$TARBALL"
 
 # ---- install ----
 rm -rf "$TARGET_DIR"; mkdir -p "$TARGET_DIR"

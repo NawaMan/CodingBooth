@@ -77,7 +77,7 @@ chmod -R 0777 "$NUGET_DIR" || true
 # Fetch official installer
 DOTNET_INSTALL=/tmp/dotnet-install.sh
 echo "📦 Downloading .NET installer..."
-curl -fsSL https://dot.net/v1/dotnet-install.sh -o "$DOTNET_INSTALL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL https://dot.net/v1/dotnet-install.sh -o "$DOTNET_INSTALL"
 chmod +x "$DOTNET_INSTALL"
 
 # Install SDK or runtime

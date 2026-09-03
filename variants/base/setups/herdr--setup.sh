@@ -46,14 +46,14 @@ apt-get install -y --no-install-recommends curl ca-certificates
 rm -rf /var/lib/apt/lists/*
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/ogulcancelik/herdr/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/ogulcancelik/herdr/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
 else
   VERSION="${REQ_VER#v}"
 fi
 
 echo "⬇️  Installing Herdr v${VERSION} (${HERDR_ARCH}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-curl -fsSL -o "$TMP/herdr" "https://github.com/ogulcancelik/herdr/releases/download/v${VERSION}/herdr-linux-${HERDR_ARCH}"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$TMP/herdr" "https://github.com/ogulcancelik/herdr/releases/download/v${VERSION}/herdr-linux-${HERDR_ARCH}"
 install -m 755 "$TMP/herdr" /usr/local/bin/herdr
 
 echo "✅ Herdr installed."

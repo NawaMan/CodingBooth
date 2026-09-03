@@ -45,14 +45,14 @@ apt-get install -y --no-install-recommends curl ca-certificates unzip
 rm -rf /var/lib/apt/lists/*
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/duckdb/duckdb/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/duckdb/duckdb/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
 else
   VERSION="${REQ_VER#v}"
 fi
 
 echo "⬇️  Installing duckdb v${VERSION} (${ARCH}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
-curl -fsSL "https://github.com/duckdb/duckdb/releases/download/v${VERSION}/duckdb_cli-linux-${ARCH}.zip" -o "$TMP/duckdb.zip"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://github.com/duckdb/duckdb/releases/download/v${VERSION}/duckdb_cli-linux-${ARCH}.zip" -o "$TMP/duckdb.zip"
 unzip -q "$TMP/duckdb.zip" -d "$TMP"
 install -m 755 "$TMP/duckdb" /usr/local/bin/duckdb
 

@@ -54,7 +54,7 @@ rm -rf /var/lib/apt/lists/*
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
   echo "🔍 Resolving latest Terraform version ..."
-  VERSION="$(curl -s https://checkpoint-api.hashicorp.com/v1/check/terraform | jq -r .current_version)"
+  VERSION="$(curl --retry 3 --retry-delay 2 -s https://checkpoint-api.hashicorp.com/v1/check/terraform | jq -r .current_version)"
   if [[ -z "$VERSION" || "$VERSION" == "null" ]]; then
     echo "❌ Failed to resolve latest Terraform version"; exit 1
   fi
@@ -71,7 +71,7 @@ ZIP_URL="https://releases.hashicorp.com/terraform/${VERSION}/terraform_${VERSION
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 echo "⬇️  Downloading Terraform ${VERSION} (${ARCH}) ..."
-curl -fsSL "$ZIP_URL" -o "$TMP/terraform.zip"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$ZIP_URL" -o "$TMP/terraform.zip"
 
 echo "📦 Extracting ..."
 unzip -q "$TMP/terraform.zip" -d "$TMP"

@@ -44,7 +44,7 @@ fi
 
 # Download and extract
 cd /tmp
-curl -fsSL -o deno.zip "$DENO_URL"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o deno.zip "$DENO_URL"
 unzip -o deno.zip
 cp deno "$INSTALL_DIR/"
 chmod +x "$INSTALL_DIR/deno"

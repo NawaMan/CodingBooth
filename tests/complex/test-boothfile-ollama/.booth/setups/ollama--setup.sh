@@ -83,7 +83,7 @@ echo "⬇️  Installing Ollama v${VERSION} (${ARCH}) ..."
 # Best-effort: a failed probe just means no size. Lowercase first, since HTTP/2
 # sends header names lowercased but HTTP/1.1 sends "Content-Length" and mawk has
 # no IGNORECASE; keep the last value, as the redirect hops carry a length of 0.
-TOTAL="$(curl -fsIL --connect-timeout 10 --max-time 30 "$TARBALL_URL" 2>/dev/null \
+TOTAL="$(curl --retry 3 --retry-delay 2 -fsIL --connect-timeout 10 --max-time 30 "$TARBALL_URL" 2>/dev/null \
   | tr -d '\r' | tr 'A-Z' 'a-z' \
   | awk '/^content-length:/{n=$2} END{print n}')" || true
 [[ "$TOTAL" =~ ^[0-9]+$ ]] || TOTAL=0

@@ -50,7 +50,11 @@ if [[ "${GH_VERSION}" == "latest" ]]; then
   echo "Installing GitHub CLI (latest from cli.github.com)..."
 
   # Add GitHub CLI repository
-  curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+  # `-o` rather than `| dd of=`: curl writes the file itself, so a retried
+  # transfer overwrites cleanly instead of appending to a partial one.
+  curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
+    -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    https://cli.github.com/packages/githubcli-archive-keyring.gpg
   chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg
   echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | tee /etc/apt/sources.list.d/github-cli.list > /dev/null
 
@@ -72,7 +76,7 @@ else
   DEB_URL="https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${GH_ARCH}.deb"
 
   echo "Installing GitHub CLI ${GH_VERSION}..."
-  curl -fsSL -o "$DEB_FILE" "$DEB_URL"
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL -o "$DEB_FILE" "$DEB_URL"
 
   apt-get update
   apt-get install -y --no-install-recommends "$DEB_FILE" || {

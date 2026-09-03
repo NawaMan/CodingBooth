@@ -45,13 +45,13 @@ apt-get install -y --no-install-recommends curl ca-certificates
 rm -rf /var/lib/apt/lists/*
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/direnv/direnv/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/direnv/direnv/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
 else
   VERSION="${REQ_VER#v}"
 fi
 
 echo "⬇️  Installing direnv v${VERSION} (${ARCH}) ..."
-curl -fsSL "https://github.com/direnv/direnv/releases/download/v${VERSION}/direnv.linux-${ARCH}" -o /usr/local/bin/direnv
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://github.com/direnv/direnv/releases/download/v${VERSION}/direnv.linux-${ARCH}" -o /usr/local/bin/direnv
 chmod +x /usr/local/bin/direnv
 
 cat >/etc/profile.d/99-direnv--profile.sh <<'EOF'

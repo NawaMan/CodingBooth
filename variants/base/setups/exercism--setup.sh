@@ -54,7 +54,7 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl -fsSL https://api.github.com/repos/exercism/cli/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/' || true)
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/exercism/cli/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/' || true)
   if [[ -z "$VERSION" ]]; then
     # See elixir--setup.sh: the GitHub API is rate-limited, so degrade to the
     # pinned default instead of failing the build.
@@ -68,7 +68,7 @@ fi
 # ---- install exercism ----
 echo "⬇️  Installing exercism CLI v${VERSION} (${ARCH}) ..."
 TMP_DIR=$(mktemp -d)
-curl -fsSL "https://github.com/exercism/cli/releases/download/v${VERSION}/exercism-${VERSION}-linux-${ARCH}.tar.gz" -o "${TMP_DIR}/exercism.tar.gz"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://github.com/exercism/cli/releases/download/v${VERSION}/exercism-${VERSION}-linux-${ARCH}.tar.gz" -o "${TMP_DIR}/exercism.tar.gz"
 tar -xzf "${TMP_DIR}/exercism.tar.gz" -C "${TMP_DIR}"
 install -m 755 "${TMP_DIR}/exercism" /usr/local/bin/exercism
 rm -rf "${TMP_DIR}"

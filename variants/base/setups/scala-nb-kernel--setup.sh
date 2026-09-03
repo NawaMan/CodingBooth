@@ -61,7 +61,7 @@ fi
 # ---------------- Install Coursier (if not present) ----------------
 if ! command -v cs >/dev/null 2>&1; then
   echo "📦 Installing Coursier..."
-  curl -fL "https://github.com/coursier/launchers/raw/master/cs-$(uname -m)-pc-linux.gz" \
+  curl --retry 3 --retry-delay 2 -fL "https://github.com/coursier/launchers/raw/master/cs-$(uname -m)-pc-linux.gz" \
     | gzip -d > /usr/local/bin/cs
   chmod +x /usr/local/bin/cs
 fi

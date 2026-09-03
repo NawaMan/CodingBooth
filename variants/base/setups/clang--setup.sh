@@ -89,7 +89,7 @@ if [[ "$_CLANG_MADISON" == *"ubuntu-ports"* || "$_CLANG_MADISON" == *"archive.ub
   echo "📦 Using Ubuntu repo for LLVM ${LLVM_VER} (already available in ${CODENAME})"
 else
   install -d /usr/share/keyrings
-  curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key -o /usr/share/keyrings/llvm.asc
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key -o /usr/share/keyrings/llvm.asc
   cat >/etc/apt/sources.list.d/llvm-toolchain.list <<EOF
 deb [signed-by=/usr/share/keyrings/llvm.asc] http://apt.llvm.org/${CODENAME}/ llvm-toolchain-${CODENAME}-${LLVM_VER} main
 EOF

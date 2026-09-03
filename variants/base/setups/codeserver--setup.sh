@@ -57,15 +57,21 @@ install_code_server() {
   # be the one it will look for, or the pre-fetch buys nothing. Best-effort: if
   # this does not produce a version, fall back to the plain installer, which is
   # what ran here before. A failed probe must never be worse than not probing.
-  version="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+  version="$(curl --retry 3 --retry-delay 2 -fsSLI -o /dev/null -w '%{url_effective}' \
       --connect-timeout 10 --max-time 30 \
       https://github.com/coder/code-server/releases/latest 2>/dev/null \
     | sed -n 's|.*/tag/v||p')" || true
 
   if [[ ! "$version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo "⚠️  Could not resolve the latest code-server version; using install.sh as-is."
+    # Staged to a file rather than piped into sh: a retried transfer restarts from
+    # the beginning, so the shell would run the truncated first attempt and then
+    # the whole installer again.
+    installer="$(mktemp)"
     curl -fsSL --connect-timeout 10 --retry 3 --retry-delay 5 --retry-all-errors \
-      https://code-server.dev/install.sh | sh
+      -o "$installer" https://code-server.dev/install.sh
+    sh "$installer"
+    rm -f "$installer"
     return
   fi
 
@@ -82,7 +88,7 @@ install_code_server() {
   # probe just means no size. Lowercase first, since HTTP/2 sends header names
   # lowercased but HTTP/1.1 sends "Content-Length" and mawk has no IGNORECASE;
   # keep the last value, as the redirect hops carry a content-length of 0.
-  size="$(curl -fsIL --connect-timeout 10 --max-time 30 "$url" 2>/dev/null \
+  size="$(curl --retry 3 --retry-delay 2 -fsIL --connect-timeout 10 --max-time 30 "$url" 2>/dev/null \
     | tr -d '\r' | tr 'A-Z' 'a-z' \
     | awk '/^content-length:/{n=$2} END{print n}')" || true
 
@@ -108,8 +114,14 @@ install_code_server() {
   # --version pins the installer to the package just fetched, so it reuses the
   # file instead of resolving "latest" a second time and possibly landing on a
   # newer release than the one in the cache.
+  # Staged to a file rather than piped into sh: a retried transfer restarts from
+  # the beginning, so the shell would run the truncated first attempt and then the
+  # whole installer again. `-s --` existed only to read it from stdin.
+  installer="$(mktemp)"
   curl -fsSL --connect-timeout 10 --retry 3 --retry-delay 5 --retry-all-errors \
-    https://code-server.dev/install.sh | sh -s -- --version "$version"
+    -o "$installer" https://code-server.dev/install.sh
+  sh "$installer" --version "$version"
+  rm -f "$installer"
 }
 
 echo "[1/9] Install code-server…"

@@ -53,7 +53,7 @@ done
 if [[ -z "$REQ_VER" ]]; then
   ELIX_VER="$ELIXIR_DEFAULT"
 elif [[ "$REQ_VER" == "latest" ]]; then
-  ELIX_VER="$(curl -fsSL https://api.github.com/repos/elixir-lang/elixir/releases/latest \
+  ELIX_VER="$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/elixir-lang/elixir/releases/latest \
     | grep -oP '"tag_name"\s*:\s*"\K[^"]+' | sed 's/^v//' || true)"
   if [[ -z "$ELIX_VER" ]]; then
     # Unauthenticated GitHub API calls are rate-limited (60/hr per IP), so a busy
@@ -98,7 +98,7 @@ TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 ZIP_URL="https://github.com/elixir-lang/elixir/releases/download/v${ELIX_VER}/elixir-otp-${OTP_MAJOR}.zip"
 
 echo "⬇️  Downloading Elixir ${ELIX_VER} (for OTP ${OTP_MAJOR}) ..."
-curl -fsSL "$ZIP_URL" -o "$TMP/elixir.zip"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$ZIP_URL" -o "$TMP/elixir.zip"
 
 echo "📦 Installing Elixir ${ELIX_VER} ..."
 rm -rf "$TARGET_DIR"

@@ -72,7 +72,7 @@ fi
 
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 echo "⬇️  Downloading AWS CLI v2 ($REQ_VER, ${AWS_ARCH}) ..."
-curl -fsSL "$ZIP_URL" -o "$TMP/awscliv2.zip"
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "$ZIP_URL" -o "$TMP/awscliv2.zip"
 
 echo "📦 Extracting ..."
 unzip -q "$TMP/awscliv2.zip" -d "$TMP"

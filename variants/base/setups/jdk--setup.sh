@@ -144,8 +144,14 @@ chmod -R 0777 "$JBANG_DIR" "$JBANG_CACHE_DIR"
 install_jbang() {
   log "Installing JBang..."
   export JBANG_JDK_VENDOR="$ACTIVE_VENDOR"
+  # Staged to a file rather than piped into bash: a retried transfer restarts from
+  # the beginning, so bash would run the truncated first attempt and then the whole
+  # installer again. `-s -` existed only to read it from stdin.
+  jbang_installer="$(mktemp)"
   curl -Ls --connect-timeout 10 --max-time 60 --retry 3 --retry-delay 2 \
-    https://sh.jbang.dev | bash -s - app setup
+    -o "$jbang_installer" https://sh.jbang.dev
+  bash "$jbang_installer" app setup
+  rm -f "$jbang_installer"
   install -Dm755 "${JBANG_DIR}/bin/jbang" /usr/local/bin/jbang
 }
 
@@ -167,7 +173,7 @@ if [[ "$DOWNLOAD_URL" != "jbang" ]]; then
   # Lowercase first: HTTP/2 headers arrive lowercased but HTTP/1.1 sends
   # "Content-Length", and mawk (Ubuntu's default) has no IGNORECASE. Keep the
   # last value in the chain — the redirect hops carry a content-length of 0.
-  SIZE="$(curl -fsIL --connect-timeout 10 --max-time 30 "$DOWNLOAD_URL" 2>/dev/null \
+  SIZE="$(curl --retry 3 --retry-delay 2 -fsIL --connect-timeout 10 --max-time 30 "$DOWNLOAD_URL" 2>/dev/null \
     | tr -d '\r' | tr 'A-Z' 'a-z' \
     | awk '/^content-length:/{n=$2} END{print n}')" || true
   if [[ "$SIZE" =~ ^[0-9]+$ && "$SIZE" -gt 0 ]]; then

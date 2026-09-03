@@ -70,7 +70,7 @@ if [[ $USE_CRAN -eq 1 && $IS_UBUNTU -eq 1 ]]; then
   # CRAN provides suites like noble-cran40, jammy-cran40, etc.
   CRAN_SUITE="${CODENAME}-cran40"
   install -d /usr/share/keyrings
-  curl -fsSL "${CRAN_URL}/bin/linux/ubuntu/marutter_pubkey.asc" -o /usr/share/keyrings/cran-archive-keyring.asc
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${CRAN_URL}/bin/linux/ubuntu/marutter_pubkey.asc" -o /usr/share/keyrings/cran-archive-keyring.asc
   # Convert to gpg keyring if needed
   gpg --dearmor </usr/share/keyrings/cran-archive-keyring.asc >/usr/share/keyrings/cran-archive-keyring.gpg 2>/dev/null || true
 

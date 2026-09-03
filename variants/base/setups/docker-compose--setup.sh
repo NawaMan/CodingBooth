@@ -22,8 +22,13 @@ apt-get install -y ca-certificates curl gnupg
 # Add Docker’s official GPG key (idempotent)
 install -m 0755 -d /etc/apt/keyrings
 if [[ ! -s /etc/apt/keyrings/docker.gpg ]]; then
-  curl -fsSL https://download.docker.com/linux/ubuntu/gpg \
-    | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+  # Staged to a file rather than piped: a retried transfer restarts from the
+  # beginning, so gpg would be fed the truncated first attempt followed by the
+  # whole body.
+  DOCKER_KEY="$(mktemp)"
+  curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors -o "$DOCKER_KEY" https://download.docker.com/linux/ubuntu/gpg
+  gpg --dearmor -o /etc/apt/keyrings/docker.gpg < "$DOCKER_KEY"
+  rm -f "$DOCKER_KEY"
   chmod a+r /etc/apt/keyrings/docker.gpg
 fi
 

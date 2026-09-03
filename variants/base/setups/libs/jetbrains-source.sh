@@ -132,7 +132,7 @@ jb_resolve_id() {
     ''|*[!0-9]*) printf '%s\n' "$id"; return 0 ;;
   esac
 
-  xml="$(curl -fsSL "https://plugins.jetbrains.com/api/plugins/${id}" 2>/dev/null | jq -r '.xmlId // empty')"
+  xml="$(curl --retry 3 --retry-delay 2 -fsSL "https://plugins.jetbrains.com/api/plugins/${id}" 2>/dev/null | jq -r '.xmlId // empty')"
   [ -n "$xml" ] || return 1
 
   printf '%s\n' "$xml"

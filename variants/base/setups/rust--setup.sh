@@ -32,7 +32,16 @@ export RUSTUP_HOME="/opt/rust/rustup"
 export CARGO_HOME="/opt/rust/cargo"
 
 echo "📦 Installing Rust ${RUST_VERSION} via rustup..."
-curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --default-toolchain "${RUST_VERSION}"
+# Staged to a file rather than piped: a retried transfer restarts from the
+# beginning, so a consumer already reading the stream would see the truncated
+# first attempt followed by the whole body. Downloading first removes that hazard
+# and lets --retry-all-errors cover a registry 5xx.
+# `sh -s --` existed only to read the script from stdin; with a file the args go
+# straight to it.
+RUSTUP_INIT="$(mktemp)"
+curl --proto '=https' --tlsv1.2 -sSf --retry 5 --retry-delay 3 --retry-all-errors -o "$RUSTUP_INIT" https://sh.rustup.rs
+sh "$RUSTUP_INIT" -y --no-modify-path --default-toolchain "${RUST_VERSION}"
+rm -f "$RUSTUP_INIT"
 
 # Make the shared installation readable
 chmod -R a+rX /opt/rust
