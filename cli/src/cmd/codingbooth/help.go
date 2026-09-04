@@ -169,6 +169,7 @@ CONTAINER MODE:
                          Can also be set in config.toml (browser = false) or
                          with CB_BROWSER=false
   --no-browser           Shorthand for browser = false, for this run only
+  --quiet, -q            Hide lifecycle messages (implies --silence-build --no-browser)
   --persist-home         [Experimental] Persist /home/coder across sessions using a Docker named volume
   --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
   --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)
@@ -264,6 +265,7 @@ CONTAINER MODE:
   --keep-alive           Do not remove container when stopped
   --browser              Open the booth UI in a browser once its port answers (default)
   --no-browser           Never open a browser (also: browser = false, CB_BROWSER=false)
+  --quiet, -q            Hide lifecycle messages (implies --silence-build --no-browser)
   --writable-booth       Allow writing to .booth/ inside the container
   --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)
   --log-time             Prefix progress messages with timestamps
@@ -443,6 +445,8 @@ OPTIONS:
   --port <n|NEXT|RANDOM>
                        With --run, host port when creating a missing booth
   --accept-existing    Connect even if create flags (e.g. --port) do not match
+  --silence-build, --quiet, -q
+                       Hide --run bring-up and teardown
   -e <VAR=value>       Set environment variable (repeatable)
   --envfile <path>     Load environment variables from a file
 
@@ -460,7 +464,8 @@ EXAMPLES:
   %s shell myproject --run --keep-alive
   %s shell myproject --run --port 9000
   %s shell myproject --port 9000 --accept-existing
-`, s, s, s, s, s, s, s, s, s, s)
+  %s shell --silence-build --run
+`, s, s, s, s, s, s, s, s, s, s, s)
 }
 
 func showHelpExec() {
@@ -479,6 +484,8 @@ OPTIONS:
   --port <n|NEXT|RANDOM>
                        With --run, host port when creating a missing booth
   --accept-existing    Connect even if create flags (e.g. --port) do not match
+  --silence-build, --quiet, -q
+                       Hide --run bring-up and teardown; command output only
   -e <VAR=value>       Set environment variable (repeatable)
   --envfile <path>     Load environment variables from a file
 
@@ -487,6 +494,10 @@ brought up by --run is stopped again when the command finishes, unless
 --keep-alive is given. A booth that was already running is never stopped.
 Create-intent flags like --port apply only when a booth is created; against an
 existing booth a mismatch fails unless --accept-existing is set.
+
+--silence-build (also --quiet / -q) hides the --run start/stop chatter and the
+image build, leaving the command's output. A long first build still shows one
+in-place progress line; a failed build still prints the log.
 
 --daemon starts the command in the background and returns at once: nothing is
 streamed back and the command's exit code is not forwarded (exec exits 0 if the
@@ -500,10 +511,11 @@ EXAMPLES:
   %s exec myproject --dir /tmp -- ls
   %s exec myproject --daemon -- bash -c './server >/tmp/server.log 2>&1'
   %s exec myproject --run -- make test
+  %s exec --silence-build --run -- make test
   %s exec myproject --run --keep-alive -- make test
   %s exec myproject --run --port 9000 -- make test
   %s exec myproject --port 9000 --accept-existing -- make test
-`, s, s, s, s, s, s, s, s, s, s)
+`, s, s, s, s, s, s, s, s, s, s, s)
 }
 
 func showHelpExpose() {

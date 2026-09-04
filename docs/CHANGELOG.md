@@ -4,6 +4,8 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`exec` / `shell --silence-build` hides the `--run` bring-up.** `booth exec --silence-build --run -- ./build.sh` used to fail with `flag provided but not defined: -silence-build`. The flag is now accepted (aliases: `--quiet`, `-q`) and quiets the whole auto-start: no "starting one with booth run", no port-selection banner, no daemon banner / visit URL / container id, no "Stopping booth" or `docker stop` name echo. The command's own output is what you see. A long first image build still draws the one-line `--silence-build` progress spinner; a failed build still dumps the log. Internally this forwards `booth run --quiet`, which implies `--silence-build --no-browser` so a command-only `--run` does not open a browser or wait on the UI. `booth --silence-build --daemon` is unchanged — it still prints the URL. Unit tests cover flag parse and argv forwarding; `tests/dryrun/test031--quiet-daemon.sh` locks the banner-free daemon dryrun. See `docs/BOOTH_CONNECT.md`.
+
 - **The same outage would have taken out a third of the catalog's downloads.** The retry above
   covers the package managers; `curl` needed nothing built, because `--retry` already handles the
   failures that matter — 408, 429, 5xx and connection/timeout errors. The gap was that only 18 of

@@ -173,6 +173,25 @@ func TestAppContext_ConfigValues(t *testing.T) {
 	}
 }
 
+func TestAppContext_QuietImpliesSilenceBuildAndNoBrowser(t *testing.T) {
+	builder := &AppContextBuilder{
+		Config: AppConfig{
+			Quiet:   true,
+			Browser: true,
+		},
+	}
+	ctx := NewAppContext(builder)
+	if !ctx.Quiet() {
+		t.Error("Quiet mismatch")
+	}
+	if !ctx.SilenceBuild() {
+		t.Error("Quiet should imply SilenceBuild")
+	}
+	if ctx.Browser() {
+		t.Error("Quiet should disable Browser")
+	}
+}
+
 func TestAppContext_DerivedValues(t *testing.T) {
 	builder := &AppContextBuilder{
 		PrebuildRepo:   "repo",

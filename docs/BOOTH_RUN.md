@@ -365,6 +365,22 @@ Nothing is drawn when no standard stream is a terminal — a daemonised run, a
 cron job, CI — and `CB_NO_BUILD_PROGRESS=1` turns it off on a terminal too. On
 failure the full build log is printed, exactly as before.
 
+### Quiet Mode (`--quiet`, `-q`)
+
+Hides lifecycle chatter — the daemon/foreground banners, the visit URL, the
+container id. Implies `--silence-build` and `--no-browser`. A failed build still
+prints the log.
+
+`--silence-build` alone is the narrower switch: `booth --silence-build --daemon`
+still prints the URL you need to open. `--quiet` is for when the booth is only a
+means to a command, including the inner run that `booth exec --silence-build --run`
+starts.
+
+```bash
+./booth --quiet --daemon
+./booth exec --silence-build --run -- make test
+```
+
 ### Log Time (`--log-time`)
 
 Prefixes progress messages with timestamps, useful for debugging startup timing:

@@ -91,10 +91,28 @@ func (ctx AppContext) PortNumber() int     { return ctx.values.PortNumber }
 func (ctx AppContext) OffsetBaseNumber() int { return ctx.values.OffsetBaseNumber }
 
 // Flags
-func (ctx AppContext) KeepAlive() bool    { return ctx.values.Config.KeepAlive }
-func (ctx AppContext) SilenceBuild() bool { return ctx.values.Config.SilenceBuild }
-func (ctx AppContext) Daemon() bool       { return ctx.values.Config.Daemon }
-func (ctx AppContext) Browser() bool      { return ctx.values.Config.Browser }
+func (ctx AppContext) KeepAlive() bool { return ctx.values.Config.KeepAlive }
+
+// SilenceBuild reports whether image-build output should be hidden. --quiet
+// implies it, so a quiet run never dumps BuildKit.
+func (ctx AppContext) SilenceBuild() bool {
+	return ctx.values.Config.SilenceBuild || ctx.values.Config.Quiet
+}
+
+// Quiet reports whether lifecycle chatter (daemon/foreground banners, visit
+// URL, container id) should be suppressed. Distinct from SilenceBuild, which
+// only hides the image build: `booth --silence-build --daemon` still prints
+// the URL you need to open.
+func (ctx AppContext) Quiet() bool { return ctx.values.Config.Quiet }
+
+func (ctx AppContext) Daemon() bool { return ctx.values.Config.Daemon }
+
+// Browser is off when Quiet is set: a quiet run is not a "sit in the booth"
+// launch, so it should not wait on the UI or open a tab.
+func (ctx AppContext) Browser() bool {
+	return ctx.values.Config.Browser && !ctx.values.Config.Quiet
+}
+
 func (ctx AppContext) Pull() bool         { return ctx.values.Config.Pull }
 func (ctx AppContext) Dind() bool         { return ctx.values.Config.Dind }
 func (ctx AppContext) Sudo() bool         { return ctx.values.Config.Sudo }
@@ -218,6 +236,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "# Flags -------------------------\n")
 	fmt.Fprintf(&str, "    KeepAlive:        %t\n", ctx.KeepAlive())
 	fmt.Fprintf(&str, "    SilenceBuild:     %t\n", ctx.SilenceBuild())
+	fmt.Fprintf(&str, "    Quiet:            %t\n", ctx.Quiet())
 	fmt.Fprintf(&str, "    Daemon:           %t\n", ctx.Daemon())
 	fmt.Fprintf(&str, "    Browser:          %t\n", ctx.Browser())
 	fmt.Fprintf(&str, "    Pull:             %t\n", ctx.Pull())

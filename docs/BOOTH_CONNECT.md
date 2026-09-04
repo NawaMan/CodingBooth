@@ -66,6 +66,7 @@ The shell launched is the default shell configured for the `coder` user inside t
 ./booth shell myproject --run --keep-alive          # ...and leave it running afterwards
 ./booth shell myproject --run --port 9000           # create (if needed) on host port 9000
 ./booth shell myproject --port 9000 --accept-existing  # attach even if port differs
+./booth shell --silence-build --run                 # bring it up without the start chatter
 ```
 
 | Flag                         | Description                                                                 |
@@ -76,6 +77,7 @@ The shell launched is the default shell configured for the `coder` user inside t
 | `--keep-alive`               | With `--run`, leave the booth running after you disconnect                  |
 | `--port <n\|NEXT\|RANDOM>`   | Host port when **creating** a missing booth; asserted against existing ones |
 | `--accept-existing`          | Connect even if create flags (e.g. `--port`) do not match the booth         |
+| `--silence-build`, `--quiet`, `-q` | Hide `--run` bring-up and teardown                                     |
 | `-e <VAR=value>`             | Set environment variable for the session                                    |
 | `--envfile <path>`           | Load environment variables from a file                                      |
 | `--name <name>`              | Target container by name                                                    |
@@ -113,6 +115,7 @@ Everything after `--` is executed inside the container. The exit code is forward
 ./booth exec myproject --run --keep-alive -- make test   # ...and leave it running
 ./booth exec myproject --run --port 9000 -- make test    # create (if needed) on port 9000
 ./booth exec myproject --port 9000 --accept-existing -- make test
+./booth exec --silence-build --run -- make test          # command output only, even if the booth had to start
 ```
 
 | Flag                         | Description                                                                 |
@@ -123,6 +126,7 @@ Everything after `--` is executed inside the container. The exit code is forward
 | `--keep-alive`               | With `--run`, leave the booth running after the command finishes            |
 | `--port <n\|NEXT\|RANDOM>`   | Host port when **creating** a missing booth; asserted against existing ones |
 | `--accept-existing`          | Connect even if create flags (e.g. `--port`) do not match the booth         |
+| `--silence-build`, `--quiet`, `-q` | Hide `--run` bring-up and teardown; command output only               |
 | `-e <VAR=value>`             | Set environment variable for the command                                    |
 | `--envfile <path>`           | Load environment variables from a file                                      |
 | `--dir <path>`               | Working directory inside the container (default: `/home/coder/code`)        |
@@ -210,7 +214,13 @@ On create, create-time flags such as **`--port`** and **`--name`** are forwarded
 ./booth exec --port NEXT --name '{project}-{port}' --run -- ./dev-run.sh
 ```
 
-A short note is printed to **stderr**, and the new booth's startup output also goes to stderr, so `exec`'s **stdout stays clean** for scripting. `shell`/`exec` then wait for the booth's `coder` user alignment to finish before connecting, so the first command never races container startup.
+A short note is printed to **stderr**, and the new booth's startup output also goes to stderr, so `exec`'s **stdout stays clean** for scripting. Pass **`--silence-build`** (also `--quiet` / `-q`) to hide that bring-up — the compile/build, the port-selection banner, the daemon banner, the visit URL, and the later "Stopping booth" line — so the terminal shows only the command:
+
+```bash
+./booth exec --silence-build --run -- ./build.sh
+```
+
+A long first image build still draws one in-place progress line (the same as `booth --silence-build`); a failed build still prints the log. `shell`/`exec` then wait for the booth's `coder` user alignment to finish before connecting, so the first command never races container startup.
 
 > **Why this matters:** a normal booth that is stopped is *removed* (only `--keep-alive` booths persist as stopped containers). So "the booth is not running" usually means "there is no container" — and `--run` recreates it from the workspace config rather than failing.
 
