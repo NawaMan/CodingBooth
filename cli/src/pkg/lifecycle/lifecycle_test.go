@@ -5,6 +5,7 @@
 package lifecycle
 
 import (
+	"io"
 	"strings"
 	"testing"
 
@@ -308,22 +309,66 @@ func TestCheckCreateIntentAgainstExisting(t *testing.T) {
 }
 
 func TestBuildConnectRunArgs(t *testing.T) {
-	got := buildConnectRunArgs("demo", true, connectCreateOpts{port: "9000"})
+	got := buildConnectRunArgs("demo", true, connectCreateOpts{port: "9000"}, false)
 	want := []string{"run", "--daemon", "--keep-alive", "--name", "demo", "--port", "9000"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("buildConnectRunArgs = %v, want %v", got, want)
 	}
 
-	got = buildConnectRunArgs("", false, connectCreateOpts{})
+	got = buildConnectRunArgs("", false, connectCreateOpts{}, false)
 	want = []string{"run", "--daemon"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("minimal buildConnectRunArgs = %v, want %v", got, want)
 	}
 
-	got = buildConnectRunArgs("", false, connectCreateOpts{port: "NEXT"})
+	got = buildConnectRunArgs("", false, connectCreateOpts{port: "NEXT"}, false)
 	want = []string{"run", "--daemon", "--port", "NEXT"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("NEXT port buildConnectRunArgs = %v, want %v", got, want)
+	}
+
+	got = buildConnectRunArgs("", false, connectCreateOpts{}, true)
+	want = []string{"run", "--daemon", "--quiet"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("quiet buildConnectRunArgs = %v, want %v", got, want)
+	}
+
+	got = buildConnectRunArgs("demo", true, connectCreateOpts{port: "9000"}, true)
+	want = []string{"run", "--daemon", "--quiet", "--keep-alive", "--name", "demo", "--port", "9000"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("quiet+create buildConnectRunArgs = %v, want %v", got, want)
+	}
+}
+
+func TestExecAcceptsSilenceBuildFlag(t *testing.T) {
+	// Before this flag existed, `exec --silence-build --run -- cmd` failed at
+	// flag.Parse with exit 2 ("flag provided but not defined"). A missing
+	// command is exit 1 — proof the flag was accepted.
+	for _, flagName := range []string{"--silence-build", "--quiet", "-q"} {
+		err := Exec([]string{flagName}, io.Discard)
+		if err == nil {
+			t.Fatalf("%s: expected error for missing command", flagName)
+		}
+		if code := ExitCode(err); code != 1 {
+			t.Fatalf("%s: ExitCode = %d, want 1 (missing command); flag parse would be 2: %v", flagName, code, err)
+		}
+		if !strings.Contains(err.Error(), "no command specified") {
+			t.Fatalf("%s: got %v", flagName, err)
+		}
+	}
+}
+
+func TestShellAcceptsSilenceBuildFlag(t *testing.T) {
+	var stderr strings.Builder
+	err := Shell([]string{"--silence-build", "--bogus-flag"}, &stderr)
+	if err == nil {
+		t.Fatal("expected error for unknown flag")
+	}
+	if code := ExitCode(err); code != 2 {
+		t.Fatalf("ExitCode = %d, want 2", code)
+	}
+	if !strings.Contains(stderr.String(), "flag provided but not defined: -bogus-flag") {
+		t.Fatalf("expected --silence-build to be accepted and --bogus-flag to fail, got %q", stderr.String())
 	}
 }
 

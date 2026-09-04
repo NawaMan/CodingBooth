@@ -422,6 +422,10 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.SilenceBuild = true
 			i++
 
+		case "--quiet", "-q":
+			cfg.Quiet = true
+			i++
+
 		case "--log-time":
 			cfg.LogTime = true
 			i++

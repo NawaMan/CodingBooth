@@ -91,7 +91,7 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 	}
 	builder.OffsetBaseNumber = offsetBase
 
-	if (portGenerated || portNumber != defaultPortBase || ctx.Verbose()) && ctx.Cmds().Length() == 0 {
+	if !ctx.Quiet() && (portGenerated || portNumber != defaultPortBase || ctx.Verbose()) && ctx.Cmds().Length() == 0 {
 		printPortBanner(portNumber, ctx.Public())
 	}
 

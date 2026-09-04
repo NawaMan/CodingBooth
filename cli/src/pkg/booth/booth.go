@@ -179,7 +179,9 @@ func (booth *Booth) runAsDaemon() error {
 	flags := docker.DockerFlags{
 		Dryrun:  booth.ctx.Dryrun(),
 		Verbose: booth.ctx.Verbose(),
-		Silent:  false,
+		// Quiet hides docker run -d's container-id print. Foreground/command
+		// mode must not do this: that output is the user's session.
+		Silent: booth.ctx.Quiet(),
 	}
 
 	keepAliveArgs := prepareKeepAliveArgs(booth.ctx.KeepAlive())
@@ -190,30 +192,32 @@ func (booth *Booth) runAsDaemon() error {
 		userCmds = append(userCmds, flattenArgs(booth.ctx.Cmds())...)
 	}
 
-	LogPrintln("📦 Running booth in daemon mode.")
+	if !booth.ctx.Quiet() {
+		LogPrintln("📦 Running booth in daemon mode.")
 
-	if booth.ctx.KeepAlive() {
-		LogPrintln("👉 Stop with Ctrl+C. The container will be kept (no --rm).")
-	} else {
-		LogPrintln("👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.")
-	}
+		if booth.ctx.KeepAlive() {
+			LogPrintln("👉 Stop with Ctrl+C. The container will be kept (no --rm).")
+		} else {
+			LogPrintln("👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.")
+		}
 
-	if booth.ctx.Public() {
-		LogPrintf("👉 Visit 'https://localhost:%d'\n", booth.ctx.PortNumber())
-	} else {
-		LogPrintf("👉 Visit 'http://localhost:%d'\n", booth.ctx.PortNumber())
-	}
-	LogPrintf("👉 To open an interactive shell instead: %s -- bash\n", booth.ctx.ScriptName())
-	LogPrintln("👉 To stop the running container:")
-	fmt.Println()
-	fmt.Printf("      docker stop %s\n", booth.ctx.Name())
-	fmt.Println()
-	LogPrintf("👉 Container Name: %s\n", booth.ctx.Name())
-	fmt.Print("👉 Container ID: ")
-
-	if booth.ctx.Dryrun() {
-		fmt.Println("<--dryrun-->")
+		if booth.ctx.Public() {
+			LogPrintf("👉 Visit 'https://localhost:%d'\n", booth.ctx.PortNumber())
+		} else {
+			LogPrintf("👉 Visit 'http://localhost:%d'\n", booth.ctx.PortNumber())
+		}
+		LogPrintf("👉 To open an interactive shell instead: %s -- bash\n", booth.ctx.ScriptName())
+		LogPrintln("👉 To stop the running container:")
 		fmt.Println()
+		fmt.Printf("      docker stop %s\n", booth.ctx.Name())
+		fmt.Println()
+		LogPrintf("👉 Container Name: %s\n", booth.ctx.Name())
+		fmt.Print("👉 Container ID: ")
+
+		if booth.ctx.Dryrun() {
+			fmt.Println("<--dryrun-->")
+			fmt.Println()
+		}
 	}
 
 	args := ilist.NewList[ilist.List[string]]()
@@ -239,7 +243,7 @@ func (booth *Booth) runAsDaemon() error {
 	err := docker.Docker(flags, "run", args)
 
 	// If DinD is enabled in daemon mode, inform user how to stop it
-	if booth.ctx.Egress() {
+	if !booth.ctx.Quiet() && booth.ctx.Egress() {
 		fmt.Printf("🛡️  Egress sidecar running: %s\n", getEgressProxyName(booth.ctx))
 		if booth.ctx.Dind() {
 			fmt.Printf("   Reusing DinD netns owner: %s\n", getDindName(booth.ctx))
@@ -248,7 +252,7 @@ func (booth *Booth) runAsDaemon() error {
 		}
 	}
 
-	if booth.ctx.Dind() {
+	if !booth.ctx.Quiet() && booth.ctx.Dind() {
 		dindName := getDindName(booth.ctx)
 		dindNet := getDindNet(booth.ctx)
 		fmt.Printf("🔧 DinD sidecar running: %s (network: %s)\n", dindName, dindNet)
@@ -277,14 +281,16 @@ func (booth *Booth) runAsForeground() error {
 	ttyArgs := prepareTtyArgs()
 	keepAliveArgs := prepareKeepAliveArgs(booth.ctx.KeepAlive())
 
-	LogPrintln("📦 Running booth in foreground.")
-	if booth.ctx.KeepAlive() {
-		LogPrintln("👉 Stop with Ctrl+C. The container will be kept (no --rm).")
-	} else {
-		LogPrintln("👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.")
+	if !booth.ctx.Quiet() {
+		LogPrintln("📦 Running booth in foreground.")
+		if booth.ctx.KeepAlive() {
+			LogPrintln("👉 Stop with Ctrl+C. The container will be kept (no --rm).")
+		} else {
+			LogPrintln("👉 Stop with Ctrl+C. The container will be removed (--rm) when stop.")
+		}
+		LogPrintf("👉 To open an interactive shell instead: '%s -- bash'\n", booth.ctx.ScriptName())
+		fmt.Println()
 	}
-	LogPrintf("👉 To open an interactive shell instead: '%s -- bash'\n", booth.ctx.ScriptName())
-	fmt.Println()
 
 	args := ilist.NewList[ilist.List[string]]()
 	if len(ttyArgs) > 0 {

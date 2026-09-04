@@ -177,6 +177,34 @@ func TestParseArgs(t *testing.T) {
 	}
 }
 
+func TestParseArgs_Quiet(t *testing.T) {
+	config := appctx.AppConfig{
+		RunArgs:   ilist.SemicolonStringList{List: ilist.NewList[string]()},
+		BuildArgs: ilist.SemicolonStringList{List: ilist.NewList[string]()},
+		Cmds:      ilist.SemicolonStringList{List: ilist.NewList[string]()},
+		Browser:   true,
+	}
+	err := parseArgs(ilist.NewListFromSlice([]string{"--quiet", "--daemon"}), &config)
+	if err != nil {
+		t.Fatalf("parseArgs failed: %v", err)
+	}
+	if !config.Quiet {
+		t.Error("Expected Quiet to be true")
+	}
+	if !config.Daemon {
+		t.Error("Expected Daemon to be true")
+	}
+
+	config.Quiet = false
+	err = parseArgs(ilist.NewListFromSlice([]string{"-q"}), &config)
+	if err != nil {
+		t.Fatalf("parseArgs -q failed: %v", err)
+	}
+	if !config.Quiet {
+		t.Error("Expected -q to set Quiet")
+	}
+}
+
 func TestGetScriptDir(t *testing.T) {
 	// This tests the fallback or simple behavior, as testing absolute path resolution
 	// depends heavily on the OS and filesystem state.

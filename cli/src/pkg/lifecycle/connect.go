@@ -55,6 +55,9 @@ func Shell(args []string, stderr io.Writer) error {
 	keepAlive := flagSet.Bool("keep-alive", false, "Keep a booth started by --run running afterwards")
 	port := flagSet.String("port", "", "With --run, host port for a newly created booth (number, NEXT[:base], or RANDOM[:base])")
 	acceptExisting := flagSet.Bool("accept-existing", false, "Connect to an existing booth even if create flags (e.g. --port) do not match")
+	silenceBuild := flagSet.Bool("silence-build", false, "Hide --run bring-up and teardown; command/shell only")
+	flagSet.BoolVar(silenceBuild, "quiet", false, "Alias for --silence-build")
+	flagSet.BoolVar(silenceBuild, "q", false, "Alias for --silence-build")
 	var envVars stringSliceFlag
 	flagSet.Var(&envVars, "e", "Set environment variable (repeatable)")
 	flagSet.SetOutput(stderr)
@@ -64,7 +67,7 @@ func Shell(args []string, stderr io.Writer) error {
 	}
 
 	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting}
-	target, cleanup, err := resolveConnectTarget(*name, positional, *run, *keepAlive, create, stderr)
+	target, cleanup, err := resolveConnectTarget(*name, positional, *run, *keepAlive, *silenceBuild, create, stderr)
 	if err != nil {
 		return err
 	}
@@ -109,6 +112,9 @@ func Exec(args []string, stderr io.Writer) error {
 	keepAlive := flagSet.Bool("keep-alive", false, "Keep a booth started by --run running afterwards")
 	port := flagSet.String("port", "", "With --run, host port for a newly created booth (number, NEXT[:base], or RANDOM[:base])")
 	acceptExisting := flagSet.Bool("accept-existing", false, "Connect to an existing booth even if create flags (e.g. --port) do not match")
+	silenceBuild := flagSet.Bool("silence-build", false, "Hide --run bring-up and teardown; command output only")
+	flagSet.BoolVar(silenceBuild, "quiet", false, "Alias for --silence-build")
+	flagSet.BoolVar(silenceBuild, "q", false, "Alias for --silence-build")
 	var envVars stringSliceFlag
 	flagSet.Var(&envVars, "e", "Set environment variable (repeatable)")
 	flagSet.SetOutput(stderr)
@@ -126,7 +132,7 @@ func Exec(args []string, stderr io.Writer) error {
 	}
 
 	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting}
-	target, cleanup, err := resolveConnectTarget(*name, positional, *run, *keepAlive, create, stderr)
+	target, cleanup, err := resolveConnectTarget(*name, positional, *run, *keepAlive, *silenceBuild, create, stderr)
 	if err != nil {
 		return err
 	}
@@ -204,7 +210,7 @@ const (
 // removed, and a pre-existing keep-alive booth returns to stopped. A booth that
 // was already running, or keepAlive=true, yields a no-op cleanup. The returned
 // error is already a commandError.
-func resolveConnectTarget(name string, positional []string, run, keepAlive bool, create connectCreateOpts, stderr io.Writer) (managedContainer, func(), error) {
+func resolveConnectTarget(name string, positional []string, run, keepAlive, quiet bool, create connectCreateOpts, stderr io.Writer) (managedContainer, func(), error) {
 	noCleanup := func() {}
 
 	containers, err := managedContainers(false)
@@ -236,7 +242,7 @@ func resolveConnectTarget(name string, positional []string, run, keepAlive bool,
 		}
 
 	case connectStart:
-		fmt.Fprintf(stderr, "Booth %q is not running; starting it...\n", target.Name)
+		connectNote(stderr, quiet, "Booth %q is not running; starting it...\n", target.Name)
 		// Silent so docker's container-name echo does not pollute exec's stdout
 		// (which is forwarded verbatim for scripting). Failures surface via err.
 		if err := docker.Docker(docker.DockerFlags{Silent: true}, "start", ilist.NewList(ilist.NewList(target.Name))); err != nil {
@@ -249,7 +255,7 @@ func resolveConnectTarget(name string, positional []string, run, keepAlive bool,
 		}
 
 	case connectRun:
-		created, err := runConnectTarget(name, positional, keepAlive, create, containers, stderr)
+		created, err := runConnectTarget(name, positional, keepAlive, quiet, create, containers, stderr)
 		if err != nil {
 			return managedContainer{}, noCleanup, err
 		}
@@ -259,7 +265,7 @@ func resolveConnectTarget(name string, positional []string, run, keepAlive bool,
 		return managedContainer{}, noCleanup, commandExit(1, "Error: internal error: unknown connect action")
 	}
 
-	cleanup := registerConnectSession(target.Name, action, keepAlive, stderr)
+	cleanup := registerConnectSession(target.Name, action, keepAlive, quiet, stderr)
 	return target, cleanup, nil
 }
 
@@ -335,7 +341,7 @@ func isComparablePort(port string) bool {
 // freshly-created --rm booth is removed; a pre-existing keep-alive booth returns
 // to stopped). A booth that was already running and is not ephemeral, or any
 // session with --keep-alive, is never torn down.
-func registerConnectSession(containerName string, action connectAction, keepAlive bool, stderr io.Writer) func() {
+func registerConnectSession(containerName string, action connectAction, keepAlive, quiet bool, stderr io.Writer) func() {
 	noCleanup := func() {}
 
 	// --keep-alive: make sure this booth is not (or no longer) treated as
@@ -362,7 +368,7 @@ func registerConnectSession(containerName string, action connectAction, keepAliv
 	return func() {
 		once.Do(func() {
 			if releaseConnectionIsLast(containerName, token) {
-				stopBoothQuietly(containerName, stderr)
+				stopBoothQuietly(containerName, stderr, quiet)
 			}
 		})
 	}
@@ -420,7 +426,7 @@ func connectPlan(containers []managedContainer, name string, positional []string
 // when --name carries a placeholder template (e.g. '{project}-{port}'): the
 // resolved name is only known after the run, so we cannot look it up by the
 // literal flag value.
-func runConnectTarget(name string, positional []string, keepAlive bool, create connectCreateOpts, preRun []managedContainer, stderr io.Writer) (managedContainer, error) {
+func runConnectTarget(name string, positional []string, keepAlive, quiet bool, create connectCreateOpts, preRun []managedContainer, stderr io.Writer) (managedContainer, error) {
 	self, err := os.Executable()
 	if err != nil {
 		return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to locate booth executable: %v", err))
@@ -431,9 +437,9 @@ func runConnectTarget(name string, positional []string, keepAlive bool, create c
 		explicitName = positional[0]
 	}
 
-	runArgs := buildConnectRunArgs(explicitName, keepAlive, create)
+	runArgs := buildConnectRunArgs(explicitName, keepAlive, create, quiet)
 
-	fmt.Fprintf(stderr, "No running booth found; starting one with 'booth run'...\n")
+	connectNote(stderr, quiet, "No running booth found; starting one with 'booth run'...\n")
 
 	cmd := exec.Command(self, runArgs...)
 	// Route the run pipeline's output to stderr so exec's stdout stays clean.
@@ -513,19 +519,33 @@ func newlyCreatedContainer(preRun, postRun []managedContainer) (managedContainer
 // removes a non-keep-alive (--rm) booth and returns a keep-alive one to stopped.
 // Output goes to stderr; failures are reported there but otherwise ignored, as
 // this runs as deferred cleanup where there is nothing left to abort.
-func stopBoothQuietly(containerName string, stderr io.Writer) {
+func stopBoothQuietly(containerName string, stderr io.Writer, quiet bool) {
 	self, err := os.Executable()
 	if err != nil {
 		fmt.Fprintf(stderr, "Warning: could not stop booth %q: %v\n", containerName, err)
 		return
 	}
-	fmt.Fprintf(stderr, "Stopping booth %q...\n", containerName)
+	connectNote(stderr, quiet, "Stopping booth %q...\n", containerName)
 	cmd := exec.Command(self, "stop", containerName)
-	cmd.Stdout = stderr
-	cmd.Stderr = stderr
+	if quiet {
+		cmd.Stdout = io.Discard
+		cmd.Stderr = io.Discard
+	} else {
+		cmd.Stdout = stderr
+		cmd.Stderr = stderr
+	}
 	if err := cmd.Run(); err != nil {
 		fmt.Fprintf(stderr, "Warning: failed to stop booth %q: %v\n", containerName, err)
 	}
+}
+
+// connectNote writes a lifecycle status line unless --silence-build/--quiet
+// asked for command output only. Errors still go to stderr unconditionally.
+func connectNote(stderr io.Writer, quiet bool, format string, args ...any) {
+	if quiet {
+		return
+	}
+	fmt.Fprintf(stderr, format, args...)
 }
 
 // connectSessionDir is the in-container (tmpfs) directory where shell/exec
@@ -708,8 +728,13 @@ func buildExecFlags(interactive, daemon bool, dir string, envVars stringSliceFla
 // buildConnectRunArgs builds the argv for `booth run` when shell/exec creates a
 // missing booth. Always daemon mode so the process returns and shell/exec can
 // attach. Pure for unit tests.
-func buildConnectRunArgs(explicitName string, keepAlive bool, create connectCreateOpts) []string {
+func buildConnectRunArgs(explicitName string, keepAlive bool, create connectCreateOpts, quiet bool) []string {
 	runArgs := []string{"run", "--daemon"}
+	if quiet {
+		// --quiet on run hides the daemon banner, implies --silence-build and
+		// --no-browser, and still dumps the build log if the image build fails.
+		runArgs = append(runArgs, "--quiet")
+	}
 	if keepAlive {
 		runArgs = append(runArgs, "--keep-alive")
 	}

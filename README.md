@@ -225,6 +225,7 @@ booth [flags] [-- command...]
 | `--daemon`           | Run container in background                                                      |
 | `--no-browser`       | Do not open the booth UI in a browser when it comes up (on by default)           |
 | `--silence-build`    | Suppress build/startup output; a build keeps one transient status line           |
+| `--quiet`, `-q`      | Hide lifecycle messages (implies `--silence-build` and `--no-browser`)           |
 | `--writable-booth`   | Allow writing to `.booth/` inside the container (read-only by default)            |
 | `--show-run-time [epoch]` | Display elapsed session time in the lifecycle panel ([details](docs/BOOTH_RUNTIME.md)) |
 | `--show-count-down <epoch>` | Display countdown timer to a deadline ([details](docs/BOOTH_RUNTIME.md))         |
@@ -280,6 +281,15 @@ Combine with `--silence-build` for clean scripted output:
 ```shell
 > booth --silence-build -- echo "Hello"
 Hello
+```
+
+To run a command in the **project booth** (reuse it if it is already up, bring it up if not):
+
+```shell
+> booth exec --silence-build --run -- ./build.sh
+Building viewmd v0.6.0
+  -> ./viewmd (9.7M)
+Done.
 ```
 
 

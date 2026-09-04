@@ -223,6 +223,7 @@ booth [flags] [-- command...]
 | `--daemon`                      | Run container in background                                                  |
 | `--no-browser`                  | Do not open the booth UI in a browser when it comes up (on by default)       |
 | `--silence-build`               | Suppress build/startup output                                                |
+| `--quiet`, `-q`                 | Hide lifecycle messages (implies `--silence-build` and `--no-browser`)       |
 | `--show-run-time [epoch]`       | Display elapsed session time ([details](docs/BOOTH_RUNTIME.md))              |
 | `--show-count-down <epoch>`     | Display countdown timer to a deadline ([details](docs/BOOTH_RUNTIME.md))     |
 | `--count-down-exit-code <code>` | Exit code when countdown expires (default: 0)                                |
@@ -452,6 +453,7 @@ Attach to a running booth without SSH:
 booth shell                      # interactive shell
 booth exec <cmd> [args...]       # run a single command
 booth exec --daemon -- <cmd>     # start a command in the background and return
+booth exec --silence-build --run -- make test   # bring the booth up quietly, run, tear down
 ```
 
 See **[booth connect](docs/BOOTH_CONNECT.md)**.

@@ -238,6 +238,8 @@ var unrenderedKeys = map[string]string{
 	"config": "names which config file to read — an argument to the run, not a setting inside it",
 	"code":   "names which directory to configure — a committed absolute host path helps nobody",
 
+	"quiet": "invocation flag (--quiet / exec --silence-build); a committed quiet = true would hide the URL on every daemon launch",
+
 	"run-args": "compiled from the Expose / Env / Mount fields; a raw field would fight them",
 }
 

@@ -542,6 +542,56 @@ func TestBooth_runAsDaemon_DryrunMode(t *testing.T) {
 	}
 }
 
+// TestBooth_runAsDaemon_Quiet hides the banner but still prints the docker command in dryrun.
+func TestBooth_runAsDaemon_Quiet(t *testing.T) {
+	oldStdout := os.Stdout
+	reader, writer, _ := os.Pipe()
+	os.Stdout = writer
+
+	builder := &appctx.AppContextBuilder{
+		CbVersion:  getTestVersion(),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Quiet = true
+	builder.Config.Timezone = "America/New_York"
+	builder.Config.Image = "test-image:latest"
+	builder.Config.Name = "test-container"
+	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
+	builder.CommonArgs.Append(ilist.NewList("--name", "test-container"))
+
+	ctx := builder.Build()
+	booth := NewBooth(ctx)
+	err := booth.runAsDaemon()
+
+	writer.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	io.Copy(&buf, reader)
+	output := normalizeOutput(buf.String())
+
+	if err != nil {
+		t.Errorf("runAsDaemon() in dryrun mode returned error: %v", err)
+	}
+	if strings.Contains(output, "📦 Running booth in daemon mode.") {
+		t.Errorf("Quiet should hide the daemon banner, got: %q", output)
+	}
+	if strings.Contains(output, "Visit") {
+		t.Errorf("Quiet should hide the visit URL, got: %q", output)
+	}
+	if strings.Contains(output, "Container ID") {
+		t.Errorf("Quiet should hide the container id line, got: %q", output)
+	}
+	if !strings.Contains(output, "docker") || !strings.Contains(output, "run") {
+		t.Errorf("Dryrun should still print the docker command, got: %q", output)
+	}
+}
+
 // TestBooth_runAsDaemon_WithDind verifies DinD informational message.
 func TestBooth_runAsDaemon_WithDind(t *testing.T) {
 	// Capture stdout

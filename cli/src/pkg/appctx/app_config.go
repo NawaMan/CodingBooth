@@ -105,6 +105,7 @@ type AppConfig struct {
 	// --------------------
 	KeepAlive         bool   `toml:"keep-alive,omitempty"          envconfig:"CB_KEEP_ALIVE" default:"false"`
 	SilenceBuild      bool   `toml:"silence-build,omitempty"       envconfig:"CB_SILENCE_BUILD" default:"false"`
+	Quiet             bool   `toml:"-"                             envconfig:"CB_QUIET" default:"false"`
 	Daemon            bool   `toml:"daemon,omitempty"              envconfig:"CB_DAEMON" default:"false"`
 	Browser           bool   `toml:"browser,omitempty"             envconfig:"CB_BROWSER" default:"true"`
 	Pull              bool   `toml:"pull,omitempty"                envconfig:"CB_PULL" default:"false"`
@@ -218,6 +219,7 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "# Flags -------------------------\n")
 	fmt.Fprintf(&str, "    KeepAlive:         %t\n", config.KeepAlive)
 	fmt.Fprintf(&str, "    SilenceBuild:      %t\n", config.SilenceBuild)
+	fmt.Fprintf(&str, "    Quiet:             %t\n", config.Quiet)
 	fmt.Fprintf(&str, "    Daemon:            %t\n", config.Daemon)
 	fmt.Fprintf(&str, "    Browser:           %t\n", config.Browser)
 	fmt.Fprintf(&str, "    Pull:              %t\n", config.Pull)
