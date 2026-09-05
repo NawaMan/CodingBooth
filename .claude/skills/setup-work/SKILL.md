@@ -317,8 +317,9 @@ setup buf --version ${BUF_VERSION}
 """
 ```
 
-Categories: `languages`, `tools`, `ides`, `databases`, `browsers`, `desktops`, `ai-tools`,
-`education`. The loader scans the tree — there is no index to update.
+Categories: `languages`, `tools`, `ides`, `middlewares`, `desktops`, `ai-tools`,
+`education`. The loader scans the tree — there is no index to update. Browsers live
+under `desktops/` (the Desktop tab).
 
 **An extension instead** when the thing is an add-on to an existing entry — a single
 `<name>--extension.toml` beside the parent's `template.toml`. May set `auto-select = true` and

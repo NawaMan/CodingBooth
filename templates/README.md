@@ -24,7 +24,7 @@ merged **globally** and sorted by order number, with alphabetical tiebreak by te
 | Segment Key        | Order | Use for                                                                                       |
 |--------------------|-------|-----------------------------------------------------------------------------------------------|
 | `"Boothfile--40"`  | 40    | Infrastructure (desktop environments: xfce, kde, lxqt)                                        |
-| `Boothfile`        | 50    | Base/independent setups (languages, tools, databases)                                         |
+| `Boothfile`        | 50    | Base/independent setups (languages, tools, middlewares)                                       |
 | `"Boothfile--60"`  | 60    | Dependent setups (IDEs: codeserver/vscode; notebook; derived languages: kotlin, scala, etc.)  |
 | `"Boothfile--65"`  | 65    | Language VS Code extensions (need codeserver/vscode from order 60)                            |
 | `"Boothfile--70"`  | 70    | Notebook kernels and JetBrains IDE plugins (need notebook / an IDE from order 60)             |
@@ -255,13 +255,13 @@ All templates and extensions grouped by segment order.
 | `desktops/lxqt`  | LXQt         |
 | `desktops/xfce`  | XFCE         |
 
-### Order 50 — Base setups (languages, tools, databases)
+### Order 50 — Base setups (languages, tools, middlewares)
 
 | Template               | Display Name     |
 |------------------------|------------------|
-| `databases/mysql`      | MySQL            |
-| `databases/postgresql` | PostgreSQL       |
-| `databases/sqlite`     | SQLite           |
+| `middlewares/mysql`      | MySQL            |
+| `middlewares/postgresql` | PostgreSQL       |
+| `middlewares/sqlite`     | SQLite           |
 | `languages/bun`        | Bun              |
 | `languages/clang`      | Clang (C/C++)    |
 | `languages/deno`       | Deno             |
@@ -324,9 +324,9 @@ All templates and extensions grouped by segment order.
 | Template                  | Display Name     |
 |---------------------------|------------------|
 | `tools/android-sdk`       | Android SDK      |
-| `browsers/chromium`       | Chromium         |
-| `browsers/firefox`        | Firefox          |
-| `browsers/google-chrome`  | Google Chrome    |
+| `desktops/chromium`       | Chromium         |
+| `desktops/firefox`        | Firefox          |
+| `desktops/google-chrome`  | Google Chrome    |
 | `desktops/gimp`           | GIMP             |
 | `desktops/inkscape`       | Inkscape         |
 | `desktops/libreoffice`    | LibreOffice      |

@@ -82,12 +82,46 @@ assert-contains "$tmpfile" "template show"           "list: show hint in footer"
 
 # Test 8: Non-primary templates hidden by default
 assert-not-contains "$tmpfile" "^  kotlin"           "list: non-primary kotlin hidden"
+assert-not-contains "$tmpfile" "^  julia"            "list: non-primary julia hidden"
+assert-not-contains "$tmpfile" "^  opencode"         "list: non-primary opencode hidden"
+
+# Test 8b: curated Popular set is what the default list shows
+assert-contains "$tmpfile" "^  sqlite "              "list: sqlite is popular"
+assert-contains "$tmpfile" "^  lazygit "             "list: lazygit is popular"
+assert-contains "$tmpfile" "^  neovim "              "list: neovim is popular"
+assert-contains "$tmpfile" "^Middlewares"            "list: Middlewares category (has sqlite)"
+assert-not-contains "$tmpfile" "^Browsers"           "list: Browsers is not a category"
+assert-not-contains "$tmpfile" "^Desktop"            "list: Desktop has no popular templates"
 
 # Test 9: --full shows non-primary templates
 booth template list --full > "$tmpfile" 2>&1
 assert-contains "$tmpfile" "^  kotlin"               "list --full: kotlin appears"
 
 # Test 10: --full shows more categories
-assert-contains "$tmpfile" "^Databases"              "list --full: Databases category"
+assert-contains "$tmpfile" "^Middlewares"            "list --full: Middlewares category"
+assert-contains "$tmpfile" "^Desktop"                "list --full: Desktop category (browsers live here)"
+assert-not-contains "$tmpfile" "^Databases"          "list --full: Databases renamed to Middlewares"
+assert-not-contains "$tmpfile" "^Browsers"           "list --full: Browsers folded into Desktop"
+
+# Test 11: AI Tools sits immediately after Tools
+tools_line=$(grep -n "^Tools$" "$tmpfile" | head -1 | cut -d: -f1)
+ai_line=$(grep -n "^AI Tools$" "$tmpfile" | head -1 | cut -d: -f1)
+ides_line=$(grep -n "^IDEs$" "$tmpfile" | head -1 | cut -d: -f1)
+TEST_COUNT=$((TEST_COUNT + 1))
+label="list --full: AI Tools follows Tools "
+pad_len=$((64 - ${#label}))
+if (( pad_len < 3 )); then pad_len=3; fi
+pad=$(printf '%*s' "$pad_len" '' | tr ' ' '.')
+echo -n "Test ${TEST_COUNT}: ${label}${pad} "
+if [[ -n "$tools_line" && -n "$ai_line" && -n "$ides_line" ]] &&
+   (( tools_line < ai_line && ai_line < ides_line )); then
+    PASS_COUNT=$((PASS_COUNT + 1))
+    echo -e "\033[32mPASSED\033[0m"
+else
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    FAIL_TESTS+=("Test ${TEST_COUNT}: ${label}")
+    echo -e "\033[31mFAILED\033[0m"
+    echo "  Tools=$tools_line AI Tools=$ai_line IDEs=$ides_line"
+fi
 
 finally
