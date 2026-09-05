@@ -46,7 +46,7 @@ booth config ./existing-project
 1. **Launch** — `booth config` loads all available templates and opens the TUI
 2. **Load existing** — If the target path has a `.booth/Boothfile`, its configuration is loaded as the baseline (existing selections, variant, port, etc. appear pre-checked)
 3. **Override** — CLI flags (`--select`, `--variant`, etc.) override the existing values
-4. **Browse** — Navigate the template tree grouped by category (Languages, Tools, Databases, etc.)
+4. **Browse** — Navigate the template tree grouped by category (Languages, Tools, Middlewares, etc.)
 5. **Select** — Toggle templates and extensions with Space. Dependencies and auto-select extensions are handled automatically
 6. **Configure** — Set variant and port using the config bar at the top
 7. **Save** — Press Ctrl+S to generate `.booth/` files
@@ -62,8 +62,8 @@ If the booth holds hand-written files, step 2 also raises a warning on open and 
 ```
 ══════════════════════════════════════════════════════════════
  CodingBooth Configuration                     [5 selected]
- Search: ·····················································
- Config  Languages  Databases  Tools  ...
+ Search: ·························  1 All  2 Popular  3 Selected
+ Config  Languages  Middlewares  Tools  ...
 ──────────────────────────────────────────────────────────────
  [x] go                   │ go
      [x] *linter          │ Go programming language
@@ -86,8 +86,8 @@ If the booth holds hand-written files, step 2 also raises a warning on open and 
 ```
 
 - **Header**: Title and selection count
-- **Search bar**: Type to filter templates/extensions across all tabs (Tab to focus)
-- **Tab bar**: Tab 0 = Config, Tabs 1..N = categories. Switch with `←`/`→`
+- **Search bar**: Type to filter templates/extensions across all tabs (Tab to focus). On a category tab the right side holds exclusive **1 All / 2 Popular / 3 Selected** chips (and **4 Local** when the booth has project templates under `.booth/templates/`). **Popular is the default.** It shows `primary` templates plus anything already selected, so reopening a booth never hides a current pick. Press the digit, or click the chip. Typing searches the full tab even when a chip is active, so a hidden name is still findable; Esc restores the chip. The chips are hidden on the Config tab; the digits still work there.
+- **Tab bar**: Tab 0 = Config, Tabs 1..N = categories. Switch with `←`/`→`. A non-All chip stars the tabs that still have matching items, the same way a search does.
 - **Left panel**: Scrollable template/extension list for the active category
 - **Right panel**: Details of the highlighted item (description, parameters, dependencies, extensions)
 - **Footer line 1**: Messages and notifications (auto-select, dependency resolution)
@@ -165,6 +165,19 @@ else the booth holds is carried through untouched.
 | `Tab` / `Enter` / `↓` | Return to content (keep search text) |
 | `Esc` | Clear search and return to content |
 
+A non-empty search ignores the filter chip so a hidden template is still
+findable. Clearing the query restores the chip.
+
+| Key | Action |
+|-----|--------|
+| `1` | All — every template in the current category |
+| `2` | Popular — `primary = true`, plus anything already selected (the default) |
+| `3` | Selected — current picks |
+| `4` | Local — project templates (only when `.booth/templates/` contributed any) |
+
+Digits are ignored while the search box or another text field is focused, so
+typing `2` into a query still searches. Click a chip to do the same as the key.
+
 ### Text fields
 
 Every text box in the TUI — the search bar, a Config string or list entry, a
@@ -197,6 +210,7 @@ with `Enter` or `Esc`.
 | `Home` | Jump to top of tab |
 | `End` | Jump to bottom of tab |
 | `Space` | Select / deselect item |
+| `1` / `2` / `3` | All / Popular / Selected filter (`4` Local when present) |
 | `Tab` | Focus search bar |
 
 ### Config Fields
@@ -208,6 +222,7 @@ with `Enter` or `Esc`.
 | `←` / `→` / `Home` / `End` (when editing) | Move the cursor within the value (see [Text fields](#text-fields)) |
 | `Esc` (when editing) | Finish editing |
 | `←` / `→` | Switch tab |
+| `1` / `2` / `3` | All / Popular / Selected filter (`4` Local when present) |
 | `Tab` | Focus search bar |
 
 ### Global
@@ -228,6 +243,7 @@ The mouse is live — no flag, nothing to turn on:
 |-------|--------|
 | A tab | Switch to it |
 | The search box | Focus it |
+| An **1 All / 2 Popular / 3 Selected** chip | Switch the list filter (`4 Local` appears when the booth has project templates) |
 | A template / extension **row** | Move the cursor there (the right panel follows) |
 | The row's `[ ]` **marker** | Select or deselect it — the marker is the mouse's `Space` |
 | A **config field** | Bool flips, cycle opens for stepping, string or list entry opens for editing, `(+ add new)` adds one |

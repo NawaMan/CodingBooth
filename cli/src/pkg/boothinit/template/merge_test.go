@@ -41,6 +41,8 @@ func TestMergeRegistries_AddsNewTemplate(t *testing.T) {
 	require.Contains(t, merged.ByName, "go")
 	require.Contains(t, merged.ByName, "myapp")
 	assert.Equal(t, "My App", merged.ByName["myapp"].DisplayName)
+	assert.False(t, merged.ByName["go"].Local)
+	assert.True(t, merged.ByName["myapp"].Local)
 	assert.Empty(t, warn.String())
 }
 
@@ -60,6 +62,7 @@ func TestMergeRegistries_OverrideWarns(t *testing.T) {
 	require.Contains(t, merged.ByName, "go")
 	assert.Equal(t, "Go Local", merged.ByName["go"].DisplayName)
 	assert.Equal(t, "project", merged.ByName["go"].CategoryName)
+	assert.True(t, merged.ByName["go"].Local)
 	assert.Contains(t, warn.String(), `project template "go" overrides built-in`)
 	assert.Contains(t, warn.String(), `category "languages" → "project"`)
 

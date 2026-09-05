@@ -94,14 +94,14 @@ done < <(find "$root/templates" -name template.toml)
 # The concrete case this guard was built for. chromium is the counter-example:
 # Debian builds it for arm64, so flagging it would send people to a workaround
 # they do not need.
-chrome_toml="$root/templates/browsers/google-chrome/template.toml"
+chrome_toml="$root/templates/desktops/google-chrome/template.toml"
 grep -qE '^unsupported-arch[[:space:]]*=.*arm64' "$chrome_toml"
 assert-true "$?" "google-chrome declares arm64 unsupported"
 
 grep -qiE 'chromium' "$chrome_toml"
 assert-true "$?" "google-chrome's note points at an alternative"
 
-chromium_toml="$root/templates/browsers/chromium/template.toml"
+chromium_toml="$root/templates/desktops/chromium/template.toml"
 ! grep -q '^unsupported-arch[[:space:]]*=' "$chromium_toml"
 assert-true "$?" "chromium is not flagged (Debian builds it for arm64)"
 

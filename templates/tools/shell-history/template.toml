@@ -1,4 +1,5 @@
 display-name = "Shell History"
+primary = true
 display-disc = "Persist bash and zsh history across sessions"
 display-detail = "Touches empty history files in .booth/cache/ so bash and zsh command history survives container recreation. No startup scripts needed — shells already write to their default history paths, and the cache mount maps them automatically."
 display-order = 33

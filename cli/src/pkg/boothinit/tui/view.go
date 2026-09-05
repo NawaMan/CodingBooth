@@ -189,19 +189,19 @@ func (m model) renderTabBar() string {
 
 func (m model) renderSearchBar(fullWidth int) string {
 	label := normalLabelStyle.Render(" Search:")
-	boxWidth := fullWidth - lipgloss.Width(label) - 3
+	chips := m.chipLabels()
+	chipStart := fullWidth
+	if len(chips) > 0 {
+		chipStart = chips[0].start
+	}
 
-	query := m.searchQuery
+	boxWidth := chipStart - lipgloss.Width(label) - 3
 	if boxWidth < 5 {
 		boxWidth = 5
 	}
 
-	// Truncate query if too long
-	displayQuery := query
-	if len(displayQuery) > boxWidth-2 {
-		displayQuery = displayQuery[len(displayQuery)-boxWidth+2:]
-	}
-
+	query := m.searchQuery
+	var box string
 	if m.searchFocused {
 		// The box holds a leading space, the visible text and the caret, so the text
 		// window is two columns narrower — and it follows the cursor rather than the
@@ -210,17 +210,32 @@ func (m model) renderSearchBar(fullWidth int) string {
 		content := caretText(visible, cursor)
 		// lipgloss.Width, not len: the block cursor carries escape codes that cost
 		// bytes and no columns, and counting them would eat the box's padding.
-		box := focusValueStyle.Render(" " + content + strings.Repeat(" ", max(0, boxWidth-lipgloss.Width(content)-1)))
-		return label + " " + box
+		box = focusValueStyle.Render(" " + content + strings.Repeat(" ", max(0, boxWidth-lipgloss.Width(content)-1)))
+	} else if query == "" {
+		box = sepStyle.Render(" " + strings.Repeat("·", max(0, boxWidth-1)))
+	} else {
+		displayQuery := query
+		if len(displayQuery) > boxWidth-2 {
+			displayQuery = displayQuery[len(displayQuery)-boxWidth+2:]
+		}
+		box = normalValueStyle.Render(" " + displayQuery + strings.Repeat(" ", max(0, boxWidth-len(displayQuery)-1)))
 	}
 
-	if query == "" {
-		box := sepStyle.Render(" " + strings.Repeat("·", max(0, boxWidth-1)))
-		return label + " " + box
+	line := label + " " + box
+	col := lipgloss.Width(line)
+	for _, chip := range chips {
+		if chip.start > col {
+			line += strings.Repeat(" ", chip.start-col)
+			col = chip.start
+		}
+		rendered := m.renderChip(chip)
+		line += rendered
+		col += lipgloss.Width(rendered)
 	}
-
-	box := normalValueStyle.Render(" " + displayQuery + strings.Repeat(" ", max(0, boxWidth-len(displayQuery)-1)))
-	return label + " " + box
+	if col < fullWidth {
+		line += strings.Repeat(" ", fullWidth-col)
+	}
+	return line
 }
 
 // renderConfigPanel renders the left panel for the Config tab.
@@ -902,7 +917,7 @@ func (m model) renderFooter() string {
 			keys = "  ◄►: cycle  │  Enter/Type: custom value  │  ↑↓: param  │  Esc: back to list"
 		}
 	} else {
-		keys = "  Space: select  │  Enter: edit params  │  ↑↓: navigate  │  ◄►: tab  │  Tab: search"
+		keys = "  Space: select  │  ↑↓: navigate  │  ◄►: tab  │  1-3: filter  │  Tab: search"
 	}
 
 	return messageLine + "\n" + m.renderFooterHints(keys)
