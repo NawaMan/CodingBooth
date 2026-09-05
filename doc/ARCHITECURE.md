@@ -422,10 +422,10 @@ The web variants share one presentation layer, served from inside the booth and
 fronted by **nginx** (front door on `:10000`):
 
 - **Console UI** (`variants/base/web-ttyd-split/index.html`) — split terminal
-  plus a **web proxy pane**: nginx exposes `/proxy/{port}/` (rewriting bodies via
-  `sub_filter`, stripping `X-Frame-Options`/CSP) and the UI toggles an iframe or
-  opens it in a new tab, so a service on an internal port is viewable without a
-  host mapping.
+  plus a **web proxy pane**: nginx exposes `/proxy/{port}/{path}` (rewriting bodies via
+  `sub_filter`, stripping `X-Frame-Options`/CSP) and the UI's
+  `http://booth:{port}/{path}` bar loads that in an iframe or a new tab, so a
+  service on an internal port is viewable without a host mapping.
 - **Message overlay** (`booth-message-overlay.html`) — modal / toast / banner
   primitives loaded by every web variant. It speaks to the message API server
   and renders yes-no / ok / text / password / choice / radio / checkbox / toast

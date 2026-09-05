@@ -183,6 +183,48 @@
       text-overflow: ellipsis;
     }
 
+    .pane-header.web-addr-open .pane-title {
+      display: none;
+    }
+
+    .proxy-addr {
+      display: none;
+      flex: 1;
+      min-width: 0;
+      align-items: center;
+      background: var(--bg);
+      border: 1px solid var(--panel-edge);
+      border-radius: 4px;
+      padding: 0 6px;
+      min-height: 20px;
+    }
+
+    .pane-header.web-addr-open .proxy-addr {
+      display: flex;
+    }
+
+    .pane-header.web-addr-open .proxy-addr:focus-within {
+      border-color: var(--accent);
+    }
+
+    .proxy-addr.error {
+      border-color: #e74c3c;
+    }
+
+    .proxy-page-title {
+      display: none;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      color: var(--muted);
+      cursor: default;
+      padding: 1px;
+    }
+
+    .pane-header.web-addr-open .proxy-page-title {
+      display: flex;
+    }
+
     .proxy-toggle {
       background: none;
       border: none;
@@ -194,6 +236,7 @@
       border-radius: 4px;
       display: flex;
       align-items: center;
+      flex-shrink: 0;
     }
 
     .proxy-toggle:hover {
@@ -201,24 +244,34 @@
       background: rgba(47, 141, 255, 0.1);
     }
 
+    .proxy-toggle-term {
+      display: none;
+    }
+
+    .proxy-toggle.active-web .proxy-toggle-web {
+      display: none;
+    }
+
+    .proxy-toggle.active-web .proxy-toggle-term {
+      display: block;
+    }
+
     .proxy-toggle.active-web {
+      order: -1;
       color: var(--accent);
     }
 
     .proxy-port-input {
-      width: 60px;
-      background: var(--bg);
-      border: 1px solid var(--panel-edge);
-      border-radius: 4px;
+      flex: 1;
+      min-width: 0;
+      width: 100%;
+      background: transparent;
+      border: none;
       color: var(--text);
       font-family: "JetBrains Mono", "Fira Code", monospace;
       font-size: 11px;
-      padding: 2px 6px;
+      padding: 2px 4px;
       outline: none;
-    }
-
-    .proxy-port-input:focus {
-      border-color: var(--accent);
     }
 
     .proxy-port-input::placeholder {
@@ -226,7 +279,8 @@
     }
 
     .proxy-open-tab,
-    .proxy-back-btn,
+    .proxy-hist-back,
+    .proxy-hist-forward,
     .proxy-reload {
       background: none;
       border: none;
@@ -236,17 +290,15 @@
       font-size: 11px;
       line-height: 1;
       border-radius: 4px;
+      flex-shrink: 0;
     }
 
     .proxy-open-tab:hover,
+    .proxy-hist-back:hover,
+    .proxy-hist-forward:hover,
     .proxy-reload:hover {
       color: var(--accent);
       background: rgba(47, 141, 255, 0.1);
-    }
-
-    .proxy-back-btn:hover {
-      color: #e74c3c;
-      background: rgba(231, 76, 60, 0.1);
     }
 
     .proxy-warning {
@@ -405,10 +457,19 @@
       <section class="pane pane-1" data-pane="1">
         <div class="pane-header">
           <span class="pane-title">Session 1</span>
-          <button class="proxy-toggle" data-session="1" title="Web view">&#x1F310;</button>
+          <span class="proxy-page-title" data-session="1" title="">
+            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
+          </span>
+          <label class="proxy-addr" data-session="1">
+            <input class="proxy-port-input" data-session="1" type="text" placeholder="http://booth:3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
+          </label>
+          <button class="proxy-toggle" data-session="1" title="Web view">
+            <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
+            <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
           <button class="proxy-reload" data-session="1" title="Reload">&#x21BB;</button>
-          <input class="proxy-port-input" data-session="1" type="text" placeholder="port" maxlength="5" style="display:none">
-          <button class="proxy-back-btn" data-session="1" title="Back to terminal" style="display:none">&#x2190;</button>
+          <button class="proxy-hist-back" data-session="1" title="Back" style="display:none">&#x2190;</button>
+          <button class="proxy-hist-forward" data-session="1" title="Forward" style="display:none">&#x2192;</button>
           <button class="proxy-open-tab" data-session="1" title="Open in new tab" style="display:none">&#x2197;</button>
           <span class="proxy-warning" data-session="1" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
@@ -417,10 +478,19 @@
       <section class="pane pane-2" data-pane="2">
         <div class="pane-header">
           <span class="pane-title">Session 2</span>
-          <button class="proxy-toggle" data-session="2" title="Web view">&#x1F310;</button>
+          <span class="proxy-page-title" data-session="2" title="">
+            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
+          </span>
+          <label class="proxy-addr" data-session="2">
+            <input class="proxy-port-input" data-session="2" type="text" placeholder="http://booth:3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
+          </label>
+          <button class="proxy-toggle" data-session="2" title="Web view">
+            <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
+            <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
           <button class="proxy-reload" data-session="2" title="Reload">&#x21BB;</button>
-          <input class="proxy-port-input" data-session="2" type="text" placeholder="port" maxlength="5" style="display:none">
-          <button class="proxy-back-btn" data-session="2" title="Back to terminal" style="display:none">&#x2190;</button>
+          <button class="proxy-hist-back" data-session="2" title="Back" style="display:none">&#x2190;</button>
+          <button class="proxy-hist-forward" data-session="2" title="Forward" style="display:none">&#x2192;</button>
           <button class="proxy-open-tab" data-session="2" title="Open in new tab" style="display:none">&#x2197;</button>
           <span class="proxy-warning" data-session="2" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
@@ -429,10 +499,19 @@
       <section class="pane pane-3" data-pane="3">
         <div class="pane-header">
           <span class="pane-title">Session 3</span>
-          <button class="proxy-toggle" data-session="3" title="Web view">&#x1F310;</button>
+          <span class="proxy-page-title" data-session="3" title="">
+            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
+          </span>
+          <label class="proxy-addr" data-session="3">
+            <input class="proxy-port-input" data-session="3" type="text" placeholder="http://booth:3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
+          </label>
+          <button class="proxy-toggle" data-session="3" title="Web view">
+            <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
+            <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
           <button class="proxy-reload" data-session="3" title="Reload">&#x21BB;</button>
-          <input class="proxy-port-input" data-session="3" type="text" placeholder="port" maxlength="5" style="display:none">
-          <button class="proxy-back-btn" data-session="3" title="Back to terminal" style="display:none">&#x2190;</button>
+          <button class="proxy-hist-back" data-session="3" title="Back" style="display:none">&#x2190;</button>
+          <button class="proxy-hist-forward" data-session="3" title="Forward" style="display:none">&#x2192;</button>
           <button class="proxy-open-tab" data-session="3" title="Open in new tab" style="display:none">&#x2197;</button>
           <span class="proxy-warning" data-session="3" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
@@ -441,10 +520,19 @@
       <section class="pane pane-4" data-pane="4">
         <div class="pane-header">
           <span class="pane-title">Session 4</span>
-          <button class="proxy-toggle" data-session="4" title="Web view">&#x1F310;</button>
+          <span class="proxy-page-title" data-session="4" title="">
+            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
+          </span>
+          <label class="proxy-addr" data-session="4">
+            <input class="proxy-port-input" data-session="4" type="text" placeholder="http://booth:3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
+          </label>
+          <button class="proxy-toggle" data-session="4" title="Web view">
+            <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
+            <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
           <button class="proxy-reload" data-session="4" title="Reload">&#x21BB;</button>
-          <input class="proxy-port-input" data-session="4" type="text" placeholder="port" maxlength="5" style="display:none">
-          <button class="proxy-back-btn" data-session="4" title="Back to terminal" style="display:none">&#x2190;</button>
+          <button class="proxy-hist-back" data-session="4" title="Back" style="display:none">&#x2190;</button>
+          <button class="proxy-hist-forward" data-session="4" title="Forward" style="display:none">&#x2192;</button>
           <button class="proxy-open-tab" data-session="4" title="Open in new tab" style="display:none">&#x2197;</button>
           <span class="proxy-warning" data-session="4" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
@@ -831,6 +919,185 @@
 
       const proxyState = loadProxyState();
 
+      // Globe bar: `http://booth:{port}{path}` → iframe `/proxy/{port}{path}`.
+      // Host is only `booth` (localhost paste is rewritten). Scheme is http;
+      // https is accepted as a shape but refused until the proxy speaks TLS.
+      function proxySrc(port, path, query, hash) {
+        var p = path && path.charAt(0) === "/" ? path : "/" + (path || "");
+        if (p === "") p = "/";
+        return "/proxy/" + port + p + (query || "") + (hash || "");
+      }
+
+      function proxyDisplay(port, path, query, hash) {
+        var shown = "http://booth:" + port;
+        if (path && path !== "/") shown += path;
+        else shown += "/";
+        return shown + (query || "") + (hash || "");
+      }
+
+      function normalizeTarget(portStr, rest) {
+        var portNum = parseInt(portStr, 10);
+        if (!portNum || portNum < 1 || portNum > 65535) {
+          return { error: "port" };
+        }
+        if (portNum >= 10000 && portNum <= 10007) {
+          return { error: "reserved" };
+        }
+
+        rest = rest == null ? "" : String(rest);
+        var hash = "";
+        var hashIdx = rest.indexOf("#");
+        if (hashIdx >= 0) {
+          hash = rest.slice(hashIdx);
+          rest = rest.slice(0, hashIdx);
+        }
+        var query = "";
+        var qIdx = rest.indexOf("?");
+        if (qIdx >= 0) {
+          query = rest.slice(qIdx);
+          rest = rest.slice(0, qIdx);
+        }
+
+        var path = "/";
+        if (rest) {
+          path = rest.charAt(0) === "/" ? rest : "/" + rest;
+        }
+        if (path === "") path = "/";
+
+        return {
+          port: portNum,
+          path: path,
+          query: query,
+          hash: hash,
+          src: proxySrc(portNum, path, query, hash),
+          display: proxyDisplay(portNum, path, query, hash)
+        };
+      }
+
+      function fromAllowedHost(host, port, rest) {
+        host = String(host || "").toLowerCase();
+        if (host === "booth" || host === "localhost" || host === "127.0.0.1") {
+          if (!port) return { error: "port" };
+          return normalizeTarget(port, rest || "/");
+        }
+        return { error: "host" };
+      }
+
+      function parseBoothTarget(raw, sessionNum) {
+        var s = String(raw || "").trim();
+        if (!s) return { error: "empty" };
+
+        if (/^https:\/\//i.test(s)) {
+          return { error: "https" };
+        }
+
+        var urlMatch = s.match(/^http:\/\/([^/:?#]+)(?::(\d+))?([/?#].*)?$/i);
+        if (urlMatch) {
+          return fromAllowedHost(urlMatch[1], urlMatch[2], urlMatch[3] || "/");
+        }
+
+        var boothBare = s.match(/^booth:(\d+)([/?#].*)?$/i);
+        if (boothBare) {
+          return normalizeTarget(boothBare[1], boothBare[2] || "/");
+        }
+
+        var hostPort = s.match(/^(localhost|127\.0\.0\.1)(?::(\d+))?([/?#].*)?$/i);
+        if (hostPort) {
+          return fromAllowedHost(hostPort[1], hostPort[2], hostPort[3] || "/");
+        }
+
+        if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s) || /^[a-zA-Z]/.test(s)) {
+          return { error: "host" };
+        }
+
+        if (s.charAt(0) === "/" || s.charAt(0) === "?" || s.charAt(0) === "#") {
+          var cur = proxyState[sessionNum];
+          if (cur && cur.port) {
+            if (s.charAt(0) === "/") return normalizeTarget(cur.port, s);
+            return normalizeTarget(cur.port, "/" + s);
+          }
+          return { error: "port" };
+        }
+
+        var pm = s.match(/^(\d+)([/?#].*)?$/);
+        if (!pm) return { error: "port" };
+        return normalizeTarget(pm[1], pm[2] || "/");
+      }
+
+      function flashAddrError(input, placeholder) {
+        var box = input.closest(".proxy-addr");
+        if (box) box.classList.add("error");
+        var prevPlaceholder = input.placeholder;
+        var clearValue = placeholder && placeholder !== "http only";
+        if (clearValue) {
+          input.value = "";
+          input.placeholder = placeholder;
+        }
+        setTimeout(function() {
+          if (box) box.classList.remove("error");
+          if (clearValue) input.placeholder = prevPlaceholder;
+        }, placeholder ? 1500 : 1000);
+      }
+
+      function setAddrOpen(pane, open) {
+        var header = pane.querySelector(".pane-header");
+        if (!header) return;
+        if (open) header.classList.add("web-addr-open");
+        else header.classList.remove("web-addr-open");
+      }
+
+      function setPageTitleTip(pane, text) {
+        var tip = pane.querySelector(".proxy-page-title");
+        if (tip) tip.setAttribute("title", text || "");
+      }
+
+      function syncAddrFromIframe(iframe) {
+        var pane = iframe.closest(".pane");
+        if (!pane) return;
+        var session = pane.getAttribute("data-pane");
+        var toggle = pane.querySelector(".proxy-toggle");
+        if (!toggle || !toggle.classList.contains("active-web")) return;
+        var input = pane.querySelector(".proxy-port-input");
+        try {
+          var loc = iframe.contentWindow.location;
+          var m = loc.pathname.match(/^\/proxy\/(\d+)(\/.*)?$/);
+          if (!m) return;
+          var target = normalizeTarget(m[1], (m[2] || "/") + loc.search + loc.hash);
+          if (target.error) return;
+          if (input && document.activeElement !== input) {
+            input.value = target.display;
+          }
+          var pageTitle = "";
+          try {
+            pageTitle = (iframe.contentDocument && iframe.contentDocument.title) || "";
+          } catch (_t) { /* ignore */ }
+          setPageTitleTip(pane, pageTitle || target.display);
+          proxyState[session] = {
+            port: target.port,
+            path: target.path,
+            query: target.query,
+            display: target.display
+          };
+          saveProxyState(proxyState);
+        } catch (_e) { /* cross-origin */ }
+      }
+
+      function iframeHistory(iframe, delta) {
+        if (!iframe) return;
+        try {
+          if (delta < 0) iframe.contentWindow.history.back();
+          else iframe.contentWindow.history.forward();
+        } catch (_e) { /* cross-origin */ }
+      }
+
+      function setWebTools(pane, on) {
+        var display = on ? "" : "none";
+        ["proxy-hist-back", "proxy-hist-forward", "proxy-open-tab", "proxy-warning"].forEach(function(cls) {
+          var el = pane.querySelector("." + cls);
+          if (el) el.style.display = display;
+        });
+      }
+
       // A pane's target, recorded on the frame and only loaded while the booth
       // is answering. nginx serves this page before the ttyd processes behind
       // it are listening, so a frame pointed at /s1/ too early shows nginx's
@@ -873,6 +1140,7 @@
       document.querySelectorAll(".pane iframe").forEach(function(iframe) {
         iframe.addEventListener("load", function() {
           applyIframeFallbackStyle(iframe);
+          syncAddrFromIframe(iframe);
         });
       });
 
@@ -891,27 +1159,28 @@
         });
       });
 
-      function switchToWebView(sessionNum, port) {
+      function switchToWebView(sessionNum, target) {
         const pane = document.querySelector('.pane[data-pane="' + sessionNum + '"]');
         if (!pane) return;
 
         const iframe = pane.querySelector("iframe");
-        const title = pane.querySelector(".pane-title");
         const portInput = pane.querySelector(".proxy-port-input");
-        const backBtn = pane.querySelector(".proxy-back-btn");
-        const openTab = pane.querySelector(".proxy-open-tab");
         const toggleBtn = pane.querySelector(".proxy-toggle");
-        const warning = pane.querySelector(".proxy-warning");
 
-        setPaneSrc(iframe, "/proxy/" + port + "/");
-        title.textContent = "Web :" + port;
-        portInput.style.display = "none";
-        backBtn.style.display = "";
-        openTab.style.display = "";
-        warning.style.display = "";
+        setPaneSrc(iframe, target.src);
+        setAddrOpen(pane, true);
+        setWebTools(pane, true);
+        if (portInput) portInput.value = target.display;
+        setPageTitleTip(pane, target.display);
         toggleBtn.classList.add("active-web");
+        toggleBtn.title = "Back to terminal";
 
-        proxyState[sessionNum] = { port: port };
+        proxyState[sessionNum] = {
+          port: target.port,
+          path: target.path,
+          query: target.query,
+          display: target.display
+        };
         saveProxyState(proxyState);
       }
 
@@ -920,18 +1189,16 @@
         if (!pane) return;
 
         const iframe = pane.querySelector("iframe");
-        const title = pane.querySelector(".pane-title");
-        const backBtn = pane.querySelector(".proxy-back-btn");
-        const openTab = pane.querySelector(".proxy-open-tab");
+        const portInput = pane.querySelector(".proxy-port-input");
         const toggleBtn = pane.querySelector(".proxy-toggle");
-        const warning = pane.querySelector(".proxy-warning");
 
         setPaneSrc(iframe, iframe.dataset.defaultSrc);
-        title.textContent = "Session " + sessionNum;
-        backBtn.style.display = "none";
-        openTab.style.display = "none";
-        warning.style.display = "none";
+        setAddrOpen(pane, false);
+        setWebTools(pane, false);
+        if (portInput) portInput.value = "";
+        setPageTitleTip(pane, "");
         toggleBtn.classList.remove("active-web");
+        toggleBtn.title = "Web view";
 
         delete proxyState[sessionNum];
         saveProxyState(proxyState);
@@ -939,22 +1206,21 @@
 
       document.querySelectorAll(".proxy-toggle").forEach(function(btn) {
         btn.addEventListener("click", function() {
-          var session = btn.dataset.session;
           var pane = btn.closest(".pane");
+          var header = pane.querySelector(".pane-header");
           var portInput = pane.querySelector(".proxy-port-input");
 
           if (btn.classList.contains("active-web")) {
-            portInput.style.display = portInput.style.display === "none" ? "" : "none";
-            if (portInput.style.display !== "none") {
-              portInput.value = proxyState[session] ? proxyState[session].port : "";
-              portInput.focus();
-              portInput.select();
-            }
+            switchToTerminal(btn.dataset.session);
+            return;
+          }
+
+          if (header.classList.contains("web-addr-open")) {
+            setAddrOpen(pane, false);
           } else {
-            portInput.style.display = portInput.style.display === "none" ? "" : "none";
-            if (portInput.style.display !== "none") {
-              portInput.focus();
-            }
+            setAddrOpen(pane, true);
+            portInput.value = "";
+            portInput.focus();
           }
         });
       });
@@ -962,56 +1228,87 @@
       document.querySelectorAll(".proxy-port-input").forEach(function(input) {
         input.addEventListener("keydown", function(e) {
           if (e.key === "Enter") {
-            var port = input.value.trim();
+            e.preventDefault();
             var session = input.dataset.session;
-            var portNum = parseInt(port, 10);
-
-            if (!portNum || portNum < 1 || portNum > 65535) {
-              input.style.borderColor = "#e74c3c";
-              setTimeout(function() { input.style.borderColor = ""; }, 1000);
+            var parsed = parseBoothTarget(input.value, session);
+            if (parsed.error === "reserved") {
+              flashAddrError(input, "reserved");
               return;
             }
-
-            if (portNum >= 10000 && portNum <= 10007) {
-              input.style.borderColor = "#e74c3c";
-              input.value = "";
-              input.placeholder = "reserved";
-              setTimeout(function() { input.placeholder = "port"; }, 1500);
+            if (parsed.error === "https") {
+              flashAddrError(input, "http only");
               return;
             }
-
-            switchToWebView(session, port);
+            if (parsed.error) {
+              flashAddrError(input);
+              return;
+            }
+            switchToWebView(session, parsed);
           } else if (e.key === "Escape") {
-            input.style.display = "none";
+            var pane = input.closest(".pane");
+            var toggle = pane.querySelector(".proxy-toggle");
+            if (toggle && toggle.classList.contains("active-web")) {
+              input.blur();
+            } else {
+              setAddrOpen(pane, false);
+            }
           }
         });
 
-        input.addEventListener("input", function() {
-          input.value = input.value.replace(/\D/g, "");
+        input.addEventListener("blur", function() {
+          var pane = input.closest(".pane");
+          var toggle = pane && pane.querySelector(".proxy-toggle");
+          if (!toggle || !toggle.classList.contains("active-web")) return;
+          var session = input.dataset.session;
+          var parsed = parseBoothTarget(input.value, session);
+          if (parsed && !parsed.error) {
+            input.value = parsed.display;
+            return;
+          }
+          var saved = proxyState[session];
+          if (saved && saved.display) input.value = saved.display;
         });
       });
 
-      document.querySelectorAll(".proxy-back-btn").forEach(function(btn) {
+      document.querySelectorAll(".proxy-hist-back").forEach(function(btn) {
         btn.addEventListener("click", function() {
-          switchToTerminal(btn.dataset.session);
+          var pane = btn.closest(".pane");
+          iframeHistory(pane && pane.querySelector("iframe"), -1);
+        });
+      });
+
+      document.querySelectorAll(".proxy-hist-forward").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          var pane = btn.closest(".pane");
+          iframeHistory(pane && pane.querySelector("iframe"), 1);
         });
       });
 
       document.querySelectorAll(".proxy-open-tab").forEach(function(btn) {
         btn.addEventListener("click", function() {
           var session = btn.dataset.session;
+          var pane = btn.closest(".pane");
+          var input = pane.querySelector(".proxy-port-input");
+          var parsed = parseBoothTarget(input && input.value, session);
+          if (parsed && !parsed.error) {
+            window.open(parsed.src, "_blank");
+            return;
+          }
           var state = proxyState[session];
           if (state && state.port) {
-            window.open("/proxy/" + state.port + "/", "_blank");
+            window.open(proxySrc(state.port, state.path || "/", state.query || ""), "_blank");
           }
         });
       });
 
-      // Restore saved proxy states on load
+      // Restore saved proxy states on load (old shape was `{ port }`).
       Object.keys(proxyState).forEach(function(session) {
         var data = proxyState[session];
-        if (data && data.port) {
-          switchToWebView(session, data.port);
+        if (!data || !data.port) return;
+        var raw = data.display || (String(data.port) + (data.path && data.path !== "/" ? data.path : "") + (data.query || ""));
+        var parsed = parseBoothTarget(raw, session);
+        if (parsed && !parsed.error) {
+          switchToWebView(session, parsed);
         }
       });
 
