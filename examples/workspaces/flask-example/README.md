@@ -7,7 +7,8 @@ This example is a minimal Flask web app running inside a CodingBooth workspace. 
 ```bash
 ./booth run
 # inside the booth:
-./run.sh
+just --list
+just run                 # ./run.sh
 ```
 
 Then open http://localhost:5555/ on the host.

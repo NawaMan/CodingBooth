@@ -7,8 +7,8 @@ This example is a minimal Django web app running inside a CodingBooth workspace.
 ```bash
 ./booth run
 # inside the booth:
-pip install -r requirements.txt
-python manage.py runserver 0.0.0.0:8000
+just --list
+just run                 # pip install && runserver
 ```
 
 Then open:

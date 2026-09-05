@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Compile the Maven project
+build:
+    mvn -q compile
+
+# Clean, package, and run Person
+run:
+    ./run-on-container.sh

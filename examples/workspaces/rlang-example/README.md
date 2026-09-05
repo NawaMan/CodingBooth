@@ -11,7 +11,10 @@ This example is an R environment wired for statistical notebooks through Jupyter
 cd examples/workspaces/r-example
 booth
 
-# 2. Inside the booth — open VS Code, create a .ipynb file and select the R kernel
+# 2. Inside the booth
+just --list
+just run
+#    or open VS Code, create a .ipynb and select the R kernel
 ```
 
 ## What's included

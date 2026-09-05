@@ -1,0 +1,15 @@
+[private]
+default:
+    @just --list
+
+# Production build of the Vite client
+build:
+    cd client && npm install && npm run build
+
+# Terminal 1 — Express API on :3000
+server:
+    cd server && npm install && npm start
+
+# Terminal 2 — Vite dev server on :5173
+client:
+    cd client && npm install && npm run dev

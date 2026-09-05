@@ -11,7 +11,11 @@ This example is a Rust (stable) development environment with Jupyter notebook su
 cd examples/workspaces/rust-example
 booth
 
-# 2. Inside the booth — open VS Code, create a .ipynb file and select the Rust kernel
+# 2. Inside the booth
+just --list
+just run
+just test
+#    or open VS Code, create a .ipynb and select the Rust kernel
 ```
 
 ## What's included

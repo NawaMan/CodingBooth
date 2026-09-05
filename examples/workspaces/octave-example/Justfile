@@ -1,0 +1,7 @@
+[private]
+default:
+    @just --list
+
+# Run the Octave sample
+run:
+    ./run-octave.sh

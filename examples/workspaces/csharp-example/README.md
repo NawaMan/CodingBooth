@@ -12,7 +12,8 @@ cd examples/workspaces/csharp-example
 booth
 
 # 2. Inside the booth — build and run
-./run-csharp.sh
+just --list
+just run                 # ./run-csharp.sh
 ```
 
 ## What's included

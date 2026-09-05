@@ -17,7 +17,8 @@ jenv local 21                    # switch to JDK 21
 java -version                    # verify
 
 # 3. Build the Maven project
-mvn compile
+just --list
+just build               # mvn -q compile
 
 # 4. Try Jupyter notebooks
 #    Open Demo-Java.ipynb in VS Code or JupyterLab

@@ -12,8 +12,9 @@ cd examples/workspaces/clang-example
 booth
 
 # 2. Inside the booth — build and run the demo
-./run-primes.sh 20
-./run-primes.sh --json 20   # same primes, serialized with the apt-installed JSON library
+just --list
+just run 20
+just run -- --json 20    # same primes, serialized with the apt-installed JSON library
 ```
 
 ## What's included

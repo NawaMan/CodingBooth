@@ -14,9 +14,10 @@ the admin UI with no port plumbing to set up.
 ```bash
 ./booth run
 # inside the booth:
-./build.sh                                                    # one static binary
+just --list
+just build                                                    # ./build.sh
 ./tripboard superuser upsert you@example.com 'a-strong-password'
-./start.sh                                                    # → http://localhost:8090/
+just start                                                    # ./start.sh → http://localhost:8090/
 ```
 
 `start.sh` builds first (`go build` is incremental, so it is nearly free) and serves on

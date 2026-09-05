@@ -11,7 +11,10 @@ This example is a Haskell environment built on GHC with Jupyter notebook support
 cd examples/workspaces/haskell-example
 booth
 
-# 2. Inside the booth — open VS Code, create a .ipynb file and select the Haskell kernel
+# 2. Inside the booth
+just --list
+just run 5
+#    or open VS Code, create a .ipynb and select the Haskell kernel
 ```
 
 ## What's included

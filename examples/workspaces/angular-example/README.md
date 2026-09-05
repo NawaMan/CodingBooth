@@ -7,8 +7,8 @@ This example is a minimal Angular 19 standalone-component app running inside a C
 ```bash
 ./booth run
 # inside the booth:
-npm install
-npm start
+just --list
+just run                 # npm install && npm start
 ```
 
 Then open http://localhost:4200/ on the host.

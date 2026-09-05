@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Run the Playwright test suite
+test:
+    ./run-playwright.sh
+
+# Capture a screenshot (`just screenshot https://playwright.dev shot.png`)
+screenshot *args:
+    ./run-screenshot.sh {{ args }}

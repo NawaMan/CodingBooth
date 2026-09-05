@@ -12,7 +12,8 @@ cd examples/workspaces/kotlin-example
 booth
 
 # 2. Inside the booth — compile and run
-./run-fibonacci.sh 10
+just --list
+just run 10              # ./run-fibonacci.sh 10
 ```
 
 ## What's included

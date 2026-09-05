@@ -7,8 +7,8 @@ This example is a minimal Next.js 15 App Router demo running inside a CodingBoot
 ```bash
 ./booth run
 # inside the booth:
-npm install
-npm run dev
+just --list
+just run                 # npm install && npm run dev
 ```
 
 Then open:

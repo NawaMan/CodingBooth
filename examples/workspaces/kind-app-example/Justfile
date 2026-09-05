@@ -1,0 +1,27 @@
+[private]
+default:
+    @just --list
+
+# Create the KinD cluster
+start:
+    ./start-cluster.sh
+
+# Build the app images
+build:
+    ./build.sh
+
+# Deploy the TODO app
+deploy:
+    ./deploy-app.sh
+
+# Port-forward the UI
+access:
+    ./access-app.sh
+
+# One-shot health check
+check:
+    ./status.sh
+
+# Delete the cluster
+stop:
+    ./stop-cluster.sh

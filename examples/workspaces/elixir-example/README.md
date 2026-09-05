@@ -12,7 +12,8 @@ cd examples/workspaces/elixir-example
 booth
 
 # 2. Inside the booth — run the palindrome checker
-./run-palindrome.sh "racecar"
+just --list
+just run racecar         # ./run-palindrome.sh "racecar"
 ```
 
 ## What's included

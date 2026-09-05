@@ -7,8 +7,8 @@ This example is a minimal FastAPI async web app running inside a CodingBooth wor
 ```bash
 ./booth run
 # inside the booth:
-pip install -r requirements.txt
-uvicorn app:app --host 0.0.0.0 --port 8000 --reload
+just --list
+just run                 # pip install && uvicorn …
 ```
 
 Then open:

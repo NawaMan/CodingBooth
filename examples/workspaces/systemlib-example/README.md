@@ -12,7 +12,7 @@ a booth that's declared once and baked into the image; nothing lands on your hos
 ## Run
 
 ```bash
-./booth -- ./run-linkcheck.sh
+./booth -- just run      # ./run-linkcheck.sh
 ```
 
 That builds and runs in one step. The two halves are also split out, so you can build

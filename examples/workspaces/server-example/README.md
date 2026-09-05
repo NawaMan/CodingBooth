@@ -12,7 +12,8 @@ cd examples/server-example
 ../../codingbooth
 
 # 2. Inside the booth — start the server
-./start-server.sh          # serves www/ on port 8080
+just --list
+just start                 # ./start-server.sh — serves www/ on port 8080
 
 # 3. Verify from inside the booth
 curl http://localhost:8080
@@ -21,7 +22,7 @@ curl http://localhost:8080
 #    http://localhost:8080   — you should see the page from www/
 
 # 5. Stop the server
-./stop-server.sh
+just stop                # ./stop-server.sh
 ```
 
 ## How it works

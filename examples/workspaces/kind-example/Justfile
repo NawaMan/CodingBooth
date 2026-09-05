@@ -1,0 +1,19 @@
+[private]
+default:
+    @just --list
+
+# Create the KinD cluster
+start:
+    ./start-cluster.sh
+
+# Deploy the sample app
+deploy:
+    ./deploy-app.sh
+
+# Check cluster status
+check:
+    ./check-cluster.sh
+
+# Delete the cluster
+stop:
+    ./stop-cluster.sh

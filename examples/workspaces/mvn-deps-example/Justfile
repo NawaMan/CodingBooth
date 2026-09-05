@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Compile (deps are already in the image)
+build:
+    mvn -q compile
+
+# Compile and run App
+run:
+    mvn compile -q exec:java -Dexec.mainClass=com.example.App

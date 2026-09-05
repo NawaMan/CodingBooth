@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Compile the console app
+build:
+    dotnet build --project .
+
+# Print customers.csv and run
+run:
+    ./run-fsharp.sh

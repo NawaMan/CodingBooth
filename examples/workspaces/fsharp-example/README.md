@@ -12,7 +12,8 @@ cd examples/workspaces/fsharp-example
 booth
 
 # 2. Inside the booth — build and run
-./run-fsharp.sh
+just --list
+just run                 # ./run-fsharp.sh
 ```
 
 ## What's included

@@ -1,0 +1,7 @@
+[private]
+default:
+    @just --list
+
+# Compile and run Fibonacci (`just run 10`)
+run *args:
+    ./run-fibonacci.sh {{ args }}

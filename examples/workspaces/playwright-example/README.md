@@ -12,11 +12,12 @@ cd examples/workspaces/playwright-example
 booth
 
 # 2. Inside the booth — run the test suite
-./run-playwright.sh
+just --list
+just test                # ./run-playwright.sh
 
 # 3. Or capture a screenshot of a real web page
-./run-screenshot.sh                              # defaults to Hacker News
-./run-screenshot.sh https://playwright.dev shot.png
+just screenshot                              # defaults to Hacker News
+just screenshot https://playwright.dev shot.png
 ```
 
 Both scripts run `npm ci` first (project deps are git-ignored). The Chromium
