@@ -115,8 +115,8 @@ CodingBooth/
 │   └── desktop-wayland/      # labwc + wayvnc (Wayland) desktop
 │
 ├── templates/                # 294 TOML template definitions, by category:
-│   ├── languages/ databases/ ides/ tools/ ai-tools/
-│   └── browsers/ desktops/ education/     (+ meta.toml per dir)
+│   ├── languages/ middlewares/ ides/ tools/ ai-tools/
+│   └── desktops/ education/               (+ meta.toml per dir; browsers live under desktops/)
 │
 ├── examples/                 # ready-to-run example workspaces + demo
 ├── build/                    # cli-build.sh, docker-build.sh, build-all.sh
@@ -315,7 +315,7 @@ the largest subsystem.
   pins, `+extension` add-ons. `booth config --select …` and `.recipe` files
   both feed it.
 - **Templates** (`templates/`) — TOML files grouped by category (`languages/`,
-  `databases/`, `ides/`, `tools/`, `ai-tools/`, `browsers/`, `desktops/`,
+  `middlewares/`, `ides/`, `tools/`, `ai-tools/`, `desktops/` (browsers live here),
   `education/`, each with a `meta.toml`). A template declares Boothfile
   segments, config scalars/arrays, home/cache seeds, startup segments, and its
   required extensions.

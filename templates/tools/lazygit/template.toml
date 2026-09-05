@@ -1,4 +1,5 @@
 display-name = "Lazygit"
+primary = true
 display-disc = "Simple terminal UI for git commands"
 display-detail = "Installs lazygit, a simple terminal UI for git commands, making it easy to stage, commit, and manage branches."
 display-order = 60

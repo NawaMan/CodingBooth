@@ -452,9 +452,9 @@ templates/
 ├── ai-tools/              # 5 AI tool templates (claude-code, codex, ...)
 ├── tools/                 # 11 tool templates (notebook, neovim, dind, ...)
 ├── ides/                  # 11 IDE templates (idea, pycharm, codeserver, ...)
-├── desktops/              # 6 desktop templates (xfce, kde, ...)
-├── databases/             # 3 database templates (postgresql, mysql, sqlite)
-└── browsers/              # 3 browser templates (chromium, firefox, chrome)
+├── desktops/              # desktop environments, apps, and browsers (xfce, kde, chromium, ...)
+├── middlewares/           # databases and message brokers (postgresql, mysql, sqlite, redis, ...)
+└── education/             # education tools
 ```
 
 Total: **58 templates** and **36 extensions** across **7 categories**.

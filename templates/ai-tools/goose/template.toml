@@ -1,5 +1,4 @@
 display-name = "Goose"
-primary = true
 display-disc = "Block/AAIF open AI agent CLI (code + MCP + automation)"
 display-detail = "Installs Goose, an open extensible AI agent from Block (AAIF). Terminal CLI for coding, research, and automation with deep MCP/extension support. Binary: goose. Configure providers with `goose configure` or env API keys. Seed host config via the credential extension."
 display-order = 21

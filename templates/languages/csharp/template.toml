@@ -1,5 +1,4 @@
 display-name = "C#"
-primary = true
 display-disc = "C# programming language with .NET SDK"
 display-detail = "Installs the .NET SDK (dotnet) using the official installer with configurable channel version. Includes the dotnet CLI, C# compiler, and NuGet package manager. Telemetry is disabled by default in the container environment."
 display-order = 35

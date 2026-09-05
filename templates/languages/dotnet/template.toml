@@ -1,5 +1,4 @@
 display-name = ".NET"
-primary = true
 display-disc = ".NET SDK with C# and F# support"
 display-detail = "Sets up a .NET development environment with the SDK, NuGet package manager, and configurable channel version."
 display-order = 35

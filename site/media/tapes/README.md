@@ -47,7 +47,7 @@ The TUI keys (see `cli/src/pkg/boothinit/tui/model.go`):
 Important quirks:
 
 - The TUI opens on the **Languages** tab (index 1), not Config — so `Left` from
-  the default lands on Config, and `Right` lands on Databases.
+  the default lands on Config, and `Right` lands on Middlewares.
 - On the Config tab the cursor starts at the **Booth** group header (rendered
   invisibly); `Down 1` → Booth Version, `Down 2` → Variant.
 - Template lists are alphabetical; `Down N` counts depend on registry order.

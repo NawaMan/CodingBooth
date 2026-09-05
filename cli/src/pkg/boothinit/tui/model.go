@@ -83,6 +83,11 @@ type model struct {
 	searchFocused bool
 	searchCursor  int
 
+	// List filter chips on the search row (All / Popular / Local / Selected).
+	// Local is omitted unless a project template was merged in.
+	listFilter listFilter
+	hasLocal   bool
+
 	// Config fields (generic)
 	stringFields map[string]string   // values for string/cycle fields
 	boolFields   map[string]bool     // values for bool fields
@@ -129,6 +134,7 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 		cycleIndices: make(map[string]int),
 		listFields:   make(map[string][]string),
 		paramValues:  make(map[string]string),
+		listFilter:   listFilterPopular,
 	}
 
 	// No string-field defaults: an unset port (and other unset string fields)
@@ -167,6 +173,15 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 
 	m.tabCursors = make([]int, len(m.tabItems))
 	m.tabScrollOffs = make([]int, len(m.tabItems))
+
+	if registry != nil {
+		for _, loaded := range registry.ByName {
+			if loaded != nil && loaded.Local {
+				m.hasLocal = true
+				break
+			}
+		}
+	}
 
 	// Default to tab 1 (first category)
 	m.activeTab = 1
@@ -252,10 +267,13 @@ func (m *model) activeItems() []treeItem {
 		return nil
 	}
 	items := m.tabItems[m.activeTab]
-	if m.searchQuery == "" {
-		return items
+	// Typing is the escape hatch: a non-empty query searches the full tab,
+	// ignoring Popular/Local/Selected so a hidden name is still findable.
+	// Clearing the query (Esc) restores the chip.
+	if m.searchQuery != "" {
+		return m.filterItems(items)
 	}
-	return m.filterItems(items)
+	return m.applyListFilter(items)
 }
 
 // filterItems returns items matching the search query (case-insensitive).
@@ -475,7 +493,12 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, nil
 		}
 
-		// Tab switching (digit keys and left/right)
+		// List-filter chips (1 All / 2 Popular / 3 Selected / 4 Local)
+		if handled, result := m.handleListFilterKey(msg); handled {
+			return result, nil
+		}
+
+		// Tab switching (left/right)
 		if handled, result := m.handleTabSwitch(msg); handled {
 			return result, nil
 		}
@@ -546,6 +569,27 @@ func (m *model) resetTabCursors() {
 	for i := range m.tabScrollOffs {
 		m.tabScrollOffs[i] = 0
 	}
+}
+
+func (m *model) handleListFilterKey(msg tea.KeyMsg) (bool, tea.Model) {
+	var filter listFilter
+	switch msg.String() {
+	case "1":
+		filter = listFilterAll
+	case "2":
+		filter = listFilterPopular
+	case "3":
+		filter = listFilterSelected
+	case "4":
+		if !m.hasLocal {
+			return false, m
+		}
+		filter = listFilterLocal
+	default:
+		return false, m
+	}
+	result, _ := m.clickChip(filter)
+	return true, result.(model)
 }
 
 func (m *model) handleTabSwitch(msg tea.KeyMsg) (bool, tea.Model) {

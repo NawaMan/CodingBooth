@@ -1,7 +1,7 @@
 display-name = "Google Chrome"
 display-disc = "Google Chrome browser for web testing (DEB repo)"
 display-detail = "Installs Google Chrome browser from the official DEB repository. Useful for web development testing in desktop variants."
-display-order = 14
+display-order = 34
 tags = [
     "browser",
     "chrome",

@@ -111,6 +111,7 @@ func MergeRegistries(stock, project *TemplateRegistry, warn io.Writer) *Template
 			// Avoid duplicate entries if project registry itself listed the name twice
 			// (LoadRegistry already forbids that within one tree).
 			c.Templates = removeTemplateNamed(c.Templates, t.Name)
+			t.Local = true
 			c.Templates = append(c.Templates, t)
 			out.ByName[t.Name] = t
 		}

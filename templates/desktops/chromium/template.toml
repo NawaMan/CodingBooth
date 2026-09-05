@@ -1,7 +1,7 @@
 display-name = "Chromium"
 display-disc = "Chromium browser for web testing (no snap)"
 display-detail = "Installs the Chromium browser without snap packaging. Useful for web development testing in desktop variants."
-display-order = 10
+display-order = 30
 tags = [
     "browser",
     "chromium",

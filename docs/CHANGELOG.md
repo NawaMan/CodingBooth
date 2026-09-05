@@ -4,6 +4,31 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Popular is a short curated set, and two catalog tabs moved.** The Config TUI
+  Popular chip (and `booth template list` without `--full`) now shows:
+  Languages — `go`, `java`, `nodejs`, `python`, `rust`; Middlewares — `sqlite`;
+  Tools — `lazygit`, `neovim`, `shell-history`; AI Tools — `claude-code`, `grok`.
+  The Databases tab is **Middlewares** (`templates/middlewares/`). Browsers
+  (`chromium`, `firefox`, `google-chrome`) now live under **Desktop** — there is
+  no Browsers tab. **AI Tools** sits immediately after Tools. Filter chips are
+  `1` All, `2` Popular, `3` Selected (`4` Local when the booth has project
+  templates). The TUI opens on Popular, and a current pick is never hidden —
+  reopening a booth that selected `kotlin` still shows `kotlin` on Languages.
+  Everything else is still there under All / `--full`. See
+  [config TUI](BOOTH_CONFIG_TUI.md).
+
+- **Config TUI list filters sit on the search row, not as extra tabs.** Category
+  tabs still partition the catalog. On those tabs the search row now ends with
+  exclusive **All / Popular / Local / Selected** chips: Popular is the default
+  (`primary = true` plus anything already selected, so an existing pick never
+  disappears). All is the full category list. Local is templates merged from
+  `.booth/templates/` and is hidden when the booth has none. Selected is the
+  current picks. Typing still searches the whole tab, so a name the chip hid is
+  findable; Esc restores the chip. The Config tab keeps a full-width search box.
+  Click a chip or press `1`/`2`/`3` to switch; tabs that still have matches under
+  a non-All chip are starred the same way a search stars them. See
+  [config TUI](BOOTH_CONFIG_TUI.md).
+
 - **The console globe bar is a full URL, host `booth` only.** Canonical form is
   `http://booth:3000/api/items`, which the pane maps to `/proxy/3000/api/items`.
   Shortcuts still work and rewrite on Enter: `3000`, `3000/api/items`, a

@@ -46,7 +46,7 @@
   - Desktop bits (`booth-desktop-actions--setup.sh`, VNC helpers, `cb-has-desktop*.sh`)
   - `cleanup-after--setup.sh`, `no-sudo`, `tls--setup.sh` (with pinned Caddy)
 - `variants/codeserver/`, `variants/notebook/`, `variants/desktop-xfce/`, `variants/desktop-kde/` — per-variant Dockerfiles + start scripts
-- `templates/` — TOML template definitions organized by category: `languages/`, `databases/`, `ides/`, `tools/`, `ai-tools/`, `browsers/`, `desktops/`, `education/` (+ `meta.toml` per dir)
+- `templates/` — TOML template definitions organized by category: `languages/`, `middlewares/`, `ides/`, `tools/`, `ai-tools/`, `desktops/` (browsers live here), `education/` (+ `meta.toml` per dir)
 - `booth` — shell wrapper (install/update/cache/version management, gitignore generation, read-only host-wrapper mount)
 - `install.sh`, `on-board-me.sh` — bootstrap + contributor onboarding (pre-commit hook)
 - `bin/` — compiled multi-platform binaries

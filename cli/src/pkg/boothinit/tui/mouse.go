@@ -130,6 +130,18 @@ func (m model) footerButtons() []footerButton {
 	return labels
 }
 
+// clickChip switches the list filter. The query is left alone — search already
+// ignores the chip, and Esc returns to whatever view this click picked.
+func (m model) clickChip(filter listFilter) (tea.Model, tea.Cmd) {
+	m.searchFocused = false
+	m.paramFocused = false
+	if m.listFilter != filter {
+		m.listFilter = filter
+		m.resetTabCursors()
+	}
+	return m, nil
+}
+
 // clickFooterButton runs the button at column x, if any.
 func (m model) clickFooterButton(x int) (tea.Model, tea.Cmd) {
 	for _, b := range m.footerButtons() {
@@ -159,7 +171,7 @@ func (l layout) rightStart() int { return l.leftWidth + 3 }
 // tabLabel is one entry of the tab bar and the columns it occupies.
 type tabLabel struct {
 	name    string
-	starred bool // the search matched something on this tab
+	starred bool // search or a non-All filter has items on this tab
 	start   int
 	width   int
 }
@@ -181,9 +193,14 @@ func (m model) tabLabels() []tabLabel {
 	col := 1 // renderTabBar opens with a single leading space
 	for i, name := range m.tabNames {
 		starred := false
-		if m.searchQuery != "" && i > 0 && m.tabItems[i] != nil {
+		if i > 0 && m.tabItems[i] != nil {
 			mp := &m
-			starred = len(mp.filterItems(m.tabItems[i])) > 0
+			switch {
+			case m.searchQuery != "":
+				starred = len(mp.filterItems(m.tabItems[i])) > 0
+			case m.listFilter != listFilterAll:
+				starred = len(mp.applyListFilter(m.tabItems[i])) > 0
+			}
 		}
 		t := tabLabel{name: name, starred: starred, start: col}
 		t.width = lipgloss.Width(t.plain())
@@ -266,6 +283,14 @@ func (m model) handleClick(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 
 	switch {
 	case msg.Y == rowSearch:
+		chips := m.chipLabels()
+		if len(chips) > 0 && msg.X >= chips[0].start {
+			if filter, ok := m.chipAt(msg.X); ok {
+				m.commitActiveEdit()
+				return m.clickChip(filter)
+			}
+			return m, nil
+		}
 		m.commitActiveEdit()
 		m.searchFocused = true
 		m.paramFocused = false

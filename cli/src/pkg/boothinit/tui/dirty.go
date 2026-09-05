@@ -19,8 +19,8 @@ import (
 // deselecting it again is genuinely no change, so it does not ask.
 
 // configSnapshot is everything a save would write, flattened for comparison.
-// Cursors, scroll offsets, the active tab and the search query are deliberately
-// absent: looking around is not editing.
+// Cursors, scroll offsets, the active tab, the search query and the list-filter
+// chip are deliberately absent: looking around is not editing.
 type configSnapshot struct {
 	selected map[string]bool
 	params   map[string]string

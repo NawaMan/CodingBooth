@@ -48,11 +48,10 @@ coverage came from the C/C++ toolchain tests and the `install <manager>` tests t
 | tools | 57 | 40 | 17 |
 | languages | 30 | 22 | 8 |
 | ai-tools | 14 | 5 | 9 |
-| databases | 7 | 4 | 3 |
-| desktops | 7 | 0 | 7 |
+| middlewares | 7 | 4 | 3 |
+| desktops | 10 | 0 | 10 |
 | education | 7 | 0 | 7 |
 | ides | 6 | 1 | 5 |
-| browsers | 3 | 0 | 3 |
 
 ## Worth fixing first
 
@@ -86,7 +85,7 @@ Best effort is the standard. Some of the catalog cannot be exercised in a build:
   account and a paid API call. `--help` is close to the ceiling; where a credential *is*
   seeded, that it lands in the right path and is readable can still be checked — see
   `test-claude-code-credential-cache`, which does exactly that.
-- **Desktops, browsers, IDEs, education tools** (`eclipse`, `bluej`, `greenfoot`, `scratch`,
+- **Desktop (including browsers), IDEs, education tools** (`eclipse`, `bluej`, `greenfoot`, `scratch`,
   `drracket`, `gimp`, `freeplane`) are GUI applications; launching one headless proves little
   and costs a lot of build time.
 - **Cloud CLIs** (`aws-cli`, `gcloud`, `azure-cli`, `firebase`) would need real projects and

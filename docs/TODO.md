@@ -305,7 +305,7 @@ isn't a priority. Audited 2026-07-25. Everything *not* listed here was checked a
       maven specs are all superseded — maven now lives as
       `templates/languages/java/maven--extension.toml`.
       The one idea that did *not* land: a **framework** category. `main` has `languages`, `tools`,
-      `ides`, `browsers`, `databases`, `desktops`, `ai-tools`, `education` — but no framework tier, so
+      `ides`, `middlewares`, `desktops` (browsers live here), `ai-tools`, `education` — but no framework tier, so
       django and spring have no home.
       Approach if revisited: write `templates/frameworks/{django,spring}/template.toml` fresh in the current
       format and drop the stash — replaying it would cost more than it returns.
