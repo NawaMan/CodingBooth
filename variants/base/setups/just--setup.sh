@@ -12,17 +12,19 @@ Usage:
 
 Examples:
   $0                           # install latest just
-  $0 --version 1.36.0          # pin specific version
+  $0 --version 1.58.0          # pin specific version
 
 Notes:
 - Installs just to /usr/local/bin/just (single static binary)
-- Upstream tags do not include a leading 'v' (e.g. 1.36.0)
+- Upstream tags do not include a leading 'v' (e.g. 1.58.0)
+- Part of the base image: every variant already has it
 - See: https://just.systems
 USAGE
 }
 
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
+JUST_DEFAULT_VER="1.58.0"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -31,6 +33,7 @@ while [[ $# -gt 0 ]]; do
     *) echo "❌ Unknown arg: $1" >&2; usage; exit 2 ;;
   esac
 done
+REQ_VER="${REQ_VER#v}"
 
 dpkgArch="$(dpkg --print-architecture)"
 case "$dpkgArch" in
@@ -39,15 +42,27 @@ case "$dpkgArch" in
   *) echo "❌ Unsupported arch: $dpkgArch (need amd64 or arm64)"; exit 1 ;;
 esac
 
-export DEBIAN_FRONTEND=noninteractive
-apt-get update
-apt-get install -y --no-install-recommends curl ca-certificates tar
-rm -rf /var/lib/apt/lists/*
+# The base image already carries curl, tar, and ca-certificates; only pay for
+# apt when this script is run somewhere leaner.
+if ! command -v curl >/dev/null 2>&1 || ! command -v tar >/dev/null 2>&1; then
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update
+  apt-get install -y --no-install-recommends curl ca-certificates tar
+  rm -rf /var/lib/apt/lists/*
+fi
 
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/casey/just/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 | sed -E 's/.*"v?([^"]+)".*/\1/')
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/casey/just/releases/latest \
+            | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v?[^"]+"' | head -1 \
+            | sed -E 's/.*"v?([^"]+)".*/\1/' || true)
+  if [[ -z "$VERSION" ]]; then
+    # See elixir--setup.sh: the GitHub API is rate-limited, so degrade to the
+    # pinned default instead of failing the build.
+    echo "⚠️  Could not resolve the latest just release; using ${JUST_DEFAULT_VER}."
+    VERSION="$JUST_DEFAULT_VER"
+  fi
 else
-  VERSION="${REQ_VER#v}"
+  VERSION="$REQ_VER"
 fi
 
 echo "⬇️  Installing just ${VERSION} (${TARGET}) ..."

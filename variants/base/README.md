@@ -11,6 +11,8 @@ The foundation variant containing core CodingBooth functionality and setup scrip
 - 70+ setup scripts in `setups/` directory
 - Common development tools and utilities
 - `viewmd` -- browse the project's Markdown files in a browser (`viewmd --md README.md --expose`)
+- `just` -- run project recipes from a Justfile (`just --list`, `just <recipe>`)
+- `lazygit` -- terminal UI for git (`lazygit` inside a repository)
 
 **Usage:**
 ```bash

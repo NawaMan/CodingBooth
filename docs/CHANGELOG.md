@@ -4,6 +4,25 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Every booth now ships `lazygit`.** Installed into the base image by
+  `variants/base/setups/lazygit--setup.sh`, so all variants inherit it — a
+  terminal UI for git ([lazygit](https://github.com/jesseduffield/lazygit)).
+  It is listed in the login welcome message next to `just`. `--select lazygit`
+  still pins a version (`lazygit:0.65.0`); without a pin the setup resolves
+  `latest`, with a fallback to 0.65.0 when the GitHub API cannot answer.
+  `tests/basic/test022--lazygit.sh` guards PATH, version, the welcome line,
+  and that the binary actually runs (`lazygit --config`).
+
+- **Every booth now ships `just`.** Installed into the base image by
+  `variants/base/setups/just--setup.sh`, so all variants inherit it — a command
+  runner for project-scoped recipes ([Justfile](https://just.systems)). Create
+  one with `just --init`, list recipes with `just --list`, run one with
+  `just <recipe>`. It is listed in the login welcome message next to `viewmd`.
+  `--select just` still pins a version (`just:1.58.0`); without a pin the setup
+  resolves `latest`, with a fallback to 1.58.0 when the GitHub API cannot
+  answer. `tests/basic/test021--just.sh` guards PATH, version, the welcome line,
+  and that a recipe actually runs.
+
 - **Popular is a short curated set, and two catalog tabs moved.** The Config TUI
   Popular chip (and `booth template list` without `--full`) now shows:
   Languages — `go`, `java`, `nodejs`, `python`, `rust`; Middlewares — `sqlite`;

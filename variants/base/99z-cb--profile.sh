@@ -135,6 +135,8 @@ if [ -z "${TIP_SHOWN:-}" ]; then
   echo "  editor            Text editor (tilde)"
   echo "  explorer          File manager (mc)"
   echo "  viewmd            Markdown viewer in your browser"
+  echo "  just              Run recipes from a Justfile"
+  echo "  lazygit           Terminal UI for git"
   echo ""
   echo "Want a different UI? Exit and rerun booth with --variant codeserver or --variant desktop-xfce"
   echo ""
