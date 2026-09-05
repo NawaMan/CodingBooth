@@ -13,7 +13,7 @@ This example is a classic terminal Snake game written in Zig, built and played e
 git clone <this-repo>
 cd zig-snake
 ./booth          # Start the CodingBooth container
-zig build run    # Build and play!
+just run         # zig build run — build and play
 ```
 
 ## Controls

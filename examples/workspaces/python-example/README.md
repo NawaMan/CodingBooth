@@ -11,7 +11,10 @@ This example is a Python 3.13 environment wired for interactive work in Jupyter 
 cd examples/workspaces/python-example
 booth
 
-# 2. Inside the booth — open VS Code, create a .ipynb file and select the Python kernel
+# 2. Inside the booth
+just --list
+just run
+#    or open VS Code, create a .ipynb and select the Python kernel
 ```
 
 ## What's included

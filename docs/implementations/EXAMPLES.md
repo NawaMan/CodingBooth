@@ -147,6 +147,7 @@ Each example contains:
 - `booth` wrapper script
 - `.booth/config.toml` configuration
 - `.booth/Dockerfile` (optional) for custom images
+- `Justfile` when the example has in-booth `build` / `run` / `test` (or `start` / `stop`, `server` / `client`)
 - Example code and documentation
 
 Security/network examples:

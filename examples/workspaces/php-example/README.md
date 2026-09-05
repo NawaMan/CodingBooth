@@ -12,7 +12,8 @@ cd examples/workspaces/php-example
 booth
 
 # 2. Inside the booth — run the anagram demo
-./run-anagram.sh listen silent
+just --list
+just run listen silent   # ./run-anagram.sh listen silent
 ```
 
 ## What's included

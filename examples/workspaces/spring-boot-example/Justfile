@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Package the Spring Boot app
+build:
+    mvn -q package
+
+# Run the web app on :8080
+run:
+    mvn spring-boot:run

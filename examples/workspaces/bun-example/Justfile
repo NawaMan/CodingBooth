@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Greet a name (`just run World`, `just run -- --color Alice`)
+run *args:
+    ./greeting.sh {{ args }}
+
+# Run bun tests
+test:
+    bun test

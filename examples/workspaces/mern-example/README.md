@@ -4,16 +4,16 @@ This example is a canonical MERN stack — MongoDB, Express, React, and Node —
 
 ## Run
 
-Two terminals inside the booth:
+Two terminals inside the booth (`just --list`):
 
 ```bash
 # terminal 1 — API
-cd server && npm install && npm start
+just server              # cd server && npm install && npm start
 ```
 
 ```bash
 # terminal 2 — client (Vite dev server)
-cd client && npm install && npm run dev
+just client              # cd client && npm install && npm run dev
 ```
 
 Then open http://localhost:5173/ on the host. The page should list items the Express API reads from MongoDB.

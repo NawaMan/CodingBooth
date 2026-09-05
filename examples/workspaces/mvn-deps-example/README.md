@@ -12,7 +12,8 @@ cd examples/workspaces/mvn-deps-example
 booth
 
 # 2. Inside the booth — compile and run; no network round-trips for deps
-mvn compile -q exec:java -Dexec.mainClass=com.example.App
+just --list
+just run                 # mvn compile -q exec:java -Dexec.mainClass=com.example.App
 ```
 
 ## What's included

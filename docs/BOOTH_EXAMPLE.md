@@ -25,7 +25,7 @@ Back to [README](../README.md)
 
 ## Overview
 
-Examples are complete, working CodingBooth configurations — each with a `booth` wrapper, `.booth/config.toml`, and sample code. They are a quick way to see CodingBooth in action or to bootstrap a new project from a known-good starting point.
+Examples are complete, working CodingBooth configurations — each with a `booth` wrapper, `.booth/config.toml`, sample code, and (when the project has in-booth commands) a `Justfile`. They are a quick way to see CodingBooth in action or to bootstrap a new project from a known-good starting point.
 
 Examples are distributed as zip archives alongside each CodingBooth release, so they are always compatible with the version you have installed.
 

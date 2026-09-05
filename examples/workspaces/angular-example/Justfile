@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Production build
+build:
+    npm install && npm run build
+
+# Angular dev server on :4200
+run:
+    npm install && npm start

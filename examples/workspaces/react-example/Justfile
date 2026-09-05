@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Production build
+build:
+    npm install && npm run build
+
+# Vite dev server on :5173
+run:
+    npm install && npm run dev
