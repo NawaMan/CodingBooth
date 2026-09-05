@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Count words in a file or stdin (`just run README.md`)
+run *args:
+    ./run-wordcount.sh {{ args }}
+
+# Run the wordcount tests
+test:
+    ./run-ruby-test.sh

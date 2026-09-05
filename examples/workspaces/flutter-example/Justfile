@@ -1,0 +1,15 @@
+[private]
+default:
+    @just --list
+
+# Compile the web target
+build:
+    cd booth_counter && flutter build web
+
+# Serve on :8080 (open /proxy/8080/ on the booth)
+run:
+    cd booth_counter && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0
+
+# Run widget tests
+test:
+    cd booth_counter && flutter test

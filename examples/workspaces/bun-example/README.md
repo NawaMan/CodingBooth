@@ -10,9 +10,10 @@ This example is a simple greeting CLI built with Bun and TypeScript. `src/greete
 ## Usage
 
 ```bash
-bun run src/greeter.ts World
-bun run src/greeter.ts --color Alice
-./greeting.sh Alice
+just --list
+just run World
+just run -- --color Alice
+just test
 ```
 
 ## Development

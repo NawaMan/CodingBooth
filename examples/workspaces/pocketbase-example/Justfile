@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Build the tripboard static binary
+build:
+    ./build.sh
+
+# Build if needed and serve on :8090
+start:
+    ./start.sh

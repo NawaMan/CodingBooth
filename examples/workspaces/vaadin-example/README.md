@@ -7,7 +7,8 @@ This example is a minimal Vaadin Flow app where the entire UI is written in pure
 ```bash
 ./booth run
 # inside the booth:
-mvn spring-boot:run
+just --list
+just run                 # mvn spring-boot:run
 ```
 
 The first run downloads dependencies (incl. the Vaadin frontend toolchain — Node.js is preinstalled in the booth so this is fast). When it's ready, open http://localhost:8080/ on the host. Click the button — Vaadin updates the page through its WebSocket bridge with zero handwritten JavaScript.

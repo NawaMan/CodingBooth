@@ -1,0 +1,15 @@
+[private]
+default:
+    @just --list
+
+# Configure and compile the link checker
+build:
+    ./build.sh
+
+# Build and check URLs (`just run`, `just run my-urls.txt out.db`)
+run *args:
+    ./run.sh {{ args }}
+
+# Print recorded checks from SQLite (`just check`, `just check my.db`)
+check *args:
+    ./query.sh {{ args }}

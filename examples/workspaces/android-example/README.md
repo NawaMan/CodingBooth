@@ -14,7 +14,8 @@ cd examples/workspaces/android-example
 booth
 
 # 2. In a terminal inside the booth — build the APK
-./build-apk.sh
+just --list
+just build               # ./build-apk.sh
 ```
 
 The APK lands at `build/hello.apk`, signed with a debug keystore generated on first build.

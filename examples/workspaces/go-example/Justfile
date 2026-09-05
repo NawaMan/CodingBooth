@@ -1,0 +1,15 @@
+[private]
+default:
+    @just --list
+
+# Cross-compile treemoji into ./bin/
+build:
+    ./build.sh
+
+# Run treemoji (builds first if needed)
+run *args:
+    ./run-treemoji.sh {{ args }}
+
+# Run Go unit tests
+test:
+    ./run-go-test.sh

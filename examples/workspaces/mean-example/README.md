@@ -4,16 +4,16 @@ This example is a canonical MEAN stack — MongoDB, Express, Angular, and Node �
 
 ## Run
 
-Two terminals inside the booth:
+Two terminals inside the booth (`just --list`):
 
 ```bash
 # terminal 1 — API
-cd server && npm install && npm start
+just server              # cd server && npm install && npm start
 ```
 
 ```bash
 # terminal 2 — client (Angular dev server)
-cd client && npm install && npm start
+just client              # cd client && npm install && npm start
 ```
 
 Then open http://localhost:4200/ on the host. The page should list items the Express API reads from MongoDB.

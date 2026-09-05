@@ -10,10 +10,11 @@ cd examples/kind-example
 ../../codingbooth
 
 # 2. Inside the booth — create the cluster
-./start-cluster.sh
+just --list
+just start               # ./start-cluster.sh
 
 # 3. Deploy the sample nginx app
-./deploy-app.sh
+just deploy              # ./deploy-app.sh
 
 # 4. Verify it works (inside the booth)
 curl http://localhost:30080
@@ -29,7 +30,7 @@ curl http://localhost:30081/health
 # 7. Clean up
 ./remove-hello.sh
 ./remove-app.sh
-./stop-cluster.sh
+just stop                # ./stop-cluster.sh
 ```
 
 ## How it works

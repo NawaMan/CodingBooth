@@ -1,0 +1,7 @@
+[private]
+default:
+    @just --list
+
+# Check a palindrome (`just run racecar`)
+run *args:
+    ./run-palindrome.sh {{ args }}
