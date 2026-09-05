@@ -1,13 +1,13 @@
 display-name = "Lazygit"
 primary = true
 display-disc = "Simple terminal UI for git commands"
-display-detail = "Installs lazygit, a simple terminal UI for git commands, making it easy to stage, commit, and manage branches."
+display-detail = "Installs lazygit, a simple terminal UI for git commands, making it easy to stage, commit, and manage branches. Already in every booth; select this only to pin a version."
 display-order = 60
 tags = ["git", "tui", "cli"]
 
 [params.LAZYGIT_VERSION]
 default = "latest"
-suggests = ["latest"]
+suggests = ["latest", "0.65.0"]
 
 [segments]
 Boothfile = """

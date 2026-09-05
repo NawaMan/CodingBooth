@@ -307,10 +307,13 @@ These essentials are preinstalled so you can start working immediately — no ex
   `curl`, `wget`, `httpie`
 
 - **Source Control & GitHub Integration**
-  `git`, `gh` (GitHub CLI), `tig`
+  `git`, `gh` (GitHub CLI), `tig`, `lazygit` (terminal UI for git)
 
 - **Editors & File Browsers**
   `nano`, `tilde`, `ranger`, `less`, `viewmd` (Markdown viewer in a browser)
+
+- **Task runners**
+  `just` (run recipes from a Justfile)
 
 - **Data Processing & Formatting**
   `jq`, `yq`, `tree`
