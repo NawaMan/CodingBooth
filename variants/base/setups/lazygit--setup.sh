@@ -12,11 +12,12 @@ Usage:
 
 Examples:
   $0                         # install latest stable lazygit
-  $0 --version 0.44.1        # pin specific version
+  $0 --version 0.65.0        # pin specific version
 
 Notes:
 - Installs lazygit to /usr/local/bin/lazygit
 - Supports amd64 and arm64
+- Part of the base image: every variant already has it
 USAGE
 }
 
@@ -24,6 +25,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
+LAZYGIT_DEFAULT_VER="0.65.0"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -32,6 +34,7 @@ while [[ $# -gt 0 ]]; do
     *) echo "❌ Unknown arg: $1" >&2; usage; exit 2 ;;
   esac
 done
+REQ_VER="${REQ_VER#v}"
 
 # ---- arch mapping ----
 dpkgArch="$(dpkg --print-architecture)"
@@ -41,15 +44,26 @@ case "$dpkgArch" in
   *) echo "❌ Unsupported arch: $dpkgArch (need amd64 or arm64)"; exit 1 ;;
 esac
 
-# ---- base deps ----
-export DEBIAN_FRONTEND=noninteractive
-apt-get update
-apt-get install -y --no-install-recommends curl ca-certificates
-rm -rf /var/lib/apt/lists/*
+# The base image already carries curl, tar, and ca-certificates; only pay for
+# apt when this script is run somewhere leaner.
+if ! command -v curl >/dev/null 2>&1 || ! command -v tar >/dev/null 2>&1; then
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update
+  apt-get install -y --no-install-recommends curl ca-certificates tar
+  rm -rf /var/lib/apt/lists/*
+fi
 
 # ---- resolve version ----
 if [[ "$REQ_VER" == "latest" ]]; then
-  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 | sed -E 's/.*"v([^"]+)".*/\1/')
+  VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/jesseduffield/lazygit/releases/latest \
+            | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 \
+            | sed -E 's/.*"v([^"]+)".*/\1/' || true)
+  if [[ -z "$VERSION" ]]; then
+    # See elixir--setup.sh: the GitHub API is rate-limited, so degrade to the
+    # pinned default instead of failing the build.
+    echo "⚠️  Could not resolve the latest lazygit release; using ${LAZYGIT_DEFAULT_VER}."
+    VERSION="$LAZYGIT_DEFAULT_VER"
+  fi
 else
   VERSION="$REQ_VER"
 fi

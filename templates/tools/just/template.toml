@@ -1,6 +1,6 @@
 display-name = "just"
 display-disc = "Command runner for project-scoped recipes (Justfile)"
-display-detail = "Installs just, a handy way to save and run project-specific commands. Like make, but without the build-system semantics."
+display-detail = "Installs just, a handy way to save and run project-specific commands. Like make, but without the build-system semantics. Already in every booth; select this only to pin a version."
 display-order = 65
 tags = [
     "cli",
@@ -10,7 +10,7 @@ tags = [
 
 [params.JUST_VERSION]
 default = "latest"
-suggests = ["latest"]
+suggests = ["latest", "1.58.0"]
 
 [segments]
 Boothfile = """
