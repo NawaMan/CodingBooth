@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Floci is a Tools catalog template.** `--select floci` installs the official
+  [Floci](https://floci.io) CLI, a LocalStack-compatible local AWS emulator on
+  port 4566 (no cloud account, no auth token). `floci start` needs Docker —
+  `+autostart` pulls in `dind` and starts the emulator on boot; `+expose`
+  publishes 4566 to the host. Dummy AWS keys are exported in every login shell,
+  so `aws s3 mb s3://my-bucket` works once the emulator is up. Pin the CLI with
+  `floci:0.2.1`. `examples/workspaces/floci-example` selects
+  `aws-cli/floci+autostart+expose` and round-trips an S3 object with `just run`.
+
 - **Config TUI tab clicks land on the tab you clicked.** The tab bar styles pad
   one column on each side, but the click map measured the unpadded names, so
   later tabs drifted left under the pointer — clicking the **T** of Tools

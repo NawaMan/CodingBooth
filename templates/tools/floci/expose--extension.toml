@@ -1,0 +1,21 @@
+display-name = "Expose Floci Port"
+display-disc = "Publish the Floci AWS endpoint to the host"
+display-detail = "Floci listens inside the booth on FLOCI_PORT (default 4566). This publishes it so an AWS CLI or SDK on the host can point at it. Add autostart too, or nothing will be listening."
+display-order = 1
+auto-select = false
+tags = [
+    "floci",
+    "aws",
+    "port",
+    "network",
+]
+
+run-args = [
+    "-p", "${FLOCI_HOST_PORT}:${FLOCI_PORT}",
+]
+
+# Host-side port. Defaults to the port the emulator listens on, so moving the
+# service moves the published port with it. Override only when the host port is
+# already taken.
+[params.FLOCI_HOST_PORT]
+default = "${FLOCI_PORT}"

@@ -1,0 +1,7 @@
+[private]
+default:
+    @just --list
+
+# Wait for Floci, put a file in S3, and read it back
+run:
+    ./demo.sh

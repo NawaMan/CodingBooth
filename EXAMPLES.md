@@ -130,7 +130,7 @@ for readability — `booth example list` itself prints a flat alphabetical list.
 
 ### Cloud & services
 
-`aws` · `firebase` · `gcloud` · `server`
+`aws` · `firebase` · `floci` · `gcloud` · `server`
 
 ### Dependencies, caching & system packages
 
@@ -252,8 +252,8 @@ the strongest guarantee a setup script offers on its own.
 **`--version` flag** (`setup elixir --version 1.19.5`):
 
 `act` · `aider` · `ansible` · `aws-cdk` · `aws-cli` · `aws-sam-cli` · `buf` · `clojure` · `cmake` ·
-`crystal` · `cypress` · `direnv` · `dive` · `duckdb` · `elixir` · `elm` · `exercism` · `fzf` ·
-`goose` · `grok` · `helm` · `herdr` · `just` · `k3d` · `k9s` · `kafka` · `kind` · `kotlin` ·
+`crystal` · `cypress` · `direnv` · `dive` · `duckdb` · `elixir` · `elm` · `exercism` · `floci` ·
+`fzf` · `goose` · `grok` · `helm` · `herdr` · `just` · `k3d` · `k9s` · `kafka` · `kind` · `kotlin` ·
 `kubectl` · `kustomize` · `lazydocker` · `lazygit` · `make` (source-build mode) · `mkcert` · `nim` ·
 `oh-my-pi` · `ollama` · `opencode` · `playwright` · `pulumi` · `puppeteer` · `rescript` · `roc` ·
 `sbt` · `scala` · `stern` · `swift` · `terraform` · `vhs` · `zig`

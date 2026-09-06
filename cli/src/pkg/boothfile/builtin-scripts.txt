@@ -74,6 +74,7 @@ setup exercism
 setup firebase
 setup firefox
 setup firefox-managed-policies
+setup floci
 setup flutter
 setup flutter-android
 setup flutter-code-extension

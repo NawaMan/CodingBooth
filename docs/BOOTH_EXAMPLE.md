@@ -125,7 +125,7 @@ Examples span a wide range of languages, tools, and configurations:
 | Category | Examples |
 |----------|----------|
 | Languages | go, python, java, all-java, kotlin, rust, nodejs, bun, deno, elixir, haskell, php, ruby, rlang, zig, octave |
-| Cloud & CI | aws, gcloud, firebase, dind, kind, kind-app |
+| Cloud & CI | aws, floci, gcloud, firebase, dind, kind, kind-app |
 | Tools | homebrew, neovim, server, jetbrain |
 | Package managers | pip, npm, conda |
 | Security | egress-allowlist-extra, egress-envoy, firewall |
