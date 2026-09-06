@@ -3,9 +3,10 @@
 
 env APT_SNAPSHOT=20260623T000000Z
 
+arg CLAUDE_CODE_VERSION=latest
 arg HERDR_VERSION=latest
 arg LLVM_VERSION=18
 
 setup clang --version ${LLVM_VERSION}
-setup claude-code
+setup claude-code ${CLAUDE_CODE_VERSION}
 setup herdr --version ${HERDR_VERSION}

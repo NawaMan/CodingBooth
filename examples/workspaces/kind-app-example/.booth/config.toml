@@ -1,5 +1,21 @@
-# Configured by: booth config --no-tui --overwrite --expose 3000
+# Configured by: booth config --no-tui --overwrite --expose +-7000:3000 --select dind/kind/aws-cli/go:1.25.3+vscode-ext/bun:1.3.6/python/notebook/claude-code/antigravity/libreoffice
 
 dind = true
 
-run-args = ["--publish", "+-7000:3000"]
+run-args = [
+    "-v", "~/.docker/config.json:/etc/cb-home-seed/.docker/config.json:ro",
+    "-v", "~/.aws/config:/etc/cb-home-seed/.aws/config:ro",
+    "-v", "~/.aws/credentials:/etc/cb-home-seed/.aws/credentials:ro",
+    "-v", "~/.aws/sso/cache:/etc/cb-home-seed/.aws/sso/cache:ro",
+    "-e", "PYTHONDONTWRITEBYTECODE=1",
+    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/Library/Application Support/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/AppData/Roaming/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",
+    "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/Library/Application Support/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/AppData/Roaming/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",
+    "--publish", "+-7000:3000"
+]

@@ -1,6 +1,9 @@
-variant = "base"
+# Configured by: booth config --no-tui --overwrite --expose +-7000:3000 --expose +-4827:5173 --select nodejs/postgresql
+
 
 run-args = [
-    "-p", "+-7000:3000",
-    "-p", "+-4827:5173",
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
+    "-v", "booth-pgdata:/var/lib/postgresql",
+    "--publish", "+-7000:3000",
+    "--publish", "+-4827:5173"
 ]

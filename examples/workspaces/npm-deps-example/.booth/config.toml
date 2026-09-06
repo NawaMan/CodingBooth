@@ -1,1 +1,4 @@
-variant = "base"
+# Configured by: booth config --no-tui --overwrite --select nodejs+npm-install
+
+
+run-args = ["-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro"]
