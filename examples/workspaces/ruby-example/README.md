@@ -11,7 +11,11 @@ This example is a Ruby 3.3 development environment with Jupyter notebook support
 cd examples/workspaces/ruby-example
 booth
 
-# 2. Inside the booth — open VS Code, create a .ipynb file and select the Ruby kernel
+# 2. Inside the booth
+just --list
+just run README.md
+just test
+#    or open VS Code, create a .ipynb and select the Ruby kernel
 ```
 
 ## What's included

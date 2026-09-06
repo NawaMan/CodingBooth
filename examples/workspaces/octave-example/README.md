@@ -11,7 +11,10 @@ This example is a GNU Octave environment with the Calysto Octave notebook kernel
 cd examples/workspaces/octave-example
 booth
 
-# 2. Open the Jupyter Notebook UI and select the Octave kernel
+# 2. Inside the booth
+just --list
+just run
+#    or open the Jupyter Notebook UI and select the Octave kernel
 ```
 
 ## Choosing a variant

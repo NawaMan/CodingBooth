@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Roll dice (`just run 2d6`)
+run *args:
+    ./run-dice.sh {{ args }}
+
+# Run Deno tests
+test:
+    ./run-deno-test.sh

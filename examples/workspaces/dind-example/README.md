@@ -37,10 +37,11 @@ cd examples/workspaces/dind-example
 docker run hello-world
 
 # Build and run the example server:
-./start-server.sh    # Build image and start container
-./check-server.sh    # Verify it's running
-curl localhost:8080  # Test the server
-./stop-server.sh     # Stop and cleanup
+just --list
+just start           # ./start-server.sh
+just check           # ./check-server.sh
+curl localhost:8080
+just stop            # ./stop-server.sh
 ```
 
 ## Architecture

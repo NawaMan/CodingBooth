@@ -10,9 +10,10 @@ This example is a simple dice-roller CLI built with Deno. `src/dice.ts` parses s
 ## Usage
 
 ```bash
-deno run src/dice.ts 2d6
-deno run src/dice.ts 1d20
-deno run src/dice.ts 3d8
+just --list
+just run 2d6
+just run 1d20
+just test
 ```
 
 ## Development
