@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="_ds/nocturne-dfcc87c9-0034-40af-ad1c-43521ad29c14/styles.css">
+<script src="_ds/nocturne-dfcc87c9-0034-40af-ad1c-43521ad29c14/_ds_bundle.js"></script>
+<script src="catalog.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css">
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css">
+<style>
+  body { margin: 0; overflow: hidden; }
+  a { color: var(--color-accent); }
+  a:hover { color: var(--color-accent-300); }
+  .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .scroll { overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--color-neutral-800) transparent; }
+  .btn, button.mono { white-space: nowrap; }
+  .lbl { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-neutral-500); }
+</style>
+</helmet>
+
+<div style="height:100vh;display:flex;flex-direction:column;background:var(--color-bg);color:var(--color-text);font-family:var(--font-body);font-size:14px">
+
+  <header style="display:flex;align-items:center;gap:var(--space-4);padding:var(--space-3) var(--space-6);box-shadow:inset 0 -1px 0 var(--color-divider);flex:none">
+    <div style="font-family:var(--font-heading);font-weight:500;font-size:16px;letter-spacing:-0.01em">booth&nbsp;config</div>
+    <div class="mono" style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:var(--color-neutral-400);padding:3px 9px;border-radius:var(--radius-sm);background:var(--color-surface)">
+      <i class="ph ph-folder-open" style="color:var(--color-accent-400)"></i>{{ projectPath }}
+    </div>
+    <div style="display:flex;align-items:center;gap:var(--space-2);margin-left:auto">
+      <span class="mono" style="font-size:11.5px;color:{{ dirtyColor }};display:flex;align-items:center;gap:6px"><i class="{{ dirtyIcon }}"></i>{{ dirtyLabel }}</span>
+      <span class="mono" style="font-size:11.5px;color:{{ compileColor }};display:flex;align-items:center;gap:6px"><i class="{{ compileIcon }}"></i>{{ compileLabel }}</span>
+      <sc-if value="{{ handwritten }}" hint-placeholder-val="{{ true }}">
+        <button onClick="{{ openPreview }}" class="tag tag-outline" style="gap:6px;cursor:pointer;background:transparent;font-family:var(--font-body)"><i class="ph ph-shield-warning"></i>Boothfile is hand-written</button>
+      </sc-if>
+      <button class="btn btn-secondary" onClick="{{ undo }}" disabled="{{ undoDisabled }}" style="gap:7px"><i class="ph ph-arrow-counter-clockwise"></i>{{ undoLabel }}</button>
+      <button class="btn btn-primary" onClick="{{ openPreview }}" style="gap:7px"><i class="ph ph-eye"></i>Preview &amp; save</button>
+    </div>
+  </header>
+
+  <div style="flex:1;min-height:0;display:grid;grid-template-columns:196px minmax(0,1fr) 392px">
+
+    <nav class="scroll" style="padding:var(--space-6) var(--space-4);box-shadow:inset -1px 0 0 var(--color-divider);display:flex;flex-direction:column;gap:var(--space-6)">
+      <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+        <div class="lbl">Lens</div>
+        <sc-for list="{{ lenses }}" as="l" hint-placeholder-count="4">
+          <button onClick="{{ l.pick }}" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:5px 8px;border-radius:var(--radius-sm);border:0;cursor:pointer;font:inherit;font-size:13px;background:{{ l.bg }};color:{{ l.fg }}" style-hover="background:color-mix(in srgb, var(--color-text) 7%, transparent)">
+            <i class="{{ l.icon }}" style="font-size:14px"></i><span style="flex:1">{{ l.label }}</span><span class="mono" style="font-size:11px;opacity:0.6">{{ l.count }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+        <div class="lbl">Groups</div>
+        <sc-for list="{{ cats }}" as="c" hint-placeholder-count="7">
+          <button onClick="{{ c.pick }}" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:5px 8px;border-radius:var(--radius-sm);border:0;cursor:pointer;font:inherit;font-size:13px;background:{{ c.bg }};color:{{ c.fg }}" style-hover="background:color-mix(in srgb, var(--color-text) 7%, transparent)">
+            <span style="flex:1">{{ c.label }}</span><span class="mono" style="font-size:11px;opacity:0.6">{{ c.count }}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+        <div class="lbl">Tags</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px">
+          <sc-for list="{{ tags }}" as="t" hint-placeholder-count="8">
+            <button onClick="{{ t.pick }}" class="tag" style="cursor:pointer;font-family:var(--font-body);border:1px solid {{ t.border }};background:{{ t.bg }};color:{{ t.fg }}">{{ t.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+    </nav>
+
+    <main class="scroll" style="padding:0 var(--space-8) var(--space-8)">
+      <div style="position:sticky;top:0;z-index:3;background:var(--color-bg);padding:var(--space-6) 0 var(--space-4)">
+        <div style="display:flex;align-items:center;gap:var(--space-3)">
+          <div style="position:relative;flex:1">
+            <i class="ph ph-magnifying-glass" style="position:absolute;left:11px;top:11px;color:var(--color-neutral-500)"></i>
+            <input class="input" placeholder="Search every template, description and extension" value="{{ query }}" onInput="{{ setQuery }}" style="padding-left:34px;min-height:40px"></input>
+          </div>
+          <div class="seg">
+            <button onClick="{{ setViewCards }}" style="padding:8px 12px;font-size:13px;cursor:pointer;border:0;font:inherit;background:{{ viewCardsBg }};color:{{ viewCardsFg }};box-shadow:{{ viewCardsRing }}"><i class="ph ph-squares-four"></i></button>
+            <button onClick="{{ setViewRows }}" style="padding:8px 12px;font-size:13px;cursor:pointer;border:0;border-left:1px solid var(--color-divider);font:inherit;background:{{ viewRowsBg }};color:{{ viewRowsFg }};box-shadow:{{ viewRowsRing }}"><i class="ph ph-rows"></i></button>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:var(--space-3);font-size:12px;color:var(--color-neutral-500)">
+          <span>{{ resultLine }}</span>
+          <sc-if value="{{ filterActive }}" hint-placeholder-val="{{ true }}">
+            <button class="btn btn-ghost" onClick="{{ clearFilters }}" style="font-size:12px;gap:5px"><i class="ph ph-x"></i>clear lens</button>
+          </sc-if>
+        </div>
+      </div>
+
+      <sc-for list="{{ groups }}" as="g" hint-placeholder-count="3">
+        <section style="margin-bottom:var(--space-8)">
+          <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:var(--space-4)">
+            <h5 style="margin:0;font-size:15px">{{ g.title }}</h5>
+            <span class="mono" style="font-size:11px;color:var(--color-neutral-500)">{{ g.meta }}</span>
+            <div style="flex:1;height:1px;background:linear-gradient(to right, var(--color-divider), transparent 60%)"></div>
+          </div>
+          <div style="display:grid;grid-template-columns:{{ g.cols }};gap:var(--space-4)">
+            <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="4">
+              <article style="border-radius:var(--radius-md);background:{{ it.cardBg }};box-shadow:0 0 0 1px {{ it.cardEdge }};padding:var(--space-4);display:flex;flex-direction:column;gap:var(--space-2)">
+                <div style="display:flex;align-items:flex-start;gap:var(--space-3)">
+                  <div style="flex:1;min-width:0">
+                    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                      <span class="mono" style="font-size:14.5px;color:{{ it.nameColor }}">{{ it.name }}</span>
+                      <span style="font-size:12px;color:var(--color-neutral-500)">{{ it.display }}</span>
+                      <sc-if value="{{ it.primary }}" hint-placeholder-val="{{ true }}"><i class="ph-fill ph-star" style="font-size:10.5px;color:var(--color-accent-500)" title="primary"></i></sc-if>
+                      <sc-if value="{{ it.local }}" hint-placeholder-val="{{ true }}"><span class="tag tag-neutral" style="font-size:10px;padding:1px 7px">local</span></sc-if>
+                      <sc-if value="{{ it.pinLabel }}" hint-placeholder-val="{{ true }}"><span class="mono" style="font-size:11px;color:var(--color-accent-300)">{{ it.pinLabel }}</span></sc-if>
+                    </div>
+                    <div style="font-size:12.5px;color:var(--color-neutral-400);margin-top:3px;text-wrap:pretty">{{ it.short }}</div>
+                  </div>
+                  <div style="display:flex;gap:5px;flex:none">
+                    <sc-if value="{{ it.selected }}" hint-placeholder-val="{{ true }}">
+                      <button onClick="{{ it.expand }}" class="btn btn-secondary" style="font-size:12.5px;padding:4px 8px" title="show extensions and parameters"><i class="{{ it.caret }}"></i></button>
+                    </sc-if>
+                    <button onClick="{{ it.toggle }}" class="btn" style="gap:6px;font-size:12.5px;padding:4px 10px;color:{{ it.btnFg }};border-color:{{ it.btnBorder }};background:{{ it.btnBg }}">
+                      <i class="{{ it.btnIcon }}"></i>{{ it.btnLabel }}
+                    </button>
+                  </div>
+                </div>
+
+                <sc-if value="{{ it.whyText }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;gap:7px;font-size:11.5px;color:var(--color-accent-300);align-items:flex-start"><i class="ph ph-git-fork" style="margin-top:2px"></i><span>{{ it.whyText }}</span></div>
+                </sc-if>
+                <sc-if value="{{ it.archText }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;gap:7px;font-size:11.5px;color:var(--color-neutral-300);align-items:flex-start;background:var(--color-neutral-900);padding:6px 8px;border-radius:var(--radius-sm)"><i class="ph ph-warning" style="margin-top:2px;color:var(--color-accent-400)"></i><span>{{ it.archText }}</span></div>
+                </sc-if>
+                <sc-if value="{{ it.variantText }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;gap:7px;font-size:11.5px;color:var(--color-neutral-300);align-items:flex-start"><i class="ph ph-monitor" style="margin-top:2px;color:var(--color-neutral-400)"></i><span>{{ it.variantText }}</span></div>
+                </sc-if>
+
+                <sc-if value="{{ it.collapsed }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--color-neutral-500);margin-top:2px">
+                    <span class="mono">{{ it.childHint }}</span>
+                    <sc-for list="{{ it.tagList }}" as="tg" hint-placeholder-count="2">
+                      <span class="tag tag-neutral" style="font-size:10px;padding:1px 7px">{{ tg.label }}</span>
+                    </sc-for>
+                  </div>
+                </sc-if>
+
+                <sc-if value="{{ it.open }}" hint-placeholder-val="{{ true }}">
+                  <div style="display:flex;flex-direction:column;gap:var(--space-4);margin-top:var(--space-2);padding-top:var(--space-3);box-shadow:inset 0 1px 0 var(--color-divider)">
+
+                    <sc-if value="{{ it.hasExts }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+                        <div class="lbl">Extensions of {{ it.name }}</div>
+                        <sc-for list="{{ it.extRows }}" as="ex" hint-placeholder-count="3">
+                          <button onClick="{{ ex.toggle }}" style="display:flex;gap:9px;align-items:flex-start;width:100%;text-align:left;padding:6px 8px;border-radius:var(--radius-sm);border:1px solid {{ ex.border }};background:{{ ex.bg }};color:inherit;cursor:pointer;font:inherit" style-hover="border-color:var(--color-accent-600)">
+                            <i class="{{ ex.icon }}" style="font-size:15px;margin-top:1px;color:{{ ex.iconColor }}"></i>
+                            <span style="flex:1;min-width:0">
+                              <span class="mono" style="font-size:12.5px">{{ ex.name }}</span>
+                              <span style="display:block;font-size:11.5px;color:var(--color-neutral-400);text-wrap:pretty">{{ ex.note }}</span>
+                            </span>
+                            <sc-if value="{{ ex.badge }}" hint-placeholder-val="{{ true }}">
+                              <span class="tag" style="flex:none;font-size:10px;padding:1px 7px;background:{{ ex.badgeBg }};color:{{ ex.badgeFg }}">{{ ex.badge }}</span>
+                            </sc-if>
+                          </button>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{ it.hasParams }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+                        <div class="lbl">Parameters</div>
+                        <sc-for list="{{ it.paramRows }}" as="p" hint-placeholder-count="2">
+                          <div style="display:flex;flex-direction:column;gap:6px">
+                            <div style="display:flex;align-items:baseline;gap:8px">
+                              <span class="mono" style="font-size:12px;color:var(--color-neutral-300)">{{ p.label }}</span>
+                              <sc-if value="{{ p.owner }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;color:var(--color-neutral-500)">on {{ p.owner }}</span></sc-if>
+                              <sc-if value="{{ p.followNote }}" hint-placeholder-val="{{ true }}"><span style="font-size:11px;color:var(--color-accent-300)">{{ p.followNote }}</span></sc-if>
+                            </div>
+                            <sc-if value="{{ p.isList }}" hint-placeholder-val="{{ true }}">
+                              <div style="display:flex;flex-direction:column;gap:6px">
+                                <div style="display:flex;flex-wrap:wrap;gap:5px">
+                                  <sc-for list="{{ p.entries }}" as="e" hint-placeholder-count="2">
+                                    <button onClick="{{ e.remove }}" class="mono" style="display:flex;align-items:center;gap:6px;font-size:11.5px;padding:2px 7px;border-radius:var(--radius-sm);border:1px solid var(--color-neutral-800);background:var(--color-neutral-900);color:var(--color-neutral-200);cursor:pointer" style-hover="border-color:var(--color-accent-600)">{{ e.label }}<i class="ph ph-x" style="font-size:10px;opacity:0.7"></i></button>
+                                  </sc-for>
+                                </div>
+                                <input class="input mono" placeholder="{{ p.placeholder }}" value="{{ p.draft }}" onInput="{{ p.setDraft }}" onKeyDown="{{ p.commit }}" style="font-size:12.5px;min-height:32px"></input>
+                                <div style="font-size:11px;color:var(--color-neutral-500)">{{ p.hint }}</div>
+                              </div>
+                            </sc-if>
+                            <sc-if value="{{ p.isScalar }}" hint-placeholder-val="{{ true }}">
+                              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                                <input class="input mono" value="{{ p.value }}" onInput="{{ p.set }}" style="width:132px;font-size:12.5px;min-height:32px"></input>
+                                <sc-for list="{{ p.suggest }}" as="s" hint-placeholder-count="3">
+                                  <button onClick="{{ s.pick }}" class="mono" style="font-size:11.5px;padding:3px 9px;border-radius:var(--radius-sm);cursor:pointer;border:1px solid {{ s.border }};background:{{ s.bg }};color:{{ s.fg }}" style-hover="border-color:var(--color-accent)">{{ s.label }}</button>
+                                </sc-for>
+                              </div>
+                            </sc-if>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+
+                    <sc-if value="{{ it.hasEffects }}" hint-placeholder-val="{{ true }}">
+                      <div style="display:flex;flex-direction:column;gap:5px">
+                        <div class="lbl">Contributes to the booth</div>
+                        <sc-for list="{{ it.effects }}" as="ef" hint-placeholder-count="2">
+                          <div class="mono" style="display:flex;gap:7px;font-size:11.5px;color:var(--color-neutral-400)"><i class="ph ph-arrow-elbow-down-right" style="color:var(--color-neutral-600)"></i>{{ ef.label }}</div>
+                        </sc-for>
+                      </div>
+                    </sc-if>
+                  </div>
+                </sc-if>
+              </article>
+            </sc-for>
+          </div>
+        </section>
+      </sc-for>
+
+      <sc-if value="{{ noResults }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:var(--space-8);text-align:center;color:var(--color-neutral-500);font-size:13px">Nothing matches “{{ query }}”. Search covers names, descriptions and extension names across all {{ catalogSize }} templates.</div>
+      </sc-if>
+    </main>
+
+    <aside style="box-shadow:inset 1px 0 0 var(--color-divider);display:flex;flex-direction:column;min-height:0;background:color-mix(in srgb, var(--color-surface) 45%, var(--color-bg))">
+      <div class="scroll" style="flex:1;min-height:0;padding:var(--space-6) var(--space-6) var(--space-8);display:flex;flex-direction:column;gap:var(--space-6)">
+
+        <div>
+          <div style="display:flex;align-items:baseline;gap:8px">
+            <h5 style="margin:0;font-size:15px">The package</h5>
+            <span class="mono" style="font-size:11px;color:var(--color-neutral-500)">{{ packageMeta }}</span>
+          </div>
+          <div style="font-size:11.5px;color:var(--color-neutral-500);margin-top:2px">{{ baselineLine }}</div>
+        </div>
+
+        <sc-if value="{{ hasIssues }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+            <sc-for list="{{ issues }}" as="i" hint-placeholder-count="1">
+              <div style="display:flex;gap:8px;padding:8px 10px;border-radius:var(--radius-sm);background:{{ i.bg }};box-shadow:0 0 0 1px {{ i.edge }};font-size:12px;color:var(--color-neutral-200);align-items:flex-start;text-wrap:pretty">
+                <i class="{{ i.icon }}" style="margin-top:2px;color:{{ i.iconColor }};font-size:14px"></i><span>{{ i.text }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+
+        <div style="display:flex;flex-direction:column;gap:var(--space-3)">
+          <div class="lbl">Runtime shape</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px">
+            <sc-for list="{{ variantOpts }}" as="v" hint-placeholder-count="6">
+              <button onClick="{{ v.pick }}" class="mono" style="font-size:11.5px;padding:4px 9px;border-radius:var(--radius-sm);cursor:pointer;border:1px solid {{ v.border }};background:{{ v.bg }};color:{{ v.fg }}" style-hover="border-color:var(--color-accent)">{{ v.label }}</button>
+            </sc-for>
+          </div>
+          <div style="font-size:11.5px;color:var(--color-neutral-400);text-wrap:pretty">{{ variantMeaning }}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-3)">
+            <div class="field">
+              <label>booth port</label>
+              <input class="input mono" value="{{ portValue }}" placeholder="unset — booth default" onInput="{{ setPort }}" style="font-size:12.5px;min-height:32px"></input>
+            </div>
+            <div class="field">
+              <label>offset base</label>
+              <input class="input mono" value="{{ offsetValue }}" placeholder="{{ offsetPlaceholder }}" onInput="{{ setOffset }}" style="font-size:12.5px;min-height:32px"></input>
+            </div>
+          </div>
+          <div style="font-size:11.5px;color:var(--color-neutral-500);text-wrap:pretty">{{ portNote }}</div>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+          <div class="lbl">Selected — parents and children</div>
+          <sc-if value="{{ empty }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:12px;color:var(--color-neutral-500);padding:var(--space-3) 0;text-wrap:pretty">No templates. A settings-only booth is valid — pick a variant and save.</div>
+          </sc-if>
+          <sc-for list="{{ chosen }}" as="c" hint-placeholder-count="2">
+            <div style="border-radius:var(--radius-sm);background:var(--color-surface);box-shadow:0 0 0 1px var(--color-neutral-800);padding:8px 9px;display:flex;flex-direction:column;gap:5px">
+              <div style="display:flex;align-items:center;gap:8px">
+                <button onClick="{{ c.reveal }}" class="mono" style="font-size:12.5px;background:none;border:0;padding:0;color:var(--color-text);cursor:pointer;text-align:left;flex:1" style-hover="color:var(--color-accent)">{{ c.label }}</button>
+                <sc-if value="{{ c.lock }}" hint-placeholder-val="{{ true }}"><span style="font-size:10.5px;color:var(--color-neutral-500)">{{ c.lock }}</span></sc-if>
+                <button onClick="{{ c.remove }}" class="btn btn-ghost" style="padding:0 2px" title="remove"><i class="ph ph-x" style="font-size:12px"></i></button>
+              </div>
+              <sc-if value="{{ c.hasKids }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;flex-wrap:wrap;gap:4px;padding-left:2px">
+                  <sc-for list="{{ c.kids }}" as="k" hint-placeholder-count="2">
+                    <span class="mono" style="font-size:10.5px;padding:1px 6px;border-radius:3px;background:{{ k.bg }};color:{{ k.fg }}">{{ k.label }}</span>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+          <div class="lbl">From your templates — effects, not yours to edit</div>
+          <sc-if value="{{ noContrib }}" hint-placeholder-val="{{ false }}">
+            <div style="font-size:11.5px;color:var(--color-neutral-500)">Nothing published or mounted by the selection yet.</div>
+          </sc-if>
+          <sc-for list="{{ contributed }}" as="r" hint-placeholder-count="2">
+            <div style="display:flex;gap:8px;align-items:baseline;font-size:11.5px">
+              <span class="mono" style="color:var(--color-neutral-300)">{{ r.flag }}</span>
+              <span style="color:var(--color-neutral-500);flex:1">{{ r.from }}</span>
+              <sc-if value="{{ r.action }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ r.move }}" class="btn btn-ghost" style="font-size:11px;padding:0 2px">{{ r.action }}</button>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:var(--space-4)">
+          <div class="lbl">Yours — long-form run-args, distinct from template contributions</div>
+          <sc-for list="{{ extraGroups }}" as="g" hint-placeholder-count="3">
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <div style="display:flex;align-items:baseline;gap:7px">
+                <span style="font-size:12px;color:var(--color-neutral-300)">{{ g.label }}</span>
+                <span class="mono" style="font-size:10.5px;color:var(--color-neutral-600)">{{ g.flag }}</span>
+                <span class="mono" style="font-size:10.5px;color:var(--color-accent-300);margin-left:auto">{{ g.count }}</span>
+              </div>
+              <sc-if value="{{ g.isEmpty }}" hint-placeholder-val="{{ false }}">
+                <div style="font-size:11px;color:var(--color-neutral-600)">{{ g.emptyNote }}</div>
+              </sc-if>
+              <sc-for list="{{ g.rows }}" as="x" hint-placeholder-count="1">
+                <div style="display:flex;align-items:center;gap:8px;font-size:11.5px">
+                  <span class="mono" style="flex:1;color:var(--color-neutral-200)">{{ x.label }}</span>
+                  <button onClick="{{ x.remove }}" class="btn btn-ghost" style="padding:0 2px"><i class="ph ph-x" style="font-size:11px"></i></button>
+                </div>
+              </sc-for>
+              <input class="input mono" placeholder="{{ g.placeholder }}" value="{{ g.draft }}" onInput="{{ g.setDraft }}" onKeyDown="{{ g.commit }}" style="font-size:12px;min-height:30px"></input>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:var(--space-1)">
+          <div class="lbl" style="margin-bottom:var(--space-2)">The long tail — {{ tailCount }} more settings</div>
+          <sc-for list="{{ tail }}" as="s" hint-placeholder-count="5">
+            <div>
+              <button onClick="{{ s.toggle }}" style="display:flex;align-items:center;gap:8px;width:100%;padding:6px 0;background:none;border:0;cursor:pointer;font:inherit;font-size:12.5px;color:var(--color-neutral-300)" style-hover="color:var(--color-text)">
+                <i class="{{ s.icon }}" style="font-size:12px;color:var(--color-neutral-500)"></i>
+                <span style="flex:1;text-align:left">{{ s.label }}</span>
+                <span class="mono" style="font-size:10.5px;color:var(--color-neutral-500)">{{ s.summary }}</span>
+              </button>
+              <sc-if value="{{ s.open }}" hint-placeholder-val="{{ true }}">
+                <div style="padding:0 0 var(--space-3) 20px;display:flex;flex-direction:column;gap:6px">
+                  <sc-for list="{{ s.fields }}" as="f" hint-placeholder-count="3">
+                    <div style="display:flex;align-items:center;gap:8px">
+                      <span class="mono" style="font-size:11.5px;color:var(--color-neutral-400);flex:1">{{ f.key }}</span>
+                      <div class="seg" style="border-radius:var(--radius-sm)">
+                        <sc-for list="{{ f.states }}" as="o" hint-placeholder-count="3">
+                          <button onClick="{{ o.pick }}" style="padding:2px 8px;font-size:10.5px;border:0;cursor:pointer;font:inherit;background:{{ o.bg }};color:{{ o.fg }};box-shadow:{{ o.ring }}">{{ o.label }}</button>
+                        </sc-for>
+                      </div>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div style="flex:none;padding:var(--space-4) var(--space-6);box-shadow:inset 0 1px 0 var(--color-divider);display:flex;flex-direction:column;gap:var(--space-3)">
+        <div style="display:flex;align-items:center;gap:8px;font-size:11.5px;color:{{ compileColor }}"><i class="{{ compileIcon }}"></i><span style="flex:1;text-wrap:pretty">{{ compileDetail }}</span></div>
+        <div style="display:flex;gap:var(--space-2)">
+          <button class="btn btn-primary" onClick="{{ openPreview }}" style="flex:1;gap:7px"><i class="ph ph-eye"></i>Preview &amp; save</button>
+          <button class="btn btn-secondary" onClick="{{ copyDsl }}" style="gap:7px"><i class="{{ copyIcon }}"></i>{{ copyLabel }}</button>
+        </div>
+      </div>
+    </aside>
+  </div>
+
+  <sc-if value="{{ previewOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;inset:0;z-index:20;display:flex;justify-content:flex-end;background:color-mix(in srgb, var(--color-neutral-900) 62%, transparent)">
+      <div onClick="{{ closePreview }}" style="flex:1"></div>
+      <div style="width:min(760px,88vw);height:100%;background:var(--color-bg);box-shadow:var(--shadow-lg);display:flex;flex-direction:column">
+        <div style="display:flex;align-items:center;gap:var(--space-4);padding:var(--space-4) var(--space-6);box-shadow:inset 0 -1px 0 var(--color-divider)">
+          <div>
+            <h5 style="margin:0;font-size:15px">Preview — nothing is written yet</h5>
+            <div style="font-size:11.5px;color:var(--color-neutral-500);margin-top:2px">{{ writeTargetLine }}</div>
+          </div>
+          <div class="seg" style="margin-left:auto">
+            <sc-for list="{{ previewTabs }}" as="t" hint-placeholder-count="3">
+              <button onClick="{{ t.pick }}" class="mono" style="padding:6px 11px;font-size:12px;border:0;cursor:pointer;font-family:ui-monospace,monospace;background:{{ t.bg }};color:{{ t.fg }};box-shadow:{{ t.ring }}">{{ t.label }}</button>
+            </sc-for>
+          </div>
+          <button onClick="{{ closePreview }}" class="btn btn-ghost btn-icon"><i class="ph ph-x"></i></button>
+        </div>
+
+        <div class="scroll" style="flex:1;min-height:0;padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-6)">
+          <div style="display:flex;flex-direction:column;gap:var(--space-2)">
+            <div class="lbl">{{ previewSummaryLabel }}</div>
+            <pre class="mono" style="margin:0;padding:var(--space-4);border-radius:var(--radius-md);background:var(--color-surface);box-shadow:0 0 0 1px var(--color-neutral-800);font-size:12px;line-height:1.65;white-space:pre-wrap;color:var(--color-neutral-200)">{{ previewText }}</pre>
+          </div>
+
+          <sc-if value="{{ handwritten }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:var(--space-3);padding:var(--space-4);border-radius:var(--radius-md);box-shadow:0 0 0 1px var(--color-accent-800);background:var(--color-accent-900)">
+              <div style="display:flex;gap:8px;align-items:flex-start">
+                <i class="ph ph-shield-warning" style="color:var(--color-accent-300);margin-top:2px"></i>
+                <div style="font-size:12.5px;color:var(--color-accent-100);text-wrap:pretty">config did not write this project’s <span class="mono">.booth/Boothfile</span> — a human did. Choose what save does with it.</div>
+              </div>
+              <sc-for list="{{ writeModes }}" as="w" hint-placeholder-count="2">
+                <button onClick="{{ w.pick }}" style="display:flex;gap:9px;align-items:flex-start;text-align:left;padding:9px 10px;border-radius:var(--radius-sm);cursor:pointer;font:inherit;border:1px solid {{ w.border }};background:{{ w.bg }};color:inherit">
+                  <i class="{{ w.icon }}" style="margin-top:2px;color:{{ w.iconColor }}"></i>
+                  <span>
+                    <span style="font-size:12.5px;display:block">{{ w.label }}</span>
+                    <span style="font-size:11.5px;color:var(--color-neutral-400);display:block;text-wrap:pretty">{{ w.note }}</span>
+                  </span>
+                </button>
+              </sc-for>
+              <sc-if value="{{ replaceArmed }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;align-items:center;gap:8px">
+                  <input class="input mono" placeholder="type replace to confirm" value="{{ confirmWord }}" onInput="{{ setConfirmWord }}" style="font-size:12px;min-height:32px"></input>
+                  <span style="font-size:11px;color:var(--color-neutral-500);flex:1">Originals kept as <span class="mono">.bak</span>.</span>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </div>
+
+        <div style="padding:var(--space-4) var(--space-6);box-shadow:inset 0 1px 0 var(--color-divider);display:flex;align-items:center;gap:var(--space-4)">
+          <div style="font-size:11.5px;color:var(--color-neutral-500);flex:1;text-wrap:pretty">{{ saveNote }}</div>
+          <button class="btn btn-secondary" onClick="{{ closePreview }}">Back to composing</button>
+          <button class="btn btn-primary" onClick="{{ save }}" disabled="{{ saveDisabled }}" style="gap:7px"><i class="ph ph-check"></i>{{ saveLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ dropAsk }}" hint-placeholder-val="{{ false }}">
+    <div class="dialog-backdrop" style="z-index:30">
+      <div class="dialog">
+        <div class="dialog-title" style="font-size:17px">{{ dropTitle }}</div>
+        <div class="dialog-body" style="text-wrap:pretty">{{ dropBody }}</div>
+        <div class="dialog-actions">
+          <button class="btn btn-secondary" onClick="{{ cancelDrop }}">Keep it</button>
+          <button class="btn btn-primary" onClick="{{ confirmDrop }}">{{ dropConfirmLabel }}</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:40;padding:9px 14px;border-radius:var(--radius-md);background:var(--color-surface);box-shadow:var(--shadow-md);font-size:12.5px;display:flex;align-items:center;gap:9px">
+      <i class="ph ph-check-circle" style="color:var(--color-accent-400)"></i>{{ toast }}
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  catalog = (window.BOOTH_CATALOG || {}).templates || [];
+
+  variants = (window.BOOTH_CATALOG || {}).variants || [];
+
+  tailSections = [
+    { id:'egress', label:'Egress', icon:'ph ph-globe-hemisphere-west', fields:[{key:'egress'},{key:'egress.allow-hosts'},{key:'egress.audit'}] },
+    { id:'container', label:'Container', icon:'ph ph-shipping-container', fields:[{key:'sudo', def:'on'},{key:'docker-in-docker'},{key:'timezone'}] },
+    { id:'build', label:'Build', icon:'ph ph-hammer', fields:[{key:'build.no-cache'},{key:'build.platform'},{key:'build.args'}] },
+    { id:'cache', label:'Cache &amp; shared', icon:'ph ph-hard-drives', fields:[{key:'cache.paths'},{key:'shared.paths'}] },
+    { id:'session', label:'Session &amp; idle', icon:'ph ph-timer', fields:[{key:'idle-timeout'},{key:'open-browser', def:'on'},{key:'debug'}] }
+  ];
+
+  state = {
+    sel: [], exts: {}, excl: {}, params: {}, drafts: {},
+    variant: null, port: '', offset: '', extras: [],
+    q: '', lens: 'all', cat: null, tag: null, view: 'cards',
+    open: {}, tail: {}, tri: {},
+    preview: false, tab: 'boothfile', writeMode: 'keep', confirm: '',
+    dropAsk: null, toast: '', copied: false, history: [], reveal: null
+  };
+
+  componentDidMount() {
+    // Baseline: this project already holds go:1.25 + codeserver, hand-written Boothfile.
+    const base = {
+      sel: ['go'], exts: { go: { 'vscode-ext': 1 } }, excl: {},
+      params: { 'go.GO_VERSION': '1.24.13' }, variant: 'codeserver', port: '8722', offset: '', extras: [], tri: {}
+    };
+    this.baseline = JSON.stringify(base);
+    this.setState(base);
+  }
+
+  find = n => this.catalog.find(t => t.n === n);
+  snap = () => JSON.stringify({ sel: this.state.sel, exts: this.state.exts, excl: this.state.excl, params: this.state.params,
+    variant: this.state.variant, port: this.state.port, offset: this.state.offset, extras: this.state.extras, tri: this.state.tri });
+  push = () => { const h = this.state.history.slice(-20); h.push(this.snap()); this.setState({ history: h }); };
+  undo = () => {
+    const h = this.state.history.slice();
+    const prev = h.pop(); if (!prev) return;
+    this.setState(Object.assign(JSON.parse(prev), { history: h }));
+  };
+
+  add = (n, why) => {
+    this.push();
+    const sel = this.state.sel.slice(), exts = JSON.parse(JSON.stringify(this.state.exts));
+    const walk = (name) => {
+      if (sel.indexOf(name) < 0) sel.push(name);
+      const t = this.find(name); if (!t) return;
+      (t.req || []).forEach(walk);
+      exts[name] = exts[name] || {};
+      (t.exts || []).forEach(e => { if (e.a && !this.state.excl[name + '/' + e.n]) exts[name][e.n] = 1; });
+    };
+    walk(n);
+    this.setState({ sel, exts, open: Object.assign({}, this.state.open, { [n]: 1 }), reveal: n });
+  };
+
+  dependers = n => this.state.sel.filter(s => (this.find(s).req || []).indexOf(n) >= 0);
+
+  remove = n => {
+    const deps = this.dependers(n);
+    if (deps.length) { this.setState({ dropAsk: { kind: 'dep', name: n, deps } }); return; }
+    const t = this.find(n);
+    const cost = Object.keys(this.state.exts[n] || {}).length;
+    if (cost > 1) { this.setState({ dropAsk: { kind: 'cost', name: n, count: cost } }); return; }
+    this.drop([n]);
+  };
+
+  drop = names => {
+    this.push();
+    const sel = this.state.sel.filter(s => names.indexOf(s) < 0);
+    const exts = JSON.parse(JSON.stringify(this.state.exts));
+    const params = Object.assign({}, this.state.params);
+    names.forEach(n => { delete exts[n]; Object.keys(params).forEach(k => { if (k.indexOf(n + '.') === 0 || k.indexOf(n + '/') === 0) delete params[k]; }); });
+    this.setState({ sel, exts, params, dropAsk: null });
+  };
+  confirmDrop = () => { const a = this.state.dropAsk; if (!a) return; this.drop(a.kind === 'dep' ? [a.name].concat(a.deps) : [a.name]); };
+  cancelDrop = () => this.setState({ dropAsk: null });
+
+  toggleExt = (tn, en) => {
+    this.push();
+    const exts = JSON.parse(JSON.stringify(this.state.exts));
+    const excl = Object.assign({}, this.state.excl);
+    exts[tn] = exts[tn] || {};
+    const e = (this.find(tn).exts || []).find(x => x.n === en);
+    if (exts[tn][en]) { delete exts[tn][en]; if (e.a) excl[tn + '/' + en] = 1; }
+    else { exts[tn][en] = 1; delete excl[tn + '/' + en]; }
+    this.setState({ exts, excl });
+  };
+
+  setParam = (k, v) => this.setState({ params: Object.assign({}, this.state.params, { [k]: v }) });
+  setDraft = (k, v) => this.setState({ drafts: Object.assign({}, this.state.drafts, { [k]: v }) });
+  commitList = (k, ev) => {
+    if (ev.key !== 'Enter') return;
+    const raw = (this.state.drafts[k] || '').trim(); if (!raw) return;
+    const cur = (this.state.params[k] || '').split(' ').filter(Boolean);
+    raw.split(/[\s,]+/).filter(Boolean).forEach(v => { if (cur.indexOf(v) < 0) cur.push(v); });
+    this.push();
+    this.setState({ params: Object.assign({}, this.state.params, { [k]: cur.join(' ') }), drafts: Object.assign({}, this.state.drafts, { [k]: '' }) });
+  };
+  removeEntry = (k, v) => {
+    const cur = (this.state.params[k] || '').split(' ').filter(x => x && x !== v);
+    this.push(); this.setState({ params: Object.assign({}, this.state.params, { [k]: cur.join(' ') }) });
+  };
+
+  commitExtra = (kind, ev) => {
+    if (ev.key !== 'Enter') return;
+    const key = 'extra.' + kind;
+    const v = (this.state.drafts[key] || '').trim(); if (!v) return;
+    this.push();
+    this.setState({ extras: this.state.extras.concat([{ kind, v }]), drafts: Object.assign({}, this.state.drafts, { [key]: '' }) });
+  };
+
+  // --select grammar per docs/AGENT_RECIPE.md: templates joined by /, params comma-separated
+  // positionally after one :, extensions with +, auto-select opt-outs with ~, an extension’s
+  // pinned param as +ext:value. Variadic package lists carry as arg lines, not in the string.
+  dsl = () => this.state.sel.map(n => {
+    const t = this.find(n), st = this.state;
+    let s = n;
+    const scalars = (t.params || []).filter(p => !p.list);
+    const vals = scalars.map(p => st.params[n + '.' + p.k] === undefined ? '' : st.params[n + '.' + p.k]);
+    while (vals.length && (vals[vals.length - 1] === '' || vals[vals.length - 1] === scalars[vals.length - 1].d)) vals.pop();
+    if (vals.length) s += ':' + vals.map((v, i) => v === '' ? scalars[i].d : v).join(',');
+    Object.keys(st.exts[n] || {}).forEach(e => {
+      const ext = (t.exts || []).find(x => x.n === e) || {};
+      const pk = (ext.params && ext.params[0] && ext.params[0].k) || (ext.follow && ext.follow.k);
+      let pin = '';
+      if (pk) {
+        const v = st.params[n + '/' + e + '.' + pk];
+        const def = ext.params && ext.params[0] ? ext.params[0].d : undefined;
+        if (v !== undefined && v !== '' && v !== def) pin = ':' + v;
+      }
+      s += '+' + e + pin;
+    });
+    Object.keys(st.excl).filter(k => k.indexOf(n + '/') === 0).forEach(k => { s += '~' + k.split('/')[1]; });
+    return s;
+  }).join('/');
+
+  flags = () => {
+    const f = [];
+    if (this.state.variant) f.push('--variant ' + this.state.variant);
+    if (this.state.port) f.push('--port ' + this.state.port);
+    if (this.state.offset) f.push('--offset-base ' + this.state.offset);
+    this.state.extras.forEach(x => f.push('--' + x.kind + ' ' + x.v));
+    Object.keys(this.state.tri).forEach(k => { if (this.state.tri[k] !== 'unset') f.push('--' + (this.state.tri[k] === 'off' ? 'no-' : '') + k); });
+    return f.join(' ');
+  };
+
+  publishes = () => {
+    const out = [];
+    this.state.sel.forEach(n => {
+      const t = this.find(n);
+      (t.exts || []).forEach(e => {
+        if (!(this.state.exts[n] || {})[e.n]) return;
+        if (e.container && (e.params || []).length) {
+          const key = n + '/' + e.n + '.' + e.params[0].k;
+          const host = this.state.params[key] || e.params[0].d;
+          out.push({ n, ext: e.n, svc: e.container, host, pinned: !!this.state.params[key], key, fixed: true });
+          return;
+        }
+        if (!e.follow) return;
+        const svc = this.state.params[n + '.' + e.follow.from] || (t.params || []).find(p => p.k === e.follow.from).d;
+        const pinKey = n + '/' + e.n + '.' + e.follow.k;
+        const host = this.state.params[pinKey] || svc;
+        out.push({ n, ext: e.n, svc, host, pinned: !!this.state.params[pinKey], key: pinKey });
+      });
+    });
+    return out;
+  };
+
+  issues = () => {
+    const out = [];
+    const v = this.variantObj();
+    const setters = this.state.sel.filter(n => (this.find(n).sets || {}).variant);
+    if (setters.length > 1) out.push({ level: 'error', text: setters.join(' and ') + ' each set variant (' + setters.map(n => this.find(n).sets.variant).join(' / ') + '). Merge is match-or-error — drop one.' });
+    else if (setters.length === 1 && this.state.variant && this.find(setters[0]).sets.variant !== this.state.variant)
+      out.push({ level: 'warn', text: setters[0] + ' sets variant ' + this.find(setters[0]).sets.variant + '; your ' + this.state.variant + ' will be overridden at compile.' });
+
+    this.state.sel.forEach(n => {
+      const t = this.find(n);
+      const needs = [];
+      if (t.needs) needs.push({ owner: n, needs: t.needs });
+      (t.exts || []).forEach(e => { if (e.needs && (this.state.exts[n] || {})[e.n]) needs.push({ owner: n + '/' + e.n, needs: e.needs }); });
+      needs.forEach(x => {
+        const ok = x.needs === 'editor' ? (v.kind === 'editor' || v.kind === 'desktop') : v.kind === x.needs;
+        if (!ok) out.push({ level: 'warn', text: x.owner + ' assumes a ' + x.needs + ' variant; you are on ' + v.label + ', so it will install with nowhere to run.' });
+      });
+      if (t.arch) out.push({ level: 'warn', text: n + ' has no ' + t.arch.on + ' build. Host is arm64, so it will be skipped at build — use ' + t.arch.use + '. The rest of the booth still builds.' });
+    });
+
+    const ports = {};
+    if (this.state.port) ports[this.state.port] = ['booth port'];
+    this.publishes().forEach(p => { (ports[p.host] = ports[p.host] || []).push(p.n + '/+expose'); });
+    this.state.extras.filter(x => x.kind === 'publish').forEach(x => {
+      const host = x.v.split(':')[0]; (ports[host] = ports[host] || []).push('your --publish ' + x.v);
+      const cn = x.v.split(':')[1] || host;
+      const owner = this.publishes().find(p => String(p.svc) === String(cn));
+      if (owner) out.push({ level: 'warn', text: 'Your --publish ' + x.v + ' adds a second mapping for container port ' + cn + ' — ' + owner.n + '/+expose already publishes it. Move the host port on the extension instead.' });
+    });
+    Object.keys(ports).forEach(h => { if (ports[h].length > 1) out.push({ level: 'error', text: 'Host port ' + h + ' is bound twice: ' + ports[h].join(' and ') + '.' }); });
+    return out;
+  };
+
+  variantObj = () => this.variants.find(v => v.id === this.state.variant) || { id: 'unset', label: 'unset (base)', kind: 'terminal', meaning: 'Unset — the booth default applies (base terminal).' };
+
+  boothfile = () => {
+    const selStr = this.dsl(), flStr = this.flags();
+    const cmd = ' --select "' + selStr + '"' + (flStr ? ' ' + flStr : '');
+    const lines = ['# Generated by: booth config --no-tui ~/src/atlas-api' + cmd,
+      '# Adjust with : booth config --no-tui --overwrite' + cmd, ''];
+    this.state.sel.forEach(n => {
+      const t = this.find(n);
+      lines.push('template ' + n);
+      (t.params || []).forEach(p => { const v = this.state.params[n + '.' + p.k]; if (v && v !== p.d) lines.push('  arg ' + p.k + ' = ' + (String(v).indexOf('/') >= 0 ? '"' + v + '"' : v)); });
+      Object.keys(this.state.exts[n] || {}).forEach(e => lines.push('  ext ' + e));
+      Object.keys(this.state.excl).filter(k => k.indexOf(n + '/') === 0).forEach(k => lines.push('  ext ~' + k.split('/')[1] + '   # opted out, kept so resolve will not re-add'));
+    });
+    if (!this.state.sel.length) lines.push('# no templates — settings-only booth');
+    return lines.join('\n');
+  };
+
+  configToml = () => {
+    const v = this.state.variant, args = [];
+    this.publishes().forEach(p => args.push('"-p", "' + p.host + ':' + p.svc + '"'));
+    this.state.extras.forEach(x => args.push('"--' + x.kind + '", "' + x.v + '"'));
+    const l = ['[general]'];
+    l.push('variant = ' + (v ? '"' + v + '"' : '# unset — booth default'));
+    l.push(this.state.port ? 'port = ' + this.state.port : '# port unset — booth default');
+    if (this.state.offset) l.push('offset-base = ' + this.state.offset);
+    l.push('', '[network]');
+    l.push('run-args = [' + (args.length ? '\n  ' + args.join(',\n  ') + '\n' : '') + ']');
+    l.push('# short-form -p entries are template contributions, re-derived from the selection.');
+    l.push('# long-form --publish/--env/--volume entries are yours and come back editable.');
+    Object.keys(this.state.tri).filter(k => this.state.tri[k] !== 'unset').forEach((k, i) => { if (!i) l.push('', '[container]'); l.push(k + ' = ' + (this.state.tri[k] === 'on')); });
+    l.push('', '# unrecognised keys already in this file pass through untouched.');
+    return l.join('\n');
+  };
+
+  renderVals() {
+    const st = this.state, self = this;
+    const v = this.variantObj();
+    const issues = this.issues();
+    const errs = issues.filter(i => i.level === 'error');
+    const dirty = this.snap() !== this.baseline;
+    const pubs = this.publishes();
+    const q = st.q.trim().toLowerCase();
+
+    const matches = t => {
+      if (!q) return true;
+      if (t.n.toLowerCase().indexOf(q) >= 0 || t.s.toLowerCase().indexOf(q) >= 0) return true;
+      if ((t.t || []).some(x => x.indexOf(q) >= 0)) return true;
+      return (t.exts || []).some(e => e.n.toLowerCase().indexOf(q) >= 0 || e.s.toLowerCase().indexOf(q) >= 0);
+    };
+    const lensOk = t => {
+      if (st.sel.indexOf(t.n) >= 0) return true;
+      if (st.lens === 'all') return true;
+      if (st.lens === 'selected') return false;
+      if (st.lens === 'local') return !!t.local;
+      return !!t.p;
+    };
+    const visible = this.catalog.filter(t => matches(t) && (q ? true : lensOk(t)) && (!st.cat || t.c === st.cat) && (!st.tag || (t.t || []).indexOf(st.tag) >= 0));
+
+    const item = t => {
+      const on = st.sel.indexOf(t.n) >= 0;
+      const open = on && st.open[t.n];
+      const deps = this.dependers(t.n);
+      const auto = (t.exts || []).filter(e => e.a).map(e => e.n);
+      const extHit = q && (t.exts || []).filter(e => e.n.toLowerCase().indexOf(q) >= 0).map(e => e.n);
+      const why = on
+        ? (deps.length ? 'Pulled in by ' + deps.join(', ') + ' — kept until they go.' : (auto.length && open ? 'Auto-select children joined: ' + auto.join(', ') + '. Untick to opt out; the exclusion is saved.' : ''))
+        : (extHit && extHit.length ? 'Matched on extension ' + extHit.join(', ') + ' — choosing it brings ' + t.n + ' along.' : ((t.req || []).length ? 'Requires ' + t.req.join(', ') + ' — it will join.' : ''));
+
+      const params = [];
+      if (on) (t.params || []).forEach(p => {
+        const key = t.n + '.' + p.k;
+        if (p.list) {
+          params.push({ label: p.k, owner: '', isList: true, isScalar: false, followNote: '',
+            entries: (st.params[key] || '').split(' ').filter(Boolean).map(e => ({ label: e, remove: () => self.removeEntry(key, e) })),
+            draft: st.drafts[key] || '', setDraft: ev => self.setDraft(key, ev.target.value), commit: ev => self.commitList(key, ev),
+            hint: p.list.hint, placeholder: p.list.ph, value: '', suggest: [] });
+        } else {
+          params.push({ label: p.k, owner: '', isScalar: true, isList: false, followNote: '',
+            value: st.params[key] === undefined ? p.d : st.params[key], set: ev => self.setParam(key, ev.target.value),
+            suggest: (p.sug || []).map(s => ({ label: s, pick: () => self.setParam(key, s),
+              border: (st.params[key] || p.d) === s ? 'var(--color-accent)' : 'var(--color-neutral-800)',
+              bg: (st.params[key] || p.d) === s ? 'var(--color-accent-900)' : 'transparent',
+              fg: (st.params[key] || p.d) === s ? 'var(--color-accent-200)' : 'var(--color-neutral-400)' })),
+            entries: [], hint: '', placeholder: '', draft: '' });
+        }
+      });
+      if (on) (t.exts || []).forEach(e => {
+        if (!(st.exts[t.n] || {})[e.n]) return;
+        if (e.list) {
+          const key = t.n + '/' + e.n + '.' + e.list.k;
+          params.push({ label: e.list.k, owner: e.n, isList: true, isScalar: false, followNote: '',
+            entries: (st.params[key] || '').split(' ').filter(Boolean).map(x => ({ label: x, remove: () => self.removeEntry(key, x) })),
+            draft: st.drafts[key] || '', setDraft: ev => self.setDraft(key, ev.target.value), commit: ev => self.commitList(key, ev),
+            hint: e.list.hint, placeholder: e.list.ph, value: '', suggest: [] });
+        }
+        (e.params || []).forEach(p => {
+          const key = t.n + '/' + e.n + '.' + p.k;
+          params.push({ label: p.k, owner: e.n, isScalar: true, isList: false,
+            followNote: e.container ? 'host port \u2014 container side is the literal ' + e.container : '',
+            value: st.params[key] === undefined ? p.d : st.params[key], set: ev => self.setParam(key, ev.target.value),
+            suggest: (p.sug || []).map(s => ({ label: s, pick: () => self.setParam(key, s),
+              border: (st.params[key] || p.d) === s ? 'var(--color-accent)' : 'var(--color-neutral-800)',
+              bg: (st.params[key] || p.d) === s ? 'var(--color-accent-900)' : 'transparent',
+              fg: (st.params[key] || p.d) === s ? 'var(--color-accent-200)' : 'var(--color-neutral-400)' })),
+            entries: [], hint: '', placeholder: '', draft: '' });
+        });
+        if (e.follow) {
+          const key = t.n + '/' + e.n + '.' + e.follow.k;
+          const svc = st.params[t.n + '.' + e.follow.from] || (t.params || []).find(p => p.k === e.follow.from).d;
+          params.push({ label: e.follow.k, owner: e.n, isScalar: true, isList: false,
+            followNote: st.params[key] ? 'pinned — no longer follows ' + e.follow.from : 'following ' + e.follow.from + ' (' + svc + ') — type to pin',
+            value: st.params[key] === undefined ? svc : st.params[key], set: ev => self.setParam(key, ev.target.value),
+            suggest: ['+OFFSET', svc].map(s => ({ label: s, pick: () => self.setParam(key, s), border: st.params[key] === s ? 'var(--color-accent)' : 'var(--color-neutral-800)', bg: st.params[key] === s ? 'var(--color-accent-900)' : 'transparent', fg: st.params[key] === s ? 'var(--color-accent-200)' : 'var(--color-neutral-400)' })),
+            entries: [], hint: '', placeholder: '', draft: '' });
+        }
+      });
+
+      const effects = [];
+      if (on) {
+        if ((t.sets || {}).variant) effects.push({ label: 'sets variant = ' + t.sets.variant });
+        pubs.filter(p => p.n === t.n).forEach(p => effects.push({ label: '-p ' + p.host + ':' + p.svc + '  (from ' + p.ext + ')' }));
+        if ((st.exts[t.n] || {}).credential) effects.push({ label: '-v <host credential store>:/etc/cb-home-seed/…:ro  (from credential)' });
+        if ((st.exts[t.n] || {}).autostart) effects.push({ label: 'startup segment: ' + t.n + ' starts with the booth' });
+      }
+
+      const pinnedParams = (t.params || []).filter(p => !p.list && st.params[t.n + '.' + p.k] && st.params[t.n + '.' + p.k] !== p.d);
+      const nk = (t.exts || []).length;
+
+      return {
+        name: t.n, display: t.dn || '', short: t.s, primary: !!t.p, local: !!t.local,
+        pinLabel: pinnedParams.length ? pinnedParams.map(p => p.k + ' ' + st.params[t.n + '.' + p.k]).join(' · ') : '',
+        cardBg: on ? 'var(--color-surface)' : 'color-mix(in srgb, var(--color-surface) 55%, var(--color-bg))',
+        cardEdge: on ? 'var(--color-accent-700)' : 'var(--color-neutral-900)',
+        nameColor: on ? 'var(--color-accent-200)' : 'var(--color-text)',
+        btnLabel: on ? 'remove' : 'add',
+        btnIcon: on ? 'ph ph-x' : 'ph ph-plus',
+        btnFg: on ? 'var(--color-accent-300)' : 'var(--color-text)',
+        btnBorder: on ? 'var(--color-accent-700)' : 'var(--color-divider)',
+        btnBg: on ? 'var(--color-accent-900)' : 'transparent',
+        toggle: on ? () => self.remove(t.n) : () => self.add(t.n),
+        selected: !!on,
+        caret: open ? 'ph ph-caret-up' : 'ph ph-caret-down',
+        expand: () => self.setState({ open: Object.assign({}, st.open, { [t.n]: st.open[t.n] ? 0 : 1 }) }),
+        whyText: why,
+        archText: t.arch ? 'No ' + t.arch.on + ' build — on this host it will be skipped at build time, not fail. Use ' + t.arch.use + '.' : '',
+        variantText: t.needs && !(t.needs === 'editor' ? (v.kind === 'editor' || v.kind === 'desktop') : v.kind === t.needs) ? 'Assumes a ' + t.needs + ' variant. You are on ' + v.label + '.' : '',
+        collapsed: !open, open: !!open,
+        childHint: nk ? nk + (nk === 1 ? ' extension' : ' extensions') + (on ? ' \u2014 open to choose' : ' — visible once it is in the package') : 'no extensions',
+        tagList: (t.t || []).map(x => ({ label: x })),
+        hasExts: on && nk > 0, hasParams: params.length > 0, hasEffects: effects.length > 0,
+        paramRows: params, effects: effects,
+        extRows: (t.exts || []).map(e => {
+          const eon = !!(st.exts[t.n] || {})[e.n];
+          const excluded = !!st.excl[t.n + '/' + e.n];
+          return { name: e.n, note: e.s + (e.needs ? ' Needs a ' + e.needs + ' variant.' : ''),
+            icon: eon ? 'ph-fill ph-check-square' : 'ph ph-square',
+            iconColor: eon ? 'var(--color-accent-400)' : 'var(--color-neutral-600)',
+            border: eon ? 'var(--color-accent-800)' : 'var(--color-neutral-900)',
+            bg: eon ? 'var(--color-accent-900)' : 'transparent',
+            badge: excluded ? 'opted out — saved as ~' + e.n : (e.a ? 'default on' : ''),
+            badgeBg: excluded ? 'var(--color-neutral-800)' : 'var(--color-accent-800)',
+            badgeFg: excluded ? 'var(--color-neutral-100)' : 'var(--color-accent-100)',
+            toggle: () => self.toggleExt(t.n, e.n) };
+        })
+      };
+    };
+
+    const catDefs = (window.BOOTH_CATALOG || {}).cats || [];
+    const cats = catDefs.map(c => c.id);
+    const catLabel = id => (catDefs.find(c => c.id === id) || {}).label || id;
+    const groups = [];
+    const chosenVisible = visible.filter(t => st.sel.indexOf(t.n) >= 0);
+    if (chosenVisible.length && !q) groups.push({ title: 'In your package', meta: 'never hidden by a lens', cols: st.view === 'rows' ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))', items: chosenVisible.map(item) });
+    if (q) {
+      groups.push({ title: 'Results for “' + st.q.trim() + '”', meta: visible.length + ' of ' + this.catalog.length + ' templates · prominence filter bypassed', cols: st.view === 'rows' ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))', items: visible.map(item) });
+    } else {
+      cats.forEach(c => {
+        const its = visible.filter(t => t.c === c && st.sel.indexOf(t.n) < 0);
+        if (!its.length) return;
+        const total = this.catalog.filter(t => t.c === c).length;
+        groups.push({ title: catLabel(c), meta: its.length + ' shown of ' + total, cols: st.view === 'rows' ? '1fr' : 'repeat(auto-fill, minmax(320px, 1fr))', items: its.map(item) });
+      });
+    }
+
+    const lensDefs = [
+      { id: 'popular', label: 'Popular', icon: 'ph ph-star', count: this.catalog.filter(t => t.p || st.sel.indexOf(t.n) >= 0).length },
+      { id: 'all', label: 'All', icon: 'ph ph-list', count: this.catalog.length },
+      { id: 'selected', label: 'Selected', icon: 'ph ph-check', count: st.sel.length },
+      { id: 'local', label: 'Local to project', icon: 'ph ph-house', count: this.catalog.filter(t => t.local).length }
+    ];
+
+    const tri = (k, def) => {
+      const cur = st.tri[k] || 'unset';
+      return ['unset', 'on', 'off'].map(o => ({
+        label: o === 'unset' ? (def ? 'unset (' + def + ')' : 'unset') : o,
+        pick: () => self.setState({ tri: Object.assign({}, st.tri, { [k]: o }) }),
+        bg: cur === o ? 'var(--color-accent-900)' : 'transparent',
+        fg: cur === o ? 'var(--color-accent-200)' : 'var(--color-neutral-400)',
+        ring: cur === o ? 'inset 0 0 0 1px var(--color-accent)' : 'none'
+      }));
+    };
+
+    const previewText = st.tab === 'boothfile' ? this.boothfile() : st.tab === 'config' ? this.configToml()
+      : 'booth config --no-tui ~/src/atlas-api \\\n  --select "' + this.dsl() + '"'
+        + (this.flags() ? ' \\\n  ' + this.flags().split(' --').join(' \\\n  --').replace(/^ +/, '') : '')
+        + '\n\n# The same selection as a recipe under .booth/recipes/atlas-api.recipe:\n'
+        + (st.sel.length ? this.dsl().split('/').join('\n') : '(no templates)')
+        + '\n\n# Variadic package lists (APT_PKGS, PIP_PKGS, CODE_EXT_PKGS) are not part of the'
+        + '\n# select string \u2014 they are written as arg lines in the Boothfile.';
+
+    const segBg = a => a ? 'var(--color-accent-900)' : 'transparent';
+    const segFg = a => a ? 'var(--color-accent-200)' : 'var(--color-neutral-400)';
+    const segRing = a => a ? 'inset 0 0 0 1px var(--color-accent)' : 'none';
+
+    return {
+      projectPath: '~/src/atlas-api',
+      catalogSize: this.catalog.length,
+      handwritten: true,
+      dirtyLabel: dirty ? 'changed since open' : 'same as opened',
+      dirtyIcon: dirty ? 'ph-fill ph-circle' : 'ph ph-circle',
+      dirtyColor: dirty ? 'var(--color-accent-300)' : 'var(--color-neutral-500)',
+      compileLabel: errs.length ? errs.length + ' blocking' : 'compiles',
+      compileIcon: errs.length ? 'ph ph-x-circle' : 'ph ph-check-circle',
+      compileColor: errs.length ? 'var(--color-neutral-200)' : 'var(--color-neutral-500)',
+      compileDetail: errs.length ? errs[0].text : 'Compile is clean. Save writes .booth/ — a running booth is not live-updated.',
+      undo: this.undo, undoDisabled: !st.history.length,
+      undoLabel: st.history.length ? 'Undo last change' : 'Nothing to undo',
+
+      lenses: lensDefs.map(l => ({ label: l.label, icon: l.icon, count: l.count, pick: () => self.setState({ lens: l.id }),
+        bg: st.lens === l.id ? 'var(--color-accent-900)' : 'transparent', fg: st.lens === l.id ? 'var(--color-accent-200)' : 'var(--color-neutral-300)' })),
+      cats: [{ id: null, label: 'Every group', n: this.catalog.length }].concat(cats.map(c => ({ id: c, label: catLabel(c), n: this.catalog.filter(t => t.c === c).length })))
+        .map(c => ({ label: c.label, count: q ? this.catalog.filter(t => matches(t) && (!c.id || t.c === c.id)).length : c.n, pick: () => self.setState({ cat: c.id }),
+          bg: st.cat === c.id ? 'var(--color-accent-900)' : 'transparent', fg: st.cat === c.id ? 'var(--color-accent-200)' : 'var(--color-neutral-300)' })),
+      tags: Array.from(new Set(this.catalog.reduce((a, t) => a.concat(t.t || []), []))).sort().map(x => ({
+        label: x, pick: () => self.setState({ tag: st.tag === x ? null : x }),
+        border: st.tag === x ? 'var(--color-accent)' : 'var(--color-neutral-800)',
+        bg: st.tag === x ? 'var(--color-accent-900)' : 'transparent',
+        fg: st.tag === x ? 'var(--color-accent-200)' : 'var(--color-neutral-400)' })),
+
+      query: st.q, setQuery: ev => self.setState({ q: ev.target.value }),
+      resultLine: q ? visible.length + ' templates match across all eight groups, hidden names included' + (st.cat ? ' · narrowed to ' + catLabel(st.cat) : '') + (st.tag ? ' · tag ' + st.tag : '')
+        : 'Showing ' + visible.length + ' of ' + this.catalog.length + ' templates · ' + (st.lens === 'popular' ? 'popular plus everything you have picked' : st.lens) + (st.cat ? ' · ' + catLabel(st.cat) : '') + (st.tag ? ' · tag ' + st.tag : ''),
+      filterActive: !!(st.cat || st.tag || st.lens !== 'all'),
+      clearFilters: () => self.setState({ cat: null, tag: null, lens: 'all' }),
+      setViewCards: () => self.setState({ view: 'cards' }), setViewRows: () => self.setState({ view: 'rows' }),
+      viewCardsBg: segBg(st.view === 'cards'), viewCardsFg: segFg(st.view === 'cards'), viewCardsRing: segRing(st.view === 'cards'),
+      viewRowsBg: segBg(st.view === 'rows'), viewRowsFg: segFg(st.view === 'rows'), viewRowsRing: segRing(st.view === 'rows'),
+      groups, noResults: !groups.length,
+
+      packageMeta: st.sel.length + ' templates · ' + st.sel.reduce((a, n) => a + Object.keys(st.exts[n] || {}).length, 0) + ' children · ' + v.label,
+      baselineLine: dirty ? 'Differs from how this session opened. Closing now asks first.' : 'Matches the configuration on disk. Closing writes nothing.',
+      empty: !st.sel.length,
+      hasIssues: issues.length > 0,
+      issues: issues.map(i => ({ text: i.text, icon: i.level === 'error' ? 'ph ph-x-circle' : 'ph ph-warning',
+        iconColor: i.level === 'error' ? 'var(--color-accent-200)' : 'var(--color-accent-400)',
+        bg: i.level === 'error' ? 'var(--color-accent-900)' : 'var(--color-neutral-900)',
+        edge: i.level === 'error' ? 'var(--color-accent-700)' : 'var(--color-neutral-800)' })),
+
+      variantOpts: this.variants.map(o => ({ label: o.label, pick: () => { self.push(); self.setState({ variant: o.id }); },
+        border: st.variant === o.id ? 'var(--color-accent)' : 'var(--color-neutral-800)',
+        bg: st.variant === o.id ? 'var(--color-accent-900)' : 'transparent',
+        fg: st.variant === o.id ? 'var(--color-accent-200)' : 'var(--color-neutral-400)' })),
+      variantMeaning: v.meaning,
+      portValue: st.port, setPort: ev => self.setState({ port: ev.target.value }),
+      offsetValue: st.offset, setOffset: ev => self.setState({ offset: ev.target.value }),
+      offsetPlaceholder: st.port ? 'follows booth port (' + st.port + ')' : 'follows booth port',
+      portNote: pubs.length ? 'Three knobs: booth port ' + (st.port || 'unset') + ', offset base ' + (st.offset || 'following it') + ', and ' + pubs.length + ' per-service publish' + (pubs.length === 1 ? '' : 'es') + ' below. Moving the booth port moves any +OFFSET publish unless you pin the base.'
+        : 'Three knobs: booth port, offset base, and per-service publishes from +expose extensions. Nothing publishes yet.',
+
+      chosen: st.sel.map(n => {
+        const t = this.find(n), deps = self.dependers(n);
+        const pinned = (t.params || []).filter(p => !p.list && st.params[n + '.' + p.k] && st.params[n + '.' + p.k] !== p.d);
+        return { label: n + (pinned.length ? ':' + pinned.map(p => st.params[n + '.' + p.k]).join(':') : ''),
+          lock: deps.length ? 'kept by ' + deps.join(', ') : '',
+          reveal: () => self.setState({ open: Object.assign({}, st.open, { [n]: 1 }), q: '', lens: 'all', cat: null, tag: null, reveal: n }),
+          remove: () => self.remove(n),
+          hasKids: Object.keys(st.exts[n] || {}).length > 0 || Object.keys(st.excl).some(k => k.indexOf(n + '/') === 0),
+          kids: Object.keys(st.exts[n] || {}).map(e => ({ label: e, bg: 'var(--color-accent-900)', fg: 'var(--color-accent-200)' }))
+            .concat(Object.keys(st.excl).filter(k => k.indexOf(n + '/') === 0).map(k => ({ label: '~' + k.split('/')[1], bg: 'var(--color-neutral-900)', fg: 'var(--color-neutral-500)' }))) };
+      }),
+
+      contributed: pubs.map(p => ({ flag: '-p ' + p.host + ':' + p.svc, from: 'from ' + p.n + '/' + p.ext + (p.fixed ? ' (host port; container side is the literal ' + p.svc + ')' : p.pinned ? ' (pinned)' : ' (follows service port)'),
+        action: 'move host port', move: () => self.setState({ open: Object.assign({}, st.open, { [p.n]: 1 }), q: p.n, lens: 'all' }) }))
+        .concat(st.sel.filter(n => (st.exts[n] || {}).credential).map(n => ({ flag: '-v …:/etc/cb-home-seed/…:ro', from: 'from ' + n + '/credential', action: '', move: () => {} }))),
+      noContrib: !pubs.length && !st.sel.some(n => (st.exts[n] || {}).credential),
+
+      extraGroups: [
+        { kind: 'publish', label: 'Extra publishes', ph: '3000:3000, or +10:3000 relative to the offset base', empty: 'No publishes of your own. Template +expose mappings are above.' },
+        { kind: 'env', label: 'Environment variables', ph: 'KEY=value', empty: 'No env of your own.' },
+        { kind: 'volume', label: 'Mounts', ph: '/host/path:/in/booth[:ro]', empty: 'No mounts of your own.' }
+      ].map(g => {
+        const key = 'extra.' + g.kind;
+        const rows = st.extras.map((x, i) => ({ x, i })).filter(r => r.x.kind === g.kind);
+        return { label: g.label, flag: '--' + g.kind, placeholder: g.ph,
+          count: rows.length ? String(rows.length) : '',
+          isEmpty: !rows.length, emptyNote: g.empty,
+          rows: rows.map(r => ({ label: '--' + g.kind + ' ' + r.x.v,
+            remove: () => { self.push(); self.setState({ extras: st.extras.filter((_, j) => j !== r.i) }); } })),
+          draft: st.drafts[key] || '',
+          setDraft: ev => self.setDraft(key, ev.target.value),
+          commit: ev => self.commitExtra(g.kind, ev) };
+      }),
+      tailCount: this.tailSections.reduce((a, s) => a + s.fields.length, 0) + 27,
+      tail: this.tailSections.map(s => ({ label: s.label, icon: st.tail[s.id] ? 'ph ph-caret-down' : 'ph ph-caret-right',
+        summary: s.fields.filter(f => st.tri[f.key] && st.tri[f.key] !== 'unset').length ? s.fields.filter(f => st.tri[f.key] && st.tri[f.key] !== 'unset').length + ' set' : 'all unset',
+        open: !!st.tail[s.id], toggle: () => self.setState({ tail: Object.assign({}, st.tail, { [s.id]: !st.tail[s.id] }) }),
+        fields: s.fields.map(f => ({ key: f.key, states: tri(f.key, f.def) })) })),
+
+      copyDsl: () => { try { navigator.clipboard.writeText('booth config --no-tui --select "' + self.dsl() + '" ' + self.flags()); } catch (e) {} self.setState({ copied: true, toast: 'Shareable description copied — DSL plus settings flags.' }); setTimeout(() => self.setState({ copied: false, toast: '' }), 2600); },
+      copyLabel: st.copied ? 'Copied' : 'Copy DSL', copyIcon: st.copied ? 'ph ph-check' : 'ph ph-link',
+
+      previewOpen: st.preview, openPreview: () => self.setState({ preview: true }), closePreview: () => self.setState({ preview: false }),
+      previewTabs: [{ id: 'boothfile', label: '.booth/Boothfile' }, { id: 'config', label: 'config.toml' }, { id: 'dsl', label: 'shareable' }].map(t => ({
+        label: t.label, pick: () => self.setState({ tab: t.id }), bg: segBg(st.tab === t.id), fg: segFg(st.tab === t.id), ring: segRing(st.tab === t.id) })),
+      previewSummaryLabel: st.tab === 'dsl' ? 'What an agent or teammate can replay' : 'Generated file — not written yet',
+      previewText,
+      writeTargetLine: st.writeMode === 'keep' ? 'Would write .booth/Boothfile.new and .booth/config.toml.new beside your originals' : 'Would replace .booth/Boothfile and config.toml, keeping .bak copies',
+      writeModes: [
+        { id: 'keep', label: 'Keep mine — write generated files as .new', note: 'Your Boothfile and config.toml are untouched; .new is merge scratch and gitignored. The safe path.', icon: 'ph ph-shield-check' },
+        { id: 'replace', label: 'Replace mine — originals kept as .bak', note: 'Regenerates both files from this selection. Needs a typed confirmation.', icon: 'ph ph-warning-octagon' }
+      ].map(w => ({ label: w.label, note: w.note, icon: w.icon, pick: () => self.setState({ writeMode: w.id, confirm: '' }),
+        border: st.writeMode === w.id ? 'var(--color-accent)' : 'var(--color-neutral-800)',
+        bg: st.writeMode === w.id ? 'color-mix(in srgb, var(--color-accent) 10%, transparent)' : 'transparent',
+        iconColor: st.writeMode === w.id ? 'var(--color-accent-300)' : 'var(--color-neutral-500)' })),
+      replaceArmed: st.writeMode === 'replace',
+      confirmWord: st.confirm, setConfirmWord: ev => self.setState({ confirm: ev.target.value }),
+      saveDisabled: errs.length > 0 || (st.writeMode === 'replace' && st.confirm.trim().toLowerCase() !== 'replace'),
+      saveLabel: errs.length ? 'Blocked — ' + errs.length + ' conflict' + (errs.length === 1 ? '' : 's') : st.writeMode === 'replace' ? 'Replace and save' : 'Save as .new',
+      saveNote: errs.length ? errs[0].text : 'User startups, setups, home files and unrecognised config.toml keys survive. Saving does not restart a running booth.',
+      save: () => { self.baseline = self.snap(); self.setState({ preview: false, toast: st.writeMode === 'replace' ? 'Wrote .booth/ — originals kept as .bak.' : 'Wrote .booth/Boothfile.new and config.toml.new.' }); setTimeout(() => self.setState({ toast: '' }), 3200); },
+
+      dropAsk: !!st.dropAsk,
+      dropTitle: st.dropAsk ? (st.dropAsk.kind === 'dep' ? st.dropAsk.name + ' is required by ' + st.dropAsk.deps.join(', ') : 'Dropping ' + st.dropAsk.name + ' drops its children') : '',
+      dropBody: st.dropAsk ? (st.dropAsk.kind === 'dep'
+        ? 'Keeping it is the default: resolve would pull ' + st.dropAsk.name + ' back on save anyway. Drop ' + st.dropAsk.deps.join(', ') + ' too and it can go.'
+        : st.dropAsk.count + ' chosen extensions and their pinned parameters go with it. Undo restores them.') : '',
+      dropConfirmLabel: st.dropAsk ? (st.dropAsk.kind === 'dep' ? 'Drop ' + st.dropAsk.deps.concat([st.dropAsk.name]).join(', ') : 'Drop it and its children') : '',
+      confirmDrop: this.confirmDrop, cancelDrop: this.cancelDrop,
+      toast: st.toast
+    };
+  }
+}
+</script>
+</body>
+</html>
