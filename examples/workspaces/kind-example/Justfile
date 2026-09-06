@@ -10,9 +10,9 @@ start:
 deploy:
     ./deploy-app.sh
 
-# Check cluster status
-check:
-    ./check-cluster.sh
+# Check cluster status (`just check expect=down`)
+check expect="up":
+    ./check-cluster.sh --expect={{ expect }}
 
 # Delete the cluster
 stop:

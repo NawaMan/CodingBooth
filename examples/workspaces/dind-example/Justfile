@@ -10,6 +10,6 @@ start:
 stop:
     ./stop-server.sh
 
-# Check whether the server is up
-check:
-    ./check-server.sh
+# Check whether the server is up (`just check expect=down`)
+check expect="up":
+    ./check-server.sh --expect={{ expect }}

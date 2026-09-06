@@ -20,7 +20,7 @@ fail() { echo -e "${RED}✗${NC} $1"; exit 1; }
 SERVER_PORT=8080
 
 cleanup() {
-    ./stop-server.sh 2>/dev/null || true
+    just stop 2>/dev/null || true
 }
 trap cleanup EXIT
 
@@ -37,7 +37,7 @@ fi
 
 # Test 2: Start the server in background
 echo "Starting server..."
-./start-server.sh > /tmp/server.log 2>&1 &
+just start > /tmp/server.log 2>&1 &
 SERVER_PID=$!
 echo "  Server start PID: $SERVER_PID"
 
@@ -76,7 +76,7 @@ fi
 
 # Test 4: Stop the server
 echo "Stopping server..."
-./stop-server.sh
+just stop
 sleep 1
 
 # Test 5: Verify server is NOT running after stop

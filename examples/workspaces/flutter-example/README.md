@@ -42,7 +42,7 @@ Then, inside the booth:
 ```bash
 just --list
 just test             # flutter test
-just build            # flutter build web
+just build            # flutter build web --release
 ```
 
 To see it in a browser, serve it from inside the booth and open it through the web pane:
