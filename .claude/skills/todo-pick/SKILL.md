@@ -84,8 +84,9 @@ worth pointing at:
   consistent with `docs/implementations/WRAPPER.md`.
 - **Tests match the layer:** Go `*_test.go` for pure logic; `tests/wrapper/`, `tests/config/`,
   `tests/complex/` for end-to-end. Prefer the smallest suite that would catch the bug class.
-- **Examples** live under `examples/workspaces/` with Boothfile + README; don't use personal mounts
-  or host-specific secrets in committed examples.
+- **Examples** live under `examples/workspaces/` with Boothfile + README, plus a `Justfile` when
+  the sample has in-booth `build`/`run`/`test` (or `start`/`stop`, `server`/`client`). Don't use
+  personal mounts or host-specific secrets in committed examples.
 - **Definition of done** is behaviour + the tests that prove it + user-visible docs/CHANGELOG when
   appropriate — not a diff that only "looks right".
 
