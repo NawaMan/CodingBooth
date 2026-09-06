@@ -1,0 +1,30 @@
+display-name = "Logo"
+display-disc = "JSLogo turtle-graphics editor (web-served)"
+display-detail = """Serves the open-source JSLogo editor locally on a configurable port. \
+Logo is the classic turtle-graphics language (Papert, 1967): type `fd 100 rt 90` and a turtle \
+draws. Hide the green turtle with `hideturtle` (or `ht`). Access the editor in a browser at \
+http://localhost:<LOGO_PORT>. Works on any variant — no desktop required. On desktop \
+variants a Logo icon is placed on the desktop (same as Excalidraw). Requires Node.js \
+(pulled in via the nodejs template) to run the static file server."""
+display-order = 25
+requires = ["nodejs"]
+tags = [
+    "education",
+    "logo",
+    "turtle",
+    "beginner",
+    "kids",
+    "graphics",
+]
+
+[params.LOGO_PORT]
+default = "18610"
+suggests = [
+    "18610",
+    "18611",
+]
+
+[segments]
+"Boothfile--60" = """
+setup logo ${LOGO_PORT}
+"""

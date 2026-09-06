@@ -1,0 +1,18 @@
+display-name = "Expose Logo Port"
+display-disc = "Expose Logo editor port to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "logo",
+    "port",
+    "network",
+]
+
+run-args = [
+    "-p", "${LOGO_HOST_PORT}:${LOGO_PORT}",
+]
+
+# Host-side port. Defaults to the port the service listens on, so moving the service
+# moves the published port with it. Override only when the host port is already taken.
+[params.LOGO_HOST_PORT]
+default = "${LOGO_PORT}"

@@ -334,6 +334,7 @@ All templates and extensions grouped by segment order.
 | `education/drracket`      | DrRacket         |
 | `education/exercism`      | Exercism CLI     |
 | `education/greenfoot`     | Greenfoot        |
+| `education/logo`          | Logo             |
 | `education/scratch`       | Scratch          |
 | `education/thonny`        | Thonny           |
 | `ides/clion`              | CLion            |

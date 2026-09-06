@@ -1,0 +1,4 @@
+; A five-pointed star — the same drawing as star.py
+; hideturtle (ht) hides the green triangle; showturtle (st) brings it back
+clearscreen hideturtle
+repeat 5 [ fd 100 rt 144 ]

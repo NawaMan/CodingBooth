@@ -1,0 +1,34 @@
+{
+  "page": {
+    "translations": {
+      "title": "Logo-Umgebung",
+      "tl-title": "Logo-Umgebung",
+      "tl-tests": "Tests",
+      "tl-source": "Quellcode",
+      "tl-reference": "Anleitung",
+      "start-togetherjs": "zusammenarbeiten",
+      "no-canvas": "Dein Browser unterstützt das Canvas-Element nicht – Entschuldigung!",
+      "ip-button-run": "Starten",
+      "ip-button-stop": "Stoppen",
+      "ip-button-clear": "Leeren",
+      "logo-ta-single-line.placeholder": "Gib hier deinen Code ein ...",
+      "logo-ta-multi-line.placeholder": "Gib hier deinen Code ein ...",
+      "sb-link-reference": "Anleitung",
+      "sb-link-text-reference": "- Programmiersprache Logo",
+      "sb-link-library": "Speicher",
+      "sb-link-text-library": "- deine Prozeduren",
+      "sb-link-history": "Verlauf",
+      "sb-link-text-history": "- was du hier schon gemacht hast",
+      "sb-link-examples": "Beispiele",
+      "sb-link-text-examples": "- coole Dinge, die du hier machen kannst",
+      "sb-link-extras": "Extras",
+      "sb-link-text-extras": "- hilfreiche Werkzeuge",
+      "sb-link-links": "Links",
+      "sb-link-text-links": "- andere Dinge über Logo",
+      "extras-download-library": "Bibliothek herunterladen",
+      "extras-download-drawing": "Zeichnung herunterladen",
+      "extras-clear-history": "Verlauf löschen",
+      "extras-clear-library": "Bibliothek löschen"
+    }
+  }
+}

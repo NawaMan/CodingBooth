@@ -1,0 +1,19 @@
+display-name = "Logo Auto-Start"
+display-disc = "Auto-start Logo editor on container boot"
+display-order = 2
+auto-select = false
+tags = [
+    "logo",
+    "autostart",
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start Logo editor in background
+PORT=${LOGO_PORT}
+LOG_FILE="/tmp/logo.log"
+
+nohup serve -s --no-clipboard /opt/logo -l "$PORT" > "$LOG_FILE" 2>&1 &
+
+echo "Logo started on port $PORT (PID $!, log: $LOG_FILE)"
+"""
