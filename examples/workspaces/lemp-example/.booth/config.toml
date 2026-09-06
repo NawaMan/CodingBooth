@@ -1,3 +1,4 @@
+# Hand-written: pairs with the LEMP Boothfile (`nginx --with-php-fpm` + lemp-init).
 variant = "base"
 
 run-args = [

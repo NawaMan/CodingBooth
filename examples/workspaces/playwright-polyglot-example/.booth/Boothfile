@@ -1,4 +1,5 @@
 # syntax=codingbooth/boothfile:1
+# Hand-written after generation: teaching comments plus version-pinned `run pip install` / `dotnet tool install` that playwright+python+dotnet do not emit.
 # Configured by: booth config --no-tui --overwrite --select nodejs/python/java+maven/dotnet/go/playwright:chromium,1.58.0+java+dotnet
 
 env APT_SNAPSHOT=20260722T000000Z

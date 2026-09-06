@@ -1,3 +1,4 @@
+# Hand-written: pairs with the LAMP Boothfile (`apache --with-php` + lamp-init).
 variant = "base"
 
 run-args = [
