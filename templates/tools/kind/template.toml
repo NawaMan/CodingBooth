@@ -7,6 +7,7 @@ tags = [
     "docker",
     "k8s"
 ]
+requires = ["dind"]
 
 [params.KIND_VERSION]
 default = "0.27.0"
