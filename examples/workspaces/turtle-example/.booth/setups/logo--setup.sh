@@ -109,21 +109,14 @@ echo ""
 # Resolve the helper from the image setups dir so a project-local copy of
 # *this* script still finds it.
 CB_SETUPS="${SETUPS_DIR:-/opt/codingbooth/setups}"
-WEB_ICON="${CB_SETUPS}/cb-web-icon.sh"
-if [ ! -x "$WEB_ICON" ]; then
-  WEB_ICON="$(command -v cb-web-icon.sh || true)"
-fi
+export PATH="${CB_SETUPS}${PATH:+:$PATH}"
 ICON="applications-education"
 for candidate in icon.svg favicon.svg favicon.png favicon.ico; do
   found="$(find "$LOGO_DIR" -maxdepth 2 -name "$candidate" -print -quit 2>/dev/null || true)"
   if [ -n "$found" ]; then ICON="$found"; break; fi
 done
-if [ -n "$WEB_ICON" ] && [ -x "$WEB_ICON" ]; then
-  "$WEB_ICON" --id logo --name "Logo" --icon "$ICON" \
-    --port "${LOGO_PORT}" --path / --start start-logo
-else
-  echo "⚠️  cb-web-icon.sh not found; desktop icon skipped"
-fi
+cb-web-icon.sh --id logo --name "Logo" --icon "$ICON" \
+  --port "${LOGO_PORT}" --path / --start start-logo
 
 echo "✅ Logo editor installed."
 echo "   Location: ${LOGO_DIR}"
