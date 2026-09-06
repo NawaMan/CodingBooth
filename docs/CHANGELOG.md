@@ -4,6 +4,30 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Thonny File → Open works over VNC.** Apt Thonny is 4.0.1, which calls
+  zenity unless `file.avoid_zenity` is True — `file.use_zenity` is a later key
+  and is ignored. Zenity over noVNC exits 255 (`This option is not available`),
+  so the Open icon did nothing. `thonny--setup.sh` now wraps `/usr/local/bin/thonny`
+  to set `avoid_zenity = True` on every launch (Tk dialogs, start folder
+  `/home/coder/code`). `tests/setups/test--thonny-avoid-zenity.sh` locks the 4.0.1
+  key.
+
+- **Logo is an Education catalog template.** `--select logo` (plus `+autostart`
+  / `+expose`) installs a web-served [JSLogo](https://github.com/inexorabletash/jslogo)
+  editor on port 18610, same shape as Scratch and Excalidraw: `start-logo`,
+  a desktop icon, vendored CodeMirror so the page does not fetch cdnjs.
+  Hide the green turtle in a program with `hideturtle` (or `ht`).
+  `examples/workspaces/turtle-example` selects it next to Python turtle so
+  the same square, star, and tree exist in both languages.
+
+- **Turtle example: Logo and Python turtle in one booth.**
+  `examples/workspaces/turtle-example` is a classroom lab with the same
+  square, star, and tree in Logo (`--select logo+autostart+expose`) and in
+  Python turtle (Thonny + XFCE). Tcl/Tk and Xvfb are installed so
+  `import turtle` works on booth Python. Try it with
+  `booth example try turtle ./my-turtle` (once released) or
+  `cd examples/workspaces/turtle-example && booth`.
+
 - **Every booth now ships `lazygit`.** Installed into the base image by
   `variants/base/setups/lazygit--setup.sh`, so all variants inherit it — a
   terminal UI for git ([lazygit](https://github.com/jesseduffield/lazygit)).

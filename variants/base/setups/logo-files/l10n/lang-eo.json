@@ -1,0 +1,92 @@
+{
+  "page": {
+    "translations": {
+      "title": "Logo Interpretisto",
+      "tl-title": "Logo Interpretisto",
+      "tl-tests": "Testoj",
+      "tl-source": "Fonto",
+      "tl-reference": "Referenco",
+      "start-togetherjs": "Kunlabori",
+      "no-canvas": "Via retumilo ne subtenas la kanvaso elemento - Mizera !",
+      "ip-button-run": "Run",
+      "ip-button-stop": "Ĉesigi",
+      "ip-button-clear": "Klara",
+      "logo-ta-single-line.placeholder": "Tajpu vian kodon ĉi tie...",
+      "logo-ta-multi-line.placeholder": "Tajpu vian kodon ĉi tie...",
+      "sb-link-reference": "Referenco",
+      "sb-link-text-reference": "la Logo lingvo",
+      "sb-link-library": "Biblioteko",
+      "sb-link-text-library": "via proceduroj",
+      "sb-link-history": "Historio",
+      "sb-link-text-history": "ĉio vi faris tie",
+      "sb-link-examples": "Ekzemploj",
+      "sb-link-text-examples": "amuzaj aferoj provi ekstere",
+      "sb-link-extras": "Ekstraj",
+      "sb-link-text-extras": "helpema utilecoj",
+      "sb-link-links": "Ligoj",
+      "sb-link-text-links": "aliaj Logo rimedoj",
+      "extras-download-library": "Download Biblioteko",
+      "extras-download-drawing": "Download Desegnaĵo",
+      "extras-clear-history": "Klara Historio",
+      "extras-clear-library": "Klara Biblioteko"
+    }
+  },
+  "interpreter": {
+    "messages": {
+      "Can't apply {_PROC_} to special {name:U}": "Ne aplikas {_PROC_} al {name:U",
+      "Can't {_PROC_} primitives unless REDEFP is TRUE": "Ne {_PROC_} primitivoj se REDEFP estas VERA",
+      "Can't {_PROC_} special {name:U}": "Ne {_PROC_} speciala {name:U}",
+      "Couldn't parse: '{string}'": "Povis analizi '{string}'",
+      "Division by zero": "Divido per nulo",
+      "Don't know about variable {name:U}": "Ne estu variablo {name:U}",
+      "Don't know how to {name:U}": "Ne scipovas {name:U}",
+      "Don't know what to do with {result}": "Ne scias kion fari kun {result}",
+      "Expected ')'": "Atendis ')'",
+      "Expected ')', saw {word}": "Atendis ')', segilo {word}",
+      "Expected ']'": "Atendis ']'",
+      "Expected '}'": "Atendis '}'",
+      "Expected number after @": "Atendis nombro post @",
+      "Expected number": "Atendis nombro",
+      "Expected string": "Atendis ŝnuro",
+      "No output from procedure": "Neniu eligo de proceduro",
+      "TO: Expected END":  "Atendis FINO",
+      "TO: Expected identifier": "Atendis ensalutilo",
+      "Unexpected '{c}'": "Neatendita '{c}'",
+      "Unexpected end of instructions": "Neatendita fino de instrukcioj",
+      "{_PROC_}: Array size must be positive integer": "{_PROC_}: Tabelo grandeco devas esti pozitiva entjero",
+      "{_PROC_}: Can't create circular array": "{_PROC_}: Povas krei cirkla tabelo",
+      "{_PROC_}: Can't overwrite primitives unless REDEFP is TRUE": "{_PROC_}: Povas superskribi primitivoj se REDEFP estas VERA",
+      "{_PROC_}: Can't overwrite special {name:U}": "{_PROC_}: Povas superskribi speciala {name:U}",
+      "{_PROC_}: Can't redefine primitive {name:U}": "{_PROC_}: Ne redifini primitiva {name:U}",
+      "{_PROC_}: Can't show definition of primitive {name:U}": "{_PROC_}: Ne montri difinon de primitiva {name:U}",
+      "{_PROC_}: Expected array": "{_PROC_}: Atendata tabelo",
+      "{_PROC_}: Expected block": "{_PROC_}: Atendis bloko",
+      "{_PROC_}: Expected list of length 2": "{_PROC_}: Atendis listo de longo 2",
+      "{_PROC_}: Expected list": "{_PROC_} atendita listo",
+      "{_PROC_}: Expected lists of equal length": "{_PROC_}: Atendis listoj samlongaj",
+      "{_PROC_}: Expected non-empty list": "{_PROC_} atendis ne-malplena listo",
+      "{_PROC_}: Index out of bounds": "{_PROC_}: Indekso ekster limojn"
+    },
+    "keywords": {
+      "ALIE": "ELSE",
+      "FINO": "END"
+    },
+    "procedures": {
+      "vera": "true",
+      "falsa": "false"
+    }
+  },
+  "graphics": {
+    "colors": {
+      "ruĝa": "red",
+      "oranĝo": "orange",
+      "flava": "yellow",
+      "verda": "green",
+      "bluaj": "blue",
+      "viola": "violet",
+      "blanka": "white",
+      "grizaj": "gray",
+      "nigra": "black"
+    }
+  }
+}

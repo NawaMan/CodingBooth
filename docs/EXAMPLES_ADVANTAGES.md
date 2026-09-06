@@ -127,6 +127,11 @@ the common ground that makes the comparison fair (identical OS, identical depend
   IJava kernels in one container. `jenv local 21` switches the active JDK per project, so you can
   build and test the *same* code across Java versions to check compatibility — impractical to
   co-install on a host.
+- **turtle-example** — the *same* square, star, and tree in Logo (the Education `logo` template,
+  a JSLogo editor like Scratch/Excalidraw) and in Python turtle, in one XFCE booth with Thonny.
+  Compare the two languages on identical drawings instead of installing Logo or fighting
+  `import turtle` / Tk on the host. *(Secondary: batteries-included — Tcl/Tk, Xvfb, and
+  CodeMirror are in the image so both turtles run offline.)*
 - *(Related: **js-example** bundles three JS runtimes and **jetbrain-exmple** ten IDEs for the same
   try-them-all reason.)*
 
@@ -267,6 +272,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | server-example-2 | Port exposure (auto-pick free port) |
 | spring-boot-example | Precise version compatibility |
 | systemlib-example | Precise version compatibility |
+| turtle-example | Try / compare side-by-side (Logo vs Python turtle) |
 | vaadin-example | Batteries-included |
 | wordpress-example | Pre-baked deps / multiple things bundled |
 | zig-example | Reproducibility |

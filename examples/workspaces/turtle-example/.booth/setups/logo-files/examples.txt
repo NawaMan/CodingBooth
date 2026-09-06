@@ -1,0 +1,92 @@
+; Square — same drawing as samples/square.logo
+clearscreen hideturtle
+repeat 4 [ fd 100 rt 90 ]
+
+; Star — same drawing as samples/star.logo
+clearscreen hideturtle
+repeat 5 [ fd 100 rt 144 ]
+
+; Tree — same drawing as samples/tree.logo
+to tree :size
+  if :size < 8 [ stop ]
+  fd :size
+  lt 30
+  tree :size * 0.7
+  rt 60
+  tree :size * 0.7
+  lt 30
+  bk :size
+end
+clearscreen hideturtle
+pu bk 80 pd
+tree 70
+
+to star
+  repeat 5 [ fd 100 rt 144 ]
+end
+clearscreen
+star
+
+to square :length
+  repeat 4 [ fd :length rt 90 ]
+end
+to randomcolor
+  setcolor pick [ red orange yellow green blue violet ]
+end
+clearscreen
+repeat 36 [ randomcolor square random 200 rt 10 ]
+
+clearscreen window hideturtle
+repeat 144 [
+  setlabelheight repcount
+  penup
+  fd repcount * repcount / 30
+  label "Logo
+  bk repcount * repcount / 30
+  pendown
+  rt 10
+  wait 5
+]
+showturtle
+
+to tree :size
+   if :size < 5 [forward :size back :size stop]
+   forward :size/3
+   left 30 tree :size*2/3 right 30
+   forward :size/6
+   right 25 tree :size/2 left 25
+   forward :size/3
+   right 25 tree :size/2 left 25
+   forward :size/6
+   back :size
+end
+clearscreen
+tree 150
+
+to fern :size :sign
+  if :size < 1 [ stop ]
+  fd :size
+  rt 70 * :sign fern :size * 0.5 :sign * -1 lt 70 * :sign
+  fd :size
+  lt 70 * :sign fern :size * 0.5 :sign rt 70 * :sign
+  rt 7 * :sign fern :size - 1 :sign lt 7 * :sign
+  bk :size * 2
+end
+window clearscreen pu bk 150 pd
+fern 25 1
+
+clearscreen
+setturtle 2 penup right 90 forward 100 left 90 pendown
+repeat 100 [
+  setturtle 1 forward random 4
+  setturtle 2 forward random 4
+  wait 2
+]
+
+to choices :menu [:sofar []]
+if emptyp :menu [print :sofar stop]
+foreach first :menu [(choices butfirst :menu sentence :sofar ?)]
+end
+choices [[small medium large]
+         [vanilla [ultra chocolate] lychee [rum raisin] ginger]
+         [cone cup]]
