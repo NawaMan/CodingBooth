@@ -1,0 +1,12 @@
+en English
+eo Esperanto
+es Español
+de Deutsch
+fr Français
+he עברית
+it Italiano
+ja 日本語
+pl Polski
+ru Русский
+ua Українська
+zh 中文

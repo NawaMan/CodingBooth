@@ -1,0 +1,15 @@
+; A recursive tree — the same drawing as tree.py
+; hideturtle (ht) hides the green triangle; showturtle (st) brings it back
+to tree :size
+  if :size < 8 [ stop ]
+  fd :size
+  lt 30
+  tree :size * 0.7
+  rt 60
+  tree :size * 0.7
+  lt 30
+  bk :size
+end
+clearscreen hideturtle
+pu bk 80 pd
+tree 70

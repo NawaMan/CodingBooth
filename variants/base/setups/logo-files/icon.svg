@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <!-- Simple turtle mark for the desktop launcher (not the canvas sprite). -->
+  <circle cx="32" cy="36" r="18" fill="#2e7d32"/>
+  <circle cx="32" cy="14" r="8" fill="#1b5e20"/>
+  <circle cx="14" cy="36" r="6" fill="#1b5e20"/>
+  <circle cx="50" cy="36" r="6" fill="#1b5e20"/>
+  <circle cx="22" cy="52" r="6" fill="#1b5e20"/>
+  <circle cx="42" cy="52" r="6" fill="#1b5e20"/>
+</svg>
