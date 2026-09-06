@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Config TUI tab clicks land on the tab you clicked.** The tab bar styles pad
+  one column on each side, but the click map measured the unpadded names, so
+  later tabs drifted left under the pointer — clicking the **T** of Tools
+  selected AI Tools. Hit-testing now uses the same padded label the bar draws.
+
 - **Thonny File → Open works over VNC.** Apt Thonny is 4.0.1, which calls
   zenity unless `file.avoid_zenity` is True — `file.use_zenity` is a later key
   and is ignored. Zenity over noVNC exits 255 (`This option is not available`),
