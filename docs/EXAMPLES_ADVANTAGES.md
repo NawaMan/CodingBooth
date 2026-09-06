@@ -77,6 +77,9 @@ The advantages, in CodingBooth's own vocabulary:
 - **octave-example** — Octave + the Calysto kernel + gnuplot, preconfigured.
 - **claude-example** — Claude Code CLI preinstalled in a minimal booth.
 - **herdr-example** — a niche `herdr` tool plus a pinned clang/LLVM 18 toolchain in one selector.
+- **floci-example** — Floci (local AWS emulator) + AWS CLI + DinD in one selector, so
+  `just run` creates an S3 bucket on `:4566` with no cloud account. *(Secondary: nested
+  containers — `floci start` runs the emulator image inside the DinD sidecar.)*
 - **zig-snake-example** — "no Zig installation required" on the host; `zig build run` just works.
 - **playwright-example** — Node + Playwright + headless Chromium + VS Code extensions in one command.
 
@@ -231,6 +234,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | empty-example | Minimal scaffold |
 | fastapi-example | Port exposure |
 | firebase-example | Credential seeding |
+| floci-example | Batteries-included (local AWS) |
 | flask-example | Reproducibility |
 | fsharp-example | Host stays clean |
 | gcloud-example | Credential seeding |

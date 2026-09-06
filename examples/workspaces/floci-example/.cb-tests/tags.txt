@@ -1,0 +1,5 @@
+aws
+floci
+cloud
+dind
+emulator

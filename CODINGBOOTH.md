@@ -636,7 +636,7 @@ Startup scripts run before the user's command under `set -euo pipefail`, so a no
 
 - **Language toolchains:** bun, cabal, cargo, clojure, conan, go, gradle, java/jdk, kotlin, lua, nodejs, php, python, ruby, rust, sbt, scala, ...
 - **Package install layer:** pip, uv, conda, npm, yarn, bun, deno, go, cargo, gem, brew, cabal, hex, luarocks, pecl, conan, apt (Debian/Ubuntu system packages, with `APT_SNAPSHOT` freeze)
-- **Cloud CLIs:** aws-cli, aws-cdk, aws-sam-cli, azure-cli, gcloud, firebase
+- **Cloud CLIs:** aws-cli, aws-cdk, aws-sam-cli, azure-cli, gcloud, firebase, floci (local AWS emulator)
 - **IDE / editor:** codeserver, bluej, neovim
 - **AI tools:** claude-code, codex, aider, cursor, gh-copilot, ollama, antigravity, warp
 - **Browsers / databases / build tools:** chromium-browser; cloudbeaver; cmake

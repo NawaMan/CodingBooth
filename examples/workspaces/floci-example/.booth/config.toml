@@ -1,0 +1,13 @@
+# Configured by: booth config --no-tui --overwrite --select aws-cli/floci+autostart+expose
+
+dind = true
+
+run-args = [
+    "-v", "~/.aws/config:/etc/cb-home-seed/.aws/config:ro",
+    "-v", "~/.aws/credentials:/etc/cb-home-seed/.aws/credentials:ro",
+    "-v", "~/.aws/sso/cache:/etc/cb-home-seed/.aws/sso/cache:ro",
+    "-e", "FLOCI_PORT=4566",
+    "-v", "booth-flocidata:/home/coder/.floci",
+    "-p", "4566:4566",
+    "-v", "~/.docker/config.json:/etc/cb-home-seed/.docker/config.json:ro"
+]
