@@ -3,12 +3,15 @@
 
 env APT_SNAPSHOT=20260629T000000Z
 
+arg AWS_CLI_VERSION=latest
+arg CLAUDE_CODE_VERSION=latest
+arg NOTEBOOK_PORT=18888
 arg PYTHON_VERSION=3.13.12
 
-setup aws-cli
-setup claude-code
+setup aws-cli --version ${AWS_CLI_VERSION}
+setup claude-code ${CLAUDE_CODE_VERSION}
 setup python ${PYTHON_VERSION}
 setup antigravity
-setup notebook 18888
+setup notebook ${NOTEBOOK_PORT}
 setup python-code-extension
 setup bash-nb-kernel

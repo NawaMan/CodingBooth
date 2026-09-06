@@ -1,3 +1,4 @@
+# Hand-written: live writable ~/.config/gcloud bind (gcloud SQLite WAL); +credential seeds read-only files and does not work here.
 # Google Cloud Example
 #
 # This example demonstrates mounting gcloud credentials from the host

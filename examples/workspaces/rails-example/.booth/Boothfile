@@ -1,9 +1,13 @@
 # syntax=codingbooth/boothfile:1
-# Rails example — Ruby on Rails on a Postgres backend
+# Configured by: booth config --no-tui --overwrite --expose +-7000:3000 --select ruby:3.3+vscode-ext+gem-pkg:rails/postgresql
 
+env APT_SNAPSHOT=20260906T000000Z
+
+arg GEM_PKGS=rails
+arg PG_VERSION=latest
 arg RUBY_VERSION=3.3
 
+setup postgresql --version ${PG_VERSION}
 setup ruby ${RUBY_VERSION}
-setup postgresql
+install gem ${GEM_PKGS}
 setup ruby-code-extension
-install gem rails

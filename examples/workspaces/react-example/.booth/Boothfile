@@ -1,7 +1,9 @@
 # syntax=codingbooth/boothfile:1
-# React example — Vite + React 18
+# Configured by: booth config --no-tui --overwrite --expose +-4827:5173 --select nodejs
+
+env APT_SNAPSHOT=20260906T000000Z
 
 arg NODE_VERSION=22
 
 setup nodejs ${NODE_VERSION}
-setup react-code-extension
+setup nodejs-code-extension

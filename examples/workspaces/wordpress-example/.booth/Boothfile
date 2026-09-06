@@ -1,7 +1,13 @@
 # syntax=codingbooth/boothfile:1
-# WordPress example — PHP + Apache (mod_php) + MySQL on one container
+# Configured by: booth config --no-tui --overwrite --expose +-1920:80 --select php+composer~vscode-ext/mysql/apache+php/wp-init
 
-setup php --with-composer
+env APT_SNAPSHOT=20260906T000000Z
+
+arg PHP_VERSION=8.3
+
+setup apache
 setup mysql
-setup apache --with-php
+setup php --version ${PHP_VERSION}
 setup wp-init
+setup apache --php-only
+setup php --composer-only

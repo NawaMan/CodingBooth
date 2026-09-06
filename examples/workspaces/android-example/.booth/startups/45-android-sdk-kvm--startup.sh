@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth config --no-tui --overwrite --variant xfce --port 50411 --select java:17/android-sdk+emulator+kvm
+# Configured by: booth config --no-tui --overwrite --variant xfce --port 50411 --set common-args=--platform --set common-args=${CB_ANDROID_PLATFORM:-linux/amd64} --select java:17/android-sdk+emulator+kvm
 
 if [ -e /dev/kvm ]; then
   if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then

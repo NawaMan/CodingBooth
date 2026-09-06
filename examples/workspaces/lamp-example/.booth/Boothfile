@@ -1,7 +1,12 @@
 # syntax=codingbooth/boothfile:1
-# LAMP example — Linux + Apache + MySQL + PHP, single container
+# Configured by: booth config --no-tui --overwrite --expose +-1920:80 --select php~vscode-ext/mysql/apache+php/lamp-init
 
-setup php
-setup mysql
-setup apache --with-php
+env APT_SNAPSHOT=20260906T000000Z
+
+arg PHP_VERSION=8.3
+
+setup apache
 setup lamp-init
+setup mysql
+setup php --version ${PHP_VERSION}
+setup apache --php-only

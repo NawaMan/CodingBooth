@@ -1,8 +1,9 @@
 # syntax=codingbooth/boothfile:1
-# Browser shared-state demo — bookmarks, settings, extensions via .booth/shared;
-# optional managed policies at image build (not cache).
+# Configured by: booth config --no-tui --overwrite --variant xfce --port NEXT:25000 --select google-chrome+bookmarks-shared+settings-shared+extensions-shared+managed-policies/firefox+bookmarks-shared+settings-shared+extensions-shared+managed-policies
 
-setup google-chrome
-setup chrome-managed-policies
+env APT_SNAPSHOT=20260906T000000Z
+
 setup firefox
+setup google-chrome
 setup firefox-managed-policies
+setup chrome-managed-policies

@@ -1063,6 +1063,10 @@ For these, `go build`, `cargo build`, `mvn compile`, or `gradle build` can run i
 
 **Project-local dependencies** (startup copy from cache):
 
+`php+composer` installs Composer globally (`setup php --composer-only`). The
+`php+composer-install` row below is the next step: it runs `composer install`
+from the project's `composer.json`.
+
 These package managers install into the project directory (e.g., `node_modules/`, `vendor/`). Since the project directory is bind-mounted at runtime, the templates cache dependencies in `/opt/` during build and restore them on first startup via a local filesystem copy (no network needed):
 
 | Extension              | Manifest files                      | Image cache            | Restored to    |

@@ -1,0 +1,14 @@
+# Project-local template: the LEMP demo page and MySQL seed.
+#
+# It exists so `setup lemp-init` is generated rather than hand-typed.
+# The setup script itself stays in .booth/setups/.
+display-name = "LEMP demo"
+display-disc = "Demo index.php and lemp_demo MySQL seed"
+display-order = 1
+primary = true
+tags = ["project", "lemp", "php", "mysql"]
+
+[segments]
+Boothfile = """
+setup lemp-init
+"""

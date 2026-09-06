@@ -1,5 +1,6 @@
-silence-build=true
+# Configured by: booth config --no-tui --overwrite --cmd bash --set silence-build --select bun+bun-pkg:typescript,prettier,cowsay,figlet
 
-cmds = [
-    "bash"
-]
+
+cmds = ["bash"]
+
+silence-build = true

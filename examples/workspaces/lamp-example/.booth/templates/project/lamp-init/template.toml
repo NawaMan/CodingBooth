@@ -1,0 +1,14 @@
+# Project-local template: the LAMP demo page and MySQL seed.
+#
+# It exists so `setup lamp-init` is generated rather than hand-typed.
+# The setup script itself stays in .booth/setups/.
+display-name = "LAMP demo"
+display-disc = "Demo index.php and lamp_demo MySQL seed"
+display-order = 1
+primary = true
+tags = ["project", "lamp", "php", "mysql"]
+
+[segments]
+Boothfile = """
+setup lamp-init
+"""

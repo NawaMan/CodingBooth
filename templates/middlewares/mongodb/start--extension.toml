@@ -1,0 +1,17 @@
+display-name = "MongoDB Auto-Start"
+display-disc = "Start mongod automatically on container boot"
+display-detail = """mongodb--setup.sh only prepares ~/.mongodb; it does not start the server. This writes a startup \
+hook that forks mongod from that config on boot, so mongosh and apps work immediately."""
+display-order = 2
+auto-select = false
+tags = [
+    "mongodb",
+    "database",
+    "startup",
+    "daemon",
+]
+
+[segments]
+"Boothfile--65" = """
+setup mongodb-start
+"""
