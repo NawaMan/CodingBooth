@@ -12,17 +12,17 @@
 
 set -euo pipefail
 
-APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../booth_counter" && pwd)"
-cd "$APP_DIR"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
 
-echo "=== flutter build web in $APP_DIR ==="
+echo "=== flutter build web in $ROOT/booth_counter ==="
 
 FAILED=0
 
 # Start clean so a stale build/ from a previous run cannot make this pass.
-rm -rf build
+rm -rf booth_counter/build
 
-if flutter build web --release; then
+if just build; then
     echo "  ✅ flutter build web completed"
 else
     echo "  ❌ flutter build web failed"
@@ -31,7 +31,7 @@ fi
 
 echo ""
 echo "=== the compiled bundle exists ==="
-for artifact in build/web/main.dart.js build/web/index.html build/web/flutter.js; do
+for artifact in booth_counter/build/web/main.dart.js booth_counter/build/web/index.html booth_counter/build/web/flutter.js; do
     if [[ -s "$artifact" ]]; then
         echo "  ✅ $artifact ($(wc -c < "$artifact") bytes)"
     else
@@ -45,7 +45,7 @@ echo "=== the app's own code reached the bundle ==="
 # Guards against a build that succeeded but compiled a different entrypoint:
 # the counter's label is a string this example owns, so it can only be in
 # main.dart.js if lib/main.dart is what was compiled.
-if grep -q "Booth counter" build/web/main.dart.js; then
+if grep -q "Booth counter" booth_counter/build/web/main.dart.js; then
     echo "  ✅ the app's UI string is present in main.dart.js"
 else
     echo "  ❌ the app's UI string is missing from main.dart.js"
