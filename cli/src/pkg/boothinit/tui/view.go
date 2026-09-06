@@ -174,15 +174,7 @@ func (m model) renderTabBar() string {
 	labels := m.tabLabels()
 	tabs := make([]string, 0, len(labels))
 	for i, t := range labels {
-		label := t.name + " "
-		if t.starred {
-			label = t.name + boldStyle.Render("*")
-		}
-		if i == m.activeTab {
-			tabs = append(tabs, activeTabStyle.Render(label))
-		} else {
-			tabs = append(tabs, inactiveTabStyle.Render(label))
-		}
+		tabs = append(tabs, t.rendered(i == m.activeTab))
 	}
 	return " " + strings.Join(tabs, " ")
 }
