@@ -176,13 +176,20 @@ type tabLabel struct {
 	width   int
 }
 
-// plain returns the label as it is measured: the name plus its one-column
-// suffix, which is "*" when the search matched this tab and a space otherwise.
-func (t tabLabel) plain() string {
+// rendered is the tab as the bar draws it: the name plus a trailing space (or a
+// bold "*" when the tab is starred), wrapped in the active or inactive style.
+// Those styles pad one column on each side, so a click is measured against this
+// string rather than the bare name — otherwise later tabs sit two columns
+// further right than their hit boxes.
+func (t tabLabel) rendered(active bool) string {
+	label := t.name + " "
 	if t.starred {
-		return t.name + "*"
+		label = t.name + boldStyle.Render("*")
 	}
-	return t.name + " "
+	if active {
+		return activeTabStyle.Render(label)
+	}
+	return inactiveTabStyle.Render(label)
 }
 
 // tabLabels returns the tab bar as label plus column span. renderTabBar draws
@@ -203,7 +210,7 @@ func (m model) tabLabels() []tabLabel {
 			}
 		}
 		t := tabLabel{name: name, starred: starred, start: col}
-		t.width = lipgloss.Width(t.plain())
+		t.width = lipgloss.Width(t.rendered(i == m.activeTab))
 		labels = append(labels, t)
 		col += t.width + 1 // tabs are joined with a space
 	}

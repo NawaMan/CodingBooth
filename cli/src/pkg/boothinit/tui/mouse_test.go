@@ -129,6 +129,57 @@ func TestClickTabSwitchesTab(t *testing.T) {
 	}
 }
 
+// catalogTabNames is the real category bar. Two-tab fixtures hide the padding
+// drift: each tab is two columns wider on screen than an unstyled name, and by
+// Tools that error has the first letter of Tools landing on AI Tools.
+var catalogTabNames = []string{
+	"Config", "Languages", "Middlewares", "Tools", "AI Tools", "IDEs", "Desktop", "Education",
+}
+
+func catalogTabModel() model {
+	m := mouseModel(nil)
+	m.tabNames = catalogTabNames
+	m.tabItems = make([][]treeItem, len(catalogTabNames))
+	m.tabCursors = make([]int, len(catalogTabNames))
+	m.tabScrollOffs = make([]int, len(catalogTabNames))
+	return m
+}
+
+// The spans a click uses must be the columns the bar actually occupies — padding
+// included — not the unstyled names. Assert against View, the same way the
+// footer buttons pin their hit boxes to the hint row.
+func TestTabHitsMatchTheDrawnBar(t *testing.T) {
+	m := catalogTabModel()
+	lines := strings.Split(m.View(), "\n")
+	bar := stripANSI(lines[rowTabs])
+
+	labels := m.tabLabels()
+	if len(labels) != len(catalogTabNames) {
+		t.Fatalf("got %d labels, want %d", len(labels), len(catalogTabNames))
+	}
+
+	for i, tab := range labels {
+		want := stripANSI(tab.rendered(i == m.activeTab))
+		got := plainAt(bar, tab.start, tab.start+tab.width-1)
+		if got != want {
+			t.Fatalf("tab %q: columns %d-%d hold %q, want %q (bar %q)",
+				tab.name, tab.start, tab.start+tab.width-1, got, want, bar)
+		}
+
+		// First letter of the name, after the style's left padding.
+		letter := tab.start + 1
+		if runeAt(bar, letter) != string(tab.name[0]) {
+			t.Fatalf("tab %q: column %d holds %q, want the first letter %q",
+				tab.name, letter, runeAt(bar, letter), string(tab.name[0]))
+		}
+		clicked := click(m, letter, rowTabs)
+		if clicked.activeTab != i {
+			t.Fatalf("clicking the %q of %q selected tab %d (%q)",
+				string(tab.name[0]), tab.name, clicked.activeTab, catalogTabNames[clicked.activeTab])
+		}
+	}
+}
+
 func TestClickSearchBarFocusesSearch(t *testing.T) {
 	m := mouseModel([]treeItem{templateItem("go")})
 	m.searchQuery = "go"
