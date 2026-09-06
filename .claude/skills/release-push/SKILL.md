@@ -1,18 +1,22 @@
 ---
 name: release-push
-description: Cut a release from the current --rc version — drop the rc suffix in version.txt and README.md, commit, push main to origin, then reopen the tree by bumping to the next minor --rc1 and committing that WITHOUT pushing. Use when the user says "release", "cut a release", "make the version non-rc", "/release-push", or asks to publish the current version.
+description: Cut a release from the current --rc version — offer to refresh catalog version pins, drop the rc suffix in version.txt and README.md, commit, push main to origin, then reopen the tree by bumping to the next minor --rc1 and committing that WITHOUT pushing. Use when the user says "release", "cut a release", "make the version non-rc", "/release-push", or asks to publish the current version.
 ---
 
 # Cut a release and reopen the tree
 
-Two commits, exactly one push, and one dispatch that needs its own yes.
+Two version commits, exactly one push, and one dispatch that needs its own yes.
+Catalog version bumps, if accepted, are extra commits **before** the first version
+commit — they ride the same push.
 
 ```
-1. version.txt/README.md: X.Y.Z--rcN → X.Y.Z    → commit "X.Y.Z"
-2.                                               → git push origin main
-3. version.txt/README.md: X.Y.Z → X.(Y+1).0--rc1 → commit "X.(Y+1).0--rc1"  → NO push
-4. report
-5. offer to dispatch `Release everything`, wait for a yes, then watch it
+0.  git preflight (must be main, clean, --rc)
+0b. catalog version sweep — offer bumps; commit accepted ones (not the version commit)
+1.  version.txt/README.md: X.Y.Z--rcN → X.Y.Z    → commit "X.Y.Z"
+2.                                                → git push origin main
+3.  version.txt/README.md: X.Y.Z → X.(Y+1).0--rc1 → commit "X.(Y+1).0--rc1"  → NO push
+4.  report
+5.  offer to dispatch `Release everything`, wait for a yes, then watch it
 ```
 
 Steps 1–4 are recoverable — two local commits and a push. **Step 5 is not**: it publishes Docker
@@ -32,7 +36,7 @@ version for as long as the release needs it. The asymmetry is a constraint, not 
 around this project and the two got genuinely confused once. If the user's wording is ambiguous, ask
 which — do not infer from the word alone.
 
-## 0. Preflight — read-only, then report
+## 0. Preflight — git
 
 ```bash
 cat version.txt                            # must be X.Y.Z--rcN; if already non-rc, stop and ask
@@ -52,9 +56,93 @@ Four things stop the release:
   everything landed earlier. Show the user the list before pushing; a release push is the moment
   unrelated local work escapes.
 
-Report the version transition, the commit list step 2 will publish, and wait for the go-ahead.
-Pushing is outward-facing and this project has a private-repo → retimed-public-history concern, so
-never push on inferred consent.
+Do **0b** next, before asking for the go-ahead to drop the rc. Catalog commits (if any) have to
+land first so the version commit stays two files, and so the push list you show is complete.
+
+## 0b. Catalog versions — check, offer, commit if accepted
+
+Defaults and fallbacks in `variants/base/setups/` and `templates/` go stale between releases, and
+the script pin can disagree with the template pin. Catch that here so this release ships current
+stable versions — not after, when the images are already built from the old pins.
+
+This is an **offer**, same shape as the CHANGELOG promotion at the end: report, wait, apply only
+what the user picks. "Cut a release" is not consent to bump Go.
+
+### Inventory
+
+Two surfaces; a pin that lives on only one of them is already a finding (script↔template drift).
+
+```bash
+# script defaults, *_DEFAULT*, and fallbacks (including FALLBACK_VERSION)
+rg -n 'FALLBACK_VERSION=|_DEFAULT(_VER|_VERSION)?=|_VERSION="\$\{1:-' \
+    variants/base/setups/*--setup.sh
+
+# template version params (name contains VERSION — not PORT)
+rg -n -A3 '\[params\.\w*VERSION' templates --glob '**/template.toml'
+```
+
+The regex is a net. Also open any setup whose template has a concrete default — some pins are
+bare assignments (`JDK_VERSION="21"`, `NODE_MAJOR=20`) that `${1:-}` / `_DEFAULT` miss.
+
+Skip `variants/base/setups/future/` (abandoned). Skip example Boothfiles — they are snapshots, not
+the catalog.
+
+**Not a version pin** — leave them alone:
+
+- channel defaults: `latest`, `stable`, `recommended`, `apt`, empty (distro latest)
+- ports and other non-version params
+- VS Code / JetBrains extension IDs, apt package names
+
+**Still check** when the template default is `latest` / `stable`:
+
+- the script's fallback (`FALLBACK_VERSION`, `*_DEFAULT_VER`, "fallback when latest cannot be resolved")
+- the first concrete (non-`latest`) entry in `suggests`
+- script default vs template default disagreeing — report as **drift** even if both look current enough
+
+### Look up current stable
+
+Use the same source the setup already uses. If it curls `api.github.com/repos/<owner>/<repo>/releases/latest`, that is the lookup; otherwise the vendor page it downloads from (go.dev/dl, nodejs.org/dist, python.org, Adoptium, …). Skip prereleases, RCs, nightlies unless the tool itself is a rolling prerelease (roc `alpha4-rolling`).
+
+```bash
+gh api repos/<owner>/<repo>/releases/latest --jq '.tag_name'
+```
+
+If lookup fails (rate limit, unknown source), put `?` in the table — do not invent a version.
+
+Propose:
+
+| Kind | Target |
+| --- | --- |
+| CLI tools / single binaries | latest stable |
+| Languages / runtimes | current stable or current LTS. Prefer **N−1** (previous stable/LTS) when the newest major is brand-new or is not the LTS — Node current LTS not the odd Current; Python current 3.x that is not a just-cut `.0` |
+| Fallbacks for a `latest` default | the same number as latest stable, so a rate-limited build still gets something current |
+
+### Report, then wait
+
+Table: **tool · kind** (`default` / `fallback` / `suggests` / **drift**) **· current · proposed · source**.
+
+No stale pins and no drift → say **No catalog version bumps.** and go to the go-ahead below.
+
+Otherwise wait. Apply only the rows the user picks.
+
+### Apply
+
+How to edit: **`setup-work` §1b**.
+
+Same commit also needs:
+
+- any `tests/config/` assertion of the old default
+- a `docs/CHANGELOG.md` Unreleased bullet
+
+One commit for the accepted set (not one per tool unless the user asks). Tree must be clean before
+step 1. Re-list `git log --oneline origin/main..main` so the push preview includes these commits.
+Do not mix catalog files into the version.txt commit.
+
+### Go-ahead to drop the rc
+
+Report the version transition, the commit list step 2 will publish (catalog bumps included), and
+wait for the go-ahead. Pushing is outward-facing and this project has a private-repo →
+retimed-public-history concern, so never push on inferred consent.
 
 ## 1. Drop the rc, commit
 
