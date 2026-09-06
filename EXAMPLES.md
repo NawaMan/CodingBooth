@@ -63,6 +63,10 @@ That bare `booth` at the end is the whole ceremony. It reads the project's `.boo
 or fetches the right image, and brings the environment up. Unless the example runs in command mode,
 open **http://localhost:10000** in your browser to reach the UI.
 
+Every booth ships `just`. If the example has a `Justfile` (language apps and servers do; empty and
+tooling-only examples do not), **`just --list`** inside the booth shows the recipes — `just run`,
+`just test`, `just start` / `just stop`, or `just server` / `just client` for two-process stacks.
+
 A concrete run:
 
 ```bash

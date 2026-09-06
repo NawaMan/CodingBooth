@@ -31,7 +31,12 @@ booth--info                              # What environment am I in?
 ls /opt/codingbooth/setups/              # What tools can I easily add?
 cat /home/coder/code/.booth/Boothfile    # What's already configured, and by which command
 cat /home/coder/code/.booth/config.toml  # Variant, ports, mounts
+just --list                              # Project recipes, if a Justfile is present
 ```
+
+Every booth ships `just`. If the workspace has a `Justfile` (shipped examples with build/run/test
+do), **`just --list`** then `just run` / `just test` / `just start` is how you exercise the sample.
+Do not invent a parallel command; wrap or call the existing recipes.
 
 (An older booth may have a `.booth/Dockerfile` instead of a Boothfile — see
 [Change the Environment](#action-change-the-environment-boothfile--configtoml).)
