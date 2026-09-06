@@ -1,0 +1,19 @@
+display-name = "php-fpm"
+display-disc = "Route .php through php-fpm on the default nginx site"
+display-detail = """Installs php-fpm and points the default nginx site at its unix socket, after nginx is already \
+installed. This is the `--with-php-fpm` flag as a catalog checkbox — it does not reinstall nginx. \
+The existing nginx startup starts php-fpm when it is present."""
+display-order = 2
+auto-select = false
+tags = [
+    "nginx",
+    "php",
+    "fpm",
+    "web",
+    "lemp",
+]
+
+[segments]
+"Boothfile--55" = """
+setup nginx --fpm-only
+"""

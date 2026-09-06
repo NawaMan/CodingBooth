@@ -1,6 +1,7 @@
-# Hand-written: pairs with the WordPress Boothfile (composer / mod_php flags + wp-init).
-variant = "base"
+# Configured by: booth config --no-tui --overwrite --expose +-1920:80 --select php+composer~vscode-ext/mysql/apache+php/wp-init
+
 
 run-args = [
-    "-p", "+-1920:80",
+    "-v", "booth-mysqldata:/var/lib/mysql",
+    "--publish", "+-1920:80"
 ]

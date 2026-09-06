@@ -12,7 +12,7 @@ Then open http://localhost:8080/ on the host. You should see a PHP-rendered page
 
 ## What's inside
 
-- `.booth/Boothfile` — sets up PHP, MySQL, Apache (with mod_php), and the workspace-local `lamp-init` setup.
+- `.booth/Boothfile` — PHP, MySQL, Apache+mod_php (`apache+php`), and the project-local `lamp-init` demo.
 - `.booth/config.toml` — maps host port 8080 to container port 80.
 - `.booth/setups/lamp-init--setup.sh`:
   - Installs `php-mysql` so PHP can talk to MySQL.

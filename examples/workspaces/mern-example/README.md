@@ -20,8 +20,7 @@ Then open http://localhost:5173/ on the host. The page should list items the Exp
 
 ## What's inside
 
-- `.booth/Boothfile` — Node.js, MongoDB, and the workspace-local `mern-init` setup.
+- `.booth/Boothfile` — Node.js and MongoDB with `+start` (mongod on boot).
 - `.booth/config.toml` — exposes 3000 (API) and 5173 (Vite).
-- `.booth/setups/mern-init--setup.sh` — startup hook that auto-starts `mongod`.
 - `server/server.js` — Express + Mongoose; seeds one item if empty, exposes `GET /api/items`.
 - `client/` — React 18 + Vite 5; one `App.jsx` that fetches `/api/items`.

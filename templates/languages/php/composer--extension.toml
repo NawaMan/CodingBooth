@@ -1,0 +1,17 @@
+display-name = "Composer"
+display-disc = "Install Composer globally (PHP package manager)"
+display-detail = """Downloads Composer to /usr/local/bin after PHP is already on PATH. This is the `--with-composer` \
+flag as a catalog checkbox — it does not reinstall PHP. Project `composer.json` deps are a \
+different extension (`+composer-install`)."""
+display-order = 8
+auto-select = false
+tags = [
+    "php",
+    "composer",
+    "packages",
+]
+
+[segments]
+"Boothfile--55" = """
+setup php --composer-only
+"""

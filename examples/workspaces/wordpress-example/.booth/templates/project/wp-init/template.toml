@@ -1,0 +1,14 @@
+# Project-local template: WordPress core into /var/www/html and the DB seed.
+#
+# It exists so `setup wp-init` is generated rather than hand-typed.
+# The setup script itself stays in .booth/setups/.
+display-name = "WordPress demo"
+display-disc = "Download WordPress core and create the wordpress database"
+display-order = 1
+primary = true
+tags = ["project", "wordpress", "php", "mysql"]
+
+[segments]
+Boothfile = """
+setup wp-init
+"""
