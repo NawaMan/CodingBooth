@@ -1,7 +1,8 @@
-# Hand-written: commented-out run-args publish has no TUI field, and mean-init is not a catalog template.
-variant = "base"
+# Configured by: booth config --no-tui --overwrite --expose +-5800:4200 --select nodejs~vscode-ext/mongodb+start
+
 
 run-args = [
-#    "-p", "+-7000:3000",
-    "-p", "+-5800:4200",
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
+    "-v", "booth-mongodata:/home/coder/.mongodb",
+    "--publish", "+-5800:4200"
 ]

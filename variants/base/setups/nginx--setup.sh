@@ -8,11 +8,12 @@ set -Eeuo pipefail
 usage() {
   cat <<USAGE
 Usage:
-  $0 [--with-php-fpm]
+  $0 [--with-php-fpm] [--fpm-only]
 
 Examples:
   $0                  # install nginx only
   $0 --with-php-fpm   # install nginx + php-fpm and route .php to fpm via default site
+  $0 --fpm-only       # install php-fpm and wire the default site; nginx must already be installed
 
 Notes:
 - Installs nginx via apt
@@ -20,36 +21,26 @@ Notes:
 - A startup script auto-starts nginx on container start
 - With --with-php-fpm, php-fpm is installed and the default site is configured to
   pass .php files to fpm over the unix socket /run/php/php-fpm.sock
+- --fpm-only does not reinstall nginx; use it from the nginx+php-fpm catalog extension
 USAGE
 }
 
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (use sudo)"; exit 1; }
 
 WITH_FPM=false
+FPM_ONLY=false
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --with-php-fpm) WITH_FPM=true; shift ;;
+    --fpm-only)     FPM_ONLY=true; WITH_FPM=true; shift ;;
     -h|--help)      usage; exit 0 ;;
     *) echo "❌ Unknown arg: $1"; usage; exit 2 ;;
   esac
 done
 
-export DEBIAN_FRONTEND=noninteractive
-echo "📦 Installing nginx ..."
-apt-get update
-
-if $WITH_FPM; then
-  apt-get install -y --no-install-recommends nginx php-fpm
-else
-  apt-get install -y --no-install-recommends nginx
-fi
-rm -rf /var/lib/apt/lists/*
-
-# Configure default site to pass .php files to php-fpm if requested.
-if $WITH_FPM; then
+wire_php_fpm_site() {
   FPM_SOCK=$(ls /run/php/php*-fpm.sock 2>/dev/null | head -1 || true)
   if [[ -z "$FPM_SOCK" ]]; then
-    # Discover socket path from installed php-fpm pool config (sock created at runtime).
     PHP_VER=$(ls /etc/php/ 2>/dev/null | head -1 || echo "")
     FPM_SOCK="/run/php/php${PHP_VER}-fpm.sock"
   fi
@@ -78,6 +69,37 @@ server {
     }
 }
 NGINX
+}
+
+if $FPM_ONLY; then
+  if ! command -v nginx >/dev/null 2>&1; then
+    echo "❌ --fpm-only needs nginx on PATH (select nginx before +php-fpm)" >&2
+    exit 1
+  fi
+  export DEBIAN_FRONTEND=noninteractive
+  echo "📦 Installing php-fpm and wiring the default nginx site ..."
+  apt-get update
+  apt-get install -y --no-install-recommends php-fpm
+  rm -rf /var/lib/apt/lists/*
+  wire_php_fpm_site
+  echo "✅ php-fpm wired to default site — drop .php files in /var/www/html"
+  exit 0
+fi
+
+export DEBIAN_FRONTEND=noninteractive
+echo "📦 Installing nginx ..."
+apt-get update
+
+if $WITH_FPM; then
+  apt-get install -y --no-install-recommends nginx php-fpm
+else
+  apt-get install -y --no-install-recommends nginx
+fi
+rm -rf /var/lib/apt/lists/*
+
+# Configure default site to pass .php files to php-fpm if requested.
+if $WITH_FPM; then
+  wire_php_fpm_site
 fi
 
 # --- startup script: start nginx (and php-fpm if installed) ---

@@ -1,9 +1,11 @@
 # syntax=codingbooth/boothfile:1
-# Hand-written: local mean-init setup and a commented-out run-args publish; neither has a catalog home. Do not add a "# Configured by:" header.
-# MEAN example — MongoDB + Express + Angular + Node
+# Configured by: booth config --no-tui --overwrite --expose +-5800:4200 --select nodejs~vscode-ext/mongodb+start
 
+env APT_SNAPSHOT=20260906T000000Z
+
+arg MONGO_VERSION=latest
 arg NODE_VERSION=22
 
+setup mongodb --version ${MONGO_VERSION}
 setup nodejs ${NODE_VERSION}
-setup mongodb
-setup mean-init
+setup mongodb-start

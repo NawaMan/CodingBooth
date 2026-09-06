@@ -8,12 +8,13 @@ set -Eeuo pipefail
 usage() {
   cat <<USAGE
 Usage:
-  $0 [--version <MAJOR.MINOR>] [--with-composer] [--with-fpm] [--extensions "ext1,ext2,..."] [--no-default-exts]
+  $0 [--version <MAJOR.MINOR>] [--with-composer] [--composer-only] [--with-fpm] [--extensions "ext1,ext2,..."] [--no-default-exts]
 
 Examples:
   $0                            # PHP 8.3 CLI + common extensions
   $0 --version 8.2              # PHP 8.2 instead
-  $0 --with-composer            # also install Composer globally
+  $0 --with-composer            # also install Composer globally (reinstalls PHP)
+  $0 --composer-only            # install Composer only; PHP must already be on PATH
   $0 --with-fpm                 # install php-fpm (service not enabled in containers)
   $0 --extensions "curl,gd,intl"  # choose your own extension set
   $0 --no-default-exts            # install only core + dev tools (no extra exts)
@@ -23,6 +24,7 @@ Notes:
 - Exposes php/pecl/phpize/php-config via /usr/local/bin (non-login shells OK)
 - Uses apt packages (php<ver>-*) for speed & security
 - Composer is optional and installed to /usr/local/bin/composer
+- --composer-only does not reinstall PHP; use it from the php+composer catalog extension
 USAGE
 }
 
@@ -33,6 +35,7 @@ USAGE
 PHP_DEFAULT_VER="8.3"
 PHP_VER="$PHP_DEFAULT_VER"
 WITH_COMPOSER=0
+COMPOSER_ONLY=0
 WITH_FPM=0
 NO_DEFAULT_EXTS=0
 CUSTOM_EXTS=""
@@ -41,6 +44,7 @@ while [[ $# -gt 0 ]]; do
   case "$1" in
     --version) shift; PHP_VER="${1:-$PHP_DEFAULT_VER}"; shift ;;
     --with-composer) WITH_COMPOSER=1; shift ;;
+    --composer-only) COMPOSER_ONLY=1; WITH_COMPOSER=1; shift ;;
     --with-fpm)      WITH_FPM=1; shift ;;
     --extensions)    shift; CUSTOM_EXTS="${1:-}"; shift ;;
     --no-default-exts) NO_DEFAULT_EXTS=1; shift ;;
@@ -48,6 +52,30 @@ while [[ $# -gt 0 ]]; do
     *) echo "❌ Unknown arg: $1" >&2; usage; exit 2 ;;
   esac
 done
+
+# Install Composer to /usr/local/bin using whatever php is already on PATH.
+# Shared by --with-composer (after this script's PHP install) and --composer-only
+# (the php+composer catalog extension; PHP must already have been set up).
+install_composer() {
+  if ! command -v php >/dev/null 2>&1; then
+    echo "❌ Composer install needs php on PATH (select php before +composer)" >&2
+    exit 1
+  fi
+  echo "⬇️  Installing Composer ..."
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL https://getcomposer.org/installer -o /tmp/composer-setup.php
+  php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
+  rm -f /tmp/composer-setup.php
+}
+
+# --composer-only: do not reinstall PHP (that would rm -rf the prefix and default
+# the version to 8.3). Just run the Composer installer.
+if [[ $COMPOSER_ONLY -eq 1 ]]; then
+  install_composer
+  echo "✅ Composer installed at /usr/local/bin/composer"
+  echo -n "   composer -V → "
+  command -v composer >/dev/null && composer -V || echo "composer not found"
+  exit 0
+fi
 
 # sanitize version like 8.3 / 8.2
 if ! [[ "$PHP_VER" =~ ^[0-9]+\.[0-9]+$ ]]; then
@@ -162,11 +190,7 @@ ln -sfn "${BIN_DIR}/phpwrap" "${BIN_DIR}/php"
 
 # ---- Composer (optional) ----
 if [[ $WITH_COMPOSER -eq 1 ]]; then
-  echo "⬇️  Installing Composer ..."
-  curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL https://getcomposer.org/installer -o /tmp/composer-setup.php
-  # You can add signature verification here if you like (sha384)
-  php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer
-  rm -f /tmp/composer-setup.php
+  install_composer
 fi
 
 # ---- FPM footnote (optional) ----
