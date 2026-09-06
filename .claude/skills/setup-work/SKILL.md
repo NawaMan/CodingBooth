@@ -25,7 +25,7 @@ often loaded alone):
 **Standing rule — end every turn by naming the try-it folder.** Once §2 has picked a workspace,
 close each reply with the folder and the one command that exercises the change:
 
-> 🧪 Try it: `examples/workspaces/zig-example` — `./booth -- ./run-primes.sh`
+> 🧪 Try it: `examples/workspaces/zig-example` — `./booth -- just run`
 
 The user cannot check your work without that line. Repeat it every turn, not just the last one.
 
@@ -154,9 +154,15 @@ examples/workspaces/<name>-example/
 │   ├── tags.txt                    # one tag per line; runner filters on these
 │   ├── test001-<thing>--on-host.sh # starts the booth, runs the in-booth suite
 │   └── inBooth-test001-<thing>.sh  # the actual assertions, run inside
-├── README.md                       # what it demonstrates, how to run it
+├── Justfile                        # if the project has in-booth build/run/test
+├── README.md                       # what it demonstrates, how to run it (`just --list`)
 └── <a small real project>          # source the tool actually operates on
 ```
+
+**Justfile** when the sample has in-booth commands (`just run`, `just test`, `just start`/`stop`,
+or `just server`/`client` for two-process stacks). Wrap the existing scripts; keep them. Skip it
+for empty / tooling-only / autostart-stack examples. In-booth sample tests call `just <recipe>`,
+not the wrapped script.
 
 **Generate the two `.booth/` files; do not type them.** A hand-written pair is guarded as
 hand-written forever after — the TUI opens it behind a warning dialog and `booth config` will not

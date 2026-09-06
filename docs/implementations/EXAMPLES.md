@@ -147,8 +147,19 @@ Each example contains:
 - `booth` wrapper script
 - `.booth/config.toml` configuration
 - `.booth/Dockerfile` (optional) for custom images
-- `Justfile` when the example has in-booth `build` / `run` / `test` (or `start` / `stop`, `server` / `client`)
+- `Justfile` when the example has in-booth commands — see [Justfile](#justfile)
 - Example code and documentation
+
+### Justfile
+
+Every booth ships `just`. Examples that have a real in-booth `build` / `run` / `test` (or `start` /
+`stop`, or `server` / `client` for two-process stacks) wrap those commands in a root `Justfile`.
+`just` with no args lists recipes. Wrap the existing scripts; do not delete them. Empty, tooling-only,
+and autostart-stack examples skip the Justfile.
+
+In-booth sample tests (`.cb-tests/inBooth-*` and `booth -- '…'` lines that exercise the sample)
+call `just <recipe>`, not the wrapped script. Tool-version checks and host-side port probes stay as
+direct commands. `run-automatic-on-host-test.sh` is a host dispatcher and never calls `just`.
 
 Security/network examples:
 - `examples/workspaces/urlwhitelist-example/` - tinyproxy-based domain whitelist flow
