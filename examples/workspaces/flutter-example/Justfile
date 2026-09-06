@@ -4,7 +4,7 @@ default:
 
 # Compile the web target
 build:
-    cd booth_counter && flutter build web
+    cd booth_counter && flutter build web --release
 
 # Serve on :8080 (open /proxy/8080/ on the booth)
 run:

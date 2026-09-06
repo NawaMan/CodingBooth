@@ -23,7 +23,7 @@ cleanup() {
     echo
     echo "Cleaning up..."
     # Delete kind cluster if running
-    docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./stop-cluster.sh" 2>/dev/null || true
+    docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just stop" 2>/dev/null || true
     # Stop workspace
     docker stop "$CONTAINER_NAME" 2>/dev/null || true
     docker stop "${CONTAINER_NAME}-10000-dind" 2>/dev/null || true

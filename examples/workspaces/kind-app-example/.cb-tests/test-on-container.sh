@@ -24,7 +24,7 @@ echo
 
 # Test 1: Create cluster
 echo "Creating KinD cluster..."
-./start-cluster.sh > /dev/null 2>&1
+just start > /dev/null 2>&1
 pass "Cluster created"
 
 # Test 2: Check cluster is running (expects UP)
@@ -36,12 +36,12 @@ fi
 
 # Test 3: Build app images
 echo "Building app images..."
-./build.sh > /dev/null 2>&1
+just build > /dev/null 2>&1
 pass "App images built"
 
 # Test 4: Deploy app
 echo "Deploying TODO app..."
-./deploy-app.sh > /dev/null 2>&1
+just deploy > /dev/null 2>&1
 pass "App deployed"
 
 # Test 5: Verify pods are running in todo-app namespace
@@ -72,7 +72,7 @@ pass "App removed"
 
 # Test 8: Delete cluster
 echo "Deleting cluster..."
-./stop-cluster.sh > /dev/null 2>&1
+just stop > /dev/null 2>&1
 pass "Cluster deleted"
 
 # Test 9: Check cluster is not running (expects DOWN)
