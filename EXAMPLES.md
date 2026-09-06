@@ -107,6 +107,10 @@ for readability — `booth example list` itself prints a flat alphabetical list.
 `js` · `kotlin` · `nodejs` · `octave` · `php` · `python` · `rlang` · `ruby` · `rust` · `zig` ·
 `zig-snake`
 
+### Education
+
+`turtle` — catalog Logo editor (`--select logo`) and Python turtle drawing the same square, star, and tree.
+
 ### Mobile
 
 `android`

@@ -1,0 +1,16 @@
+JSLogo (Logo interpreter in the browser)
+  https://github.com/inexorabletash/jslogo
+  commit ea74c385d2488b21d97fb3eaf728a671445f9eaa
+  license Apache-2.0 (see LICENSE.md)
+
+CodeMirror 5.61.1 (editor widget)
+  https://github.com/codemirror/codemirror5
+  license MIT
+  vendored under vendor/codemirror/ so the editor works offline
+
+Shipped by logo--setup.sh into /opt/logo and served with `serve`.
+
+Local patches on top of upstream JSLogo:
+- CodeMirror and fonts vendored (no cdnjs / fonts.googleapis.com)
+- Open file control (top bar + Extras) to load a .logo from the desktop file picker
+- Classroom square/star/tree snippets prepended to examples.txt
