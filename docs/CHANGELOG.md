@@ -4,6 +4,27 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Apache mod_php, nginx php-fpm, and MongoDB auto-start are catalog
+  extensions.** `--select apache+php` enables mod_php without reinstalling
+  Apache (`setup apache --php-only`). `--select nginx+php-fpm` installs php-fpm
+  and wires the default site (`setup nginx --fpm-only`) without reinstalling
+  nginx. `--select mongodb+start` forks mongod on boot — mongodb--setup.sh only
+  prepares `~/.mongodb`. LAMP / LEMP / WordPress examples wrap their demo
+  `*-init` scripts as project-local templates; MEAN / MERN drop the duplicate
+  mongod-start inits and select `mongodb+start`. Tests:
+  `test102-init-apache-php.sh`, `test103-init-nginx-php-fpm.sh`,
+  `test104-init-mongodb-start.sh`.
+
+- **PHP Composer is a catalog extension.** `--select php+composer` installs
+  Composer globally after PHP (`setup php --composer-only`), without reinstalling
+  PHP — which is what a second `setup php --with-composer` would do, and which
+  would also reset a pinned version to 8.3. Distinct from `+composer-install`,
+  which runs `composer install` for a project's `composer.json`.
+  `examples/workspaces/php-example` selects `php+composer`.
+  `tests/config/test101-init-php-composer.sh` and
+  `tests/setups/test--php-composer-only.sh` cover the Boothfile line and the
+  `--composer-only` path.
+
 - **Floci is a Tools catalog template.** `--select floci` installs the official
   [Floci](https://floci.io) CLI, a LocalStack-compatible local AWS emulator on
   port 4566 (no cloud account, no auth token). `floci start` needs Docker —

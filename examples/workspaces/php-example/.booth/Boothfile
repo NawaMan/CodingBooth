@@ -1,6 +1,10 @@
 # syntax=codingbooth/boothfile:1
-# Hand-written: `setup php --with-composer` is a documented hand-edit; the php template emits `setup php --version`. Do not add a "# Configured by:" header.
+# Configured by: booth config --no-tui --overwrite --select php+vscode-ext+composer
 
-# PHP Example
+env APT_SNAPSHOT=20260906T000000Z
 
-setup php --with-composer
+arg PHP_VERSION=8.3
+
+setup php --version ${PHP_VERSION}
+setup php --composer-only
+setup php-code-extension

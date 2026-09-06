@@ -1,9 +1,11 @@
 # syntax=codingbooth/boothfile:1
-# Hand-written: local mern-init setup is not a catalog template. Do not add a "# Configured by:" header.
-# MERN example — MongoDB + Express + React + Node
+# Configured by: booth config --no-tui --overwrite --expose +-7000:3000 --expose +-4827:5173 --select nodejs~vscode-ext/mongodb+start
 
+env APT_SNAPSHOT=20260906T000000Z
+
+arg MONGO_VERSION=latest
 arg NODE_VERSION=22
 
+setup mongodb --version ${MONGO_VERSION}
 setup nodejs ${NODE_VERSION}
-setup mongodb
-setup mern-init
+setup mongodb-start

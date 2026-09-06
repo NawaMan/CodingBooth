@@ -1,6 +1,6 @@
 display-name = "PHP"
 display-disc = "PHP language with Composer package manager"
-display-detail = "Installs PHP with Composer for dependency management. Supports version pinning via the PHP_VERSION parameter."
+display-detail = "Installs the PHP CLI with common extensions. Pin the version with PHP_VERSION. Add the Composer extension (`php+composer`) to install Composer globally; `+composer-install` then pre-installs project composer.json deps."
 display-order = 62
 tags = [
     "php",

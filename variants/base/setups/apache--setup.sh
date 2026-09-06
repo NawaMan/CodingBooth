@@ -8,30 +8,59 @@ set -Eeuo pipefail
 usage() {
   cat <<USAGE
 Usage:
-  $0 [--with-php]
+  $0 [--with-php] [--php-only]
 
 Examples:
   $0              # install apache2 only
   $0 --with-php   # install apache2 + libapache2-mod-php (mod_php enabled)
+  $0 --php-only   # enable mod_php only; Apache must already be installed
 
 Notes:
 - Installs the Apache HTTP Server via apt
 - The server is NOT started during build (Docker best practice)
 - A startup script auto-starts apache2 on container start
 - With --with-php, mod_php is enabled so .php files are served by Apache directly
+- --php-only does not reinstall Apache; use it from the apache+php catalog extension
 USAGE
 }
 
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (use sudo)"; exit 1; }
 
 WITH_PHP=false
+PHP_ONLY=false
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --with-php) WITH_PHP=true; shift ;;
+    --php-only) PHP_ONLY=true; WITH_PHP=true; shift ;;
     -h|--help)  usage; exit 0 ;;
     *) echo "❌ Unknown arg: $1"; usage; exit 2 ;;
   esac
 done
+
+enable_mod_php() {
+  export DEBIAN_FRONTEND=noninteractive
+  apt-get update
+  apt-get install -y --no-install-recommends libapache2-mod-php
+  rm -rf /var/lib/apt/lists/*
+  if command -v a2enmod >/dev/null 2>&1; then
+    shopt -s nullglob
+    for mod in /etc/apache2/mods-available/php*.load; do
+      a2enmod "$(basename "$mod" .load)" >/dev/null
+    done
+    shopt -u nullglob
+  fi
+}
+
+if $PHP_ONLY; then
+  if ! command -v apache2 >/dev/null 2>&1 && ! command -v apache2ctl >/dev/null 2>&1; then
+    echo "❌ --php-only needs Apache on PATH (select apache before +php)" >&2
+    exit 1
+  fi
+  echo "📦 Enabling Apache mod_php ..."
+  enable_mod_php
+  echo "✅ mod_php enabled — drop .php files in /var/www/html"
+  exit 0
+fi
 
 export DEBIAN_FRONTEND=noninteractive
 echo "📦 Installing Apache HTTP Server ..."

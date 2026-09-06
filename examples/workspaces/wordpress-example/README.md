@@ -22,7 +22,7 @@ Both Apache and MySQL auto-start when the container boots.
 
 ## What's inside
 
-- `.booth/Boothfile` — sets up PHP (with Composer), MySQL server, Apache (with mod_php), and a workspace-local `wp-init` setup.
+- `.booth/Boothfile` — PHP+Composer, MySQL, Apache+mod_php, and the project-local `wp-init` demo.
 - `.booth/config.toml` — maps host port 8080 to container port 80.
 - `.booth/setups/wp-init--setup.sh` — downloads WordPress core into `/var/www/html` at build time, and registers a startup hook that creates the `wordpress` database on container start.
 

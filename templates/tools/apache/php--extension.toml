@@ -1,0 +1,17 @@
+display-name = "mod_php"
+display-disc = "Serve .php files from Apache (libapache2-mod-php)"
+display-detail = """Enables Apache mod_php after Apache is already installed. This is the `--with-php` flag as a \
+catalog checkbox — it does not reinstall Apache. Drop `.php` files in /var/www/html."""
+display-order = 2
+auto-select = false
+tags = [
+    "apache",
+    "php",
+    "web",
+    "lamp",
+]
+
+[segments]
+"Boothfile--55" = """
+setup apache --php-only
+"""
