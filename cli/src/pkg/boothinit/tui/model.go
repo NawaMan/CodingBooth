@@ -61,6 +61,14 @@ type model struct {
 	confirmed    bool
 	quitting     bool // true when showing quit confirmation
 
+	// confirmRequires, when non-nil, is a requires-driven select/deselect
+	// awaiting a y/n answer: selecting something pulls in a still-unselected
+	// requirement, or deselecting something would orphan a still-selected
+	// dependent. The question is posed in the notification line; every other
+	// key is ignored until it's answered. 'n'/Esc leaves everything exactly
+	// as it was — nothing is applied until 'y'.
+	confirmRequires *requiresPrompt
+
 	// Warning dialog — shown once at startup (e.g., .booth not writable)
 	warningDialog  bool
 	warningMessage string
@@ -437,6 +445,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.handleOverwriteConfirm(msg)
 		}
 
+		// Requires-driven select/deselect awaiting a y/n answer
+		if m.confirmRequires != nil {
+			return m.handleRequiresConfirm(msg)
+		}
+
 		// Quit confirmation mode
 		if m.quitting {
 			switch msg.String() {
@@ -697,7 +710,11 @@ func (m *model) activateConfigRow(row configRow) {
 		f := allConfigFields[row.fieldIdx]
 		switch f.Kind {
 		case fieldKindBool:
-			m.boolFields[f.Key] = !m.boolFields[f.Key]
+			newVal := !m.boolFields[f.Key]
+			m.boolFields[f.Key] = newVal
+			if f.Key == "dind" {
+				m.setDindSelected(newVal)
+			}
 		case fieldKindCycle:
 			m.cycleEditing = true
 			m.cyclePrevIdx = m.cycleIndices[f.Key]
