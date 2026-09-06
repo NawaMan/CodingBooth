@@ -6,6 +6,7 @@ tags = [
     "docker",
     "compose"
 ]
+requires = ["dind"]
 
 [segments]
 Boothfile = """
