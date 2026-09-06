@@ -40,16 +40,15 @@ booth
 Then, inside the booth:
 
 ```bash
-cd booth_counter
-flutter test          # runs the widget test
-flutter build web     # compiles to build/web/main.dart.js
+just --list
+just test             # flutter test
+just build            # flutter build web --release
 ```
 
 To see it in a browser, serve it from inside the booth and open it through the web pane:
 
 ```bash
-cd booth_counter
-flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0
+just run              # flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0
 ```
 
 `--web-hostname 0.0.0.0` matters: bound to `localhost` the server is unreachable from outside the

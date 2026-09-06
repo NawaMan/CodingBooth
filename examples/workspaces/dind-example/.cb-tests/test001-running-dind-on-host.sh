@@ -24,7 +24,7 @@ cleanup() {
     echo
     echo "Cleaning up..."
     # Stop http-server if running
-    docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./stop-server.sh" 2>/dev/null || true
+    docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just stop" 2>/dev/null || true
 
     # Stop and remove the main booth container
     docker stop "$CONTAINER_NAME" 2>/dev/null || true
@@ -90,7 +90,7 @@ echo
 
 # Start server for host tests
 echo "Starting server for host tests..."
-docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./start-server.sh" > /dev/null 2>&1
+docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just start" > /dev/null 2>&1
 pass "Server started"
 
 # Wait for server to be ready
@@ -106,7 +106,7 @@ fi
 
 # Stop server
 echo "Stopping server..."
-docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./stop-server.sh" > /dev/null 2>&1
+docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just stop" > /dev/null 2>&1
 pass "Server stopped"
 
 # Wait for port to close

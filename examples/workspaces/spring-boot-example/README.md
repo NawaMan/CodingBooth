@@ -7,7 +7,8 @@ This example is a minimal Spring Boot web app running inside a CodingBooth works
 ```bash
 ./booth run
 # inside the booth:
-mvn spring-boot:run
+just --list
+just run                 # mvn spring-boot:run
 ```
 
 Then open:

@@ -57,7 +57,7 @@ fi
 APK="build/hello.apk"
 if [[ ! -f "$APK" ]]; then
     echo "=== APK not built yet; building it first ==="
-    ./build-apk.sh >/dev/null || { echo "❌ build-apk.sh failed"; exit 1; }
+    just build >/dev/null || { echo "❌ just build failed"; exit 1; }
 fi
 
 # The launcher derives the system image from whatever is installed, so this test

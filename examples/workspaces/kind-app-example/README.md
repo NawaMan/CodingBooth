@@ -94,11 +94,12 @@ cd examples/workspaces/kind-app-example
 booth
 
 # Inside the workspace, run:
-./start-cluster.sh   # Create KIND cluster
-./build.sh           # Build Docker images
-./deploy-app.sh      # Deploy to Kubernetes
-./access-app.sh      # Start port-forwards
-./status.sh          # One-shot health check (optional)
+just --list
+just start           # ./start-cluster.sh
+just build           # ./build.sh
+just deploy          # ./deploy-app.sh
+just access          # ./access-app.sh
+just check           # ./status.sh
 
 # Open http://localhost:3000 in your browser
 ```

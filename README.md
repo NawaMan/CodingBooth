@@ -141,7 +141,8 @@ CodingBooth provides several ready-to-use examples to get you started.
    booth
    ```
 
-At this point, you can inspect the code, modify it, then build and run it.
+At this point, you can inspect the code, modify it, then build and run it. Inside the booth,
+`just --list` shows project recipes when the example ships a Justfile (`just run`, `just test`, …).
 **NOTE:** Visit http://localhost:10000 in your browser to access the UI (except for command mode).
 
 Not sure which example to start from? See **[Examples](EXAMPLES.md)** — the full catalog, grouped and with a walk-through of three that show the range. For the specific CodingBooth advantage each workspace showcases, see **[What Each Example Demonstrates](docs/EXAMPLES_ADVANTAGES.md)**.

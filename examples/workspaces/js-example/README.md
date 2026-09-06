@@ -8,7 +8,8 @@ This example is a full client-server "Time App" built and run entirely inside a 
 
 ```bash
 # Inside the booth
-./start-server.sh          # starts both API (port 3000) and Vite (port 5173)
+just --list
+just start                 # ./start-server.sh — API :3000 and Vite :5173
 ```
 
 This launches two background servers:
@@ -43,8 +44,9 @@ the booth. If both times are in sync, everything is working.
 ## Other commands
 
 ```bash
-./check-server.sh              # verify both servers are up
-./check-server.sh --expect=down  # verify both servers are down
-./stop-server.sh               # stop both servers
-./start-server.sh --runtime=bun  # use Bun instead of Node for the API
+just check                     # verify both servers are up
+just check expect=down         # verify both servers are down
+just stop                      # stop both servers
+just start runtime=bun         # use Bun instead of Node for the API
+just typecheck                 # tsc --noEmit
 ```

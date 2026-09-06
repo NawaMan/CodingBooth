@@ -13,7 +13,7 @@ The four official bindings (JS, Python, Java, .NET) are all pinned to Playwright
 ## Run
 
 ```bash
-./booth -- ./run-polyglot.sh
+./booth -- just run      # ./run-polyglot.sh
 ```
 
 That runs all five and prints a summary:
