@@ -12,7 +12,7 @@ Then open http://localhost:8080/ on the host. You should see a PHP-FPM-rendered 
 
 ## What's inside
 
-- `.booth/Boothfile` — sets up PHP, MySQL, nginx (with php-fpm wired into the default site), and the workspace-local `lemp-init` setup.
+- `.booth/Boothfile` — PHP, MySQL, nginx+php-fpm, and the project-local `lemp-init` demo.
 - `.booth/config.toml` — maps host port 8080 to container port 80.
 - `.booth/setups/lemp-init--setup.sh`:
   - Installs `php-mysql`.

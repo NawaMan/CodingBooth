@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --select nodejs+npm-pkg:typescript,ts-node,prettier,eslint,cowsay,figlet-cli
+
+
+run-args = ["-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro"]

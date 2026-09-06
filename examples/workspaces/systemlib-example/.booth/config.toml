@@ -1,2 +1,2 @@
-# Configured by: booth config --no-tui --overwrite --select clang/cmake
+# Configured by: booth config --no-tui --overwrite --select clang/cmake/make/apt-pkg:libcurl4-openssl-dev,libsqlite3-dev,sqlite3,ca-certificates
 

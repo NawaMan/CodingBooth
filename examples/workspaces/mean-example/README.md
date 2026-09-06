@@ -20,8 +20,7 @@ Then open http://localhost:4200/ on the host. The page should list items the Exp
 
 ## What's inside
 
-- `.booth/Boothfile` — Node.js, MongoDB, and the workspace-local `mean-init` setup.
-- `.booth/config.toml` — exposes 3000 (API) and 4200 (Angular dev server).
-- `.booth/setups/mean-init--setup.sh` — registers a startup hook that auto-starts `mongod` (MongoDB's setup only prepares data dirs).
+- `.booth/Boothfile` — Node.js and MongoDB with `+start` (mongod on boot).
+- `.booth/config.toml` — exposes 4200 (Angular dev server).
 - `server/server.js` — Express + Mongoose; seeds one item if the collection is empty, exposes `GET /api/items`.
 - `client/` — Angular 19 standalone-component app with one `AppComponent` that fetches `/api/items`.

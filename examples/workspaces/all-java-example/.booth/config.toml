@@ -1,3 +1,4 @@
+# Hand-written: pairs with the multi-JDK Boothfile, which no catalog selection can emit.
 variant="desktop-xfce"
 run-args=[
     "-v", "$HOME/.m2:/home/coder/.m2",
