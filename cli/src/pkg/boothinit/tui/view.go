@@ -285,6 +285,9 @@ func (m model) renderConfigPanel(leftWidth, contentH int) []string {
 
 func (m model) renderBoolField(f configFieldDef, width int, isCursor bool) string {
 	val := m.boolFields[f.Key]
+	if f.Key == "dind" && m.templateImpliesDind() {
+		val = true
+	}
 	check := "[ ]"
 	if val {
 		check = "[x]"
@@ -874,7 +877,9 @@ func (m model) renderFooter() string {
 	// Ctrl+E are no longer spelled out here — the buttons carry both the action and
 	// its key, and repeating them only crowded the row.
 	var keys string
-	if m.quitting {
+	if m.confirmRequires != nil {
+		keys = "  Enter/Y: yes  │  Esc/N: no"
+	} else if m.quitting {
 		keys = "  Enter: quit  │  Esc: cancel"
 	} else if m.searchFocused {
 		keys = "  Type to search  │  Tab/Enter/↓: go to list  │  Esc: clear"
