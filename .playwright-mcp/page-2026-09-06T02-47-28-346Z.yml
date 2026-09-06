@@ -1,0 +1,183 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - heading "CodingBooth Configuration" [level=1] [ref=e4]
+    - generic [ref=e5]: 2 selected
+  - generic [ref=e6]:
+    - searchbox "Search templates…" [ref=e7]
+    - generic [ref=e8]:
+      - button "All" [ref=e168] [cursor=pointer]
+      - button "Popular" [ref=e169] [cursor=pointer]
+      - button "Selected" [ref=e170] [cursor=pointer]
+  - tablist [ref=e12]:
+    - tab "Config" [ref=e171] [cursor=pointer]
+    - tab "Languages*" [selected] [ref=e172] [cursor=pointer]
+    - tab "Middlewares*" [ref=e173] [cursor=pointer]
+    - tab "Tools*" [ref=e174] [cursor=pointer]
+    - tab "AI Tools*" [ref=e175] [cursor=pointer]
+    - tab "IDEs" [ref=e176] [cursor=pointer]
+    - tab "Desktop" [ref=e177] [cursor=pointer]
+    - tab "Education" [ref=e178] [cursor=pointer]
+  - main [ref=e21]:
+    - generic [ref=e22]:
+      - option "Go Go" [selected] [ref=e179] [cursor=pointer]:
+        - checkbox "Go" [checked] [ref=e180]
+        - generic [ref=e181]: Go
+      - option "linter linter" [ref=e182] [cursor=pointer]:
+        - checkbox "linter" [ref=e183]
+        - generic [ref=e184]: linter
+      - option "*vscode-ext *vscode-ext" [selected] [ref=e185] [cursor=pointer]:
+        - checkbox "*vscode-ext" [checked] [ref=e186]
+        - generic [ref=e187]: "*vscode-ext"
+      - option "kernel kernel" [ref=e188] [cursor=pointer]:
+        - checkbox "kernel" [ref=e189]
+        - generic [ref=e190]: kernel
+      - option "go-pkg go-pkg" [ref=e191] [cursor=pointer]:
+        - checkbox "go-pkg" [ref=e192]
+        - generic [ref=e193]: go-pkg
+      - option "go-mod go-mod" [ref=e194] [cursor=pointer]:
+        - checkbox "go-mod" [ref=e195]
+        - generic [ref=e196]: go-mod
+      - option "Python Python" [ref=e197] [cursor=pointer]:
+        - checkbox "Python" [ref=e198]
+        - generic [ref=e199]: Python
+      - option "*pip-config *pip-config" [ref=e200] [cursor=pointer]:
+        - checkbox "*pip-config" [ref=e201]
+        - generic [ref=e202]: "*pip-config"
+      - option "*vscode-ext *vscode-ext" [ref=e203] [cursor=pointer]:
+        - checkbox "*vscode-ext" [ref=e204]
+        - generic [ref=e205]: "*vscode-ext"
+      - option "kernel kernel" [ref=e206] [cursor=pointer]:
+        - checkbox "kernel" [ref=e207]
+        - generic [ref=e208]: kernel
+      - option "pip-pkg pip-pkg" [ref=e209] [cursor=pointer]:
+        - checkbox "pip-pkg" [ref=e210]
+        - generic [ref=e211]: pip-pkg
+      - option "uv uv" [ref=e212] [cursor=pointer]:
+        - checkbox "uv" [ref=e213]
+        - generic [ref=e214]: uv
+      - option "conda conda" [ref=e215] [cursor=pointer]:
+        - checkbox "conda" [ref=e216]
+        - generic [ref=e217]: conda
+      - option "uv-pkg uv-pkg" [ref=e218] [cursor=pointer]:
+        - checkbox "uv-pkg" [ref=e219]
+        - generic [ref=e220]: uv-pkg
+      - option "conda-pkg conda-pkg" [ref=e221] [cursor=pointer]:
+        - checkbox "conda-pkg" [ref=e222]
+        - generic [ref=e223]: conda-pkg
+      - option "pip pip" [ref=e224] [cursor=pointer]:
+        - checkbox "pip" [ref=e225]
+        - generic [ref=e226]: pip
+      - option "repl-history repl-history" [ref=e227] [cursor=pointer]:
+        - checkbox "repl-history" [ref=e228]
+        - generic [ref=e229]: repl-history
+      - option "Java Java" [ref=e230] [cursor=pointer]:
+        - checkbox "Java" [ref=e231]
+        - generic [ref=e232]: Java
+      - option "*vscode-ext *vscode-ext" [ref=e233] [cursor=pointer]:
+        - checkbox "*vscode-ext" [ref=e234]
+        - generic [ref=e235]: "*vscode-ext"
+      - option "kernel kernel" [ref=e236] [cursor=pointer]:
+        - checkbox "kernel" [ref=e237]
+        - generic [ref=e238]: kernel
+      - option "kernel-jjava kernel-jjava" [ref=e239] [cursor=pointer]:
+        - checkbox "kernel-jjava" [ref=e240]
+        - generic [ref=e241]: kernel-jjava
+      - option "m2 m2" [ref=e242] [cursor=pointer]:
+        - checkbox "m2" [ref=e243]
+        - generic [ref=e244]: m2
+      - option "maven maven" [ref=e245] [cursor=pointer]:
+        - checkbox "maven" [ref=e246]
+        - generic [ref=e247]: maven
+      - option "gradle gradle" [ref=e248] [cursor=pointer]:
+        - checkbox "gradle" [ref=e249]
+        - generic [ref=e250]: gradle
+      - option "jbang jbang" [ref=e251] [cursor=pointer]:
+        - checkbox "jbang" [ref=e252]
+        - generic [ref=e253]: jbang
+      - option "jenv jenv" [ref=e254] [cursor=pointer]:
+        - checkbox "jenv" [ref=e255]
+        - generic [ref=e256]: jenv
+      - option "mvn-install mvn-install" [ref=e257] [cursor=pointer]:
+        - checkbox "mvn-install" [ref=e258]
+        - generic [ref=e259]: mvn-install
+      - option "gradle-deps gradle-deps" [ref=e260] [cursor=pointer]:
+        - checkbox "gradle-deps" [ref=e261]
+        - generic [ref=e262]: gradle-deps
+      - option "Rust Rust" [ref=e263] [cursor=pointer]:
+        - checkbox "Rust" [ref=e264]
+        - generic [ref=e265]: Rust
+      - option "*cargo-cache *cargo-cache" [ref=e266] [cursor=pointer]:
+        - checkbox "*cargo-cache" [ref=e267]
+        - generic [ref=e268]: "*cargo-cache"
+      - option "*credential *credential" [ref=e269] [cursor=pointer]:
+        - checkbox "*credential" [ref=e270]
+        - generic [ref=e271]: "*credential"
+      - option "*vscode-ext *vscode-ext" [ref=e272] [cursor=pointer]:
+        - checkbox "*vscode-ext" [ref=e273]
+        - generic [ref=e274]: "*vscode-ext"
+      - option "kernel kernel" [ref=e275] [cursor=pointer]:
+        - checkbox "kernel" [ref=e276]
+        - generic [ref=e277]: kernel
+      - option "cargo-pkg cargo-pkg" [ref=e278] [cursor=pointer]:
+        - checkbox "cargo-pkg" [ref=e279]
+        - generic [ref=e280]: cargo-pkg
+      - option "cargo-build cargo-build" [ref=e281] [cursor=pointer]:
+        - checkbox "cargo-build" [ref=e282]
+        - generic [ref=e283]: cargo-build
+      - option "Node.js Node.js" [ref=e284] [cursor=pointer]:
+        - checkbox "Node.js" [ref=e285]
+        - generic [ref=e286]: Node.js
+      - option "*npmrc *npmrc" [ref=e287] [cursor=pointer]:
+        - checkbox "*npmrc" [ref=e288]
+        - generic [ref=e289]: "*npmrc"
+      - option "*vscode-ext *vscode-ext" [ref=e290] [cursor=pointer]:
+        - checkbox "*vscode-ext" [ref=e291]
+        - generic [ref=e292]: "*vscode-ext"
+      - option "kernel kernel" [ref=e293] [cursor=pointer]:
+        - checkbox "kernel" [ref=e294]
+        - generic [ref=e295]: kernel
+      - option "npm-pkg npm-pkg" [ref=e296] [cursor=pointer]:
+        - checkbox "npm-pkg" [ref=e297]
+        - generic [ref=e298]: npm-pkg
+      - option "npm-upgrade npm-upgrade" [ref=e299] [cursor=pointer]:
+        - checkbox "npm-upgrade" [ref=e300]
+        - generic [ref=e301]: npm-upgrade
+      - option "yarn-pkg yarn-pkg" [ref=e302] [cursor=pointer]:
+        - checkbox "yarn-pkg" [ref=e303]
+        - generic [ref=e304]: yarn-pkg
+      - option "npm-install npm-install" [ref=e305] [cursor=pointer]:
+        - checkbox "npm-install" [ref=e306]
+        - generic [ref=e307]: npm-install
+      - option "yarn-install yarn-install" [ref=e308] [cursor=pointer]:
+        - checkbox "yarn-install" [ref=e309]
+        - generic [ref=e310]: yarn-install
+      - option "pnpm-install pnpm-install" [ref=e311] [cursor=pointer]:
+        - checkbox "pnpm-install" [ref=e312]
+        - generic [ref=e313]: pnpm-install
+      - option "repl-history repl-history" [ref=e314] [cursor=pointer]:
+        - checkbox "repl-history" [ref=e315]
+        - generic [ref=e316]: repl-history
+    - generic [ref=e161]:
+      - heading "Go" [level=2] [ref=e317]
+      - paragraph [ref=e318]: Provides a complete Go development environment including the Go compiler, gopls language server for IDE integration, and Delve debugger. Supports version pinning via the GO_VERSION parameter.
+      - paragraph [ref=e319]:
+        - strong [ref=e320]: "Extensions:"
+        - text: linter, *vscode-ext, kernel, go-pkg, go-mod
+      - generic [ref=e322]:
+        - generic [ref=e323]: GO_VERSION
+        - combobox [ref=e324]:
+          - option "1.25.7" [selected]
+          - option "1.25.0"
+          - option "1.24.13"
+          - option "1.24.0"
+          - option "1.23.12"
+          - option "1.23.0"
+          - option "1.22.12"
+          - option "1.22.0"
+          - option "1.21.13"
+          - option "1.21.0"
+  - contentinfo [ref=e163]:
+    - generic [ref=e164]: "Auto: go/vscode-ext"
+    - generic [ref=e165]:
+      - button "Save" [ref=e166] [cursor=pointer]
+      - button "Quit" [ref=e167] [cursor=pointer]
