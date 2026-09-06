@@ -1,17 +1,15 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select clang/cmake
+# Configured by: booth config --no-tui --overwrite --select clang/cmake/make/apt-pkg:libcurl4-openssl-dev,libsqlite3-dev,sqlite3,ca-certificates
 
 env APT_SNAPSHOT=20260722T000000Z
 
+arg APT_PKGS=ca-certificates,libcurl4-openssl-dev,libsqlite3-dev,sqlite3
+arg CMAKE_VERSION=latest
 arg LLVM_VERSION=18
+arg MAKE_VERSION=apt
 
+install apt ${APT_PKGS}
 setup clang --version ${LLVM_VERSION}
-setup cmake
-setup make --from-apt
-
-# The point of this example: real system libraries, installed with apt and *linked*
-# (not header-only). libcurl for HTTPS, SQLite for storage — both land as headers +
-# shared objects that CMake's find_package(CURL) / find_package(SQLite3) resolve.
-# ca-certificates so libcurl can verify HTTPS; sqlite3 is the CLI, handy for poking
-# the resulting database by hand. APT_SNAPSHOT above pins them for reproducibility.
-install apt libcurl4-openssl-dev libsqlite3-dev sqlite3 ca-certificates
+setup cmake --version ${CMAKE_VERSION}
+setup make --version ${MAKE_VERSION}
+setup clang-code-extension

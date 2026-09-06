@@ -1,6 +1,14 @@
 # syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select python:3.12+conda+conda-pkg:numpy
 
-# Conda Example
+env APT_SNAPSHOT=20260906T000000Z
 
-setup conda --python-version 3.12
-install conda numpy
+arg CONDA_PKGS=numpy
+arg PYTHON_VERSION=3.12
+
+setup python ${PYTHON_VERSION}
+setup conda
+install conda ${CONDA_PKGS}
+setup python-code-extension
+ 
+run --mount=type=bind,target=/tmp/ctx                                               if [ -f /tmp/ctx/.booth/requirements.txt ]; then                                pip install -r /tmp/ctx/.booth/requirements.txt;                           else echo "Warning: .booth/requirements.txt not found -- skipping pip install"; fi

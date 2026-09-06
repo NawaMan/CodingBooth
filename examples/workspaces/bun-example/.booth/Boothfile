@@ -1,7 +1,11 @@
 # syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --cmd bash --set silence-build --select bun+bun-pkg:typescript,prettier,cowsay,figlet
 
-# Bun Example
-# Installs popular Bun global packages on top of the base workspace image
+env APT_SNAPSHOT=20260906T000000Z
 
-setup bun
-install bun typescript prettier cowsay figlet
+arg BUN_PKGS=cowsay,figlet,prettier,typescript
+arg BUN_VERSION=latest
+
+setup bun ${BUN_VERSION}
+install bun ${BUN_PKGS}
+setup bun-code-extension

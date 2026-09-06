@@ -1,7 +1,11 @@
 # syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select nodejs+npm-pkg:typescript,ts-node,prettier,eslint,cowsay,figlet-cli
 
-# NPM Example
-# Installs popular npm global packages on top of the base workspace image
+env APT_SNAPSHOT=20260906T000000Z
 
-setup nodejs
-install npm typescript ts-node prettier eslint cowsay figlet-cli
+arg NODE_VERSION=22
+arg NPM_PKGS=cowsay,eslint,figlet-cli,prettier,ts-node,typescript
+
+setup nodejs ${NODE_VERSION}
+install npm ${NPM_PKGS}
+setup nodejs-code-extension

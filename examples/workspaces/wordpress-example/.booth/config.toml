@@ -1,3 +1,4 @@
+# Hand-written: pairs with the WordPress Boothfile (composer / mod_php flags + wp-init).
 variant = "base"
 
 run-args = [

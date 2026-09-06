@@ -1,3 +1,4 @@
+# Hand-written: commented-out run-args publish has no TUI field, and mean-init is not a catalog template.
 variant = "base"
 
 run-args = [

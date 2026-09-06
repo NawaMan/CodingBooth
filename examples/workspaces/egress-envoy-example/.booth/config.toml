@@ -1,4 +1,5 @@
-egress = true
-variant = "base"
+# Configured by: booth config --no-tui --overwrite --set egress --set egress-policy-file=.booth/egress/envoy.yaml --select claude-code~credential
 
+
+egress = true
 egress-policy-file = ".booth/egress/envoy.yaml"
