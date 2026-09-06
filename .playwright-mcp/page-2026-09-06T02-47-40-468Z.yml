@@ -1,0 +1,255 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - heading "CodingBooth Configuration" [level=1] [ref=e4]
+      - generic [ref=e5]: 2 selected
+    - searchbox "Search templates…" [ref=e7]
+    - tablist [ref=e12]:
+      - tab "Config" [selected] [ref=e325] [cursor=pointer]
+      - tab "Languages*" [ref=e326] [cursor=pointer]
+      - tab "Middlewares*" [ref=e327] [cursor=pointer]
+      - tab "Tools*" [ref=e328] [cursor=pointer]
+      - tab "AI Tools*" [ref=e329] [cursor=pointer]
+      - tab "IDEs" [ref=e330] [cursor=pointer]
+      - tab "Desktop" [ref=e331] [cursor=pointer]
+      - tab "Education" [ref=e332] [cursor=pointer]
+    - main [ref=e21]:
+      - generic [ref=e22]:
+        - generic [ref=e333]: Booth
+        - generic [ref=e334]:
+          - generic [ref=e335]: Booth Version
+          - textbox [ref=e336]: dev
+        - generic [ref=e337]: General
+        - generic [ref=e338]:
+          - generic [ref=e339]: Variant
+          - combobox [ref=e340]:
+            - option "(default)" [selected]
+            - option "base"
+            - option "notebook"
+            - option "codeserver"
+            - option "desktop-xfce"
+            - option "desktop-kde"
+            - option "desktop-lxqt"
+            - option "desktop-wayland"
+            - option "terminal"
+        - generic [ref=e341]:
+          - generic [ref=e342]: Port
+          - textbox [ref=e343]: "18766"
+        - generic [ref=e344]:
+          - generic [ref=e345]: Offset Base
+          - textbox [ref=e346]
+        - generic [ref=e347]:
+          - generic [ref=e348]: Name
+          - textbox [ref=e349]
+        - generic [ref=e350]:
+          - generic [ref=e351]: Templates Version
+          - textbox [ref=e352]
+        - generic [ref=e353]: Container
+        - generic [ref=e354]:
+          - generic [ref=e355]: Docker-in-Docker
+          - checkbox [ref=e356]
+        - generic [ref=e357]:
+          - generic [ref=e358]: Keep Alive
+          - checkbox [ref=e359]
+        - generic [ref=e360]:
+          - generic [ref=e361]: Daemon
+          - checkbox [ref=e362]
+        - generic [ref=e363]:
+          - generic [ref=e364]: Open Browser
+          - combobox [ref=e365]:
+            - option "(default)" [selected]
+            - option "true"
+            - option "false"
+        - generic [ref=e366]:
+          - generic [ref=e367]: Sudo
+          - combobox [ref=e368]:
+            - option "(default)" [selected]
+            - option "true"
+            - option "false"
+        - generic [ref=e369]:
+          - generic [ref=e370]: Writable .booth/
+          - checkbox [ref=e371]
+        - generic [ref=e372]:
+          - generic [ref=e373]: Persist Home
+          - checkbox [ref=e374]
+        - generic [ref=e375]:
+          - generic [ref=e376]: Project Name
+          - textbox [ref=e377]
+        - generic [ref=e378]:
+          - generic [ref=e379]: Timezone
+          - textbox [ref=e380]
+        - generic [ref=e381]:
+          - generic [ref=e382]: Host UID
+          - textbox [ref=e383]
+        - generic [ref=e384]:
+          - generic [ref=e385]: Host GID
+          - textbox [ref=e386]
+        - generic [ref=e387]: Egress
+        - generic [ref=e388]:
+          - generic [ref=e389]: Egress
+          - checkbox [ref=e390]
+        - generic [ref=e391]:
+          - generic [ref=e392]: Egress Mode
+          - combobox [ref=e393]:
+            - option "(default)" [selected]
+            - option "envoy"
+            - option "squid"
+            - option "tinyproxy"
+            - option "none"
+        - generic [ref=e394]:
+          - generic [ref=e395]: Egress Enforcement
+          - combobox [ref=e396]:
+            - option "(default)" [selected]
+            - option "iptables"
+            - option "nftables"
+            - option "none"
+        - generic [ref=e397]:
+          - generic [ref=e398]: Egress Allowlist
+          - generic [ref=e400]:
+            - textbox "add…" [ref=e401]
+            - button "Add" [ref=e402] [cursor=pointer]
+        - generic [ref=e403]:
+          - generic [ref=e404]: Egress Allowlist File
+          - textbox [ref=e405]
+        - generic [ref=e406]:
+          - generic [ref=e407]: Egress Policy File
+          - textbox [ref=e408]
+        - generic [ref=e409]: Build
+        - generic [ref=e410]:
+          - generic [ref=e411]: Silence Build
+          - checkbox [ref=e412]
+        - generic [ref=e413]:
+          - generic [ref=e414]: Always Pull
+          - checkbox [ref=e415]
+        - generic [ref=e416]:
+          - generic [ref=e417]: Strict
+          - checkbox [ref=e418]
+        - generic [ref=e419]:
+          - generic [ref=e420]: Emit Dockerfile
+          - checkbox [ref=e421]
+        - generic [ref=e422]:
+          - generic [ref=e423]: Dockerfile
+          - textbox [ref=e424]
+        - generic [ref=e425]:
+          - generic [ref=e426]: Boothfile
+          - textbox [ref=e427]
+        - generic [ref=e428]:
+          - generic [ref=e429]: Build Args
+          - generic [ref=e431]:
+            - textbox "add…" [ref=e432]
+            - button "Add" [ref=e433] [cursor=pointer]
+        - generic [ref=e434]:
+          - generic [ref=e435]: Common Args
+          - generic [ref=e437]:
+            - textbox "add…" [ref=e438]
+            - button "Add" [ref=e439] [cursor=pointer]
+        - generic [ref=e440]: Advanced
+        - generic [ref=e441]:
+          - generic [ref=e442]: Image
+          - textbox [ref=e443]
+        - generic [ref=e444]:
+          - generic [ref=e445]: Image Version
+          - textbox [ref=e446]
+        - generic [ref=e447]:
+          - generic [ref=e448]: Startup Command
+          - textbox [ref=e449]
+        - generic [ref=e450]:
+          - generic [ref=e451]: Env File
+          - textbox [ref=e452]
+        - generic [ref=e453]:
+          - generic [ref=e454]: Commands
+          - generic [ref=e456]:
+            - textbox "add…" [ref=e457]
+            - button "Add" [ref=e458] [cursor=pointer]
+        - generic [ref=e459]: Network & Volumes
+        - generic [ref=e460]:
+          - generic [ref=e461]: Expose
+          - generic [ref=e463]:
+            - textbox "add…" [ref=e464]
+            - button "Add" [ref=e465] [cursor=pointer]
+        - generic [ref=e466]:
+          - generic [ref=e467]: Env
+          - generic [ref=e469]:
+            - textbox "add…" [ref=e470]
+            - button "Add" [ref=e471] [cursor=pointer]
+        - generic [ref=e472]:
+          - generic [ref=e473]: Mount
+          - generic [ref=e475]:
+            - textbox "add…" [ref=e476]
+            - button "Add" [ref=e477] [cursor=pointer]
+        - generic [ref=e478]: Cache
+        - generic [ref=e479]:
+          - generic [ref=e480]: Cache Files
+          - generic [ref=e482]:
+            - textbox "add…" [ref=e483]
+            - button "Add" [ref=e484] [cursor=pointer]
+        - generic [ref=e485]:
+          - generic [ref=e486]: Cache Dirs
+          - generic [ref=e488]:
+            - textbox "add…" [ref=e489]
+            - button "Add" [ref=e490] [cursor=pointer]
+        - generic [ref=e491]: Shared
+        - generic [ref=e492]:
+          - generic [ref=e493]: Shared Files
+          - generic [ref=e495]:
+            - textbox "add…" [ref=e496]
+            - button "Add" [ref=e497] [cursor=pointer]
+        - generic [ref=e498]:
+          - generic [ref=e499]: Shared Dirs
+          - generic [ref=e501]:
+            - textbox "add…" [ref=e502]
+            - button "Add" [ref=e503] [cursor=pointer]
+        - generic [ref=e504]: Session
+        - generic [ref=e505]:
+          - generic [ref=e506]: Idle Time
+          - spinbutton [ref=e507]
+        - generic [ref=e508]:
+          - generic [ref=e509]: Idle Shutdown Time
+          - spinbutton [ref=e510]
+        - generic [ref=e511]:
+          - generic [ref=e512]: Idle Exit Code
+          - spinbutton [ref=e513]
+        - generic [ref=e514]:
+          - generic [ref=e515]: Show Run Time
+          - textbox [ref=e516]
+        - generic [ref=e517]:
+          - generic [ref=e518]: Show Count Down
+          - textbox [ref=e519]
+        - generic [ref=e520]:
+          - generic [ref=e521]: Count Down Exit Code
+          - textbox [ref=e522]
+        - generic [ref=e523]: Temp Files
+        - generic [ref=e524]:
+          - generic [ref=e525]: Leave Tmp On Exit
+          - checkbox [ref=e526]
+        - generic [ref=e527]:
+          - generic [ref=e528]: Keep Tmp On Start
+          - checkbox [ref=e529]
+        - generic [ref=e530]: Debug
+        - generic [ref=e531]:
+          - generic [ref=e532]: Verbose
+          - checkbox [ref=e533]
+        - generic [ref=e534]:
+          - generic [ref=e535]: Dry Run
+          - checkbox [ref=e536]
+        - generic [ref=e537]:
+          - generic [ref=e538]: Log Time
+          - checkbox [ref=e539]
+        - generic [ref=e540]:
+          - generic [ref=e541]: Debug
+          - checkbox [ref=e542]
+      - generic [ref=e161]:
+        - heading "Booth Version" [level=2] [ref=e543]
+        - paragraph [ref=e544]: Version of the CodingBooth CLI tool. Change this to upgrade or downgrade the booth binary. The new version will be downloaded on the next run. Use 'latest' for the most recent release.
+    - contentinfo [ref=e163]:
+      - generic [ref=e164]: "Auto: go/vscode-ext"
+      - generic [ref=e165]:
+        - button "Save" [ref=e166] [cursor=pointer]
+        - button "Quit" [ref=e167] [cursor=pointer]
+  - dialog [ref=e545]:
+    - generic [ref=e546]:
+      - heading "Quit without saving?" [level=3] [ref=e547]
+      - paragraph [ref=e549]: You have unsaved changes.
+      - generic [ref=e550]:
+        - button "Quit" [active] [ref=e551] [cursor=pointer]
+        - button "Back" [ref=e552] [cursor=pointer]

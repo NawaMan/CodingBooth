@@ -1,9 +1,12 @@
 # syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select java+vscode-ext/lazygit
 
-# Empty Example
+env APT_SNAPSHOT=20260905T000000Z
 
-#== Setup ==
+arg JDK_VENDOR=temurin
+arg JDK_VERSION=25
+arg LAZYGIT_VERSION=latest
 
-# Use setup command to install tools (see setup scripts in /opt/codingbooth/setups)
-
-# setup jdk 25
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+setup lazygit --version ${LAZYGIT_VERSION}
+setup java-code-extension
