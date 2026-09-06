@@ -294,6 +294,7 @@ All templates and extensions grouped by segment order.
 | `tools/docker-buildx`  | Docker Buildx    |
 | `tools/docker-compose` | Docker Compose   |
 | `tools/firebase`       | Firebase CLI     |
+| `tools/floci`          | Floci (local AWS emulator) |
 | `tools/gcloud`         | Google Cloud SDK |
 | `tools/gh`             | GitHub CLI       |
 | `tools/homebrew`       | Homebrew         |

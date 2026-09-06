@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: floci CLI installation via Boothfile.
+# floci--setup.sh is supplied under .booth/setups/ until the base image ships it.
+# `floci start` needs Docker; this test only proves the CLI landed. The
+# functional "create a bucket" path is examples/workspaces/floci-example.
+
+setup floci --version 0.2.1

@@ -1,0 +1,28 @@
+#!/bin/bash
+set -e
+# Configured by: booth config --no-tui --overwrite --select aws-cli/floci+autostart+expose
+
+# Auto-start the Floci AWS emulator (needs Docker / dind).
+PORT=${FLOCI_PORT:-4566}
+LOG_FILE="/tmp/floci.log"
+DATA_DIR="${HOME}/.floci/data"
+mkdir -p "$DATA_DIR"
+
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30; do
+  if docker info >/dev/null 2>&1; then
+    break
+  fi
+  sleep 1
+done
+
+if ! docker info >/dev/null 2>&1; then
+  echo "⚠️  Docker is not available; cannot auto-start Floci (select dind)."
+else
+  floci start --detach --port "$PORT" --persist "$DATA_DIR" > "$LOG_FILE" 2>&1 || true
+  # DinD publishes the port on the sidecar, not on localhost in this booth.
+  if command -v dind-open-port >/dev/null 2>&1; then
+    dind-open-port "$PORT" >/dev/null || true
+  fi
+  floci wait --timeout 60s >> "$LOG_FILE" 2>&1 || true
+  echo "Floci started on port $PORT (log: $LOG_FILE)"
+fi
