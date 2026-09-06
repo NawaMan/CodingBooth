@@ -1,6 +1,9 @@
 # syntax=codingbooth/boothfile:1
-# Angular example — Angular 19 standalone-component app
+# Configured by: booth config --no-tui --overwrite --expose +-5800:4200 --select nodejs
+
+env APT_SNAPSHOT=20260906T000000Z
 
 arg NODE_VERSION=22
 
 setup nodejs ${NODE_VERSION}
+setup nodejs-code-extension

@@ -1,5 +1,4 @@
-variant = "base"
+# Configured by: booth config --no-tui --overwrite --expose +-1920:8080 --select java:21+maven:3.9.11+vscode-ext
 
-run-args = [
-    "-p", "+-1920:8080",
-]
+
+run-args = ["--publish", "+-1920:8080"]

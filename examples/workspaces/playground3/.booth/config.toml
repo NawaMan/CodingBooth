@@ -1,2 +1,10 @@
 # Configured by: booth config --no-tui --overwrite --port 10000 --select python+pip-config+vscode-ext/clang+vscode-ext+kernel/notebook
 
+port = "10000"
+
+run-args = [
+    "-e", "PYTHONDONTWRITEBYTECODE=1",
+    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/Library/Application Support/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/AppData/Roaming/pip:/etc/cb-home-seed/.config/pip:ro"
+]

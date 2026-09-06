@@ -1,7 +1,9 @@
 # syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select brew-pkg:bat,neovim,imagemagick,node,ffmpeg,gcc,postgresql,redis,nginx
 
-# Homebrew Example
-# Installs popular brew packages on top of the base workspace image
+env APT_SNAPSHOT=20260906T000000Z
+
+arg BREW_PKGS=bat,ffmpeg,gcc,imagemagick,neovim,nginx,node,postgresql,redis
 
 setup homebrew
-install brew bat neovim imagemagick node ffmpeg gcc postgresql redis nginx
+install brew ${BREW_PKGS}

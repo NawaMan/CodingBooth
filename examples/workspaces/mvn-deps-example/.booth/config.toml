@@ -1,1 +1,2 @@
-variant = "base"
+# Configured by: booth config --no-tui --overwrite --select java:21+maven+mvn-install
+

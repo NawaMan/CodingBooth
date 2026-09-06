@@ -1,5 +1,7 @@
-variant = "base"
+# Configured by: booth config --no-tui --overwrite --expose +-7000:3000 --select nodejs
+
 
 run-args = [
-    "-p", "+-7000:3000",
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
+    "--publish", "+-7000:3000"
 ]

@@ -1,33 +1,28 @@
 # syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --expose +-7000:3000 --select dind/kind/aws-cli/go:1.25.3+vscode-ext/bun:1.3.6/python/notebook/claude-code/antigravity/libreoffice
 
-# Kind App Example
-# Full-stack development with Kubernetes, Go, Bun, Python, and LibreOffice
+env APT_SNAPSHOT=20260906T000000Z
 
-arg CB_GO_VERSION=1.25.3
-arg CB_BUN_VERSION=1.3.6
+arg AWS_CLI_VERSION=latest
+arg BUN_VERSION=1.3.6
+arg CLAUDE_CODE_VERSION=latest
+arg GO_VERSION=1.25.3
+arg KIND_VERSION=0.27.0
+arg NOTEBOOK_PORT=18888
+arg PYTHON_VERSION=3.13.12
 
-# Setup DinD and Kubernetes
+setup aws-cli --version ${AWS_CLI_VERSION}
+setup bun ${BUN_VERSION}
+setup claude-code ${CLAUDE_CODE_VERSION}
 setup dind
-setup kind
-setup aws-cli
-
-# Go development
-setup go ${CB_GO_VERSION}
-setup go-code-extension
-
-# Bun for frontend
-setup bun ${CB_BUN_VERSION}
-
-# Python with Jupyter notebooks
-setup python
-setup notebook 18888
-
-setup claude-code
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+setup kind --kind-version ${KIND_VERSION}
+setup python ${PYTHON_VERSION}
 setup antigravity
-
-# Install LibreOffice for document processing
-run &&<<APT
-apt update
-apt install -y libreoffice libreoffice-gtk3
-rm -rf /var/lib/apt/lists/*
-APT
+setup libreoffice
+setup notebook ${NOTEBOOK_PORT}
+setup bun-code-extension
+setup go-code-extension
+setup python-code-extension

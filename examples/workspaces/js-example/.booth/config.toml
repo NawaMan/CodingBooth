@@ -1,13 +1,15 @@
-variant  = "kde"
+# Configured by: booth config --no-tui --overwrite --variant kde --expose +-7000:3000 --expose +-4827:5173 --select nodejs:20/bun:1.3.6/deno:2.6.5/webstorm/claude-code/antigravity
+
+variant = "kde"
+
 run-args = [
-    # Claude Code credentials (home-seeding)
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
-    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
-
-    # Google Antigravity credentials (home-seeding: app may write session data)
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",
     "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/Library/Application Support/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
+    "-v", "~/AppData/Roaming/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
     "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",
-
-    "-p", "+-7000:3000",   # API server - this can be removed if you don't want API to be accessible outside of the container.
-    "-p", "+-4827:5173"    # Vite dev server
+    "--publish", "+-7000:3000",
+    "--publish", "+-4827:5173"
 ]

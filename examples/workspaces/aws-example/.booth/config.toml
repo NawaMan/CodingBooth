@@ -5,7 +5,11 @@ variant = "notebook"
 run-args = [
     "-e", "PYTHONDONTWRITEBYTECODE=1",
     "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
-    "-v", "~/.aws:/etc/cb-home-seed/.aws:ro",
+    "-v", "~/Library/Application Support/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/AppData/Roaming/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/.aws/config:/etc/cb-home-seed/.aws/config:ro",
+    "-v", "~/.aws/credentials:/etc/cb-home-seed/.aws/credentials:ro",
+    "-v", "~/.aws/sso/cache:/etc/cb-home-seed/.aws/sso/cache:ro",
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
     "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",
     "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",

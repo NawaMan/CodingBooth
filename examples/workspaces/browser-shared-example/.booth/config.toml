@@ -1,10 +1,4 @@
-# Hand-written, on purpose — do not add a "# Configured by:" line here. That prefix is
-# how `booth config` recognises its own output, so a prose line starting with it makes the
-# tool adopt this file and overwrite it without warning.
-# Template idea:
-#   google-chrome+bookmarks-shared+settings-shared+extensions-shared+managed-policies
-#   firefox+bookmarks-shared+settings-shared+extensions-shared+managed-policies
-# All live state is .booth/shared (not cache).
+# Configured by: booth config --no-tui --overwrite --variant xfce --port NEXT:25000 --select google-chrome+bookmarks-shared+settings-shared+extensions-shared+managed-policies/firefox+bookmarks-shared+settings-shared+extensions-shared+managed-policies
 
 variant = "xfce"
 port = "NEXT:25000"
@@ -12,5 +6,5 @@ port = "NEXT:25000"
 shared-dirs = [
     "home/coder/.chrome-data/Default",
     "home/coder/.chrome-data/Default/Extensions",
-    "home/coder/.mozilla/firefox",
+    "home/coder/.mozilla/firefox"
 ]

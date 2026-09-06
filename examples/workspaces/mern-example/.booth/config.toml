@@ -1,3 +1,4 @@
+# Hand-written: pairs with the MERN Boothfile (local mern-init setup).
 variant = "base"
 
 run-args = [
