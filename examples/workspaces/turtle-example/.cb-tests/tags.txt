@@ -1,0 +1,6 @@
+education
+python
+turtle
+logo
+desktop
+thonny

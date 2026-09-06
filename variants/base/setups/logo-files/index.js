@@ -1,0 +1,851 @@
+/*global CodeMirror,TogetherJS,LogoInterpreter,CanvasTurtle,Dialog*/
+//
+// Logo Interpreter in Javascript
+//
+
+// Copyright (C) 2011-2015 Joshua Bell
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+// https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+if (!('console' in window)) {
+  window.console = { log() {}, error() {} };
+}
+
+function $(s) { return document.querySelector(s); }
+function $$(s) { return document.querySelectorAll(s); }
+
+function escapeHTML(s) {
+  return String(s).replace(/[&<>]/g, c => {
+    switch (c) {
+    case '&': return '&amp;';
+    case '<': return '&lt;';
+    case '>': return '&gt;';
+    default: return c;
+    }
+  });
+}
+
+// Globals
+let logo, turtle;
+
+// Later scripts may override this to customize the examples.
+// Leave it exposed as a global.
+let examples = 'examples.txt';
+
+
+//
+// Storage hooks
+//
+// TODO: Replace these with events and/or data binding/observers
+
+function hook(orig, func) {
+  return function(...args) {
+    try {
+      func.apply(this, args);
+    } finally {
+      if (orig)
+        orig.apply(this, args);
+    }
+  };
+}
+
+let savehook;
+let historyhook;
+let clearhistoryhook;
+
+function initStorage(loadhook) {
+  if (!window.indexedDB)
+    return;
+
+  const req = indexedDB.open('logo', 3);
+  req.onblocked = () => {
+    Dialog.alert("Please close other Logo pages to allow database upgrade to proceed.");
+  };
+  req.onerror = e => {
+    console.error(e);
+  };
+  req.onupgradeneeded = e => {
+    const db = req.result;
+    if (e.oldVersion < 2) {
+      db.createObjectStore('procedures');
+    }
+    if (e.oldVersion < 3) {
+      db.createObjectStore('history', {autoIncrement: true});
+    }
+  };
+  req.onsuccess = () => {
+    const db = req.result;
+
+    let tx = db.transaction('procedures');
+    tx.objectStore('procedures').openCursor().onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        try {
+          loadhook(cursor.value);
+        } catch (ex) {
+          console.error("Error loading procedure: " + ex);
+        } finally {
+          cursor.continue();
+        }
+      }
+    };
+    tx = db.transaction('history');
+    tx.objectStore('history').openCursor().onsuccess = e => {
+      const cursor = e.target.result;
+      if (cursor) {
+        try {
+          historyhook(cursor.value);
+        } catch (ex) {
+          console.error("Error loading procedure: " + ex);
+        } finally {
+          cursor.continue();
+        }
+      }
+    };
+
+    tx.oncomplete = () => {
+      savehook = hook(savehook, (name, def) => {
+        const tx = db.transaction('procedures', 'readwrite');
+        if (def)
+          tx.objectStore('procedures').put(def, name);
+        else
+          tx.objectStore('procedures')['delete'](name);
+      });
+
+      historyhook = hook(historyhook, entry => {
+        const tx = db.transaction('history', 'readwrite');
+        tx.objectStore('history').put(entry);
+      });
+
+      clearhistoryhook = hook(clearhistoryhook, () => {
+        const tx = db.transaction('history', 'readwrite');
+        tx.objectStore('history').clear();
+      });
+    };
+  };
+}
+
+//
+// Command history
+//
+const commandHistory = (() => {
+  const entries = [];
+  let pos = -1;
+
+  clearhistoryhook = hook(clearhistoryhook, () => {
+    entries = [];
+    pos = -1;
+  });
+
+  return {
+    push: entry => {
+      if (entries.length > 0 && entries[entries.length - 1] === entry) {
+        pos = -1;
+        return;
+      }
+      entries.push(entry);
+      pos = -1;
+      if (historyhook) {
+        historyhook(entry);
+      }
+    },
+    next() {
+      if (entries.length === 0) {
+        return undefined;
+      }
+      if (pos === -1) {
+        pos = 0;
+      } else {
+        pos = (pos === entries.length - 1) ? 0 : pos + 1;
+      }
+      return entries[pos];
+    },
+    prev() {
+      if (entries.length === 0) {
+        return undefined;
+      }
+      if (pos === -1) {
+        pos = entries.length - 1;
+      } else {
+        pos = (pos === 0) ? entries.length - 1 : pos - 1;
+      }
+      return entries[pos];
+    }
+  };
+})();
+
+
+//
+// Input UI
+//
+const input = {};
+function initInput() {
+
+  function keyNameForEvent(e) {
+    window.ke = e;
+    return e.key ||
+      ({ 3: 'Enter', 10: 'Enter', 13: 'Enter',
+         38: 'ArrowUp', 40: 'ArrowDown', 63232: 'ArrowUp', 63233: 'ArrowDown' })[e.keyCode];
+  }
+
+  input.setMulti = () => {
+    // TODO: Collapse these to a single class?
+    document.body.classList.remove('single');
+    document.body.classList.add('multi');
+  };
+
+  input.setSingle = () => {
+    // TODO: Collapse these to a single class?
+    document.body.classList.remove('multi');
+    document.body.classList.add('single');
+  };
+
+  const isMulti = () => {
+    return document.body.classList.contains('multi');
+  };
+
+  function run(remote) {
+    if (remote !== true && window.TogetherJS && window.TogetherJS.running) {
+      TogetherJS.send({type: "run"});
+    }
+    const error = $('#display #error');
+    error.classList.remove('shown');
+
+    const v = input.getValue();
+    if (v === '') {
+      return;
+    }
+    commandHistory.push(v);
+    if (!isMulti()) {
+      input.setValue('');
+    }
+    setTimeout(async () => {
+      document.body.classList.add('running');
+      try {
+        await logo.run(v);
+      } catch(e) {
+        error.innerHTML = '';
+        error.appendChild(document.createTextNode(e.message));
+        error.classList.add('shown');
+      }
+      document.body.classList.remove('running');
+    }, 100);
+  }
+
+  function stop() {
+    logo.bye();
+    document.body.classList.remove('running');
+  }
+
+  input.run = run;
+
+  function clear(remote) {
+    if (remote !== true && window.TogetherJS && window.TogetherJS.running) {
+      TogetherJS.send({type: "clear"});
+    }
+    input.setValue('');
+  }
+  input.clear = clear;
+
+  if (typeof CodeMirror !== 'undefined') {
+    const BRACKETS = '()[]{}';
+
+    // Single Line
+    CodeMirror.keyMap['single-line'] = {
+      'Enter': cm => {
+         run();
+       },
+      'Up': cm => {
+        const v = commandHistory.prev();
+        if (v !== undefined) {
+          cm.setValue(v);
+          cm.setCursor({line: 0, ch: v.length});
+        }
+      },
+      'Down': cm => {
+        const v = commandHistory.next();
+        if (v !== undefined) {
+          cm.setValue(v);
+          cm.setCursor({line: 0, ch: v.length});
+        }
+      },
+      fallthrough: ['default']
+    };
+    const cm = CodeMirror.fromTextArea($('#logo-ta-single-line'), {
+      autoCloseBrackets: { pairs: BRACKETS, explode: false },
+      matchBrackets: true,
+      lineComment: ';',
+      keyMap: 'single-line'
+    });
+    $('#logo-ta-single-line + .CodeMirror').id = 'logo-cm-single-line';
+
+    // https://stackoverflow.com/questions/13026285/codemirror-for-just-one-line-textfield
+    cm.setSize('100%', cm.defaultTextHeight() + 4 + 4); // 4 = theme padding
+
+    // Handle paste - switch to multi-line if input is multiple lines
+    cm.on("change", (cm, change) => {
+      if (change.text.length > 1) {
+        const v = input.getValue();
+        input.setMulti();
+        input.setValue(v);
+        input.setFocus();
+      }
+    });
+
+    // Multi-Line
+    const cm2 = CodeMirror.fromTextArea($('#logo-ta-multi-line'), {
+      autoCloseBrackets: { pairs: BRACKETS, explode: BRACKETS },
+      matchBrackets: true,
+      lineComment: ';',
+      lineNumbers: true
+    });
+    $('#logo-ta-multi-line + .CodeMirror').id = 'logo-cm-multi-line';
+    cm2.setSize('100%', '100%');
+
+    // Handle ctrl+enter in Multi-Line
+    cm2.on('keydown', (instance, event) => {
+      if (keyNameForEvent(event) === 'Enter' && event.ctrlKey) {
+        event.preventDefault();
+        run();
+      }
+    });
+
+    input.getValue = () => {
+      return (isMulti() ? cm2 : cm).getValue();
+    };
+    input.setValue = (v) => {
+      (isMulti() ? cm2 : cm).setValue(v);
+    };
+    input.setFocus = () => {
+      (isMulti() ? cm2 : cm).focus();
+    };
+
+  } else {
+    // Fallback in case of no CodeMirror
+
+    $('#logo-ta-single-line').addEventListener('keydown', e => {
+
+      const elem = $('#logo-ta-single-line');
+
+      const keyMap = {
+        'Enter': elem => {
+          run();
+        },
+        'ArrowUp': elem => {
+          const v = commandHistory.prev();
+          if (v !== undefined) {
+            elem.value = v;
+          }
+        },
+        'ArrowDown': elem => {
+          const v = commandHistory.next();
+          if (v !== undefined) {
+            elem.value = v;
+          }
+        }
+      };
+
+      const keyName = keyNameForEvent(e);
+      if (keyName in keyMap && typeof keyMap[keyName] === 'function') {
+        keyMap[keyName](elem);
+        e.stopPropagation();
+        e.preventDefault();
+      }
+    });
+
+    input.getValue = () => {
+      return $(isMulti() ? '#logo-ta-multi-line' : '#logo-ta-single-line').value;
+    };
+    input.setValue = v => {
+      $(isMulti() ? '#logo-ta-multi-line' : '#logo-ta-single-line').value = v;
+    };
+    input.setFocus = () => {
+      $(isMulti() ? '#logo-ta-multi-line' : '#logo-ta-single-line').focus();
+    };
+  }
+
+  input.setFocus();
+  $('#input').addEventListener('click', () => {
+    input.setFocus();
+  });
+
+  $('#toggle').addEventListener('click', () => {
+    let v = input.getValue();
+    document.body.classList.toggle('single');
+    document.body.classList.toggle('multi');
+    if (!isMulti()) {
+      v = v.replace(/\n/g, '  ');
+    } else {
+      v = v.replace(/\s\s(\s*)/g, '\n$1');
+    }
+    input.setValue(v);
+    input.setFocus();
+  });
+
+  $('#run').addEventListener('click', run);
+  $('#stop').addEventListener('click', stop);
+  $('#clear').addEventListener('click', clear);
+
+  // Open a .logo file from the host/desktop file picker (e.g. samples/square.logo).
+  const fileInput = $('#open-file');
+  function pickLogoFile(e) {
+    if (e) e.preventDefault();
+    if (fileInput) fileInput.click();
+  }
+  const openLink = $('#open-file-link');
+  if (openLink) openLink.addEventListener('click', pickLogoFile);
+  const extrasOpen = $('#extras-open-file');
+  if (extrasOpen) extrasOpen.addEventListener('click', pickLogoFile);
+  if (fileInput) {
+    fileInput.addEventListener('change', () => {
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const text = String(reader.result || '');
+        if (text.indexOf('\n') !== -1) input.setMulti();
+        input.setValue(text);
+        input.setFocus();
+      };
+      reader.readAsText(file);
+      fileInput.value = '';
+    });
+  }
+
+  window.addEventListener('message', e => {
+    if ('example' in e.data) {
+      const text = e.data.example;
+      input.setSingle();
+      input.setValue(text);
+      input.setFocus();
+    }
+  });
+}
+
+
+//
+// Canvas resizing
+//
+{
+  window.addEventListener('resize', resize);
+  window.addEventListener('DOMContentLoaded', resize);
+  function resize() {
+    const box = $('#display-panel .inner'), rect = box.getBoundingClientRect(),
+        w = rect.width, h = rect.height;
+    $('#sandbox').width = w; $('#sandbox').height = h;
+    $('#turtle').width = w; $('#turtle').height = h;
+    $('#overlay').width = w; $('#overlay').height = h;
+
+    if (logo && turtle) {
+      turtle.resize(w, h);
+      logo.run('cs');
+    }
+  }
+}
+
+
+//
+// Hook up sidebar links
+//
+{
+  const sidebars = Array.from($$('#sidebar .choice')).map(elem => elem.id);
+  sidebars.forEach(k => {
+    $('#sb-link-' + k).addEventListener('click', () => {
+      const cl = $('#sidebar').classList;
+      sidebars.forEach(sb => { cl.remove(sb); });
+      cl.add(k);
+    });
+  });
+}
+
+
+//
+// Hooks for Library and History sidebars
+//
+{
+  savehook = hook(savehook, (name, def) => {
+    const parent = $('#library .snippets');
+    if (def)
+      insertSnippet(def, parent, name);
+    else
+      removeSnippet(parent, name);
+  });
+
+  historyhook = hook(historyhook, entry => {
+    const parent = $('#history .snippets');
+    insertSnippet(entry, parent);
+  });
+
+  clearhistoryhook = hook(clearhistoryhook, () => {
+    const parent = $('#history .snippets');
+    while (parent.firstChild)
+      parent.removeChild(parent.firstChild);
+  });
+}
+
+
+//
+// Code snippets
+//
+const snippets = new Map();
+function insertSnippet(text, parent, key, options) {
+  options = options || {};
+
+  let snippet;
+  if (key && snippets.has(key)) {
+    snippet = snippets.get(key);
+    snippet.innerHTML = '';
+  } else {
+    snippet = document.createElement('div');
+    snippet.className = 'snippet';
+    snippet.title = "Click to edit";
+    snippet.addEventListener('click', () => {
+      input.setMulti();
+      input.setValue(text);
+    });
+    if (key) {
+      snippets.set(key, snippet);
+    }
+  }
+
+  const container = document.createElement('pre');
+  snippet.appendChild(container);
+  if (typeof CodeMirror !== 'undefined') {
+    CodeMirror.runMode(text, 'logo', container);
+  } else {
+    container.appendChild(document.createTextNode(text));
+  }
+
+  if (!options.noScroll) {
+    if (parent.scrollTimeoutId)
+      clearTimeout(parent.scrollTimeoutId);
+    parent.scrollTimeoutId = setTimeout(() => {
+      parent.scrollTimeoutId = null;
+      parent.scrollTop = snippet.offsetTop;
+    }, 100);
+  }
+
+  if (snippet.parentElement !== parent)
+    parent.appendChild(snippet);
+}
+function removeSnippet(parent, key) {
+  let snippet;
+  if (!key || !snippets.has(key))
+    return;
+  snippet = snippets.get(key);
+  parent.removeChild(snippet);
+  snippets.delete(key);
+}
+
+
+//
+// Main page logic
+//
+window.addEventListener('DOMContentLoaded', async () => {
+
+  // Parse query string
+  const queryParams = {};
+  let queryRest;
+  {
+    if (document.location.search) {
+      document.location.search.substring(1).split('&').forEach(entry => {
+        const match = /^(\w+)=(.*)$/.exec(entry);
+        if (match)
+          queryParams[decodeURIComponent(match[1])] = decodeURIComponent(match[2]);
+        else
+          queryRest = '?' + entry;
+      });
+    }
+  }
+
+
+  $('#overlay').style.fontSize = '13px';
+  $('#overlay').style.fontFamily = 'monospace';
+  $('#overlay').style.color = 'black';
+
+  function asyncResult(value) {
+    return new Promise(resolve => {
+      setTimeout(() => { resolve(value); }, 0);
+    });
+  }
+
+  const stream = {
+    read(s) {
+      return Dialog.prompt(s ? s : "");
+    },
+    write(...args) {
+      const div = $('#overlay');
+      for (let i = 0; i < args.length; i += 1) {
+        div.innerHTML += escapeHTML(args[i]);
+      }
+      div.scrollTop = div.scrollHeight;
+      return asyncResult();
+    },
+    clear() {
+      const div = $('#overlay');
+      div.innerHTML = "";
+      return asyncResult();
+    },
+    readback() {
+      const div = $('#overlay');
+      return asyncResult(div.innerHTML);
+    },
+    get textsize() {
+      return parseFloat($('#overlay').style.fontSize.replace('px', ''));
+    },
+    set textsize(height) {
+      $('#overlay').style.fontSize = Math.max(height, 1) + 'px';
+    },
+    get font() {
+      return $('#overlay').style.fontFamily;
+    },
+    set font(name) {
+      if (['serif', 'sans-serif', 'cursive', 'fantasy', 'monospace'].indexOf(name) === -1)
+        name = JSON.stringify(name);
+      $('#overlay').style.fontFamily = name;
+    },
+    get color() {
+      return $('#overlay').style.color;
+    },
+    set color(color) {
+      $('#overlay').style.color = color;
+    }
+  };
+
+  const canvas_element = $("#sandbox"), canvas_ctx = canvas_element.getContext('2d'),
+        turtle_element = $("#turtle"), turtle_ctx = turtle_element.getContext('2d');
+  turtle = new CanvasTurtle(
+    canvas_ctx,
+    turtle_ctx,
+    canvas_element.width, canvas_element.height, $('#overlay'));
+
+  logo = new LogoInterpreter(turtle, stream, (name, def) => {
+    if (savehook) {
+      savehook(name, def);
+    }
+  });
+  logo.run('cs');
+  initStorage(def => {
+    logo.run(def);
+  });
+
+  // Default translation replacement function is a no-op.
+  let __ = s => s;
+
+  function saveDataAs(dataURL, filename) {
+    if (!('download' in document.createElement('a')))
+      return false;
+    const anchor = document.createElement('a');
+    anchor.href = dataURL;
+    anchor.download = filename;
+    anchor.click();
+    return true;
+  }
+
+  $('#savelibrary').addEventListener('click', () => {
+    const library = logo.procdefs().replace('\n', '\r\n');
+    const url = 'data:text/plain,' + encodeURIComponent(library);
+    if (!saveDataAs(url, 'logo_library.txt'))
+      Dialog.alert("Sorry, not supported by your browser");
+  });
+  $('#screenshot').addEventListener('click', () => {
+    const canvas = $('#sandbox');
+    const url = canvas.toDataURL('image/png');
+    if (!saveDataAs(url, 'logo_drawing.png'))
+      Dialog.alert("Sorry, not supported by your browser");
+  });
+  $('#clearhistory').addEventListener('click', () => {
+    if (!confirm(__('Clear history: Are you sure?'))) return;
+    clearhistoryhook();
+  });
+  $('#clearlibrary').addEventListener('click', () => {
+    if (!confirm(__('Clear library: Are you sure?'))) return;
+    logo.run('erall');
+  });
+
+  //
+  // Localization
+  //
+  function localize(data) {
+    if ('page' in data) {
+      if ('dir' in data.page)
+        document.body.dir = data.page.dir;
+      if ('examples' in data.page)
+        examples = data.page.examples;
+
+      if ('translations' in data.page) {
+        (translation => {
+          const ids = new Set();
+          Object.keys(translation).forEach(key => {
+            const parts = key.split('.'), id = parts[0], attr = parts[1], s = translation[key];
+            ids.add(id);
+            const elem = $('[data-l10n-id="'+id+'"]');
+            if (!elem)
+              console.warn('Unused translation: ' + id);
+            else if (attr)
+              elem.setAttribute(attr, s);
+            else
+              elem.textContent = s;
+          });
+          Array.from($$('[data-l10n-id]'))
+            .map(element => element.getAttribute('data-l10n-id'))
+            .filter(id => !ids.has(id))
+            .forEach(id => { console.warn('Missing translation: ' + id); });
+        })(data.page.translations);
+      }
+      if ('messages' in data.page) {
+        // Actual string translation replacement function.
+        __ = s => data.page.messages[s] || s;
+      }
+    }
+
+    if ('interpreter' in data) {
+      if ('messages' in data.interpreter) {
+        logo.localize = s => data.interpreter.messages[s];
+      }
+
+      if ('keywords' in data.interpreter) {
+        logo.keywordAlias = s => data.interpreter.keywords[s];
+      }
+
+      if ('procedures' in data.interpreter) {
+        (aliases => {
+          Object.keys(aliases).forEach(alias => {
+            logo.copydef(alias, aliases[alias]);
+          });
+        })(data.interpreter.procedures);
+      }
+    }
+
+    if ('graphics' in data) {
+      if ('colors' in data.graphics) {
+        turtle.colorAlias = s => data.graphics.colors[s];
+      }
+    }
+  }
+
+  let lang = queryParams.lang || navigator.language || navigator.userLanguage;
+  if (lang) {
+    // TODO: Support locale/fallback
+    lang = lang.split('-')[0];
+    document.body.lang = lang;
+
+    if (lang !== 'en') {
+      try {
+        const response = await fetch('l10n/lang-' + lang + '.json');
+        if (!response.ok) throw Error(response.statusText);
+        const text = await response.text();
+        window.json = text;
+        localize(JSON.parse(text));
+      } catch(reason) {
+        console.warn('Error loading localization file for "' +
+                     lang + '": ' + reason.message);
+        document.body.lang = 'en';
+      }
+    }
+  }
+
+  // Populate languages selection list
+  {
+    const response = await fetch('l10n/languages.txt');
+    if (!response.ok) throw Error(response.statusText);
+    const text = await response.text();
+    const select = $('#select-lang');
+    text.split(/\r?\n/g).forEach(entry => {
+      const match = /^(\w+)\s+(.*)$/.exec(entry);
+      if (!match) return;
+      const opt = document.createElement('option');
+      opt.value = match[1];
+      opt.textContent = match[2];
+      select.appendChild(opt);
+    });
+    select.value = document.body.lang;
+    select.addEventListener('change', () => {
+      let url = String(document.location);
+      url = url.replace(/[?#].*/, '');
+      document.location = url + '?lang=' + select.value;
+    });
+  }
+
+  initInput();
+
+  //
+  // Populate "Examples" sidebar
+  // (URL may be overwritten by localization file)
+  //
+  {
+    const response = await fetch(examples);
+    if (!response.ok) throw Error(response.statusText);
+    const text = await response.text();
+    const parent = $('#examples');
+    text.split(/\n\n/g).forEach(line => {
+      insertSnippet(line, parent, undefined, {
+        noScroll: true
+      });
+    });
+  }
+
+  //
+  // Demo
+  //
+
+  async function demo(param) {
+    param = String(param);
+    if (param.length > 0) {
+      param = decodeURIComponent(param.substring(1).replace(/_/g, ' '));
+      input.setValue(param);
+      try {
+        await logo.run(param);
+      } catch(e) {
+        Dialog.alert("Error: " + e.message);
+      }
+    }
+  }
+
+  // Look for a program to run in the query string / hash
+  const param = queryRest || document.location.hash;
+  demo(param);
+  window.addEventListener('hashchange', () => { demo(document.location.hash); } );
+});
+
+window.TogetherJSConfig ={
+
+  hub_on: {
+    "togetherjs.hello": () => {
+      const visible = turtle.isturtlevisible();
+      TogetherJS.send({
+        type: "init",
+        image: $("#sandbox").toDataURL("image/png"),
+        turtle: turtle.getstate()
+      });
+    },
+
+    // FIXME: we don't align the height/width of the canvases
+    init(msg) {
+      const context = $("#sandbox").getContext("2d");
+      const image = document.createElement('image');
+      image.src = msg.image;
+      context.drawImage(image, 0, 0);
+      turtle.setstate(msg.turtle);
+    },
+
+    run(msg) {
+      input.run(true);
+    },
+
+    clear(msg) {
+      input.clear(true);
+    }
+  }
+
+};
