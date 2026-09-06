@@ -82,6 +82,9 @@ user's pin silently does nothing:
 2. `[params.<NAME>_VERSION] default` in `template.toml`,
 3. the `suggests` list — put the new version first, drop the oldest.
 
+A catalog-wide sweep of these pins is **`release-push` step 0b** — that skill is when to offer a
+bump; this section is how to apply one.
+
 If a param is added, it must be *referenced* as `${<NAME>_VERSION}` on the `setup` line in the same
 template's directory, or `test88` fails. If a `setup <newname>` line is added, the script must
 exist, or `test86` fails.
