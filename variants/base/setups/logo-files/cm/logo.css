@@ -1,0 +1,74 @@
+span.cm-logo-error {
+  background-image: url('data:image/gif;base64,R0lGODlhBAAOAJEAAAAAAP////8AAP///yH5BAEAAAMALAAAAAAEAA4AAAIJnI+pyyg+XkwFADs=');
+  background-repeat: repeat-x;
+  background-position: left bottom;
+
+  background-color: #ffff00;
+  border-radius: 2px;
+}
+
+span.cm-logo-string {
+  color: #007f00;
+}
+
+span.cm-logo-number {
+  color: #0000ff;
+}
+
+span.cm-logo-operator {
+  color: #7f007f;
+  font-weight: bold;
+}
+
+span.cm-logo-variable {
+  color: #007f7f;
+  font-style: italic;
+}
+
+span.cm-logo-keyword {
+  color: black;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+span.cm-logo-word {
+  color: black;
+}
+
+span.cm-logo-comment {
+  color: #cc00ff;
+  font-style: italic;
+}
+
+span.cm-logo-defn-start {
+  color: #3f0000;
+  font-weight: bold;
+  text-transform: uppercase;
+
+  background-color: #c0ffc0;
+  border-radius: 2px;
+}
+
+span.cm-logo-defn-end {
+  color: #3f0000;
+  font-weight: bold;
+  text-transform: uppercase;
+
+  background-color: #ffc0c0;
+  border-radius: 2px;
+}
+
+span.cm-logo-defn-name {
+  color: #3f0000;
+  font-weight: bold;
+  font-size: 12pt;
+  text-decoration: underline;
+}
+
+span.cm-logo-defn-arg {
+  color: #007f7f;
+  font-weight: bold;
+  font-size: 12pt;
+  text-decoration: underline;
+  font-style: italic;
+}
+

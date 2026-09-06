@@ -1,0 +1,16 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant xfce --select python~vscode-ext/thonny/apt-pkg:tk,xvfb/nodejs~vscode-ext/logo+autostart+expose
+
+env APT_SNAPSHOT=20260906T000000Z
+
+arg APT_PKGS=tk,xvfb
+arg LOGO_HOST_PORT=18610
+arg LOGO_PORT=18610
+arg NODE_VERSION=22
+arg PYTHON_VERSION=3.13.12
+
+install apt ${APT_PKGS}
+setup nodejs ${NODE_VERSION}
+setup python ${PYTHON_VERSION}
+setup logo ${LOGO_PORT}
+setup thonny

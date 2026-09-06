@@ -1,0 +1,4 @@
+; A square — the same drawing as square.py
+; hideturtle (ht) hides the green triangle; showturtle (st) brings it back
+clearscreen hideturtle
+repeat 4 [ fd 100 rt 90 ]

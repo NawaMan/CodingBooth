@@ -136,6 +136,7 @@ setup kustomize
 setup lazydocker
 setup lazygit
 setup libreoffice
+setup logo
 setup lombok-eclipse
 setup lombok-idea
 setup lua
