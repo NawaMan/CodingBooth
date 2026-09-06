@@ -11,7 +11,10 @@ This example is a batteries-included JVM workspace built around JDK 25. The bund
 cd examples/workspaces/java-example
 booth
 
-# 2. Inside the booth — open VS Code, create a .ipynb file and select the Java kernel
+# 2. Inside the booth
+just --list
+just run
+#    or open VS Code, create a .ipynb and select the Java kernel
 ```
 
 ## What's included

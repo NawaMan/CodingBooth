@@ -21,7 +21,7 @@ http://127.0.0.1:18080/
 https://this-host-does-not-exist-9x8y7z.invalid/
 EOF
 
-./run-linkcheck.sh "$urls" "$db"
+just run "$urls" "$db"
 
 alive=$(sqlite3 "$db" "SELECT COUNT(*) FROM checks WHERE status = '200';")
 dead=$(sqlite3 "$db"  "SELECT COUNT(*) FROM checks WHERE status LIKE 'DEAD:%';")

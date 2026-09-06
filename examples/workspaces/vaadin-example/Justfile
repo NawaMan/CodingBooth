@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Package the Vaadin app
+build:
+    mvn -q package
+
+# Run the UI on :8080
+run:
+    mvn spring-boot:run

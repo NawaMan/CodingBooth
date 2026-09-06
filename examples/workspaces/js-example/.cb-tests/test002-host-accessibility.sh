@@ -25,7 +25,7 @@ cleanup() {
     echo
     echo "Cleaning up..."
     # Stop servers if running
-    docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./stop-server.sh" 2>/dev/null || true
+    docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just stop" 2>/dev/null || true
     # Stop workspace
     docker stop "$CONTAINER_NAME" 2>/dev/null || true
     docker rm   "$CONTAINER_NAME" 2>/dev/null || true
@@ -75,7 +75,7 @@ pass "Using ports: API=$API_PORT, Vite=$VITE_PORT"
 # Start server inside container
 echo
 echo "Starting server inside container..."
-docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./start-server.sh" > /dev/null 2>&1
+docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just start" > /dev/null 2>&1
 pass "Server started"
 
 # Wait for server to be ready
@@ -91,7 +91,7 @@ fi
 
 # Stop server
 echo "Stopping server..."
-docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./stop-server.sh" > /dev/null 2>&1
+docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just stop" > /dev/null 2>&1
 pass "Server stopped"
 
 # Wait for ports to close

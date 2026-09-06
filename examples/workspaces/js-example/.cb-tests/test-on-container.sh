@@ -91,7 +91,7 @@ test_runtime() {
     sleep 2
 
     # Check it's running
-    if ./check-server.sh --expect=up > /dev/null 2>&1; then
+    if just check expect=up > /dev/null 2>&1; then
         pass "${runtime}: Server started"
     else
         fail "${runtime}: Server failed to start"
@@ -105,11 +105,11 @@ test_runtime() {
     fi
 
     # Stop server
-    ./stop-server.sh > /dev/null 2>&1
+    just stop > /dev/null 2>&1
     sleep 0.5
 
     # Check it stopped
-    if ./check-server.sh --expect=down > /dev/null 2>&1; then
+    if just check expect=down > /dev/null 2>&1; then
         pass "${runtime}: Server stopped"
     else
         fail "${runtime}: Server should have stopped"
@@ -120,17 +120,17 @@ test_runtime() {
 
 # Test with Node.js
 if [[ "$HAS_NODE" == "true" ]]; then
-    test_runtime "Node.js" "./start-server.sh --runtime=node"
+    test_runtime "Node.js" "just start runtime=node"
 fi
 
 # Test with Bun
 if [[ "$HAS_BUN" == "true" ]]; then
-    test_runtime "Bun" "./start-server.sh --runtime=bun"
+    test_runtime "Bun" "just start runtime=bun"
 fi
 
 # Test with Deno
 if [[ "$HAS_DENO" == "true" ]]; then
-    test_runtime "Deno" "./start-server.sh --runtime=deno"
+    test_runtime "Deno" "just start runtime=deno"
 fi
 
 echo -e "${GREEN}All container tests passed!${NC}"

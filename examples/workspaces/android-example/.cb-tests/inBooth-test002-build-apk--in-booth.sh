@@ -20,7 +20,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR/.."
 
 echo "=== Building the APK ==="
-./build-apk.sh
+just build
 
 APK="build/hello.apk"
 

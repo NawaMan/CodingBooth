@@ -11,12 +11,12 @@
 
 set -euo pipefail
 
-APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../booth_counter" && pwd)"
-cd "$APP_DIR"
+ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT"
 
-echo "=== flutter test in $APP_DIR ==="
+echo "=== flutter test in $ROOT/booth_counter ==="
 
-if flutter test; then
+if just test; then
     echo "  ✅ the widget test passed"
 else
     echo "  ❌ flutter test failed"

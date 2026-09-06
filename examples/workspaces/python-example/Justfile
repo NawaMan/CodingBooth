@@ -1,0 +1,7 @@
+[private]
+default:
+    @just --list
+
+# Print a Python environment check
+run:
+    python Main.py

@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Compile with zig build
+build:
+    zig build
+
+# Build and run the primes demo (`just run 20`)
+run *args:
+    ./run-primes.sh {{ args }}

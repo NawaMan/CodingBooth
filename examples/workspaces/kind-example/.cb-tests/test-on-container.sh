@@ -24,11 +24,11 @@ echo
 
 # Test 1: Create cluster
 echo "Creating KinD cluster..."
-./start-cluster.sh > /dev/null 2>&1
+just start > /dev/null 2>&1
 pass "Cluster created"
 
 # Test 2: Check cluster is running (expects UP)
-if ./check-cluster.sh --expect=up > /dev/null 2>&1; then
+if just check expect=up > /dev/null 2>&1; then
     pass "Check shows cluster running"
 else
     fail "Check should show cluster running"
@@ -36,7 +36,7 @@ fi
 
 # Test 3: Deploy app
 echo "Deploying nginx app..."
-./deploy-app.sh > /dev/null 2>&1
+just deploy > /dev/null 2>&1
 pass "App deployed"
 
 # Test 4: Verify pods are running
@@ -62,11 +62,11 @@ pass "App removed"
 
 # Test 7: Delete cluster
 echo "Deleting cluster..."
-./stop-cluster.sh > /dev/null 2>&1
+just stop > /dev/null 2>&1
 pass "Cluster deleted"
 
 # Test 8: Check cluster is not running (expects DOWN)
-if ./check-cluster.sh --expect=down > /dev/null 2>&1; then
+if just check expect=down > /dev/null 2>&1; then
     pass "Check shows cluster not running"
 else
     fail "Check should show cluster not running"

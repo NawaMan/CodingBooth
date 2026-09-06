@@ -23,6 +23,12 @@ This file contains a list of changes for each released version.
   answer. `tests/basic/test021--just.sh` guards PATH, version, the welcome line,
   and that a recipe actually runs.
 
+- **Example workspaces that have in-booth commands now ship a `Justfile`.**
+  `just --list` is the front door; recipes wrap the existing scripts (`just run`,
+  `just test`, `just start` / `just stop`, or `just server` / `just client` for
+  MEAN/MERN/PERN). Empty, tooling-only, and autostart-stack examples are left
+  without one. The original `./run-*.sh` scripts stay.
+
 - **Popular is a short curated set, and two catalog tabs moved.** The Config TUI
   Popular chip (and `booth template list` without `--full`) now shows:
   Languages — `go`, `java`, `nodejs`, `python`, `rust`; Middlewares — `sqlite`;

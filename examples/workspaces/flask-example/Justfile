@@ -1,0 +1,7 @@
+[private]
+default:
+    @just --list
+
+# Install deps and serve on :5555
+run:
+    ./run.sh

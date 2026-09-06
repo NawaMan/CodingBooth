@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Serve www/ on :8080
+start:
+    ./start-server.sh
+
+# Stop the HTTP server
+stop:
+    ./stop-server.sh

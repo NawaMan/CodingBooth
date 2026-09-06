@@ -25,7 +25,7 @@ Back to [README](../README.md)
 
 ## Overview
 
-Examples are complete, working CodingBooth configurations — each with a `booth` wrapper, `.booth/config.toml`, and sample code. They are a quick way to see CodingBooth in action or to bootstrap a new project from a known-good starting point.
+Examples are complete, working CodingBooth configurations — each with a `booth` wrapper, `.booth/config.toml`, sample code, and (when the project has in-booth commands) a `Justfile`. They are a quick way to see CodingBooth in action or to bootstrap a new project from a known-good starting point.
 
 Examples are distributed as zip archives alongside each CodingBooth release, so they are always compatible with the version you have installed.
 
@@ -113,6 +113,8 @@ cd ./my-go-project
 ```
 
 Once running, you can inspect the `.booth/` directory to understand how the example is configured and customize it for your needs.
+
+Inside the booth, **`just --list`** is the front door when the example ships a `Justfile` — typically `just run`, `just test`, or `just start` / `just stop`. Those recipes wrap the example's existing scripts. Empty and tooling-only examples have no Justfile.
 
 ---
 

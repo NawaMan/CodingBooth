@@ -1,0 +1,23 @@
+[private]
+default:
+    @just --list
+
+# Production build of the Vite client
+build:
+    npm install && npm run build
+
+# Typecheck the TypeScript
+typecheck:
+    npm install && npm run typecheck
+
+# Start API + Vite as daemons (`just start runtime=bun` for the API)
+start runtime="npm":
+    ./start-server.sh --runtime={{ runtime }}
+
+# Stop both servers
+stop:
+    ./stop-server.sh
+
+# Check whether both servers are up (`just check expect=down`)
+check expect="up":
+    ./check-server.sh --expect={{ expect }}

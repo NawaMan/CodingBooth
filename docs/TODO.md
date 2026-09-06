@@ -23,9 +23,11 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       Approach: follow the `setup-work` shape (`.claude/skills/<name>/SKILL.md`, numbered steps, a
       standing "try it" line). The recipe it should encode, all of it already established: generate
       `.booth/` with `booth config` **from inside the folder** so no absolute path reaches the header;
-      commit `Boothfile` + `config.toml` + `.generated`; `.cb-tests/tags.txt` + a smoke test on an unused
+      commit `Boothfile` + `config.toml` + `.generated`; a `Justfile` when the sample has in-booth
+      `build`/`run`/`test` (wrap the scripts; in-booth sample tests call `just <recipe>`);
+      `.cb-tests/tags.txt` + a smoke test on an unused
       `CB_PORT` (they are allocated in steps of 10 — grep the existing ones); a README in the sibling
-      house shape (what it demonstrates → Run → What's inside); then the three catalog surfaces
+      house shape (what it demonstrates → Run → What's inside, leading with `just --list`); then the three catalog surfaces
       (`EXAMPLES.md`, `docs/EXAMPLES_ADVANTAGES.md` prose *and* table) and a `docs/CHANGELOG.md` entry.
       Open questions: how far it should push on proving the example works. `pocketbase-example` shipped a
       cheap `go version` smoke test matching its siblings, with the real proof done by hand at authoring

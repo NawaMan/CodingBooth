@@ -12,7 +12,8 @@ cd examples/workspaces/conda-example
 booth
 
 # 2. Inside the booth — run the stats sample
-./run-stats.sh 1 2 3 4 5
+just --list
+just run 1 2 3 4 5       # ./run-stats.sh 1 2 3 4 5
 ```
 
 ## What's included

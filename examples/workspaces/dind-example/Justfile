@@ -1,0 +1,15 @@
+[private]
+default:
+    @just --list
+
+# Build the http-server image and start it
+start:
+    ./start-server.sh
+
+# Stop the container
+stop:
+    ./stop-server.sh
+
+# Check whether the server is up (`just check expect=down`)
+check expect="up":
+    ./check-server.sh --expect={{ expect }}

@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Compile the console app
+build:
+    dotnet build --project .
+
+# Build and run
+run:
+    ./run-csharp.sh

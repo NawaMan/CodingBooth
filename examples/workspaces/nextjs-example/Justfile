@@ -1,0 +1,11 @@
+[private]
+default:
+    @just --list
+
+# Production build
+build:
+    npm install && npm run build
+
+# Next.js dev server on :3000
+run:
+    npm install && npm run dev

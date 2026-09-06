@@ -7,8 +7,8 @@ This example is a minimal React and Vite app running inside a CodingBooth worksp
 ```bash
 ./booth run
 # inside the booth:
-npm install
-npm run dev
+just --list
+just run                 # npm install && npm run dev
 ```
 
 Then open http://localhost:5173/ on the host.

@@ -1,0 +1,7 @@
+[private]
+default:
+    @just --list
+
+# Run the R sample
+run:
+    ./run-r.sh

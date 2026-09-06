@@ -24,7 +24,7 @@ cleanup() {
     echo
     echo "Cleaning up..."
     # Stop server if running
-    docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./stop-server.sh" 2>/dev/null || true
+    docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just stop" 2>/dev/null || true
     # Stop and remove the booth container
     docker stop "$CONTAINER_NAME" 2>/dev/null || true
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
@@ -69,7 +69,7 @@ echo
 
 # Start server for host tests
 echo "Starting server for host tests..."
-docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./start-server.sh > /tmp/server.log 2>&1 &"
+docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just start > /tmp/server.log 2>&1 &"
 
 # Wait for server to start with retries
 MAX_RETRIES=10
@@ -108,7 +108,7 @@ fi
 
 # Stop server
 echo "Stopping server..."
-docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./stop-server.sh" > /dev/null 2>&1
+docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just stop" > /dev/null 2>&1
 sleep 1
 
 # Test curl fails from host

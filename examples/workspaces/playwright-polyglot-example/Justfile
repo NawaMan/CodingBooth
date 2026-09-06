@@ -1,0 +1,9 @@
+[private]
+default:
+    @just --list
+
+# Drive the same Playwright task from five languages
+run:
+    ./run-polyglot.sh
+
+alias test := run

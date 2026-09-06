@@ -24,7 +24,7 @@ cleanup() {
     echo
     echo "Cleaning up..."
     # Stop server if running
-    docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./stop-server.sh" 2>/dev/null || true
+    docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just stop" 2>/dev/null || true
     # Stop and remove the booth container
     docker stop "$CONTAINER_NAME" 2>/dev/null || true
     docker rm -f "$CONTAINER_NAME" 2>/dev/null || true
@@ -49,7 +49,7 @@ fi
 
 # Test 2: Start server inside container
 echo "Starting server inside container..."
-docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && ./start-server.sh > /dev/null 2>&1 &"
+docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just start > /dev/null 2>&1 &"
 sleep 2
 
 # Test 3: Verify server is accessible from host

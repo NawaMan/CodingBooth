@@ -12,7 +12,8 @@ cd examples/workspaces/zig-example
 booth
 
 # 2. Inside the booth — build and run the primes demo
-./run-primes.sh 20
+just --list
+just run 20              # ./run-primes.sh 20
 ```
 
 ## What's included
