@@ -1,0 +1,15 @@
+#!/bin/sh
+ARGS=""
+SKIP_NEXT=0
+for arg in "$@"; do
+    if [ $SKIP_NEXT -eq 1 ]; then
+        SKIP_NEXT=0
+        continue
+    fi
+    case "$arg" in
+        -target) SKIP_NEXT=1 ;;
+        -Wl,*) ;;
+        *) ARGS="$ARGS $arg" ;;
+    esac
+done
+exec zig cc -target aarch64-windows-gnu $ARGS

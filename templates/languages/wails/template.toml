@@ -1,0 +1,50 @@
+display-name = "Wails"
+display-disc = "Wails v3 — Go desktop apps with a web frontend"
+display-detail = """Installs the Wails v3 CLI (`wails3`) and the Linux compile stack it needs: GTK 4 and \
+WebKitGTK 6.0, plus build-essential and pkg-config. Selecting this pulls in Go and Node.js \
+(`requires`), because the CLI is installed with `go install` and most Wails templates build \
+their frontend with npm.
+
+`wails3 build` produces a native Linux GUI binary on the base variant — no desktop needed to \
+*compile*. Running that binary needs a desktop variant (or DISPLAY pointed at an X server). \
+Windows is a free cross-compile from Linux (`wails3 build GOOS=windows`); macOS and \
+foreign-arch Linux need Docker, which is the `+cross` extension. Android APKs need \
+`+android` (SDK + NDK). iOS needs macOS + Xcode, not a Linux booth.
+
+The CLI lands in `/usr/local/bin/wails3` so a non-login shell (`booth -- cmd`) finds it, not \
+only an interactive login via GOPATH/bin.
+
+WebKitGTK 6.0 sandboxes the renderer with bubblewrap, which needs user namespaces a booth \
+does not grant. The template therefore sets `WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1` \
+(and `WEBKIT_DISABLE_DMABUF_RENDERER=1` for the no-GPU case) — the same class of workaround \
+as Chromium's `--no-sandbox` wrappers. Without those, `just run` dies at start with \
+`bwrap: No permissions to create new namespace`."""
+display-order = 12
+tags = [
+    "wails",
+    "wails3",
+    "go",
+    "desktop",
+    "gui",
+    "webview",
+]
+
+requires = ["go", "nodejs"]
+
+# Docker -e so every process in the booth sees these, not only login shells.
+# WebKitGTK 6.0's bubblewrap sandbox cannot create user namespaces inside a
+# container; DMA-BUF needs a real GPU the booth does not pass through.
+run-args = [
+    "-e", "WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1",
+    "-e", "WEBKIT_DISABLE_DMABUF_RENDERER=1",
+]
+
+[params.WAILS_VERSION]
+default = "latest"
+suggests = ["latest", "v3.0.0-beta.16"]
+
+# Order 60: after Go and Node.js, which land in the base band at 50.
+[segments]
+"Boothfile--60" = """
+setup wails --version ${WAILS_VERSION}
+"""

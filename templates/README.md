@@ -354,6 +354,7 @@ All templates and extensions grouped by segment order.
 | `languages/elixir`        | Elixir           |
 | `languages/kotlin`        | Kotlin           |
 | `languages/scala`         | Scala            |
+| `languages/wails`         | Wails v3         |
 | `tools/codex`             | Codex            |
 | `tools/notebook`          | Jupyter Notebook |
 | `tools/warp`              | Warp             |

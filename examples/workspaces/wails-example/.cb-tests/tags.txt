@@ -1,0 +1,4 @@
+wails
+go
+desktop
+cross-compile
