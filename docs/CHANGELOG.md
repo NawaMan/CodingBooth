@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Mojo is a catalog language.** `--select mojo` installs the Mojo 1.0
+  compiler (`pip install mojo` into booth Python) and a C++ compiler, and
+  pulls in Python (`requires`). Pin with `mojo:1.0.0`. The official VS Code
+  extension (`modular-mojotools.vscode-mojo`) auto-selects on codeserver/VS
+  Code variants. `examples/workspaces/mojo-example` JIT-compiles a factorial
+  with `just run 5`. Tests: `test105-init-mojo.sh`,
+  `tests/setups/test--mojo-setup.sh`,
+  `tests/complex/test-boothfile-mojo`.
+
 - **Catalog version pins refreshed for 0.76.0.** Script defaults, template
   defaults, and GitHub-API fallbacks now agree on current stables, including
   the three script↔template drifts: Go `1.26.8` (N−1 of 1.27), Node.js `24`
