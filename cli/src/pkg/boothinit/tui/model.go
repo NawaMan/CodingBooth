@@ -895,16 +895,9 @@ func (m model) handleCycleEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.stringFields[f.Key] = f.Options[m.cyclePrevIdx]
 		m.cycleEditing = false
 	case "right", " ", "down":
-		idx := (m.cycleIndices[f.Key] + 1) % len(f.Options)
-		m.cycleIndices[f.Key] = idx
-		m.stringFields[f.Key] = f.Options[idx]
+		m.stepCycle(*f, 1)
 	case "left", "up":
-		idx := m.cycleIndices[f.Key] - 1
-		if idx < 0 {
-			idx = len(f.Options) - 1
-		}
-		m.cycleIndices[f.Key] = idx
-		m.stringFields[f.Key] = f.Options[idx]
+		m.stepCycle(*f, -1)
 	}
 	return m, nil
 }
