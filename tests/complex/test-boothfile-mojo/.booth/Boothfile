@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Mojo installation via Boothfile.
+# mojo--setup.sh is supplied under .booth/setups/ until the base image ships it.
+# python--setup.sh is already in the released image.
+
+setup python 3.13.12
+setup mojo --version 1.0.0
