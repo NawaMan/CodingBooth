@@ -127,6 +127,10 @@ var variantProvidedSetups = map[string][]string{
 type Compiler struct {
 	options  CompilerOptions
 	warnings []ParseError // Accumulated warnings during compilation
+	// args records NAME=value from `arg` commands so COPY --from=image:${NAME}
+	// can be expanded. Docker does not substitute ARG in a --from image
+	// reference (invalid reference format); RUN still expands ${NAME} itself.
+	args map[string]string
 }
 
 // NewCompiler creates a new Boothfile compiler with default options.
@@ -164,6 +168,7 @@ func (cr CompileResult) HasWarnings() bool {
 func (c *Compiler) Compile(parseResult ParseResult) CompileResult {
 	// Initialize compiler warnings
 	c.warnings = make([]ParseError, 0)
+	c.args = make(map[string]string)
 
 	result := CompileResult{
 		Errors:   append([]ParseError{}, parseResult.Errors...),
@@ -410,7 +415,29 @@ func (c *Compiler) compileCopy(cmd Command) (string, *ParseError) {
 			Message:    "copy command requires source and destination",
 		}
 	}
-	return "COPY " + strings.Join(cmd.Args, " "), nil
+	args := append([]string(nil), cmd.Args...)
+	// COPY --from=<image>:${ARG} is parsed as a stage name before Docker
+	// expands ARG, so hoppscotch/cloudbeaver-style pins would never resolve.
+	// Substitute known Boothfile arg values into the --from image only.
+	if strings.HasPrefix(args[0], "--from=") {
+		args[0] = expandCopyFromArgs(args[0], c.args)
+	}
+	return "COPY " + strings.Join(args, " "), nil
+}
+
+var copyFromArgRef = regexp.MustCompile(`\$\{([A-Za-z_][A-Za-z0-9_]*)\}`)
+
+func expandCopyFromArgs(fromFlag string, args map[string]string) string {
+	if len(args) == 0 {
+		return fromFlag
+	}
+	return copyFromArgRef.ReplaceAllStringFunc(fromFlag, func(ref string) string {
+		name := copyFromArgRef.FindStringSubmatch(ref)[1]
+		if v, ok := args[name]; ok && v != "" {
+			return v
+		}
+		return ref
+	})
 }
 
 // compileEnv compiles an env command.
@@ -463,6 +490,13 @@ func (c *Compiler) compileArg(cmd Command) (string, *ParseError) {
 		return "", &ParseError{
 			LineNumber: cmd.LineNumber,
 			Message:    "arg command requires NAME or NAME=default",
+		}
+	}
+	if c.args != nil {
+		for _, a := range cmd.Args {
+			if name, val, ok := strings.Cut(a, "="); ok && name != "" {
+				c.args[name] = val
+			}
 		}
 	}
 	return "ARG " + strings.Join(cmd.Args, " "), nil

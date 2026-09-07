@@ -1,0 +1,19 @@
+display-name = "Hoppscotch Auto-Start"
+display-disc = "Auto-start Hoppscotch server on container boot"
+display-order = 2
+auto-select = false
+tags = [
+    "hoppscotch",
+    "autostart"
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start Hoppscotch in background
+PORT=${HOPPSCOTCH_PORT}
+LOG_FILE="/tmp/hoppscotch.log"
+
+nohup start-hoppscotch "$PORT" > "$LOG_FILE" 2>&1 &
+
+echo "Hoppscotch started on port $PORT (PID $!, log: $LOG_FILE)"
+"""
