@@ -1,0 +1,28 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant xfce --select wails:v3.0.0-beta.16+android/android-sdk+emulator+kvm
+
+env APT_SNAPSHOT=20260906T000000Z
+
+arg ANDROID_API=34
+arg ANDROID_BUILD_TOOLS=34.0.0
+arg ANDROID_CMDLINE_TOOLS=11076708
+arg ANDROID_IMAGE_ABI=x86_64
+arg ANDROID_IMAGE_TAG=default
+arg GO_VERSION=1.25.7
+arg JDK_VENDOR=temurin
+arg JDK_VERSION=25
+arg NODE_VERSION=22
+arg WAILS_VERSION=v3.0.0-beta.16
+
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+setup nodejs ${NODE_VERSION}
+setup android-sdk --cmdline-tools ${ANDROID_CMDLINE_TOOLS} --api ${ANDROID_API} --build-tools ${ANDROID_BUILD_TOOLS}
+setup wails --version ${WAILS_VERSION}
+setup android-emulator --api ${ANDROID_API} --tag ${ANDROID_IMAGE_TAG} --abi ${ANDROID_IMAGE_ABI}
+setup go-code-extension
+setup java-code-extension
+setup nodejs-code-extension
+setup wails-android

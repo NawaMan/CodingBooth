@@ -218,6 +218,8 @@ setup vhs
 setup viewmd
 setup viewmd-desktop-icon
 setup vscode
+setup wails
+setup wails-android
 setup warp
 setup wayland
 setup xfce

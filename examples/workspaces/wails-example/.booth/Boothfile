@@ -1,0 +1,18 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant xfce --set dind --select wails:v3.0.0-beta.16/dind+docker-config/docker-buildx
+
+env APT_SNAPSHOT=20260906T000000Z
+
+arg GO_VERSION=1.25.7
+arg NODE_VERSION=22
+arg WAILS_VERSION=v3.0.0-beta.16
+
+setup dind
+setup docker-buildx
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+setup nodejs ${NODE_VERSION}
+setup wails --version ${WAILS_VERSION}
+setup go-code-extension
+setup nodejs-code-extension

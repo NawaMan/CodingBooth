@@ -82,6 +82,14 @@ The advantages, in CodingBooth's own vocabulary:
   containers — `floci start` runs the emulator image inside the DinD sidecar.)*
 - **zig-snake-example** — "no Zig installation required" on the host; `zig build run` just works.
 - **playwright-example** — Node + Playwright + headless Chromium + VS Code extensions in one command.
+- **wails-example** — Go + Node + GTK 4 / WebKitGTK 6.0 + the Wails v3 CLI on
+  an XFCE desktop, so `wails3 build` works without installing WebKit on the
+  host and `just run` opens the window. *(Secondary: Standardize-to-Linux —
+  Windows is a free cross-compile from the same booth; macOS needs
+  `wails+cross` and one Docker image.)*
+- **wails-android-example** — the same counter, `wails+android` plus emulator
+  and KVM on xfce; `just build` emits an APK and `just run` launches it on an
+  AVD. The SDK + NDK stay out of the desktop example on purpose.
 
 ## 🧹 Host stays clean — no global/system-wide installs
 
@@ -278,6 +286,8 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | systemlib-example | Precise version compatibility |
 | turtle-example | Try / compare side-by-side (Logo vs Python turtle) |
 | vaadin-example | Batteries-included |
+| wails-example | Batteries-included / Standardize-to-Linux (cross-compile) |
+| wails-android-example | Batteries-included (APK + emulator) |
 | wordpress-example | Pre-baked deps / multiple things bundled |
 | zig-example | Reproducibility |
 | zig-snake-example | Batteries-included / Standardize-to-Linux |

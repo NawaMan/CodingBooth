@@ -184,6 +184,23 @@ variants/base/_stage/
 !.claude/skills/
 
 !/build/
+# Wails v3 keeps packaging Taskfiles under the project build/ directory.
+# The unanchored `build/` rules above would otherwise drop them.
+# Re-ignore compile products that a `just build` / android:build drops in there.
+!examples/workspaces/wails-example/build/
+!examples/workspaces/wails-example/build/**
+examples/workspaces/wails-example/bin/
+examples/workspaces/wails-example/.task/
+examples/workspaces/wails-example/build/android/build/
+examples/workspaces/wails-example/build/android/gen/
+examples/workspaces/wails-example/build/android/app/src/main/jniLibs/
+!examples/workspaces/wails-android-example/build/
+!examples/workspaces/wails-android-example/build/**
+examples/workspaces/wails-android-example/bin/
+examples/workspaces/wails-android-example/.task/
+examples/workspaces/wails-android-example/build/android/build/
+examples/workspaces/wails-android-example/build/android/gen/
+examples/workspaces/wails-android-example/build/android/app/src/main/jniLibs/
 /codingbooth
 /cli/codingbooth
 **/booth

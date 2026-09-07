@@ -1,0 +1,145 @@
+[private]
+default:
+    @just --list
+
+# Native Linux GUI binary (needs GTK4/WebKitGTK 6.0 to compile, a desktop to run)
+build:
+    wails3 build
+
+# Windows amd64 + arm64 from Linux — no Docker, CGO_ENABLED=0.
+# Wails writes both arches to bin/booth-counter.exe, so rename after each
+# build or the second clobbers the first.
+build-windows:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    wails3 build GOOS=windows GOARCH=amd64
+    mv -f bin/booth-counter.exe bin/booth-counter-windows-amd64.exe
+    wails3 build GOOS=windows GOARCH=arm64
+    mv -f bin/booth-counter.exe bin/booth-counter-windows-arm64.exe
+
+# Build the wails-cross image if it is missing (Zig + macOS SDK, ~800MB, once).
+[private]
+ensure-wails-cross:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v docker >/dev/null 2>&1 || ! docker info >/dev/null 2>&1; then
+        echo "Docker is required for macOS / other-arch Linux."
+        echo "Enable DinD and restart the booth, then retry:"
+        echo "  booth config . --variant xfce --select 'wails:v3.0.0-beta.16+cross'"
+        echo "  booth"
+        exit 1
+    fi
+    if docker image inspect wails-cross >/dev/null 2>&1; then
+        echo "wails-cross image is ready"
+        exit 0
+    fi
+    host_m="$(uname -m)"
+    case "$host_m" in
+        x86_64|amd64) host_goarch=amd64 ;;
+        aarch64|arm64) host_goarch=arm64 ;;
+        *) echo "unknown host arch: $host_m"; exit 1 ;;
+    esac
+    echo "Building wails-cross (once, ~800MB) ..."
+    # Ubuntu docker.io has no BuildKit; pass TARGETPLATFORM explicitly.
+    unset DOCKER_BUILDKIT || true
+    docker build \
+        --build-arg "TARGETPLATFORM=linux/${host_goarch}" \
+        --build-arg "TARGETARCH=${host_goarch}" \
+        -t wails-cross \
+        -f build/docker/Dockerfile.cross \
+        build/docker
+
+# macOS amd64 + arm64 via wails-cross (builds the image if needed)
+build-macos: ensure-wails-cross
+    ./cross-docker.sh darwin arm64
+    ./cross-docker.sh darwin amd64
+
+# Every desktop target: native Linux, Windows, other-arch Linux, macOS.
+# Builds wails-cross on first use. Docker targets use a named volume, not a
+# bind mount — DinD cannot see /home/coder/code.
+build-all: ensure-wails-cross
+    #!/usr/bin/env bash
+    set -euo pipefail
+    host_arch="$(uname -m)"
+    case "$host_arch" in
+        x86_64|amd64) host_goarch=amd64; other_goarch=arm64 ;;
+        aarch64|arm64) host_goarch=arm64; other_goarch=amd64 ;;
+        *) echo "unknown arch: $host_arch"; exit 1 ;;
+    esac
+    wails3 build
+    mv -f bin/booth-counter "bin/booth-counter-linux-${host_goarch}"
+    wails3 build GOOS=windows GOARCH=amd64
+    mv -f bin/booth-counter.exe bin/booth-counter-windows-amd64.exe
+    wails3 build GOOS=windows GOARCH=arm64
+    mv -f bin/booth-counter.exe bin/booth-counter-windows-arm64.exe
+    # Darwin uses Zig in the host-arch image. Other-arch Linux needs a
+    # --platform rebuild (GTK CGO); do darwin first so a QEMU miss does not
+    # hide a successful macOS build.
+    ./cross-docker.sh darwin arm64
+    ./cross-docker.sh darwin amd64
+    ./cross-docker.sh linux "$other_goarch"
+    echo ""
+    echo "Built:"
+    ls -lh bin/
+
+# Run the GUI on this booth's XFCE desktop.
+# WebKitGTK's bubblewrap sandbox cannot create user namespaces in a booth.
+# Exec the binary directly (not `wails3 task run`) so the env cannot be lost.
+run:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    export WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1
+    export WEBKIT_DISABLE_DMABUF_RENDERER=1
+    if [[ ! -x bin/booth-counter ]]; then
+        wails3 build
+    fi
+    echo "WebKit sandbox disabled (booth has no user namespaces)"
+    exec ./bin/booth-counter
+
+# Debug APK. Needs the Android SDK + NDK (`wails+android`); not in the default booth.
+build-android:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/opt/android-sdk}}"
+    if [[ ! -x "${SDK}/cmdline-tools/latest/bin/sdkmanager" ]] && ! command -v sdkmanager >/dev/null 2>&1; then
+        echo "Android SDK is not in this booth. The APK example is a sibling:"
+        echo "  examples/workspaces/wails-android-example"
+        exit 1
+    fi
+    export ANDROID_HOME="$SDK"
+    export ANDROID_SDK_ROOT="$SDK"
+    if [[ -z "${ANDROID_NDK_HOME:-}" ]]; then
+        ndk="$(ls -d "${SDK}"/ndk/* 2>/dev/null | sort -V | tail -1 || true)"
+        if [[ -n "$ndk" ]]; then
+            export ANDROID_NDK_HOME="$ndk"
+        fi
+    fi
+    if [[ -z "${ANDROID_NDK_HOME:-}" || ! -d "${ANDROID_NDK_HOME}" ]]; then
+        echo "Android NDK not found under ${SDK}/ndk."
+        echo "The wails-android setup installs NDK 26.3; select +android and rebuild."
+        exit 1
+    fi
+    wails3 task android:build
+    wails3 task android:assemble:apk
+    ls -lh bin/booth-counter.apk
+
+# iOS simulator .app. Needs macOS + full Xcode — a Linux booth cannot do this.
+build-ios:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if [[ "$(uname -s)" != "Darwin" ]]; then
+        echo "iOS builds need macOS with full Xcode (not the command-line tools)."
+        echo "This booth is $(uname -s)/$(uname -m); it cannot produce a .app or .ipa."
+        echo "On a Mac: wails3 task ios:run"
+        exit 1
+    fi
+    if ! command -v xcodebuild >/dev/null 2>&1; then
+        echo "xcodebuild not found. Install Xcode from the Mac App Store."
+        exit 1
+    fi
+    wails3 task ios:package
+    ls -lh bin/*.app bin/*.ipa 2>/dev/null || ls -lh bin/
+
+# What Wails thinks of this booth
+doctor:
+    wails3 doctor

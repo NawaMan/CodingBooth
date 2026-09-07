@@ -1,0 +1,83 @@
+[private]
+default:
+    @just --list
+
+# Debug APK via Wails' Android Taskfile (NDK → libwails.so → Gradle).
+# Needs ANDROID_HOME from the wails+android booth; just exports the booth paths
+# so a non-login shell (`booth -- just build`) sees them too.
+build:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/opt/android-sdk}}"
+    if [[ ! -x "${SDK}/cmdline-tools/latest/bin/sdkmanager" ]] && ! command -v sdkmanager >/dev/null 2>&1; then
+        echo "Android SDK is not in this booth. This example selects wails+android."
+        echo "Rebuild the booth from this folder:  booth"
+        exit 1
+    fi
+    export ANDROID_HOME="$SDK"
+    export ANDROID_SDK_ROOT="$SDK"
+    if [[ -z "${ANDROID_NDK_HOME:-}" ]]; then
+        ndk="$(ls -d "${SDK}"/ndk/* 2>/dev/null | sort -V | tail -1 || true)"
+        if [[ -n "$ndk" ]]; then
+            export ANDROID_NDK_HOME="$ndk"
+        fi
+    fi
+    if [[ -z "${ANDROID_NDK_HOME:-}" || ! -d "${ANDROID_NDK_HOME}" ]]; then
+        echo "Android NDK not found under ${SDK}/ndk (wails-android setup installs 26.3)."
+        exit 1
+    fi
+    wails3 task android:build
+    wails3 task android:assemble:apk
+    ls -lh bin/booth-counter.apk
+
+# Native Linux GUI binary — same app, desktop target. Needs GTK; no APK.
+desktop:
+    wails3 build
+
+# Start the AVD on this booth's XFCE desktop. Extra args go to the emulator
+# (`just emulator -- -no-window`). cb-android-emulator picks KVM vs -accel off.
+emulator *args:
+    cb-android-emulator {{ args }}
+
+# Build the APK, boot the emulator if needed, install and launch the counter.
+run:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/opt/android-sdk}}"
+    export ANDROID_HOME="$SDK" ANDROID_SDK_ROOT="$SDK"
+    if [[ -z "${ANDROID_NDK_HOME:-}" ]]; then
+        ndk="$(ls -d "${SDK}"/ndk/* 2>/dev/null | sort -V | tail -1 || true)"
+        [[ -n "$ndk" ]] && export ANDROID_NDK_HOME="$ndk"
+    fi
+    if [[ ! -s bin/booth-counter.apk ]]; then
+        just build
+    fi
+    if ! command -v adb >/dev/null 2>&1 && ! command -v cb-android-emulator >/dev/null 2>&1; then
+        echo "No emulator in this booth. This example selects +emulator+kvm."
+        echo "Rebuild: booth"
+        exit 1
+    fi
+    if ! adb devices 2>/dev/null | grep -qE 'emulator-|device$'; then
+        echo "Starting emulator ..."
+        nohup cb-android-emulator >/tmp/wails-emulator.log 2>&1 &
+        adb wait-for-device
+        for _ in $(seq 1 180); do
+            if [[ "$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r')" == "1" ]]; then
+                break
+            fi
+            sleep 2
+        done
+    fi
+    adb install -r bin/booth-counter.apk
+    adb shell am start -n com.wails.app/com.wails.app.MainActivity
+    echo "Launched Booth counter on the emulator"
+
+# What Wails / the Android SDK think of this booth
+doctor:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    wails3 doctor
+    echo ""
+    echo "=== Android SDK ==="
+    echo "ANDROID_HOME=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/opt/android-sdk}}"
+    command -v sdkmanager && sdkmanager --list_installed 2>/dev/null | head -20 || true

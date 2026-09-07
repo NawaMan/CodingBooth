@@ -1,0 +1,13 @@
+# Configured by: booth config --no-tui --overwrite --variant xfce --select wails:v3.0.0-beta.16+android/android-sdk+emulator+kvm
+
+variant = "xfce"
+
+build-args = ["--platform", "${CB_ANDROID_PLATFORM:-linux/amd64}"]
+
+run-args = [
+    "-e", "WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1",
+    "-e", "WEBKIT_DISABLE_DMABUF_RENDERER=1",
+    "--platform", "${CB_ANDROID_PLATFORM:-linux/amd64}",
+    "--device", "/dev/kvm",
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro"
+]

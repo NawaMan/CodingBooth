@@ -1,0 +1,7 @@
+wails
+android
+mobile
+apk
+go
+emulator
+desktop

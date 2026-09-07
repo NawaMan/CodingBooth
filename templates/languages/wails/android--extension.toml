@@ -1,0 +1,47 @@
+display-name = "Wails Android Target"
+display-disc = "Wires Wails to the Android SDK so `wails3 task android:build` produces an APK"
+display-detail = """Installs the NDK and Android API Wails v3's Gradle file compiles against, turning a \
+desktop-only Wails booth into one that can emit an APK.
+
+Wails compiles the same `main.go` to `libwails.so` via the NDK (`GOOS=android`) and a small Java \
+host loads it. The Android SDK's default API trails what the Wails template's `compileSdk 35` \
+wants, and the NDK is not part of a stock `android-sdk` install, so without this the Gradle task \
+fails looking for `ndk;26.3.11579264`.
+
+Selecting this pulls in the Android SDK (and, through it, a JDK). To actually run the app rather \
+than only build it, also select the Android SDK's `emulator` extension, and `kvm` if the host has \
+hardware virtualisation. iOS is not part of this extension — it needs macOS + Xcode.
+
+Google's SDK, NDK and emulator are linux x86_64 only, so this forces \
+`--platform linux/amd64` on build and run (no-op on a real amd64 host). Override with \
+`CB_ANDROID_PLATFORM` — e.g. `linux/arm64` on an arm64 CI runner that should skip rather \
+than QEMU-rebuild."""
+display-order = 2
+auto-select = false
+tags = [
+    "wails",
+    "wails3",
+    "android",
+    "mobile",
+    "apk",
+]
+
+requires = ["android-sdk"]
+
+unsupported-arch = ["arm64"]
+unsupported-arch-note = "Google ships the Android SDK platform and NDK for linux x86_64 only."
+
+# Same workaround as android-example: tools are x86_64-only. ExpandParams leaves
+# unknown ${CB_ANDROID_PLATFORM:-…} intact for docker to expand at start.
+run-args = [
+    "--platform", "${CB_ANDROID_PLATFORM:-linux/amd64}",
+]
+build-args = [
+    "--platform", "${CB_ANDROID_PLATFORM:-linux/amd64}",
+]
+
+# Order 67: after Wails (60) and the Android SDK (60).
+[segments]
+"Boothfile--67" = """
+setup wails-android
+"""

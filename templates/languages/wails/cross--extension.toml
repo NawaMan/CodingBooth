@@ -1,0 +1,30 @@
+display-name = "Wails Cross-Compilation"
+display-disc = "Docker-in-Docker so `wails3 build GOOS=darwin` (and other-arch Linux) works"
+display-detail = """Wails v3 can target every desktop OS from Linux, but not all of those targets are \
+plain `go build`. Windows is CGO-free and works from a stock `wails` booth \
+(`wails3 build GOOS=windows`). macOS and a Linux architecture that is not the booth's own need \
+the `wails-cross` Docker image (Zig + the macOS SDK, ~800MB).
+
+This extension pulls in Docker-in-Docker. Once the booth is up, build that image once:
+
+    wails3 task setup:docker
+
+After that, `wails3 build GOOS=darwin GOARCH=arm64` (and linux/arm64 from an amd64 booth) uses \
+it automatically. Cross-compiled macOS binaries are unsigned — Apple still wants a Mac, or a \
+macOS CI runner, to sign before distribution. Wails does not redistribute the macOS SDK; you \
+are responsible for Apple's SDK licence terms.
+
+iOS needs macOS + Xcode (not this extension). Android is the separate `+android` \
+extension, which pulls the Android SDK and NDK."""
+display-order = 1
+auto-select = false
+tags = [
+    "wails",
+    "wails3",
+    "cross-compile",
+    "docker",
+    "macos",
+    "darwin",
+]
+
+requires = ["dind"]

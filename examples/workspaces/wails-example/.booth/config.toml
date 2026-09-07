@@ -1,0 +1,11 @@
+# Configured by: booth config --no-tui --overwrite --variant xfce --set dind --select wails:v3.0.0-beta.16/dind+docker-config/docker-buildx
+
+variant = "xfce"
+dind = true
+
+run-args = [
+    "-e", "WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1",
+    "-e", "WEBKIT_DISABLE_DMABUF_RENDERER=1",
+    "-v", "~/.docker/config.json:/etc/cb-home-seed/.docker/config.json:ro",
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro"
+]
