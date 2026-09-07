@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Mojo notebooks are a catalog extension.** `--select mojo+kernel` pulls
+  Jupyter and registers a kernelspec named `mojo`. Modular's official
+  notebooks are a Python kernel plus `import mojo.notebook` (`%%mojo` cells,
+  each a complete program with `main()`); the extension auto-imports that
+  magic so the first cell does not have to. The third-party `mojokernel`
+  package is not used — it last shipped against Mojo 0.26 and has no
+  linux/arm64 wheel. `examples/workspaces/mojo-example` includes
+  `Factorial.ipynb`. Tests: `test106-init-mojo-kernel.sh`,
+  `tests/complex/test-boothfile-mojo-nb-kernel`.
+
 - **Mojo is a catalog language.** `--select mojo` installs the Mojo 1.0
   compiler (`pip install mojo` into booth Python) and a C++ compiler, and
   pulls in Python (`requires`). Pin with `mojo:1.0.0`. The official VS Code

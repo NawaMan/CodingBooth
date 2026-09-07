@@ -487,6 +487,7 @@ curl -s -X POST https://marketplace.visualstudio.com/_apis/public/gallery/extens
 | `java/kernel--extension`     | Java Notebook Kernel (IJava) |
 | `java/kernel-jjava--extension` | Java Notebook Kernel (JJava, Java 11+) — pick this *or* `java/kernel`, not both |
 | `kotlin/kernel--extension`   | Kotlin Notebook Kernel |
+| `mojo/kernel--extension`     | Mojo Notebook Kernel   |
 | `nodejs/kernel--extension`   | Node.js Notebook Kernel |
 | `python/kernel--extension`   | Python Notebook Kernel |
 | `r/kernel--extension`        | R Notebook Kernel      |
