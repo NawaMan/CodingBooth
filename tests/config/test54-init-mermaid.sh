@@ -6,7 +6,7 @@ begin
 # Test 1: Mermaid with default params
 run booth config $prj --no-tui --select "mermaid"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg MERMAID_VERSION=' '11.4.2'  "default version is 11.4.2"
+assert-line "$boothfile" 'arg MERMAID_VERSION=' '11.17.0'  "default version is 11.17.0"
 assert-line "$boothfile" 'arg MERMAID_PORT=' '18090'  "default port is 18090"
 assert-line "$boothfile" 'setup mermaid ' '${MERMAID_VERSION} ${MERMAID_PORT}'  "Boothfile uses param references"
 

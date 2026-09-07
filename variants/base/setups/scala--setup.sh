@@ -11,7 +11,7 @@ Usage:
   $0 [--scala-version <3.x.y>] [--with-ammonite|--no-ammonite]
 
 Examples:
-  $0                                  # default Scala 3.5.1 + coursier + scala-cli
+  $0                                  # default Scala 3.8.4 + coursier + scala-cli
   $0 --scala-version 3.4.2            # pin a specific Scala 3 version
   $0 --with-ammonite                  # also install Ammonite (via coursier)
 
@@ -26,7 +26,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (use sudo)"; exit 1; }
 
 # --- defaults / args ---
-SCALA_DEFAULT="3.5.1"
+SCALA_DEFAULT="3.8.4"
 SCALA_VER="$SCALA_DEFAULT"
 WITH_AMM=0
 

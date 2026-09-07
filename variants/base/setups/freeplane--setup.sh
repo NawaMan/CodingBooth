@@ -12,11 +12,11 @@ Usage:
   $0 [VERSION]
 
 Arguments:
-  VERSION  Freeplane version (default: 1.12.8)
+  VERSION  Freeplane version (default: 1.13.3)
 
 Examples:
   $0             # install with default version
-  $0 1.12.8      # specific version
+  $0 1.13.3      # specific version
 
 Notes:
 - Downloads Freeplane .deb from GitHub releases (pinned version)
@@ -34,7 +34,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 # ---- defaults / args ----
-FREEPLANE_VERSION="${1:-1.12.8}"
+FREEPLANE_VERSION="${1:-1.13.3}"
 
 export DEBIAN_FRONTEND=noninteractive
 

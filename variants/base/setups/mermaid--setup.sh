@@ -12,12 +12,12 @@ Usage:
   $0 [VERSION] [PORT]
 
 Arguments:
-  VERSION  Mermaid CLI version (default: 11.4.2)
+  VERSION  Mermaid CLI version (default: 11.17.0)
   PORT     Port for the Mermaid live editor (default: 18090)
 
 Examples:
   $0                    # install with defaults
-  $0 11.4.2 18090       # specific version and port
+  $0 11.17.0 18090       # specific version and port
 
 Notes:
 - Installs Node.js (if not present), Mermaid CLI (mmdc), and Mermaid Live Editor
@@ -38,7 +38,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 # ---- defaults / args ----
-MERMAID_VERSION="${1:-11.4.2}"
+MERMAID_VERSION="${1:-11.17.0}"
 MERMAID_PORT="${2:-18090}"
 MERMAID_DIR="/opt/mermaid"
 

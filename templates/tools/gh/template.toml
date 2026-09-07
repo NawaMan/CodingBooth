@@ -10,7 +10,7 @@ tags = [
 
 [params.GH_VERSION]
 default = "latest"
-suggests = ["latest", "2.97.0", "2.96.0", "2.95.0", "2.94.0", "2.93.0"]
+suggests = ["latest", "2.100.0", "2.97.0", "2.96.0", "2.95.0"]
 
 [segments]
 Boothfile = """

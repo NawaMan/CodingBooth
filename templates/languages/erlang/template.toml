@@ -9,8 +9,8 @@ tags = [
 ]
 
 [params.OTP_VERSION]
-default = "27"
-suggests = ["27", "26", "25"]
+default = "28"
+suggests = ["28", "27", "26"]
 
 [segments]
 Boothfile = """

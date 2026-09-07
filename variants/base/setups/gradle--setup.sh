@@ -18,7 +18,7 @@ HOME=/root
 
 PROFILE_FILE="/etc/profile.d/62-cb-gradle--profile.sh"
 
-GRADLE_VERSION=${1:-9.1.0}
+GRADLE_VERSION=${1:-9.7.1}
 
 # Optional override (e.g., corporate mirror): export GRADLE_MIRROR_BASE="https://my-mirror.example.com/gradle"
 BASE="${GRADLE_MIRROR_BASE:-https://services.gradle.org}/distributions"

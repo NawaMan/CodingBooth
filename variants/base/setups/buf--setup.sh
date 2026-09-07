@@ -53,7 +53,7 @@ rm -rf /var/lib/apt/lists/*
 
 # Known-good pin when the GitHub API is rate-limited or returns minified JSON
 # that older parsers mis-read (see mkcert--setup.sh for the "eyes" failure mode).
-FALLBACK_VERSION="1.50.0"
+FALLBACK_VERSION="1.72.0"
 
 if [[ "$REQ_VER" == "latest" ]]; then
   # Match the tag_name *key* only — never sed the whole JSON line (minified

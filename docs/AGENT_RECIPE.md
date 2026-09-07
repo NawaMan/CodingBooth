@@ -175,8 +175,8 @@ Current built-in templates and their parameters:
 
 | Template | Parameters | Extensions |
 |----------|-----------|------------|
-| `go` | `GO_VERSION` (default: 1.25.7) | `vscode-ext` (auto), `linter` |
-| `python` | `PYTHON_VERSION` (default: 3.13.12) | `vscode-ext` (auto), `uv`, `conda` |
+| `go` | `GO_VERSION` (default: 1.26.8) | `vscode-ext` (auto), `linter` |
+| `python` | `PYTHON_VERSION` (default: 3.13.15) | `vscode-ext` (auto), `uv`, `conda` |
 | `java` | `JDK_VERSION` (default: 25), `JDK_VENDOR` (default: temurin) | `vscode-ext` (auto), `maven`, `gradle`, `jenv` |
 
 ### Tools
@@ -272,7 +272,7 @@ The same approach works for `.bashrc` customization.
 When you run `config --no-tui` with a recipe, you'll see a summary:
 
 ```
-  - Go (GO_VERSION=1.25.7)
+  - Go (GO_VERSION=1.26.8)
     + Go VS Code Extension (auto)
   - Python (PYTHON_VERSION=3.13)
     + Python VS Code Extension (auto)

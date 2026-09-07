@@ -15,8 +15,8 @@ run-args = [
 ]
 
 [params.KAFKA_VERSION]
-default = "3.7.0"
-suggests = ["3.7.0", "3.6.1", "3.5.2"]
+default = "4.3.1"
+suggests = ["4.3.1", "4.2.1", "3.7.0"]
 
 # kafka--setup.sh accepts --port, so this genuinely moves the broker's listener
 # (not just a host mapping). The controller port (9093) stays internal.

@@ -10,11 +10,11 @@ tags = [
 ]
 
 [params.DOTNET_CHANNEL]
-default = "9.0"
+default = "10.0"
 suggests = [
+    "10.0",
     "9.0",
     "8.0",
-    "6.0",
     "LTS",
     "current",
 ]

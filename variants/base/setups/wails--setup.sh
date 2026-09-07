@@ -15,7 +15,7 @@ Usage:
 
 Examples:
   $0                              # install latest wails3
-  $0 --version v3.0.0-beta.16     # pin a Wails v3 module version
+  $0 --version v3.0.0-beta.17     # pin a Wails v3 module version
   $0 --version latest             # same as the default
 
 Notes:
@@ -77,7 +77,7 @@ fi
 
 # ---- resolve the Go module version ----
 MODULE="github.com/wailsapp/wails/v3/cmd/wails3"
-FALLBACK_VERSION="v3.0.0-beta.16"
+FALLBACK_VERSION="v3.0.0-beta.17"
 
 if [[ "$REQ_VER" == "latest" ]]; then
   SPEC="${MODULE}@latest"

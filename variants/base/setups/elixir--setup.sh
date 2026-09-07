@@ -30,7 +30,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # --- defaults / args ---
-ELIXIR_DEFAULT="1.19.5"     # fallback when 'latest' cannot be resolved
+ELIXIR_DEFAULT="1.20.4"     # fallback when 'latest' cannot be resolved
 REQ_VER="latest"            # no version given means "the current release"
 WITH_PHOENIX=0
 MIX_HOME_DEFAULT="/opt/mix"

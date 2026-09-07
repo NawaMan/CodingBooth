@@ -10,8 +10,8 @@ tags = [
 ]
 
 [params.NODE_VERSION]
-default = "22"
-suggests = ["22", "20", "18"]
+default = "24"
+suggests = ["24", "22", "20"]
 
 [segments]
 Boothfile = """

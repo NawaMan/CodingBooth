@@ -12,14 +12,14 @@ Usage:
   $0 [--version <X.Y.Z>|latest] [--with-format] [--with-test]
 
 Examples:
-  $0                              # install Elm 0.19.1 (default)
-  $0 --version 0.19.1             # pin specific Elm version
+  $0                              # install Elm 0.19.2 (default)
+  $0 --version 0.19.2             # pin specific Elm version
   $0 --with-format --with-test    # also install elm-format and elm-test
 
 Notes:
-- Installs Elm via npm (requires Node.js — declared via template 'requires').
-- Binaries land in /usr/local/lib/node_modules/.bin and are symlinked to /usr/local/bin.
-- Pin to a known Elm release; elm 0.19.1 is the de-facto stable.
+- 0.19.2 installs the official GitHub linux binaries (x64 and arm).
+- 0.19.1 still uses npm, with a community aarch64 binary on arm64.
+- Pin to a known Elm release; elm 0.19.2 is the current stable.
 USAGE
 }
 
@@ -28,7 +28,7 @@ USAGE
 
 HOME=/root
 
-ELM_DEFAULT_VER="0.19.1"
+ELM_DEFAULT_VER="0.19.2"
 REQ_VER="$ELM_DEFAULT_VER"
 WITH_FORMAT=0
 WITH_TEST=0
@@ -49,14 +49,25 @@ if ! command -v npm >/dev/null 2>&1; then
 fi
 
 ELM_PKG_VER="$REQ_VER"
-[[ "$ELM_PKG_VER" == "latest" ]] && ELM_PKG_VER=""
+[[ "$ELM_PKG_VER" == "latest" ]] && ELM_PKG_VER="$ELM_DEFAULT_VER"
 
-# Elm 0.19.1's npm package downloads a prebuilt linux x86_64 binary at install
-# time. On arm64 the wrapper resolves to `binary-for-linux-undefined.gz` which
-# 404s — `npm install -g elm` crashes mid-install. Fall back to a community
-# arm64 build (dmy/elm-raspberry-pi) and install the binary manually.
 ARCH="$(dpkg --print-architecture 2>/dev/null || uname -m)"
-if [[ "$ARCH" == "arm64" || "$ARCH" == "aarch64" ]] && [[ "$ELM_PKG_VER" == "0.19.1" || -z "$ELM_PKG_VER" ]]; then
+if [[ "$ELM_PKG_VER" == "0.19.2" ]]; then
+  # Official 0.19.2 GitHub binaries exist for linux x64 and arm (aarch64).
+  case "$ARCH" in
+    amd64|x86_64) ELM_ASSET="elm-0.19.2-linux-x64.gz" ;;
+    arm64|aarch64) ELM_ASSET="elm-0.19.2-linux-arm.gz" ;;
+    *) echo "❌ Unsupported arch for Elm 0.19.2: $ARCH"; exit 2 ;;
+  esac
+  echo "📦 Installing Elm 0.19.2 from GitHub ($ELM_ASSET) ..."
+  TMP="$(mktemp -d)"
+  curl --retry 5 --retry-delay 3 --retry-all-errors -fL \
+    "https://github.com/elm/compiler/releases/download/0.19.2/${ELM_ASSET}" \
+    -o "$TMP/elm.gz"
+  gunzip -f "$TMP/elm.gz"
+  install -m 0755 "$TMP/elm" /usr/local/bin/elm
+  rm -rf "$TMP"
+elif [[ "$ARCH" == "arm64" || "$ARCH" == "aarch64" ]] && [[ "$ELM_PKG_VER" == "0.19.1" ]]; then
   echo "📦 Installing Elm 0.19.1 (aarch64) via community release ..."
   # The community aarch64 elm binary was built against libffi.so.7 (Ubuntu
   # 20.04). Noble (24.04) only ships libffi8 with incompatible versioned
@@ -107,6 +118,6 @@ cat <<'EON'
 - Build: elm make src/Main.elm
 
 Notes:
-- Elm 0.19.1 is the long-stable release; the language is in maintenance mode.
+- Elm 0.19.2 is the current stable; 0.19.1 remains pin-able.
 - Add elm-format/elm-test with --with-format / --with-test.
 EON

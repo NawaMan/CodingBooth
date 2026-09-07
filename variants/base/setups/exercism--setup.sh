@@ -12,7 +12,7 @@ Usage:
 
 Examples:
   $0                         # install default version
-  $0 --version 3.5.5         # pin specific version
+  $0 --version 3.5.8         # pin specific version
   $0 --version latest        # install latest GitHub release
 
 Notes:
@@ -28,7 +28,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-EXERCISM_DEFAULT_VER="3.5.5"   # fallback when 'latest' cannot be resolved
+EXERCISM_DEFAULT_VER="3.5.8"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"               # no version given means "the current release"
 while [[ $# -gt 0 ]]; do
   case "$1" in

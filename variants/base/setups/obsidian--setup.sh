@@ -12,11 +12,11 @@ Usage:
   $0 [VERSION]
 
 Arguments:
-  VERSION  Obsidian version (default: 1.12.4)
+  VERSION  Obsidian version (default: 1.13.8)
 
 Examples:
   $0             # install with default version
-  $0 1.12.4      # specific version
+  $0 1.13.8      # specific version
 
 Notes:
 - Downloads Obsidian AppImage from official GitHub releases
@@ -82,7 +82,7 @@ if ! "$SCRIPT_DIR/cb-has-desktop.sh"; then
 fi
 
 # ---- defaults / args ----
-OBSIDIAN_VERSION="${1:-1.12.4}"
+OBSIDIAN_VERSION="${1:-1.13.8}"
 OBSIDIAN_DIR="/opt/obsidian"
 
 # ---- determine architecture ----
