@@ -251,6 +251,12 @@ http {
             sub_filter "import('/" "import('/proxy/$proxy_port/";
             sub_filter 'base: "/' 'base: "/proxy/$proxy_port/';
             sub_filter 'assets: "/' 'assets: "/proxy/$proxy_port/';
+
+            # JS that builds API paths at runtime (viewmd's assetURL, etc.)
+            # is not covered by fetch("/ or src="/. Rewrite the literal so
+            # those requests stay under /proxy/{port}/.
+            sub_filter '"/api/'    '"/proxy/$proxy_port/api/';
+            sub_filter "'/api/"    "'/proxy/$proxy_port/api/";
         }
 
         # Same-origin SPAs (Appwrite console with APPWRITE_ENDPOINT_SAME_ORIGIN)

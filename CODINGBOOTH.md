@@ -698,7 +698,7 @@ The browser-facing presentation layer for the web variants. Reaches into the bin
 - **Idle Pause/Disable chip** — sectioned dialog with inline change-base-timeout; activity detection (throttled keyboard / mouse events) feeds `booth--idle-monitor`
 - **"Container stopped" page** — across all web variants, including console (since v0.42)
 - **Web proxy pane** (`/proxy/{port}/{path}`) — nginx `sub_filter` plus an `http://booth:{port}/{path}` address bar in the console UI; `X-Frame-Options` and CSP headers are stripped, with an open-in-new-tab fallback
-- **Console UI** — `index.html` in `web-ttyd-split/`: terminal split view + overlay + proxy toggle
+- **Console UI** — `index.html` in `web-ttyd-split/`: terminal split view + overlay + proxy toggle (globe) + Markdown shortcut (document icon → web view `http://booth:8765`)
 - **Nginx config** — `web-ttyd-split/nginx.conf.template`
 - **Per-variant wrapper integration** — setup scripts (`booth-message-wrapper--setup.sh`, `booth-message-{codeserver,notebook,desktop}-wrapped--setup.sh`) wire the overlay into each variant's UI
 - **Shutdown / restart confirmation dialogs** — zenity / kdialog on desktop variants; the web overlay on web variants

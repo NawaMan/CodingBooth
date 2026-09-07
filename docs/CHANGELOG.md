@@ -15,6 +15,13 @@ This file contains a list of changes for each released version.
   are forwarded to that proxy port when the Referer is a `/proxy/{port}/` pane,
   so the console gets JSON instead of the booth HTML and can finish loading.
 
+- **The console has a Markdown-view shortcut.** Each pane's document icon
+  opens the existing web view at `http://booth:8765` — viewmd, which the
+  split UI now starts on that port against the project folder (`README.md`
+  when present). Click again (or the terminal icon) to return to the
+  session. Same path as typing `8765` in the globe bar; the nginx proxy
+  also rewrites `"/api/` so viewmd's images resolve behind `/proxy/8765/`.
+
 - **Mojo notebooks are a catalog extension.** `--select mojo+kernel` pulls
   Jupyter and registers a kernelspec named `mojo`. Modular's official
   notebooks are a Python kernel plus `import mojo.notebook` (`%%mojo` cells,
