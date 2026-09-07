@@ -1,0 +1,19 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select nodejs:22/affine-server+autostart+expose
+
+env APT_SNAPSHOT=20260907T000000Z
+
+arg AFFINE_SERVER_DATA=clean
+arg AFFINE_SERVER_HOST_PORT=13010
+arg AFFINE_SERVER_PORT=13010
+arg AFFINE_SERVER_VERSION=stable
+arg NODE_VERSION=22
+arg PG_VERSION=latest
+arg REDIS_VERSION=latest
+
+setup nodejs ${NODE_VERSION}
+setup postgresql --version ${PG_VERSION}
+setup redis --version ${REDIS_VERSION}
+copy --from=ghcr.io/toeverything/affine:${AFFINE_SERVER_VERSION} /app /opt/affine
+setup affine-server --port ${AFFINE_SERVER_PORT} --data ${AFFINE_SERVER_DATA}
+setup nodejs-code-extension

@@ -1,0 +1,19 @@
+display-name = "Expose AFFiNE Server Port"
+display-disc = "Expose AFFiNE Server port to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "affine",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "${AFFINE_SERVER_HOST_PORT}:${AFFINE_SERVER_PORT}",
+]
+
+# Host-side port. Defaults to the port the service listens on, so moving the
+# service moves the published port with it. Override only when the host port is
+# already taken.
+[params.AFFINE_SERVER_HOST_PORT]
+default = "${AFFINE_SERVER_PORT}"

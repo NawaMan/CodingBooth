@@ -327,6 +327,8 @@ All templates and extensions grouped by segment order.
 
 | Template                  | Display Name     |
 |---------------------------|------------------|
+| `tools/affine-desktop`    | AFFiNE Desktop   |
+| `tools/affine-server`     | AFFiNE Server    |
 | `tools/android-sdk`       | Android SDK      |
 | `desktops/chromium`       | Chromium         |
 | `desktops/firefox`        | Firefox          |

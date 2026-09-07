@@ -1,0 +1,11 @@
+# Configured by: booth config --no-tui --overwrite --select nodejs:22/affine-server+autostart+expose
+
+
+run-args = [
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
+    "-e", "AFFINE_SERVER_PORT=13010",
+    "-e", "AFFINE_SERVER_DATA=clean",
+    "-p", "13010:13010",
+    "-v", "booth-pgdata:/var/lib/postgresql",
+    "-v", "booth-redisdata:/home/coder/.redis"
+]

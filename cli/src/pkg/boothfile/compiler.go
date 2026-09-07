@@ -123,14 +123,20 @@ var variantProvidedSetups = map[string][]string{
 	},
 }
 
+// copyFromArgRef matches ${NAME} in a COPY --from= image reference.
+// Docker parses --from as a stage/image name *before* ARG expansion, so a
+// Boothfile `copy --from=ghcr.io/foo:${TAG}` would otherwise reach the
+// daemon as the literal tag `${TAG}` and fail with "invalid reference format".
+var copyFromArgRef = regexp.MustCompile(`\$\{([A-Za-z_][A-Za-z0-9_]*)\}`)
+
 // Compiler compiles parsed Boothfile commands into a Dockerfile.
 type Compiler struct {
 	options  CompilerOptions
 	warnings []ParseError // Accumulated warnings during compilation
-	// args records NAME=value from `arg` commands so COPY --from=image:${NAME}
+	// argDefaults records NAME=value from `arg` commands so COPY --from=image:${NAME}
 	// can be expanded. Docker does not substitute ARG in a --from image
 	// reference (invalid reference format); RUN still expands ${NAME} itself.
-	args map[string]string
+	argDefaults map[string]string
 }
 
 // NewCompiler creates a new Boothfile compiler with default options.
@@ -168,7 +174,7 @@ func (cr CompileResult) HasWarnings() bool {
 func (c *Compiler) Compile(parseResult ParseResult) CompileResult {
 	// Initialize compiler warnings
 	c.warnings = make([]ParseError, 0)
-	c.args = make(map[string]string)
+	c.argDefaults = make(map[string]string)
 
 	result := CompileResult{
 		Errors:   append([]ParseError{}, parseResult.Errors...),
@@ -415,29 +421,41 @@ func (c *Compiler) compileCopy(cmd Command) (string, *ParseError) {
 			Message:    "copy command requires source and destination",
 		}
 	}
-	args := append([]string(nil), cmd.Args...)
-	// COPY --from=<image>:${ARG} is parsed as a stage name before Docker
-	// expands ARG, so hoppscotch/cloudbeaver-style pins would never resolve.
-	// Substitute known Boothfile arg values into the --from image only.
-	if strings.HasPrefix(args[0], "--from=") {
-		args[0] = expandCopyFromArgs(args[0], c.args)
+	copyArgs := append([]string(nil), cmd.Args...)
+	for index, argument := range copyArgs {
+		image, ok := strings.CutPrefix(argument, "--from=")
+		if !ok {
+			continue
+		}
+		expanded, expandErr := expandCopyFromImage(image, c.argDefaults)
+		if expandErr != nil {
+			return "", &ParseError{
+				LineNumber: cmd.LineNumber,
+				Message:    expandErr.Error(),
+			}
+		}
+		copyArgs[index] = "--from=" + expanded
 	}
-	return "COPY " + strings.Join(args, " "), nil
+	return "COPY " + strings.Join(copyArgs, " "), nil
 }
 
-var copyFromArgRef = regexp.MustCompile(`\$\{([A-Za-z_][A-Za-z0-9_]*)\}`)
-
-func expandCopyFromArgs(fromFlag string, args map[string]string) string {
-	if len(args) == 0 {
-		return fromFlag
-	}
-	return copyFromArgRef.ReplaceAllStringFunc(fromFlag, func(ref string) string {
-		name := copyFromArgRef.FindStringSubmatch(ref)[1]
-		if v, ok := args[name]; ok && v != "" {
-			return v
+// expandCopyFromImage inlines ARG defaults into a COPY --from= image
+// reference. Docker does not expand ARG there (unlike FROM / RUN).
+func expandCopyFromImage(image string, argDefaults map[string]string) (string, error) {
+	var unresolved []string
+	expanded := copyFromArgRef.ReplaceAllStringFunc(image, func(match string) string {
+		name := copyFromArgRef.FindStringSubmatch(match)[1]
+		value, ok := argDefaults[name]
+		if !ok || value == "" {
+			unresolved = append(unresolved, name)
+			return match
 		}
-		return ref
+		return value
 	})
+	if len(unresolved) > 0 {
+		return "", fmt.Errorf("COPY --from image cannot use ARG %s: Docker does not expand ARG in --from=image (declare arg NAME=value before the copy)", strings.Join(unresolved, ", "))
+	}
+	return expanded, nil
 }
 
 // compileEnv compiles an env command.
@@ -492,14 +510,13 @@ func (c *Compiler) compileArg(cmd Command) (string, *ParseError) {
 			Message:    "arg command requires NAME or NAME=default",
 		}
 	}
-	if c.args != nil {
-		for _, a := range cmd.Args {
-			if name, val, ok := strings.Cut(a, "="); ok && name != "" {
-				c.args[name] = val
-			}
-		}
+	joined := strings.Join(cmd.Args, " ")
+	name, value, hasValue := strings.Cut(joined, "=")
+	name = strings.TrimSpace(name)
+	if hasValue && name != "" {
+		c.argDefaults[name] = value
 	}
-	return "ARG " + strings.Join(cmd.Args, " "), nil
+	return "ARG " + joined, nil
 }
 
 // compileSetup compiles a setup command.

@@ -3,6 +3,8 @@
 # compiler to validate `setup <tool>` and `install <manager>` names.
 # Format: "setup <name>" or "install <name>", one per line.
 setup act
+setup affine-desktop
+setup affine-server
 setup aider
 setup android-emulator
 setup android-sdk

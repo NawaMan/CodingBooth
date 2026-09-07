@@ -1,0 +1,39 @@
+display-name = "AFFiNE Desktop"
+display-disc = "AFFiNE docs and whiteboard (requires desktop variant)"
+display-detail = """Installs the AFFiNE desktop app — an open-source, local-first knowledge base \
+with documents and an infinite whiteboard (MIT, https://github.com/toeverything/AFFiNE). \
+Downloaded from official GitHub releases at build time. Requires a desktop variant.
+
+Linux desktop builds are x86_64 only. On arm64 the setup warns and skips; use \
+affine-server (the self-hosted web app) instead, or run AFFiNE on the host."""
+display-order = 77
+tags = [
+    "desktop",
+    "affine",
+    "notes",
+    "markdown",
+    "whiteboard",
+    "knowledge-base"
+]
+
+unsupported-arch = ["arm64"]
+unsupported-arch-note = """\
+AFFiNE publishes no linux/arm64 desktop AppImage, so affine-desktop cannot be \
+installed in a booth built on Apple Silicon. The booth still builds — the setup \
+warns and skips — but the app will not be in it.
+
+Use "affine-server" instead: the self-hosted web app, official image is \
+multi-arch. Or run the AFFiNE macOS client on the host."""
+
+[params.AFFINE_DESKTOP_VERSION]
+default = "0.27.4"
+suggests = [
+    "0.27.4",
+    "0.27.3",
+    "0.27.2",
+]
+
+[segments]
+"Boothfile--60" = """
+setup affine-desktop ${AFFINE_DESKTOP_VERSION}
+"""
