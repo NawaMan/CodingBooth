@@ -1,0 +1,18 @@
+display-name = "Expose Hoppscotch Port"
+display-disc = "Expose Hoppscotch port to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "hoppscotch",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "${HOPPSCOTCH_HOST_PORT}:${HOPPSCOTCH_PORT}",
+]
+
+# Host-side port. Defaults to the port the service listens on, so moving the service
+# moves the published port with it. Override only when the host port is already taken.
+[params.HOPPSCOTCH_HOST_PORT]
+default = "${HOPPSCOTCH_PORT}"

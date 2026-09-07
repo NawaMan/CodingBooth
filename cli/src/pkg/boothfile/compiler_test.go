@@ -177,6 +177,18 @@ copy requirements.txt /tmp/requirements.txt
 	assert.Contains(t, result.Dockerfile, "COPY requirements.txt /tmp/requirements.txt")
 }
 
+func TestCompiler_CopyFromExpandsArg(t *testing.T) {
+	content := `# syntax=codingbooth/boothfile:1
+arg HOPPSCOTCH_VERSION=2026.8.0
+copy --from=hoppscotch/hoppscotch-frontend:${HOPPSCOTCH_VERSION} /site/selfhost-web /opt/hoppscotch
+`
+	result := CompileString(content)
+
+	assert.False(t, result.HasErrors())
+	assert.Contains(t, result.Dockerfile, "COPY --from=hoppscotch/hoppscotch-frontend:2026.8.0 /site/selfhost-web /opt/hoppscotch")
+	assert.NotContains(t, result.Dockerfile, "hoppscotch-frontend:${HOPPSCOTCH_VERSION}")
+}
+
 func TestCompiler_Env(t *testing.T) {
 	content := `# syntax=codingbooth/boothfile:1
 env MY_VAR=value

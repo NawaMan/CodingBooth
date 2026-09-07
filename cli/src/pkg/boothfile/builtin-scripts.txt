@@ -107,6 +107,7 @@ setup haskell-nb-kernel
 setup helm
 setup herdr
 setup homebrew
+setup hoppscotch
 setup idea
 setup inkscape
 setup java-code-extension

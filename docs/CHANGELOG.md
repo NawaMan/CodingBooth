@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Hoppscotch is a catalog template.** `--select hoppscotch` copies the
+  official `hoppscotch/hoppscotch-frontend` image (default `2026.8.0`) and
+  serves the API client in the booth. No Postgres, OAuth, or admin dashboard —
+  collections stay in the browser. A same-origin CORS proxy is bundled so
+  requests to booth-local APIs work without the Hoppscotch Agent. Add
+  `+autostart` to run it on boot and `+expose` to reach it from the host.
+  Default UI port is `13000` (Hoppscotch's own 3000 collides with Node apps).
+  Pin with `hoppscotch:2026.8.0,18000`. Tests: `test108-init-hoppscotch.sh`.
+
+- **`copy --from=image:${ARG}` compiles to a real image tag.** Docker does
+  not expand ARG in a `--from` image reference, so CloudBeaver-style pins
+  produced `invalid reference format` at build. The Boothfile compiler now
+  substitutes known `arg` values into `COPY --from=` only.
+
 - **Config cycle fields take a mouse click on the option list.** Opening
   Variant (or Sudo, Egress Mode, and the other cycle fields) listed the
   values in the right panel, but `clickRightPanel` treated that pane as
