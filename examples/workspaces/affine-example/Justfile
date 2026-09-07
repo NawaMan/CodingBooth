@@ -1,0 +1,7 @@
+[private]
+default:
+    @just --list
+
+# Wait until AFFiNE answers on :13010
+run:
+    ./demo.sh

@@ -178,15 +178,44 @@ copy requirements.txt /tmp/requirements.txt
 }
 
 func TestCompiler_CopyFromExpandsArg(t *testing.T) {
-	content := `# syntax=codingbooth/boothfile:1
+	// Docker parses COPY --from= as a stage/image ref before ARG expansion, so
+	// `copy --from=image:${TAG}` used to reach the daemon as the literal tag
+	// `${TAG}` and fail with "invalid reference format".
+	t.Run("hoppscotch frontend tag", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
 arg HOPPSCOTCH_VERSION=2026.8.0
 copy --from=hoppscotch/hoppscotch-frontend:${HOPPSCOTCH_VERSION} /site/selfhost-web /opt/hoppscotch
 `
+		result := CompileString(content)
+
+		assert.False(t, result.HasErrors())
+		assert.Contains(t, result.Dockerfile, "COPY --from=hoppscotch/hoppscotch-frontend:2026.8.0 /site/selfhost-web /opt/hoppscotch")
+		assert.NotContains(t, result.Dockerfile, "hoppscotch-frontend:${HOPPSCOTCH_VERSION}")
+	})
+
+	t.Run("affine server tag", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
+arg AFFINE_SERVER_VERSION=stable
+copy --from=ghcr.io/toeverything/affine:${AFFINE_SERVER_VERSION} /app /opt/affine
+`
+		result := CompileString(content)
+
+		assert.False(t, result.HasErrors())
+		assert.Contains(t, result.Dockerfile, "ARG AFFINE_SERVER_VERSION=stable")
+		assert.Contains(t, result.Dockerfile, "COPY --from=ghcr.io/toeverything/affine:stable /app /opt/affine")
+		assert.NotContains(t, result.Dockerfile, "${AFFINE_SERVER_VERSION} /app")
+	})
+}
+
+func TestCompiler_CopyFromMissingArgIsAnError(t *testing.T) {
+	content := `# syntax=codingbooth/boothfile:1
+copy --from=ghcr.io/toeverything/affine:${AFFINE_SERVER_VERSION} /app /opt/affine
+`
 	result := CompileString(content)
 
-	assert.False(t, result.HasErrors())
-	assert.Contains(t, result.Dockerfile, "COPY --from=hoppscotch/hoppscotch-frontend:2026.8.0 /site/selfhost-web /opt/hoppscotch")
-	assert.NotContains(t, result.Dockerfile, "hoppscotch-frontend:${HOPPSCOTCH_VERSION}")
+	assert.True(t, result.HasErrors())
+	assert.Contains(t, result.Errors[0].Message, "AFFINE_SERVER_VERSION")
+	assert.Contains(t, result.Errors[0].Message, "does not expand ARG")
 }
 
 func TestCompiler_Env(t *testing.T) {

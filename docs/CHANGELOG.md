@@ -4,6 +4,51 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **AFFiNE Server starts Redis and runs Prisma without yarn.**
+  The redis template only prepares `~/.redis` — it does not fork `redis-server`
+  — so `affine-server+autostart` waited 60s, got connection refused, and
+  exited; nginx then served 502 on `:13010`. `start-affine-server` now
+  daemonizes Redis when nothing is listening. Official predeploy runs
+  `yarn prisma migrate deploy`, but we COPY only `/app` from the Affine
+  image (no yarn). The starter calls `prisma migrate deploy` from
+  `node_modules/.bin` instead.
+
+- **PostgreSQL startup reclaims a `booth-pgdata` volume owned by an old
+  postgres UID.** The named volume is shared across booths; a later base
+  image can ship `postgres` as a different uid (100 vs 112). The 0700
+  data dir then made `cp pg_hba.conf` fail with `Permission denied`, and
+  booth-entry's `set -e` took the whole container down. Startup now chowns
+  `/var/lib/postgresql` when this image's postgres user cannot read it,
+  and drops a stale `postmaster.pid` left by another container.
+
+- **`copy --from=image:${ARG}` inlines the ARG at compile time.** Docker
+  parses `--from` as a stage/image name before ARG expansion, so
+  `copy --from=ghcr.io/toeverything/affine:${AFFINE_SERVER_VERSION}` reached
+  the daemon as the literal tag `${AFFINE_SERVER_VERSION}` and failed with
+  `invalid reference format`. The compiler now substitutes the Boothfile
+  `arg NAME=value` default and errors if the ARG is missing. Hoppscotch's
+  `hoppscotch/hoppscotch-frontend:${HOPPSCOTCH_VERSION}` and CloudBeaver's
+  `dbeaver/cloudbeaver:${CLOUDBEAVER_VERSION}` had the same latent bug.
+
+- **AFFiNE Desktop and AFFiNE Server are Tools catalog templates.**
+  `--select affine-desktop` installs the AFFiNE Electron app (docs +
+  whiteboard) on a desktop variant, AppImage from GitHub, same shape as
+  Obsidian. Linux is x64 only — arm64 warns and skips; use affine-server
+  or the host client instead. `--select affine-server` copies the official
+  self-hosted image (`ghcr.io/toeverything/affine`) into the booth;
+  PostgreSQL, Redis, and Node.js 22 are pulled in. The server does not
+  start or publish a port on its own — add `+autostart` and `+expose`.
+  First browser visit creates the admin account. Pin the desktop with
+  `affine-desktop:0.27.4`; pin the server image with `affine-server:canary`
+  (default `stable`). `AFFINE_SERVER_DATA` is `clean` (default, empty every
+  booth), `seed` (`+seed`, home-seed snapshot, writes discarded), or
+  `persist` (`+persist`, `.booth/cache`, writes survive on this machine).
+  `examples/workspaces/affine-example` selects
+  `affine-server+autostart+expose` so `just run` waits for the UI on
+  :13010. Open the admin setup at `http://localhost:13010/admin/setup`
+  (the globe pane cannot load Affine's `/admin/js/` SPA). Tests:
+  `test109-init-affine-desktop.sh`, `test110-init-affine-server.sh`.
+
 - **Hoppscotch is a catalog template.** `--select hoppscotch` copies the
   official `hoppscotch/hoppscotch-frontend` image (default `2026.8.0`) and
   serves the API client in the booth. No Postgres, OAuth, or admin dashboard —
@@ -12,11 +57,6 @@ This file contains a list of changes for each released version.
   `+autostart` to run it on boot and `+expose` to reach it from the host.
   Default UI port is `13000` (Hoppscotch's own 3000 collides with Node apps).
   Pin with `hoppscotch:2026.8.0,18000`. Tests: `test108-init-hoppscotch.sh`.
-
-- **`copy --from=image:${ARG}` compiles to a real image tag.** Docker does
-  not expand ARG in a `--from` image reference, so CloudBeaver-style pins
-  produced `invalid reference format` at build. The Boothfile compiler now
-  substitutes known `arg` values into `COPY --from=` only.
 
 - **Config cycle fields take a mouse click on the option list.** Opening
   Variant (or Sudo, Egress Mode, and the other cycle fields) listed the

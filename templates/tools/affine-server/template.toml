@@ -1,0 +1,60 @@
+display-name = "AFFiNE Server"
+display-disc = "Self-hosted AFFiNE web app (docs + whiteboard)"
+display-detail = """Installs the official self-hosted AFFiNE server by copying \
+ghcr.io/toeverything/affine into the booth. PostgreSQL, Redis, and Node.js 22 \
+are selected automatically. The server does not start or publish a port on its \
+own — add +autostart to run it on boot, and +expose to reach it from the host.
+
+AFFINE_SERVER_DATA=clean (default) is a fresh workspace every booth; +seed \
+copies a snapshot from home-seed (writes do not stick); +persist is \
+.booth/cache (writes survive on this machine). Postgres is dumped into \
+~/.affine/dumps so persist does not share the global booth-pgdata volume.
+
+First browser visit creates the admin account at /admin/setup. Open \
+http://localhost:13010/ in a host tab — the globe pane cannot load Affine's \
+/admin/js/ SPA. Pin the image with affine-server:canary; default is stable."""
+display-order = 27
+tags = [
+    "affine",
+    "notes",
+    "whiteboard",
+    "knowledge-base",
+    "server",
+    "self-hosted"
+]
+requires = ["nodejs", "postgresql", "redis"]
+
+run-args = [
+    "-e", "AFFINE_SERVER_PORT=${AFFINE_SERVER_PORT}",
+    "-e", "AFFINE_SERVER_DATA=${AFFINE_SERVER_DATA}",
+]
+
+[params.AFFINE_SERVER_VERSION]
+default = "stable"
+suggests = [
+    "stable",
+    "canary",
+    "beta",
+]
+
+[params.AFFINE_SERVER_PORT]
+default = "13010"
+suggests = [
+    "13010",
+    "3010",
+    "18010",
+]
+
+[params.AFFINE_SERVER_DATA]
+default = "clean"
+suggests = [
+    "clean",
+    "seed",
+    "persist",
+]
+
+[segments]
+"Boothfile--60" = """
+copy --from=ghcr.io/toeverything/affine:${AFFINE_SERVER_VERSION} /app /opt/affine
+setup affine-server --port ${AFFINE_SERVER_PORT} --data ${AFFINE_SERVER_DATA}
+"""

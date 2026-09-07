@@ -85,6 +85,10 @@ The advantages, in CodingBooth's own vocabulary:
   Compose stack inside DinD — there is no native install. `just run` waits for
   `/v1/health/version` and points the CLI at localhost. *(Secondary: nested
   containers and port exposure; first boot wants ~4GB RAM.)*
+- **affine-example** — self-hosted AFFiNE (docs + whiteboard) with PostgreSQL, Redis,
+  and Node.js 22 in one selector, so `just run` waits for the UI on `:13010`.
+  *(Secondary: port exposure — `+expose` publishes it to the host browser; first
+  visit creates the admin account. Data: `clean` / `+seed` / `+persist`.)*
 - **zig-snake-example** — "no Zig installation required" on the host; `zig build run` just works.
 - **playwright-example** — Node + Playwright + headless Chromium + VS Code extensions in one command.
 - **wails-example** — Go + Node + GTK 4 / WebKitGTK 6.0 + the Wails v3 CLI on
@@ -170,6 +174,8 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
   on 8090, all reached from the host browser through a single mapped port. *(Secondary:
   reproducibility — the Go toolchain is pinned in the Boothfile, PocketBase in `go.mod`, and the
   schema is Go migrations, so a fresh clone builds an identical database.)*
+- **affine-example** — self-hosted AFFiNE on 13010, published to the host, with Postgres
+  and Redis already in the booth.
 - *(Also strongly present in fastapi, nextjs, js, and every full-stack example above.)*
 
 ## 🔐 Credential seeding — host creds without secrets in the repo
@@ -227,6 +233,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | Example | Primary advantage |
 |---|---|
 | all-java-example | Try / compare side-by-side (7 JDKs) |
+| affine-example | Batteries-included (self-hosted AFFiNE) |
 | android-example | Precise version compatibility |
 | angular-example | Host stays clean |
 | apt-example | Reproducibility (archive snapshot) |

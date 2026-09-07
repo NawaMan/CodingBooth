@@ -1,0 +1,24 @@
+# Secrets - never commit
+.booth.password
+.env
+
+# Local persistent state (not committed).
+# Holds whatever the container writes to the mounted paths, including live credentials
+# (~/.claude/.credentials.json arrives here via the cb-home override layer).
+# Booth refuses to start if this is tracked by git.
+cache/
+
+# Runtime temp files
+.tmp/
+
+# Transient artifacts of booth config overwriting hand-written files:
+# .bak = what was replaced, .new = generated content awaiting a manual merge
+*.bak
+*.new
+
+# Downloaded binaries - re-fetched from the lock version.
+# Shared cache (the default) keeps them in ~/.cache/codingbooth/; --cache=local puts them here.
+tools/codingbooth-*
+tools/*.sha256
+
+# codingbooth.lock and .generated are version-controlled

@@ -80,9 +80,31 @@ CB_PG_CONF_DIR="/opt/codingbooth/postgresql"
 PG_VER=$(pg_config --version 2>/dev/null | grep -oP '\d+' | head -1)
 PG_DATA="/var/lib/postgresql/${PG_VER}/main"
 
+# booth-pgdata is a named volume reused across booths. The postgres UID in
+# the image can drift (this image is 100; an older one left the volume at
+# 112). A 0700 data dir owned by the old UID makes `cp pg_hba.conf` fail
+# with "Permission denied" and, under booth-entry's set -e, takes the
+# booth down before anything else starts.
+if [ -d /var/lib/postgresql ]; then
+  if [ -d "$PG_DATA" ]; then
+    sudo -u postgres test -r "$PG_DATA" 2>/dev/null || \
+      sudo chown -R postgres:postgres /var/lib/postgresql
+  else
+    sudo -u postgres test -w /var/lib/postgresql 2>/dev/null || \
+      sudo chown -R postgres:postgres /var/lib/postgresql
+  fi
+fi
+
 # Initialize cluster if not exists
 if [ ! -d "$PG_DATA" ] || [ ! -f "$PG_DATA/PG_VERSION" ]; then
   sudo -u postgres /usr/lib/postgresql/${PG_VER}/bin/initdb -D "$PG_DATA" 2>/dev/null || true
+fi
+
+# Stale pid from another container that last used this volume
+if [ -f "$PG_DATA/postmaster.pid" ]; then
+  if ! sudo -u postgres /usr/lib/postgresql/${PG_VER}/bin/pg_ctl -D "$PG_DATA" status >/dev/null 2>&1; then
+    sudo rm -f "$PG_DATA/postmaster.pid"
+  fi
 fi
 
 # Apply CodingBooth configs (idempotent)

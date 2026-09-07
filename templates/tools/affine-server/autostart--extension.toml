@@ -1,0 +1,19 @@
+display-name = "AFFiNE Server Auto-Start"
+display-disc = "Auto-start AFFiNE Server on container boot"
+display-order = 2
+auto-select = false
+tags = [
+    "affine",
+    "autostart"
+]
+
+[segments]
+"startup--70.sh" = """
+# Auto-start AFFiNE Server in background (after postgres/redis at level 50).
+PORT=${AFFINE_SERVER_PORT}
+LOG_FILE="/tmp/affine-server.log"
+
+nohup start-affine-server "$PORT" > "$LOG_FILE" 2>&1 &
+
+echo "AFFiNE Server starting on port $PORT (PID $!, log: $LOG_FILE)"
+"""
