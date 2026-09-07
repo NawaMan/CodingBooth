@@ -1,0 +1,7 @@
+[private]
+default:
+    @just --list
+
+# Compute a factorial (`just run 5`)
+run *args:
+    ./run-factorial.sh {{ args }}

@@ -1,0 +1,14 @@
+display-name = "Mojo VS Code Extension"
+display-disc = "Official Mojo language support for VS Code"
+display-order = 1
+auto-select = true
+tags = [
+    "mojo",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup mojo-code-extension
+"""
