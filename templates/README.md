@@ -288,6 +288,7 @@ All templates and extensions grouped by segment order.
 | `ai-tools/oh-my-pi`    | Oh My Pi (omp)   |
 | `ai-tools/goose`       | Goose            |
 | `tools/herdr`          | Herdr (agent multiplexer) |
+| `tools/hoppscotch`     | Hoppscotch       |
 | `tools/cmake`          | CMake            |
 | `tools/conan`          | Conan            |
 | `tools/dind`           | Docker-in-Docker |

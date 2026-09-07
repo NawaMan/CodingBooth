@@ -1,0 +1,44 @@
+display-name = "Hoppscotch"
+display-disc = "Open-source API development UI (Postman-class)"
+display-detail = """Installs the Hoppscotch web app by copying the official \
+hoppscotch/hoppscotch-frontend image into the booth. No Postgres, OAuth, or \
+admin dashboard — collections live in the browser. A same-origin CORS proxy \
+is bundled so requests to booth-local APIs work without the Hoppscotch Agent. \
+The server does not start or publish a port on its own — add +autostart to \
+run it on boot, and +expose to reach it from the host.
+
+Pin the image tag with hoppscotch:2026.8.0 or hoppscotch:latest; the default \
+is 2026.8.0. Default UI port is 13000 (Hoppscotch's own 3000 collides with \
+Node apps)."""
+display-order = 29
+tags = [
+    "hoppscotch",
+    "api",
+    "rest",
+    "graphql",
+    "postman",
+    "http",
+    "testing"
+]
+
+[params.HOPPSCOTCH_VERSION]
+default = "2026.8.0"
+suggests = [
+    "2026.8.0",
+    "2026.7.0",
+    "latest",
+]
+
+[params.HOPPSCOTCH_PORT]
+default = "13000"
+suggests = [
+    "13000",
+    "18000",
+    "3000",
+]
+
+[segments]
+Boothfile = """
+copy --from=hoppscotch/hoppscotch-frontend:${HOPPSCOTCH_VERSION} /site/selfhost-web /opt/hoppscotch
+setup hoppscotch ${HOPPSCOTCH_PORT}
+"""
