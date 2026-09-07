@@ -333,25 +333,14 @@ func (m model) handleClick(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 // Both panels render exactly one line per row, so the row is the scroll offset
 // plus the line.
 func (m model) clickLeftPanel(line, x int) (tea.Model, tea.Cmd) {
-	m.commitActiveEdit()
 	m.searchFocused = false
 	m.paramFocused = false
 
 	if m.isConfigTab() {
-		rows := m.buildConfigRows()
-		idx := m.tabScrollOffs[0] + line
-		if idx < 0 || idx >= len(rows) {
-			return m, nil
-		}
-		// Group headers are not navigable — the keyboard skips over them.
-		if rows[idx].kind == configRowGroup {
-			return m, nil
-		}
-		m.setCursor(idx)
-		m.activateConfigRow(rows[idx])
-		m.adjustConfigScroll()
-		return m, nil
+		return m.clickConfigLeft(line, x)
 	}
+
+	m.commitActiveEdit()
 
 	items := m.activeItems()
 	idx := m.scrollOffset() + line
@@ -368,11 +357,44 @@ func (m model) clickLeftPanel(line, x int) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// clickConfigLeft is the Config tab's left panel: a first click opens the row
+// the same way Space does, and a second click on a cycle field's ◄ ► steps it
+// instead of committing and re-opening the editor.
+func (m model) clickConfigLeft(line, x int) (tea.Model, tea.Cmd) {
+	rows := m.buildConfigRows()
+	idx := m.tabScrollOffs[0] + line
+	if idx < 0 || idx >= len(rows) || rows[idx].kind == configRowGroup {
+		m.commitActiveEdit()
+		return m, nil
+	}
+
+	alreadyHere := m.cycleEditing && m.cursorPos() == idx
+	if alreadyHere {
+		field := allConfigFields[rows[idx].fieldIdx]
+		if field.Kind == fieldKindCycle {
+			leftCol, rightCol := m.cycleFieldArrowCols(field)
+			switch x {
+			case leftCol:
+				m.stepCycle(field, -1)
+			case rightCol:
+				m.stepCycle(field, 1)
+			}
+		}
+		return m, nil
+	}
+
+	m.commitActiveEdit()
+	m.setCursor(idx)
+	m.activateConfigRow(rows[idx])
+	m.adjustConfigScroll()
+	return m, nil
+}
+
 // clickRightPanel resolves a click on visible line `line` of the right panel,
 // `x` columns into it.
 func (m model) clickRightPanel(line, x int) (tea.Model, tea.Cmd) {
 	if m.isConfigTab() {
-		return m, nil // the Config tab's right panel is help text only
+		return m.clickConfigOption(line)
 	}
 
 	panel := m.renderRightPanel(m.layout().rightWidth, m.layout().contentH)
@@ -423,6 +445,23 @@ func (m model) clickRightPanel(line, x int) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
+	return m, nil
+}
+
+// clickConfigOption picks a cycle value from the Config help pane. The list is
+// the mouse's way through Variant / Sudo / Egress Mode: a click is Enter on that
+// option, not a no-op on help text.
+func (m model) clickConfigOption(line int) (tea.Model, tea.Cmd) {
+	field := m.currentConfigField()
+	if field == nil || field.Kind != fieldKindCycle {
+		return m, nil
+	}
+	panel := m.renderConfigDetail(m.layout().rightWidth, m.layout().contentH)
+	optIdx, ok := panel.optionAt[line]
+	if !ok {
+		return m, nil
+	}
+	m.pickCycleOption(*field, optIdx)
 	return m, nil
 }
 
@@ -568,17 +607,28 @@ func cycleArrowsAround(display string) string {
 	return " ◄ " + display + " ► "
 }
 
-// cycleArrowCols returns the columns, within the right panel, of the ◄ and ► on a
-// focused cycle param row.
+// cycleArrowColsFor returns the columns of the ◄ and ► around a cycle value.
 //
 // The row is drawn as an unstyled two-space indent, the label, two spaces, then
 // cycleArrowsAround — and styles cost no columns — so the arrows sit at fixed
 // offsets either side of the same display string the renderer uses. Sharing that
 // string is the point: a click lands on the arrow that is actually there.
-func (m model) cycleArrowCols(t *tmpl.Template, name, pk string) (leftCol, rightCol int) {
-	prefix := lipgloss.Width("  " + name + ":" + "  ")
-	inner := cycleArrowsAround(m.cycleParamDisplay(t, name, pk))
+func cycleArrowColsFor(label, display string) (leftCol, rightCol int) {
+	prefix := lipgloss.Width("  " + label + ":" + "  ")
+	inner := cycleArrowsAround(display)
 	return prefix + 1, prefix + lipgloss.Width(inner) - 2
+}
+
+// cycleArrowCols returns the columns, within the right panel, of the ◄ and ► on a
+// focused cycle param row.
+func (m model) cycleArrowCols(t *tmpl.Template, name, pk string) (leftCol, rightCol int) {
+	return cycleArrowColsFor(name, m.cycleParamDisplay(t, name, pk))
+}
+
+// cycleFieldArrowCols returns the columns, within the left panel, of the ◄ and ►
+// on a Config cycle field that is being edited.
+func (m model) cycleFieldArrowCols(field configFieldDef) (leftCol, rightCol int) {
+	return cycleArrowColsFor(field.Label, variantDisplay(m.stringFields[field.Key]))
 }
 
 // stepSuggest moves a param to the next or previous suggested value.
@@ -610,6 +660,32 @@ func (m *model) stepSuggest(t *tmpl.Template, name, pk string, dir int) {
 	case dir < 0 && current > 0:
 		m.paramValues[pk] = suggests[current-1]
 	}
+}
+
+// stepCycle moves a Config cycle field to the next or previous option, wrapping
+// at the ends — the same wrap the arrow keys make, so a click on ◄ or ► cannot
+// stop where a keypress would wrap, or wrap where a keypress would stop.
+func (m *model) stepCycle(field configFieldDef, dir int) {
+	count := len(field.Options)
+	if count == 0 {
+		return
+	}
+	idx := m.cycleIndices[field.Key] + dir
+	idx = (idx%count + count) % count
+	m.cycleIndices[field.Key] = idx
+	m.stringFields[field.Key] = field.Options[idx]
+}
+
+// pickCycleOption sets a Config cycle field to one listed option and commits.
+// A click on the list is a pick, not a step: the value is accepted the way Enter
+// would accept whatever the arrows had landed on.
+func (m *model) pickCycleOption(field configFieldDef, optIdx int) {
+	if optIdx < 0 || optIdx >= len(field.Options) {
+		return
+	}
+	m.cycleIndices[field.Key] = optIdx
+	m.stringFields[field.Key] = field.Options[optIdx]
+	m.cycleEditing = false
 }
 
 // itemTemplate returns the template whose params an item carries.

@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Config cycle fields take a mouse click on the option list.** Opening
+  Variant (or Sudo, Egress Mode, and the other cycle fields) listed the
+  values in the right panel, but `clickRightPanel` treated that pane as
+  help-text-only, so a click on `notebook` did nothing — you had to cycle
+  with the keys. The options are now hit-tested from the same pass that
+  draws them (the `paramRowAt` pattern), and a click picks that value and
+  commits, which is what Enter does after cycling there. While the field is
+  being edited, `◄` `►` on the left row step the same way the arrow keys do
+  (including wrap), instead of committing and re-opening the editor; and
+  the help text yields so the option list stays on screen rather than
+  clipping `desktop-wayland` and `terminal` off the bottom of a short
+  terminal.
+
 - **Appwrite CLI and self-hosted server are catalog templates.** `--select
   appwrite-cli` installs the official CLI from GitHub releases (`appwrite -v`).
   `--select appwrite-server` requires the CLI and installs `start-appwrite` /

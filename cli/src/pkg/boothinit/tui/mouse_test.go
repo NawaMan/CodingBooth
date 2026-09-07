@@ -322,6 +322,175 @@ func TestClickConfigRowActivatesIt(t *testing.T) {
 	}
 }
 
+func configMouseModel() model {
+	m := mouseModel(nil)
+	m.activeTab = 0
+	return m
+}
+
+func configFieldRow(m model, key string) (rowIdx int, field configFieldDef, ok bool) {
+	for idx, row := range m.buildConfigRows() {
+		if row.kind != configRowField {
+			continue
+		}
+		field = allConfigFields[row.fieldIdx]
+		if field.Key == key {
+			return idx, field, true
+		}
+	}
+	return 0, configFieldDef{}, false
+}
+
+func clickConfigField(t *testing.T, m model, key string) (model, int, configFieldDef) {
+	t.Helper()
+	rowIdx, field, ok := configFieldRow(m, key)
+	if !ok {
+		t.Fatalf("config field %q not found", key)
+	}
+	return click(m, 5, contentTop+rowIdx), rowIdx, field
+}
+
+func optionLine(panel configDetail, field configFieldDef, want string) (int, bool) {
+	for line, optIdx := range panel.optionAt {
+		if optIdx >= 0 && optIdx < len(field.Options) && field.Options[optIdx] == want {
+			return line, true
+		}
+	}
+	return 0, false
+}
+
+// Clicking Variant listed the options in the help pane but did nothing with
+// the click — clickRightPanel treated that pane as help-text-only. A click on
+// an option is a pick, the same as cycling there and pressing Enter.
+func TestClickConfigCycleOptionPicksIt(t *testing.T) {
+	m := configMouseModel()
+	m, _, field := clickConfigField(t, m, "variant")
+	if !m.cycleEditing {
+		t.Fatal("clicking Variant should open it for stepping")
+	}
+
+	panel := m.renderConfigDetail(m.layout().rightWidth, m.layout().contentH)
+	line, ok := optionLine(panel, field, "notebook")
+	if !ok {
+		t.Fatal("notebook should be a visible option once Variant is being edited")
+	}
+
+	m = click(m, m.layout().rightStart()+2, contentTop+line)
+	if m.stringFields["variant"] != "notebook" {
+		t.Fatalf("variant = %q, want notebook", m.stringFields["variant"])
+	}
+	if m.cycleEditing {
+		t.Fatal("picking an option should commit, not leave the field in cycle-edit")
+	}
+	wantIdx := -1
+	for idx, opt := range field.Options {
+		if opt == "notebook" {
+			wantIdx = idx
+			break
+		}
+	}
+	if m.cycleIndices["variant"] != wantIdx {
+		t.Fatalf("cycle index = %d, want %d (notebook)", m.cycleIndices["variant"], wantIdx)
+	}
+}
+
+// The option map must point at the line the value is drawn on — the same
+// agreement paramRowAt keeps with the template detail pane.
+func TestConfigCycleOptionMapMatchesTheDrawnRows(t *testing.T) {
+	m := configMouseModel()
+	m, _, field := clickConfigField(t, m, "variant")
+
+	panel := m.renderConfigDetail(m.layout().rightWidth, m.layout().contentH)
+	if len(panel.optionAt) != len(field.Options) {
+		t.Fatalf("mapped %d options, want all %d", len(panel.optionAt), len(field.Options))
+	}
+	for line, optIdx := range panel.optionAt {
+		want := variantDisplay(field.Options[optIdx])
+		if !strings.Contains(stripANSI(panel.lines[line]), want) {
+			t.Fatalf("line %d maps to %q but reads %q", line, want, stripANSI(panel.lines[line]))
+		}
+	}
+}
+
+func TestClickOnConfigHelpDoesNotPickACycleOption(t *testing.T) {
+	m := configMouseModel()
+	m, _, _ = clickConfigField(t, m, "variant")
+
+	m = click(m, m.layout().rightStart()+2, contentTop) // title, not an option
+	if m.stringFields["variant"] != "" {
+		t.Fatalf("clicking the help text should not pick a value, got %q", m.stringFields["variant"])
+	}
+	if !m.cycleEditing {
+		t.Fatal("a miss should leave cycle-edit open")
+	}
+}
+
+func TestClickConfigCycleArrowsStepTheValue(t *testing.T) {
+	m := configMouseModel()
+	m, rowIdx, field := clickConfigField(t, m, "variant")
+	if !m.cycleEditing {
+		t.Fatal("clicking Variant should open it for stepping")
+	}
+
+	leftCol, rightCol := m.cycleFieldArrowCols(field)
+	plain := stripANSI(strings.Split(m.View(), "\n")[contentTop+rowIdx])
+	if got := runeAt(plain, leftCol); got != "◄" {
+		t.Fatalf("column %d holds %q, want ◄ (line %q)", leftCol, got, plain)
+	}
+	if got := runeAt(plain, rightCol); got != "►" {
+		t.Fatalf("column %d holds %q, want ► (line %q)", rightCol, got, plain)
+	}
+
+	m = click(m, rightCol, contentTop+rowIdx)
+	if m.stringFields["variant"] != "base" {
+		t.Fatalf("clicking ► should step to base, got %q", m.stringFields["variant"])
+	}
+	if !m.cycleEditing {
+		t.Fatal("stepping with the arrows should stay in cycle-edit")
+	}
+
+	// The value is shorter now, so the columns move; re-read them.
+	leftCol, _ = m.cycleFieldArrowCols(field)
+	m = click(m, leftCol, contentTop+rowIdx)
+	if m.stringFields["variant"] != "" {
+		t.Fatalf("clicking ◄ should step back to default, got %q", m.stringFields["variant"])
+	}
+
+	// Config cycle wraps, unlike param suggests. ◄ from the first option is the last.
+	leftCol, _ = m.cycleFieldArrowCols(field)
+	m = click(m, leftCol, contentTop+rowIdx)
+	if m.stringFields["variant"] != "terminal" {
+		t.Fatalf("stepping back from default should wrap to terminal, got %q", m.stringFields["variant"])
+	}
+}
+
+// Variant's help restates every option, then lists them again. On a short
+// terminal the list was what fell off the bottom — the rows a mouse needs.
+func TestCycleEditKeepsOptionsOnScreen(t *testing.T) {
+	m := configMouseModel()
+	m.height = 20
+	rowIdx, field, ok := configFieldRow(m, "variant")
+	if !ok {
+		t.Fatal("variant field missing")
+	}
+	m.setCursor(rowIdx)
+
+	browsing := m.renderConfigDetail(m.layout().rightWidth, m.layout().contentH)
+	if _, ok := optionLine(browsing, field, "terminal"); ok {
+		t.Fatal("browsing a short terminal should clip the last Variant options — the test needs that clip to exist")
+	}
+
+	m.cycleEditing = true
+	editing := m.renderConfigDetail(m.layout().rightWidth, m.layout().contentH)
+	if len(editing.optionAt) != len(field.Options) {
+		t.Fatalf("cycle-edit mapped %d options, want all %d so a click can reach them",
+			len(editing.optionAt), len(field.Options))
+	}
+	if _, ok := optionLine(editing, field, "terminal"); !ok {
+		t.Fatal("terminal should stay on screen while Variant is being edited")
+	}
+}
+
 func TestClickParamRowFocusesAndAddRowStartsEditing(t *testing.T) {
 	items := goItems()
 	m := mouseModel(items)
