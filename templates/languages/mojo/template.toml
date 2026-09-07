@@ -1,0 +1,34 @@
+display-name = "Mojo"
+display-disc = "Mojo language (requires python)"
+display-detail = """Installs the Mojo compiler, standard library, LSP, and debugger as a pip \
+package into the booth Python (`/opt/python`). Selecting this pulls in Python (`requires`), \
+because Mojo 1.0 ships as `pip install mojo` and needs CPython 3.10–3.14. The setup also \
+installs g++, which Mojo's Linux toolchain requires.
+
+`mojo hello.mojo` JIT-compiles and runs; `mojo build hello.mojo` emits an executable. Pin \
+with `mojo:1.0.0`. The official VS Code extension (`modular-mojotools.vscode-mojo`) \
+auto-selects when a codeserver or VS Code variant is in use.
+
+GPU / MAX serving is out of scope of this template — CPU compilation and run work without \
+a GPU. Nightly wheels are not a version knob here; use a pinned stable release or `latest` \
+from PyPI."""
+display-order = 22
+tags = [
+    "mojo",
+    "python",
+    "ai",
+    "compiled",
+    "systems",
+]
+
+requires = ["python"]
+
+[params.MOJO_VERSION]
+default = "1.0.0"
+suggests = ["1.0.0", "latest"]
+
+# Order 60: after Python, which lands in the base band at 50.
+[segments]
+"Boothfile--60" = """
+setup mojo --version ${MOJO_VERSION}
+"""
