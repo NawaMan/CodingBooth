@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The console globe bar prefills `http://booth` and keeps proxied apps
+  inside the pane.** Clicking the globe opens the address box already set to
+  `http://booth` with the cursor at the end, so the next keys are
+  `:8080/` rather than the whole URL. A leading `:port` is accepted the same
+  way. Proxied backends that `Location: /` (Appwrite's console does) used to
+  resolve against the booth origin and recursively load the console UI in the
+  iframe; nginx now rewrites those redirects under `/proxy/{port}/`. SPAs that
+  then `fetch('/v1/…')` against the booth origin (same-origin Appwrite console)
+  are forwarded to that proxy port when the Referer is a `/proxy/{port}/` pane,
+  so the console gets JSON instead of the booth HTML and can finish loading.
+
 - **Mojo notebooks are a catalog extension.** `--select mojo+kernel` pulls
   Jupyter and registers a kernelspec named `mojo`. Modular's official
   notebooks are a Python kernel plus `import mojo.notebook` (`%%mojo` cells,
