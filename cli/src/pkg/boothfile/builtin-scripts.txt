@@ -147,6 +147,9 @@ setup lxqt
 setup make
 setup mermaid
 setup mkcert
+setup mojo
+setup mojo-code-extension
+setup mojo-nb-kernel
 setup mongodb
 setup mongodb-start
 setup mvn

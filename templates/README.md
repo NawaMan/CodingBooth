@@ -353,6 +353,7 @@ All templates and extensions grouped by segment order.
 | `languages/clojure`       | Clojure          |
 | `languages/elixir`        | Elixir           |
 | `languages/kotlin`        | Kotlin           |
+| `languages/mojo`          | Mojo             |
 | `languages/scala`         | Scala            |
 | `languages/wails`         | Wails v3         |
 | `tools/codex`             | Codex            |
@@ -398,6 +399,7 @@ amd64 from arm64, which is a different question from "does this machine have KVM
 | `julia/vscode-ext--extension`     | Julia VS Code Extension       |
 | `kotlin/vscode-ext--extension`    | Kotlin VS Code Extension      |
 | `lua/vscode-ext--extension`       | Lua VS Code Extension         |
+| `mojo/vscode-ext--extension`      | Mojo VS Code Extension        |
 | `nim/vscode-ext--extension`       | Nim VS Code Extension         |
 | `nodejs/vscode-ext--extension`    | Node.js VS Code Extension     |
 | `php/vscode-ext--extension`       | PHP VS Code Extension         |
@@ -485,6 +487,7 @@ curl -s -X POST https://marketplace.visualstudio.com/_apis/public/gallery/extens
 | `java/kernel--extension`     | Java Notebook Kernel (IJava) |
 | `java/kernel-jjava--extension` | Java Notebook Kernel (JJava, Java 11+) — pick this *or* `java/kernel`, not both |
 | `kotlin/kernel--extension`   | Kotlin Notebook Kernel |
+| `mojo/kernel--extension`     | Mojo Notebook Kernel   |
 | `nodejs/kernel--extension`   | Node.js Notebook Kernel |
 | `python/kernel--extension`   | Python Notebook Kernel |
 | `r/kernel--extension`        | R Notebook Kernel      |
