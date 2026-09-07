@@ -32,7 +32,7 @@ HOME=/root
 PROFILE_FILE="/etc/profile.d/53-cb-python--profile.sh"  # profile to be run when login
 
 # Wanted python version
-PY_VERSION=${1:-3.13.12}
+PY_VERSION=${1:-3.13.15}
 
 # ---- validate python version format ----
 # accepts X.Y or X.Y.Z (exact patch recommended)

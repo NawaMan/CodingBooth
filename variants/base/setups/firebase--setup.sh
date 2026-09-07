@@ -25,11 +25,11 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-NODE_MAJOR=20
+NODE_MAJOR=24
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --node-version) shift; NODE_MAJOR="${1:-20}"; shift ;;
+    --node-version) shift; NODE_MAJOR="${1:-24}"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "❌ Unknown arg: $1" >&2; usage; exit 2 ;;
   esac

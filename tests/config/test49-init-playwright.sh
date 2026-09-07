@@ -28,7 +28,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "playwright"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg NODE_VERSION=' '22'  "nodejs auto-selected as dependency"
+assert-line "$boothfile" 'arg NODE_VERSION=' '24'  "nodejs auto-selected as dependency"
 
 # Test 5: Playwright+python extension requires python
 run rm -Rf $prj

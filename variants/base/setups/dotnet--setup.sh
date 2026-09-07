@@ -16,7 +16,7 @@ HOME=/root
 
 
 # --- Defaults ---
-CHANNEL="9.0"
+CHANNEL="10.0"
 SDK_VERSION=""
 RUNTIME_KIND=""
 WITH_WASM_TOOLS=0
@@ -29,7 +29,7 @@ PROFILE_FILE="/etc/profile.d/${LEVEL}-cb-dotnet--profile.sh"
 STARTER_FILE="/usr/local/bin/dotnet"
 
 # --- Parse args ---
-# First positional arg is channel (for simple usage: setup dotnet 9.0)
+# First positional arg is channel (for simple usage: setup dotnet 10.0)
 if [[ $# -ge 1 && ! "$1" =~ ^-- ]]; then
   CHANNEL="$1"
   shift

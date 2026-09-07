@@ -6,7 +6,7 @@ begin
 # Test 1: Obsidian with default version
 run booth config $prj --no-tui --select "obsidian"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg OBSIDIAN_VERSION=' '1.12.4'  "default version is 1.12.4"
+assert-line "$boothfile" 'arg OBSIDIAN_VERSION=' '1.13.8'  "default version is 1.13.8"
 assert-line "$boothfile" 'setup obsidian ' '${OBSIDIAN_VERSION}'  "Boothfile uses param reference"
 
 # Test 2: Obsidian with custom version

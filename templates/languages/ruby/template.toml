@@ -8,8 +8,8 @@ tags = [
 ]
 
 [params.RUBY_VERSION]
-default = "3.3"
-suggests = ["3.3", "3.2", "3.1"]
+default = "3.4"
+suggests = ["3.4", "3.3", "3.2"]
 
 [segments]
 Boothfile = """

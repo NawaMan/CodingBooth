@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Catalog version pins refreshed for 0.76.0.** Script defaults, template
+  defaults, and GitHub-API fallbacks now agree on current stables, including
+  the three script↔template drifts: Go `1.26.8` (N−1 of 1.27), Node.js `24`
+  (current LTS), JDK `25`. Also Python `3.13.15`, kind `0.33.0`, PlantUML
+  `1.2026.8`, Mermaid CLI `11.17.0`, Gradle `9.7.1`, Obsidian `1.13.8`, Julia
+  `1.12.7`, Swift `6.3.3`, Scala `3.8.4` (N−1 of 3.9.0), Kafka `4.3.1`, PHP
+  `8.4`, Ruby `3.4`, .NET `10.0`, Erlang/OTP `28`, Elm `0.19.2` (official
+  linux x64/arm binaries), ReScript `12.3.1`, plus fallback/suggests bumps
+  for buf, viewmd, Kotlin, Elixir, Exercism, Clojure, Wails v3
+  `v3.0.0-beta.17`, Freeplane, and `gh`.
+
 - **Apache mod_php, nginx php-fpm, and MongoDB auto-start are catalog
   extensions.** `--select apache+php` enables mod_php without reinstalling
   Apache (`setup apache --php-only`). `--select nginx+php-fpm` installs php-fpm
@@ -18,7 +29,7 @@ This file contains a list of changes for each released version.
 - **PHP Composer is a catalog extension.** `--select php+composer` installs
   Composer globally after PHP (`setup php --composer-only`), without reinstalling
   PHP — which is what a second `setup php --with-composer` would do, and which
-  would also reset a pinned version to 8.3. Distinct from `+composer-install`,
+  would also reset a pinned version to 8.4. Distinct from `+composer-install`,
   which runs `composer install` for a project's `composer.json`.
   `examples/workspaces/php-example` selects `php+composer`.
   `tests/config/test101-init-php-composer.sh` and
@@ -49,7 +60,7 @@ This file contains a list of changes for each released version.
   iOS still needs a Mac with Xcode. WebKitGTK's
   bubblewrap sandbox cannot create user namespaces in a booth, so the template
   sets `WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1` (same class of workaround as
-  Chromium `--no-sandbox`). Pin with `wails:v3.0.0-beta.16`.
+  Chromium `--no-sandbox`). Pin with `wails:v3.0.0-beta.17`.
 
 - **Config TUI tab clicks land on the tab you clicked.** The tab bar styles pad
   one column on each side, but the click map measured the unpadded names, so
