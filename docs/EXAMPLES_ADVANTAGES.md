@@ -80,6 +80,11 @@ The advantages, in CodingBooth's own vocabulary:
 - **floci-example** — Floci (local AWS emulator) + AWS CLI + DinD in one selector, so
   `just run` creates an S3 bucket on `:4566` with no cloud account. *(Secondary: nested
   containers — `floci start` runs the emulator image inside the DinD sidecar.)*
+- **appwrite-example** — Appwrite CLI + a self-hosted Appwrite console on `:8080` in
+  one selector (`appwrite-server+autostart+expose`). The server is the official
+  Compose stack inside DinD — there is no native install. `just run` waits for
+  `/v1/health/version` and points the CLI at localhost. *(Secondary: nested
+  containers and port exposure; first boot wants ~4GB RAM.)*
 - **zig-snake-example** — "no Zig installation required" on the host; `zig build run` just works.
 - **playwright-example** — Node + Playwright + headless Chromium + VS Code extensions in one command.
 - **wails-example** — Go + Node + GTK 4 / WebKitGTK 6.0 + the Wails v3 CLI on
@@ -225,6 +230,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | android-example | Precise version compatibility |
 | angular-example | Host stays clean |
 | apt-example | Reproducibility (archive snapshot) |
+| appwrite-example | Batteries-included (local Appwrite) |
 | aws-example | Credential seeding |
 | bun-example | Host stays clean |
 | cache-example | Persistence / cache |

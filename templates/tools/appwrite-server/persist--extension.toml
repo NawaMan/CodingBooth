@@ -1,0 +1,18 @@
+display-name = "Appwrite Persist Data"
+display-disc = "Keep Appwrite data across booth runs via .booth/cache"
+display-detail = """Bind-mounts `~/.appwrite-server` from `.booth/cache/` (CodingBooth cache-dirs, gitignored, this machine only). start-appwrite restores Compose volumes from that tree; stop-appwrite dumps them back so the next booth sees your projects and console user. Select this extension — setting APPWRITE_DATA=persist alone does not create the cache bind."""
+display-order = 4
+auto-select = false
+tags = [
+    "appwrite",
+    "cache",
+    "persistence",
+]
+
+run-args = [
+    "-e", "APPWRITE_DATA=persist",
+]
+
+cache-dirs = [
+    "home/coder/.appwrite-server",
+]

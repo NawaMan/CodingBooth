@@ -293,6 +293,8 @@ All templates and extensions grouped by segment order.
 | `tools/dind`           | Docker-in-Docker |
 | `tools/docker-buildx`  | Docker Buildx    |
 | `tools/docker-compose` | Docker Compose   |
+| `tools/appwrite-cli`   | Appwrite CLI     |
+| `tools/appwrite-server`| Appwrite Server  |
 | `tools/firebase`       | Firebase CLI     |
 | `tools/floci`          | Floci (local AWS emulator) |
 | `tools/gcloud`         | Google Cloud SDK |

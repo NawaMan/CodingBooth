@@ -1,0 +1,20 @@
+display-name = "Appwrite CLI"
+display-disc = "Official CLI for Appwrite Cloud and self-hosted"
+display-detail = """Installs the official Appwrite CLI (`appwrite`) from GitHub releases. Use it against Appwrite Cloud (`appwrite login`) or a self-hosted instance (`appwrite client --endpoint http://localhost:8080/v1`). The CLI does not start a server — select `appwrite-server` for that. Host credentials in `~/.appwrite` are seeded by the auto-selected credential extension."""
+display-order = 54
+tags = [
+    "appwrite",
+    "cli",
+    "baas",
+    "backend",
+    "cloud",
+]
+
+[params.APPWRITE_CLI_VERSION]
+default = "latest"
+suggests = ["latest", "27.3.0", "23.0.0"]
+
+[segments]
+Boothfile = """
+setup appwrite-cli --version ${APPWRITE_CLI_VERSION}
+"""
