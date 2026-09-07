@@ -247,6 +247,8 @@ The mouse is live — no flag, nothing to turn on:
 | A template / extension **row** | Move the cursor there (the right panel follows) |
 | The row's `[ ]` **marker** | Select or deselect it — the marker is the mouse's `Space` |
 | A **config field** | Bool flips, cycle opens for stepping, string or list entry opens for editing, `(+ add new)` adds one |
+| A **cycle option** in the Config help pane | Pick that value and commit — Variant, Sudo, Egress Mode, and the rest. Opening the field keeps the list on screen even when the help text would have pushed it off |
+| The `◄` / `►` of a cycle field being edited | Step to the previous / next option, wrapping at the ends — the same step the arrow keys make |
 | A **parameter** in the right panel | Focus the parameter editor on that row; on a package list's `(+ add)` it starts a new entry straight away |
 | The `◄` / `►` of a focused parameter | Step to the previous / next suggested value — the arrows appear once the row is focused |
 | A footer **button** | `[ Save (Ctrl+S) ]` writes the booth; `[ Cancel (Ctrl+E) ]` asks first (below) |

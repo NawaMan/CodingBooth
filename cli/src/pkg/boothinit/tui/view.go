@@ -147,7 +147,7 @@ func (m model) View() string {
 	var leftLines, rightLines []string
 	if m.isConfigTab() {
 		leftLines = m.renderConfigPanel(leftWidth, contentH)
-		rightLines = m.renderConfigDetail(rightWidth, contentH)
+		rightLines = m.renderConfigDetail(rightWidth, contentH).lines
 	} else {
 		leftLines = m.renderLeftPanel(leftWidth, contentH)
 		rightLines = m.renderRightPanel(rightWidth, contentH).lines
@@ -384,9 +384,21 @@ func padStyledRight(s string, width int) string {
 	return s + strings.Repeat(" ", width-w)
 }
 
+// configDetail is what the Config tab's right panel drew: the lines on screen,
+// and which cycle option each of those lines belongs to.
+//
+// Same contract as rightPanel.paramRowAt: the map is filled by the same pass
+// that renders the options and re-keyed by the same scroll that moved them, so a
+// click can only ever resolve to an option the panel is actually showing.
+type configDetail struct {
+	lines    []string
+	optionAt map[int]int // screen line within the panel → index into field.Options
+}
+
 // renderConfigDetail renders the right panel for the Config tab.
-func (m model) renderConfigDetail(rightWidth, contentH int) []string {
+func (m model) renderConfigDetail(rightWidth, contentH int) configDetail {
 	var lines []string
+	optionAt := map[int]int{}
 
 	f := m.currentConfigField()
 	if f != nil {
@@ -407,22 +419,20 @@ func (m model) renderConfigDetail(rightWidth, contentH int) []string {
 			lines = append(lines, "")
 			lines = append(lines, detailLabel.Render("Options:"))
 			currentVal := m.stringFields[f.Key]
-			for _, opt := range f.Options {
-				display := opt
-				if display == "" {
-					display = "(default)"
-				}
+			for optIdx, opt := range f.Options {
+				display := variantDisplay(opt)
 				if opt == currentVal {
 					lines = append(lines, selectedStyle.Render("> "+display))
 				} else {
 					lines = append(lines, "  "+display)
 				}
+				optionAt[len(lines)-1] = optIdx
 			}
 			lines = append(lines, "")
 			if m.cycleEditing {
-				lines = append(lines, detailLabel.Render("Editing... ◄► to change, Enter to commit, Esc to cancel"))
+				lines = append(lines, detailLabel.Render("Editing... click an option or ◄►, Enter commits"))
 			} else {
-				lines = append(lines, detailLabel.Render("Space/Enter to edit"))
+				lines = append(lines, detailLabel.Render("Click an option, or Space/Enter to edit"))
 			}
 		}
 
@@ -487,6 +497,11 @@ func (m model) renderConfigDetail(rightWidth, contentH int) []string {
 		}
 	}
 
+	off := m.configDetailScroll(len(lines), optionAt, contentH)
+	if off > 0 {
+		lines = lines[off:]
+	}
+
 	// Pad and truncate
 	for i, line := range lines {
 		w := lipgloss.Width(line)
@@ -503,7 +518,68 @@ func (m model) renderConfigDetail(rightWidth, contentH int) []string {
 		lines = lines[:contentH]
 	}
 
-	return lines
+	visible := make(map[int]int, len(optionAt))
+	for line, optIdx := range optionAt {
+		if screen := line - off; screen >= 0 && screen < len(lines) {
+			visible[screen] = optIdx
+		}
+	}
+	return configDetail{lines: lines, optionAt: visible}
+}
+
+// configDetailScroll is how far to shift the Config help pane so a cycle field's
+// option list stays on screen while it is being edited.
+//
+// Variant's help restates every value, then lists them again under Options:. On a
+// short terminal that list was the thing that fell off the bottom — exactly the
+// rows a mouse needs. Help yields while editing; browsing still prefers the
+// description.
+func (m model) configDetailScroll(lineCount int, optionAt map[int]int, contentH int) int {
+	if !m.cycleEditing || contentH <= 0 || len(optionAt) == 0 || lineCount <= contentH {
+		return 0
+	}
+
+	first, last := -1, -1
+	for line := range optionAt {
+		if first < 0 || line < first {
+			first = line
+		}
+		if line > last {
+			last = line
+		}
+	}
+
+	// "Options:" sits immediately above the first value; keep the hint below
+	// when it fits.
+	blockStart := first - 1
+	if blockStart < 0 {
+		blockStart = 0
+	}
+	blockEnd := last
+	if last+2 < lineCount {
+		blockEnd = last + 2
+	}
+
+	off := 0
+	if blockEnd >= contentH {
+		switch {
+		case blockEnd-blockStart+1 <= contentH:
+			off = blockStart
+		case last-first+1 <= contentH:
+			off = first
+		default:
+			off = last - contentH + 1
+		}
+	}
+	if off < 0 {
+		off = 0
+	}
+	if maxOff := lineCount - contentH; maxOff < 0 {
+		return 0
+	} else if off > maxOff {
+		return maxOff
+	}
+	return off
 }
 
 func variantDisplay(v string) string {
