@@ -1,0 +1,40 @@
+display-name = "Appwrite Server"
+display-disc = "Self-hosted Appwrite BaaS (Docker Compose via DinD)"
+display-detail = """Installs start/stop wrappers for a self-hosted Appwrite instance. Appwrite has no native install — it is an official Docker Compose stack (Traefik, database, Redis, workers, Open Runtimes). The stack is not started by this template; add +autostart (pulls dind + docker-compose) to bring it up on boot, and +expose to reach the console from the host. Default HTTP is 8080 (the official installer CLI rejects ports longer than 4 digits, so 20080 cannot be passed through). APPWRITE_DATA=clean (default) is a fresh stack every booth; +seed copies a snapshot from home-seed (writes do not stick); +persist is .booth/cache (writes survive on this machine). First start pulls many images and wants about 4GB RAM. Requires the Appwrite CLI."""
+display-order = 55
+tags = [
+    "appwrite",
+    "baas",
+    "backend",
+    "server",
+    "self-hosted",
+    "docker",
+]
+requires = ["appwrite-cli"]
+
+run-args = [
+    "-e", "APPWRITE_PORT=${APPWRITE_PORT}",
+    "-e", "APPWRITE_HTTPS_PORT=${APPWRITE_HTTPS_PORT}",
+    "-e", "APPWRITE_DATA=${APPWRITE_DATA}",
+]
+
+[params.APPWRITE_VERSION]
+default = "1.9.6"
+suggests = ["1.9.6", "1.8.1"]
+
+[params.APPWRITE_PORT]
+default = "8080"
+suggests = ["8080", "80", "443"]
+
+[params.APPWRITE_HTTPS_PORT]
+default = "8443"
+suggests = ["8443", "443"]
+
+[params.APPWRITE_DATA]
+default = "clean"
+suggests = ["clean", "seed", "persist"]
+
+[segments]
+Boothfile = """
+setup appwrite-server --version ${APPWRITE_VERSION} --http-port ${APPWRITE_PORT} --https-port ${APPWRITE_HTTPS_PORT} --data ${APPWRITE_DATA}
+"""

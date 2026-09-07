@@ -4,6 +4,24 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Appwrite CLI and self-hosted server are catalog templates.** `--select
+  appwrite-cli` installs the official CLI from GitHub releases (`appwrite -v`).
+  `--select appwrite-server` requires the CLI and installs `start-appwrite` /
+  `stop-appwrite` for a self-hosted instance. Appwrite has no native install —
+  the server is the official Docker Compose stack, so `+autostart` pulls in
+  `dind` and `docker-compose` and starts it on boot; `+expose` publishes the
+  console (default HTTP 8080 — the official installer CLI rejects ports
+  longer than 4 digits, so 20080 cannot be passed through). First start
+  wants about 4GB RAM. Pin with `appwrite-cli:27.3.0` and
+  `appwrite-server:1.9.6`. `APPWRITE_DATA` is `clean` (default, empty every
+  booth), `seed` (`+seed`, home-seed snapshot, writes discarded), or
+  `persist` (`+persist`, `.booth/cache`, writes survive on this machine).
+  `start-appwrite` dumps/restores Compose volumes through that tree because
+  DinD cannot bind booth paths. First console user is
+  `admin@example.com` / `password123`. `examples/workspaces/appwrite-example`
+  selects `appwrite-server+autostart+expose` (clean) and checks CLI plus
+  `/v1/health/version` with `just run`. Tests: `test107-init-appwrite.sh`.
+
 - **The console globe bar prefills `http://booth` and keeps proxied apps
   inside the pane.** Clicking the globe opens the address box already set to
   `http://booth` with the cursor at the end, so the next keys are

@@ -1,0 +1,16 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select appwrite-server+autostart+expose
+
+env APT_SNAPSHOT=20260907T000000Z
+
+arg APPWRITE_CLI_VERSION=latest
+arg APPWRITE_DATA=clean
+arg APPWRITE_HOST_PORT=8080
+arg APPWRITE_HTTPS_PORT=8443
+arg APPWRITE_PORT=8080
+arg APPWRITE_VERSION=1.9.6
+
+setup appwrite-cli --version ${APPWRITE_CLI_VERSION}
+setup appwrite-server --version ${APPWRITE_VERSION} --http-port ${APPWRITE_PORT} --https-port ${APPWRITE_HTTPS_PORT} --data ${APPWRITE_DATA}
+setup dind
+setup docker-compose

@@ -1,0 +1,13 @@
+# Configured by: booth config --no-tui --overwrite --select appwrite-server+autostart+expose
+
+dind = true
+
+run-args = [
+    "-e", "APPWRITE_PORT=8080",
+    "-e", "APPWRITE_HTTPS_PORT=8443",
+    "-e", "APPWRITE_DATA=clean",
+    "-p", "8080:8080",
+    "-v", "~/.appwrite:/etc/cb-home-seed/.appwrite:ro",
+    "-v", "~/AppData/Roaming/appwrite:/etc/cb-home-seed/.appwrite:ro",
+    "-v", "~/.docker/config.json:/etc/cb-home-seed/.docker/config.json:ro"
+]
