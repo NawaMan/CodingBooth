@@ -71,8 +71,12 @@ calling `run-tui` (e.g. `LAUNCH_ARGS=(--select go)`).
 - **Keystrokes are timing- and cursor-sensitive.** The TUI launches on the
   **Languages** tab; the **Config** tab is one `Left` away. Select a template
   with `Tab` (focus search) → `Type "name"` → `Tab` (back to list, cursor on the
-  first match) → `Space`. Config fields top-to-bottom: Booth Version, Variant,
-  Port, … (so `Down×2` = Variant, `Down×3` = Port). Exit is **Ctrl+E** →
-  `Enter` to confirm / `Esc` to cancel. Keep generous `Sleep`s and verify each
-  tape against the live TUI — the `.txt` frame dump (no alternate screen) stacks
-  every render, so `assert-frame` uses substring matches.
+  first match) → `Space`. A template with unselected `requires` (kotlin → java,
+  kind → dind) does **not** select on Space: it asks `… requires … — add it
+  too? [y/n]`. Answer with `Enter`/`y` before `Ctrl+S` — the prompt swallows
+  every other key, so a save while it is up writes nothing. Config fields
+  top-to-bottom: Booth Version, Variant, Port, … (so `Down×2` = Variant,
+  `Down×3` = Port). Exit is **Ctrl+E** → `Enter` to confirm / `Esc` to cancel.
+  Keep generous `Sleep`s and verify each tape against the live TUI — the `.txt`
+  frame dump (no alternate screen) stacks every render, so `assert-frame` uses
+  substring matches.

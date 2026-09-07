@@ -86,7 +86,7 @@ set -euo pipefail
 PORT=${1:-__LOGO_PORT__}
 URL="http://localhost:${PORT}/"
 
-if curl -sf --max-time 1 "http://127.0.0.1:${PORT}/" 2>/dev/null | grep -q "Logo Interpreter"; then
+if curl -sf --retry 0 --max-time 1 "http://127.0.0.1:${PORT}/" 2>/dev/null | grep -q "Logo Interpreter"; then
   echo "Logo editor is already running at ${URL}"
   echo "Hide the green turtle in a program with: hideturtle   (or ht)"
   exit 0

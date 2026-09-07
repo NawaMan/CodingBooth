@@ -148,6 +148,7 @@ setup make
 setup mermaid
 setup mkcert
 setup mongodb
+setup mongodb-start
 setup mvn
 setup mysql
 setup nbgrader
