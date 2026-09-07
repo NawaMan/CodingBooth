@@ -8,6 +8,7 @@ Each variant comes pre-configured with a curated toolset and a consistent runtim
 - **`base`** – A minimal base image with essential shell tools.
   Ideal for building custom environments, running CLI applications, or lightweight automation tasks.
   The terminal is exposed with [ttyd](https://github.com/tsl0922/ttyd) on port 10000.
+  The split console's document icon opens [viewmd](https://github.com/NawaMan/MarkDownViewer) in the pane's web view at `http://booth:8765`.
 
 - **`notebook`** – Includes [Jupyter Notebook](https://jupyter.org/) with Bash and other utilities.
   Great for data science, analytics, documentation, or interactive scripting workflows.

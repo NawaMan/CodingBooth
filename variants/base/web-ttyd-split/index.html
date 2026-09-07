@@ -261,6 +261,28 @@
       color: var(--accent);
     }
 
+    .md-toggle {
+      background: none;
+      border: none;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px 4px;
+      line-height: 1;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .md-toggle:hover {
+      color: var(--accent);
+      background: rgba(47, 141, 255, 0.1);
+    }
+
+    .md-toggle.active-md {
+      color: var(--accent);
+    }
+
     .proxy-port-input {
       flex: 1;
       min-width: 0;
@@ -467,6 +489,9 @@
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
             <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
+          <button class="md-toggle" data-session="1" title="Markdown view">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </button>
           <button class="proxy-reload" data-session="1" title="Reload">&#x21BB;</button>
           <button class="proxy-hist-back" data-session="1" title="Back" style="display:none">&#x2190;</button>
           <button class="proxy-hist-forward" data-session="1" title="Forward" style="display:none">&#x2192;</button>
@@ -487,6 +512,9 @@
           <button class="proxy-toggle" data-session="2" title="Web view">
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
             <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="md-toggle" data-session="2" title="Markdown view">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           </button>
           <button class="proxy-reload" data-session="2" title="Reload">&#x21BB;</button>
           <button class="proxy-hist-back" data-session="2" title="Back" style="display:none">&#x2190;</button>
@@ -509,6 +537,9 @@
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
             <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
+          <button class="md-toggle" data-session="3" title="Markdown view">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+          </button>
           <button class="proxy-reload" data-session="3" title="Reload">&#x21BB;</button>
           <button class="proxy-hist-back" data-session="3" title="Back" style="display:none">&#x2190;</button>
           <button class="proxy-hist-forward" data-session="3" title="Forward" style="display:none">&#x2192;</button>
@@ -529,6 +560,9 @@
           <button class="proxy-toggle" data-session="4" title="Web view">
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
             <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <button class="md-toggle" data-session="4" title="Markdown view">
+            <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           </button>
           <button class="proxy-reload" data-session="4" title="Reload">&#x21BB;</button>
           <button class="proxy-hist-back" data-session="4" title="Back" style="display:none">&#x2190;</button>
@@ -918,6 +952,25 @@
       }
 
       const proxyState = loadProxyState();
+      // viewmd's default listen port — the Markdown button is a shortcut to
+      // the same web view as typing this into the globe bar.
+      const VIEWMD_PORT = 8765;
+
+      function setMdToggle(pane, on) {
+        var btn = pane && pane.querySelector(".md-toggle");
+        if (!btn) return;
+        if (on) {
+          btn.classList.add("active-md");
+          btn.title = "Back to terminal";
+        } else {
+          btn.classList.remove("active-md");
+          btn.title = "Markdown view";
+        }
+      }
+
+      function isViewmdPort(port) {
+        return Number(port) === VIEWMD_PORT;
+      }
 
       // Globe bar: `http://booth:{port}{path}` → iframe `/proxy/{port}{path}`.
       // Host is only `booth` (localhost paste is rewritten). Scheme is http;
@@ -1085,6 +1138,7 @@
             display: target.display
           };
           saveProxyState(proxyState);
+          setMdToggle(pane, isViewmdPort(target.port));
         } catch (_e) { /* cross-origin */ }
       }
 
@@ -1189,6 +1243,7 @@
         setPageTitleTip(pane, target.display);
         toggleBtn.classList.add("active-web");
         toggleBtn.title = "Back to terminal";
+        setMdToggle(pane, isViewmdPort(target.port));
 
         proxyState[sessionNum] = {
           port: target.port,
@@ -1214,6 +1269,7 @@
         setPageTitleTip(pane, "");
         toggleBtn.classList.remove("active-web");
         toggleBtn.title = "Web view";
+        setMdToggle(pane, false);
 
         setGlobeProxyPort(null);
         delete proxyState[sessionNum];
@@ -1243,6 +1299,22 @@
               portInput.setSelectionRange(n, n);
             }
           }
+        });
+      });
+
+      document.querySelectorAll(".md-toggle").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          var session = btn.dataset.session;
+          var pane = btn.closest(".pane");
+          var toggle = pane && pane.querySelector(".proxy-toggle");
+          var saved = proxyState[session];
+          if (toggle && toggle.classList.contains("active-web") && saved && isViewmdPort(saved.port)) {
+            switchToTerminal(session);
+            return;
+          }
+          var parsed = parseBoothTarget("http://booth:" + VIEWMD_PORT);
+          if (parsed.error) return;
+          switchToWebView(session, parsed);
         });
       });
 
