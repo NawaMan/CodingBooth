@@ -1,0 +1,24 @@
+display-name = "Mojo Notebook Kernel"
+display-disc = "Mojo Jupyter support (%%mojo magic on a Mojo-named Python kernel)"
+display-detail = """Modular's official notebooks are a Python kernel plus `import mojo.notebook`, \
+which registers the `%%mojo` cell magic. Each `%%mojo` cell is a complete program \
+with `main()`. There is no first-party native Mojo kernelspec as of Mojo 1.0.
+
+This extension registers a kernelspec named `mojo` (picker label **Mojo**) that \
+is that Python kernel, and auto-imports `mojo.notebook` so the first cell does \
+not have to. Opt-in: `--select mojo+kernel` (pulls `notebook`). The third-party \
+`mojokernel` package is not used — it last shipped against Mojo 0.26 and has no \
+linux/arm64 wheel."""
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "mojo",
+    "kernel",
+    "notebook",
+]
+
+[segments]
+"Boothfile--70" = """
+setup mojo-nb-kernel
+"""

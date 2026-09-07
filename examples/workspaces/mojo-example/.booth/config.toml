@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --select mojo+vscode-ext
+# Configured by: booth config --no-tui --overwrite --select mojo+kernel
 
 
 run-args = [
