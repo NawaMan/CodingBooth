@@ -9,6 +9,8 @@ setup android-sdk
 setup ansible
 setup antigravity
 setup apache
+setup appwrite-cli
+setup appwrite-server
 setup aws-cdk
 setup aws-cli
 setup aws-sam-cli

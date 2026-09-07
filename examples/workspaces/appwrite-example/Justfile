@@ -1,0 +1,7 @@
+[private]
+default:
+    @just --list
+
+# Wait for the local Appwrite, print CLI version and API health
+run:
+    ./demo.sh

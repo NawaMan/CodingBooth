@@ -130,7 +130,7 @@ for readability — `booth example list` itself prints a flat alphabetical list.
 
 ### Cloud & services
 
-`aws` · `firebase` · `floci` · `gcloud` · `server`
+`appwrite` · `aws` · `firebase` · `floci` · `gcloud` · `server`
 
 ### Dependencies, caching & system packages
 

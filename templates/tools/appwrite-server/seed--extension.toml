@@ -1,0 +1,23 @@
+display-name = "Appwrite Seed Data"
+display-disc = "Start from a home-seed snapshot; writes do not survive the booth"
+display-detail = """Copies `.booth/home-seed/.appwrite-server/` into `~/.appwrite-server` at start (CodingBooth seed, no-clobber). start-appwrite restores that tree into the Compose volumes and does not copy back on stop, so the snapshot is the same every run. Drop volume tarballs from a persist dump into the seed dir (manifest + volumes/*.tar), or leave the placeholder and get a fresh install that still will not persist. Not for secrets you would not commit."""
+display-order = 3
+auto-select = false
+tags = [
+    "appwrite",
+    "seed",
+    "persistence",
+]
+
+run-args = [
+    "-e", "APPWRITE_DATA=seed",
+]
+
+[files.home-seed]
+".appwrite-server/.keep" = """
+# Appwrite seed tree (select appwrite-server+seed).
+# Empty = first-run install, then discarded on booth stop.
+# To freeze a demo world: run with +persist, stop-appwrite (dumps here),
+# copy ~/.appwrite-server/manifest and volumes/ into this directory, commit.
+"""
+

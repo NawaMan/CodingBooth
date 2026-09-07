@@ -1,0 +1,20 @@
+display-name = "Expose Appwrite Port"
+display-disc = "Publish the Appwrite console (HTTP) to the host"
+display-detail = "Appwrite listens inside the booth on APPWRITE_PORT (default 8080). This publishes it so a browser or SDK on the host can open the console. Add autostart too, or nothing will be listening. HTTPS stays inside the booth (APPWRITE_HTTPS_PORT); publish it separately with --expose if you need it."
+display-order = 1
+auto-select = false
+tags = [
+    "appwrite",
+    "port",
+    "network",
+]
+
+run-args = [
+    "-p", "${APPWRITE_HOST_PORT}:${APPWRITE_PORT}",
+]
+
+# Host-side port. Defaults to the port the console listens on, so moving the
+# service moves the published port with it. Override only when the host port is
+# already taken.
+[params.APPWRITE_HOST_PORT]
+default = "${APPWRITE_PORT}"
