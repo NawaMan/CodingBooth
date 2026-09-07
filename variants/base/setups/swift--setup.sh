@@ -11,7 +11,7 @@ Usage:
   $0 [--version <X.Y.Z>] [--with-lldb]
 
 Examples:
-  $0                      # install Swift 6.0.1 (default)
+  $0                      # install Swift 6.3.3 (default)
   $0 --version 6.0.2      # install a specific Swift release
   $0 --with-lldb          # also install lldb debugger (from apt)
 
@@ -26,7 +26,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-SWIFT_DEFAULT_VER="6.0.1"
+SWIFT_DEFAULT_VER="6.3.3"
 REQ_VER=""
 WITH_LLDB=0
 

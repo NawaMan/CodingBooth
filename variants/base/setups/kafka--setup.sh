@@ -11,7 +11,7 @@ Usage:
   $0 [--version <VER>] [--port <PORT>] [--advertised-host <HOST>] [--data <DIR>]
 
 Environment overrides:
-  KAFKA_VERSION          (default: 3.7.0)         # Apache Kafka version
+  KAFKA_VERSION          (default: 4.3.1)         # Apache Kafka version
   KAFKA_PORT             (default: 9092)
   KAFKA_ADVERTISED_HOST  (default: 127.0.0.1)
   KAFKA_DATA             (default: /opt/kafkadata)
@@ -35,7 +35,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (use sudo)"; exit 1; }
 
 # --- defaults ---
-KAFKA_VERSION="${KAFKA_VERSION:-3.7.0}"
+KAFKA_VERSION="${KAFKA_VERSION:-4.3.1}"
 KAFKA_PORT="${KAFKA_PORT:-9092}"
 KAFKA_ADVERTISED_HOST="${KAFKA_ADVERTISED_HOST:-127.0.0.1}"
 KAFKA_DATA="${KAFKA_DATA:-/opt/kafkadata}"

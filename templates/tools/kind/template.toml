@@ -10,8 +10,8 @@ tags = [
 requires = ["dind"]
 
 [params.KIND_VERSION]
-default = "0.27.0"
-suggests = ["0.27.0", "0.26.0", "0.25.0"]
+default = "0.33.0"
+suggests = ["0.33.0", "0.27.0", "0.26.0"]
 
 [segments]
 Boothfile = """

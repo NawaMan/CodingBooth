@@ -12,12 +12,12 @@ Usage:
   $0 [VERSION] [PORT]
 
 Arguments:
-  VERSION  PlantUML version (default: 1.2025.2)
+  VERSION  PlantUML version (default: 1.2026.8)
   PORT     Port for the PlantUML web server (default: 18080)
 
 Examples:
   $0                     # install with defaults
-  $0 1.2025.2 18080      # specific version and port
+  $0 1.2026.8 18080      # specific version and port
 
 Notes:
 - Installs Java (if not present), PlantUML jar, and PlantUML Server
@@ -38,7 +38,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 # ---- defaults / args ----
-PLANTUML_VERSION="${1:-1.2025.2}"
+PLANTUML_VERSION="${1:-1.2026.8}"
 PLANTUML_PORT="${2:-18080}"
 PLANTUML_DIR="/opt/plantuml"
 PLANTUML_JAR="${PLANTUML_DIR}/plantuml.jar"

@@ -30,7 +30,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "Run as root (use sudo)"; exit 1; }
 
 # ---- defaults / args ----
-CLJ_DEFAULT_VER="1.12.0.1479"
+CLJ_DEFAULT_VER="1.12.6.1673"
 REQ_VER=""
 WITH_LEIN=1
 

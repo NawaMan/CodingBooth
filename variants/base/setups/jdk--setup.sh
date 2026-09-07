@@ -45,7 +45,7 @@ PROFILE_FILE="/etc/profile.d/60-cb-jdk--profile.sh"
 STARTUP_FILE="/usr/share/startup.d/60-cb-jdk--startup.sh"
 
 # --- Defaults ---
-JDK_VERSION="21"
+JDK_VERSION="25"
 CLI_VENDOR=""
 ALT_PRIO="20000"
 
@@ -78,7 +78,7 @@ USAGE
       ;;
     --*) die "Unknown option: $1" ;;
     *)
-      if [[ "$JDK_VERSION" == "21" && "$1" =~ ^[0-9]+$ ]]; then
+      if [[ "$JDK_VERSION" == "25" && "$1" =~ ^[0-9]+$ ]]; then
         JDK_VERSION="$1"
       elif [[ -z "$CLI_VENDOR" ]]; then
         CLI_VENDOR="$1"

@@ -16,7 +16,7 @@ HOME=/root
 
 
 # --- Defaults ---
-NODE_MAJOR=20
+NODE_MAJOR=24
 
 # --- Parse args ---
 if [[ $# -ge 1 && ! "$1" =~ ^-- ]]; then

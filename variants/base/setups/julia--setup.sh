@@ -15,7 +15,7 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 HOME=/root
 
 # --- Defaults ---
-JULIA_VERSION="${1:-1.11.3}"
+JULIA_VERSION="${1:-1.12.7}"
 
 LEVEL=60
 
@@ -24,7 +24,7 @@ PROFILE_FILE="/etc/profile.d/${LEVEL}-cb-julia--profile.sh"
 
 # ---- validate version format ----
 if [[ ! "$JULIA_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-  echo "❌ Version must be X.Y.Z (e.g., 1.11.3)"; exit 2
+  echo "❌ Version must be X.Y.Z (e.g., 1.12.7)"; exit 2
 fi
 
 MAJOR="${JULIA_VERSION%%.*}"

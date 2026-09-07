@@ -32,7 +32,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-PHP_DEFAULT_VER="8.3"
+PHP_DEFAULT_VER="8.4"
 PHP_VER="$PHP_DEFAULT_VER"
 WITH_COMPOSER=0
 COMPOSER_ONLY=0
@@ -68,7 +68,7 @@ install_composer() {
 }
 
 # --composer-only: do not reinstall PHP (that would rm -rf the prefix and default
-# the version to 8.3). Just run the Composer installer.
+# the version to 8.4). Just run the Composer installer.
 if [[ $COMPOSER_ONLY -eq 1 ]]; then
   install_composer
   echo "✅ Composer installed at /usr/local/bin/composer"

@@ -11,8 +11,8 @@ tags = [
 requires = ["nodejs"]
 
 [params.ELM_VERSION]
-default = "0.19.1"
-suggests = ["0.19.1"]
+default = "0.19.2"
+suggests = ["0.19.2", "0.19.1"]
 
 [segments]
 "Boothfile--60" = """

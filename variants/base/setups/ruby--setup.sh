@@ -15,7 +15,7 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 HOME=/root
 
 # --- Defaults ---
-RUBY_VERSION="${1:-3.3}"
+RUBY_VERSION="${1:-3.4}"
 
 LEVEL=59                          # See README.md - Profile Ordering
 

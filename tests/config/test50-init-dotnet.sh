@@ -3,10 +3,10 @@ source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
 
-# Test 1: Dotnet with default channel (9.0)
+# Test 1: Dotnet with default channel (10.0)
 run booth config $prj --no-tui --select "csharp"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg DOTNET_CHANNEL=' '9.0'  "default channel is 9.0"
+assert-line "$boothfile" 'arg DOTNET_CHANNEL=' '10.0'  "default channel is 10.0"
 assert-line "$boothfile" 'setup dotnet --channel ' '${DOTNET_CHANNEL}'  "Boothfile uses param reference"
 
 # Test 2: Dotnet with custom channel

@@ -32,7 +32,7 @@ boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" "install apt " 'protobuf-compiler'  "protobuf+go still installs protoc"
 assert-line "$boothfile" "install go google.golang.org/protobuf/cmd/protoc-gen-go@" 'latest'  "protoc-gen-go plugin"
 assert-line "$boothfile" "install go google.golang.org/grpc/cmd/protoc-gen-go-grpc@" 'latest'  "protoc-gen-go-grpc plugin"
-assert-line "$boothfile" "arg GO_VERSION=" '1.25.7'  "go auto-selected for protobuf+go"
+assert-line "$boothfile" "arg GO_VERSION=" '1.26.8'  "go auto-selected for protobuf+go"
 
 # --- buf default version ---
 run rm -Rf $prj

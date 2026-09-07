@@ -12,7 +12,7 @@ Usage:
 
 Examples:
   $0                                    # install latest kind + stable kubectl
-  $0 --kind-version 0.27.0              # pin kind version
+  $0 --kind-version 0.33.0              # pin kind version
   $0 --kubectl-version 1.32.0           # pin kubectl version
 
 Notes:
@@ -27,12 +27,12 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-KIND_VERSION="0.27.0"
+KIND_VERSION="0.33.0"
 KUBECTL_VERSION="stable"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --kind-version) shift; KIND_VERSION="${1:-0.27.0}"; shift ;;
+    --kind-version) shift; KIND_VERSION="${1:-0.33.0}"; shift ;;
     --kubectl-version) shift; KUBECTL_VERSION="${1:-stable}"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "❌ Unknown arg: $1" >&2; usage; exit 2 ;;

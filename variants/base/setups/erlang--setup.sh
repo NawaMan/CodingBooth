@@ -32,7 +32,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (use sudo)"; exit 1; }
 
 # --- Defaults ---
-OTP_DEFAULT_VERSION="27"
+OTP_DEFAULT_VERSION="28"
 OTP_VERSION_INPUT="${1:-}"
 WITH_REBAR3=1
 

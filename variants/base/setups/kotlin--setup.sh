@@ -12,7 +12,7 @@ Usage:
   $0 [--version <x.y.z>|latest] [--with-native] [--konan-dir </path>]
 
 Examples:
-  $0                         # Kotlin compiler (JVM/JS) default 2.0.20
+  $0                         # Kotlin compiler (JVM/JS) default 2.4.10
   $0 --version latest        # latest Kotlin
   $0 --version 2.0.10 --with-native  # add Kotlin/Native
 
@@ -28,7 +28,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "Run as root (use sudo)"; exit 1; }
 
 # ---- defaults / args ----
-KOTLIN_DEFAULT_VER="2.0.20"   # fallback when 'latest' cannot be resolved
+KOTLIN_DEFAULT_VER="2.4.10"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"              # no version given means "the current release"
 WITH_NATIVE=0
 KONAN_DIR_DEFAULT="/opt/konan"

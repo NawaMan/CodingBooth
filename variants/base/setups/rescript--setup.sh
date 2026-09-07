@@ -12,8 +12,8 @@ Usage:
   $0 [--version <X.Y.Z>|latest]
 
 Examples:
-  $0                       # install ReScript 11.1.4 (default)
-  $0 --version 11.1.4      # pin specific version
+  $0                       # install ReScript 12.3.1 (default)
+  $0 --version 12.3.1      # pin specific version
   $0 --version latest      # latest from npm
 
 Notes:
@@ -28,7 +28,7 @@ USAGE
 
 HOME=/root
 
-RESCRIPT_DEFAULT_VER="11.1.4"   # kept as the --version fallback
+RESCRIPT_DEFAULT_VER="12.3.1"   # kept as the --version fallback
 REQ_VER="latest"                # no version given means "the current release";
                                 # npm's own 'latest' dist-tag decides, and for
                                 # rescript that tag points at a stable release.

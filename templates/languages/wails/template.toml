@@ -41,7 +41,7 @@ run-args = [
 
 [params.WAILS_VERSION]
 default = "latest"
-suggests = ["latest", "v3.0.0-beta.16"]
+suggests = ["latest", "v3.0.0-beta.17"]
 
 # Order 60: after Go and Node.js, which land in the base band at 50.
 [segments]
