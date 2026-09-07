@@ -461,7 +461,7 @@
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
           </span>
           <label class="proxy-addr" data-session="1">
-            <input class="proxy-port-input" data-session="1" type="text" placeholder="http://booth:3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
+            <input class="proxy-port-input" data-session="1" type="text" placeholder=":3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
           </label>
           <button class="proxy-toggle" data-session="1" title="Web view">
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
@@ -482,7 +482,7 @@
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
           </span>
           <label class="proxy-addr" data-session="2">
-            <input class="proxy-port-input" data-session="2" type="text" placeholder="http://booth:3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
+            <input class="proxy-port-input" data-session="2" type="text" placeholder=":3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
           </label>
           <button class="proxy-toggle" data-session="2" title="Web view">
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
@@ -503,7 +503,7 @@
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
           </span>
           <label class="proxy-addr" data-session="3">
-            <input class="proxy-port-input" data-session="3" type="text" placeholder="http://booth:3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
+            <input class="proxy-port-input" data-session="3" type="text" placeholder=":3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
           </label>
           <button class="proxy-toggle" data-session="3" title="Web view">
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
@@ -524,7 +524,7 @@
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
           </span>
           <label class="proxy-addr" data-session="4">
-            <input class="proxy-port-input" data-session="4" type="text" placeholder="http://booth:3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
+            <input class="proxy-port-input" data-session="4" type="text" placeholder=":3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
           </label>
           <button class="proxy-toggle" data-session="4" title="Web view">
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
@@ -996,6 +996,12 @@
           return fromAllowedHost(urlMatch[1], urlMatch[2], urlMatch[3] || "/");
         }
 
+        // Globe click prefills `http://booth`; the rest is typed as `:8080/path`.
+        var colonPort = s.match(/^:(\d+)([/?#].*)?$/);
+        if (colonPort) {
+          return normalizeTarget(colonPort[1], colonPort[2] || "/");
+        }
+
         var boothBare = s.match(/^booth:(\d+)([/?#].*)?$/i);
         if (boothBare) {
           return normalizeTarget(boothBare[1], boothBare[2] || "/");
@@ -1159,6 +1165,14 @@
         });
       });
 
+      function setGlobeProxyPort(port) {
+        if (port) {
+          document.cookie = "cb_proxy_port=" + port + "; Path=/; SameSite=Lax";
+        } else {
+          document.cookie = "cb_proxy_port=; Path=/; Max-Age=0; SameSite=Lax";
+        }
+      }
+
       function switchToWebView(sessionNum, target) {
         const pane = document.querySelector('.pane[data-pane="' + sessionNum + '"]');
         if (!pane) return;
@@ -1167,6 +1181,7 @@
         const portInput = pane.querySelector(".proxy-port-input");
         const toggleBtn = pane.querySelector(".proxy-toggle");
 
+        setGlobeProxyPort(target.port);
         setPaneSrc(iframe, target.src);
         setAddrOpen(pane, true);
         setWebTools(pane, true);
@@ -1200,6 +1215,7 @@
         toggleBtn.classList.remove("active-web");
         toggleBtn.title = "Web view";
 
+        setGlobeProxyPort(null);
         delete proxyState[sessionNum];
         saveProxyState(proxyState);
       }
@@ -1219,8 +1235,13 @@
             setAddrOpen(pane, false);
           } else {
             setAddrOpen(pane, true);
-            portInput.value = "";
+            // Prefill the host so the next keys are `:<port>/<path>`.
+            portInput.value = "http://booth";
             portInput.focus();
+            if (typeof portInput.setSelectionRange === "function") {
+              var n = portInput.value.length;
+              portInput.setSelectionRange(n, n);
+            }
           }
         });
       });
