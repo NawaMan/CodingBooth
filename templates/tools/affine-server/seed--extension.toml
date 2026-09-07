@@ -1,0 +1,23 @@
+display-name = "AFFiNE Seed Data"
+display-disc = "Start from a home-seed snapshot; writes do not survive the booth"
+display-detail = """Copies `.booth/home-seed/.affine/` into `~/.affine` at start (CodingBooth seed, no-clobber). start-affine-server restores a Postgres dump from that tree if present (`dumps/affine.dump`) and does not copy back on stop, so the snapshot is the same every run. Drop a persist dump (config/, storage/, dumps/) into the seed dir, or leave the placeholder for a fresh install that still will not persist. Not for secrets you would not commit."""
+display-order = 3
+auto-select = false
+tags = [
+    "affine",
+    "seed",
+    "persistence"
+]
+
+run-args = [
+    "-e", "AFFINE_SERVER_DATA=seed",
+]
+
+[files.home-seed]
+".affine/.keep" = """
+# AFFiNE seed tree (select affine-server+seed).
+# Empty = first-run install, then discarded on booth stop.
+# To freeze a demo workspace: run with +persist, stop-affine-server (dumps
+# Postgres here), copy ~/.affine/config, storage, and dumps/ into this
+# directory, commit.
+"""
