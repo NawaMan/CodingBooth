@@ -353,6 +353,7 @@ All templates and extensions grouped by segment order.
 | `languages/clojure`       | Clojure          |
 | `languages/elixir`        | Elixir           |
 | `languages/kotlin`        | Kotlin           |
+| `languages/mojo`          | Mojo             |
 | `languages/scala`         | Scala            |
 | `languages/wails`         | Wails v3         |
 | `tools/codex`             | Codex            |
@@ -398,6 +399,7 @@ amd64 from arm64, which is a different question from "does this machine have KVM
 | `julia/vscode-ext--extension`     | Julia VS Code Extension       |
 | `kotlin/vscode-ext--extension`    | Kotlin VS Code Extension      |
 | `lua/vscode-ext--extension`       | Lua VS Code Extension         |
+| `mojo/vscode-ext--extension`      | Mojo VS Code Extension        |
 | `nim/vscode-ext--extension`       | Nim VS Code Extension         |
 | `nodejs/vscode-ext--extension`    | Node.js VS Code Extension     |
 | `php/vscode-ext--extension`       | PHP VS Code Extension         |
