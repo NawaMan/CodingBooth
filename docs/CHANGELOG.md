@@ -34,6 +34,23 @@ This file contains a list of changes for each released version.
   `floci:0.2.1`. `examples/workspaces/floci-example` selects
   `aws-cli/floci+autostart+expose` and round-trips an S3 object with `just run`.
 
+- **Wails v3 is a catalog language.** `--select wails` installs the `wails3` CLI
+  (`go install github.com/wailsapp/wails/v3/cmd/wails3@…`) and the Linux compile
+  stack Wails v3 actually needs — GTK 4 and WebKitGTK 6.0 — and pulls in Go and
+  Node.js. `wails3 build` produces a Linux GUI binary. Windows is a free
+  cross-compile (`wails3 build GOOS=windows`); macOS and foreign-arch Linux
+  take `+cross`, which adds Docker-in-Docker so `wails3 task setup:docker` can
+  build the `wails-cross` image. `examples/workspaces/wails-example` is a
+  counter on the xfce variant (`backend/` Go, `frontend/` UI), so `just run`
+  opens the window. `+android` adds the SDK and NDK so
+  `wails3 task android:build` can emit an APK;
+  `examples/workspaces/wails-android-example` is that selection as an xfce booth
+  with the emulator and KVM, so `just run` installs the APK on an AVD.
+  iOS still needs a Mac with Xcode. WebKitGTK's
+  bubblewrap sandbox cannot create user namespaces in a booth, so the template
+  sets `WEBKIT_DISABLE_SANDBOX_THIS_IS_DANGEROUS=1` (same class of workaround as
+  Chromium `--no-sandbox`). Pin with `wails:v3.0.0-beta.16`.
+
 - **Config TUI tab clicks land on the tab you clicked.** The tab bar styles pad
   one column on each side, but the click map measured the unpadded names, so
   later tabs drifted left under the pointer — clicking the **T** of Tools

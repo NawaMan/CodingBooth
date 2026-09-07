@@ -1,0 +1,15 @@
+#!/bin/sh
+ARGS=""
+SKIP_NEXT=0
+for arg in "$@"; do
+    if [ $SKIP_NEXT -eq 1 ]; then
+        SKIP_NEXT=0
+        continue
+    fi
+    case "$arg" in
+        -target) SKIP_NEXT=1 ;;
+        -mmacosx-version-min=*) ;;
+        *) ARGS="$ARGS $arg" ;;
+    esac
+done
+exec zig cc -fno-sanitize=all -target aarch64-macos-none -isysroot /opt/macos-sdk -I/opt/macos-sdk/usr/include -L/opt/macos-sdk/usr/lib -F/opt/macos-sdk/System/Library/Frameworks -w $ARGS

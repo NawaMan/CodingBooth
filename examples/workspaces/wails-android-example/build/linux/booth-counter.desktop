@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=booth-counter
+Exec=booth-counter
+Icon=booth-counter
+Categories=Development;
+Terminal=false
+Keywords=wails
+Version=1.0
+StartupNotify=false
