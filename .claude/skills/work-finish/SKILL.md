@@ -110,7 +110,13 @@ git -C <main-clone> stash list --format='%H %gs' | grep "land-<branch>"   # capt
 
 ## 2. Rebase the branch onto main
 
+Restore the worktree version stamp first. `version.txt` / README `**Current Version:**` were
+retargeted to `x.x.x--<name>` for this session — that is not a release. Set them back to whatever
+main currently has, then rebase:
+
 ```bash
+git -C <main-clone> show main:version.txt
+# copy that value into worktree/<name>/version.txt and the README Current Version line
 git -C worktree/<name> rebase main
 ```
 

@@ -287,6 +287,7 @@ All templates and extensions grouped by segment order.
 | `ai-tools/grok`        | Grok Build (xAI) |
 | `ai-tools/oh-my-pi`    | Oh My Pi (omp)   |
 | `ai-tools/goose`       | Goose            |
+| `ai-tools/anythingllm` | AnythingLLM      |
 | `tools/herdr`          | Herdr (agent multiplexer) |
 | `tools/hoppscotch`     | Hoppscotch       |
 | `tools/cmake`          | CMake            |

@@ -10,6 +10,7 @@ setup android-emulator
 setup android-sdk
 setup ansible
 setup antigravity
+setup anythingllm
 setup apache
 setup appwrite-cli
 setup appwrite-server

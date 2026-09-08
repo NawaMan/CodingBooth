@@ -126,6 +126,22 @@ that alone.
 cd worktree/<name>
 ```
 
+Stamp the session version so images and the binary do not collide with main's `--rc` tag. Keep the
+numeric triple; replace any `--…` suffix with `--<name>` (`0.77.0--rc2` → `0.77.0--anythingllm`).
+Write **both** `version.txt` and the README `**Current Version:**` line (the pre-commit hook
+requires they match). Do not use `build/set-version.sh` — it only accepts `--rc#`. Then retag a
+local base and rebuild the CLI:
+
+```bash
+old=$(tr -d ' \t\n\r' < ../../version.txt)
+new=$(tr -d ' \t\n\r' < version.txt)
+docker tag "nawaman/codingbooth:base-${old}" "nawaman/codingbooth:base-${new}" 2>/dev/null || true
+./build/cli-build.sh
+```
+
+This stamp is a session label, not a release — `work-finish` restores it to match main before
+landing. Full text: `AGENTS.md` → *Worktree version stamp*.
+
 If step 4 stashed something, bring it across now — `apply`, then `drop` only once you've eyeballed
 the result:
 
@@ -146,9 +162,11 @@ If either fails: **do not write.** Fix the checkout first.
 
 Tell the user, plainly:
 
-- the **path** (`worktree/<name>`) and the **branch** (`<name>`);
+- the **path** (`worktree/<name>`), the **branch** (`<name>`), and the **version stamp**
+  (`x.x.x--<name>` in `version.txt`);
 - that the branch is created but **nothing is committed** — committing is still its own ask
-  (Rule 8; creating the worktree branch is the one exception);
+  (Rule 8; creating the worktree branch is the one exception); the version stamp is a session
+  label and is restored to match main before landing;
 - that they can open `worktree/<name>` in GitKraken or an editor, and that if they'd rather run a
   fresh agent inside the session they can start one from that folder;
 - that the session ends with **`work-finish`**, which rebases, tests, merges (`--no-ff`, or a
