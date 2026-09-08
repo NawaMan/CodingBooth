@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Config TUI search ranks a name hit above a description hit.** Typing
+  `python` used to focus Mojo first (alphabetical, and Mojo's blurb says
+  "requires python"). Space then selected Mojo; the dependency prompt
+  swallowed Ctrl+S. Name and display-name matches now sort above a match
+  that only lives in the description.
+
 - **Erlang/OTP 28 actually installs.** The 0.76.0 pin bump set the erlang
   template default and `OTP_DEFAULT_VERSION` to 28, but `erlang--setup.sh`
   still only accepted 25–27, so `setup elixir` (which auto-installs Erlang)

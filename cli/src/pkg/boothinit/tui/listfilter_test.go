@@ -159,6 +159,50 @@ func TestActiveItems_SearchIgnoresListFilter(t *testing.T) {
 	}
 }
 
+func TestFilterItems_NameMatchRanksAboveDescription(t *testing.T) {
+	// Searching "python" used to land on Mojo first: the Languages tab is
+	// alphabetical (mojo < python) and Mojo's blurb contains "python". Space
+	// then selected Mojo; the requires-python prompt swallowed Ctrl+S
+	// (test12-tui-edit-existing).
+	mojo := &tmpl.Template{
+		Name:        "mojo",
+		DisplayName: "Mojo",
+		DisplayDesc: "Mojo language (requires python)",
+	}
+	python := &tmpl.Template{Name: "python", DisplayName: "Python", Primary: true}
+	m := mouseModel([]treeItem{
+		{kind: kindTemplate, template: mojo},
+		{kind: kindTemplate, template: python},
+	})
+	m.searchQuery = "python"
+	if got, want := templateNames(m.activeItems()), []string{"python", "mojo"}; !namesEqual(got, want) {
+		t.Fatalf("search python = %v, want %v (name match ranks above description)", got, want)
+	}
+}
+
+func TestFilterItems_RankKeepsMatchingExtensionsUnderParent(t *testing.T) {
+	kernel := &tmpl.Template{Name: "kernel", DisplayName: "Kernel", DisplayDesc: "Python Jupyter kernel"}
+	python := &tmpl.Template{
+		Name:        "python",
+		DisplayName: "Python",
+		Extensions:  []*tmpl.Template{kernel},
+	}
+	mojo := &tmpl.Template{Name: "mojo", DisplayName: "Mojo", DisplayDesc: "requires python"}
+	m := mouseModel([]treeItem{
+		{kind: kindTemplate, template: mojo},
+		{kind: kindTemplate, template: python},
+		{kind: kindExtension, template: python, extension: kernel},
+	})
+	m.searchQuery = "python"
+	items := m.activeItems()
+	if got, want := templateNames(items), []string{"python", "mojo"}; !namesEqual(got, want) {
+		t.Fatalf("templates = %v, want %v", got, want)
+	}
+	if len(items) < 2 || items[1].kind != kindExtension || items[1].extension.Name != "kernel" {
+		t.Fatalf("kernel should stay under python after rank, got %v", items)
+	}
+}
+
 func TestChipLabels_HiddenOnConfigTab(t *testing.T) {
 	m := filterFixture()
 	m.activeTab = 0

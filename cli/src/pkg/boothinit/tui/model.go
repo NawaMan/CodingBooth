@@ -289,6 +289,9 @@ func (m *model) activeItems() []treeItem {
 // - Extension matches → show that extension + its parent template
 // - Non-matching extensions are hidden
 // - Templates with no match (and no matching extensions) are hidden
+// Name and display-name hits rank above a match that only lives in the blurb,
+// so typing "python" focuses Python rather than Mojo (whose description
+// mentions Python). Matching extensions stay under their parent after the sort.
 func (m *model) filterItems(items []treeItem) []treeItem {
 	if m.searchQuery == "" {
 		return items
@@ -296,15 +299,18 @@ func (m *model) filterItems(items []treeItem) []treeItem {
 	query := strings.ToLower(m.searchQuery)
 
 	matches := func(item treeItem) bool {
-		var t *tmpl.Template
+		var entry *tmpl.Template
 		if item.kind == kindTemplate {
-			t = item.template
+			entry = item.template
 		} else {
-			t = item.extension
+			entry = item.extension
 		}
-		return strings.Contains(strings.ToLower(t.Name), query) ||
-			strings.Contains(strings.ToLower(t.DisplayName), query) ||
-			strings.Contains(strings.ToLower(t.DisplayDesc), query)
+		if entry == nil {
+			return false
+		}
+		return strings.Contains(strings.ToLower(entry.Name), query) ||
+			strings.Contains(strings.ToLower(entry.DisplayName), query) ||
+			strings.Contains(strings.ToLower(entry.DisplayDesc), query)
 	}
 
 	// Find which templates have at least one matching extension
@@ -315,21 +321,62 @@ func (m *model) filterItems(items []treeItem) []treeItem {
 		}
 	}
 
-	var result []treeItem
+	type rankedGroup struct {
+		parent treeItem
+		exts   []treeItem
+	}
+	var groups []rankedGroup
 	for _, item := range items {
 		switch item.kind {
 		case kindTemplate:
 			if matches(item) || parentNeeded[item.template.Name] {
-				result = append(result, item)
+				groups = append(groups, rankedGroup{parent: item})
 			}
 		case kindExtension:
-			if matches(item) {
-				result = append(result, item)
+			if !matches(item) || len(groups) == 0 {
+				continue
 			}
+			last := &groups[len(groups)-1]
+			if last.parent.template.Name != item.template.Name {
+				continue
+			}
+			last.exts = append(last.exts, item)
 		}
 	}
 
+	sort.SliceStable(groups, func(left, right int) bool {
+		return searchRank(groups[left].parent.template, query) < searchRank(groups[right].parent.template, query)
+	})
+
+	var result []treeItem
+	for _, group := range groups {
+		result = append(result, group.parent)
+		result = append(result, group.exts...)
+	}
 	return result
+}
+
+// searchRank scores how closely a template matches the lowercase query.
+// Lower is better: exact name, name prefix, name contains, description, else
+// (parent kept only because an extension matched).
+func searchRank(entry *tmpl.Template, query string) int {
+	if entry == nil {
+		return 4
+	}
+	name := strings.ToLower(entry.Name)
+	display := strings.ToLower(entry.DisplayName)
+	switch {
+	case name == query || display == query:
+		return 0
+	case strings.HasPrefix(name, query) || strings.HasPrefix(display, query):
+		return 1
+	case strings.Contains(name, query) || strings.Contains(display, query):
+		return 2
+	case strings.Contains(strings.ToLower(entry.DisplayDesc), query):
+		return 3
+	default:
+		return 4
+	}
 }
 
 func (m *model) cursorPos() int {
