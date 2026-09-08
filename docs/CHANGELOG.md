@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Erlang/OTP 28 actually installs.** The 0.76.0 pin bump set the erlang
+  template default and `OTP_DEFAULT_VERSION` to 28, but `erlang--setup.sh`
+  still only accepted 25–27, so `setup elixir` (which auto-installs Erlang)
+  and `setup erlang` failed with `Unsupported OTP version: 28`. 28 now uses
+  the same RabbitMQ PPA pattern as 26/27 (`ppa:rabbitmq/rabbitmq-erlang-28`).
+
 - **`install apt` retries a snapshot 5xx that apt-get treated as success.**
   `apt-get update --snapshot` exits 0 on `snapshot.ubuntu.com` 502/503
   (`W: Failed to fetch … ignored`). The following install then died with

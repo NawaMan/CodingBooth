@@ -11,15 +11,16 @@ Usage:
   $0 [<OTP_VERSION>] [--otp-version <ver>] [--with-rebar3|--no-rebar3]
 
 Examples:
-  $0                       # install default (OTP 27)
+  $0                       # install default (OTP 28)
   $0 26                    # pin OTP 26
   $0 --otp-version 27      # pin OTP 27
   $0 --no-rebar3           # skip rebar3
 
-Supported OTP versions: 25, 26, 27
+Supported OTP versions: 25, 26, 27, 28
   - 25: default Ubuntu repo
   - 26: ppa:rabbitmq/rabbitmq-erlang-26
   - 27: ppa:rabbitmq/rabbitmq-erlang-27
+  - 28: ppa:rabbitmq/rabbitmq-erlang-28
 
 Notes:
 - Installs Erlang/OTP via apt (RabbitMQ team PPAs for OTP 26+)
@@ -60,8 +61,8 @@ OTP_VERSION="${OTP_VERSION%%.*}"
 
 # Validate
 case "$OTP_VERSION" in
-  25|26|27) ;;
-  *) echo "❌ Unsupported OTP version: ${OTP_VERSION} (supported: 25, 26, 27)" >&2; usage; exit 2 ;;
+  25|26|27|28) ;;
+  *) echo "❌ Unsupported OTP version: ${OTP_VERSION} (supported: 25, 26, 27, 28)" >&2; usage; exit 2 ;;
 esac
 
 export DEBIAN_FRONTEND=noninteractive
