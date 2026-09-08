@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Appwrite admin create retries a slow first boot.** The health probe
+  no longer lets curl retry on its own (that stacked with the wait loop).
+  Creating the first account now retries a few times after the server
+  answers.
+
 - **Config TUI search ranks a name hit above a description hit.** Typing
   `python` used to focus Mojo first (alphabetical, and Mojo's blurb says
   "requires python"). Space then selected Mojo; the dependency prompt

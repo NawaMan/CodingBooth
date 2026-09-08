@@ -105,7 +105,7 @@ cb_appwrite_init() {
 
 cb_appwrite_health_url() {
   local port="$1"
-  curl -fsS -m 3 -H "Host: localhost" \
+  curl --retry 0 -fsS -m 3 -H "Host: localhost" \
     "http://127.0.0.1:${port}/v1/health/version" 2>/dev/null
 }
 
@@ -240,7 +240,7 @@ cb_appwrite_wait_healthy() {
   done
   echo "⚠️  Appwrite did not become healthy in time." >&2
   echo "    Try: docker ps" >&2
-  echo "         curl -H 'Host: localhost' http://127.0.0.1:${HTTP_PORT}/v1/health/version" >&2
+  echo "         GET http://127.0.0.1:${HTTP_PORT}/v1/health/version  (Host: localhost)" >&2
   return 1
 }
 
@@ -250,7 +250,7 @@ cb_appwrite_ensure_admin() {
   password="${APPWRITE_ADMIN_PASSWORD:-password123}"
   port="$HTTP_PORT"
   cb_appwrite_health_ok "$port" || port=80
-  code="$(curl -sS -m 10 -o /tmp/cb-appwrite-account.json -w '%{http_code}' \
+  code="$(curl -sS -m 10 --retry 3 --retry-delay 2 -o /tmp/cb-appwrite-account.json -w '%{http_code}' \
     -X POST "http://127.0.0.1:${port}/v1/account" \
     -H "Host: localhost" \
     -H "Content-Type: application/json" \
@@ -356,7 +356,7 @@ case "$MODE" in
 esac
 
 if ! cb_appwrite_wait_healthy; then
-  echo "         curl -H 'Host: localhost' http://127.0.0.1/v1/health/version" >&2
+  echo "         GET http://127.0.0.1/v1/health/version  (Host: localhost)" >&2
   exit 1
 fi
 
@@ -414,7 +414,7 @@ cat <<EON
 - Start: start-appwrite
 - Stop:  stop-appwrite
 - Console: http://localhost:${HTTP_PORT}
-- Health: curl -H 'Host: localhost' http://localhost:${HTTP_PORT}/v1/health/version
+- Health: GET http://localhost:${HTTP_PORT}/v1/health/version  (Host: localhost)
 - Data:  ${DATA_MODE}  (clean | seed via +seed | persist via +persist)
 
 Notes:
