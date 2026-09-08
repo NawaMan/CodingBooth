@@ -87,6 +87,25 @@ if [ -n "${APT_SNAPSHOT:-}" ]; then
     esac
 fi
 
-cb_retry apt-get update "${SNAPSHOT_ARGS[@]}"
+# apt-get update exits 0 even when snapshot.ubuntu.com 502/503s
+# ("W: Failed to fetch … ignored"). cb_retry then sees success and does not
+# retry; the following install dies with "Unable to locate package", which is
+# deliberately not retried. Fail the update in that case so the existing
+# retry actually runs (apt-example / turtle-example / systemlib-example).
+apt_get_update() {
+    local log rc
+    log="$(mktemp)"
+    rc=0
+    apt-get update "$@" >"$log" 2>&1 || rc=$?
+    cat "$log"
+    if [ "$rc" -eq 0 ] && grep -qiE 'Failed to fetch|[45][0-9]{2}[[:space:]]+(Bad Gateway|Service Unavailable|Too Many Requests)' "$log"; then
+        rm -f "$log"
+        return 1
+    fi
+    rm -f "$log"
+    return "$rc"
+}
+
+cb_retry apt_get_update "${SNAPSHOT_ARGS[@]}"
 cb_retry apt-get install -y --no-install-recommends "${SNAPSHOT_ARGS[@]}" "$@"
 rm -rf /var/lib/apt/lists/*

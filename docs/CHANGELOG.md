@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`install apt` retries a snapshot 5xx that apt-get treated as success.**
+  `apt-get update --snapshot` exits 0 on `snapshot.ubuntu.com` 502/503
+  (`W: Failed to fetch … ignored`). The following install then died with
+  `Unable to locate package`, which is not retried — so a blip looked like
+  a missing package (apt-example, turtle-example, systemlib-example).
+  Update now fails closed on that warning so `cb_retry` actually runs.
+  Tests: `test--apt-install-snapshot-fetch.sh`.
+
 - **`install brew` no longer fails the image build on Linuxbrew
   caveats.** `brew install` of nginx / postgresql / redis on Linux often
   exits 1 after a successful install (systemd-only services, PATH
