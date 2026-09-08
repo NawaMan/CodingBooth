@@ -10,7 +10,7 @@ start:
 deploy:
     ./deploy-app.sh
 
-# Check cluster status (`just check expect=down`)
+# Check cluster status (`just check down`)
 check expect="up":
     ./check-cluster.sh --expect={{ expect }}
 
