@@ -1,0 +1,20 @@
+display-name = "Expose AnythingLLM Port"
+display-disc = "Expose the AnythingLLM web UI port to the host network"
+display-order = 1
+auto-select = false
+tags = [
+    "ai",
+    "llm",
+    "anythingllm",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "${ANYTHINGLLM_HOST_PORT}:${ANYTHINGLLM_PORT}",
+]
+
+# Host-side port. Defaults to the port the service listens on, so moving the service
+# moves the published port with it. Override only when the host port is already taken.
+[params.ANYTHINGLLM_HOST_PORT]
+default = "${ANYTHINGLLM_PORT}"

@@ -132,7 +132,7 @@ install go golang.org/x/tools/gopls@latest
 | `sudo`          | bool       | Config: give the booth user passwordless sudo            |
 | `cmds`          | []string   | Config: default commands                                 |
 | `build-args`    | []string   | Config: Docker build arguments                           |
-| `run-args`      | []string   | Config: Docker run arguments (flag-value pairs deduped)  |
+| `run-args`      | []string   | Config: Docker run arguments (flag-value pairs deduped). Volume source `@code` is rewritten at run time to the host project directory (the same path mounted at `/home/coder/code`) — use it to bind the project a second time into a tool jail that rejects symlink-out-of-jail. |
 | `requires`      | []string   | Other template names that must also be selected          |
 | `cache-files`   | []string   | Files to persist in `.booth/cache/` (see below)          |
 | `cache-dirs`    | []string   | Directories to persist in `.booth/cache/`                |

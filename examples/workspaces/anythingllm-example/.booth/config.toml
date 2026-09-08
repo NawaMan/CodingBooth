@@ -1,0 +1,8 @@
+# Configured by: booth config --no-tui --overwrite --select anythingllm+autostart+expose+project-fs+passwordless
+
+
+run-args = [
+    "-p", "3001:3001",
+    "-v", "@code:/home/coder/.anythingllm/anythingllm-fs/code",
+    "-e", "AUTH_TOKEN="
+]

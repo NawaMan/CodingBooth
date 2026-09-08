@@ -1,0 +1,11 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select anythingllm+autostart+expose+project-fs+passwordless
+
+env APT_SNAPSHOT=20260908T000000Z
+
+arg ANYTHINGLLM_HOST_PORT=3001
+arg ANYTHINGLLM_PORT=3001
+arg ANYTHINGLLM_VERSION=1.16.1
+
+copy --from=mintplexlabs/anythingllm:${ANYTHINGLLM_VERSION} /app /opt/anythingllm
+setup anythingllm --version ${ANYTHINGLLM_VERSION} --port ${ANYTHINGLLM_PORT}

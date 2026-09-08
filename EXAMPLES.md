@@ -142,7 +142,7 @@ for readability — `booth example list` itself prints a flat alphabetical list.
 
 ### Editors & AI tooling
 
-`claude` · `herdr` · `neovim`
+`anythingllm` · `claude` · `herdr` · `neovim`
 
 ### Security & network isolation
 

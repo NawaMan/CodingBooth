@@ -1,0 +1,78 @@
+display-name = "AnythingLLM Project Files"
+display-disc = "Bind-mount /home/coder/code into AnythingLLM's file-system agent jail"
+display-detail = """Bind-mounts the booth project into `~/.anythingllm/anythingllm-fs/code` and turns on AnythingLLM's filesystem-agent skill (it is off by default; without that, `@agent list files` only searches workspace RAG and reports empty). A symlink is not enough: the agent realpath()s and rejects targets outside the jail. In chat: `@agent list files in code`. This is not +persist and not workspace RAG."""
+display-order = 4
+auto-select = false
+tags = [
+    "ai",
+    "llm",
+    "anythingllm",
+    "filesystem",
+    "rag"
+]
+
+# @code is rewritten at docker-run time to the host project path (the same
+# source already mounted at /home/coder/code). Nested after +persist's
+# ~/.anythingllm cache mount because run-args follow CommonArgs.
+run-args = [
+    "-v", "@code:/home/coder/.anythingllm/anythingllm-fs/code",
+]
+
+[segments]
+"startup--60.sh" = """
+# AnythingLLM realpath()s and rejects a symlink out of the jail.
+# Docker bind-mounts the project at $JAIL/code via run-args -v @code:...
+# Drop a leftover symlink from the old +project-fs so the bind can attach.
+JAIL="${STORAGE_DIR:-$HOME/.anythingllm}/anythingllm-fs"
+mkdir -p "$JAIL"
+if [ -L "$JAIL/code" ]; then
+  rm -f "$JAIL/code"
+  echo "AnythingLLM project-fs: removed leftover symlink $JAIL/code"
+fi
+mkdir -p "$JAIL/code"
+"""
+"startup--70.sh" = """
+# filesystem-agent is not a default skill. Without it, @agent only has
+# document/RAG tools and "list files" reports an empty workspace.
+PORT=${ANYTHINGLLM_PORT}
+export PORT
+(
+  for i in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+    curl -fsS --max-time 2 "http://127.0.0.1:$PORT/api/ping" >/dev/null 2>&1 && break
+    sleep 2
+  done
+  node -e '
+const http = require("http");
+const port = process.env.PORT || process.argv[1] || "3001";
+function req(method, path, body) {
+  return new Promise((resolve, reject) => {
+    const data = body ? JSON.stringify(body) : null;
+    const opts = { hostname: "127.0.0.1", port, path, method, headers: {} };
+    if (data) {
+      opts.headers["Content-Type"] = "application/json";
+      opts.headers["Content-Length"] = Buffer.byteLength(data);
+    }
+    const r = http.request(opts, (res) => {
+      let b = "";
+      res.on("data", (c) => (b += c));
+      res.on("end", () => {
+        try { resolve(JSON.parse(b || "{}")); } catch { resolve({}); }
+      });
+    });
+    r.on("error", reject);
+    if (data) r.write(data);
+    r.end();
+  });
+}
+(async () => {
+  const cur = await req("GET", "/api/admin/system-preferences-for?labels=default_agent_skills");
+  let skills = (cur.settings && cur.settings.default_agent_skills) || [];
+  if (!Array.isArray(skills)) skills = [];
+  if (!skills.includes("filesystem-agent")) skills.push("filesystem-agent");
+  await req("POST", "/api/admin/system-preferences", { default_agent_skills: skills.join(",") });
+  console.log("AnythingLLM project-fs: filesystem-agent skill enabled");
+})().catch((e) => console.log("AnythingLLM project-fs: could not enable skill:", e.message));
+' "$PORT"
+) >/tmp/anythingllm-project-fs.log 2>&1 &
+echo "AnythingLLM project-fs: enabling filesystem-agent in the background (log: /tmp/anythingllm-project-fs.log)"
+"""

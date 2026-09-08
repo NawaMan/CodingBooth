@@ -1,0 +1,64 @@
+display-name = "AnythingLLM"
+display-disc = "Self-hosted RAG chat UI for local and cloud LLMs"
+display-detail = """Installs AnythingLLM by copying the official \
+mintplexlabs/anythingllm image into the booth. Chat with documents using \
+Ollama (already in this catalog) or a cloud provider. The server does not \
+start or publish a port on its own — add +autostart to run it on boot, and \
++expose to reach it from the host. +passwordless skips the login password \
+(AUTH_TOKEN empty). +persist keeps ~/.anythingllm in \
+.booth/cache on this machine. +project-fs bind-mounts /home/coder/code into \
+AnythingLLM's file-system agent jail (~/.anythingllm/anythingllm-fs/code) \
+so the agent can read the project (a symlink is rejected); that is not persist.
+
+Default UI port is 3001 (AnythingLLM's own). Pin the image with \
+anythingllm:1.16.1 or anythingllm:latest. Pair with ollama+autostart and \
+point the UI at http://127.0.0.1:11434 — native in the booth, so no \
+host.docker.internal dance. First build copies a large image.
+
+Booth config params: ANYTHINGLLM_VERSION (image tag, default 1.16.1), \
+ANYTHINGLLM_PORT (listen, default 3001), ANYTHINGLLM_HOST_PORT (+expose, \
+defaults to the listen port). Pin as anythingllm:1.16.1,13001 or \
+anythingllm+expose:19000.
+
+AnythingLLM env (UI Settings, or .env): AUTH_TOKEN is the single-user \
+password — empty/unset means no login (+passwordless). JWT_SECRET is \
+minted when a password is turned on. STORAGE_DIR is ~/.anythingllm \
+(+persist bind-mounts that tree). start-anythingllm sets SERVER_PORT and \
+ANYTHING_LLM_RUNTIME=docker (the filesystem agent is hidden unless that \
+is docker). Host LM Studio: http://host.docker.internal:1234/v1 — not \
+localhost.
+
+The UI works at http://localhost:3001/ on the host and at http://booth:3001/ \
+in the globe pane (React Router basename follows /proxy/<port>)."""
+display-order = 42
+tags = [
+    "ai",
+    "llm",
+    "rag",
+    "anythingllm",
+    "chat",
+    "documents",
+    "local",
+    "self-hosted"
+]
+
+[params.ANYTHINGLLM_VERSION]
+default = "1.16.1"
+suggests = [
+    "1.16.1",
+    "1.16.0",
+    "latest",
+]
+
+[params.ANYTHINGLLM_PORT]
+default = "3001"
+suggests = [
+    "3001",
+    "13001",
+]
+
+[segments]
+Boothfile = """
+copy --from=mintplexlabs/anythingllm:${ANYTHINGLLM_VERSION} /app /opt/anythingllm
+setup anythingllm --version ${ANYTHINGLLM_VERSION} --port ${ANYTHINGLLM_PORT}
+"""

@@ -4,6 +4,49 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **AnythingLLM `+passwordless` skips the login password.** `--select
+  anythingllm+passwordless` sets `AUTH_TOKEN` empty (AnythingLLM's
+  `RequiresAuth` flag), strips a leftover `AUTH_TOKEN=` from `.env` on
+  boot, and disables password protection on the running server. Not
+  auto-select: with `+expose`, anyone who can reach the host port has
+  full admin. Template params are `ANYTHINGLLM_VERSION`,
+  `ANYTHINGLLM_PORT`, and `ANYTHINGLLM_HOST_PORT` (`+expose`). AnythingLLM
+  env: `AUTH_TOKEN` (password), `JWT_SECRET` (set with a password),
+  `STORAGE_DIR` (`~/.anythingllm`, `+persist`), `SERVER_PORT` and
+  `ANYTHING_LLM_RUNTIME=docker` (set by `start-anythingllm`; filesystem
+  agent needs `docker`). Host LM Studio:
+  `http://host.docker.internal:1234/v1`. Tests:
+  `test111-init-anythingllm.sh`.
+
+- **AnythingLLM `+project-fs` bind-mounts the booth project into the
+  file-system agent jail.** `--select anythingllm+project-fs` mounts the
+  host project at `~/.anythingllm/anythingllm-fs/code` (run-args `-v @code:…`;
+  `@code` is rewritten to the same host path as `/home/coder/code`). A
+  symlink is not enough: AnythingLLM `realpath()`s and rejects targets
+  outside the jail. `start-anythingllm` sets `ANYTHING_LLM_RUNTIME=docker`
+  so the filesystem skill is offered, and `+project-fs` turns that skill
+  on (it is off by default; `@agent list files` otherwise only searches
+  empty workspace RAG). In chat: `@agent list files in code`. This is not
+  workspace RAG and not `+persist`. Tests:
+  `test111-init-anythingllm.sh`, `TestPrepareCommonArgs_RewritesAtCodeVolume`.
+
+- **AnythingLLM is a catalog template.** `--select anythingllm` copies the
+  official `mintplexlabs/anythingllm` image (default `1.16.1`) into the booth
+  and installs `start-anythingllm`. Chat with documents using Ollama (already
+  in this catalog) or a cloud provider — native in the booth, so
+  `http://127.0.0.1:11434` just works. The server does not start or publish a
+  port on its own: add `+autostart` to run it on boot and `+expose` to reach
+  it from the host. `+persist` keeps `~/.anythingllm` in `.booth/cache` on
+  this machine. Default UI port is `3001`. Pin with `anythingllm:1.16.1,13001`.
+  `examples/workspaces/anythingllm-example` selects
+  `anythingllm+autostart+expose+project-fs+passwordless` and checks `/api/ping` with `just run`.
+  The UI works at `http://localhost:3001/` and in the globe pane
+  (`http://booth:3001/`) — React Router basename follows `/proxy/<port>`,
+  and pane-originated `/login` is redirected under that prefix so it does
+  not nest the booth console in the iframe.
+  Tests: `test111-init-anythingllm.sh`,
+  `tests/complex/test-boothfile-anythingllm`.
+
 - **AFFiNE Server starts Redis and runs Prisma without yarn.**
   The redis template only prepares `~/.redis` — it does not fork `redis-server`
   — so `affine-server+autostart` waited 60s, got connection refused, and

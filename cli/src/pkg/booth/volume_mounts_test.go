@@ -77,6 +77,44 @@ func TestIsBindMountSource(t *testing.T) {
 	}
 }
 
+func TestRewriteAtCodeVolumeItems(t *testing.T) {
+	code := "/host/project"
+	got := rewriteAtCodeVolumeItems([]string{
+		"-p", "3001:3001",
+		"-v", "@code:/home/coder/.anythingllm/anythingllm-fs/code",
+		"-e", "FOO=bar",
+	}, code)
+	want := []string{
+		"-p", "3001:3001",
+		"-v", "/host/project:/home/coder/.anythingllm/anythingllm-fs/code",
+		"-e", "FOO=bar",
+	}
+	if strings.Join(got, "\x00") != strings.Join(want, "\x00") {
+		t.Fatalf("rewriteAtCodeVolumeItems =\n%q\nwant\n%q", got, want)
+	}
+}
+
+func TestRewriteAtCodeVolumeItems_LeavesOtherVolumes(t *testing.T) {
+	got := rewriteAtCodeVolumeItems([]string{
+		"-v", "/tmp/data:/data",
+		"--volume", "myvol:/var/lib",
+	}, "/host/project")
+	want := []string{"-v", "/tmp/data:/data", "--volume", "myvol:/var/lib"}
+	if strings.Join(got, "\x00") != strings.Join(want, "\x00") {
+		t.Fatalf("got %q want %q", got, want)
+	}
+}
+
+func TestPrepareCommonArgs_RewritesAtCodeVolume(t *testing.T) {
+	builder := hostAccessBuilder()
+	builder.RunArgs.Append(ilist.NewList[string](
+		"-v", "@code:/home/coder/.anythingllm/anythingllm-fs/code",
+	))
+	ctx := PrepareCommonArgs(builder.Build())
+	want := normalizeCodePath(".") + ":/home/coder/.anythingllm/anythingllm-fs/code"
+	assertContainsArgPair(t, ctx.RunArgs(), "-v", want)
+}
+
 func TestExpandHostPath(t *testing.T) {
 	home := "/home/tester"
 	if got := expandHostPath("~", home); got != home {
