@@ -11,4 +11,10 @@ if [[ ! -d build ]]; then
 fi
 cmake --build build -j
 
+# just 1.58 forwards a `--` argument separator into *args, so
+# `just run -- --json 20` becomes `./run-primes.sh -- --json 20`.
+while [[ "${1:-}" == -- ]]; do
+    shift
+done
+
 ./build/primes "$@"

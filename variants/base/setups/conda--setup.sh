@@ -116,6 +116,20 @@ fi
 # ---- stable symlink ----
 ln -snf "$ENV_PATH" "$STABLE_PY_LINK"
 
+# python--setup.sh's login profile puts /opt/venvs/pyX.Y/bin first on PATH.
+# That series link still points at the uv venv when both `setup python` and
+# `setup conda` ran, so `python` is not /opt/python and `install conda numpy`
+# is invisible (conda-example inBooth-test003). Retarget the series link at
+# this env so the two prefixes are the same interpreter.
+if [ -d /opt/venvs ]; then
+  PY_FULL="$("$ENV_PATH/bin/python" -c 'import sys; print(".".join(map(str, sys.version_info[:3])))' 2>/dev/null || true)"
+  if [ -n "$PY_FULL" ]; then
+    PY_SERIES="${PY_FULL%.*}"
+    ln -snf "$ENV_PATH" "/opt/venvs/py${PY_SERIES}"
+    echo "Retargeted /opt/venvs/py${PY_SERIES} → ${ENV_PATH}"
+  fi
+fi
+
 # Convenience shims
 ln -sfn "${STABLE_PY_LINK}/bin/python" /usr/local/bin/python || true
 ln -sfn "${STABLE_PY_LINK}/bin/pip"    /usr/local/bin/pip    || true

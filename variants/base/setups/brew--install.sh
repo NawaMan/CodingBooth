@@ -44,11 +44,30 @@ if [ $# -eq 0 ]; then
     exit 0
 fi
 
-if [ ! -x /home/linuxbrew/.linuxbrew/bin/brew ]; then
+BREW_PREFIX="${LINUXBREW_PREFIX:-/home/linuxbrew/.linuxbrew}"
+BREW_BIN="${BREW_PREFIX}/bin/brew"
+
+if [ ! -x "$BREW_BIN" ]; then
     echo "brew is not installed."
     /opt/codingbooth/setups/brew--install.sh
 fi
 
-cb_retry sudo -u coder /home/linuxbrew/.linuxbrew/bin/brew install "$@"
+# Linuxbrew often exits 1 after a successful install because a formula
+# "provides a service which can only be used on macOS or systemd" or
+# because a binary is shadowed by /usr/sbin (nginx). That is a warning,
+# not a missing package — treating it as fatal failed homebrew-example.
+if ! cb_retry sudo -u coder "$BREW_BIN" install "$@"; then
+    missing=()
+    for pkg in "$@"; do
+        if ! sudo -u coder "$BREW_BIN" list --formula "$pkg" >/dev/null 2>&1; then
+            missing+=("$pkg")
+        fi
+    done
+    if [ ${#missing[@]} -ne 0 ]; then
+        echo "❌ brew install failed and these packages are missing: ${missing[*]}" >&2
+        exit 1
+    fi
+    echo "⚠️  brew install exited non-zero, but all requested packages are present."
+fi
 chown -R root:linuxbrew /home/linuxbrew
 chmod -R g+w /home/linuxbrew

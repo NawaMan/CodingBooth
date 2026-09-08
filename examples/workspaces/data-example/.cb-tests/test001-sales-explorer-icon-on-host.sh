@@ -37,9 +37,18 @@ fi
 # "not found" long before it can say anything about this example. Prefer the
 # newest released desktop-xfce image already on this machine, else pull latest.
 BOOTH_VERSION="${CB_BOOTH_VERSION:-}"
+xfce_tags() {
+    docker images --format '{{.Tag}}' nawaman/codingbooth 2>/dev/null \
+        | sed -n 's/^desktop-xfce-//p'
+}
 if [ -z "$BOOTH_VERSION" ]; then
-    BOOTH_VERSION="$(docker images --format '{{.Tag}}' nawaman/codingbooth 2>/dev/null \
-        | sed -n 's/^desktop-xfce-//p' | grep -v -- '--rc' | sort -V | tail -1)"
+    # Prefer a released tag. `grep -v -- '--rc'` exits 1 when the only local
+    # images are --rc (a booth built from this tree), and with pipefail that
+    # used to kill the test before it printed anything.
+    BOOTH_VERSION="$(xfce_tags | grep -v -- '--rc' | sort -V | tail -1)" || true
+fi
+if [ -z "$BOOTH_VERSION" ]; then
+    BOOTH_VERSION="$(xfce_tags | sort -V | tail -1)" || true
 fi
 [ -n "$BOOTH_VERSION" ] || BOOTH_VERSION=latest
 

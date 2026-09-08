@@ -88,10 +88,17 @@ test_runtime() {
 
     # Start server
     eval "$start_cmd" > /dev/null 2>&1
-    sleep 2
 
-    # Check it's running
-    if just check expect=up > /dev/null 2>&1; then
+    # npx tsx + vite can take more than 2s on a cold start
+    started=false
+    for _ in $(seq 1 30); do
+        if just check expect=up > /dev/null 2>&1; then
+            started=true
+            break
+        fi
+        sleep 1
+    done
+    if [[ "$started" == "true" ]]; then
         pass "${runtime}: Server started"
     else
         fail "${runtime}: Server failed to start"

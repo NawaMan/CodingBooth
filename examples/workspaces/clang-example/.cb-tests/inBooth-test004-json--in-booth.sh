@@ -3,4 +3,4 @@
 set -euo pipefail
 echo "=== Testing primes --json (uses apt-installed nlohmann/json) ==="
 cd "$(dirname "$0")/.."
-just run -- --json 20 2>&1 | grep -qF '[2,3,5,7,11,13,17,19]'
+just run --json 20 2>&1 | grep -qF '[2,3,5,7,11,13,17,19]'
