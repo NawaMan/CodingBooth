@@ -1,0 +1,16 @@
+display-name = "AnythingLLM Persist Data"
+display-disc = "Keep AnythingLLM data across booth runs via .booth/cache"
+display-detail = """Bind-mounts `~/.anythingllm` from `.booth/cache/` (CodingBooth cache-dirs, gitignored, this machine only). Workspaces, uploaded documents, and the SQLite DB survive the next booth on this machine. Select this extension — the data directory is always ~/.anythingllm; without +persist it dies with the container. This is not the project bind: `/home/coder/code` is already the host folder. Use +project-fs to expose it to the file-system agent."""
+display-order = 3
+auto-select = false
+tags = [
+    "ai",
+    "llm",
+    "anythingllm",
+    "cache",
+    "persistence"
+]
+
+cache-dirs = [
+    "home/coder/.anythingllm",
+]

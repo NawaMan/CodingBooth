@@ -640,6 +640,12 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 		builder.CommonArgs.Append(ilist.NewList[string]("--pull=never"))
 	}
 
+	// Rewrite -v @code:<dest> to the host project path (same source as
+	// /home/coder/code). Must run before FilterMissingVolumeMounts, which
+	// would otherwise treat @code as a Docker named volume.
+	builder.RunArgs = rewriteAtCodeVolumeGroups(builder.RunArgs, codePath)
+	builder.CommonArgs = rewriteAtCodeVolumeGroups(builder.CommonArgs, codePath)
+
 	return builder.Build()
 }
 
@@ -1072,6 +1078,48 @@ func formatPortMapping(public bool, hostPort, containerPort int) string {
 		return fmt.Sprintf("127.0.0.1:%d:%d", hostPort, containerPort)
 	}
 	return fmt.Sprintf("%d:%d", hostPort, containerPort)
+}
+
+// atCodeVolumeSource in a run-args -v spec means "the host project directory"
+// (the same path already mounted at /home/coder/code). AnythingLLM's
+// file-system agent realpath()s and rejects a symlink that points outside its
+// jail, so +project-fs bind-mounts the project a second time into that jail.
+const atCodeVolumeSource = "@code"
+
+func rewriteAtCodeVolumeGroups(args *ilist.AppendableList[ilist.List[string]], codePath string) *ilist.AppendableList[ilist.List[string]] {
+	out := ilist.NewAppendableList[ilist.List[string]]()
+	if args == nil || codePath == "" {
+		if args == nil {
+			return out
+		}
+		return args
+	}
+	args.ToList().Range(func(_ int, group ilist.List[string]) bool {
+		rewritten := rewriteAtCodeVolumeItems(group.Slice(), codePath)
+		if len(rewritten) > 0 {
+			out.Append(ilist.NewListFromSlice(rewritten))
+		}
+		return true
+	})
+	return out
+}
+
+func rewriteAtCodeVolumeItems(items []string, codePath string) []string {
+	out := make([]string, 0, len(items))
+	for i := 0; i < len(items); i++ {
+		flag := items[i]
+		if !isVolumeFlag(flag) || i+1 >= len(items) {
+			out = append(out, flag)
+			continue
+		}
+		spec := items[i+1]
+		if volumeSource(spec) == atCodeVolumeSource {
+			spec = codePath + spec[len(atCodeVolumeSource):]
+		}
+		out = append(out, flag, spec)
+		i++
+	}
+	return out
 }
 
 // FilterMissingVolumeMounts removes -v/--volume bind mounts whose host path does not exist.

@@ -205,6 +205,18 @@ copy --from=ghcr.io/toeverything/affine:${AFFINE_SERVER_VERSION} /app /opt/affin
 		assert.Contains(t, result.Dockerfile, "COPY --from=ghcr.io/toeverything/affine:stable /app /opt/affine")
 		assert.NotContains(t, result.Dockerfile, "${AFFINE_SERVER_VERSION} /app")
 	})
+
+	t.Run("anythingllm image tag", func(t *testing.T) {
+		content := `# syntax=codingbooth/boothfile:1
+arg ANYTHINGLLM_VERSION=1.16.1
+copy --from=mintplexlabs/anythingllm:${ANYTHINGLLM_VERSION} /app /opt/anythingllm
+`
+		result := CompileString(content)
+
+		assert.False(t, result.HasErrors())
+		assert.Contains(t, result.Dockerfile, "COPY --from=mintplexlabs/anythingllm:1.16.1 /app /opt/anythingllm")
+		assert.NotContains(t, result.Dockerfile, "anythingllm:${ANYTHINGLLM_VERSION}")
+	})
 }
 
 func TestCompiler_CopyFromMissingArgIsAnError(t *testing.T) {

@@ -63,6 +63,14 @@ http {
         # The login form itself is the one page reachable without a session.
         # Already signed in (or no password at all) => nothing to ask for.
         location = /login {
+            # A globe-pane SPA (AnythingLLM, …) that does window.location =
+            # "/login" hits this exact location on the booth origin. Serving
+            # the gate here 302s an authed session to / and nests the whole
+            # console in the iframe. Referer /proxy/<port>/ means send it
+            # back under the pane prefix instead.
+            if ($cb_proxy_ref != "") {
+                return 302 /proxy/$cb_proxy_ref/login$is_args$args;
+            }
             if ($booth_auth_ok = 1) {
                 return 302 /;
             }
@@ -287,6 +295,32 @@ http {
             proxy_hide_header Content-Security-Policy;
         }
 
+        # AnythingLLM (and similar) fetch `/api/…` on the booth origin from
+        # the globe pane. Same cookie/Referer pass-through as /v1/ above.
+        location ^~ /api/ {
+            if ($booth_auth_ok = 0) {
+                return 302 /login;
+            }
+            set $cb_up $cookie_cb_proxy_port;
+            if ($cb_up = "") {
+                set $cb_up $cb_proxy_ref;
+            }
+            if ($cb_up = "") {
+                return 404;
+            }
+            proxy_pass http://127.0.0.1:$cb_up;
+            proxy_http_version 1.1;
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $connection_upgrade;
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header Accept-Encoding "";
+            proxy_read_timeout 24h;
+            proxy_buffering off;
+            proxy_hide_header X-Frame-Options;
+            proxy_hide_header Content-Security-Policy;
+        }
+
         location ^~ /v1/ {
             if ($booth_auth_ok = 0) {
                 return 302 /login;
@@ -308,6 +342,20 @@ http {
             proxy_buffering off;
             proxy_hide_header X-Frame-Options;
             proxy_hide_header Content-Security-Policy;
+        }
+
+        # Exact `/` is the booth console. A globe-pane SPA that does
+        # `window.location = "/"` (AnythingLLM after login) would otherwise
+        # hit try_files and load index.html in the iframe — nested console.
+        # Referer /proxy/<port>/ means bounce it back under the pane prefix.
+        location = / {
+            if ($booth_auth_ok = 0) {
+                return 302 /login;
+            }
+            if ($cb_proxy_ref != "") {
+                return 302 /proxy/$cb_proxy_ref/;
+            }
+            rewrite ^ /index.html last;
         }
 
         location / {

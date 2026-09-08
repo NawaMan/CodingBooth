@@ -174,6 +174,7 @@ branch, registered with the main clone so GitKraken lists it.
 mkdir -p worktree
 git worktree add worktree/<name> -b <name>    # branch + linked checkout in one step
 cd worktree/<name>
+# Stamp the session version (see *Worktree version stamp* below), then:
 claude                                        # or grok / your agent CLI — start it HERE, from inside
 ```
 
@@ -184,6 +185,7 @@ feature to create it (see below).
 | --- | --- | --- |
 | Working tree | `<repo>/worktree/<name>/` | Open this in the editor / agent CLI / GitKraken |
 | Branch | `<name>` (same as the folder) | Created by `-b <name>`; already checked out |
+| Version stamp | `x.x.x--<name>` in `version.txt` | See *Worktree version stamp* below |
 | Git bookkeeping | `<repo>/.git/worktrees/<name>/` | Auto; **never** open or check out files here |
 | Gitignore | `/worktree/` in `.gitignore` | Nested under main → must be ignored |
 
@@ -246,6 +248,27 @@ Prefer a short name from the task (`mnemonic-underline`). Tell the user the path
 answer to worktree — hand the setup itself to `work-start`. Do **not** invent a worktree for pure
 Q&A, docs-only nits the user wants on main, or a one-line fix they explicitly want in place.
 
+**Worktree version stamp.** As soon as you are inside `worktree/<name>/`, retarget `version.txt`
+and the README `**Current Version:**` line from main's `x.x.x--rcN` (or bare `x.x.x`) to
+`x.x.x--<name>`. Keep the numeric triple; replace any existing `--…` suffix with `--<name>`.
+Example: `0.77.0--rc2` → `0.77.0--anythingllm`. The pre-commit hook requires those two files to
+match, so edit both. Do **not** use `build/set-version.sh` for this — it only accepts `--rc#`.
+
+That label is how the CLI and Docker image tags (`nawaman/codingbooth:base-0.77.0--anythingllm`)
+tell this session apart from main's `--rc` tag. After stamping, retag a local base rather than
+rebuilding Ubuntu:
+
+```bash
+# from worktree/<name>/
+old=$(tr -d ' \t\n\r' < ../../version.txt)   # main clone, e.g. 0.77.0--rc2
+new=$(tr -d ' \t\n\r' < version.txt)         # this worktree, e.g. 0.77.0--anythingllm
+docker tag "nawaman/codingbooth:base-${old}" "nawaman/codingbooth:base-${new}"
+./build/cli-build.sh
+```
+
+The stamp is a **session label, not a release**. Restore `version.txt` and the README version
+line to match main **before** landing (`work-finish`); do not merge `x.x.x--<name>` onto main.
+
 **Pre-edit self-check (feature work) — fail closed:**
 
 - [ ] `pwd` is under `…/worktree/<name>/` **or** the user opted out of isolation
@@ -266,9 +289,11 @@ Summary of the procedure:
    "Not yet committed" is a process step, not a gap. Full text: `work-finish` skill step 0b.
 1. **In the main clone**, stash anything uncommitted so main is clean before the merge
    (`git stash push -u -m "land-<branch>"` — skip if main is already clean).
-2. **In the worktree**, rebase the feature branch onto main: `git rebase main`. Resolve conflicts.
-   If the rebase touched covered code, re-run the relevant tests (Go unit tests and/or targeted
-   shell tests) in that worktree **before** merging.
+2. **In the worktree**, restore `version.txt` and the README `**Current Version:**` line to
+   match main (drop the `x.x.x--<name>` session stamp — it is not a release), then rebase the
+   feature branch onto main: `git rebase main`. Resolve conflicts. If the rebase touched covered
+   code, re-run the relevant tests (Go unit tests and/or targeted shell tests) in that worktree
+   **before** merging.
 3. **From the main clone**, `git merge --no-ff <branch>` — a real merge commit, so the worktree's
    commit history is kept. **Never squash.** *Exception:* if the branch is exactly **one** commit
    (`git rev-list --count main..<branch>` = 1), a plain fast-forward `git merge <branch>` is fine —

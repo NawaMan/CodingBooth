@@ -1,0 +1,22 @@
+display-name = "AnythingLLM Auto-Start"
+display-disc = "Auto-start AnythingLLM on container boot"
+display-detail = "Runs start-anythingllm in the background when the container boots so the UI at ANYTHINGLLM_PORT is up without a manual start. Add the expose extension to reach it from the host. Pair with ollama+autostart if you want a local model on http://127.0.0.1:11434."
+display-order = 2
+auto-select = false
+tags = [
+    "ai",
+    "llm",
+    "anythingllm",
+    "autostart"
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start AnythingLLM in background
+PORT=${ANYTHINGLLM_PORT}
+LOG_FILE="/tmp/anythingllm.log"
+
+nohup start-anythingllm "$PORT" > "$LOG_FILE" 2>&1 &
+
+echo "AnythingLLM started on port $PORT (PID $!, log: $LOG_FILE)"
+"""
