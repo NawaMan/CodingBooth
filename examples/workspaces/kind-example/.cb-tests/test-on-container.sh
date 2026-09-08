@@ -32,12 +32,12 @@ pass "Cluster created"
 
 # Test 2: Check cluster is running (expects UP)
 check_out=""
-if just check expect=up > /dev/null 2>&1; then
+if just check up > /dev/null 2>&1; then
     pass "Check shows cluster running"
 else
     up=false
     for _ in $(seq 1 15); do
-        if check_out=$(just check expect=up 2>&1); then
+        if check_out=$(just check up 2>&1); then
             up=true
             break
         fi
@@ -83,7 +83,7 @@ just stop > /dev/null 2>&1
 pass "Cluster deleted"
 
 # Test 8: Check cluster is not running (expects DOWN)
-if just check expect=down > /dev/null 2>&1; then
+if just check down > /dev/null 2>&1; then
     pass "Check shows cluster not running"
 else
     fail "Check should show cluster not running"

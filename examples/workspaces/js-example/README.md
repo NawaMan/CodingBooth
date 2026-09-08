@@ -45,8 +45,8 @@ the booth. If both times are in sync, everything is working.
 
 ```bash
 just check                     # verify both servers are up
-just check expect=down         # verify both servers are down
+just check down                # verify both servers are down
 just stop                      # stop both servers
-just start runtime=bun         # use Bun instead of Node for the API
+just start bun                 # use Bun instead of Node for the API
 just typecheck                 # tsc --noEmit
 ```

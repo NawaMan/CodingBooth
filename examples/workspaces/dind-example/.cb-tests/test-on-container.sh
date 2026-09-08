@@ -30,12 +30,12 @@ pass "Server started"
 
 # Test 2: Check server is running (expects UP)
 check_out=""
-if just check expect=up > /dev/null 2>&1; then
+if just check up > /dev/null 2>&1; then
   pass "Check shows server running"
 else
   up=false
   for _ in $(seq 1 15); do
-    if check_out=$(just check expect=up 2>&1); then
+    if check_out=$(just check up 2>&1); then
       up=true
       break
     fi
@@ -56,7 +56,7 @@ sleep 1
 pass "Server stopped"
 
 # Test 4: Check server is not running (expects DOWN)
-if just check expect=down > /dev/null 2>&1; then
+if just check down > /dev/null 2>&1; then
   pass "Check shows server not running"
 else
   fail "Check should show server not running"

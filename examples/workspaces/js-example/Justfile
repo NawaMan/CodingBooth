@@ -10,7 +10,7 @@ build:
 typecheck:
     npm install && npm run typecheck
 
-# Start API + Vite as daemons (`just start runtime=bun` for the API)
+# Start API + Vite as daemons (`just start bun` for the API)
 start runtime="npm":
     ./start-server.sh --runtime={{ runtime }}
 
@@ -18,6 +18,6 @@ start runtime="npm":
 stop:
     ./stop-server.sh
 
-# Check whether both servers are up (`just check expect=down`)
+# Check whether both servers are up (`just check down`)
 check expect="up":
     ./check-server.sh --expect={{ expect }}
