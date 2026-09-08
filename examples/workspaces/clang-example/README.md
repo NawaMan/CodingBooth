@@ -14,7 +14,7 @@ booth
 # 2. Inside the booth — build and run the demo
 just --list
 just run 20
-just run -- --json 20    # same primes, serialized with the apt-installed JSON library
+just run --json 20       # same primes, serialized with the apt-installed JSON library
 ```
 
 ## What's included

@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`install brew` no longer fails the image build on Linuxbrew
+  caveats.** `brew install` of nginx / postgresql / redis on Linux often
+  exits 1 after a successful install (systemd-only services, PATH
+  shadows). `brew--install.sh` now treats that as a warning when
+  `brew list` still shows every requested formula. Tests:
+  `test--brew-install.sh`.
+
+- **`python+conda+conda-pkg` packages are importable.** `setup conda`
+  retargets `/opt/python` at the conda env, but `python--setup.sh`'s
+  profile still put `/opt/venvs/pyX.Y/bin` first — the uv venv, which
+  never saw `install conda numpy`. The series venv link is now retargeted
+  at the conda env too.
+
 - **AnythingLLM `+passwordless` skips the login password.** `--select
   anythingllm+passwordless` sets `AUTH_TOKEN` empty (AnythingLLM's
   `RequiresAuth` flag), strips a leftover `AUTH_TOKEN=` from `.env` on
