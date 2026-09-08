@@ -49,8 +49,16 @@ fi
 echo "Checking Bun installation..."
 if bun --version > /dev/null 2>&1; then
     BUN_VERSION=$(bun --version)
-    pass "Bun installed: $BUN_VERSION"
-    HAS_BUN=true
+    # bun--setup.sh links node -> bun when Node is absent. nodejs--setup.sh then
+    # `cp`s the Node tarball into /usr/local/bin, follows that symlink, and
+    # overwrites the bun binary with Node. bun --version then prints vX.Y.Z
+    # (Node's format; real bun is X.Y.Z). Don't treat that as Bun.
+    if [[ "$BUN_VERSION" == v* ]]; then
+        skip "Bun (binary is Node; nodejs--setup.sh overwrote bun via the node symlink)"
+    else
+        pass "Bun installed: $BUN_VERSION"
+        HAS_BUN=true
+    fi
 else
     skip "Bun"
 fi
@@ -92,7 +100,7 @@ test_runtime() {
     # npx tsx + vite can take more than 2s on a cold start
     started=false
     for _ in $(seq 1 30); do
-        if just check expect=up > /dev/null 2>&1; then
+        if just check up > /dev/null 2>&1; then
             started=true
             break
         fi
@@ -116,7 +124,7 @@ test_runtime() {
     sleep 0.5
 
     # Check it stopped
-    if just check expect=down > /dev/null 2>&1; then
+    if just check down > /dev/null 2>&1; then
         pass "${runtime}: Server stopped"
     else
         fail "${runtime}: Server should have stopped"
@@ -127,17 +135,17 @@ test_runtime() {
 
 # Test with Node.js
 if [[ "$HAS_NODE" == "true" ]]; then
-    test_runtime "Node.js" "just start runtime=node"
+    test_runtime "Node.js" "just start node"
 fi
 
 # Test with Bun
 if [[ "$HAS_BUN" == "true" ]]; then
-    test_runtime "Bun" "just start runtime=bun"
+    test_runtime "Bun" "just start bun"
 fi
 
 # Test with Deno
 if [[ "$HAS_DENO" == "true" ]]; then
-    test_runtime "Deno" "just start runtime=deno"
+    test_runtime "Deno" "just start deno"
 fi
 
 echo -e "${GREEN}All container tests passed!${NC}"
