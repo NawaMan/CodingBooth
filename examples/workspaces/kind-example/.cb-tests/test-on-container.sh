@@ -24,14 +24,31 @@ echo
 
 # Test 1: Create cluster
 echo "Creating KinD cluster..."
-just start > /dev/null 2>&1
+if ! start_out=$(just start 2>&1); then
+    echo "$start_out"
+    fail "Cluster failed to create"
+fi
 pass "Cluster created"
 
 # Test 2: Check cluster is running (expects UP)
+check_out=""
 if just check expect=up > /dev/null 2>&1; then
     pass "Check shows cluster running"
 else
-    fail "Check should show cluster running"
+    up=false
+    for _ in $(seq 1 15); do
+        if check_out=$(just check expect=up 2>&1); then
+            up=true
+            break
+        fi
+        sleep 2
+    done
+    if [[ "$up" == "true" ]]; then
+        pass "Check shows cluster running"
+    else
+        echo "$check_out"
+        fail "Check should show cluster running"
+    fi
 fi
 
 # Test 3: Deploy app

@@ -17,7 +17,7 @@ docker stop "$CONTAINER_NAME" 2>/dev/null && docker rm "$CONTAINER_NAME" 2>/dev/
 # Close port forwarding
 if [[ -f "$PID_FILE" ]]; then
     SOCAT_PID="$(cat "$PID_FILE")"
-    /usr/local/bin/dind-open-port "$SOCAT_PID" 2>/dev/null || true
+    /usr/local/bin/dind-close-port "$SOCAT_PID" 2>/dev/null || true
     rm -f "$PID_FILE"
 fi
 

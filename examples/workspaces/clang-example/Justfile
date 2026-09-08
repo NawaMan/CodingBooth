@@ -7,7 +7,7 @@ build:
     cmake -S . -B build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release
     cmake --build build -j
 
-# Build and run (`just run 20`, `just run -- --json 20`)
+# Build and run (`just run 20`, `just run --json 20`)
 run *args:
     ./run-primes.sh {{ args }}
 

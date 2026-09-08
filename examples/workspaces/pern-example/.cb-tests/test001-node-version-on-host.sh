@@ -31,11 +31,19 @@ echo ""
 
 failed=0
 
-if grep -qE '^v22\.' <<< "$output"; then
-    echo -e "${GREEN}\xe2\x9c\x93${NC} Found Node.js v22"
-else
-    echo -e "${RED}\xe2\x9c\x97${NC} Expected Node.js v22 but got: $output"
+if grep -q "port is already allocated" <<< "$output"; then
+    echo -e "${RED}\xe2\x9c\x97${NC} Booth failed to start: a host port from this example's expose offsets is already allocated"
     failed=1
+elif ! grep -qE '^v22\.' <<< "$output"; then
+    version=$(grep -E '^v[0-9]+\.' <<< "$output" | tail -1 || true)
+    if [ -n "$version" ]; then
+        echo -e "${RED}\xe2\x9c\x97${NC} Expected Node.js v22 but got: $version"
+    else
+        echo -e "${RED}\xe2\x9c\x97${NC} Expected Node.js v22 but booth did not print a node version"
+    fi
+    failed=1
+else
+    echo -e "${GREEN}\xe2\x9c\x93${NC} Found Node.js v22"
 fi
 
 echo ""
