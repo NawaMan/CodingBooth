@@ -53,6 +53,8 @@ jobs:
             --cache
             --max-cache-age 1d
             --no-progress
+            --timeout 30
+            --max-retries 3
             --accept '200..=299,403,429'
             --root-dir site
             --exclude-path site/blog/404.html

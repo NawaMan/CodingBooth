@@ -20,7 +20,7 @@ Logo Examples
 Logo Links
 ----------
 * [Logo](https://en.wikipedia.org/wiki/Logo_%28programming_language%29) on Wikipedia
-* [The Logo Foundation](http://el.media.mit.edu/logo-foundation/)
+* [The Logo Foundation](https://el.media.mit.edu/logo-foundation/)
 * [Berkeley Logo (UCBLogo)](https://github.com/jrincayc/ucblogo-code)
 * [The Logo Tree Project](https://pavel.it.fmi.uni-sofia.bg/logotree/)
 * [Ian Bicking on Logo](https://ianbicking.org/blog/2007/10/logo)
