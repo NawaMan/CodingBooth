@@ -15,5 +15,5 @@ suggests = [
 
 [segments]
 "Boothfile--65" = """
-setup import-project ${ECLIPSE_PROJECT_KIND}
+setup eclipse-import-project ${ECLIPSE_PROJECT_KIND}
 """
