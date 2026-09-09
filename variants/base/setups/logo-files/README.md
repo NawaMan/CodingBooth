@@ -4,7 +4,7 @@ jslogo - Logo in JavaScript
 This is hosted at https://inexorabletash.github.io/jslogo/ for playing with live.
 
 [Language Reference](https://htmlpreview.github.io/?https://github.com/inexorabletash/jslogo/blob/master/language.html) -
-this attempts to implement a subset of [UCBLogo](https://www.cs.berkeley.edu/~bh/v2ch14/manual.html)
+this attempts to implement a subset of [UCBLogo](https://github.com/jrincayc/ucblogo-code/blob/master/usermanual)
 defined in in *Brian Harvey's Computer Science Logo Style*
 
 Logo Examples
@@ -21,7 +21,7 @@ Logo Links
 ----------
 * [Logo](https://en.wikipedia.org/wiki/Logo_%28programming_language%29) on Wikipedia
 * [The Logo Foundation](http://el.media.mit.edu/logo-foundation/)
-* [Berkeley Logo (UCBLogo)](https://www.cs.berkeley.edu/~bh/logo.html)
+* [Berkeley Logo (UCBLogo)](https://github.com/jrincayc/ucblogo-code)
 * [The Logo Tree Project](https://pavel.it.fmi.uni-sofia.bg/logotree/)
 * [Ian Bicking on Logo](https://ianbicking.org/blog/2007/10/logo)
 * [PyLogo](http://pylogo.sourceforge.net/)
