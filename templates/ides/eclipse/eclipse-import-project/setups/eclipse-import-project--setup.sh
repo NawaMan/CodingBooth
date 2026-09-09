@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Custom setup for templates/ides/eclipse/import-project (select via
-# `booth config --select eclipse+import-project`). Installed into a project's
+# Custom setup for templates/ides/eclipse/eclipse-import-project (select via
+# `booth config --select eclipse+eclipse-import-project`). Installed into a project's
 # .booth/setups/ by the template compiler when the extension is selected; see
 # docs/BOOTH_CUSTOMIZATION.md#creating-a-custom-setup for the general mechanism.
 #
-# Usage in Boothfile:  setup import-project [DEFAULT|GENERAL|MAVEN|GRADLE]
+# Usage in Boothfile:  setup eclipse-import-project [DEFAULT|GENERAL|MAVEN|GRADLE]
 #
 # Why this needs a real Eclipse application and not just a dropped file:
 # Eclipse's per-project ".location" file (written under
@@ -37,11 +37,11 @@ KIND="${1:-DEFAULT}"
 ECLIPSE_DIR="$(readlink -f /opt/eclipse 2>/dev/null || true)"
 
 if [ -z "$ECLIPSE_DIR" ] || [ ! -d "$ECLIPSE_DIR/plugins" ]; then
-  echo "import-project: Eclipse not found -- skipping (select 'eclipse' before 'import-project')." >&2
+  echo "eclipse-import-project: Eclipse not found -- skipping (select 'eclipse' before 'eclipse-import-project')." >&2
   exit 0
 fi
 if ! command -v javac >/dev/null 2>&1; then
-  echo "import-project: no JDK (javac) available -- skipping." >&2
+  echo "eclipse-import-project: no JDK (javac) available -- skipping." >&2
   exit 0
 fi
 
@@ -149,7 +149,7 @@ CP=$(ls "$ECLIPSE_DIR"/plugins/org.eclipse.core.resources_*.jar \
         "$ECLIPSE_DIR"/plugins/org.eclipse.osgi_*.jar 2>/dev/null | tr '\n' ':')
 
 if [ -z "$CP" ]; then
-  echo "import-project: could not find Eclipse's resource/runtime jars -- skipping." >&2
+  echo "eclipse-import-project: could not find Eclipse's resource/runtime jars -- skipping." >&2
   rm -rf "$WORK"
   exit 0
 fi
@@ -164,7 +164,7 @@ chown root:root "$ECLIPSE_DIR/dropins/cb.importproject_1.0.0.jar"
 chmod 0644 "$ECLIPSE_DIR/dropins/cb.importproject_1.0.0.jar"
 rm -rf "$WORK"
 
-STARTUP_FILE="/usr/share/startup.d/${LEVEL}-cb-import-project--startup.sh"
+STARTUP_FILE="/usr/share/startup.d/${LEVEL}-cb-eclipse-import-project--startup.sh"
 mkdir -p /usr/share/startup.d
 cat > "$STARTUP_FILE" <<'STARTUPEOF'
 #!/usr/bin/env bash
