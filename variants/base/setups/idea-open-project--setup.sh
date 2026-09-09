@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Custom setup for templates/ides/idea/open-project (select via
-# `booth config --select idea+open-project`). Installed into a project's
-# .booth/setups/ by the template compiler when the extension is selected; see
-# docs/BOOTH_CUSTOMIZATION.md#creating-a-custom-setup for the general mechanism.
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
 #
 # Usage in Boothfile:  setup idea-open-project [DEFAULT|GENERAL|MAVEN|GRADLE]
 #
@@ -28,24 +27,30 @@
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO while running: $BASH_COMMAND" >&2' ERR
 
+# ===================== Must be root =====================
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   echo "This script must be run as root." >&2
   exit 1
 fi
+
+# This script will always be installed by root.
+HOME=/root
+
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/libs/skip-setup.sh"
 
 LEVEL=73
 KIND="${1:-DEFAULT}"
 IDEA_DIR="$(readlink -f /opt/idea 2>/dev/null || true)"
 
 if [ -z "$IDEA_DIR" ] || [ ! -d "$IDEA_DIR/bin" ]; then
-  echo "idea-open-project: IntelliJ IDEA not found -- skipping (select 'idea' before 'idea-open-project')." >&2
-  exit 0
+  skip_setup "$SCRIPT_NAME" "IntelliJ IDEA not installed (select 'idea' before 'idea-open-project')"
 fi
 
 STARTER_FILE="${IDEA_DIR}/idea-starter"
 if [ ! -f "$STARTER_FILE" ]; then
-  echo "idea-open-project: starter script not found at ${STARTER_FILE} -- skipping." >&2
-  exit 0
+  skip_setup "$SCRIPT_NAME" "starter script not found at ${STARTER_FILE}"
 fi
 
 # --- Patch the starter: default to opening the project when launched bare ---

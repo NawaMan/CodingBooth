@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# Custom setup for templates/ides/eclipse/eclipse-import-project (select via
-# `booth config --select eclipse+eclipse-import-project`). Installed into a project's
-# .booth/setups/ by the template compiler when the extension is selected; see
-# docs/BOOTH_CUSTOMIZATION.md#creating-a-custom-setup for the general mechanism.
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
 #
 # Usage in Boothfile:  setup eclipse-import-project [DEFAULT|GENERAL|MAVEN|GRADLE]
 #
@@ -27,22 +26,28 @@
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO while running: $BASH_COMMAND" >&2' ERR
 
+# ===================== Must be root =====================
 if [[ "${EUID:-$(id -u)}" -ne 0 ]]; then
   echo "This script must be run as root." >&2
   exit 1
 fi
+
+# This script will always be installed by root.
+HOME=/root
+
+SCRIPT_NAME="$(basename "$0")"
+SCRIPT_DIR="$(dirname "$0")"
+source "$SCRIPT_DIR/libs/skip-setup.sh"
 
 LEVEL=72
 KIND="${1:-DEFAULT}"
 ECLIPSE_DIR="$(readlink -f /opt/eclipse 2>/dev/null || true)"
 
 if [ -z "$ECLIPSE_DIR" ] || [ ! -d "$ECLIPSE_DIR/plugins" ]; then
-  echo "eclipse-import-project: Eclipse not found -- skipping (select 'eclipse' before 'eclipse-import-project')." >&2
-  exit 0
+  skip_setup "$SCRIPT_NAME" "Eclipse not installed (select 'eclipse' before 'eclipse-import-project')"
 fi
 if ! command -v javac >/dev/null 2>&1; then
-  echo "eclipse-import-project: no JDK (javac) available -- skipping." >&2
-  exit 0
+  skip_setup "$SCRIPT_NAME" "no JDK (javac) available"
 fi
 
 WORK="$(mktemp -d)"
