@@ -3,7 +3,7 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 #
-# Usage in Boothfile:  setup idea-open-project [DEFAULT|GENERAL|MAVEN|GRADLE]
+# Usage in Boothfile:  setup idea-import-project [DEFAULT|GENERAL|MAVEN|GRADLE]
 #
 # Unlike Eclipse, IntelliJ has no separate "workspace" to register a project into --
 # a folder with a valid .idea/ is a complete, self-contained project, and opening it
@@ -45,7 +45,7 @@ KIND="${1:-DEFAULT}"
 IDEA_DIR="$(readlink -f /opt/idea 2>/dev/null || true)"
 
 if [ -z "$IDEA_DIR" ] || [ ! -d "$IDEA_DIR/bin" ]; then
-  skip_setup "$SCRIPT_NAME" "IntelliJ IDEA not installed (select 'idea' before 'idea-open-project')"
+  skip_setup "$SCRIPT_NAME" "IntelliJ IDEA not installed (select 'idea' before 'idea-import-project')"
 fi
 
 STARTER_FILE="${IDEA_DIR}/idea-starter"
@@ -70,7 +70,7 @@ STARTEREOF
 chmod 0755 "$STARTER_FILE"
 
 # --- Runtime hook: pre-generate .idea/ via Gradle's own `idea` task if missing ---
-STARTUP_FILE="/usr/share/startup.d/${LEVEL}-cb-idea-open-project--startup.sh"
+STARTUP_FILE="/usr/share/startup.d/${LEVEL}-cb-idea-import-project--startup.sh"
 mkdir -p /usr/share/startup.d
 cat > "$STARTUP_FILE" <<'STARTUPEOF'
 #!/usr/bin/env bash
