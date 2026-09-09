@@ -15,5 +15,5 @@ suggests = [
 
 [segments]
 "Boothfile--65" = """
-setup idea-open-project ${IDEA_PROJECT_KIND}
+setup idea-import-project ${IDEA_PROJECT_KIND}
 """
