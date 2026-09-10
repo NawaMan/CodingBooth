@@ -62,31 +62,8 @@ apt-get install -y  \
 apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ---- install Fira Code Nerd Font (for xfce4-terminal) ----
-# Patched with icon/powerline glyphs, so shell prompts (starship, p10k-style)
-# and CLI tools that print Nerd Font icons (lsd, exa, ...) render correctly
-# in xfce4-terminal instead of showing tofu boxes.
-FIRA_CODE_NERD_FONT_DEFAULT_VER="3.4.0"   # fallback when 'latest' cannot be resolved
-FONT_VERSION=$(curl --retry 3 --retry-delay 2 -fsSL https://api.github.com/repos/ryanoasis/nerd-fonts/releases/latest \
-              | grep -oE '"tag_name"[[:space:]]*:[[:space:]]*"v[^"]+"' | head -1 \
-              | sed -E 's/.*"v([^"]+)".*/\1/' || true)
-if [[ -z "$FONT_VERSION" ]]; then
-  # See lazygit--setup.sh: the GitHub API is rate-limited, so degrade to the
-  # pinned default instead of failing the build.
-  echo "⚠️  Could not resolve the latest Nerd Fonts release; using ${FIRA_CODE_NERD_FONT_DEFAULT_VER}."
-  FONT_VERSION="$FIRA_CODE_NERD_FONT_DEFAULT_VER"
-fi
-
+fira-code-nerd-font--setup.sh
 FONT_DIR="/usr/share/fonts/truetype/fira-code-nerd-font"
-mkdir -p "$FONT_DIR"
-TMP_FONT_DIR=$(mktemp -d)
-curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL \
-  "https://github.com/ryanoasis/nerd-fonts/releases/download/v${FONT_VERSION}/FiraCode.zip" \
-  -o "${TMP_FONT_DIR}/FiraCode.zip"
-unzip -o -q "${TMP_FONT_DIR}/FiraCode.zip" -d "$TMP_FONT_DIR"
-find "$TMP_FONT_DIR" -name '*.ttf' -exec install -m 644 {} "$FONT_DIR/" \;
-rm -rf "$TMP_FONT_DIR"
-fc-cache -f "$FONT_DIR" >/dev/null
-echo "✅ Fira Code Nerd Font v${FONT_VERSION} installed to ${FONT_DIR}"
 
 # ---- sanity check for noVNC ----
 if [[ ! -d /usr/share/novnc ]]; then
@@ -662,7 +639,7 @@ cat <<EOF
 ✅ Files:
   • Profile: ${PROFILE_FILE}
   • Binary:  /usr/local/bin/start-xfce
-  • Font:    FiraCode Nerd Font v${FONT_VERSION} (${FONT_DIR}), default terminal font on first run
+  • Font:    FiraCode Nerd Font (${FONT_DIR}), default terminal font on first run
 
 ✅ Defaults:
   DISPLAY=${DEFAULT_DISPLAY}

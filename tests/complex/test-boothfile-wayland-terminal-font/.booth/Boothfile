@@ -1,0 +1,6 @@
+# syntax=codingbooth/boothfile:1
+
+# wayland--setup.sh and fira-code-nerd-font--setup.sh are loaded from .booth/setups/
+# (mirror variants/base/setups/) until the released base image ships the font.
+
+setup wayland
