@@ -55,12 +55,14 @@ if [[ -f "${FONT_DIR}/FiraCodeNerdFontMono-Regular.ttf" ]]; then
   exit 0
 fi
 
-# The base image already carries curl and unzip; only pay for apt when this
-# script is run somewhere leaner.
-if ! command -v curl >/dev/null 2>&1 || ! command -v unzip >/dev/null 2>&1; then
+# The base image already carries curl and unzip, and the desktop variants
+# already carry fontconfig (a transitive dependency of their GTK/Qt stacks);
+# only pay for apt when this script is run somewhere leaner (e.g. codeserver,
+# which installs no desktop toolkit at all).
+if ! command -v curl >/dev/null 2>&1 || ! command -v unzip >/dev/null 2>&1 || ! command -v fc-cache >/dev/null 2>&1; then
   export DEBIAN_FRONTEND=noninteractive
   apt-get update
-  apt-get install -y --no-install-recommends curl ca-certificates unzip
+  apt-get install -y --no-install-recommends curl ca-certificates unzip fontconfig
   rm -rf /var/lib/apt/lists/*
 fi
 
