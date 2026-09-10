@@ -46,6 +46,9 @@ if ! apt-get install -y $KDE_PACKAGES $VNC_STACK_PACKAGES $EXTRA_PACKAGES; then
 fi
 apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ---- install Fira Code Nerd Font (for Konsole) ----
+fira-code-nerd-font--setup.sh
+
 # ---- sanity check for noVNC ----
 if [[ ! -d /usr/share/novnc ]]; then
   echo "❌ /usr/share/novnc not found" >&2
@@ -300,6 +303,9 @@ if [[ ! -s "$PROFILE_FILE" ]]; then
 Command=/bin/bash
 Name=Shell
 Parent=FALLBACK/
+
+[Appearance]
+Font=FiraCode Nerd Font Mono,11,-1,5,50,0,0,0,0,0
 PROF
 fi
 KONSOLERC="${HOME}/.config/konsolerc"
@@ -528,6 +534,7 @@ cat <<EOF
 ✅ Extras:    $EXTRA_PACKAGES
 ✅ Profile:   ${PROFILE_FILE}
 ✅ Binary:    /usr/local/bin/start-kde
+✅ Font:      FiraCode Nerd Font, default Konsole font on first run
 ✅ Dolphin & Konsole pinned to panel and favorites
 ✅ KDE lock screen disabled (system-wide defaults + per-user enforcement)
 

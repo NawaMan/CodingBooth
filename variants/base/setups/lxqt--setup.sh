@@ -63,6 +63,9 @@ apt-get install -y  \
 
 apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ---- install Fira Code Nerd Font (for qterminal) ----
+fira-code-nerd-font--setup.sh
+
 # ---- sanity check for noVNC ----
 if [[ ! -d /usr/share/novnc ]]; then
   echo "❌ /usr/share/novnc not found" >&2
@@ -432,6 +435,19 @@ XEOF
   chmod +x "$XSTART"
 fi
 
+# qterminal default font — seeded once, like xstartup above. Only writing it
+# when the file is still absent means a later font change made from qterminal's
+# own Preferences is never overwritten on the next session.
+QTERM_INI="${HOME}/.config/qterminal.org/qterminal.ini"
+if [[ ! -f "$QTERM_INI" ]]; then
+  mkdir -p "$(dirname "$QTERM_INI")"
+  cat > "$QTERM_INI" <<'INIEOF'
+[General]
+fontFamily=FiraCode Nerd Font Mono
+fontSize=11
+INIEOF
+fi
+
 # start VNC
 if "$VNCBIN" -list 2>/dev/null | grep -qE "^[[:space:]]*${DISPLAY}[[:space:]]"; then
   echo "ℹ️  VNC already running on ${DISPLAY}"
@@ -508,6 +524,7 @@ cat <<EOF
 ✅ Files:
   • Profile: ${PROFILE_FILE}
   • Binary:  /usr/local/bin/start-lxqt
+  • Font:    FiraCode Nerd Font, default qterminal font on first run
 
 ✅ Defaults:
   DISPLAY=${DEFAULT_DISPLAY}

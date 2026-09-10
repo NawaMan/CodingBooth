@@ -60,6 +60,9 @@ apt-get install -y --no-install-recommends \
 
 apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# ---- install Fira Code Nerd Font (for foot) ----
+fira-code-nerd-font--setup.sh
+
 if [[ ! -d /usr/share/novnc ]]; then
   echo "❌ /usr/share/novnc not found" >&2
   exit 2
@@ -109,6 +112,18 @@ export XDG_SESSION_TYPE=wayland WAYLAND_DISPLAY=wayland-0
 export XDG_CURRENT_DESKTOP=labwc
 
 WALL=/usr/share/backgrounds/codingbooth/wallpaper.jpg
+
+# foot default font — seeded once. Only writing it when the file is still
+# absent means a later font change made by hand is never overwritten on the
+# next session.
+FOOT_INI="$HOME/.config/foot/foot.ini"
+if [[ ! -f "$FOOT_INI" ]]; then
+  mkdir -p "$(dirname "$FOOT_INI")"
+  cat > "$FOOT_INI" <<'INIEOF'
+[main]
+font=FiraCode Nerd Font Mono:size=11
+INIEOF
+fi
 
 # labwc config: autostart the shell bits + a right-click menu with the common apps.
 mkdir -p "$HOME/.config/labwc"
@@ -228,4 +243,5 @@ cat <<EOF
 ✅ labwc (Wayland/noVNC) variant installed.
    Profile: ${PROFILE_FILE}
    Starter: /usr/local/bin/start-wayland
+   Font:    FiraCode Nerd Font, default foot font on first run
 EOF

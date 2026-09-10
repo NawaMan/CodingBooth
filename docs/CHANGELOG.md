@@ -4,14 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
-- **XFCE's terminal ships with the Fira Code Nerd Font.** `xfce--setup.sh`
-  now installs the Nerd Fonts-patched Fira Code family (glyph icons for
-  prompts like starship, and tools like lsd/exa) and `start-xfce` seeds
-  `~/.config/xfce4/terminal/terminalrc` with `FiraCode Nerd Font Mono` as
-  the default on first run only, so a later font change from Preferences
-  is never overwritten. Covers both the `setup xfce` catalog template and
-  the prebuilt desktop-xfce variant. Tests:
-  `tests/complex/test-boothfile-xfce-terminal-font`.
+- **Every desktop variant's terminal ships with the Fira Code Nerd Font.**
+  A new shared `fira-code-nerd-font--setup.sh` installs the Nerd
+  Fonts-patched Fira Code family (glyph icons for prompts like starship,
+  and tools like lsd/exa). Each desktop's own setup script seeds its
+  terminal's font on first run only, so a later font change made by hand
+  is never overwritten: XFCE's `xfce4-terminal` (`terminalrc`), KDE's
+  Konsole (`Shell.profile`), LXQt's `qterminal` (`qterminal.ini`), and
+  Wayland's `foot` (`foot.ini`). Covers both the `setup <desktop>` catalog
+  templates and the matching prebuilt desktop-* variants. Tests:
+  `tests/complex/test-boothfile-{xfce,kde,lxqt,wayland}-terminal-font`.
 
 - **Appwrite admin create retries a slow first boot.** The health probe
   no longer lets curl retry on its own (that stacked with the wait loop).
