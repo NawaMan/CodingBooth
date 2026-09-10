@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **XFCE's terminal ships with the Fira Code Nerd Font.** `xfce--setup.sh`
+  now installs the Nerd Fonts-patched Fira Code family (glyph icons for
+  prompts like starship, and tools like lsd/exa) and `start-xfce` seeds
+  `~/.config/xfce4/terminal/terminalrc` with `FiraCode Nerd Font Mono` as
+  the default on first run only, so a later font change from Preferences
+  is never overwritten. Covers both the `setup xfce` catalog template and
+  the prebuilt desktop-xfce variant. Tests:
+  `tests/complex/test-boothfile-xfce-terminal-font`.
+
 - **Appwrite admin create retries a slow first boot.** The health probe
   no longer lets curl retry on its own (that stacked with the wait loop).
   Creating the first account now retries a few times after the server
