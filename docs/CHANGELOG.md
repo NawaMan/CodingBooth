@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`setup fira-code-nerd-font`, `eclipse-import-project`, and
+  `idea-import-project` are recognized as valid `setup` names again.**
+  `cli/src/pkg/boothfile/builtin-scripts.txt` — the Boothfile compiler's
+  generated allow-list — had drifted out of sync with
+  `variants/base/setups/`, so a Boothfile referencing any of the three
+  failed compilation with "unknown setup". Regenerated via
+  `build/gen-builtin-scripts.sh`.
+
 - **Every desktop variant's terminal ships with the Fira Code Nerd Font.**
   A new shared `fira-code-nerd-font--setup.sh` installs the Nerd
   Fonts-patched Fira Code family (glyph icons for prompts like starship,

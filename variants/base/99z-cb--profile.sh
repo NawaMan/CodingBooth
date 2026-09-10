@@ -122,7 +122,13 @@ fi
 # Tip for those who are new to CodingBooth bash
 if [ -z "${TIP_SHOWN:-}" ]; then
   export TIP_SHOWN=1
-  echo "Welcome to CodingBooth!"
+  # A Nerd Font glyph, shown only when one is actually installed (desktop
+  # variants) — a quick, unannounced way to eyeball that the terminal's font
+  # is really rendering Nerd Font glyphs, not just a tofu box.
+  _cb_nerd_glyph=""
+  [ -f /usr/share/fonts/truetype/fira-code-nerd-font/FiraCodeNerdFontMono-Regular.ttf ] && _cb_nerd_glyph=$' '
+  echo "${_cb_nerd_glyph}Welcome to CodingBooth!"
+  unset _cb_nerd_glyph
   echo ""
   echo "Your code is ready at ~/code"
   echo ""

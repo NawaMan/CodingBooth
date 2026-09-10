@@ -68,6 +68,7 @@ setup dotnet-code-extension
 setup drracket
 setup duckdb
 setup eclipse
+setup eclipse-import-project
 setup elixir
 setup elixir-code-extension
 setup elm
@@ -76,6 +77,7 @@ setup erlang
 setup erlang-code-extension
 setup excalidraw
 setup exercism
+setup fira-code-nerd-font
 setup firebase
 setup firefox
 setup firefox-managed-policies
@@ -112,6 +114,7 @@ setup herdr
 setup homebrew
 setup hoppscotch
 setup idea
+setup idea-import-project
 setup inkscape
 setup java-code-extension
 setup java-ijava-nb-kernel
