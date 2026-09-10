@@ -4,6 +4,23 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **VS Code's own integrated terminal now uses the Fira Code Nerd Font too.**
+  The desktop-* variants' terminal apps got the font, but VS Code's built-in
+  terminal panel — both the desktop app and code-server's browser terminal —
+  never had `terminal.integrated.fontFamily` set, so it kept the default.
+  `vscode--setup.sh`'s `code` launcher now seeds
+  `~/.vscode-data/User/settings.json` with it on first run only (never
+  overwriting a later change from Settings); `codeserver--setup.sh` now
+  installs the font and adds the same key to the settings.json it already
+  writes on every launch (unlike the other terminals, that file is fully
+  regenerated each start, to keep `python.defaultInterpreterPath` tracking
+  the live venv — so a manual font change there won't survive a restart,
+  matching how every other setting in that file already behaves). Also
+  fixes `fira-code-nerd-font--setup.sh` to install `fontconfig` itself
+  when missing — code-server carries no desktop toolkit, so `fc-cache`
+  wasn't guaranteed to exist and the install failed outright. Tests:
+  `tests/complex/test-boothfile-{vscode,codeserver}-terminal-font`.
+
 - **`setup fira-code-nerd-font`, `eclipse-import-project`, and
   `idea-import-project` are recognized as valid `setup` names again.**
   `cli/src/pkg/boothfile/builtin-scripts.txt` — the Boothfile compiler's

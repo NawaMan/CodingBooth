@@ -130,6 +130,9 @@ if ! command -v code-server >/dev/null 2>&1; then
 fi
 command -v code-server >/dev/null
 
+# ---- install Fira Code Nerd Font (for the integrated terminal) ----
+fira-code-nerd-font--setup.sh
+
 
 # echo "[2/9] Pre-seed Jupyter into ${CB_VENV_DIR} (build-time)…"
 
@@ -353,6 +356,7 @@ cat > "$SETTINGS_JSON" <<JSON
     "bash-login": { "path": "/bin/bash", "args": ["-l"] }
   },
   "terminal.integrated.defaultProfile.linux": "bash-login",
+  "terminal.integrated.fontFamily": "FiraCode Nerd Font Mono",
   "python.terminal.activateEnvironment": true,
   "workbench.colorTheme": "Default Dark+",
   "editor.fontSize": 14
@@ -405,6 +409,9 @@ Start:
 
 Auth mode:
   $( [[ -z "$PASSWORD" ]] && echo "No password (auth: none)" || echo "Password set (auth: password)" )
+
+Font:
+  FiraCode Nerd Font, default integrated terminal font
 
 Kernels available (scoped to venv):
   - Python 3 (venv)

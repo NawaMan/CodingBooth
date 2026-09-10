@@ -105,6 +105,22 @@ VSCODE_EXTENSION_DIR="${VSCODE_EXTENSION_DIR:-/usr/local/share/code/extensions}"
 DATA_DIR="${HOME}/.vscode-data"
 mkdir -p "${DATA_DIR}"
 
+# Integrated terminal font — seeded once, like the desktop-terminal configs
+# (xfce4-terminal/Konsole/qterminal/foot). Only writing it when the file is
+# still absent means a later font change made from VS Code's own Settings is
+# never overwritten. Gated on the font actually being installed, though every
+# variant that ships this launcher already runs its desktop setup (which
+# installs it) first.
+SETTINGS_JSON="${DATA_DIR}/User/settings.json"
+if [[ ! -f "$SETTINGS_JSON" && -f /usr/share/fonts/truetype/fira-code-nerd-font/FiraCodeNerdFontMono-Regular.ttf ]]; then
+  mkdir -p "$(dirname "$SETTINGS_JSON")"
+  cat > "$SETTINGS_JSON" <<'JSONEOF'
+{
+  "terminal.integrated.fontFamily": "FiraCode Nerd Font Mono"
+}
+JSONEOF
+fi
+
 # --disable-dev-shm-usage: the container's /dev/shm defaults to 64 MB, too small
 # for Chromium's renderer shared memory. Rendering a rich notebook overflows it and
 # the renderer aborts ("renderer process gone, code 133"). Point Chromium at /tmp.
