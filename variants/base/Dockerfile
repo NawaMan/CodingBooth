@@ -170,6 +170,18 @@ RUN just--setup.sh
 # Git TUI (lazygit) - every booth can manage git from the terminal
 RUN lazygit--setup.sh
 
+# Fira Code Nerd Font - lets the built-in web terminal (ttyd) render icon
+# glyphs. ttyd's terminal renders client-side in the visitor's own browser, so
+# this alone does nothing visible; start-ttyd-split's nginx layer and
+# ttyd-nerd-font-index--setup.sh (below) are what actually get the font bytes
+# to that browser.
+RUN fira-code-nerd-font--setup.sh
+
+# Bakes a custom ttyd index.html with the font embedded, for the non-split
+# fallback mode (BOOTH_WEB_SPLIT=false), which has no nginx layer to inject
+# it. See the script for why the split mode doesn't need this.
+RUN ttyd-nerd-font-index--setup.sh
+
 # Cleanup to reduce image size
 RUN cleanup-after--setup.sh
 
