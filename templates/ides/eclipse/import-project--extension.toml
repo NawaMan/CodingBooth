@@ -2,7 +2,7 @@ display-name = "Eclipse Project Auto-Import"
 display-disc = "Register the workspace project into Eclipse's workspace automatically at boot"
 display-detail = "Eclipse only shows a project in its Project Explorer once it has been imported into the open workspace -- normally a manual File > Import click-through, and again on every fresh workspace. This extension installs a tiny headless Eclipse application (built from Eclipse's own resource/runtime jars at image-build time) and runs it at container startup to register the project the real way Eclipse itself would: through IProject.create()/.open(), so it lands in the workspace's actual resource tree with JDT/EGit/Buildship/m2e wired up -- not just a hand-written metadata file, which Eclipse silently ignores. If the project has no .project file yet, a minimal one is generated first, with the nature chosen by ECLIPSE_PROJECT_KIND: GENERAL (plain Java project, no build-tool nature), MAVEN (m2e), or GRADLE (Buildship). Left at DEFAULT, the kind is auto-detected from the project's build files -- a pom.xml selects Maven, a build.gradle(.kts)/settings.gradle(.kts) selects Gradle, otherwise it falls back to a plain Java project. Idempotent: skips silently once the project is already registered, and never touches an existing .project. Verified end-to-end against a running booth: the project appears in the workspace's resource tree exactly as if imported by hand."
 display-order = 1
-auto-select = false
+auto-select = true
 tags = [
     "eclipse", "ide", "gradle", "maven", "import"
 ]

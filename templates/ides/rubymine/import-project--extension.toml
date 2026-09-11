@@ -1,0 +1,13 @@
+display-name = "RubyMine Open Project"
+display-disc = "Open the workspace project automatically, no Open-project wizard"
+display-detail = "Like IntelliJ, RubyMine needs no separate workspace registration -- a folder with a Gemfile (or any Ruby sources) opens directly, no import wizard. RubyMine's \"recent projects\" list lives in internal app state, not an editable file, so it can't be safely pre-seeded -- instead this patches the IDE's own starter script to default to opening the project directory whenever launched with no arguments, which both the CLI shim and the desktop icon already funnel through."
+display-order = 1
+auto-select = true
+tags = [
+    "jetbrains", "rubymine", "ide", "ruby", "open"
+]
+
+[segments]
+"Boothfile--65" = """
+setup jetbrains-import-project rubymine
+"""

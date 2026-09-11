@@ -47,6 +47,41 @@ This file contains a list of changes for each released version.
   templates and the matching prebuilt desktop-* variants. Tests:
   `tests/complex/test-boothfile-{xfce,kde,lxqt,wayland}-terminal-font`.
 
+- **Every JetBrains IDE skips its first-run prompts by default.**
+  `skip-first-run` (pre-answering the Trust-and-Open, Third-Party-Plugins,
+  and Data-Sharing modals — never the licence agreement, which stays a
+  human's click) already existed for IntelliJ as an opt-in extension; it's
+  now `auto-select` there and added, also auto-selected, to CLion, GoLand,
+  PhpStorm, PyCharm, Rider, RubyMine and WebStorm. The underlying
+  `jetbrains-first-run` setup script was already IDE-agnostic (it loops over
+  every JetBrains IDE the image has installed), so this is catalog wiring,
+  not new script logic. Live-verified against a running PyCharm booth: with
+  it applied, PyCharm opened straight to the editor with neither dialog
+  shown, and the seeded "declined" data-sharing answer survived untouched.
+
+- **Every JetBrains/Eclipse IDE opens its project on launch by default.**
+  `idea+import-project` and `eclipse+import-project` are now `auto-select`
+  — selecting `idea` or `eclipse` alone gets the hands-off launch behaviour
+  without typing `+import-project`. The same "open `$CODE_DIR` when launched
+  with no arguments" trick (already proven for IntelliJ) is now a catalog
+  extension, auto-selected, for CLion, GoLand, PhpStorm, PyCharm, Rider,
+  RubyMine and WebStorm too — every JetBrains IDE install shares the same
+  `/opt/<ide>/<ide>-starter` layout the CLI shim and `.desktop` launcher both
+  funnel through, so one shared script (`jetbrains-import-project`) patches
+  it for any of them: `setup jetbrains-import-project <ide>`. Unlike IDEA,
+  none of these pre-generate project files first — the Gradle-vs-Eclipse
+  build-system prompt IDEA's extra `gradle idea` step dodges is a JVM-only
+  problem; Python/Go/PHP/Ruby/C++/.NET projects have no equivalent ambiguity
+  to resolve, and JetBrains IDEs need no separate workspace import the way
+  Eclipse does. DataGrip is excluded (a DB tool, not project-based).
+
+- **RubyMine installs again.** `jetbrains--setup.sh rubymine` downloaded from
+  `download-cdn.jetbrains.com/ruby/...`, which 404s for the RubyMine tarball
+  specifically (its `.sha256` is present there, the tarball is not). Switched
+  to `download.jetbrains.com/ruby/...`, which redirects to a working signed
+  CDN URL. Found while live-verifying the new RubyMine `import-project`
+  extension above.
+
 - **Appwrite admin create retries a slow first boot.** The health probe
   no longer lets curl retry on its own (that stacked with the wait loop).
   Creating the first account now retries a few times after the server

@@ -1,0 +1,13 @@
+display-name = "Rider Open Project"
+display-disc = "Open the workspace project automatically, no Open-project wizard"
+display-detail = "Like IntelliJ, Rider needs no separate workspace registration -- a folder with a .sln/.csproj (or any .NET sources) opens directly, no import wizard. Rider's \"recent projects\" list lives in internal app state, not an editable file, so it can't be safely pre-seeded -- instead this patches the IDE's own starter script to default to opening the project directory whenever launched with no arguments, which both the CLI shim and the desktop icon already funnel through."
+display-order = 1
+auto-select = true
+tags = [
+    "jetbrains", "rider", "ide", "dotnet", "csharp", "open"
+]
+
+[segments]
+"Boothfile--65" = """
+setup jetbrains-import-project rider
+"""

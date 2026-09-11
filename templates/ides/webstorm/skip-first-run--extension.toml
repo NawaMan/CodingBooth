@@ -1,4 +1,4 @@
-display-name = "Skip IntelliJ First-Run Prompts"
+display-name = "Skip WebStorm First-Run Prompts"
 display-disc = "Pre-answer the modals that block a fresh booth's first IDE launch"
 display-detail = """Seeds the answers to three JetBrains first-launch prompts, so opening the IDE \
 in a fresh container does not mean clicking through modals over noVNC every time the container is \
@@ -14,7 +14,7 @@ display-order = 3
 auto-select = true
 tags = [
     "jetbrains",
-    "idea",
+    "webstorm",
     "ide",
     "desktop",
 ]

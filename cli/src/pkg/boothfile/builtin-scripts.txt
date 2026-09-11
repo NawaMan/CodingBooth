@@ -124,6 +124,7 @@ setup jdk
 setup jenv
 setup jetbrains
 setup jetbrains-first-run
+setup jetbrains-import-project
 setup jetbrains-jdk
 setup jetbrains-plugin
 setup julia
