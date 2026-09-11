@@ -116,6 +116,34 @@ cat > ~/.jupyter/lab/user-settings/@jupyterlab/apputils-extension/themes.jupyter
   "theme": "JupyterLab Light"
 }
 CONFIG
+
+# Terminal font. JupyterLab's terminal (xterm.js, rendered client-side in
+# the browser) resolves its font once at construction time — it does not
+# dynamically follow the --jp-code-font-family theme variable the way
+# CodeMirror-based editors do, so that variable alone (set via
+# WRAPPER_HEAD_INJECT in booth-message-notebook-wrapped--setup.sh) isn't
+# enough; the terminal extension's own explicit setting is what actually
+# takes effect. Schema: @jupyterlab/terminal-extension:plugin.
+mkdir -p ~/.jupyter/lab/user-settings/@jupyterlab/terminal-extension
+[ ! -f ~/.jupyter/lab/user-settings/@jupyterlab/terminal-extension/plugin.jupyterlab-settings ] && \
+cat > ~/.jupyter/lab/user-settings/@jupyterlab/terminal-extension/plugin.jupyterlab-settings <<'CONFIG'
+{
+  "fontFamily": "FiraCode Nerd Font Mono, monospace"
+}
+CONFIG
+
+# File editor font (plain text/.py/etc files opened directly, as opposed to
+# notebook cells, which follow --jp-code-font-family through CodeMirror).
+# Schema: @jupyterlab/fileeditor-extension:plugin.
+mkdir -p ~/.jupyter/lab/user-settings/@jupyterlab/fileeditor-extension
+[ ! -f ~/.jupyter/lab/user-settings/@jupyterlab/fileeditor-extension/plugin.jupyterlab-settings ] && \
+cat > ~/.jupyter/lab/user-settings/@jupyterlab/fileeditor-extension/plugin.jupyterlab-settings <<'CONFIG'
+{
+  "editorConfig": {
+    "fontFamily": "FiraCode Nerd Font Mono, monospace"
+  }
+}
+CONFIG
 EOF
 chmod +x ${STARTUP_FILE}
 

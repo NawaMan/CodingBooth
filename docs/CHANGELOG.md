@@ -4,6 +4,29 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The notebook variant's JupyterLab now renders the Fira Code Nerd Font
+  too, in both its terminal and its file/notebook editors.** JupyterLab is
+  wrapped by the same shared nginx layer as code-server, but its real UI
+  lives at `/lab` (and nested paths under it), not the bare root — so this
+  needed the shared wrapper's catch-all `location /` extended with the same
+  `Accept-Encoding` fix and `@font-face` injection the exact-match `location
+  = /` already had for code-server, plus nginx's own `gzip on;`/`gzip_types`
+  so disabling `Accept-Encoding` to the upstream that broadly doesn't cost
+  bandwidth on JupyterLab's much heavier JS bundle. `start-notebook-wrapped`
+  injects the `@font-face` plus a `:root{--jp-code-font-family:...
+  !important}` override (needed `!important` — JupyterLab's own theme CSS
+  sets the same variable and loads after the injected style, same
+  specificity, last one wins without it). That variable is what
+  CodeMirror-based editors (file editor, notebook cells) read live, but
+  JupyterLab's terminal is xterm.js rendered via canvas and resolves its
+  font once at construction from an explicit settings key instead — found by
+  testing in a real browser and seeing the CSS-only version of this fix
+  leave the terminal's rendering unchanged. `notebook--setup.sh`'s startup
+  script now also seeds that terminal-extension setting (and the matching
+  fileeditor-extension one), the first time the booth starts, the same
+  "write only if missing" pattern already used to seed the JupyterLab theme.
+  Tests: `tests/basic/test025--notebook-nerd-font.sh`.
+
 - **VS Code's editor pane — both code-server's and the desktop app's — now
   uses the Fira Code Nerd Font too, not just the integrated terminal.**
   `codeserver--setup.sh` and `vscode--setup.sh` only ever set
