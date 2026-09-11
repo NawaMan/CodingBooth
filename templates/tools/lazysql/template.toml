@@ -1,0 +1,19 @@
+display-name = "lazysql"
+display-disc = "Terminal UI database management tool"
+display-detail = "Installs lazysql, a cross-platform terminal UI for MySQL, PostgreSQL, SQLite3, and MSSQL. Takes a connection URL directly on the command line, or start it with none to pick a saved connection."
+display-order = 69
+tags = [
+    "database",
+    "sql",
+    "tui",
+    "cli",
+]
+
+[params.LAZYSQL_VERSION]
+default = "latest"
+suggests = ["latest", "0.5.6"]
+
+[segments]
+Boothfile = """
+setup lazysql --version ${LAZYSQL_VERSION}
+"""

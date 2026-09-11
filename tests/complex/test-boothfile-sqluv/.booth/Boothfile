@@ -1,0 +1,6 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: sqluv installation via Boothfile
+# sqluv--setup.sh is not yet in the released base image, so a copy is
+# checked in under .booth/setups/ to override it for this test run.
+setup sqluv

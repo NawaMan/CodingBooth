@@ -1,0 +1,9 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: HeidiSQL installation via Boothfile
+# heidisql--setup.sh is not yet in the released base image, so a copy is
+# checked in under .booth/setups/ to override it for this test run — along
+# with the shared helpers (cb-has-desktop.sh, libs/skip-setup.sh) it depends
+# on via $SCRIPT_DIR, since only /usr/local/bin (via PATH) is inherited from
+# the released image, not those relative sibling files.
+setup heidisql

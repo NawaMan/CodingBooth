@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: lazysql installation via Boothfile
+# lazysql--setup.sh is not yet in the released base image, so a copy is
+# checked in under .booth/setups/ to override it for this test run.
+# postgresql gives it a real database to actually connect to.
+setup postgresql
+setup lazysql

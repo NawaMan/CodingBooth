@@ -4,6 +4,66 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Added five more database GUI/TUI clients as selectable templates:
+  `lazysql`, `dblab`, `harlequin`, `sql-studio`, and `heidisql`.** All are
+  opt-in only (`booth config --select <name>`), none baked into the base
+  image. `lazysql` (jorgerojas26/lazysql) and `dblab` (danvergara/dblab) are
+  Go TUI clients for MySQL/PostgreSQL/SQLite3/SQL Server; `dblab` is unusual
+  among these tools in taking real `--host`/`--port`/`--user`/`--driver`
+  connection flags directly, rather than only prompting interactively.
+  `harlequin` (tconbeer/harlequin) is a Python SQL IDE installed into an
+  isolated venv at `/opt/harlequin` (same pattern as `aider`); its own
+  install covers SQLite and DuckDB, with Postgres/MySQL needing a separate
+  adapter package noted in its summary, and it ships `hsql`, a
+  non-interactive "run this SQL and exit" companion useful in scripts. Each
+  of the four's setup script documents CodingBooth's own convention —
+  `postgresql`/`mysql` grant the container user a passwordless local
+  superuser role but create no database matching that user's name, so a
+  connection needs to name one that actually exists (PostgreSQL's is always
+  `postgres`).
+  `sql-studio` (frectonz/sql-studio) is different in kind: a single Rust
+  binary that serves a browser-based SQL explorer (SQLite, libSQL, Postgres,
+  MySQL, DuckDB, ClickHouse, SQL Server, Parquet/CSV) rather than a
+  terminal UI, so it gets the full `cloudbeaver`-style treatment — a `PORT`
+  param, a `start-sql-studio` launcher, and a desktop icon (via
+  `cb-web-icon.sh`). With no target on the command line (the icon's first
+  click, or running `start-sql-studio` bare in a desktop session), it now
+  asks via a `zenity` dialog what to open — a SQLite/DuckDB/CSV file
+  (`zenity --file-selection`) or a Postgres/MySQL URL (pre-filled with
+  CodingBooth's own-user/no-password/localhost convention) — falling back
+  to sql-studio's own `sqlite preview` sample if zenity isn't installed
+  (headless/`base` variant) or the dialog is cancelled. A caller-supplied
+  path is passed straight through untouched — a fix along the way: the
+  launcher used to unconditionally `cd` into its own state directory
+  before running, which silently broke any relative path given to it.
+  `heidisql` is HeidiSQL's native Linux build (still beta upstream),
+  amd64-only like `dbeaver` (arm64 only has an unpackaged beta tarball,
+  declared as `unsupported-arch` with a note pointing at `dbeaver`/
+  `cloudbeaver` instead); its `.deb` also needs `libqt6pas6`, a dependency
+  Ubuntu itself does not package, installed first from a separate release
+  per HeidiSQL's own documented workaround
+  (github.com/HeidiSQL/HeidiSQL/issues/2427). Tests:
+  `tests/complex/test-boothfile-{lazysql,dblab,harlequin,sql-studio,heidisql}/`
+  — each proves the tool does something real (a live query against a
+  PostgreSQL server also installed in the test booth, an `hsql` query, an
+  HTTP response, or a genuine `dpkg`-verified install), not just that a
+  binary landed on `PATH`.
+
+- **Added `sqluv`, a terminal UI SQL client, as a selectable tool template.**
+  `sqluv` (github.com/nao1215/sqluv) queries MySQL, PostgreSQL, SQLite3, and
+  SQL Server, plus local/HTTPS/S3 CSV/TSV/LTSV files, all through one TUI;
+  connections are entered interactively and it remembers them for later
+  launches. Unlike `lazygit`, it isn't baked into every booth by default —
+  select it with `booth config --select sqluv` (or pin a version with
+  `sqluv:0.4.8`). It has no CLI flags or documented config format for
+  supplying a connection up front (its saved-connection store is internal
+  and encrypts passwords), so this doesn't try to auto-wire it to any
+  database also running in the booth; the setup script's closing summary
+  just documents the convention CodingBooth's own `postgresql`/`mysql`
+  setups already share — host `localhost`, user matching the container
+  user, no password, default port — as a hint for the interactive prompt.
+  Tests: `tests/complex/test-boothfile-sqluv/`.
+
 - **The notebook variant's JupyterLab now renders the Fira Code Nerd Font
   too, in both its terminal and its file/notebook editors.** JupyterLab is
   wrapped by the same shared nginx layer as code-server, but its real UI

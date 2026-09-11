@@ -1,0 +1,31 @@
+display-name = "HeidiSQL"
+display-disc = "Native Linux HeidiSQL database GUI (amd64 only)"
+display-detail = "Installs HeidiSQL's native Linux build (currently beta upstream), a lightweight GUI for MySQL, MariaDB, PostgreSQL, SQL Server, and SQLite. Requires a desktop variant. amd64 only — see the note for why arm64 is not supported."
+display-order = 40
+tags = [
+    "heidisql",
+    "database",
+    "sql",
+    "gui",
+]
+
+unsupported-arch = ["arm64"]
+unsupported-arch-note = """\
+HeidiSQL's native Linux build only ships a packaged .deb for amd64. The \
+arm64 build is an unpackaged "Raspberry Pi OS" tarball with no dependency \
+resolution, and upstream itself documents the native Linux build as beta — \
+the arm64 one is beta of a beta. The booth still builds — the setup warns \
+and skips — but HeidiSQL will not be in it.
+
+Use "dbeaver" or "cloudbeaver" instead: both are arm64-friendly and cover \
+the same job (any RDBMS GUI). Or run HeidiSQL on your host, pointed at the \
+port this booth exposes."""
+
+[params.HEIDISQL_VERSION]
+default = "latest"
+suggests = ["latest", "12.21"]
+
+[segments]
+"Boothfile--60" = """
+setup heidisql --version ${HEIDISQL_VERSION}
+"""
