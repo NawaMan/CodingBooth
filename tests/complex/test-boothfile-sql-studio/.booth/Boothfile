@@ -1,0 +1,6 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: sql-studio installation via Boothfile
+# sql-studio--setup.sh is not yet in the released base image, so a copy is
+# checked in under .booth/setups/ to override it for this test run.
+setup sql-studio

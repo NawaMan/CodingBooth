@@ -55,6 +55,7 @@ setup crystal-code-extension
 setup cursor
 setup cypress
 setup dbeaver
+setup dblab
 setup deno
 setup deno-code-extension
 setup deno-nb-kernel
@@ -106,9 +107,11 @@ setup goose
 setup gradle
 setup greenfoot
 setup grok
+setup harlequin
 setup haskell
 setup haskell-code-extension
 setup haskell-nb-kernel
+setup heidisql
 setup helm
 setup herdr
 setup homebrew
@@ -146,6 +149,7 @@ setup kubectx
 setup kustomize
 setup lazydocker
 setup lazygit
+setup lazysql
 setup libreoffice
 setup logo
 setup lombok-eclipse
@@ -219,7 +223,9 @@ setup scala-code-extension
 setup scala-nb-kernel
 setup scratch
 setup selenium
+setup sql-studio
 setup sqlite
+setup sqluv
 setup stern
 setup svelte-code-extension
 setup swift

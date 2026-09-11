@@ -1,0 +1,19 @@
+display-name = "Harlequin"
+display-disc = "The SQL IDE for your terminal"
+display-detail = "Installs Harlequin, a terminal-based SQL IDE with autocomplete, a results viewer, and multiple tabs. Ships with SQLite and DuckDB support; Postgres and MySQL need an extra adapter package, noted in the install summary."
+display-order = 78
+tags = [
+    "database",
+    "sql",
+    "tui",
+    "cli",
+]
+
+[params.HARLEQUIN_VERSION]
+default = "latest"
+suggests = ["latest", "2.13.0"]
+
+[segments]
+Boothfile = """
+setup harlequin --version ${HARLEQUIN_VERSION}
+"""
