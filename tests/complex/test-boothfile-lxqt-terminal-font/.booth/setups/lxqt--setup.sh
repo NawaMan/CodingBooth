@@ -430,7 +430,12 @@ unset DBUS_SESSION_BUS_ADDRESS
 xsetroot -solid grey
 # Mark ~/Desktop launchers trusted (inside the session bus) before the desktop
 # renders, so pcmanfm-qt shows no "untrusted launcher" emblem / prompt.
-exec dbus-launch --exit-with-session sh -c 'cb-lxqt-trust-icons; exec startlxqt'
+#
+# SHELL is exported here, inside the dbus-launched session, because
+# dbus-launch does not carry it in from this script's own environment —
+# without it qterminal falls back to /bin/sh ("Neither default shell nor
+# $SHELL is set to a correct path").
+exec dbus-launch --exit-with-session sh -c 'export SHELL=/bin/bash; cb-lxqt-trust-icons; exec startlxqt'
 XEOF
   chmod +x "$XSTART"
 fi
