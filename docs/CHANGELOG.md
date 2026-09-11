@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **LXQt's qterminal now opens bash instead of falling back to `/bin/sh`.**
+  `dbus-launch` doesn't carry `$SHELL` into the session it starts, so
+  qterminal printed "Neither default shell nor $SHELL is set to a correct
+  path" and fell back to a plain POSIX shell — no `.bashrc`, no aliases,
+  none of the profile setup every other terminal gets. `lxqt--setup.sh`'s
+  `xstartup` now exports `SHELL=/bin/bash` inside the dbus session itself.
+
 - **VS Code's own integrated terminal now uses the Fira Code Nerd Font too.**
   The desktop-* variants' terminal apps got the font, but VS Code's built-in
   terminal panel — both the desktop app and code-server's browser terminal —
