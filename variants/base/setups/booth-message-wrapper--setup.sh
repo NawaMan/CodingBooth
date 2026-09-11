@@ -101,6 +101,16 @@ http {
     uwsgi_temp_path /tmp/nginx/uwsgi;
     scgi_temp_path /tmp/nginx/scgi;
 
+    # Compresses nginx's own responses to the browser. Paired with the
+    # catch-all location's `proxy_set_header Accept-Encoding ""` below: that
+    # asks the *inner service* for an uncompressed body (so sub_filter can
+    # read it), and this recovers the bandwidth on the client-facing leg
+    # instead of just giving it up — relevant for a heavier inner service
+    # like JupyterLab or code-server's own JS bundles.
+    gzip on;
+    gzip_vary on;
+    gzip_types text/css application/javascript application/json image/svg+xml;
+
     map $http_upgrade $connection_upgrade {
         default upgrade;
         ''      close;
@@ -204,7 +214,13 @@ http {
             return 302 /booth;
         }
 
-        # Everything else — proxy to the inner service
+        # Everything else — proxy to the inner service. Unlike the exact `/`
+        # above, an inner service can serve its real UI shell (and reachable
+        # sub-pages of it, e.g. JupyterLab's /lab, /lab/tree/...) from more
+        # than just the bare root, so the same injection has to reach here
+        # too. sub_filter_types defaults to text/html only, so this is a
+        # no-op against JS/CSS/asset responses passing through the same
+        # location — only an actual HTML document gets the sub_filter cost.
         location / {
             proxy_pass http://127.0.0.1:${INNER_PORT};
             proxy_http_version 1.1;
@@ -212,8 +228,12 @@ http {
             proxy_set_header Connection $connection_upgrade;
             proxy_set_header Host $http_host;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header Accept-Encoding "";
             proxy_read_timeout 24h;
             proxy_buffering off;
+
+            sub_filter_once on;
+            sub_filter '<head>' '<head>${WRAPPER_HEAD_INJECT}';
         }
     }
 }
