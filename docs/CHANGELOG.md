@@ -4,6 +4,36 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The codeserver variant's integrated terminal now renders the Fira Code
+  Nerd Font, and its welcome banner reliably shows up.** Two independent bugs,
+  found while extending the `ttyd` fix above to code-server:
+  - **Font**: code-server's terminal renders client-side in the browser via
+    xterm.js, same as `ttyd` — `terminal.integrated.fontFamily` in
+    settings.json only named the font. The shared `start-booth-wrapped` nginx
+    layer (used by code-server and every other "wrapped" variant) now serves
+    the font at `/booth-assets/fonts/` unconditionally, and a new opt-in
+    `WRAPPER_HEAD_INJECT` env var lets a variant's start script
+    `sub_filter`-inject arbitrary HTML into the wrapped root document's
+    `<head>` — empty by default, a no-op for every wrapped service that
+    doesn't set it. `start-codeserver-wrapped` sets it to the matching
+    `@font-face` style. Needed the same `proxy_set_header Accept-Encoding
+    "";` gzip fix as `ttyd`, scoped to the exact-match root location only so
+    code-server's much heavier JS bundles still transfer compressed.
+  - **Welcome banner**: `99z-cb--profile.sh` used to `export TIP_SHOWN=1`
+    after printing its one-time banner. VS Code (and code-server) resolve
+    what env vars your shell profile sets by spawning a *hidden* probe — an
+    interactive login shell whose stdout is captured and parsed as JSON,
+    never shown to any user — then seed every real terminal they open
+    afterward with that captured environment. The exported flag got swept
+    into that snapshot and pre-suppressed the banner in every terminal a
+    user actually opened. `TIP_SHOWN` is no longer exported: a plain shell
+    variable still dedupes `~/.bashrc`'s own re-source of
+    `/etc/profile.d/*-cb-*.sh` within one process (a pre-existing double
+    invocation), but is invisible to a spawned child's `process.env`, so it
+    can't leak into the probe's snapshot.
+
+  Tests: `tests/basic/test024--codeserver-terminal.sh`.
+
 - **The base variant's built-in web terminal (`ttyd`) actually renders the
   Fira Code Nerd Font now, not just names it.** `ttyd`'s terminal paints in
   the visitor's own browser via canvas/WebGL, not in this container, so

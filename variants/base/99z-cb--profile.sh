@@ -121,7 +121,22 @@ fi
 # Welcome message
 # Tip for those who are new to CodingBooth bash
 if [ -z "${TIP_SHOWN:-}" ]; then
-  export TIP_SHOWN=1
+  # Deliberately NOT exported. ~/.bashrc re-sources /etc/profile.d/*-cb-*.sh
+  # itself (for interactive shells that don't take the /etc/profile login
+  # path), so a single logical session already sources this script twice —
+  # a plain shell variable still dedupes that second pass within the same
+  # process. Exporting it, as this used to, does something worse than just
+  # surviving into child processes: VS Code (and code-server) resolve what
+  # env vars your shell profile sets by spawning a *hidden* probe — an
+  # interactive login shell whose stdout is captured and parsed as JSON,
+  # never shown to any user — and then seed every real terminal it opens
+  # afterward with that captured environment. An exported TIP_SHOWN gets
+  # swept into that snapshot and pre-suppresses the banner in every real
+  # terminal the user actually opens. A non-exported var never reaches the
+  # probe's `JSON.stringify(process.env)` in the first place (that runs in a
+  # separate child process, which only inherits exported vars), so it can't
+  # leak forward this way.
+  TIP_SHOWN=1
   # A Nerd Font glyph, shown only when one is actually installed (desktop
   # variants) — a quick, unannounced way to eyeball that the terminal's font
   # is really rendering Nerd Font glyphs, not just a tofu box.
