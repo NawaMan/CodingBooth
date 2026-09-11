@@ -4,6 +4,36 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The base variant's built-in web terminal (`ttyd`) actually renders the
+  Fira Code Nerd Font now, not just names it.** `ttyd`'s terminal paints in
+  the visitor's own browser via canvas/WebGL, not in this container, so
+  installing the font system-wide and passing `-t fontFamily=...` (an
+  earlier pass at this) only *names* a font — it doesn't supply one, and a
+  visitor's browser without that family installed silently fell back to its
+  default monospace. Two real fixes, one per web UI mode:
+  - split mode (the default): `start-ttyd-split`'s nginx layer now serves
+    the font as a real, cacheable asset at `/booth-assets/fonts/` and
+    `sub_filter`-injects an `@font-face` referencing it into each pane's
+    HTML — one fetch shared by all 4 panes rather than each embedding its
+    own copy. Getting this right needed `proxy_set_header Accept-Encoding
+    "";` on each pane location: `sub_filter` silently no-ops on a
+    gzip-compressed body, and a real browser (unlike plain `curl`) sends
+    `Accept-Encoding: gzip` by default — the same fix the `/proxy/` location
+    already carried.
+  - non-split fallback (`BOOTH_WEB_SPLIT=false`): no nginx sits in front of
+    bare `ttyd` there, so a new `ttyd-nerd-font-index--setup.sh` bakes a
+    custom `ttyd` index.html with the font embedded as a data URI, handed to
+    `ttyd -I`.
+
+  `fira-code-nerd-font--setup.sh` still installs the font system-wide too, so
+  the welcome banner's Nerd Font glyph shows up for base booths as well —
+  but that install was never what made the browser rendering work.
+  Verified against a real @font-face load in a browser with the font
+  installed nowhere else (`document.fonts` + a canvas pixel comparison of a
+  Nerd Font icon codepoint against a guaranteed-fallback font), not just a
+  `-t` flag or a file-exists check. Tests:
+  `tests/basic/test023--ttyd-nerd-font.sh`.
+
 - **LXQt's qterminal now opens bash instead of falling back to `/bin/sh`.**
   `dbus-launch` doesn't carry `$SHELL` into the session it starts, so
   qterminal printed "Neither default shell nor $SHELL is set to a correct

@@ -127,6 +127,22 @@ http {
             return 200 "ok $time_iso8601\n";
         }
 
+        # Fira Code Nerd Font Mono, served as a real cacheable asset so all 4
+        # panes' @font-face rules (injected below) share one fetch instead of
+        # each embedding its own copy. ttyd's terminal renders in the visitor's
+        # own browser via canvas/WebGL — installing the font in this container
+        # (fira-code-nerd-font--setup.sh) only lets the container *name* it via
+        # ttyd's `-t fontFamily=` client option; a visitor whose browser never
+        # requested this file would just fall back to its own default
+        # monospace, silently.
+        location /booth-assets/fonts/ {
+            if ($booth_auth_ok = 0) {
+                return 302 /login;
+            }
+            alias /usr/share/fonts/truetype/fira-code-nerd-font/;
+            add_header Cache-Control "public, max-age=31536000, immutable";
+        }
+
         location /s1/ {
             if ($booth_auth_ok = 0) {
                 return 302 /login;
@@ -141,6 +157,17 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_read_timeout 24h;
             proxy_buffering off;
+
+            # ttyd's page is a single self-contained HTML document (no
+            # external assets), so this only has to fire once per pane load,
+            # not on every websocket frame. See /booth-assets/fonts/ above.
+            # sub_filter cannot rewrite a compressed body, and a real browser
+            # (unlike curl) sends Accept-Encoding: gzip by default — without
+            # this, ttyd answers compressed and the filter below silently
+            # never matches. Same fix the /proxy/ location already needed.
+            proxy_set_header Accept-Encoding "";
+            sub_filter_once on;
+            sub_filter '<head>' '<head><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.ttf);}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.ttf);}</style>';
         }
 
         location /s2/ {
@@ -157,6 +184,17 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_read_timeout 24h;
             proxy_buffering off;
+
+            # ttyd's page is a single self-contained HTML document (no
+            # external assets), so this only has to fire once per pane load,
+            # not on every websocket frame. See /booth-assets/fonts/ above.
+            # sub_filter cannot rewrite a compressed body, and a real browser
+            # (unlike curl) sends Accept-Encoding: gzip by default — without
+            # this, ttyd answers compressed and the filter below silently
+            # never matches. Same fix the /proxy/ location already needed.
+            proxy_set_header Accept-Encoding "";
+            sub_filter_once on;
+            sub_filter '<head>' '<head><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.ttf);}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.ttf);}</style>';
         }
 
         location /s3/ {
@@ -173,6 +211,17 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_read_timeout 24h;
             proxy_buffering off;
+
+            # ttyd's page is a single self-contained HTML document (no
+            # external assets), so this only has to fire once per pane load,
+            # not on every websocket frame. See /booth-assets/fonts/ above.
+            # sub_filter cannot rewrite a compressed body, and a real browser
+            # (unlike curl) sends Accept-Encoding: gzip by default — without
+            # this, ttyd answers compressed and the filter below silently
+            # never matches. Same fix the /proxy/ location already needed.
+            proxy_set_header Accept-Encoding "";
+            sub_filter_once on;
+            sub_filter '<head>' '<head><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.ttf);}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.ttf);}</style>';
         }
 
         location /s4/ {
@@ -189,6 +238,17 @@ http {
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_read_timeout 24h;
             proxy_buffering off;
+
+            # ttyd's page is a single self-contained HTML document (no
+            # external assets), so this only has to fire once per pane load,
+            # not on every websocket frame. See /booth-assets/fonts/ above.
+            # sub_filter cannot rewrite a compressed body, and a real browser
+            # (unlike curl) sends Accept-Encoding: gzip by default — without
+            # this, ttyd answers compressed and the filter below silently
+            # never matches. Same fix the /proxy/ location already needed.
+            proxy_set_header Accept-Encoding "";
+            sub_filter_once on;
+            sub_filter '<head>' '<head><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.ttf);}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.ttf);}</style>';
         }
 
         location /booth-messages/api/ {

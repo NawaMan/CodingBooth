@@ -227,6 +227,7 @@ setup swift-code-extension
 setup terraform
 setup thonny
 setup tls
+setup ttyd-nerd-font-index
 setup vhs
 setup viewmd
 setup viewmd-desktop-icon

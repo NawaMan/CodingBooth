@@ -14,7 +14,14 @@ if is_truthy "${BOOTH_WEB_SPLIT:-true}"; then
     exec start-ttyd-split "$PORT"
 fi
 
-TTYD_ARGS=(-W -i 0.0.0.0 -p "$PORT" --writable)
+TTYD_ARGS=(-W -i 0.0.0.0 -p "$PORT" --writable -t 'fontFamily=FiraCode Nerd Font Mono')
+
+# No nginx sits in front of this mode to inject the font the way
+# start-ttyd-split does, so this custom index (baked by
+# ttyd-nerd-font-index--setup.sh) carries it embedded instead.
+if [[ -f /usr/local/share/ttyd-nerd-font-index.html ]]; then
+    TTYD_ARGS+=(-I /usr/local/share/ttyd-nerd-font-index.html)
+fi
 
 if [[ -n "${PASSWORD:-}" ]]; then
     TTYD_ARGS+=(-c "coder:${PASSWORD}")
