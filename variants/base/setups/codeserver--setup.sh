@@ -357,6 +357,7 @@ cat > "$SETTINGS_JSON" <<JSON
   },
   "terminal.integrated.defaultProfile.linux": "bash-login",
   "terminal.integrated.fontFamily": "FiraCode Nerd Font Mono",
+  "editor.fontFamily": "FiraCode Nerd Font Mono",
   "python.terminal.activateEnvironment": true,
   "workbench.colorTheme": "Default Dark+",
   "editor.fontSize": 14

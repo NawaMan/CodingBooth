@@ -4,6 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **VS Code's editor pane — both code-server's and the desktop app's — now
+  uses the Fira Code Nerd Font too, not just the integrated terminal.**
+  `codeserver--setup.sh` and `vscode--setup.sh` only ever set
+  `terminal.integrated.fontFamily`; the editor kept VS Code's default font,
+  which has no Nerd Font glyphs, so text containing them (rare, but real —
+  found by literally typing one into a file to check) still showed tofu
+  boxes even after the terminal fix above. `editor.fontFamily` is now set
+  alongside it in both. Verified in a browser with the font installed
+  nowhere else: Monaco's actual text-rendering elements (`.view-line span`,
+  not the `.monaco-editor` container, which only carries the UI chrome font)
+  correctly resolve to `"FiraCode Nerd Font Mono"` once a real file is open.
+
 - **The codeserver variant's integrated terminal now renders the Fira Code
   Nerd Font, and its welcome banner reliably shows up.** Two independent bugs,
   found while extending the `ttyd` fix above to code-server:
