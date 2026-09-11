@@ -1,0 +1,25 @@
+display-name = "Skip GoLand First-Run Prompts"
+display-disc = "Pre-answer the modals that block a fresh booth's first IDE launch"
+display-detail = """Seeds the answers to three JetBrains first-launch prompts, so opening the IDE \
+in a fresh container does not mean clicking through modals over noVNC every time the container is \
+recreated: the Third-Party Plugins Notice (raised by any plugin whose vendor is not JetBrains), \
+Trust and Open Project (scoped to the workspace path only, never "trust all projects in this \
+folder"), and Data Sharing (declined). The User Agreement is deliberately NOT answered — accepting \
+a licence on your behalf at image-build time is a legal act, not a configuration default, so that \
+one dialog still appears and a human still clicks it. Auto-selected: trusting the workspace path and declining data sharing are \
+defaults defensible to make on someone else's behalf, unlike the licence acceptance above, which \
+is why that one stays a human's click. Everything is seeded into the home no-clobber, so changing \
+any of it in the IDE sticks."""
+display-order = 3
+auto-select = true
+tags = [
+    "jetbrains",
+    "goland",
+    "ide",
+    "desktop",
+]
+
+[segments]
+"Boothfile--70" = """
+setup jetbrains-first-run
+"""

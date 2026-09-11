@@ -6,11 +6,12 @@ recreated: the Third-Party Plugins Notice (raised by any plugin whose vendor is 
 Trust and Open Project (scoped to the workspace path only, never "trust all projects in this \
 folder"), and Data Sharing (declined). The User Agreement is deliberately NOT answered — accepting \
 a licence on your behalf at image-build time is a legal act, not a configuration default, so that \
-one dialog still appears and a human still clicks it. Off by default for the same reason: these are \
-consent decisions, so you opt in rather than having them made for you. Everything is seeded into \
-the home no-clobber, so changing any of it in the IDE sticks."""
+one dialog still appears and a human still clicks it. Auto-selected: trusting the workspace path and declining data sharing are \
+defaults defensible to make on someone else's behalf, unlike the licence acceptance above, which \
+is why that one stays a human's click. Everything is seeded into the home no-clobber, so changing \
+any of it in the IDE sticks."""
 display-order = 3
-auto-select = false
+auto-select = true
 tags = [
     "jetbrains",
     "idea",

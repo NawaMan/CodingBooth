@@ -148,7 +148,10 @@ case "$IDE" in
     ;;
   rubymine)
     PRODUCT="RubyMine"
-    BASE="https://download-cdn.jetbrains.com/ruby"
+    # Unlike the other IDEs here, the RubyMine tarball itself 404s on the CDN host
+    # (download-cdn.jetbrains.com) even though its .sha256 is present there; the
+    # front door (download.jetbrains.com) 302-redirects to a working signed CDN URL.
+    BASE="https://download.jetbrains.com/ruby"
     TARBALL="RubyMine-${VER}${ARCH_SUFFIX}.tar.gz"
     INSTALL_DIR="/opt/rubymine-${VER}"
     ;;

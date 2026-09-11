@@ -2,7 +2,7 @@ display-name = "IntelliJ Open Project"
 display-disc = "Open the workspace project automatically, no Open-project wizard"
 display-detail = "Unlike Eclipse, IntelliJ needs no separate workspace registration -- a folder with a valid .idea/ opens directly, no import wizard, confirmed live against a running booth. Two gaps remain between that and truly hands-off: first, if .idea/ doesn't exist yet, IntelliJ's own Open wizard asks the user to pick a build system (Gradle vs. any Eclipse project files the same repo may carry) -- this runs Gradle's own `idea` task headlessly instead, generating the same .idea/ files IntelliJ's wizard would, so that prompt never appears. Second, IntelliJ's \"recent projects\" list lives in an internal app-internal-state.db / \"Station\" service on modern versions, not an editable XML file, so it can't be safely pre-seeded the way Eclipse's workspace state was -- instead this patches the IDE's own starter script to default to opening the project directory whenever launched with no arguments, which both the CLI shim and the desktop icon already funnel through. ECLIPSE_PROJECT_KIND-style IDEA_PROJECT_KIND (DEFAULT/GENERAL/MAVEN/GRADLE) controls whether/how .idea/ is pre-generated; DEFAULT auto-detects from the project's build files, and only GRADLE has a safe headless generator today. The one thing this deliberately does NOT touch is the JetBrains User Agreement -- see the skip-first-run extension for why."
 display-order = 1
-auto-select = false
+auto-select = true
 tags = [
     "jetbrains", "idea", "ide", "gradle", "open"
 ]
