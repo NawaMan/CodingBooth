@@ -12,7 +12,11 @@ echo "=== Waiting for AnythingLLM on :${PORT} ==="
 echo "(first boot copies a large image and may take several minutes)"
 
 body=""
-for _ in $(seq 1 60); do
+# 100 * 5s = ~8.3 minutes. First boot runs `prisma generate`/`migrate deploy`
+# before the server answers at all, which can run past the old 60*5s=5min
+# budget when the host is busy building other example images concurrently
+# (see run-example-tests.sh's intermittent-under-load note).
+for _ in $(seq 1 100); do
   if body="$(curl -fsS -m 3 "http://127.0.0.1:${PORT}/api/ping" 2>/dev/null)"; then
     break
   fi
