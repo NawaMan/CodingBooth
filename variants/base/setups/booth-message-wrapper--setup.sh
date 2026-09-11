@@ -174,8 +174,29 @@ http {
             return 204;
         }
 
+        # Fira Code Nerd Font Mono, served as a real cacheable asset. Always
+        # present — every base-derived image installs it unconditionally
+        # (fira-code-nerd-font--setup.sh) — so this is safe to expose
+        # regardless of which inner service a given variant wraps.
+        location /booth-assets/fonts/ {
+            alias /usr/share/fonts/truetype/fira-code-nerd-font/;
+            add_header Cache-Control "public, max-age=31536000, immutable";
+        }
+
         # Root — redirect to /booth unless _booth_inner is set
         location = / {
+            # sub_filter cannot rewrite a compressed body, and a real browser
+            # (unlike curl) sends Accept-Encoding: gzip by default. Scoped to
+            # this exact-match root document only — the catch-all below still
+            # serves the inner service's JS/CSS bundles gzip'd, so a heavier
+            # app like code-server doesn't pay for this on its whole payload.
+            proxy_set_header Accept-Encoding "";
+            sub_filter_once on;
+            # WRAPPER_HEAD_INJECT is opt-in and empty by default (see
+            # start-booth-wrapped) — a no-op for every wrapped service that
+            # doesn't set it.
+            sub_filter '<head>' '<head>${WRAPPER_HEAD_INJECT}';
+
             if ($root_action = "proxy") {
                 proxy_pass http://127.0.0.1:${INNER_PORT};
                 break;
@@ -269,7 +290,11 @@ envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${BOOTH_SHOW_
 export OUTER_PORT INNER_PORT API_PORT SERVE_DIR
 export BOOTH_VARIANT_TAG="${BOOTH_VARIANT_TAG:-unknown}"
 export BOOTH_VERSION_TAG="${BOOTH_VERSION_TAG:-unknown}"
-envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT} ${BOOTH_INSTANCE_ID}' \
+# Opt-in HTML a variant's start-*-wrapped script wants injected into the
+# inner service's root <head> (e.g. an @font-face style) — empty by default,
+# a no-op sub_filter for every wrapped service that doesn't set it.
+export WRAPPER_HEAD_INJECT="${WRAPPER_HEAD_INJECT:-}"
+envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT} ${BOOTH_INSTANCE_ID} ${WRAPPER_HEAD_INJECT}' \
   <"$WRAPPER_DIR/nginx.conf.template" >"$NGINX_CONFIG"
 
 # Propagate SIGTERM to all child processes for clean container shutdown
