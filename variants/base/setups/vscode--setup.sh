@@ -116,7 +116,8 @@ if [[ ! -f "$SETTINGS_JSON" && -f /usr/share/fonts/truetype/fira-code-nerd-font/
   mkdir -p "$(dirname "$SETTINGS_JSON")"
   cat > "$SETTINGS_JSON" <<'JSONEOF'
 {
-  "terminal.integrated.fontFamily": "FiraCode Nerd Font Mono"
+  "terminal.integrated.fontFamily": "FiraCode Nerd Font Mono",
+  "editor.fontFamily": "FiraCode Nerd Font Mono"
 }
 JSONEOF
 fi
