@@ -19,8 +19,12 @@ export IFRAME_SRC="/?_booth_inner=1"
 # workbench) renders client-side in the visitor's browser, same as ttyd, so
 # the font bytes still have to reach that browser. start-booth-wrapped's
 # nginx serves them at /booth-assets/fonts/ unconditionally; this is what
-# actually asks for them to be woven into the page.
-export WRAPPER_HEAD_INJECT='<style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.ttf);}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.ttf);}</style>'
+# actually asks for them to be woven into the page. Points at the .woff2
+# fira-code-nerd-font--setup.sh generates alongside the .ttf it installs for
+# fontconfig — .woff2's font-specific compression is roughly half the bytes
+# of the raw .ttf — and preloads it so the fetch starts the instant this
+# document's <head> is parsed, same as web-ttyd-split/nginx.conf.template.
+export WRAPPER_HEAD_INJECT='<link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");}</style>'
 
 exec start-booth-wrapped
 EOF
