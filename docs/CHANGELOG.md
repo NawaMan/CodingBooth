@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`shell` / `exec` accept `--code <path>` to target (or, with `--run`, create) a booth by the
+  code path it was created from, instead of by name.** Alone, `--code` cascades the same way
+  `--run` does for names: a running booth on that path is used as-is, a stopped one is started
+  with `--run`, and a missing one is created there with `--run` (rooted at `--code` instead of the
+  current directory). Combined with `--name` / a positional name, `--code` is not a narrowing
+  search — one code directory can back any number of differently named booths — it's an identity
+  check: if the named booth's own code path disagrees, the command refuses with a hard,
+  unconditional error naming both paths. Unlike a `--port` create-flag mismatch, this is **not**
+  affected by `--accept-existing` — a wrong code path means `--name` resolved to the wrong
+  project, and there is no "connect anyway" for that. Unit tests cover the resolution cascade and
+  the mismatch rules; complex test `tests/complex/test-connect-code-path/` exercises target-by-code,
+  start-stopped, create-new-rooted-there, matching name+code, and the unconditional mismatch
+  refusal (with and without `--accept-existing`). See `docs/BOOTH_CONNECT.md`.
+
 - **Added five more database GUI/TUI clients as selectable templates:
   `lazysql`, `dblab`, `harlequin`, `sql-studio`, and `heidisql`.** All are
   opt-in only (`booth config --select <name>`), none baked into the base
