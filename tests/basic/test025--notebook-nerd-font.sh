@@ -87,14 +87,16 @@ else
 fi
 
 # -------------------------------------------------------
-# Test 2: the font referenced by that style is actually fetchable
+# Test 2: the font referenced by that style — the .woff2, not the .ttf; the
+# browser downloads whichever the @font-face src actually names — is
+# actually fetchable
 # -------------------------------------------------------
-FONT_CODE=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/booth-assets/fonts/FiraCodeNerdFontMono-Regular.ttf")
+FONT_CODE=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT}/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2")
 
 if [[ "$FONT_CODE" == "200" ]]; then
-  print_test_result "true" "$0" "2" "/booth-assets/fonts/ serves the referenced font file (200)"
+  print_test_result "true" "$0" "2" "/booth-assets/fonts/ serves the referenced .woff2 font file (200)"
 else
-  print_test_result "false" "$0" "2" "/booth-assets/fonts/ should serve the font file (200)"
+  print_test_result "false" "$0" "2" "/booth-assets/fonts/ should serve the referenced .woff2 font file (200)"
   echo "  Actual status: $FONT_CODE"
   FAILED=$((FAILED + 1))
 fi

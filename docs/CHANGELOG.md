@@ -4,6 +4,45 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fixed extra letter-spacing in the ttyd Nerd Font terminal that only went away after a hard
+  refresh.** ttyd's bundled xterm.js measures its terminal cell width once, synchronously, against
+  whatever font is actually rendering at that instant — usually the browser's fallback monospace,
+  since the Nerd Font `@font-face` is still loading — and never re-measures once the real font
+  swaps in. Every cell stayed sized for the fallback's wider advance width while the narrower Nerd
+  Font glyphs rendered inside it, producing a visible gap between every character; a hard refresh
+  only "fixed" it by the accident of the font already being cached by the time xterm measured.
+  Both places that splice the Nerd Font in — `web-ttyd-split/nginx.conf.template`'s per-pane
+  `sub_filter` and `ttyd-nerd-font-index--setup.sh`'s baked `index.html` (used when
+  `BOOTH_WEB_SPLIT=false`) — now also inject a small script that detects the mismatch and corrects
+  it. Getting there took three tries: calling xterm's own `_charSizeService.measure()` directly
+  (once as a single attempt after `document.fonts.ready`, once debounced on xterm's `onRender`
+  going quiet) corrupted the terminal — blank rows, or a stuck resize — whenever it landed while a
+  reattached tmux pane was replaying its buffer, reproduced live. A JS-triggered `location.reload()`
+  was tried next, on the theory that a manual hard refresh always fixes this; it doesn't reliably —
+  the reloaded page can lose the same race again, with no way to retry in place. The fix that
+  actually holds up: independently measure the loaded font with a throwaway canvas context (zero
+  side effects), compare it to xterm's cached cell width, and when they disagree, dispatch a plain
+  `resize` event — which drives ttyd's own window-resize handler, the same code path every browser
+  window resize already exercises, rather than reaching into xterm's internals directly. Verified
+  clean across repeated reattaches to the same live session (the scenario that broke both earlier
+  attempts) with no reload and no rendering corruption.
+
+- **Nerd Fonts served to the browser are now WOFF2, not the raw `.ttf`, cutting the transfer by
+  roughly half.** `FiraCode Nerd Font Mono` is ~2.7MB per weight as a `.ttf` — mostly the thousands
+  of icon glyphs Nerd Fonts patches into every font it ships, not the base typeface — and every
+  extra millisecond spent fetching or decoding it widens the race the fix above corrects for.
+  `fira-code-nerd-font--setup.sh` now also runs `woff2_compress` on the two weights the web terminal
+  actually serves (Regular/Bold Mono), producing a `.woff2` sibling at roughly half the bytes
+  (~1.2MB) alongside the `.ttf` it still installs for fontconfig/native apps. Every place that
+  serves the font to a browser — `web-ttyd-split/nginx.conf.template`'s per-pane `sub_filter`,
+  `ttyd-nerd-font-index--setup.sh`'s embedded data URI, and the codeserver/notebook wrapper's
+  `WRAPPER_HEAD_INJECT` (`booth-message-codeserver-wrapped--setup.sh`,
+  `booth-message-notebook-wrapped--setup.sh`) — now references the `.woff2` instead, and the three
+  nginx-served paths also get a `<link rel="preload">` so the fetch starts the instant the
+  document's `<head>` is parsed rather than waiting for CSS to discover it's needed. This narrows
+  the race window; it doesn't close it — decoding a font is always asynchronous, however fast it's
+  fetched — so the detect-and-`resize` fix above still does the actual correcting.
+
 - **`shell` / `exec` accept `--code <path>` to target (or, with `--run`, create) a booth by the
   code path it was created from, instead of by name.** Alone, `--code` cascades the same way
   `--run` does for names: a running booth on that path is used as-is, a stopped one is started

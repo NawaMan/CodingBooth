@@ -50,7 +50,9 @@ REQ_VER="${REQ_VER#v}"
 FONT_DIR="/usr/share/fonts/truetype/fira-code-nerd-font"
 
 # Already installed (e.g. a second desktop variant's setup calling this again).
-if [[ -f "${FONT_DIR}/FiraCodeNerdFontMono-Regular.ttf" ]]; then
+# Both suffixes, so re-running an older layer that only has the .ttf still
+# backfills the .woff2 siblings below instead of short-circuiting past them.
+if [[ -f "${FONT_DIR}/FiraCodeNerdFontMono-Regular.ttf" && -f "${FONT_DIR}/FiraCodeNerdFontMono-Regular.woff2" ]]; then
   echo "ℹ️  Fira Code Nerd Font already installed at ${FONT_DIR}"
   exit 0
 fi
@@ -58,11 +60,12 @@ fi
 # The base image already carries curl and unzip, and the desktop variants
 # already carry fontconfig (a transitive dependency of their GTK/Qt stacks);
 # only pay for apt when this script is run somewhere leaner (e.g. codeserver,
-# which installs no desktop toolkit at all).
-if ! command -v curl >/dev/null 2>&1 || ! command -v unzip >/dev/null 2>&1 || ! command -v fc-cache >/dev/null 2>&1; then
+# which installs no desktop toolkit at all). woff2_compress is never already
+# present — it's only needed here, for the web-terminal .woff2 siblings below.
+if ! command -v curl >/dev/null 2>&1 || ! command -v unzip >/dev/null 2>&1 || ! command -v fc-cache >/dev/null 2>&1 || ! command -v woff2_compress >/dev/null 2>&1; then
   export DEBIAN_FRONTEND=noninteractive
   apt-get update
-  apt-get install -y --no-install-recommends curl ca-certificates unzip fontconfig
+  apt-get install -y --no-install-recommends curl ca-certificates unzip fontconfig woff2
   rm -rf /var/lib/apt/lists/*
 fi
 
@@ -92,6 +95,15 @@ unzip -o -q "${TMP_FONT_DIR}/FiraCode.zip" -d "$TMP_FONT_DIR"
 find "$TMP_FONT_DIR" -name '*.ttf' -exec install -m 644 {} "$FONT_DIR/" \;
 rm -rf "$TMP_FONT_DIR"
 fc-cache -f "$FONT_DIR" >/dev/null
+
+# .woff2 siblings for the two weights the web terminal actually serves
+# (ttyd-nerd-font-index--setup.sh and web-ttyd-split/nginx.conf.template) —
+# native apps read the .ttf above via fontconfig, but a browser downloading
+# this font over the network cares about bytes-on-the-wire, and WOFF2's
+# font-specific compression roughly halves it versus the raw .ttf.
+for weight in Regular Bold; do
+  woff2_compress "${FONT_DIR}/FiraCodeNerdFontMono-${weight}.ttf" >/dev/null
+done
 
 echo "✅ Fira Code Nerd Font v${FONT_VERSION} installed to ${FONT_DIR}"
 cat <<'EON'

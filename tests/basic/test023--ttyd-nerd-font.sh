@@ -72,7 +72,9 @@ if ! wait_for_200 "http://127.0.0.1:${PORT2}/"; then
 fi
 
 # -------------------------------------------------------
-# Test 1: the font file ships in the base image
+# Test 1: the font ships in the base image, both as the .ttf native apps and
+# fontconfig read and as the .woff2 fira-code-nerd-font--setup.sh generates
+# alongside it for the web terminal below to actually serve.
 # -------------------------------------------------------
 ACTUAL=$(docker exec "$NAME1" test -f /usr/share/fonts/truetype/fira-code-nerd-font/FiraCodeNerdFontMono-Regular.ttf && echo present || echo missing)
 
@@ -84,42 +86,54 @@ else
   FAILED=$((FAILED + 1))
 fi
 
+ACTUAL=$(docker exec "$NAME1" test -f /usr/share/fonts/truetype/fira-code-nerd-font/FiraCodeNerdFontMono-Regular.woff2 && echo present || echo missing)
+
+if [[ "$ACTUAL" == "present" ]]; then
+  print_test_result "true" "$0" "2" "Fira Code Nerd Font Mono's .woff2 sibling ships alongside the .ttf"
+else
+  print_test_result "false" "$0" "2" "Fira Code Nerd Font Mono's .woff2 sibling should ship alongside the .ttf"
+  echo "  Actual: $ACTUAL"
+  FAILED=$((FAILED + 1))
+fi
+
 # -------------------------------------------------------
-# Test 2: a real browser's request (gzip'd) to a split-mode pane gets the
+# Test 3: a real browser's request (gzip'd) to a split-mode pane gets the
 # @font-face style — the exact case plain curl would miss and falsely pass
 # -------------------------------------------------------
 PANE_HTML=$(curl -s --compressed "http://127.0.0.1:${PORT1}/s1/")
 
 if [[ "$PANE_HTML" == *"@font-face"* && "$PANE_HTML" == *"FiraCode Nerd Font Mono"* ]]; then
-  print_test_result "true" "$0" "2" "split-mode pane /s1/ carries the @font-face style even when gzip'd"
+  print_test_result "true" "$0" "3" "split-mode pane /s1/ carries the @font-face style even when gzip'd"
 else
-  print_test_result "false" "$0" "2" "split-mode pane /s1/ should carry the @font-face style when gzip'd"
+  print_test_result "false" "$0" "3" "split-mode pane /s1/ should carry the @font-face style when gzip'd"
   echo "  First 300 chars of response: ${PANE_HTML:0:300}"
   FAILED=$((FAILED + 1))
 fi
 
 # -------------------------------------------------------
-# Test 3: the font referenced by that style is actually fetchable
+# Test 4: the font referenced by that style — the .woff2, not the .ttf; the
+# browser downloads whichever the @font-face src actually names — is
+# actually fetchable
 # -------------------------------------------------------
-FONT_CODE=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT1}/booth-assets/fonts/FiraCodeNerdFontMono-Regular.ttf")
+FONT_CODE=$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:${PORT1}/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2")
 
 if [[ "$FONT_CODE" == "200" ]]; then
-  print_test_result "true" "$0" "3" "/booth-assets/fonts/ serves the referenced font file (200)"
+  print_test_result "true" "$0" "4" "/booth-assets/fonts/ serves the referenced .woff2 font file (200)"
 else
-  print_test_result "false" "$0" "3" "/booth-assets/fonts/ should serve the font file (200)"
+  print_test_result "false" "$0" "4" "/booth-assets/fonts/ should serve the referenced .woff2 font file (200)"
   echo "  Actual status: $FONT_CODE"
   FAILED=$((FAILED + 1))
 fi
 
 # -------------------------------------------------------
-# Test 4: the non-split fallback (no nginx in front) embeds the font directly
+# Test 5: the non-split fallback (no nginx in front) embeds the font directly
 # -------------------------------------------------------
 ROOT_HTML=$(curl -s --compressed "http://127.0.0.1:${PORT2}/")
 
-if [[ "$ROOT_HTML" == *"@font-face"* && "$ROOT_HTML" == *"FiraCode Nerd Font Mono"* && "$ROOT_HTML" == *"data:font/ttf;base64,"* ]]; then
-  print_test_result "true" "$0" "4" "non-split root page embeds the font as a data URI even when gzip'd"
+if [[ "$ROOT_HTML" == *"@font-face"* && "$ROOT_HTML" == *"FiraCode Nerd Font Mono"* && "$ROOT_HTML" == *"data:font/woff2;base64,"* ]]; then
+  print_test_result "true" "$0" "5" "non-split root page embeds the font as a woff2 data URI even when gzip'd"
 else
-  print_test_result "false" "$0" "4" "non-split root page should embed the font as a data URI when gzip'd"
+  print_test_result "false" "$0" "5" "non-split root page should embed the font as a woff2 data URI when gzip'd"
   echo "  First 300 chars of response: ${ROOT_HTML:0:300}"
   FAILED=$((FAILED + 1))
 fi
