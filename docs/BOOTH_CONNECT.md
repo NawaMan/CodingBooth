@@ -67,6 +67,7 @@ The shell launched is the default shell configured for the `coder` user inside t
 ./booth shell myproject --run --port 9000           # create (if needed) on host port 9000
 ./booth shell myproject --port 9000 --accept-existing  # attach even if port differs
 ./booth shell --silence-build --run                 # bring it up without the start chatter
+./booth shell --code ~/projects/app                 # target by code path instead of name
 ```
 
 | Flag                         | Description                                                                 |
@@ -81,6 +82,7 @@ The shell launched is the default shell configured for the `coder` user inside t
 | `-e <VAR=value>`             | Set environment variable for the session                                    |
 | `--envfile <path>`           | Load environment variables from a file                                      |
 | `--name <name>`              | Target container by name                                                    |
+| `--code <path>`              | Target (or, with `--run`, create) the booth by code path — see [Target Resolution](#target-resolution) |
 
 ### What you get
 
@@ -116,6 +118,7 @@ Everything after `--` is executed inside the container. The exit code is forward
 ./booth exec myproject --run --port 9000 -- make test    # create (if needed) on port 9000
 ./booth exec myproject --port 9000 --accept-existing -- make test
 ./booth exec --silence-build --run -- make test          # command output only, even if the booth had to start
+./booth exec --code ~/projects/app -- make test           # target by code path instead of name
 ```
 
 | Flag                         | Description                                                                 |
@@ -131,6 +134,7 @@ Everything after `--` is executed inside the container. The exit code is forward
 | `--envfile <path>`           | Load environment variables from a file                                      |
 | `--dir <path>`               | Working directory inside the container (default: `/home/coder/code`)        |
 | `--name <name>`              | Target container by name                                                    |
+| `--code <path>`              | Target (or, with `--run`, create) the booth by code path — see [Target Resolution](#target-resolution) |
 
 ### Exit codes
 
@@ -176,15 +180,47 @@ Both `shell` and `exec` resolve the target container using the same priority as 
 
 1. `--name <name>` — explicit container name
 2. Positional argument — first non-flag argument
-3. Default — booth name derived from the current directory
+3. `--code <path>` (with no name/positional) — search by the code path the booth was created from, instead of by name
+4. Default — booth name derived from the current directory
 
 ```bash
 ./booth shell myproject              # positional
 ./booth shell --name myproject       # explicit flag
+./booth shell --code ~/projects/app  # by code path, no name needed
 cd ~/projects/app && ./booth shell   # default from current directory
 ```
 
 If the target container is not running, the command exits with an error — unless you pass `--run`.
+
+### `--name`/positional and `--code` together
+
+One code directory can back any number of differently-named booths, so `--code` alongside `--name`/positional is not a way to narrow a name search — it's an independent identity check. The named booth's own code path must match `--code`, or the command refuses to connect:
+
+```bash
+./booth exec myproject --code ~/other-project -- make test
+# Error: booth "myproject" was created from code path "/home/you/projects/app", not "/home/you/other-project".
+#        Refusing to connect so the command does not run against the wrong project.
+```
+
+This check is **unconditional** — unlike the `--port` create-flag mismatch below, it is not affected by `--accept-existing`. A wrong code path means `--name` resolved to the wrong project; there is no "connect anyway" for that.
+
+### `--code` alone
+
+With no `--name`/positional, `--code` searches by code path with the same running → stopped → missing priority `--run` uses for names:
+
+| Booths on that code path | Without `--run` | With `--run` |
+|---|---|---|
+| One running | Used as-is | Used as-is |
+| One stopped, none running | Error (not running) | Started |
+| None | Error (not found) | Created, rooted at `--code` |
+| More than one in the same state | Error — use `--name` | Error — use `--name` |
+
+```bash
+./booth exec --code ~/projects/app -- make test              # by code path only
+./booth exec --code ~/projects/app --run -- make test        # ...creating it there if needed
+```
+
+When `--run` creates a new booth from `--code`, the new booth is rooted at that directory (its `config.toml`, if any, is read from there) instead of the directory `exec`/`shell` was invoked in.
 
 ---
 
@@ -204,7 +240,7 @@ When `--run` is given, the booth is made available in whatever way is needed:
 |-------------|--------------|
 | **Already running** | Used as-is — nothing is restarted |
 | **Stopped** (e.g. a `--keep-alive` booth that was stopped) | Started (equivalent to `booth start`) |
-| **Does not exist** | Created from the current workspace with `booth run --daemon` |
+| **Does not exist** | Created from the current workspace with `booth run --daemon` (or from `--code`, if given) |
 
 On create, create-time flags such as **`--port`** and **`--name`** are forwarded to that run (along with **`--keep-alive`** when set), so the booth matches an equivalent `booth run` invocation.
 
@@ -274,6 +310,8 @@ Today the create flag on `shell` / `exec` is:
 | No create flags | Connect | Connect |
 
 Mismatch checks apply whenever you connect to an **existing** booth — with or without `--run`. They do not reconfigure a live container; they only decide whether connecting is safe.
+
+`--code` is deliberately **not** in this table: it is a target-identity check, not a create-flag contract, so it has no `--accept-existing` bypass — see [`--name`/positional and `--code` together](#namepositional-and---code-together).
 
 ```bash
 # Create on 9000 if missing; fail if myproject already runs on another port
