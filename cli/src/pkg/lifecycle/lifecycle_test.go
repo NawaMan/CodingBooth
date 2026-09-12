@@ -6,6 +6,7 @@ package lifecycle
 
 import (
 	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -101,7 +102,7 @@ func TestResolveSingleContainerStateValidation(t *testing.T) {
 func TestConnectPlanRunningWithoutRun(t *testing.T) {
 	containers := []managedContainer{{Name: "demo", State: "running"}}
 
-	target, action, err := connectPlan(containers, "demo", nil, false)
+	target, action, err := connectPlan(containers, "demo", nil, "", false)
 	if err != nil {
 		t.Fatalf("connectPlan returned error: %v", err)
 	}
@@ -116,7 +117,7 @@ func TestConnectPlanRunningWithoutRun(t *testing.T) {
 func TestConnectPlanStoppedWithoutRun(t *testing.T) {
 	containers := []managedContainer{{Name: "demo", State: "exited"}}
 
-	_, _, err := connectPlan(containers, "demo", nil, false)
+	_, _, err := connectPlan(containers, "demo", nil, "", false)
 	if err == nil {
 		t.Fatal("expected not-running error for a stopped booth without --run")
 	}
@@ -128,7 +129,7 @@ func TestConnectPlanStoppedWithoutRun(t *testing.T) {
 func TestConnectPlanMissingWithoutRun(t *testing.T) {
 	containers := []managedContainer{{Name: "demo", State: "running"}}
 
-	_, _, err := connectPlan(containers, "ghost", nil, false)
+	_, _, err := connectPlan(containers, "ghost", nil, "", false)
 	if err == nil {
 		t.Fatal("expected not-found error for a missing booth without --run")
 	}
@@ -140,7 +141,7 @@ func TestConnectPlanMissingWithoutRun(t *testing.T) {
 func TestConnectPlanStoppedWithRun(t *testing.T) {
 	containers := []managedContainer{{Name: "demo", State: "exited"}}
 
-	target, action, err := connectPlan(containers, "demo", nil, true)
+	target, action, err := connectPlan(containers, "demo", nil, "", true)
 	if err != nil {
 		t.Fatalf("connectPlan returned error: %v", err)
 	}
@@ -155,7 +156,7 @@ func TestConnectPlanStoppedWithRun(t *testing.T) {
 func TestConnectPlanRunningWithRun(t *testing.T) {
 	containers := []managedContainer{{Name: "demo", State: "running"}}
 
-	_, action, err := connectPlan(containers, "demo", nil, true)
+	_, action, err := connectPlan(containers, "demo", nil, "", true)
 	if err != nil {
 		t.Fatalf("connectPlan returned error: %v", err)
 	}
@@ -167,7 +168,7 @@ func TestConnectPlanRunningWithRun(t *testing.T) {
 func TestConnectPlanMissingWithRun(t *testing.T) {
 	containers := []managedContainer{{Name: "demo", State: "running"}}
 
-	target, action, err := connectPlan(containers, "ghost", nil, true)
+	target, action, err := connectPlan(containers, "ghost", nil, "", true)
 	if err != nil {
 		t.Fatalf("connectPlan returned error: %v", err)
 	}
@@ -176,6 +177,160 @@ func TestConnectPlanMissingWithRun(t *testing.T) {
 	}
 	if target.Name != "ghost" {
 		t.Fatalf("target.Name = %q, want %q (name to run under)", target.Name, "ghost")
+	}
+}
+
+func TestConnectPlanNameAndCodeMismatch(t *testing.T) {
+	containers := []managedContainer{{Name: "demo", State: "running", CodePath: "/proj/a"}}
+
+	_, _, err := connectPlan(containers, "demo", nil, "/proj/b", true)
+	if err == nil {
+		t.Fatal("expected mismatch error when booth's code path disagrees with --code")
+	}
+	if !strings.Contains(err.Error(), `was created from code path "/proj/a"`) {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestConnectPlanNameAndCodeMatch(t *testing.T) {
+	containers := []managedContainer{{Name: "demo", State: "running", CodePath: "/proj/a"}}
+
+	target, action, err := connectPlan(containers, "demo", nil, "/proj/a", true)
+	if err != nil {
+		t.Fatalf("connectPlan returned error: %v", err)
+	}
+	if action != connectUse || target.Name != "demo" {
+		t.Fatalf("target=%+v action=%d, want connectUse for demo", target, action)
+	}
+}
+
+func TestConnectPlanByCodePrefersRunning(t *testing.T) {
+	containers := []managedContainer{
+		{Name: "stopped-one", State: "exited", CodePath: "/proj/a"},
+		{Name: "running-one", State: "running", CodePath: "/proj/a"},
+	}
+
+	target, action, err := connectPlan(containers, "", nil, "/proj/a", true)
+	if err != nil {
+		t.Fatalf("connectPlan returned error: %v", err)
+	}
+	if action != connectUse || target.Name != "running-one" {
+		t.Fatalf("target=%+v action=%d, want connectUse for running-one", target, action)
+	}
+}
+
+func TestConnectPlanByCodeStartsStoppedWithRun(t *testing.T) {
+	containers := []managedContainer{{Name: "demo", State: "exited", CodePath: "/proj/a"}}
+
+	target, action, err := connectPlan(containers, "", nil, "/proj/a", true)
+	if err != nil {
+		t.Fatalf("connectPlan returned error: %v", err)
+	}
+	if action != connectStart || target.Name != "demo" {
+		t.Fatalf("target=%+v action=%d, want connectStart for demo", target, action)
+	}
+}
+
+func TestConnectPlanByCodeStoppedWithoutRun(t *testing.T) {
+	containers := []managedContainer{{Name: "demo", State: "exited", CodePath: "/proj/a"}}
+
+	_, _, err := connectPlan(containers, "", nil, "/proj/a", false)
+	if err == nil {
+		t.Fatal("expected error: stopped booth on that code path but --run not given")
+	}
+	if !strings.Contains(err.Error(), "no running booth found for code path") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestConnectPlanByCodeMissingWithRun(t *testing.T) {
+	var containers []managedContainer
+
+	target, action, err := connectPlan(containers, "", nil, "/proj/a", true)
+	if err != nil {
+		t.Fatalf("connectPlan returned error: %v", err)
+	}
+	if action != connectRun {
+		t.Fatalf("action = %d, want connectRun for a code path with no matching booth", action)
+	}
+	if target.Name != "" {
+		t.Fatalf("target.Name = %q, want empty (name is derived by `booth run` itself)", target.Name)
+	}
+}
+
+func TestConnectPlanByCodeMissingWithoutRun(t *testing.T) {
+	var containers []managedContainer
+
+	_, _, err := connectPlan(containers, "", nil, "/proj/a", false)
+	if err == nil {
+		t.Fatal("expected not-found error for a code path with no matching booth")
+	}
+	if !strings.Contains(err.Error(), "no booth found for code path") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestConnectPlanByCodeAmbiguousRunning(t *testing.T) {
+	containers := []managedContainer{
+		{Name: "a", State: "running", CodePath: "/proj/a"},
+		{Name: "b", State: "running", CodePath: "/proj/a"},
+	}
+
+	_, _, err := connectPlan(containers, "", nil, "/proj/a", true)
+	if err == nil {
+		t.Fatal("expected ambiguous error for two running booths on the same code path")
+	}
+	if !strings.Contains(err.Error(), "multiple booths match code path") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestConnectPlanByCodeAmbiguousStopped(t *testing.T) {
+	containers := []managedContainer{
+		{Name: "a", State: "exited", CodePath: "/proj/a"},
+		{Name: "b", State: "exited", CodePath: "/proj/a"},
+	}
+
+	_, _, err := connectPlan(containers, "", nil, "/proj/a", true)
+	if err == nil {
+		t.Fatal("expected ambiguous error for two stopped booths on the same code path")
+	}
+	if !strings.Contains(err.Error(), "multiple stopped booths match code path") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestResolveCodePathFlagEmpty(t *testing.T) {
+	got, err := resolveCodePathFlag("")
+	if err != nil || got != "" {
+		t.Fatalf("resolveCodePathFlag(\"\") = (%q, %v), want (\"\", nil)", got, err)
+	}
+}
+
+func TestResolveCodePathFlagMissingDir(t *testing.T) {
+	_, err := resolveCodePathFlag("/no/such/dir/hopefully-not-real")
+	if err == nil {
+		t.Fatal("expected error for a --code path that does not exist")
+	}
+	if !strings.Contains(err.Error(), "does not exist") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestResolveCodePathFlagNotADir(t *testing.T) {
+	f, err := os.CreateTemp("", "codingbooth-code-flag-*")
+	if err != nil {
+		t.Fatalf("failed to create temp file: %v", err)
+	}
+	defer os.Remove(f.Name())
+	f.Close()
+
+	_, err = resolveCodePathFlag(f.Name())
+	if err == nil {
+		t.Fatal("expected error for a --code path that is a file, not a directory")
+	}
+	if !strings.Contains(err.Error(), "is not a directory") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
