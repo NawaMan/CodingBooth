@@ -12,6 +12,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
@@ -48,6 +49,7 @@ func Shell(args []string, stderr io.Writer) error {
 
 	flagSet := flag.NewFlagSet("shell", flag.ContinueOnError)
 	name := flagSet.String("name", "", "Container name")
+	code := flagSet.String("code", "", "Code path used to find (or, with --run, create) the booth")
 	shell := flagSet.String("shell", "", "Shell to launch (default: container default)")
 	dir := flagSet.String("dir", "", "Starting directory inside the container")
 	envfile := flagSet.String("envfile", "", "Load environment variables from a file")
@@ -66,8 +68,13 @@ func Shell(args []string, stderr io.Writer) error {
 		return commandExit(2, "")
 	}
 
+	codePath, err := resolveCodePathFlag(*code)
+	if err != nil {
+		return err
+	}
+
 	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting}
-	target, cleanup, err := resolveConnectTarget(*name, positional, *run, *keepAlive, *silenceBuild, create, stderr)
+	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, stderr)
 	if err != nil {
 		return err
 	}
@@ -103,6 +110,7 @@ func Exec(args []string, stderr io.Writer) error {
 
 	flagSet := flag.NewFlagSet("exec", flag.ContinueOnError)
 	name := flagSet.String("name", "", "Container name")
+	code := flagSet.String("code", "", "Code path used to find (or, with --run, create) the booth")
 	dir := flagSet.String("dir", "", "Working directory inside the container")
 	interactive := flagSet.Bool("it", false, "Force interactive mode with TTY")
 	daemon := flagSet.Bool("daemon", false, "Run the command detached; return immediately without its output or exit code")
@@ -131,8 +139,13 @@ func Exec(args []string, stderr io.Writer) error {
 		return err
 	}
 
+	codePath, err := resolveCodePathFlag(*code)
+	if err != nil {
+		return err
+	}
+
 	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting}
-	target, cleanup, err := resolveConnectTarget(*name, positional, *run, *keepAlive, *silenceBuild, create, stderr)
+	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, stderr)
 	if err != nil {
 		return err
 	}
@@ -210,7 +223,7 @@ const (
 // removed, and a pre-existing keep-alive booth returns to stopped. A booth that
 // was already running, or keepAlive=true, yields a no-op cleanup. The returned
 // error is already a commandError.
-func resolveConnectTarget(name string, positional []string, run, keepAlive, quiet bool, create connectCreateOpts, stderr io.Writer) (managedContainer, func(), error) {
+func resolveConnectTarget(name string, positional []string, codePath string, run, keepAlive, quiet bool, create connectCreateOpts, stderr io.Writer) (managedContainer, func(), error) {
 	noCleanup := func() {}
 
 	containers, err := managedContainers(false)
@@ -218,7 +231,7 @@ func resolveConnectTarget(name string, positional []string, run, keepAlive, quie
 		return managedContainer{}, noCleanup, commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
 
-	target, action, err := connectPlan(containers, name, positional, run)
+	target, action, err := connectPlan(containers, name, positional, codePath, run)
 	if err != nil {
 		return managedContainer{}, noCleanup, commandExit(1, err.Error())
 	}
@@ -255,7 +268,7 @@ func resolveConnectTarget(name string, positional []string, run, keepAlive, quie
 		}
 
 	case connectRun:
-		created, err := runConnectTarget(name, positional, keepAlive, quiet, create, containers, stderr)
+		created, err := runConnectTarget(name, positional, codePath, keepAlive, quiet, create, containers, stderr)
 		if err != nil {
 			return managedContainer{}, noCleanup, err
 		}
@@ -379,7 +392,19 @@ func registerConnectSession(containerName string, action connectAction, keepAliv
 //
 // With run=false the booth must already be running. With run=true: a running
 // booth is used as-is, a stopped one is started, and a missing one is created.
-func connectPlan(containers []managedContainer, name string, positional []string, run bool) (managedContainer, connectAction, error) {
+//
+// codePath (already normalized to absolute, or "" if --code was not given) is
+// a second, independent way to locate the booth:
+//
+//   - --name/positional and --code together identify the *same* booth two
+//     ways at once — one project directory can run any number of differently
+//     named booths, so this is not a narrowing search. If the named booth's
+//     own code path disagrees, that is a mismatch, not an ambiguity: it means
+//     the name resolved to the wrong booth, and we refuse rather than connect
+//     silently against the wrong project.
+//   - --code alone (no name/positional) searches by code path instead of by
+//     name, cascading across states the same way the name path does.
+func connectPlan(containers []managedContainer, name string, positional []string, codePath string, run bool) (managedContainer, connectAction, error) {
 	if name != "" && len(positional) > 0 {
 		return managedContainer{}, connectUse, errors.New("Error: use either --name or positional name, not both")
 	}
@@ -391,11 +416,23 @@ func connectPlan(containers []managedContainer, name string, positional []string
 	if targetName == "" && len(positional) == 1 {
 		targetName = positional[0]
 	}
+
+	if targetName == "" && codePath != "" {
+		return connectPlanByCode(containers, codePath, run)
+	}
+
 	if targetName == "" {
 		targetName = defaultBoothName()
 	}
 
 	container, found := findByName(containers, targetName)
+	if found && codePath != "" && container.CodePath != codePath {
+		return managedContainer{}, connectUse, fmt.Errorf(
+			"Error: booth %q was created from code path %q, not %q. Refusing to connect so the command does not run against the wrong project.",
+			targetName, nonEmpty(container.CodePath, "(none)"), codePath,
+		)
+	}
+
 	if found && container.State == "running" {
 		return container, connectUse, nil
 	}
@@ -413,20 +450,97 @@ func connectPlan(containers []managedContainer, name string, positional []string
 	return managedContainer{Name: targetName}, connectRun, nil
 }
 
-// runConnectTarget creates a booth from the current workspace with `booth run`
-// in daemon mode, waits for it to become ready, and returns the running
-// container. It shells out to the same executable so the full run pipeline
-// (config, image build, ports, …) is reused verbatim. When keepAlive is set the
-// new booth is created with --keep-alive so it persists across a later stop.
-// Create-intent flags (e.g. --port) are forwarded so a shell/exec --run create
-// matches an equivalent booth run.
+// connectPlanByCode resolves shell/exec's target when --code is given without
+// --name or a positional name. Unlike resolveSingleContainer (used by `start`,
+// which only ever targets an existing booth in one fixed state) this cascades
+// across states the same way name-based connectPlan does: prefer a running
+// booth on that code path, else (with --run) start the one stopped booth on
+// it, else (with --run) create one rooted there. Multiple booths sharing a
+// code path in the same state is ambiguous and is rejected outright, same as
+// resolveSingleContainer does — there is no further heuristic to pick one.
+func connectPlanByCode(containers []managedContainer, codePath string, run bool) (managedContainer, connectAction, error) {
+	var running, stopped []managedContainer
+	for _, container := range containers {
+		if container.CodePath != codePath {
+			continue
+		}
+		if container.State == "running" {
+			running = append(running, container)
+		} else {
+			stopped = append(stopped, container)
+		}
+	}
+
+	if len(running) > 1 {
+		return managedContainer{}, connectUse, fmt.Errorf("Error: multiple booths match code path %q (%s). Use --name.", codePath, joinContainerNames(running))
+	}
+	if len(running) == 1 {
+		return running[0], connectUse, nil
+	}
+
+	if !run {
+		if len(stopped) == 0 {
+			return managedContainer{}, connectUse, fmt.Errorf("Error: no booth found for code path %q. Use 'booth list' to see available containers.", codePath)
+		}
+		return managedContainer{}, connectUse, fmt.Errorf("Error: no running booth found for code path %q (a stopped one exists). Use --run to start it.", codePath)
+	}
+
+	if len(stopped) > 1 {
+		return managedContainer{}, connectUse, fmt.Errorf("Error: multiple stopped booths match code path %q (%s). Use --name.", codePath, joinContainerNames(stopped))
+	}
+	if len(stopped) == 1 {
+		return stopped[0], connectStart, nil
+	}
+
+	return managedContainer{}, connectRun, nil
+}
+
+// joinContainerNames returns the sorted, comma-joined names of containers, for
+// "multiple matches, use --name" error messages.
+func joinContainerNames(containers []managedContainer) string {
+	names := make([]string, 0, len(containers))
+	for _, container := range containers {
+		names = append(names, container.Name)
+	}
+	sort.Strings(names)
+	return strings.Join(names, ", ")
+}
+
+// resolveCodePathFlag normalizes a --code flag value to an absolute path and
+// confirms it exists and is a directory, so a typo fails immediately with a
+// clear error rather than surfacing later as a confusing "booth not found" or,
+// worse, silently rooting a newly-created booth at the wrong place. Returns ""
+// unchanged when --code was not given.
+func resolveCodePathFlag(code string) (string, error) {
+	if code == "" {
+		return "", nil
+	}
+	normalized := normalizeCodePath(code)
+	info, err := os.Stat(normalized)
+	if err != nil {
+		return "", commandExit(1, fmt.Sprintf("Error: --code path %q does not exist: %v", normalized, err))
+	}
+	if !info.IsDir() {
+		return "", commandExit(1, fmt.Sprintf("Error: --code path %q is not a directory.", normalized))
+	}
+	return normalized, nil
+}
+
+// runConnectTarget creates a booth from the current workspace (or, when
+// codePath is set, from that directory instead) with `booth run` in daemon
+// mode, waits for it to become ready, and returns the running container. It
+// shells out to the same executable so the full run pipeline (config, image
+// build, ports, …) is reused verbatim. When keepAlive is set the new booth is
+// created with --keep-alive so it persists across a later stop. Create-intent
+// flags (e.g. --port) are forwarded so a shell/exec --run create matches an
+// equivalent booth run.
 //
 // preRun is the set of managed booths that existed before the run; it lets us
 // identify the container the run just created by set difference. This matters
 // when --name carries a placeholder template (e.g. '{project}-{port}'): the
 // resolved name is only known after the run, so we cannot look it up by the
 // literal flag value.
-func runConnectTarget(name string, positional []string, keepAlive, quiet bool, create connectCreateOpts, preRun []managedContainer, stderr io.Writer) (managedContainer, error) {
+func runConnectTarget(name string, positional []string, codePath string, keepAlive, quiet bool, create connectCreateOpts, preRun []managedContainer, stderr io.Writer) (managedContainer, error) {
 	self, err := os.Executable()
 	if err != nil {
 		return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to locate booth executable: %v", err))
@@ -442,6 +556,12 @@ func runConnectTarget(name string, positional []string, keepAlive, quiet bool, c
 	connectNote(stderr, quiet, "No running booth found; starting one with 'booth run'...\n")
 
 	cmd := exec.Command(self, runArgs...)
+	// `booth run` roots the new booth at its own working directory (via
+	// config.toml resolution), so an explicit --code takes effect by running it
+	// there instead of in this process's cwd.
+	if codePath != "" {
+		cmd.Dir = codePath
+	}
 	// Route the run pipeline's output to stderr so exec's stdout stays clean.
 	cmd.Stdout = stderr
 	cmd.Stderr = stderr
@@ -450,8 +570,9 @@ func runConnectTarget(name string, positional []string, keepAlive, quiet bool, c
 	}
 
 	// Re-query and resolve the container the run just created. When no name was
-	// given, resolve by the current working directory's code path so we match
-	// however the run derived the name (e.g. from config.toml).
+	// given, resolve by the code path the booth was run from (--code, or this
+	// process's cwd when --code was not given) so we match however the run
+	// derived the name (e.g. from config.toml).
 	containers, err := managedContainers(false)
 	if err != nil {
 		return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
@@ -467,11 +588,15 @@ func runConnectTarget(name string, positional []string, keepAlive, quiet bool, c
 	case explicitName != "":
 		target, err = resolveSingleContainer(containers, explicitName, "", nil, stateRunning)
 	default:
-		cwd, cwdErr := os.Getwd()
-		if cwdErr != nil {
-			return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to determine working directory: %v", cwdErr))
+		lookupPath := codePath
+		if lookupPath == "" {
+			cwd, cwdErr := os.Getwd()
+			if cwdErr != nil {
+				return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to determine working directory: %v", cwdErr))
+			}
+			lookupPath = cwd
 		}
-		target, err = resolveSingleContainer(containers, "", cwd, nil, stateRunning)
+		target, err = resolveSingleContainer(containers, "", lookupPath, nil, stateRunning)
 	}
 	if err != nil {
 		return managedContainer{}, commandExit(1, err.Error())
@@ -755,7 +880,7 @@ func buildConnectRunArgs(explicitName string, keepAlive bool, create connectCrea
 func extractPositionalAndFlags(args []string) (positional []string, flags []string) {
 	knownValueFlags := map[string]bool{
 		"-e": true, "--name": true, "--shell": true,
-		"--dir": true, "--envfile": true, "--port": true,
+		"--dir": true, "--envfile": true, "--port": true, "--code": true,
 	}
 
 	for i := 0; i < len(args); i++ {
