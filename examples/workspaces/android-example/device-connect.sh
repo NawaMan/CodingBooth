@@ -8,7 +8,7 @@
 # does not run under Docker Desktop's amd64 emulation on Apple Silicon (see the
 # README's Architecture note), but a real device over the network is unaffected.
 #
-# Run this INSIDE the booth: ../../../codingbooth -- ./device-connect.sh ...
+# Run this INSIDE the booth: ../../../booth -- ./device-connect.sh ...
 #
 # On the phone: Settings -> Developer options -> Wireless debugging ->
 # "Pair device with pairing code" shows the IP, a PAIRING port, and a 6-digit
@@ -44,7 +44,7 @@ CONNECT_PORT="${4:-}"
 
 if ! command -v adb >/dev/null 2>&1; then
   echo "❌ adb not found on PATH. Is this running inside the booth?" >&2
-  echo "   Try: ../../../codingbooth -- ./device-connect.sh ..." >&2
+  echo "   Try: ../../../booth -- ./device-connect.sh ..." >&2
   exit 1
 fi
 

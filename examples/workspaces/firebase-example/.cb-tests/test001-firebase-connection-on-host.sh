@@ -10,6 +10,12 @@
 
 set -euo pipefail
 
+# Locate the booth wrapper from this script's own location, so it works from any cwd.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+BOOTH="$REPO_ROOT/booth"
+[ -x "$BOOTH" ] || BOOTH="$REPO_ROOT/codingbooth"
+[ -x "$BOOTH" ] || { echo "booth wrapper not found under $REPO_ROOT" >&2; exit 1; }
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -55,7 +61,7 @@ echo ""
 
 # Test 2: Firebase connection from inside the container
 echo "Testing Firebase connection from inside container..."
-if ../../../codingbooth --variant base --port "${CB_PORT:-50091}" -- ./check-connection.sh; then
+if "$BOOTH" --variant base --port "${CB_PORT:-50091}" -- ./check-connection.sh; then
     echo -e "${GREEN}✓${NC} Container Firebase connection test passed"
 else
     echo -e "${RED}✗${NC} Container Firebase connection test failed"
