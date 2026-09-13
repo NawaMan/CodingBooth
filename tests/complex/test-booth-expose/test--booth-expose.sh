@@ -107,7 +107,7 @@ fi
 # Test 6: End-to-end tunnel via booth--expose
 # Start a daemon booth with a simple HTTP server, then use booth--expose
 reset_booth_tmp
-TUNNEL_PORT=18686
+TUNNEL_PORT=18688
 
 booth_step 6 "daemon booth for the end-to-end tunnel" \
   --variant base --name "$NAME" --port "$TUNNEL_PORT" --daemon --keep-alive -- 'sleep 600' \

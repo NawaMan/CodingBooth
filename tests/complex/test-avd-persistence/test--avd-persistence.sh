@@ -62,7 +62,7 @@ trap cleanup EXIT
 
 "$BOOTH" config "$PRJ" --no-tui --overwrite \
     --templates-path "$REPO_ROOT/templates" \
-    --variant base --port 50419 \
+    --variant base --port 50418 \
     --select "java:17/android-sdk+emulator+kvm+avd-cache" >/dev/null 2>&1
 
 FAILED=0
