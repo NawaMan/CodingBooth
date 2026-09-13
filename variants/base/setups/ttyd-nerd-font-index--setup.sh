@@ -51,7 +51,7 @@ ttyd -p "$CAPTURE_PORT" true &
 TTYD_PID=$!
 FETCHED=false
 for _ in $(seq 1 40); do
-  if curl -sf "http://127.0.0.1:${CAPTURE_PORT}/" -o "$DEFAULT_HTML" 2>/dev/null && [[ -s "$DEFAULT_HTML" ]]; then
+  if curl -sf --retry 0 "http://127.0.0.1:${CAPTURE_PORT}/" -o "$DEFAULT_HTML" 2>/dev/null && [[ -s "$DEFAULT_HTML" ]]; then
     FETCHED=true
     break
   fi
