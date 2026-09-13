@@ -24,10 +24,12 @@
 # still appears in the Boothfile, so the damage is invisible until someone
 # notices the page won't load. Test 1 pins the mapping; test 4 proves it works.
 #
-# Note the ports here are deliberately odd (18080/18989) rather than the 8080
-# default: a dev host is quite likely to have something on 8080 already, and a
-# collision would fail this test for a reason that has nothing to do with nginx.
-# The non-default port doubles as proof that `+expose:<port>` parameterizes.
+# Note the ports here are deliberately odd (18088/18988, both ending in 8 per
+# this suite's port convention for a value that doesn't itself matter) rather
+# than the 8080 default: a dev host is quite likely to have something on 8080
+# already, and a collision would fail this test for a reason that has nothing
+# to do with nginx. The non-default port doubles as proof that
+# `+expose:<port>` parameterizes.
 #
 # The .booth/ is GENERATED from the local templates rather than checked in as a
 # fixture — a checked-in config.toml with a hand-written "-p" would still pass
@@ -45,8 +47,8 @@ echo "=== Test: nginx expose extension ==="
 
 FAILED=0
 NAME="test-nginx-expose-$$"
-HTTP_PORT=18080      # host port -> container 80
-BOOTH_PORT=18989     # the booth's own port, kept clear of the default 10000
+HTTP_PORT=18088      # host port -> container 80
+BOOTH_PORT=18988     # the booth's own port, kept clear of the default 10000
 
 TEMPLATES_PATH="$(cd ../../.. && pwd)/templates"
 
