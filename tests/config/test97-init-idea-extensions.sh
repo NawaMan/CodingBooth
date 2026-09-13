@@ -1,8 +1,13 @@
 #!/bin/bash
-# The two opt-in extensions on `idea`: Lombok (the IntelliJ counterpart to the
-# lombok-eclipse setup) and skipping the first-run prompts. Neither is auto-selected,
-# so an extension that silently stops being selectable would not show up anywhere else:
-# test86 only proves the setup script exists, not that anything can reach it.
+# Three extensions on `idea`: Lombok (the IntelliJ counterpart to the
+# lombok-eclipse setup), which stays opt-in, and skipping the first-run
+# prompts / opening the project automatically, which commit 365140ea made
+# auto-select (jetbrains-import-project--extension.toml / skip-first-run--
+# extension.toml both carry auto-select = true) — a bare `idea` selection now
+# emits both without being asked. Lombok not auto-selecting, and the
+# auto-selected pair still showing up on a bare `idea`, is what would silently
+# break if an extension stopped being selectable: test86 only proves the
+# setup script exists, not that anything can reach it.
 source "$(dirname "$0")/test-helpers--source.sh"
 
 begin
@@ -52,23 +57,15 @@ run booth config $prj --no-tui --variant xfce --select "idea+skip-first-run"
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" "setup jetbrains-first-run" ''      "idea+skip-first-run emits setup jetbrains-first-run"
 
-# --- and it stays opt-in. This one guards a decision, not just a default: the setup
-#     answers consent prompts on the user's behalf, so it must never arrive unasked. ---
+# --- and it keeps arriving unasked on a bare `idea` — auto-select = true since
+#     365140ea, guarding a decision, not just a default: an extension that
+#     silently stopped auto-selecting would leave a fresh IDE booth back to
+#     clicking through first-run modals with no test noticing. ---
 run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --variant xfce --select "idea"
 boothfile="$prj/.booth/Boothfile"
-TEST_COUNT=$((TEST_COUNT + 1))
-if ! grep -q '^setup jetbrains-first-run' "$boothfile"; then
-  PASS_COUNT=$((PASS_COUNT + 1))
-  echo -n "Test ${TEST_COUNT}: first-run seeding is opt-in, never automatic ....... "
-  echo -e "\033[32mPASSED\033[0m"
-else
-  FAIL_COUNT=$((FAIL_COUNT + 1))
-  FAIL_TESTS+=("Test ${TEST_COUNT}: first-run seeding is opt-in, never automatic")
-  echo -n "Test ${TEST_COUNT}: first-run seeding is opt-in, never automatic ....... "
-  echo -e "\033[31mFAILED\033[0m"
-fi
+assert-line "$boothfile" "setup jetbrains-first-run" ''      "first-run seeding auto-selects on a bare idea"
 
 # --- both together, alongside the generic escape hatch left empty (java-example's shape) ---
 run rm -Rf $prj
