@@ -231,6 +231,7 @@ booth [flags] [-- command...]
 | `--show-run-time [epoch]` | Display elapsed session time in the lifecycle panel ([details](docs/BOOTH_RUNTIME.md)) |
 | `--show-count-down <epoch>` | Display countdown timer to a deadline ([details](docs/BOOTH_RUNTIME.md))         |
 | `--count-down-exit-code <code>` | Exit code when countdown expires (default: 0) ([details](docs/BOOTH_RUNTIME.md)) |
+| `--console-spec <shared\|cache>` | Save the console's layout/tabs back to `.booth/console.json` (`shared`) or `.booth/.tmp/console.json` (`cache`) as they change ([details](docs/BOOTH_CONSOLE.md)) |
 | `--log-time`         | Prefix progress messages with timestamps (HH:MM:SS)                              |
 | `--leave-tmp-on-exit`| Preserve `.booth/.tmp/` contents on exit for debugging                            |
 | `--keep-tmp-on-start`| Preserve `.booth/.tmp/` from previous session on start                            |

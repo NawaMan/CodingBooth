@@ -24,6 +24,7 @@ Back to [README](../README.md)
 - [File Format](#file-format)
 - [Tab Addresses](#tab-addresses)
 - [Precedence](#precedence)
+- [Saving Layout Changes Back](#saving-layout-changes-back)
 - [Why a Separate File](#why-a-separate-file)
 - [Examples](#examples)
 
@@ -94,11 +95,34 @@ This means editing the file after the fact doesn't retroactively change anyone's
 
 ---
 
+## Saving Layout Changes Back
+
+By default, `console.json` only ever flows one way: the container reads it at boot, but your later customizing (switching a pane to Web view, opening tabs, resizing) is remembered in `localStorage` only — the file on disk never changes. `--console-spec <mode>` (or `console-spec = "..."` in `.booth/config.toml`) turns on saving the current layout and tabs back to the file itself, so the *next* fresh browser — a teammate, or you on another machine — starts from what you last had, without anyone editing JSON by hand.
+
+Two modes:
+
+| Mode | Saves to | Requires | Git |
+|---|---|---|---|
+| `shared` | `.booth/console.json` | `--writable-booth` | Committable — this is the same file described above |
+| `cache` | `.booth/.tmp/console.json` | Nothing extra — `.tmp/` is always writable | Never committed (already in `.booth/.gitignore`) |
+
+Leaving `console-spec` unset keeps the read-only behavior documented above: an existing `.booth/console.json` is still honored as a starting layout, but nothing is ever written back.
+
+`shared` needs `--writable-booth` because `.booth/` is otherwise bind-mounted read-only; without it, a `shared` save fails cleanly (logged, not fatal) and the change still lives on in `localStorage` for that browser. `cache` never needs `--writable-booth` — `.booth/.tmp/` is always mounted read-write, the same mount used for session/idle/lifecycle state — but because it isn't git-tracked, it only helps *your* next session, not a teammate's.
+
+Saving is automatic and debounced: there's no explicit "save" button, it just happens shortly after you change layout or tabs.
+
+**Caveat: takes effect on next restart, not live.** `index.html` is rendered once, from `console.json`'s contents at that moment, when the container boots — the same static page is then served for the container's entire lifetime. A save updates the file on disk right away, but the *currently running* container keeps serving the page it already rendered, so even a brand-new browser tab against that same running container won't see the change until the container restarts. This mirrors the read-only file's own load-once behavior — it isn't unique to saving.
+
+This setting is only meaningful for the base variant's split console — other variants and layouts ignore it, so it's harmless to leave set in a shared `config.toml` that's used across variants.
+
+---
+
 ## Why a Separate File
 
-Most per-project settings — idle timeout, run-time display, and the like — live as scalar keys in `.booth/config.toml` and get forwarded into the container as a `BOOTH_*` environment variable. This setting doesn't: a layout name plus an arbitrary, per-pane list of tab addresses is genuinely structured data, not a string, bool, or flat list, and `config.toml`'s schema doesn't have a good way to express "an array of arrays" without real changes to the CLI itself.
+Most per-project settings — idle timeout, run-time display, and the like — live as scalar keys in `.booth/config.toml` and get forwarded into the container as a `BOOTH_*` environment variable. The layout/tabs data itself follows a different path: a layout name plus an arbitrary, per-pane list of tab addresses is genuinely structured data, not a string, bool, or flat list, and `config.toml`'s schema doesn't have a good way to express "an array of arrays" without real changes to the CLI itself.
 
-Instead, `console.json` rides the same mechanism `.booth/cache/` and `.booth/shared/` already use: `.booth/` is bind-mounted read-only into every booth at `/home/coder/code/.booth`, so the container's own startup script can just read the file directly — no `docker -e`, no environment variable, no CLI changes at all.
+Instead, `console.json` rides the same mechanism `.booth/cache/` and `.booth/shared/` already use: `.booth/` is bind-mounted into every booth at `/home/coder/code/.booth` (read-only by default), so the container's own startup script can just read the file directly — no `docker -e`, no environment variable needed for the *read* path. `console-spec` (above) is the one small piece of this feature that *is* a scalar `BOOTH_*` setting, since "which mode, if any" is exactly the kind of flat value `config.toml` already handles well.
 
 ---
 

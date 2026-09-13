@@ -98,6 +98,9 @@ handle_request() {
                 /booth-messages/api/login)
                     handle_login "$body"
                     ;;
+                /booth-messages/api/console-config)
+                    handle_save_console_config "$body"
+                    ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
             ;;
@@ -294,6 +297,58 @@ handle_login() {
     send_response 200 '{"ok":true}' "$cookie"
 }
 
+# Saves the console's current layout/tabs back to whichever file
+# console-spec (BOOTH_CONSOLE_SPEC, set by start-ttyd-split) points at — see
+# that script for the shared/cache path split. Reached at
+# /booth-messages/api/console-config; nginx's generic /booth-messages/api/
+# location already gates this behind the same cookie every other endpoint
+# here (but /login) requires, so there's nothing to check here.
+handle_save_console_config() {
+    local body="$1"
+
+    if [ -z "${BOOTH_CONSOLE_SPEC:-}" ]; then
+        send_response 403 '{"error":"console layout saving is not enabled — set console-spec in .booth/config.toml"}'
+        return
+    fi
+
+    # The browser only ever sends what it itself built, so this is a
+    # sanity check against a client-side bug, not a defense against a
+    # hostile body — jq is already relied on by start-ttyd-split for the
+    # same file's read side. Specifically an object, not just any JSON
+    # value: start-ttyd-split's reader assumes .layout/.panes are there to
+    # look at.
+    if ! printf '%s' "$body" | jq -e 'type == "object"' >/dev/null 2>&1; then
+        send_response 400 '{"error":"expected a JSON object body"}'
+        return
+    fi
+
+    local target
+    case "$BOOTH_CONSOLE_SPEC" in
+        cache) target="/home/coder/code/.booth/.tmp/console.json" ;;
+        *)     target="/home/coder/code/.booth/console.json" ;;
+    esac
+
+    # Written to a temp file in the same directory, then renamed into
+    # place — an atomic swap on the same filesystem, so a concurrent read
+    # (start-ttyd-split, at the next boot) never sees a half-written file.
+    # .booth/ is read-only unless the booth was started with
+    # --writable-booth (console-spec=cache's .booth/.tmp/ is always
+    # writable regardless), so both steps can fail in a completely normal,
+    # expected way — surfaced as a real error rather than the silent
+    # best-effort writes this file's other handlers use for their own,
+    # always-writable .tmp/ state.
+    local tmp_target="${target}.tmp.$$"
+    if ! mkdir -p "$(dirname "$target")" 2>/dev/null \
+        || ! printf '%s' "$body" >"$tmp_target" 2>/dev/null \
+        || ! mv "$tmp_target" "$target" 2>/dev/null; then
+        rm -f "$tmp_target" 2>/dev/null
+        send_response 500 '{"error":"could not save layout — console-spec=shared needs this booth restarted with --writable-booth"}'
+        return
+    fi
+
+    send_response 200 '{"ok":true}'
+}
+
 send_response() {
     local code="$1"
     local body="$2"
@@ -301,8 +356,10 @@ send_response() {
     local status_text="OK"
     [ "$code" = "400" ] && status_text="Bad Request"
     [ "$code" = "401" ] && status_text="Unauthorized"
+    [ "$code" = "403" ] && status_text="Forbidden"
     [ "$code" = "404" ] && status_text="Not Found"
     [ "$code" = "405" ] && status_text="Method Not Allowed"
+    [ "$code" = "500" ] && status_text="Internal Server Error"
 
     # ${#body} counts chars in a UTF-8 locale; HTTP Content-Length needs bytes.
     local body_bytes
