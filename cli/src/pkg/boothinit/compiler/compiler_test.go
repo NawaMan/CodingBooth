@@ -166,6 +166,121 @@ func TestCompile_SegmentTiebreakBySourceName(t *testing.T) {
 	assert.Equal(t, "# alpha\n# beta\n", out.Boothfile.Content)
 }
 
+func TestCompile_RequiresOverridesAlphabeticalTiebreak(t *testing.T) {
+	// Reproduces the real Boothfile bug: aws-cdk declares `requires = ["nodejs"]`
+	// in its template.toml, but both templates leave Boothfile at the default
+	// order (50), so the plain (Order, SourceName) tiebreak used to put
+	// "aws-cdk" ahead of "nodejs" alphabetically — installing the CDK CLI before
+	// Node.js exists, which fails outright (aws-cdk--setup.sh has no fallback).
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{
+					Name:     "aws-cdk",
+					Requires: []string{"nodejs"},
+					BoothfileSegments: []tmpl.Segment{
+						{Order: 50, Content: "setup aws-cdk\n"},
+					},
+				},
+				ParamValues: map[string]string{},
+			},
+			{
+				Template: &tmpl.Template{
+					Name: "nodejs",
+					BoothfileSegments: []tmpl.Segment{
+						{Order: 50, Content: "setup nodejs\n"},
+					},
+				},
+				ParamValues: map[string]string{},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	require.NotNil(t, out.Boothfile)
+	assert.Equal(t, "setup nodejs\nsetup aws-cdk\n", out.Boothfile.Content)
+}
+
+func TestCompile_ExtensionRequiresOrdersAheadOfDependency(t *testing.T) {
+	// An extension can declare its own Requires (e.g. a notebook kernel
+	// requiring the "notebook" template) independent of its parent template.
+	// The extension's segment must still land after its dependency even though
+	// its composite source name ("zeta+kernel") would otherwise sort after
+	// "notebook" only by luck of the alphabet — swap the names to prove it's
+	// not accidentally passing on alphabetical order alone.
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{Name: "alpha"},
+				Extensions: []selection.SelectedExtension{
+					{
+						Extension: &tmpl.Template{
+							Name:     "kernel",
+							Requires: []string{"zeta-notebook"},
+							BoothfileSegments: []tmpl.Segment{
+								{Order: 50, Content: "setup alpha-kernel\n"},
+							},
+						},
+						ParamValues: map[string]string{},
+					},
+				},
+				ParamValues: map[string]string{},
+			},
+			{
+				Template: &tmpl.Template{
+					Name: "zeta-notebook",
+					BoothfileSegments: []tmpl.Segment{
+						{Order: 50, Content: "setup zeta-notebook\n"},
+					},
+				},
+				ParamValues: map[string]string{},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	require.NotNil(t, out.Boothfile)
+	assert.Equal(t, "setup zeta-notebook\nsetup alpha-kernel\n", out.Boothfile.Content)
+}
+
+func TestCompile_RequiresCycleDoesNotPanic(t *testing.T) {
+	// Nothing upstream currently rejects a Requires cycle. topoSortSegments must
+	// not infinite-loop or panic on one — it falls back to baseline order for
+	// the cyclic pair instead of erroring.
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{
+					Name:     "a",
+					Requires: []string{"b"},
+					BoothfileSegments: []tmpl.Segment{
+						{Order: 50, Content: "setup a\n"},
+					},
+				},
+				ParamValues: map[string]string{},
+			},
+			{
+				Template: &tmpl.Template{
+					Name:     "b",
+					Requires: []string{"a"},
+					BoothfileSegments: []tmpl.Segment{
+						{Order: 50, Content: "setup b\n"},
+					},
+				},
+				ParamValues: map[string]string{},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	require.NotNil(t, out.Boothfile)
+	assert.Contains(t, out.Boothfile.Content, "setup a\n")
+	assert.Contains(t, out.Boothfile.Content, "setup b\n")
+}
+
 func TestCompile_MultiTemplateSegmentsMerged(t *testing.T) {
 	resolved := &selection.ResolvedSelection{
 		Templates: []selection.SelectedTemplate{
@@ -489,7 +604,7 @@ func TestCompile_ExtensionConfig(t *testing.T) {
 	resolved := &selection.ResolvedSelection{
 		Templates: []selection.SelectedTemplate{
 			{
-				Template: &tmpl.Template{Name: "go"},
+				Template:    &tmpl.Template{Name: "go"},
 				ParamValues: map[string]string{},
 				Extensions: []selection.SelectedExtension{
 					{
@@ -636,7 +751,7 @@ func TestCompile_ExtensionFilesCollected(t *testing.T) {
 	resolved := &selection.ResolvedSelection{
 		Templates: []selection.SelectedTemplate{
 			{
-				Template: &tmpl.Template{Name: "go"},
+				Template:    &tmpl.Template{Name: "go"},
 				ParamValues: map[string]string{},
 				Extensions: []selection.SelectedExtension{
 					{
