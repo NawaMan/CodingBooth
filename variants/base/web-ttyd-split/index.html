@@ -1203,8 +1203,10 @@
       }
 
       // Globe bar: `http://booth:{port}{path}` → iframe `/proxy/{port}{path}`.
-      // Host is only `booth` (localhost paste is rewritten). Scheme is http;
-      // https is accepted as a shape but refused until the proxy speaks TLS.
+      // Only host "booth" routes through this rewrite (and only over http —
+      // the proxy has no TLS to speak of); every other host, including
+      // localhost/127.0.0.1, is an externalTarget instead, loaded directly
+      // with no rewrite at all.
       function proxySrc(port, path, query, hash) {
         var p = path && path.charAt(0) === "/" ? path : "/" + (path || "");
         if (p === "") p = "/";
@@ -1257,26 +1259,51 @@
         };
       }
 
-      function fromAllowedHost(host, port, rest) {
-        host = String(host || "").toLowerCase();
-        if (host === "booth" || host === "localhost" || host === "127.0.0.1") {
-          if (!port) return { error: "port" };
-          return normalizeTarget(port, rest || "/");
-        }
-        return { error: "host" };
+      // "booth" is the only host that means this booth's own proxy — unlike
+      // localhost/127.0.0.1, which mean the machine the browser itself is
+      // running on, same as typing them into any other address bar.
+      function fromBooth(port, rest) {
+        if (!port) return { error: "port" };
+        return normalizeTarget(port, rest || "/");
+      }
+
+      // A non-booth target: loaded directly in the tab's iframe, unproxied,
+      // no /proxy/ rewrite. No port of ours to speak of — see every place
+      // that reads tab.port as "is this tab non-empty" (it isn't, for
+      // these) versus tab.display (always set once a tab has loaded
+      // *something*, booth or not).
+      function externalTarget(scheme, host, port, rest) {
+        rest = rest == null || rest === "" ? "/" : String(rest);
+        var url = scheme + "://" + host + (port ? ":" + port : "") + rest;
+        return { port: null, src: url, display: url };
       }
 
       function parseBoothTarget(raw, sessionNum) {
         var s = String(raw || "").trim();
         if (!s) return { error: "empty" };
 
-        if (/^https:\/\//i.test(s)) {
-          return { error: "https" };
-        }
-
-        var urlMatch = s.match(/^http:\/\/([^/:?#]+)(?::(\d+))?([/?#].*)?$/i);
+        // A full scheme://host[:port][/path] URL. Only host "booth" goes
+        // through the /proxy/ rewrite below (and only over http — the proxy
+        // has no TLS); every other host, localhost/127.0.0.1 included,
+        // opens directly in the tab's own iframe — this becomes an iframe
+        // src, so any scheme besides http/https (a custom app URI,
+        // javascript:, data:, ...) is refused outright rather than handed a
+        // free pass.
+        var urlMatch = s.match(/^([a-zA-Z][a-zA-Z0-9+.-]*):\/\/([^/:?#]+)(?::(\d+))?([/?#].*)?$/);
         if (urlMatch) {
-          return fromAllowedHost(urlMatch[1], urlMatch[2], urlMatch[3] || "/");
+          var scheme = urlMatch[1].toLowerCase();
+          var host = urlMatch[2];
+          var port = urlMatch[3];
+          var rest = urlMatch[4] || "/";
+          var lowerHost = host.toLowerCase();
+          if (lowerHost === "booth") {
+            if (scheme !== "http") return { error: "https" };
+            return fromBooth(port, rest);
+          }
+          if (scheme !== "http" && scheme !== "https") {
+            return { error: "scheme" };
+          }
+          return externalTarget(scheme, host, port, rest);
         }
 
         // Globe click prefills `http://booth`; the rest is typed as `:8080/path`.
@@ -1290,13 +1317,12 @@
           return normalizeTarget(boothBare[1], boothBare[2] || "/");
         }
 
+        // Bare `localhost[:port][/path]` / `127.0.0.1[:port][/path]`, no
+        // scheme — the machine running the browser, not this booth. Assumes
+        // http, since that's overwhelmingly what a local dev server runs.
         var hostPort = s.match(/^(localhost|127\.0\.0\.1)(?::(\d+))?([/?#].*)?$/i);
         if (hostPort) {
-          return fromAllowedHost(hostPort[1], hostPort[2], hostPort[3] || "/");
-        }
-
-        if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(s) || /^[a-zA-Z]/.test(s)) {
-          return { error: "host" };
+          return externalTarget("http", hostPort[1].toLowerCase(), hostPort[2], hostPort[3] || "/");
         }
 
         if (s.charAt(0) === "/" || s.charAt(0) === "?" || s.charAt(0) === "#") {
@@ -1309,8 +1335,21 @@
         }
 
         var pm = s.match(/^(\d+)([/?#].*)?$/);
-        if (!pm) return { error: "port" };
-        return normalizeTarget(pm[1], pm[2] || "/");
+        if (pm) {
+          return normalizeTarget(pm[1], pm[2] || "/");
+        }
+
+        // A bare host with no scheme — pasting `example.com` or
+        // `example.com/path` the way you'd type it into a real address bar.
+        // Requires a dot, so a plain typo or word (no TLD-shaped suffix)
+        // still errors instead of silently trying to resolve it; a genuine
+        // single-label host works fine with an explicit http://.
+        var bareHost = s.match(/^([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)(?::(\d+))?([/?#].*)?$/);
+        if (bareHost) {
+          return externalTarget("https", bareHost[1].toLowerCase(), bareHost[2], bareHost[3] || "/");
+        }
+
+        return { error: "host" };
       }
 
       function flashAddrError(input, placeholder) {
@@ -1524,11 +1563,19 @@
         if (!pane) return;
         var input = pane.querySelector(".proxy-port-input");
         var tab = getActiveTab(session);
-        var hasContent = !!(tab && tab.port);
+        // display, not port: an external tab (see externalTarget) has a real
+        // loaded address but no booth port at all, so port alone would read
+        // a fully-loaded external tab as still-empty.
+        var hasContent = !!(tab && tab.display);
         setWebTools(pane, hasContent);
         if (input) input.value = (tab && tab.display) || "";
         setPageTitleTip(pane, (tab && (tab.title || tab.display)) || "");
         setMdToggle(pane, !!(tab && isViewmdPort(tab.port)));
+        // The rewriting-caveat warning is about the /proxy/ sub_filter
+        // specifically — an external tab isn't proxied or rewritten at all,
+        // so it doesn't apply there.
+        var warn = pane.querySelector(".proxy-warning");
+        if (warn) warn.style.display = (hasContent && tab.port) ? "" : "none";
         pane.classList.toggle("has-active-tab", !!tab);
         pane.classList.toggle("active-tab-empty", !!tab && !hasContent);
       }
@@ -1744,7 +1791,7 @@
           } else if (e.key === "Escape") {
             var session = input.dataset.session;
             var tab = getActiveTab(session);
-            if (tab && !tab.port) {
+            if (tab && !tab.display) {
               // Never-navigated tab (the "+"/globe just opened it) — Escape
               // cancels it outright rather than leaving an empty tab behind,
               // since that's a deliberate cancel, not an incidental blur.
@@ -1830,10 +1877,16 @@
 
         var validTabs = [];
         state.tabs.forEach(function(tab) {
-          if (!tab.port) return; // drop a half-open "new tab" from a stale save
+          if (!tab.display) return; // drop a half-open "new tab" from a stale save
+          // A booth tab's src is reconstructed from port/path/query; an
+          // external tab (see externalTarget) has no port at all — its
+          // display *is* the literal src, so just reuse it.
+          var src = tab.port
+            ? proxySrc(tab.port, tab.path || "/", tab.query || "")
+            : tab.display;
           createTabFrame(session, {
             id: tab.id,
-            src: proxySrc(tab.port, tab.path || "/", tab.query || ""),
+            src: src,
             title: tab.title,
             display: tab.display
           });

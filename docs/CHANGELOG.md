@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A console pane's Web view tab now accepts any URL, not just a booth port.** Only host `booth`
+  still routes through the `/proxy/{port}/` rewrite (and only over `http` — the proxy has no TLS);
+  every other host, including `localhost`/`127.0.0.1`, now opens directly in the tab's iframe with
+  no rewrite at all. `localhost`/`127.0.0.1` changed meaning as part of this: they used to be
+  treated as this booth (a paste-friendly alias, since a dev server prints `http://localhost:3000`
+  but means "this container"), and now mean the machine actually running the browser, same as
+  typing them into any other address bar — so `https://localhost:...` also works now, since the
+  restriction to `http` was specifically about the booth proxy's lack of TLS, not about localhost.
+  A bare host with no scheme (`example.com`, `example.com/path`) assumes `https`; any scheme other
+  than `http`/`https` (`javascript:`, `data:`, `ftp:`, ...) is refused outright, since the address
+  becomes an iframe `src`. Fixed three places that used a tab's booth `port` as its "has this tab
+  loaded anything" signal — an external tab legitimately has no port at all, so each was reading a
+  fully-loaded external tab as still-empty: the has-content/warning-icon check, the Escape-cancels-
+  a-blank-tab check, and reload persistence's stale-tab filter. All three now key off the tab's
+  `display` instead, which is set for both booth and external tabs alike.
+
 - **Each console pane's Web view can now hold more than one tab.** Previously a pane's Web view was
   a single target — typing a new address replaced whatever was open. The globe button's Web view
   now carries its own tab strip: any number of tabs, each with its own independently-mounted
