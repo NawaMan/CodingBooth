@@ -13,6 +13,14 @@
   <link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin>
   <link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin>
   ${BOOTH_READY_JS}
+  <!-- Optional project-checked-in starting layout/tabs; see .booth/console.json
+       and start-ttyd-split. type="application/json" rather than assigning a
+       raw object literal to a window var: the browser never tries to parse
+       this as JS, so even if start-ttyd-split's jq validation somehow let
+       something malformed through, it can't take the whole page's script
+       down with a syntax error — readConsoleConfig() below JSON.parses it
+       defensively instead. -->
+  <script type="application/json" id="cb-console-config">${BOOTH_CONSOLE_CONFIG_JSON}</script>
   <style>
     /* Declared here purely so document.fonts.load() below has a face to
        actually fetch and wait on — this document never renders any text
@@ -781,6 +789,23 @@
       const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"));
       const reloadButton = document.getElementById("reload");
       const projectName = (document.querySelector('meta[name="booth-project"]') || {}).content || "default";
+
+      // Optional project-checked-in starting layout/tabs — see
+      // .booth/console.json and start-ttyd-split for how this gets here.
+      // type="application/json" (inert text, never JS-parsed) plus our own
+      // JSON.parse means a malformed file just yields {} here instead of
+      // ever risking a syntax error in this script itself.
+      function readConsoleConfig() {
+        try {
+          var el = document.getElementById("cb-console-config");
+          var parsed = el && JSON.parse(el.textContent);
+          return (parsed && typeof parsed === "object") ? parsed : {};
+        } catch (_e) {
+          return {};
+        }
+      }
+      const consoleConfig = readConsoleConfig();
+
       const layoutStorageKey = "cb.webSplit." + projectName + ".layout";
       const splitStorageKey = "cb.webSplit." + projectName + ".splits";
       const modeHashPrefix = "#mode=";
@@ -1984,6 +2009,41 @@
         }
       });
 
+      // Apply .booth/console.json's per-pane starting tabs — but only to a
+      // pane the restore-from-localStorage loop above left untouched. This
+      // is a first-visit default, not a standing override: once a pane's
+      // been opened in this browser (even just to look at it), whatever the
+      // user left it as wins on every later load, same as the layout
+      // fallback above.
+      if (consoleConfig.panes && typeof consoleConfig.panes === "object") {
+        Object.keys(consoleConfig.panes).forEach(function(session) {
+          if (getPaneState(session).tabs.length) return;
+          var paneCfg = consoleConfig.panes[session];
+          if (!paneCfg || !paneCfg.web) return;
+          var pane = document.querySelector('.pane[data-pane="' + session + '"]');
+          if (!pane) return;
+
+          var urls = Array.isArray(paneCfg.tabs) ? paneCfg.tabs : [];
+          var opened = false;
+          urls.forEach(function(raw, i) {
+            var parsed = parseBoothTarget(raw, session);
+            if (!parsed || parsed.error) return;
+            if (i > 0) {
+              // navigateActiveTab always targets *the* active tab, so
+              // opening more than one means giving it a fresh blank one to
+              // land on first, the same shape openNewTab pushes.
+              var state = getPaneState(session);
+              var blank = { id: nextTabId(), port: null, path: null, query: "", display: "", title: "" };
+              state.tabs.push(blank);
+              state.activeTabId = blank.id;
+            }
+            navigateActiveTab(session, parsed);
+            opened = true;
+          });
+          if (opened) switchToWeb(session);
+        });
+      }
+
       // Load the panes once the booth answers, and reload them every time it
       // comes back — a booth--restart restarts ttyd under this very tab, and
       // without this the panes would sit on the 502 it left behind.
@@ -1999,7 +2059,8 @@
       applySplitVariables();
       const hashMode = parseModeFromHash();
       const savedMode = loadSavedLayout();
-      setLayout(hashMode || savedMode || "single", { updateHash: false });
+      const configLayout = consoleConfig.layout;
+      setLayout(hashMode || savedMode || (layouts[configLayout] ? configLayout : "") || "single", { updateHash: false });
     })();
   </script>
 

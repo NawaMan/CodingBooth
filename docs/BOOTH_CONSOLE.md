@@ -1,0 +1,127 @@
+# Console Layout
+
+> Check in the starting layout and Web view tabs for the base variant's console — so opening the booth looks the same for everyone, on any machine.
+
+`.booth/console.json` sets the console's starting split layout and pre-opens Web view tabs in specific panes. It only ever supplies a *default*: the moment you customize a pane yourself (switch it to Web view, open or close a tab, resize the split), that customization is remembered in your browser and wins over the file on every later load — the file only fills in a pane nobody has touched yet in this browser.
+
+```json
+{
+  "layout": "quad",
+  "panes": {
+    "1": { "web": true, "tabs": [":3000", "https://example.com"] },
+    "3": { "web": true, "tabs": ["myserver:9000/dashboard"] }
+  }
+}
+```
+
+Back to [README](../README.md)
+
+---
+
+## Table of Contents
+
+- [Overview](#overview)
+- [File Format](#file-format)
+- [Tab Addresses](#tab-addresses)
+- [Precedence](#precedence)
+- [Why a Separate File](#why-a-separate-file)
+- [Examples](#examples)
+
+---
+
+## Overview
+
+The base variant's default console (`web-ttyd-split`) splits into up to four panes, each either a terminal or a Web view holding its own tabs. Normally you build that layout by hand each time — pick a split, click the globe on a pane, type an address. `.booth/console.json` lets a project check in that starting point instead, so a teammate (or you, on a different machine) opens the booth to the same layout every time, without repeating the clicks.
+
+The file is:
+- **Per-project** — lives inside `.booth/`, scoped to this project
+- **Committable** — meant to be checked into git, unlike `.booth/cache/`
+- **Optional** — the console works exactly as before with no file present, or with any pane the file doesn't mention
+
+---
+
+## File Format
+
+```json
+{
+  "layout": "<layout-name>",
+  "panes": {
+    "<pane-number>": {
+      "web": true,
+      "tabs": ["<address>", "..."]
+    }
+  }
+}
+```
+
+- **`layout`** — one of the six layout names the toolbar buttons themselves produce: `single`, `hsplit`, `vsplit`, `quad`, `left-main`, `top-main`. Anything else is ignored.
+- **`panes`** — an object keyed by pane number as a string (`"1"` through `"4"`). A pane not listed here stays a terminal.
+  - **`web`** — must be `true` for the pane to open in Web view at all. A pane listed with `"web": false` (or without `"tabs"`) is left as a terminal, same as not listing it.
+  - **`tabs`** — an array of addresses, one per tab to open in that pane, in order. The last one ends up active. An empty or missing list leaves the pane as a terminal even with `"web": true`.
+
+The file is validated as JSON when the booth starts (`start-ttyd-split`, via `jq`); a syntax error is logged to the container's startup output and the console just starts with no preset at all rather than failing to load.
+
+---
+
+## Tab Addresses
+
+Each string in `tabs` is parsed exactly the way typing it into a pane's own address bar would be — the same parser, so anything that works there works here:
+
+| You write | Opens |
+|---|---|
+| `:3000` or `:3000/path` | This booth's port 3000, proxied through `/proxy/3000/...` |
+| `booth:3000` | Same, alternate spelling |
+| `myserver:9000` | `https://myserver:9000/` directly, unproxied — `myserver` isn't `booth`/`localhost`/`127.0.0.1` |
+| `https://example.com` | That URL directly, unproxied |
+| `localhost:3000` | `http://localhost:3000/` on the machine running the browser, not this booth |
+
+A bare domain with no scheme (`example.com`) is assumed to be `https`; anything that isn't a URL or host shape at all falls back to a Google search, exactly as typing it into the address bar would.
+
+A malformed individual address (an unsupported scheme, a reserved port) is silently skipped rather than blocking the rest of the file's tabs from opening.
+
+---
+
+## Precedence
+
+On each load, in order:
+
+1. **The URL hash** (`#mode=quad`) — if you followed a link that names a layout.
+2. **What you last set in this browser** (`localStorage`) — a pane you've ever opened in Web view, even once, keeps whatever it was left as, forever, regardless of what the file says.
+3. **`.booth/console.json`** — applies only to a layout nobody has picked yet, or a pane with no tabs ever recorded in this browser.
+4. **The built-in default** — a single terminal pane.
+
+This means editing the file after the fact doesn't retroactively change anyone's already-customized console — it only changes what a *fresh* browser (or a fresh `localStorage`) sees.
+
+---
+
+## Why a Separate File
+
+Most per-project settings — idle timeout, run-time display, and the like — live as scalar keys in `.booth/config.toml` and get forwarded into the container as a `BOOTH_*` environment variable. This setting doesn't: a layout name plus an arbitrary, per-pane list of tab addresses is genuinely structured data, not a string, bool, or flat list, and `config.toml`'s schema doesn't have a good way to express "an array of arrays" without real changes to the CLI itself.
+
+Instead, `console.json` rides the same mechanism `.booth/cache/` and `.booth/shared/` already use: `.booth/` is bind-mounted read-only into every booth at `/home/coder/code/.booth`, so the container's own startup script can just read the file directly — no `docker -e`, no environment variable, no CLI changes at all.
+
+---
+
+## Examples
+
+**A dev server pre-opened next to the terminal:**
+
+```json
+{
+  "layout": "hsplit",
+  "panes": {
+    "2": { "web": true, "tabs": [":3000"] }
+  }
+}
+```
+
+**Two tabs in one pane, in a four-way split:**
+
+```json
+{
+  "layout": "quad",
+  "panes": {
+    "1": { "web": true, "tabs": [":3000", ":3000/admin"] }
+  }
+}
+```
