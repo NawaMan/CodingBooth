@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A project can now check in the base variant console's starting split layout and pre-opened Web
+  view tabs, via `.booth/console.json`.** Layout name plus an arbitrary, per-pane list of tab
+  addresses is genuinely structured data — not a string, bool, or flat list — so it doesn't fit
+  `config.toml`'s scalar/list schema without real CLI changes. Rides the same mechanism
+  `.booth/cache/` and `.booth/shared/` already use instead: `.booth/` is bind-mounted read-only into
+  every booth already, so `start-ttyd-split` just reads the file directly at container start — no
+  `docker -e`, no environment variable, no CLI changes at all. Validated as JSON via `jq` (already
+  in the base image); a malformed file is logged and ignored rather than breaking the console, and
+  is embedded into the page as inert `type="application/json"` text rather than a raw object
+  literal, so even a validation gap can't take the page's own script down with a syntax error.
+  Every tab address is parsed by the exact same parser the address bar itself uses, so anything that
+  works typed in works here too (`:3000`, `myserver:9000`, `https://example.com`, ...). Strictly a
+  *first-visit default*: the moment a pane is customized in a given browser (opened, a tab closed,
+  whatever), that sticks in `localStorage` and wins over the file on every later load — editing the
+  file doesn't retroactively change an already-customized console. See `docs/BOOTH_CONSOLE.md`.
+
 - **Web view toolbar polish: Back/Forward now only appear where they can actually work, the "+" new-
   tab button moved to the left of the tab strip, the Markdown-view icon moved next to the
   Terminal/Web toggle, and Ctrl/Cmd-click on a link inside a booth-proxied tab now navigates that

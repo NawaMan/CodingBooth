@@ -339,6 +339,7 @@ CodingBooth is highly customizable. You can tailor how your environments run by 
 - **[Booth Customization Guide](docs/BOOTH_CUSTOMIZATION.md)** — Setup scripts, install scripts, templates, and reusable recipes.
 - **[Boothfile Reference](docs/implementations/BOOTHFILE.md)** — The simplified, script-like format for defining container environments.
 - **[Home Directory Guide](docs/BOOTH_HOME.md)** — Seeding dotfiles, credentials, and home directory precedence rules.
+- **[Console Layout Guide](docs/BOOTH_CONSOLE.md)** — Checking in the base variant's starting split layout and pre-opened Web view tabs.
 
 ### The `.booth/` Folder (Quick Overview)
 
@@ -348,6 +349,7 @@ All booth configuration lives in a single `.booth/` folder in your project root:
 my-project/
 └── .booth/
     ├── config.toml     # Launcher configuration
+    ├── console.json    # Base variant's starting console layout (optional)
     ├── Boothfile       # Simplified build script (optional, preferred)
     ├── Dockerfile      # Custom Docker build (optional, fallback)
     ├── .env            # Personal env vars (optional, gitignored)
