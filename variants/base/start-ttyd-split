@@ -66,7 +66,14 @@ for i in "${!SESSION_NAMES[@]}"; do
         ttyd_args+=(-c "coder:${PASSWORD}")
     fi
 
-    ttyd "${ttyd_args[@]}" bash -l &
+    # Each pane's shell lives inside a tmux session named after the pane, not
+    # bare `bash -l`. ttyd spawns a fresh process for every websocket
+    # connection, so a plain shell dies with the connection — a page reload
+    # (or any network blip) SIGHUPs it and takes a foreground job like a dev
+    # server down with it. `new-session -A` creates the session once and
+    # reattaches to it on every later connection instead, so the shell (and
+    # whatever is running in it) survives a reload.
+    ttyd "${ttyd_args[@]}" tmux new-session -A -s "$session_name" &
 done
 
 # Message API server — serves booth message list/respond endpoints and

@@ -27,4 +27,7 @@ if [[ -n "${PASSWORD:-}" ]]; then
     TTYD_ARGS+=(-c "coder:${PASSWORD}")
 fi
 
-exec ttyd "${TTYD_ARGS[@]}" bash -l
+# A bare shell dies with the websocket connection (a reload SIGHUPs it,
+# taking a foreground job like a dev server down too), so it lives inside a
+# tmux session that a reconnect reattaches to instead of replacing.
+exec ttyd "${TTYD_ARGS[@]}" tmux new-session -A -s main

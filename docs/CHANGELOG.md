@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A console pane's shell now survives a page reload instead of dying with the websocket.** ttyd
+  spawns a fresh process for every connection, so a bare `bash -l` (in `start-ttyd-split`, and the
+  `start-ttyd` fallback used when `BOOTH_WEB_SPLIT=false`) was killed outright the moment a reload
+  or a dropped connection SIGHUPed it — taking down any foreground job, a dev server or a build,
+  along with it — and reconnecting handed back an empty shell with no memory of what was running.
+  Each pane's shell now lives inside `tmux new-session -A -s <pane>` instead: the tmux server holds
+  the session independently of any one client, and `-A` reattaches an incoming connection to the
+  existing session rather than replacing it, so a reload resumes exactly where it left off,
+  scrollback included. tmux was already in the base image. Verified live: started a counting loop
+  in a pane, hard-refreshed, and watched it resume mid-count rather than restart.
+
 - **Fixed extra letter-spacing in the ttyd Nerd Font terminal that only went away after a hard
   refresh.** ttyd's bundled xterm.js measures its terminal cell width once, synchronously, against
   whatever font is actually rendering at that instant — usually the browser's fallback monospace,
