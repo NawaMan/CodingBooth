@@ -1342,14 +1342,34 @@
         // A bare host with no scheme — pasting `example.com` or
         // `example.com/path` the way you'd type it into a real address bar.
         // Requires a dot, so a plain typo or word (no TLD-shaped suffix)
-        // still errors instead of silently trying to resolve it; a genuine
-        // single-label host works fine with an explicit http://.
+        // still isn't treated as a host here.
         var bareHost = s.match(/^([a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)+)(?::(\d+))?([/?#].*)?$/);
         if (bareHost) {
           return externalTarget("https", bareHost[1].toLowerCase(), bareHost[2], bareHost[3] || "/");
         }
 
-        return { error: "host" };
+        // A single-label host with no dot (`myserver:3000`, an internal/LAN
+        // name) is too ambiguous with a plain typo on its own, but paired
+        // with an explicit :port it's an unambiguous host:port shorthand —
+        // same treatment as any other bare host above.
+        var bareHostPort = s.match(/^([a-zA-Z0-9-]+):(\d+)([/?#].*)?$/);
+        if (bareHostPort) {
+          return externalTarget("https", bareHostPort[1].toLowerCase(), bareHostPort[2], bareHostPort[3] || "/");
+        }
+
+        // Nothing above matched — not a URL, not a recognizable host shape.
+        // Same fallback a real browser's address bar uses: treat it as a
+        // search query. igu=1 is Google's own (undocumented) flag that lets
+        // its results page be framed at all — it refuses by default, same
+        // as most sites. title carries the "Search: ..." label for the tab
+        // chip; display stays the raw typed text, not the constructed URL,
+        // so the address bar shows what was actually typed.
+        return {
+          port: null,
+          src: "https://www.google.com/search?q=" + encodeURIComponent(s) + "&igu=1",
+          display: s,
+          title: "Search: " + s
+        };
       }
 
       function flashAddrError(input, placeholder) {
@@ -1653,7 +1673,12 @@
         tab.path = target.path;
         tab.query = target.query;
         tab.display = target.display;
-        tab.title = target.display;
+        tab.title = target.title || target.display;
+        // Stored explicitly rather than always re-derived: a search
+        // target's display is the raw typed text (so the address bar shows
+        // what was typed, not the constructed URL), not something src can
+        // be recomputed from the way a booth target's can.
+        tab.src = target.src;
         saveProxyState(proxyState);
 
         var pane = document.querySelector('.pane[data-pane="' + session + '"]');
@@ -1661,7 +1686,7 @@
         if (existingFrame) {
           existingFrame.src = target.src;
         } else {
-          createTabFrame(session, { id: tab.id, src: target.src, title: target.display, display: target.display });
+          createTabFrame(session, { id: tab.id, src: target.src, title: tab.title, display: target.display });
         }
 
         activateTab(session, tab.id);
@@ -1878,12 +1903,14 @@
         var validTabs = [];
         state.tabs.forEach(function(tab) {
           if (!tab.display) return; // drop a half-open "new tab" from a stale save
-          // A booth tab's src is reconstructed from port/path/query; an
-          // external tab (see externalTarget) has no port at all — its
-          // display *is* the literal src, so just reuse it.
-          var src = tab.port
+          // Prefer the stored src (needed for a search tab — its display is
+          // the raw typed text, not a URL, so it can't be recomputed from
+          // that). Falls back to reconstructing it for a tab saved before
+          // src was persisted: a booth tab's from port/path/query, an
+          // external tab's display was always the literal src already.
+          var src = tab.src || (tab.port
             ? proxySrc(tab.port, tab.path || "/", tab.query || "")
-            : tab.display;
+            : tab.display);
           createTabFrame(session, {
             id: tab.id,
             src: src,

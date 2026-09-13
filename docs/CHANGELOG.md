@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A Web view tab's address bar now also accepts a bare `host:port` with no dot, and falls back to
+  a Google search for anything that isn't a URL or recognizable host at all**, matching a real
+  browser's omnibox. `myserver:3000` (no scheme, no dot — an internal/LAN-style name) resolves the
+  same as any other external host; a bare single-label word with no port is still too ambiguous
+  with a plain typo to treat as a host, so it — and anything else with no URL or host shape —
+  becomes a query against `https://www.google.com/search?q=…&igu=1` instead of erroring. `igu=1` is
+  Google's own undocumented flag that lets its results page be framed at all (it refuses by
+  default, same as most sites); verified live, real results render inside the tab. The tab chip
+  shows `Search: <query>`; the address bar shows the typed text itself, not the constructed URL.
+  Needed storing a tab's resolved `src` explicitly rather than always re-deriving it (from
+  port/path for a booth tab, or reusing `display` for a plain external one): a search tab's
+  `display` is the raw typed text, not a URL, so it can't be recomputed from that on a reload —
+  falls back to the old reconstruction for a tab saved before `src` was persisted.
+
 - **A console pane's Web view tab now accepts any URL, not just a booth port.** Only host `booth`
   still routes through the `/proxy/{port}/` rewrite (and only over `http` — the proxy has no TLS);
   every other host, including `localhost`/`127.0.0.1`, now opens directly in the tab's iframe with
