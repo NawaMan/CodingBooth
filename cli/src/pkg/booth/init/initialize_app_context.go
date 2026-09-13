@@ -613,6 +613,14 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.CountDownExitCode = v
 			i += 2
 
+		case "--console-spec":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			cfg.ConsoleSpec = v
+			i += 2
+
 		case "--":
 			// everything after goes to cmds, overriding any cmds from config
 			cmds = []string{} // Clear existing cmds so CLI overrides config

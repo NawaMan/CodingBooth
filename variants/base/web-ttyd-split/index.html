@@ -21,6 +21,10 @@
        down with a syntax error — readConsoleConfig() below JSON.parses it
        defensively instead. -->
   <script type="application/json" id="cb-console-config">${BOOTH_CONSOLE_CONFIG_JSON}</script>
+  <!-- "" (default), "shared", or "cache" — see console-spec in start-ttyd-split.
+       A plain quoted string, unlike the JSON above, so no template-literal-vs-
+       plain-string parsing hazard to design around here. -->
+  <script>window.BOOTH_CONSOLE_SPEC = "${BOOTH_CONSOLE_SPEC}";</script>
   <style>
     /* Declared here purely so document.fonts.load() below has a face to
        actually fetch and wait on — this document never renders any text
@@ -806,6 +810,61 @@
       }
       const consoleConfig = readConsoleConfig();
 
+      // "shared" or "cache" enables saving the console's current layout/tabs
+      // back to .booth/console.json (see console-spec in start-ttyd-split);
+      // anything else — including an unset or unrecognized value, already
+      // normalized to "" server-side — leaves this read-only, same as before.
+      const consoleSpecMode = window.BOOTH_CONSOLE_SPEC === "shared" || window.BOOTH_CONSOLE_SPEC === "cache"
+        ? window.BOOTH_CONSOLE_SPEC
+        : "";
+
+      // Starts suppressed: applying the checked-in config below, and
+      // restoring this browser's own saved tabs, both flow through the same
+      // setLayout/saveProxyState calls an interactive change does — without
+      // this, loading the page would immediately save right back exactly
+      // what it just read. Cleared once initial load finishes, at the very
+      // end of this script.
+      let suppressConsoleSave = true;
+
+      // Mirrors the shape readConsoleConfig() above expects back — a
+      // terminal pane is simply absent, matching how an absent pane in the
+      // file already means "leave it as a terminal" on the read side.
+      function buildCurrentConsoleSpec() {
+        var spec = { layout: currentLayout, panes: {} };
+        panes.forEach(function(pane) {
+          if (!pane.classList.contains("mode-web")) return;
+          var session = pane.getAttribute("data-pane");
+          var tabs = getPaneState(session).tabs
+            .map(function(t) { return t.display; })
+            .filter(function(d) { return !!d; });
+          if (tabs.length) spec.panes[session] = { web: true, tabs: tabs };
+        });
+        return spec;
+      }
+
+      // Debounced so a burst of changes (closing several tabs, say) becomes
+      // one write, not several — each one is a real file write, and for
+      // console-spec=shared a real git-working-tree change.
+      let consoleSaveTimer = null;
+      function scheduleConsoleSave() {
+        if (!consoleSpecMode || suppressConsoleSave) return;
+        clearTimeout(consoleSaveTimer);
+        consoleSaveTimer = setTimeout(function() {
+          fetch("/booth-messages/api/console-config", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(buildCurrentConsoleSpec())
+          }).then(function(res) {
+            if (res.ok) return;
+            return res.json().catch(function() { return {}; }).then(function(body) {
+              console.warn("Saving console layout failed:", body.error || res.status);
+            });
+          }).catch(function(err) {
+            console.warn("Saving console layout failed:", err);
+          });
+        }, 600);
+      }
+
       const layoutStorageKey = "cb.webSplit." + projectName + ".layout";
       const splitStorageKey = "cb.webSplit." + projectName + ".splits";
       const modeHashPrefix = "#mode=";
@@ -901,6 +960,7 @@
         } catch (_error) {
           // Ignore localStorage write failures (private mode / restricted env).
         }
+        scheduleConsoleSave();
       }
 
       function applySplitVariables() {
@@ -1185,6 +1245,7 @@
         try {
           window.localStorage.setItem(proxyStorageKey, JSON.stringify(state));
         } catch (_e) { /* ignore */ }
+        scheduleConsoleSave();
       }
 
       const proxyState = loadProxyState();
@@ -2071,6 +2132,11 @@
       const savedMode = loadSavedLayout();
       const configLayout = consoleConfig.layout;
       setLayout(hashMode || savedMode || (layouts[configLayout] ? configLayout : "") || "single", { updateHash: false });
+
+      // Initial load — restoring this browser's own tabs, applying the
+      // checked-in config, setting the starting layout — is done. From here
+      // on, a layout or tab change is a real interactive one, worth saving.
+      suppressConsoleSave = false;
     })();
   </script>
 

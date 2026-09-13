@@ -167,6 +167,7 @@ func (ctx AppContext) Startup() string           { return ctx.values.Config.Star
 func (ctx AppContext) ShowRunTime() string       { return ctx.values.Config.ShowRunTime }
 func (ctx AppContext) ShowCountDown() string     { return ctx.values.Config.ShowCountDown }
 func (ctx AppContext) CountDownExitCode() string { return ctx.values.Config.CountDownExitCode }
+func (ctx AppContext) ConsoleSpec() string       { return ctx.values.Config.ConsoleSpec }
 
 // derived from all the context processing (IMMUTABLE SNAPSHOTS)
 func (ctx AppContext) CommonArgs() ilist.List[ilist.List[string]] { return ctx.commonArgs }

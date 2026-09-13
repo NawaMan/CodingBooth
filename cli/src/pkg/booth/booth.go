@@ -636,6 +636,13 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_COUNT_DOWN_EXIT_CODE="+ctx.CountDownExitCode()))
 	}
 
+	// Console layout remembering (start-ttyd-split / web-ttyd-split only —
+	// harmlessly unused by every other variant, same as the timer displays
+	// above are unused outside the console UIs that read them).
+	if ctx.ConsoleSpec() != "" {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_CONSOLE_SPEC="+ctx.ConsoleSpec()))
+	}
+
 	if !ctx.Pull() {
 		builder.CommonArgs.Append(ilist.NewList[string]("--pull=never"))
 	}

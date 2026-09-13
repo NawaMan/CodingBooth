@@ -76,6 +76,55 @@ for i in "${!SESSION_NAMES[@]}"; do
     ttyd "${ttyd_args[@]}" tmux new-session -A -s "$session_name" &
 done
 
+# Optional project-checked-in starting layout/tabs for this console, read
+# straight off the existing .booth/ bind mount — no docker -e / envsubst
+# round trip needed the way a scalar setting like BOOTH_IDLE_TIME gets,
+# since this is inherently structured (a layout name, plus an arbitrary
+# list of tab addresses per pane) and doesn't fit config.toml's flat
+# scalar/list schema without real Go changes. Shape:
+#   { "layout": "quad", "panes": { "1": { "web": true, "tabs": [":3000"] } } }
+# Validated with jq (already in the base image) so a hand-edited typo just
+# falls back to no preset rather than breaking the console entirely; tab
+# addresses are re-validated in the browser by the same parser the address
+# bar itself uses, so anything bogus there just fails to open, same as
+# typing it in would.
+#
+# console-spec (BOOTH_CONSOLE_SPEC) additionally controls whether the
+# console *saves* its own layout/tabs back here as they change, and to
+# which of two fixed locations — never a user-supplied path, so there's
+# never a "wrong writable location" to misconfigure:
+#   unset/other  -> read-only, same file, same as always
+#   "shared"     -> .booth/console.json itself; needs --writable-booth to
+#                   actually persist a save, since .booth/ is read-only
+#                   otherwise (reading it never needed that)
+#   "cache"      -> .booth/.tmp/console.json; already writable
+#                   unconditionally, never git-committed
+# Resolved and exported here, before the message API server starts below:
+# it's a background job that forks per-connection handlers off *its own*
+# environment snapshot, so exporting this any later would never reach it —
+# same reason BOOTH_AUTH_TOKEN above is exported before that same server
+# starts, not after.
+case "${BOOTH_CONSOLE_SPEC:-}" in
+    shared|"") CONSOLE_CONFIG_FILE="/home/coder/code/.booth/console.json" ;;
+    cache)     CONSOLE_CONFIG_FILE="/home/coder/code/.booth/.tmp/console.json" ;;
+    *)
+        echo "⚠️  console-spec=\"${BOOTH_CONSOLE_SPEC}\" is not \"shared\" or \"cache\"; saving is disabled, but .booth/console.json is still read normally." >&2
+        CONSOLE_CONFIG_FILE="/home/coder/code/.booth/console.json"
+        BOOTH_CONSOLE_SPEC=""
+        ;;
+esac
+export BOOTH_CONSOLE_SPEC="${BOOTH_CONSOLE_SPEC:-}"
+
+BOOTH_CONSOLE_CONFIG_JSON="{}"
+if [[ -f "$CONSOLE_CONFIG_FILE" ]]; then
+    if parsed=$(jq -c . "$CONSOLE_CONFIG_FILE" 2>/dev/null); then
+        BOOTH_CONSOLE_CONFIG_JSON="$parsed"
+    else
+        echo "⚠️  $CONSOLE_CONFIG_FILE is not valid JSON; ignoring it." >&2
+    fi
+fi
+export BOOTH_CONSOLE_CONFIG_JSON
+
 # Message API server — serves booth message list/respond endpoints and
 # handles the overlay's POSTs to /restart, /shutdown, /idle/*, and
 # /countdown-shutdown.
@@ -104,29 +153,6 @@ booth-lifecycle-watcher &
 
 # Timer notifier — sends toast messages at countdown thresholds
 booth-timer-notifier &
-
-# Optional project-checked-in starting layout/tabs for this console, read
-# straight off the existing read-only .booth/ bind mount — no docker -e /
-# envsubst round trip needed the way a scalar setting like BOOTH_IDLE_TIME
-# gets, since this is inherently structured (a layout name, plus an
-# arbitrary list of tab addresses per pane) and doesn't fit config.toml's
-# flat scalar/list schema without real Go changes. Shape:
-#   { "layout": "quad", "panes": { "1": { "web": true, "tabs": [":3000"] } } }
-# Validated with jq (already in the base image) so a hand-edited typo just
-# falls back to no preset rather than breaking the console entirely; tab
-# addresses are re-validated in the browser by the same parser the address
-# bar itself uses, so anything bogus there just fails to open, same as
-# typing it in would.
-CONSOLE_CONFIG_FILE="/home/coder/code/.booth/console.json"
-BOOTH_CONSOLE_CONFIG_JSON="{}"
-if [[ -f "$CONSOLE_CONFIG_FILE" ]]; then
-    if parsed=$(jq -c . "$CONSOLE_CONFIG_FILE" 2>/dev/null); then
-        BOOTH_CONSOLE_CONFIG_JSON="$parsed"
-    else
-        echo "⚠️  .booth/console.json is not valid JSON; ignoring it." >&2
-    fi
-fi
-export BOOTH_CONSOLE_CONFIG_JSON
 
 export PORT
 export BOOTH_CONTAINER_NAME="${BOOTH_CONTAINER_NAME:-CodingBooth}"
@@ -175,7 +201,7 @@ export PLUGINS_HTML
 
 envsubst '${PORT} ${WEB_SPLIT_SERVE} ${AUTH_MAP} ${TTYD_AUTH_HEADER} ${BOOTH_INSTANCE_ID}' <"$WEB_SPLIT_ROOT/nginx.conf.template" >"$NGINX_CONFIG"
 envsubst '${BOOTH_CONTAINER_NAME}' <"$WEB_SPLIT_ROOT/login.html" >"$WEB_SPLIT_SERVE/login.html"
-envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML} ${BOOTH_READY_JS} ${BOOTH_CONSOLE_CONFIG_JSON}' \
+envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML} ${BOOTH_READY_JS} ${BOOTH_CONSOLE_CONFIG_JSON} ${BOOTH_CONSOLE_SPEC}' \
   <"$WEB_SPLIT_ROOT/index.html" >"$WEB_SPLIT_SERVE/index.html"
 
 mkdir -p /tmp/nginx/body /tmp/nginx/proxy /tmp/nginx/fastcgi /tmp/nginx/uwsgi /tmp/nginx/scgi

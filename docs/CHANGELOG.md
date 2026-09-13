@@ -4,6 +4,31 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The base variant console can now save its layout and Web view tabs back to `.booth/console.json`
+  itself, via a new `--console-spec <shared|cache>` flag / `console-spec` config key, instead of
+  only ever reading it.** `shared` saves to the same committable `.booth/console.json` described
+  above, but needs `--writable-booth` since `.booth/` is otherwise bind-mounted read-only — without
+  it a save fails cleanly (logged, not fatal) and the change still lives on in that browser's
+  `localStorage`. `cache` saves to `.booth/.tmp/console.json` instead, which is always writable
+  regardless of `--writable-booth` (the same always-read-write mount already used for session/idle/
+  lifecycle state) but is never git-committed, for a "remember for my next session" without
+  affecting teammates. Leaving it unset keeps today's read-only behavior exactly as before. Wired
+  end-to-end: a new `AppConfig.ConsoleSpec` field (auto-picked-up by `ConfigKeys()`'s reflection, no
+  extra work needed there), a CLI flag parsed the same way as the adjacent `--count-down-exit-code`,
+  a `BOOTH_CONSOLE_SPEC` env var exported before `booth-message-api-server` starts (it forks a fresh
+  handler per connection off its own environment snapshot, so anything exported after it starts
+  would've been invisible to it — caught before it caused a live bug), a new
+  `/booth-messages/api/console-config` POST route in that same Bash server that validates the body
+  is a JSON object and writes it atomically (temp file + `mv`), and a debounced save from the
+  front-end whenever layout or tabs change, suppressed until the page's own initial-load hydration
+  finishes so a fresh load never immediately re-saves exactly what it just read. Locked in with a
+  new dryrun test (CLI flag, config.toml key, and absence all produce/omit the right env var) plus
+  the existing full suite. One accepted limitation, by design: `index.html` is rendered once at
+  container boot and served static for the container's whole life, so a save updates the file on
+  disk immediately but a currently-running container won't reflect it until restarted — matches the
+  read-only file's own load-once behavior, and isn't worth an async-boot rework to avoid. See
+  `docs/BOOTH_CONSOLE.md`.
+
 - **Fixed a pane staying on its Web view tab, visually, after switching back to Terminal** — the
   header correctly reverted to "Session N", but the tab's content stayed stacked on top of the now-
   visible terminal underneath. `switchToTerminal` cleared the pane's `has-active-tab` class (which

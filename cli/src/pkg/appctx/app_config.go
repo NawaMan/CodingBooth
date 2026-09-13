@@ -168,6 +168,14 @@ type AppConfig struct {
 	ShowRunTime       string `toml:"show-run-time,omitempty"           envconfig:"CB_SHOW_RUN_TIME"`
 	ShowCountDown     string `toml:"show-count-down,omitempty"         envconfig:"CB_SHOW_COUNT_DOWN"`
 	CountDownExitCode string `toml:"count-down-exit-code,omitempty"    envconfig:"CB_COUNT_DOWN_EXIT_CODE"`
+	// ConsoleSpec controls the base variant's split console remembering its
+	// own layout/tabs back to .booth/console.json, not just reading it:
+	// "shared" saves to .booth/console.json itself (requires --writable-booth
+	// to actually persist, since .booth/ is read-only otherwise; reading it
+	// never needed that), "cache" saves to .booth/.tmp/console.json (already
+	// writable unconditionally, never git-committed). Empty/any other value
+	// disables saving — console.json (if present) is still read either way.
+	ConsoleSpec string `toml:"console-spec,omitempty"   envconfig:"CB_CONSOLE_SPEC"`
 
 	// --------------------
 	// TOML-friendly array fields
