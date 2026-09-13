@@ -4,6 +4,34 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Each console pane's Web view can now hold more than one tab.** Previously a pane's Web view was
+  a single target — typing a new address replaced whatever was open. The globe button's Web view
+  now carries its own tab strip: any number of tabs, each with its own independently-mounted
+  iframe, so switching between them is a visibility toggle, not a reload — a background tab keeps
+  its scroll position, form state, and websockets. Tabs (and which one is active) persist in
+  `localStorage` per pane and survive both a Terminal↔Web view toggle and a full page reload,
+  restoring every previously-open tab's iframe. Opening Web view with no tabs yet, or closing the
+  last one, leaves the terminal visible underneath rather than a blank pane. Fixed three real bugs
+  surfaced while building this: a freshly-opened tab briefly showed the terminal through it instead
+  of a blank page (the terminal was only hidden once the active tab had real content, not just an
+  active tab); the address bar's blur handler unconditionally reset the field to the active tab's
+  saved address, so clicking a fresh tab's own empty body — which blurs the input — wiped whatever
+  was typed or prefilled, since a brand-new tab has no saved address to fall back to; and
+  `flashAddrError`'s reserved-port rejection cleared the typed value and never restored it (only
+  the placeholder came back), unlike the https-URL rejection, which already left the text alone.
+
+- **Narrowed the ttyd Nerd Font race further: a pane's font now has to finish loading before its
+  iframe even starts navigating**, not just before the fallback-then-swap flash gets corrected
+  after the fact. The console shell itself — which renders before any pane's ttyd backend is even
+  ready — now preloads and registers the same `@font-face` the pane's own `sub_filter` injects, and
+  gates a pane's first navigation (and a Terminal↔Web view round trip) on `document.fonts.load()`
+  resolving, capped at 2s so a stalled font can never block the terminal from appearing. By the
+  time a pane's iframe is allowed to navigate, the font is normally already decoded and
+  cache-resident, so the existing detect-and-`resize` correction rarely has anything left to
+  correct. Caught a real bug in the first pass: the gate initially had no matching `@font-face`
+  declared in the shell's own document, so `document.fonts.load()` had nothing to wait on and
+  resolved immediately regardless of whether the font was actually ready.
+
 - **A console pane's shell now survives a page reload instead of dying with the websocket.** ttyd
   spawns a fresh process for every connection, so a bare `bash -l` (in `start-ttyd-split`, and the
   `start-ttyd` fallback used when `BOOTH_WEB_SPLIT=false`) was killed outright the moment a reload
