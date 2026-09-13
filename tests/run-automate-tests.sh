@@ -504,9 +504,21 @@ for i in "${!SUITES[@]}"; do
 
     stripped=$(sed 's/\x1b\[[0-9;]*m//g' "$log" 2>/dev/null) || stripped=""
 
-    # Extract test names from the "Failed tests:" block at the end of suite logs.
-    # Patterns: "  ❌ test-name" or "  - test-name"
-    echo "$stripped" | grep -E '^\s+(❌|-)' | sed 's/^[[:space:]]*[❌-][[:space:]]*//' | while IFS= read -r tname; do
+    # Extract test names from the LAST "Failed tests:" block in the log (a log
+    # with retries has one such block per attempt; only the final one reflects
+    # what's still broken). A suite log with no such block (e.g. unit.log, raw
+    # `go test -v` output) falls through to the "log the suite itself"
+    # fallback below rather than matching arbitrary "--- PASS:" / "-e FOO=bar"
+    # lines elsewhere in the log, which used to feed both garbage suite names
+    # and unbalanced quotes (from printed docker command dumps) into xargs.
+    failed_block=$(echo "$stripped" | awk '
+        /^Failed tests:/ { n = 0; capturing = 1; next }
+        capturing && /^[[:space:]]*$/ { capturing = 0 }
+        capturing { lines[n++] = $0 }
+        END { for (i = 0; i < n; i++) print lines[i] }
+    ')
+
+    echo "$failed_block" | grep -E '^\s+(❌|-)' | sed 's/^[[:space:]]*[❌-][[:space:]]*//' | while IFS= read -r tname; do
         tname=$(echo "$tname" | xargs)  # trim whitespace
         [[ -n "$tname" ]] && echo "${s}:${tname}"
     done >> "$FAILED_LOG"
