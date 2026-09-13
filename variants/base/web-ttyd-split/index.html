@@ -6,8 +6,35 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${BOOTH_CONTAINER_NAME} (${BOOTH_HOST_PORT})</title>
   <meta name="booth-project" content="${BOOTH_CONTAINER_NAME}">
+  <!-- Warms the browser cache for ttyd's Nerd Font before any pane's iframe
+       loads it — this shell renders before ttyd is ready (see BoothReady
+       below), so the fetch has a head start instead of racing each pane's
+       own late-injected preload. Same origin, so the cache is shared. -->
+  <link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin>
   ${BOOTH_READY_JS}
   <style>
+    /* Declared here purely so document.fonts.load() below has a face to
+       actually fetch and wait on — this document never renders any text
+       in it. Without a matching @font-face, .load() would find nothing to
+       match and resolve immediately regardless of whether the real font
+       bytes are ready. Keep the family name, weights, and URLs in sync
+       with the @font-face rules nginx injects into each pane (see
+       nginx.conf.template) — a mismatch here leaves the pane's own load
+       unguarded again. */
+    @font-face {
+      font-family: "FiraCode Nerd Font Mono";
+      font-weight: 400;
+      font-style: normal;
+      src: url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");
+    }
+    @font-face {
+      font-family: "FiraCode Nerd Font Mono";
+      font-weight: 700;
+      font-style: normal;
+      src: url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");
+    }
+
     :root {
       --bg: #0b1018;
       --panel: #141c27;
@@ -160,10 +187,16 @@
 
     .pane.active {
       display: grid;
-      grid-template-rows: auto 1fr;
+      /* Three explicit rows, not two, and every row-owning child below is
+         pinned to one with grid-row — the tab strip goes display:none
+         outside Web view, and CSS grid auto-placement skips display:none
+         items entirely, so without a pin pane-body would slide up into the
+         tab strip's row and everything would collapse to zero height. */
+      grid-template-rows: auto auto 1fr;
     }
 
     .pane-header {
+      grid-row: 1;
       display: flex;
       align-items: center;
       gap: 6px;
@@ -173,6 +206,130 @@
       font-family: "JetBrains Mono", "Fira Code", monospace;
       font-size: 11px;
       padding: 6px 10px;
+    }
+
+    .tab-strip {
+      grid-row: 2;
+      display: none;
+      align-items: center;
+      gap: 4px;
+      background: #0d131c;
+      border-bottom: 1px solid var(--panel-edge);
+      padding: 4px 6px;
+      overflow-x: auto;
+    }
+
+    .pane.mode-web .tab-strip {
+      display: flex;
+    }
+
+    .tab-list {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      min-width: 0;
+      flex: 1;
+      overflow-x: auto;
+    }
+
+    .tab-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      max-width: 160px;
+      background: var(--panel);
+      border: 1px solid var(--panel-edge);
+      border-radius: 6px;
+      padding: 3px 6px;
+      color: var(--muted);
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 11px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .tab-pill.is-active {
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .tab-pill-label {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
+    }
+
+    .tab-pill-close {
+      background: none;
+      border: none;
+      color: inherit;
+      opacity: 0.7;
+      cursor: pointer;
+      padding: 0;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .tab-pill-close:hover {
+      opacity: 1;
+      color: #e74c3c;
+    }
+
+    .tab-add {
+      background: none;
+      border: 1px dashed var(--panel-edge);
+      border-radius: 6px;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 2px 8px;
+      font-size: 12px;
+      line-height: 1.4;
+      flex-shrink: 0;
+    }
+
+    .tab-add:hover {
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .pane-body {
+      grid-row: 3;
+      position: relative;
+      min-height: 0;
+    }
+
+    .pane-body iframe {
+      position: absolute;
+      inset: 0;
+    }
+
+    .web-tab-frame {
+      display: none;
+    }
+
+    .web-tab-frame.is-active {
+      display: block;
+    }
+
+    /* Any active tab — even a freshly opened, not-yet-navigated one — hides
+       the terminal underneath it, same as switching a real browser tab
+       replaces whatever the previous one showed. Only with zero tabs open
+       at all does the terminal stay visible, so Web view has something to
+       show rather than a blank pane. */
+    .pane.has-active-tab .term-frame {
+      display: none;
+    }
+
+    .tab-empty {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: var(--terminal);
+    }
+
+    .pane.active-tab-empty .tab-empty {
+      display: block;
     }
 
     .pane-title {
@@ -483,7 +640,7 @@
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
           </span>
           <label class="proxy-addr" data-session="1">
-            <input class="proxy-port-input" data-session="1" type="text" placeholder=":3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
+            <input class="proxy-port-input" data-session="1" type="text" placeholder="http://booth" spellcheck="false" autocomplete="off" aria-label="Booth address">
           </label>
           <button class="proxy-toggle" data-session="1" title="Web view">
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
@@ -498,7 +655,14 @@
           <button class="proxy-open-tab" data-session="1" title="Open in new tab" style="display:none">&#x2197;</button>
           <span class="proxy-warning" data-session="1" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
-        <iframe title="Session 1" data-default-src="/s1/"></iframe>
+        <div class="tab-strip" data-pane="1">
+          <div class="tab-list" data-pane="1"></div>
+          <button class="tab-add" data-pane="1" title="New tab">+</button>
+        </div>
+        <div class="pane-body" data-pane="1">
+          <iframe class="term-frame" title="Session 1" data-default-src="/s1/"></iframe>
+          <div class="tab-empty" data-pane="1"></div>
+        </div>
       </section>
       <section class="pane pane-2" data-pane="2">
         <div class="pane-header">
@@ -507,7 +671,7 @@
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
           </span>
           <label class="proxy-addr" data-session="2">
-            <input class="proxy-port-input" data-session="2" type="text" placeholder=":3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
+            <input class="proxy-port-input" data-session="2" type="text" placeholder="http://booth" spellcheck="false" autocomplete="off" aria-label="Booth address">
           </label>
           <button class="proxy-toggle" data-session="2" title="Web view">
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
@@ -522,7 +686,14 @@
           <button class="proxy-open-tab" data-session="2" title="Open in new tab" style="display:none">&#x2197;</button>
           <span class="proxy-warning" data-session="2" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
-        <iframe title="Session 2" data-default-src="/s2/"></iframe>
+        <div class="tab-strip" data-pane="2">
+          <div class="tab-list" data-pane="2"></div>
+          <button class="tab-add" data-pane="2" title="New tab">+</button>
+        </div>
+        <div class="pane-body" data-pane="2">
+          <iframe class="term-frame" title="Session 2" data-default-src="/s2/"></iframe>
+          <div class="tab-empty" data-pane="2"></div>
+        </div>
       </section>
       <section class="pane pane-3" data-pane="3">
         <div class="pane-header">
@@ -531,7 +702,7 @@
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
           </span>
           <label class="proxy-addr" data-session="3">
-            <input class="proxy-port-input" data-session="3" type="text" placeholder=":3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
+            <input class="proxy-port-input" data-session="3" type="text" placeholder="http://booth" spellcheck="false" autocomplete="off" aria-label="Booth address">
           </label>
           <button class="proxy-toggle" data-session="3" title="Web view">
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
@@ -546,7 +717,14 @@
           <button class="proxy-open-tab" data-session="3" title="Open in new tab" style="display:none">&#x2197;</button>
           <span class="proxy-warning" data-session="3" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
-        <iframe title="Session 3" data-default-src="/s3/"></iframe>
+        <div class="tab-strip" data-pane="3">
+          <div class="tab-list" data-pane="3"></div>
+          <button class="tab-add" data-pane="3" title="New tab">+</button>
+        </div>
+        <div class="pane-body" data-pane="3">
+          <iframe class="term-frame" title="Session 3" data-default-src="/s3/"></iframe>
+          <div class="tab-empty" data-pane="3"></div>
+        </div>
       </section>
       <section class="pane pane-4" data-pane="4">
         <div class="pane-header">
@@ -555,7 +733,7 @@
             <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M3 1.5h4.2L9.5 4v6.5H3z" fill="none" stroke="currentColor" stroke-width="1.1"/><path d="M7.2 1.5V4H9.5" fill="none" stroke="currentColor" stroke-width="1.1"/></svg>
           </span>
           <label class="proxy-addr" data-session="4">
-            <input class="proxy-port-input" data-session="4" type="text" placeholder=":3000/path" spellcheck="false" autocomplete="off" aria-label="Booth address">
+            <input class="proxy-port-input" data-session="4" type="text" placeholder="http://booth" spellcheck="false" autocomplete="off" aria-label="Booth address">
           </label>
           <button class="proxy-toggle" data-session="4" title="Web view">
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
@@ -570,7 +748,14 @@
           <button class="proxy-open-tab" data-session="4" title="Open in new tab" style="display:none">&#x2197;</button>
           <span class="proxy-warning" data-session="4" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
-        <iframe title="Session 4" data-default-src="/s4/"></iframe>
+        <div class="tab-strip" data-pane="4">
+          <div class="tab-list" data-pane="4"></div>
+          <button class="tab-add" data-pane="4" title="New tab">+</button>
+        </div>
+        <div class="pane-body" data-pane="4">
+          <iframe class="term-frame" title="Session 4" data-default-src="/s4/"></iframe>
+          <div class="tab-empty" data-pane="4"></div>
+        </div>
       </section>
       <div id="handle-x" class="split-handle split-handle-x" aria-hidden="true"></div>
       <div id="handle-y" class="split-handle split-handle-y" aria-hidden="true"></div>
@@ -593,6 +778,24 @@
       const modeHashPrefix = "#mode=";
       // Keep this breakpoint in sync with the @media (max-width: …) rule above.
       const compactQuery = window.matchMedia("(max-width: 600px)");
+
+      // Gate a ttyd pane's first navigation on the Nerd Font actually being
+      // decoded, not just requested — the <link rel="preload"> above only
+      // starts the fetch. ttyd paints its terminal on <canvas>, which,
+      // unlike DOM text, never auto-repaints when a font finishes loading
+      // later (see the resize-dispatch workaround in the sub_filter in
+      // nginx.conf.template), so racing the iframe's navigation against the
+      // font fetch is what produces the fallback-then-swap flash. Waiting
+      // here means ttyd's own script shouldn't get to paint before the
+      // font is already loaded. Capped so a slow or broken font fetch can
+      // never block the terminal from appearing at all.
+      const fontsReadyPromise = Promise.race([
+        Promise.all([
+          document.fonts.load('400 15px "FiraCode Nerd Font Mono"'),
+          document.fonts.load('700 15px "FiraCode Nerd Font Mono"')
+        ]),
+        new Promise((resolve) => setTimeout(resolve, 2000))
+      ]).catch(() => {});
 
       const minSplit = 0.2;
       const maxSplit = 0.8;
@@ -926,7 +1129,7 @@
           if (!pane.classList.contains("active")) {
             return;
           }
-          const iframe = pane.querySelector("iframe");
+          const iframe = activeWebFrame(pane) || pane.querySelector(".term-frame");
           if (iframe && iframe.contentWindow) {
             iframe.contentWindow.location.reload();
           }
@@ -952,6 +1155,33 @@
       }
 
       const proxyState = loadProxyState();
+      let nextTabSeq = 1;
+      function nextTabId() {
+        return "t" + (nextTabSeq++) + "_" + Date.now().toString(36);
+      }
+
+      // A pane's Web view holds a list of tabs plus which one is active, not
+      // one single target — the old shape (`{ port, path, ... }`) can't be
+      // mapped onto a specific tab, so it's dropped on upgrade rather than
+      // guessed at: the pane just opens fresh in Terminal mode.
+      function getPaneState(session) {
+        var data = proxyState[session];
+        if (!data || !Array.isArray(data.tabs)) {
+          data = { tabs: [], activeTabId: null };
+          proxyState[session] = data;
+        }
+        return data;
+      }
+
+      function getActiveTab(session) {
+        var state = getPaneState(session);
+        if (!state.activeTabId) return null;
+        for (var i = 0; i < state.tabs.length; i++) {
+          if (state.tabs[i].id === state.activeTabId) return state.tabs[i];
+        }
+        return null;
+      }
+
       // viewmd's default listen port — the Markdown button is a shortcut to
       // the same web view as typing this into the globe bar.
       const VIEWMD_PORT = 8765;
@@ -1070,7 +1300,7 @@
         }
 
         if (s.charAt(0) === "/" || s.charAt(0) === "?" || s.charAt(0) === "#") {
-          var cur = proxyState[sessionNum];
+          var cur = getActiveTab(sessionNum);
           if (cur && cur.port) {
             if (s.charAt(0) === "/") return normalizeTarget(cur.port, s);
             return normalizeTarget(cur.port, "/" + s);
@@ -1087,6 +1317,7 @@
         var box = input.closest(".proxy-addr");
         if (box) box.classList.add("error");
         var prevPlaceholder = input.placeholder;
+        var prevValue = input.value;
         var clearValue = placeholder && placeholder !== "http only";
         if (clearValue) {
           input.value = "";
@@ -1094,7 +1325,13 @@
         }
         setTimeout(function() {
           if (box) box.classList.remove("error");
-          if (clearValue) input.placeholder = prevPlaceholder;
+          if (clearValue) {
+            input.placeholder = prevPlaceholder;
+            // Only hand the rejected text back if the user hasn't already
+            // started typing something else during the flash — restoring
+            // it unconditionally would clobber a fresh edit mid-keystroke.
+            if (input.value === "") input.value = prevValue;
+          }
         }, placeholder ? 1500 : 1000);
       }
 
@@ -1110,35 +1347,47 @@
         if (tip) tip.setAttribute("title", text || "");
       }
 
+      // iframe belongs to a specific web tab (dataset.tabId) — the terminal
+      // frame has no tabId and is ignored here.
       function syncAddrFromIframe(iframe) {
         var pane = iframe.closest(".pane");
         if (!pane) return;
         var session = pane.getAttribute("data-pane");
-        var toggle = pane.querySelector(".proxy-toggle");
-        if (!toggle || !toggle.classList.contains("active-web")) return;
-        var input = pane.querySelector(".proxy-port-input");
+        var tabId = iframe.dataset.tabId;
+        if (!tabId) return;
+        var state = getPaneState(session);
+        var tab = null;
+        for (var i = 0; i < state.tabs.length; i++) {
+          if (state.tabs[i].id === tabId) { tab = state.tabs[i]; break; }
+        }
+        if (!tab) return;
         try {
           var loc = iframe.contentWindow.location;
           var m = loc.pathname.match(/^\/proxy\/(\d+)(\/.*)?$/);
           if (!m) return;
           var target = normalizeTarget(m[1], (m[2] || "/") + loc.search + loc.hash);
           if (target.error) return;
-          if (input && document.activeElement !== input) {
-            input.value = target.display;
-          }
+
+          tab.port = target.port;
+          tab.path = target.path;
+          tab.query = target.query;
+          tab.display = target.display;
           var pageTitle = "";
           try {
             pageTitle = (iframe.contentDocument && iframe.contentDocument.title) || "";
           } catch (_t) { /* ignore */ }
-          setPageTitleTip(pane, pageTitle || target.display);
-          proxyState[session] = {
-            port: target.port,
-            path: target.path,
-            query: target.query,
-            display: target.display
-          };
+          tab.title = pageTitle || target.display;
           saveProxyState(proxyState);
-          setMdToggle(pane, isViewmdPort(target.port));
+
+          if (state.activeTabId === tabId) {
+            var input = pane.querySelector(".proxy-port-input");
+            if (input && document.activeElement !== input) {
+              input.value = target.display;
+            }
+            setPageTitleTip(pane, tab.title);
+            setMdToggle(pane, isViewmdPort(target.port));
+          }
+          renderTabStrip(session); // the tab pill may have just picked up a real page title
         } catch (_e) { /* cross-origin */ }
       }
 
@@ -1148,6 +1397,10 @@
           if (delta < 0) iframe.contentWindow.history.back();
           else iframe.contentWindow.history.forward();
         } catch (_e) { /* cross-origin */ }
+      }
+
+      function activeWebFrame(pane) {
+        return pane && pane.querySelector(".web-tab-frame.is-active");
       }
 
       function setWebTools(pane, on) {
@@ -1197,7 +1450,7 @@
         }
       }
 
-      document.querySelectorAll(".pane iframe").forEach(function(iframe) {
+      document.querySelectorAll(".pane .term-frame").forEach(function(iframe) {
         iframe.addEventListener("load", function() {
           applyIframeFallbackStyle(iframe);
           syncAddrFromIframe(iframe);
@@ -1206,8 +1459,7 @@
 
       document.querySelectorAll(".proxy-reload").forEach(function(btn) {
         btn.addEventListener("click", function() {
-          var pane = btn.closest(".pane");
-          var iframe = pane && pane.querySelector("iframe");
+          var iframe = activeWebFrame(btn.closest(".pane"));
           if (!iframe) return;
           try {
             // Same-origin: contentWindow.location.reload() preserves history.
@@ -1227,78 +1479,227 @@
         }
       }
 
-      function switchToWebView(sessionNum, target) {
+      // Rebuilds a pane's tab strip from state — cheap enough (a handful of
+      // tabs at most) to just redraw wholesale on every change rather than
+      // diff it.
+      function renderTabStrip(session) {
+        var pane = document.querySelector('.pane[data-pane="' + session + '"]');
+        var list = pane && pane.querySelector(".tab-list");
+        if (!list) return;
+        var state = getPaneState(session);
+        list.innerHTML = "";
+        state.tabs.forEach(function(tab) {
+          var pill = document.createElement("div");
+          pill.className = "tab-pill" + (tab.id === state.activeTabId ? " is-active" : "");
+          pill.dataset.tabId = tab.id;
+
+          var label = document.createElement("span");
+          label.className = "tab-pill-label";
+          label.textContent = tab.title || tab.display || "New tab";
+          pill.appendChild(label);
+
+          var close = document.createElement("button");
+          close.className = "tab-pill-close";
+          close.title = "Close tab";
+          close.textContent = "×";
+          close.addEventListener("click", function(e) {
+            e.stopPropagation();
+            closeTab(session, tab.id);
+          });
+          pill.appendChild(close);
+
+          pill.addEventListener("click", function() {
+            activateTab(session, tab.id);
+          });
+
+          list.appendChild(pill);
+        });
+      }
+
+      // Address bar, toolbar buttons, page-title tip, and the pane's
+      // has-active-tab/active-tab-empty flags all just reflect whichever
+      // tab is active — recomputed here after anything changes it.
+      function updateAddrBarForActiveTab(session) {
+        var pane = document.querySelector('.pane[data-pane="' + session + '"]');
+        if (!pane) return;
+        var input = pane.querySelector(".proxy-port-input");
+        var tab = getActiveTab(session);
+        var hasContent = !!(tab && tab.port);
+        setWebTools(pane, hasContent);
+        if (input) input.value = (tab && tab.display) || "";
+        setPageTitleTip(pane, (tab && (tab.title || tab.display)) || "");
+        setMdToggle(pane, !!(tab && isViewmdPort(tab.port)));
+        pane.classList.toggle("has-active-tab", !!tab);
+        pane.classList.toggle("active-tab-empty", !!tab && !hasContent);
+      }
+
+      function activateTab(session, tabId) {
+        var pane = document.querySelector('.pane[data-pane="' + session + '"]');
+        if (!pane) return;
+        var state = getPaneState(session);
+        state.activeTabId = tabId;
+        saveProxyState(proxyState);
+
+        pane.querySelectorAll(".web-tab-frame").forEach(function(frame) {
+          frame.classList.toggle("is-active", frame.dataset.tabId === tabId);
+        });
+
+        var tab = getActiveTab(session);
+        setGlobeProxyPort(tab ? tab.port : null);
+        renderTabStrip(session);
+        updateAddrBarForActiveTab(session);
+      }
+
+      // One real iframe per tab, kept mounted (just hidden) once created —
+      // switching tabs is a visibility toggle, not a reload, so a background
+      // tab's scroll position, form state, and websockets survive it.
+      function createTabFrame(session, tab) {
+        var pane = document.querySelector('.pane[data-pane="' + session + '"]');
+        var body = pane && pane.querySelector(".pane-body");
+        if (!body) return null;
+        var iframe = document.createElement("iframe");
+        iframe.className = "web-tab-frame";
+        iframe.dataset.tabId = tab.id;
+        iframe.title = tab.title || tab.display || "Web tab";
+        iframe.addEventListener("load", function() {
+          applyIframeFallbackStyle(iframe);
+          syncAddrFromIframe(iframe);
+        });
+        body.appendChild(iframe);
+        iframe.src = tab.src;
+        return iframe;
+      }
+
+      function openNewTab(session) {
+        var pane = document.querySelector('.pane[data-pane="' + session + '"]');
+        if (!pane) return;
+        var state = getPaneState(session);
+        var tab = { id: nextTabId(), port: null, path: null, query: "", display: "", title: "" };
+        state.tabs.push(tab);
+        pane.classList.add("mode-web");
+        activateTab(session, tab.id);
+
+        var input = pane.querySelector(".proxy-port-input");
+        if (input) {
+          // Prefill the host so the next keys are `:<port>/<path>`.
+          input.value = "http://booth";
+          input.focus();
+          if (typeof input.setSelectionRange === "function") {
+            var n = input.value.length;
+            input.setSelectionRange(n, n);
+          }
+        }
+      }
+
+      // Navigating the address bar always acts on the active tab — creating
+      // one first if the pane somehow has none — matching how a browser's
+      // address bar navigates the current tab rather than opening a new one.
+      function navigateActiveTab(session, target) {
+        var state = getPaneState(session);
+        var tab = getActiveTab(session);
+        if (!tab) {
+          tab = { id: nextTabId() };
+          state.tabs.push(tab);
+          state.activeTabId = tab.id;
+        }
+        tab.port = target.port;
+        tab.path = target.path;
+        tab.query = target.query;
+        tab.display = target.display;
+        tab.title = target.display;
+        saveProxyState(proxyState);
+
+        var pane = document.querySelector('.pane[data-pane="' + session + '"]');
+        var existingFrame = pane && pane.querySelector('.web-tab-frame[data-tab-id="' + tab.id + '"]');
+        if (existingFrame) {
+          existingFrame.src = target.src;
+        } else {
+          createTabFrame(session, { id: tab.id, src: target.src, title: target.display, display: target.display });
+        }
+
+        activateTab(session, tab.id);
+      }
+
+      function closeTab(session, tabId) {
+        var pane = document.querySelector('.pane[data-pane="' + session + '"]');
+        if (!pane) return;
+        var state = getPaneState(session);
+        var idx = state.tabs.findIndex(function(t) { return t.id === tabId; });
+        if (idx === -1) return;
+
+        var frame = pane.querySelector('.web-tab-frame[data-tab-id="' + tabId + '"]');
+        if (frame) frame.remove();
+
+        var wasActive = state.activeTabId === tabId;
+        state.tabs.splice(idx, 1);
+
+        if (wasActive) {
+          var next = state.tabs[idx] || state.tabs[idx - 1] || null;
+          state.activeTabId = next ? next.id : null;
+        }
+        saveProxyState(proxyState);
+
+        if (state.activeTabId) {
+          activateTab(session, state.activeTabId);
+        } else {
+          setGlobeProxyPort(null);
+          renderTabStrip(session);
+          updateAddrBarForActiveTab(session);
+        }
+      }
+
+      function switchToWeb(sessionNum) {
         const pane = document.querySelector('.pane[data-pane="' + sessionNum + '"]');
         if (!pane) return;
-
-        const iframe = pane.querySelector("iframe");
-        const portInput = pane.querySelector(".proxy-port-input");
         const toggleBtn = pane.querySelector(".proxy-toggle");
+        const state = getPaneState(sessionNum);
 
-        setGlobeProxyPort(target.port);
-        setPaneSrc(iframe, target.src);
+        pane.classList.add("mode-web");
         setAddrOpen(pane, true);
-        setWebTools(pane, true);
-        if (portInput) portInput.value = target.display;
-        setPageTitleTip(pane, target.display);
         toggleBtn.classList.add("active-web");
         toggleBtn.title = "Back to terminal";
-        setMdToggle(pane, isViewmdPort(target.port));
 
-        proxyState[sessionNum] = {
-          port: target.port,
-          path: target.path,
-          query: target.query,
-          display: target.display
-        };
-        saveProxyState(proxyState);
+        if (state.tabs.length === 0) {
+          openNewTab(sessionNum);
+          return;
+        }
+
+        var activeId = state.activeTabId && state.tabs.some(function(t) { return t.id === state.activeTabId; })
+          ? state.activeTabId
+          : state.tabs[0].id;
+        activateTab(sessionNum, activeId);
       }
 
       function switchToTerminal(sessionNum) {
         const pane = document.querySelector('.pane[data-pane="' + sessionNum + '"]');
         if (!pane) return;
-
-        const iframe = pane.querySelector("iframe");
-        const portInput = pane.querySelector(".proxy-port-input");
         const toggleBtn = pane.querySelector(".proxy-toggle");
 
-        setPaneSrc(iframe, iframe.dataset.defaultSrc);
+        // Tabs and their iframes stay mounted, just hidden by mode-web
+        // going away — the terminal iframe is never repointed by any of
+        // this (each web tab gets its own frame now), so it doesn't need
+        // reloading here either; toggling back to Web view later restores
+        // exactly where this pane left off.
+        pane.classList.remove("mode-web", "has-active-tab", "active-tab-empty");
         setAddrOpen(pane, false);
-        setWebTools(pane, false);
-        if (portInput) portInput.value = "";
-        setPageTitleTip(pane, "");
         toggleBtn.classList.remove("active-web");
         toggleBtn.title = "Web view";
-        setMdToggle(pane, false);
-
         setGlobeProxyPort(null);
-        delete proxyState[sessionNum];
-        saveProxyState(proxyState);
       }
 
       document.querySelectorAll(".proxy-toggle").forEach(function(btn) {
         btn.addEventListener("click", function() {
-          var pane = btn.closest(".pane");
-          var header = pane.querySelector(".pane-header");
-          var portInput = pane.querySelector(".proxy-port-input");
-
           if (btn.classList.contains("active-web")) {
             switchToTerminal(btn.dataset.session);
-            return;
-          }
-
-          if (header.classList.contains("web-addr-open")) {
-            setAddrOpen(pane, false);
           } else {
-            setAddrOpen(pane, true);
-            // Prefill the host so the next keys are `:<port>/<path>`.
-            portInput.value = "http://booth";
-            portInput.focus();
-            if (typeof portInput.setSelectionRange === "function") {
-              var n = portInput.value.length;
-              portInput.setSelectionRange(n, n);
-            }
+            switchToWeb(btn.dataset.session);
           }
+        });
+      });
+
+      document.querySelectorAll(".tab-add").forEach(function(btn) {
+        btn.addEventListener("click", function() {
+          openNewTab(btn.dataset.pane);
         });
       });
 
@@ -1307,14 +1708,17 @@
           var session = btn.dataset.session;
           var pane = btn.closest(".pane");
           var toggle = pane && pane.querySelector(".proxy-toggle");
-          var saved = proxyState[session];
-          if (toggle && toggle.classList.contains("active-web") && saved && isViewmdPort(saved.port)) {
+          var active = getActiveTab(session);
+          if (toggle && toggle.classList.contains("active-web") && active && isViewmdPort(active.port)) {
             switchToTerminal(session);
             return;
           }
           var parsed = parseBoothTarget("http://booth:" + VIEWMD_PORT);
           if (parsed.error) return;
-          switchToWebView(session, parsed);
+          if (!toggle || !toggle.classList.contains("active-web")) {
+            switchToWeb(session);
+          }
+          navigateActiveTab(session, parsed);
         });
       });
 
@@ -1336,14 +1740,20 @@
               flashAddrError(input);
               return;
             }
-            switchToWebView(session, parsed);
+            navigateActiveTab(session, parsed);
           } else if (e.key === "Escape") {
-            var pane = input.closest(".pane");
-            var toggle = pane.querySelector(".proxy-toggle");
-            if (toggle && toggle.classList.contains("active-web")) {
-              input.blur();
+            var session = input.dataset.session;
+            var tab = getActiveTab(session);
+            if (tab && !tab.port) {
+              // Never-navigated tab (the "+"/globe just opened it) — Escape
+              // cancels it outright rather than leaving an empty tab behind,
+              // since that's a deliberate cancel, not an incidental blur.
+              var state = getPaneState(session);
+              var wasOnlyTab = state.tabs.length === 1;
+              closeTab(session, tab.id);
+              if (wasOnlyTab) switchToTerminal(session);
             } else {
-              setAddrOpen(pane, false);
+              input.blur();
             }
           }
         });
@@ -1358,22 +1768,29 @@
             input.value = parsed.display;
             return;
           }
-          var saved = proxyState[session];
-          if (saved && saved.display) input.value = saved.display;
+          // Unparseable — typically just the "http://booth" prefill or a
+          // still-incomplete edit. Revert to the active tab's own known-good
+          // address if it has one; otherwise leave the input as the user
+          // left it. A blank tab has no display to revert to, and clicking
+          // its own empty body is what fires this blur in the first place —
+          // wiping the input right back to nothing on that click, every
+          // time, is the bug this guards against.
+          var tab = getActiveTab(session);
+          if (tab && tab.display) {
+            input.value = tab.display;
+          }
         });
       });
 
       document.querySelectorAll(".proxy-hist-back").forEach(function(btn) {
         btn.addEventListener("click", function() {
-          var pane = btn.closest(".pane");
-          iframeHistory(pane && pane.querySelector("iframe"), -1);
+          iframeHistory(activeWebFrame(btn.closest(".pane")), -1);
         });
       });
 
       document.querySelectorAll(".proxy-hist-forward").forEach(function(btn) {
         btn.addEventListener("click", function() {
-          var pane = btn.closest(".pane");
-          iframeHistory(pane && pane.querySelector("iframe"), 1);
+          iframeHistory(activeWebFrame(btn.closest(".pane")), 1);
         });
       });
 
@@ -1387,21 +1804,52 @@
             window.open(parsed.src, "_blank");
             return;
           }
-          var state = proxyState[session];
-          if (state && state.port) {
-            window.open(proxySrc(state.port, state.path || "/", state.query || ""), "_blank");
+          var tab = getActiveTab(session);
+          if (tab && tab.port) {
+            window.open(proxySrc(tab.port, tab.path || "/", tab.query || ""), "_blank");
           }
         });
       });
 
-      // Restore saved proxy states on load (old shape was `{ port }`).
+      // Restore every saved tab's iframe on load (not just the active one),
+      // so switching between them post-reload doesn't need a fresh navigate
+      // — that persistence is the whole point of tabs surviving a reload.
       Object.keys(proxyState).forEach(function(session) {
-        var data = proxyState[session];
-        if (!data || !data.port) return;
-        var raw = data.display || (String(data.port) + (data.path && data.path !== "/" ? data.path : "") + (data.query || ""));
-        var parsed = parseBoothTarget(raw, session);
-        if (parsed && !parsed.error) {
-          switchToWebView(session, parsed);
+        var state = getPaneState(session);
+        if (!state.tabs.length) return;
+        var pane = document.querySelector('.pane[data-pane="' + session + '"]');
+        if (!pane) return;
+
+        pane.classList.add("mode-web");
+        setAddrOpen(pane, true);
+        var toggleBtn = pane.querySelector(".proxy-toggle");
+        if (toggleBtn) {
+          toggleBtn.classList.add("active-web");
+          toggleBtn.title = "Back to terminal";
+        }
+
+        var validTabs = [];
+        state.tabs.forEach(function(tab) {
+          if (!tab.port) return; // drop a half-open "new tab" from a stale save
+          createTabFrame(session, {
+            id: tab.id,
+            src: proxySrc(tab.port, tab.path || "/", tab.query || ""),
+            title: tab.title,
+            display: tab.display
+          });
+          validTabs.push(tab);
+        });
+        state.tabs = validTabs;
+        if (!state.tabs.some(function(t) { return t.id === state.activeTabId; })) {
+          state.activeTabId = state.tabs.length ? state.tabs[0].id : null;
+        }
+        saveProxyState(proxyState);
+
+        if (state.activeTabId) {
+          activateTab(session, state.activeTabId);
+        } else {
+          renderTabStrip(session);
+          updateAddrBarForActiveTab(session);
         }
       });
 
@@ -1409,9 +1857,11 @@
       // comes back — a booth--restart restarts ttyd under this very tab, and
       // without this the panes would sit on the 502 it left behind.
       window.BoothReady.onUp(function () {
-        panes.forEach(function (pane) {
-          const iframe = pane.querySelector("iframe");
-          iframe.src = iframe.dataset.boothSrc || iframe.dataset.defaultSrc;
+        fontsReadyPromise.then(function () {
+          panes.forEach(function (pane) {
+            const iframe = pane.querySelector(".term-frame");
+            iframe.src = iframe.dataset.boothSrc || iframe.dataset.defaultSrc;
+          });
         });
       });
 
