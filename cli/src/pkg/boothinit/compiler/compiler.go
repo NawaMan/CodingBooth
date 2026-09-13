@@ -21,6 +21,14 @@ type sourcedSegment struct {
 	Order      int
 	Content    string
 	SourceName string
+
+	// Owner and Requires are set for Boothfile segments only (see collectSegments)
+	// and let mergeSegments enforce install-order constraints on top of the
+	// Order/SourceName sort. Owner is the top-level template name a Requires
+	// value from another segment would reference; Requires lists the top-level
+	// template names this segment's content depends on being installed first.
+	Owner    string
+	Requires []string
 }
 
 // Compile converts a ResolvedSelection into a BoothOutput.
@@ -81,6 +89,11 @@ type collector struct {
 func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
 	t := st.Template
 	source := t.Name
+	// Requires values always name a top-level template (selection.Resolve looks
+	// them up in registry.ByName), so that's the identity other segments' Requires
+	// need to match against — an extension's segments are owned by their parent,
+	// not by the extension's own composite source name.
+	owner := t.Name
 
 	// Params
 	if err := c.collectParams(st.ParamValues, source); err != nil {
@@ -88,7 +101,7 @@ func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
 	}
 
 	// Segments
-	c.collectSegments(t, source)
+	c.collectSegments(t, source, owner, t.Requires)
 
 	// Config
 	if err := c.collectConfig(t, source); err != nil {
@@ -106,7 +119,7 @@ func (c *collector) collectTemplate(st selection.SelectedTemplate) error {
 			return err
 		}
 
-		c.collectSegments(ext.Extension, extSource)
+		c.collectSegments(ext.Extension, extSource, owner, ext.Extension.Requires)
 
 		if err := c.collectConfig(ext.Extension, extSource); err != nil {
 			return err
@@ -133,10 +146,11 @@ func (c *collector) collectParams(values map[string]string, source string) error
 	return nil
 }
 
-func (c *collector) collectSegments(t *tmpl.Template, source string) {
+func (c *collector) collectSegments(t *tmpl.Template, source, owner string, requires []string) {
 	for _, seg := range t.BoothfileSegments {
 		c.boothfileSegs = append(c.boothfileSegs, sourcedSegment{
 			Order: seg.Order, Content: seg.Content, SourceName: source,
+			Owner: owner, Requires: requires,
 		})
 	}
 	for _, seg := range t.StartupSegments {
@@ -350,19 +364,73 @@ func sortSegments(segs []sourcedSegment) {
 	})
 }
 
-// mergeSegments sorts by order (tiebreak by source name) and concatenates content.
+// mergeSegments sorts by order (tiebreak by source name), then concatenates
+// content. Order/source-name is only a default: a template picked that
+// consistently for everything left at the default segment order (most of the
+// catalog), it says nothing about install dependencies, so a segment is never
+// placed ahead of a template it Requires regardless of where order/tiebreak
+// would otherwise put it — see topoSortSegments.
 func mergeSegments(segs []sourcedSegment) string {
 	if len(segs) == 0 {
 		return ""
 	}
 
-	sortSegments(segs)
+	segs = topoSortSegments(segs)
 
 	var parts []string
 	for _, seg := range segs {
 		parts = append(parts, strings.TrimRight(seg.Content, "\n"))
 	}
 	return strings.Join(parts, "\n") + "\n"
+}
+
+// topoSortSegments orders segments by (Order, SourceName) as a baseline, then
+// pulls a segment's Requires (matched against other segments' Owner) ahead of
+// it wherever the baseline would otherwise separate them — e.g. two templates
+// that both leave Boothfile at the default order band still install in
+// dependency order, not alphabetically by template name.
+//
+// Requires is resolved only against selected templates: selection.Resolve
+// already fails the whole selection if a Requires name isn't in the catalog,
+// and auto-selects it when it's valid but not explicitly chosen, so by the
+// time segments reach here every Requires name is guaranteed to have a
+// matching Owner among segs. A Requires cycle (which nothing upstream
+// currently rejects) is not treated as an error here either — visiting simply
+// does not re-enter a segment already being visited, so a cyclic pair falls
+// back to baseline order for that pair instead of infinite-looping.
+func topoSortSegments(segs []sourcedSegment) []sourcedSegment {
+	ordered := append([]sourcedSegment(nil), segs...)
+	sortSegments(ordered)
+
+	byOwner := make(map[string][]int, len(ordered))
+	for i, seg := range ordered {
+		byOwner[seg.Owner] = append(byOwner[seg.Owner], i)
+	}
+
+	visited := make([]bool, len(ordered))
+	visiting := make([]bool, len(ordered))
+	result := make([]sourcedSegment, 0, len(ordered))
+
+	var visit func(i int)
+	visit = func(i int) {
+		if visited[i] || visiting[i] {
+			return
+		}
+		visiting[i] = true
+		for _, req := range ordered[i].Requires {
+			for _, j := range byOwner[req] {
+				visit(j)
+			}
+		}
+		visiting[i] = false
+		visited[i] = true
+		result = append(result, ordered[i])
+	}
+
+	for i := range ordered {
+		visit(i)
+	}
+	return result
 }
 
 // sanitizeName converts a source name to a safe filename component.

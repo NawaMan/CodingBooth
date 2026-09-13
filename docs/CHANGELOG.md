@@ -424,6 +424,19 @@ This file contains a list of changes for each released version.
   CDN URL. Found while live-verifying the new RubyMine `import-project`
   extension above.
 
+- **A template's `requires` is now honored when ordering Boothfile `setup`
+  lines, not just for auto-selecting a missing dependency.** Selecting
+  `aws-cdk` alongside `nodejs` (both leave Boothfile at the default order
+  band) generated `setup aws-cdk` before `setup nodejs` — "aws-cdk" sorts
+  before "nodejs" alphabetically, the tiebreak used when order is equal — so
+  the build failed with "npm and node are required but not found" even
+  though `aws-cdk`'s `template.toml` correctly declares
+  `requires = ["nodejs"]`. Anyone hitting this was affected regardless of
+  selection order, since the ordering step never consulted `requires` at
+  all. Boothfile segments are now topologically sorted by `requires` (an
+  extension's own `requires` counts too), with order/tiebreak only deciding
+  between segments that have no dependency relationship.
+
 - **Appwrite admin create retries a slow first boot.** The health probe
   no longer lets curl retry on its own (that stacked with the wait loop).
   Creating the first account now retries a few times after the server
