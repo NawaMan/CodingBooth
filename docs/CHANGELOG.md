@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fixed a pane staying on its Web view tab, visually, after switching back to Terminal** — the
+  header correctly reverted to "Session N", but the tab's content stayed stacked on top of the now-
+  visible terminal underneath. `switchToTerminal` cleared the pane's `has-active-tab` class (which
+  un-hides the terminal) but never cleared the web-tab iframe's own `is-active` class, a separate
+  CSS rule keyed off the iframe itself that independently kept it `display: block`. Fixed by
+  explicitly deactivating the active web-tab-frame there too; `activateTab` already recomputes
+  `is-active` correctly the moment Web view is reopened, so nothing about the tab is lost — verified
+  the full round trip (open a tab, back to terminal, back to the tab) live.
+
 - **A project can now check in the base variant console's starting split layout and pre-opened Web
   view tabs, via `.booth/console.json`.** Layout name plus an arbitrary, per-pane list of tab
   addresses is genuinely structured data — not a string, bool, or flat list — so it doesn't fit

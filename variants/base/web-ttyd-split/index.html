@@ -1823,11 +1823,21 @@
         if (!pane) return;
         const toggleBtn = pane.querySelector(".proxy-toggle");
 
-        // Tabs and their iframes stay mounted, just hidden by mode-web
-        // going away — the terminal iframe is never repointed by any of
-        // this (each web tab gets its own frame now), so it doesn't need
-        // reloading here either; toggling back to Web view later restores
-        // exactly where this pane left off.
+        // Tabs and their iframes stay mounted, just hidden — but the active
+        // web-tab-frame's own is-active class has to come off explicitly
+        // here too, not just the pane's has-active-tab: that's a separate
+        // CSS rule keyed off the iframe itself (.web-tab-frame.is-active {
+        // display: block }), so removing has-active-tab alone un-hides the
+        // terminal underneath without ever hiding the web tab stacked on
+        // top of it. activateTab recomputes is-active correctly the moment
+        // Web view is opened again, so this loses no state.
+        pane.querySelectorAll(".web-tab-frame.is-active").forEach(function(frame) {
+          frame.classList.remove("is-active");
+        });
+        // The terminal iframe is never repointed by any of this (each web
+        // tab gets its own frame now), so it doesn't need reloading here
+        // either; toggling back to Web view later restores exactly where
+        // this pane left off.
         pane.classList.remove("mode-web", "has-active-tab", "active-tab-empty");
         setAddrOpen(pane, false);
         toggleBtn.classList.remove("active-web");
