@@ -431,6 +431,14 @@
       flex-shrink: 0;
     }
 
+    /* Same order as the terminal toggle above, and DOM order (toggle comes
+       first in the markup) breaks the tie between the two — puts this
+       right after it, ahead of the address bar, instead of its natural
+       spot after the address bar. */
+    .pane.mode-web .md-toggle {
+      order: -1;
+    }
+
     .md-toggle:hover {
       color: var(--accent);
       background: rgba(47, 141, 255, 0.1);
@@ -656,8 +664,8 @@
           <span class="proxy-warning" data-session="1" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
         <div class="tab-strip" data-pane="1">
-          <div class="tab-list" data-pane="1"></div>
           <button class="tab-add" data-pane="1" title="New tab">+</button>
+          <div class="tab-list" data-pane="1"></div>
         </div>
         <div class="pane-body" data-pane="1">
           <iframe class="term-frame" title="Session 1" data-default-src="/s1/"></iframe>
@@ -687,8 +695,8 @@
           <span class="proxy-warning" data-session="2" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
         <div class="tab-strip" data-pane="2">
-          <div class="tab-list" data-pane="2"></div>
           <button class="tab-add" data-pane="2" title="New tab">+</button>
+          <div class="tab-list" data-pane="2"></div>
         </div>
         <div class="pane-body" data-pane="2">
           <iframe class="term-frame" title="Session 2" data-default-src="/s2/"></iframe>
@@ -718,8 +726,8 @@
           <span class="proxy-warning" data-session="3" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
         <div class="tab-strip" data-pane="3">
-          <div class="tab-list" data-pane="3"></div>
           <button class="tab-add" data-pane="3" title="New tab">+</button>
+          <div class="tab-list" data-pane="3"></div>
         </div>
         <div class="pane-body" data-pane="3">
           <iframe class="term-frame" title="Session 3" data-default-src="/s3/"></iframe>
@@ -749,8 +757,8 @@
           <span class="proxy-warning" data-session="4" title="URL rewriting is best-effort. Some apps using dynamic JS URLs may not work correctly. For full compatibility, use booth expose." style="display:none">&#x26A0;</span>
         </div>
         <div class="tab-strip" data-pane="4">
-          <div class="tab-list" data-pane="4"></div>
           <button class="tab-add" data-pane="4" title="New tab">+</button>
+          <div class="tab-list" data-pane="4"></div>
         </div>
         <div class="pane-body" data-pane="4">
           <iframe class="term-frame" title="Session 4" data-default-src="/s4/"></iframe>
@@ -1450,6 +1458,15 @@
         } catch (_e) { /* cross-origin */ }
       }
 
+      // Only meaningful for a booth (proxied, same-origin) tab: reading
+      // .history at all on a genuinely cross-origin frame throws a
+      // SecurityError outright, so there's no history to drive for an
+      // external tab this way — see updateAddrBarForActiveTab, which hides
+      // these buttons entirely rather than showing them permanently
+      // disabled for that case. (A parent-tracked, address-bar-only
+      // history was tried here and removed: it can't see a link clicked
+      // *inside* a cross-origin page, which is how people actually browse
+      // one, so it stayed disabled for the common case anyway.)
       function iframeHistory(iframe, delta) {
         if (!iframe) return;
         try {
@@ -1462,12 +1479,12 @@
         return pane && pane.querySelector(".web-tab-frame.is-active");
       }
 
+      // "Open in new tab" works the same for any tab, booth or external —
+      // window.open() doesn't care about same-origin. The other three
+      // web-tools buttons are booth-only; see updateAddrBarForActiveTab.
       function setWebTools(pane, on) {
-        var display = on ? "" : "none";
-        ["proxy-hist-back", "proxy-hist-forward", "proxy-open-tab", "proxy-warning"].forEach(function(cls) {
-          var el = pane.querySelector("." + cls);
-          if (el) el.style.display = display;
-        });
+        var el = pane.querySelector(".proxy-open-tab");
+        if (el) el.style.display = on ? "" : "none";
       }
 
       // A pane's target, recorded on the frame and only loaded while the booth
@@ -1506,6 +1523,31 @@
           doc.head.appendChild(style);
         } catch (_e) {
           // Cross-origin iframe — can't (and shouldn't) inject. Silent no-op.
+        }
+      }
+
+      // Ctrl/Cmd-click on a link normally opens a new *browser* tab —
+      // standard behavior for any link, iframe or not, and not something
+      // the parent page can intercept from outside. For a same-origin
+      // (booth-proxied) tab we can inject into the frame's own document,
+      // same as applyIframeFallbackStyle above, and redirect that click to
+      // navigate the frame in place instead. Only possible here — a
+      // genuinely cross-origin (external) tab's document is as unreachable
+      // as its history object is (see iframeHistory).
+      function keepLinkClicksInFrame(iframe) {
+        try {
+          const doc = iframe.contentDocument;
+          if (!doc) return;
+          doc.addEventListener("click", function(e) {
+            if (!e.ctrlKey && !e.metaKey) return;
+            const a = e.target && e.target.closest && e.target.closest("a[href]");
+            if (!a) return;
+            e.preventDefault();
+            e.stopPropagation();
+            iframe.contentWindow.location.href = a.href;
+          }, true);
+        } catch (_e) {
+          // Cross-origin iframe — can't reach its document at all. Silent no-op.
         }
       }
 
@@ -1591,11 +1633,19 @@
         if (input) input.value = (tab && tab.display) || "";
         setPageTitleTip(pane, (tab && (tab.title || tab.display)) || "");
         setMdToggle(pane, !!(tab && isViewmdPort(tab.port)));
-        // The rewriting-caveat warning is about the /proxy/ sub_filter
-        // specifically — an external tab isn't proxied or rewritten at all,
-        // so it doesn't apply there.
-        var warn = pane.querySelector(".proxy-warning");
-        if (warn) warn.style.display = (hasContent && tab.port) ? "" : "none";
+        // Back/forward and the rewriting-caveat warning only make sense for
+        // a booth (proxied, same-origin) tab. Back/forward drive the
+        // iframe's own history, and a genuinely cross-origin tab refuses to
+        // expose that at all (reading .history on it throws outright) —
+        // there's no way to make these work for an external tab, so they're
+        // hidden there instead of shown permanently disabled. The warning
+        // is about the /proxy/ sub_filter specifically, which an external
+        // tab never goes through either.
+        var isBoothTab = hasContent && !!tab.port;
+        ["proxy-hist-back", "proxy-hist-forward", "proxy-warning"].forEach(function(cls) {
+          var el = pane.querySelector("." + cls);
+          if (el) el.style.display = isBoothTab ? "" : "none";
+        });
         pane.classList.toggle("has-active-tab", !!tab);
         pane.classList.toggle("active-tab-empty", !!tab && !hasContent);
       }
@@ -1631,6 +1681,7 @@
         iframe.addEventListener("load", function() {
           applyIframeFallbackStyle(iframe);
           syncAddrFromIframe(iframe);
+          keepLinkClicksInFrame(iframe);
         });
         body.appendChild(iframe);
         iframe.src = tab.src;

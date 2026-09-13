@@ -4,6 +4,21 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Web view toolbar polish: Back/Forward now only appear where they can actually work, the "+" new-
+  tab button moved to the left of the tab strip, the Markdown-view icon moved next to the
+  Terminal/Web toggle, and Ctrl/Cmd-click on a link inside a booth-proxied tab now navigates that
+  tab instead of opening a new browser tab.** Back/Forward were silently broken for every external
+  tab — reading `.history` at all on a genuinely cross-origin iframe throws a `SecurityError`
+  outright, not just "no history to go back to" — so they're now hidden entirely for those tabs
+  instead of sitting there looking clickable and doing nothing; a booth (proxied, same-origin) tab's
+  history is real and unaffected, buttons stay exactly as before. (A parent-tracked, address-bar-
+  only history was tried and removed for external tabs: it can't see a link clicked *inside* a
+  cross-origin page, which is how people actually browse one, so it stayed disabled for the common
+  case anyway — not worth the complexity for what it bought.) The rewriting-caveat warning icon is
+  booth-only for the same reason and moves with them. Ctrl/Cmd-click interception works the same
+  way `applyIframeFallbackStyle` already does — injecting into the frame's own document — so it's
+  also booth-only; a cross-origin tab's document is as unreachable as its history object.
+
 - **A Web view tab's address bar now also accepts a bare `host:port` with no dot, and falls back to
   a Google search for anything that isn't a URL or recognizable host at all**, matching a real
   browser's omnibox. `myserver:3000` (no scheme, no dot — an internal/LAN-style name) resolves the
