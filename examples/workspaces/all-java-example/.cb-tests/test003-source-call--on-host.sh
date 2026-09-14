@@ -9,6 +9,12 @@
 
 set -euo pipefail
 
+# Locate the booth wrapper from this script's own location, so it works from any cwd.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+BOOTH="$REPO_ROOT/booth"
+[ -x "$BOOTH" ] || BOOTH="$REPO_ROOT/codingbooth"
+[ -x "$BOOTH" ] || { echo "booth wrapper not found under $REPO_ROOT" >&2; exit 1; }
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -18,7 +24,7 @@ echo "=== Testing jbang Source Execution ==="
 echo ""
 
 # Run jbang with inline Java source
-output=$("../../../codingbooth" --variant base --port "${CB_PORT:-50012}" -- '
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50012}" -- '
 cat > /tmp/Test.java << "EOFJAVA"
 import java.nio.file.*;
 import java.util.Arrays;
@@ -44,7 +50,7 @@ echo ""
 failed=0
 
 # Check for JDK version line
-if grep -q "🚀 JDK:" <<< "$output"; then
+if LC_ALL=C grep -q "🚀 JDK:" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found JDK version output"
 else
     echo -e "${RED}✗${NC} Missing JDK version output"
@@ -52,7 +58,7 @@ else
 fi
 
 # Check for CWD line
-if grep -q "📁 CWD:" <<< "$output"; then
+if LC_ALL=C grep -q "📁 CWD:" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found CWD output"
 else
     echo -e "${RED}✗${NC} Missing CWD output"
@@ -60,7 +66,7 @@ else
 fi
 
 # Check for Args line with expected arguments
-if grep -q "🔧 Args: \[one, two 2\]" <<< "$output"; then
+if LC_ALL=C grep -q "🔧 Args: \[one, two 2\]" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found correct arguments"
 else
     echo -e "${RED}✗${NC} Missing or incorrect arguments"

@@ -9,6 +9,12 @@
 
 set -euo pipefail
 
+# Locate the booth wrapper from this script's own location, so it works from any cwd.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+BOOTH="$REPO_ROOT/booth"
+[ -x "$BOOTH" ] || BOOTH="$REPO_ROOT/codingbooth"
+[ -x "$BOOTH" ] || { echo "booth wrapper not found under $REPO_ROOT" >&2; exit 1; }
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -20,8 +26,8 @@ echo "=== Testing Java Version ==="
 echo ""
 
 # Capture java -version output (note: java -version outputs to stderr)
-"../../../codingbooth" --variant base --port "${CB_PORT:-50011}" -- 'java -version' 2>&1
-output=$("../../../codingbooth" --variant base --port "${CB_PORT:-50011}" -- 'java -version' 2>&1) || true
+"$BOOTH" --variant base --port "${CB_PORT:-50011}" -- 'java -version' 2>&1
+output=$("$BOOTH" --variant base --port "${CB_PORT:-50011}" -- 'java -version' 2>&1) || true
 
 echo "$output"
 echo ""

@@ -8,6 +8,12 @@
 
 set -euo pipefail
 
+# Locate the booth wrapper from this script's own location, so it works from any cwd.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+BOOTH="$REPO_ROOT/booth"
+[ -x "$BOOTH" ] || BOOTH="$REPO_ROOT/codingbooth"
+[ -x "$BOOTH" ] || { echo "booth wrapper not found under $REPO_ROOT" >&2; exit 1; }
+
 cd "$(dirname "$0")/.."
 
 GREEN='\033[0;32m'
@@ -60,7 +66,7 @@ sleep 1
 
 # Start booth in daemon mode
 echo "Starting booth with KinD..."
-../../../codingbooth --no-browser --keep-alive --daemon --variant base --port "${CB_PORT:-50171}" --name "$CONTAINER_NAME"
+"$BOOTH" --no-browser --keep-alive --daemon --variant base --port "${CB_PORT:-50171}" --name "$CONTAINER_NAME"
 
 # Wait for booth to be ready (up to 60 seconds)
 echo "Waiting for booth container to start..."

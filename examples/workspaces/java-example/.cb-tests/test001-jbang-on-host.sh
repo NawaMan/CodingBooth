@@ -37,7 +37,7 @@ echo ""
 failed=0
 
 # Check for JDK version
-if grep -q "🚀 JDK:" <<< "$output"; then
+if LC_ALL=C grep -q "🚀 JDK:" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found JDK version in output"
 else
     echo -e "${RED}✗${NC} Missing JDK version in output"
@@ -45,7 +45,7 @@ else
 fi
 
 # Check for current working directory
-if grep -q "📁 CWD:" <<< "$output"; then
+if LC_ALL=C grep -q "📁 CWD:" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found CWD in output"
 else
     echo -e "${RED}✗${NC} Missing CWD in output"
@@ -53,7 +53,7 @@ else
 fi
 
 # Check for args display
-if grep -q "🔧 Args:" <<< "$output"; then
+if LC_ALL=C grep -q "🔧 Args:" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found Args in output"
 else
     echo -e "${RED}✗${NC} Missing Args in output"

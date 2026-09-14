@@ -8,6 +8,12 @@
 
 set -euo pipefail
 
+# Locate the booth wrapper from this script's own location, so it works from any cwd.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+BOOTH="$REPO_ROOT/booth"
+[ -x "$BOOTH" ] || BOOTH="$REPO_ROOT/codingbooth"
+[ -x "$BOOTH" ] || { echo "booth wrapper not found under $REPO_ROOT" >&2; exit 1; }
+
 cd "$(dirname "$0")/.."
 
 GREEN='\033[0;32m'
@@ -43,7 +49,7 @@ sleep 1
 
 # Start workspace in daemon mode with fixed port mappings
 echo "Starting codingbooth..."
-../../../codingbooth --no-browser --daemon --variant base --port "${CB_PORT:-50162}" --name "$CONTAINER_NAME" -p "$API_HOST_PORT":3000 -p "$VITE_HOST_PORT":5173 || true
+"$BOOTH" --no-browser --daemon --variant base --port "${CB_PORT:-50162}" --name "$CONTAINER_NAME" -p "$API_HOST_PORT":3000 -p "$VITE_HOST_PORT":5173 || true
 
 # Wait for npm install to complete (up to 120 seconds)
 echo "Waiting for npm install to complete..."
@@ -78,16 +84,20 @@ echo "Starting server inside container..."
 docker exec "$CONTAINER_NAME" bash -c "cd /home/coder/code && just start" > /dev/null 2>&1
 pass "Server started"
 
-# Wait for server to be ready
-sleep 2
-
-# Check servers are accessible from host
+# Check servers are accessible from host, polling while they start
+# (the tsx-compiled API server can take well over a few seconds)
 echo "Checking servers from host..."
-if API_PORT=$API_PORT VITE_PORT=$VITE_PORT ./check-server.sh --expect=up; then
-    pass "Servers accessible from host"
-else
-    fail "Servers should be accessible from host"
-fi
+WAIT_COUNT=0
+until API_PORT=$API_PORT VITE_PORT=$VITE_PORT ./check-server.sh --expect=up > /dev/null 2>&1; do
+    WAIT_COUNT=$((WAIT_COUNT + 1))
+    if [ "$WAIT_COUNT" -ge 60 ]; then
+        API_PORT=$API_PORT VITE_PORT=$VITE_PORT ./check-server.sh --expect=up || true
+        fail "Servers should be accessible from host"
+    fi
+    sleep 1
+done
+API_PORT=$API_PORT VITE_PORT=$VITE_PORT ./check-server.sh --expect=up
+pass "Servers accessible from host"
 
 # Stop server
 echo "Stopping server..."
