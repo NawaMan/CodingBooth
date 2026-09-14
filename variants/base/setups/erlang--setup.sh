@@ -88,6 +88,32 @@ apt-get install -y --no-install-recommends \
 
 rm -rf /var/lib/apt/lists/*
 
+# --- verify the requested version actually got installed ---
+# On arm64, ppa:rabbitmq/rabbitmq-erlang-26/27/28 publishes only a handful of
+# arch-independent metapackages (erlang, erlang-nox, ...) — none of the
+# granular erlang-base/erlang-dev/... packages installed above by name. apt
+# then silently satisfies those names from Ubuntu's own default archive,
+# which only carries OTP 25 on that architecture, so a request for 26/27/28
+# quietly becomes 25 with no error from apt at all — until something
+# downstream (e.g. elixir--setup.sh picking a release asset for "the
+# installed OTP") fails confusingly, far away from the actual cause. Check
+# at the source instead of letting that happen.
+INSTALLED_OTP_MAJOR=$(erl -noshell -eval 'io:format("~s~n",[erlang:system_info(otp_release)]), halt().' 2>/dev/null || echo "")
+if [[ -z "$INSTALLED_OTP_MAJOR" ]]; then
+  echo "❌ Erlang/OTP did not install correctly (erl not runnable)." >&2
+  exit 1
+fi
+if [[ "$INSTALLED_OTP_MAJOR" != "$OTP_VERSION" ]]; then
+  ARCH="$(dpkg --print-architecture 2>/dev/null || uname -m)"
+  echo "❌ Requested OTP ${OTP_VERSION} but apt installed OTP ${INSTALLED_OTP_MAJOR} instead." >&2
+  echo "   On ${ARCH}, ppa:rabbitmq/rabbitmq-erlang-${OTP_VERSION} does not publish the" >&2
+  echo "   individual erlang-base/erlang-dev/... packages this script installs by name" >&2
+  echo "   — only a few arch-independent metapackages. apt silently fell back to" >&2
+  echo "   Ubuntu's default archive, which only has OTP 25 on this architecture." >&2
+  echo "   Use --otp-version 25, or build/run this on an amd64 host." >&2
+  exit 1
+fi
+
 # --- rebar3 (optional) ---
 if [[ "$WITH_REBAR3" -eq 1 ]]; then
   echo "📦 Installing rebar3 ..."
