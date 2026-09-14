@@ -4,9 +4,19 @@
 env APT_SNAPSHOT=20260730T000000Z
 
 arg CODESERVER_PORT=19999
-arg ELIXIR_VERSION=1.19.5
+# Pinned to OTP 25 (Ubuntu's default apt package on every arch) instead of
+# elixir--setup.sh's implicit OTP 28 default: ppa:rabbitmq/rabbitmq-erlang-28
+# only publishes arm64 builds of a few metapackages, not the erlang-base/
+# erlang-dev/... packages erlang--setup.sh installs by name, so apt silently
+# falls back to OTP 25 on arm64 anyway — and Elixir 1.19 dropped OTP 25
+# support, so that mismatch 404s trying to fetch elixir-otp-25.zip. Elixir
+# 1.18.4 still ships an otp-25 build, so this combo installs cleanly and
+# identically on both amd64 and arm64.
+arg OTP_VERSION=25
+arg ELIXIR_VERSION=1.18.4
 
 setup claude-code
 setup codeserver ${CODESERVER_PORT}
+setup erlang --otp-version ${OTP_VERSION}
 setup elixir --version ${ELIXIR_VERSION}
 setup elixir-code-extension
