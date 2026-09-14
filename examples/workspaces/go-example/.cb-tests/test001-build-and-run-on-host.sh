@@ -46,14 +46,14 @@ else
 fi
 
 # Check for tree output (the emoji tree structure)
-if grep -q "📁" <<< "$output"; then
+if LC_ALL=C grep -q "📁" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found directory emoji in output"
 else
     echo -e "${RED}✗${NC} Missing directory emoji in output"
     failed=1
 fi
 
-if grep -q "📄" <<< "$output"; then
+if LC_ALL=C grep -q "📄" <<< "$output"; then
     echo -e "${GREEN}✓${NC} Found file emoji in output"
 else
     echo -e "${RED}✗${NC} Missing file emoji in output"
