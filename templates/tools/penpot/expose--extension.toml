@@ -1,0 +1,19 @@
+display-name = "Expose Penpot Port"
+display-disc = "Expose Penpot port to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "penpot",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "${PENPOT_HOST_PORT}:${PENPOT_PORT}",
+]
+
+# Host-side port. Defaults to the port the service listens on, so moving the
+# service moves the published port with it. Override only when the host port is
+# already taken.
+[params.PENPOT_HOST_PORT]
+default = "${PENPOT_PORT}"

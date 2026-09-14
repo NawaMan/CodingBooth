@@ -187,6 +187,8 @@ setup ollama
 setup opencode
 setup openssh
 setup opensshd
+setup penpot
+setup penpot-exporter
 setup php
 setup php-code-extension
 setup plantuml

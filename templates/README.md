@@ -361,9 +361,10 @@ All templates and extensions grouped by segment order.
 | `languages/kotlin`        | Kotlin           |
 | `languages/mojo`          | Mojo             |
 | `languages/scala`         | Scala            |
-| `languages/wails`         | Wails v3         |
+| `languages/wails`         | Wails v3 (experimental) |
 | `tools/codex`             | Codex            |
 | `tools/notebook`          | Jupyter Notebook |
+| `tools/penpot`            | Penpot (experimental) |
 | `tools/warp`              | Warp             |
 
 ### Order 62 — Android emulator (needs the Android SDK from order 60)
