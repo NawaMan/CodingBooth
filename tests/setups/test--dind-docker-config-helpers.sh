@@ -40,6 +40,22 @@ if [[ -z "$STARTUP_BODY" ]]; then
   exit 1
 fi
 
+# A dev host running this test can have real docker-credential-* binaries on
+# PATH (Docker Desktop, gcloud CLI, ...). Passing $PATH through unfiltered
+# would let the startup script find those, "resolve" the helper, and no-op —
+# masking the "missing" case every run_case below means to simulate. Rather
+# than filter PATH directory-by-directory (that can hide unrelated tools that
+# happen to share a bin dir with a credential helper, like bash itself),
+# symlink only the specific externals the startup script and this harness
+# need into an isolated dir and use that as the entire non-stub PATH.
+SAFE_BIN=$(mktemp -d)
+trap "rm -rf '$SAFE_BIN'" EXIT
+for tool in bash jq mv rm; do
+  real=$(command -v "$tool") || { echo "FAIL: '$tool' not found on PATH" >&2; exit 1; }
+  ln -s "$real" "$SAFE_BIN/$tool"
+done
+SAFE_PATH="$SAFE_BIN"
+
 FAILED=0
 
 # run_case NAME INPUT_JSON EXPECTED_JSON [helper names to stub on PATH...]
@@ -57,7 +73,7 @@ run_case() {
     chmod +x "$work/bin/docker-credential-$helper"
   done
 
-  if ! HOME="$work/home" PATH="$work/bin:$PATH" DOCKER_CONFIG= bash "$work/startup.sh" >/dev/null; then
+  if ! HOME="$work/home" PATH="$work/bin:$SAFE_PATH" DOCKER_CONFIG= bash "$work/startup.sh" >/dev/null; then
     echo "FAIL: $name — startup exited non-zero"
     FAILED=$((FAILED + 1))
     rm -rf "$work"
