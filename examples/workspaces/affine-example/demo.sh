@@ -15,7 +15,10 @@ echo "Waiting for AFFiNE Server on ${URL} ..."
 
 up=0
 code=""
-for _ in $(seq 1 90); do
+# 240 * 2s = 8 minutes. Postgres/Redis warm-up plus AFFiNE's own boot can run
+# past the old 90*2s=3min budget when the host is busy building other example
+# images concurrently (see run-example-tests.sh's intermittent-under-load note).
+for _ in $(seq 1 240); do
   # Follow redirects: a fresh instance 302s to /admin/setup (create first account).
   code="$(curl -sS -L --max-redirs 5 -o "$BODY" -w '%{http_code}' --max-time 5 "$URL" 2>/dev/null || true)"
   if [[ "$code" =~ ^(200|301|302|303|307|308)$ ]]; then
