@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/boothfile"
@@ -249,6 +250,18 @@ func buildLocalImage(ctx appctx.AppContext) {
 			"--pull=false",
 		)))
 	}
+	// A --platform in common-args/run-args exists to force a specific
+	// architecture for the whole booth (e.g. an x86_64-only SDK under
+	// emulation on arm64), but it was only ever threaded into `docker run`.
+	// Building without it produces an image for the host's native arch, and
+	// `docker run --platform ...` then refuses to start it: the local image
+	// has no manifest for the platform it was asked to run under. Apply the
+	// same platform to the build so the image it produces actually matches.
+	if platform, ok := extractPlatformFlag(ctx.CommonArgs(), ctx.RunArgs()); ok {
+		args = args.ExtendByLists(ilist.NewList(ilist.NewList(
+			"--platform", platform,
+		)))
+	}
 	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
 		"--build-arg", fmt.Sprintf("BOOTH_VARIANT_TAG=%s", ctx.Variant()),
 	)))
@@ -276,6 +289,27 @@ func buildLocalImage(ctx appctx.AppContext) {
 		fmt.Fprintf(os.Stderr, "Error: failed to build image\n")
 		os.Exit(1)
 	}
+}
+
+// extractPlatformFlag scans the given argument groups (in order) for a
+// "--platform <value>" or "--platform=<value>" pair and returns the first
+// value found. Groups are flat docker CLI argument lists, e.g. common-args
+// or run-args from config.toml.
+func extractPlatformFlag(groupLists ...ilist.List[ilist.List[string]]) (string, bool) {
+	for _, groups := range groupLists {
+		for _, group := range groups.Slice() {
+			items := group.Slice()
+			for i, item := range items {
+				if item == "--platform" && i+1 < len(items) {
+					return items[i+1], true
+				}
+				if value, ok := strings.CutPrefix(item, "--platform="); ok {
+					return value, true
+				}
+			}
+		}
+	}
+	return "", false
 }
 
 // pullImageIfNeeded pulls the Docker image if needed.

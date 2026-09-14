@@ -1,2 +1,8 @@
 # Configured by: booth config --no-tui --overwrite --select flutter
+# --platform forced below: Google publishes the Flutter Linux SDK for x86_64
+# only, so flutter--setup.sh silently skips the whole install on an arm64
+# host (exit 0, "skipping the Flutter install") rather than failing the
+# build — the same x86_64-only-SDK situation android-example handles the
+# same way. CB_FLUTTER_PLATFORM overrides it for an arm64 CI runner.
 
+common-args = ["--platform", "${CB_FLUTTER_PLATFORM:-linux/amd64}"]

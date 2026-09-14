@@ -140,6 +140,20 @@ fi
 rm -rf /var/lib/apt/lists/*
 
 # Readable by the booth user; prisma generate may write under /opt/anythingllm.
+#
+# Deliberately chown, not chmod a+rwX: Prisma's generator copies
+# schema.prisma into node_modules/.prisma/client via Node's fs.copyFile,
+# which uses the copy_file_range() syscall. Under Docker Desktop's
+# overlay2-on-virtiofs setup, that syscall can return EPERM specifically
+# when the calling process doesn't *own* the destination file, even though
+# the permission bits allow the write (verified: a plain `cp` of the same
+# file with the same mode succeeds; Node's copyFile does not). Making the
+# directory merely world-writable does not avoid this — the process needs
+# to actually own the files, hence chown below and again at start time in
+# the STARTER_FILE (coder's UID is remapped to the host user's UID/GID at
+# container start — see booth-entry — but that remap only re-chowns
+# $HOME; anything outside it, like this directory, keeps whatever owner it
+# had at build time regardless of who "coder" resolves to later).
 chmod -R a+rX "$ANYTHINGLLM_DIR"
 if id coder >/dev/null 2>&1; then
   chown -R coder:coder "$ANYTHINGLLM_DIR" || true
@@ -378,6 +392,16 @@ fi
 
 echo "Starting AnythingLLM on http://localhost:$PORT ..."
 echo "  storage: $STORAGE_DIR"
+
+# The build-time `chown -R coder:coder "$ANYTHINGLLM_DIR"` above bakes in
+# whatever UID "coder" had during the image build. The container's coder
+# user is then remapped to HOST_UID/HOST_GID at start, so that baked-in
+# owner can point at a UID nothing maps to anymore. `prisma generate`
+# copies files under node_modules/.prisma via Node's fs.copyFile on every
+# boot; on Docker Desktop's overlay2/virtiofs that call needs the process
+# to actually own the destination (EPERM otherwise — chmod a+rwX alone is
+# not enough, verified), so re-chown to match the real runtime UID here.
+sudo chown -R "$(id -u):$(id -g)" "$APP" 2>/dev/null || true
 
 cd "$APP/server"
 if [[ -f prisma/schema.prisma ]]; then

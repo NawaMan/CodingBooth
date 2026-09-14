@@ -132,8 +132,15 @@ else
 fi
 rm -rf /var/lib/apt/lists/*
 
-# Readable by the booth user; predeploy may write under /opt/affine.
-chmod -R a+rX "$AFFINE_DIR"
+# World-writable, not just coder-owned: coder's UID is remapped to the host
+# user's UID/GID at container start (see booth-entry), but that remap only
+# re-chowns $HOME — anything outside it, like this directory, keeps whatever
+# owner it had at build time regardless of who "coder" resolves to later.
+# AFFiNE's GraphQL module writes a generated schema under $AFFINE_DIR/src on
+# every boot (not just once), so a stale owner there is a hard crash (EACCES)
+# rather than a cosmetic warning. Making it writable by anyone sidesteps the
+# ownership question entirely instead of trying to guess or track the UID.
+chmod -R a+rwX "$AFFINE_DIR"
 if id coder >/dev/null 2>&1; then
   chown -R coder:coder "$AFFINE_DIR" || true
 fi
