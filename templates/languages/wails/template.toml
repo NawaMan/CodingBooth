@@ -1,6 +1,7 @@
-display-name = "Wails"
-display-disc = "Wails v3 — Go desktop apps with a web frontend"
-display-detail = """Installs the Wails v3 CLI (`wails3`) and the Linux compile stack it needs: GTK 4 and \
+display-name = "Wails [experimental]"
+display-disc = "Experimental — Wails v3, Go desktop apps with a web frontend"
+display-detail = """EXPERIMENTAL — new, not yet battle-tested; expect rough edges. \
+Installs the Wails v3 CLI (`wails3`) and the Linux compile stack it needs: GTK 4 and \
 WebKitGTK 6.0, plus build-essential and pkg-config. Selecting this pulls in Go and Node.js \
 (`requires`), because the CLI is installed with `go install` and most Wails templates build \
 their frontend with npm.
@@ -27,6 +28,7 @@ tags = [
     "desktop",
     "gui",
     "webview",
+    "experimental",
 ]
 
 requires = ["go", "nodejs"]

@@ -1,0 +1,54 @@
+display-name = "Penpot [experimental]"
+display-disc = "Experimental — self-hosted open-source design tool (Figma-class)"
+display-detail = """EXPERIMENTAL — new, not yet battle-tested; expect rough edges. \
+Installs Penpot by copying the official penpotapp/backend and \
+penpotapp/frontend images into the booth. PostgreSQL and Redis are selected \
+automatically. No Docker-in-Docker: the stack runs as native processes. The \
+server does not start or publish a port on its own — add +autostart to run it \
+on boot, and +expose to reach it from the host.
+
+First browser visit creates the account (email verification is off). Design \
+assets persist in a named Docker volume (booth-penpot-assets). PNG/PDF export \
+needs the optional +exporter extension (Playwright/Chromium, ~650MB). Pin the \
+image tag with penpot:2.17.2 or penpot:latest; the default is 2.17.2."""
+display-order = 27
+tags = [
+    "penpot",
+    "design",
+    "figma",
+    "prototype",
+    "ui",
+    "self-hosted",
+    "experimental"
+]
+requires = ["postgresql", "redis"]
+
+run-args = [
+    "-e", "PENPOT_PORT=${PENPOT_PORT}",
+    "-v", "booth-penpot-assets:/opt/data/assets",
+]
+
+[params.PENPOT_VERSION]
+default = "2.17.2"
+suggests = [
+    "2.17.2",
+    "2.17",
+    "latest",
+]
+
+[params.PENPOT_PORT]
+default = "19001"
+suggests = [
+    "19001",
+    "9001",
+    "18001",
+]
+
+[segments]
+"Boothfile--60" = """
+copy --from=penpotapp/backend:${PENPOT_VERSION} /opt/penpot/backend /opt/penpot/backend
+copy --from=penpotapp/backend:${PENPOT_VERSION} /opt/jre /opt/jre
+copy --from=penpotapp/backend:${PENPOT_VERSION} /opt/imagick /opt/imagick
+copy --from=penpotapp/frontend:${PENPOT_VERSION} /var/www/app /opt/penpot/frontend
+setup penpot ${PENPOT_PORT}
+"""
