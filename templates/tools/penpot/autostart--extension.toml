@@ -1,0 +1,19 @@
+display-name = "Penpot Auto-Start"
+display-disc = "Auto-start Penpot on container boot"
+display-order = 2
+auto-select = false
+tags = [
+    "penpot",
+    "autostart"
+]
+
+[segments]
+"startup--70.sh" = """
+# Auto-start Penpot in background (after postgres at level 50).
+PORT=${PENPOT_PORT}
+LOG_FILE="/tmp/penpot.log"
+
+nohup start-penpot "$PORT" > "$LOG_FILE" 2>&1 &
+
+echo "Penpot starting on port $PORT (PID $!, log: $LOG_FILE)"
+"""
