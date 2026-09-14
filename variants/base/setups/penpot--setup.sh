@@ -306,7 +306,7 @@ if [[ -f "$CONFIG_JS" ]]; then
 fi
 
 # Backend on :6060 — skip if a previous start-penpot left it running.
-if ! curl -sf -o /dev/null "http://127.0.0.1:6060/readyz" 2>/dev/null; then
+if ! curl -sf --retry 0 -o /dev/null "http://127.0.0.1:6060/readyz" 2>/dev/null; then
   echo "• Starting Penpot backend ..."
   (
     cd "$BACKEND_DIR"
@@ -328,7 +328,7 @@ fi
 echo "• Waiting for Penpot backend on :6060 ..."
 backend_ready=0
 for _ in $(seq 1 90); do
-  if curl -sf -o /dev/null "http://127.0.0.1:6060/readyz" 2>/dev/null; then
+  if curl -sf --retry 0 -o /dev/null "http://127.0.0.1:6060/readyz" 2>/dev/null; then
     backend_ready=1
     break
   fi
@@ -342,7 +342,7 @@ fi
 
 # Optional exporter (copied by the exporter extension).
 if [[ -f /opt/penpot/exporter/app.js ]]; then
-  if ! curl -sf -o /dev/null "http://127.0.0.1:6061/" 2>/dev/null; then
+  if ! curl -sf --retry 0 -o /dev/null "http://127.0.0.1:6061/" 2>/dev/null; then
     echo "• Starting Penpot exporter ..."
     export PENPOT_INTERNAL_URI="http://127.0.0.1:${PORT}"
     export PLAYWRIGHT_BROWSERS_PATH="${PLAYWRIGHT_BROWSERS_PATH:-/opt/penpot/browsers}"
