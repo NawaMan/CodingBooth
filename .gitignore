@@ -194,6 +194,7 @@ examples/workspaces/wails-example/.task/
 examples/workspaces/wails-example/build/android/build/
 examples/workspaces/wails-example/build/android/gen/
 examples/workspaces/wails-example/build/android/app/src/main/jniLibs/
+examples/workspaces/wails-example/build/android/.gradle/
 !examples/workspaces/wails-android-example/build/
 !examples/workspaces/wails-android-example/build/**
 examples/workspaces/wails-android-example/bin/
@@ -201,6 +202,7 @@ examples/workspaces/wails-android-example/.task/
 examples/workspaces/wails-android-example/build/android/build/
 examples/workspaces/wails-android-example/build/android/gen/
 examples/workspaces/wails-android-example/build/android/app/src/main/jniLibs/
+examples/workspaces/wails-android-example/build/android/.gradle/
 /codingbooth
 /cli/codingbooth
 **/booth
