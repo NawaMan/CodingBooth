@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Penpot is a Tools catalog template (experimental).** `--select penpot` copies the
+  official `penpotapp/backend` and `penpotapp/frontend` images into the
+  booth (CloudBeaver-style `copy --from`, no Docker-in-Docker) and pulls
+  in PostgreSQL and Redis. The design UI does not start or publish a port
+  on its own — add `+autostart` to run it on boot and `+expose` to reach
+  it from the host. First browser visit creates the account (email
+  verification is off). Pin the image tag with `penpot:2.17.2`. Optional
+  `+exporter` copies `penpotapp/exporter` (Playwright/Chromium, ~650MB)
+  so File → Export works. Default port 19001. Tests:
+  `test107-init-penpot.sh`.
+
 - **The base variant console can now save its layout and Web view tabs back to `.booth/console.json`
   itself, via a new `--console-spec <shared|cache>` flag / `console-spec` config key, instead of
   only ever reading it.** `shared` saves to the same committable `.booth/console.json` described
@@ -681,7 +692,7 @@ This file contains a list of changes for each released version.
   `floci:0.2.1`. `examples/workspaces/floci-example` selects
   `aws-cli/floci+autostart+expose` and round-trips an S3 object with `just run`.
 
-- **Wails v3 is a catalog language.** `--select wails` installs the `wails3` CLI
+- **Wails v3 is a catalog language (experimental).** `--select wails` installs the `wails3` CLI
   (`go install github.com/wailsapp/wails/v3/cmd/wails3@…`) and the Linux compile
   stack Wails v3 actually needs — GTK 4 and WebKitGTK 6.0 — and pulls in Go and
   Node.js. `wails3 build` produces a Linux GUI binary. Windows is a free

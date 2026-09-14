@@ -1,0 +1,23 @@
+display-name = "Penpot Exporter"
+display-disc = "PNG/PDF export via Playwright/Chromium (~650MB)"
+display-detail = """Copies the official penpotapp/exporter image into the booth \
+(Playwright + Chromium) and installs the native libraries it needs. \
+start-penpot launches the exporter on :6061 when this bundle is present. Skip \
+it unless you need File → Export from the Penpot UI — the design editor works \
+without it."""
+display-order = 3
+auto-select = false
+tags = [
+    "penpot",
+    "exporter",
+    "pdf",
+    "png"
+]
+
+[segments]
+"Boothfile--65" = """
+copy --from=penpotapp/exporter:${PENPOT_VERSION} /opt/penpot/exporter /opt/penpot/exporter
+copy --from=penpotapp/exporter:${PENPOT_VERSION} /opt/node /opt/penpot-exporter-node
+copy --from=penpotapp/exporter:${PENPOT_VERSION} /opt/penpot/browsers /opt/penpot/browsers
+setup penpot-exporter
+"""
