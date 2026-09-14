@@ -1,0 +1,6 @@
+database
+postgresql
+postgrest
+pgvector
+pg_trgm
+api

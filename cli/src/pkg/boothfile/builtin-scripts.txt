@@ -195,6 +195,7 @@ setup plantuml
 setup playwright
 setup playwright-code-extension
 setup postgresql
+setup postgrest
 setup pulumi
 setup puppeteer
 setup pycharm
@@ -266,6 +267,7 @@ install jetbrains-plugin
 install luarocks
 install npm
 install pecl
+install pg-ext
 install pip
 install uv
 install yarn

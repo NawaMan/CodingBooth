@@ -1,0 +1,34 @@
+display-name = "PostgREST [experimental]"
+display-disc = "Experimental — REST API over a PostgreSQL database"
+display-detail = """EXPERIMENTAL — new, not yet battle-tested; expect rough edges. \
+Installs the PostgREST static binary from GitHub releases — a REST API over the booth's \
+PostgreSQL, not the postgrest/postgrest Docker image. Requires postgresql (add it alongside, \
+e.g. postgresql,postgrest). Does not start or publish a port on its own: add +autostart to run it \
+on boot, and +expose to reach it from the host. Requests use the booth user as the anonymous role \
+against schema public — fine for a disposable booth, not for production."""
+display-order = 22
+requires = ["postgresql"]
+tags = [
+    "postgrest",
+    "postgresql",
+    "rest",
+    "api",
+    "database",
+    "experimental",
+]
+
+[params.POSTGREST_VERSION]
+default = "latest"
+suggests = ["latest", "16.2"]
+
+[params.POSTGREST_PORT]
+default = "3000"
+suggests = [
+    "3000",
+    "13000",
+]
+
+[segments]
+"Boothfile--60" = """
+setup postgrest --version ${POSTGREST_VERSION}
+"""

@@ -1,0 +1,14 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select postgresql+pg-ext-pkg:pgvector,pg_trgm/postgrest+autostart+expose:+3000
+
+env APT_SNAPSHOT=20260911T000000Z
+
+arg PG_EXTS=pg_trgm,pgvector
+arg PG_VERSION=latest
+arg POSTGREST_HOST_PORT=+3000
+arg POSTGREST_PORT=3000
+arg POSTGREST_VERSION=latest
+
+setup postgresql --version ${PG_VERSION}
+install pg-ext ${PG_EXTS}
+setup postgrest --version ${POSTGREST_VERSION}

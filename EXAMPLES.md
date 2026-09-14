@@ -122,7 +122,7 @@ for readability — `booth example list` itself prints a flat alphabetical list.
 
 ### Data & notebooks
 
-`conda` · `data`
+`conda` · `data` · `postgrest`
 
 ### Containers & Kubernetes
 

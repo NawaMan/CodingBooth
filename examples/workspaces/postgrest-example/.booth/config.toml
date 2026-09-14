@@ -1,0 +1,7 @@
+# Configured by: booth config --no-tui --overwrite --select postgresql+pg-ext-pkg:pgvector,pg_trgm/postgrest+autostart+expose:+3000
+
+
+run-args = [
+    "-v", "booth-pgdata:/var/lib/postgresql",
+    "-p", "+3000:3000"
+]

@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **New `postgresql+pg-ext-pkg` extension enables common PostgreSQL extensions
+  (experimental).** `postgresql+pg-ext-pkg:pgvector,pg_trgm` apt-installs the
+  packages behind each named extension (`pg_trgm`, `hstore`, `uuid-ossp`,
+  `pgcrypto`, `btree_gist`, `citext`, `ltree`, `postgis`, `pgvector`,
+  `pgrouting`) and enables them with `CREATE EXTENSION` once the server is up
+  on container boot — there is no server running yet at build time to run
+  that against.
+
+- **New `postgrest` template runs PostgREST as a REST API over the booth's
+  PostgreSQL (experimental).** Installs the static binary from GitHub
+  releases; `+autostart` runs it after PostgreSQL is up, `+expose` publishes
+  the port. Requests use the booth user as the anonymous role against schema
+  public — fine for a disposable booth, not for production.
+
 - **Penpot is a Tools catalog template (experimental).** `--select penpot` copies the
   official `penpotapp/backend` and `penpotapp/frontend` images into the
   booth (CloudBeaver-style `copy --from`, no Docker-in-Docker) and pulls
