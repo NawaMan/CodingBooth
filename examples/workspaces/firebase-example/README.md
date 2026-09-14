@@ -33,7 +33,7 @@ This means:
 ### From Host
 
 ```bash
-../../../codingbooth -- ./test-connection.sh
+../../../booth -- ./test-connection.sh
 ```
 
 ### From Container
