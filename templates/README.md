@@ -344,6 +344,7 @@ All templates and extensions grouped by segment order.
 | `education/logo`          | Logo             |
 | `education/scratch`       | Scratch          |
 | `education/thonny`        | Thonny           |
+| `middlewares/postgrest`   | PostgREST        |
 | `ides/clion`              | CLion            |
 | `ides/codeserver`         | code-server      |
 | `ides/datagrip`           | DataGrip         |
@@ -514,6 +515,7 @@ curl -s -X POST https://marketplace.visualstudio.com/_apis/public/gallery/extens
 | `nodejs/npm-pkg--extension`     | npm Packages     |
 | `nodejs/yarn-pkg--extension`    | Yarn Packages    |
 | `php/pecl-pkg--extension`       | PECL Packages    |
+| `postgresql/pg-ext-pkg--extension` | PostgreSQL Extensions |
 | `python/conda-pkg--extension`   | Conda Packages   |
 | `python/pip-pkg--extension`     | pip Packages     |
 | `python/uv-pkg--extension`      | uv Packages      |

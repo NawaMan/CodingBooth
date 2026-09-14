@@ -1,0 +1,28 @@
+[private]
+default:
+    @just --list
+
+# Load the demo product catalog into PostgreSQL (idempotent, safe to re-run)
+seed:
+    psql -d postgres -f seed.sql
+
+# Walk through the API: list all products, a fuzzy name search (pg_trgm), and
+# a nearest-neighbor similarity search (pgvector) via a PostgREST RPC call
+demo:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    echo "== All products =="
+    curl -s http://localhost:3000/products
+    echo ""
+    echo ""
+    echo "== Fuzzy search for the misspelled 'Runing Shoez' (pg_trgm ranks by similarity, not exact match) =="
+    curl -s -X POST http://localhost:3000/rpc/search_products \
+        -H "Content-Type: application/json" \
+        -d '{"query": "Runing Shoez"}'
+    echo ""
+    echo ""
+    echo "== Nearest neighbors to a hiking-ish embedding (pgvector) =="
+    curl -s -X POST http://localhost:3000/rpc/match_products \
+        -H "Content-Type: application/json" \
+        -d '{"query_embedding": [0.75, 0.2, 0.05], "match_count": 2}'
+    echo ""

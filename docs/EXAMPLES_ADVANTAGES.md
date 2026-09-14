@@ -93,6 +93,10 @@ The advantages, in CodingBooth's own vocabulary:
   and Node.js 22 in one selector, so `just run` waits for the UI on `:13010`.
   *(Secondary: port exposure — `+expose` publishes it to the host browser; first
   visit creates the admin account. Data: `clean` / `+seed` / `+persist`.)*
+- **postgrest-example** — PostgreSQL + pgvector/pg_trgm + a REST API in one selector
+  (`postgresql+pg-ext-pkg:pgvector,pg_trgm/postgrest+autostart+expose`), no server code written.
+  `just seed` loads a product catalog, `just demo` walks a typo-tolerant trigram search and a
+  pgvector nearest-neighbor RPC call. *(Secondary: port exposure — `+expose` publishes the API.)*
 - **zig-snake-example** — "no Zig installation required" on the host; `zig build run` just works.
 - **playwright-example** — Node + Playwright + headless Chromium + VS Code extensions in one command.
 - **wails-example** — Go + Node + GTK 4 / WebKitGTK 6.0 + the Wails v3 CLI on
@@ -292,6 +296,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | playwright-example | Batteries-included / pre-baked Chromium |
 | playwright-polyglot-example | Try / compare side-by-side (5 languages) |
 | pocketbase-example | Port exposure (app + admin UI) |
+| postgrest-example | Batteries-included (Postgres + extensions + REST API) |
 | python-example | Notebook / multi-kernel |
 | rails-example | Batteries-included |
 | react-example | Port exposure |
