@@ -8,6 +8,12 @@
 
 set -euo pipefail
 
+# Locate the booth wrapper from this script's own location, so it works from any cwd.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+BOOTH="$REPO_ROOT/booth"
+[ -x "$BOOTH" ] || BOOTH="$REPO_ROOT/codingbooth"
+[ -x "$BOOTH" ] || { echo "booth wrapper not found under $REPO_ROOT" >&2; exit 1; }
+
 cd "$(dirname "$0")/.."
 
 GREEN='\033[0;32m'
@@ -42,7 +48,7 @@ sleep 1
 
 # Start workspace in daemon mode with fixed port mapping
 echo "Starting codingbooth..."
-../../../codingbooth --no-browser --variant base --port "${CB_PORT:-50301}" --daemon --name "$CONTAINER_NAME" -p "$SERVER_HOST_PORT":8080 || true
+"$BOOTH" --no-browser --variant base --port "${CB_PORT:-50301}" --daemon --name "$CONTAINER_NAME" -p "$SERVER_HOST_PORT":8080 || true
 sleep 2
 
 # Check if booth container is running

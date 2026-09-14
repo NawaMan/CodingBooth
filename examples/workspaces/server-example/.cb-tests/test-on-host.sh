@@ -8,6 +8,12 @@
 
 set -euo pipefail
 
+# Locate the booth wrapper from this script's own location, so it works from any cwd.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+BOOTH="$REPO_ROOT/booth"
+[ -x "$BOOTH" ] || BOOTH="$REPO_ROOT/codingbooth"
+[ -x "$BOOTH" ] || { echo "booth wrapper not found under $REPO_ROOT" >&2; exit 1; }
+
 cd "$(dirname "$0")/.."
 
 GREEN='\033[0;32m'
@@ -37,7 +43,7 @@ echo
 
 # Test 1: Start booth in daemon mode
 echo "Starting codingbooth in daemon mode..."
-../../../codingbooth --no-browser --daemon > /dev/null 2>&1 || true
+"$BOOTH" --no-browser --daemon > /dev/null 2>&1 || true
 sleep 2
 
 # Check if booth container is running

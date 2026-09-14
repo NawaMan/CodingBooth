@@ -8,6 +8,12 @@
 
 set -euo pipefail
 
+# Locate the booth wrapper from this script's own location, so it works from any cwd.
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
+BOOTH="$REPO_ROOT/booth"
+[ -x "$BOOTH" ] || BOOTH="$REPO_ROOT/codingbooth"
+[ -x "$BOOTH" ] || { echo "booth wrapper not found under $REPO_ROOT" >&2; exit 1; }
+
 cd "$(dirname "$0")/.."
 
 GREEN='\033[0;32m'
@@ -39,7 +45,7 @@ sleep 1
 
 # Start workspace in daemon mode
 echo "Starting codingbooth..."
-../../../codingbooth --no-browser --daemon --variant base --port "${CB_PORT:-50161}" --name "$CONTAINER_NAME" -p "$CONTAINER_PORT":8080 || true
+"$BOOTH" --no-browser --daemon --variant base --port "${CB_PORT:-50161}" --name "$CONTAINER_NAME" -p "$CONTAINER_PORT":8080 || true
 
 # Wait for npm install to complete (up to 120 seconds)
 echo "Waiting for npm install to complete..."
