@@ -7,6 +7,12 @@ FROM ubuntu:${UBUNTU_VERSION}
 ENV DEBIAN_FRONTEND=noninteractive
 ARG LOCALE=en_US.UTF-8
 
+# Reproducibility: same mechanism as apt--install.sh (see that script for the
+# arch caveat — snapshot.ubuntu.com covers amd64/i386 only). Unlike downstream
+# setups, this can't just call apt--install.sh: it runs before /opt/codingbooth/
+# is copied in, so the snapshot pin is inlined for these two base install steps.
+ARG APT_SNAPSHOT=
+
 # Safer default shell
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 
@@ -29,12 +35,30 @@ RUN touch /tmp/startups.log \
 # Update base OS, install packages, generate locale
 # NOTE: we intentionally DO NOT install python3-pip (it can pull in an old setuptools)
 
-# Essential system setup
+# ubuntu:24.04 ships with no CA trust store at all, and Ubuntu's snapshot
+# service is HTTPS-only — so a pinned apt-get here can't yet verify
+# snapshot.ubuntu.com's certificate to install the very package that would let
+# it. Bootstrap ca-certificates first, unpinned, off the plain (HTTP-capable)
+# archive; every apt-get from here on can use APT_SNAPSHOT. Left unpinned on
+# purpose even once that's possible: a snapshotted root CA bundle is a stale
+# root CA bundle, and freshness is the point of this particular package.
 RUN set -euo pipefail \
   ; apt-get update \
-  ; apt-get install -y --no-install-recommends \
+  ; apt-get install -y --no-install-recommends ca-certificates \
+  ; rm -rf /var/lib/apt/lists/*
+
+# Essential system setup
+RUN set -euo pipefail \
+  ; SNAPSHOT_ARGS=() \
+  ; if [ -n "${APT_SNAPSHOT:-}" ]; then \
+      case "$(dpkg --print-architecture)" in \
+        amd64|i386) SNAPSHOT_ARGS=(--snapshot "${APT_SNAPSHOT}") ;; \
+        *) echo "⚠️  APT_SNAPSHOT=${APT_SNAPSHOT} ignored on $(dpkg --print-architecture): no ports.ubuntu.com snapshots" ;; \
+      esac \
+    fi \
+  ; apt-get update "${SNAPSHOT_ARGS[@]}" \
+  ; apt-get install -y --no-install-recommends "${SNAPSHOT_ARGS[@]}" \
   bash                   \
-  ca-certificates        \
   curl                   \
   debian-archive-keyring \
   file                   \
@@ -59,8 +83,15 @@ RUN set -euo pipefail \
 
 # Optional + niceties
 RUN set -euo pipefail \
-  ; apt-get update \
-  ; apt-get install -y --no-install-recommends \
+  ; SNAPSHOT_ARGS=() \
+  ; if [ -n "${APT_SNAPSHOT:-}" ]; then \
+      case "$(dpkg --print-architecture)" in \
+        amd64|i386) SNAPSHOT_ARGS=(--snapshot "${APT_SNAPSHOT}") ;; \
+        *) echo "⚠️  APT_SNAPSHOT=${APT_SNAPSHOT} ignored on $(dpkg --print-architecture): no ports.ubuntu.com snapshots" ;; \
+      esac \
+    fi \
+  ; apt-get update "${SNAPSHOT_ARGS[@]}" \
+  ; apt-get install -y --no-install-recommends "${SNAPSHOT_ARGS[@]}" \
   direnv \
   jq     \
   mc     \
