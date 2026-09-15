@@ -53,7 +53,7 @@ OTHER COMMANDS:
   CONNECT   | Connect to a running booth       | shell, exec                                                             | docs/BOOTH_CONNECT.md
   MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md
   EXPOSE    | Inspect a booth's ports          | expose list                                                             | docs/BOOTH_EXPOSE.md
-  PROJECT   | Set up and scaffold new projects | example, config, template                                               | docs/BOOTH_EXAMPLE.md
+  PROJECT   | Set up and scaffold new projects | example, config, template, showcase                                     | docs/BOOTH_EXAMPLE.md
 
 Run '%s --help <command>'   for command-specific help.
 Run '%s --help --detail'    for the full reference.
@@ -84,6 +84,7 @@ USAGE:
   %s expose list [--name <n>]                  (list a booth's published ports)
   %s example <subcommand>                      (manage examples)
   %s template <subcommand>                     (browse and manage templates)
+  %s showcase <subcommand>                     (browse and import CodingBooths.online showcases)
   %s config [path] [options]                    (configure a new or existing .booth/ project)
   %s build [options]                            (build and optionally push image)
   %s emit-dockerfile [options]                 (compile Boothfile to Dockerfile)
@@ -207,7 +208,7 @@ EXAMPLES:
   %s --env-file none --variant notebook
 `,
 		s, version,
-		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
+		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)

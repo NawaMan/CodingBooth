@@ -259,6 +259,7 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 - **Connect to running booth:** `booth shell`, `booth exec` — see **[booth connect](docs/BOOTH_CONNECT.md)**
 - **Messaging:** `booth message send`, `booth message list` — see **[booth message](docs/BOOTH_MESSAGE.md)**
 - **Examples:** `booth example list`, `booth example try` — see **[booth example](docs/BOOTH_EXAMPLE.md)**
+- **Showcases:** `booth showcase list`, `booth showcase import` — see **[booth showcase](docs/BOOTH_SHOWCASE.md)**
 
 
 ## Command Passthrough
@@ -413,6 +414,7 @@ User-facing guides:
 - **[booth config](docs/BOOTH_CONFIG.md)** — Template-driven project scaffolding
 - **[booth build](docs/BOOTH_BUILD.md)** — Build and publish booth images to a container registry
 - **[booth example](docs/BOOTH_EXAMPLE.md)** — Pre-built example workspaces
+- **[booth showcase](docs/BOOTH_SHOWCASE.md)** — Browse and import booths published on CodingBooths.online
 - **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)** — Container lifecycle: keep-alive, start, stop, restart, remove, prune
 - **[booth connect](docs/BOOTH_CONNECT.md)** — Connect to running booths: open a shell or run commands
 - **[booth variants](docs/BOOTH_VARIANTS.md)** — Variant details, aliases, desktop configuration, clipboard, and use cases

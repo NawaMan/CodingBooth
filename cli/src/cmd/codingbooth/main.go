@@ -73,6 +73,9 @@ func main() {
 		case "template":
 			runTemplate(version)
 			return
+		case "showcase":
+			runShowcase(version)
+			return
 		case "config":
 			runConfig(version)
 			return
