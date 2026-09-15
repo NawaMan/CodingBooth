@@ -360,7 +360,8 @@ cat > "$SETTINGS_JSON" <<JSON
   "editor.fontFamily": "FiraCode Nerd Font Mono",
   "python.terminal.activateEnvironment": true,
   "workbench.colorTheme": "Default Dark+",
-  "editor.fontSize": 14
+  "editor.fontSize": 14,
+  "security.workspace.trust.enabled": false
 }
 JSON
 
