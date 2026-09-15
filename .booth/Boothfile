@@ -1,0 +1,12 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select go+vscode-ext+go-mod/shell-history
+
+env APT_SNAPSHOT=20260915T000000Z
+
+arg GO_VERSION=1.26.8
+
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
+setup go-code-extension
+run --mount=type=bind,target=/tmp/ctx if [ -f /tmp/ctx/go.mod ]; then mkdir -p /opt/go-mod-cache && cp /tmp/ctx/go.mod /tmp/ctx/go.sum /opt/go-mod-cache/ 2>/dev/null || true && cd /opt/go-mod-cache && GOPATH=/home/coder/go go mod download; fi
