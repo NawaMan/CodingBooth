@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth config --no-tui --overwrite --select anythingllm+autostart+expose+project-fs+passwordless
+# Configured by: booth config --no-tui --overwrite --select shell-history/anythingllm+expose+autostart+project-fs+passwordless
 
 # filesystem-agent is not a default skill. Without it, @agent only has
 # document/RAG tools and "list files" reports an empty workspace.
