@@ -57,6 +57,7 @@ type initFlags struct {
 	overwrite     bool
 	beside        bool // keep hand-written files; write generated content as <name>.new
 	noTUI         bool
+	web           bool
 	dryrun        bool
 }
 
@@ -92,6 +93,8 @@ func parseInitFlags(args []string) initFlags {
 			flags.beside = true
 		case "--no-tui":
 			flags.noTUI = true
+		case "--web":
+			flags.web = true
 		case "--dryrun":
 			flags.dryrun = true
 		case "--cmd":

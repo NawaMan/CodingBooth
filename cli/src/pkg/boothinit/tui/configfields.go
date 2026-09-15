@@ -353,6 +353,51 @@ func SortedRenderedConfigKeys() []string {
 	return keys
 }
 
+// FieldInfo is the JSON-friendly view of one Config-tab field. The Web UI
+// renders from this table so it cannot drift from the TUI's field list.
+type FieldInfo struct {
+	Key     string   `json:"key"`
+	Label   string   `json:"label"`
+	Group   string   `json:"group"`
+	Kind    string   `json:"kind"`
+	Options []string `json:"options,omitempty"`
+	Detail  string   `json:"detail"`
+	TUIOnly bool     `json:"tuiOnly"`
+}
+
+// FieldTable returns every Config-tab field in display order, with Kind as a
+// stable string ("cycle", "string", "bool", "list", "int").
+func FieldTable() []FieldInfo {
+	table := make([]FieldInfo, 0, len(allConfigFields))
+	for _, field := range allConfigFields {
+		table = append(table, FieldInfo{
+			Key:     field.Key,
+			Label:   field.Label,
+			Group:   field.Group,
+			Kind:    fieldKindName(field.Kind),
+			Options: field.Options,
+			Detail:  field.Detail,
+			TUIOnly: field.TUIOnly,
+		})
+	}
+	return table
+}
+
+func fieldKindName(kind fieldKind) string {
+	switch kind {
+	case fieldKindCycle:
+		return "cycle"
+	case fieldKindBool:
+		return "bool"
+	case fieldKindList:
+		return "list"
+	case fieldKindInt:
+		return "int"
+	default:
+		return "string"
+	}
+}
+
 // defaultBoolValues returns the default values for boolean fields.
 func defaultBoolValues() map[string]bool {
 	return map[string]bool{}

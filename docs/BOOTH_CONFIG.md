@@ -2,17 +2,21 @@
 
 > One command. A fully configured development environment.
 
-`booth config` creates a complete `.booth/` configuration — Boothfile, config, startup scripts — from templates. Browse and select interactively via the TUI, or use `--no-tui` for scripting. Users can add their own startup scripts to `.booth/startups/` that survive re-generation. No manual Dockerfile writing required.
+`booth config` creates a complete `.booth/` configuration — Boothfile, config, startup scripts — from templates. Browse and select interactively via the TUI or the Web UI, or use `--no-tui` for scripting. Users can add their own startup scripts to `.booth/startups/` that survive re-generation. No manual Dockerfile writing required.
 
 ```bash
 # Interactive TUI
 ./booth config
+
+# Same editor in a browser, on the booth port
+./booth config --web
 
 # CLI mode
 ./booth config --no-tui --select go+linter/python:3.13+uv/claude-code
 ```
 
 For the full TUI guide, see **[booth config — Interactive Configuration](BOOTH_CONFIG_TUI.md)**.
+For the browser UI, see **[booth config — Web UI](BOOTH_CONFIG_WEB.md)**.
 
 Back to [README](../README.md)
 
@@ -65,6 +69,20 @@ Opens an interactive terminal interface for browsing templates and configuring y
 ```
 
 See **[booth config — Interactive Configuration](BOOTH_CONFIG_TUI.md)** for the full TUI guide.
+
+### Web UI mode (`--web`)
+
+Opens the same editor in a browser on the booth port (`http://127.0.0.1:10000`
+by default). Same catalog, same Config-tab fields, same save path as the TUI.
+Loopback only, with a one-shot token in the URL.
+
+```bash
+./booth config --web
+./booth config --web --select go+linter --variant codeserver
+```
+
+If the booth port is already taken, the command refuses — stop the running
+booth, or pass `--port`. See **[booth config — Web UI](BOOTH_CONFIG_WEB.md)**.
 
 ### CLI mode (`--no-tui`)
 
@@ -432,6 +450,7 @@ automatically (local name overrides stock with a warning).
 |----------------------------|----------------------------------------------------------------|
 | `--select <dsl>`           | Template selection (repeatable)                                |
 | `--no-tui`                 | Non-interactive CLI mode                                       |
+| `--web`                    | Browser UI on the booth port (`127.0.0.1:<port>`)              |
 | `--dryrun`                 | Preview what would be generated without writing files           |
 | `--variant <name>`         | Set variant (default, console, terminal, base, notebook, codeserver, xfce, kde) |
 | `--port <port>`            | Set port in generated config.toml (number, NEXT[:base], RANDOM[:base]) |

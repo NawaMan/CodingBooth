@@ -504,7 +504,8 @@ CodingBooth generates `.booth/` from templates. There are four entry points:
 
 ### `booth config` — Template-driven scaffolding
 
-Multi-tab interactive TUI with live preview. Non-interactive equivalents:
+Multi-tab interactive TUI, or `booth config --web` for the same editor in a
+browser on the booth port. Non-interactive equivalents:
 
 ```bash
 booth config --no-tui --select go:1.25+linter --select claude-code+auto-accept

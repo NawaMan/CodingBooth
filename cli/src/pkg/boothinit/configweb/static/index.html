@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CodingBooth Configuration</title>
+  <style>
+    :root {
+      --bg: #0b1220;
+      --panel: #121a2a;
+      --panel-2: #182236;
+      --border: #2a3a55;
+      --text: #e8eef8;
+      --muted: #8b9bb4;
+      --accent: #3db9f5;
+      --selected: #5ee08a;
+      --warn: #f5b942;
+      --danger: #e85d5d;
+      --tab: #4c5bd4;
+      --ok: #2f9e6a;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text);
+      font: 14px/1.45 ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    #app { display: flex; flex-direction: column; height: 100%; }
+    header { display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--panel); }
+    header h1 { margin: 0; font-size: 16px; font-weight: 650; color: var(--accent); }
+    .count { color: var(--selected); font-weight: 600; }
+    .toolbar { display: flex; gap: 10px; align-items: center; padding: 8px 16px;
+      border-bottom: 1px solid var(--border); background: var(--panel); }
+    .toolbar input[type=search] { flex: 1; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; padding: 6px 10px; }
+    .chips { display: flex; gap: 6px; flex-shrink: 0; }
+    .chip { background: transparent; border: 1px solid var(--border); color: var(--muted);
+      border-radius: 999px; padding: 4px 12px; cursor: pointer; }
+    .chip.active { background: var(--tab); color: #fff; border-color: var(--tab); }
+    .tabs { display: flex; gap: 0; padding: 0 16px; overflow-x: auto;
+      border-bottom: 1px solid var(--border); background: var(--panel); }
+    .tab { background: transparent; border: 0; border-bottom: 2px solid transparent;
+      border-radius: 0; color: var(--muted); padding: 10px 14px; margin-bottom: -1px;
+      cursor: pointer; white-space: nowrap; }
+    .tab:hover { color: var(--text); }
+    .tab.active { color: var(--text); border-bottom-color: var(--accent); font-weight: 650; }
+    .star { color: var(--warn); }
+    main { flex: 1; display: grid; grid-template-columns: minmax(280px, 1fr) minmax(280px, 1fr);
+      min-height: 0; }
+    .list, .detail { overflow: auto; padding: 10px 16px; }
+    .list { border-right: 1px solid var(--border); }
+    .item { display: flex; gap: 8px; align-items: center; padding: 6px 8px;
+      border-radius: 6px; cursor: pointer; }
+    .item:hover { background: var(--panel-2); }
+    .item.hi { background: #1c3a5c; }
+    .item.ext { padding-left: 28px; color: var(--muted); }
+    .item input[type=checkbox] { accent-color: var(--selected); width: 15px; height: 15px;
+      flex-shrink: 0; cursor: pointer; }
+    .bang { color: var(--warn); font-weight: 700; }
+    .group { margin: 16px 0 8px; color: #ff87ff; font-weight: 700; font-size: 12px;
+      text-transform: uppercase; letter-spacing: .04em; }
+    .field { display: grid; grid-template-columns: 180px 1fr; gap: 8px; align-items: start;
+      margin: 8px 0; }
+    .field label { color: var(--muted); padding-top: 6px; }
+    .field input[type=text], .field input[type=number], .field select, .field textarea {
+      width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 6px;
+      padding: 6px 8px; }
+    .list-edit { display: flex; flex-direction: column; gap: 4px; }
+    .list-row { display: flex; gap: 6px; }
+    .list-row input { flex: 1; background: var(--bg); border: 1px solid var(--border);
+      border-radius: 6px; padding: 5px 8px; }
+    .list-row button, .add-row button, .ghost { background: transparent; border: 1px solid var(--border);
+      border-radius: 6px; padding: 4px 8px; cursor: pointer; color: var(--muted); }
+    footer { display: flex; justify-content: space-between; align-items: center; gap: 12px;
+      padding: 8px 16px; border-top: 1px solid var(--border); background: var(--panel); }
+    .note { color: var(--warn); min-height: 1.2em; flex: 1; }
+    .actions { display: flex; gap: 8px; }
+    .btn { border: 0; border-radius: 6px; padding: 7px 14px; cursor: pointer; font-weight: 650; }
+    .btn.save { background: var(--ok); color: #fff; }
+    .btn.quit { background: var(--danger); color: #fff; }
+    .detail h2 { margin: 0 0 8px; font-size: 18px; color: var(--warn); }
+    .detail p { color: var(--muted); white-space: pre-wrap; }
+    .params { margin-top: 12px; display: flex; flex-direction: column; gap: 8px; }
+    .param { display: flex; flex-direction: column; gap: 4px; }
+    .param label { font-size: 12px; color: var(--muted); }
+    .arch { background: var(--warn); color: #111; font-weight: 700; padding: 8px 10px;
+      border-radius: 6px; margin-bottom: 10px; }
+    dialog { border: 1px solid var(--border); border-radius: 10px; background: var(--panel);
+      color: var(--text); max-width: 520px; padding: 0; }
+    dialog::backdrop { background: rgba(0,0,0,.55); }
+    .dlg { padding: 18px 20px; }
+    .dlg h3 { margin: 0 0 8px; }
+    .dlg.danger h3 { background: var(--danger); color: #fff; padding: 8px 10px; border-radius: 6px; }
+    .dlg .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
+    .empty { color: var(--muted); padding: 24px 8px; }
+    @media (max-width: 800px) {
+      main { grid-template-columns: 1fr; }
+      .field { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>CodingBooth Configuration</h1>
+    <div class="count" id="count">0 selected</div>
+  </header>
+  <div class="toolbar">
+    <input type="search" id="search" placeholder="Search templates…" autocomplete="off">
+    <div class="chips" id="chips"></div>
+  </div>
+  <div class="tabs" id="tabs" role="tablist"></div>
+  <main>
+    <section class="list" id="list"></section>
+    <section class="detail" id="detail"></section>
+  </main>
+  <footer>
+    <div class="note" id="note"></div>
+    <div class="actions">
+      <button class="btn save" id="save" type="button">Save</button>
+      <button class="btn quit" id="quit" type="button">Quit</button>
+    </div>
+  </footer>
+</div>
+<dialog id="modal"></dialog>
+<script>
+const TOKEN = new URLSearchParams(location.search).get("token") || "";
+if (!TOKEN) {
+  document.body.innerHTML = "<p style='padding:2rem'>Missing config token. Open the URL printed by <code>booth config --web</code>.</p>";
+  throw new Error("missing token");
+}
+
+const api = async (path, opts = {}) => {
+  const headers = { "X-Booth-Config-Token": TOKEN, ...(opts.headers || {}) };
+  let body = opts.body;
+  if (body && typeof body === "object") {
+    headers["Content-Type"] = "application/json";
+    body = JSON.stringify(body);
+  }
+  const res = await fetch(path, { ...opts, headers, body });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(data.message || data.error || res.statusText);
+    err.status = res.status;
+    err.data = data;
+    throw err;
+  }
+  return data;
+};
+
+let catalog = { categories: [], hasLocal: false, hostArch: "" };
+let fields = [];
+let state = { selected: {}, stringFields: {}, boolFields: {}, listFields: {}, paramValues: {}, selectedCount: 0, drifted: [], dirty: false };
+let tab = 0; // 0 = Config
+let filter = "popular";
+let search = "";
+let highlighted = null;
+let warningShown = false;
+
+const $ = (id) => document.getElementById(id);
+
+function isSelected(key) { return !!state.selected[key]; }
+
+function extensionsOf(template) { return template.extensions || []; }
+
+function passesFilter(template) {
+  const exts = extensionsOf(template);
+  if (filter === "all") return true;
+  if (filter === "popular") return template.primary || isSelected(template.name) || exts.some(e => isSelected(template.name + "/" + e.name));
+  if (filter === "local") return template.local || exts.some(e => e.local);
+  if (filter === "selected") return isSelected(template.name) || exts.some(e => isSelected(template.name + "/" + e.name));
+  return true;
+}
+
+function visibleTemplates(category) {
+  const q = search.trim().toLowerCase();
+  return category.templates.filter(t => {
+    if (!q && !passesFilter(t)) return false;
+    if (!q) return true;
+    const blob = [t.name, t.displayName, t.displayDesc, ...extensionsOf(t).map(e => e.name + " " + e.displayName + " " + e.displayDesc)].join(" ").toLowerCase();
+    return blob.includes(q);
+  });
+}
+
+function tabHasMatches(index) {
+  if (index === 0) return true;
+  return visibleTemplates(catalog.categories[index - 1]).length > 0;
+}
+
+function renderChips() {
+  const chips = [["all", "All"], ["popular", "Popular"], ["selected", "Selected"]];
+  if (catalog.hasLocal) chips.push(["local", "Local"]);
+  $("chips").innerHTML = tab === 0 ? "" : chips.map(([id, label]) =>
+    `<button type="button" class="chip${filter === id ? " active" : ""}" data-filter="${id}">${label}</button>`
+  ).join("");
+}
+
+function renderTabs() {
+  const labels = ["Config", ...catalog.categories.map(c => c.displayName)];
+  $("tabs").innerHTML = labels.map((name, index) => {
+    const star = (index > 0 && filter !== "all" && tabHasMatches(index)) ? '<span class="star">*</span>' : "";
+    const active = tab === index;
+    return `<button type="button" class="tab${active ? " active" : ""}" role="tab" aria-selected="${active}" data-tab="${index}">${name}${star}</button>`;
+  }).join("");
+}
+
+function renderList() {
+  if (tab === 0) {
+    renderConfig();
+    return;
+  }
+  const category = catalog.categories[tab - 1];
+  const templates = visibleTemplates(category);
+  if (!templates.length) {
+    $("list").innerHTML = `<div class="empty">No templates match.</div>`;
+    return;
+  }
+  const q = search.trim().toLowerCase();
+  let html = "";
+  for (const template of templates) {
+    const key = template.name;
+    html += itemRow(key, template, false);
+    for (const ext of extensionsOf(template)) {
+      if (q) {
+        const blob = (ext.name + " " + ext.displayName + " " + ext.displayDesc).toLowerCase();
+        const parentHit = (template.name + " " + template.displayName + " " + template.displayDesc).toLowerCase().includes(q);
+        if (!blob.includes(q) && !parentHit) continue;
+      }
+      if (filter === "selected" && !isSelected(template.name) && !isSelected(key + "/" + ext.name)) continue;
+      html += itemRow(key + "/" + ext.name, ext, true);
+    }
+  }
+  $("list").innerHTML = html;
+}
+
+function itemRow(key, item, isExt) {
+  const checked = isSelected(key) ? " checked" : "";
+  const bang = item.unsupportedOnHost ? ' <span class="bang">!</span>' : "";
+  const star = item.autoSelect ? "*" : "";
+  const hi = highlighted === key ? " hi" : "";
+  const ext = isExt ? " ext" : "";
+  const label = isExt ? star + item.name : item.displayName || item.name;
+  return `<div class="item${ext}${hi}" data-key="${key}" role="option" aria-selected="${isSelected(key)}">
+    <input type="checkbox" data-toggle="${esc(key)}"${checked} aria-label="${esc(label)}">
+    <span>${label}${bang}</span>
+  </div>`;
+}
+
+function renderConfig() {
+  let html = "";
+  let lastGroup = "";
+  for (const field of fields) {
+    if (field.group !== lastGroup) {
+      html += `<div class="group">${field.group}</div>`;
+      lastGroup = field.group;
+    }
+    html += `<div class="field"><label>${field.label}</label>${fieldControl(field)}</div>`;
+  }
+  $("list").innerHTML = html;
+  $("detail").innerHTML = configDetail();
+}
+
+function fieldControl(field) {
+  if (field.kind === "bool") {
+    const on = !!state.boolFields[field.key];
+    return `<input type="checkbox" data-field="${field.key}" data-kind="bool"${on ? " checked" : ""}>`;
+  }
+  if (field.kind === "cycle") {
+    const cur = state.stringFields[field.key] || "";
+    const opts = (field.options || []).map(o => {
+      const label = o === "" ? "(default)" : o;
+      return `<option value="${esc(o)}"${o === cur ? " selected" : ""}>${esc(label)}</option>`;
+    }).join("");
+    return `<select data-field="${field.key}" data-kind="cycle">${opts}</select>`;
+  }
+  if (field.kind === "list") {
+    const values = state.listFields[field.key] || [];
+    const rows = values.map((v, i) =>
+      `<div class="list-row"><input data-list="${field.key}" data-idx="${i}" value="${esc(v)}"><button type="button" data-del="${field.key}" data-idx="${i}">×</button></div>`
+    ).join("");
+    return `<div class="list-edit">${rows}<div class="add-row"><input data-add="${field.key}" placeholder="add…"><button type="button" data-addbtn="${field.key}">Add</button></div></div>`;
+  }
+  const val = state.stringFields[field.key] || "";
+  const type = field.kind === "int" ? "number" : "text";
+  return `<input type="${type}" data-field="${field.key}" data-kind="${field.kind}" value="${esc(val)}">`;
+}
+
+function configDetail() {
+  const field = fields.find(f => f.key === highlighted) || fields[0];
+  if (!field) return "";
+  return `<h2>${esc(field.label)}</h2><p>${esc(field.detail)}</p>`;
+}
+
+function findItem(key) {
+  for (const category of catalog.categories) {
+    for (const template of category.templates) {
+      if (template.name === key) return { template, item: template, parent: null };
+      for (const ext of extensionsOf(template)) {
+        if (template.name + "/" + ext.name === key) return { template, item: ext, parent: template };
+      }
+    }
+  }
+  return null;
+}
+
+function renderDetail() {
+  if (tab === 0) {
+    $("detail").innerHTML = configDetail();
+    return;
+  }
+  const found = findItem(highlighted);
+  if (!found) {
+    $("detail").innerHTML = `<div class="empty">Select a template to see details.</div>`;
+    return;
+  }
+  const item = found.item;
+  let html = "";
+  if (item.unsupportedOnHost) {
+    html += `<div class="arch">No ${esc(catalog.hostArch)} build — it will NOT be installed. ${esc(item.unsupportedArchNote)}</div>`;
+  }
+  html += `<h2>${esc(item.displayName || item.name)}</h2>`;
+  html += `<p>${esc(item.displayDetail || item.displayDesc || "")}</p>`;
+  if (item.requires && item.requires.length) {
+    html += `<p><strong>Requires:</strong> ${item.requires.map(esc).join(", ")}</p>`;
+  }
+  if (extensionsOf(found.template).length && !found.parent) {
+    html += `<p><strong>Extensions:</strong> ${extensionsOf(found.template).map(e => (e.autoSelect ? "*" : "") + e.name).join(", ")}</p>`;
+  }
+  const selected = isSelected(found.parent ? found.template.name + "/" + item.name : item.name);
+  if (selected && item.params && item.params.length) {
+    const prefix = found.parent ? found.template.name + "/" + item.name : item.name;
+    html += `<div class="params">`;
+    for (const param of item.params) {
+      const pk = prefix + ":" + param.name;
+      const value = state.paramValues[pk] ?? param.default ?? "";
+      html += `<div class="param"><label>${esc(param.name)}${param.variadic ? " (list)" : ""}</label>`;
+      if (param.suggests && param.suggests.length && !param.variadic) {
+        html += `<select data-param="${esc(pk)}">${param.suggests.map(s =>
+          `<option${s === value ? " selected" : ""}>${esc(s)}</option>`).join("")}</select>`;
+      } else {
+        html += `<input type="text" data-param="${esc(pk)}" value="${esc(value)}" placeholder="${esc(param.default || "")}">`;
+      }
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+  $("detail").innerHTML = html;
+}
+
+function renderAll() {
+  $("count").textContent = state.selectedCount + " selected";
+  $("note").textContent = state.notification || "";
+  renderChips();
+  renderTabs();
+  renderList();
+  renderDetail();
+}
+
+function esc(value) {
+  return String(value ?? "").replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[ch]));
+}
+
+async function refresh() {
+  state = await api("/api/state");
+  renderAll();
+  maybeWarn();
+}
+
+function maybeWarn() {
+  if (warningShown || !state.warning) return;
+  warningShown = true;
+  showModal({
+    title: "Before you start",
+    body: state.warning,
+    actions: [{ label: "OK", primary: true }]
+  });
+}
+
+function showModal({ title, body, danger, actions, extra }) {
+  const dlg = $("modal");
+  dlg.innerHTML = `<form method="dialog" class="dlg${danger ? " danger" : ""}">
+    <h3>${esc(title)}</h3>
+    <div>${typeof body === "string" ? `<p>${esc(body)}</p>` : body}</div>
+    ${extra || ""}
+    <div class="row">${actions.map(a =>
+      `<button class="btn ${a.primary ? "save" : "quit"}" value="${esc(a.value || a.label)}" type="submit">${esc(a.label)}</button>`
+    ).join("")}</div>
+  </form>`;
+  dlg.returnValue = "";
+  dlg.showModal();
+  return new Promise(resolve => {
+    dlg.addEventListener("submit", () => {
+      const typed = dlg.querySelector("#ow");
+      dlg.dataset.ow = typed ? typed.value : "";
+    }, { once: true });
+    dlg.addEventListener("close", () => resolve({
+      value: dlg.returnValue,
+      overwriteWord: dlg.dataset.ow || ""
+    }), { once: true });
+  });
+}
+
+async function doSave() {
+  try {
+    await api("/api/save", { method: "POST", body: { mode: "save" } });
+    document.body.innerHTML = "<p style='padding:2rem'>Saved. You can close this tab.</p>";
+  } catch (err) {
+    if (err.status === 409 && err.data && err.data.error === "hand-written") {
+      const files = (err.data.drifted || []).map(esc).join(", ");
+      const choice = await showModal({
+        title: "Hand-written files",
+        danger: true,
+        body: "Saving regenerates: " + files + ". Keep yours and write .new beside them, or type overwrite to replace.",
+        extra: `<p><input id="ow" type="text" placeholder="overwrite" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px"></p>`,
+        actions: [
+          { label: "Keep mine (.new)", value: "beside", primary: true },
+          { label: "Replace", value: "overwrite" },
+          { label: "Cancel", value: "cancel" }
+        ]
+      });
+      if (choice.value === "beside") {
+        await api("/api/save", { method: "POST", body: { mode: "beside" } });
+        document.body.innerHTML = "<p style='padding:2rem'>Wrote .new beside your files. You can close this tab.</p>";
+      } else if (choice.value === "overwrite") {
+        await api("/api/save", { method: "POST", body: { mode: "overwrite", overwriteWord: choice.overwriteWord } });
+        document.body.innerHTML = "<p style='padding:2rem'>Saved (replaced). You can close this tab.</p>";
+      }
+      return;
+    }
+    $("note").textContent = err.message;
+  }
+}
+
+async function doQuit() {
+  if (state.dirty) {
+    const choice = await showModal({
+      title: "Quit without saving?",
+      body: "You have unsaved changes.",
+      actions: [
+        { label: "Quit", value: "quit" },
+        { label: "Back", value: "back", primary: true }
+      ]
+    });
+    if (choice.value !== "quit") return;
+  }
+  await api("/api/cancel", { method: "POST", body: {} });
+  document.body.innerHTML = "<p style='padding:2rem'>Cancelled. You can close this tab.</p>";
+}
+
+$("chips").addEventListener("click", (ev) => {
+  const btn = ev.target.closest("[data-filter]");
+  if (!btn) return;
+  filter = btn.dataset.filter;
+  renderAll();
+});
+$("tabs").addEventListener("click", (ev) => {
+  const btn = ev.target.closest("[data-tab]");
+  if (!btn) return;
+  tab = Number(btn.dataset.tab);
+  highlighted = null;
+  renderAll();
+});
+$("search").addEventListener("input", (ev) => {
+  search = ev.target.value;
+  renderAll();
+});
+$("list").addEventListener("click", async (ev) => {
+  if (ev.target.closest("[data-toggle]")) return;
+  const row = ev.target.closest("[data-key]");
+  if (row) {
+    highlighted = row.dataset.key;
+    renderDetail();
+    document.querySelectorAll(".item.hi").forEach(el => el.classList.remove("hi"));
+    row.classList.add("hi");
+    return;
+  }
+  const del = ev.target.closest("[data-del]");
+  if (del) {
+    const key = del.dataset.del;
+    const idx = Number(del.dataset.idx);
+    const next = (state.listFields[key] || []).filter((_, i) => i !== idx);
+    state = await api("/api/field", { method: "POST", body: { key, list: next } });
+    highlighted = key;
+    renderAll();
+    return;
+  }
+  const addBtn = ev.target.closest("[data-addbtn]");
+  if (addBtn) {
+    const key = addBtn.dataset.addbtn;
+    const input = $("list").querySelector(`[data-add="${key}"]`);
+    const value = (input && input.value || "").trim();
+    if (!value) return;
+    const next = [...(state.listFields[key] || []), value];
+    state = await api("/api/field", { method: "POST", body: { key, list: next } });
+    highlighted = key;
+    renderAll();
+  }
+});
+$("list").addEventListener("change", async (ev) => {
+  const el = ev.target;
+  if (el.dataset.toggle) {
+    highlighted = el.dataset.toggle;
+    try {
+      state = await api("/api/toggle", { method: "POST", body: { key: el.dataset.toggle } });
+    } catch (err) {
+      $("note").textContent = err.message;
+    }
+    renderAll();
+    return;
+  }
+  if (el.dataset.field) {
+    const key = el.dataset.field;
+    highlighted = key;
+    const kind = el.dataset.kind;
+    const body = { key };
+    if (kind === "bool") body.bool = el.checked;
+    else body.value = el.value;
+    state = await api("/api/field", { method: "POST", body });
+    renderAll();
+    return;
+  }
+  if (el.dataset.list) {
+    const key = el.dataset.list;
+    const idx = Number(el.dataset.idx);
+    const next = [...(state.listFields[key] || [])];
+    next[idx] = el.value;
+    state = await api("/api/field", { method: "POST", body: { key, list: next } });
+    highlighted = key;
+    renderAll();
+  }
+});
+$("list").addEventListener("focusin", (ev) => {
+  const el = ev.target;
+  if (el.dataset.field) highlighted = el.dataset.field;
+  renderDetail();
+});
+$("list").addEventListener("keydown", async (ev) => {
+  if (ev.key !== "Enter") return;
+  const add = ev.target.closest("[data-add]");
+  if (!add) return;
+  ev.preventDefault();
+  const key = add.dataset.add;
+  const value = add.value.trim();
+  if (!value) return;
+  const next = [...(state.listFields[key] || []), value];
+  state = await api("/api/field", { method: "POST", body: { key, list: next } });
+  highlighted = key;
+  renderAll();
+});
+$("detail").addEventListener("change", async (ev) => {
+  const el = ev.target.closest("[data-param]");
+  if (!el) return;
+  state = await api("/api/param", { method: "POST", body: { key: el.dataset.param, value: el.value } });
+  renderAll();
+});
+$("save").addEventListener("click", doSave);
+$("quit").addEventListener("click", doQuit);
+document.addEventListener("keydown", (ev) => {
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "s") {
+    ev.preventDefault();
+    doSave();
+  }
+  if ((ev.ctrlKey || ev.metaKey) && ev.key.toLowerCase() === "q") {
+    ev.preventDefault();
+    doQuit();
+  }
+  if (!ev.ctrlKey && !ev.metaKey && tab !== 0) {
+    if (ev.key === "1") { filter = "all"; renderAll(); }
+    if (ev.key === "2") { filter = "popular"; renderAll(); }
+    if (ev.key === "3") { filter = "selected"; renderAll(); }
+    if (ev.key === "4" && catalog.hasLocal) { filter = "local"; renderAll(); }
+  }
+});
+
+(async () => {
+  const [c, f, s] = await Promise.all([
+    api("/api/catalog"),
+    api("/api/fields"),
+    api("/api/state")
+  ]);
+  catalog = c;
+  fields = f;
+  state = s;
+  tab = catalog.categories.length ? 1 : 0;
+  renderAll();
+  maybeWarn();
+})().catch(err => {
+  document.body.innerHTML = `<p style="padding:2rem">Failed to load config UI: ${esc(err.message)}</p>`;
+});
+</script>
+</body>
+</html>

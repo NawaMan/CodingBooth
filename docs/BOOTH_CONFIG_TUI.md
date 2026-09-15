@@ -53,6 +53,8 @@ booth config ./existing-project
 
 The output is identical to running `booth config --no-tui --select <your-selections>` — same Boothfile, config.toml, startup scripts, and files.
 
+For the same editor in a browser on the booth port, see **[booth config — Web UI](BOOTH_CONFIG_WEB.md)** (`booth config --web`).
+
 If the booth holds hand-written files, step 2 also raises a warning on open and step 7 asks what to do with them — see [Saving over hand-written files](#saving-over-hand-written-files).
 
 ---
