@@ -68,6 +68,14 @@ EXAMPLE_TIMEOUT=900  # 15 minutes per example
 declare -a FILTER_TAGS=()
 declare -a FILTER_EXAMPLES=()
 
+# Skipped from a full run (no --example/--tag filter) by default: not broken,
+# just too slow to fit EXAMPLE_TIMEOUT once the rest of the suite has already
+# loaded the machine. anythingllm-example passes standalone in ~6-7 minutes but
+# hits the 15-minute timeout under a full run's cumulative CPU/disk/memory
+# pressure. `--example anythingllm` still runs it explicitly -- this list is
+# only consulted when no example/tag filter narrowed the run.
+declare -a DEFAULT_SKIP_EXAMPLES=(anythingllm-example)
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -186,6 +194,25 @@ matches_example_filter() {
     return 1
 }
 
+# Function to check if example is skipped from an unfiltered full run.
+# Any --example or --tag filter is already a narrowed, explicit run, so the
+# default-skip list only applies when neither was given.
+is_default_skipped() {
+    local example_name="$1"
+
+    if [ ${#FILTER_EXAMPLES[@]} -gt 0 ] || [ ${#FILTER_TAGS[@]} -gt 0 ]; then
+        return 1
+    fi
+
+    for skip in "${DEFAULT_SKIP_EXAMPLES[@]}"; do
+        if [ "$example_name" = "$skip" ]; then
+            return 0
+        fi
+    done
+
+    return 1
+}
+
 # Collect examples
 declare -a examples=()
 
@@ -202,6 +229,11 @@ for example_dir in "$SCRIPT_DIR"/*/; do
 
     # Check if matches tag filter
     if ! matches_tag_filter "$example_dir"; then
+        continue
+    fi
+
+    # Skip from an unfiltered full run (see DEFAULT_SKIP_EXAMPLES above)
+    if is_default_skipped "$example_name"; then
         continue
     fi
 
