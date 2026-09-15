@@ -10,7 +10,7 @@ default:
 
 # Build the CLI binary inside a booth
 build-cli:
-    booth -- ./build/cli-build.sh
+    ./booth -- ./build/cli-build.sh
 
 # Build the Docker images
 build-docker:
@@ -18,7 +18,8 @@ build-docker:
 
 # Build the CLI and Docker images
 build-all:
-    ./build/build-all.sh
+    ./booth -- ./build/cli-build.sh
+    ./build/docker-build.sh
 
 # Run the automated test suites
 run-tests:
