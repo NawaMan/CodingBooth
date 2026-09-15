@@ -442,7 +442,7 @@ Add or improve support for these developer tools and environments:
       editor for a language the catalog already installs. New ids must be checked against Open VSX
       (`curl -s -o /dev/null -w '%{http_code}' https://open-vsx.org/api/<pub>/<name>`) — code-server does
       not query the Microsoft Marketplace, and the publisher frequently differs between the two.
-- [ ] code-server has no C#, C/C++, IntelliCode, or Lombok extension. Four curated ids are Marketplace-only,
+- [ ] code-server has no C#, C/C++, or IntelliCode extension. Three curated ids are Marketplace-only,
       so Open VSX has nothing to resolve and code-server users go without. They are now scoped with
       `install_vscode_extensions` (explicit, and no longer a warning on every code-server build), but that
       only documents the gap — it doesn't close it. Each needs its own decision, and each substitute must be
@@ -454,9 +454,11 @@ Add or improve support for these developer tools and environments:
         code-server users at that rather than duplicating it.
       - `visualstudioexptteam.vscodeintellicode` (`java-code-extension`) — AI completion polish, not
         language support. Probably fine to leave code-server without it permanently.
-      - `vscjava.vscode-lombok` (`java-code-extension`) — never published to Open VSX, so Lombok annotations
-        go unresolved in code-server. `redhat.java` still works; whether that is acceptable depends on how
-        much Lombok the Java examples use.
+      `vscjava.vscode-lombok` (`java-code-extension`) was on this list too, but isn't actually a gap:
+      never published to Open VSX, but `redhat.java` (installed for both editors) has shipped built-in,
+      default-on Lombok support since v1.9 — it applies its own bundled lombok.jar to any project that
+      declares Lombok as a dependency, no separate extension required. See the comment in
+      `java-code-extension--setup.sh`.
 - [ ] A failed extension install is invisible. `libs/code-extension-source.sh`'s `install_extensions` logs
       `⚠ Failed to install` and returns 0, so the build passes and the booth comes up without the
       extension — which is how the `JakeBecker.elixir-ls` bug survived unnoticed. The new

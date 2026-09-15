@@ -33,9 +33,15 @@ source "${SETUP_LIBS_DIR}/${CODE_EXTENSION_LIB}"
 # Marketplace-only, so code-server goes without both. See docs/TODO.md.
 #   visualstudioexptteam.vscodeintellicode  Microsoft-licensed; AI completion polish,
 #                                           not Java language support proper.
-#   vscjava.vscode-lombok                   never published to Open VSX. Lombok
-#                                           annotations therefore go unresolved in
-#                                           code-server; redhat.java still works.
+#   vscjava.vscode-lombok                   never published to Open VSX -- but this
+#                                           isn't a functional gap: redhat.java (installed
+#                                           below, for both editors) has shipped its own
+#                                           built-in Lombok support, on by default, since
+#                                           v1.9 -- it applies its bundled lombok.jar to
+#                                           any project that declares Lombok as a
+#                                           dependency, no separate extension needed.
+#                                           vscjava.vscode-lombok mainly exists for the
+#                                           desktop-VS-Code UI around it; skip it here.
 install_vscode_extensions           \
     visualstudioexptteam.vscodeintellicode \
     vscjava.vscode-lombok
