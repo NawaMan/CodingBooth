@@ -1,0 +1,23 @@
+display-name = "Lombok for Eclipse"
+display-disc = "Lombok plugin for Eclipse"
+display-detail = """Installs Lombok into Eclipse by pointing eclipse.ini at lombok.jar via \
+-javaagent and -Xbootclasspath/a, the Eclipse counterpart to `lombok-idea`. Without it, \
+Eclipse's own compiler (JDT) does not know what @Value or @Data generate, and marks every \
+field and method they produce as unresolved -- in a project that compiles perfectly well from \
+Maven. Compiles to `setup lombok-eclipse`, which downloads lombok.jar at image-build time and \
+patches eclipse.ini. Unlike IntelliJ, Eclipse needs no separate per-project annotation-processing \
+setting: Lombok's Eclipse integration works by patching the compiler itself via the javaagent, \
+so this is the only piece needed."""
+display-order = 2
+auto-select = false
+tags = [
+    "eclipse",
+    "java",
+    "lombok",
+    "ide",
+]
+
+[segments]
+"Boothfile--70" = """
+setup lombok-eclipse
+"""
