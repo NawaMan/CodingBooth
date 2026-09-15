@@ -752,6 +752,14 @@ This file contains a list of changes for each released version.
   `booth example try turtle ./my-turtle` (once released) or
   `cd examples/workspaces/turtle-example && booth`.
 
+- **`booth config --web` is a browser equivalent of the Config TUI.** It
+  serves the same template catalog and Config-tab fields at
+  `http://127.0.0.1:<booth-port>/` (loopback, one-shot token). Save writes
+  the same `.booth/` files as the TUI / `--no-tui`. The catalog is the
+  loaded `TemplateRegistry` — category tabs are not hard-coded. A taken
+  booth port is refused rather than stolen. See
+  [config Web UI](BOOTH_CONFIG_WEB.md).
+
 - **Every booth now ships `lazygit`.** Installed into the base image by
   `variants/base/setups/lazygit--setup.sh`, so all variants inherit it — a
   terminal UI for git ([lazygit](https://github.com/jesseduffield/lazygit)).

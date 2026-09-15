@@ -113,6 +113,29 @@ func TestRenderedFieldsWriteBackAsTheirShape(t *testing.T) {
 // rather than as a bare toggle, because "unset" and "false" differ — sudo
 // defaults to on, so losing an explicit false silently restores passwordless
 // sudo.
+func TestFieldTable_IncludesConfigTabKeys(t *testing.T) {
+	table := FieldTable()
+	if len(table) == 0 {
+		t.Fatal("FieldTable is empty")
+	}
+	kinds := map[string]string{}
+	for _, field := range table {
+		kinds[field.Key] = field.Kind
+	}
+	if kinds["variant"] != "cycle" {
+		t.Fatalf("variant kind = %q, want cycle", kinds["variant"])
+	}
+	if kinds["port"] != "string" {
+		t.Fatalf("port kind = %q, want string", kinds["port"])
+	}
+	if kinds["dind"] != "bool" {
+		t.Fatalf("dind kind = %q, want bool", kinds["dind"])
+	}
+	if kinds["expose"] != "list" {
+		t.Fatalf("expose kind = %q, want list", kinds["expose"])
+	}
+}
+
 func TestRenderedConfigKeysRoles(t *testing.T) {
 	roles := RenderedConfigKeys()
 

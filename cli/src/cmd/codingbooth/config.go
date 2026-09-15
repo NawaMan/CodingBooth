@@ -16,16 +16,19 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/configweb"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/tui"
+	"github.com/nawaman/codingbooth/src/pkg/docker"
 )
 
 // runConfig handles the "config" command — booth configuration via TUI or CLI.
 //
 //	booth config                        → TUI (empty)
 //	booth config --select go            → TUI pre-populated
+//	booth config --web                  → browser UI on the booth port
 //	booth config --no-tui --select go   → CLI mode
 //	booth config --dryrun --select go   → TUI, dryrun on confirm
 //	booth config --no-tui --dryrun ...  → CLI dryrun
@@ -56,11 +59,28 @@ func runConfig(version string) {
 		os.Exit(1)
 	}
 
+	if flags.noTUI && flags.web {
+		fmt.Fprintln(os.Stderr, "Error: --web and --no-tui cannot be used together")
+		os.Exit(1)
+	}
 	if flags.noTUI {
 		runConfigCLI(version, targetPath, flags)
+	} else if flags.web || shouldUseWebUI() {
+		runConfigWeb(version, targetPath, flags)
 	} else {
 		runConfigTUI(version, targetPath, flags)
 	}
+}
+
+// shouldUseWebUI is the no-TTY fallback: a display to open, and no terminal
+// to host the TUI. Headless CI has neither DISPLAY nor a TTY and keeps using
+// --no-tui; this only fires for someone who typed `booth config` over SSH
+// with X forwarding, or from a desktop without a terminal.
+func shouldUseWebUI() bool {
+	if docker.IsStdinTTY() {
+		return false
+	}
+	return os.Getenv("DISPLAY") != "" || os.Getenv("WAYLAND_DISPLAY") != ""
 }
 
 // aptSnapshotID returns the Ubuntu archive snapshot id used to freeze `install apt`
@@ -275,44 +295,48 @@ func backupDrifted(targetPath string, drifted []string) error {
 	return nil
 }
 
-// runConfigTUI handles interactive TUI mode (default).
-func runConfigTUI(version string, targetPath string, flags initFlags) {
-	// Resolve templates
+type interactiveSetup struct {
+	registry    *tmpl.TemplateRegistry
+	mergedFlags initFlags
+	pre         *tui.PreSelection
+	warning     string
+	drifted     []string
+	cleanup     func()
+}
+
+func prepareInteractiveConfig(version, targetPath string, flags initFlags) interactiveSetup {
 	templatesPath, cleanup := resolveTemplatesPath(flags, version)
-	defer cleanup()
 	flags.templatesPath = templatesPath
 
-	// Load stock + project-local .booth/templates/ (local overrides with warning)
 	registry, err := tmpl.LoadMergedRegistry(flags.templatesPath, targetPath, os.Stderr)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
 		os.Exit(1)
 	}
 
-	// Read existing .booth/ configuration as baseline
 	existingFlags := readExistingBooth(targetPath)
-
-	// Merge: existing booth is the baseline, CLI flags override
 	mergedFlags := mergeFlags(existingFlags, flags)
-
-	// Build pre-selection from merged flags, overlaying preserved pins so the
-	// TUI shows the real param values from the existing Boothfile.
 	pre := buildPreSelection(registry, mergedFlags, readExistingArgs(targetPath))
-
-	// Pre-populate booth version from target's lock file (falls back to binary version)
 	pre.StringFields["booth-version"] = readLockFileVersion(targetPath, version)
-
-	// Files holding hand-written content. Saving regenerates them from scratch, so
-	// the TUI makes the user choose before it will touch them.
 	drifted := output.Drifted(targetPath)
-
-	// Say so up front, before any time is invested. Learning only at save time that
-	// your Boothfile can't simply be written out means having configured the whole
-	// booth without knowing the result was in question.
 	warning := joinWarnings(checkBoothWritable(targetPath), handWrittenNotice(drifted))
 
-	// Run TUI
-	result, err := tui.RunConfig(registry, pre, warning, drifted)
+	return interactiveSetup{
+		registry:    registry,
+		mergedFlags: mergedFlags,
+		pre:         pre,
+		warning:     warning,
+		drifted:     drifted,
+		cleanup:     cleanup,
+	}
+}
+
+// runConfigTUI handles interactive TUI mode (default).
+func runConfigTUI(version string, targetPath string, flags initFlags) {
+	setup := prepareInteractiveConfig(version, targetPath, flags)
+	defer setup.cleanup()
+
+	result, err := tui.RunConfig(setup.registry, setup.pre, setup.warning, setup.drifted)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
@@ -323,6 +347,38 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 		return
 	}
 
+	applyInteractiveResult(version, targetPath, setup.mergedFlags, result, setup.drifted)
+}
+
+// runConfigWeb is the browser equivalent of runConfigTUI. Same registry,
+// same save path; the view is HTML on 127.0.0.1:<booth-port>.
+func runConfigWeb(version string, targetPath string, flags initFlags) {
+	setup := prepareInteractiveConfig(version, targetPath, flags)
+	defer setup.cleanup()
+
+	result, err := configweb.Run(configweb.Options{
+		Registry:    setup.registry,
+		Pre:         setup.pre,
+		Warning:     setup.warning,
+		Drifted:     setup.drifted,
+		PortFlag:    setup.mergedFlags.port,
+		OpenBrowser: true,
+		Output:      os.Stderr,
+	})
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
+
+	if result == nil || !result.Confirmed {
+		fmt.Fprintln(os.Stderr, "Cancelled.")
+		return
+	}
+
+	applyInteractiveResult(version, targetPath, setup.mergedFlags, result, setup.drifted)
+}
+
+func applyInteractiveResult(version, targetPath string, mergedFlags initFlags, result *tui.ConfigResult, drifted []string) {
 	// The merged baseline — not the bare CLI flags — is what this run writes out.
 	//
 	// Saving regenerates config.toml from scratch, so anything not carried into
@@ -335,7 +391,7 @@ func runConfigTUI(version string, targetPath string, flags initFlags) {
 	// The TUI speaks for exactly the keys it renders. Those are stripped from the
 	// baseline and re-derived from the result below — so unchecking a box still
 	// removes the key — and everything else is carried through untouched.
-	flags = mergedFlags
+	flags := mergedFlags
 	flags.sets = dropTUIOwnedSets(mergedFlags.sets)
 
 	// Apply TUI results back to flags. These are assigned unconditionally rather
@@ -751,6 +807,7 @@ func mergeFlags(existing, cli initFlags) initFlags {
 	merged := existing
 
 	merged.noTUI = cli.noTUI
+	merged.web = cli.web
 	merged.overwrite = cli.overwrite
 	merged.beside = cli.beside
 	merged.dryrun = cli.dryrun
@@ -1099,7 +1156,8 @@ func printConfigHelp() {
 	fmt.Println(`Usage: booth config [path] [flags]
 
 Configure a CodingBooth environment. Opens an interactive TUI by default.
-Use --no-tui for non-interactive CLI mode.
+Use --web for the same editor in a browser on the booth port, or --no-tui
+for non-interactive CLI mode.
 
 If the target path already contains a .booth/Boothfile, the existing
 configuration is loaded as the baseline. CLI flags override the existing values.
@@ -1117,6 +1175,7 @@ choices, in the TUI on save or here as flags:
 Flags:
   --select <selection>     Template selection DSL (repeatable)
   --no-tui                 Non-interactive CLI mode (requires --select)
+  --web                    Browser UI on the booth port (127.0.0.1:<port>)
   --dryrun                 Preview what would be generated without writing files
   --variant <variant>      Set variant (base, notebook, codeserver, xfce, kde)
   --port <port>            Set port (e.g., 10000, NEXT, RANDOM)
@@ -1156,6 +1215,7 @@ TUI Controls:
 Examples:
   booth config                                  # TUI (empty)
   booth config --select go+linter               # TUI pre-populated
+  booth config --web                            # browser UI on the booth port
   booth config --no-tui --select go+linter      # CLI mode
   booth config --dryrun --select go              # TUI, dryrun on confirm
   booth config --no-tui --dryrun --select go     # CLI dryrun
