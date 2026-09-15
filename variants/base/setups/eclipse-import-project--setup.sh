@@ -159,7 +159,33 @@ if [ -z "$CP" ]; then
   exit 0
 fi
 
-javac -cp "$CP" -d "$WORK/build" "$WORK/src/cb/importproject/Application.java"
+# Application.java is compiled against Eclipse's own resource/runtime jars,
+# which are built for whatever Java level current Eclipse targets (17+, class
+# file major version 61+) -- independent of JDK_VERSION, the project's own
+# selected JDK, which a project can legitimately pin much older (8, 11, ...).
+# javac can't even read newer class files to link against them, so reusing
+# the project's javac fails with "bad class file ... has wrong version" on
+# any such project. Fall back to a throwaway compiler JDK for this one
+# compile step when the system javac is too old, leaving JDK_VERSION alone.
+JAVAC_BIN="javac"
+JAVAC_MAJOR="$(javac -version 2>&1 | sed -E 's/^javac 1\.([0-9]+).*/\1/; t; s/^javac ([0-9]+).*/\1/')"
+COMPILER_JDK_DIR=""
+if [[ -z "$JAVAC_MAJOR" || "$JAVAC_MAJOR" -lt 17 ]]; then
+  echo "eclipse-import-project: system javac (${JAVAC_MAJOR:-unknown}) is too old to read Eclipse's own class files (needs 17+) -- fetching a compiler JDK just for this step..."
+  MACHINE="$(uname -m)"
+  case "$MACHINE" in
+    x86_64)  COMPILER_ARCH="x64"    ;;
+    aarch64) COMPILER_ARCH="aarch64" ;;
+    *)       echo "eclipse-import-project: unsupported architecture ${MACHINE} for compiler JDK -- skipping." >&2; rm -rf "$WORK"; exit 0 ;;
+  esac
+  COMPILER_JDK_DIR="$(mktemp -d)"
+  curl -fsSL "https://api.adoptium.net/v3/binary/latest/21/ga/linux/${COMPILER_ARCH}/jdk/hotspot/normal/eclipse" -o "$COMPILER_JDK_DIR/jdk.tar.gz"
+  tar -xzf "$COMPILER_JDK_DIR/jdk.tar.gz" -C "$COMPILER_JDK_DIR" --strip-components=1
+  JAVAC_BIN="$COMPILER_JDK_DIR/bin/javac"
+fi
+
+"$JAVAC_BIN" -cp "$CP" -d "$WORK/build" "$WORK/src/cb/importproject/Application.java"
+[[ -n "$COMPILER_JDK_DIR" ]] && rm -rf "$COMPILER_JDK_DIR"
 
 (cd "$WORK/build" && jar cfm cb.importproject_1.0.0.jar META-INF/MANIFEST.MF plugin.xml cb)
 
