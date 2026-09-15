@@ -27,3 +27,6 @@ run-tests:
 # Refresh example booth scripts, then run the workspace example tests
 run-examples:
     cd examples && ./update-booth.sh && cd workspaces && ./run-example-tests.sh
+
+# Build everything, then run the automated tests and the example tests
+verify: build-all run-tests run-examples
