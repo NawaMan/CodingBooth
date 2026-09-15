@@ -36,6 +36,8 @@ jobs:
   # ---------------------------------------------------------
   guard-no-rc:
     runs-on: ubuntu-24.04
+    outputs:
+      apt_snapshot: ${{ steps.snapshot.outputs.apt_snapshot }}
     steps:
       - uses: actions/checkout@v4
 
@@ -49,6 +51,16 @@ jobs:
             exit 1
           fi
           echo "Stable version — proceeding."
+
+      # Computed once here, not left to each build job's own docker-build.sh
+      # default: build-base and build-variants are separate amd64/arm64 matrix
+      # jobs that can run minutes apart, and each would otherwise pick its own
+      # `date -u` at invocation time. One release straddling UTC midnight would
+      # then pin different architectures — and base vs. the variants built on
+      # top of it — to different apt snapshots.
+      - name: Compute this release's apt snapshot id
+        id: snapshot
+        run: echo "apt_snapshot=$(date -u +%Y%m%d)T000000Z" >> "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------
   # 1. Build the base container natively, one arch per runner
@@ -73,6 +85,7 @@ jobs:
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
+          CB_APT_SNAPSHOT:    ${{ needs.guard-no-rc.outputs.apt_snapshot }}
 
       - name: Upload base digest (${{ matrix.arch }})
         uses: actions/upload-artifact@v4
@@ -115,7 +128,11 @@ jobs:
   #     so they need the merged base first)
   # ---------------------------------------------------------
   build-variants:
-    needs: merge-base
+    # guard-no-rc added so this job can read its apt_snapshot output directly —
+    # needs.<job>.outputs is only visible to jobs that list <job>, not
+    # transitively through merge-base. Ordering is unaffected: guard-no-rc
+    # already finished long before merge-base could succeed.
+    needs: [merge-base, guard-no-rc]
     strategy:
       fail-fast: false
       matrix:
@@ -144,6 +161,7 @@ jobs:
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN:    ${{ secrets.DOCKERHUB_TOKEN }}
+          CB_APT_SNAPSHOT:    ${{ needs.guard-no-rc.outputs.apt_snapshot }}
 
       - name: Upload ${{ matrix.variant }} digest (${{ matrix.arch }})
         uses: actions/upload-artifact@v4

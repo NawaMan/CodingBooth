@@ -138,6 +138,30 @@ One commit for the accepted set (not one per tool unless the user asks). Tree mu
 step 1. Re-list `git log --oneline origin/main..main` so the push preview includes these commits.
 Do not mix catalog files into the version.txt commit.
 
+### Apt snapshot pin — a different staleness than the version sweep above
+
+Not a catalog version pin (the "skip example Boothfiles" line above is about tool versions, not
+this). `build/docker-build.sh` pins every image's own `apt-get` to a snapshot (`APT_SNAPSHOT`
+build-arg, `CB_APT_SNAPSHOT` env override — see `apt--install.sh` for why: the live archive drifts,
+and an exact-version dependency like `libc6-dev` → `libc6` can break a build months later for no
+code reason at all). `publish-docker-images.yaml` computes the id **once**, in `guard-no-rc`, and
+threads it through both `build-base` and `build-variants` as `CB_APT_SNAPSHOT` — they are separate
+amd64/arm64 matrix jobs that can straddle a UTC day boundary, so a per-job default would risk
+pinning one release's architectures (and base vs. variants) to different snapshots. Nothing to do
+here — just know it is not a per-job `date -u` before "simplifying" it back to one.
+
+A Boothfile's own `env APT_SNAPSHOT=...` (stamped by `booth config` at configuration time) is the
+part that *does* need checking here: it can go stale against the images *this* release is about to
+publish, the same way. Example Boothfiles are the case that actually bites — they get built and
+tested against whatever this release just shipped.
+
+```bash
+grep -rn 'env APT_SNAPSHOT=' examples/workspaces/*/.booth/Boothfile
+```
+
+Compare each date against today's. Offer to bump the stale ones (same `booth config` stamp format:
+`YYYYMMDDT000000Z`) — same shape as the version sweep above: report, wait, apply only what's picked.
+
 ### Go-ahead to drop the rc
 
 Report the version transition, the commit list step 2 will publish (catalog bumps included), and

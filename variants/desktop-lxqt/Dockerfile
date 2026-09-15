@@ -25,9 +25,11 @@ RUN viewmd-desktop-icon--setup.sh
 RUN python-nb-kernel--setup.sh
 RUN bash-nb-kernel--setup.sh
 
-# This is so that some basic GTK would work.
-RUN apt-get update        \
-  && apt-get install -y   \
+ARG APT_SNAPSHOT=
+
+# This is so that some basic GTK would work. apt--install.sh (already on PATH
+# from the base image) applies APT_SNAPSHOT the same way every setup script does.
+RUN apt--install.sh      \
   breeze-gtk-theme        \
   gnome-themes-extra      \
   libgtk-3-0              \

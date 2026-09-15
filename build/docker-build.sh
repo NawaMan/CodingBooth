@@ -35,6 +35,16 @@ IMAGE_NAME="nawaman/codingbooth"
 PLATFORMS="linux/amd64,linux/arm64"
 VERSION_FILE="version.txt"
 
+# Reproducibility: same id format and same CB_APT_SNAPSHOT override as
+# aptSnapshotID() in cli/src/cmd/codingbooth/config.go, which stamps this into
+# every `booth config`-generated Boothfile. Building the image itself against
+# the *same* default (today, UTC, day granularity) keeps a freshly configured
+# Boothfile's apt pin in sync with what the base/desktop images it builds on
+# already have installed — without it, a Boothfile pinned days ago can demand
+# an exact package version (e.g. libc6-dev's dependency on libc6) that no
+# longer matches whatever the image's own unpinned apt-get last installed.
+APT_SNAPSHOT="${CB_APT_SNAPSHOT:-$(date -u +%Y%m%d)T000000Z}"
+
 # All known variants
 ALL_VARIANTS=(
   base
@@ -278,6 +288,14 @@ BuildVariant() {
     no_cache_arg+=( --no-cache )
   fi
 
+  # Only variants that declare the ARG use it (base and the desktop variants
+  # with their own apt-get); passing --build-arg to one that doesn't just
+  # prints an unconsumed-arg warning for no benefit.
+  local snapshot_arg=()
+  if grep -q '^ARG APT_SNAPSHOT' "${docker_file}"; then
+    snapshot_arg+=( --build-arg "APT_SNAPSHOT=${APT_SNAPSHOT}" )
+  fi
+
   if [[ "${do_push}" == "true" ]]; then
     Log "[$variant]: Setting up buildx (driver: docker-container)"
     docker buildx create --use --name ci_builder >/dev/null 2>&1 || docker buildx use ci_builder
@@ -294,6 +312,7 @@ BuildVariant() {
       Log "[$variant]: Building ${platform} natively (push by digest)"
       docker buildx build \
         ${no_cache_arg[@]+"${no_cache_arg[@]}"} \
+        ${snapshot_arg[@]+"${snapshot_arg[@]}"} \
         --platform "${platform}" \
         -f "${docker_file}" \
         --build-arg "BOOTH_VERSION_TAG=${version}" \
@@ -324,6 +343,7 @@ BuildVariant() {
     Log "[$variant]: Building with buildx (push)"
     docker buildx build \
       ${no_cache_arg[@]+"${no_cache_arg[@]}"} \
+      ${snapshot_arg[@]+"${snapshot_arg[@]}"} \
       --platform "${PLATFORMS}" \
       -f "${docker_file}" \
       --build-arg "BOOTH_VERSION_TAG=${version}" \
@@ -349,6 +369,7 @@ BuildVariant() {
     export DOCKER_BUILDKIT=1
     docker build \
       ${no_cache_arg[@]+"${no_cache_arg[@]}"} \
+      ${snapshot_arg[@]+"${snapshot_arg[@]}"} \
       -f "${docker_file}" \
       --build-arg "BOOTH_VERSION_TAG=${version}" \
       "${tags_arg[@]}" \
