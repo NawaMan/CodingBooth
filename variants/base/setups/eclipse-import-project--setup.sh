@@ -179,7 +179,9 @@ if [[ -z "$JAVAC_MAJOR" || "$JAVAC_MAJOR" -lt 17 ]]; then
     *)       echo "eclipse-import-project: unsupported architecture ${MACHINE} for compiler JDK -- skipping." >&2; rm -rf "$WORK"; exit 0 ;;
   esac
   COMPILER_JDK_DIR="$(mktemp -d)"
-  curl -fsSL "https://api.adoptium.net/v3/binary/latest/21/ga/linux/${COMPILER_ARCH}/jdk/hotspot/normal/eclipse" -o "$COMPILER_JDK_DIR/jdk.tar.gz"
+  curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
+    "https://api.adoptium.net/v3/binary/latest/21/ga/linux/${COMPILER_ARCH}/jdk/hotspot/normal/eclipse" \
+    -o "$COMPILER_JDK_DIR/jdk.tar.gz"
   tar -xzf "$COMPILER_JDK_DIR/jdk.tar.gz" -C "$COMPILER_JDK_DIR" --strip-components=1
   JAVAC_BIN="$COMPILER_JDK_DIR/bin/javac"
 fi
