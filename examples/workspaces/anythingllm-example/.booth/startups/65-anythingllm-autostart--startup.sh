@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth config --no-tui --overwrite --select anythingllm+autostart+expose+project-fs+passwordless
+# Configured by: booth config --no-tui --overwrite --select shell-history/anythingllm+expose+autostart+project-fs+passwordless
 
 # Auto-start AnythingLLM in background
 PORT=${ANYTHINGLLM_PORT:-3001}

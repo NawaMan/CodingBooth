@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth config --no-tui --overwrite --select anythingllm+autostart+expose+project-fs+passwordless
+# Configured by: booth config --no-tui --overwrite --select shell-history/anythingllm+expose+autostart+project-fs+passwordless
 
 # If the server is already up with a password from this session, turn it off.
 PORT=${ANYTHINGLLM_PORT:-3001}

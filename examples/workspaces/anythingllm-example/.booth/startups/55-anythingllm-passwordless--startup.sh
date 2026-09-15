@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth config --no-tui --overwrite --select anythingllm+autostart+expose+project-fs+passwordless
+# Configured by: booth config --no-tui --overwrite --select shell-history/anythingllm+expose+autostart+project-fs+passwordless
 
 # Strip a persisted instance password before autostart (65) loads .env.
 for f in /opt/anythingllm/server/.env "${STORAGE_DIR:-$HOME/.anythingllm}/.env"; do
