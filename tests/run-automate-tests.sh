@@ -188,6 +188,23 @@ status_icon() {
     esac
 }
 
+# Every suite that retries a flaky test once prints an in-progress notice
+# (⚠️  FAILED/TRANSIENT ... — retrying once) and, since the retried test's own
+# first (failing) attempt is echoed live into the log before the retry runs,
+# leaves that attempt's raw ❌/FAILED lines sitting in the log even once the
+# retry passes. Only the LAST "Failed tests:" block (every suite that retries
+# prints one such block per attempt) says what is still broken after retries
+# — same insight already used below to build FAILED_LOG, extracted here so
+# sync_counts can use it too.
+last_failed_tests_block() {
+    awk '
+        /^Failed tests:/ { n = 0; capturing = 1; next }
+        capturing && /^[[:space:]]*$/ { capturing = 0 }
+        capturing { lines[n++] = $0 }
+        END { for (i = 0; i < n; i++) print lines[i] }
+    '
+}
+
 # Count pass/fail/skip from a log file by looking for common test result markers.
 #
 # Skips are counted and reported, never folded into the pass tally. A test that
@@ -207,7 +224,21 @@ sync_counts() {
     stripped=$(sed 's/\x1b\[[0-9;]*m//g' "$log" 2>/dev/null) || stripped=""
     local pass fail skip
     pass=$(echo "$stripped" | grep -cE '✅|PASSED|^ok ' 2>/dev/null) || pass=0
-    fail=$(echo "$stripped" | grep -cE '❌|FAILED|^--- FAIL' 2>/dev/null) || fail=0
+    # Every suite but `unit` reaches one of two mutually-exclusive closing
+    # lines: "Failed tests:" (+ list) on failure, or "All ... tests passed"
+    # on success — never both. Once a suite has reached that verdict, trust
+    # it: count only the LAST "Failed tests:" block (0 if the log has none),
+    # not every ❌/FAILED substring, which includes stale first-attempt lines
+    # from tests a suite's own retry-once already turned into a pass.
+    if echo "$stripped" | grep -qiE '^Failed tests:|All .* tests? passed' 2>/dev/null; then
+        fail=$(echo "$stripped" | last_failed_tests_block | grep -cE '^\s*(❌|-)' 2>/dev/null) || fail=0
+    else
+        # No recognizable closing verdict (unit.log's raw `go test` output,
+        # or a suite that crashed before reaching its own tally) — fall back
+        # to the naive count, but still exclude ⚠️ retry notices, which never
+        # represent a final verdict on their own.
+        fail=$(echo "$stripped" | grep -v '⚠️' | grep -cE '❌|FAILED|^--- FAIL' 2>/dev/null) || fail=0
+    fi
     # [[:space:]] rather than \s — BSD grep (macOS) does not honour \s.
     skip=$(echo "$stripped" | grep -cE '^[[:space:]]*(SKIP:|--- SKIP|--- Skipping:)' 2>/dev/null) || skip=0
     PASS_COUNTS[$idx]=$((pass))
@@ -511,12 +542,7 @@ for i in "${!SUITES[@]}"; do
     # fallback below rather than matching arbitrary "--- PASS:" / "-e FOO=bar"
     # lines elsewhere in the log, which used to feed both garbage suite names
     # and unbalanced quotes (from printed docker command dumps) into xargs.
-    failed_block=$(echo "$stripped" | awk '
-        /^Failed tests:/ { n = 0; capturing = 1; next }
-        capturing && /^[[:space:]]*$/ { capturing = 0 }
-        capturing { lines[n++] = $0 }
-        END { for (i = 0; i < n; i++) print lines[i] }
-    ')
+    failed_block=$(echo "$stripped" | last_failed_tests_block)
 
     echo "$failed_block" | grep -E '^\s+(❌|-)' | sed 's/^[[:space:]]*[❌-][[:space:]]*//' | while IFS= read -r tname; do
         tname=$(echo "$tname" | xargs)  # trim whitespace
