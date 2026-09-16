@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fixed the base image's arm64 build failing on `just--setup.sh`.** Cross-building
+  `linux/arm64` under QEMU emulation made GNU tar fail extracting the `just` release
+  tarball's `completions/` directory (`tar: completions/just.zsh: Cannot open: Invalid
+  argument`) — a QEMU-user-emulation/tar interaction, not a corrupt archive. Those
+  completion files were never used anyway (bash completion is generated separately via
+  `just --completions bash`), so the fix extracts only the `just` binary member instead
+  of the whole tarball.
+
 - **Every example workspace's `Justfile` now auto-wraps its recipes in
   `./booth exec --run --` when run from the host, so `just <recipe>` works
   the same whether you're inside the booth or not.** A `run` variable
