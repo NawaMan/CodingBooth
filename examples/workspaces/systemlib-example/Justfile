@@ -1,15 +1,17 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Configure and compile the link checker
 build:
-    ./build.sh
+    {{run}} ./build.sh
 
 # Build and check URLs (`just run`, `just run my-urls.txt out.db`)
 run *args:
-    ./run.sh {{ args }}
+    {{run}} ./run.sh {{ args }}
 
 # Print recorded checks from SQLite (`just check`, `just check my.db`)
 check *args:
-    ./query.sh {{ args }}
+    {{run}} ./query.sh {{ args }}

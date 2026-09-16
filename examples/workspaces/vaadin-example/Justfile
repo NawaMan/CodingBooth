@@ -1,11 +1,13 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Package the Vaadin app
 build:
-    mvn -q package
+    {{run}} mvn -q package
 
 # Run the UI on :8080
 run:
-    mvn spring-boot:run
+    {{run}} mvn spring-boot:run

@@ -1,15 +1,17 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Cross-compile treemoji into ./bin/
 build:
-    ./build.sh
+    {{run}} ./build.sh
 
 # Run treemoji (builds first if needed)
 run *args:
-    ./run-treemoji.sh {{ args }}
+    {{run}} ./run-treemoji.sh {{ args }}
 
 # Run Go unit tests
 test:
-    ./run-go-test.sh
+    {{run}} ./run-go-test.sh

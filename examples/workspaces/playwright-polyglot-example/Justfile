@@ -1,9 +1,11 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Drive the same Playwright task from five languages
 run:
-    ./run-polyglot.sh
+    {{run}} ./run-polyglot.sh
 
 alias test := run

@@ -1,15 +1,23 @@
+# Wrapped commands auto-run inside the booth when called from the host
+# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+# Same, but keeps the booth running afterwards -- for recipes that start a
+# DinD sidecar meant to outlive this command (a plain --run would tear the
+# booth, and the sidecar with it, down as soon as the script returns).
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --keep-alive --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Build the http-server image and start it
 start:
-    ./start-server.sh
+    {{run-in-booth}} ./start-server.sh
 
 # Stop the container
 stop:
-    ./stop-server.sh
+    {{run}} ./stop-server.sh
 
 # Check whether the server is up (`just check down`)
 check expect="up":
-    ./check-server.sh --expect={{ expect }}
+    {{run}} ./check-server.sh --expect={{ expect }}

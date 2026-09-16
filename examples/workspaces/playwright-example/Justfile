@@ -1,11 +1,13 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Run the Playwright test suite
 test:
-    ./run-playwright.sh
+    {{run}} ./run-playwright.sh
 
 # Capture a screenshot (`just screenshot https://playwright.dev shot.png`)
 screenshot *args:
-    ./run-screenshot.sh {{ args }}
+    {{run}} ./run-screenshot.sh {{ args }}

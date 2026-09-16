@@ -1,11 +1,13 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Greet a name (`just run World`, `just run -- --color Alice`)
 run *args:
-    ./greeting.sh {{ args }}
+    {{run}} ./greeting.sh {{ args }}
 
 # Run bun tests
 test:
-    bun test
+    {{run}} bun test

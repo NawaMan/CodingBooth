@@ -1,11 +1,13 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Production build
 build:
-    npm install && npm run build
+    {{run}} bash -c 'npm install && npm run build'
 
 # Angular dev server on :4200
 run:
-    npm install && npm start
+    {{run}} bash -c 'npm install && npm start'

@@ -1,11 +1,13 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Count words in a file or stdin (`just run README.md`)
 run *args:
-    ./run-wordcount.sh {{ args }}
+    {{run}} ./run-wordcount.sh {{ args }}
 
 # Run the wordcount tests
 test:
-    ./run-ruby-test.sh
+    {{run}} ./run-ruby-test.sh

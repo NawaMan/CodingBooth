@@ -1,7 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Check two phrases for anagrams (`just run listen silent`)
 run *args:
-    ./run-anagram.sh {{ args }}
+    {{run}} ./run-anagram.sh {{ args }}

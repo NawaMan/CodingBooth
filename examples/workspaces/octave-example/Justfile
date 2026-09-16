@@ -1,7 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Run the Octave sample
 run:
-    ./run-octave.sh
+    {{run}} ./run-octave.sh

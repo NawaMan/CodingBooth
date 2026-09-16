@@ -1,11 +1,13 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Compile the console app
 build:
-    dotnet build --project .
+    {{run}} dotnet build --project .
 
 # Build and run
 run:
-    ./run-csharp.sh
+    {{run}} ./run-csharp.sh

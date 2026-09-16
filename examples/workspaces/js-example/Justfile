@@ -1,23 +1,31 @@
+# Wrapped commands auto-run inside the booth when called from the host
+# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+# Same, but keeps the booth running afterwards -- start-server.sh daemonizes
+# and returns immediately, so a plain --run would tear the booth (and the
+# detached servers with it) down right after start-server.sh exits.
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --keep-alive --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Production build of the Vite client
 build:
-    npm install && npm run build
+    {{run}} bash -c 'npm install && npm run build'
 
 # Typecheck the TypeScript
 typecheck:
-    npm install && npm run typecheck
+    {{run}} bash -c 'npm install && npm run typecheck'
 
 # Start API + Vite as daemons (`just start bun` for the API)
 start runtime="npm":
-    ./start-server.sh --runtime={{ runtime }}
+    {{run-in-booth}} ./start-server.sh --runtime={{ runtime }}
 
 # Stop both servers
 stop:
-    ./stop-server.sh
+    {{run}} ./stop-server.sh
 
 # Check whether both servers are up (`just check down`)
 check expect="up":
-    ./check-server.sh --expect={{ expect }}
+    {{run}} ./check-server.sh --expect={{ expect }}

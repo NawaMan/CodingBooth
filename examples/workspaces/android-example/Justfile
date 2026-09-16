@@ -1,11 +1,13 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Build the signed APK to build/hello.apk
 build:
-    ./build-apk.sh
+    {{run}} ./build-apk.sh
 
 # Pair and connect a real device over Wi-Fi debugging
 connect *args:
-    ./device-connect.sh {{ args }}
+    {{run}} ./device-connect.sh {{ args }}

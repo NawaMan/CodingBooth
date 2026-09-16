@@ -1,15 +1,17 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Compile the web target
 build:
-    cd booth_counter && flutter build web --release
+    {{run}} bash -c 'cd booth_counter && flutter build web --release'
 
 # Serve on :8080 (open /proxy/8080/ on the booth)
 run:
-    cd booth_counter && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0
+    {{run}} bash -c 'cd booth_counter && flutter run -d web-server --web-port 8080 --web-hostname 0.0.0.0'
 
 # Run widget tests
 test:
-    cd booth_counter && flutter test
+    {{run}} bash -c 'cd booth_counter && flutter test'

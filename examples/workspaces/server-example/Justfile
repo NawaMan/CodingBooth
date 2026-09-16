@@ -1,11 +1,13 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Serve www/ on :8080
 start:
-    ./start-server.sh
+    {{run}} ./start-server.sh
 
 # Stop the HTTP server
 stop:
-    ./stop-server.sh
+    {{run}} ./stop-server.sh

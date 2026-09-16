@@ -1,7 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Compute a factorial (`just run 5`)
 run *args:
-    ./run-factorial.sh {{ args }}
+    {{run}} ./run-factorial.sh {{ args }}

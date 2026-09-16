@@ -1,11 +1,13 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Build the tripboard static binary
 build:
-    ./build.sh
+    {{run}} ./build.sh
 
 # Build if needed and serve on :8090
 start:
-    ./start.sh
+    {{run}} ./start.sh

@@ -1,7 +1,11 @@
+# Wrapped commands auto-run inside the booth when called from the host
+# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Wait until AFFiNE answers on :13010
 run:
-    ./demo.sh
+    {{run}} ./demo.sh
