@@ -55,7 +55,7 @@ OTHER COMMANDS:
   CONNECT   | Connect to a running booth       | shell, exec                                                             | docs/BOOTH_CONNECT.md
   MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md
   EXPOSE    | Inspect a booth's ports          | expose list                                                             | docs/BOOTH_EXPOSE.md
-  PROJECT   | Set up and scaffold new projects | example, config, template                                               | docs/BOOTH_EXAMPLE.md
+  PROJECT   | Set up and scaffold new projects | example, config, template, showcase                                     | docs/BOOTH_EXAMPLE.md
 
 Run 'codingbooth --help <command>'   for command-specific help."
 
