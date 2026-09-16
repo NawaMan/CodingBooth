@@ -28,7 +28,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "Run as root (use sudo)"; exit 1; }
 
 # ---- defaults / args ----
-KOTLIN_DEFAULT_VER="2.4.10"   # fallback when 'latest' cannot be resolved
+KOTLIN_DEFAULT_VER="2.4.20"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"              # no version given means "the current release"
 WITH_NATIVE=0
 KONAN_DIR_DEFAULT="/opt/konan"

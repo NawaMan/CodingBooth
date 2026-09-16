@@ -25,7 +25,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-LAZYSQL_DEFAULT_VER="0.5.6"   # fallback when 'latest' cannot be resolved
+LAZYSQL_DEFAULT_VER="0.5.7"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"
 while [[ $# -gt 0 ]]; do
   case "$1" in

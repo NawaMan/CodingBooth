@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --variant xfce --port 50411 --set common-args=--platform --set common-args=${CB_ANDROID_PLATFORM:-linux/amd64} --select java:17/android-sdk+emulator+kvm
 
-env APT_SNAPSHOT=20260807T000000Z
+env APT_SNAPSHOT=20260916T000000Z
 
 arg ANDROID_API=34
 arg ANDROID_BUILD_TOOLS=34.0.0

@@ -26,7 +26,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (use sudo)"; exit 1; }
 
 # --- defaults / args ---
-SCALA_DEFAULT="3.8.4"
+SCALA_DEFAULT="3.9.0"
 SCALA_VER="$SCALA_DEFAULT"
 WITH_AMM=0
 

@@ -36,7 +36,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-FONT_DEFAULT_VER="3.4.0"   # fallback when 'latest' cannot be resolved
+FONT_DEFAULT_VER="3.5.1"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"
 while [[ $# -gt 0 ]]; do
   case "$1" in

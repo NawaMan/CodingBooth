@@ -25,7 +25,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-LAZYGIT_DEFAULT_VER="0.65.0"   # fallback when 'latest' cannot be resolved
+LAZYGIT_DEFAULT_VER="0.65.1"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"
 while [[ $# -gt 0 ]]; do
   case "$1" in

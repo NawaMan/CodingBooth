@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Catalog version pins refreshed for 0.78.0.** Script defaults/fallbacks,
+  template defaults, and suggests lists now agree on current stables: buf
+  `1.73.0`, PostgREST `16.3`, Kotlin `2.4.20`, lazysql `0.5.7`, lazygit
+  `0.65.1`, Fira Code Nerd Font `3.5.1`, Scala `3.9.0`, Julia `1.13.0`.
+
 - **Fixed the base image's arm64 build failing on `just--setup.sh`.** Cross-building
   `linux/arm64` under QEMU emulation made GNU tar fail extracting the `just` release
   tarball's `completions/` directory (`tar: completions/just.zsh: Cannot open: Invalid

@@ -2,7 +2,7 @@
 # Hand-written after generation: teaching comments plus version-pinned `run pip install` / `dotnet tool install` that playwright+python+dotnet do not emit.
 # Configured by: booth config --no-tui --overwrite --select nodejs/python/java+maven/dotnet/go/playwright:chromium,1.58.0+java+dotnet
 
-env APT_SNAPSHOT=20260722T000000Z
+env APT_SNAPSHOT=20260916T000000Z
 
 arg DOTNET_CHANNEL=9.0
 arg GO_VERSION=1.25.7
