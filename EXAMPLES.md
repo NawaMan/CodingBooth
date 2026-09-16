@@ -64,8 +64,11 @@ or fetches the right image, and brings the environment up. Unless the example ru
 open **http://localhost:10000** in your browser to reach the UI.
 
 Every booth ships `just`. If the example has a `Justfile` (language apps and servers do; empty and
-tooling-only examples do not), **`just --list`** inside the booth shows the recipes — `just run`,
-`just test`, `just start` / `just stop`, or `just server` / `just client` for two-process stacks.
+tooling-only examples do not), **`just --list`** shows the recipes — `just run`, `just test`,
+`just start` / `just stop`, or `just server` / `just client` for two-process stacks. These recipes
+also work straight from the host (if you have `just` installed there too): outside a booth they
+auto-wrap in `./booth exec --run --`, which brings up the booth if needed and tears it down
+afterwards, so `just run` behaves the same whether you're inside the booth or not.
 
 A concrete run:
 

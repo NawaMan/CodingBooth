@@ -1,8 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Install deps and serve on :8000
 run:
-    pip install -r requirements.txt
-    python manage.py runserver 0.0.0.0:8000
+    {{run}} bash -c 'pip install -r requirements.txt && python manage.py runserver 0.0.0.0:8000'

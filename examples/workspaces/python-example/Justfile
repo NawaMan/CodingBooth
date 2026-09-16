@@ -1,7 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Print a Python environment check
 run:
-    python Main.py
+    {{run}} python Main.py

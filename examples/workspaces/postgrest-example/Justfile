@@ -1,14 +1,15 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Load the demo product catalog into PostgreSQL (idempotent, safe to re-run)
 seed:
-    psql -d postgres -f seed.sql
+    {{run}} psql -d postgres -f seed.sql
 
-# Walk through the API: list all products, a fuzzy name search (pg_trgm), and
-# a nearest-neighbor similarity search (pgvector) via a PostgREST RPC call
-demo:
+[private]
+demo-impl:
     #!/usr/bin/env bash
     set -euo pipefail
     echo "== All products =="
@@ -26,3 +27,8 @@ demo:
         -H "Content-Type: application/json" \
         -d '{"query_embedding": [0.75, 0.2, 0.05], "match_count": 2}'
     echo ""
+
+# Walk through the API: list all products, a fuzzy name search (pg_trgm), and
+# a nearest-neighbor similarity search (pgvector) via a PostgREST RPC call
+demo:
+    {{run}} just demo-impl

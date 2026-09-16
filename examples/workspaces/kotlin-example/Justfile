@@ -1,7 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Compile and run Fibonacci (`just run 10`)
 run *args:
-    ./run-fibonacci.sh {{ args }}
+    {{run}} ./run-fibonacci.sh {{ args }}

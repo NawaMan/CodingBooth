@@ -1,11 +1,13 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Compile the Maven project
 build:
-    mvn -q compile
+    {{run}} mvn -q compile
 
 # Clean, package, and run Person
 run:
-    ./run-on-container.sh
+    {{run}} ./run-on-container.sh

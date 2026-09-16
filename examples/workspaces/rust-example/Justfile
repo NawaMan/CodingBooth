@@ -1,15 +1,17 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Compile the FizzBuzz binary
 build:
-    cargo build
+    {{run}} cargo build
 
 # Run FizzBuzz (default range 1–15)
 run *args:
-    ./run-fizzbuzz.sh {{ args }}
+    {{run}} ./run-fizzbuzz.sh {{ args }}
 
 # Run cargo tests
 test:
-    ./run-rust-test.sh
+    {{run}} ./run-rust-test.sh

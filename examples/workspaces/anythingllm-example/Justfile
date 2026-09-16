@@ -1,7 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Wait for AnythingLLM and print /api/ping
 run:
-    ./demo.sh
+    {{run}} ./demo.sh

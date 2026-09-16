@@ -1,19 +1,25 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+# Same, but keeps the booth (and its DinD sidecar, which holds the cluster)
+# running afterwards -- a plain --run would tear both down as soon as
+# start-cluster.sh returns, taking the KinD cluster with it.
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --keep-alive --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Create the KinD cluster
 start:
-    ./start-cluster.sh
+    {{run-in-booth}} ./start-cluster.sh
 
 # Deploy the sample app
 deploy:
-    ./deploy-app.sh
+    {{run}} ./deploy-app.sh
 
 # Check cluster status (`just check down`)
 check expect="up":
-    ./check-cluster.sh --expect={{ expect }}
+    {{run}} ./check-cluster.sh --expect={{ expect }}
 
 # Delete the cluster
 stop:
-    ./stop-cluster.sh
+    {{run}} ./stop-cluster.sh

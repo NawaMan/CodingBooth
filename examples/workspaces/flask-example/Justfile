@@ -1,7 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Install deps and serve on :5555
 run:
-    ./run.sh
+    {{run}} ./run.sh

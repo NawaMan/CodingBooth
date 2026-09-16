@@ -1,27 +1,35 @@
+# Wrapped commands auto-run inside the booth when called from the host
+# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+# Same, but keeps the booth (and its DinD sidecar, which holds the cluster)
+# running afterwards -- a plain --run would tear both down as soon as
+# start-cluster.sh returns, taking the KinD cluster with it.
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --keep-alive --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Create the KinD cluster
 start:
-    ./start-cluster.sh
+    {{run-in-booth}} ./start-cluster.sh
 
 # Build the app images
 build:
-    ./build.sh
+    {{run}} ./build.sh
 
 # Deploy the TODO app
 deploy:
-    ./deploy-app.sh
+    {{run}} ./deploy-app.sh
 
 # Port-forward the UI
 access:
-    ./access-app.sh
+    {{run}} ./access-app.sh
 
 # One-shot health check
 check:
-    ./status.sh
+    {{run}} ./status.sh
 
 # Delete the cluster
 stop:
-    ./stop-cluster.sh
+    {{run}} ./stop-cluster.sh

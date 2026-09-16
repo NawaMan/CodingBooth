@@ -1,11 +1,13 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Roll dice (`just run 2d6`)
 run *args:
-    ./run-dice.sh {{ args }}
+    {{run}} ./run-dice.sh {{ args }}
 
 # Run Deno tests
 test:
-    ./run-deno-test.sh
+    {{run}} ./run-deno-test.sh

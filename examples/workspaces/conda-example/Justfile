@@ -1,7 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Print stats for a list of numbers (`just run 1 2 3 4 5`)
 run *args:
-    ./run-stats.sh {{ args }}
+    {{run}} ./run-stats.sh {{ args }}

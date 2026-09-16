@@ -1,7 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Check a palindrome (`just run racecar`)
 run *args:
-    ./run-palindrome.sh {{ args }}
+    {{run}} ./run-palindrome.sh {{ args }}

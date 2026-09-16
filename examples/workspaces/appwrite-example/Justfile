@@ -1,7 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Wait for the local Appwrite, print CLI version and API health
 run:
-    ./demo.sh
+    {{run}} ./demo.sh

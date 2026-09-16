@@ -1,7 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Compile the Maven sample (`jenv local 21` first to pick a JDK)
 build:
-    mvn -q compile
+    {{run}} mvn -q compile

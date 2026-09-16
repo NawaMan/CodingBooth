@@ -1,7 +1,9 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Run the R sample
 run:
-    ./run-r.sh
+    {{run}} ./run-r.sh

@@ -4,6 +4,26 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Every example workspace's `Justfile` now auto-wraps its recipes in
+  `./booth exec --run --` when run from the host, so `just <recipe>` works
+  the same whether you're inside the booth or not.** A `run` variable
+  (`run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }`)
+  resolves to nothing once already inside a booth (`BOOTH_CONTAINER_NAME` is
+  set there — the same marker the `booth` wrapper itself uses for nested-booth
+  detection), so recipe bodies are unchanged for the existing inside-the-booth
+  workflow. Compound/multi-step recipe bodies (`npm install && npm start`,
+  `pip install -r requirements.txt` followed by a server) are collapsed into a
+  single `bash -c '...'` invocation so the whole step runs as one `exec`
+  call — a bare prefix would otherwise only wrap the first sub-command and
+  leak the rest onto the host shell. A second `run-in-booth` variable
+  (`--run --keep-alive --`) is used instead wherever a recipe starts something
+  meant to outlive the command itself (a DinD sidecar, a self-daemonizing
+  dev server) — a plain `--run` would tear the booth, and whatever it just
+  started, down again the moment the script returns. A few recipes are left
+  unwrapped on purpose: ones that drive a booth's desktop directly (Wails'
+  `run`, the Android emulator flow) have nothing for a fresh ephemeral booth
+  to show, and `wails-example`'s `build-ios` only ever runs on a macOS host.
+
 - **New `postgresql+pg-ext-pkg` extension enables common PostgreSQL extensions
   (experimental).** `postgresql+pg-ext-pkg:pgvector,pg_trgm` apt-installs the
   packages behind each named extension (`pg_trgm`, `hstore`, `uuid-ossp`,

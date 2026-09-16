@@ -1,11 +1,16 @@
+# Wrapped commands auto-run inside the booth when called from the host
+# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
+# Not used on `emulator`/`run`: both drive this booth's XFCE desktop (AVD
+# window, adb) you're already looking at in the browser, so there's nothing
+# useful for a fresh ephemeral booth to do there.
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
-# Debug APK via Wails' Android Taskfile (NDK → libwails.so → Gradle).
-# Needs ANDROID_HOME from the wails+android booth; just exports the booth paths
-# so a non-login shell (`booth -- just build`) sees them too.
-build:
+[private]
+build-impl:
     #!/usr/bin/env bash
     set -euo pipefail
     SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/opt/android-sdk}}"
@@ -30,16 +35,26 @@ build:
     wails3 task android:assemble:apk
     ls -lh bin/booth-counter.apk
 
+# Debug APK via Wails' Android Taskfile (NDK → libwails.so → Gradle).
+# Needs ANDROID_HOME from the wails+android booth; just exports the booth paths
+# so a non-login shell (`booth -- just build`) sees them too.
+build:
+    {{run}} just build-impl
+
 # Native Linux GUI binary — same app, desktop target. Needs GTK; no APK.
 desktop:
-    wails3 build
+    {{run}} wails3 build
 
 # Start the AVD on this booth's XFCE desktop. Extra args go to the emulator
 # (`just emulator -- -no-window`). cb-android-emulator picks KVM vs -accel off.
+# Run this inside the booth (open its desktop tab first) — it drives a GUI
+# window there, which a fresh ephemeral booth from the host has no view of.
 emulator *args:
     cb-android-emulator {{ args }}
 
 # Build the APK, boot the emulator if needed, install and launch the counter.
+# Run this inside the booth, same as `emulator` — it needs the AVD already
+# on this booth's desktop.
 run:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -72,8 +87,8 @@ run:
     adb shell am start -n com.wails.app/com.wails.app.MainActivity
     echo "Launched Booth counter on the emulator"
 
-# What Wails / the Android SDK think of this booth
-doctor:
+[private]
+doctor-impl:
     #!/usr/bin/env bash
     set -euo pipefail
     wails3 doctor
@@ -81,3 +96,7 @@ doctor:
     echo "=== Android SDK ==="
     echo "ANDROID_HOME=${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/opt/android-sdk}}"
     command -v sdkmanager && sdkmanager --list_installed 2>/dev/null | head -20 || true
+
+# What Wails / the Android SDK think of this booth
+doctor:
+    {{run}} just doctor-impl

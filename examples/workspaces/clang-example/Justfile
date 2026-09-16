@@ -1,16 +1,17 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Configure and compile the prime sieve
 build:
-    cmake -S . -B build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release
-    cmake --build build -j
+    {{run}} bash -c 'cmake -S . -B build -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release && cmake --build build -j'
 
 # Build and run (`just run 20`, `just run --json 20`)
 run *args:
-    ./run-primes.sh {{ args }}
+    {{run}} ./run-primes.sh {{ args }}
 
 # Run CTest (primes_default)
 test: build
-    ctest --test-dir build --output-on-failure
+    {{run}} ctest --test-dir build --output-on-failure

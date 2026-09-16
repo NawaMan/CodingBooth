@@ -1,21 +1,38 @@
+# Wrapped commands auto-run inside the booth when called from the host
+# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
+# Not used on `run`: it drives this booth's XFCE desktop directly (exec's the
+# GUI binary), so a fresh ephemeral booth from the host has no display to show
+# it on. Not used on `build-ios` either: that one only ever runs on a macOS
+# host, never inside a (Linux) booth at all.
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+# Same, but keeps the booth (and its DinD sidecar, which caches the
+# wails-cross image) running afterwards -- a plain --run would tear both
+# down right after the script returns, losing the ~800MB cross-build image
+# and forcing a full rebuild on the next macOS/build-all call.
+run-in-booth := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --keep-alive --" } else { "" }
+
 [private]
 default:
     @just --list
 
 # Native Linux GUI binary (needs GTK4/WebKitGTK 6.0 to compile, a desktop to run)
 build:
-    wails3 build
+    {{run}} wails3 build
 
-# Windows amd64 + arm64 from Linux — no Docker, CGO_ENABLED=0.
-# Wails writes both arches to bin/booth-counter.exe, so rename after each
-# build or the second clobbers the first.
-build-windows:
+[private]
+build-windows-impl:
     #!/usr/bin/env bash
     set -euo pipefail
     wails3 build GOOS=windows GOARCH=amd64
     mv -f bin/booth-counter.exe bin/booth-counter-windows-amd64.exe
     wails3 build GOOS=windows GOARCH=arm64
     mv -f bin/booth-counter.exe bin/booth-counter-windows-arm64.exe
+
+# Windows amd64 + arm64 from Linux — no Docker, CGO_ENABLED=0.
+# Wails writes both arches to bin/booth-counter.exe, so rename after each
+# build or the second clobbers the first.
+build-windows:
+    {{run}} just build-windows-impl
 
 # Build the wails-cross image if it is missing (Zig + macOS SDK, ~800MB, once).
 [private]
@@ -49,17 +66,23 @@ ensure-wails-cross:
         -f build/docker/Dockerfile.cross \
         build/docker
 
-# macOS amd64 + arm64 via wails-cross (builds the image if needed)
-build-macos: ensure-wails-cross
+[private]
+build-macos-impl:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    just ensure-wails-cross
     ./cross-docker.sh darwin arm64
     ./cross-docker.sh darwin amd64
 
-# Every desktop target: native Linux, Windows, other-arch Linux, macOS.
-# Builds wails-cross on first use. Docker targets use a named volume, not a
-# bind mount — DinD cannot see /home/coder/code.
-build-all: ensure-wails-cross
+# macOS amd64 + arm64 via wails-cross (builds the image if needed)
+build-macos:
+    {{run-in-booth}} just build-macos-impl
+
+[private]
+build-all-impl:
     #!/usr/bin/env bash
     set -euo pipefail
+    just ensure-wails-cross
     host_arch="$(uname -m)"
     case "$host_arch" in
         x86_64|amd64) host_goarch=amd64; other_goarch=arm64 ;;
@@ -82,9 +105,16 @@ build-all: ensure-wails-cross
     echo "Built:"
     ls -lh bin/
 
+# Every desktop target: native Linux, Windows, other-arch Linux, macOS.
+# Builds wails-cross on first use. Docker targets use a named volume, not a
+# bind mount — DinD cannot see /home/coder/code.
+build-all:
+    {{run-in-booth}} just build-all-impl
+
 # Run the GUI on this booth's XFCE desktop.
 # WebKitGTK's bubblewrap sandbox cannot create user namespaces in a booth.
 # Exec the binary directly (not `wails3 task run`) so the env cannot be lost.
+# Run this inside the booth (open its desktop tab first) — see `run` above.
 run:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -96,8 +126,8 @@ run:
     echo "WebKit sandbox disabled (booth has no user namespaces)"
     exec ./bin/booth-counter
 
-# Debug APK. Needs the Android SDK + NDK (`wails+android`); not in the default booth.
-build-android:
+[private]
+build-android-impl:
     #!/usr/bin/env bash
     set -euo pipefail
     SDK="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-/opt/android-sdk}}"
@@ -123,7 +153,13 @@ build-android:
     wails3 task android:assemble:apk
     ls -lh bin/booth-counter.apk
 
+# Debug APK. Needs the Android SDK + NDK (`wails+android`); not in the default booth.
+build-android:
+    {{run}} just build-android-impl
+
 # iOS simulator .app. Needs macOS + full Xcode — a Linux booth cannot do this.
+# Always runs on the host directly (see `run` above) — there is no point
+# routing this through a Linux booth.
 build-ios:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -142,4 +178,4 @@ build-ios:
 
 # What Wails thinks of this booth
 doctor:
-    wails3 doctor
+    {{run}} wails3 doctor
