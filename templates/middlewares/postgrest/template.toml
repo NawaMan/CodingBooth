@@ -19,7 +19,7 @@ tags = [
 
 [params.POSTGREST_VERSION]
 default = "latest"
-suggests = ["latest", "16.2"]
+suggests = ["latest", "16.3"]
 
 [params.POSTGREST_PORT]
 default = "3000"

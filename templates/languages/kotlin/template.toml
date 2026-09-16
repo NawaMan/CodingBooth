@@ -10,7 +10,7 @@ requires = ["java"]
 
 [params.KOTLIN_VERSION]
 default = "latest"
-suggests = ["latest", "2.4.10", "2.0.20", "1.9.24"]
+suggests = ["latest", "2.4.20", "2.4.10", "2.0.20"]
 
 [segments]
 "Boothfile--60" = """

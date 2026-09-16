@@ -15,7 +15,7 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 HOME=/root
 
 # --- Defaults ---
-JULIA_VERSION="${1:-1.12.7}"
+JULIA_VERSION="${1:-1.13.0}"
 
 LEVEL=60
 

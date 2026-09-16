@@ -50,7 +50,7 @@ if ! command -v curl >/dev/null 2>&1 || ! command -v tar >/dev/null 2>&1 || ! co
 fi
 
 # Known-good pin for when the GitHub API is rate-limited or returns minified JSON.
-FALLBACK_VERSION="16.2"
+FALLBACK_VERSION="16.3"
 
 if [[ "$REQ_VER" == "latest" ]]; then
   VERSION=$(curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL \

@@ -10,8 +10,8 @@ tags = [
 requires = ["java"]
 
 [params.SCALA_VERSION]
-default = "3.8.4"
-suggests = ["3.8.4", "3.5.1", "2.13.14"]
+default = "3.9.0"
+suggests = ["3.9.0", "3.8.4", "3.5.1"]
 
 [segments]
 "Boothfile--60" = """
