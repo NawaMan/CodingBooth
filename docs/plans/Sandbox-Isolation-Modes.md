@@ -48,9 +48,18 @@ needs a rework — hence largest effort and lowest priority.
 
 ## Why `sbx` and `kata` are experimental
 
-- **`sbx`** — pre-1.0 (`v0.39.0`, Aug 2026) despite the "GA" framing; actively breaking its CLI
-  (`sbx run <name>` → `sbx run --name <name>`, `sbx policy set-default` → `sbx policy init`); still
-  fixing core daemon hangs. Six releases landed between v0.33.0 and v0.39.0 without reaching 1.0.
+- **`sbx`** — still pre-1.0 (`v0.43.0`, reviewed 2026-09-15, up from the `v0.39.0` baseline) despite
+  the "GA" framing; still actively breaking its CLI/config surface release over release —
+  `v0.42.0` deprecated `sbx run <kit-name> --kit <kit-ref>` in favor of `sbx run <kit-ref>` as the
+  agent positional (yet another CLI-surface change, on top of the earlier `sbx run <name>` →
+  `sbx run --name <name>` and `sbx policy set-default` → `sbx policy init` breaks) and changed
+  `--publish`'s default from dual-stack to `tcp4`-only; `v0.43.0` renamed `shareSkills` → `skills`
+  in `sbxenv.yaml` and changed the secret-storage key format for MCP OAuth client secrets (an old
+  secret silently stops being read). `v0.42.0` also fixed two sandbox-escape-adjacent security
+  vulnerabilities (an arbitrary host command execution via D-Bus, and an OAuth callback-port
+  hijack) — still finding and fixing that class of bug pre-1.0. None of this breaks anything today
+  (no code shells out to `sbx` yet), but it's the same pattern that keeps this experimental: revisit
+  at 1.0. See `.github/workflows/sbx-watch.yaml` issues #21/#22 for the full release notes reviewed.
   Since the integration shells out to that CLI, upstream breakage breaks us. Also: don't bundle the
   binary (proprietary, no redistribution grant) — detect + delegate only.
 - **`kata`** — the mechanism is mature, but *our* integration (KVM detection + VM networking) is
