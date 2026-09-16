@@ -22,3 +22,10 @@ codingbooth\.io/tour(/|$)
 # Template placeholders like ${rel_url} in issue/workflow templates aren't real
 # links; the URL-encoded "${" is "$%7B". Skip anything containing one.
 \$%7B
+
+# codingbooths.online is the GA domain for the separate CodingBooths.online showcase
+# SaaS (see docs/BOOTH_SHOWCASE.md) that `booth showcase` talks to — not yet launched,
+# so DNS doesn't resolve. The CLI's actual default, dev.codingbooths.online, is live
+# and stays checked. Remove this line once the SaaS ships its GA domain (see
+# pkg/showcase/client.go's defaultBaseURL, which flips at the same time).
+^https?://codingbooths\.online(/|$)
