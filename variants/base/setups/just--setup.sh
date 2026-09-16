@@ -68,7 +68,12 @@ fi
 echo "⬇️  Installing just ${VERSION} (${TARGET}) ..."
 TMP="$(mktemp -d)"; trap 'rm -rf "$TMP"' EXIT
 curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "https://github.com/casey/just/releases/download/${VERSION}/just-${VERSION}-${TARGET}.tar.gz" -o "$TMP/just.tar.gz"
-tar -xzf "$TMP/just.tar.gz" -C "$TMP"
+# Extract only the binary. The tarball's completions/ (bash/zsh/fish/...) are
+# never used below (bash completion is generated separately via `just
+# --completions bash`) and, on arm64 builds cross-built under QEMU, extracting
+# them fails the whole build: `tar: completions/just.zsh: Cannot open: Invalid
+# argument` — a QEMU-user-emulation/GNU-tar interaction, not a corrupt archive.
+tar -xzf "$TMP/just.tar.gz" -C "$TMP" just
 install -m 755 "$TMP/just" /usr/local/bin/just
 
 install -d /etc/bash_completion.d
