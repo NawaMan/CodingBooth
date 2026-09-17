@@ -1,5 +1,9 @@
 display-name = "pip requirements"
 display-disc = "pip requirements.txt package installation"
+display-detail = """Installs the packages listed in your project's .booth/requirements.txt with pip, baking them \
+into the booth image at build time. This is for your project's own dependencies, declared in your \
+requirements file, as opposed to the pip Packages extension's ad hoc dev tools. If the file is \
+missing, the build still succeeds and this step is skipped."""
 display-order = 12
 auto-select = false
 tags = [

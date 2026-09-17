@@ -1,5 +1,9 @@
 display-name = "Docker-in-Docker (for sam local)"
 display-disc = "Enable DinD for sam local invoke/start-api"
+display-detail = """Enables Docker-in-Docker (DinD) so `sam local invoke`/`start-api` can launch the Lambda \
+runtime containers they depend on. Like the standalone Docker-in-Docker template, this runs the DinD \
+sidecar privileged, so code in the booth can reach its daemon and use it to step outside the booth's \
+isolation and touch the host. Only select this for booths whose code you trust."""
 tags = ["aws", "sam", "dind", "docker"]
 
 dind = true
