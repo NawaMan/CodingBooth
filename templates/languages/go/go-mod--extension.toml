@@ -1,5 +1,9 @@
 display-name = "go mod download"
 display-disc = "Pre-download Go module dependencies into the image"
+display-detail = """Pre-downloads your project's Go module dependencies from go.mod/go.sum into the image's module \
+cache at build time, so a later `go build` inside the booth resolves them from cache instead of the \
+network. This is for your project's own dependencies, as opposed to the go Packages extension's ad \
+hoc dev tools. If go.mod is missing, the build still succeeds and this step is skipped."""
 display-order = 15
 auto-select = false
 tags = ["go", "packages"]

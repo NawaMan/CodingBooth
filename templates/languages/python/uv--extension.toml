@@ -1,5 +1,9 @@
 display-name = "uv"
 display-disc = "UV fast Python package manager"
+display-detail = """Installs the packages listed in your project's .booth/requirements.txt with `uv pip install`, \
+baking them into the booth image at build time -- the same requirements.txt as the pip extension, \
+resolved considerably faster. Also enables the `install uv <packages>` Boothfile directive used by \
+the uv Packages extension. If the file is missing, the build still succeeds and this step is skipped."""
 display-order = 10
 auto-select = false
 tags = [
