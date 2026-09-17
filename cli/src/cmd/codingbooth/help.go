@@ -175,7 +175,7 @@ CONTAINER MODE:
   --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
   --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)
   --log-time             Prefix progress messages with timestamps
-  --console-spec <mode>  Save the base variant console's layout/tabs as they change:
+  --console-spec <mode>  Save the Console UI's layout/tabs to disk as they change:
                          "shared" to .booth/console.json (needs --writable-booth to
                          persist), "cache" to .booth/.tmp/console.json (always writable)
 
@@ -273,7 +273,7 @@ CONTAINER MODE:
   --writable-booth       Allow writing to .booth/ inside the container
   --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)
   --log-time             Prefix progress messages with timestamps
-  --console-spec <mode>  Save the base variant console's layout/tabs as they change:
+  --console-spec <mode>  Save the Console UI's layout/tabs to disk as they change:
                          "shared" to .booth/console.json (needs --writable-booth to
                          persist), "cache" to .booth/.tmp/console.json (always writable)
 

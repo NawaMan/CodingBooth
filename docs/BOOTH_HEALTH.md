@@ -167,7 +167,7 @@ The endpoints are defined in the shared wrapper nginx template:
 - Rendered at container start by `start-booth-wrapped` using `envsubst` against the runtime environment.
 - Inner service URL is `http://127.0.0.1:${INNER_PORT}/`, where `INNER_PORT` is set by the variant-specific `start-<variant>-wrapped` script.
 
-For the terminal (ttyd-split) variant:
+For the Console UI (base variant's browser terminal):
 
 - Template source: [`variants/base/web-ttyd-split/nginx.conf.template`](../variants/base/web-ttyd-split/nginx.conf.template), rendered by `start-ttyd-split`.
 - It probes `http://127.0.0.1:10001/s1` — session 1's ttyd, at the un-slashed base path. ttyd answers that with an empty 302, which the `error_page` list turns into this endpoint's own `ok` body; asking for `/s1/` would get a 200 instead, and `error_page` cannot intercept a 200, so the whole terminal page would come back as the health response.
