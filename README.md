@@ -231,7 +231,7 @@ booth [flags] [-- command...]
 | `--show-run-time [epoch]` | Display elapsed session time in the lifecycle panel ([details](docs/BOOTH_RUNTIME.md)) |
 | `--show-count-down <epoch>` | Display countdown timer to a deadline ([details](docs/BOOTH_RUNTIME.md))         |
 | `--count-down-exit-code <code>` | Exit code when countdown expires (default: 0) ([details](docs/BOOTH_RUNTIME.md)) |
-| `--console-spec <shared\|cache>` | Save the console's layout/tabs back to `.booth/console.json` (`shared`) or `.booth/.tmp/console.json` (`cache`) as they change ([details](docs/BOOTH_CONSOLE.md)) |
+| `--console-spec <shared\|cache>` | Save the Console UI's layout/tabs back to `.booth/console.json` (`shared`) or `.booth/.tmp/console.json` (`cache`) as they change ([details](docs/BOOTH_CONSOLE.md)) |
 | `--log-time`         | Prefix progress messages with timestamps (HH:MM:SS)                              |
 | `--leave-tmp-on-exit`| Preserve `.booth/.tmp/` contents on exit for debugging                            |
 | `--keep-tmp-on-start`| Preserve `.booth/.tmp/` from previous session on start                            |
@@ -341,7 +341,7 @@ CodingBooth is highly customizable. You can tailor how your environments run by 
 - **[Booth Customization Guide](docs/BOOTH_CUSTOMIZATION.md)** — Setup scripts, install scripts, templates, and reusable recipes.
 - **[Boothfile Reference](docs/implementations/BOOTHFILE.md)** — The simplified, script-like format for defining container environments.
 - **[Home Directory Guide](docs/BOOTH_HOME.md)** — Seeding dotfiles, credentials, and home directory precedence rules.
-- **[Console Layout Guide](docs/BOOTH_CONSOLE.md)** — Checking in the base variant's starting split layout and pre-opened Web view tabs.
+- **[Console Layout Guide](docs/BOOTH_CONSOLE.md)** — Checking in the Console UI's (the Booth console web UI, base variant's browser terminal) starting split layout and pre-opened Web view tabs.
 
 ### The `.booth/` Folder (Quick Overview)
 
@@ -351,7 +351,7 @@ All booth configuration lives in a single `.booth/` folder in your project root:
 my-project/
 └── .booth/
     ├── config.toml     # Launcher configuration
-    ├── console.json    # Base variant's starting console layout (optional)
+    ├── console.json    # Console UI's starting layout (optional)
     ├── Boothfile       # Simplified build script (optional, preferred)
     ├── Dockerfile      # Custom Docker build (optional, fallback)
     ├── .env            # Personal env vars (optional, gitignored)

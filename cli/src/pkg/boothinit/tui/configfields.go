@@ -107,7 +107,7 @@ var fieldDisplays = []fieldDisplay{
 		Detail: "Allow writing to .booth/ inside the container.\nBy default, .booth/ is mounted read-only."},
 	{Key: "console-spec", Label: "Console Spec", Group: "Container",
 		Options: []string{"", "shared", "cache"},
-		Detail:  "Save the base variant console's layout/tabs as they change.\n\n(default) = off — console.json (if present) is still read\nshared = .booth/console.json (needs Writable .booth/\nto actually persist)\ncache = .booth/.tmp/console.json (always writable,\nnever git-committed)"},
+		Detail:  "Save the Console UI's (base variant's browser terminal)\nlayout/tabs back to disk as you change them, instead of\nonly remembering them in this browser.\n\n(default) = off — console.json (if present) still sets\nthe starting layout, but changes are never written back\nshared = writes to .booth/console.json, so the new\nlayout becomes the committed default for everyone\n(needs Writable .booth/ to actually persist)\ncache = writes to .booth/.tmp/console.json, just for\nyour own next session on this machine (always writable,\nnever git-committed)"},
 	{Key: "persist-home", Label: "Persist Home", Group: "Container",
 		Detail: "Keep /home/coder in a named volume across runs.\nWithout this, everything outside the mounted code\ndirectory is lost when the container goes away."},
 	{Key: "project-name", Label: "Project Name", Group: "Container",
