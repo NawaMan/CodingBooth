@@ -1,8 +1,8 @@
 # Console Layout
 
-> Check in the starting layout and Web view tabs for the base variant's console — so opening the booth looks the same for everyone, on any machine.
+> Check in the starting layout and Web view tabs for the Booth console web UI (the base variant's browser terminal) — so opening the booth looks the same for everyone, on any machine.
 
-`.booth/console.json` sets the console's starting split layout and pre-opens Web view tabs in specific panes. It only ever supplies a *default*: the moment you customize a pane yourself (switch it to Web view, open or close a tab, resize the split), that customization is remembered in your browser and wins over the file on every later load — the file only fills in a pane nobody has touched yet in this browser.
+The **Booth console web UI** — "Console UI" for short — is the base variant's browser terminal: it splits into up to four panes, each either a plain terminal or a Web view holding its own tabs. `.booth/console.json` sets the Console UI's starting split layout and pre-opens Web view tabs in specific panes. It only ever supplies a *default*: the moment you customize a pane yourself (switch it to Web view, open or close a tab, resize the split), that customization is remembered in your browser and wins over the file on every later load — the file only fills in a pane nobody has touched yet in this browser.
 
 ```json
 {
@@ -32,7 +32,7 @@ Back to [README](../README.md)
 
 ## Overview
 
-The base variant's default console (`web-ttyd-split`) splits into up to four panes, each either a terminal or a Web view holding its own tabs. Normally you build that layout by hand each time — pick a split, click the globe on a pane, type an address. `.booth/console.json` lets a project check in that starting point instead, so a teammate (or you, on a different machine) opens the booth to the same layout every time, without repeating the clicks.
+The Console UI is the base variant's default screen: a browser terminal that splits into up to four panes, each either a terminal or a Web view holding its own tabs. Normally you build that layout by hand each time — pick a split, click the globe on a pane, type an address. `.booth/console.json` lets a project check in that starting point instead, so a teammate (or you, on a different machine) opens the booth to the same layout every time, without repeating the clicks.
 
 The file is:
 - **Per-project** — lives inside `.booth/`, scoped to this project
@@ -97,7 +97,7 @@ This means editing the file after the fact doesn't retroactively change anyone's
 
 ## Saving Layout Changes Back
 
-By default, `console.json` only ever flows one way: the container reads it at boot, but your later customizing (switching a pane to Web view, opening tabs, resizing) is remembered in `localStorage` only — the file on disk never changes. `--console-spec <mode>` (or `console-spec = "..."` in `.booth/config.toml`) turns on saving the current layout and tabs back to the file itself, so the *next* fresh browser — a teammate, or you on another machine — starts from what you last had, without anyone editing JSON by hand.
+By default, `console.json` only ever flows one way: the container reads it at boot, but your later customizing of the Console UI (switching a pane to Web view, opening tabs, resizing) is remembered in `localStorage` only — the file on disk never changes. `--console-spec <mode>` (or `console-spec = "..."` in `.booth/config.toml`) turns on saving the current layout and tabs back to the file itself, so the *next* fresh browser — a teammate, or you on another machine — starts from what you last had, without anyone editing JSON by hand.
 
 Two modes:
 
@@ -114,7 +114,7 @@ Saving is automatic and debounced: there's no explicit "save" button, it just ha
 
 **Caveat: takes effect on next restart, not live.** `index.html` is rendered once, from `console.json`'s contents at that moment, when the container boots — the same static page is then served for the container's entire lifetime. A save updates the file on disk right away, but the *currently running* container keeps serving the page it already rendered, so even a brand-new browser tab against that same running container won't see the change until the container restarts. This mirrors the read-only file's own load-once behavior — it isn't unique to saving.
 
-This setting is only meaningful for the base variant's split console — other variants and layouts ignore it, so it's harmless to leave set in a shared `config.toml` that's used across variants.
+This setting is only meaningful for the Console UI — other variants ignore it, so it's harmless to leave set in a shared `config.toml` that's used across variants.
 
 ---
 
