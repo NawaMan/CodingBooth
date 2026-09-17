@@ -7,7 +7,7 @@
 set -euo pipefail
 
 echo "=== Testing APT_SNAPSHOT freeze ==="
-EXPECTED="20250601T000000Z"
+EXPECTED="20260916T000000Z"
 ACTUAL="$(printenv APT_SNAPSHOT || true)"
 echo "APT_SNAPSHOT=${ACTUAL}"
 

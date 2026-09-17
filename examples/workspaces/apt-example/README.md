@@ -1,6 +1,6 @@
 # Apt Example
 
-This example installs Debian/Ubuntu system packages with `install apt` on top of the base booth. It installs jq, tree, and ripgrep while pinning `APT_SNAPSHOT=20250601T000000Z` to freeze the entire Ubuntu archive to a point in time. Reproducibility: an apt archive snapshot freezes the whole package set — including transitive dependencies you never named — so every rebuild resolves identical versions. Pinning one package version isn't enough, because the live archive keeps moving underneath you and a bare version pin stops resolving once a newer build lands; freezing the snapshot keeps the entire dependency graph installable for years. Build the image today or next spring and you get byte-for-byte the same system packages — the honest reproducibility apt normally can't promise.
+This example installs Debian/Ubuntu system packages with `install apt` on top of the base booth. It installs jq, tree, and ripgrep while pinning `APT_SNAPSHOT=20260916T000000Z` to freeze the entire Ubuntu archive to a point in time. Reproducibility: an apt archive snapshot freezes the whole package set — including transitive dependencies you never named — so every rebuild resolves identical versions. Pinning one package version isn't enough, because the live archive keeps moving underneath you and a bare version pin stops resolving once a newer build lands; freezing the snapshot keeps the entire dependency graph installable for years. Build the image today or next spring and you get byte-for-byte the same system packages — the honest reproducibility apt normally can't promise.
 
 **Stack:** base workspace + apt-installed CLI tools
 
@@ -24,14 +24,14 @@ printenv APT_SNAPSHOT  # the snapshot the archive was frozen to
 |-----------|------------------------------------------------------|
 | Runtime   | base                                                 |
 | Packages  | `jq`, `tree`, `ripgrep`                              |
-| Pinning   | `APT_SNAPSHOT=20250601T000000Z` (whole-archive freeze) |
+| Pinning   | `APT_SNAPSHOT=20260916T000000Z` (whole-archive freeze) |
 
 ## How it works
 
 The `.booth/Boothfile` is just:
 
 ```
-env APT_SNAPSHOT=20250601T000000Z
+env APT_SNAPSHOT=20260916T000000Z
 
 install apt jq tree ripgrep
 ```
