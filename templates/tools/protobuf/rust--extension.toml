@@ -1,0 +1,24 @@
+display-name = "Rust protoc plugins"
+display-disc = "protoc-gen-prost and protoc-gen-tonic"
+display-detail = """Installs protoc-gen-prost (message codegen for the Prost! crate) and protoc-gen-tonic \
+(gRPC service codegen for the Tonic framework) as standalone protoc plugins on PATH, so plain \
+`protoc --prost_out=... --tonic_out=...` works from any language's build. In a Rust-only project, \
+prost-build/tonic-build from a build.rs is the more common path -- this extension is for polyglot \
+repos that drive codegen from protoc directly."""
+display-order = 20
+auto-select = false
+tags = [
+    "protobuf",
+    "protoc",
+    "rust",
+    "grpc",
+    "codegen",
+]
+
+requires = ["rust"]
+
+[segments]
+"Boothfile--60" = """
+install cargo protoc-gen-prost
+install cargo protoc-gen-tonic
+"""

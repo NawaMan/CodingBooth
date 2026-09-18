@@ -1,0 +1,22 @@
+display-name = "Ruby protoc plugin"
+display-disc = "grpc-tools for Ruby message and gRPC codegen"
+display-detail = """Installs the grpc-tools gem, which -- like the Python plugin, and unlike Go/Rust/Node's -- bundles \
+its own protoc rather than registering a plugin the system protoc discovers. Generate code with the \
+gem's own `grpc_tools_ruby_protoc --ruby_out=... --grpc_out=... file.proto`, not the bare `protoc` \
+command."""
+display-order = 50
+auto-select = false
+tags = [
+    "protobuf",
+    "protoc",
+    "ruby",
+    "grpc",
+    "codegen",
+]
+
+requires = ["ruby"]
+
+[segments]
+"Boothfile--60" = """
+install gem grpc-tools
+"""

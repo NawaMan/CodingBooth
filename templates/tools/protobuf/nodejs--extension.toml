@@ -1,0 +1,24 @@
+display-name = "Node.js/TypeScript protoc plugin"
+display-disc = "protoc-gen-ts_proto for TypeScript message and gRPC codegen"
+display-detail = """Installs ts-proto globally, which registers protoc-gen-ts_proto on PATH, so plain \
+`protoc --ts_proto_out=...` generates TypeScript types (and optional gRPC client/server code) from \
+your .proto files. ts-proto's own docs default to a per-project install \
+(node_modules/.bin/protoc-gen-ts_proto) -- a global install is untested by this catalog; report \
+success or failure."""
+display-order = 30
+auto-select = false
+tags = [
+    "protobuf",
+    "protoc",
+    "nodejs",
+    "typescript",
+    "grpc",
+    "codegen",
+]
+
+requires = ["nodejs"]
+
+[segments]
+"Boothfile--60" = """
+install npm ts-proto
+"""

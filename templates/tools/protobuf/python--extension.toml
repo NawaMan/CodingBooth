@@ -1,0 +1,22 @@
+display-name = "Python protoc plugin"
+display-disc = "grpcio-tools for Python message and gRPC codegen"
+display-detail = """Installs grpcio-tools, a self-contained compiler distinct from the other language plugins \
+here -- it bundles its own protoc rather than registering a plugin the system protoc discovers. \
+Generate code with `python -m grpc_tools.protoc --python_out=... --grpc_python_out=... file.proto`, \
+not the bare `protoc` command."""
+display-order = 40
+auto-select = false
+tags = [
+    "protobuf",
+    "protoc",
+    "python",
+    "grpc",
+    "codegen",
+]
+
+requires = ["python"]
+
+[segments]
+"Boothfile--60" = """
+install pip grpcio-tools
+"""
