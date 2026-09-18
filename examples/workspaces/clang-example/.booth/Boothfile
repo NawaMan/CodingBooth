@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --select clang/cmake/make/apt-pkg:nlohmann-json3-dev
 
-env APT_SNAPSHOT=20260906T000000Z
+env APT_SNAPSHOT=20260918T000000Z
 
 arg APT_PKGS=nlohmann-json3-dev
 arg CMAKE_VERSION=latest

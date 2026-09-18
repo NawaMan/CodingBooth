@@ -155,12 +155,58 @@ part that *does* need checking here: it can go stale against the images *this* r
 publish, the same way. Example Boothfiles are the case that actually bites — they get built and
 tested against whatever this release just shipped.
 
-```bash
-grep -rn 'env APT_SNAPSHOT=' examples/workspaces/*/.booth/Boothfile
+**The rule is: an example's snapshot must be at or after the base image's.** Not "recent" — *not
+older than the base*. The base is built at its own snapshot, so its installed packages are
+whatever that day's archive held. An example pinned earlier asks apt for an older `-dev` package
+whose exact-version dependency the base has already upgraded, and apt will not downgrade an
+installed package to satisfy it. The failure reads like a broken archive, not a stale pin:
+
+```
+libsqlite3-dev : Depends: libsqlite3-0 (= 3.45.1-1ubuntu2.7) but 3.45.1-1ubuntu2.8 is to be installed
+E: Unable to correct problems, you have held broken packages.
 ```
 
-Compare each date against today's. Offer to bump the stale ones (same `booth config` stamp format:
-`YYYYMMDDT000000Z`) — same shape as the version sweep above: report, wait, apply only what's picked.
+(That one is real: `systemlib-example` pinned `20260914`, the base was rebuilt at `20260918`, and
+Ubuntu shipped a sqlite security update in between.)
+
+**Compare against the base's snapshot, not today's date.** The two differ whenever the base is
+built on a later day than this check runs — and a base can be **rebuilt on the same version**,
+which moves its snapshot with no version change to warn anyone. Read it from the published image:
+
+```bash
+docker buildx imagetools inspect nawaman/codingbooth:base-<version> --format '{{json .Image}}' \
+  | grep -o 'APT_SNAPSHOT=[0-9]*T[0-9]*Z' | sort -u
+```
+
+Re-run this whole check after **any** base rebuild, not only at release.
+
+**Which examples it can actually break.** Only `apt--install.sh` reads `APT_SNAPSHOT` — that is,
+only a Boothfile's `install apt ...` line. Setups' own `apt-get` calls do not pass `--snapshot`;
+they install from the live archive, which is never older than the base. So most examples carry an
+`env APT_SNAPSHOT=` stamp that nothing consumes, and a stale date there is harmless. The ones that
+matter, as of 2026-09-18:
+
+| Example | Pinned | `install apt` packages | Risk |
+| --- | --- | --- | --- |
+| `systemlib-example` | `20260918` | `ca-certificates`, `libcurl4-openssl-dev`, `libsqlite3-dev`, `sqlite3` | **high** — `-dev` packages pin exact library versions; broke at `20260914` on the `20260918` base |
+| `clang-example` | `20260918` | `nlohmann-json3-dev` | medium — header-only, few exact-version deps |
+| `turtle-example` | `20260918` | `tk`, `xvfb` | medium — `xvfb` pulls X libs the base may carry newer |
+| `apt-example` | `20260918` | `jq`, `ripgrep`, `tree` | low — leaf packages; its test also asserts the exact snapshot, so bump that too (`inBooth-test004-apt-snapshot--in-booth.sh`) |
+
+The table drifts as examples are added. Regenerate it rather than trusting it:
+
+```bash
+grep -l '^install apt' examples/workspaces/*/.booth/Boothfile | while read -r bf; do
+  printf '%s  %s  %s\n' "$(basename "$(dirname "$(dirname "$bf")")")" \
+    "$(grep -o 'APT_SNAPSHOT=[0-9]*T[0-9]*Z' "$bf" | cut -d= -f2)" \
+    "$(grep -m1 '^arg APT_PKGS=' "$bf" | cut -d= -f2)"
+done
+```
+
+Report each one whose date is before the base's, and offer to bump it to the base's snapshot
+(same `booth config` stamp format: `YYYYMMDDT000000Z`) — same shape as the version sweep above:
+report, wait, apply only what's picked. Leave the unconsumed stamps on the other examples alone;
+bumping them is churn that fixes nothing.
 
 ### Go-ahead to drop the rc
 
