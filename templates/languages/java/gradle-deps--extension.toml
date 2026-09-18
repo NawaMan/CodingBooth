@@ -1,5 +1,10 @@
 display-name = "gradle dependencies"
 display-disc = "Pre-download Gradle dependencies into the image"
+display-detail = """Pre-downloads your project's Gradle dependencies from build.gradle(.kts) into the image's \
+Gradle cache (/opt/gradle-cache) at build time, so a later `gradle` command inside the booth resolves \
+them from cache instead of the network. This is for your project's own dependencies; it does not \
+build or package your code. If no build.gradle(.kts) is found, the build still succeeds and this \
+step is skipped."""
 display-order = 25
 auto-select = false
 tags = ["java", "gradle", "packages"]

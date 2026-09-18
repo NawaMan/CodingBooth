@@ -1,5 +1,9 @@
 display-name = "mvn dependency:resolve"
 display-disc = "Pre-download Maven dependencies into the image"
+display-detail = """Pre-downloads your project's Maven dependencies from pom.xml into the image's local repo \
+cache (/opt/mvn-cache) at build time, so a later `mvn` command inside the booth resolves them from \
+cache instead of the network. This is for your project's own dependencies; it does not build or \
+package your code. If pom.xml is missing, the build still succeeds and this step is skipped."""
 display-order = 20
 auto-select = false
 tags = ["java", "maven", "packages"]
