@@ -1,0 +1,25 @@
+display-name = "Ant"
+display-disc = "Apache Ant build tool for Java projects"
+display-detail = """Installs Ant itself, since the Java template ships no default build tool -- pick this, \
+Gradle, or Maven. Ant predates both and has no built-in dependency resolution of its own (that's \
+what Ivy or a manually-managed lib/ directory is for); reach for it for an existing build.xml-driven \
+project rather than starting a new one. Pin ANT_VERSION for a reproducible build; the default \
+tracks a recent release."""
+display-order = 13
+auto-select = false
+tags = [
+    "build",
+    "ant",
+]
+
+[params.ANT_VERSION]
+default = "1.10.18"
+suggests = [
+    "1.10.18",
+    "1.10.15",
+]
+
+[segments]
+Boothfile = """
+setup ant ${ANT_VERSION}
+"""
