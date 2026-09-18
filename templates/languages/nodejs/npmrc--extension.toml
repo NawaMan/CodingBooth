@@ -1,6 +1,9 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "npm Config"
 display-disc = "Mount host npm configuration (.npmrc)"
+display-detail = """Seeds ~/.npmrc from the host, so a private registry URL or auth token works inside the booth \
+without retyping it. Mounts read-only; a host path that does not exist is dropped before the \
+container starts, so this is harmless to leave selected when you have no .npmrc."""
 auto-select = true
 tags = ["nodejs", "npm", "credential"]
 

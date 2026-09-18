@@ -1,6 +1,10 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
 display-name = "Cargo Cache"
 display-disc = "Mount host Cargo registry cache"
+display-detail = """Bind-mounts your host's ~/.cargo/registry into the booth, so cargo reuses whatever you've already \
+downloaded on the host instead of re-fetching it inside the container. Unlike the cargo fetch \
+extension, nothing is baked into the image itself -- this only helps while the mount is present, and \
+shares your host cache across every booth using it."""
 auto-select = true
 tags = ["rust", "cargo", "cache"]
 

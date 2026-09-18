@@ -1,5 +1,10 @@
 display-name = "cargo fetch"
 display-disc = "Pre-download Cargo dependencies into the image"
+display-detail = """Pre-downloads your project's Cargo dependencies from Cargo.toml into the image's registry cache \
+(/opt/cargo-cache) at build time with `cargo fetch`, so a later `cargo build` inside the booth \
+resolves them from cache instead of the network. This is for your project's own dependencies; it \
+does not build your code. If Cargo.toml is missing, the build still succeeds and this step is \
+skipped."""
 display-order = 15
 auto-select = false
 tags = ["rust", "cargo", "packages"]
