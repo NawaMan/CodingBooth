@@ -1,5 +1,9 @@
 display-name = "Maven Local Repository"
 display-disc = "Mount host Maven repository cache (.m2)"
+display-detail = """Bind-mounts your host's ~/.m2 directory into the booth, so Maven and Gradle both reuse \
+whatever you've already downloaded on the host instead of re-fetching it inside the container. Unlike \
+the mvn dependency:resolve / gradle dependencies extensions, nothing is baked into the image itself -- \
+this only helps while the mount is present, and shares your host cache across every booth using it."""
 display-order = 9
 auto-select = false
 tags = [
