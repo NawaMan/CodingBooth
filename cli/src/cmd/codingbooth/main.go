@@ -10,6 +10,7 @@ import (
 )
 
 var version = "dev"
+var buildDate = "unknown"
 
 func main() {
 	// Check for commands
@@ -77,7 +78,7 @@ func main() {
 			runShowcase(version)
 			return
 		case "config":
-			runConfig(version)
+			runConfig(version, buildDate)
 			return
 		case "tools-cache":
 			runToolsCache()
