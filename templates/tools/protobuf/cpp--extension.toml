@@ -1,0 +1,22 @@
+display-name = "C++ gRPC protoc plugin"
+display-disc = "grpc_cpp_plugin for gRPC service codegen"
+display-detail = """Installs grpc_cpp_plugin via apt (protobuf-compiler-grpc). Plain C++ message codegen \
+(--cpp_out) needs no plugin -- it's built into the Protocol Buffers template's own protoc -- this \
+extension is only for generating gRPC service code, invoked as: \
+`protoc --cpp_out=... --grpc_out=... --plugin=protoc-gen-grpc=$(which grpc_cpp_plugin) file.proto`. \
+No language template required: codegen only produces .cc/.h text files, not a build -- pair with \
+gcc or clang separately to compile them."""
+display-order = 60
+auto-select = false
+tags = [
+    "protobuf",
+    "protoc",
+    "cpp",
+    "grpc",
+    "codegen",
+]
+
+[segments]
+"Boothfile--45" = """
+install apt protobuf-compiler-grpc
+"""
