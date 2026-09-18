@@ -1,0 +1,31 @@
+display-name = "gRPC-Web protoc plugin"
+display-disc = "protoc-gen-grpc-web for browser gRPC client codegen"
+display-detail = """Installs protoc-gen-grpc-web as a standalone protoc plugin on PATH, downloaded as a \
+prebuilt native executable from grpc/grpc-web's GitHub releases -- no Node.js needed to run it. \
+Distinct from the Node.js/TypeScript extension's ts-proto: that generates types plus a gRPC-Node \
+client for a Node.js backend, while this generates a browser-side gRPC-Web client, invoked as \
+`protoc --grpc-web_out=import_style=commonjs,mode=grpcwebtext:. file.proto`. Plain message codegen \
+for JS also needs the separate protoc-gen-js plugin (--js_out), which this does not install. \
+Supports linux/amd64 and linux/arm64; pin PROTOC_GEN_GRPC_WEB_VERSION for a reproducible build."""
+display-order = 35
+auto-select = false
+tags = [
+    "protobuf",
+    "protoc",
+    "grpc-web",
+    "javascript",
+    "browser",
+    "grpc",
+    "codegen",
+]
+
+[params.PROTOC_GEN_GRPC_WEB_VERSION]
+default = "2.1.1"
+suggests = [
+    "2.1.1",
+]
+
+[segments]
+"Boothfile--60" = """
+setup protoc-gen-grpc-web ${PROTOC_GEN_GRPC_WEB_VERSION}
+"""
