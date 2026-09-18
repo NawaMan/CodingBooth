@@ -170,6 +170,12 @@ CONTAINER MODE:
                          Can also be set in config.toml (browser = false) or
                          with CB_BROWSER=false
   --no-browser           Shorthand for browser = false, for this run only
+  --browser-port <spec>  Which port --browser opens, instead of the booth's own port:
+                         n       : that absolute port
+                         +OFFSET : offset-base + OFFSET (same arithmetic as a
+                                   +OFFSET run-arg, e.g. -p +80:8080)
+                         Default: the booth's own port. Can also be set in
+                         config.toml (browser-port = "+80") or CB_BROWSER_PORT
   --quiet, -q            Hide lifecycle messages (implies --silence-build --no-browser)
   --persist-home         [Experimental] Persist /home/coder across sessions using a Docker named volume
   --writable-booth       Allow writing to .booth/ inside the container (read-only by default)
@@ -272,6 +278,8 @@ CONTAINER MODE:
   --keep-alive           Do not remove container when stopped
   --browser              Open the booth UI in a browser once its port answers (default)
   --no-browser           Never open a browser (also: browser = false, CB_BROWSER=false)
+  --browser-port <spec>  Which port --browser opens: n (absolute) or +OFFSET (from
+                         offset-base), instead of the booth's own port
   --quiet, -q            Hide lifecycle messages (implies --silence-build --no-browser)
   --writable-booth       Allow writing to .booth/ inside the container
   --no-writable-booth    Force .booth/ to be read-only (overrides config.toml)

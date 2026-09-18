@@ -542,6 +542,28 @@ Windows, and `xdg-open` with fallbacks (`gio`, `gnome-open`, `kde-open`,
 `x-www-browser`, …) elsewhere. On WSL the Windows browser is used, via `wslview` or
 PowerShell. `$BROWSER` is honored where it is set, and is tried first.
 
+**Opening a different port.** By default the browser opens the booth's own port —
+its UI. A booth running something else worth looking at, like a dev server
+published via [the offset base](#the-offset-base) (`-p +80:8080`), can point the
+browser there instead:
+
+- CLI flag: `--browser-port <n|+OFFSET>`
+- Environment variable: `CB_BROWSER_PORT`
+- Configuration file: `browser-port` in `.booth/config.toml`
+
+`<n>` is an absolute port; `+OFFSET` is counted from the offset base — the same
+arithmetic a `+OFFSET` run-arg uses, so it composes with whatever `--offset-base`
+is already set to.
+
+```bash
+./booth --port 24000 -p +80:8080 --browser-port +80
+# server published at 24080 (24000 + 80) opens, not the booth UI on 24000
+```
+
+Readiness is still checked against the booth's own `/__booth/health` — the target
+port is not assumed to have one — so the wait behaves exactly as it does today; only
+where the browser lands changes.
+
 ---
 
 ## Pulling Images

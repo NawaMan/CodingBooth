@@ -91,6 +91,41 @@ func TestParseOffsetBase(t *testing.T) {
 	}
 }
 
+func TestParseBrowserPort(t *testing.T) {
+	const offsetBase = 24000
+
+	tests := []struct {
+		name    string
+		spec    string
+		want    int
+		wantErr bool
+	}{
+		{"unset means fall back to the booth port", "", 0, false},
+		{"blank means fall back to the booth port", "  ", 0, false},
+		{"an absolute port is used as-is", "8080", 8080, false},
+		// +80 with offsetBase 24000 (a booth on 24000, server on +80 -> 24080).
+		{"+OFFSET counts from the offset base", "+80", 24080, false},
+		{"+0 lands exactly on the offset base", "+0", 24000, false},
+		{"non-numeric absolute port is rejected", "abc", 0, true},
+		{"non-numeric +OFFSET is rejected", "+abc", 0, true},
+		{"an absolute port out of range is rejected", "70000", 0, true},
+		{"a +OFFSET resolving out of range is rejected", "+70000", 0, true},
+		{"a negative absolute port is rejected", "-1", 0, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := parseBrowserPort(tt.spec, offsetBase)
+			if (err != nil) != tt.wantErr {
+				t.Fatalf("parseBrowserPort(%q, %d) err = %v, wantErr %v", tt.spec, offsetBase, err, tt.wantErr)
+			}
+			if !tt.wantErr && got != tt.want {
+				t.Errorf("parseBrowserPort(%q, %d) = %d, want %d", tt.spec, offsetBase, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestFindNextPort_SkipsOccupied(t *testing.T) {
 	// Hold the base and the very next slot open, so the scan must skip BOTH occupied
 	// ports and land on base+2*step. Uses an OS-assigned base so no fixed port is

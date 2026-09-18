@@ -90,6 +90,11 @@ func (ctx AppContext) PortNumber() int     { return ctx.values.PortNumber }
 // PortDetermination has run.
 func (ctx AppContext) OffsetBaseNumber() int { return ctx.values.OffsetBaseNumber }
 
+// BrowserPortNumber is the resolved port --browser opens: 0 means unset,
+// so the booth's own port (PortNumber) is used, matching today's behavior.
+// Valid only after PortDetermination has run.
+func (ctx AppContext) BrowserPortNumber() int { return ctx.values.BrowserPortNumber }
+
 // Flags
 func (ctx AppContext) KeepAlive() bool { return ctx.values.Config.KeepAlive }
 
@@ -162,6 +167,7 @@ func (ctx AppContext) Timezone() string    { return ctx.values.Config.Timezone }
 func (ctx AppContext) Name() string              { return ctx.values.Config.Name }
 func (ctx AppContext) Port() string              { return ctx.values.Config.Port }
 func (ctx AppContext) OffsetBase() string        { return ctx.values.Config.OffsetBase }
+func (ctx AppContext) BrowserPort() string       { return ctx.values.Config.BrowserPort }
 func (ctx AppContext) EnvFile() string           { return ctx.values.Config.EnvFile }
 func (ctx AppContext) Startup() string           { return ctx.values.Config.Startup }
 func (ctx AppContext) ShowRunTime() string       { return ctx.values.Config.ShowRunTime }
@@ -226,6 +232,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    PortGenerated:    %t\n", ctx.PortGenerated())
 	fmt.Fprintf(&str, "    PortNumber:       %d\n", ctx.PortNumber())
 	fmt.Fprintf(&str, "    OffsetBaseNumber: %d\n", ctx.OffsetBaseNumber())
+	fmt.Fprintf(&str, "    BrowserPortNumber:%d\n", ctx.BrowserPortNumber())
 
 	fmt.Fprintf(&str, "# General configuration ---------\n")
 	fmt.Fprintf(&str, "    Dryrun:           %t\n", ctx.Dryrun())
@@ -270,6 +277,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Name:             %q\n", ctx.Name())
 	fmt.Fprintf(&str, "    Port:             %q\n", ctx.Port())
 	fmt.Fprintf(&str, "    OffsetBase:       %q\n", ctx.OffsetBase())
+	fmt.Fprintf(&str, "    BrowserPort:      %q\n", ctx.BrowserPort())
 	fmt.Fprintf(&str, "    EnvFile:          %q\n", ctx.EnvFile())
 	fmt.Fprintf(&str, "    Startup:          %q\n", ctx.Startup())
 

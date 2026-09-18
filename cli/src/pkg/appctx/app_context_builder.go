@@ -61,6 +61,9 @@ type AppContextBuilder struct {
 	// OffsetBaseNumber is the resolved base for "+OFFSET" host ports: the
 	// configured offset-base when there is one, else the booth port.
 	OffsetBaseNumber int
+	// BrowserPortNumber is the resolved port --browser opens: 0 means unset,
+	// so BoothURL falls back to PortNumber (today's behavior).
+	BrowserPortNumber int
 
 	// Configurable
 	Config AppConfig
