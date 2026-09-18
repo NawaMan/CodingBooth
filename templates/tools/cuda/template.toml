@@ -1,0 +1,37 @@
+display-name = "CUDA Toolkit"
+display-disc = "NVIDIA CUDA compiler and libraries (nvcc)"
+display-detail = """Installs the CUDA Toolkit (nvcc, headers, runtime libraries) via NVIDIA's own apt repo. \
+Adds `--gpus all` to the booth's run-args so the container actually requests a GPU.
+
+WARNING: this does NOT install a GPU driver, and it cannot make a GPU appear on a host that \
+doesn't have one. Using it needs, on the Docker HOST (not in this container): (1) an NVIDIA GPU \
+with a driver installed, and (2) the NVIDIA Container Toolkit configured for Docker. Without both, \
+\"docker run --gpus all\" fails outright -- the booth will not start at all, not just run without \
+GPU support. Only select this for a project you know will run on a GPU-configured host; a \
+teammate without one will not be able to launch this booth. Pin CUDA_VERSION (e.g. "13-4") for a \
+reproducible build, or leave it "latest"."""
+display-order = 42
+auto-select = false
+tags = [
+    "cuda",
+    "nvidia",
+    "gpu",
+    "compiler",
+]
+
+run-args = [
+    "--gpus", "all",
+]
+
+[params.CUDA_VERSION]
+default = "latest"
+suggests = [
+    "latest",
+    "13-4",
+    "12-6",
+]
+
+[segments]
+"Boothfile--55" = """
+setup cuda ${CUDA_VERSION}
+"""

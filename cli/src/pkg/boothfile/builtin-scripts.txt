@@ -53,6 +53,7 @@ setup conda
 setup cpp-nb-kernel
 setup crystal
 setup crystal-code-extension
+setup cuda
 setup cursor
 setup cypress
 setup dbeaver
