@@ -640,10 +640,14 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 	name := item.template.Name
 	desc := item.template.DisplayDesc
 
-	// Marker for templates with no build on this architecture.
-	mark := "  "
+	// Marker for templates with no build on this architecture. Empty in the
+	// normal case so the gap after "[ ]" is exactly one space, same as an
+	// extension row's "[ ] name" or "[ ] *name" — the warning glyph takes that
+	// single slot instead of widening it, same convention as the "*" auto-select
+	// marker below.
+	mark := ""
 	if item.template.UnsupportedOn(m.hostArch) {
-		mark = "! "
+		mark = "!"
 	}
 
 	plainPrefix := check + " " + mark + name
@@ -662,7 +666,7 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 
 	styledName := boldStyle.Render(name)
 	styledMark := mark
-	if mark != "  " {
+	if mark != "" {
 		styledMark = archWarnStyle.Render(mark)
 	}
 	line := check + " " + styledMark + styledName
