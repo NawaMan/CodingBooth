@@ -26,6 +26,29 @@ report with `print_test_result`; `config/` and `config-tui/` open with `begin` a
 `assert-file-contains` / `skip`; `wrapper/` uses `run_in_container` with `assert_not_contains`.
 Match the suite you are in rather than importing a habit from another one.
 
+## Picking the booth to run
+
+Never resolve the binary inline. `booth-bin--source.sh` does it, `common--source.sh` already sources
+it, and an example test sources it directly:
+
+```bash
+source "$REPO_ROOT/tests/booth-bin--source.sh"
+BOOTH="$(resolve_booth_bin)"                         # local build, else the booth wrapper
+BOOTH_BIN="$(find_local_booth_build)" || exit 1      # the local build or nothing
+```
+
+**Why not `[ -x "$REPO_ROOT/codingbooth" ]`.** That was the old line, in 118 scripts, and on Windows
+it is always false: `cli-build.sh` writes the host build to `codingbooth.exe` there, and the
+extensionless `codingbooth` beside it is the Linux cross-build, which the host cannot execute. Every
+one of those tests fell through to the wrapper without saying so — and the wrapper runs a *release*
+binary, whose version picks the base image tag. A 0.77.0 wrapper builds
+`FROM nawaman/codingbooth:base-0.77.0` against a 0.78.0 tree, so a setup added after 0.77.0 is
+simply missing, and the test fails somewhere far from the cause.
+
+Use `find_local_booth_build` when only the real CLI will do — reading `version`, or a subcommand a
+given release may not have. Use `resolve_booth_bin` otherwise. The walk stops at the checkout root,
+so a linked worktree never silently runs the main clone's binary.
+
 ## Picking a port
 
 Any test that publishes a port must take it from `common--source.sh`. Never write a picker inline —

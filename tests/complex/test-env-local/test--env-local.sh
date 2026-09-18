@@ -13,7 +13,7 @@ set -euo pipefail
 source ../../common--source.sh
 
 # ---- Config -------------------------------------------------------------------
-CB_SCRIPT="${CB_SCRIPT:-../../../codingbooth}"
+CB_SCRIPT="${CB_SCRIPT:-$(find_local_booth_build "$SCRIPT_DIR")}"
 if command -v readlink >/dev/null 2>&1; then
   CB_SCRIPT="$(readlink -f "$CB_SCRIPT")"
 else

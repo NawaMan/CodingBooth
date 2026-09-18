@@ -29,23 +29,10 @@ echo "=== Test: Select All Templates and Extensions ==="
 FAILED=0
 TEST_NUM=0
 
-# ---------------------------------------------------------------------------
-# Helper: find the codingbooth binary (same logic as run_coding_booth)
-# ---------------------------------------------------------------------------
-find_booth() {
-  local check_dir="$SCRIPT_DIR"
-  for _ in 1 2 3 4 5; do
-    if [[ -x "$check_dir/codingbooth" ]]; then
-      echo "$check_dir/codingbooth"
-      return
-    fi
-    check_dir="$(dirname "$check_dir")"
-  done
+BOOTH="$(find_local_booth_build "$SCRIPT_DIR")" || {
   echo "ERROR: Could not find codingbooth" >&2
-  return 1
+  exit 1
 }
-
-BOOTH="$(find_booth)"
 
 # ---------------------------------------------------------------------------
 # Parse `template list --full` to discover all templates and extensions.
