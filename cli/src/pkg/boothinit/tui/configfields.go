@@ -89,7 +89,7 @@ var fieldDisplays = []fieldDisplay{
 
 	// --- Container ---
 	{Key: "dind", Label: "Docker-in-Docker", Group: "Container",
-		Detail: "Enable a Docker-in-Docker sidecar.\nRequires --privileged flag. Use only when needed."},
+		Detail: "Enable a Docker-in-Docker sidecar. Requires --privileged.\n\nWARNING: the sidecar runs privileged, so code in the\nbooth can reach its daemon and use it to step outside\nthe booth's isolation and touch the host. Only enable\nfor booths whose code you trust."},
 	{Key: "keep-alive", Label: "Keep Alive", Group: "Container",
 		Detail: "Preserve container after exit.\nResume later with: booth start <name>"},
 	{Key: "daemon", Label: "Daemon", Group: "Container",

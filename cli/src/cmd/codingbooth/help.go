@@ -197,6 +197,9 @@ NOTES:
   - In daemon mode, do not pass commands after '--'.
   - With --dind, a docker:dind sidecar runs on a private network and the main
     container uses DOCKER_HOST=tcp://<sidecar>:2375.
+  - WARNING: the DinD sidecar runs privileged, so code in the booth can reach
+    its daemon and use it to step outside the booth's isolation and touch the
+    host. Only enable --dind for booths whose code you trust.
   - With --egress, booth enables egress policy defaults. If --dind is also set,
     the existing DinD sidecar network namespace is reused.
 
