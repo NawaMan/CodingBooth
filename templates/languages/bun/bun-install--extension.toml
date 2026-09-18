@@ -1,5 +1,9 @@
 display-name = "bun install"
 display-disc = "Pre-install bun dependencies from package.json into the image"
+display-detail = """Installs your project's dependencies from package.json with `bun install` into the image's cache \
+(/opt/bun-cache/node_modules) at build time, then restores them into the running booth's \
+node_modules on startup if not already there. This is for your project's own dependencies; it does \
+not run your code. If package.json is missing, the build still succeeds and this step is skipped."""
 display-order = 15
 auto-select = false
 tags = ["bun", "packages"]

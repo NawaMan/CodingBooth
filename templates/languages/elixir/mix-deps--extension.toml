@@ -1,5 +1,9 @@
 display-name = "mix deps.get"
 display-disc = "Pre-download Elixir/Mix dependencies into the image"
+display-detail = """Installs your project's dependencies from mix.exs with `mix deps.get` into the image's cache \
+(/opt/mix-cache/deps) at build time, then restores them into the running booth's deps/ on startup \
+if not already there. This is for your project's own dependencies; it does not compile your code. \
+If mix.exs is missing, the build still succeeds and this step is skipped."""
 display-order = 15
 auto-select = false
 tags = ["elixir", "mix", "packages"]

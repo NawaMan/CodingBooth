@@ -1,5 +1,8 @@
 display-name = "Maven"
 display-disc = "Apache Maven build tool for Java projects"
+display-detail = """Installs Maven itself, since the Java template ships no default build tool -- pick this or Gradle. \
+Pin MAVEN_VERSION for a reproducible build; the default tracks a recent release. Project pom.xml \
+dependencies are a different extension (mvn dependency:resolve)."""
 display-order = 10
 auto-select = false
 tags = [

@@ -1,5 +1,10 @@
 display-name = "composer install"
 display-disc = "Pre-install Composer dependencies into the image"
+display-detail = """Installs your project's dependencies from composer.json with `composer install` into the image's \
+cache (/opt/composer-cache/vendor) at build time, then restores them into the running booth's \
+vendor/ on startup if not already there (regenerating the autoloader). This is for your project's \
+own dependencies; it does not run your code. If composer.json is missing, the build still succeeds \
+and this step is skipped."""
 display-order = 15
 auto-select = false
 tags = ["php", "composer", "packages"]
