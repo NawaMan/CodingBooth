@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --variant xfce --select python~vscode-ext/thonny/apt-pkg:tk,xvfb/nodejs~vscode-ext/logo+autostart+expose
 
-env APT_SNAPSHOT=20260906T000000Z
+env APT_SNAPSHOT=20260918T000000Z
 
 arg APT_PKGS=tk,xvfb
 arg LOGO_HOST_PORT=18610
