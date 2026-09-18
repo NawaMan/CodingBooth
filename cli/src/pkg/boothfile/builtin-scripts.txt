@@ -196,6 +196,7 @@ setup playwright
 setup playwright-code-extension
 setup postgresql
 setup postgrest
+setup protoc-gen-grpc-java
 setup pulumi
 setup puppeteer
 setup pycharm

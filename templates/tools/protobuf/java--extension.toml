@@ -1,0 +1,30 @@
+display-name = "Java protoc plugin"
+display-disc = "protoc-gen-grpc-java for Java gRPC service codegen"
+display-detail = """Installs protoc-gen-grpc-java as a standalone protoc plugin on PATH, downloaded as a \
+prebuilt native executable from Maven Central (io.grpc:protoc-gen-grpc-java) -- no JVM needed to run \
+it. Plain Java message codegen (--java_out) needs no plugin at all -- it's built into the Protocol \
+Buffers template's own protoc -- this is only for generating gRPC service code: \
+`protoc --java_out=... --grpc-java_out=... file.proto`. Supports linux/amd64 and linux/arm64; pin \
+PROTOC_GEN_GRPC_JAVA_VERSION for a reproducible build."""
+display-order = 15
+auto-select = false
+tags = [
+    "protobuf",
+    "protoc",
+    "java",
+    "grpc",
+    "codegen",
+]
+
+requires = ["java"]
+
+[params.PROTOC_GEN_GRPC_JAVA_VERSION]
+default = "1.84.0"
+suggests = [
+    "1.84.0",
+]
+
+[segments]
+"Boothfile--60" = """
+setup protoc-gen-grpc-java ${PROTOC_GEN_GRPC_JAVA_VERSION}
+"""
