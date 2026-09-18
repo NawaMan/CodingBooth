@@ -571,6 +571,14 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.OffsetBase = v
 			i += 2
 
+		case "--browser-port":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			cfg.BrowserPort = v
+			i += 2
+
 		case "--env-file":
 			v, err := needValue(args, i, arg)
 			if err != nil {

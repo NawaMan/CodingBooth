@@ -100,6 +100,8 @@ var fieldDisplays = []fieldDisplay{
 	{Key: "browser", Label: "Open Browser", Group: "Container",
 		Options: []string{"", "true", "false"},
 		Detail:  "Open the booth UI in your browser once its port\nanswers.\n\n(default) = leave to booth (enabled)\ntrue = explicitly enable\nfalse = never open a browser\n\nNo effect on a booth given a command\n(-- bash, or variant 'terminal'): it serves no page."},
+	{Key: "browser-port", Label: "Browser Port", Group: "Container",
+		Detail: "Which port Open Browser opens, instead of the\nbooth's own port.\n\nEmpty = the booth's own port (default).\nA number = that absolute port.\n+OFFSET = counted from Offset Base — the same\narithmetic a +OFFSET Expose entry uses.\n\nExample: a dev server published via an Expose entry\nof +80:8080 is reachable at booth-port+80; setting\nbrowser-port = +80 opens that instead of the booth UI."},
 	{Key: "sudo", Label: "Sudo", Group: "Container",
 		Options: []string{"", "true", "false"},
 		Detail:  "Enable passwordless sudo for the coder user.\n\n(default) = leave to booth (enabled)\ntrue = explicitly enable\nfalse = explicitly disable"},

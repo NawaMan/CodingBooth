@@ -71,6 +71,36 @@ func TestBoothURL(t *testing.T) {
 	}
 }
 
+func TestBrowserOpenURL(t *testing.T) {
+	// No --browser-port: opens the same place BoothURL does.
+	ctx := browserTestContext(true, false, false, 10000)
+	if got, want := browserOpenURL(ctx), "http://localhost:10000"; got != want {
+		t.Errorf("browserOpenURL() = %q, want %q", got, want)
+	}
+
+	// --browser-port set: opens the resolved port instead, e.g. a dev server
+	// published at booth-port+80 (24000 -> 24080).
+	builder := &appctx.AppContextBuilder{
+		Cmds: ilist.NewAppendableList[ilist.List[string]](),
+	}
+	builder.Config.Browser = true
+	builder.PortNumber = 24000
+	builder.BrowserPortNumber = 24080
+	offsetCtx := builder.Build()
+	if got, want := browserOpenURL(offsetCtx), "http://localhost:24080"; got != want {
+		t.Errorf("browserOpenURL() with --browser-port = %q, want %q", got, want)
+	}
+
+	// --public + --browser-port: the offset port is a plain published port, not
+	// the booth's own TLS-terminated front door, so it stays http even though
+	// the booth itself is https.
+	builder.Config.Public = true
+	publicOffsetCtx := builder.Build()
+	if got, want := browserOpenURL(publicOffsetCtx), "http://localhost:24080"; got != want {
+		t.Errorf("browserOpenURL() public with --browser-port = %q, want %q", got, want)
+	}
+}
+
 func TestWaitForBoothServing_RespondingBooth(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// A real booth answers the front door with a redirect to its login page.

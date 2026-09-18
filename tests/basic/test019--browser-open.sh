@@ -14,6 +14,9 @@
 #   5) browser = false in config.toml opens nothing...
 #   6) ...and --browser overrides it for the one run
 #   7) a booth given a command (-- …) serves no page, so it opens nothing
+#   9) --browser-port <n> opens that absolute port instead of the booth's own
+#  10) --browser-port +OFFSET opens booth-port+OFFSET (offset-base defaults to
+#      the booth port)
 #
 # Case 8 is numbered last but runs with case 2: both interrogate the booth that
 # case 1 opened, and each later case replaces that container with its own.
@@ -48,7 +51,7 @@ function generate_name() {
 }
 
 NAME="$(generate_name)"
-PORT="$(pick_free_port)"
+PORT="$(pick_free_port 80)"
 WORK="$(mktemp -d)"
 LOG="$0.log"
 : > "$LOG"
@@ -167,5 +170,32 @@ if [[ -z "$URL" ]]; then
   print_test_result "true" "$0" "7" "A booth given a command opened nothing"
 else
   print_test_result "false" "$0" "7" "A command booth should open nothing, opened '$URL'"
+  exit 1
+fi
+
+# --- 9: --browser-port <n> opens that absolute port --------------------------
+# Nothing needs to be listening on OTHER_PORT: the fake browser only records
+# the URL it was handed, and readiness is still waited for on the booth's own
+# port (case 2/8 already cover that wait). This checks --browser-port picks a
+# different URL, not that anything answers there.
+OTHER_PORT="$(pick_free_port)"
+URL="$(run_booth --daemon --keep-alive --browser-port "$OTHER_PORT")"
+if [[ "$URL" == "http://localhost:$OTHER_PORT" ]]; then
+  print_test_result "true" "$0" "9" "--browser-port $OTHER_PORT opened http://localhost:$OTHER_PORT"
+else
+  print_test_result "false" "$0" "9" "--browser-port $OTHER_PORT should open http://localhost:$OTHER_PORT, opened '$URL'"
+  exit 1
+fi
+
+# --- 10: --browser-port +OFFSET counts from the booth port -------------------
+# offset-base defaults to the booth's own port, so +80 on a booth at $PORT
+# should open $PORT+80 — the motivating case: a dev server published via
+# "-p +80:8080" is reachable at booth-port+80.
+OFFSET_PORT=$((PORT + 80))
+URL="$(run_booth --daemon --keep-alive --browser-port +80)"
+if [[ "$URL" == "http://localhost:$OFFSET_PORT" ]]; then
+  print_test_result "true" "$0" "10" "--browser-port +80 opened http://localhost:$OFFSET_PORT"
+else
+  print_test_result "false" "$0" "10" "--browser-port +80 should open http://localhost:$OFFSET_PORT, opened '$URL'"
   exit 1
 fi

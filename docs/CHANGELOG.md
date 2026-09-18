@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **New `--browser-port <n|+OFFSET>` flag picks which port `--browser` opens,
+  instead of always the booth's own port.** A booth running a dev server on a
+  published port other than its own front door — e.g. `-p +80:8080` on a booth
+  at port 24000, reachable at 24080 — can now open that with `--browser-port
+  +80` instead of the booth's own UI. `+OFFSET` uses the same arithmetic as a
+  `+OFFSET` run-arg, counted from `--offset-base`. Also settable via
+  `CB_BROWSER_PORT` or `browser-port` in `config.toml`. See
+  [Opening a different port](BOOTH_RUN.md#opening-the-browser).
+
 - **Tests resolve the booth they run through one shared helper,
   `tests/booth-bin--source.sh`, instead of 118 copies of the same broken line.**
   Every test used to pick its binary with `[ -x "$REPO_ROOT/codingbooth" ]`,
