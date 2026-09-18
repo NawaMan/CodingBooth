@@ -43,6 +43,14 @@ type model struct {
 	width    int
 	height   int
 
+	// Identity of the running codingbooth binary — set by RunConfig from the
+	// ldflags-injected main.version/main.buildDate, not part of newModel's own
+	// construction. Purely informational (header display); never written to
+	// config.toml. Distinct from the "Booth Version" config field, which pins
+	// which version *this project* should run, not which binary rendered the TUI.
+	binaryVersion string
+	buildDate     string
+
 	// Architecture this booth will be built for, in dpkg names. A few templates
 	// have no build for some architectures (Google publishes no linux/arm64
 	// Chrome, say). Selecting one is allowed — the booth still builds, the setup

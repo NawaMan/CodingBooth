@@ -33,6 +33,13 @@ else
     exit 1
 fi
 
+
+# Stamped into main.buildDate via ldflags below, so a rebuilt-but-unbumped dev
+# binary (version.txt unchanged) is still distinguishable in the config TUI
+# header from whatever a project's wrapper/cache had already resolved.
+BUILD_DATE=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+LDFLAGS="-X main.version=${VERSION} -X main.buildDate=${BUILD_DATE}"
+
 echo "🔨 Building ${APP_NAME} v${VERSION}"
 echo "=================================="
 echo ""
@@ -71,7 +78,7 @@ if [[ "$(uname -s)" == "MINGW"* ]] || [[ "$(uname -s)" == "CYGWIN"* ]] || [[ "$(
     LOCAL_OUTPUT="../codingbooth.exe"
 fi
 
-BUILD_OUTPUT=$(go build -ldflags "-X main.version=${VERSION}" -o "$LOCAL_OUTPUT" "$SRC_DIR/codingbooth" 2>&1) && BUILD_SUCCESS=true || BUILD_SUCCESS=false
+BUILD_OUTPUT=$(go build -ldflags "${LDFLAGS}" -o "$LOCAL_OUTPUT" "$SRC_DIR/codingbooth" 2>&1) && BUILD_SUCCESS=true || BUILD_SUCCESS=false
 if $BUILD_SUCCESS; then
     LOCAL_SIZE=$(du -h "$LOCAL_OUTPUT" | cut -f1)
     echo "   ✅ Built: $LOCAL_OUTPUT (${LOCAL_SIZE})"
@@ -102,7 +109,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
     # Build
     echo -n "   Building ${GOOS}/${GOARCH}... "
     
-    BUILD_OUTPUT=$(GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "-X main.version=${VERSION}" -o "$OUTPUT_PATH" "$SRC_DIR/codingbooth" 2>&1) && BUILD_SUCCESS=true || BUILD_SUCCESS=false
+    BUILD_OUTPUT=$(GOOS=$GOOS GOARCH=$GOARCH go build -ldflags "${LDFLAGS}" -o "$OUTPUT_PATH" "$SRC_DIR/codingbooth" 2>&1) && BUILD_SUCCESS=true || BUILD_SUCCESS=false
     if $BUILD_SUCCESS; then
         SIZE=$(du -h "$OUTPUT_PATH" | cut -f1)
         echo "✅ (${SIZE})"

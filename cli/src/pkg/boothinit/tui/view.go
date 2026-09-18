@@ -116,12 +116,22 @@ func (m model) View() string {
 
 	// === Header line 1: title ===
 	title := "CodingBooth Configuration"
+	// Identity of the running binary, e.g. "v0.78.0 · built 2026-09-17T21:03:00Z" —
+	// dim, next to the title, so a rebuilt-but-unbumped dev binary is visibly
+	// distinguishable from whatever a project's wrapper/cache already resolved.
+	identity := ""
+	if m.binaryVersion != "" {
+		identity = "  v" + m.binaryVersion
+		if m.buildDate != "" && m.buildDate != "unknown" {
+			identity += " · built " + m.buildDate
+		}
+	}
 	selInfo := fmt.Sprintf("[%d selected]", selCount)
-	padding := fullWidth - lipgloss.Width(title) - lipgloss.Width(selInfo) - 2
+	padding := fullWidth - lipgloss.Width(title) - lipgloss.Width(identity) - lipgloss.Width(selInfo) - 2
 	if padding < 1 {
 		padding = 1
 	}
-	headerLine1 := " " + headerStyle.Render(title) + strings.Repeat(" ", padding) + headerStyle.Render(selInfo)
+	headerLine1 := " " + headerStyle.Render(title) + sepStyle.Render(identity) + strings.Repeat(" ", padding) + headerStyle.Render(selInfo)
 
 	// === Header line 2: search bar ===
 	headerLine2 := m.renderSearchBar(fullWidth)

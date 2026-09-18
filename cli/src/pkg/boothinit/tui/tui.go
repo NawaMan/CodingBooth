@@ -45,9 +45,15 @@ type PreSelection struct {
 // list is non-empty Ctrl+S opens a dialog rather than saving: the safe default writes
 // the generated content beside them (ConfigResult.SaveBeside), and replacing them
 // outright requires typing the confirmation word.
-func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection, warning string, drifted []string) (*ConfigResult, error) {
+//
+// binaryVersion and buildDate identify the running codingbooth binary (main.version /
+// main.buildDate) and are shown in the header — purely so a rebuilt-but-unbumped dev
+// binary is distinguishable from whatever a project's wrapper/cache already resolved.
+func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection, warning string, drifted []string, binaryVersion, buildDate string) (*ConfigResult, error) {
 	m := newModel(registry, pre)
 	m.drifted = drifted
+	m.binaryVersion = binaryVersion
+	m.buildDate = buildDate
 	if warning != "" {
 		m.warningDialog = true
 		m.warningMessage = warning
