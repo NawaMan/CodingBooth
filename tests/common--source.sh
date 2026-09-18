@@ -5,6 +5,11 @@
 
 # Common utilities for unit tests
 
+# Which booth a test runs — resolve_booth_bin / find_local_booth_build. Sourced
+# here so every suite that pulls in this file gets them without a second source
+# line; see booth-bin--source.sh for why the lookup is not inlined any more.
+source "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/booth-bin--source.sh"
+
 # Host OS tag matching the codingbooth CLI's HOST_OS env var.
 # Tests use this in their expected-output fixtures.
 case "$(uname -s)" in
@@ -339,16 +344,9 @@ booth_step() {
 use_local_base_image() {
   local version="${1:-}"
   if [[ -z "$version" ]]; then
-    local booth_path script_dir check_dir
+    local booth_path script_dir
     script_dir="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
-    check_dir="$script_dir"
-    for _ in 1 2 3 4 5; do
-      if [[ -f "$check_dir/codingbooth" && -x "$check_dir/codingbooth" ]]; then
-        booth_path="$check_dir/codingbooth"
-        break
-      fi
-      check_dir="$(dirname "$check_dir")"
-    done
+    booth_path="$(find_local_booth_build "$script_dir")" || booth_path=""
     if [[ -n "${booth_path:-}" ]]; then
       version=$("$booth_path" version 2>/dev/null | tail -1 | sed 's/.*: //')
     fi
@@ -456,21 +454,11 @@ run_coding_booth() {
   local script_dir
   script_dir="$(cd "$(dirname "${BASH_SOURCE[1]}")" && pwd)"
 
-  # Find the codingbooth binary relative to the test location.
-  # Use `-f` before `-x` so we don't accidentally match a directory of the same name
-  # on case-insensitive filesystems (e.g. macOS: -x /path/codingbooth would otherwise
-  # match the CodingBooth project directory itself, since directories are "executable").
+  # The locally built CLI, not the wrapper: this helper injects --version for a
+  # dev build and reads `version` to decide, neither of which means anything for
+  # a release binary behind the wrapper.
   local booth_path=""
-  local check_dir="$script_dir"
-  for _ in 1 2 3 4 5; do
-    if [[ -f "$check_dir/codingbooth" && -x "$check_dir/codingbooth" ]]; then
-      booth_path="$check_dir/codingbooth"
-      break
-    fi
-    check_dir="$(dirname "$check_dir")"
-  done
-
-  if [[ -z "$booth_path" ]]; then
+  if ! booth_path="$(find_local_booth_build "$script_dir")"; then
     echo "ERROR: Could not find codingbooth" >&2
     return 1
   fi

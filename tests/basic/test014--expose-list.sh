@@ -34,19 +34,10 @@ function generate_name() {
 }
 
 # Find the codingbooth binary for the exec/expose subcommands (no --version).
-BOOTH_BIN=""
-check_dir="$(pwd)"
-for _ in 1 2 3 4 5; do
-  if [[ -x "$check_dir/codingbooth" ]]; then
-    BOOTH_BIN="$check_dir/codingbooth"
-    break
-  fi
-  check_dir="$(dirname "$check_dir")"
-done
-if [[ -z "$BOOTH_BIN" ]]; then
+BOOTH_BIN="$(find_local_booth_build)" || {
   echo "ERROR: Could not find codingbooth" >&2
   exit 1
-fi
+}
 
 run_booth() {
   echo -e "${COLOR_BOOTH:-}> codingbooth $*${COLOR_RESET:-}" >&2

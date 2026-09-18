@@ -28,19 +28,10 @@ WORK_DIR=""
 # `booth run` takes its code directory from the cwd, so this test has to cd into
 # the worktree -- which breaks run_coding_booth's binary lookup (it searches
 # upward from the script's dir). Resolve the binary first, as test008 does.
-BOOTH_BIN=""
-check_dir="$(pwd)"
-for _ in 1 2 3 4 5; do
-  if [[ -f "$check_dir/codingbooth" && -x "$check_dir/codingbooth" ]]; then
-    BOOTH_BIN="$check_dir/codingbooth"
-    break
-  fi
-  check_dir="$(dirname "$check_dir")"
-done
-if [[ -z "$BOOTH_BIN" ]]; then
+BOOTH_BIN="$(find_local_booth_build)" || {
   echo "ERROR: Could not find codingbooth" >&2
   exit 1
-fi
+}
 
 cleanup() {
   [[ -n "$WORK_DIR" && -d "$WORK_DIR" ]] && rm -rf "$WORK_DIR"

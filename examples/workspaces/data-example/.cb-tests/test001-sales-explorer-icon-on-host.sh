@@ -26,11 +26,8 @@ NC='\033[0m'
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR/../../../.."
-if [ -x "$REPO_ROOT/codingbooth" ]; then
-    BOOTH="$REPO_ROOT/codingbooth"
-else
-    BOOTH="$REPO_ROOT/booth"
-fi
+source "$REPO_ROOT/tests/booth-bin--source.sh"
+BOOTH="$(resolve_booth_bin)"
 
 # Pin a base image that exists. A dev or rc binary tags BOOTH_VERSION_TAG as
 # e.g. 0.72.0--rc1, and rc variants are not published — the build then dies on
