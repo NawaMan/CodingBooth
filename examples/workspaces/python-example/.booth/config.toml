@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --variant xfce --select python+vscode-ext+kernel/notebook/xfce/claude-code
+# Configured by: booth config --no-tui --overwrite --variant xfce --select python:3.13.12+pip-config+vscode-ext+kernel+pip/notebook/claude-code+credential+settings-cache/xfce
 
 variant = "xfce"
 
