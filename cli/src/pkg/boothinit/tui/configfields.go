@@ -159,11 +159,11 @@ var fieldDisplays = []fieldDisplay{
 	{Key: "version", Label: "Image Version", Group: "Advanced",
 		Detail: "Tag of the prebuilt booth image to run.\n\nThis is the config.toml 'version' key — the image the\nbooth runs, not the templates it was configured from.\nIf empty, 'latest' is used.\n\nExample: 0.53.0"},
 	{Key: "startup", Label: "Startup Command", Group: "Advanced",
-		Detail: "Custom startup command to run inside the container.\n\nExample: jupyter lab --no-browser --ip=0.0.0.0"},
+		Detail: "Path to a script sourced once at container boot, as the\ncoder user, before the main service starts.\n\nSetting this REPLACES the default startup step entirely:\nnormally every .booth/startups/*.sh file runs (plus the\nlegacy .booth/startup.sh); this instead sources only the\none file you name here.\n\nExample: .booth/my-startup.sh\n\nThis does not change what command the container actually\nruns in the foreground — see Commands for that."},
 	{Key: "env-file", Label: "Env File", Group: "Advanced",
 		Detail: "Provide an --env-file to docker run.\nUse 'none' to disable the default .booth/.env.\n\nExample: .env.local"},
 	{Key: "cmds", Label: "Commands", Group: "Advanced",
-		Detail: "Command to run instead of the variant's default.\nEach entry is one argv element — no shell is involved.\n\nExample, for `echo hello`:\n  echo\n  hello"},
+		Detail: "Command to run instead of the variant's default UI\nservice — the booth serves no page when this is set.\nEach entry is one argv element — no shell is involved.\n\nThis is the same value `-- <cmd>` sets on the command\nline (e.g. `booth -- bash -lc \"echo hi\"`); a `--` on the\ncommand line fully replaces this field for that run,\nrather than adding to it.\n\nExample, for `echo hello`:\n  echo\n  hello"},
 
 	// No fields for public / password / tls-cert / tls-key.
 	//
