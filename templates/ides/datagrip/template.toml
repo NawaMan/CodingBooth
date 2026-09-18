@@ -1,6 +1,12 @@
 display-name = "DataGrip"
 display-disc = "JetBrains DataGrip database IDE and SQL editor"
-display-detail = "Installs JetBrains DataGrip for database management and SQL development. Requires a desktop variant."
+display-detail = """Installs JetBrains DataGrip for database management and SQL development. Requires a \
+desktop variant.
+
+WARNING: DataGrip is commercial with no free tier -- unlike IntelliJ IDEA/PyCharm's Community \
+Editions in this catalog, you need your own JetBrains license (or trial) to use it past the \
+evaluation window. This setup only downloads and installs the IDE; per the JetBrains EULA, \
+distributing an image with it pre-installed is not allowed even without an active license."""
 display-order = 38
 tags = [
     "jetbrains",
