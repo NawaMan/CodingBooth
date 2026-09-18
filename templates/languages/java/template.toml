@@ -1,7 +1,14 @@
 display-name = "Java"
 primary = true
 display-disc = "Java JDK with configurable version and distribution"
-display-detail = "Installs the Java Development Kit (JDK) with configurable version and distribution (default: Temurin). Supports version pinning via JDK_VERSION and JDK_DISTRO parameters."
+display-detail = """Installs the Java Development Kit (JDK) with configurable version and distribution \
+(default: Temurin). Supports version pinning via JDK_VERSION and JDK_VENDOR.
+
+JDK_VENDOR = graalvm installs GraalVM instead of a stock OpenJDK build -- its `native-image` tool \
+(for ahead-of-time compiling a JAR to a standalone native binary) ships bundled in the JDK itself, \
+no separate `gu install` step. Temurin/Corretto download directly; graalvm (and any other vendor) \
+installs through JBang's own JDK manager instead, which is a less-exercised path in this catalog -- \
+report success or failure."""
 display-order = 30
 tags = [
     "java",
@@ -25,7 +32,8 @@ default = "temurin"
 suggests = [
     "temurin",
     "corretto",
-    "openjdk"
+    "openjdk",
+    "graalvm"
 ]
 
 [segments]
