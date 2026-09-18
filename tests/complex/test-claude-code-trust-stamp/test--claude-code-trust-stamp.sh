@@ -43,19 +43,10 @@ use_local_base_image || exit 0
 
 FAILED=0
 
-BOOTH_PATH=""
-CHECK_DIR="$SCRIPT_DIR"
-for _ in 1 2 3 4 5; do
-    if [[ -f "$CHECK_DIR/codingbooth" && -x "$CHECK_DIR/codingbooth" ]]; then
-        BOOTH_PATH="$CHECK_DIR/codingbooth"
-        break
-    fi
-    CHECK_DIR="$(dirname "$CHECK_DIR")"
-done
-if [[ -z "$BOOTH_PATH" ]]; then
+BOOTH_PATH="$(find_local_booth_build "$SCRIPT_DIR")" || {
     echo "ERROR: Could not find codingbooth" >&2
     exit 1
-fi
+}
 REPO_ROOT="$(dirname "$BOOTH_PATH")"
 
 cleanup() { rm -rf "$SCRIPT_DIR/.booth"; }

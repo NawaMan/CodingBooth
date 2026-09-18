@@ -10,11 +10,10 @@
 
 set -euo pipefail
 
-# Locate the booth wrapper from this script's own location, so it works from any cwd.
+# Locate the booth to run from this script's own location, so it works from any cwd.
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../../.." && pwd)"
-BOOTH="$REPO_ROOT/booth"
-[ -x "$BOOTH" ] || BOOTH="$REPO_ROOT/codingbooth"
-[ -x "$BOOTH" ] || { echo "booth wrapper not found under $REPO_ROOT" >&2; exit 1; }
+source "$REPO_ROOT/tests/booth-bin--source.sh"
+BOOTH="$(resolve_booth_bin)" || { echo "no booth found under $REPO_ROOT" >&2; exit 1; }
 
 # Colors for output
 RED='\033[0;31m'
