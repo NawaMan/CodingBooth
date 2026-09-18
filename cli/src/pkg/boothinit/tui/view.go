@@ -640,20 +640,22 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 	name := item.template.Name
 	desc := item.template.DisplayDesc
 
-	// Marker for templates with no build on this architecture. Kept ASCII on
-	// purpose: the padding below counts bytes, so a multi-byte glyph here would
-	// misalign every row.
+	// Marker for templates with no build on this architecture.
 	mark := "  "
 	if item.template.UnsupportedOn(m.hostArch) {
 		mark = "! "
 	}
 
 	plainPrefix := check + " " + mark + name
-	remaining := width - len(plainPrefix) - 2
+	// Width, not byte length: a display-disc with a multi-byte rune (an em dash,
+	// say) has fewer columns than bytes, and len() here shifted the divider left
+	// by the byte/column difference on every row that had one — flutter's own
+	// disc ("...codebase — brings...") was the one that surfaced it.
+	remaining := width - lipgloss.Width(plainPrefix) - 2
 	descStr := ""
 	if remaining > 3 && len(desc) > 0 {
-		if len(desc) > remaining {
-			desc = desc[:remaining-2] + ".."
+		if lipgloss.Width(desc) > remaining {
+			desc = truncateCols(desc, remaining-2) + ".."
 		}
 		descStr = desc
 	}
@@ -667,9 +669,9 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 	if descStr != "" {
 		line += "  " + detailLabel.Render(descStr)
 	}
-	plainLen := len(plainPrefix)
+	plainLen := lipgloss.Width(plainPrefix)
 	if descStr != "" {
-		plainLen += 2 + len(descStr)
+		plainLen += 2 + lipgloss.Width(descStr)
 	}
 	if plainLen < width {
 		line += strings.Repeat(" ", width-plainLen)
@@ -701,11 +703,12 @@ func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) stri
 	}
 
 	plainPrefix := "    " + check + " " + autoMark + name
-	remaining := width - len(plainPrefix) - 2
+	// See renderTemplateLine: width, not byte length, for the same reason.
+	remaining := width - lipgloss.Width(plainPrefix) - 2
 	descStr := ""
 	if remaining > 3 && len(desc) > 0 {
-		if len(desc) > remaining {
-			desc = desc[:remaining-2] + ".."
+		if lipgloss.Width(desc) > remaining {
+			desc = truncateCols(desc, remaining-2) + ".."
 		}
 		descStr = desc
 	}
@@ -715,9 +718,9 @@ func (m model) renderExtensionLine(item treeItem, width int, isCursor bool) stri
 	if descStr != "" {
 		line += "  " + detailLabel.Render(descStr)
 	}
-	plainLen := len(plainPrefix)
+	plainLen := lipgloss.Width(plainPrefix)
 	if descStr != "" {
-		plainLen += 2 + len(descStr)
+		plainLen += 2 + lipgloss.Width(descStr)
 	}
 	if plainLen < width {
 		line += strings.Repeat(" ", width-plainLen)
