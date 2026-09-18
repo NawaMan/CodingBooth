@@ -65,18 +65,18 @@ type fieldDisplay struct {
 var fieldDisplays = []fieldDisplay{
 	// --- Booth ---
 	{Key: "booth-version", Label: "Booth Version", Group: "Booth", TUIOnly: true, Kind: fieldKindString,
-		Detail: "Version of the CodingBooth CLI tool.\nChange this to upgrade or downgrade the booth binary.\n\nThe new version will be downloaded on the next run.\nUse 'latest' for the most recent release."},
+		Detail: "Version of the CodingBooth CLI tool.\nChange this to upgrade or downgrade the booth binary.\n\nThe new version will be downloaded on the next run.\n\nExample: 0.53.0 (pins that release); 'latest' tracks\nthe newest one."},
 
 	// --- General ---
 	{Key: "variant", Label: "Variant", Group: "General",
 		Options: []string{"", "base", "notebook", "codeserver", "desktop-xfce", "desktop-kde", "desktop-lxqt", "desktop-wayland", "terminal"},
 		Detail:  "The booth variant determines the UI mode.\n\n(default) = auto-detect from config\nbase = minimal terminal\nnotebook = Jupyter Lab\ncodeserver = VS Code in browser\ndesktop-xfce = XFCE desktop\ndesktop-kde = KDE Plasma desktop\ndesktop-lxqt = LXQt desktop\ndesktop-wayland = labwc (Wayland) desktop\nterminal = direct bash session"},
 	{Key: "port", Label: "Port", Group: "General",
-		Detail: "Host port for accessing the booth UI.\n\nSpecial values:\n  NEXT   = next available port\n  RANDOM = random available port"},
+		Detail: "Host port for accessing the booth UI.\n\nExample: 8080 (fixed port)\n\nSpecial values:\n  NEXT   = next available port\n  RANDOM = random available port"},
 	{Key: "offset-base", Label: "Offset Base", Group: "General",
-		Detail: "What a +OFFSET host port counts from.\n\nEmpty = the booth port, so published ports follow it\nand two local booths never collide.\n\nSet a number where the booth owns the whole port\nrange and its port is fixed. 0 makes every +OFFSET\nan absolute port."},
+		Detail: "What a +OFFSET host port counts from.\n\nEmpty = the booth port, so published ports follow it\nand two local booths never collide.\n\nSet a number where the booth owns the whole port\nrange and its port is fixed. 0 makes every +OFFSET\nan absolute port.\n\nExample: offset-base = 0, with an Expose entry of\n+8080:8080, publishes host port 8080 regardless of\nwhere the booth's own port lands."},
 	{Key: "name", Label: "Name", Group: "General",
-		Detail: "Container name. If empty, inferred from the code directory name."},
+		Detail: "Container name. If empty, inferred from the code\ndirectory name.\n\nExample: my-app-dev"},
 
 	// Not the config.toml `version` key — see "Image Version" below.
 	//
@@ -85,7 +85,7 @@ var fieldDisplays = []fieldDisplay{
 	// "Version" and described as the image tag, which is a different setting
 	// entirely and one this field has never written.
 	{Key: "templates-version", Label: "Templates Version", Group: "General", TUIOnly: true, Kind: fieldKindString,
-		Detail: "Compile from a specific CodingBooth release's templates.\n\nAffects this configure run only — it is recorded in the\n'Configured by' header, not as a config.toml setting.\nLeave empty to use the running binary's templates."},
+		Detail: "Compile from a specific CodingBooth release's templates.\n\nAffects this configure run only — it is recorded in the\n'Configured by' header, not as a config.toml setting.\nLeave empty to use the running binary's templates.\n\nExample: 0.53.0"},
 
 	// --- Container ---
 	{Key: "dind", Label: "Docker-in-Docker", Group: "Container",
@@ -111,13 +111,13 @@ var fieldDisplays = []fieldDisplay{
 	{Key: "persist-home", Label: "Persist Home", Group: "Container",
 		Detail: "Keep /home/coder in a named volume across runs.\nWithout this, everything outside the mounted code\ndirectory is lost when the container goes away."},
 	{Key: "project-name", Label: "Project Name", Group: "Container",
-		Detail: "Name of the project, used in labels and derived names.\nIf empty, inferred from the code directory name."},
+		Detail: "Name of the project, used in labels and derived names.\nIf empty, inferred from the code directory name.\n\nExample: my-app"},
 	{Key: "timezone", Label: "Timezone", Group: "Container",
 		Detail: "Timezone inside the container (TZ database name).\n\nExample: Asia/Bangkok\n\nIf empty, the container's default is used."},
 	{Key: "host-uid", Label: "Host UID", Group: "Container",
-		Detail: "UID the coder user runs as, so files written to the\nmounted code directory belong to you on the host.\n\nIf empty, booth detects the invoking user's UID."},
+		Detail: "UID the coder user runs as, so files written to the\nmounted code directory belong to you on the host.\n\nIf empty, booth detects the invoking user's UID.\n\nExample: 1000 (the usual first-user UID on Linux and\nmacOS — check yours with: id -u)"},
 	{Key: "host-gid", Label: "Host GID", Group: "Container",
-		Detail: "GID the coder user runs as.\n\nIf empty, booth detects the invoking user's GID."},
+		Detail: "GID the coder user runs as.\n\nIf empty, booth detects the invoking user's GID.\n\nExample: 1000 (check yours with: id -g)"},
 
 	// --- Egress ---
 	{Key: "egress", Label: "Egress", Group: "Egress",
@@ -131,9 +131,9 @@ var fieldDisplays = []fieldDisplay{
 	{Key: "egress-allowlist", Label: "Egress Allowlist", Group: "Egress",
 		Detail: "Domains reachable while egress is on.\nEach entry adds one host pattern.\n\nExamples:\n  github.com\n  .npmjs.org\n  pypi.org"},
 	{Key: "egress-allowlist-file", Label: "Egress Allowlist File", Group: "Egress",
-		Detail: "Path to a file of allowlist entries, one per line.\nMerged with the entries above."},
+		Detail: "Path to a file of allowlist entries, one per line.\nMerged with the entries above.\n\nExample: .booth/allowlist.txt"},
 	{Key: "egress-policy-file", Label: "Egress Policy File", Group: "Egress",
-		Detail: "Path to a full egress policy file, for rules the plain\nallowlist cannot express."},
+		Detail: "Path to a full egress policy file, for rules the plain\nallowlist cannot express — a complete Envoy config when\nEgress Mode is envoy.\n\nExample: .booth/egress-policy.yaml"},
 
 	// --- Build ---
 	{Key: "silence-build", Label: "Silence Build", Group: "Build",
@@ -145,23 +145,23 @@ var fieldDisplays = []fieldDisplay{
 	{Key: "emit-dockerfile", Label: "Emit Dockerfile", Group: "Build",
 		Detail: "Write the Dockerfile compiled from the Boothfile to disk\ninstead of building it straight from memory.\n\nUseful for inspecting or hand-editing what booth builds."},
 	{Key: "dockerfile", Label: "Dockerfile", Group: "Build",
-		Detail: "Build from this Dockerfile instead of the Boothfile.\n\nPath relative to the code directory."},
+		Detail: "Build from this Dockerfile instead of the Boothfile.\n\nPath relative to the code directory. A directory is\nalso accepted — booth then looks for <dir>/Dockerfile.\n\nExample: ./Dockerfile, or a directory containing one\nat .booth/Dockerfile"},
 	{Key: "boothfile", Label: "Boothfile", Group: "Build",
-		Detail: "Use a Boothfile from this path instead of\n.booth/Boothfile."},
+		Detail: "Use a Boothfile from this path instead of\n.booth/Boothfile.\n\nExample: .booth/Boothfile.dev"},
 	{Key: "build-args", Label: "Build Args", Group: "Build",
 		Detail: "Extra arguments passed to 'docker build'.\nEach entry is one argument.\n\nExample:\n  --build-arg\n  HTTP_PROXY=http://proxy:3128"},
 	{Key: "common-args", Label: "Common Args", Group: "Build",
-		Detail: "Arguments passed to both 'docker build' and\n'docker run'. Each entry is one argument."},
+		Detail: "Arguments passed to both 'docker build' and\n'docker run'. Each entry is one argument.\n\nExample:\n  --platform\n  linux/amd64"},
 
 	// --- Advanced ---
 	{Key: "image", Label: "Image", Group: "Advanced",
 		Detail: "Use an existing local or remote image.\nExample: repo/name:tag\n\nIf set, skips building from Dockerfile/Boothfile."},
 	{Key: "version", Label: "Image Version", Group: "Advanced",
-		Detail: "Tag of the prebuilt booth image to run.\n\nThis is the config.toml 'version' key — the image the\nbooth runs, not the templates it was configured from.\nIf empty, 'latest' is used."},
+		Detail: "Tag of the prebuilt booth image to run.\n\nThis is the config.toml 'version' key — the image the\nbooth runs, not the templates it was configured from.\nIf empty, 'latest' is used.\n\nExample: 0.53.0"},
 	{Key: "startup", Label: "Startup Command", Group: "Advanced",
-		Detail: "Custom startup command to run inside the container."},
+		Detail: "Custom startup command to run inside the container.\n\nExample: jupyter lab --no-browser --ip=0.0.0.0"},
 	{Key: "env-file", Label: "Env File", Group: "Advanced",
-		Detail: "Provide an --env-file to docker run.\nUse 'none' to disable the default .booth/.env."},
+		Detail: "Provide an --env-file to docker run.\nUse 'none' to disable the default .booth/.env.\n\nExample: .env.local"},
 	{Key: "cmds", Label: "Commands", Group: "Advanced",
 		Detail: "Command to run instead of the variant's default.\nEach entry is one argv element — no shell is involved.\n\nExample, for `echo hello`:\n  echo\n  hello"},
 
@@ -195,17 +195,17 @@ var fieldDisplays = []fieldDisplay{
 	{Key: "shared-files", Label: "Shared Files", Group: "Shared",
 		Detail: "Container paths kept under .booth/shared/ as live bind\nmounts. Intended for git — team-shared state.\n\nExamples:\n  home/coder/.chrome-data/Default/Bookmarks\n  home/coder/.local/share/code-server/User/settings.json\n\nDo not put secrets or passwords here."},
 	{Key: "shared-dirs", Label: "Shared Dirs", Group: "Shared",
-		Detail: "Container directories kept under .booth/shared/ as whole-dir\nbind mounts. Intended for git — team-shared state.\n\nDo not put secrets, cookies, or full browser profiles."},
+		Detail: "Container directories kept under .booth/shared/ as whole-dir\nbind mounts. Intended for git — team-shared state.\n\nExample:\n  home/coder/.local/share/code-server/User/snippets\n\nDo not put secrets, cookies, or full browser profiles."},
 
 	// --- Session ---
 	{Key: "idle-time", Label: "Idle Time", Group: "Session",
-		Detail: "Seconds of inactivity before the booth is considered\nidle. 0 disables idle tracking."},
+		Detail: "Seconds of inactivity before the booth is considered\nidle. 0 disables idle tracking.\n\nExample: 300 (5 minutes)"},
 	{Key: "idle-shutdown-time", Label: "Idle Shutdown Time", Group: "Session",
-		Detail: "Seconds the booth may stay idle before it shuts itself\ndown. 0 means never shut down on idle."},
+		Detail: "Seconds the booth may stay idle before it shuts itself\ndown. 0 means never shut down on idle.\n\nExample: 1800 (30 minutes)"},
 	{Key: "idle-exit-code", Label: "Idle Exit Code", Group: "Session",
 		Detail: "Exit code reported when an idle shutdown fires."},
 	{Key: "show-run-time", Label: "Show Run Time", Group: "Session",
-		Detail: "Show elapsed session time in the booth UI.\n\nA Unix epoch (seconds) to count up from, or any\nnon-empty value to count from container launch."},
+		Detail: "Show elapsed session time in the booth UI.\n\nA Unix epoch (seconds) to count up from, or any\nnon-empty value to count from container launch.\n\nExample: date +%s (to count from a specific moment),\nor just \"true\" to count from launch."},
 	{Key: "show-count-down", Label: "Show Count Down", Group: "Session",
 		Detail: "Show time remaining until a Unix epoch (seconds).\n\nThe booth shuts down when it reaches zero.\nGet an epoch with: date +%s"},
 	{Key: "count-down-exit-code", Label: "Count Down Exit Code", Group: "Session",
