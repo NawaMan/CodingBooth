@@ -59,6 +59,7 @@ func (config *AppConfig) ExpandEnvScalars() error {
 		{"name", &config.Name},
 		{"port", &config.Port},
 		{"offset-base", &config.OffsetBase},
+		{"browser-port", &config.BrowserPort},
 		{"env-file", &config.EnvFile},
 		{"startup", &config.Startup},
 		{"egress-mode", &config.EgressMode},
@@ -162,7 +163,13 @@ type AppConfig struct {
 	// published ports. A cloud booth owns the whole port range and puts its front
 	// door on a fixed number, so there it is set to a base of its own — and "0"
 	// makes every "+OFFSET" resolve to the offset itself, i.e. an absolute port.
-	OffsetBase        string `toml:"offset-base,omitempty"    envconfig:"CB_OFFSET_BASE"`
+	OffsetBase string `toml:"offset-base,omitempty"    envconfig:"CB_OFFSET_BASE"`
+	// BrowserPort is which port --browser opens, as an absolute port or a
+	// "+OFFSET" counted from the offset base. Empty means the booth's own
+	// port — today's behavior, for a booth whose UI is the thing being opened.
+	// A booth running a dev server on another published port (e.g. "-p
+	// +80:8080") sets this to "+80" so --browser opens that app instead.
+	BrowserPort       string `toml:"browser-port,omitempty"   envconfig:"CB_BROWSER_PORT"`
 	EnvFile           string `toml:"env-file,omitempty"       envconfig:"CB_ENV_FILE"`
 	Startup           string `toml:"startup,omitempty"        envconfig:"CB_STARTUP"`
 	ShowRunTime       string `toml:"show-run-time,omitempty"           envconfig:"CB_SHOW_RUN_TIME"`
@@ -263,11 +270,12 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Timezone:    %q\n", config.Timezone)
 
 	fmt.Fprintf(&str, "# Container Configuration -------\n")
-	fmt.Fprintf(&str, "    Name:       %q\n", config.Name)
-	fmt.Fprintf(&str, "    Port:       %q\n", config.Port)
-	fmt.Fprintf(&str, "    OffsetBase: %q\n", config.OffsetBase)
-	fmt.Fprintf(&str, "    EnvFile:    %q\n", config.EnvFile)
-	fmt.Fprintf(&str, "    Startup:    %q\n", config.Startup)
+	fmt.Fprintf(&str, "    Name:        %q\n", config.Name)
+	fmt.Fprintf(&str, "    Port:        %q\n", config.Port)
+	fmt.Fprintf(&str, "    OffsetBase:  %q\n", config.OffsetBase)
+	fmt.Fprintf(&str, "    BrowserPort: %q\n", config.BrowserPort)
+	fmt.Fprintf(&str, "    EnvFile:     %q\n", config.EnvFile)
+	fmt.Fprintf(&str, "    Startup:     %q\n", config.Startup)
 
 	fmt.Fprintf(&str, "# TOML-friendly array fields ----\n")
 	formatList(&str, "CommonArgs", config.CommonArgs.List, "    ")

@@ -91,6 +91,13 @@ func PortDetermination(ctx appctx.AppContext) appctx.AppContext {
 	}
 	builder.OffsetBaseNumber = offsetBase
 
+	browserPort, err := parseBrowserPort(ctx.BrowserPort(), offsetBase)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+	builder.BrowserPortNumber = browserPort
+
 	if !ctx.Quiet() && (portGenerated || portNumber != defaultPortBase || ctx.Verbose()) && ctx.Cmds().Length() == 0 {
 		printPortBanner(portNumber, ctx.Public())
 	}
@@ -120,6 +127,39 @@ func parseOffsetBase(spec string, boothPort int) (int, error) {
 		return 0, fmt.Errorf("Error: --offset-base must be between 0 and 65535 (got '%s').", spec)
 	}
 	return base, nil
+}
+
+// parseBrowserPort resolves what port --browser should open: the booth's own
+// port (0, meaning unset) unless spec says otherwise. An absolute number
+// (e.g. "24080") is used as-is; a "+OFFSET" (e.g. "+80") is counted from the
+// offset base, the same arithmetic "+OFFSET" run-args use (see
+// resolveRelativeMapping) — so a booth already publishing its dev server via
+// "-p +80:8080" can point the browser at the same place with "--browser-port
+// +80" instead of restating the resolved absolute port.
+func parseBrowserPort(spec string, offsetBase int) (int, error) {
+	spec = strings.TrimSpace(spec)
+	if spec == "" {
+		return 0, nil
+	}
+	if rest, ok := strings.CutPrefix(spec, "+"); ok {
+		offset, err := strconv.Atoi(rest)
+		if err != nil {
+			return 0, fmt.Errorf("Error: --browser-port +OFFSET must be a number (got '%s').", spec)
+		}
+		port := offsetBase + offset
+		if port < 1 || port > 65535 {
+			return 0, fmt.Errorf("Error: --browser-port %s resolves to %d, which is outside 1-65535.", spec, port)
+		}
+		return port, nil
+	}
+	port, err := strconv.Atoi(spec)
+	if err != nil {
+		return 0, fmt.Errorf("Error: --browser-port must be a number or +OFFSET (got '%s').", spec)
+	}
+	if port < 1 || port > 65535 {
+		return 0, fmt.Errorf("Error: --browser-port must be between 1 and 65535 (got '%s').", spec)
+	}
+	return port, nil
 }
 
 // parseSymbolicPort parses a NEXT / RANDOM port spec, optionally suffixed with

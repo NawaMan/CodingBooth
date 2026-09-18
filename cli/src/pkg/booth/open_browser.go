@@ -43,13 +43,27 @@ func boothHealthURL(boothURL string) string {
 	return strings.TrimSuffix(boothURL, "/") + boothHealthPath
 }
 
-// BoothURL is the address this run's booth UI answers on.
+// BoothURL is the address this run's booth front door answers on — always the
+// booth's own port. This is what readiness is checked against, since
+// /__booth/health lives there regardless of where the browser ends up opening.
 func BoothURL(ctx appctx.AppContext) string {
 	scheme := "http"
 	if ctx.Public() {
 		scheme = "https"
 	}
 	return fmt.Sprintf("%s://localhost:%d", scheme, ctx.PortNumber())
+}
+
+// browserOpenURL is the address --browser actually opens: BoothURL, unless
+// --browser-port points at a different published port (e.g. a dev server the
+// booth's own run-args publish via "-p +80:8080"). That other port is plain
+// HTTP — it is not the booth's own TLS-terminated front door, so --public's
+// HTTPS does not carry over to it.
+func browserOpenURL(ctx appctx.AppContext) string {
+	if port := ctx.BrowserPortNumber(); port != 0 {
+		return fmt.Sprintf("http://localhost:%d", port)
+	}
+	return BoothURL(ctx)
 }
 
 // shouldOpenBrowser reports whether this run has a page worth opening.
@@ -73,27 +87,30 @@ func shouldOpenBrowser(ctx appctx.AppContext) bool {
 // container exits, so a booth that dies during startup does not leave a
 // goroutine polling a port nothing is on.
 func OpenBoothInBrowser(waitCtx context.Context, ctx appctx.AppContext) {
-	url := BoothURL(ctx)
+	// Readiness is always checked against the booth's own front door — that is
+	// where /__booth/health lives — even when --browser-port opens elsewhere.
+	healthWaitURL := BoothURL(ctx)
+	targetURL := browserOpenURL(ctx)
 
 	if reason := browserUnavailable(); reason != "" {
-		warnBrowser(url, "not opening a browser: %s", reason)
+		warnBrowser(targetURL, "not opening a browser: %s", reason)
 		return
 	}
 
-	if !waitForBoothServing(waitCtx, url, browserWaitTimeout) {
+	if !waitForBoothServing(waitCtx, healthWaitURL, browserWaitTimeout) {
 		// A cancelled wait means the booth exited first — it has already said so.
 		if waitCtx.Err() != nil {
 			return
 		}
-		warnBrowser(url, "the booth did not answer within %s", browserWaitTimeout)
+		warnBrowser(targetURL, "the booth did not answer within %s", browserWaitTimeout)
 		return
 	}
 
-	if err := openURL(url); err != nil {
-		warnBrowser(url, "could not open a browser: %v", err)
+	if err := openURL(targetURL); err != nil {
+		warnBrowser(targetURL, "could not open a browser: %v", err)
 		return
 	}
-	LogFprintf(os.Stderr, "🌐 Opened %s in your browser.\n", url)
+	LogFprintf(os.Stderr, "🌐 Opened %s in your browser.\n", targetURL)
 }
 
 // warnBrowser reports why the browser did not open and points at the URL, so
