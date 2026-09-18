@@ -40,7 +40,7 @@ project booth (and `.booth/`); without one they fail with the usual messages.
 |-------|----------------|
 | bash  | `~/.bashrc` |
 | zsh   | `~/.zshrc` |
-| fish  | `~/.config/fish/conf.d/codingbooth.fish` |
+| fish  | `~/.config/fish/functions/booth.fish` |
 
 The block is fenced so you can delete it by hand:
 
@@ -343,7 +343,7 @@ Restart your shell after `shell-config uninstall` to drop the `booth` function.
 ```
 ~/                                    ← user home
 ├── .bashrc, .zshrc                              [layer 1: shell function]
-├── .config/fish/conf.d/codingbooth.fish         [layer 1: fish]
+├── .config/fish/functions/booth.fish            [layer 1: fish]
 ├── .local/share/codingbooth/booth               [layer 1: central wrapper] (Linux)
 ├── .cache/codingbooth/versions/<v>/              [layer 6: shared cache]   (Linux)
 └── Library/Caches/codingbooth/versions/<v>/     [layer 6: shared cache]   (macOS)

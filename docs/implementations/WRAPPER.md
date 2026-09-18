@@ -130,7 +130,7 @@ marked `booth()` function into the user's shell startup files:
 |-------|------|
 | bash  | `~/.bashrc` |
 | zsh   | `~/.zshrc` |
-| fish  | `~/.config/fish/conf.d/codingbooth.fish` |
+| fish  | `~/.config/fish/functions/booth.fish` |
 
 | Platform | Central wrapper |
 |----------|-----------------|

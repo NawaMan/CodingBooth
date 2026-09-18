@@ -16,6 +16,6 @@ chmod +x booth
 ./booth shell-config install
 
 echo ""
-echo "Use ./booth from this project, or type 'booth' after opening a new shell"
-echo "(shell-config installs a function that finds the nearest project wrapper)."
+echo "Restart your shell (or open a new terminal) to use 'booth' from anywhere."
+echo "Until then, use ./booth from this directory."
 echo ""
