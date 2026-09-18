@@ -39,16 +39,12 @@ android_emulator_test_enabled || exit 0
 use_local_base_image || exit 0
 
 # Locate the repo root, for the binary and the templates the extension lives in.
-REPO_ROOT="$SCRIPT_DIR"
-for _ in 1 2 3 4 5; do
-    [[ -f "$REPO_ROOT/codingbooth" && -x "$REPO_ROOT/codingbooth" ]] && break
-    REPO_ROOT="$(dirname "$REPO_ROOT")"
-done
-if [[ ! -x "$REPO_ROOT/codingbooth" ]]; then
+# The build sits at the root, so the root is where it was found.
+BOOTH="$(find_local_booth_build "$SCRIPT_DIR")" || {
     echo "ERROR: Could not find codingbooth"
     exit 1
-fi
-BOOTH="$REPO_ROOT/codingbooth"
+}
+REPO_ROOT="$(dirname "$BOOTH")"
 
 # A throwaway project, because the cache grows to gigabytes and must not be left
 # in the repo. Generated through the real template so the mount under test is the

@@ -18,11 +18,8 @@ NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR/../../../.."
-if [ -x "$REPO_ROOT/codingbooth" ]; then
-    BOOTH="$REPO_ROOT/codingbooth"
-else
-    BOOTH="$REPO_ROOT/booth"
-fi
+source "$REPO_ROOT/tests/booth-bin--source.sh"
+BOOTH="$(resolve_booth_bin)"
 
 # Run inside the container
 "$BOOTH" --variant base --port "${CB_PORT:-50232}" -- './.cb-tests/inBooth--run-all-tests.sh' 2>&1 | tee "$0.out"
