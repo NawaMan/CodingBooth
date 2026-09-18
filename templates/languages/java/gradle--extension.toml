@@ -1,5 +1,8 @@
 display-name = "Gradle"
 display-disc = "Gradle build tool for Java and JVM projects"
+display-detail = """Installs Gradle itself, since the Java template ships no default build tool -- pick this or Maven. \
+Pin GRADLE_VERSION for a reproducible build; the default tracks a recent release. Project \
+build.gradle(.kts) dependencies are a different extension (gradle dependencies)."""
 display-order = 11
 auto-select = false
 tags = [

@@ -1,5 +1,11 @@
 display-name = "Deno Tools"
 display-disc = "Install global CLI tools with deno install"
+display-detail = """Installs global CLI tools by passing each entry straight to `deno install`, landing their \
+binaries on PATH -- `--global` is added automatically unless one of your own entries already carries \
+a `g` permission flag. Entries can mix permission flags, a package specifier, or a script URL: \
+`-A npm:cowsay`, `-Agf jsr:@luca/flag@1`, or `-A -n cowsay https://deno.land/x/cowsay/mod.ts`. This \
+is for runnable commands, not importable dependencies for your code -- see the Deno Packages \
+extension for that."""
 display-order = 11
 auto-select = false
 tags = ["deno", "tools", "packages"]
