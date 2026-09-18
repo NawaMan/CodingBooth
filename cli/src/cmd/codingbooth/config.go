@@ -32,7 +32,7 @@ import (
 //	booth config --no-tui --select go   → CLI mode
 //	booth config --dryrun --select go   → TUI, dryrun on confirm
 //	booth config --no-tui --dryrun ...  → CLI dryrun
-func runConfig(version string) {
+func runConfig(version, buildDate string) {
 	args := os.Args[2:] // skip "codingbooth" and "config"
 
 	if len(args) > 0 && (args[0] == "help" || args[0] == "--help" || args[0] == "-h") {
@@ -68,7 +68,7 @@ func runConfig(version string) {
 	} else if flags.web || shouldUseWebUI() {
 		runConfigWeb(version, targetPath, flags)
 	} else {
-		runConfigTUI(version, targetPath, flags)
+		runConfigTUI(version, buildDate, targetPath, flags)
 	}
 }
 
@@ -332,11 +332,11 @@ func prepareInteractiveConfig(version, targetPath string, flags initFlags) inter
 }
 
 // runConfigTUI handles interactive TUI mode (default).
-func runConfigTUI(version string, targetPath string, flags initFlags) {
+func runConfigTUI(version, buildDate string, targetPath string, flags initFlags) {
 	setup := prepareInteractiveConfig(version, targetPath, flags)
 	defer setup.cleanup()
 
-	result, err := tui.RunConfig(setup.registry, setup.pre, setup.warning, setup.drifted)
+	result, err := tui.RunConfig(setup.registry, setup.pre, setup.warning, setup.drifted, version, buildDate)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
