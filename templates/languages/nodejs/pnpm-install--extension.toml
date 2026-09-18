@@ -1,5 +1,10 @@
 display-name = "pnpm install"
 display-disc = "Pre-install pnpm dependencies from package.json into the image"
+display-detail = """Installs pnpm itself, then your project's dependencies from package.json with `pnpm install` into \
+the image's cache (/opt/pnpm-cache/node_modules) at build time, restoring them into the running \
+booth's node_modules on startup if not already there. This is for your project's own dependencies; \
+it does not run your code. If package.json is missing, the build still succeeds and this step is \
+skipped."""
 display-order = 17
 auto-select = false
 tags = ["nodejs", "pnpm", "packages"]

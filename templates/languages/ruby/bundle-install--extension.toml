@@ -1,5 +1,9 @@
 display-name = "bundle install"
 display-disc = "Pre-install Ruby gem dependencies into the image"
+display-detail = """Installs your project's gems from Gemfile with `bundle install` into the image's gem cache \
+(/opt/bundle-cache/vendor) at build time, then restores them into the running booth's vendor/bundle \
+on startup if not already there. This is for your project's own dependencies; it does not run your \
+code. If Gemfile is missing, the build still succeeds and this step is skipped."""
 display-order = 15
 auto-select = false
 tags = ["ruby", "bundler", "packages"]
