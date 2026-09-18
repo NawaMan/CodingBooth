@@ -4,6 +4,24 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Tests resolve the booth they run through one shared helper,
+  `tests/booth-bin--source.sh`, instead of 118 copies of the same broken line.**
+  Every test used to pick its binary with `[ -x "$REPO_ROOT/codingbooth" ]`,
+  which is always false on Windows: `build/cli-build.sh` writes the host build
+  to `codingbooth.exe` there, and the extensionless `codingbooth` beside it is
+  the Linux cross-build, not executable on the host. So every test silently fell
+  through to the `booth` wrapper — which runs a *release* binary, and a release
+  binary's version picks the base image tag. That is what made a 0.78.0 tree
+  build `FROM nawaman/codingbooth:base-0.77.0` and fail on setups added after
+  0.77.0 (`pg-ext--install.sh: command not found`), with nothing in the output
+  pointing at the real cause. `resolve_booth_bin` returns the local build, or
+  the nearest wrapper when there is none; `find_local_booth_build` returns only
+  the real CLI, for callers that read `version` or need a subcommand a given
+  release may not have. The walk stops at the checkout root, so a linked
+  worktree never picks up the main clone's binary. The 17 example tests that
+  checked the wrapper *first* — and so never ran a local build on any platform —
+  now use the same order as everything else.
+
 - **Catalog version pins refreshed for 0.78.0.** Script defaults/fallbacks,
   template defaults, and suggests lists now agree on current stables: buf
   `1.73.0`, PostgREST `16.3`, Kotlin `2.4.20`, lazysql `0.5.7`, lazygit
