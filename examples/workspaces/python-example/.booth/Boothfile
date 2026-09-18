@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --variant xfce --select python+vscode-ext+kernel/notebook/xfce/claude-code
+# Configured by: booth config --no-tui --overwrite --variant xfce --select python:3.13.12+pip-config+vscode-ext+kernel+pip/notebook/claude-code+credential+settings-cache/xfce
 
-env APT_SNAPSHOT=20260906T000000Z
+env APT_SNAPSHOT=20260918T000000Z
 
 arg CLAUDE_CODE_VERSION=latest
 arg NOTEBOOK_PORT=18888
@@ -10,6 +10,7 @@ arg PYTHON_VERSION=3.13.12
 setup xfce
 setup claude-code ${CLAUDE_CODE_VERSION}
 setup python ${PYTHON_VERSION}
-setup notebook ${NOTEBOOK_PORT}
 setup python-code-extension
 setup python-nb-kernel
+run --mount=type=bind,target=/tmp/ctx if [ -f /tmp/ctx/.booth/requirements.txt ]; then pip install -r /tmp/ctx/.booth/requirements.txt; else echo "Warning: .booth/requirements.txt not found -- skipping pip install"; fi
+setup notebook ${NOTEBOOK_PORT}
