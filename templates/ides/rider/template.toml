@@ -1,6 +1,11 @@
 display-name = "Rider"
 display-disc = "JetBrains Rider IDE for .NET development"
-display-detail = "Installs JetBrains Rider IDE for .NET and C# development. Requires a desktop variant."
+display-detail = """Installs JetBrains Rider IDE for .NET and C# development. Requires a desktop variant.
+
+WARNING: Rider is commercial with no free tier -- unlike IntelliJ IDEA/PyCharm's Community \
+Editions in this catalog, you need your own JetBrains license (or trial) to use it past the \
+evaluation window. This setup only downloads and installs the IDE; per the JetBrains EULA, \
+distributing an image with it pre-installed is not allowed even without an active license."""
 display-order = 34
 tags = [
     "jetbrains",
