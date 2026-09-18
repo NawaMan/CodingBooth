@@ -9,6 +9,7 @@ setup aider
 setup android-emulator
 setup android-sdk
 setup ansible
+setup ant
 setup antigravity
 setup anythingllm
 setup apache
@@ -197,6 +198,7 @@ setup playwright-code-extension
 setup postgresql
 setup postgrest
 setup protoc-gen-grpc-java
+setup protoc-gen-grpc-web
 setup pulumi
 setup puppeteer
 setup pycharm
