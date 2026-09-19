@@ -237,6 +237,18 @@ run-args = ["-e", "GH_TOKEN=${GH_TOKEN}"]
 
 `$VAR`, `${VAR}`, and `~` (tilde for home directory) are expanded at config load time using host environment values.
 
+Docker's bare passthrough form is also allowed:
+
+```toml
+run-args = ["-e", "GH_TOKEN"]
+```
+
+If `GH_TOKEN` exists in the host environment, booth passes `-e GH_TOKEN` to Docker. If it is unset, booth omits that `-e` pair entirely. An empty-but-set host variable still counts as present and is passed through. To force an empty variable into the container, use the explicit assignment form:
+
+```toml
+run-args = ["-e", "GH_TOKEN="]
+```
+
 > **Tip:** If the variable is already defined in `.booth/.env` or an explicit `env-file`, you don't need to repeat it in `run-args`. The env files pass variables directly to the container.
 
 ### 4. Build-Time Variables: `env` in Boothfile

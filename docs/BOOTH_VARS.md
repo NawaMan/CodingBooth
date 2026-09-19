@@ -21,6 +21,11 @@ Back to [README](../README.md)
 | `CB_*` environment variables (string or semicolon list) | yes |
 | CLI `-e KEY=VAL` / `--env KEY=VAL` | **no** — the invoking shell has already done its expansion. Booth passes the value through to docker untouched |
 
+Bare Docker env passthrough entries in run args, such as `-e GH_TOKEN` or
+`--env GH_TOKEN`, are conditional at runtime: booth emits them only when the
+host variable exists. Empty-but-set variables still count as present. Explicit
+assignments, including `GH_TOKEN=`, are always emitted.
+
 ---
 
 ## The rules

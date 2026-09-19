@@ -1484,3 +1484,71 @@ func deviceHostPath(spec string) string {
 	}
 	return spec
 }
+
+// FilterUnsetEnvVars drops bare -e/--env passthrough entries when the host
+// variable does not exist. Explicit assignments such as FOO= and FOO=bar are
+// preserved exactly as written.
+func FilterUnsetEnvVars(ctx appctx.AppContext) appctx.AppContext {
+	builder := ctx.ToBuilder()
+	builder.RunArgs = filterUnsetEnvVarGroups(ctx.RunArgs())
+	builder.CommonArgs = filterUnsetEnvVarGroups(ctx.CommonArgs())
+	return builder.Build()
+}
+
+func filterUnsetEnvVarGroups(args ilist.List[ilist.List[string]]) *ilist.AppendableList[ilist.List[string]] {
+	filtered := ilist.NewAppendableList[ilist.List[string]]()
+	args.Range(func(_ int, group ilist.List[string]) bool {
+		kept := filterUnsetEnvVarItems(group.Slice())
+		if len(kept) > 0 {
+			filtered.Append(ilist.NewListFromSlice(kept))
+		}
+		return true
+	})
+	return filtered
+}
+
+func filterUnsetEnvVarItems(items []string) []string {
+	var kept []string
+	for i := 0; i < len(items); i++ {
+		flag := items[i]
+		if isEnvFlag(flag) && i+1 < len(items) {
+			spec := items[i+1]
+			if shouldKeepEnvSpec(spec) {
+				kept = append(kept, flag, spec)
+			}
+			i++
+			continue
+		}
+
+		if spec, ok := splitEnvEqualsFlag(flag); ok {
+			if shouldKeepEnvSpec(spec) {
+				kept = append(kept, flag)
+			}
+			continue
+		}
+
+		kept = append(kept, flag)
+	}
+	return kept
+}
+
+func isEnvFlag(flag string) bool {
+	return flag == "-e" || flag == "--env"
+}
+
+func splitEnvEqualsFlag(flag string) (string, bool) {
+	for _, prefix := range []string{"-e=", "--env="} {
+		if strings.HasPrefix(flag, prefix) {
+			return strings.TrimPrefix(flag, prefix), true
+		}
+	}
+	return "", false
+}
+
+func shouldKeepEnvSpec(spec string) bool {
+	if strings.Contains(spec, "=") {
+		return true
+	}
+	_, ok := os.LookupEnv(spec)
+	return ok
+}

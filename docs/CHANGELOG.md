@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Bare runtime env passthrough now skips variables that are truly unset.**
+  `run-args = ["-e", "NAME"]` and `["--env", "NAME"]` are passed to Docker
+  only when `NAME` exists in the host environment. Empty-but-set variables
+  still pass through, and explicit assignments such as `NAME=` or `NAME=value`
+  are unchanged.
+
 - **New "Grok Token Credential" extension authenticates via `XAI_API_KEY`,
   alongside the existing host-file-mount extension.** The existing "Grok
   Build Credentials" extension bind-mounts `~/.grok/auth.json` and

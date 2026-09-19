@@ -62,6 +62,9 @@ func (runner *BoothRunner) Run() error {
 	// Same contract for devices: a template that asks for hardware this host does
 	// not have degrades with a warning rather than stopping the booth from starting.
 	ctx = FilterMissingDevices(ctx)
+	// Bare env passthrough flags depend on the host environment. If the variable
+	// is absent, skip the flag instead of asking Docker to copy nothing.
+	ctx = FilterUnsetEnvVars(ctx)
 
 	// Create booth with prepared context and run
 	booth := NewBooth(ctx)
