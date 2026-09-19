@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.78.0--browser-open-port — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.78.0 — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 

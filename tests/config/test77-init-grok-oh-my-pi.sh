@@ -37,6 +37,7 @@ assert-line "$boothfile" 'setup grok ' '--version ${GROK_VERSION}'  "Boothfile u
 config="$prj/.booth/config.toml"
 has   "$config" '"~/.grok/auth.json:/etc/cb-home-seed/.grok/auth.json:ro"'     ; check $? "grok auto-seeds auth.json"
 has   "$config" '"~/.grok/config.toml:/etc/cb-home-seed/.grok/config.toml:ro"' ; check $? "grok auto-seeds config.toml"
+! has "$config" 'XAI_API_KEY'                                                 ; check $? "grok does not auto-pass XAI_API_KEY"
 # plugins are opt-in — must NOT appear on bare select
 ! has "$config" '"~/.grok/installed-plugins:/etc/cb-home-seed/.grok/installed-plugins:ro"' ; check $? "grok does not auto-seed plugins"
 ! has "$config" '"~/.grok/skills:/etc/cb-home-seed/.grok/skills:ro"'                       ; check $? "grok does not auto-seed skills"
@@ -60,6 +61,23 @@ has   "$config" '"~/.grok/installed-plugins:/etc/cb-home-seed/.grok/installed-pl
 has   "$config" '"~/.grok/skills:/etc/cb-home-seed/.grok/skills:ro"'                       ; check $? "grok+plugins seeds skills"
 has   "$config" '"~/.grok/auth.json:/etc/cb-home-seed/.grok/auth.json:ro"'                 ; check $? "grok+plugins still seeds auth"
 ! has "$config" '"~/.grok:/etc/cb-home-seed/.grok:ro"'                                     ; check $? "grok+plugins does not seed all of ~/.grok"
+
+# Grok + token-credential (opt-in API key; file credential still auto-selected)
+run rm -Rf $prj
+mkdir -p $prj
+run booth config $prj --no-tui --select "grok+token-credential"
+config="$prj/.booth/config.toml"
+has   "$config" '"-e", "XAI_API_KEY=${XAI_API_KEY}"'                     ; check $? "grok+token-credential passes XAI_API_KEY"
+has   "$config" '"~/.grok/auth.json:/etc/cb-home-seed/.grok/auth.json:ro"' ; check $? "grok+token-credential still auto-seeds auth.json"
+
+# Grok + token-credential without the file credential (the key actually wins)
+run rm -Rf $prj
+mkdir -p $prj
+run booth config $prj --no-tui --select "grok+token-credential~credential"
+config="$prj/.booth/config.toml"
+has   "$config" '"-e", "XAI_API_KEY=${XAI_API_KEY}"'                       ; check $? "grok+token-credential~credential passes XAI_API_KEY"
+! has "$config" '"~/.grok/auth.json:/etc/cb-home-seed/.grok/auth.json:ro"'   ; check $? "grok+token-credential~credential does not seed auth.json"
+! has "$config" '"~/.grok/config.toml:/etc/cb-home-seed/.grok/config.toml:ro"' ; check $? "grok+token-credential~credential does not seed config.toml"
 
 # ---------------------------------------------------------------------------
 # Oh My Pi — parent + auto extensions
