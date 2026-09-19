@@ -4,17 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
-- **Claude Code Credentials extension now authenticates via
-  `CLAUDE_CODE_OAUTH_TOKEN` instead of mounting host credential files.**
-  The old extension bind-mounted `~/.claude.json` and
-  `~/.claude/.credentials.json` from the host, which depended on those exact
-  paths existing and being readable on the host -- brittle across hosts and
-  unusable in a container-only environment. The extension now passes
-  `CLAUDE_CODE_OAUTH_TOKEN` through from `.booth/.env` (generate it once on
-  the host with `claude setup-token`, which requires a Pro/Max/Team/
-  Enterprise subscription, not API/console billing). Unset, the variable
-  expands to empty, so the extension stays harmless and auto-selectable with
-  no token configured.
+- **New "Claude Code Token Credential" extension authenticates via
+  `CLAUDE_CODE_OAUTH_TOKEN`, alongside the existing host-file-mount
+  extension.** The existing "Claude Code Credentials" extension bind-mounts
+  `~/.claude.json` and `~/.claude/.credentials.json` from the host, which
+  depends on those exact paths existing and being readable on the host --
+  no good on a host with no `~/.claude` files at all (CI, a remote/headless
+  box). The new extension instead passes `CLAUDE_CODE_OAUTH_TOKEN` through
+  from `.booth/.env` (generate it once on the host with `claude
+  setup-token`, which requires a Pro/Max/Team/Enterprise subscription, not
+  API/console billing). It is opt-in (`auto-select = false`) since the
+  file-mount extension remains the default; unset, the variable expands to
+  empty, so selecting it without a token configured stays harmless.
 
 - **New `--browser-port <n|+OFFSET>` flag picks which port `--browser` opens,
   instead of always the booth's own port.** A booth running a dev server on a
