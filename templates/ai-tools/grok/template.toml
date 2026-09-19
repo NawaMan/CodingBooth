@@ -1,7 +1,7 @@
 display-name = "Grok Build"
 primary = true
 display-disc = "xAI Grok Build coding agent CLI"
-display-detail = "Installs the official xAI Grok Build coding agent (binary: grok; alias: agent). Interactive TUI for complex coding work powered by Grok. Authenticate with 'grok login' (seeds ~/.grok/auth.json) or GROK_DEPLOYMENT_KEY. Pair with the credential extension to reuse host auth inside the booth."
+display-detail = "Installs the official xAI Grok Build coding agent (binary: grok; alias: agent). Interactive TUI for complex coding work powered by Grok. Authenticate with 'grok login' (seeds ~/.grok/auth.json) or a console API key (`XAI_API_KEY`). Pair with the credential extension to reuse host auth, or token-credential (`grok+token-credential~credential`) to pass `XAI_API_KEY` from `.booth/.env`."
 display-order = 18
 tags = [
     "ai",
