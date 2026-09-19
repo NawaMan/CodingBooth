@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **New "Grok Token Credential" extension authenticates via `XAI_API_KEY`,
+  alongside the existing host-file-mount extension.** The existing "Grok
+  Build Credentials" extension bind-mounts `~/.grok/auth.json` and
+  `~/.grok/config.toml` from the host (the default, still auto-selected).
+  The new extension instead passes `XAI_API_KEY` through from `.booth/.env`
+  (a console.x.ai API key). It is opt-in (`auto-select = false`). Grok
+  prefers a session in `auth.json` over the API key, so select it *instead*
+  of the file mount: `grok+token-credential~credential`. Unset, the
+  variable expands to empty, so selecting it without a key configured stays
+  harmless.
+
 - **New "Claude Code Token Credential" extension authenticates via
   `CLAUDE_CODE_OAUTH_TOKEN`, alongside the existing host-file-mount
   extension.** The existing "Claude Code Credentials" extension bind-mounts
