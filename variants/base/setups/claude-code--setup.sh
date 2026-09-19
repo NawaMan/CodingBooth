@@ -160,14 +160,23 @@ echo ""
 echo "Users can run 'claude' directly. Config will be set up on first run."
 echo ""
 echo "=== Credential Seeding ==="
-echo "Generate a long-lived token on the host (requires a Pro/Max/Team/Enterprise"
-echo "subscription -- not API/console billing):"
+echo "To reuse credentials from host, add to .booth/config.toml:"
 echo ""
-echo "  claude setup-token"
+echo '  run-args = ['
+echo '      # Claude Code config (home-seeding: onboarding state, theme, etc.)'
+echo '      "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",'
+echo '      # Claude Code credentials (home-override: always use fresh host credentials)'
+echo '      "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"'
+echo '  ]'
 echo ""
-echo "Then put it in .booth/.env (gitignored, not .booth/config.toml):"
+echo "Seed the single credential file, not the whole ~/.claude: that directory also"
+echo "holds session history and project state, which do not belong in a booth. And"
+echo "seed it through /etc/cb-home (override), not /etc/cb-home-seed (no-clobber),"
+echo "so a refreshed host token reaches the booth instead of losing to a stale copy."
 echo ""
-echo "  CLAUDE_CODE_OAUTH_TOKEN=<token>"
-echo ""
-echo "The Claude Code Credentials extension passes it through automatically."
+echo "No host ~/.claude files to mount (CI, a remote/headless box)? Select the"
+echo "'Claude Code Token Credential' extension instead: generate a long-lived"
+echo "token with 'claude setup-token' (needs a Pro/Max/Team/Enterprise"
+echo "subscription, not API/console billing) and put"
+echo "CLAUDE_CODE_OAUTH_TOKEN=<token> in .booth/.env."
 echo ""
