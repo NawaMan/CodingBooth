@@ -19,7 +19,7 @@ Notes:
 - Installs the official xAI Grok Build coding agent CLI (binary: grok).
 - Also installs the 'agent' alias (same binary), matching the upstream installer.
 - Auth: run 'grok login' once, or seed ~/.grok/auth.json from the host.
-- Env: GROK_DEPLOYMENT_KEY or tokens in ~/.grok/auth.json.
+- Env: XAI_API_KEY (console API key) as a fallback when no session is active.
 - See: https://x.ai/cli  and  https://x.ai/news/grok-build-cli
 USAGE
 }
@@ -120,7 +120,7 @@ cat > "${PROFILE_FILE}" <<EOF
 #   grok login           # authenticate (or seed ~/.grok/auth.json)
 #   agent                # alias for grok
 #
-# Auth via ~/.grok/auth.json (from 'grok login') or GROK_DEPLOYMENT_KEY.
+# Auth via ~/.grok/auth.json (from 'grok login') or XAI_API_KEY.
 # Docs: https://x.ai/cli
 EOF
 chmod 644 "${PROFILE_FILE}"
@@ -146,6 +146,8 @@ echo '      "-v", "~/.grok/auth.json:/etc/cb-home-seed/.grok/auth.json:ro",'
 echo '      "-v", "~/.grok/config.toml:/etc/cb-home-seed/.grok/config.toml:ro"'
 echo '  ]'
 echo ""
-echo "Or pass a deployment key at launch:"
-echo "  GROK_DEPLOYMENT_KEY=... booth"
+echo "No host ~/.grok files to mount (CI, a remote/headless box)? Select the"
+echo "'Grok Token Credential' extension instead: put XAI_API_KEY=<key> in"
+echo ".booth/.env (from console.x.ai). Drop the file credential so the key"
+echo "wins:  grok+token-credential~credential"
 echo ""
