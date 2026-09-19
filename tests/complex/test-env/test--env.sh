@@ -15,7 +15,7 @@ source ../../common--source.sh
 
 # ---- Config -------------------------------------------------------------------
 # Path to your booth launcher script. Override via env if needed.
-CB_SCRIPT="${CB_SCRIPT:-$(find_local_booth_build "$SCRIPT_DIR")}"
+CB_SCRIPT="${CB_SCRIPT:-$(find_local_booth_build)}"
 # Canonicalize to absolute path before we cd/pushd anywhere
 if command -v readlink >/dev/null 2>&1; then
   CB_SCRIPT="$(readlink -f "$CB_SCRIPT")"

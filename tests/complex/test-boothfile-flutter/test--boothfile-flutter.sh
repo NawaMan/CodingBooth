@@ -42,6 +42,7 @@ BOOTH_PATH="$(find_local_booth_build "$SCRIPT_DIR")" || {
     echo "ERROR: Could not find codingbooth"
     exit 1
 }
+CHECK_DIR="$(dirname "$BOOTH_PATH")"
 
 DOCKERFILE=$("$BOOTH_PATH" emit-dockerfile --code "$SCRIPT_DIR" 2>&1) || true
 
