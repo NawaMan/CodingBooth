@@ -13,6 +13,22 @@ The `booth` wrapper script is **location-based**: it operates relative to its ow
 6. Run startup scripts (system scripts from `/usr/share/startup.d/`, then user scripts from `.booth/startups/`)
 7. All commands run as the unprivileged **`coder`** user, not `root`, preserving security and consistent file ownership.
 
+> **On Windows hosts**, a bind-mounted file carries no Unix owner of its own, so
+> Docker Desktop presents it as `root:root` and step 3 above reconciles it. That
+> reconciliation cannot reach `.booth/` or the `booth` wrapper, because both are
+> mounted read-only (see [The `.booth/` Folder](../README.md#the-booth-folder-quick-overview)) —
+> a `chown` is a metadata write, which a read-only mount rejects even for `root`.
+> Instead `booth config` and `booth init` stamp the ownership host-side, once, at
+> the moment they write `.booth/`. This works because Docker Desktop reaches a
+> Windows drive through WSL `drvfs` mounted with `metadata`, which stores the
+> `chown` as an NTFS extended attribute on the host file — a property of the file,
+> not of the mount, so every later read-only mount reads it back. The result is
+> `coder`-owned and still read-only.
+>
+> One consequence: if you drop the `booth` wrapper into a project *after*
+> configuring it, it keeps reading back as `root` until the next `booth config`.
+> It stays readable and executable either way, so this is cosmetic.
+
 ```
 host                                     # your machine
   ├── ~/.cache/codingbooth/              # shared binary cache

@@ -363,6 +363,8 @@ my-project/
 
 >  **Read-only by default:** The `.booth/` folder is mounted **read-only** inside the container to prevent accidental or malicious modifications to your configuration. Use `--writable-booth` if you need to edit `.booth/` files from inside the container.
 >
+>  On Windows, `booth config` also stamps `.booth/` and the `booth` wrapper so they read back as `coder` rather than `root` inside the booth. They stay read-only — see [How It Works](docs/HOW_IT_WORKS.md).
+>
 >  **Local cache:** The `cache/` directory persists files (like shell history) across container sessions. Its structure mirrors the container filesystem and files are automatically bind-mounted. See **[Local Cache Guide](docs/BOOTH_LOCALCACHE.md)**.
 
 ---
