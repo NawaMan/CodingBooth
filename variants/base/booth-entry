@@ -261,6 +261,17 @@ if [ "${HOST_OS:-}" = "WIN" ]; then
     find "$mount_point" -xdev \( -user 0 -o -group 0 \) -exec chown "$HOST_UID:$HOST_GID" {} + 2>/dev/null || true
   done
 
+  # .booth/ and the booth wrapper are bind-mounted read-only, so the loop above
+  # cannot reach them: -xdev will not cross into them, and a chown would fail
+  # EROFS anyway. They get stamped host-side at init/config time instead -- see
+  # StampBoothOwnership. The one exception is .booth/.tmp, which is mounted
+  # READ-WRITE and is created by the CLI at run time, i.e. after that stamp ran,
+  # so it can and must be reconciled here.
+  booth_tmp="$CODE_DIR/.booth/.tmp"
+  if [ -d "$booth_tmp" ]; then
+    find "$booth_tmp" \( -user 0 -o -group 0 \) -exec chown "$HOST_UID:$HOST_GID" {} + 2>/dev/null || true
+  fi
+
   info "Windows ownership fix completed (recursive)."
 fi
 

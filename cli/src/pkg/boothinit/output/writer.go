@@ -226,6 +226,10 @@ func writeOutput(out *BoothOutput, targetPath string, beside []string) error {
 		}
 	}
 
+	// Windows only, and presentation only: make what we just wrote read back as
+	// coder rather than root from inside a booth. Best-effort, never fatal.
+	StampBoothOwnership(targetPath)
+
 	return nil
 }
 
