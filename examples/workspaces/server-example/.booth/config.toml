@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --select python/claude-code/antigravity
+# Configured by: booth config --no-tui --overwrite --expose +8080 --select python:3.13.12+pip-config+vscode-ext/claude-code+credential+settings-cache/antigravity+credential
 
 
 run-args = [
@@ -11,5 +11,6 @@ run-args = [
     "-v", "~/.config/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
     "-v", "~/Library/Application Support/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
     "-v", "~/AppData/Roaming/Antigravity:/etc/cb-home-seed/.config/Antigravity:ro",
-    "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro"
+    "-v", "~/.antigravity:/etc/cb-home-seed/.antigravity:ro",
+    "--publish", "+8080:8080"
 ]
