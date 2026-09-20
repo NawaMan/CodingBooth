@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select python/claude-code/antigravity
+# Configured by: booth config --no-tui --overwrite --expose +8080 --select python:3.13.12+pip-config+vscode-ext/claude-code+credential+settings-cache/antigravity+credential
 
-env APT_SNAPSHOT=20260906T000000Z
+env APT_SNAPSHOT=20260920T000000Z
 
 arg CLAUDE_CODE_VERSION=latest
 arg PYTHON_VERSION=3.13.12
