@@ -40,6 +40,7 @@ OPTIONS
   --egress                Enable egress defaults (proxy + enforcement)
   --sudo <true|false>     Enable/disable sudo access (default: true)
   --no-sudo               Shorthand for --sudo false
+  --rootless              Skip the Linux rootless/userns-remap refusal (unsupported)
 
 EXAMPLES:
   %s --variant codeserver       Run the booth to use codeserver on localhost:<port>.
@@ -157,6 +158,8 @@ CONTAINER MODE:
   --tls-cert <path>      TLS certificate file for HTTPS (used with --public)
   --tls-key <path>       TLS private key file for HTTPS (used with --public)
   --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST
+  --rootless             Skip the Linux rootless/userns-remap refusal (unsupported).
+                         macOS/Windows Docker Desktop and Linux rootful Docker are fine.
   --egress               Enable egress defaults (proxy + enforcement setup)
   --sudo <true|false>    Enable/disable sudo for the coder user (default: true).
                          When false, passwordless sudo is revoked after container setup.
@@ -272,6 +275,7 @@ CONTAINER MODE:
   --tls-cert <path>      TLS certificate file (used with --public)
   --tls-key <path>       TLS private key file (used with --public)
   --dind                 Enable Docker-in-Docker sidecar
+  --rootless             Skip the Linux rootless/userns-remap refusal (unsupported)
   --egress               Enable egress defaults
   --sudo <true|false>    Enable/disable sudo (default: true)
   --no-sudo              Shorthand for --sudo false

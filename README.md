@@ -1,6 +1,6 @@
 # CodingBooth
 
-**Current Version:** v0.78.0 — [View Changelog](docs/CHANGELOG.md)
+**Current Version:** v0.78.0--host-requirements — [View Changelog](docs/CHANGELOG.md)
 
 ![Works On My Machine](docs/Works-On-My-Machine-small.png)
 
@@ -62,9 +62,16 @@ Ready to try it? Browse the demos at [codingbooth.io](https://codingbooth.io/) o
 
 ### Requirements
 
-- Docker
-- Bash
-- curl
+To **install** (`curl … | bash`): Bash and curl.
+
+To **run** a booth:
+
+- **Docker**, and your user must be able to run `docker info` without sudo.
+  - **Linux:** Docker Engine, **rootful**. Rootless Docker and userns-remap are **not supported** — they map your host user to root inside the container, so CodingBooth cannot create a separate `coder` user. `booth` refuses to start if it detects either; `--rootless` skips that check (unsupported; file ownership may be wrong).
+  - **macOS / Windows:** Docker Desktop (standard install) works.
+- **Not Podman.** The CLI on `PATH` must be Docker.
+
+The wrapper itself is a Bash script (Git Bash or WSL on Windows).
 
 
 ## Quick Demo
@@ -236,6 +243,7 @@ booth [flags] [-- command...]
 | `--leave-tmp-on-exit`| Preserve `.booth/.tmp/` contents on exit for debugging                            |
 | `--keep-tmp-on-start`| Preserve `.booth/.tmp/` from previous session on start                            |
 | `--dryrun`           | Print docker commands without executing                                          |
+| `--rootless`         | Skip the Linux rootless/userns-remap refusal (unsupported; try anyway)           |
 
 Additional Docker pass-through flags (`-e`, `-p`, etc.) can be set via `run-args` in `.booth/config.toml`. For the full flag reference, see **[booth run documentation](docs/BOOTH_RUN.md)**.
 
@@ -449,12 +457,27 @@ For deeper technical details on how CodingBooth works internally, see [docs/impl
 ### "Docker not found" or "Cannot connect to Docker daemon"
 
 ```bash
-# Check if Docker is installed and running
-docker version
+# Docker must be installed, running, and usable without sudo
+docker info
+```
 
-# If permission denied, add yourself to docker group
+On Linux, permission denied usually means you are not in the `docker` group:
+
+```bash
 sudo usermod -aG docker $USER
-# Then logout and login again
+# Then log out and back in
+```
+
+On macOS/Windows, start Docker Desktop and wait until it is ready.
+
+### "CodingBooth cannot run on Linux rootless Docker" (or userns-remap)
+
+Linux rootless Docker and userns-remap are not supported. They map your host user to root inside the container, so CodingBooth cannot create `coder`. Use rootful Docker on Linux, or Docker Desktop on macOS/Windows.
+
+To try anyway (unsupported; files may be owned wrongly):
+
+```bash
+booth --rootless
 ```
 
 ### "Permission denied" on project files
@@ -554,7 +577,7 @@ The hook only triggers when either file is staged — it won't interfere with un
 
 ## Guidance & Limitations
 
-- **Host file ownership:** All files in your project folder remain owned by your host user — no "root-owned" files.
+- **Host file ownership:** All files in your project folder remain owned by your host user — no "root-owned" files. That remap needs rootful Docker on Linux (or Docker Desktop on macOS/Windows). Linux rootless Docker and userns-remap are not supported.
 - **Consistent user mapping:** Each container automatically creates a matching user and group via `booth-entry`.
 - **Cross-OS caveats:** CodingBooth doesn't abstract away all host OS differences — things like line endings, symlinks, or file attributes may still vary between platforms.
 

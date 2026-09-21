@@ -31,6 +31,12 @@ func (runner *BoothRunner) Run() error {
 	// Prepare arguments and determine run mode (matching booth order)
 	ctx := runner.ctx
 	SetLogTime(ctx.LogTime())
+	if err := docker.CheckHostDocker(docker.HostCheckOptions{
+		AllowRootless: ctx.Rootless(),
+		RequireDaemon: !ctx.Dryrun(),
+	}); err != nil {
+		return err
+	}
 	ctx = ValidateVariant(ctx)
 	ctx = EnsureDockerImage(ctx)
 	ctx = PortDetermination(ctx)

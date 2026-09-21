@@ -4,6 +4,29 @@ CodingBooth is not one thing on disk. It is six small things, each with its
 own lifecycle. Once you know which one you have a question about, the answer
 is short. This document walks through all six from the user's point of view.
 
+## What you need
+
+The one-liner installer (`curl … | bash`) needs **Bash** and **curl**. It will
+still install the wrapper and binary if Docker is missing; it prints a warning
+instead of aborting.
+
+To **run** a booth you also need Docker, and your user must be able to run
+`docker info` without sudo:
+
+| Host | What works |
+| --- | --- |
+| Linux | Docker Engine, **rootful** (user in the `docker` group) |
+| macOS / Windows | Docker Desktop (standard install) |
+
+**Not supported on Linux:** rootless Docker and userns-remap. They map your
+host user to root inside the container, so CodingBooth cannot create a
+separate `coder` user. The installer warns if it detects either; `booth`
+refuses to start. `--rootless` skips that check (unsupported; file ownership
+may be wrong).
+
+The wrapper is a Bash script — on Windows that means Git Bash or WSL. The CLI
+on `PATH` must be Docker, not Podman.
+
 ## The six layers
 
 | # | Layer                | Lives in                                            | Scope         | Required for          |

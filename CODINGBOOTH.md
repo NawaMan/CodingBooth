@@ -28,9 +28,11 @@ host                                                container
 - x86 64-bit, ARM 64-bit
 
 ### Requirements
-- Docker
-- Bash
-- curl
+- Bash and curl to install
+- Docker to run a booth, and `docker info` without sudo
+  - Linux: Docker Engine, **rootful**. Rootless Docker and userns-remap are not supported (`booth` refuses; `--rootless` skips that check).
+  - macOS / Windows: Docker Desktop (standard install)
+- Not Podman
 
 
 # Table of Contents
@@ -744,9 +746,14 @@ For deeper details — data persistence rules, in-container documentation, UID/G
 ### "Docker not found" or "Cannot connect to Docker daemon"
 
 ```bash
-docker version
-sudo usermod -aG docker $USER  # then logout/login
+docker info
+sudo usermod -aG docker $USER  # then logout/login (Linux)
 ```
+
+### "CodingBooth cannot run on Linux rootless Docker" (or userns-remap)
+
+Not supported. Use rootful Docker on Linux, or Docker Desktop on macOS/Windows.
+`--rootless` skips the refusal (unsupported).
 
 ### "Permission denied" on project files
 
@@ -812,7 +819,7 @@ Installs `.githooks/pre-commit`, which prevents committing when `version.txt` an
 
 ## Guidance & Limitations
 
-- **Host file ownership:** Files in your project remain owned by your host user — no root-owned files.
+- **Host file ownership:** Files in your project remain owned by your host user — no root-owned files. That remap needs rootful Docker on Linux, or Docker Desktop on macOS/Windows. Linux rootless Docker and userns-remap are not supported.
 - **Consistent user mapping:** Each container creates a matching user and group via `booth-entry`.
 - **Cross-OS caveats:** CodingBooth doesn't paper over all host-OS differences — line endings, symlinks, and file attributes may still vary.
 
