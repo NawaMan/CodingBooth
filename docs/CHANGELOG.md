@@ -24,6 +24,15 @@ This file contains a list of changes for each released version.
   newer one. tmux's mouse mode is now on system-wide, so tmux claims wheel
   events itself and scrolls the pane's own history instead.
 
+- **Click-drag in the Console UI keeps a selection you can copy.** Turning
+  tmux mouse mode on for the wheel also handed left-drag to tmux, whose
+  default is copy-pipe-and-cancel: the highlight vanished on mouse-up, and
+  ttyd never honours OSC 52 so that copy never reached the host clipboard.
+  Left-drag / double-click / triple-click are unbound in tmux; the pane
+  page sets xterm.js's Shift-drag predicate so a regular drag keeps a
+  browser selection and Ctrl+C / Cmd+C / right-click copy work. The wheel
+  still scrolls tmux history.
+
 - **Bare runtime env passthrough now skips variables that are truly unset.**
   `run-args = ["-e", "NAME"]` and `["--env", "NAME"]` are passed to Docker
   only when `NAME` exists in the host environment. Empty-but-set variables

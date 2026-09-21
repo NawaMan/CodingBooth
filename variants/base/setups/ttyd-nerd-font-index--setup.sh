@@ -30,7 +30,7 @@ trap 'echo "❌ Error on line $LINENO" >&2; exit 1' ERR
 FONT_DIR="/usr/share/fonts/truetype/fira-code-nerd-font"
 OUT="/usr/local/share/ttyd-nerd-font-index.html"
 
-if [[ -f "$OUT" ]]; then
+if [[ -f "$OUT" ]] && grep -q cbForceTermSelect "$OUT"; then
   echo "ℹ️  $OUT already generated"
   exit 0
 fi
@@ -104,6 +104,11 @@ STYLE+="</style>"
 # (zero side effects) and compares that to xterm's cached cell width, only
 # dispatching the resize when they actually disagree.
 STYLE+='<script>document.fonts.ready.then(function(){var checks=0;function check(){checks++;var t=window.term,s=t&&t._core&&t._core._charSizeService;if(s){try{var c=document.createElement("canvas").getContext("2d");c.font=(t.options.fontSize||15)+"px "+t.options.fontFamily;var want=c.measureText("W").width;if(Math.abs(s.width-want)>2){window.dispatchEvent(new Event("resize"));}}catch(e){}}if(checks<30){setTimeout(check,500);}}check();});</script>'
+# tmux mouse mode is on so the wheel scrolls pane history, which also makes
+# xterm.js send left-drag to tmux. shouldForceSelection always true (native
+# selection on a trusted drag); triggerMouseEvent ignores button 0 so a
+# mouseup does not redraw the pane and wipe the highlight. Wheel is 4/5.
+STYLE+='<script>(function(){function cbForceTermSelect(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService,cms=c&&c.coreMouseService;if(!ss||!cms)return false;if(ss.__cbForce)return true;ss.__cbForce=1;ss.shouldForceSelection=function(){return true};var orig=cms.triggerMouseEvent.bind(cms);cms.triggerMouseEvent=function(ev){if(ev&&ev.button===0)return false;return orig(ev)};return true}var n=0;function wait(){n++;if(cbForceTermSelect())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>'
 
 DEFAULT_HTML_CONTENT="$(cat "$DEFAULT_HTML")"
 printf '%s' "${DEFAULT_HTML_CONTENT/<head>/<head>$STYLE}" > "$OUT"
