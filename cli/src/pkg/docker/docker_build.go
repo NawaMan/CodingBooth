@@ -25,6 +25,9 @@ func DockerBuild(flags DockerFlags, args ilist.List[ilist.List[string]]) error {
 	// Silent mode: capture stderr and only show on failure
 	cmdArgs := make([]string, 0, 64)
 	cmdArgs = append(cmdArgs, "build")
+	if needsPodmanBuildFormat("build", flags.binary(), args) {
+		cmdArgs = append(cmdArgs, "--format", "docker")
+	}
 
 	args.Range(func(_ int, group ilist.List[string]) bool {
 		cmdArgs = append(cmdArgs, group.Slice()...)
@@ -34,18 +37,21 @@ func DockerBuild(flags DockerFlags, args ilist.List[ilist.List[string]]) error {
 	if flags.Dryrun || flags.Verbose {
 		var printingArgs [][]string
 		printingArgs = append(printingArgs, []string{"build"})
+		if needsPodmanBuildFormat("build", flags.binary(), args) {
+			printingArgs = append(printingArgs, []string{"--format", "docker"})
+		}
 		args.Range(func(_ int, group ilist.List[string]) bool {
 			printingArgs = append(printingArgs, group.Slice())
 			return true
 		})
-		printCmd("docker", printingArgs...)
+		printCmd(flags.binary(), printingArgs...)
 	}
 
 	if flags.Dryrun {
 		return nil
 	}
 
-	cmd := exec.Command("docker", cmdArgs...)
+	cmd := exec.Command(flags.binary(), cmdArgs...)
 
 	// Set environment (same as Docker function)
 	env := append(os.Environ(), "MSYS_NO_PATHCONV=1")
