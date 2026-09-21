@@ -108,6 +108,20 @@ RUN set -euo pipefail \
   ; rm -rf /var/cache/apt/archives/* \
   ; rm -rf /var/cache/apt/archives/partial/*
 
+# Every pane in the Console UI (start-ttyd/start-ttyd-split) lives inside a
+# tmux session, and tmux keeps its whole display on the terminal's alternate
+# screen. With tmux's own "mouse" left at its default (off), it never asks
+# xterm.js for real mouse reporting — so xterm.js falls back to its built-in
+# alt-screen behavior of translating wheel scroll into Up/Down key presses,
+# which lands on whatever's running in the pane. At an idle prompt that's
+# bash's readline: scroll up/down ends up paging through command history
+# instead of scrolling the overflowed output. Turning tmux's mouse mode on
+# makes tmux request real mouse reporting itself, so wheel events scroll the
+# pane's own history (via copy-mode) instead. System-wide so it applies no
+# matter which user or session starts the tmux server; a project's own
+# ~/.tmux.conf (if any) is read after this and can still override it.
+RUN echo 'set -g mouse on' > /etc/tmux.conf
+
 RUN  set -euo pipefail \
   ; sed -i "s/^#\s*\(${LOCALE}[[:space:]]\+UTF-8\)/\1/" /etc/locale.gen \
   ; locale-gen "${LOCALE}"
