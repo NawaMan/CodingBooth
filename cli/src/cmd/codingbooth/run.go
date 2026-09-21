@@ -93,6 +93,12 @@ func runBooth(version string, args []string) {
 			if context.Verbose() {
 				fmt.Fprintf(os.Stderr, "[debug] failing with error: %v\n", err)
 			}
+			var hostErr *docker.HostCheckError
+			if errors.As(err, &hostErr) {
+				fmt.Fprintln(os.Stderr, hostErr.Message)
+				os.Exit(1)
+				return
+			}
 			fmt.Println("❌ CodingBooth failed with error:", err)
 			os.Exit(1)
 			return

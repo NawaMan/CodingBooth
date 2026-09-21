@@ -205,6 +205,27 @@ func TestParseArgs_Quiet(t *testing.T) {
 	}
 }
 
+func TestParseArgs_Rootless(t *testing.T) {
+	config := appctx.AppConfig{
+		RunArgs:   ilist.SemicolonStringList{List: ilist.NewList[string]()},
+		BuildArgs: ilist.SemicolonStringList{List: ilist.NewList[string]()},
+		Cmds:      ilist.SemicolonStringList{List: ilist.NewList[string]()},
+	}
+	err := parseArgs(ilist.NewListFromSlice([]string{"--rootless", "--daemon"}), &config)
+	if err != nil {
+		t.Fatalf("parseArgs failed: %v", err)
+	}
+	if !config.Rootless {
+		t.Error("Expected Rootless to be true")
+	}
+	if !config.Daemon {
+		t.Error("Expected Daemon to be true")
+	}
+	if len(config.RunArgs.Slice()) != 0 {
+		t.Errorf("--rootless must not fall through as a docker run-arg, got %v", config.RunArgs.Slice())
+	}
+}
+
 func TestGetScriptDir(t *testing.T) {
 	// This tests the fallback or simple behavior, as testing absolute path resolution
 	// depends heavily on the OS and filesystem state.

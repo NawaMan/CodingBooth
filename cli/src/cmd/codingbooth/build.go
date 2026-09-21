@@ -27,6 +27,7 @@ type buildOpts struct {
 	verbose      bool
 	dryrun       bool
 	silenceBuild bool
+	rootless     bool
 }
 
 // parseBuildArgs parses build-specific flags from os.Args[2:].
@@ -91,9 +92,11 @@ func parseBuildArgs() buildOpts {
 			opts.dryrun = true
 		case "--silence-build":
 			opts.silenceBuild = true
+		case "--rootless":
+			opts.rootless = true
 		default:
 			fmt.Fprintf(os.Stderr, "Error: unknown flag for build: %s\n", args[i])
-			fmt.Fprintln(os.Stderr, "Usage: booth build [--push <registry>] [--name <name>] [--tag <tag>] [--build-arg KEY=VALUE ...] [--code <path>] [--variant <variant>] [--version <version>] [--verbose] [--dryrun]")
+			fmt.Fprintln(os.Stderr, "Usage: booth build [--push <registry>] [--name <name>] [--tag <tag>] [--build-arg KEY=VALUE ...] [--code <path>] [--variant <variant>] [--version <version>] [--verbose] [--dryrun] [--rootless]")
 			os.Exit(1)
 		}
 	}
@@ -127,6 +130,9 @@ func buildBooth(version string) {
 	if opts.silenceBuild {
 		runArgs = append(runArgs, "--silence-build")
 	}
+	if opts.rootless {
+		runArgs = append(runArgs, "--rootless")
+	}
 	for _, ba := range opts.buildArgs {
 		runArgs = append(runArgs, "--build-arg", ba)
 	}
@@ -140,6 +146,14 @@ func buildBooth(version string) {
 	// Expand variant aliases (xfce -> desktop-xfce, ide -> codeserver, ...) as the run path
 	// does. The variant names the base image tag, and only the canonical names are published.
 	ctx = booth.ValidateVariant(ctx)
+
+	if err := docker.CheckHostDocker(docker.HostCheckOptions{
+		AllowRootless: ctx.Rootless(),
+		RequireDaemon: !ctx.Dryrun(),
+	}); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
 
 	// Resolve the Boothfile content for hashing
 	codePath := ctx.Code()
