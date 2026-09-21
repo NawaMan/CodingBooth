@@ -81,6 +81,37 @@ func (e *DockerExitError) Error() string {
 	return fmt.Sprintf("docker %s failed with exit code %d", e.Subcommand, e.ExitCode)
 }
 
+// hasFlagPrefix reports whether any arg group already sets a flag starting
+// with prefix (e.g. "--format"), so callers don't inject one the caller
+// already specified.
+func hasFlagPrefix(args ilist.List[ilist.List[string]], prefix string) bool {
+	found := false
+	args.Range(func(_ int, group ilist.List[string]) bool {
+		group.Range(func(_ int, arg string) bool {
+			if strings.HasPrefix(arg, prefix) {
+				found = true
+				return false
+			}
+			return true
+		})
+		return !found
+	})
+	return found
+}
+
+// needsPodmanBuildFormat reports whether a build needs an explicit
+// "--format docker". Buildah's default OCI image format silently drops the
+// Dockerfile SHELL directive ("SHELL is not supported for OCI image
+// format... will be ignored"), which breaks every RUN step in every shipped
+// Dockerfile — they all set SHELL ["/bin/bash","-o","pipefail",...], and
+// without this flag Buildah falls back to /bin/sh, where "set -o pipefail"
+// is a syntax error. --format docker makes Buildah honor SHELL correctly.
+// Docker-specific and irrelevant there, so this only fires for podman.
+// See docs/PODMAN_SUPPORT.md.
+func needsPodmanBuildFormat(subcommand, engine string, args ilist.List[ilist.List[string]]) bool {
+	return subcommand == "build" && engine == "podman" && !hasFlagPrefix(args, "--format")
+}
+
 // Docker executes a docker command with the given subcommand and arguments.
 // If silent is true, suppresses all stdout/stderr from the docker process.
 func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[string]]) error {
@@ -91,21 +122,11 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 		printingArgs = append(printingArgs, []string{subcommand})
 
 		// For build commands, add --progress=auto if BuildKit is available and not already set
-		if subcommand == "build" && hasBuildKitSupport(flags.binary()) {
-			hasProgress := false
-			args.Range(func(_ int, group ilist.List[string]) bool {
-				group.Range(func(_ int, arg string) bool {
-					if strings.HasPrefix(arg, "--progress") {
-						hasProgress = true
-						return false
-					}
-					return true
-				})
-				return !hasProgress
-			})
-			if !hasProgress {
-				printingArgs = append(printingArgs, []string{"--progress=auto"})
-			}
+		if subcommand == "build" && hasBuildKitSupport(flags.binary()) && !hasFlagPrefix(args, "--progress") {
+			printingArgs = append(printingArgs, []string{"--progress=auto"})
+		}
+		if needsPodmanBuildFormat(subcommand, flags.binary(), args) {
+			printingArgs = append(printingArgs, []string{"--format", "docker"})
 		}
 
 		// - Always add -i (interactive, keeps stdin open)
@@ -147,21 +168,11 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 	}
 
 	// For build commands, add --progress=auto if BuildKit is available and not already set
-	if subcommand == "build" && hasBuildKitSupport(flags.binary()) {
-		hasProgress := false
-		args.Range(func(_ int, group ilist.List[string]) bool {
-			group.Range(func(_ int, arg string) bool {
-				if strings.HasPrefix(arg, "--progress") {
-					hasProgress = true
-					return false
-				}
-				return true
-			})
-			return !hasProgress
-		})
-		if !hasProgress {
-			cmdArgs = append(cmdArgs, "--progress=auto")
-		}
+	if subcommand == "build" && hasBuildKitSupport(flags.binary()) && !hasFlagPrefix(args, "--progress") {
+		cmdArgs = append(cmdArgs, "--progress=auto")
+	}
+	if needsPodmanBuildFormat(subcommand, flags.binary(), args) {
+		cmdArgs = append(cmdArgs, "--format", "docker")
 	}
 
 	args.Range(func(_ int, group ilist.List[string]) bool {
@@ -237,21 +248,11 @@ func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.Li
 		printingArgs = append(printingArgs, []string{subcommand})
 
 		// For build commands, add --progress=auto if BuildKit is available and not already set
-		if subcommand == "build" && hasBuildKitSupport(flags.binary()) {
-			hasProgress := false
-			args.Range(func(_ int, group ilist.List[string]) bool {
-				group.Range(func(_ int, arg string) bool {
-					if strings.HasPrefix(arg, "--progress") {
-						hasProgress = true
-						return false
-					}
-					return true
-				})
-				return !hasProgress
-			})
-			if !hasProgress {
-				printingArgs = append(printingArgs, []string{"--progress=auto"})
-			}
+		if subcommand == "build" && hasBuildKitSupport(flags.binary()) && !hasFlagPrefix(args, "--progress") {
+			printingArgs = append(printingArgs, []string{"--progress=auto"})
+		}
+		if needsPodmanBuildFormat(subcommand, flags.binary(), args) {
+			printingArgs = append(printingArgs, []string{"--format", "docker"})
 		}
 
 		// - Always add -i (interactive, keeps stdin open)
@@ -292,21 +293,11 @@ func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.Li
 	}
 
 	// For build commands, add --progress=auto if BuildKit is available and not already set
-	if subcommand == "build" && hasBuildKitSupport(flags.binary()) {
-		hasProgress := false
-		args.Range(func(_ int, group ilist.List[string]) bool {
-			group.Range(func(_ int, arg string) bool {
-				if strings.HasPrefix(arg, "--progress") {
-					hasProgress = true
-					return false
-				}
-				return true
-			})
-			return !hasProgress
-		})
-		if !hasProgress {
-			cmdArgs = append(cmdArgs, "--progress=auto")
-		}
+	if subcommand == "build" && hasBuildKitSupport(flags.binary()) && !hasFlagPrefix(args, "--progress") {
+		cmdArgs = append(cmdArgs, "--progress=auto")
+	}
+	if needsPodmanBuildFormat(subcommand, flags.binary(), args) {
+		cmdArgs = append(cmdArgs, "--format", "docker")
 	}
 
 	args.Range(func(_ int, group ilist.List[string]) bool {
