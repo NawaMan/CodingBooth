@@ -19,7 +19,7 @@ fi
 
 # Just check the USAGE section - the full help is ~98 lines
 ACTUAL=$(run_coding_booth help)
-ACTUAL=$(printf '%s\n' "$ACTUAL" | head -33)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -34)
 
 HERE="$PWD"
 VERSION="$(get_booth_version)"
@@ -42,6 +42,7 @@ OPTIONS
   --egress                Enable egress defaults (proxy + enforcement)
   --sudo <true|false>     Enable/disable sudo access (default: true)
   --no-sudo               Shorthand for --sudo false
+  --rootless              Skip the Linux rootless/userns-remap refusal (unsupported)
 
 EXAMPLES:
   codingbooth --variant codeserver       Run the booth to use codeserver on localhost:<port>.

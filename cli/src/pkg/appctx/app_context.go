@@ -120,6 +120,7 @@ func (ctx AppContext) Browser() bool {
 
 func (ctx AppContext) Pull() bool         { return ctx.values.Config.Pull }
 func (ctx AppContext) Dind() bool         { return ctx.values.Config.Dind }
+func (ctx AppContext) Rootless() bool     { return ctx.values.Config.Rootless }
 func (ctx AppContext) Sudo() bool         { return ctx.values.Config.Sudo }
 func (ctx AppContext) Egress() bool       { return ctx.values.Config.Egress }
 func (ctx AppContext) EgressMode() string { return ctx.values.Config.EgressMode }
@@ -249,6 +250,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Browser:          %t\n", ctx.Browser())
 	fmt.Fprintf(&str, "    Pull:             %t\n", ctx.Pull())
 	fmt.Fprintf(&str, "    Dind:             %t\n", ctx.Dind())
+	fmt.Fprintf(&str, "    Rootless:         %t\n", ctx.Rootless())
 	fmt.Fprintf(&str, "    Sudo:             %t\n", ctx.Sudo())
 	fmt.Fprintf(&str, "    Egress:          %t\n", ctx.Egress())
 	fmt.Fprintf(&str, "    EgressMode:      %q\n", ctx.EgressMode())

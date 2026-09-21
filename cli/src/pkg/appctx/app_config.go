@@ -111,6 +111,7 @@ type AppConfig struct {
 	Browser           bool   `toml:"browser,omitempty"             envconfig:"CB_BROWSER" default:"true"`
 	Pull              bool   `toml:"pull,omitempty"                envconfig:"CB_PULL" default:"false"`
 	Dind              bool   `toml:"dind,omitempty"                envconfig:"CB_DIND" default:"false"`
+	Rootless          bool   `toml:"rootless,omitempty"            envconfig:"CB_ROOTLESS" default:"false"` // skip Linux rootless/userns refusal (unsupported)
 	Sudo              bool   `toml:"sudo,omitempty"                envconfig:"CB_SUDO" default:"true"`
 	Egress            bool   `toml:"egress,omitempty"           envconfig:"CB_EGRESS" default:"false"`
 	EgressMode        string `toml:"egress-mode,omitempty"        envconfig:"CB_EGRESS_MODE"`

@@ -96,6 +96,7 @@ func TestAppContext_ConfigValues(t *testing.T) {
 			Daemon:       true,
 			Pull:         true,
 			Dind:         true,
+			Rootless:     true,
 			Dockerfile:   "dockerfile",
 			Image:        "image",
 			Variant:      "variant",
@@ -137,6 +138,9 @@ func TestAppContext_ConfigValues(t *testing.T) {
 	}
 	if !ctx.Dind() {
 		t.Error("Dind mismatch")
+	}
+	if !ctx.Rootless() {
+		t.Error("Rootless mismatch")
 	}
 	if ctx.Dockerfile() != "dockerfile" {
 		t.Error("DockerFile mismatch")

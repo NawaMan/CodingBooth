@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Host requirements are spelled out, and Linux rootless Docker is refused.**
+  The installer still installs without Docker, but now reports bash/curl/docker
+  and warns on Linux rootless Docker or userns-remap. `booth` / `booth build`
+  refuse to start in those modes (they map the host user to root, so a separate
+  `coder` user cannot be created). macOS/Windows Docker Desktop and Linux
+  rootful Docker are unchanged. `--rootless` (also `CB_ROOTLESS` /
+  `rootless = true` in config.toml) skips the refusal; that path is
+  unsupported. README, the site, `docs/BOOTH_INSTALL.md`, and
+  `docs/AGENT_SETUP.md` now say the same thing.
+
 - **Fixed mouse-wheel scroll in the Console UI paging through command history
   instead of scrolling overflowed terminal output.** Every pane runs its
   shell inside tmux, which keeps its whole display on the terminal's

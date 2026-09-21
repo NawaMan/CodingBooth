@@ -9,6 +9,13 @@ CodingBooth dynamically mirrors your host identity inside every container, ensur
 
 This document explains how CodingBooth handles user permissions to ensure seamless file ownership between host and container.
 
+**Linux rootless Docker and userns-remap are not supported.** Those modes map
+the host user to root inside the container, so booth-entry cannot create a
+separate `coder` user that owns bind-mounted project files. macOS and Windows
+with Docker Desktop, and Linux with rootful Docker, are the supported setups.
+`booth` refuses to start when it detects rootless or userns-remap;
+`--rootless` skips that refusal (unsupported).
+
 ---
 
 ## The Problem
