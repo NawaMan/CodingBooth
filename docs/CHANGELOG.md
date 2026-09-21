@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fixed mouse-wheel scroll in the Console UI paging through command history
+  instead of scrolling overflowed terminal output.** Every pane runs its
+  shell inside tmux, which keeps its whole display on the terminal's
+  alternate screen; with tmux's own mouse mode left at its default (off), it
+  never asked the browser's terminal for real mouse reporting, so scrolling
+  fell back to xterm.js's alt-screen behavior of sending Up/Down key presses
+  straight to bash — scroll up recalled an older command, scroll down a
+  newer one. tmux's mouse mode is now on system-wide, so tmux claims wheel
+  events itself and scrolls the pane's own history instead.
+
 - **Bare runtime env passthrough now skips variables that are truly unset.**
   `run-args = ["-e", "NAME"]` and `["--env", "NAME"]` are passed to Docker
   only when `NAME` exists in the host environment. Empty-but-set variables
