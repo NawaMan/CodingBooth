@@ -283,6 +283,7 @@ func buildLocalImage(ctx appctx.AppContext) {
 		Dryrun:  ctx.Dryrun(),
 		Verbose: ctx.Verbose(),
 		Silent:  ctx.SilenceBuild(),
+		Engine:  ctx.Engine(),
 	}
 	err := docker.DockerBuild(flags, args)
 	if err != nil {
@@ -329,6 +330,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 			Dryrun:  ctx.Dryrun(),
 			Verbose: ctx.Verbose(),
 			Silent:  true,
+			Engine:  ctx.Engine(),
 		}
 		err := docker.Docker(flags, "pull", ilist.NewList(ilist.NewList(imageName)))
 		if err != nil {
@@ -345,6 +347,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 			Dryrun:  ctx.Dryrun(),
 			Verbose: ctx.Verbose(),
 			Silent:  true,
+			Engine:  ctx.Engine(),
 		}
 		err := docker.Docker(flags, "image", ilist.NewList(ilist.NewList("inspect", "--format", "{{.Id}}", imageName)))
 		if err != nil {
@@ -358,6 +361,7 @@ func pullImageIfNeeded(ctx appctx.AppContext) {
 				Dryrun:  ctx.Dryrun(),
 				Verbose: ctx.Verbose(),
 				Silent:  true,
+				Engine:  ctx.Engine(),
 			}
 			err = docker.Docker(flags, "pull", ilist.NewList(ilist.NewList(imageName)))
 			if err != nil {
@@ -382,6 +386,7 @@ func validateImageExists(ctx appctx.AppContext) {
 		Dryrun:  ctx.Dryrun(),
 		Verbose: ctx.Verbose(),
 		Silent:  true,
+		Engine:  ctx.Engine(),
 	}
 	err := docker.Docker(flags, "image", ilist.NewList(ilist.NewList("inspect", ctx.Image())))
 	if err != nil {

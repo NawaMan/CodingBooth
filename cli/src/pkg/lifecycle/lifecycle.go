@@ -18,9 +18,17 @@ import (
 	"strings"
 	"text/tabwriter"
 
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
+
+// resolveLifecycleEngine resolves the container engine for commands in this
+// package, none of which build a full AppContext. codeDir may be "" for
+// commands with no --code flag of their own (see docs/PODMAN_SUPPORT.md).
+func resolveLifecycleEngine(codeDir string) string {
+	return appctx.ResolveEngineForPath(codeDir, false)
+}
 
 type managedContainer struct {
 	Name      string
@@ -101,7 +109,8 @@ func List(args []string, stdout io.Writer, stderr io.Writer) error {
 		return commandExit(1, "Error: --running and --stopped cannot be used together.")
 	}
 
-	containers, err := managedContainers(false)
+	engine := resolveLifecycleEngine("")
+	containers, err := managedContainers(engine, false)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to list booths: %v", err))
 	}
@@ -167,7 +176,8 @@ func Start(args []string, stderr io.Writer) error {
 		return commandExit(2, "")
 	}
 
-	containers, err := managedContainers(false)
+	engine := resolveLifecycleEngine(*code)
+	containers, err := managedContainers(engine, false)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -181,7 +191,7 @@ func Start(args []string, stderr io.Writer) error {
 	if !*daemon {
 		dockerArgs = ilist.NewList(ilist.NewList("-ai"), ilist.NewList(target.Name))
 	}
-	if err := docker.Docker(docker.DockerFlags{Silent: false}, "start", dockerArgs); err != nil {
+	if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "start", dockerArgs); err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to start %q: %v", target.Name, err))
 	}
 	return nil
@@ -202,7 +212,8 @@ func Stop(args []string, stderr io.Writer) error {
 		return commandExit(1, "Error: --timeout must be a non-negative integer.")
 	}
 
-	containers, err := managedContainers(false)
+	engine := resolveLifecycleEngine("")
+	containers, err := managedContainers(engine, false)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -213,11 +224,11 @@ func Stop(args []string, stderr io.Writer) error {
 	}
 
 	if *force {
-		if err := docker.Docker(docker.DockerFlags{Silent: false}, "kill", ilist.NewList(ilist.NewList(target.Name))); err != nil {
+		if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "kill", ilist.NewList(ilist.NewList(target.Name))); err != nil {
 			return commandExit(1, fmt.Sprintf("Error: failed to force-stop %q: %v", target.Name, err))
 		}
 	} else {
-		if err := docker.Docker(docker.DockerFlags{Silent: false}, "stop", ilist.NewList(
+		if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "stop", ilist.NewList(
 			ilist.NewList("--timeout", strconv.Itoa(*timeout)),
 			ilist.NewList(target.Name),
 		)); err != nil {
@@ -226,13 +237,13 @@ func Stop(args []string, stderr io.Writer) error {
 	}
 
 	// Stop any sidecar containers (DinD, egress) belonging to this booth
-	stopSidecars(target.Name, docker.DockerFlags{Silent: true})
+	stopSidecars(target.Name, docker.DockerFlags{Silent: true, Engine: engine})
 
 	if target.KeepAlive {
 		return nil
 	}
 
-	exists, err := containerExists(target.Name)
+	exists, err := containerExists(target.Name, docker.DockerFlags{Engine: engine})
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to verify container state: %v", err))
 	}
@@ -240,10 +251,10 @@ func Stop(args []string, stderr io.Writer) error {
 		return nil
 	}
 
-	if err := docker.Docker(docker.DockerFlags{Silent: false}, "rm", ilist.NewList(ilist.NewList(target.Name))); err != nil {
+	if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "rm", ilist.NewList(ilist.NewList(target.Name))); err != nil {
 		// Container may have been auto-removed between the existence check and
 		// the rm call. If it is gone now, treat the stop as successful.
-		gone, existsErr := containerExists(target.Name)
+		gone, existsErr := containerExists(target.Name, docker.DockerFlags{Engine: engine})
 		if existsErr == nil && !gone {
 			return nil
 		}
@@ -265,7 +276,8 @@ func Restart(args []string, stderr io.Writer) error {
 		return commandExit(1, "Error: --timeout must be a non-negative integer.")
 	}
 
-	containers, err := managedContainers(false)
+	engine := resolveLifecycleEngine("")
+	containers, err := managedContainers(engine, false)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -275,7 +287,7 @@ func Restart(args []string, stderr io.Writer) error {
 		return commandExit(1, err.Error())
 	}
 
-	if err := docker.Docker(docker.DockerFlags{Silent: false}, "restart", ilist.NewList(
+	if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "restart", ilist.NewList(
 		ilist.NewList("--timeout", strconv.Itoa(*timeout)),
 		ilist.NewList(target.Name),
 	)); err != nil {
@@ -295,7 +307,8 @@ func Remove(args []string, stderr io.Writer) error {
 		return commandExit(2, "")
 	}
 
-	containers, err := managedContainers(false)
+	engine := resolveLifecycleEngine("")
+	containers, err := managedContainers(engine, false)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -315,19 +328,19 @@ func Remove(args []string, stderr io.Writer) error {
 		}
 
 		// Stop any sidecar containers (DinD, egress) belonging to this booth
-		stopSidecars(targetName, docker.DockerFlags{Silent: true})
+		stopSidecars(targetName, docker.DockerFlags{Silent: true, Engine: engine})
 
 		dockerArgs := ilist.NewList(ilist.NewList(targetName))
 		if *force {
 			dockerArgs = ilist.NewList(ilist.NewList("--force"), ilist.NewList(targetName))
 		}
-		if err := docker.Docker(docker.DockerFlags{Silent: false}, "rm", dockerArgs); err != nil {
+		if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "rm", dockerArgs); err != nil {
 			return commandExit(1, fmt.Sprintf("Error: failed to remove %q: %v", targetName, err))
 		}
 
 		// Remove associated home volume (if any). Fails silently if volume does not exist.
 		homeVolName := "cb-home-" + targetName
-		_ = docker.Docker(docker.DockerFlags{Silent: true}, "volume", ilist.NewList(ilist.NewList("rm", homeVolName)))
+		_ = docker.Docker(docker.DockerFlags{Silent: true, Engine: engine}, "volume", ilist.NewList(ilist.NewList("rm", homeVolName)))
 	}
 	return nil
 }
@@ -342,7 +355,8 @@ func Prune(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) e
 		return commandExit(2, "")
 	}
 
-	containers, err := managedContainers(false)
+	engine := resolveLifecycleEngine("")
+	containers, err := managedContainers(engine, false)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -374,21 +388,21 @@ func Prune(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) e
 
 	for _, name := range names {
 		// Stop any sidecar containers belonging to this booth before removing
-		stopSidecars(name, docker.DockerFlags{Silent: true})
+		stopSidecars(name, docker.DockerFlags{Silent: true, Engine: engine})
 
-		if err := docker.Docker(docker.DockerFlags{Silent: false}, "rm", ilist.NewList(ilist.NewList(name))); err != nil {
+		if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "rm", ilist.NewList(ilist.NewList(name))); err != nil {
 			return commandExit(1, fmt.Sprintf("Error: failed to remove %q: %v", name, err))
 		}
 
 		// Remove associated home volume (if any). Fails silently if volume does not exist.
 		homeVolName := "cb-home-" + name
-		_ = docker.Docker(docker.DockerFlags{Silent: true}, "volume", ilist.NewList(ilist.NewList("rm", homeVolName)))
+		_ = docker.Docker(docker.DockerFlags{Silent: true, Engine: engine}, "volume", ilist.NewList(ilist.NewList("rm", homeVolName)))
 	}
 
 	_, _ = fmt.Fprintf(stdout, "Removed %d stopped booth container(s).\n", len(names))
 
 	// Clean up any orphaned sidecars whose parent container no longer exists
-	orphanCount := pruneOrphanSidecars(docker.DockerFlags{Silent: true})
+	orphanCount := pruneOrphanSidecars(docker.DockerFlags{Silent: true, Engine: engine})
 	if orphanCount > 0 {
 		_, _ = fmt.Fprintf(stdout, "Removed %d orphaned sidecar(s).\n", orphanCount)
 	}
@@ -396,8 +410,8 @@ func Prune(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) e
 	return nil
 }
 
-func managedContainers(verbose bool) ([]managedContainer, error) {
-	flags := docker.DockerFlags{Verbose: verbose, Silent: true}
+func managedContainers(engine string, verbose bool) ([]managedContainer, error) {
+	flags := docker.DockerFlags{Verbose: verbose, Silent: true, Engine: engine}
 
 	out, err := docker.DockerOutput(flags, "ps", ilist.NewList(
 		ilist.NewList("-a"),
@@ -615,8 +629,9 @@ func stateMatches(container managedContainer, requiredState string) bool {
 	}
 }
 
-func containerExists(name string) (bool, error) {
-	out, err := docker.DockerOutput(docker.DockerFlags{Silent: true}, "ps", ilist.NewList(
+func containerExists(name string, flags docker.DockerFlags) (bool, error) {
+	flags.Silent = true
+	out, err := docker.DockerOutput(flags, "ps", ilist.NewList(
 		ilist.NewList("-a"),
 		ilist.NewList("--filter", "name=^"+name+"$"),
 		ilist.NewList("--format", "{{.Names}}"),
@@ -740,7 +755,7 @@ func pruneOrphanSidecars(flags docker.DockerFlags) int {
 		}
 
 		// Check if parent container still exists
-		exists, err := containerExists(parentName)
+		exists, err := containerExists(parentName, flags)
 		if err != nil || exists {
 			continue
 		}

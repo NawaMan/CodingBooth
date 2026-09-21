@@ -190,7 +190,7 @@ func TestGetSuggestionForPort(t *testing.T) {
 
 func TestDiagnosePortConflict_NilError(t *testing.T) {
 	// Test that nil error always returns empty strings
-	port, diagnostic := diagnosePortConflict(nil, 10000, []string{})
+	port, diagnostic := diagnosePortConflict(nil, 10000, []string{}, "docker")
 	if port != "" || diagnostic != "" {
 		t.Errorf("diagnosePortConflict(nil) should return empty strings, got port=%q, diagnostic=%q",
 			port, diagnostic)
@@ -201,7 +201,7 @@ func TestDiagnosePortConflict_UnusedPort(t *testing.T) {
 	// Test with a port that's very unlikely to be in use
 	// Port 59999 is in the ephemeral range and unlikely to be bound
 	err := errors.New("some docker error")
-	port, diagnostic := diagnosePortConflict(err, 59999, []string{"59998:80"})
+	port, diagnostic := diagnosePortConflict(err, 59999, []string{"59998:80"}, "docker")
 
 	// If neither port is in use, should return empty strings
 	// (this test may be flaky if these ports happen to be in use)
@@ -252,7 +252,7 @@ func TestDiagnosePortConflict_PortErrors(t *testing.T) {
 			// Note: This test may return empty if the ports aren't actually in use on the test machine.
 			// The function tries to check actual port usage, so we mainly verify it doesn't panic
 			// and recognizes the error pattern.
-			port, _ := diagnosePortConflict(tt.err, tt.hostPort, tt.extra)
+			port, _ := diagnosePortConflict(tt.err, tt.hostPort, tt.extra, "docker")
 			// We can't guarantee a port will be returned since it depends on actual port state,
 			// but we verify the function runs without error
 			_ = port

@@ -150,6 +150,7 @@ func containerNameTaken(ctx appctx.AppContext, name string) (bool, error) {
 		Dryrun:  ctx.Dryrun(),
 		Verbose: ctx.Verbose(),
 		Silent:  true,
+		Engine:  ctx.Engine(),
 	}
 
 	output, err := docker.DockerOutput(flags, "ps", ilist.NewList(
@@ -208,7 +209,7 @@ func SetupDind(ctx appctx.AppContext) appctx.AppContext {
 		fmt.Fprintf(os.Stderr, "❌ Failed to start DinD sidecar.\n\n")
 
 		// Try to diagnose if this is a port conflict
-		port, diagnostic := diagnosePortConflict(err, ctx.PortNumber(), extraPorts)
+		port, diagnostic := diagnosePortConflict(err, ctx.PortNumber(), extraPorts, ctx.Engine())
 		if port != "" {
 			fmt.Fprintf(os.Stderr, "   %s\n", diagnostic)
 		} else {
