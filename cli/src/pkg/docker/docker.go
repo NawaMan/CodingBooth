@@ -25,8 +25,13 @@ var (
 
 // hasBuildKitSupport checks if Docker BuildKit is available.
 // BuildKit supports the --progress flag; the legacy builder does not.
-// This function caches the result for efficiency.
-func hasBuildKitSupport() bool {
+// This function caches the result for efficiency. BuildKit is Docker/Moby-
+// specific, so any non-Docker engine short-circuits to false rather than
+// guessing at that engine's own progress-flag support.
+func hasBuildKitSupport(engine string) bool {
+	if engine != "docker" {
+		return false
+	}
 	buildKitOnce.Do(func() {
 		// Check if DOCKER_BUILDKIT=1 is explicitly set
 		if os.Getenv("DOCKER_BUILDKIT") == "1" {
@@ -50,6 +55,19 @@ type DockerFlags struct {
 	Dryrun  bool
 	Verbose bool
 	Silent  bool
+	// Engine is the container engine binary to shell out to: "docker" or
+	// "podman". Empty defaults to "docker" (see binary()) so zero-value
+	// DockerFlags{} keeps today's behavior for callers that don't set it.
+	Engine string
+}
+
+// binary returns the container engine binary name to invoke, defaulting to
+// "docker" when Engine is unset.
+func (f DockerFlags) binary() string {
+	if f.Engine == "" {
+		return "docker"
+	}
+	return f.Engine
 }
 
 // DockerExitError is returned when a docker command exits with a non-zero exit code.
@@ -73,7 +91,7 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 		printingArgs = append(printingArgs, []string{subcommand})
 
 		// For build commands, add --progress=auto if BuildKit is available and not already set
-		if subcommand == "build" && hasBuildKitSupport() {
+		if subcommand == "build" && hasBuildKitSupport(flags.binary()) {
 			hasProgress := false
 			args.Range(func(_ int, group ilist.List[string]) bool {
 				group.Range(func(_ int, arg string) bool {
@@ -109,7 +127,7 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 			return true
 		})
 
-		printCmd("docker", printingArgs...)
+		printCmd(flags.binary(), printingArgs...)
 	}
 
 	if flags.Dryrun {
@@ -129,7 +147,7 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 	}
 
 	// For build commands, add --progress=auto if BuildKit is available and not already set
-	if subcommand == "build" && hasBuildKitSupport() {
+	if subcommand == "build" && hasBuildKitSupport(flags.binary()) {
 		hasProgress := false
 		args.Range(func(_ int, group ilist.List[string]) bool {
 			group.Range(func(_ int, arg string) bool {
@@ -157,7 +175,7 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 		return true
 	})
 
-	cmd := exec.Command("docker", cmdArgs...)
+	cmd := exec.Command(flags.binary(), cmdArgs...)
 
 	// Set environment for Windows path compatibility and color output
 	env := append(os.Environ(), "MSYS_NO_PATHCONV=1")
@@ -219,7 +237,7 @@ func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.Li
 		printingArgs = append(printingArgs, []string{subcommand})
 
 		// For build commands, add --progress=auto if BuildKit is available and not already set
-		if subcommand == "build" && hasBuildKitSupport() {
+		if subcommand == "build" && hasBuildKitSupport(flags.binary()) {
 			hasProgress := false
 			args.Range(func(_ int, group ilist.List[string]) bool {
 				group.Range(func(_ int, arg string) bool {
@@ -254,7 +272,7 @@ func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.Li
 			return true
 		})
 
-		printCmd("docker", printingArgs...)
+		printCmd(flags.binary(), printingArgs...)
 	}
 
 	if flags.Dryrun {
@@ -274,7 +292,7 @@ func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.Li
 	}
 
 	// For build commands, add --progress=auto if BuildKit is available and not already set
-	if subcommand == "build" && hasBuildKitSupport() {
+	if subcommand == "build" && hasBuildKitSupport(flags.binary()) {
 		hasProgress := false
 		args.Range(func(_ int, group ilist.List[string]) bool {
 			group.Range(func(_ int, arg string) bool {
@@ -296,7 +314,7 @@ func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.Li
 		return true
 	})
 
-	cmd := exec.Command("docker", cmdArgs...)
+	cmd := exec.Command(flags.binary(), cmdArgs...)
 
 	// Set environment for Windows path compatibility and color output
 	env := append(os.Environ(), "MSYS_NO_PATHCONV=1")

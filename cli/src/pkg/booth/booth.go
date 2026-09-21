@@ -94,6 +94,7 @@ func (booth *Booth) runAsCommand() error {
 		Dryrun:  booth.ctx.Dryrun(),
 		Verbose: booth.ctx.Verbose(),
 		Silent:  false,
+		Engine:  booth.ctx.Engine(),
 	}
 
 	ttyArgs := prepareTtyArgs()
@@ -182,6 +183,7 @@ func (booth *Booth) runAsDaemon() error {
 		// Quiet hides docker run -d's container-id print. Foreground/command
 		// mode must not do this: that output is the user's session.
 		Silent: booth.ctx.Quiet(),
+		Engine: booth.ctx.Engine(),
 	}
 
 	keepAliveArgs := prepareKeepAliveArgs(booth.ctx.KeepAlive())
@@ -276,6 +278,7 @@ func (booth *Booth) runAsForeground() error {
 		Dryrun:  booth.ctx.Dryrun(),
 		Verbose: booth.ctx.Verbose(),
 		Silent:  false,
+		Engine:  booth.ctx.Engine(),
 	}
 
 	ttyArgs := prepareTtyArgs()
@@ -1014,7 +1017,7 @@ func printHomeVolumeWarning(ctx appctx.AppContext) {
 // ensureHomeVolume creates a Docker named volume for persisting /home/coder.
 // docker volume create is idempotent — it succeeds silently if the volume already exists.
 func ensureHomeVolume(ctx appctx.AppContext, volumeName string, containerName string) {
-	flags := docker.DockerFlags{Dryrun: ctx.Dryrun(), Verbose: ctx.Verbose(), Silent: true}
+	flags := docker.DockerFlags{Dryrun: ctx.Dryrun(), Verbose: ctx.Verbose(), Silent: true, Engine: ctx.Engine()}
 	_ = docker.Docker(flags, "volume", ilist.NewList(
 		ilist.NewList("create"),
 		ilist.NewList("--label", "cb.managed=true"),

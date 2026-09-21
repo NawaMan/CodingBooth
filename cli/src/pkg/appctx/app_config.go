@@ -100,6 +100,11 @@ type AppConfig struct {
 	Config  nillable.NillableString `toml:"config,omitempty"  envconfig:"CB_CONFIG"`
 	Code    nillable.NillableString `toml:"code,omitempty"    envconfig:"CB_CODE"`
 	Version nillable.NillableString `toml:"version,omitempty" envconfig:"CB_VERSION"`
+	// Engine picks the container engine binary: "docker" or "podman". Left
+	// empty (no default tag) so ResolveEngineValue can tell "never set" apart
+	// from an explicit "docker", which is what the docker->podman PATH
+	// fallback needs (see docs/PODMAN_SUPPORT.md).
+	Engine string `toml:"engine,omitempty" envconfig:"CB_ENGINE"`
 
 	// --------------------
 	// Flags
@@ -231,6 +236,7 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Config:  %v\n", config.Config)
 	fmt.Fprintf(&str, "    Code:    %v\n", config.Code)
 	fmt.Fprintf(&str, "    Version: %q\n", config.Version)
+	fmt.Fprintf(&str, "    Engine:  %q\n", config.Engine)
 
 	fmt.Fprintf(&str, "# Flags -------------------------\n")
 	fmt.Fprintf(&str, "    KeepAlive:         %t\n", config.KeepAlive)

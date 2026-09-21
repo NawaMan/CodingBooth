@@ -94,7 +94,7 @@ func exposeList(args []string, stdout io.Writer, stderr io.Writer) error {
 		return commandExit(2, "")
 	}
 
-	containers, err := managedContainers(false)
+	containers, err := managedContainers(resolveLifecycleEngine(""), false)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}

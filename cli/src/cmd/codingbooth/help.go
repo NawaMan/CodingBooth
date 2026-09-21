@@ -41,6 +41,8 @@ OPTIONS
   --sudo <true|false>     Enable/disable sudo access (default: true)
   --no-sudo               Shorthand for --sudo false
   --rootless              Skip the Linux rootless/userns-remap refusal (unsupported)
+  --engine <docker|podman>  Container engine to use (default: docker; podman
+                          is experimental — see docs/PODMAN_SUPPORT.md)
 
 EXAMPLES:
   %s --variant codeserver       Run the booth to use codeserver on localhost:<port>.
@@ -165,6 +167,12 @@ CONTAINER MODE:
                          When false, passwordless sudo is revoked after container setup.
                          Can also be set in config.toml: sudo = false
   --no-sudo              Shorthand for --sudo false
+  --engine <docker|podman>  Container engine to shell out to (default: docker;
+                         falls back to podman if docker isn't installed but
+                         podman is). podman is experimental and may not have
+                         full Docker feature parity yet — see
+                         docs/PODMAN_SUPPORT.md. Can also be set in
+                         config.toml (engine = "podman") or CB_ENGINE.
   --keep-alive           Do not remove the container when stopped
   --browser              Open the booth UI in your default browser once its port
                          answers. On by default; a booth given a command
@@ -279,6 +287,8 @@ CONTAINER MODE:
   --egress               Enable egress defaults
   --sudo <true|false>    Enable/disable sudo (default: true)
   --no-sudo              Shorthand for --sudo false
+  --engine <docker|podman>  Container engine to use (default: docker; podman
+                         is experimental — see docs/PODMAN_SUPPORT.md)
   --keep-alive           Do not remove container when stopped
   --browser              Open the booth UI in a browser once its port answers (default)
   --no-browser           Never open a browser (also: browser = false, CB_BROWSER=false)

@@ -24,15 +24,17 @@ func cleanupPreviousBoothInstances(ctx appctx.AppContext, projectName string) {
 		return
 	}
 
+	engine := ctx.Engine()
+
 	// Find and stop/remove sidecars labeled with cb.parent matching the project name
-	output, err := exec.Command("docker", "ps", "-aq",
+	output, err := exec.Command(engine, "ps", "-aq",
 		"--filter", "label=cb.role=sidecar",
 		"--filter", "label=cb.parent="+projectName,
 	).Output()
 	if err == nil && len(strings.TrimSpace(string(output))) > 0 {
 		containerIDs := strings.Fields(string(output))
 		for _, id := range containerIDs {
-			nameOutput, _ := exec.Command("docker", "inspect", "--format", "{{.Name}}", id).Output()
+			nameOutput, _ := exec.Command(engine, "inspect", "--format", "{{.Name}}", id).Output()
 			containerName := strings.TrimPrefix(strings.TrimSpace(string(nameOutput)), "/")
 			if containerName == "" {
 				containerName = id
@@ -43,13 +45,13 @@ func cleanupPreviousBoothInstances(ctx appctx.AppContext, projectName string) {
 			} else {
 				LogPrintf("Cleaning up leftover sidecar: %s\n", containerName)
 			}
-			exec.Command("docker", "stop", id).Run()
-			exec.Command("docker", "rm", "-f", id).Run()
+			exec.Command(engine, "stop", id).Run()
+			exec.Command(engine, "rm", "-f", id).Run()
 		}
 	}
 
 	// Find and remove any networks matching the project name pattern
-	output, err = exec.Command("docker", "network", "ls", "--filter", "name="+projectName, "--format", "{{.Name}}").Output()
+	output, err = exec.Command(engine, "network", "ls", "--filter", "name="+projectName, "--format", "{{.Name}}").Output()
 	if err == nil && len(strings.TrimSpace(string(output))) > 0 {
 		networks := strings.Fields(string(output))
 		for _, network := range networks {
@@ -58,7 +60,7 @@ func cleanupPreviousBoothInstances(ctx appctx.AppContext, projectName string) {
 				if ctx.Verbose() {
 					fmt.Printf("Removing leftover network: %s\n", network)
 				}
-				exec.Command("docker", "network", "rm", network).Run()
+				exec.Command(engine, "network", "rm", network).Run()
 			}
 		}
 	}
@@ -72,6 +74,7 @@ func createDindNetwork(ctx appctx.AppContext, networkName string) bool {
 		Dryrun:  ctx.Dryrun(),
 		Verbose: ctx.Verbose(),
 		Silent:  true,
+		Engine:  ctx.Engine(),
 	}
 	output, err := docker.DockerOutput(flags, "network", ilist.NewList(ilist.NewList("inspect", networkName)))
 	if err == nil && strings.TrimSpace(output) != "" {
@@ -103,6 +106,7 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 		Dryrun:  ctx.Dryrun(),
 		Verbose: ctx.Verbose(),
 		Silent:  true,
+		Engine:  ctx.Engine(),
 	}
 	output, err := docker.DockerOutput(flags, "ps", ilist.NewList(ilist.NewList("--filter", fmt.Sprintf("name=^/%s$", dindName), "--format", "{{.Names}}")))
 
@@ -200,6 +204,7 @@ func waitForDindReady(ctx appctx.AppContext, dindName, dindNet string) {
 			Dryrun:  ctx.Dryrun(),
 			Verbose: ctx.Verbose(),
 			Silent:  true,
+			Engine:  ctx.Engine(),
 		}
 		_, err := docker.DockerOutput(flags, "run", ilist.NewList(ilist.NewList("--rm", "--network", dindNet, "docker:cli",
 			"-H", fmt.Sprintf("tcp://%s:2375", dindName), "version")))
@@ -354,8 +359,9 @@ func parsePortFromMapping(mapping string) string {
 }
 
 // checkPortInUse checks if a port is in use and returns diagnostic information.
-// Returns nil if the port is free.
-func checkPortInUse(port string) *PortConflictError {
+// Returns nil if the port is free. engine is the container engine ("docker"
+// or "podman") to query for a container already holding the port.
+func checkPortInUse(port string, engine string) *PortConflictError {
 	// Try ss command first (more common on modern Linux)
 	output, err := exec.Command("ss", "-tlnp").Output()
 	if err == nil {
@@ -364,18 +370,18 @@ func checkPortInUse(port string) *PortConflictError {
 			if strings.Contains(line, ":"+port+" ") || strings.Contains(line, ":"+port+"\t") {
 				processInfo := parseProcessFromSS(line)
 
-				// If ss couldn't identify the process, try to detect Docker
+				// If ss couldn't identify the process, try to detect the engine
 				if processInfo == "unknown process" {
-					// First check if it's a running Docker container
-					containerName := getDockerContainerUsingPort(port)
+					// First check if it's a running container
+					containerName := getDockerContainerUsingPort(port, engine)
 					if containerName != "" {
-						processInfo = fmt.Sprintf("Docker container '%s'", containerName)
-						suggestion := fmt.Sprintf(`This port is used by Docker container '%s'.
+						processInfo = fmt.Sprintf("%s container '%s'", engine, containerName)
+						suggestion := fmt.Sprintf(`This port is used by %s container '%s'.
 
    To stop this container:
-   docker stop %s
+   %s stop %s
 
-   Or use a different port in your config.`, containerName, containerName)
+   Or use a different port in your config.`, engine, containerName, engine, containerName)
 						return &PortConflictError{
 							Port:        port,
 							ProcessInfo: processInfo,
@@ -383,8 +389,10 @@ func checkPortInUse(port string) *PortConflictError {
 						}
 					}
 
-					// Check if it's an orphaned docker-proxy
-					if isDockerProxy(port) {
+					// Check if it's an orphaned docker-proxy (Docker-specific; Podman's
+					// rootless networking doesn't use this process, so this check is
+					// skipped for other engines).
+					if engine == "docker" && isDockerProxy(port) {
 						processInfo = "docker-proxy (orphaned)"
 						return &PortConflictError{
 							Port:        port,
@@ -440,9 +448,9 @@ func isDockerProxy(port string) bool {
 	return false
 }
 
-// getDockerContainerUsingPort returns the name of the Docker container using a port, or empty string.
-func getDockerContainerUsingPort(port string) string {
-	output, err := exec.Command("docker", "ps", "--format", "{{.Names}}\t{{.Ports}}").Output()
+// getDockerContainerUsingPort returns the name of the container using a port, or empty string.
+func getDockerContainerUsingPort(port string, engine string) string {
+	output, err := exec.Command(engine, "ps", "--format", "{{.Names}}\t{{.Ports}}").Output()
 	if err == nil {
 		lines := strings.Split(string(output), "\n")
 		for _, line := range lines {
@@ -519,9 +527,13 @@ func getSuggestionForPort(port string, processInfo string) string {
 // Returns the conflicting port and diagnostic message, or empty strings if no port conflict found.
 // Note: Docker's error message goes to stderr and isn't captured in the error object,
 // so we proactively check all ports rather than parsing the error message.
-func diagnosePortConflict(err error, hostPort int, extraPorts []string) (string, string) {
+func diagnosePortConflict(err error, hostPort int, extraPorts []string, engine string) (string, string) {
 	if err == nil {
 		return "", ""
+	}
+
+	if engine == "" {
+		engine = "docker"
 	}
 
 	// Build list of all ports we're trying to bind
@@ -532,7 +544,7 @@ func diagnosePortConflict(err error, hostPort int, extraPorts []string) (string,
 
 	// Check each port and find the one that's actually in use
 	for _, port := range portsToCheck {
-		if conflict := checkPortInUse(port); conflict != nil {
+		if conflict := checkPortInUse(port, engine); conflict != nil {
 			return port, fmt.Sprintf("Port %s is already in use by: %s\n\n   %s",
 				port, conflict.ProcessInfo, conflict.Suggestion)
 		}
