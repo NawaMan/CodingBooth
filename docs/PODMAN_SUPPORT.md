@@ -89,6 +89,27 @@ places, all short:
   and the separate unconditional warning is skipped when the engine was
   auto-fallen-back rather than explicitly requested.
 
+### Podman-specific behavior worth knowing
+
+- **Rootless UID mapping.** Rootless Podman maps the host user to container
+  *root*, which would leave bind-mounted files (and `.booth/.tmp`, where the
+  shutdown/restart markers live) unwritable by the in-container `coder` user.
+  For a non-root host user, `booth run` therefore adds `--userns=keep-id
+  --user root` so the host UID maps to the same UID inside. Rootful Podman and
+  Docker are unaffected.
+- **Builds use `--format docker`.** Buildah's default OCI image format silently
+  ignores the Dockerfile `SHELL` directive, which every shipped Dockerfile
+  relies on (`bash -o pipefail`). The build wrapper adds `--format docker` for
+  Podman.
+- **`booth list/stop/start/restart/remove/prune` pick the engine from
+  `CB_ENGINE` (or `.booth/config.toml` where a `--code` is available), not from
+  `--engine`.** With both engines installed and nothing set they look at Docker,
+  so run `CB_ENGINE=podman booth stop` for a booth started with `--engine podman`
+  (or set `engine = "podman"` in `.booth/config.toml`).
+- **Rootless Podman needs `/etc/subuid` and `/etc/subgid` entries** for your
+  user (`sudo usermod --add-subuids ... --add-subgids ...`, then
+  `podman system migrate`); without them image layers cannot be unpacked.
+
 ## Phases
 
 Each phase ends with something a user can actually run and observe — no phase
