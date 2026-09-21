@@ -279,6 +279,11 @@ Boothfile env (build-time, lowest)
 
 CodingBooth ensures that all files created inside the container are owned by the same user and group as on your host system. This eliminates the common "root-owned files" problem when developing inside Docker.
 
+That remap assumes **rootful** Docker on Linux, or Docker Desktop on macOS/Windows.
+Linux **rootless** Docker and **userns-remap** map the host user to root inside
+the container, so there is no separate identity for `coder`. `booth` detects
+those modes and refuses to start. `--rootless` skips the check (unsupported).
+
 **Defaults**
 Automatically detects and uses your current user and group IDs:
 ```bash

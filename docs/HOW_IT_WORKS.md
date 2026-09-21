@@ -6,7 +6,7 @@ The `booth` wrapper script is **location-based**: it operates relative to its ow
 - The script always finds `.booth/` in the same directory where `booth` is located
 
 1. The launcher passes your **host UID** and **GID** into the container using the environment variables `HOST_UID` and `HOST_GID`.  
-2. Inside the container, the entrypoint script (`booth-entry`) ensures a matching `coder` user and group exist with those IDs.  
+2. Inside the container, the entrypoint script (`booth-entry`) ensures a matching `coder` user and group exist with those IDs. This needs rootful Docker on Linux (or Docker Desktop on macOS/Windows). Linux rootless Docker and userns-remap map the host user to root, so a separate `coder` cannot be created — `booth` refuses those modes unless `--rootless` is passed.  
 3. The directories `/home/coder` and `/home/coder/code` are owned by that user, ensuring smooth file sharing between host and container.  
 4. Add the user `coder` to sudoers so that it can sudo without needing the password
 5. Prepare `.bashrc` and `.zshrc`

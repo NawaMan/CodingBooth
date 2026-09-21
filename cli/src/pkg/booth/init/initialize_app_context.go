@@ -392,6 +392,10 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.Dind = true
 			i++
 
+		case "--rootless":
+			cfg.Rootless = true
+			i++
+
 		case "--sudo":
 			v, err := needValue(args, i, arg)
 			if err != nil {

@@ -41,11 +41,20 @@ That's it. The booth will build and start with sensible defaults.
 ### Step 1: Check Prerequisites
 
 ```bash
-# Docker must be installed and running
-docker version
+# Docker must be installed, running, and usable without sudo
+docker info
 ```
 
-If Docker isn't available, help the user install it first.
+If Docker isn't available, help the user install it first:
+
+- **Linux:** Docker Engine, **rootful**. The user must be in the `docker`
+  group (`sudo usermod -aG docker $USER`, then log out/in). **Rootless Docker
+  and userns-remap are not supported** — CodingBooth remaps a `coder` user to
+  the host UID, which those modes cannot distinguish from root. `booth` will
+  refuse to start; `--rootless` skips that check (unsupported).
+- **macOS / Windows:** Docker Desktop (standard install).
+- The installer also needs **Bash** and **curl**. The wrapper is a Bash script
+  (Git Bash or WSL on Windows).
 
 ### Step 2: Install CodingBooth Wrapper
 
@@ -263,10 +272,14 @@ Tell the user:
 ## Troubleshooting
 
 **"Docker not found"**
-→ User needs to install Docker first.
+→ User needs to install Docker first (`docker info` should work without sudo).
 
-**"Permission denied"**
+**"Permission denied"** talking to Docker
 → User may need to add themselves to the docker group: `sudo usermod -aG docker $USER` (then logout/login).
+
+**"CodingBooth cannot run on Linux rootless Docker"** (or userns-remap)
+→ Not supported. Use rootful Docker on Linux, or Docker Desktop on macOS/Windows.
+  `--rootless` skips the refusal (unsupported; ownership may be wrong).
 
 **"Port already in use"**
 → Use `port = "NEXT"` in config.toml, or stop the conflicting service.
