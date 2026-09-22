@@ -234,7 +234,7 @@ func TestBuildProgress_IgnoresOutputFromOtherVertices(t *testing.T) {
 func TestBuildProgress_NilOutIsAPlainPassThrough(t *testing.T) {
 	var sink bytes.Buffer
 
-	progress := newBuildProgress(&sink, nil)
+	progress := newBuildProgress(&sink, nil, "docker")
 	if _, err := progress.Write([]byte(codeserverBuildLog)); err != nil {
 		t.Fatalf("Write failed: %v", err)
 	}
@@ -335,7 +335,7 @@ func TestBuildProgress_TickerAnimatesWhileTheStepIsSilent(t *testing.T) {
 	var sink bytes.Buffer
 	out := &syncBuffer{}
 
-	progress := newBuildProgress(&sink, out)
+	progress := newBuildProgress(&sink, out, "docker")
 	progress.begun = time.Now().Add(-time.Hour) // skip progressStartDelay
 
 	if _, err := progress.Write([]byte(codeserverBuildLog)); err != nil {
@@ -493,5 +493,143 @@ func TestBuildProgress_ABlankOutputLineKeepsTheStepNamed(t *testing.T) {
 	}
 	if progress.detail != "" {
 		t.Errorf("detail = %q, want a blank line to clear the detail", progress.detail)
+	}
+}
+
+// newTestProgressPodman is newTestProgress for Buildah's plain output format.
+func newTestProgressPodman() (*buildProgress, *bytes.Buffer, *bytes.Buffer) {
+	var sink, out bytes.Buffer
+
+	progress := &buildProgress{
+		sink:   &sink,
+		out:    &out,
+		engine: "podman",
+		begun:  time.Now().Add(-time.Hour),
+	}
+
+	return progress, &sink, &out
+}
+
+// Captured verbatim from a real `podman build --format docker` (rootless
+// Podman 5.4.2): no per-line vertex tag at all, unlike BuildKit — a step's
+// own stdout is just its own stdout, one bare line at a time.
+const podmanBuildLog = `STEP 2/4: RUN echo "step one output line A" && sleep 1 && echo "step one output line B"
+step one output line A
+step one output line B
+--> b49dd0d8e33f
+STEP 3/4: RUN echo "step two" && for i in 1 2 3; do echo "counting $i"; sleep 1; done
+step two
+counting 1
+counting 2
+counting 3
+`
+
+func TestBuildProgress_Podman_TracksCurrentStep(t *testing.T) {
+	progress, _, _ := newTestProgressPodman()
+
+	if _, err := progress.Write([]byte(podmanBuildLog)); err != nil {
+		t.Fatalf("Write failed: %v", err)
+	}
+
+	if progress.vertex != "3" {
+		t.Errorf("vertex = %q, want \"3\"", progress.vertex)
+	}
+	wantName := `[3/4] RUN echo "step two" && for i in 1 2 3; do echo "counting $i"; sleep 1; done`
+	if progress.name != wantName {
+		t.Errorf("name = %q, want %q", progress.name, wantName)
+	}
+	if progress.detail != "counting 3" {
+		t.Errorf("detail = %q, want the RUN step's latest output line", progress.detail)
+	}
+}
+
+func TestBuildProgress_Podman_DrawsStepAndClock(t *testing.T) {
+	progress, _, out := newTestProgressPodman()
+
+	// Short step name — the full podmanBuildLog command line is long enough
+	// that progressFallbackWidth (80 cols) truncates the detail off the end,
+	// which is a truncateProgress concern, not this test's.
+	log := "STEP 3/4: RUN codeserver--setup.sh\nDownloading code-server…\n"
+	if _, err := progress.Write([]byte(log)); err != nil {
+		t.Fatalf("Write failed: %v", err)
+	}
+	progress.started = time.Now().Add(-449 * time.Second)
+	progress.render()
+
+	drawn := out.String()
+
+	if !strings.Contains(drawn, "7m29s") {
+		t.Errorf("drawn line has no elapsed clock: %q", drawn)
+	}
+	if !strings.Contains(drawn, "RUN codeserver--setup.sh") {
+		t.Errorf("drawn line has no step name: %q", drawn)
+	}
+	if !strings.Contains(drawn, "Downloading code-server…") {
+		t.Errorf("drawn line has no detail: %q", drawn)
+	}
+}
+
+func TestBuildProgress_Podman_ClockRestartsOnlyOnANewStep(t *testing.T) {
+	progress, _, _ := newTestProgressPodman()
+
+	if _, err := progress.Write([]byte("STEP 3/4: RUN slow-thing.sh\n")); err != nil {
+		t.Fatalf("Write failed: %v", err)
+	}
+	started := progress.started
+
+	if _, err := progress.Write([]byte("still going\n")); err != nil {
+		t.Fatalf("Write failed: %v", err)
+	}
+	if !progress.started.Equal(started) {
+		t.Error("more output from the same step restarted the clock")
+	}
+	if progress.detail != "still going" {
+		t.Errorf("detail = %q, want the step's latest output line", progress.detail)
+	}
+
+	if _, err := progress.Write([]byte("STEP 4/4: RUN next-thing.sh\n")); err != nil {
+		t.Fatalf("Write failed: %v", err)
+	}
+	if progress.started.Equal(started) {
+		t.Error("a new step did not restart the clock")
+	}
+}
+
+// "--> <id>" is Buildah's DONE/CACHED: the step just committed its
+// intermediate image, so the last output line is stale but the step should
+// stay named until STEP names the next one.
+func TestBuildProgress_Podman_CacheLineEndsTheStepButKeepsItNamed(t *testing.T) {
+	progress, _, _ := newTestProgressPodman()
+
+	log := "STEP 3/4: RUN thing.sh\nsome output\n--> b49dd0d8e33f\n"
+	if _, err := progress.Write([]byte(log)); err != nil {
+		t.Fatalf("Write failed: %v", err)
+	}
+
+	if progress.name != "[3/4] RUN thing.sh" {
+		t.Errorf("name = %q, want the step still named", progress.name)
+	}
+	if progress.detail != "" {
+		t.Errorf("detail = %q, want the cache line to clear the detail", progress.detail)
+	}
+}
+
+// A build's registry-pull chatter (this project routes it through the same
+// capturing writer as STEP/RUN output on Podman — see docker_build.go) can
+// arrive before the very first STEP line. It has nowhere named to attach to
+// yet, so it must not make render() draw a line with an empty step name.
+func TestBuildProgress_Podman_PullChatterBeforeFirstStepDoesNotRender(t *testing.T) {
+	progress, _, out := newTestProgressPodman()
+
+	log := "Trying to pull docker.io/library/alpine:3.20...\nCopying blob sha256:25f1d6b1...\n"
+	if _, err := progress.Write([]byte(log)); err != nil {
+		t.Fatalf("Write failed: %v", err)
+	}
+
+	if progress.name != "" {
+		t.Errorf("name = %q, want no step named yet", progress.name)
+	}
+	if out.String() != "" {
+		t.Errorf("out = %q, want nothing drawn before the first STEP line", out.String())
 	}
 }

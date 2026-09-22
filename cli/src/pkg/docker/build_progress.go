@@ -60,18 +60,28 @@ var (
 	// replace "[3/3] RUN pip--install.sh …" with a naked "20.10".
 	progressOutputRe = regexp.MustCompile(`^\d+(?:\.\d+)?(?:\s+(.*))?$`)
 	progressANSIRe   = regexp.MustCompile(`\x1b\[[0-9;?]*[ -/]*[@-~]`)
+
+	// Buildah's plain output has no vertex tag at all: a step header line
+	// ("STEP 3/6: RUN codeserver--setup.sh") followed by the RUN's own stdout
+	// verbatim, one bare line at a time — confirmed against a real `podman
+	// build` (5.4.2). "--> <id>" marks a step's intermediate image (finished,
+	// same as BuildKit's DONE/CACHED); "COMMIT <ref>" marks the final commit.
+	podmanStepRe   = regexp.MustCompile(`^STEP (\d+)/(\d+):\s*(.*)$`)
+	podmanCacheRe  = regexp.MustCompile(`^-->`)
+	podmanCommitRe = regexp.MustCompile(`^COMMIT\b`)
 )
 
 // buildProgress is the io.Writer handed to a silenced build's stderr. It passes
 // every byte through to sink and, when out is non-nil, renders the current step
 // as a single transient line.
 type buildProgress struct {
-	sink io.Writer
-	out  io.Writer
+	sink   io.Writer
+	out    io.Writer
+	engine string // "docker" (BuildKit "#N" format) or "podman" (Buildah "STEP n/m" format)
 
 	mu      sync.Mutex
 	partial []byte
-	vertex  string // "8" — the BuildKit vertex currently being reported
+	vertex  string // "8", or podman's step number "3" — the step currently being reported
 	name    string // "[3/6] RUN codeserver--setup.sh"
 	detail  string // the step's most recent output line
 	started time.Time
@@ -85,12 +95,15 @@ type buildProgress struct {
 }
 
 // newBuildProgress returns a writer that mirrors into sink. When out is nil
-// (not a terminal, or progress opted out) it is a plain pass-through.
-func newBuildProgress(sink io.Writer, out io.Writer) *buildProgress {
+// (not a terminal, or progress opted out) it is a plain pass-through. engine
+// picks which output format is parsed for the transient line ("podman" for
+// Buildah's "STEP n/m" style, anything else for BuildKit's "#N" style).
+func newBuildProgress(sink io.Writer, out io.Writer, engine string) *buildProgress {
 	progress := &buildProgress{
-		sink:  sink,
-		out:   out,
-		begun: time.Now(),
+		sink:   sink,
+		out:    out,
+		engine: engine,
+		begun:  time.Now(),
 	}
 
 	if out != nil {
@@ -252,17 +265,27 @@ func (p *buildProgress) consume(chunk []byte) {
 	p.render()
 }
 
-// parse folds one line of BuildKit plain output into the current step.
+// parse folds one line of build output into the current step, in whichever
+// format p.engine actually produces.
 func (p *buildProgress) parse(raw string) {
 	line := progressANSIRe.ReplaceAllString(raw, "")
 
 	// A \r-rewritten line (curl's meter) only ever carries its vertex prefix
 	// once, at the very front, so anything after the last \r is unattributable
-	// and gets dropped by the vertex match below.
+	// and gets dropped by the matches below.
 	if cut := strings.LastIndexByte(line, '\r'); cut >= 0 {
 		line = line[cut+1:]
 	}
 
+	if p.engine == "podman" {
+		p.parsePodman(strings.TrimSpace(line))
+		return
+	}
+	p.parseBuildKit(line)
+}
+
+// parseBuildKit folds one line of BuildKit plain output into the current step.
+func (p *buildProgress) parseBuildKit(line string) {
 	match := progressVertexRe.FindStringSubmatch(strings.TrimSpace(line))
 	if match == nil {
 		return
@@ -296,6 +319,43 @@ func (p *buildProgress) parse(raw string) {
 		}
 		p.name, p.detail = rest, ""
 	}
+}
+
+// parsePodman folds one line of Buildah plain output into the current step.
+// Unlike BuildKit, a RUN step's own stdout carries no per-line tag at all —
+// it is only ever attributable to "whatever step STEP last named" — so every
+// line that isn't itself a STEP/-->/COMMIT marker is read as that step's
+// latest output line.
+func (p *buildProgress) parsePodman(line string) {
+	if line == "" {
+		return
+	}
+
+	if match := podmanStepRe.FindStringSubmatch(line); match != nil {
+		number, total, instruction := match[1], match[2], strings.TrimSpace(match[3])
+		if number != p.vertex {
+			p.vertex = number
+			p.started = time.Now()
+		}
+		p.name, p.detail = fmt.Sprintf("[%s/%s] %s", number, total, instruction), ""
+		return
+	}
+
+	if podmanCacheRe.MatchString(line) {
+		// "--> <id>" — the step just committed its intermediate image; drop
+		// its last output line but keep the name until STEP names the next one.
+		p.detail = ""
+		return
+	}
+
+	if podmanCommitRe.MatchString(line) {
+		p.name, p.detail = line, ""
+		return
+	}
+
+	// A bare output line belonging to the step STEP last named (RUN's own
+	// stdout, or pull/registry chatter arriving before the first STEP).
+	p.detail = line
 }
 
 // render redraws the status line in place. Callers hold p.mu.

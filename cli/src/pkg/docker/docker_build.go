@@ -71,30 +71,45 @@ func DockerBuild(flags DockerFlags, args ilist.List[ilist.List[string]]) error {
 
 	cmd.Env = env
 
-	// Forward stdout normally, but capture stderr
-	cmd.Stdout = os.Stdout
 	cmd.Stdin = os.Stdin
 
-	// stderr still lands in the buffer verbatim for the failure path; progress
-	// reads it on the way past to draw one transient line on the terminal.
-	// Deferred LIFO: the line is erased first, and only then is a terminal that
-	// buildProgressOut had to open for it handed back.
+	// The captured stream still lands in the buffer verbatim for the failure
+	// path; progress reads it on the way past to draw one transient line on
+	// the terminal. Deferred LIFO: the line is erased first, and only then is
+	// a terminal that buildProgressOut had to open for it handed back.
 	progressOut, releaseProgressOut := buildProgressOut()
 	defer releaseProgressOut()
 
-	var stderrBuf bytes.Buffer
-	progress := newBuildProgress(&stderrBuf, progressOut)
+	var captureBuf bytes.Buffer
+	progress := newBuildProgress(&captureBuf, progressOut, flags.binary())
 	defer progress.Close()
-	cmd.Stderr = progress
+
+	if flags.binary() == "podman" {
+		// Buildah's STEP headers and every RUN step's own output land on
+		// stdout, not stderr (confirmed against a real `podman build`) — only
+		// registry-pull chatter and the final error go to stderr. Silencing
+		// only stderr, as the Docker/BuildKit path below does, would leave
+		// every STEP and RUN line printing live, exactly the clutter
+		// --silence-build exists to hide. Cmd docs: giving Stdout and Stderr
+		// the same comparable writer serializes both through it, so no extra
+		// locking is needed here beyond buildProgress's own.
+		cmd.Stdout = progress
+		cmd.Stderr = progress
+	} else {
+		// BuildKit's progress lives on stderr; stdout is just the image ID
+		// echoed back, harmless to forward live.
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = progress
+	}
 
 	// Run the build
 	if err := cmd.Run(); err != nil {
-		// Build failed - wipe the status line, then display captured stderr
+		// Build failed - wipe the status line, then display what was captured
 		progress.Close()
 		fmt.Fprintln(os.Stderr)
 		fmt.Fprintf(os.Stderr, "❌ %s build failed!\n", flags.binary())
 		fmt.Fprintln(os.Stderr, "---- Build output ----")
-		fmt.Fprint(os.Stderr, stderrBuf.String())
+		fmt.Fprint(os.Stderr, captureBuf.String())
 		fmt.Fprintln(os.Stderr, "----------------------")
 
 		if exitErr, ok := err.(*exec.ExitError); ok {

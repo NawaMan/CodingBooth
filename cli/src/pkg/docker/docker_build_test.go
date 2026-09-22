@@ -159,6 +159,65 @@ RUN false
 	}
 }
 
+// TestDockerBuild_Silent_PodmanStdoutIsActuallySilenced verifies a Podman
+// silent build hides Buildah's STEP headers and RUN output, not just
+// registry/error chatter — see docs/PODMAN_SUPPORT.md. Buildah prints STEP
+// n/m and every RUN step's own stdout to *stdout*, not stderr (confirmed
+// against a real `podman build`), so a fix that only re-routes stderr (the
+// BuildKit-shaped assumption the Docker path makes) would leave a Podman
+// build printing live regardless of --silence-build.
+func TestDockerBuild_Silent_PodmanStdoutIsActuallySilenced(t *testing.T) {
+	requirePodman(t)
+
+	flags := docker.DockerFlags{
+		Dryrun: false,
+		Silent: true,
+		Engine: "podman",
+	}
+
+	const marker = "distinctive-silent-build-marker-should-not-leak"
+	dockerfile := "FROM alpine:latest\nRUN echo \"" + marker + "\"\n"
+
+	tmpDir := t.TempDir()
+	dockerfilePath := tmpDir + "/Dockerfile"
+	if err := writeFile(dockerfilePath, []byte(dockerfile), 0644); err != nil {
+		t.Fatalf("Failed to create Dockerfile: %v", err)
+	}
+
+	oldStdout, oldStderr := os.Stdout, os.Stderr
+	outReader, outWriter, _ := os.Pipe()
+	errReader, errWriter, _ := os.Pipe()
+	os.Stdout, os.Stderr = outWriter, errWriter
+
+	err := docker.DockerBuild(flags, ilist.NewList(ilist.NewList(
+		"-t", "test-podman-silent-stdout:latest",
+		"-f", dockerfilePath,
+		tmpDir,
+	)))
+
+	outWriter.Close()
+	errWriter.Close()
+	os.Stdout, os.Stderr = oldStdout, oldStderr
+
+	var outBuf, errBuf bytes.Buffer
+	io.Copy(&outBuf, outReader)
+	io.Copy(&errBuf, errReader)
+	stdout, stderr := outBuf.String(), errBuf.String()
+
+	if err != nil {
+		t.Fatalf("expected the build to succeed: %v", err)
+	}
+	if strings.Contains(stdout, "STEP") {
+		t.Errorf("STEP header leaked to stdout on a silent build: %q", stdout)
+	}
+	if strings.Contains(stdout, marker) {
+		t.Errorf("RUN step output leaked to stdout on a silent build: %q", stdout)
+	}
+	if strings.Contains(stderr, marker) {
+		t.Errorf("RUN step output leaked to stderr on a silent build: %q", stderr)
+	}
+}
+
 // Helper function for tests
 func writeFile(path string, data []byte, perm int) error {
 	return os.WriteFile(path, data, os.FileMode(perm))
