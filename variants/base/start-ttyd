@@ -14,7 +14,11 @@ if is_truthy "${BOOTH_WEB_SPLIT:-true}"; then
     exec start-ttyd-split "$PORT"
 fi
 
-TTYD_ARGS=(-W -i 0.0.0.0 -p "$PORT" --writable -t 'fontFamily=FiraCode Nerd Font Mono')
+# -d 3 = libwebsockets LLL_ERR|LLL_WARN only. ttyd's default (7) also sets
+# LLL_NOTICE, which logs every HTTP request plus a connection tag/untag pair
+# for it straight to the container's stdout/stderr (docker logs) - errors and
+# warnings still print at 3.
+TTYD_ARGS=(-W -i 0.0.0.0 -p "$PORT" --writable -t 'fontFamily=FiraCode Nerd Font Mono' -d 3)
 
 # No nginx sits in front of this mode to inject the font the way
 # start-ttyd-split does, so this custom index (baked by
