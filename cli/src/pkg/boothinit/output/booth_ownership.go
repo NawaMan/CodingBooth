@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"testing"
 
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
@@ -86,7 +87,7 @@ func StampBoothOwnership(targetPath string) {
 		return
 	}
 
-	_ = docker.Docker(docker.DockerFlags{Silent: true}, "run", ilist.NewList(
+	_ = docker.Docker(docker.DockerFlags{Silent: true, Engine: appctx.ResolveEngineForPath(targetPath, true)}, "run", ilist.NewList(
 		ilist.NewList("--rm"),
 		ilist.NewList("-v", absPath+":"+ownershipMountPoint),
 		ilist.NewList(ownershipStampImage),

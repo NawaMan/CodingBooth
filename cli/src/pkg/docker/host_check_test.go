@@ -217,3 +217,39 @@ func TestCheckHostDocker_rootfulLinuxIsFine(t *testing.T) {
 		t.Fatalf("rootful linux should pass: %v", err)
 	}
 }
+
+func TestCheckHostDocker_podmanSkipsDockerChecks(t *testing.T) {
+	// A Podman booth must not be judged by the Docker daemon: no Docker at all,
+	// or a rootless / userns-remap Docker, is irrelevant when Podman is the engine.
+	for name, readInfo := range map[string]func() ([]string, string, error){
+		"docker rootless":    func() ([]string, string, error) { return []string{"name=rootless"}, "", nil },
+		"docker userns":      func() ([]string, string, error) { return []string{"name=userns"}, "", nil },
+		"docker not on PATH": func() ([]string, string, error) { return nil, "", errors.New("executable file not found in $PATH") },
+	} {
+		t.Run(name, func(t *testing.T) {
+			err := CheckHostDocker(HostCheckOptions{
+				Goos:          "linux",
+				Engine:        "podman",
+				RequireDaemon: true,
+				ReadInfo:      readInfo,
+			})
+			if err != nil {
+				t.Fatalf("podman engine must skip the Docker host check, got %v", err)
+			}
+		})
+	}
+}
+
+func TestCheckHostDocker_explicitDockerEngineStillChecked(t *testing.T) {
+	err := CheckHostDocker(HostCheckOptions{
+		Goos:          "linux",
+		Engine:        "docker",
+		RequireDaemon: true,
+		ReadInfo: func() ([]string, string, error) {
+			return []string{"name=rootless"}, "", nil
+		},
+	})
+	if _, ok := err.(*HostCheckError); !ok {
+		t.Fatalf("got %v (%T), want HostCheckError for docker engine", err, err)
+	}
+}

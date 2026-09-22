@@ -72,9 +72,10 @@ func Shell(args []string, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
+	engine := resolveLifecycleEngine(codePath)
 
 	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting}
-	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, stderr)
+	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, engine, stderr)
 	if err != nil {
 		return err
 	}
@@ -95,7 +96,7 @@ func Shell(args []string, stderr io.Writer) error {
 	}
 	execArgs = append(execArgs, ilist.NewList(shellCmd, "-l"))
 
-	if err := docker.Docker(docker.DockerFlags{Silent: false}, "exec", ilist.NewList(execArgs...)); err != nil {
+	if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "exec", ilist.NewList(execArgs...)); err != nil {
 		return forwardExitCode("shell", target.Name, err)
 	}
 	return nil
@@ -143,9 +144,10 @@ func Exec(args []string, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
+	engine := resolveLifecycleEngine(codePath)
 
 	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting}
-	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, stderr)
+	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, engine, stderr)
 	if err != nil {
 		return err
 	}
@@ -153,7 +155,7 @@ func Exec(args []string, stderr io.Writer) error {
 	stopCleanupSignalWatch := watchSignalsForCleanup(cleanup)
 	defer stopCleanupSignalWatch()
 
-	if *daemon && !*keepAlive && isEphemeral(target.Name) {
+	if *daemon && !*keepAlive && isEphemeral(target.Name, engine) {
 		return commandExit(1, fmt.Sprintf(
 			"Error: booth %q is ephemeral: it is stopped once the last session leaves, which would kill the detached command.\n"+
 				"       Re-run with --keep-alive to keep the booth (and the command) alive.",
@@ -170,7 +172,7 @@ func Exec(args []string, stderr io.Writer) error {
 	// Command to execute
 	execArgs = append(execArgs, ilist.NewList(cmdArgs...))
 
-	if err := docker.Docker(docker.DockerFlags{Silent: false}, "exec", ilist.NewList(execArgs...)); err != nil {
+	if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "exec", ilist.NewList(execArgs...)); err != nil {
 		return forwardExitCode("exec", target.Name, err)
 	}
 	return nil
@@ -223,10 +225,10 @@ const (
 // removed, and a pre-existing keep-alive booth returns to stopped. A booth that
 // was already running, or keepAlive=true, yields a no-op cleanup. The returned
 // error is already a commandError.
-func resolveConnectTarget(name string, positional []string, codePath string, run, keepAlive, quiet bool, create connectCreateOpts, stderr io.Writer) (managedContainer, func(), error) {
+func resolveConnectTarget(name string, positional []string, codePath string, run, keepAlive, quiet bool, create connectCreateOpts, engine string, stderr io.Writer) (managedContainer, func(), error) {
 	noCleanup := func() {}
 
-	containers, err := managedContainers(false)
+	containers, err := managedContainers(engine, false)
 	if err != nil {
 		return managedContainer{}, noCleanup, commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -258,17 +260,17 @@ func resolveConnectTarget(name string, positional []string, codePath string, run
 		connectNote(stderr, quiet, "Booth %q is not running; starting it...\n", target.Name)
 		// Silent so docker's container-name echo does not pollute exec's stdout
 		// (which is forwarded verbatim for scripting). Failures surface via err.
-		if err := docker.Docker(docker.DockerFlags{Silent: true}, "start", ilist.NewList(ilist.NewList(target.Name))); err != nil {
+		if err := docker.Docker(docker.DockerFlags{Silent: true, Engine: engine}, "start", ilist.NewList(ilist.NewList(target.Name))); err != nil {
 			return managedContainer{}, noCleanup, commandExit(1, fmt.Sprintf("Error: failed to start %q: %v", target.Name, err))
 		}
 		// Restarting re-runs booth-entry, which re-aligns the coder user; wait so
 		// the following exec does not race the passwd rewrite.
-		if err := waitForBoothReady(target.Name); err != nil {
+		if err := waitForBoothReady(target.Name, engine); err != nil {
 			return managedContainer{}, noCleanup, err
 		}
 
 	case connectRun:
-		created, err := runConnectTarget(name, positional, codePath, keepAlive, quiet, create, containers, stderr)
+		created, err := runConnectTarget(name, positional, codePath, keepAlive, quiet, create, containers, engine, stderr)
 		if err != nil {
 			return managedContainer{}, noCleanup, err
 		}
@@ -278,7 +280,7 @@ func resolveConnectTarget(name string, positional []string, codePath string, run
 		return managedContainer{}, noCleanup, commandExit(1, "Error: internal error: unknown connect action")
 	}
 
-	cleanup := registerConnectSession(target.Name, action, keepAlive, quiet, stderr)
+	cleanup := registerConnectSession(target.Name, action, keepAlive, quiet, engine, stderr)
 	return target, cleanup, nil
 }
 
@@ -354,33 +356,33 @@ func isComparablePort(port string) bool {
 // freshly-created --rm booth is removed; a pre-existing keep-alive booth returns
 // to stopped). A booth that was already running and is not ephemeral, or any
 // session with --keep-alive, is never torn down.
-func registerConnectSession(containerName string, action connectAction, keepAlive, quiet bool, stderr io.Writer) func() {
+func registerConnectSession(containerName string, action connectAction, keepAlive, quiet bool, engine string, stderr io.Writer) func() {
 	noCleanup := func() {}
 
 	// --keep-alive: make sure this booth is not (or no longer) treated as
 	// ephemeral, so neither we nor any concurrent session stops it, then leave it
 	// running untouched.
 	if keepAlive {
-		clearEphemeralMark(containerName)
+		clearEphemeralMark(containerName, engine)
 		return noCleanup
 	}
 
 	broughtUp := action == connectStart || action == connectRun
 	if broughtUp {
-		markEphemeral(containerName)
-	} else if !isEphemeral(containerName) {
+		markEphemeral(containerName, engine)
+	} else if !isEphemeral(containerName, engine) {
 		// connectUse on a booth that was already running and not managed by a
 		// prior --run: leave its lifecycle entirely alone.
 		return noCleanup
 	}
 
 	token := connectSessionToken()
-	addConnection(containerName, token)
+	addConnection(containerName, token, engine)
 
 	var once sync.Once
 	return func() {
 		once.Do(func() {
-			if releaseConnectionIsLast(containerName, token) {
+			if releaseConnectionIsLast(containerName, token, engine) {
 				stopBoothQuietly(containerName, stderr, quiet)
 			}
 		})
@@ -540,7 +542,7 @@ func resolveCodePathFlag(code string) (string, error) {
 // when --name carries a placeholder template (e.g. '{project}-{port}'): the
 // resolved name is only known after the run, so we cannot look it up by the
 // literal flag value.
-func runConnectTarget(name string, positional []string, codePath string, keepAlive, quiet bool, create connectCreateOpts, preRun []managedContainer, stderr io.Writer) (managedContainer, error) {
+func runConnectTarget(name string, positional []string, codePath string, keepAlive, quiet bool, create connectCreateOpts, preRun []managedContainer, engine string, stderr io.Writer) (managedContainer, error) {
 	self, err := os.Executable()
 	if err != nil {
 		return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to locate booth executable: %v", err))
@@ -573,7 +575,7 @@ func runConnectTarget(name string, positional []string, codePath string, keepAli
 	// given, resolve by the code path the booth was run from (--code, or this
 	// process's cwd when --code was not given) so we match however the run
 	// derived the name (e.g. from config.toml).
-	containers, err := managedContainers(false)
+	containers, err := managedContainers(engine, false)
 	if err != nil {
 		return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -602,7 +604,7 @@ func runConnectTarget(name string, positional []string, codePath string, keepAli
 		return managedContainer{}, commandExit(1, err.Error())
 	}
 
-	if err := waitForBoothReady(target.Name); err != nil {
+	if err := waitForBoothReady(target.Name, engine); err != nil {
 		return managedContainer{}, err
 	}
 	return target, nil
@@ -688,8 +690,8 @@ func connectSessionToken() string {
 // dockerExecRootQuiet runs a shell snippet in the container as root, discarding
 // output, and reports whether it exited zero. Root avoids any dependence on the
 // coder user's mid-alignment state for this bookkeeping.
-func dockerExecRootQuiet(containerName, script string) bool {
-	cmd := exec.Command("docker", "exec", "-u", "root", containerName, "sh", "-c", script)
+func dockerExecRootQuiet(containerName, script, engine string) bool {
+	cmd := exec.Command(engine, "exec", "-u", "root", containerName, "sh", "-c", script)
 	cmd.Stdout = io.Discard
 	cmd.Stderr = io.Discard
 	return cmd.Run() == nil
@@ -697,38 +699,38 @@ func dockerExecRootQuiet(containerName, script string) bool {
 
 // markEphemeral records that this booth was brought up by --run and should be
 // stopped once the last connection leaves.
-func markEphemeral(containerName string) {
-	dockerExecRootQuiet(containerName, "mkdir -p "+connectSessionDir+" && : > "+connectSessionDir+"/ephemeral")
+func markEphemeral(containerName, engine string) {
+	dockerExecRootQuiet(containerName, "mkdir -p "+connectSessionDir+" && : > "+connectSessionDir+"/ephemeral", engine)
 }
 
 // clearEphemeralMark promotes a booth to persistent so no session stops it
 // (used by --keep-alive).
-func clearEphemeralMark(containerName string) {
-	dockerExecRootQuiet(containerName, "rm -f "+connectSessionDir+"/ephemeral")
+func clearEphemeralMark(containerName, engine string) {
+	dockerExecRootQuiet(containerName, "rm -f "+connectSessionDir+"/ephemeral", engine)
 }
 
 // isEphemeral reports whether the booth is currently marked ephemeral.
-func isEphemeral(containerName string) bool {
-	return dockerExecRootQuiet(containerName, "[ -e "+connectSessionDir+"/ephemeral ]")
+func isEphemeral(containerName, engine string) bool {
+	return dockerExecRootQuiet(containerName, "[ -e "+connectSessionDir+"/ephemeral ]", engine)
 }
 
 // addConnection records this session as an active connection to the booth.
-func addConnection(containerName, token string) {
-	dockerExecRootQuiet(containerName, "mkdir -p "+connectSessionDir+" && : > "+connectSessionDir+"/conn."+token)
+func addConnection(containerName, token, engine string) {
+	dockerExecRootQuiet(containerName, "mkdir -p "+connectSessionDir+" && : > "+connectSessionDir+"/conn."+token, engine)
 }
 
 // releaseConnectionIsLast removes this session's connection record and reports
 // whether the booth should now be stopped: true only when the booth is still
 // marked ephemeral and no other connections remain. A failed exec (e.g. the
 // container is already gone because another session stopped it) reports false.
-func releaseConnectionIsLast(containerName, token string) bool {
+func releaseConnectionIsLast(containerName, token, engine string) bool {
 	script := strings.Join([]string{
 		"rm -f " + connectSessionDir + "/conn." + token,
 		"[ -e " + connectSessionDir + "/ephemeral ] || exit 1",
 		"for f in " + connectSessionDir + "/conn.*; do [ -e \"$f\" ] && exit 1; done",
 		"exit 0",
 	}, "\n")
-	return dockerExecRootQuiet(containerName, script)
+	return dockerExecRootQuiet(containerName, script, engine)
 }
 
 // watchSignalsForCleanup runs cleanup if the process is interrupted (SIGINT or
@@ -767,12 +769,12 @@ func watchSignalsForCleanup(cleanup func()) func() {
 // to), so we poll until `id -u coder` reports exactly that. Where the host UID is
 // not meaningful (Windows, os.Getuid() == -1) we instead wait for coder's UID to
 // hold steady across several probes.
-func waitForBoothReady(containerName string) error {
+func waitForBoothReady(containerName, engine string) error {
 	const attempts = 120
 	const interval = 500 * time.Millisecond
 
 	coderUID := func() (string, bool) {
-		out, err := exec.Command("docker", "exec", containerName, "id", "-u", "coder").Output()
+		out, err := exec.Command(engine, "exec", containerName, "id", "-u", "coder").Output()
 		if err != nil {
 			return "", false
 		}

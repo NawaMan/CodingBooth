@@ -4,6 +4,21 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Experimental: Podman as an alternative container engine.** `--engine podman`
+  (also `CB_ENGINE` and `engine = "podman"` in `.booth/config.toml`) runs booths
+  on Podman instead of Docker; the `booth config` TUI has an engine field too.
+  With nothing chosen, Docker is used, and Podman only when `docker` is not
+  installed but `podman` is. This is Phase 1 of `docs/PODMAN_SUPPORT.md` and is
+  still being developed: it may not have feature parity with Docker, and
+  Docker-in-Docker, `booth expose` tunnels and live build progress are not
+  supported yet. Podman builds pass `--format docker` (Buildah's default image
+  format ignores the Dockerfile `SHELL`, which every variant relies on), and
+  rootless Podman runs with `--userns=keep-id` so your host UID matches `coder`
+  and `.booth/.tmp` stays writable — without it a booth could not shut down.
+  `booth list`/`stop`/`start`/`restart`/`remove`/`prune` follow `CB_ENGINE`
+  rather than `--engine`. The Linux rootless-Docker refusal does not apply when
+  the engine is Podman.
+
 - **Host requirements are spelled out, and Linux rootless Docker is refused.**
   The installer still installs without Docker, but now reports bash/curl/docker
   and warns on Linux rootless Docker or userns-remap. `booth` / `booth build`
