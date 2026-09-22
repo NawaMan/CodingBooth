@@ -148,6 +148,7 @@ func buildBooth(version string) {
 	ctx = booth.ValidateVariant(ctx)
 
 	if err := docker.CheckHostDocker(docker.HostCheckOptions{
+		Engine:        ctx.Engine(),
 		AllowRootless: ctx.Rootless(),
 		RequireDaemon: !ctx.Dryrun(),
 	}); err != nil {

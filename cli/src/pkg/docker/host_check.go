@@ -71,7 +71,12 @@ func (err *HostCheckError) Error() string {
 
 // HostCheckOptions controls CheckHostDocker.
 type HostCheckOptions struct {
-	Goos          string
+	Goos string
+	// Engine is the container engine in use ("docker" or "podman"; empty means
+	// docker). The rootless / userns-remap refusal is about how Docker maps the
+	// host user, so it does not apply to any other engine — Podman's rootless
+	// mode is handled by --userns=keep-id at run time.
+	Engine        string
 	AllowRootless bool
 	RequireDaemon bool
 	ReadInfo      func() (options []string, stderr string, err error)
@@ -85,6 +90,9 @@ func defaultWarn(message string) {
 // CheckHostDocker refuses Linux rootless / userns-remap unless AllowRootless
 // is set, and (when RequireDaemon) explains a missing or unreachable daemon.
 func CheckHostDocker(opts HostCheckOptions) error {
+	if opts.Engine != "" && opts.Engine != "docker" {
+		return nil
+	}
 	goos := opts.Goos
 	if goos == "" {
 		goos = runtime.GOOS
