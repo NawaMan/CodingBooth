@@ -61,7 +61,12 @@ for i in "${!SESSION_NAMES[@]}"; do
     session_name="${SESSION_NAMES[$i]}"
     session_port="${SESSION_PORTS[$i]}"
 
-    ttyd_args=(-W -i 127.0.0.1 -p "$session_port" -b "/$session_name" --writable -t 'fontFamily=FiraCode Nerd Font Mono')
+    # -d 3 = libwebsockets LLL_ERR|LLL_WARN only. ttyd's default (7) also sets
+    # LLL_NOTICE, which logs a tag/untag pair plus an access line for every
+    # HTTP request - including the /__booth/health readiness poll hitting
+    # this pane's /s1 base path every 5s, straight to docker logs. Errors and
+    # warnings still print at 3.
+    ttyd_args=(-W -i 127.0.0.1 -p "$session_port" -b "/$session_name" --writable -t 'fontFamily=FiraCode Nerd Font Mono' -d 3)
     if [[ -n "${PASSWORD:-}" ]]; then
         ttyd_args+=(-c "coder:${PASSWORD}")
     fi
