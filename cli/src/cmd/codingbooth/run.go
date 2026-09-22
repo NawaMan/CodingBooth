@@ -119,7 +119,7 @@ func removeContainerForRestart(ctx appctx.AppContext) {
 		containerName = ctx.ProjectName()
 	}
 
-	flags := docker.DockerFlags{Silent: true}
+	flags := docker.DockerFlags{Silent: true, Engine: ctx.Engine()}
 
 	// Check if the container still exists
 	output, err := docker.DockerOutput(flags, "ps", ilist.NewList(

@@ -1,188 +1,283 @@
 # Podman Support
 
-Status: **experimental — Phase 1 implemented.** Podman support is still being
-developed and may not have feature parity with Docker. Docker remains the
-supported engine. This document scopes the work, how the user chooses between
-the two, and what each phase delivers; phases 2–6 below are not started.
+Status: **experimental.** Docker is the supported container engine. Podman support
+is still being developed and **may not have feature parity with Docker** — read
+[Known limitations](#known-limitations) before relying on it.
 
-## Why this looks feasible
+This document has two parts, kept apart on purpose:
 
-- The CLI only shells out to the `docker` binary via `os/exec` — it never uses
-  the Docker Engine API or Go SDK (`cli/go.mod`/`go.sum` have no
-  `docker/docker`, `docker/cli`, or `docker/compose` dependency). Nothing
-  depends on Docker's wire protocol, only on CLI flag/argument compatibility.
-- Nearly all docker invocations (~60+ call sites) already funnel through one
-  package, `cli/src/pkg/docker/`, via four functions: `Docker()`,
-  `DockerOutput()`, `DockerBuild()`, `DockerBuildAndPush()`.
-- There is no hardcoded Docker version check or `exec.LookPath("docker")`
-  preflight anywhere — failures are just generic "binary not found" errors, so
-  there's nothing to un-gate for a second engine.
+1. **[Implemented](#part-1--implemented-phase-1)** — what ships today, as built and
+   as verified. Nothing in it is a promise about the future.
+2. **[Plan](#part-2--plan-not-implemented)** — what is *not* built: phases 2–6 and
+   follow-ups.
 
-## How the user chooses: `engine`
+Phase 1 (core lifecycle) is implemented. Phases 2–6 are not started.
 
-The engine choice follows the exact same settings pattern already used for
-`--sudo`, `--egress-mode`, etc. — no new mechanism is introduced.
+---
 
-- **New `AppConfig` field** (`cli/src/pkg/appctx/app_config.go`):
-  `Engine string` tagged `toml:"engine,omitempty"` and `envconfig:"CB_ENGINE"`,
-  with a struct-tag default of `docker`.
-- **CLI flag**: `--engine docker|podman`, parsed alongside the existing flags
-  in `initialize_app_context.go`.
-- **Env var**: `CB_ENGINE=podman`, following the established `CB_*` convention
-  (parsed via `envconfig.Process`, same path as `CB_DRYRUN`/`CB_SUDO`).
-- **Per-project config file**: `engine = "podman"` in `.booth/config.toml`,
-  same TOML struct as every other setting.
-- **Precedence**: identical to every other AppConfig field — CLI flag > TOML
-  config file > env var > default (`docker`). No special-casing needed (the
-  `dryrun`/`verbose`/`config`/`code` early-capture behavior does not apply
-  here).
-- **`booth config` TUI**: exposed as a cycle field, the same widget already
-  used for `egress-mode` — `Options: []string{"", "docker", "podman"}` added
-  to the `fieldDisplays` table in `pkg/boothinit/tui/configfields.go`. This
-  automatically wires it into the TUI, `--set engine=podman`, and save/reload,
-  since that table drives `ConfigKeys()`/`RenderedConfigKeys()` generically.
-- **Reaching `pkg/docker`**: `DockerFlags` (or equivalent) gains an `Engine`
-  field, read at each call site the same way `Dryrun`/`Verbose` are today, and
-  the 5 hardcoded `"docker"` literals in `docker.go` (3x `exec.Command`, 2x
-  `printCmd`) become `flags.Engine`.
+# Part 1 — Implemented (Phase 1)
 
-No general auto-detection is planned — an explicit `--engine`/`CB_ENGINE`/
-config-file choice always wins, and the default stays `docker`, to avoid
-silently changing behavior for existing users. The one narrow exception:
-**if the engine was never explicitly set and the default (`docker`) binary
-isn't on PATH but `podman` is, fall back to `podman` automatically.** Without
-this, a machine that only has Podman installed would see CodingBooth as
-simply broken (`docker: executable file not found`) with no hint that
-`--engine podman` exists — the whole point of adding support. The fallback
-is resolved once (not re-checked per `docker` call) and never overrides an
-explicit choice.
+## Choosing the engine
 
-When it fires, it prints one line, gated by the same `--quiet`/`CB_QUIET`
-convention already used for the DinD/egress sidecar notices (`booth.go`):
+`engine` is an ordinary setting, resolved like `--sudo` or `--egress-mode`.
+
+| Way | Example |
+| --- | --- |
+| CLI flag | `booth --engine podman` (also `booth build --engine podman`) |
+| Environment | `CB_ENGINE=podman booth` |
+| Project config | `engine = "podman"` in `.booth/config.toml` |
+| Config TUI / CLI | `booth config` (a "Container Engine" field), or `booth config . --no-tui --set engine=podman` |
+
+Values are `docker` and `podman` (case-insensitive). Anything else is rejected:
+`❌ invalid engine "nerdctl" (supported: docker, podman)`.
+
+**Precedence** is the usual one: `--engine` > `.booth/config.toml` > `CB_ENGINE` > default.
+
+### Which engine each command uses
+
+Only `booth` (run) and `booth build` take `--engine`. The other commands do not build
+the full application context, so they cannot see the flag:
+
+| Command | Engine comes from |
+| --- | --- |
+| `booth` (run), `booth build` | `--engine` > config.toml > `CB_ENGINE` > default |
+| `booth shell`, `booth exec`, `booth start` | `engine` in the `.booth/config.toml` under `--code`, then `CB_ENGINE`. **Without `--code`, only `CB_ENGINE` is read** (not the current directory's config). |
+| `booth list`, `stop`, `restart`, `remove`, `prune`, `home-volume-*`, `message`, `expose list` | `CB_ENGINE` only |
+
+So a booth started with `--engine podman` is stopped with
+`CB_ENGINE=podman booth stop` — or set `engine = "podman"` in its config and pass
+`--code` where the command has one. Unset, these commands look at Docker and will not
+see a Podman booth.
+
+### When you choose nothing
+
+The default is `docker`, so nothing changes for existing users. One narrow exception:
+if the engine was never set (no flag, config or env) **and `docker` is not on `PATH`
+but `podman` is**, CodingBooth uses `podman` and says so once:
 
 ```
 ⚠️  docker not found — using podman instead (experimental; --engine docker to force)
 ```
 
-### Feature parity disclaimer
+`--quiet` hides that line. An explicit choice is never overridden. If neither binary is
+found, the run fails the way it always did (the engine command is not found).
 
-Podman support is new and not expected to have full feature parity with
-Docker for a while (see the phase list below — DinD, build progress UX, and
-the release pipeline are all later-phase work). This is surfaced in three
-places, all short:
+### Experimental warning
 
-- **This doc** — this section.
-- **`--help`** — the `--engine` flag's help line notes "podman is
-  experimental — see docs/PODMAN_SUPPORT.md", next to the other flag
-  descriptions in `cmd/codingbooth/help.go`.
-- **Runtime warning** — whenever the resolved engine is `podman` (whether
-  explicitly chosen or via the PATH fallback above), print once, modeled on
-  the existing unconditional `--persist-home is experimental` warning in
-  `booth.go` (i.e. *not* gated by `--quiet` — this one disclaimer is a
-  "know your risks" notice the user should see even in quiet mode):
+Whenever `podman` is chosen explicitly, this is printed to stderr and is **not**
+hidden by `--quiet`:
 
-  ```
-  Warning: --engine podman is experimental and may not have full Docker feature parity yet. See docs/PODMAN_SUPPORT.md.
-  ```
+```
+Warning: --engine podman is experimental and may not have full Docker feature parity yet. See docs/PODMAN_SUPPORT.md.
+```
 
-  In the fallback case, the two messages would otherwise say almost the same
-  thing twice — so the fallback line above absorbs the parity caveat itself
-  and the separate unconditional warning is skipped when the engine was
-  auto-fallen-back rather than explicitly requested.
+A command that spawns other `booth` processes (for example `exec --run`) can print it
+more than once. `--help`, `docs/BOOTH_RUN.md` and the README say the same.
 
-### Podman-specific behavior worth knowing
+## What runs on the chosen engine
 
-- **Rootless UID mapping.** Rootless Podman maps the host user to container
-  *root*, which would leave bind-mounted files (and `.booth/.tmp`, where the
-  shutdown/restart markers live) unwritable by the in-container `coder` user.
-  For a non-root host user, `booth run` therefore adds `--userns=keep-id
-  --user root` so the host UID maps to the same UID inside. Rootful Podman and
-  Docker are unaffected.
-- **Builds use `--format docker`.** Buildah's default OCI image format silently
-  ignores the Dockerfile `SHELL` directive, which every shipped Dockerfile
-  relies on (`bash -o pipefail`). The build wrapper adds `--format docker` for
-  Podman.
-- **`booth list/stop/start/restart/remove/prune` pick the engine from
-  `CB_ENGINE` (or `.booth/config.toml` where a `--code` is available), not from
-  `--engine`.** With both engines installed and nothing set they look at Docker,
-  so run `CB_ENGINE=podman booth stop` for a booth started with `--engine podman`
-  (or set `engine = "podman"` in `.booth/config.toml`).
-- **Docker's host check is skipped for Podman.** The Linux rootless-Docker /
-  userns-remap refusal (and the "Docker daemon not reachable" check) is about
-  how Docker maps the host user, so it does not run when the engine is Podman.
-- **Rootless Podman needs `/etc/subuid` and `/etc/subgid` entries** for your
-  user (`sudo usermod --add-subuids ... --add-subgids ...`, then
-  `podman system migrate`); without them image layers cannot be unpacked.
+Every engine call the CLI makes goes through the selected binary — `run`, `build`,
+`ps`/`inspect`/`exec`/`stop`/`rm`/`restart`/`start`, `volume`, `network`, the container
+lookup used to diagnose a port conflict, and the sidecar clean-up done before a run.
+`--dryrun` and `--verbose` print the real `podman …` command line.
 
-## Phases
+## Podman-specific behavior
 
-Each phase ends with something a user can actually run and observe — no phase
-ships as "plumbing only."
+These are applied automatically when the engine is Podman.
 
-### Phase 1 — Core lifecycle + dryrun/verbose on Podman
-Add the `engine` setting (flag/env/config/TUI, as above) and thread it through
-`pkg/docker`. Fix the handful of bypass call sites that run outside the
-`pkg/docker` wrapper but are used in ordinary lifecycle regardless of DinD:
-`dind_setup.go`'s `cleanupPreviousBoothInstances()`/port-conflict helpers, and
-`connect.go`'s root-exec and UID-wait calls. Update `print_cmd.go` so
-`--dryrun`/`--verbose` print the correct `podman ...` command line.
+- **Builds pass `--format docker`.** Buildah's default OCI image format silently
+  ignores the Dockerfile `SHELL` directive (`SHELL is not supported for OCI image
+  format … will be ignored`). Every shipped Dockerfile sets `SHELL ["/bin/bash","-o",
+  "pipefail",…]`, so without this every `RUN` step failed with
+  `set: Illegal option -o pipefail`. Docker builds are unchanged.
+- **Rootless runs add `--userns=keep-id --user root`** (when the CLI is not run as
+  root). Rootless Podman maps your host user to container *root*, so the `coder`
+  user could not write bind-mounted files or `.booth/.tmp` — where the shutdown and
+  restart markers live — and a booth could not shut down. `keep-id` maps your host UID
+  to the same UID inside; `--user root` lets `booth-entry` start as root to align
+  `coder`, exactly as under Docker. Container-root here is an unprivileged
+  subordinate UID, not host root. Rootful Podman and Docker get neither flag.
+- **Low ports are allowed for `coder`** (`--sysctl net.ipv4.ip_unprivileged_port_start=0`).
+  Docker sets this in every container; Podman leaves it at 1024, so the `--public`
+  TLS proxy (Caddy wants `:80`) and any app a user runs on `:80`/`:443` failed with
+  "permission denied". It is skipped for `--dind` / `--egress`, where the booth joins
+  another container's network namespace and Podman cannot set it.
+- **`home-volume-export` keeps your UID** (`--userns=keep-id` on its helper container).
+  Without it the helper ran as an unprivileged subordinate UID and could not write the
+  backup file.
+- **BuildKit-only behavior is skipped.** `--progress=auto` and the BuildKit probe are
+  Docker-only; Podman prints its own `STEP n/m` output.
+- **Docker's host check is skipped.** The Linux rootless-Docker / userns-remap refusal
+  and the "Docker daemon not reachable" check describe how *Docker* maps the host user,
+  so they do not run for Podman.
+- **Errors name the engine that failed** (`podman restart failed with exit code 125`).
+  Docker's messages are unchanged.
+- **`restart` passes `--time`** — `podman restart` has no `--timeout`.
+- **Port-conflict help** looks up the container holding a port with the chosen engine;
+  the "orphaned docker-proxy" hint is Docker-only.
 
-**User-visible:** `booth run/connect/stop/restart/rm --engine podman` (or
-`CB_ENGINE=podman`) works end-to-end on a basic booth with no Docker daemon
-involved, and `--dryrun`/`--verbose` show accurate Podman commands from day
-one.
+### Host prerequisites for rootless Podman
 
-### Phase 2 — `booth expose` on Podman
-Fix `tcp_tunnel.go`'s direct `docker exec ... socat` call to go through the
-engine abstraction.
+Rootless Podman needs `/etc/subuid` and `/etc/subgid` entries for your user, or image
+layers cannot be unpacked (`potentially insufficient UIDs or GIDs available`):
 
-**User-visible:** `booth expose` (port tunneling) works on a Podman-run booth.
+```bash
+sudo usermod --add-subuids 100000-165535 --add-subgids 100000-165535 "$USER"
+podman system migrate
+```
 
-### Phase 3 — Build progress UX on Podman
-`build_progress.go` currently parses BuildKit's specific `#N` vertex progress
-format; Podman/Buildah's build output differs. Adapt (or add a
-format-specific parser) so live build progress renders correctly instead of
-silently falling back.
+Pick ranges that do not overlap another user's. This does not affect a Docker daemon
+that has no `userns-remap`. If you ran a development build from before the `keep-id` fix under
+rootless Podman, the project directory may be left owned by a subordinate UID and show as
+`999:999`; restore it with `podman unshare chown 0:0 <project-dir>`.
 
-**User-visible:** `booth build`/`config` on Podman shows real live progress
-output during image builds, not just "it eventually finishes."
+## Verification status
 
-### Phase 4 — DinD / nested-docker parity (design-first)
-The `docker:dind` sidecar + `DOCKER_HOST=tcp://localhost:2375` model
-(`dind_setup.go`, `docs/implementations/DIND.md`) has no drop-in Podman
-equivalent — Podman is rootless/daemonless by default with a different
-nesting story. This phase starts with a design decision (in the same spirit
-as the paused DinD/privileged consent-gate decision) before any code is
-written.
+Verified by hand on **Linux, rootless Podman 5.4.2** (crun, pasta), with Docker also
+installed, on 2026-09-21:
 
-**User-visible:** templates/tools that need Docker-inside-the-booth (the
-`dind` tool, `docker-compose` setup, Appwrite stack) either work under a
-Podman-run booth, or fail with a clear, documented "not supported with Podman
-yet" message instead of a confusing error.
+| Area | Result |
+| --- | --- |
+| Build the real 55-step `variants/base` image and a full example project (JDK + tool setups) | works |
+| `booth` run (foreground and `--daemon`), port mapping, files owned by the host user | works |
+| Shut down from inside the booth (`booth--shutdown`) | works |
+| `list`, `stop`, `start`, `restart`, `remove` (with `CB_ENGINE=podman`) | work |
+| `prune` (nothing stale to prune in the test) | ran without error |
+| `exec --name …`, and `exec --run` (creates the booth, runs, tears it down) | work |
+| `booth build --engine podman` (real build) | works |
+| `--persist-home`: labelled volume created, `coder` can write it, data survives a restart | works |
+| `home-volume-list`, and a `home-volume-export` → `home-volume-import` round trip (data read back) | work |
+| Interactive `booth shell` (driven through a real pty) | works |
+| `message send` reaches the booth | works |
+| A restart requested from *inside* a foreground booth (`booth--restart`): the CLI relaunches a fresh container, and a later shutdown ends the CLI | works |
+| `--public`: HTTPS answers 302 and plain HTTP 400 — the same as a Docker control run | works (after the low-port fix) |
+| `--egress`: proxy and netns sidecars start; an allowlisted host connects, a non-allowlisted one is blocked | works (checked by hand only) |
+| Engine selection: flag, config, `CB_ENGINE`, precedence, `booth config --set`, fallback, `--quiet`, invalid value | works |
 
-### Phase 5 — Release pipeline on Podman
+Automated: Go unit tests (`pkg/appctx/engine_test.go`, `pkg/docker/engine_test.go`,
+`pkg/docker/host_check_test.go`, `pkg/booth/podman_userns_test.go`,
+`pkg/booth/init/initialize_app_context_engine_test.go`,
+`pkg/lifecycle/restart_flag_test.go`), the config-TUI schema guard, and
+`tests/dryrun/test036--engine.sh` (15 checks, no engine needs to be installed).
+**No CI job runs against Podman** — see Phase 6.
+
+**Not verified on Podman:** the live-port column of `expose list` (still calls `docker`);
+rootful Podman; macOS/Windows (`podman machine`); Podman older than 5.x; SELinux hosts
+(bind mounts may need `:Z`, which CodingBooth does not add); `--dind` (unsupported).
+`--egress`, `--public` and `--persist-home` were checked by hand once and have no
+automated Podman test. After `booth stop` on an `--egress` booth the sidecar containers
+go away (a moment later, as Podman removes them) but the egress network is left behind.
+
+## Known limitations
+
+- **Docker-in-Docker is not supported.** `--dind`, and anything that needs Docker inside
+  the booth (the `dind` tool, `docker-compose`, Appwrite), rely on the `docker:dind`
+  sidecar and `DOCKER_HOST`. `--dind` with `--engine podman` is **not blocked** — it will
+  try, and is unsupported and untested.
+- **`booth expose` tunnels do not work on Podman**, and `expose list` cannot see live
+  ports (both still call `docker`).
+- **Lifecycle commands do not take `--engine`** (table above), and each looks at one
+  engine only, so there is no combined view of Docker and Podman booths.
+- **No live build-progress line.** The single status line shown by `--silence-build`
+  parses BuildKit's output format; on Podman the build output is captured and shown only
+  on failure, like Docker's but without the live line.
+- **The release pipeline, `tests/wrapper/` and CI are Docker-only.** Images are built
+  and published with Docker/buildx.
+- **Separate image stores.** Podman cannot see images Docker built or pulled, and the
+  reverse; `--pull=never` runs need the image in the engine you chose.
+- The silent-build failure banner still reads "❌ Docker build failed!" (the error that
+  follows names the right engine).
+
+## Where it lives (for maintainers)
+
+| Piece | Location |
+| --- | --- |
+| Resolution + fallback + warnings | `cli/src/pkg/appctx/engine.go` (`ResolveEngineValue`, `ResolveEngineForPath`) |
+| `engine` setting, accessor | `AppConfig.Engine` (`CB_ENGINE`), `AppContext.Engine()` |
+| `--engine` parsing and validation | `pkg/booth/init/initialize_app_context.go`; `cmd/codingbooth/build.go` for `build` |
+| Engine on every call | `DockerFlags.Engine` / `binary()` in `pkg/docker/docker.go` |
+| `--format docker` | `needsPodmanBuildFormat` in `pkg/docker/docker.go`, `docker_build.go` |
+| `--userns=keep-id`, low-port sysctl | `podmanUserNamespaceArgs`, `podmanLowPortArgs` in `pkg/booth/booth.go`; `exportUserNamespaceArgs` in `pkg/lifecycle/home_volume.go` |
+| Host check skip | `HostCheckOptions.Engine` in `pkg/docker/host_check.go` |
+| Commands without a context | `resolveLifecycleEngine` in `pkg/lifecycle/lifecycle.go` |
+| TUI field | `engine` in `pkg/boothinit/tui/configfields.go` |
+
+---
+
+# Part 2 — Plan (not implemented)
+
+Everything below is **not built**. Each phase is meant to end in something a user can
+run and see.
+
+## Why this is feasible
+
+The CLI only shells out to the `docker` binary (no Engine API or Go SDK dependency), and
+almost every call already goes through one package, `cli/src/pkg/docker/`. What differs
+between the engines is mostly CLI-flag compatibility, Buildah's build behavior, rootless
+user-namespace mapping, and nested containers.
+
+## Phase 1 — done
+
+See [Part 1](#part-1--implemented-phase-1). It delivered slightly less than planned in
+one place: the plan said `stop`/`restart`/`rm` would accept `--engine`; they follow
+`CB_ENGINE` instead (see follow-ups).
+
+## Phase 2 — `booth expose` on Podman
+
+Route `tcp_tunnel.go`'s direct `docker exec … socat` call, and `expose list`'s
+`docker port` lookup, through the chosen engine.
+
+**User-visible:** `booth expose` (port tunnelling) and `expose list` work on a
+Podman-run booth.
+
+## Phase 3 — Build progress on Podman
+
+`build_progress.go` parses BuildKit's `#N` progress format; Buildah's output differs.
+Adapt or add a parser so `--silence-build` shows a live status line on Podman.
+
+**User-visible:** `booth build` / `config` on Podman shows live progress.
+
+## Phase 4 — Docker-in-Docker parity (design first)
+
+The `docker:dind` sidecar with `DOCKER_HOST=tcp://localhost:2375`
+(`dind_setup.go`, `docs/implementations/DIND.md`) has no drop-in Podman equivalent —
+Podman is daemonless and rootless by default. This phase starts with a design decision
+before any code.
+
+**User-visible:** the `dind` tool, `docker-compose` and Appwrite either work under a
+Podman-run booth, or fail with a clear "not supported with Podman yet" message instead
+of trying and failing confusingly.
+
+## Phase 5 — Release pipeline on Podman
+
 Podman/Buildah equivalents (`podman build --platform`, `podman manifest`) for
-`build/docker-build.sh`'s buildx-based multi-arch build+push.
+`build/docker-build.sh`'s buildx multi-arch build and push.
 
-**User-visible:** maintainers can cut and publish official multi-arch
-CodingBooth images using Podman instead of Docker buildx.
+**User-visible:** maintainers can publish multi-arch images with Podman.
 
-### Phase 6 — Test/CI parity
-A Podman variant of `tests/wrapper/` (nested `dockerd` has no direct Podman
-analog — rootless Podman is daemonless) and a CI matrix leg running the
-existing suites against Podman.
+## Phase 6 — Test and CI parity
 
-**User-visible:** a green "Podman: supported" CI check backing the claim,
-not just "should work."
+A Podman variant of `tests/wrapper/` (nested `dockerd` has no Podman analogue) and a CI
+job that runs the existing suites against Podman.
 
-## Out of scope / open questions
+**User-visible:** a CI check that backs "Podman is supported" instead of "should work".
 
-- Auto-detecting the engine when `docker` is absent (deferred; see above).
-- Podman as a *Boothfile compilation target* (generating Containerfiles /
-  Buildah scripts) — already noted as a deferred idea in
-  `docs/plans/Boothfile--improvement.md`, but a distinct feature from
-  choosing the runtime engine the CLI itself shells out to.
-- Whether `docker-compose`/Appwrite setups installed *inside* a booth image
-  (`variants/base/setups/docker-compose--setup.sh`,
-  `appwrite-server--setup.sh`) need a Podman-in-booth variant — orthogonal to
-  the host engine choice and not addressed by any phase above.
+## Follow-ups to Phase 1 (unscheduled)
+
+- Let `list`/`stop`/`start`/`restart`/`remove`/`prune` see Podman booths without
+  `CB_ENGINE` — accept `--engine`, or query both engines and remember which one owns each
+  container.
+- Refuse or clearly warn on `--dind` when the engine is Podman (Phase 4 covers it fully).
+- Verify the paths listed under "Not verified", above all rootful Podman and SELinux
+  hosts, and add automated Podman coverage for `--egress`, `--public` and `--persist-home`.
+- Print the experimental warning once per invocation, not once per spawned process.
+- Make the "❌ Docker build failed!" banner name the engine.
+
+## Open questions
+
+- Should the engine be recorded on the container (a label) so lifecycle commands can find
+  the right engine themselves?
+- Podman as a *Boothfile compilation target* (emitting Containerfiles / Buildah scripts)
+  is a separate, deferred idea — see `docs/plans/Boothfile--improvement.md`.
+- Whether the `docker-compose` / Appwrite setups *inside* a booth image need a
+  Podman-in-booth variant. That is independent of the host engine.

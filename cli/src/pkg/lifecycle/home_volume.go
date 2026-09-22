@@ -8,6 +8,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"os"
 	"os/user"
 	"path/filepath"
 	"strings"
@@ -67,6 +68,17 @@ func ListHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 	return nil
 }
 
+// exportUserNamespaceArgs keeps the host UID inside the export helper container
+// under rootless Podman. Without it, --user <host uid> is an unprivileged
+// subordinate UID on the host and cannot write the backup directory (or read the
+// volume, which the booth's keep-id `coder` owns as the host user).
+func exportUserNamespaceArgs(engine string, euid int) []string {
+	if engine != "podman" || euid == 0 {
+		return nil
+	}
+	return []string{"--userns=keep-id"}
+}
+
 // ExportHomeVolume exports a home volume to a tar.gz file.
 func ExportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("home-volume-export", flag.ContinueOnError)
@@ -106,14 +118,18 @@ func ExportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 	u, _ := user.Current()
 	userFlag := u.Uid + ":" + u.Gid
 
-	err = docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "run", ilist.NewList(
-		ilist.NewList("--rm"),
+	runArgs := []ilist.List[string]{ilist.NewList("--rm")}
+	if keepID := exportUserNamespaceArgs(engine, os.Geteuid()); len(keepID) > 0 {
+		runArgs = append(runArgs, ilist.NewListFromSlice(keepID))
+	}
+	runArgs = append(runArgs,
 		ilist.NewList("-v", volName+":/data:ro"),
 		ilist.NewList("-v", dir+":/backup"),
 		ilist.NewList("--user", userFlag),
 		ilist.NewList("alpine"),
 		ilist.NewList("tar", "czf", "/backup/"+base, "-C", "/data", "."),
-	))
+	)
+	err = docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "run", ilist.NewListFromSlice(runArgs))
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to export volume: %v", err))
 	}

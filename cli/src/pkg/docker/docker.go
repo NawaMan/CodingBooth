@@ -75,10 +75,16 @@ func (f DockerFlags) binary() string {
 type DockerExitError struct {
 	Subcommand string
 	ExitCode   int
+	// Engine is the binary that failed ("docker" or "podman"); empty reads as "docker".
+	Engine string
 }
 
 func (e *DockerExitError) Error() string {
-	return fmt.Sprintf("docker %s failed with exit code %d", e.Subcommand, e.ExitCode)
+	engine := e.Engine
+	if engine == "" {
+		engine = "docker"
+	}
+	return fmt.Sprintf("%s %s failed with exit code %d", engine, e.Subcommand, e.ExitCode)
 }
 
 // hasFlagPrefix reports whether any arg group already sets a flag starting
@@ -230,9 +236,9 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 	// Run and propagate exit status
 	if err := cmd.Run(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			return &DockerExitError{Subcommand: subcommand, ExitCode: exitErr.ExitCode()}
+			return &DockerExitError{Subcommand: subcommand, ExitCode: exitErr.ExitCode(), Engine: flags.binary()}
 		}
-		return fmt.Errorf("docker %s failed: %w", subcommand, err)
+		return fmt.Errorf("%s %s failed: %w", flags.binary(), subcommand, err)
 	}
 
 	return nil
@@ -341,9 +347,9 @@ func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.Li
 	// Run and propagate exit status
 	if err := cmd.Run(); err != nil {
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			return stdout.String(), &DockerExitError{Subcommand: subcommand, ExitCode: exitErr.ExitCode()}
+			return stdout.String(), &DockerExitError{Subcommand: subcommand, ExitCode: exitErr.ExitCode(), Engine: flags.binary()}
 		}
-		return stdout.String(), fmt.Errorf("docker %s failed: %w", subcommand, err)
+		return stdout.String(), fmt.Errorf("%s %s failed: %w", flags.binary(), subcommand, err)
 	}
 
 	return stdout.String(), nil

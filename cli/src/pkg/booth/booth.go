@@ -490,6 +490,19 @@ func podmanUserNamespaceArgs(engine string, euid int) []string {
 	return []string{"--userns=keep-id", "--user", "root"}
 }
 
+// podmanLowPortArgs lets the non-root `coder` user bind ports below 1024, as it
+// can under Docker (which sets net.ipv4.ip_unprivileged_port_start=0 in every
+// container). Podman leaves it at 1024, so the --public TLS proxy (Caddy wants
+// :80) and any app a user runs on :80/:443 failed with "permission denied".
+// Skipped when the booth joins another container's network namespace (--dind,
+// --egress): Podman cannot set the sysctl on a namespace it does not own.
+func podmanLowPortArgs(engine string, joinsNetns bool) []string {
+	if engine != "podman" || joinsNetns {
+		return nil
+	}
+	return []string{"--sysctl", "net.ipv4.ip_unprivileged_port_start=0"}
+}
+
 // PrepareCommonArgs prepares common Docker run arguments and returns updated AppContext.
 func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
@@ -504,6 +517,9 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_GID="+ctx.HostGID()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_OS="+getHostOS()))
 	if args := podmanUserNamespaceArgs(ctx.Engine(), os.Geteuid()); len(args) > 0 {
+		builder.CommonArgs.Append(ilist.NewListFromSlice(args))
+	}
+	if args := podmanLowPortArgs(ctx.Engine(), ctx.Dind() || ctx.Egress()); len(args) > 0 {
 		builder.CommonArgs.Append(ilist.NewListFromSlice(args))
 	}
 	codePath := normalizeCodePath(ctx.Code())

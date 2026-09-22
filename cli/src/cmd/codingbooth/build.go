@@ -28,6 +28,7 @@ type buildOpts struct {
 	dryrun       bool
 	silenceBuild bool
 	rootless     bool
+	engine       string
 }
 
 // parseBuildArgs parses build-specific flags from os.Args[2:].
@@ -94,9 +95,16 @@ func parseBuildArgs() buildOpts {
 			opts.silenceBuild = true
 		case "--rootless":
 			opts.rootless = true
+		case "--engine":
+			if i+1 >= len(args) || args[i+1] == "" {
+				fmt.Fprintln(os.Stderr, "Error: --engine requires a value")
+				os.Exit(1)
+			}
+			opts.engine = args[i+1]
+			i++
 		default:
 			fmt.Fprintf(os.Stderr, "Error: unknown flag for build: %s\n", args[i])
-			fmt.Fprintln(os.Stderr, "Usage: booth build [--push <registry>] [--name <name>] [--tag <tag>] [--build-arg KEY=VALUE ...] [--code <path>] [--variant <variant>] [--version <version>] [--verbose] [--dryrun] [--rootless]")
+			fmt.Fprintln(os.Stderr, "Usage: booth build [--push <registry>] [--name <name>] [--tag <tag>] [--build-arg KEY=VALUE ...] [--code <path>] [--variant <variant>] [--version <version>] [--verbose] [--dryrun] [--rootless] [--engine <docker|podman>]")
 			os.Exit(1)
 		}
 	}
@@ -132,6 +140,9 @@ func buildBooth(version string) {
 	}
 	if opts.rootless {
 		runArgs = append(runArgs, "--rootless")
+	}
+	if opts.engine != "" {
+		runArgs = append(runArgs, "--engine", opts.engine)
 	}
 	for _, ba := range opts.buildArgs {
 		runArgs = append(runArgs, "--build-arg", ba)
@@ -242,6 +253,7 @@ func buildBooth(version string) {
 		Dryrun:  ctx.Dryrun(),
 		Verbose: ctx.Verbose(),
 		Silent:  ctx.SilenceBuild(),
+		Engine:  ctx.Engine(),
 	}
 
 	if opts.pushRegistry != "" {

@@ -31,3 +31,18 @@ func TestPodmanUserNamespaceArgs(t *testing.T) {
 		})
 	}
 }
+
+func TestPodmanLowPortArgs(t *testing.T) {
+	want := []string{"--sysctl", "net.ipv4.ip_unprivileged_port_start=0"}
+	if got := podmanLowPortArgs("podman", false); !reflect.DeepEqual(got, want) {
+		t.Errorf("podman = %v, want %v", got, want)
+	}
+	if got := podmanLowPortArgs("podman", true); got != nil {
+		t.Errorf("podman joining another netns = %v, want nil (sysctl cannot be set there)", got)
+	}
+	for _, engine := range []string{"docker", ""} {
+		if got := podmanLowPortArgs(engine, false); got != nil {
+			t.Errorf("%q = %v, want nil (Docker already allows low ports)", engine, got)
+		}
+	}
+}
