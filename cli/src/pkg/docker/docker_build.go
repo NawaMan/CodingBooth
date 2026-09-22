@@ -92,7 +92,7 @@ func DockerBuild(flags DockerFlags, args ilist.List[ilist.List[string]]) error {
 		// Build failed - wipe the status line, then display captured stderr
 		progress.Close()
 		fmt.Fprintln(os.Stderr)
-		fmt.Fprintln(os.Stderr, "❌ Docker build failed!")
+		fmt.Fprintf(os.Stderr, "❌ %s build failed!\n", flags.binary())
 		fmt.Fprintln(os.Stderr, "---- Build output ----")
 		fmt.Fprint(os.Stderr, stderrBuf.String())
 		fmt.Fprintln(os.Stderr, "----------------------")

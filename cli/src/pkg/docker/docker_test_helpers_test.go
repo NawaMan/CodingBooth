@@ -21,3 +21,14 @@ func requireDocker(t *testing.T) {
 	}
 }
 
+func requirePodman(t *testing.T) {
+	t.Helper()
+
+	cmd := exec.Command("podman", "version")
+	cmd.Stdout = io.Discard
+	cmd.Stderr = io.Discard
+	if err := cmd.Run(); err != nil {
+		t.Skipf("Skipping test - podman not available: %v", err)
+	}
+}
+

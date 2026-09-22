@@ -136,6 +136,14 @@ These are applied automatically when the engine is Podman.
 - **`restart` passes `--time`** — `podman restart` has no `--timeout`.
 - **Port-conflict help** looks up the container holding a port with the chosen engine;
   the "orphaned docker-proxy" hint is Docker-only.
+- **User-facing hints name the real engine**, not always Docker: the daemon-mode "stop
+  with" line, the DinD "stop && network rm" line, the DinD-not-ready "check: … logs"
+  line, the `--persist-home` "reclaim space" line, and the silent-build "❌ … build
+  failed!" banner all read `podman` on a Podman booth.
+- **`--dind` warns instead of trying silently.** `docker:dind` has no Podman equivalent
+  yet (Phase 4), so `--dind` with `--engine podman` prints `Warning: --dind has no
+  Podman support yet and will likely fail …` and then tries anyway, rather than failing
+  confusingly with no explanation.
 
 ### Host prerequisites for rootless Podman
 
@@ -178,10 +186,13 @@ installed, on 2026-09-21 (Phase 1) and again for Phase 2:
 | Engine selection: flag, config, `CB_ENGINE`, precedence, `booth config --set`, fallback, `--quiet`, invalid value | works |
 
 Automated: Go unit tests (`pkg/appctx/engine_test.go`, `pkg/docker/engine_test.go`,
-`pkg/docker/host_check_test.go`, `pkg/booth/podman_userns_test.go`,
+`pkg/docker/host_check_test.go`, `pkg/docker/docker_build_test.go`,
+`pkg/booth/podman_userns_test.go`, `pkg/booth/booth_test.go`,
 `pkg/booth/init/initialize_app_context_engine_test.go`,
 `pkg/lifecycle/restart_flag_test.go`, `pkg/lifecycle/engines_test.go`), the config-TUI schema guard, and
 `tests/dryrun/test036--engine.sh` (15 checks, no engine needs to be installed).
+One of those (`TestDockerBuild_Silent_FailureNamesEngine`) drives a real failing
+`podman build`, not just a docker-only path with a stubbed flag.
 **No CI job runs against Podman** — see Phase 6.
 
 **Not verified on Podman:** rootful Podman; macOS/Windows (`podman machine`); Podman older than 5.x; SELinux hosts
@@ -197,8 +208,10 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 
 - **Docker-in-Docker is not supported.** `--dind`, and anything that needs Docker inside
   the booth (the `dind` tool, `docker-compose`, Appwrite), rely on the `docker:dind`
-  sidecar and `DOCKER_HOST`. `--dind` with `--engine podman` is **not blocked** — it will
-  try, and is unsupported and untested.
+  sidecar and `DOCKER_HOST`. `--dind` with `--engine podman` is **not blocked** — it
+  prints `Warning: --dind has no Podman support yet and will likely fail …` to stderr
+  (unconditional, like the experimental-engine warning) and then tries anyway; it is
+  unsupported and untested.
 - **Tunnels need the booth running in the foreground**, exactly as under Docker
   ([BOOTH_EXPOSE.md](BOOTH_EXPOSE.md)). `booth--expose` inside the booth needs no engine
   setting: the host-side CLI that started the booth already knows it.
@@ -212,8 +225,6 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
   and published with Docker/buildx.
 - **Separate image stores.** Podman cannot see images Docker built or pulled, and the
   reverse; `--pull=never` runs need the image in the engine you chose.
-- The silent-build failure banner still reads "❌ Docker build failed!" (the error that
-  follows names the right engine).
 
 ## Where it lives (for maintainers)
 
@@ -231,6 +242,9 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 | Commands without a context | `resolveLifecycleEngine` / `resolveLifecycleEngines` in `pkg/lifecycle/lifecycle.go` |
 | Both-engine lookup | `ResolveEnginesForPath` in `pkg/appctx/engine.go`; `managedContainersAcross`, `managedContainer.Engine`, `ambiguousEngineError` in `pkg/lifecycle/lifecycle.go` |
 | TUI field | `engine` in `pkg/boothinit/tui/configfields.go` |
+| `--dind` + Podman warning | `resolveEngineConfig` in `pkg/booth/init/initialize_app_context.go` |
+| Engine-named user hints (`stop`, DinD `stop`/`network rm`/`logs`, `--persist-home` reclaim) | `engineOrDocker` in `pkg/booth/booth.go`, used from `runAsDaemon`, `printHomeVolumeWarning`, and `waitForDindReady` in `dind_setup.go` |
+| Engine-named build-failure banner | `DockerBuild` in `pkg/docker/docker_build.go` (`flags.binary()`) |
 
 ---
 
@@ -307,12 +321,8 @@ Part 1 only once it has actually been run:
 
 - Let `shell`, `exec` and `home-volume-*` find a booth on either engine too (they can
   create booths or hold engine-local volumes, so they need a rule for which engine wins).
-- Refuse or clearly warn on `--dind` when the engine is Podman (Phase 4 covers it fully).
-- Add automated Podman coverage for `--egress`, `--public` and `--persist-home`.
+- Add automated Podman coverage for `--egress` and `--public`.
 - Print the experimental warning once per invocation, not once per spawned process.
-- Make the "❌ Docker build failed!" banner name the engine.
-- Daemon mode still prints `docker stop <name>` as the way to stop the booth
-  (`pkg/booth/booth.go`); on Podman it should print `podman stop`.
 
 ## Open questions
 

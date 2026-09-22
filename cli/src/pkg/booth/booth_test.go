@@ -655,6 +655,58 @@ func TestBooth_runAsDaemon_WithDind(t *testing.T) {
 	}
 }
 
+// TestBooth_runAsDaemon_WithDind_Podman verifies the DinD stop hint names
+// podman, not docker, when the booth's engine is Podman. See
+// docs/PODMAN_SUPPORT.md.
+func TestBooth_runAsDaemon_WithDind_Podman(t *testing.T) {
+	// Capture stdout
+	oldStdout := os.Stdout
+	reader, writer, _ := os.Pipe()
+	os.Stdout = writer
+
+	builder := &appctx.AppContextBuilder{
+		CbVersion:  getTestVersion(),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
+	}
+	builder.Config.Dryrun = nillable.NewNillableBool(true)
+	builder.Config.Verbose = nillable.NewNillableBool(true)
+	builder.Config.Dind = true
+	builder.Config.Engine = "podman"
+	builder.Config.Name = "test-container"
+	builder.Config.Port = "10000"
+	builder.PortNumber = 10000
+
+	builder.Config.Timezone = "UTC"
+	builder.Config.Image = "alpine:latest"
+	builder.ScriptName = "booth"
+	builder.Cmds.Append(ilist.NewList("echo", "test"))
+
+	ctx := builder.Build()
+	booth := NewBooth(ctx)
+
+	err := booth.runAsDaemon()
+
+	writer.Close()
+	os.Stdout = oldStdout
+
+	var buf bytes.Buffer
+	io.Copy(&buf, reader)
+	output := normalizeOutput(buf.String())
+
+	if err != nil {
+		t.Errorf("runAsDaemon() with DinD on podman returned error: %v", err)
+	}
+	if !strings.Contains(output, "podman stop test-container-10000-dind && podman network rm test-container-10000-net") {
+		t.Errorf("Expected podman DinD stop instructions, got: %q", output)
+	}
+	if strings.Contains(output, "docker stop test-container-10000-dind") {
+		t.Errorf("Did not expect docker-named DinD stop instructions on a podman booth, got: %q", output)
+	}
+}
+
 // TestBooth_runAsDaemon_NoCommands verifies daemon mode without commands.
 func TestBooth_runAsDaemon_NoCommands(t *testing.T) {
 	// Capture stdout
@@ -1102,4 +1154,87 @@ func TestBooth_Run_CommandMode(t *testing.T) {
 
 func normalizeOutput(s string) string {
 	return strings.ReplaceAll(s, " \\\n    ", " ")
+}
+
+// TestEngineOrDocker verifies the fallback used by every engine-named
+// user-facing hint (see docs/PODMAN_SUPPORT.md).
+func TestEngineOrDocker(t *testing.T) {
+	cases := map[string]string{
+		"":       "docker",
+		"docker": "docker",
+		"podman": "podman",
+	}
+	for engine, want := range cases {
+		if got := engineOrDocker(engine); got != want {
+			t.Errorf("engineOrDocker(%q) = %q, want %q", engine, got, want)
+		}
+	}
+}
+
+// TestPrintHomeVolumeWarning_Podman verifies the "reclaim space" hint names
+// podman, not docker, for a Podman booth. See docs/PODMAN_SUPPORT.md.
+func TestPrintHomeVolumeWarning_Podman(t *testing.T) {
+	oldStderr := os.Stderr
+	reader, writer, _ := os.Pipe()
+	os.Stderr = writer
+
+	builder := &appctx.AppContextBuilder{
+		CbVersion:  getTestVersion(),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
+	}
+	builder.Config.PersistHome = true
+	builder.Config.Engine = "podman"
+	builder.Config.Name = "test-container"
+	ctx := builder.Build()
+
+	printHomeVolumeWarning(ctx)
+
+	writer.Close()
+	os.Stderr = oldStderr
+
+	var buf bytes.Buffer
+	io.Copy(&buf, reader)
+	output := buf.String()
+
+	if !strings.Contains(output, "podman volume rm cb-home-test-container") {
+		t.Errorf("Expected podman volume-rm hint, got: %q", output)
+	}
+	if strings.Contains(output, "docker volume rm") {
+		t.Errorf("Did not expect a docker-named hint on a podman booth, got: %q", output)
+	}
+}
+
+// TestPrintHomeVolumeWarning_DefaultsToDocker verifies the pre-existing
+// behavior is unchanged for a Docker (or unset-engine) booth.
+func TestPrintHomeVolumeWarning_DefaultsToDocker(t *testing.T) {
+	oldStderr := os.Stderr
+	reader, writer, _ := os.Pipe()
+	os.Stderr = writer
+
+	builder := &appctx.AppContextBuilder{
+		CbVersion:  getTestVersion(),
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
+	}
+	builder.Config.PersistHome = true
+	builder.Config.Name = "test-container"
+	ctx := builder.Build()
+
+	printHomeVolumeWarning(ctx)
+
+	writer.Close()
+	os.Stderr = oldStderr
+
+	var buf bytes.Buffer
+	io.Copy(&buf, reader)
+	output := buf.String()
+
+	if !strings.Contains(output, "docker volume rm cb-home-test-container") {
+		t.Errorf("Expected docker volume-rm hint, got: %q", output)
+	}
 }

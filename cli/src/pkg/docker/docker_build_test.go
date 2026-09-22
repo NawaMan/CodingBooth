@@ -5,7 +5,10 @@
 package docker_test
 
 import (
+	"bytes"
+	"io"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/nawaman/codingbooth/src/pkg/docker"
@@ -104,6 +107,56 @@ func TestDockerBuild_Dryrun(t *testing.T) {
 	}
 
 	t.Log("✓ Dryrun completed (no execution)")
+}
+
+// TestDockerBuild_Silent_FailureNamesEngine verifies the "❌ … build failed!"
+// banner names the engine that actually failed, not always "Docker" — see
+// docs/PODMAN_SUPPORT.md ("The silent-build failure banner still reads
+// '❌ Docker build failed!'").
+func TestDockerBuild_Silent_FailureNamesEngine(t *testing.T) {
+	requirePodman(t)
+
+	flags := docker.DockerFlags{
+		Dryrun: false,
+		Silent: true,
+		Engine: "podman",
+	}
+
+	dockerfile := `FROM alpine:latest
+RUN false
+`
+	tmpDir := t.TempDir()
+	dockerfilePath := tmpDir + "/Dockerfile"
+	if err := writeFile(dockerfilePath, []byte(dockerfile), 0644); err != nil {
+		t.Fatalf("Failed to create Dockerfile: %v", err)
+	}
+
+	oldStderr := os.Stderr
+	reader, writer, _ := os.Pipe()
+	os.Stderr = writer
+
+	err := docker.DockerBuild(flags, ilist.NewList(ilist.NewList(
+		"-t", "test-podman-build-fail:latest",
+		"-f", dockerfilePath,
+		tmpDir,
+	)))
+
+	writer.Close()
+	os.Stderr = oldStderr
+
+	var buf bytes.Buffer
+	io.Copy(&buf, reader)
+	stderr := buf.String()
+
+	if err == nil {
+		t.Fatal("expected the build to fail")
+	}
+	if !strings.Contains(stderr, "❌ podman build failed!") {
+		t.Errorf("expected the banner to name podman, got: %q", stderr)
+	}
+	if strings.Contains(stderr, "❌ Docker build failed!") {
+		t.Errorf("did not expect the Docker-named banner for a podman build, got: %q", stderr)
+	}
 }
 
 // Helper function for tests
