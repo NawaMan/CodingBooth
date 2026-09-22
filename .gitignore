@@ -230,3 +230,5 @@ site/media/tapes/*.webm
 .firebase/
 firebase-debug.log
 firestore-debug.log
+
+.playwright-mcp/
