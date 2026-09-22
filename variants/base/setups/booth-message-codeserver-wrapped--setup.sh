@@ -13,6 +13,7 @@ set -euo pipefail
 export INNER_PORT=19999
 export INNER_CMD="start-codeserver $INNER_PORT"
 export IFRAME_SRC="/?_booth_inner=1"
+export BOOTH_WEB_PREVIEW=1
 
 # code-server's own settings.json sets terminal.integrated.fontFamily, but
 # that only *names* the font — code-server's terminal (and its whole

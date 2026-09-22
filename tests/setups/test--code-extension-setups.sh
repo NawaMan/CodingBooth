@@ -81,6 +81,7 @@ for script in "$SETUPS_DIR"/*-code-extension--setup.sh; do
           SETUP_LIBS_DIR="$SETUPS_DIR/libs" \
           VSCODE_EXTENSION_DIR="$STUB/ext-code" \
           CODESERVER_EXTENSION_DIR="$STUB/ext-code-server" \
+          CB_WEB_PREVIEW_DIR="$STUB/web-preview" \
               ${ROOT_RUN[@]+"${ROOT_RUN[@]}"} bash "$script" 2>&1) && rc=0 || rc=$?
 
     installed="$(cat "$STUB/ext-code/installed.txt" "$STUB/ext-code-server/installed.txt" 2>/dev/null | sort -u | tr '\n' ' ')"

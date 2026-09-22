@@ -1,0 +1,16 @@
+{
+  "name": "booth-web-preview",
+  "displayName": "CodingBooth: Web Preview",
+  "description": "Preview booth servers and web pages, or search Google, in independent editor tabs.",
+  "publisher": "codingbooth",
+  "version": "1.0.0",
+  "license": "Apache-2.0",
+  "engines": { "vscode": "^1.70.0" },
+  "categories": ["Other"],
+  "extensionKind": ["workspace"],
+  "activationEvents": ["onStartupFinished", "onCommand:codingbooth.webPreview", "onWebviewPanel:codingbooth.webPreview"],
+  "main": "./extension.js",
+  "contributes": {
+    "commands": [{ "command": "codingbooth.webPreview", "title": "CodingBooth: Open Web Preview", "icon": "$(globe)" }]
+  }
+}

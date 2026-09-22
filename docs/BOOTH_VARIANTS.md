@@ -91,6 +91,66 @@ noVNC does not have direct clipboard integration with your host machine. To copy
 
 ## Code Server Notes
 
+### Web Preview
+
+The `codeserver` variant includes **CodingBooth: Web Preview**. Start your
+application inside the booth, click **Web Preview** (the globe in the status
+bar), and enter its port, such as `3000`, or `http://booth:3000/path`. The Command
+Palette also provides **CodingBooth: Open Web Preview**. No additional host port
+mapping is needed.
+
+The address box also follows the console web panel's web/search rules:
+
+| Input | Opens |
+| --- | --- |
+| `3000` or `http://booth:3000/path` | A server inside the booth, through its proxy |
+| `https://example.com` or `http://example.com` | The external URL directly |
+| `example.com/path` | `https://example.com/path` |
+| `localhost:3000` | `http://localhost:3000` on the machine running your browser |
+| `python async examples` | A Google search, keeping your search text in the address box |
+
+External pages and searches can use separate tabs, duplication, reload, and
+**Open in browser** just like booth previews. They load directly, without Booth
+URL rewriting. Browsers prevent the controls from reading navigation within
+external pages: their saved address remains the one entered in the controls,
+and Back/Forward only track destinations opened through those controls.
+Some sites block embedding; Google search uses the same `igu=1` URL parameter
+as the console panel, but availability still depends on Google and your browser.
+Use **Open in browser** if a page refuses to load. An HTTPS booth cannot embed an
+HTTP page; use the site's HTTPS address or open it in the browser instead.
+
+Each invocation opens an independent editor tab. Use the **＋** button to duplicate
+the current preview, or the status-bar command to open another server. Drag tabs
+into editor groups to arrange previews beside code or alongside each other. Each
+preview has its own address, back/forward navigation, reload and open-in-browser
+controls. Preview tabs and their last addresses restore when the editor reloads;
+application memory and navigation history start fresh after a reload.
+Use **Developer: Reload Window** in the Command Palette to reload with workspace
+state saved. An immediate browser refresh can lose recent tab changes that
+code-server has not yet persisted.
+
+`booth` in these addresses means the container. The preview uses the booth's
+actual browser address and authenticated `/proxy/<port>/` endpoint to reach the
+server. Ports 10000–10007 and 19999 are reserved for Booth itself.
+
+The code-server proxy shares the console web panel's HTML/CSS/JavaScript URL
+rewriting rules, supports WebSockets, and rewrites redirects to stay within the
+preview. Booth-server authentication still passes through code-server, which removes its own
+session cookie before forwarding requests to application servers. The same
+rewriting also applies when opening the full proxy URL in Simple Browser.
+
+Rewriting is best-effort: computed absolute URLs, framework base paths, and
+hard-coded WebSocket URLs may need application configuration. Each tab routes
+through its own `/proxy/<port>/` path; there is no shared last-selected-port
+cookie. Root requests that escape this path are not guessed or routed to a
+different tab's server. Use `booth expose` when an application needs its own
+origin. Proxied booth apps share the booth's origin, as in the console web panel;
+the proxy removes frame-blocking response headers to allow embedding.
+
+The bundled extension is intended for the `codeserver` variant and its Booth
+wrapper. Installing standalone code-server using the `codeserver` template does
+not add the wrapper or preview extension.
+
 ### Clipboard in Terminal
 
 When pasting into the integrated terminal, your browser may show a "Paste" confirmation popup instead of pasting directly. This is a browser security feature for clipboard access. Simply click the popup or press Enter to confirm the paste.
