@@ -1,8 +1,9 @@
-# Podman Support (proposal)
+# Podman Support
 
-Status: **proposed, not started.** This document scopes what it would take to run
-CodingBooth against Podman as an alternative to Docker, and how the user would
-choose between them. No code has been written yet.
+Status: **experimental — Phase 1 implemented.** Podman support is still being
+developed and may not have feature parity with Docker. Docker remains the
+supported engine. This document scopes the work, how the user chooses between
+the two, and what each phase delivers; phases 2–6 below are not started.
 
 ## Why this looks feasible
 
@@ -106,6 +107,9 @@ places, all short:
   `--engine`.** With both engines installed and nothing set they look at Docker,
   so run `CB_ENGINE=podman booth stop` for a booth started with `--engine podman`
   (or set `engine = "podman"` in `.booth/config.toml`).
+- **Docker's host check is skipped for Podman.** The Linux rootless-Docker /
+  userns-remap refusal (and the "Docker daemon not reachable" check) is about
+  how Docker maps the host user, so it does not run when the engine is Podman.
 - **Rootless Podman needs `/etc/subuid` and `/etc/subgid` entries** for your
   user (`sudo usermod --add-subuids ... --add-subgids ...`, then
   `podman system migrate`); without them image layers cannot be unpacked.
