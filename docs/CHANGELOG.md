@@ -39,15 +39,19 @@ This file contains a list of changes for each released version.
   With nothing chosen, Docker is used, and Podman only when `docker` is not
   installed but `podman` is. This is Phase 1 of `docs/PODMAN_SUPPORT.md` and is
   still being developed: it may not have feature parity with Docker, and
-  Docker-in-Docker, `booth expose` tunnels and live build progress are not
-  supported yet. Podman builds pass `--format docker` (Buildah's default image
+  Docker-in-Docker and live build progress are not supported yet. `booth--expose`
+  tunnels and `booth expose list` work on a Podman booth (they use the engine the
+  booth was started with). Podman builds pass `--format docker` (Buildah's default image
   format ignores the Dockerfile `SHELL`, which every variant relies on), and
   rootless Podman runs with `--userns=keep-id` so your host UID matches `coder`
   and `.booth/.tmp` stays writable — without it a booth could not shut down —
   and lets `coder` bind ports below 1024 as it can under Docker.
-  `booth list`/`stop`/`start`/`restart`/`remove`/`prune` follow `CB_ENGINE`
-  rather than `--engine`. The Linux rootless-Docker refusal does not apply when
-  the engine is Podman.
+  `booth list`/`stop`/`start`/`restart`/`remove`/`prune`/`message`/`expose list`
+  take no `--engine`: with no engine chosen and both installed they look at
+  Docker and Podman together (`booth list` gains an `ENGINE` column) and act on
+  the engine that owns the booth; `CB_ENGINE` narrows them to one. `booth shell`
+  and `booth exec` still look at one engine. The Linux rootless-Docker refusal
+  does not apply when the engine is Podman.
 
 - **Code-server now includes CodingBooth: Web Preview.** Open a booth server by
   port or `http://booth:<port>/` in independent editor tabs, arrange previews

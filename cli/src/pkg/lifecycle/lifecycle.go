@@ -30,8 +30,16 @@ func resolveLifecycleEngine(codeDir string) string {
 	return appctx.ResolveEngineForPath(codeDir, false)
 }
 
+// resolveLifecycleEngines is resolveLifecycleEngine for commands that look a booth
+// up before acting on it. With no engine chosen and both docker and podman
+// installed it returns both, and each managedContainer records which one owns it.
+func resolveLifecycleEngines(codeDir string) []string {
+	return appctx.ResolveEnginesForPath(codeDir, false)
+}
+
 type managedContainer struct {
 	Name      string
+	Engine    string // engine that owns the container ("docker" or "podman")
 	State     string
 	Variant   string
 	CodePath  string
@@ -109,8 +117,8 @@ func List(args []string, stdout io.Writer, stderr io.Writer) error {
 		return commandExit(1, "Error: --running and --stopped cannot be used together.")
 	}
 
-	engine := resolveLifecycleEngine("")
-	containers, err := managedContainers(engine, false)
+	engines := resolveLifecycleEngines("")
+	containers, err := managedContainersAcross(engines, false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to list booths: %v", err))
 	}
@@ -137,7 +145,14 @@ func List(args []string, stdout io.Writer, stderr io.Writer) error {
 	}
 
 	writer := tabwriter.NewWriter(stdout, 0, 4, 2, ' ', 0)
-	_, _ = fmt.Fprintln(writer, "NAME\tSTATUS\tVARIANT\tPORT\tCODE PATH\tDAEMON\tKEEP_ALIVE\tCREATED")
+	// The ENGINE column only appears when more than one engine was asked, so the
+	// output for a single engine is unchanged.
+	showEngine := len(engines) > 1
+	header := "NAME\tSTATUS\tVARIANT\tPORT\tCODE PATH\tDAEMON\tKEEP_ALIVE\tCREATED"
+	if showEngine {
+		header = "NAME\tENGINE\tSTATUS\tVARIANT\tPORT\tCODE PATH\tDAEMON\tKEEP_ALIVE\tCREATED"
+	}
+	_, _ = fmt.Fprintln(writer, header)
 	for _, container := range containers {
 		status := "Stopped"
 		if container.State == "running" {
@@ -147,18 +162,20 @@ func List(args []string, stdout io.Writer, stderr io.Writer) error {
 		if port == "" {
 			port = "-"
 		}
-		_, _ = fmt.Fprintf(
-			writer,
-			"%s\t%s\t%s\t%s\t%s\t%t\t%t\t%s\n",
-			container.Name,
+		row := []string{container.Name}
+		if showEngine {
+			row = append(row, nonEmpty(container.Engine, "-"))
+		}
+		row = append(row,
 			status,
 			nonEmpty(container.Variant, "-"),
 			port,
 			nonEmpty(container.CodePath, "-"),
-			container.Daemon,
-			container.KeepAlive,
+			fmt.Sprintf("%t", container.Daemon),
+			fmt.Sprintf("%t", container.KeepAlive),
 			nonEmpty(container.CreatedAt, "-"),
 		)
+		_, _ = fmt.Fprintln(writer, strings.Join(row, "\t"))
 	}
 	_ = writer.Flush()
 	return nil
@@ -176,8 +193,7 @@ func Start(args []string, stderr io.Writer) error {
 		return commandExit(2, "")
 	}
 
-	engine := resolveLifecycleEngine(*code)
-	containers, err := managedContainers(engine, false)
+	containers, err := managedContainersAcross(resolveLifecycleEngines(*code), false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -186,6 +202,7 @@ func Start(args []string, stderr io.Writer) error {
 	if err != nil {
 		return commandExit(1, err.Error())
 	}
+	engine := target.Engine
 
 	dockerArgs := ilist.NewList(ilist.NewList(target.Name))
 	if !*daemon {
@@ -212,8 +229,7 @@ func Stop(args []string, stderr io.Writer) error {
 		return commandExit(1, "Error: --timeout must be a non-negative integer.")
 	}
 
-	engine := resolveLifecycleEngine("")
-	containers, err := managedContainers(engine, false)
+	containers, err := managedContainersAcross(resolveLifecycleEngines(""), false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -222,6 +238,7 @@ func Stop(args []string, stderr io.Writer) error {
 	if err != nil {
 		return commandExit(1, err.Error())
 	}
+	engine := target.Engine
 
 	if *force {
 		if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "kill", ilist.NewList(ilist.NewList(target.Name))); err != nil {
@@ -285,8 +302,7 @@ func Restart(args []string, stderr io.Writer) error {
 		return commandExit(1, "Error: --timeout must be a non-negative integer.")
 	}
 
-	engine := resolveLifecycleEngine("")
-	containers, err := managedContainers(engine, false)
+	containers, err := managedContainersAcross(resolveLifecycleEngines(""), false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -295,6 +311,7 @@ func Restart(args []string, stderr io.Writer) error {
 	if err != nil {
 		return commandExit(1, err.Error())
 	}
+	engine := target.Engine
 
 	if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "restart", ilist.NewList(
 		ilist.NewList(restartTimeoutFlag(engine), strconv.Itoa(*timeout)),
@@ -316,8 +333,7 @@ func Remove(args []string, stderr io.Writer) error {
 		return commandExit(2, "")
 	}
 
-	engine := resolveLifecycleEngine("")
-	containers, err := managedContainers(engine, false)
+	containers, err := managedContainersAcross(resolveLifecycleEngines(""), false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -328,10 +344,14 @@ func Remove(args []string, stderr io.Writer) error {
 	}
 
 	for _, targetName := range names {
+		if err := ambiguousEngineError(containers, targetName); err != nil {
+			return commandExit(1, err.Error())
+		}
 		container, found := findByName(containers, targetName)
 		if !found {
 			return commandExit(1, fmt.Sprintf("Error: booth %q not found. Use 'booth list' to see available containers.", targetName))
 		}
+		engine := container.Engine
 		if container.State == "running" && !*force {
 			return commandExit(1, fmt.Sprintf("Error: booth %q is running. Stop it first or use --force.", targetName))
 		}
@@ -364,8 +384,8 @@ func Prune(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) e
 		return commandExit(2, "")
 	}
 
-	engine := resolveLifecycleEngine("")
-	containers, err := managedContainers(engine, false)
+	engines := resolveLifecycleEngines("")
+	containers, err := managedContainersAcross(engines, false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -376,11 +396,16 @@ func Prune(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) e
 		return nil
 	}
 
+	// candidates is sorted by name then engine. With several engines the prompt
+	// says which engine each booth is on, since a name can exist on both.
 	names := make([]string, 0, len(candidates))
 	for _, container := range candidates {
-		names = append(names, container.Name)
+		label := container.Name
+		if len(engines) > 1 {
+			label = fmt.Sprintf("%s (%s)", container.Name, nonEmpty(container.Engine, "docker"))
+		}
+		names = append(names, label)
 	}
-	sort.Strings(names)
 
 	if !*yes {
 		_, _ = fmt.Fprintf(stdout, "About to remove %d stopped booth container(s): %s\n", len(names), strings.Join(names, ", "))
@@ -395,7 +420,9 @@ func Prune(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) e
 		}
 	}
 
-	for _, name := range names {
+	for _, container := range candidates {
+		name, engine := container.Name, container.Engine
+
 		// Stop any sidecar containers belonging to this booth before removing
 		stopSidecars(name, docker.DockerFlags{Silent: true, Engine: engine})
 
@@ -411,7 +438,10 @@ func Prune(args []string, stdin io.Reader, stdout io.Writer, stderr io.Writer) e
 	_, _ = fmt.Fprintf(stdout, "Removed %d stopped booth container(s).\n", len(names))
 
 	// Clean up any orphaned sidecars whose parent container no longer exists
-	orphanCount := pruneOrphanSidecars(docker.DockerFlags{Silent: true, Engine: engine})
+	orphanCount := 0
+	for _, engine := range engines {
+		orphanCount += pruneOrphanSidecars(docker.DockerFlags{Silent: true, Engine: engine})
+	}
 	if orphanCount > 0 {
 		_, _ = fmt.Fprintf(stdout, "Removed %d orphaned sidecar(s).\n", orphanCount)
 	}
@@ -438,6 +468,7 @@ func managedContainers(engine string, verbose bool) ([]managedContainer, error) 
 		if inspectErr != nil {
 			return nil, inspectErr
 		}
+		container.Engine = engine
 		containers = append(containers, container)
 	}
 
@@ -445,6 +476,58 @@ func managedContainers(engine string, verbose bool) ([]managedContainer, error) 
 		return containers[i].Name < containers[j].Name
 	})
 	return containers, nil
+}
+
+// managedContainersAcross lists the booths of every engine in engines, each
+// tagged with the engine that owns it. With more than one engine, one that fails
+// (a stopped Docker daemon, say) is reported on stderr and skipped so the others
+// still answer; it is an error only when every engine fails.
+func managedContainersAcross(engines []string, verbose bool, stderr io.Writer) ([]managedContainer, error) {
+	var all []managedContainer
+	var warnings []string
+	var firstErr error
+	failed := 0
+	for _, engine := range engines {
+		found, err := managedContainers(engine, verbose)
+		if err != nil {
+			failed++
+			if firstErr == nil {
+				firstErr = err
+			}
+			warnings = append(warnings, fmt.Sprintf("Warning: could not list %s booths: %v", engine, err))
+			continue
+		}
+		all = append(all, found...)
+	}
+	if failed == len(engines) {
+		return nil, firstErr
+	}
+	for _, warning := range warnings {
+		_, _ = fmt.Fprintln(stderr, warning)
+	}
+	sort.SliceStable(all, func(i, j int) bool {
+		if all[i].Name != all[j].Name {
+			return all[i].Name < all[j].Name
+		}
+		return all[i].Engine < all[j].Engine
+	})
+	return all, nil
+}
+
+// ambiguousEngineError is non-nil when a booth called name exists on more than
+// one engine, so the command cannot tell which one is meant.
+func ambiguousEngineError(containers []managedContainer, name string) error {
+	var owners []string
+	for _, container := range containers {
+		if container.Name == name {
+			owners = append(owners, nonEmpty(container.Engine, "docker"))
+		}
+	}
+	if len(owners) < 2 {
+		return nil
+	}
+	sort.Strings(owners)
+	return fmt.Errorf("Error: booth %q exists on both %s. Set CB_ENGINE=<engine> to choose one.", name, strings.Join(owners, " and "))
 }
 
 func inspectManagedContainer(name string, flags docker.DockerFlags) (managedContainer, error) {
@@ -561,7 +644,11 @@ func resolveSingleContainer(containers []managedContainer, name string, codePath
 		if len(matches) > 1 {
 			names := make([]string, 0, len(matches))
 			for _, match := range matches {
-				names = append(names, match.Name)
+				label := match.Name
+				if match.Engine != matches[0].Engine {
+					label = fmt.Sprintf("%s (%s)", match.Name, nonEmpty(match.Engine, "docker"))
+				}
+				names = append(names, label)
 			}
 			sort.Strings(names)
 			return managedContainer{}, fmt.Errorf("Error: multiple booths match code path %q (%s). Use --name.", normalized, strings.Join(names, ", "))
@@ -577,6 +664,9 @@ func resolveSingleContainer(containers []managedContainer, name string, codePath
 		targetName = defaultBoothName()
 	}
 
+	if err := ambiguousEngineError(containers, targetName); err != nil {
+		return managedContainer{}, err
+	}
 	container, found := findByName(containers, targetName)
 	if !found {
 		suggestion := "booth list"

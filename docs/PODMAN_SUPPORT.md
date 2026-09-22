@@ -6,16 +6,17 @@ is still being developed and **may not have feature parity with Docker** — rea
 
 This document has two parts, kept apart on purpose:
 
-1. **[Implemented](#part-1--implemented-phase-1)** — what ships today, as built and
+1. **[Implemented](#part-1--implemented-phases-12)** — what ships today, as built and
    as verified. Nothing in it is a promise about the future.
-2. **[Plan](#part-2--plan-not-implemented)** — what is *not* built: phases 2–6 and
+2. **[Plan](#part-2--plan-not-implemented)** — what is *not* built: phases 3–6 and
    follow-ups.
 
-Phase 1 (core lifecycle) is implemented. Phases 2–6 are not started.
+Phases 1 (core lifecycle) and 2 (`booth expose`) are implemented. Phases 3–6 are not
+started.
 
 ---
 
-# Part 1 — Implemented (Phase 1)
+# Part 1 — Implemented (Phases 1–2)
 
 ## Choosing the engine
 
@@ -41,13 +42,31 @@ the full application context, so they cannot see the flag:
 | Command | Engine comes from |
 | --- | --- |
 | `booth` (run), `booth build` | `--engine` > config.toml > `CB_ENGINE` > default |
-| `booth shell`, `booth exec`, `booth start` | `engine` in the `.booth/config.toml` under `--code`, then `CB_ENGINE`. **Without `--code`, only `CB_ENGINE` is read** (not the current directory's config). |
-| `booth list`, `stop`, `restart`, `remove`, `prune`, `home-volume-*`, `message`, `expose list` | `CB_ENGINE` only |
+| `booth list`, `stop`, `start`, `restart`, `remove`, `prune`, `message`, `expose list` | **Both engines** when none is chosen (see below). If `CB_ENGINE` is set — or, for `start`, `engine` in the `.booth/config.toml` under `--code` — only that engine. |
+| `booth shell`, `booth exec` | `engine` in the `.booth/config.toml` under `--code`, then `CB_ENGINE`, then Docker. **Without `--code`, only `CB_ENGINE` is read** (not the current directory's config). |
+| `booth home-volume-*` | `CB_ENGINE` only |
 
-So a booth started with `--engine podman` is stopped with
-`CB_ENGINE=podman booth stop` — or set `engine = "podman"` in its config and pass
-`--code` where the command has one. Unset, these commands look at Docker and will not
-see a Podman booth.
+### Finding booths on either engine
+
+When you have not chosen an engine and **both `docker` and `podman` are installed**, the
+commands in the first row ask both and show one list. Each booth is remembered with the
+engine that owns it, and `stop`, `start`, `restart`, `remove`, `prune` and `expose list`
+act on that engine — so `booth stop mybooth` stops a Podman booth without any
+`CB_ENGINE`.
+
+- `booth list` adds an `ENGINE` column, only in this both-engines case; with one engine
+  the output is exactly what it was.
+- Setting `CB_ENGINE` (or `engine =` in config) to either value narrows every one of
+  these commands to that engine. This is also how you choose when a name exists on both:
+  `Error: booth "web" exists on both docker and podman. Set CB_ENGINE=<engine> to choose one.`
+- If one engine cannot be queried (for example the Docker daemon is not running) a
+  `Warning: could not list docker booths: …` goes to stderr and the other engine's
+  booths are still used. It is an error only when every engine fails.
+- With only one of the two installed, that one is used, as before.
+
+`booth shell`, `booth exec` and `home-volume-*` are not part of this: `shell`/`exec`
+can create a booth (`--run`) and so need one definite engine, and a home volume lives in
+one engine's store. For a Podman booth use `CB_ENGINE=podman booth shell`.
 
 ### When you choose nothing
 
@@ -77,8 +96,10 @@ more than once. `--help`, `docs/BOOTH_RUN.md` and the README say the same.
 ## What runs on the chosen engine
 
 Every engine call the CLI makes goes through the selected binary — `run`, `build`,
-`ps`/`inspect`/`exec`/`stop`/`rm`/`restart`/`start`, `volume`, `network`, the container
-lookup used to diagnose a port conflict, and the sidecar clean-up done before a run.
+`ps`/`inspect`/`exec`/`stop`/`rm`/`restart`/`start`/`port`, `volume`, `network`, the
+container lookup used to diagnose a port conflict, and the sidecar clean-up done before
+a run. That includes the `<engine> exec -i … socat` that carries each `booth--expose`
+tunnel connection, and the `<engine> port` lookup behind `booth expose list`.
 `--dryrun` and `--verbose` print the real `podman …` command line.
 
 ## Podman-specific behavior
@@ -134,7 +155,7 @@ rootless Podman, the project directory may be left owned by a subordinate UID an
 ## Verification status
 
 Verified by hand on **Linux, rootless Podman 5.4.2** (crun, pasta), with Docker also
-installed, on 2026-09-21:
+installed, on 2026-09-21 (Phase 1) and again for Phase 2:
 
 | Area | Result |
 | --- | --- |
@@ -142,6 +163,7 @@ installed, on 2026-09-21:
 | `booth` run (foreground and `--daemon`), port mapping, files owned by the host user | works |
 | Shut down from inside the booth (`booth--shutdown`) | works |
 | `list`, `stop`, `start`, `restart`, `remove` (with `CB_ENGINE=podman`) | work |
+| With no `CB_ENGINE` and both engines installed: `booth list` shows a Docker and a Podman booth side by side (`ENGINE` column), `booth expose list` finds a Podman booth, and `booth stop <name>` stops a Podman booth and a Docker booth, each on its own engine | works |
 | `prune` (nothing stale to prune in the test) | ran without error |
 | `exec --name …`, and `exec --run` (creates the booth, runs, tears it down) | work |
 | `booth build --engine podman` (real build) | works |
@@ -151,18 +173,18 @@ installed, on 2026-09-21:
 | `message send` reaches the booth | works |
 | A restart requested from *inside* a foreground booth (`booth--restart`): the CLI relaunches a fresh container, and a later shutdown ends the CLI | works |
 | `--public`: HTTPS answers 302 and plain HTTP 400 — the same as a Docker control run | works (after the low-port fix) |
+| `booth--expose 8080 18080` inside a foreground booth: the host opens `localhost:18080`, a `curl` through it gets the response (HTTP 200, repeated requests), and `booth expose list` (with `CB_ENGINE=podman`) shows the tunnel as live | works |
 | `--egress`: proxy and netns sidecars start; an allowlisted host connects, a non-allowlisted one is blocked | works (checked by hand only) |
 | Engine selection: flag, config, `CB_ENGINE`, precedence, `booth config --set`, fallback, `--quiet`, invalid value | works |
 
 Automated: Go unit tests (`pkg/appctx/engine_test.go`, `pkg/docker/engine_test.go`,
 `pkg/docker/host_check_test.go`, `pkg/booth/podman_userns_test.go`,
 `pkg/booth/init/initialize_app_context_engine_test.go`,
-`pkg/lifecycle/restart_flag_test.go`), the config-TUI schema guard, and
+`pkg/lifecycle/restart_flag_test.go`, `pkg/lifecycle/engines_test.go`), the config-TUI schema guard, and
 `tests/dryrun/test036--engine.sh` (15 checks, no engine needs to be installed).
 **No CI job runs against Podman** — see Phase 6.
 
-**Not verified on Podman:** the live-port column of `expose list` (still calls `docker`);
-rootful Podman; macOS/Windows (`podman machine`); Podman older than 5.x; SELinux hosts
+**Not verified on Podman:** rootful Podman; macOS/Windows (`podman machine`); Podman older than 5.x; SELinux hosts
 (bind mounts may need `:Z`, which CodingBooth does not add); `--dind` (unsupported).
 `--egress`, `--public` and `--persist-home` were checked by hand once and have no
 automated Podman test. After `booth stop` on an `--egress` booth the sidecar containers
@@ -177,10 +199,12 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
   the booth (the `dind` tool, `docker-compose`, Appwrite), rely on the `docker:dind`
   sidecar and `DOCKER_HOST`. `--dind` with `--engine podman` is **not blocked** — it will
   try, and is unsupported and untested.
-- **`booth expose` tunnels do not work on Podman**, and `expose list` cannot see live
-  ports (both still call `docker`).
-- **Lifecycle commands do not take `--engine`** (table above), and each looks at one
-  engine only, so there is no combined view of Docker and Podman booths.
+- **Tunnels need the booth running in the foreground**, exactly as under Docker
+  ([BOOTH_EXPOSE.md](BOOTH_EXPOSE.md)). `booth--expose` inside the booth needs no engine
+  setting: the host-side CLI that started the booth already knows it.
+- **Lifecycle commands do not take `--engine`** (table above); choose with `CB_ENGINE`.
+  `booth shell`, `booth exec` and `home-volume-*` look at one engine only and need
+  `CB_ENGINE=podman` for a Podman booth.
 - **No live build-progress line.** The single status line shown by `--silence-build`
   parses BuildKit's output format; on Podman the build output is captured and shown only
   on failure, like Docker's but without the live line.
@@ -201,8 +225,11 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 | Engine on every call | `DockerFlags.Engine` / `binary()` in `pkg/docker/docker.go` |
 | `--format docker` | `needsPodmanBuildFormat` in `pkg/docker/docker.go`, `docker_build.go` |
 | `--userns=keep-id`, low-port sysctl | `podmanUserNamespaceArgs`, `podmanLowPortArgs` in `pkg/booth/booth.go`; `exportUserNamespaceArgs` in `pkg/lifecycle/home_volume.go` |
+| `booth--expose` tunnel exec | `tunnelExecCommand` in `pkg/booth/tcp_tunnel.go` |
+| `expose list` live ports | `readLivePorts` in `pkg/lifecycle/expose.go` |
 | Host check skip | `HostCheckOptions.Engine` in `pkg/docker/host_check.go` |
-| Commands without a context | `resolveLifecycleEngine` in `pkg/lifecycle/lifecycle.go` |
+| Commands without a context | `resolveLifecycleEngine` / `resolveLifecycleEngines` in `pkg/lifecycle/lifecycle.go` |
+| Both-engine lookup | `ResolveEnginesForPath` in `pkg/appctx/engine.go`; `managedContainersAcross`, `managedContainer.Engine`, `ambiguousEngineError` in `pkg/lifecycle/lifecycle.go` |
 | TUI field | `engine` in `pkg/boothinit/tui/configfields.go` |
 
 ---
@@ -221,17 +248,15 @@ user-namespace mapping, and nested containers.
 
 ## Phase 1 — done
 
-See [Part 1](#part-1--implemented-phase-1). It delivered slightly less than planned in
+See [Part 1](#part-1--implemented-phases-12). It delivered slightly less than planned in
 one place: the plan said `stop`/`restart`/`rm` would accept `--engine`; they follow
-`CB_ENGINE` instead (see follow-ups).
+`CB_ENGINE` instead — and, when none is set, look at both engines (see
+[Finding booths on either engine](#finding-booths-on-either-engine)).
 
-## Phase 2 — `booth expose` on Podman
+## Phase 2 — done
 
-Route `tcp_tunnel.go`'s direct `docker exec … socat` call, and `expose list`'s
-`docker port` lookup, through the chosen engine.
-
-**User-visible:** `booth expose` (port tunnelling) and `expose list` work on a
-Podman-run booth.
+See [Part 1](#part-1--implemented-phases-12). `tcp_tunnel.go`'s `exec` call and
+`expose list`'s `port` lookup now use the chosen engine.
 
 ## Phase 3 — Build progress on Podman
 
@@ -277,23 +302,20 @@ Part 1 only once it has actually been run:
 - [ ] **SELinux hosts** — bind mounts may need `:Z`, which CodingBooth does not add.
 - [ ] **Podman older than 5.x** — only 5.4.2 has been tried; decide and document a minimum
   version.
-- [ ] **`expose list` live ports** — it still calls `docker`; fixed together with the
-  `booth expose` tunnel in Phase 2.
 
 ## Follow-ups to Phase 1 (unscheduled)
 
-- Let `list`/`stop`/`start`/`restart`/`remove`/`prune` see Podman booths without
-  `CB_ENGINE` — accept `--engine`, or query both engines and remember which one owns each
-  container.
+- Let `shell`, `exec` and `home-volume-*` find a booth on either engine too (they can
+  create booths or hold engine-local volumes, so they need a rule for which engine wins).
 - Refuse or clearly warn on `--dind` when the engine is Podman (Phase 4 covers it fully).
 - Add automated Podman coverage for `--egress`, `--public` and `--persist-home`.
 - Print the experimental warning once per invocation, not once per spawned process.
 - Make the "❌ Docker build failed!" banner name the engine.
+- Daemon mode still prints `docker stop <name>` as the way to stop the booth
+  (`pkg/booth/booth.go`); on Podman it should print `podman stop`.
 
 ## Open questions
 
-- Should the engine be recorded on the container (a label) so lifecycle commands can find
-  the right engine themselves?
 - Podman as a *Boothfile compilation target* (emitting Containerfiles / Buildah scripts)
   is a separate, deferred idea — see `docs/plans/Boothfile--improvement.md`.
 - Whether the `docker-compose` / Appwrite setups *inside* a booth image need a

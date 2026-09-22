@@ -60,6 +60,29 @@ func ResolveEngineValue(raw string, quiet bool) (string, error) {
 // (a typo in config.toml shouldn't block `booth stop`) — it just falls back
 // to "docker" and lets the resulting engine call surface the real problem.
 func ResolveEngineForPath(codeDir string, quiet bool) string {
+	engine, err := ResolveEngineValue(rawEngineForPath(codeDir), quiet)
+	if err != nil {
+		return "docker"
+	}
+	return engine
+}
+
+// ResolveEnginesForPath is ResolveEngineForPath for commands that only look
+// booths up (list, stop, restart, remove, prune, message, expose list). When the
+// engine was chosen explicitly (config file or CB_ENGINE) it returns just that
+// one. When nothing was chosen and both docker and podman are installed it
+// returns both, so a booth is found whichever engine started it. In every other
+// case it is the single engine ResolveEngineForPath would pick.
+func ResolveEnginesForPath(codeDir string, quiet bool) []string {
+	if strings.TrimSpace(rawEngineForPath(codeDir)) == "" && onPath("docker") && onPath("podman") {
+		return []string{"docker", "podman"}
+	}
+	return []string{ResolveEngineForPath(codeDir, quiet)}
+}
+
+// rawEngineForPath is the engine setting exactly as written: engine= in
+// <codeDir>/.booth/config.toml (skipped when codeDir is ""), then CB_ENGINE.
+func rawEngineForPath(codeDir string) string {
 	raw := ""
 	if codeDir != "" {
 		raw = readEngineFromConfigFile(filepath.Join(codeDir, ".booth", "config.toml"))
@@ -67,11 +90,12 @@ func ResolveEngineForPath(codeDir string, quiet bool) string {
 	if raw == "" {
 		raw = os.Getenv("CB_ENGINE")
 	}
-	engine, err := ResolveEngineValue(raw, quiet)
-	if err != nil {
-		return "docker"
-	}
-	return engine
+	return raw
+}
+
+func onPath(binary string) bool {
+	_, err := exec.LookPath(binary)
+	return err == nil
 }
 
 func readEngineFromConfigFile(path string) string {

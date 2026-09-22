@@ -35,7 +35,7 @@ Back to [README](../README.md)
 
 Docker port mappings (`-p`) are fixed at container creation. If you start a web server, database, or any service on a port that was not exposed upfront, you normally have to stop and recreate the container with the new port mapping.
 
-`booth--expose` solves this by tunneling TCP traffic via `docker exec` and `socat`. The running booth process on the host detects the tunnel request and automatically opens a local port that forwards traffic into the container.
+`booth--expose` solves this by tunneling TCP traffic via `docker exec` and `socat` (`podman exec` when the booth runs on Podman, see [Podman support](PODMAN_SUPPORT.md)). The running booth process on the host detects the tunnel request and automatically opens a local port that forwards traffic into the container.
 
 - Works for **all TCP traffic** — HTTP, databases, gRPC, raw TCP
 - Works in **all variants** — base, terminal, codeserver, notebook, desktop
@@ -310,7 +310,7 @@ CodingBooth has three ways to make container ports accessible. Each serves a dif
 
 ## Security
 
-The tunnel uses `docker exec` to bridge connections, which requires access to the Docker socket. Only processes that can run `docker exec` on the container (i.e., the host-side booth process) can create tunnels. The tunnel is bound to `localhost` by default, so it is not accessible from other machines.
+The tunnel uses `docker exec` (or `podman exec`) to bridge connections, which requires access to the container engine. Only processes that can run `docker exec` on the container (i.e., the host-side booth process) can create tunnels. The tunnel is bound to `localhost` by default, so it is not accessible from other machines.
 
 If the booth port is exposed publicly (`--public`), consider whether the tunneled service should also be accessible.
 

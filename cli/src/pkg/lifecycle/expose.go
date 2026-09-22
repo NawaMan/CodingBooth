@@ -94,7 +94,7 @@ func exposeList(args []string, stdout io.Writer, stderr io.Writer) error {
 		return commandExit(2, "")
 	}
 
-	containers, err := managedContainers(resolveLifecycleEngine(""), false)
+	containers, err := managedContainersAcross(resolveLifecycleEngines(""), false, stderr)
 	if err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -113,7 +113,7 @@ func exposeList(args []string, stdout io.Writer, stderr io.Writer) error {
 
 	manifest := readPortManifest(target.CodePath)
 	tunnels := readTunnels(target.CodePath)
-	live := readLivePorts(target.Name)
+	live := readLivePorts(target.Engine, target.Name)
 
 	rows := buildExposeRows(manifest, tunnels, live)
 	printExposeRows(stdout, target, rows)
@@ -172,12 +172,13 @@ func readTunnels(codePath string) map[int]int {
 	return tunnels
 }
 
-// readLivePorts parses `docker port <name>`, whose lines look like
-// "10000/tcp -> 127.0.0.1:11000". It is keyed by "<containerPort>/<proto>" so a
-// manifest entry can be confirmed against what is actually bound right now.
-func readLivePorts(containerName string) map[string][]livePort {
+// readLivePorts parses `<engine> port <name>`, whose lines look like
+// "10000/tcp -> 127.0.0.1:11000" under both Docker and Podman. It is keyed by
+// "<containerPort>/<proto>" so a manifest entry can be confirmed against what is
+// actually bound right now.
+func readLivePorts(engine, containerName string) map[string][]livePort {
 	live := make(map[string][]livePort)
-	out, err := docker.DockerOutput(docker.DockerFlags{Silent: true}, "port", ilist.NewList(
+	out, err := docker.DockerOutput(docker.DockerFlags{Silent: true, Engine: engine}, "port", ilist.NewList(
 		ilist.NewList(containerName),
 	))
 	if err != nil {
