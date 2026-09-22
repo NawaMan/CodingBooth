@@ -275,6 +275,35 @@ Boothfile env (build-time, lowest)
 
 ---
 
+## Container Engine (experimental)
+
+CodingBooth runs on Docker. Podman can be used instead, but **Podman support is
+experimental**: it is still being developed and may not have feature parity with
+Docker.
+
+```bash
+booth --engine podman                 # this run
+CB_ENGINE=podman booth                # environment
+```
+
+or `engine = "podman"` in `.booth/config.toml`. Precedence is the usual
+`--engine` > config file > `CB_ENGINE` > default (`docker`). If you choose
+nothing and `docker` is not installed but `podman` is, CodingBooth uses `podman`
+and says so (hidden by `--quiet`).
+
+Notes:
+
+- `booth list`, `stop`, `start`, `restart`, `remove` and `prune` do not take
+  `--engine`; they follow `CB_ENGINE` (or `engine` in the `.booth/config.toml`
+  that `--code` points to), and otherwise look at Docker. Use
+  `CB_ENGINE=podman booth stop` for a booth started with `--engine podman`.
+- Rootless Podman needs `/etc/subuid` and `/etc/subgid` entries for your user.
+  CodingBooth adds `--userns=keep-id` so your host UID matches `coder` inside.
+- Not supported yet on Podman: Docker-in-Docker (`--dind`), `booth expose`
+  tunnels, and the live build-progress line.
+
+See [Podman support](PODMAN_SUPPORT.md) for the plan and known differences.
+
 ## Host UID/GID Handling
 
 CodingBooth ensures that all files created inside the container are owned by the same user and group as on your host system. This eliminates the common "root-owned files" problem when developing inside Docker.

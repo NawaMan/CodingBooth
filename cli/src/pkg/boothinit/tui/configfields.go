@@ -77,6 +77,9 @@ var fieldDisplays = []fieldDisplay{
 		Detail: "What a +OFFSET host port counts from.\n\nEmpty = the booth port, so published ports follow it\nand two local booths never collide.\n\nSet a number where the booth owns the whole port\nrange and its port is fixed. 0 makes every +OFFSET\nan absolute port.\n\nExample: offset-base = 0, with an Expose entry of\n+8080:8080, publishes host port 8080 regardless of\nwhere the booth's own port lands."},
 	{Key: "name", Label: "Name", Group: "General",
 		Detail: "Container name. If empty, inferred from the code\ndirectory name.\n\nExample: my-app-dev"},
+	{Key: "engine", Label: "Container Engine", Group: "General",
+		Options: []string{"", "docker", "podman"},
+		Detail:  "Which container engine binary to shell out to.\n\n(default) = docker (falls back to podman if docker\nisn't installed but podman is)\ndocker = always use docker\npodman = always use podman (experimental; may not\nhave full Docker feature parity yet — see\ndocs/PODMAN_SUPPORT.md)"},
 
 	// Not the config.toml `version` key — see "Image Version" below.
 	//
@@ -246,6 +249,8 @@ var unrenderedKeys = map[string]string{
 	"quiet": "invocation flag (--quiet / exec --silence-build); a committed quiet = true would hide the URL on every daemon launch",
 
 	"run-args": "compiled from the Expose / Env / Mount fields; a raw field would fight them",
+
+	"rootless": "unsupported escape hatch (--rootless) that skips the Linux rootless/userns-remap refusal; not something to offer as a setting",
 }
 
 // allConfigFields is the field table the renderer walks, in display order.

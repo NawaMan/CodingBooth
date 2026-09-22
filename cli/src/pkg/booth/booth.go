@@ -94,6 +94,7 @@ func (booth *Booth) runAsCommand() error {
 		Dryrun:  booth.ctx.Dryrun(),
 		Verbose: booth.ctx.Verbose(),
 		Silent:  false,
+		Engine:  booth.ctx.Engine(),
 	}
 
 	ttyArgs := prepareTtyArgs()
@@ -182,6 +183,7 @@ func (booth *Booth) runAsDaemon() error {
 		// Quiet hides docker run -d's container-id print. Foreground/command
 		// mode must not do this: that output is the user's session.
 		Silent: booth.ctx.Quiet(),
+		Engine: booth.ctx.Engine(),
 	}
 
 	keepAliveArgs := prepareKeepAliveArgs(booth.ctx.KeepAlive())
@@ -276,6 +278,7 @@ func (booth *Booth) runAsForeground() error {
 		Dryrun:  booth.ctx.Dryrun(),
 		Verbose: booth.ctx.Verbose(),
 		Silent:  false,
+		Engine:  booth.ctx.Engine(),
 	}
 
 	ttyArgs := prepareTtyArgs()
@@ -472,6 +475,21 @@ func getDindNet(ctx appctx.AppContext) string {
 	return ctx.Name() + "-" + strconv.Itoa(ctx.PortNumber()) + "-net"
 }
 
+// podmanUserNamespaceArgs returns the run flags a rootless Podman booth needs.
+// Rootless Podman maps the host user to container root, so bind-mounted project
+// files (and .booth/.tmp, where the shutdown/restart markers live) show up as
+// root-owned and the `coder` user booth-entry aligns to HOST_UID cannot write
+// them. keep-id maps the host UID to the same UID inside instead; --user root
+// keeps booth-entry running as root, since keep-id otherwise defaults the
+// container to the host UID. Docker (root-owned daemon) and rootful Podman
+// (euid 0) need nothing.
+func podmanUserNamespaceArgs(engine string, euid int) []string {
+	if engine != "podman" || euid == 0 {
+		return nil
+	}
+	return []string{"--userns=keep-id", "--user", "root"}
+}
+
 // PrepareCommonArgs prepares common Docker run arguments and returns updated AppContext.
 func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
@@ -485,6 +503,9 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_UID="+ctx.HostUID()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_GID="+ctx.HostGID()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "HOST_OS="+getHostOS()))
+	if args := podmanUserNamespaceArgs(ctx.Engine(), os.Geteuid()); len(args) > 0 {
+		builder.CommonArgs.Append(ilist.NewListFromSlice(args))
+	}
 	codePath := normalizeCodePath(ctx.Code())
 	createdAt := time.Now().UTC().Format(time.RFC3339)
 
@@ -1014,7 +1035,7 @@ func printHomeVolumeWarning(ctx appctx.AppContext) {
 // ensureHomeVolume creates a Docker named volume for persisting /home/coder.
 // docker volume create is idempotent — it succeeds silently if the volume already exists.
 func ensureHomeVolume(ctx appctx.AppContext, volumeName string, containerName string) {
-	flags := docker.DockerFlags{Dryrun: ctx.Dryrun(), Verbose: ctx.Verbose(), Silent: true}
+	flags := docker.DockerFlags{Dryrun: ctx.Dryrun(), Verbose: ctx.Verbose(), Silent: true, Engine: ctx.Engine()}
 	_ = docker.Docker(flags, "volume", ilist.NewList(
 		ilist.NewList("create"),
 		ilist.NewList("--label", "cb.managed=true"),

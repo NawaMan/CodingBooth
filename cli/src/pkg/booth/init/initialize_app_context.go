@@ -129,6 +129,21 @@ func validateConfig(config *appctx.AppConfig) {
 	if err := validateEgressConfig(config); err != nil {
 		panic(err)
 	}
+	if err := resolveEngineConfig(config); err != nil {
+		panic(err)
+	}
+}
+
+// resolveEngineConfig normalizes config.Engine to a concrete "docker" or
+// "podman" (applying the PATH fallback when it was never explicitly set),
+// or returns an error for anything else. See docs/PODMAN_SUPPORT.md.
+func resolveEngineConfig(config *appctx.AppConfig) error {
+	engine, err := appctx.ResolveEngineValue(config.Engine, config.Quiet)
+	if err != nil {
+		return err
+	}
+	config.Engine = engine
+	return nil
 }
 
 const (
@@ -510,6 +525,14 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 				return err
 			}
 			cfg.Variant = v
+			i += 2
+
+		case "--engine":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			cfg.Engine = v
 			i += 2
 
 		case "--version":

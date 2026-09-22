@@ -25,7 +25,8 @@ func ListHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 		return commandExit(2, "")
 	}
 
-	output, err := docker.DockerOutput(docker.DockerFlags{Silent: true}, "volume", ilist.NewList(
+	engine := resolveLifecycleEngine("")
+	output, err := docker.DockerOutput(docker.DockerFlags{Silent: true, Engine: engine}, "volume", ilist.NewList(
 		ilist.NewList("ls"),
 		ilist.NewList("--filter", "label=cb.managed=true"),
 		ilist.NewList("--format", "{{.Name}}\t{{.Labels}}"),
@@ -83,9 +84,10 @@ func ExportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 	containerName := positional[0]
 	outputFile := positional[1]
 	volName := "cb-home-" + containerName
+	engine := resolveLifecycleEngine("")
 
 	// Verify volume exists
-	if _, err := docker.DockerOutput(docker.DockerFlags{Silent: true}, "volume", ilist.NewList(
+	if _, err := docker.DockerOutput(docker.DockerFlags{Silent: true, Engine: engine}, "volume", ilist.NewList(
 		ilist.NewList("inspect", volName),
 	)); err != nil {
 		return commandExit(1, fmt.Sprintf("Error: home volume %q not found. Is --persist-home enabled for %q?", volName, containerName))
@@ -104,7 +106,7 @@ func ExportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 	u, _ := user.Current()
 	userFlag := u.Uid + ":" + u.Gid
 
-	err = docker.Docker(docker.DockerFlags{Silent: false}, "run", ilist.NewList(
+	err = docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "run", ilist.NewList(
 		ilist.NewList("--rm"),
 		ilist.NewList("-v", volName+":/data:ro"),
 		ilist.NewList("-v", dir+":/backup"),
@@ -137,9 +139,10 @@ func ImportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 	containerName := positional[0]
 	inputFile := positional[1]
 	volName := "cb-home-" + containerName
+	engine := resolveLifecycleEngine("")
 
 	// Create volume if it doesn't exist (idempotent)
-	_ = docker.Docker(docker.DockerFlags{Silent: true}, "volume", ilist.NewList(
+	_ = docker.Docker(docker.DockerFlags{Silent: true, Engine: engine}, "volume", ilist.NewList(
 		ilist.NewList("create"),
 		ilist.NewList("--label", "cb.managed=true"),
 		ilist.NewList("--label", "cb.parent="+containerName),
@@ -155,7 +158,7 @@ func ImportHomeVolume(args []string, stdout io.Writer, stderr io.Writer) error {
 
 	_, _ = fmt.Fprintf(stdout, "Importing %s into %s ...\n", absInput, volName)
 
-	err = docker.Docker(docker.DockerFlags{Silent: false}, "run", ilist.NewList(
+	err = docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "run", ilist.NewList(
 		ilist.NewList("--rm"),
 		ilist.NewList("-v", volName+":/data"),
 		ilist.NewList("-v", dir+":/backup:ro"),

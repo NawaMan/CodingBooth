@@ -73,6 +73,8 @@ keep-alive = true
 
 ## Lifecycle Commands
 
+> **Podman (experimental):** these commands use Docker unless `CB_ENGINE=podman` is set (or `engine = "podman"` in the `.booth/config.toml` that `--code` points to). See [Container Engine](BOOTH_RUN.md#container-engine-experimental).
+
 ### `list`
 
 Show all booth-managed containers.

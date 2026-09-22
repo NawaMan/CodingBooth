@@ -121,6 +121,7 @@ func startEgressNetnsOwner(ctx appctx.AppContext, ownerName, netName string, hos
 		Dryrun:  ctx.Dryrun(),
 		Verbose: ctx.Verbose(),
 		Silent:  true,
+		Engine:  ctx.Engine(),
 	}
 
 	output, err := docker.DockerOutput(flags, "ps", ilist.NewList(
@@ -383,6 +384,7 @@ func startEgressProxy(ctx appctx.AppContext, proxyName, netnsOwnerName, configPa
 		Dryrun:  ctx.Dryrun(),
 		Verbose: ctx.Verbose(),
 		Silent:  true,
+		Engine:  ctx.Engine(),
 	}
 	output, err := docker.DockerOutput(flags, "ps", ilist.NewList(
 		ilist.NewList("--filter", fmt.Sprintf("name=^/%s$", proxyName), "--format", "{{.Names}}"),
@@ -417,6 +419,7 @@ func waitForEgressProxyReady(ctx appctx.AppContext, netnsOwnerName string) error
 		Dryrun:  false,
 		Verbose: ctx.Verbose(),
 		Silent:  true,
+		Engine:  ctx.Engine(),
 	}
 	checkCmd := fmt.Sprintf("nc -z 127.0.0.1 %d", egressProxyPort)
 	for i := 0; i < 30; i++ {
@@ -453,6 +456,7 @@ iptables -P OUTPUT DROP
 		Dryrun:  ctx.Dryrun(),
 		Verbose: ctx.Verbose(),
 		Silent:  true,
+		Engine:  ctx.Engine(),
 	}
 	return docker.Docker(flags, "exec", ilist.NewList(
 		ilist.NewList(netnsOwnerName, "sh", "-lc", cmd),
