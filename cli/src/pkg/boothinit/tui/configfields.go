@@ -249,6 +249,8 @@ var unrenderedKeys = map[string]string{
 	"quiet": "invocation flag (--quiet / exec --silence-build); a committed quiet = true would hide the URL on every daemon launch",
 
 	"run-args": "compiled from the Expose / Env / Mount fields; a raw field would fight them",
+
+	"rootless": "unsupported escape hatch (--rootless) that skips the Linux rootless/userns-remap refusal; not something to offer as a setting",
 }
 
 // allConfigFields is the field table the renderer walks, in display order.
