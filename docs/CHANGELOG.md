@@ -14,7 +14,8 @@ This file contains a list of changes for each released version.
   supported yet. Podman builds pass `--format docker` (Buildah's default image
   format ignores the Dockerfile `SHELL`, which every variant relies on), and
   rootless Podman runs with `--userns=keep-id` so your host UID matches `coder`
-  and `.booth/.tmp` stays writable — without it a booth could not shut down.
+  and `.booth/.tmp` stays writable — without it a booth could not shut down —
+  and lets `coder` bind ports below 1024 as it can under Docker.
   `booth list`/`stop`/`start`/`restart`/`remove`/`prune` follow `CB_ENGINE`
   rather than `--engine`. The Linux rootless-Docker refusal does not apply when
   the engine is Podman.

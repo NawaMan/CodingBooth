@@ -263,6 +263,15 @@ func Stop(args []string, stderr io.Writer) error {
 	return nil
 }
 
+// restartTimeoutFlag is the stop-wait flag of `<engine> restart`: podman takes
+// --time, docker takes --timeout.
+func restartTimeoutFlag(engine string) string {
+	if engine == "podman" {
+		return "--time"
+	}
+	return "--timeout"
+}
+
 func Restart(args []string, stderr io.Writer) error {
 	flagSet := flag.NewFlagSet("restart", flag.ContinueOnError)
 	name := flagSet.String("name", "", "Container name")
@@ -288,7 +297,7 @@ func Restart(args []string, stderr io.Writer) error {
 	}
 
 	if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "restart", ilist.NewList(
-		ilist.NewList("--timeout", strconv.Itoa(*timeout)),
+		ilist.NewList(restartTimeoutFlag(engine), strconv.Itoa(*timeout)),
 		ilist.NewList(target.Name),
 	)); err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to restart %q: %v", target.Name, err))

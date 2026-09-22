@@ -111,3 +111,45 @@ if [[ "$(id -u)" != "0" ]]; then
     print_test_result "true" "$0" "11" "docker run gets no --userns flag"
   fi
 fi
+
+# 12. `booth build` takes --engine too (it parses its own flags)
+mkdir -p "$WORK/buildproj/.booth"
+printf 'FROM scratch\n' > "$WORK/buildproj/.booth/Dockerfile"
+OUT=$(run_coding_booth build --code "$WORK/buildproj" --variant base --dryrun --engine podman 2>/dev/null || true)
+if printf '%s\n' "$OUT" | grep -Eq '^podman \\$' && ! printf '%s\n' "$OUT" | grep -Eq '^docker \\$'; then
+  print_test_result "true" "$0" "12" "booth build --engine podman prints podman commands"
+else
+  print_test_result "false" "$0" "12" "booth build --engine podman prints podman commands"
+  echo "Output:"; echo "$OUT"
+  exit 1
+fi
+
+# 13. podman gets the low-port sysctl Docker already applies; docker does not need it
+OUT=$(run_coding_booth --variant base --dryrun --engine podman 2>/dev/null || true)
+if printf '%s\n' "$OUT" | grep -q 'net.ipv4.ip_unprivileged_port_start=0'; then
+  print_test_result "true" "$0" "13" "podman run lets coder bind low ports"
+else
+  print_test_result "false" "$0" "13" "podman run lets coder bind low ports"
+  echo "Output:"; echo "$OUT"
+  exit 1
+fi
+OUT=$(run_coding_booth --variant base --dryrun --engine docker 2>/dev/null || true)
+if printf '%s\n' "$OUT" | grep -q 'ip_unprivileged_port_start'; then
+  print_test_result "false" "$0" "14" "docker run has no low-port sysctl"
+  echo "Output:"; echo "$OUT"
+  exit 1
+else
+  print_test_result "true" "$0" "14" "docker run has no low-port sysctl"
+fi
+
+# 15. ...but not when the booth joins a sidecar's network namespace (--egress): Podman cannot set it there.
+# --code points at a temp dir because --egress writes its generated policy files under the code directory.
+mkdir -p "$WORK/egressproj"
+OUT=$(run_coding_booth --code "$WORK/egressproj" --variant base --dryrun --engine podman --egress 2>/dev/null || true)
+if printf '%s\n' "$OUT" | grep -q 'ip_unprivileged_port_start'; then
+  print_test_result "false" "$0" "15" "podman --egress run skips the low-port sysctl"
+  echo "Output:"; echo "$OUT"
+  exit 1
+else
+  print_test_result "true" "$0" "15" "podman --egress run skips the low-port sysctl"
+fi

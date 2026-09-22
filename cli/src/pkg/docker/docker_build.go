@@ -98,9 +98,9 @@ func DockerBuild(flags DockerFlags, args ilist.List[ilist.List[string]]) error {
 		fmt.Fprintln(os.Stderr, "----------------------")
 
 		if exitErr, ok := err.(*exec.ExitError); ok {
-			return fmt.Errorf("docker build failed with exit code %d", exitErr.ExitCode())
+			return fmt.Errorf("%s build failed with exit code %d", flags.binary(), exitErr.ExitCode())
 		}
-		return fmt.Errorf("docker build failed: %w", err)
+		return fmt.Errorf("%s build failed: %w", flags.binary(), err)
 	}
 
 	// Build succeeded - the status line is wiped and stderr is discarded

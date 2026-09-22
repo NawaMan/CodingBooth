@@ -441,6 +441,7 @@ OPTIONS:
   --silence-build         Hide build output; show a status line, log on failure
   --verbose               Show detailed output
   --dryrun                Print docker commands without executing
+  --engine <docker|podman>  Container engine to use (default: docker; podman is experimental)
 
 IMAGE NAMING:
   Local:   <name>:<tag>

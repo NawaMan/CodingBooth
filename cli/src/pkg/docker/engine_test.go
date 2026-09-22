@@ -63,3 +63,22 @@ func TestHasBuildKitSupport_NonDockerEngineShortCircuits(t *testing.T) {
 		t.Error("hasBuildKitSupport(\"podman\") should always be false; BuildKit is Docker-specific")
 	}
 }
+
+func TestDockerExitError_NamesTheEngine(t *testing.T) {
+	tests := []struct {
+		name   string
+		err    DockerExitError
+		expect string
+	}{
+		{"podman", DockerExitError{Subcommand: "restart", ExitCode: 125, Engine: "podman"}, "podman restart failed with exit code 125"},
+		{"docker", DockerExitError{Subcommand: "ps", ExitCode: 1, Engine: "docker"}, "docker ps failed with exit code 1"},
+		{"unset means docker", DockerExitError{Subcommand: "ps", ExitCode: 1}, "docker ps failed with exit code 1"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := tt.err.Error(); got != tt.expect {
+				t.Errorf("Error() = %q, want %q", got, tt.expect)
+			}
+		})
+	}
+}
