@@ -730,11 +730,61 @@ func readFromToml(boundary InitializeAppContextBoundary, context *appctx.AppCont
 			if p.ConfigPath == "" {
 				continue
 			}
+			if err := checkProfileCollisions(p, &context.Config); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
 			if err := appctx.MergeProfileToml(p.ConfigPath, &context.Config); err != nil {
 				panic(fmt.Errorf("failed to merge profile %q config: %w", p.Name, err))
 			}
 		}
 	})
+}
+
+// checkProfileCollisions refuses an overlay whose run-args, build-args or
+// common-args claim something an earlier layer already claimed — the same
+// environment variable, container mount target, published port or label with a
+// different value. See profile.FindCollisions for exactly what counts.
+//
+// Overlay lists are merged by concatenation, so without this the outcome of a
+// repeated claim was decided by whichever layer handled that flag (Docker kept the
+// last -e, booth silently kept the first bind mount, a repeated -p published both).
+// "earlier" is everything accumulated so far: the base config.toml, CB_* list
+// variables, and any profile applied before this one.
+//
+// A decode failure is left for MergeProfileToml to report in its usual way.
+func checkProfileCollisions(p appctx.ProfileEntry, earlier *appctx.AppConfig) error {
+	var overlay appctx.AppConfig
+	if err := appctx.ReadFromToml(p.ConfigPath, &overlay); err != nil {
+		return nil
+	}
+
+	lists := []struct {
+		key           string
+		before, after []string
+	}{
+		{"run-args", earlier.RunArgs.Slice(), overlay.RunArgs.Slice()},
+		{"common-args", earlier.CommonArgs.Slice(), overlay.CommonArgs.Slice()},
+		{"build-args", earlier.BuildArgs.Slice(), overlay.BuildArgs.Slice()},
+	}
+
+	var b strings.Builder
+	for _, l := range lists {
+		for _, c := range profile.FindCollisions(l.before, l.after) {
+			fmt.Fprintf(&b, "\n  %s: %s\n      earlier: %s\n      %s: %s\n",
+				l.key, c.What, c.Earlier, p.Name, c.Later)
+		}
+	}
+	if b.Len() == 0 {
+		return nil
+	}
+
+	return fmt.Errorf("profile %q (%s) collides with an earlier layer "+
+		"(the base config.toml or a profile applied before it):\n%s\n"+
+		"An overlay's lists add to the base; they cannot replace what it already sets. "+
+		"Set each of these in only one place — move it out of the base and into the "+
+		"profiles that need it. See docs/BOOTH_PROFILES.md.",
+		p.Name, filepath.Base(p.ConfigPath), b.String())
 }
 
 // resolveAndStoreProfiles inspects args and BOOTH_PROFILES to resolve the

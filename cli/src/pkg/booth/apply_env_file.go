@@ -21,7 +21,7 @@ import (
 // Layering order (each layer becomes a separate --env-file arg; on a key
 // collision Docker honors the rightmost --env-file, so later layers win):
 //  1. .booth/.env                — base, always included if present (must be gitignored)
-//  2. .booth/.env--<profile>     — one per resolved profile, in apply order
+//  2. .booth/.<profile>--env     — one per resolved profile, in apply order (each must be gitignored)
 //  3. user-supplied --env-file   — explicit override, applied last
 //
 // Profiles and --env-file are mutually exclusive (enforced at init), so in
@@ -55,7 +55,7 @@ func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 		}
 	}
 
-	// Step 2: Apply per-profile .env--<name> files in apply order.
+	// Step 2: Apply per-profile .<name>--env files in apply order.
 	for _, p := range ctx.Profiles() {
 		if p.EnvPath == "" {
 			continue
@@ -65,6 +65,15 @@ func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 			// concurrent removal between init and ApplyEnvFile.
 			fmt.Fprintf(os.Stderr, "Error: profile env file disappeared: %s\n", p.EnvPath)
 			os.Exit(1)
+		}
+		// Same policy as the base .env: profile env files are where per-
+		// environment secrets (prod, deploy) end up, so refuse to run if git
+		// would commit one.
+		if codeDir != "" {
+			if err := checkBoothEnvGitignored(p.EnvPath, codeDir); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
 		}
 		label := "profile-" + p.Name
 		finalPath := mustPrepareExpandedEnvFile(ctx, p.EnvPath, codeDir, label)
@@ -157,8 +166,13 @@ func mustPrepareExpandedEnvFile(ctx appctx.AppContext, src, codeDir, label strin
 	return dst
 }
 
-// checkBoothEnvGitignored verifies that .booth/.env is gitignored.
+// checkBoothEnvGitignored verifies that the given booth env file — the base
+// .booth/.env or a profile's .booth/.<name>--env — is gitignored.
 // Skips the check if git is not available or the project is not a git repo.
+//
+// A file git already tracks is reported as NOT ignored even when an ignore
+// pattern matches it (git check-ignore only considers untracked paths), which
+// is the right outcome here: ignoring a committed secret does not un-commit it.
 func checkBoothEnvGitignored(boothEnvFile, codeDir string) error {
 	gitPath, err := exec.LookPath("git")
 	if err != nil {
@@ -175,16 +189,28 @@ func checkBoothEnvGitignored(boothEnvFile, codeDir string) error {
 		return nil
 	}
 
+	// Ask about the file we were given, relative to codeDir (git -C codeDir).
+	// Falls back to the path as given if it cannot be made relative.
+	checkPath := boothEnvFile
+	if rel, relErr := filepath.Rel(codeDir, boothEnvFile); relErr == nil {
+		checkPath = filepath.ToSlash(rel)
+	}
+
 	// git check-ignore returns exit 0 if ignored, exit 1 if NOT ignored
-	cmd = exec.Command(gitPath, "-C", codeDir, "check-ignore", "-q", ".booth/.env")
+	cmd = exec.Command(gitPath, "-C", codeDir, "check-ignore", "-q", "--", checkPath)
 	cmd.Stdout = nil
 	cmd.Stderr = nil
 	if err := cmd.Run(); err != nil {
+		// The base file is ".env"; every profile env file matches ".*--env".
+		pattern := ".env"
+		if filepath.Base(boothEnvFile) != ".env" {
+			pattern = ".*--env"
+		}
 		return fmt.Errorf(
 			"booth env file %q is NOT gitignored. "+
-				"Add '.env' to .booth/.gitignore before using this feature. "+
+				"Add '%s' to .booth/.gitignore before using this feature. "+
 				"Refusing to run to prevent accidental credential exposure",
-			boothEnvFile,
+			boothEnvFile, pattern,
 		)
 	}
 

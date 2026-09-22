@@ -292,6 +292,109 @@ func TestCheckBoothEnvGitignored_Ignored(t *testing.T) {
 	}
 }
 
+// gitRepoWithBooth makes a temp git repo containing .booth/ and returns
+// (repoDir, boothDir). Skips the test when git is not installed.
+func gitRepoWithBooth(t *testing.T) (string, string) {
+	t.Helper()
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not available")
+	}
+	dir := t.TempDir()
+	if err := exec.Command("git", "init", dir).Run(); err != nil {
+		t.Fatal(err)
+	}
+	boothDir := filepath.Join(dir, ".booth")
+	if err := os.MkdirAll(boothDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	return dir, boothDir
+}
+
+func writeBoothFile(t *testing.T, path, content string) {
+	t.Helper()
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// The regression this guards: the check used to hard-code ".booth/.env", so a
+// profile env file passed whenever the BASE .env was ignored (or missing).
+func TestCheckBoothEnvGitignored_ProfileFileNotIgnored(t *testing.T) {
+	dir, boothDir := gitRepoWithBooth(t)
+	writeBoothFile(t, filepath.Join(boothDir, ".gitignore"), ".env\n") // base only
+	profileEnv := filepath.Join(boothDir, ".dev--env")
+	writeBoothFile(t, profileEnv, "SECRET=value")
+
+	err := checkBoothEnvGitignored(profileEnv, dir)
+	if err == nil {
+		t.Fatal("expected error: .dev--env is not ignored, even though the base .env is")
+	}
+	for _, want := range []string{"NOT gitignored", ".dev--env", ".*--env"} {
+		if !strings.Contains(err.Error(), want) {
+			t.Errorf("expected %q in error, got %q", want, err.Error())
+		}
+	}
+}
+
+func TestCheckBoothEnvGitignored_ProfileFileIgnored(t *testing.T) {
+	dir, boothDir := gitRepoWithBooth(t)
+	writeBoothFile(t, filepath.Join(boothDir, ".gitignore"), ".env\n.*--env\n")
+	profileEnv := filepath.Join(boothDir, ".dev--env")
+	writeBoothFile(t, profileEnv, "SECRET=value")
+
+	if err := checkBoothEnvGitignored(profileEnv, dir); err != nil {
+		t.Fatalf("expected nil for gitignored profile env file, got %v", err)
+	}
+}
+
+// Each profile file is judged on its own: ignoring one does not cover another.
+func TestCheckBoothEnvGitignored_ProfileFilesJudgedIndividually(t *testing.T) {
+	dir, boothDir := gitRepoWithBooth(t)
+	writeBoothFile(t, filepath.Join(boothDir, ".gitignore"), ".dev--env\n")
+	dev := filepath.Join(boothDir, ".dev--env")
+	prod := filepath.Join(boothDir, ".prod--env")
+	writeBoothFile(t, dev, "A=1")
+	writeBoothFile(t, prod, "A=2")
+
+	if err := checkBoothEnvGitignored(dev, dir); err != nil {
+		t.Fatalf("dev is ignored, expected nil, got %v", err)
+	}
+	if err := checkBoothEnvGitignored(prod, dir); err == nil {
+		t.Fatal("prod is not ignored, expected an error")
+	}
+}
+
+// Ignoring a file after it was committed does not un-commit it, so a tracked
+// env file must still be refused even when an ignore pattern matches it.
+func TestCheckBoothEnvGitignored_TrackedProfileFileIsRefused(t *testing.T) {
+	dir, boothDir := gitRepoWithBooth(t)
+	profileEnv := filepath.Join(boothDir, ".prod--env")
+	writeBoothFile(t, profileEnv, "SECRET=value")
+	if out, err := exec.Command("git", "-C", dir, "add", "-f", ".booth/.prod--env").CombinedOutput(); err != nil {
+		t.Fatalf("git add: %v: %s", err, out)
+	}
+	writeBoothFile(t, filepath.Join(boothDir, ".gitignore"), ".*--env\n") // too late
+
+	if err := checkBoothEnvGitignored(profileEnv, dir); err == nil {
+		t.Fatal("expected error: file is already tracked by git")
+	}
+}
+
+// The base file keeps its original wording and hint.
+func TestCheckBoothEnvGitignored_BaseFileHintIsDotEnv(t *testing.T) {
+	dir, boothDir := gitRepoWithBooth(t)
+	baseEnv := filepath.Join(boothDir, ".env")
+	writeBoothFile(t, baseEnv, "SECRET=value")
+
+	err := checkBoothEnvGitignored(baseEnv, dir)
+	if err == nil {
+		t.Fatal("expected error for non-gitignored base .env")
+	}
+	if !strings.Contains(err.Error(), "Add '.env' to .booth/.gitignore") {
+		t.Errorf("expected the base-file hint, got %q", err.Error())
+	}
+}
+
 // expectExpandedEnvArg fails the test unless the context's CommonArgs
 // contains exactly one --env-file <path>, where <path> lives under
 // expectedDir and ends in .expanded. Returns the expanded path so the

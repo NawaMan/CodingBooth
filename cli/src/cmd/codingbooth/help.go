@@ -101,6 +101,12 @@ BOOTSTRAP OPTIONS (CLI or defaults; evaluated before env and config file):
                          (default: current directory)
   --config <file>        Path to the config file to load
                          (default: <code>/.booth/config.toml)
+  --profile <a[,b]>      Overlay .booth/<name>--config.toml and .booth/.<name>--env
+                         on the base config; later wins. Repeatable. Also
+                         BOOTH_PROFILES. Not combinable with --config/--env-file.
+                         Lists add to the base; a conflicting -e/-v/-p/-l between
+                         layers is an error, not an override.
+                         (Value is the next argument; --profile=<a> is not read.)
 
 CONFIG PRECEDENCE:
   options (CLI) > config file (TOML) > environment (ENV) > defaults
@@ -249,6 +255,7 @@ USAGE:
 BOOTSTRAP OPTIONS:
   --code <path>          Host code path (default: current directory)
   --config <file>        Config file (default: <code>/.booth/config.toml)
+  --profile <a[,b]>      Overlay <name>--config.toml / .<name>--env (or BOOTH_PROFILES)
 
   Config precedence: CLI > config file (TOML) > environment (ENV) > defaults
 

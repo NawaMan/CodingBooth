@@ -169,6 +169,16 @@ You can define special arrays in `.booth/config.toml` to customize Docker intera
 
 > These arrays allow you to version-control runtime and build options without hardcoding them into your CLI workflow.
 
+#### Profiles
+
+Need a few settings to differ per situation (`dev`, `deploy`, …)? Add
+`.booth/<name>--config.toml` overlays and select one with `--profile <name>`
+(or `BOOTH_PROFILES`). The overlay sets only the keys it names; the rest come
+from `config.toml`. Lists like `run-args` add to the base, and an overlay entry
+that conflicts with one already set (the same `-e` name, mount target or port) is
+an error. See **[booth profiles](BOOTH_PROFILES.md)** for layout, the `default`
+profile and the merge rules.
+
 ### Environment Files (`.booth/.env`)
 
 See [Environment Variables](#environment-variables) for the full guide on passing env vars into the container, including `.booth/.env`, `env-file`, `run-args -e`, and Boothfile `env`.
