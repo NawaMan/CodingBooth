@@ -19,7 +19,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 )
 
-// tcpTunnel represents an active tunnel from a host port to a container port via docker exec + socat.
+// tcpTunnel represents an active tunnel from a host port to a container port via `<engine> exec` + socat.
 type tcpTunnel struct {
 	containerPort int
 	externalPort  int
@@ -28,8 +28,8 @@ type tcpTunnel struct {
 }
 
 // StartTcpTunnelWatcher watches .booth/.tmp/tcp-tunnels/ for control files
-// and creates host-side TCP listeners that forward traffic via docker exec + socat
-// to the container. It runs until the provided context is cancelled.
+// and creates host-side TCP listeners that forward traffic via `<engine> exec` + socat
+// to the container (the engine is the one the booth was started with). It runs until the provided context is cancelled.
 func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, containerName string) {
 	codePath := appCtx.Code()
 	if codePath == "" {
@@ -38,6 +38,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 
 	tunnelDir := filepath.Join(codePath, ".booth", ".tmp", "tcp-tunnels")
 	verbose := appCtx.Verbose()
+	engine := appCtx.Engine()
 
 	var mu sync.Mutex
 	activeTunnels := make(map[int]*tcpTunnel) // keyed by container port
@@ -96,7 +97,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 				}
 
 				// Start tunnel
-				tunnel, err := startTunnel(ctx, containerName, containerPort, externalPort, verbose)
+				tunnel, err := startTunnel(ctx, engine, containerName, containerPort, externalPort, verbose)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, "  Tunnel error (port %d): %v\n", containerPort, err)
 					continue
@@ -124,7 +125,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 	}
 }
 
-func startTunnel(parentCtx context.Context, containerName string, containerPort, externalPort int, verbose bool) (*tcpTunnel, error) {
+func startTunnel(parentCtx context.Context, engine, containerName string, containerPort, externalPort int, verbose bool) (*tcpTunnel, error) {
 	listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", externalPort))
 	if err != nil {
 		return nil, fmt.Errorf("cannot listen on port %d: %w", externalPort, err)
@@ -139,12 +140,12 @@ func startTunnel(parentCtx context.Context, containerName string, containerPort,
 		cancel:        cancel,
 	}
 
-	go acceptLoop(ctx, listener, containerName, containerPort, verbose)
+	go acceptLoop(ctx, listener, engine, containerName, containerPort, verbose)
 
 	return tunnel, nil
 }
 
-func acceptLoop(ctx context.Context, listener net.Listener, containerName string, containerPort int, verbose bool) {
+func acceptLoop(ctx context.Context, listener net.Listener, engine, containerName string, containerPort int, verbose bool) {
 	for {
 		conn, err := listener.Accept()
 		if err != nil {
@@ -155,15 +156,24 @@ func acceptLoop(ctx context.Context, listener net.Listener, containerName string
 				continue
 			}
 		}
-		go handleTunnelConn(ctx, conn, containerName, containerPort, verbose)
+		go handleTunnelConn(ctx, conn, engine, containerName, containerPort, verbose)
 	}
 }
 
-func handleTunnelConn(ctx context.Context, tcpConn net.Conn, containerName string, containerPort int, verbose bool) {
+// tunnelExecCommand builds the `<engine> exec -i <container> socat …` process
+// that carries one tunnelled connection. An empty engine means Docker.
+func tunnelExecCommand(ctx context.Context, engine, containerName string, containerPort int) *exec.Cmd {
+	if engine == "" {
+		engine = "docker"
+	}
+	return exec.CommandContext(ctx, engine, "exec", "-i", containerName,
+		"socat", "STDIO", fmt.Sprintf("TCP:localhost:%d", containerPort))
+}
+
+func handleTunnelConn(ctx context.Context, tcpConn net.Conn, engine, containerName string, containerPort int, verbose bool) {
 	defer tcpConn.Close()
 
-	cmd := exec.CommandContext(ctx, "docker", "exec", "-i", containerName,
-		"socat", "STDIO", fmt.Sprintf("TCP:localhost:%d", containerPort))
+	cmd := tunnelExecCommand(ctx, engine, containerName, containerPort)
 	cmd.Stdin = tcpConn
 	cmd.Stdout = tcpConn
 	if verbose {

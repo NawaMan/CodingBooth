@@ -4,7 +4,11 @@
 
 package lifecycle
 
-import "testing"
+import (
+	"os"
+	"path/filepath"
+	"testing"
+)
 
 func TestParseDockerPortLine(t *testing.T) {
 	tests := []struct {
@@ -132,5 +136,44 @@ func TestBuildExposeRows_LivePortNotInManifestStillListed(t *testing.T) {
 	r, ok := rowFor(rows, 9000, "published")
 	if !ok || r.Source != "docker (live)" {
 		t.Errorf("uncovered live mapping should be listed as docker (live): %+v (ok=%v)", r, ok)
+	}
+}
+
+// fakeEngines puts a "docker" and a "podman" script on PATH, each printing its own
+// `port` output, so a test can tell which binary readLivePorts actually ran.
+func fakeEngines(t *testing.T) {
+	t.Helper()
+	dir := t.TempDir()
+	scripts := map[string]string{
+		"docker": "echo '3000/tcp -> 0.0.0.0:3111'",
+		"podman": "echo '3000/tcp -> 0.0.0.0:3222'",
+	}
+	for name, body := range scripts {
+		script := "#!/bin/sh\n[ \"$1\" = port ] || exit 1\n" + body + "\n"
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(script), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Setenv("PATH", dir)
+}
+
+func TestReadLivePortsUsesChosenEngine(t *testing.T) {
+	fakeEngines(t)
+
+	tests := []struct {
+		engine   string
+		wantHost int
+	}{
+		{"podman", 3222},
+		{"docker", 3111},
+		{"", 3111}, // unset engine means docker
+	}
+	for _, tt := range tests {
+		t.Run("engine="+tt.engine, func(t *testing.T) {
+			got := readLivePorts(tt.engine, "mybooth")["3000/tcp"]
+			if len(got) != 1 || got[0].HostPort != tt.wantHost {
+				t.Errorf("readLivePorts(%q) = %v, want one binding on host port %d", tt.engine, got, tt.wantHost)
+			}
+		})
 	}
 }

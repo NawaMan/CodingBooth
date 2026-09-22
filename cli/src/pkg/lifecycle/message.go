@@ -41,7 +41,7 @@ type boothMessageResponse struct {
 // resolveMessageTarget resolves the booth container for message commands.
 // Uses --name flag, or defaults to the current directory name.
 func resolveMessageTarget(name string) (managedContainer, error) {
-	containers, err := managedContainers(resolveLifecycleEngine(""), false)
+	containers, err := managedContainersAcross(resolveLifecycleEngines(""), false, os.Stderr)
 	if err != nil {
 		return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}

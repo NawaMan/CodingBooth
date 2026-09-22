@@ -303,14 +303,18 @@ and says so (hidden by `--quiet`).
 
 Notes:
 
-- `booth list`, `stop`, `start`, `restart`, `remove` and `prune` do not take
-  `--engine`; they follow `CB_ENGINE` (or `engine` in the `.booth/config.toml`
-  that `--code` points to), and otherwise look at Docker. Use
-  `CB_ENGINE=podman booth stop` for a booth started with `--engine podman`.
+- `booth list`, `stop`, `start`, `restart`, `remove`, `prune`, `message` and
+  `expose list` do not take `--engine`. When no engine is chosen and both are
+  installed they look at both Docker and Podman, and act on whichever owns the
+  booth (`booth list` adds an `ENGINE` column). `CB_ENGINE=docker` or
+  `CB_ENGINE=podman` narrows them to one, which is also how to pick when the same
+  name exists on both. `booth shell` and `booth exec` look at one engine, so use
+  `CB_ENGINE=podman booth shell` for a Podman booth.
 - Rootless Podman needs `/etc/subuid` and `/etc/subgid` entries for your user.
   CodingBooth adds `--userns=keep-id` so your host UID matches `coder` inside.
-- Not supported yet on Podman: Docker-in-Docker (`--dind`), `booth expose`
-  tunnels, and the live build-progress line.
+- `booth--expose` tunnels work on Podman (they use `podman exec`).
+- Not supported yet on Podman: Docker-in-Docker (`--dind`) and the live
+  build-progress line.
 
 See [Podman support](PODMAN_SUPPORT.md) for the plan and known differences.
 

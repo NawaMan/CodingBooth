@@ -69,7 +69,7 @@ To **run** a booth:
 - **Docker**, and your user must be able to run `docker info` without sudo.
   - **Linux:** Docker Engine, **rootful**. Rootless Docker and userns-remap are **not supported** — they map your host user to root inside the container, so CodingBooth cannot create a separate `coder` user. `booth` refuses to start if it detects either; `--rootless` skips that check (unsupported; file ownership may be wrong).
   - **macOS / Windows:** Docker Desktop (standard install) works.
-- **Podman is experimental.** Docker is the supported engine. `--engine podman` (or `CB_ENGINE=podman`, or `engine = "podman"` in `.booth/config.toml`) runs booths on Podman instead, but it is still being developed and may not have feature parity with Docker (for example Docker-in-Docker and `booth expose` tunnels are not supported yet). See [Podman support](docs/PODMAN_SUPPORT.md).
+- **Podman is experimental.** Docker is the supported engine. `--engine podman` (or `CB_ENGINE=podman`, or `engine = "podman"` in `.booth/config.toml`) runs booths on Podman instead, but it is still being developed and may not have feature parity with Docker (for example Docker-in-Docker is not supported yet). See [Podman support](docs/PODMAN_SUPPORT.md).
 
 The wrapper itself is a Bash script (Git Bash or WSL on Windows).
 
