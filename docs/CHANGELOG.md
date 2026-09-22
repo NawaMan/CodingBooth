@@ -39,13 +39,18 @@ This file contains a list of changes for each released version.
   With nothing chosen, Docker is used, and Podman only when `docker` is not
   installed but `podman` is. This is Phase 1 of `docs/PODMAN_SUPPORT.md` and is
   still being developed: it may not have feature parity with Docker, and
-  Docker-in-Docker and live build progress are not supported yet. `booth--expose`
+  Docker-in-Docker is not supported yet. `booth--expose`
   tunnels and `booth expose list` work on a Podman booth (they use the engine the
   booth was started with). Podman builds pass `--format docker` (Buildah's default image
   format ignores the Dockerfile `SHELL`, which every variant relies on), and
   rootless Podman runs with `--userns=keep-id` so your host UID matches `coder`
   and `.booth/.tmp` stays writable — without it a booth could not shut down —
   and lets `coder` bind ports below 1024 as it can under Docker.
+  `--silence-build` now genuinely hides a Podman build too: Buildah's `STEP n/m`
+  headers and every `RUN` step's own output land on stdout, not stderr, and used
+  to print live regardless of the flag; both streams are captured now, and the
+  same one-line ticking status a silent Docker build shows renders on Podman as
+  well.
   `booth list`/`stop`/`start`/`restart`/`remove`/`prune`/`message`/`expose list`
   take no `--engine`: with no engine chosen and both installed they look at
   Docker and Podman together (`booth list` gains an `ENGINE` column) and act on

@@ -6,17 +6,17 @@ is still being developed and **may not have feature parity with Docker** — rea
 
 This document has two parts, kept apart on purpose:
 
-1. **[Implemented](#part-1--implemented-phases-12)** — what ships today, as built and
+1. **[Implemented](#part-1--implemented-phases-13)** — what ships today, as built and
    as verified. Nothing in it is a promise about the future.
-2. **[Plan](#part-2--plan-not-implemented)** — what is *not* built: phases 3–6 and
+2. **[Plan](#part-2--plan-not-implemented)** — what is *not* built: phases 4–6 and
    follow-ups.
 
-Phases 1 (core lifecycle) and 2 (`booth expose`) are implemented. Phases 3–6 are not
-started.
+Phases 1 (core lifecycle), 2 (`booth expose`) and 3 (build progress) are implemented.
+Phases 4–6 are not started.
 
 ---
 
-# Part 1 — Implemented (Phases 1–2)
+# Part 1 — Implemented (Phases 1–3)
 
 ## Choosing the engine
 
@@ -128,6 +128,18 @@ These are applied automatically when the engine is Podman.
   backup file.
 - **BuildKit-only behavior is skipped.** `--progress=auto` and the BuildKit probe are
   Docker-only; Podman prints its own `STEP n/m` output.
+- **`--silence-build` actually silences a Podman build.** Buildah's `STEP n/m:` headers
+  and every `RUN` step's own output land on *stdout*, not stderr — confirmed against a
+  real `podman build` — while only registry-pull chatter and the final error go to
+  stderr. The silent build path used to capture stderr only (a BuildKit-shaped
+  assumption), so a Podman booth build printed every `STEP`/`RUN` line live regardless
+  of `--silence-build`; that was a correctness bug, not just a missing live-progress
+  line, and is now fixed: both streams are captured on Podman and shown only on
+  failure, exactly like Docker's silent path. `build_progress.go` also gained a
+  Buildah-format parser (`STEP n/m: …`, `--> …`, `COMMIT …`), so the same one-line
+  ticking status a Docker build shows now renders on Podman too. The two format
+  parsers are kept separate rather than shared, since the two engines' plain output
+  shapes have little in common beyond both being line-oriented.
 - **Docker's host check is skipped.** The Linux rootless-Docker / userns-remap refusal
   and the "Docker daemon not reachable" check describe how *Docker* maps the host user,
   so they do not run for Podman.
@@ -163,7 +175,8 @@ rootless Podman, the project directory may be left owned by a subordinate UID an
 ## Verification status
 
 Verified by hand on **Linux, rootless Podman 5.4.2** (crun, pasta), with Docker also
-installed, on 2026-09-21 (Phase 1) and again for Phase 2:
+installed, on 2026-09-21 (Phase 1), again for Phase 2, and again on 2026-09-22 for
+Phase 3:
 
 | Area | Result |
 | --- | --- |
@@ -184,15 +197,19 @@ installed, on 2026-09-21 (Phase 1) and again for Phase 2:
 | `booth--expose 8080 18080` inside a foreground booth: the host opens `localhost:18080`, a `curl` through it gets the response (HTTP 200, repeated requests), and `booth expose list` (with `CB_ENGINE=podman`) shows the tunnel as live | works |
 | `--egress`: proxy and netns sidecars start; an allowlisted host connects, a non-allowlisted one is blocked | works (checked by hand only) |
 | Engine selection: flag, config, `CB_ENGINE`, precedence, `booth config --set`, fallback, `--quiet`, invalid value | works |
+| `booth build --engine podman --silence-build` on the JDK + lazygit + vscode-ext example (10 real build steps): before the fix, the run's captured stdout showed the leaked `STEP`/`RUN` output live; after the fix, stdout carries only the final `Built: …` line and stderr only the experimental warning — the same 10 `STEP` lines still appear (confirmed on the same build without `--silence-build`, redirected to stderr by the pre-existing BuildKit-compat shim), proving the silent path now genuinely hides them rather than the build simply having nothing to print | works |
 
 Automated: Go unit tests (`pkg/appctx/engine_test.go`, `pkg/docker/engine_test.go`,
 `pkg/docker/host_check_test.go`, `pkg/docker/docker_build_test.go`,
+`pkg/docker/build_progress_test.go`,
 `pkg/booth/podman_userns_test.go`, `pkg/booth/booth_test.go`,
 `pkg/booth/init/initialize_app_context_engine_test.go`,
 `pkg/lifecycle/restart_flag_test.go`, `pkg/lifecycle/engines_test.go`), the config-TUI schema guard, and
 `tests/dryrun/test036--engine.sh` (15 checks, no engine needs to be installed).
-One of those (`TestDockerBuild_Silent_FailureNamesEngine`) drives a real failing
-`podman build`, not just a docker-only path with a stubbed flag.
+Two of those drive a real engine rather than a stubbed flag:
+`TestDockerBuild_Silent_FailureNamesEngine` (a real failing `podman build`) and
+`TestDockerBuild_Silent_PodmanStdoutIsActuallySilenced` (a real successful `podman
+build`, asserting a distinctive `RUN echo` marker never reaches either captured stream).
 **No CI job runs against Podman** — see Phase 6.
 
 **Not verified on Podman:** rootful Podman; macOS/Windows (`podman machine`); Podman older than 5.x; SELinux hosts
@@ -218,9 +235,11 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 - **Lifecycle commands do not take `--engine`** (table above); choose with `CB_ENGINE`.
   `booth shell`, `booth exec` and `home-volume-*` look at one engine only and need
   `CB_ENGINE=podman` for a Podman booth.
-- **No live build-progress line.** The single status line shown by `--silence-build`
-  parses BuildKit's output format; on Podman the build output is captured and shown only
-  on failure, like Docker's but without the live line.
+- **Podman's live build-progress line only understands Buildah's plain-text format.**
+  If a future Buildah version changes its `STEP n/m:` / `-->` / `COMMIT` wording, the
+  parser in `build_progress.go` falls silently back to no live line (same as an
+  unrecognized format does today) rather than erroring — the build itself is
+  unaffected either way.
 - **The release pipeline, `tests/wrapper/` and CI are Docker-only.** Images are built
   and published with Docker/buildx.
 - **Separate image stores.** Podman cannot see images Docker built or pulled, and the
@@ -245,6 +264,8 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 | `--dind` + Podman warning | `resolveEngineConfig` in `pkg/booth/init/initialize_app_context.go` |
 | Engine-named user hints (`stop`, DinD `stop`/`network rm`/`logs`, `--persist-home` reclaim) | `engineOrDocker` in `pkg/booth/booth.go`, used from `runAsDaemon`, `printHomeVolumeWarning`, and `waitForDindReady` in `dind_setup.go` |
 | Engine-named build-failure banner | `DockerBuild` in `pkg/docker/docker_build.go` (`flags.binary()`) |
+| Silent-build stream capture per engine (both stdout+stderr on Podman) | `DockerBuild` in `pkg/docker/docker_build.go` |
+| Buildah-format live progress parser | `parsePodman`, `podmanStepRe`/`podmanCacheRe`/`podmanCommitRe` in `pkg/docker/build_progress.go` |
 
 ---
 
@@ -262,22 +283,23 @@ user-namespace mapping, and nested containers.
 
 ## Phase 1 — done
 
-See [Part 1](#part-1--implemented-phases-12). It delivered slightly less than planned in
+See [Part 1](#part-1--implemented-phases-13). It delivered slightly less than planned in
 one place: the plan said `stop`/`restart`/`rm` would accept `--engine`; they follow
 `CB_ENGINE` instead — and, when none is set, look at both engines (see
 [Finding booths on either engine](#finding-booths-on-either-engine)).
 
 ## Phase 2 — done
 
-See [Part 1](#part-1--implemented-phases-12). `tcp_tunnel.go`'s `exec` call and
+See [Part 1](#part-1--implemented-phases-13). `tcp_tunnel.go`'s `exec` call and
 `expose list`'s `port` lookup now use the chosen engine.
 
-## Phase 3 — Build progress on Podman
+## Phase 3 — done
 
-`build_progress.go` parses BuildKit's `#N` progress format; Buildah's output differs.
-Adapt or add a parser so `--silence-build` shows a live status line on Podman.
-
-**User-visible:** `booth build` / `config` on Podman shows live progress.
+See [Part 1](#part-1--implemented-phases-13). Delivered more than planned: the plan
+assumed only a missing live-progress line, but Buildah's `STEP`/`RUN` output turned out
+to land on stdout, which the silent build path never captured — so `--silence-build` did
+not actually silence a Podman build at all. Both are fixed: `build_progress.go` gained a
+Buildah-format parser, and `docker_build.go` now captures Podman's stdout too.
 
 ## Phase 4 — Docker-in-Docker parity (design first)
 
