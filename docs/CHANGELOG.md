@@ -39,6 +39,13 @@ This file contains a list of changes for each released version.
   newer one. tmux's mouse mode is now on system-wide, so tmux claims wheel
   events itself and scrolls the pane's own history instead.
 
+- **viewmd no longer starts with the Console UI.** It is still installed;
+  start it from a shell (`viewmd --md README.md`, or `--daemon` /
+  `--expose`), or click the document icon, which starts `viewmd --daemon`
+  if nothing is already serving on :8765. The icon's tooltip is now
+  "Markdown viewer" / "Close Markdown viewer" (it used to share
+  "Back to terminal" with the globe).
+
 - **Click-drag in the Console UI keeps a selection you can copy.** Turning
   tmux mouse mode on for the wheel also handed left-drag to tmux, whose
   default is copy-pipe-and-cancel: the highlight vanished on mouse-up, and

@@ -20,6 +20,7 @@
 #   POST /booth-messages/api/idle/resume   — resume normal idle cadence
 #   POST /booth-messages/api/idle/set-time — override base idle time {"seconds": N}
 #   POST /booth-messages/api/login         — trade the password for a session cookie
+#   POST /booth-messages/api/viewmd        — start viewmd --daemon if it is not already serving
 #
 # Usage: booth-message-api-server <port>
 # -----------------------------------------------------------------------------
@@ -101,6 +102,9 @@ handle_request() {
                 /booth-messages/api/console-config)
                     handle_save_console_config "$body"
                     ;;
+                /booth-messages/api/viewmd)
+                    handle_viewmd_start
+                    ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
             ;;
@@ -153,6 +157,37 @@ handle_respond() {
         > "$MSG_DIR/${msg_id}.response.json"
 
     send_response 200 '{"ok":true}'
+}
+
+handle_viewmd_start() {
+    # Idempotent: the Console UI document icon calls this on every open, so a
+    # viewer that is already serving must be a no-op, not a second daemon.
+    if curl -sf -o /dev/null --max-time 1 "http://127.0.0.1:8765/" 2>/dev/null; then
+        send_response 200 '{"ok":true,"running":true}'
+        return
+    fi
+    if ! command -v viewmd >/dev/null 2>&1; then
+        send_response 500 '{"error":"viewmd is not installed"}'
+        return
+    fi
+    local folder="/home/coder/code"
+    [ -d "$folder" ] || folder="${HOME:-/home/coder}"
+    local args=(--folder "$folder" --port 8765 --server-only --daemon)
+    [ -f "$folder/README.md" ] && args+=(--md README.md)
+    # stdout would poison this HTTP response — viewmd prints its pid/url.
+    if ! viewmd "${args[@]}" >/tmp/viewmd-console.log 2>&1; then
+        send_response 500 '{"error":"viewmd failed to start"}'
+        return
+    fi
+    local i
+    for i in $(seq 1 25); do
+        if curl -sf -o /dev/null --max-time 1 "http://127.0.0.1:8765/" 2>/dev/null; then
+            send_response 200 '{"ok":true}'
+            return
+        fi
+        sleep 0.2
+    done
+    send_response 500 '{"error":"viewmd did not become ready"}'
 }
 
 handle_activity() {

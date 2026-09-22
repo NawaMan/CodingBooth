@@ -7,7 +7,7 @@ The foundation variant containing core CodingBooth functionality and setup scrip
 - Default variant
 - Web terminal via split-pane `ttyd` UI by default
 - Optional classic single-session mode with `web-split = false` or `CB_WEB_SPLIT=false`
-- Markdown view — pane document icon opens web view at `http://booth:8765` (viewmd)
+- Markdown view — pane document icon starts `viewmd --daemon` if needed and opens `http://booth:8765`
 - Manage user ownership and permission for the workspace (project directory) on host and /home/coder/code on the container.
 - 70+ setup scripts in `setups/` directory
 - Common development tools and utilities
