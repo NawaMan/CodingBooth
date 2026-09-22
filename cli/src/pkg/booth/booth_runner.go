@@ -32,6 +32,7 @@ func (runner *BoothRunner) Run() error {
 	ctx := runner.ctx
 	SetLogTime(ctx.LogTime())
 	if err := docker.CheckHostDocker(docker.HostCheckOptions{
+		Engine:        ctx.Engine(),
 		AllowRootless: ctx.Rootless(),
 		RequireDaemon: !ctx.Dryrun(),
 	}); err != nil {
