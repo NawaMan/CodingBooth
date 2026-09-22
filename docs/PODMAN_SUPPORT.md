@@ -168,6 +168,9 @@ rootful Podman; macOS/Windows (`podman machine`); Podman older than 5.x; SELinux
 automated Podman test. After `booth stop` on an `--egress` booth the sidecar containers
 go away (a moment later, as Podman removes them) but the egress network is left behind.
 
+The unverified items are **not done yet**; they are tracked, to be done incrementally, under
+[Remaining verification](#remaining-verification-incremental) in Part 2.
+
 ## Known limitations
 
 - **Docker-in-Docker is not supported.** `--dind`, and anything that needs Docker inside
@@ -262,14 +265,28 @@ job that runs the existing suites against Podman.
 
 **User-visible:** a CI check that backs "Podman is supported" instead of "should work".
 
+## Remaining verification (incremental)
+
+Not done. Each item is picked up on its own, and moves into the verification table in
+Part 1 only once it has actually been run:
+
+- [ ] **Rootful Podman** — run, build, lifecycle and `--public` with the CLI as root (the
+  `--userns=keep-id` and low-port logic assume this case needs neither; unproven).
+- [ ] **macOS and Windows** (`podman machine`) — nothing has been run there, including how
+  the `euid` check behaves.
+- [ ] **SELinux hosts** — bind mounts may need `:Z`, which CodingBooth does not add.
+- [ ] **Podman older than 5.x** — only 5.4.2 has been tried; decide and document a minimum
+  version.
+- [ ] **`expose list` live ports** — it still calls `docker`; fixed together with the
+  `booth expose` tunnel in Phase 2.
+
 ## Follow-ups to Phase 1 (unscheduled)
 
 - Let `list`/`stop`/`start`/`restart`/`remove`/`prune` see Podman booths without
   `CB_ENGINE` — accept `--engine`, or query both engines and remember which one owns each
   container.
 - Refuse or clearly warn on `--dind` when the engine is Podman (Phase 4 covers it fully).
-- Verify the paths listed under "Not verified", above all rootful Podman and SELinux
-  hosts, and add automated Podman coverage for `--egress`, `--public` and `--persist-home`.
+- Add automated Podman coverage for `--egress`, `--public` and `--persist-home`.
 - Print the experimental warning once per invocation, not once per spawned process.
 - Make the "❌ Docker build failed!" banner name the engine.
 
