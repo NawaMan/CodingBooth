@@ -130,22 +130,6 @@ export BOOTH_CONSOLE_CONFIG_JSON
 # /countdown-shutdown.
 booth-message-api-server 10007 &
 
-# Markdown viewer for the console MD button. That button is a shortcut to
-# web view at http://booth:8765, so something has to be listening there.
-# --server-only: there is no browser inside the container to open.
-# Failure is non-fatal — the rest of the console still starts.
-if command -v viewmd >/dev/null 2>&1; then
-    VIEWMD_FOLDER="$(pwd)"
-    if [[ ! -d "$VIEWMD_FOLDER" ]]; then
-        VIEWMD_FOLDER="/home/coder/code"
-    fi
-    viewmd_args=(--folder "$VIEWMD_FOLDER" --port 8765 --server-only --daemon)
-    if [[ -f "$VIEWMD_FOLDER/README.md" ]]; then
-        viewmd_args+=(--md README.md)
-    fi
-    viewmd "${viewmd_args[@]}" || echo "⚠️  viewmd did not start; Markdown view will be empty until it does." >&2
-fi
-
 # Lifecycle watcher — picks up .restart-requested / .shutdown-requested
 # marker files written by the API server and runs booth--restart /
 # booth--shutdown.

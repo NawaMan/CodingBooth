@@ -666,7 +666,7 @@
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
             <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
-          <button class="md-toggle" data-session="1" title="Markdown view">
+          <button class="md-toggle" data-session="1" title="Markdown viewer">
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           </button>
           <button class="proxy-reload" data-session="1" title="Reload">&#x21BB;</button>
@@ -697,7 +697,7 @@
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
             <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
-          <button class="md-toggle" data-session="2" title="Markdown view">
+          <button class="md-toggle" data-session="2" title="Markdown viewer">
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           </button>
           <button class="proxy-reload" data-session="2" title="Reload">&#x21BB;</button>
@@ -728,7 +728,7 @@
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
             <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
-          <button class="md-toggle" data-session="3" title="Markdown view">
+          <button class="md-toggle" data-session="3" title="Markdown viewer">
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           </button>
           <button class="proxy-reload" data-session="3" title="Reload">&#x21BB;</button>
@@ -759,7 +759,7 @@
             <span class="proxy-toggle-web" aria-hidden="true">&#x1F310;</span>
             <svg class="proxy-toggle-term" width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><rect x="1.25" y="1.25" width="11.5" height="11.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M4.2 4.4 L7.2 7 L4.2 9.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
-          <button class="md-toggle" data-session="4" title="Markdown view">
+          <button class="md-toggle" data-session="4" title="Markdown viewer">
             <svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
           </button>
           <button class="proxy-reload" data-session="4" title="Reload">&#x21BB;</button>
@@ -1285,10 +1285,10 @@
         if (!btn) return;
         if (on) {
           btn.classList.add("active-md");
-          btn.title = "Back to terminal";
+          btn.title = "Close Markdown viewer";
         } else {
           btn.classList.remove("active-md");
-          btn.title = "Markdown view";
+          btn.title = "Markdown viewer";
         }
       }
 
@@ -1922,6 +1922,12 @@
         });
       });
 
+      function ensureViewmd() {
+        return fetch("/booth-messages/api/viewmd", { method: "POST" }).then(function(r) {
+          if (!r.ok) throw new Error("viewmd start failed");
+        });
+      }
+
       document.querySelectorAll(".md-toggle").forEach(function(btn) {
         btn.addEventListener("click", function() {
           var session = btn.dataset.session;
@@ -1932,12 +1938,20 @@
             switchToTerminal(session);
             return;
           }
-          var parsed = parseBoothTarget("http://booth:" + VIEWMD_PORT);
-          if (parsed.error) return;
-          if (!toggle || !toggle.classList.contains("active-web")) {
-            switchToWeb(session);
-          }
-          navigateActiveTab(session, parsed);
+          if (btn.dataset.busy) return;
+          btn.dataset.busy = "1";
+          ensureViewmd().then(function() {
+            var parsed = parseBoothTarget("http://booth:" + VIEWMD_PORT);
+            if (parsed.error) return;
+            if (!toggle || !toggle.classList.contains("active-web")) {
+              switchToWeb(session);
+            }
+            navigateActiveTab(session, parsed);
+          }).catch(function() {
+            btn.title = "Markdown viewer failed to start";
+          }).then(function() {
+            delete btn.dataset.busy;
+          });
         });
       });
 
