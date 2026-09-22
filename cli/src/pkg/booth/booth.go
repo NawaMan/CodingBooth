@@ -211,7 +211,7 @@ func (booth *Booth) runAsDaemon() error {
 		LogPrintf("👉 To open an interactive shell instead: %s -- bash\n", booth.ctx.ScriptName())
 		LogPrintln("👉 To stop the running container:")
 		fmt.Println()
-		fmt.Printf("      docker stop %s\n", booth.ctx.Name())
+		fmt.Printf("      %s stop %s\n", engineOrDocker(booth.ctx.Engine()), booth.ctx.Name())
 		fmt.Println()
 		LogPrintf("👉 Container Name: %s\n", booth.ctx.Name())
 		fmt.Print("👉 Container ID: ")
@@ -258,7 +258,8 @@ func (booth *Booth) runAsDaemon() error {
 		dindName := getDindName(booth.ctx)
 		dindNet := getDindNet(booth.ctx)
 		fmt.Printf("🔧 DinD sidecar running: %s (network: %s)\n", dindName, dindNet)
-		fmt.Printf("   Stop with:  docker stop %s && docker network rm %s\n", dindName, dindNet)
+		engine := engineOrDocker(booth.ctx.Engine())
+		fmt.Printf("   Stop with:  %s stop %s && %s network rm %s\n", engine, dindName, engine, dindNet)
 	}
 
 	// `docker run -d` returns as soon as the container is created, so unlike
@@ -465,6 +466,18 @@ func isUsableHostIP(ip net.IP) bool {
 		return false
 	}
 	return !ip.IsLoopback() && !ip.IsLinkLocalUnicast()
+}
+
+// engineOrDocker is for user-facing hints ("stop with: <engine> stop …") that
+// name the binary the reader should type. ctx.Engine() is normally already a
+// concrete "docker"/"podman" by run time (see resolveEngineConfig), but a
+// couple of call sites build this message without a full AppContext, so an
+// empty value still reads as Docker.
+func engineOrDocker(engine string) string {
+	if engine == "" {
+		return "docker"
+	}
+	return engine
 }
 
 func getDindName(ctx appctx.AppContext) string {
@@ -1044,7 +1057,7 @@ func printHomeVolumeWarning(ctx appctx.AppContext) {
 	}
 	homeVolName := "cb-home-" + containerName
 	fmt.Fprintf(os.Stderr, "Info: Home volume %q persists on disk.\n", homeVolName)
-	fmt.Fprintf(os.Stderr, "      To reclaim space: docker volume rm %s\n", homeVolName)
+	fmt.Fprintf(os.Stderr, "      To reclaim space: %s volume rm %s\n", engineOrDocker(ctx.Engine()), homeVolName)
 	fmt.Fprintf(os.Stderr, "      Or: booth remove %s\n", containerName)
 }
 

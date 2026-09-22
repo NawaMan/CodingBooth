@@ -217,7 +217,7 @@ func waitForDindReady(ctx appctx.AppContext, dindName, dindNet string) {
 		time.Sleep(250 * time.Millisecond)
 	}
 
-	fmt.Printf("⚠️  DinD did not become ready. Check: docker logs %s\n", dindName)
+	fmt.Printf("⚠️  DinD did not become ready. Check: %s logs %s\n", engineOrDocker(ctx.Engine()), dindName)
 }
 
 // extractPortFlags extracts -p and --publish flags from RunArgs and returns them as a slice of port mappings.
