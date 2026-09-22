@@ -7,6 +7,8 @@ package appctx
 import (
 	"os"
 	"path/filepath"
+	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
@@ -147,4 +149,83 @@ port = "13000"
 
 	assert.Equal(t, []string{"echo", "FROM_BASE"}, cfg.Cmds.Slice(),
 		"cmds absent from profile must leave the base cmds intact")
+}
+
+func TestMergeProfileToml_BoolCanBeResetToFalse(t *testing.T) {
+	cfg := &AppConfig{KeepAlive: true, Daemon: true}
+
+	path := writeTempToml(t, `
+keep-alive = false
+`)
+
+	require.NoError(t, MergeProfileToml(path, cfg))
+
+	assert.False(t, cfg.KeepAlive, "an explicit false in the profile must override a true base")
+	assert.True(t, cfg.Daemon, "a bool absent from the profile keeps the base value")
+}
+
+// egress-allowlist is a plain []string, not one of the concat-and-dedup lists,
+// so a profile that sets it REPLACES the base list. This pins that behavior as
+// documented in docs/BOOTH_PROFILES.md; changing it to a union is a deliberate
+// decision, and this test is where that change should show up.
+func TestMergeProfileToml_EgressAllowlistReplacesNotMerges(t *testing.T) {
+	cfg := &AppConfig{EgressAllowlist: []string{"base.example.com"}}
+
+	path := writeTempToml(t, `
+egress-allowlist = ["dev.example.com"]
+`)
+
+	require.NoError(t, MergeProfileToml(path, cfg))
+
+	assert.Equal(t, []string{"dev.example.com"}, cfg.EgressAllowlist,
+		"egress-allowlist set in a profile replaces the base list")
+}
+
+func TestMergeProfileToml_EgressAllowlistAbsentLeavesBaseUnchanged(t *testing.T) {
+	cfg := &AppConfig{EgressAllowlist: []string{"base.example.com"}}
+
+	path := writeTempToml(t, `
+port = "14000"
+`)
+
+	require.NoError(t, MergeProfileToml(path, cfg))
+
+	assert.Equal(t, []string{"base.example.com"}, cfg.EgressAllowlist)
+}
+
+// Every list-typed config key must have a declared profile-merge rule.
+//
+// MergeProfileToml unions the docker-arg lists by field name; anything else
+// that decodes from TOML silently REPLACES. That is right for cmds (one
+// logical command) but easy to get wrong by accident when a new list key is
+// added. This test fails on any list-typed key that is in neither set below,
+// so adding one forces a decision — and a matching update to
+// docs/BOOTH_PROFILES.md.
+func TestMergeProfileToml_EveryListKeyHasADeclaredRule(t *testing.T) {
+	unioned := map[string]bool{ // concat-and-dedup in MergeProfileToml
+		"common-args": true,
+		"build-args":  true,
+		"run-args":    true,
+	}
+	replaced := map[string]bool{ // later profile wins outright
+		"cmds":             true,
+		"egress-allowlist": true,
+	}
+
+	semicolonList := reflect.TypeOf(ilist.SemicolonStringList{})
+	typ := reflect.TypeOf(AppConfig{})
+	for i := 0; i < typ.NumField(); i++ {
+		field := typ.Field(i)
+		if field.Type.Kind() != reflect.Slice && field.Type != semicolonList {
+			continue
+		}
+		key := strings.Split(field.Tag.Get("toml"), ",")[0]
+		if key == "" || key == "-" {
+			continue // not readable from a profile config.toml
+		}
+		assert.Truef(t, unioned[key] || replaced[key],
+			"list-typed config key %q (AppConfig.%s) has no declared profile-merge rule: "+
+				"union it in MergeProfileToml, or add it to `replaced` here, and document it in docs/BOOTH_PROFILES.md",
+			key, field.Name)
+	}
 }

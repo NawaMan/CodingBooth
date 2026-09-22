@@ -51,7 +51,7 @@ func TestDiscover_EnvOnly(t *testing.T) {
 	dir := t.TempDir()
 	boothDir := filepath.Join(dir, ".booth")
 	require.NoError(t, os.MkdirAll(boothDir, 0755))
-	require.NoError(t, os.WriteFile(filepath.Join(boothDir, ".env--deploy"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(boothDir, ".deploy--env"), []byte(""), 0644))
 
 	got, err := Discover(dir)
 	require.NoError(t, err)
@@ -65,7 +65,7 @@ func TestDiscover_BothFilesForProfile(t *testing.T) {
 	boothDir := filepath.Join(dir, ".booth")
 	require.NoError(t, os.MkdirAll(boothDir, 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(boothDir, "dev--config.toml"), []byte(""), 0644))
-	require.NoError(t, os.WriteFile(filepath.Join(boothDir, ".env--dev"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(boothDir, ".dev--env"), []byte(""), 0644))
 
 	got, err := Discover(dir)
 	require.NoError(t, err)
@@ -91,12 +91,36 @@ func TestDiscover_IgnoresCommon(t *testing.T) {
 	boothDir := filepath.Join(dir, ".booth")
 	require.NoError(t, os.MkdirAll(boothDir, 0755))
 	require.NoError(t, os.WriteFile(filepath.Join(boothDir, "common--config.toml"), []byte(""), 0644))
-	require.NoError(t, os.WriteFile(filepath.Join(boothDir, ".env--common"), []byte(""), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(boothDir, ".common--env"), []byte(""), 0644))
 
 	got, err := Discover(dir)
 	require.NoError(t, err)
 	assert.NotContains(t, got, "common",
 		"common is reserved — files with that name should not be discovered as a profile")
+}
+
+// The env overlay is ".<name>--env". The earlier ".env--<name>" shape was
+// dropped outright (no users to migrate), so it must not resolve to a profile.
+func TestDiscover_OldEnvShapeIsNotAProfile(t *testing.T) {
+	dir := t.TempDir()
+	boothDir := filepath.Join(dir, ".booth")
+	require.NoError(t, os.MkdirAll(boothDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(boothDir, ".env--dev"), []byte(""), 0644))
+
+	got, err := Discover(dir)
+	require.NoError(t, err)
+	assert.Empty(t, got, ".env--<name> is no longer a profile file")
+}
+
+func TestDiscover_EmptyEnvNameIsNotAProfile(t *testing.T) {
+	dir := t.TempDir()
+	boothDir := filepath.Join(dir, ".booth")
+	require.NoError(t, os.MkdirAll(boothDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(boothDir, ".--env"), []byte(""), 0644))
+
+	got, err := Discover(dir)
+	require.NoError(t, err)
+	assert.Empty(t, got, "a profile needs a name between the dot and --env")
 }
 
 // ---------- Resolve ----------
@@ -111,6 +135,22 @@ func TestResolve_NoSelection_DefaultAvailable(t *testing.T) {
 	got, err := Resolve(argList(), "", map[string]Files{"default": {}})
 	require.NoError(t, err)
 	assert.Equal(t, []string{"default"}, got)
+}
+
+// "default" is only implicit when nothing is selected; naming it explicitly is
+// how a caller gets the default overlay AND another profile on top of it.
+func TestResolve_DefaultComposesWithOtherProfileWhenNamed(t *testing.T) {
+	got, err := Resolve(argList("--profile", "default,dev"), "",
+		map[string]Files{"default": {}, "dev": {}})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"default", "dev"}, got, "explicit list keeps order: later wins")
+}
+
+func TestResolve_ExplicitSelectionDropsImplicitDefault(t *testing.T) {
+	got, err := Resolve(argList("--profile", "dev"), "",
+		map[string]Files{"default": {}, "dev": {}})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"dev"}, got, "default applies only when nothing is selected")
 }
 
 func TestResolve_FlagSingleProfile(t *testing.T) {

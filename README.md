@@ -422,6 +422,7 @@ User-facing guides:
 - **[Examples](EXAMPLES.md)** — Install, run your first example, the full catalog, and which setups support version pinning
 - **[booth install](docs/BOOTH_INSTALL.md)** — Install and uninstall every layer: shell function, wrapper, binary, `.booth/`, lock file, shared cache
 - **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS
+- **[booth profiles](docs/BOOTH_PROFILES.md)** — Named `config.toml` / `.env` overlays (`--profile dev`): layout, selection, merge rules
 - **[booth config](docs/BOOTH_CONFIG.md)** — Template-driven project scaffolding
 - **[booth build](docs/BOOTH_BUILD.md)** — Build and publish booth images to a container registry
 - **[booth example](docs/BOOTH_EXAMPLE.md)** — Pre-built example workspaces

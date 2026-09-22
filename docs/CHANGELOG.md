@@ -4,6 +4,35 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Profiles: env files are checked against git, list collisions are refused, and the env filename changed.**
+  `--profile` / `BOOTH_PROFILES` selects named overlays of `.booth/config.toml`
+  and `.booth/.env` (`.booth/<name>--config.toml` and a per-profile env file).
+  Three changes to how that works:
+  - The per-profile env file is now **`.booth/.<name>--env`** (was
+    `.env--<name>`). The old name is no longer recognised — rename any you have.
+  - Booth now **refuses to run** if a selected profile's env file is not
+    gitignored, exactly as it already did for the base `.booth/.env`. Before, a
+    profile env file was passed to Docker unchecked, even when the base `.env` was
+    ignored. Add `.*--env` to `.booth/.gitignore`. A file git already tracks is
+    refused too.
+  - An overlay's `run-args`, `build-args` or `common-args` that **collide** with an
+    earlier layer are now an error. Overlay lists are added to the base, so a
+    repeated claim used to be settled by whichever layer handled the flag — Docker
+    kept the last `-e`, booth silently kept the first bind mount, a repeated `-p`
+    published both. Booth now stops and names both entries when an overlay repeats
+    an `-e` / `-l` / `--build-arg` name, a mount target, or a published host or
+    container port with a different value. Identical repeats are fine; scalars,
+    `cmds` and env files still override as before; nothing changes with no profile
+    selected, or for a repeat inside a single file.
+
+  New guide `docs/BOOTH_PROFILES.md` documents the feature, including how base,
+  `default`, several profiles, `CB_*` variables and the command line combine, and
+  which repeated entries are refused. `booth help` now lists `--profile`. Worth
+  knowing: `egress-allowlist` in an overlay replaces the base list rather than
+  adding to it, and only `--profile dev` is read, not `--profile=dev`. New tests
+  pin the merge rules and fail if a list-typed config key is added without a
+  declared rule.
+
 - **Experimental: Podman as an alternative container engine.** `--engine podman`
   (also `CB_ENGINE` and `engine = "podman"` in `.booth/config.toml`) runs booths
   on Podman instead of Docker; the `booth config` TUI has an engine field too.

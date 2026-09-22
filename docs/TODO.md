@@ -33,6 +33,52 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       cheap `go version` smoke test matching its siblings, with the real proof done by hand at authoring
       time (build, serve, curl) — worth deciding whether the skill mandates the deeper `inBooth-*` shape
       `go-example` uses, or keeps the cheap default and just *requires* the hand-proof be reported.
+- [ ] **`--profile=dev` (the `=` form) is silently ignored — and the implicit `default` profile then
+      applies.** Not specific to profiles: no booth flag accepts `--flag=value` (`--port=9500` is
+      ignored the same way, verified 2026-09-21), so the arg is skipped without a word. With profiles
+      it bites harder: a typo'd `=` form quietly runs whatever `default--config.toml` says.
+      Approach: `parseFlag` in `cli/src/pkg/booth/profile/profile.go` and the `switch arg` in
+      `parseArgs` (`initialize_app_context.go`) both match the literal `--profile`. Cheapest: reject any
+      `--profile=…` with an error pointing at `--profile <name>`; better: normalise `--x=v` → `--x v`
+      once, up front, for every flag that takes a value.
+      Open questions: reject vs accept, and whether to do it CLI-wide — a global change to how args are
+      read, so it needs a look at flags whose values may legitimately contain `=` (`--build-arg K=V`,
+      `-e K=V`, everything after `--`). Documented in `docs/BOOTH_PROFILES.md` meanwhile.
+- [ ] **`{profile}` placeholder for `--name`** — a profile does not change the container name, so two
+      profiles of one project only stay apart via the derived-name auto-suffix (`proj`, `proj-12000`),
+      which says nothing about *which* profile is which. `name = "{project}-{profile}"` in a base
+      config would fix that without an overlay per profile.
+      Approach: `ResolveNamePlaceholders` in `cli/src/pkg/booth/resolve_name.go` already expands
+      `{port}`/`{project}`/`{variant}` from `ctx`; `ctx.Profiles()` has the resolved names. Join with
+      `-` for `--profile a,b`; expand to empty (and trim the dangling separator) when none is selected.
+      Open questions: that empty case — `{project}-{profile}` with no profile should probably be plain
+      `{project}`, not `proj-`. Also `booth stop`/`exec`/`shell` resolve by folder name and never read
+      config, so a profile-derived name still needs to be passed to them explicitly (same limitation as
+      `name` in `config.toml` today).
+- [ ] **Profile merge decisions left open.** (a) `egress-allowlist` in an overlay currently *replaces*
+      the base list while `run-args`/`build-args`/`common-args` union — so a profile that wants to
+      *add* one host silently drops the rest. Fail-closed here (a shorter list only narrows egress),
+      but surprising. Pinned as replace by `TestMergeProfileToml_EgressAllowlistReplacesNotMerges`, and
+      `TestMergeProfileToml_EveryListKeyHasADeclaredRule` forces a decision for any new list key.
+      Approach if unioned: add it to the `md.IsDefined` cases in `MergeProfileToml`
+      (`cli/src/pkg/appctx/app_config_merge.go`) — `mergeSemicolonList` is typed for the docker-arg
+      lists, so this one needs a small `[]string` variant of it (`dedupDockerArgs` itself is fine:
+      host names never match a paired flag) — then move it between the two sets in that test.
+      Open question: whether union is right at all — for an allowlist, "replace" is also how a profile
+      would *tighten* a base list, which union can't express.
+      (b) `booth profile list` was in the original design and never built;
+      users currently `ls .booth/*--config.toml`. `profile.Discover` already returns everything it
+      would print.
+      (c) The profile collision check (`profile.FindCollisions`, called from `checkProfileCollisions`
+      in `cli/src/pkg/booth/init/initialize_app_context.go`) covers `-e`, `-l`, `--build-arg`, `-v`
+      target and `-p` host/container port. Other docker flags in `run-args` — `--cpus`, `--memory`,
+      `--network`, `--user`, `--name`, … — are still just concatenated and Docker's last one wins, so
+      an overlay can still silently override a base `--cpus`. Extending it means a table of which
+      flags are single-valued (collide on the flag name) versus repeatable (`--add-host`, `--device`,
+      `--cap-add` legitimately repeat); a wrong table entry is a false error, so add flags one at a
+      time. Left as is: within one config, booth still silently keeps the first bind mount per target
+      (`filterMissingVolumeMountItems` in `booth.go`) — that is deliberate, for templates listing one
+      mount per platform for the same target — and a repeated `-e` in a single file is Docker's.
 - [ ] ...
 
 ## Features

@@ -17,7 +17,7 @@
 #   9) --profile combined with --config → error (mutual exclusion)
 #  10) --profile combined with --env-file → error (mutual exclusion)
 #  11) BOOTH_PROFILES combined with --config → error
-#  12) Per-profile .env--<name> values reach the container
+#  12) Per-profile .<name>--env values reach the container
 #
 # Error-path checks (7-11) use --dryrun so docker is never invoked.
 
@@ -58,7 +58,7 @@ cleanup() {
 }
 trap cleanup EXIT
 
-# Initialize a git repo so the gitignore check on .env / .env--* passes
+# Initialize a git repo so the gitignore check on .env / .*--env passes
 git init "$TMPDIR" >/dev/null 2>&1
 
 mkdir -p "$TMPDIR/.booth"
@@ -67,7 +67,7 @@ mkdir -p "$TMPDIR/.booth"
 cat > "$TMPDIR/.booth/.gitignore" <<'EOF'
 .booth.password
 .env
-.env--*
+.*--env
 EOF
 
 # Base — common to every run.
@@ -90,11 +90,11 @@ EOF
 #   - TOML literal strings ('...') preserve content verbatim — no TOML escapes.
 #   - The \$PROFILE_KEY is shellexpand's escape (docs/BOOTH_VARS.md): booth
 #     emits a literal $PROFILE_KEY into the cmd, deferring expansion to the
-#     container's bash where .env--dev has set the value.
+#     container's bash where .dev--env has set the value.
 cat > "$TMPDIR/.booth/dev--config.toml" <<'EOF'
 cmds = ['echo FROM_DEV: \$PROFILE_KEY']
 EOF
-cat > "$TMPDIR/.booth/.env--dev" <<'EOF'
+cat > "$TMPDIR/.booth/.dev--env" <<'EOF'
 PROFILE_KEY=dev-value
 EOF
 
@@ -102,7 +102,7 @@ EOF
 cat > "$TMPDIR/.booth/deploy--config.toml" <<'EOF'
 cmds = ['echo FROM_DEPLOY: \$PROFILE_KEY']
 EOF
-cat > "$TMPDIR/.booth/.env--deploy" <<'EOF'
+cat > "$TMPDIR/.booth/.deploy--env" <<'EOF'
 PROFILE_KEY=deploy-value
 EOF
 
@@ -190,7 +190,7 @@ assert_eq "FROM_DEFAULT" "$out" "implicit default profile applies when present a
 
 # Test 2: --profile dev overrides default; default is NOT applied.
 out="$(run_cb t2 --profile dev 2>/dev/null | tr -d '\r\n')"
-assert_eq "FROM_DEV: dev-value" "$out" "--profile dev overrides default; .env--dev visible"
+assert_eq "FROM_DEV: dev-value" "$out" "--profile dev overrides default; .dev--env visible"
 
 # Test 3: --profile dev,deploy → later wins for scalars, env layers (deploy wins).
 out="$(run_cb t3 --profile dev,deploy 2>/dev/null | tr -d '\r\n')"

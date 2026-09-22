@@ -9,14 +9,14 @@
 //
 //	.booth/config.toml          # common base (always applied)
 //	.booth/.env                 # common base (always applied)
-//	.booth/<name>--config.toml  # profile overlay (prefix tag)
-//	.booth/.env--<name>         # profile overlay (suffix tag preserves dotfile)
+//	.booth/<name>--config.toml  # profile overlay
+//	.booth/.<name>--env         # profile overlay (leading dot keeps it hidden)
 //
 // Selection (highest first):
 //
 //	--profile <list>     (repeatable; comma-separated values inside each value)
 //	BOOTH_PROFILES=<list> env var — ignored if --profile is given
-//	implicit "default"   (only if .booth/default--config.toml or .env--default exists)
+//	implicit "default"   (only if .booth/default--config.toml or .default--env exists)
 //	none                 (only the common base loads)
 package profile
 
@@ -39,7 +39,12 @@ const (
 	ImplicitDefault = "default"
 
 	configSuffix = "--config.toml"
-	envPrefix    = ".env--"
+
+	// A profile env file is ".<name>--env": hidden by its leading dot, and
+	// recognisable as a profile file by its "--env" tail. The base ".env" has
+	// no such tail, so the two can never be confused.
+	envDotPrefix = "."
+	envSuffix    = "--env"
 )
 
 // Files identifies the on-disk files for a single profile. Either or
@@ -87,8 +92,8 @@ func Discover(codeDir string) (map[string]Files, error) {
 			f.ConfigPath = filepath.Join(boothDir, name)
 			out[profile] = f
 
-		case strings.HasPrefix(name, envPrefix):
-			profile := strings.TrimPrefix(name, envPrefix)
+		case strings.HasPrefix(name, envDotPrefix) && strings.HasSuffix(name, envSuffix):
+			profile := strings.TrimSuffix(strings.TrimPrefix(name, envDotPrefix), envSuffix)
 			if profile == "" || profile == ReservedCommon {
 				continue
 			}
@@ -187,7 +192,7 @@ func validate(names []string, source string, available map[string]Files) ([]stri
 		}
 		seen[n] = true
 		if _, ok := available[n]; !ok {
-			return nil, fmt.Errorf("%s: profile %q not found under .booth/ (looked for %s--config.toml and .env--%s)", source, n, n, n)
+			return nil, fmt.Errorf("%s: profile %q not found under .booth/ (looked for %s--config.toml and .%s--env)", source, n, n, n)
 		}
 	}
 	return names, nil
