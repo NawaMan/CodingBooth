@@ -128,6 +128,10 @@ http {
         server_name _;
         absolute_redirect off;
 
+        # Only code-server enables these locations; its proxy still authenticates
+        # every preview request before any application content reaches nginx.
+        ${WRAPPER_PREVIEW_LOCATIONS}
+
         # Wrapper page
         location = /booth {
             alias ${SERVE_DIR}/index.html;
@@ -314,7 +318,12 @@ export BOOTH_VERSION_TAG="${BOOTH_VERSION_TAG:-unknown}"
 # inner service's root <head> (e.g. an @font-face style) — empty by default,
 # a no-op sub_filter for every wrapped service that doesn't set it.
 export WRAPPER_HEAD_INJECT="${WRAPPER_HEAD_INJECT:-}"
-envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT} ${BOOTH_INSTANCE_ID} ${WRAPPER_HEAD_INJECT}' \
+export WRAPPER_PREVIEW_LOCATIONS=""
+if [[ "${BOOTH_WEB_PREVIEW:-0}" == 1 ]]; then
+  WRAPPER_PREVIEW_LOCATIONS=$(envsubst '${INNER_PORT}' \
+    </usr/local/share/booth-web-preview/nginx.conf.template)
+fi
+envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT} ${BOOTH_INSTANCE_ID} ${WRAPPER_HEAD_INJECT} ${WRAPPER_PREVIEW_LOCATIONS}' \
   <"$WRAPPER_DIR/nginx.conf.template" >"$NGINX_CONFIG"
 
 # Propagate SIGTERM to all child processes for clean container shutdown

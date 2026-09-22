@@ -31,6 +31,7 @@ setup booth-message-notebook-wrapped
 setup booth-message-wrapper
 setup booth-restart-code-extension
 setup booth-shutdown-code-extension
+setup booth-web-preview-code-extension
 setup buf
 setup build-essential
 setup bun

@@ -20,6 +20,15 @@ This file contains a list of changes for each released version.
   rather than `--engine`. The Linux rootless-Docker refusal does not apply when
   the engine is Podman.
 
+- **Code-server now includes CodingBooth: Web Preview.** Open a booth server by
+  port or `http://booth:<port>/` in independent editor tabs, arrange previews
+  beside code, navigate, reload, or open the page in a browser. External URLs,
+  bare domains, and Google searches follow the console panel's address rules.
+  Preview addresses and search text restore with editor tabs. The authenticated
+  proxy shares the console panel's best-effort URL rewriting, including assets
+  and API paths, while preserving code-server's authentication and WebSocket
+  support.
+
 - **Host requirements are spelled out, and Linux rootless Docker is refused.**
   The installer still installs without Docker, but now reports bash/curl/docker
   and warns on Linux rootless Docker or userns-remap. `booth` / `booth build`

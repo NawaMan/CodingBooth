@@ -1,0 +1,21 @@
+/* Copyright 2025-2026 Nawa Manusitthipol. Licensed under Apache-2.0. */
+:root { color-scheme: light dark; font: 13px system-ui, sans-serif; }
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { display: flex; flex-direction: column; background: #202124; color: #eee; }
+form { display: flex; gap: 4px; padding: 6px; border-bottom: 1px solid #555; }
+button, input { font: inherit; border: 1px solid #666; border-radius: 4px; color: inherit; background: #303134; }
+button { cursor: pointer; min-width: 28px; height: 30px; }
+button:hover { background: #444; }
+button:disabled { opacity: .35; cursor: default; }
+input { flex: 1; min-width: 40px; padding: 4px 8px; }
+:focus-visible { outline: 2px solid #75baff; outline-offset: 1px; }
+#error { margin: 0; padding: 8px; color: #ffcf80; }
+#external-hint { margin: 0; padding: 6px 8px; font-size: 12px; }
+iframe { flex: 1; width: 100%; min-height: 0; border: 0; background: white; }
+@media (prefers-color-scheme: light) {
+  body { background: #f3f3f3; color: #222; }
+  button, input { background: white; border-color: #bbb; }
+  button:hover { background: #e4e4e4; }
+  #error { color: #8a4500; }
+}
