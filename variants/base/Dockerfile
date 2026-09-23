@@ -222,6 +222,7 @@ COPY --chmod=0644 ./_stage/README.md   /opt/codingbooth/
 COPY --chmod=0644 ./_stage/LICENSE     /opt/codingbooth/
 COPY --chmod=0644 ./_stage/version.txt /opt/codingbooth/
 COPY --chmod=0644 ./_stage/AGENT.md    /opt/codingbooth/
+COPY --chmod=0644 ./_stage/GUIDE.md    /opt/codingbooth/
 # Directories need 0755 for traversal; files inside are still readable
 COPY ./_stage/variants/ /opt/codingbooth/variants/
 RUN chmod -R a+rX /opt/codingbooth/variants

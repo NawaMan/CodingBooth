@@ -219,6 +219,7 @@ StageDocsForBase() {
   cp LICENSE "$stage_dir/"
   cp version.txt "$stage_dir/"
   cp docs/AGENT.md "$stage_dir/"
+  cp docs/GUIDE.md "$stage_dir/"
 
   # Copy docs markdown files (excluding images to keep image small)
   mkdir -p "$stage_dir/docs"

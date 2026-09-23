@@ -46,10 +46,55 @@
     margin-bottom: 6px;
   }
 
+  .msg-dialog h3 {
+    font-size: 13.5px;
+    color: #333;
+    margin: 14px 0 4px;
+  }
+
   .msg-dialog p {
     font-size: 14px;
     color: #555;
     margin-bottom: 14px;
+  }
+
+  .msg-dialog p.msg-dialog-lead {
+    color: #333;
+  }
+
+  .msg-tabs {
+    display: flex;
+    gap: 4px;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 14px;
+  }
+
+  .msg-tab {
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 6px 4px 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    cursor: pointer;
+  }
+
+  .msg-tab:hover {
+    color: #374151;
+  }
+
+  .msg-tab.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+  }
+
+  .msg-tab-panel {
+    display: none;
+  }
+
+  .msg-tab-panel.active {
+    display: block;
   }
 
   .msg-actions {
@@ -675,6 +720,83 @@
     pointer-events: none;
   }
 
+  /* Points at noVNC's own control-bar tab — its clipboard panel lives behind
+     that tab and nothing else marks it, so first-time users never find it.
+     Purely a discoverability nudge: this never touches the iframe, and
+     dismissing it is remembered per-browser so it doesn't nag on every
+     visit. top/left are set from JS (see the positioning script below),
+     since noVNC positions the tab with its own transform rather than a
+     fixed CSS spot. */
+  .bl-clip-hint {
+    position: fixed;
+    left: 0;
+    z-index: 9998;
+    display: flex;
+    align-items: center;
+    pointer-events: none;
+    opacity: 0;
+    animation: bl-clip-hint-in 0.3s ease-out 0.6s forwards;
+  }
+
+  @keyframes bl-clip-hint-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  .bl-clip-hint-arrow {
+    width: 0;
+    height: 0;
+    border-top: 7px solid transparent;
+    border-bottom: 7px solid transparent;
+    border-right: 8px solid #1e3a5f;
+    margin-left: 4px;
+  }
+
+  .bl-clip-hint-bubble {
+    pointer-events: auto;
+    background: #1e3a5f;
+    color: #cfe4ff;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-family: -apple-system, "Segoe UI", sans-serif;
+    font-size: 12.5px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+    white-space: nowrap;
+  }
+
+  /* Shared by the hint's "Learn more" <button> (opens the help dialog) and
+     the dialog's own "Read this on codingbooth.io" <a> — the reset
+     properties are no-ops on the anchor. */
+  .bl-clip-hint-link {
+    background: none;
+    border: none;
+    padding: 0;
+    font: inherit;
+    cursor: pointer;
+    color: #7fb8ff;
+    font-weight: 600;
+    text-decoration: underline;
+    white-space: nowrap;
+  }
+
+  .bl-clip-hint-close {
+    background: transparent;
+    border: none;
+    color: #cfe4ff;
+    opacity: 0.7;
+    cursor: pointer;
+    font-size: 14px;
+    line-height: 1;
+    padding: 0 0 0 4px;
+  }
+
+  .bl-clip-hint-close:hover {
+    opacity: 1;
+  }
+
   .banner {
     pointer-events: auto;
     background: #fff;
@@ -763,6 +885,81 @@
 <div class="toast-container" id="toast-container"></div>
 <div class="banner-container" id="banner-container"></div>
 
+<div class="bl-clip-hint" id="bl-clip-hint" style="display:none">
+  <div class="bl-clip-hint-arrow"></div>
+  <div class="bl-clip-hint-bubble">
+    <span>Clipboard &amp; extra keys are behind this tab</span>
+    <button class="bl-clip-hint-link" id="bl-clip-hint-learn-more">Learn more</button>
+    <button class="bl-clip-hint-close" id="bl-clip-hint-close" title="Dismiss" aria-label="Dismiss">&times;</button>
+  </div>
+</div>
+
+<div class="msg-overlay" id="bl-help-dialog-overlay">
+  <div class="msg-stack">
+    <div class="msg-dialog">
+      <h2>CodingBooth Help</h2>
+
+      <div class="msg-tabs" role="tablist">
+        <button class="msg-tab" id="bl-help-tab-general" data-tab="general" role="tab">General</button>
+        <button class="msg-tab" id="bl-help-tab-clipboard" data-tab="clipboard" role="tab">Clipboard</button>
+      </div>
+
+      <div class="msg-tab-panel" id="bl-help-panel-general" data-panel="general">
+        <p class="msg-dialog-lead">You're inside a <strong>CodingBooth</strong> — an ephemeral,
+          reproducible dev environment running in a container. The floating <strong>Booth</strong>
+          panel is your control surface for it.</p>
+
+        <h3>Restart / Shut Down</h3>
+        <p><strong>Restart</strong> re-reads your configuration and rebuilds the booth in place.
+          <strong>Shut Down</strong> stops and removes the container — anything not saved in your
+          mounted project folder is gone after that.</p>
+
+        <h3>Idle indicator</h3>
+        <p>Shows when idle shutdown is active, and lets you pause or disable it if you'll be away
+          from the keyboard but still want the booth running.</p>
+
+        <h3>Capture Keyboard</h3>
+        <p>Where shown, this takes back browser shortcuts (like Ctrl+W) that would otherwise be
+          swallowed by the browser tab instead of reaching the booth — see the Clipboard tab for
+          the equivalent friction with copy/paste.</p>
+
+        <p>More detail lives inside the booth itself, at
+          <code>/opt/codingbooth/GUIDE.md</code>.</p>
+      </div>
+
+      <div class="msg-tab-panel" id="bl-help-panel-clipboard" data-panel="clipboard">
+        <p class="msg-dialog-lead">This desktop runs remotely, inside your browser — so your
+          computer's clipboard is <strong>not</strong> automatically shared with it. Regular
+          Ctrl+C / Ctrl+V only work <em>within</em> the desktop, not across that boundary. There's
+          a separate panel for crossing it, and it works differently in each direction:</p>
+
+        <h3>1. Open the panel</h3>
+        <p>Click the small gray tab with an arrow, flush against the <strong>left edge</strong> of
+          the desktop. Then click the <strong>clipboard icon</strong> in the bar that slides out —
+          a panel titled "Clipboard" opens, with a text box.</p>
+
+        <h3>2. Sending text INTO the booth (reliable)</h3>
+        <p>Paste or type your text into that box. It's sent to the desktop right away — switch to
+          any app inside the booth and press <strong>Ctrl+V</strong> to paste it there normally.</p>
+
+        <h3>3. Getting text OUT of the booth (not always reliable)</h3>
+        <p>Copy something inside an app in the desktop, then check that same box — it may appear
+          there automatically. <strong>If it doesn't:</strong> that's a known limitation of this
+          desktop image, not something you did wrong — the in-desktop clipboard isn't fully
+          bridged to this panel yet. Select and copy again from inside the app if the first
+          attempt didn't register.</p>
+
+        <p><a class="bl-clip-hint-link" href="https://codingbooth.io/guides/clipboard.md"
+          target="_blank" rel="noopener">Read this on codingbooth.io &rarr;</a></p>
+      </div>
+
+      <div class="msg-actions">
+        <button class="msg-btn msg-btn-yes" id="bl-help-dialog-close">Got it</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="bl-fullscreen" id="bl-fullscreen">
   <div class="bl-fs-icon">&#x2713;</div>
   <div class="bl-fs-title">Booth stopped</div>
@@ -782,6 +979,11 @@
         title="Time remaining before the booth session ends"></div>
       <div class="bl-idle-chip bl-idle-chip-active" id="bl-idle-chip" data-priority="50"
         title="Idle shutdown is active — click to pause or disable"></div>
+      <button class="bl-btn bl-btn-capture" id="bl-help-btn" data-priority="60"
+        title="Help using this booth, including moving text between your computer and it"
+        style="display:none">
+        <span class="bl-btn-icon">&#x2753;</span> CodingBooth Help
+      </button>
       <button class="bl-btn bl-btn-capture" id="bl-kbcapture-btn" data-priority="70"
         title="Capture keyboard shortcuts that the browser would otherwise steal (requires fullscreen; Chromium browsers only)"
         style="display:none">
@@ -1325,6 +1527,220 @@
             ? "Release captured keyboard shortcuts"
             : "Capture keyboard shortcuts that the browser would otherwise steal (requires fullscreen; Chromium browsers only)";
         });
+      }
+    })();
+
+    // Shared by the clipboard hint and the CodingBooth Help dialog button
+    // below: is the wrapped iframe actually noVNC? Same-origin, so a plain
+    // contentDocument read; returns null rather than throwing for a
+    // cross-origin or not-yet-loaded frame, so callers can just check falsy.
+    function findNoVncHandle(inner) {
+      var innerDoc;
+      try {
+        innerDoc = inner.contentDocument;
+      } catch (error) {
+        return null; // Cross-origin — not our iframe to inspect.
+      }
+      return (innerDoc && innerDoc.getElementById("noVNC_control_bar_handle")) || null;
+    }
+
+    // Set once the CodingBooth Help dialog's own IIFE (below) runs — declared
+    // here so the hint's "Learn more" button can open it too, without either
+    // IIFE needing to know about the other's internals. Definition order
+    // doesn't matter: nothing calls this until a user actually clicks
+    // something, well after both IIFEs have finished running once.
+    var openHelpDialog = null;
+
+    // Points at noVNC's own control-bar tab — see the .bl-clip-hint CSS
+    // comment. Only shown when the wrapped iframe is actually noVNC, and
+    // only until dismissed once, ever, per browser.
+    (function () {
+      var DISMISS_KEY = "cb.booth.clipHintDismissed";
+      var hint = document.getElementById("bl-clip-hint");
+      var closeBtn = document.getElementById("bl-clip-hint-close");
+      var inner = document.getElementById("booth-inner");
+      if (!hint || !inner) {
+        return;
+      }
+
+      function dismissed() {
+        try {
+          return window.localStorage.getItem(DISMISS_KEY) === "1";
+        } catch (error) {
+          return false;
+        }
+      }
+
+      function dismiss() {
+        hint.style.display = "none";
+        try {
+          window.localStorage.setItem(DISMISS_KEY, "1");
+        } catch (error) {
+          // No localStorage (private mode) — the hint just reappears next visit.
+        }
+      }
+
+      closeBtn.addEventListener("click", dismiss);
+
+      var learnMoreBtn = document.getElementById("bl-clip-hint-learn-more");
+      if (learnMoreBtn) {
+        learnMoreBtn.addEventListener("click", function () {
+          if (openHelpDialog) {
+            openHelpDialog("clipboard");
+          }
+        });
+      }
+
+      var handleObserver = null;
+      var innerResizeWired = false;
+
+      // The handle positions itself with its own transform — noVNC recenters
+      // it on load, on resize, and while it's being dragged — rather than
+      // sitting at a fixed CSS spot, so this reads its real on-screen
+      // position instead of guessing one. The iframe fills the viewport
+      // edge-to-edge, so its internal coordinates are the top document's
+      // fixed-position coordinates too; no conversion needed.
+      function positionFromHandle(handle) {
+        var rect = handle.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) {
+          return false; // Not laid out yet.
+        }
+        hint.style.top = (rect.top + rect.height / 2) + "px";
+        hint.style.left = rect.right + "px";
+        hint.style.transform = "translateY(-50%)";
+        hint.style.display = "";
+        return true;
+      }
+
+      // Catches every reposition noVNC makes to the handle — resize, drag,
+      // whatever — regardless of what triggered it, rather than trying to
+      // anticipate each cause separately. Attached once, the first time the
+      // handle is found.
+      function watchHandle(handle) {
+        if (handleObserver || typeof MutationObserver !== "function") {
+          return;
+        }
+        handleObserver = new MutationObserver(function () {
+          positionFromHandle(handle);
+        });
+        handleObserver.observe(handle, { attributes: true, attributeFilter: ["style"] });
+      }
+
+      function positionAndShow() {
+        if (dismissed()) {
+          return;
+        }
+        var handle = findNoVncHandle(inner);
+        if (!handle) {
+          return; // Not (yet) a noVNC page.
+        }
+        watchHandle(handle);
+        positionFromHandle(handle);
+
+        // The window resize that moves the handle fires on the iframe's own
+        // window first, ahead of (and independently of) this top document's
+        // resize — same-origin, so it's just as reachable. Wired once, right
+        // here, since contentWindow only exists once the frame has loaded.
+        if (!innerResizeWired && inner.contentWindow) {
+          innerResizeWired = true;
+          inner.contentWindow.addEventListener("resize", positionAndShow);
+        }
+      }
+
+      // The frame's src is only set once the booth answers (see the
+      // readiness gate above). A couple of delayed retries cover noVNC's own
+      // layout settling (fonts, its logo image) after 'load' fires but
+      // before the handle's final position is stable.
+      function scheduleChecks() {
+        positionAndShow();
+        setTimeout(positionAndShow, 300);
+        setTimeout(positionAndShow, 1000);
+      }
+
+      inner.addEventListener("load", scheduleChecks);
+      if (window.BoothReady && window.BoothReady.isUp()) {
+        scheduleChecks();
+      }
+
+      // Belt-and-suspenders alongside the iframe's own resize listener above
+      // — cheap to run, and positionAndShow already no-ops safely if the
+      // handle isn't there yet or the hint was dismissed.
+      window.addEventListener("resize", positionAndShow);
+    })();
+
+    // "CodingBooth Help" panel button — general orientation plus the same
+    // host<->booth clipboard boundary the hint above points at. People hit
+    // real, repeated confusion on the clipboard specifically (two different
+    // directions, one of them unreliable), so unlike the hint this stays
+    // reachable at any time rather than showing once and going away.
+    (function () {
+      var inner = document.getElementById("booth-inner");
+      var btn = document.getElementById("bl-help-btn");
+      var overlay = document.getElementById("bl-help-dialog-overlay");
+      var closeBtn = document.getElementById("bl-help-dialog-close");
+      var tabs = Array.from(document.querySelectorAll(".msg-tab"));
+      var panels = Array.from(document.querySelectorAll(".msg-tab-panel"));
+      if (!inner || !btn || !overlay || !closeBtn || !tabs.length) {
+        return;
+      }
+
+      function selectTab(name) {
+        tabs.forEach(function (tab) {
+          tab.classList.toggle("active", tab.dataset.tab === name);
+        });
+        panels.forEach(function (panel) {
+          panel.classList.toggle("active", panel.dataset.panel === name);
+        });
+      }
+
+      tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+          selectTab(tab.dataset.tab);
+        });
+      });
+
+      // Both entry points — the panel button and the hint's "Learn more" —
+      // always land on Clipboard: it's the one people actually get stuck on,
+      // and both triggers are clipboard-shaped even if General is now also
+      // in here. General is one click away either way.
+      function openDialog(tab) {
+        selectTab(tab || "clipboard");
+        overlay.classList.add("visible");
+        document.body.classList.add("msg-active");
+      }
+
+      function closeDialog() {
+        overlay.classList.remove("visible");
+        document.body.classList.remove("msg-active");
+      }
+
+      openHelpDialog = openDialog;
+
+      btn.addEventListener("click", function () {
+        openDialog("clipboard");
+      });
+      closeBtn.addEventListener("click", closeDialog);
+      // Clicking the dark backdrop closes it too, same as the other dialogs
+      // in this overlay — but not a click inside the card itself.
+      overlay.addEventListener("click", function (event) {
+        if (event.target === overlay) {
+          closeDialog();
+        }
+      });
+
+      function checkVisible() {
+        if (findNoVncHandle(inner)) {
+          btn.style.display = "";
+        }
+      }
+
+      inner.addEventListener("load", function () {
+        checkVisible();
+        setTimeout(checkVisible, 300);
+        setTimeout(checkVisible, 1000);
+      });
+      if (window.BoothReady && window.BoothReady.isUp()) {
+        checkVisible();
       }
     })();
 
