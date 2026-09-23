@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Alacritty and Kitty: alternate GPU-accelerated terminals for the desktop variants.**
+  `--select alacritty` / `--select kitty` (`templates/desktops/`) install either terminal
+  alongside a desktop variant's own default (xfce4-terminal, Konsole, qterminal, foot) — not
+  a replacement. Both are OpenGL terminal emulators; a booth's desktop runs headless with no
+  host GPU, so this only works because Mesa's `llvmpipe` software rasterizer gives `Xvnc` a
+  working GL context (confirmed via `glxinfo -B`: GL 4.5 core, `direct rendering: Yes`). Each
+  seeds `FiraCode Nerd Font Mono` on first container start (matching the desktop's built-in
+  terminal), only if the config file doesn't already exist, and registers a desktop icon via
+  `cb-desktop-icon.sh` (the same mechanism Firefox/GIMP/Inkscape use), so it's discoverable
+  without already knowing the command name. Alacritty now also pulls in `ncurses-term`: Ubuntu's
+  `alacritty` package ships no terminfo entry of its own (unlike `kitty`, which gets one via a
+  dependency), so `TERM=alacritty` had no matching terminfo and could confuse programs that do a
+  strict terminfo lookup. Untested on arm64. New example:
+  `examples/workspaces/desktop-terminals-example`. See `docs/MODERN_UX.md` for the background —
+  suggestion #1 from a review of Omarchy-inspired desktop UX ideas.
+
 - **Console UI and wrapped variants: a "Capture Keyboard" toggle, and a clipboard fix for
   desktop/code-server/notebook variants.** A browser tab reserves shortcuts like Ctrl+W and
   Ctrl+T for itself, so they never reached the terminal or remote desktop underneath — no

@@ -1,0 +1,17 @@
+display-name   = "Alacritty"
+display-disc   = "GPU-accelerated terminal emulator (alternate terminal for desktop variants)"
+display-detail = """\
+Installs Alacritty as an additional terminal alongside a desktop variant's own \
+default (xfce4-terminal, Konsole, qterminal, foot). Runs via software OpenGL \
+(Mesa llvmpipe) inside a booth's VNC/noVNC session — no host GPU needed."""
+display-order  = 40
+tags = [
+    "terminal",
+    "gpu",
+    "alacritty"
+]
+
+[segments]
+"Boothfile--60" = """
+setup alacritty
+"""

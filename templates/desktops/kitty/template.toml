@@ -1,0 +1,17 @@
+display-name   = "Kitty"
+display-disc   = "GPU-accelerated terminal emulator (alternate terminal for desktop variants)"
+display-detail = """\
+Installs Kitty as an additional terminal alongside a desktop variant's own \
+default (xfce4-terminal, Konsole, qterminal, foot). Runs via software OpenGL \
+(Mesa llvmpipe) inside a booth's VNC/noVNC session — no host GPU needed."""
+display-order  = 42
+tags = [
+    "terminal",
+    "gpu",
+    "kitty"
+]
+
+[segments]
+"Boothfile--60" = """
+setup kitty
+"""
