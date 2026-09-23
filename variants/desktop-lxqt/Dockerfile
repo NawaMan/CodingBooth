@@ -41,9 +41,8 @@ RUN apt--install.sh      \
 # Cleanup to reduce image size
 RUN cleanup-after--setup.sh
 
-# CodingBooth wallpaper: copy to branded path and set as LXQt default via pcmanfm-qt
-COPY wallpaper.png /usr/share/backgrounds/codingbooth/wallpaper.png
-COPY lxqt-wallpaper--setup.sh /opt/codingbooth/setups/lxqt-wallpaper--setup.sh
+# CodingBooth wallpaper: base image already carries wallpaper.png and the
+# lxqt-wallpaper--setup.sh script; this sets it as the LXQt default via pcmanfm-qt.
 RUN lxqt-wallpaper--setup.sh
 
 # Clear the lock

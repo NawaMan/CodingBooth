@@ -161,6 +161,7 @@ setup lua
 setup lua-code-extension
 setup lua-nb-kernel
 setup lxqt
+setup lxqt-wallpaper
 setup make
 setup mermaid
 setup mkcert

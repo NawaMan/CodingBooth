@@ -205,6 +205,17 @@ RUN set -euo pipefail                             \
 COPY --chmod=0755 ./setups/ /opt/codingbooth/setups/
 ENV PATH=/opt/codingbooth/setups:/home/coder/.local/bin:$PATH
 
+# Branded wallpaper, shared by every desktop variant (kde/lxqt/xfce/wayland) so
+# it lives once here instead of duplicated per variant. Non-desktop variants
+# carry the few unused KB too, in exchange for one copy instead of four.
+# --chmod on the files also stamps every directory Docker implicitly creates
+# along the destination path (/usr/share/backgrounds did not exist in this
+# non-desktop base image), stripping their execute bit — the desktop session
+# runs as non-root `coder`, which then can't traverse the path at all. Fix
+# both levels up explicitly, same as /opt/codingbooth/variants/ below.
+COPY --chmod=0644 ./wallpaper.png ./wallpaper.jpg /usr/share/backgrounds/codingbooth/
+RUN chmod 0755 /usr/share/backgrounds /usr/share/backgrounds/codingbooth
+
 # Copy documentation files (staged by build script)
 # These provide self-documenting environment for users/agents inside the container
 COPY --chmod=0644 ./_stage/README.md   /opt/codingbooth/
