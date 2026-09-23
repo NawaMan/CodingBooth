@@ -13,6 +13,7 @@
   <link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin>
   <link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin>
   ${BOOTH_READY_JS}
+  ${BOOTH_KEYBOARD_CAPTURE_JS}
   <!-- Optional project-checked-in starting layout/tabs; see .booth/console.json
        and start-ttyd-split. type="application/json" rather than assigning a
        raw object literal to a window var: the browser never tries to parse
@@ -649,6 +650,7 @@
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
         </button>
         <button id="reload">Reload</button>
+        <button id="kbcapture" title="Capture keyboard shortcuts that the browser would otherwise steal (requires fullscreen; Chromium browsers only)">&#x2328;</button>
       </div>
     </header>
 
@@ -792,6 +794,7 @@
       const dragOverlay = document.getElementById("drag-overlay");
       const layoutButtons = Array.from(document.querySelectorAll("[data-layout]"));
       const reloadButton = document.getElementById("reload");
+      const kbCaptureButton = document.getElementById("kbcapture");
       const projectName = (document.querySelector('meta[name="booth-project"]') || {}).content || "default";
 
       // Optional project-checked-in starting layout/tabs — see
@@ -1228,6 +1231,23 @@
           }
         });
       });
+
+      // ── Keyboard capture ──
+      // See booth-keyboard-capture.js: Chromium-only, so a browser without
+      // the Keyboard Lock API doesn't get a button that can only half-work.
+      if (window.BoothKeyboardCapture && window.BoothKeyboardCapture.isSupported()) {
+        kbCaptureButton.addEventListener("click", () => {
+          window.BoothKeyboardCapture.toggle();
+        });
+        window.BoothKeyboardCapture.onChange((active) => {
+          kbCaptureButton.classList.toggle("active", active);
+          kbCaptureButton.title = active
+            ? "Release captured keyboard shortcuts"
+            : "Capture keyboard shortcuts that the browser would otherwise steal (requires fullscreen; Chromium browsers only)";
+        });
+      } else if (kbCaptureButton) {
+        kbCaptureButton.style.display = "none";
+      }
 
       // ── Web proxy ──
       const proxyStorageKey = "cb.webSplit." + projectName + ".proxy";
