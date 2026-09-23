@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Console UI and wrapped variants: a "Capture Keyboard" toggle, and a clipboard fix for
+  desktop/code-server/notebook variants.** A browser tab reserves shortcuts like Ctrl+W and
+  Ctrl+T for itself, so they never reached the terminal or remote desktop underneath — no
+  page-level `preventDefault()` can win them back. A new **Capture Keyboard** button (console
+  UI toolbar, and the lifecycle panel on wrapped variants) requests fullscreen plus the
+  Keyboard Lock API so those combos pass through instead; it only appears in Chromium-based
+  browsers, since Keyboard Lock has no Firefox/Safari equivalent. Separately, the overlay
+  iframe that wraps desktop/code-server/notebook variants now grants
+  `clipboard-read`/`clipboard-write`, which was silently blocking native Clipboard API access
+  regardless of what the inner service (noVNC included) tried to do with it.
+
 - **Profiles: env files are checked against git, list collisions are refused, and the env filename changed.**
   `--profile` / `BOOTH_PROFILES` selects named overlays of `.booth/config.toml`
   and `.booth/.env` (`.booth/<name>--config.toml` and a per-profile env file).
