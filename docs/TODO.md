@@ -226,6 +226,27 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
 - [ ] ...
 
 ## Problems
+- [ ] **Desktop variants' clipboard still needs noVNC's manual side panel.** Investigated
+      2026-09-23 while looking at browser-UI friction (see `docs/implementations/DESKTOP_NOVNC.md`'s
+      "Clipboard Not Working" section). Two separate blockers, confirmed by inspecting a built
+      `desktop-xfce` image:
+      - The vendored noVNC is **1.3.0** (Ubuntu 24.04's `novnc` apt package, from 2021) — five
+        majors behind current stable (1.7.0). Its `app/ui.js`/`core/rfb.js` have only the manual
+        clipboard-panel flow (`clipboardSend`/`clipboardReceive`/`clipboardPasteFrom` wired to a
+        textarea + button), no `navigator.clipboard` code at all.
+      - Real automatic clipboard sync (noVNC PR #1993, `navigator.clipboard` auto-sync when the
+        browser grants permission) merged to noVNC's `master` branch in Oct 2025 but is **not in
+        any tagged release**, including the current 1.7.0 — a noVNC maintainer said on the PR it
+        "should not be released until we have an idea on how to bring Safari and Firefox in to
+        the fold." So there is no stable, pinnable noVNC version with this feature yet, only a
+        moving, explicitly-not-ready `master` snapshot — vendoring that would fight this repo's
+        pinned/reproducible-build stance.
+      Approach: revisit once noVNC actually tags a release containing PR #1993, then vendor that
+      pinned version in `variants/base/setups/xfce--setup.sh` (and the kde/lxqt/wayland
+      equivalents) instead of apt's stale package. Bumping to the current 1.7.0 apt-free is a
+      separate, smaller, lower-risk task worth doing on its own merits regardless of clipboard.
+      Open questions: whether to self-host a noVNC tarball per variant (reproducibility) vs. track
+      upstream apt; whether Firefox/Safari being permanently second-class here is acceptable.
 - [ ] VS Code hangs/crashes sometimes. Some cases were the 64 MB `/dev/shm` renderer crash
       fixed below (`code: 133`); watch for any that survive that fix.
 - [x] **Jupyter Notebook (`.ipynb`) in VS Code hangs/crashes.** RESOLVED 2026-07-14.
