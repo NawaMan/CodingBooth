@@ -38,9 +38,8 @@ RUN apt--install.sh      \
 # Cleanup to reduce image size
 RUN cleanup-after--setup.sh
 
-# CodingBooth wallpaper: copy to branded path and set as KDE default via autostart
-COPY wallpaper.png /usr/share/backgrounds/codingbooth/wallpaper.png
-COPY kde-wallpaper--setup.sh /opt/codingbooth/setups/kde-wallpaper--setup.sh
+# CodingBooth wallpaper: base image already carries wallpaper.png and the
+# kde-wallpaper--setup.sh script; this sets it as the KDE default via autostart.
 RUN kde-wallpaper--setup.sh
 
 # Clear the lock

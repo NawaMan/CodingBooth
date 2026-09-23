@@ -27,9 +27,8 @@ RUN bash-nb-kernel--setup.sh
 # Cleanup to reduce image size
 RUN cleanup-after--setup.sh
 
-# CodingBooth wallpaper (swaybg reads it directly from this branded path)
-COPY wallpaper.jpg /usr/share/backgrounds/codingbooth/wallpaper.jpg
-COPY wallpaper.png /usr/share/backgrounds/codingbooth/wallpaper.png
+# CodingBooth wallpaper: base image already carries wallpaper.jpg, which
+# swaybg reads directly from that branded path — nothing to do here.
 
 # Clear the lock
 RUN rm -f /etc/.pwd.lock /etc/passwd.lock /etc/shadow.lock /etc/group.lock

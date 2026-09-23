@@ -38,10 +38,8 @@ RUN apt--install.sh      \
 # Cleanup to reduce image size
 RUN cleanup-after--setup.sh
 
-# CodingBooth wallpaper: copy to branded path and set as XFCE default via xfconf XML
-COPY wallpaper.jpg /usr/share/backgrounds/codingbooth/wallpaper.jpg
-COPY wallpaper.png /usr/share/backgrounds/codingbooth/wallpaper.png
-COPY xfce-wallpaper--setup.sh /opt/codingbooth/setups/xfce-wallpaper--setup.sh
+# CodingBooth wallpaper: base image already carries wallpaper.jpg and the
+# xfce-wallpaper--setup.sh script; this sets it as the XFCE default via xfconf XML.
 RUN xfce-wallpaper--setup.sh
 
 # Clear the lock
