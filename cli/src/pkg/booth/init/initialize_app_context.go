@@ -146,11 +146,12 @@ func resolveEngineConfig(config *appctx.AppConfig) error {
 
 	// --dind relies on the docker:dind sidecar and DOCKER_HOST, which Podman
 	// (daemonless, rootless by default) has no drop-in replacement for yet
-	// (Phase 4, docs/PODMAN_SUPPORT.md). Not blocked — it will try and most
-	// likely fail confusingly without this — so warn instead, the same way an
-	// explicit --engine podman itself is unconditionally flagged.
+	// (Phase 4, docs/PODMAN_SUPPORT.md). This used to warn and try anyway,
+	// which failed confusingly deep inside dind_setup.go with no clear cause.
+	// Refuse up front instead, the same way an unsupported --engine value is
+	// refused, so the failure is immediate and says what's wrong.
 	if config.Engine == "podman" && config.Dind {
-		fmt.Fprintln(os.Stderr, "Warning: --dind has no Podman support yet and will likely fail (docker:dind sidecar needs Docker). See docs/PODMAN_SUPPORT.md.")
+		return fmt.Errorf("--dind is not supported with --engine podman yet (the docker:dind sidecar needs Docker). Use --engine docker, or drop --dind. See docs/PODMAN_SUPPORT.md")
 	}
 	return nil
 }
