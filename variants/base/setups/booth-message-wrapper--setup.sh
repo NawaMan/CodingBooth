@@ -29,6 +29,7 @@ mkdir -p "${WRAPPER_DIR}/plugins"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 cp "${SCRIPT_DIR}/booth-message-overlay.html" "${WRAPPER_DIR}/overlay.html"
 cp "${SCRIPT_DIR}/booth-ready.js" "${WRAPPER_DIR}/booth-ready.js"
+cp "${SCRIPT_DIR}/booth-keyboard-capture.js" "${WRAPPER_DIR}/booth-keyboard-capture.js"
 cp "${SCRIPT_DIR}/booth-message-api-server" "${WRAPPER_DIR}/booth-message-api-server"
 chmod +x "${WRAPPER_DIR}/booth-message-api-server"
 cp "${SCRIPT_DIR}/booth-lifecycle-watcher" "${WRAPPER_DIR}/booth-lifecycle-watcher"
@@ -46,6 +47,7 @@ cat > "${WRAPPER_DIR}/wrapper.html" <<'HTMLEOF'
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${BOOTH_CONTAINER_NAME} (${BOOTH_HOST_PORT})</title>
 ${BOOTH_READY_JS}
+${BOOTH_KEYBOARD_CAPTURE_JS}
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   html, body { height: 100%; overflow: hidden; background: #111; }
@@ -53,7 +55,7 @@ ${BOOTH_READY_JS}
 </style>
 </head>
 <body>
-<iframe id="booth-inner" data-booth-src="${IFRAME_SRC}"></iframe>
+<iframe id="booth-inner" data-booth-src="${IFRAME_SRC}" allow="clipboard-read; clipboard-write"></iframe>
 <script>
 // The frame is loaded by the readiness gate, not by the markup: nginx answers
 // on this port before the inner service does, so a frame that loads with the
@@ -292,6 +294,14 @@ $(cat "$WRAPPER_DIR/booth-ready.js")
 </script>"
 export BOOTH_READY_JS
 
+# Feature-detected fullscreen + Keyboard Lock toggle behind the overlay's
+# "Capture keyboard" button — see booth-keyboard-capture.js for why this
+# can't just be a preventDefault() in the wrapped service's own key handlers.
+BOOTH_KEYBOARD_CAPTURE_JS="<script>
+$(cat "$WRAPPER_DIR/booth-keyboard-capture.js")
+</script>"
+export BOOTH_KEYBOARD_CAPTURE_JS
+
 # Concatenate any lifecycle-panel plugin scripts into the wrapper HTML. Each
 # file is wrapped in its own <script> tag so a parse error in one doesn't
 # poison the others. Runs after overlay.html so window.BoothPanel is defined.
@@ -307,7 +317,7 @@ $(cat "$plugin_file")
 fi
 export PLUGINS_HTML
 
-envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML} ${BOOTH_READY_JS}' \
+envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML} ${BOOTH_READY_JS} ${BOOTH_KEYBOARD_CAPTURE_JS}' \
   <"$WRAPPER_DIR/wrapper.html" >"$SERVE_DIR/index.html"
 
 # Generate nginx config

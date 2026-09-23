@@ -225,6 +225,20 @@
     background: #5b2424;
   }
 
+  .bl-btn-capture {
+    background: #2a2f3a;
+    color: #cbd5e1;
+  }
+
+  .bl-btn-capture:hover {
+    background: #363c49;
+  }
+
+  .bl-btn-capture.active {
+    background: #1e3a5f;
+    color: #60a5fa;
+  }
+
   .bl-btn-icon {
     font-size: 16px;
   }
@@ -768,6 +782,11 @@
         title="Time remaining before the booth session ends"></div>
       <div class="bl-idle-chip bl-idle-chip-active" id="bl-idle-chip" data-priority="50"
         title="Idle shutdown is active — click to pause or disable"></div>
+      <button class="bl-btn bl-btn-capture" id="bl-kbcapture-btn" data-priority="70"
+        title="Capture keyboard shortcuts that the browser would otherwise steal (requires fullscreen; Chromium browsers only)"
+        style="display:none">
+        <span class="bl-btn-icon">&#x2328;</span> Capture Keyboard
+      </button>
       <button class="bl-btn bl-btn-restart" id="bl-restart-btn" data-priority="90"
         title="Restart the booth container (re-reads config and rebuilds)">
         <span class="bl-btn-icon">&#x21BB;</span> Restart
@@ -1288,6 +1307,26 @@
       confirmYes.className = "bl-btn-yes restart";
       showState("confirm");
     });
+
+    // See booth-keyboard-capture.js: Chromium-only, so a browser without the
+    // Keyboard Lock API doesn't get a button that can only half-work. Fullscreen
+    // here fullscreens the top wrapper document, not just the inner iframe —
+    // that's what lets the lock cover the whole tab.
+    (function () {
+      var kbBtn = document.getElementById("bl-kbcapture-btn");
+      if (window.BoothKeyboardCapture && window.BoothKeyboardCapture.isSupported()) {
+        kbBtn.style.display = "";
+        kbBtn.addEventListener("click", function () {
+          window.BoothKeyboardCapture.toggle();
+        });
+        window.BoothKeyboardCapture.onChange(function (active) {
+          kbBtn.classList.toggle("active", active);
+          kbBtn.title = active
+            ? "Release captured keyboard shortcuts"
+            : "Capture keyboard shortcuts that the browser would otherwise steal (requires fullscreen; Chromium browsers only)";
+        });
+      }
+    })();
 
     confirmNo.addEventListener("click", function () {
       pendingAction = null;
