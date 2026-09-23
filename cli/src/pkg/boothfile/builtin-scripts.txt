@@ -6,6 +6,7 @@ setup act
 setup affine-desktop
 setup affine-server
 setup aider
+setup alacritty
 setup android-emulator
 setup android-sdk
 setup ansible
@@ -144,6 +145,7 @@ setup kafka-start
 setup kde
 setup kde-wallpaper
 setup kind
+setup kitty
 setup kotlin
 setup kotlin-code-extension
 setup kotlin-nb-kernel
