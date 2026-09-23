@@ -12,7 +12,11 @@ This document has two parts, kept apart on purpose:
    follow-ups.
 
 Phases 1 (core lifecycle), 2 (`booth expose`) and 3 (build progress) are implemented.
-Phases 4–6 are not started.
+Phase 4 (Docker-in-Docker parity) has started: `--dind` with `--engine podman` is now
+refused outright with a clear error instead of warning and trying anyway; real
+Docker-in-Docker support is still not built — see
+[Phase 4](#phase-4--docker-in-docker-parity-design-first--started) for what was found. Phases 5–6
+are not started.
 
 ---
 
@@ -152,10 +156,11 @@ These are applied automatically when the engine is Podman.
   with" line, the DinD "stop && network rm" line, the DinD-not-ready "check: … logs"
   line, the `--persist-home` "reclaim space" line, and the silent-build "❌ … build
   failed!" banner all read `podman` on a Podman booth.
-- **`--dind` warns instead of trying silently.** `docker:dind` has no Podman equivalent
-  yet (Phase 4), so `--dind` with `--engine podman` prints `Warning: --dind has no
-  Podman support yet and will likely fail …` and then tries anyway, rather than failing
-  confusingly with no explanation.
+- **`--dind` is refused, not attempted.** `docker:dind` has no Podman equivalent yet
+  (Phase 4), so `--dind` with `--engine podman` fails immediately with
+  `❌ --dind is not supported with --engine podman yet (the docker:dind sidecar needs
+  Docker). Use --engine docker, or drop --dind. See docs/PODMAN_SUPPORT.md`, instead of
+  warning and trying anyway and failing confusingly deep inside the DinD sidecar setup.
 
 ### Host prerequisites for rootless Podman
 
@@ -205,7 +210,7 @@ Automated: Go unit tests (`pkg/appctx/engine_test.go`, `pkg/docker/engine_test.g
 `pkg/booth/podman_userns_test.go`, `pkg/booth/booth_test.go`,
 `pkg/booth/init/initialize_app_context_engine_test.go`,
 `pkg/lifecycle/restart_flag_test.go`, `pkg/lifecycle/engines_test.go`), the config-TUI schema guard, and
-`tests/dryrun/test036--engine.sh` (15 checks, no engine needs to be installed).
+`tests/dryrun/test036--engine.sh` (16 checks, no engine needs to be installed).
 Two of those drive a real engine rather than a stubbed flag:
 `TestDockerBuild_Silent_FailureNamesEngine` (a real failing `podman build`) and
 `TestDockerBuild_Silent_PodmanStdoutIsActuallySilenced` (a real successful `podman
@@ -225,10 +230,9 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 
 - **Docker-in-Docker is not supported.** `--dind`, and anything that needs Docker inside
   the booth (the `dind` tool, `docker-compose`, Appwrite), rely on the `docker:dind`
-  sidecar and `DOCKER_HOST`. `--dind` with `--engine podman` is **not blocked** — it
-  prints `Warning: --dind has no Podman support yet and will likely fail …` to stderr
-  (unconditional, like the experimental-engine warning) and then tries anyway; it is
-  unsupported and untested.
+  sidecar and `DOCKER_HOST`. `--dind` with `--engine podman` is **refused outright** with
+  a clear error (see above) rather than attempted; real support is unbuilt — see
+  [Phase 4](#phase-4--docker-in-docker-parity-design-first--started).
 - **Tunnels need the booth running in the foreground**, exactly as under Docker
   ([BOOTH_EXPOSE.md](BOOTH_EXPOSE.md)). `booth--expose` inside the booth needs no engine
   setting: the host-side CLI that started the booth already knows it.
@@ -261,7 +265,7 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 | Commands without a context | `resolveLifecycleEngine` / `resolveLifecycleEngines` in `pkg/lifecycle/lifecycle.go` |
 | Both-engine lookup | `ResolveEnginesForPath` in `pkg/appctx/engine.go`; `managedContainersAcross`, `managedContainer.Engine`, `ambiguousEngineError` in `pkg/lifecycle/lifecycle.go` |
 | TUI field | `engine` in `pkg/boothinit/tui/configfields.go` |
-| `--dind` + Podman warning | `resolveEngineConfig` in `pkg/booth/init/initialize_app_context.go` |
+| `--dind` + Podman refusal | `resolveEngineConfig` in `pkg/booth/init/initialize_app_context.go` |
 | Engine-named user hints (`stop`, DinD `stop`/`network rm`/`logs`, `--persist-home` reclaim) | `engineOrDocker` in `pkg/booth/booth.go`, used from `runAsDaemon`, `printHomeVolumeWarning`, and `waitForDindReady` in `dind_setup.go` |
 | Engine-named build-failure banner | `DockerBuild` in `pkg/docker/docker_build.go` (`flags.binary()`) |
 | Silent-build stream capture per engine (both stdout+stderr on Podman) | `DockerBuild` in `pkg/docker/docker_build.go` |
@@ -301,16 +305,53 @@ to land on stdout, which the silent build path never captured — so `--silence-
 not actually silence a Podman build at all. Both are fixed: `build_progress.go` gained a
 Buildah-format parser, and `docker_build.go` now captures Podman's stdout too.
 
-## Phase 4 — Docker-in-Docker parity (design first)
+## Phase 4 — Docker-in-Docker parity (design first) — started
 
 The `docker:dind` sidecar with `DOCKER_HOST=tcp://localhost:2375`
 (`dind_setup.go`, `docs/implementations/DIND.md`) has no drop-in Podman equivalent —
 Podman is daemonless and rootless by default. This phase starts with a design decision
 before any code.
 
-**User-visible:** the `dind` tool, `docker-compose` and Appwrite either work under a
-Podman-run booth, or fail with a clear "not supported with Podman yet" message instead
-of trying and failing confusingly.
+**Done:** the minimum bar for this phase — `--dind` with `--engine podman` now fails
+immediately with a clear, actionable error (`resolveEngineConfig`) instead of warning
+and trying anyway. Before, the warning still let a Podman booth start and then fail
+deep inside `dind_setup.go` with no clear cause.
+
+**Design finding (2026-09-22):** a real Podman equivalent of the sidecar was spiked
+before settling on the refusal above, to see whether it belongs in this phase or a
+later one:
+
+- `podman system service` genuinely answers the **Docker Engine API**, not just
+  Podman's native `libpod` API — confirmed by hand: `GET /v1.41/version` and
+  `GET /v1.41/containers/json` over its unix socket return real Docker-shaped
+  responses. So a sidecar built around it could, in principle, sit where `docker:dind`
+  sits today: netns-shared with the booth (the same pattern `--egress`'s netns-owner
+  sidecar already proves works under rootless Podman), with `DOCKER_HOST` pointed at
+  it instead of a Docker daemon.
+- The gap is what the sidecar has to run: unlike `docker:dind`, which just *is* a
+  Docker daemon, a Podman-API sidecar has to run **nested rootless Podman inside
+  itself** to create the containers `docker build` / `docker-compose` / Appwrite ask
+  for. That needs `--privileged` (already true of `docker:dind`, so not a new cost by
+  itself), plus `/dev/fuse` and a **second, nested** subuid/subgid delegation inside
+  the sidecar's own user namespace — a real host prerequisite beyond what Phase 1's
+  rootless-Podman setup ([Host prerequisites](#host-prerequisites-for-rootless-podman))
+  already asks for, and unverified: nobody has built the sidecar image or run
+  `docker build`/`docker-compose`/Appwrite through it end to end.
+- Shipping a "works" claim on the strength of the API-compat check alone, without that
+  end-to-end proof, would repeat the exact mistake Phase 3's `--silence-build` finding
+  was called out for — a plausible-looking path that turns out not to do what it
+  claims. So the refusal above ships now as the honest, fully-verified outcome for this
+  phase, and the nested-sidecar path is **not attempted** in this session.
+
+**Remaining for this phase (not started):** build a `podman system service` sidecar
+image, wire nested subuid/subgid + `/dev/fuse` into it, point a Podman booth's
+`DOCKER_HOST` at it in `dind_setup.go`, and verify `docker build`, `docker-compose` and
+Appwrite actually work through it on a real rootless-Podman host before calling any of
+it done.
+
+**User-visible (target):** the `dind` tool, `docker-compose` and Appwrite either work
+under a Podman-run booth, or fail with a clear "not supported with Podman yet" message
+instead of trying and failing confusingly. The second half is done; the first is not.
 
 ## Phase 5 — Release pipeline on Podman
 

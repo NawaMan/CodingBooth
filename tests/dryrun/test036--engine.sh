@@ -153,3 +153,17 @@ if printf '%s\n' "$OUT" | grep -q 'ip_unprivileged_port_start'; then
 else
   print_test_result "true" "$0" "15" "podman --egress run skips the low-port sysctl"
 fi
+
+# 16. --dind with --engine podman is refused outright (Phase 4, docker:dind has no
+# Podman equivalent yet), not warned about and tried anyway.
+if ERR=$(run_coding_booth --variant base --dryrun --engine podman --dind 2>&1); then
+  print_test_result "false" "$0" "16" "podman --dind is refused, not attempted"
+  echo "Output:"; echo "$ERR"
+  exit 1
+elif printf '%s\n' "$ERR" | grep -q -- '--dind is not supported with --engine podman'; then
+  print_test_result "true" "$0" "16" "podman --dind is refused, not attempted"
+else
+  print_test_result "false" "$0" "16" "podman --dind is refused with a clear message"
+  echo "Output:"; echo "$ERR"
+  exit 1
+fi

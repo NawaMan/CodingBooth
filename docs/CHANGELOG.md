@@ -66,7 +66,10 @@ This file contains a list of changes for each released version.
   With nothing chosen, Docker is used, and Podman only when `docker` is not
   installed but `podman` is. This is Phase 1 of `docs/PODMAN_SUPPORT.md` and is
   still being developed: it may not have feature parity with Docker, and
-  Docker-in-Docker is not supported yet. `booth--expose`
+  Docker-in-Docker is not supported yet — `--dind` with `--engine podman` is
+  now refused outright with a clear error instead of warning and trying
+  anyway, which used to fail confusingly deep inside the DinD sidecar setup
+  (Phase 4). `booth--expose`
   tunnels and `booth expose list` work on a Podman booth (they use the engine the
   booth was started with). Podman builds pass `--format docker` (Buildah's default image
   format ignores the Dockerfile `SHELL`, which every variant relies on), and
