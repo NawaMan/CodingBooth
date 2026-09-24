@@ -4,6 +4,46 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The desktop clipboard hint walks you to the clipboard, then gets out of the way.** The arrow
+  pointing at noVNC's left-edge tab moves onto the Clipboard button once you open the bar from
+  that tab ("Clipboard: paste here to send text into the booth"), and back to the tab if you
+  close the bar. Opening the clipboard panel dismisses it for good, the same as its ×, both
+  remembered per browser; noVNC's own open-at-startup and dragging the tab don't count. Left
+  alone, it disappears one minute after first appearing, for that page view only — it returns on
+  the next visit — but not once you've opened the bar from the tab. noVNC's clipboard panel
+  heading also gains a right-aligned "Local ⇄ remote" label, and clicking the heading opens
+  CodingBooth Help on its Clipboard tab — added from the overlay, not by patching the novnc
+  package. Also fixed: moving or resizing noVNC's tab could bring back a hint you had already
+  dismissed.
+
+- **Alacritty and Kitty: `+default` extension to make either the desktop's default terminal.**
+  `--select xfce/alacritty+default` (or `kde`/`lxqt`/`wayland`, either terminal) points the
+  desktop's own "open a terminal" action at Alacritty/Kitty instead of its stock terminal, via
+  a new `default-terminal--setup.sh` — the DE's own registry, not a replacement of the stock
+  terminal (which stays installed and reachable). Each desktop keeps that preference somewhere
+  different: XFCE's `~/.config/xfce4/helpers.rc` (`TerminalEmulator=`, which XFCE's own
+  Ctrl+Alt+T also follows), KDE's `kdeglobals` (`TerminalApplication=`). KDE's Ctrl+Alt+T is
+  Konsole's own global shortcut and ignores that key, so it is moved in `kglobalshortcutsrc`
+  (Konsole's launch key → none, the terminal's `.desktop` → Ctrl+Alt+T). LXQt has no session-wide key that anything reads — the setting that
+  matters is PCManFM-Qt's own `[System] Terminal=` (desktop right-click and "Open in Terminal"),
+  seeded from the `/etc/xdg` copy so its wallpaper settings survive. LXQt's Ctrl+Alt+T is also
+  bound to the chosen terminal: Ubuntu installs LXQt's default shortcuts one directory too deep
+  (`/etc/xdg/lxqt/globalkeyshortcuts.conf/globalkeyshortcuts.conf`), so in these images it was
+  bound to nothing at all. All written once at container start and never overwritten once set by
+  hand, matching the font-seeding convention — except PCManFM-Qt's auto-saved `Terminal=xterm`
+  fallback (xterm isn't installed), which counts as unset. labwc (Wayland) has no such
+  registry: the terminal was hardcoded into `wayland--setup.sh`'s runtime-generated
+  autostart/menu.xml, now read from `/opt/codingbooth/default-terminal` (falling back to
+  `foot`) — a file rather than a profile.d export, because the desktop is launched through
+  `runuser` without a login shell and never sources `/etc/profile.d`. labwc's built-in
+  Super+Enter was hardcoded to `alacritty` (dead unless alacritty happened to be installed);
+  `start-wayland` now writes an `rc.xml` that keeps labwc's default keybinds and points
+  Super+Enter at the booth's terminal (foot when none was chosen) — regenerated only while it
+  carries its `cb-generated` marker. On every desktop, Debian's generic `x-terminal-emulator` is
+  pinned to the chosen terminal too (auto mode had kept foot / xfce4-terminal by priority).
+  New complex tests, one per desktop variant:
+  `tests/complex/test-boothfile-default-terminal-{xfce,kde,lxqt,wayland}`.
+
 - **Alacritty and Kitty: alternate GPU-accelerated terminals for the desktop variants.**
   `--select alacritty` / `--select kitty` (`templates/desktops/`) install either terminal
   alongside a desktop variant's own default (xfce4-terminal, Konsole, qterminal, foot) — not
@@ -20,12 +60,14 @@ This file contains a list of changes for each released version.
   `examples/workspaces/desktop-terminals-example`. See `docs/MODERN_UX.md` for the background —
   suggestion #1 from a review of Omarchy-inspired desktop UX ideas.
 
-- **Console UI and wrapped variants: a "Capture Keyboard" toggle, and a clipboard fix for
+- **Console UI and wrapped variants: a "Full screen" toggle, and a clipboard fix for
   desktop/code-server/notebook variants.** A browser tab reserves shortcuts like Ctrl+W and
   Ctrl+T for itself, so they never reached the terminal or remote desktop underneath — no
-  page-level `preventDefault()` can win them back. A new **Capture Keyboard** button (console
+  page-level `preventDefault()` can win them back. A new **Full screen** button (console
   UI toolbar, and the lifecycle panel on wrapped variants) requests fullscreen plus the
-  Keyboard Lock API so those combos pass through instead; it only appears in Chromium-based
+  Keyboard Lock API so those combos pass through instead. It locks only the keys shortcuts are
+  built from (letters, digits, punctuation, navigation, F1–F12, modifiers), so PrintScreen and
+  the media/volume keys still reach the host while it is on; it only appears in Chromium-based
   browsers, since Keyboard Lock has no Firefox/Safari equivalent. Separately, the overlay
   iframe that wraps desktop/code-server/notebook variants now grants
   `clipboard-read`/`clipboard-write`, which was silently blocking native Clipboard API access

@@ -176,8 +176,8 @@ $(cat "$WRAPPER_DIR/booth-ready.js")
 </script>"
 export BOOTH_READY_JS
 
-# Feature-detected fullscreen + Keyboard Lock toggle behind the "Capture
-# keyboard" button below — see booth-keyboard-capture.js for why this can't
+# Feature-detected fullscreen + Keyboard Lock toggle behind the "Full
+# screen" button below — see booth-keyboard-capture.js for why this can't
 # just be a preventDefault() in this page's own key handlers.
 BOOTH_KEYBOARD_CAPTURE_JS="<script>
 $(cat "$WRAPPER_DIR/booth-keyboard-capture.js")

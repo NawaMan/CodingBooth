@@ -1,0 +1,11 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Kitty made the default terminal on labwc (Wayland)
+# wayland--setup.sh, kitty--setup.sh, and default-terminal--setup.sh are
+# not yet in the released base image, so copies are checked in under
+# .booth/setups/ to override them for this test run. variant=base (not
+# desktop-wayland) mirrors test-boothfile-wayland-terminal-font, which
+# builds labwc from scratch rather than relying on the prebuilt variant.
+setup wayland
+setup kitty
+setup default-terminal kitty

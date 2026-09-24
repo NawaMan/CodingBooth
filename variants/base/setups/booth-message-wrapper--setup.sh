@@ -295,7 +295,7 @@ $(cat "$WRAPPER_DIR/booth-ready.js")
 export BOOTH_READY_JS
 
 # Feature-detected fullscreen + Keyboard Lock toggle behind the overlay's
-# "Capture keyboard" button — see booth-keyboard-capture.js for why this
+# "Full screen" button — see booth-keyboard-capture.js for why this
 # can't just be a preventDefault() in the wrapped service's own key handlers.
 BOOTH_KEYBOARD_CAPTURE_JS="<script>
 $(cat "$WRAPPER_DIR/booth-keyboard-capture.js")
