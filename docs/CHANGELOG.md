@@ -4,6 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The desktop clipboard hint walks you to the clipboard, then gets out of the way.** The arrow
+  pointing at noVNC's left-edge tab moves onto the Clipboard button once you open the bar from
+  that tab ("Clipboard: paste here to send text into the booth"), and back to the tab if you
+  close the bar. Opening the clipboard panel dismisses it for good, the same as its ×, both
+  remembered per browser; noVNC's own open-at-startup and dragging the tab don't count. Left
+  alone, it disappears one minute after first appearing, for that page view only — it returns on
+  the next visit — but not once you've opened the bar from the tab. noVNC's clipboard panel
+  heading also gains a right-aligned "Local ⇄ remote" label, and clicking the heading opens
+  CodingBooth Help on its Clipboard tab — added from the overlay, not by patching the novnc
+  package. Also fixed: moving or resizing noVNC's tab could bring back a hint you had already
+  dismissed.
+
 - **Alacritty and Kitty: `+default` extension to make either the desktop's default terminal.**
   `--select xfce/alacritty+default` (or `kde`/`lxqt`/`wayland`, either terminal) points the
   desktop's own "open a terminal" action at Alacritty/Kitty instead of its stock terminal, via
@@ -48,12 +60,14 @@ This file contains a list of changes for each released version.
   `examples/workspaces/desktop-terminals-example`. See `docs/MODERN_UX.md` for the background —
   suggestion #1 from a review of Omarchy-inspired desktop UX ideas.
 
-- **Console UI and wrapped variants: a "Capture Keyboard" toggle, and a clipboard fix for
+- **Console UI and wrapped variants: a "Full screen" toggle, and a clipboard fix for
   desktop/code-server/notebook variants.** A browser tab reserves shortcuts like Ctrl+W and
   Ctrl+T for itself, so they never reached the terminal or remote desktop underneath — no
-  page-level `preventDefault()` can win them back. A new **Capture Keyboard** button (console
+  page-level `preventDefault()` can win them back. A new **Full screen** button (console
   UI toolbar, and the lifecycle panel on wrapped variants) requests fullscreen plus the
-  Keyboard Lock API so those combos pass through instead; it only appears in Chromium-based
+  Keyboard Lock API so those combos pass through instead. It locks only the keys shortcuts are
+  built from (letters, digits, punctuation, navigation, F1–F12, modifiers), so PrintScreen and
+  the media/volume keys still reach the host while it is on; it only appears in Chromium-based
   browsers, since Keyboard Lock has no Firefox/Safari equivalent. Separately, the overlay
   iframe that wraps desktop/code-server/notebook variants now grants
   `clipboard-read`/`clipboard-write`, which was silently blocking native Clipboard API access

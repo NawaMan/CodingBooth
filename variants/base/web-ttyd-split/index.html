@@ -650,7 +650,7 @@
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
         </button>
         <button id="reload">Reload</button>
-        <button id="kbcapture" title="Capture keyboard shortcuts that the browser would otherwise steal (requires fullscreen; Chromium browsers only)">&#x2328;</button>
+        <button id="kbcapture" title="Full screen, with browser shortcuts like Ctrl+W sent to the booth (Chromium browsers only)">&#x26F6;</button>
       </div>
     </header>
 
@@ -1242,8 +1242,8 @@
         window.BoothKeyboardCapture.onChange((active) => {
           kbCaptureButton.classList.toggle("active", active);
           kbCaptureButton.title = active
-            ? "Release captured keyboard shortcuts"
-            : "Capture keyboard shortcuts that the browser would otherwise steal (requires fullscreen; Chromium browsers only)";
+            ? "Exit full screen"
+            : "Full screen, with browser shortcuts like Ctrl+W sent to the booth (Chromium browsers only)";
         });
       } else if (kbCaptureButton) {
         kbCaptureButton.style.display = "none";

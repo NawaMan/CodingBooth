@@ -18,8 +18,9 @@ container. The floating **Booth** panel is your control surface for it:
   folder is gone after that.
 - The **idle indicator**, where shown, tells you idle shutdown is active, and lets you pause or
   disable it if you'll be away from the keyboard but still want the booth running.
-- **Capture Keyboard**, where shown, takes back browser shortcuts (like Ctrl+W) that would
-  otherwise be swallowed by the browser tab instead of reaching the booth.
+- **Full screen**, where shown, puts the booth in full screen and, while it is, takes back
+  browser shortcuts (like Ctrl+W) that would otherwise be swallowed by the browser tab instead
+  of reaching the booth.
 
 ---
 
