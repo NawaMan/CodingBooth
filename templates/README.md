@@ -255,6 +255,10 @@ All templates and extensions grouped by segment order.
 | `desktops/lxqt`  | LXQt         |
 | `desktops/xfce`  | XFCE         |
 
+`desktops/xfce` auto-selects two extensions at order **41** — right after the desktop they need,
+since both skip when XFCE is absent: `+modern-theme` (`setup xfce-theme`: Greybird-dark, Adwaita)
+and `+plank` (`setup plank`: the Plank Reloaded dock). Drop either with `~`, e.g. `xfce~plank`.
+
 ### Order 50 — Base setups (languages, tools, middlewares)
 
 | Template               | Display Name     |

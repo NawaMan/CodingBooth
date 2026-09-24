@@ -3,7 +3,9 @@
 Lightweight desktop environment with full GUI support.
 
 **Includes:**
-- XFCE desktop environment
+- XFCE desktop environment, Greybird-dark window and app theme, Adwaita icons
+- [Plank Reloaded](https://github.com/zquestz/plank-reloaded) dock (Matte theme) in place of
+  XFCE's bottom panel — Ctrl+right-click the dock for its Preferences
 - Firefox, Google Chrome, Chromium browsers
 - Python 3.12
 - VS Code desktop

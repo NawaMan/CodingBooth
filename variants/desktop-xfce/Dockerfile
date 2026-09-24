@@ -5,6 +5,11 @@ FROM nawaman/codingbooth:base-${BOOTH_VERSION_TAG}
 # Given user is root and /opt/codingbooth/setups is in PATH (from base image)
 
 RUN xfce--setup.sh
+# Modern look: Greybird-dark windows + GTK, Adwaita icons, Plank dock (Matte)
+# in place of the bottom panel. Plank seeds its launchers on first login, so
+# the browsers and VS Code installed below still land on the dock.
+RUN xfce-theme--setup.sh
+RUN plank--setup.sh
 
 RUN firefox--setup.sh
 RUN google-chrome--setup.sh

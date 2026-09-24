@@ -210,6 +210,41 @@ func TestResolve_AutoSelectNotDuplicated(t *testing.T) {
 	require.Len(t, resolved.Templates[0].Extensions, 1)
 }
 
+func TestResolve_AutoSelectExplicitParamsWin(t *testing.T) {
+	// Naming an auto-selected extension with params pins them: `test+auto-ext:1.2`
+	// must not silently keep the default the auto-select resolved it with.
+	autoSelect := true
+	ext := &tmpl.Template{
+		Name:       "auto-ext",
+		AutoSelect: &autoSelect,
+		Params:     map[string]tmpl.Param{"AUTO_VERSION": {Default: ""}},
+		ParamOrder: []string{"AUTO_VERSION"},
+	}
+	registry := &tmpl.TemplateRegistry{
+		ByName: map[string]*tmpl.Template{
+			"test": {Name: "test", Extensions: []*tmpl.Template{ext}},
+		},
+	}
+
+	parsed := &ParsedSelection{Items: []ParsedItem{
+		{Name: "test", Extensions: []ParsedExtension{{Name: "auto-ext", Params: []string{"1.2"}}}},
+	}}
+	resolved, err := Resolve(parsed, registry)
+	require.NoError(t, err)
+	require.Len(t, resolved.Templates[0].Extensions, 1)
+	assert.Equal(t, "1.2", resolved.Templates[0].Extensions[0].ParamValues["AUTO_VERSION"])
+	assert.Equal(t, ExplicitSelect, resolved.Templates[0].Extensions[0].SelectMode)
+
+	// Without params it stays the auto-selected entry, defaults and all.
+	parsed = &ParsedSelection{Items: []ParsedItem{
+		{Name: "test", Extensions: []ParsedExtension{{Name: "auto-ext"}}},
+	}}
+	resolved, err = Resolve(parsed, registry)
+	require.NoError(t, err)
+	assert.Equal(t, "", resolved.Templates[0].Extensions[0].ParamValues["AUTO_VERSION"])
+	assert.Equal(t, AutoSelected, resolved.Templates[0].Extensions[0].SelectMode)
+}
+
 // --- Exclude resolution ---
 
 func TestResolve_ExcludeAutoSelectedExtension(t *testing.T) {
