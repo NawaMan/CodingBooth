@@ -198,6 +198,7 @@ setup penpot
 setup penpot-exporter
 setup php
 setup php-code-extension
+setup plank
 setup plantuml
 setup playwright
 setup playwright-code-extension
@@ -255,6 +256,7 @@ setup wails-android
 setup warp
 setup wayland
 setup xfce
+setup xfce-theme
 setup xfce-wallpaper
 setup zig
 setup zig-code-extension

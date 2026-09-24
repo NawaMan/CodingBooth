@@ -4,6 +4,22 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **XFCE gets a more modern look: Greybird-dark, Adwaita icons, and a Plank dock.** The
+  `desktop-xfce` variant — and any Boothfile with `setup xfce`, via two new auto-selected `xfce`
+  extensions — now defaults to Greybird-dark for both window decorations and GTK apps, the
+  Adwaita icon theme, and a [Plank Reloaded](https://github.com/zquestz/plank-reloaded) dock with
+  its Matte theme in place of XFCE's bottom launcher panel (the top panel stays). New setups:
+  `xfce-theme--setup.sh` changes only the `/etc/xdg` xfconf defaults, so a theme picked later from
+  Settings always wins; `plank--setup.sh [VERSION]` installs from the plank-reloaded author's apt
+  repo (amd64 and arm64; not covered by `APT_SNAPSHOT`, so pin with `xfce+plank:0.11.172-1`) and, on the
+  first session per home, seeds the dock with the default terminal, Thunar, and whichever browsers
+  and VS Code the booth has. Opt out with `xfce~modern-theme` / `xfce~plank`.
+
+- **Fixed: params on an auto-selected extension were silently dropped.** Naming an extension
+  that its parent already auto-selects, with params — `xfce+plank:0.11.172-1` — kept the
+  auto-select's defaults and discarded the values. Explicit params now win; naming it bare still
+  changes nothing.
+
 - **The desktop clipboard hint walks you to the clipboard, then gets out of the way.** The arrow
   pointing at noVNC's left-edge tab moves onto the Clipboard button once you open the bar from
   that tab ("Clipboard: paste here to send text into the booth"), and back to the tab if you

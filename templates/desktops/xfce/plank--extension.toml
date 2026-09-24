@@ -1,0 +1,27 @@
+display-name   = "Plank Dock"
+display-disc   = "Plank Reloaded dock (Matte theme) in place of XFCE's bottom panel"
+display-detail = """\
+Installs Plank Reloaded (github.com/zquestz/plank-reloaded, from its author's apt \
+repo) and starts it with the XFCE session, using its Matte theme. The first \
+session seeds the dock with the default terminal, the file manager, and \
+whichever browsers and VS Code the booth has; XFCE's bottom launcher panel is \
+dropped since the dock takes its place (the top panel stays). Ctrl+right-click \
+the dock for its Preferences — changes made there are kept. The plank-reloaded \
+repo is not covered by APT_SNAPSHOT; pin it with xfce+plank:<version> \
+(e.g. xfce+plank:0.11.172-1)."""
+display-order  = 16
+auto-select    = true
+tags = [
+    "desktop",
+    "xfce",
+    "dock",
+    "plank"
+]
+
+[params.PLANK_VERSION]
+default     = ""
+
+[segments]
+"Boothfile--41" = """
+setup plank ${PLANK_VERSION}
+"""
