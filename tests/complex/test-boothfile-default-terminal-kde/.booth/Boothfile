@@ -1,0 +1,8 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Kitty made the default terminal on KDE
+# kitty--setup.sh and default-terminal--setup.sh are not yet in the
+# released base image, so copies are checked in under .booth/setups/ to
+# override them for this test run.
+setup kitty
+setup default-terminal kitty

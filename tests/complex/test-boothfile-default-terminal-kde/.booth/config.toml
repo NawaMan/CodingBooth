@@ -1,0 +1,2 @@
+# Test config for boothfile-default-terminal-kde
+variant = "desktop-kde"

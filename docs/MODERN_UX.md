@@ -49,6 +49,21 @@ does the pty/marker-file proof against a real running desktop booth via `docker 
 catalog guards (`test86`/`test88`/`test90`/`test92`) pass. Not verified on arm64 — flagged, not
 blocking.
 
+**2026-09-23 addendum — `+default` extension.** Both were originally *alternate* terminals only
+— no way to make either the one that actually opens when the desktop says "open a terminal."
+`templates/desktops/{alacritty,kitty}/default--extension.toml` (`--select
+xfce/alacritty+default`, any of the four desktop variants) closes that gap via a new
+`default-terminal--setup.sh`, which writes whichever DE-specific "default terminal" setting is
+present — XFCE's `helpers.rc`, KDE's `kdeglobals` plus moving Konsole's Ctrl+Alt+T in
+`kglobalshortcutsrc`, and on LXQt PCManFM-Qt's `[System] Terminal=` plus a Ctrl+Alt+T binding — at
+container start, no-clobber like the font seeding. labwc (Wayland) has no such registry at all; the
+terminal was hardcoded (autostart and right-click menu) inside `wayland--setup.sh`'s
+runtime-generated `start-wayland` script, now read from `/opt/codingbooth/default-terminal`
+(falling back to `foot`), which also drives a generated `rc.xml` rebinding labwc's Super+Enter.
+`x-terminal-emulator` is pinned to the chosen terminal on every desktop. Proven per-desktop in
+`tests/complex/test-boothfile-default-terminal-{xfce,kde,lxqt,wayland}`, including that a
+hand-edited registry file is never clobbered on a later container start.
+
 <details>
 <summary>Original feasibility check (2026-09-22, before implementation)</summary>
 
@@ -146,3 +161,38 @@ not availability. Left as a separate decision; no further work done on it here.
   user's real shell, and dash chokes on bash/kitty-specific shell-integration text, trying to
   execute fragments of it as commands. This is a herdr bug, unrelated to the alacritty/kitty work
   above. Stopped investigating further per user's call.
+- **2026-09-23 (`+default`, LXQt)** — first cut wrote `lxqt.conf`'s `[General] terminal=` and its
+  test passed, because the test only read that file back. Tried live: desktop right-click →
+  "Open in Terminal" failed with `Failed to execute child process "xterm"`. Nothing in
+  lxqt-session / lxqt-config-session / liblxqt reads that key; PCManFM-Qt uses its own
+  `[System] Terminal=` (compiled-in fallback `xterm`, not installed). It reads the user
+  `settings.conf` *or* the `/etc/xdg` copy, not a merge — so the seed copies the system file first
+  to keep the wallpaper — and it saves every setting (including `Terminal=xterm`) back on exit,
+  so editing the file while it runs is lost. Also found: Ubuntu installs LXQt's default shortcuts
+  at `/etc/xdg/lxqt/globalkeyshortcuts.conf/globalkeyshortcuts.conf` (a directory), so
+  Ctrl+Alt+T was unbound entirely; now bound in the user file. Both proven on a running desktop:
+  an xdotool Ctrl+Alt+T spawned alacritty. Lesson: for a "default app" setting, a config-file
+  check proves nothing unless something is known to read that file.
+- **2026-09-23 (`+default`, KDE Ctrl+Alt+T)** — `TerminalApplication` doesn't cover the shortcut:
+  Ctrl+Alt+T is Konsole's own kglobalaccel launch action (`X-KDE-Shortcuts` in
+  `org.kde.konsole.desktop`). Plasma 5.27 / kglobalaccel 5.115 keeps it as
+  `[org.kde.konsole.desktop] _launch=<current>,<default>,<name>`; setting Konsole's current to
+  `none` and adding `[kitty.desktop] _launch=Ctrl+Alt+T,none,kitty` works, and kglobalaccel
+  keeps both when the file is seeded before the session's first start. Proven with a real
+  keypress on a fresh booth (kitty spawned, konsole didn't). One false alarm on the way: the very
+  first xdotool key sent into a just-started session was dropped; a second press, or a throwaway
+  key first, behaves normally — a harness artifact, not the feature.
+- **2026-09-23 (`+default`, Wayland)** — first cut passed the choice to `start-wayland` as a
+  `DEFAULT_TERMINAL` export in `/etc/profile.d`, and its test passed because the test launched
+  `start-wayland` from a login shell. On a real booth it came up with foot: booth-entry starts
+  the desktop with `exec runuser -u coder -- start-wayland-wrapped` — no login shell, so
+  profile.d is never sourced (the process env had only `HOME` and `NOVNC_PORT`). Now a file,
+  `/opt/codingbooth/default-terminal`, read by `start-wayland` itself. The test launches it with
+  `env -i` to match; it failed first against the old code, then passed. Same lesson as LXQt, in
+  a different form: the test's launch path must be the product's launch path.
+- **2026-09-23 (`+default`, Wayland keys)** — a foot window opened from Apps (wofi) was expected:
+  the Wayland image always installs foot. Two real gaps found checking it: `x-terminal-emulator`
+  was still foot (kitty registers as an alternative, but at lower priority), and labwc 0.7.1's
+  built-in Super+Enter is hardcoded to `alacritty`. Fixed both; proven with `wtype` key events on
+  the live session — Super+Enter spawned kitty, and Alt+F4 still closed a window, so `<default />`
+  kept labwc's other bindings while the later `W-Return` overrode the built-in one.

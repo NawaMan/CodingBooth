@@ -4,6 +4,34 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Alacritty and Kitty: `+default` extension to make either the desktop's default terminal.**
+  `--select xfce/alacritty+default` (or `kde`/`lxqt`/`wayland`, either terminal) points the
+  desktop's own "open a terminal" action at Alacritty/Kitty instead of its stock terminal, via
+  a new `default-terminal--setup.sh` — the DE's own registry, not a replacement of the stock
+  terminal (which stays installed and reachable). Each desktop keeps that preference somewhere
+  different: XFCE's `~/.config/xfce4/helpers.rc` (`TerminalEmulator=`, which XFCE's own
+  Ctrl+Alt+T also follows), KDE's `kdeglobals` (`TerminalApplication=`). KDE's Ctrl+Alt+T is
+  Konsole's own global shortcut and ignores that key, so it is moved in `kglobalshortcutsrc`
+  (Konsole's launch key → none, the terminal's `.desktop` → Ctrl+Alt+T). LXQt has no session-wide key that anything reads — the setting that
+  matters is PCManFM-Qt's own `[System] Terminal=` (desktop right-click and "Open in Terminal"),
+  seeded from the `/etc/xdg` copy so its wallpaper settings survive. LXQt's Ctrl+Alt+T is also
+  bound to the chosen terminal: Ubuntu installs LXQt's default shortcuts one directory too deep
+  (`/etc/xdg/lxqt/globalkeyshortcuts.conf/globalkeyshortcuts.conf`), so in these images it was
+  bound to nothing at all. All written once at container start and never overwritten once set by
+  hand, matching the font-seeding convention — except PCManFM-Qt's auto-saved `Terminal=xterm`
+  fallback (xterm isn't installed), which counts as unset. labwc (Wayland) has no such
+  registry: the terminal was hardcoded into `wayland--setup.sh`'s runtime-generated
+  autostart/menu.xml, now read from `/opt/codingbooth/default-terminal` (falling back to
+  `foot`) — a file rather than a profile.d export, because the desktop is launched through
+  `runuser` without a login shell and never sources `/etc/profile.d`. labwc's built-in
+  Super+Enter was hardcoded to `alacritty` (dead unless alacritty happened to be installed);
+  `start-wayland` now writes an `rc.xml` that keeps labwc's default keybinds and points
+  Super+Enter at the booth's terminal (foot when none was chosen) — regenerated only while it
+  carries its `cb-generated` marker. On every desktop, Debian's generic `x-terminal-emulator` is
+  pinned to the chosen terminal too (auto mode had kept foot / xfce4-terminal by priority).
+  New complex tests, one per desktop variant:
+  `tests/complex/test-boothfile-default-terminal-{xfce,kde,lxqt,wayland}`.
+
 - **Alacritty and Kitty: alternate GPU-accelerated terminals for the desktop variants.**
   `--select alacritty` / `--select kitty` (`templates/desktops/`) install either terminal
   alongside a desktop variant's own default (xfce4-terminal, Konsole, qterminal, foot) — not
