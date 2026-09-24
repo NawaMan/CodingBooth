@@ -1,0 +1,21 @@
+display-name   = "Make Default"
+display-disc   = "Make Alacritty the desktop's default terminal"
+display-detail = """\
+Points the desktop's own "open a terminal" action at Alacritty instead of its \
+stock terminal — XFCE's TerminalEmulator preference, KDE's TerminalApplication, \
+or LXQt's file-manager terminal, plus the Ctrl+Alt+T shortcut on all three; on \
+labwc/Wayland, the autostart and right-click menu's Terminal entry. The stock terminal (xfce4-terminal/Konsole/qterminal/foot) \
+stays installed; this only changes what runs by default. Never overwrites a \
+choice you make by hand afterwards."""
+display-order  = 41
+auto-select    = false
+tags = [
+    "terminal",
+    "alacritty",
+    "default"
+]
+
+[segments]
+"Boothfile--65" = """
+setup default-terminal alacritty
+"""
