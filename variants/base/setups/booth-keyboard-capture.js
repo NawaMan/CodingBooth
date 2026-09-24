@@ -1,4 +1,4 @@
-// Booth keyboard capture — shared "Capture keyboard" control for browser UIs.
+// Booth keyboard capture — shared "Full screen" control for browser UIs.
 //
 // A booth's browser UI runs in an ordinary tab, so shortcuts the browser
 // reserves for itself (Ctrl+W, Ctrl+T, Ctrl+Tab, Ctrl+N, ...) never reach the
@@ -20,6 +20,36 @@
   function supported() {
     return !!(navigator.keyboard && typeof navigator.keyboard.lock === "function");
   }
+
+  // Only the keys browser shortcuts are built from. lock() with no list takes
+  // every key, which also kept PrintScreen and the media/volume keys from ever
+  // reaching the host. Every entry must be a KeyboardEvent.code Chrome knows —
+  // one unknown name and lock() rejects the whole call.
+  var LOCKED_KEYS = (function () {
+    var keys = [];
+    var i;
+    for (i = 0; i < 26; i++) {
+      keys.push("Key" + String.fromCharCode(65 + i));
+    }
+    for (i = 0; i < 10; i++) {
+      keys.push("Digit" + i, "Numpad" + i);
+    }
+    for (i = 1; i <= 12; i++) {
+      keys.push("F" + i);
+    }
+    return keys.concat([
+      "Backquote", "Minus", "Equal", "BracketLeft", "BracketRight", "Backslash",
+      "Semicolon", "Quote", "Comma", "Period", "Slash",
+      "IntlBackslash", "IntlRo", "IntlYen",
+      "Space", "Tab", "Enter", "Backspace", "Escape", "ContextMenu",
+      "Insert", "Delete", "Home", "End", "PageUp", "PageDown",
+      "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
+      "NumpadAdd", "NumpadSubtract", "NumpadMultiply", "NumpadDivide",
+      "NumpadDecimal", "NumpadEnter",
+      "ShiftLeft", "ShiftRight", "ControlLeft", "ControlRight",
+      "AltLeft", "AltRight", "MetaLeft", "MetaRight"
+    ]);
+  })();
 
   var active = false;
   var listeners = [];
@@ -85,7 +115,7 @@
     }
     return target.requestFullscreen()
       .then(function () {
-        return navigator.keyboard.lock();
+        return navigator.keyboard.lock(LOCKED_KEYS);
       })
       .then(function () {
         active = true;

@@ -60,6 +60,7 @@ setup cursor
 setup cypress
 setup dbeaver
 setup dblab
+setup default-terminal
 setup deno
 setup deno-code-extension
 setup deno-nb-kernel
