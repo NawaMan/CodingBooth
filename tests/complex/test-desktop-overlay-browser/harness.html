@@ -1,0 +1,163 @@
+<!doctype html>
+<!--
+  Browser harness for test--desktop-overlay-browser.sh. Copied into the booth's
+  /usr/share/novnc (served same-origin through the booth port), loaded by headless
+  Chrome with a scenario in the URL hash. It frames the real /booth wrapper page —
+  which frames the real noVNC — and drives both with DOM events. Each check prints
+  "PASS <name>" or "FAIL <name>: <detail>"; "DONE" marks a scenario that ran to the end.
+-->
+<html><head><meta charset="utf-8"></head><body><pre id="out"></pre>
+<iframe id="f" src="/booth" style="width:1280px;height:800px"></iframe>
+<script>
+var scenario = location.hash.slice(1), lines = [], frame = document.getElementById("f");
+function emit(line) { lines.push(line); document.getElementById("out").textContent = lines.join("\n"); }
+function check(name, ok, detail) { emit((ok ? "PASS " : "FAIL ") + name + (ok ? "" : ": " + detail)); }
+
+function wrapDoc() { return frame.contentDocument; }
+function noVnc() { return wrapDoc().getElementById("booth-inner").contentDocument; }
+function hintEl() { return wrapDoc().getElementById("bl-clip-hint"); }
+function hintShown() { return hintEl().style.display !== "none"; }
+function hintText() { return wrapDoc().getElementById("bl-clip-hint-text").textContent; }
+function saved() { return localStorage.getItem("cb.booth.clipHintDismissed"); }
+function pointsAt(id) {
+  var r = noVnc().getElementById(id).getBoundingClientRect(), h = hintEl();
+  return Math.abs(parseFloat(h.style.top) - (r.top + r.height / 2)) < 2
+      && Math.abs(parseFloat(h.style.left) - r.right) < 2;
+}
+function barOpen() { return noVnc().getElementById("noVNC_control_bar").classList.contains("noVNC_open"); }
+function mouse(el, type, dy) {
+  var r = el.getBoundingClientRect();
+  el.dispatchEvent(new MouseEvent(type, { bubbles: true, cancelable: true, button: 0,
+    clientX: r.left + r.width / 2, clientY: r.top + r.height / 2 + (dy || 0) }));
+}
+function tab() { return noVnc().getElementById("noVNC_control_bar_handle"); }
+function pressTab() { mouse(tab(), "mousedown"); mouse(tab(), "mouseup"); }
+
+var TAB_TEXT = "Clipboard & extra keys are behind this tab";
+var BUTTON_TEXT = "Clipboard: paste here to send text into the booth";
+
+// Runs [delayMs, fn] steps in order; the first step waits for the booth and noVNC to settle.
+function steps(list) {
+  var t = 0;
+  list.forEach(function (s) {
+    t += s[0];
+    setTimeout(function () { try { s[1](); } catch (e) { emit("FAIL exception: " + e); } }, t);
+  });
+}
+function atStart() {
+  check("hint shown at start, on the tab", hintShown() && pointsAt("noVNC_control_bar_handle") && hintText() === TAB_TEXT,
+        "shown=" + hintShown() + " text=" + hintText());
+  check("noVNC's own startup open of the bar did not dismiss it", saved() === null, "saved=" + saved());
+}
+var SETTLE = 10000;
+
+var scenarios = {
+  // Full screen asks the Keyboard Lock API for an explicit key list, so PrintScreen and
+  // media keys stay with the host. Fullscreen itself needs a real user gesture, so it is
+  // stubbed; the lock call is the real one, which rejects the whole list on any bad name.
+  keys: [[SETTLE, function () {
+    var w = frame.contentWindow, btn = wrapDoc().getElementById("bl-kbcapture-btn");
+    check("button reads Full screen with the full-screen icon",
+          /Full screen/.test(btn.textContent) && btn.textContent.indexOf("\u26F6") >= 0, btn.textContent.trim());
+    var realLock = w.navigator.keyboard.lock.bind(w.navigator.keyboard);
+    w.recordedLocks = [];
+    w.navigator.keyboard.lock = function (keys) { w.recordedLocks.push(keys); return realLock(keys); };
+    w.document.documentElement.requestFullscreen = function () { return Promise.resolve(); };
+    w.BoothKeyboardCapture.toggle();
+  }], [1000, function () {
+    var w = frame.contentWindow, keys = w.recordedLocks[0];
+    check("lock() is given an explicit key list", Array.isArray(keys) && keys.length > 50, JSON.stringify(keys));
+    keys = keys || [];
+    ["KeyW", "KeyT", "Tab", "Escape", "F5", "ArrowLeft", "MetaLeft"].forEach(function (k) {
+      check("key list captures " + k, keys.indexOf(k) >= 0, "missing");
+    });
+    ["PrintScreen", "AudioVolumeUp", "MediaPlayPause"].forEach(function (k) {
+      check("key list leaves " + k + " to the host", keys.indexOf(k) < 0, "present");
+    });
+    // Keyboard Lock only works in a top-level document, and here the wrapper sits in this
+    // harness's iframe, so its own lock() is refused whatever the list. In real use the
+    // wrapper *is* top-level; replay the exact list it passed from this top-level page.
+    navigator.keyboard.lock(keys).then(function () {
+      check("Chrome accepts the whole list (one unknown key name would reject it)", true, "");
+      navigator.keyboard.unlock();
+    }, function (e) {
+      check("Chrome accepts the whole list (one unknown key name would reject it)", false, e.name + ": " + e.message);
+    }).then(function () { emit("DONE"); });
+  }]],
+
+  clipboard: [[SETTLE, atStart], [0, pressTab], [1500, function () {
+    check("opening the bar from the tab moves the arrow to the Clipboard button",
+          hintShown() && pointsAt("noVNC_clipboard_button") && hintText() === BUTTON_TEXT,
+          "shown=" + hintShown() + " text=" + hintText());
+    check("opening the bar alone is not a dismissal", saved() === null, "saved=" + saved());
+    noVnc().getElementById("noVNC_clipboard_button").click();
+  }], [800, function () {
+    check("opening the clipboard panel dismisses the hint for good", !hintShown() && saved() === "1",
+          "shown=" + hintShown() + " saved=" + saved());
+    emit("DONE");
+  }]],
+
+  close: [[SETTLE, atStart], [0, pressTab], [1500, pressTab], [1500, function () {
+    check("closing the bar sends the arrow back to the tab",
+          !barOpen() && hintShown() && pointsAt("noVNC_control_bar_handle") && hintText() === TAB_TEXT,
+          "barOpen=" + barOpen() + " shown=" + hintShown() + " text=" + hintText());
+    emit("DONE");
+  }]],
+
+  drag: [[SETTLE, atStart], [0, function () {
+    mouse(tab(), "mousedown"); mouse(tab(), "mousemove", 150); mouse(tab(), "mouseup", 150);
+  }], [1500, function () {
+    check("dragging the tab neither opens the bar nor moves or dismisses the hint",
+          !barOpen() && hintShown() && hintText() === TAB_TEXT && saved() === null,
+          "barOpen=" + barOpen() + " shown=" + hintShown() + " saved=" + saved());
+    emit("DONE");
+  }]],
+
+  idle: [[SETTLE, atStart], [65000, function () {
+    check("left alone, the hint hides itself after a minute", !hintShown(), "still shown");
+    check("the one-minute hide is not a permanent dismissal", saved() === null, "saved=" + saved());
+    emit("DONE");
+  }]],
+
+  engaged: [[SETTLE, atStart], [0, pressTab], [65000, function () {
+    check("once the bar is opened from the tab, the one-minute hide no longer applies",
+          hintShown() && pointsAt("noVNC_clipboard_button"), "shown=" + hintShown());
+    emit("DONE");
+  }]],
+
+  heading: [[SETTLE, function () {
+    noVnc().getElementById("noVNC_clipboard_button").click();
+  }], [800, function () {
+    var d = noVnc(), heading = d.querySelector("#noVNC_clipboard .noVNC_heading"),
+        label = d.getElementById("cb-clip-heading-label");
+    check("clipboard heading has the Local \u21C4 remote label", !!label && label.textContent === "Local \u21C4 remote",
+          label ? label.textContent : "no label");
+    if (!label) { emit("DONE"); return; }
+    var hr = heading.getBoundingClientRect(), lr = label.getBoundingClientRect();
+    var word = Array.from(heading.childNodes).find(function (n) { return n.nodeType === 3 && n.textContent.trim(); });
+    var range = d.createRange(); range.selectNodeContents(word);
+    var wordRight = Math.max(range.getBoundingClientRect().right, heading.querySelector("img").getBoundingClientRect().right);
+    label.style.display = "none"; var bareHeight = heading.getBoundingClientRect().height; label.style.display = "";
+    check("label is right-aligned inside the heading", Math.abs((hr.right - lr.right) - 8) < 1.5, "gap " + (hr.right - lr.right));
+    check("label stays on one line", lr.height < 20, "height " + lr.height);
+    check("label does not collide with the icon or \"Clipboard\"", lr.left - wordRight > 10, "gap " + (lr.left - wordRight));
+    check("label does not change the heading's height", Math.abs(hr.height - bareHeight) < 0.5, hr.height + " vs " + bareHeight);
+    check("heading stays above the Clear button",
+          hr.bottom <= d.getElementById("noVNC_clipboard_clear_button").getBoundingClientRect().top, "overlap");
+    heading.click();
+  }], [300, function () {
+    var help = wrapDoc().getElementById("bl-help-dialog-overlay"), active = wrapDoc().querySelector(".msg-tab-panel.active");
+    check("clicking the heading opens CodingBooth Help on the Clipboard tab",
+          help.classList.contains("visible") && active && active.dataset.panel === "clipboard",
+          "visible=" + help.classList.contains("visible") + " tab=" + (active && active.dataset.panel));
+    emit("DONE");
+  }]]
+};
+
+if (scenarios[scenario]) {
+  steps(scenarios[scenario]);
+} else {
+  emit("FAIL unknown scenario: " + scenario);
+  emit("DONE");
+}
+</script></body></html>

@@ -1,6 +1,6 @@
 # Using the clipboard in a CodingBooth desktop
 
-If you opened this from the **Capture Keyboard** panel or the hint pointing at the tab on the left
+If you opened this from the **Full screen** panel or the hint pointing at the tab on the left
 edge of a desktop booth (XFCE, KDE, LXQt, Wayland), here's what that tab is for.
 
 ## Why it's needed
