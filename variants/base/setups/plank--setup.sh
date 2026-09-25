@@ -72,8 +72,7 @@ fi
 
 # ---- always visible (default hide mode) ----
 # Stock Plank autohides ("intelligent"). With hide-mode "none" the dock stays up
-# and reserves its strip of the screen, so maximized and tiled (Cortile) windows
-# stop above it instead of covering it. A schema override only changes the
+# and reserves its strip of the screen, so maximized windows stop above it instead of covering it. A schema override only changes the
 # default: a hide mode picked in Plank's Preferences, or with
 # `booth--theme set dock-hide`, still wins.
 SCHEMA_DIR=/usr/share/glib-2.0/schemas

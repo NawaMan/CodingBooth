@@ -52,7 +52,6 @@ setup codex
 setup codex-code-extension
 setup conan
 setup conda
-setup cortile
 setup cpp-nb-kernel
 setup crystal
 setup crystal-code-extension

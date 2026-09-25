@@ -51,18 +51,6 @@ after_packs() {
     done
 }
 check "every theme pack is installed before xfce-theme" after_packs
-assert-line "$boothfile" "setup cortile" ""                      "xfce installs cortile"
-check "cortile is not enabled by default" absent 'setup cortile --enable'
-
-# --- +cortile turns it on, after it is installed ------------------------------
-run booth config $prj --no-tui --overwrite --select 'xfce+cortile'
-assert-line "$boothfile" "setup cortile --enable" ""             "xfce+cortile enables cortile"
-after_install() {
-    local i e
-    i="$(line_of 'setup cortile')"; e="$(line_of 'setup cortile --enable')"
-    [[ -n "$i" && -n "$e" && "$e" -gt "$i" ]]
-}
-check "cortile is enabled after it is installed" after_install
 
 # --- naming an auto-selected extension with a param pins it ----------------
 run booth config $prj --no-tui --overwrite --select 'xfce+plank:0.11.172-1'

@@ -12,5 +12,4 @@ tags = [
 [segments]
 "Boothfile--40" = """
 setup xfce
-setup cortile
 """

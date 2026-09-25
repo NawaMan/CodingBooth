@@ -8,8 +8,6 @@ Lightweight desktop environment with full GUI support.
 - `booth--theme` to show or switch the look from any shell (`booth--theme set icons Adwaita`)
 - [Plank Reloaded](https://github.com/zquestz/plank-reloaded) dock (Matte theme, always visible)
   in place of XFCE's bottom panel — Ctrl+right-click the dock for its Preferences
-- [Cortile](https://github.com/leukipp/cortile) auto-tiling, installed but off — `cortile &`
-  to try it, or `xfce+cortile` to start it on login
 - Firefox, Google Chrome, Chromium browsers
 - Python 3.12
 - VS Code desktop, without GitHub Copilot (~290 MB lighter; select the `vscode-copilot` template

@@ -15,8 +15,6 @@ RUN reversal-icons--setup.sh
 RUN gruppled-cursors--setup.sh
 RUN xfce-theme--setup.sh
 RUN plank--setup.sh
-# Installed, not started — `setup cortile --enable` (xfce+cortile) turns it on.
-RUN cortile--setup.sh
 
 RUN firefox--setup.sh
 RUN google-chrome--setup.sh
