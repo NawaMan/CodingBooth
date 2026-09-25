@@ -47,7 +47,9 @@ renders its child in its own window, not the caller's stdout, so that's the only
 and check the icon lands in `/etc/skel/Desktop`. `examples/workspaces/desktop-terminals-example`
 does the pty/marker-file proof against a real running desktop booth via `docker exec`. All four
 catalog guards (`test86`/`test88`/`test90`/`test92`) pass. Not verified on arm64 — flagged, not
-blocking.
+blocking. Kitty comes from a pinned, SHA256-verified upstream release rather than apt (2026-09-24):
+noble's `kitty` 0.32.2 gets security fixes only through Ubuntu Pro, and is open to
+CVE-2026-72913, where displaying untrusted output can run commands.
 
 **2026-09-23 addendum — `+default` extension.** Both were originally *alternate* terminals only
 — no way to make either the one that actually opens when the desktop says "open a terminal."

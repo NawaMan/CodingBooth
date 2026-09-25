@@ -30,8 +30,8 @@ echo "🔧 Installing Alacritty…"
 
 apt-get update
 # ncurses-term: Ubuntu's alacritty package does not ship its own terminfo entry
-# (unlike kitty, which pulls one in automatically via the kitty-terminfo
-# dependency) — without it, TERM=alacritty has no matching terminfo, and any
+# (kitty--setup.sh installs Kitty's own from its release instead) — without it,
+# TERM=alacritty has no matching terminfo, and any
 # program that does a strict terminfo lookup (readline, ncurses UIs, some
 # terminal multiplexers) can misbehave. ncurses-term provides it.
 apt-get install -y --no-install-recommends alacritty ncurses-term
