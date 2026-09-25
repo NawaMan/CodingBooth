@@ -112,6 +112,7 @@ setup goose
 setup gradle
 setup greenfoot
 setup grok
+setup gruppled-cursors
 setup harlequin
 setup haskell
 setup haskell-code-extension
@@ -166,6 +167,7 @@ setup lua-nb-kernel
 setup lxqt
 setup lxqt-wallpaper
 setup make
+setup material-cursors
 setup mermaid
 setup mkcert
 setup mojo
@@ -194,10 +196,12 @@ setup ollama
 setup opencode
 setup openssh
 setup opensshd
+setup orchis-gtk
 setup penpot
 setup penpot-exporter
 setup php
 setup php-code-extension
+setup plank
 setup plantuml
 setup playwright
 setup playwright-code-extension
@@ -221,6 +225,7 @@ setup redis
 setup remotion
 setup rescript
 setup rescript-code-extension
+setup reversal-icons
 setup roc
 setup roc-code-extension
 setup ruby
@@ -242,6 +247,7 @@ setup stern
 setup svelte-code-extension
 setup swift
 setup swift-code-extension
+setup tela-icons
 setup terraform
 setup thonny
 setup tls
@@ -250,11 +256,13 @@ setup vhs
 setup viewmd
 setup viewmd-desktop-icon
 setup vscode
+setup vscode-copilot
 setup wails
 setup wails-android
 setup warp
 setup wayland
 setup xfce
+setup xfce-theme
 setup xfce-wallpaper
 setup zig
 setup zig-code-extension

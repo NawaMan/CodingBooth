@@ -265,7 +265,7 @@ func resolveExtensions(t *tmpl.Template, explicit []ParsedExtension, excludes []
 		}
 	}
 
-	selected := make(map[string]bool)
+	selected := make(map[string]int) // extension name -> index in result
 	var result []SelectedExtension
 
 	// Auto-select extensions (skip excluded ones)
@@ -283,14 +283,25 @@ func resolveExtensions(t *tmpl.Template, explicit []ParsedExtension, excludes []
 				ParamValues: paramValues,
 				SelectMode:  AutoSelected,
 			})
-			selected[ext.Name] = true
+			selected[ext.Name] = len(result) - 1
 		}
 	}
 
 	// Add explicit extensions
 	for _, pe := range explicit {
-		if selected[pe.Name] {
-			continue // already auto-selected
+		if i, ok := selected[pe.Name]; ok {
+			// Already auto-selected. Naming it again with params (`xfce+plank:1.2`)
+			// is how the user pins them, so those win over the defaults it was
+			// auto-selected with; a bare repeat changes nothing.
+			if len(pe.Params) > 0 {
+				paramValues, err := resolveParams(result[i].Extension, pe.Params, overrides)
+				if err != nil {
+					return nil, fmt.Errorf("extension %q: %w", pe.Name, err)
+				}
+				result[i].ParamValues = paramValues
+				result[i].SelectMode = ExplicitSelect
+			}
+			continue
 		}
 		ext, ok := extByName[pe.Name]
 		if !ok {

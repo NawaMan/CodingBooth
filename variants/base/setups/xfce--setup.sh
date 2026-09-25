@@ -65,6 +65,14 @@ apt-get clean && rm -rf /var/lib/apt/lists/*
 fira-code-nerd-font--setup.sh
 FONT_DIR="/usr/share/fonts/truetype/fira-code-nerd-font"
 
+# ---- symbol fallback font ----
+# FiraCode Nerd Font lacks the U+23xx symbols Claude Code draws (⏵ auto-accept,
+# ⏺ message bullet, ⏸ plan mode, ⎿ result corner) and no other installed font
+# has them, so they rendered as boxes. Symbola covers them; fontconfig falls
+# back to it from the terminal font. A running xfce4-terminal caches its
+# fallback, so on a live install each terminal window must be closed once.
+apt--install.sh fonts-symbola
+
 # ---- sanity check for noVNC ----
 if [[ ! -d /usr/share/novnc ]]; then
   echo "❌ /usr/share/novnc not found" >&2
@@ -336,6 +344,21 @@ INFO
 }
 EOF
 chmod 0644 "${PROFILE_FILE}"
+
+# ---- xfce4-terminal: no "Potentially Unsafe Paste" dialog ----
+# xfce4-terminal (1.1+) keeps its preferences in the xfce4-terminal xfconf
+# channel, so a system default here applies to every user who has not chosen
+# otherwise — re-enabling it from the dialog or Preferences still wins. Off by
+# default because pasting install one-liners into a throwaway booth is routine.
+XFCONF_DIR="/etc/xdg/xfce4/xfconf/xfce-perchannel-xml"
+mkdir -p "${XFCONF_DIR}"
+cat > "${XFCONF_DIR}/xfce4-terminal.xml" <<'EOF'
+<?xml version="1.0" encoding="UTF-8"?>
+<channel name="xfce4-terminal" version="1.0">
+  <property name="misc-show-unsafe-paste-dialog" type="bool" value="false"/>
+</channel>
+EOF
+chmod 0644 "${XFCONF_DIR}/xfce4-terminal.xml"
 
 # ---- desktop launcher trust (xfdesktop / Thunar) ----
 # xfdesktop hands .desktop launches to Thunar, whose trust check (in

@@ -255,6 +255,16 @@ All templates and extensions grouped by segment order.
 | `desktops/lxqt`  | LXQt         |
 | `desktops/xfce`  | XFCE         |
 
+`desktops/xfce` auto-selects two extensions at order **41** — right after the desktop they need,
+since both skip when XFCE is absent: `+modern-theme` (the theme packs, then `setup xfce-theme`,
+which picks the defaults and so must come last) and `+plank` (`setup plank`: the Plank Reloaded
+dock). Drop either with `~`, e.g. `xfce~plank`.
+
+Themes beyond the XFCE default are standalone, opt-in templates at order **60** —
+`desktops/tela-icons`, `desktops/orchis-gtk`, `desktops/material-cursors`. They only install;
+`xfce-theme` (auto-selected with `xfce`) stays the one place that picks defaults, and
+`booth--theme` lists whatever is installed.
+
 ### Order 50 — Base setups (languages, tools, middlewares)
 
 | Template               | Display Name     |

@@ -5,6 +5,13 @@
 
 # vscode--setup.sh — Install Visual Studio Code (DEB, no snap)
 # Adds: Jupyter Notebook + Bash kernel setup (for VS Code Jupyter extension)
+#
+# GitHub Copilot is stripped by default: the `code` package bundles it as a
+# built-in extension plus a native runtime (~290 MB of a ~970 MB install). Pass
+# --keep-copilot to leave it in, or add it back to a stripped image with
+# vscode-copilot--setup.sh (the vscode-copilot template).
+#
+# Usage: vscode--setup.sh [--keep-copilot]
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO" >&2; exit 1' ERR
 
@@ -16,6 +23,14 @@ fi
 
 # This script will always be installed by root.
 HOME=/root
+
+KEEP_COPILOT=false
+if [[ "${1:-}" == "--keep-copilot" ]]; then
+  KEEP_COPILOT=true
+fi
+# Marker read by the /usr/local/bin/code wrapper (to seed chat.disableAIFeatures)
+# and by vscode-copilot--setup.sh (to know there is something to restore).
+COPILOT_STRIPPED_MARKER=/etc/codingbooth/vscode-copilot-stripped
 
 
 # Work around hash-sum-mismatch issues under emulation (libgcrypt)
@@ -66,6 +81,22 @@ apt-get update || echo "⚠️ apt-get update failed; continuing with existing i
 apt-get install -y code
 echo "✅ VS Code installed"
 
+# ---- Strip GitHub Copilot (unless --keep-copilot) ----
+# Only the two Copilot folders go; VS Code runs normally without them. Its core
+# still tries to start the Copilot client and logs "Unable to resolve
+# @github/copilot SDK runtime paths" on every launch, so the wrapper below also
+# seeds "chat.disableAIFeatures": true, which stops that entirely.
+VSCODE_APP=/usr/share/code/resources/app
+if [[ "$KEEP_COPILOT" == "true" ]]; then
+  rm -f "$COPILOT_STRIPPED_MARKER"
+else
+  rm -rf "$VSCODE_APP/extensions/copilot" \
+         "$VSCODE_APP"/node_modules.asar.unpacked/@github/copilot-sdk-*
+  install -d /etc/codingbooth
+  dpkg-query -W -f='${Version}\n' code > "$COPILOT_STRIPPED_MARKER"
+  echo "✅ GitHub Copilot stripped from VS Code (restore: setup vscode-copilot)"
+fi
+
 # ---- Jupyter + Bash kernel setup ----
 echo "🔧 Installing Jupyter + Bash kernel…"
 
@@ -111,15 +142,29 @@ mkdir -p "${DATA_DIR}"
 # never overwritten. Gated on the font actually being installed, though every
 # variant that ships this launcher already runs its desktop setup (which
 # installs it) first.
+#
+# AI features are turned off the same way, once, when this image had Copilot
+# stripped (see vscode--setup.sh) — otherwise VS Code keeps trying to start it.
 SETTINGS_JSON="${DATA_DIR}/User/settings.json"
-if [[ ! -f "$SETTINGS_JSON" && -f /usr/share/fonts/truetype/fira-code-nerd-font/FiraCodeNerdFontMono-Regular.ttf ]]; then
-  mkdir -p "$(dirname "$SETTINGS_JSON")"
-  cat > "$SETTINGS_JSON" <<'JSONEOF'
-{
-  "terminal.integrated.fontFamily": "FiraCode Nerd Font Mono",
-  "editor.fontFamily": "FiraCode Nerd Font Mono"
-}
-JSONEOF
+if [[ ! -f "$SETTINGS_JSON" ]]; then
+  SEED=()
+  if [[ -f /usr/share/fonts/truetype/fira-code-nerd-font/FiraCodeNerdFontMono-Regular.ttf ]]; then
+    SEED+=('"terminal.integrated.fontFamily": "FiraCode Nerd Font Mono"'
+           '"editor.fontFamily": "FiraCode Nerd Font Mono"')
+  fi
+  if [[ -f /etc/codingbooth/vscode-copilot-stripped ]]; then
+    SEED+=('"chat.disableAIFeatures": true')
+  fi
+  if [[ ${#SEED[@]} -gt 0 ]]; then
+    mkdir -p "$(dirname "$SETTINGS_JSON")"
+    { echo "{"
+      for i in "${!SEED[@]}"; do
+        sep=","; [[ $i -eq $(( ${#SEED[@]} - 1 )) ]] && sep=""
+        echo "  ${SEED[$i]}${sep}"
+      done
+      echo "}"
+    } > "$SETTINGS_JSON"
+  fi
 fi
 
 # --disable-dev-shm-usage: the container's /dev/shm defaults to 64 MB, too small
@@ -138,13 +183,32 @@ exec /usr/bin/code                           \
 EOF
 chmod 755 "$STARTER_FILE"
 
-# Froce the desktop launcher to use the executor we create.
-if [[ -f /usr/share/applications/code.desktop ]]; then
-  sed -i 's#^Exec=.*#Exec=/usr/local/bin/code %F#' /usr/share/applications/code.desktop || true
-fi
+# Force the desktop launchers to use the executor we create. Newer `code`
+# packages ship com.microsoft.VSCode*.desktop instead of code*.desktop; a
+# launcher left on /usr/share/code/code runs Electron without --no-sandbox and
+# it aborts ("Failed to move to new namespace", exit 133). Only the binary is
+# swapped, so each Exec keeps its own args (--new-window, --open-url %U, …).
+VSCODE_LAUNCHERS=()
+for f in /usr/share/applications/code.desktop                     \
+         /usr/share/applications/code-url-handler.desktop         \
+         /usr/share/applications/com.microsoft.VSCode.desktop    \
+         /usr/share/applications/com.microsoft.VSCode.UrlHandler.desktop; do
+  [[ -f "$f" ]] || continue
+  sed -i -E 's#^Exec=(/usr/share/code/code|/usr/bin/code)( |$)#Exec=/usr/local/bin/code\2#' "$f"
+  if grep -qE '^Exec=(/usr/share/code/code|/usr/bin/code)( |$)' "$f"; then
+    echo "❌ Unrewritten Exec line left in $f" >&2
+    exit 1
+  fi
+  VSCODE_LAUNCHERS+=("$f")
+done
 
-# Register a VS Code desktop icon (no-ops on non-desktop variants).
-cb-desktop-icon.sh code.desktop
+# Register a VS Code desktop icon (no-ops on non-desktop variants) — the main
+# launcher under whichever name the package uses, never the URL handler.
+for f in "${VSCODE_LAUNCHERS[@]}"; do
+  case "$f" in
+    */code.desktop|*/com.microsoft.VSCode.desktop) cb-desktop-icon.sh "$f"; break ;;
+  esac
+done
 
 echo "✅ VS Code configured to use --no-sandbox by default"
 echo "✅ Environment prepared for Jupyter notebooks + Bash kernel"

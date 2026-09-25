@@ -1,0 +1,25 @@
+display-name   = "Tela Icons"
+display-disc   = "Tela icon theme (Tela, Tela-light, Tela-dark) — opt-in, not the default"
+display-detail = """\
+Installs the Tela icon theme (github.com/vinceliuice/Tela-icon-theme) \
+system-wide, pinned to a release tag. It does not change the default icons; \
+switch with `booth--theme set icons Tela-dark` or in Settings → Appearance."""
+display-order  = 50
+tags = [
+    "desktop",
+    "icons",
+    "theme"
+]
+
+[params.TELA_VERSION]
+default  = "2026-07-07"
+suggests = ["2026-07-07"]
+
+[params.TELA_COLOR]
+default  = "standard"
+suggests = ["standard", "black", "blue", "brown", "green", "grey", "orange", "pink", "purple", "red", "yellow", "manjaro", "ubuntu", "dracula", "nord"]
+
+[segments]
+"Boothfile--60" = """
+setup tela-icons ${TELA_VERSION} ${TELA_COLOR}
+"""
