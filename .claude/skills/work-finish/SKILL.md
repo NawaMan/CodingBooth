@@ -243,10 +243,23 @@ When **all of** the following are true:
 language, for example:
 
 > **All done.** Gaps closed, branch merged into local `main`, worktree/branch removed. Nothing
-> was pushed. **You can close this session.**
+> was pushed.
 
 Loose ends worth flagging (push still pending, unrelated dirty files on main) go **in** that block
 as their own bullets — never trailing after it.
+
+Then, as the **very last thing** in the reply, print the close line **in green** — a `diff` code
+block whose single line starts with `+ `, which the terminal renders green (plain Markdown has no
+colour, and raw ANSI escapes print literally):
+
+````markdown
+```diff
++ You can close this session.
+```
+````
+
+Only for a complete land. Every other ending — including the *not done* verdict below — stays
+uncoloured, so the green line always means "safe to walk away".
 
 **Do not** use that line if: re-verify failed; merge failed; cleanup refused; or the user chose
 **land as-is** with remaining gaps.
