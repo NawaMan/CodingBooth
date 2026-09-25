@@ -260,6 +260,9 @@ since both skip when XFCE is absent: `+modern-theme` (the theme packs, then `set
 which picks the defaults and so must come last) and `+plank` (`setup plank`: the Plank Reloaded
 dock). Drop either with `~`, e.g. `xfce~plank`.
 
+One opt-in extension shares order 41: `+i3` (`setup i3 ${I3_MOD}`) swaps xfwm4 for the i3 tiling
+window manager inside the same XFCE session — `xfce+i3`, or `xfce+i3:super` for a Super mod key.
+
 Themes beyond the XFCE default are standalone, opt-in templates at order **60** —
 `desktops/tela-icons`, `desktops/orchis-gtk`, `desktops/material-cursors`. They only install;
 `xfce-theme` (auto-selected with `xfce`) stays the one place that picks defaults, and
