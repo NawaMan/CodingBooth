@@ -41,12 +41,44 @@ assert-line "$boothfile" "setup plank" ' ${PLANK_VERSION}'       "xfce auto-sele
 assert-line "$boothfile" "arg PLANK_VERSION=" ""                 "PLANK_VERSION defaults to empty (latest)"
 check "setup xfce-theme runs after setup xfce" after_xfce 'setup xfce-theme'
 check "setup plank runs after setup xfce"      after_xfce 'setup plank ${PLANK_VERSION}'
+# xfce-theme picks defaults out of what the packs installed, so it goes after them.
+after_packs() {
+    local t p
+    t="$(line_of 'setup xfce-theme')"
+    for p in reversal-icons gruppled-cursors; do
+        p="$(line_of "setup $p")"
+        [[ -n "$p" && -n "$t" && "$p" -lt "$t" ]] || return 1
+    done
+}
+check "every theme pack is installed before xfce-theme" after_packs
+assert-line "$boothfile" "setup cortile" ""                      "xfce installs cortile"
+check "cortile is not enabled by default" absent 'setup cortile --enable'
+
+# --- +cortile turns it on, after it is installed ------------------------------
+run booth config $prj --no-tui --overwrite --select 'xfce+cortile'
+assert-line "$boothfile" "setup cortile --enable" ""             "xfce+cortile enables cortile"
+after_install() {
+    local i e
+    i="$(line_of 'setup cortile')"; e="$(line_of 'setup cortile --enable')"
+    [[ -n "$i" && -n "$e" && "$e" -gt "$i" ]]
+}
+check "cortile is enabled after it is installed" after_install
 
 # --- naming an auto-selected extension with a param pins it ----------------
 run booth config $prj --no-tui --overwrite --select 'xfce+plank:0.11.172-1'
 assert-line "$boothfile" "arg PLANK_VERSION=" "0.11.172-1"       "xfce+plank:<ver> pins PLANK_VERSION"
 run booth config $prj --no-tui --overwrite
 assert-line "$boothfile" "arg PLANK_VERSION=" "0.11.172-1"       "the pin survives a reconfigure"
+
+# --- opt-in theme templates install only, with their params wired ----------
+run booth config $prj --no-tui --overwrite --select 'xfce/tela-icons/orchis-gtk/material-cursors:dark'
+assert-line "$boothfile" "setup tela-icons" ' ${TELA_VERSION} ${TELA_COLOR}'                    "tela-icons installs via its setup"
+assert-line "$boothfile" "setup orchis-gtk" ' ${ORCHIS_ACCENT} ${ORCHIS_SIZE} ${ORCHIS_VERSION}' "orchis-gtk installs via its setup"
+assert-line "$boothfile" "arg MATERIAL_CURSORS_VARIANT=" "dark"                                 "material-cursors:dark picks the variant"
+
+# --- Copilot is stripped from VS Code by default; this template restores it --
+run booth config $prj --no-tui --overwrite --variant xfce --select 'vscode-copilot'
+assert-line "$boothfile" "setup vscode-copilot" ""               "vscode-copilot restores Copilot"
 
 # --- each can be excluded ---------------------------------------------------
 run booth config $prj --no-tui --overwrite --select 'xfce~plank'

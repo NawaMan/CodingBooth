@@ -526,6 +526,26 @@ build-args = ["--build-arg", "NODE_VERSION=20"]
 
 ---
 
+## Action: Change the Desktop Look
+
+On a desktop booth (XFCE for now), `booth--theme` switches the look from any shell — no GUI, no
+`.booth/` change, applies live:
+
+```bash
+booth--theme                          # current gtk, wm, icons, cursor, cursor-size, dock, dock-hide
+booth--theme list icons               # what is installed (* marks the current one)
+booth--theme set  icons Adwaita       # switch; refuses a name that is not installed
+booth--theme set  dock-hide intelligent
+booth--theme reset icons              # back to the image default
+```
+
+It writes exactly what the desktop's own Settings would, per user under `~/.config` — so it
+survives a booth restart but not a recreated container. To change the **image default** for
+everyone instead, that is a setup change (`xfce-theme--setup.sh` picks the XFCE defaults) — hand
+it to the user like any other environment change.
+
+---
+
 ## Action: Find Information About the Environment
 
 **Quick overview:** Run `booth--info` to see version, variant, key paths, and how to reach the host:

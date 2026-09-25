@@ -1,0 +1,251 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth--theme
+#
+# Show or switch the desktop's look from a shell — so a user, a script, or an
+# agent inside the booth can customize it programmatically.
+#
+#   booth--theme                        show every type's current value
+#   booth--theme list  <type>           what is installed for that type (* = current)
+#   booth--theme get   <type>           the current value
+#   booth--theme set   <type> <value>   switch it (applies live)
+#   booth--theme reset [<type>]         drop your choice → back to the image default
+#
+# Types: gtk (app style), wm (window borders), icons, cursor, cursor-size,
+#        dock (Plank theme), dock-hide (Plank hide mode)
+#
+# One front end, one backend per desktop. Only XFCE has a backend so far; on
+# another desktop it says so instead of guessing. Choices are written exactly
+# where the desktop's own Settings would write them (per user, under ~/.config),
+# so they survive a restart but not a recreated container.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+PROG="booth--theme"
+SHARE_DIR="${BOOTH_THEME_SHARE_DIR:-/usr/share}"   # overridable for tests
+PLANK_SETTINGS="net.launchpad.plank.dock.settings:/net/launchpad/plank/docks/dock1/"
+TYPES=(gtk wm icons cursor cursor-size dock dock-hide)
+
+die() { echo "❌ $PROG: $*" >&2; exit 1; }
+
+usage() {
+  sed -n '/^#   booth--theme/,/^#        dock/p' "$0" | sed 's/^# \{0,1\}//'
+}
+
+# ---- desktop detection -------------------------------------------------------
+
+detect_desktop() {
+  if   pgrep -x xfce4-session >/dev/null 2>&1; then echo xfce
+  elif pgrep -x plasmashell   >/dev/null 2>&1; then echo kde
+  elif pgrep -x lxqt-session  >/dev/null 2>&1; then echo lxqt
+  elif pgrep -x labwc         >/dev/null 2>&1; then echo wayland
+  else echo none
+  fi
+}
+
+# Borrow the session's D-Bus address and DISPLAY from the running session, so
+# this works from any shell — `booth exec`, an SSH login, an agent — not only
+# from a terminal opened inside the desktop.
+attach_session() {
+  local proc="$1" pid env
+  if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" || -z "${DISPLAY:-}" ]]; then
+    pid="$(pgrep -u "$(id -u)" -x "$proc" | head -1 || true)"
+    [[ -n "$pid" ]] || die "the $proc session is not running as $(id -un) — run this as the desktop user"
+    env="$(tr '\0' '\n' < "/proc/$pid/environ" 2>/dev/null || true)"
+    [[ -n "${DBUS_SESSION_BUS_ADDRESS:-}" ]] ||
+      export DBUS_SESSION_BUS_ADDRESS="$(sed -n 's/^DBUS_SESSION_BUS_ADDRESS=//p' <<< "$env" | head -1)"
+    [[ -n "${DISPLAY:-}" ]] ||
+      export DISPLAY="$(sed -n 's/^DISPLAY=//p' <<< "$env" | head -1)"
+  fi
+}
+
+# ---- what is installed ---------------------------------------------------------
+
+# Theme names from every place GTK looks, deduped and sorted.
+theme_dirs() { echo "$HOME/.themes" "$HOME/.local/share/themes" "$SHARE_DIR/themes"; }
+icon_dirs()  { echo "$HOME/.icons"  "$HOME/.local/share/icons"  "$SHARE_DIR/icons"; }
+
+names_with() {   # names_with <kind: themes|icons> <sub-path that must exist>
+  local kind="$1" need="$2" root d
+  local roots; roots="$( [[ "$kind" == themes ]] && theme_dirs || icon_dirs )"
+  # `if`, not `[[ ]] && …`: a loop whose last test fails would return non-zero,
+  # which pipefail carries through sort and set -e turns into a silent exit.
+  for root in $roots; do
+    for d in "$root"/*/; do
+      if [[ -e "${d}${need}" ]]; then basename "$d"; fi
+    done
+  done 2>/dev/null | sort -u
+}
+
+list_values() {
+  case "$1" in
+    gtk)         names_with themes gtk-3.0 ;;
+    wm)          names_with themes xfwm4 ;;
+    # An icon theme has size directories; a cursor-only theme has just cursors/.
+    icons)       for n in $(names_with icons index.theme); do
+                   if grep -qs '^Directories=' "$(icon_index "$n")"; then echo "$n"; fi
+                 done ;;
+    cursor)      names_with icons cursors ;;
+    cursor-size) printf '%s\n' 24 32 40 48 64 ;;
+    dock)        for d in "$HOME/.local/share/plank/themes" "$SHARE_DIR/plank/themes"; do
+                   for t in "$d"/*/; do if [[ -d "$t" ]]; then basename "$t"; fi; done
+                 done 2>/dev/null | sort -u ;;
+    dock-hide)   gsettings range "$PLANK_SETTINGS" hide-mode 2>/dev/null | tail -n +2 | tr -d "'" ;;
+  esac
+}
+
+icon_index() {
+  local root
+  for root in $(icon_dirs); do
+    if [[ -f "$root/$1/index.theme" ]]; then echo "$root/$1/index.theme"; return; fi
+  done
+}
+
+# ---- XFCE backend --------------------------------------------------------------
+
+# type → "channel property xfconf-type" (xfconf) or "gsettings key" (Plank)
+xfce_key() {
+  case "$1" in
+    gtk)         echo "xfconf xsettings /Net/ThemeName string" ;;
+    wm)          echo "xfconf xfwm4 /general/theme string" ;;
+    icons)       echo "xfconf xsettings /Net/IconThemeName string" ;;
+    cursor)      echo "xfconf xsettings /Gtk/CursorThemeName string" ;;
+    cursor-size) echo "xfconf xsettings /Gtk/CursorThemeSize int" ;;
+    dock)        echo "gsettings theme" ;;
+    dock-hide)   echo "gsettings hide-mode" ;;
+  esac
+}
+
+require_plank() {
+  command -v gsettings >/dev/null 2>&1 &&
+    gsettings list-keys "$PLANK_SETTINGS" >/dev/null 2>&1 ||
+    die "'$1' needs the Plank dock, which is not installed (setup plank)"
+}
+
+xfce_get() {
+  local k; read -r -a k <<< "$(xfce_key "$1")"
+  if [[ "${k[0]}" == xfconf ]]; then
+    xfconf-query -c "${k[1]}" -p "${k[2]}" 2>/dev/null || true
+  else
+    require_plank "$1"
+    gsettings get "$PLANK_SETTINGS" "${k[1]}" 2>/dev/null | tr -d "'" || true
+  fi
+}
+
+xfce_set() {
+  local k; read -r -a k <<< "$(xfce_key "$1")"
+  if [[ "${k[0]}" == xfconf ]]; then
+    # -n creates the property in the user's channel if only the system default had it.
+    xfconf-query -c "${k[1]}" -p "${k[2]}" -n -t "${k[3]}" -s "$2"
+  else
+    require_plank "$1"
+    gsettings set "$PLANK_SETTINGS" "${k[1]}" "$2"
+  fi
+}
+
+xfce_reset() {
+  local k; read -r -a k <<< "$(xfce_key "$1")"
+  if [[ "${k[0]}" == xfconf ]]; then
+    xfconf-query -c "${k[1]}" -p "${k[2]}" -r 2>/dev/null || true
+  else
+    require_plank "$1"
+    gsettings reset "$PLANK_SETTINGS" "${k[1]}"
+  fi
+}
+
+# ---- front end -----------------------------------------------------------------
+
+check_type() {
+  local t
+  for t in "${TYPES[@]}"; do [[ "$1" == "$t" ]] && return 0; done
+  die "unknown type '$1' (types: ${TYPES[*]})"
+}
+
+check_value() {
+  local type="$1" value="$2"
+  if [[ "$type" == cursor-size ]]; then
+    [[ "$value" =~ ^[1-9][0-9]*$ ]] || die "cursor-size must be a positive number, not '$value'"
+    return
+  fi
+  # Capture first: piping into `grep -q` makes the lister die of SIGPIPE on an
+  # early match, which pipefail turns into "not found".
+  local installed; installed="$(list_values "$type")"
+  if ! grep -qxF -- "$value" <<< "$installed"; then
+    echo "❌ $PROG: '$value' is not an installed $type. Installed:" >&2
+    sed 's/^/     /' <<< "$installed" >&2
+    exit 1
+  fi
+}
+
+main() {
+  local cmd="${1:-show}"
+  case "$cmd" in
+    -h|--help|help) usage; return ;;
+  esac
+
+  local desktop; desktop="$(detect_desktop)"
+  case "$desktop" in
+    xfce) attach_session xfce4-session ;;
+    none) die "no desktop is running (this booth has no desktop variant, or it has not started yet)" ;;
+    *)    die "the $desktop desktop is not supported yet — only XFCE for now" ;;
+  esac
+
+  case "$cmd" in
+    show)
+      local t v
+      for t in "${TYPES[@]}"; do
+        if [[ "$t" == dock* ]] && ! gsettings list-keys "$PLANK_SETTINGS" >/dev/null 2>&1; then
+          v="(no Plank)"
+        else
+          v="$(xfce_get "$t")"
+        fi
+        printf '%-12s %s\n' "$t" "$v"
+      done
+      ;;
+    list)
+      [[ $# -eq 2 ]] || die "usage: $PROG list <type>"
+      check_type "$2"
+      [[ "$2" == dock* ]] && require_plank "$2"
+      local current; current="$(xfce_get "$2")"
+      list_values "$2" | while read -r v; do
+        [[ "$v" == "$current" ]] && echo "* $v" || echo "  $v"
+      done
+      ;;
+    get)
+      [[ $# -eq 2 ]] || die "usage: $PROG get <type>"
+      check_type "$2"
+      xfce_get "$2"
+      ;;
+    set)
+      [[ $# -eq 3 ]] || die "usage: $PROG set <type> <value>"
+      check_type "$2"
+      [[ "$2" == dock* ]] && require_plank "$2"
+      check_value "$2" "$3"
+      xfce_set "$2" "$3"
+      echo "✅ $2 = $3"
+      ;;
+    reset)
+      [[ $# -le 2 ]] || die "usage: $PROG reset [<type>]"
+      local types=("${TYPES[@]}")
+      if [[ $# -eq 2 ]]; then check_type "$2"; types=("$2"); fi
+      for t in "${types[@]}"; do
+        if [[ "$t" == dock* ]] && ! gsettings list-keys "$PLANK_SETTINGS" >/dev/null 2>&1; then
+          [[ $# -eq 2 ]] && require_plank "$t"
+          continue
+        fi
+        xfce_reset "$t"
+        echo "↺ $t = $(xfce_get "$t")"
+      done
+      ;;
+    *)
+      die "unknown command '$cmd' (show | list | get | set | reset; --help)"
+      ;;
+  esac
+}
+
+main "$@"

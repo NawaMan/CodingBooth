@@ -15,6 +15,7 @@
 #   - /usr/local/bin/cb-plank-start, launched from XFCE autostart, which on the
 #     first session per home sets the Matte theme and seeds the dock launchers,
 #     then execs plank. Later changes made from Plank's Preferences are kept.
+#   - hide-mode 'none' as the default (always visible, reserves its space).
 #   - XFCE's stock bottom panel (panel-2, a launcher bar) is dropped from the
 #     panel's system default, since the dock sits in the same place. The top
 #     panel is untouched. Homes that already have a panel config keep theirs.
@@ -68,6 +69,20 @@ if [[ ! -d "/usr/share/plank/themes/${PLANK_THEME}" ]]; then
   echo "❌ Plank theme '${PLANK_THEME}' not found under /usr/share/plank/themes" >&2
   exit 2
 fi
+
+# ---- always visible (default hide mode) ----
+# Stock Plank autohides ("intelligent"). With hide-mode "none" the dock stays up
+# and reserves its strip of the screen, so maximized and tiled (Cortile) windows
+# stop above it instead of covering it. A schema override only changes the
+# default: a hide mode picked in Plank's Preferences, or with
+# `booth--theme set dock-hide`, still wins.
+SCHEMA_DIR=/usr/share/glib-2.0/schemas
+cat > "$SCHEMA_DIR/90-cb-plank.gschema.override" <<'OVERRIDE'
+[net.launchpad.plank.dock.settings]
+hide-mode='none'
+OVERRIDE
+chmod 0644 "$SCHEMA_DIR/90-cb-plank.gschema.override"
+glib-compile-schemas "$SCHEMA_DIR"
 
 # ---- per-session starter ----
 cat > /usr/local/bin/cb-plank-start <<EOF

@@ -1,0 +1,21 @@
+display-name   = "VS Code Copilot"
+display-disc   = "Keep GitHub Copilot in desktop VS Code (stripped by default)"
+display-detail = """\
+The desktop variants' VS Code ships without GitHub Copilot: the `code` package \
+bundles it as a built-in extension plus a native runtime, about 290 MB of a \
+970 MB install, so it is stripped and "chat.disableAIFeatures" is set. This \
+puts the two Copilot folders back, from the same VS Code version, and stops \
+new homes from getting the disable setting. Needs a desktop variant (VS Code \
+comes with xfce, kde, lxqt and wayland)."""
+display-order  = 31
+tags = [
+    "ai",
+    "copilot",
+    "github",
+    "vscode"
+]
+
+[segments]
+"Boothfile--60" = """
+setup vscode-copilot
+"""

@@ -5,11 +5,18 @@ FROM nawaman/codingbooth:base-${BOOTH_VERSION_TAG}
 # Given user is root and /opt/codingbooth/setups is in PATH (from base image)
 
 RUN xfce--setup.sh
-# Modern look: Greybird-dark windows + GTK, Adwaita icons, Plank dock (Matte)
-# in place of the bottom panel. Plank seeds its launchers on first login, so
-# the browsers and VS Code installed below still land on the dock.
+# Modern look. The packs only install; xfce-theme--setup.sh then picks the
+# defaults (Greybird-dark apps and windows, Reversal-dark icons, Gruppled White
+# cursor), so it runs after them. Only the default look is installed; other
+# themes are opt-in templates. Switch in the booth with booth--theme. Plank seeds
+# its launchers on first login, so the browsers and VS Code installed below
+# still land on the dock.
+RUN reversal-icons--setup.sh
+RUN gruppled-cursors--setup.sh
 RUN xfce-theme--setup.sh
 RUN plank--setup.sh
+# Installed, not started — `setup cortile --enable` (xfce+cortile) turns it on.
+RUN cortile--setup.sh
 
 RUN firefox--setup.sh
 RUN google-chrome--setup.sh
