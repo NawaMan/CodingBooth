@@ -143,6 +143,10 @@ for readability — `booth example list` itself prints a flat alphabetical list.
 
 `browser-shared` · `playwright` · `playwright-polyglot`
 
+### Desktops
+
+`i3-desktop` — the XFCE desktop tiling with i3; `start-i3` / `stop-i3` switch it live.
+
 ### Editors & AI tooling
 
 `anythingllm` · `claude` · `herdr` · `neovim`

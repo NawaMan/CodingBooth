@@ -4,19 +4,28 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
-- **i3 tiling for the XFCE desktop: `xfce+i3`.** An opt-in extension that swaps XFCE's window
-  manager (xfwm4) for [i3](https://i3wm.org), keeping the rest of the session — the top panel is
-  the bar, and the menu, tray, Thunar, notifications and Plank dock are unchanged. Alt is the mod
-  key by default, since a browser tab rarely passes Super through to noVNC; `xfce+i3:super`
-  picks Super. Every binding also works as Ctrl+Alt (Ctrl+Alt+h, Ctrl+Alt+2, …), which reaches
-  the booth in any browser — Firefox keeps Alt shortcuts for itself and cannot use the panel's
-  keyboard-capturing Full screen — so the Help lists the Ctrl+Alt forms. Windows have an 8px
-  gap, and the Plank dock stays centred along the bottom.
-  xfdesktop does not run under i3, so the desktop shows the wallpaper (repainted when noVNC
-  resizes the screen) but no icons.
-  Customize by copying `/etc/xdg/i3/config` to `~/.config/i3/config`.
-  - The booth's **Help** dialog gets an **i3 Shortcuts** tab listing the key bindings — present only when
-    `i3--setup.sh` ran. Setups can add their own Help tabs the same way: a lifecycle-panel
+- **Tiling Window Manager (i3): `--select i3`.** A new template that installs
+  [i3](https://i3wm.org) beside the desktop's own window manager on the **XFCE or LXQt** desktop
+  (xfwm4 / openbox): windows tile instead of overlapping, driven from the keyboard, while the
+  panel, menu, tray, file manager, notifications and Plank dock stay. It does nothing on a booth
+  without XFCE or LXQt, so it is safe to select anywhere — the desktop can come from the variant
+  or the `xfce` / `lxqt` template. Try it with `booth example try i3-desktop <folder>`.
+  - **`start-i3` / `stop-i3`** switch a running desktop to i3 and back (also: the "Tiling Window
+    Manager (i3)" desktop icon, "Leave Tiling (i3)" in the menu, and Ctrl+Alt+Shift+e).
+    Desktop icons are hidden while i3 runs — i3 has no desktop layer — and the wallpaper is
+    painted on the root window instead, repainted whenever noVNC resizes the screen.
+  - Alt is the mod key by default, since a browser tab rarely passes Super through to noVNC;
+    `i3:super` picks Super.
+  - Extensions, all on by default: **`i3+default`** logs in on i3 (`i3~default` to log in on the
+    desktop's own window manager and tile on demand); **`i3+ctrl-alt`** adds a Ctrl+Alt twin of
+    every shortcut (Ctrl+Alt+h, Ctrl+Alt+2, …) — it reaches the booth in any browser, where Alt
+    needs Chrome's keyboard-capturing Full screen, so the Help lists the Ctrl+Alt forms — and drops
+    the desktop's own clashing Ctrl+Alt+L / F / E; **`i3+gaps`** puts an 8px gap between windows
+    (`i3+gaps:12` for more).
+  - Customize by copying `/etc/xdg/i3/config` to `~/.config/i3/config`; extensions add their
+    pieces under `/etc/xdg/i3/config.d/`.
+  - The booth's **Help** dialog gets an **i3 Shortcuts** tab listing the key bindings and how to
+    switch — present only when `i3--setup.sh` ran. Setups can add their own Help tabs the same way: a lifecycle-panel
     plugin calling the new `window.BoothHelp.addTab(name, label, html)`.
   - **CodingBooth Help** is now a floating window rather than a modal dialog: no dark backdrop,
     the booth stays usable behind it, and it is larger, draggable by its title, and resizable from
