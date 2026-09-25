@@ -1,0 +1,21 @@
+display-name   = "Window Gaps"
+display-disc   = "A small gap between i3 windows so the wallpaper shows at their edges"
+display-detail = """\
+Puts a gap (8px by default) between tiled windows and between the windows and \
+the panel/dock. Set the size with i3+gaps:<pixels>; drop it with i3~gaps."""
+display-order  = 19
+auto-select    = true
+tags = [
+    "desktop",
+    "tiling",
+    "i3"
+]
+
+[params.I3_GAPS]
+default     = "8"
+suggests    = ["4", "8", "12"]
+
+[segments]
+"Boothfile--42" = """
+setup i3-gaps ${I3_GAPS}
+"""

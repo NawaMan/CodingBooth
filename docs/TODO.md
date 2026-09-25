@@ -225,6 +225,18 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       templates from …" notice either way.
 - [ ] ...
 
+- [ ] **i3 on KDE.** `i3--setup.sh` covers XFCE and LXQt; Plasma 5.27 can run another window
+      manager in place of KWin (`KDEWM`), but plasmashell's desktop, panel and pop-ups need several
+      i3 rules, and results are uneven. Worth trying behind the same `start-i3` / `stop-i3`.
+- [ ] **A sway (Wayland tiling) option.** i3 is X11-only; sway reads nearly the same config and is
+      what wayvnc was built for. It would replace labwc rather than live inside a desktop, so it is
+      closer to a variant (or a `wayland` alternative) than an `i3` extension. The i3 Help tab and
+      Ctrl+Alt twins would carry over.
+- [ ] **Desktop templates on `base` build a desktop that never starts.** Selecting `xfce` / `lxqt`
+      (or `i3`) on the `base` variant installs the desktop into the image while the booth still
+      opens the Console UI — by design, so `start-desktop` can bring it up later, but it costs image
+      size silently. `booth config` could say so when a desktop template is picked on `base`.
+
 ## Problems
 - [ ] **Desktop variants' clipboard still needs noVNC's manual side panel.** Investigated
       2026-09-23 while looking at browser-UI friction (see `docs/implementations/DESKTOP_NOVNC.md`'s
