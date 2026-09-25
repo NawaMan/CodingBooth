@@ -21,6 +21,61 @@
     pointer-events: none;
   }
 
+  /* CodingBooth Help floats instead of blocking: no backdrop, the booth stays
+     usable behind it, and the window can be dragged by its title and resized
+     from its corner. Other dialogs keep the modal .msg-overlay above. */
+  #bl-help-dialog-overlay {
+    background: transparent;
+    pointer-events: none;
+  }
+
+  #bl-help-dialog-overlay .msg-stack {
+    pointer-events: auto;
+    position: fixed;
+    width: 720px;
+    height: 75vh;
+    min-width: 360px;
+    min-height: 260px;
+    max-width: calc(100vw - 16px);
+    max-height: calc(100vh - 16px);
+    padding: 0;
+    overflow: hidden;
+    resize: both;
+    border-radius: 10px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  }
+
+  #bl-help-dialog-overlay .msg-dialog {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    box-shadow: none;
+  }
+
+  #bl-help-dialog-overlay .msg-dialog h2 {
+    cursor: move;
+    user-select: none;
+    margin: -20px -20px 6px;
+    padding: 20px 20px 6px;
+  }
+
+  #bl-help-dialog-overlay .msg-tab-panel.active {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 6px;
+  }
+
+  #bl-help-dialog-overlay .msg-actions {
+    margin-top: 12px;
+  }
+
+  /* While dragging, the booth iframe must not swallow the pointer. */
+  body.bl-help-dragging iframe {
+    pointer-events: none;
+  }
+
   .msg-stack {
     display: flex;
     flex-direction: column;
@@ -986,7 +1041,7 @@
         <span class="bl-btn-icon">&#x2753;</span> CodingBooth Help
       </button>
       <button class="bl-btn bl-btn-capture" id="bl-kbcapture-btn" data-priority="70"
-        title="Full screen, with browser shortcuts like Ctrl+W sent to the booth (Chromium browsers only)"
+        title="Full screen mode with full keyboard capture: browser shortcuts like Ctrl+W go to the booth"
         style="display:none">
         <span class="bl-btn-icon">&#x26F6;</span> Full screen
       </button>
@@ -1525,8 +1580,8 @@
         window.BoothKeyboardCapture.onChange(function (active) {
           kbBtn.classList.toggle("active", active);
           kbBtn.title = active
-            ? "Exit full screen"
-            : "Full screen, with browser shortcuts like Ctrl+W sent to the booth (Chromium browsers only)";
+            ? "Exit full screen mode"
+            : "Full screen mode with full keyboard capture: browser shortcuts like Ctrl+W go to the booth";
         });
       }
     })();
@@ -1854,18 +1909,103 @@
       // always land on Clipboard: it's the one people actually get stuck on,
       // and both triggers are clipboard-shaped even if General is now also
       // in here. General is one click away either way.
+      // The dialog floats (see the #bl-help-dialog-overlay CSS), so it leaves
+      // msg-active alone: the booth stays usable while it is open. It opens
+      // centred the first time, then where it was last dragged to.
+      var stack = overlay.querySelector(".msg-stack");
+      var title = overlay.querySelector(".msg-dialog h2");
+      var placed = false;
+
+      // Keep the whole window on screen when it fits; when it is taller than
+      // the screen, keep its title (the drag handle) reachable at the top.
+      function clampIntoView() {
+        var r = stack.getBoundingClientRect();
+        var left = Math.min(Math.max(r.left, 8), Math.max(8, window.innerWidth - r.width - 8));
+        var top = Math.min(Math.max(r.top, 8), Math.max(8, window.innerHeight - r.height - 8));
+        stack.style.left = left + "px";
+        stack.style.top = top + "px";
+      }
+
       function openDialog(tab) {
         selectTab(tab || "clipboard");
         overlay.classList.add("visible");
-        document.body.classList.add("msg-active");
+        if (!placed) {
+          var r = stack.getBoundingClientRect();
+          stack.style.left = Math.max(8, (window.innerWidth - r.width) / 2) + "px";
+          stack.style.top = Math.max(8, (window.innerHeight - r.height) / 2) + "px";
+          placed = true;
+        } else {
+          clampIntoView();
+        }
       }
 
       function closeDialog() {
         overlay.classList.remove("visible");
-        document.body.classList.remove("msg-active");
+      }
+
+      if (title) {
+        title.addEventListener("pointerdown", function (event) {
+          if (event.button !== 0) {
+            return;
+          }
+          var r = stack.getBoundingClientRect();
+          var dx = event.clientX - r.left;
+          var dy = event.clientY - r.top;
+          document.body.classList.add("bl-help-dragging");
+          title.setPointerCapture(event.pointerId);
+          function move(e) {
+            stack.style.left = (e.clientX - dx) + "px";
+            stack.style.top = (e.clientY - dy) + "px";
+          }
+          function up(e) {
+            title.releasePointerCapture(e.pointerId);
+            title.removeEventListener("pointermove", move);
+            title.removeEventListener("pointerup", up);
+            title.removeEventListener("pointercancel", up);
+            document.body.classList.remove("bl-help-dragging");
+            clampIntoView();
+          }
+          title.addEventListener("pointermove", move);
+          title.addEventListener("pointerup", up);
+          title.addEventListener("pointercancel", up);
+          event.preventDefault();
+        });
       }
 
       openHelpDialog = openDialog;
+
+      // Setups that change how the booth is used add their own tab here from
+      // a lifecycle-panel plugin (booth-message-wrapper--setup.sh's plugins/
+      // drop-in) — e.g. i3--setup.sh adds its key bindings. Additive only:
+      // the built-in tabs and the default (Clipboard) are unchanged.
+      window.BoothHelp = {
+        addTab: function (name, label, html) {
+          var tabBar = overlay.querySelector(".msg-tabs");
+          var actions = overlay.querySelector(".msg-actions");
+          if (!tabBar || !actions || document.getElementById("bl-help-tab-" + name)) {
+            return;
+          }
+          var tab = document.createElement("button");
+          tab.className = "msg-tab";
+          tab.id = "bl-help-tab-" + name;
+          tab.dataset.tab = name;
+          tab.setAttribute("role", "tab");
+          tab.textContent = label;
+          var panel = document.createElement("div");
+          panel.className = "msg-tab-panel";
+          panel.id = "bl-help-panel-" + name;
+          panel.dataset.panel = name;
+          panel.innerHTML = html;
+          tabBar.appendChild(tab);
+          actions.parentNode.insertBefore(panel, actions);
+          tabs.push(tab);
+          panels.push(panel);
+          tab.addEventListener("click", function () {
+            selectTab(name);
+          });
+        },
+        open: openDialog
+      };
 
       btn.addEventListener("click", function () {
         openDialog("clipboard");

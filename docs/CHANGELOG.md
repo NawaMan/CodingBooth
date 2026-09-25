@@ -4,6 +4,26 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **i3 tiling for the XFCE desktop: `xfce+i3`.** An opt-in extension that swaps XFCE's window
+  manager (xfwm4) for [i3](https://i3wm.org), keeping the rest of the session — the top panel is
+  the bar, and the menu, tray, Thunar, notifications and Plank dock are unchanged. Alt is the mod
+  key by default, since a browser tab rarely passes Super through to noVNC; `xfce+i3:super`
+  picks Super. Every binding also works as Ctrl+Alt (Ctrl+Alt+h, Ctrl+Alt+2, …), which reaches
+  the booth in any browser — Firefox keeps Alt shortcuts for itself and cannot use the panel's
+  keyboard-capturing Full screen — so the Help lists the Ctrl+Alt forms. Windows have an 8px
+  gap, and the Plank dock stays centred along the bottom.
+  xfdesktop does not run under i3, so the desktop shows the wallpaper (repainted when noVNC
+  resizes the screen) but no icons.
+  Customize by copying `/etc/xdg/i3/config` to `~/.config/i3/config`.
+  - The booth's **Help** dialog gets an **i3 Shortcuts** tab listing the key bindings — present only when
+    `i3--setup.sh` ran. Setups can add their own Help tabs the same way: a lifecycle-panel
+    plugin calling the new `window.BoothHelp.addTab(name, label, html)`.
+  - **CodingBooth Help** is now a floating window rather than a modal dialog: no dark backdrop,
+    the booth stays usable behind it, and it is larger, draggable by its title, and resizable from
+    its corner. It reopens where it was left.
+  - The **Full screen** button's tooltip (desktop panel and Console UI) now reads "Full screen mode
+    with full keyboard capture", and "Exit full screen mode" while active.
+
 - **XFCE gets a more modern look, and a command to change it.** The `desktop-xfce` variant — and
   any Boothfile with `setup xfce`, via auto-selected `xfce` extensions — now defaults to
   Greybird-dark apps and window borders, Reversal-dark icons and the Gruppled White cursor
