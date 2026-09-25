@@ -255,12 +255,10 @@ All templates and extensions grouped by segment order.
 | `desktops/lxqt`  | LXQt         |
 | `desktops/xfce`  | XFCE         |
 
-`desktops/xfce` also installs Cortile (`setup cortile`, not started), and auto-selects two
-extensions at order **41** — right after the desktop they need, since both skip when XFCE is
-absent: `+modern-theme` (the theme packs, then `setup xfce-theme`, which picks the defaults and so
-must come last) and `+plank` (`setup plank`: the Plank Reloaded dock). Drop either with `~`, e.g.
-`xfce~plank`. `+cortile` (order **42**, not auto-selected) runs `setup cortile --enable` after the
-order-40 install.
+`desktops/xfce` auto-selects two extensions at order **41** — right after the desktop they need,
+since both skip when XFCE is absent: `+modern-theme` (the theme packs, then `setup xfce-theme`,
+which picks the defaults and so must come last) and `+plank` (`setup plank`: the Plank Reloaded
+dock). Drop either with `~`, e.g. `xfce~plank`.
 
 Themes beyond the XFCE default are standalone, opt-in templates at order **60** —
 `desktops/tela-icons`, `desktops/orchis-gtk`, `desktops/material-cursors`. They only install;

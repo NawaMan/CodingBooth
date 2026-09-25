@@ -23,8 +23,6 @@ This file contains a list of changes for each released version.
     arm64; not covered by `APT_SNAPSHOT`, so pin with `xfce+plank:0.11.172-1`) and, on the first
     session per home, seeds the dock with the default terminal, Thunar, and whichever browsers and
     VS Code the booth has.
-  - **Cortile** auto-tiling ships installed but not started; `xfce+cortile` (`setup cortile
-    --enable`) starts it on login, or run `cortile &` to try it once.
   - Opt out with `xfce~modern-theme` / `xfce~plank`.
 
 - **Claude Code's status symbols render in XFCE's terminal.** FiraCode Nerd Font has no ⏵ ⏺ ⏸ ⎿
