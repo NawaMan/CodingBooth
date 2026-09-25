@@ -1,0 +1,27 @@
+display-name   = "Modern Theme"
+display-disc   = "Greybird-dark apps and windows, Reversal-dark icons, Gruppled cursor"
+display-detail = """\
+Makes a modern dark look the default: Greybird-dark for apps and window borders, \
+Reversal-dark icons and the Gruppled White cursor (size 40). Only what that look \
+needs is installed; more themes are opt-in templates (tela-icons, orchis-gtk, \
+material-cursors). Only the system defaults change, so \
+a choice made later in Settings, or with `booth--theme set <type> <name>` from \
+any shell in the booth, always wins. Same look as the desktop-xfce variant."""
+display-order  = 15
+auto-select    = true
+tags = [
+    "desktop",
+    "xfce",
+    "theme",
+    "icons",
+    "cursor",
+    "dark"
+]
+
+# The packs only install; xfce-theme picks the defaults, so it goes last.
+[segments]
+"Boothfile--41" = """
+setup reversal-icons
+setup gruppled-cursors
+setup xfce-theme
+"""

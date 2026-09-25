@@ -1,0 +1,22 @@
+display-name   = "Material Cursors"
+display-disc   = "Material cursor theme (light, dark or default) — opt-in, not the default"
+display-detail = """\
+Builds the Material cursor theme (github.com/varlesh/material-cursors, pinned \
+commit) and installs it system-wide at sizes 24, 32, 48 and 64. It does not \
+change the default cursor; switch with \
+`booth--theme set cursor material_light_cursors` or in Settings → Mouse and Touchpad."""
+display-order  = 54
+tags = [
+    "desktop",
+    "cursor",
+    "theme"
+]
+
+[params.MATERIAL_CURSORS_VARIANT]
+default  = "light"
+suggests = ["light", "dark", "default"]
+
+[segments]
+"Boothfile--60" = """
+setup material-cursors ${MATERIAL_CURSORS_VARIANT}
+"""
