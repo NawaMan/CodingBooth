@@ -104,9 +104,16 @@ This file contains a list of changes for each released version.
   terminal), only if the config file doesn't already exist, and registers a desktop icon via
   `cb-desktop-icon.sh` (the same mechanism Firefox/GIMP/Inkscape use), so it's discoverable
   without already knowing the command name. Alacritty now also pulls in `ncurses-term`: Ubuntu's
-  `alacritty` package ships no terminfo entry of its own (unlike `kitty`, which gets one via a
-  dependency), so `TERM=alacritty` had no matching terminfo and could confuse programs that do a
-  strict terminfo lookup. Untested on arm64. New example:
+  `alacritty` package ships no terminfo entry of its own, so `TERM=alacritty` had no matching
+  terminfo and could confuse programs that do a strict terminfo lookup. **Kitty is not taken from
+  apt:** Ubuntu 24.04's `kitty` is 0.32.2, and its security fixes reach Ubuntu Pro (ESM Apps)
+  only — the public package is open to CVE-2026-72913 (fixed upstream in 0.48.2; displaying
+  untrusted output can run commands through Kitty's `@kitty-echo`/`@kitty-ssh` escape handlers),
+  CVE-2026-42850 and CVE-2026-33642. `kitty--setup.sh` instead installs the upstream **0.49.1**
+  release into `/opt/kitty`, verified against SHA256s pinned in the script (taken from the
+  GPG-signed release assets), and places Kitty's own `xterm-kitty` terminfo in `/etc/terminfo`.
+  `--version X --sha256 H` installs a different release; a version without a checksum is
+  refused. Untested on arm64. New example:
   `examples/workspaces/desktop-terminals-example`. See `docs/MODERN_UX.md` for the background —
   suggestion #1 from a review of Omarchy-inspired desktop UX ideas.
 

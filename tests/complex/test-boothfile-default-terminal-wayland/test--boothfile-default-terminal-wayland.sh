@@ -93,9 +93,11 @@ else
 fi
 
 # Test 4: Debian's generic x-terminal-emulator points at kitty, not foot
-ACTUAL=$(capture_codingbooth "tail -1" --silence-build -- 'readlink -f /usr/bin/x-terminal-emulator') || ACTUAL=""
+# Compared against wherever kitty itself resolves: it is an upstream release
+# under /opt/kitty (symlinked from /usr/local/bin), not apt's /usr/bin/kitty.
+ACTUAL=$(capture_codingbooth "tail -1" --silence-build -- 'echo "$(readlink -f /usr/bin/x-terminal-emulator) $(readlink -f "$(command -v kitty)")"') || ACTUAL=""
 
-if [[ "$ACTUAL" == "/usr/bin/kitty" ]]; then
+if [[ "$ACTUAL" =~ ^(/[^ ]*/kitty)\ (.*)$ && "${BASH_REMATCH[1]}" == "${BASH_REMATCH[2]}" ]]; then
     print_test_result "true" "$0" "4" "x-terminal-emulator points at kitty"
 else
     print_test_result "false" "$0" "4" "x-terminal-emulator should point at kitty"
