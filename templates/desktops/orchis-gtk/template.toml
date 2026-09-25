@@ -1,0 +1,30 @@
+display-name   = "Orchis Theme"
+display-disc   = "Orchis app + window theme (Orchis, -Light, -Dark) — opt-in, not the default"
+display-detail = """\
+Installs the Orchis GTK theme with its xfwm4 window decorations \
+(github.com/vinceliuice/Orchis-theme) system-wide, pinned to a release tag. It \
+does not change the default look; switch with `booth--theme set gtk Orchis-Dark` \
+and `booth--theme set wm Orchis-Dark`, or in Settings."""
+display-order  = 52
+tags = [
+    "desktop",
+    "theme",
+    "gtk"
+]
+
+[params.ORCHIS_ACCENT]
+default  = "default"
+suggests = ["default", "purple", "pink", "red", "orange", "yellow", "green", "teal", "grey", "all"]
+
+[params.ORCHIS_SIZE]
+default  = "standard"
+suggests = ["standard", "compact", "all"]
+
+[params.ORCHIS_VERSION]
+default  = "2026-07-07"
+suggests = ["2026-07-07"]
+
+[segments]
+"Boothfile--60" = """
+setup orchis-gtk ${ORCHIS_ACCENT} ${ORCHIS_SIZE} ${ORCHIS_VERSION}
+"""

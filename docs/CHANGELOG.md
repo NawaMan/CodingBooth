@@ -4,16 +4,52 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
-- **XFCE gets a more modern look: Greybird-dark, Adwaita icons, and a Plank dock.** The
-  `desktop-xfce` variant — and any Boothfile with `setup xfce`, via two new auto-selected `xfce`
-  extensions — now defaults to Greybird-dark for both window decorations and GTK apps, the
-  Adwaita icon theme, and a [Plank Reloaded](https://github.com/zquestz/plank-reloaded) dock with
-  its Matte theme in place of XFCE's bottom launcher panel (the top panel stays). New setups:
-  `xfce-theme--setup.sh` changes only the `/etc/xdg` xfconf defaults, so a theme picked later from
-  Settings always wins; `plank--setup.sh [VERSION]` installs from the plank-reloaded author's apt
-  repo (amd64 and arm64; not covered by `APT_SNAPSHOT`, so pin with `xfce+plank:0.11.172-1`) and, on the
-  first session per home, seeds the dock with the default terminal, Thunar, and whichever browsers
-  and VS Code the booth has. Opt out with `xfce~modern-theme` / `xfce~plank`.
+- **XFCE gets a more modern look, and a command to change it.** The `desktop-xfce` variant — and
+  any Boothfile with `setup xfce`, via auto-selected `xfce` extensions — now defaults to
+  Greybird-dark apps and window borders, Reversal-dark icons and the Gruppled White cursor
+  (size 40), with a [Plank Reloaded](https://github.com/zquestz/plank-reloaded) dock (Matte
+  theme, always visible) in place of XFCE's bottom launcher panel; the top panel stays.
+  - New install-only theme packs, pinned to an upstream tag or commit. Only the default look is
+    in the image (`reversal-icons`, `gruppled-cursors`); the rest are opt-in templates —
+    `tela-icons`, `orchis-gtk`, `material-cursors` — that add to what `booth--theme` can switch
+    to. `xfce-theme--setup.sh` is the one script that picks the defaults, and only in `/etc/xdg`,
+    so a choice made later in Settings always wins.
+  - **`booth--theme`** shows or switches the look from any shell in the booth, by type —
+    `gtk`, `wm`, `icons`, `cursor`, `cursor-size`, `dock`, `dock-hide`:
+    `booth--theme set icons Adwaita`, `booth--theme list cursor`, `booth--theme reset`. It
+    writes what XFCE's own Settings would, and refuses a name that is not installed. XFCE only
+    for now; on other desktops it says so.
+  - `plank--setup.sh [VERSION]` installs from the plank-reloaded author's apt repo (amd64 and
+    arm64; not covered by `APT_SNAPSHOT`, so pin with `xfce+plank:0.11.172-1`) and, on the first
+    session per home, seeds the dock with the default terminal, Thunar, and whichever browsers and
+    VS Code the booth has.
+  - **Cortile** auto-tiling ships installed but not started; `xfce+cortile` (`setup cortile
+    --enable`) starts it on login, or run `cortile &` to try it once.
+  - Opt out with `xfce~modern-theme` / `xfce~plank`.
+
+- **Claude Code's status symbols render in XFCE's terminal.** FiraCode Nerd Font has no ⏵ ⏺ ⏸ ⎿
+  (U+23xx), and nothing else installed did, so they showed as boxes. `xfce--setup.sh` now installs
+  `fonts-symbola`, which fontconfig falls back to.
+
+- **Desktop VS Code ships without GitHub Copilot — ~290 MB lighter.** The `code` package bundles
+  Copilot as a built-in extension plus a native runtime (178 MB + 113 MB of a 971 MB install);
+  `vscode--setup.sh` now removes both and the `code` wrapper seeds `"chat.disableAIFeatures":
+  true` for new homes (without it, VS Code keeps trying to start the missing client and logs an
+  error each launch). Applies to every desktop variant (xfce, kde, lxqt, wayland). To keep
+  Copilot, select the new **`vscode-copilot`** template, which restores the two folders from the
+  same VS Code version's `.deb`, or run `vscode--setup.sh --keep-copilot`. A `code` upgrade inside
+  a booth brings the folders back; the setting keeps Copilot switched off either way.
+
+- **Fixed: VS Code launched from the desktop, menu or dock aborted.** Current `code` packages ship
+  `com.microsoft.VSCode.desktop` rather than `code.desktop`, so `vscode--setup.sh` never pointed
+  the launcher at its `--no-sandbox` wrapper and Electron died ("Failed to move to new namespace",
+  exit 133). It now rewrites whichever launchers exist, keeping each one's own arguments.
+
+- **XFCE's terminal no longer asks before a multi-line or command-like paste.** xfce4-terminal's
+  "Potentially Unsafe Paste" dialog is off by default in every XFCE booth (a system xfconf default
+  set by `xfce--setup.sh`), since pasting install one-liners into a booth is routine. Turn it back
+  on per user in xfce4-terminal's Preferences, or with
+  `xfconf-query -c xfce4-terminal -p /misc-show-unsafe-paste-dialog -n -t bool -s true`.
 
 - **Fixed: params on an auto-selected extension were silently dropped.** Naming an extension
   that its parent already auto-selects, with params — `xfce+plank:0.11.172-1` — kept the
