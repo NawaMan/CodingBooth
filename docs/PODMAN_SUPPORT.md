@@ -13,9 +13,11 @@ This document has two parts, kept apart on purpose:
 
 Phases 1 (core lifecycle), 2 (`booth expose`), 3 (build progress) and 4
 (Docker-in-Docker via a nested-Podman sidecar) are implemented. Phase 4 covers
-`docker build`, `docker run` and `docker-compose` (verified by hand end to end through
-a real `--engine podman --dind` booth); Appwrite through it is untested, and there is
-no automated Podman DinD coverage beyond a dryrun command-shape check — see
+`docker build`, `docker run`, `docker-compose` and kind (Kubernetes-in-Docker) — all
+verified by hand end to end through a real `--engine podman --dind` booth, kind via
+the real, unmodified `kind-example` project deploying and serving a real pod;
+Appwrite through it is untested, and there is no automated Podman DinD coverage
+beyond a dryrun command-shape check — see
 [Docker-in-Docker (`--dind`)](#docker-in-docker---dind) for what was found and what
 remains. Phases 5–6 are not started.
 
@@ -288,11 +290,12 @@ got HTTP 200, `stop-server.sh` cleaned up. No other shipped script forces
 `DOCKER_BUILDKIT=1` (checked: `wails-example` already unsets it, for an unrelated
 reason).
 
-**kind (Kubernetes-in-Docker) does not work yet (2026-09-24).**
+**kind (Kubernetes-in-Docker) works (2026-09-24/25).**
 `examples/workspaces/kind-example`'s `start-cluster.sh` (`kind create cluster`)
-surfaced two more real bugs in the sidecar image's shipped
-`/etc/containers/containers.conf`, both now fixed in `podmanDindStartupScript`
-(`dind_setup.go`) by patching the file before `podman system service` starts:
+surfaced three real bugs, all now fixed — two in the sidecar image's shipped
+`/etc/containers/containers.conf` (fixed in `podmanDindStartupScript` in
+`dind_setup.go`, by patching the file before `podman system service` starts), one
+in kind's own node config (fixed in the example script itself):
 
 - `utsns="host"` made any container that sets an explicit hostname fail with
   `cannot set hostname when running in the host UTS namespace` — kind's
@@ -302,19 +305,37 @@ surfaced two more real bugs in the sidecar image's shipped
   `UserNS: cpu controller needs to be delegated`. Fixed: `cgroups="enabled"`,
   `cgroupns="private"` — confirmed the same node image then boots systemd past
   that point, reaching `multi-user.target` with containerd running.
+- Past both of those, `kubeadm init` still hung waiting on kubelet's health
+  endpoint for a full 4 minutes and failed
+  (`dial tcp 127.0.0.1:10248: connect: connection refused`). Caught kubelet
+  mid-crash-loop (`docker exec kind-control-plane systemctl status kubelet` /
+  `journalctl -u kubelet`) rather than trust kubeadm's generic "required cgroups
+  disabled" guess, and found the real error: kubelet's OOM watcher tries to open
+  `/dev/kmsg`, which a user namespace never permits —
+  `open /dev/kmsg: operation not permitted` — and kubelet's own log names the
+  exact fix: `Failed to create an oomWatcher (running in UserNS, Hint: enable
+  KubeletInUserNamespace feature flag to ignore the error)`. Fixed in
+  `start-cluster.sh`'s generated kind config with a `KubeletConfiguration`
+  `kubeadmConfigPatches` entry setting `featureGates: {KubeletInUserNamespace:
+  true}` — a no-op under Docker, where kubelet isn't in a user namespace and the
+  OOM watcher works normally.
 
-Both fixes are real and kept regardless of kind's own outcome — they unblock any
-Docker-API tool that hits them. **kind itself still fails past both fixes**: a real
-`kind create cluster` gets through "Preparing nodes" (the original blocker) and
-"Writing configuration", then `kubeadm init` hangs waiting on kubelet's health
-endpoint and fails after its 4-minute timeout —
-`dial tcp 127.0.0.1:10248: connect: connection refused`, with kubeadm's own hint
-pointing at "required cgroups disabled". This needs more than the blanket
-enable/private flip above — most likely specific controller delegation or a
-cgroup-driver mismatch between the sidecar's nested Podman and the node's own
-nested containerd/kubelet — and has **not been chased further**; regression-tested
-that the earlier `docker build`/`run`/bridge-networking-with-DNS verification still
-passes with these two settings changed.
+All three fixes are real and kept regardless of what depends on them — the two
+`containers.conf` fixes unblock any Docker-API tool that hits them, not just kind.
+**Verified fully working end to end**, as the real, unmodified (aside from the fix
+above) example, run as the `coder` user exactly as a real terminal session would:
+`start-cluster.sh` reports `Ready after 17s`, `check-cluster.sh` reports the node
+`Ready`, and `deploy-hello.sh` builds the app image, `kind load`s it, deploys 2
+replicas, both roll out `Running`, and `curl`ing the NodePort service returns a
+real JSON response from the pod (`{"message": "Hello from Kubernetes!", ...}`) —
+then `remove-hello.sh` and `kind delete cluster` clean up without error.
+
+Also found and fixed along the way: `start-cluster.sh` wrote its generated config
+to a fixed `/tmp/kind-config.yaml` path. A leftover from an earlier run owned by a
+different user (e.g. a root shell) made the plain `cat >` fail with "Permission
+denied" — confirmed by hand that even root cannot overwrite a file the `coder`
+user already owns here, only create a new one, under this rootless-Podman overlay.
+Switched to `mktemp` for a fresh, unique path every run.
 
 **Not verified:** the `docker-compose--setup.sh` setup script running inside a Podman
 booth (`dind--setup.sh` is now verified above; this project didn't select
@@ -370,6 +391,7 @@ on 2026-09-23 for Phase 4:
 | Engine selection: flag, config, `CB_ENGINE`, precedence, `booth config --set`, fallback, `--quiet`, invalid value | works |
 | `booth build --engine podman --silence-build` on the JDK + lazygit + vscode-ext example (10 real build steps): before the fix, the run's captured stdout showed the leaked `STEP`/`RUN` output live; after the fix, stdout carries only the final `Built: …` line and stderr only the experimental warning — the same 10 `STEP` lines still appear (confirmed on the same build without `--silence-build`, redirected to stderr by the pre-existing BuildKit-compat shim), proving the silent path now genuinely hides them rather than the build simply having nothing to print | works |
 | `booth --engine podman --dind --daemon`: the nested-Podman sidecar and booth both start, `docker build`/`docker run` and a `docker-compose up`/DNS/`docker-compose down` cycle all work from inside the booth against its own `DOCKER_HOST`, and `booth stop` removes both containers cleanly | works |
+| `examples/workspaces/kind-example` under `--engine podman --dind`, unmodified except the `KubeletInUserNamespace` fix: `start-cluster.sh` (real `kind create cluster`), `check-cluster.sh`, `deploy-hello.sh` (build → `kind load` → 2-replica rollout → `curl` gets a real JSON response), `remove-hello.sh`, cluster teardown — all as the `coder` user | works |
 
 Automated: Go unit tests (`pkg/appctx/engine_test.go`, `pkg/docker/engine_test.go`,
 `pkg/docker/host_check_test.go`, `pkg/docker/docker_build_test.go`,
@@ -417,13 +439,6 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
   — see [Docker-in-Docker (`--dind`)](#docker-in-docker---dind). The legacy builder
   (`DOCKER_BUILDKIT=0`) works and is the only known workaround for now; branch on the
   `BOOTH_ENGINE` env var to pick it only under Podman, as `start-server.sh` now does.
-- **kind (Kubernetes-in-Docker, `examples/workspaces/kind-example`) does not work.**
-  Two real bugs in the sidecar's own `containers.conf` are fixed (a container setting
-  an explicit hostname, and a container booting systemd both used to fail outright —
-  see [Docker-in-Docker (`--dind`)](#docker-in-docker---dind)), but `kind create
-  cluster` still fails past both: `kubeadm init` times out after 4 minutes waiting on
-  kubelet's health endpoint. Needs more cgroup-delegation work than has been done so
-  far; not chased further this round.
 - **Tunnels need the booth running in the foreground**, exactly as under Docker
   ([BOOTH_EXPOSE.md](BOOTH_EXPOSE.md)). `booth--expose` inside the booth needs no engine
   setting: the host-side CLI that started the booth already knows it.
@@ -465,7 +480,8 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 | Both-engine lookup | `ResolveEnginesForPath` in `pkg/appctx/engine.go`; `managedContainersAcross`, `managedContainer.Engine`, `ambiguousEngineError` in `pkg/lifecycle/lifecycle.go` |
 | TUI field | `engine` in `pkg/boothinit/tui/configfields.go` |
 | `--dind` + Podman warning | `resolveEngineConfig` in `pkg/booth/init/initialize_app_context.go` |
-| Nested-Podman DinD sidecar | `podmanDindSidecarImage`, `startDindSidecar` in `pkg/booth/dind_setup.go` |
+| Nested-Podman DinD sidecar | `podmanDindSidecarImage`, `startDindSidecar`, `podmanDindStartupScript` in `pkg/booth/dind_setup.go` |
+| kind's `KubeletInUserNamespace` fix + `mktemp` config path | `examples/workspaces/kind-example/start-cluster.sh` |
 | Engine-named user hints (`stop`, DinD `stop`/`network rm`/`logs`, `--persist-home` reclaim) | `engineOrDocker` in `pkg/booth/booth.go`, used from `runAsDaemon`, `printHomeVolumeWarning`, and `waitForDindReady` in `dind_setup.go` |
 | Engine-named build-failure banner | `DockerBuild` in `pkg/docker/docker_build.go` (`flags.binary()`) |
 | Silent-build stream capture per engine (both stdout+stderr on Podman) | `DockerBuild` in `pkg/docker/docker_build.go` |

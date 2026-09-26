@@ -15,11 +15,24 @@ API_PORT="${KIND_API_PORT:-6443}"
 echo "Creating KinD cluster: $CLUSTER_NAME"
 echo "DinD sidecar: $DIND_NAME"
 
+# A fresh, unique path every run rather than a fixed /tmp/kind-config.yaml: a
+# leftover from an earlier run owned by a different user (e.g. a root shell)
+# makes the plain `cat >` below fail with "Permission denied" — confirmed by
+# hand that even root cannot overwrite a file the coder user already owns
+# here, only create a new one, under this rootless-Podman overlay.
+KIND_CONFIG="$(mktemp /tmp/kind-config.XXXXXX.yaml)"
+
 # Create kind config that:
 # 1. Binds API server to 0.0.0.0 (accessible from outside)
 # 2. Adds DinD hostname to the certificate SANs
 # 3. Maps NodePort range to DinD container interface
-cat > /tmp/kind-config.yaml <<EOF
+# 4. Tells kubelet it's running in a user namespace (--engine podman's DinD is a
+#    nested-Podman sidecar, not docker:dind; kubelet's OOM watcher otherwise tries
+#    to open /dev/kmsg, which a user namespace never permits, and crash-loops
+#    forever with "open /dev/kmsg: operation not permitted" — its own log names
+#    this exact feature gate as the fix. Harmless under Docker, where the OOM
+#    watcher works and this is a no-op)
+cat > "$KIND_CONFIG" <<EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 networking:
@@ -67,10 +80,15 @@ nodes:
       - "localhost"
       - "127.0.0.1"
       - "0.0.0.0"
+  - |
+    kind: KubeletConfiguration
+    featureGates:
+      KubeletInUserNamespace: true
 EOF
 
 # Create cluster with the config
-kind create cluster --name "$CLUSTER_NAME" --config /tmp/kind-config.yaml --wait 60s
+kind create cluster --name "$CLUSTER_NAME" --config "$KIND_CONFIG" --wait 60s
+rm -f "$KIND_CONFIG"
 
 # Kubeconfig uses localhost which works because workspace shares DinD's network namespace
 echo
