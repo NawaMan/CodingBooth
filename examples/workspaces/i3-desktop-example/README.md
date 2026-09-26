@@ -14,7 +14,7 @@ booth      # opens the desktop in your browser, already tiling
 ```
 
 Open a couple of apps from the dock and watch them tile side by side. The booth panel's
-**CodingBooth Help → i3 Shortcuts** tab lists every key; the ones you need first:
+**CodingBooth Help → i3 Shortcuts (Tiling)** tab lists every key; the ones you need first:
 
 | Keys | Does |
 |---|---|

@@ -28,6 +28,7 @@ type metaToml struct {
 
 type specToml struct {
 	DisplayName  string               `toml:"display-name"`
+	DisplayLabel string               `toml:"display-label"`
 	DisplayDesc   string               `toml:"display-disc"`
 	DisplayDetail string               `toml:"display-detail"`
 	DisplayOrder  int                  `toml:"display-order"`
@@ -177,6 +178,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		Name:          name,
 		CategoryName:  categoryName,
 		DisplayName:   spec.DisplayName,
+		DisplayLabel:  spec.DisplayLabel,
 		DisplayDesc:   spec.DisplayDesc,
 		DisplayDetail: spec.DisplayDetail,
 		DisplayOrder:  spec.DisplayOrder,
@@ -355,6 +357,7 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		Name:          name,
 		CategoryName:  categoryName,
 		DisplayName:   spec.DisplayName,
+		DisplayLabel:  spec.DisplayLabel,
 		DisplayDesc:   spec.DisplayDesc,
 		DisplayDetail: spec.DisplayDetail,
 		DisplayOrder:  spec.DisplayOrder,

@@ -5,7 +5,7 @@ you're an AI agent, read `AGENT.md` in this same directory instead — it's writ
 
 The "CodingBooth Help" button in the floating **Booth** panel (where present) covers the same
 ground as this file, in a General tab and a Clipboard tab — plus a tab for anything a setup adds,
-such as **i3 Shortcuts** when the tiling window manager is installed. Help opens as a floating
+such as **i3 Shortcuts (Tiling)** when the tiling window manager is installed. Help opens as a floating
 window rather than a blocking dialog: the booth stays usable behind it, and you can drag it by its
 title and resize it from its bottom-right corner.
 
@@ -32,7 +32,7 @@ container. The floating **Booth** panel is your control surface for it:
 Booths with the `i3` template on XFCE or LXQt can tile windows instead of overlapping them. Run
 `start-i3` (or the **Tiling Window Manager (i3)** desktop icon) to switch to i3, and `stop-i3` (or
 **Leave Tiling (i3)** in the menu) to switch back — desktop icons are hidden while i3 runs. The
-shortcuts are in Help → **i3 Shortcuts**; every one works with **Ctrl+Alt** in any browser, and
+shortcuts are in Help → **i3 Shortcuts (Tiling)**; every one works with **Ctrl+Alt** in any browser, and
 with plain Alt in Chrome while **Full screen** is on.
 
 ---

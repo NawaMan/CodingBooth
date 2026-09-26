@@ -164,7 +164,7 @@ the common ground that makes the comparison fair (identical OS, identical depend
   *same* running session between i3 and XFCE's own floating window manager. Compare the two ways of
   working on your real apps without installing a window manager on the host or logging out.
   *(Secondary: batteries-included — Ctrl+Alt twins of every shortcut so it works in any browser,
-  and an i3 Shortcuts tab in the booth's Help.)*
+  and an i3 Shortcuts (Tiling) tab in the booth's Help.)*
 - *(Related: **js-example** bundles three JS runtimes and **jetbrain-exmple** ten IDEs for the same
   try-them-all reason.)*
 
