@@ -268,11 +268,32 @@ untouched by this verification):
   same known behavior `--egress` already has (see
   [Verification status](#verification-status)).
 
-**Not verified:** the actual `dind--setup.sh` / `docker-compose--setup.sh` setup
-scripts running inside a Podman booth (this verification installed their packages by
-hand, to test the sidecar wiring itself, not the setup scripts); Appwrite through this
-sidecar (a heavier, more real-world consumer of the same `docker-compose` path than the
-synthetic 2-service stack above); any of this under an automated test — coverage is
+**Real example, real setup scripts (2026-09-23):** `examples/workspaces/dind-example`
+(`--select dind/docker-buildx/...`) was run for real under `--engine podman --dind` —
+the actual `dind--setup.sh` script (not an ad-hoc package install) ran during the
+image build. Its own `start-server.sh` (`docker build -t http-server .` then
+`docker run`) failed with `Error response from daemon: container create: cannot set
+cgroup parent if not creating cgroups: invalid argument` — because that script forces
+`DOCKER_BUILDKIT=1`, and buildx (installed by the `docker-buildx` setup, also selected
+by this project) tries to create its own builder container in a way Podman's compat
+API rejects. **This is a real, general limitation**: any `docker build` that goes
+through buildx (Docker's own default in recent CLI versions) fails against the
+nested-Podman sidecar; the legacy builder (`DOCKER_BUILDKIT=0`) goes straight through
+the sidecar's build endpoint instead and works — already confirmed hand-verified
+above, now confirmed again through a real shipped example. Fixed in
+`start-server.sh` by branching on the `BOOTH_ENGINE` env var (added alongside this
+work — see [What runs on the chosen engine](#what-runs-on-the-chosen-engine)) to use
+`DOCKER_BUILDKIT=0` only under Podman; re-run end to end afterward: build, run, `curl`
+got HTTP 200, `stop-server.sh` cleaned up. No other shipped script forces
+`DOCKER_BUILDKIT=1` (checked: `wails-example` already unsets it, for an unrelated
+reason).
+
+**Not verified:** the `docker-compose--setup.sh` setup script running inside a Podman
+booth (`dind--setup.sh` is now verified above; this project didn't select
+`docker-compose`, only `docker-buildx`); Appwrite through this sidecar (a heavier,
+more real-world consumer of the same `docker-compose` path than the synthetic
+2-service stack used in the hand-driven verification above); any of this under an
+automated test — coverage is
 currently a dryrun command-shape check (`tests/dryrun/test036--engine.sh`, test 16)
 plus the Go unit tests in `initialize_app_context_engine_test.go`, not a test that
 actually drives a container; and the sidecar as a purpose-built image (this uses the
@@ -360,6 +381,14 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
   and `docker-compose` are verified through it by hand; Appwrite, which is a heavier
   real-world consumer of the same `docker-compose` path, is not, and there is no
   automated Podman DinD test beyond a dryrun command-shape check.
+- **A `docker build` that goes through buildx fails inside a `--dind --engine podman`
+  booth.** Buildx (Docker's own default builder in recent CLI versions, and what
+  `DOCKER_BUILDKIT=1` forces) tries to create its own builder container in a way the
+  nested-Podman sidecar's compat API rejects: `cannot set cgroup parent if not
+  creating cgroups`. Found via the real `dind-example` project's own `start-server.sh`
+  — see [Docker-in-Docker (`--dind`)](#docker-in-docker---dind). The legacy builder
+  (`DOCKER_BUILDKIT=0`) works and is the only known workaround for now; branch on the
+  `BOOTH_ENGINE` env var to pick it only under Podman, as `start-server.sh` now does.
 - **Tunnels need the booth running in the foreground**, exactly as under Docker
   ([BOOTH_EXPOSE.md](BOOTH_EXPOSE.md)). `booth--expose` inside the booth needs no engine
   setting: the host-side CLI that started the booth already knows it.
@@ -373,8 +402,14 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
   unaffected either way.
 - **The release pipeline, `tests/wrapper/` and CI are Docker-only.** Images are built
   and published with Docker/buildx.
-- **Separate image stores.** Podman cannot see images Docker built or pulled, and the
-  reverse; `--pull=never` runs need the image in the engine you chose.
+- **Separate image stores, with a sync path for locally-built images.** Podman cannot
+  see images Docker built or pulled, and the reverse; `--pull=never` runs need the
+  image in the engine you chose. `./build/build-all.sh` closes this for its own
+  builds — by default it copies each Docker-built image into Podman's store too
+  (`docker save | podman load`, no rebuild — see its `--help`); a *published* image
+  needs no such step at all, since `podman pull` reads the exact same registry image
+  Docker/buildx pushed (confirmed by hand). Any other locally-built or hand-pulled
+  image is still store-local to whichever engine touched it.
 
 ## Where it lives (for maintainers)
 
@@ -386,6 +421,8 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 | Engine on every call | `DockerFlags.Engine` / `binary()` in `pkg/docker/docker.go` |
 | `--format docker` | `needsPodmanBuildFormat` in `pkg/docker/docker.go`, `docker_build.go` |
 | `--userns=keep-id`, low-port sysctl | `podmanUserNamespaceArgs`, `podmanLowPortArgs` in `pkg/booth/booth.go`; `exportUserNamespaceArgs` in `pkg/lifecycle/home_volume.go` |
+| `BOOTH_ENGINE` env var inside every booth | `PrepareCommonArgs` in `pkg/booth/booth.go` |
+| Copying a locally-built Docker image into Podman's store | `sync_variant_to_podman`, `--docker-only`/`--podman-only` in `build/build-all.sh` |
 | `booth--expose` tunnel exec | `tunnelExecCommand` in `pkg/booth/tcp_tunnel.go` |
 | `expose list` live ports | `readLivePorts` in `pkg/lifecycle/expose.go` |
 | Host check skip | `HostCheckOptions.Engine` in `pkg/docker/host_check.go` |
