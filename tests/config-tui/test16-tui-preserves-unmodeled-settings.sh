@@ -43,16 +43,16 @@ assert-file-contains "$config" '"echo",'                   "cmds survives a no-e
 
 # ── Now uncheck a field the TUI *does* render ───────────────────────────
 # Config is tab 0 and the TUI opens on Languages, so ◄ first. From the top of the
-# config list (Booth Version), eight ▼ reach "Keep Alive":
-#   Variant, Port, Offset Base, Name, Version, Docker-in-Docker, Keep Alive is
-# the 8th stop after the group headers are skipped. Space unchecks it.
+# config list (Booth Version), nine ▼ reach "Keep Alive":
+#   Variant, Port, Offset Base, Name, Container Engine, Version, Docker-in-Docker,
+# Keep Alive is the 9th stop after the group headers are skipped. Space unchecks it.
 #
-# This count tracks the rendered field list: "Offset Base" was added between Port
-# and Name, which pushed Keep Alive from the 7th stop to the 8th and left the old
-# seven ▼ toggling Docker-in-Docker instead. Adding a config field above Keep
-# Alive means bumping this count.
+# This count tracks the rendered field list: "Container Engine" was added between
+# Name and Version, which pushed Keep Alive from the 8th stop to the 9th and left
+# the old eight ▼ toggling Docker-in-Docker instead. Adding a config field above
+# Keep Alive means bumping this count.
 run-tui save 'Left' 'Sleep 300ms' \
-    'Down' 'Down' 'Down' 'Down' 'Down' 'Down' 'Down' 'Down' 'Sleep 300ms' \
+    'Down' 'Down' 'Down' 'Down' 'Down' 'Down' 'Down' 'Down' 'Down' 'Sleep 300ms' \
     'Space' 'Sleep 500ms'
 
 assert-frame "[ ] Keep Alive" "the TUI shows Keep Alive unchecked before saving"
