@@ -1,6 +1,6 @@
 # KinD (Kubernetes in Docker) Example
 
-This example runs a full Kubernetes cluster entirely inside a CodingBooth using KinD on top of Docker-in-Docker. `start-cluster.sh` creates a KinD cluster in the DinD sidecar and `deploy-app.sh` deploys a sample nginx app on NodePort 30080 (plus a buildable hello-service on 30081), reachable from your host browser. The whole cluster — control plane, nodes, and pods — is nested inside the booth, so you get a throwaway Kubernetes environment without installing kind, kubectl, or a single container runtime on your own machine. Kick the tires on manifests, ingress, and NodePorts, then delete the entire cluster by stopping the booth — no lingering `~/.kube` config, no orphaned Docker networks, no "why is my laptop running eight etcd pods" surprise later. It's a real cluster you can be genuinely careless with.
+This example runs a full Kubernetes cluster entirely inside a CodingBooth using KinD on top of Docker-in-Docker. `start-cluster.sh` creates a KinD cluster in the DinD sidecar and `deploy-app.sh` deploys a sample nginx app on NodePort 30080 (plus a buildable hello-service on 30081), reachable from inside the booth — its own Chrome comes with a bookmark folder for both, and `k9s` gives you a live TUI view of the cluster from the terminal. The whole cluster — control plane, nodes, and pods — is nested inside the booth, so you get a throwaway Kubernetes environment without installing kind, kubectl, or a single container runtime on your own machine. Kick the tires on manifests, ingress, and NodePorts, then delete the entire cluster by stopping the booth — no lingering `~/.kube` config, no orphaned Docker networks, no "why is my laptop running eight etcd pods" surprise later. It's a real cluster you can be genuinely careless with.
 
 ## Quick start
 
@@ -19,19 +19,23 @@ just deploy              # ./deploy-app.sh
 # 4. Verify it works (inside the booth)
 curl http://localhost:30080
 
-# 5. Open in your host browser
-#    http://localhost:30080    — you should see the nginx welcome page
-
-# 6. Try the hello-service too
+# 5. Try the hello-service too
 ./deploy-hello.sh
 curl http://localhost:30081
 curl http://localhost:30081/health
 
-# 7. Clean up
+# 6. Clean up
 ./remove-hello.sh
 ./remove-app.sh
 just stop                # ./stop-cluster.sh
 ```
+
+Open these in the booth's own browser to see them rendered — click straight through:
+
+- [http://localhost:30080](http://localhost:30080) — nginx welcome page
+- [http://localhost:30081](http://localhost:30081) — hello-service
+
+Both are also pre-seeded as a "KinD Example" bookmark folder in Chrome; see [GUI access](#gui-access).
 
 ## How it works
 
@@ -75,6 +79,32 @@ The following ports are pre-mapped and accessible via `http://localhost:{port}`:
 | 80          | HTTP (for ingress)     |
 | 443         | HTTPS (for ingress)    |
 | 30080-30084 | NodePort services      |
+
+## GUI access
+
+The desktop has Chrome (Firefox is removed for this example — one browser is enough
+clutter) with a "KinD Example" bookmark folder pre-seeded for both service URLs:
+
+- [http://localhost:30080](http://localhost:30080)
+- [http://localhost:30081](http://localhost:30081)
+
+These are only reachable from *inside* the booth's own browser or terminal — the
+ports aren't published to your host machine by default. If you want that too, add
+`-p 30080:30080` (and any other NodePort you use) to `run-args` in
+`.booth/config.toml`, matching the port(s) `start-cluster.sh` maps.
+
+## Watching the cluster (k9s)
+
+[k9s](https://k9scli.io/) is installed — a terminal UI for browsing and managing a
+live cluster. From any terminal in the booth, once a cluster exists:
+
+```bash
+k9s
+```
+
+It picks up the current kubectl context (`kind-kind` after `start-cluster.sh`)
+automatically. `?` for help, `:pod`/`:svc`/`:deploy` to switch resource views, `Ctrl+C`
+to quit.
 
 ## Scripts
 
