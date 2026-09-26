@@ -108,7 +108,7 @@ func TestWaitForBoothServing_RespondingBooth(t *testing.T) {
 	}))
 	defer server.Close()
 
-	if !waitForBoothServing(context.Background(), server.URL, 5*time.Second) {
+	if !waitForBoothServing(context.Background(), server.URL, 5*time.Second, false) {
 		t.Error("waitForBoothServing() = false for a booth that answers")
 	}
 }
@@ -137,7 +137,7 @@ func TestWaitForBoothServing_PublishedButNotListening(t *testing.T) {
 
 	url := "http://" + listener.Addr().String()
 	start := time.Now()
-	if waitForBoothServing(context.Background(), url, 600*time.Millisecond) {
+	if waitForBoothServing(context.Background(), url, 600*time.Millisecond, false) {
 		t.Error("waitForBoothServing() = true for a port that accepts but serves nothing")
 	}
 	if elapsed := time.Since(start); elapsed < 500*time.Millisecond {
@@ -160,12 +160,12 @@ func TestWaitForBoothServing_NginxAheadOfService(t *testing.T) {
 	}))
 	defer server.Close()
 
-	if waitForBoothServing(context.Background(), server.URL, 400*time.Millisecond) {
+	if waitForBoothServing(context.Background(), server.URL, 400*time.Millisecond, false) {
 		t.Error("waitForBoothServing() = true while the front door was still answering 502")
 	}
 
 	serviceUp.Store(true)
-	if !waitForBoothServing(context.Background(), server.URL, 5*time.Second) {
+	if !waitForBoothServing(context.Background(), server.URL, 5*time.Second, false) {
 		t.Error("waitForBoothServing() = false once the service behind nginx was up")
 	}
 }
@@ -194,7 +194,7 @@ func TestWaitForBoothServing_ProbesHealthNotRoot(t *testing.T) {
 	}))
 	defer server.Close()
 
-	if waitForBoothServing(context.Background(), server.URL, 400*time.Millisecond) {
+	if waitForBoothServing(context.Background(), server.URL, 400*time.Millisecond, false) {
 		t.Error("waitForBoothServing() = true while only nginx was answering")
 	}
 	if got := rootProbes.Load(); got != 0 {
@@ -202,7 +202,7 @@ func TestWaitForBoothServing_ProbesHealthNotRoot(t *testing.T) {
 	}
 
 	serviceUp.Store(true)
-	if !waitForBoothServing(context.Background(), server.URL, 5*time.Second) {
+	if !waitForBoothServing(context.Background(), server.URL, 5*time.Second, false) {
 		t.Error("waitForBoothServing() = false once the service behind nginx was up")
 	}
 }
@@ -231,7 +231,7 @@ func TestWaitForBoothServing_CancelledWhenBoothExits(t *testing.T) {
 	}()
 
 	start := time.Now()
-	if waitForBoothServing(waitCtx, "http://127.0.0.1:1", time.Minute) {
+	if waitForBoothServing(waitCtx, "http://127.0.0.1:1", time.Minute, false) {
 		t.Error("waitForBoothServing() = true with nothing listening")
 	}
 	if elapsed := time.Since(start); elapsed > 10*time.Second {

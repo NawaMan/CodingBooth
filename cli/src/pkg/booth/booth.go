@@ -267,7 +267,7 @@ func (booth *Booth) runAsDaemon() error {
 	// wait happens here, and daemon mode returns once the booth is up and its
 	// page is open. Skipped when the run itself failed: there is no booth.
 	if err == nil && shouldOpenBrowser(booth.ctx) {
-		OpenBoothInBrowser(context.Background(), booth.ctx)
+		OpenBoothInBrowser(context.Background(), booth.ctx, false)
 	}
 
 	return err
@@ -329,7 +329,7 @@ func (booth *Booth) runAsForeground() error {
 	browserCtx, browserCancel := context.WithCancel(context.Background())
 	defer browserCancel()
 	if shouldOpenBrowser(booth.ctx) {
-		go OpenBoothInBrowser(browserCtx, booth.ctx)
+		go OpenBoothInBrowser(browserCtx, booth.ctx, true)
 	}
 
 	// Execute the docker run command
