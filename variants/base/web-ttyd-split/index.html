@@ -2077,25 +2077,32 @@
         });
       });
 
-      // .booth/console.json can force a pane back to plain terminal with an
-      // explicit `"web": false`, clearing whatever web tabs a previous
-      // session in this same browser left there. Unlike the tabs-restore
-      // default further below — a first-visit default only, which never
-      // touches a pane the browser already has state for — this is a
-      // standing override: for "the rest of the panes are always a
-      // terminal, full stop" project configs, not a one-time nudge. Runs
-      // before the restore-from-localStorage loop so a forced pane is
-      // simply absent from proxyState by the time that loop looks at it.
+      // .booth/console.json can force a pane's state to be cleared before
+      // this browser's own saved state ever gets a look-in — either back to
+      // plain terminal with an explicit `"web": false`, or (with
+      // `"force": true` alongside `"web": true`) so a *changed* set of
+      // starting tabs actually takes effect instead of whatever this pane
+      // already had saved. Unlike the tabs-restore default further below —
+      // a first-visit default only, which never touches a pane the browser
+      // already has state for — this is a standing override: for "this
+      // pane's config always wins" project configs, not a one-time nudge.
+      // `web: false` is inherently a forced terminal — nothing downstream
+      // re-populates a cleared pane as web unless the config also says so —
+      // so it needs no separate `force` flag of its own. Runs before the
+      // restore-from-localStorage loop so a forced pane is simply absent
+      // from proxyState by the time that loop looks at it.
       if (consoleConfig.panes && typeof consoleConfig.panes === "object") {
-        var forcedTerminalChange = false;
+        var forcedPaneChange = false;
         Object.keys(consoleConfig.panes).forEach(function(session) {
           var paneCfg = consoleConfig.panes[session];
-          if (paneCfg && paneCfg.web === false && proxyState[session]) {
+          var shouldForce = paneCfg && proxyState[session] &&
+            (paneCfg.web === false || paneCfg.force === true);
+          if (shouldForce) {
             delete proxyState[session];
-            forcedTerminalChange = true;
+            forcedPaneChange = true;
           }
         });
-        if (forcedTerminalChange) saveProxyState(proxyState);
+        if (forcedPaneChange) saveProxyState(proxyState);
       }
 
       // Restore every saved tab's iframe on load (not just the active one),

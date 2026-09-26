@@ -1,7 +1,7 @@
 {
   "layout": "left-main",
   "panes": {
-    "1": { "web": true, "tabs": ["booth:8765", "booth:30080", "booth:30081"] },
+    "1": { "web": true, "tabs": ["booth:8765", "booth:30080", "booth:30081"], "force": true },
     "2": { "web": false },
     "3": { "web": false }
   }
