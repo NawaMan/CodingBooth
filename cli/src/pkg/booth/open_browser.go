@@ -89,7 +89,7 @@ func shouldOpenBrowser(ctx appctx.AppContext) bool {
 //
 // foreground says whether this call runs alongside a foreground `docker run`
 // that is live-streaming the container's own stdout/stderr straight to the
-// terminal — see foregroundGuard.
+// terminal — see foregroundPrefix.
 func OpenBoothInBrowser(waitCtx context.Context, ctx appctx.AppContext, foreground bool) {
 	// Readiness is always checked against the booth's own front door — that is
 	// where /__booth/health lives — even when --browser-port opens elsewhere.
@@ -114,11 +114,10 @@ func OpenBoothInBrowser(waitCtx context.Context, ctx appctx.AppContext, foregrou
 		warnBrowser(targetURL, foreground, "could not open a browser: %v", err)
 		return
 	}
-	foregroundGuard(foreground)
-	LogFprintf(os.Stderr, "🌐 Opened %s in your browser.\n", targetURL)
+	LogFprintf(os.Stderr, foregroundPrefix(foreground)+"🌐 Opened %s in your browser.\n", targetURL)
 }
 
-// foregroundGuard writes a newline before a status message that runs
+// foregroundPrefix returns a leading newline for a status message that runs
 // concurrently with a foreground container's own live-streamed output. That
 // stream shares the terminal with no synchronization between the two writers
 // — os/exec wires the container's stdout/stderr straight to the terminal, so
@@ -126,21 +125,33 @@ func OpenBoothInBrowser(waitCtx context.Context, ctx appctx.AppContext, foregrou
 // left a partial line (no trailing newline) at that instant, the next status
 // message lands wherever that cursor happens to be instead of at the left
 // margin. Confirmed by hand: this is exactly what produced a status line
-// appearing indented mid-terminal. Daemon mode has nothing else writing to
-// the terminal at this point, so doing this there would only cost it a
-// needless blank line — skipped for it.
-func foregroundGuard(foreground bool) {
+// appearing indented mid-terminal.
+//
+// This must be prepended into the *same* formatted string as the message it
+// guards, not written separately beforehand: two separate Write calls (a
+// bare newline, then the message) leave their own race window between them,
+// where the container's concurrent output can land in between — confirmed by
+// hand to still reproduce the exact same bug, just one layer down. A single
+// Fprintf builds the whole string first and issues one Write, which is what
+// actually closes the window.
+//
+// Daemon mode has nothing else writing to the terminal at this point, so
+// prepending this there would only cost it a needless blank line — empty for
+// it.
+func foregroundPrefix(foreground bool) string {
 	if foreground {
-		fmt.Fprint(os.Stderr, "\n")
+		return "\n"
 	}
+	return ""
 }
 
 // warnBrowser reports why the browser did not open and points at the URL, so
-// the failure costs the user a click rather than the session.
+// the failure costs the user a click rather than the session. Built and
+// written as one string/one Write — see foregroundPrefix.
 func warnBrowser(url string, foreground bool, format string, a ...any) {
-	foregroundGuard(foreground)
-	fmt.Fprintf(os.Stderr, "⚠️  "+format+"\n", a...)
-	fmt.Fprintf(os.Stderr, "   Open %s yourself.\n", url)
+	line1 := fmt.Sprintf("⚠️  "+format+"\n", a...)
+	line2 := fmt.Sprintf("   Open %s yourself.\n", url)
+	fmt.Fprint(os.Stderr, foregroundPrefix(foreground)+line1+line2)
 }
 
 // waitForBoothServing polls the booth's readiness endpoint until it answers,
@@ -189,8 +200,7 @@ func waitForBoothServing(waitCtx context.Context, url string, timeout time.Durat
 		if !announced {
 			// Only once the booth is not up on the first try: a booth that is
 			// already serving should not print a wait it never did.
-			foregroundGuard(foreground)
-			LogFprintf(os.Stderr, "⏳ Waiting for the booth to answer on %s ...\n", url)
+			LogFprintf(os.Stderr, foregroundPrefix(foreground)+"⏳ Waiting for the booth to answer on %s ...\n", url)
 			announced = true
 		}
 		select {
