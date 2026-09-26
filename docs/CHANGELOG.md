@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A booth message you would miss now gets your attention.** When a dialog, banner, session
+  countdown warning or the idle "Still using this booth?" prompt appears while the booth's tab is
+  in the background, the overlay plays a short two-note chime, marks the tab title, and shows a
+  desktop notification whose click lands on the control that needs you (the idle prompt's
+  **I'm here**). The idle prompt puts its countdown in the title (`⚠ Idle — shutting down in 45s`),
+  since its grace period is only 60 s by default. Toasts only mark the title. Audio is unlocked by
+  any key or click, including inside the booth's iframes; notification permission is asked only on
+  a click in the booth's own UI, and the desktop variants' Help dialog has an **Enable desktop
+  notifications** button. See [Attention Signals](BOOTH_UI_OVERLAY.md#attention-signals).
+
 - **`booth config` no longer forgets a booth that has no Boothfile.** A booth that sets only
   config fields (variant, port, mounts, env) and selects no templates gets a `config.toml` but no
   Boothfile, and reconfiguring it — in the TUI or with `--no-tui` — started from defaults, so

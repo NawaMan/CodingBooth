@@ -979,6 +979,14 @@
           reaching the booth — see the Clipboard tab for the equivalent friction with
           copy/paste.</p>
 
+        <h3>Notifications</h3>
+        <p>When a message or the idle shutdown warning shows up while this tab is in the
+          background, the booth plays a short chime, marks the tab title, and can show a
+          desktop notification. <span id="bl-help-notify-status"></span></p>
+        <div class="msg-actions" id="bl-help-notify-actions" style="display:none">
+          <button class="msg-btn msg-btn-no" id="bl-help-notify-btn">Enable desktop notifications</button>
+        </div>
+
         <p>More detail lives inside the booth itself, at
           <code>/opt/codingbooth/GUIDE.md</code>.</p>
       </div>
@@ -1073,6 +1081,226 @@
 </div>
 
 <script>
+  // Attention signals for when a message arrives while the tab is hidden or
+  // unfocused: a two-note chime, a marked tab title, and a desktop
+  // notification. Browsers only allow audio and the permission prompt during
+  // a user action, but the alerts fire later with none, so both are armed
+  // ahead of time — audio on any key/click (including inside the booth
+  // iframe, whose events never reach this document), the permission prompt
+  // only on a click in the booth's own UI so it never interrupts typing.
+  // Every step fails silently: a missing API drops that one signal.
+  (function () {
+    var ctx = null;
+    var notified = {};         // key -> true; each event alerts at most once
+    var notifications = {};    // key -> Notification, closed when the event ends
+    var baseTitle = null;      // tab title before we marked it; null = unmarked
+    var titleOwner = null;     // key whose title is showing
+    var titleFn = null;        // returns the current mark (live countdowns)
+    var titleTimer = null;
+    var asked = false;
+    var TAG = "booth-" + location.host;
+
+    function attended() {
+      try {
+        return document.visibilityState === "visible" && document.hasFocus();
+      } catch (e) {
+        return false;
+      }
+    }
+
+    function unlockAudio() {
+      try {
+        var AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        if (!ctx) ctx = new AC();
+        if (ctx.state !== "running") ctx.resume().catch(function () { });
+      } catch (e) { }
+    }
+
+    // done (optional) runs once the user has answered the prompt. force
+    // skips the once-per-page guard, for an explicit "Enable" button.
+    function askPermission(done, force) {
+      try {
+        if ((asked && !force) || !("Notification" in window)) return;
+        if (Notification.permission !== "default") return;
+        asked = true;
+        var settled = false;
+        var finish = function () {
+          if (settled) return;
+          settled = true;
+          try { if (done) done(); } catch (e) { }
+        };
+        // Older Safari only takes the callback; newer browsers return a promise.
+        var p = Notification.requestPermission(finish);
+        if (p && p.then) p.then(finish, finish);
+      } catch (e) { }
+    }
+
+    function watchGestures(doc) {
+      try {
+        ["keydown", "mousedown", "touchstart"].forEach(function (type) {
+          doc.addEventListener(type, unlockAudio, true);
+        });
+      } catch (e) { }
+    }
+
+    function note(freq, at) {
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(0.3, at + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, at + 0.62);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(at);
+      osc.stop(at + 0.65);
+    }
+
+    function chime() {
+      try {
+        if (!ctx || ctx.state !== "running") return;
+        var t = ctx.currentTime;
+        note(659.25, t);        // E5
+        note(880, t + 0.16);    // A5
+      } catch (e) { }
+    }
+
+    function renderTitle() {
+      try {
+        if (baseTitle === null) return;
+        if (attended()) { restoreTitle(); return; }
+        document.title = titleFn() + " — " + baseTitle;
+      } catch (e) { }
+    }
+
+    function markTitle(key, fn) {
+      try {
+        if (baseTitle === null) baseTitle = document.title;
+        titleOwner = key;
+        titleFn = fn;
+        renderTitle();
+        if (!titleTimer) titleTimer = setInterval(renderTitle, 1000);
+      } catch (e) { }
+    }
+
+    function restoreTitle() {
+      try {
+        if (titleTimer) { clearInterval(titleTimer); titleTimer = null; }
+        if (baseTitle !== null) document.title = baseTitle;
+        baseTitle = null;
+        titleOwner = null;
+        titleFn = null;
+      } catch (e) { }
+    }
+
+    function showNotification(key, title, body, onClick) {
+      try {
+        if (!("Notification" in window) || Notification.permission !== "granted") return;
+        var n = new Notification(title, { body: body || "", tag: TAG });
+        n.onclick = function () {
+          try { window.focus(); } catch (e) { }
+          try { n.close(); } catch (e) { }
+          try { if (onClick) onClick(); } catch (e) { }
+        };
+        notifications[key] = n;
+      } catch (e) { }
+    }
+
+    // opts: key, title, body, mark (string or function for the tab title),
+    // quiet (title only — no chime, no desktop notification), onClick.
+    function notify(opts) {
+      if (!opts || !opts.key || notified[opts.key]) return;
+      notified[opts.key] = true;
+      if (attended()) return;
+      var mark = opts.mark || ("● " + opts.title);
+      if (!opts.quiet) chime();
+      markTitle(opts.key, typeof mark === "function" ? mark : function () { return mark; });
+      if (!opts.quiet) {
+        var name = baseTitle || document.title;
+        showNotification(opts.key, opts.title, opts.body ? opts.body + "\n" + name : name, opts.onClick);
+      }
+    }
+
+    // The event is over (answered, dismissed, or gone): drop its title mark
+    // and its desktop notification, which would otherwise go stale.
+    function done(key) {
+      try {
+        if (titleOwner === key) restoreTitle();
+        var n = notifications[key];
+        if (n) { delete notifications[key]; n.close(); }
+      } catch (e) { }
+    }
+
+    // Poll-driven events: end every key with this prefix not in `seen`.
+    function sync(prefix, seen) {
+      Object.keys(notified).forEach(function (key) {
+        if (key.indexOf(prefix) === 0 && !seen[key]) done(key);
+      });
+      if (titleOwner && titleOwner.indexOf(prefix) === 0 && !seen[titleOwner]) restoreTitle();
+    }
+
+    function permissionState() {
+      try {
+        if (!("Notification" in window)) return "unsupported";
+        return Notification.permission;
+      } catch (e) {
+        return "unsupported";
+      }
+    }
+
+    // Typing happens inside iframes — the wrapped service's #booth-inner, or
+    // the console UI's terminal panes and web tabs, some added later — so
+    // watch every same-origin frame, re-arming on each load since a
+    // navigation brings a fresh document. Cross-origin frames throw and
+    // simply aren't watched.
+    function armFrame(frame) {
+      try {
+        var doc = frame.contentDocument;
+        if (!doc || doc.__boothAlertArmed) return;
+        doc.__boothAlertArmed = true;
+        watchGestures(doc);
+        frame.contentWindow.addEventListener("focus", renderTitle);
+      } catch (e) { }
+    }
+    function armFrames() {
+      try {
+        var frames = document.querySelectorAll("iframe");
+        for (var i = 0; i < frames.length; i++) {
+          var frame = frames[i];
+          if (!frame.__boothAlertLoad) {
+            frame.__boothAlertLoad = true;
+            frame.addEventListener("load", armFrame.bind(null, frame));
+          }
+          armFrame(frame);
+        }
+      } catch (e) { }
+    }
+    watchGestures(document);
+    armFrames();
+    try {
+      new MutationObserver(armFrames).observe(document.documentElement, { childList: true, subtree: true });
+    } catch (e) { }
+    document.addEventListener("click", function (e) {
+      try {
+        if (e.target.closest("#bl-idle-chip, #bl-help-btn, #bl-toggle, #msg-overlay, #bl-idle-overlay, #banner-container, [data-booth-notify-ask]")) {
+          askPermission();
+        }
+      } catch (err) { }
+    }, true);
+    window.addEventListener("focus", renderTitle);
+    document.addEventListener("visibilitychange", renderTitle);
+
+    window.BoothAlert = {
+      notify: notify,
+      done: done,
+      sync: sync,
+      askPermission: askPermission,
+      permissionState: permissionState
+    };
+  })();
+
   (function () {
     var overlay = document.getElementById("msg-overlay");
     var dialogs = document.getElementById("msg-dialogs");
@@ -1119,6 +1347,8 @@
 
       toastContainer.appendChild(el);
       activeToasts[m.id] = el;
+      // Toasts are informational and go away on their own: title mark only.
+      alertFor({ key: "msg:" + m.id, title: m.title, quiet: true });
 
       // Calculate remaining duration from expires
       var durationMs = 30000;  // fallback 30s
@@ -1178,6 +1408,10 @@
         dismissBanner(m.id, el);
       };
       bannerContainer.appendChild(el);
+      alertFor({
+        key: "msg:" + m.id, title: nextTitle, body: nextBody,
+        onClick: function () { el.querySelector(".banner-close").focus(); }
+      });
       activeBanners[m.id] = {
         el: el, titleEl: titleEl, bodyEl: bodyEl,
         title: nextTitle, body: nextBody
@@ -1194,6 +1428,43 @@
         if (!entry || !entry.el) return;
         entry.el.classList.add("banner-out");
         setTimeout(function () { entry.el.remove(); }, 250);
+      });
+    }
+
+    function alertFor(opts) {
+      if (window.BoothAlert) window.BoothAlert.notify(opts);
+    }
+
+    // Chime/title/desktop notification for a dialog that just appeared; a
+    // no-op for one that already alerted. The idle prompt gets a live
+    // countdown in the tab title, since its grace period is short.
+    function alertDialog(m) {
+      if (m.type === "idle-prompt") {
+        var expiresMs = m.expires ? Date.parse(m.expires) : Date.now();
+        var secsLeft = function () {
+          return Math.max(0, Math.ceil((expiresMs - Date.now()) / 1000));
+        };
+        alertFor({
+          key: "msg:" + m.id,
+          title: m.title || "Still using this booth?",
+          body: "Shutting down in " + secsLeft() + "s unless you respond.",
+          mark: function () {
+            var s = secsLeft();
+            return "\u26A0 Idle \u2014 shutting down " + (s > 0 ? "in " + s + "s" : "now");
+          },
+          onClick: function () {
+            var btn = dialogs.querySelector('[data-idle-here="' + m.id + '"]');
+            if (btn) btn.focus();
+          }
+        });
+        return;
+      }
+      alertFor({
+        key: "msg:" + m.id, title: m.title, body: m.body,
+        onClick: function () {
+          var target = dialogs.querySelector(".msg-input, button");
+          if (target) target.focus();
+        }
       });
     }
 
@@ -1239,7 +1510,7 @@
         '<h3>I&rsquo;m still here</h3>' +
         '<p>Reset the timer and keep watching for inactivity.</p>' +
         '<div class="msg-idle-controls">' +
-        '<button onclick="window._msgRespond(\'' + m.id + '\',\'ok\')">I&rsquo;m here</button>' +
+        '<button data-idle-here="' + esc(m.id) + '" onclick="window._msgRespond(\'' + m.id + '\',\'ok\')">I&rsquo;m here</button>' +
         '</div>' +
         '</div>' +
 
@@ -1302,7 +1573,9 @@
         // Separate toasts and banners from modal interactive messages.
         var interactive = [];
         var seenBannerIds = {};
+        var seenAlertKeys = {};
         msgs.forEach(function (m) {
+          seenAlertKeys["msg:" + m.id] = true;
           if (m.type === "toast") {
             showToast(m);
           } else if (m.type === "banner") {
@@ -1313,6 +1586,7 @@
           }
         });
         reapBanners(seenBannerIds);
+        if (window.BoothAlert) window.BoothAlert.sync("msg:", seenAlertKeys);
 
         if (!interactive.length) {
           // Don't clear if a countdown warning dialog is showing
@@ -1387,6 +1661,7 @@
           }
           return h + '</div>';
         }).join("");
+        interactive.forEach(alertDialog);
       }).catch(function () { pollFails++; checkConnectionLost(); });
     }
 
@@ -1926,8 +2201,25 @@
         stack.style.top = top + "px";
       }
 
+      var notifyStatus = document.getElementById("bl-help-notify-status");
+      var notifyActions = document.getElementById("bl-help-notify-actions");
+      var notifyBtn = document.getElementById("bl-help-notify-btn");
+      function renderNotifyState() {
+        var state = window.BoothAlert ? window.BoothAlert.permissionState() : "unsupported";
+        notifyActions.style.display = state === "default" ? "" : "none";
+        notifyStatus.textContent =
+          state === "granted" ? "Desktop notifications are on." :
+          state === "denied" ? "Desktop notifications are blocked for this site; allow them in your browser's site settings." :
+          state === "default" ? "" :
+          "Desktop notifications aren't available here (they need HTTPS or localhost).";
+      }
+      notifyBtn.addEventListener("click", function () {
+        if (window.BoothAlert) window.BoothAlert.askPermission(renderNotifyState, true);
+      });
+
       function openDialog(tab) {
         selectTab(tab || "clipboard");
+        renderNotifyState();
         overlay.classList.add("visible");
         if (!placed) {
           var r = stack.getBoundingClientRect();
@@ -2228,6 +2520,7 @@
           var overlay = document.getElementById("msg-overlay");
           var dialogs = document.getElementById("msg-dialogs");
           var dismissFn = "document.getElementById('" + warnId + "').remove();" +
+            "if(window.BoothAlert)window.BoothAlert.done('warn:" + id + "');" +
             "var d=document.getElementById('msg-dialogs');" +
             "if(!d.children.length){document.getElementById('msg-overlay').classList.remove('visible');" +
             "document.body.classList.remove('msg-active');}";
@@ -2241,6 +2534,15 @@
           dialogs.appendChild(wrapper);
           overlay.classList.add("visible");
           document.body.classList.add("msg-active");
+          if (window.BoothAlert) {
+            window.BoothAlert.notify({
+              key: "warn:" + id, title: title, body: body,
+              onClick: function () {
+                var btn = wrapper.querySelector("button");
+                if (btn) btn.focus();
+              }
+            });
+          }
           if (autoDismissSec) {
             setTimeout(function () {
               var el = document.getElementById(warnId);

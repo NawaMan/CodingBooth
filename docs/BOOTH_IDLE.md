@@ -149,6 +149,8 @@ The "Still using this booth?" grace-window prompt reuses the same sectioned layo
 2. **Turn it off entirely** — danger-styled Disable.
 3. **I'm still here** — `[ I'm here ]` button that resets the timer and keeps watching. Takes the place of the chip dialog's "Got it, carry on" section.
 
+If the booth's tab is in the background when the prompt appears, the overlay also chimes, puts the countdown in the tab title (`⚠ Idle — shutting down in 45s — …`), and shows a desktop notification whose click focuses **I'm here**. See [Attention Signals](BOOTH_UI_OVERLAY.md#attention-signals).
+
 ### State files (`.booth/.tmp/`)
 
 - `.idle-disabled` — zero-byte flag. Presence ⇒ disabled.

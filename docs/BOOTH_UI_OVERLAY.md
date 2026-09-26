@@ -19,6 +19,7 @@ Back to [README](../README.md)
 - [Readiness Gate](#readiness-gate)
 - [API Server](#api-server)
 - [Overlay HTML Injection](#overlay-html-injection)
+- [Attention Signals](#attention-signals)
 - [Adding a Variant](#adding-a-variant)
 - [Extending the Overlay](#extending-the-overlay)
 
@@ -211,6 +212,25 @@ The overlay uses two rendering modes:
 - **Non-blocking** — Fixed-position elements that don't block iframe interaction. Used for toast notifications (bottom-right corner, `z-index: 10001`).
 
 The overlay JavaScript polls the API server every 2 seconds and updates the DOM based on the response. The API base URL defaults to `/booth-messages/api` but can be overridden via `window.BOOTH_MSG_API_BASE`.
+
+---
+
+## Attention Signals
+
+A message that shows up while the booth's tab is hidden or unfocused would otherwise go unseen, which matters most for the idle prompt: its grace period is only 60 seconds by default. So when a message arrives and the tab is **not** both visible and focused, the overlay (`window.BoothAlert`, plain browser JavaScript, no sound file or backend) signals it:
+
+| Signal | What | When |
+|--------|------|------|
+| Chime | Two-note sine chime, E5 then A5 0.16 s later, built with Web Audio oscillators | Dialogs, banners, the idle prompt, session-countdown warnings |
+| Tab title | `● <title> — <original title>`; the idle prompt shows a live `⚠ Idle — shutting down in 45s — …` | All of the above, and toasts |
+| Desktop notification | `new Notification(title, {body, tag})`, tagged per booth (`booth-<host>`) so repeats replace each other | Same as the chime, when permission is granted |
+
+- **Toasts only mark the title.** They are informational and dismiss themselves, so they don't chime or notify.
+- **Each message alerts at most once**, keyed by its id. When it goes away (answered, dismissed, expired, or answered in another tab), its title mark and desktop notification are cleared. Returning to the tab (`focus`, or `visibilitychange` to visible) restores the title.
+- **Clicking the notification** focuses the tab and the control that needs you: the idle prompt's **I'm here** button, a dialog's first input or button, a banner's OK.
+- **Browsers only allow audio and the permission prompt during a user action**, and alerts fire later without one, so both are armed ahead of time. Audio is unlocked on any key press, mouse press or touch, in the wrapper page and in every same-origin iframe (the wrapped service, the console UI's panes and web tabs), since that is where typing happens. The notification-permission prompt is only asked on a click in the booth's own UI (the Booth panel's idle chip, Help or collapse button, a message dialog or banner), at most once per page load, so it never interrupts typing. On the desktop variants, which show the **CodingBooth Help** button, its General tab shows the current state and an **Enable desktop notifications** button.
+- **Permission is per origin.** On a booth with a stable hostname you allow it once; on `localhost:<port>` each port is its own origin. Desktop notifications need HTTPS or `localhost`; over plain HTTP to another host only the chime and title work.
+- Every step fails silently, so a missing API drops only that one signal.
 
 ---
 

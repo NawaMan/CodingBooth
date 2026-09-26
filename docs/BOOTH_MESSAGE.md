@@ -34,6 +34,8 @@ Booth messaging provides a way for scripts, CI pipelines, or the host CLI to pre
 
 All variants use the shared [booth UI overlay](BOOTH_UI_OVERLAY.md) — an nginx wrapper that injects an HTML overlay into the page. This means messages look and behave identically across all variants.
 
+A message that arrives while the booth's tab is in the background chimes, marks the tab title, and can show a desktop notification (toasts only mark the title). See [Attention Signals](BOOTH_UI_OVERLAY.md#attention-signals).
+
 ---
 
 ## Subcommands
