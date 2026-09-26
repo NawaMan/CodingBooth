@@ -1,0 +1,3 @@
+# Configured by: booth config --no-tui --overwrite --variant desktop-xfce --select i3+default+ctrl-alt+gaps
+
+variant = "desktop-xfce"

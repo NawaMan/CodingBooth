@@ -1,0 +1,6 @@
+# Written by booth config — a fingerprint of the files it generated.
+# `booth config` compares against this to detect hand-edits before
+# overwriting them. Commit it. Delete it to have those files treated
+# as hand-written (booth config will then refuse to clobber them).
+Boothfile=sha256:1aa81e70c2e9e18b6fe11fdd3772cbd052690d4ad5b4f3d83a1b8f01ab90dff2
+config.toml=sha256:6125f5d2d3bee00408fe092b48b820738e065eb17f8b1b51edbea5db2a58642c
