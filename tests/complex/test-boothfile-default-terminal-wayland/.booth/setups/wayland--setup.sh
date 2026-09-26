@@ -109,6 +109,22 @@ if [[ -z "${DEFAULT_TERMINAL:-}" && -r /opt/codingbooth/default-terminal ]]; the
   DEFAULT_TERMINAL="$(tr -d ' \t\r\n' < /opt/codingbooth/default-terminal)"
 fi
 : "${DEFAULT_TERMINAL:=foot}"
+# The compositor: labwc, unless a setup chose another by writing its name to
+# /opt/codingbooth/wayland-compositor (sway--setup.sh writes "sway"). Read from
+# a file for the same reason as the terminal above. WAYLAND_COMPOSITOR in the
+# environment overrides it for one run (e.g. --env WAYLAND_COMPOSITOR=labwc).
+if [[ -z "${WAYLAND_COMPOSITOR:-}" && -r /opt/codingbooth/wayland-compositor ]]; then
+  WAYLAND_COMPOSITOR="$(tr -d ' \t\r\n' < /opt/codingbooth/wayland-compositor)"
+fi
+: "${WAYLAND_COMPOSITOR:=labwc}"
+case "$WAYLAND_COMPOSITOR" in
+  labwc|sway) ;;
+  *) echo "❌ Unknown WAYLAND_COMPOSITOR '${WAYLAND_COMPOSITOR}' (labwc or sway)" >&2; exit 1 ;;
+esac
+if ! command -v "$WAYLAND_COMPOSITOR" >/dev/null 2>&1; then
+  echo "❌ ${WAYLAND_COMPOSITOR} is not installed" >&2
+  exit 1
+fi
 : "${HOME:?HOME must be set and writable}"
 
 export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/xdg-$(id -u)}"
@@ -116,7 +132,7 @@ mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR"
 # wlroots headless backend: software render (no GPU), one virtual output, no seat/DRM.
 export WLR_BACKENDS=headless WLR_RENDERER=pixman WLR_HEADLESS_OUTPUTS=1
 export XDG_SESSION_TYPE=wayland WAYLAND_DISPLAY=wayland-0
-export XDG_CURRENT_DESKTOP=labwc
+export XDG_CURRENT_DESKTOP="$WAYLAND_COMPOSITOR"
 
 WALL=/usr/share/backgrounds/codingbooth/wallpaper.jpg
 
@@ -150,6 +166,8 @@ mkdir -p "$HOME/.config/waybar"
 # panel automatically tracks whatever GUI apps the booth selected.
 _reg_dir=/etc/skel/Desktop
 _modules='"custom/apps"'
+# Under sway, the workspaces and the current binding mode (resize) lead the panel.
+[[ "$WAYLAND_COMPOSITOR" == sway ]] && _modules='"sway/workspaces", "sway/mode", '"${_modules}"
 _defs='"custom/apps": { "format": "  Apps", "on-click": "wofi --show drun", "tooltip": false }'
 _style=""
 _idx=0
@@ -173,6 +191,15 @@ for _f in "$_reg_dir"/*.desktop; do
 "
 done
 shopt -u nullglob
+# sway's workspace buttons would take GTK's default button look — dark text on
+# the dark bar — so give them the panel's colors, the focused one highlighted.
+if [[ "$WAYLAND_COMPOSITOR" == sway ]]; then
+  _style="${_style}#workspaces button { padding: 0 8px; color: #e6edf3; background: transparent; border: none; border-radius: 0; box-shadow: none; }
+#workspaces button.focused { background: #5294e2; color: #ffffff; }
+#workspaces button.urgent { background: #e06c75; color: #ffffff; }
+#mode { padding: 0 10px; background: #e06c75; color: #ffffff; }
+"
+fi
 
 cat > "$HOME/.config/waybar/config.jsonc" <<BAR
 {
@@ -225,10 +252,32 @@ if [[ ! -f "$RC_XML" ]] || grep -q "cb-generated" "$RC_XML"; then
 RC
 fi
 
-# 1) headless labwc compositor
-labwc >/tmp/cb-labwc.log 2>&1 &
-LABWC_PID=$!
-for i in $(seq 1 30); do [[ -e "$XDG_RUNTIME_DIR/wayland-0" ]] && break; sleep 1; done
+# 1) headless compositor (labwc, or sway when chosen; sway's config starts
+#    swaybg/waybar/the terminal itself, as labwc's autostart above does).
+#    sway refuses to start when it sees the Nvidia driver in /proc/modules —
+#    which a container shares with its host — though it renders in software
+#    here and never touches the GPU; --unsupported-gpu lets it through.
+COMPOSITOR_ARGS=()
+if [[ "$WAYLAND_COMPOSITOR" == sway ]]; then
+  COMPOSITOR_ARGS=(--unsupported-gpu)
+  # A restarted booth keeps /tmp: drop a previous session's sockets so the
+  # wait below cannot pick one up before sway has made its own.
+  pgrep -x sway >/dev/null || rm -f "$XDG_RUNTIME_DIR"/wayland-[0-9]*
+fi
+"$WAYLAND_COMPOSITOR" "${COMPOSITOR_ARGS[@]}" >"/tmp/cb-${WAYLAND_COMPOSITOR}.log" 2>&1 &
+COMPOSITOR_PID=$!
+if [[ "$WAYLAND_COMPOSITOR" == sway ]]; then
+  # sway names its socket wayland-1 here, not wayland-0 as labwc does: follow
+  # the one it makes (the newest), so wlr-randr and wayvnc below attach to it.
+  for i in $(seq 1 30); do
+    _sock="$(cd "$XDG_RUNTIME_DIR" && ls -1t 2>/dev/null | grep -E '^wayland-[0-9]+$' | head -1 || true)"
+    [[ -n "$_sock" ]] && pgrep -x sway >/dev/null && break
+    sleep 1
+  done
+  [[ -n "$_sock" ]] && export WAYLAND_DISPLAY="$_sock"
+else
+  for i in $(seq 1 30); do [[ -e "$XDG_RUNTIME_DIR/wayland-0" ]] && break; sleep 1; done
+fi
 sleep 1
 
 # 2) set the virtual output resolution
@@ -247,15 +296,15 @@ websockify --web=/usr/share/novnc "0.0.0.0:${NOVNC_PORT}" "localhost:${VNC_PORT}
 WS_PID=$!
 
 cleanup() {
-  echo; echo "🛑 stopping labwc session…"
-  kill "$WS_PID" "$WAYVNC_PID" "$LABWC_PID" 2>/dev/null || true
+  echo; echo "🛑 stopping ${WAYLAND_COMPOSITOR} session…"
+  kill "$WS_PID" "$WAYVNC_PID" "$COMPOSITOR_PID" 2>/dev/null || true
   wait "$WS_PID" 2>/dev/null || true
   exit 0
 }
 trap cleanup INT TERM
 
-echo "🖥️  labwc (Wayland) via noVNC — connect through the booth port."
-wait -n "$LABWC_PID" "$WAYVNC_PID" "$WS_PID" || true
+echo "🖥️  ${WAYLAND_COMPOSITOR} (Wayland) via noVNC — connect through the booth port."
+wait -n "$COMPOSITOR_PID" "$WAYVNC_PID" "$WS_PID" || true
 cleanup
 EOF
 chmod 0755 "${STARTER_FILE}"
