@@ -162,9 +162,13 @@ if ! printf '%s\n' "$OUT" | grep -q -- 'Warning: --dind with --engine podman use
   print_test_result "false" "$0" "16" "podman --dind warns and runs a nested-Podman sidecar"
   echo "Missing the --dind/podman warning. Output:"; echo "$OUT"
   exit 1
-elif ! printf '%s\n' "$OUT" | grep -q -- 'quay.io/podman/stable podman system service'; then
+elif ! printf '%s\n' "$OUT" | grep -q -- 'quay.io/podman/stable sh -c'; then
   print_test_result "false" "$0" "16" "podman --dind warns and runs a nested-Podman sidecar"
   echo "Missing the nested-Podman sidecar command. Output:"; echo "$OUT"
+  exit 1
+elif ! printf '%s\n' "$OUT" | grep -q -- 'exec podman system service --time=0 tcp://0.0.0.0:2375'; then
+  print_test_result "false" "$0" "16" "podman --dind warns and runs a nested-Podman sidecar"
+  echo "Missing the podman system service startup command. Output:"; echo "$OUT"
   exit 1
 else
   print_test_result "true" "$0" "16" "podman --dind warns and runs a nested-Podman sidecar"

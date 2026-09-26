@@ -73,6 +73,45 @@ func cleanupPreviousBoothInstances(ctx appctx.AppContext, projectName string) {
 // Podman running inside the sidecar. See docs/PODMAN_SUPPORT.md, Phase 4.
 const podmanDindSidecarImage = "quay.io/podman/stable"
 
+// podmanDindStartupScript patches the sidecar image's own
+// /etc/containers/containers.conf before starting the API service. That file
+// ships defaults meant for this image's usual use as a lightweight
+// "run more podman commands sharing my own namespaces" CI helper, not for
+// spawning isolated application containers — two of which break real
+// Docker-API tools that assume Docker's own always-isolated defaults:
+//
+//   - `utsns="host"`: any container creation that explicitly sets a hostname
+//     fails with "cannot set hostname when running in the host UTS
+//     namespace", since a host-shared UTS namespace has no hostname of its
+//     own to set. kind (Kubernetes-in-Docker, used by
+//     examples/workspaces/kind-example) does exactly that for its
+//     control-plane node and hit this for real.
+//   - `cgroups="disabled"` and `cgroupns="host"`: a container that boots
+//     systemd (kind's node image does, to run containerd + kubelet) needs
+//     real, delegated cgroup controllers and fails at the very first log
+//     line with "UserNS: cpu controller needs to be delegated" otherwise.
+//     Confirmed by hand: with both settings switched, the same node image
+//     boots past that point, systemd reaches multi-user.target, and
+//     containerd starts.
+//
+// Both fixes are real and worth keeping — they unblock any Docker-API tool
+// that hits them, not just kind. kind itself still does not fully work: past
+// both of the above, `kubeadm init` hangs waiting on kubelet's health
+// endpoint and fails after 4 minutes ("required cgroups disabled" is
+// kubeadm's own guess at why). That needs more than this blanket
+// enable/private flip — most likely specific controller delegation or a
+// cgroup-driver mismatch between the nested layers — and has not been
+// chased further. See docs/PODMAN_SUPPORT.md, Known limitations.
+//
+// The patch must happen before `podman system service` starts — it reads
+// containers.conf once at startup, not per request, so editing it on an
+// already-running sidecar has no effect (confirmed by hand).
+const podmanDindStartupScript = `sed -i ` +
+	`-e 's/^utsns="host"$/utsns="private"/' ` +
+	`-e 's/^cgroupns="host"$/cgroupns="private"/' ` +
+	`-e 's/^cgroups="disabled"$/cgroups="enabled"/' ` +
+	`/etc/containers/containers.conf; exec podman system service --time=0 tcp://0.0.0.0:2375`
+
 // createDindNetwork creates a Docker network for DinD if it doesn't exist.
 // Returns true if the network was created, false if it already existed.
 func createDindNetwork(ctx appctx.AppContext, networkName string) bool {
@@ -196,8 +235,7 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 	// docker:dind starts dockerd on its own; the nested-Podman sidecar needs
 	// an explicit command, and has no TLS-cert-dir env to disable.
 	if ctx.Engine() == "podman" {
-		args = append(args, podmanDindSidecarImage,
-			"podman", "system", "service", "--time=0", "tcp://0.0.0.0:2375")
+		args = append(args, podmanDindSidecarImage, "sh", "-c", podmanDindStartupScript)
 	} else {
 		args = append(args, "-e", "DOCKER_TLS_CERTDIR=", "docker:dind")
 	}

@@ -288,6 +288,34 @@ got HTTP 200, `stop-server.sh` cleaned up. No other shipped script forces
 `DOCKER_BUILDKIT=1` (checked: `wails-example` already unsets it, for an unrelated
 reason).
 
+**kind (Kubernetes-in-Docker) does not work yet (2026-09-24).**
+`examples/workspaces/kind-example`'s `start-cluster.sh` (`kind create cluster`)
+surfaced two more real bugs in the sidecar image's shipped
+`/etc/containers/containers.conf`, both now fixed in `podmanDindStartupScript`
+(`dind_setup.go`) by patching the file before `podman system service` starts:
+
+- `utsns="host"` made any container that sets an explicit hostname fail with
+  `cannot set hostname when running in the host UTS namespace` — kind's
+  control-plane node does exactly that. Fixed: `utsns="private"`.
+- `cgroups="disabled"` / `cgroupns="host"` made any container that boots systemd
+  (kind's node image does, to run containerd + kubelet) fail immediately with
+  `UserNS: cpu controller needs to be delegated`. Fixed: `cgroups="enabled"`,
+  `cgroupns="private"` — confirmed the same node image then boots systemd past
+  that point, reaching `multi-user.target` with containerd running.
+
+Both fixes are real and kept regardless of kind's own outcome — they unblock any
+Docker-API tool that hits them. **kind itself still fails past both fixes**: a real
+`kind create cluster` gets through "Preparing nodes" (the original blocker) and
+"Writing configuration", then `kubeadm init` hangs waiting on kubelet's health
+endpoint and fails after its 4-minute timeout —
+`dial tcp 127.0.0.1:10248: connect: connection refused`, with kubeadm's own hint
+pointing at "required cgroups disabled". This needs more than the blanket
+enable/private flip above — most likely specific controller delegation or a
+cgroup-driver mismatch between the sidecar's nested Podman and the node's own
+nested containerd/kubelet — and has **not been chased further**; regression-tested
+that the earlier `docker build`/`run`/bridge-networking-with-DNS verification still
+passes with these two settings changed.
+
 **Not verified:** the `docker-compose--setup.sh` setup script running inside a Podman
 booth (`dind--setup.sh` is now verified above; this project didn't select
 `docker-compose`, only `docker-buildx`); Appwrite through this sidecar (a heavier,
@@ -389,6 +417,13 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
   — see [Docker-in-Docker (`--dind`)](#docker-in-docker---dind). The legacy builder
   (`DOCKER_BUILDKIT=0`) works and is the only known workaround for now; branch on the
   `BOOTH_ENGINE` env var to pick it only under Podman, as `start-server.sh` now does.
+- **kind (Kubernetes-in-Docker, `examples/workspaces/kind-example`) does not work.**
+  Two real bugs in the sidecar's own `containers.conf` are fixed (a container setting
+  an explicit hostname, and a container booting systemd both used to fail outright —
+  see [Docker-in-Docker (`--dind`)](#docker-in-docker---dind)), but `kind create
+  cluster` still fails past both: `kubeadm init` times out after 4 minutes waiting on
+  kubelet's health endpoint. Needs more cgroup-delegation work than has been done so
+  far; not chased further this round.
 - **Tunnels need the booth running in the foreground**, exactly as under Docker
   ([BOOTH_EXPOSE.md](BOOTH_EXPOSE.md)). `booth--expose` inside the booth needs no engine
   setting: the host-side CLI that started the booth already knows it.
