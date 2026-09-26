@@ -18,6 +18,7 @@
 #   idle      untouched, the hint hides after a minute (not saved)
 #   engaged   bar opened from the tab: the minute no longer applies
 #   heading   "Local ⇄ remote" label layout, heading opens the help dialog
+#   helpfloat Help floats (booth usable under it), resizes, drags; BoothHelp.addTab
 # Chrome's --virtual-time-budget fast-forwards the one-minute timers.
 # -----------------------------------------------------------------------------
 
@@ -98,7 +99,7 @@ run_scenario() {
     | grep -v '^$' || true
 }
 
-for entry in keys:20000 clipboard:20000 close:20000 drag:20000 heading:20000 idle:85000 engaged:85000; do
+for entry in keys:20000 clipboard:20000 close:20000 drag:20000 heading:20000 helpfloat:20000 idle:85000 engaged:85000; do
   scenario="${entry%%:*}" budget="${entry#*:}"
   output="$(run_scenario "$scenario" "$budget")"
   while IFS= read -r line; do

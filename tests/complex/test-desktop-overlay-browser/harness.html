@@ -151,6 +151,48 @@ var scenarios = {
           help.classList.contains("visible") && active && active.dataset.panel === "clipboard",
           "visible=" + help.classList.contains("visible") + " tab=" + (active && active.dataset.panel));
     emit("DONE");
+  }]],
+
+  helpfloat: [[SETTLE, function () {
+    wrapDoc().getElementById("bl-help-btn").click();
+  }], [300, function () {
+    var w = wrapDoc(), win = w.defaultView, help = w.getElementById("bl-help-dialog-overlay"),
+        stack = help.querySelector(".msg-stack"), cs = win.getComputedStyle(stack), r = stack.getBoundingClientRect();
+    check("Help opens", help.classList.contains("visible"), "not visible");
+    check("Help does not lock the booth (no msg-active)", !w.body.classList.contains("msg-active"), "msg-active set");
+    var under = w.elementFromPoint(win.innerWidth - 5, win.innerHeight - 5);
+    check("the booth under the Help window still takes clicks", !!under && under.id === "booth-inner",
+          under ? under.tagName + "#" + under.id : "nothing");
+    check("Help is a resizable floating window", cs.position === "fixed" && cs.resize === "both",
+          cs.position + " / " + cs.resize);
+    check("Help opens larger than the old 480px dialog", r.width >= 600, "width " + r.width);
+    var title = help.querySelector(".msg-dialog h2"), tr = title.getBoundingClientRect(),
+        x = tr.left + 40, y = tr.top + 10, before = r.left;
+    function ptr(type, px, py) {
+      title.dispatchEvent(new win.PointerEvent(type, { bubbles: true, button: 0, buttons: type === "pointerup" ? 0 : 1,
+        pointerId: 1, clientX: px, clientY: py }));
+    }
+    ptr("pointerdown", x, y); ptr("pointermove", x - 60, y + 30); ptr("pointerup", x - 60, y + 30);
+    var after = stack.getBoundingClientRect().left;
+    check("dragging the title moves the window", Math.abs((after - before) + 60) < 1.5, before + " -> " + after);
+    check("booth takes clicks again after the drag", !w.body.classList.contains("bl-help-dragging"), "still dragging");
+
+    win.BoothHelp.addTab("harness", "Harness", '<p id="harness-panel-text">from a plugin</p>');
+    win.BoothHelp.addTab("harness", "Harness again", "<p>duplicate</p>");
+    var tabs = w.querySelectorAll('#bl-help-dialog-overlay .msg-tab[data-tab="harness"]');
+    check("BoothHelp.addTab adds one tab per name", tabs.length === 1 && tabs[0].textContent === "Harness",
+          tabs.length + " tab(s)");
+    tabs[0].click();
+    var active = w.querySelector("#bl-help-dialog-overlay .msg-tab-panel.active");
+    check("an added tab switches to its panel", !!active && active.dataset.panel === "harness"
+          && !!w.getElementById("harness-panel-text"), active ? active.dataset.panel : "none");
+    w.getElementById("bl-help-tab-general").click();
+    active = w.querySelector("#bl-help-dialog-overlay .msg-tab-panel.active");
+    check("the built-in tabs still switch away from it", !!active && active.dataset.panel === "general",
+          active ? active.dataset.panel : "none");
+    w.getElementById("bl-help-dialog-close").click();
+    check("Got it closes Help", !help.classList.contains("visible"), "still visible");
+    emit("DONE");
   }]]
 };
 

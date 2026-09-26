@@ -1952,13 +1952,15 @@
           var dx = event.clientX - r.left;
           var dy = event.clientY - r.top;
           document.body.classList.add("bl-help-dragging");
-          title.setPointerCapture(event.pointerId);
+          // Capture keeps the drag when the pointer outruns the title; it
+          // throws for a pointer the browser is not tracking (synthetic events).
+          try { title.setPointerCapture(event.pointerId); } catch (e) { }
           function move(e) {
             stack.style.left = (e.clientX - dx) + "px";
             stack.style.top = (e.clientY - dy) + "px";
           }
           function up(e) {
-            title.releasePointerCapture(e.pointerId);
+            try { title.releasePointerCapture(e.pointerId); } catch (err) { }
             title.removeEventListener("pointermove", move);
             title.removeEventListener("pointerup", up);
             title.removeEventListener("pointercancel", up);
