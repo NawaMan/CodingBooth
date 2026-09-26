@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The Wayland desktop now fits the browser window.** It stayed at `GEOMETRY` (1280×800 by
+  default) however large the browser was: noVNC asks the VNC server to resize the desktop, and the
+  X11 desktops' TigerVNC does, but Ubuntu 24.04's wayvnc 0.7 ignores the request. The booth page
+  now reports its size to the booth (`POST /booth-messages/api/display-size`), which resizes the
+  desktop from inside through a new `cb-display-resize` hook — live, as the window or Full screen
+  changes. Only `desktop-wayland` (labwc or sway) installs the hook; elsewhere the endpoint answers
+  `supported:false` and the page stops asking. With several browsers on one booth, the last one
+  resized wins.
+
 - **Tiling for Wayland (sway): `--select sway`.** A new template that makes
   [sway](https://swaywm.org) — i3 for Wayland — the **Wayland desktop's** compositor in place of
   labwc: windows tile instead of overlapping, driven from the keyboard, with the same waybar panel

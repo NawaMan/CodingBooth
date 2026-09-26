@@ -283,6 +283,9 @@ sleep 1
 # 2) set the virtual output resolution
 OUT="$(wlr-randr 2>/dev/null | awk 'NR==1{print $1}')"
 [[ -n "$OUT" ]] && wlr-randr --output "$OUT" --custom-mode "${GEOMETRY}" 2>/dev/null || true
+# Where cb-display-resize finds this session (the booth page resizes the output
+# to fit the browser through it; see below).
+printf '%s\n' "$WAYLAND_DISPLAY" > "$XDG_RUNTIME_DIR/cb-wayland-display"
 
 # 3) wayvnc: wlr-screencopy -> RFB on localhost:$VNC_PORT
 wayvnc --render-cursor 0.0.0.0 "$VNC_PORT" >/tmp/cb-wayvnc.log 2>&1 &
@@ -297,6 +300,7 @@ WS_PID=$!
 
 cleanup() {
   echo; echo "🛑 stopping ${WAYLAND_COMPOSITOR} session…"
+  rm -f "$XDG_RUNTIME_DIR/cb-wayland-display"
   kill "$WS_PID" "$WAYVNC_PID" "$COMPOSITOR_PID" 2>/dev/null || true
   wait "$WS_PID" 2>/dev/null || true
   exit 0
@@ -308,6 +312,41 @@ wait -n "$COMPOSITOR_PID" "$WAYVNC_PID" "$WS_PID" || true
 cleanup
 EOF
 chmod 0755 "${STARTER_FILE}"
+
+# --- cb-display-resize: fit the desktop to the browser ---
+# The booth page opens noVNC with resize=remote, which asks the VNC server to
+# resize the desktop to the browser window. TigerVNC (the X11 desktops) does;
+# wayvnc 0.7 (Ubuntu 24.04) ignores the request, so the desktop stayed at
+# GEOMETRY. It does follow a resize made on the compositor side, live, so the
+# booth page reports its size to booth-message-api-server, which runs this hook
+# (as the desktop user). Works for labwc and sway alike: both take wlr-randr.
+cat > /usr/local/bin/cb-display-resize <<'EOF'
+#!/usr/bin/env bash
+# cb-display-resize WIDTH HEIGHT — resize the running Wayland desktop's output.
+# Installed by wayland--setup.sh; called by booth-message-api-server.
+set -u
+W="${1:-}"; H="${2:-}"
+if [[ ! "$W" =~ ^[0-9]+$ || ! "$H" =~ ^[0-9]+$ ]]; then
+  echo "Usage: cb-display-resize WIDTH HEIGHT" >&2
+  exit 2
+fi
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/tmp/xdg-$(id -u)}"
+if [[ ! -r "$XDG_RUNTIME_DIR/cb-wayland-display" ]]; then
+  echo "No Wayland desktop is running for $(id -un)." >&2
+  exit 1
+fi
+WAYLAND_DISPLAY="$(tr -d ' \t\r\n' < "$XDG_RUNTIME_DIR/cb-wayland-display")"
+export WAYLAND_DISPLAY
+OUT="$(wlr-randr 2>/dev/null | awk 'NR==1{print $1}')"
+if [[ -z "$OUT" ]]; then
+  echo "No output found on $WAYLAND_DISPLAY." >&2
+  exit 1
+fi
+# Already that size: nothing to do (the page reports on every load).
+wlr-randr 2>/dev/null | grep -qE "^ +${W}x${H} px.*current" && exit 0
+exec wlr-randr --output "$OUT" --custom-mode "${W}x${H}"
+EOF
+chmod 0755 /usr/local/bin/cb-display-resize
 
 rm -Rf "${DESKTOP_FILE}"
 ln -s  "${STARTER_FILE}" "${DESKTOP_FILE}"
