@@ -12,7 +12,16 @@ set -euo pipefail
 SERVER_PORT=${SERVER_PORT:-8080}
 CONTAINER_NAME="http-server"
 
-DOCKER_BUILDKIT=1 docker build -t http-server .
+# --dind under Podman talks to a nested-Podman sidecar (docs/PODMAN_SUPPORT.md),
+# not docker:dind. Its compat API rejects the container buildx's own builder
+# tries to create: "cannot set cgroup parent if not creating cgroups". The
+# legacy builder (DOCKER_BUILDKIT=0) goes straight through the sidecar's build
+# endpoint instead and works on both engines, so only force BuildKit on Docker.
+if [[ "${BOOTH_ENGINE:-docker}" == "podman" ]]; then
+    DOCKER_BUILDKIT=0 docker build -t http-server .
+else
+    DOCKER_BUILDKIT=1 docker build -t http-server .
+fi
 
 echo
 echo "Starting http-server on port ${SERVER_PORT} in daemon mode..."
