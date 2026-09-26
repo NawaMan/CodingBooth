@@ -66,6 +66,13 @@ func cleanupPreviousBoothInstances(ctx appctx.AppContext, projectName string) {
 	}
 }
 
+// podmanDindSidecarImage is the nested-Podman sidecar image used in place of
+// docker:dind when --engine podman is chosen. Podman is daemonless, so there
+// is no drop-in equivalent of docker:dind; instead this image's own
+// `podman system service` answers the real Docker Engine API from a nested
+// Podman running inside the sidecar. See docs/PODMAN_SUPPORT.md, Phase 4.
+const podmanDindSidecarImage = "quay.io/podman/stable"
+
 // createDindNetwork creates a Docker network for DinD if it doesn't exist.
 // Returns true if the network was created, false if it already existed.
 func createDindNetwork(ctx appctx.AppContext, networkName string) bool {
@@ -135,7 +142,24 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 
 	parentName := ctx.Name()
 	var args []string
-	if isDockerDesktop {
+	switch {
+	case ctx.Engine() == "podman":
+		// Podman: nested Podman sidecar, no --cgroupns=host / /sys/fs/cgroup
+		// bind mount. Verified by hand (docs/PODMAN_SUPPORT.md, Phase 4) that
+		// docker build, docker run, and a docker-compose bridge-network stack
+		// with inter-container DNS all work — and tear down cleanly — with
+		// just --privileged and no cgroup flags on rootless Podman 5.4.2.
+		args = []string{
+			"run", "-d", "--rm", "--privileged",
+			"--name", dindName,
+			"--network", dindNet,
+			"--add-host", hostGatewayMapping,
+			"-p", portMapping,
+			"--label", "cb.managed=true",
+			"--label", "cb.role=sidecar",
+			"--label", "cb.parent=" + parentName,
+		}
+	case isDockerDesktop:
 		// Docker Desktop: skip cgroup flags + /sys/fs/cgroup mount
 		args = []string{
 			"run", "-d", "--rm", "--privileged",
@@ -147,7 +171,7 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 			"--label", "cb.role=sidecar",
 			"--label", "cb.parent=" + parentName,
 		}
-	} else {
+	default:
 		// Native Linux: full flags
 		args = []string{
 			"run", "-d", "--rm", "--privileged",
@@ -168,8 +192,15 @@ func startDindSidecar(ctx appctx.AppContext, dindName, dindNet string, hostPort 
 		args = append(args, "-p", port)
 	}
 
-	// Add final args (env and image)
-	args = append(args, "-e", "DOCKER_TLS_CERTDIR=", "docker:dind")
+	// Add final args (image, and how it's told to speak the Docker API).
+	// docker:dind starts dockerd on its own; the nested-Podman sidecar needs
+	// an explicit command, and has no TLS-cert-dir env to disable.
+	if ctx.Engine() == "podman" {
+		args = append(args, podmanDindSidecarImage,
+			"podman", "system", "service", "--time=0", "tcp://0.0.0.0:2375")
+	} else {
+		args = append(args, "-e", "DOCKER_TLS_CERTDIR=", "docker:dind")
+	}
 
 	flags.Silent = false
 	err = docker.Docker(flags, args[0], ilist.NewList(ilist.NewListFromSlice(args[1:])))

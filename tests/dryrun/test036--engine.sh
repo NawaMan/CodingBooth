@@ -154,16 +154,18 @@ else
   print_test_result "true" "$0" "15" "podman --egress run skips the low-port sysctl"
 fi
 
-# 16. --dind with --engine podman is refused outright (Phase 4, docker:dind has no
-# Podman equivalent yet), not warned about and tried anyway.
-if ERR=$(run_coding_booth --variant base --dryrun --engine podman --dind 2>&1); then
-  print_test_result "false" "$0" "16" "podman --dind is refused, not attempted"
-  echo "Output:"; echo "$ERR"
+# 16. --dind with --engine podman runs a nested-Podman sidecar in place of
+# docker:dind (Phase 4, docs/PODMAN_SUPPORT.md), with its own experimental
+# warning, rather than the outright refusal this used to be.
+OUT=$(run_coding_booth --variant base --dryrun --engine podman --dind 2>&1)
+if ! printf '%s\n' "$OUT" | grep -q -- 'Warning: --dind with --engine podman uses an experimental nested-Podman sidecar'; then
+  print_test_result "false" "$0" "16" "podman --dind warns and runs a nested-Podman sidecar"
+  echo "Missing the --dind/podman warning. Output:"; echo "$OUT"
   exit 1
-elif printf '%s\n' "$ERR" | grep -q -- '--dind is not supported with --engine podman'; then
-  print_test_result "true" "$0" "16" "podman --dind is refused, not attempted"
+elif ! printf '%s\n' "$OUT" | grep -q -- 'quay.io/podman/stable podman system service'; then
+  print_test_result "false" "$0" "16" "podman --dind warns and runs a nested-Podman sidecar"
+  echo "Missing the nested-Podman sidecar command. Output:"; echo "$OUT"
+  exit 1
 else
-  print_test_result "false" "$0" "16" "podman --dind is refused with a clear message"
-  echo "Output:"; echo "$ERR"
-  exit 1
+  print_test_result "true" "$0" "16" "podman --dind warns and runs a nested-Podman sidecar"
 fi

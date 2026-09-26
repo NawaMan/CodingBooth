@@ -9,6 +9,12 @@ This document describes the Docker-in-Docker (DinD) implementation used by Codin
 
 The goal is to allow users to run Docker workloads inside CodingBooth without exposing the host Docker daemon, while maintaining predictable and secure port exposure behavior.
 
+This document describes the `docker:dind` sidecar used when `--engine docker` (the
+default). Under `--engine podman`, `--dind` runs a different sidecar — a nested Podman
+(`quay.io/podman/stable`) instead, since Podman has no `docker:dind` equivalent — with
+the same network-namespace-sharing design and `DOCKER_HOST` wiring described below. See
+[docs/PODMAN_SUPPORT.md](../PODMAN_SUPPORT.md#docker-in-docker---dind) for that variant.
+
 ---
 
 ## Design Goals

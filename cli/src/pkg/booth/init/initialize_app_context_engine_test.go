@@ -5,7 +5,6 @@
 package init
 
 import (
-	"strings"
 	"testing"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
@@ -57,23 +56,20 @@ func TestResolveEngineConfig_EmptyResolvesToConcreteValue(t *testing.T) {
 	}
 }
 
-// TestResolveEngineConfig_DindPodmanRefused verifies --dind with --engine
-// podman is refused outright (Phase 4, docs/PODMAN_SUPPORT.md) rather than
-// warning and trying anyway, which used to fail confusingly deep inside
-// dind_setup.go with no clear cause.
-func TestResolveEngineConfig_DindPodmanRefused(t *testing.T) {
+// TestResolveEngineConfig_DindPodmanNoError verifies --dind with --engine
+// podman is accepted (Phase 4, docs/PODMAN_SUPPORT.md): it runs a nested-Podman
+// sidecar instead of docker:dind (see startDindSidecar in dind_setup.go),
+// rather than the outright refusal this used to be. It still only warns, on
+// stderr, which this test does not capture.
+func TestResolveEngineConfig_DindPodmanNoError(t *testing.T) {
 	config := &appctx.AppConfig{Engine: "podman", Dind: true, Quiet: true}
-	err := resolveEngineConfig(config)
-	if err == nil {
-		t.Fatal("expected an error for --dind with --engine podman")
-	}
-	if !strings.Contains(err.Error(), "--dind") || !strings.Contains(err.Error(), "podman") {
-		t.Errorf("expected a --dind/podman error, got: %q", err.Error())
+	if err := resolveEngineConfig(config); err != nil {
+		t.Errorf("did not expect an error for --dind with --engine podman, got: %v", err)
 	}
 }
 
-// TestResolveEngineConfig_DindDockerNoError verifies the refusal is specific
-// to Podman and does not fire for Docker, which has always supported --dind.
+// TestResolveEngineConfig_DindDockerNoError verifies plain Docker --dind
+// (always supported) is unaffected by the Podman-specific warning above.
 func TestResolveEngineConfig_DindDockerNoError(t *testing.T) {
 	config := &appctx.AppConfig{Engine: "docker", Dind: true, Quiet: true}
 	if err := resolveEngineConfig(config); err != nil {
