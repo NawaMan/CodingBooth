@@ -600,49 +600,22 @@ func dropTUIOwnedSets(sets []string) []string {
 	return kept
 }
 
-// readExistingBooth reads the "# Adjust with :" header from an existing .booth/Boothfile
-// and parses it into initFlags. Also reads config.toml to extract user-set run-args
-// (long-form flags like --env, --publish, --volume) back into flags.
+// readExistingBooth reads the "# Configured by:" header (or the legacy "# Adjust with :")
+// from an existing booth and parses it into initFlags. The header comes from .booth/Boothfile
+// when there is one; a booth that selects no templates has no Boothfile, so its config.toml —
+// which carries the same header — is read instead. Also reads config.toml to extract user-set
+// run-args (long-form flags like --env, --publish, --volume) back into flags.
 // Returns empty flags if no existing booth is found.
 func readExistingBooth(targetPath string) initFlags {
-	boothfilePath := filepath.Join(targetPath, ".booth", "Boothfile")
-	f, err := os.Open(boothfilePath)
-	if err != nil {
-		return initFlags{}
-	}
-	defer f.Close()
-
 	var flags initFlags
 
-	scanner := bufio.NewScanner(f)
-	linesRead := 0
-	for scanner.Scan() && linesRead < 10 {
-		line := scanner.Text()
-		linesRead++
-
-		if strings.HasPrefix(line, "# Configured by: ") {
-			cmd := strings.TrimPrefix(line, "# Configured by: ")
-			flags = parseAdjustCommand(cmd)
-			break
-		}
-		if strings.HasPrefix(line, "# Configured by:") {
-			cmd := strings.TrimPrefix(line, "# Configured by:")
-			cmd = strings.TrimSpace(cmd)
-			flags = parseAdjustCommand(cmd)
-			break
-		}
-		// Legacy format: "# Adjust with :"
-		if strings.HasPrefix(line, "# Adjust with : ") {
-			cmd := strings.TrimPrefix(line, "# Adjust with : ")
-			flags = parseAdjustCommand(cmd)
-			break
-		}
-		if strings.HasPrefix(line, "# Adjust with :") {
-			cmd := strings.TrimPrefix(line, "# Adjust with :")
-			cmd = strings.TrimSpace(cmd)
-			flags = parseAdjustCommand(cmd)
-			break
-		}
+	source := filepath.Join(targetPath, ".booth", "Boothfile")
+	if _, err := os.Stat(source); err != nil {
+		source = filepath.Join(targetPath, ".booth", "config.toml")
+	}
+	cmd, found := readConfiguredByHeader(source)
+	if found {
+		flags = parseAdjustCommand(cmd)
 	}
 
 	// Also read config.toml to extract user-set values from long-form run-args.
@@ -656,9 +629,34 @@ func readExistingBooth(targetPath string) initFlags {
 	// the whole run over it would leave an existing booth impossible to
 	// reconfigure. A key typed on the command line right now is different: that is
 	// someone's intent, and a typo there is still refused outright.
-	flags.sets = dropUnknownSets(flags.sets, boothfilePath)
+	flags.sets = dropUnknownSets(flags.sets, source)
 
 	return flags
+}
+
+// readConfiguredByHeader returns the command recorded in the "# Configured by:" header
+// (or the legacy "# Adjust with :") within the first 10 lines of path, and whether one
+// was found. A missing or unreadable file reports not found.
+func readConfiguredByHeader(path string) (string, bool) {
+	f, err := os.Open(path)
+	if err != nil {
+		return "", false
+	}
+	defer f.Close()
+
+	scanner := bufio.NewScanner(f)
+	linesRead := 0
+	for scanner.Scan() && linesRead < 10 {
+		line := scanner.Text()
+		linesRead++
+
+		for _, prefix := range []string{"# Configured by:", "# Adjust with :"} {
+			if strings.HasPrefix(line, prefix) {
+				return strings.TrimSpace(strings.TrimPrefix(line, prefix)), true
+			}
+		}
+	}
+	return "", false
 }
 
 // dropUnknownSets removes --set entries whose key booth no longer reads, saying

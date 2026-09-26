@@ -339,3 +339,45 @@ func TestNormalizePublishedPorts_RelativeAndAbsoluteAreNotConfused(t *testing.T)
 	normalizePublishedPorts(cfg)
 	assert.Equal(t, before, cfg.RunArgs)
 }
+
+// --- readExistingBooth (baseline for a reconfigure) ---
+
+func writeBoothFile(t *testing.T, dir, name, content string) {
+	t.Helper()
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, ".booth"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".booth", name), []byte(content), 0o644))
+}
+
+func TestReadExistingBooth_NoBoothfileReadsConfigTomlHeader(t *testing.T) {
+	dir := t.TempDir()
+	writeBoothFile(t, dir, "config.toml",
+		"# Configured by: booth config --no-tui --overwrite --variant terminal --mount /tmp/x:/home/coder/x\n"+
+			"\n"+
+			"variant = \"terminal\"\n"+
+			"\n"+
+			"run-args = [\"--volume\", \"/tmp/x:/home/coder/x\"]\n")
+
+	flags := readExistingBooth(dir)
+	assert.Equal(t, "terminal", flags.variant)
+	assert.Contains(t, flags.mounts, "/tmp/x:/home/coder/x")
+}
+
+func TestReadExistingBooth_NoBoothNoFlags(t *testing.T) {
+	flags := readExistingBooth(t.TempDir())
+	assert.Empty(t, flags.variant)
+	assert.Empty(t, flags.mounts)
+	assert.Empty(t, flags.selectDSLs)
+}
+
+func TestReadExistingBooth_BoothfileHeaderWins(t *testing.T) {
+	dir := t.TempDir()
+	writeBoothFile(t, dir, "Boothfile",
+		"# syntax=codingbooth/boothfile:1\n"+
+			"# Configured by: booth config --select go --variant codeserver\n")
+	writeBoothFile(t, dir, "config.toml",
+		"# Configured by: booth config --variant terminal\n\nvariant = \"terminal\"\n")
+
+	flags := readExistingBooth(dir)
+	assert.Equal(t, "codeserver", flags.variant)
+	assert.Equal(t, []string{"go"}, flags.selectDSLs)
+}
