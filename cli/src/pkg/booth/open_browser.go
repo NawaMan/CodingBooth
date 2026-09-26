@@ -86,36 +86,59 @@ func shouldOpenBrowser(ctx appctx.AppContext) bool {
 // waitCtx cancels the wait: in foreground mode it is cancelled when the
 // container exits, so a booth that dies during startup does not leave a
 // goroutine polling a port nothing is on.
-func OpenBoothInBrowser(waitCtx context.Context, ctx appctx.AppContext) {
+//
+// foreground says whether this call runs alongside a foreground `docker run`
+// that is live-streaming the container's own stdout/stderr straight to the
+// terminal — see foregroundGuard.
+func OpenBoothInBrowser(waitCtx context.Context, ctx appctx.AppContext, foreground bool) {
 	// Readiness is always checked against the booth's own front door — that is
 	// where /__booth/health lives — even when --browser-port opens elsewhere.
 	healthWaitURL := BoothURL(ctx)
 	targetURL := browserOpenURL(ctx)
 
 	if reason := browserUnavailable(); reason != "" {
-		warnBrowser(targetURL, "not opening a browser: %s", reason)
+		warnBrowser(targetURL, foreground, "not opening a browser: %s", reason)
 		return
 	}
 
-	if !waitForBoothServing(waitCtx, healthWaitURL, browserWaitTimeout) {
+	if !waitForBoothServing(waitCtx, healthWaitURL, browserWaitTimeout, foreground) {
 		// A cancelled wait means the booth exited first — it has already said so.
 		if waitCtx.Err() != nil {
 			return
 		}
-		warnBrowser(targetURL, "the booth did not answer within %s", browserWaitTimeout)
+		warnBrowser(targetURL, foreground, "the booth did not answer within %s", browserWaitTimeout)
 		return
 	}
 
 	if err := openURL(targetURL); err != nil {
-		warnBrowser(targetURL, "could not open a browser: %v", err)
+		warnBrowser(targetURL, foreground, "could not open a browser: %v", err)
 		return
 	}
+	foregroundGuard(foreground)
 	LogFprintf(os.Stderr, "🌐 Opened %s in your browser.\n", targetURL)
+}
+
+// foregroundGuard writes a newline before a status message that runs
+// concurrently with a foreground container's own live-streamed output. That
+// stream shares the terminal with no synchronization between the two writers
+// — os/exec wires the container's stdout/stderr straight to the terminal, so
+// there is nothing to lock against — and if the container's own output has
+// left a partial line (no trailing newline) at that instant, the next status
+// message lands wherever that cursor happens to be instead of at the left
+// margin. Confirmed by hand: this is exactly what produced a status line
+// appearing indented mid-terminal. Daemon mode has nothing else writing to
+// the terminal at this point, so doing this there would only cost it a
+// needless blank line — skipped for it.
+func foregroundGuard(foreground bool) {
+	if foreground {
+		fmt.Fprint(os.Stderr, "\n")
+	}
 }
 
 // warnBrowser reports why the browser did not open and points at the URL, so
 // the failure costs the user a click rather than the session.
-func warnBrowser(url, format string, a ...any) {
+func warnBrowser(url string, foreground bool, format string, a ...any) {
+	foregroundGuard(foreground)
 	fmt.Fprintf(os.Stderr, "⚠️  "+format+"\n", a...)
 	fmt.Fprintf(os.Stderr, "   Open %s yourself.\n", url)
 }
@@ -137,7 +160,7 @@ func warnBrowser(url, format string, a ...any) {
 // a page whose frames then fill with nginx's 502. /__booth/health is the one
 // endpoint that proxies through to that service, so it is the only answer that
 // means the booth is up.
-func waitForBoothServing(waitCtx context.Context, url string, timeout time.Duration) bool {
+func waitForBoothServing(waitCtx context.Context, url string, timeout time.Duration, foreground bool) bool {
 	client := &http.Client{
 		Timeout: browserProbeTimeout,
 		// Any response proves something is serving. Where it points does not
@@ -166,6 +189,7 @@ func waitForBoothServing(waitCtx context.Context, url string, timeout time.Durat
 		if !announced {
 			// Only once the booth is not up on the first try: a booth that is
 			// already serving should not print a wait it never did.
+			foregroundGuard(foreground)
 			LogFprintf(os.Stderr, "⏳ Waiting for the booth to answer on %s ...\n", url)
 			announced = true
 		}
