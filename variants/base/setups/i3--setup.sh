@@ -26,7 +26,7 @@
 #     start-i3, and a "Leave Tiling (i3)" menu entry running stop-i3.
 #   - cb-i3-wallpaper (repaints on every noVNC resize) and cb-i3-dock (keeps a
 #     Plank dock's icons centred under i3), both started from the i3 config.
-#   - An "i3 Shortcuts" tab in the booth Help dialog (the overlay's plugins/
+#   - An "i3 Shortcuts (Tiling)" tab in the booth Help dialog (the overlay's plugins/
 #     drop-in), present exactly when this setup ran.
 #
 # The mod key defaults to Alt (Mod1): a desktop reached through noVNC in a
@@ -406,7 +406,7 @@ for f in /etc/xdg/i3/config /etc/i3/config; do
   fi
 done
 
-# ---- "i3 Shortcuts" tab in the booth's Help dialog ----
+# ---- "i3 Shortcuts (Tiling)" tab in the booth's Help dialog ----
 # A lifecycle-panel plugin (see booth-message-wrapper--setup.sh): the wrapper
 # inlines every plugins/*.js into the page, so the tab exists exactly when this
 # setup ran. The keys are listed with window.CB_I3_KEYS as the modifier when an
@@ -452,7 +452,7 @@ if [[ -d "$PLUGIN_DIR" ]]; then
       'when the browser passes it on: in Chrome, turn on the panel\'s <strong>Full screen</strong> ' +
       'button, which captures the whole keyboard. Firefox keeps @MOD@ shortcuts for itself, so ' +
       'use ' + K + ' there. ' + K + '+arrows may be taken by your own desktop; h/j/k/l always work.</p>';
-  window.BoothHelp.addTab("i3", "i3 Shortcuts",
+  window.BoothHelp.addTab("i3", "i3 Shortcuts (Tiling)",
     '<p class="msg-dialog-lead">This desktop can use the <strong>i3</strong> tiling window ' +
     'manager: new windows split the screen instead of overlapping, and everything is ' +
     'driven from the keyboard with <strong>' + K + '</strong> as the modifier. The panel ' +

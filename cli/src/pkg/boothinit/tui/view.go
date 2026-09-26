@@ -637,7 +637,7 @@ func (m model) renderTemplateLine(item treeItem, width int, isCursor bool) strin
 		check = "[x]"
 	}
 
-	name := item.template.Name
+	name := item.template.ListLabel()
 	desc := item.template.DisplayDesc
 
 	// Marker for templates with no build on this architecture. Empty in the

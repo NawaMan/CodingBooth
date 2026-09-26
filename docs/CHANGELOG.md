@@ -24,9 +24,12 @@ This file contains a list of changes for each released version.
     (`i3+gaps:12` for more).
   - Customize by copying `/etc/xdg/i3/config` to `~/.config/i3/config`; extensions add their
     pieces under `/etc/xdg/i3/config.d/`.
-  - The booth's **Help** dialog gets an **i3 Shortcuts** tab listing the key bindings and how to
-    switch — present only when `i3--setup.sh` ran. Setups can add their own Help tabs the same way: a lifecycle-panel
-    plugin calling the new `window.BoothHelp.addTab(name, label, html)`.
+  - The booth's **Help** dialog gets an **i3 Shortcuts (Tiling)** tab listing the key bindings
+    and how to switch — present only when `i3--setup.sh` ran. Setups can add their own Help tabs
+    the same way: a lifecycle-panel plugin calling the new
+    `window.BoothHelp.addTab(name, label, html)`.
+  - The `booth config` TUI lists it as **i3 (Tiling)**, via a new optional template key
+    `display-label` that replaces the name in the list row only (`--select i3` is unchanged).
   - **CodingBooth Help** is now a floating window rather than a modal dialog: no dark backdrop,
     the booth stays usable behind it, and it is larger, draggable by its title, and resizable from
     its corner. It reopens where it was left.

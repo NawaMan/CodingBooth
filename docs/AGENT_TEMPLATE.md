@@ -119,6 +119,7 @@ install go golang.org/x/tools/gopls@latest
 | Field           | Type       | Description                                              |
 |-----------------|------------|----------------------------------------------------------|
 | `display-name`  | string     | Human-readable name                                      |
+| `display-label` | string     | Optional TUI list-row label in place of the template name (e.g. `i3 (Tiling)`); `--select` still takes the name |
 | `display-disc`  | string     | Short description — the list view                        |
 | `display-detail`| string     | Long description — the TUI detail pane / `template show` |
 | `display-order` | int        | Sort order within category (lower = first)               |

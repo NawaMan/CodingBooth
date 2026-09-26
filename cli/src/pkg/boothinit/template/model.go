@@ -25,6 +25,7 @@ type Template struct {
 	Name          string // directory name (unique across all categories for top-level templates)
 	CategoryName  string // parent category name
 	DisplayName   string // from template.toml display-name
+	DisplayLabel  string // from template.toml display-label (list-row label; empty = Name)
 	DisplayDesc   string // from template.toml display-disc (short description for list view)
 	DisplayDetail string // from template.toml display-detail (long description for show view)
 	DisplayOrder  int    // from template.toml display-order
@@ -105,4 +106,14 @@ type FileRef struct {
 	SourcePath string // absolute path to source file (empty for inline)
 	RelPath    string // relative path within target directory
 	Content    string // inline content from TOML (empty for file-based)
+}
+
+// ListLabel is what the TUI list row shows for the template: display-label
+// when set, else Name. Only the row changes — selection, --select and the
+// Boothfile header still use Name.
+func (t *Template) ListLabel() string {
+	if t.DisplayLabel != "" {
+		return t.DisplayLabel
+	}
+	return t.Name
 }

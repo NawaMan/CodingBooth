@@ -169,3 +169,18 @@ func TestArchWarning_SelectingOnSupportedArchIsQuiet(t *testing.T) {
 		t.Errorf("no warning expected on amd64, got %q", m.notification)
 	}
 }
+
+// display-label replaces the template name in the list row only; the name is
+// still what selection is keyed on.
+func TestTemplateLineUsesDisplayLabel(t *testing.T) {
+	m := archModel("amd64")
+	m.registry.ByName["chromium"].DisplayLabel = "Chromium (Open)"
+
+	line := m.renderTemplateLine(m.tabItems[1][1], 60, false)
+	if !strings.Contains(line, "Chromium (Open)") {
+		t.Errorf("row should show the display-label, got %q", line)
+	}
+	if m.tabItems[1][1].template.Name != "chromium" {
+		t.Errorf("display-label must not change the template name")
+	}
+}
