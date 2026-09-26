@@ -21,6 +21,7 @@
 #   POST /booth-messages/api/idle/set-time — override base idle time {"seconds": N}
 #   POST /booth-messages/api/login         — trade the password for a session cookie
 #   POST /booth-messages/api/viewmd        — start viewmd --daemon if it is not already serving
+#   POST /booth-messages/api/display-size  — fit the desktop to the browser {"width": W, "height": H}
 #
 # Usage: booth-message-api-server <port>
 # -----------------------------------------------------------------------------
@@ -104,6 +105,9 @@ handle_request() {
                     ;;
                 /booth-messages/api/viewmd)
                     handle_viewmd_start
+                    ;;
+                /booth-messages/api/display-size)
+                    handle_display_size "$body"
                     ;;
                 *) send_response 404 '{"error":"not found"}' ;;
             esac
@@ -215,6 +219,40 @@ handle_lifecycle_signal() {
 
 # Idle pause/disable/resume handlers — mirror the lifecycle-signal pattern.
 # State files live under .booth/.tmp/ and are consumed by booth--idle-monitor.
+
+handle_display_size() {
+    # The booth page reports the size of its frame so the desktop can match it.
+    # Only a desktop that cannot follow noVNC's own resize request installs the
+    # cb-display-resize hook (the Wayland desktop — wayvnc 0.7 ignores it);
+    # everywhere else this answers supported:false and the page stops asking.
+    local body="$1"
+    local width height
+    width=$(echo "$body" | sed -n 's/.*"width" *: *\([0-9][0-9]*\).*/\1/p')
+    height=$(echo "$body" | sed -n 's/.*"height" *: *\([0-9][0-9]*\).*/\1/p')
+    if [ -z "$width" ] || [ -z "$height" ]; then
+        send_response 400 '{"error":"width and height must be positive integers"}'
+        return
+    fi
+    if ! command -v cb-display-resize >/dev/null 2>&1; then
+        send_response 200 '{"ok":true,"supported":false}'
+        return
+    fi
+    # A 10-digit value is a client bug, not a screen (and would overflow the
+    # comparisons below); within range, clamp to what a headless output takes.
+    if [ "${#width}" -gt 5 ] || [ "${#height}" -gt 5 ]; then
+        send_response 400 '{"error":"width or height out of range"}'
+        return
+    fi
+    [ "$width"  -lt 320 ]  && width=320
+    [ "$height" -lt 240 ]  && height=240
+    [ "$width"  -gt 7680 ] && width=7680
+    [ "$height" -gt 4320 ] && height=4320
+    if cb-display-resize "$width" "$height" >/dev/null 2>&1; then
+        send_response 200 "{\"ok\":true,\"supported\":true,\"width\":${width},\"height\":${height}}"
+    else
+        send_response 503 '{"error":"no desktop to resize yet","supported":true}'
+    fi
+}
 
 handle_idle_pause() {
     # Time-boxed pause: accept {"seconds": N} and store now+N in .idle-pause-until.
@@ -395,6 +433,7 @@ send_response() {
     [ "$code" = "404" ] && status_text="Not Found"
     [ "$code" = "405" ] && status_text="Method Not Allowed"
     [ "$code" = "500" ] && status_text="Internal Server Error"
+    [ "$code" = "503" ] && status_text="Service Unavailable"
 
     # ${#body} counts chars in a UTF-8 locale; HTTP Content-Length needs bytes.
     local body_bytes

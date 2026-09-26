@@ -68,6 +68,42 @@ ${BOOTH_KEYBOARD_CAPTURE_JS}
     inner.src = inner.dataset.boothSrc;
   });
 })();
+// Fit the desktop to the browser. noVNC's resize=remote asks the VNC server to
+// do this, and TigerVNC (X11 desktops) does; wayvnc 0.7 (the Wayland desktop)
+// ignores it. So report the frame's size to the booth, which resizes the
+// desktop itself when it can — whenever the booth comes up and on every window
+// resize (Full screen included). A booth without a resize hook answers
+// supported:false, and the page stops asking.
+(function () {
+  var inner = document.getElementById("booth-inner");
+  var supported = true, last = "", timer = null;
+  function report() {
+    var w = inner.clientWidth, h = inner.clientHeight, key = w + "x" + h;
+    if (!supported || !w || !h || key === last) return;
+    last = key;
+    fetch("/booth-messages/api/display-size", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ width: w, height: h })
+    }).then(function (r) { return r.json(); })
+      .then(function (j) {
+        if (j && j.supported === false) supported = false;
+        else if (!j || !j.ok) last = "";   // not up yet: try again next time
+      })
+      .catch(function () { last = ""; });
+  }
+  function schedule(delay) {
+    clearTimeout(timer);
+    timer = setTimeout(report, delay);
+  }
+  window.addEventListener("resize", function () { schedule(400); });
+  window.BoothReady.onUp(function () {
+    last = "";
+    schedule(0);
+    // The desktop may still be starting when the booth first answers.
+    setTimeout(function () { last = ""; schedule(0); }, 5000);
+  });
+})();
 window.BOOTH_SHOW_RUN_TIME="${BOOTH_SHOW_RUN_TIME}";
 window.BOOTH_SHOW_COUNT_DOWN="${BOOTH_SHOW_COUNT_DOWN}";
 window.BOOTH_IDLE_TIME="${BOOTH_IDLE_TIME}";

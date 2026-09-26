@@ -1,0 +1,33 @@
+display-name = "Tiling for Wayland (sway)"
+display-label = "sway (Tiling)"
+display-disc = "sway tiling compositor for the Wayland desktop, in place of labwc"
+display-detail = """\
+Installs sway — i3 for Wayland — as the Wayland desktop's compositor, in place of \
+labwc: windows tile instead of overlapping, driven from the keyboard, with the \
+same waybar panel (now showing the workspaces), wallpaper and terminal. On \
+Wayland the compositor is the whole session, so sway is chosen when the desktop \
+starts rather than switched live; start the booth with \
+--env WAYLAND_COMPOSITOR=labwc to get labwc back for a run. The booth's Help \
+dialog gets a "sway Shortcuts (Tiling)" tab. Alt is the mod key by default \
+(sway:super for Super). Does nothing unless the Wayland desktop is installed — \
+by the desktop-wayland variant or the wayland template — so it is safe to select \
+on any booth. Its extensions (both on by default): +ctrl-alt adds a Ctrl+Alt \
+twin of every shortcut (for Firefox, which keeps Alt), +gaps puts an 8px gap \
+between windows. Customize by copying /etc/sway/config to ~/.config/sway/config."""
+display-order = 18
+tags = [
+    "desktop",
+    "wayland",
+    "tiling",
+    "sway",
+    "window-manager"
+]
+
+[params.SWAY_MOD]
+default     = "alt"
+suggests    = ["alt", "super"]
+
+[segments]
+"Boothfile--41" = """
+setup sway ${SWAY_MOD}
+"""
