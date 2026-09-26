@@ -2174,16 +2174,28 @@
           urls.forEach(function(raw, i) {
             var parsed = parseBoothTarget(raw, session);
             if (!parsed || parsed.error) return;
-            if (i > 0) {
-              // navigateActiveTab always targets *the* active tab, so
-              // opening more than one means giving it a fresh blank one to
-              // land on first, the same shape openNewTab pushes.
-              var state = getPaneState(session);
+            // navigateActiveTab always targets *whichever* tab is active
+            // *when it runs* — and ensureViewmdIfTarget makes that a real
+            // async wait (up to 5s for a cold viewmd, near-instant for
+            // anything else), so these settle out of order. Pin each url to
+            // its own tab id up front and re-assert it as active right
+            // before navigating, so a late viewmd resolution can't land on
+            // whatever tab a faster one already claimed.
+            var state = getPaneState(session);
+            var tabId;
+            if (i === 0 && state.tabs.length === 0) {
+              var first = { id: nextTabId() };
+              state.tabs.push(first);
+              tabId = first.id;
+            } else if (i === 0) {
+              tabId = state.tabs[0].id;
+            } else {
               var blank = { id: nextTabId(), port: null, path: null, query: "", display: "", title: "" };
               state.tabs.push(blank);
-              state.activeTabId = blank.id;
+              tabId = blank.id;
             }
             ensureViewmdIfTarget(parsed.port).finally(function() {
+              getPaneState(session).activeTabId = tabId;
               navigateActiveTab(session, parsed);
             });
             opened = true;
