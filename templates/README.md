@@ -256,6 +256,7 @@ All templates and extensions grouped by segment order.
 | `desktops/xfce`  | XFCE         |
 | `desktops/i3`    | Tiling Window Manager (i3) — order 41, see below |
 | `desktops/bismuth` | Tiling for KDE (Bismuth) — order 41, see below |
+| `desktops/sway`  | Tiling for Wayland (sway) — order 41, see below |
 
 `desktops/xfce` auto-selects two extensions at order **41** — right after the desktop they need,
 since both skip when XFCE is absent: `+modern-theme` (the theme packs, then `setup xfce-theme`,
@@ -274,6 +275,12 @@ ${BISMUTH_MOD}` at **41**, skipping when KWin is absent, and its auto-selected e
 `+default` (`setup bismuth-default`, tiling from login) and `+gaps` (`setup bismuth-gaps
 ${BISMUTH_GAPS}`). No `+ctrl-alt` extension: Bismuth's shortcuts are one set, so the modifier is the
 `BISMUTH_MOD` param (`ctrl-alt` by default, or `meta`).
+
+`desktops/sway` (Tiling for Wayland) is at **41** too (`setup sway ${SWAY_MOD}`), skipping when the
+Wayland desktop (`start-wayland`) is absent, with `+ctrl-alt` (`setup sway-ctrl-alt`) and `+gaps`
+(`setup sway-gaps ${SWAY_GAPS}`) at **42**. There is no `+default`: sway replaces labwc as the
+compositor rather than running beside it, so selecting it already means sway at login —
+`start-wayland` reads the choice from `/opt/codingbooth/wayland-compositor`.
 
 Themes beyond the XFCE default are standalone, opt-in templates at order **60** —
 `desktops/tela-icons`, `desktops/orchis-gtk`, `desktops/material-cursors`. They only install;

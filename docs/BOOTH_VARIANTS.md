@@ -66,7 +66,7 @@ run-args = ["-e", "GEOMETRY=1920x1080"]
 
 When accessing the desktop through your browser, noVNC supports different resize modes:
 
-- **`remote`** (default) – Dynamically resizes the remote desktop to match your browser window size. The `GEOMETRY` setting becomes the initial size.
+- **`remote`** (default) – Dynamically resizes the remote desktop to match your browser window size. The `GEOMETRY` setting becomes the initial size. (On `desktop-wayland`, whose VNC server ignores the resize request, the booth page reports its size and the desktop is resized from inside — same effect.)
 - **`scale`** – Scales the desktop to fit your browser window while maintaining the resolution set by `GEOMETRY`.
 - **`off`** – No resizing or scaling; displays the desktop at native resolution (1:1 pixel mapping).
 

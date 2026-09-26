@@ -5,7 +5,8 @@ you're an AI agent, read `AGENT.md` in this same directory instead — it's writ
 
 The "CodingBooth Help" button in the floating **Booth** panel (where present) covers the same
 ground as this file, in a General tab and a Clipboard tab — plus a tab for anything a setup adds,
-such as **i3 Shortcuts (Tiling)** or **Bismuth Shortcuts (Tiling)** when window tiling is installed. Help opens as a floating
+such as **i3 Shortcuts (Tiling)**, **Bismuth Shortcuts (Tiling)** or **sway Shortcuts (Tiling)** when
+window tiling is installed. Help opens as a floating
 window rather than a blocking dialog: the booth stays usable behind it, and you can drag it by its
 title and resize it from its bottom-right corner.
 
@@ -45,6 +46,16 @@ desktop icon) to tile, and `stop-bismuth` (or **Leave Tiling (Bismuth)** in the 
 choice is remembered. The shortcuts use **Ctrl+Alt** and are listed in Help → **Bismuth Shortcuts
 (Tiling)**; change them in System Settings → Shortcuts → Bismuth, and layouts and gaps in System
 Settings → Window Management → Window Tiling.
+
+---
+
+## Window tiling on Wayland (sway, desktop booths)
+
+Booths with the `sway` template on the Wayland desktop run sway — i3 for Wayland — in place of
+labwc, so windows tile from the start; the top panel shows the workspaces. The shortcuts are in
+Help → **sway Shortcuts (Tiling)**; every one works with **Ctrl+Alt** in any browser, and with plain
+Alt in Chrome while **Full screen** is on. sway cannot be swapped out in a running session; to get
+the plain labwc desktop for a run, start the booth with `--env WAYLAND_COMPOSITOR=labwc`.
 
 ---
 

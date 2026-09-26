@@ -1,0 +1,21 @@
+display-name   = "Window Gaps"
+display-disc   = "A small gap between sway windows so the wallpaper shows at their edges"
+display-detail = """\
+Puts a gap (8px by default) between tiled windows and between the windows and \
+the panel. Set the size with sway+gaps:<pixels>; drop it with sway~gaps."""
+display-order  = 20
+auto-select    = true
+tags = [
+    "desktop",
+    "tiling",
+    "sway"
+]
+
+[params.SWAY_GAPS]
+default     = "8"
+suggests    = ["4", "8", "12"]
+
+[segments]
+"Boothfile--42" = """
+setup sway-gaps ${SWAY_GAPS}
+"""

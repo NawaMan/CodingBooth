@@ -1,0 +1,20 @@
+display-name   = "Ctrl+Alt Shortcuts"
+display-disc   = "Every sway shortcut also works with Ctrl+Alt, which every browser passes on"
+display-detail = """\
+Adds a Ctrl+Alt twin for each sway mod-key shortcut (Ctrl+Alt+h, Ctrl+Alt+2, …), \
+and the Help lists those. Alt shortcuts only reach the booth when the browser \
+lets go of them — Chrome with the panel's Full screen on; Firefox keeps Alt for \
+its own menus. Drop it with sway~ctrl-alt."""
+display-order  = 19
+auto-select    = true
+tags = [
+    "desktop",
+    "tiling",
+    "sway",
+    "keyboard"
+]
+
+[segments]
+"Boothfile--42" = """
+setup sway-ctrl-alt
+"""
