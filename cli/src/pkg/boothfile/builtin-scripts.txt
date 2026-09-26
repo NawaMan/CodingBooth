@@ -122,6 +122,10 @@ setup helm
 setup herdr
 setup homebrew
 setup hoppscotch
+setup i3
+setup i3-ctrl-alt
+setup i3-default
+setup i3-gaps
 setup idea
 setup idea-import-project
 setup inkscape
