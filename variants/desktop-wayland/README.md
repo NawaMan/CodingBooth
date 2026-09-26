@@ -42,3 +42,6 @@ top **waybar** panel (Apps button → `wofi`) or the labwc right-click menu.
   the `sway` template (`booth config --select sway`). `start-wayland` runs whichever
   `/opt/codingbooth/wayland-compositor` names (labwc when absent); `--env WAYLAND_COMPOSITOR=labwc`
   overrides it for a run.
+- **Fits the browser window.** The booth page reports its size and the desktop is resized to
+  match (`cb-display-resize`, run by the booth's API server) — wayvnc 0.7 ignores noVNC's own
+  resize request, so this is done from inside. `GEOMETRY` is the size before the page connects.
