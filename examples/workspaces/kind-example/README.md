@@ -2,7 +2,7 @@
 
 This example runs a full Kubernetes cluster entirely inside a CodingBooth using KinD on top of Docker-in-Docker. `start-cluster.sh` creates a KinD cluster in the DinD sidecar and `deploy-app.sh` deploys a sample nginx app on NodePort 30080 (plus a buildable hello-service on 30081) — viewable right in the console UI's own tabs (no desktop or browser needed), and `k9s` gives you a live TUI view of the cluster from the terminal. The whole cluster — control plane, nodes, and pods — is nested inside the booth, so you get a throwaway Kubernetes environment without installing kind, kubectl, or a single container runtime on your own machine. Kick the tires on manifests, ingress, and NodePorts, then delete the entire cluster by stopping the booth — no lingering `~/.kube` config, no orphaned Docker networks, no "why is my laptop running eight etcd pods" surprise later. It's a real cluster you can be genuinely careless with.
 
-This is a plain (non-desktop) booth, using the multi-pane console UI rather than a full remote desktop — `.booth/console.json` defaults it to a "Left Main" layout with the Markdown viewer pane on the left, so notes/docs and the terminal are visible side by side from the first load.
+This is a plain (non-desktop) booth, using the multi-pane console UI rather than a full remote desktop — `.booth/console.json` defaults it to a "Left Main" layout, with the left pane pre-opened to three tabs (the Markdown viewer, nginx, and hello-service) and the other two panes forced to plain terminals. The nginx/hello-service tabs show a connection error until `start-cluster.sh`/`deploy-app.sh`/`deploy-hello.sh` below have actually run — reload the browser page once they have.
 
 ## Quick start
 
@@ -80,15 +80,14 @@ The following ports are pre-mapped and accessible via `http://localhost:{port}`:
 ## Viewing services
 
 No desktop or browser here — the console UI's own tabs can load a web page directly.
-Click a pane's "+" (new tab), then type into its address bar:
+The left pane already opens both by default (see `.booth/console.json`):
 
 - `booth:30080` — nginx welcome page
 - `booth:30081` — hello-service
 
-(`booth:<port>` is the console's shorthand for "this booth, this port" — the same
-thing typing `http://booth:30080` does.) `.booth/console.json` already opens the
-Markdown viewer this way in the left pane by default; the same mechanism works for
-any port the booth exposes.
+To open another port yourself, click a pane's "+" (new tab), then type into its
+address bar — `booth:<port>` is the console's shorthand for "this booth, this port",
+the same thing typing `http://booth:<port>` does.
 
 These are only reachable from *inside* the booth — the ports aren't published to your
 host machine by default. If you want that too, add `-p 30080:30080` (and any other
