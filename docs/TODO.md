@@ -230,10 +230,12 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       i3 rules, and results are uneven. Worth trying behind the same `start-i3` / `stop-i3`.
       -- Tiling on KDE done another way: the `bismuth` template (a KWin script, so KWin and
       plasmashell stay untouched) with `start-bismuth` / `stop-bismuth`. i3-as-KDEWM not pursued.
-- [ ] **A sway (Wayland tiling) option.** i3 is X11-only; sway reads nearly the same config and is
+- [x] **A sway (Wayland tiling) option.** i3 is X11-only; sway reads nearly the same config and is
       what wayvnc was built for. It would replace labwc rather than live inside a desktop, so it is
       closer to a variant (or a `wayland` alternative) than an `i3` extension. The i3 Help tab and
       Ctrl+Alt twins would carry over.
+      -- Done as the `sway` template: `start-wayland` reads the compositor from
+      `/opt/codingbooth/wayland-compositor` (`WAYLAND_COMPOSITOR=labwc` overrides for a run).
 - [ ] **Desktop templates on `base` build a desktop that never starts.** Selecting `xfce` / `lxqt`
       (or `i3`) on the `base` variant installs the desktop into the image while the booth still
       opens the Console UI — by design, so `start-desktop` can bring it up later, but it costs image

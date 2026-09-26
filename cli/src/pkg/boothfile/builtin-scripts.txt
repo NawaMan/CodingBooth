@@ -253,6 +253,9 @@ setup sqlite
 setup sqluv
 setup stern
 setup svelte-code-extension
+setup sway
+setup sway-ctrl-alt
+setup sway-gaps
 setup swift
 setup swift-code-extension
 setup tela-icons

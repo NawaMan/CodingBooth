@@ -38,4 +38,7 @@ top **waybar** panel (Apps button → `wofi`) or the labwc right-click menu.
   use, not GPU/video-heavy workloads.
 - **No VNC password by default** (localhost model, like the other desktop variants). Password
   auth for `--public` needs wayvnc TLS setup — a planned follow-up.
-- Shell is **labwc** (lightweight), not GNOME/XFCE/KDE.
+- Shell is **labwc** (lightweight), not GNOME/XFCE/KDE — or **sway**, the tiling compositor, with
+  the `sway` template (`booth config --select sway`). `start-wayland` runs whichever
+  `/opt/codingbooth/wayland-compositor` names (labwc when absent); `--env WAYLAND_COMPOSITOR=labwc`
+  overrides it for a run.

@@ -4,6 +4,26 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Tiling for Wayland (sway): `--select sway`.** A new template that makes
+  [sway](https://swaywm.org) — i3 for Wayland — the **Wayland desktop's** compositor in place of
+  labwc: windows tile instead of overlapping, driven from the keyboard, with the same waybar panel
+  (now listing the workspaces), wallpaper, terminal, wayvnc and noVNC. It does nothing on a booth
+  without the Wayland desktop, so it is safe to select anywhere — the desktop can come from the
+  `desktop-wayland` variant or the `wayland` template. The Wayland counterpart of the `i3` template.
+  - On Wayland the compositor is the whole session, so sway is chosen when the desktop starts
+    rather than switched live: `start-wayland` now reads the compositor from
+    `/opt/codingbooth/wayland-compositor` (written by `sway--setup.sh`; labwc when absent), and
+    **`WAYLAND_COMPOSITOR=labwc`** in the booth's environment (`--env`) brings labwc back for a run.
+  - The keys follow the i3 template: Alt is the mod (`sway:super` for Super), and extensions, both
+    on by default: **`sway+ctrl-alt`** adds a Ctrl+Alt twin of every shortcut, which reaches the
+    booth in any browser; **`sway+gaps`** puts an 8px gap between windows (`sway+gaps:12` for
+    more). Customize by copying `/etc/sway/config` to `~/.config/sway/config`.
+  - The booth's **Help** dialog gets a **sway Shortcuts (Tiling)** tab.
+  - sway runs with `--unsupported-gpu`: it refuses to start when it sees the Nvidia driver in
+    `/proc/modules`, which a container shares with its host, though it renders in software here and
+    never touches the GPU. Its apt dependencies add about 24 MB (mostly systemd libraries, inert in
+    a container).
+
 - **Tiling for KDE (Bismuth): `--select bismuth`.** A new template that tiles the **KDE Plasma**
   desktop with [Bismuth](https://github.com/Bismuth-Forge/bismuth), a KWin script: windows split
   the screen instead of overlapping, driven from the keyboard, while KWin stays the window manager —
