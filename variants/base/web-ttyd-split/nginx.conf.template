@@ -432,6 +432,21 @@ http {
             rewrite ^ /index.html last;
         }
 
+        # index.html itself must never be heuristically cached. With no
+        # Cache-Control at all, a browser's normal-navigation heuristic can
+        # serve it straight from disk cache without a network round trip —
+        # same origin (port reused) hits that cache, a new port doesn't,
+        # which is exactly the "works on a new port, not on a reused one"
+        # split this was found from. It also carries the JS behind every fix
+        # landed here, and X-Booth-Instance's reload-on-mismatch (see
+        # /__booth/health above) only ever runs if the browser actually asks.
+        location = /index.html {
+            if ($booth_auth_ok = 0) {
+                return 302 /login;
+            }
+            add_header Cache-Control "no-store" always;
+        }
+
         location / {
             if ($booth_auth_ok = 0) {
                 return 302 /login;
