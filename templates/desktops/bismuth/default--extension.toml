@@ -1,0 +1,19 @@
+display-name   = "Tiling at Login"
+display-disc   = "The KDE desktop tiles its windows with Bismuth from login"
+display-detail = """\
+Turns Bismuth on as KWin's default, so the desktop tiles from the moment it \
+starts. stop-bismuth still turns it off, and it stays off until start-bismuth. \
+Drop it with bismuth~default to log in untiled and tile only on demand with \
+start-bismuth or the desktop icon."""
+display-order  = 18
+auto-select    = true
+tags = [
+    "desktop",
+    "tiling",
+    "bismuth"
+]
+
+[segments]
+"Boothfile--42" = """
+setup bismuth-default
+"""

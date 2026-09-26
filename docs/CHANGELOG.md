@@ -4,6 +4,29 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Tiling for KDE (Bismuth): `--select bismuth`.** A new template that tiles the **KDE Plasma**
+  desktop with [Bismuth](https://github.com/Bismuth-Forge/bismuth), a KWin script: windows split
+  the screen instead of overlapping, driven from the keyboard, while KWin stays the window manager —
+  so the panel, menu, desktop icons and pop-ups work exactly as before. It does nothing on a booth
+  without KDE, so it is safe to select anywhere — the desktop can come from the `desktop-kde`
+  variant or the `kde` template. The KDE counterpart of the `i3` template.
+  - **`start-bismuth` / `stop-bismuth`** turn tiling on and off in a running desktop (also: the
+    "Tiling for KDE (Bismuth)" desktop icon and "Leave Tiling (Bismuth)" in the menu). Unlike
+    `stop-i3`, the choice is remembered like any other Plasma setting.
+  - Bismuth's shortcuts are all Meta, which a browser tab rarely passes through to noVNC, so they
+    are moved to **Ctrl+Alt** (Ctrl+Alt+h/j/k/l to focus, +Shift to move, Ctrl+Alt+m monocle,
+    Ctrl+Alt+\ / | to cycle layouts, …); Ctrl+Alt+T stays Konsole's. `bismuth:meta` keeps
+    Bismuth's own. They are seeded only where not already set, so a rebinding made in System
+    Settings → Shortcuts → Bismuth survives.
+  - Extensions, both on by default: **`bismuth+default`** tiles from login (`bismuth~default` to
+    tile on demand); **`bismuth+gaps`** puts an 8px gap between windows (`bismuth+gaps:12` for
+    more). Layouts, gaps and window rules can be changed later in System Settings → Window
+    Management → Window Tiling.
+  - The booth's **Help** dialog gets a **Bismuth Shortcuts (Tiling)** tab.
+  - Ubuntu 24.04's `kwin-bismuth` package does not work as shipped — its script uses JavaScript
+    syntax that KDE's Qt 5 engine cannot parse, so KWin loads it with no code and nothing tiles.
+    `bismuth--setup.sh` rewrites that syntax at install time.
+
 - **Tiling Window Manager (i3): `--select i3`.** A new template that installs
   [i3](https://i3wm.org) beside the desktop's own window manager on the **XFCE or LXQt** desktop
   (xfwm4 / openbox): windows tile instead of overlapping, driven from the keyboard, while the

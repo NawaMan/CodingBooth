@@ -255,6 +255,7 @@ All templates and extensions grouped by segment order.
 | `desktops/lxqt`  | LXQt         |
 | `desktops/xfce`  | XFCE         |
 | `desktops/i3`    | Tiling Window Manager (i3) — order 41, see below |
+| `desktops/bismuth` | Tiling for KDE (Bismuth) — order 41, see below |
 
 `desktops/xfce` auto-selects two extensions at order **41** — right after the desktop they need,
 since both skip when XFCE is absent: `+modern-theme` (the theme packs, then `setup xfce-theme`,
@@ -267,6 +268,12 @@ sit at **42**, after it: `+default` (`setup i3-default`, i3 at login), `+ctrl-al
 (`setup i3-ctrl-alt`) and `+gaps` (`setup i3-gaps ${I3_GAPS}`). It deliberately has no `requires`
 or `variant`: like `xfce` itself, selecting it on a `base` booth installs what it can and lets you
 start the desktop later.
+
+`desktops/bismuth` (Tiling for KDE) follows the same shape for KDE Plasma: `setup bismuth
+${BISMUTH_MOD}` at **41**, skipping when KWin is absent, and its auto-selected extensions at **42** —
+`+default` (`setup bismuth-default`, tiling from login) and `+gaps` (`setup bismuth-gaps
+${BISMUTH_GAPS}`). No `+ctrl-alt` extension: Bismuth's shortcuts are one set, so the modifier is the
+`BISMUTH_MOD` param (`ctrl-alt` by default, or `meta`).
 
 Themes beyond the XFCE default are standalone, opt-in templates at order **60** —
 `desktops/tela-icons`, `desktops/orchis-gtk`, `desktops/material-cursors`. They only install;

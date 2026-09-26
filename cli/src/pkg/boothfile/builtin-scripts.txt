@@ -23,6 +23,9 @@ setup azure-cli
 setup base-code-extension
 setup bash-code-extension
 setup bash-nb-kernel
+setup bismuth
+setup bismuth-default
+setup bismuth-gaps
 setup bluej
 setup booth-desktop-actions
 setup booth-message-code-extension

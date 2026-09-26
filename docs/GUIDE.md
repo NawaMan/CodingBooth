@@ -5,7 +5,7 @@ you're an AI agent, read `AGENT.md` in this same directory instead — it's writ
 
 The "CodingBooth Help" button in the floating **Booth** panel (where present) covers the same
 ground as this file, in a General tab and a Clipboard tab — plus a tab for anything a setup adds,
-such as **i3 Shortcuts (Tiling)** when the tiling window manager is installed. Help opens as a floating
+such as **i3 Shortcuts (Tiling)** or **Bismuth Shortcuts (Tiling)** when window tiling is installed. Help opens as a floating
 window rather than a blocking dialog: the booth stays usable behind it, and you can drag it by its
 title and resize it from its bottom-right corner.
 
@@ -34,6 +34,17 @@ Booths with the `i3` template on XFCE or LXQt can tile windows instead of overla
 **Leave Tiling (i3)** in the menu) to switch back — desktop icons are hidden while i3 runs. The
 shortcuts are in Help → **i3 Shortcuts (Tiling)**; every one works with **Ctrl+Alt** in any browser, and
 with plain Alt in Chrome while **Full screen** is on.
+
+---
+
+## Window tiling on KDE (Bismuth, desktop booths)
+
+Booths with the `bismuth` template on KDE Plasma tile windows with Bismuth, a KWin script — KWin,
+the panel and the desktop stay as they are. Run `start-bismuth` (or the **Tiling for KDE (Bismuth)**
+desktop icon) to tile, and `stop-bismuth` (or **Leave Tiling (Bismuth)** in the menu) to stop; the
+choice is remembered. The shortcuts use **Ctrl+Alt** and are listed in Help → **Bismuth Shortcuts
+(Tiling)**; change them in System Settings → Shortcuts → Bismuth, and layouts and gaps in System
+Settings → Window Management → Window Tiling.
 
 ---
 
