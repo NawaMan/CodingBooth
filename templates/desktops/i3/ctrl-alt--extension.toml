@@ -1,0 +1,21 @@
+display-name   = "Ctrl+Alt Shortcuts"
+display-disc   = "Every i3 shortcut also works with Ctrl+Alt, which every browser passes on"
+display-detail = """\
+Adds a Ctrl+Alt twin for each i3 mod-key shortcut (Ctrl+Alt+h, Ctrl+Alt+2, …), \
+and the Help lists those. Alt shortcuts only reach the booth when the browser \
+lets go of them — Chrome with the panel's Full screen on; Firefox keeps Alt for \
+its own menus. The desktop's own Ctrl+Alt+L (lock) and Ctrl+Alt+F / E (file \
+manager) are dropped so they do not race i3. Drop it with i3~ctrl-alt."""
+display-order  = 18
+auto-select    = true
+tags = [
+    "desktop",
+    "tiling",
+    "i3",
+    "keyboard"
+]
+
+[segments]
+"Boothfile--42" = """
+setup i3-ctrl-alt
+"""

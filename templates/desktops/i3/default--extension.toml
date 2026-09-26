@@ -1,0 +1,21 @@
+display-name   = "Tiling at Login"
+display-disc   = "The desktop logs in on i3 instead of its own window manager"
+display-detail = """\
+Makes i3 the window manager when the desktop session starts (XFCE: in place of \
+xfwm4, LXQt: in place of openbox), and leaves out the desktop-icon program, \
+which i3 would tile as a full-screen window. stop-i3 (or Ctrl+Alt+Shift+e) \
+still switches back for the session. Drop it with i3~default to log in on the \
+desktop's own window manager and tile only on demand with start-i3 or the \
+desktop icon."""
+display-order  = 17
+auto-select    = true
+tags = [
+    "desktop",
+    "tiling",
+    "i3"
+]
+
+[segments]
+"Boothfile--42" = """
+setup i3-default
+"""

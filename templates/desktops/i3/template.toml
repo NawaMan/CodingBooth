@@ -1,0 +1,32 @@
+display-name = "Tiling Window Manager (i3)"
+display-disc = "i3 tiling window manager for the XFCE or LXQt desktop, with start-i3 / stop-i3"
+display-detail = """\
+Installs the i3 tiling window manager beside the desktop's own (xfwm4 on XFCE, \
+openbox on LXQt): windows tile instead of overlapping, driven from the keyboard, \
+while the panel, menu, tray and file manager stay. Switch a running desktop with \
+start-i3 / stop-i3 or the "Tiling Window Manager (i3)" desktop icon; the booth's \
+Help dialog gets an i3 Shortcuts tab. Alt is the mod key by default \
+(i3:super for Super). Does nothing unless XFCE or LXQt is installed — by the \
+desktop variant or the xfce / lxqt template — so it is safe to select on any \
+booth. Its extensions (all on by default): +default logs in on i3, +ctrl-alt \
+adds a Ctrl+Alt twin of every shortcut (for Firefox, which keeps Alt), +gaps \
+puts an 8px gap between windows. Customize by copying /etc/xdg/i3/config to \
+~/.config/i3/config."""
+display-order = 16
+tags = [
+    "desktop",
+    "xfce",
+    "lxqt",
+    "tiling",
+    "i3",
+    "window-manager"
+]
+
+[params.I3_MOD]
+default     = "alt"
+suggests    = ["alt", "super"]
+
+[segments]
+"Boothfile--41" = """
+setup i3 ${I3_MOD}
+"""

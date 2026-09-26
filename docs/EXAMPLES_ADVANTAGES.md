@@ -160,6 +160,11 @@ the common ground that makes the comparison fair (identical OS, identical depend
   Compare the two languages on identical drawings instead of installing Logo or fighting
   `import turtle` / Tk on the host. *(Secondary: batteries-included — Tcl/Tk, Xvfb, and
   CodeMirror are in the image so both turtles run offline.)*
+- **i3-desktop-example** — the XFCE desktop tiling with i3, and `stop-i3` / `start-i3` to switch the
+  *same* running session between i3 and XFCE's own floating window manager. Compare the two ways of
+  working on your real apps without installing a window manager on the host or logging out.
+  *(Secondary: batteries-included — Ctrl+Alt twins of every shortcut so it works in any browser,
+  and an i3 Shortcuts tab in the booth's Help.)*
 - *(Related: **js-example** bundles three JS runtimes and **jetbrain-exmple** ten IDEs for the same
   try-them-all reason.)*
 
@@ -272,6 +277,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | haskell-example | Batteries-included (with baked-in repair) |
 | herdr-example | Batteries-included |
 | homebrew-example | Host stays clean |
+| i3-desktop-example | Try / compare side-by-side |
 | java-example | Batteries-included |
 | jetbrain-exmple | Multiple things bundled (10 IDEs) |
 | js-example | Port exposure / try runtimes side-by-side |

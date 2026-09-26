@@ -254,11 +254,19 @@ All templates and extensions grouped by segment order.
 | `desktops/kde`   | KDE Plasma   |
 | `desktops/lxqt`  | LXQt         |
 | `desktops/xfce`  | XFCE         |
+| `desktops/i3`    | Tiling Window Manager (i3) — order 41, see below |
 
 `desktops/xfce` auto-selects two extensions at order **41** — right after the desktop they need,
 since both skip when XFCE is absent: `+modern-theme` (the theme packs, then `setup xfce-theme`,
 which picks the defaults and so must come last) and `+plank` (`setup plank`: the Plank Reloaded
 dock). Drop either with `~`, e.g. `xfce~plank`.
+
+`desktops/i3` (Tiling Window Manager) is also at order **41** (`setup i3 ${I3_MOD}`), since it runs
+inside whichever of XFCE or LXQt is installed and skips when neither is. Its auto-selected extensions
+sit at **42**, after it: `+default` (`setup i3-default`, i3 at login), `+ctrl-alt`
+(`setup i3-ctrl-alt`) and `+gaps` (`setup i3-gaps ${I3_GAPS}`). It deliberately has no `requires`
+or `variant`: like `xfce` itself, selecting it on a `base` booth installs what it can and lets you
+start the desktop later.
 
 Themes beyond the XFCE default are standalone, opt-in templates at order **60** —
 `desktops/tela-icons`, `desktops/orchis-gtk`, `desktops/material-cursors`. They only install;

@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --variant xfce --port 50741 --select i3
+
+variant = "xfce"
+port = "50741"
