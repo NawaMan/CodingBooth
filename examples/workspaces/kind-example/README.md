@@ -1,6 +1,8 @@
 # KinD (Kubernetes in Docker) Example
 
-This example runs a full Kubernetes cluster entirely inside a CodingBooth using KinD on top of Docker-in-Docker. `start-cluster.sh` creates a KinD cluster in the DinD sidecar and `deploy-app.sh` deploys a sample nginx app on NodePort 30080 (plus a buildable hello-service on 30081), reachable from inside the booth — its own Chrome comes with a bookmark folder for both, and `k9s` gives you a live TUI view of the cluster from the terminal. The whole cluster — control plane, nodes, and pods — is nested inside the booth, so you get a throwaway Kubernetes environment without installing kind, kubectl, or a single container runtime on your own machine. Kick the tires on manifests, ingress, and NodePorts, then delete the entire cluster by stopping the booth — no lingering `~/.kube` config, no orphaned Docker networks, no "why is my laptop running eight etcd pods" surprise later. It's a real cluster you can be genuinely careless with.
+This example runs a full Kubernetes cluster entirely inside a CodingBooth using KinD on top of Docker-in-Docker. `start-cluster.sh` creates a KinD cluster in the DinD sidecar and `deploy-app.sh` deploys a sample nginx app on NodePort 30080 (plus a buildable hello-service on 30081) — viewable right in the console UI's own tabs (no desktop or browser needed), and `k9s` gives you a live TUI view of the cluster from the terminal. The whole cluster — control plane, nodes, and pods — is nested inside the booth, so you get a throwaway Kubernetes environment without installing kind, kubectl, or a single container runtime on your own machine. Kick the tires on manifests, ingress, and NodePorts, then delete the entire cluster by stopping the booth — no lingering `~/.kube` config, no orphaned Docker networks, no "why is my laptop running eight etcd pods" surprise later. It's a real cluster you can be genuinely careless with.
+
+This is a plain (non-desktop) booth, using the multi-pane console UI rather than a full remote desktop — `.booth/console.json` defaults it to a "Left Main" layout with the Markdown viewer pane on the left, so notes/docs and the terminal are visible side by side from the first load.
 
 ## Quick start
 
@@ -30,12 +32,7 @@ curl http://localhost:30081/health
 just stop                # ./stop-cluster.sh
 ```
 
-Open these in the booth's own browser to see them rendered — click straight through:
-
-- [http://localhost:30080](http://localhost:30080) — nginx welcome page
-- [http://localhost:30081](http://localhost:30081) — hello-service
-
-Both are also pre-seeded as a "KinD Example" bookmark folder in Chrome; see [GUI access](#gui-access).
+See [Viewing services](#viewing-services) for how to open these as tabs right in the console UI.
 
 ## How it works
 
@@ -80,18 +77,23 @@ The following ports are pre-mapped and accessible via `http://localhost:{port}`:
 | 443         | HTTPS (for ingress)    |
 | 30080-30084 | NodePort services      |
 
-## GUI access
+## Viewing services
 
-The desktop has Chrome (Firefox is removed for this example — one browser is enough
-clutter) with a "KinD Example" bookmark folder pre-seeded for both service URLs:
+No desktop or browser here — the console UI's own tabs can load a web page directly.
+Click a pane's "+" (new tab), then type into its address bar:
 
-- [http://localhost:30080](http://localhost:30080)
-- [http://localhost:30081](http://localhost:30081)
+- `booth:30080` — nginx welcome page
+- `booth:30081` — hello-service
 
-These are only reachable from *inside* the booth's own browser or terminal — the
-ports aren't published to your host machine by default. If you want that too, add
-`-p 30080:30080` (and any other NodePort you use) to `run-args` in
-`.booth/config.toml`, matching the port(s) `start-cluster.sh` maps.
+(`booth:<port>` is the console's shorthand for "this booth, this port" — the same
+thing typing `http://booth:30080` does.) `.booth/console.json` already opens the
+Markdown viewer this way in the left pane by default; the same mechanism works for
+any port the booth exposes.
+
+These are only reachable from *inside* the booth — the ports aren't published to your
+host machine by default. If you want that too, add `-p 30080:30080` (and any other
+NodePort you use) to `run-args` in `.booth/config.toml`, matching the port(s)
+`start-cluster.sh` maps.
 
 ## Watching the cluster (k9s)
 

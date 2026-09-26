@@ -1,7 +1,11 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select dind/kind/xfce/claude-code/k9s
-# Hand-edited afterward: antigravity dropped, k9s + remove-firefox + chrome-bookmarks
-# added (the latter two are project-local, see .booth/setups/).
+# Configured by: booth config --no-tui --overwrite --select dind/kind/claude-code/k9s
+# Hand-edited afterward: switched from the xfce desktop to plain base, so this
+# gets the actual multi-pane console UI (web-ttyd-split) instead of a full
+# desktop — dropped xfce, and remove-firefox/chrome-bookmarks along with it
+# (nothing to remove/bookmark without a desktop or browser). Services are
+# viewed via the console's own tabs instead — see .booth/console.json and the
+# README's "Viewing services" section.
 
 env APT_SNAPSHOT=20260906T000000Z
 
@@ -9,10 +13,7 @@ arg CLAUDE_CODE_VERSION=latest
 arg KIND_VERSION=0.27.0
 arg K9S_VERSION=latest
 
-setup xfce
 setup claude-code ${CLAUDE_CODE_VERSION}
 setup dind
 setup kind --kind-version ${KIND_VERSION}
 setup k9s --version ${K9S_VERSION}
-setup remove-firefox
-setup chrome-bookmarks

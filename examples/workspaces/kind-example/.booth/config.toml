@@ -1,5 +1,7 @@
-# Configured by: booth config --no-tui --overwrite --select dind/kind/xfce/claude-code/k9s
-# Hand-edited afterward: antigravity (and its credential mounts) dropped.
+# Configured by: booth config --no-tui --overwrite --select dind/kind/claude-code/k9s
+# Hand-edited afterward: antigravity (and its credential mounts) dropped, and
+# switched from --variant xfce to plain base (no variant = base is the
+# default) — see .booth/Boothfile for why.
 
 dind = true
 
