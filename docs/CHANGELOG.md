@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth config` no longer forgets a booth that has no Boothfile.** A booth that sets only
+  config fields (variant, port, mounts, env) and selects no templates gets a `config.toml` but no
+  Boothfile, and reconfiguring it — in the TUI or with `--no-tui` — started from defaults, so
+  `booth config --no-tui --overwrite --port 10005` after `--variant terminal --mount …` kept only
+  the port. The recorded settings are now read from `config.toml`'s own `# Configured by:` header
+  when there is no Boothfile.
+
 - **The Wayland desktop now fits the browser window.** It stayed at `GEOMETRY` (1280×800 by
   default) however large the browser was: noVNC asks the VNC server to resize the desktop, and the
   X11 desktops' TigerVNC does, but Ubuntu 24.04's wayvnc 0.7 ignores the request. The booth page

@@ -109,7 +109,9 @@ Both modes read an existing `.booth/` as their **baseline**, and the flags of th
 run override it. The baseline comes from the `# Configured by:` header in
 `.booth/Boothfile` (the selection, `--variant`, `--port`, `--cmd`, `--set`) and
 from `.booth/config.toml` (the long-form `--env` / `--volume` / `--publish`
-run-args, plus `cache-files` / `cache-dirs`).
+run-args, plus `cache-files` / `cache-dirs`). A booth that selects no templates has
+no Boothfile, only `config.toml` — which carries the same header, so the baseline is
+read from there instead.
 
 So a reconfigure only has to state what changes:
 
