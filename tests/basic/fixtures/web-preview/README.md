@@ -22,3 +22,9 @@ executable when these are not installed in their usual locations.
 External-site and Google responses are intercepted by the browser test so it
 checks cross-origin embedding and query handling without depending on public
 sites' availability or changing framing policies.
+
+The same servers back the notebook variant's check,
+`tests/basic/test028--notebook-web-preview.sh`: run
+`../../../../codingbooth --variant notebook`, open **Web Preview** from the
+JupyterLab Launcher and enter `8080`. Its browser half is `browser-notebook.cjs`,
+gated the same way.

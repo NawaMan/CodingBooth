@@ -1,0 +1,28 @@
+# http-level half of nginx-notebook.conf.template: the request Cookie header
+# with Jupyter's own cookies removed, as $cb_preview_cookie.
+#
+# Jupyter signs a browser in with "username-<host>" (named after the Host the
+# browser used, so every booth reached on localhost adds one) plus "_xsrf".
+# An nginx map can only remove one match, so the pass is chained: four
+# removals cover three booths' sessions on the same host plus _xsrf, and a
+# last map drops the "; " left over when the first cookie was removed.
+map $http_cookie $cb_preview_cookie_1 {
+    "~^(?<cb_pre>.*?)(?:^|;\s*)(?:username-[^=;]*|_xsrf)=[^;]*(?<cb_post>.*)$" "$cb_pre$cb_post";
+    default $http_cookie;
+}
+map $cb_preview_cookie_1 $cb_preview_cookie_2 {
+    "~^(?<cb_pre>.*?)(?:^|;\s*)(?:username-[^=;]*|_xsrf)=[^;]*(?<cb_post>.*)$" "$cb_pre$cb_post";
+    default $cb_preview_cookie_1;
+}
+map $cb_preview_cookie_2 $cb_preview_cookie_3 {
+    "~^(?<cb_pre>.*?)(?:^|;\s*)(?:username-[^=;]*|_xsrf)=[^;]*(?<cb_post>.*)$" "$cb_pre$cb_post";
+    default $cb_preview_cookie_2;
+}
+map $cb_preview_cookie_3 $cb_preview_cookie_4 {
+    "~^(?<cb_pre>.*?)(?:^|;\s*)(?:username-[^=;]*|_xsrf)=[^;]*(?<cb_post>.*)$" "$cb_pre$cb_post";
+    default $cb_preview_cookie_3;
+}
+map $cb_preview_cookie_4 $cb_preview_cookie {
+    "~^;\s*(?<cb_rest>.*)$" "$cb_rest";
+    default $cb_preview_cookie_4;
+}

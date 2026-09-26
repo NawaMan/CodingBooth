@@ -1,0 +1,55 @@
+# Notebook variant's Web Preview locations. Spliced into the wrapper's server
+# block by start-booth-wrapped; $cb_preview_cookie comes from the maps in
+# nginx-notebook-http.conf.template, spliced into its http block.
+#
+# Unlike code-server, JupyterLab has no path proxy that keeps its own session
+# away from the application: jupyter-server-proxy forwards every request
+# header, the Jupyter login cookie included. So nginx asks Jupyter whether the
+# browser is signed in (auth_request), then proxies straight to the booth port
+# itself — the same direct proxy the Console UI uses — with Jupyter's cookies
+# taken out of the request.
+
+# Public static preview controls. Application content is gated below.
+location ^~ /booth-preview/ {
+    alias /usr/local/share/booth-web-preview/media/;
+    add_header Cache-Control "no-cache";
+}
+
+# 2xx from Jupyter's identity endpoint means the browser holds a valid session
+# (or the booth has no PASSWORD, in which case Jupyter lets everyone in).
+location = /__booth/jupyter-auth {
+    internal;
+    proxy_pass http://127.0.0.1:${INNER_PORT}/api/me;
+    proxy_pass_request_body off;
+    proxy_set_header Content-Length "";
+    # Jupyter names its session cookie after the Host the browser used.
+    proxy_set_header Host $http_host;
+}
+
+location ~ ^/proxy/([0-9]+)(/.*)$ {
+    auth_request /__booth/jupyter-auth;
+
+    set $proxy_port $1;
+    set $proxy_path $2;
+
+    proxy_pass http://127.0.0.1:$proxy_port$proxy_path$is_args$args;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection $connection_upgrade;
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header Cookie $cb_preview_cookie;
+    proxy_set_header Accept-Encoding "";
+    proxy_read_timeout 24h;
+    proxy_buffering off;
+
+    # proxy_pass uses variables, so nginx's default redirect rewrite is off.
+    # Same set as the Console UI's /proxy/ location.
+    proxy_redirect / /proxy/$proxy_port/;
+    proxy_redirect http://127.0.0.1:$proxy_port/ /proxy/$proxy_port/;
+    proxy_redirect http://localhost:$proxy_port/ /proxy/$proxy_port/;
+    proxy_redirect http://127.0.0.1/ /proxy/$proxy_port/;
+    proxy_redirect http://localhost/ /proxy/$proxy_port/;
+
+    include /opt/codingbooth/setups/libs/booth-proxy-response.conf;
+}

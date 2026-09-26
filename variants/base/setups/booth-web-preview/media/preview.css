@@ -13,9 +13,17 @@ input { flex: 1; min-width: 40px; padding: 4px 8px; }
 #error { margin: 0; padding: 8px; color: #ffcf80; }
 #external-hint { margin: 0; padding: 6px 8px; font-size: 12px; }
 iframe { flex: 1; width: 100%; min-height: 0; border: 0; background: white; }
+/* Light follows the OS, unless preview.js sets data-theme from JupyterLab's
+   own theme (the notebook variant), which then wins either way. */
 @media (prefers-color-scheme: light) {
-  body { background: #f3f3f3; color: #222; }
-  button, input { background: white; border-color: #bbb; }
-  button:hover { background: #e4e4e4; }
-  #error { color: #8a4500; }
+  :root:not([data-theme="dark"]) body { background: #f3f3f3; color: #222; }
+  :root:not([data-theme="dark"]) button, :root:not([data-theme="dark"]) input { background: white; border-color: #bbb; }
+  :root:not([data-theme="dark"]) button:hover { background: #e4e4e4; }
+  :root:not([data-theme="dark"]) #error { color: #8a4500; }
 }
+:root[data-theme="light"] { color-scheme: light; }
+:root[data-theme="dark"] { color-scheme: dark; }
+:root[data-theme="light"] body { background: #f3f3f3; color: #222; }
+:root[data-theme="light"] button, :root[data-theme="light"] input { background: white; border-color: #bbb; }
+:root[data-theme="light"] button:hover { background: #e4e4e4; }
+:root[data-theme="light"] #error { color: #8a4500; }

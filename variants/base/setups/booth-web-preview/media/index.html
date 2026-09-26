@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; frame-src 'self' http: https:;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; frame-src 'self' http: https:;">
   <title>Booth Web Preview</title>
   <link rel="stylesheet" href="preview.css">
   <script src="target.js" defer></script>
@@ -14,9 +14,10 @@
     <button type="button" id="back" title="Back" aria-label="Back" disabled>←</button>
     <button type="button" id="forward" title="Forward" aria-label="Forward" disabled>→</button>
     <button type="button" id="reload" title="Reload" aria-label="Reload">↻</button>
+    <button type="button" id="new" title="Open another preview tab" aria-label="New preview tab">＋</button>
     <input id="address" aria-label="Address or search" placeholder="Port, web address, or Google search" spellcheck="false" autocomplete="off">
     <button type="submit" title="Go" aria-label="Go">Go</button>
-    <button type="button" id="new" title="Open another preview tab" aria-label="New preview tab">＋</button>
+    <button type="button" id="markdown" title="Markdown viewer" aria-label="Markdown viewer" hidden><svg width="14" height="14" viewBox="0 0 14 14" aria-hidden="true"><path d="M3.2 1.5h5.1L11.5 4.7v7.8H3.2z" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M8.2 1.5V4.7H11.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M5 8.2h4M5 10.3h2.6" fill="none" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg></button>
     <button type="button" id="external" title="Open in browser" aria-label="Open in browser">↗</button>
   </form>
   <p id="error" role="status" hidden></p>

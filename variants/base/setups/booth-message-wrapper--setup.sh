@@ -125,13 +125,18 @@ http {
         "~."     "proxy";
     }
 
+    # http-level half of a variant's Web Preview (e.g. notebook's cookie maps);
+    # empty unless the variant names one.
+    ${WRAPPER_PREVIEW_HTTP}
+
     server {
         listen ${OUTER_PORT};
         server_name _;
         absolute_redirect off;
 
-        # Only code-server enables these locations; its proxy still authenticates
-        # every preview request before any application content reaches nginx.
+        # Only the code-server and notebook variants enable these locations, and
+        # both authenticate every preview request against the inner service
+        # before any application content reaches the browser.
         ${WRAPPER_PREVIEW_LOCATIONS}
 
         # Wrapper page
@@ -148,7 +153,9 @@ http {
             # replaced needs to notice it is driving a stranger. `always` so the
             # id rides the 502 as well.
             add_header X-Booth-Instance "${BOOTH_INSTANCE_ID}" always;
-            proxy_pass http://127.0.0.1:${INNER_PORT}/;
+            # WRAPPER_HEALTH_PATH ("/" unless the variant names a quieter one:
+            # this is polled every few seconds by every open page).
+            proxy_pass http://127.0.0.1:${INNER_PORT}${WRAPPER_HEALTH_PATH};
             proxy_connect_timeout 2s;
             proxy_read_timeout 3s;
             proxy_intercept_errors on;
@@ -328,12 +335,22 @@ export BOOTH_VERSION_TAG="${BOOTH_VERSION_TAG:-unknown}"
 # inner service's root <head> (e.g. an @font-face style) — empty by default,
 # a no-op sub_filter for every wrapped service that doesn't set it.
 export WRAPPER_HEAD_INJECT="${WRAPPER_HEAD_INJECT:-}"
+# Path /__booth/health probes on the inner service. Any 2xx-4xx answer counts
+# as up, so a variant can point this at an endpoint its service does not log.
+export WRAPPER_HEALTH_PATH="${WRAPPER_HEALTH_PATH:-/}"
+# Web Preview: the server-block locations come from WRAPPER_PREVIEW_TEMPLATE
+# (code-server's, forwarding /proxy/ to its own authenticated path proxy, by
+# default) and an optional http-block part from WRAPPER_PREVIEW_HTTP_TEMPLATE.
 export WRAPPER_PREVIEW_LOCATIONS=""
+export WRAPPER_PREVIEW_HTTP=""
 if [[ "${BOOTH_WEB_PREVIEW:-0}" == 1 ]]; then
   WRAPPER_PREVIEW_LOCATIONS=$(envsubst '${INNER_PORT}' \
-    </usr/local/share/booth-web-preview/nginx.conf.template)
+    <"${WRAPPER_PREVIEW_TEMPLATE:-/usr/local/share/booth-web-preview/nginx.conf.template}")
+  if [[ -n "${WRAPPER_PREVIEW_HTTP_TEMPLATE:-}" ]]; then
+    WRAPPER_PREVIEW_HTTP=$(cat "$WRAPPER_PREVIEW_HTTP_TEMPLATE")
+  fi
 fi
-envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT} ${BOOTH_INSTANCE_ID} ${WRAPPER_HEAD_INJECT} ${WRAPPER_PREVIEW_LOCATIONS}' \
+envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT} ${BOOTH_INSTANCE_ID} ${WRAPPER_HEAD_INJECT} ${WRAPPER_PREVIEW_LOCATIONS} ${WRAPPER_PREVIEW_HTTP} ${WRAPPER_HEALTH_PATH}' \
   <"$WRAPPER_DIR/nginx.conf.template" >"$NGINX_CONFIG"
 
 # Propagate SIGTERM to all child processes for clean container shutdown
