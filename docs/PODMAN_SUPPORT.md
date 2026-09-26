@@ -107,6 +107,13 @@ a run. That includes the `<engine> exec -i … socat` that carries each `booth--
 tunnel connection, and the `<engine> port` lookup behind `booth expose list`.
 `--dryrun` and `--verbose` print the real `podman …` command line.
 
+**From inside a booth**, `env | grep BOOTH_ENGINE` shows which engine started it
+(`BOOTH_ENGINE=docker` or `BOOTH_ENGINE=podman`) — the one CodingBooth-specific signal
+for this; the container itself is otherwise identical either way by design. The
+OS-level equivalent, engine-agnostic and not specific to CodingBooth, is
+`/run/.containerenv` (Podman; also names the actual Podman version) vs `/.dockerenv`
+(Docker, an empty marker file).
+
 ## Podman-specific behavior
 
 These are applied automatically when the engine is Podman.

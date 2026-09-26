@@ -642,6 +642,14 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_KEEP_ALIVE=%t", ctx.KeepAlive())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_SILENCE_BUILD=%t", ctx.SilenceBuild())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_PULL=%t", ctx.Pull())))
+	// The container engine (docker/podman) that started this booth. There was
+	// previously no way to tell from inside the booth at all — the container
+	// itself is identical either way by design — short of the OS-level
+	// /run/.containerenv (Podman) vs /.dockerenv (Docker) marker files. This
+	// makes it visible directly, which matters most for a --dind booth, where
+	// the sidecar it's talking to differs by engine (docker:dind vs a nested
+	// Podman); see docs/PODMAN_SUPPORT.md.
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_ENGINE="+ctx.Engine()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_DIND=%t", ctx.Dind())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_SUDO=%t", ctx.Sudo())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_EGRESS=%t", ctx.Egress())))
