@@ -49,7 +49,8 @@ The file is:
   "panes": {
     "<pane-number>": {
       "web": true,
-      "tabs": ["<address>", "..."]
+      "tabs": ["<address>", "..."],
+      "force": true
     }
   }
 }
@@ -59,6 +60,7 @@ The file is:
 - **`panes`** — an object keyed by pane number as a string (`"1"` through `"4"`). A pane not listed here stays a terminal.
   - **`web`** — must be `true` for the pane to open in Web view at all. A pane listed with `"web": false` (or without `"tabs"`) is left as a terminal, same as not listing it.
   - **`tabs`** — an array of addresses, one per tab to open in that pane, in order. The last one ends up active. An empty or missing list leaves the pane as a terminal even with `"web": true`.
+  - **`force`** — `true` makes this pane's entry win over whatever this browser already saved for it (see [Forcing a Pane](#forcing-a-pane)). Only meaningful alongside `"web": true`; `"web": false` already forces on its own.
 
 The file is validated as JSON when the booth starts (`start-ttyd-split`, via `jq`); a syntax error is logged to the container's startup output and the console just starts with no preset at all rather than failing to load.
 
@@ -91,7 +93,29 @@ On each load, in order:
 3. **`.booth/console.json`** — applies only to a layout nobody has picked yet, or a pane with no tabs ever recorded in this browser.
 4. **The built-in default** — a single terminal pane.
 
-This means editing the file after the fact doesn't retroactively change anyone's already-customized console — it only changes what a *fresh* browser (or a fresh `localStorage`) sees.
+This means editing the file after the fact doesn't retroactively change anyone's already-customized console — it only changes what a *fresh* browser (or a fresh `localStorage`) sees — unless the pane is forced.
+
+### Forcing a Pane
+
+Two per-pane settings skip step 2 and make the file win on **every** load, not just the first:
+
+- **`"web": false`** — the pane is always a terminal. Any Web view this browser saved for it is cleared.
+- **`"web": true` with `"force": true`** — the pane always opens exactly the file's `tabs`. Whatever tabs this browser saved for it are cleared first, so a changed tab list in the file actually takes effect.
+
+Use it when the pane's contents are part of the project's setup rather than a starting suggestion — for example `examples/workspaces/kind-example`, which pins its Markdown viewer and the cluster's service tabs to pane 1 and keeps panes 2 and 3 as terminals:
+
+```json
+{
+  "layout": "left-main",
+  "panes": {
+    "1": { "web": true, "tabs": ["booth:8765", "booth:30080", "booth:30081"], "force": true },
+    "2": { "web": false },
+    "3": { "web": false }
+  }
+}
+```
+
+The trade-off: a forced pane never remembers your own changes across reloads. The layout itself (step 2 for `layout`) is not affected by `force`.
 
 ---
 

@@ -95,13 +95,13 @@ const podmanDindSidecarImage = "quay.io/podman/stable"
 //     containerd starts.
 //
 // Both fixes are real and worth keeping — they unblock any Docker-API tool
-// that hits them, not just kind. kind itself still does not fully work: past
-// both of the above, `kubeadm init` hangs waiting on kubelet's health
-// endpoint and fails after 4 minutes ("required cgroups disabled" is
-// kubeadm's own guess at why). That needs more than this blanket
-// enable/private flip — most likely specific controller delegation or a
-// cgroup-driver mismatch between the nested layers — and has not been
-// chased further. See docs/PODMAN_SUPPORT.md, Known limitations.
+// that hits them, not just kind. They are necessary for kind but not
+// sufficient on their own: past both, kubelet still crash-loops on
+// `open /dev/kmsg: operation not permitted` (its OOM watcher, in a user
+// namespace). That third fix belongs to kind's node config, not to this
+// sidecar — a `KubeletInUserNamespace` feature gate set in
+// examples/workspaces/kind-example/start-cluster.sh — and with it kind works
+// end to end. See docs/PODMAN_SUPPORT.md, "kind (Kubernetes-in-Docker) works".
 //
 // The patch must happen before `podman system service` starts — it reads
 // containers.conf once at startup, not per request, so editing it on an
