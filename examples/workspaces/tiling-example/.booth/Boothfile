@@ -1,0 +1,12 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant desktop-xfce --select i3+default+ctrl-alt+gaps
+
+env APT_SNAPSHOT=20260926T000000Z
+
+arg I3_GAPS=8
+arg I3_MOD=alt
+
+setup i3 ${I3_MOD}
+setup i3-ctrl-alt
+setup i3-default
+setup i3-gaps ${I3_GAPS}
