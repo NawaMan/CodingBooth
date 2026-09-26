@@ -206,6 +206,27 @@ This file contains a list of changes for each released version.
   New complex tests, one per desktop variant:
   `tests/complex/test-boothfile-default-terminal-{xfce,kde,lxqt,wayland}`.
 
+- **FreeLens: a Kubernetes IDE for desktop variants.** `--select freelens` (`setup freelens`)
+  installs FreeLens, the maintained MIT-licensed fork of OpenLens, from its official GitHub
+  release DEB (amd64 and arm64). It reads `$KUBECONFIG` / `~/.kube/config` like `kubectl`
+  and `k9s`, runs with `--no-sandbox` as Electron needs in a container, and starts in a dark
+  theme — `--theme light` or `--theme system` (template param `FREELENS_THEME`) to change it.
+  The theme is only seeded when FreeLens has no config yet, so a change made inside the app
+  sticks.
+
+- **Console UI: `console.json` can force a pane, and several fixes.**
+  - A pane in `.booth/console.json` with `"force": true` (alongside `"web": true`) now always
+    opens the file's tabs, replacing whatever this browser saved for it; `"web": false` always
+    keeps a pane a terminal. Without either, the file is still only a first-visit default. See
+    `docs/BOOTH_CONSOLE.md` → *Forcing a Pane*.
+  - A tab pointed at the Markdown viewer's port — typed in the address bar or opened from
+    `console.json` — no longer shows nginx's 502; the viewer is started first, and several
+    starting tabs no longer race each other onto the wrong tab while it starts.
+  - `index.html` is served `Cache-Control: no-store`, so a booth reusing a port no longer loads
+    a stale console from the browser's cache.
+  - In foreground mode, the "Waiting for the booth…" / "Opened … in your browser" lines no
+    longer land mid-line in the container's own output.
+
 - **Alacritty and Kitty: alternate GPU-accelerated terminals for the desktop variants.**
   `--select alacritty` / `--select kitty` (`templates/desktops/`) install either terminal
   alongside a desktop variant's own default (xfce4-terminal, Konsole, qterminal, foot) — not
@@ -281,10 +302,15 @@ This file contains a list of changes for each released version.
   (`quay.io/podman/stable` running `podman system service`) in place of
   `docker:dind`, which has no Podman equivalent — `docker build`, `docker run`
   and `docker-compose` (including multi-container bridge networking and
-  inter-container DNS) are verified working through it end to end; Appwrite
-  through it is untested. This replaces the earlier outright refusal of
+  inter-container DNS) are verified working through it end to end, and so is kind
+  (`examples/workspaces/kind-example` creates a cluster, deploys and serves a real
+  pod); Appwrite through it is untested. This replaces the earlier outright refusal of
   `--dind --engine podman`, which is gone; a `--dind`-specific experimental
-  warning is printed instead. `booth--expose`
+  warning is printed instead. Every booth now gets a `BOOTH_ENGINE` env var
+  (`docker` or `podman`) so scripts inside it can tell which engine started it.
+  `build/build-all.sh` now also copies each built image into Podman's store
+  (`docker save | podman load`); `--docker-only` skips that, `--podman-only` only
+  copies what is already built. `booth--expose`
   tunnels and `booth expose list` work on a Podman booth (they use the engine the
   booth was started with). Podman builds pass `--format docker` (Buildah's default image
   format ignores the Dockerfile `SHELL`, which every variant relies on), and
