@@ -1,0 +1,22 @@
+display-name   = "Window Gaps"
+display-disc   = "A small gap between Bismuth's windows so the wallpaper shows at their edges"
+display-detail = """\
+Puts a gap (8px by default) between tiled windows and between the windows and \
+the screen edges and panel. Set the size with bismuth+gaps:<pixels>; drop it \
+with bismuth~gaps. System Settings → Window Tiling can change it later."""
+display-order  = 19
+auto-select    = true
+tags = [
+    "desktop",
+    "tiling",
+    "bismuth"
+]
+
+[params.BISMUTH_GAPS]
+default     = "8"
+suggests    = ["4", "8", "12"]
+
+[segments]
+"Boothfile--42" = """
+setup bismuth-gaps ${BISMUTH_GAPS}
+"""

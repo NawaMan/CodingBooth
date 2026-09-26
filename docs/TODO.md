@@ -225,9 +225,11 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       templates from …" notice either way.
 - [ ] ...
 
-- [ ] **i3 on KDE.** `i3--setup.sh` covers XFCE and LXQt; Plasma 5.27 can run another window
+- [x] **i3 on KDE.** `i3--setup.sh` covers XFCE and LXQt; Plasma 5.27 can run another window
       manager in place of KWin (`KDEWM`), but plasmashell's desktop, panel and pop-ups need several
       i3 rules, and results are uneven. Worth trying behind the same `start-i3` / `stop-i3`.
+      -- Tiling on KDE done another way: the `bismuth` template (a KWin script, so KWin and
+      plasmashell stay untouched) with `start-bismuth` / `stop-bismuth`. i3-as-KDEWM not pursued.
 - [ ] **A sway (Wayland tiling) option.** i3 is X11-only; sway reads nearly the same config and is
       what wayvnc was built for. It would replace labwc rather than live inside a desktop, so it is
       closer to a variant (or a `wayland` alternative) than an `i3` extension. The i3 Help tab and

@@ -1,0 +1,32 @@
+display-name = "Tiling for KDE (Bismuth)"
+display-label = "Bismuth (Tiling)"
+display-disc = "Bismuth auto-tiling for the KDE Plasma desktop, with start-bismuth / stop-bismuth"
+display-detail = """\
+Installs Bismuth, a KWin script that tiles the KDE desktop's windows instead of \
+letting them overlap, driven from the keyboard. KWin stays the window manager, \
+so the panel, menu, desktop and pop-ups work as usual. Turn it on and off with \
+start-bismuth / stop-bismuth or the "Tiling for KDE (Bismuth)" desktop icon; the \
+booth's Help dialog gets a "Bismuth Shortcuts (Tiling)" tab. Bismuth's shortcuts \
+use Meta, which the browser or your own desktop usually keeps, so they are moved \
+to Ctrl+Alt by default (bismuth:meta keeps Bismuth's own). Does nothing unless \
+KDE Plasma is installed — by the desktop-kde variant or the kde template — so it \
+is safe to select on any booth. Its extensions (both on by default): +default \
+tiles from login, +gaps puts an 8px gap between windows. Layouts and window \
+rules are in System Settings → Window Management → Window Tiling."""
+display-order = 17
+tags = [
+    "desktop",
+    "kde",
+    "tiling",
+    "bismuth",
+    "window-manager"
+]
+
+[params.BISMUTH_MOD]
+default     = "ctrl-alt"
+suggests    = ["ctrl-alt", "meta"]
+
+[segments]
+"Boothfile--41" = """
+setup bismuth ${BISMUTH_MOD}
+"""
