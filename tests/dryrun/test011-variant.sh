@@ -104,6 +104,7 @@ ${SHM}    -p 127.0.0.1:10000:10000 \\
     -e 'BOOTH_KEEP_ALIVE=false' \\
     -e 'BOOTH_SILENCE_BUILD=false' \\
     -e 'BOOTH_PULL=false' \\
+    -e 'BOOTH_ENGINE=docker' \\
     -e 'BOOTH_DIND=false' \\
     -e 'BOOTH_SUDO=true' \\
     -e 'BOOTH_EGRESS=false' \\
