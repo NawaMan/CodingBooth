@@ -8,8 +8,8 @@ This document has two parts, kept apart on purpose:
 
 1. **[Implemented](#part-1--implemented-phases-14)** — what ships today, as built and
    as verified. Nothing in it is a promise about the future.
-2. **[Plan](#part-2--plan-not-implemented)** — what is *not* built: phases 5–6 and
-   follow-ups.
+2. **[Plan](#part-2--plan-not-implemented)** — what is *not* built: mostly testing,
+   plus small follow-ups and fixable limitations; larger engine work is deferred.
 
 Phases 1 (core lifecycle), 2 (`booth expose`), 3 (build progress) and 4
 (Docker-in-Docker via a nested-Podman sidecar) are implemented. Phase 4 covers
@@ -19,7 +19,7 @@ the real, unmodified `kind-example` project deploying and serving a real pod;
 Appwrite through it is untested, and there is no automated Podman DinD coverage
 beyond a dryrun command-shape check — see
 [Docker-in-Docker (`--dind`)](#docker-in-docker---dind) for what was found and what
-remains. Phases 5–6 are not started.
+remains. What is left is mostly [testing](#testing) — see Part 2.
 
 ---
 
@@ -391,6 +391,7 @@ on 2026-09-23 for Phase 4:
 | Engine selection: flag, config, `CB_ENGINE`, precedence, `booth config --set`, fallback, `--quiet`, invalid value | works |
 | `booth build --engine podman --silence-build` on the JDK + lazygit + vscode-ext example (10 real build steps): before the fix, the run's captured stdout showed the leaked `STEP`/`RUN` output live; after the fix, stdout carries only the final `Built: …` line and stderr only the experimental warning — the same 10 `STEP` lines still appear (confirmed on the same build without `--silence-build`, redirected to stderr by the pre-existing BuildKit-compat shim), proving the silent path now genuinely hides them rather than the build simply having nothing to print | works |
 | `booth --engine podman --dind --daemon`: the nested-Podman sidecar and booth both start, `docker build`/`docker run` and a `docker-compose up`/DNS/`docker-compose down` cycle all work from inside the booth against its own `DOCKER_HOST`, and `booth stop` removes both containers cleanly | works |
+| An image built by Docker (a fresh test image using `SHELL`/`USER`/`WORKDIR`/`ENTRYPOINT`, and the real local `variants/base` image), copied with `docker save \| podman load` and run on Podman — user, env, workdir, entrypoint and build-time files all intact; the base image starts through `tini` → `booth-entry` and aligns `coder` under `--userns=keep-id --user root` (2026-09-26) | works |
 | `examples/workspaces/kind-example` under `--engine podman --dind`, unmodified except the `KubeletInUserNamespace` fix: `start-cluster.sh` (real `kind create cluster`), `check-cluster.sh`, `deploy-hello.sh` (build → `kind load` → 2-replica rollout → `curl` gets a real JSON response), `remove-hello.sh`, cluster teardown — all as the `coder` user | works |
 
 Automated: Go unit tests (`pkg/appctx/engine_test.go`, `pkg/docker/engine_test.go`,
@@ -408,7 +409,8 @@ build`, asserting a distinctive `RUN echo` marker never reaches either captured 
 (`TestResolveEngineConfig_DindPodmanNoError`) and by a dryrun command-shape check
 (`test036--engine.sh`, test 16, asserting the nested-Podman sidecar command and warning
 appear) — neither actually drives a container; that proof is the hand-verification
-above. **No CI job runs against Podman** — see Phase 6.
+above. **No CI job runs against Podman** — see
+[Test and CI parity](#test-and-ci-parity-phase-6).
 
 **Not verified on Podman:** rootful Podman; macOS/Windows (`podman machine`); Podman older than 5.x; SELinux hosts
 (bind mounts may need `:Z`, which CodingBooth does not add); Appwrite through the
@@ -451,7 +453,8 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
   unrecognized format does today) rather than erroring — the build itself is
   unaffected either way.
 - **The release pipeline, `tests/wrapper/` and CI are Docker-only.** Images are built
-  and published with Docker/buildx.
+  and published with Docker/buildx — which is fine for Podman users, since the images
+  are engine-neutral (see [Verification status](#verification-status)).
 - **Separate image stores, with a sync path for locally-built images.** Podman cannot
   see images Docker built or pulled, and the reverse; `--pull=never` runs need the
   image in the engine you chose. `./build/build-all.sh` closes this for its own
@@ -491,8 +494,11 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 
 # Part 2 — Plan (not implemented)
 
-Everything below is **not built**. Each phase is meant to end in something a user can
-run and see.
+Everything below is **not built**. Phases 1–4 are done (see
+[Part 1](#part-1--implemented-phases-14)), and a Docker-built image runs on Podman
+unchanged (see [Verification status](#verification-status)), so what remains is mostly
+**testing**, a few small follow-ups, the known limitations that can actually be fixed, and
+one open design question. Larger engine work is [deferred](#deferred).
 
 ## Why this is feasible
 
@@ -501,80 +507,98 @@ almost every call already goes through one package, `cli/src/pkg/docker/`. What 
 between the engines is mostly CLI-flag compatibility, Buildah's build behavior, rootless
 user-namespace mapping, and nested containers.
 
-## Phase 1 — done
+## Done — phases 1–4
 
-See [Part 1](#part-1--implemented-phases-14). It delivered slightly less than planned in
-one place: the plan said `stop`/`restart`/`rm` would accept `--engine`; they follow
-`CB_ENGINE` instead — and, when none is set, look at both engines (see
-[Finding booths on either engine](#finding-booths-on-either-engine)).
+- **Phase 1 (core lifecycle).** Delivered slightly less than planned in one place: the plan
+  said `stop`/`restart`/`rm` would accept `--engine`; they follow `CB_ENGINE` instead — and,
+  when none is set, look at both engines (see
+  [Finding booths on either engine](#finding-booths-on-either-engine)).
+- **Phase 2 (`booth expose`).** `tcp_tunnel.go`'s `exec` call and `expose list`'s `port`
+  lookup now use the chosen engine.
+- **Phase 3 (build progress).** Delivered more than planned: Buildah's `STEP`/`RUN` output
+  turned out to land on stdout, which the silent build path never captured — so
+  `--silence-build` did not actually silence a Podman build at all. Both are fixed:
+  `build_progress.go` gained a Buildah-format parser, and `docker_build.go` now captures
+  Podman's stdout too.
+- **Phase 4 (Docker-in-Docker).** Delivered more than the original "refuse clearly" bar:
+  the nested-Podman sidecar was spiked, verified by hand end to end (`docker build`,
+  `docker run`, `docker-compose`, kind), and wired into `dind_setup.go` behind
+  `--engine podman` — see [Docker-in-Docker (`--dind`)](#docker-in-docker---dind). What it
+  did not deliver is tracked under [Testing](#testing) below.
 
-## Phase 2 — done
+## Testing
 
-See [Part 1](#part-1--implemented-phases-14). `tcp_tunnel.go`'s `exec` call and
-`expose list`'s `port` lookup now use the chosen engine.
+The main remaining work. Podman stays **experimental** until this backs it.
 
-## Phase 3 — done
-
-See [Part 1](#part-1--implemented-phases-14). Delivered more than planned: the plan
-assumed only a missing live-progress line, but Buildah's `STEP`/`RUN` output turned out
-to land on stdout, which the silent build path never captured — so `--silence-build` did
-not actually silence a Podman build at all. Both are fixed: `build_progress.go` gained a
-Buildah-format parser, and `docker_build.go` now captures Podman's stdout too.
-
-## Phase 4 — done
-
-See [Docker-in-Docker (`--dind`)](#docker-in-docker---dind) in Part 1. Delivered more
-than the original "refuse clearly" bar: the nested-Podman sidecar design was spiked,
-verified by hand end to end (`docker build`, `docker run`, `docker-compose`), and then
-actually wired into `dind_setup.go` behind `--engine podman`. What is not done:
-Appwrite through it is untested, and there is no automated Podman DinD test that
-actually drives a container (see [Verification status](#verification-status)) — both
-tracked under [Remaining verification](#remaining-verification-incremental) below.
-
-## Phase 5 — Release pipeline on Podman
-
-Podman/Buildah equivalents (`podman build --platform`, `podman manifest`) for
-`build/docker-build.sh`'s buildx multi-arch build and push.
-
-**User-visible:** maintainers can publish multi-arch images with Podman.
-
-## Phase 6 — Test and CI parity
+### Test and CI parity (Phase 6)
 
 A Podman variant of `tests/wrapper/` (nested `dockerd` has no Podman analogue) and a CI
 job that runs the existing suites against Podman.
 
 **User-visible:** a CI check that backs "Podman is supported" instead of "should work".
 
-## Remaining verification (incremental)
+### Automated coverage
 
-Not done. Each item is picked up on its own, and moves into the verification table in
-Part 1 only once it has actually been run:
+- [ ] **A Podman `--dind` test that actually drives a container** — today's coverage is a
+  dryrun command-shape check (`test036--engine.sh`, test 16) and unit tests on
+  `resolveEngineConfig`; nothing exercises the real sidecar the way Phase 3's
+  `TestDockerBuild_Silent_PodmanStdoutIsActuallySilenced` does for builds.
+- [ ] **`--egress` and `--public` on Podman** — checked by hand only.
+
+### Remaining verification (incremental)
+
+Environments and workloads nobody has run yet. Each item is picked up on its own, and
+moves into the verification table in Part 1 only once it has actually been run:
 
 - [ ] **Rootful Podman** — run, build, lifecycle and `--public` with the CLI as root (the
   `--userns=keep-id` and low-port logic assume this case needs neither; unproven).
 - [ ] **macOS and Windows** (`podman machine`) — nothing has been run there, including how
   the `euid` check behaves.
-- [ ] **SELinux hosts** — bind mounts may need `:Z`, which CodingBooth does not add.
+- [ ] **SELinux hosts** — bind mounts may need `:Z`, which CodingBooth does not add (a fix,
+  if needed, is listed under [Known-limitation fixes](#known-limitation-fixes)).
 - [ ] **Podman older than 5.x** — only 5.4.2 has been tried; decide and document a minimum
   version.
 - [ ] **Appwrite through the `--dind` nested-Podman sidecar** — `docker build`, `docker
   run` and `docker-compose` are verified; Appwrite is a heavier, more real-world
   consumer of the same `docker-compose` path and has not been run.
-- [ ] **An automated Podman `--dind` test that actually drives a container** — today's
-  coverage is a dryrun command-shape check (`test036--engine.sh`, test 16) and unit
-  tests on `resolveEngineConfig`; nothing exercises the real sidecar the way Phase 3's
-  `TestDockerBuild_Silent_PodmanStdoutIsActuallySilenced` does for builds.
 
-## Follow-ups to Phase 1 (unscheduled)
+## Small follow-ups
 
-- Let `shell`, `exec` and `home-volume-*` find a booth on either engine too (they can
+- [ ] Let `shell`, `exec` and `home-volume-*` find a booth on either engine too (they can
   create booths or hold engine-local volumes, so they need a rule for which engine wins).
-- Add automated Podman coverage for `--egress` and `--public`.
-- Print the experimental warning once per invocation, not once per spawned process.
+- [ ] Print the experimental warning once per invocation, not once per spawned process.
 
-## Open questions
+## Known-limitation fixes
 
-- Podman as a *Boothfile compilation target* (emitting Containerfiles / Buildah scripts)
-  is a separate, deferred idea — see `docs/plans/Boothfile--improvement.md`.
-- Whether the `docker-compose` / Appwrite setups *inside* a booth image need a
-  Podman-in-booth variant. That is independent of the host engine.
+Only the [known limitations](#known-limitations) that are actually fixable:
+
+- [ ] **Leftover network** — after `booth stop` on an `--egress` or `--dind` booth the
+  sidecars go away but the network is left behind; remove it once they are gone.
+- [ ] **SELinux bind mounts** — add `:Z` where needed, once
+  [verified on an SELinux host](#remaining-verification-incremental).
+
+Not planned as fixes, by nature:
+
+- **buildx inside a `--dind --engine podman` booth** — a limitation of the nested-Podman
+  compat API; the workaround (`DOCKER_BUILDKIT=0`, branched on `BOOTH_ENGINE`) is
+  documented.
+- **Separate image stores** — how the two engines are built; `build/build-all.sh` already
+  copies locally-built images across, and published images need no step at all.
+
+## Open question — Podman in the booth
+
+Whether the `docker-compose` / Appwrite setups *inside* a booth image need a
+Podman-in-booth variant. That is independent of the host engine.
+
+## Deferred
+
+Not important now; kept only so the reasoning is not lost.
+
+- **Release pipeline on Podman (was Phase 5)** — Podman/Buildah equivalents
+  (`podman build --platform`, `podman manifest`) for `build/docker-build.sh`'s buildx
+  multi-arch build and push. Deferred because it buys users nothing: images are
+  engine-neutral — a Docker/buildx-built image runs on Podman unchanged, both when pulled
+  from a registry and when copied locally (see [Verification status](#verification-status)).
+  It would only let a maintainer publish without Docker installed.
+- **Podman as a Boothfile compilation target** (emitting Containerfiles / Buildah scripts)
+  — see `docs/plans/Boothfile--improvement.md`.
