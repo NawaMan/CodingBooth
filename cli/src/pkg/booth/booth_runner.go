@@ -38,6 +38,10 @@ func (runner *BoothRunner) Run() error {
 	}); err != nil {
 		return err
 	}
+	// Ask before anything is built or started if this booth could reach the host as root.
+	if err := EnsureHostEscapeConsent(ctx); err != nil {
+		return err
+	}
 	ctx = ValidateVariant(ctx)
 	ctx = EnsureDockerImage(ctx)
 	ctx = PortDetermination(ctx)

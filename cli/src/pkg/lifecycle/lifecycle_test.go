@@ -493,6 +493,13 @@ func TestBuildConnectRunArgs(t *testing.T) {
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("quiet+create buildConnectRunArgs = %v, want %v", got, want)
 	}
+
+	// The consent overrides are forwarded, so `exec --run --dind-allowed` works without a terminal.
+	got = buildConnectRunArgs("", false, connectCreateOpts{dindAllowed: true, privilegedAllowed: true}, false)
+	want = []string{"run", "--daemon", "--dind-allowed", "--privileged-allowed"}
+	if strings.Join(got, " ") != strings.Join(want, " ") {
+		t.Fatalf("consent buildConnectRunArgs = %v, want %v", got, want)
+	}
 }
 
 func TestExecAcceptsSilenceBuildFlag(t *testing.T) {

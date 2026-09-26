@@ -39,8 +39,10 @@ func (f *stringSliceFlag) Set(value string) error {
 // These apply only when --run creates a missing booth; against an existing booth
 // they are asserted (fail by default) unless --accept-existing is set.
 type connectCreateOpts struct {
-	port           string // --port (empty if unset)
-	acceptExisting bool   // --accept-existing: connect despite create-intent mismatch
+	port              string // --port (empty if unset)
+	acceptExisting    bool   // --accept-existing: connect despite create-intent mismatch
+	dindAllowed       bool   // --dind-allowed: forwarded so a --run create need not ask
+	privilegedAllowed bool   // --privileged-allowed: forwarded likewise
 }
 
 // Shell opens a new interactive shell inside a running booth container.
@@ -57,6 +59,8 @@ func Shell(args []string, stderr io.Writer) error {
 	keepAlive := flagSet.Bool("keep-alive", false, "Keep a booth started by --run running afterwards")
 	port := flagSet.String("port", "", "With --run, host port for a newly created booth (number, NEXT[:base], or RANDOM[:base])")
 	acceptExisting := flagSet.Bool("accept-existing", false, "Connect to an existing booth even if create flags (e.g. --port) do not match")
+	dindAllowed := flagSet.Bool("dind-allowed", false, "With --run: start a --dind booth without asking")
+	privilegedAllowed := flagSet.Bool("privileged-allowed", false, "With --run: allow --privileged-like run-args without asking")
 	silenceBuild := flagSet.Bool("silence-build", false, "Hide --run bring-up and teardown; command/shell only")
 	flagSet.BoolVar(silenceBuild, "quiet", false, "Alias for --silence-build")
 	flagSet.BoolVar(silenceBuild, "q", false, "Alias for --silence-build")
@@ -74,7 +78,7 @@ func Shell(args []string, stderr io.Writer) error {
 	}
 	engine := resolveLifecycleEngine(codePath)
 
-	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting}
+	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed}
 	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, engine, stderr)
 	if err != nil {
 		return err
@@ -121,6 +125,8 @@ func Exec(args []string, stderr io.Writer) error {
 	keepAlive := flagSet.Bool("keep-alive", false, "Keep a booth started by --run running afterwards")
 	port := flagSet.String("port", "", "With --run, host port for a newly created booth (number, NEXT[:base], or RANDOM[:base])")
 	acceptExisting := flagSet.Bool("accept-existing", false, "Connect to an existing booth even if create flags (e.g. --port) do not match")
+	dindAllowed := flagSet.Bool("dind-allowed", false, "With --run: start a --dind booth without asking")
+	privilegedAllowed := flagSet.Bool("privileged-allowed", false, "With --run: allow --privileged-like run-args without asking")
 	silenceBuild := flagSet.Bool("silence-build", false, "Hide --run bring-up and teardown; command output only")
 	flagSet.BoolVar(silenceBuild, "quiet", false, "Alias for --silence-build")
 	flagSet.BoolVar(silenceBuild, "q", false, "Alias for --silence-build")
@@ -146,7 +152,7 @@ func Exec(args []string, stderr io.Writer) error {
 	}
 	engine := resolveLifecycleEngine(codePath)
 
-	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting}
+	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed}
 	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, engine, stderr)
 	if err != nil {
 		return err
@@ -870,6 +876,12 @@ func buildConnectRunArgs(explicitName string, keepAlive bool, create connectCrea
 	}
 	if create.port != "" {
 		runArgs = append(runArgs, "--port", create.port)
+	}
+	if create.dindAllowed {
+		runArgs = append(runArgs, "--dind-allowed")
+	}
+	if create.privilegedAllowed {
+		runArgs = append(runArgs, "--privileged-allowed")
 	}
 	return runArgs
 }

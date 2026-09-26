@@ -73,10 +73,10 @@ function booth-collect() {
 function booth-collect-dind() {
     local cmd="$1"
     if [[ "$VERBOSE" == "true" ]]; then
-        echo "  > booth ${BUILD_ARGS[@]+${BUILD_ARGS[@]} }--dind -- ${cmd}"
+        echo "  > booth ${BUILD_ARGS[@]+${BUILD_ARGS[@]} }--dind --dind-allowed -- ${cmd}"
     fi
     cd $prj
-    booth ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} --dind -- "$cmd" > "$tmpfile"
+    booth ${BUILD_ARGS[@]+"${BUILD_ARGS[@]}"} --dind --dind-allowed -- "$cmd" > "$tmpfile"
     cd ..
     cat "$tmpfile" >> $log
     if [[ "$VERBOSE" == "true" ]]; then

@@ -35,7 +35,9 @@ OPTIONS
   --port <n|RANDOM|NEXT>  Host port → container 10000 (NEXT/RANDOM accept :base)
   --daemon                Run the booth in the background
   --no-browser            Do not open the booth UI in a browser when it comes up
-  --dind                  Enable a Docker-in-Docker sidecar
+  --dind                  Enable a Docker-in-Docker sidecar (privileged: asks first)
+  --dind-allowed          Start a --dind booth without asking
+  --privileged-allowed    Start a booth with --privileged-like run-args without asking
   --public                Bind to all interfaces with password authentication
   --egress                Enable egress defaults (proxy + enforcement)
   --sudo <true|false>     Enable/disable sudo access (default: true)
@@ -165,7 +167,13 @@ CONTAINER MODE:
                          or prompted interactively if not found.
   --tls-cert <path>      TLS certificate file for HTTPS (used with --public)
   --tls-key <path>       TLS private key file for HTTPS (used with --public)
-  --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST
+  --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST.
+                         The sidecar is privileged, so booth asks before starting it.
+  --dind-allowed         Start a --dind booth without asking. Command line only:
+                         there is no config.toml key or environment variable for it.
+  --privileged-allowed   Start without asking when run-args give the booth a way onto
+                         the host (--privileged, --pid=host, a docker.sock mount, ...).
+                         Command line only, like --dind-allowed.
   --rootless             Skip the Linux rootless/userns-remap refusal (unsupported).
                          macOS/Windows Docker Desktop and Linux rootful Docker are fine.
   --egress               Enable egress defaults (proxy + enforcement setup)
@@ -223,6 +231,12 @@ NOTES:
   - WARNING: the DinD sidecar runs privileged, so code in the booth can reach
     its daemon and use it to step outside the booth's isolation and touch the
     host. Only enable --dind for booths whose code you trust.
+  - Before starting a booth that can reach the host as root (--dind, or run-args
+    such as --privileged, --cap-add SYS_ADMIN, --pid=host, --device, a docker.sock
+    mount, a writable mount of /etc or ~), booth lists what it found and asks.
+    With no terminal it refuses unless --dind-allowed / --privileged-allowed is
+    given. Rootless Podman does not ask (its root is your own account). See
+    docs/BOOTH_SECURITY.md.
   - With --egress, booth enables egress policy defaults. If --dind is also set,
     the existing DinD sidecar network namespace is reused.
 
@@ -289,7 +303,9 @@ CONTAINER MODE:
   --public               Bind to all interfaces with password authentication
   --tls-cert <path>      TLS certificate file (used with --public)
   --tls-key <path>       TLS private key file (used with --public)
-  --dind                 Enable Docker-in-Docker sidecar
+  --dind                 Enable Docker-in-Docker sidecar (privileged: asks first)
+  --dind-allowed         Start a --dind booth without asking (command line only)
+  --privileged-allowed   Allow --privileged-like run-args without asking (command line only)
   --rootless             Skip the Linux rootless/userns-remap refusal (unsupported)
   --egress               Enable egress defaults
   --sudo <true|false>    Enable/disable sudo (default: true)
@@ -485,6 +501,9 @@ OPTIONS:
   --port <n|NEXT|RANDOM>
                        With --run, host port when creating a missing booth
   --accept-existing    Connect even if create flags (e.g. --port) do not match
+  --dind-allowed       With --run, start a --dind booth without asking
+  --privileged-allowed
+                       With --run, allow --privileged-like run-args without asking
   --silence-build, --quiet, -q
                        Hide --run bring-up and teardown
   -e <VAR=value>       Set environment variable (repeatable)
@@ -524,6 +543,9 @@ OPTIONS:
   --port <n|NEXT|RANDOM>
                        With --run, host port when creating a missing booth
   --accept-existing    Connect even if create flags (e.g. --port) do not match
+  --dind-allowed       With --run, start a --dind booth without asking
+  --privileged-allowed
+                       With --run, allow --privileged-like run-args without asking
   --silence-build, --quiet, -q
                        Hide --run bring-up and teardown; command output only
   -e <VAR=value>       Set environment variable (repeatable)

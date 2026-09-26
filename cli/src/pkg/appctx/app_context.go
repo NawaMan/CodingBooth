@@ -117,6 +117,10 @@ func (ctx AppContext) Engine() string { return ctx.values.Config.Engine }
 
 func (ctx AppContext) Daemon() bool { return ctx.values.Config.Daemon }
 
+// DindAllowed and PrivilegedAllowed are set only by their command-line flags (see AppConfig).
+func (ctx AppContext) DindAllowed() bool       { return ctx.values.Config.DindAllowed }
+func (ctx AppContext) PrivilegedAllowed() bool { return ctx.values.Config.PrivilegedAllowed }
+
 // Browser is off when Quiet is set: a quiet run is not a "sit in the booth"
 // launch, so it should not wait on the UI or open a tab.
 func (ctx AppContext) Browser() bool {

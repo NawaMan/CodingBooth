@@ -418,6 +418,15 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.Dind = true
 			i++
 
+		case "--dind-allowed":
+			// Command line only — no config.toml key, no env var — so a repo cannot pre-approve itself.
+			cfg.DindAllowed = true
+			i++
+
+		case "--privileged-allowed":
+			cfg.PrivilegedAllowed = true
+			i++
+
 		case "--rootless":
 			cfg.Rootless = true
 			i++
