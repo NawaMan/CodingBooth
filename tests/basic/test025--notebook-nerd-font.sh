@@ -117,4 +117,19 @@ else
   FAILED=$((FAILED + 1))
 fi
 
+# -------------------------------------------------------
+# Test 4: the same startup script seeds JupyterLab's dark theme — unrelated to
+# the font, but the same "write only if missing" settings seed, so it is
+# checked from the booth already running here.
+# -------------------------------------------------------
+THEME_SETTINGS=$(docker exec "$NAME" su - coder -c 'cat ~/.jupyter/lab/user-settings/@jupyterlab/apputils-extension/themes.jupyterlab-settings' 2>/dev/null)
+
+if [[ "$THEME_SETTINGS" == *'"JupyterLab Dark"'* ]]; then
+  print_test_result "true" "$0" "4" "JupyterLab defaults to its dark theme"
+else
+  print_test_result "false" "$0" "4" "JupyterLab should default to its dark theme"
+  echo "  File contents: ${THEME_SETTINGS:-<missing>}"
+  FAILED=$((FAILED + 1))
+fi
+
 exit $FAILED

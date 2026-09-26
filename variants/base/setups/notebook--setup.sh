@@ -40,13 +40,16 @@ ensure_jupyterlab_in_venv() {
   env PIP_CACHE_DIR="${PIP_CACHE_DIR:-/opt/pip-cache}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
     python -m pip install -U pip setuptools wheel
 
+  # JupyterLab stays on 4.x until booth-web-preview-notebook--setup.sh pins a
+  # jupyter-server-proxy whose Launcher plugin supports 5 (4.6.0's is 4-only):
+  # a new major must be a deliberate bump, not whatever an image build finds.
   env PIP_CACHE_DIR="${PIP_CACHE_DIR:-/opt/pip-cache}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
     python -m pip install -U \
       "ipykernel>=6"         \
       "jupyter_core>=5"      \
       "jupyter_server>=2"    \
       "jupyterlab_server>=2" \
-      "jupyterlab>=4,<6"
+      "jupyterlab>=4,<5"
 
   # Verify importability
   if ! python - <<'PY'
@@ -113,7 +116,7 @@ mkdir -p ~/.jupyter/lab/user-settings/@jupyterlab/apputils-extension
 [ ! -f ~/.jupyter/lab/user-settings/@jupyterlab/apputils-extension/themes.jupyterlab-settings ] && \
 cat > ~/.jupyter/lab/user-settings/@jupyterlab/apputils-extension/themes.jupyterlab-settings <<'CONFIG'
 {
-  "theme": "JupyterLab Light"
+  "theme": "JupyterLab Dark"
 }
 CONFIG
 

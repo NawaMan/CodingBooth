@@ -131,7 +131,7 @@ code-server has not yet persisted.
 
 `booth` in these addresses means the container. The preview uses the booth's
 actual browser address and authenticated `/proxy/<port>/` endpoint to reach the
-server. Ports 10000–10007 and 19999 are reserved for Booth itself.
+server. Ports 10000–10007, 18888 and 19999 are reserved for Booth itself.
 
 The code-server proxy shares the console web panel's HTML/CSS/JavaScript URL
 rewriting rules, supports WebSockets, and rewrites redirects to stay within the
@@ -162,6 +162,51 @@ This behavior is inconsistent because it depends on several browser conditions:
 - **HTTPS context** — Clipboard API is more reliable over HTTPS; HTTP localhost can be inconsistent
 
 When all conditions align, paste works directly. When any condition isn't met, the confirmation popup appears.
+
+## Notebook Notes
+
+### Web Preview
+
+The `notebook` variant has the same Web Preview controls as code-server. Start your
+application inside the booth, open **Web Preview** from the JupyterLab Launcher
+(under *Other*), and add its port to the `http://booth:` already in the address
+box, such as `http://booth:3000`, or enter any address the
+[code-server table above](#web-preview) accepts. The preview opens as a JupyterLab
+tab you can dock beside notebooks and terminals. No additional host port mapping
+is needed.
+
+Use **＋** (left of the address box) in a preview to open another tab at the same
+address, then change its address to show a different server. Each tab is named after the page it shows
+(`Web · 8080`, `Web · 8081/docs`) and has its own address and back/forward
+history. Drag tabs to arrange them beside notebooks or each other. After a
+JupyterLab reload, each tab reopens at the last address it showed.
+
+To read the project's Markdown files, open **Markdown Viewer** from the Launcher,
+or click 📄 in any preview to switch it there. Both open `http://booth:8765/`,
+the booth's [viewmd](https://github.com/NawaMan/MarkDownViewer), and start it if it
+is not running, just like the Console UI's document icon.
+
+Differences from code-server:
+
+- The Launcher tile always brings back its own first tab. Use **＋** for more.
+- **Open in browser** opens the page in a new browser tab. A booth server opens
+  at its `/proxy/<port>/` address, which needs the same JupyterLab login.
+- A tab's latest address is kept in the browser. In a different browser, a
+  restored tab reopens at the address it was opened with.
+- JupyterLab is set to expose its app object to its own pages
+  (`LabApp.expose_app_in_browser`), which is how **＋** opens tabs and names
+  them. Previewed apps share JupyterLab's origin, so this gives them nothing
+  they could not already reach.
+
+`/proxy/<port>/` is served by the booth's own proxy: each request is first checked
+against the JupyterLab login, and JupyterLab's session and `_xsrf` cookies are
+removed before it reaches your application, whose own cookies pass through. URL
+rewriting, WebSockets and redirect handling are the same as in code-server, with
+the same best-effort limits. The Launcher tile comes from
+[jupyter-server-proxy](https://github.com/jupyterhub/jupyter-server-proxy), which
+`booth-web-preview-notebook--setup.sh` installs in the notebook's Python venv.
+Its Launcher plugin supports JupyterLab 4 only, so the notebook installs JupyterLab
+4.x (`jupyterlab>=4,<5`) until a compatible version is pinned.
 
 ## Typical Use Cases
 

@@ -153,7 +153,9 @@ For desktop variants, the wrapper's inner service is a noVNC / web-VNC front-end
 
 A future per-variant probe can address this (e.g. TCP-connect to the VNC socket, or call a desktop-internal endpoint). For now, treat desktop health as "the web front-end is up" rather than "the desktop session is interactive".
 
-The desktop variants also return the wrong *body*. `error_page` can only intercept the statuses listed above, and noVNC answers the probe with a 200 — so nginx passes its page straight through, and the response is ~5 KB of `text/html` rather than `ok <timestamp>`. The status is still correct (200 up, 502/504 down), so callers that check the status — `booth run`'s wait and `booth-ready.js` — work as documented; only a caller parsing the body would be surprised. The wrapped variants whose inner service answers with a redirect (codeserver, notebook) are unaffected.
+The desktop variants also return the wrong *body*. `error_page` can only intercept the statuses listed above, and noVNC answers the probe with a 200 — so nginx passes its page straight through, and the response is ~5 KB of `text/html` rather than `ok <timestamp>`. The status is still correct (200 up, 502/504 down), so callers that check the status — `booth run`'s wait and `booth-ready.js` — work as documented; only a caller parsing the body would be surprised. `codeserver`, whose inner service answers the probe with a redirect, returns the `ok` body.
+
+`notebook` likewise returns a 200 whose body is not `ok <timestamp>`, by choice. Its probe asks Jupyter for `/api` (the wrapper's `WRAPPER_HEALTH_PATH`) rather than `/`: Jupyter answers `/` with a redirect it logs at INFO, one log line per probe from every open page, while `/api` is a public 200 it logs only at debug level. That 200 passes through unintercepted, so the body is Jupyter's small version JSON (`{"version": "2.x"}`). Status and `X-Booth-Instance` are as documented.
 
 `codeserver` and `notebook` variants do not have this limitation — their inner service is the application itself, so a reachable inner means the application is actually answering.
 

@@ -18,6 +18,16 @@ set -euo pipefail
 export INNER_PORT=18888
 export INNER_CMD="BOOTH_CODE_PORT=18888 start-notebook 18888"
 export IFRAME_SRC="/lab"
+# Health probes hit /api, Jupyter's public version endpoint: a 200 it logs at
+# debug level. Its "/" answers 302, which it logs at INFO — once per probe.
+export WRAPPER_HEALTH_PATH=/api
+# Web Preview (booth-web-preview-notebook--setup.sh): /booth-preview/ serves the
+# controls, /proxy/<port>/ the booth's servers — gated on the Jupyter login.
+if [[ -f /usr/local/share/booth-web-preview/nginx-notebook.conf.template ]]; then
+  export BOOTH_WEB_PREVIEW=1
+  export WRAPPER_PREVIEW_TEMPLATE=/usr/local/share/booth-web-preview/nginx-notebook.conf.template
+  export WRAPPER_PREVIEW_HTTP_TEMPLATE=/usr/local/share/booth-web-preview/nginx-notebook-http.conf.template
+fi
 
 # JupyterLab's terminal (xterm.js, rendered client-side in the browser same
 # as ttyd and code-server) and its notebook/file editors (CodeMirror) both
@@ -31,6 +41,17 @@ export IFRAME_SRC="/lab"
 # starts the instant this document's <head> is parsed, same as
 # web-ttyd-split/nginx.conf.template.
 export WRAPPER_HEAD_INJECT='<link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");}:root{--jp-code-font-family:FiraCode Nerd Font Mono, menlo, consolas, "DejaVu Sans Mono", monospace !important;}</style>'
+
+# Launcher icons for the Web Preview and Markdown Viewer tiles. JupyterLab's
+# Launcher draws a tile's icon URL only in its Notebook/Console (kernel)
+# sections; elsewhere it uses the command's icon, and jupyter-server-proxy's
+# command has none. So the icons jupyter-server-proxy already serves are painted
+# into the tiles here, matched by title. If JupyterLab renames these classes the
+# tiles just go blank again; no single quotes, as this lands in a sub_filter.
+if [[ -f /usr/local/share/booth-web-preview/nginx-notebook.conf.template ]]; then
+  WRAPPER_HEAD_INJECT+='<style>.jp-LauncherCard[title="Web Preview"] .jp-LauncherCard-icon,.jp-LauncherCard[title="Markdown Viewer"] .jp-LauncherCard-icon{background:center / 52px 52px no-repeat}.jp-LauncherCard[title="Web Preview"] .jp-LauncherCard-icon{background-image:url(/server-proxy/icon/booth-web-preview)}.jp-LauncherCard[title="Markdown Viewer"] .jp-LauncherCard-icon{background-image:url(/server-proxy/icon/booth-markdown-viewer)}</style>'
+  export WRAPPER_HEAD_INJECT
+fi
 
 exec start-booth-wrapped
 EOF

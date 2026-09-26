@@ -19,7 +19,7 @@ assert.equal(parseTarget(address).address, address);
 assert.equal(parseTarget('/next', 'http://booth:80/a').address, 'http://booth:80/next');
 assert.equal(parseTarget('?new=1', address).address, 'http://booth:8080/nested/a%20b?new=1');
 assert.equal(parseTarget('#other', address).address, address.replace('#section', '#other'));
-for (const input of ['', '0', '65536', '10000', '10007', '19999', 'https://booth:8080', 'http://booth/', 'javascript:alert(1)', 'data:text/html,test', 'ftp://example.com/', 'http://booth:8080@evil.example/', '//evil.example/']) {
+for (const input of ['', '0', '65536', '10000', '10007', '19999', '18888', 'https://booth:8080', 'http://booth/', 'javascript:alert(1)', 'data:text/html,test', 'ftp://example.com/', 'http://booth:8080@evil.example/', '//evil.example/']) {
   assert.throws(() => parseTarget(input, 'http://booth:8080/'), undefined, input);
 }
 assert.equal(parseTarget('65535/').port, 65535);

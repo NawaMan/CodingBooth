@@ -59,6 +59,34 @@ This file contains a list of changes for each released version.
   - The **Full screen** button's tooltip (desktop panel and Console UI) now reads "Full screen mode
     with full keyboard capture", and "Exit full screen mode" while active.
 
+- **The notebook variant gets Web Preview.** Open **Web Preview** from the JupyterLab Launcher
+  to view a server running in the booth (`3000`, `http://booth:3000/path`), an external page, or a
+  Google search, in JupyterLab tabs: **＋** opens another tab, each tab is named after its page, and
+  tabs reopen at their last address after a JupyterLab reload. An empty preview starts at
+  `http://booth:`, so only the port is left to type. Both Launcher tiles carry their own icons,
+  painted in by the wrapper since JupyterLab only draws tile icons for kernels. **Markdown
+  Viewer** (a second Launcher tile) and a 📄 button open the booth's viewmd, starting it on demand
+  like the Console UI. These are the controls and address rules code-server's Web Preview uses; in
+  both variants **＋** now sits just before the address box. `/proxy/<port>/` checks the JupyterLab
+  login first, then removes JupyterLab's cookies before the request reaches your app.
+  - New `booth-web-preview-notebook--setup.sh`, which installs `jupyter-server-proxy` 4.6.0 for the
+    Launcher tile. The wrapper can now take a per-variant preview config
+    (`WRAPPER_PREVIEW_TEMPLATE`, `WRAPPER_PREVIEW_HTTP_TEMPLATE`).
+  - Port 18888 (JupyterLab) is now reserved in Web Preview addresses.
+  - JupyterLab is capped at 4.x (`jupyterlab>=4,<5`), since `jupyter-server-proxy`'s Launcher
+    plugin supports 4 only; moving to 5 is a deliberate bump. If JupyterLab's own API changes,
+    Web Preview loses ＋, tab titles, saved addresses or theme matching, never navigation.
+
+- **The notebook log no longer fills with `302 GET /`.** The readiness check every open page runs
+  asked Jupyter for `/`, which it answers with a redirect logged at INFO. The notebook now probes
+  `/api` instead, which Jupyter answers without logging. Other variants still probe `/`; a
+  wrapped variant can choose its own path with `WRAPPER_HEALTH_PATH`.
+
+- **JupyterLab defaults to its dark theme** in the notebook variant, matching code-server and the
+  Console UI. Only the first-start seed changed: a booth home that already has a theme setting, or
+  one chosen in Settings, keeps it. Web Preview's controls follow JupyterLab's theme, including a
+  switch made while they are open; elsewhere they still follow the OS.
+
 - **XFCE gets a more modern look, and a command to change it.** The `desktop-xfce` variant — and
   any Boothfile with `setup xfce`, via auto-selected `xfce` extensions — now defaults to
   Greybird-dark apps and window borders, Reversal-dark icons and the Gruppled White cursor

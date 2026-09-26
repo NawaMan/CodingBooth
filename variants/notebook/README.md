@@ -6,6 +6,7 @@ Browser-based JupyterLab environment for interactive development.
 - Python 3.12
 - JupyterLab
 - Bash kernel for notebooks
+- Web Preview — view a server running in the booth (e.g. port `3000`) in JupyterLab tabs, from the Launcher; **Markdown Viewer** browses the project's `.md` files with `viewmd` ([details](../../docs/BOOTH_VARIANTS.md#web-preview-1))
 
 **Usage:**
 ```bash
