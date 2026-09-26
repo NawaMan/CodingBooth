@@ -24,6 +24,7 @@ fi
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 LOG_DIR="${SCRIPT_DIR}/logs"
+IMAGE_NAME="nawaman/codingbooth"
 
 ALL_DEPENDENT_VARIANTS=(notebook codeserver desktop-xfce desktop-kde desktop-lxqt desktop-wayland)
 
@@ -35,6 +36,13 @@ STOP_REQUESTED=false
 PUSH_REQUESTED=false   # mirror of --push in DOCKER_FLAGS
 NO_CACHE_REQUESTED=false  # mirror of --no-cache; drives the pre-build cache prune
 PRUNE_REQUESTED=true      # --no-prune opts out of that prune
+
+# Which engine(s) each variant build actually touches. Resolved once in Main(),
+# after ParseArgs and after checking whether podman is even on PATH.
+DOCKER_ONLY_REQUESTED=false   # --docker-only
+PODMAN_ONLY_REQUESTED=false   # --podman-only
+DO_DOCKER_BUILD=true
+DO_PODMAN_SYNC=true
 
 # Status files are used instead of associative arrays for bash 3.2 compatibility
 # Status for each step stored in ${LOG_DIR}/${step}.status
@@ -65,13 +73,25 @@ ParseArgs() {
 
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            --push)     DOCKER_FLAGS+=("--push"); PUSH_REQUESTED=true; shift ;;
-            --no-cache) DOCKER_FLAGS+=("--no-cache"); NO_CACHE_REQUESTED=true; shift ;;
-            --no-prune) PRUNE_REQUESTED=false;         shift ;;
-            -h|--help)  Usage; exit 0 ;;
-            *)          positional+=("$1");            shift ;;
+            --push)         DOCKER_FLAGS+=("--push"); PUSH_REQUESTED=true; shift ;;
+            --no-cache)     DOCKER_FLAGS+=("--no-cache"); NO_CACHE_REQUESTED=true; shift ;;
+            --no-prune)     PRUNE_REQUESTED=false;         shift ;;
+            --docker-only)  DOCKER_ONLY_REQUESTED=true;    shift ;;
+            --podman-only)  PODMAN_ONLY_REQUESTED=true;    shift ;;
+            -h|--help)      Usage; exit 0 ;;
+            *)              positional+=("$1");            shift ;;
         esac
     done
+
+    if [[ "${DOCKER_ONLY_REQUESTED}" == "true" && "${PODMAN_ONLY_REQUESTED}" == "true" ]]; then
+        echo "Error: --docker-only and --podman-only are mutually exclusive." >&2
+        exit 2
+    fi
+    if [[ "${PODMAN_ONLY_REQUESTED}" == "true" && "${PUSH_REQUESTED}" == "true" ]]; then
+        echo "Error: --push has nothing to do with --podman-only (there is no separate Podman" >&2
+        echo "       build or publish path — see the 'Engines' note in --help)." >&2
+        exit 2
+    fi
 
     if [[ ${#positional[@]} -gt 0 ]]; then
         # User specified variants — filter out "base" (always built) and keep the rest
@@ -89,7 +109,7 @@ ParseArgs() {
 
 Usage() {
     cat <<'EOF'
-Usage: ./build/build-all.sh [--push] [--no-cache] [variant ...]
+Usage: ./build/build-all.sh [--push] [--no-cache] [--docker-only|--podman-only] [variant ...]
 
 Builds the CLI, then the base Docker image, then the remaining variants in
 parallel.  A live status graph is displayed during the build.
@@ -99,10 +119,24 @@ Options:
   --no-cache      Forward to docker-build.sh (no layer cache). Also discards the
                   build cache first — see --no-prune.
   --no-prune      Keep the existing build cache even with --no-cache.
+  --docker-only   Build under Docker only; skip the Podman sync step below.
+  --podman-only   Skip the Docker build; just sync each variant's already-built
+                  Docker image into Podman (fails if it isn't built yet).
   -h, --help      Show this help
 
+Engines:
+  There is no separate Podman build — an image built by Docker/buildx runs
+  identically under Podman (proven: a real published tag pulled straight from
+  Docker Hub with `podman pull` and run with no issue). So by default, after
+  each variant is built under Docker, its image is also copied into Podman's
+  local store (`docker save | podman load`, then retagged) — same bits, no
+  rebuild, and this can't drift the way two separate builds could. Skip that
+  with --docker-only; do only that (assuming Docker already built it) with
+  --podman-only. Needs `podman` on PATH; without it, the sync is skipped with
+  a warning unless --podman-only was explicitly requested, which then errors.
+
 Variants (if none provided, all are built):
-  base, notebook, codeserver, desktop-xfce, desktop-kde, desktop-lxqt
+  base, notebook, codeserver, desktop-xfce, desktop-kde, desktop-lxqt, desktop-wayland
 
 Logs are written to build/logs/.
 
@@ -402,6 +436,10 @@ build_cli() {
     draw_graph
 }
 
+resolve_version_stamp() {
+    tr -d ' \t\n\r' < version.txt 2>/dev/null
+}
+
 # Tag the freshly-built base as the "locally rebuilt" image the complex tests gate on
 # (tests/common--source.sh → use_local_base_image). The gate exists so those tests skip
 # on a machine that never rebuilt the base — but the tag used to be applied by hand, so
@@ -409,22 +447,68 @@ build_cli() {
 # here keeps the gate tracking the build that is actually under test.
 tag_local_base() {
     local version
-    version="$(tr -d ' \t\n\r' < version.txt 2>/dev/null)"
+    version="$(resolve_version_stamp)"
     [[ -z "$version" ]] && return 0
     docker tag "nawaman/codingbooth:base-${version}" "cb-local/codingbooth:base-${version}" \
         >> "${LOG_DIR}/base.log" 2>&1 || true
+}
+
+# Copy one already-built Docker image into Podman's local store. Docker and
+# Podman keep separate stores, but an OCI image built by Docker/buildx runs
+# identically under Podman, so this is a straight copy — no rebuild, and
+# `docker save | podman load` produces byte-identical bits, which can't drift
+# the way two independent builds could. `podman load` namespaces the result
+# under `docker.io/`, so it's retagged to match what the CLI resolves images
+# by. See the "Engines" note in --help.
+sync_variant_to_podman() {
+    local variant="$1" version="$2"
+    local tag="${IMAGE_NAME}:${variant}-${version}"
+
+    if ! docker image inspect "${tag}" >/dev/null 2>&1; then
+        echo "❌ podman sync: '${tag}' is not a Docker image on this host — build it first."
+        return 1
+    fi
+
+    echo "Syncing ${tag} into Podman's local store..."
+    if ! docker save "${tag}" | podman load >/dev/null 2>&1; then
+        echo "❌ podman sync: 'docker save ${tag} | podman load' failed."
+        return 1
+    fi
+    podman tag "docker.io/${tag}" "${tag}" 2>/dev/null || true
+
+    # Mirror the -latest tag too, when the build produced one (not for --rc versions).
+    if [[ ! "${version}" =~ --rc([0-9]+)?$ ]]; then
+        local latest="${IMAGE_NAME}:${variant}-latest"
+        if docker image inspect "${latest}" >/dev/null 2>&1; then
+            docker save "${latest}" | podman load >/dev/null 2>&1 || true
+            podman tag "docker.io/${latest}" "${latest}" 2>/dev/null || true
+        fi
+    fi
+
+    echo "Synced ${tag} into Podman."
 }
 
 build_base() {
     BASE_STATUS="running"
     draw_graph
 
-    if "${SCRIPT_DIR}/docker-build.sh" "${DOCKER_FLAGS[@]+"${DOCKER_FLAGS[@]}"}" base > "${LOG_DIR}/base.log" 2>&1; then
-        BASE_STATUS="done"
-        tag_local_base
+    local ok=true
+    if [[ "${DO_DOCKER_BUILD}" == "true" ]]; then
+        if "${SCRIPT_DIR}/docker-build.sh" "${DOCKER_FLAGS[@]+"${DOCKER_FLAGS[@]}"}" base > "${LOG_DIR}/base.log" 2>&1; then
+            tag_local_base
+        else
+            ok=false
+        fi
     else
-        BASE_STATUS="failed"
+        # No Docker build ran (--podman-only) to truncate the log — start it
+        # fresh so the live status line doesn't show a stale prior run's output.
+        : > "${LOG_DIR}/base.log"
     fi
+    if [[ "${ok}" == "true" && "${DO_PODMAN_SYNC}" == "true" ]]; then
+        sync_variant_to_podman base "$(resolve_version_stamp)" >> "${LOG_DIR}/base.log" 2>&1 || ok=false
+    fi
+
+    BASE_STATUS="$([[ "${ok}" == "true" ]] && echo done || echo failed)"
     draw_graph
 }
 
@@ -435,11 +519,19 @@ run_variant_bg() {
     local status_file="${LOG_DIR}/${v}.status"
     echo "running" > "$status_file"
 
-    if "${SCRIPT_DIR}/docker-build.sh" "${DOCKER_FLAGS[@]+"${DOCKER_FLAGS[@]}"}" "$v" > "${LOG_DIR}/${v}.log" 2>&1; then
-        echo "done" > "$status_file"
+    local ok=true
+    if [[ "${DO_DOCKER_BUILD}" == "true" ]]; then
+        "${SCRIPT_DIR}/docker-build.sh" "${DOCKER_FLAGS[@]+"${DOCKER_FLAGS[@]}"}" "$v" > "${LOG_DIR}/${v}.log" 2>&1 || ok=false
     else
-        echo "failed" > "$status_file"
+        # No Docker build ran (--podman-only) to truncate the log — start it
+        # fresh so the live status line doesn't show a stale prior run's output.
+        : > "${LOG_DIR}/${v}.log"
     fi
+    if [[ "${ok}" == "true" && "${DO_PODMAN_SYNC}" == "true" ]]; then
+        sync_variant_to_podman "$v" "$(resolve_version_stamp)" >> "${LOG_DIR}/${v}.log" 2>&1 || ok=false
+    fi
+
+    echo "$([[ "${ok}" == "true" ]] && echo done || echo failed)" > "$status_file"
 }
 
 # Get PID variable name for a variant
@@ -498,9 +590,37 @@ Main() {
     echo -e "${C_BOLD}CodingBooth Build${C_RESET}"
     echo ""
 
+    # Resolve which engine(s) this run actually touches. --docker-only and
+    # --podman-only were already checked mutually exclusive in ParseArgs.
+    DO_DOCKER_BUILD=true
+    DO_PODMAN_SYNC=true
+    if [[ "${DOCKER_ONLY_REQUESTED}" == "true" ]]; then
+        DO_PODMAN_SYNC=false
+    fi
+    if [[ "${PODMAN_ONLY_REQUESTED}" == "true" ]]; then
+        DO_DOCKER_BUILD=false
+    fi
+    if [[ "${DO_PODMAN_SYNC}" == "true" ]] && ! command -v podman >/dev/null 2>&1; then
+        if [[ "${PODMAN_ONLY_REQUESTED}" == "true" ]]; then
+            echo -e "${C_RED}Error: --podman-only requires podman on PATH.${C_RESET}"
+            exit 2
+        fi
+        echo -e "${C_GRAY}podman not found on PATH — skipping the Podman sync step (--podman-only to require it).${C_RESET}"
+        DO_PODMAN_SYNC=false
+    fi
+    if [[ "${DO_DOCKER_BUILD}" == "true" && "${DO_PODMAN_SYNC}" == "true" ]]; then
+        echo -e "${C_GRAY}Building under Docker, then syncing each image into Podman too.${C_RESET}"
+    elif [[ "${DO_DOCKER_BUILD}" == "true" ]]; then
+        echo -e "${C_GRAY}Building under Docker only (--docker-only).${C_RESET}"
+    else
+        echo -e "${C_GRAY}Syncing already-built Docker images into Podman only (--podman-only).${C_RESET}"
+    fi
+    echo ""
+
     # Before anything is built: a --no-cache run cannot use the existing cache,
-    # so carrying it through the run only costs disk.
-    if [[ "$NO_CACHE_REQUESTED" == "true" && "$PRUNE_REQUESTED" == "true" ]]; then
+    # so carrying it through the run only costs disk. N/A when skipping the
+    # Docker build entirely (--podman-only).
+    if [[ "${DO_DOCKER_BUILD}" == "true" && "$NO_CACHE_REQUESTED" == "true" && "$PRUNE_REQUESTED" == "true" ]]; then
         prune_build_cache
     fi
 
