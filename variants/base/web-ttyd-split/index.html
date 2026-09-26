@@ -1948,6 +1948,17 @@
         });
       }
 
+      // Starts the viewmd service before navigating a tab there by any means
+      // other than the Markdown button (which already awaits ensureViewmd()
+      // itself, below). Without this, a tab pointed at VIEWMD_PORT — by
+      // typing "booth:8765" into the address bar, or by a .booth/console.json
+      // starting tab — loads before the service is up and shows nginx's own
+      // 502, since nothing else ever asked for it to start. Confirmed by
+      // hand: a console.json tab targeting VIEWMD_PORT showed exactly that.
+      function ensureViewmdIfTarget(port) {
+        return isViewmdPort(port) ? ensureViewmd() : Promise.resolve();
+      }
+
       document.querySelectorAll(".md-toggle").forEach(function(btn) {
         btn.addEventListener("click", function() {
           var session = btn.dataset.session;
@@ -1993,7 +2004,9 @@
               flashAddrError(input);
               return;
             }
-            navigateActiveTab(session, parsed);
+            ensureViewmdIfTarget(parsed.port).finally(function() {
+              navigateActiveTab(session, parsed);
+            });
           } else if (e.key === "Escape") {
             var session = input.dataset.session;
             var tab = getActiveTab(session);
@@ -2142,7 +2155,9 @@
               state.tabs.push(blank);
               state.activeTabId = blank.id;
             }
-            navigateActiveTab(session, parsed);
+            ensureViewmdIfTarget(parsed.port).finally(function() {
+              navigateActiveTab(session, parsed);
+            });
             opened = true;
           });
           if (opened) switchToWeb(session);
