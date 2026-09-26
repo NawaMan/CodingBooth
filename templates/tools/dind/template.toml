@@ -6,7 +6,7 @@ the booth container.
 WARNING: The DinD sidecar runs privileged, which means code running in the booth can \
 reach its Docker daemon and use it to step outside the booth's isolation and touch the host. Only \
 select this for booths whose code you trust -- treat it the same caution you'd give running \
---privileged yourself, and be wary of enabling it for a booth of unknown origin."""
+--privileged yourself, and be wary of enabling it for a booth of unknown origin. booth asks before starting a DinD booth; pass --dind-allowed to skip the question (e.g. in CI)."""
 display-order = 62
 dind = true
 tags = [

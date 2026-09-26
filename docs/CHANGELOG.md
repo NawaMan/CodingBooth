@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **booth asks before starting a booth that can reach the host as root.** A `--dind` booth's
+  sidecar is privileged, so code in the booth can use it to read and write the host filesystem and
+  run commands on the host as root — and `dind = true` can arrive in a cloned repo's
+  `config.toml`. The same goes for run-args such as `--privileged`, `--cap-add SYS_ADMIN`,
+  `--pid=host`, `--network=host`, a `--device` other than KVM/GPU/TUN/FUSE, a `docker.sock` mount,
+  or a writable mount of `/etc` or `~`. Before building or starting anything, booth now lists what
+  it found and asks `[y/N]` on the terminal. With no terminal it refuses (exit 1) unless the command
+  line carries `--dind-allowed` or `--privileged-allowed`; neither has a `config.toml` key or an
+  environment variable, so a repo cannot approve itself. `booth shell --run` / `booth exec --run`
+  accept and forward both. Rootless Podman does not ask, since a breakout there lands as your own
+  account. **Scripts and CI that run a `--dind` booth need `--dind-allowed` added.** New guide:
+  [Security](BOOTH_SECURITY.md).
+
 - **A booth message you would miss now gets your attention.** When a dialog, banner, session
   countdown warning or the idle "Still using this booth?" prompt appears while the booth's tab is
   in the background, the overlay plays a short two-note chime, marks the tab title, and shows a

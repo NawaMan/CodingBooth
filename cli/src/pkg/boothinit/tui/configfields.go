@@ -242,6 +242,9 @@ var unrenderedKeys = map[string]string{
 	"password": "start-time only (toml:\"-\") — resolved from a gitignored file or stdin, never persisted",
 	"tlscert":  "start-time only (toml:\"-\"), paired with --public",
 	"tlskey":   "start-time only (toml:\"-\"), paired with --public",
+	// Consent overrides (--dind-allowed / --privileged-allowed) are command-line only by design.
+	"dindallowed":       "command-line consent (--dind-allowed); a committed key would let a repo approve its own privileged sidecar",
+	"privilegedallowed": "command-line consent (--privileged-allowed); a committed key would let a repo approve its own host-escape run-args",
 
 	"config": "names which config file to read — an argument to the run, not a setting inside it",
 	"code":   "names which directory to configure — a committed absolute host path helps nobody",

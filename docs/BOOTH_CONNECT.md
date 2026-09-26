@@ -78,6 +78,8 @@ The shell launched is the default shell configured for the `coder` user inside t
 | `--keep-alive`               | With `--run`, leave the booth running after you disconnect                  |
 | `--port <n\|NEXT\|RANDOM>`   | Host port when **creating** a missing booth; asserted against existing ones |
 | `--accept-existing`          | Connect even if create flags (e.g. `--port`) do not match the booth         |
+| `--dind-allowed`             | With `--run`: start a `--dind` booth without asking ([why](BOOTH_SECURITY.md)) |
+| `--privileged-allowed`       | With `--run`: allow `--privileged`-like run-args without asking              |
 | `--silence-build`, `--quiet`, `-q` | Hide `--run` bring-up and teardown                                     |
 | `-e <VAR=value>`             | Set environment variable for the session                                    |
 | `--envfile <path>`           | Load environment variables from a file                                      |
@@ -129,6 +131,8 @@ Everything after `--` is executed inside the container. The exit code is forward
 | `--keep-alive`               | With `--run`, leave the booth running after the command finishes            |
 | `--port <n\|NEXT\|RANDOM>`   | Host port when **creating** a missing booth; asserted against existing ones |
 | `--accept-existing`          | Connect even if create flags (e.g. `--port`) do not match the booth         |
+| `--dind-allowed`             | With `--run`: start a `--dind` booth without asking ([why](BOOTH_SECURITY.md)) |
+| `--privileged-allowed`       | With `--run`: allow `--privileged`-like run-args without asking              |
 | `--silence-build`, `--quiet`, `-q` | Hide `--run` bring-up and teardown; command output only               |
 | `-e <VAR=value>`             | Set environment variable for the command                                    |
 | `--envfile <path>`           | Load environment variables from a file                                      |

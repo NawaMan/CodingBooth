@@ -283,7 +283,8 @@ Key functions:
 
 - Ports must be declared at startup
 - Ports cannot be dynamically exposed to the host after startup
-- DinD requires privileged mode
+- DinD requires privileged mode, which makes it a way onto the host — booth asks before starting
+  one (`--dind-allowed` skips the question). See [Security](../BOOTH_SECURITY.md).
 - Slight performance overhead due to nested Docker
 
 ## FAQ

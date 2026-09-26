@@ -226,7 +226,9 @@ booth [flags] [-- command...]
 | `--build-arg <arg>`  | Pass build argument to Docker                                                    |
 | `-v <host:container>`| Bind mount a file or folder into the container                                   |
 | `--`                 | Separator: everything after runs as a command inside the container                |
-| `--dind`             | Enable Docker-in-Docker mode                                                     |
+| `--dind`             | Enable Docker-in-Docker mode (privileged: booth asks first — [why](docs/BOOTH_SECURITY.md)) |
+| `--dind-allowed`     | Start a `--dind` booth without asking (command line only)                        |
+| `--privileged-allowed` | Start without asking when run-args can reach the host (`--privileged`, `docker.sock`, …) |
 | `--keep-alive`       | Preserve container after exit (resume with `booth start <name>`)                 |
 | `--persist-home`     | Persist `/home/coder` across sessions using a Docker named volume                |
 | `--egress`        | Restrict outbound network to allowlisted domains                                 |
@@ -422,6 +424,7 @@ User-facing guides:
 - **[Examples](EXAMPLES.md)** — Install, run your first example, the full catalog, and which setups support version pinning
 - **[booth install](docs/BOOTH_INSTALL.md)** — Install and uninstall every layer: shell function, wrapper, binary, `.booth/`, lock file, shared cache
 - **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS
+- **[Security](docs/BOOTH_SECURITY.md)** — What the booth isolates, what it does not, and when booth asks before starting
 - **[booth profiles](docs/BOOTH_PROFILES.md)** — Named `config.toml` / `.env` overlays (`--profile dev`): layout, selection, merge rules
 - **[booth config](docs/BOOTH_CONFIG.md)** — Template-driven project scaffolding
 - **[booth build](docs/BOOTH_BUILD.md)** — Build and publish booth images to a container registry
@@ -595,13 +598,15 @@ CodingBooth is designed for development environments, not production workloads. 
 | **`.booth/` config** | Read-only inside the container by default (`--writable-booth` to opt out) |
 | **Network**          | Full network access by default                                            |
 | **Egress**   | Optional `--egress` mode restricts outbound connections to allowlisted domains via Envoy proxy + iptables ([details](docs/implementations/EGRESS.md)) |
-| **DinD mode**        | Requires `--privileged` flag (elevated permissions)                       |
+| **DinD mode**        | Privileged sidecar — host-root-equivalent; booth asks before starting one |
+| **Host-escape run-args** | `--privileged`, `--pid=host`, a `docker.sock` mount, … — booth asks first ([details](docs/BOOTH_SECURITY.md)) |
 
 **Best practices:**
 - Don't run untrusted code in CodingBooth containers
 - Avoid mounting sensitive host directories beyond what's needed
 - Use `--egress` to restrict egress when running third-party or untrusted dependencies
 - DinD mode grants significant privileges — use only when needed
+- Read **[Security](docs/BOOTH_SECURITY.md)** before running a booth from a repo you do not trust
 
 > **Note:** CodingBooth prioritizes developer experience over strict isolation. For production containers or multi-tenant environments, use standard Docker security practices.
 

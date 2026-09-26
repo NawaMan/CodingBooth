@@ -130,6 +130,12 @@ type AppConfig struct {
 	IdleShutdownTime  int    `toml:"idle-shutdown-time,omitempty"  envconfig:"CB_IDLE_SHUTDOWN_TIME" default:"0"`
 	IdleExitCode      int    `toml:"idle-exit-code,omitempty"      envconfig:"CB_IDLE_EXIT_CODE" default:"0"`
 
+	// DindAllowed and PrivilegedAllowed pre-approve a booth that can reach the host (the --dind
+	// sidecar; --privileged-like run-args). They come only from the command line: no config.toml
+	// key and no environment variable, so a cloned repo can never grant them to itself.
+	DindAllowed       bool `toml:"-" ignored:"true"`
+	PrivilegedAllowed bool `toml:"-" ignored:"true"`
+
 	// Public exposes the booth on all interfaces (0.0.0.0) with password auth and HTTPS.
 	// Password is resolved at startup from .booth/.booth.password or interactive stdin.
 	// These are never read from TOML or environment variables.

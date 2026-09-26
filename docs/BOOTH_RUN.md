@@ -730,6 +730,13 @@ Or in `.booth/config.toml`:
 dind = true
 ```
 
+**Booth asks first.** The sidecar runs `--privileged`, so code in the booth can use it to reach the
+host as root. Before starting a `--dind` booth, booth warns and asks `[y/N]`; with no terminal it
+refuses unless the command line has `--dind-allowed`. There is no `config.toml` key or environment
+variable for that, so a repo cannot approve itself. Rootless Podman does not ask. Run-args such as
+`--privileged` or a `docker.sock` mount get the same question (`--privileged-allowed`). See
+**[Security](BOOTH_SECURITY.md)**.
+
 **How it works (sidecar mode)**
 
 1. Creates a dedicated Docker network
