@@ -275,12 +275,16 @@ This file contains a list of changes for each released version.
   (also `CB_ENGINE` and `engine = "podman"` in `.booth/config.toml`) runs booths
   on Podman instead of Docker; the `booth config` TUI has an engine field too.
   With nothing chosen, Docker is used, and Podman only when `docker` is not
-  installed but `podman` is. This is Phase 1 of `docs/PODMAN_SUPPORT.md` and is
-  still being developed: it may not have feature parity with Docker, and
-  Docker-in-Docker is not supported yet — `--dind` with `--engine podman` is
-  now refused outright with a clear error instead of warning and trying
-  anyway, which used to fail confusingly deep inside the DinD sidecar setup
-  (Phase 4). `booth--expose`
+  installed but `podman` is. This is Phases 1–4 of `docs/PODMAN_SUPPORT.md` and is
+  still being developed: it may not have feature parity with Docker.
+  `--dind --engine podman` now runs a nested-Podman sidecar
+  (`quay.io/podman/stable` running `podman system service`) in place of
+  `docker:dind`, which has no Podman equivalent — `docker build`, `docker run`
+  and `docker-compose` (including multi-container bridge networking and
+  inter-container DNS) are verified working through it end to end; Appwrite
+  through it is untested. This replaces the earlier outright refusal of
+  `--dind --engine podman`, which is gone; a `--dind`-specific experimental
+  warning is printed instead. `booth--expose`
   tunnels and `booth expose list` work on a Podman booth (they use the engine the
   booth was started with). Podman builds pass `--format docker` (Buildah's default image
   format ignores the Dockerfile `SHELL`, which every variant relies on), and

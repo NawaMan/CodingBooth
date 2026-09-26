@@ -144,14 +144,15 @@ func resolveEngineConfig(config *appctx.AppConfig) error {
 	}
 	config.Engine = engine
 
-	// --dind relies on the docker:dind sidecar and DOCKER_HOST, which Podman
-	// (daemonless, rootless by default) has no drop-in replacement for yet
-	// (Phase 4, docs/PODMAN_SUPPORT.md). This used to warn and try anyway,
-	// which failed confusingly deep inside dind_setup.go with no clear cause.
-	// Refuse up front instead, the same way an unsupported --engine value is
-	// refused, so the failure is immediate and says what's wrong.
+	// --dind has no docker:dind to reuse under Podman (daemonless, rootless by
+	// default), so it runs a nested-Podman sidecar instead (Phase 4,
+	// docs/PODMAN_SUPPORT.md): quay.io/podman/stable running
+	// `podman system service`, which genuinely answers the Docker Engine API.
+	// This is newer and less exercised than the rest of Podman support, so it
+	// gets its own unconditional warning on top of the general
+	// --engine podman one already printed by ResolveEngineValue.
 	if config.Engine == "podman" && config.Dind {
-		return fmt.Errorf("--dind is not supported with --engine podman yet (the docker:dind sidecar needs Docker). Use --engine docker, or drop --dind. See docs/PODMAN_SUPPORT.md")
+		fmt.Fprintln(os.Stderr, "Warning: --dind with --engine podman uses an experimental nested-Podman sidecar (not docker:dind); expect rough edges. See docs/PODMAN_SUPPORT.md.")
 	}
 	return nil
 }

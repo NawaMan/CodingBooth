@@ -6,21 +6,22 @@ is still being developed and **may not have feature parity with Docker** — rea
 
 This document has two parts, kept apart on purpose:
 
-1. **[Implemented](#part-1--implemented-phases-13)** — what ships today, as built and
+1. **[Implemented](#part-1--implemented-phases-14)** — what ships today, as built and
    as verified. Nothing in it is a promise about the future.
-2. **[Plan](#part-2--plan-not-implemented)** — what is *not* built: phases 4–6 and
+2. **[Plan](#part-2--plan-not-implemented)** — what is *not* built: phases 5–6 and
    follow-ups.
 
-Phases 1 (core lifecycle), 2 (`booth expose`) and 3 (build progress) are implemented.
-Phase 4 (Docker-in-Docker parity) has started: `--dind` with `--engine podman` is now
-refused outright with a clear error instead of warning and trying anyway; real
-Docker-in-Docker support is still not built — see
-[Phase 4](#phase-4--docker-in-docker-parity-design-first--started) for what was found. Phases 5–6
-are not started.
+Phases 1 (core lifecycle), 2 (`booth expose`), 3 (build progress) and 4
+(Docker-in-Docker via a nested-Podman sidecar) are implemented. Phase 4 covers
+`docker build`, `docker run` and `docker-compose` (verified by hand end to end through
+a real `--engine podman --dind` booth); Appwrite through it is untested, and there is
+no automated Podman DinD coverage beyond a dryrun command-shape check — see
+[Docker-in-Docker (`--dind`)](#docker-in-docker---dind) for what was found and what
+remains. Phases 5–6 are not started.
 
 ---
 
-# Part 1 — Implemented (Phases 1–3)
+# Part 1 — Implemented (Phases 1–4)
 
 ## Choosing the engine
 
@@ -156,11 +157,120 @@ These are applied automatically when the engine is Podman.
   with" line, the DinD "stop && network rm" line, the DinD-not-ready "check: … logs"
   line, the `--persist-home` "reclaim space" line, and the silent-build "❌ … build
   failed!" banner all read `podman` on a Podman booth.
-- **`--dind` is refused, not attempted.** `docker:dind` has no Podman equivalent yet
-  (Phase 4), so `--dind` with `--engine podman` fails immediately with
-  `❌ --dind is not supported with --engine podman yet (the docker:dind sidecar needs
-  Docker). Use --engine docker, or drop --dind. See docs/PODMAN_SUPPORT.md`, instead of
-  warning and trying anyway and failing confusingly deep inside the DinD sidecar setup.
+- **`--dind` runs a nested-Podman sidecar, not `docker:dind`.** Podman has no drop-in
+  equivalent of `docker:dind` (it is daemonless), so `--engine podman --dind` starts
+  `quay.io/podman/stable` running `podman system service --time=0 tcp://0.0.0.0:2375`
+  as container-root, `--privileged`, netns-shared with the booth exactly like
+  `docker:dind` — see [Docker-in-Docker (`--dind`)](#docker-in-docker---dind) for the
+  full design and what was verified. `--dind --engine podman` prints its own
+  unconditional experimental warning on top of the general `--engine podman` one.
+
+## Docker-in-Docker (`--dind`)
+
+The `docker:dind` sidecar with `DOCKER_HOST=tcp://localhost:2375`
+(`dind_setup.go`, `docs/implementations/DIND.md`) has no drop-in Podman equivalent —
+Podman is daemonless and rootless by default. This was worked out in three steps: a
+design spike, a second spike that actually drove the design end to end by hand, and
+then wiring it into `dind_setup.go` for real.
+
+**Design finding (2026-09-22):** a real Podman equivalent of the sidecar was spiked
+before committing to it:
+
+- `podman system service` genuinely answers the **Docker Engine API**, not just
+  Podman's native `libpod` API — confirmed by hand: `GET /v1.41/version` and
+  `GET /v1.41/containers/json` over its unix socket return real Docker-shaped
+  responses. So a sidecar built around it could sit where `docker:dind` sits today:
+  netns-shared with the booth (the same pattern `--egress`'s netns-owner sidecar
+  already proves works under rootless Podman), with `DOCKER_HOST` pointed at it
+  instead of a Docker daemon.
+- The gap is what the sidecar has to run: unlike `docker:dind`, which just *is* a
+  Docker daemon, a Podman-API sidecar has to run **nested Podman inside itself** to
+  create the containers `docker build` / `docker-compose` / Appwrite ask for. That
+  needs `--privileged` (already true of `docker:dind`, so not a new cost by itself),
+  and at the time it was unverified whether that nested Podman could avoid needing
+  its own rootless setup on top.
+- Shipping a "works" claim on the strength of the API-compat check alone would repeat
+  the exact mistake Phase 3's `--silence-build` finding was called out for — a
+  plausible-looking path that turns out not to do what it claims. So this round ended
+  with `--dind` **refused outright** for `--engine podman` (a clear error instead of
+  warning and failing confusingly deep in `dind_setup.go`), and the nested-sidecar path
+  was not attempted yet.
+
+**Spike continued (2026-09-23):** the nested-sidecar path was actually built and
+driven end to end by hand, using the real `quay.io/podman/stable` image (which ships a
+built-in unprivileged `podman` user with its own baked-in subuid/subgid delegation)
+and the real `docker`/`docker compose` v2 CLIs pointed at its `podman system service
+--time=0 tcp://0.0.0.0:8888` over a published port:
+
+- **Single-container `docker build` / `docker run` work fully rootless, no
+  `--privileged`.** The outer sidecar container needs only `--user podman`,
+  `--device /dev/fuse`, `--device /dev/net/tun`, and
+  `--cap-add SYS_ADMIN,MKNOD,SETFCAP,NET_ADMIN`. Verified with a real `docker build`
+  of a Dockerfile (`RUN` step + `CMD`) and `docker run` of the resulting image through
+  the API, both actually executing inside the nested Podman, not just returning
+  API-shaped responses.
+- **`docker compose` (bridge network + inter-container DNS) does *not* work under that
+  same rootless config.** `docker compose up` on a 2-service stack fails while
+  netavark configures the bridge interface: `netavark: set sysctl
+  net/ipv4/conf/podman1/route_localnet: IO error: Read-only file system`. This
+  persisted after pre-setting `net.ipv4.conf.default.route_localnet=1` as a `--sysctl`
+  on the *outer* container and after `--security-opt unmask=/proc/sys/net` — the write
+  happens on a per-interface path created dynamically inside the nested netns, after
+  the interface already exists, and rootless Podman's sysctl/mount restrictions block
+  it regardless of those workarounds.
+- **`docker compose` does work once the outer sidecar is `--privileged`.** Two shapes
+  were tried: (a) `--privileged` outer + nested Podman still running as the
+  unprivileged `podman` user — compose brings both containers up with working
+  inter-container DNS (`db.dns.podman` resolves), but `docker compose down` then hits
+  `rootless netns: kill network process: permission denied` while tearing the network
+  down; (b) `--privileged` outer + nested Podman running as container-root (no
+  `--user podman`, i.e. the same privileged/root shape `docker:dind` itself uses) —
+  compose up, inter-container DNS, and `docker compose down` all completed cleanly,
+  with no errors anywhere.
+- **Conclusion: the nested-rootless design does not end up cheaper than
+  `docker:dind`'s own cost for what this phase actually needs to close.** It only pays
+  off for the narrower single-container `docker build`/`docker run` case. Podman's
+  own tool list (`docker-compose`, Appwrite) is multi-container by nature, and that
+  path needs `--privileged` regardless — at which point running the nested Podman as
+  container-root (shape (b) above) is both simpler and the only shape that tore down
+  cleanly in testing. The sidecar design mirrors `docker:dind`'s own privileged/root
+  model rather than chasing rootless-in-rootless.
+
+**Wired and verified end to end (2026-09-23):** the design above is now real code —
+`startDindSidecar` in `dind_setup.go` branches on `ctx.Engine() == "podman"` and starts
+`quay.io/podman/stable` with `--privileged` (no `--cgroupns=host` or `/sys/fs/cgroup`
+mount — confirmed unneeded, see below) running `podman system service --time=0
+tcp://0.0.0.0:2375` as container-root, in place of `docker:dind`. `resolveEngineConfig`
+no longer refuses `--dind --engine podman`; it prints its own experimental warning
+instead (see [Podman-specific behavior](#podman-specific-behavior)). Driven for real
+through a `booth --engine podman --dind --daemon` booth (base variant, rootless Podman
+5.4.2), with `docker.io` and a `docker-compose` binary installed ad hoc inside it for
+the test (not by actually running the `dind`/`docker-compose` setup scripts —
+`variants/base/setups/dind--setup.sh` and `docker-compose--setup.sh` themselves are
+untouched by this verification):
+
+- `docker build` (a real `Dockerfile` with a `RUN` step) and `docker run` of the
+  resulting image, from inside the booth against its own `DOCKER_HOST=tcp://
+  localhost:2375`: both work.
+- `docker-compose up` on a 2-service stack, inter-container DNS (`getent hosts db`
+  resolves from the `web` service), and `docker-compose down`: all work, and tear down
+  cleanly — no `--cgroupns=host` / `/sys/fs/cgroup` mount needed, closing the question
+  the 2026-09-22 finding left open.
+- `booth stop` on the running booth removes both the booth and the sidecar container
+  (both started `--rm`) without error; the DinD bridge network is left behind, the
+  same known behavior `--egress` already has (see
+  [Verification status](#verification-status)).
+
+**Not verified:** the actual `dind--setup.sh` / `docker-compose--setup.sh` setup
+scripts running inside a Podman booth (this verification installed their packages by
+hand, to test the sidecar wiring itself, not the setup scripts); Appwrite through this
+sidecar (a heavier, more real-world consumer of the same `docker-compose` path than the
+synthetic 2-service stack above); any of this under an automated test — coverage is
+currently a dryrun command-shape check (`tests/dryrun/test036--engine.sh`, test 16)
+plus the Go unit tests in `initialize_app_context_engine_test.go`, not a test that
+actually drives a container; and the sidecar as a purpose-built image (this uses the
+stock `quay.io/podman/stable` image as-is, not something CodingBooth builds and
+publishes itself).
 
 ### Host prerequisites for rootless Podman
 
@@ -180,8 +290,8 @@ rootless Podman, the project directory may be left owned by a subordinate UID an
 ## Verification status
 
 Verified by hand on **Linux, rootless Podman 5.4.2** (crun, pasta), with Docker also
-installed, on 2026-09-21 (Phase 1), again for Phase 2, and again on 2026-09-22 for
-Phase 3:
+installed, on 2026-09-21 (Phase 1), again for Phase 2, on 2026-09-22 for Phase 3, and
+on 2026-09-23 for Phase 4:
 
 | Area | Result |
 | --- | --- |
@@ -203,6 +313,7 @@ Phase 3:
 | `--egress`: proxy and netns sidecars start; an allowlisted host connects, a non-allowlisted one is blocked | works (checked by hand only) |
 | Engine selection: flag, config, `CB_ENGINE`, precedence, `booth config --set`, fallback, `--quiet`, invalid value | works |
 | `booth build --engine podman --silence-build` on the JDK + lazygit + vscode-ext example (10 real build steps): before the fix, the run's captured stdout showed the leaked `STEP`/`RUN` output live; after the fix, stdout carries only the final `Built: …` line and stderr only the experimental warning — the same 10 `STEP` lines still appear (confirmed on the same build without `--silence-build`, redirected to stderr by the pre-existing BuildKit-compat shim), proving the silent path now genuinely hides them rather than the build simply having nothing to print | works |
+| `booth --engine podman --dind --daemon`: the nested-Podman sidecar and booth both start, `docker build`/`docker run` and a `docker-compose up`/DNS/`docker-compose down` cycle all work from inside the booth against its own `DOCKER_HOST`, and `booth stop` removes both containers cleanly | works |
 
 Automated: Go unit tests (`pkg/appctx/engine_test.go`, `pkg/docker/engine_test.go`,
 `pkg/docker/host_check_test.go`, `pkg/docker/docker_build_test.go`,
@@ -215,24 +326,33 @@ Two of those drive a real engine rather than a stubbed flag:
 `TestDockerBuild_Silent_FailureNamesEngine` (a real failing `podman build`) and
 `TestDockerBuild_Silent_PodmanStdoutIsActuallySilenced` (a real successful `podman
 build`, asserting a distinctive `RUN echo` marker never reaches either captured stream).
-**No CI job runs against Podman** — see Phase 6.
+`--dind --engine podman` itself is covered by unit tests asserting it no longer errors
+(`TestResolveEngineConfig_DindPodmanNoError`) and by a dryrun command-shape check
+(`test036--engine.sh`, test 16, asserting the nested-Podman sidecar command and warning
+appear) — neither actually drives a container; that proof is the hand-verification
+above. **No CI job runs against Podman** — see Phase 6.
 
 **Not verified on Podman:** rootful Podman; macOS/Windows (`podman machine`); Podman older than 5.x; SELinux hosts
-(bind mounts may need `:Z`, which CodingBooth does not add); `--dind` (unsupported).
-`--egress`, `--public` and `--persist-home` were checked by hand once and have no
-automated Podman test. After `booth stop` on an `--egress` booth the sidecar containers
-go away (a moment later, as Podman removes them) but the egress network is left behind.
+(bind mounts may need `:Z`, which CodingBooth does not add); Appwrite through the
+`--dind` nested-Podman sidecar (`docker build`/`docker run`/`docker-compose` are
+verified, see above).
+`--egress`, `--public`, `--persist-home` and `--dind` were checked by hand and have no
+automated Podman test beyond a dryrun command-shape check. After `booth stop` on an
+`--egress` or `--dind` booth the sidecar containers go away (a moment later, as Podman
+removes them) but the network is left behind.
 
 The unverified items are **not done yet**; they are tracked, to be done incrementally, under
 [Remaining verification](#remaining-verification-incremental) in Part 2.
 
 ## Known limitations
 
-- **Docker-in-Docker is not supported.** `--dind`, and anything that needs Docker inside
-  the booth (the `dind` tool, `docker-compose`, Appwrite), rely on the `docker:dind`
-  sidecar and `DOCKER_HOST`. `--dind` with `--engine podman` is **refused outright** with
-  a clear error (see above) rather than attempted; real support is unbuilt — see
-  [Phase 4](#phase-4--docker-in-docker-parity-design-first--started).
+- **Docker-in-Docker uses a different sidecar than under Docker, and Appwrite through
+  it is untested.** `--dind --engine podman` runs a nested-Podman sidecar
+  (`quay.io/podman/stable`) instead of `docker:dind` — see
+  [Docker-in-Docker (`--dind`)](#docker-in-docker---dind). `docker build`, `docker run`
+  and `docker-compose` are verified through it by hand; Appwrite, which is a heavier
+  real-world consumer of the same `docker-compose` path, is not, and there is no
+  automated Podman DinD test beyond a dryrun command-shape check.
 - **Tunnels need the booth running in the foreground**, exactly as under Docker
   ([BOOTH_EXPOSE.md](BOOTH_EXPOSE.md)). `booth--expose` inside the booth needs no engine
   setting: the host-side CLI that started the booth already knows it.
@@ -265,7 +385,8 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
 | Commands without a context | `resolveLifecycleEngine` / `resolveLifecycleEngines` in `pkg/lifecycle/lifecycle.go` |
 | Both-engine lookup | `ResolveEnginesForPath` in `pkg/appctx/engine.go`; `managedContainersAcross`, `managedContainer.Engine`, `ambiguousEngineError` in `pkg/lifecycle/lifecycle.go` |
 | TUI field | `engine` in `pkg/boothinit/tui/configfields.go` |
-| `--dind` + Podman refusal | `resolveEngineConfig` in `pkg/booth/init/initialize_app_context.go` |
+| `--dind` + Podman warning | `resolveEngineConfig` in `pkg/booth/init/initialize_app_context.go` |
+| Nested-Podman DinD sidecar | `podmanDindSidecarImage`, `startDindSidecar` in `pkg/booth/dind_setup.go` |
 | Engine-named user hints (`stop`, DinD `stop`/`network rm`/`logs`, `--persist-home` reclaim) | `engineOrDocker` in `pkg/booth/booth.go`, used from `runAsDaemon`, `printHomeVolumeWarning`, and `waitForDindReady` in `dind_setup.go` |
 | Engine-named build-failure banner | `DockerBuild` in `pkg/docker/docker_build.go` (`flags.binary()`) |
 | Silent-build stream capture per engine (both stdout+stderr on Podman) | `DockerBuild` in `pkg/docker/docker_build.go` |
@@ -287,71 +408,33 @@ user-namespace mapping, and nested containers.
 
 ## Phase 1 — done
 
-See [Part 1](#part-1--implemented-phases-13). It delivered slightly less than planned in
+See [Part 1](#part-1--implemented-phases-14). It delivered slightly less than planned in
 one place: the plan said `stop`/`restart`/`rm` would accept `--engine`; they follow
 `CB_ENGINE` instead — and, when none is set, look at both engines (see
 [Finding booths on either engine](#finding-booths-on-either-engine)).
 
 ## Phase 2 — done
 
-See [Part 1](#part-1--implemented-phases-13). `tcp_tunnel.go`'s `exec` call and
+See [Part 1](#part-1--implemented-phases-14). `tcp_tunnel.go`'s `exec` call and
 `expose list`'s `port` lookup now use the chosen engine.
 
 ## Phase 3 — done
 
-See [Part 1](#part-1--implemented-phases-13). Delivered more than planned: the plan
+See [Part 1](#part-1--implemented-phases-14). Delivered more than planned: the plan
 assumed only a missing live-progress line, but Buildah's `STEP`/`RUN` output turned out
 to land on stdout, which the silent build path never captured — so `--silence-build` did
 not actually silence a Podman build at all. Both are fixed: `build_progress.go` gained a
 Buildah-format parser, and `docker_build.go` now captures Podman's stdout too.
 
-## Phase 4 — Docker-in-Docker parity (design first) — started
+## Phase 4 — done
 
-The `docker:dind` sidecar with `DOCKER_HOST=tcp://localhost:2375`
-(`dind_setup.go`, `docs/implementations/DIND.md`) has no drop-in Podman equivalent —
-Podman is daemonless and rootless by default. This phase starts with a design decision
-before any code.
-
-**Done:** the minimum bar for this phase — `--dind` with `--engine podman` now fails
-immediately with a clear, actionable error (`resolveEngineConfig`) instead of warning
-and trying anyway. Before, the warning still let a Podman booth start and then fail
-deep inside `dind_setup.go` with no clear cause.
-
-**Design finding (2026-09-22):** a real Podman equivalent of the sidecar was spiked
-before settling on the refusal above, to see whether it belongs in this phase or a
-later one:
-
-- `podman system service` genuinely answers the **Docker Engine API**, not just
-  Podman's native `libpod` API — confirmed by hand: `GET /v1.41/version` and
-  `GET /v1.41/containers/json` over its unix socket return real Docker-shaped
-  responses. So a sidecar built around it could, in principle, sit where `docker:dind`
-  sits today: netns-shared with the booth (the same pattern `--egress`'s netns-owner
-  sidecar already proves works under rootless Podman), with `DOCKER_HOST` pointed at
-  it instead of a Docker daemon.
-- The gap is what the sidecar has to run: unlike `docker:dind`, which just *is* a
-  Docker daemon, a Podman-API sidecar has to run **nested rootless Podman inside
-  itself** to create the containers `docker build` / `docker-compose` / Appwrite ask
-  for. That needs `--privileged` (already true of `docker:dind`, so not a new cost by
-  itself), plus `/dev/fuse` and a **second, nested** subuid/subgid delegation inside
-  the sidecar's own user namespace — a real host prerequisite beyond what Phase 1's
-  rootless-Podman setup ([Host prerequisites](#host-prerequisites-for-rootless-podman))
-  already asks for, and unverified: nobody has built the sidecar image or run
-  `docker build`/`docker-compose`/Appwrite through it end to end.
-- Shipping a "works" claim on the strength of the API-compat check alone, without that
-  end-to-end proof, would repeat the exact mistake Phase 3's `--silence-build` finding
-  was called out for — a plausible-looking path that turns out not to do what it
-  claims. So the refusal above ships now as the honest, fully-verified outcome for this
-  phase, and the nested-sidecar path is **not attempted** in this session.
-
-**Remaining for this phase (not started):** build a `podman system service` sidecar
-image, wire nested subuid/subgid + `/dev/fuse` into it, point a Podman booth's
-`DOCKER_HOST` at it in `dind_setup.go`, and verify `docker build`, `docker-compose` and
-Appwrite actually work through it on a real rootless-Podman host before calling any of
-it done.
-
-**User-visible (target):** the `dind` tool, `docker-compose` and Appwrite either work
-under a Podman-run booth, or fail with a clear "not supported with Podman yet" message
-instead of trying and failing confusingly. The second half is done; the first is not.
+See [Docker-in-Docker (`--dind`)](#docker-in-docker---dind) in Part 1. Delivered more
+than the original "refuse clearly" bar: the nested-Podman sidecar design was spiked,
+verified by hand end to end (`docker build`, `docker run`, `docker-compose`), and then
+actually wired into `dind_setup.go` behind `--engine podman`. What is not done:
+Appwrite through it is untested, and there is no automated Podman DinD test that
+actually drives a container (see [Verification status](#verification-status)) — both
+tracked under [Remaining verification](#remaining-verification-incremental) below.
 
 ## Phase 5 — Release pipeline on Podman
 
@@ -379,6 +462,13 @@ Part 1 only once it has actually been run:
 - [ ] **SELinux hosts** — bind mounts may need `:Z`, which CodingBooth does not add.
 - [ ] **Podman older than 5.x** — only 5.4.2 has been tried; decide and document a minimum
   version.
+- [ ] **Appwrite through the `--dind` nested-Podman sidecar** — `docker build`, `docker
+  run` and `docker-compose` are verified; Appwrite is a heavier, more real-world
+  consumer of the same `docker-compose` path and has not been run.
+- [ ] **An automated Podman `--dind` test that actually drives a container** — today's
+  coverage is a dryrun command-shape check (`test036--engine.sh`, test 16) and unit
+  tests on `resolveEngineConfig`; nothing exercises the real sidecar the way Phase 3's
+  `TestDockerBuild_Silent_PodmanStdoutIsActuallySilenced` does for builds.
 
 ## Follow-ups to Phase 1 (unscheduled)
 
