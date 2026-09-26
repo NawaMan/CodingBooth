@@ -1,0 +1,31 @@
+display-name = "FreeLens"
+display-disc = "Kubernetes IDE (GUI, requires desktop variant)"
+display-detail = """Installs FreeLens — a free, MIT-licensed Kubernetes IDE, the actively-maintained \
+fork of OpenLens (Lens itself is a commercial product built on that same open-core; \
+OpenLens is no longer maintained, FreeLens picked up where it left off: \
+https://github.com/freelensapp/freelens). Downloaded from official GitHub releases \
+(DEB) at build time. Requires a desktop variant; honors $KUBECONFIG / ~/.kube/config \
+like kubectl and k9s. Defaults to a dark color theme, pre-seeded so it's already set \
+on first launch rather than following the desktop theme — pass --theme system to \
+follow it instead, or --theme light."""
+display-order = 64
+tags = [
+    "kubernetes",
+    "k8s",
+    "ide",
+    "gui",
+    "desktop",
+]
+
+[params.FREELENS_VERSION]
+default = "1.10.3"
+suggests = ["1.10.3"]
+
+[params.FREELENS_THEME]
+default = "dark"
+suggests = ["dark", "light", "system"]
+
+[segments]
+Boothfile = """
+setup freelens ${FREELENS_VERSION} --theme ${FREELENS_THEME}
+"""
