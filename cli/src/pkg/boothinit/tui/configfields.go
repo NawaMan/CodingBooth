@@ -239,6 +239,7 @@ var fieldDisplays = []fieldDisplay{
 // AppConfig field cannot slip in unnoticed the way this table drifted before.
 var unrenderedKeys = map[string]string{
 	"public":   "start-time only (toml:\"-\") — and a committed `public = true` would expose every clone",
+	"okpublic": "start-time only (toml:\"-\") — a one-off --ok-public consent, never persisted (same reasoning as public)",
 	"password": "start-time only (toml:\"-\") — resolved from a gitignored file or stdin, never persisted",
 	"tlscert":  "start-time only (toml:\"-\"), paired with --public",
 	"tlskey":   "start-time only (toml:\"-\"), paired with --public",

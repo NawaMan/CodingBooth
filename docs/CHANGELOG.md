@@ -10,6 +10,20 @@ This file contains a list of changes for each released version.
   instead of retyped blind; click it again to hide. The sign-in page masks the field again when you
   submit.
 
+- **`booth--expose` tunnels follow the booth's own public/private setting, and both
+  `booth--expose` and booth startup now refuse a published port with no protection of its own
+  unless `--ok-public` says you mean it.** A tunnel opened with `booth--expose` used to always
+  bind to `localhost`, even on a `--public` booth — useless on a remote or hosted booth, where
+  `--public`'s whole point is being reachable from elsewhere. It now binds to every interface
+  exactly when the booth is public, the same as the booth's own published port. That reachability
+  is not the same as protection, though: only the booth's own port gets a password and TLS from
+  `--public` — every other published port (a template's `+expose`, `--expose` at configuration
+  time, or a runtime tunnel) is a bare forward with neither. `booth--expose` now refuses to open a
+  tunnel on a public booth unless given `--ok-public`, and booth startup refuses to start the same
+  way when a public booth already has an extra port published (new `--ok-public` flag); both still
+  warn even with the flag, since acknowledging the tradeoff is not the same as making it invisible.
+  See [Security](BOOTH_EXPOSE.md#security).
+
 - **Web Preview opens JupyterLab and code-server as ordinary services.** It refused their ports as
   "reserved for Booth services", so a notebook started with `start-notebook` on a codeserver booth
   could not be previewed. Only the booth's own ports (10000–10007) are refused now.

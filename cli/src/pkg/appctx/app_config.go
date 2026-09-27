@@ -140,6 +140,10 @@ type AppConfig struct {
 	// Password is resolved at startup from .booth/.booth.password or interactive stdin.
 	// These are never read from TOML or environment variables.
 	Public              bool     `toml:"-" ignored:"true"`
+	// OkPublic is the one-off "I mean it" acknowledgement for starting a --public
+	// booth that already has another port published — no persistence, same as
+	// Public/Password: a repo's config.toml must not be able to pre-approve this.
+	OkPublic            bool     `toml:"-" ignored:"true"`
 	Password            string   `toml:"-" ignored:"true"`
 	TLSCert             string   `toml:"-" ignored:"true"`
 	TLSKey              string   `toml:"-" ignored:"true"`
@@ -258,6 +262,7 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    EgressEnforcement:%q\n", config.EgressEnforcement)
 	fmt.Fprintf(&str, "    WritableBooth:     %t\n", config.WritableBooth)
 	fmt.Fprintf(&str, "    Public:            %t\n", config.Public)
+	fmt.Fprintf(&str, "    OkPublic:          %t\n", config.OkPublic)
 	fmt.Fprintf(&str, "    Password:          %s\n", maskStr(config.Password))
 	fmt.Fprintf(&str, "    TLSCert:           %q\n", config.TLSCert)
 	fmt.Fprintf(&str, "    TLSKey:            %q\n", config.TLSKey)

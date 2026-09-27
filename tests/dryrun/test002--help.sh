@@ -19,7 +19,7 @@ fi
 
 # Just check the USAGE section - the full help is ~98 lines
 ACTUAL=$(run_coding_booth help)
-ACTUAL=$(printf '%s\n' "$ACTUAL" | head -38)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -39)
 
 HERE="$PWD"
 VERSION="$(get_booth_version)"
@@ -41,6 +41,7 @@ OPTIONS
   --dind-allowed          Start a --dind booth without asking
   --privileged-allowed    Start a booth with --privileged-like run-args without asking
   --public                Bind to all interfaces with password authentication
+  --ok-public             Required with --public if another port is already published
   --egress                Enable egress defaults (proxy + enforcement)
   --sudo <true|false>     Enable/disable sudo access (default: true)
   --no-sudo               Shorthand for --sudo false
