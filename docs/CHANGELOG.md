@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`start-codeserver` works from inside code-server.** Run in a code-server (or VS Code)
+  terminal it started nothing: the terminal's `VSCODE_IPC_HOOK_CLI` turned `code-server` into a
+  client of the running window, which printed `Ignoring option 'bind-addr'…` and exited. The
+  launcher now always starts a server, with the real `code-server` rather than the terminal's
+  remote-CLI shim of the same name (which answers "Command is only available in WSL or inside a
+  Visual Studio Code terminal"); refuses a port already in use (`start-codeserver <port>`);
+  and, when another code-server is running, keeps its state in `~/.local/share/code-server-<port>`
+  instead of taking over the first one's session socket and settings.
+
 - **The terminal no longer leaves the cursor mid-line after a foreground booth's status
   messages.** "🌐 Opened … in your browser.", "⏳ Waiting for the booth …" and the tunnel watcher's
   "Tunnel opened/closed …" are printed while the foreground `docker run -it` holds the terminal in
