@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Selecting `eclipse` on its own now builds.** Eclipse needs a JDK, but the template never
+  said so and no variant ships one, so `--variant xfce --select eclipse` generated a Boothfile
+  that failed at `RUN eclipse--setup.sh` with "'java' command not found". Anyone who picked
+  Eclipse without also ticking Java hit it; selecting both, as the Java examples do, was fine.
+  The template now requires `java`, so the JDK is pulled in and installed first.
+
 - **The Console UI tiles like i3, with Ctrl+Alt shortcuts.** The base variant's browser
   console now takes the same Ctrl+Alt keys as the i3 template: focus (`h`/`j`/`k`/`l` or
   arrows), move (`Shift`+those), split beside/below (`b`/`v`), open (`Enter`), close
