@@ -19,7 +19,7 @@ fi
 
 # Just check the USAGE section - the full help is ~98 lines
 ACTUAL=$(run_coding_booth help)
-ACTUAL=$(printf '%s\n' "$ACTUAL" | head -39)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -40)
 
 HERE="$PWD"
 VERSION="$(get_booth_version)"
@@ -37,6 +37,7 @@ OPTIONS
   --port <n|RANDOM|NEXT>  Host port → container 10000 (NEXT/RANDOM accept :base)
   --daemon                Run the booth in the background
   --no-browser            Do not open the booth UI in a browser when it comes up
+  --hide-welcome          Do not print the welcome banner in booth shells
   --dind                  Enable a Docker-in-Docker sidecar (privileged: asks first)
   --dind-allowed          Start a --dind booth without asking
   --privileged-allowed    Start a booth with --privileged-like run-args without asking

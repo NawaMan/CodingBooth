@@ -56,7 +56,7 @@ fi
 #
 # The welcome only prints for an interactive login shell, and the outer
 # `bash -lc` booth runs commands with is not interactive — so it never sets
-# TIP_SHOWN and the inner `bash -lic` prints the banner.
+# _cb_welcome_shown and the inner `bash -lic` prints the banner.
 # -------------------------------------------------------
 ACTUAL=$(run_coding_booth --variant base -- 'bash -lic true 2>/dev/null | grep -c "^  just "' 2>&1 | tail -1) || ACTUAL=""
 

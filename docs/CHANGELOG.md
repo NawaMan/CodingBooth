@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`--hide-welcome` turns off the shell welcome banner.** The "Welcome to CodingBooth!"
+  banner with its handy-command list prints in every interactive booth shell; it can now be
+  switched off with `--hide-welcome`, `hide-welcome = true` in `.booth/config.toml` (also a
+  toggle in the `booth config` TUI), or `CB_HIDE_WELCOME=true`. The booth passes it into the
+  container as `BOOTH_HIDE_WELCOME`. The banner's internal once-per-shell guard was renamed from
+  `TIP_SHOWN` to `_cb_welcome_shown`, so setting `TIP_SHOWN` no longer hides it — use the new
+  switch instead. See [BOOTH_RUN.md](BOOTH_RUN.md#hide-the-welcome-banner---hide-welcome).
+
 - **Kitty gets the same `+fancy` look, selected by default.** `--select kitty` now also seeds
   `~/.config/kitty/kitty.conf` with Omarchy's kitty.conf: JetBrainsMono Nerd Font 12pt, 14px
   padding, a steady block cursor, a slanted powerline tab bar at the bottom, the Tokyo Night
