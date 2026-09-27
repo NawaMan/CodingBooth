@@ -27,6 +27,17 @@ type tcpTunnel struct {
 	cancel        context.CancelFunc
 }
 
+// tunnelBindAddr is the host address tunnel listeners bind to: every interface
+// for a public booth, loopback otherwise. It mirrors formatPortMapping's choice
+// for the booth's own published port, so `-p` mappings and `booth--expose`
+// tunnels agree about who can reach the booth.
+func tunnelBindAddr(public bool) string {
+	if public {
+		return "0.0.0.0"
+	}
+	return "localhost"
+}
+
 // StartTcpTunnelWatcher watches .booth/.tmp/tcp-tunnels/ for control files
 // and creates host-side TCP listeners that forward traffic via `<engine> exec` + socat
 // to the container (the engine is the one the booth was started with). It runs until the provided context is cancelled.
@@ -39,6 +50,12 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 	tunnelDir := filepath.Join(codePath, ".booth", ".tmp", "tcp-tunnels")
 	verbose := appCtx.Verbose()
 	engine := appCtx.Engine()
+
+	// A public booth tunnels publicly. Binding these to localhost while the
+	// booth's own front door is on every interface makes `booth--expose`
+	// unusable exactly where it is most wanted — a remote or hosted booth,
+	// where "the host" is not the machine holding the browser.
+	bindAddr := tunnelBindAddr(appCtx.Public())
 
 	var mu sync.Mutex
 	activeTunnels := make(map[int]*tcpTunnel) // keyed by container port
@@ -97,7 +114,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 				}
 
 				// Start tunnel
-				tunnel, err := startTunnel(ctx, engine, containerName, containerPort, externalPort, verbose)
+				tunnel, err := startTunnel(ctx, engine, containerName, containerPort, externalPort, bindAddr, verbose)
 				if err != nil {
 					fmt.Fprintf(os.Stderr, rawSafe("  Tunnel error (port %d): %v\n", true), containerPort, err)
 					continue
@@ -107,7 +124,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 				activeTunnels[containerPort] = tunnel
 				mu.Unlock()
 
-				fmt.Fprintf(os.Stderr, rawSafe("  Tunnel opened: container:%d -> localhost:%d\n", true), containerPort, externalPort)
+				fmt.Fprintf(os.Stderr, rawSafe("  Tunnel opened: container:%d -> %s:%d\n", true), containerPort, bindAddr, externalPort)
 			}
 
 			// Remove tunnels whose control files are gone
@@ -117,7 +134,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 					t.cancel()
 					t.listener.Close()
 					delete(activeTunnels, port)
-					fmt.Fprintf(os.Stderr, rawSafe("  Tunnel closed: container:%d -> localhost:%d\n", true), port, t.externalPort)
+					fmt.Fprintf(os.Stderr, rawSafe("  Tunnel closed: container:%d -> %s:%d\n", true), port, bindAddr, t.externalPort)
 				}
 			}
 			mu.Unlock()
@@ -125,8 +142,11 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 	}
 }
 
-func startTunnel(parentCtx context.Context, engine, containerName string, containerPort, externalPort int, verbose bool) (*tcpTunnel, error) {
-	listener, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", externalPort))
+func startTunnel(parentCtx context.Context, engine, containerName string, containerPort, externalPort int, bindAddr string, verbose bool) (*tcpTunnel, error) {
+	if bindAddr == "" {
+		bindAddr = "localhost"
+	}
+	listener, err := net.Listen("tcp", net.JoinHostPort(bindAddr, strconv.Itoa(externalPort)))
 	if err != nil {
 		return nil, fmt.Errorf("cannot listen on port %d: %w", externalPort, err)
 	}
