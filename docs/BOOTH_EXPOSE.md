@@ -294,9 +294,16 @@ CodingBooth has three ways to make container ports accessible. Each serves a dif
 
 ## Security
 
-The tunnel uses `docker exec` (or `podman exec`) to bridge connections, which requires access to the container engine. Only processes that can run `docker exec` on the container (i.e., the host-side booth process) can create tunnels. The tunnel is bound to `localhost` by default, so it is not accessible from other machines.
+The tunnel uses `docker exec` (or `podman exec`) to bridge connections, which requires access to the container engine. Only processes that can run `docker exec` on the container (i.e., the host-side booth process) can create tunnels.
 
-If the booth port is exposed publicly (`--public`), consider whether the tunneled service should also be accessible.
+**Where the tunnel listens follows the booth.** A booth started without `--public` binds its tunnels to `localhost`, so they are not reachable from other machines. A booth started with `--public` binds them to `0.0.0.0`, the same as its own published port:
+
+| Booth | Tunnel listens on | Reachable from |
+|-------|-------------------|----------------|
+| default | `localhost:<port>` | the host only |
+| `--public` | `0.0.0.0:<port>` | anything that can route to the host |
+
+This is what makes `booth--expose` useful on a remote or hosted booth, where "the host" is not the machine holding the browser. It also means the exposed service is reachable by whoever can reach that host: the tunnel adds **no authentication and no TLS** of its own, unlike the booth's own port, which is password-protected. A development server tunneled out of a public booth is public — check that it is meant to be. A tunnel lasts until its control file under `.booth/.tmp/tcp-tunnels/` is removed (deleting the file closes the listener within a second), or until the booth restarts, which clears `.booth/.tmp/` along with every ephemeral tunnel.
 
 ---
 
