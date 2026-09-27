@@ -40,8 +40,15 @@ func tunnelBindAddr(public bool) string {
 
 // StartTcpTunnelWatcher watches .booth/.tmp/tcp-tunnels/ for control files
 // and creates host-side TCP listeners that forward traffic via `<engine> exec` + socat
-// to the container (the engine is the one the booth was started with). It runs until the provided context is cancelled.
-func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, containerName string) {
+// to the container (the engine is the one the booth was started with). It runs until the
+// provided context is cancelled.
+//
+// foreground marks whether this runs alongside a non-detached `docker run` whose own
+// stdout/stderr streams straight to the terminal (runAsCommand/runAsForeground; never
+// runAsDaemon, which detaches with -d) — see foregroundPrefix in open_browser.go for why
+// every print below needs it: without it, one of this goroutine's lines can land wherever
+// the container's own concurrent output left the cursor, not at the left margin.
+func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, containerName string, foreground bool) {
 	codePath := appCtx.Code()
 	if codePath == "" {
 		return
@@ -116,7 +123,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 				// Start tunnel
 				tunnel, err := startTunnel(ctx, engine, containerName, containerPort, externalPort, bindAddr, verbose)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, rawSafe("  Tunnel error (port %d): %v\n", true), containerPort, err)
+					fmt.Fprintf(os.Stderr, rawSafe(foregroundPrefix(foreground)+"  Tunnel error (port %d): %v\n", foreground), containerPort, err)
 					continue
 				}
 
@@ -124,7 +131,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 				activeTunnels[containerPort] = tunnel
 				mu.Unlock()
 
-				fmt.Fprintf(os.Stderr, rawSafe("  Tunnel opened: container:%d -> %s:%d\n", true), containerPort, bindAddr, externalPort)
+				fmt.Fprintf(os.Stderr, rawSafe(foregroundPrefix(foreground)+"  Tunnel opened: container:%d -> %s:%d\n", foreground), containerPort, bindAddr, externalPort)
 			}
 
 			// Remove tunnels whose control files are gone
@@ -134,7 +141,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 					t.cancel()
 					t.listener.Close()
 					delete(activeTunnels, port)
-					fmt.Fprintf(os.Stderr, rawSafe("  Tunnel closed: container:%d -> %s:%d\n", true), port, bindAddr, t.externalPort)
+					fmt.Fprintf(os.Stderr, rawSafe(foregroundPrefix(foreground)+"  Tunnel closed: container:%d -> %s:%d\n", foreground), port, bindAddr, t.externalPort)
 				}
 			}
 			mu.Unlock()

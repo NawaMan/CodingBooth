@@ -5,12 +5,20 @@
 package booth
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"net"
+	"os"
+	"path/filepath"
 	"reflect"
 	"strconv"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
 
 func TestTunnelExecCommand(t *testing.T) {
@@ -128,6 +136,91 @@ func freePort(t *testing.T) int {
 	port := l.Addr().(*net.TCPAddr).Port
 	l.Close()
 	return port
+}
+
+// runTunnelWatcher drives StartTcpTunnelWatcher for one tick against a control
+// file requesting the given external port, capturing stderr. Same rationale as
+// the "Waiting"/"Opened" fix (open_browser.go's foregroundPrefix): this
+// goroutine's prints share the terminal with a concurrently-streamed foreground
+// container, unsynchronized, so every one of them must carry the same guard.
+func runTunnelWatcher(t *testing.T, foreground bool, externalPort int) string {
+	t.Helper()
+
+	codeDir := t.TempDir()
+	tunnelDir := filepath.Join(codeDir, ".booth", ".tmp", "tcp-tunnels")
+	if err := os.MkdirAll(tunnelDir, 0755); err != nil {
+		t.Fatalf("mkdir tunnelDir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tunnelDir, "12345"), []byte(strconv.Itoa(externalPort)), 0644); err != nil {
+		t.Fatalf("write control file: %v", err)
+	}
+
+	builder := &appctx.AppContextBuilder{}
+	builder.Config.Code = nillable.NewNillableString(codeDir)
+	ctx := builder.Build()
+
+	oldStderr := os.Stderr
+	reader, writer, err := os.Pipe()
+	if err != nil {
+		t.Fatalf("os.Pipe: %v", err)
+	}
+	os.Stderr = writer
+
+	watchCtx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	defer cancel()
+	StartTcpTunnelWatcher(watchCtx, ctx, "no-such-container", foreground)
+	<-watchCtx.Done()
+
+	writer.Close()
+	os.Stderr = oldStderr
+
+	var buf bytes.Buffer
+	io.Copy(&buf, reader)
+	return buf.String()
+}
+
+func TestStartTcpTunnelWatcher_ErrorLineGuardedInForeground(t *testing.T) {
+	// Pre-occupy the port so the watcher's own bind fails, forcing the "Tunnel
+	// error" line rather than "Tunnel opened".
+	busy, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("cannot occupy a port: %v", err)
+	}
+	defer busy.Close()
+	busyPort := busy.Addr().(*net.TCPAddr).Port
+
+	out := runTunnelWatcher(t, true, busyPort)
+	if !strings.Contains(out, "\n  Tunnel error") {
+		t.Errorf("foreground=true: expected the error line prefixed with a guard newline, got: %q", out)
+	}
+}
+
+func TestStartTcpTunnelWatcher_ErrorLineUnguardedOutsideForeground(t *testing.T) {
+	busy, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("cannot occupy a port: %v", err)
+	}
+	defer busy.Close()
+	busyPort := busy.Addr().(*net.TCPAddr).Port
+
+	out := runTunnelWatcher(t, false, busyPort)
+	if !strings.HasPrefix(out, "  Tunnel error") {
+		t.Errorf("foreground=false: expected the error line with no leading guard newline, got: %q", out)
+	}
+}
+
+func TestStartTcpTunnelWatcher_OpenedLineGuardedInForeground(t *testing.T) {
+	out := runTunnelWatcher(t, true, freePort(t))
+	if !strings.Contains(out, "\n  Tunnel opened") {
+		t.Errorf("foreground=true: expected the opened line prefixed with a guard newline, got: %q", out)
+	}
+}
+
+func TestStartTcpTunnelWatcher_OpenedLineUnguardedOutsideForeground(t *testing.T) {
+	out := runTunnelWatcher(t, false, freePort(t))
+	if !strings.HasPrefix(out, "  Tunnel opened") {
+		t.Errorf("foreground=false: expected the opened line with no leading guard newline, got: %q", out)
+	}
 }
 
 func nonLoopbackIPv4(t *testing.T) string {

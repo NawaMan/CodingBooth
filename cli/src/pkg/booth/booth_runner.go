@@ -56,6 +56,7 @@ func (runner *BoothRunner) Run() error {
 	ctx = newCtx
 	ctx = ResolveRelativePorts(ctx)
 	ctx = NormalizePortMappings(ctx)
+	ctx = CheckPublicPortsExposed(ctx)
 	ctx = ShowDebugBanner(ctx)
 	ctx = SetupDind(ctx)
 	ctx = SetupEgress(ctx)

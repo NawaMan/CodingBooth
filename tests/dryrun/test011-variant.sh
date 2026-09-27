@@ -88,6 +88,7 @@ ${SHM}    -p 127.0.0.1:10000:10000 \\
     -e 'BOOTH_SETUPS=/opt/codingbooth/setups' \\
     -e 'BOOTH_CONTAINER_NAME=dryrun' \\
     -e 'BOOTH_DAEMON=false' \\
+    -e 'BOOTH_PUBLIC=false' \\
     -e 'BOOTH_HOST_PORT=10000' \\
     -e 'BOOTH_IMAGE_NAME=nawaman/codingbooth:${GOT_VARIANT}-${VERSION}' \\
     -e 'BOOTH_RUNMODE=COMMAND' \\
