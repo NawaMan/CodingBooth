@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Kitty gets the same `+fancy` look, selected by default.** `--select kitty` now also seeds
+  `~/.config/kitty/kitty.conf` with Omarchy's kitty.conf: JetBrainsMono Nerd Font 12pt, 14px
+  padding, a steady block cursor, a slanted powerline tab bar at the bottom, the Tokyo Night
+  palette, no bell, and Shift/Ctrl+Insert paste/copy. `kitty~fancy` keeps the plain FiraCode Nerd
+  Font default. As with Ghostty and Alacritty, it is written on the first container start only,
+  never over a config you have edited.
+
 - **Alacritty gets the same `+fancy` look as Ghostty, selected by default.** `--select alacritty`
   now also seeds `~/.config/alacritty/alacritty.toml` with Omarchy's Alacritty skeleton:
   JetBrainsMono Nerd Font 12pt, 14px padding, the Tokyo Night palette, and

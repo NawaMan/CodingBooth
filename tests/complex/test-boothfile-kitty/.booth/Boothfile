@@ -1,6 +1,8 @@
 # syntax=codingbooth/boothfile:1
 
-# Test: Kitty installation via Boothfile
-# kitty--setup.sh is not yet in the released base image, so a copy is
-# checked in under .booth/setups/ to override it for this test run.
+# Test: Kitty installation via Boothfile, with the +fancy config
+# kitty--setup.sh, kitty-fancy--setup.sh and jetbrains-mono-nerd-font--setup.sh
+# are not yet in the released base image, so copies are checked in under
+# .booth/setups/ to override them for this test run.
 setup kitty
+setup kitty-fancy

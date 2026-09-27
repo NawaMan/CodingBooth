@@ -65,6 +65,12 @@ Ghostty actually loaded, and runs `ghostty +validate-config` on the seeded file.
 place of the FiraCode default when present. `test-boothfile-alacritty` launches it with `-vv` and
 fails on any `Unused config key` / config error in the log.
 
+**2026-09-27 addendum — Kitty `+fancy`.** Same shape as Alacritty's: `kitty-fancy--setup.sh`
+writes Omarchy's kitty.conf to `/opt/codingbooth/kitty/kitty.conf`, seeded by
+`57-cb-kitty--startup.sh` in place of the FiraCode default. `test-boothfile-kitty` fails on any
+"Ignoring unknown config key" and checks `--debug-font-fallback` resolves JetBrainsMono. All three
+alternate terminals now share one look.
+
 **2026-09-23 addendum — `+default` extension.** Both were originally *alternate* terminals only
 — no way to make either the one that actually opens when the desktop says "open a terminal."
 `templates/desktops/{alacritty,kitty}/default--extension.toml` (`--select

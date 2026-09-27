@@ -158,6 +158,9 @@ cb-desktop-icon.sh kitty
 # written at container start (like xfce--setup.sh's terminalrc seeding) rather
 # than baked in here. Only writing it when the file is still absent means a
 # later font change made by hand is never overwritten on the next session.
+# A setup that wants a richer config (kitty-fancy--setup.sh) drops it at
+# /opt/codingbooth/kitty/kitty.conf; it is read at start time, so the order
+# the two setups ran in does not matter.
 STARTUP_FILE="/usr/share/startup.d/57-cb-kitty--startup.sh"
 install -d "$(dirname "$STARTUP_FILE")"
 cat > "$STARTUP_FILE" <<'STARTUP'
@@ -168,6 +171,12 @@ CONF="$HOME/.config/kitty/kitty.conf"
 [[ -f "$CONF" ]] && exit 0
 
 mkdir -p "$(dirname "$CONF")"
+if [[ -f /opt/codingbooth/kitty/kitty.conf ]]; then
+  cp /opt/codingbooth/kitty/kitty.conf "$CONF"
+  echo "✅ cb-kitty: seeded $CONF from /opt/codingbooth/kitty/kitty.conf"
+  exit 0
+fi
+
 cat > "$CONF" <<'KCONF'
 font_family      FiraCode Nerd Font Mono
 font_size        11.0

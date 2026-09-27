@@ -161,6 +161,7 @@ setup kde
 setup kde-wallpaper
 setup kind
 setup kitty
+setup kitty-fancy
 setup kotlin
 setup kotlin-code-extension
 setup kotlin-nb-kernel

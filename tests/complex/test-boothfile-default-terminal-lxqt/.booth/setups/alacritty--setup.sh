@@ -51,6 +51,9 @@ cb-desktop-icon.sh alacritty
 # written at container start (like xfce--setup.sh's terminalrc seeding) rather
 # than baked in here. Only writing it when the file is still absent means a
 # later font change made by hand is never overwritten on the next session.
+# A setup that wants a richer config (alacritty-fancy--setup.sh) drops it at
+# /opt/codingbooth/alacritty/alacritty.toml; it is read at start time, so the
+# order the two setups ran in does not matter.
 STARTUP_FILE="/usr/share/startup.d/57-cb-alacritty--startup.sh"
 install -d "$(dirname "$STARTUP_FILE")"
 cat > "$STARTUP_FILE" <<'STARTUP'
@@ -61,6 +64,12 @@ CONF="$HOME/.config/alacritty/alacritty.toml"
 [[ -f "$CONF" ]] && exit 0
 
 mkdir -p "$(dirname "$CONF")"
+if [[ -f /opt/codingbooth/alacritty/alacritty.toml ]]; then
+  cp /opt/codingbooth/alacritty/alacritty.toml "$CONF"
+  echo "✅ cb-alacritty: seeded $CONF from /opt/codingbooth/alacritty/alacritty.toml"
+  exit 0
+fi
+
 cat > "$CONF" <<'TOML'
 [font]
 size = 11.0

@@ -110,4 +110,34 @@ else
     FAILED=$((FAILED + 1))
 fi
 
+# Test 7: the +fancy config is seeded into the user's home at start, and Kitty
+# loads it cleanly — it prints "Ignoring unknown config key" / "Ignoring
+# invalid config line" for anything it does not accept, and with
+# --debug-font-fallback names the font file it resolved, so one launch proves
+# both the keys and the JetBrains Mono font (a missing font falls back
+# silently otherwise).
+CMD='grep -q "^background  *#1a1b26" ~/.config/kitty/kitty.conf && echo SEEDED_FANCY; '
+CMD+='Xvnc :1 -geometry 1280x800 -localhost yes -SecurityTypes=None >/tmp/xvnc.log 2>&1 & sleep 2; '
+CMD+='DISPLAY=:1 timeout 10 kitty --debug-font-fallback sh -c "sleep 1" >/tmp/kitty.log 2>&1; '
+CMD+='grep -qi "Ignoring" /tmp/kitty.log && echo CONFIG_COMPLAINED; '
+CMD+='grep -q "Normal: JetBrainsMonoNF-Regular" /tmp/kitty.log && echo FONT_JETBRAINS'
+ACTUAL=$(run_coding_booth --silence-build -- "$CMD" 2>/dev/null)
+
+if echo "$ACTUAL" | grep -q "SEEDED_FANCY" && ! echo "$ACTUAL" | grep -q "CONFIG_COMPLAINED"; then
+    print_test_result "true" "$0" "7" "+fancy config is seeded and Kitty accepts every key"
+else
+    print_test_result "false" "$0" "7" "+fancy config should be seeded and accepted"
+    echo "  Actual output: ${ACTUAL:-<empty>}"
+    FAILED=$((FAILED + 1))
+fi
+
+# Test 8: the +fancy font is the one Kitty actually renders with.
+if echo "$ACTUAL" | grep -q "FONT_JETBRAINS"; then
+    print_test_result "true" "$0" "8" "Kitty renders with JetBrainsMono Nerd Font"
+else
+    print_test_result "false" "$0" "8" "Kitty should render with JetBrainsMono Nerd Font"
+    echo "  Actual output: ${ACTUAL:-<empty>}"
+    FAILED=$((FAILED + 1))
+fi
+
 exit $FAILED
