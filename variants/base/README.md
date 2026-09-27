@@ -6,7 +6,8 @@ The foundation variant containing core CodingBooth functionality and setup scrip
 - Ubuntu-based container -- a human-friendly made for development
 - Default variant
 - Web terminal via split-pane `ttyd` UI by default
-- Optional classic single-session mode with `web-split = false` or `CB_WEB_SPLIT=false`
+- Optional classic single-session mode with `-e BOOTH_WEB_SPLIT=false`
+- i3-style tiling shortcuts (Ctrl+Alt) in the split UI — see [BOOTH_CONSOLE.md](../../docs/BOOTH_CONSOLE.md#keyboard-shortcuts-tiling)
 - Markdown view — pane document icon starts `viewmd --daemon` if needed and opens `http://booth:8765`
 - Manage user ownership and permission for the workspace (project directory) on host and /home/coder/code on the container.
 - 70+ setup scripts in `setups/` directory
@@ -20,7 +21,7 @@ The foundation variant containing core CodingBooth functionality and setup scrip
 booth --variant base
 
 # Classic single terminal mode (disable split UI)
-CB_WEB_SPLIT=false booth --variant base
+booth --variant base -e BOOTH_WEB_SPLIT=false
 
 # Optional URL mode switch (examples)
 # http://localhost:10000/#mode=single
@@ -29,6 +30,7 @@ CB_WEB_SPLIT=false booth --variant base
 # http://localhost:10000/#mode=quad
 # http://localhost:10000/#mode=left-main
 # http://localhost:10000/#mode=top-main
+# http://localhost:10000/#mode=h(1,v(2,3,4))   (any tiling layout)
 ```
 
 **Purpose:** Serves as the base image for all other variants. Use directly for minimal, customizable environments or as a starting point for custom variants.

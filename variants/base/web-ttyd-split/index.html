@@ -14,6 +14,7 @@
   <link rel="preload" as="font" type="font/woff2" href="booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin>
   ${BOOTH_READY_JS}
   ${BOOTH_KEYBOARD_CAPTURE_JS}
+  ${BOOTH_TILING_JS}
   <!-- Optional project-checked-in starting layout/tabs; see .booth/console.json
        and start-ttyd-split. type="application/json" rather than assigning a
        raw object literal to a window var: the browser never tries to parse
@@ -26,6 +27,17 @@
        A plain quoted string, unlike the JSON above, so no template-literal-vs-
        plain-string parsing hazard to design around here. -->
   <script>window.BOOTH_CONSOLE_SPEC = "${BOOTH_CONSOLE_SPEC}";</script>
+  <!-- CodingBooth Help in the Booth panel (booth-message-overlay.html): this
+       page wraps no desktop, so it asks for the button itself, keeps only the
+       General tab (Clipboard is about the desktop's noVNC panel) and opens on
+       the Console Shortcuts tab added below. -->
+  <script>
+    window.BOOTH_HELP = {
+      tabs: ["general"],
+      open: window.BoothTiling ? "console" : "general",
+      title: "Help using this booth, including the console's keyboard shortcuts"
+    };
+  </script>
   <style>
     /* Declared here purely so document.fonts.load() below has a face to
        actually fetch and wait on — this document never renders any text
@@ -135,8 +147,13 @@
       padding: 5px 8px;
     }
 
-    button[data-layout] svg {
+    button[data-layout] svg,
+    #tree-layout svg {
       display: block;
+    }
+
+    #tree-layout {
+      padding: 5px 8px;
     }
 
     button.active {
@@ -580,6 +597,55 @@
       bottom: 10px;
     }
 
+    /* Tiling (Ctrl+Alt shortcuts, tiling.js): a layout that is not one of the
+       six presets places its panes absolutely from the layout tree, so the
+       pane elements — and the iframes in them — never move in the page. */
+    .grid.layout-tree .pane.active {
+      position: absolute;
+    }
+
+    .grid .tree-handle {
+      display: block;
+      bottom: auto;
+      right: auto;
+    }
+
+    /* Which pane the shortcuts act on, once there is more than one. */
+    .grid.has-focus-ring .pane.focused {
+      border-color: color-mix(in srgb, var(--accent), var(--panel-edge) 35%);
+    }
+
+    /* i3's split indicator: where the next pane opens. */
+    .pane.split-next-h {
+      box-shadow: inset -3px 0 0 var(--accent), 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .pane.split-next-v {
+      box-shadow: inset 0 -3px 0 var(--accent), 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    /* CodingBooth Help (booth-message-overlay.html) is a light dialog that
+       colours only its paragraphs; the rest would inherit this page's light
+       text. The desktop pages it was made for have dark text by default. */
+    #bl-help-dialog-overlay .msg-dialog {
+      color: #333;
+    }
+
+    .tiling-status {
+      display: none;
+      font-family: "JetBrains Mono", "Fira Code", monospace;
+      font-size: 11px;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      border-radius: 8px;
+      padding: 4px 8px;
+      white-space: nowrap;
+    }
+
+    .tiling-status.shown {
+      display: inline-block;
+    }
+
     .drag-overlay {
       position: fixed;
       inset: 0;
@@ -649,6 +715,8 @@
         <button data-layout="quad" title="Quad">
           <svg width="16" height="14" viewBox="0 0 16 14"><rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/><line x1="8" y1="1" x2="8" y2="13" stroke="currentColor" stroke-width="1"/><line x1="1" y1="7" x2="15" y2="7" stroke="currentColor" stroke-width="1"/></svg>
         </button>
+        <button id="tree-layout" title="Tiling layout" style="display:none"></button>
+        <span id="tiling-status" class="tiling-status" aria-live="polite"></span>
         <button id="reload">Reload</button>
         <button id="kbcapture" title="Full screen mode with full keyboard capture: browser shortcuts like Ctrl+W go to the booth">&#x26F6;</button>
       </div>
@@ -910,6 +978,26 @@
       let currentLayout = "single";
       const split = loadSplitValues();
 
+      // Besides the six preset names, a layout can be a tiling tree written
+      // as text — h(1,v(2,3)) — from the Ctrl+Alt shortcuts (tiling.js).
+      const Tiling = window.BoothTiling || null;
+      function isKnownLayout(mode) {
+        if (typeof mode !== "string") return false;
+        return !!layouts[mode] || !!(Tiling && Tiling.parse(mode));
+      }
+
+      // Tiling state — see "Tiling" further down. Declared up here because
+      // setLayout, which runs on every layout change, reads it.
+      let currentTree = null;   // set only while a tree layout (not a preset) shows
+      let zoomPane = null;      // Ctrl+Alt+F: the one pane filling the grid
+      let focusedPane = 1;      // the pane the shortcuts act on
+      let pendingSplit = null;  // Ctrl+Alt+B / V: { pane, dir } for the next open
+      let resizeMode = false;   // Ctrl+Alt+R
+      let treeDrag = null;      // a tree divider being dragged
+      const tilingStatus = document.getElementById("tiling-status");
+      const treeLayoutButton = document.getElementById("tree-layout");
+      let lastTreeLayout = "";  // the tree layout the toolbar's tiling button goes back to
+
       function clamp(value, min, max) {
         return Math.min(max, Math.max(min, value));
       }
@@ -951,7 +1039,7 @@
             return "";
           }
           const mode = raw.trim().toLowerCase();
-          return layouts[mode] ? mode : "";
+          return isKnownLayout(mode) ? mode : "";
         } catch (_error) {
           return "";
         }
@@ -992,14 +1080,15 @@
 
         try {
           const mode = decodeURIComponent(hash.slice(modeHashPrefix.length)).trim().toLowerCase();
-          return layouts[mode] ? mode : "";
+          return isKnownLayout(mode) ? mode : "";
         } catch (_error) {
           return "";
         }
       }
 
       function setHashMode(mode) {
-        const nextHash = modeHashPrefix + encodeURIComponent(mode);
+        // "," and "@" left readable in a tree layout: #mode=h(1@60,v(2,3)@40).
+        const nextHash = modeHashPrefix + encodeURIComponent(mode).replace(/%2C/gi, ",").replace(/%40/gi, "@");
         if (window.location.hash === nextHash) {
           return;
         }
@@ -1081,6 +1170,14 @@
       }
 
       function setLayout(layout, options = {}) {
+        if (!layouts[layout] && Tiling) {
+          const tree = Tiling.parse(layout || "");
+          if (tree) {
+            setTreeLayout(tree, options);
+            return;
+          }
+        }
+        leaveTreeLayout();
         const updateHash = options.updateHash !== false;
         const persistLayout = options.persistLayout !== false;
         currentLayout = layouts[layout] ? layout : "single";
@@ -1111,6 +1208,8 @@
         if (updateHash) {
           setHashMode(currentLayout);
         }
+        refreshTilingFocus();
+        updateTreeLayoutButton();
       }
 
       function updateSplitFromPointer(event) {
@@ -1247,6 +1346,550 @@
         });
       } else if (kbCaptureButton) {
         kbCaptureButton.style.display = "none";
+      }
+
+      // ── Tiling: i3-style Ctrl+Alt shortcuts ──
+      // The same keys as the i3 template's +ctrl-alt bindings (i3--setup.sh),
+      // acting on the four panes: focus, move, split, open, close, full,
+      // resize. The layout logic is tiling.js; this is the page side.
+      //
+      // The six presets keep their own grid code above untouched. A shortcut
+      // turns the current preset into a tree, edits it, and shows the result
+      // as a preset again whenever it is exactly one (tiling.js matchPreset);
+      // anything else shows as a tree layout, placed absolutely so the pane
+      // elements, and the terminals in them, never move in the page.
+      //
+      // Keys pressed inside a pane arrive in that pane's iframe, not here, so
+      // each same-origin frame (the terminals, booth web tabs) gets the same
+      // listener. An external site in a web tab is out of reach; click into a
+      // terminal pane first.
+      const GRID_PAD = 8;   // the .grid padding, px
+      const PANE_GAP = 8;   // the .grid --pane-gap, px
+
+      function visiblePanes() {
+        return panes
+          .filter(function(pane) { return pane.classList.contains("active"); })
+          .map(function(pane) { return Number(pane.dataset.pane); });
+      }
+
+      function layoutTreeNow() {
+        return currentTree || Tiling.presetTree(currentLayout, split.x, split.y);
+      }
+
+      function clearTreeGeometry() {
+        panes.forEach(function(pane) {
+          pane.style.position = "";
+          pane.style.left = "";
+          pane.style.top = "";
+          pane.style.width = "";
+          pane.style.height = "";
+        });
+        grid.querySelectorAll(".tree-handle").forEach(function(handle) { handle.remove(); });
+      }
+
+      function leaveTreeLayout() {
+        currentTree = null;
+        zoomPane = null;
+        clearTreeGeometry();
+        setTilingStatus();
+      }
+
+      // Lengths below are [fraction of the grid's content box, px]: a split
+      // shares its length minus the gaps between its children, as a CSS grid
+      // track list does, so three columns come out equally wide.
+      function lin(f, px) { return [f, px]; }
+      function css(v) {
+        return "calc(" + GRID_PAD + "px + (100% - " + (2 * GRID_PAD) + "px) * " + v[0].toFixed(6) + " + " + v[1].toFixed(3) + "px)";
+      }
+      function cssLength(v) {
+        return "calc((100% - " + (2 * GRID_PAD) + "px) * " + v[0].toFixed(6) + " + " + v[1].toFixed(3) + "px)";
+      }
+
+      // Where every pane and divider of a tree goes.
+      function treeGeometry(tree) {
+        const out = { panes: {}, handles: [] };
+        (function walk(node, box, path) {
+          if (typeof node.pane === "number") {
+            out.panes[node.pane] = box;
+            return;
+          }
+          const across = node.dir === "h";
+          const len = across ? box.w : box.h;
+          const gaps = PANE_GAP * (node.children.length - 1);
+          let at = across ? box.x : box.y;
+          node.children.forEach(function(child, i) {
+            const size = node.sizes[i];
+            const part = lin(len[0] * size, (len[1] - gaps) * size);
+            walk(child, across
+              ? { x: at, y: box.y, w: part, h: box.h }
+              : { x: box.x, y: at, w: box.w, h: part }, path.concat(i));
+            at = lin(at[0] + part[0], at[1] + part[1] + PANE_GAP);
+            if (i < node.children.length - 1) {
+              out.handles.push({
+                path: path, index: i, axis: across ? "x" : "y",
+                // centred in the gap just passed: 12px wide, 2px in from the ends
+                at: lin(at[0], at[1] - PANE_GAP / 2 - 6),
+                from: lin((across ? box.y : box.x)[0], (across ? box.y : box.x)[1] + 2),
+                length: lin((across ? box.h : box.w)[0], (across ? box.h : box.w)[1] - 4)
+              });
+            }
+          });
+        })(tree, { x: lin(0, 0), y: lin(0, 0), w: lin(1, 0), h: lin(1, 0) }, []);
+        return out;
+      }
+
+      function placeAt(el, box) {
+        el.style.left = css(box.x);
+        el.style.top = css(box.y);
+        el.style.width = cssLength(box.w);
+        el.style.height = cssLength(box.h);
+      }
+
+      function addTreeHandle(d) {
+        const handle = document.createElement("div");
+        handle.className = "split-handle tree-handle " + (d.axis === "x" ? "split-handle-x" : "split-handle-y");
+        handle.setAttribute("aria-hidden", "true");
+        if (d.axis === "x") {
+          handle.style.left = css(d.at);
+          handle.style.top = css(d.from);
+          handle.style.height = cssLength(d.length);
+        } else {
+          handle.style.top = css(d.at);
+          handle.style.left = css(d.from);
+          handle.style.width = cssLength(d.length);
+        }
+        handle.addEventListener("pointerdown", function(event) { beginTreeDrag(d, event); });
+        grid.appendChild(handle);
+      }
+
+      // Places the panes of `tree` without touching currentTree — the full
+      // pane of Ctrl+Alt+F is drawn this way too. Narrow screens stack the
+      // panes in tree order, as the presets do.
+      function renderTree(tree) {
+        clearTreeGeometry();
+        grid.className = "grid layout-tree";
+        grid.style.gridTemplateColumns = "";
+        grid.style.gridTemplateRows = "";
+        const order = Tiling.panes(tree);
+        panes.forEach(function(pane, index) {
+          pane.style.gridRow = "";
+          pane.style.gridColumn = "";
+          pane.classList.toggle("active", order.indexOf(index + 1) >= 0);
+        });
+        // Narrow: the same panes stacked in tree order, one column.
+        const compact = compactQuery.matches;
+        const geometry = treeGeometry(compact
+          ? (order.length > 1 ? { dir: "v", children: order.map(function(n) { return { pane: n }; }), sizes: order.map(function() { return 1 / order.length; }) } : tree)
+          : tree);
+        order.forEach(function(n) { placeAt(panes[n - 1], geometry.panes[n]); });
+        if (!compact) geometry.handles.forEach(addTreeHandle);
+        refreshTilingFocus();
+      }
+
+      function setTreeLayout(tree, options = {}) {
+        const preset = Tiling.matchPreset(tree);
+        if (preset) {
+          if (preset.x !== undefined) split.x = preset.x;
+          if (preset.y !== undefined) split.y = preset.y;
+          saveSplitValues();
+          setLayout(preset.name, options);
+          return;
+        }
+        currentTree = tree;
+        zoomPane = null;
+        currentLayout = Tiling.serialize(tree);
+        renderTree(tree);
+        layoutButtons.forEach(function(button) { button.classList.remove("active"); });
+        if (options.persistLayout !== false) saveLayout(currentLayout);
+        if (options.updateHash !== false) setHashMode(currentLayout);
+        lastTreeLayout = currentLayout;
+        updateTreeLayoutButton();
+        setTilingStatus();
+      }
+
+      // The toolbar's seventh button: the last tree layout, drawn the way
+      // the six preset icons are. Lit while it shows; after a preset is
+      // picked it stays, so one click goes back to it.
+      function treeLayoutIcon(tree) {
+        const lines = [];
+        (function walk(node, x, y, w, h) {
+          if (typeof node.pane === "number") return;
+          let offset = 0;
+          node.children.forEach(function(child, i) {
+            const size = node.sizes[i];
+            if (node.dir === "h") {
+              walk(child, x + w * offset, y, w * size, h);
+            } else {
+              walk(child, x, y + h * offset, w, h * size);
+            }
+            offset += size;
+            if (i < node.children.length - 1) {
+              lines.push(node.dir === "h"
+                ? [x + w * offset, y, x + w * offset, y + h]
+                : [x, y + h * offset, x + w, y + h * offset]);
+            }
+          });
+        })(tree, 1, 1, 14, 12);
+        return '<svg width="16" height="14" viewBox="0 0 16 14">' +
+          '<rect x="0.5" y="0.5" width="15" height="13" rx="1.5" fill="none" stroke="currentColor" stroke-width="1"/>' +
+          lines.map(function(l) {
+            return '<line x1="' + l[0].toFixed(1) + '" y1="' + l[1].toFixed(1) + '" x2="' + l[2].toFixed(1) +
+              '" y2="' + l[3].toFixed(1) + '" stroke="currentColor" stroke-width="1"/>';
+          }).join("") + "</svg>";
+      }
+
+      function updateTreeLayoutButton() {
+        const tree = Tiling && lastTreeLayout ? Tiling.parse(lastTreeLayout) : null;
+        treeLayoutButton.style.display = tree ? "" : "none";
+        if (!tree) return;
+        if (treeLayoutButton.dataset.tree !== lastTreeLayout) {
+          treeLayoutButton.dataset.tree = lastTreeLayout;
+          treeLayoutButton.innerHTML = treeLayoutIcon(tree);
+          treeLayoutButton.title = "Tiling layout " + lastTreeLayout;
+        }
+        treeLayoutButton.classList.toggle("active", currentTree !== null);
+      }
+
+      treeLayoutButton.addEventListener("click", function() {
+        if (lastTreeLayout) setLayout(lastTreeLayout);
+      });
+
+      // Redraws whatever the current layout is, e.g. to come back from full.
+      function showCurrentLayout() {
+        setLayout(currentLayout, { updateHash: false, persistLayout: false });
+      }
+
+      function applyTree(next) {
+        if (next) setTreeLayout(next);
+      }
+
+      function beginTreeDrag(d, event) {
+        if (!currentTree) return;
+        treeDrag = { path: d.path, index: d.index, axis: d.axis };
+        document.body.classList.add(d.axis === "x" ? "dragging-col" : "dragging-row");
+        dragOverlay.classList.add("active", d.axis === "x" ? "axis-x" : "axis-y");
+        event.preventDefault();
+      }
+
+      function moveTreeDrag(event) {
+        if (!treeDrag || !currentTree) return;
+        const rect = grid.getBoundingClientRect();
+        const pos = treeDrag.axis === "x"
+          ? (event.clientX - rect.left - GRID_PAD) / (rect.width - 2 * GRID_PAD)
+          : (event.clientY - rect.top - GRID_PAD) / (rect.height - 2 * GRID_PAD);
+        if (!Number.isFinite(pos)) return;
+        currentTree = Tiling.dragDivider(currentTree, treeDrag.path, treeDrag.index, pos);
+        renderTree(currentTree);
+      }
+
+      function endTreeDrag() {
+        if (!treeDrag) return;
+        treeDrag = null;
+        document.body.classList.remove("dragging-col", "dragging-row");
+        dragOverlay.classList.remove("active", "axis-x", "axis-y");
+        setTreeLayout(currentTree);
+      }
+
+      window.addEventListener("pointermove", moveTreeDrag);
+      window.addEventListener("pointerup", endTreeDrag);
+      window.addEventListener("pointercancel", endTreeDrag);
+      window.addEventListener("blur", endTreeDrag);
+
+      // ── Tiling: focus ──
+      function refreshTilingFocus() {
+        const shown = visiblePanes();
+        if (shown.length && shown.indexOf(focusedPane) < 0) focusedPane = shown[0];
+        grid.classList.toggle("has-focus-ring", shown.length > 1);
+        panes.forEach(function(pane, index) {
+          const n = index + 1;
+          const pending = pendingSplit && pendingSplit.pane === n ? pendingSplit.dir : "";
+          pane.classList.toggle("focused", n === focusedPane);
+          pane.classList.toggle("split-next-h", pending === "h");
+          pane.classList.toggle("split-next-v", pending === "v");
+        });
+      }
+
+      // Puts the keyboard in a pane: its terminal, or its web tab.
+      function focusPaneContent(n) {
+        const pane = panes[n - 1];
+        if (!pane) return;
+        const frame = (pane.classList.contains("mode-web") && activeWebFrame(pane)) || pane.querySelector(".term-frame");
+        if (!frame) return;
+        try {
+          frame.contentWindow.focus();
+          const term = frame.contentWindow.term;
+          if (term && typeof term.focus === "function") term.focus();
+        } catch (_e) {
+          frame.focus();
+        }
+      }
+
+      function setFocusedPane(n, moveKeyboard) {
+        focusedPane = n;
+        refreshTilingFocus();
+        if (moveKeyboard) focusPaneContent(n);
+      }
+
+      function noteFocus(pane) {
+        const n = pane ? Number(pane.dataset.pane) : 0;
+        if (n && n !== focusedPane) {
+          focusedPane = n;
+          refreshTilingFocus();
+        }
+      }
+
+      // Clicking or tabbing into a pane makes it the focused one. A click
+      // into an iframe only shows up here as this window losing focus; a
+      // click from one iframe into another, only inside the frames (below).
+      window.addEventListener("blur", function() {
+        setTimeout(function() {
+          const el = document.activeElement;
+          noteFocus(el && el.closest ? el.closest(".pane") : null);
+        }, 0);
+      });
+      document.addEventListener("focusin", function(e) {
+        noteFocus(e.target && e.target.closest ? e.target.closest(".pane") : null);
+      });
+      grid.addEventListener("pointerdown", function(e) {
+        noteFocus(e.target && e.target.closest ? e.target.closest(".pane") : null);
+      }, true);
+
+      // ── Tiling: status ──
+      function setTilingStatus() {
+        let text = "";
+        if (resizeMode) {
+          text = "Resize: h j k l or arrows · Enter or Esc to finish";
+        } else if (zoomPane !== null) {
+          text = "Session " + zoomPane + " full · Ctrl+Alt+F to restore";
+        }
+        tilingStatus.textContent = text;
+        tilingStatus.classList.toggle("shown", !!text);
+      }
+      tilingStatus.addEventListener("click", function() {
+        if (resizeMode) setResizeMode(false);
+        else if (zoomPane !== null) tilingZoom();
+      });
+
+      // ── Tiling: actions ──
+      function unzoom() {
+        if (zoomPane === null) return;
+        zoomPane = null;
+        showCurrentLayout();
+      }
+
+      function tilingFocus(dir) {
+        unzoom();
+        const n = Tiling.neighbor(layoutTreeNow(), focusedPane, dir);
+        if (n) setFocusedPane(n, true);
+      }
+
+      function tilingMove(dir) {
+        unzoom();
+        applyTree(Tiling.move(layoutTreeNow(), focusedPane, dir));
+        focusPaneContent(focusedPane);
+      }
+
+      function tilingToggleSplit() {
+        unzoom();
+        applyTree(Tiling.toggleSplit(layoutTreeNow(), focusedPane));
+      }
+
+      function setPendingSplit(dir) {
+        pendingSplit = { pane: focusedPane, dir: dir };
+        refreshTilingFocus();
+      }
+
+      // Brings back a hidden pane — the lowest, or `pane` — beside the
+      // focused one. Its session kept running while it was hidden.
+      function tilingOpen(pane) {
+        unzoom();
+        const tree = layoutTreeNow();
+        const shown = Tiling.panes(tree);
+        const next = pane || [1, 2, 3, 4].find(function(n) { return shown.indexOf(n) < 0; });
+        if (!next || shown.indexOf(next) >= 0) return;
+        const dir = pendingSplit && pendingSplit.pane === focusedPane ? pendingSplit.dir : undefined;
+        const rect = panes[focusedPane - 1].getBoundingClientRect();
+        pendingSplit = null;
+        applyTree(Tiling.insert(tree, focusedPane, next, dir, rect.width >= rect.height ? "h" : "v"));
+        setFocusedPane(next, true);
+      }
+
+      function tilingGoTo(n) {
+        if (Tiling.panes(layoutTreeNow()).indexOf(n) >= 0) {
+          unzoom();
+          setFocusedPane(n, true);
+        } else {
+          tilingOpen(n);
+        }
+      }
+
+      // Hides the pane; its tmux session keeps running and Ctrl+Alt+Enter or
+      // Ctrl+Alt+<number> brings it back. The last pane stays.
+      function tilingClose() {
+        unzoom();
+        const tree = layoutTreeNow();
+        const shown = Tiling.panes(tree);
+        if (shown.length < 2) return;
+        const closing = focusedPane;
+        const next = ["left", "up", "right", "down"]
+          .map(function(dir) { return Tiling.neighbor(tree, closing, dir); })
+          .find(Boolean) || shown.find(function(n) { return n !== closing; });
+        if (pendingSplit && pendingSplit.pane === closing) pendingSplit = null;
+        focusedPane = next;
+        applyTree(Tiling.remove(tree, closing));
+        focusPaneContent(next);
+      }
+
+      function tilingZoom() {
+        if (zoomPane !== null) {
+          unzoom();
+          focusPaneContent(focusedPane);
+          return;
+        }
+        if (visiblePanes().length < 2) return;
+        zoomPane = focusedPane;
+        renderTree({ pane: zoomPane });
+        setTilingStatus();
+        focusPaneContent(zoomPane);
+      }
+
+      function setResizeMode(on) {
+        resizeMode = on;
+        setTilingStatus();
+      }
+
+      // ── Tiling: keys ──
+      const tilingDirs = {
+        h: "left", j: "down", k: "up", l: "right",
+        arrowleft: "left", arrowdown: "down", arrowup: "up", arrowright: "right"
+      };
+      const resizeSteps = {
+        h: ["h", -0.05], arrowleft: ["h", -0.05], l: ["h", 0.05], arrowright: ["h", 0.05],
+        k: ["v", -0.05], arrowup: ["v", -0.05], j: ["v", 0.05], arrowdown: ["v", 0.05]
+      };
+
+      // By the key's label (i3 binds keysyms), falling back to its position
+      // for a layout that gives Ctrl+Alt+<key> no plain character.
+      function tilingKeyName(e) {
+        if (e.key && e.key.length === 1 && /[a-z0-9]/i.test(e.key)) return e.key.toLowerCase();
+        if (/^Key[A-Z]$/.test(e.code || "")) return e.code.slice(3).toLowerCase();
+        if (/^Digit[0-9]$/.test(e.code || "")) return e.code.slice(5);
+        return (e.key || "").toLowerCase();
+      }
+
+      function tilingAction(key, shift) {
+        const dir = tilingDirs[key];
+        if (dir) return shift ? function() { tilingMove(dir); } : function() { tilingFocus(dir); };
+        if (shift) return key === "q" ? tilingClose : null;
+        switch (key) {
+          case "b": return function() { setPendingSplit("h"); };
+          case "v": return function() { setPendingSplit("v"); };
+          case "e": return tilingToggleSplit;
+          case "enter": return function() { tilingOpen(null); };
+          case "f": return tilingZoom;
+          case "r": return function() { setResizeMode(true); };
+          case "1": case "2": case "3": case "4": return function() { tilingGoTo(Number(key)); };
+        }
+        return null;
+      }
+
+      function handleResizeKey(e) {
+        const key = tilingKeyName(e);
+        if (key === "control" || key === "alt" || key === "shift" || key === "meta") return;
+        // A dialog or address bar on this page keeps its typing.
+        const t = e.target;
+        if (t && t.ownerDocument === document && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName || "")) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        if (key === "enter" || key === "escape" || (e.ctrlKey && e.altKey && key === "r")) {
+          setResizeMode(false);
+          return;
+        }
+        const step = resizeSteps[key];
+        if (!step) return;
+        unzoom();
+        applyTree(Tiling.resize(layoutTreeNow(), focusedPane, step[0], step[1]));
+      }
+
+      function onTilingKey(e) {
+        if (resizeMode) {
+          handleResizeKey(e);
+          return;
+        }
+        if (!e.ctrlKey || !e.altKey || e.metaKey) return;
+        // AltGr arrives as Ctrl+Alt on Windows; it is typing a character.
+        if (typeof e.getModifierState === "function" && e.getModifierState("AltGraph")) return;
+        const action = tilingAction(tilingKeyName(e), e.shiftKey);
+        if (!action) return;
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        action();
+      }
+
+      // Each same-origin frame gets the key and focus listeners, again after
+      // every navigation (a new document means a new window to listen on).
+      function hookTilingFrame(iframe) {
+        function attach() {
+          try {
+            const w = iframe.contentWindow;
+            if (!w || w.__cbTiling) return;
+            w.__cbTiling = true;
+            const pane = iframe.closest(".pane");
+            w.addEventListener("keydown", onTilingKey, true);
+            w.addEventListener("focus", function() { noteFocus(pane); });
+            w.addEventListener("pointerdown", function() { noteFocus(pane); }, true);
+          } catch (_e) {
+            // Cross-origin (an external web tab): out of reach.
+          }
+        }
+        iframe.addEventListener("load", attach);
+        attach();
+      }
+
+      if (Tiling) {
+        window.addEventListener("keydown", onTilingKey, true);
+        grid.querySelectorAll("iframe").forEach(hookTilingFrame);
+        // Web tabs create their iframes as they open.
+        new MutationObserver(function(records) {
+          records.forEach(function(record) {
+            record.addedNodes.forEach(function(node) {
+              if (node.nodeType !== 1) return;
+              if (node.tagName === "IFRAME") hookTilingFrame(node);
+              else node.querySelectorAll("iframe").forEach(hookTilingFrame);
+            });
+          });
+        }).observe(grid, { childList: true, subtree: true });
+
+        // CodingBooth Help (the overlay, parsed after this script) gets the
+        // key table, the way i3--setup.sh's i3-help.js adds the desktop's.
+        document.addEventListener("DOMContentLoaded", function() {
+          if (!window.BoothHelp || typeof window.BoothHelp.addTab !== "function") return;
+          const keys = [
+            ["Ctrl+Alt+h / j / k / l", "Focus the pane left / down / up / right (arrows work too)"],
+            ["Ctrl+Alt+Shift+h / j / k / l", "Move the pane left / down / up / right"],
+            ["Ctrl+Alt+b / Ctrl+Alt+v", "Next pane opens beside / below this one"],
+            ["Ctrl+Alt+Enter", "Open a pane (up to four)"],
+            ["Ctrl+Alt+Shift+q", "Close the pane — its session keeps running"],
+            ["Ctrl+Alt+1 … 4", "Go to session 1 … 4, opening it if closed"],
+            ["Ctrl+Alt+e", "Turn the pane's split the other way"],
+            ["Ctrl+Alt+f", "The pane fills the console / back"],
+            ["Ctrl+Alt+r", "Resize mode (h/j/k/l or arrows, Enter to leave)"]
+          ];
+          const rows = keys.map(function(k) {
+            return '<tr><td style="padding:2px 12px 2px 0;white-space:nowrap"><code>' + k[0] +
+              '</code></td><td style="padding:2px 0">' + k[1] + '</td></tr>';
+          }).join("");
+          window.BoothHelp.addTab("console", "Console Shortcuts",
+            '<p class="msg-dialog-lead">The console tiles its four sessions the way the ' +
+            '<strong>i3</strong> window manager tiles windows, with <strong>Ctrl+Alt</strong> ' +
+            'as the modifier. The toolbar layouts still work; a shortcut can reach any ' +
+            'arrangement of up to four panes.</p>' +
+            '<table style="border-collapse:collapse;font-size:13px">' + rows + '</table>' +
+            '<h3>Shortcut did nothing?</h3>' +
+            '<p>A web tab showing an outside site keeps its keys to itself: click into a ' +
+            'terminal pane first. Ctrl+Alt+arrows may be taken by your own desktop; ' +
+            'h/j/k/l always work.</p>');
+        });
       }
 
       // ── Web proxy ──
@@ -2233,7 +2876,7 @@
       const hashMode = parseModeFromHash();
       const savedMode = loadSavedLayout();
       const configLayout = consoleConfig.layout;
-      setLayout(hashMode || savedMode || (layouts[configLayout] ? configLayout : "") || "single", { updateHash: false });
+      setLayout(hashMode || savedMode || (isKnownLayout(configLayout) ? configLayout : "") || "single", { updateHash: false });
 
       // Initial load — restoring this browser's own tabs, applying the
       // checked-in config, setting the starting layout — is done. From here
