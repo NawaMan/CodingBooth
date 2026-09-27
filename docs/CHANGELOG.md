@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The terminal no longer leaves the cursor mid-line after a foreground booth's status
+  messages.** "🌐 Opened … in your browser.", "⏳ Waiting for the booth …" and the tunnel watcher's
+  "Tunnel opened/closed …" are printed while the foreground `docker run -it` holds the terminal in
+  raw mode, where a bare newline moves down a line without returning to the left margin — so the
+  cursor sat under the end of the message and the booth's next output (a code-server log line,
+  say) started there. They now end their lines with `\r\n` on a terminal (plain newlines when
+  output goes to a file).
+
 - **`booth--expose close <port>` closes a tunnel.** There was no way to take one down short of
   deleting its control file by hand; `close` removes it and the host-side booth process stops
   listening within a second, so the port can be exposed again (or elsewhere) straight away.
