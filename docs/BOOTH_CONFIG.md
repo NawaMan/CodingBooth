@@ -120,14 +120,58 @@ So a reconfigure only has to state what changes:
 ./booth config --no-tui --overwrite --select go+linter/python:3.13+uv
 ```
 
-Omitting a flag **keeps** the recorded value; restating a list flag (`--env`,
-`--mount`, `--expose`) **replaces** the whole list rather than adding to it —
-which is how an entry is removed:
+Omitting a flag **keeps** the recorded value; restating a list flag (`--select`,
+`--env`, `--mount`, `--expose`) **replaces** the whole list rather than adding to
+it — which is one way to remove an entry, at the cost of restating the rest:
 
 ```bash
 # Was: --env FOO=1 --env BAR=2. Now only BAR survives.
 ./booth config --no-tui --overwrite --env BAR=2
 ```
+
+### Adding or removing one entry
+
+`--select`, `--expose`, `--env`, and `--mount` each have an `--add-*` and a
+`--remove-*` counterpart that edits the baseline in place instead of replacing
+the whole list, so you don't have to restate everything else:
+
+```bash
+# Add a template or an extension, keeping everything else selected.
+./booth config --no-tui --overwrite --add-select docker
+./booth config --no-tui --overwrite --add-select go+linter   # adds `linter` to the
+                                                              # already-selected `go`
+
+# Drop one template or extension by name.
+./booth config --no-tui --overwrite --remove-select python
+
+# Add or update one expose/env/mount entry, keyed on the part that identifies it —
+# the container port, the env KEY, the container path — so re-adding an existing
+# key updates it rather than duplicating it.
+./booth config --no-tui --overwrite --add-expose 9000:8080   # was exposing 8080; now on 9000
+./booth config --no-tui --overwrite --add-env FOO=2          # was FOO=1
+./booth config --no-tui --overwrite --add-mount /other:/app/data
+
+# Drop one entry by that same key.
+./booth config --no-tui --overwrite --remove-expose 8080
+./booth config --no-tui --overwrite --remove-env FOO
+./booth config --no-tui --overwrite --remove-mount /app/data
+```
+
+`--remove-*` and `--add-*` for the same field can combine in one run — a
+`--remove-select go --add-select go:1.25` replaces `go`'s params by dropping it
+and adding it back, in one step. A name `--remove-select` doesn't find is a
+no-op with a warning, not an error, so repeating a removal is harmless.
+
+Combining a field's plain (replace) flag with its own `--remove-*` in the same
+run is refused: the plain flag already discards the whole baseline for that
+field, so there is nothing left for `--remove-*` to act on. Combining the plain
+flag with `--add-*` is fine — the add applies onto the value just given, not the
+discarded baseline.
+
+There is no `--add-cmd`/`--remove-cmd`: `--cmd` holds one command's argv, not an
+unordered set of commands, so restating it is the only way to change it — the
+same reason [Setting config values](#setting-config-values) below never merges
+`cmds` on `--set`, and a profile overlay never merges it either.
 
 The flags that steer the run itself — `--overwrite`, `--beside`, `--dryrun`,
 `--start` — are never inherited from the header, even though the header records
@@ -451,6 +495,8 @@ automatically (local name overrides stock with a warning).
 | Flag                       | Description                                                    |
 |----------------------------|----------------------------------------------------------------|
 | `--select <dsl>`           | Template selection (repeatable)                                |
+| `--add-select <dsl>`       | Reconfigure only: add onto the existing selection instead of replacing it — see [Adding or removing one entry](#adding-or-removing-one-entry) (repeatable) |
+| `--remove-select <name>`   | Reconfigure only: drop a template or extension by name from the existing selection (repeatable) |
 | `--no-tui`                 | Non-interactive CLI mode                                       |
 | `--web`                    | Browser UI on the booth port (`127.0.0.1:<port>`)              |
 | `--dryrun`                 | Preview what would be generated without writing files           |
@@ -458,8 +504,14 @@ automatically (local name overrides stock with a warning).
 | `--port <port>`            | Set port in generated config.toml (number, NEXT[:base], RANDOM[:base]) |
 | `--cmd <command>`          | Set the default start command (repeatable)                     |
 | `--expose <port>`          | Expose extra port (HOST:CONTAINER, +OFFSET, or host-side `${NAME:-digits}`; produces long-form `--publish` in run-args; repeatable) |
+| `--add-expose <port>`      | Reconfigure only: add or update one expose mapping, keyed on the container port (repeatable) |
+| `--remove-expose <port>`   | Reconfigure only: drop one expose mapping by container port (repeatable) |
 | `--env <KEY=VALUE>`        | Set container environment variable (produces long-form `--env` in run-args to distinguish from template-contributed `-e`; repeatable) |
+| `--add-env <KEY=VALUE>`    | Reconfigure only: add or update one env var, keyed on KEY (repeatable) |
+| `--remove-env <KEY>`       | Reconfigure only: drop one env var by KEY (repeatable) |
 | `--mount <host:container>` | Mount volume (produces long-form `--volume` in run-args to distinguish from template-contributed `-v`; repeatable) |
+| `--add-mount <host:container>` | Reconfigure only: add or update one mount, keyed on the container path (repeatable) |
+| `--remove-mount <container>` | Reconfigure only: drop one mount by container path (repeatable) |
 | `--set <key=value>`        | Set a config.toml value (repeatable; bare key = boolean true). See [Setting config values](#setting-config-values) |
 | `--version <ver>`          | Use templates from a specific release version                  |
 | `--templates-path <dir>`   | Use local templates directory                                  |
