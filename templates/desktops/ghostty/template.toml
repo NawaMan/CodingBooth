@@ -1,0 +1,20 @@
+display-name   = "Ghostty"
+display-disc   = "Fast, native GTK terminal emulator (alternate terminal for desktop variants)"
+display-detail = """\
+Installs Ghostty as an additional terminal alongside a desktop variant's own \
+default (xfce4-terminal, Konsole, qterminal, foot). Comes from the community \
+Ubuntu 24.04 build (pinned, checksum-verified) — Ghostty itself ships no Linux \
+binaries. Runs via software OpenGL (Mesa llvmpipe) inside a booth's VNC/noVNC \
+session — no host GPU needed. Seeds ~/.config/ghostty/config on first start \
+and never overwrites it afterwards."""
+display-order  = 44
+tags = [
+    "terminal",
+    "gpu",
+    "ghostty"
+]
+
+[segments]
+"Boothfile--60" = """
+setup ghostty
+"""

@@ -51,6 +51,14 @@ blocking. Kitty comes from a pinned, SHA256-verified upstream release rather tha
 noble's `kitty` 0.32.2 gets security fixes only through Ubuntu Pro, and is open to
 CVE-2026-72913, where displaying untrusted output can run commands.
 
+**2026-09-27 addendum — Ghostty.** `templates/desktops/ghostty` (`--select ghostty`) adds a
+third alternate terminal, from the pinned, SHA256-verified community noble `.deb`
+(`mkasberg/ghostty-ubuntu`; upstream ships no Linux binaries). Its auto-selected `+fancy`
+extension seeds a Tokyo Night / JetBrainsMono Nerd Font config; `ghostty~fancy` keeps the plain
+FiraCode default. `tests/complex/test-boothfile-ghostty` launches it under `Xvnc`, checks the font
+Ghostty actually loaded, and runs `ghostty +validate-config` on the seeded file. Not yet wired into
+`+default` / `default-terminal--setup.sh`.
+
 **2026-09-23 addendum — `+default` extension.** Both were originally *alternate* terminals only
 — no way to make either the one that actually opens when the desktop says "open a terminal."
 `templates/desktops/{alacritty,kitty}/default--extension.toml` (`--select
