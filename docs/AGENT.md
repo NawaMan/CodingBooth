@@ -380,15 +380,10 @@ in the manager's own syntax when it matters — `apt-pkg:htop=3.3.0-1`.
    > `booth config` refuses to run without `--overwrite`. Only do it if the user says they don't use
    > the TUI.
 
-**Level ranges for ordering:**
-| Level | Purpose                              |
-|-------|--------------------------------------|
-| 50–54 | Core CodingBooth                     |
-| 55–59 | OS/UI (desktop, browsers)            |
-| 60–64 | Languages (Python, Java, Node, Go)   |
-| 65–69 | Language extensions (venv, linters)  |
-| 70–74 | Dev tools (IDEs, editors)            |
-| 75–79 | Tool extensions (plugins, kernels)   |
+**Picking a `<LEVEL>`:** profiles and startup scripts run in filename order, lower first. Pick a
+level above every built-in your script relies on — `ls /etc/profile.d/ /usr/share/startup.d/` shows
+what is in this booth and at which number. Common ones: Python 53, Go 57, the JDK 60, jenv 65,
+IDEs and the notebook 70. Nothing validates the number; sorting after what you need is the rule.
 
 ---
 

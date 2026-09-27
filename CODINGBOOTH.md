@@ -624,16 +624,11 @@ The image's *capability* (Java? Python? VS Code? AI tools?) comes from ~186 buil
 
 Startup scripts run before the user's command under `set -euo pipefail`, so a non-zero exit takes the whole booth down — for every user, over a tool most of them never touch. A setup that cannot complete must be skipped, not fatal. See **[Startup Script](docs/BOOTH_CUSTOMIZATION.md#1-startup-script)** for the rule and its two footguns (git repo discovery, absent tools).
 
-`<LEVEL>` orders execution:
-
-| Range  | Purpose                       |
-|--------|-------------------------------|
-| 50–54  | Base                          |
-| 55–59  | OS / UI                       |
-| 60–64  | Languages                     |
-| 65–69  | Language extensions           |
-| 70–74  | Dev tools                     |
-| 75–79  | Tool extensions               |
+`<LEVEL>` orders execution: profiles and startup scripts run in filename order, so a script must
+sit above anything it relies on (a profile reading the JDK's `JAVA_HOME` sits above the JDK's 60).
+The levels in use, and what sits at each, are in
+**[Setup Implementation Notes → Startup/Profile Ordering](docs/BOOTH_SETUP.md#startupprofile-ordering)**.
+LEVEL is runtime order only; the order setups install in is the Boothfile's.
 
 ### Categories of available setups
 

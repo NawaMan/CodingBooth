@@ -186,18 +186,12 @@ Starter wrappers are optional. Simple tools that just need to be on `PATH` don't
 
 ### Profile Ordering
 
-The `<LEVEL>` number in file names controls execution order:
+The `<LEVEL>` number in file names controls execution order: files run in filename order, lower
+first. Pick a level above everything your script relies on — a profile that reads `JAVA_HOME` from
+the JDK's `60-cb-jdk--profile.sh` must sit above 60.
 
-| Level | Purpose | Examples |
-|-------|---------|---------|
-| 50-54 | Core CodingBooth base | Shell config, base utilities |
-| 55-59 | OS / UI | Desktop environments, display server |
-| 60-64 | Languages / platforms | Python, Java, Go, Node.js, Rust |
-| 65-69 | Language extensions | venv managers, JDK tools, linters |
-| 70-74 | Developer tools | IDEs, editors, notebook servers |
-| 75-79 | Tool extensions | Plugins, kernels, IDE extensions |
-
-Lower levels run first. A language setup at level 60 finishes before a tool that depends on it at level 70.
+The levels the built-in setups use, and what sits at each, are in
+[BOOTH_SETUP.md → Startup/Profile Ordering](BOOTH_SETUP.md#startupprofile-ordering).
 
 ### Creating a Custom Setup
 
