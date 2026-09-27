@@ -132,11 +132,11 @@ async function until(fn, description, timeout = 30000) {
       console.error("Restored addresses:", await addresses(), "Tabs:", await tabs());
       throw error;
     }
-    // The editor's own ports are refused.
+    // The booth's own ports (10000-10007) are refused.
     const last = await until(async () => {
       for (const frame of controlsFrames()) if (await frame.locator("#address").isVisible().catch(() => false)) return frame;
     }, "visible preview tab");
-    await last.locator("#address").fill("12222");
+    await last.locator("#address").fill("10007");
     await last.locator("#address").press("Enter");
     await until(async () => (await last.locator("#error").textContent()).includes("reserved"), "reserved port");
 

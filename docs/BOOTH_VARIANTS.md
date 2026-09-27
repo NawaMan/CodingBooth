@@ -169,7 +169,7 @@ code-server has not yet persisted.
 
 `booth` in these addresses means the container. The preview uses the booth's
 actual browser address and authenticated `/proxy/<port>/` endpoint to reach the
-server. Ports 10000–10007, 12222 and 13333 are reserved for Booth itself.
+server. Ports 10000–10007 are reserved for Booth itself.
 
 The code-server proxy shares the console web panel's HTML/CSS/JavaScript URL
 rewriting rules, supports WebSockets, and rewrites redirects to stay within the
