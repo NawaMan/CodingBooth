@@ -107,7 +107,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 				activeTunnels[containerPort] = tunnel
 				mu.Unlock()
 
-				fmt.Fprintf(os.Stderr, "  Tunnel opened: localhost:%d -> container:%d\n", externalPort, containerPort)
+				fmt.Fprintf(os.Stderr, "  Tunnel opened: container:%d -> localhost:%d\n", containerPort, externalPort)
 			}
 
 			// Remove tunnels whose control files are gone
@@ -117,7 +117,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 					t.cancel()
 					t.listener.Close()
 					delete(activeTunnels, port)
-					fmt.Fprintf(os.Stderr, "  Tunnel closed: localhost:%d -> container:%d\n", t.externalPort, port)
+					fmt.Fprintf(os.Stderr, "  Tunnel closed: container:%d -> localhost:%d\n", port, t.externalPort)
 				}
 			}
 			mu.Unlock()

@@ -42,9 +42,9 @@ Subcommands:
   list             Show published ports, runtime tunnels, and listening services
 
 Examples:
-  booth--expose 8080               # host:8080 -> container:8080
-  booth--expose 8080 18080         # host:18080 -> container:8080
-  booth--expose 8080 +8080         # host:<offset-base>+8080 -> container:8080
+  booth--expose 8080               # container:8080 -> host:8080
+  booth--expose 8080 18080         # container:8080 -> host:18080
+  booth--expose 8080 +8080         # container:8080 -> host:<offset-base>+8080
   booth--expose 5432 --permanent   # same, but persisted across restarts
   booth--expose list               # what is published and what is listening
 EOF
@@ -211,7 +211,7 @@ mkdir -p "$TUNNEL_DIR"
 echo "$EXTERNAL_PORT" > "$TUNNEL_DIR/$CONTAINER_PORT"
 
 # --- Output ---
-echo "TCP tunnel: host localhost:${EXTERNAL_PORT} -> container localhost:${CONTAINER_PORT}"
+echo "TCP tunnel: container localhost:${CONTAINER_PORT} -> host localhost:${EXTERNAL_PORT}"
 
 if [[ "$PERMANENT" == "true" ]]; then
     # Check if .booth/ is writable

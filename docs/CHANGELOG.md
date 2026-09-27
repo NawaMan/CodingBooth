@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth--expose` now names the container port first.** Its help, its confirmation line and the
+  host's `Tunnel opened/closed` messages read `container:8080 -> host:18080`, in the same order as
+  the arguments (`booth--expose 8080 18080`) and as `docker port`. Only the wording changed; the
+  tunnel still carries connections from the host into the container.
+
 - **New `posting` template: an HTTP client in the terminal.** [Posting](https://posting.sh/) is a
   keyboard-driven TUI alternative to Postman/Insomnia that saves requests as YAML in the project,
   so a collection persists and goes into version control with the code. Ubuntu packages it only

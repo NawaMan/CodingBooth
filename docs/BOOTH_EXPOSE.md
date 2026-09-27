@@ -7,7 +7,7 @@
 ```bash
 # Inside the booth:
 booth--expose 8080
-# → TCP tunnel: host localhost:8080 → container localhost:8080
+# → TCP tunnel: container localhost:8080 → host localhost:8080
 #
 # Note: This tunnel is ephemeral and will not survive a booth restart.
 #       Use --permanent to save to .booth/config.toml.
@@ -74,15 +74,15 @@ booth--expose <container-port> [external-port]
 
 ```bash
 booth--expose 8080 18080
-# host localhost:18080 → container localhost:8080
+# container localhost:8080 → host localhost:18080
 ```
 
 ### Relative to the offset base (`+`)
 
 ```bash
 booth--expose 8080 +8080
-# If booth port is 10000: host localhost:18080 → container localhost:8080
-# If booth port is 12000: host localhost:20080 → container localhost:8080
+# If booth port is 10000: container localhost:8080 → host localhost:18080
+# If booth port is 12000: container localhost:8080 → host localhost:20080
 ```
 
 The `+` prefix adds the value to the **offset base**, which is the booth port unless the booth was
@@ -95,14 +95,14 @@ front door on a port it did not choose, so it sets a base of its own instead:
 
 ```bash
 booth --port 443 --offset-base 20000
-# inside: booth--expose 8080 +8080  → host localhost:28080 → container localhost:8080
+# inside: booth--expose 8080 +8080  gives container localhost:8080 → host localhost:28080
 ```
 
 ### Default (no external port)
 
 ```bash
 booth--expose 8080
-# host localhost:8080 → container localhost:8080
+# container localhost:8080 → host localhost:8080
 ```
 
 When no external port is specified, it defaults to the same port number.
@@ -135,7 +135,7 @@ booth--expose 8080
 
 Output:
 ```
-TCP tunnel: host localhost:8080 → container localhost:8080
+TCP tunnel: container localhost:8080 → host localhost:8080
 Note: This tunnel is ephemeral and will not survive a booth restart.
       Use --permanent to save to .booth/config.toml.
 ```

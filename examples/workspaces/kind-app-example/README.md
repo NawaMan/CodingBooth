@@ -190,7 +190,7 @@ row says `published` (declared in `.booth/config.toml` at container start) or `t
 (created at runtime). If port 3000 shows `internal`, open a tunnel:
 
 ```bash
-booth--expose 3000          # host localhost:3000 -> container 3000
+booth--expose 3000          # container 3000 -> host localhost:3000
 booth--expose 8080          # optional, only if you want the API from the host
 booth--expose 8081          # optional
 ```
