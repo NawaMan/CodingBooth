@@ -39,6 +39,7 @@ OPTIONS
   --dind-allowed          Start a --dind booth without asking
   --privileged-allowed    Start a booth with --privileged-like run-args without asking
   --public                Bind to all interfaces with password authentication
+  --ok-public             Required with --public if another port is already published
   --egress                Enable egress defaults (proxy + enforcement)
   --sudo <true|false>     Enable/disable sudo access (default: true)
   --no-sudo               Shorthand for --sudo false
@@ -165,6 +166,9 @@ CONTAINER MODE:
   --public               Bind to all interfaces with password authentication.
                          Password read from .booth/.booth.password (chmod 600, gitignored),
                          or prompted interactively if not found.
+  --ok-public            Required with --public when another port is already published
+                         (e.g. a template's own +expose, or --expose at config time) --
+                         that port has no password or TLS of its own, only the booth's does.
   --tls-cert <path>      TLS certificate file for HTTPS (used with --public)
   --tls-key <path>       TLS private key file for HTTPS (used with --public)
   --dind                 Enable a Docker-in-Docker sidecar and set DOCKER_HOST.
@@ -301,6 +305,7 @@ RUNTIME OPTIONS:
 CONTAINER MODE:
   --daemon               Run in background
   --public               Bind to all interfaces with password authentication
+  --ok-public            Required with --public if another port is already published
   --tls-cert <path>      TLS certificate file (used with --public)
   --tls-key <path>       TLS private key file (used with --public)
   --dind                 Enable Docker-in-Docker sidecar (privileged: asks first)

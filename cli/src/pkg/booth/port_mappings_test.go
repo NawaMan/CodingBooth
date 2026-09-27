@@ -5,8 +5,13 @@
 package booth
 
 import (
+	"bytes"
+	"io"
+	"os"
 	"testing"
 
+	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -119,3 +124,95 @@ func TestDedupePortMappings_KeepsDistinctMappings(t *testing.T) {
 	assert.Equal(t, args, got)
 	assert.Equal(t, 0, removed)
 }
+
+// exposedPortsCtx builds the AppContext exposedPublicPorts/CheckPublicPortsExposed need.
+func exposedPortsCtx(public, okPublic, quiet bool, runArgs []string) appctx.AppContext {
+	builder := &appctx.AppContextBuilder{
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BuildArgs:  ilist.NewAppendableList[ilist.List[string]](),
+		RunArgs:    ilist.NewAppendableList[ilist.List[string]](),
+		Cmds:       ilist.NewAppendableList[ilist.List[string]](),
+		PortNumber: 13000,
+	}
+	builder.Config.Public = public
+	builder.Config.OkPublic = okPublic
+	builder.Config.Quiet = quiet
+	if len(runArgs) > 0 {
+		builder.RunArgs.Append(ilist.NewListFromSlice(runArgs))
+	}
+	return builder.Build()
+}
+
+// exposedPublicPorts is the pure decision half — this is what a test can drive
+// directly for the refuse-unless-ok-public case, since CheckPublicPortsExposed
+// itself calls os.Exit(1) there and cannot be called in-process.
+
+func TestExposedPublicPorts_ReportsExtraPortOnPublicBooth(t *testing.T) {
+	ports := exposedPublicPorts(exposedPortsCtx(true, false, false, []string{"-p", "18080:80"}))
+	assert.Equal(t, []string{"18080"}, ports)
+}
+
+func TestExposedPublicPorts_NilWhenNotPublic(t *testing.T) {
+	ports := exposedPublicPorts(exposedPortsCtx(false, false, false, []string{"-p", "18080:80"}))
+	assert.Nil(t, ports)
+}
+
+func TestExposedPublicPorts_NilWhenNoExtraPortsPublished(t *testing.T) {
+	ports := exposedPublicPorts(exposedPortsCtx(true, false, false, nil))
+	assert.Nil(t, ports)
+}
+
+func TestExposedPublicPorts_ListsEachDistinctPortOnce(t *testing.T) {
+	ports := exposedPublicPorts(exposedPortsCtx(true, false, false, []string{
+		"-p", "18080:80", "-p", "19090:90", "-p", "18080:80", // repeat, should not double-list
+	}))
+	assert.ElementsMatch(t, []string{"18080", "19090"}, ports)
+}
+
+// captureCheckPublicPortsExposed runs CheckPublicPortsExposed and captures stderr —
+// same pattern as TestPrintHomeVolumeWarning_* in booth_test.go. Only safe to call
+// for cases that do not reach os.Exit(1): not public, no extra ports, or okPublic.
+func captureCheckPublicPortsExposed(t *testing.T, public, okPublic, quiet bool, runArgs []string) string {
+	t.Helper()
+
+	oldStderr := os.Stderr
+	reader, writer, err := os.Pipe()
+	require.NoError(t, err)
+	os.Stderr = writer
+
+	ctx := exposedPortsCtx(public, okPublic, quiet, runArgs)
+
+	CheckPublicPortsExposed(ctx)
+
+	writer.Close()
+	os.Stderr = oldStderr
+
+	var buf bytes.Buffer
+	io.Copy(&buf, reader)
+	return buf.String()
+}
+
+func TestCheckPublicPortsExposed_SilentWhenNotPublic(t *testing.T) {
+	out := captureCheckPublicPortsExposed(t, false, false, false, []string{"-p", "18080:80"})
+	assert.Empty(t, out)
+}
+
+func TestCheckPublicPortsExposed_SilentWhenNoExtraPortsPublished(t *testing.T) {
+	out := captureCheckPublicPortsExposed(t, true, false, false, nil)
+	assert.Empty(t, out)
+}
+
+func TestCheckPublicPortsExposed_OkPublicWarnsRatherThanStayingSilent(t *testing.T) {
+	out := captureCheckPublicPortsExposed(t, true, true, false, []string{"-p", "18080:80"})
+	assert.Contains(t, out, "public")
+	assert.Contains(t, out, "18080")
+	assert.Contains(t, out, "13000") // the booth's own (protected) port, for contrast
+}
+
+func TestCheckPublicPortsExposed_OkPublicButQuietStaysSilent(t *testing.T) {
+	out := captureCheckPublicPortsExposed(t, true, true, true, []string{"-p", "18080:80"})
+	assert.Empty(t, out)
+}
+
+// The refuse-without-ok-public path (os.Exit(1)) cannot be called in-process — it
+// is exercised for real, as a subprocess, by tests/dryrun/test040--public-exposed-port-warning.sh.

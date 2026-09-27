@@ -22,6 +22,10 @@ Thumbs.db
 *.key
 id_rsa*
 id_ed25519*
+# --public's password file. Same reasoning as .booth/cache/ above: a per-project
+# .booth/.gitignore carrying this rule is itself covered by the '.gitignore' line
+# above, so it never reaches a clone — spelled out globally instead.
+**/.booth/.booth.password
 
 # --- Editors & IDEs ---
 .vscode/*

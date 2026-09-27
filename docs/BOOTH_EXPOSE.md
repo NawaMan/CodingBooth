@@ -303,7 +303,41 @@ The tunnel uses `docker exec` (or `podman exec`) to bridge connections, which re
 | default | `localhost:<port>` | the host only |
 | `--public` | `0.0.0.0:<port>` | anything that can route to the host |
 
-This is what makes `booth--expose` useful on a remote or hosted booth, where "the host" is not the machine holding the browser. It also means the exposed service is reachable by whoever can reach that host: the tunnel adds **no authentication and no TLS** of its own, unlike the booth's own port, which is password-protected. A development server tunneled out of a public booth is public — check that it is meant to be. A tunnel lasts until its control file under `.booth/.tmp/tcp-tunnels/` is removed (deleting the file closes the listener within a second), or until the booth restarts, which clears `.booth/.tmp/` along with every ephemeral tunnel.
+This is what makes `booth--expose` useful on a remote or hosted booth, where "the host" is not the machine holding the browser. It also means the exposed service is reachable by whoever can reach that host: the tunnel adds **no authentication and no TLS** of its own, unlike the booth's own port, which is password-protected. A development server tunneled out of a public booth is public — check that it is meant to be.
+
+Because of that, `booth--expose` **refuses** to open a tunnel on a public booth unless you pass `--ok-public`:
+
+```
+$ booth--expose 8080 28080
+Error: this booth is public — port 28080 would be open on
+       every interface with NO password and NO TLS of its own.
+       Pass --ok-public if that is what you mean.
+```
+
+```
+$ booth--expose 8080 28080 --ok-public
+TCP tunnel: host localhost:28080 -> container localhost:8080
+⚠️  This booth is public — port 28080 is now open on every
+   interface with NO password and NO TLS of its own.
+```
+
+`--ok-public` is a one-off acknowledgement for that single call — it is never read from `.booth/config.toml` or an environment variable, the same as `--public` and the password itself, so a committed config file can never pre-approve this.
+
+A tunnel lasts until its control file under `.booth/.tmp/tcp-tunnels/` is removed (deleting the file closes the listener within a second), or until the booth restarts, which clears `.booth/.tmp/` along with every ephemeral tunnel.
+
+The same check applies at booth startup — before any tunnel is even opened — if a `--public` booth already publishes an extra port (a template's own `+expose`, or `--expose` at config time): the booth refuses to start without `--ok-public` on the `codingbooth`/`booth` command line, and warns even with it:
+
+```
+$ codingbooth --public
+Error: this booth is public. Port(s) 18080 would be open on every
+       interface with NO password and NO TLS of their own — only the
+       booth's own port (https://localhost:13000) is protected.
+       Pass --ok-public if that is what you mean.
+
+$ codingbooth --public --ok-public
+⚠️  This booth is public. Port(s) 18080 have no password or TLS of
+   their own — only the booth's own port (https://localhost:13000) is protected.
+```
 
 ---
 
