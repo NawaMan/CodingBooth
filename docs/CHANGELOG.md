@@ -4,6 +4,27 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The Console UI tiles like i3, with Ctrl+Alt shortcuts.** The base variant's browser
+  console now takes the same Ctrl+Alt keys as the i3 template: focus (`h`/`j`/`k`/`l` or
+  arrows), move (`Shift`+those), split beside/below (`b`/`v`), open (`Enter`), close
+  (`Shift+q`, which only hides the pane — its session keeps running), go to session 1–4,
+  toggle the split (`e`), fill the console (`f`) and resize mode (`r`). Any arrangement of up
+  to four panes is now reachable, not just the six toolbar layouts, and is written as a tree
+  such as `h(1,v(2,3))` in the URL hash, the browser's saved layout and `.booth/console.json`.
+  The toolbar layouts are unchanged, and a shortcut that lands on one of them shows it as that
+  layout again; any other layout gets a seventh toolbar button drawn in its shape, which brings
+  it back after a preset. `console-spec` saves a tree layout to `console.json` like a preset
+  name (older images ignore it and start single). The focused pane gets a highlighted border
+  when more than one is showing. The console's Booth panel now has the **CodingBooth Help**
+  button the desktops have, opening on a Console Shortcuts tab (its Clipboard tab, which is
+  about the desktop's noVNC panel, is left out there). See
+  [BOOTH_CONSOLE.md](BOOTH_CONSOLE.md#keyboard-shortcuts-tiling).
+
+- **Fixed: CodingBooth Help tabs added by a setup showed up empty.** Since the notification
+  settings were added to the General tab, a tab added with `BoothHelp.addTab` — the i3
+  template's **i3 Shortcuts (Tiling)** — had its content placed inside the hidden General panel,
+  so selecting it showed a blank dialog. It now gets its own panel again.
+
 - **`booth config` can add or remove one entry on reconfigure, instead of restating the whole
   list.** `--select`, `--expose`, `--env`, and `--mount` each replace their whole list the moment
   you give them a value, so changing one entry meant retyping everything else you wanted to keep.

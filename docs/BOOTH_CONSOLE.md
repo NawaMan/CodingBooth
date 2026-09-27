@@ -24,6 +24,7 @@ Back to [README](../README.md)
 - [File Format](#file-format)
 - [Tab Addresses](#tab-addresses)
 - [Precedence](#precedence)
+- [Keyboard Shortcuts (Tiling)](#keyboard-shortcuts-tiling)
 - [Saving Layout Changes Back](#saving-layout-changes-back)
 - [Why a Separate File](#why-a-separate-file)
 - [Examples](#examples)
@@ -56,7 +57,7 @@ The file is:
 }
 ```
 
-- **`layout`** — one of the six layout names the toolbar buttons themselves produce: `single`, `hsplit`, `vsplit`, `quad`, `left-main`, `top-main`. Anything else is ignored.
+- **`layout`** — one of the six layout names the toolbar buttons themselves produce: `single`, `hsplit`, `vsplit`, `quad`, `left-main`, `top-main` — or a [tiling layout](#tiling-layouts) such as `h(1,v(2,3))`. Anything else is ignored.
 - **`panes`** — an object keyed by pane number as a string (`"1"` through `"4"`). A pane not listed here stays a terminal.
   - **`web`** — must be `true` for the pane to open in Web view at all. A pane listed with `"web": false` (or without `"tabs"`) is left as a terminal, same as not listing it.
   - **`tabs`** — an array of addresses, one per tab to open in that pane, in order. The last one ends up active. An empty or missing list leaves the pane as a terminal even with `"web": true`.
@@ -116,6 +117,43 @@ Use it when the pane's contents are part of the project's setup rather than a st
 ```
 
 The trade-off: a forced pane never remembers your own changes across reloads. The layout itself (step 2 for `layout`) is not affected by `force`.
+
+---
+
+## Keyboard Shortcuts (Tiling)
+
+The Console UI tiles its four sessions the way the **i3** window manager tiles windows, with **Ctrl+Alt** as the modifier — the same keys as the i3 template's Ctrl+Alt bindings, so one set of habits works on both. The toolbar layouts still work as before; the shortcuts reach every other arrangement of up to four panes as well.
+
+| Keys | Action |
+|---|---|
+| `Ctrl+Alt+h` / `j` / `k` / `l` (or arrows) | Focus the pane left / down / up / right |
+| `Ctrl+Alt+Shift+h` / `j` / `k` / `l` (or arrows) | Move the pane left / down / up / right |
+| `Ctrl+Alt+b` / `Ctrl+Alt+v` | The next pane opens beside / below this one |
+| `Ctrl+Alt+Enter` | Open a pane next to this one (up to four) |
+| `Ctrl+Alt+Shift+q` | Close the pane — it is only hidden; its session keeps running |
+| `Ctrl+Alt+1` … `4` | Go to session 1 … 4, opening it again if it was closed |
+| `Ctrl+Alt+e` | Turn the pane's split the other way |
+| `Ctrl+Alt+f` | The pane fills the console; again to restore |
+| `Ctrl+Alt+r` | Resize mode: `h`/`l` narrower/wider, `k`/`j` shorter/taller, `Enter` or `Esc` to finish |
+
+The focused pane has a highlighted border once there is more than one. The shortcuts work from inside a terminal or a booth web tab (`:3000` and the like). A web tab showing an outside site keeps its keys to itself, so click into a terminal pane first. `Ctrl+Alt+arrows` may be taken by your own desktop; `h`/`j`/`k`/`l` always work.
+
+The same table is in the console itself: open the floating **Booth** panel and pick **CodingBooth Help**, which opens on its **Console Shortcuts** tab (the desktop variants' i3 template adds an **i3 Shortcuts** tab to the same dialog).
+
+### Tiling Layouts
+
+A layout the toolbar has no button for is written as a tree: `h(…)` puts its parts side by side, `v(…)` stacks them, and the numbers are sessions. `@` gives a part's share in percent when the parts are not equal:
+
+| Layout | Looks like |
+|---|---|
+| `h(1,2,3)` | Three columns |
+| `h(v(2,3),1)` | Session 1 on the right, 2 and 3 stacked on the left |
+| `v(h(2,3),1)` | Session 1 along the bottom, 2 and 3 above it |
+| `h(1@60,v(2,3,4)@40)` | Session 1 on 60% of the width, three stacked on the right |
+
+It appears in the URL (`#mode=h(1,2,3)`), is remembered in the browser like any layout, and works as `"layout"` in `console.json` — [console-spec](#saving-layout-changes-back) saves it there the same way it saves a preset name, sizes included (`"layout": "h(2@55,1@45)"`). Filling the console with `Ctrl+Alt+f` is temporary and never saved. When a shortcut produces one of the six toolbar layouts, the console shows it as that layout again and lights its button; any other layout gets a seventh toolbar button drawn in its shape, which stays after you pick a preset so one click brings the tiling layout back.
+
+A booth image older than this feature does not know tree layouts: it ignores one in `console.json` and starts with a single pane, as it would for any unknown name.
 
 ---
 
