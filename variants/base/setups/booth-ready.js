@@ -28,7 +28,9 @@
 (function () {
   "use strict";
 
-  var HEALTH_URL = "/__booth/health";
+  // Relative, so it follows the page when a console is opened through another
+  // page's proxy (Web Preview); from "/" or "/booth" it is "/__booth/health".
+  var HEALTH_URL = "__booth/health";
 
   // The header the booth stamps its identity into, and the shape it must have.
   // Anything else — an image too old to send it, a template that failed to
@@ -197,7 +199,7 @@
     }
     // replace, not assign: the dead booth's page is not somewhere Back should
     // return to.
-    window.location.replace(window.location.origin + "/");
+    window.location.replace(new URL("./", window.location.href).href);
   }
 
   function notifyUp() {

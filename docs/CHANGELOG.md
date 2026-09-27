@@ -13,6 +13,12 @@ This file contains a list of changes for each released version.
   - **`start-webconsole [port]`** (new, `11111`): the web console, started next to another variant's
     service. Its panes and message API sit just above its own port (`11112`–`11115`, `11118`), as
     the booth-port console's sit on `10001`–`10004` and `10007`.
+  - **The web console also works inside another page's proxy**, such as code-server's Web Preview
+    (`http://booth:11111/`). Its panes, API calls, fonts and reloads used root paths (`/s1/`,
+    `/booth-messages/…`), which left the preview's `/proxy/11111/` and landed on the page's own
+    server: the panes came up blank, or the whole preview turned into a second code-server. They
+    are now relative to the console page, and an expired pane's login takes over the console
+    rather than the whole browser tab.
   - **`start-notebook [port]`** now defaults to **`12222`** (was 18888), **`start-codeserver
     [port]`** to **`13333`** (was 19999) — also the `NOTEBOOK_PORT` / `CODESERVER_PORT` template
     defaults.

@@ -1314,7 +1314,7 @@
     var activeBanners = {};
 
     // API base — override via window.BOOTH_MSG_API_BASE if needed
-    var apiBase = window.BOOTH_MSG_API_BASE || "/booth-messages/api";
+    var apiBase = window.BOOTH_MSG_API_BASE || "booth-messages/api";
 
     function esc(s) {
       var d = document.createElement("div");
@@ -1744,7 +1744,7 @@
 
     var fullscreen = document.getElementById("bl-fullscreen");
 
-    var apiBase = window.BOOTH_MSG_API_BASE || "/booth-messages/api";
+    var apiBase = window.BOOTH_MSG_API_BASE || "booth-messages/api";
     var pendingAction = null;   // "shutdown" or "restart" (built-in)
     var pendingConfirm = null;  // {text, yesLabel, yesVariant, progressText, onConfirm} from BoothPanel.confirm()
 
@@ -2364,7 +2364,7 @@
           // so the inner service has time to start, not just nginx)
           var readyCount = 0;
           var poll = setInterval(function () {
-            fetch("/booth", { method: "HEAD", cache: "no-store" }).then(function (r) {
+            fetch("booth", { method: "HEAD", cache: "no-store" }).then(function (r) {
               if (r.ok) {
                 readyCount++;
                 if (readyCount >= 3) {
@@ -2599,7 +2599,7 @@
     var chipEl = document.getElementById("bl-idle-chip");
     var idleOverlay = document.getElementById("bl-idle-overlay");
     var idleStack = document.getElementById("bl-idle-stack");
-    var apiBase = window.BOOTH_MSG_API_BASE || "/booth-messages/api";
+    var apiBase = window.BOOTH_MSG_API_BASE || "booth-messages/api";
 
     var baseIdleSec = parseInt(window.BOOTH_IDLE_TIME || "0", 10) || 0;
     if (!baseIdleSec) return;  // idle monitoring not armed for this booth
@@ -2842,7 +2842,7 @@
 
   // Activity tracker for idle detection — write last-activity timestamp via API
   (function () {
-    var apiBase = window.BOOTH_MSG_API_BASE || "/booth-messages/api";
+    var apiBase = window.BOOTH_MSG_API_BASE || "booth-messages/api";
     var lastReport = 0;
     var THROTTLE = 60000; // report at most once per minute
     // Mousemove deadband: sub-threshold drift (table vibration, sensor jitter)
