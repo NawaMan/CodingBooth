@@ -35,13 +35,21 @@ import (
 var hostEnvPortRE = regexp.MustCompile(`^\$\{[A-Za-z_][A-Za-z0-9_]*(:-\+?[0-9]+)?\}`)
 
 type initFlags struct {
-	selectDSLs    []string
-	selectDSL     string // resolved: joined from selectDSLs after ReadSelectInput
-	cmds          []string
-	exposes       []string // --expose port mappings
-	envs          []string // --env environment variables
-	mounts        []string // --mount volume mounts
-	sets          []string // raw --set key=value strings
+	selectDSLs        []string
+	selectDSL         string   // resolved: joined from selectDSLs after ReadSelectInput
+	addSelectDSLs     []string // --add-select: unioned onto the baseline selection
+	removeSelectNames []string // --remove-select: template/extension names dropped from the baseline
+	cmds              []string
+	exposes           []string // --expose port mappings
+	addExposes        []string // --add-expose: unioned onto the baseline, by container port
+	removeExposes     []string // --remove-expose: container ports dropped from the baseline
+	envs              []string // --env environment variables
+	addEnvs           []string // --add-env: unioned onto the baseline, by KEY
+	removeEnvs        []string // --remove-env: KEYs dropped from the baseline
+	mounts            []string // --mount volume mounts
+	addMounts         []string // --add-mount: unioned onto the baseline, by container path
+	removeMounts      []string // --remove-mount: container paths dropped from the baseline
+	sets              []string // raw --set key=value strings
 	cacheFiles    []string // cache-files read back from existing config.toml
 	cacheDirs     []string // cache-dirs read back from existing config.toml
 	sharedFiles   []string // shared-files read back from existing config.toml
@@ -71,6 +79,20 @@ func parseInitFlags(args []string) initFlags {
 				os.Exit(1)
 			}
 			flags.selectDSLs = append(flags.selectDSLs, args[i+1])
+			i++
+		case "--add-select":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --add-select requires a value")
+				os.Exit(1)
+			}
+			flags.addSelectDSLs = append(flags.addSelectDSLs, args[i+1])
+			i++
+		case "--remove-select":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --remove-select requires a value")
+				os.Exit(1)
+			}
+			flags.removeSelectNames = append(flags.removeSelectNames, args[i+1])
 			i++
 		case "--templates-path":
 			if i+1 >= len(args) {
@@ -136,6 +158,28 @@ func parseInitFlags(args []string) initFlags {
 			}
 			flags.exposes = append(flags.exposes, args[i+1])
 			i++
+		case "--add-expose":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --add-expose requires a value")
+				os.Exit(1)
+			}
+			if err := validateExpose(args[i+1]); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			flags.addExposes = append(flags.addExposes, args[i+1])
+			i++
+		case "--remove-expose":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --remove-expose requires a value")
+				os.Exit(1)
+			}
+			if err := validateExpose(args[i+1]); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			flags.removeExposes = append(flags.removeExposes, args[i+1])
+			i++
 		case "--env":
 			if i+1 >= len(args) {
 				fmt.Fprintln(os.Stderr, "Error: --env requires a value")
@@ -147,6 +191,28 @@ func parseInitFlags(args []string) initFlags {
 			}
 			flags.envs = append(flags.envs, args[i+1])
 			i++
+		case "--add-env":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --add-env requires a value")
+				os.Exit(1)
+			}
+			if err := validateEnv(args[i+1]); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			flags.addEnvs = append(flags.addEnvs, args[i+1])
+			i++
+		case "--remove-env":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --remove-env requires a value")
+				os.Exit(1)
+			}
+			if err := validateEnv(args[i+1]); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			flags.removeEnvs = append(flags.removeEnvs, args[i+1])
+			i++
 		case "--mount":
 			if i+1 >= len(args) {
 				fmt.Fprintln(os.Stderr, "Error: --mount requires a value")
@@ -157,6 +223,28 @@ func parseInitFlags(args []string) initFlags {
 				os.Exit(1)
 			}
 			flags.mounts = append(flags.mounts, args[i+1])
+			i++
+		case "--add-mount":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --add-mount requires a value")
+				os.Exit(1)
+			}
+			if err := validateMount(args[i+1]); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			flags.addMounts = append(flags.addMounts, args[i+1])
+			i++
+		case "--remove-mount":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --remove-mount requires a value")
+				os.Exit(1)
+			}
+			if args[i+1] == "" {
+				fmt.Fprintln(os.Stderr, "Error: --remove-mount requires a non-empty container path")
+				os.Exit(1)
+			}
+			flags.removeMounts = append(flags.removeMounts, args[i+1])
 			i++
 		case "--set":
 			if i+1 >= len(args) {
@@ -378,31 +466,40 @@ func readExistingArgs(targetPath string) map[string]string {
 	return args
 }
 
+// resolveDSLFragments resolves each raw --select-style fragment — stdin ("-"),
+// a recipe reference ("@name", a path, or "@@url"), or plain DSL text — to its
+// literal text and joins the results with "/". Shared by compileSelection and
+// the --add-select/--remove-select merge (mergeSelectDSLs in config.go) so both
+// read recipes and stdin the same way.
+func resolveDSLFragments(raw []string, projectRoot string) (string, error) {
+	var parts []string
+	for _, dsl := range raw {
+		if dsl == "-" {
+			data, err := io.ReadAll(os.Stdin)
+			if err != nil {
+				return "", fmt.Errorf("reading stdin: %w", err)
+			}
+			parts = append(parts, string(data))
+			continue
+		}
+		resolved, err := selection.ReadSelectInputWithProject(dsl, projectRoot)
+		if err != nil {
+			return "", err
+		}
+		parts = append(parts, resolved)
+	}
+	return strings.Join(parts, "/"), nil
+}
+
 // compileSelection runs the full pipeline: read input → parse → resolve → compile.
 // projectRoot is the config target (for .booth/templates and .booth/recipes).
 // overrides preserves existing param values across reconfiguration (may be nil).
 func compileSelection(flags initFlags, projectRoot string, overrides map[string]string) (*output.BoothOutput, *selection.ResolvedSelection) {
-	// Read input (handles -, @recipe, @@url, plain DSL)
-	// Each --select value is resolved individually, then joined with "/".
-	var parts []string
-	for _, dsl := range flags.selectDSLs {
-		if dsl == "-" {
-			data, err := io.ReadAll(os.Stdin)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error reading stdin: %v\n", err)
-				os.Exit(1)
-			}
-			parts = append(parts, string(data))
-		} else {
-			resolved, err := selection.ReadSelectInputWithProject(dsl, projectRoot)
-			if err != nil {
-				fmt.Fprintf(os.Stderr, "Error reading selection: %v\n", err)
-				os.Exit(1)
-			}
-			parts = append(parts, resolved)
-		}
+	rawInput, err := resolveDSLFragments(flags.selectDSLs, projectRoot)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading selection: %v\n", err)
+		os.Exit(1)
 	}
-	rawInput := strings.Join(parts, "/")
 
 	// Load stock templates, merge project-local .booth/templates/ (local wins + warn)
 	registry, err := tmpl.LoadMergedRegistry(flags.templatesPath, projectRoot, os.Stderr)
@@ -988,6 +1085,50 @@ func validateMount(mount string) error {
 		return fmt.Errorf("invalid --mount value %q: must contain host:container", mount)
 	}
 	return nil
+}
+
+// exposeKey returns the part of an --expose value that identifies which
+// container port it maps, so --add-expose/--remove-expose can tell "replace
+// this mapping" from "add a new one": the container-port side of HOST:CONTAINER
+// and IP:HOST:CONTAINER, the CONTAINER of +OFFSET:CONTAINER, and the container
+// port after a ${...} host form. A form with no separate container side
+// (a bare PORT, a bare +OFFSET, or a bare ${NAME...} with no :CONTAINER) has
+// nothing else to key on, so it keys on itself.
+func exposeKey(expose string) string {
+	if strings.HasPrefix(expose, "+") {
+		if _, container, ok := strings.Cut(expose[1:], ":"); ok {
+			return container
+		}
+		return expose
+	}
+	if envAt := strings.Index(expose, "${"); envAt >= 0 {
+		rest := expose[envAt:]
+		host := hostEnvPortRE.FindString(rest)
+		if after := rest[len(host):]; strings.HasPrefix(after, ":") {
+			return after[1:]
+		}
+		return expose
+	}
+	if idx := strings.LastIndex(expose, ":"); idx >= 0 {
+		return expose[idx+1:]
+	}
+	return expose
+}
+
+// envKey returns the KEY of an --env value ("KEY" or "KEY=VALUE"), so
+// --add-env/--remove-env can match on it regardless of the value.
+func envKey(env string) string {
+	key, _, _ := strings.Cut(env, "=")
+	return key
+}
+
+// mountKey returns the container-path side of a validated --mount value
+// ("host:container"), so --add-mount/--remove-mount can match on it regardless
+// of the host path. Only the first ":" separates: a host path is never expected
+// to contain one, but a container path safely could.
+func mountKey(mount string) string {
+	_, container, _ := strings.Cut(mount, ":")
+	return container
 }
 
 // applyMountFlags appends --volume mount entries to RunArgs.

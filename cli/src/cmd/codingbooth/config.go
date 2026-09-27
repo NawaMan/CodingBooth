@@ -119,7 +119,7 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 	// recovered from config.toml) survived — a silent, lopsided wipe.
 	//
 	// readExistingBooth also pulls run-args and cache entries out of config.toml.
-	flags = mergeFlags(readExistingBooth(targetPath), flags)
+	flags = mergeFlags(readExistingBooth(targetPath), flags, targetPath)
 	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
 
 	var out *output.BoothOutput
@@ -315,7 +315,7 @@ func prepareInteractiveConfig(version, targetPath string, flags initFlags) inter
 	}
 
 	existingFlags := readExistingBooth(targetPath)
-	mergedFlags := mergeFlags(existingFlags, flags)
+	mergedFlags := mergeFlags(existingFlags, flags, targetPath)
 	pre := buildPreSelection(registry, mergedFlags, readExistingArgs(targetPath))
 	pre.StringFields["booth-version"] = readLockFileVersion(targetPath, version)
 	drifted := output.Drifted(targetPath)
@@ -801,7 +801,11 @@ func parseAdjustCommand(cmd string) initFlags {
 // file. Those say nothing about what this run should do — inheriting them would
 // make every subsequent run an overwriting one — so the flags that steer this
 // invocation are taken from the CLI alone.
-func mergeFlags(existing, cli initFlags) initFlags {
+//
+// projectRoot is only needed to resolve --add-select/--remove-select fragments
+// (a recipe reference or URL has to be read before it can be merged); every
+// other field merges without touching disk.
+func mergeFlags(existing, cli initFlags, projectRoot string) initFlags {
 	merged := existing
 
 	merged.noTUI = cli.noTUI
@@ -815,10 +819,9 @@ func mergeFlags(existing, cli initFlags) initFlags {
 	merged.debug = cli.debug
 
 	// CLI overrides
-	if len(cli.selectDSLs) > 0 {
-		merged.selectDSLs = cli.selectDSLs
-		merged.selectDSL = cli.selectDSL
-	}
+	merged.selectDSLs = mergeSelectDSLs(existing, cli, projectRoot)
+	merged.selectDSL = "" // recomputed by the caller from merged.selectDSLs
+
 	if cli.variant != "" {
 		merged.variant = cli.variant
 	}
@@ -828,15 +831,9 @@ func mergeFlags(existing, cli initFlags) initFlags {
 	if len(cli.cmds) > 0 {
 		merged.cmds = cli.cmds
 	}
-	if len(cli.exposes) > 0 {
-		merged.exposes = cli.exposes
-	}
-	if len(cli.envs) > 0 {
-		merged.envs = cli.envs
-	}
-	if len(cli.mounts) > 0 {
-		merged.mounts = cli.mounts
-	}
+	merged.exposes = mergeKeyedList(existing.exposes, cli.exposes, cli.addExposes, cli.removeExposes, "expose", exposeKey)
+	merged.envs = mergeKeyedList(existing.envs, cli.envs, cli.addEnvs, cli.removeEnvs, "env", envKey)
+	merged.mounts = mergeKeyedList(existing.mounts, cli.mounts, cli.addMounts, cli.removeMounts, "mount", mountKey)
 	if len(cli.sets) > 0 {
 		merged.sets = cli.sets
 	}
@@ -848,6 +845,155 @@ func mergeFlags(existing, cli initFlags) initFlags {
 	}
 
 	return merged
+}
+
+// mergeSelectDSLs applies --select / --add-select / --remove-select against the
+// existing baseline and returns the raw fragments to carry forward on
+// merged.selectDSLs.
+//
+// A plain --select combined with --remove-select is rejected: --select already
+// discards the whole baseline, so there is nothing left for --remove-select to
+// act on. --add-select may combine with a plain --select — it adds onto the
+// value just given, not onto the (about to be discarded) baseline.
+func mergeSelectDSLs(existing, cli initFlags, projectRoot string) []string {
+	hasEdit := len(cli.addSelectDSLs) > 0 || len(cli.removeSelectNames) > 0
+	if !hasEdit {
+		if len(cli.selectDSLs) > 0 {
+			return cli.selectDSLs
+		}
+		return existing.selectDSLs
+	}
+	if len(cli.selectDSLs) > 0 && len(cli.removeSelectNames) > 0 {
+		fmt.Fprintln(os.Stderr, "Error: --select cannot be combined with --remove-select in the same run")
+		os.Exit(1)
+	}
+
+	baseRaw := existing.selectDSLs
+	if len(cli.selectDSLs) > 0 {
+		baseRaw = cli.selectDSLs
+	}
+
+	baseText, err := resolveDSLFragments(baseRaw, projectRoot)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading existing selection: %v\n", err)
+		os.Exit(1)
+	}
+	addText, err := resolveDSLFragments(cli.addSelectDSLs, projectRoot)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error reading --add-select: %v\n", err)
+		os.Exit(1)
+	}
+
+	base := parseSelectionOrExit(baseText, "existing selection")
+	add := parseSelectionOrExit(addText, "--add-select")
+
+	if len(cli.removeSelectNames) > 0 {
+		var unmatched []string
+		base, unmatched = selection.RemoveFromSelection(base, cli.removeSelectNames)
+		for _, name := range unmatched {
+			fmt.Fprintf(os.Stderr, "Note: --remove-select %q did not match anything in the existing selection.\n", name)
+		}
+	}
+
+	merged := selection.MergeSelections(base, add)
+	if merged == nil {
+		return nil
+	}
+	return []string{selection.SerializeSelection(merged)}
+}
+
+// parseSelectionOrExit parses already-resolved DSL text (no recipe/URL/stdin
+// left in it), or returns nil for empty text — an empty baseline or an
+// --add-select that was not given both parse to "no selection" rather than an
+// error.
+func parseSelectionOrExit(text, label string) *selection.ParsedSelection {
+	if text == "" {
+		return nil
+	}
+	parsed, err := selection.ParseSelectDSL(text)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error parsing %s: %v\n", label, err)
+		os.Exit(1)
+	}
+	return parsed
+}
+
+// mergeKeyedList applies a plain/--add-*/--remove-* flag triple onto a baseline
+// list keyed by keyFn. A plain value replaces the baseline outright (matching
+// every other list flag); combining it with --remove-* is rejected for the same
+// reason as --select above. Otherwise removals apply to the baseline first,
+// then additions are unioned in by key: an add whose key already exists in the
+// list updates that entry in place instead of duplicating it.
+func mergeKeyedList(existing, plain, add, remove []string, flagName string, keyFn func(string) string) []string {
+	if len(plain) > 0 {
+		if len(remove) > 0 {
+			fmt.Fprintf(os.Stderr, "Error: --%s cannot be combined with --remove-%s in the same run\n", flagName, flagName)
+			os.Exit(1)
+		}
+		if len(add) == 0 {
+			return plain
+		}
+		return addByKey(plain, add, keyFn)
+	}
+
+	result := existing
+	if len(remove) > 0 {
+		result = removeByKey(result, remove, keyFn, flagName)
+	}
+	if len(add) > 0 {
+		result = addByKey(result, add, keyFn)
+	}
+	return result
+}
+
+// addByKey unions add onto base: an add entry whose key already exists in base
+// replaces that entry in place (so re-adding the same expose/env/mount updates
+// it), and one with a new key is appended.
+func addByKey(base, add []string, keyFn func(string) string) []string {
+	result := make([]string, len(base), len(base)+len(add))
+	copy(result, base)
+	for _, a := range add {
+		k := keyFn(a)
+		replaced := false
+		for i, b := range result {
+			if keyFn(b) == k {
+				result[i] = a
+				replaced = true
+				break
+			}
+		}
+		if !replaced {
+			result = append(result, a)
+		}
+	}
+	return result
+}
+
+// removeByKey drops every entry of base whose key matches one of removeKeys,
+// warning (not erroring — a repeated removal is a no-op) about any key that
+// matched nothing.
+func removeByKey(base, removeKeys []string, keyFn func(string) string, flagName string) []string {
+	matched := make(map[string]bool, len(removeKeys))
+	var result []string
+	for _, b := range base {
+		k := keyFn(b)
+		dropped := false
+		for _, rk := range removeKeys {
+			if rk == k {
+				dropped = true
+				matched[rk] = true
+			}
+		}
+		if !dropped {
+			result = append(result, b)
+		}
+	}
+	for _, rk := range removeKeys {
+		if !matched[rk] {
+			fmt.Fprintf(os.Stderr, "Note: --remove-%s %q did not match anything in the existing booth.\n", flagName, rk)
+		}
+	}
+	return result
 }
 
 // buildPreSelection converts CLI flags into a TUI pre-selection. existingArgs
@@ -1202,6 +1348,27 @@ Flags:
   --mount <host:container> Mount volume (repeatable)
   --set <key=value>        Set config.toml value (repeatable)
 
+Reconfiguring an existing booth (edit one entry instead of restating the list):
+  --add-select <dsl>       Add onto the existing selection (repeatable). An
+                            extension merges onto an already-selected template
+                            instead of selecting it a second time.
+  --remove-select <name>   Drop a template or extension by name (repeatable).
+                            A name matching nothing only warns.
+  --add-expose <port>      Add or update one expose mapping, keyed on the
+                            container port (repeatable)
+  --remove-expose <port>   Drop one expose mapping by container port (repeatable)
+  --add-env <KEY=VALUE>    Add or update one env var, keyed on KEY (repeatable)
+  --remove-env <KEY>       Drop one env var by KEY (repeatable)
+  --add-mount <host:container>  Add or update one mount, keyed on the
+                                 container path (repeatable)
+  --remove-mount <container>    Drop one mount by container path (repeatable)
+
+  A plain flag (--select/--expose/--env/--mount) combined with its own
+  --remove-* in the same run is refused: the plain flag already replaces the
+  whole list, leaving nothing for --remove-* to act on. --add-* may combine
+  with the plain flag. There is no --add-cmd/--remove-cmd: --cmd holds one
+  command's argv, not a set, so restating it is the only way to change it.
+
 TUI Controls:
   ↑↓             Navigate templates
   Space          Select / deselect
@@ -1224,5 +1391,10 @@ Examples:
 
   # A param value holding a "/" must be quoted, or the "/" starts a new template
   booth config --select 'go+go-pkg:"github.com/user/tool@latest"'
-  booth config --select 'nodejs+npm-pkg:"@types/node","@types/react"'`)
+  booth config --select 'nodejs+npm-pkg:"@types/node","@types/react"'
+
+  # Editing an existing booth without restating what you are not changing:
+  booth config --no-tui --overwrite --add-select docker
+  booth config --no-tui --overwrite --remove-select python
+  booth config --no-tui --overwrite --add-expose 9000:8080 --remove-env DEBUG`)
 }

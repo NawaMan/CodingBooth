@@ -4,6 +4,23 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth config` can add or remove one entry on reconfigure, instead of restating the whole
+  list.** `--select`, `--expose`, `--env`, and `--mount` each replace their whole list the moment
+  you give them a value, so changing one entry meant retyping everything else you wanted to keep.
+  New `--add-select`/`--remove-select`, `--add-expose`/`--remove-expose`, `--add-env`/`--remove-env`,
+  and `--add-mount`/`--remove-mount` edit the existing `.booth/` baseline in place: `--add-select
+  go+linter` merges an extension onto an already-selected template instead of selecting it a
+  second time (which the resolver would refuse), and `--add-expose`/`--add-env`/`--add-mount`
+  update an existing entry in place — keyed on the container port, the env `KEY`, and the
+  container path — rather than duplicating it. `--remove-select`/`--remove-expose`/`--remove-env`/
+  `--remove-mount` drop one entry by name/key; a name that matches nothing only warns, so
+  repeating a removal is harmless. `--remove-select` and `--add-select` can combine in one run to
+  replace a template's params by dropping it and re-adding it. Combining a field's plain flag with
+  its own `--remove-*` in the same run is refused, since the plain flag already discards the whole
+  baseline. There is no `--add-cmd`/`--remove-cmd`: `--cmd` holds one command's argv, not a set of
+  independent commands. See
+  [Adding or removing one entry](BOOTH_CONFIG.md#adding-or-removing-one-entry).
+
 - **`--hide-welcome` turns off the shell welcome banner.** The "Welcome to CodingBooth!"
   banner with its handy-command list prints in every interactive booth shell; it can now be
   switched off with `--hide-welcome`, `hide-welcome = true` in `.booth/config.toml` (also a
