@@ -1,0 +1,21 @@
+display-name   = "Fancy"
+display-disc   = "Tokyo Night palette, JetBrains Mono Nerd Font, roomy padding"
+display-detail = """\
+Seeds Ghostty with a styled config instead of the plain default: JetBrainsMono \
+Nerd Font 12pt, 14px window padding, a flat toolbar, a steady block cursor, \
+Omarchy's Tokyo Night palette, and Shift+Insert / Ctrl+Insert for paste / \
+copy. Written to ~/.config/ghostty/config on the first container start only — \
+edit it there afterwards. Selected by default with Ghostty; deselect it for \
+the plain config."""
+display-order  = 45
+auto-select    = true
+tags = [
+    "terminal",
+    "ghostty",
+    "theme"
+]
+
+[segments]
+"Boothfile--65" = """
+setup ghostty-fancy
+"""

@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Ghostty: a third alternate terminal for the desktop variants, styled out of the box.**
+  `--select ghostty` (`templates/desktops/ghostty/`) installs Ghostty alongside the desktop's own
+  terminal, the way Alacritty and Kitty already are. Ghostty publishes no Linux binaries and noble
+  does not package it, so it comes from the community Ubuntu 24.04 build
+  (`mkasberg/ghostty-ubuntu`), pinned with a SHA256 per arch (amd64 + arm64); a different build
+  needs `--version <deb-version> --sha256 <hex>`. It renders through Mesa `llvmpipe` (OpenGL 4.5)
+  like the other two, registers a desktop icon, and ships its own `xterm-ghostty` terminfo. The
+  new `+fancy` extension is **selected by default**: it seeds `~/.config/ghostty/config` with
+  JetBrainsMono Nerd Font 12pt, 14px padding, a flat toolbar, a steady block cursor, Omarchy's
+  Tokyo Night palette, and Shift/Ctrl+Insert paste/copy. `ghostty~fancy` gets the plain
+  FiraCode Nerd Font default instead. Either is written on the first container start only, never
+  over a config you have edited. The font comes from a new `jetbrains-mono-nerd-font` setup.
+
 - **Password fields get a show/hide button.** The Console UI sign-in page of a password-protected
   booth, and the overlay's `--type password` prompt from `booth message send`, now have an eye
   button at the right edge of the field. It shows what you typed, so a typo can be fixed in place

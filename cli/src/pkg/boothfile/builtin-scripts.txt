@@ -108,6 +108,8 @@ setup gcloud
 setup gemini-cli
 setup gh
 setup gh-copilot
+setup ghostty
+setup ghostty-fancy
 setup gimp
 setup go
 setup go-code-extension
@@ -144,6 +146,7 @@ setup jetbrains
 setup jetbrains-first-run
 setup jetbrains-import-project
 setup jetbrains-jdk
+setup jetbrains-mono-nerd-font
 setup jetbrains-plugin
 setup julia
 setup julia-code-extension
