@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`start-codeserver` and `start-notebook` default to 13333 and 12222 on their own variants
+  too.** The codeserver and notebook images passed 10000 to their setup, which stamped the booth
+  port in as the by-hand default, so a bare `start-codeserver` on a codeserver booth aimed at the
+  port the booth itself is served on. The variants' own services were unaffected (their wrappers
+  pass the port explicitly).
+
 - **`start-codeserver` works from inside code-server.** Run in a code-server (or VS Code)
   terminal it started nothing: the terminal's `VSCODE_IPC_HOOK_CLI` turned `code-server` into a
   client of the running window, which printed `Ignoring option 'bind-addr'…` and exited. The

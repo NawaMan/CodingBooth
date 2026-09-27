@@ -7,8 +7,10 @@ FROM nawaman/codingbooth:base-${BOOTH_VERSION_TAG} AS base
 
 ARG PYTHON_VERSION=3.12
 RUN python--setup.sh ${PYTHON_VERSION}
-ARG CODESERVER_PORT=10000
-RUN codeserver--setup.sh ${CODESERVER_PORT}
+# No port: start-codeserver keeps the setup's own default (13333), which is also
+# the port start-codeserver-wrapped runs this variant's code-server on behind the
+# booth port. A 10000 here made a bare `start-codeserver` aim at the booth port.
+RUN codeserver--setup.sh
 RUN jupyter-code-extension--setup.sh
 RUN bash-code-extension--setup.sh
 RUN booth-shutdown-code-extension--setup.sh
