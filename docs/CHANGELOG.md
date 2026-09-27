@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Fixed: CodingBooth Help tabs added by a setup showed up empty.** Since the notification
+  settings were added to the General tab, a tab added with `BoothHelp.addTab` — the i3
+  template's **i3 Shortcuts (Tiling)** — had its content placed inside the hidden General panel,
+  so selecting it showed a blank dialog. It now gets its own panel again.
+
 - **`booth config` can add or remove one entry on reconfigure, instead of restating the whole
   list.** `--select`, `--expose`, `--env`, and `--mount` each replace their whole list the moment
   you give them a value, so changing one entry meant retyping everything else you wanted to keep.

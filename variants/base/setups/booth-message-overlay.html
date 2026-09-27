@@ -2353,7 +2353,9 @@
       window.BoothHelp = {
         addTab: function (name, label, html) {
           var tabBar = overlay.querySelector(".msg-tabs");
-          var actions = overlay.querySelector(".msg-actions");
+          // The dialog's own "Got it" row, not the first .msg-actions in it —
+          // that is the notification button's, inside the General panel.
+          var actions = closeBtn.closest(".msg-actions");
           if (!tabBar || !actions || document.getElementById("bl-help-tab-" + name)) {
             return;
           }
