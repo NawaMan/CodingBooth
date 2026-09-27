@@ -514,6 +514,10 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.Public = true
 			i++
 
+		case "--ok-public":
+			cfg.OkPublic = true
+			i++
+
 		case "--tls-cert":
 			v, err := needValue(args, i, arg)
 			if err != nil {

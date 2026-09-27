@@ -118,14 +118,17 @@ func (booth *Booth) runAsCommand() error {
 		}),
 	)
 
-	// Start TCP tunnel watcher (watches .booth/.tmp/tcp-tunnels/ for booth--expose)
+	// Start TCP tunnel watcher (watches .booth/.tmp/tcp-tunnels/ for booth--expose).
+	// This mode streams the container's own output synchronously below (no -d), so
+	// its prints need the same mid-terminal guard as OpenBoothInBrowser's — see
+	// StartTcpTunnelWatcher's doc comment.
 	tunnelCtx, tunnelCancel := context.WithCancel(context.Background())
 	if !booth.ctx.Dryrun() {
 		containerName := booth.ctx.Name()
 		if containerName == "" {
 			containerName = booth.ctx.ProjectName()
 		}
-		go StartTcpTunnelWatcher(tunnelCtx, booth.ctx, containerName)
+		go StartTcpTunnelWatcher(tunnelCtx, booth.ctx, containerName, true)
 	}
 
 	// Execute the docker run command
@@ -312,14 +315,15 @@ func (booth *Booth) runAsForeground() error {
 		ilist.NewList(booth.ctx.Image()),
 	))
 
-	// Start TCP tunnel watcher (watches .booth/.tmp/tcp-tunnels/ for booth--expose)
+	// Start TCP tunnel watcher (watches .booth/.tmp/tcp-tunnels/ for booth--expose).
+	// See StartTcpTunnelWatcher's doc comment for why `true` here.
 	tunnelCtx, tunnelCancel := context.WithCancel(context.Background())
 	if !booth.ctx.Dryrun() {
 		containerName := booth.ctx.Name()
 		if containerName == "" {
 			containerName = booth.ctx.ProjectName()
 		}
-		go StartTcpTunnelWatcher(tunnelCtx, booth.ctx, containerName)
+		go StartTcpTunnelWatcher(tunnelCtx, booth.ctx, containerName, true)
 	}
 
 	// Open the booth's UI once it actually answers. `docker run` below blocks
@@ -618,6 +622,9 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_SETUPS="+ctx.SetupsDir()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_CONTAINER_NAME="+ctx.Name()))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_DAEMON=%t", ctx.Daemon())))
+	// Read by booth--expose to warn when a tunnel it opens has no auth/TLS of
+	// its own even though the booth itself does (see tunnelBindAddr).
+	builder.CommonArgs.Append(ilist.NewList[string]("-e", fmt.Sprintf("BOOTH_PUBLIC=%t", ctx.Public())))
 	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_PORT="+strconv.Itoa(ctx.PortNumber())))
 	// Only when the base has been moved off the booth port. booth--expose reads
 	// BOOTH_HOST_PORT when this is absent, which is the same answer — so the

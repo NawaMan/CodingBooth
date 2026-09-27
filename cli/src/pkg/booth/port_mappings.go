@@ -256,3 +256,67 @@ func NormalizePortMappings(ctx appctx.AppContext) appctx.AppContext {
 
 	return ctx
 }
+
+// CheckPublicPortsExposed refuses to start a --public booth that already has at least
+// one extra port published (via a template's +expose, a config-time --expose, or plain
+// run-args) unless --ok-public says the caller means it. --public gets the booth's own
+// port a password and TLS (see PrepareCommonArgs's BOOTH_TLS); every other published port
+// is a bare forward with neither — same tradeoff booth--expose refuses at runtime for a
+// tunnel opened on a public booth without --ok-public (see
+// variants/base/setups/booth--expose). With --ok-public, this still warns instead of
+// staying silent: acknowledging the tradeoff is not the same as making it invisible.
+//
+// Must run after NormalizePortMappings, so a +OFFSET port is reported as the number it
+// actually claims, not the placeholder it started as.
+func CheckPublicPortsExposed(ctx appctx.AppContext) appctx.AppContext {
+	ports := exposedPublicPorts(ctx)
+	if len(ports) == 0 {
+		return ctx
+	}
+	portList := strings.Join(ports, ", ")
+
+	if !ctx.OkPublic() {
+		// A hard refusal, not gated on --quiet: this is a safety check, not
+		// informational chatter, so --quiet must not be a silent way past it.
+		fmt.Fprintf(os.Stderr, "Error: this booth is public. Port(s) %s would be open on every\n", portList)
+		fmt.Fprintf(os.Stderr, "       interface with NO password and NO TLS of their own — only the\n")
+		fmt.Fprintf(os.Stderr, "       booth's own port (https://localhost:%d) is protected.\n", ctx.PortNumber())
+		fmt.Fprintln(os.Stderr, "       Pass --ok-public if that is what you mean.")
+		os.Exit(1)
+	}
+
+	if !ctx.Quiet() {
+		fmt.Fprintf(os.Stderr, "⚠️  This booth is public. Port(s) %s have no password or TLS of\n", portList)
+		fmt.Fprintf(os.Stderr, "   their own — only the booth's own port (https://localhost:%d) is protected.\n",
+			ctx.PortNumber())
+	}
+
+	return ctx
+}
+
+// exposedPublicPorts is the pure decision half of CheckPublicPortsExposed: the
+// deduped, non-relative host ports an already-public booth has published besides
+// its own, or nil when there is nothing to refuse or warn about. Split out so the
+// decision is unit-testable without going anywhere near CheckPublicPortsExposed's
+// os.Exit(1) — a test cannot safely call that in-process.
+func exposedPublicPorts(ctx appctx.AppContext) []string {
+	if !ctx.Public() {
+		return nil
+	}
+
+	mappings := collectPortMappings(ctx.RunArgs(), "run-args")
+	if len(mappings) == 0 {
+		return nil
+	}
+
+	seen := make(map[int]bool)
+	var ports []string
+	for _, m := range mappings {
+		if m.Relative || seen[m.Host] {
+			continue
+		}
+		seen[m.Host] = true
+		ports = append(ports, strconv.Itoa(m.Host))
+	}
+	return ports
+}

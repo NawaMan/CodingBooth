@@ -6,12 +6,16 @@
 # booth--expose: Create a TCP tunnel to expose a container port on the host.
 #
 # Usage:
-#   booth--expose <container-port> [external-port]
+#   booth--expose <container-port> [external-port] [--ok-public]
 #   booth--expose close <container-port>
 #
 # Writes a control file to .booth/.tmp/tcp-tunnels/ that the host-side
 # booth process watches. The host opens a local listener and forwards
 # each connection via docker exec + socat into the container.
+#
+# On a --public booth, the tunnel it opens is a bare port forward with no
+# password or TLS of its own — refused unless --ok-public says the caller
+# means it. See the Security section of docs/BOOTH_EXPOSE.md.
 
 set -euo pipefail
 
@@ -22,7 +26,7 @@ MANIFEST_FILE="$TMP_DIR/ports.json"
 # --- Usage ---
 usage() {
     cat >&2 <<'EOF'
-Usage: booth--expose <container-port> [external-port]
+Usage: booth--expose <container-port> [external-port] [--ok-public]
        booth--expose close <container-port>
        booth--expose list
 
@@ -39,6 +43,11 @@ Arguments:
 A tunnel lasts until the booth stops. To keep a port across restarts, add it
 on the host with: booth config --expose <port>
 
+Options:
+  --ok-public      Required on a --public booth: the tunnel has no password or
+                   TLS of its own, unlike the booth's own port. Refused without
+                   this flag.
+
 Subcommands:
   close            Close the tunnel for a container port
   list             Show published ports, runtime tunnels, and listening services
@@ -48,6 +57,7 @@ Examples:
   booth--expose 8080 18080         # container:8080 -> host:18080
   booth--expose 8080 +8080         # container:8080 -> host:<offset-base>+8080
   booth--expose close 8080         # stop forwarding container:8080 to the host
+  booth--expose 8080 28080 --ok-public   # ...on a --public booth
   booth--expose list               # what is published and what is listening
 EOF
     exit 1
@@ -197,6 +207,7 @@ fi
 # --- Parse args ---
 CONTAINER_PORT=""
 EXTERNAL_PORT=""
+OK_PUBLIC=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -204,6 +215,10 @@ while [[ $# -gt 0 ]]; do
             echo "Error: --permanent was removed; to keep a port across restarts use" >&2
             echo "       'booth config --expose <port>' on the host." >&2
             exit 1
+            ;;
+        --ok-public)
+            OK_PUBLIC=true
+            shift
             ;;
         --help|-h)
             usage
@@ -263,11 +278,26 @@ if [[ -f "$TUNNEL_DIR/$CONTAINER_PORT" ]]; then
     exit 1
 fi
 
+# --- Refuse on a public booth without --ok-public ---
+# This booth's own port gets a password and TLS when --public. The tunnel
+# about to open does not: it is a bare port forward, same as any other -p.
+if [[ "${BOOTH_PUBLIC:-false}" == "true" ]] && [[ "$OK_PUBLIC" != "true" ]]; then
+    echo "Error: this booth is public — port ${EXTERNAL_PORT} would be open on" >&2
+    echo "       every interface with NO password and NO TLS of its own." >&2
+    echo "       Pass --ok-public if that is what you mean." >&2
+    exit 1
+fi
+
 # --- Write control file ---
 mkdir -p "$TUNNEL_DIR"
 echo "$EXTERNAL_PORT" > "$TUNNEL_DIR/$CONTAINER_PORT"
 
 # --- Output ---
 echo "TCP tunnel: container localhost:${CONTAINER_PORT} -> host localhost:${EXTERNAL_PORT}"
+
+if [[ "${BOOTH_PUBLIC:-false}" == "true" ]]; then
+    echo "⚠️  This booth is public — port ${EXTERNAL_PORT} is now open on every" >&2
+    echo "   interface with NO password and NO TLS of its own." >&2
+fi
 
 echo "Note: this tunnel lasts until the booth stops; use 'booth config --expose' to keep it."

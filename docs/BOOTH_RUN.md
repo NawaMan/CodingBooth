@@ -785,6 +785,7 @@ A few things worth knowing:
 - **The session lasts as long as the booth does.** Signing in sets a cookie tied to a token the booth generates at startup, so restarting a booth signs you out everywhere.
 - **The certificate is self-signed** unless you pass `--tls-cert` / `--tls-key`, so expect a browser warning on first visit.
 - **Everything behind the front door is protected**, including the terminal panes and the booth's own control API — not just the landing page.
+- **Only the front door is protected.** Any *other* port you publish — a template's own `+expose`, `--expose` at configuration time, or a runtime `booth--expose` tunnel — is a plain port forward with no password and no TLS of its own. If one is already published, `--public` alone **refuses to start** — add `--ok-public` to say you mean it, and CodingBooth still warns naming the port even then. The same applies to `booth--expose` on an already-public booth. See [Security](BOOTH_EXPOSE.md#security) in `booth--expose`'s own docs.
 
 > `--public` exposes your development environment to your whole network. Use a password you would not mind an attacker seeing attempts against, prefer a real certificate over the self-signed one, and shut the booth down when you are done with it.
 
