@@ -360,3 +360,31 @@ func TestBrowserOpenerCommandsHonorsBrowserEnv(t *testing.T) {
 		t.Errorf("$BROWSER should be tried first, got %v", commands[0])
 	}
 }
+
+func TestRawSafe(t *testing.T) {
+	saved := stderrIsTerminal
+	defer func() { stderrIsTerminal = saved }()
+
+	msg := foregroundPrefix(true) + "🌐 Opened http://localhost:12000 in your browser.\n"
+	cases := []struct {
+		name       string
+		terminal   bool
+		foreground bool
+		in, want   string
+	}{
+		// Beside a foreground `docker run -it` on a terminal, which the docker client
+		// has put in raw mode: every line must return to the margin itself.
+		{"foreground on a terminal", true, true, msg, "\r\n🌐 Opened http://localhost:12000 in your browser.\r\n"},
+		{"every line of a warning", true, true, "⚠️  one\n   two\n", "⚠️  one\r\n   two\r\n"},
+		// Daemon mode: nothing holds the terminal, so nothing to compensate for.
+		{"daemon", true, false, msg, msg},
+		// Not a terminal (a log file): plain newlines, no stray carriage returns.
+		{"not a terminal", false, true, msg, msg},
+	}
+	for _, c := range cases {
+		stderrIsTerminal = func() bool { return c.terminal }
+		if got := rawSafe(c.in, c.foreground); got != c.want {
+			t.Errorf("%s: rawSafe(%q) = %q, want %q", c.name, c.in, got, c.want)
+		}
+	}
+}
