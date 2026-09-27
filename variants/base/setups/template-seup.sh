@@ -20,7 +20,7 @@ command -v envsubst >/dev/null 2>&1 || { echo "❌ 'envsubst' is required but no
 # --- Defaults ---
 XXXXXX_VERSION="${1:-0.0.0}"      # Replace this variable with your component version
 
-LEVEL=57                          # See README.md – Profile Ordering (choose an appropriate level)
+LEVEL=57                          # See docs/BOOTH_SETUP.md – Startup/Profile Ordering (choose an appropriate level)
 
 STARTUP_FILE="/usr/share/startup.d/${LEVEL}-cb-xxxxxx--startup.sh"
 PROFILE_FILE="/etc/profile.d/${LEVEL}-cb-xxxxxx--profile.sh"

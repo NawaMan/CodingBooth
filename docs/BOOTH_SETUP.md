@@ -43,19 +43,39 @@ CodingBooth setup scripts follow a simple pattern that produces **three artifact
 Name your scripts using this pattern:  
 `/etc/profile.d/<LEVEL>-cb-<thing>--profile.sh` and `/usr/share/startup.d/<LEVEL>-cb-<thing>--startup.sh`
 
-Choose `<LEVEL>` from these ranges to keep load order predictable:
+Both directories are processed in **filename order** — `/etc/profile` sources `profile.d/*.sh` via
+`run-parts --list`, and `booth-entry` runs `startup.d/*-cb-*.sh` by glob. Nothing validates the
+number. The one rule that matters:
 
-| Level Range | Purpose                                                               |
-|-------------|-----------------------------------------------------------------------|
-| **50–54**   | Core CodingBooth base setup                                           |
-| **55–59**   | OS / UI setup (desktop, display, browsers)                            |
-| **60–64**   | Language / platform setup (Python, Java, Node.js, Go, etc.)           |
-| **65–69**   | Language / platform extensions (venv managers, JDK tools, linters)    |
-| **70–74**   | Developer tools (IDEs, editors, notebook servers)                     |
-| **75–79**   | Tool extensions (plugins, kernels, IDE extensions)                    |
+> **Pick a level that sorts after everything your profile or startup script relies on.** A profile
+> that reads a variable exported by the JDK's `60-cb-jdk--profile.sh` must sit above 60, or it runs
+> first and sees nothing. `jenv` is the case that broke: at 57, the JDK profile ran after it and
+> overwrote the `JAVA_HOME` jenv had chosen. It is at 65 now.
 
-> 💡 **Guideline:** Prefer **lower** levels for prerequisites and **higher** levels for dependents.  
-> For example, install Python at **60–64**, then add Jupyter kernels at **75–79**.
+LEVEL orders only what runs *inside* the booth — profiles at every shell, startup scripts at every
+start. The order setups are *installed* in is the Boothfile's, set by each template's segment order
+band and its `requires` (`templates/README.md` → *Segment Ordering*). A setup that needs another at
+build time needs a `requires`, whatever its LEVEL.
+
+The levels in use today, and what sits at each:
+
+| Level     | Holds                                                          | Examples                                                                   |
+|-----------|----------------------------------------------------------------|----------------------------------------------------------------------------|
+| **40**    | Must precede everything else                                   | `dind`, `network-whitelist`                                                |
+| **50–53** | Core services, and Python (sourced by many later scripts)      | `tls`, `postgresql`, `mysql`, `python`                                     |
+| **55**    | Desktops, editor and web servers                               | `xfce`, `kde`, `lxqt`, `wayland`, `codeserver`, `nginx`, `apache`, `opensshd` |
+| **56–59** | Early runtimes, and things inside a 55 desktop                 | `deno`, `go`, `dotnet`, `rust`, `ruby`, `bismuth`, `ghostty`, `kitty`     |
+| **60–64** | JVM and other runtimes, cloud CLIs, build tools, datastores    | `jdk`, `kotlin`, `julia`, `gcloud`, `aws-cli`, `gradle`, `cmake`, `gcc`, `redis` |
+| **65–67** | Built on a lower-level setup                                   | `jenv`, `kafka`, `make`, `wails`, `flutter-android`                        |
+| **70–73** | Dev tools — IDEs, notebook, AI CLIs, web tools — and follow-ups | `vscode`, `notebook`, `jetbrains`, `claude-code`, `cloudbeaver`, `idea-import-project` |
+| **75**    | Plugins inside a 70 tool                                       | `jetbrains-plugin`, `mojo-nb-kernel`                                       |
+| **99**    | Must run last                                                  | `kde`, `notebook` (late hooks); the base image's own `99z-cb--*`           |
+
+> 💡 **For a new script:** languages and platforms at **60–64**, their extensions at **65–69**,
+> developer tools at **70–74**, and plugins or kernels for them at **75–79**. Look at what already
+> sits near the number you pick. Older scripts predate these bands — Go, Rust, Ruby and Deno sit at
+> 56–59, and Python at 53 — and keep those numbers: Python's `53-cb-python--profile.sh`, for one,
+> is sourced by its full filename from over a dozen other setups.
 
 ---
 
