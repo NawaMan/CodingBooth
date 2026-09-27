@@ -24,9 +24,15 @@ merged **globally** and sorted by order number, with alphabetical tiebreak by te
 | Segment Key        | Order | Use for                                                                                       |
 |--------------------|-------|-----------------------------------------------------------------------------------------------|
 | `"Boothfile--40"`  | 40    | Infrastructure (desktop environments: xfce, kde, lxqt)                                        |
+| `"Boothfile--41"`  | 41    | Things that run *inside* a desktop from order 40 (tiling WMs, XFCE theme and dock)            |
+| `"Boothfile--42"`  | 42    | Extensions of an order-41 template (tiling at login, gaps, modifier keys)                     |
+| `"Boothfile--45"`  | 45    | System packages and libraries, ahead of every order-50 setup (apt-pkg, ffmpeg, graphviz, protoc) |
 | `Boothfile`        | 50    | Base/independent setups (languages, tools, middlewares)                                       |
+| `"Boothfile--55"`  | 55    | A second pass of an order-50 script (`--php-only`, `--fpm-only`, `--composer-only`); CUDA      |
 | `"Boothfile--60"`  | 60    | Dependent setups (IDEs: codeserver/vscode; notebook; derived languages: kotlin, scala, etc.)  |
+| `"Boothfile--62"`  | 62    | Needs an order-60 setup (Android emulator on the Android SDK)                                  |
 | `"Boothfile--65"`  | 65    | Language VS Code extensions (need codeserver/vscode from order 60)                            |
+| `"Boothfile--67"`  | 67    | Android targets of a derived language (flutter/wails `+android`, need the SDK from 60)         |
 | `"Boothfile--70"`  | 70    | Notebook kernels and JetBrains IDE plugins (need notebook / an IDE from order 60)             |
 | `"Boothfile--90"`  | 90    | Post-setup steps (pip/uv/conda install from requirements.txt, etc.)                           |
 
@@ -249,14 +255,15 @@ All templates and extensions grouped by segment order.
 
 ### Order 40 — Infrastructure (desktop environments)
 
-| Template         | Display Name |
-|------------------|--------------|
-| `desktops/kde`   | KDE Plasma   |
-| `desktops/lxqt`  | LXQt         |
-| `desktops/xfce`  | XFCE         |
-| `desktops/i3`    | Tiling Window Manager (i3) — order 41, see below |
-| `desktops/bismuth` | Tiling for KDE (Bismuth) — order 41, see below |
-| `desktops/sway`  | Tiling for Wayland (sway) — order 41, see below |
+| Template                   | Display Name |
+|----------------------------|--------------|
+| `desktops/bismuth`         | Tiling for KDE (Bismuth) — order 41, see below |
+| `desktops/i3`              | Tiling Window Manager (i3) — order 41, see below |
+| `desktops/kde`             | KDE Plasma |
+| `desktops/lxqt`            | LXQt |
+| `desktops/sway`            | Tiling for Wayland (sway) — order 41, see below |
+| `desktops/wayland`         | labwc (Wayland) [experimental] |
+| `desktops/xfce`            | XFCE |
 
 `desktops/xfce` auto-selects two extensions at order **41** — right after the desktop they need,
 since both skip when XFCE is absent: `+modern-theme` (the theme packs, then `setup xfce-theme`,
@@ -287,58 +294,135 @@ Themes beyond the XFCE default are standalone, opt-in templates at order **60** 
 `xfce-theme` (auto-selected with `xfce`) stays the one place that picks defaults, and
 `booth--theme` lists whatever is installed.
 
+### Order 45 — System libraries (before the setups that build against them)
+
+| Template                   | Display Name |
+|----------------------------|--------------|
+| `tools/apt-pkg`            | apt Packages |
+| `tools/ffmpeg`             | ffmpeg |
+| `tools/graphviz`           | Graphviz |
+| `tools/protobuf`           | Protocol Buffers |
+
+These run ahead of every order-50 setup, so anything installed at 50 or later can already see
+them. The `protobuf/cpp--extension` is at 45 too; its other language extensions follow their
+language.
+
+### Order 55 — Second passes of an order-50 script; CUDA
+
+| Template / Extension                | Display Name |
+|-------------------------------------|--------------|
+| `tools/cuda`                        | CUDA Toolkit |
+| `apache/php--extension`             | mod_php |
+| `nginx/php-fpm--extension`          | php-fpm |
+| `php/composer--extension`           | Composer |
+
+The three extensions are a second pass of their parent's own script with an `--…-only` flag
+(`setup apache --php-only`, `setup nginx --fpm-only`, `setup php --composer-only`), so they must
+come after the parent's order-50 line and before the IDEs at 60.
+
 ### Order 50 — Base setups (languages, tools, middlewares)
 
 | Template               | Display Name     |
 |------------------------|------------------|
-| `middlewares/mysql`      | MySQL            |
-| `middlewares/postgresql` | PostgreSQL       |
-| `middlewares/sqlite`     | SQLite           |
-| `languages/bun`        | Bun              |
-| `languages/clang`      | Clang (C/C++)    |
-| `languages/deno`       | Deno             |
-| `languages/erlang`     | Erlang           |
-| `languages/fpc`        | Free Pascal      |
-| `languages/gcc`        | GCC (C/C++)      |
-| `languages/go`         | Go               |
-| `languages/haskell`    | Haskell          |
-| `languages/java`       | Java             |
-| `languages/lua`        | Lua              |
-| `languages/nodejs`     | Node.js          |
-| `languages/php`        | PHP              |
-| `languages/python`     | Python           |
-| `languages/r`          | R                |
-| `languages/ruby`       | Ruby             |
-| `languages/rust`       | Rust             |
-| `languages/zig`        | Zig              |
-| `tools/aws-cli`        | AWS CLI          |
-| `tools/build-essential`| Build Essentials |
-| `tools/claude-code`    | Claude Code      |
-| `ai-tools/opencode`    | OpenCode         |
-| `ai-tools/gemini-cli`  | Gemini CLI       |
-| `ai-tools/grok`        | Grok Build (xAI) |
-| `ai-tools/oh-my-pi`    | Oh My Pi (omp)   |
-| `ai-tools/goose`       | Goose            |
-| `ai-tools/anythingllm` | AnythingLLM      |
-| `tools/herdr`          | Herdr (agent multiplexer) |
-| `tools/hoppscotch`     | Hoppscotch       |
-| `tools/cmake`          | CMake            |
-| `tools/conan`          | Conan            |
-| `tools/dind`           | Docker-in-Docker |
-| `tools/docker-buildx`  | Docker Buildx    |
-| `tools/docker-compose` | Docker Compose   |
-| `tools/appwrite-cli`   | Appwrite CLI     |
-| `tools/appwrite-server`| Appwrite Server  |
-| `tools/firebase`       | Firebase CLI     |
-| `tools/floci`          | Floci (local AWS emulator) |
-| `tools/gcloud`         | Google Cloud SDK |
-| `tools/gh`             | GitHub CLI       |
-| `tools/homebrew`       | Homebrew         |
-| `tools/kind`           | kind             |
-| `tools/make`           | GNU Make         |
-| `tools/neovim`         | Neovim           |
-| `tools/openssh`        | OpenSSH Client   |
-| `tools/vhs`            | VHS (terminal/TUI recorder) |
+| `ai-tools/aider`           | Aider |
+| `ai-tools/anythingllm`     | AnythingLLM |
+| `ai-tools/claude-code`     | Claude Code |
+| `ai-tools/gemini-cli`      | Gemini CLI |
+| `ai-tools/gh-copilot`      | GitHub Copilot CLI |
+| `ai-tools/goose`           | Goose |
+| `ai-tools/grok`            | Grok Build (xAI) |
+| `ai-tools/herdr`           | Herdr (agent multiplexer) |
+| `ai-tools/oh-my-pi`        | Oh My Pi (omp) |
+| `ai-tools/ollama`          | Ollama |
+| `ai-tools/opencode`        | OpenCode |
+| `languages/bun`            | Bun |
+| `languages/clang`          | Clang (C/C++) |
+| `languages/crystal`        | Crystal |
+| `languages/csharp`         | C# |
+| `languages/deno`           | Deno |
+| `languages/dotnet`         | .NET |
+| `languages/erlang`         | Erlang |
+| `languages/flutter`        | Flutter |
+| `languages/fpc`            | Free Pascal |
+| `languages/gcc`            | GCC (C/C++) |
+| `languages/go`             | Go |
+| `languages/haskell`        | Haskell |
+| `languages/java`           | Java |
+| `languages/julia`          | Julia |
+| `languages/lua`            | Lua |
+| `languages/nim`            | Nim |
+| `languages/nodejs`         | Node.js |
+| `languages/octave`         | GNU Octave |
+| `languages/php`            | PHP |
+| `languages/python`         | Python |
+| `languages/r`              | R |
+| `languages/roc`            | Roc |
+| `languages/ruby`           | Ruby |
+| `languages/rust`           | Rust |
+| `languages/swift`          | Swift |
+| `languages/zig`            | Zig |
+| `middlewares/kafka`        | Kafka |
+| `middlewares/mongodb`      | MongoDB |
+| `middlewares/mysql`        | MySQL |
+| `middlewares/postgresql`   | PostgreSQL |
+| `middlewares/rabbitmq`     | RabbitMQ |
+| `middlewares/redis`        | Redis |
+| `middlewares/sqlite`       | SQLite |
+| `tools/act`                | act |
+| `tools/ansible`            | Ansible |
+| `tools/apache`             | Apache HTTP Server |
+| `tools/appwrite-cli`       | Appwrite CLI |
+| `tools/appwrite-server`    | Appwrite Server |
+| `tools/aws-cdk`            | AWS CDK |
+| `tools/aws-cli`            | AWS CLI |
+| `tools/aws-sam-cli`        | AWS SAM CLI |
+| `tools/azure-cli`          | Azure CLI |
+| `tools/build-essential`    | Build Essentials |
+| `tools/cloudbeaver`        | CloudBeaver |
+| `tools/cmake`              | CMake |
+| `tools/conan`              | Conan |
+| `tools/conda`              | Conda (Miniforge) |
+| `tools/dblab`              | dblab |
+| `tools/dind`               | Docker-in-Docker |
+| `tools/direnv`             | direnv |
+| `tools/dive`               | dive |
+| `tools/docker-buildx`      | Docker Buildx |
+| `tools/docker-compose`     | Docker Compose |
+| `tools/duckdb`             | DuckDB |
+| `tools/firebase`           | Firebase CLI |
+| `tools/floci`              | Floci (local AWS emulator) |
+| `tools/freelens`           | FreeLens |
+| `tools/fzf`                | fzf |
+| `tools/gcloud`             | Google Cloud SDK |
+| `tools/gh`                 | GitHub CLI |
+| `tools/gradle`             | Gradle |
+| `tools/harlequin`          | Harlequin |
+| `tools/helm`               | Helm |
+| `tools/homebrew`           | Homebrew |
+| `tools/hoppscotch`         | Hoppscotch |
+| `tools/just`               | just |
+| `tools/k3d`                | k3d |
+| `tools/k9s`                | k9s |
+| `tools/kind`               | kind |
+| `tools/kubectl`            | Kubectl |
+| `tools/kubectx`            | kubectx + kubens |
+| `tools/kustomize`          | kustomize |
+| `tools/lazydocker`         | Lazydocker |
+| `tools/lazygit`            | Lazygit |
+| `tools/lazysql`            | lazysql |
+| `tools/make`               | GNU Make |
+| `tools/mkcert`             | mkcert |
+| `tools/neovim`             | Neovim |
+| `tools/nginx`              | nginx |
+| `tools/openssh`            | OpenSSH Client |
+| `tools/posting`            | Posting |
+| `tools/pulumi`             | Pulumi |
+| `tools/sbt`                | sbt |
+| `tools/sql-studio`         | sql-studio |
+| `tools/sqluv`              | sqluv |
+| `tools/stern`              | stern |
+| `tools/terraform`          | Terraform |
+| `tools/vhs`                | VHS (terminal/TUI recorder) |
 
 ### Order 50 — Extensions (run alongside parent)
 
@@ -360,45 +444,65 @@ Themes beyond the XFCE default are standalone, opt-in templates at order **60** 
 
 | Template                  | Display Name     |
 |---------------------------|------------------|
-| `tools/affine-desktop`    | AFFiNE Desktop   |
-| `tools/affine-server`     | AFFiNE Server    |
-| `tools/android-sdk`       | Android SDK      |
-| `desktops/chromium`       | Chromium         |
-| `desktops/firefox`        | Firefox          |
-| `desktops/google-chrome`  | Google Chrome    |
-| `desktops/gimp`           | GIMP             |
-| `desktops/inkscape`       | Inkscape         |
-| `desktops/libreoffice`    | LibreOffice      |
-| `education/bluej`         | BlueJ            |
-| `education/drracket`      | DrRacket         |
-| `education/exercism`      | Exercism CLI     |
-| `education/greenfoot`     | Greenfoot        |
-| `education/logo`          | Logo             |
-| `education/scratch`       | Scratch          |
-| `education/thonny`        | Thonny           |
-| `middlewares/postgrest`   | PostgREST        |
-| `ides/clion`              | CLion            |
-| `ides/codeserver`         | code-server      |
-| `ides/datagrip`           | DataGrip         |
-| `ides/eclipse`            | Eclipse          |
-| `ides/goland`             | GoLand           |
-| `ides/idea`               | IntelliJ IDEA    |
-| `ides/phpstorm`           | PhpStorm         |
-| `ides/pycharm`            | PyCharm          |
-| `ides/rider`              | Rider            |
-| `ides/rubymine`           | RubyMine         |
-| `ides/vscode`             | VS Code          |
-| `ides/webstorm`           | WebStorm         |
-| `languages/clojure`       | Clojure          |
-| `languages/elixir`        | Elixir           |
-| `languages/kotlin`        | Kotlin           |
-| `languages/mojo`          | Mojo             |
-| `languages/scala`         | Scala            |
-| `languages/wails`         | Wails v3 (experimental) |
-| `tools/codex`             | Codex            |
-| `tools/notebook`          | Jupyter Notebook |
-| `tools/penpot`            | Penpot (experimental) |
-| `tools/warp`              | Warp             |
+| `ai-tools/antigravity`     | Antigravity |
+| `ai-tools/codex`           | Codex |
+| `ai-tools/cursor`          | Cursor |
+| `ai-tools/vscode-copilot`  | VS Code Copilot |
+| `ai-tools/warp`            | Warp |
+| `desktops/alacritty`       | Alacritty |
+| `desktops/chromium`        | Chromium |
+| `desktops/firefox`         | Firefox |
+| `desktops/ghostty`         | Ghostty |
+| `desktops/gimp`            | GIMP |
+| `desktops/google-chrome`   | Google Chrome |
+| `desktops/inkscape`        | Inkscape |
+| `desktops/kitty`           | Kitty |
+| `desktops/libreoffice`     | LibreOffice |
+| `education/bluej`          | BlueJ |
+| `education/drracket`       | DrRacket |
+| `education/exercism`       | Exercism CLI |
+| `education/greenfoot`      | Greenfoot |
+| `education/logo`           | Logo |
+| `education/scratch`        | Scratch |
+| `education/thonny`         | Thonny |
+| `ides/clion`               | CLion |
+| `ides/codeserver`          | code-server |
+| `ides/datagrip`            | DataGrip |
+| `ides/dbeaver`             | DBeaver |
+| `ides/eclipse`             | Eclipse |
+| `ides/goland`              | GoLand |
+| `ides/heidisql`            | HeidiSQL |
+| `ides/idea`                | IntelliJ IDEA |
+| `ides/phpstorm`            | PhpStorm |
+| `ides/pycharm`             | PyCharm |
+| `ides/rider`               | Rider |
+| `ides/rubymine`            | RubyMine |
+| `ides/webstorm`            | WebStorm |
+| `languages/clojure`        | Clojure |
+| `languages/elixir`         | Elixir |
+| `languages/elm`            | Elm |
+| `languages/kotlin`         | Kotlin |
+| `languages/mojo`           | Mojo |
+| `languages/rescript`       | ReScript |
+| `languages/scala`          | Scala |
+| `languages/wails`          | Wails v3 (experimental) |
+| `middlewares/postgrest`    | PostgREST |
+| `tools/affine-desktop`     | AFFiNE Desktop |
+| `tools/affine-server`      | AFFiNE Server |
+| `tools/android-sdk`        | Android SDK |
+| `tools/buf`                | Buf |
+| `tools/cypress`            | Cypress |
+| `tools/excalidraw`         | Excalidraw |
+| `tools/freeplane`          | Freeplane |
+| `tools/mermaid`            | Mermaid |
+| `tools/notebook`           | Jupyter Notebook |
+| `tools/obsidian`           | Obsidian |
+| `tools/penpot`             | Penpot (experimental) |
+| `tools/plantuml`           | PlantUML |
+| `tools/playwright`         | Playwright |
+| `tools/puppeteer`          | Puppeteer |
+| `tools/remotion`           | Remotion |
+| `tools/selenium`           | Selenium drivers |
 
 ### Order 62 — Android emulator (needs the Android SDK from order 60)
 
@@ -516,7 +620,17 @@ curl -s -X POST https://marketplace.visualstudio.com/_apis/public/gallery/extens
   -d '{"filters":[{"criteria":[{"filterType":7,"value":"<pub>.<name>"}]}],"flags":914}'
 ```
 
-### Order 70 — Notebook kernels (need notebook/Jupyter)
+### Order 67 — Android targets (need the Android SDK from order 60)
+
+| Extension                            | Display Name      |
+|--------------------------------------|-------------------|
+| `flutter/android--extension`         | Flutter Android Target |
+| `wails/android--extension`           | Wails Android Target |
+
+Both `require` `android-sdk` and read what the SDK (60) and the emulator (62) installed, so they
+come after both.
+
+### Order 70 — Notebook kernels and JetBrains plugins (need notebook / an IDE)
 
 | Extension                    | Display Name           |
 |------------------------------|------------------------|
@@ -533,6 +647,13 @@ curl -s -X POST https://marketplace.visualstudio.com/_apis/public/gallery/extens
 | `r/kernel--extension`        | R Notebook Kernel      |
 | `ruby/kernel--extension`     | Ruby Notebook Kernel   |
 | `rust/kernel--extension`     | Rust Notebook Kernel   |
+
+Two top-level templates also live at 70:
+
+| Template                     | Display Name           |
+|------------------------------|------------------------|
+| `ides/jetbrains-plugin-pkg`  | JetBrains Plugins *(any plugin id — installs into every JetBrains IDE present)* |
+| `tools/bash-nb-kernel`       | Bash Notebook Kernel   |
 
 ### Order 60 — Package manager extensions (global package installation)
 
@@ -578,3 +699,23 @@ curl -s -X POST https://marketplace.visualstudio.com/_apis/public/gallery/extens
 | `php/composer-install--extension`     | Composer install          |
 | `ruby/bundle-install--extension`      | Bundle install            |
 | `rust/cargo-build--extension`         | Cargo Build               |
+
+### No Boothfile segment — config, run-args, or files only
+
+These templates emit nothing into the Boothfile. They change the booth through `config.toml`
+keys, `run-args`, cache paths, or `requires`, so no order applies:
+
+| Template                | Display Name    | What it does instead |
+|-------------------------|-----------------|----------------------|
+| `languages/fsharp`      | F#              | `requires = ["csharp"]` — F# ships in the .NET SDK; its `+vscode-ext` is at 65 |
+| `tools/git-credential`  | Git Credentials | `run-args` seeding the host `~/.gitconfig` |
+| `tools/no-sudo`         | No Sudo         | `sudo = false` |
+| `tools/shell-history`   | Shell History   | `cache-files` for bash/zsh history |
+| `tools/ssh`             | SSH Config      | `run-args` seeding the host `~/.ssh` |
+| `tools/zsh`             | Zsh             | nothing on its own (zsh is in the base image); `+default` sets `USER_SHELL=/bin/zsh` |
+
+### Keeping this reference complete
+
+`tests/config/test121-templates-readme-is-complete.sh` fails when a template directory is missing
+from this reference, or when a `category/name` path in it no longer exists. Add the row in the
+same change that adds, moves, or removes a template.
