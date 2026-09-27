@@ -138,6 +138,8 @@ The Console UI tiles its four sessions the way the **i3** window manager tiles w
 
 The focused pane has a highlighted border once there is more than one. The shortcuts work from inside a terminal or a booth web tab (`:3000` and the like). A web tab showing an outside site keeps its keys to itself, so click into a terminal pane first. `Ctrl+Alt+arrows` may be taken by your own desktop; `h`/`j`/`k`/`l` always work.
 
+The same table is in the console itself: open the floating **Booth** panel and pick **CodingBooth Help**, which opens on its **Console Shortcuts** tab (the desktop variants' i3 template adds an **i3 Shortcuts** tab to the same dialog).
+
 ### Tiling Layouts
 
 A layout the toolbar has no button for is written as a tree: `h(…)` puts its parts side by side, `v(…)` stacks them, and the numbers are sessions. `@` gives a part's share in percent when the parts are not equal:

@@ -15,7 +15,9 @@ This file contains a list of changes for each released version.
   layout again; any other layout gets a seventh toolbar button drawn in its shape, which brings
   it back after a preset. `console-spec` saves a tree layout to `console.json` like a preset
   name (older images ignore it and start single). The focused pane gets a highlighted border
-  when more than one is showing. See
+  when more than one is showing. The console's Booth panel now has the **CodingBooth Help**
+  button the desktops have, opening on a Console Shortcuts tab (its Clipboard tab, which is
+  about the desktop's noVNC panel, is left out there). See
   [BOOTH_CONSOLE.md](BOOTH_CONSOLE.md#keyboard-shortcuts-tiling).
 
 - **Fixed: CodingBooth Help tabs added by a setup showed up empty.** Since the notification
