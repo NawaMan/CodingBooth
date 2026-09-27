@@ -459,7 +459,7 @@ Reference: `../docs/BOOTH_MESSAGE.md`, `BOOTH_UI_OVERLAY.md`, `BOOTH_IDLE.md`,
 - **Runtime TCP tunnels.** `booth--expose` (in-container) writes a control file
   under `.booth/.tmp/`; the host-side watcher (`pkg/booth/tcp_tunnel.go`) tails
   it and stands up a `socat` listener on the host — a tunnel created *after* the
-  container is already running. `--permanent` persists it into config.
+  container is already running. It lasts until the booth stops.
 - **Docker-in-Docker** (`--dind`, `pkg/booth/dind_setup.go`) — a sibling Docker
   daemon container on a dedicated network, linked to the main container via the
   `cb.parent` label.

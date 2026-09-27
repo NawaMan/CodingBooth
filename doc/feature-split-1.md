@@ -142,7 +142,7 @@ The ~186 build-time scripts under `variants/base/setups/` plus per-variant overl
 
 Bash scripts the user invokes from a terminal inside the running booth. Each shells back to the host (or talks to the message API server in Part E) to do its work.
 
-- **`booth--expose [port]`** — request a runtime TCP tunnel host↔container. Writes a control file in `.booth/.tmp/`; B6b watcher (host side) sets up socat. `--permanent` persists into config.
+- **`booth--expose [port]`** — request a runtime TCP tunnel host↔container. Writes a control file in `.booth/.tmp/`; B6b watcher (host side) sets up socat. Lasts until the booth stops.
 - **`booth--restart`** — write a restart message; `booth-lifecycle-watcher` (E) acts on it. `--yes` skips confirmation. Rebuilds image if needed; preserves CLI args.
 - **`booth--shutdown`** — same pattern, ends the booth.
 - **`booth--msg`** (`list` / `send` / `dismiss`) — terminal UI for the messaging system (replaces the missing overlay in base variant).

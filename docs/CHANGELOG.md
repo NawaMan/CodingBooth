@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth--expose --permanent` is removed.** It wrote a `[tcp-tunnels]` table into
+  `.booth/config.toml`, but nothing ever read that table, so the tunnel never came back after a
+  restart; it also saved the wrong host port and marked a generated `config.toml` as hand-written.
+  Tunnels now last until the booth stops, and passing `--permanent` exits with an error. To keep a
+  port across restarts, publish it from the host with `booth config --expose <port>`.
+
 - **`booth--expose` now names the container port first.** Its help, its confirmation line and the
   host's `Tunnel opened/closed` messages read `container:8080 -> host:18080`, in the same order as
   the arguments (`booth--expose 8080 18080`) and as `docker port`. Only the wording changed; the

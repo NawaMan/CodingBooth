@@ -195,10 +195,8 @@ booth--expose 8080          # optional, only if you want the API from the host
 booth--expose 8081          # optional
 ```
 
-Runtime tunnels are **ephemeral and do not survive a booth restart**. To persist one, use
-`booth--expose 3000 --permanent`, which writes to `.booth/config.toml` — that file is
-read-only inside the booth by default, so this requires either editing it from the host or
-restarting with `--writable-booth`.
+Runtime tunnels last **until the booth stops**. To keep a port across restarts, publish it
+from the host with `booth config --expose 3000`; it takes effect the next time the booth starts.
 
 ## Scripts
 

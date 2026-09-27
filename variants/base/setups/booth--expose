@@ -6,7 +6,7 @@
 # booth--expose: Create a TCP tunnel to expose a container port on the host.
 #
 # Usage:
-#   booth--expose <container-port> [external-port] [--permanent]
+#   booth--expose <container-port> [external-port]
 #
 # Writes a control file to .booth/.tmp/tcp-tunnels/ that the host-side
 # booth process watches. The host opens a local listener and forwards
@@ -17,12 +17,11 @@ set -euo pipefail
 TMP_DIR="$HOME/code/.booth/.tmp"
 TUNNEL_DIR="$TMP_DIR/tcp-tunnels"
 MANIFEST_FILE="$TMP_DIR/ports.json"
-CONFIG_FILE="$HOME/code/.booth/config.toml"
 
 # --- Usage ---
 usage() {
     cat >&2 <<'EOF'
-Usage: booth--expose <container-port> [external-port] [--permanent]
+Usage: booth--expose <container-port> [external-port]
        booth--expose list
 
 Create a TCP tunnel through the booth port, or list the booth's ports.
@@ -35,8 +34,8 @@ Arguments:
                    unless the booth was started with --offset-base), or a plain
                    number for absolute
 
-Options:
-  --permanent      Save tunnel to .booth/config.toml (requires --writable-booth)
+A tunnel lasts until the booth stops. To keep a port across restarts, add it
+on the host with: booth config --expose <port>
 
 Subcommands:
   list             Show published ports, runtime tunnels, and listening services
@@ -45,7 +44,6 @@ Examples:
   booth--expose 8080               # container:8080 -> host:8080
   booth--expose 8080 18080         # container:8080 -> host:18080
   booth--expose 8080 +8080         # container:8080 -> host:<offset-base>+8080
-  booth--expose 5432 --permanent   # same, but persisted across restarts
   booth--expose list               # what is published and what is listening
 EOF
     exit 1
@@ -140,13 +138,13 @@ fi
 # --- Parse args ---
 CONTAINER_PORT=""
 EXTERNAL_PORT=""
-PERMANENT=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --permanent)
-            PERMANENT=true
-            shift
+            echo "Error: --permanent was removed; to keep a port across restarts use" >&2
+            echo "       'booth config --expose <port>' on the host." >&2
+            exit 1
             ;;
         --help|-h)
             usage
@@ -213,25 +211,4 @@ echo "$EXTERNAL_PORT" > "$TUNNEL_DIR/$CONTAINER_PORT"
 # --- Output ---
 echo "TCP tunnel: container localhost:${CONTAINER_PORT} -> host localhost:${EXTERNAL_PORT}"
 
-if [[ "$PERMANENT" == "true" ]]; then
-    # Check if .booth/ is writable
-    if [[ ! -w "$CONFIG_FILE" ]] && [[ ! -w "$(dirname "$CONFIG_FILE")" ]]; then
-        echo ""
-        echo "Cannot write to $CONFIG_FILE (booth directory is read-only)."
-        echo "Use --writable-booth when starting the booth, or add the tunnel"
-        echo "config to .booth/config.toml manually."
-    else
-        # Append tcp-tunnels section if not present, or add entry
-        if grep -q '^\[tcp-tunnels\]' "$CONFIG_FILE" 2>/dev/null; then
-            # Add entry under existing section
-            sed -i "/^\[tcp-tunnels\]/a ${CONTAINER_PORT} = \"+${CONTAINER_PORT}\"" "$CONFIG_FILE"
-        else
-            # Append new section
-            printf '\n[tcp-tunnels]\n%s = "+%s"\n' "$CONTAINER_PORT" "$CONTAINER_PORT" >> "$CONFIG_FILE"
-        fi
-        echo "Saved to $CONFIG_FILE"
-    fi
-else
-    echo "Note: This tunnel is ephemeral and will not survive a booth restart."
-    echo "      Use --permanent to save to .booth/config.toml."
-fi
+echo "Note: this tunnel lasts until the booth stops; use 'booth config --expose' to keep it."

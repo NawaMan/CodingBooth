@@ -672,7 +672,7 @@ Bash scripts named `booth--*` that the user invokes from a terminal **inside** t
 
 | Command                  | What it does                                                                                |
 |--------------------------|---------------------------------------------------------------------------------------------|
-| `booth--expose [port]`   | Request a runtime TCP tunnel host↔container. Writes a control file in `.booth/.tmp/`. `--permanent` persists into config |
+| `booth--expose [port]`   | Request a runtime TCP tunnel host↔container. Writes a control file in `.booth/.tmp/`; lasts until the booth stops |
 | `booth--restart`         | Write a restart message; the lifecycle watcher acts on it. `--yes` skips confirmation. Rebuilds image if needed and preserves CLI args |
 | `booth--shutdown`        | End the booth (same control-file pattern)                                                   |
 | `booth--msg list/send/dismiss` | Terminal UI for the messaging system (replaces the missing overlay in `base`)         |
