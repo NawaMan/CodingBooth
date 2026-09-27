@@ -42,10 +42,11 @@ templates/
 │       ├── template.toml
 │       ├── maven--extension.toml       # Extension with its own params
 │       └── vscode-ext--extension.toml
-└── tools/                              # Another category
+└── ai-tools/                           # Another category
     ├── meta.toml
     └── claude-code/
-        └── template.toml
+        ├── template.toml
+        └── credential--extension.toml  # Extension carrying only run-args
 ```
 
 **Key rules:**
@@ -103,8 +104,8 @@ run-args = [
 
 # Parameters: positional mapping uses declaration order in this file
 [params.GO_VERSION]
-default = "1.25.7"
-suggests = ["1.25.7", "1.24.13", "1.23.12"]
+default = "1.26.8"
+suggests = ["1.26.8", "1.25.7", "1.24.13", "1.23.12"]
 
 # Inline segments: Boothfile and startup content
 [segments]
@@ -437,13 +438,17 @@ When multiple templates are selected, their outputs merge:
 **`templates/languages/rust/template.toml`:**
 ```toml
 display-name = "Rust"
-display-disc = "Rust language toolchain"
+display-disc = "Rust toolchain with Cargo and rustup"
 display-order = 40
-tags = ["rust", "systems"]
+tags = ["rust", "systems", "compiled"]
+
+run-args = [
+    "-e", "CARGO_NET_GIT_FETCH_WITH_CLI=true",
+]
 
 [params.RUST_VERSION]
 default = "stable"
-suggests = ["stable", "nightly", "1.82.0"]
+suggests = ["stable", "nightly", "1.84.0", "1.83.0"]
 
 [segments]
 Boothfile = """
@@ -456,35 +461,60 @@ setup rust ${RUST_VERSION}
 **`templates/languages/rust/vscode-ext--extension.toml`:**
 ```toml
 display-name = "Rust VS Code Extension"
-display-disc = "rust-analyzer for VS Code"
+display-disc = "Rust language support extension for VS Code"
 display-order = 1
 auto-select = true
 tags = ["rust", "ide", "vscode"]
 
 [segments]
-Boothfile = """
+"Boothfile--65" = """
 setup rust-code-extension
 """
 ```
 
-### Tool Template with Credentials
+Note the `"Boothfile--65"` key: a VS Code extension installs into an editor that another template
+sets up at order 60, so it must sort after it. A plain `Boothfile` (order 50) would run before the
+editor exists. The bands are in `templates/README.md` → *Segment Ordering*.
 
-**`templates/tools/claude-code/template.toml`:**
+### Tool Template with a Credentials Extension
+
+The tool and its credentials are separate pieces, so a booth can have the tool without mounting
+anything from the host. The template installs:
+
+**`templates/ai-tools/claude-code/template.toml`:**
 ```toml
 display-name = "Claude Code"
-display-disc = "Anthropic Claude Code AI assistant"
+display-disc = "Anthropic Claude Code AI coding assistant"
 display-order = 10
 tags = ["ai", "claude"]
 
-run-args = [
-    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
-    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro",
-]
+[params.CLAUDE_CODE_VERSION]
+default = "latest"
+suggests = ["latest"]
 
 [segments]
 Boothfile = """
-setup claude-code
+setup claude-code ${CLAUDE_CODE_VERSION}
 """
+```
+
+An auto-selected extension carries only `run-args` — no segment at all — and can be dropped with
+`claude-code~credential`:
+
+**`templates/ai-tools/claude-code/credential--extension.toml`:**
+```toml
+display-name = "Claude Code Credentials"
+display-disc = "Mount host Claude Code credentials"
+display-order = 90
+auto-select = true
+tags = ["credential", "claude"]
+
+run-args = [
+    # home-seed: copied into ~ once, then the booth's own copy wins
+    "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
+    # home: overrides ~ on every start, so the host's fresh credentials always win
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro",
+]
 ```
 
 ### Template with Multiple Ordered Segments
