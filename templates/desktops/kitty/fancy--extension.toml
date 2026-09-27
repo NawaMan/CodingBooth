@@ -1,0 +1,21 @@
+display-name   = "Fancy"
+display-disc   = "Tokyo Night palette, JetBrains Mono Nerd Font, powerline tabs"
+display-detail = """\
+Seeds Kitty with Omarchy's styled kitty.conf instead of the plain default: \
+JetBrainsMono Nerd Font 12pt, 14px window padding, a steady block cursor, a \
+slanted powerline tab bar at the bottom, the Tokyo Night palette, no bell, \
+and Shift+Insert / Ctrl+Insert for paste / copy. Written to \
+~/.config/kitty/kitty.conf on the first container start only — edit it there \
+afterwards. Selected by default with Kitty; deselect it for the plain config."""
+display-order  = 42
+auto-select    = true
+tags = [
+    "terminal",
+    "kitty",
+    "theme"
+]
+
+[segments]
+"Boothfile--65" = """
+setup kitty-fancy
+"""
