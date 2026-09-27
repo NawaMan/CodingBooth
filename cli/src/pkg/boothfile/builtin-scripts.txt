@@ -216,6 +216,7 @@ setup playwright
 setup playwright-code-extension
 setup postgresql
 setup postgrest
+setup posting
 setup protoc-gen-grpc-java
 setup protoc-gen-grpc-web
 setup pulumi

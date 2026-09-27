@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **New `posting` template: an HTTP client in the terminal.** [Posting](https://posting.sh/) is a
+  keyboard-driven TUI alternative to Postman/Insomnia that saves requests as YAML in the project,
+  so a collection persists and goes into version control with the code. Ubuntu packages it only
+  from 26.04, so `setup posting` installs it from PyPI into its own venv at `/opt/posting`, pinned
+  to 2.11.0 by default. Select it with `--select posting`, or `posting:latest` to track PyPI.
+
 - **booth asks before starting a booth that can reach the host as root.** A `--dind` booth's
   sidecar is privileged, so code in the booth can use it to read and write the host filesystem and
   run commands on the host as root — and `dind = true` can arrive in a cloned repo's
