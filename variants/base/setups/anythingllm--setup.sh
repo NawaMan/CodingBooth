@@ -14,12 +14,12 @@ Usage:
 
 Arguments:
   --version TAG  Image tag that was copied in (default: 1.16.1; display only)
-  --port PORT    Port for the AnythingLLM web UI (default: 3001)
+  --port PORT    Port for the AnythingLLM web UI (default: 20200)
 
 Examples:
   $0
   $0 --port 13001
-  $0 --version 1.16.1 --port 3001
+  $0 --version 1.16.1 --port 20200
 
 Prerequisites:
 - AnythingLLM must be pre-installed at /opt/anythingllm
@@ -53,11 +53,11 @@ HOME=/root
 
 # ---- defaults / args ----
 VERSION="1.16.1"
-ANYTHINGLLM_PORT="3001"
+ANYTHINGLLM_PORT="20200"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --version) shift; VERSION="${1:-1.16.1}"; shift ;;
-    --port)    shift; ANYTHINGLLM_PORT="${1:-3001}"; shift ;;
+    --port)    shift; ANYTHINGLLM_PORT="${1:-20200}"; shift ;;
     -h|--help) usage; exit 0 ;;
     *)
       if [[ "$1" =~ ^[0-9]+$ ]]; then

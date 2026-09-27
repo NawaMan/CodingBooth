@@ -7,7 +7,11 @@ package booth
 import (
 	"fmt"
 	"io"
+	"os"
+	"strings"
 	"time"
+
+	"golang.org/x/term"
 )
 
 // logTime controls whether timestamps are prepended to log output.
@@ -56,4 +60,25 @@ func LogTimef(w io.Writer, format string, a ...any) {
 	}
 	fmt.Fprint(w, timePrefix())
 	fmt.Fprintf(w, format, a...)
+}
+
+// stderrIsTerminal reports whether stderr is a terminal; a variable so tests,
+// which never run on one, can say otherwise.
+var stderrIsTerminal = func() bool { return term.IsTerminal(int(os.Stderr.Fd())) }
+
+// rawSafe ends each line of a status message with "\r\n" when it is written
+// alongside a foreground container on a terminal, as the browser opener's
+// "Opened …" and the tunnel watcher's "Tunnel opened …" are. The foreground
+// `docker run` gets -i -t there, and the docker client puts the terminal in raw
+// mode for it:
+// a bare "\n" then moves down a line without returning to the left margin, so
+// the message leaves the cursor mid-line — under the text it just printed —
+// and the container's next output, or the shell prompt after it, starts there.
+// A terminal in normal mode just sees an extra "\r" before its own, which moves
+// nothing. Output that is not a terminal (a log file) keeps plain "\n".
+func rawSafe(s string, foreground bool) string {
+	if !foreground || !stderrIsTerminal() {
+		return s
+	}
+	return strings.ReplaceAll(s, "\n", "\r\n")
 }

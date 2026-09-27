@@ -10,9 +10,9 @@ tags = [
 ]
 
 [params.CODESERVER_PORT]
-default = "19999"
+default = "13333"
 suggests = [
-    "19999",
+    "13333",
     "8443",
 ]
 

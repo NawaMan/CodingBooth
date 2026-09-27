@@ -13,7 +13,7 @@ Usage:
   $0 [PORT]
 
 Arguments:
-  --port PORT   AFFiNE web port (default: 13010)
+  --port PORT   AFFiNE web port (default: 20100)
   --data MODE   clean (default): empty every booth
                 seed: restore ~/.affine (home-seed), do not dump back
                 persist: dump/restore ~/.affine (.booth/cache bind)
@@ -46,11 +46,11 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 # ---- defaults / args ----
-AFFINE_SERVER_PORT="13010"
+AFFINE_SERVER_PORT="20100"
 DATA_MODE="clean"
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --port) shift; AFFINE_SERVER_PORT="${1:-13010}"; shift ;;
+    --port) shift; AFFINE_SERVER_PORT="${1:-20100}"; shift ;;
     --data) shift; DATA_MODE="${1:-clean}"; shift ;;
     -h|--help) usage; exit 0 ;;
     *)

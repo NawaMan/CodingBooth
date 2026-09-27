@@ -19,9 +19,9 @@ suggests = [
 ]
 
 [params.CLOUDBEAVER_PORT]
-default = "8978"
+default = "20300"
 suggests = [
-    "8978",
+    "20300",
     "18978",
 ]
 

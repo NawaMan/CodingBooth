@@ -47,10 +47,10 @@ run booth config $prj --no-tui --overwrite --select "openssh+server+expose"
 has "$config" '"2222:2222"' ; check $? "openssh+server+expose publishes 2222:2222"
 
 run booth config $prj --no-tui --overwrite --select "cloudbeaver+expose"
-has "$config" '"8978:8978"' ; check $? "cloudbeaver+expose publishes 8978:8978"
+has "$config" '"20300:20300"' ; check $? "cloudbeaver+expose publishes 20300:20300"
 
 run booth config $prj --no-tui --overwrite --select "notebook+expose"
-has "$config" '"18888:18888"' ; check $? "notebook+expose publishes 18888:18888"
+has "$config" '"12222:12222"' ; check $? "notebook+expose publishes 12222:12222"
 
 # ---------------------------------------------------------------------------
 # Move the service: the published host port must follow it, not stay behind
@@ -61,7 +61,7 @@ has   "$config" '"2200:2200"' ; check $? "openssh+server:2200+expose publishes 2
 
 run booth config $prj --no-tui --overwrite --select "cloudbeaver:25.3.5,9000+expose"
 has   "$config" '"9000:9000"' ; check $? "cloudbeaver:...,9000+expose publishes 9000:9000"
-! has "$config" '"8978'       ; check $? "cloudbeaver does not publish the old hardcoded 8978"
+! has "$config" '"20300'       ; check $? "cloudbeaver does not publish its default 20300 once moved"
 
 # ---------------------------------------------------------------------------
 # Override the host side alone: service stays put, host port moves
@@ -97,7 +97,7 @@ has "$config" '"15672:15672"' ; check $? "the un-overridden UI port stays absolu
 # A bare number is still an absolute host port — the "+" is what makes it relative.
 rm -rf "$prj/.booth"
 run booth config $prj --no-tui --overwrite --select "cloudbeaver+expose:19000"
-has   "$config" '"19000:8978"' ; check $? "a bare host port is still absolute"
+has   "$config" '"19000:20300"' ; check $? "a bare host port is still absolute"
 ! has "$config" '"+'           ; check $? "no relative mapping appears without a '+'"
 
 # An extension after a relative param must still parse as an extension, not as more of

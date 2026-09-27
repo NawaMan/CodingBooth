@@ -46,6 +46,44 @@ The `terminal` alias resolves to the `base` variant but automatically sets the c
 
 If an unknown value is provided, CodingBooth will exit with an error listing supported variants and aliases.
 
+## Service Ports
+
+Every variant's main service is reached through the booth port, `10000` inside the
+container. The same services can also be started **by hand, next to** another variant's —
+a desktop on a `base` booth when a GUI tool is needed for a while, a console beside
+JupyterLab on a `notebook` booth. Each has its own default port, so one started this way
+never lands on the booth port:
+
+| Service | Start it with | Default port |
+|---|---|---|
+| Web console (split terminal) | `start-webconsole [port]` | `11111` |
+| JupyterLab | `start-notebook [port]` | `12222` |
+| code-server | `start-codeserver [port]` | `13333` |
+| XFCE desktop | `start-xfce [port]` | `14444` |
+| KDE Plasma desktop | `start-kde [port]` | `15555` |
+| LXQt desktop | `start-lxqt [port]` | `16666` |
+| Wayland desktop | `start-wayland [port]` | `17777` |
+
+Each runs in the foreground (Ctrl+C stops it). The desktop needs its template selected
+(`booth config --select xfce`), and so do JupyterLab and code-server; the web console is in
+every image. A service started this way is not published — run `booth--expose <port>` inside
+the booth to reach it from the host (see [BOOTH_EXPOSE.md](BOOTH_EXPOSE.md)). On its own
+variant a service still runs on the port above, behind the booth's nginx on `10000`.
+
+A second code-server works too, next to a `codeserver` booth's own: `start-codeserver 14000`
+from any terminal, including one inside code-server. It keeps its state in
+`~/.local/share/code-server-<port>` so the two do not share a session.
+
+The web console started with `start-webconsole` also uses the four ports just above its own and
+the seventh (`11112`–`11115`, `11118` by default), as the one on the booth port uses
+`10001`–`10004` and `10007`.
+
+Web apps from the catalog that serve their own UI default to the `2xxxx` range, one
+hundred apart: AFFiNE `20100`, AnythingLLM `20200`, CloudBeaver `20300`, Excalidraw `20400`,
+Hoppscotch `20500`, Logo `20600`, Mermaid `20700`, Penpot `20800`, PlantUML `20900`,
+Scratch `21000`, SQL Studio `21100`. Servers whose clients expect a standard port keep it
+(Ollama `11434`, RabbitMQ `15672`, Appwrite `8080`), as does `viewmd` (`8765`).
+
 ## Desktop Configuration
 
 For desktop variants (`desktop-xfce`, `desktop-kde`, `desktop-lxqt`, `desktop-wayland`), you can customize the screen resolution by setting the `GEOMETRY` environment variable.
@@ -131,7 +169,7 @@ code-server has not yet persisted.
 
 `booth` in these addresses means the container. The preview uses the booth's
 actual browser address and authenticated `/proxy/<port>/` endpoint to reach the
-server. Ports 10000–10007, 18888 and 19999 are reserved for Booth itself.
+server. Ports 10000–10007 are reserved for Booth itself.
 
 The code-server proxy shares the console web panel's HTML/CSS/JavaScript URL
 rewriting rules, supports WebSockets, and rewrites redirects to stay within the

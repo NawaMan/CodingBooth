@@ -10,13 +10,13 @@ start or publish a port on its own — add +autostart to run it on boot, and \
 AnythingLLM's file-system agent jail (~/.anythingllm/anythingllm-fs/code) \
 so the agent can read the project (a symlink is rejected); that is not persist.
 
-Default UI port is 3001 (AnythingLLM's own). Pin the image with \
+Default UI port is 20200 (AnythingLLM's own is 3001). Pin the image with \
 anythingllm:1.16.1 or anythingllm:latest. Pair with ollama+autostart and \
 point the UI at http://127.0.0.1:11434 — native in the booth, so no \
 host.docker.internal dance. First build copies a large image.
 
 Booth config params: ANYTHINGLLM_VERSION (image tag, default 1.16.1), \
-ANYTHINGLLM_PORT (listen, default 3001), ANYTHINGLLM_HOST_PORT (+expose, \
+ANYTHINGLLM_PORT (listen, default 20200), ANYTHINGLLM_HOST_PORT (+expose, \
 defaults to the listen port). Pin as anythingllm:1.16.1,13001 or \
 anythingllm+expose:19000.
 
@@ -28,7 +28,7 @@ ANYTHING_LLM_RUNTIME=docker (the filesystem agent is hidden unless that \
 is docker). Host LM Studio: http://host.docker.internal:1234/v1 — not \
 localhost.
 
-The UI works at http://localhost:3001/ on the host and at http://booth:3001/ \
+The UI works at http://localhost:20200/ on the host and at http://booth:20200/ \
 in the globe pane (React Router basename follows /proxy/<port>)."""
 display-order = 42
 tags = [
@@ -51,9 +51,9 @@ suggests = [
 ]
 
 [params.ANYTHINGLLM_PORT]
-default = "3001"
+default = "20200"
 suggests = [
-    "3001",
+    "20200",
     "13001",
 ]
 

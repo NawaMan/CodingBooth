@@ -1,6 +1,6 @@
 worker_processes auto;
-pid /tmp/nginx-ttyd-split.pid;
-error_log /tmp/nginx-error.log warn;
+pid /tmp/nginx-ttyd-split${FILE_TAG}.pid;
+error_log /tmp/nginx-error${FILE_TAG}.log warn;
 
 events {
     worker_connections 1024;
@@ -9,7 +9,7 @@ events {
 http {
     include /etc/nginx/mime.types;
     default_type application/octet-stream;
-    access_log /tmp/nginx-access.log;
+    access_log /tmp/nginx-access${FILE_TAG}.log;
     sendfile on;
     tcp_nopush on;
     keepalive_timeout 65;
@@ -79,7 +79,7 @@ http {
 
         # ...and the endpoint that trades the password for the cookie.
         location = /booth-messages/api/login {
-            proxy_pass http://127.0.0.1:10007;
+            proxy_pass http://127.0.0.1:${API_PORT};
             proxy_http_version 1.1;
             proxy_set_header Host $http_host;
             proxy_buffering off;
@@ -109,7 +109,7 @@ http {
             # endpoint's own "ok" body. Asking for /s1/ would get a 200 instead,
             # and error_page cannot intercept a 200 — the whole 700 KB terminal
             # page would be returned as the health response, on every poll.
-            proxy_pass http://127.0.0.1:10001/s1;
+            proxy_pass http://127.0.0.1:${S1_PORT}/s1;
             ${TTYD_AUTH_HEADER}
             proxy_connect_timeout 2s;
             proxy_read_timeout 3s;
@@ -148,7 +148,7 @@ http {
                 return 302 /login;
             }
 
-            proxy_pass http://127.0.0.1:10001;
+            proxy_pass http://127.0.0.1:${S1_PORT};
             proxy_http_version 1.1;
             ${TTYD_AUTH_HEADER}
             proxy_set_header Upgrade $http_upgrade;
@@ -211,7 +211,7 @@ http {
             # triggerMouseEvent ignores button 0 so a mouseup does not
             # redraw the pane and wipe the selection. Wheel is button 4/5
             # and still goes to tmux. Same hook in the non-split index.
-            sub_filter '<head>' '<head><link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");}</style><script>document.fonts.ready.then(function(){var checks=0;function check(){checks++;var t=window.term,s=t&&t._core&&t._core._charSizeService;if(s){try{var c=document.createElement("canvas").getContext("2d");c.font=(t.options.fontSize||15)+"px "+t.options.fontFamily;var want=c.measureText("W").width;if(Math.abs(s.width-want)>2){window.dispatchEvent(new Event("resize"));}}catch(e){}}if(checks<30){setTimeout(check,500);}}check();});</script><script>(function(){function cbForceTermSelect(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService,cms=c&&c.coreMouseService;if(!ss||!cms)return false;if(ss.__cbForce)return true;ss.__cbForce=1;ss.shouldForceSelection=function(){return true};var orig=cms.triggerMouseEvent.bind(cms);cms.triggerMouseEvent=function(ev){if(ev&&ev.button===0)return false;return orig(ev)};return true}var n=0;function wait(){n++;if(cbForceTermSelect())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>';
+            sub_filter '<head>' '<head><link rel="preload" as="font" type="font/woff2" href="../booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="../booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(../booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(../booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");}</style><script>document.fonts.ready.then(function(){var checks=0;function check(){checks++;var t=window.term,s=t&&t._core&&t._core._charSizeService;if(s){try{var c=document.createElement("canvas").getContext("2d");c.font=(t.options.fontSize||15)+"px "+t.options.fontFamily;var want=c.measureText("W").width;if(Math.abs(s.width-want)>2){window.dispatchEvent(new Event("resize"));}}catch(e){}}if(checks<30){setTimeout(check,500);}}check();});</script><script>(function(){function cbForceTermSelect(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService,cms=c&&c.coreMouseService;if(!ss||!cms)return false;if(ss.__cbForce)return true;ss.__cbForce=1;ss.shouldForceSelection=function(){return true};var orig=cms.triggerMouseEvent.bind(cms);cms.triggerMouseEvent=function(ev){if(ev&&ev.button===0)return false;return orig(ev)};return true}var n=0;function wait(){n++;if(cbForceTermSelect())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>';
         }
 
         location /s2/ {
@@ -219,7 +219,7 @@ http {
                 return 302 /login;
             }
 
-            proxy_pass http://127.0.0.1:10002;
+            proxy_pass http://127.0.0.1:${S2_PORT};
             proxy_http_version 1.1;
             ${TTYD_AUTH_HEADER}
             proxy_set_header Upgrade $http_upgrade;
@@ -238,7 +238,7 @@ http {
             # never matches. Same fix the /proxy/ location already needed.
             proxy_set_header Accept-Encoding "";
             sub_filter_once on;
-            sub_filter '<head>' '<head><link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");}</style><script>document.fonts.ready.then(function(){var checks=0;function check(){checks++;var t=window.term,s=t&&t._core&&t._core._charSizeService;if(s){try{var c=document.createElement("canvas").getContext("2d");c.font=(t.options.fontSize||15)+"px "+t.options.fontFamily;var want=c.measureText("W").width;if(Math.abs(s.width-want)>2){window.dispatchEvent(new Event("resize"));}}catch(e){}}if(checks<30){setTimeout(check,500);}}check();});</script><script>(function(){function cbForceTermSelect(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService,cms=c&&c.coreMouseService;if(!ss||!cms)return false;if(ss.__cbForce)return true;ss.__cbForce=1;ss.shouldForceSelection=function(){return true};var orig=cms.triggerMouseEvent.bind(cms);cms.triggerMouseEvent=function(ev){if(ev&&ev.button===0)return false;return orig(ev)};return true}var n=0;function wait(){n++;if(cbForceTermSelect())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>';
+            sub_filter '<head>' '<head><link rel="preload" as="font" type="font/woff2" href="../booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="../booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(../booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(../booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");}</style><script>document.fonts.ready.then(function(){var checks=0;function check(){checks++;var t=window.term,s=t&&t._core&&t._core._charSizeService;if(s){try{var c=document.createElement("canvas").getContext("2d");c.font=(t.options.fontSize||15)+"px "+t.options.fontFamily;var want=c.measureText("W").width;if(Math.abs(s.width-want)>2){window.dispatchEvent(new Event("resize"));}}catch(e){}}if(checks<30){setTimeout(check,500);}}check();});</script><script>(function(){function cbForceTermSelect(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService,cms=c&&c.coreMouseService;if(!ss||!cms)return false;if(ss.__cbForce)return true;ss.__cbForce=1;ss.shouldForceSelection=function(){return true};var orig=cms.triggerMouseEvent.bind(cms);cms.triggerMouseEvent=function(ev){if(ev&&ev.button===0)return false;return orig(ev)};return true}var n=0;function wait(){n++;if(cbForceTermSelect())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>';
         }
 
         location /s3/ {
@@ -246,7 +246,7 @@ http {
                 return 302 /login;
             }
 
-            proxy_pass http://127.0.0.1:10003;
+            proxy_pass http://127.0.0.1:${S3_PORT};
             proxy_http_version 1.1;
             ${TTYD_AUTH_HEADER}
             proxy_set_header Upgrade $http_upgrade;
@@ -265,7 +265,7 @@ http {
             # never matches. Same fix the /proxy/ location already needed.
             proxy_set_header Accept-Encoding "";
             sub_filter_once on;
-            sub_filter '<head>' '<head><link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");}</style><script>document.fonts.ready.then(function(){var checks=0;function check(){checks++;var t=window.term,s=t&&t._core&&t._core._charSizeService;if(s){try{var c=document.createElement("canvas").getContext("2d");c.font=(t.options.fontSize||15)+"px "+t.options.fontFamily;var want=c.measureText("W").width;if(Math.abs(s.width-want)>2){window.dispatchEvent(new Event("resize"));}}catch(e){}}if(checks<30){setTimeout(check,500);}}check();});</script><script>(function(){function cbForceTermSelect(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService,cms=c&&c.coreMouseService;if(!ss||!cms)return false;if(ss.__cbForce)return true;ss.__cbForce=1;ss.shouldForceSelection=function(){return true};var orig=cms.triggerMouseEvent.bind(cms);cms.triggerMouseEvent=function(ev){if(ev&&ev.button===0)return false;return orig(ev)};return true}var n=0;function wait(){n++;if(cbForceTermSelect())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>';
+            sub_filter '<head>' '<head><link rel="preload" as="font" type="font/woff2" href="../booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="../booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(../booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(../booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");}</style><script>document.fonts.ready.then(function(){var checks=0;function check(){checks++;var t=window.term,s=t&&t._core&&t._core._charSizeService;if(s){try{var c=document.createElement("canvas").getContext("2d");c.font=(t.options.fontSize||15)+"px "+t.options.fontFamily;var want=c.measureText("W").width;if(Math.abs(s.width-want)>2){window.dispatchEvent(new Event("resize"));}}catch(e){}}if(checks<30){setTimeout(check,500);}}check();});</script><script>(function(){function cbForceTermSelect(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService,cms=c&&c.coreMouseService;if(!ss||!cms)return false;if(ss.__cbForce)return true;ss.__cbForce=1;ss.shouldForceSelection=function(){return true};var orig=cms.triggerMouseEvent.bind(cms);cms.triggerMouseEvent=function(ev){if(ev&&ev.button===0)return false;return orig(ev)};return true}var n=0;function wait(){n++;if(cbForceTermSelect())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>';
         }
 
         location /s4/ {
@@ -273,7 +273,7 @@ http {
                 return 302 /login;
             }
 
-            proxy_pass http://127.0.0.1:10004;
+            proxy_pass http://127.0.0.1:${S4_PORT};
             proxy_http_version 1.1;
             ${TTYD_AUTH_HEADER}
             proxy_set_header Upgrade $http_upgrade;
@@ -292,7 +292,7 @@ http {
             # never matches. Same fix the /proxy/ location already needed.
             proxy_set_header Accept-Encoding "";
             sub_filter_once on;
-            sub_filter '<head>' '<head><link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");}</style><script>document.fonts.ready.then(function(){var checks=0;function check(){checks++;var t=window.term,s=t&&t._core&&t._core._charSizeService;if(s){try{var c=document.createElement("canvas").getContext("2d");c.font=(t.options.fontSize||15)+"px "+t.options.fontFamily;var want=c.measureText("W").width;if(Math.abs(s.width-want)>2){window.dispatchEvent(new Event("resize"));}}catch(e){}}if(checks<30){setTimeout(check,500);}}check();});</script><script>(function(){function cbForceTermSelect(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService,cms=c&&c.coreMouseService;if(!ss||!cms)return false;if(ss.__cbForce)return true;ss.__cbForce=1;ss.shouldForceSelection=function(){return true};var orig=cms.triggerMouseEvent.bind(cms);cms.triggerMouseEvent=function(ev){if(ev&&ev.button===0)return false;return orig(ev)};return true}var n=0;function wait(){n++;if(cbForceTermSelect())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>';
+            sub_filter '<head>' '<head><link rel="preload" as="font" type="font/woff2" href="../booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="../booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(../booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(../booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");}</style><script>document.fonts.ready.then(function(){var checks=0;function check(){checks++;var t=window.term,s=t&&t._core&&t._core._charSizeService;if(s){try{var c=document.createElement("canvas").getContext("2d");c.font=(t.options.fontSize||15)+"px "+t.options.fontFamily;var want=c.measureText("W").width;if(Math.abs(s.width-want)>2){window.dispatchEvent(new Event("resize"));}}catch(e){}}if(checks<30){setTimeout(check,500);}}check();});</script><script>(function(){function cbForceTermSelect(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService,cms=c&&c.coreMouseService;if(!ss||!cms)return false;if(ss.__cbForce)return true;ss.__cbForce=1;ss.shouldForceSelection=function(){return true};var orig=cms.triggerMouseEvent.bind(cms);cms.triggerMouseEvent=function(ev){if(ev&&ev.button===0)return false;return orig(ev)};return true}var n=0;function wait(){n++;if(cbForceTermSelect())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>';
         }
 
         location /booth-messages/api/ {
@@ -302,7 +302,7 @@ http {
                 return 401;
             }
 
-            proxy_pass http://127.0.0.1:10007;
+            proxy_pass http://127.0.0.1:${API_PORT};
             proxy_http_version 1.1;
             proxy_set_header Host $http_host;
             proxy_buffering off;

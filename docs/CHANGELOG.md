@@ -4,6 +4,74 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Web Preview opens JupyterLab and code-server as ordinary services.** It refused their ports as
+  "reserved for Booth services", so a notebook started with `start-notebook` on a codeserver booth
+  could not be previewed. Only the booth's own ports (10000–10007) are refused now.
+
+- **`start-codeserver` and `start-notebook` default to 13333 and 12222 on their own variants
+  too.** The codeserver and notebook images passed 10000 to their setup, which stamped the booth
+  port in as the by-hand default, so a bare `start-codeserver` on a codeserver booth aimed at the
+  port the booth itself is served on. The variants' own services were unaffected (their wrappers
+  pass the port explicitly).
+
+- **`start-codeserver` works from inside code-server.** Run in a code-server (or VS Code)
+  terminal it started nothing: the terminal's `VSCODE_IPC_HOOK_CLI` turned `code-server` into a
+  client of the running window, which printed `Ignoring option 'bind-addr'…` and exited. The
+  launcher now always starts a server, with the real `code-server` rather than the terminal's
+  remote-CLI shim of the same name (which answers "Command is only available in WSL or inside a
+  Visual Studio Code terminal"); refuses a port already in use (`start-codeserver <port>`);
+  and, when another code-server is running, keeps its state in `~/.local/share/code-server-<port>`
+  instead of taking over the first one's session socket and settings.
+
+- **The terminal no longer leaves the cursor mid-line after a foreground booth's status
+  messages.** "🌐 Opened … in your browser.", "⏳ Waiting for the booth …" and the tunnel watcher's
+  "Tunnel opened/closed …" are printed while the foreground `docker run -it` holds the terminal in
+  raw mode, where a bare newline moves down a line without returning to the left margin — so the
+  cursor sat under the end of the message and the booth's next output (a code-server log line,
+  say) started there. They now end their lines with `\r\n` on a terminal (plain newlines when
+  output goes to a file).
+
+- **`booth--expose close <port>` closes a tunnel.** There was no way to take one down short of
+  deleting its control file by hand; `close` removes it and the host-side booth process stops
+  listening within a second, so the port can be exposed again (or elsewhere) straight away.
+  Exposing a port that already has a tunnel now points at `close` instead of at the file.
+
+- **Start a desktop, a notebook or the web console by hand, next to any variant — each on its
+  own port.** A booth that usually needs only a terminal can bring up a heavier tool for a while:
+  `start-xfce` on a `base` booth to use PyCharm, or a web console beside JupyterLab on a
+  `notebook` booth. Every such service now has a fixed default port, so none of them lands on the
+  booth port (10000) where the variant's own service already listens — `start-xfce` used to, and
+  on a `base` booth collided with the console there.
+  - **`start-webconsole [port]`** (new, `11111`): the web console, started next to another variant's
+    service. Its panes and message API sit just above its own port (`11112`–`11115`, `11118`), as
+    the booth-port console's sit on `10001`–`10004` and `10007`.
+  - **The web console also works inside another page's proxy**, such as code-server's Web Preview
+    (`http://booth:11111/`). Its panes, API calls, fonts and reloads used root paths (`/s1/`,
+    `/booth-messages/…`), which left the preview's `/proxy/11111/` and landed on the page's own
+    server: the panes came up blank, or the whole preview turned into a second code-server. They
+    are now relative to the console page, and an expired pane's login takes over the console
+    rather than the whole browser tab.
+  - **`start-notebook [port]`** now defaults to **`12222`** (was 18888), **`start-codeserver
+    [port]`** to **`13333`** (was 19999) — also the `NOTEBOOK_PORT` / `CODESERVER_PORT` template
+    defaults.
+  - **`start-xfce`**, **`start-kde`**, **`start-lxqt`**, **`start-wayland`** now take **`[port]`**
+    — it was silently ignored before, leaving only `NOVNC_PORT=` to set it — and default to
+    **`14444`**, **`15555`**, **`16666`**, **`17777`** (all were 10000). The desktop profiles no
+    longer export `NOVNC_PORT`, which made every installed desktop share one port. Started on its
+    own port, a desktop now prints that port and the `booth--expose` to reach it, instead of the
+    booth port.
+  - On their own variants these services still run behind the booth's nginx on 10000; only the
+    inner port moved (the four desktops shared 10099 before).
+  - **Web apps from the catalog move to the `2xxxx` range**, one hundred apart: AFFiNE `20100`
+    (was 13010), AnythingLLM `20200` (3001), CloudBeaver `20300` (8978), Excalidraw `20400`
+    (15555), Hoppscotch `20500` (13000), Logo `20600` (18610), Mermaid `20700` (18090), Penpot
+    `20800` (19001), PlantUML `20900` (18080), Scratch `21000` (18601), SQL Studio `21100` (3030).
+    Appwrite (8080, which it requires), viewmd (8765) and servers whose clients expect a standard
+    port (Ollama, RabbitMQ, PostgREST, Floci) are unchanged.
+  - **Existing booths keep their ports**: `booth config` writes each port into the Boothfile as an
+    `arg` line, and a reconfigure keeps it. Only a fresh selection gets the new default.
+    Full table: [Service Ports](BOOTH_VARIANTS.md#service-ports).
+
 - **`booth--expose --permanent` is removed.** It wrote a `[tcp-tunnels]` table into
   `.booth/config.toml`, but nothing ever read that table, so the tunnel never came back after a
   restart; it also saved the wrong host port and marked a generated `config.toml` as hand-written.

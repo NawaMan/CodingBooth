@@ -53,7 +53,7 @@ Browser --> nginx (:10000)
 |-------|------|
 | 10000 | Outer port — nginx, exposed to the user's browser |
 | 10007 | API server — handles overlay API requests |
-| Varies | Inner port — the variant's own service (e.g., 19999 for code-server) |
+| Varies | Inner port — the variant's own service (e.g., 13333 for code-server) |
 
 ---
 
@@ -241,7 +241,7 @@ To add overlay support to a new variant, create a small wrapper script that sets
 ```bash
 #!/usr/bin/env bash
 set -euo pipefail
-export INNER_PORT=19999
+export INNER_PORT=18000
 export INNER_CMD="start-my-variant $INNER_PORT"
 export IFRAME_SRC="/"
 exec start-booth-wrapped
@@ -251,9 +251,15 @@ Existing examples:
 
 | Variant | Script | Inner Port | Iframe Src |
 |---------|--------|------------|------------|
-| code-server | `start-codeserver-wrapped` | 19999 | `/?_booth_inner=1` |
-| notebook | `start-notebook-wrapped` | 19999 | `/lab` |
-| desktop | `start-desktop-wrapped` | 19999 | `/` |
+| code-server | `start-codeserver-wrapped` | 13333 | `/?_booth_inner=1` |
+| notebook | `start-notebook-wrapped` | 12222 | `/lab` |
+| desktop-xfce | `start-xfce-wrapped` | 14444 | `/vnc.html?autoconnect=true&resize=remote` |
+| desktop-kde | `start-kde-wrapped` | 15555 | `/vnc.html?autoconnect=true&resize=remote` |
+| desktop-lxqt | `start-lxqt-wrapped` | 16666 | `/vnc.html?autoconnect=true&resize=remote` |
+| desktop-wayland | `start-wayland-wrapped` | 17777 | `/vnc.html?autoconnect=true&resize=remote` |
+
+Each inner port is the same default the service uses when started by hand on another
+variant — see [Service Ports](BOOTH_VARIANTS.md#service-ports).
 
 The overlay infrastructure (`booth-message-wrapper--setup.sh`) must be installed first as a prerequisite setup.
 

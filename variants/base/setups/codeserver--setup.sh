@@ -24,7 +24,7 @@ HOME=/root
 
 PROFILE_FILE="/etc/profile.d/55-cb-codeserver--profile.sh"
 STARTER_FILE=/usr/local/bin/start-codeserver
-CODESERVER_DEFAULT_PORT="${1:-${CODESERVER_DEFAULT_PORT:-19999}}"
+CODESERVER_DEFAULT_PORT="${1:-${CODESERVER_DEFAULT_PORT:-13333}}"
 
 
 # Load python env exported by the base setup
@@ -306,6 +306,30 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 PORT=${1:-__CODESERVER_DEFAULT_PORT__}
 PASSWORD="${PASSWORD:-}"
 
+if [[ ! "$PORT" =~ ^[0-9]+$ ]]; then
+  echo "❌ Usage: start-codeserver [port]   (got '$PORT')" >&2
+  exit 1
+fi
+if (exec 3<>"/dev/tcp/127.0.0.1/$PORT") 2>/dev/null; then
+  echo "❌ Port $PORT is already in use — pick another: start-codeserver <port>" >&2
+  exit 1
+fi
+
+# Inside a code-server (or VS Code) terminal this is set, and it turns
+# `code-server` into a client of that window: it opens the folder there, ignores
+# --bind-addr/--auth, and starts nothing. This launcher always starts a server.
+unset VSCODE_IPC_HOOK_CLI
+
+# And a code-server terminal puts VS Code's remote CLI first on PATH, with its own
+# `code-server` (…/bin/remote-cli/code-server) that only talks to that window —
+# without the variable above it just refuses ("Command is only available in WSL or
+# inside a Visual Studio Code terminal"). Use the real one, whatever PATH says.
+CODE_SERVER_BIN=$(PATH=$(printf '%s' "$PATH" | tr ':' '\n' | grep -v '/remote-cli' | paste -sd: -) command -v code-server || true)
+if [[ -z "$CODE_SERVER_BIN" ]]; then
+  echo "❌ code-server is not installed" >&2
+  exit 1
+fi
+
 # Ensure PATH and /opt/python are active in non-login shells
 [ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
@@ -320,8 +344,20 @@ fi
 # Use the current user's home directory
 CSHOME="${HOME}"
 
+# Two code-servers must not share one data directory: the second takes over the
+# first's session socket (code-server-ipc.sock) and both write the same state and
+# settings. The first one keeps the usual directory, so the codeserver variant's
+# own instance is unchanged; any other gets its own, per port.
+DATA_DIR="$CSHOME/.local/share/code-server"
+DATA_DIR_ARGS=()
+if pgrep -u "$(id -u)" -f '^/usr/lib/code-server/lib/node /usr/lib/code-server( |$)' >/dev/null 2>&1; then
+  DATA_DIR="$CSHOME/.local/share/code-server-$PORT"
+  DATA_DIR_ARGS=(--user-data-dir "$DATA_DIR")
+  echo "ℹ️  Another code-server is already running; this one keeps its state in ${DATA_DIR/#$CSHOME/\~}"
+fi
+
 # Pre-create config dirs for this user
-mkdir -p "$CSHOME/.config" "$CSHOME/.local/share/code-server" "$CSHOME/.local/share/code-server/User"
+mkdir -p "$CSHOME/.config" "$DATA_DIR" "$DATA_DIR/User"
 
 # Write code-server config for this user (auth decided at generation time via envsubst)
 mkdir -p "${CSHOME}/.config/code-server"
@@ -338,7 +374,7 @@ ${PASS_LINE}
 EOF
 
 # Settings
-SETTING_DIR=$CSHOME/.local/share/code-server/User
+SETTING_DIR=${DATA_DIR:-$CSHOME/.local/share/code-server}/User
 SETTINGS_JSON="$SETTING_DIR/settings.json"
 mkdir -p "$SETTING_DIR"
 
@@ -378,7 +414,7 @@ DEFAULT_SHELL="/bin/bash"
 MARKER="/usr/local/share/code-server/.extensions-installed"
 if [ ! -f "$MARKER" ]; then
   echo "Installing deferred extensions (first launch) ..."
-  code-server --extensions-dir "$CODESERVER_EXTENSION_DIR" \
+  "$CODE_SERVER_BIN" --extensions-dir "$CODESERVER_EXTENSION_DIR" \
     --install-extension ms-toolsai.jupyter \
     --install-extension ms-python.python || true
   touch "$MARKER" 2>/dev/null || true
@@ -390,10 +426,11 @@ echo "Starting code-server. This may take sometime ..."
 SHELL="$DEFAULT_SHELL" \
 PASSWORD="$PASSWORD" \
 JUPYTER_PATH="$JUPYTER_PATH" \
-exec code-server \
+exec "$CODE_SERVER_BIN" \
     --extensions-dir "$CODESERVER_EXTENSION_DIR" \
     --bind-addr      "0.0.0.0:$PORT"             \
     --auth           "$AUTH"                     \
+    "${DATA_DIR_ARGS[@]}"                        \
     "$CSHOME/code"
 
 LAUNCH

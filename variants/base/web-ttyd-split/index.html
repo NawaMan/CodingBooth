@@ -10,8 +10,8 @@
        loads it — this shell renders before ttyd is ready (see BoothReady
        below), so the fetch has a head start instead of racing each pane's
        own late-injected preload. Same origin, so the cache is shared. -->
-  <link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin>
-  <link rel="preload" as="font" type="font/woff2" href="/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin>
+  <link rel="preload" as="font" type="font/woff2" href="booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin>
   ${BOOTH_READY_JS}
   ${BOOTH_KEYBOARD_CAPTURE_JS}
   <!-- Optional project-checked-in starting layout/tabs; see .booth/console.json
@@ -39,13 +39,13 @@
       font-family: "FiraCode Nerd Font Mono";
       font-weight: 400;
       font-style: normal;
-      src: url(/booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");
+      src: url(booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");
     }
     @font-face {
       font-family: "FiraCode Nerd Font Mono";
       font-weight: 700;
       font-style: normal;
-      src: url(/booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");
+      src: url(booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");
     }
 
     :root {
@@ -682,7 +682,7 @@
           <div class="tab-list" data-pane="1"></div>
         </div>
         <div class="pane-body" data-pane="1">
-          <iframe class="term-frame" title="Session 1" data-default-src="/s1/"></iframe>
+          <iframe class="term-frame" title="Session 1" data-default-src="s1/"></iframe>
           <div class="tab-empty" data-pane="1"></div>
         </div>
       </section>
@@ -713,7 +713,7 @@
           <div class="tab-list" data-pane="2"></div>
         </div>
         <div class="pane-body" data-pane="2">
-          <iframe class="term-frame" title="Session 2" data-default-src="/s2/"></iframe>
+          <iframe class="term-frame" title="Session 2" data-default-src="s2/"></iframe>
           <div class="tab-empty" data-pane="2"></div>
         </div>
       </section>
@@ -744,7 +744,7 @@
           <div class="tab-list" data-pane="3"></div>
         </div>
         <div class="pane-body" data-pane="3">
-          <iframe class="term-frame" title="Session 3" data-default-src="/s3/"></iframe>
+          <iframe class="term-frame" title="Session 3" data-default-src="s3/"></iframe>
           <div class="tab-empty" data-pane="3"></div>
         </div>
       </section>
@@ -775,7 +775,7 @@
           <div class="tab-list" data-pane="4"></div>
         </div>
         <div class="pane-body" data-pane="4">
-          <iframe class="term-frame" title="Session 4" data-default-src="/s4/"></iframe>
+          <iframe class="term-frame" title="Session 4" data-default-src="s4/"></iframe>
           <div class="tab-empty" data-pane="4"></div>
         </div>
       </section>
@@ -853,7 +853,7 @@
         if (!consoleSpecMode || suppressConsoleSave) return;
         clearTimeout(consoleSaveTimer);
         consoleSaveTimer = setTimeout(function() {
-          fetch("/booth-messages/api/console-config", {
+          fetch("booth-messages/api/console-config", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(buildCurrentConsoleSpec())
@@ -1316,7 +1316,20 @@
         return Number(port) === VIEWMD_PORT;
       }
 
-      // Globe bar: `http://booth:{port}{path}` → iframe `/proxy/{port}{path}`.
+      // Every URL this page builds is relative to where it is served from: "/" on
+      // its own port, or e.g. "/proxy/11111/" when a second console is opened
+      // through another page's proxy (code-server's Web Preview). An absolute
+      // "/s1/" would leave that path and land on the other page's server.
+      var CONSOLE_BASE = window.location.pathname.replace(/[^/]*$/, "");
+
+      // A path as this console's own nginx sees it: CONSOLE_BASE taken off.
+      function consolePath(pathname) {
+        return pathname.indexOf(CONSOLE_BASE) === 0
+          ? "/" + pathname.slice(CONSOLE_BASE.length)
+          : pathname;
+      }
+
+      // Globe bar: `http://booth:{port}{path}` → iframe `proxy/{port}{path}`.
       // Only host "booth" routes through this rewrite (and only over http —
       // the proxy has no TLS to speak of); every other host, including
       // localhost/127.0.0.1, is an externalTarget instead, loaded directly
@@ -1324,7 +1337,7 @@
       function proxySrc(port, path, query, hash) {
         var p = path && path.charAt(0) === "/" ? path : "/" + (path || "");
         if (p === "") p = "/";
-        return "/proxy/" + port + p + (query || "") + (hash || "");
+        return "proxy/" + port + p + (query || "") + (hash || "");
       }
 
       function proxyDisplay(port, path, query, hash) {
@@ -1536,7 +1549,7 @@
         if (!tab) return;
         try {
           var loc = iframe.contentWindow.location;
-          var m = loc.pathname.match(/^\/proxy\/(\d+)(\/.*)?$/);
+          var m = consolePath(loc.pathname).match(/^\/proxy\/(\d+)(\/.*)?$/);
           if (!m) return;
           var target = normalizeTarget(m[1], (m[2] || "/") + loc.search + loc.hash);
           if (target.error) return;
@@ -1943,7 +1956,7 @@
       });
 
       function ensureViewmd() {
-        return fetch("/booth-messages/api/viewmd", { method: "POST" }).then(function(r) {
+        return fetch("booth-messages/api/viewmd", { method: "POST" }).then(function(r) {
           if (!r.ok) throw new Error("viewmd start failed");
         });
       }

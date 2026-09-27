@@ -21,7 +21,7 @@ HOME=/root
 # ---- configurable args ----
 DEFAULT_DISPLAY="${DEFAULT_DISPLAY:-:1}"
 DEFAULT_GEOMETRY="${DEFAULT_GEOMETRY:-1280x800}"
-DEFAULT_NOVNC_PORT="${DEFAULT_NOVNC_PORT:-10000}"
+DEFAULT_NOVNC_PORT="${DEFAULT_NOVNC_PORT:-16666}"
 DEFAULT_VNC_PORT="${DEFAULT_VNC_PORT:-5901}"
 DEFAULT_VNC_PASSWORD="${DEFAULT_VNC_PASSWORD:-}"
 LXQT_WM="${LXQT_WM:-openbox}"    # can be xfwm4 if installed
@@ -275,7 +275,8 @@ cat > "${PROFILE_FILE}" <<'EOF'
 # LXQt over VNC/noVNC defaults
 export DISPLAY=${DEFAULT_DISPLAY}
 export GEOMETRY=${GEOMETRY:-${DEFAULT_GEOMETRY}}
-export NOVNC_PORT=${NOVNC_PORT:-${DEFAULT_NOVNC_PORT}}
+# NOVNC_PORT is deliberately not exported: every start-<desktop> has its own default
+# port (lxqt: 16666), and one exported value would make them all share it.
 export VNC_PORT=${VNC_PORT:-${DEFAULT_VNC_PORT}}
 # export VNC_PASSWORD=change-me   # to require password
 # export VNC_PASSWORD=            # leave empty (or "none") to disable password
@@ -285,7 +286,7 @@ alias desktop-start='start-lxqt'
 lxqt_setup_info() {
   local DISPLAY_DEF="\${DEFAULT_DISPLAY:-:1}"
   local GEOMETRY_DEF="\${DEFAULT_GEOMETRY:-1280x800}"
-  local NOVNC_PORT_DEF="\${DEFAULT_NOVNC_PORT:-10000}"
+  local NOVNC_PORT_DEF="\${DEFAULT_NOVNC_PORT:-16666}"
   local VNC_PORT_DEF="\${DEFAULT_VNC_PORT:-5901}"
   local VNC_PASSWORD_DEF="\${DEFAULT_VNC_PASSWORD:-}"
   local KEYRING_DEF="\${KEYRING_MODE:-basic}"
@@ -315,7 +316,7 @@ lxqt_setup_info() {
 
 💡 Usage (as non-root user)
     source \${PROFILE_FILE_DEF}
-    start-lxqt                    # foreground; Ctrl+C to stop
+    start-lxqt [port]             # foreground; Ctrl+C to stop
 ───────────────────────────────────────────────────────────────
 INFO
 }
@@ -349,7 +350,13 @@ trap 'echo "❌ Error on line $LINENO" >&2; exit 1' ERR
 
 : "${DISPLAY:=:1}"
 : "${GEOMETRY:=1280x800}"
-: "${NOVNC_PORT:=10000}"
+# Port: the first argument, else NOVNC_PORT when set explicitly, else this desktop's
+# own default. The defaults differ per desktop so none of them lands on the booth port.
+NOVNC_PORT="${1:-${NOVNC_PORT:-16666}}"
+if [[ ! "$NOVNC_PORT" =~ ^[0-9]+$ ]]; then
+  echo "❌ Usage: start-lxqt [port]   (got '$NOVNC_PORT')" >&2
+  exit 1
+fi
 : "${VNC_PASSWORD:=}"
 : "${KEYRING_MODE:=basic}"
 : "${LXQT_WM:=openbox}"
@@ -461,7 +468,15 @@ else
 fi
 
 # start noVNC in background, monitor VNC server for desktop logout
-DISPLAY_PORT="${BOOTH_HOST_PORT:-${NOVNC_PORT}}"
+# Behind the booth wrapper (the desktop variants' main service) the desktop is reached
+# through the booth port. Started on its own, it is on its own port, which the host
+# can only reach once that port is exposed.
+if [[ "${INNER_PORT:-}" == "$NOVNC_PORT" ]]; then
+  DISPLAY_PORT="${BOOTH_HOST_PORT:-${NOVNC_PORT}}"
+else
+  DISPLAY_PORT="${NOVNC_PORT}"
+  echo "ℹ️  To reach it from the host, run 'booth--expose ${NOVNC_PORT}' inside the booth."
+fi
 echo "🌐 noVNC: http://localhost:${DISPLAY_PORT}/vnc.html?autoconnect=1&host=localhost&port=${DISPLAY_PORT}&path=websockify&resize=scale"
 websockify --web=/usr/share/novnc "0.0.0.0:${NOVNC_PORT}" "localhost:${VNC_PORT}" &
 WS_PID=$!

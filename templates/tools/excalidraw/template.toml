@@ -11,9 +11,9 @@ tags = [
 ]
 
 [params.EXCALIDRAW_PORT]
-default = "15555"
+default = "20400"
 suggests = [
-    "15555",
+    "20400",
     "13333",
 ]
 

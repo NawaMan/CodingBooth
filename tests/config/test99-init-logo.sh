@@ -6,7 +6,7 @@ begin
 # Test 1: Logo with default port (no extensions)
 run booth config $prj --no-tui --select "logo"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg LOGO_PORT=' '18610'  "default port param is 18610"
+assert-line "$boothfile" 'arg LOGO_PORT=' '20600'  "default port param is 20600"
 assert-line "$boothfile" 'setup logo ' '${LOGO_PORT}'  "Boothfile uses param reference"
 
 # Test 2: Logo with custom port
@@ -21,7 +21,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "logo+expose"
 config="$prj/.booth/config.toml"
-assert-line "$config" '    "-p", ' '"18610:18610",'  "expose uses default port 18610"
+assert-line "$config" '    "-p", ' '"20600:20600",'  "expose uses default port 20600"
 
 # Test 4: Logo+expose with custom port — run-args expanded
 run rm -Rf $prj
@@ -35,7 +35,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "logo+autostart"
 startup="$prj/.booth/startups/65-logo-autostart--startup.sh"
-assert-line "$startup" 'PORT=' '${LOGO_PORT:-18610}'  "startup uses param with default"
+assert-line "$startup" 'PORT=' '${LOGO_PORT:-20600}'  "startup uses param with default"
 
 # Test 6: Logo+expose+autostart with custom port — all consistent
 run rm -Rf $prj

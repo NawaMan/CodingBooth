@@ -99,7 +99,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 				// Start tunnel
 				tunnel, err := startTunnel(ctx, engine, containerName, containerPort, externalPort, verbose)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, "  Tunnel error (port %d): %v\n", containerPort, err)
+					fmt.Fprintf(os.Stderr, rawSafe("  Tunnel error (port %d): %v\n", true), containerPort, err)
 					continue
 				}
 
@@ -107,7 +107,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 				activeTunnels[containerPort] = tunnel
 				mu.Unlock()
 
-				fmt.Fprintf(os.Stderr, "  Tunnel opened: container:%d -> localhost:%d\n", containerPort, externalPort)
+				fmt.Fprintf(os.Stderr, rawSafe("  Tunnel opened: container:%d -> localhost:%d\n", true), containerPort, externalPort)
 			}
 
 			// Remove tunnels whose control files are gone
@@ -117,7 +117,7 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 					t.cancel()
 					t.listener.Close()
 					delete(activeTunnels, port)
-					fmt.Fprintf(os.Stderr, "  Tunnel closed: container:%d -> localhost:%d\n", port, t.externalPort)
+					fmt.Fprintf(os.Stderr, rawSafe("  Tunnel closed: container:%d -> localhost:%d\n", true), port, t.externalPort)
 				}
 			}
 			mu.Unlock()
@@ -182,7 +182,7 @@ func handleTunnelConn(ctx context.Context, tcpConn net.Conn, engine, containerNa
 
 	if err := cmd.Run(); err != nil {
 		if verbose {
-			fmt.Fprintf(os.Stderr, "  Tunnel exec error (port %d): %v\n", containerPort, err)
+			fmt.Fprintf(os.Stderr, rawSafe("  Tunnel exec error (port %d): %v\n", true), containerPort, err)
 		}
 	}
 }

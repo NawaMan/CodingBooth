@@ -12,10 +12,10 @@ Usage:
   $0 [PORT]
 
 Arguments:
-  PORT  Port for the Logo web editor (default: 18610)
+  PORT  Port for the Logo web editor (default: 20600)
 
 Examples:
-  $0            # install with default port 18610
+  $0            # install with default port 20600
   $0 18700      # use port 18700
 
 Notes:
@@ -34,7 +34,7 @@ USAGE
 HOME=/root
 
 # ---- defaults / args ----
-LOGO_PORT="${1:-18610}"
+LOGO_PORT="${1:-20600}"
 LOGO_DIR="/opt/logo"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then

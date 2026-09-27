@@ -32,7 +32,7 @@ NOTEBOOK_PROFILE_FILE=/etc/profile.d/70-cb-notebook--profile.sh
 # ---- Jupyter kernel registration tunables (match code-server) ----
 JUPYTER_KERNEL_NAME="${JUPYTER_KERNEL_NAME:-python}"
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"
-NOTEBOOK_DEFAULT_PORT="${1:-${NOTEBOOK_DEFAULT_PORT:-18888}}"
+NOTEBOOK_DEFAULT_PORT="${1:-${NOTEBOOK_DEFAULT_PORT:-12222}}"
 
 
 # ---- helper: install + verify Jupyter in venv ----
