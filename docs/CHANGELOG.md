@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Alacritty gets the same `+fancy` look as Ghostty, selected by default.** `--select alacritty`
+  now also seeds `~/.config/alacritty/alacritty.toml` with Omarchy's Alacritty skeleton:
+  JetBrainsMono Nerd Font 12pt, 14px padding, the Tokyo Night palette, and
+  `TERM=xterm-256color`. `alacritty~fancy` keeps the plain FiraCode Nerd Font default. Either is
+  written on the first container start only, never over a config you have edited. Existing
+  Boothfiles that say `setup alacritty` are unchanged; only a fresh `booth config` picks up
+  `+fancy`.
+
 - **Ghostty: a third alternate terminal for the desktop variants, styled out of the box.**
   `--select ghostty` (`templates/desktops/ghostty/`) installs Ghostty alongside the desktop's own
   terminal, the way Alacritty and Kitty already are. Ghostty publishes no Linux binaries and noble
