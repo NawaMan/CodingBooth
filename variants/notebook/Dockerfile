@@ -7,8 +7,10 @@ FROM nawaman/codingbooth:base-${BOOTH_VERSION_TAG}
 ARG PYTHON_VERSION=3.12
 RUN python--setup.sh ${PYTHON_VERSION}
 
-ARG NOTEBOOK_PORT=10000
-RUN notebook--setup.sh ${NOTEBOOK_PORT}
+# No port: start-notebook keeps the setup's own default (12222), which is also
+# the port start-notebook-wrapped runs this variant's JupyterLab on behind the
+# booth port. A 10000 here made a bare `start-notebook` aim at the booth port.
+RUN notebook--setup.sh
 
 RUN bash-nb-kernel--setup.sh
 RUN booth-web-preview-notebook--setup.sh
