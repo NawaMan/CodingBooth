@@ -70,6 +70,10 @@ every image. A service started this way is not published — run `booth--expose 
 the booth to reach it from the host (see [BOOTH_EXPOSE.md](BOOTH_EXPOSE.md)). On its own
 variant a service still runs on the port above, behind the booth's nginx on `10000`.
 
+A second code-server works too, next to a `codeserver` booth's own: `start-codeserver 14000`
+from any terminal, including one inside code-server. It keeps its state in
+`~/.local/share/code-server-<port>` so the two do not share a session.
+
 The web console started with `start-webconsole` also uses the four ports just above its own and
 the seventh (`11112`–`11115`, `11118` by default), as the one on the booth port uses
 `10001`–`10004` and `10007`.
