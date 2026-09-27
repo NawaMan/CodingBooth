@@ -1024,8 +1024,8 @@
         <h3>Full screen</h3>
         <p>Where shown, this puts the booth in full screen and, while it is, takes back browser
           shortcuts (like Ctrl+W) that would otherwise be swallowed by the browser tab instead of
-          reaching the booth — see the Clipboard tab for the equivalent friction with
-          copy/paste.</p>
+          reaching the booth<span data-help-needs="clipboard"> — see the Clipboard tab for the
+          equivalent friction with copy/paste</span>.</p>
 
         <h3>Notifications</h3>
         <p>When a message or the idle shutdown warning shows up while this tab is in the
@@ -2239,9 +2239,34 @@
       var closeBtn = document.getElementById("bl-help-dialog-close");
       var tabs = Array.from(document.querySelectorAll(".msg-tab"));
       var panels = Array.from(document.querySelectorAll(".msg-tab-panel"));
-      if (!inner || !btn || !overlay || !closeBtn || !tabs.length) {
+      // A page with no wrapped service to look into (the base variant's
+      // Console UI) opts in by setting, before this overlay loads:
+      //   window.BOOTH_HELP = { tabs: [built-in tabs to keep], open: "<tab>", title: "..." }
+      // The button then always shows, and opens on `open` — a tab the page
+      // adds itself with BoothHelp.addTab below.
+      var pageHelp = !inner && window.BOOTH_HELP ? window.BOOTH_HELP : null;
+      if ((!inner && !pageHelp) || !btn || !overlay || !closeBtn || !tabs.length) {
         return;
       }
+      if (pageHelp) {
+        var keep = Array.isArray(pageHelp.tabs) ? pageHelp.tabs : ["general"];
+        tabs = tabs.filter(function (tab) {
+          if (keep.indexOf(tab.dataset.tab) >= 0) return true;
+          tab.remove();
+          return false;
+        });
+        panels = panels.filter(function (panel) {
+          if (keep.indexOf(panel.dataset.panel) >= 0) return true;
+          panel.remove();
+          return false;
+        });
+        // Text elsewhere that points at a tab this page dropped goes with it.
+        Array.from(overlay.querySelectorAll("[data-help-needs]")).forEach(function (el) {
+          if (keep.indexOf(el.getAttribute("data-help-needs")) < 0) el.remove();
+        });
+        if (pageHelp.title) btn.title = pageHelp.title;
+      }
+      var defaultTab = (pageHelp && pageHelp.open) || "clipboard";
 
       function selectTab(name) {
         tabs.forEach(function (tab) {
@@ -2296,7 +2321,7 @@
       });
 
       function openDialog(tab) {
-        selectTab(tab || "clipboard");
+        selectTab(tab || defaultTab);
         renderNotifyState();
         overlay.classList.add("visible");
         if (!placed) {
@@ -2382,7 +2407,7 @@
       };
 
       btn.addEventListener("click", function () {
-        openDialog("clipboard");
+        openDialog(defaultTab);
       });
       closeBtn.addEventListener("click", closeDialog);
       // Clicking the dark backdrop closes it too, same as the other dialogs
@@ -2392,6 +2417,11 @@
           closeDialog();
         }
       });
+
+      if (pageHelp) {
+        btn.style.display = "";
+        return;
+      }
 
       function checkVisible() {
         if (findNoVncHandle(inner)) {

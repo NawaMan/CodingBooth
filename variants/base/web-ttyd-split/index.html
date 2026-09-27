@@ -27,6 +27,17 @@
        A plain quoted string, unlike the JSON above, so no template-literal-vs-
        plain-string parsing hazard to design around here. -->
   <script>window.BOOTH_CONSOLE_SPEC = "${BOOTH_CONSOLE_SPEC}";</script>
+  <!-- CodingBooth Help in the Booth panel (booth-message-overlay.html): this
+       page wraps no desktop, so it asks for the button itself, keeps only the
+       General tab (Clipboard is about the desktop's noVNC panel) and opens on
+       the Console Shortcuts tab added below. -->
+  <script>
+    window.BOOTH_HELP = {
+      tabs: ["general"],
+      open: window.BoothTiling ? "console" : "general",
+      title: "Help using this booth, including the console's keyboard shortcuts"
+    };
+  </script>
   <style>
     /* Declared here purely so document.fonts.load() below has a face to
        actually fetch and wait on — this document never renders any text
@@ -611,6 +622,13 @@
 
     .pane.split-next-v {
       box-shadow: inset 0 -3px 0 var(--accent), 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    /* CodingBooth Help (booth-message-overlay.html) is a light dialog that
+       colours only its paragraphs; the rest would inherit this page's light
+       text. The desktop pages it was made for have dark text by default. */
+    #bl-help-dialog-overlay .msg-dialog {
+      color: #333;
     }
 
     .tiling-status {
@@ -1841,6 +1859,37 @@
             });
           });
         }).observe(grid, { childList: true, subtree: true });
+
+        // CodingBooth Help (the overlay, parsed after this script) gets the
+        // key table, the way i3--setup.sh's i3-help.js adds the desktop's.
+        document.addEventListener("DOMContentLoaded", function() {
+          if (!window.BoothHelp || typeof window.BoothHelp.addTab !== "function") return;
+          const keys = [
+            ["Ctrl+Alt+h / j / k / l", "Focus the pane left / down / up / right (arrows work too)"],
+            ["Ctrl+Alt+Shift+h / j / k / l", "Move the pane left / down / up / right"],
+            ["Ctrl+Alt+b / Ctrl+Alt+v", "Next pane opens beside / below this one"],
+            ["Ctrl+Alt+Enter", "Open a pane (up to four)"],
+            ["Ctrl+Alt+Shift+q", "Close the pane — its session keeps running"],
+            ["Ctrl+Alt+1 … 4", "Go to session 1 … 4, opening it if closed"],
+            ["Ctrl+Alt+e", "Turn the pane's split the other way"],
+            ["Ctrl+Alt+f", "The pane fills the console / back"],
+            ["Ctrl+Alt+r", "Resize mode (h/j/k/l or arrows, Enter to leave)"]
+          ];
+          const rows = keys.map(function(k) {
+            return '<tr><td style="padding:2px 12px 2px 0;white-space:nowrap"><code>' + k[0] +
+              '</code></td><td style="padding:2px 0">' + k[1] + '</td></tr>';
+          }).join("");
+          window.BoothHelp.addTab("console", "Console Shortcuts",
+            '<p class="msg-dialog-lead">The console tiles its four sessions the way the ' +
+            '<strong>i3</strong> window manager tiles windows, with <strong>Ctrl+Alt</strong> ' +
+            'as the modifier. The toolbar layouts still work; a shortcut can reach any ' +
+            'arrangement of up to four panes.</p>' +
+            '<table style="border-collapse:collapse;font-size:13px">' + rows + '</table>' +
+            '<h3>Shortcut did nothing?</h3>' +
+            '<p>A web tab showing an outside site keeps its keys to itself: click into a ' +
+            'terminal pane first. Ctrl+Alt+arrows may be taken by your own desktop; ' +
+            'h/j/k/l always work.</p>');
+        });
       }
 
       // ── Web proxy ──
