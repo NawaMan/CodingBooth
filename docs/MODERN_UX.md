@@ -59,6 +59,12 @@ FiraCode default. `tests/complex/test-boothfile-ghostty` launches it under `Xvnc
 Ghostty actually loaded, and runs `ghostty +validate-config` on the seeded file. Not yet wired into
 `+default` / `default-terminal--setup.sh`.
 
+**2026-09-27 addendum — Alacritty `+fancy`.** `templates/desktops/alacritty/fancy--extension.toml`
+(auto-selected; `alacritty~fancy` opts out) writes Omarchy's Tokyo Night / JetBrainsMono config to
+`/opt/codingbooth/alacritty/alacritty.toml`, which `57-cb-alacritty--startup.sh` now seeds in
+place of the FiraCode default when present. `test-boothfile-alacritty` launches it with `-vv` and
+fails on any `Unused config key` / config error in the log.
+
 **2026-09-23 addendum — `+default` extension.** Both were originally *alternate* terminals only
 — no way to make either the one that actually opens when the desktop says "open a terminal."
 `templates/desktops/{alacritty,kitty}/default--extension.toml` (`--select

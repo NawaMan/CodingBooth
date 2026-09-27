@@ -7,6 +7,7 @@ setup affine-desktop
 setup affine-server
 setup aider
 setup alacritty
+setup alacritty-fancy
 setup android-emulator
 setup android-sdk
 setup ansible

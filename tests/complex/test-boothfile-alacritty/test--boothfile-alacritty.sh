@@ -66,4 +66,34 @@ else
     FAILED=$((FAILED + 1))
 fi
 
+# Test 4: the +fancy config is seeded into the user's home at start, and
+# Alacritty loads it cleanly — it logs "Unused config key" / "Config error" at
+# WARN/ERROR for anything it does not accept, and names the font it loads, so
+# a verbose launch proves both the keys and the JetBrains Mono font (a missing
+# font falls back silently otherwise).
+CMD='grep -q "^background = \"#1a1b26\"" ~/.config/alacritty/alacritty.toml && echo SEEDED_FANCY; '
+CMD+='Xvnc :1 -geometry 1280x800 -localhost yes -SecurityTypes=None >/tmp/xvnc.log 2>&1 & sleep 2; '
+CMD+='DISPLAY=:1 timeout 10 alacritty -vv -e sh -c "echo \$TERM > /tmp/alacritty-term.txt; sleep 1" >/tmp/alacritty.log 2>&1; '
+CMD+='grep -qE "\[(WARN|ERROR) *\].*([Cc]onfig|[Uu]nused)" /tmp/alacritty.log && echo CONFIG_COMPLAINED; '
+CMD+='grep -q "Loading \"JetBrainsMono Nerd Font\" font" /tmp/alacritty.log && echo FONT_JETBRAINS; '
+CMD+='cat /tmp/alacritty-term.txt 2>/dev/null'
+ACTUAL=$(run_coding_booth --silence-build -- "$CMD" 2>/dev/null)
+
+if echo "$ACTUAL" | grep -q "SEEDED_FANCY" && ! echo "$ACTUAL" | grep -q "CONFIG_COMPLAINED"; then
+    print_test_result "true" "$0" "4" "+fancy config is seeded and Alacritty accepts every key"
+else
+    print_test_result "false" "$0" "4" "+fancy config should be seeded and accepted"
+    echo "  Actual output: ${ACTUAL:-<empty>}"
+    FAILED=$((FAILED + 1))
+fi
+
+# Test 5: the +fancy font and TERM are what the running terminal actually uses.
+if echo "$ACTUAL" | grep -q "FONT_JETBRAINS" && echo "$ACTUAL" | grep -qx "xterm-256color"; then
+    print_test_result "true" "$0" "5" "Alacritty renders with JetBrainsMono and TERM=xterm-256color"
+else
+    print_test_result "false" "$0" "5" "Alacritty should render with JetBrainsMono and TERM=xterm-256color"
+    echo "  Actual output: ${ACTUAL:-<empty>}"
+    FAILED=$((FAILED + 1))
+fi
+
 exit $FAILED

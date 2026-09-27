@@ -1,0 +1,20 @@
+display-name   = "Fancy"
+display-disc   = "Tokyo Night palette, JetBrains Mono Nerd Font, roomy padding"
+display-detail = """\
+Seeds Alacritty with a styled config instead of the plain default: \
+JetBrainsMono Nerd Font 12pt, 14px window padding, Omarchy's Tokyo Night \
+palette, and TERM=xterm-256color. Written to ~/.config/alacritty/alacritty.toml \
+on the first container start only — edit it there afterwards. Selected by \
+default with Alacritty; deselect it for the plain config."""
+display-order  = 40
+auto-select    = true
+tags = [
+    "terminal",
+    "alacritty",
+    "theme"
+]
+
+[segments]
+"Boothfile--65" = """
+setup alacritty-fancy
+"""
