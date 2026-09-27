@@ -21,6 +21,7 @@ Back to [README](../README.md)
 - [How It Works](#how-it-works)
 - [Port Syntax](#port-syntax)
 - [Lifetime](#lifetime)
+- [Closing a tunnel](#closing-a-tunnel)
 - [Listing ports](#listing-ports)
 - [The other direction: reaching a service on the host](#the-other-direction-reaching-a-service-on-the-host)
 - [Relationship to -p and --expose](#relationship-to--p-and---expose)
@@ -148,6 +149,20 @@ That becomes a Docker port mapping in `.booth/config.toml`, and it takes effect 
 booth starts. See [Relationship to -p and --expose](#relationship-to--p-and---expose).
 
 ---
+
+## Closing a tunnel
+
+```bash
+booth--expose close 8080               # stop forwarding container:8080 to the host
+```
+
+A tunnel lives exactly as long as its control file in `.booth/.tmp/tcp-tunnels/`: `close`
+removes the file, and the host-side booth process closes the listener within a second
+(`Tunnel closed: …` in its output). The port can be exposed again straight away.
+
+`close` only covers tunnels. Ports published when the container was created (`-p`, `booth config
+--expose`, a template's `+expose`) are Docker port mappings and stay until the booth is recreated
+without them.
 
 ## Listing ports
 

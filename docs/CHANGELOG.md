@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth--expose close <port>` closes a tunnel.** There was no way to take one down short of
+  deleting its control file by hand; `close` removes it and the host-side booth process stops
+  listening within a second, so the port can be exposed again (or elsewhere) straight away.
+  Exposing a port that already has a tunnel now points at `close` instead of at the file.
+
 - **Start a desktop, a notebook or the web console by hand, next to any variant — each on its
   own port.** A booth that usually needs only a terminal can bring up a heavier tool for a while:
   `start-xfce` on a `base` booth to use PyCharm, or a web console beside JupyterLab on a

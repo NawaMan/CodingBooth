@@ -7,6 +7,7 @@
 #
 # Usage:
 #   booth--expose <container-port> [external-port]
+#   booth--expose close <container-port>
 #
 # Writes a control file to .booth/.tmp/tcp-tunnels/ that the host-side
 # booth process watches. The host opens a local listener and forwards
@@ -22,6 +23,7 @@ MANIFEST_FILE="$TMP_DIR/ports.json"
 usage() {
     cat >&2 <<'EOF'
 Usage: booth--expose <container-port> [external-port]
+       booth--expose close <container-port>
        booth--expose list
 
 Create a TCP tunnel through the booth port, or list the booth's ports.
@@ -38,12 +40,14 @@ A tunnel lasts until the booth stops. To keep a port across restarts, add it
 on the host with: booth config --expose <port>
 
 Subcommands:
+  close            Close the tunnel for a container port
   list             Show published ports, runtime tunnels, and listening services
 
 Examples:
   booth--expose 8080               # container:8080 -> host:8080
   booth--expose 8080 18080         # container:8080 -> host:18080
   booth--expose 8080 +8080         # container:8080 -> host:<offset-base>+8080
+  booth--expose close 8080         # stop forwarding container:8080 to the host
   booth--expose list               # what is published and what is listening
 EOF
     exit 1
@@ -135,6 +139,61 @@ if [[ "${1:-}" == "list" || "${1:-}" == "ls" ]]; then
     exit 0
 fi
 
+# --- Close: the reverse of opening one ---
+#
+# A tunnel lives exactly as long as its control file: the host-side booth
+# process polls .booth/.tmp/tcp-tunnels/ every second and closes the listener of
+# any port whose file is gone. Ports published when the container was created
+# (-p, --expose, +expose) are Docker mappings, not tunnels, and cannot be closed
+# from inside the booth.
+expose_close() {
+    local port=""
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --permanent)
+                echo "Error: --permanent was removed; tunnels already end with the booth." >&2
+                exit 1
+                ;;
+            --help|-h) usage ;;
+            *)
+                if [[ -z "$port" ]]; then
+                    port="$1"
+                else
+                    echo "Error: unexpected argument: $1" >&2
+                    usage
+                fi
+                ;;
+        esac
+        shift
+    done
+
+    if [[ -z "$port" ]]; then
+        echo "Error: close needs the container port of the tunnel." >&2
+        usage
+    fi
+    if ! [[ "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
+        echo "Error: invalid container port: $port" >&2
+        exit 1
+    fi
+
+    if [[ ! -f "$TUNNEL_DIR/$port" ]]; then
+        echo "Error: no tunnel for container port $port." >&2
+        echo "       'booth--expose list' shows the open ones." >&2
+        exit 1
+    fi
+
+    local external
+    external=$(tr -d ' \t\r\n' < "$TUNNEL_DIR/$port")
+    rm -f "$TUNNEL_DIR/$port"
+    echo "TCP tunnel closed: container localhost:${port} -> host localhost:${external:-?}"
+}
+
+if [[ "${1:-}" == "close" ]]; then
+    shift
+    expose_close "$@"
+    exit 0
+fi
+
 # --- Parse args ---
 CONTAINER_PORT=""
 EXTERNAL_PORT=""
@@ -200,7 +259,7 @@ fi
 # --- Check if tunnel already exists ---
 if [[ -f "$TUNNEL_DIR/$CONTAINER_PORT" ]]; then
     echo "Error: tunnel for container port $CONTAINER_PORT already exists." >&2
-    echo "       Remove $TUNNEL_DIR/$CONTAINER_PORT to reset." >&2
+    echo "       Close it first: booth--expose close $CONTAINER_PORT" >&2
     exit 1
 fi
 
