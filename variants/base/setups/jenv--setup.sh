@@ -10,7 +10,10 @@ trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 HOME=/root
 
 
-PROFILE_FILE="/etc/profile.d/57-cb-jenv--profile.sh"
+# 65: after the JDK's 60-cb-jdk--profile.sh. That profile exports JAVA_HOME, so
+# sorting before it (this used to be 57) let it overwrite whatever jenv chose, in
+# every non-interactive shell (`booth -- mvn ...`) where no prompt hook runs.
+PROFILE_FILE="/etc/profile.d/65-cb-jenv--profile.sh"
 
 # ----- idempotent/atomic write of PROFILE_FILE -----
 mkdir -p "$(dirname "$PROFILE_FILE")"
@@ -38,11 +41,39 @@ case ":$PATH:" in
   *) export PATH="$JENV_ROOT/bin:$PATH" ;;
 esac
 
-# initialize the shell hooks
-eval "$(${JENV_BIN} init -)"
-
+# Enabled before `jenv init`, which is what loads the enabled plugins.
 if [ ! -e "${JENV_ROOT}/plugins/export" ]; then
   jenv enable-plugin export
 fi
+
+# The JDK profile has already run, so this is the booth's JDK. Captured once:
+# ~/.bashrc re-sources this file, by which point JAVA_HOME may be jenv's.
+if [ -z "${CB_JENV_SYSTEM_JAVA_HOME+x}" ]; then
+  export CB_JENV_SYSTEM_JAVA_HOME="${JAVA_HOME:-}"
+fi
+
+# initialize the shell hooks
+eval "$(${JENV_BIN} init -)"
+
+# With no version chosen ("system"), `jenv javahome` fails and jenv's export hook
+# exports JAVA_HOME="". Put the booth's JDK back, after that hook, every time it runs.
+_cb_jenv_java_home_fallback() {
+  if [ -z "${JAVA_HOME:-}" ] && [ -n "${CB_JENV_SYSTEM_JAVA_HOME:-}" ]; then
+    export JAVA_HOME="$CB_JENV_SYSTEM_JAVA_HOME"
+  fi
+}
+if [ -n "${ZSH_VERSION:-}" ]; then
+  case " ${precmd_functions[*]} " in
+    *" _cb_jenv_java_home_fallback "*) : ;;
+    *) precmd_functions+=(_cb_jenv_java_home_fallback) ;;
+  esac
+else
+  case ";${PROMPT_COMMAND:-};" in
+    *";_cb_jenv_java_home_fallback;"*) : ;;
+    *) PROMPT_COMMAND="${PROMPT_COMMAND%;}"
+       PROMPT_COMMAND="${PROMPT_COMMAND:+$PROMPT_COMMAND;}_cb_jenv_java_home_fallback" ;;
+  esac
+fi
+_cb_jenv_java_home_fallback
 
 EOF

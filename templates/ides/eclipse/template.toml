@@ -8,6 +8,9 @@ tags = [
     "java"
 ]
 
+# eclipse--setup.sh exits 1 when `java` is missing, and no variant ships a JDK.
+requires = ["java"]
+
 [segments]
 "Boothfile--60" = """
 setup eclipse
