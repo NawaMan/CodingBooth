@@ -134,10 +134,17 @@
   <script>
     (function () {
       // A pane whose session expired gets redirected here inside its iframe.
-      // Take over the whole window instead of rendering a login card in a pane.
-      if (window.top !== window.self) {
-        window.top.location = '/login';
-        return;
+      // Take over the console instead of rendering a login card in a pane. The
+      // console, not the top window: opened through another page's proxy (Web
+      // Preview) the top window is that page, not this booth's console. And
+      // this page's own URL, which that proxy has already rewritten.
+      if (window.parent !== window.self) {
+        var inConsole = false;
+        try { inConsole = !!window.parent.document.querySelector('.term-frame'); } catch (e) { /* cross-origin */ }
+        if (inConsole) {
+          window.parent.location = window.location.href;
+          return;
+        }
       }
 
       var form = document.getElementById('login-form');
@@ -166,7 +173,7 @@
         error.classList.remove('shown');
         submit.disabled = true;
 
-        fetch('/booth-messages/api/login', {
+        fetch('booth-messages/api/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -175,7 +182,7 @@
           })
         }).then(function (response) {
           if (response.ok) {
-            window.location.replace('/');
+            window.location.replace('./');
             return;
           }
           fail(response.status === 401

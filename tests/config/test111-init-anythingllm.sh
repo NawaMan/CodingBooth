@@ -9,8 +9,8 @@ run booth config $prj --no-tui --select "anythingllm"
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" 'arg ANYTHINGLLM_VERSION=' '1.16.1' \
     "default version is 1.16.1"
-assert-line "$boothfile" 'arg ANYTHINGLLM_PORT=' '3001' \
-    "default port is 3001"
+assert-line "$boothfile" 'arg ANYTHINGLLM_PORT=' '20200' \
+    "default port is 20200"
 assert-line "$boothfile" 'copy --from=mintplexlabs/anythingllm:' '${ANYTHINGLLM_VERSION} /app /opt/anythingllm' \
     "Boothfile copies official image"
 assert-line "$boothfile" 'setup anythingllm --version ' '${ANYTHINGLLM_VERSION} --port ${ANYTHINGLLM_PORT}' \
@@ -31,8 +31,8 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "anythingllm+expose"
 config="$prj/.booth/config.toml"
-assert-line "$config" 'run-args = ' '["-p", "3001:3001"]' \
-    "expose uses default port 3001"
+assert-line "$config" 'run-args = ' '["-p", "20200:20200"]' \
+    "expose uses default port 20200"
 
 # Test 4: +expose with custom port — host follows service
 run rm -Rf $prj
@@ -55,7 +55,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "anythingllm+autostart"
 startup="$prj/.booth/startups/65-anythingllm-autostart--startup.sh"
-assert-line "$startup" 'PORT=' '${ANYTHINGLLM_PORT:-3001}' \
+assert-line "$startup" 'PORT=' '${ANYTHINGLLM_PORT:-20200}' \
     "startup uses param with default"
 
 # Test 7: +persist creates the cache bind

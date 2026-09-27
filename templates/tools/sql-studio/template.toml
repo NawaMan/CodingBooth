@@ -14,8 +14,8 @@ default = "latest"
 suggests = ["latest", "0.1.53"]
 
 [params.SQLSTUDIO_PORT]
-default = "3030"
-suggests = ["3030", "13030"]
+default = "21100"
+suggests = ["21100", "3030"]
 
 [segments]
 Boothfile = """

@@ -225,7 +225,7 @@ published port with it, and the two cannot drift apart:
 
 | Selection | Publishes |
 |---|---|
-| `cloudbeaver+expose` | `8978:8978` |
+| `cloudbeaver+expose` | `20300:20300` |
 | `cloudbeaver:25.3.5,9000+expose` | `9000:9000` — host follows the service |
 | `cloudbeaver:25.3.5,9000+expose:19000` | `19000:9000` — host overridden alone |
 | `cloudbeaver+expose:+8978` | `28978:8978` — host relative to an offset base of 20000 |

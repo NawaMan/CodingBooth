@@ -21,6 +21,7 @@ Back to [README](../README.md)
 - [How It Works](#how-it-works)
 - [Port Syntax](#port-syntax)
 - [Lifetime](#lifetime)
+- [Closing a tunnel](#closing-a-tunnel)
 - [Listing ports](#listing-ports)
 - [The other direction: reaching a service on the host](#the-other-direction-reaching-a-service-on-the-host)
 - [Relationship to -p and --expose](#relationship-to--p-and---expose)
@@ -149,6 +150,20 @@ booth starts. See [Relationship to -p and --expose](#relationship-to--p-and---ex
 
 ---
 
+## Closing a tunnel
+
+```bash
+booth--expose close 8080               # stop forwarding container:8080 to the host
+```
+
+A tunnel lives exactly as long as its control file in `.booth/.tmp/tcp-tunnels/`: `close`
+removes the file, and the host-side booth process closes the listener within a second
+(`Tunnel closed: …` in its output). The port can be exposed again straight away.
+
+`close` only covers tunnels. Ports published when the container was created (`-p`, `booth config
+--expose`, a template's `+expose`) are Docker port mappings and stay until the booth is recreated
+without them.
+
 ## Listing ports
 
 Two commands report what a booth exposes and where — one from the host, one from
@@ -173,7 +188,7 @@ booth expose list --name demo
 CONTAINER  HOST             PROTO  KIND        LIVE  SOURCE
 10000      127.0.0.1:11000  tcp    front door  yes   booth front door
 13000      0.0.0.0:13000    tcp    published   yes   published (-p)
-18888      0.0.0.0:19888    tcp    published   yes   published (-p)
+12222      0.0.0.0:19888    tcp    published   yes   published (-p)
 5432       127.0.0.1:5432   tcp    tunnel      yes   booth--expose
 ```
 
@@ -196,9 +211,9 @@ booth--expose list
 CONTAINER HOST                   PROTO KIND        STATUS  SERVER
 10000     127.0.0.1:11000        tcp   front door  up      nginx
 13000     0.0.0.0:13000          tcp   published   up      node
-18888     0.0.0.0:19888          tcp   published   up      jupyter-lab
+12222     0.0.0.0:19888          tcp   published   up      jupyter-lab
 5432      127.0.0.1:5432         tcp   tunnel      up      -
-10099     -                      tcp   internal    up      websockify
+14444     -                      tcp   internal    up      websockify
 ```
 
 A `SERVER` of `-` means the process is owned by another user and `ss` could not

@@ -32,7 +32,7 @@ EXTRA_PACKAGES="${EXTRA_PACKAGES:-x11-xserver-utils curl locales software-proper
 
 DEFAULT_DISPLAY="${DEFAULT_DISPLAY:-:1}"
 DEFAULT_GEOMETRY="${DEFAULT_GEOMETRY:-1280x800}"
-DEFAULT_NOVNC_PORT="${DEFAULT_NOVNC_PORT:-10000}"
+DEFAULT_NOVNC_PORT="${DEFAULT_NOVNC_PORT:-15555}"
 DEFAULT_VNC_PORT="${DEFAULT_VNC_PORT:-5901}"
 DEFAULT_VNC_PASSWORD="${DEFAULT_VNC_PASSWORD:-}"   # empty ⇒ NO VNC AUTH
 
@@ -251,7 +251,8 @@ cat > "${PROFILE_FILE}" <<EOF
 # KDE Plasma over VNC/noVNC defaults
 export DISPLAY=${DEFAULT_DISPLAY}
 export GEOMETRY=\${GEOMETRY:-${DEFAULT_GEOMETRY}}
-export NOVNC_PORT=\${NOVNC_PORT:-${DEFAULT_NOVNC_PORT}}
+# NOVNC_PORT is deliberately not exported: every start-<desktop> has its own default
+# port (kde: 15555), and one exported value would make them all share it.
 export VNC_PORT=\${VNC_PORT:-${DEFAULT_VNC_PORT}}
 # export VNC_PASSWORD=change-me   # to require password
 # export VNC_PASSWORD=            # leave empty (or "none") to disable password
@@ -270,7 +271,13 @@ trap 'echo "❌ Error on line $LINENO" >&2; exit 1' ERR
 
 : "${DISPLAY:=:1}"
 : "${GEOMETRY:=1280x800}"
-: "${NOVNC_PORT:=10000}"
+# Port: the first argument, else NOVNC_PORT when set explicitly, else this desktop's
+# own default. The defaults differ per desktop so none of them lands on the booth port.
+NOVNC_PORT="${1:-${NOVNC_PORT:-15555}}"
+if [[ ! "$NOVNC_PORT" =~ ^[0-9]+$ ]]; then
+  echo "❌ Usage: start-kde [port]   (got '$NOVNC_PORT')" >&2
+  exit 1
+fi
 : "${VNC_PASSWORD:=}"
 # Map unified PASSWORD to VNC_PASSWORD if VNC_PASSWORD is not explicitly set
 if [[ -z "${VNC_PASSWORD}" && -n "${PASSWORD:-}" ]]; then
@@ -379,7 +386,15 @@ if [[ -x /usr/local/bin/kde-set-wallpaper ]]; then
 fi
 
 # start noVNC in background, monitor VNC server for desktop logout
-DISPLAY_PORT="${BOOTH_HOST_PORT:-${NOVNC_PORT}}"
+# Behind the booth wrapper (the desktop variants' main service) the desktop is reached
+# through the booth port. Started on its own, it is on its own port, which the host
+# can only reach once that port is exposed.
+if [[ "${INNER_PORT:-}" == "$NOVNC_PORT" ]]; then
+  DISPLAY_PORT="${BOOTH_HOST_PORT:-${NOVNC_PORT}}"
+else
+  DISPLAY_PORT="${NOVNC_PORT}"
+  echo "ℹ️  To reach it from the host, run 'booth--expose ${NOVNC_PORT}' inside the booth."
+fi
 echo "🌐 noVNC: http://localhost:${DISPLAY_PORT}/vnc.html?autoconnect=1&host=localhost&port=${DISPLAY_PORT}&path=websockify&resize=scale"
 websockify --web=/usr/share/novnc "0.0.0.0:${NOVNC_PORT}" "localhost:${VNC_PORT}" &
 WS_PID=$!
@@ -548,7 +563,7 @@ Defaults:
 Usage:
   # as NON-root user
   . ${PROFILE_FILE}
-  start-kde             # runs in foreground; Ctrl+C to stop
+  start-kde [port]      # runs in foreground; Ctrl+C to stop
 
 Security:
   - VNC auth is DISABLED by default (SecurityTypes=None).

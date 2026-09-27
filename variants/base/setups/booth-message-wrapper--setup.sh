@@ -294,7 +294,7 @@ cat > /usr/local/bin/start-booth-wrapped <<'STARTEOF'
 set -euo pipefail
 
 # Required env vars (set by the variant-specific start-*-wrapped script):
-#   INNER_CMD      — command to start the inner service (e.g., "start-codeserver 19999")
+#   INNER_CMD      — command to start the inner service (e.g., "start-codeserver 13333")
 #   INNER_PORT     — port the inner service listens on
 #   IFRAME_SRC     — URL path for the iframe (e.g., "/" or "/lab")
 

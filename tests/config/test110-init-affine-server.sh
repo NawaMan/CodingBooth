@@ -7,7 +7,7 @@ begin
 run booth config $prj --no-tui --select "affine-server"
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" 'arg AFFINE_SERVER_VERSION=' 'stable'  "default image tag is stable"
-assert-line "$boothfile" 'arg AFFINE_SERVER_PORT=' '13010'  "default port is 13010"
+assert-line "$boothfile" 'arg AFFINE_SERVER_PORT=' '20100'  "default port is 20100"
 assert-line "$boothfile" 'arg AFFINE_SERVER_DATA=' 'clean'  "default data mode is clean"
 assert-line "$boothfile" 'copy --from=ghcr.io/toeverything/affine:' '${AFFINE_SERVER_VERSION} /app /opt/affine'  "copies official image"
 assert-line "$boothfile" 'setup affine-server --port ' '${AFFINE_SERVER_PORT} --data ${AFFINE_SERVER_DATA}'  "Boothfile wires port and data mode"
@@ -28,7 +28,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "affine-server+expose"
 config="$prj/.booth/config.toml"
-assert-line "$config" '    "-p", ' '"13010:13010",'  "expose uses default port 13010"
+assert-line "$config" '    "-p", ' '"20100:20100",'  "expose uses default port 20100"
 
 # Test 4: +expose with custom port
 run rm -Rf $prj
@@ -42,7 +42,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "affine-server+autostart"
 startup="$prj/.booth/startups/70-affine-server-autostart--startup.sh"
-assert-line "$startup" 'PORT=' '${AFFINE_SERVER_PORT:-13010}'  "startup uses param with default"
+assert-line "$startup" 'PORT=' '${AFFINE_SERVER_PORT:-20100}'  "startup uses param with default"
 
 # Test 6: custom port + expose + autostart stay consistent
 run rm -Rf $prj

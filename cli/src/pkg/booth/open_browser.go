@@ -114,7 +114,7 @@ func OpenBoothInBrowser(waitCtx context.Context, ctx appctx.AppContext, foregrou
 		warnBrowser(targetURL, foreground, "could not open a browser: %v", err)
 		return
 	}
-	LogFprintf(os.Stderr, foregroundPrefix(foreground)+"🌐 Opened %s in your browser.\n", targetURL)
+	LogFprintf(os.Stderr, rawSafe(foregroundPrefix(foreground)+"🌐 Opened %s in your browser.\n", foreground), targetURL)
 }
 
 // foregroundPrefix returns a leading newline for a status message that runs
@@ -151,7 +151,7 @@ func foregroundPrefix(foreground bool) string {
 func warnBrowser(url string, foreground bool, format string, a ...any) {
 	line1 := fmt.Sprintf("⚠️  "+format+"\n", a...)
 	line2 := fmt.Sprintf("   Open %s yourself.\n", url)
-	fmt.Fprint(os.Stderr, foregroundPrefix(foreground)+line1+line2)
+	fmt.Fprint(os.Stderr, rawSafe(foregroundPrefix(foreground)+line1+line2, foreground))
 }
 
 // waitForBoothServing polls the booth's readiness endpoint until it answers,
@@ -200,7 +200,7 @@ func waitForBoothServing(waitCtx context.Context, url string, timeout time.Durat
 		if !announced {
 			// Only once the booth is not up on the first try: a booth that is
 			// already serving should not print a wait it never did.
-			LogFprintf(os.Stderr, foregroundPrefix(foreground)+"⏳ Waiting for the booth to answer on %s ...\n", url)
+			LogFprintf(os.Stderr, rawSafe(foregroundPrefix(foreground)+"⏳ Waiting for the booth to answer on %s ...\n", foreground), url)
 			announced = true
 		}
 		select {

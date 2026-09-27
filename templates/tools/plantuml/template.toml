@@ -18,9 +18,9 @@ suggests = [
 ]
 
 [params.PLANTUML_PORT]
-default = "18080"
+default = "20900"
 suggests = [
-    "18080",
+    "20900",
     "18180",
 ]
 

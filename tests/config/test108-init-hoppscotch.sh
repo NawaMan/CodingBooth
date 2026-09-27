@@ -9,8 +9,8 @@ run booth config $prj --no-tui --select "hoppscotch"
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" 'arg HOPPSCOTCH_VERSION=' '2026.8.0' \
     "default version is 2026.8.0"
-assert-line "$boothfile" 'arg HOPPSCOTCH_PORT=' '13000' \
-    "default port is 13000"
+assert-line "$boothfile" 'arg HOPPSCOTCH_PORT=' '20500' \
+    "default port is 20500"
 assert-line "$boothfile" 'copy --from=hoppscotch/hoppscotch-frontend:' '${HOPPSCOTCH_VERSION} /site/selfhost-web /opt/hoppscotch' \
     "Boothfile copies official frontend image"
 assert-line "$boothfile" 'setup hoppscotch ' '${HOPPSCOTCH_PORT}' \
@@ -31,8 +31,8 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "hoppscotch+expose"
 config="$prj/.booth/config.toml"
-assert-line "$config" 'run-args = ' '["-p", "13000:13000"]' \
-    "expose uses default port 13000"
+assert-line "$config" 'run-args = ' '["-p", "20500:20500"]' \
+    "expose uses default port 20500"
 
 # Test 4: +expose with custom port — host follows service
 run rm -Rf $prj
@@ -55,7 +55,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "hoppscotch+autostart"
 startup="$prj/.booth/startups/65-hoppscotch-autostart--startup.sh"
-assert-line "$startup" 'PORT=' '${HOPPSCOTCH_PORT:-13000}' \
+assert-line "$startup" 'PORT=' '${HOPPSCOTCH_PORT:-20500}' \
     "startup uses param with default"
 
 # Test 7: version + custom port + expose + autostart

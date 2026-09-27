@@ -18,9 +18,9 @@ tags = [
 ]
 
 [params.LOGO_PORT]
-default = "18610"
+default = "20600"
 suggests = [
-    "18610",
+    "20600",
     "18611",
 ]
 

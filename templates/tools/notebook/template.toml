@@ -10,9 +10,9 @@ tags = [
 ]
 
 [params.NOTEBOOK_PORT]
-default = "18888"
+default = "12222"
 suggests = [
-    "18888",
+    "12222",
     "8888",
 ]
 

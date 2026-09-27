@@ -12,7 +12,7 @@ tags = [
 # Auto-start CloudBeaver in background
 CB_DIR="/opt/cloudbeaver"
 JAVA_HOME_DIR="/opt/cloudbeaver-java/openjdk"
-PORT=${CB_CLOUDBEAVER_PORT:-8978}
+PORT=${CB_CLOUDBEAVER_PORT:-20300}
 LOG_FILE="/tmp/cloudbeaver.log"
 
 export PATH="${JAVA_HOME_DIR}/bin:$PATH"

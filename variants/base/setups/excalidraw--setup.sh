@@ -12,10 +12,10 @@ Usage:
   $0 [PORT]
 
 Arguments:
-  PORT  Port for the Excalidraw web server (default: 15555)
+  PORT  Port for the Excalidraw web server (default: 20400)
 
 Examples:
-  $0           # install with default port 15555
+  $0           # install with default port 20400
   $0 16000     # use port 16000
 
 Notes:
@@ -32,7 +32,7 @@ USAGE
 HOME=/root
 
 # ---- defaults / args ----
-EXCALIDRAW_PORT="${1:-15555}"
+EXCALIDRAW_PORT="${1:-20400}"
 EXCALIDRAW_VERSION="v0.18.0"
 EXCALIDRAW_DIR="/opt/excalidraw"
 

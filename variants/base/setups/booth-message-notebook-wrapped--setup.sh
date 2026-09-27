@@ -15,8 +15,8 @@ set -euo pipefail
 cat > /usr/local/bin/start-notebook-wrapped <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-export INNER_PORT=18888
-export INNER_CMD="BOOTH_CODE_PORT=18888 start-notebook 18888"
+export INNER_PORT=12222
+export INNER_CMD="BOOTH_CODE_PORT=12222 start-notebook 12222"
 export IFRAME_SRC="/lab"
 # Health probes hit /api, Jupyter's public version endpoint: a 200 it logs at
 # debug level. Its "/" answers 302, which it logs at INFO — once per probe.
