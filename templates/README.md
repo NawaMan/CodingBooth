@@ -222,7 +222,7 @@ echo "Excalidraw started on port $PORT (PID $!, log: $LOG_FILE)"
 
 `notebook` and `codeserver` are both a template *and* a variant. On their own variant the server is
 already running as the primary service — and on the **same port** the template defaults to (JupyterLab
-on 18888, code-server on 19999, each fronted by the booth's nginx). Auto-starting a second one there
+on 12222, code-server on 13333, each fronted by the booth's nginx). Auto-starting a second one there
 is not merely redundant, it collides. So the startup segment must bail out on the matching variant:
 
 ```bash

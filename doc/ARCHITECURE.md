@@ -351,9 +351,9 @@ process** they front in the browser:
 | Variant | Inner surface | Delivery |
 |---------|---------------|----------|
 | `base` | ttyd terminal | console UI (split terminal + proxy pane) over nginx |
-| `codeserver` | VS Code (code-server, `:19999`) | wrapped behind nginx + overlay |
-| `notebook` | JupyterLab (`:18888`) | wrapped behind nginx + overlay |
-| `desktop-xfce` / `desktop-kde` / `desktop-lxqt` | X11 desktop via noVNC (`:10099`) | wrapped behind nginx + overlay |
+| `codeserver` | VS Code (code-server, `:13333`) | wrapped behind nginx + overlay |
+| `notebook` | JupyterLab (`:12222`) | wrapped behind nginx + overlay |
+| `desktop-xfce` / `desktop-kde` / `desktop-lxqt` | X11 desktop via noVNC (`:14444` xfce, `:15555` kde, `:16666` lxqt) | wrapped behind nginx + overlay |
 | `desktop-wayland` | labwc + wayvnc → websockify → noVNC | wrapped behind nginx + overlay |
 
 Everything after `base` — the ~213 scripts in `variants/base/setups/` — is the
@@ -524,7 +524,7 @@ scripts; the **Boothfile segment** numbers (40/50/60/65/70/90) sequence template
 merges (§7).
 
 **Internal ports:** `10000` nginx front door, `10001–10004` proxy targets,
-`10007` message API, `10099` noVNC, `18888` JupyterLab, `19999` code-server.
+`10007` message API, `12222` JupyterLab, `13333` code-server, `14444`–`17777` noVNC (xfce, kde, lxqt, wayland).
 
 **Markers:** `_booth_inner=1` (URL param that breaks the `/` → `/booth` redirect
 loop), `.mount-this` (opt a cache subtree into the bind mount),

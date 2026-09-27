@@ -7,7 +7,7 @@ begin
 run booth config $prj --no-tui --select "mermaid"
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" 'arg MERMAID_VERSION=' '11.17.0'  "default version is 11.17.0"
-assert-line "$boothfile" 'arg MERMAID_PORT=' '18090'  "default port is 18090"
+assert-line "$boothfile" 'arg MERMAID_PORT=' '20700'  "default port is 20700"
 assert-line "$boothfile" 'setup mermaid ' '${MERMAID_VERSION} ${MERMAID_PORT}'  "Boothfile uses param references"
 
 # Test 2: Mermaid with custom version and port
@@ -23,7 +23,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "mermaid+expose"
 config="$prj/.booth/config.toml"
-assert-line "$config" 'run-args = ' '["-p", "18090:18090"]'  "expose uses default port 18090"
+assert-line "$config" 'run-args = ' '["-p", "20700:20700"]'  "expose uses default port 20700"
 
 # Test 4: Mermaid+expose with custom port
 run rm -Rf $prj
@@ -37,7 +37,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "mermaid+autostart"
 startup="$prj/.booth/startups/65-mermaid-autostart--startup.sh"
-assert-line "$startup" 'PORT=' '${MERMAID_PORT:-18090}'  "startup uses param with default"
+assert-line "$startup" 'PORT=' '${MERMAID_PORT:-20700}'  "startup uses param with default"
 
 # Test 6: Mermaid+expose+autostart with custom port
 run rm -Rf $prj

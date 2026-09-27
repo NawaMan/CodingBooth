@@ -16,9 +16,9 @@ tags = [
 ]
 
 [params.SCRATCH_PORT]
-default = "18601"
+default = "21000"
 suggests = [
-    "18601",
+    "21000",
     "18602",
 ]
 

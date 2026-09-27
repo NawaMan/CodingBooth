@@ -10,7 +10,7 @@ set -euo pipefail
 cat > /usr/local/bin/start-codeserver-wrapped <<'EOF'
 #!/usr/bin/env bash
 set -euo pipefail
-export INNER_PORT=19999
+export INNER_PORT=13333
 export INNER_CMD="start-codeserver $INNER_PORT"
 export IFRAME_SRC="/?_booth_inner=1"
 export BOOTH_WEB_PREVIEW=1

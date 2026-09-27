@@ -12,10 +12,10 @@ Usage:
   $0 [PORT]
 
 Arguments:
-  PORT  Port for the Penpot web UI (default: 19001)
+  PORT  Port for the Penpot web UI (default: 20800)
 
 Examples:
-  $0           # install with default port 19001
+  $0           # install with default port 20800
   $0 9001      # official upstream compose port
 
 Prerequisites:
@@ -43,7 +43,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 # ---- defaults / args ----
-PENPOT_PORT="${1:-19001}"
+PENPOT_PORT="${1:-20800}"
 PENPOT_DIR="/opt/penpot"
 BACKEND_DIR="${PENPOT_DIR}/backend"
 FRONTEND_DIR="${PENPOT_DIR}/frontend"

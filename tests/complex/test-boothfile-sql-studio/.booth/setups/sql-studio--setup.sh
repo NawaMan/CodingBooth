@@ -12,7 +12,7 @@ Usage:
   $0 [--version <X.Y.Z>|latest] [--port <PORT>]
 
 Examples:
-  $0                            # install latest sql-studio, port 3030
+  $0                            # install latest sql-studio, port 21100
   $0 --version 0.1.53           # pin specific version
   $0 --port 13030               # use a different default port
 
@@ -39,11 +39,11 @@ SCRIPT_DIR="$(dirname "$0")"
 # ---- defaults / args ----
 SQLSTUDIO_DEFAULT_VER="0.1.53"   # fallback when 'latest' cannot be resolved
 REQ_VER="latest"
-PORT="3030"
+PORT="21100"
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --version) shift; REQ_VER="${1:-latest}"; shift ;;
-    --port)    shift; PORT="${1:-3030}"; shift ;;
+    --port)    shift; PORT="${1:-21100}"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) echo "❌ Unknown arg: $1" >&2; usage; exit 2 ;;
   esac

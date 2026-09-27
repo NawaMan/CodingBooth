@@ -12,10 +12,10 @@ Usage:
   $0 [PORT]
 
 Arguments:
-  PORT  Port for the Scratch web editor (default: 18601)
+  PORT  Port for the Scratch web editor (default: 21000)
 
 Examples:
-  $0            # install with default port 18601
+  $0            # install with default port 21000
   $0 18700      # use port 18700
 
 Notes:
@@ -34,7 +34,7 @@ USAGE
 HOME=/root
 
 # ---- defaults / args ----
-SCRATCH_PORT="${1:-18601}"
+SCRATCH_PORT="${1:-21000}"
 SCRATCH_DIR="/opt/scratch"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then

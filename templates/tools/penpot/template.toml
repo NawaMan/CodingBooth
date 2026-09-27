@@ -37,9 +37,9 @@ suggests = [
 ]
 
 [params.PENPOT_PORT]
-default = "19001"
+default = "20800"
 suggests = [
-    "19001",
+    "20800",
     "9001",
     "18001",
 ]

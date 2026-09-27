@@ -12,10 +12,10 @@ Usage:
   $0 [PORT]
 
 Arguments:
-  PORT  Port for the Hoppscotch web UI (default: 13000)
+  PORT  Port for the Hoppscotch web UI (default: 20500)
 
 Examples:
-  $0           # install with default port 13000
+  $0           # install with default port 20500
   $0 18000     # use port 18000
 
 Prerequisites:
@@ -42,7 +42,7 @@ if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
 fi
 
 # ---- defaults / args ----
-HOPPSCOTCH_PORT="${1:-13000}"
+HOPPSCOTCH_PORT="${1:-20500}"
 HOPPSCOTCH_DIR="/opt/hoppscotch"
 PROFILE_FILE="/etc/profile.d/70-cb-hoppscotch--profile.sh"
 STARTER_FILE="/usr/local/bin/start-hoppscotch"
@@ -301,7 +301,7 @@ class Handler(BaseHTTPRequestHandler):
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="Hoppscotch SPA + CORS proxy")
-    parser.add_argument("--port", type=int, default=13000)
+    parser.add_argument("--port", type=int, default=20500)
     parser.add_argument("--root", default="/opt/hoppscotch")
     args = parser.parse_args()
     Handler.root = Path(args.root)

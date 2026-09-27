@@ -38,7 +38,7 @@ fi
 
 # Test 2: start-sql-studio actually serves the preview sample over HTTP
 ACTUAL=$(run_coding_booth --silence-build -- \
-  "start-sql-studio & sleep 2; curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3030/" \
+  "start-sql-studio & sleep 2; curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:21100/" \
   2>/dev/null | tail -1)
 
 if [[ "$ACTUAL" == "200" ]]; then

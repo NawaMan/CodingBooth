@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+#
+# start-webconsole [port] — the booth's web console (split terminal UI), started by
+# hand next to a variant's own main service: a console beside JupyterLab on a
+# notebook booth, or beside code-server on a codeserver booth. Foreground;
+# Ctrl+C to stop.
+#
+# The console that *is* the main service (the base variant) is started by
+# start-ttyd on the booth port. This one defaults to 11111, and its panes and
+# message API sit just above it (11112-11115, 11118).
+set -euo pipefail
+
+PORT="${1:-11111}"
+if [[ ! "$PORT" =~ ^[0-9]+$ ]] || (( PORT < 1 || PORT > 65528 )); then
+    echo "❌ Usage: start-webconsole [port]   (got '$PORT')" >&2
+    exit 1
+fi
+
+if (exec 3<>"/dev/tcp/127.0.0.1/$PORT") 2>/dev/null; then
+    echo "❌ Port $PORT is already in use — pick another: start-webconsole <port>" >&2
+    exit 1
+fi
+
+echo "🌐 Web console on port $PORT"
+echo "ℹ️  To reach it from the host, run 'booth--expose $PORT' inside the booth."
+exec start-ttyd "$PORT"

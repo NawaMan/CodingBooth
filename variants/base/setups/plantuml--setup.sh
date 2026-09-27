@@ -13,11 +13,11 @@ Usage:
 
 Arguments:
   VERSION  PlantUML version (default: 1.2026.8)
-  PORT     Port for the PlantUML web server (default: 18080)
+  PORT     Port for the PlantUML web server (default: 20900)
 
 Examples:
   $0                     # install with defaults
-  $0 1.2026.8 18080      # specific version and port
+  $0 1.2026.8 20900      # specific version and port
 
 Notes:
 - Installs Java (if not present), PlantUML jar, and PlantUML Server
@@ -39,7 +39,7 @@ fi
 
 # ---- defaults / args ----
 PLANTUML_VERSION="${1:-1.2026.8}"
-PLANTUML_PORT="${2:-18080}"
+PLANTUML_PORT="${2:-20900}"
 PLANTUML_DIR="/opt/plantuml"
 PLANTUML_JAR="${PLANTUML_DIR}/plantuml.jar"
 PLANTUML_SERVER_WAR="${PLANTUML_DIR}/plantuml-server.war"

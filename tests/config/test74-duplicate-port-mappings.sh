@@ -48,10 +48,10 @@ function check() {
 # The user-owned long form is the keeper — reconfiguring reads it back into --expose.
 # ---------------------------------------------------------------------------
 rm -rf "$prj/.booth"
-run booth config $prj --no-tui --overwrite --select "cloudbeaver+expose" --expose 8978:8978
+run booth config $prj --no-tui --overwrite --select "cloudbeaver+expose" --expose 20300:20300
 # The quoted form: the "# Configured by:" header echoes the flag text as well.
-[[ "$(count "$config" '"8978:8978"')" == "1" ]] ; check $? "a mapping given twice is published once"
-has "$config" '"--publish", "8978:8978"'      ; check $? "the user-owned long form is the one kept"
+[[ "$(count "$config" '"20300:20300"')" == "1" ]] ; check $? "a mapping given twice is published once"
+has "$config" '"--publish", "20300:20300"'      ; check $? "the user-owned long form is the one kept"
 
 # ---------------------------------------------------------------------------
 # Two templates that both default to host 8080 — no --expose involved at all.
@@ -64,8 +64,8 @@ run booth config $prj --no-tui --overwrite --select "nginx+expose/apache+expose"
 # Both spellings of a base-relative mapping collapse the same way.
 # ---------------------------------------------------------------------------
 rm -rf "$prj/.booth"
-run booth config $prj --no-tui --overwrite --select "cloudbeaver+expose:+8978" --expose "+8978:8978"
-[[ "$(count "$config" '"+8978:8978"')" == "1" ]] ; check $? "a relative mapping given twice is published once"
+run booth config $prj --no-tui --overwrite --select "cloudbeaver+expose:+20300" --expose "+20300:20300"
+[[ "$(count "$config" '"+20300:20300"')" == "1" ]] ; check $? "a relative mapping given twice is published once"
 
 # ---------------------------------------------------------------------------
 # A --expose on a *different* host port is additive, and docker allows it — so keep both,
@@ -73,10 +73,10 @@ run booth config $prj --no-tui --overwrite --select "cloudbeaver+expose:+8978" -
 # ---------------------------------------------------------------------------
 rm -rf "$prj/.booth"
 warning="$prj/warning.txt"
-booth config $prj --no-tui --overwrite --select "cloudbeaver+expose" --expose 19000:8978 2> "$warning" >/dev/null
+booth config $prj --no-tui --overwrite --select "cloudbeaver+expose" --expose 19000:20300 2> "$warning" >/dev/null
 
-has "$config"  '"-p", "8978:8978"'       ; check $? "the template mapping is kept"
-has "$config"  '"--publish", "19000:8978"' ; check $? "the --expose mapping is kept alongside it"
+has "$config"  '"-p", "20300:20300"'       ; check $? "the template mapping is kept"
+has "$config"  '"--publish", "19000:20300"' ; check $? "the --expose mapping is kept alongside it"
 has "$warning" 'adds a second mapping'   ; check $? "the user is told it adds rather than moves"
 has "$warning" '+expose:19000'           ; check $? "the warning names the way to actually move it"
 
@@ -86,8 +86,8 @@ has "$warning" '+expose:19000'           ; check $? "the warning names the way t
 rm -rf "$prj/.booth"
 booth config $prj --no-tui --overwrite --select "cloudbeaver+expose:19000" 2> "$warning" >/dev/null
 
-has   "$config"  '"19000:8978"'          ; check $? "+expose:19000 publishes 19000:8978"
-! has "$config"  '"8978:8978"'           ; check $? "…and 8978 is no longer bound"
+has   "$config"  '"19000:20300"'          ; check $? "+expose:19000 publishes 19000:20300"
+! has "$config"  '"20300:20300"'           ; check $? "…and 20300 is no longer bound"
 ! has "$warning" 'adds a second mapping' ; check $? "…with nothing to warn about"
 
 finally
