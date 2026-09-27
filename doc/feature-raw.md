@@ -11,7 +11,7 @@
 - Docker-in-Docker (`--dind`) via sidecar
 - Egress filtering (`--egress`) via Envoy + iptables, with domain allowlist
 - Port mapping: explicit / NEXT / RANDOM
-- `booth--expose` — runtime TCP tunnel (host↔container) via socat, explicit/relative/default port, `--permanent` persists to config
+- `booth--expose` — runtime TCP tunnel (host↔container) via socat, explicit/relative/default port, lasts until the booth stops
 - Web proxy pane — nginx `/proxy/{port}/` with sub_filter + iframe toggle in console UI; X-Frame-Options / CSP stripped; open-in-new-tab button
 - Bind mounts (`-v`) and Docker pass-through args via `run-args` in config
 - Daemon / foreground / command run modes

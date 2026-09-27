@@ -1378,8 +1378,8 @@
                     <span class="comment"># Inside the booth, after starting a server on a new port:</span><br>
                     <span class="prompt">$</span> booth--expose 8080<br>
                     <span class="out">→ TCP tunnel: container localhost:8080 → host localhost:8080</span><br><br>
-                    <span class="comment"># Save it to .booth/config.toml so it survives restarts</span><br>
-                    <span class="prompt">$</span> booth--expose 8080 --permanent
+                    <span class="comment"># On the host: publish it on every start from now on</span><br>
+                    <span class="prompt">$</span> booth config --expose 8080
                 </div>
                 <p class="more-text">
                     Started a server on a port that wasn't published at <code>docker run</code> time?

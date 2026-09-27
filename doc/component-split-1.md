@@ -20,7 +20,7 @@ Sections:
 Single artifacts whose contents fan out into many features. These are the same items called out at the bottom of feature-split-1.md, restated here for completeness because they are the most load-bearing components in the system.
 
 - **Boothfile** (`Boothfile`, parsed by `pkg/boothfile/parser.go` / `compiler.go`) — DSL with `# syntax=codingbooth/boothfile:1` header and `setup` / `install` / `run` / `env` / `copy` / `expose` directives. Primary: B3b (parse → Dockerfile). Also: B1d (run input), B4b (Template emits Boothfile segments).
-- **`.booth/config.toml`** — TOML config bundle. Primary: B4a (TUI reads/writes). Also: B1d (run-time precedence chain), B4b (Template emits scalar/array values: `dind`, `run-args`, `build-args`), B6a (`booth--expose --permanent` writes tunnel entries).
+- **`.booth/config.toml`** — TOML config bundle. Primary: B4a (TUI reads/writes). Also: B1d (run-time precedence chain), B4b (Template emits scalar/array values: `dind`, `run-args`, `build-args`).
 - **Template** (`templates/**/*.toml`) — 77+ TOML definitions across `languages/`, `middlewares/`, `ides/`, `tools/`, `ai-tools/`, `desktops/` (browsers live here), `education/` (with `meta.toml` per dir). Primary: B4b. Emits into B3 (Boothfile segments), B1d (config), B1j (home seeding), B1k (cache), B1a (startup files under `.booth/startups/`).
 - **Recipe** (`.recipe` files) — multiline format with `+` continuation, loaded via `@file` / `@@url` / stdin. Wraps the B4b selection DSL. Primary: B4c.
 - **`.booth/.env`** — auto-loaded environment file, **gitignore-enforced** (`git check-ignore` refuses to run otherwise). Primary: B1l. Layered before any explicit `--env-file`.
@@ -36,7 +36,7 @@ Directory roots whose contents are written by one feature and read by several. T
 
 ### Host-side, persistent (in the user's repo)
 
-- **`.booth/`** — project-local config root. Written by A1 (wrapper writes `.gitignore`), B4 (scaffolding writes most contents), B6a (`booth message --permanent`). Read by B1 (mounted read-only into the container by default; `--writable-booth` opts out). Subtrees:
+- **`.booth/`** — project-local config root. Written by A1 (wrapper writes `.gitignore`), B4 (scaffolding writes most contents). Read by B1 (mounted read-only into the container by default; `--writable-booth` opts out). Subtrees:
   - `.booth/config.toml` → C1
   - `.booth/Boothfile` → C1
   - `.booth/.env` → C1

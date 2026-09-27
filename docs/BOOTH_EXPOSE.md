@@ -8,9 +8,7 @@
 # Inside the booth:
 booth--expose 8080
 # → TCP tunnel: container localhost:8080 → host localhost:8080
-#
-# Note: This tunnel is ephemeral and will not survive a booth restart.
-#       Use --permanent to save to .booth/config.toml.
+# Note: this tunnel lasts until the booth stops; use 'booth config --expose' to keep it.
 ```
 
 Back to [README](../README.md)
@@ -22,7 +20,7 @@ Back to [README](../README.md)
 - [Overview](#overview)
 - [How It Works](#how-it-works)
 - [Port Syntax](#port-syntax)
-- [Ephemeral vs Permanent](#ephemeral-vs-permanent)
+- [Lifetime](#lifetime)
 - [Listing ports](#listing-ports)
 - [The other direction: reaching a service on the host](#the-other-direction-reaching-a-service-on-the-host)
 - [Relationship to -p and --expose](#relationship-to--p-and---expose)
@@ -123,11 +121,10 @@ The offset base is the booth port unless `--offset-base` moved it, so the first 
 
 ---
 
-## Ephemeral vs Permanent
+## Lifetime
 
-### Ephemeral (default)
-
-By default, tunnels are ephemeral. The control file is written to `.booth/.tmp/tcp-tunnels/`, which is cleaned on booth exit and startup (see [booth tmp](BOOTH_TMP.md)).
+A tunnel lasts until the booth stops. Its control file lives in `.booth/.tmp/tcp-tunnels/`, which
+is cleaned on booth exit and startup (see [booth tmp](BOOTH_TMP.md)).
 
 ```bash
 booth--expose 8080
@@ -136,47 +133,19 @@ booth--expose 8080
 Output:
 ```
 TCP tunnel: container localhost:8080 → host localhost:8080
-Note: This tunnel is ephemeral and will not survive a booth restart.
-      Use --permanent to save to .booth/config.toml.
+Note: this tunnel lasts until the booth stops; use 'booth config --expose' to keep it.
 ```
 
-### Permanent (`--permanent`)
-
-To persist a tunnel across restarts, use `--permanent`. This writes the tunnel configuration to `.booth/config.toml`.
+To keep a port across restarts, publish it instead. Run `booth config` on the host with
+`--expose`, which accepts the same `+OFFSET` form:
 
 ```bash
-booth--expose 8080 +8080 --permanent
+booth config --expose 8080          # host 8080 → container 8080
+booth config --expose +8080         # host <offset-base>+8080 → container 8080
 ```
 
-This adds to `.booth/config.toml`:
-
-```toml
-[tcp-tunnels]
-8080 = "+8080"
-```
-
-The tunnel is also activated immediately for the current session.
-
-**Requires `--writable-booth`:** The `.booth/` directory is mounted read-only by default. If the booth was not started with `--writable-booth`, the `--permanent` flag will fail:
-
-```
-Cannot write to .booth/config.toml (booth directory is read-only).
-Use --writable-booth when starting the booth, or add the tunnel
-config to .booth/config.toml manually.
-```
-
-### Permanent tunnels in config.toml
-
-You can also add tunnel configurations directly to `.booth/config.toml`:
-
-```toml
-[tcp-tunnels]
-3000 = "+3000"           # React dev server
-8080 = "18080"           # API server (explicit port)
-5432 = "+5432"           # PostgreSQL
-```
-
-These tunnels activate automatically on every booth start. If a host port is unavailable, the tunnel is skipped with a warning — the booth start is not blocked.
+That becomes a Docker port mapping in `.booth/config.toml`, and it takes effect the next time the
+booth starts. See [Relationship to -p and --expose](#relationship-to--p-and---expose).
 
 ---
 
@@ -298,13 +267,13 @@ CodingBooth has three ways to make container ports accessible. Each serves a dif
 |--------|-------------|-----------------|-----------|
 | `-p` (Docker port mapping) | Container creation | Yes (if keep-alive) | Docker native |
 | `--expose` in `booth config` | Configuration time | Yes | Writes `-p` to run-args |
-| `booth--expose` (TCP tunnel) | Runtime | No (unless `--permanent`) | docker exec + socat |
+| `booth--expose` (TCP tunnel) | Runtime | No | docker exec + socat |
 
 **Use `-p` / `--expose`** when you know the ports upfront. These are Docker-native port mappings — no overhead, full performance.
 
 **Use `booth--expose`** when you discover a port at runtime. It tunnels via `docker exec`, so there is some overhead compared to a native port mapping, but it works without restarting the container.
 
-> **Tip:** If you find yourself using `booth--expose` for the same port every time, consider adding it to your `config.toml` either with `booth--expose --permanent` or by adding an `--expose` to your `booth config` command.
+> **Tip:** If you find yourself using `booth--expose` for the same port every time, add it with `booth config --expose <port>` so it is published every time the booth starts.
 
 ---
 
