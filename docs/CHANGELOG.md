@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Password fields get a show/hide button.** The Console UI sign-in page of a password-protected
+  booth, and the overlay's `--type password` prompt from `booth message send`, now have an eye
+  button at the right edge of the field. It shows what you typed, so a typo can be fixed in place
+  instead of retyped blind; click it again to hide. The sign-in page masks the field again when you
+  submit.
+
 - **Web Preview opens JupyterLab and code-server as ordinary services.** It refused their ports as
   "reserved for Booth services", so a notebook started with `start-notebook` on a codeserver booth
   could not be previewed. Only the booth's own ports (10000–10007) are refused now.
