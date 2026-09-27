@@ -4,6 +4,10 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Web Preview opens JupyterLab and code-server as ordinary services.** It refused their ports as
+  "reserved for Booth services", so a notebook started with `start-notebook` on a codeserver booth
+  could not be previewed. Only the booth's own ports (10000–10007) are refused now.
+
 - **`start-codeserver` and `start-notebook` default to 13333 and 12222 on their own variants
   too.** The codeserver and notebook images passed 10000 to their setup, which stamped the booth
   port in as the by-hand default, so a bare `start-codeserver` on a codeserver booth aimed at the
