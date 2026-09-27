@@ -22,11 +22,12 @@
 # (`bash -i -l -c 'node -p "...JSON.stringify(process.env)..."'`) whose
 # stdout is captured and parsed as JSON, never shown to any user — then seed
 # every REAL terminal it opens afterward with that resolved environment.
-# 99z-cb--profile.sh used to `export TIP_SHOWN=1` after printing the banner,
-# so the hidden probe's own run of the profile consumed the one-time flag,
+# 99z-cb--profile.sh used to `export TIP_SHOWN=1` (the guard, now the
+# unexported `_cb_welcome_shown`) after printing the banner, so the hidden
+# probe's own run of the profile consumed the one-time flag,
 # and that got captured into the env snapshot code-server applies to real
 # terminals too — the banner never reached any terminal a user actually saw.
-# Fixed by no longer exporting TIP_SHOWN (a plain shell variable still
+# Fixed by no longer exporting _cb_welcome_shown (a plain shell variable still
 # dedupes ~/.bashrc's own re-source of /etc/profile.d/*-cb-*.sh within one
 # process, but is invisible to a spawned child's process.env).
 # -----------------------------------------------------------------------------
@@ -109,7 +110,7 @@ fi
 # VS Code's hidden env-resolution probe has already run once.
 #
 # Two separate `docker exec` calls never share environment on their own —
-# that's not what leaks TIP_SHOWN in the real bug. VS Code's own mechanism
+# that's not what leaks _cb_welcome_shown in the real bug. VS Code's own mechanism
 # is: capture the probe's resolved process.env, then explicitly pass that
 # captured environment into every real terminal it spawns afterward. So
 # this test has to do the same explicit capture-and-replay to actually
@@ -129,17 +130,17 @@ fi
 # would otherwise perform and which would mask exactly the leak this test
 # exists to catch.
 #
-# Reading TIP_SHOWN has to go through a real child process (`env`), not a
+# Reading _cb_welcome_shown has to go through a real child process (`env`), not a
 # bash builtin like `echo` — a builtin sees the variable directly from the
 # running shell's own memory regardless of export status, which would make
-# this probe "see" TIP_SHOWN even under the fix and defeat the whole test.
+# this probe "see" _cb_welcome_shown even under the fix and defeat the whole test.
 # VS Code's actual probe has exactly this shape: `node -p
 # "MARKER"+JSON.stringify(process.env)+"MARKER"` reads process.env in a
 # separate node process, which only inherits what the parent shell exported.
 # The banner (if it fires) shares this same stdout, so the same
 # sentinel-marker trick is needed to pull the value back out cleanly.
-PROBE_RAW=$(docker exec -u coder "$NAME" bash -i -l -c 'echo -n "MARK_$(env | grep -c '"'"'^TIP_SHOWN='"'"')_MARK"' 2>/dev/null)
-PROBE_TIP_SHOWN=$(echo "$PROBE_RAW" | grep -o 'MARK_.*_MARK' | sed -e 's/^MARK_//' -e 's/_MARK$//')
+PROBE_RAW=$(docker exec -u coder "$NAME" bash -i -l -c 'echo -n "MARK_$(env | grep -c '"'"'^_cb_welcome_shown='"'"')_MARK"' 2>/dev/null)
+PROBE_GUARD=$(echo "$PROBE_RAW" | grep -o 'MARK_.*_MARK' | sed -e 's/^MARK_//' -e 's/_MARK$//')
 
 PTY_SCRIPT='
 import pty, os, time, select
@@ -164,12 +165,12 @@ else:
         out += chunk
     print(out.decode(errors="replace"))
 '
-# Replay whatever the probe resolved TIP_SHOWN to into the real terminal's
+# Replay whatever the probe resolved _cb_welcome_shown to into the real terminal's
 # own environment — the explicit hand-off VS Code performs. When the fix
 # holds this is "0" (never exported) and nothing gets injected; when the
 # bug is present this is "1" and reintroduces exactly the leak it causes.
-if [[ "$PROBE_TIP_SHOWN" == "1" ]]; then
-  TERM_OUTPUT=$(docker exec -u coder -e "TIP_SHOWN=$PROBE_TIP_SHOWN" "$NAME" python3 -c "$PTY_SCRIPT" 2>/dev/null)
+if [[ "$PROBE_GUARD" == "1" ]]; then
+  TERM_OUTPUT=$(docker exec -u coder -e "_cb_welcome_shown=$PROBE_GUARD" "$NAME" python3 -c "$PTY_SCRIPT" 2>/dev/null)
 else
   TERM_OUTPUT=$(docker exec -u coder "$NAME" python3 -c "$PTY_SCRIPT" 2>/dev/null)
 fi

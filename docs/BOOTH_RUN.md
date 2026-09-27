@@ -441,6 +441,25 @@ starts.
 ./booth exec --silence-build --run -- make test
 ```
 
+### Hide the Welcome Banner (`--hide-welcome`)
+
+Every interactive shell in a booth — the terminal variant, a code-server or desktop
+terminal, `booth shell` — opens with a "Welcome to CodingBooth!" banner listing handy
+commands. Once you know them, turn it off:
+
+```bash
+./booth --hide-welcome
+```
+
+```toml
+# .booth/config.toml
+hide-welcome = true
+```
+
+or `CB_HIDE_WELCOME=true` in the environment. The setting is applied when the container
+is created, so it covers every shell in that booth. The pending-messages notice
+(`booth--msg`) is not part of the banner and still appears.
+
 ### Log Time (`--log-time`)
 
 Prefixes progress messages with timestamps, useful for debugging startup timing:

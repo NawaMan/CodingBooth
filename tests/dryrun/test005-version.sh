@@ -74,6 +74,7 @@ docker \\
     -e 'BOOTH_SCRIPT_DIR=${SCRIPT_DIR}' \\
     -e 'BOOTH_LIB_DIR=${LIB_DIR}' \\
     -e 'BOOTH_KEEP_ALIVE=false' \\
+    -e 'BOOTH_HIDE_WELCOME=false' \\
     -e 'BOOTH_SILENCE_BUILD=false' \\
     -e 'BOOTH_PULL=false' \\
     -e 'BOOTH_ENGINE=docker' \\

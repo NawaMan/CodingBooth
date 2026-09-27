@@ -35,6 +35,7 @@ OPTIONS
   --port <n|RANDOM|NEXT>  Host port → container 10000 (NEXT/RANDOM accept :base)
   --daemon                Run the booth in the background
   --no-browser            Do not open the booth UI in a browser when it comes up
+  --hide-welcome          Do not print the welcome banner in booth shells
   --dind                  Enable a Docker-in-Docker sidecar (privileged: asks first)
   --dind-allowed          Start a --dind booth without asking
   --privileged-allowed    Start a booth with --privileged-like run-args without asking
@@ -192,6 +193,9 @@ CONTAINER MODE:
                          docs/PODMAN_SUPPORT.md. Can also be set in
                          config.toml (engine = "podman") or CB_ENGINE.
   --keep-alive           Do not remove the container when stopped
+  --hide-welcome         Do not print the welcome banner when a shell starts.
+                         Can also be set in config.toml (hide-welcome = true)
+                         or with CB_HIDE_WELCOME=true
   --browser              Open the booth UI in your default browser once its port
                          answers. On by default; a booth given a command
                          (-- bash, or --variant terminal) serves no page and
@@ -318,6 +322,7 @@ CONTAINER MODE:
   --engine <docker|podman>  Container engine to use (default: docker; podman
                          is experimental — see docs/PODMAN_SUPPORT.md)
   --keep-alive           Do not remove container when stopped
+  --hide-welcome         No welcome banner in shells (also: hide-welcome = true, CB_HIDE_WELCOME=true)
   --browser              Open the booth UI in a browser once its port answers (default)
   --no-browser           Never open a browser (also: browser = false, CB_BROWSER=false)
   --browser-port <spec>  Which port --browser opens: n (absolute) or +OFFSET (from
