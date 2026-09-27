@@ -5,9 +5,9 @@
   function boothTarget(port, rest) {
     port = Number(port);
     if (port < 1 || port > 65535) throw new Error("Port must be between 1 and 65535.");
-    // 10000-10007: the booth port and its helpers; 19999: code-server;
-    // 18888: JupyterLab. Each variant's editor sits behind the wrapper already.
-    if ((port >= 10000 && port <= 10007) || port === 19999 || port === 18888) {
+    // 10000-10007: the booth port and its helpers; 13333: code-server;
+    // 12222: JupyterLab. Each variant's editor sits behind the wrapper already.
+    if ((port >= 10000 && port <= 10007) || port === 13333 || port === 12222) {
       throw new Error("That port is reserved for Booth services.");
     }
     const url = new URL(`http://booth:${port}${rest || "/"}`);

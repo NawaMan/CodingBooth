@@ -136,7 +136,7 @@ async function until(fn, description, timeout = 30000) {
     const last = await until(async () => {
       for (const frame of controlsFrames()) if (await frame.locator("#address").isVisible().catch(() => false)) return frame;
     }, "visible preview tab");
-    await last.locator("#address").fill("18888");
+    await last.locator("#address").fill("12222");
     await last.locator("#address").press("Enter");
     await until(async () => (await last.locator("#error").textContent()).includes("reserved"), "reserved port");
 

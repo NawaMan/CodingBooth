@@ -101,9 +101,9 @@ Conventions that nginx, the message API, and per-variant launchers all agree on.
 - **10000** — nginx front door (web variants).
 - **10001 – 10004** — internal proxy targets (verified via `proxy_pass` in nginx configs).
 - **10007** — `booth-message-api-server` (bash + socat HTTP).
-- **10099** — noVNC (desktop-xfce, desktop-kde).
-- **18888** — JupyterLab inner service.
-- **19999** — code-server inner service.
+- **12222** — JupyterLab inner service.
+- **13333** — code-server inner service.
+- **14444** / **15555** / **16666** / **17777** — noVNC (desktop-xfce / -kde / -lxqt / -wayland).
 
 ### URL params and markers
 
@@ -169,7 +169,7 @@ Running instances. Some are scripts from C5; some are external programs the imag
 - **`booth-timer-notifier`** — surfaces session timer events into the web UI via the same message API.
 - **`booth-lifecycle-watcher`** — watches `.booth/.tmp/` for `booth--restart` / `booth--shutdown` writes and acts on them inside the container.
 - **`ttyd`**, **`nginx`** — base variant terminal + reverse proxy.
-- **`code-server`** (`:19999`), **JupyterLab** (`:18888`), **noVNC** (`:10099`) — per-variant inner services.
+- **`code-server`** (`:13333`), **JupyterLab** (`:12222`), **noVNC** (`:14444`–`:17777`) — per-variant inner services.
 
 ### Sidecar containers
 

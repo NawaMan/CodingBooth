@@ -18,9 +18,9 @@ suggests = [
 ]
 
 [params.MERMAID_PORT]
-default = "18090"
+default = "20700"
 suggests = [
-    "18090",
+    "20700",
     "18190",
 ]
 

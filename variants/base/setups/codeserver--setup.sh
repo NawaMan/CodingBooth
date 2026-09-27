@@ -24,7 +24,7 @@ HOME=/root
 
 PROFILE_FILE="/etc/profile.d/55-cb-codeserver--profile.sh"
 STARTER_FILE=/usr/local/bin/start-codeserver
-CODESERVER_DEFAULT_PORT="${1:-${CODESERVER_DEFAULT_PORT:-19999}}"
+CODESERVER_DEFAULT_PORT="${1:-${CODESERVER_DEFAULT_PORT:-13333}}"
 
 
 # Load python env exported by the base setup

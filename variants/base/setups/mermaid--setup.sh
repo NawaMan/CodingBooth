@@ -13,11 +13,11 @@ Usage:
 
 Arguments:
   VERSION  Mermaid CLI version (default: 11.17.0)
-  PORT     Port for the Mermaid live editor (default: 18090)
+  PORT     Port for the Mermaid live editor (default: 20700)
 
 Examples:
   $0                    # install with defaults
-  $0 11.17.0 18090       # specific version and port
+  $0 11.17.0 20700       # specific version and port
 
 Notes:
 - Installs Node.js (if not present), Mermaid CLI (mmdc), and Mermaid Live Editor
@@ -39,7 +39,7 @@ fi
 
 # ---- defaults / args ----
 MERMAID_VERSION="${1:-11.17.0}"
-MERMAID_PORT="${2:-18090}"
+MERMAID_PORT="${2:-20700}"
 MERMAID_DIR="/opt/mermaid"
 
 STARTER_FILE="/usr/local/bin/start-mermaid"

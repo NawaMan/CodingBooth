@@ -8,7 +8,7 @@ The server does not start or publish a port on its own — add +autostart to \
 run it on boot, and +expose to reach it from the host.
 
 Pin the image tag with hoppscotch:2026.8.0 or hoppscotch:latest; the default \
-is 2026.8.0. Default UI port is 13000 (Hoppscotch's own 3000 collides with \
+is 2026.8.0. Default UI port is 20500 (Hoppscotch's own 3000 collides with \
 Node apps)."""
 display-order = 29
 tags = [
@@ -30,9 +30,9 @@ suggests = [
 ]
 
 [params.HOPPSCOTCH_PORT]
-default = "13000"
+default = "20500"
 suggests = [
-    "13000",
+    "20500",
     "18000",
     "3000",
 ]

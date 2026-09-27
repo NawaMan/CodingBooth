@@ -12,10 +12,10 @@ Usage:
   $0 [PORT]
 
 Arguments:
-  PORT  Port for the CloudBeaver web server (default: 8978)
+  PORT  Port for the CloudBeaver web server (default: 20300)
 
 Examples:
-  $0           # install with default port 8978
+  $0           # install with default port 20300
   $0 18978     # use port 18978
 
 Prerequisites:
@@ -36,7 +36,7 @@ USAGE
 HOME=/root
 
 # ---- defaults / args ----
-CLOUDBEAVER_PORT="${1:-8978}"
+CLOUDBEAVER_PORT="${1:-20300}"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   usage

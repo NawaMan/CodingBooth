@@ -4,6 +4,36 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Start a desktop, a notebook or the web console by hand, next to any variant — each on its
+  own port.** A booth that usually needs only a terminal can bring up a heavier tool for a while:
+  `start-xfce` on a `base` booth to use PyCharm, or a web console beside JupyterLab on a
+  `notebook` booth. Every such service now has a fixed default port, so none of them lands on the
+  booth port (10000) where the variant's own service already listens — `start-xfce` used to, and
+  on a `base` booth collided with the console there.
+  - **`start-webconsole [port]`** (new, `11111`): the web console, started next to another variant's
+    service. Its panes and message API sit just above its own port (`11112`–`11115`, `11118`), as
+    the booth-port console's sit on `10001`–`10004` and `10007`.
+  - **`start-notebook [port]`** now defaults to **`12222`** (was 18888), **`start-codeserver
+    [port]`** to **`13333`** (was 19999) — also the `NOTEBOOK_PORT` / `CODESERVER_PORT` template
+    defaults.
+  - **`start-xfce`**, **`start-kde`**, **`start-lxqt`**, **`start-wayland`** now take **`[port]`**
+    — it was silently ignored before, leaving only `NOVNC_PORT=` to set it — and default to
+    **`14444`**, **`15555`**, **`16666`**, **`17777`** (all were 10000). The desktop profiles no
+    longer export `NOVNC_PORT`, which made every installed desktop share one port. Started on its
+    own port, a desktop now prints that port and the `booth--expose` to reach it, instead of the
+    booth port.
+  - On their own variants these services still run behind the booth's nginx on 10000; only the
+    inner port moved (the four desktops shared 10099 before).
+  - **Web apps from the catalog move to the `2xxxx` range**, one hundred apart: AFFiNE `20100`
+    (was 13010), AnythingLLM `20200` (3001), CloudBeaver `20300` (8978), Excalidraw `20400`
+    (15555), Hoppscotch `20500` (13000), Logo `20600` (18610), Mermaid `20700` (18090), Penpot
+    `20800` (19001), PlantUML `20900` (18080), Scratch `21000` (18601), SQL Studio `21100` (3030).
+    Appwrite (8080, which it requires), viewmd (8765) and servers whose clients expect a standard
+    port (Ollama, RabbitMQ, PostgREST, Floci) are unchanged.
+  - **Existing booths keep their ports**: `booth config` writes each port into the Boothfile as an
+    `arg` line, and a reconfigure keeps it. Only a fresh selection gets the new default.
+    Full table: [Service Ports](BOOTH_VARIANTS.md#service-ports).
+
 - **`booth--expose --permanent` is removed.** It wrote a `[tcp-tunnels]` table into
   `.booth/config.toml`, but nothing ever read that table, so the tunnel never came back after a
   restart; it also saved the wrong host port and marked a generated `config.toml` as hand-written.

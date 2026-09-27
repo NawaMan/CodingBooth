@@ -7,7 +7,7 @@ begin
 run booth config $prj --no-tui --select "penpot"
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" 'arg PENPOT_VERSION=' '2.17.2'  "default image tag is 2.17.2"
-assert-line "$boothfile" 'arg PENPOT_PORT=' '19001'  "default port is 19001"
+assert-line "$boothfile" 'arg PENPOT_PORT=' '20800'  "default port is 20800"
 assert-line "$boothfile" 'copy --from=penpotapp/backend:' '${PENPOT_VERSION} /opt/penpot/backend /opt/penpot/backend'  "copies backend image"
 assert-line "$boothfile" 'copy --from=penpotapp/frontend:' '${PENPOT_VERSION} /var/www/app /opt/penpot/frontend'  "copies frontend image"
 assert-line "$boothfile" 'setup penpot ' '${PENPOT_PORT}'  "Boothfile uses port param"
@@ -27,7 +27,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "penpot+expose"
 config="$prj/.booth/config.toml"
-assert-line "$config" '    "-p", ' '"19001:19001",'  "expose uses default port 19001"
+assert-line "$config" '    "-p", ' '"20800:20800",'  "expose uses default port 20800"
 
 # Test 4: +expose with custom port
 run rm -Rf $prj
@@ -41,7 +41,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "penpot+autostart"
 startup="$prj/.booth/startups/70-penpot-autostart--startup.sh"
-assert-line "$startup" 'PORT=' '${PENPOT_PORT:-19001}'  "startup uses param with default"
+assert-line "$startup" 'PORT=' '${PENPOT_PORT:-20800}'  "startup uses param with default"
 
 # Test 6: custom port + expose + autostart stay consistent
 run rm -Rf $prj

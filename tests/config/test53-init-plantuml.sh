@@ -7,7 +7,7 @@ begin
 run booth config $prj --no-tui --select "plantuml"
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" 'arg PLANTUML_VERSION=' '1.2026.8'  "default version is 1.2026.8"
-assert-line "$boothfile" 'arg PLANTUML_PORT=' '18080'  "default port is 18080"
+assert-line "$boothfile" 'arg PLANTUML_PORT=' '20900'  "default port is 20900"
 assert-line "$boothfile" 'setup plantuml ' '${PLANTUML_VERSION} ${PLANTUML_PORT}'  "Boothfile uses param references"
 
 # Test 2: PlantUML with custom version and port
@@ -23,7 +23,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "plantuml+expose"
 config="$prj/.booth/config.toml"
-assert-line "$config" 'run-args = ' '["-p", "18080:18080"]'  "expose uses default port 18080"
+assert-line "$config" 'run-args = ' '["-p", "20900:20900"]'  "expose uses default port 20900"
 
 # Test 4: PlantUML+expose with custom port
 run rm -Rf $prj
@@ -37,7 +37,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "plantuml+autostart"
 startup="$prj/.booth/startups/65-plantuml-autostart--startup.sh"
-assert-line "$startup" 'PORT=' '${PLANTUML_PORT:-18080}'  "startup uses param with default"
+assert-line "$startup" 'PORT=' '${PLANTUML_PORT:-20900}'  "startup uses param with default"
 
 # Test 6: PlantUML+expose+autostart with custom port
 run rm -Rf $prj

@@ -173,7 +173,7 @@ booth expose list --name demo
 CONTAINER  HOST             PROTO  KIND        LIVE  SOURCE
 10000      127.0.0.1:11000  tcp    front door  yes   booth front door
 13000      0.0.0.0:13000    tcp    published   yes   published (-p)
-18888      0.0.0.0:19888    tcp    published   yes   published (-p)
+12222      0.0.0.0:19888    tcp    published   yes   published (-p)
 5432       127.0.0.1:5432   tcp    tunnel      yes   booth--expose
 ```
 
@@ -196,9 +196,9 @@ booth--expose list
 CONTAINER HOST                   PROTO KIND        STATUS  SERVER
 10000     127.0.0.1:11000        tcp   front door  up      nginx
 13000     0.0.0.0:13000          tcp   published   up      node
-18888     0.0.0.0:19888          tcp   published   up      jupyter-lab
+12222     0.0.0.0:19888          tcp   published   up      jupyter-lab
 5432      127.0.0.1:5432         tcp   tunnel      up      -
-10099     -                      tcp   internal    up      websockify
+14444     -                      tcp   internal    up      websockify
 ```
 
 A `SERVER` of `-` means the process is owned by another user and `ss` could not

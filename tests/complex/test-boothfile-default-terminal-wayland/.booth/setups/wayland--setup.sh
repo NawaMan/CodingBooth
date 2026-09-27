@@ -25,7 +25,7 @@ fi
 HOME=/root
 
 DEFAULT_GEOMETRY="${DEFAULT_GEOMETRY:-1280x800}"
-DEFAULT_NOVNC_PORT="${DEFAULT_NOVNC_PORT:-10000}"
+DEFAULT_NOVNC_PORT="${DEFAULT_NOVNC_PORT:-17777}"
 DEFAULT_VNC_PORT="${DEFAULT_VNC_PORT:-5900}"
 
 PROFILE_FILE="/etc/profile.d/55-cb-desktop-wayland--profile.sh"
@@ -85,7 +85,8 @@ HTML
 cat > "${PROFILE_FILE}" <<EOF
 # labwc (Wayland) over VNC/noVNC defaults
 export GEOMETRY=\${GEOMETRY:-${DEFAULT_GEOMETRY}}
-export NOVNC_PORT=\${NOVNC_PORT:-${DEFAULT_NOVNC_PORT}}
+# NOVNC_PORT is deliberately not exported: every start-<desktop> has its own default
+# port (wayland: 17777), and one exported value would make them all share it.
 export VNC_PORT=\${VNC_PORT:-${DEFAULT_VNC_PORT}}
 export XDG_SESSION_TYPE=wayland
 alias desktop-start='start-wayland'
@@ -100,7 +101,13 @@ set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO" >&2; exit 1' ERR
 
 : "${GEOMETRY:=1280x800}"
-: "${NOVNC_PORT:=10000}"
+# Port: the first argument, else NOVNC_PORT when set explicitly, else this desktop's
+# own default. The defaults differ per desktop so none of them lands on the booth port.
+NOVNC_PORT="${1:-${NOVNC_PORT:-17777}}"
+if [[ ! "$NOVNC_PORT" =~ ^[0-9]+$ ]]; then
+  echo "❌ Usage: start-wayland [port]   (got '$NOVNC_PORT')" >&2
+  exit 1
+fi
 : "${VNC_PORT:=5900}"
 # Chosen by default-terminal--setup.sh ("<terminal>+default"). Read from its file
 # rather than only the environment: the wrapped launch (booth-entry -> runuser,
@@ -293,7 +300,15 @@ WAYVNC_PID=$!
 sleep 1
 
 # 4) websockify + noVNC on the booth port
-DISPLAY_PORT="${BOOTH_HOST_PORT:-${NOVNC_PORT}}"
+# Behind the booth wrapper (the desktop variants' main service) the desktop is reached
+# through the booth port. Started on its own, it is on its own port, which the host
+# can only reach once that port is exposed.
+if [[ "${INNER_PORT:-}" == "$NOVNC_PORT" ]]; then
+  DISPLAY_PORT="${BOOTH_HOST_PORT:-${NOVNC_PORT}}"
+else
+  DISPLAY_PORT="${NOVNC_PORT}"
+  echo "ℹ️  To reach it from the host, run 'booth--expose ${NOVNC_PORT}' inside the booth."
+fi
 echo "🌐 noVNC: http://localhost:${DISPLAY_PORT}/vnc.html?autoconnect=1&resize=remote"
 websockify --web=/usr/share/novnc "0.0.0.0:${NOVNC_PORT}" "localhost:${VNC_PORT}" >/tmp/cb-websockify.log 2>&1 &
 WS_PID=$!

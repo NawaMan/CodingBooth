@@ -11,7 +11,7 @@ copies a snapshot from home-seed (writes do not stick); +persist is \
 ~/.affine/dumps so persist does not share the global booth-pgdata volume.
 
 First browser visit creates the admin account at /admin/setup. Open \
-http://localhost:13010/ in a host tab — the globe pane cannot load Affine's \
+http://localhost:20100/ in a host tab — the globe pane cannot load Affine's \
 /admin/js/ SPA. Pin the image with affine-server:canary; default is stable."""
 display-order = 27
 tags = [
@@ -38,9 +38,9 @@ suggests = [
 ]
 
 [params.AFFINE_SERVER_PORT]
-default = "13010"
+default = "20100"
 suggests = [
-    "13010",
+    "20100",
     "3010",
     "18010",
 ]
