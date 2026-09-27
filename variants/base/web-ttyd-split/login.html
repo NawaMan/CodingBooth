@@ -84,7 +84,57 @@
       border-color: var(--accent);
     }
 
-    button {
+    .password-field {
+      position: relative;
+      margin-bottom: 16px;
+    }
+
+    .password-field input {
+      margin-bottom: 0;
+      padding-right: 42px;
+    }
+
+    .reveal {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 40px;
+      display: grid;
+      place-items: center;
+      padding: 0;
+      background: none;
+      border: none;
+      border-radius: 0 6px 6px 0;
+      color: var(--muted);
+      cursor: pointer;
+    }
+
+    .reveal:hover,
+    .reveal:focus-visible {
+      color: var(--text);
+    }
+
+    .reveal:focus-visible {
+      outline: 1px solid var(--accent);
+      outline-offset: -1px;
+    }
+
+    .reveal svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .reveal .icon-hide,
+    .reveal[aria-pressed="true"] .icon-show {
+      display: none;
+    }
+
+    .reveal[aria-pressed="true"] .icon-hide {
+      display: block;
+    }
+
+    #submit {
       width: 100%;
       padding: 10px 12px;
       background: var(--accent);
@@ -97,7 +147,7 @@
       cursor: pointer;
     }
 
-    button:disabled {
+    #submit:disabled {
       opacity: 0.6;
       cursor: default;
     }
@@ -125,7 +175,24 @@
       autocapitalize="none">
 
     <label for="password">Password</label>
-    <input id="password" name="password" type="password" autocomplete="current-password" autofocus>
+    <div class="password-field">
+      <input id="password" name="password" type="password" autocomplete="current-password" autofocus>
+      <button type="button" class="reveal" id="reveal" aria-label="Show password" aria-pressed="false"
+        aria-controls="password" title="Show password">
+        <svg class="icon-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+          <circle cx="12" cy="12" r="3" />
+        </svg>
+        <svg class="icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-2.2 3.1" />
+          <path d="M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.9 0 3.6-.6 5-1.5" />
+          <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+          <path d="M2 2l20 20" />
+        </svg>
+      </button>
+    </div>
 
     <button type="submit" id="submit">Sign in</button>
     <p class="error" id="error"></p>
@@ -152,6 +219,25 @@
       var password = document.getElementById('password');
       var submit = document.getElementById('submit');
       var error = document.getElementById('error');
+      var reveal = document.getElementById('reveal');
+
+      function setRevealed(shown) {
+        password.type = shown ? 'text' : 'password';
+        var label = shown ? 'Hide password' : 'Show password';
+        reveal.setAttribute('aria-pressed', shown ? 'true' : 'false');
+        reveal.setAttribute('aria-label', label);
+        reveal.title = label;
+      }
+
+      // Show the typed password so a typo can be spotted and fixed in place.
+      // Keep the caret where it was: switching the type resets the selection.
+      reveal.addEventListener('click', function () {
+        var start = password.selectionStart;
+        var end = password.selectionEnd;
+        setRevealed(password.type === 'password');
+        password.focus();
+        if (start !== null) password.setSelectionRange(start, end);
+      });
 
       function fail(message) {
         error.textContent = message;
@@ -172,6 +258,9 @@
         event.preventDefault();
         error.classList.remove('shown');
         submit.disabled = true;
+        // Back to a masked field, so a password manager offering to save
+        // still sees a password input.
+        setRevealed(false);
 
         fetch('booth-messages/api/login', {
           method: 'POST',

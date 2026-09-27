@@ -111,7 +111,7 @@ booth message response [--name <booth>] <msg-id>
 | `yes-no-cancel`  | Yes, No, Cancel                  | `yes`, `no`, or `cancel`       | Blocks until response |
 | `ok`             | OK                               | `ok`                           | Blocks until response |
 | `text`           | Text input + Send                | Free-form text                 | Blocks until response |
-| `password`       | Password input + Send            | Free-form text (masked)        | Blocks until response |
+| `password`       | Masked input, eye toggle, Send   | Free-form text (masked)        | Blocks until response |
 | `choice`         | One button per option            | Selected option text           | Blocks until response |
 | `choice-text`    | Option buttons + text input      | Selected option or typed text  | Blocks until response |
 | `radio`          | Radio buttons + Submit           | Selected option (single)       | Blocks until response |

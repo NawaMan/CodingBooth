@@ -193,6 +193,54 @@
     font-size: 13px;
   }
 
+  .msg-password {
+    position: relative;
+    display: flex;
+    flex: 1;
+  }
+
+  .msg-password .msg-input {
+    padding-right: 34px;
+    min-width: 0;
+  }
+
+  .msg-reveal {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    margin: 0;
+    background: none;
+    border: none;
+    border-radius: 0 6px 6px 0;
+    color: #6b7280;
+    cursor: pointer;
+  }
+
+  .msg-reveal:hover,
+  .msg-reveal:focus-visible {
+    color: #111827;
+  }
+
+  .msg-reveal svg {
+    width: 16px;
+    height: 16px;
+  }
+
+  .msg-reveal .msg-icon-hide,
+  .msg-reveal[aria-pressed="true"] .msg-icon-show {
+    display: none;
+  }
+
+  .msg-reveal[aria-pressed="true"] .msg-icon-hide {
+    display: block;
+  }
+
   .msg-btn-submit {
     background: #2563eb;
     color: #fff;
@@ -1613,7 +1661,10 @@
               '<button type="submit" class="msg-btn msg-btn-submit">Send</button></form>';
           } else if (m.type === "password") {
             h += '<form class="msg-actions" onsubmit="window._msgRespond(\'' + m.id + '\', this.answer.value); return false;">' +
+              '<span class="msg-password">' +
               '<input type="password" name="answer" class="msg-input" placeholder="Enter password...">' +
+              '<button type="button" class="msg-reveal" aria-label="Show password" aria-pressed="false" title="Show password"' +
+              ' onclick="window._msgReveal(this)">' + REVEAL_ICONS + '</button></span>' +
               '<button type="submit" class="msg-btn msg-btn-submit">Send</button></form>';
           } else if (m.type === "ok") {
             h += '<div class="msg-actions">' +
@@ -1682,6 +1733,33 @@
         delete fs.dataset.pollDriven;
       }
     }
+
+    // Eye / eye-off, swapped by CSS on aria-pressed.
+    var REVEAL_ICONS =
+      '<svg class="msg-icon-show" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"' +
+      ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>' +
+      '<svg class="msg-icon-hide" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"' +
+      ' stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M10.6 5.1A10.4 10.4 0 0 1 12 5c6.5 0 10 7 10 7a17.6 17.6 0 0 1-2.2 3.1"/>' +
+      '<path d="M6.6 6.6C3.8 8.4 2 12 2 12s3.5 7 10 7c1.9 0 3.6-.6 5-1.5"/>' +
+      '<path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/><path d="M2 2l20 20"/></svg>';
+
+    // Show the typed password so a typo can be spotted and fixed in place.
+    // Keep the caret where it was: switching the type resets the selection.
+    window._msgReveal = function (btn) {
+      var input = btn.parentNode.querySelector(".msg-input");
+      var start = input.selectionStart;
+      var end = input.selectionEnd;
+      var shown = input.type === "password";
+      var label = shown ? "Hide password" : "Show password";
+      input.type = shown ? "text" : "password";
+      btn.setAttribute("aria-pressed", shown ? "true" : "false");
+      btn.setAttribute("aria-label", label);
+      btn.title = label;
+      input.focus();
+      if (start !== null) input.setSelectionRange(start, end);
+    };
 
     window._msgRespond = function (id, answer) {
       respond(id, answer);

@@ -778,7 +778,7 @@ A booth started with `--public` greets you with its own sign-in page rather than
 🔑 Login username: coder (prefilled)
 ```
 
-**The username is always `coder`**, and the page fills it in for you — you only type the password. The field stays editable, but `coder` is the sole account a booth accepts.
+**The username is always `coder`**, and the page fills it in for you — you only type the password. The field stays editable, but `coder` is the sole account a booth accepts. The eye button at the end of the password field shows what you typed, so you can fix a typo before signing in.
 
 A few things worth knowing:
 
