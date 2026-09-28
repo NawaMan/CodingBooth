@@ -1,10 +1,10 @@
 # syntax=codingbooth/boothfile:1
-# Hand-written: live writable ~/.config/gcloud bind (gcloud SQLite WAL); +credential seeds read-only files and does not work here. Do not add a "# Configured by:" header.
+# Configured by: booth config --no-tui --overwrite --select gcloud+credential/claude-code+auto-accept+settings-cache+token-credential~credential
 
-# Google Cloud Example
-# Installs Google Cloud CLI on top of the base workspace image
+env APT_SNAPSHOT=20260927T000000Z
 
-setup gcloud
+arg CLAUDE_CODE_VERSION=latest
+arg GCLOUD_VERSION=latest
 
-setup claude-code
-setup antigravity
+setup claude-code ${CLAUDE_CODE_VERSION}
+setup gcloud --version ${GCLOUD_VERSION}

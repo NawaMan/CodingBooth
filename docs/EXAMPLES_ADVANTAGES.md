@@ -191,8 +191,8 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 
 - **aws-example** — mounts `~/.aws` read-only via `cb-home-seed`; a committed
   `.booth/home/.aws/config` pins the profile/region while secrets stay on the host.
-- **gcloud-example** — mounts `~/.config/gcloud`, notably *read-write* — a documented tradeoff, since
-  gcloud's SQLite state needs write/WAL access.
+- **gcloud-example** — seeds gcloud's credential/config files individually (read-only) via the
+  `gcloud+credential` extension, plus Claude Code and token-credential seeding for in-booth AI use.
 - **firebase-example** — mounts `firebase-tools.json` read-only so the `firebase` CLI works with no
   creds stored in the repo.
 

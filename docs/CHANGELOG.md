@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`gcloud-example` moves off its hand-written credential bind mount and onto `booth config`.**
+  It previously bind-mounted `~/.config/gcloud` read-write into the container, worked around
+  gcloud's SQLite/WAL files needing write access even to read. It now selects
+  `gcloud+credential` (verified against real host credentials: `gcloud auth list` succeeds
+  in-booth), which seeds gcloud's credential and config files individually and read-only instead
+  — narrower host exposure, and the example is config-generated like the others. It also gains
+  `claude-code+auto-accept+settings-cache+token-credential` for in-booth AI use, and drops the
+  `antigravity` setup. The `gcloud+credential` extension itself is confirmed working, no longer
+  marked untested.
+
 - **`booth config --no-tui --dryrun` now refuses hand-written files like a real run does.** It
   used to print the regenerated files and exit 0 even when the same command without `--dryrun`
   would refuse to overwrite a hand-written Boothfile or config.toml, so a dryrun could not tell
