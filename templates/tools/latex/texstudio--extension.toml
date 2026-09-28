@@ -1,0 +1,21 @@
+display-name = "TeXstudio"
+display-disc = "Desktop LaTeX editor with a built-in PDF viewer"
+display-detail = """Installs TeXstudio from Ubuntu's packages and puts its icon on the desktop: a native LaTeX \
+editor with syntax highlighting, completion, a structure view and a built-in PDF viewer with \
+jump-to-source. It compiles with the TeX Live that the latex template installs. Needs a desktop \
+variant (desktop-xfce, desktop-kde, ...); on any other variant the setup skips itself and the build \
+carries on. F5 builds and shows the PDF, running BibTeX on its own when the document cites."""
+display-order = 2
+auto-select = false
+tags = [
+    "latex",
+    "texstudio",
+    "editor",
+    "gui",
+    "desktop",
+]
+
+[segments]
+"Boothfile--60" = """
+setup texstudio
+"""

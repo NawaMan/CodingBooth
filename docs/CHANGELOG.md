@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **New `latex` template: author LaTeX in a booth.** `--select latex` installs TeX Live from
+  Ubuntu's packages plus `latexmk`, so `latexmk -pdf main.tex` builds a PDF; on an editor variant it
+  also adds LaTeX Workshop (build on save, PDF preview, SyncTeX) through an auto-selected
+  `vscode-ext` extension. For a native editor, `latex+texstudio` adds TeXstudio (a desktop LaTeX
+  editor with a built-in PDF viewer; F5 builds, runs BibTeX when needed, and shows the PDF) on a
+  desktop variant, and skips itself cleanly on any other. TeX Live is large, so `LATEX_SCHEME` picks
+  how much of it goes into the image (installed sizes): `basic` (~150 MB), `recommended` (~190 MB,
+  the default), `extra` (~380 MB, most of what a paper or thesis pulls in, TikZ included) or `full`
+  (~7.4 GB) — `latex:extra`. Installs go through `apt--install.sh`, so the `APT_SNAPSHOT` freeze
+  applies. Verified by compiling a document to PDF in a booth, by listing LaTeX Workshop in a
+  codeserver booth, and by building the same document with F5 in TeXstudio on `desktop-xfce`. New
+  `latex-example` shows it on a small paper (sections, maths, a table, a listing, BibTeX): save
+  `main.tex` in the editor, or `just build`.
+
 - **`gcloud-example` moves off its hand-written credential bind mount and onto `booth config`.**
   It previously bind-mounted `~/.config/gcloud` read-write into the container, worked around
   gcloud's SQLite/WAL files needing write access even to read. It now selects

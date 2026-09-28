@@ -142,6 +142,10 @@ for readability — `booth example list` itself prints a flat alphabetical list.
 
 `browser-shared` · `playwright` · `playwright-polyglot`
 
+### Documents & typesetting
+
+`latex` — a small paper built to PDF with latexmk and BibTeX, edited in VS Code with LaTeX Workshop.
+
 ### Desktops
 
 `i3-desktop` — the XFCE desktop tiling with i3; `start-i3` / `stop-i3` switch it live.

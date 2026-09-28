@@ -1,0 +1,35 @@
+% A small paper, built with latexmk: `just build`, or save it in the editor.
+% Uses only packages in the `recommended` TeX Live scheme. TikZ, pgfplots, cleveref,
+% siunitx and biblatex need `extra` -- see README.md.
+\documentclass[11pt]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{microtype}
+\usepackage[numbers]{natbib}
+\usepackage{hyperref}
+
+\lstset{basicstyle=\ttfamily\small, frame=single, keywordstyle=\color{blue}}
+
+\title{Counting Primes in a Box}
+\author{A CodingBooth Example}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+A two-page paper that exercises what a real document needs: sections in separate files,
+mathematics, a table, a code listing, and a bibliography resolved by BibTeX.
+\end{abstract}
+
+\input{sections/introduction}
+\input{sections/results}
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}

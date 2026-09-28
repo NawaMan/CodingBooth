@@ -168,6 +168,8 @@ setup kotlin-nb-kernel
 setup kubectl
 setup kubectx
 setup kustomize
+setup latex
+setup latex-code-extension
 setup lazydocker
 setup lazygit
 setup lazysql
@@ -267,6 +269,7 @@ setup swift
 setup swift-code-extension
 setup tela-icons
 setup terraform
+setup texstudio
 setup thonny
 setup tls
 setup ttyd-nerd-font-index

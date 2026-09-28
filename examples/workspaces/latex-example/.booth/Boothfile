@@ -1,0 +1,9 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant codeserver --select latex
+
+env APT_SNAPSHOT=20260928T000000Z
+
+arg LATEX_SCHEME=recommended
+
+setup latex --scheme ${LATEX_SCHEME}
+setup latex-code-extension

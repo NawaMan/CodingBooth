@@ -1,0 +1,23 @@
+# Wrapped commands auto-run inside the booth when called from the host
+# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
+[private]
+default:
+    @just --list
+
+# Build main.pdf (latexmk runs pdflatex and BibTeX as many times as needed)
+build:
+    {{run}} latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex
+
+# Rebuild main.pdf on every save, until Ctrl+C
+watch:
+    {{run}} latexmk -pdf -pvc -view=none -interaction=nonstopmode main.tex
+
+# Remove build artifacts but keep main.pdf
+clean:
+    {{run}} latexmk -c -bibtex main.tex
+
+# Remove build artifacts and main.pdf
+clean-all:
+    {{run}} latexmk -C -bibtex main.tex

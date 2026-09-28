@@ -1,0 +1,33 @@
+\section{Results}
+\label{sec:results}
+
+Table~\ref{tab:counts} lists $\pi(x)$ next to the estimate $x / \ln x$
+\citep{hardy2008}.
+
+\begin{table}[h]
+  \centering
+  \begin{tabular}{rrrr}
+    \toprule
+    $x$ & $\pi(x)$ & $x / \ln x$ & ratio \\
+    \midrule
+    $10^2$ & 25     & 21.7     & 1.151 \\
+    $10^3$ & 168    & 144.8    & 1.161 \\
+    $10^4$ & 1\,229 & 1\,085.7 & 1.132 \\
+    $10^5$ & 9\,592 & 8\,685.9 & 1.104 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Exact prime counts against the prime number theorem.}
+  \label{tab:counts}
+\end{table}
+
+The counts come from a sieve of Eratosthenes:
+
+\begin{lstlisting}[language=Python]
+def primes_up_to(n):
+    sieve = [True] * (n + 1)
+    sieve[0:2] = [False, False]
+    for i in range(2, int(n ** 0.5) + 1):
+        if sieve[i]:
+            sieve[i*i::i] = [False] * len(sieve[i*i::i])
+    return [i for i, p in enumerate(sieve) if p]
+\end{lstlisting}
