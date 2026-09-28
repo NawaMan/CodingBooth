@@ -119,6 +119,9 @@ The advantages, in CodingBooth's own vocabulary:
   `DOTNET_SKIP_WORKLOAD_INTEGRITY_CHECK=1` precisely because the sandbox can't reach NuGet — evidence
   of a locked-down environment.)*
 - **angular-example** — the heavy Angular CLI and its ~500-package `node_modules` stay in the booth.
+- **latex-example** — TeX Live, hundreds of megabytes even trimmed and over 7 GB in full, stays in
+  the booth; `LATEX_SCHEME` sizes it to the document. *(Secondary: batteries-included — the editor,
+  LaTeX Workshop and `latexmk` come wired together, so saving `main.tex` builds the PDF.)*
 
 ## 📦 Pre-baked deps — offline-fast first run
 
@@ -280,6 +283,7 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 | kind-app-example | Nested containers (microservices) |
 | kotlin-example | Precise version compatibility |
 | lamp-example | Multiple things bundled |
+| latex-example | Host stays clean / batteries-included |
 | lemp-example | Multiple things bundled |
 | mean-example | Multiple things bundled |
 | mern-example | Multiple things bundled |

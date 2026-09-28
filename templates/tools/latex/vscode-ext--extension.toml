@@ -1,0 +1,14 @@
+display-name = "LaTeX VS Code Extension"
+display-disc = "LaTeX Workshop: build on save, PDF preview, SyncTeX"
+display-order = 1
+auto-select = true
+tags = [
+    "latex",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup latex-code-extension
+"""

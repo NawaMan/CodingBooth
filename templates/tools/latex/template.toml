@@ -1,0 +1,34 @@
+display-name = "LaTeX"
+display-disc = "TeX Live LaTeX toolchain with latexmk"
+display-detail = """Installs TeX Live from Ubuntu's packages (TeX Live 2023 on 24.04) plus latexmk, so \
+`latexmk -pdf main.tex` builds a PDF. TeX Live is large, so the LATEX_SCHEME parameter picks how \
+much of it to install (installed sizes): `basic` (~150 MB) is pdflatex and the core classes; \
+`recommended` (~190 MB, the default) adds hyperref, geometry, booktabs and the standard fonts; \
+`extra` (~380 MB) covers most packages a paper or thesis pulls in, and is the smallest scheme with \
+TikZ/pgfplots, cleveref, siunitx and biblatex; `full` (~7.4 GB) is all of TeX Live, every language \
+included. A "File `foo.sty' not found" error means the scheme is too small. \
+The VS Code extension (LaTeX Workshop) is added automatically when an editor is in the image."""
+display-order = 58
+tags = [
+    "latex",
+    "tex",
+    "texlive",
+    "latexmk",
+    "pdf",
+    "typesetting",
+    "documents",
+]
+
+[params.LATEX_SCHEME]
+default = "recommended"
+suggests = [
+    "recommended",
+    "basic",
+    "extra",
+    "full",
+]
+
+[segments]
+"Boothfile--45" = """
+setup latex --scheme ${LATEX_SCHEME}
+"""
