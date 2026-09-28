@@ -407,6 +407,7 @@ come after the parent's order-50 line and before the IDEs at 60.
 | `tools/kubectl`            | Kubectl |
 | `tools/kubectx`            | kubectx + kubens |
 | `tools/kustomize`          | kustomize |
+| `tools/latex`              | LaTeX |
 | `tools/lazydocker`         | Lazydocker |
 | `tools/lazygit`            | Lazygit |
 | `tools/lazysql`            | lazysql |
