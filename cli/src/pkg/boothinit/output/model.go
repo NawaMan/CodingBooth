@@ -10,6 +10,11 @@ package output
 type BoothOutput struct {
 	Command       string // Exact command used to generate (e.g., "booth config . --select go")
 	AdjustCommand string // Reformatted command for easy adjustment (--select last)
+	// TemplatesVersion is the release whose template catalog produced this output,
+	// recorded in .booth/.generated so a later run can regenerate against the same
+	// catalog. Empty for a local catalog (--templates-path / CB_TEMPLATES_PATH),
+	// which has no release to fetch again.
+	TemplatesVersion string
 	Config        *ConfigToml
 	Boothfile *BoothfileContent
 	Startups  []FileContent

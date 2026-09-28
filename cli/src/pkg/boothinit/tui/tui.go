@@ -46,12 +46,17 @@ type PreSelection struct {
 // the generated content beside them (ConfigResult.SaveBeside), and replacing them
 // outright requires typing the confirmation word.
 //
+// lostComments lists comments a save would remove from files whose hand edits were
+// read back ("<file>:<line>  <text>"); when non-empty, Ctrl+S shows them and waits
+// for Enter before saving.
+//
 // binaryVersion and buildDate identify the running codingbooth binary (main.version /
 // main.buildDate) and are shown in the header — purely so a rebuilt-but-unbumped dev
 // binary is distinguishable from whatever a project's wrapper/cache already resolved.
-func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection, warning string, drifted []string, binaryVersion, buildDate string) (*ConfigResult, error) {
+func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection, warning string, drifted, lostComments []string, binaryVersion, buildDate string) (*ConfigResult, error) {
 	m := newModel(registry, pre)
 	m.drifted = drifted
+	m.lostComments = lostComments
 	m.binaryVersion = binaryVersion
 	m.buildDate = buildDate
 	if warning != "" {

@@ -14,7 +14,7 @@
 # of this. So this is NOT a fix for a broken IDE; what it adds is:
 #
 #   - **Every** JDK, not just one. Auto-detection finds what JAVA_HOME points at;
-#     all-java-example installs six, and the other five stay invisible.
+#     a booth with several JDKs (jenv, or extra `setup jdk` lines) has the rest invisible.
 #   - A table that does not depend on JAVA_HOME being aimed at the right JDK, nor on the
 #     IDE's naming convention continuing to match what projects ask for.
 #
