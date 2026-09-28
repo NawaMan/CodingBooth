@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **7 examples pass `--dind-allowed`/`--privileged-allowed` in their on-host tests.** The host-escape
+  consent gate (`dind = true` or a writable sensitive mount asks `[y/N]` on `/dev/tty` before
+  starting) writes straight to the controlling terminal, not to stdout/stderr — deliberately, so it
+  can't be silently piped past. That also means a captured/logged test run never sees the prompt and
+  looks hung rather than waiting. `appwrite-example`, `dind-example`, `floci-example`,
+  `kind-app-example`, `kind-example`, and `wails-example` (all `dind = true`) now pass
+  `--dind-allowed`; `rust-example` (a writable `$HOME/.cargo/registry` mount, no `:ro`) passes
+  `--privileged-allowed`. Checked all 81 example configs against the actual detection rules
+  (`cli/src/pkg/booth/host_escape_consent.go`, including that `$HOME`/`~` are already expanded by
+  TOML unmarshal time) — these 7 are the complete set; nothing else in the catalog triggers any of
+  the other rules (raw `--privileged`, `--pid`/`--ipc`/`--userns`/`--network=host`, a dangerous
+  `--cap-add`, a non-safe `--device`, an engine-socket mount, or a writable mount of `/etc`, `/root`,
+  etc.).
+
 - **Catalog version-pin sweep (release-push step 0b).** Bumped 23 stale defaults/fallbacks/suggests
   across the catalog, each verified against its real source before landing — not just re-typed from
   a version-lookup script. Two were caught wrong by that verification and skipped rather than

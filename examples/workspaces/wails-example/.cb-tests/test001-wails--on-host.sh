@@ -18,7 +18,9 @@ BOOTH="$(resolve_booth_bin)"
 # declares (xfce), so the tests exercise the environment the example actually ships.
 IN_BOOTH_CMD="./.cb-tests/inBooth--run-all-tests.sh"
 
-"$BOOTH" --port "${CB_PORT:-50422}" -- "$IN_BOOTH_CMD" 2>&1 | tee "$0.out"
+# --dind-allowed: this example's dind = true would otherwise stop for a [y/N]
+# consent prompt on /dev/tty (see docs/BOOTH_SECURITY.md) — silent in a script.
+"$BOOTH" --dind-allowed --port "${CB_PORT:-50422}" -- "$IN_BOOTH_CMD" 2>&1 | tee "$0.out"
 BOOTH_STATUS=${PIPESTATUS[0]}
 
 if ! grep -q "TEST SUMMARY" "$0.out"; then
