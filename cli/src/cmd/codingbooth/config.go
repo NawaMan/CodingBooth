@@ -184,18 +184,22 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 		printDebug(resolved, out)
 	}
 
-	if flags.dryrun {
-		printDryrun(out)
-		return
-	}
-
 	// Refuse to destroy hand-written content without explicit consent. This is a
 	// stronger gate than the conflict prompt below, which only asks "does a file
 	// exist?" — regenerating a file we wrote ourselves loses nothing. An edit that
 	// was read back is not in drifted: regenerating it loses nothing either.
+	//
+	// A dryrun passes through this gate too: it answers "would this run succeed?",
+	// so a booth that a real run refuses must not look loadable under --dryrun.
 	if len(drifted) > 0 && !flags.overwrite && !flags.beside {
 		printDriftRefusal(targetPath, drifted)
 		os.Exit(1)
+	}
+
+	if flags.dryrun {
+		printDryrunDrift(targetPath, drifted, flags.beside && !flags.overwrite)
+		printDryrun(out)
+		return
 	}
 
 	// --beside: keep the user's files, write the generated content as <name>.new.
@@ -320,6 +324,21 @@ func printBesideResult(targetPath string, drifted []string) {
 	fmt.Println()
 	for _, name := range drifted {
 		fmt.Printf("  diff %s %s.new\n", filepath.Join(boothDir, name), filepath.Join(boothDir, name))
+	}
+}
+
+// printDryrunDrift tells a dryrun that got past the hand-written guard (via
+// --overwrite or --beside) what a real run would do with those files. It goes to
+// stderr so stdout stays the generated content alone.
+func printDryrunDrift(targetPath string, drifted []string, beside bool) {
+	boothDir := filepath.Join(targetPath, ".booth")
+	for _, name := range drifted {
+		path := filepath.Join(boothDir, name)
+		if beside {
+			fmt.Fprintf(os.Stderr, "Dryrun: %s is hand-written; it would be kept and the output below written as %s.new\n", path, path)
+		} else {
+			fmt.Fprintf(os.Stderr, "Dryrun: %s is hand-written; it would be replaced and kept as %s.bak\n", path, path)
+		}
 	}
 }
 

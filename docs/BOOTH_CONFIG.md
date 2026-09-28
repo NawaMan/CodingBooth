@@ -191,6 +191,11 @@ Preview what would be generated without writing any files. Works in both modes.
 ./booth config --dryrun --select go+linter
 ```
 
+A CLI dryrun also checks that the existing `.booth/` can be loaded, and fails exactly where a real
+run would: an unknown template, or [hand-written files](#hand-written-files) without `--overwrite`
+or `--beside`. Exit 0 means the same command without `--dryrun` would write what it printed. With
+`--overwrite` or `--beside`, it notes on stderr which hand-written files would be backed up or kept.
+
 ---
 
 ## Selection DSL
@@ -499,7 +504,7 @@ automatically (local name overrides stock with a warning).
 | `--remove-select <name>`   | Reconfigure only: drop a template or extension by name from the existing selection (repeatable) |
 | `--no-tui`                 | Non-interactive CLI mode                                       |
 | `--web`                    | Browser UI on the booth port (`127.0.0.1:<port>`)              |
-| `--dryrun`                 | Preview what would be generated without writing files           |
+| `--dryrun`                 | Preview what would be generated without writing files; fails where a real run would |
 | `--variant <name>`         | Set variant (default, console, terminal, base, notebook, codeserver, xfce, kde) |
 | `--port <port>`            | Set port in generated config.toml (number, NEXT[:base], RANDOM[:base]) |
 | `--cmd <command>`          | Set the default start command (repeatable)                     |
@@ -722,7 +727,7 @@ The kept file stays protected until you actually merge it — writing `.new` doe
 #   .booth/Boothfile.bak  what was replaced
 ```
 
-With neither flag, config refuses and tells you both options. The rest of `.booth/` (`setups/`, `startups/`, `home/`, `cache/`) is written normally either way, so merging the `.new` file is all that remains to complete the reconfigure.
+With neither flag, config refuses and tells you both options — under `--dryrun` too, so a dryrun is an honest check of whether a reconfigure would go through. The rest of `.booth/` (`setups/`, `startups/`, `home/`, `cache/`) is written normally either way, so merging the `.new` file is all that remains to complete the reconfigure.
 
 `.bak` and `.new` are gitignored — they are merge scratch, not configuration.
 

@@ -4,6 +4,12 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth config --no-tui --dryrun` now refuses hand-written files like a real run does.** It
+  used to print the regenerated files and exit 0 even when the same command without `--dryrun`
+  would refuse to overwrite a hand-written Boothfile or config.toml, so a dryrun could not tell
+  you whether a booth config would actually open. Now it prints the same refusal and exits 1;
+  with `--overwrite` or `--beside` it proceeds and says which files would be backed up or kept.
+
 - **`java+jenv` now agrees with jenv about `JAVA_HOME`, in every shell.** Two bugs, one on each
   side. With a version chosen (`jenv global 21`), `java` followed jenv but `JAVA_HOME` did not in
   a non-interactive shell (`booth -- mvn install`, scripts, CI): jenv's profile ran before the
