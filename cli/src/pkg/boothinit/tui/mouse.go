@@ -254,6 +254,11 @@ func (m model) handleMouse(msg tea.MouseMsg) (tea.Model, tea.Cmd) {
 	if m.overwriteDialog {
 		return m, nil
 	}
+	// Removing comments is answered on the keyboard too — a stray click must not
+	// save over them.
+	if m.commentsDialog {
+		return m, nil
+	}
 	// The cancel confirmation is answerable by mouse, but only on its own two
 	// buttons — a click anywhere else must not discard a configuration.
 	if m.quitting {

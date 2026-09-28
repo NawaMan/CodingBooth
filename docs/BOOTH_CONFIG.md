@@ -655,13 +655,47 @@ Every time config writes those two files, it records a SHA-256 fingerprint of ex
 | State | Meaning | What happens |
 |-------|---------|--------------|
 | Fingerprint matches | Config wrote it, nobody has touched it | Regenerated freely |
-| Fingerprint differs | Config wrote it, then a human edited it | **Protected** |
+| Fingerprint differs | Config wrote it, then a human edited it | [Read back](#edits-that-can-be-read-back) if config can reproduce the edit; otherwise **protected** |
 | No fingerprint, but a `# Configured by:` header | Generated before `.generated` existed | Adopted — regenerated freely, and fingerprinted from now on |
 | No fingerprint, no header | Hand-written from the start | **Protected** |
 
 The `# Configured by:` header alone is not enough to decide this: it survives a hand-edit, so a file can carry the header and still be full of someone's own work. Only the fingerprint distinguishes "still ours" from "someone has been here."
 
 `.booth/.generated` is committed alongside the Boothfile — drift detection has to survive a clone. Delete it and config will treat those files as hand-written again.
+
+It also records which release's template catalog wrote the files (`templates=0.78.0`), so an edit can be read back against the catalog that produced it — see below. A local catalog (`--templates-path` / `CB_TEMPLATES_PATH`) records nothing.
+
+### Edits that can be read back
+
+Plenty of edits are ones config could have written itself: a `timezone = "Asia/Bangkok"` line, an extra `--env` entry, a changed `port`, a bumped `arg GO_VERSION=`. Those are not treated as hand-written. When a generated file's fingerprint no longer matches, config first tries to read the edit back:
+
+1. **Regenerate** what the `# Configured by:` header produces, from the template catalog recorded in `.booth/.generated`.
+2. **Lift** every difference from the files on disk into flags: a changed or added key becomes `--set` (or `--port` / `--variant` / `--cmd`), a run-args entry that no selected template contributes becomes `--env` / `--expose` / `--mount` (short `-e`/`-p`/`-v` forms too), and an edited `arg` pin becomes that template's param in the selection.
+3. **Regenerate from the lifted flags and compare** with the files on disk — as TOML for `config.toml`, directive by directive for the Boothfile. Comments and whitespace do not count; the order of run-args entries and Boothfile lines does.
+
+Only an exact match is read back, so nothing is guessed. The edit then simply becomes part of the configuration: the booth reconfigures without `--overwrite` or `--beside`, the TUI opens without a warning and with the edit pre-loaded, and the next save writes it into the header — `--set timezone=Asia/Bangkok` — so it survives every reconfigure after.
+
+```bash
+echo 'timezone = "Asia/Bangkok"' >> .booth/config.toml
+./booth config --no-tui --overwrite --add-env FOO=1
+# Note: .booth/config.toml was edited outside booth config; the edits were read back and are kept.
+```
+
+**Comments are the exception.** They cannot become flags, so a save regenerates the files without them. Config names each comment it is about to remove before writing — the TUI and web editor ask on save, `--no-tui` prints them (and still asks for confirmation unless `--overwrite` is given). Only viewing a booth never writes anything, so opening it costs nothing.
+
+```
+Warning: saving regenerates the files, which removes these comments:
+  config.toml:5  # the team is in Bangkok
+```
+
+**When it cannot be read back** — a `run` line no template produces, an unknown key, an entry placed among a template's own run-args (config always writes user entries after them), a template's entry removed — the file stays protected as before, and config says what blocked it:
+
+```
+Could not read back the edits in .booth/Boothfile:
+  - Boothfile `run echo hi` — no selection or flag produces this line
+```
+
+Move content like that somewhere config copies rather than regenerates — a project template in `.booth/templates/`, or a script in `.booth/setups/` or `.booth/startups/` — and it survives every reconfigure.
 
 ### The two ways through
 

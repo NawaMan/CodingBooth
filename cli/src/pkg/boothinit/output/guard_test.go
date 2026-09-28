@@ -53,7 +53,7 @@ func TestDrifted_Tracked_Unchanged(t *testing.T) {
 	boothDir := filepath.Join(dir, ".booth")
 	require.NoError(t, writeManifest(boothDir, map[string]string{
 		"Boothfile": hashContent(generatedBoothfile),
-	}))
+	}, ""))
 
 	assert.Empty(t, Drifted(dir), "content matching what we wrote is safe to regenerate")
 }
@@ -66,7 +66,7 @@ func TestDrifted_Tracked_ThenHandEdited(t *testing.T) {
 	writeBooth(t, dir, "Boothfile", generatedBoothfile)
 	require.NoError(t, writeManifest(boothDir, map[string]string{
 		"Boothfile": hashContent(generatedBoothfile),
-	}))
+	}, ""))
 
 	// A human adds a line, leaving the "# Configured by:" header intact.
 	writeBooth(t, dir, "Boothfile", generatedBoothfile+"install apt ripgrep\n")
@@ -112,8 +112,8 @@ func TestWriteManifest_PreservesUntouchedEntries(t *testing.T) {
 	boothDir := filepath.Join(dir, ".booth")
 	require.NoError(t, os.MkdirAll(boothDir, 0755))
 
-	require.NoError(t, writeManifest(boothDir, map[string]string{"Boothfile": "sha256:aaa"}))
-	require.NoError(t, writeManifest(boothDir, map[string]string{"config.toml": "sha256:bbb"}))
+	require.NoError(t, writeManifest(boothDir, map[string]string{"Boothfile": "sha256:aaa"}, ""))
+	require.NoError(t, writeManifest(boothDir, map[string]string{"config.toml": "sha256:bbb"}, ""))
 
 	entries := readManifest(boothDir)
 	assert.Equal(t, "sha256:aaa", entries["Boothfile"], "an untouched file keeps its hash")

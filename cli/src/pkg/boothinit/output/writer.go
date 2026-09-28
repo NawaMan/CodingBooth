@@ -158,7 +158,7 @@ func writeOutput(out *BoothOutput, targetPath string, beside []string) error {
 		}
 	}
 
-	if err := writeManifest(boothDir, written); err != nil {
+	if err := writeManifest(boothDir, written, out.TemplatesVersion); err != nil {
 		return fmt.Errorf("writing %s: %w", ManifestName, err)
 	}
 

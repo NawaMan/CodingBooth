@@ -94,6 +94,14 @@ type model struct {
 	overwriteCursor int // cursor position within overwriteInput
 	saveBeside      bool
 
+	// Comments confirmation — the booth's files were edited outside booth config
+	// and the edits were read back, but comments cannot be: a save regenerates the
+	// files without them. lostComments lists each one ("<file>:<line>  <text>"),
+	// and Ctrl+S shows them and waits for Enter before saving. Only viewing the
+	// booth never writes, so nothing is lost by opening it.
+	lostComments   []string
+	commentsDialog bool
+
 	// Search
 	searchQuery   string
 	searchFocused bool
@@ -498,6 +506,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Overwrite confirmation — blocks saving until the word is typed in full
 		if m.overwriteDialog {
 			return m.handleOverwriteConfirm(msg)
+		}
+
+		// Comments confirmation — a save would remove comments read back from disk
+		if m.commentsDialog {
+			return m.handleCommentsConfirm(msg)
 		}
 
 		// Requires-driven select/deselect awaiting a y/n answer
@@ -1543,8 +1556,29 @@ func (m model) requestSave() (tea.Model, tea.Cmd) {
 		m.overwriteCursor = 0
 		return m, nil
 	}
+	if len(m.lostComments) > 0 {
+		m.commentsDialog = true
+		return m, nil
+	}
 	m.confirmed = true
 	return m, tea.Quit
+}
+
+// handleCommentsConfirm drives the comments dialog: Enter saves (removing the
+// comments it listed), Esc goes back to configuring with nothing written.
+func (m model) handleCommentsConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	switch keyName(msg) {
+	case "enter":
+		m.confirmed = true
+		return m, tea.Quit
+	case "esc":
+		m.commentsDialog = false
+		return m, nil
+	case "ctrl+c", "ctrl+e":
+		// Quit without saving — the files, comments included, stay as they are.
+		return m, tea.Quit
+	}
+	return m, nil
 }
 
 // handleOverwriteConfirm drives the dialog. Enter on an empty field takes the safe

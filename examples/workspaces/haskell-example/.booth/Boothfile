@@ -1,36 +1,11 @@
 # syntax=codingbooth/boothfile:1
-# Hand-written: custom `run` workarounds for old ghcup/hswrap base-image bugs; the haskell template does not emit them. Do not add a "# Configured by:" header.
+# Configured by: booth config --no-tui --overwrite --select haskell/claude-code
 
-setup claude-code
-setup haskell
+env APT_SNAPSHOT=20260928T000000Z
 
-# Workaround for base image 0.25.0 bugs (remove after next base image release):
-# 1. ghcup bootstrap only installed ghcup itself, not GHC/Cabal
-run &&<<END
-export GHCUP_INSTALL_BASE_PREFIX=/opt/haskell/haskell-recommended
-export PATH="/opt/haskell-stable/.ghcup/bin:/opt/haskell-stable/.cabal/bin:$PATH"
-ghcup install ghc recommended
-ghcup set     ghc recommended
-ghcup install cabal recommended
-ghcup set     cabal recommended
-END
+arg CLAUDE_CODE_VERSION=latest
+arg GHC_VERSION=recommended
 
-# 2. hswrap had infinite recursion via command -v
-run <<END
-cat >/usr/local/bin/hswrap <<'WRAP'
-#!/bin/sh
-HASKELL_HOME="${HASKELL_HOME:-/opt/haskell-stable}"
-tool="$(basename "$0")"
-for dir in "$HASKELL_HOME/.ghcup/bin" "$HASKELL_HOME/.cabal/bin"; do
-  if [ -x "$dir/$tool" ]; then
-    export PATH="$HASKELL_HOME/.ghcup/bin:$HASKELL_HOME/.cabal/bin:$PATH"
-    exec "$dir/$tool" "$@"
-  fi
-done
-echo "hswrap: $tool not found in $HASKELL_HOME/.ghcup/bin or $HASKELL_HOME/.cabal/bin" >&2
-exit 1
-WRAP
-chmod +x /usr/local/bin/hswrap
-END
-
+setup claude-code ${CLAUDE_CODE_VERSION}
+setup haskell --ghc-version ${GHC_VERSION}
 setup haskell-code-extension

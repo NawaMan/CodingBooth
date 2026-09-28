@@ -391,6 +391,18 @@ func runInitDryrun(version string, args []string) {
 // compileEmpty produces an empty BoothOutput with only CLI overrides applied.
 // Used when no --select is given (empty booth).
 func compileEmpty(flags initFlags) (*output.BoothOutput, *selection.ResolvedSelection) {
+	out, resolved, err := compileEmptyE(flags)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error %v\n", err)
+		os.Exit(1)
+	}
+	return out, resolved
+}
+
+// compileEmptyE is compileEmpty returning its error instead of exiting, for a
+// caller that has a fallback — reading an edited booth back must not end the run
+// just because the edit does not compile.
+func compileEmptyE(flags initFlags) (*output.BoothOutput, *selection.ResolvedSelection, error) {
 	out := &output.BoothOutput{
 		Config:    &output.ConfigToml{},
 		Boothfile: &output.BoothfileContent{Content: ""},
@@ -415,8 +427,7 @@ func compileEmpty(flags initFlags) (*output.BoothOutput, *selection.ResolvedSele
 	if len(flags.sets) > 0 {
 		overrides, err := parseSetOverrides(flags.sets)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing --set: %v\n", err)
-			os.Exit(1)
+			return nil, nil, fmt.Errorf("parsing --set: %w", err)
 		}
 		applySetOverrides(out.Config, overrides)
 	}
@@ -427,7 +438,7 @@ func compileEmpty(flags initFlags) (*output.BoothOutput, *selection.ResolvedSele
 	mergeConfigCache(out)
 	mergeConfigShared(out)
 
-	return out, &selection.ResolvedSelection{}
+	return out, &selection.ResolvedSelection{}, nil
 }
 
 // readExistingArgs parses `arg NAME=VALUE` lines out of an existing Boothfile at
@@ -495,38 +506,45 @@ func resolveDSLFragments(raw []string, projectRoot string) (string, error) {
 // projectRoot is the config target (for .booth/templates and .booth/recipes).
 // overrides preserves existing param values across reconfiguration (may be nil).
 func compileSelection(flags initFlags, projectRoot string, overrides map[string]string) (*output.BoothOutput, *selection.ResolvedSelection) {
+	out, resolved, err := compileSelectionE(flags, projectRoot, overrides)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error %v\n", err)
+		os.Exit(1)
+	}
+	return out, resolved
+}
+
+// compileSelectionE is compileSelection returning its error instead of exiting.
+// The error reads "<step>: <cause>", so "Error " + err is the message
+// compileSelection has always printed.
+func compileSelectionE(flags initFlags, projectRoot string, overrides map[string]string) (*output.BoothOutput, *selection.ResolvedSelection, error) {
 	rawInput, err := resolveDSLFragments(flags.selectDSLs, projectRoot)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error reading selection: %v\n", err)
-		os.Exit(1)
+		return nil, nil, fmt.Errorf("reading selection: %w", err)
 	}
 
 	// Load stock templates, merge project-local .booth/templates/ (local wins + warn)
 	registry, err := tmpl.LoadMergedRegistry(flags.templatesPath, projectRoot, os.Stderr)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error loading templates: %v\n", err)
-		os.Exit(1)
+		return nil, nil, fmt.Errorf("loading templates: %w", err)
 	}
 
 	// Parse DSL
 	parsed, err := selection.ParseSelectDSL(rawInput)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error parsing selection: %v\n", err)
-		os.Exit(1)
+		return nil, nil, fmt.Errorf("parsing selection: %w", err)
 	}
 
 	// Resolve against registry, preserving existing param pins on reconfiguration
 	resolved, err := selection.ResolveWithOverrides(parsed, registry, overrides)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error resolving selection: %v\n", err)
-		os.Exit(1)
+		return nil, nil, fmt.Errorf("resolving selection: %w", err)
 	}
 
 	// Compile to output
 	out, err := compiler.Compile(resolved)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error compiling: %v\n", err)
-		os.Exit(1)
+		return nil, nil, fmt.Errorf("compiling: %w", err)
 	}
 
 	// Apply CLI overrides (take precedence over template values)
@@ -548,8 +566,7 @@ func compileSelection(flags initFlags, projectRoot string, overrides map[string]
 	if len(flags.sets) > 0 {
 		overrides, err := parseSetOverrides(flags.sets)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error parsing --set: %v\n", err)
-			os.Exit(1)
+			return nil, nil, fmt.Errorf("parsing --set: %w", err)
 		}
 		applySetOverrides(out.Config, overrides)
 	}
@@ -560,7 +577,7 @@ func compileSelection(flags initFlags, projectRoot string, overrides map[string]
 	mergeConfigCache(out)
 	mergeConfigShared(out)
 
-	return out, resolved
+	return out, resolved, nil
 }
 
 // printDryrun prints what would be generated without writing files.

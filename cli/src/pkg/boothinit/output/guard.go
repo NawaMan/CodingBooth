@@ -26,6 +26,13 @@ import (
 // survive a clone.
 const ManifestName = ".generated"
 
+// manifestTemplatesKey records, in the manifest, which release's template catalog
+// produced the guarded files. It is not a file name, so Drifted never looks it up;
+// ReadTemplatesVersion does. A reconfigure that reads edited files back needs it to
+// regenerate against the catalog that wrote them — against a newer one, template
+// updates would be indistinguishable from the user's own edits.
+const manifestTemplatesKey = "templates"
+
 // GuardedFiles are the files WriteOutput regenerates wholesale. They are the ones
 // whose hand-written content a reconfigure would silently destroy — the rest of
 // .booth/ is either copied, no-clobbered, or cleaned up by header.
@@ -66,7 +73,11 @@ func readManifest(boothDir string) map[string]string {
 // writeManifest merges the freshly-written hashes into .booth/.generated,
 // preserving entries for files this run did not touch (an empty selection writes
 // no Boothfile, and dropping its hash would silently un-track it).
-func writeManifest(boothDir string, written map[string]string) error {
+//
+// templatesVersion replaces the recorded catalog version; empty removes it, since
+// a local catalog has no release a later run could fetch again, and leaving the
+// previous version in place would name a catalog that did not write these files.
+func writeManifest(boothDir string, written map[string]string, templatesVersion string) error {
 	if len(written) == 0 {
 		return nil
 	}
@@ -74,6 +85,11 @@ func writeManifest(boothDir string, written map[string]string) error {
 	entries := readManifest(boothDir)
 	for name, hash := range written {
 		entries[name] = hash
+	}
+	if templatesVersion != "" {
+		entries[manifestTemplatesKey] = templatesVersion
+	} else {
+		delete(entries, manifestTemplatesKey)
 	}
 
 	names := make([]string, 0, len(entries))
@@ -92,6 +108,13 @@ func writeManifest(boothDir string, written map[string]string) error {
 	}
 
 	return writeFile(filepath.Join(boothDir, ManifestName), b.String(), 0644)
+}
+
+// ReadTemplatesVersion returns the release whose template catalog last wrote the
+// guarded files under targetPath, or "" when none is recorded — a local catalog,
+// or a booth written before the version was recorded.
+func ReadTemplatesVersion(targetPath string) string {
+	return readManifest(filepath.Join(targetPath, ".booth"))[manifestTemplatesKey]
 }
 
 // Drifted returns the guarded files under targetPath holding content that

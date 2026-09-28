@@ -12,6 +12,6 @@ arg JDK_VENDOR=temurin
 arg JDK_VERSION=17
 
 setup jdk ${JDK_VERSION} ${JDK_VENDOR}
+setup java-code-extension
 setup android-sdk --cmdline-tools ${ANDROID_CMDLINE_TOOLS} --api ${ANDROID_API} --build-tools ${ANDROID_BUILD_TOOLS}
 setup android-emulator --api ${ANDROID_API} --tag ${ANDROID_IMAGE_TAG} --abi ${ANDROID_IMAGE_ABI}
-setup java-code-extension

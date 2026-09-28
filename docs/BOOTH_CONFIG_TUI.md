@@ -420,6 +420,32 @@ Saving regenerates `.booth/Boothfile` and `.booth/config.toml` **from scratch** 
 
 A file counts as hand-written if `booth config` never wrote it, or wrote it and a human edited it afterwards. See [BOOTH_CONFIG.md — Hand-Written Files](BOOTH_CONFIG.md#hand-written-files) for how that is detected.
 
+An edit booth config could have written itself — a `timezone` line, an extra `--env` entry, a bumped `arg` pin — is **not** hand-written: it is [read back](BOOTH_CONFIG.md#edits-that-can-be-read-back), the TUI opens without a warning and with the edit pre-loaded, and saving keeps it. The dialogs below are for edits that could not be read back; the startup warning then lists what blocked it.
+
+### Comments in an edited booth
+
+Comments cannot be read back into the configuration, so a save regenerates the files without them. When the booth holds any, `Ctrl+S` names them first:
+
+```
+┌──────────────────────────────────────────────────┐
+│           ⚠ Comments will be removed             │
+│                                                  │
+│ This booth was edited outside booth config. The  │
+│ edits were read back and will be kept, but       │
+│ comments cannot be: saving regenerates the       │
+│ files, and these comments will be removed:       │
+│                                                  │
+│   .booth/config.toml:5  # the team is in Bangkok │
+│                                                  │
+│ Nothing has been written yet. Esc goes back      │
+│ without saving.                                  │
+│                                                  │
+│       Enter: save anyway  │  Esc: back           │
+└──────────────────────────────────────────────────┘
+```
+
+`Enter` saves; `Esc` goes back to configuring with nothing written. Clicks do not answer it. Opening the booth and quitting without saving leaves the files — comments included — exactly as they were.
+
 ### On open — a heads-up
 
 The TUI tells you as soon as it starts, so you find out *before* configuring rather than after:

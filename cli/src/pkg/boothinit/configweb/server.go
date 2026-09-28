@@ -22,15 +22,18 @@ import (
 
 // Options configures the host-side config Web UI.
 type Options struct {
-	Registry    *tmpl.TemplateRegistry
-	Pre         *tui.PreSelection
-	Warning     string
-	Drifted     []string
-	PortFlag    string
-	Listener    net.Listener // tests; when set, PortFlag is ignored
-	Token       string       // tests; generated when empty
-	OpenBrowser bool
-	Output      io.Writer
+	Registry *tmpl.TemplateRegistry
+	Pre      *tui.PreSelection
+	Warning  string
+	Drifted  []string
+	// LostComments lists comments a save would remove from files whose hand edits
+	// were read back; saving asks before removing them.
+	LostComments []string
+	PortFlag     string
+	Listener     net.Listener // tests; when set, PortFlag is ignored
+	Token        string       // tests; generated when empty
+	OpenBrowser  bool
+	Output       io.Writer
 }
 
 // Run serves the config Web UI on 127.0.0.1:<booth-port> until the user saves
@@ -62,6 +65,7 @@ func Run(opts Options) (*tui.ConfigResult, error) {
 	}
 
 	session := NewSession(opts.Registry, opts.Pre, opts.Warning, opts.Drifted)
+	session.lostComments = append([]string{}, opts.LostComments...)
 	done := make(chan Outcome, 1)
 	server := &http.Server{
 		Handler:           NewMux(session, token, done),

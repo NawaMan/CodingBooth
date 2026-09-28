@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --select appwrite-server+autostart+expose
+# Configured by: booth config --no-tui --overwrite --select appwrite-server+autostart+expose:+-1920
 
 dind = true
 

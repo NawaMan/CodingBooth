@@ -101,13 +101,47 @@ func aptSnapshotID() string {
 // the live archive. No-op when there is no Boothfile content to freeze, or when an
 // APT_SNAPSHOT directive is already present.
 func applyAptSnapshot(out *output.BoothOutput) {
+	applyAptSnapshotID(out, aptSnapshotID())
+}
+
+// applyBoothAptSnapshot is applyAptSnapshot for a reconfigure: it keeps the
+// snapshot the booth's Boothfile already freezes apt to, rather than moving it to
+// today. Re-stamping on every reconfigure meant that adding an env var also
+// silently moved every apt package to whatever the archive held that day — the
+// opposite of freezing. The freeze date moves only when asked, via CB_APT_SNAPSHOT.
+func applyBoothAptSnapshot(out *output.BoothOutput, targetPath string) {
+	id := aptSnapshotID()
+	if os.Getenv("CB_APT_SNAPSHOT") == "" {
+		if existing := readExistingAptSnapshot(targetPath); existing != "" {
+			id = existing
+		}
+	}
+	applyAptSnapshotID(out, id)
+}
+
+func applyAptSnapshotID(out *output.BoothOutput, id string) {
 	if out == nil || out.Boothfile == nil || out.Boothfile.Content == "" {
 		return
 	}
 	if strings.Contains(out.Boothfile.Content, "APT_SNAPSHOT") {
 		return
 	}
-	out.Boothfile.Content = "env APT_SNAPSHOT=" + aptSnapshotID() + "\n\n" + out.Boothfile.Content
+	out.Boothfile.Content = "env APT_SNAPSHOT=" + id + "\n\n" + out.Boothfile.Content
+}
+
+// readExistingAptSnapshot returns the snapshot id an existing Boothfile's
+// `env APT_SNAPSHOT=<id>` line freezes apt to, or "" when there is none.
+func readExistingAptSnapshot(targetPath string) string {
+	data, err := os.ReadFile(filepath.Join(targetPath, ".booth", "Boothfile"))
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(data), "\n") {
+		if rest, ok := strings.CutPrefix(strings.TrimSpace(line), "env APT_SNAPSHOT="); ok {
+			return strings.TrimSpace(rest)
+		}
+	}
+	return ""
 }
 
 // runConfigCLI handles non-interactive mode (--no-tui).
@@ -119,8 +153,15 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 	// recovered from config.toml) survived — a silent, lopsided wipe.
 	//
 	// readExistingBooth also pulls run-args and cache entries out of config.toml.
-	flags = mergeFlags(readExistingBooth(targetPath), flags, targetPath)
+	// When the files were edited since booth config wrote them, the edits are read
+	// back on top of that (see config_adopt.go), so a valid edit is kept rather than
+	// refused or regenerated away.
+	baseline := readBoothBaseline(version, targetPath, flags)
+	printAdoptOutcome(os.Stderr, baseline)
+	drifted := baseline.drifted
+	flags = mergeFlags(baseline.flags, flags, targetPath)
 	flags.selectDSL = strings.Join(flags.selectDSLs, "/")
+	templatesVersion := templatesVersionFor(flags, version)
 
 	var out *output.BoothOutput
 	var resolved *selection.ResolvedSelection
@@ -136,7 +177,8 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 
 	out.Command = buildConfigCommand(targetPath, flags)
 	out.AdjustCommand = buildConfigAdjustCommand(flags)
-	applyAptSnapshot(out)
+	out.TemplatesVersion = templatesVersion
+	applyBoothAptSnapshot(out, targetPath)
 
 	if flags.debug {
 		printDebug(resolved, out)
@@ -149,8 +191,8 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 
 	// Refuse to destroy hand-written content without explicit consent. This is a
 	// stronger gate than the conflict prompt below, which only asks "does a file
-	// exist?" — regenerating a file we wrote ourselves loses nothing.
-	drifted := output.Drifted(targetPath)
+	// exist?" — regenerating a file we wrote ourselves loses nothing. An edit that
+	// was read back is not in drifted: regenerating it loses nothing either.
 	if len(drifted) > 0 && !flags.overwrite && !flags.beside {
 		printDriftRefusal(targetPath, drifted)
 		os.Exit(1)
@@ -301,11 +343,21 @@ type interactiveSetup struct {
 	pre         *tui.PreSelection
 	warning     string
 	drifted     []string
-	cleanup     func()
+	// lostComments lists, one per line, the comments a save would remove from
+	// files whose edits were read back — the save asks before removing them.
+	lostComments     []string
+	templatesVersion string
+	cleanup          func()
 }
 
 func prepareInteractiveConfig(version, targetPath string, flags initFlags) interactiveSetup {
+	// Read the booth back before resolving this run's templates: the check may
+	// fetch the catalog the booth was written with, and it runs on the CLI's own
+	// flags, not the resolved temp path.
+	baseline := readBoothBaseline(version, targetPath, flags)
+
 	templatesPath, cleanup := resolveTemplatesPath(flags, version)
+	cliFlags := flags
 	flags.templatesPath = templatesPath
 
 	registry, err := tmpl.LoadMergedRegistry(flags.templatesPath, targetPath, os.Stderr)
@@ -314,20 +366,27 @@ func prepareInteractiveConfig(version, targetPath string, flags initFlags) inter
 		os.Exit(1)
 	}
 
-	existingFlags := readExistingBooth(targetPath)
-	mergedFlags := mergeFlags(existingFlags, flags, targetPath)
+	mergedFlags := mergeFlags(baseline.flags, flags, targetPath)
 	pre := buildPreSelection(registry, mergedFlags, readExistingArgs(targetPath))
 	pre.StringFields["booth-version"] = readLockFileVersion(targetPath, version)
-	drifted := output.Drifted(targetPath)
-	warning := joinWarnings(checkBoothWritable(targetPath), handWrittenNotice(drifted))
+	drifted := baseline.drifted
+	warning := joinWarnings(checkBoothWritable(targetPath), handWrittenNotice(drifted), adoptReasonsText(baseline))
 
+	var lostComments []string
+	for _, c := range baseline.adopt.lost {
+		lostComments = append(lostComments, fmt.Sprintf(".booth/%s:%d  %s", c.file, c.Line, c.Text))
+	}
+
+	mergedCLI := mergeFlags(baseline.flags, cliFlags, targetPath)
 	return interactiveSetup{
-		registry:    registry,
-		mergedFlags: mergedFlags,
-		pre:         pre,
-		warning:     warning,
-		drifted:     drifted,
-		cleanup:     cleanup,
+		registry:         registry,
+		mergedFlags:      mergedFlags,
+		pre:              pre,
+		warning:          warning,
+		drifted:          drifted,
+		lostComments:     lostComments,
+		templatesVersion: templatesVersionFor(mergedCLI, version),
+		cleanup:          cleanup,
 	}
 }
 
@@ -336,7 +395,7 @@ func runConfigTUI(version, buildDate string, targetPath string, flags initFlags)
 	setup := prepareInteractiveConfig(version, targetPath, flags)
 	defer setup.cleanup()
 
-	result, err := tui.RunConfig(setup.registry, setup.pre, setup.warning, setup.drifted, version, buildDate)
+	result, err := tui.RunConfig(setup.registry, setup.pre, setup.warning, setup.drifted, setup.lostComments, version, buildDate)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
@@ -347,7 +406,7 @@ func runConfigTUI(version, buildDate string, targetPath string, flags initFlags)
 		return
 	}
 
-	applyInteractiveResult(version, targetPath, setup.mergedFlags, result, setup.drifted)
+	applyInteractiveResult(version, targetPath, setup, result)
 }
 
 // runConfigWeb is the browser equivalent of runConfigTUI. Same registry,
@@ -357,13 +416,14 @@ func runConfigWeb(version string, targetPath string, flags initFlags) {
 	defer setup.cleanup()
 
 	result, err := configweb.Run(configweb.Options{
-		Registry:    setup.registry,
-		Pre:         setup.pre,
-		Warning:     setup.warning,
-		Drifted:     setup.drifted,
-		PortFlag:    setup.mergedFlags.port,
-		OpenBrowser: true,
-		Output:      os.Stderr,
+		Registry:     setup.registry,
+		Pre:          setup.pre,
+		Warning:      setup.warning,
+		Drifted:      setup.drifted,
+		LostComments: setup.lostComments,
+		PortFlag:     setup.mergedFlags.port,
+		OpenBrowser:  true,
+		Output:       os.Stderr,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -375,10 +435,12 @@ func runConfigWeb(version string, targetPath string, flags initFlags) {
 		return
 	}
 
-	applyInteractiveResult(version, targetPath, setup.mergedFlags, result, setup.drifted)
+	applyInteractiveResult(version, targetPath, setup, result)
 }
 
-func applyInteractiveResult(version, targetPath string, mergedFlags initFlags, result *tui.ConfigResult, drifted []string) {
+func applyInteractiveResult(version, targetPath string, setup interactiveSetup, result *tui.ConfigResult) {
+	mergedFlags, drifted := setup.mergedFlags, setup.drifted
+
 	// The merged baseline — not the bare CLI flags — is what this run writes out.
 	//
 	// Saving regenerates config.toml from scratch, so anything not carried into
@@ -473,7 +535,8 @@ func applyInteractiveResult(version, targetPath string, mergedFlags initFlags, r
 
 	out.Command = buildConfigCommand(targetPath, flags)
 	out.AdjustCommand = buildConfigAdjustCommand(flags)
-	applyAptSnapshot(out)
+	out.TemplatesVersion = setup.templatesVersion
+	applyBoothAptSnapshot(out, targetPath)
 
 	if flags.debug {
 		printDebug(resolved, out)
@@ -601,19 +664,14 @@ func dropTUIOwnedSets(sets []string) []string {
 }
 
 // readExistingBooth reads the "# Configured by:" header (or the legacy "# Adjust with :")
-// from an existing booth and parses it into initFlags. The header comes from .booth/Boothfile
-// when there is one; a booth that selects no templates has no Boothfile, so its config.toml —
-// which carries the same header — is read instead. Also reads config.toml to extract user-set
-// run-args (long-form flags like --env, --publish, --volume) back into flags.
+// from an existing booth and parses it into initFlags — see readBoothHeader for which file
+// it comes from. Also reads config.toml to extract user-set run-args (long-form flags like
+// --env, --publish, --volume) back into flags.
 // Returns empty flags if no existing booth is found.
 func readExistingBooth(targetPath string) initFlags {
 	var flags initFlags
 
-	source := filepath.Join(targetPath, ".booth", "Boothfile")
-	if _, err := os.Stat(source); err != nil {
-		source = filepath.Join(targetPath, ".booth", "config.toml")
-	}
-	cmd, found := readConfiguredByHeader(source)
+	cmd, source, found := readBoothHeader(targetPath)
 	if found {
 		flags = parseAdjustCommand(cmd)
 	}
@@ -632,6 +690,22 @@ func readExistingBooth(targetPath string) initFlags {
 	flags.sets = dropUnknownSets(flags.sets, source)
 
 	return flags
+}
+
+// readBoothHeader returns the command recorded in a booth's "# Configured by:" header,
+// the file it came from, and whether there was one. The header comes from .booth/Boothfile
+// when that carries one, else from config.toml, which records the same header: a booth
+// that selects no templates has no Boothfile, and one whose Boothfile is hand-written has
+// no header there — without the fallback, reconfiguring such a booth would start from
+// nothing and a save would wipe the configuration config.toml still records.
+func readBoothHeader(targetPath string) (cmd, source string, found bool) {
+	source = filepath.Join(targetPath, ".booth", "Boothfile")
+	if cmd, found = readConfiguredByHeader(source); found {
+		return cmd, source, true
+	}
+	source = filepath.Join(targetPath, ".booth", "config.toml")
+	cmd, found = readConfiguredByHeader(source)
+	return cmd, source, found
 }
 
 // readConfiguredByHeader returns the command recorded in the "# Configured by:" header

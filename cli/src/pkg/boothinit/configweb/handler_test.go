@@ -111,6 +111,40 @@ func TestMux_HandWrittenSaveConflictsUntilChosen(t *testing.T) {
 	}
 }
 
+// Edits read back from disk save normally, except that their comments cannot be
+// carried: the first save names them, and only a deliberate second one writes.
+func TestMux_LostCommentsConflictUntilConfirmed(t *testing.T) {
+	session := NewSession(sessionRegistry(), nil, "", nil)
+	session.lostComments = []string{".booth/config.toml:3  # team port"}
+	done := make(chan Outcome, 1)
+	handler := NewMux(session, testToken, done)
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, testRequest(http.MethodPost, "/api/save", testToken, map[string]string{"mode": "save"}))
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409", recorder.Code)
+	}
+	var body map[string]any
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil || body["error"] != "comments" {
+		t.Fatalf("want a comments conflict, got %s", recorder.Body.String())
+	}
+	select {
+	case <-done:
+		t.Fatal("conflict should not complete the save")
+	default:
+	}
+
+	recorder = httptest.NewRecorder()
+	handler.ServeHTTP(recorder, testRequest(http.MethodPost, "/api/save", testToken, map[string]string{"mode": "drop-comments"}))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("drop-comments status = %d", recorder.Code)
+	}
+	outcome := <-done
+	if !outcome.Result.Confirmed || outcome.Result.SaveBeside {
+		t.Fatalf("confirming should save in place: %+v", outcome.Result)
+	}
+}
+
 func TestMux_ServesIndexWithToken(t *testing.T) {
 	session := NewSession(sessionRegistry(), nil, "", nil)
 	handler := NewMux(session, testToken, make(chan Outcome, 1))
