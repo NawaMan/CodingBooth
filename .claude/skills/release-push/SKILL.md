@@ -208,6 +208,23 @@ Report each one whose date is before the base's, and offer to bump it to the bas
 report, wait, apply only what's picked. Leave the unconsumed stamps on the other examples alone;
 bumping them is churn that fixes nothing.
 
+**Bump it through `booth config`, never with `sed`.** Editing the `env APT_SNAPSHOT=` line by hand
+breaks the example's `.booth/.generated` fingerprint, and the example then opens as edited.
+Reconfiguring keeps a booth's existing snapshot, so move it explicitly — from inside the example
+directory, against the repo's own templates:
+
+```bash
+export CB_TEMPLATES_PATH="$PWD/templates"
+(cd examples/workspaces/<example> && CB_APT_SNAPSHOT=<base-snapshot> \
+    ../../../codingbooth config --no-tui --overwrite)
+rm -f examples/workspaces/<example>/.booth/*.bak
+```
+
+That regenerates from the example's header, so it also picks up any template changes since the
+example was last configured. Look at the diff before committing (all three files: `Boothfile`,
+`config.toml`, `.booth/.generated`). If `booth config` says it could not read the example's edits
+back, the example holds hand-written content — ask before overwriting it.
+
 ### Go-ahead to drop the rc
 
 Report the version transition, the commit list step 2 will publish (catalog bumps included), and

@@ -103,6 +103,12 @@ func (m model) View() string {
 		return m.renderOverwriteDialog()
 	}
 
+	// Comments confirmation overlay — shown when saving would remove comments
+	if m.commentsDialog {
+		return m.renderMessageDialog("⚠ Comments will be removed", commentsDialogMessage(m.lostComments),
+			"Enter: save anyway  │  Esc: back")
+	}
+
 	l := m.layout()
 	fullWidth, leftWidth, rightWidth, contentH := l.fullWidth, l.leftWidth, l.rightWidth, l.contentH
 
@@ -1278,8 +1284,27 @@ func (m model) renderOverwriteDialog() string {
 	return strings.Join(lines, "\n")
 }
 
+// commentsDialogMessage explains why a save removes comments, and lists them.
+func commentsDialogMessage(lost []string) string {
+	var b strings.Builder
+	b.WriteString("This booth was edited outside booth config. The edits were read back and ")
+	b.WriteString("will be kept, but comments cannot be: saving regenerates the files, and ")
+	b.WriteString("these comments will be removed:\n\n")
+	for _, c := range lost {
+		b.WriteString("  " + c + "\n")
+	}
+	b.WriteString("\nNothing has been written yet. Esc goes back without saving.")
+	return b.String()
+}
+
 // renderWarningDialog renders a centered warning dialog overlay.
 func (m model) renderWarningDialog() string {
+	return m.renderMessageDialog("⚠ Warning", m.warningMessage, "Enter/Space: continue  │  Esc: quit")
+}
+
+// renderMessageDialog renders a centered dialog: a title, a message (its own
+// newlines kept), and a key hint.
+func (m model) renderMessageDialog(title, message, hint string) string {
 	// Dialog box dimensions
 	boxWidth := m.width * 60 / 100
 	if boxWidth < 40 {
@@ -1291,9 +1316,7 @@ func (m model) renderWarningDialog() string {
 	innerWidth := boxWidth - 4 // 2 border + 2 padding
 
 	// Build dialog content
-	title := "⚠ Warning"
-	msgLines := wrapParagraphs(m.warningMessage, innerWidth)
-	hint := "Enter/Space: continue  │  Esc: quit"
+	msgLines := wrapParagraphs(message, innerWidth)
 
 	// Dialog lines: border top, title, blank, message lines, blank, hint, border bottom
 	var dialogLines []string

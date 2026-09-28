@@ -89,11 +89,11 @@ install `RUN` lines, so the script sees it. Verified end-to-end: generated Docke
   `config.go`, so the init/emit paths and their fixtures are untouched.
 - **`CB_APT_SNAPSHOT` override.** Follows the repo's `CB_*` env convention; lets tests
   pin a deterministic date and lets users pin a specific snapshot.
-- **Idempotent / re-config behavior.** Re-running `booth config` regenerates the
-  Boothfile from templates+flags and re-stamps today's date (the prior `env` line is not
-  carried through the adjust-command round-trip). The idempotency guard only matters
-  within a single generation pass. *If sticky snapshots across re-configs are wanted
-  later, read the existing `env APT_SNAPSHOT=` line in `readExistingBooth` and reuse it.*
+- **Idempotent / re-config behavior.** Re-running `booth config` keeps the snapshot:
+  `applyBoothAptSnapshot` reads the existing Boothfile's `env APT_SNAPSHOT=` line and
+  reuses it, so a reconfigure does not silently move apt to that day's archive. A new
+  booth gets today; `CB_APT_SNAPSHOT` overrides both, and is how the date is moved on
+  purpose. (Before this, every reconfigure re-stamped today's date.)
 - **Why a bare `=version` pin isn't enough.** The live archive pool keeps only the
   current version, so old pins rot; the snapshot is what makes them resolvable. Stated
   honestly in the Tier 1 notes.

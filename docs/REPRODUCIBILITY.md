@@ -136,7 +136,7 @@ env APT_SNAPSHOT=20260601T000000Z
 install apt qrencode imagemagick
 ```
 
-The base image is Ubuntu 24.04, where `--snapshot` is auto-supported (no apt config needed). The date is captured once at config time and baked in literally — it is **not** recomputed on each build, so rebuilds stay frozen until you re-run `booth config`. To pin a specific snapshot instead of "today", set `CB_APT_SNAPSHOT=<id>` when running `booth config`, or edit the `env APT_SNAPSHOT=` line directly.
+The base image is Ubuntu 24.04, where `--snapshot` is auto-supported (no apt config needed). The date is captured once at config time and baked in literally — it is **not** recomputed on each build, so rebuilds stay frozen. Re-running `booth config` on an existing booth keeps the snapshot its Boothfile already holds — reconfiguring (adding a template, an env var) does not move apt forward to that day. To move it, or to pin a specific snapshot instead of "today" on a new booth, set `CB_APT_SNAPSHOT=<id>` when running `booth config`.
 
 - **Pin the date, not each package.** With a frozen index, `install apt qrencode imagemagick` (no version pins) is already deterministic. Explicit `pkg=version` pins then act only as documentation and as a tripwire that fails loudly if a snapshot bump changes the version.
 - **Trade-off:** a frozen snapshot stops receiving security updates until you bump the date — which is the correct behaviour, since updates become a deliberate, reviewable change rather than silent drift.
