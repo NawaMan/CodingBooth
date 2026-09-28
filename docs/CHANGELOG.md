@@ -19,6 +19,26 @@ This file contains a list of changes for each released version.
   Eclipse without also ticking Java hit it; selecting both, as the Java examples do, was fine.
   The template now requires `java`, so the JDK is pulled in and installed first.
 
+- **`booth config` reads valid hand edits back instead of refusing them.** A generated
+  `.booth/config.toml` or Boothfile that was edited afterwards no longer counts as
+  hand-written when the edit is one config could have written itself — an added `timezone`,
+  an extra `--env`/`--publish`/`--volume` entry (short forms too), a changed `port`, a bumped
+  `arg` pin. Config lifts the edit into flags, regenerates, and adopts it only when the result
+  matches the files exactly (comments and whitespace aside); the TUI then opens without the
+  hand-written warning, and the next save records the edit in the header. Comments cannot be
+  carried, so a save names the ones it removes and asks first — the TUI, web editor and
+  `--no-tui` alike; viewing never writes. An edit that cannot be read back is refused as
+  before, now with the lines that blocked it. `.booth/.generated` also records the template
+  catalog version (`templates=…`) so edits are compared against the catalog that wrote the
+  files. See [booth config — Edits that can be read back](BOOTH_CONFIG.md#edits-that-can-be-read-back).
+- **Reconfiguring a booth with a hand-written Boothfile keeps its configuration.** The
+  recorded `# Configured by:` header is now read from `config.toml` when the Boothfile has
+  none, instead of reconfiguring from an empty selection — which opened the TUI blank and let
+  a save wipe the settings `config.toml` still recorded.
+- **Reconfiguring keeps the booth's APT snapshot.** `booth config` on an existing booth now
+  reuses the `env APT_SNAPSHOT=` date its Boothfile already holds rather than re-stamping
+  today's, so adding an env var no longer moves every `install apt` package forward. Set
+  `CB_APT_SNAPSHOT` to move it on purpose.
 - **The Console UI tiles like i3, with Ctrl+Alt shortcuts.** The base variant's browser
   console now takes the same Ctrl+Alt keys as the i3 template: focus (`h`/`j`/`k`/`l` or
   arrows), move (`Shift`+those), split beside/below (`b`/`v`), open (`Enter`), close

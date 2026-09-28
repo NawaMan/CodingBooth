@@ -169,6 +169,20 @@ func NewMux(session *Session, token string, done chan<- Outcome) http.Handler {
 				return
 			}
 		}
+		// Edits read back from disk keep everything but their comments, which a
+		// save regenerates away — so the first save names them and waits for a
+		// second, deliberate one.
+		if len(state.Drifted) == 0 && len(state.LostComments) > 0 && payload.Mode != "drop-comments" {
+			writer.Header().Set("Content-Type", "application/json")
+			writer.Header().Set("Cache-Control", "no-store")
+			writer.WriteHeader(http.StatusConflict)
+			_ = json.NewEncoder(writer).Encode(map[string]any{
+				"error":    "comments",
+				"comments": state.LostComments,
+				"message":  "saving regenerates the files, which removes these comments",
+			})
+			return
+		}
 		result := session.Result(false)
 		writeJSON(writer, map[string]any{"ok": true})
 		sendOutcome(done, Outcome{Result: result})

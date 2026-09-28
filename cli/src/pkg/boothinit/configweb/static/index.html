@@ -428,6 +428,23 @@ async function doSave() {
       }
       return;
     }
+    if (err.status === 409 && err.data && err.data.error === "comments") {
+      const list = (err.data.comments || []).map(c => `<li><code>${esc(c)}</code></li>`).join("");
+      const choice = await showModal({
+        title: "Comments will be removed",
+        danger: true,
+        body: `<p>This booth was edited outside booth config. The edits were read back and will be kept, but comments cannot be — saving regenerates the files without them:</p><ul>${list}</ul>`,
+        actions: [
+          { label: "Save anyway", value: "save" },
+          { label: "Back", value: "back", primary: true }
+        ]
+      });
+      if (choice.value === "save") {
+        await api("/api/save", { method: "POST", body: { mode: "drop-comments" } });
+        document.body.innerHTML = "<p style='padding:2rem'>Saved. You can close this tab.</p>";
+      }
+      return;
+    }
     $("note").textContent = err.message;
   }
 }

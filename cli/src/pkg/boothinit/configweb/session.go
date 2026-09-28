@@ -33,6 +33,7 @@ type Session struct {
 	notification string
 	warning      string
 	drifted      []string
+	lostComments []string
 	hasLocal     bool
 	baseline     sessionSnapshot
 }
@@ -56,6 +57,7 @@ type State struct {
 	SelectedCount int                 `json:"selectedCount"`
 	Warning       string              `json:"warning"`
 	Drifted       []string            `json:"drifted"`
+	LostComments  []string            `json:"lostComments"`
 	HasLocal      bool                `json:"hasLocal"`
 	Dirty         bool                `json:"dirty"`
 }
@@ -161,6 +163,7 @@ func (thisSession *Session) stateLocked() State {
 		SelectedCount: selectedCount,
 		Warning:       thisSession.warning,
 		Drifted:       append([]string{}, thisSession.drifted...),
+		LostComments:  append([]string{}, thisSession.lostComments...),
 		HasLocal:      thisSession.hasLocal,
 		Dirty:         !thisSession.snapshot().equal(thisSession.baseline),
 	}
