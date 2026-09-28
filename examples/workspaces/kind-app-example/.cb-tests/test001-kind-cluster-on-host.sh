@@ -65,7 +65,9 @@ sleep 1
 
 # Start booth in daemon mode
 echo "Starting booth with KinD..."
-"$BOOTH" --no-browser --keep-alive --daemon --variant base --port "${CB_PORT:-50171}" --name "$CONTAINER_NAME"
+# --dind-allowed: this example's dind = true would otherwise stop for a [y/N]
+# consent prompt on /dev/tty (see docs/BOOTH_SECURITY.md) — silent in a script.
+"$BOOTH" --dind-allowed --no-browser --keep-alive --daemon --variant base --port "${CB_PORT:-50171}" --name "$CONTAINER_NAME"
 
 # Wait for booth to be ready (up to 60 seconds)
 echo "Waiting for booth container to start..."

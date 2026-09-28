@@ -14,7 +14,10 @@ REPO_ROOT="$SCRIPT_DIR/../../../.."
 source "$REPO_ROOT/tests/booth-bin--source.sh"
 BOOTH="$(resolve_booth_bin)"
 
-"$BOOTH" --variant base --port "${CB_PORT:-50271}" -- "./.cb-tests/inBooth--run-all-tests.sh" 2>&1 | tee "$0.out"
+# --privileged-allowed: the writable $HOME/.cargo/registry mount would otherwise
+# stop for a [y/N] consent prompt on /dev/tty (see docs/BOOTH_SECURITY.md) —
+# silent in a script.
+"$BOOTH" --privileged-allowed --variant base --port "${CB_PORT:-50271}" -- "./.cb-tests/inBooth--run-all-tests.sh" 2>&1 | tee "$0.out"
 
 if [ $? -eq 0 ]; then
     echo -e "${GREEN}All tests passed!${NC}"

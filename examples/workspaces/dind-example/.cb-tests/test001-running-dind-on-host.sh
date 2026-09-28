@@ -66,7 +66,9 @@ sleep 1
 
 # Start workspace in daemon mode with fixed port mapping
 echo "Starting codingbooth..."
-"$BOOTH" --no-browser --variant base --port "${CB_PORT:-50071}" --daemon --name "$CONTAINER_NAME" -p "$CONTAINER_PORT":8080 || true
+# --dind-allowed: this example's dind = true would otherwise stop for a [y/N]
+# consent prompt on /dev/tty (see docs/BOOTH_SECURITY.md) — silent in a script.
+"$BOOTH" --dind-allowed --no-browser --variant base --port "${CB_PORT:-50071}" --daemon --name "$CONTAINER_NAME" -p "$CONTAINER_PORT":8080 || true
 
 # Wait for booth to be ready
 sleep 2

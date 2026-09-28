@@ -23,7 +23,9 @@ echo "=== Testing Appwrite CLI + server health ==="
 echo ""
 
 # First boot pulls the Appwrite Compose stack inside DinD — several minutes.
-output=$("$BOOTH" --variant base --port "${CB_PORT:-50280}" -- 'just run' 2>&1) || true
+# --dind-allowed: this example's dind = true would otherwise stop for a [y/N]
+# consent prompt on /dev/tty (see docs/BOOTH_SECURITY.md) — silent in a script.
+output=$("$BOOTH" --dind-allowed --variant base --port "${CB_PORT:-50280}" -- 'just run' 2>&1) || true
 
 echo "$output"
 echo ""
