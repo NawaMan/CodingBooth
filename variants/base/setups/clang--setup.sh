@@ -12,7 +12,7 @@ Usage:
   $0 [<LLVM_VER>] [--version <LLVM_VER>] [--no-export-cc] [--no-as-default]
 
 Examples:
-  $0                   # installs LLVM/clang 18, exports CC/CXX, sets cc/c++ via alternatives
+  $0                   # installs LLVM/clang 22, exports CC/CXX, sets cc/c++ via alternatives
   $0 19                # installs LLVM/clang 19 (same defaults)
   $0 --version 17      # installs LLVM/clang 17
   $0 19 --no-export-cc # do NOT export CC/CXX for login shells
@@ -36,7 +36,7 @@ USAGE
 HOME=/root
 
 # --- defaults & args ---
-LLVM_DEFAULT=18
+LLVM_DEFAULT=22
 LLVM_VER_INPUT="${1:-}"
 [[ "$LLVM_VER_INPUT" =~ ^- ]] && LLVM_VER_INPUT=""
 # Enabled by default; opt-out flags available

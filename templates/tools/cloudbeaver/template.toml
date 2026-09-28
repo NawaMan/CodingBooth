@@ -11,10 +11,10 @@ tags = [
 ]
 
 [params.CLOUDBEAVER_VERSION]
-default = "25.3.5"
+default = "26.2.1"
 suggests = [
+    "26.2.1",
     "25.3.5",
-    "25.3",
     "latest",
 ]
 

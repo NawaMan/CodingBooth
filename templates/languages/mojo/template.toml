@@ -24,8 +24,8 @@ tags = [
 requires = ["python"]
 
 [params.MOJO_VERSION]
-default = "1.0.0"
-suggests = ["1.0.0", "latest"]
+default = "1.1.0"
+suggests = ["1.1.0", "1.0.0", "latest"]
 
 # Order 60: after Python, which lands in the base band at 50.
 [segments]

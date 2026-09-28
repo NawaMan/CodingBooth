@@ -14,7 +14,7 @@ tags = [
 default = "latest"
 suggests = [
     "latest",
-    "25.3.5",
+    "26.2.1",
 ]
 
 [segments]

@@ -10,9 +10,9 @@ tags = [
 ]
 
 [params.GRADLE_VERSION]
-default = "9.7.1"
+default = "9.8.0"
 suggests = [
-    "9.7.1", "9.7",
+    "9.8.0", "9.7.1",
     "8.14.4",
 ]
 

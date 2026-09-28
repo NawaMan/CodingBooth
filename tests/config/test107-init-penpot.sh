@@ -6,7 +6,7 @@ begin
 # Test 1: Penpot with defaults — pulls postgresql and redis
 run booth config $prj --no-tui --select "penpot"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg PENPOT_VERSION=' '2.17.2'  "default image tag is 2.17.2"
+assert-line "$boothfile" 'arg PENPOT_VERSION=' '2.18.0'  "default image tag is 2.18.0"
 assert-line "$boothfile" 'arg PENPOT_PORT=' '20800'  "default port is 20800"
 assert-line "$boothfile" 'copy --from=penpotapp/backend:' '${PENPOT_VERSION} /opt/penpot/backend /opt/penpot/backend'  "copies backend image"
 assert-line "$boothfile" 'copy --from=penpotapp/frontend:' '${PENPOT_VERSION} /var/www/app /opt/penpot/frontend'  "copies frontend image"

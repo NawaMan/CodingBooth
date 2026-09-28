@@ -15,7 +15,7 @@ Usage:
   $0 [--version <X.Y.Z>|latest]
 
 Examples:
-  $0                      # install Mojo 1.0.0 (current stable)
+  $0                      # install Mojo 1.1.0 (current stable)
   $0 --version 1.0.0      # pin a release
   $0 --version latest     # newest PyPI release
 
@@ -40,7 +40,7 @@ source "${SETUP_LIBS_DIR}/retry-source.sh"
 CB_PYTHON_HOME="${CB_PYTHON_HOME:-/opt/python}"
 CB_MOJO_BIN_DIR="${CB_MOJO_BIN_DIR:-/usr/local/bin}"
 
-MOJO_DEFAULT_VER="1.0.0"
+MOJO_DEFAULT_VER="1.1.0"
 REQ_VER=""
 
 while [[ $# -gt 0 ]]; do

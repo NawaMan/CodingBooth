@@ -12,8 +12,8 @@ tags = [
 ]
 
 [params.LLVM_VERSION]
-default = "18"
-suggests = ["18", "19", "17", "16"]
+default = "22"
+suggests = ["22", "21", "20", "18"]
 
 [segments]
 Boothfile = """

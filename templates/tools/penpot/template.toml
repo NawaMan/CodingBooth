@@ -10,7 +10,7 @@ on boot, and +expose to reach it from the host.
 First browser visit creates the account (email verification is off). Design \
 assets persist in a named Docker volume (booth-penpot-assets). PNG/PDF export \
 needs the optional +exporter extension (Playwright/Chromium, ~650MB). Pin the \
-image tag with penpot:2.17.2 or penpot:latest; the default is 2.17.2."""
+image tag with penpot:2.18.0 or penpot:latest; the default is 2.18.0."""
 display-order = 27
 tags = [
     "penpot",
@@ -29,10 +29,10 @@ run-args = [
 ]
 
 [params.PENPOT_VERSION]
-default = "2.17.2"
+default = "2.18.0"
 suggests = [
+    "2.18.0",
     "2.17.2",
-    "2.17",
     "latest",
 ]
 

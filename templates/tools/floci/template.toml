@@ -19,7 +19,7 @@ run-args = [
 
 [params.FLOCI_VERSION]
 default = "latest"
-suggests = ["latest", "0.2.1"]
+suggests = ["latest", "0.2.3"]
 
 [params.FLOCI_PORT]
 default = "4566"

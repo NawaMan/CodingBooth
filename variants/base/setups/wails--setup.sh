@@ -77,7 +77,7 @@ fi
 
 # ---- resolve the Go module version ----
 MODULE="github.com/wailsapp/wails/v3/cmd/wails3"
-FALLBACK_VERSION="v3.0.0-beta.17"
+FALLBACK_VERSION="v3.0.0-beta.26"
 
 if [[ "$REQ_VER" == "latest" ]]; then
   SPEC="${MODULE}@latest"

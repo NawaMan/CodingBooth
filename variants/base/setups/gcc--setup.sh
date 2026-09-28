@@ -12,7 +12,7 @@ Usage:
   $0 [--version <N>]
 
 Examples:
-  $0                  # default GCC 13
+  $0                  # default GCC 14
   $0 --version 12     # install GCC 12 + G++ 12
 
 Notes:
@@ -30,7 +30,7 @@ USAGE
 HOME=/root
 
 # ---- defaults / args ----
-GCC_DEFAULT=13
+GCC_DEFAULT=14
 REQ_VER=""
 
 while [[ $# -gt 0 ]]; do

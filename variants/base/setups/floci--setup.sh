@@ -47,7 +47,7 @@ case "$dpkgArch" in
 esac
 
 # Known-good pin when the GitHub API is rate-limited.
-FALLBACK_VERSION="0.2.1"
+FALLBACK_VERSION="0.2.3"
 REPO="floci-io/floci-cli"
 ASSET="floci-linux-${ARCH}"
 

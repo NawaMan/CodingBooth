@@ -4,6 +4,27 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Catalog version-pin sweep (release-push step 0b).** Bumped 23 stale defaults/fallbacks/suggests
+  across the catalog, each verified against its real source before landing — not just re-typed from
+  a version-lookup script. Two were caught wrong by that verification and skipped rather than
+  applied: PHP 8.5 isn't actually installable yet (`php8.5-opcache` doesn't exist in `ondrej/php`'s
+  noble PPA), and a naive `apt-cache` probe for `gcc-14` looked absent but the real setup script
+  installs it fine (kept). Bumped: `anythingllm` 1.16.1→1.16.2, `appwrite-cli` 27.3.0→28.0.0,
+  `clang`/LLVM 18→22 (verified via a real install — N-1 against LLVM 23, which just cut),
+  `cloudbeaver`/`dbeaver` 25.3.5→26.2.1, `dblab` 0.50.0→0.51.0, `floci` 0.2.1→0.2.3, `flutter`
+  suggests ladder refreshed, `gcc` default 13→14, `gh` suggests 2.100.0→2.101.0, `gradle` 9.7.1→9.8.0
+  (both the standalone template and the `java/gradle` extension, which carries its own separate
+  pin), `harlequin` suggests 2.13.0→2.15.0, `hoppscotch` 2026.8.0→2026.8.2, `k3d` suggests
+  5.7.5→5.9.0, `lazysql` 0.5.7→0.5.9, `mojo` 1.0.0→1.1.0, `penpot` suggests 2.17.2→2.18.0, `playwright`
+  suggests 1.58.2→1.63.0, `postgrest` 16.3→16.4, `rust` suggests ladder refreshed to the 1.9x series,
+  `swift` 6.3.3→6.4.0, `viewmd` 0.7.3→0.9.0, `wails` v3.0.0-beta.17→v3.0.0-beta.26 (still tracking the
+  newest beta — v3 has no stable release yet). Left alone on purpose: `bluej` (6.x needs a
+  download-URL/arch-scheme fix first, not a version-only bump), `mermaid` (12.0.0 landed only days
+  before this sweep), and `conda`'s Python default (disagrees with the standalone `python` template's
+  deliberate N-1 policy — worth its own decision later). Also noted, not fixed here: `claude-code`'s
+  `--version` argument is a no-op — the script always installs Anthropic's `latest` regardless of
+  what's passed.
+
 - **New `latex` template: author LaTeX in a booth.** `--select latex` installs TeX Live from
   Ubuntu's packages plus `latexmk`, so `latexmk -pdf main.tex` builds a PDF; on an editor variant it
   also adds LaTeX Workshop (build on save, PDF preview, SyncTeX) through an auto-selected

@@ -11,7 +11,7 @@ tags = [
 
 [params.DBLAB_VERSION]
 default = "latest"
-suggests = ["latest", "0.50.0"]
+suggests = ["latest", "0.51.0"]
 
 [segments]
 Boothfile = """

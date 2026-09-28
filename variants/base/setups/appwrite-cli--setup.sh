@@ -14,7 +14,7 @@ Usage:
 
 Examples:
   $0                           # install latest Appwrite CLI
-  $0 --version 27.3.0          # pin a specific CLI version
+  $0 --version 28.0.0          # pin a specific CLI version
 
 Notes:
 - Installs the official Appwrite CLI (appwrite) from appwrite/sdk-for-cli
@@ -50,7 +50,7 @@ if ! command -v curl >/dev/null 2>&1; then
 fi
 
 # Known-good pin when the GitHub API is rate-limited.
-FALLBACK_VERSION="27.3.0"
+FALLBACK_VERSION="28.0.0"
 
 if [[ "$REQ_VER" == "latest" ]]; then
   VERSION=$(curl -fsSL --retry 5 --retry-delay 3 --retry-all-errors \
