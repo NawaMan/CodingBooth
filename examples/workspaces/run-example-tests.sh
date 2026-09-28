@@ -61,6 +61,17 @@ else
     progress_elapsed_var() { printf -v "$1" '%ds' "$(( $3 - $2 ))"; }
 fi
 
+# Rebuilds (cheap when nothing changed — see the header comment there) whichever
+# variant images this run's examples actually need, before any of them start, so
+# a build failure or a stale-image false pass/fail is caught up front instead of
+# looking like a flaky example. Same guard as progress--source.sh above.
+if [[ -f "$SCRIPT_DIR/../../tests/ensure-fresh-image--source.sh" ]]; then
+    source "$SCRIPT_DIR/../../tests/ensure-fresh-image--source.sh"
+else
+    ensure_fresh_image() { :; }
+    example_image_variant() { echo "base"; }
+fi
+
 # Default settings
 MAX_PARALLEL=1
 
@@ -108,6 +119,10 @@ while [[ $# -gt 0 ]]; do
             echo ""
             echo "While examples run, a single self-erasing line reports what is in flight"
             echo "and what its log last said. CB_NO_TEST_PROGRESS=1 turns it off."
+            echo ""
+            echo "Before starting, each needed variant image is rebuilt (cheap when nothing"
+            echo "changed) so tests run against the current source tree. CB_NO_IMAGE_REFRESH=1"
+            echo "skips this."
             echo ""
             echo "Examples:"
             echo "  $0                              # Run all tests"
@@ -313,6 +328,28 @@ echo "Max parallel: $MAX_PARALLEL"
 [ ${#FILTER_TAGS[@]} -gt 0 ] && echo "Filter tags: ${FILTER_TAGS[*]}"
 [ ${#FILTER_EXAMPLES[@]} -gt 0 ] && echo "Filter examples: ${FILTER_EXAMPLES[*]}"
 echo ""
+
+# Every example about to run needs its variant's image to actually match the
+# current source tree, or a build failure/pass reads as a flaky example
+# instead of what it is (see ensure-fresh-image--source.sh). Bash-3.2-safe
+# dedup (no associative arrays): small lists (<=7 variants), so O(n^2) is fine.
+declare -a needed_variants=()
+for example_dir in "${examples[@]}"; do
+    v="$(example_image_variant "$example_dir")"
+    found=false
+    for existing in "${needed_variants[@]}"; do
+        [ "$existing" = "$v" ] && { found=true; break; }
+    done
+    [ "$found" = true ] || needed_variants+=("$v")
+done
+if [ ${#needed_variants[@]} -gt 0 ]; then
+    echo "Checking ${#needed_variants[@]} image variant(s) are up to date: ${needed_variants[*]}"
+    if ! ensure_fresh_image "${needed_variants[@]}"; then
+        echo "Aborting: could not bring a needed image up to date." >&2
+        exit 1
+    fi
+    echo ""
+fi
 
 # Record overall start time
 OVERALL_START=$(date +%s)
