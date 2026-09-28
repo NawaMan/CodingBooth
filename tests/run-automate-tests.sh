@@ -24,6 +24,9 @@ FAILED_LOG="${SCRIPT_DIR}/run-automate-tests.failed-tests.log"
 # common--source.sh (which sets the same thing for a test run on its own).
 export CB_BROWSER=false
 
+# shellcheck disable=SC1091
+[[ -f "${SCRIPT_DIR}/ensure-fresh-image--source.sh" ]] && source "${SCRIPT_DIR}/ensure-fresh-image--source.sh"
+
 # ── Suite definitions ────────────────────────────────────────────────
 
 SUITES=(unit basic dryrun boothfile setups config config-tui complex)
@@ -419,6 +422,17 @@ trap handle_sigint INT
 
 echo -e "${C_BOLD}CodingBooth Tests${C_RESET}"
 echo ""
+
+# BASIC and COMPLEX build real containers across any of the 7 variants,
+# scattered over hundreds of individual test files -- cheaper and more robust
+# to refresh all 7 up front (a no-op in ~1-2s each when nothing changed, see
+# ensure-fresh-image--source.sh) than to grep every file for its --variant.
+if declare -f ensure_fresh_image >/dev/null && { should_run_suite basic || should_run_suite complex; }; then
+    if ! ensure_fresh_image base notebook codeserver desktop-xfce desktop-kde desktop-lxqt desktop-wayland; then
+        echo "Aborting: could not bring a needed image up to date." >&2
+        exit 1
+    fi
+fi
 
 draw_graph
 
