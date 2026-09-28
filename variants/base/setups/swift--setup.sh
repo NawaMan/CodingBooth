@@ -26,7 +26,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-SWIFT_DEFAULT_VER="6.3.3"
+SWIFT_DEFAULT_VER="6.4.0"
 REQ_VER=""
 WITH_LLDB=0
 

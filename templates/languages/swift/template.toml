@@ -9,8 +9,8 @@ tags = [
 ]
 
 [params.SWIFT_VERSION]
-default = "6.3.3"
-suggests = ["6.3.3", "6.0.1", "5.10.1"]
+default = "6.4.0"
+suggests = ["6.4.0", "6.3.3", "6.0.1"]
 
 [segments]
 Boothfile = """

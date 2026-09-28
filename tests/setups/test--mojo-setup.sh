@@ -60,7 +60,7 @@ if [[ "${1:-}" == "-m" && "${2:-}" == "pip" ]]; then
     echo "STUB_PIP $*" >> "$STUB_LOG"
     cat > "$(dirname "$0")/mojo" <<'M'
 #!/bin/sh
-echo "mojo 1.0.0"
+echo "mojo 1.1.0"
 M
     chmod +x "$(dirname "$0")/mojo"
     exit 0
@@ -85,15 +85,15 @@ run_mojo_setup() {
 
 ALL_PASSED=true
 
-# 1. Default pin pip-installs mojo==1.0.0 and links the binary.
+# 1. Default pin pip-installs mojo==1.1.0 and links the binary.
 out=$(run_mojo_setup "") && rc=0 || rc=$?
 if [[ $rc -eq 0 ]] \
-    && grep -q "STUB_PIP install mojo==1.0.0" "$STUB/log" \
+    && grep -q "STUB_PIP install mojo==1.1.0" "$STUB/log" \
     && grep -q "STUB_APT install" "$STUB/log" \
     && [[ -L "$STUB/bindir/mojo" ]]; then
-    print_test_result "true" "$0" "1" "default installs mojo==1.0.0 and links the binary"
+    print_test_result "true" "$0" "1" "default installs mojo==1.1.0 and links the binary"
 else
-    print_test_result "false" "$0" "1" "default installs mojo==1.0.0 and links the binary"
+    print_test_result "false" "$0" "1" "default installs mojo==1.1.0 and links the binary"
     echo "  rc=$rc"
     echo "  stub log:"; cat "$STUB/log" | sed 's/^/    /'
     echo "  output:"; echo "$out" | sed 's/^/    /'
@@ -145,7 +145,7 @@ if [[ "${1:-}" == "-m" && "${2:-}" == "pip" ]]; then
     echo "STUB_PIP $*" >> "$STUB_LOG"
     cat > "$(dirname "$0")/mojo" <<'M'
 #!/bin/sh
-echo "mojo 1.0.0"
+echo "mojo 1.1.0"
 M
     chmod +x "$(dirname "$0")/mojo"
     exit 0

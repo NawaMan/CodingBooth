@@ -23,7 +23,7 @@ suggests = ["chromium", "chromium,firefox", "chromium,firefox,webkit", "all"]
 # Default `latest` floats to the newest release at build time; pin it for
 # reproducible builds — CLI form: `--select playwright:chromium,1.58.2`.
 default = "latest"
-suggests = ["latest", "1.58.2"]
+suggests = ["latest", "1.63.0"]
 
 [segments]
 "Boothfile--60" = """

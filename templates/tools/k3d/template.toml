@@ -11,7 +11,7 @@ tags = [
 
 [params.K3D_VERSION]
 default = "latest"
-suggests = ["latest", "5.7.5", "5.7.4"]
+suggests = ["latest", "5.9.0", "5.7.5"]
 
 [segments]
 Boothfile = """

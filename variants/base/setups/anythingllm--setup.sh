@@ -52,11 +52,11 @@ fi
 HOME=/root
 
 # ---- defaults / args ----
-VERSION="1.16.1"
+VERSION="1.16.2"
 ANYTHINGLLM_PORT="20200"
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --version) shift; VERSION="${1:-1.16.1}"; shift ;;
+    --version) shift; VERSION="${1:-1.16.2}"; shift ;;
     --port)    shift; ANYTHINGLLM_PORT="${1:-20200}"; shift ;;
     -h|--help) usage; exit 0 ;;
     *)
