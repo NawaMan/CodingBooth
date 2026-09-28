@@ -31,6 +31,14 @@ This file contains a list of changes for each released version.
   before, now with the lines that blocked it. `.booth/.generated` also records the template
   catalog version (`templates=…`) so edits are compared against the catalog that wrote the
   files. See [booth config — Edits that can be read back](BOOTH_CONFIG.md#edits-that-can-be-read-back).
+- **Example workspaces all open cleanly in `booth config`.** Examples whose files had drifted
+  from what `booth config` generates were regenerated from their recorded selection — most had
+  only been touched by a release's `APT_SNAPSHOT` bump. `appwrite-example` now selects its
+  offset port as `+expose:+-1920`, `elixir-example` its OTP 25 pin as `erlang:25`, and
+  `flutter-example` records its forced `--platform`. `haskell-example` drops its hand-written
+  ghcup/hswrap workarounds (the `haskell` setup fixed both long ago) and `cache-example` its
+  empty hand-written Boothfile. `all-java-example` is removed: its six JDKs have no catalog
+  form. `playwright-polyglot-example` remains hand-written, by design.
 - **Reconfiguring a booth with a hand-written Boothfile keeps its configuration.** The
   recorded `# Configured by:` header is now read from `config.toml` when the Boothfile has
   none, instead of reconfiguring from an empty selection — which opened the TUI blank and let

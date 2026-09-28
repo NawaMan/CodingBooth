@@ -106,9 +106,8 @@ for readability — `booth example list` itself prints a flat alphabetical list.
 
 ### Languages & runtimes
 
-`all-java` · `bun` · `clang` · `csharp` · `deno` · `elixir` · `fsharp` · `go` · `haskell` · `java` ·
-`js` · `kotlin` · `nodejs` · `octave` · `php` · `python` · `rlang` · `ruby` · `rust` · `zig` ·
-`zig-snake`
+`bun` · `clang` · `csharp` · `deno` · `elixir` · `fsharp` · `go` · `haskell` · `java` · `js` ·
+`kotlin` · `nodejs` · `octave` · `php` · `python` · `rlang` · `ruby` · `rust` · `zig` · `zig-snake`
 
 ### Education
 

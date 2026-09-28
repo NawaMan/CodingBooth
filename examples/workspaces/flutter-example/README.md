@@ -103,5 +103,9 @@ and not others.
 ## Note on architecture
 
 Google publishes the Flutter SDK for linux x86_64 only — across their whole release manifest there
-has never been an arm64 stable Linux build. On arm64 the booth still starts, but the setup warns
-and skips, and this example cannot build in it.
+has never been an arm64 stable Linux build. Left to the host's architecture, an arm64 booth would
+start but the setup would warn and skip the whole install.
+
+So this booth forces the image to `linux/amd64` (`common-args` in `.booth/config.toml`), which runs
+under emulation on an arm64 host — the same x86_64-only-SDK situation `android-example` handles the
+same way. Set `CB_FLUTTER_PLATFORM` to override it, e.g. for an arm64 CI runner.

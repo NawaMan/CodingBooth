@@ -16,7 +16,7 @@ setup postgresql --version ${PG_VERSION}
 setup python ${PYTHON_VERSION}
 setup sales-explorer-icon
 setup dbeaver ${DBEAVER_VERSION}
-setup notebook ${NOTEBOOK_PORT}
 install pip ${PIP_PKGS}
-setup nodejs-code-extension
 setup python-code-extension
+setup notebook ${NOTEBOOK_PORT}
+setup nodejs-code-extension

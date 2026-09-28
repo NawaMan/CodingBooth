@@ -46,9 +46,9 @@ Output:
 ```
 Available examples (30):
 
-  all-java        aws             bun             conda
-  demo            deno            dind            elixir
-  empty           firebase        gcloud          go
+  aws             bun             conda           demo
+  deno            dind            elixir          empty
+  firebase        gcloud          go              ...
   ...
 ```
 
@@ -124,7 +124,7 @@ Examples span a wide range of languages, tools, and configurations:
 
 | Category | Examples |
 |----------|----------|
-| Languages | go, python, java, all-java, kotlin, rust, nodejs, bun, deno, elixir, haskell, php, ruby, rlang, zig, octave |
+| Languages | go, python, java, kotlin, rust, nodejs, bun, deno, elixir, haskell, php, ruby, rlang, zig, octave |
 | Cloud & CI | affine, appwrite, aws, floci, gcloud, firebase, dind, kind, kind-app |
 | Tools | homebrew, neovim, server, jetbrain |
 | Package managers | pip, npm, conda |

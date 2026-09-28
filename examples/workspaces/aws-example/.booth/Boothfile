@@ -12,6 +12,6 @@ setup aws-cli --version ${AWS_CLI_VERSION}
 setup claude-code ${CLAUDE_CODE_VERSION}
 setup python ${PYTHON_VERSION}
 setup antigravity
-setup notebook ${NOTEBOOK_PORT}
 setup python-code-extension
+setup notebook ${NOTEBOOK_PORT}
 setup bash-nb-kernel
