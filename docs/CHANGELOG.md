@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **4 examples' `APT_SNAPSHOT` bumped back even with the base image.** `apt-example`,
+  `clang-example`, `systemlib-example`, and `turtle-example` were pinned to `20260918`; the base
+  image is now built at `20260928` (nothing sets `CB_APT_SNAPSHOT`, so a local rebuild defaults to
+  today). An example's pin must never sit before the base's — a package with an exact-version
+  dependency the base has already upgraded can't be satisfied from an older archive snapshot, and
+  that's exactly what broke `systemlib-example` (`libcurl4-openssl-dev` wanting a `libcurl4t64` the
+  base no longer had). Bumped through `booth config --overwrite` (never by hand — that would break
+  the `.generated` fingerprint), so only the snapshot line changed in each; also bumped
+  `apt-example`'s own `inBooth-test004-apt-snapshot` assertion, which hardcodes the value. All four
+  re-verified end to end after the bump.
+
 - **7 examples pass `--dind-allowed`/`--privileged-allowed` in their on-host tests.** The host-escape
   consent gate (`dind = true` or a writable sensitive mount asks `[y/N]` on `/dev/tty` before
   starting) writes straight to the controlling terminal, not to stdout/stderr — deliberately, so it
