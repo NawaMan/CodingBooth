@@ -65,6 +65,23 @@ config $prj --no-tui --select go
 says "Refusing to overwrite hand-written files" ; check $? "explains why it refused"
 cmp -s "$boothfile" "$original" ; check $? "hand-written Boothfile left byte-identical"
 
+# --dryrun answers "would this run succeed?", so it must refuse just the same —
+# otherwise a booth config cannot open looks fine under a dryrun.
+config $prj --no-tui --dryrun --select go
+[[ $code -ne 0 ]] ; check $? "--dryrun refuses a hand-written Boothfile too"
+says "Refusing to overwrite hand-written files" ; check $? "--dryrun explains why it refused"
+
+config $prj --no-tui --dryrun --overwrite --select go
+[[ $code -eq 0 ]] ; check $? "--dryrun --overwrite proceeds"
+says "would be replaced and kept as" ; check $? "--dryrun --overwrite says the file would be backed up"
+
+config $prj --no-tui --dryrun --beside --select go
+[[ $code -eq 0 ]] ; check $? "--dryrun --beside proceeds"
+says "Boothfile.new" ; check $? "--dryrun --beside names the .new it would write"
+
+cmp -s "$boothfile" "$original" ; check $? "no dryrun touched the hand-written Boothfile"
+[[ ! -e "$boothfile.bak" && ! -e "$boothfile.new" ]] ; check $? "no dryrun wrote a .bak or .new"
+
 # ---------------------------------------------------------------------------
 # 2) --overwrite is the explicit way through, and keeps a backup.
 # ---------------------------------------------------------------------------
