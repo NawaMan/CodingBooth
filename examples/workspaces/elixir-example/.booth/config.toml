@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --variant codeserver --select elixir+vscode-ext+repl-history/codeserver/claude-code+auto-accept+credential+settings-cache
+# Configured by: booth config --no-tui --overwrite --variant codeserver --select erlang:25~vscode-ext/elixir:1.18.4+vscode-ext+repl-history/codeserver/claude-code+auto-accept+credential+settings-cache
 
 variant = "codeserver"
 

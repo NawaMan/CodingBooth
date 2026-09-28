@@ -1,9 +1,7 @@
-# Hand-written: pairs with the Boothfile's custom `run` workarounds, which no catalog selection can emit.
+# Configured by: booth config --no-tui --overwrite --select haskell/claude-code
 
 
 run-args = [
-    "-e", "PYTHONDONTWRITEBYTECODE=1",
-    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
     "-v", "~/.claude.json:/etc/cb-home-seed/.claude.json:ro",
-    "-v", "~/.claude:/etc/cb-home-seed/.claude:ro"
+    "-v", "~/.claude/.credentials.json:/etc/cb-home/.claude/.credentials.json:ro"
 ]

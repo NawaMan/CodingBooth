@@ -24,10 +24,10 @@ Output:
 ```
 Available examples (30):
 
-  all-java        aws             bun             conda
-  demo            deno            dind            elixir
-  empty           firebase        gcloud          go
-  firewall        ...
+  aws             bun             conda           demo
+  deno            dind            elixir          empty
+  firebase        firewall        gcloud          go
+  ...
   ...
 ```
 

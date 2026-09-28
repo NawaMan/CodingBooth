@@ -1,10 +1,11 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select appwrite-server+autostart+expose
+# Configured by: booth config --no-tui --overwrite --select appwrite-server+autostart+expose:+-1920
 
 env APT_SNAPSHOT=20260907T000000Z
 
 arg APPWRITE_CLI_VERSION=latest
 arg APPWRITE_DATA=clean
+arg APPWRITE_HOST_PORT=+-1920
 arg APPWRITE_HTTPS_PORT=8443
 arg APPWRITE_PORT=8080
 arg APPWRITE_VERSION=1.9.6

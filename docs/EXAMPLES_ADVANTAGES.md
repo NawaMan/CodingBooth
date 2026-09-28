@@ -151,10 +151,6 @@ the common ground that makes the comparison fair (identical OS, identical depend
   C#/.NET, and Go, all bundled in one booth driving the same browser. Pick a language and compare the
   binding side-by-side; the four official bindings are all pinned to the same Playwright version so
   they share one pre-baked Chromium instead of each downloading its own.
-- **all-java-example** — seven JDKs (8, 9, 17, 21, 23, 24, 25) plus Maven/Gradle/jbang and per-JDK
-  IJava kernels in one container. `jenv local 21` switches the active JDK per project, so you can
-  build and test the *same* code across Java versions to check compatibility — impractical to
-  co-install on a host.
 - **turtle-example** — the *same* square, star, and tree in Logo (the Education `logo` template,
   a JSLogo editor like Scratch/Excalidraw) and in Python turtle, in one XFCE booth with Thonny.
   Compare the two languages on identical drawings instead of installing Logo or fighting
@@ -245,7 +241,6 @@ Each ships a Jupyter kernel whose installation is notoriously painful:
 
 | Example | Primary advantage |
 |---|---|
-| all-java-example | Try / compare side-by-side (7 JDKs) |
 | affine-example | Batteries-included (self-hosted AFFiNE) |
 | android-example | Precise version compatibility |
 | angular-example | Host stays clean |
