@@ -297,6 +297,14 @@ BuildVariant() {
     snapshot_arg+=( --build-arg "APT_SNAPSHOT=${APT_SNAPSHOT}" )
   fi
 
+  # A label, unlike a build-arg, is always accepted regardless of what the
+  # Dockerfile declares, so every variant carries it -- even one that took no
+  # apt-get of its own this build still inherited a base pinned to this day.
+  # This is what lets anything ask an image what it was actually built
+  # against (`docker inspect`/`docker buildx imagetools inspect`) instead of
+  # re-deriving or assuming a snapshot date. See tests/check-apt-snapshot--source.sh.
+  local label_arg=( --label "com.codingbooth.apt-snapshot=${APT_SNAPSHOT}" )
+
   if [[ "${do_push}" == "true" ]]; then
     Log "[$variant]: Setting up buildx (driver: docker-container)"
     docker buildx create --use --name ci_builder >/dev/null 2>&1 || docker buildx use ci_builder
@@ -314,6 +322,7 @@ BuildVariant() {
       docker buildx build \
         ${no_cache_arg[@]+"${no_cache_arg[@]}"} \
         ${snapshot_arg[@]+"${snapshot_arg[@]}"} \
+        "${label_arg[@]}" \
         --platform "${platform}" \
         -f "${docker_file}" \
         --build-arg "BOOTH_VERSION_TAG=${version}" \
@@ -345,6 +354,7 @@ BuildVariant() {
     docker buildx build \
       ${no_cache_arg[@]+"${no_cache_arg[@]}"} \
       ${snapshot_arg[@]+"${snapshot_arg[@]}"} \
+      "${label_arg[@]}" \
       --platform "${PLATFORMS}" \
       -f "${docker_file}" \
       --build-arg "BOOTH_VERSION_TAG=${version}" \
@@ -371,6 +381,7 @@ BuildVariant() {
     docker build \
       ${no_cache_arg[@]+"${no_cache_arg[@]}"} \
       ${snapshot_arg[@]+"${snapshot_arg[@]}"} \
+      "${label_arg[@]}" \
       -f "${docker_file}" \
       --build-arg "BOOTH_VERSION_TAG=${version}" \
       "${tags_arg[@]}" \
