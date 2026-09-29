@@ -83,7 +83,14 @@ if docker exec "$CONTAINER_NAME" pgrep -f i3-config-wizard >/dev/null 2>&1; then
 else
     pass "No i3 first-run wizard"
 fi
-if docker exec "$CONTAINER_NAME" grep -q '^bindsym Control+Mod1+h focus left$' /etc/xdg/i3/config.d/ctrl-alt.conf; then
+
+# Extra leading slash: on Windows this whole command runs through Git Bash, whose
+# MSYS2 layer auto-converts any bare argument that looks like an absolute POSIX
+# path into a Windows one (e.g. C:/Program Files/Git/etc/...) before docker exec
+# ever sees it -- even though this path is meant for the container's filesystem,
+# not the host's. A leading `//` is MSYS2's own escape for "leave this alone";
+# Linux treats //path and /path identically, so it's a no-op there.
+if docker exec "$CONTAINER_NAME" grep -q '^bindsym Control+Mod1+h focus left$' //etc/xdg/i3/config.d/ctrl-alt.conf; then
     pass "Ctrl+Alt twins installed"
 else
     fail "Ctrl+Alt twins missing"
