@@ -36,6 +36,11 @@ jobs:
   # ---------------------------------------------------------
   guard-no-rc:
     runs-on: ubuntu-24.04
+    # Only this job writes to the repo (the apt-snapshot.txt pin below); every
+    # other job in this workflow only needs to read, so only this one is
+    # widened from the repo's default read-only GITHUB_TOKEN.
+    permissions:
+      contents: write
     outputs:
       apt_snapshot: ${{ steps.snapshot.outputs.apt_snapshot }}
     steps:
@@ -58,9 +63,32 @@ jobs:
       # `date -u` at invocation time. One release straddling UTC midnight would
       # then pin different architectures — and base vs. the variants built on
       # top of it — to different apt snapshots.
-      - name: Compute this release's apt snapshot id
+      #
+      # Pinned into apt-snapshot.txt and committed, not just kept in this job's
+      # output: a value that only ever lived in-memory for one CI run could not
+      # be reproduced later. This way, checking out `main` at or after this
+      # commit and rebuilding locally (no CB_APT_SNAPSHOT override needed, once
+      # docker-build.sh reads this file as its default) gets the exact archive
+      # this release was actually built against, not "whatever today is."
+      # Every release moves this pin exactly once; nothing else writes to it,
+      # so a run that finds nothing to commit (re-running the same day, or the
+      # pin already matches) is silent rather than an empty no-op commit.
+      - name: Pin this release's apt snapshot
         id: snapshot
-        run: echo "apt_snapshot=$(date -u +%Y%m%d)T000000Z" >> "$GITHUB_OUTPUT"
+        run: |
+          set -euo pipefail
+          NEW="$(date -u +%Y%m%d)T000000Z"
+          echo "$NEW" > apt-snapshot.txt
+          if git diff --quiet -- apt-snapshot.txt; then
+            echo "apt-snapshot.txt already pinned to $NEW — nothing to commit."
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add apt-snapshot.txt
+            git commit -m "Pin apt snapshot to $NEW for this release"
+            git push origin HEAD:main
+          fi
+          echo "apt_snapshot=$NEW" >> "$GITHUB_OUTPUT"
 
   # ---------------------------------------------------------
   # 1. Build the base container natively, one arch per runner
