@@ -19,8 +19,15 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 testname=$(basename "$0" .sh)
-prj="$(pwd)/prj--${testname}"
-log="$(pwd)/log--${testname}.log"
+
+# Scratch, not the repo tree — see tests/config/test-helpers--source.sh for
+# why (same fix, same reasoning: a fixed out-of-tree base instead of
+# "$(pwd)/prj--*", which littered the checkout whenever a test ran with a
+# different cwd than tests/config-tui/).
+_scratch_base="${TMPDIR:-/tmp}/codingbooth-config-tui-tests"
+mkdir -p "$_scratch_base"
+prj="${_scratch_base}/prj--${testname}"
+log="${_scratch_base}/log--${testname}.log"
 
 TEST_COUNT=0
 PASS_COUNT=0

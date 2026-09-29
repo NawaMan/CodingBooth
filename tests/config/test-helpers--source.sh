@@ -10,8 +10,18 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 testname=$(basename "$0" .sh)
-prj="$(pwd)/prj--${testname}"
-log="$(pwd)/log--${testname}.log"
+
+# Scratch, not the repo tree: these used to be "$(pwd)/prj--*"/"log--*", which
+# put them wherever the test happened to be invoked from -- normally
+# tests/config/, but from the repo root when a test is run (or re-run by a
+# suite) with a different cwd, littering the checkout itself. A fixed
+# out-of-tree base means the same name every time (still easy to find a
+# specific failing test's leftovers by hand) with no dependence on cwd, and
+# nothing to gitignore.
+_scratch_base="${TMPDIR:-/tmp}/codingbooth-config-tests"
+mkdir -p "$_scratch_base"
+prj="${_scratch_base}/prj--${testname}"
+log="${_scratch_base}/log--${testname}.log"
 
 TEST_COUNT=0
 PASS_COUNT=0
@@ -31,19 +41,18 @@ for arg in "$@"; do case "$arg" in --verbose) VERBOSE=true ;; esac ;done
 BUILD_ARGS=(--silence-build)
 if [[ "$VERBOSE" == "true" ]]; then BUILD_ARGS=(); fi
 
+# Resolved once, from this file's own fixed location -- not by walking up
+# from $(pwd), which broke the moment $prj moved out of the repo tree (see
+# above): every call to booth() happens from inside $prj, after `cd $prj`.
+_repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
 function booth() {
-    local dir
-    dir="$(pwd)"
-    while [[ "$dir" != "/" ]]; do
-        if [[ -d "$dir/templates" ]]; then
-            CB_TEMPLATES_PATH="$dir/templates" \
-            "$dir/codingbooth" "$@"
-            return
-        fi
-        dir="$(dirname "$dir")"
-    done
-    echo "Error: templates directory not found" >&2
-    return 1
+    if [[ ! -d "$_repo_root/templates" || ! -x "$_repo_root/codingbooth" ]]; then
+        echo "Error: templates directory or codingbooth binary not found under $_repo_root" >&2
+        return 1
+    fi
+    CB_TEMPLATES_PATH="$_repo_root/templates" \
+    "$_repo_root/codingbooth" "$@"
 }
 
 function run() {
