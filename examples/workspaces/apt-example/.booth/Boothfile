@@ -1,7 +1,7 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --select apt-pkg:jq,tree,ripgrep
 
-env APT_SNAPSHOT=20260928T000000Z
+env APT_SNAPSHOT=20260930T000000Z
 
 arg APT_PKGS=jq,ripgrep,tree
 
