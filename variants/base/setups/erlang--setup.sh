@@ -12,18 +12,18 @@ Usage:
 
 Examples:
   $0                       # install default (OTP 28)
-  $0 26                    # pin OTP 26
-  $0 --otp-version 27      # pin OTP 27
+  $0 26                    # pin OTP 26 (latest 26.x)
+  $0 --otp-version 27      # pin OTP 27 (latest 27.x)
+  $0 --otp-version 27.3.4  # pin an exact OTP release
   $0 --no-rebar3           # skip rebar3
 
-Supported OTP versions: 25, 26, 27, 28
-  - 25: default Ubuntu repo
-  - 26: ppa:rabbitmq/rabbitmq-erlang-26
-  - 27: ppa:rabbitmq/rabbitmq-erlang-27
-  - 28: ppa:rabbitmq/rabbitmq-erlang-28
+Supported OTP versions: 26, 27, 28
 
 Notes:
-- Installs Erlang/OTP via apt (RabbitMQ team PPAs for OTP 26+)
+- Installs a prebuilt Erlang/OTP from builds.hex.pm (the builds Hex, Elixir
+  and setup-beam use), built for this Ubuntu release, SHA256-checked against
+  the checksum Hex publishes next to it
+- Installs to /opt/erlang/OTP-<ver>, linked at /opt/erlang/current
 - Binaries available system-wide (erl, erlc, escript, etc.)
 - rebar3 installed by default from GitHub releases
 USAGE
@@ -34,11 +34,10 @@ USAGE
 
 # --- Defaults ---
 OTP_DEFAULT_VERSION="28"
-OTP_VERSION_INPUT="${1:-}"
+OTP_VERSION_INPUT=""
 WITH_REBAR3=1
 
 # --- Parse args ---
-if [[ "${OTP_VERSION_INPUT}" =~ ^- ]]; then OTP_VERSION_INPUT=""; fi
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --otp-version) shift; OTP_VERSION_INPUT="${1:-}"; shift ;;
@@ -54,63 +53,88 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
-OTP_VERSION="${OTP_VERSION_INPUT:-$OTP_DEFAULT_VERSION}"
 
-# Strip to major version (e.g., 27.0.1 -> 27, 26.2.5 -> 26)
-OTP_VERSION="${OTP_VERSION%%.*}"
+OTP_REQUESTED="${OTP_VERSION_INPUT:-$OTP_DEFAULT_VERSION}"
+OTP_REQUESTED="${OTP_REQUESTED#OTP-}"
+# Major version (e.g., 27.0.1 -> 27, 26.2.5 -> 26)
+OTP_VERSION="${OTP_REQUESTED%%.*}"
 
 # Validate
 case "$OTP_VERSION" in
-  25|26|27|28) ;;
-  *) echo "❌ Unsupported OTP version: ${OTP_VERSION} (supported: 25, 26, 27, 28)" >&2; usage; exit 2 ;;
+  26|27|28) ;;
+  *) echo "❌ Unsupported OTP version: ${OTP_REQUESTED} (supported: 26, 27, 28)" >&2; usage; exit 2 ;;
 esac
 
+# --- Platform ---
+. /etc/os-release
+ARCH="$(dpkg --print-architecture)"
+case "$ARCH" in
+  amd64|arm64) ;;
+  *) echo "❌ Unsupported architecture: ${ARCH} (supported: amd64, arm64)" >&2; exit 1 ;;
+esac
+BUILDS_URL="https://builds.hex.pm/builds/otp/${ARCH}/ubuntu-${VERSION_ID}"
+
 export DEBIAN_FRONTEND=noninteractive
+# Runtime libraries the prebuilt OTP links against (crypto/ssl need libssl,
+# the shell needs ncurses' libtinfo).
+apt--install.sh ca-certificates curl libssl-dev libncurses6 zlib1g
 
-# --- Add PPA if needed (OTP 26+) ---
-echo "📦 Installing Erlang/OTP ${OTP_VERSION} via apt ..."
-
-if [[ "$OTP_VERSION" -ge 26 ]]; then
-  apt-get update
-  apt-get install -y --no-install-recommends software-properties-common
-  add-apt-repository -y "ppa:rabbitmq/rabbitmq-erlang-${OTP_VERSION}"
+# --- Resolve the release ---
+# builds.txt: one line per build, "OTP-<ver> <git-sha> <date> <sha256>".
+BUILDS_TXT="$(curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${BUILDS_URL}/builds.txt")" || {
+  echo "❌ Could not fetch ${BUILDS_URL}/builds.txt — no Hex OTP builds for Ubuntu ${VERSION_ID} ${ARCH}?" >&2
+  exit 1
+}
+if [[ "$OTP_REQUESTED" == "$OTP_VERSION" ]]; then
+  # Major only: the newest release of that major.
+  OTP_RELEASE="$(awk '{print $1}' <<<"$BUILDS_TXT" | grep -E "^OTP-${OTP_VERSION}(\.[0-9]+)*$" | sed 's/^OTP-//' | sort -V | tail -1)"
+else
+  OTP_RELEASE="$(awk '{print $1}' <<<"$BUILDS_TXT" | grep -xF "OTP-${OTP_REQUESTED}" | sed 's/^OTP-//' | head -1)"
 fi
-
-# --- Install erlang ---
-apt-get update
-apt-get install -y --no-install-recommends \
-  erlang-base erlang-dev erlang-crypto erlang-ssl \
-  erlang-public-key erlang-asn1 erlang-inets \
-  erlang-mnesia erlang-runtime-tools erlang-syntax-tools \
-  erlang-tools erlang-parsetools erlang-eunit \
-  erlang-xmerl erlang-os-mon erlang-snmp \
-  erlang-eldap erlang-ftp erlang-tftp
-
-rm -rf /var/lib/apt/lists/*
-
-# --- verify the requested version actually got installed ---
-# On arm64, ppa:rabbitmq/rabbitmq-erlang-26/27/28 publishes only a handful of
-# arch-independent metapackages (erlang, erlang-nox, ...) — none of the
-# granular erlang-base/erlang-dev/... packages installed above by name. apt
-# then silently satisfies those names from Ubuntu's own default archive,
-# which only carries OTP 25 on that architecture, so a request for 26/27/28
-# quietly becomes 25 with no error from apt at all — until something
-# downstream (e.g. elixir--setup.sh picking a release asset for "the
-# installed OTP") fails confusingly, far away from the actual cause. Check
-# at the source instead of letting that happen.
-INSTALLED_OTP_MAJOR=$(erl -noshell -eval 'io:format("~s~n",[erlang:system_info(otp_release)]), halt().' 2>/dev/null || echo "")
-if [[ -z "$INSTALLED_OTP_MAJOR" ]]; then
-  echo "❌ Erlang/OTP did not install correctly (erl not runnable)." >&2
+if [[ -z "$OTP_RELEASE" ]]; then
+  echo "❌ OTP ${OTP_REQUESTED} is not published for Ubuntu ${VERSION_ID} ${ARCH} at ${BUILDS_URL}" >&2
   exit 1
 fi
+OTP_SHA256="$(awk -v r="OTP-${OTP_RELEASE}" '$1 == r {print $4; exit}' <<<"$BUILDS_TXT")"
+
+# --- Download, verify, install ---
+echo "📦 Installing Erlang/OTP ${OTP_RELEASE} (${ARCH}, Ubuntu ${VERSION_ID}) from builds.hex.pm ..."
+INSTALL_PARENT=/opt/erlang
+TARGET_DIR="${INSTALL_PARENT}/OTP-${OTP_RELEASE}"
+TMP_TGZ="$(mktemp --suffix=.tar.gz)"
+trap 'rm -f "$TMP_TGZ"' EXIT
+curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL "${BUILDS_URL}/OTP-${OTP_RELEASE}.tar.gz" -o "$TMP_TGZ"
+if [[ -n "$OTP_SHA256" ]]; then
+  echo "${OTP_SHA256}  ${TMP_TGZ}" | sha256sum -c - >/dev/null || {
+    echo "❌ SHA256 mismatch for OTP-${OTP_RELEASE}.tar.gz" >&2
+    exit 1
+  }
+else
+  echo "⚠️  builds.txt lists no checksum for OTP-${OTP_RELEASE}; installing unverified." >&2
+fi
+
+rm -rf "$TARGET_DIR"
+mkdir -p "$INSTALL_PARENT"
+tar -xzf "$TMP_TGZ" -C "$INSTALL_PARENT"
+[[ -x "${TARGET_DIR}/Install" ]] || { echo "❌ Unexpected archive layout (no ${TARGET_DIR}/Install)" >&2; exit 1; }
+# The tarball is relocatable: Install rewrites its launch scripts for this path.
+"${TARGET_DIR}/Install" -minimal "$TARGET_DIR" >/dev/null
+ln -sfn "$TARGET_DIR" "${INSTALL_PARENT}/current"
+
+for b in erl erlc escript ct_run dialyzer typer epmd run_erl to_erl; do
+  if [[ -e "${INSTALL_PARENT}/current/bin/${b}" ]]; then
+    ln -sfn "${INSTALL_PARENT}/current/bin/${b}" "/usr/local/bin/${b}"
+  fi
+done
+
+# --- verify the requested version actually got installed ---
+INSTALLED_OTP_MAJOR=$(erl -noshell -eval 'io:format("~s~n",[erlang:system_info(otp_release)]), halt().' 2>/dev/null || echo "")
 if [[ "$INSTALLED_OTP_MAJOR" != "$OTP_VERSION" ]]; then
-  ARCH="$(dpkg --print-architecture 2>/dev/null || uname -m)"
-  echo "❌ Requested OTP ${OTP_VERSION} but apt installed OTP ${INSTALLED_OTP_MAJOR} instead." >&2
-  echo "   On ${ARCH}, ppa:rabbitmq/rabbitmq-erlang-${OTP_VERSION} does not publish the" >&2
-  echo "   individual erlang-base/erlang-dev/... packages this script installs by name" >&2
-  echo "   — only a few arch-independent metapackages. apt silently fell back to" >&2
-  echo "   Ubuntu's default archive, which only has OTP 25 on this architecture." >&2
-  echo "   Use --otp-version 25, or build/run this on an amd64 host." >&2
+  echo "❌ Erlang/OTP did not install correctly (expected OTP ${OTP_VERSION}, erl reports '${INSTALLED_OTP_MAJOR}')." >&2
+  exit 1
+fi
+if ! erl -noshell -eval 'ok = crypto:start(), halt().' >/dev/null 2>&1; then
+  echo "❌ Erlang/OTP ${OTP_RELEASE} installed, but its crypto application cannot load (libssl mismatch?)." >&2
   exit 1
 fi
 
@@ -123,19 +147,15 @@ fi
 
 # --- env for login shells ---
 cat >/etc/profile.d/99-erlang--profile.sh <<'EOF'
-# Erlang/OTP via apt
-export PATH="/usr/lib/erlang/bin:$PATH"
+# Erlang/OTP from builds.hex.pm
+export PATH="/opt/erlang/current/bin:$PATH"
 EOF
 chmod 0644 /etc/profile.d/99-erlang--profile.sh
 
-# --- Summary ---
-INSTALLED_OTP=$(erl -noshell -eval 'io:format("~s~n",[erlang:system_info(otp_release)]), halt().' 2>/dev/null || echo "unknown")
-echo ""
-echo "✅ Erlang/OTP ${INSTALLED_OTP} installed."
-echo -n "   erl:      "; erl -eval 'erlang:display(erlang:system_info(otp_release)), halt().' -noshell 2>/dev/null || true
-echo -n "   erlc:     "; erlc -v 2>/dev/null || true
+echo "✅ Erlang/OTP ${OTP_RELEASE} installed"
+echo -n "   erl → "; erl -noshell -eval 'io:format("OTP ~s (erts ~s)~n",[erlang:system_info(otp_release), erlang:system_info(version)]), halt().'
 if [[ "$WITH_REBAR3" -eq 1 ]]; then
-  echo -n "   rebar3:   "; rebar3 version 2>/dev/null || true
+  echo -n "   rebar3 → "; rebar3 version 2>/dev/null || echo "not found"
 fi
 
 cat <<'EON'

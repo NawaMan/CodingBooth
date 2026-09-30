@@ -5,7 +5,7 @@ you're an AI agent, read `AGENT.md` in this same directory instead — it's writ
 
 The "CodingBooth Help" button in the floating **Booth** panel (where present) covers the same
 ground as this file, in a General tab and a Clipboard tab — plus a tab for anything a setup adds,
-such as **i3 Shortcuts (Tiling)**, **Bismuth Shortcuts (Tiling)** or **sway Shortcuts (Tiling)** when
+such as **i3 Shortcuts (Tiling)**, **Krohnkite Shortcuts (Tiling)** or **sway Shortcuts (Tiling)** when
 window tiling is installed. Help opens as a floating
 window rather than a blocking dialog: the booth stays usable behind it, and you can drag it by its
 title and resize it from its bottom-right corner.
@@ -38,14 +38,16 @@ with plain Alt in Chrome while **Full screen** is on.
 
 ---
 
-## Window tiling on KDE (Bismuth, desktop booths)
+## Window tiling on KDE (Krohnkite, desktop booths)
 
-Booths with the `bismuth` template on KDE Plasma tile windows with Bismuth, a KWin script — KWin,
-the panel and the desktop stay as they are. Run `start-bismuth` (or the **Tiling for KDE (Bismuth)**
-desktop icon) to tile, and `stop-bismuth` (or **Leave Tiling (Bismuth)** in the menu) to stop; the
-choice is remembered. The shortcuts use **Ctrl+Alt** and are listed in Help → **Bismuth Shortcuts
-(Tiling)**; change them in System Settings → Shortcuts → Bismuth, and layouts and gaps in System
-Settings → Window Management → Window Tiling.
+Booths with the `krohnkite` template on KDE Plasma tile windows with Krohnkite, a KWin script — KWin,
+the panel and the desktop stay as they are. Run `start-krohnkite` (or the **Tiling for KDE
+(Krohnkite)** desktop icon) to tile, and `stop-krohnkite` (or **Leave Tiling (Krohnkite)** in the
+menu) to stop; the choice is remembered. The shortcuts use **Ctrl+Alt** and are listed in Help →
+**Krohnkite Shortcuts (Tiling)**; change them in System Settings → Keyboard → Shortcuts → KWin
+(search "Krohnkite"), and layouts and gaps in System Settings → Window Management → KWin Scripts →
+Krohnkite. Krohnkite replaced Bismuth, which does not run on Plasma 6; an old `setup bismuth` line
+still works and installs Krohnkite.
 
 ---
 

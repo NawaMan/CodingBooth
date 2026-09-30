@@ -4,17 +4,18 @@
 # you may not use this file except in compliance with the License.
 
 # ghostty--setup.sh — installs the Ghostty terminal emulator from a pinned,
-# checksum-verified Ubuntu 24.04 build.
+# checksum-verified build for this Ubuntu release (26.04 or 24.04).
 #
 # Why not apt / upstream: Ghostty publishes no Linux binaries of its own, and
-# Ubuntu only packages it from 25.10 on — noble has nothing. The community
-# build at https://github.com/mkasberg/ghostty-ubuntu publishes one .deb per
-# Ubuntu release and arch, built from the tagged upstream source; that is what
-# this installs, pinned below with the SHA256 of each noble .deb.
+# Ubuntu only packages it from 25.10 on — noble has nothing, and 26.04's is a
+# release behind this pin. The community build at
+# https://github.com/mkasberg/ghostty-ubuntu publishes one .deb per Ubuntu
+# release and arch, built from the tagged upstream source; that is what this
+# installs, pinned below with the SHA256 of each .deb.
 #
 # To bump: pick a release from that repo, download
-# ghostty_<ver>_{amd64,arm64}_24.04.deb, `sha256sum` both, and update
-# GHOSTTY_VERSION and both SHA256s together.
+# ghostty_<ver>_{amd64,arm64}_{26.04,24.04}.deb, `sha256sum` all four, and
+# update GHOSTTY_VERSION and every SHA256 together.
 #
 # Ghostty is GTK4 + OpenGL. Verified to run against a booth's Xvnc session via
 # Mesa's llvmpipe software rasterizer (it reports "loaded OpenGL 4.5") — no
@@ -39,7 +40,7 @@ Examples:
 Notes:
 - Installs Ghostty to /usr/bin/ghostty (with its terminfo and .desktop launcher)
 - Supports amd64 and arm64
-- <deb-version> is the version in the .deb's file name (ghostty_<deb-version>_<arch>_24.04.deb)
+- <deb-version> is the version in the .deb's file name (ghostty_<deb-version>_<arch>_<ubuntu-version>.deb)
 - A version other than the pinned one must come with its .deb's SHA256
 - The first container start seeds ~/.config/ghostty/config (never overwrites it):
   from /opt/codingbooth/ghostty/config when a setup put one there (ghostty-fancy),
@@ -57,8 +58,10 @@ HOME=/root
 
 # ---- pinned release ----
 GHOSTTY_VERSION="1.3.1-0.ppa2"
-GHOSTTY_SHA256_AMD64="478d440153ef544426418efc7d6d8901715359f452c46be29071901a94b8cd47"
-GHOSTTY_SHA256_ARM64="91063815b6ce3d834d59714b4ad0310f744448b6716836d035b3d331d1923363"
+GHOSTTY_SHA256_AMD64_2604="653fa1819b4d9d592184472b0303f06b3e1b21b2e3502858d128abf17fe7965c"
+GHOSTTY_SHA256_ARM64_2604="a8128fe0106ddb803e29ad716b9ca0547fa13e45c2f7ff284ec7f6a14d97192d"
+GHOSTTY_SHA256_AMD64_2404="478d440153ef544426418efc7d6d8901715359f452c46be29071901a94b8cd47"
+GHOSTTY_SHA256_ARM64_2404="91063815b6ce3d834d59714b4ad0310f744448b6716836d035b3d331d1923363"
 
 REQ_VER=""
 REQ_SHA=""
@@ -72,20 +75,26 @@ while [[ $# -gt 0 ]]; do
 done
 REQ_VER="${REQ_VER#v}"
 
-# ---- arch mapping (release assets are named amd64 / arm64) ----
+# ---- release + arch mapping (assets are named <arch>_<ubuntu-version>) ----
+UBUNTU_VERSION="$(. /etc/os-release && echo "${VERSION_ID:-}")"
+case "$UBUNTU_VERSION" in
+  26.04|24.04) ;;
+  *) echo "❌ Unsupported Ubuntu release: ${UBUNTU_VERSION:-unknown} (need 26.04 or 24.04)" >&2; exit 1 ;;
+esac
 ARCH="$(dpkg --print-architecture)"
 case "$ARCH" in
-  amd64) PINNED_SHA="$GHOSTTY_SHA256_AMD64" ;;
-  arm64) PINNED_SHA="$GHOSTTY_SHA256_ARM64" ;;
+  amd64|arm64) ;;
   *) echo "❌ Unsupported arch: $ARCH (need amd64 or arm64)" >&2; exit 1 ;;
 esac
+PINNED_SHA_VAR="GHOSTTY_SHA256_${ARCH^^}_${UBUNTU_VERSION//./}"
+PINNED_SHA="${!PINNED_SHA_VAR}"
 
 if [[ -z "$REQ_VER" || "$REQ_VER" == "$GHOSTTY_VERSION" ]]; then
   VERSION="$GHOSTTY_VERSION"
   SHA256="${REQ_SHA:-$PINNED_SHA}"
 else
   if [[ -z "$REQ_SHA" ]]; then
-    echo "❌ --version ${REQ_VER} needs --sha256 <hex> for ghostty_${REQ_VER}_${ARCH}_24.04.deb" >&2
+    echo "❌ --version ${REQ_VER} needs --sha256 <hex> for ghostty_${REQ_VER}_${ARCH}_${UBUNTU_VERSION}.deb" >&2
     echo "   (only ${GHOSTTY_VERSION} has a checksum pinned in this script)" >&2
     exit 2
   fi
@@ -101,7 +110,7 @@ export DEBIAN_FRONTEND=noninteractive
 echo "🔧 Installing Ghostty ${VERSION} (${ARCH})…"
 
 # ---- download + verify ----
-ASSET="ghostty_${VERSION}_${ARCH}_24.04.deb"
+ASSET="ghostty_${VERSION}_${ARCH}_${UBUNTU_VERSION}.deb"
 TMP_DIR="$(mktemp -d)"
 trap 'rm -rf "$TMP_DIR"' EXIT
 curl --retry 5 --retry-delay 3 --retry-all-errors -fsSL \

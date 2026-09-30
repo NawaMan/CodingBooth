@@ -11,7 +11,7 @@ Usage:
   $0 [--version <MAJOR.MINOR>] [--with-composer] [--composer-only] [--with-fpm] [--extensions "ext1,ext2,..."] [--no-default-exts]
 
 Examples:
-  $0                            # PHP 8.3 CLI + common extensions
+  $0                            # PHP 8.5 CLI + common extensions
   $0 --version 8.2              # PHP 8.2 instead
   $0 --with-composer            # also install Composer globally (reinstalls PHP)
   $0 --composer-only            # install Composer only; PHP must already be on PATH
@@ -32,7 +32,7 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }
 
 # ---- defaults / args ----
-PHP_DEFAULT_VER="8.4"
+PHP_DEFAULT_VER="8.5"
 PHP_VER="$PHP_DEFAULT_VER"
 WITH_COMPOSER=0
 COMPOSER_ONLY=0
@@ -68,7 +68,7 @@ install_composer() {
 }
 
 # --composer-only: do not reinstall PHP (that would rm -rf the prefix and default
-# the version to 8.4). Just run the Composer installer.
+# the version to 8.5). Just run the Composer installer.
 if [[ $COMPOSER_ONLY -eq 1 ]]; then
   install_composer
   echo "✅ Composer installed at /usr/local/bin/composer"
@@ -90,14 +90,24 @@ rm -rf /var/lib/apt/lists/*
 
 # ---- enable ondrej/php PPA when the requested version isn't in main repos ----
 # (Safe on Ubuntu; on Debian you usually stick to distro PHP or use sury.org Debian repo)
+# Ubuntu's own archive is used whenever it carries the requested version (8.5
+# on 26.04), so the default install doesn't depend on the PPA at all — the PPA
+# lags each new Ubuntu release, and until it publishes for it, adding it fails.
 . /etc/os-release
 is_ubuntu=0; [[ "${ID:-}" == "ubuntu" || "${ID_LIKE:-}" == *ubuntu* ]] && is_ubuntu=1
-if [[ $is_ubuntu -eq 1 ]]; then
+apt-get update
+if [[ $is_ubuntu -eq 1 && "$(apt-cache policy "php${PHP_VER}-cli" 2>/dev/null)" != *"Candidate: "[0-9]* ]]; then
   # Add PPA only if needed (or if it isn't already present)
-  if ! apt-cache policy | grep -q "ppa.launchpadcontent.net/ondrej/php"; then
-    add-apt-repository -y ppa:ondrej/php
+  # add-apt-repository adds the source even for a release the PPA has not
+  # published for; only the update after it fails.
+  if [[ "$(apt-cache policy)" != *"ppa.launchpadcontent.net/ondrej/php"* ]]; then
+    if ! { add-apt-repository -y ppa:ondrej/php && apt-get update; }; then
+      rm -f /etc/apt/sources.list.d/ondrej-*php*
+      echo "❌ PHP ${PHP_VER} is not in Ubuntu ${VERSION_ID:-}'s archive, and ppa:ondrej/php is not usable here" >&2
+      echo "   (it may not publish for ${VERSION_CODENAME:-this release} yet). Ubuntu ${VERSION_ID:-}'s archive has: $(apt-cache search --names-only '^php[0-9.]+-cli$' | cut -d' ' -f1 | sed 's/-cli//' | tr '\n' ' ')" >&2
+      exit 1
+    fi
   fi
-  apt-get update
 fi
 
 # ---- build the package list for the requested version ----
@@ -105,7 +115,12 @@ fi
 # lookup below silently falls through its `|| true` and `install pecl <ext>` can
 # never work, even though this setup advertises pecl. build-essential supplies the
 # make/gcc that pecl needs — it builds every extension from source.
-PKGS=( "php${PHP_VER}-cli" "php${PHP_VER}-dev" "php${PHP_VER}-opcache" "php${PHP_VER}-readline" "php-pear" "build-essential" )
+PKGS=( "php${PHP_VER}-cli" "php${PHP_VER}-dev" "php${PHP_VER}-readline" "php-pear" "build-essential" )
+# PHP 8.5 compiles OPcache into the core, so php8.5-opcache no longer exists;
+# earlier versions still ship it as its own package.
+if [[ "$(apt-cache policy "php${PHP_VER}-opcache" 2>/dev/null)" == *"Candidate: "[0-9]* ]]; then
+  PKGS+=( "php${PHP_VER}-opcache" )
+fi
 
 # FPM (optional)
 [[ $WITH_FPM -eq 1 ]] && PKGS+=( "php${PHP_VER}-fpm" )

@@ -331,7 +331,7 @@ chmod 0755 "${STARTER_FILE}"
 # --- cb-display-resize: fit the desktop to the browser ---
 # The booth page opens noVNC with resize=remote, which asks the VNC server to
 # resize the desktop to the browser window. TigerVNC (the X11 desktops) does;
-# wayvnc 0.7 (Ubuntu 24.04) ignores the request, so the desktop stayed at
+# wayvnc 0.7 (Ubuntu 24.04) ignored the request, so the desktop stayed at
 # GEOMETRY. It does follow a resize made on the compositor side, live, so the
 # booth page reports its size to booth-message-api-server, which runs this hook
 # (as the desktop user). Works for labwc and sway alike: both take wlr-randr.

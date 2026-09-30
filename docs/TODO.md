@@ -230,6 +230,8 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       i3 rules, and results are uneven. Worth trying behind the same `start-i3` / `stop-i3`.
       -- Tiling on KDE done another way: the `bismuth` template (a KWin script, so KWin and
       plasmashell stay untouched) with `start-bismuth` / `stop-bismuth`. i3-as-KDEWM not pursued.
+      -- On Ubuntu 26.04 (Plasma 6, no kwin-bismuth) this became the `krohnkite` template
+      (`start-krohnkite` / `stop-krohnkite`); `setup bismuth*` are shims to it.
 - [x] **A sway (Wayland tiling) option.** i3 is X11-only; sway reads nearly the same config and is
       what wayvnc was built for. It would replace labwc rather than live inside a desktop, so it is
       closer to a variant (or a `wayland` alternative) than an `i3` extension. The i3 Help tab and
@@ -246,8 +248,9 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       2026-09-23 while looking at browser-UI friction (see `docs/implementations/DESKTOP_NOVNC.md`'s
       "Clipboard Not Working" section). Two separate blockers, confirmed by inspecting a built
       `desktop-xfce` image:
-      - The vendored noVNC is **1.3.0** (Ubuntu 24.04's `novnc` apt package, from 2021) — five
-        majors behind current stable (1.7.0). Its `app/ui.js`/`core/rfb.js` have only the manual
+      - The vendored noVNC was **1.3.0** (Ubuntu 24.04's `novnc` apt package, from 2021) — five
+        majors behind current stable (1.7.0). The base moved to Ubuntu 26.04 on 2026-09-29, whose
+        `novnc` is **1.6.0**; re-check both blockers against it before acting on this item. Its `app/ui.js`/`core/rfb.js` have only the manual
         clipboard-panel flow (`clipboardSend`/`clipboardReceive`/`clipboardPasteFrom` wired to a
         textarea + button), no `navigator.clipboard` code at all.
       - Real automatic clipboard sync (noVNC PR #1993, `navigator.clipboard` auto-sync when the

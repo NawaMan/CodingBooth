@@ -73,6 +73,10 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 echo "• Installing nginx and Penpot runtime libraries ..."
 apt-get update
+# Ubuntu 26.04 renamed libxml2's runtime package to libxml2-16 (libxml2 is left
+# only as a virtual name, which apt will not install).
+LIBXML2_PKG=libxml2
+[[ "$(apt-cache policy libxml2 2>/dev/null)" == *"Candidate: "[0-9]* ]] || LIBXML2_PKG=libxml2-16
 apt-get install -y --no-install-recommends \
   nginx \
   ca-certificates \
@@ -80,20 +84,20 @@ apt-get install -y --no-install-recommends \
   fontconfig \
   libfontconfig1 \
   libfreetype6 \
-  libglib2.0-0 \
+  libglib2.0-0t64 \
   libgomp1 \
   libheif1 \
   libjpeg-turbo8 \
   liblcms2-2 \
   libopenexr-3-1-30 \
   libopenjp2-7 \
-  libpng16-16 \
+  libpng16-16t64 \
   librsvg2-2 \
   libtiff6 \
   libwebp7 \
   libwebpdemux2 \
   libwebpmux3 \
-  libxml2 \
+  "$LIBXML2_PKG" \
   libzstd1 \
   openssl \
   python3 \

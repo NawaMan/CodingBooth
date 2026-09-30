@@ -124,8 +124,8 @@ if [[ -f "$ANYTHINGLLM_DIR/server/prisma/schema.prisma" ]]; then
     ffmpeg \
     fonts-liberation \
     libasound2t64 \
-    libatk1.0-0 \
-    libcups2 \
+    libatk1.0-0t64 \
+    libcups2t64 \
     libgbm1 \
     libnss3 \
     libpango-1.0-0 \

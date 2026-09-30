@@ -51,9 +51,9 @@ apt-get update
 apt-get install -y --no-install-recommends \
   ffmpeg \
   libnss3 \
-  libatk1.0-0 \
-  libatk-bridge2.0-0 \
-  libcups2 \
+  libatk1.0-0t64 \
+  libatk-bridge2.0-0t64 \
+  libcups2t64 \
   libdrm2 \
   libxkbcommon0 \
   libxcomposite1 \

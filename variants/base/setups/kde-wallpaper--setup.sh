@@ -43,6 +43,16 @@ if ! pgrep -x plasmashell >/dev/null 2>&1; then
   echo "⚠️ kde-set-wallpaper: plasmashell not running after 60s, skipping" >&2
   exit 0
 fi
+# start-kde launches this outside the session's dbus-launch, with no session
+# bus of its own (Plasma 6's tools then fail with "Not connected to D-Bus
+# server") — borrow plasmashell's.
+if [[ -z "\${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+  pid="\$(pgrep -u "\$(id -u)" -x plasmashell | head -1)"
+  if [[ -n "\$pid" ]]; then
+    DBUS_SESSION_BUS_ADDRESS="\$(tr '\\0' '\\n' < "/proc/\$pid/environ" | sed -n 's/^DBUS_SESSION_BUS_ADDRESS=//p')"
+    export DBUS_SESSION_BUS_ADDRESS
+  fi
+fi
 # Give D-Bus a moment to register the shell's scripting interface.
 sleep 2
 

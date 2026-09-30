@@ -1,12 +1,12 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --variant codeserver --select erlang:25~vscode-ext/elixir:1.18.4+vscode-ext+repl-history/codeserver/claude-code+auto-accept+credential+settings-cache
+# Configured by: booth config --no-tui --overwrite --variant codeserver --select erlang:27~vscode-ext/elixir:1.18.4+vscode-ext+repl-history/codeserver/claude-code+auto-accept+credential+settings-cache
 
 env APT_SNAPSHOT=20260916T000000Z
 
 arg CLAUDE_CODE_VERSION=latest
 arg CODESERVER_PORT=19999
 arg ELIXIR_VERSION=1.18.4
-arg OTP_VERSION=25
+arg OTP_VERSION=27
 
 setup claude-code ${CLAUDE_CODE_VERSION}
 setup erlang --otp-version ${OTP_VERSION}

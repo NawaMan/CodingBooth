@@ -101,14 +101,14 @@ echo "• Installing dependencies ..."
 apt-get update
 apt-get install -y --no-install-recommends \
   fuse \
-  libfuse2 \
-  libgtk-3-0 \
+  libfuse2t64 \
+  libgtk-3-0t64 \
   libnotify4 \
   libnss3 \
   libxss1 \
   libxtst6 \
   xdg-utils \
-  libatspi2.0-0 \
+  libatspi2.0-0t64 \
   libsecret-1-0
 rm -rf /var/lib/apt/lists/*
 

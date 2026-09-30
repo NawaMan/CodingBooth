@@ -31,7 +31,7 @@ Examples:
 
 Notes:
 - Always installs latexmk alongside the chosen scheme.
-- Versions come from Ubuntu's archive (TeX Live 2023 on 24.04), frozen by APT_SNAPSHOT when set.
+- Versions come from Ubuntu's archive (TeX Live 2025 on 26.04), frozen by APT_SNAPSHOT when set.
 USAGE
 }
 

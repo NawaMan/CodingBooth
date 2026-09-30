@@ -18,7 +18,7 @@ Examples:
 Notes:
 - Installs Swift to /opt/swift/swift-<ver> and links /opt/swift-stable
 - Exposes swift/swiftc/swift-package/swift-build/swift-test via /usr/local/bin
-- Supports Ubuntu 24.04 (noble), 22.04 (jammy), 20.04 (focal) on amd64/arm64
+- Supports Ubuntu 26.04 (resolute, Swift 6.4+), 24.04 (noble), 22.04 (jammy), 20.04 (focal) on amd64/arm64
 USAGE
 }
 
@@ -52,10 +52,11 @@ esac
 . /etc/os-release
 CODENAME="${UBUNTU_CODENAME:-$VERSION_CODENAME}"
 case "$CODENAME" in
+  resolute|resolute-updates|resolute-security) S_UBU="ubuntu26.04"; S_UBU_PATH="ubuntu2604";;
   noble|noble-updates|noble-security)  S_UBU="ubuntu24.04"; S_UBU_PATH="ubuntu2404";;
   jammy|jammy-updates|jammy-security)  S_UBU="ubuntu22.04"; S_UBU_PATH="ubuntu2204";;
   focal|focal-updates|focal-security)  S_UBU="ubuntu20.04"; S_UBU_PATH="ubuntu2004";;
-  *) echo "❌ Unsupported Ubuntu/Debian codename '$CODENAME'. Supported: focal (20.04), jammy (22.04), noble (24.04)."; exit 1;;
+  *) echo "❌ Unsupported Ubuntu/Debian codename '$CODENAME'. Supported: focal (20.04), jammy (22.04), noble (24.04), resolute (26.04)."; exit 1;;
 esac
 
 # ---- dirs ----
@@ -67,10 +68,14 @@ BIN_DIR=/usr/local/bin
 # ---- base deps (runtime + common build deps Swift needs) ----
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
+# Ubuntu 26.04 renamed libxml2's runtime package to libxml2-16 (libxml2 is left
+# only as a virtual name, which apt will not install).
+LIBXML2_PKG=libxml2
+[[ "$(apt-cache policy libxml2 2>/dev/null)" == *"Candidate: "[0-9]* ]] || LIBXML2_PKG=libxml2-16
 apt-get install -y --no-install-recommends \
   ca-certificates curl xz-utils tar git pkg-config \
   libc6 libstdc++6 libgcc-s1 \
-  libcurl4t64 libxml2 libedit2 libsqlite3-0 zlib1g tzdata \
+  libcurl4t64 "$LIBXML2_PKG" libedit2 libsqlite3-0 zlib1g tzdata \
   libbsd0 libatomic1 libicu-dev libncurses6 libpython3-dev \
   clang make
 # optional debugger

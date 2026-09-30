@@ -257,7 +257,7 @@ All templates and extensions grouped by segment order.
 
 | Template                   | Display Name |
 |----------------------------|--------------|
-| `desktops/bismuth`         | Tiling for KDE (Bismuth) — order 41, see below |
+| `desktops/krohnkite`       | Tiling for KDE (Krohnkite) — order 41, see below |
 | `desktops/i3`              | Tiling Window Manager (i3) — order 41, see below |
 | `desktops/kde`             | KDE Plasma |
 | `desktops/lxqt`            | LXQt |
@@ -277,11 +277,13 @@ sit at **42**, after it: `+default` (`setup i3-default`, i3 at login), `+ctrl-al
 or `variant`: like `xfce` itself, selecting it on a `base` booth installs what it can and lets you
 start the desktop later.
 
-`desktops/bismuth` (Tiling for KDE) follows the same shape for KDE Plasma: `setup bismuth
-${BISMUTH_MOD}` at **41**, skipping when KWin is absent, and its auto-selected extensions at **42** —
-`+default` (`setup bismuth-default`, tiling from login) and `+gaps` (`setup bismuth-gaps
-${BISMUTH_GAPS}`). No `+ctrl-alt` extension: Bismuth's shortcuts are one set, so the modifier is the
-`BISMUTH_MOD` param (`ctrl-alt` by default, or `meta`).
+`desktops/krohnkite` (Tiling for KDE) follows the same shape for KDE Plasma 6: `setup krohnkite
+${KROHNKITE_MOD}` at **41**, skipping when KWin is absent, and its auto-selected extensions at **42** —
+`+default` (`setup krohnkite-default`, tiling from login) and `+gaps` (`setup krohnkite-gaps
+${KROHNKITE_GAPS}`). No `+ctrl-alt` extension: Krohnkite's shortcuts are one set, so the modifier is
+the `KROHNKITE_MOD` param (`ctrl-alt` by default, or `meta`). It replaced `desktops/bismuth` when the
+base moved to Ubuntu 26.04 (Plasma 6 has no Bismuth); `setup bismuth`, `bismuth-default` and
+`bismuth-gaps` remain as shims that run the Krohnkite setups.
 
 `desktops/sway` (Tiling for Wayland) is at **41** too (`setup sway ${SWAY_MOD}`), skipping when the
 Wayland desktop (`start-wayland`) is absent, with `+ctrl-alt` (`setup sway-ctrl-alt`) and `+gaps`

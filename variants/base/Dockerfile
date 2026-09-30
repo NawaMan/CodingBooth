@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1.7
 
 # Dockerfile for CodingBooth container (the base)
-ARG UBUNTU_VERSION=24.04
+ARG UBUNTU_VERSION=26.04
 FROM ubuntu:${UBUNTU_VERSION}
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -35,7 +35,7 @@ RUN touch /tmp/startups.log \
 # Update base OS, install packages, generate locale
 # NOTE: we intentionally DO NOT install python3-pip (it can pull in an old setuptools)
 
-# ubuntu:24.04 ships with no CA trust store at all, and Ubuntu's snapshot
+# ubuntu:26.04 (like 24.04) ships with no CA trust store at all, and Ubuntu's snapshot
 # service is HTTPS-only — so a pinned apt-get here can't yet verify
 # snapshot.ubuntu.com's certificate to install the very package that would let
 # it. Bootstrap ca-certificates first, unpinned, off the plain (HTTP-capable)
@@ -153,7 +153,7 @@ ENV TERM=xterm-256color
 # We use -M to not create a home directory so that we can avoid getting the skeleton files when the user is created.
 # Then we can create the home directory manually and set the permissions as we want.
 #
-# Ubuntu 24.04 (noble) ships a stock 'ubuntu' user holding uid/gid 1000. Nothing here
+# Ubuntu 26.04 (resolute), like 24.04, ships a stock 'ubuntu' user holding uid/gid 1000. Nothing here
 # uses it, but leaving it in place makes free_uid() hand coder 1001 — and 1000 is the
 # uid nearly every Linux host has. booth-entry then has to renumber coder on every
 # single start (step 4), and re-own $HOME to match (step 5). With large host
