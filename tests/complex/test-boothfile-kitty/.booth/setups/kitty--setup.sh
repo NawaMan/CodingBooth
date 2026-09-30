@@ -6,11 +6,11 @@
 # kitty--setup.sh — installs the Kitty terminal emulator from a pinned,
 # checksum-verified upstream release.
 #
-# Why not apt: Ubuntu 24.04 ships Kitty 0.32.2 in `universe`, and its security
-# fixes go to Ubuntu Pro (ESM Apps) only. The public package is still exposed to
-# CVE-2026-72913 (fixed 0.48.2 — escape sequences that write to the shell's
-# stdin, i.e. displaying untrusted output runs commands), CVE-2026-42850 and
-# CVE-2026-33642 (fixed 0.47.0). So Kitty comes from its own GitHub release,
+# Why not apt: Ubuntu 26.04 ships Kitty 0.45.0 (24.04: 0.32.2) in `universe`, and
+# its security fixes go to Ubuntu Pro (ESM Apps) only. Both versions predate the
+# upstream fixes for CVE-2026-72913 (fixed 0.48.2 — escape sequences that write
+# to the shell's stdin, i.e. displaying untrusted output runs commands),
+# CVE-2026-42850 and CVE-2026-33642 (fixed 0.47.0). So Kitty comes from its own GitHub release,
 # pinned below with SHA256s taken from the GPG-verified assets (signed by
 # Kovid Goyal, key 3CE1780F78DD88DF45194FD706BC317B515ACE7C).
 #

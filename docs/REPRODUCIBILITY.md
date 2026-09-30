@@ -69,7 +69,7 @@ So apt version pins are *ephemeral*, and any un-pinned apt package simply tracks
 
 ### 3. The base image moves
 
-`FROM ubuntu:24.04` is a moving tag — it points at the latest 24.04 build, which changes as patches land. Only a digest (`ubuntu:24.04@sha256:…`) is fixed.
+`FROM ubuntu:26.04` is a moving tag — it points at the latest 26.04 build, which changes as patches land. Only a digest (`ubuntu:26.04@sha256:…`) is fixed.
 
 None of this is unique to CodingBooth — it is how package ecosystems and Docker work. The point is to know which leaks apply to you and how to close them.
 
@@ -136,13 +136,13 @@ env APT_SNAPSHOT=20260601T000000Z
 install apt qrencode imagemagick
 ```
 
-The base image is Ubuntu 24.04, where `--snapshot` is auto-supported (no apt config needed). The date is captured once at config time and baked in literally — it is **not** recomputed on each build, so rebuilds stay frozen. Re-running `booth config` on an existing booth keeps the snapshot its Boothfile already holds — reconfiguring (adding a template, an env var) does not move apt forward to that day. To move it, or to pin a specific snapshot instead of "today" on a new booth, set `CB_APT_SNAPSHOT=<id>` when running `booth config`.
+The base image is Ubuntu 26.04, where `--snapshot` is auto-supported (no apt config needed). The date is captured once at config time and baked in literally — it is **not** recomputed on each build, so rebuilds stay frozen. Re-running `booth config` on an existing booth keeps the snapshot its Boothfile already holds — reconfiguring (adding a template, an env var) does not move apt forward to that day. To move it, or to pin a specific snapshot instead of "today" on a new booth, set `CB_APT_SNAPSHOT=<id>` when running `booth config`.
 
 - **Pin the date, not each package.** With a frozen index, `install apt qrencode imagemagick` (no version pins) is already deterministic. Explicit `pkg=version` pins then act only as documentation and as a tripwire that fails loudly if a snapshot bump changes the version.
 - **Trade-off:** a frozen snapshot stops receiving security updates until you bump the date — which is the correct behaviour, since updates become a deliberate, reviewable change rather than silent drift.
 - **amd64/i386 only.** Ubuntu's snapshot service mirrors the primary archive (`archive.ubuntu.com`, `security.ubuntu.com`) and nothing else. Every other architecture — notably **arm64, which is what you get on Apple Silicon** — installs from `ports.ubuntu.com`, which has no snapshots. There, `install apt` prints a warning, drops the pin, and resolves against the live archive so the build still succeeds; the packages are current rather than frozen. A booth built on an Apple Silicon Mac is therefore Tier 1 for apt even with `APT_SNAPSHOT` set. Build the image on amd64 (or `--platform linux/amd64`) if the freeze has to hold.
 
-**Global alternative: freeze the whole build.** `APT_SNAPSHOT` only covers `install apt` lines. To freeze *every* apt operation in a custom setup script too, point the apt sources at the snapshot once at build time. On Ubuntu 24.04 (deb822 format) this rewrites `/etc/apt/sources.list.d/ubuntu.sources`:
+**Global alternative: freeze the whole build.** `APT_SNAPSHOT` only covers `install apt` lines. To freeze *every* apt operation in a custom setup script too, point the apt sources at the snapshot once at build time. On Ubuntu 26.04 (deb822 format, as on 24.04) this rewrites `/etc/apt/sources.list.d/ubuntu.sources`:
 
 ```bash
 # In a custom setup script, run at build time as root.

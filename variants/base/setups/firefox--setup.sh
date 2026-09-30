@@ -34,7 +34,11 @@ apt-get install -y --no-install-recommends curl ca-certificates gnupg
 # minimal BuildKit sandboxes). Fetch the ASCII-armored key directly over
 # plain HTTPS, then `gpg --dearmor` to a keyring file.
 KEYRING=/etc/apt/keyrings/mozillateam-ppa.gpg
-MOZILLATEAM_KEY_ID=0AB215679C571D1C8325275B9BDB3D89CE49EC21
+# The PPA's rsa4096 key. Launchpad also still signs with the PPA's original
+# rsa1024 key (0AB215679C571D1C8325275B9BDB3D89CE49EC21), but apt on Ubuntu
+# 26.04 rejects rsa1024 outright ("untrusted public key algorithm") and then
+# fails the whole update, so only the rsa4096 key is trusted here.
+MOZILLATEAM_KEY_ID=738BEB9321D1AAEC13EA9391AEBDF4819BE21867
 
 # Detect Ubuntu codename for the apt source line
 . /etc/os-release

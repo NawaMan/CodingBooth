@@ -39,6 +39,13 @@ DEFAULT_VNC_PASSWORD="${DEFAULT_VNC_PASSWORD:-}"   # empty ⇒ NO VNC AUTH
 # ---- install base packages ----
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
+# Plasma 6.4+ (Ubuntu 26.04) split the X11 session out of plasma-desktop:
+# without these there is no kwin_x11 and no startplasma-x11, and the VNC
+# session below has nothing to start. Plasma 5 (Ubuntu 24.04) has neither
+# package, so add them only when the archive carries them.
+for p in plasma-session-x11 kwin-x11; do
+  if apt-cache show "$p" >/dev/null 2>&1; then KDE_PACKAGES="$KDE_PACKAGES $p"; fi
+done
 if ! apt-get install -y $KDE_PACKAGES $VNC_STACK_PACKAGES $EXTRA_PACKAGES; then
   echo "ℹ️ Falling back to alternate KDE package names…"
   apt-get install -y kde-plasma-desktop $VNC_STACK_PACKAGES $EXTRA_PACKAGES || \

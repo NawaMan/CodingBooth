@@ -4,6 +4,48 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Base image moved to Ubuntu 26.04 LTS (Resolute Raccoon), from 24.04.** `variants/base/Dockerfile`'s
+  `UBUNTU_VERSION` is now `26.04`, so every variant (notebook, codeserver, the four desktops) rebuilds on
+  it. The `APT_SNAPSHOT` pin works as before (snapshot.ubuntu.com serves `resolute`). What had to change
+  for everything to install and run on the new release:
+  - **Desktops (all four):** apt on 26.04 rejects rsa1024 signatures outright, which broke
+    `firefox--setup.sh` against the mozillateam PPA's original key — it now trusts the PPA's rsa4096 key.
+  - **KDE is Plasma 6.6.** It moved the X11 session out of `plasma-desktop`, so `kde--setup.sh` also
+    installs `plasma-session-x11` and `kwin-x11` when the archive has them (otherwise there is no
+    `startplasma-x11`). `kde-set-wallpaper` borrows plasmashell's session bus when started from
+    `start-kde`, where Plasma 6's tools otherwise fail with "Not connected to D-Bus server".
+  - **Bismuth → Krohnkite.** `kwin-bismuth` is Plasma 5 only and gone from 26.04. The new
+    `krohnkite`/`krohnkite-default`/`krohnkite-gaps` setups and `templates/desktops/krohnkite`
+    (Krohnkite 0.9.9.2, pinned + SHA256-verified) replace it with the same Ctrl+Alt key scheme,
+    start/stop commands and Help tab. `setup bismuth*` lines still work: they are shims that print a
+    deprecation notice and run the Krohnkite equivalent.
+  - **PHP defaults to 8.5 from Ubuntu's own archive.** `ppa:ondrej/php` has not published for 26.04
+    yet, so the PPA is now added only when the requested version isn't in the archive, and a clear
+    error names what the archive has when the PPA can't be used. `php8.5-opcache` no longer exists
+    (OPcache is built in from 8.5), so it is installed only for versions that still ship it — this
+    also clears the blocker the last pin sweep hit.
+  - **Erlang/OTP now comes from builds.hex.pm** (the builds Hex, Elixir and setup-beam use), SHA256-checked
+    against Hex's own `builds.txt`, instead of the `rabbitmq-erlang` PPAs, which have no 26.04 builds.
+    Supported: 26, 27, 28 (default 28); a major installs its newest release, and an exact release
+    (`27.3.4.18`) works too. Hex publishes the same builds for arm64, which retires the old arm64
+    fallback to Ubuntu's OTP 25. OTP 25 is not available for 26.04 anywhere. `elixir-example` moved from
+    `erlang:25` to `erlang:27` (Elixir 1.18.4 ships no OTP 28 build). Also fixed: a positional version
+    followed by a flag (`erlang--setup.sh 27 --no-rebar3`) was rejected as an unknown argument.
+  - **Swift** maps `resolute` to swift.org's `ubuntu26.04` builds (Swift 6.4+, the default).
+  - **Ghostty** picks the community `.deb` built for the running Ubuntu release (26.04 or 24.04), each pinned
+    by SHA256.
+  - **Package renames:** 26.04 dropped the pre-t64 transitional names and a few old libraries —
+    `libatk1.0-0`, `libatk-bridge2.0-0`, `libatspi2.0-0`, `libcups2`, `libfuse2`, `libglib2.0-0`,
+    `libgtk-3-0` and `libpng16-16` → their `t64` names (valid on 24.04 too) across 8 setups;
+    `libncurses5-dev`/`libtinfo-dev` → `libncurses-dev` (ruby, haskell-nb-kernel); `libpcre3-dev` →
+    `libpcre2-dev` (crystal); `libxml2` → `libxml2-16` when that is the only real package (swift,
+    penpot).
+  - Clang's default LLVM 22 now comes from Ubuntu's archive (26.04 carries 17–22) rather than
+    apt.llvm.org.
+  - Test fixtures under `tests/complex/*/.booth/setups/` that were verbatim copies of a changed setup
+    were refreshed so they don't shadow the fix; docs and comments naming 24.04 as the current base
+    were updated.
+
 - **4 examples' `APT_SNAPSHOT` bumped back even with the base image.** `apt-example`,
   `clang-example`, `systemlib-example`, and `turtle-example` were pinned to `20260918`; the base
   image is now built at `20260928` (nothing sets `CB_APT_SNAPSHOT`, so a local rebuild defaults to

@@ -63,7 +63,7 @@ echo "📦 Installing IHaskell build dependencies..."
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
-  pkg-config libmagic-dev libzmq5 libzmq3-dev libtinfo-dev
+  pkg-config libmagic-dev libzmq5 libzmq3-dev libncurses-dev
 rm -rf /var/lib/apt/lists/*
 
 # ---------------- Install IHaskell ----------------

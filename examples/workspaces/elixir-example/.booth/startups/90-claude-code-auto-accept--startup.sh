@@ -1,6 +1,6 @@
 #!/bin/bash
 set -e
-# Configured by: booth config --no-tui --overwrite --variant codeserver --select erlang:25~vscode-ext/elixir:1.18.4+vscode-ext+repl-history/codeserver/claude-code+auto-accept+credential+settings-cache
+# Configured by: booth config --no-tui --overwrite --variant codeserver --select erlang:27~vscode-ext/elixir:1.18.4+vscode-ext+repl-history/codeserver/claude-code+auto-accept+credential+settings-cache
 
 # Detect user-bound volumes and protect them from accidental rm -rf
 # by patching Claude Code's deny rules with jq.

@@ -44,7 +44,7 @@ export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get install -y --no-install-recommends \
   curl ca-certificates tar gzip \
-  libevent-dev libgmp-dev libpcre3-dev libssl-dev libxml2-dev libyaml-dev \
+  libevent-dev libgmp-dev libpcre2-dev libssl-dev libxml2-dev libyaml-dev \
   zlib1g-dev pkg-config gcc make
 rm -rf /var/lib/apt/lists/*
 

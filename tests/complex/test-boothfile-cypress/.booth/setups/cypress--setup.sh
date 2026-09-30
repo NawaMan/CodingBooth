@@ -49,11 +49,11 @@ apt-get update
 apt-get install -y --no-install-recommends \
   ca-certificates \
   libasound2t64 \
-  libatk-bridge2.0-0 \
-  libatk1.0-0 \
-  libcups2 \
+  libatk-bridge2.0-0t64 \
+  libatk1.0-0t64 \
+  libcups2t64 \
   libgbm1 \
-  libgtk-3-0 \
+  libgtk-3-0t64 \
   libnss3 \
   libxss1 \
   libxtst6 \

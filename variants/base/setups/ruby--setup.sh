@@ -32,7 +32,7 @@ apt-get install -y --no-install-recommends \
     libyaml-dev \
     libreadline-dev \
     zlib1g-dev \
-    libncurses5-dev \
+    libncurses-dev \
     libffi-dev \
     libgdbm-dev
 rm -rf /var/lib/apt/lists/*

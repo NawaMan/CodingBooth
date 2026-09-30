@@ -7,7 +7,7 @@ modest install and over 7 GB in full, and a host-wide install is hard to get rid
 the whole toolchain lives in the booth, the editor comes with it, and `LATEX_SCHEME` picks how much
 of TeX Live the image carries.
 
-**Stack:** TeX Live 2023 (Ubuntu 24.04), latexmk, BibTeX, VS Code in the browser with LaTeX Workshop
+**Stack:** TeX Live 2025 (Ubuntu 26.04), latexmk, BibTeX, VS Code in the browser with LaTeX Workshop
 
 ## Quick start
 
@@ -30,7 +30,7 @@ just clean               # remove build files, keep main.pdf
 
 | Component       | Details                                                              |
 |-----------------|----------------------------------------------------------------------|
-| TeX             | TeX Live 2023, `recommended` scheme (~190 MB installed)             |
+| TeX             | TeX Live 2025, `recommended` scheme (~190 MB installed)             |
 | Build           | `latexmk` — runs pdflatex and BibTeX as many times as the document needs |
 | Editor          | VS Code in the browser (`codeserver` variant)                        |
 | VS Code support | LaTeX Workshop: build on save, PDF preview, SyncTeX                  |

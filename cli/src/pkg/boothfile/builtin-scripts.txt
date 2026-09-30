@@ -165,6 +165,9 @@ setup kitty-fancy
 setup kotlin
 setup kotlin-code-extension
 setup kotlin-nb-kernel
+setup krohnkite
+setup krohnkite-default
+setup krohnkite-gaps
 setup kubectl
 setup kubectx
 setup kustomize

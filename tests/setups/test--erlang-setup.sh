@@ -32,7 +32,7 @@ else
     FAILED=$((FAILED + 1))
 fi
 
-if echo "$HELP_OUT" | grep -q "Supported OTP versions: 25, 26, 27, 28"; then
+if echo "$HELP_OUT" | grep -q "Supported OTP versions: 26, 27, 28"; then
     print_test_result "true"  "$0" "2" "--help lists 28 as supported"
 else
     print_test_result "false" "$0" "2" "--help should list 28 as supported"
@@ -40,7 +40,7 @@ else
     FAILED=$((FAILED + 1))
 fi
 
-if grep -qE '25\|26\|27\|28' "$SCRIPT"; then
+if grep -qE '26\|27\|28' "$SCRIPT"; then
     print_test_result "true"  "$0" "3" "allow-list case includes 28"
 else
     print_test_result "false" "$0" "3" "allow-list case should include 28"

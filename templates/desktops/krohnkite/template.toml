@@ -1,0 +1,34 @@
+display-name = "Tiling for KDE (Krohnkite)"
+display-label = "Krohnkite (Tiling)"
+display-disc = "Krohnkite auto-tiling for the KDE Plasma desktop, with start-krohnkite / stop-krohnkite"
+display-detail = """\
+Installs Krohnkite, a KWin script that tiles the KDE desktop's windows instead \
+of letting them overlap, driven from the keyboard — the Plasma 6 successor of \
+Bismuth. KWin stays the window manager, so the panel, menu, desktop and pop-ups \
+work as usual. Turn it on and off with start-krohnkite / stop-krohnkite or the \
+"Tiling for KDE (Krohnkite)" desktop icon; the booth's Help dialog gets a \
+"Krohnkite Shortcuts (Tiling)" tab. Krohnkite's shortcuts use Meta, which the \
+browser or your own desktop usually keeps, so they are moved to Ctrl+Alt by \
+default (krohnkite:meta keeps Krohnkite's own). Does nothing unless KDE Plasma 6 \
+is installed — by the desktop-kde variant or the kde template — so it is safe \
+to select on any booth. Its extensions (both on by default): +default tiles \
+from login, +gaps puts an 8px gap between windows. Layouts and window rules are \
+in System Settings → Window Management → KWin Scripts → Krohnkite."""
+display-order = 17
+tags = [
+    "desktop",
+    "kde",
+    "tiling",
+    "krohnkite",
+    "bismuth",
+    "window-manager"
+]
+
+[params.KROHNKITE_MOD]
+default     = "ctrl-alt"
+suggests    = ["ctrl-alt", "meta"]
+
+[segments]
+"Boothfile--41" = """
+setup krohnkite ${KROHNKITE_MOD}
+"""

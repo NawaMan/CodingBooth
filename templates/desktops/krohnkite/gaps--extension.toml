@@ -1,0 +1,23 @@
+display-name   = "Window Gaps"
+display-disc   = "A small gap between Krohnkite's windows so the wallpaper shows at their edges"
+display-detail = """\
+Puts a gap (8px by default) between tiled windows and between the windows and \
+the screen edges and panel. Set the size with krohnkite+gaps:<pixels>; drop it \
+with krohnkite~gaps. Krohnkite's settings page (System Settings → KWin Scripts) \
+can change it later."""
+display-order  = 19
+auto-select    = true
+tags = [
+    "desktop",
+    "tiling",
+    "krohnkite"
+]
+
+[params.KROHNKITE_GAPS]
+default     = "8"
+suggests    = ["4", "8", "12"]
+
+[segments]
+"Boothfile--42" = """
+setup krohnkite-gaps ${KROHNKITE_GAPS}
+"""

@@ -64,7 +64,7 @@ The levels in use today, and what sits at each:
 | **40**    | Must precede everything else                                   | `dind`, `network-whitelist`                                                |
 | **50–53** | Core services, and Python (sourced by many later scripts)      | `tls`, `postgresql`, `mysql`, `python`                                     |
 | **55**    | Desktops, editor and web servers                               | `xfce`, `kde`, `lxqt`, `wayland`, `codeserver`, `nginx`, `apache`, `opensshd` |
-| **56–59** | Early runtimes, and things inside a 55 desktop                 | `deno`, `go`, `dotnet`, `rust`, `ruby`, `bismuth`, `ghostty`, `kitty`     |
+| **56–59** | Early runtimes, and things inside a 55 desktop                 | `deno`, `go`, `dotnet`, `rust`, `ruby`, `krohnkite`, `ghostty`, `kitty`   |
 | **60–64** | JVM and other runtimes, cloud CLIs, build tools, datastores    | `jdk`, `kotlin`, `julia`, `gcloud`, `aws-cli`, `gradle`, `cmake`, `gcc`, `redis` |
 | **65–67** | Built on a lower-level setup                                   | `jenv`, `kafka`, `make`, `wails`, `flutter-android`                        |
 | **70–73** | Dev tools — IDEs, notebook, AI CLIs, web tools — and follow-ups | `vscode`, `notebook`, `jetbrains`, `claude-code`, `cloudbeaver`, `idea-import-project` |

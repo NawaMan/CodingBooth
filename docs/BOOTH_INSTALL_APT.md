@@ -43,7 +43,7 @@ rm -rf /var/lib/apt/lists/*
   still fails the build immediately rather than after the full backoff.
 
 - `APT_SNAPSHOT` set, amd64/i386 → `--snapshot <id>` on both `update` and `install`
-  (whole archive, incl. transitive deps, frozen to that instant). Base is Ubuntu 24.04,
+  (whole archive, incl. transitive deps, frozen to that instant). Base is Ubuntu 26.04,
   where `--snapshot` is auto-supported.
 - `APT_SNAPSHOT` set, any other arch → warn and drop the pin. `apt-config dump` has a
   snapshot host mapping for `archive.ubuntu.com`/`security.ubuntu.com` only, and

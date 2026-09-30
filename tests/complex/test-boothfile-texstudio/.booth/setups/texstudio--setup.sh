@@ -21,7 +21,7 @@ Usage:
 
 Notes:
 - Requires a desktop variant (desktop-xfce, desktop-kde, desktop-lxqt, desktop-wayland)
-- Installs TeXstudio from Ubuntu's archive (4.7 on 24.04), frozen by APT_SNAPSHOT when set
+- Installs TeXstudio from Ubuntu's archive (4.9 on 26.04), frozen by APT_SNAPSHOT when set
 - Creates a desktop shortcut
 USAGE
 }
