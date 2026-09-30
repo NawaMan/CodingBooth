@@ -86,6 +86,7 @@ fi
 MAX_PARALLEL=1
 
 EXAMPLE_TIMEOUT=900  # 15 minutes per example
+TIMEOUT_GIVEN=false  # an explicit --timeout is carried into the rerun command
 declare -a FILTER_TAGS=()
 declare -a FILTER_EXAMPLES=()
 
@@ -114,6 +115,7 @@ while [[ $# -gt 0 ]]; do
             ;;
         --timeout)
             EXAMPLE_TIMEOUT="$2"
+            TIMEOUT_GIVEN=true
             shift 2
             ;;
         --help|-h)
@@ -612,8 +614,31 @@ else
     echo ""
     echo "======================================================"
     echo "Example tests are intermittent when run together, "
-    echo "so if some tests failed, try running them individually:"
-    echo "  ./run-example-tests.sh --example <example_name>"
+    echo "so if some tests failed, try rerunning just those:"
+    echo ""
+    # One --example per line, ready to paste. An explicit --timeout comes along
+    # (a timed-out example would just time out again); --max-parallel does not.
+    rerun_args=()
+    if [ "$TIMEOUT_GIVEN" = true ]; then
+        rerun_args+=("--timeout $EXAMPLE_TIMEOUT")
+    fi
+    for example_name in "${failed_examples[@]}"; do
+        rerun_args+=("--example $example_name")
+    done
+    if [ ${#rerun_args[@]} -eq 1 ]; then
+        echo "./run-example-tests.sh ${rerun_args[0]}"
+    else
+        echo "./run-example-tests.sh \\"
+        last=$(( ${#rerun_args[@]} - 1 ))
+        for i in "${!rerun_args[@]}"; do
+            if [ "$i" -lt "$last" ]; then
+                echo "    ${rerun_args[$i]} \\"
+            else
+                echo "    ${rerun_args[$i]}"
+            fi
+        done
+    fi
+    echo ""
     echo "======================================================"
 fi
 
