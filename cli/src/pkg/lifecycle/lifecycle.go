@@ -39,7 +39,7 @@ func resolveLifecycleEngines(codeDir string) []string {
 
 type managedContainer struct {
 	Name      string
-	Engine    string // engine that owns the container ("docker" or "podman")
+	Engine    string // engine that owns the container ("docker", "podman" or "apple")
 	State     string
 	Variant   string
 	CodePath  string
@@ -283,7 +283,7 @@ func Stop(args []string, stderr io.Writer) error {
 // restartTimeoutFlag is the stop-wait flag of `<engine> restart`: podman takes
 // --time, docker takes --timeout.
 func restartTimeoutFlag(engine string) string {
-	if engine == "podman" {
+	if engine == "podman" || engine == "apple" {
 		return "--time"
 	}
 	return "--timeout"

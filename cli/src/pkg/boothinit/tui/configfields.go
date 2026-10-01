@@ -78,8 +78,8 @@ var fieldDisplays = []fieldDisplay{
 	{Key: "name", Label: "Name", Group: "General",
 		Detail: "Container name. If empty, inferred from the code\ndirectory name.\n\nExample: my-app-dev"},
 	{Key: "engine", Label: "Container Engine", Group: "General",
-		Options: []string{"", "docker", "podman"},
-		Detail:  "Which container engine binary to shell out to.\n\n(default) = docker (falls back to podman if docker\nisn't installed but podman is)\ndocker = always use docker\npodman = always use podman (experimental; may not\nhave full Docker feature parity yet — see\ndocs/PODMAN_SUPPORT.md)"},
+		Options: []string{"", "docker", "podman", "apple"},
+		Detail:  "Which container engine binary to shell out to.\n\n(default) = docker (falls back to podman if docker\nisn't installed but podman is)\ndocker = always use docker\npodman = always use podman (experimental; may not\nhave full Docker feature parity yet — see\ndocs/PODMAN_SUPPORT.md)\napple = always use Apple container (macOS;\nexperimental — see docs/CONTAINER_SUPPORT.md)"},
 
 	// Not the config.toml `version` key — see "Image Version" below.
 	//
