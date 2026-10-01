@@ -76,14 +76,13 @@ func Shell(args []string, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	engine := resolveLifecycleEngine(codePath)
-
 	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed}
-	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, engine, stderr)
+	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, stderr)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
+	engine := target.Engine
 	stopCleanupSignalWatch := watchSignalsForCleanup(cleanup)
 	defer stopCleanupSignalWatch()
 
@@ -150,14 +149,13 @@ func Exec(args []string, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	engine := resolveLifecycleEngine(codePath)
-
 	create := connectCreateOpts{port: *port, acceptExisting: *acceptExisting, dindAllowed: *dindAllowed, privilegedAllowed: *privilegedAllowed}
-	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, engine, stderr)
+	target, cleanup, err := resolveConnectTarget(*name, positional, codePath, *run, *keepAlive, *silenceBuild, create, stderr)
 	if err != nil {
 		return err
 	}
 	defer cleanup()
+	engine := target.Engine
 	stopCleanupSignalWatch := watchSignalsForCleanup(cleanup)
 	defer stopCleanupSignalWatch()
 
@@ -231,10 +229,13 @@ const (
 // removed, and a pre-existing keep-alive booth returns to stopped. A booth that
 // was already running, or keepAlive=true, yields a no-op cleanup. The returned
 // error is already a commandError.
-func resolveConnectTarget(name string, positional []string, codePath string, run, keepAlive, quiet bool, create connectCreateOpts, engine string, stderr io.Writer) (managedContainer, func(), error) {
+func resolveConnectTarget(name string, positional []string, codePath string, run, keepAlive, quiet bool, create connectCreateOpts, stderr io.Writer) (managedContainer, func(), error) {
 	noCleanup := func() {}
 
-	containers, err := managedContainers(engine, false)
+	// Look the booth up on every engine (as stop/restart do) and act on the
+	// one that owns it.
+	engines := resolveLifecycleEngines(codePath)
+	containers, err := managedContainersAcross(engines, false, stderr)
 	if err != nil {
 		return managedContainer{}, noCleanup, commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -243,6 +244,9 @@ func resolveConnectTarget(name string, positional []string, codePath string, run
 	if err != nil {
 		return managedContainer{}, noCleanup, commandExit(1, err.Error())
 	}
+	// A booth --run creates goes to whichever engine `booth run` picks (the
+	// default one); engine is set from it once it exists.
+	engine := target.Engine
 
 	// Create-intent flags only reconfigure a missing booth. Against an existing
 	// one they are a contract: refuse on mismatch unless the user opts out.
@@ -276,11 +280,12 @@ func resolveConnectTarget(name string, positional []string, codePath string, run
 		}
 
 	case connectRun:
-		created, err := runConnectTarget(name, positional, codePath, keepAlive, quiet, create, containers, engine, stderr)
+		created, err := runConnectTarget(name, positional, codePath, keepAlive, quiet, create, containers, engines, stderr)
 		if err != nil {
 			return managedContainer{}, noCleanup, err
 		}
 		target = created
+		engine = target.Engine
 
 	default:
 		return managedContainer{}, noCleanup, commandExit(1, "Error: internal error: unknown connect action")
@@ -433,6 +438,9 @@ func connectPlan(containers []managedContainer, name string, positional []string
 		targetName = defaultBoothName()
 	}
 
+	if err := ambiguousEngineError(containers, targetName); err != nil {
+		return managedContainer{}, connectUse, err
+	}
 	container, found := findByName(containers, targetName)
 	if found && codePath != "" && container.CodePath != codePath {
 		return managedContainer{}, connectUse, fmt.Errorf(
@@ -548,7 +556,7 @@ func resolveCodePathFlag(code string) (string, error) {
 // when --name carries a placeholder template (e.g. '{project}-{port}'): the
 // resolved name is only known after the run, so we cannot look it up by the
 // literal flag value.
-func runConnectTarget(name string, positional []string, codePath string, keepAlive, quiet bool, create connectCreateOpts, preRun []managedContainer, engine string, stderr io.Writer) (managedContainer, error) {
+func runConnectTarget(name string, positional []string, codePath string, keepAlive, quiet bool, create connectCreateOpts, preRun []managedContainer, engines []string, stderr io.Writer) (managedContainer, error) {
 	self, err := os.Executable()
 	if err != nil {
 		return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to locate booth executable: %v", err))
@@ -580,8 +588,9 @@ func runConnectTarget(name string, positional []string, codePath string, keepAli
 	// Re-query and resolve the container the run just created. When no name was
 	// given, resolve by the code path the booth was run from (--code, or this
 	// process's cwd when --code was not given) so we match however the run
-	// derived the name (e.g. from config.toml).
-	containers, err := managedContainers(engine, false)
+	// derived the name (e.g. from config.toml). Every engine is asked: the run
+	// picks its own (a --dind project skips Apple container, say).
+	containers, err := managedContainersAcross(engines, false, io.Discard)
 	if err != nil {
 		return managedContainer{}, commandExit(1, fmt.Sprintf("Error: failed to query booths: %v", err))
 	}
@@ -610,7 +619,7 @@ func runConnectTarget(name string, positional []string, codePath string, keepAli
 		return managedContainer{}, commandExit(1, err.Error())
 	}
 
-	if err := waitForBoothReady(target.Name, engine); err != nil {
+	if err := waitForBoothReady(target.Name, target.Engine); err != nil {
 		return managedContainer{}, err
 	}
 	return target, nil
@@ -622,14 +631,16 @@ func runConnectTarget(name string, positional []string, codePath string, keepAli
 // advance. An unambiguous single new booth is required; anything else is an error
 // (the caller cannot safely guess which container to connect to).
 func newlyCreatedContainer(preRun, postRun []managedContainer) (managedContainer, error) {
+	// Keyed by engine too: the same name may already exist on another engine.
+	key := func(c managedContainer) string { return nonEmpty(c.Engine, "docker") + "/" + c.Name }
 	existing := make(map[string]bool, len(preRun))
 	for _, c := range preRun {
-		existing[c.Name] = true
+		existing[key(c)] = true
 	}
 
 	var created []managedContainer
 	for _, c := range postRun {
-		if !existing[c.Name] && c.State == "running" {
+		if !existing[key(c)] && c.State == "running" {
 			created = append(created, c)
 		}
 	}
@@ -697,7 +708,7 @@ func connectSessionToken() string {
 // output, and reports whether it exited zero. Root avoids any dependence on the
 // coder user's mid-alignment state for this bookkeeping.
 func dockerExecRootQuiet(containerName, script, engine string) bool {
-	cmd := exec.Command(engine, "exec", "-u", "root", containerName, "sh", "-c", script)
+	cmd := exec.Command(docker.EngineBinary(engine), "exec", "-u", "root", containerName, "sh", "-c", script)
 	cmd.Stdout = io.Discard
 	cmd.Stderr = io.Discard
 	return cmd.Run() == nil
@@ -780,7 +791,7 @@ func waitForBoothReady(containerName, engine string) error {
 	const interval = 500 * time.Millisecond
 
 	coderUID := func() (string, bool) {
-		out, err := exec.Command(engine, "exec", containerName, "id", "-u", "coder").Output()
+		out, err := exec.Command(docker.EngineBinary(engine), "exec", containerName, "id", "-u", "coder").Output()
 		if err != nil {
 			return "", false
 		}

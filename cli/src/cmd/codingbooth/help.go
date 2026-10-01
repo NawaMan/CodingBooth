@@ -45,8 +45,11 @@ OPTIONS
   --sudo <true|false>     Enable/disable sudo access (default: true)
   --no-sudo               Shorthand for --sudo false
   --rootless              Skip the Linux rootless/userns-remap refusal (unsupported)
-  --engine <docker|podman>  Container engine to use (default: docker; podman
-                          is experimental — see docs/PODMAN_SUPPORT.md)
+  --engine <docker|podman|apple>
+                          Container engine to use (default: apple, i.e. Apple
+                          container, when installed and running; else docker;
+                          else podman. podman and apple are experimental — see
+                          docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md)
 
 EXAMPLES:
   %s --variant codeserver       Run the booth to use codeserver on localhost:<port>.
@@ -186,12 +189,15 @@ CONTAINER MODE:
                          When false, passwordless sudo is revoked after container setup.
                          Can also be set in config.toml: sudo = false
   --no-sudo              Shorthand for --sudo false
-  --engine <docker|podman>  Container engine to shell out to (default: docker;
-                         falls back to podman if docker isn't installed but
-                         podman is). podman is experimental and may not have
-                         full Docker feature parity yet — see
-                         docs/PODMAN_SUPPORT.md. Can also be set in
-                         config.toml (engine = "podman") or CB_ENGINE.
+  --engine <docker|podman|apple>
+                         Container engine to shell out to (default: apple,
+                         i.e. Apple container on macOS, when installed and
+                         running — except with --dind/--egress; else docker;
+                         else podman). podman and apple are experimental and
+                         may not have full Docker feature parity yet — see
+                         docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md.
+                         Can also be set in config.toml (engine = "podman") or
+                         CB_ENGINE.
   --keep-alive           Do not remove the container when stopped
   --hide-welcome         Do not print the welcome banner when a shell starts.
                          Can also be set in config.toml (hide-welcome = true)
@@ -319,8 +325,11 @@ CONTAINER MODE:
   --egress               Enable egress defaults
   --sudo <true|false>    Enable/disable sudo (default: true)
   --no-sudo              Shorthand for --sudo false
-  --engine <docker|podman>  Container engine to use (default: docker; podman
-                         is experimental — see docs/PODMAN_SUPPORT.md)
+  --engine <docker|podman|apple>
+                         Container engine to use (default: apple, i.e. Apple
+                         container, when installed and running; else docker;
+                         else podman. podman and apple are experimental — see
+                         docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md)
   --keep-alive           Do not remove container when stopped
   --hide-welcome         No welcome banner in shells (also: hide-welcome = true, CB_HIDE_WELCOME=true)
   --browser              Open the booth UI in a browser once its port answers (default)
@@ -474,7 +483,10 @@ OPTIONS:
   --silence-build         Hide build output; show a status line, log on failure
   --verbose               Show detailed output
   --dryrun                Print docker commands without executing
-  --engine <docker|podman>  Container engine to use (default: docker; podman is experimental)
+  --engine <docker|podman|apple>
+                          Container engine to use (default: apple, i.e. Apple
+                          container, when installed and running; else docker;
+                          else podman. podman and apple are experimental)
 
 IMAGE NAMING:
   Local:   <name>:<tag>

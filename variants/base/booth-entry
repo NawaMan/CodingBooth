@@ -56,6 +56,18 @@ section() {
   fi
 }
 
+# Make host.docker.internal resolve on engines that cannot be asked to. Docker
+# and Podman map it themselves (--add-host ...:host-gateway); Apple container
+# has no such flag, so the CLI passes the network gateway as BOOTH_HOST_GATEWAY
+# and the mapping is written here. Unset everywhere else: a no-op.
+if [ -n "${BOOTH_HOST_GATEWAY:-}" ] && ! getent hosts host.docker.internal >/dev/null 2>&1; then
+  if printf '%s\thost.docker.internal\n' "$BOOTH_HOST_GATEWAY" >> /etc/hosts 2>/dev/null; then
+    info "Mapped host.docker.internal to $BOOTH_HOST_GATEWAY"
+  else
+    info "Could not map host.docker.internal to $BOOTH_HOST_GATEWAY (/etc/hosts not writable)"
+  fi
+fi
+
 section "Ensure user/group alignment ..."
 
 USER_NAME="coder"

@@ -31,6 +31,12 @@ export HOST_OS
 # is the thing it tests.
 export CB_BROWSER=false
 
+# Run on Docker unless the caller picked an engine. With nothing chosen the CLI
+# prefers Apple container when it is installed and running, so the engine — and
+# every dryrun's expected `docker \` lines — would depend on the machine.
+# CB_ENGINE=apple (or podman) runs a suite on that engine on purpose.
+export CB_ENGINE="${CB_ENGINE:-docker}"
+
 # How tests/setups/* run an install or setup script that insists on being root.
 #
 # Those scripts open with `[[ $EUID -eq 0 ]] || exit`, because inside a booth

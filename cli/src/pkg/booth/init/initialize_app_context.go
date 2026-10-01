@@ -126,23 +126,46 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 }
 
 func validateConfig(config *appctx.AppConfig) {
-	if err := validateEgressConfig(config); err != nil {
+	// Engine first: it refuses combinations (--egress on apple) that the egress
+	// defaults below would otherwise act on, writing .booth/egress/ files for a
+	// run that then fails.
+	if err := resolveEngineConfig(config); err != nil {
 		panic(err)
 	}
-	if err := resolveEngineConfig(config); err != nil {
+	if err := validateEgressConfig(config); err != nil {
 		panic(err)
 	}
 }
 
-// resolveEngineConfig normalizes config.Engine to a concrete "docker" or
-// "podman" (applying the PATH fallback when it was never explicitly set),
-// or returns an error for anything else. See docs/PODMAN_SUPPORT.md.
+// resolveEngineConfig normalizes config.Engine to a concrete "docker",
+// "podman" or "apple" (applying the default order when it was never
+// explicitly set), or returns an error for anything else. See
+// docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md.
 func resolveEngineConfig(config *appctx.AppConfig) error {
-	engine, err := appctx.ResolveEngineValue(config.Engine, config.Quiet)
+	// With no engine chosen, Apple container comes first — unless the run
+	// needs a sidecar it cannot start; then docker (or podman) is picked
+	// instead of refusing below.
+	resolve := appctx.ResolveEngineValue
+	if config.Dind || config.Egress {
+		resolve = appctx.ResolveEngineValueWithoutApple
+	}
+	engine, err := resolve(config.Engine, config.Quiet)
 	if err != nil {
 		return err
 	}
 	config.Engine = engine
+
+	// Both sidecars need what Apple container does not offer: --dind a
+	// --privileged daemon, --egress a namespace shared with a proxy container.
+	// Refuse up front rather than fail half-way through starting them.
+	if config.Engine == "apple" {
+		if config.Dind {
+			return fmt.Errorf("--dind is not supported on engine apple (Apple container) yet. See docs/CONTAINER_SUPPORT.md")
+		}
+		if config.Egress {
+			return fmt.Errorf("--egress is not supported on engine apple (Apple container) yet. See docs/CONTAINER_SUPPORT.md")
+		}
+	}
 
 	// --dind has no docker:dind to reuse under Podman (daemonless, rootless by
 	// default), so it runs a nested-Podman sidecar instead (Phase 4,

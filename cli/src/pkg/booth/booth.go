@@ -473,15 +473,12 @@ func isUsableHostIP(ip net.IP) bool {
 }
 
 // engineOrDocker is for user-facing hints ("stop with: <engine> stop …") that
-// name the binary the reader should type. ctx.Engine() is normally already a
-// concrete "docker"/"podman" by run time (see resolveEngineConfig), but a
-// couple of call sites build this message without a full AppContext, so an
-// empty value still reads as Docker.
+// name the binary the reader should type — `container` for the apple engine.
+// ctx.Engine() is normally already concrete by run time (see
+// resolveEngineConfig), but a couple of call sites build this message without
+// a full AppContext, so an empty value still reads as Docker.
 func engineOrDocker(engine string) string {
-	if engine == "" {
-		return "docker"
-	}
-	return engine
+	return docker.EngineBinary(engine)
 }
 
 func getDindName(ctx appctx.AppContext) string {
@@ -675,7 +672,18 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	// bound to a specific interface answers on — and what you would hand to
 	// someone else on the network. Absent when the host has no address beyond
 	// its loopback, in which case the name is still the way in.
-	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_NAME="+hostGatewayName))
+	//
+	// Apple container has no --add-host, so there the name resolves only once
+	// booth-entry maps it in /etc/hosts — and only images whose booth-entry
+	// does that. BOOTH_HOST_GATEWAY asks for the mapping; BOOTH_HOST_NAME is
+	// the gateway address itself, which works on any image.
+	if ctx.Engine() == docker.EngineApple {
+		gateway := docker.AppleNetworkGateway("default", ctx.Dryrun())
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_NAME="+gateway))
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_GATEWAY="+gateway))
+	} else {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_NAME="+hostGatewayName))
+	}
 	if hostIP := getHostIP(); hostIP != "" {
 		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_IP="+hostIP))
 	}
