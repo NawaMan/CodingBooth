@@ -128,6 +128,12 @@ Error: push to ghcr.io/myteam/myproject:a3f8b2c1d4e5f6a7b8c9d0e1 failed.
   Ensure you are logged in: docker login ghcr.io
 ```
 
+The suggested login names the engine in use: `podman login` on Podman, and
+`container registry login` on Apple container (`--engine apple`), which pushes with
+`container image push`. A registry on this machine (`localhost`, `127.0.0.1`) is reached
+over plain HTTP on every engine, as Docker does. See
+[CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md).
+
 ---
 
 ## Authentication
