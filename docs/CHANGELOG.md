@@ -19,6 +19,14 @@ This file contains a list of changes for each released version.
     (Krohnkite 0.9.9.2, pinned + SHA256-verified) replace it with the same Ctrl+Alt key scheme,
     start/stop commands and Help tab. `setup bismuth*` lines still work: they are shims that print a
     deprecation notice and run the Krohnkite equivalent.
+  - **i3 on XFCE: `xfce4-session.xml` carries two session blocks now.** 26.04 adds
+    `FailsafeWayland` alongside the X11 `Failsafe`, with its own `xfdesktop` client.
+    `i3-default--setup.sh` rewrites only the X11 block — i3 is an X11 window manager, so the
+    Wayland session is not ours to touch — but the check afterwards read the whole file, found the
+    Wayland block's `xfdesktop`, and failed the build with "Failed to switch ... to i3". The check
+    now reads the X11 block alone, and treats an empty block as a failure so a future restructure
+    is loud rather than silently green. `tests/complex/test-i3-desktops` had the same whole-file
+    grep and was scoped the same way; it also asserts the Wayland block is left intact.
   - **PHP defaults to 8.5 from Ubuntu's own archive.** `ppa:ondrej/php` has not published for 26.04
     yet, so the PPA is now added only when the requested version isn't in the archive, and a clear
     error names what the archive has when the PPA can't be used. `php8.5-opcache` no longer exists
