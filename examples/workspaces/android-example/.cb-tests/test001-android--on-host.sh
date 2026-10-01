@@ -9,6 +9,25 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
+# ---- arch gate ----
+#
+# Google publishes the Android SDK command-line, platform and build tools for
+# linux x86_64 only, which is why android-sdk--setup.sh skips the install on
+# any other architecture. The booth answers that with
+# `--platform linux/amd64`, so on an arm64 host it needs an amd64 image: fine
+# for a released tag (Hub is multi-arch), impossible for an unreleased --rc,
+# where the local build is arm64-only and the run dies at
+# "no match for platform in manifest" before a single assertion runs.
+#
+# Exit 77 — run-example-tests.sh reports that as SKIPPED rather than passed,
+# so this never reads as coverage that did not happen. Linux x86_64, where the
+# example is meant to run, is unaffected.
+if [[ "$(uname -m)" != "x86_64" ]]; then
+    echo "SKIP: the Android SDK is published for linux x86_64 only; this host is $(uname -m)."
+    echo "      The booth would need an amd64 image, and the emulator would need /dev/kvm."
+    exit 77
+fi
+
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$SCRIPT_DIR/../../../.."
 source "$REPO_ROOT/tests/booth-bin--source.sh"

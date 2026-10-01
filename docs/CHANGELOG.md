@@ -54,6 +54,19 @@ This file contains a list of changes for each released version.
     were refreshed so they don't shadow the fix; docs and comments naming 24.04 as the current base
     were updated.
 
+- **An example can declare the host architectures it runs on, and is skipped elsewhere.**
+  `.cb-tests/requires-arch.txt` lists `uname -m` values, one per line; anywhere else
+  `run-example-tests.sh` reports the example as `skipped` instead of running and failing it.
+  `android-example` declares `x86_64`: Google publishes the Android SDK tools for linux x86_64
+  only (which is why `android-sdk--setup.sh` skips the install elsewhere), so the booth asks for
+  `--platform linux/amd64` — fine against a released multi-arch tag, impossible against an
+  unreleased `--rc`, where the local build is arm64-only and the run dies at "no match for
+  platform in manifest" before one assertion runs. The status is its own: a skip is excluded from
+  the retry pass, and the closing line reads "N skipped — not run, not verified" rather than
+  folding into "all passed". The declaration lives beside the example rather than in its
+  `run-automatic-on-host-test.sh` because 70 of those 72 files are byte-identical, and that shared
+  wrapper flattens any exit code into a plain failure.
+
 - **`playwright-example` re-pinned from Playwright 1.58.2 to 1.63.0.** 1.58.2 predates Ubuntu
   26.04, and refuses outright: "Playwright does not support chromium on ubuntu26.04-arm64" —
   before `--with-deps` is even reached, so it is the release that is unsupported, not the
