@@ -418,6 +418,10 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.HideWelcome = true
 			i++
 
+		case "--apple-low-ports":
+			cfg.AppleLowPorts = true
+			i++
+
 		// The browser opens by default for a booth that serves a UI. Both
 		// spellings are here because config.toml and CB_BROWSER can turn it off
 		// project-wide, and a single run has to be able to say otherwise.

@@ -465,6 +465,25 @@ or `CB_HIDE_WELCOME=true` in the environment. The setting is applied when the co
 is created, so it covers every shell in that booth. The pending-messages notice
 (`booth--msg`) is not part of the banner and still appears.
 
+### Ports Below 1024 on Apple Container (`--apple-low-ports`)
+
+Docker lets `coder` open ports below 1024 (`:80`, `:443`); Apple container does not. On engine
+`apple`, ask for it explicitly:
+
+```bash
+./booth --engine apple --apple-low-ports
+```
+
+```toml
+# .booth/config.toml
+apple-low-ports = true
+```
+
+or `CB_APPLE_LOW_PORTS=true`. It hands `coder` only the `NET_BIND_SERVICE` permission, for
+every process in the booth and for `booth shell`/`booth exec` sessions. `--public` needs it on
+Apple container. Ignored, with a note, on other engines. See
+[CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md#ports-below-1024---apple-low-ports).
+
 ### Log Time (`--log-time`)
 
 Prefixes progress messages with timestamps, useful for debugging startup timing:
@@ -792,6 +811,8 @@ By default a booth listens on `127.0.0.1` only — nothing outside your machine 
 ```
 
 The password is read from `.booth/.booth.password` (mode `600`, gitignored), or prompted for if that file is missing. It is never written to `config.toml`.
+
+On Apple container (`--engine apple`), `--public` also needs [`--apple-low-ports`](#ports-below-1024-on-apple-container---apple-low-ports): its TLS proxy binds `:80`, which Apple container does not allow by default.
 
 ### Signing in
 

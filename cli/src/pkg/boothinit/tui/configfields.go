@@ -115,6 +115,8 @@ var fieldDisplays = []fieldDisplay{
 		Detail:  "Save the Console UI's (base variant's browser terminal)\nlayout/tabs back to disk as you change them, instead of\nonly remembering them in this browser.\n\n(default) = off — console.json (if present) still sets\nthe starting layout, but changes are never written back\nshared = writes to .booth/console.json, so the new\nlayout becomes the committed default for everyone\n(needs Writable .booth/ to actually persist)\ncache = writes to .booth/.tmp/console.json, just for\nyour own next session on this machine (always writable,\nnever git-committed)"},
 	{Key: "hide-welcome", Label: "Hide Welcome", Group: "Container",
 		Detail: "Do not print the welcome banner (handy commands,\nhints) when a shell starts in the booth."},
+	{Key: "apple-low-ports", Label: "Apple Low Ports", Group: "Container",
+		Detail: "Engine apple (Apple container) only: let coder open\nports below 1024, as Docker allows by default.\n--public needs it there (its TLS proxy binds :80).\n\nGrants only NET_BIND_SERVICE. Ignored on other engines."},
 	{Key: "persist-home", Label: "Persist Home", Group: "Container",
 		Detail: "Keep /home/coder in a named volume across runs.\nWithout this, everything outside the mounted code\ndirectory is lost when the container goes away."},
 	{Key: "project-name", Label: "Project Name", Group: "Container",

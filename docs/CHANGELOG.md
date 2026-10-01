@@ -4,6 +4,16 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`--apple-low-ports`: ports below 1024 on Apple container.** Docker lets `coder` open `:80` and
+  `:443`; Apple container does not, so `--public` (whose TLS proxy binds `:80`) and any app on a
+  low port failed there. The new opt-in flag (also `apple-low-ports = true`,
+  `CB_APPLE_LOW_PORTS=true`) hands `coder` only `NET_BIND_SERVICE` — no `--cap-add`, no kernel
+  setting changed. `booth-entry` now starts `coder`'s processes through the new
+  `booth--as-coder`, which is plain `runuser` unless the booth has the flag; `booth shell`/`exec`
+  start their sessions the same way in a flagged booth. `--public` on Apple container without it
+  warns. Ignored with a note on Docker and Podman. Needs a rebuilt base image. See
+  `docs/CONTAINER_SUPPORT.md`.
+
 - **Apple container engine (experimental).** `--engine apple` (or `CB_ENGINE=apple`, or
   `engine = "apple"` in `.booth/config.toml`) runs booths on Apple container, the macOS-native
   runtime, through its `container` CLI. That CLI is not Docker-compatible, so engine calls are
