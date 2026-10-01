@@ -88,6 +88,16 @@ This file contains a list of changes for each released version.
   byte-for-byte even though `templates/languages/php` already defaults to 8.5. All four re-verified
   end to end.
 
+- **`build-all.sh`'s live status graph no longer fights `docker build` for the terminal.**
+  `build/docker-build.sh` passed `--progress=auto` even though every build is captured to a log file
+  (`> log 2>&1`); BuildKit's animated renderer writes its spinner frames straight to the controlling
+  terminal regardless of that redirect, confirmed by the captured logs having zero spinner glyphs
+  despite them appearing live on screen. With several variants building in parallel, each one's
+  renderer and `build-all.sh`'s own cursor-positioned redraw (`draw_graph`) were independently issuing
+  cursor-control escapes on the same tty, garbling the display. Now `--progress=plain`, which was
+  already the format `last_step_counter` expected (`"#12 [base 5/17] RUN ..."`) — so this also fixes
+  a pre-existing mismatch between what was requested and what the status graph's own parser assumed.
+
 - **4 examples' `APT_SNAPSHOT` bumped back even with the base image.** `apt-example`,
   `clang-example`, `systemlib-example`, and `turtle-example` were pinned to `20260918`; the base
   image is now built at `20260928` (nothing sets `CB_APT_SNAPSHOT`, so a local rebuild defaults to
