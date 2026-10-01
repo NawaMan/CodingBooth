@@ -12,6 +12,7 @@ import (
 	"net"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"sort"
 	"strconv"
@@ -62,6 +63,11 @@ func runApple(flags DockerFlags, subcommand string, flat []string, capture bool)
 	steps, err := translateForApple(subcommand, flat)
 	if err != nil {
 		return "", err
+	}
+	if subcommand == "run" {
+		for _, warning := range appleMountConflicts(flat) {
+			fmt.Fprintln(os.Stderr, warning)
+		}
 	}
 
 	var out strings.Builder
@@ -372,6 +378,78 @@ func translateRunArgs(args []string) ([]string, error) {
 		}
 	}
 	return out, nil
+}
+
+// appleMountConflicts warns about a run's bind mounts that Apple container
+// would get wrong: mounting a single file drops the mount of the folder that
+// directly contains it, when that folder is mounted too (container 1.5.0).
+// The folder then goes missing in the container, or — when another mount
+// shows the same content — silently loses its :ro. One warning per such file.
+func appleMountConflicts(args []string) []string {
+	type bind struct{ source, target string }
+	var binds []bind
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+		if !strings.HasPrefix(arg, "-") || arg == "--" {
+			break // the image: mounts come before it
+		}
+		name, value, inline := arg, "", false
+		if strings.HasPrefix(arg, "--") {
+			name, value, inline = strings.Cut(arg, "=")
+		}
+		if !inline && dockerRunValueFlags[name] && i+1 < len(args) {
+			i++
+			value = args[i]
+		}
+		switch name {
+		case "-v", "--volume":
+			parts := strings.Split(value, ":")
+			if len(parts) >= 2 && filepath.IsAbs(parts[0]) {
+				binds = append(binds, bind{filepath.Clean(parts[0]), parts[1]})
+			}
+		case "--mount":
+			fields := map[string]string{}
+			for _, field := range strings.Split(value, ",") {
+				k, v, _ := strings.Cut(field, "=")
+				fields[k] = v
+			}
+			source := fields["source"]
+			if source == "" {
+				source = fields["src"]
+			}
+			target := fields["target"]
+			if target == "" {
+				target = fields["destination"]
+			}
+			if (fields["type"] == "bind" || fields["type"] == "") && filepath.IsAbs(source) {
+				binds = append(binds, bind{filepath.Clean(source), target})
+			}
+		}
+	}
+
+	folders := map[string]string{} // host folder -> where it is mounted
+	var files []bind
+	for _, b := range binds {
+		info, err := os.Stat(b.source)
+		switch {
+		case err != nil:
+			continue
+		case info.IsDir():
+			folders[b.source] = b.target
+		default:
+			files = append(files, b)
+		}
+	}
+	var warnings []string
+	for _, file := range files {
+		folder := filepath.Dir(file.source)
+		if target, mounted := folders[folder]; mounted {
+			warnings = append(warnings, fmt.Sprintf(
+				"Warning: Apple container drops a folder's mount when a file directly in it is mounted too: mounting %s (at %s) loses %s (at %s). Mount the file from another folder. See docs/CONTAINER_SUPPORT.md.",
+				file.source, file.target, folder, target))
+		}
+	}
+	return warnings
 }
 
 // translateBuildArgs maps Docker's valued --pull=<bool> onto `container

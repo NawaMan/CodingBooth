@@ -200,6 +200,42 @@ function extract_digest() {
 # ======================
 
 Log() { printf "\033[1;34m[info]\033[0m %s\n" "$1"; }
+
+# CopyToAppleContainer <variant> -t <tag> [-t <tag> ...]
+# A local build lands in Docker's image store, but Apple container keeps its
+# own: a booth on --engine apple would look for this dev tag on Docker Hub and
+# fail with 404. So when Apple container is installed and running, copy the
+# freshly built tags across (docker save | container image load). Best-effort:
+# a failed copy warns and leaves the build a success. CB_NO_APPLE_COPY=1 skips
+# it. See docs/CONTAINER_SUPPORT.md.
+CopyToAppleContainer() {
+  local variant="$1"; shift
+  local tags=()
+  while [[ $# -gt 0 ]]; do
+    [[ "$1" == "-t" ]] && { tags+=( "$2" ); shift; }
+    shift
+  done
+  [[ "${CB_NO_APPLE_COPY:-}" == "1" ]] && return 0
+  command -v container >/dev/null 2>&1 || return 0
+  container system status --format json 2>/dev/null | grep -q '"status":"running"' || return 0
+  [[ ${#tags[@]} -gt 0 ]] || return 0
+
+  # One tag through the archive, the rest re-tagged: an archive holding two
+  # tags of the same image makes `container image load` ingest each blob twice
+  # and fail with "File exists".
+  Log "[$variant]: Copying into Apple container's image store: ${tags[*]}"
+  local first="${tags[0]}" tag ok=true
+  docker save "${first}" | container image load >/dev/null || ok=false
+  for tag in "${tags[@]:1}"; do
+    [[ "${ok}" == "true" ]] || break
+    container image tag "${first}" "${tag}" >/dev/null || ok=false
+  done
+  if [[ "${ok}" == "true" ]]; then
+    Log "[$variant]: Copied into Apple container"
+  else
+    Err "[$variant]: Could not copy into Apple container (the build itself is fine); run: docker save ${first} | container image load"
+  fi
+}
 Err() { printf "\033[1;31m[err]\033[0m %s\n" "$1" >&2; }
 Die() { Err "$1"; exit 1; }
 
@@ -387,6 +423,8 @@ BuildVariant() {
       "${tags_arg[@]}" \
       "${context_dir}" \
       --progress=plain
+
+    CopyToAppleContainer "$variant" "${tags_arg[@]}"
   fi
 
   Log "[$variant]: Done."
