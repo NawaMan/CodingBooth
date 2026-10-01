@@ -4,6 +4,30 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A `booth--expose` tunnel that cannot open says so once, and says why.** The host side retries
+  every second and printed the same `Tunnel error` each time. It now prints it once (until it
+  changes), and for `permission denied` on a host port below 1024 — a normal user may not listen
+  on `localhost` there; macOS allows it only on every interface — adds a hint to expose to a port
+  of 1024 or above, e.g. `booth--expose 8080 8080`.
+
+- **Local image builds land in Apple container too.** `build/docker-build.sh` (and so
+  `build/build-all.sh`) builds into Docker's image store, which Apple container cannot see — a booth
+  on `--engine apple` then looked for the dev tag on Docker Hub and failed with `404`. After a
+  local build it now copies the new tags into Apple container when that is installed and running
+  (`CB_NO_APPLE_COPY=1` skips it); a failed copy only warns.
+- **`build/build-all.sh base` no longer dies on macOS with `VARIANTS_TO_BUILD[@]: unbound
+  variable`.** With only `base` asked for, the list of other variants is empty, and macOS's bash 3.2
+  treats a loop over an empty array as unbound under `set -u`.
+
+- **Apple container: the project folder is no longer empty in the booth.** Apple container drops a
+  folder's mount when a file directly in it is mounted too, and CodingBooth mounts the project's
+  `booth` wrapper read-only over the project folder — so on `--engine apple` every project with a
+  wrapper got an empty `/home/coder/code`. The wrapper is now mounted there from a copy kept outside
+  the project (`~/.cache/codingbooth/apple-wrappers/`), still read-only. Any other mount of that
+  shape (e.g. a `-v` in `run-args`) gets a warning naming the file and the folder it would lose.
+  Verified with `examples/workspaces/server-example`: its files are in the booth, `booth` and
+  `.booth/` stay read-only, and its server answers from the Mac.
+
 - **`booth build --push` works on Apple container.** The push ran `container push`, which does not
   exist; it is now `container image push`. Pulls and pushes against a registry on this machine
   (`localhost`, `127.0.0.1`) use plain HTTP, as Docker does — Apple container defaults to HTTPS

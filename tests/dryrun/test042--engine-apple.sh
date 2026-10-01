@@ -165,3 +165,25 @@ if printf '%s\n' "$PUB" | grep -q "Add --apple-low-ports"; then
 else
   fail 15 "--public on apple without --apple-low-ports warns" "$PUB"
 fi
+
+# 16-17. A project's booth wrapper is mounted read-only over the project. Apple
+# container drops a folder's mount when a file directly in it is mounted too,
+# which would empty /home/coder/code — so on apple the wrapper is mounted from a
+# copy outside the project; docker mounts it from the project as before.
+WRAP_PROJECT="$(mktemp -d)"
+WRAP_CACHE="$(mktemp -d)"
+printf '#!/bin/sh\n' > "$WRAP_PROJECT/booth"
+WRAP=$(XDG_CACHE_HOME="$WRAP_CACHE" run_coding_booth --code "$WRAP_PROJECT" --variant base --dryrun --engine apple 2>/dev/null || true)
+if printf '%s\n' "$WRAP" | grep -q -- "-v $WRAP_CACHE/codingbooth/apple-wrappers/[0-9a-f]*/booth:/home/coder/code/booth:ro" \
+  && ! printf '%s\n' "$WRAP" | grep -q -- "-v $WRAP_PROJECT/booth:"; then
+  pass 16 "apple mounts the booth wrapper from a copy outside the project"
+else
+  fail 16 "apple mounts the booth wrapper from a copy outside the project" "$WRAP"
+fi
+DWRAP=$(XDG_CACHE_HOME="$WRAP_CACHE" run_coding_booth --code "$WRAP_PROJECT" --variant base --dryrun --engine docker 2>/dev/null || true)
+if printf '%s\n' "$DWRAP" | grep -q -- "-v $WRAP_PROJECT/booth:/home/coder/code/booth:ro"; then
+  pass 17 "docker still mounts the booth wrapper from the project"
+else
+  fail 17 "docker still mounts the booth wrapper from the project" "$DWRAP"
+fi
+rm -rf "$WRAP_PROJECT" "$WRAP_CACHE"
