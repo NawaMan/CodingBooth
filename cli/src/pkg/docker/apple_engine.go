@@ -114,6 +114,48 @@ func runApple(flags DockerFlags, subcommand string, flat []string, capture bool)
 	return out.String(), nil
 }
 
+// AppleServiceRunning reports whether Apple container's API server is up
+// (`container system status`). When it is not, `container` cannot answer any
+// query — and there are no running booths on it either — so a lookup that
+// only included it because it is installed can skip it quietly.
+func AppleServiceRunning() bool {
+	out, err := exec.Command(appleBinary, "system", "status", "--format", "json").Output()
+	if err != nil {
+		return false
+	}
+	var status struct {
+		Status string `json:"status"`
+	}
+	return json.Unmarshal(out, &status) == nil && status.Status == "running"
+}
+
+// AppleDefaultGateway is the IPv4 gateway of Apple container's built-in
+// "default" network: the address a container on it reaches the host at.
+const AppleDefaultGateway = "192.168.64.1"
+
+// AppleNetworkGateway returns the IPv4 gateway of an Apple container network
+// (`container network inspect`), or AppleDefaultGateway when it cannot be
+// read. With dryrun set nothing is run and the default is returned, so what
+// --dryrun prints does not depend on the machine.
+func AppleNetworkGateway(network string, dryrun bool) string {
+	if dryrun {
+		return AppleDefaultGateway
+	}
+	out, err := exec.Command(appleBinary, "network", "inspect", network).Output()
+	if err != nil {
+		return AppleDefaultGateway
+	}
+	var networks []struct {
+		Status struct {
+			IPv4Gateway string `json:"ipv4Gateway"`
+		} `json:"status"`
+	}
+	if json.Unmarshal(out, &networks) != nil || len(networks) == 0 || networks[0].Status.IPv4Gateway == "" {
+		return AppleDefaultGateway
+	}
+	return networks[0].Status.IPv4Gateway
+}
+
 // printGroups splits a `container run` line into one flag (and its value) per
 // printed line, the way Docker() prints its argument groups; the image and the
 // command after it stay on one line. Anything else prints on a single line.

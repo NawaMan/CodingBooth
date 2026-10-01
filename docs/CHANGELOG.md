@@ -13,9 +13,25 @@ This file contains a list of changes for each released version.
   dropped; `build` gets Docker's `--pull=<bool>` as Apple's bare `--pull` switch. `--dind` and
   `--egress` are refused up front. Verified by hand: an interactive foreground booth, a daemon booth
   with exec/list/stop/start/restart/remove, a one-shot command, and a Boothfile build
-  (`examples/workspaces/empty-example`). Lifecycle commands need `CB_ENGINE=apple` until the
-  all-engines lookup covers it. `--engine container` is not accepted — the engine is `apple`. See
-  `docs/CONTAINER_SUPPORT.md`.
+  (`examples/workspaces/empty-example`), plus `--persist-home`, `booth--expose`, `booth build`, an
+  image pull and the `notebook` variant. With no engine chosen, `list`, `stop`, `start`, `restart`,
+  `remove`, `prune`, `message` and `expose list` query every installed engine — Docker, Podman and
+  Apple container — and act on whichever owns the booth; an Apple container whose service is not
+  started is skipped without a warning. `host.docker.internal` resolves inside the booth: the CLI
+  passes the network gateway (`BOOTH_HOST_GATEWAY`, also the value of `BOOTH_HOST_NAME` there) and
+  `booth-entry` maps it in `/etc/hosts`; on images built before that, use `$BOOTH_HOST_NAME`.
+  `--engine container` is not accepted — the engine is `apple`. See `docs/CONTAINER_SUPPORT.md`.
+- **Apple container is the default engine when it is installed and running.** With no engine
+  chosen, `booth` now picks `apple` first (its service must be up — `container system status`),
+  then `docker`, then `podman`, and says so in one line (hidden by `--quiet`); `--engine docker`
+  keeps a run on Docker. `--dind` and `--egress` runs skip Apple container, since it cannot start
+  their sidecars. An installed but stopped Apple container is passed over. The test suites pin
+  `CB_ENGINE=docker` so their results do not depend on what is installed.
+- **`booth shell` and `booth exec` find a booth on any engine.** Like `stop` and `list`, with no
+  engine chosen they look the booth up on every installed engine and run on the one that owns it,
+  so `CB_ENGINE` is no longer needed to reach a Docker booth on a Mac where Apple container is the
+  default (or a Podman one). A name on more than one engine is refused until `CB_ENGINE` picks.
+  With `--run`, a missing booth is created on the default engine.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 

@@ -38,6 +38,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # this covers the rest.
 export CB_BROWSER=false
 
+# Run on Docker unless the caller picked an engine; see common--source.sh.
+export CB_ENGINE="${CB_ENGINE:-docker}"
+
 # One self-erasing line for the stretch where this runner has nothing to say.
 #
 # Every example's output goes to .<example>.log, so between "Started example: X"

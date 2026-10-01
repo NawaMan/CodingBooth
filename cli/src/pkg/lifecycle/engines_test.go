@@ -12,9 +12,10 @@ import (
 	"testing"
 )
 
-// fakeEngine is a stand-in "docker" or "podman" binary. booths are the names its
-// `ps` reports (each shown as running); fail makes every call exit 1, like an
-// engine whose daemon is down.
+// fakeEngine is a stand-in "docker", "podman" or "container" (Apple container)
+// binary. booths are the names its `ps` (or, for container, `ls`) reports, each
+// shown as running; fail makes every call exit 1, like an engine whose daemon
+// is down.
 type fakeEngine struct {
 	booths []string
 	fail   bool
@@ -30,6 +31,19 @@ func installFakeEngines(t *testing.T, engines map[string]fakeEngine) string {
 		var script string
 		if engine.fail {
 			script = "#!/bin/sh\necho \"" + name + " $*\" >> '" + log + "'\nexit 1\n"
+		} else if name == "container" {
+			// Apple container answers in JSON; the adapter filters and reshapes it.
+			var docs []string
+			for _, booth := range engine.booths {
+				docs = append(docs, `{"id":"`+booth+`","configuration":{"labels":{"cb.managed":"true","cb.variant":"base"}},"status":{"state":"running"}}`)
+			}
+			script = "#!/bin/sh\n" +
+				"echo \"" + name + " $*\" >> '" + log + "'\n" +
+				"case \"$1\" in\n" +
+				"ls) echo '[" + strings.Join(docs, ",") + "]' ;;\n" +
+				"inspect) for last; do :; done\n" +
+				"  printf '[{\"id\":\"%s\",\"configuration\":{\"labels\":{\"cb.managed\":\"true\",\"cb.variant\":\"base\"}},\"status\":{\"state\":\"running\"}}]\\n' \"$last\" ;;\n" +
+				"esac\n"
 		} else {
 			script = "#!/bin/sh\n" +
 				"echo \"" + name + " $*\" >> '" + log + "'\n" +
@@ -101,6 +115,94 @@ func TestManagedContainersAcrossSkipsFailingEngineWithWarning(t *testing.T) {
 	}
 }
 
+// stubAppleService makes the "is Apple container's service up" check answer running.
+func stubAppleService(t *testing.T, running bool) {
+	t.Helper()
+	saved := appleServiceRunning
+	appleServiceRunning = func() bool { return running }
+	t.Cleanup(func() { appleServiceRunning = saved })
+}
+
+func TestManagedContainersAcrossIncludesApple(t *testing.T) {
+	installFakeEngines(t, map[string]fakeEngine{
+		"docker":    {booths: []string{"web"}},
+		"container": {booths: []string{"mac"}},
+	})
+
+	var stderr bytes.Buffer
+	got, err := managedContainersAcross([]string{"docker", "apple"}, false, &stderr)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	var summary []string
+	for _, container := range got {
+		summary = append(summary, container.Name+"@"+container.Engine)
+	}
+	if want := "mac@apple,web@docker"; strings.Join(summary, ",") != want {
+		t.Errorf("containers = %v, want %s", summary, want)
+	}
+}
+
+func TestManagedContainersAcrossSkipsStoppedAppleQuietly(t *testing.T) {
+	installFakeEngines(t, map[string]fakeEngine{
+		"docker":    {booths: []string{"web"}},
+		"container": {fail: true},
+	})
+	stubAppleService(t, false)
+
+	var stderr bytes.Buffer
+	got, err := managedContainersAcross([]string{"docker", "apple"}, false, &stderr)
+	if err != nil {
+		t.Fatalf("a stopped Apple container must not fail the command: %v", err)
+	}
+	if len(got) != 1 || got[0].Name != "web" {
+		t.Errorf("containers = %+v, want just web@docker", got)
+	}
+	if stderr.Len() != 0 {
+		t.Errorf("a stopped Apple container service is not worth a warning, got %q", stderr.String())
+	}
+}
+
+func TestManagedContainersAcrossWarnsWhenRunningAppleFails(t *testing.T) {
+	installFakeEngines(t, map[string]fakeEngine{
+		"docker":    {booths: []string{"web"}},
+		"container": {fail: true},
+	})
+	stubAppleService(t, true)
+
+	var stderr bytes.Buffer
+	if _, err := managedContainersAcross([]string{"docker", "apple"}, false, &stderr); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !strings.Contains(stderr.String(), "could not list apple booths") {
+		t.Errorf("stderr = %q, want an apple warning: its service is up, so the failure is real", stderr.String())
+	}
+}
+
+func TestManagedContainersAcrossStoppedAppleAndFailingDockerIsDockersError(t *testing.T) {
+	installFakeEngines(t, map[string]fakeEngine{
+		"docker":    {fail: true},
+		"container": {fail: true},
+	})
+	stubAppleService(t, false)
+
+	var stderr bytes.Buffer
+	_, err := managedContainersAcross([]string{"docker", "apple"}, false, &stderr)
+	if err == nil || !strings.Contains(err.Error(), "docker") {
+		t.Fatalf("err = %v, want docker's error", err)
+	}
+}
+
+func TestManagedContainersAcrossAppleAloneReportsItsError(t *testing.T) {
+	installFakeEngines(t, map[string]fakeEngine{"container": {fail: true}})
+	stubAppleService(t, false)
+
+	var stderr bytes.Buffer
+	if _, err := managedContainersAcross([]string{"apple"}, false, &stderr); err == nil {
+		t.Fatal("with apple the only engine asked, its failure is the answer")
+	}
+}
+
 func TestManagedContainersAcrossAllFailingIsAnError(t *testing.T) {
 	installFakeEngines(t, map[string]fakeEngine{
 		"docker": {fail: true},
@@ -144,6 +246,56 @@ func TestAmbiguousEngineError(t *testing.T) {
 
 	if _, err := resolveSingleContainer(both, "web", "", nil, stateAny); err == nil || !strings.Contains(err.Error(), "exists on both") {
 		t.Errorf("resolveSingleContainer must refuse an ambiguous name, got %v", err)
+	}
+}
+
+func TestAmbiguousEngineErrorNamesAllThreeEngines(t *testing.T) {
+	all := []managedContainer{
+		{Name: "web", Engine: "podman"},
+		{Name: "web", Engine: "apple"},
+		{Name: "web", Engine: "docker"},
+	}
+	err := ambiguousEngineError(all, "web")
+	if err == nil || !strings.Contains(err.Error(), `"web" exists on apple, docker and podman.`) {
+		t.Errorf("ambiguousEngineError = %v, want it on apple, docker and podman", err)
+	}
+}
+
+func TestListShowsAppleBoothsWhenNoneChosen(t *testing.T) {
+	installFakeEngines(t, map[string]fakeEngine{
+		"docker":    {booths: []string{"web"}},
+		"container": {booths: []string{"mac"}},
+	})
+
+	var stdout, stderr bytes.Buffer
+	if err := List(nil, &stdout, &stderr); err != nil {
+		t.Fatalf("List: %v (stderr %q)", err, stderr.String())
+	}
+	lines := strings.Split(strings.TrimSpace(stdout.String()), "\n")
+	if len(lines) != 3 || !strings.Contains(lines[0], "ENGINE") {
+		t.Fatalf("want an ENGINE header and 2 booths, got:\n%s", stdout.String())
+	}
+	if !strings.HasPrefix(lines[1], "mac") || !strings.Contains(lines[1], "apple") {
+		t.Errorf("first row = %q, want mac on apple", lines[1])
+	}
+}
+
+func TestStopActsOnAppleWhenAppleOwnsTheBooth(t *testing.T) {
+	log := installFakeEngines(t, map[string]fakeEngine{
+		"docker":    {},
+		"container": {booths: []string{"mac"}},
+	})
+
+	var stderr bytes.Buffer
+	if err := Stop([]string{"--name", "mac", "--force"}, &stderr); err != nil {
+		t.Fatalf("Stop: %v (stderr %q)", err, stderr.String())
+	}
+	calls := readLog(t, log)
+	if !strings.Contains(calls, "container kill mac") {
+		t.Errorf("Apple container never received the kill:\n%s", calls)
+	}
+	if strings.Contains(calls, "docker kill") {
+		t.Errorf("docker must not be asked to act on an apple booth:\n%s", calls)
 	}
 }
 
@@ -240,5 +392,74 @@ func TestPruneLabelsTheEngineWhenSeveralAreQueried(t *testing.T) {
 	}
 	if !strings.Contains(stdout.String(), "No stopped booth containers to prune.") {
 		t.Errorf("stdout = %q", stdout.String())
+	}
+}
+
+func TestExecActsOnAppleWhenAppleOwnsTheBooth(t *testing.T) {
+	log := installFakeEngines(t, map[string]fakeEngine{
+		"docker":    {booths: []string{"web"}},
+		"container": {booths: []string{"mac"}},
+	})
+
+	var stderr bytes.Buffer
+	if err := Exec([]string{"mac", "--", "true"}, &stderr); err != nil {
+		t.Fatalf("Exec: %v (stderr %q)", err, stderr.String())
+	}
+	calls := readLog(t, log)
+	if !strings.Contains(calls, "container exec") || !strings.Contains(calls, "mac true") {
+		t.Errorf("Apple container never received the exec:\n%s", calls)
+	}
+	if strings.Contains(calls, "docker exec") {
+		t.Errorf("docker must not be asked to exec in an apple booth:\n%s", calls)
+	}
+}
+
+func TestExecActsOnDockerWhenDockerOwnsTheBooth(t *testing.T) {
+	log := installFakeEngines(t, map[string]fakeEngine{
+		"docker":    {booths: []string{"web"}},
+		"container": {booths: []string{"mac"}},
+	})
+
+	var stderr bytes.Buffer
+	if err := Exec([]string{"web", "--", "true"}, &stderr); err != nil {
+		t.Fatalf("Exec: %v (stderr %q)", err, stderr.String())
+	}
+	calls := readLog(t, log)
+	if !strings.Contains(calls, "docker exec") {
+		t.Errorf("docker never received the exec:\n%s", calls)
+	}
+	if strings.Contains(calls, "container exec") {
+		t.Errorf("Apple container must not be asked to exec in a docker booth:\n%s", calls)
+	}
+}
+
+func TestShellActsOnTheEngineThatOwnsTheBooth(t *testing.T) {
+	log := installFakeEngines(t, map[string]fakeEngine{
+		"docker":    {booths: []string{"web"}},
+		"container": {booths: []string{"mac"}},
+	})
+
+	var stderr bytes.Buffer
+	if err := Shell([]string{"mac"}, &stderr); err != nil {
+		t.Fatalf("Shell: %v (stderr %q)", err, stderr.String())
+	}
+	if calls := readLog(t, log); !strings.Contains(calls, "container exec") || strings.Contains(calls, "docker exec") {
+		t.Errorf("shell must exec on Apple container only:\n%s", calls)
+	}
+}
+
+func TestExecRefusesANameOnSeveralEngines(t *testing.T) {
+	log := installFakeEngines(t, map[string]fakeEngine{
+		"docker":    {booths: []string{"web"}},
+		"container": {booths: []string{"web"}},
+	})
+
+	var stderr bytes.Buffer
+	err := Exec([]string{"web", "--", "true"}, &stderr)
+	if err == nil || !strings.Contains(err.Error(), "exists on both apple and docker") {
+		t.Fatalf("Exec = %v, want the ambiguity error", err)
+	}
+	if calls := readLog(t, log); strings.Contains(calls, " exec ") {
+		t.Errorf("nothing may run when the target is ambiguous:\n%s", calls)
 	}
 }
