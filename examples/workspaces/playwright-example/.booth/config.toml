@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --select nodejs+npm-upgrade/playwright:chromium,1.58.2
+# Configured by: booth config --no-tui --overwrite --select nodejs+npm-upgrade/playwright:chromium,1.63.0
 
 
 run-args = ["-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro"]
