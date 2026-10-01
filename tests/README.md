@@ -82,6 +82,31 @@ calls to `pick_free_port` can return the same number. Say what you mean with
 port, one container asked to publish the same host port twice, or a case that passes while proving
 nothing because the "other" port was the same one.
 
+## Running a booth with no controlling terminal
+
+A test that needs booth to find no terminal must take the runner from `common--source.sh`. Never
+call `setsid` directly — it is util-linux, macOS does not have it, and the failure is quiet.
+
+```bash
+no_tty_supported || exit 0                   # once, near the top; prints SKIP: and skips
+OUTPUT=$(no_tty_run "$BOOTH" --name x -- echo hi) || STATUS=$?
+```
+
+`no_tty_run` puts the command in a session of its own: `setsid -w` where it exists, otherwise the
+same fork + `setsid(2)` + exec through `python3` or `perl`, which macOS ships. All three wait for
+the child, exit with its status, and leave stdout/stderr on the caller's fds so `$( )` still
+captures them. The fork matters — `setsid(2)` returns `EPERM` for a process that already leads its
+group, and a freshly forked child never does.
+
+**Why not redirect stdin.** The consent prompt is written to `/dev/tty`, not stdout, so it still
+works under `booth shell --run`. `</dev/null` therefore proves nothing; the terminal itself has to
+be gone, which means a new session.
+
+**Why this is a shared helper.** `basic/test029` called `setsid` inline. On macOS every case died
+with `setsid: command not found` — and the weakest of them *passed* on it, because "non-zero exit
+and no container" is satisfied just as well by a missing binary as by booth refusing. A test that
+asserts a refusal must assert on the refusal's own text, or a broken harness reads as green.
+
 ## `set -euo pipefail` will eat your test
 
 Every suite runs under it, and it silently skips cases rather than failing loudly. Both of these
