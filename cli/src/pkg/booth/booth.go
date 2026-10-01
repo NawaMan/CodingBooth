@@ -517,6 +517,34 @@ func podmanLowPortArgs(engine string, joinsNetns bool) []string {
 	return []string{"--sysctl", "net.ipv4.ip_unprivileged_port_start=0"}
 }
 
+// appleLowPortsArgs is what --apple-low-ports adds to the run: only on engine
+// apple, where it is needed. The label tells shell and exec to start their
+// sessions with the same permission booth-entry gives coder. Pure for unit
+// tests.
+func appleLowPortsArgs(engine string, lowPorts bool) [][]string {
+	if engine != docker.EngineApple || !lowPorts {
+		return nil
+	}
+	return [][]string{
+		{"-e", "BOOTH_LOW_PORTS=true"},
+		{"--label", "cb.apple-low-ports=true"},
+	}
+}
+
+// appleLowPortsNote is the one line --apple-low-ports earns on stderr, if any:
+// that it does nothing on another engine, or — for --public on engine apple
+// without it — that the TLS proxy, which wants :80, will not start. Pure for
+// unit tests.
+func appleLowPortsNote(engine string, lowPorts, public bool) string {
+	switch {
+	case lowPorts && engine != docker.EngineApple:
+		return fmt.Sprintf("Note: --apple-low-ports only applies to engine apple (Apple container); ignored on %s, where ports below 1024 already work.", engine)
+	case !lowPorts && public && engine == docker.EngineApple:
+		return "Warning: --public on engine apple needs ports below 1024 (its TLS proxy binds :80), which Apple container does not allow by default. Add --apple-low-ports. See docs/CONTAINER_SUPPORT.md."
+	}
+	return ""
+}
+
 // PrepareCommonArgs prepares common Docker run arguments and returns updated AppContext.
 func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
@@ -600,6 +628,17 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	// Enable TLS reverse proxy when public
 	if ctx.Public() {
 		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_TLS=true"))
+	}
+
+	// Ports below 1024 for coder. Docker allows them in every container; Apple
+	// container keeps the kernel's limit at 1024, so there it takes an explicit
+	// --apple-low-ports: booth-entry then starts coder with NET_BIND_SERVICE,
+	// and the label tells shell/exec to start their sessions the same way.
+	for _, arg := range appleLowPortsArgs(ctx.Engine(), ctx.AppleLowPorts()) {
+		builder.CommonArgs.Append(ilist.NewList[string](arg...))
+	}
+	if note := appleLowPortsNote(ctx.Engine(), ctx.AppleLowPorts(), ctx.Public()); note != "" {
+		fmt.Fprintln(os.Stderr, note)
 	}
 
 	// Mount user-provided TLS certificates

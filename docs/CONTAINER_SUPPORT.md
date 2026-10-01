@@ -126,6 +126,47 @@ So `curl http://host.docker.internal:<port>` works in a booth built from this ve
 `$BOOTH_HOST_NAME` works on any image. A booth attached to another network with a `--network`
 run-arg still gets the `default` network's gateway.
 
+## Ports below 1024 (`--apple-low-ports`)
+
+Docker lets any user in a container open ports below 1024: it sets the kernel's
+`net.ipv4.ip_unprivileged_port_start` to `0` in every container. Apple container leaves it at
+`1024`, so in an Apple container booth `coder` gets `Permission denied` on `:80` and `:443`.
+That includes `--public`, whose TLS proxy (Caddy) binds `:80`, and any app you run there.
+
+CodingBooth does not change that on its own. You ask for it, per booth:
+
+```bash
+booth --engine apple --apple-low-ports            # this run
+```
+
+or `apple-low-ports = true` in `.booth/config.toml`, or `CB_APPLE_LOW_PORTS=true`. With
+`--public` and without the flag, the run warns (`Add --apple-low-ports`); the proxy then
+fails to start, as it would anywhere `:80` is not allowed.
+
+**What it grants: `NET_BIND_SERVICE` only** — the Linux permission to open ports below 1024,
+and nothing else. Apple container booths already hold it in their permission set; the flag
+hands it to `coder`. Nothing is added to the run (no `--cap-add`), `coder` stays a normal user,
+and even `sudo` inside the booth cannot raise anything new. The kernel limit itself is not
+changed: that needs `SYS_ADMIN`, which is far broader, and which `container exec` sessions
+would get back even if it were dropped at startup.
+
+How it reaches `coder`'s processes:
+
+- The CLI passes `BOOTH_LOW_PORTS=true` and labels the booth `cb.apple-low-ports=true`.
+- `booth-entry` (root) writes the root-owned marker `/run/booth-low-ports`, and starts every
+  `coder` process — startup hooks (where Caddy starts), user startups, the main command — through
+  `booth--as-coder`. With the marker, that switches to `coder` with `setpriv` and hands down
+  `NET_BIND_SERVICE` as an *ambient* capability, which children inherit (`runuser` would drop
+  it). Without the marker it is exactly the `runuser` call `booth-entry` made before, so Docker
+  and Podman booths are unchanged.
+- `booth shell` and `booth exec` on a labelled booth start the session as root through the same
+  helper (or plain `runuser` on an image that predates it).
+
+A raw `container exec` from the host does not go through the helper, so it gets no low ports —
+the safe direction. On Docker and Podman the flag is ignored with a one-line note: low ports
+already work there. Like the `/etc/hosts` mapping, it needs an image with the current
+`booth-entry`.
+
 ## How it works
 
 Apple container's CLI is not Docker-compatible, so a binary swap (how Podman works) is not
@@ -217,8 +258,16 @@ published `base` image through the booth entrypoint:
     `Address already in use` error. Docker gives its own raw error for the same case; the
     friendlier port diagnosis exists only for `--dind`, which `apple` does not support.
 
-Not verified yet: the `--silence-build` progress line (it only draws on a terminal), the
-`codeserver` and `desktop-*` variants, and `--public`.
+- **By hand, `--apple-low-ports`** (same machine, image with this `booth-entry`):
+  - Without the flag `coder` got `Permission denied` on `:80` and `:443`; with it both opened,
+    `coder` held `NET_BIND_SERVICE` and no `SYS_ADMIN`.
+  - `booth exec` and `booth shell` sessions in a flagged booth could open `:80`; in a plain
+    booth they could not. `sudo` in a flagged booth still had no `SYS_ADMIN`.
+  - `--public` with the flag served HTTPS (Caddy's sign-in redirect); without it the run warned
+    and Caddy failed with `listen tcp :80: bind: permission denied`.
+
+Not verified yet: the `--silence-build` progress line (it only draws on a terminal), and the
+`codeserver` and `desktop-*` variants.
 
 ## Known limitations
 
@@ -227,9 +276,9 @@ Not verified yet: the `--silence-build` progress line (it only draws on a termin
 - **Separate image store.** Images built or pulled with Docker are not visible. A locally
   built image can be copied across:
   `docker save <image> -o image.tar && container image load -i image.tar`.
-- **`--public`, the `codeserver` and desktop variants, and single-file bind mounts are
-  untested.** `--public` probably fails: its TLS proxy binds `:80`, and there is
-  no sysctl to let `coder` bind low ports.
+- **Ports below 1024 need `--apple-low-ports`**, `--public` included; see
+  [Ports below 1024](#ports-below-1024---apple-low-ports).
+- **The `codeserver` and desktop variants, and single-file bind mounts are untested.**
 - **`--dind` and `--egress` are not supported.**
 
 ## Where it lives (for maintainers)
@@ -245,6 +294,7 @@ Not verified yet: the `--silence-build` progress line (it only draws on a termin
 | Quiet skip of a stopped service | `managedContainersAcross` (`lifecycle/lifecycle.go`), `docker.AppleServiceRunning` |
 | Host gateway | `docker.AppleNetworkGateway`; `BOOTH_HOST_*` in `booth/booth.go`; the `/etc/hosts` line in `variants/base/booth-entry` |
 | `booth--expose` tunnel binary | `tunnelExecCommand` (`booth/tcp_tunnel.go`) |
+| `--apple-low-ports` | `appleLowPortsArgs` / `appleLowPortsNote` (`booth/booth.go`); `coderCommand` (`lifecycle/connect.go`); `variants/base/booth--as-coder` and its marker in `booth-entry` |
 
 ---
 
@@ -291,7 +341,7 @@ done and kept here for the record.
 | 16 | `booth build --push` / multi-arch | Possible | `container image push`; multi-arch via repeated `--arch`. |
 | 17 | `--dind` | **Blocked as built** | The sidecar needs `--privileged`. Candidates: `--publish-socket` to forward a host engine's socket, or `--virtualization`. |
 | 18 | Host-escape flags | Not supported | Refused (see [How it works](#how-it-works)). |
-| 19 | `--public` | Uncertain | Needs a way to bind `:80` as `coder`. |
+| 19 | `--public` | ✅ With `--apple-low-ports` | See [Ports below 1024](#ports-below-1024---apple-low-ports). |
 
 ### Tier 4 — Hardening
 

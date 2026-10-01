@@ -132,6 +132,12 @@ type AppConfig struct {
 	IdleShutdownTime  int    `toml:"idle-shutdown-time,omitempty"  envconfig:"CB_IDLE_SHUTDOWN_TIME" default:"0"`
 	IdleExitCode      int    `toml:"idle-exit-code,omitempty"      envconfig:"CB_IDLE_EXIT_CODE" default:"0"`
 
+	// AppleLowPorts lets coder open ports below 1024 on engine apple (Apple
+	// container leaves the kernel's limit at 1024; Docker sets it to 0). It
+	// hands coder only NET_BIND_SERVICE; see docs/CONTAINER_SUPPORT.md. Ignored
+	// on other engines.
+	AppleLowPorts bool `toml:"apple-low-ports,omitempty" envconfig:"CB_APPLE_LOW_PORTS" default:"false"`
+
 	// DindAllowed and PrivilegedAllowed pre-approve a booth that can reach the host (the --dind
 	// sidecar; --privileged-like run-args). They come only from the command line: no config.toml
 	// key and no environment variable, so a cloned repo can never grant them to itself.
@@ -257,6 +263,7 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Daemon:            %t\n", config.Daemon)
 	fmt.Fprintf(&str, "    Browser:           %t\n", config.Browser)
 	fmt.Fprintf(&str, "    HideWelcome:       %t\n", config.HideWelcome)
+	fmt.Fprintf(&str, "    AppleLowPorts:     %t\n", config.AppleLowPorts)
 	fmt.Fprintf(&str, "    Pull:              %t\n", config.Pull)
 	fmt.Fprintf(&str, "    Dind:              %t\n", config.Dind)
 	fmt.Fprintf(&str, "    Sudo:              %t\n", config.Sudo)
