@@ -445,3 +445,44 @@ func TestAppleServiceRunning(t *testing.T) {
 		})
 	}
 }
+
+func TestTranslatePushUsesImagePush(t *testing.T) {
+	steps, err := translateForApple("push", []string{"ghcr.io/team/app:v1"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(steps) != 1 || !reflect.DeepEqual(steps[0].args, []string{"image", "push", "ghcr.io/team/app:v1"}) {
+		t.Errorf("push = %+v, want container image push ghcr.io/team/app:v1 (there is no top-level push)", steps)
+	}
+}
+
+func TestLocalRegistryScheme(t *testing.T) {
+	tests := map[string]bool{
+		"localhost:5000/app:v1":                      true,
+		"localhost/app:v1":                           true,
+		"127.0.0.1:5055/team/app:v1":                 true,
+		"[::1]:5000/app:v1":                          true,
+		"ghcr.io/team/app:v1":                        false,
+		"123.dkr.ecr.us-east-1.amazonaws.com/app:v1": false,
+		"docker.io/library/ubuntu":                   false,
+		"ubuntu:26.04":                               false, // Docker Hub
+		"nawaman/codingbooth:base":                   false, // Docker Hub user repo
+	}
+	for ref, wantHTTP := range tests {
+		got := localRegistryScheme([]string{ref})
+		if wantHTTP != (len(got) == 2 && got[1] == "http") {
+			t.Errorf("localRegistryScheme(%q) = %v, want http=%t", ref, got, wantHTTP)
+		}
+	}
+}
+
+func TestTranslatePushToLocalRegistryUsesHTTP(t *testing.T) {
+	steps, err := translateForApple("push", []string{"localhost:5055/app:v1"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := []string{"image", "push", "--scheme", "http", "localhost:5055/app:v1"}
+	if len(steps) != 1 || !reflect.DeepEqual(steps[0].args, want) {
+		t.Errorf("push = %+v, want %v", steps, want)
+	}
+}

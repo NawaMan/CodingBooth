@@ -180,6 +180,8 @@ when the engine is `apple`, those hand the Docker-style call to
 | `inspect [--format …] <name>` | `container inspect`, reshaped into the Docker fields the CLI reads (`Name`, `State.Status`, `Config.Labels`, `NetworkSettings.Ports`, `HostConfig.PortBindings`, …) so `{{json .}}` and `{{index .Config.Labels "…"}}` work as before. A stopped container's state reads `exited`, as in Docker. |
 | `port <name>` | Built from `inspect`'s published ports: `10000/tcp -> 127.0.0.1:10077`. |
 | `image inspect` / `pull` | `container image inspect` / `container image pull`. |
+| `push` (`booth build --push`) | `container image push`. The failure hint says `container registry login <host>`. |
+| Registry on this machine | `pull`/`push` of a `localhost`, `127.0.0.0/8` or `::1` registry add `--scheme http`: Docker always uses plain HTTP there, Apple container defaults to HTTPS (and fails with `bad protocol version`). |
 | `volume ls` | `container volume list --format json`, filtered and formatted in Go. Other `volume` subcommands pass through. |
 | `stop --timeout N` | `container stop --time N` |
 | `start -ai` | `container start -a -i` |
@@ -338,7 +340,7 @@ done and kept here for the record.
 | # | Item | Feasibility | Notes |
 | --- | --- | --- | --- |
 | 15 | `--egress` | Uncertain | `--cap-add NET_ADMIN` exists, but it also needs user networks (macOS 26+), name resolution between containers, and item 9. |
-| 16 | `booth build --push` / multi-arch | Possible | `container image push`; multi-arch via repeated `--arch`. |
+| 16 | `booth build --push` | ✅ Done | `container image push`, plain HTTP for a registry on this machine as Docker does. Verified: pushed to a local registry, and Docker ran the image. Multi-arch is not a `booth build` feature on any engine. |
 | 17 | `--dind` | **Blocked as built** | The sidecar needs `--privileged`. Candidates: `--publish-socket` to forward a host engine's socket, or `--virtualization`. |
 | 18 | Host-escape flags | Not supported | Refused (see [How it works](#how-it-works)). |
 | 19 | `--public` | ✅ With `--apple-low-ports` | See [Ports below 1024](#ports-below-1024---apple-low-ports). |

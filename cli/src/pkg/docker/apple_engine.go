@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net"
 	"os"
 	"os/exec"
 	"regexp"
@@ -156,6 +157,35 @@ func AppleNetworkGateway(network string, dryrun bool) string {
 	return networks[0].Status.IPv4Gateway
 }
 
+// localRegistryScheme is `--scheme http` when the image reference in args
+// names a registry on this machine (localhost, 127.0.0.0/8, ::1), else nil.
+// Docker always talks plain HTTP to those; Apple container defaults to
+// HTTPS everywhere, so without this a push to a local registry fails with
+// "bad protocol version".
+func localRegistryScheme(args []string) []string {
+	ref := ""
+	for _, arg := range args {
+		if !strings.HasPrefix(arg, "-") {
+			ref = arg
+		}
+	}
+	host, _, found := strings.Cut(ref, "/")
+	if !found || !(strings.ContainsAny(host, ".:") || host == "localhost") {
+		return nil // no registry part: Docker Hub
+	}
+	if h, _, err := net.SplitHostPort(host); err == nil {
+		host = h
+	}
+	host = strings.Trim(host, "[]")
+	if host == "localhost" {
+		return []string{"--scheme", "http"}
+	}
+	if ip := net.ParseIP(host); ip != nil && ip.IsLoopback() {
+		return []string{"--scheme", "http"}
+	}
+	return nil
+}
+
 // printGroups splits a `container run` line into one flag (and its value) per
 // printed line, the way Docker() prints its argument groups; the image and the
 // command after it stay on one line. Anything else prints on a single line.
@@ -226,7 +256,10 @@ func translateForApple(subcommand string, args []string) ([]appleStep, error) {
 	case "build":
 		return []appleStep{{args: append([]string{"build"}, translateBuildArgs(args)...)}}, nil
 	case "pull":
-		return passthrough("image", "pull"), nil
+		return passthrough(append([]string{"image", "pull"}, localRegistryScheme(args)...)...), nil
+	case "push":
+		// `booth build --push`; Apple container has no top-level push.
+		return passthrough(append([]string{"image", "push"}, localRegistryScheme(args)...)...), nil
 	case "image":
 		if len(args) > 0 && args[0] == "inspect" {
 			return imageInspectQuery(args[1:])
