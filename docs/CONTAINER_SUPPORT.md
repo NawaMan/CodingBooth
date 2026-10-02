@@ -111,33 +111,108 @@ engine that owns it. With `--run`, a booth that exists nowhere is created by `bo
 
 ## Sizing the booth's VM (`--vm-memory`, `--vm-cpus`, `--vm-shm-size`)
 
-Apple container runs every booth in its own small VM, and gives it **1 GB of memory and 4 CPUs**
-by default (`container system property list`, `[container]`). Docker and Podman have no per-booth
-VM — a container shares the engine's whole VM — so this is where Apple container differs most. A
-desktop variant outgrows 1 GB quickly (KDE alone uses about 700 MB idle): the VM thrashes, the
-browser shows *Reconnecting to the booth…*, then *Booth stopped*, and even `container exec` hangs.
+### In short
 
-Size it per booth:
+On a Mac with **Apple container**, every booth runs in its own small virtual machine (VM), and
+that VM has a fixed amount of memory:
 
-| Setting | Flag | Env | `config.toml` | Passed to Apple container |
-| --- | --- | --- | --- | --- |
-| Memory | `--vm-memory 4g` | `CB_VM_MEMORY` | `vm-memory = "4g"` | `--memory 4g` |
-| CPUs | `--vm-cpus 6` | `CB_VM_CPUS` | `vm-cpus = "6"` | `--cpus 6` |
-| `/dev/shm` | `--vm-shm-size 2g` | `CB_VM_SHM_SIZE` | `vm-shm-size = "2g"` | `--shm-size 2g` |
+- **A Linux desktop booth gets 4 GB by itself.** KDE, XFCE, LXQt and Wayland ask for it — no
+  setting needed.
+- **Every other booth gets Apple container's default, 1 GB.** Enough for a terminal or a code
+  server; raise it for anything heavy.
+- **You can choose the amount** with `--vm-memory`, `CB_VM_MEMORY`, `vm-memory` in
+  `.booth/config.toml`, the Config TUI, or the `vm-memory` template.
 
-or pick them as templates — category **Booth VM (macOS)** in `booth config`, or
-`--select vm-memory:8g/vm-cpus:6/vm-shm-size:2g`. They are also fields in the Config TUI.
+This only concerns **Apple container**. With Docker Desktop or Podman — on a Mac or anywhere
+else — a booth simply shares the engine's memory, there is no per-booth VM, and all of these
+settings are ignored (with a one-line note).
 
-- **Only engine `apple` uses them.** On Docker and Podman they are ignored with a one-line note, so
-  nothing gets capped there.
-- **`/dev/shm` comes out of the VM's memory.** Desktops get `--shm-size 1g`; `vm-shm-size` replaces
-  it. Keep it well below `vm-memory`.
-- **A desktop variant without `vm-memory` gets a warning** (`Add --vm-memory 4g`); the default is not
-  changed for you.
-- Values are checked up front: sizes like `512m`, `4g`, `4096m`; CPUs a whole number.
+### What happens by default
 
-Verified: `--vm-memory 4g --vm-cpus 6` gave the booth a 4096 MB, 6-CPU VM (`free` showed 4047 MB
-and `nproc` 6 inside).
+| Booth | Memory | CPUs | `/dev/shm` |
+| --- | --- | --- | --- |
+| Desktop variant (`desktop-kde`, `desktop-xfce`, `desktop-lxqt`, `desktop-wayland`), or an image built `FROM` one | **4 GB** — the image asks for it | 4 | 1 GB |
+| Any other booth | 1 GB (Apple container's default) | 4 | Apple container's default |
+
+When a desktop gets its 4 GB this way, the run says so:
+
+```
+ℹ️  Giving the booth's VM 4g of memory, the minimum the desktop-kde image asks for (--vm-memory to change).
+```
+
+### Choosing the amount
+
+Any one of these — they follow the usual precedence, **flag > `config.toml` > environment
+variable**:
+
+| Way | Example | Scope |
+| --- | --- | --- |
+| Command-line flag | `booth --vm-memory 8g` | this run |
+| Project config | `vm-memory = "8g"` in `.booth/config.toml` | this project |
+| Environment variable | `CB_VM_MEMORY=8g booth` | this shell |
+| Config TUI | **VM Memory** field in `booth config` | writes `config.toml` |
+| Template | `booth config --select vm-memory:8g` (category **Booth VM (macOS)**) | writes `config.toml` |
+
+Sizes are written like `512m`, `4g`, `4096m` or `2048mb`; an invalid value stops the run with a
+clear message before anything starts. An explicit value always wins over the 4 GB a desktop asks
+for — higher or lower.
+
+**Below the minimum.** Setting less than an image asks for is allowed (you may know your
+workload), but the run warns, because a desktop starved of memory makes the whole VM thrash —
+the browser shows *Reconnecting to the booth…*, then *Booth stopped*, and even `container exec`
+hangs:
+
+```
+Warning: vm-memory 2g is below the 4g this image needs (desktop-kde); the booth may stop responding.
+```
+
+**How much is enough?** A KDE desktop with Firefox, VS Code and a terminal open peaked at about
+2.1 GB, so 4 GB leaves headroom. Heavier work — large builds, several browsers — wants 8 GB.
+
+### CPUs and shared memory
+
+Same mechanism, same ways to set them:
+
+| Setting | Flag | Env | `config.toml` | Template | Default on Apple container |
+| --- | --- | --- | --- | --- | --- |
+| CPUs | `--vm-cpus 6` | `CB_VM_CPUS` | `vm-cpus = "6"` | `--select vm-cpus:6` | 4 |
+| `/dev/shm` | `--vm-shm-size 2g` | `CB_VM_SHM_SIZE` | `vm-shm-size = "2g"` | `--select vm-shm-size:2g` | 1 GB for desktops |
+
+`/dev/shm` is shared memory that browsers, Electron apps and desktops use heavily. On Apple
+container it comes **out of the VM's memory**, so keep it well below `vm-memory`.
+
+### For image authors: asking for a minimum
+
+An image declares the memory its booths need with a label; the desktop variants carry:
+
+```dockerfile
+LABEL com.codingbooth.vm-memory-min="4g"
+```
+
+Images built `FROM` a labelled image inherit it, so a project's Boothfile on a desktop variant
+gets the same 4 GB. Any image may set it. On engine `apple` the CLI reads it before starting and
+uses it when no `vm-memory` is set; Docker and Podman ignore it. A desktop image built before the
+label existed gets this warning instead of the automatic 4 GB:
+
+```
+Warning: the desktop-kde variant on Apple container gets its VM's default 1 GB of memory, which a desktop outgrows (KDE uses ~700 MB idle). Add --vm-memory 4g.
+```
+
+### Background
+
+Apple container's defaults come from `container system property list` (`[container]`:
+`memory = "1gb"`, `cpus = 4`); container 1.5.0 can list them but not change them, so CodingBooth
+sizes each booth's VM instead. The settings become `container run --memory / --cpus /
+--shm-size`.
+
+Verified on container 1.5.0 / macOS 26:
+
+- `--vm-memory 4g --vm-cpus 6` gave a 4096 MB, 6-CPU VM (`free` 4047 MB, `nproc` 6 inside).
+- A KDE booth with no setting got 4096 MB from the label, and stayed up for two minutes with
+  Firefox, VS Code and Konsole open and a viewer connected (peak 2.1 GB used, no
+  out-of-memory kills).
+- An image built `FROM` a labelled KDE image got 4096 MB too; `--vm-memory 2g` kept 2048 MB, with
+  the warning.
 
 ## Single-file mounts
 
@@ -356,7 +431,7 @@ Not verified yet: the `--silence-build` progress line (it only draws on a termin
 | Quiet skip of a stopped service | `managedContainersAcross` (`lifecycle/lifecycle.go`), `docker.AppleServiceRunning` |
 | Host gateway | `docker.AppleNetworkGateway`; `BOOTH_HOST_*` in `booth/booth.go`; the `/etc/hosts` line in `variants/base/booth-entry` |
 | `booth--expose` tunnel binary | `tunnelExecCommand` (`booth/tcp_tunnel.go`) |
-| VM sizing | `vmResourceArgs` (`booth/booth.go`); template fields `vm-*` and `runtime` params in `boothinit/template`, `boothinit/compiler`; templates in `templates/booth-vm/` |
+| VM sizing | `vmResourceArgs`, `imageVmMemoryMin` (`booth/booth.go`); the label on `variants/desktop-*/Dockerfile`; image labels in the adapter's `image inspect`; template fields `vm-*` and `runtime` params in `boothinit/template`, `boothinit/compiler`; templates in `templates/booth-vm/` |
 | Single-file mount bug | `appleWrapperCopy` / `addReadOnlyBoothWrapper` (`booth/booth.go`); the warning, `appleMountConflicts` (`docker/apple_engine.go`) |
 | `--apple-low-ports` | `appleLowPortsArgs` / `appleLowPortsNote` (`booth/booth.go`); `coderCommand` (`lifecycle/connect.go`); `variants/base/booth--as-coder` and its marker in `booth-entry` |
 
