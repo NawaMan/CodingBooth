@@ -132,6 +132,9 @@ install go golang.org/x/tools/gopls@latest
 | `timezone`      | string     | Config: timezone                                         |
 | `dind`          | bool       | Config: Docker-in-Docker                                 |
 | `sudo`          | bool       | Config: give the booth user passwordless sudo            |
+| `vm-memory`     | string     | Config: memory for the booth's VM — engine `apple` (macOS) only; `${PARAM}` expanded |
+| `vm-cpus`       | string     | Config: CPUs for the booth's VM — engine `apple` only; `${PARAM}` expanded |
+| `vm-shm-size`   | string     | Config: `/dev/shm` size — engine `apple` only; `${PARAM}` expanded |
 | `cmds`          | []string   | Config: default commands                                 |
 | `build-args`    | []string   | Config: Docker build arguments                           |
 | `run-args`      | []string   | Config: Docker run arguments (flag-value pairs deduped). Volume source `@code` is rewritten at run time to the host project directory (the same path mounted at `/home/coder/code`) — use it to bind the project a second time into a tool jail that rejects symlink-out-of-jail. |
@@ -259,6 +262,21 @@ booth config --no-tui --select "apt-pkg:jq,ripgrep,htop"   # APT_PKGS=htop,jq,ri
 
 Values are **deduped and sorted** into a canonical form, so the same set produces the same Boothfile
 whether it came from the TUI, `--select`, or a recipe. Only the last param may be variadic.
+
+**Runtime params:** a param that only feeds config values (`run-args`, `vm-memory`, …) and no
+Boothfile segment can set `runtime = true`. It is then not written as `arg NAME=value` into the
+Boothfile: an `arg` whose value changes invalidates the image's build cache, which a runtime knob
+must not do.
+
+```toml
+# templates/booth-vm/vm-memory/template.toml
+vm-memory = "${VM_MEMORY}"
+
+[params.VM_MEMORY]
+default  = "4g"
+suggests = ["2g", "4g", "8g", "16g"]
+runtime  = true
+```
 
 ---
 

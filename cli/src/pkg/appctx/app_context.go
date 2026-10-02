@@ -144,6 +144,9 @@ func (ctx AppContext) LogTime() bool         { return ctx.values.Config.LogTime 
 func (ctx AppContext) PersistHome() bool     { return ctx.values.Config.PersistHome }
 func (ctx AppContext) HideWelcome() bool     { return ctx.values.Config.HideWelcome }
 func (ctx AppContext) AppleLowPorts() bool   { return ctx.values.Config.AppleLowPorts }
+func (ctx AppContext) VmMemory() string      { return ctx.values.Config.VmMemory }
+func (ctx AppContext) VmCpus() string        { return ctx.values.Config.VmCpus }
+func (ctx AppContext) VmShmSize() string     { return ctx.values.Config.VmShmSize }
 func (ctx AppContext) IdleTime() int         { return ctx.values.Config.IdleTime }
 func (ctx AppContext) IdleShutdownTime() int { return ctx.values.Config.IdleShutdownTime }
 func (ctx AppContext) IdleExitCode() int     { return ctx.values.Config.IdleExitCode }
@@ -263,6 +266,9 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Browser:          %t\n", ctx.Browser())
 	fmt.Fprintf(&str, "    HideWelcome:      %t\n", ctx.HideWelcome())
 	fmt.Fprintf(&str, "    AppleLowPorts:    %t\n", ctx.AppleLowPorts())
+	fmt.Fprintf(&str, "    VmMemory:         %s\n", ctx.VmMemory())
+	fmt.Fprintf(&str, "    VmCpus:           %s\n", ctx.VmCpus())
+	fmt.Fprintf(&str, "    VmShmSize:        %s\n", ctx.VmShmSize())
 	fmt.Fprintf(&str, "    Pull:             %t\n", ctx.Pull())
 	fmt.Fprintf(&str, "    Dind:             %t\n", ctx.Dind())
 	fmt.Fprintf(&str, "    Rootless:         %t\n", ctx.Rootless())

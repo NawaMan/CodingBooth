@@ -484,6 +484,26 @@ every process in the booth and for `booth shell`/`booth exec` sessions. `--publi
 Apple container. Ignored, with a note, on other engines. See
 [CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md#ports-below-1024---apple-low-ports).
 
+### Sizing the Booth's VM on Apple Container (`--vm-memory`, `--vm-cpus`, `--vm-shm-size`)
+
+On macOS with Apple container (`--engine apple`), every booth runs in its own VM with 1 GB of
+memory and 4 CPUs by default — too little for a desktop variant. Size it per booth:
+
+```bash
+./booth --engine apple --variant kde --vm-memory 4g --vm-cpus 6
+```
+
+```toml
+# .booth/config.toml
+vm-memory = "4g"
+vm-cpus = "6"
+vm-shm-size = "2g"
+```
+
+or `CB_VM_MEMORY` / `CB_VM_CPUS` / `CB_VM_SHM_SIZE`, or the **Booth VM (macOS)** templates
+(`--select vm-memory:8g`). Docker and Podman ignore them, with a note. See
+[CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md#sizing-the-booths-vm---vm-memory---vm-cpus---vm-shm-size).
+
 ### Log Time (`--log-time`)
 
 Prefixes progress messages with timestamps, useful for debugging startup timing:

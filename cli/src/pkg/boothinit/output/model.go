@@ -36,6 +36,10 @@ type ConfigToml struct {
 	Timezone string
 	Dind     bool
 	Sudo     *bool
+	// VM sizing for engine apple (see appctx.AppConfig.VmMemory).
+	VmMemory  string
+	VmCpus    string
+	VmShmSize string
 	Cmds     []string
 	RunArgs   []string
 	BuildArgs []string

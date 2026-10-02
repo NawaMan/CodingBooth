@@ -44,6 +44,24 @@ func TestParseArgs_AppleLowPorts(t *testing.T) {
 	}
 }
 
+func TestParseArgs_VmSizing(t *testing.T) {
+	config := appctx.AppConfig{
+		RunArgs:   ilist.SemicolonStringList{List: ilist.NewList[string]()},
+		BuildArgs: ilist.SemicolonStringList{List: ilist.NewList[string]()},
+		Cmds:      ilist.SemicolonStringList{List: ilist.NewList[string]()},
+	}
+	args := []string{"--vm-memory", "8g", "--vm-cpus", "6", "--vm-shm-size", "2g"}
+	if err := parseArgs(ilist.NewListFromSlice(args), &config); err != nil {
+		t.Fatalf("parseArgs failed: %v", err)
+	}
+	if config.VmMemory != "8g" || config.VmCpus != "6" || config.VmShmSize != "2g" {
+		t.Errorf("got memory=%q cpus=%q shm=%q", config.VmMemory, config.VmCpus, config.VmShmSize)
+	}
+	if err := parseArgs(ilist.NewListFromSlice([]string{"--vm-memory"}), &config); err == nil {
+		t.Error("--vm-memory without a value must be an error")
+	}
+}
+
 func TestResolveEngineConfig_ExplicitValues(t *testing.T) {
 	for _, engine := range []string{"docker", "podman", "apple"} {
 		config := &appctx.AppConfig{Engine: engine, Quiet: true}

@@ -1,0 +1,27 @@
+display-name = "VM Shared Memory"
+display-disc = "Size of /dev/shm in the booth's VM — macOS / Apple container only"
+display-detail = """Sets the size of /dev/shm (`vm-shm-size` in config.toml, `--vm-shm-size` on the \
+command line), the shared memory browsers, Electron apps and desktops use heavily. Desktop variants \
+get 1g without it.
+
+Only takes effect on macOS with Apple container (`--engine apple`). There /dev/shm comes out of the \
+VM's own memory, so keep it well below VM Memory — 1g of shared memory in the default 1 GB VM leaves \
+nothing for the desktop. Ignored on Docker and Podman.
+
+Select with a size: `--select vm-shm-size:2g`. Units k, m, g."""
+display-order = 3
+primary = true
+tags = [
+    "macos",
+    "apple-container",
+    "vm",
+    "shm",
+    "resources",
+]
+
+vm-shm-size = "${VM_SHM_SIZE}"
+
+[params.VM_SHM_SIZE]
+default = "2g"
+suggests = ["512m", "1g", "2g", "4g"]
+runtime = true
