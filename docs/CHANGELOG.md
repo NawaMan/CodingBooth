@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Desktop booths on Apple container get 4 GB by themselves.** The desktop images now carry the
+  label `com.codingbooth.vm-memory-min="4g"` (inherited by images built `FROM` them). On engine
+  `apple` with no `vm-memory`, the booth's VM gets that minimum instead of Apple container's 1 GB;
+  an explicit `vm-memory` still wins, and one below the minimum is kept with a warning. Any image
+  can declare the label; Docker and Podman ignore it. The adapter's `image inspect` now exposes
+  image labels (`.Config.Labels`). Needs the desktop images rebuilt.
+
 - **`--vm-memory`, `--vm-cpus`, `--vm-shm-size`: size the booth's VM on Apple container.** Apple
   container runs each booth in its own VM with 1 GB and 4 CPUs by default; a desktop variant
   outgrows that (KDE ~700 MB idle), the VM thrashes and the booth stops responding. The new settings
