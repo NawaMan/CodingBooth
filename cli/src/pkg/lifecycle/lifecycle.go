@@ -54,15 +54,53 @@ type managedContainer struct {
 	// AppleLowPorts: created with --apple-low-ports (cb.apple-low-ports), so
 	// shell/exec sessions start through booth--as-coder; see coderCommand.
 	AppleLowPorts bool
+
+	// ImageID is the image the container was created from; ImageRef the name
+	// it was created by. See staleImageWarning.
+	ImageID  string
+	ImageRef string
+}
+
+// staleImageWarning is a line for a booth about to be started again whose
+// image name now points to a different image than the one the booth was
+// created from — typically the Boothfile changed and `booth` rebuilt it. A
+// restarted booth keeps its old image (that is what a kept booth is), so the
+// changes are not in it. "" when the image is unchanged, or cannot be checked.
+func staleImageWarning(target managedContainer) string {
+	if target.ImageID == "" || target.ImageRef == "" {
+		return ""
+	}
+	out, err := docker.DockerOutput(docker.DockerFlags{Silent: true, Engine: target.Engine}, "image", ilist.NewList(
+		ilist.NewList("inspect"),
+		ilist.NewList("--format", "{{.Id}}"),
+		ilist.NewList(target.ImageRef),
+	))
+	if err != nil {
+		return ""
+	}
+	return staleImageMessage(target.Name, target.ImageRef, target.ImageID, strings.TrimSpace(out))
+}
+
+// staleImageMessage is staleImageWarning's decision. Pure for unit tests.
+func staleImageMessage(name, imageRef, createdFrom, current string) string {
+	if current == "" || createdFrom == "" || current == createdFrom {
+		return ""
+	}
+	return fmt.Sprintf("Warning: booth %q was created from an older build of %s; changes since (Boothfile, setups) are not in it.\n"+
+		"         To use the current image: booth remove --force --name %s, then run booth again.", name, imageRef, name)
 }
 
 type inspectData struct {
 	Name    string `json:"Name"`
 	Created string `json:"Created"`
-	State   struct {
+	// Image is the image ID the container was created from (Apple container:
+	// its digest), Config.Image the name it was created by.
+	Image string `json:"Image"`
+	State struct {
 		Status string `json:"Status"`
 	} `json:"State"`
 	Config struct {
+		Image  string            `json:"Image"`
 		Labels map[string]string `json:"Labels"`
 	} `json:"Config"`
 	NetworkSettings struct {
@@ -210,6 +248,9 @@ func Start(args []string, stderr io.Writer) error {
 		return commandExit(1, err.Error())
 	}
 	engine := target.Engine
+	if warning := staleImageWarning(target); warning != "" {
+		_, _ = fmt.Fprintln(stderr, warning)
+	}
 
 	dockerArgs := ilist.NewList(ilist.NewList(target.Name))
 	if !*daemon {
@@ -588,6 +629,8 @@ func inspectManagedContainer(name string, flags docker.DockerFlags) (managedCont
 		Port:      port,
 
 		AppleLowPorts: strings.EqualFold(labels["cb.apple-low-ports"], "true"),
+		ImageID:       data.Image,
+		ImageRef:      data.Config.Image,
 	}, nil
 }
 
