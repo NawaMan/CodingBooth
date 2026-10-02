@@ -138,6 +138,14 @@ type AppConfig struct {
 	// on other engines.
 	AppleLowPorts bool `toml:"apple-low-ports,omitempty" envconfig:"CB_APPLE_LOW_PORTS" default:"false"`
 
+	// VmMemory, VmCpus and VmShmSize size the VM Apple container runs each
+	// booth in (container 1.5.0 defaults: 1 GB, 4 CPUs) and its /dev/shm. Only
+	// engine apple has a per-booth VM; other engines ignore them. Empty = the
+	// engine's default (and, for VmShmSize, the 1g desktops get anyway).
+	VmMemory  string `toml:"vm-memory,omitempty"   envconfig:"CB_VM_MEMORY"`
+	VmCpus    string `toml:"vm-cpus,omitempty"     envconfig:"CB_VM_CPUS"`
+	VmShmSize string `toml:"vm-shm-size,omitempty" envconfig:"CB_VM_SHM_SIZE"`
+
 	// DindAllowed and PrivilegedAllowed pre-approve a booth that can reach the host (the --dind
 	// sidecar; --privileged-like run-args). They come only from the command line: no config.toml
 	// key and no environment variable, so a cloned repo can never grant them to itself.
@@ -264,6 +272,9 @@ func (config AppConfig) String() string {
 	fmt.Fprintf(&str, "    Browser:           %t\n", config.Browser)
 	fmt.Fprintf(&str, "    HideWelcome:       %t\n", config.HideWelcome)
 	fmt.Fprintf(&str, "    AppleLowPorts:     %t\n", config.AppleLowPorts)
+	fmt.Fprintf(&str, "    VmMemory:          %s\n", config.VmMemory)
+	fmt.Fprintf(&str, "    VmCpus:            %s\n", config.VmCpus)
+	fmt.Fprintf(&str, "    VmShmSize:         %s\n", config.VmShmSize)
 	fmt.Fprintf(&str, "    Pull:              %t\n", config.Pull)
 	fmt.Fprintf(&str, "    Dind:              %t\n", config.Dind)
 	fmt.Fprintf(&str, "    Sudo:              %t\n", config.Sudo)

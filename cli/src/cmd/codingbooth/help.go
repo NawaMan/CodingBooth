@@ -202,6 +202,15 @@ CONTAINER MODE:
   --hide-welcome         Do not print the welcome banner when a shell starts.
                          Can also be set in config.toml (hide-welcome = true)
                          or with CB_HIDE_WELCOME=true
+  --vm-memory <size>     macOS / engine apple only: memory for the booth's VM
+                         (Apple container's default is 1 GB; a desktop needs
+                         more, e.g. 4g). Also vm-memory in config.toml or
+                         CB_VM_MEMORY. Ignored on Docker and Podman.
+  --vm-cpus <n>          macOS / engine apple only: CPUs for the booth's VM
+                         (default 4). Also vm-cpus / CB_VM_CPUS.
+  --vm-shm-size <size>   macOS / engine apple only: size of /dev/shm, out of
+                         the VM's memory (desktops get 1g). Also vm-shm-size /
+                         CB_VM_SHM_SIZE.
   --apple-low-ports      On engine apple, let coder open ports below 1024 (as
                          Docker allows by default; --public needs it there).
                          Grants only NET_BIND_SERVICE. Ignored on other
@@ -338,6 +347,9 @@ CONTAINER MODE:
   --keep-alive           Do not remove container when stopped
   --hide-welcome         No welcome banner in shells (also: hide-welcome = true, CB_HIDE_WELCOME=true)
   --apple-low-ports      Engine apple only: let coder open ports below 1024 (also: apple-low-ports = true, CB_APPLE_LOW_PORTS=true)
+  --vm-memory <size>     Engine apple only: memory for the booth's VM, default 1 GB (also: vm-memory, CB_VM_MEMORY)
+  --vm-cpus <n>          Engine apple only: CPUs for the booth's VM, default 4 (also: vm-cpus, CB_VM_CPUS)
+  --vm-shm-size <size>   Engine apple only: /dev/shm size, out of VM memory (also: vm-shm-size, CB_VM_SHM_SIZE)
   --browser              Open the booth UI in a browser once its port answers (default)
   --no-browser           Never open a browser (also: browser = false, CB_BROWSER=false)
   --browser-port <spec>  Which port --browser opens: n (absolute) or +OFFSET (from

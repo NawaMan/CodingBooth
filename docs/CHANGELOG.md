@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`--vm-memory`, `--vm-cpus`, `--vm-shm-size`: size the booth's VM on Apple container.** Apple
+  container runs each booth in its own VM with 1 GB and 4 CPUs by default; a desktop variant
+  outgrows that (KDE ~700 MB idle), the VM thrashes and the booth stops responding. The new settings
+  (also `vm-memory` / `vm-cpus` / `vm-shm-size` in `config.toml`, `CB_VM_*`, Config TUI fields) pass
+  `--memory` / `--cpus` / `--shm-size` on engine `apple` only — Docker and Podman ignore them with a
+  note. A desktop on `apple` without `vm-memory` warns. New template category **Booth VM (macOS)**
+  (`--select vm-memory:8g/vm-cpus:6/vm-shm-size:2g`); templates can now set those keys, and a param
+  can be `runtime = true` so it never becomes a Boothfile `arg` (and never rebuilds the image).
+
 - **A `booth--expose` tunnel that cannot open says so once, and says why.** The host side retries
   every second and printed the same `Tunnel error` each time. It now prints it once (until it
   changes), and for `permission denied` on a host port below 1024 — a normal user may not listen
