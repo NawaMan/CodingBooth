@@ -98,9 +98,11 @@ declare -a FILTER_EXAMPLES=()
 # just too slow to fit EXAMPLE_TIMEOUT once the rest of the suite has already
 # loaded the machine. anythingllm-example passes standalone in ~6-7 minutes but
 # hits the 15-minute timeout under a full run's cumulative CPU/disk/memory
-# pressure. `--example anythingllm` still runs it explicitly -- this list is
-# only consulted when no example/tag filter narrowed the run.
-declare -a DEFAULT_SKIP_EXAMPLES=(anythingllm-example)
+# pressure. n8n-example installs the npm package during the image build, which
+# is the same kind of stall under a full run. `--example anythingllm` and
+# `--example n8n` still run them explicitly -- this list is only consulted
+# when no example/tag filter narrowed the run.
+declare -a DEFAULT_SKIP_EXAMPLES=(anythingllm-example n8n-example)
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do

@@ -1,0 +1,6 @@
+# syntax=codingbooth/boothfile:1
+
+# n8n--setup.sh is supplied under .booth/setups/ until the base image ships it.
+# Node.js 24 comes from the image's nodejs--setup.sh. n8n 2.x requires >= 24.
+setup nodejs 24
+setup n8n --version 2.41.5 --port 21200

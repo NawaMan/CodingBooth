@@ -1,0 +1,11 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select xonsh:0.24.2+default
+
+env APT_SNAPSHOT=20261002T000000Z
+
+arg PYTHON_VERSION=3.13.15
+arg XONSH_VERSION=0.24.2
+
+setup python ${PYTHON_VERSION}
+setup python-code-extension
+setup xonsh --version ${XONSH_VERSION}

@@ -1,0 +1,20 @@
+display-name = "n8n Auto-Start"
+display-disc = "Auto-start n8n on container boot"
+display-detail = "Runs start-n8n in the background when the container boots so the editor at N8N_PORT is up without a manual start. Add +expose to reach it from the host."
+display-order = 2
+auto-select = false
+tags = [
+    "n8n",
+    "autostart"
+]
+
+[segments]
+"startup--65.sh" = """
+# Auto-start n8n in background
+PORT=${N8N_PORT}
+LOG_FILE="/tmp/n8n.log"
+
+nohup start-n8n "$PORT" > "$LOG_FILE" 2>&1 &
+
+echo "n8n started on port $PORT (PID $!, log: $LOG_FILE)"
+"""

@@ -1,0 +1,19 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --expose 21200 --select n8n+expose+autostart+persist+sandbox+search
+
+env APT_SNAPSHOT=20261002T000000Z
+
+arg N8N_HOST_PORT=21200
+arg N8N_PORT=21200
+arg N8N_SANDBOX_PORT=21280
+arg N8N_SANDBOX_VERSION=1.3.4
+arg N8N_SEARXNG_PORT=21281
+arg N8N_SEARXNG_VERSION=2026.9.30-a9d990033
+arg N8N_VERSION=2.41.5
+arg NODE_VERSION=24
+
+setup dind
+setup docker-compose
+setup nodejs ${NODE_VERSION}
+setup nodejs-code-extension
+setup n8n --version ${N8N_VERSION} --port ${N8N_PORT}

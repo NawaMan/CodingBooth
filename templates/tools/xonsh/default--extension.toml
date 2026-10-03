@@ -1,0 +1,14 @@
+display-name = "Xonsh Default"
+display-disc = "Set Xonsh as the default login shell"
+display-detail = "Sets USER_SHELL=/usr/local/bin/xonsh. On container start, booth-entry uses that as the coder user's login shell. Without this extension the login shell stays bash."
+display-order = 2
+auto-select = false
+tags = [
+    "xonsh",
+    "shell",
+    "default"
+]
+
+run-args = [
+    "-e", "USER_SHELL=/usr/local/bin/xonsh",
+]

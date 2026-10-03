@@ -1,0 +1,13 @@
+# Configured by: booth config --no-tui --overwrite --expose 21200 --select n8n+expose+autostart+persist+sandbox+search
+
+dind = true
+
+run-args = [
+    "-e", "N8N_SANDBOX_PORT=21280",
+    "-e", "N8N_SANDBOX_VERSION=1.3.4",
+    "-e", "N8N_SEARXNG_PORT=21281",
+    "-e", "N8N_SEARXNG_VERSION=2026.9.30-a9d990033",
+    "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
+    "-v", "~/.docker/config.json:/etc/cb-home-seed/.docker/config.json:ro",
+    "--publish", "21200:21200"
+]
