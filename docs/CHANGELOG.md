@@ -114,6 +114,19 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **Julia re-pinned away from `1.11.3`: its `libopenlibm.so` needs an executable stack, which this
+  base's glibc/kernel refuses to grant.** `readelf -lW` against the official tarball shows
+  `1.11.3`'s `libopenlibm.so.4` with `GNU_STACK=RWE` (an executable-stack requirement); `1.12.7` and
+  `1.13.0` (the current default) both ship `GNU_STACK=RW` and load fine — confirmed by downloading
+  and inspecting all three directly rather than assuming the newer default was the fix. The only
+  thing still asking for `1.11.3` was `tests/complex/boothfile/test-boothfile-julia`'s fixture
+  Boothfile (`setup julia 1.11.3`, hardcoded independent of the template's own default) and its
+  `.booth/setups/julia--setup.sh` copy, which had also drifted out of byte-identical sync with the
+  real script (a pre-existing staleness this pass also caught and fixed). `1.11.3` dropped from
+  `templates/languages/julia/template.toml`'s `suggests`; the fixture now pins `1.13.0`. Verified:
+  the real test now passes (37s — a genuine Julia install and `julia --version` check); `test86`/
+  `test88`/`test93` catalog guards still pass.
+
 - **Swift's version pin fixed: `6.0.1`/`6.3.3` both 404 on this base's Ubuntu 26.04.** swift.org's
   `resolute` builds start at `6.4.0` (verified live against `download.swift.org`: anything older
   redirects to a 404) — already noted in this file's own Ubuntu 26.04 migration entry, but
