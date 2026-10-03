@@ -250,26 +250,38 @@ sync_counts() {
     # it: count only the LAST "Failed tests:" block (0 if the log has none),
     # not every ❌/FAILED substring, which includes stale first-attempt lines
     # from tests a suite's own retry-once already turned into a pass.
+    # Failure lines are sourced the same way as the count just below, and for
+    # the same reason: a suite like CONFIG nests its own sub-tests' "Failed
+    # tests:" blocks (one per failing file, from test-helpers--source.sh's
+    # finally()) inside the suite runner's own top-level one. Grepping the
+    # whole log for every ❌/FAILED caught both — the sub-test's live
+    # "Test N: ... FAILED" echo *and* its own block's "❌ Test N: ..." line,
+    # each a stale duplicate of the other, and neither one identifying which
+    # of the suite's many files it came from. Only the LAST block is the
+    # suite's actual verdict (it already flattens each sub-failure down to
+    # "<file>: Test N: ..." — see run-all-tests.sh's failed_subtests), so
+    # using it here instead gives one line per real failure, self-identifying.
+    local failures
     if echo "$stripped" | grep -qiE '^Failed tests:|All .* tests? passed' 2>/dev/null; then
         fail=$(echo "$stripped" | last_failed_tests_block | grep -cE '^\s*(❌|-)' 2>/dev/null) || fail=0
+        failures=$(echo "$stripped" | last_failed_tests_block | grep -E '^\s*(❌|-)' 2>/dev/null | head -10 | while IFS= read -r line; do
+            echo "    ${line}"
+        done) || true
     else
         # No recognizable closing verdict (unit.log's raw `go test` output,
         # or a suite that crashed before reaching its own tally) — fall back
-        # to the naive count, but still exclude ⚠️ retry notices, which never
-        # represent a final verdict on their own.
+        # to the naive count/lines, but still exclude ⚠️ retry notices, which
+        # never represent a final verdict on their own.
         fail=$(echo "$stripped" | grep -v '⚠️' | grep -cE '❌|FAILED|^--- FAIL' 2>/dev/null) || fail=0
+        failures=$(echo "$stripped" | grep -v '⚠️' | grep -E '❌|FAILED|^--- FAIL' 2>/dev/null | head -10 | while IFS= read -r line; do
+            echo "    ${line}"
+        done) || true
     fi
     # [[:space:]] rather than \s — BSD grep (macOS) does not honour \s.
     skip=$(echo "$stripped" | grep -cE '^[[:space:]]*(SKIP:|--- SKIP|--- Skipping:)' 2>/dev/null) || skip=0
     PASS_COUNTS[$idx]=$((pass))
     FAIL_COUNTS[$idx]=$((fail))
     SKIP_COUNTS[$idx]=$((skip))
-
-    # Collect failure lines (trimmed, max 10)
-    local failures
-    failures=$(echo "$stripped" | grep -E '❌|FAILED' 2>/dev/null | head -10 | while IFS= read -r line; do
-        echo "    ${line}"
-    done) || true
     FAILURE_LINES[$idx]="$failures"
 }
 

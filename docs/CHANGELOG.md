@@ -221,6 +221,23 @@ This file contains a list of changes for each released version.
   terminal was therefore fighting the top-level graph (and each other) for the same tty. Both are now
   exported once, inherited by every suite and every booth invocation underneath.
 
+- **A CONFIG suite failure now names its own file.** `templates/README.md: stop test121
+  false-flagging the retired Bismuth mention` fixed one failing assertion; this fixes what made it
+  hard to even find: the CONFIG suite's 126 test files each number their own assertions from 1, so
+  a failure surfacing as bare `Test 216: ...` in the suite-wide summary was one of over a hundred
+  files' "Test 216" — nothing said which. `tests/common--source.sh`'s `print_test_result()` already
+  prefixes every COMPLEX assertion with its file's relative path for exactly this reason; CONFIG's
+  `test-helpers--source.sh` (and 9 files with their own copy of the same `assert-true`) did not.
+  Failures now record `"${testname}: Test N: ..."` the same way. `tests/config/run-all-tests.sh`
+  (new `failed_subtests()`) propagates those richer lines into its own top-level "Failed tests:"
+  roundup instead of collapsing each failing file down to its bare name, for both the sequential and
+  parallel test paths. And `tests/run-automate-tests.sh`'s live display, one level up, now sources
+  its shown failure lines from the same deduplicated "last `Failed tests:` block" logic it already
+  used only for the failure *count* — a raw whole-log grep for `❌|FAILED` had been catching a
+  retried test's stale first-attempt line, its own finally() line, *and* the suite runner's summary
+  line as three separate "failures" for one real one, which is why the same `Test 216: ...` kept
+  reappearing, unlabeled, with no two copies even reading alike.
+
 - **4 examples' `APT_SNAPSHOT` bumped back even with the base image.** `apt-example`,
   `clang-example`, `systemlib-example`, and `turtle-example` were pinned to `20260918`; the base
   image is now built at `20260928` (nothing sets `CB_APT_SNAPSHOT`, so a local rebuild defaults to
