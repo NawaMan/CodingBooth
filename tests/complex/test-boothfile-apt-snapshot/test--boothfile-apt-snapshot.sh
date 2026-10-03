@@ -31,7 +31,7 @@ cd "$SCRIPT_DIR"
 
 source ../../common--source.sh
 
-SNAPSHOT="20250601T000000Z"
+SNAPSHOT="20260901T000000Z"
 
 echo "=== Test: Boothfile install apt (APT_SNAPSHOT=${SNAPSHOT}) ==="
 

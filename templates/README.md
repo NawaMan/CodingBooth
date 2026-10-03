@@ -281,7 +281,7 @@ start the desktop later.
 ${KROHNKITE_MOD}` at **41**, skipping when KWin is absent, and its auto-selected extensions at **42** —
 `+default` (`setup krohnkite-default`, tiling from login) and `+gaps` (`setup krohnkite-gaps
 ${KROHNKITE_GAPS}`). No `+ctrl-alt` extension: Krohnkite's shortcuts are one set, so the modifier is
-the `KROHNKITE_MOD` param (`ctrl-alt` by default, or `meta`). It replaced `desktops/bismuth` when the
+the `KROHNKITE_MOD` param (`ctrl-alt` by default, or `meta`). It replaced the former Bismuth template when the
 base moved to Ubuntu 26.04 (Plasma 6 has no Bismuth); `setup bismuth`, `bismuth-default` and
 `bismuth-gaps` remain as shims that run the Krohnkite setups.
 
