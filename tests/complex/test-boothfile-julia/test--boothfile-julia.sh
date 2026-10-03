@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Test: Boothfile Julia Installation
 #
-# Verifies that a Boothfile with `setup julia 1.11.3` correctly installs Julia
+# Verifies that a Boothfile with `setup julia 1.13.0` correctly installs Julia
 # and makes it available in the container.
 # -----------------------------------------------------------------------------
 
