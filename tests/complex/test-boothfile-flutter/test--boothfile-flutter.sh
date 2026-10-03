@@ -12,19 +12,18 @@
 #  1. The SDK ships as a git checkout. Installed by root and run by coder, git
 #     refuses it with "detected dubious ownership" and the flutter tool dies
 #     before it does anything. The setup's `git config --system --add
-#     safe.directory` is the fix, and test 3 is what proves it.
+#     safe.directory` is the fix, and test 2 is what proves it.
 #
 #  2. The tool writes back into its own tree (bin/cache) at runtime. `chown
 #     coder` is the wrong fix, because booth-entry remaps coder's UID to the
 #     host user's at container start — so a build-time owner only matches by
-#     luck, and the failure appears on some hosts and not others. Test 5 checks
+#     luck, and the failure appears on some hosts and not others. Test 4 checks
 #     the mode bits, which are UID-agnostic.
 #
 #  3. profile.d is not read by `booth -- cmd`, so anything wired only through
-#     the profile is missing from every script. Test 4 runs in that shell.
+#     the profile is missing from every script. Test 3 runs in that shell.
 #
-# Test 1 is docker-free. Tests 2+ build a real image; the setup script is copied
-# into .booth/setups/ so this runs against the released base image.
+# Test 1 is docker-free. Tests 2+ build a real image.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
@@ -42,7 +41,6 @@ BOOTH_PATH="$(find_local_booth_build "$SCRIPT_DIR")" || {
     echo "ERROR: Could not find codingbooth"
     exit 1
 }
-CHECK_DIR="$(dirname "$BOOTH_PATH")"
 
 DOCKERFILE=$("$BOOTH_PATH" emit-dockerfile --code "$SCRIPT_DIR" 2>&1) || true
 
@@ -56,23 +54,8 @@ else
     FAILED=$((FAILED + 1))
 fi
 
-# Test 2: the copy under .booth/setups/ has not drifted from the repo's. The
-# copy is what actually runs, so a drift means this suite verifies a script that
-# is not the one being shipped.
-REPO_SCRIPT="$CHECK_DIR/variants/base/setups/flutter--setup.sh"
-LOCAL_SCRIPT="$SCRIPT_DIR/.booth/setups/flutter--setup.sh"
-if [[ -f "$REPO_SCRIPT" ]] && diff -q "$REPO_SCRIPT" "$LOCAL_SCRIPT" >/dev/null 2>&1; then
-    print_test_result "true" "$0" "2" ".booth/setups copy matches variants/base/setups"
-else
-    print_test_result "false" "$0" "2" ".booth/setups copy should match variants/base/setups"
-    echo "  Compared: $REPO_SCRIPT <-> $LOCAL_SCRIPT"
-    FAILED=$((FAILED + 1))
-fi
-
-# The remaining tests build a real image. The setup script is copied into
-# .booth/setups/ so it does not need to be baked into the base image, but the
-# base image itself still has to resolve — skip (reporting the emit results)
-# when no local one is tagged.
+# The remaining tests build a real image on the local base image — skip
+# (reporting the emit results) when no local one is tagged.
 use_local_base_image || exit $FAILED
 
 # flutter--setup.sh gates itself on amd64 — Google publishes the Linux SDK for
@@ -86,7 +69,7 @@ if [[ "$SERVER_ARCH" != "amd64" ]]; then
     exit $FAILED
 fi
 
-# Test 3: dart compiles and runs a program. This is the functional bar: a Dart
+# Test 2: dart compiles and runs a program. This is the functional bar: a Dart
 # SDK that landed on PATH but cannot read its own snapshot, or a flutter tool
 # git refuses to look at, both pass `command -v` and fail here.
 #
@@ -96,38 +79,38 @@ fi
 # else. Everything below is a single pre-joined string for the same reason.
 ACTUAL=$(run_coding_booth --silence-build -- 'dart run sum.dart' 2>/dev/null) || ACTUAL=""
 if echo "$ACTUAL" | grep -q "SUM=15"; then
-    print_test_result "true" "$0" "3" "dart compiles and runs a program"
+    print_test_result "true" "$0" "2" "dart compiles and runs a program"
 else
-    print_test_result "false" "$0" "3" "dart should compile and run a program"
+    print_test_result "false" "$0" "2" "dart should compile and run a program"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
 
-# Test 4: flutter and dart resolve in a NON-LOGIN shell — the shell
+# Test 3: flutter and dart resolve in a NON-LOGIN shell — the shell
 # `booth -- ./build.sh` actually gets, which never sources /etc/profile.d.
 ACTUAL=$(run_coding_booth --silence-build -- 'command -v flutter && command -v dart' 2>/dev/null) || ACTUAL=""
 if echo "$ACTUAL" | grep -q "flutter" && echo "$ACTUAL" | grep -q "dart"; then
-    print_test_result "true" "$0" "4" "flutter and dart are on PATH in a non-login shell"
+    print_test_result "true" "$0" "3" "flutter and dart are on PATH in a non-login shell"
 else
-    print_test_result "false" "$0" "4" "flutter and dart should be on PATH in a non-login shell"
+    print_test_result "false" "$0" "3" "flutter and dart should be on PATH in a non-login shell"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
 
-# Test 5: the SDK cache is writable by the booth user, whatever UID it was
+# Test 4: the SDK cache is writable by the booth user, whatever UID it was
 # remapped to. Read-only here turns the first real command into a permission
 # error on exactly the hosts where the build-time UID did not match.
 ACTUAL=$(run_coding_booth --silence-build -- \
     'test -w /usr/local/flutter-current/bin/cache && echo WRITABLE' 2>/dev/null | tail -1) || ACTUAL=""
 if [[ "$ACTUAL" == "WRITABLE" ]]; then
-    print_test_result "true" "$0" "5" "the SDK cache is writable by the booth user"
+    print_test_result "true" "$0" "4" "the SDK cache is writable by the booth user"
 else
-    print_test_result "false" "$0" "5" "the SDK cache should be writable by the booth user"
+    print_test_result "false" "$0" "4" "the SDK cache should be writable by the booth user"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
 
-# Test 6: the flutter tool itself runs and reports its version. This is what
+# Test 5: the flutter tool itself runs and reports its version. This is what
 # breaks on "dubious ownership" — the tool shells out to git against its own
 # checkout to work out which version it is.
 #
@@ -137,22 +120,22 @@ fi
 # output rather than failing.
 ACTUAL=$(run_coding_booth --silence-build -- 'timeout 120 flutter --version </dev/null 2>&1' 2>/dev/null) || ACTUAL=""
 if echo "$ACTUAL" | grep -qiE "^Flutter [0-9]+\.[0-9]+"; then
-    print_test_result "true" "$0" "6" "flutter reports its version (git ownership is accepted)"
+    print_test_result "true" "$0" "5" "flutter reports its version (git ownership is accepted)"
 else
-    print_test_result "false" "$0" "6" "flutter should report its version"
+    print_test_result "false" "$0" "5" "flutter should report its version"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
 
-# Test 7: Flutter compiles a real app for the web. The heaviest assertion and
+# Test 6: Flutter compiles a real app for the web. The heaviest assertion and
 # the most meaningful one — it exercises the Dart compiler, the web engine
 # artifacts the setup precached, and the cache directory being writable, all at
 # once. A booth that passes tests 3-6 and fails this one is not usable.
 ACTUAL=$(run_coding_booth --silence-build -- 'cd /tmp && rm -rf webapp && flutter create --platforms=web webapp >/dev/null 2>&1 && cd webapp && flutter build web >/dev/null 2>&1 && test -s build/web/main.dart.js && echo BUILT' 2>/dev/null | tail -1) || ACTUAL=""
 if [[ "$ACTUAL" == "BUILT" ]]; then
-    print_test_result "true" "$0" "7" "flutter builds a web app to main.dart.js"
+    print_test_result "true" "$0" "6" "flutter builds a web app to main.dart.js"
 else
-    print_test_result "false" "$0" "7" "flutter should build a web app to main.dart.js"
+    print_test_result "false" "$0" "6" "flutter should build a web app to main.dart.js"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
