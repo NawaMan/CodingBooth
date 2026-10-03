@@ -27,7 +27,7 @@ FAILED=0
 
 # Test 1: it is the pinned build — `ghostty --version` prints "Ghostty 1.3.1"
 # for the .deb 1.3.1-0.ppa2.
-EXPECTED_VERSION=$(sed -n 's/^GHOSTTY_VERSION="\([^-]*\)-.*"$/\1/p' .booth/setups/ghostty--setup.sh)
+EXPECTED_VERSION=$(sed -n 's/^GHOSTTY_VERSION="\([^-]*\)-.*"$/\1/p' ../../../variants/base/setups/ghostty--setup.sh)
 ACTUAL=$(run_coding_booth --silence-build -- "ghostty --version | head -1" 2>/dev/null)
 ACTUAL=$(printf '%s\n' "$ACTUAL" | tail -1)
 

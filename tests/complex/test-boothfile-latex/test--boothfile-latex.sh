@@ -11,14 +11,9 @@
 # that pdflatex is on PATH -- and that the desktop-only pieces skip cleanly on the
 # base variant instead of failing the build.
 #
-# .booth/ is `booth config` output; only .booth/setups/ is hand-placed. It holds
-# copies of latex--setup.sh, latex-code-extension--setup.sh and texstudio--setup.sh,
-# byte-identical to variants/base/setups/, until the base image ships them -- plus
-# the helpers those scripts reach via $SCRIPT_DIR (cb-has-vscode.sh,
-# cb-has-desktop.sh, libs/skip-setup.sh), which the released image has only in
-# /opt/codingbooth/setups/ and so are not siblings of the override copies. The base
-# variant has neither an editor nor a desktop, so a successful build also proves
-# both guarded setups skip rather than fail.
+# .booth/ is `booth config` output. The base variant has neither an editor nor a
+# desktop, so a successful build also proves both guarded setups skip rather
+# than fail.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail

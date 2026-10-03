@@ -15,10 +15,6 @@
 #
 # `code --version` exercises the launcher (which seeds settings before
 # exec'ing the real binary) without needing a display.
-#
-# xfce--setup.sh, vscode--setup.sh, and fira-code-nerd-font--setup.sh are
-# loaded from .booth/setups/ (mirror variants/base/setups/) until the
-# released base image ships the font install.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
