@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Julia `1.11.3` dropped from the template's suggestions: it no longer starts on the Ubuntu 26.04
+  base.** Its `libopenlibm.so` asks for an executable stack (`GNU_STACK=RWE`), which 26.04's glibc
+  refuses ("cannot enable executable stack"). `1.12.7` and `1.13.0` (the default) are unaffected.
+  The Julia test now pins `1.13.0`.
+
 - **`setup aider` works on the Ubuntu 26.04 base again.** Aider supports Python 3.10-3.12 only;
   26.04's `python3` is 3.14, so pip found no current release, backtracked through old ones and
   crashed in its resolver. When the system Python is outside Aider's range, `aider--setup.sh` now
