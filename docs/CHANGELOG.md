@@ -114,6 +114,8 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **The booth Web UI has a browser-tab icon.** Every variant's tab (the Console and its sign-in page, and the wrapper in front of code-server, Jupyter, and the desktops) shows the CodingBooth mark from `docs/favicon.png`. A project replaces it with one file in `.booth/favicon/`: `favicon.svg`, or else `favicon.png`, or else `favicon.ico`. The icon is chosen when the container starts. See [Tab icon](BOOTH_UI_OVERLAY.md#tab-icon).
+
 - **Every image CodingBooth builds now carries `cb.managed=true`, the same label convention every
   container it creates already has.** Prompted by wanting to scope `docker builder prune` to just
   this project's own cache — turns out that's not possible at all: confirmed directly, a build-cache
