@@ -1,0 +1,15 @@
+display-name = "Gleam VS Code Extension"
+display-disc = "Gleam language support extension for VS Code"
+display-detail = "Installs the official gleam.gleam extension: syntax highlighting plus the language server built into the gleam binary (diagnostics, go-to-definition, formatting on save)."
+display-order = 1
+auto-select = true
+tags = [
+    "gleam",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup gleam-code-extension
+"""

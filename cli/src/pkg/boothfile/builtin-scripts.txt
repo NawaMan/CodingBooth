@@ -112,6 +112,8 @@ setup gh-copilot
 setup ghostty
 setup ghostty-fancy
 setup gimp
+setup gleam
+setup gleam-code-extension
 setup go
 setup go-code-extension
 setup go-nb-kernel
