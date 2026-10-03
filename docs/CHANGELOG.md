@@ -4,6 +4,21 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`--dind` and `--egress` stay unsupported on Apple container, and their tests say so.** Both are
+  deferred (docs/CONTAINER_SUPPORT.md, "Not supported: --dind and --egress", with what a later
+  design can build on). The suites pin `CB_ENGINE=docker`, so nothing changes in a normal run; a run
+  made on purpose with `CB_ENGINE=apple` now *skips* the tests that need either — 11 under `tests/`
+  through a new `sidecars_supported` guard in `tests/common--source.sh`, and the 8 examples whose
+  `.booth/config.toml` sets `dind = true` / `egress = true`, which `run-example-tests.sh` detects by
+  itself and reports as skipped.
+
+- **Starting a kept booth warns when its image has been rebuilt since.** `booth start` (and
+  `shell` / `exec --run` on a stopped booth) reuse the existing container, so a booth created
+  before a Boothfile or setup change keeps running the old image — the change silently "doesn't
+  work". It now compares the image the booth was created from with what its image name points to
+  today, and warns with the fix (`booth remove --force --name <booth>`, then run `booth` again). On
+  every engine; the Apple adapter's `inspect` now reports the image a container was created from.
+
 - **Desktop booths on Apple container get 4 GB by themselves.** The desktop images now carry the
   label `com.codingbooth.vm-memory-min="4g"` (inherited by images built `FROM` them). On engine
   `apple` with no `vm-memory`, the booth's VM gets that minimum instead of Apple container's 1 GB;

@@ -104,6 +104,20 @@ Target resolution priority:
 3. `--code <path>`
 4. Default booth name from current directory
 
+A started booth is the same container as before, so it keeps the image it was **created** from.
+If that image has been rebuilt since — you changed the Boothfile or a setup, and `booth` or
+`booth build` rebuilt it — those changes are not in the booth, and `start` says so:
+
+```
+Warning: booth "myproject" was created from an older build of codingbooth-local:myproject-base; changes since (Boothfile, setups) are not in it.
+         To use the current image: booth remove --force --name myproject, then run booth again.
+```
+
+`booth shell` / `booth exec` with `--run` warn the same way when they start a stopped booth.
+Removing the booth deletes the container, and with it anything kept only inside it; files in
+the project folder stay. `booth remove` also deletes the booth's `--persist-home` home volume —
+export it first (`booth home-volume-export`) if you want to keep it.
+
 ### `stop`
 
 Stop a running booth container.
