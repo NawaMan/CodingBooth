@@ -114,6 +114,23 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **`test-desktop-overlay-browser`'s 2 real failures fixed — both the harness's, not the product's.**
+  `noVNC_clipboard_clear_button` doesn't exist in noVNC 1.6.0's markup at all (checked
+  `/usr/share/novnc/vnc.html` directly inside the built image; apt's `novnc` has clearly moved on
+  since whoever wrote the check last verified it) — querying it threw `TypeError: Cannot read
+  properties of null`, which aborted the heading test before its own `heading.click()` ever ran,
+  which is why the *next* check ("clicking the heading opens Help") was failing too: not a second
+  bug, a cascade from the first. The check tested nothing the product code depends on (grepped
+  `booth-message-overlay.html` — it never references that id), so it's removed outright rather than
+  patched to point at some other noVNC element. Separately, "label stays on one line" asserted
+  `height < 20`, failing at `22.39` even though the label is `white-space: nowrap` — which *forbids*
+  wrapping by spec regardless of height; the real single-line height for a 14px span under this
+  environment's default sans-serif metrics is just over 20px on its own. Replaced the pixel guess
+  with a direct check of the actual guarantee: the computed `white-space` is `nowrap`. Verified: the
+  real test passes twice in a row post-fix (84s each, 49/49 — one fewer than before, since the dead
+  check was deleted rather than patched); the two heading checks that depended on `heading.click()`
+  actually running now both pass for the first time.
+
 - **Julia re-pinned away from `1.11.3`: its `libopenlibm.so` needs an executable stack, which this
   base's glibc/kernel refuses to grant.** `readelf -lW` against the official tarball shows
   `1.11.3`'s `libopenlibm.so.4` with `GNU_STACK=RWE` (an executable-stack requirement); `1.12.7` and
