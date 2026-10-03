@@ -13,16 +13,27 @@ behaviour genuinely spans steps: stop/start preserving state, restart, `exec` ag
 booth, expose, persistence, port scanning. One booth and three assertions belongs in
 `test-add-basic`.
 
-## 1. Name and place it
+## 1. Name, categorize, and place it
 
-Complex tests get **their own directory** — the runner discovers with `for test_dir in test-*/`:
+Complex tests get **their own directory**, one level under one of 4 category subfolders the runner
+discovers explicitly (`boothfile/`, `features/`, `security/`, `desktop/` — see
+`tests/complex/run-complex-tests.sh`'s own header comment for what each one is for). A directory
+not inside one of these 4, or not matching `test-*/`, is never run:
 
 ```
-tests/complex/test-<scenario>/test--<scenario>.sh
+tests/complex/<category>/test-<scenario>/test--<scenario>.sh
 ```
 
-The directory is also where fixtures live (a `.booth/`, a Boothfile, seed files). A directory that
-does not match `test-*/` is never run.
+Pick the category by what the test is actually checking, not by habit:
+- **`features/`** — the default for most complex tests per this skill's own framing: a booth
+  CLI/runtime feature's lifecycle (stop/start, persistence, expose, port behavior) that isn't tied
+  to one specific setup/install directive.
+- **`boothfile/`** — a specific `setup <name>`/`install <pkg>` directive's own behavior, proven end
+  to end in a real build (most of these already exist as `test-boothfile-*`/`test-install-*`).
+- **`security/`** — network or credential isolation (`--egress`, a credential mount's ownership).
+- **`desktop/`** — needs a real GUI/VNC/browser to assert on (a window manager, a real browser).
+
+The directory is also where fixtures live (a `.booth/`, a Boothfile, seed files).
 
 ## 2. The skeleton
 
@@ -36,7 +47,7 @@ does not match `test-*/` is never run.
 
 set -euo pipefail
 
-source ../../common--source.sh      # note: two levels up
+source ../../../common--source.sh   # note: three levels up (test dir, category, tests/complex)
 
 NAME="lifecycle-thing-$RANDOM"
 PORT_A="$(pick_free_port)"
@@ -81,12 +92,14 @@ is confusing (docker binding one host port twice, or a case that passes having p
 ## 5. Run it
 
 ```bash
-cd tests/complex/test-<scenario> && ./test--<scenario>.sh    # alone, a few times
-cd tests/complex && ./run-complex-tests.sh                   # the suite (long)
+cd tests/complex/<category>/test-<scenario> && ./test--<scenario>.sh   # alone, a few times
+cd tests/complex && ./run-complex-tests.sh                             # the suite (long)
+cd tests/complex && ./run-complex-tests.sh test-<scenario>             # just this one, by bare
+                                                                        # name, from any directory
 ```
 
-The suite supports sharding for CI — shards are round-robin over the sorted test list, so a new
-directory changes shard membership. That is expected; don't pin to a shard.
+The suite supports sharding for CI — shards are round-robin over the sorted, category-qualified test
+list, so a new directory changes shard membership. That is expected; don't pin to a shard.
 
 **When a booth call returns nothing**, the tests discard stderr but the suite traces every call —
 command, exit code, stderr — to `tests/logs/complex-booth-calls.log`. Start there.

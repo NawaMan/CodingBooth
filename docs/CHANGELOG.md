@@ -114,6 +114,48 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **`tests/complex/`'s 155 test directories split into 4 category subfolders.** Same
+  organizational-only move as `tests/config/` below, adapted to a suite that was already one
+  directory per test rather than flat files: `boothfile/` (117 — `test-boothfile-*`/`test-install-*`,
+  a setup/install directive's own behavior in a real build, plus `test-claude-code-trust-stamp`, the
+  end-to-end version of `tests/config`'s `test89`), `features/` (27 — a CLI/runtime feature via a
+  real container: `.booth/home`, lifecycle, `--persist-home`, port behavior and the like),
+  `security/` (6 — `--egress` and credential-mount isolation) and `desktop/` (5 — needs a real
+  GUI/VNC/browser: i3, Krohnkite, sway, the Android emulator, the desktop overlay).
+  `run-complex-tests.sh`'s discovery now scans those 4 named categories explicitly (not a bare
+  wildcard — `tests/config/`'s reorg hit a pre-existing unrelated sibling directory that way, so
+  this one didn't repeat it), and a bare test name (`./run-complex-tests.sh test-boothfile-kafka`)
+  still resolves from any category without the caller naming one, so existing muscle memory and the
+  "re-run just these" line both keep working. `--shard` is unaffected (still round-robin over the
+  sorted, now category-qualified, list) — CI only ever asks for "shard N of 4", never a specific
+  test by shard number, so a one-time shard-membership shift from the new sort key costs nothing.
+  Every test script's `source .../common--source.sh` gained one `../` for the added nesting level
+  (151 of 155 share one exact line, fixed in bulk; the other 4 use an equivalent `$SCRIPT_DIR` form);
+  8 files with their own additional fixed-depth path (`REPO_ROOT`, `TEMPLATES_PATH`, a stderr log
+  path) needed the same bump individually, caught by grepping for every `../../` pattern rather than
+  assuming only the common case existed. `print_test_result` (`tests/common--source.sh`) needed no
+  change at all — it already resolves a test's path via `git rev-parse --show-toplevel`, not a fixed
+  offset, confirmed live in the verification run below. Stale path mentions in several setup-script
+  comments and 3 skill docs (`test-add-complex`, `setup-work`, `work-finish`) were updated to match —
+  `setup-work` also had 2 leftover flat `tests/config/test<NN>` mentions the earlier reorg's doc pass
+  had missed, caught by re-sweeping the whole repo rather than trusting the first pass. Verified:
+  every moved/edited file passes `bash -n`; `--list` reports exactly 155 across the 4 categories
+  (117/27/6/5); the 4-way `--shard` partition is an exact, non-overlapping cover of the full list;
+  bare-name and category-qualified lookup both resolve; every file touched by the path-depth fix
+  was individually re-run and passed. The full 155-test suite was then run in the background:
+  150/155 passed, and each of the 5 failures was chased down individually rather than assumed —
+  none is a path/sourcing problem, every one reached a real build or a real running container first:
+  `test-boothfile-aider` (a `pip BackendUnavailable: Cannot import 'setuptools.build_meta'` inside
+  the build) and `test-boothfile-apt-snapshot` were already failing identically before this move, in
+  this same session's earlier full run; `test-boothfile-julia` hits a host-kernel incompatibility
+  (`cannot enable executable stack as shared object requires`) when the container actually runs
+  `julia --version`; `test-boothfile-swift` hits a genuine 404 from swift.org for the pinned 6.0.1
+  download; `test-desktop-overlay-browser` passed 46 of its 50 real, Chrome-DevTools-driven UI
+  assertions, failing 4 on specific element layout/rendering (a `getBoundingClientRect` on a null
+  element, an exact pixel height) — environment-specific rendering, not a path issue, and 46 passing
+  assertions through a real browser automation flow is itself strong evidence the move didn't break
+  anything structural.
+
 - **`tests/config/`'s 125 test files split into 5 category subfolders.** Purely organizational,
   not a parallelism change (that's still the existing `booth-collect` auto-detection, unaffected):
   `init/` (98 files — does one template/extension's own selection compile right, the

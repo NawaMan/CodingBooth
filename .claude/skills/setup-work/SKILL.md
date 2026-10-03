@@ -355,21 +355,22 @@ Write the **functional** assertion — compile and run a program, execute a scri
 a request, run a query. Fall back to `--version` only when nothing else is meaningful (a
 credential helper, a pure library), and say so in the test's comment.
 
-### Complex test — `tests/complex/test-boothfile-<name>/`
+### Complex test — `tests/complex/boothfile/test-boothfile-<name>/`
 
-Auto-discovered by directory name:
+Auto-discovered by directory name, one level under the `boothfile/` category (see
+`tests/complex/run-complex-tests.sh`'s header for the other 3 categories):
 
 ```
 .booth/config.toml                    variant = "base"
 .booth/Boothfile                      setup <name>
 .booth/setups/<name>--setup.sh        ← copy of the script
-test--boothfile-<name>.sh             sources ../../common--source.sh
+test--boothfile-<name>.sh             sources ../../../common--source.sh
 ```
 
 **The copy under `.booth/setups/` is mandatory and is not redundant** — the same mechanism §3 uses.
 Tests run against the *released* base image, which does not ship your script yet. Note it in a
-Boothfile comment, as `tests/complex/test-boothfile-binary-companions/.booth/Boothfile` does, and
-keep the copy byte-identical.
+Boothfile comment, as `tests/complex/boothfile/test-boothfile-binary-companions/.booth/Boothfile`
+does, and keep the copy byte-identical.
 
 ```bash
 ACTUAL=$(run_coding_booth --silence-build -- bash -c 'cd /tmp && <compile-and-run something>')
@@ -381,11 +382,11 @@ else
 fi
 ```
 
-### Config test — `tests/config/test<NN>-init-<name>.sh`
+### Config test — `tests/config/init/test<NN>-init-<name>.sh`
 
-Next free number (`ls tests/config | tail -3`), using `begin` / `run` / `assert-line` / `finally`
-from `test-helpers--source.sh`. Assert the `setup`/`install` line and the version pin, default and
-pinned:
+Next free number (`ls tests/config/init | tail -3`), using `begin` / `run` / `assert-line` /
+`finally` from `test-helpers--source.sh` (one directory up). Assert the `setup`/`install` line and
+the version pin, default and pinned:
 
 ```bash
 run booth config $prj --no-tui --select "<name>:1.72.0"
@@ -406,9 +407,9 @@ tests/config/catalog/test92-arch-unsupported-is-declared.sh  # unsupported-arch 
 ### Run only what you touched
 
 ```bash
-tests/config/test<NN>-init-<name>.sh
-(cd tests/complex/test-boothfile-<name> && ./test--boothfile-<name>.sh)   # needs Docker; builds an image
-examples/workspaces/run-example-tests.sh --example <name>-example         # if you made one
+tests/config/init/test<NN>-init-<name>.sh
+(cd tests/complex/boothfile/test-boothfile-<name> && ./test--boothfile-<name>.sh)   # needs Docker; builds an image
+examples/workspaces/run-example-tests.sh --example <name>-example                  # if you made one
 ```
 
 ---

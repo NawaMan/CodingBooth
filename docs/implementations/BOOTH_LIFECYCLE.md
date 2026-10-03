@@ -131,11 +131,11 @@ Test references:
 
 ## Testing
 ### Automated (complex)
-- `tests/complex/test-lifecycle/test--lifecycle.sh`
+- `tests/complex/features/test-lifecycle/test--lifecycle.sh`
   - full run/start/restart/stop/remove round-trip
-- `tests/complex/test-lifecycle-name-port/test--lifecycle-name-port.sh`
+- `tests/complex/features/test-lifecycle-name-port/test--lifecycle-name-port.sh`
   - name/port persistence + non-overridability behavior
-- `tests/complex/test-lifecycle-bind-port/test--lifecycle-bind-port.sh`
+- `tests/complex/features/test-lifecycle-bind-port/test--lifecycle-bind-port.sh`
   - bind and extra port persistence across stop/start
 
 ### Manual

@@ -10,7 +10,7 @@
 #   - an unknown mod key fails the build instead of guessing, and it does so
 #     before anything is installed.
 # What the scripts write into a real Wayland image, and that start-wayland then
-# runs sway, is tests/complex/test-sway-wayland.
+# runs sway, is tests/complex/desktop/test-sway-wayland.
 
 set -euo pipefail
 
