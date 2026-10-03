@@ -114,6 +114,18 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **`test-boothfile-apt-snapshot` re-pinned: `20250601` predates this base's Ubuntu 26.04 entirely.**
+  The fixture froze `APT_SNAPSHOT` to `20250601T000000Z` for determinism, exactly as intended — but
+  `resolute` (26.04) didn't exist in Ubuntu's archive yet at that date (26.04's own release is well
+  after June 2025). Verified live against `snapshot.ubuntu.com`: `resolute` 404s at `20250601`,
+  200s at `20260901`; `resolute-updates` and `resolute-security` checked too, since a partial
+  pocket failure can surface as the same "Service Unavailable" symptom. Same staleness pattern as
+  the Swift/Julia/aider fixes just before this one — a fixture pinned before the Ubuntu 26.04
+  migration, never revisited after it. Re-pinned to `20260901T000000Z`, comfortably past resolute's
+  archive existing and still safely in the past for a deterministic pin. Verified: all 4 assertions
+  pass twice in a row (19s cold, 8s warm); `test86`/`test88`/`test93` catalog guards still pass.
+  With this, the full 155-test complex suite is green.
+
 - **`test-desktop-overlay-browser`'s 2 real failures fixed — both the harness's, not the product's.**
   `noVNC_clipboard_clear_button` doesn't exist in noVNC 1.6.0's markup at all (checked
   `/usr/share/novnc/vnc.html` directly inside the built image; apt's `novnc` has clearly moved on
