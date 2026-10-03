@@ -114,6 +114,27 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **CONFIG failures now name the category folder, not just the file.** Caught by the user running
+  the real suite right after the category split: `${testname}` (used to prefix a failure, e.g.
+  `catalog/test91-…`) was `basename "$0" .sh` — the bare file name only, which answered "which
+  file?" but not "which of `tests/config`'s 5 category folders is it in?", the same gap the
+  category split itself had just created one level up from the problem this prefix originally
+  fixed. `test-helpers--source.sh` now also computes `test_label`, the test's path relative to
+  `tests/` (`config/catalog/test91-…`), resolved against `$_repo_root` rather than a hardcoded
+  depth — same approach as `tests/complex`'s `script_relative_path()` (`tests/common--source.sh`),
+  which already got this right by never hardcoding a depth at all. `testname` itself is untouched
+  (still bare — it names scratch/log files, where a `/` would be a bug, not an improvement) and so
+  are the 9 files with their own local `assert-true` copy except for the one line that builds
+  `FAIL_TESTS`. `run-all-tests.sh`'s own `Begin …`/`Retried …`/timing-line labels got the same fix
+  for the same category-folder gap, now anchored to a new `TESTS_ROOT` one level above `SCRIPT_DIR`
+  so every layer of output agrees on one `tests/`-relative label instead of two different ones
+  (`run-all-tests.sh`'s lines were one level shorter, relative to `tests/config/` rather than
+  `tests/`, until this pass caught the mismatch too). Verified: full 125-test suite still green
+  afterward; a forced failure traced end to end through `Begin`, the live `Test N:` line (still
+  bare — it's for someone already watching one test, not a suite-wide roundup), the
+  `Failed tests:` block, the `Retried …` list, and the timing line, all now reading
+  `config/catalog/test121-…` consistently.
+
 - **`tests/complex/`'s 155 test directories split into 4 category subfolders.** Same
   organizational-only move as `tests/config/` below, adapted to a suite that was already one
   directory per test rather than flat files: `boothfile/` (117 — `test-boothfile-*`/`test-install-*`,
