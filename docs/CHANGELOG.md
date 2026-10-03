@@ -114,6 +114,22 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **Every image CodingBooth builds now carries `cb.managed=true`, the same label convention every
+  container it creates already has.** Prompted by wanting to scope `docker builder prune` to just
+  this project's own cache — turns out that's not possible at all: confirmed directly, a build-cache
+  prune's `--filter label=...` matches nothing, even for a label a real image was just built with
+  (cache entries carry no per-project handle, unlike images or containers). What *is* achievable:
+  `docker images`/`docker image prune --filter label=cb.managed=true` now works as a real, reliable
+  answer to "every image CodingBooth built" — catalog variants (`build/docker-build.sh`'s shared
+  `label_arg`, already used by all 3 of its build invocations) and every ad-hoc image a Boothfile
+  compiles to (`ensure_docker_image.go`'s `buildLocalImage`, which also carries `cb.project` and
+  `cb.variant` matching the container convention) alike. Before this, a scoped cleanup
+  (`build/clean-examples.sh`) could only ever find images by guessing at a tag naming pattern, never
+  by asking Docker directly. Verified against real builds through both paths: a catalog
+  `./build/docker-build.sh notebook` and a real Boothfile compile both show `cb.managed=true` (plus
+  `cb.variant`/`cb.version`, and `cb.project` for the latter) in `docker image inspect`'s labels;
+  full Go suite and the `test86`/`test88`/`test93` catalog guards still pass.
+
 - **Gleam is now in the catalog: `setup gleam`, a `gleam` language template, and a Wisp web
   example.** `gleam--setup.sh` installs the single static `gleam` binary (compiler, build tool,
   formatter and language server) from the GitHub release, SHA256-checked against the checksum
