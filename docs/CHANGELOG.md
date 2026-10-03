@@ -114,6 +114,11 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **`tests/config/run-all-tests.sh`'s `--jobs` renamed to `--max-parallel`, capped at 16.** Same
+  option (parallel slots for the config-only tests, default still 4), clearer name, and a sanity
+  upper bound — not a measured optimum, just a guard against `--max-parallel 500` quietly meaning
+  "no limit." Nothing else in the repo called it by the old name.
+
 - **Base image moved to Ubuntu 26.04 LTS (Resolute Raccoon), from 24.04.** `variants/base/Dockerfile`'s
   `UBUNTU_VERSION` is now `26.04`, so every variant (notebook, codeserver, the four desktops) rebuilds on
   it. The `APT_SNAPSHOT` pin works as before (snapshot.ubuntu.com serves `resolute`). What had to change
