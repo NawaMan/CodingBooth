@@ -114,6 +114,21 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **`build-all.sh --no-cache`'s own prune step was pruning an empty, unrelated cache the whole time.**
+  It ran `docker buildx prune --force --all`, which targets whichever builder is currently *active*
+  via `docker buildx use` — but this project's local (non-push) builds go through plain `docker build`
+  (`DOCKER_BUILDKIT=1`), which always uses the Docker Engine's own embedded "default" builder,
+  tracked by `docker system df`'s Build Cache row. `BuildVariant`'s own `--push` path switches the
+  active builder to `ci_builder` (a separate `docker-container` instance with its own, unrelated
+  cache) and never switches back — so on any machine that has ever run a `--push` build,
+  `docker buildx prune` silently prunes `ci_builder`'s empty cache forever after, every single
+  `--no-cache` run reporting `"Build cache: X -> X"` with zero actual change (reproduced directly:
+  confirmed `0B` reclaimed). Switched to `docker builder prune`, the long-standing classic-build
+  alias that always targets the embedded default builder regardless of the active `buildx` context —
+  the one this step actually needs. Verified directly against the real, affected cache: `288.8GB ->
+  1.923GB` in one run, with `docker images`' own count and total size unchanged before/after,
+  confirming the existing guarantee ("only ever removes cache, never images") still holds.
+
 - **`notebook`/`codeserver`/`desktop-wayland` no longer silently drift to a newer package version on
   rebuild — but `ensure_fresh_image` will still report them "stale" every time, and that part is not
   fixed.** Traced `ensure_fresh_image--source.sh`'s "was stale — rebuilt" messages for `notebook`
