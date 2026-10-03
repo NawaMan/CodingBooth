@@ -10,8 +10,14 @@ LABEL com.codingbooth.vm-memory-min="4g"
 
 # Given user is root and /opt/codingbooth/setups is in PATH (from base image)
 
+ARG APT_SNAPSHOT=
+
 # Wayland-native desktop: labwc (wlroots) + wayvnc + noVNC.
 # See docs/BOOTH_VARIANTS.md and variants/desktop-wayland/README.md.
+# APT_SNAPSHOT is declared before this RUN so wayland--setup.sh's own
+# apt--install.sh call (inherited as an env var, same as every other ARG
+# used inside a RUN) resolves against the pinned archive instead of whatever
+# Ubuntu's live archive serves at build time.
 RUN wayland--setup.sh
 
 RUN firefox--setup.sh

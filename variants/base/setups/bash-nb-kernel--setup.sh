@@ -32,6 +32,17 @@ JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"
 KERNEL_NAME="${KERNEL_NAME:-bash}"
 KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Bash}"
 
+# Exact pins (verified against PyPI 2026-10-02) -- a bare `-U` let these float
+# to whatever PyPI served at build time; see notebook--setup.sh's own comment
+# on why that's a real reproducibility gap, not a cosmetic one. Keep the
+# pip/setuptools/wheel pins identical to notebook--setup.sh's -- both scripts
+# run against the same interpreter, and this one runs after it.
+PIP_PIN_VERSION="26.2.1"
+SETUPTOOLS_PIN_VERSION="84.0.0"
+WHEEL_PIN_VERSION="0.48.0"
+JUPYTER_CLIENT_VERSION="8.10.0"
+BASH_KERNEL_VERSION="0.10.0"
+
 
 # Pick Python: prefer the venv’s python; else fall back to python3/python on PATH.
 if ! command -v python >/dev/null 2>&1; then
@@ -41,10 +52,12 @@ fi
 
 # ---------------- Ensure deps in the chosen Python ----------------
 env PIP_CACHE_DIR="$PIP_CACHE_DIR" PIP_DISABLE_PIP_VERSION_CHECK=1 \
-  python -m pip install -U pip setuptools wheel >/dev/null
+  python -m pip install \
+    "pip==${PIP_PIN_VERSION}" "setuptools==${SETUPTOOLS_PIN_VERSION}" "wheel==${WHEEL_PIN_VERSION}" >/dev/null
 
 env PIP_CACHE_DIR="$PIP_CACHE_DIR" PIP_DISABLE_PIP_VERSION_CHECK=1 \
-  python -m pip install -U jupyter_client bash_kernel >/dev/null
+  python -m pip install \
+    "jupyter_client==${JUPYTER_CLIENT_VERSION}" "bash_kernel==${BASH_KERNEL_VERSION}" >/dev/null
 
 # ---------------- Register kernelspecs ----------------
 echo "🧩 Registering Bash kernel under ${JUPYTER_KERNEL_PREFIX} (system-wide)…"
