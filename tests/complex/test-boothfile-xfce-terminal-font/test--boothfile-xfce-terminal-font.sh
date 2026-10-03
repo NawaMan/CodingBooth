@@ -11,10 +11,6 @@
 # resolvable by fontconfig, start-xfce seeds ~/.config/xfce4/terminal/terminalrc
 # with it on first run, and a later user font change is never overwritten on
 # a subsequent run.
-#
-# xfce--setup.sh is loaded from .booth/setups/ (mirrors
-# variants/base/setups/xfce--setup.sh) until the released base image ships
-# the font install.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail

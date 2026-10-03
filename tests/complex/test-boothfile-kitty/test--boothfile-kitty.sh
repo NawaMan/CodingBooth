@@ -71,7 +71,7 @@ fi
 # Test 4: it is the pinned upstream release, not Ubuntu's apt build. noble's
 # kitty 0.32.2 is exposed to CVE-2026-72913 (fixed 0.48.2), where displaying
 # untrusted output can run commands — Test 1 alone would pass on that too.
-EXPECTED_VERSION=$(sed -n 's/^KITTY_VERSION="\(.*\)"$/\1/p' .booth/setups/kitty--setup.sh)
+EXPECTED_VERSION=$(sed -n 's/^KITTY_VERSION="\(.*\)"$/\1/p' ../../../variants/base/setups/kitty--setup.sh)
 ACTUAL=$(run_coding_booth --silence-build -- "kitty --version; readlink -f /usr/local/bin/kitty" 2>/dev/null)
 
 if echo "$ACTUAL" | grep -q "^kitty ${EXPECTED_VERSION} " \

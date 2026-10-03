@@ -11,10 +11,6 @@
 # checks that each tool is on PATH and reports a version. Proves the booth
 # starts and the install/setup segments work end-to-end — not only that
 # `booth config` emits the right Boothfile lines.
-#
-# buf is loaded from .booth/setups/buf--setup.sh (mirrors
-# variants/base/setups/buf--setup.sh) so the test works before the script
-# ships in the Docker Hub base image.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail

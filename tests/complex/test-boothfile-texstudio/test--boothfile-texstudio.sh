@@ -15,12 +15,7 @@
 # The scheme is `basic` and the VS Code extension is dropped to keep the image
 # small; test-boothfile-latex covers the TeX side.
 #
-# .booth/ is `booth config` output; only .booth/setups/ is hand-placed. It holds
-# copies of latex--setup.sh and texstudio--setup.sh, byte-identical to
-# variants/base/setups/, until the image ships them -- plus the helpers
-# texstudio--setup.sh reaches via $SCRIPT_DIR (cb-has-desktop.sh,
-# libs/skip-setup.sh), which the released image has only in
-# /opt/codingbooth/setups/ and so are not siblings of the override copies.
+# .booth/ is `booth config` output.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail

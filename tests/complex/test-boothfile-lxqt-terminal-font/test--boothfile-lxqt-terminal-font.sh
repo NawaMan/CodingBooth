@@ -10,9 +10,6 @@
 # font actually works: the Fira Code Nerd Font is installed and resolvable by
 # fontconfig, and start-lxqt seeds ~/.config/qterminal.org/qterminal.ini with
 # it on first run, without clobbering a later user font change.
-#
-# lxqt--setup.sh and fira-code-nerd-font--setup.sh are loaded from .booth/setups/
-# (mirror variants/base/setups/) until the released base image ships the font.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail

@@ -9,8 +9,6 @@
 # Verifies that `setup mojo` (with python already in the Boothfile) installs
 # the Mojo compiler and that it can compile and run a program — not only that
 # `mojo --version` prints a string.
-# mojo--setup.sh is loaded from .booth/setups/ so the test works before the
-# script ships in the Docker Hub base image.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail

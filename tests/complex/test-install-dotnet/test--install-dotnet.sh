@@ -10,10 +10,6 @@
 #   1. `install dotnet …` compiles to RUN dotnet--install.sh (known manager)
 #   2. A real booth with setup dotnet + install dotnet-ef starts and has the
 #      tool on PATH (dotnet-ef / `dotnet ef`)
-#
-# The install script is supplied under .booth/setups/ (mirrors
-# variants/base/setups/dotnet--install.sh) so the test works before the script
-# ships in the Docker Hub base image.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail

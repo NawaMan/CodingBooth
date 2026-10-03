@@ -16,10 +16,6 @@
 #   no version chosen  x  non-interactive / interactive  ->  JAVA_HOME is JDK 21
 #   jenv global 21     x  non-interactive / interactive  ->  JAVA_HOME is JDK 21,
 #     although a second JDK (17) installed afterwards owns the JDK profile.
-#
-# .booth/setups/jenv--setup.sh is a byte-identical copy of the one under
-# variants/base/setups/: the released base image predates the fix, and a
-# project's .booth/setups/ shadows the image's. Keep the two in sync.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail

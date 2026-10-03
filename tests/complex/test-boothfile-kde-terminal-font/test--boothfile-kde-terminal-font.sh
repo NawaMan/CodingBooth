@@ -10,9 +10,6 @@
 # actually works: the Fira Code Nerd Font is installed and resolvable by
 # fontconfig, and kde--setup.sh's seeded Shell.profile carries the Font= line
 # on first run, without clobbering a later user font change.
-#
-# kde--setup.sh and fira-code-nerd-font--setup.sh are loaded from .booth/setups/
-# (mirror variants/base/setups/) until the released base image ships the font.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail

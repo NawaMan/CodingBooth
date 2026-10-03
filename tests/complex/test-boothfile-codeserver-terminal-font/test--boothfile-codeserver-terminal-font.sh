@@ -12,10 +12,6 @@
 # pulled in too — the bug this test guards against) and resolvable by
 # fontconfig, and start-codeserver's settings.json carries
 # terminal.integrated.fontFamily, with code-server actually starting.
-#
-# codeserver--setup.sh and fira-code-nerd-font--setup.sh are loaded from
-# .booth/setups/ (mirror variants/base/setups/) until the released base image
-# ships the font install.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
