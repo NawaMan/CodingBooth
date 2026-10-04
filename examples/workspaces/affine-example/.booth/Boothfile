@@ -14,6 +14,6 @@ arg REDIS_VERSION=latest
 setup nodejs ${NODE_VERSION}
 setup postgresql --version ${PG_VERSION}
 setup redis --version ${REDIS_VERSION}
+setup nodejs-code-extension
 copy --from=ghcr.io/toeverything/affine:${AFFINE_SERVER_VERSION} /app /opt/affine
 setup affine-server --port ${AFFINE_SERVER_PORT} --data ${AFFINE_SERVER_DATA}
-setup nodejs-code-extension

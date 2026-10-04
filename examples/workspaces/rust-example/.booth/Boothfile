@@ -6,15 +6,20 @@ env APT_SNAPSHOT=20260906T000000Z
 arg CARGO_PKGS=bat,fd-find,ripgrep
 arg CLAUDE_CODE_VERSION=latest
 arg NOTEBOOK_PORT=18888
+arg PLANK_VERSION=
 arg PYTHON_VERSION=3.13.12
 arg RUST_VERSION=stable
 
 setup xfce
+setup reversal-icons
+setup gruppled-cursors
+setup xfce-theme
+setup plank ${PLANK_VERSION}
 setup claude-code ${CLAUDE_CODE_VERSION}
 setup python ${PYTHON_VERSION}
 setup rust ${RUST_VERSION}
+setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
 install cargo ${CARGO_PKGS}
-setup python-code-extension
 setup rust-code-extension
 setup rust-nb-kernel

@@ -5,9 +5,14 @@ env APT_SNAPSHOT=20260918T000000Z
 
 arg CLAUDE_CODE_VERSION=latest
 arg NOTEBOOK_PORT=18888
+arg PLANK_VERSION=
 arg PYTHON_VERSION=3.13.12
 
 setup xfce
+setup reversal-icons
+setup gruppled-cursors
+setup xfce-theme
+setup plank ${PLANK_VERSION}
 setup claude-code ${CLAUDE_CODE_VERSION}
 setup python ${PYTHON_VERSION}
 setup python-code-extension

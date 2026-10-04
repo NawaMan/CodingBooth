@@ -19,10 +19,10 @@ install go golang.org/x/tools/gopls@latest            # GO language server
 install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
 setup jdk ${JDK_VERSION} ${JDK_VENDOR}
 setup nodejs ${NODE_VERSION}
+setup java-code-extension
 setup android-sdk --cmdline-tools ${ANDROID_CMDLINE_TOOLS} --api ${ANDROID_API} --build-tools ${ANDROID_BUILD_TOOLS}
+setup go-code-extension
+setup nodejs-code-extension
 setup wails --version ${WAILS_VERSION}
 setup android-emulator --api ${ANDROID_API} --tag ${ANDROID_IMAGE_TAG} --abi ${ANDROID_IMAGE_ABI}
-setup go-code-extension
-setup java-code-extension
-setup nodejs-code-extension
 setup wails-android
