@@ -104,7 +104,7 @@ func parseBuildArgs() buildOpts {
 			i++
 		default:
 			fmt.Fprintf(os.Stderr, "Error: unknown flag for build: %s\n", args[i])
-			fmt.Fprintln(os.Stderr, "Usage: booth build [--push <registry>] [--name <name>] [--tag <tag>] [--build-arg KEY=VALUE ...] [--code <path>] [--variant <variant>] [--version <version>] [--verbose] [--dryrun] [--rootless] [--engine <docker|podman>]")
+			fmt.Fprintln(os.Stderr, "Usage: booth build [--push <registry>] [--name <name>] [--tag <tag>] [--build-arg KEY=VALUE ...] [--code <path>] [--variant <variant>] [--version <version>] [--verbose] [--dryrun] [--rootless] [--engine <docker|podman|apple>]")
 			os.Exit(1)
 		}
 	}

@@ -36,8 +36,9 @@ remains. What is left is mostly [testing](#testing) — see Part 2.
 | Project config | `engine = "podman"` in `.booth/config.toml` |
 | Config TUI / CLI | `booth config` (a "Container Engine" field), or `booth config . --no-tui --set engine=podman` |
 
-Values are `docker` and `podman` (case-insensitive). Anything else is rejected:
-`❌ invalid engine "nerdctl" (supported: docker, podman)`.
+Values are `docker`, `podman` and `apple` (Apple container — see
+[CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md)), case-insensitive. Anything else is rejected:
+`❌ invalid engine "nerdctl" (supported: docker, podman, apple)`.
 
 **Precedence** is the usual one: `--engine` > `.booth/config.toml` > `CB_ENGINE` > default.
 

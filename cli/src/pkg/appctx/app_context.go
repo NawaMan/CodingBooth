@@ -110,7 +110,8 @@ func (ctx AppContext) SilenceBuild() bool {
 // the URL you need to open.
 func (ctx AppContext) Quiet() bool { return ctx.values.Config.Quiet }
 
-// Engine is the resolved container engine binary ("docker" or "podman"),
+// Engine is the resolved container engine binary ("docker", "podman" or
+// "apple"; see docker.EngineBinary for the binary each runs),
 // never empty by the time an AppContext exists — InitializeAppContext runs
 // it through ResolveEngineValue before Build().
 func (ctx AppContext) Engine() string { return ctx.values.Config.Engine }

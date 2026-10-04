@@ -287,9 +287,12 @@ Boothfile env (build-time, lowest)
 
 ## Container Engine (experimental)
 
-CodingBooth runs on Docker. Podman can be used instead, but **Podman support is
-experimental**: it is still being developed and may not have feature parity with
-Docker.
+CodingBooth runs on Docker. Podman or, on macOS, Apple container can be used
+instead, but **both are experimental**: they are still being developed and may not
+have feature parity with Docker. Apple container is the `apple` engine
+(`--engine apple`); see [CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md) for what works
+on it — notably `--dind` and `--egress` do not, and lifecycle commands need
+`CB_ENGINE=apple` for now.
 
 ```bash
 booth --engine podman                 # this run

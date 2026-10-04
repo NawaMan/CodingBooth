@@ -21,6 +21,9 @@ func DockerBuild(flags DockerFlags, args ilist.List[ilist.List[string]]) error {
 	if !flags.Silent {
 		return Docker(flags, "build", args)
 	}
+	if flags.Engine == EngineApple {
+		return appleSilentBuild(flags, args)
+	}
 
 	// Silent mode: capture stderr and only show on failure
 	cmdArgs := make([]string, 0, 64)

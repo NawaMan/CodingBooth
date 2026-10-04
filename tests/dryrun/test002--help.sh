@@ -19,7 +19,7 @@ fi
 
 # Just check the USAGE section - the full help is ~98 lines
 ACTUAL=$(run_coding_booth help)
-ACTUAL=$(printf '%s\n' "$ACTUAL" | head -40)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -42)
 
 HERE="$PWD"
 VERSION="$(get_booth_version)"
@@ -47,8 +47,10 @@ OPTIONS
   --sudo <true|false>     Enable/disable sudo access (default: true)
   --no-sudo               Shorthand for --sudo false
   --rootless              Skip the Linux rootless/userns-remap refusal (unsupported)
-  --engine <docker|podman>  Container engine to use (default: docker; podman
-                          is experimental — see docs/PODMAN_SUPPORT.md)
+  --engine <docker|podman|apple>
+                          Container engine to use (default: docker; podman and
+                          apple, i.e. Apple container, are experimental — see
+                          docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md)
 
 EXAMPLES:
   codingbooth --variant codeserver       Run the booth to use codeserver on localhost:<port>.

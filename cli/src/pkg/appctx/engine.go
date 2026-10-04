@@ -15,7 +15,9 @@ import (
 )
 
 // ResolveEngineValue normalizes and validates a raw "engine" setting
-// ("" / "docker" / "podman", case-insensitive) into a concrete binary name.
+// ("" / "docker" / "podman" / "apple", case-insensitive) into a concrete
+// engine name. "apple" is Apple's container runtime; its binary is
+// `container` (see docker.EngineBinary).
 //
 // Empty means the caller never explicitly chose an engine (not via flag, env,
 // or config file). In that case: use "docker" if it's on PATH; otherwise fall
@@ -24,7 +26,7 @@ import (
 // elsewhere); otherwise keep "docker" and let the real exec error explain
 // what's missing. An explicit "podman" always prints an unconditional
 // experimental-support warning (not gated by quiet — this is a "know your
-// risks" notice, not routine chatter).
+// risks" notice, not routine chatter). An explicit "apple" does the same.
 func ResolveEngineValue(raw string, quiet bool) (string, error) {
 	engine := strings.ToLower(strings.TrimSpace(raw))
 	switch engine {
@@ -44,8 +46,11 @@ func ResolveEngineValue(raw string, quiet bool) (string, error) {
 	case "podman":
 		fmt.Fprintln(os.Stderr, "Warning: --engine podman is experimental and may not have full Docker feature parity yet. See docs/PODMAN_SUPPORT.md.")
 		return "podman", nil
+	case "apple":
+		fmt.Fprintln(os.Stderr, "Warning: --engine apple (Apple container) is experimental and may not have full Docker feature parity yet. See docs/CONTAINER_SUPPORT.md.")
+		return "apple", nil
 	default:
-		return "", fmt.Errorf("invalid engine %q (supported: docker, podman)", raw)
+		return "", fmt.Errorf("invalid engine %q (supported: docker, podman, apple)", raw)
 	}
 }
 

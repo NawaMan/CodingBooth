@@ -21,6 +21,8 @@ func TestResolveEngineValue_Explicit(t *testing.T) {
 		{" DOCKER ", "docker"},
 		{"podman", "podman"},
 		{"Podman", "podman"},
+		{"apple", "apple"},
+		{" Apple ", "apple"},
 	}
 	for _, tt := range tests {
 		got, err := ResolveEngineValue(tt.raw, true)
@@ -35,9 +37,12 @@ func TestResolveEngineValue_Explicit(t *testing.T) {
 }
 
 func TestResolveEngineValue_Invalid(t *testing.T) {
-	_, err := ResolveEngineValue("nerdctl", true)
-	if err == nil {
-		t.Fatal("expected an error for an unsupported engine value")
+	// "container" is the Apple engine's binary, not an engine name: the
+	// engine is "apple".
+	for _, raw := range []string{"nerdctl", "container"} {
+		if _, err := ResolveEngineValue(raw, true); err == nil {
+			t.Errorf("expected an error for unsupported engine value %q", raw)
+		}
 	}
 }
 

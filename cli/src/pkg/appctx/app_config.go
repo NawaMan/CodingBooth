@@ -100,7 +100,8 @@ type AppConfig struct {
 	Config  nillable.NillableString `toml:"config,omitempty"  envconfig:"CB_CONFIG"`
 	Code    nillable.NillableString `toml:"code,omitempty"    envconfig:"CB_CODE"`
 	Version nillable.NillableString `toml:"version,omitempty" envconfig:"CB_VERSION"`
-	// Engine picks the container engine binary: "docker" or "podman". Left
+	// Engine picks the container engine binary: "docker", "podman" or
+	// "apple" (Apple container, whose binary is `container`). Left
 	// empty (no default tag) so ResolveEngineValue can tell "never set" apart
 	// from an explicit "docker", which is what the docker->podman PATH
 	// fallback needs (see docs/PODMAN_SUPPORT.md).

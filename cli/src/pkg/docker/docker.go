@@ -55,8 +55,9 @@ type DockerFlags struct {
 	Dryrun  bool
 	Verbose bool
 	Silent  bool
-	// Engine is the container engine binary to shell out to: "docker" or
-	// "podman". Empty defaults to "docker" (see binary()) so zero-value
+	// Engine is the container engine to shell out to: "docker", "podman" or
+	// "apple" (Apple container, whose binary is `container`; see
+	// apple_engine.go and EngineBinary). Empty defaults to "docker" (see binary()) so zero-value
 	// DockerFlags{} keeps today's behavior for callers that don't set it.
 	Engine string
 }
@@ -64,10 +65,22 @@ type DockerFlags struct {
 // binary returns the container engine binary name to invoke, defaulting to
 // "docker" when Engine is unset.
 func (f DockerFlags) binary() string {
-	if f.Engine == "" {
+	return EngineBinary(f.Engine)
+}
+
+// EngineBinary maps an engine name to the CLI binary it runs: "docker" and
+// "podman" are their own binaries, "apple" runs `container`, and an empty
+// engine reads as docker. Use it wherever an engine is exec'd directly or
+// named in a hint the user will type.
+func EngineBinary(engine string) string {
+	switch engine {
+	case "":
 		return "docker"
+	case EngineApple:
+		return appleBinary
+	default:
+		return engine
 	}
-	return f.Engine
 }
 
 // DockerExitError is returned when a docker command exits with a non-zero exit code.
@@ -121,6 +134,11 @@ func needsPodmanBuildFormat(subcommand, engine string, args ilist.List[ilist.Lis
 // Docker executes a docker command with the given subcommand and arguments.
 // If silent is true, suppresses all stdout/stderr from the docker process.
 func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[string]]) error {
+	if flags.Engine == EngineApple {
+		_, err := runApple(flags, subcommand, appleCallArgs(subcommand, args, subcommand == "run"), false)
+		return err
+	}
+
 	// Preserve current behavior: print the command for dry-run or verbose,
 	// even if silent is true (matches "contract" of showing what would run).
 	if flags.Dryrun || flags.Verbose {
@@ -248,6 +266,10 @@ func Docker(flags DockerFlags, subcommand string, args ilist.List[ilist.List[str
 // This is useful for commands like "docker ps" where we need to check the output.
 // The function respects Dryrun and Verbose flags for printing, but always captures output when not in dryrun mode.
 func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.List[string]]) (string, error) {
+	if flags.Engine == EngineApple {
+		return runApple(flags, subcommand, appleCallArgs(subcommand, args, true), true)
+	}
+
 	// Print command if dryrun or verbose (same as Docker function)
 	if flags.Dryrun || flags.Verbose {
 		var printingArgs [][]string
@@ -353,6 +375,24 @@ func DockerOutput(flags DockerFlags, subcommand string, args ilist.List[ilist.Li
 	}
 
 	return stdout.String(), nil
+}
+
+// appleCallArgs flattens args the way Docker() and DockerOutput() build
+// their command lines — run gets -i (and -t on a terminal) up front — for
+// runApple to translate.
+func appleCallArgs(subcommand string, args ilist.List[ilist.List[string]], filterTTY bool) []string {
+	var flat []string
+	if subcommand == "run" {
+		flat = append(flat, "-i")
+		if HasInteractiveTTY() {
+			flat = append(flat, "-t")
+		}
+	}
+	rest := flattenArgs(args)
+	if filterTTY {
+		rest = filterTTYFlags(rest)
+	}
+	return append(flat, rest...)
 }
 
 // filterTTYFlags removes user-provided TTY-related flags from args.

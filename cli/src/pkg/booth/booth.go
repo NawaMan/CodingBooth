@@ -473,15 +473,12 @@ func isUsableHostIP(ip net.IP) bool {
 }
 
 // engineOrDocker is for user-facing hints ("stop with: <engine> stop …") that
-// name the binary the reader should type. ctx.Engine() is normally already a
-// concrete "docker"/"podman" by run time (see resolveEngineConfig), but a
-// couple of call sites build this message without a full AppContext, so an
-// empty value still reads as Docker.
+// name the binary the reader should type — `container` for the apple engine.
+// ctx.Engine() is normally already concrete by run time (see
+// resolveEngineConfig), but a couple of call sites build this message without
+// a full AppContext, so an empty value still reads as Docker.
 func engineOrDocker(engine string) string {
-	if engine == "" {
-		return "docker"
-	}
-	return engine
+	return docker.EngineBinary(engine)
 }
 
 func getDindName(ctx appctx.AppContext) string {

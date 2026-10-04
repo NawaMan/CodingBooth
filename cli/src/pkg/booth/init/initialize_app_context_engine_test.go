@@ -5,6 +5,7 @@
 package init
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
@@ -28,7 +29,7 @@ func TestParseArgs_Engine(t *testing.T) {
 }
 
 func TestResolveEngineConfig_ExplicitValues(t *testing.T) {
-	for _, engine := range []string{"docker", "podman"} {
+	for _, engine := range []string{"docker", "podman", "apple"} {
 		config := &appctx.AppConfig{Engine: engine, Quiet: true}
 		if err := resolveEngineConfig(config); err != nil {
 			t.Fatalf("resolveEngineConfig(%q) unexpected error: %v", engine, err)
@@ -83,5 +84,20 @@ func TestResolveEngineConfig_PodmanWithoutDindNoError(t *testing.T) {
 	config := &appctx.AppConfig{Engine: "podman", Dind: false, Quiet: true}
 	if err := resolveEngineConfig(config); err != nil {
 		t.Errorf("did not expect an error for plain --engine podman, got: %v", err)
+	}
+}
+
+// TestResolveEngineConfig_AppleRefusesSidecars: --dind needs a
+// --privileged daemon and --egress a shared network namespace, neither of
+// which Apple container offers (docs/CONTAINER_SUPPORT.md).
+func TestResolveEngineConfig_AppleRefusesSidecars(t *testing.T) {
+	for _, config := range []*appctx.AppConfig{
+		{Engine: "apple", Quiet: true, Dind: true},
+		{Engine: "apple", Quiet: true, Egress: true},
+	} {
+		err := resolveEngineConfig(config)
+		if err == nil || !strings.Contains(err.Error(), "not supported on engine apple") {
+			t.Errorf("dind=%t egress=%t: want a refusal, got %v", config.Dind, config.Egress, err)
+		}
 	}
 }

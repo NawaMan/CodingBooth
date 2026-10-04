@@ -22,6 +22,7 @@ func TestDockerFlags_Binary(t *testing.T) {
 		{"empty defaults to docker", DockerFlags{}, "docker"},
 		{"explicit docker", DockerFlags{Engine: "docker"}, "docker"},
 		{"explicit podman", DockerFlags{Engine: "podman"}, "podman"},
+		{"apple runs the container CLI", DockerFlags{Engine: "apple"}, "container"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
