@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --expose +-1920:80 --select php+composer~vscode-ext/mysql/apache+php/wp-init
+# Configured by: booth config --no-tui --overwrite --expose +-1920:80 --select php:8.5+composer~vscode-ext/mysql/apache+php/wp-init
 
 
 run-args = [

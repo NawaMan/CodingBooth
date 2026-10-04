@@ -1,9 +1,9 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --expose +-1920:80 --select php~vscode-ext/mysql/apache+php/lamp-init
+# Configured by: booth config --no-tui --overwrite --expose +-1920:80 --select php:8.5~vscode-ext/mysql/apache+php/lamp-init
 
 env APT_SNAPSHOT=20260906T000000Z
 
-arg PHP_VERSION=8.3
+arg PHP_VERSION=8.5
 
 setup apache
 setup lamp-init

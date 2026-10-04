@@ -1,2 +1,2 @@
-# Configured by: booth config --no-tui --overwrite --select php+vscode-ext+composer
+# Configured by: booth config --no-tui --overwrite --select php:8.5+vscode-ext+composer
 

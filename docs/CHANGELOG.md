@@ -74,6 +74,16 @@ This file contains a list of changes for each released version.
     were refreshed so they don't shadow the fix; docs and comments naming 24.04 as the current base
     were updated.
 
+- **4 examples re-pinned from PHP 8.3 to 8.5.** `php-example`, `lamp-example`, `lemp-example` and
+  `wordpress-example` still carried `arg PHP_VERSION=8.3`, which exists nowhere for 26.04 — not in
+  the archive (which has 8.5), and not in `ppa:ondrej/php`, which publishes no `resolute` suite —
+  so all four failed to build with "PHP 8.3 is not in Ubuntu 26.04's archive". Re-pinned through
+  `booth config --overwrite` (never by hand: that breaks the `.generated` fingerprint). The version
+  has to be named in the selection (`--select php:8.5...`): `--overwrite` carries existing param
+  values forward, so regenerating with each example's original command reproduced `8.3`
+  byte-for-byte even though `templates/languages/php` already defaults to 8.5. All four re-verified
+  end to end.
+
 - **4 examples' `APT_SNAPSHOT` bumped back even with the base image.** `apt-example`,
   `clang-example`, `systemlib-example`, and `turtle-example` were pinned to `20260918`; the base
   image is now built at `20260928` (nothing sets `CB_APT_SNAPSHOT`, so a local rebuild defaults to
