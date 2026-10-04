@@ -87,6 +87,7 @@ MAX_PARALLEL=1
 
 EXAMPLE_TIMEOUT=900  # 15 minutes per example
 TIMEOUT_GIVEN=false  # an explicit --timeout is carried into the rerun command
+RETRY=true           # rerun the failed examples once (see the retry below)
 declare -a FILTER_TAGS=()
 declare -a FILTER_EXAMPLES=()
 
@@ -118,6 +119,10 @@ while [[ $# -gt 0 ]]; do
             TIMEOUT_GIVEN=true
             shift 2
             ;;
+        --no-retry)
+            RETRY=false
+            shift
+            ;;
         --help|-h)
             echo "Usage: $0 [OPTIONS]"
             echo ""
@@ -125,8 +130,10 @@ while [[ $# -gt 0 ]]; do
             echo "  --tag <tag>           Filter examples by tag (can be used multiple times, OR logic)"
             echo "  --example <example>   Filter by example name (can be used multiple times, OR logic)"
             echo "                        (tries appending '-example' if exact match not found)"
-            echo "  --max-parallel <n>    Maximum parallel examples (default: 32)"
-            echo "  --timeout <seconds>   Timeout per example in seconds (default: 600 = 10 min)"
+            echo "  --max-parallel <n>    Maximum parallel examples (default: 1)"
+            echo "  --timeout <seconds>   Timeout per example in seconds (default: 900 = 15 min)"
+            echo "  --no-retry            Do not rerun failed examples (by default they are rerun"
+            echo "                        once, one at a time, when fewer than half failed)"
             echo "  --help, -h            Show this help message"
             echo ""
             echo "While examples run, a single self-erasing line reports what is in flight"
@@ -412,127 +419,130 @@ draw_in_flight() {
     progress_draw "$line"
 }
 
-# Run examples in parallel with limit
-running_jobs=0
-declare -a job_pids=()
-declare -a job_examples=()
-declare -a job_starts=()
+# Run the given example directories, at most MAX_PARALLEL at a time. Each one
+# writes its result and duration under RESULTS_DIR and its output to
+# .<name>.log -- a second call (the retry below) overwrites both.
+run_examples() {
+    local example_dir example_name pid last_pid still_running
+    running_jobs=0
+    job_pids=()
+    job_examples=()
+    job_starts=()
 
-for example_dir in "${examples[@]}"; do
-    example_name=$(basename "$example_dir")
+    for example_dir in "$@"; do
+        example_name=$(basename "$example_dir")
 
-    # Wait if we've hit the parallel limit
-    while [ $running_jobs -ge $MAX_PARALLEL ]; do
-        # Wait for any job to finish. `wait -n` (bash 4.3+) blocks until the next
-        # job exits; on bash 3.2 fall back to polling with a short sleep.
-        #
-        # With a line to draw we poll either way: `wait -n` would block for the
-        # whole of an example, and a clock that only moves when a job finishes is
-        # not a clock.
-        if [ "$PROGRESS_ACTIVE" = true ]; then
-            draw_in_flight
-            sleep 0.25
-        elif [ "$HAS_WAIT_N" = true ]; then
-            wait -n 2>/dev/null || true
-        else
-            sleep 1
-        fi
-        # Recount running jobs
-        running_jobs=0
-        for pid in "${job_pids[@]}"; do
-            if kill -0 "$pid" 2>/dev/null; then
-                running_jobs=$((running_jobs + 1))
+        # Wait if we've hit the parallel limit
+        while [ $running_jobs -ge $MAX_PARALLEL ]; do
+            # Wait for any job to finish. `wait -n` (bash 4.3+) blocks until the next
+            # job exits; on bash 3.2 fall back to polling with a short sleep.
+            #
+            # With a line to draw we poll either way: `wait -n` would block for the
+            # whole of an example, and a clock that only moves when a job finishes is
+            # not a clock.
+            if [ "$PROGRESS_ACTIVE" = true ]; then
+                draw_in_flight
+                sleep 0.25
+            elif [ "$HAS_WAIT_N" = true ]; then
+                wait -n 2>/dev/null || true
+            else
+                sleep 1
             fi
+            # Recount running jobs
+            running_jobs=0
+            for pid in "${job_pids[@]}"; do
+                if kill -0 "$pid" 2>/dev/null; then
+                    running_jobs=$((running_jobs + 1))
+                fi
+            done
         done
+
+        # Start example in background with timeout
+        (
+            start_time=$(date +%s)
+
+            # This runner owns the terminal line; a booth build inside the example
+            # would otherwise draw its own on top of it. The build output still goes
+            # to this example's log, which is where the line reads its detail from.
+            export CB_NO_BUILD_PROGRESS=1
+
+            test_runner="$example_dir/run-automatic-on-host-test.sh"
+            test_count=$(find "$example_dir" "$example_dir/.cb-tests" -maxdepth 1 -name "test0*.sh" 2>/dev/null | wc -l)
+
+            echo "========================================"
+            echo "Example: $example_name ($test_count test(s))"
+            echo "========================================"
+
+            set +e
+            run_with_timeout "$EXAMPLE_TIMEOUT" bash -c "cd '$example_dir' && VARIANT=base CB_PORT=RANDOM ./run-automatic-on-host-test.sh"
+            test_exit_code=$?
+            set -e
+
+            end_time=$(date +%s)
+            duration=$((end_time - start_time))
+
+            echo "----------------------------------------"
+            if [ $test_exit_code -eq 0 ]; then
+                echo "✓ $example_name passed (${duration}s)"
+                echo "0" > "$RESULTS_DIR/$example_name.result"
+            elif [ $test_exit_code -eq 124 ]; then
+                echo "⏱ $example_name TIMEOUT (${duration}s)"
+                echo "124" > "$RESULTS_DIR/$example_name.result"
+            else
+                echo "✗ $example_name FAILED (${duration}s)"
+                echo "1" > "$RESULTS_DIR/$example_name.result"
+            fi
+            echo ""
+
+            # Write duration
+            echo "$duration" > "$RESULTS_DIR/$example_name.duration"
+
+            # Post-cleanup: ensure containers are fully stopped
+            docker stop "$example_name" 2>/dev/null || true
+            docker rm -f "$example_name" 2>/dev/null || true
+            # Also cleanup any DinD sidecars
+            for container in $(docker ps -aq --filter "name=${example_name}-.*-dind" 2>/dev/null); do
+                docker stop "$container" 2>/dev/null || true
+                docker rm -f "$container" 2>/dev/null || true
+            done
+            for network in $(docker network ls --filter "name=${example_name}-" --format '{{.Name}}' 2>/dev/null | grep -- '-net$'); do
+                docker network rm "$network" 2>/dev/null || true
+            done
+        ) > "$SCRIPT_DIR/.$example_name.log" 2>&1 &
+
+        last_pid=$!
+        job_pids+=("$last_pid")
+        job_examples+=("$example_name")
+        job_starts+=("$(date +%s)")
+        running_jobs=$((running_jobs + 1))
+
+        progress_clear
+        echo "Started example: $example_name (pid: $last_pid)"
     done
-
-    # Start example in background with timeout
-    (
-        start_time=$(date +%s)
-
-        # This runner owns the terminal line; a booth build inside the example
-        # would otherwise draw its own on top of it. The build output still goes
-        # to this example's log, which is where the line reads its detail from.
-        export CB_NO_BUILD_PROGRESS=1
-
-        test_runner="$example_dir/run-automatic-on-host-test.sh"
-        test_count=$(find "$example_dir" "$example_dir/.cb-tests" -maxdepth 1 -name "test0*.sh" 2>/dev/null | wc -l)
-
-        echo "========================================"
-        echo "Example: $example_name ($test_count test(s))"
-        echo "========================================"
-
-        set +e
-        run_with_timeout "$EXAMPLE_TIMEOUT" bash -c "cd '$example_dir' && VARIANT=base CB_PORT=RANDOM ./run-automatic-on-host-test.sh"
-        test_exit_code=$?
-        set -e
-
-        end_time=$(date +%s)
-        duration=$((end_time - start_time))
-
-        echo "----------------------------------------"
-        if [ $test_exit_code -eq 0 ]; then
-            echo "✓ $example_name passed (${duration}s)"
-            echo "0" > "$RESULTS_DIR/$example_name.result"
-        elif [ $test_exit_code -eq 124 ]; then
-            echo "⏱ $example_name TIMEOUT (${duration}s)"
-            echo "124" > "$RESULTS_DIR/$example_name.result"
-        else
-            echo "✗ $example_name FAILED (${duration}s)"
-            echo "1" > "$RESULTS_DIR/$example_name.result"
-        fi
-        echo ""
-
-        # Write duration
-        echo "$duration" > "$RESULTS_DIR/$example_name.duration"
-
-        # Post-cleanup: ensure containers are fully stopped
-        docker stop "$example_name" 2>/dev/null || true
-        docker rm -f "$example_name" 2>/dev/null || true
-        # Also cleanup any DinD sidecars
-        for container in $(docker ps -aq --filter "name=${example_name}-.*-dind" 2>/dev/null); do
-            docker stop "$container" 2>/dev/null || true
-            docker rm -f "$container" 2>/dev/null || true
-        done
-        for network in $(docker network ls --filter "name=${example_name}-" --format '{{.Name}}' 2>/dev/null | grep -- '-net$'); do
-            docker network rm "$network" 2>/dev/null || true
-        done
-    ) > "$SCRIPT_DIR/.$example_name.log" 2>&1 &
-
-    last_pid=$!
-    job_pids+=("$last_pid")
-    job_examples+=("$example_name")
-    job_starts+=("$(date +%s)")
-    running_jobs=$((running_jobs + 1))
 
     progress_clear
-    echo "Started example: $example_name (pid: $last_pid)"
-done
+    echo ""
+    echo "Waiting for all examples to complete..."
+    echo ""
 
-progress_clear
-echo ""
-echo "Waiting for all examples to complete..."
-echo ""
-
-# Wait for all jobs. Polled rather than a bare `wait` when there is a line to
-# draw: this is the longest silence in the run, and the one worth reporting.
-if [ "$PROGRESS_ACTIVE" = true ]; then
-    while :; do
-        still_running=false
-        for pid in "${job_pids[@]}"; do
-            kill -0 "$pid" 2>/dev/null && { still_running=true; break; }
+    # Wait for all jobs. Polled rather than a bare `wait` when there is a line to
+    # draw: this is the longest silence in the run, and the one worth reporting.
+    if [ "$PROGRESS_ACTIVE" = true ]; then
+        while :; do
+            still_running=false
+            for pid in "${job_pids[@]}"; do
+                kill -0 "$pid" 2>/dev/null && { still_running=true; break; }
+            done
+            [ "$still_running" = true ] || break
+            draw_in_flight
+            sleep 0.25
         done
-        [ "$still_running" = true ] || break
-        draw_in_flight
-        sleep 0.25
-    done
-fi
-wait
-progress_clear
+    fi
+    wait
+    progress_clear
+}
 
-# Record overall end time
-OVERALL_END=$(date +%s)
-OVERALL_DURATION=$((OVERALL_END - OVERALL_START))
+run_examples "${examples[@]}"
 
 # Result/duration accessors. Data lives in per-example files under RESULTS_DIR,
 # so we read on demand instead of caching in associative arrays (bash 4 only).
@@ -544,6 +554,37 @@ get_duration() {
     local f="$RESULTS_DIR/$1.duration"
     [ -f "$f" ] && cat "$f" || echo 0
 }
+
+# Retry the failed examples once, the way tests/run-automate-tests.sh retries
+# its failed suites: failures here are often only intermittent under a full
+# run. Only when fewer than half failed -- past that, something is broken for
+# real (Docker down, a bad base image) and a second pass just doubles the wait.
+# One at a time, since running alone is what usually clears them; the retry's
+# result and log replace the first attempt's.
+if [ "$RETRY" = true ]; then
+    retry_dirs=()
+    for example_dir in "${examples[@]}"; do
+        [ "$(get_result "$(basename "$example_dir")")" = "0" ] || retry_dirs+=("$example_dir")
+    done
+    if [ ${#retry_dirs[@]} -gt 0 ]; then
+        echo ""
+        if [ $(( ${#retry_dirs[@]} * 2 )) -lt ${#examples[@]} ]; then
+            echo "Retrying ${#retry_dirs[@]} failed example(s), one at a time..."
+            echo ""
+            saved_max_parallel=$MAX_PARALLEL
+            MAX_PARALLEL=1
+            run_examples "${retry_dirs[@]}"
+            MAX_PARALLEL=$saved_max_parallel
+        else
+            echo "Not retrying: ${#retry_dirs[@]} of ${#examples[@]} example(s) failed (half or more)."
+        fi
+        echo ""
+    fi
+fi
+
+# Record overall end time
+OVERALL_END=$(date +%s)
+OVERALL_DURATION=$((OVERALL_END - OVERALL_START))
 
 # Collect results
 failed_examples=()
