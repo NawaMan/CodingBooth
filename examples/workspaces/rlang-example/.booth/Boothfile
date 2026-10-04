@@ -8,7 +8,7 @@ arg PYTHON_VERSION=3.13.12
 
 setup python ${PYTHON_VERSION}
 setup r-rscript
-setup notebook ${NOTEBOOK_PORT}
 setup python-code-extension
+setup notebook ${NOTEBOOK_PORT}
 setup r-code-extension
 setup r-nb-kernel

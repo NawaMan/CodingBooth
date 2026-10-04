@@ -8,8 +8,8 @@ arg NOTEBOOK_PORT=18888
 arg PYTHON_VERSION=3.13.12
 
 setup python ${PYTHON_VERSION}
+setup python-code-extension
 setup mojo --version ${MOJO_VERSION}
 setup notebook ${NOTEBOOK_PORT}
 setup mojo-code-extension
-setup python-code-extension
 setup mojo-nb-kernel

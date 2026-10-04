@@ -3,9 +3,10 @@
 
 env APT_SNAPSHOT=20260629T000000Z
 
+arg CLAUDE_CODE_VERSION=latest
 arg NODE_VERSION=22
 
-setup claude-code
+setup claude-code ${CLAUDE_CODE_VERSION}
 setup nodejs ${NODE_VERSION}
 install npm pnpm
 setup nodejs-code-extension
