@@ -236,6 +236,19 @@ This file contains a list of changes for each released version.
   already the format `last_step_counter` expected (`"#12 [base 5/17] RUN ..."`) — so this also fixes
   a pre-existing mismatch between what was requested and what the status graph's own parser assumed.
 
+- **`run-automate-tests.sh` now sets the two opt-outs its own live status graph requires.** A silenced
+  `booth build`/`booth run` falls back to opening `/dev/tty` directly for its transient progress line
+  once its stderr is redirected (`cli/src/pkg/docker/build_progress.go`) — true for every booth
+  invocation under SETUPS, CONFIG, CONFIG-TUI and COMPLEX — and `tests/progress--source.sh` does the
+  same for a suite runner's own heartbeat line. Both exist so a quiet suite doesn't look hung, and both
+  are deliberately opt-out-able for exactly this case: `tests/progress--source.sh` documents the
+  contract directly — "a runner that owns the terminal line sets [`CB_NO_BUILD_PROGRESS`] for its
+  children, so the two never draw at once" — but `run-automate-tests.sh`, which draws its own
+  cursor-positioned suite graph across up to eight parallel suites, was never setting it or its own
+  `CB_NO_TEST_PROGRESS` counterpart. Each nested line-drawer that assumed nothing else owned the
+  terminal was therefore fighting the top-level graph (and each other) for the same tty. Both are now
+  exported once, inherited by every suite and every booth invocation underneath.
+
 - **4 examples' `APT_SNAPSHOT` bumped back even with the base image.** `apt-example`,
   `clang-example`, `systemlib-example`, and `turtle-example` were pinned to `20260918`; the base
   image is now built at `20260928` (nothing sets `CB_APT_SNAPSHOT`, so a local rebuild defaults to

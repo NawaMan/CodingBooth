@@ -27,6 +27,20 @@ export CB_BROWSER=false
 # Run on Docker unless the caller picked an engine; see common--source.sh.
 export CB_ENGINE="${CB_ENGINE:-docker}"
 
+# This runner owns the terminal's status line (draw_graph below redraws the
+# suite graph in place with cursor-up escapes). A silenced `booth build` falls
+# back to /dev/tty for its own transient progress line when its stderr is
+# redirected (see cli/src/pkg/docker/build_progress.go) — true for every booth
+# invocation under SETUPS/CONFIG/CONFIG-TUI/COMPLEX — and tests/progress--source.sh
+# does the same for a suite runner's own heartbeat line. Both fall back
+# precisely because nothing else looked like it was drawing there; with eight
+# suites running in parallel, several would make that same assumption at once
+# and fight over the one real terminal this process already owns. Setting
+# both opt-outs here, inherited by every child, is the documented contract for
+# "a runner that owns the terminal line" (see tests/progress--source.sh).
+export CB_NO_BUILD_PROGRESS=1
+export CB_NO_TEST_PROGRESS=1
+
 # shellcheck disable=SC1091
 [[ -f "${SCRIPT_DIR}/ensure-fresh-image--source.sh" ]] && source "${SCRIPT_DIR}/ensure-fresh-image--source.sh"
 
