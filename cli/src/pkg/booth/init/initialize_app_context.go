@@ -422,6 +422,21 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 			cfg.AppleLowPorts = true
 			i++
 
+		case "--vm-memory", "--vm-cpus", "--vm-shm-size":
+			v, err := needValue(args, i, arg)
+			if err != nil {
+				return err
+			}
+			switch arg {
+			case "--vm-memory":
+				cfg.VmMemory = v
+			case "--vm-cpus":
+				cfg.VmCpus = v
+			default:
+				cfg.VmShmSize = v
+			}
+			i += 2
+
 		// The browser opens by default for a booth that serves a UI. Both
 		// spellings are here because config.toml and CB_BROWSER can turn it off
 		// project-wide, and a single run has to be able to say otherwise.

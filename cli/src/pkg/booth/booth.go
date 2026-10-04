@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -519,6 +520,59 @@ func podmanLowPortArgs(engine string, joinsNetns bool) []string {
 	return []string{"--sysctl", "net.ipv4.ip_unprivileged_port_start=0"}
 }
 
+// vmSizePattern is a memory size as Docker and Apple container take it: a
+// number with an optional unit and optional b (512m, 4g, 2048mb, 1.5g).
+var vmSizePattern = regexp.MustCompile(`^[0-9]+(\.[0-9]+)?[kKmMgGtT]?[bB]?$`)
+
+// vmResourceArgs is what --vm-memory / --vm-cpus / --vm-shm-size add to the
+// run, plus the lines worth printing. Only engine apple runs each booth in its
+// own VM (container 1.5.0: 1 GB, 4 CPUs by default); elsewhere the settings are
+// ignored with a note, so nothing gets capped there. A desktop on apple without
+// vm-memory gets a warning: KDE alone needs ~700 MB idle. Pure for unit tests.
+func vmResourceArgs(engine, memory, cpus, shm, variant string, desktop bool) (args [][]string, notes []string, err error) {
+	if memory != "" && !vmSizePattern.MatchString(memory) {
+		return nil, nil, fmt.Errorf("invalid vm-memory %q (expected a size like 4g or 4096m)", memory)
+	}
+	if shm != "" && !vmSizePattern.MatchString(shm) {
+		return nil, nil, fmt.Errorf("invalid vm-shm-size %q (expected a size like 1g or 512m)", shm)
+	}
+	if cpus != "" {
+		if n, convErr := strconv.Atoi(cpus); convErr != nil || n < 1 {
+			return nil, nil, fmt.Errorf("invalid vm-cpus %q (expected a whole number of CPUs, 1 or more)", cpus)
+		}
+	}
+
+	if engine != docker.EngineApple {
+		if memory != "" || cpus != "" || shm != "" {
+			notes = append(notes, fmt.Sprintf("Note: --vm-memory / --vm-cpus / --vm-shm-size only apply to engine apple (Apple container, macOS), where each booth is its own VM; ignored on %s.", engine))
+		}
+		return nil, notes, nil
+	}
+
+	if memory != "" {
+		args = append(args, []string{"--memory", memory})
+	} else if desktop {
+		notes = append(notes, fmt.Sprintf("Warning: the %s variant on Apple container gets its VM's default 1 GB of memory, which a desktop outgrows (KDE uses ~700 MB idle). Add --vm-memory 4g. See docs/CONTAINER_SUPPORT.md.", variant))
+	}
+	if cpus != "" {
+		args = append(args, []string{"--cpus", cpus})
+	}
+	if shm != "" {
+		args = append(args, []string{"--shm-size", shm})
+	}
+	return args, notes, nil
+}
+
+// hasFlag reports whether args sets flag.
+func hasFlag(args [][]string, flag string) bool {
+	for _, arg := range args {
+		if len(arg) > 0 && arg[0] == flag {
+			return true
+		}
+	}
+	return false
+}
+
 // appleLowPortsArgs is what --apple-low-ports adds to the run: only on engine
 // apple, where it is needed. The label tells shell and exec to start their
 // sessions with the same permission booth-entry gives coder. Pure for unit
@@ -604,8 +658,22 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	// map shared memory in /dev/shm. Docker's default 64 MB is too small and the
 	// renderer aborts ("renderer process gone, code 133") on heavy pages such as
 	// rich notebooks. Give them room.
-	if ctx.HasDesktop() {
+	//
+	// On Apple container each booth is its own VM: --vm-memory / --vm-cpus /
+	// --vm-shm-size size it (vmResourceArgs), and a vm-shm-size replaces this 1g.
+	vmArgs, vmNotes, err := vmResourceArgs(ctx.Engine(), ctx.VmMemory(), ctx.VmCpus(), ctx.VmShmSize(), ctx.Variant(), ctx.HasDesktop())
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "❌ %v\n", err)
+		os.Exit(1)
+	}
+	for _, note := range vmNotes {
+		fmt.Fprintln(os.Stderr, note)
+	}
+	if ctx.HasDesktop() && !hasFlag(vmArgs, "--shm-size") {
 		builder.CommonArgs.Append(ilist.NewList[string]("--shm-size", "1g"))
+	}
+	for _, arg := range vmArgs {
+		builder.CommonArgs.Append(ilist.NewList[string](arg...))
 	}
 
 	// Skip port mapping when using shared network namespace sidecars.

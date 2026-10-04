@@ -42,6 +42,9 @@ type specToml struct {
 	Timezone     string               `toml:"timezone"`
 	Dind         *bool                `toml:"dind"`
 	Sudo         *bool                `toml:"sudo"`
+	VmMemory     string               `toml:"vm-memory"`
+	VmCpus       string               `toml:"vm-cpus"`
+	VmShmSize    string               `toml:"vm-shm-size"`
 	Cmds         []string             `toml:"cmds"`
 	BuildArgs    []string             `toml:"build-args"`
 	RunArgs      []string             `toml:"run-args"`
@@ -65,6 +68,7 @@ type paramToml struct {
 	Default  string   `toml:"default"`
 	Suggests []string `toml:"suggests"`
 	Variadic bool     `toml:"variadic"`
+	Runtime  bool     `toml:"runtime"`
 }
 
 // LoadRegistry loads all templates from the given root directory.
@@ -192,6 +196,9 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		Timezone:      spec.Timezone,
 		Dind:          spec.Dind,
 		Sudo:          spec.Sudo,
+		VmMemory:      spec.VmMemory,
+		VmCpus:        spec.VmCpus,
+		VmShmSize:     spec.VmShmSize,
 		Cmds:          spec.Cmds,
 		BuildArgs:     spec.BuildArgs,
 		RunArgs:       spec.RunArgs,
@@ -202,7 +209,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 	if len(spec.Params) > 0 {
 		tmpl.Params = make(map[string]Param, len(spec.Params))
 		for k, v := range spec.Params {
-			tmpl.Params[k] = Param{Default: v.Default, Suggests: v.Suggests, Variadic: v.Variadic}
+			tmpl.Params[k] = Param{Default: v.Default, Suggests: v.Suggests, Variadic: v.Variadic, Runtime: v.Runtime}
 		}
 		// Extract declaration order from TOML metadata keys
 		for _, key := range md.Keys() {
@@ -371,6 +378,9 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		Timezone:      spec.Timezone,
 		Dind:          spec.Dind,
 		Sudo:          spec.Sudo,
+		VmMemory:      spec.VmMemory,
+		VmCpus:        spec.VmCpus,
+		VmShmSize:     spec.VmShmSize,
 		Cmds:          spec.Cmds,
 		BuildArgs:     spec.BuildArgs,
 		RunArgs:       spec.RunArgs,
@@ -381,7 +391,7 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 	if len(spec.Params) > 0 {
 		tmpl.Params = make(map[string]Param, len(spec.Params))
 		for k, v := range spec.Params {
-			tmpl.Params[k] = Param{Default: v.Default, Suggests: v.Suggests, Variadic: v.Variadic}
+			tmpl.Params[k] = Param{Default: v.Default, Suggests: v.Suggests, Variadic: v.Variadic, Runtime: v.Runtime}
 		}
 		for _, key := range md.Keys() {
 			if len(key) == 2 && key[0] == "params" {

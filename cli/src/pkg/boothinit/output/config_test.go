@@ -314,3 +314,15 @@ func TestSerializeConfigToml_ValidToml(t *testing.T) {
 		}
 	}
 }
+
+func TestSerializeConfigToml_VmSizing(t *testing.T) {
+	out := SerializeConfigToml(&ConfigToml{VmMemory: "8g", VmCpus: "6", VmShmSize: "2g"}, "", "")
+	for _, want := range []string{`vm-memory = "8g"`, `vm-cpus = "6"`, `vm-shm-size = "2g"`} {
+		if !strings.Contains(out, want) {
+			t.Errorf("config.toml lacks %s:\n%s", want, out)
+		}
+	}
+	if strings.Contains(SerializeConfigToml(&ConfigToml{}, "", ""), "vm-") {
+		t.Error("unset VM sizing must not be written")
+	}
+}

@@ -109,6 +109,36 @@ list it is reported like any other engine's.
 engine that owns it. With `--run`, a booth that exists nowhere is created by `booth run` on the
 [default engine](#when-you-choose-nothing), and they connect to it on whichever engine it landed.
 
+## Sizing the booth's VM (`--vm-memory`, `--vm-cpus`, `--vm-shm-size`)
+
+Apple container runs every booth in its own small VM, and gives it **1 GB of memory and 4 CPUs**
+by default (`container system property list`, `[container]`). Docker and Podman have no per-booth
+VM — a container shares the engine's whole VM — so this is where Apple container differs most. A
+desktop variant outgrows 1 GB quickly (KDE alone uses about 700 MB idle): the VM thrashes, the
+browser shows *Reconnecting to the booth…*, then *Booth stopped*, and even `container exec` hangs.
+
+Size it per booth:
+
+| Setting | Flag | Env | `config.toml` | Passed to Apple container |
+| --- | --- | --- | --- | --- |
+| Memory | `--vm-memory 4g` | `CB_VM_MEMORY` | `vm-memory = "4g"` | `--memory 4g` |
+| CPUs | `--vm-cpus 6` | `CB_VM_CPUS` | `vm-cpus = "6"` | `--cpus 6` |
+| `/dev/shm` | `--vm-shm-size 2g` | `CB_VM_SHM_SIZE` | `vm-shm-size = "2g"` | `--shm-size 2g` |
+
+or pick them as templates — category **Booth VM (macOS)** in `booth config`, or
+`--select vm-memory:8g/vm-cpus:6/vm-shm-size:2g`. They are also fields in the Config TUI.
+
+- **Only engine `apple` uses them.** On Docker and Podman they are ignored with a one-line note, so
+  nothing gets capped there.
+- **`/dev/shm` comes out of the VM's memory.** Desktops get `--shm-size 1g`; `vm-shm-size` replaces
+  it. Keep it well below `vm-memory`.
+- **A desktop variant without `vm-memory` gets a warning** (`Add --vm-memory 4g`); the default is not
+  changed for you.
+- Values are checked up front: sizes like `512m`, `4g`, `4096m`; CPUs a whole number.
+
+Verified: `--vm-memory 4g --vm-cpus 6` gave the booth a 4096 MB, 6-CPU VM (`free` showed 4047 MB
+and `nproc` 6 inside).
+
 ## Single-file mounts
 
 Apple container (`container` 1.5.0) has a mount bug: **mounting a single file drops the mount of
@@ -326,6 +356,7 @@ Not verified yet: the `--silence-build` progress line (it only draws on a termin
 | Quiet skip of a stopped service | `managedContainersAcross` (`lifecycle/lifecycle.go`), `docker.AppleServiceRunning` |
 | Host gateway | `docker.AppleNetworkGateway`; `BOOTH_HOST_*` in `booth/booth.go`; the `/etc/hosts` line in `variants/base/booth-entry` |
 | `booth--expose` tunnel binary | `tunnelExecCommand` (`booth/tcp_tunnel.go`) |
+| VM sizing | `vmResourceArgs` (`booth/booth.go`); template fields `vm-*` and `runtime` params in `boothinit/template`, `boothinit/compiler`; templates in `templates/booth-vm/` |
 | Single-file mount bug | `appleWrapperCopy` / `addReadOnlyBoothWrapper` (`booth/booth.go`); the warning, `appleMountConflicts` (`docker/apple_engine.go`) |
 | `--apple-low-ports` | `appleLowPortsArgs` / `appleLowPortsNote` (`booth/booth.go`); `coderCommand` (`lifecycle/connect.go`); `variants/base/booth--as-coder` and its marker in `booth-entry` |
 

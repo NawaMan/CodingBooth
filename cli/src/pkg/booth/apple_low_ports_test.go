@@ -54,3 +54,43 @@ func TestAppleLowPortsNote(t *testing.T) {
 		})
 	}
 }
+
+func TestVmResourceArgs(t *testing.T) {
+	args, notes, err := vmResourceArgs("apple", "8g", "6", "2g", "desktop-kde", true)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	want := [][]string{{"--memory", "8g"}, {"--cpus", "6"}, {"--shm-size", "2g"}}
+	if !reflect.DeepEqual(args, want) || len(notes) != 0 {
+		t.Errorf("apple with all three = %v, notes %v; want %v and no notes", args, notes, want)
+	}
+
+	args, notes, _ = vmResourceArgs("apple", "", "", "", "desktop-kde", true)
+	if args != nil || len(notes) != 1 || !strings.Contains(notes[0], "Add --vm-memory 4g") {
+		t.Errorf("a desktop on apple without vm-memory = %v, %q; want no args and the warning", args, notes)
+	}
+	if _, notes, _ := vmResourceArgs("apple", "", "", "", "base", false); len(notes) != 0 {
+		t.Errorf("a non-desktop on apple needs no warning, got %q", notes)
+	}
+
+	args, notes, _ = vmResourceArgs("docker", "8g", "", "", "desktop-kde", true)
+	if args != nil || len(notes) != 1 || !strings.Contains(notes[0], "ignored on docker") {
+		t.Errorf("docker = %v, %q; want nothing passed and the ignored note", args, notes)
+	}
+	if _, notes, _ := vmResourceArgs("docker", "", "", "", "desktop-kde", true); len(notes) != 0 {
+		t.Errorf("docker with nothing set says nothing, got %q", notes)
+	}
+
+	for _, bad := range []struct{ memory, cpus, shm string }{
+		{"lots", "", ""}, {"", "0", ""}, {"", "two", ""}, {"", "", "1 g"},
+	} {
+		if _, _, err := vmResourceArgs("apple", bad.memory, bad.cpus, bad.shm, "base", false); err == nil {
+			t.Errorf("%+v: want a validation error", bad)
+		}
+	}
+	for _, ok := range []string{"512m", "4g", "4096m", "2048mb", "1.5g", "8G"} {
+		if _, _, err := vmResourceArgs("apple", ok, "", "", "base", false); err != nil {
+			t.Errorf("%q should be a valid size: %v", ok, err)
+		}
+	}
+}

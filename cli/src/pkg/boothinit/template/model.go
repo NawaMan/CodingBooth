@@ -49,6 +49,11 @@ type Template struct {
 	Timezone string
 	Dind     *bool
 	Sudo     *bool
+	// VM sizing for engine apple (vm-memory, vm-cpus, vm-shm-size in
+	// config.toml); ${PARAM} references are expanded.
+	VmMemory  string
+	VmCpus    string
+	VmShmSize string
 
 	// Config array values (combine-and-dedup merge strategy)
 	Cmds      []string
@@ -92,6 +97,9 @@ type Param struct {
 	Default  string
 	Suggests []string
 	Variadic bool // if true, absorbs all remaining positional values joined with ","
+	// Runtime: only feeds config values (run-args, vm-memory, …), so it is not
+	// written as an `arg` into the Boothfile — changing it must not rebuild the image.
+	Runtime bool
 }
 
 // Segment represents an ordered content fragment (Boothfile or startup).

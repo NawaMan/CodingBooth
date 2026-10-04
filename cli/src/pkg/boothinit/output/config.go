@@ -36,6 +36,15 @@ func SerializeConfigToml(cfg *ConfigToml, command, adjustCommand string) string 
 	if cfg.Sudo != nil && !*cfg.Sudo {
 		fmt.Fprintf(&b, "sudo = false\n")
 	}
+	if cfg.VmMemory != "" {
+		fmt.Fprintf(&b, "vm-memory = %q\n", cfg.VmMemory)
+	}
+	if cfg.VmCpus != "" {
+		fmt.Fprintf(&b, "vm-cpus = %q\n", cfg.VmCpus)
+	}
+	if cfg.VmShmSize != "" {
+		fmt.Fprintf(&b, "vm-shm-size = %q\n", cfg.VmShmSize)
+	}
 
 	if len(cfg.Cmds) > 0 {
 		b.WriteString("\n")

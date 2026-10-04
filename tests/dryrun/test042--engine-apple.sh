@@ -187,3 +187,52 @@ else
   fail 17 "docker still mounts the booth wrapper from the project" "$DWRAP"
 fi
 rm -rf "$WRAP_PROJECT" "$WRAP_CACHE"
+
+# 18-23. --vm-memory / --vm-cpus / --vm-shm-size size the VM Apple container runs
+# each booth in (1 GB / 4 CPUs by default); other engines ignore them.
+VM=$(run_coding_booth --variant base --dryrun --engine apple --vm-memory 8g --vm-cpus 6 --vm-shm-size 2g 2>/dev/null || true)
+if printf '%s\n' "$VM" | grep -q -- "--memory 8g" && printf '%s\n' "$VM" | grep -q -- "--cpus 6" \
+  && printf '%s\n' "$VM" | grep -q -- "--shm-size 2g"; then
+  pass 18 "apple: --vm-memory/--vm-cpus/--vm-shm-size become --memory/--cpus/--shm-size"
+else
+  fail 18 "apple: --vm-memory/--vm-cpus/--vm-shm-size become --memory/--cpus/--shm-size" "$VM"
+fi
+
+VMENV=$(CB_VM_MEMORY=6g run_coding_booth --variant base --dryrun --engine apple 2>/dev/null || true)
+printf 'vm-cpus = "3"\n' > "$CONFIG"
+VMCFG=$(run_coding_booth --config "$CONFIG" --variant base --dryrun --engine apple 2>/dev/null || true)
+if printf '%s\n' "$VMENV" | grep -q -- "--memory 6g" && printf '%s\n' "$VMCFG" | grep -q -- "--cpus 3"; then
+  pass 19 "CB_VM_MEMORY and vm-cpus in config.toml work too"
+else
+  fail 19 "CB_VM_MEMORY and vm-cpus in config.toml work too" "$VMENV"$'\n---\n'"$VMCFG"
+fi
+
+# a desktop gets 1g of /dev/shm; vm-shm-size replaces it rather than adding a second one
+DSHM=$(run_coding_booth --variant kde --dryrun --engine apple --vm-memory 4g --vm-shm-size 2g 2>/dev/null || true)
+if [[ "$(printf '%s\n' "$DSHM" | grep -c -- '--shm-size')" == "1" ]] && printf '%s\n' "$DSHM" | grep -q -- "--shm-size 2g"; then
+  pass 20 "vm-shm-size replaces the desktop's 1g /dev/shm"
+else
+  fail 20 "vm-shm-size replaces the desktop's 1g /dev/shm" "$DSHM"
+fi
+
+DVM=$(run_coding_booth --variant base --dryrun --engine docker --vm-memory 8g 2>&1 || true)
+if printf '%s\n' "$DVM" | grep -q "only apply to engine apple" && ! printf '%s\n' "$DVM" | grep -q -- "--memory"; then
+  pass 21 "docker ignores --vm-memory, with a note"
+else
+  fail 21 "docker ignores --vm-memory, with a note" "$DVM"
+fi
+
+KDEWARN=$(run_coding_booth --variant kde --dryrun --engine apple 2>&1 || true)
+if printf '%s\n' "$KDEWARN" | grep -q "Add --vm-memory 4g"; then
+  pass 22 "a desktop on apple without --vm-memory warns"
+else
+  fail 22 "a desktop on apple without --vm-memory warns" "$KDEWARN"
+fi
+
+if ERR=$(run_coding_booth --variant base --dryrun --engine apple --vm-cpus lots 2>&1); then
+  fail 23 "an invalid --vm-cpus is refused" "$ERR"
+elif printf '%s\n' "$ERR" | grep -q 'invalid vm-cpus "lots"'; then
+  pass 23 "an invalid --vm-cpus is refused"
+else
+  fail 23 "an invalid --vm-cpus is refused with a clear message" "$ERR"
+fi

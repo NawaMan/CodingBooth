@@ -943,3 +943,26 @@ func TestLoadRegistry_RepoCodexRequiresNodejs(t *testing.T) {
 	require.NotNil(t, codex)
 	assert.Contains(t, codex.Requires, "nodejs")
 }
+
+func TestLoadRegistry_VmSizingAndRuntimeParam(t *testing.T) {
+	tmpDir := t.TempDir()
+	catDir := filepath.Join(tmpDir, "booth-vm")
+	tmplDir := filepath.Join(catDir, "vm-memory")
+	require.NoError(t, os.MkdirAll(tmplDir, 0755))
+	require.NoError(t, os.WriteFile(filepath.Join(catDir, "meta.toml"),
+		[]byte("display-name = \"Booth VM\"\norder = 8\n"), 0644))
+	require.NoError(t, os.WriteFile(filepath.Join(tmplDir, "template.toml"), []byte(
+		"display-name = \"VM Memory\"\ndisplay-order = 1\n"+
+			"vm-memory = \"${VM_MEMORY}\"\nvm-cpus = \"6\"\nvm-shm-size = \"2g\"\n\n"+
+			"[params.VM_MEMORY]\ndefault = \"4g\"\nruntime = true\n"), 0644))
+
+	registry, err := LoadRegistry(tmpDir)
+	require.NoError(t, err)
+
+	tmpl := registry.ByName["vm-memory"]
+	require.NotNil(t, tmpl)
+	assert.Equal(t, "${VM_MEMORY}", tmpl.VmMemory)
+	assert.Equal(t, "6", tmpl.VmCpus)
+	assert.Equal(t, "2g", tmpl.VmShmSize)
+	assert.True(t, tmpl.Params["VM_MEMORY"].Runtime, "runtime = true is read")
+}

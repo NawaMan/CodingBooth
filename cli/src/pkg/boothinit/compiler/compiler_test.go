@@ -1166,3 +1166,45 @@ func TestCompile_NonParamRefLeftForRuntime(t *testing.T) {
 	assert.Equal(t, []string{"-v", "${HOME}/data:/data"}, out.Config.RunArgs)
 	assert.Contains(t, out.Boothfile.Content, "arg DATA_DIR=${HOME}/data")
 }
+
+func TestCompile_VmSizingFromRuntimeParams(t *testing.T) {
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{
+				Template: &tmpl.Template{
+					Name:     "vm-memory",
+					VmMemory: "${VM_MEMORY}",
+					Params:   map[string]tmpl.Param{"VM_MEMORY": {Default: "4g", Runtime: true}},
+				},
+				ParamValues: map[string]string{"VM_MEMORY": "8g"},
+			},
+			{
+				Template: &tmpl.Template{
+					Name:              "lang",
+					Params:            map[string]tmpl.Param{"LANG_VERSION": {Default: "1"}},
+					BoothfileSegments: []tmpl.Segment{{Order: 50, Content: "setup lang ${LANG_VERSION}"}},
+				},
+				ParamValues: map[string]string{"LANG_VERSION": "2"},
+			},
+		},
+	}
+
+	out, err := Compile(resolved)
+	require.NoError(t, err)
+	assert.Equal(t, "8g", out.Config.VmMemory, "the param is expanded into vm-memory")
+	require.NotNil(t, out.Boothfile)
+	assert.Contains(t, out.Boothfile.Content, "arg LANG_VERSION=2")
+	assert.NotContains(t, out.Boothfile.Content, "VM_MEMORY", "a runtime param must not become a Boothfile arg")
+}
+
+func TestCompile_VmSizingConflict(t *testing.T) {
+	resolved := &selection.ResolvedSelection{
+		Templates: []selection.SelectedTemplate{
+			{Template: &tmpl.Template{Name: "a", VmCpus: "4"}, ParamValues: map[string]string{}},
+			{Template: &tmpl.Template{Name: "b", VmCpus: "8"}, ParamValues: map[string]string{}},
+		},
+	}
+	_, err := Compile(resolved)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "vm-cpus")
+}
