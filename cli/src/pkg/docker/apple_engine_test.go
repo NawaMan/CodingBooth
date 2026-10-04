@@ -550,3 +550,14 @@ func TestImageInspectRendersLabels(t *testing.T) {
 		t.Errorf("label = %q, want this platform's 4g", got)
 	}
 }
+
+func TestInspectReportsTheImageItWasCreatedFrom(t *testing.T) {
+	var c appleContainer
+	if err := json.Unmarshal([]byte(`{"id":"web","configuration":{"image":{"reference":"img:1","descriptor":{"digest":"sha256:abc"}}},"status":{"state":"running"}}`), &c); err != nil {
+		t.Fatal(err)
+	}
+	doc := toInspectDoc(c)
+	if doc.Image != "sha256:abc" || doc.Config.Image != "img:1" {
+		t.Errorf("Image = %q, Config.Image = %q; want the digest and the name", doc.Image, doc.Config.Image)
+	}
+}
