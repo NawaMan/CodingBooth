@@ -1,7 +1,6 @@
 # syntax=codingbooth/boothfile:1
-# playground-firebase — lean booth to exercise Firebase CLI + host credential seed.
-#
-# `setup firebase` resolves to .booth/setups/firebase--setup.sh first (PATH),
-# which runs the product installer then installs the placeholder-aware startup.
+# Configured by: booth config --no-tui --overwrite --variant base --select firebase+credential
+
+env APT_SNAPSHOT=20261003T000000Z
 
 setup firebase

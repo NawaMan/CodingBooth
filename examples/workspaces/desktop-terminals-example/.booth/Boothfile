@@ -5,3 +5,5 @@ env APT_SNAPSHOT=20260923T000000Z
 
 setup alacritty
 setup kitty
+setup alacritty-fancy
+setup kitty-fancy

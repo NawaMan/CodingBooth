@@ -13,7 +13,7 @@ install go golang.org/x/tools/gopls@latest            # GO language server
 install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
 setup python ${PYTHON_VERSION}
 setup codeserver ${CODESERVER_PORT}
+setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
 setup go-code-extension
-setup python-code-extension
 setup go-nb-kernel

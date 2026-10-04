@@ -17,3 +17,5 @@ setup jetbrains webstorm
 setup bun-code-extension
 setup deno-code-extension
 setup nodejs-code-extension
+setup jetbrains-import-project webstorm
+setup jetbrains-first-run

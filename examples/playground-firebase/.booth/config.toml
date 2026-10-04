@@ -1,9 +1,5 @@
-# playground-firebase — Firebase CLI with host credentials (firebase+credential shape).
-# Prerequisite on host: ~/.config/configstore/firebase-tools.json  (firebase login)
+# Configured by: booth config --no-tui --overwrite --variant base --select firebase+credential
 
 variant = "base"
 
-run-args = [
-    # Host Firebase CLI credentials → home-seed (read-only); startup copies into ~
-    "-v", "~/.config/configstore/firebase-tools.json:/etc/cb-home-seed/.config/configstore/firebase-tools.json:ro",
-]
+run-args = ["-v", "~/.config/configstore/firebase-tools.json:/etc/cb-home-seed/.config/configstore/firebase-tools.json:ro"]

@@ -1,8 +1,10 @@
-# Configured by: booth config --no-tui --overwrite --select nodejs/python/java+maven/dotnet/go/playwright:chromium,1.58.2+java+dotnet
+# Configured by: booth config --no-tui --overwrite --select nodejs/python/java+maven/dotnet/go/playwright:chromium,1.58.0+python+java+dotnet
 
 
 run-args = [
     "-v", "~/.npmrc:/etc/cb-home-seed/.npmrc:ro",
     "-e", "PYTHONDONTWRITEBYTECODE=1",
-    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro"
+    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/Library/Application Support/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/AppData/Roaming/pip:/etc/cb-home-seed/.config/pip:ro"
 ]

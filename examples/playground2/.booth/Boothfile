@@ -1,9 +1,13 @@
 # syntax=codingbooth/boothfile:1
 # Configured by: booth config --no-tui --overwrite --variant desktop-xfce --port 10000 --select python+pip-config+vscode-ext/notebook/codeserver+settings-cache
 
+env APT_SNAPSHOT=20261003T000000Z
+
+arg CODESERVER_PORT=13333
+arg NOTEBOOK_PORT=12222
 arg PYTHON_VERSION=3.13.12
 
 setup python ${PYTHON_VERSION}
-setup codeserver 19999
-setup notebook 18888
+setup codeserver ${CODESERVER_PORT}
 setup python-code-extension
+setup notebook ${NOTEBOOK_PORT}

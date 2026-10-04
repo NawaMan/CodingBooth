@@ -1,6 +1,5 @@
 # syntax=codingbooth/boothfile:1
-# Hand-written after generation: teaching comments plus version-pinned `run pip install` / `dotnet tool install` that playwright+python+dotnet do not emit.
-# Configured by: booth config --no-tui --overwrite --select nodejs/python/java+maven/dotnet/go/playwright:chromium,1.58.0+java+dotnet
+# Configured by: booth config --no-tui --overwrite --select nodejs/python/java+maven/dotnet/go/playwright:chromium,1.58.0+python+java+dotnet
 
 env APT_SNAPSHOT=20260916T000000Z
 
@@ -14,21 +13,21 @@ arg PLAYWRIGHT_BROWSERS=chromium
 arg PLAYWRIGHT_VERSION=1.58.0
 arg PYTHON_VERSION=3.13.12
 
-# Five language toolchains in one booth.
+setup dotnet --channel ${DOTNET_CHANNEL}
 setup dotnet ${DOTNET_CHANNEL}
-setup go ${GO_VERSION}
+setup go ${GO_VERSION}                                # GO tool chain
+install go golang.org/x/tools/gopls@latest            # GO language server
+install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
 setup jdk ${JDK_VERSION} ${JDK_VENDOR}
 setup mvn ${MAVEN_VERSION}
 setup nodejs ${NODE_VERSION}
 setup python ${PYTHON_VERSION}
-
-# Playwright + the pre-baked Chromium, pinned. The Node binding installs the browser
-# into the shared cache (~/.cache/ms-playwright); the Python/Java/.NET bindings below
-# are pinned to the same version so they reuse it instead of downloading their own.
+setup nodejs-code-extension
 setup playwright ${PLAYWRIGHT_BROWSERS} --version ${PLAYWRIGHT_VERSION}
-
-# Python binding, pinned to the same Playwright version.
-run pip install playwright==${PLAYWRIGHT_VERSION}
-
-# .NET Playwright CLI (points .NET projects at the shared browser cache).
+setup dotnet-code-extension
+setup go-code-extension
+setup java-code-extension
+setup playwright-code-extension
+setup python-code-extension
 run dotnet tool install --global Microsoft.Playwright.CLI || true
+run if [ "${PLAYWRIGHT_VERSION}" = "latest" ]; then pip install playwright; else pip install "playwright==${PLAYWRIGHT_VERSION}"; fi

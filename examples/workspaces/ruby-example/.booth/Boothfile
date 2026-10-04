@@ -10,8 +10,8 @@ arg RUBY_VERSION=3.3
 
 setup python ${PYTHON_VERSION}
 setup ruby ${RUBY_VERSION}
+setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
 install gem ${GEM_PKGS}
-setup python-code-extension
 setup ruby-code-extension
 setup ruby-nb-kernel

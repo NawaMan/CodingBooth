@@ -3,6 +3,7 @@
 
 env APT_SNAPSHOT=20260719T000000Z
 
+arg CLAUDE_CODE_VERSION=latest
 arg DBEAVER_VERSION=latest
 arg GO_VERSION=1.25.4
 arg GRADLE_VERSION=9.3.1
@@ -12,10 +13,11 @@ arg MAVEN_VERSION=3.9.12
 arg NODE_VERSION=20
 arg NOTEBOOK_HOST_PORT=${NOTEBOOK_PORT:-+8888}
 arg NOTEBOOK_PORT=18888
+arg PG_VERSION=latest
 arg PIP_PKGS=matplotlib,psycopg2-binary
 arg PYTHON_VERSION=3.12
 
-setup claude-code
+setup claude-code ${CLAUDE_CODE_VERSION}
 setup go ${GO_VERSION}                                # GO tool chain
 install go golang.org/x/tools/gopls@latest            # GO language server
 install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
@@ -24,15 +26,17 @@ setup gradle "${GRADLE_VERSION}"
 run echo 'class Hi { public static void main(String[] args) { System.out.println("Hi"); }}' | jbang -
 setup mvn ${MAVEN_VERSION}
 setup nodejs ${NODE_VERSION}
-setup postgresql
+setup postgresql --version ${PG_VERSION}
 setup python ${PYTHON_VERSION}
 setup dbeaver ${DBEAVER_VERSION}
+install pip ${PIP_PKGS}
+setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
 setup pycharm
-install pip ${PIP_PKGS}
 setup go-code-extension
 setup java-code-extension
 setup nodejs-code-extension
-setup python-code-extension
+setup jetbrains-import-project pycharm
 setup bash-nb-kernel
 setup java-jjava-nb-kernel
+setup jetbrains-first-run

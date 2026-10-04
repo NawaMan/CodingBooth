@@ -4,6 +4,7 @@
 env APT_SNAPSHOT=20260906T000000Z
 
 arg CLAUDE_CODE_VERSION=latest
+arg IDEA_PROJECT_KIND=DEFAULT
 arg JDK_VENDOR=temurin
 arg JDK_VERSION=24
 
@@ -20,5 +21,21 @@ setup pycharm
 setup jetbrains rider
 setup jetbrains rubymine
 setup jetbrains webstorm
+setup jetbrains-import-project clion
+setup jetbrains-import-project goland
+setup idea-import-project ${IDEA_PROJECT_KIND}
 setup java-code-extension
+setup jetbrains-import-project phpstorm
+setup jetbrains-import-project pycharm
+setup jetbrains-import-project rider
+setup jetbrains-import-project rubymine
+setup jetbrains-import-project webstorm
+setup jetbrains-first-run
+setup jetbrains-first-run
 setup jetbrains-jdk
+setup jetbrains-first-run
+setup jetbrains-first-run
+setup jetbrains-first-run
+setup jetbrains-first-run
+setup jetbrains-first-run
+setup jetbrains-first-run

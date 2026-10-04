@@ -22,7 +22,7 @@ setup kind --kind-version ${KIND_VERSION}
 setup python ${PYTHON_VERSION}
 setup antigravity
 setup libreoffice
+setup python-code-extension
 setup notebook ${NOTEBOOK_PORT}
 setup bun-code-extension
 setup go-code-extension
-setup python-code-extension

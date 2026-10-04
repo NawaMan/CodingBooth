@@ -13,6 +13,6 @@ setup go ${GO_VERSION}                                # GO tool chain
 install go golang.org/x/tools/gopls@latest            # GO language server
 install go github.com/go-delve/delve/cmd/dlv@latest   # Debugger
 setup nodejs ${NODE_VERSION}
-setup wails --version ${WAILS_VERSION}
 setup go-code-extension
 setup nodejs-code-extension
+setup wails --version ${WAILS_VERSION}
