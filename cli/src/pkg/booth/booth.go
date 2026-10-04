@@ -524,12 +524,64 @@ func podmanLowPortArgs(engine string, joinsNetns bool) []string {
 // number with an optional unit and optional b (512m, 4g, 2048mb, 1.5g).
 var vmSizePattern = regexp.MustCompile(`^[0-9]+(\.[0-9]+)?[kKmMgGtT]?[bB]?$`)
 
+// VmMemoryMinLabel is the image label giving the least memory a booth from that
+// image needs, e.g. "4g" on the desktop variants. Images built FROM one inherit
+// it. Only engine apple reads it (see vmResourceArgs).
+const VmMemoryMinLabel = "com.codingbooth.vm-memory-min"
+
+// imageVmMemoryMin reads VmMemoryMinLabel from image, on engine apple only;
+// "" when it is absent, unreadable or not a size. A read-only query, so it runs
+// under --dryrun too (the image may then be missing: "", same as no label).
+func imageVmMemoryMin(engine, image string) string {
+	if engine != docker.EngineApple || image == "" {
+		return ""
+	}
+	out, err := docker.DockerOutput(docker.DockerFlags{Engine: engine, Silent: true}, "image", ilist.NewList(
+		ilist.NewList("inspect"),
+		ilist.NewList("--format", `{{index .Config.Labels "`+VmMemoryMinLabel+`"}}`),
+		ilist.NewList(image),
+	))
+	value := strings.TrimSpace(out)
+	if err != nil || value == "<no value>" || !vmSizePattern.MatchString(value) {
+		return ""
+	}
+	return value
+}
+
+// vmSizeBytes converts a size like 512m, 4g or 2048mb to bytes (k/m/g/t are
+// powers of 1024, as Docker and Apple container read them).
+func vmSizeBytes(size string) (float64, bool) {
+	if !vmSizePattern.MatchString(size) {
+		return 0, false
+	}
+	s := strings.TrimSuffix(strings.TrimSuffix(size, "b"), "B")
+	unit := 1.0
+	if n := len(s); n > 0 {
+		switch s[n-1] {
+		case 'k', 'K':
+			unit, s = 1<<10, s[:n-1]
+		case 'm', 'M':
+			unit, s = 1<<20, s[:n-1]
+		case 'g', 'G':
+			unit, s = 1<<30, s[:n-1]
+		case 't', 'T':
+			unit, s = 1<<40, s[:n-1]
+		}
+	}
+	v, err := strconv.ParseFloat(s, 64)
+	return v * unit, err == nil
+}
+
 // vmResourceArgs is what --vm-memory / --vm-cpus / --vm-shm-size add to the
 // run, plus the lines worth printing. Only engine apple runs each booth in its
 // own VM (container 1.5.0: 1 GB, 4 CPUs by default); elsewhere the settings are
-// ignored with a note, so nothing gets capped there. A desktop on apple without
-// vm-memory gets a warning: KDE alone needs ~700 MB idle. Pure for unit tests.
-func vmResourceArgs(engine, memory, cpus, shm, variant string, desktop bool) (args [][]string, notes []string, err error) {
+// ignored with a note, so nothing gets capped there.
+//
+// minMemory is the image's VmMemoryMinLabel ("" when it has none). Without a
+// vm-memory the VM gets that minimum; an explicit vm-memory below it is kept
+// (the user chose it) with a warning. A desktop whose image predates the label
+// still gets the plain warning. Pure for unit tests.
+func vmResourceArgs(engine, memory, cpus, shm, minMemory, variant string, desktop bool) (args [][]string, notes []string, err error) {
 	if memory != "" && !vmSizePattern.MatchString(memory) {
 		return nil, nil, fmt.Errorf("invalid vm-memory %q (expected a size like 4g or 4096m)", memory)
 	}
@@ -549,9 +601,18 @@ func vmResourceArgs(engine, memory, cpus, shm, variant string, desktop bool) (ar
 		return nil, notes, nil
 	}
 
-	if memory != "" {
+	switch {
+	case memory != "":
 		args = append(args, []string{"--memory", memory})
-	} else if desktop {
+		if want, ok := vmSizeBytes(minMemory); ok {
+			if got, _ := vmSizeBytes(memory); got < want {
+				notes = append(notes, fmt.Sprintf("Warning: vm-memory %s is below the %s this image needs (%s); the booth may stop responding. See docs/CONTAINER_SUPPORT.md.", memory, minMemory, variant))
+			}
+		}
+	case minMemory != "":
+		args = append(args, []string{"--memory", minMemory})
+		notes = append(notes, fmt.Sprintf("ℹ️  Giving the booth's VM %s of memory, the minimum the %s image asks for (--vm-memory to change).", minMemory, variant))
+	case desktop:
 		notes = append(notes, fmt.Sprintf("Warning: the %s variant on Apple container gets its VM's default 1 GB of memory, which a desktop outgrows (KDE uses ~700 MB idle). Add --vm-memory 4g. See docs/CONTAINER_SUPPORT.md.", variant))
 	}
 	if cpus != "" {
@@ -661,7 +722,8 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	//
 	// On Apple container each booth is its own VM: --vm-memory / --vm-cpus /
 	// --vm-shm-size size it (vmResourceArgs), and a vm-shm-size replaces this 1g.
-	vmArgs, vmNotes, err := vmResourceArgs(ctx.Engine(), ctx.VmMemory(), ctx.VmCpus(), ctx.VmShmSize(), ctx.Variant(), ctx.HasDesktop())
+	minMemory := imageVmMemoryMin(ctx.Engine(), ctx.Image())
+	vmArgs, vmNotes, err := vmResourceArgs(ctx.Engine(), ctx.VmMemory(), ctx.VmCpus(), ctx.VmShmSize(), minMemory, ctx.Variant(), ctx.HasDesktop())
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "❌ %v\n", err)
 		os.Exit(1)

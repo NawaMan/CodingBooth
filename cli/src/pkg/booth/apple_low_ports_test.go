@@ -56,7 +56,7 @@ func TestAppleLowPortsNote(t *testing.T) {
 }
 
 func TestVmResourceArgs(t *testing.T) {
-	args, notes, err := vmResourceArgs("apple", "8g", "6", "2g", "desktop-kde", true)
+	args, notes, err := vmResourceArgs("apple", "8g", "6", "2g", "", "desktop-kde", true)
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
@@ -65,32 +65,67 @@ func TestVmResourceArgs(t *testing.T) {
 		t.Errorf("apple with all three = %v, notes %v; want %v and no notes", args, notes, want)
 	}
 
-	args, notes, _ = vmResourceArgs("apple", "", "", "", "desktop-kde", true)
+	args, notes, _ = vmResourceArgs("apple", "", "", "", "", "desktop-kde", true)
 	if args != nil || len(notes) != 1 || !strings.Contains(notes[0], "Add --vm-memory 4g") {
 		t.Errorf("a desktop on apple without vm-memory = %v, %q; want no args and the warning", args, notes)
 	}
-	if _, notes, _ := vmResourceArgs("apple", "", "", "", "base", false); len(notes) != 0 {
+	if _, notes, _ := vmResourceArgs("apple", "", "", "", "", "base", false); len(notes) != 0 {
 		t.Errorf("a non-desktop on apple needs no warning, got %q", notes)
 	}
 
-	args, notes, _ = vmResourceArgs("docker", "8g", "", "", "desktop-kde", true)
+	args, notes, _ = vmResourceArgs("docker", "8g", "", "", "", "desktop-kde", true)
 	if args != nil || len(notes) != 1 || !strings.Contains(notes[0], "ignored on docker") {
 		t.Errorf("docker = %v, %q; want nothing passed and the ignored note", args, notes)
 	}
-	if _, notes, _ := vmResourceArgs("docker", "", "", "", "desktop-kde", true); len(notes) != 0 {
+	if _, notes, _ := vmResourceArgs("docker", "", "", "", "", "desktop-kde", true); len(notes) != 0 {
 		t.Errorf("docker with nothing set says nothing, got %q", notes)
 	}
 
 	for _, bad := range []struct{ memory, cpus, shm string }{
 		{"lots", "", ""}, {"", "0", ""}, {"", "two", ""}, {"", "", "1 g"},
 	} {
-		if _, _, err := vmResourceArgs("apple", bad.memory, bad.cpus, bad.shm, "base", false); err == nil {
+		if _, _, err := vmResourceArgs("apple", bad.memory, bad.cpus, bad.shm, "", "base", false); err == nil {
 			t.Errorf("%+v: want a validation error", bad)
 		}
 	}
 	for _, ok := range []string{"512m", "4g", "4096m", "2048mb", "1.5g", "8G"} {
-		if _, _, err := vmResourceArgs("apple", ok, "", "", "base", false); err != nil {
+		if _, _, err := vmResourceArgs("apple", ok, "", "", "", "base", false); err != nil {
 			t.Errorf("%q should be a valid size: %v", ok, err)
 		}
+	}
+}
+
+func TestVmResourceArgsImageMinimum(t *testing.T) {
+	// No vm-memory: the image's minimum is used, and said so.
+	args, notes, _ := vmResourceArgs("apple", "", "", "", "4g", "desktop-kde", true)
+	if !reflect.DeepEqual(args, [][]string{{"--memory", "4g"}}) || len(notes) != 1 || !strings.Contains(notes[0], "minimum") {
+		t.Errorf("no vm-memory, min 4g = %v, %q; want --memory 4g and an info line", args, notes)
+	}
+	// An explicit value at or above the minimum: used, nothing to say.
+	if args, notes, _ := vmResourceArgs("apple", "8g", "", "", "4g", "desktop-kde", true); !reflect.DeepEqual(args, [][]string{{"--memory", "8g"}}) || len(notes) != 0 {
+		t.Errorf("8g over a 4g min = %v, %q", args, notes)
+	}
+	if _, notes, _ := vmResourceArgs("apple", "4096m", "", "", "4g", "desktop-kde", true); len(notes) != 0 {
+		t.Errorf("4096m equals 4g, no warning expected, got %q", notes)
+	}
+	// An explicit value below it: kept, with a warning.
+	args, notes, _ = vmResourceArgs("apple", "2g", "", "", "4g", "desktop-kde", true)
+	if !reflect.DeepEqual(args, [][]string{{"--memory", "2g"}}) || len(notes) != 1 || !strings.Contains(notes[0], "below the 4g") {
+		t.Errorf("2g under a 4g min = %v, %q; want 2g kept and a warning", args, notes)
+	}
+	// Docker never reads it.
+	if args, _, _ := vmResourceArgs("docker", "", "", "", "4g", "desktop-kde", true); args != nil {
+		t.Errorf("docker = %v, want nothing", args)
+	}
+}
+
+func TestVmSizeBytes(t *testing.T) {
+	for size, want := range map[string]float64{"4g": 4 << 30, "4096m": 4 << 30, "2048mb": 2 << 30, "1.5g": 1.5 * (1 << 30), "512M": 512 << 20} {
+		if got, ok := vmSizeBytes(size); !ok || got != want {
+			t.Errorf("vmSizeBytes(%q) = %v, %t; want %v", size, got, ok, want)
+		}
+	}
+	if _, ok := vmSizeBytes("lots"); ok {
+		t.Error("lots is not a size")
 	}
 }

@@ -487,7 +487,8 @@ Apple container. Ignored, with a note, on other engines. See
 ### Sizing the Booth's VM on Apple Container (`--vm-memory`, `--vm-cpus`, `--vm-shm-size`)
 
 On macOS with Apple container (`--engine apple`), every booth runs in its own VM with 1 GB of
-memory and 4 CPUs by default — too little for a desktop variant. Size it per booth:
+memory and 4 CPUs by default. Desktop variants ask for 4 GB themselves; size any booth yourself
+with:
 
 ```bash
 ./booth --engine apple --variant kde --vm-memory 4g --vm-cpus 6
@@ -501,7 +502,8 @@ vm-shm-size = "2g"
 ```
 
 or `CB_VM_MEMORY` / `CB_VM_CPUS` / `CB_VM_SHM_SIZE`, or the **Booth VM (macOS)** templates
-(`--select vm-memory:8g`). Docker and Podman ignore them, with a note. See
+(`--select vm-memory:8g`). Precedence: flag > `config.toml` > environment variable. Docker and
+Podman ignore them, with a note. See
 [CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md#sizing-the-booths-vm---vm-memory---vm-cpus---vm-shm-size).
 
 ### Log Time (`--log-time`)

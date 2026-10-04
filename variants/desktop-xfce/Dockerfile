@@ -2,6 +2,12 @@
 ARG BOOTH_VERSION_TAG=latest
 FROM nawaman/codingbooth:base-${BOOTH_VERSION_TAG}
 
+# The least memory a booth from this image needs. Engine apple (Apple container)
+# runs each booth in its own VM, 1 GB by default, which a desktop outgrows; the
+# CLI gives the VM this much when no --vm-memory is set. Images built FROM this
+# one inherit it. Docker and Podman ignore it. See docs/CONTAINER_SUPPORT.md.
+LABEL com.codingbooth.vm-memory-min="4g"
+
 # Given user is root and /opt/codingbooth/setups is in PATH (from base image)
 
 RUN xfce--setup.sh

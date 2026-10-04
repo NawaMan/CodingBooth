@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -585,6 +586,32 @@ type appleImage struct {
 			Digest string `json:"digest"`
 		} `json:"descriptor"`
 	} `json:"configuration"`
+	// One entry per platform; the image config (and so its labels) is per platform.
+	Variants []struct {
+		Platform struct {
+			Architecture string `json:"architecture"`
+			OS           string `json:"os"`
+		} `json:"platform"`
+		Config struct {
+			Config struct {
+				Labels map[string]string `json:"Labels"`
+			} `json:"config"`
+		} `json:"config"`
+	} `json:"variants"`
+}
+
+// labels returns the image's labels for this machine's platform (linux on the
+// host's architecture — what Apple container runs), else the first platform's.
+func (image appleImage) labels() map[string]string {
+	for _, v := range image.Variants {
+		if v.Platform.OS == "linux" && v.Platform.Architecture == runtime.GOARCH {
+			return v.Config.Config.Labels
+		}
+	}
+	if len(image.Variants) > 0 {
+		return image.Variants[0].Config.Config.Labels
+	}
+	return nil
 }
 
 // dockerState maps Apple container's state onto Docker's vocabulary, which the
@@ -993,7 +1020,9 @@ func imageInspectQuery(args []string) ([]appleStep, error) {
 					Id       string
 					RepoTags []string
 					Created  string
+					Config   struct{ Labels map[string]string }
 				}{Id: id, RepoTags: []string{image.Configuration.Name}, Created: image.Configuration.CreationDate}
+				doc.Config.Labels = image.labels()
 				if err := renderLine(&out, tmpl, doc); err != nil {
 					return "", err
 				}

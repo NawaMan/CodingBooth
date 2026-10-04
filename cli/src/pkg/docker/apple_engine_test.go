@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -529,5 +530,23 @@ func TestAppleMountConflicts(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestImageInspectRendersLabels(t *testing.T) {
+	steps, err := imageInspectQuery([]string{"--format", `{{index .Config.Labels "com.codingbooth.vm-memory-min"}}`, "img"})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	// The shape `container image inspect` prints: labels per platform.
+	stdout := []byte(`[{"id":"abc","configuration":{"name":"img"},"variants":[
+		{"platform":{"architecture":"other","os":"linux"},"config":{"config":{"Labels":{"com.codingbooth.vm-memory-min":"1g"}}}},
+		{"platform":{"architecture":"` + runtime.GOARCH + `","os":"linux"},"config":{"config":{"Labels":{"com.codingbooth.vm-memory-min":"4g"}}}}]}]`)
+	got, err := steps[0].render(stdout)
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	if strings.TrimSpace(got) != "4g" {
+		t.Errorf("label = %q, want this platform's 4g", got)
 	}
 }
