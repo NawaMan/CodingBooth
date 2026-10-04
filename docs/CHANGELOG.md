@@ -82,6 +82,17 @@ This file contains a list of changes for each released version.
     were refreshed so they don't shadow the fix; docs and comments naming 24.04 as the current base
     were updated.
 
+- **`playwright-example` re-pinned from Playwright 1.58.2 to 1.63.0.** 1.58.2 predates Ubuntu
+  26.04, and refuses outright: "Playwright does not support chromium on ubuntu26.04-arm64" —
+  before `--with-deps` is even reached, so it is the release that is unsupported, not the
+  dependencies. 1.63.0 installs chromium on 26.04 (both `--with-deps` and without). The version
+  lives in two places that have to agree: `PLAYWRIGHT_VERSION` in the Boothfile, which pre-bakes
+  the browsers at build time, and `@playwright/test` in `package.json`, which runs the tests.
+  Bumping only the first swaps the install error for a launch error against a browser build the
+  image does not carry (`chromium_headless_shell-1208`), so both moved, lockfile included.
+  `templates/tools/playwright` needed nothing: `PLAYWRIGHT_VERSION` already defaults to `latest`
+  and already suggests `1.63.0`, so a fresh `--select playwright` was never affected.
+
 - **4 examples re-pinned from PHP 8.3 to 8.5.** `php-example`, `lamp-example`, `lemp-example` and
   `wordpress-example` still carried `arg PHP_VERSION=8.3`, which exists nowhere for 26.04 — not in
   the archive (which has 8.5), and not in `ppa:ondrej/php`, which publishes no `resolute` suite —

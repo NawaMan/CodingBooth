@@ -1,12 +1,12 @@
 # syntax=codingbooth/boothfile:1
-# Configured by: booth config --no-tui --overwrite --select nodejs+npm-upgrade/playwright:chromium,1.58.2
+# Configured by: booth config --no-tui --overwrite --select nodejs+npm-upgrade/playwright:chromium,1.63.0
 
 env APT_SNAPSHOT=20260916T000000Z
 
 arg NODE_VERSION=22
 arg NPM_VERSION=latest
 arg PLAYWRIGHT_BROWSERS=chromium
-arg PLAYWRIGHT_VERSION=1.58.2
+arg PLAYWRIGHT_VERSION=1.63.0
 
 setup nodejs ${NODE_VERSION}
 run npm install -g npm@${NPM_VERSION}
