@@ -697,7 +697,7 @@ func connectSessionToken() string {
 // output, and reports whether it exited zero. Root avoids any dependence on the
 // coder user's mid-alignment state for this bookkeeping.
 func dockerExecRootQuiet(containerName, script, engine string) bool {
-	cmd := exec.Command(engine, "exec", "-u", "root", containerName, "sh", "-c", script)
+	cmd := exec.Command(docker.EngineBinary(engine), "exec", "-u", "root", containerName, "sh", "-c", script)
 	cmd.Stdout = io.Discard
 	cmd.Stderr = io.Discard
 	return cmd.Run() == nil
@@ -780,7 +780,7 @@ func waitForBoothReady(containerName, engine string) error {
 	const interval = 500 * time.Millisecond
 
 	coderUID := func() (string, bool) {
-		out, err := exec.Command(engine, "exec", containerName, "id", "-u", "coder").Output()
+		out, err := exec.Command(docker.EngineBinary(engine), "exec", containerName, "id", "-u", "coder").Output()
 		if err != nil {
 			return "", false
 		}

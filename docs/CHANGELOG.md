@@ -32,6 +32,21 @@ This file contains a list of changes for each released version.
   by Aider's venv at `/opt/aider` (same path as before; `--version` pins still apply). A system
   Python Aider supports is used as before; the system Python is never changed.
 
+- **Apple container engine (experimental).** `--engine apple` (or `CB_ENGINE=apple`, or
+  `engine = "apple"` in `.booth/config.toml`) runs booths on Apple container, the macOS-native
+  runtime, through its `container` CLI. That CLI is not Docker-compatible, so engine calls are
+  translated in one place (`cli/src/pkg/docker/apple_engine.go`): `ps`/`inspect`/`port`/`volume ls`
+  are answered in Go from its JSON, `restart` becomes stop + start, and `run` flags with no Apple
+  equivalent (`--privileged`, `--device`, `--pid`, …) are refused with a clear message rather than
+  dropped; `build` gets Docker's `--pull=<bool>` as Apple's bare `--pull` switch. `--dind` and
+  `--egress` are refused up front. Verified by hand: an interactive foreground booth, a daemon booth
+  with exec/list/stop/start/restart/remove, a one-shot command, and a Boothfile build
+  (`examples/workspaces/empty-example`). Lifecycle commands need `CB_ENGINE=apple` until the
+  all-engines lookup covers it. `--engine container` is not accepted — the engine is `apple`. See
+  `docs/CONTAINER_SUPPORT.md`.
+- **Engine validation runs before the egress defaults.** A run refused for its engine no longer
+  leaves a `.booth/egress/` directory behind.
+
 - **Base image moved to Ubuntu 26.04 LTS (Resolute Raccoon), from 24.04.** `variants/base/Dockerfile`'s
   `UBUNTU_VERSION` is now `26.04`, so every variant (notebook, codeserver, the four desktops) rebuilds on
   it. The `APT_SNAPSHOT` pin works as before (snapshot.ubuntu.com serves `resolute`). What had to change

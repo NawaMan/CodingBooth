@@ -20,11 +20,13 @@ import (
 // This helps prevent port conflicts when restarting the booth.
 // It uses label-based queries to precisely identify sidecars belonging to this project.
 func cleanupPreviousBoothInstances(ctx appctx.AppContext, projectName string) {
-	if ctx.Dryrun() {
+	// Apple container booths never have sidecars: --dind and --egress are
+	// refused on that engine (resolveEngineConfig).
+	if ctx.Dryrun() || ctx.Engine() == docker.EngineApple {
 		return
 	}
 
-	engine := ctx.Engine()
+	engine := docker.EngineBinary(ctx.Engine())
 
 	// Find and stop/remove sidecars labeled with cb.parent matching the project name
 	output, err := exec.Command(engine, "ps", "-aq",
@@ -519,7 +521,9 @@ func isDockerProxy(port string) bool {
 
 // getDockerContainerUsingPort returns the name of the container using a port, or empty string.
 func getDockerContainerUsingPort(port string, engine string) string {
-	output, err := exec.Command(engine, "ps", "--format", "{{.Names}}\t{{.Ports}}").Output()
+	output, err := docker.DockerOutput(docker.DockerFlags{Silent: true, Engine: engine}, "ps", ilist.NewList(
+		ilist.NewList("--format", "{{.Names}}\t{{.Ports}}"),
+	))
 	if err == nil {
 		lines := strings.Split(string(output), "\n")
 		for _, line := range lines {
