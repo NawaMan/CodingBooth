@@ -222,11 +222,15 @@ else
   fail 21 "docker ignores --vm-memory, with a note" "$DVM"
 fi
 
+# A desktop on apple without --vm-memory: an image carrying the
+# com.codingbooth.vm-memory-min label gets that memory; one without it (or not
+# built yet, as under --dryrun on a fresh machine) gets a warning instead.
 KDEWARN=$(run_coding_booth --variant kde --dryrun --engine apple 2>&1 || true)
-if printf '%s\n' "$KDEWARN" | grep -q "Add --vm-memory 4g"; then
-  pass 22 "a desktop on apple without --vm-memory warns"
+if printf '%s\n' "$KDEWARN" | grep -q "Add --vm-memory 4g" \
+  || { printf '%s\n' "$KDEWARN" | grep -q "Giving the booth's VM 4g" && printf '%s\n' "$KDEWARN" | grep -q -- "--memory 4g"; }; then
+  pass 22 "a desktop on apple without --vm-memory gets the image's minimum, or a warning"
 else
-  fail 22 "a desktop on apple without --vm-memory warns" "$KDEWARN"
+  fail 22 "a desktop on apple without --vm-memory gets the image's minimum, or a warning" "$KDEWARN"
 fi
 
 if ERR=$(run_coding_booth --variant base --dryrun --engine apple --vm-cpus lots 2>&1); then

@@ -86,6 +86,16 @@ Scratch `21000`, SQL Studio `21100`. Servers whose clients expect a standard por
 
 ## Desktop Configuration
 
+### Memory on a Mac with Apple container
+
+On macOS with Apple container (`--engine apple`, the default there when it is running), each booth
+runs in its own VM. A desktop variant asks for **4 GB** by itself; change it with `--vm-memory 8g`,
+`vm-memory = "8g"` in `.booth/config.toml`, `CB_VM_MEMORY`, the Config TUI, or
+`--select vm-memory:8g`. Docker and Podman need none of this. See
+[Sizing the booth's VM](CONTAINER_SUPPORT.md#sizing-the-booths-vm---vm-memory---vm-cpus---vm-shm-size).
+
+### Screen resolution
+
 For desktop variants (`desktop-xfce`, `desktop-kde`, `desktop-lxqt`, `desktop-wayland`), you can customize the screen resolution by setting the `GEOMETRY` environment variable.
 
 **Default:** `1280x800`
