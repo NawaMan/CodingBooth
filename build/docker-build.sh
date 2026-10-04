@@ -330,7 +330,7 @@ BuildVariant() {
         --output "type=image,name=${IMAGE_NAME},push-by-digest=true,push=true" \
         --metadata-file "${meta_file}" \
         "${context_dir}" \
-        --progress=auto
+        --progress=plain
 
       local digest
       digest="$(extract_digest "${meta_file}")"
@@ -362,7 +362,7 @@ BuildVariant() {
       "${tags_arg[@]}" \
       "${context_dir}" \
       --push \
-      --progress=auto
+      --progress=plain
 
     if [[ ! "$version" =~ --rc([0-9]+)?$ ]]; then
       Log "[$variant]: Calling cosign to sign pushed images for variant '${variant}'"
@@ -386,7 +386,7 @@ BuildVariant() {
       --build-arg "BOOTH_VERSION_TAG=${version}" \
       "${tags_arg[@]}" \
       "${context_dir}" \
-      --progress=auto
+      --progress=plain
   fi
 
   Log "[$variant]: Done."
