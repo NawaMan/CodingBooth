@@ -10,6 +10,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../../common--source.sh"
+sidecars_supported --egress || exit 0
 
 # ---- Config -------------------------------------------------------------------
 CB_SCRIPT="${CB_SCRIPT:-$(find_local_booth_build "$SCRIPT_DIR")}"

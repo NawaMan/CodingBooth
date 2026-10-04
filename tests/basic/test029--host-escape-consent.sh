@@ -21,6 +21,7 @@
 set -euo pipefail
 
 source ../common--source.sh
+sidecars_supported --dind || exit 0
 
 no_tty_supported || exit 0
 

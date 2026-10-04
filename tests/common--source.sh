@@ -84,6 +84,22 @@ fi
 #     no_tty_supported || exit 0          # once, near the top of the test
 #     OUTPUT=$(no_tty_run "$BOOTH" ...)   # per run
 #
+# --dind and --egress are not supported on Apple container yet: both share a
+# sidecar's network namespace, which a per-booth VM cannot do (see
+# docs/CONTAINER_SUPPORT.md, "Not supported: --dind and --egress"). The suites
+# pin CB_ENGINE=docker, so this only bites a run made on purpose with
+# CB_ENGINE=apple; a test that needs either then skips instead of failing:
+#
+#     sidecars_supported --dind || exit 0      # right after sourcing this file
+#
+sidecars_supported() {
+    local engine
+    engine="$(printf '%s' "${CB_ENGINE:-docker}" | tr '[:upper:]' '[:lower:]')"
+    [[ "$engine" == "apple" ]] || return 0
+    echo "SKIP: $* is not supported on engine apple (Apple container) yet — see docs/CONTAINER_SUPPORT.md." >&2
+    return 1
+}
+
 no_tty_supported() {
     command -v setsid  >/dev/null 2>&1 && return 0
     command -v python3 >/dev/null 2>&1 && return 0

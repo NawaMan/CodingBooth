@@ -24,6 +24,7 @@ Tier 2. The rest of Tiers 2–4 is the plan.
 | Discovery when no engine is chosen | **Show all** — `booth list` and friends query every installed engine. See [Finding booths](#finding-booths). |
 | Default engine | **`apple` first** when Apple container is installed and its service is running, then `docker`, then `podman`. See [When you choose nothing](#when-you-choose-nothing). |
 | Status | Experimental, with the same unconditional stderr warning Podman gets. |
+| `--dind` / `--egress` | **Not supported, deferred.** Refused on `apple`; with no engine chosen such a run goes to Docker or Podman. See [Not supported](#not-supported---dind-and---egress). |
 
 ---
 
@@ -400,6 +401,56 @@ published `base` image through the booth entrypoint:
 Not verified yet: the `--silence-build` progress line (it only draws on a terminal), and the
 `codeserver` and `desktop-*` variants.
 
+## Not supported: `--dind` and `--egress`
+
+**Decision: not done for now.** Both are deferred until each gets its own design; everything else
+on Apple container works without them.
+
+**What happens instead**
+
+- `--engine apple` (or `engine = "apple"`) with `--dind` or `--egress` is **refused up front**,
+  before anything is written or started:
+  `❌ --dind is not supported on engine apple (Apple container) yet`.
+- With **no engine chosen**, a `--dind` / `--egress` run skips Apple container and goes to Docker
+  (or Podman) by itself, so those projects keep working on a Mac that has Docker too.
+
+**Why** — both are built on a sidecar container whose network namespace the booth joins
+(`--network container:<sidecar>`): the booth reaches the DinD daemon on `localhost`, and egress
+filtering sits invisibly in the booth's network path. Each Apple container is its own VM, so there
+is no namespace to share; both need a different design, not a port.
+
+**What a later design can build on** — checked by hand on container 1.5.0, not implemented:
+
+- *`--dind`:* a `docker:dind` sidecar runs under Apple container with `--cap-add ALL`, once
+  `/proc/sys` is remounted read-write before `dockerd` starts (otherwise it dies setting
+  `ip_forward`). Another container on the same user network drove it at `tcp://<sidecar-ip>:2375`
+  and ran an inner `nginx`. Containers on a user network cannot find each other by name, so the
+  CLI would pass the sidecar's IP. Difference to Docker: an inner container's published ports
+  appear at the sidecar's address, not the booth's `localhost` — a port-forwarding question of its
+  own.
+- *`--egress`:* an `--internal` network really is cut off (no internet, no DNS), and a proxy
+  container can join it and `default` at once — so isolation, not a firewall rule, could do the
+  enforcing. Open: Envoy as an explicit forward proxy (`HTTPS_PROXY`) instead of today's transparent
+  one, DNS inside the isolated booth, whether the booth may still reach the host, and `--dind`
+  together with `--egress`.
+
+**Skipped tests.** The suites pin `CB_ENGINE=docker`, so these run normally. They skip — they do
+not fail — only in a run made on purpose with `CB_ENGINE=apple`:
+
+| Where | Tests | How |
+| --- | --- | --- |
+| `tests/basic/` | `test029--host-escape-consent.sh` | `sidecars_supported --dind \|\| exit 0` (`tests/common--source.sh`) |
+| `tests/dryrun/` | `test012--config-file--envvars.sh`, `test013--config-file--args.sh`, `test018--config-file--env-expand.sh` (their configs set `dind = true`) | same |
+| `tests/dryrun/dind/` | `test001--dind-ports-from-config.sh`, `test002--dind-ports-deduplicated.sh`, `test003--dind-host-gateway.sh` | same |
+| `tests/complex/` | `test-egress-allowlist`, `test-egress-allowlist-extra`, `test-egress-envoy`, `test-egress-ro` | `sidecars_supported --egress \|\| exit 0` |
+| `examples/workspaces/` | `appwrite`, `dind`, `egress-allowlist-extra`, `egress-envoy`, `floci`, `kind`, `kind-app`, `wails` (`-example`) | `run-example-tests.sh` reads `dind = true` / `egress = true` from the example's `.booth/config.toml` and reports it `skipped — not run, not verified` |
+
+The examples check needs no per-example marker, so a new `--dind` / `--egress` example is covered
+by itself; a new test under `tests/` adds the one-line `sidecars_supported` guard.
+`tests/dryrun/test042--engine-apple.sh` keeps checking that `apple` *refuses* both. Not affected:
+the `tests/config/` tests that only write `dind = true` into a config (they start nothing), and
+`tests/wrapper/`, which has its own `--skip-dind`.
+
 ## Known limitations
 
 - **`host.docker.internal` needs a current image.** It resolves through `booth-entry`; on an
@@ -415,8 +466,8 @@ Not verified yet: the `--silence-build` progress line (it only draws on a termin
 - **A single-file mount drops the mount of the folder directly containing it** (Apple container
   bug). CodingBooth's own wrapper mount works around it; other such mounts get a warning. See
   [Single-file mounts](#single-file-mounts).
-- **The `codeserver` and desktop variants are untested.**
-- **`--dind` and `--egress` are not supported.**
+- **`--dind` and `--egress` are not supported** — deferred; see
+  [Not supported](#not-supported---dind-and---egress).
 
 ## Where it lives (for maintainers)
 
@@ -476,9 +527,9 @@ done and kept here for the record.
 
 | # | Item | Feasibility | Notes |
 | --- | --- | --- | --- |
-| 15 | `--egress` | Uncertain | `--cap-add NET_ADMIN` exists, but it also needs user networks (macOS 26+), name resolution between containers, and item 9. |
+| 15 | `--egress` | **Deferred** | Needs its own design; see [Not supported](#not-supported---dind-and---egress). |
 | 16 | `booth build --push` | ✅ Done | `container image push`, plain HTTP for a registry on this machine as Docker does. Verified: pushed to a local registry, and Docker ran the image. Multi-arch is not a `booth build` feature on any engine. |
-| 17 | `--dind` | **Blocked as built** | The sidecar needs `--privileged`. Candidates: `--publish-socket` to forward a host engine's socket, or `--virtualization`. |
+| 17 | `--dind` | **Deferred** | A sidecar with `--cap-add ALL` works (no `--privileged` needed); see [Not supported](#not-supported---dind-and---egress). |
 | 18 | Host-escape flags | Not supported | Refused (see [How it works](#how-it-works)). |
 | 19 | `--public` | ✅ With `--apple-low-ports` | See [Ports below 1024](#ports-below-1024---apple-low-ports). |
 
@@ -486,5 +537,5 @@ done and kept here for the record.
 
 | # | Item | Notes |
 | --- | --- | --- |
-| 20 | Verify the gaps above by hand | Left: `--silence-build` on a terminal, `codeserver`, the desktops. (`booth shell`, image pull and `booth build` are done.) |
+| 20 | Verify the gaps above by hand | Left: `--silence-build` on a terminal. (`booth shell`, image pull, `booth build`, `codeserver` and every desktop variant are done — the desktops once they got 4 GB.) |
 | 21 | Complex test for the lifecycle | Skip unless `container` is installed and running; manual only. |

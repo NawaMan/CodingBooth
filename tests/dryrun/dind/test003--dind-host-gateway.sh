@@ -13,6 +13,7 @@
 set -euo pipefail
 
 source ../../common--source.sh
+sidecars_supported --dind || exit 0
 
 strip_ansi() { sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g'; }
 

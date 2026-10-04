@@ -32,6 +32,14 @@ This file contains a list of changes for each released version.
   by Aider's venv at `/opt/aider` (same path as before; `--version` pins still apply). A system
   Python Aider supports is used as before; the system Python is never changed.
 
+- **`--dind` and `--egress` stay unsupported on Apple container, and their tests say so.** Both are
+  deferred (docs/CONTAINER_SUPPORT.md, "Not supported: --dind and --egress", with what a later
+  design can build on). The suites pin `CB_ENGINE=docker`, so nothing changes in a normal run; a run
+  made on purpose with `CB_ENGINE=apple` now *skips* the tests that need either — 11 under `tests/`
+  through a new `sidecars_supported` guard in `tests/common--source.sh`, and the 8 examples whose
+  `.booth/config.toml` sets `dind = true` / `egress = true`, which `run-example-tests.sh` detects by
+  itself and reports as skipped.
+
 - **Starting a kept booth warns when its image has been rebuilt since.** `booth start` (and
   `shell` / `exec --run` on a stopped booth) reuse the existing container, so a booth created
   before a Boothfile or setup change keeps running the old image — the change silently "doesn't
