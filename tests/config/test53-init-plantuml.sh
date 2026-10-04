@@ -6,7 +6,7 @@ begin
 # Test 1: PlantUML with default params
 run booth config $prj --no-tui --select "plantuml"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg PLANTUML_VERSION=' '1.2026.8'  "default version is 1.2026.8"
+assert-line "$boothfile" 'arg PLANTUML_VERSION=' "$(template-default plantuml PLANTUML_VERSION)"  "default version is the catalog's"
 assert-line "$boothfile" 'arg PLANTUML_PORT=' '20900'  "default port is 20900"
 assert-line "$boothfile" 'setup plantuml ' '${PLANTUML_VERSION} ${PLANTUML_PORT}'  "Boothfile uses param references"
 

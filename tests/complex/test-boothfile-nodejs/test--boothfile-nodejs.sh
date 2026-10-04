@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Test: Boothfile Node.js Installation
 #
-# Verifies that a Boothfile with `setup nodejs 20` correctly installs Node.js
+# Verifies that a Boothfile with `setup nodejs 22` correctly installs Node.js
 # and makes it available in the container.
 # -----------------------------------------------------------------------------
 
@@ -33,11 +33,11 @@ else
     FAILED=$((FAILED + 1))
 fi
 
-# Test 2: Node.js version matches requested (v20.x)
-if echo "$ACTUAL" | grep -qE "v20\."; then
-    print_test_result "true" "$0" "2" "Node.js version is v20.x as specified"
+# Test 2: Node.js version matches requested (v22.x)
+if echo "$ACTUAL" | grep -qE "v22\."; then
+    print_test_result "true" "$0" "2" "Node.js version is v22.x as specified"
 else
-    print_test_result "false" "$0" "2" "Node.js version should be v20.x"
+    print_test_result "false" "$0" "2" "Node.js version should be v22.x"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi

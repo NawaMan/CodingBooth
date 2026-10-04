@@ -8,7 +8,7 @@ begin
 # default to Boothfile order 60.
 run booth config $prj --no-tui --select "postgrest"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg POSTGREST_VERSION=' 'latest'  "default PostgREST version is latest"
+assert-line "$boothfile" 'arg POSTGREST_VERSION=' "$(template-default postgrest POSTGREST_VERSION)"  "default PostgREST version is the catalog's"
 assert-line "$boothfile" 'arg POSTGREST_PORT=' '3000'  "default PostgREST port is 3000"
 assert-line "$boothfile" 'setup postgrest --version ' '${POSTGREST_VERSION}'  "Boothfile wires postgrest version"
 assert-line "$boothfile" 'setup postgresql ' '--version ${PG_VERSION}'  "requires auto-selects postgresql"

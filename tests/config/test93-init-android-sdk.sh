@@ -9,9 +9,9 @@ configtoml="$prj/.booth/config.toml"
 kvmstartup="$prj/.booth/startups/45-android-sdk-kvm--startup.sh"
 
 # Params land as args, so a rebuild cannot silently move the toolchain.
-assert-line "$boothfile" "arg ANDROID_CMDLINE_TOOLS=" "11076708" "ANDROID_CMDLINE_TOOLS arg"
-assert-line "$boothfile" "arg ANDROID_API="           "34"       "ANDROID_API arg"
-assert-line "$boothfile" "arg ANDROID_BUILD_TOOLS="   "34.0.0"   "ANDROID_BUILD_TOOLS arg"
+assert-line "$boothfile" "arg ANDROID_CMDLINE_TOOLS=" "$(template-default android-sdk ANDROID_CMDLINE_TOOLS)" "ANDROID_CMDLINE_TOOLS arg"
+assert-line "$boothfile" "arg ANDROID_API="           "$(template-default android-sdk ANDROID_API)"       "ANDROID_API arg"
+assert-line "$boothfile" "arg ANDROID_BUILD_TOOLS="   "$(template-default android-sdk ANDROID_BUILD_TOOLS)"   "ANDROID_BUILD_TOOLS arg"
 
 # The SDK line carries its flags, and the emulator reuses the SDK's API param
 # rather than declaring a second one that could drift.

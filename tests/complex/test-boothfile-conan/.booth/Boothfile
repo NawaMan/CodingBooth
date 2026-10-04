@@ -4,5 +4,5 @@
 # Conan is a Python package — install Python first, then conan.
 # (The plain `base` variant doesn't pre-install Python, so we have to
 # bring it in explicitly here.)
-setup python 3.13
+setup python
 setup conan

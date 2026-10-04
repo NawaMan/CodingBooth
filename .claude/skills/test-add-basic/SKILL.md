@@ -99,3 +99,7 @@ until proven otherwise.
 `pick_free_port_other_than`; never write your own picker), the two `set -euo pipefail` traps that
 silently skip a case, cleanup traps, and why you must not edit a test while a suite is running.
 Read it before writing.
+
+**Versions:** check one only when pinning is the behaviour under test. A default is compared
+against the catalog, "installed" means it runs, and a fixture uses `setup x`, not `setup x 1.2.3` —
+`tests/README.md` → *Versions are catalog data, not test data*.

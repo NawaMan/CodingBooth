@@ -55,6 +55,14 @@ function booth() {
     "$_repo_root/codingbooth" "$@"
 }
 
+# template-default <template> <PARAM>: the param's default, as the catalog
+# declares it (`booth template show`). Assert a default against this, never a
+# copied literal — a version bump then needs no test edit.
+function template-default() {
+    booth template show "$1" 2>/dev/null \
+        | awk -v p="$2" '$1 == p && $2 == "default:" { print $3; exit }'
+}
+
 function run() {
     echo "" >> $log
     echo "> $*" >> $log

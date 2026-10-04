@@ -96,3 +96,7 @@ Fast — no container, no image. Run the whole suite.
 silently skip a case (`grep` exiting 1 on no match bites constantly here), cleanup traps, and why
 you must not edit a test while a suite is running. For changing the setup script itself rather than
 testing it, see the `setup-work` skill.
+
+**Versions:** check one only when pinning is the behaviour under test. A default is compared
+against the catalog, "installed" means it runs, and a fixture uses `setup x`, not `setup x 1.2.3` —
+`tests/README.md` → *Versions are catalog data, not test data*.

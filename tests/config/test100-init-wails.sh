@@ -9,7 +9,7 @@ run booth config $prj --no-tui --select "wails"
 boothfile="$prj/.booth/Boothfile"
 config="$prj/.booth/config.toml"
 
-assert-line "$boothfile" "arg WAILS_VERSION=" "latest" "WAILS_VERSION arg"
+assert-line "$boothfile" "arg WAILS_VERSION=" "$(template-default wails WAILS_VERSION)" "WAILS_VERSION arg"
 assert-line "$boothfile" 'setup wails --version ${WAILS_VERSION}' "" "wails setup line"
 
 if ! grep -qE '^setup go ' "$boothfile"; then

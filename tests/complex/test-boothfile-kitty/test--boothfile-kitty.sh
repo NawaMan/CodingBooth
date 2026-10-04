@@ -68,17 +68,16 @@ else
     FAILED=$((FAILED + 1))
 fi
 
-# Test 4: it is the pinned upstream release, not Ubuntu's apt build. noble's
-# kitty 0.32.2 is exposed to CVE-2026-72913 (fixed 0.48.2), where displaying
-# untrusted output can run commands — Test 1 alone would pass on that too.
-EXPECTED_VERSION=$(sed -n 's/^KITTY_VERSION="\(.*\)"$/\1/p' ../../../variants/base/setups/kitty--setup.sh)
-ACTUAL=$(run_coding_booth --silence-build -- "kitty --version; readlink -f /usr/local/bin/kitty" 2>/dev/null)
+# Test 4: it is the upstream release, not Ubuntu's apt build. noble's kitty
+# 0.32.2 is exposed to CVE-2026-72913 (fixed 0.48.2), where displaying untrusted
+# output can run commands — Test 1 alone would pass on that too. Where it is
+# installed from is the point, not which release it is.
+ACTUAL=$(run_coding_booth --silence-build -- "readlink -f /usr/local/bin/kitty" 2>/dev/null)
 
-if echo "$ACTUAL" | grep -q "^kitty ${EXPECTED_VERSION} " \
-   && echo "$ACTUAL" | grep -q "^/opt/kitty/bin/kitty$"; then
-    print_test_result "true" "$0" "4" "Kitty is the pinned upstream ${EXPECTED_VERSION} from /opt/kitty"
+if echo "$ACTUAL" | grep -q "^/opt/kitty/bin/kitty$"; then
+    print_test_result "true" "$0" "4" "Kitty is the upstream release from /opt/kitty"
 else
-    print_test_result "false" "$0" "4" "Kitty should be the pinned upstream ${EXPECTED_VERSION} from /opt/kitty"
+    print_test_result "false" "$0" "4" "Kitty should be the upstream release from /opt/kitty"
     echo "  Actual output: ${ACTUAL:-<empty>}"
     FAILED=$((FAILED + 1))
 fi

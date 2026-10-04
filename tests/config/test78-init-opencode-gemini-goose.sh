@@ -31,7 +31,7 @@ function check() {
 # ---------------------------------------------------------------------------
 run booth config $prj --no-tui --select "opencode"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg OPENCODE_VERSION=' 'latest'  "opencode default version is latest"
+assert-line "$boothfile" 'arg OPENCODE_VERSION=' "$(template-default opencode OPENCODE_VERSION)"  "opencode default version is the catalog's"
 assert-line "$boothfile" 'setup opencode ' '--version ${OPENCODE_VERSION}'  "Boothfile uses opencode param"
 
 config="$prj/.booth/config.toml"
@@ -62,7 +62,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "gemini-cli"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg GEMINI_CLI_VERSION=' 'latest'  "gemini-cli default version is latest"
+assert-line "$boothfile" 'arg GEMINI_CLI_VERSION=' "$(template-default gemini-cli GEMINI_CLI_VERSION)"  "gemini-cli default version is the catalog's"
 assert-line "$boothfile" 'setup gemini-cli ' '${GEMINI_CLI_VERSION}'  "Boothfile uses gemini-cli param"
 
 config="$prj/.booth/config.toml"
@@ -93,7 +93,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "goose"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg GOOSE_VERSION=' 'latest'  "goose default version is latest"
+assert-line "$boothfile" 'arg GOOSE_VERSION=' "$(template-default goose GOOSE_VERSION)"  "goose default version is the catalog's"
 assert-line "$boothfile" 'setup goose ' '--version ${GOOSE_VERSION}'  "Boothfile uses goose param"
 
 config="$prj/.booth/config.toml"

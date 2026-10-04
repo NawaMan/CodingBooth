@@ -6,7 +6,7 @@ begin
 # Test 1: AFFiNE Server with defaults — pulls nodejs, postgresql, redis
 run booth config $prj --no-tui --select "affine-server"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg AFFINE_SERVER_VERSION=' 'stable'  "default image tag is stable"
+assert-line "$boothfile" 'arg AFFINE_SERVER_VERSION=' "$(template-default affine-server AFFINE_SERVER_VERSION)"  "default image tag is the catalog's"
 assert-line "$boothfile" 'arg AFFINE_SERVER_PORT=' '20100'  "default port is 20100"
 assert-line "$boothfile" 'arg AFFINE_SERVER_DATA=' 'clean'  "default data mode is clean"
 assert-line "$boothfile" 'copy --from=ghcr.io/toeverything/affine:' '${AFFINE_SERVER_VERSION} /app /opt/affine'  "copies official image"
