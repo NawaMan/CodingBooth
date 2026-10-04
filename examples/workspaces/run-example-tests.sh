@@ -473,9 +473,21 @@ run_examples() {
             echo "Example: $example_name ($test_count test(s))"
             echo "========================================"
 
+            # An example may declare the host architectures it can run on, one
+            # `uname -m` value per line in .cb-tests/requires-arch.txt. Anywhere
+            # else it is skipped rather than run and failed: android-example
+            # needs the Android SDK, which Google publishes for linux x86_64
+            # only. Declaring it here, not in the example's own wrapper, keeps
+            # the 70 byte-identical run-automatic-on-host-test.sh copies alike.
+            requires_arch="$example_dir/.cb-tests/requires-arch.txt"
             set +e
-            run_with_timeout "$EXAMPLE_TIMEOUT" bash -c "cd '$example_dir' && VARIANT=base CB_PORT=RANDOM ./run-automatic-on-host-test.sh"
-            test_exit_code=$?
+            if [ -f "$requires_arch" ] && ! grep -qx "$(uname -m)" "$requires_arch"; then
+                echo "SKIP: runs on $(tr '\n' ' ' < "$requires_arch")only; this host is $(uname -m)."
+                test_exit_code=77
+            else
+                run_with_timeout "$EXAMPLE_TIMEOUT" bash -c "cd '$example_dir' && VARIANT=base CB_PORT=RANDOM ./run-automatic-on-host-test.sh"
+                test_exit_code=$?
+            fi
             set -e
 
             end_time=$(date +%s)
@@ -485,6 +497,12 @@ run_examples() {
             if [ $test_exit_code -eq 0 ]; then
                 echo "✓ $example_name passed (${duration}s)"
                 echo "0" > "$RESULTS_DIR/$example_name.result"
+            elif [ $test_exit_code -eq 77 ]; then
+                # 77 is the automake convention: the test declined to run on
+                # this host (wrong arch, missing device), which is not a
+                # failure and must not read as a pass either.
+                echo "○ $example_name SKIPPED (${duration}s)"
+                echo "77" > "$RESULTS_DIR/$example_name.result"
             elif [ $test_exit_code -eq 124 ]; then
                 echo "⏱ $example_name TIMEOUT (${duration}s)"
                 echo "124" > "$RESULTS_DIR/$example_name.result"
@@ -564,7 +582,10 @@ get_duration() {
 if [ "$RETRY" = true ]; then
     retry_dirs=()
     for example_dir in "${examples[@]}"; do
-        [ "$(get_result "$(basename "$example_dir")")" = "0" ] || retry_dirs+=("$example_dir")
+        case "$(get_result "$(basename "$example_dir")")" in
+            0|77) ;;   # passed, or skipped on purpose — nothing to retry
+            *)    retry_dirs+=("$example_dir") ;;
+        esac
     done
     if [ ${#retry_dirs[@]} -gt 0 ]; then
         echo ""
@@ -590,6 +611,7 @@ OVERALL_DURATION=$((OVERALL_END - OVERALL_START))
 failed_examples=()
 passed_examples=()
 timeout_examples=()
+skipped_examples=()
 
 for example_dir in "${examples[@]}"; do
     example_name=$(basename "$example_dir")
@@ -598,6 +620,8 @@ for example_dir in "${examples[@]}"; do
 
     if [ "$result_code" = "0" ]; then
         passed_examples+=("$example_name")
+    elif [ "$result_code" = "77" ]; then
+        skipped_examples+=("$example_name")
     elif [ "$result_code" = "124" ]; then
         timeout_examples+=("$example_name")
         failed_examples+=("$example_name")
@@ -613,7 +637,8 @@ echo "======================================================"
 
 num_passed=${#passed_examples[@]}
 num_failed=${#failed_examples[@]}
-total=$((num_passed + num_failed))
+num_skipped=${#skipped_examples[@]}
+total=$((num_passed + num_failed + num_skipped))
 
 # Colors
 RED='\033[0;31m'
@@ -627,6 +652,8 @@ for example_dir in "${examples[@]}"; do
 
     if [ "$result_code" = "0" ]; then
         printf "  %-32s %-12s %s\n" "$example_name" "$duration_str" "passed"
+    elif [ "$result_code" = "77" ]; then
+        printf "  %-32s %-12s %s\n" "$example_name" "$duration_str" "skipped"
     elif [ "$result_code" = "124" ]; then
         printf "${RED}  %-32s %-12s %s${NC}\n" "$example_name" "$duration_str" "TIMEOUT"
     else
@@ -639,7 +666,11 @@ printf "  %-32s %-12s\n" "Total (wall clock):" "$(format_duration $OVERALL_DURAT
 echo ""
 echo "======================================================"
 if [ $num_failed -eq 0 ]; then
-    echo "✓ All $total example(s) passed!"
+    if [ $num_skipped -gt 0 ]; then
+        echo "✓ $num_passed of $total example(s) passed (${num_skipped} skipped — not run, not verified)."
+    else
+        echo "✓ All $total example(s) passed!"
+    fi
 else
     printf "${RED}✗ $num_failed out of $total example(s) FAILED${NC}\n"
     echo ""
