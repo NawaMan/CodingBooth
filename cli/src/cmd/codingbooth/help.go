@@ -46,8 +46,9 @@ OPTIONS
   --no-sudo               Shorthand for --sudo false
   --rootless              Skip the Linux rootless/userns-remap refusal (unsupported)
   --engine <docker|podman|apple>
-                          Container engine to use (default: docker; podman and
-                          apple, i.e. Apple container, are experimental — see
+                          Container engine to use (default: apple, i.e. Apple
+                          container, when installed and running; else docker;
+                          else podman. podman and apple are experimental — see
                           docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md)
 
 EXAMPLES:
@@ -189,11 +190,11 @@ CONTAINER MODE:
                          Can also be set in config.toml: sudo = false
   --no-sudo              Shorthand for --sudo false
   --engine <docker|podman|apple>
-                         Container engine to shell out to (default: docker;
-                         falls back to podman if docker isn't installed but
-                         podman is). podman and apple (Apple container, on
-                         macOS) are experimental and may not have
-                         full Docker feature parity yet — see
+                         Container engine to shell out to (default: apple,
+                         i.e. Apple container on macOS, when installed and
+                         running — except with --dind/--egress; else docker;
+                         else podman). podman and apple are experimental and
+                         may not have full Docker feature parity yet — see
                          docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md.
                          Can also be set in config.toml (engine = "podman") or
                          CB_ENGINE.
@@ -325,8 +326,9 @@ CONTAINER MODE:
   --sudo <true|false>    Enable/disable sudo (default: true)
   --no-sudo              Shorthand for --sudo false
   --engine <docker|podman|apple>
-                         Container engine to use (default: docker; podman and
-                         apple, i.e. Apple container, are experimental — see
+                         Container engine to use (default: apple, i.e. Apple
+                         container, when installed and running; else docker;
+                         else podman. podman and apple are experimental — see
                          docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md)
   --keep-alive           Do not remove container when stopped
   --hide-welcome         No welcome banner in shells (also: hide-welcome = true, CB_HIDE_WELCOME=true)
@@ -482,8 +484,9 @@ OPTIONS:
   --verbose               Show detailed output
   --dryrun                Print docker commands without executing
   --engine <docker|podman|apple>
-                          Container engine to use (default: docker; podman and
-                          apple, i.e. Apple container, are experimental)
+                          Container engine to use (default: apple, i.e. Apple
+                          container, when installed and running; else docker;
+                          else podman. podman and apple are experimental)
 
 IMAGE NAMING:
   Local:   <name>:<tag>

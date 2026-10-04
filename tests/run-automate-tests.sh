@@ -24,6 +24,9 @@ FAILED_LOG="${SCRIPT_DIR}/run-automate-tests.failed-tests.log"
 # common--source.sh (which sets the same thing for a test run on its own).
 export CB_BROWSER=false
 
+# Run on Docker unless the caller picked an engine; see common--source.sh.
+export CB_ENGINE="${CB_ENGINE:-docker}"
+
 # shellcheck disable=SC1091
 [[ -f "${SCRIPT_DIR}/ensure-fresh-image--source.sh" ]] && source "${SCRIPT_DIR}/ensure-fresh-image--source.sh"
 
