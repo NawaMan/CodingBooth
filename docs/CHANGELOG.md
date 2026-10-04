@@ -32,6 +32,13 @@ This file contains a list of changes for each released version.
   by Aider's venv at `/opt/aider` (same path as before; `--version` pins still apply). A system
   Python Aider supports is used as before; the system Python is never changed.
 
+- **`setup aider` works on the Ubuntu 26.04 base again.** Aider supports Python 3.10-3.12 only;
+  26.04's `python3` is 3.14, so pip found no current release, backtracked through old ones and
+  crashed in its resolver. When the system Python is outside Aider's range, `aider--setup.sh` now
+  does what Aider's own installer does: a uv-managed Python 3.12 in `/opt/aider-python`, used only
+  by Aider's venv at `/opt/aider` (same path as before; `--version` pins still apply). A system
+  Python Aider supports is used as before; the system Python is never changed.
+
 - **`--dind` and `--egress` stay unsupported on Apple container, and their tests say so.** Both are
   deferred (docs/CONTAINER_SUPPORT.md, "Not supported: --dind and --egress", with what a later
   design can build on). The suites pin `CB_ENGINE=docker`, so nothing changes in a normal run; a run
