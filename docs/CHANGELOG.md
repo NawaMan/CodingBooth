@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Swift suggests only 6.4.0, the one release built for Ubuntu 26.04.** swift.org publishes no
+  26.04 tarball for older releases, so `setup swift --version 6.0.1` 404s on the new base. The
+  default was already 6.4.0; the Swift test now pins it too.
+
+- **`setup i3-default` works on the Ubuntu 26.04 XFCE desktop.** 26.04's `xfce4-session.xml` has a
+  `FailsafeWayland` session block beside the X11 `Failsafe` one, with its own `xfdesktop`. The setup
+  only ever edits the X11 block, but its check read the whole file and failed the build with
+  "Failed to switch ... to i3". The check now reads the X11 block alone (and fails on an empty one).
+
 - **Julia `1.11.3` dropped from the template's suggestions: it no longer starts on the Ubuntu 26.04
   base.** Its `libopenlibm.so` asks for an executable stack (`GNU_STACK=RWE`), which 26.04's glibc
   refuses ("cannot enable executable stack"). `1.12.7` and `1.13.0` (the default) are unaffected.
