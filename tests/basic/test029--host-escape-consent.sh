@@ -11,15 +11,18 @@
 # anything, and name the flag that would allow it. A config.toml cannot grant
 # that consent itself; only the command-line flag can.
 #
-# Runs under `setsid` so there is no controlling terminal: otherwise booth would
-# prompt on /dev/tty and the test would hang. The unit tests in
-# pkg/booth/host_escape_consent_test.go cover the prompt answers and which
-# run-args count.
+# Runs in a session of its own so there is no controlling terminal: otherwise
+# booth would prompt on /dev/tty and the test would hang. See no_tty_run in
+# tests/common--source.sh for how that is done without setsid, which macOS does
+# not have. The unit tests in pkg/booth/host_escape_consent_test.go cover the
+# prompt answers and which run-args count.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
 
 source ../common--source.sh
+
+no_tty_supported || exit 0
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 BOOTH="$(find_local_booth_build "$SCRIPT_DIR")"
@@ -33,7 +36,7 @@ FAILED=0
 
 # no_tty_booth ARGS... : run the CLI with no controlling terminal and stdin closed.
 no_tty_booth() {
-    (cd "$TEST_DIR" && setsid -w "$BOOTH" --name "$NAME" --variant base "$@" </dev/null 2>&1)
+    (cd "$TEST_DIR" && no_tty_run "$BOOTH" --name "$NAME" --variant base "$@" </dev/null 2>&1)
 }
 
 check() { # check <ok> <description> <output>
@@ -78,7 +81,8 @@ TOML
 STATUS=0
 OUTPUT=$(no_tty_booth -- echo CB_BOOTH_STARTED) || STATUS=$?
 ok=false
-if [[ $STATUS -ne 0 ]] && ! grep -q CB_BOOTH_STARTED <<<"$OUTPUT" && no_container; then ok=true; fi
+if [[ $STATUS -ne 0 ]] && grep -q -- "--dind-allowed" <<<"$OUTPUT" \
+   && ! grep -q CB_BOOTH_STARTED <<<"$OUTPUT" && no_container; then ok=true; fi
 check "$ok" "config.toml cannot grant consent to itself" "$OUTPUT"
 
 # 4. The command-line flag does allow it: the booth starts and runs the command.

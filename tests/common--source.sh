@@ -55,6 +55,73 @@ if [ "$EUID" -ne 0 ]; then
     ROOT_RUN=(env EUID=0)
 fi
 
+# Running a booth with no controlling terminal.
+#
+# A booth that can reach the host as root asks for consent on /dev/tty, not on
+# stdin, so it still works under `booth shell --run`. Redirecting or closing
+# stdin therefore proves nothing: the only way to test the refusal is to take
+# the terminal itself away, which means putting the command in a session of its
+# own. On Linux that is what `setsid` is for.
+#
+# macOS has no setsid — it is util-linux. Without a fallback, every assertion in
+# basic/test029 dies on `setsid: command not found`, and the weakest of them
+# passes *because* of it: "non-zero status and no container" is satisfied just
+# as well by a missing binary as by booth refusing. Green for the wrong reason,
+# the same trap the ROOT_RUN note above describes.
+#
+# python3 and perl both expose setsid(2), and macOS ships perl, so in practice
+# one of the three is always present. The fork matters: setsid(2) fails with
+# EPERM for a process that already leads its group, and a freshly forked child
+# never does. All three forms wait for the child and exit with its status, and
+# leave stdout/stderr on the caller's fds so $(...) still captures them.
+#
+#     no_tty_supported || exit 0          # once, near the top of the test
+#     OUTPUT=$(no_tty_run "$BOOTH" ...)   # per run
+#
+no_tty_supported() {
+    command -v setsid  >/dev/null 2>&1 && return 0
+    command -v python3 >/dev/null 2>&1 && return 0
+    command -v perl    >/dev/null 2>&1 && return 0
+    echo "SKIP: no setsid, python3 or perl here — cannot run a booth without a controlling terminal." >&2
+    return 1
+}
+
+no_tty_run() {
+    if command -v setsid >/dev/null 2>&1; then
+        setsid -w "$@"
+    elif command -v python3 >/dev/null 2>&1; then
+        python3 -c '
+import os, sys
+pid = os.fork()
+if pid == 0:
+    os.setsid()
+    try:
+        os.execvp(sys.argv[1], sys.argv[1:])
+    except OSError as err:
+        sys.stderr.write("%s: %s\n" % (sys.argv[1], err))
+        os._exit(127)
+_, status = os.waitpid(pid, 0)
+os._exit(os.WEXITSTATUS(status) if os.WIFEXITED(status) else 128 + os.WTERMSIG(status))
+' "$@"
+    elif command -v perl >/dev/null 2>&1; then
+        perl -MPOSIX -e '
+my $pid = fork();
+defined $pid or die "fork: $!\n";
+if ($pid == 0) {
+    POSIX::setsid();
+    exec { $ARGV[0] } @ARGV;
+    print STDERR "$ARGV[0]: $!\n";
+    POSIX::_exit(127);
+}
+waitpid($pid, 0);
+exit(($? & 127) ? 128 + ($? & 127) : $? >> 8);
+' "$@"
+    else
+        echo "no_tty_run: no setsid, python3 or perl — guard the test with no_tty_supported" >&2
+        return 1
+    fi
+}
+
 # Clear .booth/.tmp/ between booth runs — the contents, never the directory.
 #
 # `rm -rf .booth/.tmp` looks equivalent and is not. That directory is a bind
