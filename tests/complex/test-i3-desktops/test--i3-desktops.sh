@@ -78,9 +78,15 @@ REPORT='
 # ---- XFCE ----
 OUT=$(in_image "$XFCE_IMAGE" "$REPORT"'
     X=/etc/xdg/xfce4/xfconf/xfce-perchannel-xml
-    grep -q "value=\"i3\"" $X/xfce4-session.xml && echo "session=i3"
-    grep -qE "value=\"(xfwm4|xfdesktop)\"" $X/xfce4-session.xml && echo "session=still-xfwm4-or-xfdesktop"
-    grep -q "name=\"Count\" type=\"int\" value=\"4\"" $X/xfce4-session.xml && echo "session-count=4"
+    # Only the X11 Failsafe block; FailsafeWayland keeps its own xfdesktop, and
+    # reading the whole file would report that as a failed switch.
+    B=$(sed -n "/<property name=\"Failsafe\" type=\"empty\">/,/<property name=\"FailsafeWayland\"/p" $X/xfce4-session.xml)
+    echo "$B" | grep -q "value=\"i3\"" && echo "session=i3"
+    echo "$B" | grep -qE "value=\"(xfwm4|xfdesktop)\"" && echo "session=still-xfwm4-or-xfdesktop"
+    echo "$B" | grep -q "name=\"Count\" type=\"int\" value=\"4\"" && echo "session-count=4"
+    # FailsafeWayland keeps its own xfdesktop — only the X11 block loses one, so exactly one
+    # is left in the file. Guards the mirror image of the bug: rewriting the Wayland session.
+    echo "xfdesktop-total=$(grep -c "value=\"xfdesktop\"" $X/xfce4-session.xml)"
     for a in xfce-set-wallpaper cb-xfce-arrange-icons; do grep -qx Hidden=true /etc/xdg/autostart/$a.desktop && echo "hidden=$a"; done
     echo "xfce-clashes=$(grep -c "&lt;Primary&gt;&lt;Alt&gt;[lf]\"" $X/xfce4-keyboard-shortcuts.xml)"
     grep -q "exo-open --launch TerminalEmulator" /etc/xdg/i3/config && echo "terminal=exo-open"
@@ -106,6 +112,8 @@ has "$OUT" "plugin=i3-00-ctrl-alt.js" && has "$OUT" "plugin=i3-help.js" \
     && check "true" "XFCE: Help plugins, Ctrl+Alt flag first" || check "false" "XFCE: Help plugins, Ctrl+Alt flag first" "$OUT"
 has "$OUT" "session=i3" && has "$OUT" "session-count=4" && ! has "$OUT" "session=still-xfwm4-or-xfdesktop" \
     && check "true" "XFCE: session logs in on i3, without xfwm4 or xfdesktop" || check "false" "XFCE: session logs in on i3, without xfwm4 or xfdesktop" "$OUT"
+has "$OUT" "xfdesktop-total=1" \
+    && check "true" "XFCE: FailsafeWayland keeps its own xfdesktop" || check "false" "XFCE: FailsafeWayland keeps its own xfdesktop" "$OUT"
 has "$OUT" "hidden=xfce-set-wallpaper" && has "$OUT" "hidden=cb-xfce-arrange-icons" \
     && check "true" "XFCE: xfdesktop-starting autostarts hidden" || check "false" "XFCE: xfdesktop-starting autostarts hidden" "$OUT"
 has "$OUT" "xfce-clashes=0" \

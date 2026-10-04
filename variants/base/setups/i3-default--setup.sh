@@ -47,6 +47,13 @@ hide_autostart() {
 if command -v xfce4-session &>/dev/null; then
   # Client0 is the window manager; Client4 is xfdesktop. Removing a client
   # means lowering Count too, or xfce4-session looks for a Client4 that is gone.
+  #
+  # Since Ubuntu 26.04 the file carries two <property name="sessions"> blocks:
+  # Failsafe (X11) and FailsafeWayland. i3 is an X11 window manager, so only the
+  # X11 block is ours. The edits below already land there and nowhere else —
+  # xfwm4, Client4 and Count=5 exist only in it — but the check afterwards has
+  # to say so explicitly, or FailsafeWayland's own xfdesktop entry, which is
+  # correct where it is, reads as a failed switch.
   SESSION_XML=/etc/xdg/xfce4/xfconf/xfce-perchannel-xml/xfce4-session.xml
   if [[ ! -f "$SESSION_XML" ]]; then
     echo "❌ ${SESSION_XML} not found" >&2
@@ -59,9 +66,11 @@ if command -v xfce4-session &>/dev/null; then
       -e 's|<property name="Count" type="int" value="5"/>|<property name="Count" type="int" value="4"/>|' \
       "$SESSION_XML"
   fi
-  if grep -qE 'value="(xfwm4|xfdesktop)"' "$SESSION_XML" \
-     || ! grep -q '<value type="string" value="i3"/>' "$SESSION_XML" \
-     || ! grep -q '<property name="Count" type="int" value="4"/>' "$SESSION_XML"; then
+  X11_BLOCK=$(sed -n '/<property name="Failsafe" type="empty">/,/<property name="FailsafeWayland"/p' "$SESSION_XML")
+  if [[ -z "$X11_BLOCK" ]] \
+     || grep -qE 'value="(xfwm4|xfdesktop)"' <<< "$X11_BLOCK" \
+     || ! grep -q '<value type="string" value="i3"/>' <<< "$X11_BLOCK" \
+     || ! grep -q '<property name="Count" type="int" value="4"/>' <<< "$X11_BLOCK"; then
     echo "❌ Failed to switch ${SESSION_XML} to i3" >&2
     exit 2
   fi

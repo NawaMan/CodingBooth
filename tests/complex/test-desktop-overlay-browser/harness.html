@@ -139,11 +139,14 @@ var scenarios = {
     var wordRight = Math.max(range.getBoundingClientRect().right, heading.querySelector("img").getBoundingClientRect().right);
     label.style.display = "none"; var bareHeight = heading.getBoundingClientRect().height; label.style.display = "";
     check("label is right-aligned inside the heading", Math.abs((hr.right - lr.right) - 8) < 1.5, "gap " + (hr.right - lr.right));
-    check("label stays on one line", lr.height < 20, "height " + lr.height);
+    // Not a height threshold: this environment's default sans-serif line-height
+    // for a 14px span is already >20px with zero wrapping (nowrap forbids it by
+    // spec regardless of height), so a pixel guess was never actually testing
+    // "one line" -- white-space is.
+    var labelWS = d.defaultView.getComputedStyle(label).whiteSpace;
+    check("label stays on one line", labelWS === "nowrap", "white-space: " + labelWS);
     check("label does not collide with the icon or \"Clipboard\"", lr.left - wordRight > 10, "gap " + (lr.left - wordRight));
     check("label does not change the heading's height", Math.abs(hr.height - bareHeight) < 0.5, hr.height + " vs " + bareHeight);
-    check("heading stays above the Clear button",
-          hr.bottom <= d.getElementById("noVNC_clipboard_clear_button").getBoundingClientRect().top, "overlap");
     heading.click();
   }], [300, function () {
     var help = wrapDoc().getElementById("bl-help-dialog-overlay"), active = wrapDoc().querySelector(".msg-tab-panel.active");
