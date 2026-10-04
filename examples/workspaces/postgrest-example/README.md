@@ -1,7 +1,7 @@
 # PostgREST Example
 
 This example turns a PostgreSQL table into a REST API with no server code at all —
-[PostgREST](https://postgrest.org) generates the API straight from the database schema. It
+[PostgREST](https://docs.postgrest.org/) generates the API straight from the database schema. It
 showcases two things together:
 
 - **`postgresql+pg-ext-pkg`**: `pgvector` and `pg_trgm` are enabled automatically on container
