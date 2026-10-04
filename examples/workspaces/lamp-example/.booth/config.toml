@@ -1,4 +1,4 @@
-# Configured by: booth config --no-tui --overwrite --expose +-1920:80 --select php~vscode-ext/mysql/apache+php/lamp-init
+# Configured by: booth config --no-tui --overwrite --expose +-1920:80 --select php:8.5~vscode-ext/mysql/apache+php/lamp-init
 
 
 run-args = [
