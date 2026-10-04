@@ -25,10 +25,10 @@ FAILED=0
 PYTHON_OUT=$(run_coding_booth --silence-build -- python3 --version 2>/dev/null)
 PYTHON_OUT=$(printf '%s\n' "$PYTHON_OUT" | head -1)
 
-if echo "$PYTHON_OUT" | grep -qE "Python 3\.12"; then
-    print_test_result "true" "$0" "1" "Python 3.12 is installed"
+if echo "$PYTHON_OUT" | grep -qE "Python 3\."; then
+    print_test_result "true" "$0" "1" "Python 3 is installed"
 else
-    print_test_result "false" "$0" "1" "Python 3.12 should be installed"
+    print_test_result "false" "$0" "1" "Python 3 should be installed"
     echo "  Actual output: $PYTHON_OUT"
     FAILED=$((FAILED + 1))
 fi
@@ -37,10 +37,10 @@ fi
 NODE_OUT=$(run_coding_booth --silence-build -- node --version 2>/dev/null)
 NODE_OUT=$(printf '%s\n' "$NODE_OUT" | head -1)
 
-if echo "$NODE_OUT" | grep -qE "v20\."; then
-    print_test_result "true" "$0" "2" "Node.js v20 is installed"
+if echo "$NODE_OUT" | grep -qE "v[0-9]+\."; then
+    print_test_result "true" "$0" "2" "Node.js is installed"
 else
-    print_test_result "false" "$0" "2" "Node.js v20 should be installed"
+    print_test_result "false" "$0" "2" "Node.js should be installed"
     echo "  Actual output: $NODE_OUT"
     FAILED=$((FAILED + 1))
 fi
@@ -60,7 +60,7 @@ fi
 # Test 4: Both tools work together (run node and python in sequence)
 COMBO_OUT=$(run_coding_booth --silence-build -- 'python3 --version && node --version' 2>/dev/null)
 
-if echo "$COMBO_OUT" | grep -qE "Python 3" && echo "$COMBO_OUT" | grep -qE "v20"; then
+if echo "$COMBO_OUT" | grep -qE "Python 3" && echo "$COMBO_OUT" | grep -qE "v[0-9]+"; then
     print_test_result "true" "$0" "4" "Both Python and Node.js work together"
 else
     print_test_result "false" "$0" "4" "Both tools should work together"

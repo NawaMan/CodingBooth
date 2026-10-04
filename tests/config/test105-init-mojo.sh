@@ -9,7 +9,7 @@ run booth config $prj --no-tui --select "mojo"
 
 boothfile="$prj/.booth/Boothfile"
 
-assert-line "$boothfile" "arg MOJO_VERSION=" "1.1.0" "MOJO_VERSION arg"
+assert-line "$boothfile" "arg MOJO_VERSION=" "$(template-default mojo MOJO_VERSION)" "MOJO_VERSION arg"
 assert-line "$boothfile" 'setup mojo --version ${MOJO_VERSION}' "" "mojo setup line"
 
 if ! grep -qE '^setup python ' "$boothfile"; then

@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Test: Boothfile Elm Installation
 #
-# Verifies that a Boothfile with `setup elm --version 0.19.1` installs Elm
+# Verifies that a Boothfile with `setup elm` installs Elm
 # via npm (depends on prior `setup nodejs`).
 # -----------------------------------------------------------------------------
 
@@ -28,7 +28,7 @@ FAILED=0
 ACTUAL=$(run_coding_booth --silence-build -- elm --version 2>/dev/null)
 ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
-if echo "$ACTUAL" | grep -qE '^0\.19'; then
+if echo "$ACTUAL" | grep -qE '^[0-9]+\.[0-9]+'; then
     print_test_result "true" "$0" "1" "Elm is installed via Boothfile"
 else
     print_test_result "false" "$0" "1" "Elm should be installed"

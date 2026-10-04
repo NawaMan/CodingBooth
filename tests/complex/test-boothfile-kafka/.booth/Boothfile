@@ -1,4 +1,4 @@
 # syntax=codingbooth/boothfile:1
 
 # Test: Kafka installation via Boothfile
-setup kafka --version 3.7.0
+setup kafka

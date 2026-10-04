@@ -6,7 +6,7 @@ begin
 # Test 1: Freeplane with default version
 run booth config $prj --no-tui --select "freeplane"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg FREEPLANE_VERSION=' '1.13.3'  "default version is 1.13.3"
+assert-line "$boothfile" 'arg FREEPLANE_VERSION=' "$(template-default freeplane FREEPLANE_VERSION)"  "default version is the catalog's"
 assert-line "$boothfile" 'setup freeplane ' '${FREEPLANE_VERSION}'  "Boothfile uses param reference"
 
 # Test 2: Freeplane with custom version

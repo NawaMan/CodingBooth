@@ -31,7 +31,7 @@ function check() {
 # ---------------------------------------------------------------------------
 run booth config $prj --no-tui --select "grok"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg GROK_VERSION=' 'latest'  "grok default version is latest"
+assert-line "$boothfile" 'arg GROK_VERSION=' "$(template-default grok GROK_VERSION)"  "grok default version is the catalog's"
 assert-line "$boothfile" 'setup grok ' '--version ${GROK_VERSION}'  "Boothfile uses grok param reference"
 
 config="$prj/.booth/config.toml"
@@ -86,7 +86,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "oh-my-pi"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg OH_MY_PI_VERSION=' 'latest'  "oh-my-pi default version is latest"
+assert-line "$boothfile" 'arg OH_MY_PI_VERSION=' "$(template-default oh-my-pi OH_MY_PI_VERSION)"  "oh-my-pi default version is the catalog's"
 assert-line "$boothfile" 'setup oh-my-pi ' '--version ${OH_MY_PI_VERSION}'  "Boothfile uses oh-my-pi param reference"
 
 config="$prj/.booth/config.toml"

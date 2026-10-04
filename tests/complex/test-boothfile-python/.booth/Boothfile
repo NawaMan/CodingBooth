@@ -1,4 +1,6 @@
 # syntax=codingbooth/boothfile:1
 
 # Test: Python installation via Boothfile
+# Pinned on purpose: this test checks that `setup python <ver>` installs the
+# requested version, so it pins one that is not the catalog default.
 setup python 3.12

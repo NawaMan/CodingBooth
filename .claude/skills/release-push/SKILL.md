@@ -131,7 +131,8 @@ How to edit: **`setup-work` §1b**.
 
 Same commit also needs:
 
-- any `tests/config/` assertion of the old default
+- no test edits — a test that breaks on a bump is spelling out a version it should read from the
+  catalog; fix it per `tests/README.md` → *Versions are catalog data, not test data*
 - a `docs/CHANGELOG.md` Unreleased bullet
 
 One commit for the accepted set (not one per tool unless the user asks). Tree must be clean before

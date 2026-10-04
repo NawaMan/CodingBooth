@@ -10,7 +10,7 @@ run booth config $prj --no-tui --select "flutter"
 
 boothfile="$prj/.booth/Boothfile"
 
-assert-line "$boothfile" "arg FLUTTER_VERSION=" "latest" "FLUTTER_VERSION arg"
+assert-line "$boothfile" "arg FLUTTER_VERSION=" "$(template-default flutter FLUTTER_VERSION)" "FLUTTER_VERSION arg"
 assert-line "$boothfile" 'setup flutter --version ${FLUTTER_VERSION}' "" "flutter setup line"
 
 # vscode-ext is auto-select, so it comes along without being asked for.

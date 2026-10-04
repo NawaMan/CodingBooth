@@ -2,5 +2,5 @@
 
 # Test: Mojo installation via Boothfile.
 
-setup python 3.13.12
-setup mojo --version 1.0.0
+setup python
+setup mojo

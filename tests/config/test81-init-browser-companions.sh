@@ -7,7 +7,7 @@ begin
 # --- puppeteer ---
 run booth config $prj --no-tui --select "puppeteer"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" "arg PUPPETEER_VERSION=" 'latest'  "puppeteer default version"
+assert-line "$boothfile" "arg PUPPETEER_VERSION=" "$(template-default puppeteer PUPPETEER_VERSION)"  "puppeteer default version"
 assert-line "$boothfile" "setup puppeteer --version " '${PUPPETEER_VERSION}'  "puppeteer setup line"
 # requires nodejs
 if ! grep -qE '^setup nodejs' "$boothfile"; then
@@ -30,7 +30,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "cypress"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" "arg CYPRESS_VERSION=" 'latest'  "cypress default version"
+assert-line "$boothfile" "arg CYPRESS_VERSION=" "$(template-default cypress CYPRESS_VERSION)"  "cypress default version"
 assert-line "$boothfile" "setup cypress --version " '${CYPRESS_VERSION}'  "cypress setup line"
 
 # --- selenium defaults ---
@@ -39,7 +39,7 @@ mkdir -p $prj
 run booth config $prj --no-tui --select "selenium"
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" "arg SELENIUM_BROWSERS=" 'chromium'  "selenium default browser"
-assert-line "$boothfile" "arg SELENIUM_CHROME_VERSION=" 'Stable'  "selenium default chrome channel"
+assert-line "$boothfile" "arg SELENIUM_CHROME_VERSION=" "$(template-default selenium SELENIUM_CHROME_VERSION)"  "selenium default chrome channel"
 assert-line "$boothfile" "setup selenium " '${SELENIUM_BROWSERS} --chrome-version ${SELENIUM_CHROME_VERSION}'  "selenium setup line"
 
 # --- selenium browsers param ---

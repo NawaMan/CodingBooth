@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Test: Boothfile ReScript Installation
 #
-# Verifies that a Boothfile with `setup rescript --version 11.1.4` installs
+# Verifies that a Boothfile with `setup rescript` installs
 # ReScript via npm (depends on prior `setup nodejs`).
 # -----------------------------------------------------------------------------
 
@@ -21,7 +21,7 @@ echo "=== Test: Boothfile ReScript Installation ==="
 
 FAILED=0
 
-ACTUAL=$(run_coding_booth --silence-build -- rescript -v 2>/dev/null)
+ACTUAL=$(run_coding_booth --silence-build -- rescript --version 2>/dev/null)
 ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
 
 if echo "$ACTUAL" | grep -qE '[0-9]+\.[0-9]+'; then

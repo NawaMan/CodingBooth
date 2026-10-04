@@ -209,6 +209,10 @@ Edit the repo copy, re-copy, re-run. **Keep the two byte-identical** — the cop
 actually ran, so a drift means you verified something you are not shipping. Re-copy after every
 edit; a `diff` at the end is cheap insurance.
 
+This copy is for a scratch workspace only. **Never commit one** into `tests/` or `examples/`: there
+it outlives the change, silently shadows the image's script, and drifts. Tests run on the locally
+rebuilt base image instead (§5).
+
 ### A changed template or extension — point at the repo tree, no Docker at all
 
 ```bash
@@ -362,14 +366,19 @@ Auto-discovered by directory name:
 ```
 .booth/config.toml                    variant = "base"
 .booth/Boothfile                      setup <name>
-.booth/setups/<name>--setup.sh        ← copy of the script
 test--boothfile-<name>.sh             sources ../../common--source.sh
 ```
 
-**The copy under `.booth/setups/` is mandatory and is not redundant** — the same mechanism §3 uses.
-Tests run against the *released* base image, which does not ship your script yet. Note it in a
-Boothfile comment, as `tests/complex/test-boothfile-binary-companions/.booth/Boothfile` does, and
-keep the copy byte-identical.
+**No copy of the script under `.booth/setups/`.** The suite runs on the *locally built* base
+image — `run-automate-tests.sh` rebuilds every variant from the tree first (`ensure_fresh_image`),
+and that build already has your script — so the test exercises exactly what ships. A copy shadows
+the image's script via `PATH`, and once committed it drifts: 21 of them had, and one hid a setup
+that could not start on Ubuntu 26.04. Running a single test by hand? Rebuild base first
+(`./build/docker-build.sh base`). `.booth/setups/` in a fixture is only for a script the test
+itself adds (`test-boothfile-custom-setup`, `test-project-local`).
+
+Use `setup <name>` with no version unless the test is about pinning — see `tests/README.md` →
+*Versions are catalog data, not test data*.
 
 ```bash
 ACTUAL=$(run_coding_booth --silence-build -- bash -c 'cd /tmp && <compile-and-run something>')
@@ -384,11 +393,15 @@ fi
 ### Config test — `tests/config/test<NN>-init-<name>.sh`
 
 Next free number (`ls tests/config | tail -3`), using `begin` / `run` / `assert-line` / `finally`
-from `test-helpers--source.sh`. Assert the `setup`/`install` line and the version pin, default and
-pinned:
+from `test-helpers--source.sh`. Assert the `setup`/`install` line, the default read from the
+catalog (never a copied literal), and a pin on a version that is *not* the default:
 
 ```bash
-run booth config $prj --no-tui --select "<name>:1.72.0"
+run booth config $prj --no-tui --select "<name>"
+assert-line "$prj/.booth/Boothfile" "arg <NAME>_VERSION=" "$(template-default <name> <NAME>_VERSION)" \
+    "<name> default version is the catalog's"
+
+run booth config $prj --no-tui --overwrite --select "<name>:1.72.0"
 assert-line "$prj/.booth/Boothfile" "arg <NAME>_VERSION=" '1.72.0' "<name> version pin"
 ```
 
@@ -407,6 +420,7 @@ tests/config/test92-arch-unsupported-is-declared.sh  # unsupported-arch carries 
 
 ```bash
 tests/config/test<NN>-init-<name>.sh
+./build/docker-build.sh base                                             # so the image has your script
 (cd tests/complex/test-boothfile-<name> && ./test--boothfile-<name>.sh)   # needs Docker; builds an image
 examples/workspaces/run-example-tests.sh --example <name>-example         # if you made one
 ```

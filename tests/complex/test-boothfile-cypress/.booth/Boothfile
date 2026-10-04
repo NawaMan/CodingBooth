@@ -1,5 +1,5 @@
 # syntax=codingbooth/boothfile:1
 # Phase 3: Cypress + shared binary cache
 
-setup nodejs 22
+setup nodejs
 setup cypress --version latest

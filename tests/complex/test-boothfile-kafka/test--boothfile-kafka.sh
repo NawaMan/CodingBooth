@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Test: Boothfile Kafka Installation
 #
-# Verifies that a Boothfile with `setup kafka --version 3.7.0` lays down the
+# Verifies that a Boothfile with `setup kafka` lays down the
 # Kafka install at /opt/kafka. The broker daemon is not validated (it's only
 # transiently started during build); we check binary presence in /opt/kafka.
 # -----------------------------------------------------------------------------

@@ -30,20 +30,20 @@ FAILED=0
 
 # Test 1: clang is installed
 ACTUAL=$(capture_codingbooth "head -1" --silence-build -- clang --version)
-if echo "$ACTUAL" | grep -qE "clang version 18"; then
-    print_test_result "true" "$0" "1" "Clang 18 is installed alongside GCC"
+if echo "$ACTUAL" | grep -qE "clang version [0-9]+"; then
+    print_test_result "true" "$0" "1" "Clang is installed alongside GCC"
 else
-    print_test_result "false" "$0" "1" "Clang 18 should be installed"
+    print_test_result "false" "$0" "1" "Clang should be installed"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
 
 # Test 2: gcc is installed
 ACTUAL=$(capture_codingbooth "head -1" --silence-build -- gcc --version)
-if echo "$ACTUAL" | grep -qE "gcc.* 13\."; then
-    print_test_result "true" "$0" "2" "GCC 13 is installed alongside Clang"
+if echo "$ACTUAL" | grep -qE "gcc.* [0-9]+\."; then
+    print_test_result "true" "$0" "2" "GCC is installed alongside Clang"
 else
-    print_test_result "false" "$0" "2" "GCC 13 should be installed"
+    print_test_result "false" "$0" "2" "GCC should be installed"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi

@@ -6,10 +6,8 @@
 # -----------------------------------------------------------------------------
 # Test: Boothfile Swift Installation
 #
-# Verifies that a Boothfile with `setup swift --version 6.4.0` installs Swift
-# (6.4.0 is the first Swift with Ubuntu 26.04 builds, which the base image is
-# on; download.swift.org has nothing older for it.)
-# and exposes it on PATH.
+# Verifies that a Boothfile with `setup swift` installs Swift and exposes it
+# on PATH.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail

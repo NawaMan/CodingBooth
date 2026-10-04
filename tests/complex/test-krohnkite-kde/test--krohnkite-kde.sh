@@ -70,7 +70,6 @@ OUT=$(in_image '
 
     kpackagetool6 --type KWin/Script --list --global 2>/dev/null | grep -qx krohnkite && echo "kpackage=listed"
     kpackagetool6 --type KWin/Script --show krohnkite --global 2>/dev/null | grep -q "Path *: /usr/share/kwin/scripts/krohnkite/" && echo "kpackage-path=system"
-    grep -q "\"Version\": \"0.9.9.2\"" /usr/share/kwin/scripts/krohnkite/metadata.json && echo "version=0.9.9.2"
 
     for c in start-krohnkite stop-krohnkite; do [ -x /usr/local/bin/$c ] && echo "cmd=$c"; done
     [ -f /etc/skel/Desktop/cb-krohnkite-start.desktop ] && echo "desktop-icon=yes"
@@ -100,9 +99,9 @@ OUT=$(in_image '
 for s in krohnkite krohnkite-default krohnkite-gaps; do
     has "$OUT" "$s=ok" && check "true" "$s--setup.sh succeeds" || check "false" "$s--setup.sh succeeds" "$OUT"
 done
-has "$OUT" "kpackage=listed" && has "$OUT" "kpackage-path=system" && has "$OUT" "version=0.9.9.2" \
-    && check "true" "Plasma's package loader finds Krohnkite 0.9.9.2 as a KWin script" \
-    || check "false" "Plasma's package loader finds Krohnkite 0.9.9.2 as a KWin script" "$OUT"
+has "$OUT" "kpackage=listed" && has "$OUT" "kpackage-path=system" \
+    && check "true" "Plasma's package loader finds Krohnkite as a KWin script" \
+    || check "false" "Plasma's package loader finds Krohnkite as a KWin script" "$OUT"
 has "$OUT" "cmd=start-krohnkite" && has "$OUT" "cmd=stop-krohnkite" \
     && check "true" "start-krohnkite / stop-krohnkite installed" || check "false" "start-krohnkite / stop-krohnkite installed" "$OUT"
 has "$OUT" "desktop-icon=yes" && has "$OUT" "leave-entry=yes" \

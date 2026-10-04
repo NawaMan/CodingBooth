@@ -7,8 +7,8 @@ begin
 # Test 1: default select
 run booth config $prj --no-tui --select "anythingllm"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg ANYTHINGLLM_VERSION=' '1.17.0' \
-    "default version is 1.17.0"
+assert-line "$boothfile" 'arg ANYTHINGLLM_VERSION=' "$(template-default anythingllm ANYTHINGLLM_VERSION)" \
+    "default version is the catalog's"
 assert-line "$boothfile" 'arg ANYTHINGLLM_PORT=' '20200' \
     "default port is 20200"
 assert-line "$boothfile" 'copy --from=mintplexlabs/anythingllm:' '${ANYTHINGLLM_VERSION} /app /opt/anythingllm' \

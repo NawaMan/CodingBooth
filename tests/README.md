@@ -132,6 +132,25 @@ VALUE=$(curl -s ... | grep -o '...' || true)
 6. **Run it more than once** before believing it. Anything involving ports, container startup, or
    polling is a race until it has survived a few runs.
 
+## Versions are catalog data, not test data
+
+A test checks a version only when **pinning is the behaviour under test** — a `--select x:<ver>`
+or `setup x <ver>` that must come out as asked, an `install` pin, the wrapper's version switch.
+Everywhere else a version is data the next catalog bump changes, and a test that spells it out
+breaks on the bump without having tested anything:
+
+- **A default:** compare against the catalog, never a copied literal —
+  `assert-line "$boothfile" "arg X_VERSION=" "$(template-default x X_VERSION)" …`
+  (`tests/config/test-helpers--source.sh`).
+- **"It is installed":** check that it runs (`clang version [0-9]+`, `Python 3\.`), not which
+  release it is. A path with a version in it (`/opt/venvs/py3.14/`) is normalised before compare.
+- **A fixture:** `setup x`, not `setup x 1.2.3`, so the test exercises what users get by default.
+  A pin that has to stay — the test is about pinning, or the tool needs a particular version —
+  carries a one-line Boothfile comment saying which. A pin test picks a version that is *not* the
+  default, so it proves the pin was honoured.
+
+A version bump is then the template plus the setup script, and nothing under `tests/`.
+
 ## Gating an expensive test
 
 A test too slow to run every time is gated **opt-out, not opt-in**: it runs wherever the environment

@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Test: Boothfile Clang Installation
 #
-# Verifies that a Boothfile with `setup clang --version 18` correctly installs
+# Verifies that a Boothfile with `setup clang` correctly installs
 # the LLVM/Clang toolchain (clang, clang++, clangd, clang-format, clang-tidy)
 # and registers it as the default C/C++ compiler.
 # -----------------------------------------------------------------------------
@@ -30,10 +30,10 @@ FAILED=0
 # Test 1: clang is installed
 ACTUAL=$(run_coding_booth --silence-build -- clang --version 2>/dev/null) || ACTUAL=""
 ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
-if echo "$ACTUAL" | grep -qE "clang version 18"; then
-    print_test_result "true" "$0" "1" "Clang 18 is installed"
+if echo "$ACTUAL" | grep -qE "clang version [0-9]+"; then
+    print_test_result "true" "$0" "1" "Clang is installed"
 else
-    print_test_result "false" "$0" "1" "Clang 18 should be installed"
+    print_test_result "false" "$0" "1" "Clang should be installed"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
@@ -41,10 +41,10 @@ fi
 # Test 2: clang++ is installed
 ACTUAL=$(run_coding_booth --silence-build -- clang++ --version 2>/dev/null) || ACTUAL=""
 ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
-if echo "$ACTUAL" | grep -qE "clang version 18"; then
-    print_test_result "true" "$0" "2" "Clang++ 18 is installed"
+if echo "$ACTUAL" | grep -qE "clang version [0-9]+"; then
+    print_test_result "true" "$0" "2" "Clang++ is installed"
 else
-    print_test_result "false" "$0" "2" "Clang++ 18 should be installed"
+    print_test_result "false" "$0" "2" "Clang++ should be installed"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi

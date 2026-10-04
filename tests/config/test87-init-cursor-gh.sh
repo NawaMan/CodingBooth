@@ -59,7 +59,7 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "gh"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg GH_VERSION=' 'latest'                      "gh default version is latest"
+assert-line "$boothfile" 'arg GH_VERSION=' "$(template-default gh GH_VERSION)"                      "gh default version is the catalog's"
 assert-line "$boothfile" 'setup gh ' '--version ${GH_VERSION}'           "Boothfile uses gh param reference"
 
 run rm -Rf $prj

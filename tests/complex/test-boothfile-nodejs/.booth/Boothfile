@@ -1,4 +1,6 @@
 # syntax=codingbooth/boothfile:1
 
 # Test: Node.js installation via Boothfile
-setup nodejs 20
+# Pinned on purpose: this test checks that `setup nodejs <ver>` installs the
+# requested version. 22 is a supported LTS that is not the catalog default.
+setup nodejs 22

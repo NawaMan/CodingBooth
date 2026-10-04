@@ -39,7 +39,7 @@ BOOTH_PATH="$(find_local_booth_build "$SCRIPT_DIR")" || {
 DOCKERFILE=$("$BOOTH_PATH" emit-dockerfile --code "$SCRIPT_DIR" 2>&1) || true
 
 # Test 1: the setup compiles.
-if echo "$DOCKERFILE" | grep -qE "RUN jdk--setup\.sh 17 temurin"; then
+if echo "$DOCKERFILE" | grep -qE "RUN jdk--setup\.sh"; then
     print_test_result "true" "$0" "1" "setup jdk compiles to RUN jdk--setup.sh"
 else
     print_test_result "false" "$0" "1" "setup jdk should compile to RUN jdk--setup.sh"

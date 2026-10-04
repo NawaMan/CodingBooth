@@ -2,7 +2,7 @@
 
 # Test: Mojo Jupyter kernel (%%mojo magic on a Mojo-named Python kernel).
 
-setup python 3.13.12
+setup python
 setup notebook
-setup mojo --version 1.0.0
+setup mojo
 setup mojo-nb-kernel

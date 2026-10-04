@@ -9,8 +9,8 @@ begin
 run booth config $prj --no-tui --select "appwrite-cli"
 boothfile="$prj/.booth/Boothfile"
 config="$prj/.booth/config.toml"
-assert-line "$boothfile" "arg APPWRITE_CLI_VERSION=" 'latest' \
-    "default APPWRITE_CLI_VERSION is latest"
+assert-line "$boothfile" "arg APPWRITE_CLI_VERSION=" "$(template-default appwrite-cli APPWRITE_CLI_VERSION)" \
+    "default APPWRITE_CLI_VERSION is the catalog's"
 assert-line "$boothfile" "setup appwrite-cli --version " '${APPWRITE_CLI_VERSION}' \
     "Boothfile uses APPWRITE_CLI_VERSION"
 assert-line "$config" '    "-v", ' '"~/.appwrite:/etc/cb-home-seed/.appwrite:ro",' \
@@ -32,8 +32,8 @@ boothfile="$prj/.booth/Boothfile"
 config="$prj/.booth/config.toml"
 assert-line "$boothfile" "setup appwrite-cli --version " '${APPWRITE_CLI_VERSION}' \
     "server auto-selects appwrite-cli"
-assert-line "$boothfile" "arg APPWRITE_VERSION=" '1.9.6' \
-    "default APPWRITE_VERSION is 1.9.6"
+assert-line "$boothfile" "arg APPWRITE_VERSION=" "$(template-default appwrite-server APPWRITE_VERSION)" \
+    "default APPWRITE_VERSION is the catalog's"
 assert-line "$boothfile" "arg APPWRITE_PORT=" '8080' \
     "default APPWRITE_PORT is 8080"
 assert-line "$boothfile" "arg APPWRITE_HTTPS_PORT=" '8443' \

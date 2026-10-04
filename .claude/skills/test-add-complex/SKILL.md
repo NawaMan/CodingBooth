@@ -96,3 +96,7 @@ command, exit code, stderr — to `tests/logs/complex-booth-calls.log`. Start th
 `tests/README.md` carries the rules every suite shares — **how to pick a port**, the two
 `set -euo pipefail` traps that silently skip a case, cleanup traps, and why you must not edit a test
 while a suite is running. Read it before writing.
+
+**Versions:** check one only when pinning is the behaviour under test. A default is compared
+against the catalog, "installed" means it runs, and a fixture uses `setup x`, not `setup x 1.2.3` —
+`tests/README.md` → *Versions are catalog data, not test data*.
