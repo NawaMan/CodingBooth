@@ -106,6 +106,9 @@ apt_get_update() {
     return "$rc"
 }
 
-cb_retry apt_get_update "${SNAPSHOT_ARGS[@]}"
-cb_retry apt-get install -y --no-install-recommends "${SNAPSHOT_ARGS[@]}" "$@"
+# SNAPSHOT_ARGS is empty where the pin does not apply (arm64), and bash 3.2 — what
+# macOS ships, and what the host-side tests run this with — calls an empty
+# "${arr[@]}" unbound under `set -u`; this form expands to nothing instead.
+cb_retry apt_get_update ${SNAPSHOT_ARGS[@]+"${SNAPSHOT_ARGS[@]}"}
+cb_retry apt-get install -y --no-install-recommends ${SNAPSHOT_ARGS[@]+"${SNAPSHOT_ARGS[@]}"} "$@"
 rm -rf /var/lib/apt/lists/*

@@ -430,7 +430,7 @@ exec "$CODE_SERVER_BIN" \
     --extensions-dir "$CODESERVER_EXTENSION_DIR" \
     --bind-addr      "0.0.0.0:$PORT"             \
     --auth           "$AUTH"                     \
-    "${DATA_DIR_ARGS[@]}"                        \
+    ${DATA_DIR_ARGS[@]+"${DATA_DIR_ARGS[@]}"}    \
     "$CSHOME/code"
 
 LAUNCH

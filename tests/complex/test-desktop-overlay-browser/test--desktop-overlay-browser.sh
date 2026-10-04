@@ -61,8 +61,10 @@ if [[ "$READY" != true ]]; then
 fi
 print_test_result "true" "$0" "$NUM" "daemon XFCE booth is up with its wrapper page"
 
-# Google publishes no linux/arm64 Chrome, and the variant installs no other.
-if ! docker exec "$NAME" bash -c 'command -v google-chrome' >/dev/null 2>&1; then
+# Google publishes no linux/arm64 Chrome, and the variant installs no other. There
+# `google-chrome` is a placeholder script that points at chromium/firefox and
+# exits 0, so ask it for its version: only the real browser says "Google Chrome".
+if ! docker exec "$NAME" bash -c 'google-chrome --version 2>/dev/null' | grep -q "Google Chrome"; then
   echo "SKIP: no google-chrome in the desktop-xfce image on this architecture ($(uname -m))"
   exit 0
 fi

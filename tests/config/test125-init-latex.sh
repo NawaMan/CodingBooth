@@ -33,7 +33,7 @@ mkdir -p $prj
 run booth config $prj --no-tui --select "latex+texstudio"
 boothfile="$prj/.booth/Boothfile"
 assert-line "$boothfile" 'setup texstudio' ''                           "latex+texstudio emits setup texstudio"
-grep -E '^setup (latex|texstudio)( |$)' "$boothfile" | awk '{print $2}' | paste -sd' ' > "$tmpfile"
+grep -E '^setup (latex|texstudio)( |$)' "$boothfile" | awk '{print $2}' | paste -sd' ' - > "$tmpfile"
 assert-line "$tmpfile" '' 'latex texstudio'                             "texstudio is set up after the TeX install"
 
 finally
