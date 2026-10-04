@@ -1,6 +1,4 @@
 # syntax=codingbooth/boothfile:1
 
 # Test: Julia installation via Boothfile
-# 1.11.3's libopenlibm.so ships an executable-stack requirement (GNU_STACK=RWE)
-# this base's glibc/kernel refuses to load; 1.13.1 (current default) is fine.
-setup julia 1.13.1
+setup julia

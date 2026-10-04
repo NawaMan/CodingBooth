@@ -83,3 +83,7 @@ your test alone first; the full suite is long.
 
 `tests/README.md` carries the rules every suite shares — port picking, the two `set -euo pipefail`
 traps that silently skip a case, cleanup, and why you must not edit a test while a suite is running.
+
+**Versions:** check one only when pinning is the behaviour under test. A default is compared
+against the catalog, "installed" means it runs, and a fixture uses `setup x`, not `setup x 1.2.3` —
+`tests/README.md` → *Versions are catalog data, not test data*.

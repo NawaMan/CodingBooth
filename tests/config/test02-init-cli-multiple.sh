@@ -7,10 +7,10 @@ run booth config $prj --no-tui --select "java/go/python"
 booth-collect "
 echo -n '1: ' ; which java    || echo 'not found' ;
 echo -n '2: ' ; which go      || echo 'not found' ;
-echo -n '3: ' ; which python3 || echo 'not found' ;
+echo -n '3: ' ; { which python3 || echo 'not found'; } | sed -E 's|/py3\.[0-9]+/|/py3.X/|' ;
 "
 
 assert-line "$tmpfile" "1: " "/usr/bin/java"                    "Java is installed"
 assert-line "$tmpfile" "2: " "/usr/local/go-current/bin/go"     "Go is installed"
-assert-line "$tmpfile" "3: " "/opt/venvs/py3.14/bin/python3"    "Python is installed"
+assert-line "$tmpfile" "3: " "/opt/venvs/py3.X/bin/python3"    "Python is installed"
 finally

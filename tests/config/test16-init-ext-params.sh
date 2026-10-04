@@ -27,6 +27,6 @@ run booth config $prj --no-tui --select "java+maven"
 
 boothfile="$prj/.booth/Boothfile"
 
-assert-line "$boothfile" "arg MAVEN_VERSION=" "3.9.12"            "MAVEN_VERSION uses default 3.9.12"
+assert-line "$boothfile" "arg MAVEN_VERSION=" "$(template-default java+maven MAVEN_VERSION)"            "MAVEN_VERSION uses the catalog default"
 
 finally

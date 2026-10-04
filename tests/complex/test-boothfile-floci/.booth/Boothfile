@@ -4,4 +4,4 @@
 # `floci start` needs Docker; this test only proves the CLI landed. The
 # functional "create a bucket" path is examples/workspaces/floci-example.
 
-setup floci --version 0.2.1
+setup floci

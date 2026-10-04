@@ -21,7 +21,7 @@ Examples:
 
 Notes:
 - Requires python--setup.sh first (the python template; auto-pulled by requires).
-- Mojo needs Python 3.10–3.14. The booth Python default (3.13) is in range.
+- Mojo needs Python 3.10–3.14. The booth Python default is in range.
 - Installs g++ (Mojo's Linux requirement) and pip-installs into /opt/python.
 - Exposes 'mojo' via /usr/local/bin so a non-login shell (booth -- cmd) finds it.
 USAGE

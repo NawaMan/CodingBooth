@@ -94,3 +94,7 @@ Fast enough that there is no excuse for not running the whole suite.
 traps that silently skip a case (a failing `$( )` assignment is easy to hit here, since `grep` exits
 1 when it matches nothing), cleanup traps, and why you must not edit a test while a suite is
 running.
+
+**Versions:** check one only when pinning is the behaviour under test. A default is compared
+against the catalog, "installed" means it runs, and a fixture uses `setup x`, not `setup x 1.2.3` —
+`tests/README.md` → *Versions are catalog data, not test data*.

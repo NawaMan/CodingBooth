@@ -8,7 +8,7 @@ begin
 run booth config $prj --no-tui --select "floci"
 boothfile="$prj/.booth/Boothfile"
 config="$prj/.booth/config.toml"
-assert-line "$boothfile" "arg FLOCI_VERSION=" 'latest'              "default FLOCI_VERSION is latest"
+assert-line "$boothfile" "arg FLOCI_VERSION=" "$(template-default floci FLOCI_VERSION)"              "default FLOCI_VERSION is the catalog's"
 assert-line "$boothfile" "arg FLOCI_PORT=" '4566'                    "default FLOCI_PORT is 4566"
 assert-line "$boothfile" "setup floci --version " '${FLOCI_VERSION}' "Boothfile uses FLOCI_VERSION"
 

@@ -22,5 +22,5 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "playwright"
 
-assert-line "$boothfile" "arg PLAYWRIGHT_VERSION=" "latest"  "PLAYWRIGHT_VERSION defaults to latest"
+assert-line "$boothfile" "arg PLAYWRIGHT_VERSION=" "$(template-default playwright PLAYWRIGHT_VERSION)"  "PLAYWRIGHT_VERSION defaults to the catalog's"
 finally

@@ -6,7 +6,7 @@
 # -----------------------------------------------------------------------------
 # Test: Boothfile GCC Installation
 #
-# Verifies that a Boothfile with `setup gcc --version 13` correctly installs
+# Verifies that a Boothfile with `setup gcc` correctly installs
 # the GNU Compiler Collection (gcc + g++) at the requested version.
 # -----------------------------------------------------------------------------
 
@@ -24,10 +24,10 @@ FAILED=0
 # Test 1: gcc is installed at the requested version
 ACTUAL=$(run_coding_booth --silence-build -- gcc --version 2>/dev/null) || ACTUAL=""
 ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
-if echo "$ACTUAL" | grep -qE "gcc.* 13\."; then
-    print_test_result "true" "$0" "1" "GCC 13 is installed"
+if echo "$ACTUAL" | grep -qE "gcc.* [0-9]+\."; then
+    print_test_result "true" "$0" "1" "GCC is installed"
 else
-    print_test_result "false" "$0" "1" "GCC 13 should be installed"
+    print_test_result "false" "$0" "1" "GCC should be installed"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi
@@ -35,10 +35,10 @@ fi
 # Test 2: g++ is installed at the requested version
 ACTUAL=$(run_coding_booth --silence-build -- g++ --version 2>/dev/null) || ACTUAL=""
 ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
-if echo "$ACTUAL" | grep -qE "g\+\+.* 13\."; then
-    print_test_result "true" "$0" "2" "G++ 13 is installed"
+if echo "$ACTUAL" | grep -qE "g\+\+.* [0-9]+\."; then
+    print_test_result "true" "$0" "2" "G++ is installed"
 else
-    print_test_result "false" "$0" "2" "G++ 13 should be installed"
+    print_test_result "false" "$0" "2" "G++ should be installed"
     echo "  Actual output: $ACTUAL"
     FAILED=$((FAILED + 1))
 fi

@@ -6,7 +6,7 @@ begin
 # Test 1: Herdr with default params
 run booth config $prj --no-tui --select "herdr"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg HERDR_VERSION=' 'latest'  "default version is latest"
+assert-line "$boothfile" 'arg HERDR_VERSION=' "$(template-default herdr HERDR_VERSION)"  "default version is the catalog's"
 assert-line "$boothfile" 'setup herdr ' '--version ${HERDR_VERSION}'  "Boothfile uses param reference"
 
 # Test 2: Herdr with pinned version
