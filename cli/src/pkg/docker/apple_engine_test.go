@@ -379,3 +379,69 @@ func TestDocker_DryrunPrintsTranslatedAppleCommand(t *testing.T) {
 		t.Errorf("dropped flags leaked into dryrun output %q", output)
 	}
 }
+
+// fakeContainerScript puts a `container` whose body is the given shell script
+// alone on PATH.
+func fakeContainerScript(t *testing.T, body string) {
+	t.Helper()
+	dir := t.TempDir()
+	if err := os.WriteFile(filepath.Join(dir, "container"), []byte("#!/bin/sh\n"+body), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	t.Setenv("PATH", dir)
+}
+
+func TestAppleNetworkGateway(t *testing.T) {
+	tests := []struct {
+		name   string
+		script string
+		want   string
+	}{
+		// The shape `container network inspect` prints (pretty JSON, an array).
+		// Shell built-ins only: PATH holds nothing but the fake.
+		{"reads the gateway", `[ "$1 $2 $3" = "network inspect default" ] || exit 1
+printf '%s\n' '[ { "id" : "default", "status" : { "ipv4Gateway" : "192.168.70.1", "ipv4Subnet" : "192.168.70.0/24" } } ]'
+`, "192.168.70.1"},
+		{"failing command falls back", "exit 1\n", AppleDefaultGateway},
+		{"invalid JSON falls back", "echo not-json\n", AppleDefaultGateway},
+		{"empty list falls back", "echo '[]'\n", AppleDefaultGateway},
+		{"no gateway falls back", `echo '[{"status":{}}]'` + "\n", AppleDefaultGateway},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fakeContainerScript(t, tt.script)
+			if got := AppleNetworkGateway("default", false); got != tt.want {
+				t.Errorf("AppleNetworkGateway = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestAppleNetworkGatewayDryrunRunsNothing(t *testing.T) {
+	// A command that would answer differently proves dryrun never asks it.
+	fakeContainerScript(t, `echo '[{"status":{"ipv4Gateway":"10.9.9.9"}}]'`+"\n")
+	if got := AppleNetworkGateway("default", true); got != AppleDefaultGateway {
+		t.Errorf("dryrun gateway = %q, want the default %q", got, AppleDefaultGateway)
+	}
+}
+
+func TestAppleServiceRunning(t *testing.T) {
+	tests := []struct {
+		name   string
+		script string
+		want   bool
+	}{
+		{"running", `echo '{"status":"running","server":{"version":"1.5.0"}}'` + "\n", true},
+		{"stopped status", `echo '{"status":"stopped"}'` + "\n", false},
+		{"command fails", "exit 1\n", false},
+		{"not JSON", "echo running\n", false},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			fakeContainerScript(t, tt.script)
+			if got := AppleServiceRunning(); got != tt.want {
+				t.Errorf("AppleServiceRunning = %t, want %t", got, tt.want)
+			}
+		})
+	}
+}
