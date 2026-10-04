@@ -6,6 +6,7 @@
 set -euo pipefail
 
 source ../common--source.sh
+sidecars_supported "--dind (dind = true in its config)" || exit 0
 
 HOST_UID="XXXXX"
 HOST_GID="XXXXX"

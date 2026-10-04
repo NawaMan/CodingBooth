@@ -483,8 +483,19 @@ run_examples() {
             # only. Declaring it here, not in the example's own wrapper, keeps
             # the 70 byte-identical run-automatic-on-host-test.sh copies alike.
             requires_arch="$example_dir/.cb-tests/requires-arch.txt"
+            # --dind and --egress are not supported on Apple container yet
+            # (docs/CONTAINER_SUPPORT.md). This runner pins CB_ENGINE=docker,
+            # so this only applies to a run made on purpose with
+            # CB_ENGINE=apple: an example whose config turns either on is
+            # skipped there rather than failed. Read from the config itself so
+            # a new example needs no marker.
+            needs_sidecar=$(grep -oE '^[[:space:]]*(dind|egress)[[:space:]]*=[[:space:]]*true' "$example_dir/.booth/config.toml" 2>/dev/null | head -1 | tr -d ' ' | cut -d= -f1)
+            engine_lc=$(printf '%s' "${CB_ENGINE:-docker}" | tr '[:upper:]' '[:lower:]')
             set +e
-            if [ -f "$requires_arch" ] && ! grep -qx "$(uname -m)" "$requires_arch"; then
+            if [ -n "$needs_sidecar" ] && [ "$engine_lc" = "apple" ]; then
+                echo "SKIP: needs --${needs_sidecar}, which engine apple (Apple container) does not support yet."
+                test_exit_code=77
+            elif [ -f "$requires_arch" ] && ! grep -qx "$(uname -m)" "$requires_arch"; then
                 echo "SKIP: runs on $(tr '\n' ' ' < "$requires_arch")only; this host is $(uname -m)."
                 test_exit_code=77
             else
