@@ -209,9 +209,9 @@ Edit the repo copy, re-copy, re-run. **Keep the two byte-identical** — the cop
 actually ran, so a drift means you verified something you are not shipping. Re-copy after every
 edit; a `diff` at the end is cheap insurance.
 
-This copy is for a scratch workspace only. **Never commit one** into `tests/` or `examples/`: there
-it outlives the change, silently shadows the image's script, and drifts. Tests run on the locally
-rebuilt base image instead (§5).
+The same copy can sit in a test fixture while you develop (§5), but **it never lands**: once merged
+it outlives the change, silently shadows the image's script, and drifts. Delete it before the
+branch is merged and re-run the test on a rebuilt base.
 
 ### A changed template or extension — point at the repo tree, no Docker at all
 
@@ -369,12 +369,14 @@ Auto-discovered by directory name:
 test--boothfile-<name>.sh             sources ../../common--source.sh
 ```
 
-**No copy of the script under `.booth/setups/`.** The suite runs on the *locally built* base
-image — `run-automate-tests.sh` rebuilds every variant from the tree first (`ensure_fresh_image`),
-and that build already has your script — so the test exercises exactly what ships. A copy shadows
-the image's script via `PATH`, and once committed it drifts: 21 of them had, and one hid a setup
-that could not start on Ubuntu 26.04. Running a single test by hand? Rebuild base first
-(`./build/docker-build.sh base`). `.booth/setups/` in a fixture is only for a script the test
+**A copy of the script under `.booth/setups/` is fine while you develop — and must be gone
+before the branch lands.** While iterating, the copy (§3) lets the test run your script without
+rebuilding base each time; it shadows the image's script via `PATH`. Once merged it would keep
+shadowing it and drift — 21 of them had, and one hid a setup that could not start on Ubuntu 26.04.
+So before landing: delete the copy, rebuild base (`./build/docker-build.sh base`), and re-run the
+test against the image's own script. `work-finish` checks for leftovers (gap 3). The full suite
+needs no copy anyway: `run-automate-tests.sh` rebuilds every variant from the tree first
+(`ensure_fresh_image`). The only `.booth/setups/` that stays in a fixture is a script the test
 itself adds (`test-boothfile-custom-setup`, `test-project-local`).
 
 Use `setup <name>` with no version unless the test is about pinning — see `tests/README.md` →
