@@ -28,11 +28,11 @@ USAGE
 [[ $EUID -eq 0 ]] || { echo "Run as root (use sudo)"; exit 1; }
 
 # ---- defaults / args ----
-PY_VERSION="${1:-3.12}"
+PY_VERSION="${1:-3.13}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
-    --python-version) shift; PY_VERSION="${1:-3.12}"; shift ;;
+    --python-version) shift; PY_VERSION="${1:-3.13}"; shift ;;
     -h|--help) usage; exit 0 ;;
     *) shift ;;  # positional arg for python version
   esac

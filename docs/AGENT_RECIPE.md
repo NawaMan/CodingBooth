@@ -176,7 +176,7 @@ Current built-in templates and their parameters:
 | Template | Parameters | Extensions |
 |----------|-----------|------------|
 | `go` | `GO_VERSION` (default: 1.26.8) | `vscode-ext` (auto), `linter` |
-| `python` | `PYTHON_VERSION` (default: 3.13.15) | `vscode-ext` (auto), `uv`, `conda` |
+| `python` | `PYTHON_VERSION` (default: 3.14.8) | `vscode-ext` (auto), `uv`, `conda` |
 | `java` | `JDK_VERSION` (default: 25), `JDK_VENDOR` (default: temurin) | `vscode-ext` (auto), `maven`, `gradle`, `jenv` |
 
 ### Tools

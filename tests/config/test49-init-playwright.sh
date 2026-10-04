@@ -35,7 +35,8 @@ run rm -Rf $prj
 mkdir -p $prj
 run booth config $prj --no-tui --select "nodejs/python/playwright+python"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'run pip install ' 'playwright'  "python extension installs playwright pip"
+assert-line "$boothfile" 'run if ' '[ "${PLAYWRIGHT_VERSION}" = "latest" ]; then pip install playwright; else pip install "playwright==${PLAYWRIGHT_VERSION}"; fi' \
+    "python extension installs playwright pip, pinned to PLAYWRIGHT_VERSION"
 
 # Test 6: Playwright+dotnet extension requires dotnet
 run rm -Rf $prj

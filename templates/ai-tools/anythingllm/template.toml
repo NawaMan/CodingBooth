@@ -15,9 +15,9 @@ anythingllm:1.16.1 or anythingllm:latest. Pair with ollama+autostart and \
 point the UI at http://127.0.0.1:11434 — native in the booth, so no \
 host.docker.internal dance. First build copies a large image.
 
-Booth config params: ANYTHINGLLM_VERSION (image tag, default 1.16.2), \
+Booth config params: ANYTHINGLLM_VERSION (image tag, default 1.17.0), \
 ANYTHINGLLM_PORT (listen, default 20200), ANYTHINGLLM_HOST_PORT (+expose, \
-defaults to the listen port). Pin as anythingllm:1.16.2,13001 or \
+defaults to the listen port). Pin as anythingllm:1.17.0,13001 or \
 anythingllm+expose:19000.
 
 AnythingLLM env (UI Settings, or .env): AUTH_TOKEN is the single-user \
@@ -43,8 +43,9 @@ tags = [
 ]
 
 [params.ANYTHINGLLM_VERSION]
-default = "1.16.2"
+default = "1.17.0"
 suggests = [
+    "1.17.0",
     "1.16.2",
     "1.16.1",
     "latest",

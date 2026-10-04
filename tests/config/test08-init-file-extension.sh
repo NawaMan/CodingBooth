@@ -25,6 +25,6 @@ assert-line "$tmpfile" "1: " "/usr/bin/java"                    "Java is install
 assert-line "$tmpfile" "2: " "/opt/maven-stable/bin/mvn"        "Maven extension is installed"
 assert-line "$tmpfile" "3: " "/usr/local/go-current/bin/go"     "Go is installed"
 assert-line "$tmpfile" "4: " "/home/coder/go/bin/golangci-lint" "Go linter extension is installed"
-assert-line "$tmpfile" "5: " "/opt/venvs/py3.13/bin/python3"    "Python is installed"
+assert-line "$tmpfile" "5: " "/opt/venvs/py3.14/bin/python3"    "Python is installed"
 assert-line "$tmpfile" "6: " "/usr/local/uv/uv"                 "uv extension is installed"
 finally

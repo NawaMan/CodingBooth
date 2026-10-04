@@ -10,7 +10,7 @@ tags = [
 ]
 
 [params.PYTHON_VERSION]
-default = "3.12"
+default = "3.13"
 suggests = [
     "3.13",
     "3.12",
