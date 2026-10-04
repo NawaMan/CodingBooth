@@ -50,6 +50,10 @@ type managedContainer struct {
 	KeepAlive bool
 	Daemon    bool
 	Port      string
+
+	// AppleLowPorts: created with --apple-low-ports (cb.apple-low-ports), so
+	// shell/exec sessions start through booth--as-coder; see coderCommand.
+	AppleLowPorts bool
 }
 
 type inspectData struct {
@@ -582,6 +586,8 @@ func inspectManagedContainer(name string, flags docker.DockerFlags) (managedCont
 		KeepAlive: strings.EqualFold(labels["cb.keep-alive"], "true"),
 		Daemon:    strings.EqualFold(labels["cb.daemon"], "true"),
 		Port:      port,
+
+		AppleLowPorts: strings.EqualFold(labels["cb.apple-low-ports"], "true"),
 	}, nil
 }
 

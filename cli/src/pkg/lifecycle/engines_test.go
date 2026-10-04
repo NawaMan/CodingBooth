@@ -19,6 +19,8 @@ import (
 type fakeEngine struct {
 	booths []string
 	fail   bool
+	// lowPorts (container only): every booth carries cb.apple-low-ports=true.
+	lowPorts bool
 }
 
 // installFakeEngines puts a script per engine on an otherwise empty PATH and
@@ -33,16 +35,20 @@ func installFakeEngines(t *testing.T, engines map[string]fakeEngine) string {
 			script = "#!/bin/sh\necho \"" + name + " $*\" >> '" + log + "'\nexit 1\n"
 		} else if name == "container" {
 			// Apple container answers in JSON; the adapter filters and reshapes it.
+			labels := `"cb.managed":"true","cb.variant":"base"`
+			if engine.lowPorts {
+				labels += `,"cb.apple-low-ports":"true"`
+			}
 			var docs []string
 			for _, booth := range engine.booths {
-				docs = append(docs, `{"id":"`+booth+`","configuration":{"labels":{"cb.managed":"true","cb.variant":"base"}},"status":{"state":"running"}}`)
+				docs = append(docs, `{"id":"`+booth+`","configuration":{"labels":{`+labels+`}},"status":{"state":"running"}}`)
 			}
 			script = "#!/bin/sh\n" +
 				"echo \"" + name + " $*\" >> '" + log + "'\n" +
 				"case \"$1\" in\n" +
 				"ls) echo '[" + strings.Join(docs, ",") + "]' ;;\n" +
 				"inspect) for last; do :; done\n" +
-				"  printf '[{\"id\":\"%s\",\"configuration\":{\"labels\":{\"cb.managed\":\"true\",\"cb.variant\":\"base\"}},\"status\":{\"state\":\"running\"}}]\\n' \"$last\" ;;\n" +
+				"  printf '[{\"id\":\"%s\",\"configuration\":{\"labels\":{" + strings.ReplaceAll(labels, `"`, `\"`) + "}},\"status\":{\"state\":\"running\"}}]\\n' \"$last\" ;;\n" +
 				"esac\n"
 		} else {
 			script = "#!/bin/sh\n" +
@@ -461,5 +467,40 @@ func TestExecRefusesANameOnSeveralEngines(t *testing.T) {
 	}
 	if calls := readLog(t, log); strings.Contains(calls, " exec ") {
 		t.Errorf("nothing may run when the target is ambiguous:\n%s", calls)
+	}
+}
+
+func TestExecInALowPortsBoothStartsThroughTheHelper(t *testing.T) {
+	log := installFakeEngines(t, map[string]fakeEngine{
+		"container": {booths: []string{"mac"}, lowPorts: true},
+	})
+	t.Setenv("CB_ENGINE", "apple")
+
+	var stderr bytes.Buffer
+	if err := Exec([]string{"mac", "--", "id"}, &stderr); err != nil {
+		t.Fatalf("Exec: %v (stderr %q)", err, stderr.String())
+	}
+	calls := readLog(t, log)
+	if !strings.Contains(calls, "container exec -u root") {
+		t.Errorf("a --apple-low-ports booth's session must start as root:\n%s", calls)
+	}
+	if !strings.Contains(calls, "booth--as-coder") || !strings.HasSuffix(strings.TrimSpace(calls), " id") {
+		t.Errorf("the session must go through booth--as-coder and end with the command:\n%s", calls)
+	}
+}
+
+func TestExecInAPlainBoothStaysCoder(t *testing.T) {
+	log := installFakeEngines(t, map[string]fakeEngine{
+		"container": {booths: []string{"mac"}},
+	})
+	t.Setenv("CB_ENGINE", "apple")
+
+	var stderr bytes.Buffer
+	if err := Exec([]string{"mac", "--", "id"}, &stderr); err != nil {
+		t.Fatalf("Exec: %v (stderr %q)", err, stderr.String())
+	}
+	calls := readLog(t, log)
+	if !strings.Contains(calls, "container exec -u coder") || strings.Contains(calls, "booth--as-coder") {
+		t.Errorf("a booth without the flag must exec as coder directly:\n%s", calls)
 	}
 }

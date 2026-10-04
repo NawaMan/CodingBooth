@@ -143,6 +143,7 @@ func (ctx AppContext) KeepTmpOnStart() bool  { return ctx.values.Config.KeepTmpO
 func (ctx AppContext) LogTime() bool         { return ctx.values.Config.LogTime }
 func (ctx AppContext) PersistHome() bool     { return ctx.values.Config.PersistHome }
 func (ctx AppContext) HideWelcome() bool     { return ctx.values.Config.HideWelcome }
+func (ctx AppContext) AppleLowPorts() bool   { return ctx.values.Config.AppleLowPorts }
 func (ctx AppContext) IdleTime() int         { return ctx.values.Config.IdleTime }
 func (ctx AppContext) IdleShutdownTime() int { return ctx.values.Config.IdleShutdownTime }
 func (ctx AppContext) IdleExitCode() int     { return ctx.values.Config.IdleExitCode }
@@ -261,6 +262,7 @@ func (ctx AppContext) String() string {
 	fmt.Fprintf(&str, "    Daemon:           %t\n", ctx.Daemon())
 	fmt.Fprintf(&str, "    Browser:          %t\n", ctx.Browser())
 	fmt.Fprintf(&str, "    HideWelcome:      %t\n", ctx.HideWelcome())
+	fmt.Fprintf(&str, "    AppleLowPorts:    %t\n", ctx.AppleLowPorts())
 	fmt.Fprintf(&str, "    Pull:             %t\n", ctx.Pull())
 	fmt.Fprintf(&str, "    Dind:             %t\n", ctx.Dind())
 	fmt.Fprintf(&str, "    Rootless:         %t\n", ctx.Rootless())

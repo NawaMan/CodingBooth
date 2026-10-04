@@ -261,6 +261,9 @@ RUN cleanup-after--setup.sh
 
 # Entry that aligns coder's uid/gid to host, then drops privileges
 COPY --chmod=0755 booth-entry /usr/local/bin/booth-entry
+# Starts coder's processes for booth-entry (and the CLI's exec sessions in an
+# --apple-low-ports booth); see the script.
+COPY --chmod=0755 booth--as-coder /usr/local/bin/booth--as-coder
 # Main CodingBooth profile script with helper functions
 COPY --chmod=0644 99z-cb--profile.sh /etc/profile.d/99z-cb--profile.sh
 # Startup file: to be executed at first container start

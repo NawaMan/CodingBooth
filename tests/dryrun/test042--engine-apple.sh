@@ -113,3 +113,55 @@ if printf '%s\n' "$DOCKER_OUT" | grep -q "BOOTH_HOST_NAME=host.docker.internal" 
 else
   fail 11 "docker keeps BOOTH_HOST_NAME=host.docker.internal and no BOOTH_HOST_GATEWAY" "$DOCKER_OUT"
 fi
+
+# 12. --apple-low-ports: coder may open ports below 1024 on Apple container,
+# which (unlike Docker) does not allow them by default. booth-entry reads the
+# env var; shell/exec read the label.
+LOW=$(run_coding_booth --variant base --dryrun --engine apple --apple-low-ports 2>/dev/null || true)
+if printf '%s\n' "$LOW" | grep -q "BOOTH_LOW_PORTS=true" \
+  && printf '%s\n' "$LOW" | grep -q "cb.apple-low-ports=true" \
+  && ! printf '%s\n' "$LOW" | grep -q -- "--cap-add"; then
+  pass 12 "--apple-low-ports passes BOOTH_LOW_PORTS and the label, and adds no --cap-add"
+else
+  fail 12 "--apple-low-ports passes BOOTH_LOW_PORTS and the label, and adds no --cap-add" "$LOW"
+fi
+
+# 12b-c. the same from the environment and from config.toml
+ENVLOW=$(CB_APPLE_LOW_PORTS=true run_coding_booth --variant base --dryrun --engine apple 2>/dev/null || true)
+if printf '%s\n' "$ENVLOW" | grep -q "BOOTH_LOW_PORTS=true"; then
+  pass 12b "CB_APPLE_LOW_PORTS=true turns it on"
+else
+  fail 12b "CB_APPLE_LOW_PORTS=true turns it on" "$ENVLOW"
+fi
+printf 'apple-low-ports = true\n' > "$CONFIG"
+CFGLOW=$(run_coding_booth --config "$CONFIG" --variant base --dryrun --engine apple 2>/dev/null || true)
+if printf '%s\n' "$CFGLOW" | grep -q "BOOTH_LOW_PORTS=true"; then
+  pass 12c "apple-low-ports = true in config.toml turns it on"
+else
+  fail 12c "apple-low-ports = true in config.toml turns it on" "$CFGLOW"
+fi
+
+# 13. without the flag, nothing of it
+if printf '%s\n' "$OUT" | grep -q "BOOTH_LOW_PORTS\|cb.apple-low-ports"; then
+  fail 13 "without --apple-low-ports there is no BOOTH_LOW_PORTS or label" "$OUT"
+else
+  pass 13 "without --apple-low-ports there is no BOOTH_LOW_PORTS or label"
+fi
+
+# 14. on docker the flag is ignored, and says so
+DLOW=$(run_coding_booth --variant base --dryrun --engine docker --apple-low-ports 2>&1 || true)
+if printf '%s\n' "$DLOW" | grep -q "apple-low-ports only applies to engine apple" \
+  && ! printf '%s\n' "$DLOW" | grep -q "BOOTH_LOW_PORTS"; then
+  pass 14 "--apple-low-ports on docker is ignored with a note"
+else
+  fail 14 "--apple-low-ports on docker is ignored with a note" "$DLOW"
+fi
+
+# 15. --public on apple without the flag warns that its proxy needs :80
+# (the password prompt reads stdin, so give it one, as test040 does)
+PUB=$(echo testpw | run_coding_booth --variant base --dryrun --engine apple --public --ok-public 2>&1 || true)
+if printf '%s\n' "$PUB" | grep -q "Add --apple-low-ports"; then
+  pass 15 "--public on apple without --apple-low-ports warns"
+else
+  fail 15 "--public on apple without --apple-low-ports warns" "$PUB"
+fi

@@ -7,6 +7,7 @@ package lifecycle
 import (
 	"io"
 	"os"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -625,21 +626,21 @@ func TestNewlyCreatedContainerSameNameOnAnotherEngine(t *testing.T) {
 }
 
 func TestBuildExecFlagsDaemon(t *testing.T) {
-	got := flattenExecFlags(buildExecFlags(false, true, "", nil, ""))
+	got := flattenExecFlags(buildExecFlags(false, true, "", nil, "", false))
 	want := []string{"-d", "-u", "coder", "-w", "/home/coder/code"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("daemon buildExecFlags = %v, want %v", got, want)
 	}
 
 	// Detach wins over any stream attachment; the rest of the flags still apply.
-	got = flattenExecFlags(buildExecFlags(true, true, "/tmp", stringSliceFlag{"FOO=bar"}, ""))
+	got = flattenExecFlags(buildExecFlags(true, true, "/tmp", stringSliceFlag{"FOO=bar"}, "", false))
 	want = []string{"-d", "-u", "coder", "-w", "/tmp", "-e", "FOO=bar"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("daemon+interactive buildExecFlags = %v, want %v", got, want)
 	}
 
 	// Without --daemon nothing changes.
-	got = flattenExecFlags(buildExecFlags(false, false, "", nil, ""))
+	got = flattenExecFlags(buildExecFlags(false, false, "", nil, "", false))
 	want = []string{"-u", "coder", "-w", "/home/coder/code"}
 	if strings.Join(got, " ") != strings.Join(want, " ") {
 		t.Fatalf("plain buildExecFlags = %v, want %v", got, want)
@@ -672,5 +673,28 @@ func TestCheckDaemonCompatibility(t *testing.T) {
 		if (err != nil) != test.wantErr {
 			t.Fatalf("%s: checkDaemonCompatibility err = %v, wantErr %v", test.name, err, test.wantErr)
 		}
+	}
+}
+
+func TestCoderCommand(t *testing.T) {
+	if got := coderCommand(false, "bash", "-l"); !reflect.DeepEqual(got, []string{"bash", "-l"}) {
+		t.Errorf("without low ports = %v, want the command unchanged", got)
+	}
+	got := coderCommand(true, "bash", "-l")
+	if len(got) < 6 || got[0] != "sh" || got[1] != "-c" || got[3] != "booth--as-coder" {
+		t.Fatalf("with low ports = %v, want sh -c <script> booth--as-coder bash -l", got)
+	}
+	if !reflect.DeepEqual(got[len(got)-2:], []string{"bash", "-l"}) {
+		t.Errorf("with low ports = %v, want the command passed through as \"$@\"", got)
+	}
+	if !strings.Contains(got[2], "exec booth--as-coder --") || !strings.Contains(got[2], "exec runuser -u coder --") {
+		t.Errorf("script %q must use the helper, falling back to runuser on an older image", got[2])
+	}
+}
+
+func TestBuildExecFlagsLowPortsStartsAsRoot(t *testing.T) {
+	got := flattenExecFlags(buildExecFlags(false, false, "", nil, "", true))
+	if !strings.Contains(strings.Join(got, " "), "-u root") {
+		t.Errorf("low ports flags = %v, want -u root (coderCommand becomes coder)", got)
 	}
 }

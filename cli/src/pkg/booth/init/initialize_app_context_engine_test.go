@@ -30,6 +30,20 @@ func TestParseArgs_Engine(t *testing.T) {
 	}
 }
 
+func TestParseArgs_AppleLowPorts(t *testing.T) {
+	config := appctx.AppConfig{
+		RunArgs:   ilist.SemicolonStringList{List: ilist.NewList[string]()},
+		BuildArgs: ilist.SemicolonStringList{List: ilist.NewList[string]()},
+		Cmds:      ilist.SemicolonStringList{List: ilist.NewList[string]()},
+	}
+	if err := parseArgs(ilist.NewListFromSlice([]string{"--apple-low-ports"}), &config); err != nil {
+		t.Fatalf("parseArgs failed: %v", err)
+	}
+	if !config.AppleLowPorts {
+		t.Error("--apple-low-ports did not set AppleLowPorts")
+	}
+}
+
 func TestResolveEngineConfig_ExplicitValues(t *testing.T) {
 	for _, engine := range []string{"docker", "podman", "apple"} {
 		config := &appctx.AppConfig{Engine: engine, Quiet: true}

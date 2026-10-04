@@ -1,0 +1,75 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth--as-coder [--login] [--] [COMMAND...]
+#
+# Run COMMAND as the booth's `coder` user — what `runuser -u coder -- COMMAND`
+# does (or `runuser -u coder --login` with --login) — and, in a booth started
+# with --apple-low-ports, also hand coder the NET_BIND_SERVICE capability:
+# permission to open ports below 1024, and nothing else.
+#
+# Why this exists: Apple container leaves the kernel's low-port limit at 1024,
+# where Docker sets it to 0, so coder cannot bind :80/:443 there. The limit
+# itself can only be lowered with SYS_ADMIN; NET_BIND_SERVICE is the narrow
+# alternative. It must be passed down as an *ambient* capability, and runuser
+# drops those when it switches from root to coder, so this switches user with
+# setpriv instead. Everything coder starts from here inherits the capability.
+# See docs/CONTAINER_SUPPORT.md.
+#
+# Whether to do that is read from /run/booth-low-ports, which booth-entry
+# writes as root at startup when the booth was created with the flag
+# (BOOTH_LOW_PORTS=true). Without the marker this is plain runuser.
+#
+# Must run as root; called as anyone else it just runs COMMAND.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+USER_NAME="coder"
+LOW_PORTS_MARKER="/run/booth-low-ports"
+
+login=false
+if [ "${1:-}" = "--login" ]; then
+  login=true
+  shift
+fi
+if [ "${1:-}" = "--" ]; then
+  shift
+fi
+
+if [ "$(id -u)" -ne 0 ]; then
+  exec "$@"
+fi
+
+if [ ! -f "$LOW_PORTS_MARKER" ]; then
+  if [ "$login" = "true" ]; then
+    exec runuser -u "$USER_NAME" --login
+  fi
+  exec runuser -u "$USER_NAME" -- "$@"
+fi
+
+entry="$(getent passwd "$USER_NAME")"
+user_uid="$(cut -d: -f3 <<<"$entry")"
+user_gid="$(cut -d: -f4 <<<"$entry")"
+user_home="$(cut -d: -f6 <<<"$entry")"
+user_shell="$(cut -d: -f7 <<<"$entry")"
+
+as_coder=(setpriv --reuid="$user_uid" --regid="$user_gid" --init-groups
+  --inh-caps=+net_bind_service --ambient-caps=+net_bind_service)
+
+if [ "$login" = "true" ]; then
+  # What `runuser --login` gives: a clean environment with TERM kept, the
+  # user's HOME/SHELL/USER/LOGNAME, PATH from /etc/environment (pam_env), and
+  # the home directory as the working directory.
+  login_path="$(. /etc/environment 2>/dev/null; echo "${PATH:-/usr/local/bin:/usr/bin:/bin}")"
+  cd "$user_home"
+  exec "${as_coder[@]}" env -i TERM="${TERM:-xterm}" HOME="$user_home" SHELL="$user_shell" \
+    USER="$USER_NAME" LOGNAME="$USER_NAME" PATH="$login_path" "$user_shell" -l
+fi
+
+# What `runuser -u` gives: the environment kept, with the user's own
+# HOME/SHELL/USER/LOGNAME.
+exec "${as_coder[@]}" env HOME="$user_home" SHELL="$user_shell" USER="$USER_NAME" LOGNAME="$USER_NAME" "$@"
