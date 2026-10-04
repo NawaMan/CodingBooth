@@ -268,6 +268,9 @@ func resolveConnectTarget(name string, positional []string, codePath string, run
 
 	case connectStart:
 		connectNote(stderr, quiet, "Booth %q is not running; starting it...\n", target.Name)
+		if warning := staleImageWarning(target); warning != "" {
+			fmt.Fprintln(stderr, warning)
+		}
 		// Silent so docker's container-name echo does not pollute exec's stdout
 		// (which is forwarded verbatim for scripting). Failures surface via err.
 		if err := docker.Docker(docker.DockerFlags{Silent: true, Engine: engine}, "start", ilist.NewList(ilist.NewList(target.Name))); err != nil {

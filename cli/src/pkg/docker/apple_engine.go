@@ -551,7 +551,10 @@ type appleContainer struct {
 		Labels       map[string]string `json:"labels"`
 		CreationDate string            `json:"creationDate"`
 		Image        struct {
-			Reference string `json:"reference"`
+			Reference  string `json:"reference"`
+			Descriptor struct {
+				Digest string `json:"digest"`
+			} `json:"descriptor"`
 		} `json:"image"`
 		InitProcess struct {
 			Environment []string `json:"environment"`
@@ -847,7 +850,10 @@ type portBinding struct {
 // inspectDoc is the subset of `docker inspect` the CLI reads, filled from
 // Apple container's JSON so `{{json .}}` and field templates work unchanged.
 type inspectDoc struct {
-	Id      string
+	Id string
+	// Image is what the container was created from — Docker's image ID; here
+	// the image's digest, the same value `image inspect` reports as Id.
+	Image   string
 	Name    string
 	Created string
 	State   struct {
@@ -877,6 +883,7 @@ func toInspectDoc(c appleContainer) inspectDoc {
 	doc.State.Status = dockerState(c.Status.State)
 	doc.State.Running = doc.State.Status == "running"
 	doc.Config.Image = c.Configuration.Image.Reference
+	doc.Image = c.Configuration.Image.Descriptor.Digest
 	doc.Config.Labels = c.Configuration.Labels
 	if doc.Config.Labels == nil {
 		doc.Config.Labels = map[string]string{}

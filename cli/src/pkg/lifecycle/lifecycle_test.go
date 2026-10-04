@@ -698,3 +698,20 @@ func TestBuildExecFlagsLowPortsStartsAsRoot(t *testing.T) {
 		t.Errorf("low ports flags = %v, want -u root (coderCommand becomes coder)", got)
 	}
 }
+
+func TestStaleImageMessage(t *testing.T) {
+	got := staleImageMessage("web", "codingbooth-local:web-base", "sha256:old", "sha256:new")
+	if !strings.Contains(got, `booth "web" was created from an older build of codingbooth-local:web-base`) ||
+		!strings.Contains(got, "booth remove --force --name web") {
+		t.Errorf("changed image = %q, want the warning naming the booth, the image and the fix", got)
+	}
+	for _, tt := range []struct{ createdFrom, current string }{
+		{"sha256:same", "sha256:same"}, // unchanged
+		{"sha256:old", ""},             // image name no longer exists: nothing to compare
+		{"", "sha256:new"},             // created-from unknown (older engine output)
+	} {
+		if got := staleImageMessage("web", "img", tt.createdFrom, tt.current); got != "" {
+			t.Errorf("%+v: want no warning, got %q", tt, got)
+		}
+	}
+}
