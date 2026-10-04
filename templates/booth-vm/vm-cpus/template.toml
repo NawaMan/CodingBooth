@@ -1,0 +1,25 @@
+display-name = "VM CPUs"
+display-disc = "CPUs for the booth's VM — macOS / Apple container only"
+display-detail = """Sets how many CPUs the VM the booth runs in may use (`vm-cpus` in config.toml, \
+`--vm-cpus` on the command line).
+
+Only takes effect on macOS with Apple container (`--engine apple`), where every booth runs in its \
+own small VM — 4 CPUs by default. Ignored on Docker and Podman, which have no per-booth VM.
+
+Select with a count: `--select vm-cpus:6`."""
+display-order = 2
+primary = true
+tags = [
+    "macos",
+    "apple-container",
+    "vm",
+    "cpu",
+    "resources",
+]
+
+vm-cpus = "${VM_CPUS}"
+
+[params.VM_CPUS]
+default = "6"
+suggests = ["2", "4", "6", "8"]
+runtime = true

@@ -69,6 +69,13 @@ type collector struct {
 	dindSource     string
 	sudo           *bool
 	sudoSource     string
+	vmMemory       string
+	vmMemorySource string
+	vmCpus         string
+	vmCpusSource   string
+	vmShm          string
+	vmShmSource    string
+	runtimeParams  map[string]bool // params kept out of the Boothfile's arg lines
 	cmds           []string
 	cmdsSource     string
 
@@ -164,6 +171,23 @@ func (c *collector) collectConfig(t *tmpl.Template, source string) error {
 	if err := c.setScalar(&c.variant, &c.variantSource, t.Variant, source, "variant"); err != nil {
 		return err
 	}
+	if err := c.setScalar(&c.vmMemory, &c.vmMemorySource, t.VmMemory, source, "vm-memory"); err != nil {
+		return err
+	}
+	if err := c.setScalar(&c.vmCpus, &c.vmCpusSource, t.VmCpus, source, "vm-cpus"); err != nil {
+		return err
+	}
+	if err := c.setScalar(&c.vmShm, &c.vmShmSource, t.VmShmSize, source, "vm-shm-size"); err != nil {
+		return err
+	}
+	for name, p := range t.Params {
+		if p.Runtime {
+			if c.runtimeParams == nil {
+				c.runtimeParams = map[string]bool{}
+			}
+			c.runtimeParams[name] = true
+		}
+	}
 	if err := c.setScalar(&c.port, &c.portSource, t.Port, source, "port"); err != nil {
 		return err
 	}
@@ -256,6 +280,9 @@ func (c *collector) build() (*output.BoothOutput, error) {
 		Variant:   c.variant,
 		Port:      c.port,
 		Timezone:  c.timezone,
+		VmMemory:  expandParam(c.vmMemory, params),
+		VmCpus:    expandParam(c.vmCpus, params),
+		VmShmSize: expandParam(c.vmShm, params),
 		Cmds:      c.cmds,
 		RunArgs:   expandParams(dedup(c.runArgs), params),
 		BuildArgs: dedup(c.buildArgs),
@@ -270,7 +297,7 @@ func (c *collector) build() (*output.BoothOutput, error) {
 
 	// Boothfile
 	boothfileBody := mergeSegments(c.boothfileSegs)
-	argLines := buildArgLines(params)
+	argLines := buildArgLines(withoutRuntimeParams(params, c.runtimeParams))
 	if argLines != "" || boothfileBody != "" {
 		content := argLines + boothfileBody
 		out.Boothfile = &output.BoothfileContent{Content: content}
@@ -498,6 +525,30 @@ func expandParamsWithDefaults(s string, params map[string]string) string {
 		s = strings.ReplaceAll(s, "${"+k+"}", "${"+k+":-"+v+"}")
 	}
 	return s
+}
+
+// expandParam replaces ${PARAM} references in one string with their values.
+func expandParam(s string, params map[string]string) string {
+	if s == "" {
+		return s
+	}
+	return expandParams([]string{s}, params)[0]
+}
+
+// withoutRuntimeParams drops the params marked `runtime = true`: they only
+// feed config values, so they must not become Boothfile args (an arg that
+// changes value invalidates the build cache).
+func withoutRuntimeParams(params map[string]string, runtime map[string]bool) map[string]string {
+	if len(runtime) == 0 {
+		return params
+	}
+	kept := make(map[string]string, len(params))
+	for k, v := range params {
+		if !runtime[k] {
+			kept[k] = v
+		}
+	}
+	return kept
 }
 
 // expandParams replaces ${PARAM} references in string slices with their values.

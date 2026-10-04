@@ -706,10 +706,17 @@ Two top-level templates also live at 70:
 ### No Boothfile segment — config, run-args, or files only
 
 These templates emit nothing into the Boothfile. They change the booth through `config.toml`
-keys, `run-args`, cache paths, or `requires`, so no order applies:
+keys, `run-args`, cache paths, or `requires`, so no order applies.
+
+The `booth-vm` templates size the VM each booth runs in under Apple container (`--engine apple`,
+macOS); Docker and Podman ignore those keys. Their params are `runtime = true`, so a value change
+never becomes a Boothfile `arg` (which would rebuild the image):
 
 | Template                | Display Name    | What it does instead |
 |-------------------------|-----------------|----------------------|
+| `booth-vm/vm-cpus`      | VM CPUs         | `vm-cpus = "${VM_CPUS}"` — macOS / Apple container only |
+| `booth-vm/vm-memory`    | VM Memory       | `vm-memory = "${VM_MEMORY}"` — macOS / Apple container only |
+| `booth-vm/vm-shm-size`  | VM Shared Memory | `vm-shm-size = "${VM_SHM_SIZE}"` — macOS / Apple container only |
 | `languages/fsharp`      | F#              | `requires = ["csharp"]` — F# ships in the .NET SDK; its `+vscode-ext` is at 65 |
 | `tools/git-credential`  | Git Credentials | `run-args` seeding the host `~/.gitconfig` |
 | `tools/no-sudo`         | No Sudo         | `sudo = false` |
