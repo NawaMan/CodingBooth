@@ -13,6 +13,13 @@ This file contains a list of changes for each released version.
   only ever edits the X11 block, but its check read the whole file and failed the build with
   "Failed to switch ... to i3". The check now reads the X11 block alone (and fails on an empty one).
 
+- **Catalog version pins refreshed (n−1 where a new major just landed).** Python 3.13.15 → **3.14.8**
+  (3.15.0 is a fresh `.0`), Zig 0.15.1 → **0.16.0** (0.17.0 is two days old), Julia → 1.13.1,
+  AnythingLLM → 1.17.0, appwrite-cli fallback → 28.1.0, Hoppscotch → 2026.9.0, Penpot → 2.18.1,
+  Wails fallback → v3.0.0-beta.27, Mermaid → 11.17.2 (staying on 11), conda's Python 3.12 → 3.13.
+  Suggest lists gain Go 1.27.1, Rust 1.99.0, Flutter 3.47.6, gh 2.102.0, Python 3.13.16. Held at the
+  previous major on purpose: appwrite-server 1.9.6, Ruby 3.4, Erlang 28, Lua 5.4, Clang 22, Go 1.26.8.
+
 - **Julia `1.11.3` dropped from the template's suggestions: it no longer starts on the Ubuntu 26.04
   base.** Its `libopenlibm.so` asks for an executable stack (`GNU_STACK=RWE`), which 26.04's glibc
   refuses ("cannot enable executable stack"). `1.12.7` and `1.13.0` (the default) are unaffected.
