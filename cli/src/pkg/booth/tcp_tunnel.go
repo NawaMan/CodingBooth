@@ -6,6 +6,7 @@ package booth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
@@ -67,6 +69,10 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 
 	var mu sync.Mutex
 	activeTunnels := make(map[int]*tcpTunnel) // keyed by container port
+	// The last error printed per container port. A tunnel that cannot open is
+	// retried every tick (the port may be freed), but its error is printed
+	// once, not every second, until it changes.
+	reported := make(map[int]string)
 
 	ticker := time.NewTicker(1 * time.Second)
 	defer ticker.Stop()
@@ -124,15 +130,26 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 				// Start tunnel
 				tunnel, err := startTunnel(ctx, engine, containerName, containerPort, externalPort, bindAddr, verbose)
 				if err != nil {
-					fmt.Fprintf(os.Stderr, rawSafe(foregroundPrefix(foreground)+"  Tunnel error (port %d): %v\n", foreground), containerPort, err)
+					if message := tunnelErrorMessage(containerPort, externalPort, err); reported[containerPort] != message {
+						reported[containerPort] = message
+						fmt.Fprint(os.Stderr, rawSafe(foregroundPrefix(foreground)+message, foreground))
+					}
 					continue
 				}
+				delete(reported, containerPort)
 
 				mu.Lock()
 				activeTunnels[containerPort] = tunnel
 				mu.Unlock()
 
 				fmt.Fprintf(os.Stderr, rawSafe(foregroundPrefix(foreground)+"  Tunnel opened: container:%d -> %s:%d\n", foreground), containerPort, bindAddr, externalPort)
+			}
+
+			// Forget errors of tunnels no longer asked for, so asking again reports again.
+			for port := range reported {
+				if !seen[port] {
+					delete(reported, port)
+				}
 			}
 
 			// Remove tunnels whose control files are gone
@@ -148,6 +165,30 @@ func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, contai
 			mu.Unlock()
 		}
 	}
+}
+
+// tunnelErrorMessage is the line printed when a tunnel cannot open. Refused
+// permission on a host port below 1024 gets a hint: an unprivileged user may
+// not listen there — on macOS not on localhost even though 0.0.0.0 is allowed,
+// on Linux not at all — and the tunnel deliberately binds localhost, not every
+// interface. Pure for unit tests.
+func tunnelErrorMessage(containerPort, externalPort int, err error) string {
+	message := fmt.Sprintf("  Tunnel error (port %d): %v\n", containerPort, err)
+	if externalPort < 1024 && errors.Is(err, syscall.EACCES) {
+		message += fmt.Sprintf("  Host ports below 1024 need root on this machine; expose to a port of 1024 or above, e.g. booth--expose %d %d\n",
+			containerPort, suggestedHostPort(containerPort, externalPort))
+	}
+	return message
+}
+
+// suggestedHostPort is a host port of 1024 or above for the hint: the
+// container port itself when it is one, else the requested port + 8000
+// (80 → 8080, 443 → 8443).
+func suggestedHostPort(containerPort, externalPort int) int {
+	if containerPort >= 1024 {
+		return containerPort
+	}
+	return externalPort + 8000
 }
 
 func startTunnel(parentCtx context.Context, engine, containerName string, containerPort, externalPort int, bindAddr string, verbose bool) (*tcpTunnel, error) {

@@ -7,6 +7,8 @@ package booth
 
 import (
 	"context"
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"net"
 	"os"
@@ -582,7 +584,7 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 
 	if !ctx.WritableBooth() {
 		addReadOnlyBoothDir(builder, codePath)
-		addReadOnlyBoothWrapper(builder, codePath)
+		addReadOnlyBoothWrapper(builder, codePath, ctx.Engine())
 	}
 
 	// Lifecycle management labels used by list/start/stop/restart/remove commands.
@@ -781,7 +783,7 @@ func normalizeCodePath(path string) string {
 	return absPath
 }
 
-func addReadOnlyBoothWrapper(builder *appctx.AppContextBuilder, codePath string) {
+func addReadOnlyBoothWrapper(builder *appctx.AppContextBuilder, codePath, engine string) {
 	if codePath == "" {
 		return
 	}
@@ -790,7 +792,49 @@ func addReadOnlyBoothWrapper(builder *appctx.AppContextBuilder, codePath string)
 	if err != nil || info.IsDir() {
 		return
 	}
+	// Apple container drops a folder's mount when a file directly in it is
+	// mounted too — here that would empty /home/coder/code. So it mounts a copy
+	// kept outside the project instead, refreshed on every run; still read-only.
+	if engine == docker.EngineApple {
+		copyPath, err := appleWrapperCopy(codePath, hostPath)
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Warning: could not copy %s for Apple container (%v); it stays writable in the booth.\n", hostPath, err)
+			return
+		}
+		hostPath = copyPath
+	}
 	builder.CommonArgs.Append(ilist.NewList[string]("-v", hostPath+":/home/coder/code/booth:ro"))
+}
+
+// appleWrapperCopy copies the project's booth wrapper to
+// <cache>/codingbooth/apple-wrappers/<project>/booth — <cache> being
+// $XDG_CACHE_HOME, else ~/.cache, as for the template cache — and returns that
+// path. One folder per project path, so booths of different projects never
+// share a copy. It is written under --dryrun too: a mount whose source does
+// not exist is dropped later, and dryrun should print what a run would do.
+func appleWrapperCopy(codePath, wrapperPath string) (string, error) {
+	cacheHome := os.Getenv("XDG_CACHE_HOME")
+	if cacheHome == "" {
+		home, err := os.UserHomeDir()
+		if err != nil {
+			return "", err
+		}
+		cacheHome = filepath.Join(home, ".cache")
+	}
+	sum := sha256.Sum256([]byte(codePath))
+	dir := filepath.Join(cacheHome, "codingbooth", "apple-wrappers", hex.EncodeToString(sum[:8]))
+	copyPath := filepath.Join(dir, "booth")
+	data, err := os.ReadFile(wrapperPath)
+	if err != nil {
+		return "", err
+	}
+	if err := os.MkdirAll(dir, 0o755); err != nil {
+		return "", err
+	}
+	if err := os.WriteFile(copyPath, data, 0o755); err != nil {
+		return "", err
+	}
+	return copyPath, os.Chmod(copyPath, 0o755)
 }
 
 func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {

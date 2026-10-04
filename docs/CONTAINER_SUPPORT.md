@@ -109,6 +109,29 @@ list it is reported like any other engine's.
 engine that owns it. With `--run`, a booth that exists nowhere is created by `booth run` on the
 [default engine](#when-you-choose-nothing), and they connect to it on whichever engine it landed.
 
+## Single-file mounts
+
+Apple container (`container` 1.5.0) has a mount bug: **mounting a single file drops the mount of
+the folder that directly contains it**, when that folder is mounted too. The folder then goes
+missing in the container — or, when another mount shows the same content, silently loses its
+`:ro`. Mounting a file from a folder that is *not* itself mounted (even one deeper inside a
+mounted folder) is fine.
+
+CodingBooth hit this itself: it mounts the project's `booth` wrapper read-only over the project
+folder, and the wrapper lives directly in that folder — so every project with a wrapper got an
+empty `/home/coder/code`. On engine `apple` the wrapper is now mounted from a copy kept outside the
+project, at `$XDG_CACHE_HOME/codingbooth/apple-wrappers/<project>/booth` (`~/.cache/…` when unset),
+refreshed on every run and still read-only.
+
+For any other mount of this shape — usually a `-v` in your `run-args` — the run prints a warning
+naming the file and the folder it would lose:
+
+```
+Warning: Apple container drops a folder's mount when a file directly in it is mounted too: …
+```
+
+Mount the file from another folder to avoid it.
+
 ## Reaching the host
 
 Apple container has no `--add-host`, so `host.docker.internal` is not provided by the engine.
@@ -214,7 +237,8 @@ Podman's `--userns=keep-id` and low-port sysctl (Podman only).
 Checked by hand against `container` 1.5.0 on macOS 26 (Apple Silicon), running the
 published `base` image through the booth entrypoint:
 
-- **Bind-mounted code (virtiofs) works.** Files `coder` writes land on the host owned by the
+- **Bind-mounted code (virtiofs) works** — though, found later, not alongside a single-file mount
+  from the same folder; see [Single-file mounts](#single-file-mounts). Files `coder` writes land on the host owned by the
   host user. Git (no "dubious ownership") and `sudo` work. The UID/GID the guest *reports*
   for mounted files is unstable (it flips between `0:0` and the host UID), but writes
   succeed either way, because the host side performs them as the host user.
@@ -276,11 +300,17 @@ Not verified yet: the `--silence-build` progress line (it only draws on a termin
 - **`host.docker.internal` needs a current image.** It resolves through `booth-entry`; on an
   older image use `$BOOTH_HOST_NAME`, which holds the gateway address.
 - **Separate image store.** Images built or pulled with Docker are not visible. A locally
-  built image can be copied across:
-  `docker save <image> -o image.tar && container image load -i image.tar`.
+  built image can be copied across: `docker save <image> | container image load`.
+  `build/docker-build.sh` (and so `build/build-all.sh`) does that itself after a local build
+  when Apple container is installed and running — `CB_NO_APPLE_COPY=1` skips it. Copy one tag
+  per archive (re-tag the rest with `container image tag`): an archive holding two tags of the
+  same image fails to load with `File exists`.
 - **Ports below 1024 need `--apple-low-ports`**, `--public` included; see
   [Ports below 1024](#ports-below-1024---apple-low-ports).
-- **The `codeserver` and desktop variants, and single-file bind mounts are untested.**
+- **A single-file mount drops the mount of the folder directly containing it** (Apple container
+  bug). CodingBooth's own wrapper mount works around it; other such mounts get a warning. See
+  [Single-file mounts](#single-file-mounts).
+- **The `codeserver` and desktop variants are untested.**
 - **`--dind` and `--egress` are not supported.**
 
 ## Where it lives (for maintainers)
@@ -296,6 +326,7 @@ Not verified yet: the `--silence-build` progress line (it only draws on a termin
 | Quiet skip of a stopped service | `managedContainersAcross` (`lifecycle/lifecycle.go`), `docker.AppleServiceRunning` |
 | Host gateway | `docker.AppleNetworkGateway`; `BOOTH_HOST_*` in `booth/booth.go`; the `/etc/hosts` line in `variants/base/booth-entry` |
 | `booth--expose` tunnel binary | `tunnelExecCommand` (`booth/tcp_tunnel.go`) |
+| Single-file mount bug | `appleWrapperCopy` / `addReadOnlyBoothWrapper` (`booth/booth.go`); the warning, `appleMountConflicts` (`docker/apple_engine.go`) |
 | `--apple-low-ports` | `appleLowPortsArgs` / `appleLowPortsNote` (`booth/booth.go`); `coderCommand` (`lifecycle/connect.go`); `variants/base/booth--as-coder` and its marker in `booth-entry` |
 
 ---

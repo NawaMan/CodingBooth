@@ -7,6 +7,7 @@ package booth
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"net"
 	"os"
@@ -14,6 +15,7 @@ import (
 	"reflect"
 	"strconv"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 
@@ -146,6 +148,12 @@ func freePort(t *testing.T) int {
 // container, unsynchronized, so every one of them must carry the same guard.
 func runTunnelWatcher(t *testing.T, foreground bool, externalPort int) string {
 	t.Helper()
+	return runTunnelWatcherFor(t, foreground, externalPort, 1500*time.Millisecond)
+}
+
+// runTunnelWatcherFor is runTunnelWatcher for as long as d: several ticks.
+func runTunnelWatcherFor(t *testing.T, foreground bool, externalPort int, d time.Duration) string {
+	t.Helper()
 
 	codeDir := t.TempDir()
 	tunnelDir := filepath.Join(codeDir, ".booth", ".tmp", "tcp-tunnels")
@@ -167,7 +175,7 @@ func runTunnelWatcher(t *testing.T, foreground bool, externalPort int) string {
 	}
 	os.Stderr = writer
 
-	watchCtx, cancel := context.WithTimeout(context.Background(), 1500*time.Millisecond)
+	watchCtx, cancel := context.WithTimeout(context.Background(), d)
 	defer cancel()
 	StartTcpTunnelWatcher(watchCtx, ctx, "no-such-container", foreground)
 	<-watchCtx.Done()
@@ -237,4 +245,41 @@ func nonLoopbackIPv4(t *testing.T) string {
 	}
 	t.Skip("no non-loopback IPv4 address on this machine")
 	return ""
+}
+
+func TestStartTcpTunnelWatcher_ErrorPrintedOnceWhileUnchanged(t *testing.T) {
+	busy, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("cannot occupy a port: %v", err)
+	}
+	defer busy.Close()
+	busyPort := busy.Addr().(*net.TCPAddr).Port
+
+	// About three ticks: the tunnel is retried each one, the error printed once.
+	out := runTunnelWatcherFor(t, false, busyPort, 3500*time.Millisecond)
+	if n := strings.Count(out, "Tunnel error"); n != 1 {
+		t.Errorf("error printed %d times over several ticks, want once:\n%s", n, out)
+	}
+}
+
+func TestTunnelErrorMessage(t *testing.T) {
+	denied := fmt.Errorf("cannot listen on port 80: %w",
+		&net.OpError{Op: "listen", Net: "tcp", Err: os.NewSyscallError("bind", syscall.EACCES)})
+	inUse := fmt.Errorf("cannot listen on port 80: %w",
+		&net.OpError{Op: "listen", Net: "tcp", Err: os.NewSyscallError("bind", syscall.EADDRINUSE)})
+
+	got := tunnelErrorMessage(8080, 80, denied)
+	if !strings.Contains(got, "Tunnel error (port 8080)") || !strings.Contains(got, "below 1024 need root") ||
+		!strings.Contains(got, "booth--expose 8080 8080") {
+		t.Errorf("denied low port: %q, want the error plus a hint suggesting booth--expose 8080 8080", got)
+	}
+	if got := tunnelErrorMessage(80, 443, denied); !strings.Contains(got, "booth--expose 80 8443") {
+		t.Errorf("low container port: %q, want the suggestion 443+8000 = 8443", got)
+	}
+	if got := tunnelErrorMessage(8080, 80, inUse); strings.Contains(got, "need root") {
+		t.Errorf("a port in use is not a permission problem: %q", got)
+	}
+	if got := tunnelErrorMessage(8080, 2000, denied); strings.Contains(got, "need root") {
+		t.Errorf("a port of 1024 or above gets no low-port hint: %q", got)
+	}
 }

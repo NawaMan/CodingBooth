@@ -32,6 +32,8 @@ ALL_DEPENDENT_VARIANTS=(notebook codeserver desktop-xfce desktop-kde desktop-lxq
 
 DOCKER_FLAGS=()        # flags forwarded to docker-build.sh
 VARIANTS_TO_BUILD=()   # dependent variants (excludes base)
+# Empty when only base is asked for: loop over it as ${VARIANTS_TO_BUILD[@]+"${VARIANTS_TO_BUILD[@]}"},
+# since macOS's bash 3.2 calls a plain "${VARIANTS_TO_BUILD[@]}" of an empty array unbound under set -u.
 STOP_REQUESTED=false
 PUSH_REQUESTED=false   # mirror of --push in DOCKER_FLAGS
 NO_CACHE_REQUESTED=false  # mirror of --no-cache; drives the pre-build cache prune
@@ -205,7 +207,7 @@ compute_column_widths() {
     tmp="BASE"; w=$(( 2 + ${#tmp} )); [[ $w -gt $max_total ]] && max_total=$w
 
     # Variant lines: visual prefix "    ├─ " = 7 columns
-    for v in "${VARIANTS_TO_BUILD[@]}"; do
+    for v in ${VARIANTS_TO_BUILD[@]+"${VARIANTS_TO_BUILD[@]}"}; do
         tmp=$(echo "$v" | tr '[:lower:]-' '[:upper:] ')
         w=$(( 7 + ${#tmp} )); [[ $w -gt $max_total ]] && max_total=$w
     done
@@ -281,7 +283,7 @@ draw_graph() {
     printf "\033[K${C_RESET}\n"
 
     # Dependent variants
-    for v in "${VARIANTS_TO_BUILD[@]}"; do
+    for v in ${VARIANTS_TO_BUILD[@]+"${VARIANTS_TO_BUILD[@]}"}; do
         s=$(get_status_var "$v")
         local label
         label=$(echo "$v" | tr '[:lower:]-' '[:upper:] ')
@@ -356,7 +358,7 @@ cancel_running() {
     fi
 
     # Mark anything not done as cancelled
-    for v in "${VARIANTS_TO_BUILD[@]}"; do
+    for v in ${VARIANTS_TO_BUILD[@]+"${VARIANTS_TO_BUILD[@]}"}; do
         local status_file="${LOG_DIR}/${v}.status"
         if [[ -f "$status_file" ]]; then
             local s
@@ -554,7 +556,7 @@ poll_variants() {
 
         # Check if all variants are finished
         local all_done=true
-        for v in "${VARIANTS_TO_BUILD[@]}"; do
+        for v in ${VARIANTS_TO_BUILD[@]+"${VARIANTS_TO_BUILD[@]}"}; do
             local s
             s=$(get_status_var "$v")
             if [[ "$s" == "running" || "$s" == "pending" ]]; then
@@ -649,7 +651,7 @@ Main() {
 
     # ── Step 3: Remaining variants in parallel ──
     if [[ ${#VARIANTS_TO_BUILD[@]} -gt 0 ]]; then
-        for v in "${VARIANTS_TO_BUILD[@]}"; do
+        for v in ${VARIANTS_TO_BUILD[@]+"${VARIANTS_TO_BUILD[@]}"}; do
             if [[ "$STOP_REQUESTED" == "true" ]]; then break; fi
             echo "running" > "${LOG_DIR}/${v}.status"
             run_variant_bg "$v" &
@@ -686,7 +688,7 @@ Main() {
     fi
     # Check variants. Must read the .status files BEFORE cleaning them up,
     # otherwise get_status_var defaults to "pending" and failures are missed.
-    for v in "${VARIANTS_TO_BUILD[@]}"; do
+    for v in ${VARIANTS_TO_BUILD[@]+"${VARIANTS_TO_BUILD[@]}"}; do
         local s
         s=$(get_status_var "$v")
         if [[ "$s" == "failed" ]]; then

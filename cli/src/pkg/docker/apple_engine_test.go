@@ -486,3 +486,48 @@ func TestTranslatePushToLocalRegistryUsesHTTP(t *testing.T) {
 		t.Errorf("push = %+v, want %v", steps, want)
 	}
 }
+
+func TestAppleMountConflicts(t *testing.T) {
+	project := t.TempDir()
+	if err := os.MkdirAll(filepath.Join(project, ".booth", "cache", "home"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range []string{"booth", ".booth/x.txt", ".booth/cache/home/.cfg"} {
+		if err := os.WriteFile(filepath.Join(project, f), []byte("x"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	elsewhere := filepath.Join(t.TempDir(), "file.txt")
+	if err := os.WriteFile(elsewhere, []byte("x"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	code := project + ":/home/coder/code"
+	boothDir := filepath.Join(project, ".booth") + ":/home/coder/code/.booth:ro"
+
+	tests := []struct {
+		name string
+		args []string
+		want int // warnings
+	}{
+		{"file directly in the mounted project (the booth wrapper)", []string{"-v", code, "-v", project + "/booth:/home/coder/code/booth:ro", "img"}, 1},
+		{"file directly in mounted .booth, mounted elsewhere", []string{"-v", code, "-v", boothDir, "-v", project + "/.booth/x.txt:/etc/x.txt", "img"}, 1},
+		{"file deeper inside: its own folder is not mounted", []string{"-v", code, "-v", boothDir, "-v", project + "/.booth/cache/home/.cfg:/home/coder/.cfg", "img"}, 0},
+		{"file from elsewhere", []string{"-v", code, "-v", elsewhere + ":/etc/f.txt", "img"}, 0},
+		{"--mount form", []string{"--mount", "type=bind,source=" + project + ",target=/code", "--mount", "type=bind,source=" + project + "/booth,target=/code/booth,readonly", "img"}, 1},
+		{"mounts after the image are the command's, not ours", []string{"-v", code, "img", "-v", project + "/booth:/x"}, 0},
+		{"a missing source is not judged", []string{"-v", code, "-v", project + "/nope:/x", "img"}, 0},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := appleMountConflicts(tt.args)
+			if len(got) != tt.want {
+				t.Errorf("warnings = %q, want %d", got, tt.want)
+			}
+			for _, w := range got {
+				if !strings.Contains(w, "Apple container drops a folder's mount") {
+					t.Errorf("warning %q does not explain itself", w)
+				}
+			}
+		})
+	}
+}
