@@ -266,7 +266,7 @@ func buildBooth(version string) {
 		if err != nil {
 			host := booth.ExtractRegistryHost(opts.pushRegistry)
 			fmt.Fprintf(os.Stderr, "\nError: push to %s failed.\n", imageName)
-			fmt.Fprintf(os.Stderr, "  Ensure you are logged in: docker login %s\n", host)
+			fmt.Fprintf(os.Stderr, "  Ensure you are logged in: %s\n", booth.RegistryLoginCommand(ctx.Engine(), host))
 			os.Exit(1)
 		}
 

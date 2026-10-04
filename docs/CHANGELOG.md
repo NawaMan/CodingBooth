@@ -32,6 +32,13 @@ This file contains a list of changes for each released version.
   by Aider's venv at `/opt/aider` (same path as before; `--version` pins still apply). A system
   Python Aider supports is used as before; the system Python is never changed.
 
+- **`booth build --push` works on Apple container.** The push ran `container push`, which does not
+  exist; it is now `container image push`. Pulls and pushes against a registry on this machine
+  (`localhost`, `127.0.0.1`) use plain HTTP, as Docker does — Apple container defaults to HTTPS
+  and failed with `bad protocol version`. The failure hint now names the engine's own login
+  (`container registry login`, `podman login`) instead of always `docker login`. Verified: a push
+  to a local registry, then Docker ran the Apple-container-built image.
+
 - **`--apple-low-ports`: ports below 1024 on Apple container.** Docker lets `coder` open `:80` and
   `:443`; Apple container does not, so `--public` (whose TLS proxy binds `:80`) and any app on a
   low port failed there. The new opt-in flag (also `apple-low-ports = true`,

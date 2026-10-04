@@ -61,3 +61,17 @@ func TestExtractRegistryHost_DeepPath(t *testing.T) {
 		t.Errorf("got %q, want %q", got, want)
 	}
 }
+
+func TestRegistryLoginCommand(t *testing.T) {
+	tests := map[string]string{
+		"docker": "docker login ghcr.io",
+		"":       "docker login ghcr.io",
+		"podman": "podman login ghcr.io",
+		"apple":  "container registry login ghcr.io",
+	}
+	for engine, want := range tests {
+		if got := RegistryLoginCommand(engine, "ghcr.io"); got != want {
+			t.Errorf("RegistryLoginCommand(%q) = %q, want %q", engine, got, want)
+		}
+	}
+}
