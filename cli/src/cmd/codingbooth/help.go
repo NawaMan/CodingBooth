@@ -202,6 +202,11 @@ CONTAINER MODE:
   --hide-welcome         Do not print the welcome banner when a shell starts.
                          Can also be set in config.toml (hide-welcome = true)
                          or with CB_HIDE_WELCOME=true
+  --apple-low-ports      On engine apple, let coder open ports below 1024 (as
+                         Docker allows by default; --public needs it there).
+                         Grants only NET_BIND_SERVICE. Ignored on other
+                         engines. Also: apple-low-ports = true in config.toml,
+                         or CB_APPLE_LOW_PORTS=true
   --browser              Open the booth UI in your default browser once its port
                          answers. On by default; a booth given a command
                          (-- bash, or --variant terminal) serves no page and
@@ -332,6 +337,7 @@ CONTAINER MODE:
                          docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md)
   --keep-alive           Do not remove container when stopped
   --hide-welcome         No welcome banner in shells (also: hide-welcome = true, CB_HIDE_WELCOME=true)
+  --apple-low-ports      Engine apple only: let coder open ports below 1024 (also: apple-low-ports = true, CB_APPLE_LOW_PORTS=true)
   --browser              Open the booth UI in a browser once its port answers (default)
   --no-browser           Never open a browser (also: browser = false, CB_BROWSER=false)
   --browser-port <spec>  Which port --browser opens: n (absolute) or +OFFSET (from

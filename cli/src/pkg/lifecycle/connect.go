@@ -87,7 +87,7 @@ func Shell(args []string, stderr io.Writer) error {
 	defer stopCleanupSignalWatch()
 
 	// Build docker exec args
-	execArgs := buildExecFlags(true, false, *dir, envVars, *envfile)
+	execArgs := buildExecFlags(true, false, *dir, envVars, *envfile, target.AppleLowPorts)
 
 	// Container name
 	execArgs = append(execArgs, ilist.NewList(target.Name))
@@ -97,7 +97,7 @@ func Shell(args []string, stderr io.Writer) error {
 	if *shell != "" {
 		shellCmd = *shell
 	}
-	execArgs = append(execArgs, ilist.NewList(shellCmd, "-l"))
+	execArgs = append(execArgs, ilist.NewList(coderCommand(target.AppleLowPorts, shellCmd, "-l")...))
 
 	if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "exec", ilist.NewList(execArgs...)); err != nil {
 		return forwardExitCode("shell", target.Name, err)
@@ -168,13 +168,13 @@ func Exec(args []string, stderr io.Writer) error {
 	}
 
 	// Build docker exec args
-	execArgs := buildExecFlags(*interactive, *daemon, *dir, envVars, *envfile)
+	execArgs := buildExecFlags(*interactive, *daemon, *dir, envVars, *envfile, target.AppleLowPorts)
 
 	// Container name
 	execArgs = append(execArgs, ilist.NewList(target.Name))
 
 	// Command to execute
-	execArgs = append(execArgs, ilist.NewList(cmdArgs...))
+	execArgs = append(execArgs, ilist.NewList(coderCommand(target.AppleLowPorts, cmdArgs...)...))
 
 	if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "exec", ilist.NewList(execArgs...)); err != nil {
 		return forwardExitCode("exec", target.Name, err)
@@ -831,10 +831,22 @@ func waitForBoothReady(containerName, engine string) error {
 	return commandExit(1, fmt.Sprintf("Error: booth %q did not become ready in time.", containerName))
 }
 
-// buildExecFlags constructs the common docker exec flags for both shell and exec.
+// coderCommand is the command a shell/exec session runs. Normally that is cmd
+// itself, run as coder by buildExecFlags. In a booth created with
+// --apple-low-ports the session starts as root and goes through
+// booth--as-coder, which becomes coder with NET_BIND_SERVICE the way
+// booth-entry started coder — falling back to plain runuser on an image that
+// predates the helper. Pure for unit tests.
+func coderCommand(lowPorts bool, cmd ...string) []string {
+	if !lowPorts {
+		return cmd
+	}
+	script := `if command -v booth--as-coder >/dev/null 2>&1; then exec booth--as-coder -- "$@"; fi; exec runuser -u coder -- "$@"`
+	return append([]string{"sh", "-c", script, "booth--as-coder"}, cmd...)
+}
 
 // buildExecFlags constructs the common docker exec flags for both shell and exec.
-func buildExecFlags(interactive, daemon bool, dir string, envVars stringSliceFlag, envfile string) []ilist.List[string] {
+func buildExecFlags(interactive, daemon bool, dir string, envVars stringSliceFlag, envfile string, lowPorts bool) []ilist.List[string] {
 	var execArgs []ilist.List[string]
 
 	// Detached: docker returns as soon as the command is started, so no stream
@@ -847,8 +859,12 @@ func buildExecFlags(interactive, daemon bool, dir string, envVars stringSliceFla
 		execArgs = append(execArgs, ilist.NewList("-i"))
 	}
 
-	// User and working directory
+	// User and working directory. A --apple-low-ports booth's session starts as
+	// root and becomes coder in coderCommand, which is what hands it the permission.
 	userDir := []string{"-u", "coder"}
+	if lowPorts {
+		userDir = []string{"-u", "root"}
+	}
 	if dir != "" {
 		userDir = append(userDir, "-w", dir)
 	} else {
