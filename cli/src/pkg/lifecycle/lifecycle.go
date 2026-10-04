@@ -37,6 +37,9 @@ func resolveLifecycleEngines(codeDir string) []string {
 	return appctx.ResolveEnginesForPath(codeDir, false)
 }
 
+// appleServiceRunning is docker.AppleServiceRunning; tests replace it.
+var appleServiceRunning = docker.AppleServiceRunning
+
 type managedContainer struct {
 	Name      string
 	Engine    string // engine that owns the container ("docker", "podman" or "apple")
@@ -481,7 +484,9 @@ func managedContainers(engine string, verbose bool) ([]managedContainer, error) 
 // managedContainersAcross lists the booths of every engine in engines, each
 // tagged with the engine that owns it. With more than one engine, one that fails
 // (a stopped Docker daemon, say) is reported on stderr and skipped so the others
-// still answer; it is an error only when every engine fails.
+// still answer; it is an error only when every engine fails. Apple container
+// whose service is not started is skipped without a warning: it is only in
+// the list because `container` is installed, and it holds no running booths.
 func managedContainersAcross(engines []string, verbose bool, stderr io.Writer) ([]managedContainer, error) {
 	var all []managedContainer
 	var warnings []string
@@ -491,6 +496,9 @@ func managedContainersAcross(engines []string, verbose bool, stderr io.Writer) (
 		found, err := managedContainers(engine, verbose)
 		if err != nil {
 			failed++
+			if len(engines) > 1 && engine == docker.EngineApple && !appleServiceRunning() {
+				continue
+			}
 			if firstErr == nil {
 				firstErr = err
 			}
@@ -527,7 +535,11 @@ func ambiguousEngineError(containers []managedContainer, name string) error {
 		return nil
 	}
 	sort.Strings(owners)
-	return fmt.Errorf("Error: booth %q exists on both %s. Set CB_ENGINE=<engine> to choose one.", name, strings.Join(owners, " and "))
+	which := "both " + strings.Join(owners, " and ")
+	if len(owners) > 2 {
+		which = strings.Join(owners[:len(owners)-1], ", ") + " and " + owners[len(owners)-1]
+	}
+	return fmt.Errorf("Error: booth %q exists on %s. Set CB_ENGINE=<engine> to choose one.", name, which)
 }
 
 func inspectManagedContainer(name string, flags docker.DockerFlags) (managedContainer, error) {

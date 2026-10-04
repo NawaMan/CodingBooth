@@ -5,6 +5,8 @@
 package init
 
 import (
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -52,8 +54,61 @@ func TestResolveEngineConfig_EmptyResolvesToConcreteValue(t *testing.T) {
 	if err := resolveEngineConfig(config); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
-	if config.Engine != "docker" && config.Engine != "podman" {
-		t.Errorf("resolveEngineConfig(\"\") left Engine as %q, want docker or podman", config.Engine)
+	if config.Engine != "docker" && config.Engine != "podman" && config.Engine != "apple" {
+		t.Errorf("resolveEngineConfig(\"\") left Engine as %q, want docker, podman or apple", config.Engine)
+	}
+}
+
+// pathWithRunningApple puts docker and a `container` whose service reports
+// running alone on PATH, so Apple container is the default engine.
+func pathWithRunningApple(t *testing.T) {
+	t.Helper()
+	dir := t.TempDir()
+	scripts := map[string]string{
+		"docker":    "#!/bin/sh\n",
+		"container": "#!/bin/sh\n[ \"$1 $2\" = \"system status\" ] && echo '{\"status\":\"running\"}'\nexit 0\n",
+	}
+	for name, script := range scripts {
+		if err := os.WriteFile(filepath.Join(dir, name), []byte(script), 0o755); err != nil {
+			t.Fatal(err)
+		}
+	}
+	t.Setenv("PATH", dir)
+}
+
+func TestResolveEngineConfig_DefaultIsAppleWhenRunning(t *testing.T) {
+	pathWithRunningApple(t)
+	config := &appctx.AppConfig{Engine: "", Quiet: true}
+	if err := resolveEngineConfig(config); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if config.Engine != "apple" {
+		t.Errorf("Engine = %q, want apple", config.Engine)
+	}
+}
+
+// --dind and --egress need a sidecar Apple container cannot start, so with no
+// engine chosen they fall to docker instead of being refused.
+func TestResolveEngineConfig_SidecarRunSkipsDefaultApple(t *testing.T) {
+	pathWithRunningApple(t)
+	for _, config := range []*appctx.AppConfig{
+		{Engine: "", Dind: true, Quiet: true},
+		{Engine: "", Egress: true, Quiet: true},
+	} {
+		if err := resolveEngineConfig(config); err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if config.Engine != "docker" {
+			t.Errorf("Engine = %q (dind=%t egress=%t), want docker", config.Engine, config.Dind, config.Egress)
+		}
+	}
+}
+
+func TestResolveEngineConfig_ExplicitAppleWithDindIsStillRefused(t *testing.T) {
+	pathWithRunningApple(t)
+	config := &appctx.AppConfig{Engine: "apple", Dind: true, Quiet: true}
+	if err := resolveEngineConfig(config); err == nil {
+		t.Fatal("explicit --engine apple with --dind must still be refused")
 	}
 }
 

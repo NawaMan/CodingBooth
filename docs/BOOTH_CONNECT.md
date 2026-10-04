@@ -187,6 +187,10 @@ Both `shell` and `exec` resolve the target container using the same priority as 
 3. `--code <path>` (with no name/positional) — search by the code path the booth was created from, instead of by name
 4. Default — booth name derived from the current directory
 
+With no engine chosen, the booth is looked up on every installed engine (Docker, Podman, Apple
+container) and the command runs on the one that owns it; a name found on more than one is refused
+until `CB_ENGINE` picks. See [Finding booths](CONTAINER_SUPPORT.md#finding-booths).
+
 ```bash
 ./booth shell myproject              # positional
 ./booth shell --name myproject       # explicit flag

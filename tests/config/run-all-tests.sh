@@ -19,6 +19,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # These tests do not source common--source.sh, which sets it everywhere else.
 export CB_BROWSER=false
 
+# Run on Docker unless the caller picked an engine; see common--source.sh.
+export CB_ENGINE="${CB_ENGINE:-docker}"
+
 # The transient in-flight line (see progress--source.sh). progress_init returns
 # non-zero when there is no terminal to draw on, and the printed heartbeat below
 # stays as the signal for that case -- a CI log has nothing else.

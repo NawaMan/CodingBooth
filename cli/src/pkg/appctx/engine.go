@@ -12,6 +12,8 @@ import (
 	"strings"
 
 	"github.com/BurntSushi/toml"
+
+	"github.com/nawaman/codingbooth/src/pkg/docker"
 )
 
 // ResolveEngineValue normalizes and validates a raw "engine" setting
@@ -20,27 +22,27 @@ import (
 // `container` (see docker.EngineBinary).
 //
 // Empty means the caller never explicitly chose an engine (not via flag, env,
-// or config file). In that case: use "docker" if it's on PATH; otherwise fall
-// back to "podman" if that's on PATH instead, printing a one-line notice
-// (suppressed when quiet is true, matching the DinD/egress sidecar notices
-// elsewhere); otherwise keep "docker" and let the real exec error explain
-// what's missing. An explicit "podman" always prints an unconditional
-// experimental-support warning (not gated by quiet — this is a "know your
-// risks" notice, not routine chatter). An explicit "apple" does the same.
+// or config file); see defaultEngine for the order it is picked in. An
+// explicit "podman" always prints an unconditional experimental-support
+// warning (not gated by quiet — this is a "know your risks" notice, not
+// routine chatter). An explicit "apple" does the same.
 func ResolveEngineValue(raw string, quiet bool) (string, error) {
+	return resolveEngineValue(raw, quiet, true)
+}
+
+// ResolveEngineValueWithoutApple is ResolveEngineValue for a run that needs a
+// sidecar (--dind, --egress), which Apple container cannot start: an unset
+// engine skips apple and picks docker, then podman. An explicit "apple" is
+// still returned, for the caller to refuse.
+func ResolveEngineValueWithoutApple(raw string, quiet bool) (string, error) {
+	return resolveEngineValue(raw, quiet, false)
+}
+
+func resolveEngineValue(raw string, quiet, appleOK bool) (string, error) {
 	engine := strings.ToLower(strings.TrimSpace(raw))
 	switch engine {
 	case "":
-		if _, err := exec.LookPath("docker"); err == nil {
-			return "docker", nil
-		}
-		if _, err := exec.LookPath("podman"); err == nil {
-			if !quiet {
-				fmt.Fprintln(os.Stderr, "⚠️  docker not found — using podman instead (experimental; --engine docker to force)")
-			}
-			return "podman", nil
-		}
-		return "docker", nil
+		return defaultEngine(quiet, appleOK), nil
 	case "docker":
 		return "docker", nil
 	case "podman":
@@ -54,12 +56,51 @@ func ResolveEngineValue(raw string, quiet bool) (string, error) {
 	}
 }
 
+// defaultEngine picks the engine when none was chosen, in this order:
+//
+//  1. "apple" when `container` is on PATH and its service is running (and
+//     appleOK). An installed but stopped Apple container is passed over, so
+//     a Mac that also has Docker keeps working until `container system start`.
+//  2. "docker" when it is on PATH.
+//  3. "podman" when it is on PATH.
+//  4. "apple" when `container` is the only engine installed, so its own error
+//     (service not started) is the one shown.
+//  5. "docker", so the exec error explains that nothing is installed.
+//
+// Picking anything but docker prints a one-line notice naming the engine and
+// how to force Docker, suppressed when quiet is true (matching the DinD/egress
+// sidecar notices elsewhere).
+func defaultEngine(quiet, appleOK bool) string {
+	notice := func(msg string) {
+		if !quiet {
+			fmt.Fprintln(os.Stderr, msg)
+		}
+	}
+	hasApple := appleOK && onPath(docker.EngineBinary(docker.EngineApple))
+	if hasApple && docker.AppleServiceRunning() {
+		notice("ℹ️  Using Apple container (experimental; --engine docker to force Docker). See docs/CONTAINER_SUPPORT.md.")
+		return docker.EngineApple
+	}
+	if onPath("docker") {
+		return "docker"
+	}
+	if onPath("podman") {
+		notice("⚠️  docker not found — using podman instead (experimental; --engine docker to force)")
+		return "podman"
+	}
+	if hasApple {
+		notice("ℹ️  Using Apple container (experimental), the only engine installed. See docs/CONTAINER_SUPPORT.md.")
+		return docker.EngineApple
+	}
+	return "docker"
+}
+
 // ResolveEngineForPath resolves the container engine for a command that does
 // not build a full AppContext (e.g. booth stop/start/restart/rm/prune/list,
 // home-volume commands). It follows the same config-file-over-env-var
 // precedence as the full AppConfig pipeline: engine= in
 // <codeDir>/.booth/config.toml (skipped when codeDir is ""), then CB_ENGINE,
-// then the docker->podman PATH fallback in ResolveEngineValue.
+// then the default order in defaultEngine.
 //
 // Unlike the full pipeline, an invalid value here never aborts the command
 // (a typo in config.toml shouldn't block `booth stop`) — it just falls back
@@ -75,12 +116,22 @@ func ResolveEngineForPath(codeDir string, quiet bool) string {
 // ResolveEnginesForPath is ResolveEngineForPath for commands that only look
 // booths up (list, stop, restart, remove, prune, message, expose list). When the
 // engine was chosen explicitly (config file or CB_ENGINE) it returns just that
-// one. When nothing was chosen and both docker and podman are installed it
-// returns both, so a booth is found whichever engine started it. In every other
-// case it is the single engine ResolveEngineForPath would pick.
+// one. When nothing was chosen and more than one engine is installed it returns
+// every installed one — apple (Apple container, binary `container`), docker and
+// podman, in the order defaultEngine prefers them — so a booth is found
+// whichever engine started it. Otherwise it is the single engine
+// ResolveEngineForPath would pick.
 func ResolveEnginesForPath(codeDir string, quiet bool) []string {
-	if strings.TrimSpace(rawEngineForPath(codeDir)) == "" && onPath("docker") && onPath("podman") {
-		return []string{"docker", "podman"}
+	if strings.TrimSpace(rawEngineForPath(codeDir)) == "" {
+		var installed []string
+		for _, engine := range []string{docker.EngineApple, "docker", "podman"} {
+			if onPath(docker.EngineBinary(engine)) {
+				installed = append(installed, engine)
+			}
+		}
+		if len(installed) > 1 {
+			return installed
+		}
 	}
 	return []string{ResolveEngineForPath(codeDir, quiet)}
 }

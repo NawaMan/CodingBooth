@@ -13,21 +13,21 @@ It has two parts, kept apart on purpose:
 2. **[Plan](#part-2--plan-not-implemented)** — what is not built yet, in the order to
    build it.
 
-Tier 0 (the go/no-go spike) and Tier 1 (a minimum usable booth) are done. Tiers 2–4 are
-the plan.
+Tier 0 (the go/no-go spike) and Tier 1 (a minimum usable booth) are done, and so is most of
+Tier 2. The rest of Tiers 2–4 is the plan.
 
 ## Decisions
 
 | Question | Decision |
 | --- | --- |
 | Engine value | **`apple`**. The CLI it runs is `container`, but `container` is *not* an engine value — `--engine container` is rejected. Docs and help call it "Apple container". |
-| Discovery when no engine is chosen | **Show all** — `booth list` and friends will query every installed engine. Not built yet: [Tier 2, item 8](#tier-2--everyday-parity). |
-| Default engine | Unchanged: `docker`. `apple` is never picked implicitly. |
+| Discovery when no engine is chosen | **Show all** — `booth list` and friends query every installed engine. See [Finding booths](#finding-booths). |
+| Default engine | **`apple` first** when Apple container is installed and its service is running, then `docker`, then `podman`. See [When you choose nothing](#when-you-choose-nothing). |
 | Status | Experimental, with the same unconditional stderr warning Podman gets. |
 
 ---
 
-# Part 1 — Implemented (Tiers 0–1)
+# Part 1 — Implemented (Tiers 0–1, most of Tier 2)
 
 ## Choosing the engine
 
@@ -44,18 +44,87 @@ Values are `docker`, `podman` and `apple` (case-insensitive). Anything else — 
 the binary name `container` — is rejected:
 `❌ invalid engine "container" (supported: docker, podman, apple)`.
 
-Choosing `apple` prints, on stderr and not hidden by `--quiet`:
+### When you choose nothing
+
+With no flag, no `CB_ENGINE` and no `engine =` in the config, the engine is picked in this
+order:
+
+1. **`apple`**, when `container` is on `PATH` **and** its service is running
+   (`container system status`). A run picked this way prints, on stderr and hidden by
+   `--quiet`:
+   ```
+   ℹ️  Using Apple container (experimental; --engine docker to force Docker). See docs/CONTAINER_SUPPORT.md.
+   ```
+2. **`docker`**, when it is on `PATH`.
+3. **`podman`**, when it is on `PATH` (with Podman's own one-line notice).
+4. **`apple`** again when `container` is the only engine installed but its service is
+   stopped, so the error you see is Apple container's own (start it with
+   `container system start`).
+5. Otherwise `docker`, and the run fails because no engine is installed.
+
+An installed but **stopped** Apple container is passed over (step 1), so a Mac that also has
+Docker keeps working on Docker until `container system start`.
+
+A run with **`--dind` or `--egress`** skips step 1: Apple container cannot start the sidecars
+they need, so the run goes to Docker (or Podman) instead of being refused. With an explicit
+`--engine apple` they are still refused.
+
+Things to know when Apple container becomes your default:
+
+- **Separate image store.** Images built or pulled with Docker are not visible, so the first
+  run of each image pulls or rebuilds it.
+- **A Docker booth is not reused.** `booth` in a project whose booth is running on Docker
+  starts a second one on Apple container. `booth list` shows both (with an `ENGINE`
+  column); pass `--engine docker` (or set `engine = "docker"` in the project's config) to keep
+  a project on Docker.
+- **Test suites pin `CB_ENGINE=docker`** (`tests/common--source.sh` and the suite runners),
+  so their results do not depend on what is installed. Set `CB_ENGINE=apple` to run a
+  suite on Apple container on purpose.
+
+### Experimental warning
+
+Choosing `apple` explicitly prints, on stderr and not hidden by `--quiet`:
 
 ```
 Warning: --engine apple (Apple container) is experimental and may not have full Docker feature parity yet. See docs/CONTAINER_SUPPORT.md.
 ```
 
-**For `list`, `stop`, `start`, `restart`, `remove`, `prune`, `shell`, `exec`, set
-`CB_ENGINE=apple`** (or `engine = "apple"` in the project's config and pass `--code`).
-Until [item 8](#tier-2--everyday-parity) lands, the both-engines lookup only covers Docker
-and Podman, so without it those commands will not see Apple container booths.
-
 From inside a booth, `BOOTH_ENGINE=apple`.
+
+## Finding booths
+
+With no engine chosen (no `CB_ENGINE`, no `engine =` in the config), `list`, `stop`, `start`,
+`restart`, `remove`, `prune`, `message`, `expose list`, `shell` and `exec` query **every
+installed engine** — `docker`, `podman`, and `apple` when the `container` binary is on
+`PATH` — and act on the engine that owns the booth. `booth list` then adds an `ENGINE` column. A name that exists on more than
+one engine is refused (`booth "web" exists on apple, docker and podman. Set CB_ENGINE=<engine>
+to choose one.`).
+
+An installed Apple container whose service is not started (`container system start`) is skipped
+**without a warning**: it holds no running booths, and a Docker user who merely has `container`
+installed should not see a warning on every `booth list`. Once the service is up, a failure to
+list it is reported like any other engine's.
+
+**`shell` and `exec`** find the booth the same way (by name, or by `--code`), and run on the
+engine that owns it. With `--run`, a booth that exists nowhere is created by `booth run` on the
+[default engine](#when-you-choose-nothing), and they connect to it on whichever engine it landed.
+
+## Reaching the host
+
+Apple container has no `--add-host`, so `host.docker.internal` is not provided by the engine.
+The CLI reads the IPv4 gateway of Apple container's `default` network (`container network
+inspect default`; `192.168.64.1` if it cannot be read, and always under `--dryrun`) and passes it
+twice:
+
+- `BOOTH_HOST_GATEWAY=<gateway>` — `booth-entry` adds `<gateway> host.docker.internal` to
+  `/etc/hosts` when the name does not already resolve. Docker and Podman never get this variable,
+  so there it is a no-op.
+- `BOOTH_HOST_NAME=<gateway>` — the address itself, which works even on an image whose
+  `booth-entry` predates the mapping.
+
+So `curl http://host.docker.internal:<port>` works in a booth built from this version on, and
+`$BOOTH_HOST_NAME` works on any image. A booth attached to another network with a `--network`
+run-arg still gets the `default` network's gateway.
 
 ## How it works
 
@@ -129,20 +198,37 @@ published `base` image through the booth entrypoint:
   default run mode, with a TTY) started `examples/workspaces/empty-example` and worked.
 - **No CI**: Apple container needs Apple Silicon and macOS 26.
 
-Not verified yet: `booth shell`, a real image pull through the "not found locally" path,
-the `--silence-build` progress line, and `booth build` (the subcommand; the Boothfile build
-`booth` runs itself is verified).
+- **By hand, Tier 2** (same machine), with no `CB_ENGINE` set unless noted:
+  - `booth list` showed an Apple container booth in the `ENGINE` column next to Docker.
+  - `restart`, `stop`, `start --daemon`, `remove --force` and `prune --yes` found it and acted on
+    `apple`. `remove` also deleted its home volume.
+  - `booth shell` and `booth exec` (with `CB_ENGINE=apple`) worked.
+  - Inside the booth, `getent hosts host.docker.internal` gave `192.168.64.1`, and a connection
+    to it reached the host.
+  - `--persist-home`: a file in `/home/coder` survived deleting and recreating the booth, owned by
+    `coder`. `home-volume-list` showed the volume.
+  - `booth--expose 8080 18092`: the host read the in-booth server through the tunnel, and
+    `booth expose list` showed both the published port and the tunnel.
+  - `booth build` built a `.booth/Dockerfile` with `container build`. The `--dockerfile` path
+    built one too.
+  - `--variant notebook --version 0.79.0`, not present locally, was pulled and started, and its UI
+    answered on the published port.
+  - A second booth on an already-published port failed with Apple container's
+    `Address already in use` error. Docker gives its own raw error for the same case; the
+    friendlier port diagnosis exists only for `--dind`, which `apple` does not support.
+
+Not verified yet: the `--silence-build` progress line (it only draws on a terminal), the
+`codeserver` and `desktop-*` variants, and `--public`.
 
 ## Known limitations
 
-- **Booths are invisible to `list` etc. unless `CB_ENGINE=apple`** — item 8.
-- **`host.docker.internal` does not resolve inside the booth.** Use `192.168.64.1`. The
-  booth still receives `BOOTH_HOST_NAME=host.docker.internal` — item 9.
+- **`host.docker.internal` needs a current image.** It resolves through `booth-entry`; on an
+  older image use `$BOOTH_HOST_NAME`, which holds the gateway address.
 - **Separate image store.** Images built or pulled with Docker are not visible. A locally
   built image can be copied across:
   `docker save <image> -o image.tar && container image load -i image.tar`.
-- **`--persist-home`, `booth expose`, `--public`, desktop variants, and single-file bind
-  mounts are untested.** `--public` probably fails: its TLS proxy binds `:80`, and there is
+- **`--public`, the `codeserver` and desktop variants, and single-file bind mounts are
+  untested.** `--public` probably fails: its TLS proxy binds `:80`, and there is
   no sysctl to let `coder` bind low ports.
 - **`--dind` and `--egress` are not supported.**
 
@@ -155,6 +241,10 @@ the `--silence-build` progress line, and `booth build` (the subcommand; the Boot
 | Engine → binary (`apple` → `container`) | `docker.EngineBinary` in `cli/src/pkg/docker/docker.go` |
 | Call translation and JSON rendering | `cli/src/pkg/docker/apple_engine.go` |
 | Hook into the executor | top of `Docker` / `DockerOutput` (`docker.go`), `DockerBuild` (`docker_build.go`) |
+| Engines queried when none is chosen | `appctx.ResolveEnginesForPath` (`appctx/engine.go`) |
+| Quiet skip of a stopped service | `managedContainersAcross` (`lifecycle/lifecycle.go`), `docker.AppleServiceRunning` |
+| Host gateway | `docker.AppleNetworkGateway`; `BOOTH_HOST_*` in `booth/booth.go`; the `/etc/hosts` line in `variants/base/booth-entry` |
+| `booth--expose` tunnel binary | `tunnelExecCommand` (`booth/tcp_tunnel.go`) |
 
 ---
 
@@ -177,21 +267,21 @@ done and kept here for the record.
 | 2 | Query adapter (JSON, filtered in Go) | Done |
 | 3 | Run-argument translation | Done |
 | 4 | `booth` run, interactive and detached, with `-p` | Done |
-| 5 | `booth shell` / `booth exec` | Done (`exec` verified; `shell` not verified by hand) |
+| 5 | `booth shell` / `booth exec` | Done |
 | 6 | `stop` / `start` / `restart` / `remove` / `prune` | Done |
-| 7 | Image present/pull check | Done (pull path not verified by hand) |
+| 7 | Image present/pull check | Done |
 
 ### Tier 2 — Everyday parity
 
 | # | Item | Feasibility | Notes |
 | --- | --- | --- | --- |
-| 8 | Show booths from all engines: extend the multi-engine lookup (`appctx.ResolveEnginesForPath`) from two engines to three, with the `ENGINE` column and per-booth routing | Medium | Per-booth routing already exists; the "exists on both" error becomes an N-way check. |
-| 9 | Host gateway: make `host.docker.internal` resolve | Medium | Read the gateway from `inspect` (default `192.168.64.1`) and add an `/etc/hosts` entry at startup (needs the entrypoint), or pass the IP in `BOOTH_HOST_NAME`. |
-| 10 | Home volume (`--persist-home`, `home-volume-*`) | Likely | `volume create --label` and `volume list` JSON are already handled; the named-volume mount itself is untested. |
-| 11 | `booth expose` tunnel and `expose list` | Likely | `port` is emulated and `exec -i` works; untested end to end. |
-| 12 | Port-conflict diagnosis | Likely | Goes through the emulated `ps` now; untested. |
-| 13 | `booth build` | Medium | The Boothfile build during `booth` works (`--pull` translated). Left: the `booth build` subcommand, and the `--silence-build` progress line against real `container build` output (it prints BuildKit's `#N` lines, which the Docker parser reads). |
-| 14 | GUI variants (`codeserver`, `desktop-*`, `notebook`) | Likely | Ports only — needs checking. Desktops use `--shm-size`, which is supported. |
+| 8 | Show booths from all engines | ✅ Done | See [Finding booths](#finding-booths). Covers `shell`/`exec` too. |
+| 9 | Host gateway: make `host.docker.internal` resolve | ✅ Done | See [Reaching the host](#reaching-the-host). Needs an image with the current `booth-entry`. |
+| 10 | Home volume (`--persist-home`, `home-volume-*`) | ✅ Verified | No change needed. |
+| 11 | `booth expose` tunnel and `expose list` | ✅ Fixed, verified | The host-side tunnel ran the engine name (`apple`) as a binary; it now runs `container`. |
+| 12 | Port-conflict diagnosis | ✅ Same as Docker | An explicit port in use fails with the engine's raw error on both engines. |
+| 13 | `booth build` | ✅ Mostly | The subcommand builds. Left: the `--silence-build` progress line on a real terminal (`container build` prints BuildKit's `#N` lines, which the Docker parser reads). |
+| 14 | GUI variants (`codeserver`, `desktop-*`, `notebook`) | Partly | `notebook` verified. `codeserver` and the desktops (which use `--shm-size`, supported) are unchecked. |
 
 ### Tier 3 — Hard or blocked
 
@@ -207,5 +297,5 @@ done and kept here for the record.
 
 | # | Item | Notes |
 | --- | --- | --- |
-| 20 | Verify the gaps above by hand | `booth shell`, image pull, `--silence-build`, `booth build`. |
+| 20 | Verify the gaps above by hand | Left: `--silence-build` on a terminal, `codeserver`, the desktops. (`booth shell`, image pull and `booth build` are done.) |
 | 21 | Complex test for the lifecycle | Skip unless `container` is installed and running; manual only. |

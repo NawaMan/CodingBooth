@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/docker"
 )
 
 // tcpTunnel represents an active tunnel from a host port to a container port via `<engine> exec` + socat.
@@ -188,12 +189,10 @@ func acceptLoop(ctx context.Context, listener net.Listener, engine, containerNam
 }
 
 // tunnelExecCommand builds the `<engine> exec -i <container> socat …` process
-// that carries one tunnelled connection. An empty engine means Docker.
+// that carries one tunnelled connection. An empty engine means Docker; apple
+// runs `container`, whose `exec -i` takes the same arguments.
 func tunnelExecCommand(ctx context.Context, engine, containerName string, containerPort int) *exec.Cmd {
-	if engine == "" {
-		engine = "docker"
-	}
-	return exec.CommandContext(ctx, engine, "exec", "-i", containerName,
+	return exec.CommandContext(ctx, docker.EngineBinary(engine), "exec", "-i", containerName,
 		"socat", "STDIO", fmt.Sprintf("TCP:localhost:%d", containerPort))
 }
 

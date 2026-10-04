@@ -609,6 +609,21 @@ func TestNewlyCreatedContainer(t *testing.T) {
 	}
 }
 
+func TestNewlyCreatedContainerSameNameOnAnotherEngine(t *testing.T) {
+	// The run created "web" on apple while a "web" already existed on docker:
+	// the apple one is still new.
+	pre := []managedContainer{{Name: "web", Engine: "docker", State: "exited"}}
+	post := append([]managedContainer{}, pre...)
+	post = append(post, managedContainer{Name: "web", Engine: "apple", State: "running"})
+	got, err := newlyCreatedContainer(pre, post)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if got.Engine != "apple" {
+		t.Errorf("got %s@%s, want web@apple", got.Name, got.Engine)
+	}
+}
+
 func TestBuildExecFlagsDaemon(t *testing.T) {
 	got := flattenExecFlags(buildExecFlags(false, true, "", nil, ""))
 	want := []string{"-d", "-u", "coder", "-w", "/home/coder/code"}

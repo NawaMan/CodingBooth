@@ -19,7 +19,7 @@ fi
 
 # Just check the USAGE section - the full help is ~98 lines
 ACTUAL=$(run_coding_booth help)
-ACTUAL=$(printf '%s\n' "$ACTUAL" | head -42)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -43)
 
 HERE="$PWD"
 VERSION="$(get_booth_version)"
@@ -48,8 +48,9 @@ OPTIONS
   --no-sudo               Shorthand for --sudo false
   --rootless              Skip the Linux rootless/userns-remap refusal (unsupported)
   --engine <docker|podman|apple>
-                          Container engine to use (default: docker; podman and
-                          apple, i.e. Apple container, are experimental — see
+                          Container engine to use (default: apple, i.e. Apple
+                          container, when installed and running; else docker;
+                          else podman. podman and apple are experimental — see
                           docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md)
 
 EXAMPLES:

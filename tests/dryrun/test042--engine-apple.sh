@@ -95,3 +95,21 @@ elif printf '%s\n' "$ERR" | grep -q -- "--privileged is not supported on engine 
 else
   fail 9 "--privileged run-arg is refused on engine apple with a clear message" "$ERR"
 fi
+
+# 10. host.docker.internal has no --add-host here, so the booth is handed the
+# gateway address instead (the dryrun default), and asked to map the name
+if printf '%s\n' "$OUT" | grep -q "BOOTH_HOST_NAME=192.168.64.1" \
+  && printf '%s\n' "$OUT" | grep -q "BOOTH_HOST_GATEWAY=192.168.64.1"; then
+  pass 10 "apple passes the gateway as BOOTH_HOST_NAME and BOOTH_HOST_GATEWAY"
+else
+  fail 10 "apple passes the gateway as BOOTH_HOST_NAME and BOOTH_HOST_GATEWAY" "$OUT"
+fi
+
+# 11. docker keeps the name and never asks for the mapping
+DOCKER_OUT=$(run_coding_booth --variant base --dryrun --engine docker 2>/dev/null || true)
+if printf '%s\n' "$DOCKER_OUT" | grep -q "BOOTH_HOST_NAME=host.docker.internal" \
+  && ! printf '%s\n' "$DOCKER_OUT" | grep -q "BOOTH_HOST_GATEWAY"; then
+  pass 11 "docker keeps BOOTH_HOST_NAME=host.docker.internal and no BOOTH_HOST_GATEWAY"
+else
+  fail 11 "docker keeps BOOTH_HOST_NAME=host.docker.internal and no BOOTH_HOST_GATEWAY" "$DOCKER_OUT"
+fi

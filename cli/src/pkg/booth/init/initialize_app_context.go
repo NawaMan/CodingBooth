@@ -138,11 +138,18 @@ func validateConfig(config *appctx.AppConfig) {
 }
 
 // resolveEngineConfig normalizes config.Engine to a concrete "docker",
-// "podman" or "apple" (applying the PATH fallback when it was never
+// "podman" or "apple" (applying the default order when it was never
 // explicitly set), or returns an error for anything else. See
 // docs/PODMAN_SUPPORT.md and docs/CONTAINER_SUPPORT.md.
 func resolveEngineConfig(config *appctx.AppConfig) error {
-	engine, err := appctx.ResolveEngineValue(config.Engine, config.Quiet)
+	// With no engine chosen, Apple container comes first — unless the run
+	// needs a sidecar it cannot start; then docker (or podman) is picked
+	// instead of refusing below.
+	resolve := appctx.ResolveEngineValue
+	if config.Dind || config.Egress {
+		resolve = appctx.ResolveEngineValueWithoutApple
+	}
+	engine, err := resolve(config.Engine, config.Quiet)
 	if err != nil {
 		return err
 	}

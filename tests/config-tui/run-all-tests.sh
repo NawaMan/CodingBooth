@@ -24,6 +24,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # These tests do not source common--source.sh, which sets it everywhere else.
 export CB_BROWSER=false
 
+# Run on Docker unless the caller picked an engine; see common--source.sh.
+export CB_ENGINE="${CB_ENGINE:-docker}"
+
 # A VHS run spawns ttyd and a headless browser, records, then encodes -- tens of
 # seconds during which this runner has nothing to print. The transient line (see
 # progress--source.sh) is what tells the operator which test that is and how long

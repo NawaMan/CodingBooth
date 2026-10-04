@@ -287,12 +287,11 @@ Boothfile env (build-time, lowest)
 
 ## Container Engine (experimental)
 
-CodingBooth runs on Docker. Podman or, on macOS, Apple container can be used
-instead, but **both are experimental**: they are still being developed and may not
-have feature parity with Docker. Apple container is the `apple` engine
+CodingBooth runs on Docker, Podman or, on macOS, Apple container. Podman and Apple
+container are **experimental**: they are still being developed and may not have
+feature parity with Docker. Apple container is the `apple` engine
 (`--engine apple`); see [CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md) for what works
-on it — notably `--dind` and `--egress` do not, and lifecycle commands need
-`CB_ENGINE=apple` for now.
+on it — notably `--dind` and `--egress` do not.
 
 ```bash
 booth --engine podman                 # this run
@@ -300,19 +299,22 @@ CB_ENGINE=podman booth                # environment
 ```
 
 or `engine = "podman"` in `.booth/config.toml`. Precedence is the usual
-`--engine` > config file > `CB_ENGINE` > default (`docker`). If you choose
-nothing and `docker` is not installed but `podman` is, CodingBooth uses `podman`
-and says so (hidden by `--quiet`).
+`--engine` > config file > `CB_ENGINE` > default. The default is `apple` when
+Apple container is installed and its service is running (except for `--dind` and
+`--egress` runs), then `docker`, then `podman`; picking anything but Docker this
+way prints a one-line notice (hidden by `--quiet`). Use `--engine docker` to stay
+on Docker. See [CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md#when-you-choose-nothing).
 
 Notes:
 
 - `booth list`, `stop`, `start`, `restart`, `remove`, `prune`, `message` and
-  `expose list` do not take `--engine`. When no engine is chosen and both are
-  installed they look at both Docker and Podman, and act on whichever owns the
-  booth (`booth list` adds an `ENGINE` column). `CB_ENGINE=docker` or
-  `CB_ENGINE=podman` narrows them to one, which is also how to pick when the same
-  name exists on both. `booth shell` and `booth exec` look at one engine, so use
-  `CB_ENGINE=podman booth shell` for a Podman booth.
+  `expose list` do not take `--engine`. When no engine is chosen and more than
+  one is installed they look at every installed engine — Docker, Podman, and
+  Apple container (`apple`, see [CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md)) —
+  and act on whichever owns the booth (`booth list` adds an `ENGINE` column).
+  `CB_ENGINE=<engine>` narrows them to one, which is also how to pick when the
+  same name exists on more than one. `booth shell` and `booth exec` find their booth
+  the same way.
 - Rootless Podman needs `/etc/subuid` and `/etc/subgid` entries for your user.
   CodingBooth adds `--userns=keep-id` so your host UID matches `coder` inside.
 - `booth--expose` tunnels work on Podman (they use `podman exec`).

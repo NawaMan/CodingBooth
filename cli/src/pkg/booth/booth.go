@@ -672,7 +672,18 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	// bound to a specific interface answers on — and what you would hand to
 	// someone else on the network. Absent when the host has no address beyond
 	// its loopback, in which case the name is still the way in.
-	builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_NAME="+hostGatewayName))
+	//
+	// Apple container has no --add-host, so there the name resolves only once
+	// booth-entry maps it in /etc/hosts — and only images whose booth-entry
+	// does that. BOOTH_HOST_GATEWAY asks for the mapping; BOOTH_HOST_NAME is
+	// the gateway address itself, which works on any image.
+	if ctx.Engine() == docker.EngineApple {
+		gateway := docker.AppleNetworkGateway("default", ctx.Dryrun())
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_NAME="+gateway))
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_GATEWAY="+gateway))
+	} else {
+		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_NAME="+hostGatewayName))
+	}
 	if hostIP := getHostIP(); hostIP != "" {
 		builder.CommonArgs.Append(ilist.NewList[string]("-e", "BOOTH_HOST_IP="+hostIP))
 	}

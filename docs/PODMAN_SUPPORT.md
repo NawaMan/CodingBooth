@@ -50,8 +50,7 @@ the full application context, so they cannot see the flag:
 | Command | Engine comes from |
 | --- | --- |
 | `booth` (run), `booth build` | `--engine` > config.toml > `CB_ENGINE` > default |
-| `booth list`, `stop`, `start`, `restart`, `remove`, `prune`, `message`, `expose list` | **Both engines** when none is chosen (see below). If `CB_ENGINE` is set — or, for `start`, `engine` in the `.booth/config.toml` under `--code` — only that engine. |
-| `booth shell`, `booth exec` | `engine` in the `.booth/config.toml` under `--code`, then `CB_ENGINE`, then Docker. **Without `--code`, only `CB_ENGINE` is read** (not the current directory's config). |
+| `booth list`, `stop`, `start`, `restart`, `remove`, `prune`, `message`, `expose list`, `shell`, `exec` | **Every installed engine** when none is chosen (see below). If `CB_ENGINE` is set — or, for `start`, `shell` and `exec`, `engine` in the `.booth/config.toml` under `--code` — only that engine. |
 | `booth home-volume-*` | `CB_ENGINE` only |
 
 ### Finding booths on either engine
@@ -70,24 +69,30 @@ act on that engine — so `booth stop mybooth` stops a Podman booth without any
 - If one engine cannot be queried (for example the Docker daemon is not running) a
   `Warning: could not list docker booths: …` goes to stderr and the other engine's
   booths are still used. It is an error only when every engine fails.
+- Apple container (`apple`) joins this lookup too when its `container` binary is
+  installed, and with all three the ambiguity error names all three; see
+  [CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md#finding-booths).
 - With only one of the two installed, that one is used, as before.
 
-`booth shell`, `booth exec` and `home-volume-*` are not part of this: `shell`/`exec`
-can create a booth (`--run`) and so need one definite engine, and a home volume lives in
-one engine's store. For a Podman booth use `CB_ENGINE=podman booth shell`.
+`booth shell` and `booth exec` are part of this too: they run on the engine that owns the
+booth, and with `--run` a booth that exists nowhere is created on the default engine.
+`home-volume-*` is not — a home volume lives in one engine's store — so use
+`CB_ENGINE=podman` for a Podman booth's volumes.
 
 ### When you choose nothing
 
-The default is `docker`, so nothing changes for existing users. One narrow exception:
-if the engine was never set (no flag, config or env) **and `docker` is not on `PATH`
-but `podman` is**, CodingBooth uses `podman` and says so once:
+Podman is never preferred over Docker. If the engine was never set (no flag, config or
+env) **and `docker` is not on `PATH` but `podman` is**, CodingBooth uses `podman` and says
+so once:
 
 ```
 ⚠️  docker not found — using podman instead (experimental; --engine docker to force)
 ```
 
 `--quiet` hides that line. An explicit choice is never overridden. If neither binary is
-found, the run fails the way it always did (the engine command is not found).
+found, the run fails the way it always did (the engine command is not found). On a Mac
+with Apple container installed and running, `apple` comes before both; see
+[CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md#when-you-choose-nothing).
 
 ### Experimental warning
 
@@ -446,8 +451,8 @@ The unverified items are **not done yet**; they are tracked, to be done incremen
   ([BOOTH_EXPOSE.md](BOOTH_EXPOSE.md)). `booth--expose` inside the booth needs no engine
   setting: the host-side CLI that started the booth already knows it.
 - **Lifecycle commands do not take `--engine`** (table above); choose with `CB_ENGINE`.
-  `booth shell`, `booth exec` and `home-volume-*` look at one engine only and need
-  `CB_ENGINE=podman` for a Podman booth.
+  `home-volume-*` looks at one engine only and needs `CB_ENGINE=podman` for a Podman
+  booth's volumes.
 - **Podman's live build-progress line only understands Buildah's plain-text format.**
   If a future Buildah version changes its `STEP n/m:` / `-->` / `COMMIT` wording, the
   parser in `build_progress.go` falls silently back to no live line (same as an

@@ -29,6 +29,7 @@ func TestTunnelExecCommand(t *testing.T) {
 	}{
 		{"podman", "podman", []string{"podman", "exec", "-i", "mybooth", "socat", "STDIO", "TCP:localhost:8080"}},
 		{"docker", "docker", []string{"docker", "exec", "-i", "mybooth", "socat", "STDIO", "TCP:localhost:8080"}},
+		{"apple runs the container binary", "apple", []string{"container", "exec", "-i", "mybooth", "socat", "STDIO", "TCP:localhost:8080"}},
 		{"unset engine means docker", "", []string{"docker", "exec", "-i", "mybooth", "socat", "STDIO", "TCP:localhost:8080"}},
 	}
 	for _, tt := range tests {
