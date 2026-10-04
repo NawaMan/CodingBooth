@@ -9,13 +9,13 @@ tags = [
 ]
 
 [params.JULIA_VERSION]
-default = "1.13.0"
+default = "1.13.1"
 # 1.11.3 dropped: its libopenlibm.so ships GNU_STACK=RWE (an executable-stack
 # requirement), which this base's glibc/kernel refuses to load ("cannot enable
 # executable stack as shared object requires") -- confirmed via readelf -lW
 # against the official tarball; 1.12.7 and 1.13.0 both ship GNU_STACK=RW and
 # are unaffected. Re-check with readelf before reintroducing an older release.
-suggests = ["1.13.0", "1.12.7"]
+suggests = ["1.13.1", "1.12.7"]
 
 [segments]
 Boothfile = """

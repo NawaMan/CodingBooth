@@ -244,6 +244,23 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       size silently. `booth config` could say so when a desktop template is picked on `base`.
 
 ## Problems
+- [ ] **Open risks from the 0.79.0 catalog sweep (2026-10-03, n−1 rule applied).** Each is a
+      guess until the full suite runs on the 26.04 images; drop the line once a run settles it.
+      - **cuda reads NVIDIA's `ubuntu2404` repo on the 26.04 base** (`variants/base/setups/cuda--setup.sh`,
+        `REPO="ubuntu2404"`). NVIDIA now publishes `ubuntu2604` (cuda-toolkit 13-3, 13-4). Mixing a
+        24.04 repo into 26.04 may pull mismatched libs; switch to `ubuntu2604` once it can be checked
+        on a GPU host (`0.80.0--rc` has the same line).
+      - **Held at the previous major on purpose:** mermaid 11.17.2 (12.1.0 is out), appwrite-server
+        1.9.6 (2.3.0 is out; its compose/migration needs a look), ruby 3.4 (4.0.7), erlang OTP 28 (29),
+        lua 5.4 (5.5), clang/LLVM 22 (23), go 1.26.8 (1.27.1 only added to suggests), zig 0.16.0
+        (0.17.0 is two days old), python 3.14.8 (3.15.0 just cut), conda's python 3.13 (3.14 not
+        offered). Revisit each at the next sweep; none of the newer majors has been tried in a booth.
+      - **Bumped but not yet built:** python 3.14.8 (default jumps a minor: 3.13 → 3.14 — watch
+        packages without 3.14 wheels), zig 0.16.0 (0.15 → 0.16 breaks std APIs; zig-example code may
+        need updating), julia 1.13.1, anythingllm 1.17.0, appwrite-cli 28.1.0, hoppscotch 2026.9.0,
+        penpot 2.18.1, wails v3.0.0-beta.27, mermaid 11.17.2.
+      - **Not checked by the sweep:** greenfoot (no parseable latest), haskell's `recommended`
+        (ghcup decides), older entries deep in the go/rust/python/scala/kotlin suggests lists.
 - [ ] **Desktop variants' clipboard still needs noVNC's manual side panel.** Investigated
       2026-09-23 while looking at browser-UI friction (see `docs/implementations/DESKTOP_NOVNC.md`'s
       "Clipboard Not Working" section). Two separate blockers, confirmed by inspecting a built

@@ -9,8 +9,8 @@ tags = [
 ]
 
 [params.ZIG_VERSION]
-default = "0.15.1"
-suggests = ["0.15.1", "0.14.0", "0.13.0"]
+default = "0.16.0"
+suggests = ["0.16.0", "0.15.1", "0.14.0"]
 
 [segments]
 Boothfile = """

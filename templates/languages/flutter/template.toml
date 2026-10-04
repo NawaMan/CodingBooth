@@ -32,7 +32,7 @@ is skipped and no Flutter app can be built in it."""
 
 [params.FLUTTER_VERSION]
 default = "latest"
-suggests = ["latest", "3.47.5", "3.44.9", "3.41.9", "3.38.10"]
+suggests = ["latest", "3.47.6", "3.44.9", "3.41.9", "3.38.10"]
 
 [segments]
 Boothfile = """

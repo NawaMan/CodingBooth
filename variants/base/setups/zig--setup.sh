@@ -13,8 +13,8 @@ Usage:
 Examples:
   $0                          # install default (latest stable) and register as lowest-priority cc/c++
   $0 0.14.1                   # pin a version
-  $0 --zig-version 0.15.1     # equivalent
-  $0 0.15.1 --no-verify       # skip minisign verification
+  $0 --zig-version 0.16.0     # equivalent
+  $0 0.16.0 --no-verify       # skip minisign verification
   $0 --no-alternatives        # do NOT register cc/c++ (just install zig)
 USAGE
 }
@@ -26,7 +26,7 @@ if [ "$EUID" -ne 0 ]; then
 fi
 
 # --- defaults ---
-ZIG_DEFAULT_VERSION="${ZIG_DEFAULT_VERSION:-0.15.1}"   # latest stable on 2025-09-26
+ZIG_DEFAULT_VERSION="${ZIG_DEFAULT_VERSION:-0.16.0}"   # n-1 stable (0.17.0 is 2026-10-01)
 ZIG_VERSION_INPUT="${1:-}"
 if [[ "${ZIG_VERSION_INPUT}" =~ ^- ]] ; then ZIG_VERSION_INPUT=""; fi
 

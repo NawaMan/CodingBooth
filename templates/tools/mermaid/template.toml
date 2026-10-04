@@ -10,8 +10,9 @@ tags = [
 ]
 
 [params.MERMAID_VERSION]
-default = "11.17.0"
+default = "11.17.2"
 suggests = [
+    "11.17.2",
     "11.17.0",
     "11.4.2",
     "11.3.0",

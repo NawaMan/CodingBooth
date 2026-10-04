@@ -7,8 +7,8 @@ begin
 # Test 1: default select
 run booth config $prj --no-tui --select "hoppscotch"
 boothfile="$prj/.booth/Boothfile"
-assert-line "$boothfile" 'arg HOPPSCOTCH_VERSION=' '2026.8.2' \
-    "default version is 2026.8.2"
+assert-line "$boothfile" 'arg HOPPSCOTCH_VERSION=' '2026.9.0' \
+    "default version is 2026.9.0"
 assert-line "$boothfile" 'arg HOPPSCOTCH_PORT=' '20500' \
     "default port is 20500"
 assert-line "$boothfile" 'copy --from=hoppscotch/hoppscotch-frontend:' '${HOPPSCOTCH_VERSION} /site/selfhost-web /opt/hoppscotch' \

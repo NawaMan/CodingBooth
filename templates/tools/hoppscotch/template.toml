@@ -7,8 +7,8 @@ is bundled so requests to booth-local APIs work without the Hoppscotch Agent. \
 The server does not start or publish a port on its own — add +autostart to \
 run it on boot, and +expose to reach it from the host.
 
-Pin the image tag with hoppscotch:2026.8.2 or hoppscotch:latest; the default \
-is 2026.8.2. Default UI port is 20500 (Hoppscotch's own 3000 collides with \
+Pin the image tag with hoppscotch:2026.9.0 or hoppscotch:latest; the default \
+is 2026.9.0. Default UI port is 20500 (Hoppscotch's own 3000 collides with \
 Node apps)."""
 display-order = 29
 tags = [
@@ -22,8 +22,9 @@ tags = [
 ]
 
 [params.HOPPSCOTCH_VERSION]
-default = "2026.8.2"
+default = "2026.9.0"
 suggests = [
+    "2026.9.0",
     "2026.8.2",
     "2026.8.0",
     "latest",

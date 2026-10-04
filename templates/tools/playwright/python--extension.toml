@@ -11,6 +11,8 @@ tags = [
 requires = ["python"]
 
 [segments]
+# Pinned to the parent's PLAYWRIGHT_VERSION so the Python binding reuses the pre-baked
+# browsers instead of floating to a newer Playwright that expects different ones.
 "Boothfile--90" = """
-run pip install playwright
+run if [ "${PLAYWRIGHT_VERSION}" = "latest" ]; then pip install playwright; else pip install "playwright==${PLAYWRIGHT_VERSION}"; fi
 """
