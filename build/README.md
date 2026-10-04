@@ -94,6 +94,29 @@ Installs the Go programming language (v1.24.1).
 
 ---
 
+### clean-examples.sh
+
+Reclaims disk from the booths run in `examples/workspaces/` — without the collateral of
+`docker system prune -a --volumes`.
+
+```bash
+./build/clean-examples.sh --dry-run            # list only
+./build/clean-examples.sh                      # list, ask, remove
+./build/clean-examples.sh -y --dangling --build-cache
+```
+
+**What it removes:**
+- Stopped example booth containers (`cb.code-path` under `*/examples/workspaces/*`) and their stopped sidecars
+- Example images — `codingbooth-local:<example-folder>-<variant>-<version>`
+- Example home volumes (`cb-home-<example>`) and DinD/egress networks (`<example>-<port>-net`)
+- With `--dangling`: all dangling `<none>` images; with `--build-cache`: the whole build cache (any project's)
+
+**Never removed:** running booths and anything they use, the shared service volumes
+(`booth-pgdata`, `booth-mysqldata`, … — shared by every project using those templates), and base
+images (`nawaman/codingbooth:*`). Uses `$BOOTH_ENGINE` (default `docker`).
+
+---
+
 ### cosign.pub
 
 Public key for verifying Docker image signatures. This is used to verify that published images were signed by the project maintainer.
