@@ -33,11 +33,21 @@ begin
 
 [[ -x "$runner" ]]; assert-true "$?" "complex runner is executable"
 
-# --list must agree with what is actually on disk.
-on_disk="$(cd "$root/tests/complex" && ls -d test-*/ 2>/dev/null | sed 's#/$##' | sort)"
+# --list must agree with what is actually on disk, under the runner's own category
+# subfolders (boothfile/, features/, security/, desktop/ — kept in sync with the
+# CATEGORIES array in run-complex-tests.sh by hand, not derived from it, so a
+# category added to one and not the other fails loudly here rather than silently
+# dropping tests from --list). Deliberately not a bare tests/complex/*/test-*/
+# wildcard: a pre-existing, unrelated tests/complex/template/ (singular, its own
+# self-contained suite) sits right next to these, and the runner's own discovery
+# avoids it the same explicit way for the same reason.
+complex_categories=(boothfile features security desktop)
+on_disk="$(cd "$root/tests/complex" && for c in "${complex_categories[@]}"; do
+    ls -d "$c"/test-*/ 2>/dev/null
+done | sed 's#/$##' | sort)"
 listed="$(bash "$runner" --list | sort)"
 [[ "$listed" == "$on_disk" ]]
-assert-true "$?" "--list matches the test-*/ dirs on disk"
+assert-true "$?" "--list matches the test-*/ dirs on disk, under their category folders"
 
 count="$(printf '%s\n' "$listed" | grep -c .)"
 (( count > 0 )); assert-true "$?" "discovery finds tests (${count})"
