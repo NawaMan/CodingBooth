@@ -142,6 +142,16 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **Swift's version pin fixed: `6.0.1`/`6.3.3` both 404 on this base's Ubuntu 26.04.** swift.org's
+  `resolute` builds start at `6.4.0` (verified live against `download.swift.org`: anything older
+  redirects to a 404) — already noted in this file's own Ubuntu 26.04 migration entry, but
+  `templates/languages/swift/template.toml`'s `suggests` list still offered both dead versions, and
+  `tests/complex/boothfile/test-boothfile-swift`'s fixture Boothfile still hardcoded `--version
+  6.0.1`, so the one test that would have caught this was failing for the same reason it existed.
+  `suggests` is now just `["6.4.0"]` — the only version confirmed to actually install on this base;
+  the fixture now pins `6.4.0` too. Verified: the real test now passes (113s, a genuine Swift
+  install and `swift --version` check, not a path/mock); all 8 catalog guards still pass.
+
 - **Test logs moved into `tests/logs/`, matching the convention every other suite already follows.**
   `tests/config/run-all-tests.sh`'s `capture_file()` wrote each parallel test's `out--<name>.log`
   loose into `tests/config/` itself — ~100 of them, sitting next to the test code and the category
