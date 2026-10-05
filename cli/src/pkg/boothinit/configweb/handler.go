@@ -147,11 +147,13 @@ func NewMux(session *Session, token string, done chan<- Outcome) http.Handler {
 		_ = readJSON(request, &payload)
 		state := session.CurrentState()
 		if len(state.Drifted) > 0 {
-			mode := payload.Mode
-			if mode == "" {
-				mode = "save"
-			}
-			switch mode {
+			switch payload.Mode {
+			case "apply":
+				// Replace them; the save path keeps a .bak of each.
+				result := session.Result(false)
+				writeJSON(writer, map[string]any{"ok": true})
+				sendOutcome(done, Outcome{Result: result})
+				return
 			case "beside":
 				result := session.Result(true)
 				writeJSON(writer, map[string]any{"ok": true, "beside": true})
@@ -159,13 +161,18 @@ func NewMux(session *Session, token string, done chan<- Outcome) http.Handler {
 				return
 			case "overwrite":
 				if payload.OverwriteWord != overwriteConfirmWord {
-					writeConflict(writer, state.Drifted,
-						"type \""+overwriteConfirmWord+"\" to replace hand-written files, or keep them and write .new beside them")
+					writeConflict(writer, state,
+						"type \""+overwriteConfirmWord+"\" to overwrite with no backup, or pick another choice")
 					return
 				}
+				result := session.Result(false)
+				result.NoBackup = true
+				writeJSON(writer, map[string]any{"ok": true})
+				sendOutcome(done, Outcome{Result: result})
+				return
 			default:
-				writeConflict(writer, state.Drifted,
-					"these files are hand-written; keep them (write .new) or type overwrite to replace")
+				writeConflict(writer, state,
+					"these files have changes booth config did not make; choose apply, beside, or overwrite")
 				return
 			}
 		}
@@ -186,6 +193,27 @@ func NewMux(session *Session, token string, done chan<- Outcome) http.Handler {
 		result := session.Result(false)
 		writeJSON(writer, map[string]any{"ok": true})
 		sendOutcome(done, Outcome{Result: result})
+	})
+	mux.HandleFunc("/api/adopted", func(writer http.ResponseWriter, request *http.Request) {
+		if request.Method != http.MethodPost {
+			http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
+			return
+		}
+		var payload struct {
+			Accept bool `json:"accept"`
+		}
+		_ = readJSON(request, &payload)
+		if !payload.Accept {
+			// Leave to review the files first: nothing is saved.
+			writeJSON(writer, map[string]any{"ok": true})
+			sendOutcome(done, Outcome{Result: &tui.ConfigResult{Confirmed: false, Review: true}})
+			return
+		}
+		if err := session.AcceptAdopted(); err != nil {
+			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(writer, session.CurrentState())
 	})
 	mux.HandleFunc("/api/cancel", func(writer http.ResponseWriter, request *http.Request) {
 		if request.Method != http.MethodPost {
@@ -252,14 +280,15 @@ func writeJSON(writer http.ResponseWriter, value any) {
 	_ = json.NewEncoder(writer).Encode(value)
 }
 
-func writeConflict(writer http.ResponseWriter, drifted []string, message string) {
+func writeConflict(writer http.ResponseWriter, state State, message string) {
 	writer.Header().Set("Content-Type", "application/json")
 	writer.Header().Set("Cache-Control", "no-store")
 	writer.WriteHeader(http.StatusConflict)
 	_ = json.NewEncoder(writer).Encode(map[string]any{
-		"error":   "hand-written",
-		"drifted": drifted,
-		"message": message,
+		"error":        "hand-written",
+		"drifted":      state.Drifted,
+		"adoptReasons": state.AdoptReasons,
+		"message":      message,
 	})
 }
 

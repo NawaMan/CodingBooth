@@ -131,15 +131,20 @@ function run-with-timeout() {
 # run-tui <mode> <keystrokes...>
 #   mode = "save"  → append Ctrl+S (drive to generation, assert on files)
 #          "save-confirm"
-#                  → append Ctrl+S, then type the overwrite confirmation word.
+#                  → append Ctrl+S, pick choice 3 and type the overwrite
+#                    confirmation word: replace the files, no backup kept.
 #                    Needed whenever .booth/ holds hand-written content: the TUI
-#                    refuses to save over it until the word is typed in full, so a
-#                    plain "save" would silently leave the files untouched — and a
-#                    test asserting "the hand-written value survived" would then
-#                    pass for the wrong reason.
+#                    will not save over it without a choice, so a plain "save"
+#                    would silently leave the files untouched — and a test
+#                    asserting "the hand-written value survived" would then pass
+#                    for the wrong reason.
+#          "save-apply"
+#                  → append Ctrl+S, pick choice 1: replace the hand-written files,
+#                    keeping each as <name>.bak.
 #          "save-beside"
-#                  → append Ctrl+S then a bare Enter: keep the hand-written files
-#                    and write the generated content beside them as <name>.new.
+#                  → append Ctrl+S then a bare Enter (choice 2, the default): keep
+#                    the hand-written files and write the generated content beside
+#                    them as <name>.new.
 #          "frame" → leave the TUI displayed (final frame is the TUI), then
 #                    quit without saving (Ctrl+Q, Enter). Used for frame checks.
 #          "raw"   → append nothing; the caller's keystrokes are complete.
@@ -191,7 +196,10 @@ function run-tui() {
                 printf '%s\n' 'Ctrl+S' 'Sleep 3s'
                 ;;
             save-confirm)
-                printf '%s\n' 'Ctrl+S' 'Sleep 1s' 'Type "overwrite"' 'Sleep 500ms' 'Enter' 'Sleep 3s'
+                printf '%s\n' 'Ctrl+S' 'Sleep 1s' 'Type "3"' 'Sleep 300ms' 'Type "overwrite"' 'Sleep 500ms' 'Enter' 'Sleep 3s'
+                ;;
+            save-apply)
+                printf '%s\n' 'Ctrl+S' 'Sleep 1s' 'Type "1"' 'Sleep 300ms' 'Enter' 'Sleep 3s'
                 ;;
             save-beside)
                 # Ctrl+S then a bare Enter: keep the hand-written files, write the

@@ -260,8 +260,8 @@ Clicking away from a field you were editing **keeps** what you typed, exactly as
 `Enter` would. The two dialogs are deliberately not clickable in the same way: the
 startup warning is dismissed by a click, but the
 [overwrite confirmation](#saving-over-hand-written-files) ignores the mouse
-entirely — it exists to make destroying hand-written files take more than a reflex,
-and a stray click is precisely a reflex.
+entirely — it exists to make sure a choice about hand-written files is a deliberate
+one, and a stray click is precisely a reflex.
 
 #### Save and Cancel
 
@@ -279,8 +279,8 @@ While a cancel waits on an answer, the same corner holds the reply:
 ```
 
 `Save` is `Ctrl+S`: it writes `.booth/` and exits — and on a booth with
-[hand-written files](#saving-over-hand-written-files) it opens the same typed
-confirmation the key does, because a button is not a way around that guard.
+[hand-written files](#saving-over-hand-written-files) it opens the same
+choice the key does, because a button is not a way around that guard.
 
 `Cancel` is `Ctrl+E`. It **asks before discarding anything — but only when there is
 something to discard.** On a session you have not changed, it just leaves: opening
@@ -420,7 +420,38 @@ Saving regenerates `.booth/Boothfile` and `.booth/config.toml` **from scratch** 
 
 A file counts as hand-written if `booth config` never wrote it, or wrote it and a human edited it afterwards. See [BOOTH_CONFIG.md — Hand-Written Files](BOOTH_CONFIG.md#hand-written-files) for how that is detected.
 
-An edit booth config could have written itself — a `timezone` line, an extra `--env` entry, a bumped `arg` pin — is **not** hand-written: it is [read back](BOOTH_CONFIG.md#edits-that-can-be-read-back), the TUI opens without a warning and with the edit pre-loaded, and saving keeps it. The dialogs below are for edits that could not be read back; the startup warning then lists what blocked it.
+An edit booth config could have written itself — a `timezone` line, an extra `--env` entry, a bumped `arg` pin — is **not** hand-written: it is [read back](BOOTH_CONFIG.md#edits-that-can-be-read-back), the TUI opens without a warning and with the edit pre-loaded, and saving keeps it. The dialogs below are for edits that could not be read back; the startup warning and the save dialog then list what blocked it.
+
+### Edits made outside booth config
+
+When booth config can read the edits back, they are valid — but you did not make them here, and someone else may have. So the TUI opens on a question rather than going straight in:
+
+```
+┌────────────────────────────────────────────────────────────────┐
+│       Your booth files were changed outside booth config       │
+│                                                                │
+│ These files were edited since booth config last wrote them:    │
+│   .booth/config.toml  modified 2026-10-04 12:14:54 +07         │
+│                                                                │
+│ booth config read the changes back. They are valid, and it     │
+│ will keep them:                                                │
+│   + --set timezone=Asia/Bangkok                                │
+│                                                                │
+│ If you did not expect this, choose Cancel and review the files │
+│ yourself first.                                                │
+│                                                                │
+│                        OK     [Cancel]                         │
+│    OK: accept the changes  │  Cancel: quit and review first    │
+│                                                                │
+│                 ←→: choose  │  Enter: confirm                  │
+└────────────────────────────────────────────────────────────────┘
+```
+
+Each file shows when it was last modified, and each edit is listed as the flag it became (`+ --env …`, `- --expose …`, `--port: 10000 → 10001`). **OK** accepts them and carries on; the next save records them in the header. **Cancel** (or `Esc`) quits with nothing changed and names the files to look at.
+
+When the files hold no setting booth config would write differently — only `.booth/.generated` disagrees with them — the question says so, and OK also rewrites `.booth/.generated` straight away.
+
+`--no-tui` asks nothing: it prints the same list as a note and keeps the edits.
 
 ### Comments in an edited booth
 
@@ -454,20 +485,15 @@ The TUI tells you as soon as it starts, so you find out *before* configuring rat
 ┌──────────────────────────────────────────────────┐
 │                   ⚠ Warning                      │
 │                                                  │
-│ This booth contains hand-written files:          │
+│ Some files in this booth have changes booth      │
+│ config did not make:                             │
 │                                                  │
 │   .booth/Boothfile                               │
 │                                                  │
-│ These were not written by booth config, or were  │
-│ edited afterwards. Configuring regenerates them  │
-│ from your selection, so they cannot simply be    │
-│ written over.                                    │
-│                                                  │
-│ Nothing is decided yet. When you save, you       │
-│ choose: keep yours and have the generated        │
-│ content written beside them as .new files to     │
-│ merge, or replace them (the originals are kept   │
-│ as .bak).                                        │
+│ Saving regenerates them from your selection, so  │
+│ you will be asked what to do with yours: apply   │
+│ and keep a .bak, save the generated files as     │
+│ .new to compare, or overwrite with no backup.    │
 │                                                  │
 │ Go on in and look around — nothing is touched    │
 │ until you save.                                  │
@@ -476,6 +502,8 @@ The TUI tells you as soon as it starts, so you find out *before* configuring rat
 └──────────────────────────────────────────────────┘
 ```
 
+When booth config tried to read the edits back and could not, the warning also lists why.
+
 This is a heads-up, not a blocker. Press `Enter` and browse, select, and configure exactly as normal — nothing is written until you save.
 
 ### On save — the choice
@@ -483,37 +511,52 @@ This is a heads-up, not a blocker. Press `Enter` and browse, select, and configu
 `Ctrl+S` does not save straight away. It raises:
 
 ```
-┌──────────────────────────────────────────────────────────────┐
-│              ⚠  THESE FILES ARE HAND-WRITTEN  ⚠              │
-│                                                              │
-│ Saving regenerates .booth/ from your selection. These files  │
-│ were not written by booth config — or were edited afterwards │
-│ — so saving over them would destroy that work:               │
-│                                                              │
-│   .booth/Boothfile                                           │
-│                                                              │
-│  ENTER   Keep them. Write what I generated beside them:      │
-│          .booth/Boothfile.new                                │
-│          Nothing is destroyed — you merge the two by hand.   │
-│                                                              │
-│ To replace them instead (a .bak is kept), type "overwrite"   │
-│ and press Enter:                                             │
-│    █                                                         │
-│                                                              │
-│   Enter: keep mine, write .new  │  Esc: back out  │  Ctrl+C  │
-└──────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────┐
+│        Your booth files have changes booth config did not make        │
+│                                                                       │
+│ You are at risk of losing your hand-written booth configuration.      │
+│ Please read carefully before you choose.                              │
+│                                                                       │
+│ booth config tried to read your changes back into the selection, but  │
+│ some of them are not something it can write:                          │
+│   - Boothfile `run make tools` — no selection or flag produces this   │
+│     line                                                              │
+│                                                                       │
+│ Saving regenerates them from your selection:                          │
+│   .booth/Boothfile                                                    │
+│                                                                       │
+│    1   Apply, and back up your files                                  │
+│        Replace them with the generated files. Your version is kept    │
+│        as:                                                            │
+│        .booth/Boothfile.bak                                           │
+│                                                                       │
+│ ▸  2   Save as new, to compare                                        │
+│        Keep your files as they are, and write the generated ones      │
+│        beside them:                                                   │
+│        .booth/Boothfile.new                                           │
+│                                                                       │
+│    3   Overwrite, with no backup                                      │
+│        Replace them, and keep nothing. Type "overwrite" to confirm:   │
+│        ▏             ▕                                                │
+│                                                                       │
+│  ↑↓ or 1-3: choose  │  Enter: confirm  │  Esc: back  │  Ctrl+C: quit  │
+└───────────────────────────────────────────────────────────────────────┘
 ```
+
+When the files were never written by booth config, the dialog says so instead of listing reasons.
 
 | Key | Action |
 |-----|--------|
-| `Enter` (empty field) | **Keep your files.** The generated content is written beside them as `<name>.new` for you to merge. Nothing is destroyed. |
-| Type `overwrite`, then `Enter` | **Replace your files.** Each original is kept as `<name>.bak`. |
+| `↑`/`↓`, `1`–`3` | Pick a choice. It opens on **2**, the one that loses nothing. |
+| `Enter` on **1** | **Apply.** Replace your files; each original is kept as `<name>.bak`. |
+| `Enter` on **2** | **Save as new.** Keep your files; the generated content is written beside them as `<name>.new` to compare. Nothing is destroyed. |
+| **3**, type `overwrite`, `Enter` | **Overwrite.** Replace your files and keep no backup. |
 | `Esc` | Back out to the TUI. Nothing is touched. |
 | `Ctrl+C` | Quit without saving. |
 
-Typing the word in full is deliberate: destroying someone's work should take more than a reflex keystroke, while merely getting at the generated output should not. A half-typed word does nothing.
+Typing the word in full is deliberate: losing someone's work outright should take more than a reflex keystroke, while replacing it with a backup kept, or merely getting at the generated output, should not. A half-typed word does nothing.
 
-The CLI equivalents are `--beside` and `--overwrite`.
+The CLI equivalents of choices 2 and 1 are `--beside` and `--overwrite`; the CLI has no outright overwrite.
 
 ---
 

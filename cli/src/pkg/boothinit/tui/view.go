@@ -47,28 +47,36 @@ var (
 				Foreground(lipgloss.Color("241"))
 )
 
-// dangerStyle is used for the overwrite confirmation dialog — red, not amber,
-// because this one is about to destroy work rather than merely inform.
+// cautionStyle is used for the hand-written dialog — orange, like the other
+// notices: the user's work is at risk only if they pick the wrong choice, and the
+// dialog exists so they don't. Nothing is lost yet, so it should not read as an
+// alarm.
 var (
-	dangerBorderStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("196")).
+	cautionBorderStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("208")).
 				Bold(true)
-	dangerTitleStyle = lipgloss.NewStyle().
+	cautionTitleStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("16")).
+				Background(lipgloss.Color("208")).
+				Bold(true)
+	cautionLeadStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("214")).
+				Bold(true)
+	cautionFileStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("214")).
+				Bold(true)
+	cautionInputStyle = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("231")).
-				Background(lipgloss.Color("196")).
+				Background(lipgloss.Color("94")).
 				Bold(true)
-	dangerFileStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("214")).
-			Bold(true)
-	dangerInputStyle = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("231")).
-				Background(lipgloss.Color("52")).
+	// The focused choice of a dialog.
+	choiceFocusStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("16")).
+				Background(lipgloss.Color("214")).
 				Bold(true)
-	// The non-destructive choice — green, so the safe way out reads as the way out.
-	safeChoiceStyle = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("231")).
-			Background(lipgloss.Color("28")).
-			Bold(true)
+	choiceLabelStyle = lipgloss.NewStyle().
+				Foreground(lipgloss.Color("255")).
+				Bold(true)
 )
 
 // Footer buttons — how a mouse saves or leaves. Green keeps the work, red throws it
@@ -91,6 +99,11 @@ var (
 func (m model) View() string {
 	if m.width == 0 || m.height == 0 {
 		return "Loading..."
+	}
+
+	// Edits-made-outside question — asked on open, before the startup warning
+	if m.adoptedDialog {
+		return m.renderAdoptedDialog()
 	}
 
 	// Warning dialog overlay
@@ -1196,9 +1209,14 @@ func (m model) renderParamFieldRow(t *tmpl.Template, name, pk string, isFocused 
 	return "  " + normalLabelStyle.Render(name+":") + "  " + normalValueStyle.Render(display)
 }
 
-// renderOverwriteDialog renders the confirmation shown when saving would destroy
-// hand-written files. It names every file at risk and will not proceed until the
-// user has typed the confirmation word in full.
+// adoptReasonsShown caps how many read-back failures the hand-written dialog
+// lists; the startup notice has the full list.
+const adoptReasonsShown = 3
+
+// renderOverwriteDialog renders the dialog shown when saving would replace
+// hand-written files. It says what is at risk, why booth config could not take the
+// edits in, and offers three numbered choices — the last of which, losing the
+// files with no backup, needs the confirmation word typed in full.
 func (m model) renderOverwriteDialog() string {
 	boxWidth := m.width * 70 / 100
 	if boxWidth < 50 {
@@ -1209,61 +1227,192 @@ func (m model) renderOverwriteDialog() string {
 	}
 	inner := boxWidth - 2
 	innerWidth := boxWidth - 4
+	const indent = "       " // aligns detail lines under a choice's label
 
-	// left-aligned line inside the box
+	border := cautionBorderStyle.Render("│")
 	line := func(s string) string {
-		return dangerBorderStyle.Render("│") + padStyledRight(" "+s, inner) + dangerBorderStyle.Render("│")
+		return border + padStyledRight(" "+s, inner) + border
 	}
 	blank := func() string {
-		return dangerBorderStyle.Render("│") + strings.Repeat(" ", inner) + dangerBorderStyle.Render("│")
+		return border + strings.Repeat(" ", inner) + border
 	}
 	centered := func(s string) string {
-		return dangerBorderStyle.Render("│") + centerPad(s, inner) + dangerBorderStyle.Render("│")
+		return border + centerPad(s, inner) + border
+	}
+	para := func(dl []string, text string, width int, prefix string, style lipgloss.Style) []string {
+		for _, l := range wrapText(text, width) {
+			dl = append(dl, line(prefix+style.Render(l)))
+		}
+		return dl
 	}
 
 	var dl []string
-	dl = append(dl, dangerBorderStyle.Render("┌"+strings.Repeat("─", inner)+"┐"))
-	dl = append(dl, centered(dangerTitleStyle.Render("  ⚠  THESE FILES ARE HAND-WRITTEN  ⚠  ")))
+	dl = append(dl, cautionBorderStyle.Render("┌"+strings.Repeat("─", inner)+"┐"))
+	dl = append(dl, centered(cautionTitleStyle.Render("  Your booth files have changes booth config did not make  ")))
 	dl = append(dl, blank())
 
-	for _, l := range wrapText("Saving regenerates .booth/ from your selection. These files were not written by booth config — or were edited afterwards — so saving over them would destroy that work:", innerWidth) {
-		dl = append(dl, line(warningTextStyle.Render(l)))
+	dl = para(dl, "You are at risk of losing your hand-written booth configuration. Please read carefully before you choose.", innerWidth, "", cautionLeadStyle)
+	dl = append(dl, blank())
+
+	if len(m.adoptReasons) > 0 {
+		dl = para(dl, "booth config tried to read your changes back into the selection, but some of them are not something it can write:", innerWidth, "", warningTextStyle)
+		for i, reason := range m.adoptReasons {
+			if i == adoptReasonsShown {
+				dl = append(dl, line("  "+warningHintStyle.Render(fmt.Sprintf("… and %d more", len(m.adoptReasons)-adoptReasonsShown))))
+				break
+			}
+			for j, l := range wrapText(reason, innerWidth-4) {
+				bullet := "  - "
+				if j > 0 {
+					bullet = "    "
+				}
+				dl = append(dl, line(bullet+warningHintStyle.Render(l)))
+			}
+		}
+	} else {
+		dl = para(dl, "These files were not written by booth config, or were changed by hand afterwards, so it cannot tell what they hold.", innerWidth, "", warningTextStyle)
 	}
 	dl = append(dl, blank())
+	dl = para(dl, "Saving regenerates them from your selection:", innerWidth, "", warningTextStyle)
 	for _, name := range m.drifted {
-		dl = append(dl, line("  "+dangerFileStyle.Render(".booth/"+name)))
+		dl = append(dl, line("  "+cautionFileStyle.Render(".booth/"+name)))
 	}
 	dl = append(dl, blank())
 
-	// The safe way out, offered first and bound to the bare Enter key.
-	dl = append(dl, line(safeChoiceStyle.Render(" ENTER ")+"  "+warningTextStyle.Render("Keep them. Write what I generated beside them:")))
-	for _, name := range m.drifted {
-		dl = append(dl, line("         "+dangerFileStyle.Render(".booth/"+name+".new")))
+	choice := func(n int, label string) string {
+		tag := fmt.Sprintf(" %d ", n)
+		if m.overwriteChoice == n {
+			return line("▸ " + choiceFocusStyle.Render(tag) + "  " + choiceLabelStyle.Render(label))
+		}
+		return line("  " + warningHintStyle.Render(tag) + "  " + warningTextStyle.Render(label))
 	}
-	for _, l := range wrapText("Nothing is destroyed — you merge the two by hand.", innerWidth-9) {
-		dl = append(dl, line("         "+warningHintStyle.Render(l)))
+	files := func(suffix string) {
+		for _, name := range m.drifted {
+			dl = append(dl, line(indent+cautionFileStyle.Render(".booth/"+name+suffix)))
+		}
 	}
+
+	dl = append(dl, choice(overwriteApply, "Apply, and back up your files"))
+	dl = para(dl, "Replace them with the generated files. Your version is kept as:", innerWidth-len(indent), indent, warningHintStyle)
+	files(".bak")
 	dl = append(dl, blank())
 
-	// The destructive way out, gated behind typing the word in full.
-	for _, l := range wrapText("To replace them instead (a .bak is kept), type \""+overwriteConfirmWord+"\" and press Enter:", innerWidth) {
-		dl = append(dl, line(warningTextStyle.Render(l)))
-	}
+	dl = append(dl, choice(overwriteBeside, "Save as new, to compare"))
+	dl = para(dl, "Keep your files as they are, and write the generated ones beside them:", innerWidth-len(indent), indent, warningHintStyle)
+	files(".new")
+	dl = append(dl, blank())
 
-	// Input field with cursor
-	field := caretText(m.overwriteInput, m.overwriteCursor)
-	pad := len(overwriteConfirmWord) + 4 - lipgloss.Width(field)
-	if pad > 0 {
+	dl = append(dl, choice(overwriteOutright, "Overwrite, with no backup"))
+	dl = para(dl, "Replace them, and keep nothing. Type \""+overwriteConfirmWord+"\" to confirm:", innerWidth-len(indent), indent, warningHintStyle)
+	field := ""
+	if m.overwriteChoice == overwriteOutright {
+		field = caretText(m.overwriteInput, m.overwriteCursor)
+	} else {
+		field = m.overwriteInput
+	}
+	if pad := len(overwriteConfirmWord) + 4 - lipgloss.Width(field); pad > 0 {
 		field += strings.Repeat(" ", pad)
 	}
-	dl = append(dl, line("  "+dangerInputStyle.Render(" "+field+" ")))
+	dl = append(dl, line(indent+cautionInputStyle.Render(" "+field+" ")))
 	dl = append(dl, blank())
 
-	hint := "Enter: keep mine, write .new  │  Esc: back out  │  Ctrl+C: quit"
+	hint := "↑↓ or 1-3: choose  │  Enter: confirm  │  Esc: back  │  Ctrl+C: quit"
 	dl = append(dl, centered(warningHintStyle.Render(hint)))
-	dl = append(dl, dangerBorderStyle.Render("└"+strings.Repeat("─", inner)+"┘"))
+	dl = append(dl, cautionBorderStyle.Render("└"+strings.Repeat("─", inner)+"┘"))
 
-	// Center the box
+	return m.centerDialog(dl, boxWidth)
+}
+
+// adoptedChangesShown caps how many read-back changes the question lists.
+const adoptedChangesShown = 8
+
+// renderAdoptedDialog renders the question asked on open when the booth's files
+// were changed outside booth config and the changes were read back. They are
+// valid, but the user did not make them here — so it says what changed and lets
+// them accept it or leave to look first.
+func (m model) renderAdoptedDialog() string {
+	boxWidth := m.width * 60 / 100
+	if boxWidth < 50 {
+		boxWidth = 50
+	}
+	if boxWidth > m.width-4 {
+		boxWidth = m.width - 4
+	}
+	inner := boxWidth - 2
+	innerWidth := boxWidth - 4
+
+	border := warningBorderStyle.Render("│")
+	line := func(s string) string {
+		return border + padStyledRight(" "+s, inner) + border
+	}
+	blank := func() string {
+		return border + strings.Repeat(" ", inner) + border
+	}
+	centered := func(s string) string {
+		return border + centerPad(s, inner) + border
+	}
+	para := func(dl []string, text string) []string {
+		for _, l := range wrapText(text, innerWidth) {
+			dl = append(dl, line(warningTextStyle.Render(l)))
+		}
+		return dl
+	}
+
+	var dl []string
+	dl = append(dl, warningBorderStyle.Render("┌"+strings.Repeat("─", inner)+"┐"))
+	dl = append(dl, centered(warningBorderStyle.Render("Your booth files were changed outside booth config")))
+	dl = append(dl, blank())
+	dl = para(dl, "These files were edited since booth config last wrote them:")
+	nameWidth := 0
+	for _, name := range m.adoptedFiles {
+		nameWidth = max(nameWidth, len(".booth/"+name))
+	}
+	for _, name := range m.adoptedFiles {
+		entry := cautionFileStyle.Render(".booth/" + name)
+		if when := m.adoptedModified[name]; when != "" {
+			entry += strings.Repeat(" ", nameWidth-len(".booth/"+name)) + "  " + warningHintStyle.Render("modified "+when)
+		}
+		dl = append(dl, line("  "+entry))
+	}
+	dl = append(dl, blank())
+	if len(m.adoptedChanges) > 0 {
+		dl = para(dl, "booth config read the changes back. They are valid, and it will keep them:")
+		for i, change := range m.adoptedChanges {
+			if i == adoptedChangesShown {
+				dl = append(dl, line("  "+warningHintStyle.Render(fmt.Sprintf("… and %d more", len(m.adoptedChanges)-adoptedChangesShown))))
+				break
+			}
+			for j, l := range wrapText(change, innerWidth-2) {
+				if j > 0 {
+					l = "  " + l
+				}
+				dl = append(dl, line("  "+cautionFileStyle.Render(l)))
+			}
+		}
+	} else {
+		dl = para(dl, "booth config read them back and found no setting it would write differently — only their fingerprint in .booth/.generated disagrees.")
+	}
+	dl = append(dl, blank())
+	dl = para(dl, "If you did not expect this, choose Cancel and review the files yourself first.")
+	dl = append(dl, blank())
+
+	button := func(label string, focused bool) string {
+		if focused {
+			return choiceFocusStyle.Render(" " + label + " ")
+		}
+		return warningTextStyle.Render("[" + label + "]")
+	}
+	dl = append(dl, centered(button("OK", !m.adoptedCancel)+"    "+button("Cancel", m.adoptedCancel)))
+	dl = append(dl, centered(warningHintStyle.Render("OK: accept the changes  │  Cancel: quit and review first")))
+	dl = append(dl, blank())
+	dl = append(dl, centered(warningHintStyle.Render("←→: choose  │  Enter: confirm")))
+	dl = append(dl, warningBorderStyle.Render("└"+strings.Repeat("─", inner)+"┘"))
+
+	return m.centerDialog(dl, boxWidth)
+}
+
+// centerDialog places a dialog's lines in the middle of the screen.
+func (m model) centerDialog(dl []string, boxWidth int) string {
 	topPad := (m.height - len(dl)) / 2
 	if topPad < 0 {
 		topPad = 0

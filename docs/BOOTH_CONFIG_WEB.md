@@ -30,8 +30,10 @@ The catalog is the same `TemplateRegistry` the TUI loads — category tabs are
 not hard-coded. Add a template under `templates/` and both UIs pick it up.
 
 Save is the TUI save path: selection DSL → compile → write `.booth/`.
-Hand-written Boothfile / config.toml still require **keep mine (.new)** or
-typing `overwrite`.
+Hand-written Boothfile / config.toml get the same three choices as the TUI:
+**apply** (keeps a `.bak`), **save as .new**, or **overwrite** with no backup
+(type `overwrite`). When the files were edited outside booth config and the edits can be read
+back, the page asks on load: accept them, or cancel to review the files first.
 
 ## Port
 

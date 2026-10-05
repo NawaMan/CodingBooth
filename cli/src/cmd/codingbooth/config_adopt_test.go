@@ -7,6 +7,7 @@ package main
 import (
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -306,4 +307,54 @@ func TestReadExistingBooth_FallsBackToConfigTomlHeader(t *testing.T) {
 	flags := readExistingBooth(dir)
 	assert.Equal(t, []string{"shell-history"}, flags.selectDSLs)
 	assert.Equal(t, []string{"timezone=UTC"}, flags.sets)
+}
+
+// --- Stale fingerprint: the files are booth config's, .generated disagrees ---
+
+func staleManifest(t *testing.T, dir string) {
+	t.Helper()
+	path := filepath.Join(dir, ".booth", output.ManifestName)
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	stale := regexp.MustCompile(`sha256:[0-9a-f]+`).ReplaceAllString(string(data), "sha256:0000")
+	require.NoError(t, os.WriteFile(path, []byte(stale), 0o644))
+}
+
+func TestReadBoothBaseline_StaleFingerprintOnly(t *testing.T) {
+	catalog := adoptCatalog(t)
+	dir := adoptWorkspace(t, catalog, initFlags{selectDSLs: []string{"tool"}})
+	staleManifest(t, dir)
+
+	baseline := readBaseline(t, catalog, dir)
+	require.True(t, baseline.adopt.adopted, "reasons: %v", baseline.adopt.reasons)
+	assert.True(t, baseline.adopt.unchanged, "nothing to lift — only the fingerprint disagrees")
+	assert.Empty(t, baseline.adoptedChanges)
+
+	require.NoError(t, output.RefreshManifest(dir, baseline.edited))
+	assert.Empty(t, output.Drifted(dir), "after the refresh the files are booth config's again")
+}
+
+// A read-back edit is described as the flag it became.
+func TestReadBoothBaseline_DescribesLiftedEdit(t *testing.T) {
+	catalog := adoptCatalog(t)
+	dir := adoptWorkspace(t, catalog, initFlags{selectDSLs: []string{"tool"}})
+	editBoothFile(t, dir, "config.toml", func(s string) string {
+		return s + "timezone = \"Asia/Bangkok\"\n"
+	})
+
+	baseline := readBaseline(t, catalog, dir)
+	require.True(t, baseline.adopt.adopted, "reasons: %v", baseline.adopt.reasons)
+	assert.False(t, baseline.adopt.unchanged)
+	assert.Equal(t, []string{"+ --set timezone=Asia/Bangkok"}, baseline.adoptedChanges)
+}
+
+// An added comment is an edit too, not a fingerprint-only difference.
+func TestReadBoothBaseline_AddedCommentIsAnEdit(t *testing.T) {
+	catalog := adoptCatalog(t)
+	dir := adoptWorkspace(t, catalog, initFlags{selectDSLs: []string{"tool"}})
+	editBoothFile(t, dir, "Boothfile", func(s string) string { return s + "# note\n" })
+
+	baseline := readBaseline(t, catalog, dir)
+	require.True(t, baseline.adopt.adopted, "reasons: %v", baseline.adopt.reasons)
+	assert.False(t, baseline.adopt.unchanged)
 }

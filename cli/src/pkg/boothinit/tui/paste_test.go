@@ -275,7 +275,7 @@ func TestPasteIntoIntFieldKeepsDigitsOnly(t *testing.T) {
 }
 
 func TestOverwriteConfirmAcceptsPastedWord(t *testing.T) {
-	m := model{overwriteDialog: true, drifted: []string{".booth/Boothfile"}}
+	m := model{overwriteDialog: true, overwriteChoice: overwriteOutright, drifted: []string{".booth/Boothfile"}}
 
 	res, _ := m.Update(pasteMsg(overwriteConfirmWord + "\n"))
 	m = res.(model)
@@ -285,8 +285,8 @@ func TestOverwriteConfirmAcceptsPastedWord(t *testing.T) {
 
 	res, cmd := m.Update(tea.KeyMsg{Type: tea.KeyEnter})
 	m = res.(model)
-	if !m.confirmed || m.saveBeside {
-		t.Fatalf("Enter on the pasted word should confirm an overwrite: confirmed=%v saveBeside=%v", m.confirmed, m.saveBeside)
+	if !m.confirmed || m.saveBeside || !m.noBackup {
+		t.Fatalf("Enter on the pasted word should confirm an overwrite: confirmed=%v saveBeside=%v noBackup=%v", m.confirmed, m.saveBeside, m.noBackup)
 	}
 	if cmd == nil {
 		t.Fatal("confirming should quit the program")

@@ -25,15 +25,14 @@ type Options struct {
 	Registry *tmpl.TemplateRegistry
 	Pre      *tui.PreSelection
 	Warning  string
-	Drifted  []string
-	// LostComments lists comments a save would remove from files whose hand edits
-	// were read back; saving asks before removing them.
-	LostComments []string
-	PortFlag     string
-	Listener     net.Listener // tests; when set, PortFlag is ignored
-	Token        string       // tests; generated when empty
-	OpenBrowser  bool
-	Output       io.Writer
+	// Guard is what a save must ask about first: hand-written files, comments it
+	// would remove, edits made outside booth config — the same as the TUI's.
+	Guard       tui.SaveGuard
+	PortFlag    string
+	Listener    net.Listener // tests; when set, PortFlag is ignored
+	Token       string       // tests; generated when empty
+	OpenBrowser bool
+	Output      io.Writer
 }
 
 // Run serves the config Web UI on 127.0.0.1:<booth-port> until the user saves
@@ -64,8 +63,13 @@ func Run(opts Options) (*tui.ConfigResult, error) {
 		}
 	}
 
-	session := NewSession(opts.Registry, opts.Pre, opts.Warning, opts.Drifted)
-	session.lostComments = append([]string{}, opts.LostComments...)
+	session := NewSession(opts.Registry, opts.Pre, opts.Warning, opts.Guard.Drifted)
+	session.lostComments = append([]string{}, opts.Guard.LostComments...)
+	session.adoptReasons = append([]string{}, opts.Guard.AdoptReasons...)
+	session.adopted = append([]string{}, opts.Guard.Adopted...)
+	session.adoptedChanges = append([]string{}, opts.Guard.AdoptedChanges...)
+	session.adoptedModified = opts.Guard.AdoptedModified
+	session.refreshFingerprint = opts.Guard.RefreshFingerprint
 	done := make(chan Outcome, 1)
 	server := &http.Server{
 		Handler:           NewMux(session, token, done),

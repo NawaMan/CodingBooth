@@ -61,6 +61,11 @@ type adoptResult struct {
 
 	// reasons says why the edits could not be read back, when not adopted.
 	reasons []string
+
+	// unchanged is set when the files hold nothing booth config would not write
+	// from the recorded header: no edit to lift, no comment to lose. Only the
+	// fingerprint disagrees with them.
+	unchanged bool
 }
 
 type lostComment struct {
@@ -152,6 +157,10 @@ func adoptEdits(version, targetPath string, base, cli initFlags) adoptResult {
 	for _, c := range output.LostComments(output.BoothfileComments(diskBoothfile), output.BoothfileComments(regenBoothfile)) {
 		result.lost = append(result.lost, lostComment{file: "Boothfile", Comment: c})
 	}
+
+	result.unchanged = len(result.lost) == 0 &&
+		len(compareConfigToml(diskConfig, output.SerializeConfigToml(expected.Config, "", ""))) == 0 &&
+		len(compareBoothfile(diskBoothfile, output.SerializeBoothfile(expected.Boothfile, "", ""))) == 0
 
 	// The templates path was resolved for this check only; the run resolves its own.
 	lifted.templatesPath = cli.templatesPath
@@ -666,6 +675,13 @@ type boothBaseline struct {
 	// edited lists the guarded files found edited, adopted or not.
 	edited []string
 	adopt  adoptResult
+	// adoptedChanges describes, as the flags they became, the edits read back
+	// from the booth — empty when the files hold no setting booth config would
+	// not write from the header, and only the fingerprint disagrees.
+	adoptedChanges []string
+	// modified maps each edited file to when it was last modified, formatted for
+	// display.
+	modified map[string]string
 }
 
 // readBoothBaseline reads the existing booth at targetPath as a reconfigure's
@@ -681,6 +697,8 @@ func readBoothBaseline(version, targetPath string, cli initFlags) boothBaseline 
 
 	baseline.adopt = adoptEdits(version, targetPath, baseline.flags, cli)
 	if baseline.adopt.adopted {
+		baseline.modified = modifiedTimes(targetPath, baseline.edited)
+		baseline.adoptedChanges = describeAdoptedChanges(baseline.adopt, baseline.flags)
 		baseline.flags = baseline.adopt.flags
 		baseline.drifted = nil
 	}
@@ -701,6 +719,14 @@ func printAdoptOutcome(w io.Writer, baseline boothBaseline) {
 			verb = "were"
 		}
 		fmt.Fprintf(w, "Note: %s %s edited outside booth config; the edits were read back and are kept.\n", files, verb)
+		for _, name := range baseline.edited {
+			if when := baseline.modified[name]; when != "" {
+				fmt.Fprintf(w, "  .booth/%s last modified %s\n", name, when)
+			}
+		}
+		for _, change := range baseline.adoptedChanges {
+			fmt.Fprintf(w, "  %s\n", change)
+		}
 		if lost := lostCommentsText(baseline.adopt.lost); lost != "" {
 			fmt.Fprintf(w, "Warning: saving regenerates the files, which removes these comments:\n%s", lost)
 		}
@@ -723,16 +749,77 @@ func lostCommentsText(lost []lostComment) string {
 	return b.String()
 }
 
-// adoptReasonsText explains, for the hand-written dialog, why the edits could not
-// be read back — or "" when there was nothing to try.
+// adoptReasonsText explains, for the startup notice, why the edits could not be
+// read back — or "" when there was nothing to try.
 func adoptReasonsText(baseline boothBaseline) string {
 	if !baseline.adopt.attempted || baseline.adopt.adopted || len(baseline.adopt.reasons) == 0 {
 		return ""
 	}
 	var b strings.Builder
-	b.WriteString("The edits could not be read back:\n\n")
+	b.WriteString("booth config tried to read your changes back into the selection, but some of them are not something it can write:\n\n")
 	for _, reason := range baseline.adopt.reasons {
 		b.WriteString("  - " + reason + "\n")
 	}
 	return strings.TrimRight(b.String(), "\n")
+}
+
+// adoptReasons is adoptReasonsText as a list, for the save dialog.
+func adoptReasons(baseline boothBaseline) []string {
+	if !baseline.adopt.attempted || baseline.adopt.adopted {
+		return nil
+	}
+	return baseline.adopt.reasons
+}
+
+// describeAdoptedChanges lists the edits adoptEdits read back, as the flags they
+// became: "+ --set timezone=Asia/Bangkok", "- --env FOO=1", "--port: 10000 → 10001".
+// base is the booth as its header records it. Empty when nothing was lifted.
+func describeAdoptedChanges(adopt adoptResult, base initFlags) []string {
+	if !adopt.adopted || adopt.unchanged {
+		return nil
+	}
+	lifted := adopt.flags
+
+	var changes []string
+	scalar := func(flag, was, now string) {
+		if was == now {
+			return
+		}
+		if was == "" {
+			was = "(none)"
+		}
+		if now == "" {
+			now = "(none)"
+		}
+		changes = append(changes, fmt.Sprintf("%s: %s → %s", flag, was, now))
+	}
+	list := func(flag string, was, now []string) {
+		count := map[string]int{}
+		for _, v := range was {
+			count[v]++
+		}
+		for _, v := range now {
+			if count[v] > 0 {
+				count[v]--
+				continue
+			}
+			changes = append(changes, "+ "+flag+" "+v)
+		}
+		for _, v := range was {
+			if count[v] > 0 {
+				count[v]--
+				changes = append(changes, "- "+flag+" "+v)
+			}
+		}
+	}
+
+	scalar("--select", strings.Join(base.selectDSLs, "/"), strings.Join(lifted.selectDSLs, "/"))
+	scalar("--variant", base.variant, lifted.variant)
+	scalar("--port", base.port, lifted.port)
+	list("--expose", base.exposes, lifted.exposes)
+	list("--env", base.envs, lifted.envs)
+	list("--mount", base.mounts, lifted.mounts)
+	list("--cmd", base.cmds, lifted.cmds)
+	list("--set", base.sets, lifted.sets)
+	return changes
 }

@@ -89,6 +89,7 @@
     dialog::backdrop { background: rgba(0,0,0,.55); }
     .dlg { padding: 18px 20px; }
     .dlg h3 { margin: 0 0 8px; }
+    .dlg.caution h3 { background: #f08c2e; color: #111; padding: 8px 10px; border-radius: 6px; }
     .dlg.danger h3 { background: var(--danger); color: #fff; padding: 8px 10px; border-radius: 6px; }
     .dlg .row { display: flex; gap: 8px; justify-content: flex-end; margin-top: 14px; }
     .empty { color: var(--muted); padding: 24px 8px; }
@@ -367,7 +368,35 @@ async function refresh() {
   maybeWarn();
 }
 
-function maybeWarn() {
+async function maybeWarn() {
+  // Edits made outside booth config are asked about first; the startup
+  // warning follows.
+  const adopted = state.adopted || [];
+  if (adopted.length) {
+    const modified = state.adoptedModified || {};
+    const files = adopted.map(f => `<li><code>.booth/${esc(f)}</code>${modified[f] ? ` — modified ${esc(modified[f])}` : ""}</li>`).join("");
+    const changes = state.adoptedChanges || [];
+    const what = changes.length
+      ? `<p>booth config read the changes back. They are valid, and it will keep them:</p><ul>${changes.map(c => `<li><code>${esc(c)}</code></li>`).join("")}</ul>`
+      : `<p>booth config read them back and found no setting it would write differently — only their fingerprint in <code>.booth/.generated</code> disagrees.</p>`;
+    const choice = await showModal({
+      title: "Your booth files were changed outside booth config",
+      body: `<p>These files were edited since booth config last wrote them:</p><ul>${files}</ul>
+        ${what}
+        <p>If you did not expect this, choose Cancel and review the files yourself first.</p>`,
+      actions: [
+        { label: "OK, accept", value: "accept", primary: true },
+        { label: "Cancel, review first", value: "review" }
+      ]
+    });
+    if (choice.value !== "accept") {
+      await api("/api/adopted", { method: "POST", body: { accept: false } });
+      document.body.innerHTML = "<p style='padding:2rem'>Cancelled — nothing was changed. Review the files, then run booth config again. You can close this tab.</p>";
+      return;
+    }
+    state = await api("/api/adopted", { method: "POST", body: { accept: true } });
+    renderAll();
+  }
   if (warningShown || !state.warning) return;
   warningShown = true;
   showModal({
@@ -377,9 +406,9 @@ function maybeWarn() {
   });
 }
 
-function showModal({ title, body, danger, actions, extra }) {
+function showModal({ title, body, danger, caution, actions, extra }) {
   const dlg = $("modal");
-  dlg.innerHTML = `<form method="dialog" class="dlg${danger ? " danger" : ""}">
+  dlg.innerHTML = `<form method="dialog" class="dlg${danger ? " danger" : ""}${caution ? " caution" : ""}">
     <h3>${esc(title)}</h3>
     <div>${typeof body === "string" ? `<p>${esc(body)}</p>` : body}</div>
     ${extra || ""}
@@ -407,24 +436,40 @@ async function doSave() {
     document.body.innerHTML = "<p style='padding:2rem'>Saved. You can close this tab.</p>";
   } catch (err) {
     if (err.status === 409 && err.data && err.data.error === "hand-written") {
-      const files = (err.data.drifted || []).map(esc).join(", ");
+      const drifted = err.data.drifted || [];
+      const files = suffix => drifted.map(f => `<code>.booth/${esc(f)}${suffix}</code>`).join(", ");
+      const reasons = err.data.adoptReasons || [];
+      const why = reasons.length
+        ? `<p>booth config tried to read your changes back into the selection, but some of them are not something it can write:</p><ul>${reasons.slice(0, 3).map(r => `<li>${esc(r)}</li>`).join("")}${reasons.length > 3 ? `<li>… and ${reasons.length - 3} more</li>` : ""}</ul>`
+        : `<p>These files were not written by booth config, or were changed by hand afterwards, so it cannot tell what they hold.</p>`;
       const choice = await showModal({
-        title: "Hand-written files",
-        danger: true,
-        body: "Saving regenerates: " + files + ". Keep yours and write .new beside them, or type overwrite to replace.",
+        title: "Your booth files have changes booth config did not make",
+        caution: true,
+        body: `<p><strong>You are at risk of losing your hand-written booth configuration. Please read carefully before you choose.</strong></p>
+          ${why}
+          <p>Saving regenerates ${files("")} from your selection:</p>
+          <ol>
+            <li><strong>Apply, and back up your files</strong> — replace them; your version is kept as ${files(".bak")}.</li>
+            <li><strong>Save as new, to compare</strong> — keep yours, and write ${files(".new")} beside them.</li>
+            <li><strong>Overwrite, with no backup</strong> — replace them and keep nothing. Type <code>overwrite</code> below to confirm.</li>
+          </ol>`,
         extra: `<p><input id="ow" type="text" placeholder="overwrite" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px"></p>`,
         actions: [
-          { label: "Keep mine (.new)", value: "beside", primary: true },
-          { label: "Replace", value: "overwrite" },
-          { label: "Cancel", value: "cancel" }
+          { label: "1. Apply (.bak)", value: "apply" },
+          { label: "2. Save as .new", value: "beside", primary: true },
+          { label: "3. Overwrite", value: "overwrite" },
+          { label: "Back", value: "cancel" }
         ]
       });
-      if (choice.value === "beside") {
+      if (choice.value === "apply") {
+        await api("/api/save", { method: "POST", body: { mode: "apply" } });
+        document.body.innerHTML = "<p style='padding:2rem'>Saved. Your files were kept as .bak. You can close this tab.</p>";
+      } else if (choice.value === "beside") {
         await api("/api/save", { method: "POST", body: { mode: "beside" } });
         document.body.innerHTML = "<p style='padding:2rem'>Wrote .new beside your files. You can close this tab.</p>";
       } else if (choice.value === "overwrite") {
         await api("/api/save", { method: "POST", body: { mode: "overwrite", overwriteWord: choice.overwriteWord } });
-        document.body.innerHTML = "<p style='padding:2rem'>Saved (replaced). You can close this tab.</p>";
+        document.body.innerHTML = "<p style='padding:2rem'>Saved (overwritten, no backup). You can close this tab.</p>";
       }
       return;
     }

@@ -12,6 +12,21 @@ This file contains a list of changes for each released version.
   `booth logs --list` lists them all. Works on a stopped keep-alive booth too; stopping `-f` also
   stops the `tail` inside the booth. See [booth lifecycle](BOOTH_LIFECYCLE.md#logs).
 
+- **`booth config`'s hand-written dialog is calmer and clearer.** The red, all-caps
+  "THESE FILES ARE HAND-WRITTEN" box is now an orange dialog that leads with the actual risk,
+  lists why booth config could not read your edits back, and offers three numbered choices:
+  **1** apply (keeps a `.bak`), **2** save the generated files as `.new` to compare (the
+  default), **3** overwrite with no backup (type `overwrite`). Typing the word used to replace
+  the files *with* a `.bak`; that is now choice 1, which takes no typing. The web UI matches.
+
+- **Edits made outside `booth config` are now shown before you configure.** When the
+  Boothfile or config.toml were edited elsewhere and booth config can read the edits back, the
+  TUI and web UI open on a question that names each file with its last-modified time and lists
+  each edit as the flag it became
+  (`+ --set timezone=Asia/Bangkok`). OK accepts them; Cancel quits with nothing changed so you
+  can review the files first. When only `.booth/.generated` disagrees, OK also rewrites it.
+  `--no-tui` prints the same list.
+
 - **`tty-owner` gives the booth user its own pty.** The foreground shell of `booth run`
   keeps the terminal `docker run -it` made while the container was still root: owned
   `root:tty` mode `0620`, so the user can write to it and cannot open it by name. `gpg`

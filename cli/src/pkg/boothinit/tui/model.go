@@ -83,16 +83,38 @@ type model struct {
 
 	// Overwrite confirmation — saving regenerates .booth/ files from scratch, so
 	// when any of them hold hand-written content (drifted, from output.Drifted)
-	// Ctrl+S opens a dialog instead of saving. It offers two ways out: Enter writes
-	// the generated content beside the user's files as "<name>.new" (saveBeside —
-	// destroys nothing, and is the default), while replacing them outright requires
-	// typing overwriteConfirmWord. Destroying someone's work should take more than a
-	// reflex keystroke; merely getting at the generated output should not.
+	// Ctrl+S opens a dialog instead of saving. It offers three numbered choices:
+	//
+	//	1. apply      — replace them, keeping each as "<name>.bak"
+	//	2. save .new  — write the generated content beside them (saveBeside);
+	//	                focused when the dialog opens, since it loses nothing
+	//	3. overwrite  — replace them with no backup (noBackup); only once
+	//	                overwriteConfirmWord is typed in full
+	//
+	// Losing someone's work outright should take more than a reflex keystroke;
+	// replacing it with a backup kept, or merely getting at the generated output,
+	// should not. adoptReasons says why the edits could not be read back.
 	drifted         []string
+	adoptReasons    []string
 	overwriteDialog bool
+	overwriteChoice int // the focused choice, overwriteApply..overwriteOutright
 	overwriteInput  string
 	overwriteCursor int // cursor position within overwriteInput
 	saveBeside      bool
+	noBackup        bool
+
+	// Edits-made-outside question — the booth's files were changed outside booth
+	// config, and the changes were read back (adoptedChanges says what they
+	// became). Asked on open: OK accepts them and carries on, calling
+	// refreshFingerprint when set; Cancel quits with nothing changed (review), so
+	// the user can look at the files first.
+	adoptedFiles       []string
+	adoptedChanges     []string
+	adoptedModified    map[string]string // file → last modified, for display
+	refreshFingerprint func() error
+	adoptedDialog      bool
+	adoptedCancel      bool // the focused button: false = OK, true = Cancel
+	review             bool
 
 	// Comments confirmation — the booth's files were edited outside booth config
 	// and the edits were read back, but comments cannot be: a save regenerates the
@@ -492,6 +514,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		// Warning dialog mode — must dismiss before using TUI
+		// Edits-made-outside question — asked on open, before the startup warning
+		if m.adoptedDialog {
+			return m.handleAdoptedConfirm(msg)
+		}
+
 		if m.warningDialog {
 			switch msg.String() {
 			case "enter", " ":
@@ -1525,10 +1552,17 @@ func (m model) buildParamDSL(itemKey string, t *tmpl.Template) string {
 // keys and the footer's Discard / Back buttons answer it.
 const quitPromptMessage = "Quit without saving? Press ENTER to quit  │  ESC to go back"
 
-// overwriteConfirmWord is what the user must type to save over hand-written
-// content. Deliberately not "y" or "yes" — a reflex keystroke is exactly what
-// this dialog exists to prevent.
+// overwriteConfirmWord is what the user must type to overwrite hand-written
+// content with no backup. Deliberately not "y" or "yes" — a reflex keystroke is
+// exactly what this dialog exists to prevent.
 const overwriteConfirmWord = "overwrite"
+
+// The choices of the hand-written dialog, numbered as the dialog shows them.
+const (
+	overwriteApply    = 1 // replace, keeping <name>.bak
+	overwriteBeside   = 2 // keep theirs, write <name>.new
+	overwriteOutright = 3 // replace, no backup — needs overwriteConfirmWord
+)
 
 // requestCancel handles Ctrl+E / the Cancel button from every mode.
 //
@@ -1552,6 +1586,7 @@ func (m model) requestCancel() (tea.Model, tea.Cmd) {
 func (m model) requestSave() (tea.Model, tea.Cmd) {
 	if len(m.drifted) > 0 {
 		m.overwriteDialog = true
+		m.overwriteChoice = overwriteBeside
 		m.overwriteInput = ""
 		m.overwriteCursor = 0
 		return m, nil
@@ -1581,46 +1616,76 @@ func (m model) handleCommentsConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-// handleOverwriteConfirm drives the dialog. Enter on an empty field takes the safe
-// path — write the generated content beside the user's files as "<name>.new" and
-// destroy nothing. Enter only *replaces* the files when the field holds the
-// confirmation word exactly. A half-typed word does nothing, and Esc backs out with
-// the configuration untouched.
+// handleOverwriteConfirm drives the hand-written dialog. ↑/↓ or the number keys
+// pick a choice and Enter takes it. Apply and save-beside need nothing more; the
+// outright overwrite takes Enter only once the field holds the confirmation word
+// exactly — a half-typed word does nothing. Esc backs out with the configuration
+// untouched.
 func (m model) handleOverwriteConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	if pos, moved := moveTextCursor(keyName(msg), m.overwriteCursor, len(m.overwriteInput)); moved {
-		m.overwriteCursor = pos
-		return m, nil
-	}
-
-	switch keyName(msg) {
+	key := keyName(msg)
+	switch key {
 	case "esc":
 		m.overwriteDialog = false
 		m.overwriteInput = ""
 		m.overwriteCursor = 0
 		return m, nil
 
-	case "enter":
-		switch m.overwriteInput {
-		case "":
-			m.saveBeside = true
-			m.confirmed = true
-			return m, tea.Quit
-		case overwriteConfirmWord:
-			m.confirmed = true
-			return m, tea.Quit
+	case "ctrl+c", "ctrl+e":
+		// Quit without saving — the files stay as the user wrote them.
+		return m, tea.Quit
+
+	case "up", "shift+tab":
+		if m.overwriteChoice > overwriteApply {
+			m.overwriteChoice--
 		}
 		return m, nil
 
-	case "backspace":
+	case "down", "tab":
+		if m.overwriteChoice < overwriteOutright {
+			m.overwriteChoice++
+		}
+		return m, nil
+
+	case "1", "2", "3":
+		// The confirmation word has no digits, so a number always picks a choice.
+		m.overwriteChoice = int(key[0] - '0')
+		return m, nil
+
+	case "enter":
+		switch m.overwriteChoice {
+		case overwriteApply:
+			m.confirmed = true
+			return m, tea.Quit
+		case overwriteBeside:
+			m.saveBeside = true
+			m.confirmed = true
+			return m, tea.Quit
+		case overwriteOutright:
+			if m.overwriteInput == overwriteConfirmWord {
+				m.noBackup = true
+				m.confirmed = true
+				return m, tea.Quit
+			}
+		}
+		return m, nil
+	}
+
+	// Only the outright overwrite has a field to type into.
+	if m.overwriteChoice != overwriteOutright {
+		return m, nil
+	}
+
+	if pos, moved := moveTextCursor(key, m.overwriteCursor, len(m.overwriteInput)); moved {
+		m.overwriteCursor = pos
+		return m, nil
+	}
+
+	if key == "backspace" {
 		if m.overwriteCursor > 0 && len(m.overwriteInput) > 0 {
 			m.overwriteInput = m.overwriteInput[:m.overwriteCursor-1] + m.overwriteInput[m.overwriteCursor:]
 			m.overwriteCursor--
 		}
 		return m, nil
-
-	case "ctrl+c", "ctrl+e":
-		// Quit without saving — the files stay as the user wrote them.
-		return m, tea.Quit
 	}
 
 	// A pasted confirmation word arrives with whatever whitespace was copied with
@@ -1629,6 +1694,41 @@ func (m model) handleOverwriteConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if ins := typedText(msg); ins != "" {
 		m.overwriteInput = m.overwriteInput[:m.overwriteCursor] + ins + m.overwriteInput[m.overwriteCursor:]
 		m.overwriteCursor += len(ins)
+	}
+	return m, nil
+}
+
+// handleAdoptedConfirm drives the edits-made-outside question: ←/→ (or Tab) pick
+// OK or Cancel and Enter takes it; O and C answer directly. OK accepts the edits
+// and carries on into the TUI. Cancel or Esc quits with nothing changed, so the
+// user can review the files before configuring.
+func (m model) handleAdoptedConfirm(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	accept := false
+	switch keyName(msg) {
+	case "left", "right", "tab", "shift+tab":
+		m.adoptedCancel = !m.adoptedCancel
+		return m, nil
+	case "o", "O":
+		accept = true
+	case "c", "C", "esc":
+	case "enter":
+		accept = !m.adoptedCancel
+	case "ctrl+c", "ctrl+e":
+		return m, tea.Quit
+	default:
+		return m, nil
+	}
+
+	if !accept {
+		m.review = true
+		return m, tea.Quit
+	}
+	m.adoptedDialog = false
+	m.notification = "Accepted the changes made outside booth config"
+	if m.refreshFingerprint != nil {
+		if err := m.refreshFingerprint(); err != nil {
+			m.notification = "Could not update .booth/.generated: " + err.Error()
+		}
 	}
 	return m, nil
 }
