@@ -35,21 +35,39 @@ JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"
 NOTEBOOK_DEFAULT_PORT="${1:-${NOTEBOOK_DEFAULT_PORT:-12222}}"
 
 
+# Exact pins (verified against PyPI 2026-10-02) -- a bare `-U`/`>=` let every one
+# of these float to whatever PyPI happened to serve at build time, which is how
+# two --no-cache rebuilds with zero source changes could still produce a
+# different image: ensure_fresh_image's own staleness check was correctly
+# catching a real content change, not misfiring. Keep these in sync with the
+# identical pins in bash-nb-kernel--setup.sh -- both scripts run against the
+# same interpreter, and that one upgrades pip/setuptools/wheel again afterward.
+PIP_PIN_VERSION="26.2.1"
+SETUPTOOLS_PIN_VERSION="84.0.0"
+WHEEL_PIN_VERSION="0.48.0"
+IPYKERNEL_VERSION="7.4.0"
+JUPYTER_CORE_VERSION="5.9.1"
+JUPYTER_SERVER_VERSION="2.21.1"
+JUPYTERLAB_SERVER_VERSION="2.28.1"
+# Stays on 4.x until booth-web-preview-notebook--setup.sh's own
+# JUPYTER_SERVER_PROXY_VERSION pin moves past 4.6.0, whose Launcher plugin is
+# 4-only: a new major must be a deliberate bump, not whatever happened to
+# resolve at build time -- the same reasoning that applies to every pin here.
+JUPYTERLAB_VERSION="4.6.4"
+
 # ---- helper: install + verify Jupyter in venv ----
 ensure_jupyterlab_in_venv() {
   env PIP_CACHE_DIR="${PIP_CACHE_DIR:-/opt/pip-cache}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    python -m pip install -U pip setuptools wheel
+    python -m pip install \
+      "pip==${PIP_PIN_VERSION}" "setuptools==${SETUPTOOLS_PIN_VERSION}" "wheel==${WHEEL_PIN_VERSION}"
 
-  # JupyterLab stays on 4.x until booth-web-preview-notebook--setup.sh pins a
-  # jupyter-server-proxy whose Launcher plugin supports 5 (4.6.0's is 4-only):
-  # a new major must be a deliberate bump, not whatever an image build finds.
   env PIP_CACHE_DIR="${PIP_CACHE_DIR:-/opt/pip-cache}" PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    python -m pip install -U \
-      "ipykernel>=6"         \
-      "jupyter_core>=5"      \
-      "jupyter_server>=2"    \
-      "jupyterlab_server>=2" \
-      "jupyterlab>=4,<5"
+    python -m pip install \
+      "ipykernel==${IPYKERNEL_VERSION}"                 \
+      "jupyter_core==${JUPYTER_CORE_VERSION}"           \
+      "jupyter_server==${JUPYTER_SERVER_VERSION}"       \
+      "jupyterlab_server==${JUPYTERLAB_SERVER_VERSION}" \
+      "jupyterlab==${JUPYTERLAB_VERSION}"
 
   # Verify importability
   if ! python - <<'PY'
