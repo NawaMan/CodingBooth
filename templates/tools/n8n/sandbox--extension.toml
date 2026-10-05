@@ -1,0 +1,47 @@
+display-name = "n8n Assistant Sandbox"
+display-disc = "Code sandbox for the n8n Assistant and Agents (needs Docker)"
+display-detail = """Runs n8n's own sandbox service (an API plus a privileged Docker-in-Docker runner) at boot and points n8n at it, so the Assistant's "Code sandbox" is set up instead of asking for a URL and key. This is where the Assistant and Agents run code and work with files. Code nodes do not need it. Pulls in Docker-in-Docker and Docker Compose, because the service only runs on Docker. booth asks before starting a DinD booth (--dind-allowed skips the question). First boot pulls three sandbox images. The keys are generated once under ~/.n8n/sandbox; add +persist to keep them."""
+display-order = 4
+auto-select = false
+requires = ["dind", "docker-compose"]
+tags = [
+    "n8n",
+    "sandbox",
+    "assistant",
+    "dind",
+]
+
+# start-n8n reads the sandbox settings only when N8N_SANDBOX_PORT is set.
+run-args = [
+    "-e", "N8N_SANDBOX_PORT=${N8N_SANDBOX_PORT}",
+    "-e", "N8N_SANDBOX_VERSION=${N8N_SANDBOX_VERSION}",
+]
+
+# The sandbox API, runner and sandbox images ship as one release. 1.3.4 is the
+# version n8n's own installer pairs with n8n 2.41.5.
+[params.N8N_SANDBOX_VERSION]
+default = "1.3.4"
+suggests = [
+    "1.3.4",
+]
+
+# Container-local port for the sandbox API. Bound to 127.0.0.1 and never
+# published to the host.
+[params.N8N_SANDBOX_PORT]
+default = "21280"
+suggests = [
+    "21280",
+]
+
+[segments]
+"startup--64.sh" = """
+# n8n Assistant code sandbox (needs Docker / dind). Runs before +autostart:
+# the settings n8n reads are written now, the containers start in the background.
+if start-n8n-sandbox --env-only; then
+  nohup bash -c 'for _ in $(seq 60); do docker info >/dev/null 2>&1 && break; sleep 1; done; start-n8n-sandbox' \\
+    > /tmp/n8n-sandbox.log 2>&1 &
+  echo "n8n sandbox service starting (PID $!, log: /tmp/n8n-sandbox.log)"
+else
+  echo "⚠️  Could not write the n8n sandbox settings; the Assistant will have no code sandbox."
+fi
+"""

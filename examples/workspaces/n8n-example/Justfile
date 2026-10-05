@@ -1,0 +1,12 @@
+# Wrapped commands auto-run inside the booth when called from the host
+# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
+# This checkout's CLI. A `booth` on PATH is the installed release, which does not have this session's scripts yet.
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "../../../codingbooth exec --run --" } else { "" }
+
+[private]
+default:
+    @just --list
+
+# Ask the editor's health endpoint. +autostart brings the server up.
+health:
+    {{run}} curl -fsS http://127.0.0.1:21200/healthz

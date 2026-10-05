@@ -400,6 +400,7 @@ come after the parent's order-50 line and before the IDEs at 60.
 | `tools/gradle`             | Gradle |
 | `tools/harlequin`          | Harlequin |
 | `tools/helm`               | Helm |
+| `tools/helix`              | Helix |
 | `tools/homebrew`           | Homebrew |
 | `tools/hoppscotch`         | Hoppscotch |
 | `tools/just`               | just |
@@ -498,6 +499,7 @@ come after the parent's order-50 line and before the IDEs at 60.
 | `tools/excalidraw`         | Excalidraw |
 | `tools/freeplane`          | Freeplane |
 | `tools/mermaid`            | Mermaid |
+| `tools/n8n`                | n8n |
 | `tools/notebook`           | Jupyter Notebook |
 | `tools/obsidian`           | Obsidian |
 | `tools/penpot`             | Penpot (experimental) |
@@ -506,6 +508,7 @@ come after the parent's order-50 line and before the IDEs at 60.
 | `tools/puppeteer`          | Puppeteer |
 | `tools/remotion`           | Remotion |
 | `tools/selenium`           | Selenium drivers |
+| `tools/xonsh`              | Xonsh |
 
 ### Order 62 — Android emulator (needs the Android SDK from order 60)
 

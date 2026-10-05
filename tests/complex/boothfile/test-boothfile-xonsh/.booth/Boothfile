@@ -1,0 +1,6 @@
+# syntax=codingbooth/boothfile:1
+
+# xonsh--setup.sh is supplied under .booth/setups/ until the base image ships it.
+# Catalog Python comes from the image's python--setup.sh.
+setup python 3.13.15
+setup xonsh --version 0.24.2

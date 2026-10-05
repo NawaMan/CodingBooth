@@ -1,0 +1,19 @@
+display-name = "Expose n8n Port"
+display-disc = "Expose n8n port to host network"
+display-order = 1
+auto-select = false
+tags = [
+    "n8n",
+    "port",
+    "network"
+]
+
+run-args = [
+    "-p", "${N8N_HOST_PORT}:${N8N_PORT}",
+]
+
+# Host-side port. Defaults to the port the service listens on, so moving the
+# service moves the published port with it. Override only when the host port is
+# already taken.
+[params.N8N_HOST_PORT]
+default = "${N8N_PORT}"

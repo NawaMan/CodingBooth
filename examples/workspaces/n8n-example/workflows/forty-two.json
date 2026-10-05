@@ -1,0 +1,44 @@
+[
+  {
+    "id": "fortyTwoWorkflow01",
+    "name": "Forty Two",
+    "active": false,
+    "nodes": [
+      {
+        "parameters": {},
+        "id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+        "name": "When clicking \u2018Execute workflow\u2019",
+        "type": "n8n-nodes-base.manualTrigger",
+        "typeVersion": 1,
+        "position": [240, 300]
+      },
+      {
+        "parameters": {
+          "mode": "runOnceForAllItems",
+          "jsCode": "return [{ json: { answer: 40 + 2 } }];"
+        },
+        "id": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+        "name": "Code",
+        "type": "n8n-nodes-base.code",
+        "typeVersion": 2,
+        "position": [480, 300]
+      }
+    ],
+    "connections": {
+      "When clicking \u2018Execute workflow\u2019": {
+        "main": [
+          [
+            {
+              "node": "Code",
+              "type": "main",
+              "index": 0
+            }
+          ]
+        ]
+      }
+    },
+    "settings": {
+      "executionOrder": "v1"
+    }
+  }
+]

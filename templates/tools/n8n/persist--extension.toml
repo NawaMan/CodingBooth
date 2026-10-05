@@ -1,0 +1,14 @@
+display-name = "n8n Persist Data"
+display-disc = "Keep n8n data across booth runs via .booth/cache"
+display-detail = """Bind-mounts ~/.n8n from .booth/cache/ (CodingBooth cache-dirs, gitignored, this machine only). Workflows, credentials, and the SQLite encryption key survive the next booth on this machine. Select this extension — the data directory is always ~/.n8n; without +persist it dies with the container."""
+display-order = 3
+auto-select = false
+tags = [
+    "n8n",
+    "cache",
+    "persistence"
+]
+
+cache-dirs = [
+    "home/coder/.n8n",
+]

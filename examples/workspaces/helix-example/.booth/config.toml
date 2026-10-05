@@ -1,0 +1,4 @@
+# Configured by: booth config --no-tui --overwrite --select helix:25.07.1+config-shared
+
+
+shared-dirs = ["home/coder/.config/helix"]
