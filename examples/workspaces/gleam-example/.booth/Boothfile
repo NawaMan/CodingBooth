@@ -1,0 +1,14 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --variant codeserver --expose +8000 --select erlang/gleam:1.18.1+vscode-ext/codeserver
+
+env APT_SNAPSHOT=20261002T000000Z
+
+arg CODESERVER_PORT=13333
+arg GLEAM_VERSION=1.18.1
+arg OTP_VERSION=28
+
+setup erlang --otp-version ${OTP_VERSION}
+setup codeserver ${CODESERVER_PORT}
+setup erlang-code-extension
+setup gleam --version ${GLEAM_VERSION}
+setup gleam-code-extension

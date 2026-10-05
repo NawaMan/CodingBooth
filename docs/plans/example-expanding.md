@@ -101,7 +101,7 @@ Pays off recently-added language templates and shows breadth. Each example: a ti
 2. **nim-example** — uses new Nim setup; small HTTP server with `jester` or std `httpserver`.
 3. **lean4-example** — Lean 4 theorem prover; a verified-sort demo.
 4. **prolog-example** — SWI-Prolog; classic "I'd love to try it but…" language.
-5. **gleam-example** — BEAM with friendly typing; Wisp web demo.
+5. **gleam-example** ✅ — BEAM with friendly typing; Wisp web demo.
 
 ---
 
