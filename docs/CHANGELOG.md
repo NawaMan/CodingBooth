@@ -142,6 +142,26 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **Gleam is now in the catalog: `setup gleam`, a `gleam` language template, and a Wisp web
+  example.** `gleam--setup.sh` installs the single static `gleam` binary (compiler, build tool,
+  formatter and language server) from the GitHub release, SHA256-checked against the checksum
+  published next to it, for amd64 and arm64. `--version X|latest` (fallback 1.18.1); `latest` never
+  picks a release candidate, but `--version 1.19.0-rc2` works when asked for by name. Gleam compiles
+  to Erlang, so the template `requires = ["erlang"]` (the OTP version stays a visible choice), and
+  the script also runs `erlang--setup.sh` itself when `erl` is missing, so a bare `setup gleam` in a
+  hand-written Boothfile still works. An auto-selected `vscode-ext` extension adds `gleam.gleam`
+  (same id on Open VSX and the Marketplace). Select it with `booth config --select gleam` or
+  `gleam:1.17.0`. New `examples/workspaces/gleam-example`: a Wisp + Mist service with HTML, JSON and
+  POST routes plus a Roman numeral converter (`/roman/2026` → `MMXXVI`, `/roman/XIV` → `14`),
+  and a second Gleam program, a CLI client (`just client XIV 1999`, default input `2026`) that sends
+  its input to the server with `gleam_httpc` and prints the decoded answers. Exit codes: 1 for a
+  rejected input, 2 for an unreachable server. Port 8000 is published as `+8000:8000`, so from the
+  host it is booth port + 8000 (`booth--expose list` shows it). Router, Roman and client-formatting
+  tests use `wisp/simulate`; the host test drives the server and the CLI in a real booth. Tested
+  functionally, not by `--version`:
+  `tests/complex/boothfile/test-boothfile-gleam` runs `gleam new`, `gleam run` and `gleam test`;
+  `tests/config/init/test126-init-gleam.sh` covers the erlang dependency, its order and the pin.
+
 - **`build-all.sh --no-cache`'s own prune step was pruning an empty, unrelated cache the whole time.**
   It ran `docker buildx prune --force --all`, which targets whichever builder is currently *active*
   via `docker buildx use` — but this project's local (non-push) builds go through plain `docker build`
