@@ -689,6 +689,7 @@ Two top-level templates also live at 70:
 | `python/conda--extension`             | Conda                     |
 | `python/pip--extension`               | pip requirements          |
 | `python/uv--extension`                | uv                        |
+| `tools/tty-owner`                     | TTY owner                 |
 
 ### Order 90 — Dependency pre-installation (from manifest files)
 

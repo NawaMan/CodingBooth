@@ -1,0 +1,11 @@
+display-name = "TTY owner"
+display-disc = "Chown each login shell's pty to the booth user, so gpg's pinentry can open it"
+display-detail = "The foreground shell of booth run inherits a pty owned root:tty, mode 0620, from the container's root start. Each login shell chowns that device to the booth user, so gpg pinentry and pass can open $GPG_TTY."
+display-order = 80
+tags = ["gpg", "pinentry", "tty", "pass"]
+
+# Late, so it lands after the package installs; it doesn't depend on them.
+[segments]
+"Boothfile--90" = """
+setup tty-owner
+"""
