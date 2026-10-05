@@ -142,6 +142,21 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **Test logs moved into `tests/logs/`, matching the convention every other suite already follows.**
+  `tests/config/run-all-tests.sh`'s `capture_file()` wrote each parallel test's `out--<name>.log`
+  loose into `tests/config/` itself — ~100 of them, sitting next to the test code and the category
+  folders, never cleaned up until someone remembered to run `clean-all.sh` by hand. They now go to
+  `tests/logs/config/`, the same top-level `tests/logs/` every other suite already writes to
+  (`run-automate-tests.sh`'s own `${suite}.log`, `tests/complex`'s `complex-booth-calls.log`).
+  `clean-all.sh` was cleaning a target that had already moved once before (its `prj--*` glob matched
+  nothing — `test-helpers--source.sh`'s own scratch moved out-of-tree to `$TMPDIR` well before this
+  change) and is now pointed at both real current locations. `tests/unit/`'s 4 Go/Docker test
+  runners had the identical anti-pattern (`run-go-unit-tests.log` etc., loose in `tests/unit/`) and
+  got the identical fix. Verified: a real parallel-test run lands its logs in `tests/logs/config/`
+  with `tests/config/` itself staying clean; a forced failure still traces end to end through the
+  new location; `clean-all.sh` empties it; one of the `tests/unit/` runners confirmed writing to
+  `tests/logs/` instead of its own directory.
+
 - **CONFIG failures now name the category folder, not just the file.** Caught by the user running
   the real suite right after the category split: `${testname}` (used to prefix a failure, e.g.
   `catalog/test91-…`) was `basename "$0" .sh` — the bare file name only, which answered "which

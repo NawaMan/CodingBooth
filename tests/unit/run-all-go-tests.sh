@@ -11,7 +11,8 @@ set -e  # Exit on first failure
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WORKSPACE_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
-LOG_FILE="$SCRIPT_DIR/run-all-go-tests.log"
+mkdir -p "$SCRIPT_DIR/../logs"
+LOG_FILE="$SCRIPT_DIR/../logs/run-all-go-tests.log"
 
 # Redirect output to log file and stdout
 exec > >(tee -i "$LOG_FILE") 2>&1
