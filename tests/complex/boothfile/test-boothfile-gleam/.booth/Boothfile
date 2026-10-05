@@ -1,0 +1,6 @@
+# syntax=codingbooth/boothfile:1
+
+# Test: Gleam installation via Boothfile (runs on Erlang/OTP).
+# gleam--setup.sh is supplied under .booth/setups/ until the base image ships it.
+setup erlang --otp-version 28
+setup gleam --version 1.18.1
