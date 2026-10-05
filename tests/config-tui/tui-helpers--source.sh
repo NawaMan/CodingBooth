@@ -219,8 +219,18 @@ function run-tui() {
     # until new ones cannot start and tests that have nothing wrong with them wedge.
     # Reap by difference so only ttyd processes this call created are killed;
     # anything already running (another suite, the user's own) is left alone.
+    #
+    # "Created during this call" is not enough on its own: the host's pgrep also
+    # sees the ttyd panes of every booth container, and a booth started while vhs
+    # runs has new pids too. Its ttyd runs as coder — the host user's uid — so the
+    # kill is allowed, and the booth's console panes all go dead at once. Only a
+    # ttyd in this shell's own pid namespace can be one vhs started. (No /proc on
+    # macOS, and no container processes visible from its host either: skip the
+    # check there.)
     local ttyd_before
     ttyd_before=" $(pgrep ttyd 2>/dev/null | tr '\n' ' ') "
+    local own_pidns
+    own_pidns=$(readlink /proc/$$/ns/pid 2>/dev/null || :)
 
     ( cd "$prj" && run-with-timeout 120 vhs "$tape" ) >> "$log" 2>&1
     local rc=$?
@@ -231,9 +241,13 @@ function run-tui() {
     local ttyd_pid
     for ttyd_pid in $(pgrep ttyd 2>/dev/null); do
         case "$ttyd_before" in
-            *" ${ttyd_pid} "*) : ;;                      # pre-existing, not ours
-            *) kill "$ttyd_pid" 2>/dev/null || : ;;
+            *" ${ttyd_pid} "*) continue ;;               # pre-existing, not ours
         esac
+        if [[ -n "$own_pidns" ]] \
+           && [[ "$(readlink "/proc/${ttyd_pid}/ns/pid" 2>/dev/null)" != "$own_pidns" ]]; then
+            continue                                     # in a container, not ours
+        fi
+        kill "$ttyd_pid" 2>/dev/null || :
     done
 
     # Strip ANSI from the captured frame for stable grep-based assertions.
