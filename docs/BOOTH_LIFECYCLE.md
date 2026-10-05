@@ -162,6 +162,47 @@ Batch-remove all stopped booth containers.
 
 Also cleans up orphaned sidecar containers (DinD, egress) whose parent no longer exists.
 
+### `logs`
+
+Show what a booth printed, or the logs its services wrote.
+
+```bash
+./booth logs                       # container output, like `docker logs <booth>`
+./booth logs -f --tail 100         # follow, starting from the last 100 lines
+./booth logs --list                # the service log files in the booth's /tmp
+./booth logs excalidraw -f         # follow /tmp/excalidraw.log
+./booth logs --startup             # /tmp/startups.log, the image's startup hooks
+./booth logs --name myproject      # another booth
+```
+
+With no service named it is `<engine> logs` for the booth: the main process (ttyd, code-server,
+Jupyter, …), booth-entry, and your `.booth/startups/` scripts. `-f`/`--follow`, `--tail`/`-n`,
+`--since`, `--until` and `-t`/`--timestamps` are passed through. (Apple container has no
+`--since`, `--until` or `--timestamps`, so those are refused there.)
+
+Most autostarted services log to a file instead, so `docker logs` never shows them. A service
+name selects `/tmp/<service>.log`, or, when there is none, every `/tmp/<service>-*.log`:
+`booth logs n8n` shows `n8n-sandbox.log` and `n8n-search.log` together, with a `==> file <==`
+header for each, the way `tail` shows several files. `--startup` is the service `startups`.
+`--list` prints the names to use:
+
+```
+SERVICE       SIZE  MODIFIED             FILE
+excalidraw    4.1K  2026-10-04 13:45:40  /tmp/excalidraw.log
+startups      669B  2026-10-04 13:45:40  /tmp/startups.log
+```
+
+Positional arguments are service names, so the booth is picked with `--name` or `--code` (by
+default, the booth of the current folder).
+
+A stopped keep-alive booth still has its logs. Both forms read them from the stopped container
+(log files through `<engine> cp`, which Apple container does not offer: start the booth there
+first). `-f` then prints what is there and returns. A booth run without `--keep-alive` is removed
+when it stops, and its logs go with it.
+
+Stopping a follow — Ctrl+C, a closed pipe, a killed terminal — also stops the `tail` inside the
+booth, so following never leaves processes behind.
+
 ---
 
 ## Common Workflows

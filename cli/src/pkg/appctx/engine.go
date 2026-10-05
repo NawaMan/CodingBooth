@@ -114,7 +114,7 @@ func ResolveEngineForPath(codeDir string, quiet bool) string {
 }
 
 // ResolveEnginesForPath is ResolveEngineForPath for commands that only look
-// booths up (list, stop, restart, remove, prune, message, expose list). When the
+// booths up (list, stop, restart, remove, prune, logs, message, expose list). When the
 // engine was chosen explicitly (config file or CB_ENGINE) it returns just that
 // one. When nothing was chosen and more than one engine is installed it returns
 // every installed one — apple (Apple container, binary `container`), docker and

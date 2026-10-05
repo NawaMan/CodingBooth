@@ -291,6 +291,12 @@ func translateForApple(subcommand string, args []string) ([]appleStep, error) {
 		return steps, nil
 	case "info":
 		return nil, &UnsupportedOnAppleError{Flag: "info"}
+	case "logs":
+		translated, err := translateLogsArgs(args)
+		if err != nil {
+			return nil, err
+		}
+		return []appleStep{{args: append([]string{"logs"}, translated...)}}, nil
 	default:
 		return passthrough(subcommand), nil
 	}
@@ -503,6 +509,31 @@ func containsFlag(args []string, flag string) bool {
 		}
 	}
 	return false
+}
+
+// translateLogsArgs rewrites `docker logs` flags for `container logs`, which
+// follows (--follow) and takes a line count as -n; "all" is its default. It has
+// no --since, --until or --timestamps.
+func translateLogsArgs(args []string) ([]string, error) {
+	out := make([]string, 0, len(args))
+	for i := 0; i < len(args); i++ {
+		switch arg := args[i]; arg {
+		case "--follow", "-f":
+			out = append(out, "--follow")
+		case "--tail", "-n":
+			if i+1 < len(args) {
+				i++
+				if args[i] != "all" {
+					out = append(out, "-n", args[i])
+				}
+			}
+		case "--since", "--until", "--timestamps", "-t":
+			return nil, &UnsupportedOnAppleError{Flag: "logs " + arg}
+		default:
+			out = append(out, arg)
+		}
+	}
+	return out, nil
 }
 
 // splitShortFlags turns a bundled "-ai" into "-a", "-i".

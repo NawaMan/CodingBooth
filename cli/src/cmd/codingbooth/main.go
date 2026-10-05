@@ -62,6 +62,9 @@ func main() {
 		case "exec":
 			execBooth(version)
 			return
+		case "logs":
+			logsBooth(version)
+			return
 		case "message":
 			messageBooth(version)
 			return

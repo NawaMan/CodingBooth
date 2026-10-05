@@ -43,6 +43,10 @@ func execBooth(_ string) {
 	handleLifecycleErr(lifecycle.Exec(os.Args[2:], os.Stderr))
 }
 
+func logsBooth(_ string) {
+	handleLifecycleErr(lifecycle.Logs(os.Args[2:], os.Stdout, os.Stderr))
+}
+
 func messageBooth(_ string) {
 	handleLifecycleErr(lifecycle.Message(os.Args[2:], os.Stdout, os.Stderr))
 }

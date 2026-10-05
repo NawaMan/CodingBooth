@@ -307,8 +307,8 @@ on Docker. See [CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md#when-you-choose-nothi
 
 Notes:
 
-- `booth list`, `stop`, `start`, `restart`, `remove`, `prune`, `message` and
-  `expose list` do not take `--engine`. When no engine is chosen and more than
+- `booth list`, `stop`, `start`, `restart`, `remove`, `prune`, `logs`, `message`
+  and `expose list` do not take `--engine`. When no engine is chosen and more than
   one is installed they look at every installed engine — Docker, Podman, and
   Apple container (`apple`, see [CONTAINER_SUPPORT.md](CONTAINER_SUPPORT.md)) —
   and act on whichever owns the booth (`booth list` adds an `ENGINE` column).

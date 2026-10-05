@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth logs` shows a booth's output and its service logs.** With no arguments it is
+  `docker logs` (or `podman logs` / `container logs`) for the current folder's booth, with `-f`,
+  `--tail`, `--since`, `--until` and `-t` passed through. Most services log to files in the booth's
+  `/tmp`, which `docker logs` never sees, so `booth logs <service>` shows `/tmp/<service>.log` (or
+  every `/tmp/<service>-*.log`), `booth logs --startup` shows the startup-hook log, and
+  `booth logs --list` lists them all. Works on a stopped keep-alive booth too; stopping `-f` also
+  stops the `tail` inside the booth. See [booth lifecycle](BOOTH_LIFECYCLE.md#logs).
+
 - **`tty-owner` gives the booth user its own pty.** The foreground shell of `booth run`
   keeps the terminal `docker run -it` made while the container was still root: owned
   `root:tty` mode `0620`, so the user can write to it and cannot open it by name. `gpg`
