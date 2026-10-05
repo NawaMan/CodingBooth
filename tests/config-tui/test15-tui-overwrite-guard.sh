@@ -8,7 +8,7 @@
 #   type "overwrite"    replace them, keeping a .bak
 #   Esc                 back out, touching nothing
 #
-# The CLI equivalents are --beside and --overwrite (tests/config/test68).
+# The CLI equivalents are --beside and --overwrite (tests/config/engine/test68).
 source "$(dirname "$0")/tui-helpers--source.sh"
 
 begin

@@ -323,7 +323,7 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       Note the ninth: `jetbrain-exmple` is misspelled, so it does not match `*-example` and is invisible
       to every glob in the tooling — including the one that found the first eight. Worth renaming, or at
       least making the globs `examples/workspaces/*/`.
-      Enforcement shipped too: `tests/config/test93-booth-files-are-clean.sh` fails on any committed
+      Enforcement shipped too: `tests/config/catalog/test93-booth-files-are-clean.sh` fails on any committed
       `.booth/` file carrying a non-`coder` home path. It scans `git ls-files`, so it guards what a
       release actually zips rather than what a dirty tree holds.
 - [ ] **Nothing checks that a shipped example is still `booth config`-generated.** Of 65 examples, **6**

@@ -726,6 +726,6 @@ never becomes a Boothfile `arg` (which would rebuild the image):
 
 ### Keeping this reference complete
 
-`tests/config/test121-templates-readme-is-complete.sh` fails when a template directory is missing
+`tests/config/catalog/test121-templates-readme-is-complete.sh` fails when a template directory is missing
 from this reference, or when a `category/name` path in it no longer exists. Add the row in the
 same change that adds, moves, or removes a template.

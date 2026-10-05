@@ -142,6 +142,29 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **`tests/config/`'s 125 test files split into 5 category subfolders.** Purely organizational,
+  not a parallelism change (that's still the existing `booth-collect` auto-detection, unaffected):
+  `init/` (98 files — does one template/extension's own selection compile right, the
+  `testNN-init-<x>.sh` convention), `engine/` (14 — `booth config`'s own machinery: add/remove-select,
+  adopt, reconfigure, `template-list`/`search`/`show`), `catalog/` (8 — whole-catalog consistency
+  guards: every setup exists, every param is wired, the README stays complete), `behaviors/`
+  (4 — a convention spanning several templates, e.g. credential mounts staying narrow) and
+  `framework/` (1 — `test98`, which tests the suite runner's own progress line, not booth at all).
+  `test-helpers--source.sh` stays at the root as the shared library.
+  `init/` is named that and not `templates/` on purpose: several `catalog/` guards (and `test98`)
+  find the repo root by walking up to the nearest ancestor with its own `templates/` subdirectory,
+  and a folder named that collides with the check — it was tried, broke 9 files by sending them back
+  into `tests/config/` itself two levels too early, caught by running every affected test before
+  settling on `init/`. Also untangled from a second, unrelated, pre-existing `tests/config/template/`
+  (singular — its own self-contained suite, not part of this one) that a first-pass wildcard glob
+  (`*/test*.sh`) would have silently swept into this runner; the categories are now named explicitly.
+  Two files needed a path-depth fix for the new nesting (`tests/config/init/test84-...sh`,
+  `test89-...sh`, both resolve the repo root relative to their own script location), and `test89`
+  also updates its own git-pathspec self-exclusion to its new path. Full 125-test suite re-run
+  green afterward (`Total: 125 Passed: 125 Failed: 0`), plus spot checks of every file the collision
+  touched. A handful of doc/comment mentions of the old flat paths were updated to match (not
+  `docs/CHANGELOG.md`'s own historical entries, which describe paths as they were at the time).
+
 - **`tests/config/run-all-tests.sh`'s `--jobs` renamed to `--max-parallel`, capped at 16.** Same
   option (parallel slots for the config-only tests, default still 4), clearer name, and a sanity
   upper bound — not a measured optimum, just a guard against `--max-parallel 500` quietly meaning

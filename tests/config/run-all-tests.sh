@@ -3,11 +3,28 @@
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 
-# Runs all test*.sh scripts in this directory (excluding test-helpers--source.sh)
+# Runs every test*.sh under this directory's category subfolders -- init/
+# (does one template/extension's own selection compile right), engine/ (booth
+# config's own machinery: add/remove-select, adopt, reconfigure), catalog/
+# (whole-catalog consistency guards -- every setup exists, every param is wired,
+# etc.), behaviors/ (a convention that spans several templates, e.g. credential
+# mounts staying narrow) and framework/ (the test harness's own self-tests).
+# The category is organizational only -- it plays no part in which tests run
+# where; see the booth-collect check below for that. test-helpers--source.sh,
+# the shared library every category sources, stays at this directory's root.
+#
+# init/ is named that, not "templates/", on purpose: several catalog/ guards (and
+# test98) find the repo root by walking up to the nearest ancestor that has a
+# templates/ subdirectory of its own (the real catalog at the repo root) --
+# naming this folder the same thing satisfies that check two levels too early
+# and sends every one of them straight back into tests/config/ itself.
+#
 # Config-only tests run 4 at a time in parallel (--max-parallel N, 1-16).
 # Tests that start Docker containers (booth-collect) run sequentially to avoid port conflicts.
 # --help for the flags; --verbose shows the image builds, --heartbeat what is still in
-# flight, --only <glob> narrows the run to one test or a family.
+# flight, --only <glob> narrows the run to one test or a family (matched on the
+# bare file name, same as before the category split -- the folder it sits in is
+# not part of the glob).
 #
 # Two files per test, and they must stay separate: log--<name>.log is the test's own
 # detail log (it writes its command trace there and asserts against it), out--<name>.log
@@ -91,6 +108,12 @@ fi
 declare -a seq_tests=()   # booth-collect tests (need Docker port) → sequential
 declare -a par_tests=()   # config-only tests → parallel
 
+# The category subfolders this runner scans -- named explicitly, not "*/", so a
+# sibling directory never silently joins the run. tests/config/template/ (singular;
+# a separate, self-contained suite with its own run-all-tests.sh, not part of this
+# one) sits right next to these and a bare wildcard would have swept it in.
+CATEGORIES=(init engine catalog behaviors framework)
+
 # Does this test name match one of the --only globs? No globs means everything runs.
 selected() {
     (( ${#ONLY[@]} == 0 )) && return 0
@@ -102,15 +125,16 @@ selected() {
     return 1
 }
 
-for test_file in "$SCRIPT_DIR"/test*.sh; do
-    name=$(basename "$test_file" .sh)
-    [[ "$name" == "test-helpers--source" ]] && continue
-    selected "$name" || continue
-    if grep -q 'booth-collect' "$test_file" 2>/dev/null; then
-        seq_tests+=("$test_file")
-    else
-        par_tests+=("$test_file")
-    fi
+for category in "${CATEGORIES[@]}"; do
+    for test_file in "$SCRIPT_DIR/$category"/test*.sh; do
+        name=$(basename "$test_file" .sh)
+        selected "$name" || continue
+        if grep -q 'booth-collect' "$test_file" 2>/dev/null; then
+            seq_tests+=("$test_file")
+        else
+            par_tests+=("$test_file")
+        fi
+    done
 done
 
 TOTAL=$(( ${#seq_tests[@]} + ${#par_tests[@]} ))
