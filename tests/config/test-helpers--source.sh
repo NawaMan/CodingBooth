@@ -46,6 +46,23 @@ if [[ "$VERBOSE" == "true" ]]; then BUILD_ARGS=(); fi
 # above): every call to booth() happens from inside $prj, after `cd $prj`.
 _repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 
+# test_label: this test's path relative to tests/, used to prefix a failure
+# message so it survives being flattened into a suite-wide log alongside every
+# other category's files (see assert-line's comment below) -- "catalog/test91-…"
+# rather than just "test91-…", which by itself says nothing about which of
+# tests/config's category folders (or tests/complex's) it actually lives in.
+# Resolved against $_repo_root like everything else here, not a hardcoded
+# "one directory up" guess, so it keeps working through a future reorg without
+# a matching fix here -- the same approach tests/complex's
+# script_relative_path() (tests/common--source.sh) already uses.
+test_label="$(realpath "$0" 2>/dev/null)"
+if [[ -n "$test_label" ]]; then
+    test_label="${test_label#${_repo_root}/tests/}"
+    test_label="${test_label%.sh}"
+else
+    test_label="$testname"
+fi
+
 function booth() {
     if [[ ! -d "$_repo_root/templates" || ! -x "$_repo_root/codingbooth" ]]; then
         echo "Error: templates directory or codingbooth binary not found under $_repo_root" >&2
@@ -129,14 +146,16 @@ function assert-line() {
 
     if [[ "${FOUND}" != "${PREFIX}${EXPECTED}" ]]; then
         FAIL_COUNT=$((FAIL_COUNT + 1))
-        # Prefixed with the file name (not just "Test N: ..."): this is what
-        # survives into run-all-tests.sh's own "Failed tests:" roundup and
-        # from there into run-automate-tests.sh's suite-wide summary, where a
-        # bare "Test 216: ..." is one of 2501 numbers reused by ~126 files and
-        # tells you nothing about which one to open. Same convention as
-        # print_test_result() in tests/common--source.sh, which the complex
-        # suite already relies on for the same reason.
-        FAIL_TESTS+=("${testname}: ${test}")
+        # Prefixed with the category-qualified path (not just the bare file
+        # name, and not just "Test N: ..."): this is what survives into
+        # run-all-tests.sh's own "Failed tests:" roundup and from there into
+        # run-automate-tests.sh's suite-wide summary, where a bare
+        # "Test 216: ..." is one of 2501 numbers reused by ~126 files across
+        # 5 category folders and tells you nothing about which one to open --
+        # and the file name alone still leaves which *folder* an open guess.
+        # Same convention as print_test_result() in tests/common--source.sh,
+        # which the complex suite already relies on for the same reason.
+        FAIL_TESTS+=("${test_label}: ${test}")
         echo -e "\033[31mFAILED\033[0m"
 
         echo "  EXPECTED: ${PREFIX}${EXPECTED}"
@@ -173,7 +192,7 @@ function assert-last() {
     FOUND="$(tail $log -n 1)"
     if [[ "${FOUND}" != "${EXPECTED}" ]]; then
         FAIL_COUNT=$((FAIL_COUNT + 1))
-        FAIL_TESTS+=("${testname}: ${test}")  # see assert-line's comment on the prefix
+        FAIL_TESTS+=("${test_label}: ${test}")  # see assert-line's comment on the prefix
         echo -e "\033[31mFAILED\033[0m"
 
         echo "  EXPECTED: $EXPECTED"

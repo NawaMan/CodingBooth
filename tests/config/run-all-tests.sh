@@ -32,6 +32,14 @@
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+# Every category-qualified label printed below (Begin, Retried, Failed tests)
+# is relative to this, not to $SCRIPT_DIR -- "config/catalog/test91-…", not
+# just "catalog/test91-…" -- so it reads the same whether it came from here or
+# from test-helpers--source.sh's own test_label (see its comment), which is
+# relative to tests/ for the same reason tests/complex's script_relative_path()
+# is: one consistent anchor, regardless of which layer printed the line.
+TESTS_ROOT="$(dirname "$SCRIPT_DIR")"
+
 # Never open the host's browser: a booth that serves a UI does so by default.
 # These tests do not source common--source.sh, which sets it everywhere else.
 export CB_BROWSER=false
@@ -204,7 +212,7 @@ failed_subtests() {
 # ── Sequential tests (booth-collect: uses Docker ports) ─────────────
 
 for test_file in "${seq_tests[@]}"; do
-    name=$(basename "$test_file" .sh)
+    name="${test_file#$TESTS_ROOT/}"; name="${name%.sh}"   # category-qualified, e.g. "catalog/test91-…"
     echo "-------------------------------------------------------------------------------"
 
     # Streamed live (as before, via tee) and also captured, so a failure can
@@ -288,7 +296,8 @@ run_one() {
     # file — an array assignment here would not survive back to the parent.
     echo "" >> "$out"
     echo "⚠️  First attempt failed — retrying once." >> "$out"
-    printf '%s\n' "$(basename "$test_file" .sh)" >> "$RETRIED_LIST"
+    local retried_name="${test_file#$TESTS_ROOT/}"; retried_name="${retried_name%.sh}"   # category-qualified
+    printf '%s\n' "$retried_name" >> "$RETRIED_LIST"
 
     if (cd "$SCRIPT_DIR" && CB_NO_BUILD_PROGRESS=1 bash "$test_file" $VERBOSE) >> "$out" 2>&1; then
         echo 0 > "${out}.exit"
@@ -302,7 +311,7 @@ print_result() {
     local test_file="$1"
     local started="$2"
     local name out
-    name=$(basename "$test_file" .sh)
+    name="${test_file#$TESTS_ROOT/}"; name="${name%.sh}"   # category-qualified, e.g. "catalog/test91-…"
     out=$(capture_file "$test_file")
 
     progress_clear
@@ -405,7 +414,7 @@ qi=0
 
 # Fill initial slots
 for (( s=0; s<PARALLEL && qi<${#par_tests[@]}; s++, qi++ )); do
-    name=$(basename "${par_tests[$qi]}" .sh)
+    name="${par_tests[$qi]#$TESTS_ROOT/}"; name="${name%.sh}"   # category-qualified
     progress_clear
     echo "Begin $name"
     run_one "${par_tests[$qi]}" &
@@ -431,7 +440,7 @@ while (( DONE < ${#par_tests[@]} )); do
                 PASS_COUNT=$((PASS_COUNT + 1))
             else
                 FAIL_COUNT=$((FAIL_COUNT + 1))
-                par_name="$(basename "${slot_files[$s]}" .sh)"
+                par_name="${slot_files[$s]#$TESTS_ROOT/}"; par_name="${par_name%.sh}"   # category-qualified
                 while IFS= read -r t; do FAIL_TESTS+=("$t"); done \
                     < <(failed_subtests "$par_name" "$(capture_file "${slot_files[$s]}")")
             fi
@@ -439,7 +448,7 @@ while (( DONE < ${#par_tests[@]} )); do
 
             # Refill slot
             if (( qi < ${#par_tests[@]} )); then
-                name=$(basename "${par_tests[$qi]}" .sh)
+                name="${par_tests[$qi]#$TESTS_ROOT/}"; name="${name%.sh}"   # category-qualified
                 echo "Begin $name"
                 run_one "${par_tests[$qi]}" &
                 slot_pids[$s]=$!
