@@ -135,15 +135,55 @@ FAIL_TESTS=()
 RETRIED_LIST="$(mktemp)"
 trap 'rm -f "$RETRIED_LIST"' EXIT
 
+# failed_subtests <name> <captured-output-file> — the lines of a failed test's
+# own "Failed tests:" block, already prefixed with its file name (see
+# test-helpers--source.sh's assert-line, or a test's own local assert-true).
+# Read from a file rather than piped in: it needs to be scanned twice when
+# there are several failing assertions, and a pipe can only be read once.
+#
+# Only the LAST block counts, same reasoning as run-automate-tests.sh's
+# identically-named helper one level up: a retried test's first (failing)
+# attempt left its own block earlier in the same captured output, and the
+# whole point here is to report what is *still* broken after the retry.
+#
+# Falls back to the bare file name when there is no block to parse — a test
+# that crashed before reaching its own finally(), or exited 1 with no
+# assertions at all. A bare name is what every call site printed before this
+# existed, so that fallback changes nothing for a file that never had the
+# detail to begin with.
+failed_subtests() {
+    local name="$1" log="$2"
+    [[ -f "$log" ]] || { echo "$name"; return; }
+
+    local block
+    block=$(awk '
+        /^Failed tests:/ { n = 0; capturing = 1; next }
+        capturing && /^[[:space:]]*$/ { capturing = 0 }
+        capturing { lines[n++] = $0 }
+        END { for (i = 0; i < n; i++) print lines[i] }
+    ' "$log" 2>/dev/null)
+
+    if [[ -z "$block" ]]; then
+        echo "$name"
+        return
+    fi
+
+    echo "$block" | grep -E '^[[:space:]]*(❌|-)' | sed -E 's/^[[:space:]]*[❌-][[:space:]]*//'
+}
+
 # ── Sequential tests (booth-collect: uses Docker ports) ─────────────
 
 for test_file in "${seq_tests[@]}"; do
     name=$(basename "$test_file" .sh)
     echo "-------------------------------------------------------------------------------"
 
+    # Streamed live (as before, via tee) and also captured, so a failure can
+    # be traced back to which of this file's own assertions actually broke —
+    # see failed_subtests above.
+    seq_log="$(mktemp)"
     seq_start=$(date +%s)
-    seq_rc=0
-    (cd "$SCRIPT_DIR" && bash "$test_file" $VERBOSE) || seq_rc=$?
+    (cd "$SCRIPT_DIR" && bash "$test_file" $VERBOSE) | tee "$seq_log"
+    seq_rc=${PIPESTATUS[0]}
     if (( seq_rc == 0 )); then
         PASS_COUNT=$((PASS_COUNT + 1))
     elif (( seq_rc == 2 )); then
@@ -153,14 +193,18 @@ for test_file in "${seq_tests[@]}"; do
     else
         echo "⚠️  FAILED: ${name} — retrying once"
         printf '%s\n' "$name" >> "$RETRIED_LIST"
-        if (cd "$SCRIPT_DIR" && bash "$test_file" $VERBOSE); then
+        : > "$seq_log"
+        (cd "$SCRIPT_DIR" && bash "$test_file" $VERBOSE) | tee "$seq_log"
+        seq_rc=${PIPESTATUS[0]}
+        if (( seq_rc == 0 )); then
             echo "✅ PASSED after retry: ${name}"
             PASS_COUNT=$((PASS_COUNT + 1))
         else
             FAIL_COUNT=$((FAIL_COUNT + 1))
-            FAIL_TESTS+=("$name")
+            while IFS= read -r t; do FAIL_TESTS+=("$t"); done < <(failed_subtests "$name" "$seq_log")
         fi
     fi
+    rm -f "$seq_log"
     echo "   (${name}: $(( $(date +%s) - seq_start ))s)"
     echo ""
 done
@@ -357,7 +401,9 @@ while (( DONE < ${#par_tests[@]} )); do
                 PASS_COUNT=$((PASS_COUNT + 1))
             else
                 FAIL_COUNT=$((FAIL_COUNT + 1))
-                FAIL_TESTS+=("$(basename "${slot_files[$s]}" .sh)")
+                par_name="$(basename "${slot_files[$s]}" .sh)"
+                while IFS= read -r t; do FAIL_TESTS+=("$t"); done \
+                    < <(failed_subtests "$par_name" "$(capture_file "${slot_files[$s]}")")
             fi
             LAST_BEAT=$(date +%s)   # results just printed; no need to repeat them
 

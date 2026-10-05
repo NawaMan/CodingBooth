@@ -129,7 +129,14 @@ function assert-line() {
 
     if [[ "${FOUND}" != "${PREFIX}${EXPECTED}" ]]; then
         FAIL_COUNT=$((FAIL_COUNT + 1))
-        FAIL_TESTS+=("${test}")
+        # Prefixed with the file name (not just "Test N: ..."): this is what
+        # survives into run-all-tests.sh's own "Failed tests:" roundup and
+        # from there into run-automate-tests.sh's suite-wide summary, where a
+        # bare "Test 216: ..." is one of 2501 numbers reused by ~126 files and
+        # tells you nothing about which one to open. Same convention as
+        # print_test_result() in tests/common--source.sh, which the complex
+        # suite already relies on for the same reason.
+        FAIL_TESTS+=("${testname}: ${test}")
         echo -e "\033[31mFAILED\033[0m"
 
         echo "  EXPECTED: ${PREFIX}${EXPECTED}"
@@ -166,7 +173,7 @@ function assert-last() {
     FOUND="$(tail $log -n 1)"
     if [[ "${FOUND}" != "${EXPECTED}" ]]; then
         FAIL_COUNT=$((FAIL_COUNT + 1))
-        FAIL_TESTS+=("${test}")
+        FAIL_TESTS+=("${testname}: ${test}")  # see assert-line's comment on the prefix
         echo -e "\033[31mFAILED\033[0m"
 
         echo "  EXPECTED: $EXPECTED"
