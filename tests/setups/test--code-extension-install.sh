@@ -221,7 +221,7 @@ fi
 # ── Retrying a transient registry error ──────────────────────────────────────
 # `--install-extension` talks to a registry mid-build, and neither CLI retries. A
 # Marketplace 503 once failed five consecutive image builds of
-# tests/complex/test-boothfile-code-extension while the Open VSX half of the same
+# tests/complex/boothfile/test-boothfile-code-extension while the Open VSX half of the same
 # run succeeded every time. cb_retry (libs/retry-source.sh)
 # retries those, and only those: a rejected id must still fail on the first call,
 # or every typo'd id costs the build the full backoff before saying so.

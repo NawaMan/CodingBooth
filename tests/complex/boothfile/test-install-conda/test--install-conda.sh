@@ -1,0 +1,61 @@
+#!/bin/bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# Test: Boothfile `install conda` sanity check
+#
+# Verifies that the conda install manager is reachable end-to-end:
+#   1. `install conda jq` compiles to RUN conda--install.sh (known manager)
+#   2. The package actually installs in a real build
+#
+# Test 1 is docker-free (emit-dockerfile only). Test 2 builds a real image and
+# runs only when a locally-rebuilt base image is present (cb-local/codingbooth),
+# because some conda--install.sh scripts are newer than the Docker Hub base.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+source ../../../common--source.sh
+
+echo "=== Test: Boothfile install conda ==="
+
+FAILED=0
+
+# Locate the codingbooth binary for the docker-free emit-dockerfile check.
+BOOTH_PATH="$(find_local_booth_build "$SCRIPT_DIR")" || {
+    echo "ERROR: Could not find codingbooth"
+    exit 1
+}
+
+DOCKERFILE=$("$BOOTH_PATH" emit-dockerfile --code "$SCRIPT_DIR" 2>&1) || true
+
+# Test 1: install conda compiles to RUN conda--install.sh (conda is a known manager)
+if echo "$DOCKERFILE" | grep -qE "RUN conda--install\.sh" \
+   && ! echo "$DOCKERFILE" | grep -q "Unknown install script 'conda'"; then
+    print_test_result "true" "$0" "1" "install conda compiles to RUN conda--install.sh"
+else
+    print_test_result "false" "$0" "1" "install conda should compile to RUN conda--install.sh"
+    echo "  Dockerfile: $DOCKERFILE"
+    FAILED=$((FAILED + 1))
+fi
+
+# The real build needs conda--install.sh baked into the base image. Build against a
+# locally-rebuilt base; skip (reporting the emit result) when one isn't present.
+use_local_base_image || exit $FAILED
+
+# Test 2: the package actually installs and is usable
+ACTUAL=$(run_coding_booth --silence-build -- 'jq --version' 2>/dev/null) || ACTUAL=""
+if echo "$ACTUAL" | grep -qE 'jq-'; then
+    print_test_result "true" "$0" "2" "jq is available"
+else
+    print_test_result "false" "$0" "2" "jq is available"
+    echo "  Actual output: $ACTUAL"
+    FAILED=$((FAILED + 1))
+fi
+
+exit $FAILED

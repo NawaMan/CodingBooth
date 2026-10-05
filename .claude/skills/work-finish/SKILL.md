@@ -136,7 +136,7 @@ cd worktree/<name>
 
 # If the diff touches shell tests, wrapper, or setups, also run the matching scripts, e.g.:
 #   tests/wrapper/030-shell-config.sh
-#   tests/complex/test-boothfile-…/test--….sh
+#   tests/complex/boothfile/test-boothfile-…/test--….sh
 #   tests/unit/…
 ```
 

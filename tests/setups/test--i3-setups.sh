@@ -10,7 +10,7 @@
 #   - an unknown mod key fails the build instead of guessing, and it does so
 #     before anything is installed.
 # What the scripts write into a real XFCE / LXQt image is
-# tests/complex/test-i3-desktops.
+# tests/complex/desktop/test-i3-desktops.
 
 set -euo pipefail
 

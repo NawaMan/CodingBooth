@@ -14,7 +14,7 @@
 # "skip the occupied port and advance" behavior. That is covered by the Go unit
 # tests (TestFindNextPort_SkipsOccupied / TestFindRandomPort_AvoidsOccupiedBase in
 # pkg/booth/port_determination_test.go) and end-to-end by
-# tests/complex/test-port-next-skip.
+# tests/complex/features/test-port-next-skip.
 #
 # Test 1: NEXT:20000   → host port 20000 published to container 10000
 # Test 2: RANDOM:30000 → host port 30000

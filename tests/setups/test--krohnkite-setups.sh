@@ -11,7 +11,7 @@
 #     before anything is downloaded or installed;
 #   - a --version other than the pinned one needs its --sha256;
 #   - the deprecated bismuth setups run their Krohnkite equivalents, saying so.
-# What the scripts write into a real KDE image is tests/complex/test-krohnkite-kde.
+# What the scripts write into a real KDE image is tests/complex/desktop/test-krohnkite-kde.
 
 set -euo pipefail
 

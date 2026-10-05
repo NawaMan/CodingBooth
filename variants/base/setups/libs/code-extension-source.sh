@@ -100,7 +100,7 @@ install_codeserver_extensions() {
 # ---- Retrying the install call ----
 # `--install-extension` reaches out to a registry mid-build and neither CLI retries,
 # so a Marketplace 503 once failed five consecutive image builds of
-# tests/complex/test-boothfile-code-extension while the Open VSX half of the same
+# tests/complex/boothfile/test-boothfile-code-extension while the Open VSX half of the same
 # run succeeded every time. cb_retry (libs/retry-source.sh) retries exactly the
 # failures a later attempt can clear; a rejected id still fails on the first call,
 # which is what keeps `code-extension--install.sh`'s hard error immediate.
