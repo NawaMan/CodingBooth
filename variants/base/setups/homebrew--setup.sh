@@ -36,13 +36,10 @@ chown -R root:linuxbrew /home/linuxbrew
 chmod -R g+w /home/linuxbrew
 find /home/linuxbrew -type d -exec chmod g+s {} \;
 
-echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"' >> /etc/skel/.bashrc
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv bash)"
-
-echo 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"' >> /etc/skel/.zshrc
-eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv zsh)"
-
-# In your homebrew--setup.sh, replace the /etc/skel lines with:
-cat > /etc/profile.d/homebrew.sh << 'EOF'
+# Login shells read this via /etc/profile. Interactive non-login shells re-source
+# only /etc/profile.d/*-cb-*.sh (booth-entry). `booth exec` reads neither — the
+# homebrew template puts these bin dirs on the image PATH for that.
+cat > /etc/profile.d/50-cb-homebrew--profile.sh << 'EOF'
 eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 EOF
+chmod 644 /etc/profile.d/50-cb-homebrew--profile.sh

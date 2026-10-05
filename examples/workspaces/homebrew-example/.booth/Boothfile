@@ -5,5 +5,6 @@ env APT_SNAPSHOT=20260906T000000Z
 
 arg BREW_PKGS=bat,ffmpeg,gcc,imagemagick,neovim,nginx,node,postgresql,redis
 
+env PATH=/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH
 setup homebrew
 install brew ${BREW_PKGS}

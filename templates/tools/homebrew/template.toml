@@ -7,7 +7,10 @@ tags = [
     "packages"
 ]
 
+# Image PATH, not a shell profile. `booth exec` runs the command with no shell,
+# so /etc/profile.d never runs and a brew-installed tool would be "not found".
 [segments]
 Boothfile = """
+env PATH=/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:$PATH
 setup homebrew
 """
