@@ -9,6 +9,7 @@ the ordering levels, and the shared helpers they reuse.
 >
 > | Also see | For |
 > | --- | --- |
+> | `docs/UNDERSTAND_SETUPS.md` | the map — how setups relate to installs, variants, templates, recipes, local `.booth/` and examples |
 > | `templates/README.md` | Boothfile segment order bands, arg style, run-args, autostart + expose |
 > | `docs/AGENT_TEMPLATE.md` | the `template.toml` / `*--extension.toml` schema |
 > | `docs/BOOTH_CUSTOMIZATION.md` | the *user* side — custom setups in a project's `.booth/setups/` |

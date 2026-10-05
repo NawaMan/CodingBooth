@@ -20,6 +20,7 @@ docs. Start from the **`setup-work`** skill, which is the workflow; these are wh
 
 | Doc | Covers |
 | --- | --- |
+| `docs/UNDERSTAND_SETUPS.md` | **start here** — the map: setup, install, variant, template/extension, recipe, local `.booth/`, example, and how they connect |
 | `docs/BOOTH_SETUP.md` | setup script conventions — the startup/profile/starter trio, LEVEL ordering, shared helpers (`skip-setup`, `cb-has-*`, `cb-*-icon`) |
 | `templates/README.md` | template *patterns* — Boothfile order bands, arg style, run-args and volumes, autostart + expose, per-order catalogue |
 | `docs/AGENT_TEMPLATE.md` | template *schema* — every `template.toml` / `*--extension.toml` key, params, merge rules, catalog guards |
