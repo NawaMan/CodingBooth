@@ -412,8 +412,22 @@ prune_build_cache() {
     local before after
     before=$(docker system df --format '{{.Type}}\t{{.Size}}' 2>/dev/null | awk -F'\t' '$1=="Build Cache"{print $2}')
 
+    # `docker builder prune`, not `docker buildx prune`: this project's local
+    # (non-push) builds go through plain `docker build` (DOCKER_BUILDKIT=1),
+    # which uses the Docker Engine's own embedded builder -- the "default"
+    # one in `docker buildx ls`, tracked by `docker system df`'s Build Cache
+    # row. `docker buildx prune` instead targets whichever builder is
+    # currently *active* via `docker buildx use`, and BuildVariant's own push
+    # path switches that to "ci_builder" (a separate docker-container
+    # instance with its own, unrelated cache) and never switches back --
+    # so once anyone has ever run a --push build on this machine, `docker
+    # buildx prune` silently prunes an empty, irrelevant cache forever after
+    # ("Build cache: X -> X", no matter how many times this runs). `docker
+    # builder prune` is the long-standing classic-build alias that always
+    # targets the embedded default builder regardless of the active buildx
+    # context, which is what this step actually needs.
     echo -e "${C_GRAY}Pruning the Docker build cache (--no-cache would not reuse it anyway)...${C_RESET}"
-    if ! docker buildx prune --force --all > "${LOG_DIR}/prune.log" 2>&1; then
+    if ! docker builder prune --force --all > "${LOG_DIR}/prune.log" 2>&1; then
         echo -e "${C_RED}Warning: could not prune the build cache; see ${LOG_DIR}/prune.log${C_RESET}"
         echo ""
         return 0
