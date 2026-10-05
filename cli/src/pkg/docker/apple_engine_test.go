@@ -142,6 +142,8 @@ func TestTranslateForApple_Lifecycle(t *testing.T) {
 		{"build", []string{"--pull=true", "."}, [][]string{{"build", "--pull", "."}}},
 		{"exec", []string{"-i", "-t", "-u", "coder", "web", "bash"}, [][]string{{"exec", "-i", "-t", "-u", "coder", "web", "bash"}}},
 		{"volume", []string{"create", "--label", "cb.managed=true", "vol"}, [][]string{{"volume", "create", "--label", "cb.managed=true", "vol"}}},
+		{"logs", []string{"--follow", "--tail", "50", "web"}, [][]string{{"logs", "--follow", "-n", "50", "web"}}},
+		{"logs", []string{"--tail", "all", "web"}, [][]string{{"logs", "web"}}},
 	}
 	for _, tt := range tests {
 		steps, err := translateForApple(tt.subcommand, tt.args)
@@ -154,6 +156,16 @@ func TestTranslateForApple_Lifecycle(t *testing.T) {
 		}
 		if !reflect.DeepEqual(got, tt.want) {
 			t.Errorf("%s %q:\n got  %q\n want %q", tt.subcommand, tt.args, got, tt.want)
+		}
+	}
+}
+
+func TestTranslateForApple_LogsRefusesWhatContainerLogsLacks(t *testing.T) {
+	for _, flag := range []string{"--since", "--until", "--timestamps"} {
+		_, err := translateForApple("logs", []string{flag, "10m", "web"})
+		var unsupported *UnsupportedOnAppleError
+		if !errors.As(err, &unsupported) || unsupported.Flag != "logs "+flag {
+			t.Errorf("logs %s: got %v, want UnsupportedOnAppleError", flag, err)
 		}
 	}
 }

@@ -58,7 +58,7 @@ EXAMPLES:
 
 OTHER COMMANDS:
   BUILD     | Build and publish booth images   | build                                                                   | docs/BOOTH_BUILD.md
-  LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune                               | docs/BOOTH_LIFECYCLE.md
+  LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune, logs                         | docs/BOOTH_LIFECYCLE.md
   HOME VOL  | Manage persisted home volumes    | home-volume-list, home-volume-export, home-volume-import [Experimental] | docs/BOOTH_HOME.md
   CONNECT   | Connect to a running booth       | shell, exec                                                             | docs/BOOTH_CONNECT.md
   MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md
@@ -91,6 +91,7 @@ USAGE:
   %s prune [--yes]                             (remove stopped booth containers)
   %s shell [--name <n>] [--shell <s>]          (open interactive shell in booth)
   %s exec [--name <n>] -- <command>            (run a command in a running booth)
+  %s logs [--name <n>] [-f] [service ...]      (show a booth's output or service logs)
   %s expose list [--name <n>]                  (list a booth's published ports)
   %s example <subcommand>                      (manage examples)
   %s template <subcommand>                     (browse and manage templates)
@@ -276,7 +277,7 @@ EXAMPLES:
   %s --env-file none --variant notebook
 `,
 		s, version,
-		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
+		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
@@ -620,6 +621,48 @@ EXAMPLES:
 `, s, s, s, s, s, s, s, s, s, s, s)
 }
 
+func showHelpLogs() {
+	s := scriptName()
+	fmt.Printf(`%s logs — show a booth's output, or the logs of its services
+
+USAGE:  %s logs [options]                 (the booth's container output)
+        %s logs [options] <service> ...   (service log files in the booth's /tmp)
+        %s logs --startup [options]       (the startup-hook log)
+        %s logs --list                    (list the service log files)
+
+OPTIONS:
+  --name <n>           Booth name (default: the current folder's booth)
+  --code <path>        Code path used to find the booth
+  --follow, -f         Keep streaming new output
+  --tail, -n <n|all>   Show only the last n lines (default: all)
+  --startup            Show /tmp/startups.log (same as the service "startups")
+  --list               List the *.log files in the booth's /tmp
+  --since <time>       Container output only: since a timestamp or duration (10m)
+  --until <time>       Container output only: before a timestamp or duration
+  --timestamps, -t     Container output only: prefix each line with its time
+
+With no service, this is '<engine> logs' for the booth: what its main process,
+booth-entry and your .booth/startups/ scripts printed.
+
+Most services log to files instead. A service name selects /tmp/<service>.log,
+or, when there is none, every /tmp/<service>-*.log; several files are shown
+with a '==> file <==' header each, as tail does. Positional arguments are
+service names, so the booth is chosen with --name or --code.
+
+A stopped (kept) booth works too: its output and its log files are read from
+the stopped container (not on engine apple for log files). --follow then
+prints what is there and returns.
+
+EXAMPLES:
+  %s logs -f
+  %s logs --name myproject --tail 100
+  %s logs --startup
+  %s logs --list
+  %s logs excalidraw -f
+  %s logs penpot
+`, s, s, s, s, s, s, s, s, s, s, s)
+}
+
 func showHelpExpose() {
 	s := scriptName()
 	fmt.Printf(`%s expose — inspect the ports a booth publishes
@@ -736,6 +779,8 @@ func dispatchHelp(args []string, version string) {
 			showHelpShell()
 		case "exec":
 			showHelpExec()
+		case "logs":
+			showHelpLogs()
 		case "expose":
 			showHelpExpose()
 		case "emit-dockerfile":

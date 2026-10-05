@@ -60,7 +60,7 @@ EXAMPLES:
 
 OTHER COMMANDS:
   BUILD     | Build and publish booth images   | build                                                                   | docs/BOOTH_BUILD.md
-  LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune                               | docs/BOOTH_LIFECYCLE.md
+  LIFECYCLE | Manage kept-alive booths         | list, start, stop, restart, remove, prune, logs                         | docs/BOOTH_LIFECYCLE.md
   HOME VOL  | Manage persisted home volumes    | home-volume-list, home-volume-export, home-volume-import [Experimental] | docs/BOOTH_HOME.md
   CONNECT   | Connect to a running booth       | shell, exec                                                             | docs/BOOTH_CONNECT.md
   MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md

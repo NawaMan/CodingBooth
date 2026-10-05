@@ -95,7 +95,7 @@ From inside a booth, `BOOTH_ENGINE=apple`.
 ## Finding booths
 
 With no engine chosen (no `CB_ENGINE`, no `engine =` in the config), `list`, `stop`, `start`,
-`restart`, `remove`, `prune`, `message`, `expose list`, `shell` and `exec` query **every
+`restart`, `remove`, `prune`, `logs`, `message`, `expose list`, `shell` and `exec` query **every
 installed engine** — `docker`, `podman`, and `apple` when the `container` binary is on
 `PATH` — and act on the engine that owns the booth. `booth list` then adds an `ENGINE` column. A name that exists on more than
 one engine is refused (`booth "web" exists on apple, docker and podman. Set CB_ENGINE=<engine>
@@ -317,7 +317,8 @@ when the engine is `apple`, those hand the Docker-style call to
 | `restart` | `container stop`, then `container start` (there is no `container restart`). |
 | `run` | Flag by flag, up to the image (the image and command are untouched): see below. `--progress none` is added, since the image is already local by then. |
 | `build` | `container build`, with Docker's `--pull=false` dropped and `--pull=true` sent as the bare `--pull` switch. `FROM` a local-only tag resolves from Apple container's own image store. |
-| `exec`, `rm`, `kill`, `logs`, `volume create/rm` | Passed through — the flags the CLI uses are the same. |
+| `logs [--follow] [--tail N]` (`booth logs`) | `container logs [--follow] [-n N]`; `--tail all` is the default and dropped. `--since`, `--until` and `--timestamps` have no equivalent and are refused. |
+| `exec`, `rm`, `kill`, `volume create/rm` | Passed through — the flags the CLI uses are the same. |
 
 `run` flags:
 
