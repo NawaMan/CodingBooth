@@ -256,6 +256,9 @@ StageDocsForBase() {
   cp version.txt "$stage_dir/"
   cp docs/AGENT.md "$stage_dir/"
   cp docs/GUIDE.md "$stage_dir/"
+  # Built-in tab icon (docs/favicon.png). The Dockerfile installs it where
+  # cb-booth-favicon.sh looks when a project has no .booth/favicon/ file.
+  cp docs/favicon.png "$stage_dir/favicon.png"
 
   # Copy docs markdown files (excluding images to keep image small)
   mkdir -p "$stage_dir/docs"

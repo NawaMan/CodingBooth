@@ -229,6 +229,11 @@ RUN chmod -R a+rX /opt/codingbooth/variants
 # Documentation (markdown only, ~300KB)
 COPY ./_stage/docs/ /opt/codingbooth/docs/
 RUN chmod -R a+rX /opt/codingbooth/docs
+# Built-in browser-tab icon, staged from docs/favicon.png. --chmod on the
+# file also stamps the new parent directory without execute, and coder (who
+# runs nginx) then cannot traverse it.
+COPY --chmod=0644 ./_stage/favicon.png /usr/local/share/codingbooth/favicon.png
+RUN chmod 0755 /usr/local/share/codingbooth
 
 # WebSocket-to-TCP bridge for booth--expose tunnels
 

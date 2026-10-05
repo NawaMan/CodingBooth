@@ -364,6 +364,7 @@ my-project/
 └── .booth/
     ├── config.toml     # Launcher configuration
     ├── console.json    # Console UI's starting layout (optional)
+    ├── favicon/        # Browser-tab icon (optional): favicon.svg, favicon.png, or favicon.ico
     ├── Boothfile       # Simplified build script (optional, preferred)
     ├── Dockerfile      # Custom Docker build (optional, fallback)
     ├── .env            # Personal env vars (optional, gitignored)
@@ -372,6 +373,8 @@ my-project/
     ├── cache/          # Local persistent state (optional, gitignored)
     └── tools/          # Managed by booth wrapper (auto-created)
 ```
+
+The booth tab shows the CodingBooth mark. A file in `.booth/favicon/` replaces it on every variant's Web UI (Console, code-server, notebook, desktop). `favicon.svg` wins, then `favicon.png`, then `favicon.ico`. See [Tab icon](docs/BOOTH_UI_OVERLAY.md#tab-icon).
 
 >  **Read-only by default:** The `.booth/` folder is mounted **read-only** inside the container to prevent accidental or malicious modifications to your configuration. Use `--writable-booth` if you need to edit `.booth/` files from inside the container.
 >
