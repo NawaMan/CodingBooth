@@ -382,6 +382,7 @@ func TestOverwriteConfirmCursorKeys(t *testing.T) {
 	m := model{
 		drifted:         []string{"Dockerfile"},
 		overwriteDialog: true,
+		overwriteChoice: overwriteOutright,
 		overwriteInput:  "verwrite",
 		overwriteCursor: len("verwrite"),
 	}
@@ -397,7 +398,7 @@ func TestOverwriteConfirmCursorKeys(t *testing.T) {
 
 	res, _ = m.Update(keyOf(tea.KeyEnter))
 	m = res.(model)
-	if !m.confirmed || m.saveBeside {
-		t.Fatalf("the typed word should confirm the overwrite (confirmed=%v, saveBeside=%v)", m.confirmed, m.saveBeside)
+	if !m.confirmed || m.saveBeside || !m.noBackup {
+		t.Fatalf("the typed word should confirm the overwrite (confirmed=%v, saveBeside=%v, noBackup=%v)", m.confirmed, m.saveBeside, m.noBackup)
 	}
 }

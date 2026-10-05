@@ -25,6 +25,43 @@ type ConfigResult struct {
 	// the generated content to land alongside as "<name>.new", to merge by hand.
 	// Only ever set when the booth had hand-written files to begin with.
 	SaveBeside bool
+
+	// NoBackup is set when the user chose to overwrite hand-written files outright,
+	// without the <name>.bak copy the plain "apply" choice keeps.
+	NoBackup bool
+
+	// Review is set when the user cancelled on the edits-made-outside question
+	// to review the files before going on. Nothing was saved (Confirmed is false).
+	Review bool
+}
+
+// SaveGuard is what the TUI must know about the booth's existing files before a
+// save regenerates them.
+type SaveGuard struct {
+	// Drifted names the .booth/ files holding hand-written content
+	// (see output.Drifted) that could not be read back.
+	Drifted []string
+
+	// AdoptReasons says why the edits in Drifted could not be read back into
+	// the selection. Empty when that was never tried — a file with no
+	// "# Configured by:" header was written by hand from the start.
+	AdoptReasons []string
+
+	// LostComments lists comments a save would remove from files whose hand
+	// edits were read back ("<file>:<line>  <text>").
+	LostComments []string
+
+	// Adopted lists the files edited outside booth config whose edits were read
+	// back; AdoptedChanges says what they became, as flags (empty when only the
+	// fingerprint disagrees). The TUI asks on open: OK accepts them and carries
+	// on — calling RefreshFingerprint when set — while Cancel quits with nothing
+	// changed (ConfigResult.Review), for the user to look at the files first.
+	Adopted        []string
+	AdoptedChanges []string
+	// AdoptedModified maps each file in Adopted to when it was last modified,
+	// already formatted for display.
+	AdoptedModified    map[string]string
+	RefreshFingerprint func() error
 }
 
 // PreSelection holds values pre-populated from CLI flags.
@@ -40,23 +77,30 @@ type PreSelection struct {
 // RunConfig launches the interactive TUI and returns the user's configuration choices.
 // If warning is non-empty, it is shown as a dismissable dialog before the TUI starts.
 //
-// drifted names the .booth/ files holding hand-written content (see output.Drifted).
-// Saving regenerates those files from scratch, destroying that content, so when the
-// list is non-empty Ctrl+S opens a dialog rather than saving: the safe default writes
-// the generated content beside them (ConfigResult.SaveBeside), and replacing them
-// outright requires typing the confirmation word.
+// guard describes the booth's existing files. Saving regenerates the files in
+// guard.Drifted from scratch, destroying their hand-written content, so when the
+// list is non-empty Ctrl+S opens a dialog rather than saving. It offers three
+// choices: apply and keep a <name>.bak (the default), write the generated content
+// beside them as <name>.new (ConfigResult.SaveBeside), or overwrite outright with
+// no backup (ConfigResult.NoBackup), which requires typing the confirmation word.
 //
-// lostComments lists comments a save would remove from files whose hand edits were
-// read back ("<file>:<line>  <text>"); when non-empty, Ctrl+S shows them and waits
-// for Enter before saving.
+// When guard.LostComments is non-empty, Ctrl+S shows them and waits for Enter
+// before saving. When guard.Adopted is non-empty, the TUI opens on a question:
+// accept the edits made outside booth config (OK) or quit to review them (Cancel).
 //
 // binaryVersion and buildDate identify the running codingbooth binary (main.version /
 // main.buildDate) and are shown in the header — purely so a rebuilt-but-unbumped dev
 // binary is distinguishable from whatever a project's wrapper/cache already resolved.
-func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection, warning string, drifted, lostComments []string, binaryVersion, buildDate string) (*ConfigResult, error) {
+func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection, warning string, guard SaveGuard, binaryVersion, buildDate string) (*ConfigResult, error) {
 	m := newModel(registry, pre)
-	m.drifted = drifted
-	m.lostComments = lostComments
+	m.drifted = guard.Drifted
+	m.adoptReasons = guard.AdoptReasons
+	m.lostComments = guard.LostComments
+	m.adoptedFiles = guard.Adopted
+	m.adoptedChanges = guard.AdoptedChanges
+	m.adoptedModified = guard.AdoptedModified
+	m.refreshFingerprint = guard.RefreshFingerprint
+	m.adoptedDialog = len(guard.Adopted) > 0
 	m.binaryVersion = binaryVersion
 	m.buildDate = buildDate
 	if warning != "" {
@@ -76,7 +120,7 @@ func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection, warning strin
 
 	final := result.(model)
 	if !final.confirmed {
-		return &ConfigResult{Confirmed: false}, nil
+		return &ConfigResult{Confirmed: false, Review: final.review}, nil
 	}
 
 	return &ConfigResult{
@@ -86,5 +130,6 @@ func RunConfig(registry *tmpl.TemplateRegistry, pre *PreSelection, warning strin
 		BoolFields:   final.boolFields,
 		ListFields:   final.listFields,
 		SaveBeside:   final.saveBeside,
+		NoBackup:     final.noBackup,
 	}, nil
 }

@@ -284,16 +284,13 @@ func handWrittenNotice(drifted []string) string {
 	}
 
 	var b strings.Builder
-	b.WriteString("This booth contains hand-written files:\n\n")
+	b.WriteString("Some files in this booth have changes booth config did not make:\n\n")
 	for _, name := range drifted {
 		b.WriteString("  .booth/" + name + "\n")
 	}
-	b.WriteString("\nThese were not written by booth config, or were edited afterwards. ")
-	b.WriteString("Configuring regenerates them from your selection, so they cannot simply ")
-	b.WriteString("be written over.\n\n")
-	b.WriteString("Nothing is decided yet. When you save, you choose: keep yours and have the ")
-	b.WriteString("generated content written beside them as .new files to merge, or replace ")
-	b.WriteString("them (the originals are kept as .bak).\n\n")
+	b.WriteString("\nSaving regenerates them from your selection, so you will be asked what ")
+	b.WriteString("to do with yours: apply and keep a .bak, save the generated files as .new ")
+	b.WriteString("to compare, or overwrite with no backup.\n\n")
 	b.WriteString("Go on in and look around — nothing is touched until you save.")
 	return b.String()
 }
@@ -361,10 +358,9 @@ type interactiveSetup struct {
 	mergedFlags initFlags
 	pre         *tui.PreSelection
 	warning     string
-	drifted     []string
-	// lostComments lists, one per line, the comments a save would remove from
-	// files whose edits were read back — the save asks before removing them.
-	lostComments     []string
+	// guard is what the save must ask about before regenerating the booth's
+	// files: hand-written ones, comments it would remove, a stale fingerprint.
+	guard            tui.SaveGuard
 	templatesVersion string
 	cleanup          func()
 }
@@ -391,9 +387,25 @@ func prepareInteractiveConfig(version, targetPath string, flags initFlags) inter
 	drifted := baseline.drifted
 	warning := joinWarnings(checkBoothWritable(targetPath), handWrittenNotice(drifted), adoptReasonsText(baseline))
 
-	var lostComments []string
+	guard := tui.SaveGuard{
+		Drifted:      drifted,
+		AdoptReasons: adoptReasons(baseline),
+	}
+	if baseline.adopt.adopted {
+		guard.Adopted = baseline.edited
+		guard.AdoptedChanges = baseline.adoptedChanges
+		guard.AdoptedModified = baseline.modified
+		// With nothing lifted, the files are exactly what booth config writes from
+		// their header, so accepting them can record that straight away. Lifted
+		// edits are recorded by the save, which writes them into the header too.
+		if baseline.adopt.unchanged {
+			guard.RefreshFingerprint = func() error {
+				return output.RefreshManifest(targetPath, baseline.edited)
+			}
+		}
+	}
 	for _, c := range baseline.adopt.lost {
-		lostComments = append(lostComments, fmt.Sprintf(".booth/%s:%d  %s", c.file, c.Line, c.Text))
+		guard.LostComments = append(guard.LostComments, fmt.Sprintf(".booth/%s:%d  %s", c.file, c.Line, c.Text))
 	}
 
 	mergedCLI := mergeFlags(baseline.flags, cliFlags, targetPath)
@@ -402,8 +414,7 @@ func prepareInteractiveConfig(version, targetPath string, flags initFlags) inter
 		mergedFlags:      mergedFlags,
 		pre:              pre,
 		warning:          warning,
-		drifted:          drifted,
-		lostComments:     lostComments,
+		guard:            guard,
 		templatesVersion: templatesVersionFor(mergedCLI, version),
 		cleanup:          cleanup,
 	}
@@ -414,18 +425,44 @@ func runConfigTUI(version, buildDate string, targetPath string, flags initFlags)
 	setup := prepareInteractiveConfig(version, targetPath, flags)
 	defer setup.cleanup()
 
-	result, err := tui.RunConfig(setup.registry, setup.pre, setup.warning, setup.drifted, setup.lostComments, version, buildDate)
+	result, err := tui.RunConfig(setup.registry, setup.pre, setup.warning, setup.guard, version, buildDate)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}
 
 	if !result.Confirmed {
-		fmt.Fprintln(os.Stderr, "Cancelled.")
+		printCancelled(result, setup.guard)
 		return
 	}
 
 	applyInteractiveResult(version, targetPath, setup, result)
+}
+
+// modifiedTimes returns when each named .booth/ file was last modified, in local
+// time, for the edited-outside question. A file it cannot stat is left out.
+func modifiedTimes(targetPath string, names []string) map[string]string {
+	times := map[string]string{}
+	for _, name := range names {
+		if info, err := os.Stat(filepath.Join(targetPath, ".booth", name)); err == nil {
+			times[name] = info.ModTime().Local().Format("2006-01-02 15:04:05 MST")
+		}
+	}
+	return times
+}
+
+// printCancelled reports a run that ended without saving — pointing at the files
+// to look at when the user left to review edits made outside booth config.
+func printCancelled(result *tui.ConfigResult, guard tui.SaveGuard) {
+	if result == nil || !result.Review {
+		fmt.Fprintln(os.Stderr, "Cancelled.")
+		return
+	}
+	fmt.Fprintln(os.Stderr, "Cancelled — nothing was changed. Review the edits in:")
+	for _, name := range guard.Adopted {
+		fmt.Fprintf(os.Stderr, "  .booth/%s\n", name)
+	}
+	fmt.Fprintln(os.Stderr, "then run booth config again.")
 }
 
 // runConfigWeb is the browser equivalent of runConfigTUI. Same registry,
@@ -435,14 +472,13 @@ func runConfigWeb(version string, targetPath string, flags initFlags) {
 	defer setup.cleanup()
 
 	result, err := configweb.Run(configweb.Options{
-		Registry:     setup.registry,
-		Pre:          setup.pre,
-		Warning:      setup.warning,
-		Drifted:      setup.drifted,
-		LostComments: setup.lostComments,
-		PortFlag:     setup.mergedFlags.port,
-		OpenBrowser:  true,
-		Output:       os.Stderr,
+		Registry:    setup.registry,
+		Pre:         setup.pre,
+		Warning:     setup.warning,
+		Guard:       setup.guard,
+		PortFlag:    setup.mergedFlags.port,
+		OpenBrowser: true,
+		Output:      os.Stderr,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -450,7 +486,7 @@ func runConfigWeb(version string, targetPath string, flags initFlags) {
 	}
 
 	if result == nil || !result.Confirmed {
-		fmt.Fprintln(os.Stderr, "Cancelled.")
+		printCancelled(result, setup.guard)
 		return
 	}
 
@@ -458,7 +494,7 @@ func runConfigWeb(version string, targetPath string, flags initFlags) {
 }
 
 func applyInteractiveResult(version, targetPath string, setup interactiveSetup, result *tui.ConfigResult) {
-	mergedFlags, drifted := setup.mergedFlags, setup.drifted
+	mergedFlags, drifted := setup.mergedFlags, setup.guard.Drifted
 
 	// The merged baseline — not the bare CLI flags — is what this run writes out.
 	//
@@ -577,9 +613,13 @@ func applyInteractiveResult(version, targetPath string, setup interactiveSetup, 
 		return
 	}
 
-	// The user typed the confirmation word to get here, so back up what we are
-	// about to destroy, then overwrite.
-	if err := backupDrifted(targetPath, drifted); err != nil {
+	// The user chose to replace their hand-written files. Back them up first,
+	// unless they typed the confirmation word to overwrite with no backup.
+	if result.NoBackup {
+		for _, name := range drifted {
+			fmt.Fprintf(os.Stderr, "Overwriting hand-written %s — no backup kept\n", name)
+		}
+	} else if err := backupDrifted(targetPath, drifted); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 		os.Exit(1)
 	}

@@ -202,3 +202,17 @@ func TestBackupDrifted_KeepsOriginalContent(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, original, string(backup))
 }
+
+// A refreshed manifest records the files as they are, and keeps the catalog
+// version — the files stop counting as drifted.
+func TestRefreshManifest(t *testing.T) {
+	dir := t.TempDir()
+	boothDir := filepath.Join(dir, ".booth")
+	writeBooth(t, dir, "Boothfile", generatedBoothfile)
+	require.NoError(t, writeManifest(boothDir, map[string]string{"Boothfile": "sha256:stale"}, "0.80.0"))
+	require.Equal(t, []string{"Boothfile"}, Drifted(dir))
+
+	require.NoError(t, RefreshManifest(dir, []string{"Boothfile"}))
+	assert.Empty(t, Drifted(dir))
+	assert.Equal(t, "0.80.0", ReadTemplatesVersion(dir))
+}

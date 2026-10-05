@@ -160,3 +160,69 @@ func TestMux_ServesIndexWithToken(t *testing.T) {
 		t.Fatal("index.html was not served")
 	}
 }
+
+// The three hand-written choices: apply keeps a backup, overwrite needs the word
+// and keeps none.
+func TestMux_HandWrittenApplyAndOverwrite(t *testing.T) {
+	save := func(body map[string]string) (*httptest.ResponseRecorder, chan Outcome) {
+		session := NewSession(sessionRegistry(), nil, "", []string{"Boothfile"})
+		done := make(chan Outcome, 1)
+		recorder := httptest.NewRecorder()
+		NewMux(session, testToken, done).ServeHTTP(recorder, testRequest(http.MethodPost, "/api/save", testToken, body))
+		return recorder, done
+	}
+
+	recorder, done := save(map[string]string{"mode": "apply"})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("apply status = %d", recorder.Code)
+	}
+	if outcome := <-done; outcome.Result.SaveBeside || outcome.Result.NoBackup {
+		t.Fatal("apply should replace with a backup")
+	}
+
+	recorder, _ = save(map[string]string{"mode": "overwrite", "overwriteWord": "overwrit"})
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("a half-typed word should conflict, status = %d", recorder.Code)
+	}
+
+	recorder, done = save(map[string]string{"mode": "overwrite", "overwriteWord": overwriteConfirmWord})
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("overwrite status = %d", recorder.Code)
+	}
+	if outcome := <-done; !outcome.Result.NoBackup {
+		t.Fatal("overwrite should keep no backup")
+	}
+}
+
+// Edits made outside booth config are asked about once: accept keeps them (and
+// refreshes the fingerprint when one is set); cancel ends the session to review.
+func TestMux_AdoptedAnswer(t *testing.T) {
+	session := NewSession(sessionRegistry(), nil, "", nil)
+	refreshed := false
+	session.adopted = []string{"config.toml"}
+	session.refreshFingerprint = func() error { refreshed = true; return nil }
+	done := make(chan Outcome, 1)
+	handler := NewMux(session, testToken, done)
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, testRequest(http.MethodPost, "/api/adopted", testToken, map[string]bool{"accept": true}))
+	if recorder.Code != http.StatusOK || !refreshed {
+		t.Fatalf("accept: status = %d, refreshed = %v", recorder.Code, refreshed)
+	}
+	if len(session.CurrentState().Adopted) != 0 {
+		t.Fatal("an answered question should not be asked again")
+	}
+	select {
+	case <-done:
+		t.Fatal("accepting should not end the session")
+	default:
+	}
+
+	session.adopted = []string{"config.toml"}
+	recorder = httptest.NewRecorder()
+	handler.ServeHTTP(recorder, testRequest(http.MethodPost, "/api/adopted", testToken, map[string]bool{"accept": false}))
+	outcome := <-done
+	if outcome.Result.Confirmed || !outcome.Result.Review {
+		t.Fatalf("cancel should end the session for review: %+v", outcome.Result)
+	}
+}

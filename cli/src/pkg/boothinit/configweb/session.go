@@ -33,9 +33,18 @@ type Session struct {
 	notification string
 	warning      string
 	drifted      []string
+	adoptReasons []string
 	lostComments []string
-	hasLocal     bool
-	baseline     sessionSnapshot
+	// adopted lists files edited outside booth config whose edits were read
+	// back, and adoptedChanges what they became; the page asks about them on
+	// load. refreshFingerprint, when set, records an accepted file as booth
+	// config's own.
+	adopted            []string
+	adoptedChanges     []string
+	adoptedModified    map[string]string
+	refreshFingerprint func() error
+	hasLocal           bool
+	baseline           sessionSnapshot
 }
 
 type sessionSnapshot struct {
@@ -48,18 +57,22 @@ type sessionSnapshot struct {
 
 // State is the JSON the Web UI redraws from after every mutation.
 type State struct {
-	Selected      map[string]bool     `json:"selected"`
-	StringFields  map[string]string   `json:"stringFields"`
-	BoolFields    map[string]bool     `json:"boolFields"`
-	ListFields    map[string][]string `json:"listFields"`
-	ParamValues   map[string]string   `json:"paramValues"`
-	Notification  string              `json:"notification"`
-	SelectedCount int                 `json:"selectedCount"`
-	Warning       string              `json:"warning"`
-	Drifted       []string            `json:"drifted"`
-	LostComments  []string            `json:"lostComments"`
-	HasLocal      bool                `json:"hasLocal"`
-	Dirty         bool                `json:"dirty"`
+	Selected        map[string]bool     `json:"selected"`
+	StringFields    map[string]string   `json:"stringFields"`
+	BoolFields      map[string]bool     `json:"boolFields"`
+	ListFields      map[string][]string `json:"listFields"`
+	ParamValues     map[string]string   `json:"paramValues"`
+	Notification    string              `json:"notification"`
+	SelectedCount   int                 `json:"selectedCount"`
+	Warning         string              `json:"warning"`
+	Drifted         []string            `json:"drifted"`
+	AdoptReasons    []string            `json:"adoptReasons"`
+	Adopted         []string            `json:"adopted"`
+	AdoptedChanges  []string            `json:"adoptedChanges"`
+	AdoptedModified map[string]string   `json:"adoptedModified"`
+	LostComments    []string            `json:"lostComments"`
+	HasLocal        bool                `json:"hasLocal"`
+	Dirty           bool                `json:"dirty"`
 }
 
 // NewSession builds session state the same way the TUI's newModel does:
@@ -154,18 +167,22 @@ func (thisSession *Session) stateLocked() State {
 		}
 	}
 	return State{
-		Selected:      maps.Clone(thisSession.selected),
-		StringFields:  maps.Clone(thisSession.stringFields),
-		BoolFields:    maps.Clone(thisSession.boolFields),
-		ListFields:    lists,
-		ParamValues:   maps.Clone(thisSession.paramValues),
-		Notification:  thisSession.notification,
-		SelectedCount: selectedCount,
-		Warning:       thisSession.warning,
-		Drifted:       append([]string{}, thisSession.drifted...),
-		LostComments:  append([]string{}, thisSession.lostComments...),
-		HasLocal:      thisSession.hasLocal,
-		Dirty:         !thisSession.snapshot().equal(thisSession.baseline),
+		Selected:        maps.Clone(thisSession.selected),
+		StringFields:    maps.Clone(thisSession.stringFields),
+		BoolFields:      maps.Clone(thisSession.boolFields),
+		ListFields:      lists,
+		ParamValues:     maps.Clone(thisSession.paramValues),
+		Notification:    thisSession.notification,
+		SelectedCount:   selectedCount,
+		Warning:         thisSession.warning,
+		Drifted:         append([]string{}, thisSession.drifted...),
+		AdoptReasons:    append([]string{}, thisSession.adoptReasons...),
+		Adopted:         append([]string{}, thisSession.adopted...),
+		AdoptedChanges:  append([]string{}, thisSession.adoptedChanges...),
+		AdoptedModified: maps.Clone(thisSession.adoptedModified),
+		LostComments:    append([]string{}, thisSession.lostComments...),
+		HasLocal:        thisSession.hasLocal,
+		Dirty:           !thisSession.snapshot().equal(thisSession.baseline),
 	}
 }
 
@@ -476,4 +493,22 @@ func (thisSession *Session) buildParamDSL(itemKey string, template *tmpl.Templat
 		}
 	}
 	return ":" + strings.Join(quoted, ",")
+}
+
+// AcceptAdopted settles the edits-made-outside question with OK: the edits are
+// kept, refreshFingerprint runs when set, and the question is not asked again.
+// (Cancel ends the session instead — see the /api/adopted handler.)
+func (thisSession *Session) AcceptAdopted() error {
+	thisSession.mu.Lock()
+	defer thisSession.mu.Unlock()
+	if len(thisSession.adopted) == 0 {
+		return nil
+	}
+	refresh := thisSession.refreshFingerprint
+	thisSession.adopted = nil
+	thisSession.adoptedChanges = nil
+	if refresh != nil {
+		return refresh()
+	}
+	return nil
 }

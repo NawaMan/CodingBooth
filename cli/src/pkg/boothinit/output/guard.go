@@ -178,3 +178,20 @@ func BackupDrifted(targetPath string, names []string) error {
 	}
 	return nil
 }
+
+// RefreshManifest records the current content of each named guarded file as
+// what booth config wrote. It is for a fingerprint gone stale — the files are
+// exactly what booth config generates, yet .generated disagrees — and the user
+// has agreed to bring it up to date. The recorded templates version is kept.
+func RefreshManifest(targetPath string, names []string) error {
+	boothDir := filepath.Join(targetPath, ".booth")
+	written := map[string]string{}
+	for _, name := range names {
+		content, err := os.ReadFile(filepath.Join(boothDir, name))
+		if err != nil {
+			return fmt.Errorf("reading %s: %w", name, err)
+		}
+		written[name] = hashContent(string(content))
+	}
+	return writeManifest(boothDir, written, ReadTemplatesVersion(targetPath))
+}
