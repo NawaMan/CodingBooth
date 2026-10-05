@@ -1,0 +1,4 @@
+# syntax=codingbooth/boothfile:1
+
+# helix--setup.sh is supplied under .booth/setups/ until the base image ships it.
+setup helix --version 25.07.1

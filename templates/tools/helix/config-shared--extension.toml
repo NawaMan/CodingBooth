@@ -1,0 +1,10 @@
+display-name = "Config Shared"
+display-disc = "Team-share Helix config via git (.booth/shared)"
+display-detail = """Live-bind-mounts ~/.config/helix/ for a shared config.toml, languages.toml, and themes. Commit only config. Do not put API tokens or credential files in this tree."""
+display-order = 92
+auto-select = false
+tags = ["persistence", "shared", "helix", "editor", "git", "no-secrets"]
+
+shared-dirs = [
+    "home/coder/.config/helix",
+]

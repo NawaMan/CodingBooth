@@ -1,0 +1,20 @@
+display-name = "Helix"
+display-disc = "Modal terminal editor (hx) with tree-sitter runtime"
+display-detail = """Installs Helix from the official GitHub release: the hx binary and the runtime tree (grammars, queries, themes) under /opt/helix. A wrapper on PATH sets HELIX_RUNTIME, so hx --health works in a non-login shell. Config is ~/.config/helix/config.toml. Select +config-shared to keep that directory in git. Pin a release with helix:25.07.1; the default is latest, falling back to 25.07.1."""
+display-order = 21
+tags = [
+    "helix",
+    "hx",
+    "editor",
+    "modal",
+    "tui"
+]
+
+[params.HELIX_VERSION]
+default = "latest"
+suggests = ["latest", "25.07.1"]
+
+[segments]
+Boothfile = """
+setup helix --version ${HELIX_VERSION}
+"""

@@ -1,0 +1,6 @@
+n8n:2.41.5,21200
+  + autostart
+  + expose
+  + persist
+  + sandbox
+  + search

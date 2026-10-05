@@ -128,6 +128,7 @@ setup haskell
 setup haskell-code-extension
 setup haskell-nb-kernel
 setup heidisql
+setup helix
 setup helm
 setup herdr
 setup homebrew
@@ -198,6 +199,7 @@ setup mongodb
 setup mongodb-start
 setup mvn
 setup mysql
+setup n8n
 setup nbgrader
 setup neovim
 setup network-whitelist
@@ -290,6 +292,7 @@ setup wayland
 setup xfce
 setup xfce-theme
 setup xfce-wallpaper
+setup xonsh
 setup zig
 setup zig-code-extension
 install apt

@@ -1,0 +1,10 @@
+# Configured by: booth config --no-tui --overwrite --select xonsh:0.24.2+default
+
+
+run-args = [
+    "-e", "USER_SHELL=/usr/local/bin/xonsh",
+    "-e", "PYTHONDONTWRITEBYTECODE=1",
+    "-v", "~/.config/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/Library/Application Support/pip:/etc/cb-home-seed/.config/pip:ro",
+    "-v", "~/AppData/Roaming/pip:/etc/cb-home-seed/.config/pip:ro"
+]

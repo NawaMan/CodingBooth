@@ -1,0 +1,44 @@
+display-name = "n8n Assistant Web Search"
+display-disc = "Web search for the n8n Assistant via SearXNG (needs Docker)"
+display-detail = """Runs SearXNG with its JSON API on at boot and points n8n at it, so the Assistant's "Web search" is set up and it can read docs and API changes. Same settings n8n's own installer uses. Pulls in Docker-in-Docker and Docker Compose, because SearXNG runs as a container. booth asks before starting a DinD booth (--dind-allowed skips the question). Free search engines can rate-limit; for a steadier setup, put a Brave Search key in .booth/.env as INSTANCE_AI_BRAVE_SEARCH_API_KEY (no service needed, and it takes priority over SearXNG)."""
+display-order = 5
+auto-select = false
+requires = ["dind", "docker-compose"]
+tags = [
+    "n8n",
+    "search",
+    "assistant",
+    "dind",
+]
+
+# start-n8n points the Assistant at SearXNG only when N8N_SEARXNG_PORT is set.
+run-args = [
+    "-e", "N8N_SEARXNG_PORT=${N8N_SEARXNG_PORT}",
+    "-e", "N8N_SEARXNG_VERSION=${N8N_SEARXNG_VERSION}",
+]
+
+# SearXNG ships dated rolling builds only. n8n's installer uses :latest; this
+# pins one build so a rebuild does not move it.
+[params.N8N_SEARXNG_VERSION]
+default = "2026.9.30-a9d990033"
+suggests = [
+    "2026.9.30-a9d990033",
+    "latest",
+]
+
+# Container-local port for SearXNG. Bound to 127.0.0.1 and never published to
+# the host.
+[params.N8N_SEARXNG_PORT]
+default = "21281"
+suggests = [
+    "21281",
+]
+
+[segments]
+"startup--64.sh" = """
+# n8n Assistant web search: SearXNG (needs Docker / dind). start-n8n already
+# knows the URL from N8N_SEARXNG_PORT; the container starts in the background.
+nohup bash -c 'for _ in $(seq 60); do docker info >/dev/null 2>&1 && break; sleep 1; done; start-n8n-search' \\
+  > /tmp/n8n-search.log 2>&1 &
+echo "SearXNG starting (PID $!, log: /tmp/n8n-search.log)"
+"""

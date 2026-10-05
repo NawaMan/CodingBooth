@@ -1,0 +1,16 @@
+# Wrapped commands auto-run inside the booth when called from the host
+# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
+# This checkout's CLI. A `booth` on PATH is the installed release, which does not have this session's scripts yet.
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "../../../codingbooth exec --run --" } else { "" }
+
+[private]
+default:
+    @just --list
+
+# Show that the runtime tree loaded (grammars, queries, themes)
+health:
+    {{run}} hx --health
+
+# Open the sample note
+edit:
+    {{run}} hx notes/welcome.md
