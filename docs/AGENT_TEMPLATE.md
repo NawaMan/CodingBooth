@@ -223,7 +223,7 @@ explains it in the detail panel, and warns when the box is ticked, and
 
 Both keys go together — a declaration without a note falls back to a generic
 sentence that says something is missing but not what to do instead. The
-`tests/config/test92-arch-unsupported-is-declared.sh` guard enforces the pair,
+`tests/config/catalog/test92-arch-unsupported-is-declared.sh` guard enforces the pair,
 and that arch bail-outs in setup scripts exit 0 with an explanation.
 
 ### Parameters

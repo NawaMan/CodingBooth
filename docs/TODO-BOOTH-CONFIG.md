@@ -199,7 +199,7 @@ the TUI and `--set` — writing them at all breaks the booth. The TUI will need 
 >   both from the existing `config.toml` and from the `--set cache-files=…` in
 >   the `Configured by:` header, so it was written twice, then four times, then
 >   eight. Deduped in `mergeConfigCache`; covered by
->   `tests/config/test76-reconfigure-cache-no-growth.sh`.
+>   `tests/config/engine/test76-reconfigure-cache-no-growth.sh`.
 >
 > Covered by `tests/config-tui/test17-tui-covers-schema-keys.sh` — these keys are
 > now keys the TUI *owns*, so a save strips and re-derives them, which is a

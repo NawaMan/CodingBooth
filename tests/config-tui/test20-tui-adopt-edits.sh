@@ -6,7 +6,7 @@
 #   Ctrl+S   names the comments a save removes, and waits
 #   Enter    saves: the edit survives, the comment does not, no .bak
 #
-# The --no-tui side is tests/config/test124.
+# The --no-tui side is tests/config/engine/test124.
 source "$(dirname "$0")/tui-helpers--source.sh"
 
 begin

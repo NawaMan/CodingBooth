@@ -19,7 +19,7 @@
 #
 # NOT COVERED HERE: `setup android-emulator`. Its system image is multiple
 # gigabytes, which is more than this suite should download per run. Its
-# generated output is covered by tests/config/test93-init-android-sdk.sh, and
+# generated output is covered by tests/config/init/test93-init-android-sdk.sh, and
 # the install itself has to be exercised by hand:
 #
 #   booth config <dir> --select java:17/android-sdk+emulator+kvm

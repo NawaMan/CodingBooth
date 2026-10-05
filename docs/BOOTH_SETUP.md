@@ -235,7 +235,7 @@ cb-web-icon.sh --id excalidraw --name "Excalidraw" --icon "$ICON" \
                --port-env EXCALIDRAW_PORT --port 16000
 ```
 
-`tests/config/test90-web-servers-have-desktop-icon.sh` guards that every template starting a web
+`tests/config/catalog/test90-web-servers-have-desktop-icon.sh` guards that every template starting a web
 server registers an icon this way.
 
 ---

@@ -412,10 +412,10 @@ assert-line "$prj/.booth/Boothfile" "arg <NAME>_VERSION=" '1.72.0' "<name> versi
 Cheap, no Docker, and they catch what a single-template test cannot:
 
 ```bash
-tests/config/test86-all-setups-exist.sh              # every `setup <name>` has a script
-tests/config/test88-all-params-are-wired.sh          # every declared param is referenced
-tests/config/test90-web-servers-have-desktop-icon.sh # web servers register an icon
-tests/config/test92-arch-unsupported-is-declared.sh  # unsupported-arch carries a note
+tests/config/catalog/test86-all-setups-exist.sh              # every `setup <name>` has a script
+tests/config/catalog/test88-all-params-are-wired.sh          # every declared param is referenced
+tests/config/catalog/test90-web-servers-have-desktop-icon.sh # web servers register an icon
+tests/config/catalog/test92-arch-unsupported-is-declared.sh  # unsupported-arch carries a note
 ```
 
 ### Run only what you touched
