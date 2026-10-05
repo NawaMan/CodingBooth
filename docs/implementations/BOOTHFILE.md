@@ -460,7 +460,7 @@ During normal `codingbooth run`:
 |--------------------|-------------------------------------|-------------------------|
 | Go unit tests      | `cli/src/pkg/boothfile/*_test.go`   | Parser + compiler tests |
 | Shell unit tests   | `tests/boothfile/`                  | 30 tests                |
-| Integration tests  | `tests/complex/test-boothfile-*/`   | 5 tests                 |
+| Integration tests  | `tests/complex/boothfile/test-boothfile-*/`   | 5 tests                 |
 | Dryrun tests       | `tests/dryrun/test014-015`          | 2 tests                 |
 
 ---

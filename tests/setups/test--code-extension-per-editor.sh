@@ -245,7 +245,7 @@ fi
 #     failed install, so an unretried 503 hands back a booth quietly missing the
 #     extension and a green build — the failure mode this whole file exists to
 #     guard against. A Marketplace 503 really did fail five consecutive image
-#     builds of tests/complex/test-boothfile-code-extension; on that path the
+#     builds of tests/complex/boothfile/test-boothfile-code-extension; on that path the
 #     build stopped, on this one it would not have.
 TEST_NUM=$((TEST_NUM + 1))
 FLAKY_FAILS=1

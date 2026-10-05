@@ -359,14 +359,17 @@ Write the **functional** assertion — compile and run a program, execute a scri
 a request, run a query. Fall back to `--version` only when nothing else is meaningful (a
 credential helper, a pure library), and say so in the test's comment.
 
-### Complex test — `tests/complex/test-boothfile-<name>/`
+### Complex test — `tests/complex/boothfile/test-boothfile-<name>/`
 
-Auto-discovered by directory name:
+Auto-discovered by directory name, one level under the `boothfile/` category (see
+`tests/complex/run-complex-tests.sh`'s header for the other 3 categories):
 
 ```
 .booth/config.toml                    variant = "base"
 .booth/Boothfile                      setup <name>
 test--boothfile-<name>.sh             sources ../../common--source.sh
+.booth/setups/<name>--setup.sh        ← copy of the script
+test--boothfile-<name>.sh             sources ../../../common--source.sh
 ```
 
 **A copy of the script under `.booth/setups/` is fine while you develop — and must be gone
@@ -378,6 +381,10 @@ test against the image's own script. `work-finish` checks for leftovers (gap 3).
 needs no copy anyway: `run-automate-tests.sh` rebuilds every variant from the tree first
 (`ensure_fresh_image`). The only `.booth/setups/` that stays in a fixture is a script the test
 itself adds (`test-boothfile-custom-setup`, `test-project-local`).
+**The copy under `.booth/setups/` is mandatory and is not redundant** — the same mechanism §3 uses.
+Tests run against the *released* base image, which does not ship your script yet. Note it in a
+Boothfile comment, as `tests/complex/boothfile/test-boothfile-binary-companions/.booth/Boothfile`
+does, and keep the copy byte-identical.
 
 Use `setup <name>` with no version unless the test is about pinning — see `tests/README.md` →
 *Versions are catalog data, not test data*.
@@ -392,11 +399,14 @@ else
 fi
 ```
 
-### Config test — `tests/config/test<NN>-init-<name>.sh`
+### Config test — `tests/config/init/test<NN>-init-<name>.sh`
 
 Next free number (`ls tests/config | tail -3`), using `begin` / `run` / `assert-line` / `finally`
 from `test-helpers--source.sh`. Assert the `setup`/`install` line, the default read from the
 catalog (never a copied literal), and a pin on a version that is *not* the default:
+Next free number (`ls tests/config/init | tail -3`), using `begin` / `run` / `assert-line` /
+`finally` from `test-helpers--source.sh` (one directory up). Assert the `setup`/`install` line and
+the version pin, default and pinned:
 
 ```bash
 run booth config $prj --no-tui --select "<name>"
@@ -425,6 +435,9 @@ tests/config/test<NN>-init-<name>.sh
 ./build/docker-build.sh base                                             # so the image has your script
 (cd tests/complex/test-boothfile-<name> && ./test--boothfile-<name>.sh)   # needs Docker; builds an image
 examples/workspaces/run-example-tests.sh --example <name>-example         # if you made one
+tests/config/init/test<NN>-init-<name>.sh
+(cd tests/complex/boothfile/test-boothfile-<name> && ./test--boothfile-<name>.sh)   # needs Docker; builds an image
+examples/workspaces/run-example-tests.sh --example <name>-example                  # if you made one
 ```
 
 ---

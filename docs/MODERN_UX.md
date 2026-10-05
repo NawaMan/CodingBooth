@@ -41,7 +41,7 @@ container start via a `57-cb-<name>--startup.sh` startup hook (idempotent — ne
 hand-edited config), and registers a desktop icon via `cb-desktop-icon.sh` — the same generic
 mechanism Firefox/GIMP/Inkscape already use, which was missing from the first pass (caught by
 review: "without a launcher, people won't know" — fair). Proven end-to-end, not just installed:
-`tests/complex/test-boothfile-alacritty` and `test-boothfile-kitty` start a throwaway `Xvnc`
+`tests/complex/boothfile/test-boothfile-alacritty` and `test-boothfile-kitty` start a throwaway `Xvnc`
 session, have each terminal run a command in its pty (checked via a marker file — a terminal
 renders its child in its own window, not the caller's stdout, so that's the only reliable signal),
 and check the icon lands in `/etc/skel/Desktop`. `examples/workspaces/desktop-terminals-example`
@@ -55,7 +55,7 @@ CVE-2026-72913, where displaying untrusted output can run commands.
 third alternate terminal, from the pinned, SHA256-verified community noble `.deb`
 (`mkasberg/ghostty-ubuntu`; upstream ships no Linux binaries). Its auto-selected `+fancy`
 extension seeds a Tokyo Night / JetBrainsMono Nerd Font config; `ghostty~fancy` keeps the plain
-FiraCode default. `tests/complex/test-boothfile-ghostty` launches it under `Xvnc`, checks the font
+FiraCode default. `tests/complex/boothfile/test-boothfile-ghostty` launches it under `Xvnc`, checks the font
 Ghostty actually loaded, and runs `ghostty +validate-config` on the seeded file. Not yet wired into
 `+default` / `default-terminal--setup.sh`.
 
@@ -83,7 +83,7 @@ terminal was hardcoded (autostart and right-click menu) inside `wayland--setup.s
 runtime-generated `start-wayland` script, now read from `/opt/codingbooth/default-terminal`
 (falling back to `foot`), which also drives a generated `rc.xml` rebinding labwc's Super+Enter.
 `x-terminal-emulator` is pinned to the chosen terminal on every desktop. Proven per-desktop in
-`tests/complex/test-boothfile-default-terminal-{xfce,kde,lxqt,wayland}`, including that a
+`tests/complex/boothfile/test-boothfile-default-terminal-{xfce,kde,lxqt,wayland}`, including that a
 hand-edited registry file is never clobbered on a later container start.
 
 <details>

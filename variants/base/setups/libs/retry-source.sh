@@ -6,7 +6,7 @@
 #
 # Every `*--install.sh` reaches out to a package registry mid-build, and registries
 # have bad minutes. A Microsoft Marketplace 503 once failed five consecutive image
-# builds of tests/complex/test-boothfile-code-extension while the Open VSX half of
+# builds of tests/complex/boothfile/test-boothfile-code-extension while the Open VSX half of
 # the same run succeeded every time; `go install` had already needed its own retry
 # because proxy.golang.org resets connections. Most package managers have no retry
 # of their own, so one blip upstream fails a build that has nothing wrong with it.

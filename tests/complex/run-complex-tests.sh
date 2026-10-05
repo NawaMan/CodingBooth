@@ -9,14 +9,30 @@
 # Complex tests are tests that require custom Dockerfiles, setup scripts,
 # and more elaborate configurations.
 #
+# Grouped into 4 category subfolders, organizational only -- it plays no part
+# in selection, sharding or how a test runs:
+#   boothfile/ -- one setup/install directive's own behavior in a real build
+#                 (test-boothfile-*, test-install-*)
+#   features/  -- a booth CLI/runtime feature via a real container
+#                 (lifecycle, .booth/home, .booth/cache, --persist-home, ...)
+#   security/  -- network/credential isolation (--egress, credential mounts)
+#   desktop/   -- needs a real GUI/VNC/browser (i3, Krohnkite, sway, the
+#                 Android emulator, the desktop overlay)
+#
 # Test discovery:
-# - Looks for directories matching test-*/
+# - Looks for directories matching <category>/test-*/, one level under each
+#   of the 4 named above -- named explicitly rather than "*/test-*/", so a
+#   future unrelated sibling directory never silently joins the run.
 # - Each directory should contain a script named test--<name>.sh
-#   where <name> is the directory name without the "test-" prefix
+#   where <name> is the directory's own name (not its category-qualified
+#   path) without the "test-" prefix.
 #
 # Usage:
 #   ./run-complex-tests.sh                       # every test
-#   ./run-complex-tests.sh test-boothfile-kafka  # only the named tests
+#   ./run-complex-tests.sh test-boothfile-kafka  # only the named tests --
+#                                                 # bare name (searched across
+#                                                 # every category) or
+#                                                 # category/name both work
 #   ./run-complex-tests.sh --shard 2/4           # only shard 2 of 4
 #   ./run-complex-tests.sh --list                # print the selection, run nothing
 #   ./run-complex-tests.sh --no-retry            # fail on the first transient error
@@ -24,13 +40,18 @@
 # Selection exists so CI can split the suite across jobs: a shard that fails can
 # be re-run on its own instead of re-running all ~116 tests, which take ~23min.
 # Shards are round-robin over the sorted test list, so they stay balanced and no
-# per-test timing table has to be maintained.
+# per-test timing table has to be maintained. The sort key is the category-
+# qualified path, so adding/moving/renaming a test shifts shard membership the
+# same way it always has -- CI only ever asks for "shard N of 4", never for a
+# specific test by shard number.
 # -----------------------------------------------------------------------------
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
+
+CATEGORIES=(boothfile features security desktop)
 
 # ---- args ----
 SHARD_INDEX=0     # 1-based; 0 means "not sharded"
@@ -64,14 +85,37 @@ fi
 # Sorted, so shard membership is stable for a given commit — a re-run of shard 2
 # runs exactly the tests shard 2 ran before.
 ALL=()
-for test_dir in test-*/; do ALL+=("${test_dir%/}"); done
+for category in "${CATEGORIES[@]}"; do
+  for test_dir in "$category"/test-*/; do
+    [[ -d "$test_dir" ]] || continue
+    ALL+=("${test_dir%/}")
+  done
+done
 IFS=$'\n' ALL=($(printf '%s\n' "${ALL[@]}" | sort)); unset IFS
+
+# resolve_test <name-or-path> — a bare "test-boothfile-kafka" is searched for
+# across every category (there is exactly one match: directory names are
+# unique across the whole suite); a "category/test-..." path is used as-is.
+# Either form also works as what FAILED_TESTS prints and what --list prints,
+# so the "re-run just these" line at the end can always be pasted back in.
+resolve_test() {
+  local want="$1"
+  if [[ "$want" == */* ]]; then
+    [[ -d "$want" ]] && { echo "$want"; return 0; }
+    return 1
+  fi
+  local category
+  for category in "${CATEGORIES[@]}"; do
+    [[ -d "$category/$want" ]] && { echo "$category/$want"; return 0; }
+  done
+  return 1
+}
 
 TESTS=()
 if [[ ${#SELECTED[@]} -gt 0 ]]; then
   for want in "${SELECTED[@]}"; do
-    [[ -d "$want" ]] || { echo "❌ no such test directory: $want" >&2; exit 2; }
-    TESTS+=("$want")
+    resolved="$(resolve_test "$want")" || { echo "❌ no such test directory: $want" >&2; exit 2; }
+    TESTS+=("$resolved")
   done
 elif [[ "$SHARD_TOTAL" != "0" ]]; then
   for i in "${!ALL[@]}"; do
@@ -136,12 +180,17 @@ DURATIONS=()
 
 # run-one <test-dir> <output-file> — stream the test live and capture it for the
 # transient check. `pipefail` makes the pipeline carry the test's exit code.
+# <test-dir> is category-qualified (e.g. "boothfile/test-boothfile-kafka"); the
+# script name is derived from its own basename, not the category prefix.
 run_one() {
-  (cd "$1" && "./test--${1#test-}.sh") 2>&1 | tee "$2"
+  local base
+  base="$(basename "$1")"
+  (cd "$1" && "./test--${base#test-}.sh") 2>&1 | tee "$2"
 }
 
 for test_dir in "${TESTS[@]}"; do
-  test_script="test--${test_dir#test-}.sh"
+  test_name="$(basename "$test_dir")"
+  test_script="test--${test_name#test-}.sh"
 
   if [[ ! -x "${test_dir}/${test_script}" ]]; then
     echo ""

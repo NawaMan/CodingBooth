@@ -10,7 +10,7 @@
 # install path is constrained enough to be safe on a typical workstation
 # (e.g. tighter job cap, swap accounting, or skipping ocamlformat by default).
 # To re-enable: move this script back to variants/base/setups/, restore
-# templates/languages/ocaml/template.toml, and re-add tests/complex/test-boothfile-ocaml/.
+# templates/languages/ocaml/template.toml, and re-add tests/complex/boothfile/test-boothfile-ocaml/.
 
 set -Eeuo pipefail
 

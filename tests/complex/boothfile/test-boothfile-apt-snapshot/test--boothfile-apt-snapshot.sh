@@ -1,0 +1,101 @@
+#!/bin/bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# Test: Boothfile `install apt` — with APT_SNAPSHOT
+#
+# Sanity-checks the `install apt` manager when APT_SNAPSHOT is set: apt is pinned to
+# an Ubuntu archive snapshot (--snapshot) so the whole resolution is frozen. The
+# Boothfile sets `env APT_SNAPSHOT=<id>` exactly as `booth config` would. Verifies:
+#   1. The ENV APT_SNAPSHOT directive is emitted before the RUN apt--install.sh line
+#      (so the script sees it at build time)
+#   2. The package actually installs from the frozen snapshot in a real build
+#   3. A package the base image does not already ship (ripgrep) installs too — the pin
+#      must resolve against a real index, not silently against an empty one. On
+#      architectures the snapshot service does not cover (anything but amd64/i386,
+#      i.e. ports.ubuntu.com) apt--install.sh drops the pin and uses the live archive;
+#      the install must still succeed there.
+#
+# Test 1 is docker-free (emit-dockerfile only). Tests 2-3 build a real image and run
+# only when a locally-rebuilt base image is present, because apt--install.sh is new
+# and not yet baked into the Docker Hub base image. The build also requires network
+# access to snapshot.ubuntu.com.
+# -----------------------------------------------------------------------------
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+source ../../../common--source.sh
+
+SNAPSHOT="20260901T000000Z"
+
+echo "=== Test: Boothfile install apt (APT_SNAPSHOT=${SNAPSHOT}) ==="
+
+FAILED=0
+
+# Locate the codingbooth binary for the docker-free emit-dockerfile checks.
+BOOTH_PATH="$(find_local_booth_build "$SCRIPT_DIR")" || {
+    echo "ERROR: Could not find codingbooth"
+    exit 1
+}
+
+DOCKERFILE=$("$BOOTH_PATH" emit-dockerfile --code "$SCRIPT_DIR" 2>&1) || true
+
+# Test 1: ENV APT_SNAPSHOT is emitted before RUN apt--install.sh so the install
+# script sees it at build time.
+ENV_LINE=$(echo "$DOCKERFILE" | grep -n "ENV APT_SNAPSHOT=${SNAPSHOT}" | head -1 | cut -d: -f1)
+RUN_LINE=$(echo "$DOCKERFILE" | grep -n "RUN apt--install\.sh jq" | head -1 | cut -d: -f1)
+if [[ -n "$ENV_LINE" && -n "$RUN_LINE" && "$ENV_LINE" -lt "$RUN_LINE" ]]; then
+    print_test_result "true" "$0" "1" "ENV APT_SNAPSHOT precedes RUN apt--install.sh"
+else
+    print_test_result "false" "$0" "1" "ENV APT_SNAPSHOT should precede RUN apt--install.sh"
+    echo "  ENV_LINE=$ENV_LINE RUN_LINE=$RUN_LINE"
+    echo "  Dockerfile: $DOCKERFILE"
+    FAILED=$((FAILED + 1))
+fi
+
+# The remaining tests build a real image, which needs apt--install.sh baked into the
+# base image. That script is new and not yet on Docker Hub, so build against a
+# locally-rebuilt base. Skip (reporting the emit result) when one isn't present.
+use_local_base_image || exit $FAILED
+
+# Test 2: the package installs from the frozen snapshot (build runs
+# `apt-get install --snapshot <id>` and must succeed).
+ACTUAL=$(run_coding_booth --silence-build -- jq --version 2>/dev/null) || ACTUAL=""
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -1)
+if echo "$ACTUAL" | grep -qE "^jq-"; then
+    print_test_result "true" "$0" "2" "install apt jq makes jq available under snapshot pin"
+else
+    print_test_result "false" "$0" "2" "install apt jq should make jq available under snapshot pin"
+    echo "  Actual output: $ACTUAL"
+    FAILED=$((FAILED + 1))
+fi
+
+# Test 3: apt registered the package (dpkg status confirms a real apt install).
+ACTUAL=$(run_coding_booth --silence-build -- 'dpkg -s jq 2>/dev/null | grep -c "install ok installed"' 2>/dev/null | tail -1) || ACTUAL=""
+if [[ "$ACTUAL" == "1" ]]; then
+    print_test_result "true" "$0" "3" "jq is registered as installed by apt"
+else
+    print_test_result "false" "$0" "3" "jq should be registered as installed by apt"
+    echo "  Actual output: $ACTUAL"
+    FAILED=$((FAILED + 1))
+fi
+
+# Test 4: a package the base image does NOT already ship installs too. jq and friends
+# are preinstalled, so they resolve from dpkg's state even when the archive index is
+# empty; ripgrep can only come from the archive, so this is what actually proves the
+# snapshot (or its documented fallback) resolves against a real index.
+ACTUAL=$(run_coding_booth --silence-build -- rg --version 2>/dev/null | head -1) || ACTUAL=""
+if echo "$ACTUAL" | grep -qE "^ripgrep "; then
+    print_test_result "true" "$0" "4" "install apt ripgrep resolves a package not already in the image"
+else
+    print_test_result "false" "$0" "4" "install apt ripgrep should resolve a package not already in the image"
+    echo "  Actual output: $ACTUAL"
+    FAILED=$((FAILED + 1))
+fi
+
+exit $FAILED
