@@ -6,7 +6,11 @@
 # -----------------------------------------------------------------------------
 # Test: Boothfile Julia Installation
 #
+<<<<<<< HEAD
 # Verifies that a Boothfile with `setup julia` correctly installs Julia
+=======
+# Verifies that a Boothfile with `setup julia 1.13.0` correctly installs Julia
+>>>>>>> 1816c05c (Julia: re-pin 1.11.3 -> 1.13.0, its libopenlibm.so needs an executable stack)
 # and makes it available in the container.
 # -----------------------------------------------------------------------------
 
