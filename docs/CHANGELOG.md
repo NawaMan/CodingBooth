@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`tty-owner` gives the booth user its own pty.** The foreground shell of `booth run`
+  keeps the terminal `docker run -it` made while the container was still root: owned
+  `root:tty` mode `0620`, so the user can write to it and cannot open it by name. `gpg`
+  pinentry then fails on `$GPG_TTY`, which breaks `gpg --quick-generate-key` and
+  `pass show`. Select `tty-owner`. Each login shell `chown`s that pty to the booth user.
+  (`booth shell` was never affected.)
+
 - **Swift suggests only 6.4.0, the one release built for Ubuntu 26.04.** swift.org publishes no
   26.04 tarball for older releases, so `setup swift --version 6.0.1` 404s on the new base. The
   default was already 6.4.0; the Swift test now pins it too.

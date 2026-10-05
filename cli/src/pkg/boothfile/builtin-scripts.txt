@@ -279,6 +279,7 @@ setup terraform
 setup texstudio
 setup thonny
 setup tls
+setup tty-owner
 setup ttyd-nerd-font-index
 setup vhs
 setup viewmd
