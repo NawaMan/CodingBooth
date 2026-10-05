@@ -21,6 +21,7 @@ import (
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
+	"github.com/nawaman/codingbooth/src/pkg/lifecyclelog"
 )
 
 // resolveLifecycleEngine resolves the container engine for commands in this
@@ -287,6 +288,7 @@ func Stop(args []string, stderr io.Writer) error {
 		return commandExit(1, err.Error())
 	}
 	engine := target.Engine
+	lifecyclelog.Append(target.CodePath, target.Name, "stop-requested", "by=host-cli", "force="+strconv.FormatBool(*force))
 
 	if *force {
 		if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "kill", ilist.NewList(ilist.NewList(target.Name))); err != nil {
@@ -360,6 +362,7 @@ func Restart(args []string, stderr io.Writer) error {
 		return commandExit(1, err.Error())
 	}
 	engine := target.Engine
+	lifecyclelog.Append(target.CodePath, target.Name, "restart-requested", "by=host-cli")
 
 	if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "restart", ilist.NewList(
 		ilist.NewList(restartTimeoutFlag(engine), strconv.Itoa(*timeout)),
@@ -403,6 +406,8 @@ func Remove(args []string, stderr io.Writer) error {
 		if container.State == "running" && !*force {
 			return commandExit(1, fmt.Sprintf("Error: booth %q is running. Stop it first or use --force.", targetName))
 		}
+
+		lifecyclelog.Append(container.CodePath, targetName, "remove-requested", "by=host-cli", "state="+container.State)
 
 		// Stop any sidecar containers (DinD, egress) belonging to this booth
 		stopSidecars(targetName, docker.DockerFlags{Silent: true, Engine: engine})

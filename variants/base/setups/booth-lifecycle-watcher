@@ -22,11 +22,11 @@ TMP_DIR="/home/coder/code/.booth/.tmp"
 while true; do
     if [ -f "$TMP_DIR/.shutdown-requested" ]; then
         rm -f "$TMP_DIR/.shutdown-requested"
-        exec booth--shutdown --yes
+        exec booth--shutdown --yes --reason=requested
     fi
     if [ -f "$TMP_DIR/.restart-requested" ]; then
         rm -f "$TMP_DIR/.restart-requested"
-        exec booth--restart --yes
+        exec booth--restart --yes --reason=requested
     fi
     sleep 1
 done

@@ -145,6 +145,7 @@ func (booth *Booth) runAsCommand() error {
 	// Check for restart/idle markers before cleanup removes them
 	restartRequested := checkAndCleanRestartMarker(booth.ctx)
 	idleShutdown := checkAndCleanIdleShutdownMarker(booth.ctx)
+	logContainerExit(booth.ctx, err, restartRequested, idleShutdown)
 
 	// Cleanup .booth/.tmp/ on exit (unless --leave-tmp-on-exit)
 	cleanupBoothTmp(booth.ctx)
@@ -351,6 +352,7 @@ func (booth *Booth) runAsForeground() error {
 	// Check for restart/idle markers before cleanup removes them
 	restartRequested := checkAndCleanRestartMarker(booth.ctx)
 	idleShutdown := checkAndCleanIdleShutdownMarker(booth.ctx)
+	logContainerExit(booth.ctx, err, restartRequested, idleShutdown)
 
 	// Cleanup .booth/.tmp/ on exit (unless --leave-tmp-on-exit)
 	cleanupBoothTmp(booth.ctx)

@@ -40,7 +40,7 @@ The design has three explicit stages so it never kills a session someone is stil
 
 1. **Idle timer** — `IDLE_TIME` seconds with no activity from the user.
 2. **Grace prompt** — a modal on the web overlay asking the user to confirm they're still there.
-3. **Shutdown** — if no response within `SHUTDOWN_TIME` seconds, `booth--shutdown --yes` runs and the container exits.
+3. **Shutdown** — if no response within `SHUTDOWN_TIME` seconds, `booth--shutdown --yes` runs and the container exits. Each step — the prompt, the answer, the timeout — is recorded in the [lifecycle log](BOOTH_LIFECYCLE.md#the-lifecycle-log): `booth logs lifecycle`.
 
 The prompt is important: a 15-minute compile is "idle" from the input side but absolutely not a good moment to shut down.
 
