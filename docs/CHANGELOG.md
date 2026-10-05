@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth logs lifecycle`: what happened to a booth, kept after it is gone.** Starts, stop /
+  restart / remove requests (from the host CLI or the overlay's buttons), `booth--shutdown` and
+  `booth--restart` with their reason and caller, the idle monitor's prompts and timeout, the session
+  timer, a console pane's `ttyd` dying, and the exit status (and signal) of a foreground booth —
+  one line each, in `.booth/.tmp/lifecycle.log` on the host. That file now survives the
+  `.booth/.tmp/` wipe on start and exit, so it reads the same with the booth stopped or removed.
+  See [booth lifecycle](BOOTH_LIFECYCLE.md#the-lifecycle-log).
+
 - **`booth logs` shows a booth's output and its service logs.** With no arguments it is
   `docker logs` (or `podman logs` / `container logs`) for the current folder's booth, with `-f`,
   `--tail`, `--since`, `--until` and `-t` passed through. Most services log to files in the booth's

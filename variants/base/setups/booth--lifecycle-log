@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+
+# -----------------------------------------------------------------------------
+# booth--lifecycle-log <event> [detail...]
+#
+# Appends one line to the booth's lifecycle log: what happened to the booth and
+# who asked for it — started, told to shut down or restart, idle-prompted, timed
+# out, a console pane's terminal server gone.
+#
+#   2026-10-04T14:02:27-0400 empty-example shutdown by=booth--idle-monitor reason=idle
+#
+# The log lives in .booth/.tmp/, which is mounted from the host. A booth run with
+# --rm takes /tmp with it when it stops — exactly when this log is wanted — but
+# this file stays on the host, readable with `booth logs lifecycle` or plain cat.
+# The host CLI appends to the same file (stop/restart/remove, the exit code of a
+# foreground run), so both sides of a booth's end land in one place.
+#
+# Never fails its caller: a missing or read-only .booth/.tmp drops the line.
+# -----------------------------------------------------------------------------
+
+[ "$#" -ge 1 ] || { echo "Usage: booth--lifecycle-log <event> [detail...]" >&2; exit 2; }
+
+LOG_FILE="${BOOTH_LIFECYCLE_LOG:-/home/coder/code/.booth/.tmp/lifecycle.log}"
+
+# One line per event: a detail with a newline would forge a second one.
+line="$(date '+%Y-%m-%dT%H:%M:%S%z') ${BOOTH_CONTAINER_NAME:-booth} $*"
+line="${line//$'\n'/ }"
+
+mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null
+printf '%s\n' "$line" >> "$LOG_FILE" 2>/dev/null
+exit 0

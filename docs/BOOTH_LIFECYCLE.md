@@ -173,6 +173,7 @@ Show what a booth printed, or the logs its services wrote.
 ./booth logs excalidraw -f         # follow /tmp/excalidraw.log
 ./booth logs --startup             # /tmp/startups.log, the image's startup hooks
 ./booth logs --name myproject      # another booth
+./booth logs lifecycle             # what happened to the booth: started, stopped, idle, …
 ```
 
 With no service named it is `<engine> logs` for the booth: the main process (ttyd, code-server,
@@ -198,7 +199,37 @@ default, the booth of the current folder).
 A stopped keep-alive booth still has its logs. Both forms read them from the stopped container
 (log files through `<engine> cp`, which Apple container does not offer: start the booth there
 first). `-f` then prints what is there and returns. A booth run without `--keep-alive` is removed
-when it stops, and its logs go with it.
+when it stops, and its logs go with it — all but the lifecycle log.
+
+#### The lifecycle log
+
+`booth logs lifecycle` answers "what happened to my booth?": one line per event, with the time,
+the booth's name, and who or what caused it.
+
+```
+2026-10-04T14:42:23-0400 demo started version=0.80.0 variant=base mode=FOREGROUND port=10000
+2026-10-04T14:42:38-0400 demo idle-prompted msg=idle-1791139358376557610 expires=2026-10-04T18:42:48Z
+2026-10-04T14:42:48-0400 demo idle-timeout after=25s no answer to the prompt
+2026-10-04T14:42:51-0400 demo shutdown reason=idle by=bash /opt/codingbooth/setups/booth--idle-monitor
+2026-10-04T14:42:52-0400 demo exited status=0 idle-shutdown by=host-cli
+```
+
+| Event | Written when |
+| --- | --- |
+| `started` | the booth comes up (version, variant, run mode, host port) |
+| `stop-requested`, `restart-requested`, `remove-requested` | `booth stop` / `restart` / `remove` is run on the host |
+| `shutdown-requested`, `restart-requested` `by=web-ui` | the overlay's or console's Shut down / Restart button is pressed |
+| `shutdown`, `restart` | `booth--shutdown` / `booth--restart` runs: `reason=` `idle`, `timer` or `requested` (a button), and `by=` the process that called it |
+| `idle-monitor-started`, `idle-prompted`, `idle-answered`, `idle-paused`, `idle-disabled`, `idle-timeout` | the [idle monitor](BOOTH_IDLE.md) decides |
+| `console-pane-exited` | a console pane's terminal server (`ttyd`) exits outside a shutdown: that pane then shows 502 until the booth restarts |
+| `exited` | a booth the CLI ran in the foreground ends: its `status`, the `signal` behind it (`SIGINT` = Ctrl+C, `SIGTERM` = `docker stop`, `SIGKILL` = `docker kill`), and whether a restart or idle shutdown asked for it |
+
+The file is `.booth/.tmp/lifecycle.log` in the booth's code folder, on the host. The booth writes
+to it through the `.booth/.tmp/` mount and the CLI appends to it directly, so it outlives the
+container — `booth logs lifecycle` reads it with no booth running, and `--code <path>` reads one
+whose booth is long removed. Unlike the rest of `.booth/.tmp/`, it is kept across runs (trimmed to
+its newest half once it passes 256 KB), and like the rest of it, it is gitignored. A booth run
+without a `.booth/` folder has no `.booth/.tmp/` mount, and so no lifecycle log.
 
 Stopping a follow — Ctrl+C, a closed pipe, a killed terminal — also stops the `tail` inside the
 booth, so following never leaves processes behind.

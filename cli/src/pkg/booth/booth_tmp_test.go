@@ -237,3 +237,38 @@ func TestCleanupBoothTmp_DryrunDoesNothing(t *testing.T) {
 		t.Error("Expected survive.txt to remain in dryrun mode")
 	}
 }
+
+func TestPrepareBoothTmp_KeepsLifecycleLog(t *testing.T) {
+	tmpDir := t.TempDir()
+	boothTmp := filepath.Join(tmpDir, ".booth", ".tmp")
+	os.MkdirAll(boothTmp, 0755)
+	os.WriteFile(filepath.Join(boothTmp, "lifecycle.log"), []byte("earlier session\n"), 0644)
+	os.WriteFile(filepath.Join(boothTmp, "stale.txt"), []byte("x"), 0644)
+
+	PrepareBoothTmp(buildTmpCtx(tmpDir, false, false, false))
+
+	data, err := os.ReadFile(filepath.Join(boothTmp, "lifecycle.log"))
+	if err != nil || string(data) != "earlier session\n" {
+		t.Errorf("Expected lifecycle.log to survive the start wipe, got %q, %v", data, err)
+	}
+	if _, err := os.Stat(filepath.Join(boothTmp, "stale.txt")); !os.IsNotExist(err) {
+		t.Errorf("Expected the rest of .booth/.tmp/ to be wiped")
+	}
+}
+
+func TestCleanupBoothTmp_KeepsLifecycleLog(t *testing.T) {
+	tmpDir := t.TempDir()
+	boothTmp := filepath.Join(tmpDir, ".booth", ".tmp")
+	os.MkdirAll(boothTmp, 0755)
+	os.WriteFile(filepath.Join(boothTmp, "lifecycle.log"), []byte("exited\n"), 0644)
+	os.WriteFile(filepath.Join(boothTmp, "session.txt"), []byte("x"), 0644)
+
+	cleanupBoothTmp(buildTmpCtx(tmpDir, false, false, false))
+
+	if _, err := os.Stat(filepath.Join(boothTmp, "lifecycle.log")); err != nil {
+		t.Errorf("Expected lifecycle.log to survive the exit wipe: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(boothTmp, "session.txt")); !os.IsNotExist(err) {
+		t.Errorf("Expected the rest of .booth/.tmp/ to be wiped")
+	}
+}

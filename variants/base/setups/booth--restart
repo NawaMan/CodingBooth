@@ -22,10 +22,12 @@ set -euo pipefail
 
 YES=false
 GUI=false
+REASON=""
 for arg in "$@"; do
     case "$arg" in
         --yes|-y) YES=true ;;
         --gui)    GUI=true ;;
+        --reason=*) REASON="${arg#--reason=}" ;;
     esac
 done
 
@@ -59,6 +61,12 @@ if [ "$YES" = false ]; then
 fi
 
 echo "🔄 Restarting CodingBooth..."
+
+# Record who asked, for `booth logs lifecycle`: the reason a built-in caller
+# passes (idle, timer, console-ui), else whatever process ran this script.
+CALLER=$(tr '\0' ' ' 2>/dev/null < "/proc/$PPID/cmdline" | cut -c1-120) || CALLER=""
+CALLER="${CALLER% }"
+booth--lifecycle-log restart ${REASON:+reason=$REASON} "by=${CALLER:-pid $PPID}" || true
 
 # Signal restart to the host Go binary via the shared .booth/.tmp/ mount
 mkdir -p /home/coder/code/.booth/.tmp

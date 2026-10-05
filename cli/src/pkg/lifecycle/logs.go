@@ -141,11 +141,17 @@ func parseLogsArgs(args []string, stderr io.Writer) (logsOptions, error) {
 // Logs shows a booth's output. With no service names it is `<engine> logs`
 // for the booth: what its main process and startup scripts printed. With
 // service names (or --startup) it shows those log files from the booth's
-// /tmp; --list lists them.
+// /tmp; --list lists them. `lifecycle` is the one service read from the host
+// (see logs_lifecycle.go).
 func Logs(args []string, stdout io.Writer, stderr io.Writer) error {
 	opts, err := parseLogsArgs(args, stderr)
 	if err != nil {
 		return err
+	}
+	if lifecycle, err := wantsLifecycleLog(opts); err != nil {
+		return err
+	} else if lifecycle {
+		return showLifecycleLog(opts, stdout, stderr)
 	}
 
 	containers, err := managedContainersAcross(resolveLifecycleEngines(opts.code), false, stderr)
@@ -169,6 +175,9 @@ func Logs(args []string, stdout io.Writer, stderr io.Writer) error {
 		return err
 	}
 	if opts.list {
+		if entry, found := lifecycleLogEntry(target.CodePath); found {
+			files = append(files, entry)
+		}
 		printLogList(stdout, target.Name, files)
 		return nil
 	}

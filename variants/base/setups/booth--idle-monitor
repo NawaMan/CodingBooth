@@ -67,6 +67,14 @@ log() {
     echo "[booth--idle-monitor] $(date '+%Y-%m-%dT%H:%M:%S%z') $*" >&2
 }
 
+# The steps that decide whether the booth lives also go to the lifecycle log, so
+# an idle shutdown can be traced afterwards with `booth logs lifecycle`.
+event() {
+    local name="$1"; shift
+    log "$name $*"
+    booth--lifecycle-log "idle-$name" "$@" || true
+}
+
 do_shutdown() {
     log "Shutting down booth."
     touch "$TMP_DIR/.idle-shutdown"
@@ -74,7 +82,7 @@ do_shutdown() {
     # Give the lifecycle watcher a chance to pick it up (web variants)
     sleep 3
     # If still alive, the watcher isn't running — shut down directly
-    booth--shutdown --yes
+    booth--shutdown --yes --reason=idle
     exit 0
 }
 
@@ -140,7 +148,7 @@ sleep_idle_window() {
     return 0
 }
 
-log "Started: idle=$IDLE_TIME s, shutdown=$SHUTDOWN_TIME s"
+event monitor-started "idle=${IDLE_TIME}s" "shutdown=${SHUTDOWN_TIME}s"
 
 while true; do
     # 0) Pick up any runtime override to the base idle time.
@@ -208,7 +216,7 @@ while true; do
 }
 EOJSON
 
-    log "Prompted user (msg=$MSG_ID, expires=$EXPIRES)"
+    event prompted "msg=$MSG_ID" "expires=$EXPIRES"
 
     # Poll for response until shutdown time elapses
     WAITED=0
@@ -232,29 +240,29 @@ EOJSON
     if [ "$RESPONDED" = true ]; then
         case "$ANSWER" in
             ok|"I'm here")
-                log "User acknowledged presence, resetting idle timer."
+                event answered "answer=here"
                 ;;
             pause:*)
                 SECS="${ANSWER#pause:}"
                 if [ "$SECS" -gt 0 ] 2>/dev/null; then
                     [ "$SECS" -gt 604800 ] && SECS=604800
                     echo $(( $(date +%s) + SECS )) > "$PAUSE_UNTIL_FILE"
-                    log "User paused idle for ${SECS}s."
+                    event paused "for=${SECS}s"
                 else
                     log "Ignoring invalid pause value: $ANSWER"
                 fi
                 ;;
             disable)
                 touch "$DISABLE_FILE"
-                log "User disabled idle monitoring."
+                event disabled "by=user"
                 ;;
             *)
-                log "User responded ($ANSWER), resetting idle timer."
+                event answered "answer=$ANSWER"
                 ;;
         esac
         continue
     fi
 
-    log "Idle timeout reached after $((IDLE_TIME + SHUTDOWN_TIME))s total."
+    event timeout "after=$((CURRENT_IDLE_TIME + SHUTDOWN_TIME))s" "no answer to the prompt"
     do_shutdown
 done
