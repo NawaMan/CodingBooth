@@ -1,0 +1,5 @@
+# Configured by: booth config --no-tui --overwrite --variant codeserver --expose +8000 --select erlang/gleam:1.18.1+vscode-ext/codeserver
+
+variant = "codeserver"
+
+run-args = ["--publish", "+8000:8000"]

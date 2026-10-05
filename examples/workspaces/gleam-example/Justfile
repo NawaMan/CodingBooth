@@ -1,0 +1,25 @@
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "./booth exec --run --" } else { "" }
+
+[private]
+default:
+    @just --list
+
+# Run the unit + route tests (`gleam test`)
+test:
+    {{run}} gleam test
+
+# Serve the Wisp app on :8000 (foreground)
+run:
+    {{run}} gleam run
+
+# Convert with the CLI client via the running server (`just client XIV 1999`; default 2026)
+client *args:
+    {{run}} gleam run -m gleam_example/client -- {{ args }}
+
+# Start the Wisp app on :8000 in the background
+start:
+    {{run}} ./start-server.sh
+
+# Stop the background Wisp app
+stop:
+    {{run}} ./stop-server.sh
