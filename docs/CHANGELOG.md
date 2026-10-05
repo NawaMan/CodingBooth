@@ -142,6 +142,38 @@ This file contains a list of changes for each released version.
 - **Engine validation runs before the egress defaults.** A run refused for its engine no longer
   leaves a `.booth/egress/` directory behind.
 
+- **`notebook`/`codeserver`/`desktop-wayland` no longer silently drift to a newer package version on
+  rebuild — but `ensure_fresh_image` will still report them "stale" every time, and that part is not
+  fixed.** Traced `ensure_fresh_image--source.sh`'s "was stale — rebuilt" messages for `notebook`
+  and `codeserver` back further than the apt-pinning gap that explained `desktop-wayland`: neither
+  variant's build touches `apt-get` at all (checked every script either Dockerfile runs). The actual
+  cause was `notebook--setup.sh` and `bash-nb-kernel--setup.sh` (shared by every variant, including
+  the three that already had correct apt pinning) installing `pip`, `setuptools`, `wheel`,
+  `jupyter_client`, `bash_kernel`, `ipykernel`, `jupyter_core`, `jupyter_server`,
+  `jupyterlab_server`, and `jupyterlab` with `-U`/bare minimums and no exact pin — any one of these
+  releasing a new version between two builds changes the image, the same risk `APT_SNAPSHOT`
+  exists to close for apt. All nine now pin an exact version verified against PyPI. `desktop-wayland`
+  separately gets the `ARG APT_SNAPSHOT` + `apt--install.sh` wiring `desktop-{kde,lxqt,xfce}` already
+  had (its own `wayland--setup.sh` did a raw, unpinned `apt-get`) — the missing piece the original
+  2026-09-14 apt-pinning pass (`4ec02354`) left out, seemingly by oversight rather than on purpose,
+  since its own stated rationale for the three it did cover applies equally here.
+  Verified the part that matters: rebuilt each variant three times back to back with zero source
+  changes and diffed the *installed* package versions and `dpkg` state directly inside each
+  resulting image (not just the image ID) — byte-for-byte identical every time, for both the pip-pinned
+  variants and the apt-pinned one. That is the actual reproducibility guarantee (no silent drift to a
+  version nobody chose), and it holds.
+  What did **not** get fixed, and should not be read as fixed: the raw Docker image ID still differs
+  on every rebuild for all three, even with zero drift in what's installed — confirmed `base` itself
+  reliably produces the identical image ID across repeated plain rebuilds (true cache hit, nothing
+  re-executes), while `notebook` and `desktop-wayland` do not, across three independent attempts
+  each. Whatever makes a `RUN` step that installs something non-cache-stable here while `base`'s own
+  apt-get is stable was not isolated with confidence in the time spent on this — candidates include
+  pip/dpkg writing fresh file timestamps on every real execution of a cache-missed layer, but *why*
+  that layer misses cache in the first place, when its command text and parent layer are unchanged,
+  is still an open question. `ensure_fresh_image` is working as designed either way: it reports a
+  real content difference, not a false positive, every time it fires — this change narrows what that
+  difference actually is (timestamps/layer noise) rather than eliminating the report.
+
 - **`test-boothfile-apt-snapshot` re-pinned: `20250601` predates this base's Ubuntu 26.04 entirely.**
   The fixture froze `APT_SNAPSHOT` to `20250601T000000Z` for determinism, exactly as intended — but
   `resolute` (26.04) didn't exist in Ubuntu's archive yet at that date (26.04's own release is well

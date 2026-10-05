@@ -38,11 +38,12 @@ PY_VERSION=${1:-3.12}
 "${SETUPS_DIR}/python--setup.sh" "${PY_VERSION}"
 [ -f /etc/profile.d/53-cb-python--profile.sh ] && source /etc/profile.d/53-cb-python--profile.sh 2>/dev/null || true
 
-export DEBIAN_FRONTEND=noninteractive
-apt-get update
-
 # --- Wayland compositor + VNC bridge + a small shell (panel/launcher/terminal) ---
-apt-get install -y --no-install-recommends \
+# apt--install.sh (already on PATH from the base image) applies APT_SNAPSHOT the
+# same way every setup script does -- unlike this script's own raw apt-get
+# before this change, which floated to whatever Ubuntu's live archive served at
+# build time regardless of the Dockerfile's APT_SNAPSHOT build-arg.
+apt--install.sh  \
   labwc               \
   wayvnc              \
   wlr-randr           \
@@ -57,8 +58,6 @@ apt-get install -y --no-install-recommends \
   x11-xserver-utils   \
   fonts-dejavu-core   \
   locales
-
-apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # ---- install Fira Code Nerd Font (for foot) ----
 fira-code-nerd-font--setup.sh
