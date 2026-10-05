@@ -240,6 +240,21 @@ func buildLocalImage(ctx appctx.AppContext) {
 		"-f", ctx.Dockerfile(),
 		"-t", ctx.Image(),
 	)))
+	// Same cb.managed=true convention every container already carries (see
+	// addLifecycleLabels in booth.go) — images never had it, so a scoped
+	// cleanup (build/clean-examples.sh et al.) could only ever find images by
+	// guessing at a tag naming pattern, never by asking Docker directly for
+	// "every image CodingBooth built." docker image ls/prune's --filter
+	// label=... works on image labels natively, unlike build cache (no
+	// per-project handle exists there at all — confirmed: a build cache
+	// prune --filter label=... matches nothing, even for a label a real
+	// image was just built with).
+	args = args.ExtendByLists(ilist.NewList(ilist.NewList(
+		"--label", "cb.managed=true",
+		"--label", "cb.project="+ctx.ProjectName(),
+		"--label", "cb.variant="+ctx.Variant(),
+		"--label", "cb.version="+ctx.CbVersion(),
+	)))
 	// Prefer a matching local image as the FROM base over the registry digest.
 	// Without --pull=false, BuildKit always resolves the FROM tag against the
 	// upstream manifest list — even when an identically-tagged local image

@@ -339,7 +339,23 @@ BuildVariant() {
   # This is what lets anything ask an image what it was actually built
   # against (`docker inspect`/`docker buildx imagetools inspect`) instead of
   # re-deriving or assuming a snapshot date. See tests/check-apt-snapshot--source.sh.
-  local label_arg=( --label "com.codingbooth.apt-snapshot=${APT_SNAPSHOT}" )
+  #
+  # cb.managed=true is the same convention every container the booth CLI
+  # creates already carries (see addLifecycleLabels in cli/src/pkg/booth/
+  # booth.go, and ensure_docker_image.go's buildLocalImage -- images from a
+  # user's own Boothfile get it too). Catalog images never had it, so a
+  # scoped cleanup could only ever find them by guessing at a tag pattern.
+  # This does NOT make `docker builder prune` scopable -- confirmed directly:
+  # build-cache prune ignores --filter label=... entirely, matching nothing
+  # even for a label a real image was just built with. It does make `docker
+  # images --filter label=cb.managed=true` a real, reliable answer to "every
+  # image CodingBooth built," catalog and ad-hoc alike.
+  local label_arg=(
+    --label "com.codingbooth.apt-snapshot=${APT_SNAPSHOT}"
+    --label "cb.managed=true"
+    --label "cb.variant=${variant}"
+    --label "cb.version=${version}"
+  )
 
   if [[ "${do_push}" == "true" ]]; then
     Log "[$variant]: Setting up buildx (driver: docker-container)"
