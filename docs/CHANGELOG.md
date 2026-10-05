@@ -25,6 +25,14 @@ This file contains a list of changes for each released version.
   refuses ("cannot enable executable stack"). `1.12.7` and `1.13.0` (the default) are unaffected.
   The Julia test now pins `1.13.0`.
 
+- **Homebrew formulae are on `PATH` for `booth exec`.** The homebrew setup only
+  added Linuxbrew's bin directories through shell startup files, so a login shell
+  found `bat` or `gum` and `booth exec -- bat` did not: exec runs the command with
+  no shell and never reads those files. Selecting `homebrew` now puts
+  `/home/linuxbrew/.linuxbrew/bin` and `sbin` on the image `PATH`. The profile
+  script is `50-cb-homebrew--profile.sh`, so an interactive shell that only
+  re-sources `*-cb-*` profiles still gets `brew shellenv`.
+
 - **`setup aider` works on the Ubuntu 26.04 base again.** Aider supports Python 3.10-3.12 only;
   26.04's `python3` is 3.14, so pip found no current release, backtracked through old ones and
   crashed in its resolver. When the system Python is outside Aider's range, `aider--setup.sh` now
