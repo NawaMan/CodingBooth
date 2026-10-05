@@ -15,7 +15,8 @@ CYAN='\033[0;36m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
-LOG_FILE="$(dirname "$0")/run-docker-tests.log"
+mkdir -p "$(dirname "$0")/../logs"
+LOG_FILE="$(dirname "$0")/../logs/run-docker-tests.log"
 
 # Redirect output to log file and stdout
 exec > >(tee -i "$LOG_FILE") 2>&1

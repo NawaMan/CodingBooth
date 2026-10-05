@@ -39,6 +39,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # relative to tests/ for the same reason tests/complex's script_relative_path()
 # is: one consistent anchor, regardless of which layer printed the line.
 TESTS_ROOT="$(dirname "$SCRIPT_DIR")"
+mkdir -p "$TESTS_ROOT/logs/config"
 
 # Never open the host's browser: a booth that serves a UI does so by default.
 # These tests do not source common--source.sh, which sets it everywhere else.
@@ -249,7 +250,12 @@ done
 
 # ── Parallel tests (config-only: no Docker ports) ───────────────────
 
-# Where a parallel test's console output is captured.
+# Where a parallel test's console output is captured: tests/logs/config/, the
+# same tests/logs/ every other suite already writes to (run-automate-tests.sh's
+# own ${suite}.log, tests/complex's complex-booth-calls.log) -- not loose in
+# tests/config/ itself, where ~100 of these used to pile up next to the test
+# code and the category folders, never cleaned up, until someone remembered to
+# run clean-all.sh by hand.
 #
 # Deliberately NOT log--<name>.log: that file belongs to the test itself, which
 # writes its command trace there and, on a --verbose failure, cats it back out for
@@ -259,7 +265,7 @@ done
 # Two writers on one file also interleaved by byte offset, which is why finished
 # tests printed spliced-together garbage.
 capture_file() {
-    echo "${SCRIPT_DIR}/out--$(basename "$1" .sh).log"
+    echo "${TESTS_ROOT}/logs/config/out--$(basename "$1" .sh).log"
 }
 
 # Run a single test, capturing its console output.
