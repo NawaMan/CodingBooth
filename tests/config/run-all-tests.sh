@@ -4,7 +4,7 @@
 # you may not use this file except in compliance with the License.
 
 # Runs all test*.sh scripts in this directory (excluding test-helpers--source.sh)
-# Config-only tests run 4 at a time in parallel (--jobs N).
+# Config-only tests run 4 at a time in parallel (--max-parallel N, 1-16).
 # Tests that start Docker containers (booth-collect) run sequentially to avoid port conflicts.
 # --help for the flags; --verbose shows the image builds, --heartbeat what is still in
 # flight, --only <glob> narrows the run to one test or a family.
@@ -35,14 +35,16 @@ declare -a ONLY=()
 
 usage() {
     cat <<'USAGE'
-Usage: ./run-all-tests.sh [--verbose] [--only GLOB] [--jobs N] [--heartbeat SECS] [--help]
+Usage: ./run-all-tests.sh [--verbose] [--only GLOB] [--max-parallel N] [--heartbeat SECS] [--help]
 
   --verbose         Pass --verbose to every test: each test echoes the commands it
                     runs, and booth image builds are no longer silenced -- so a run
                     that is sitting on a long build shows what it is building.
   --only GLOB       Run only the tests whose name matches GLOB (e.g. --only 'test8*'
                     or --only test82-project-local-templates-and-recipes). Repeatable.
-  --jobs N          Parallel slots for the config-only tests (default 4).
+  --max-parallel N  Parallel slots for the config-only tests (default 4, capped at
+                    16 -- a sanity bound, not a measured optimum; raise it and
+                    benchmark on your own machine if 4 is leaving cores idle).
   --heartbeat SECS  How often to report which tests are still in flight
                     (default 15; 0 turns it off). Also settable via CB_TEST_HEARTBEAT.
                     Only used when there is no terminal to draw the live line on.
@@ -62,8 +64,8 @@ while [[ $# -gt 0 ]]; do
         --verbose)      VERBOSE="--verbose" ;;
         --only)         ONLY+=("$2"); shift ;;
         --only=*)       ONLY+=("${1#*=}") ;;
-        --jobs)         PARALLEL="$2"; shift ;;
-        --jobs=*)       PARALLEL="${1#*=}" ;;
+        --max-parallel) PARALLEL="$2"; shift ;;
+        --max-parallel=*) PARALLEL="${1#*=}" ;;
         --heartbeat)    HEARTBEAT="$2"; shift ;;
         --heartbeat=*)  HEARTBEAT="${1#*=}" ;;
         --help|-h)      usage; exit 0 ;;
@@ -73,7 +75,11 @@ while [[ $# -gt 0 ]]; do
 done
 
 if ! [[ "$PARALLEL" =~ ^[0-9]+$ ]] || (( PARALLEL < 1 )); then
-    echo "--jobs must be a positive integer (got '${PARALLEL}')" >&2
+    echo "--max-parallel must be a positive integer (got '${PARALLEL}')" >&2
+    exit 2
+fi
+if (( PARALLEL > 16 )); then
+    echo "--max-parallel caps at 16 (got '${PARALLEL}')" >&2
     exit 2
 fi
 if ! [[ "$HEARTBEAT" =~ ^[0-9]+$ ]]; then
