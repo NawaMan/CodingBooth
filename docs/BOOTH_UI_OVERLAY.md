@@ -16,6 +16,7 @@ Back to [README](../README.md)
 - [Architecture](#architecture)
 - [Wrapper Page](#wrapper-page)
 - [Nginx Configuration](#nginx-configuration)
+- [Tab icon](#tab-icon)
 - [Readiness Gate](#readiness-gate)
 - [API Server](#api-server)
 - [Overlay HTML Injection](#overlay-html-injection)
@@ -98,6 +99,8 @@ Nginx serves as the single entry point for the booth's browser UI. Its routing r
 | `/booth` | Serves the wrapper HTML page |
 | `/__booth/health`, `/__booth/info` | Liveness probe and metadata — see [BOOTH_HEALTH.md](BOOTH_HEALTH.md) |
 | `/booth-messages/api/*` | Proxies to the API server |
+| `/booth-assets/favicon.<ext>` | The browser-tab icon. Ungated, so the login page can load it |
+| `/favicon.ico` | That same icon when the project file is an `.ico`. Otherwise an empty 204, so a wrapped variant does not pass the browser's automatic request through to the inner service |
 | Everything else | Proxies to the inner service with WebSocket support |
 
 Note what this table means for readiness: `/` and `/booth` are answered by nginx
@@ -108,6 +111,24 @@ exists for.
 The `_booth_inner` query parameter prevents redirect loops — when the iframe loads `/`, it includes this parameter so nginx proxies directly to the inner service instead of redirecting back to `/booth`.
 
 WebSocket support is enabled for all proxied requests to the inner service, which is required by VS Code, Jupyter, and desktop VNC connections.
+
+---
+
+## Tab icon
+
+The browser tab for every booth Web UI — the base Console, its sign-in page, and the wrapper page in front of code-server, Jupyter, and the desktops — shows one icon.
+
+With nothing checked in, that icon is the CodingBooth mark. The image build copies [`docs/favicon.png`](favicon.png) to `/usr/local/share/codingbooth/favicon.png`, and `cb-booth-favicon.sh` serves it from there.
+
+A project replaces the mark by putting **one** file in `.booth/favicon/`:
+
+| File | When it is used |
+|------|-----------------|
+| `favicon.svg` | First choice. One file, sharp at any size. |
+| `favicon.png` | Used when there is no `favicon.svg`. |
+| `favicon.ico` | Used when neither of the other two is present. |
+
+Anything else in the folder is ignored. A symlink, an empty file, or a file over 256KB is skipped and the next candidate is tried. The folder is read with the rest of `.booth/` (read-only is enough). The choice is made when the container starts, and the link URL carries a hash of the bytes so a changed file shows up on the next start. `BOOTH_WEB_SPLIT=false` has no nginx in front of ttyd, so this icon is not applied in that mode.
 
 ---
 

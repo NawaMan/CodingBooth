@@ -55,6 +55,11 @@ http {
         root ${WEB_SPLIT_SERVE};
         index index.html;
 
+        # Tab icon. Ungated: the login page uses it, and an exact location
+        # beats the catch-all that would otherwise answer /favicon.ico with
+        # index.html. Empty when no icon could be resolved.
+        ${FAVICON_LOCATIONS}
+
         # The gate's redirects must stay relative. nginx would otherwise build
         # them from the port it listens on (10000, or 10443 behind the TLS
         # proxy) and send the browser to a port that is not the published one.

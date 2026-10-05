@@ -46,6 +46,7 @@ cat > "${WRAPPER_DIR}/wrapper.html" <<'HTMLEOF'
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${BOOTH_CONTAINER_NAME} (${BOOTH_HOST_PORT})</title>
+${BOOTH_FAVICON_LINK}
 ${BOOTH_READY_JS}
 ${BOOTH_KEYBOARD_CAPTURE_JS}
 <style>
@@ -169,6 +170,11 @@ http {
         listen ${OUTER_PORT};
         server_name _;
         absolute_redirect off;
+
+        # Tab icon. An exact location beats the catch-all that proxies
+        # /favicon.ico to the inner service. Empty when no icon could be
+        # resolved.
+        ${FAVICON_LOCATIONS}
 
         # Only the code-server and notebook variants enable these locations, and
         # both authenticate every preview request against the inner service
@@ -360,7 +366,18 @@ $(cat "$plugin_file")
 fi
 export PLUGINS_HTML
 
-envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML} ${BOOTH_READY_JS} ${BOOTH_KEYBOARD_CAPTURE_JS}' \
+# Same tab icon the console uses. See cb-booth-favicon.sh.
+BOOTH_FAVICON_LINK=""
+FAVICON_LOCATIONS=""
+if [[ -x /opt/codingbooth/setups/cb-booth-favicon.sh ]]; then
+  FAVICON_OUT=/tmp/booth-favicon
+  /opt/codingbooth/setups/cb-booth-favicon.sh "$FAVICON_OUT"
+  BOOTH_FAVICON_LINK=$(cat "$FAVICON_OUT/link")
+  FAVICON_LOCATIONS=$(cat "$FAVICON_OUT/locations")
+fi
+export BOOTH_FAVICON_LINK FAVICON_LOCATIONS
+
+envsubst '${BOOTH_CONTAINER_NAME} ${BOOTH_HOST_PORT} ${IFRAME_SRC} ${BOOTH_SHOW_RUN_TIME} ${BOOTH_SHOW_COUNT_DOWN} ${BOOTH_IDLE_TIME} ${BOOTH_IDLE_SHUTDOWN_TIME} ${OVERLAY_HTML} ${PLUGINS_HTML} ${BOOTH_READY_JS} ${BOOTH_KEYBOARD_CAPTURE_JS} ${BOOTH_FAVICON_LINK}' \
   <"$WRAPPER_DIR/wrapper.html" >"$SERVE_DIR/index.html"
 
 # Generate nginx config
@@ -386,7 +403,7 @@ if [[ "${BOOTH_WEB_PREVIEW:-0}" == 1 ]]; then
     WRAPPER_PREVIEW_HTTP=$(cat "$WRAPPER_PREVIEW_HTTP_TEMPLATE")
   fi
 fi
-envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT} ${BOOTH_INSTANCE_ID} ${WRAPPER_HEAD_INJECT} ${WRAPPER_PREVIEW_LOCATIONS} ${WRAPPER_PREVIEW_HTTP} ${WRAPPER_HEALTH_PATH}' \
+envsubst '${OUTER_PORT} ${INNER_PORT} ${API_PORT} ${SERVE_DIR} ${BOOTH_CONTAINER_NAME} ${BOOTH_VARIANT_TAG} ${BOOTH_VERSION_TAG} ${BOOTH_HOST_PORT} ${BOOTH_INSTANCE_ID} ${WRAPPER_HEAD_INJECT} ${WRAPPER_PREVIEW_LOCATIONS} ${WRAPPER_PREVIEW_HTTP} ${WRAPPER_HEALTH_PATH} ${FAVICON_LOCATIONS}' \
   <"$WRAPPER_DIR/nginx.conf.template" >"$NGINX_CONFIG"
 
 # Propagate SIGTERM to all child processes for clean container shutdown
