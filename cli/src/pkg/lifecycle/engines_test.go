@@ -48,7 +48,9 @@ func installFakeEngines(t *testing.T, engines map[string]fakeEngine) string {
 				"case \"$1\" in\n" +
 				"ls) echo '[" + strings.Join(docs, ",") + "]' ;;\n" +
 				"inspect) for last; do :; done\n" +
-				"  printf '[{\"id\":\"%s\",\"configuration\":{\"labels\":{" + strings.ReplaceAll(labels, `"`, `\"`) + "}},\"status\":{\"state\":\"running\"}}]\\n' \"$last\" ;;\n" +
+				// Plain quotes: inside printf's single-quoted format they are literal, and
+				// a `\"` escape is left as-is by dash (Linux's /bin/sh), unlike bash.
+				"  printf '[{\"id\":\"%s\",\"configuration\":{\"labels\":{" + labels + "}},\"status\":{\"state\":\"running\"}}]\\n' \"$last\" ;;\n" +
 				"esac\n"
 		} else {
 			script = "#!/bin/sh\n" +
