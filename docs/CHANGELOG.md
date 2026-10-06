@@ -108,12 +108,14 @@ This file contains a list of changes for each released version.
   can review the files first. When only `.booth/.generated` disagrees, OK also rewrites it.
   `--no-tui` prints the same list.
 
-- **`tty-owner` gives the booth user its own pty.** The foreground shell of `booth run`
-  keeps the terminal `docker run -it` made while the container was still root: owned
-  `root:tty` mode `0620`, so the user can write to it and cannot open it by name. `gpg`
-  pinentry then fails on `$GPG_TTY`, which breaks `gpg --quick-generate-key` and
-  `pass show`. Select `tty-owner`. Each login shell `chown`s that pty to the booth user.
-  (`booth shell` was never affected.)
+- **`booth run` gives the booth user its foreground pty.** `docker run -t` allocates
+  that pty while the container is still root, and the drop to the booth user used to
+  keep it owned `root:tty` mode `0620`, so the user could write to it and could not
+  open it by name. `gpg` pinentry then failed on `$GPG_TTY`, which broke
+  `gpg --quick-generate-key` and `pass show`. `booth-entry` now `chown`s that
+  `/dev/pts` device to the booth user after the uid remap and before any user
+  process. The mode stays `0620`. A start with no terminal skips the `chown`, and
+  a failed `chown` does not stop the container. (`booth shell` was never affected.)
 
 - **Swift suggests only 6.4.0, the one release built for Ubuntu 26.04.** swift.org publishes no
   26.04 tarball for older releases, so `setup swift --version 6.0.1` 404s on the new base. The
