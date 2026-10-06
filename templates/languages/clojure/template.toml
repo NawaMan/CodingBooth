@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Clojure"
 display-disc = "Clojure language with Leiningen (requires java)"
 display-detail = "Installs Clojure with the Leiningen build tool. Requires the java template for JDK."

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "brew Packages"
 display-disc = "Install packages via Homebrew"
 display-detail = """Installs packages from Homebrew (linuxbrew) as the coder user; pulls in the homebrew template. \

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Conda"
 display-disc = "Conda environment and package manager"
 display-detail = """Sets up conda as the booth's environment manager, then installs the packages listed in your \

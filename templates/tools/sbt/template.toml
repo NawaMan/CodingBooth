@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "sbt"
 display-disc = "Scala build tool for JVM projects"
 display-detail = "Installs sbt build tool for Scala, Java, and other JVM languages."

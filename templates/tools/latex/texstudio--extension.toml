@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "TeXstudio"
 display-disc = "Desktop LaTeX editor with a built-in PDF viewer"
 display-detail = """Installs TeXstudio from Ubuntu's packages and puts its icon on the desktop: a native LaTeX \

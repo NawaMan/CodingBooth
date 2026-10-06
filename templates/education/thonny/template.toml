@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Thonny"
 display-disc = "Beginner-friendly Python IDE (requires desktop variant)"
 display-detail = """Installs Thonny, a Python IDE designed for teaching and learning. \

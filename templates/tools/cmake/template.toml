@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "CMake"
 display-disc = "CMake build system generator"
 display-detail = "Installs CMake for building, testing, and packaging C/C++ and other projects."

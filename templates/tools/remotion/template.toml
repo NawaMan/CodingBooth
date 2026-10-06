@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Remotion"
 display-disc = "Remotion framework for creating videos programmatically with React"
 display-detail = "Installs Remotion CLI with ffmpeg and Chromium dependencies for creating videos, animations, and motion graphics entirely in React/TypeScript code."

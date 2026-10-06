@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Expose Hoppscotch Port"
 display-disc = "Expose Hoppscotch port to host network"
 display-order = 1

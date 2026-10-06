@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "BlueJ"
 display-disc = "BlueJ Java teaching IDE (requires desktop variant)"
 display-detail = """Installs BlueJ, a Java IDE designed for teaching object-oriented programming. \

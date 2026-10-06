@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Free Pascal"
 display-disc = "Free Pascal compiler and development tools"
 display-detail = "Installs the Free Pascal compiler for Object Pascal development."

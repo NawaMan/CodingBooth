@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Composer"
 display-disc = "Install Composer globally (PHP package manager)"
 display-detail = """Downloads Composer to /usr/local/bin after PHP is already on PATH. This is the `--with-composer` \

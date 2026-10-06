@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Rust Notebook Kernel"
 display-disc = "Rust Jupyter notebook kernel (evcxr)"
 display-order = 5

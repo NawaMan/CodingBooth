@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "nbgrader"
 display-disc = "Jupyter assignment creation & auto-grading (requires notebook)"
 display-detail = """Installs nbgrader, a tool for creating and grading Jupyter notebook \

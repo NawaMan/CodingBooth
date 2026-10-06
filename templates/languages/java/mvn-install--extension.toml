@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "mvn dependency:resolve"
 display-disc = "Pre-download Maven dependencies into the image"
 display-detail = """Pre-downloads your project's Maven dependencies from pom.xml into the image's local repo \

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Scratch"
 display-disc = "MIT Scratch 3 visual block-based programming editor (web-served)"
 display-detail = """Builds and serves the open-source Scratch 3 editor locally on a configurable port. \

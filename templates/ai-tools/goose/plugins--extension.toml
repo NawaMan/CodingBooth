@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Goose Extensions"
 display-disc = "Mount host Goose MCP extensions / recipes"
 display-detail = "Seeds host Goose extension-related files under `~/.config/goose/extensions` when present. Opt-in — not credentials."

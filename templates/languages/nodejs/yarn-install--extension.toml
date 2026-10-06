@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "yarn install"
 display-disc = "Pre-install yarn dependencies from package.json into the image"
 display-detail = """Installs yarn itself, then your project's dependencies from package.json with `yarn install` into \

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Herdr Auto-Start (experimental)"
 display-disc = "Auto-launch Herdr in the terminal (experimental — clipboard issues)"
 display-detail = "EXPERIMENTAL. Drops the base (terminal) variant straight into Herdr when you open the web terminal. Switches the terminal to single-pane mode (BOOTH_WEB_SPLIT=false) so Herdr — itself a multiplexer — owns the whole screen instead of nesting inside CodingBooth's 4-pane split. Herdr's server persists for the container's lifetime, so the first session starts it and later reconnects attach back to the same session. Known issue: copy/paste (clipboard) does not work reliably in the web terminal yet, which is why this is marked experimental."

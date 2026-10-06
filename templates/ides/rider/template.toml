@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Rider"
 display-disc = "JetBrains Rider IDE for .NET development"
 display-detail = """Installs JetBrains Rider IDE for .NET and C# development. Requires a desktop variant.

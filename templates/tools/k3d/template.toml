@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "k3d"
 display-disc = "k3s in Docker for lightweight local Kubernetes"
 display-detail = "Installs k3d for running k3s clusters inside Docker. Lighter alternative to kind."

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Wails Android Target"
 display-disc = "Wires Wails to the Android SDK so `wails3 task android:build` produces an APK"
 display-detail = """Installs the NDK and Android API Wails v3's Gradle file compiles against, turning a \

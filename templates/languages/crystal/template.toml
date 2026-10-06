@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Crystal"
 display-disc = "Compiled, statically-typed language with Ruby-like syntax"
 display-detail = "Installs the Crystal compiler and shards (Crystal's package manager) under /opt/crystal-stable. Single-binary tarball release from crystal-lang/crystal."

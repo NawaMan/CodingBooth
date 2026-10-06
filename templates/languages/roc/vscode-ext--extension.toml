@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Roc VS Code Extension"
 display-disc = "Roc language support extension for VS Code (unofficial)"
 display-detail = """Installs the only published Roc extension for VS Code / code-server. \

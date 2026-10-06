@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Snippets Shared"
 display-disc = "Team-share code-server User/snippets via git (.booth/shared)"
 display-detail = """Live-bind-mounts User/snippets/ for team code snippets. Snippets should not hold secrets. Does not share extensions or globalStorage."""

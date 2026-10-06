@@ -1,4 +1,5 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+cb-version = "1.0.0"
 display-name = "npm Config"
 display-disc = "Mount host npm configuration (.npmrc)"
 display-detail = """Seeds ~/.npmrc from the host, so a private registry URL or auth token works inside the booth \

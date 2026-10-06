@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "HeidiSQL"
 display-disc = "Native Linux HeidiSQL database GUI (amd64 only)"
 display-detail = "Installs HeidiSQL's native Linux build (currently beta upstream), a lightweight GUI for MySQL, MariaDB, PostgreSQL, SQL Server, and SQLite. Requires a desktop variant. amd64 only — see the note for why arm64 is not supported."

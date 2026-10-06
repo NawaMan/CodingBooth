@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Deno"
 display-disc = "Deno runtime for JavaScript and TypeScript"
 display-detail = "Installs the Deno runtime, a secure runtime for JavaScript and TypeScript with built-in tooling including formatter, linter, and test runner."

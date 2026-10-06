@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Elm"
 display-disc = "Elm functional language for reliable web apps"
 display-detail = "Installs the Elm compiler via npm. Requires Node.js (auto-included). Use with elm-format and elm-test for the full toolchain."

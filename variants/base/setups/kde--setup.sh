@@ -2,6 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
+# cb-version: 1.0.0
 
 # kde--setup.sh — root-only installer for KDE Plasma + VNC + noVNC + Dolphin & Konsole pinned + NO LOCK SCREEN
 # Installs deps, writes /etc/profile.d/99-cb-kde.sh, creates /usr/local/bin/start-kde,

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "KVM Acceleration"
 display-disc = "Pass /dev/kvm into the booth so the emulator runs at hardware speed"
 display-detail = """Hands the host's KVM device to the booth, which is what makes the Android emulator usable: \

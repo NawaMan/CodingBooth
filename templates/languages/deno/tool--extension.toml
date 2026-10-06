@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Deno Tools"
 display-disc = "Install global CLI tools with deno install"
 display-detail = """Installs global CLI tools by passing each entry straight to `deno install`, landing their \

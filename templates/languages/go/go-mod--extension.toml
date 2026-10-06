@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "go mod download"
 display-disc = "Pre-download Go module dependencies into the image"
 display-detail = """Pre-downloads your project's Go module dependencies from go.mod/go.sum into the image's module \

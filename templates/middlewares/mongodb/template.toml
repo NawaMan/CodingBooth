@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "MongoDB"
 display-disc = "MongoDB database with persistent volume"
 display-detail = "Installs MongoDB document database with a persistent Docker volume for data storage across container restarts."

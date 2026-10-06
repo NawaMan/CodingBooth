@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Expose SSH Port"
 display-disc = "Expose the SSH server port to host network (pair with +server)"
 display-detail = "Publishes SSH_PORT so you can ssh into the booth from the host. REQUIRES the +server extension: SSH_PORT is declared there, so selecting +expose on its own leaves ${SSH_PORT} unresolved in run-args and docker will reject the port mapping at start. Always select them together — openssh+server+expose (or openssh+server:2200+expose to move the port; the published host port follows it). SSH_HOST_PORT overrides the host side alone, for when the host port is taken but the booth's should not move: openssh+server:22+expose:2222."

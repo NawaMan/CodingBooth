@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Mojo"
 display-disc = "Mojo language (requires python)"
 display-detail = """Installs the Mojo compiler, standard library, LSP, and debugger as a pip \

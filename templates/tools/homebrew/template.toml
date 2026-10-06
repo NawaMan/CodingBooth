@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Homebrew"
 display-disc = "Homebrew package manager for Linux"
 display-detail = "Installs Homebrew (Linuxbrew) package manager for installing additional tools and libraries."

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "JetBrains Plugins"
 display-disc = "Install any JetBrains IDE plugin by marketplace id"
 display-detail = """Bakes plugins into the image for every JetBrains IDE it contains (IntelliJ IDEA, \

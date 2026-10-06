@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "bun install"
 display-disc = "Pre-install bun dependencies from package.json into the image"
 display-detail = """Installs your project's dependencies from package.json with `bun install` into the image's cache \

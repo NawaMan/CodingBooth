@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Rust protoc plugins"
 display-disc = "protoc-gen-prost and protoc-gen-tonic"
 display-detail = """Installs protoc-gen-prost (message codegen for the Prost! crate) and protoc-gen-tonic \

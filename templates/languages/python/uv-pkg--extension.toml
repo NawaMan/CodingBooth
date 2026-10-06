@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "uv Packages"
 display-disc = "Install Python packages globally via uv"
 display-detail = """Installs Python packages globally into the booth's Python (/opt/python) with `uv pip install` — \

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "kubectx + kubens"
 display-disc = "Quick context and namespace switching for kubectl"
 display-detail = "Installs both kubectx (switch contexts) and kubens (switch namespaces) from ahmetb/kubectx. They ship as a pair upstream and are installed together."

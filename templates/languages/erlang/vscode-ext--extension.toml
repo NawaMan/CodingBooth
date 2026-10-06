@@ -1,4 +1,5 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+cb-version = "1.0.0"
 display-name = "Erlang VS Code Extension"
 display-disc = "Erlang language support extension for VS Code"
 display-order = 1

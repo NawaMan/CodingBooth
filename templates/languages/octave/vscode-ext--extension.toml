@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Octave VS Code Extension"
 display-disc = "Octave/MATLAB syntax highlighting for VS Code"
 display-order = 1

@@ -2,6 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
+# cb-version: 0.1.0
 
 # ttyd-nerd-font-index--setup.sh — bakes a custom ttyd index.html that embeds
 # the Fira Code Nerd Font Mono (regular + bold) as inline @font-face data URIs.

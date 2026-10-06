@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Floci Auto-Start"
 display-disc = "Start the Floci AWS emulator on container boot"
 display-detail = "Runs `floci start` when the booth boots so `aws s3 mb` works immediately instead of failing until you start the emulator by hand. Pulls in Docker-in-Docker (`dind`) because `floci start` launches the floci/floci container. Add the expose extension to reach it from the host."

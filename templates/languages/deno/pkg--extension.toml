@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Deno Packages"
 display-disc = "Deno package installer for third-party modules"
 display-detail = """Records third-party modules in /home/coder/deno.json with `deno add`, so your code can import them \

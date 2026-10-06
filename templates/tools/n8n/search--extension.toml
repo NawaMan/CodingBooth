@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "n8n Assistant Web Search"
 display-disc = "Web search for the n8n Assistant via SearXNG (needs Docker)"
 display-detail = """Runs SearXNG with its JSON API on at boot and points n8n at it, so the Assistant's "Web search" is set up and it can read docs and API changes. Same settings n8n's own installer uses. Pulls in Docker-in-Docker and Docker Compose, because SearXNG runs as a container. booth asks before starting a DinD booth (--dind-allowed skips the question). Free search engines can rate-limit; for a steadier setup, put a Brave Search key in .booth/.env as INSTANCE_AI_BRAVE_SEARCH_API_KEY (no service needed, and it takes priority over SearXNG)."""

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Expose PostgREST Port [experimental]"
 display-disc = "Experimental — publish PostgREST to the host"
 display-detail = "EXPERIMENTAL — new, not yet battle-tested; expect rough edges. PostgREST listens inside the booth on POSTGREST_PORT (default 3000). This publishes it so curl, a frontend, or an app on the host can point at it. Autostart is a separate extension — without it, nothing is listening on this port yet."

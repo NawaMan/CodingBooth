@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Playwright .NET"
 display-disc = "Playwright .NET bindings (Microsoft.Playwright NuGet package)"
 display-order = 11

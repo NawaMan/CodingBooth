@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Drivers Shared"
 display-disc = "Durable DBeaver JDBC drivers + registry (not connections)"
 display-detail = """Live-bind-mounts two paths under .booth/shared/ (not cache):

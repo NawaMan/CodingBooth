@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Java"
 primary = true
 display-disc = "Java JDK with configurable version and distribution"

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Flutter"
 display-disc = "Flutter SDK for building apps from one Dart codebase — brings Dart with it"
 display-detail = """Installs the Flutter SDK under /usr/local/flutter-<version>, with the Dart SDK it bundles, \

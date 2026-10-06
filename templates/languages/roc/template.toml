@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Roc"
 display-disc = "Roc functional programming language"
 display-detail = "Installs the Roc compiler (fast, friendly, functional) from upstream prebuilt binaries. Linked at /opt/roc-stable."

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Expose AFFiNE Server Port"
 display-disc = "Expose AFFiNE Server port to host network"
 display-order = 1

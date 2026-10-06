@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name   = "Make Default"
 display-disc   = "Make Kitty the desktop's default terminal"
 display-detail = """\

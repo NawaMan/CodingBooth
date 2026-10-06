@@ -1,4 +1,5 @@
 #!/bin/bash
+# cb-version: 1.0.0
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
 

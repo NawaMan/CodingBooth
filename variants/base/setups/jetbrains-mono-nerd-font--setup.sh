@@ -2,6 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
+# cb-version: 0.1.0
 
 # jetbrains-mono-nerd-font--setup.sh — installs the Nerd Fonts-patched
 # JetBrains Mono family system-wide. Same shape as fira-code-nerd-font--setup.sh

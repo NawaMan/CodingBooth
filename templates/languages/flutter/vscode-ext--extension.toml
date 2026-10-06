@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Flutter VS Code Extension"
 display-disc = "Dart and Flutter language support extensions for VS Code"
 display-order = 3

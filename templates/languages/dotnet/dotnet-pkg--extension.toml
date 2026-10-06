@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = ".NET Tools"
 display-disc = "Install global .NET tools via dotnet tool install"
 display-detail = """Installs NuGet-distributed .NET global tools into ~/.dotnet/tools (on PATH via the .NET profile) — \

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Logo"
 display-disc = "JSLogo turtle-graphics editor (web-served)"
 display-detail = """Serves the open-source JSLogo editor locally on a configurable port. \
