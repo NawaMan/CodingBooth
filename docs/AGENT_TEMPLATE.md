@@ -399,14 +399,15 @@ its content in `[segments]` and `[files]`:
 
 ```toml
 # templates/languages/go/linter--extension.toml
-display-name   = "golangci-lint"
-display-disc   = "Fast Go linters runner"
-display-order  = 20
-auto-select    = false
+cb-version    = "1.0.0"
+display-name  = "Go Linter"
+display-disc  = "golangci-lint for Go code quality analysis"
+display-order = 1
+auto-select   = false
 
 [segments]
-"Boothfile--60" = """
-setup golangci-lint
+Boothfile = """
+install go github.com/golangci/golangci-lint/cmd/golangci-lint@latest
 """
 ```
 
@@ -457,6 +458,7 @@ When multiple templates are selected, their outputs merge:
 
 **`templates/languages/rust/template.toml`:**
 ```toml
+cb-version = "1.0.0"
 display-name = "Rust"
 display-disc = "Rust toolchain with Cargo and rustup"
 display-order = 40
@@ -468,7 +470,7 @@ run-args = [
 
 [params.RUST_VERSION]
 default = "stable"
-suggests = ["stable", "nightly", "1.84.0", "1.83.0"]
+suggests = ["stable", "nightly", "1.99.0", "1.98.1"]
 
 [segments]
 Boothfile = """
@@ -480,6 +482,7 @@ setup rust ${RUST_VERSION}
 
 **`templates/languages/rust/vscode-ext--extension.toml`:**
 ```toml
+cb-version = "1.0.0"
 display-name = "Rust VS Code Extension"
 display-disc = "Rust language support extension for VS Code"
 display-order = 1
@@ -503,6 +506,7 @@ anything from the host. The template installs:
 
 **`templates/ai-tools/claude-code/template.toml`:**
 ```toml
+cb-version = "1.0.0"
 display-name = "Claude Code"
 display-disc = "Anthropic Claude Code AI coding assistant"
 display-order = 10
@@ -523,6 +527,7 @@ An auto-selected extension carries only `run-args` — no segment at all — and
 
 **`templates/ai-tools/claude-code/credential--extension.toml`:**
 ```toml
+cb-version = "1.0.0"
 display-name = "Claude Code Credentials"
 display-disc = "Mount host Claude Code credentials"
 display-order = 90
@@ -543,6 +548,7 @@ Use ordered segment keys when a tool needs setup both early and late:
 
 **`templates/tools/example/template.toml`:**
 ```toml
+cb-version = "0.1.0"
 display-name = "Example"
 display-order = 10
 

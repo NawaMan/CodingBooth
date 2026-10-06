@@ -309,19 +309,6 @@ These run ahead of every order-50 setup, so anything installed at 50 or later ca
 them. The `protobuf/cpp--extension` is at 45 too; its other language extensions follow their
 language.
 
-### Order 55 — Second passes of an order-50 script; CUDA
-
-| Template / Extension                | Display Name |
-|-------------------------------------|--------------|
-| `tools/cuda`                        | CUDA Toolkit |
-| `apache/php--extension`             | mod_php |
-| `nginx/php-fpm--extension`          | php-fpm |
-| `php/composer--extension`           | Composer |
-
-The three extensions are a second pass of their parent's own script with an `--…-only` flag
-(`setup apache --php-only`, `setup nginx --fpm-only`, `setup php --composer-only`), so they must
-come after the parent's order-50 line and before the IDEs at 60.
-
 ### Order 50 — Base setups (languages, tools, middlewares)
 
 | Template               | Display Name     |
@@ -444,6 +431,19 @@ come after the parent's order-50 line and before the IDEs at 60.
 | `python/conda--extension`  | Conda *(also has order 90)*   |
 | `python/uv--extension`     | uv *(also has order 90)*      |
 
+### Order 55 — Second passes of an order-50 script; CUDA
+
+| Template / Extension                | Display Name |
+|-------------------------------------|--------------|
+| `tools/cuda`                        | CUDA Toolkit |
+| `apache/php--extension`             | mod_php |
+| `nginx/php-fpm--extension`          | php-fpm |
+| `php/composer--extension`           | Composer |
+
+The three extensions are a second pass of their parent's own script with an `--…-only` flag
+(`setup apache --php-only`, `setup nginx --fpm-only`, `setup php --composer-only`), so they must
+come after the parent's order-50 line and before the IDEs at 60.
+
 ### Order 60 — Dependent setups (IDEs, browsers, desktop apps, derived languages)
 
 | Template                  | Display Name     |
@@ -510,6 +510,27 @@ come after the parent's order-50 line and before the IDEs at 60.
 | `tools/remotion`           | Remotion |
 | `tools/selenium`           | Selenium drivers |
 | `tools/xonsh`              | Xonsh |
+
+### Order 60 — Package manager extensions (global package installation)
+
+| Extension                       | Display Name     |
+|---------------------------------|------------------|
+| `bun/bun-pkg--extension`        | bun Packages     |
+| `conan/conan-pkg--extension`    | Conan Packages   |
+| `elixir/hex-pkg--extension`     | Hex Packages     |
+| `go/go-pkg--extension`          | Go Packages      |
+| `haskell/cabal-pkg--extension`  | Cabal Packages   |
+| `lua/luarocks-pkg--extension`   | LuaRocks Packages|
+| `nodejs/npm-pkg--extension`     | npm Packages     |
+| `nodejs/yarn-pkg--extension`    | Yarn Packages    |
+| `php/pecl-pkg--extension`       | PECL Packages    |
+| `postgresql/pg-ext-pkg--extension` | PostgreSQL Extensions |
+| `python/conda-pkg--extension`   | Conda Packages   |
+| `python/pip-pkg--extension`     | pip Packages     |
+| `python/uv-pkg--extension`      | uv Packages      |
+| `ruby/gem-pkg--extension`       | Gem Packages     |
+| `rust/cargo-pkg--extension`     | Cargo Packages   |
+| `tools/brew-pkg`                | brew Packages    |
 
 ### Order 62 — Android emulator (needs the Android SDK from order 60)
 
@@ -696,27 +717,6 @@ Two top-level templates also live at 70:
 |------------------------------|------------------------|
 | `ides/jetbrains-plugin-pkg`  | JetBrains Plugins *(any plugin id — installs into every JetBrains IDE present)* |
 | `tools/bash-nb-kernel`       | Bash Notebook Kernel   |
-
-### Order 60 — Package manager extensions (global package installation)
-
-| Extension                       | Display Name     |
-|---------------------------------|------------------|
-| `bun/bun-pkg--extension`        | bun Packages     |
-| `conan/conan-pkg--extension`    | Conan Packages   |
-| `elixir/hex-pkg--extension`     | Hex Packages     |
-| `go/go-pkg--extension`          | Go Packages      |
-| `haskell/cabal-pkg--extension`  | Cabal Packages   |
-| `lua/luarocks-pkg--extension`   | LuaRocks Packages|
-| `nodejs/npm-pkg--extension`     | npm Packages     |
-| `nodejs/yarn-pkg--extension`    | Yarn Packages    |
-| `php/pecl-pkg--extension`       | PECL Packages    |
-| `postgresql/pg-ext-pkg--extension` | PostgreSQL Extensions |
-| `python/conda-pkg--extension`   | Conda Packages   |
-| `python/pip-pkg--extension`     | pip Packages     |
-| `python/uv-pkg--extension`      | uv Packages      |
-| `ruby/gem-pkg--extension`       | Gem Packages     |
-| `rust/cargo-pkg--extension`     | Cargo Packages   |
-| `tools/brew-pkg`                | brew Packages    |
 
 ### Order 90 — Post-setup steps
 

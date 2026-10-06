@@ -327,19 +327,19 @@ display-detail = "Longer paragraph shown in the TUI detail pane."
 display-order  = 60
 tags = ["git", "tui", "cli"]
 
-[params.BUF_VERSION]
+[params.LAZYGIT_VERSION]
 default  = "latest"
-suggests = ["latest", "1.72.0"]
+suggests = ["latest", "0.65.1"]
 
 [segments]
 Boothfile = """
-setup buf --version ${BUF_VERSION}
+setup lazygit --version ${LAZYGIT_VERSION}
 """
 ```
 
-Categories: `languages`, `tools`, `ides`, `middlewares`, `desktops`, `ai-tools`,
-`education`. The loader scans the tree — there is no index to update. Browsers live
-under `desktops/` (the Desktop tab).
+Categories: `languages`, `frameworks`, `tools`, `ides`, `middlewares`, `desktops`,
+`ai-tools`, `education`, `booth-vm`. The loader scans the tree — there is no index to update.
+Browsers live under `desktops/` (the Desktop tab).
 
 **An extension instead** when the thing is an add-on to an existing entry — a single
 `<name>--extension.toml` beside the parent's `template.toml`. May set `auto-select = true` and
@@ -374,8 +374,7 @@ Auto-discovered by directory name, one level under the `boothfile/` category (se
 ```
 .booth/config.toml                    variant = "base"
 .booth/Boothfile                      setup <name>
-test--boothfile-<name>.sh             sources ../../common--source.sh
-.booth/setups/<name>--setup.sh        ← copy of the script
+.booth/setups/<name>--setup.sh        ← copy of the script, while developing only
 test--boothfile-<name>.sh             sources ../../../common--source.sh
 ```
 
@@ -387,11 +386,9 @@ So before landing: delete the copy, rebuild base (`./build/docker-build.sh base`
 test against the image's own script. `work-finish` checks for leftovers (gap 3). The full suite
 needs no copy anyway: `run-automate-tests.sh` rebuilds every variant from the tree first
 (`ensure_fresh_image`). The only `.booth/setups/` that stays in a fixture is a script the test
-itself adds (`test-boothfile-custom-setup`, `test-project-local`).
-**The copy under `.booth/setups/` is mandatory and is not redundant** — the same mechanism §3 uses.
-Tests run against the *released* base image, which does not ship your script yet. Note it in a
-Boothfile comment, as `tests/complex/boothfile/test-boothfile-binary-companions/.booth/Boothfile`
-does, and keep the copy byte-identical.
+itself adds (`test-boothfile-custom-setup`, `test-project-local`). While the copy is there, note
+it in a Boothfile comment (`# <name>--setup.sh is supplied under .booth/setups/ until the base
+image ships it.`) and keep it byte-identical to the repo's script.
 
 Use `setup <name>` with no version unless the test is about pinning — see `tests/README.md` →
 *Versions are catalog data, not test data*.
@@ -408,12 +405,10 @@ fi
 
 ### Config test — `tests/config/init/test<NN>-init-<name>.sh`
 
-Next free number (`ls tests/config | tail -3`), using `begin` / `run` / `assert-line` / `finally`
-from `test-helpers--source.sh`. Assert the `setup`/`install` line, the default read from the
-catalog (never a copied literal), and a pin on a version that is *not* the default:
 Next free number (`ls tests/config/init | tail -3`), using `begin` / `run` / `assert-line` /
-`finally` from `test-helpers--source.sh` (one directory up). Assert the `setup`/`install` line and
-the version pin, default and pinned:
+`finally` from `test-helpers--source.sh` (one directory up). Assert the `setup`/`install` line, the
+default read from the catalog (never a copied literal), and a pin on a version that is *not* the
+default:
 
 ```bash
 run booth config $prj --no-tui --select "<name>"
@@ -439,11 +434,8 @@ tests/config/catalog/test94-catalog-manifest-is-current.sh   # every item has a 
 ### Run only what you touched
 
 ```bash
-tests/config/test<NN>-init-<name>.sh
-./build/docker-build.sh base                                             # so the image has your script
-(cd tests/complex/test-boothfile-<name> && ./test--boothfile-<name>.sh)   # needs Docker; builds an image
-examples/workspaces/run-example-tests.sh --example <name>-example         # if you made one
 tests/config/init/test<NN>-init-<name>.sh
+./build/docker-build.sh base                                                        # so the image has your script
 (cd tests/complex/boothfile/test-boothfile-<name> && ./test--boothfile-<name>.sh)   # needs Docker; builds an image
 examples/workspaces/run-example-tests.sh --example <name>-example                  # if you made one
 ```
