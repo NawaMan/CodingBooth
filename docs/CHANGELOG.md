@@ -15,8 +15,9 @@ This file contains a list of changes for each released version.
   selected along with `android-sdk`: without `/dev/kvm` the emulator only runs in slow software
   emulation. It costs nothing elsewhere. `/dev/kvm` needs no security consent, and a host without
   it drops the device at start, so the booth still runs. Leave it out with `android-sdk~kvm`. The
-  image build also no longer leaves a root-owned `/tmp/android-unknown` behind. Needs an image
-  built from this version.
+  image build also no longer leaves a root-owned `/tmp/android-unknown` behind, and the AVD no
+  longer names the `swiftshader_indirect` GPU mode, which emulator 37 rejects (it falls back to
+  `auto`, a software renderer, as it now does by default). Needs an image built from this version.
 
 - **A booth web app opens in one clean window.** Three things got in the way when you clicked a
   web app's desktop icon (Markdown Viewer, Excalidraw, n8n, …). On the first click, the Markdown

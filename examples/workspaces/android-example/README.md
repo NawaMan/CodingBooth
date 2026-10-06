@@ -61,7 +61,7 @@ The emulator and an AOSP system image are included, so this works out of the box
 The booth's XFCE desktop carries an **Android Emulator** icon, also in the start menu under **Development**. It opens a terminal window and:
 
 1. creates an AVD named `booth` from whichever system image is installed, the first time only;
-2. picks the acceleration mode — hardware if `/dev/kvm` came through, otherwise `-accel off -gpu swiftshader_indirect`;
+2. picks the acceleration mode — hardware if `/dev/kvm` came through, otherwise `-accel off`;
 3. starts the emulator.
 
 The same thing from a terminal is `cb-android-emulator`. Override the AVD name with `CB_AVD_NAME` and the device profile with `CB_AVD_DEVICE` (`avdmanager list device` for the options); anything else you pass is handed to `emulator` (`cb-android-emulator -no-window`).
@@ -132,7 +132,7 @@ Without KVM the emulator does **not** quietly fall back — it refuses to start:
 ERROR | x86_64 emulation currently requires hardware acceleration!
 ```
 
-You have to ask for software emulation explicitly with `emulator -avd dev -accel off -gpu swiftshader_indirect`. It works — the APK installs and the app reaches the foreground exactly the same — it is just ~13× slower to boot.
+You have to ask for software emulation explicitly with `emulator -avd dev -accel off`. It works — the APK installs and the app reaches the foreground exactly the same — it is just ~13× slower to boot.
 
 **Selecting `+kvm` is safe on any host.** If `/dev/kvm` is not present — Docker Desktop on macOS, virtualization disabled in BIOS, a nested VM without nested virt — the booth still starts; the device is dropped with a warning and you fall back to `-accel off`. On Windows, Docker Desktop's WSL2 backend often *does* have `/dev/kvm` (Windows 11 enables nested virtualization by default); `ls /dev/kvm` inside WSL is the check.
 
