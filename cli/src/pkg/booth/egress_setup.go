@@ -170,6 +170,14 @@ func resolvePolicyPath(ctx appctx.AppContext, path string) string {
 	if filepath.IsAbs(path) {
 		return path
 	}
+	if ctx.ExplicitBoothDir() != "" {
+		if trimmed, ok := strings.CutPrefix(path, ".booth/"); ok {
+			return filepath.Join(ctx.ExplicitBoothDir(), trimmed)
+		}
+		if path == ".booth" {
+			return ctx.ExplicitBoothDir()
+		}
+	}
 	return filepath.Join(ctx.Code(), path)
 }
 
@@ -186,7 +194,7 @@ func renderEgressEnvoyConfigFromAllowlist(ctx appctx.AppContext) (string, error)
 		patterns = parseAllowlistPatterns(mergeAllowlistContent("", ctx.EgressAllowlist()))
 	}
 
-	outDir := filepath.Join(ctx.Code(), ".booth", "tools", "egress")
+	outDir := filepath.Join(hostBoothDir(ctx), "tools", "egress")
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return "", fmt.Errorf("failed to create egress output dir: %w", err)
 	}

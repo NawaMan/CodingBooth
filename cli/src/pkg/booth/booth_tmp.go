@@ -24,12 +24,10 @@ func PrepareBoothTmp(ctx appctx.AppContext) appctx.AppContext {
 		return ctx
 	}
 
-	codePath := ctx.Code()
-	if codePath == "" {
+	boothDir := hostBoothDir(ctx)
+	if boothDir == "" {
 		return ctx
 	}
-
-	boothDir := filepath.Join(codePath, ".booth")
 
 	// Only create .booth/.tmp/ if .booth/ already exists.
 	// We must not create .booth/ as a side effect — it would cause the booth
@@ -52,7 +50,7 @@ func PrepareBoothTmp(ctx appctx.AppContext) appctx.AppContext {
 			}
 		}
 	}
-	lifecyclelog.Trim(codePath)
+	lifecyclelog.TrimAt(boothDir)
 
 	// Create .tmp/ directory if it doesn't exist
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
@@ -83,11 +81,11 @@ func cleanupBoothTmp(ctx appctx.AppContext) {
 	if ctx.Dryrun() || ctx.LeaveTmpOnExit() {
 		return
 	}
-	codePath := ctx.Code()
-	if codePath == "" {
+	boothDir := hostBoothDir(ctx)
+	if boothDir == "" {
 		return
 	}
-	tmpDir := filepath.Join(codePath, ".booth", ".tmp")
+	tmpDir := filepath.Join(boothDir, ".tmp")
 	entries, err := os.ReadDir(tmpDir)
 	if err != nil {
 		return

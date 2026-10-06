@@ -62,8 +62,13 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 		context.Config.Code = nillable.NewNillableString(boundary.GetCurrentPath())
 	}
 	if !context.Config.Config.IsSet() {
-		codePath := context.Config.Code.ValueOr("")
-		configFile := filepath.Join(codePath, ".booth", "config.toml")
+		// --booth-dir is a private spec. Do not fall back to the project's config.
+		configFile := ""
+		if context.BoothDir != "" {
+			configFile = filepath.Join(context.BoothDir, "config.toml")
+		} else {
+			configFile = filepath.Join(context.Config.Code.ValueOr(""), ".booth", "config.toml")
+		}
 		if fileExists(configFile) {
 			context.Config.Config = nillable.NewNillableString(configFile)
 		}
@@ -72,7 +77,10 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	// Resolve --profile / BOOTH_PROFILES against the .booth/ directory.
 	// This must run after --code is defaulted (Discover needs the code path)
 	// and before TOML loading (which layers profiles on top of the base).
-	resolveAndStoreProfiles(args, &context, configExplicitlySet)
+	// An explicit booth dir is express: the project has no profile layer.
+	if context.BoothDir == "" {
+		resolveAndStoreProfiles(args, &context, configExplicitlySet)
+	}
 
 	readFromEnvVars(boundary, &context)
 	readFromToml(boundary, &context, configExplicitlySet)
@@ -82,7 +90,7 @@ func InitializeAppContext(version string, boundary InitializeAppContextBoundary)
 	}
 	readFromArgs(boundary, &context, ilist.NewListFromSlice(args.Slice()[1:]))
 	validateConfig(&context.Config)
-	resolvePassword(&context.Config)
+	resolvePassword(&context.Config, context.BoothDir)
 
 	if context.Config.ProjectName == "" {
 		context.Config.ProjectName = getProjectName(context.Config.Code.ValueOr("."))
@@ -397,6 +405,8 @@ func parseArgs(args ilist.List[string], cfg *appctx.AppConfig) error {
 		case "--config":
 			i += 2
 		case "--code":
+			i += 2
+		case "--booth-dir":
 			i += 2
 		case "--profile":
 			i += 2
@@ -949,6 +959,19 @@ func readVerboseDryrunConfigFileAndCode(boundary InitializeAppContextBoundary, c
 			context.Config.Code = nillable.NewNillableString(value)
 			i += 2
 
+		case "--booth-dir":
+			value, err := needValue(args, i, arg)
+			if err != nil {
+				panic(fmt.Errorf("error parsing --booth-dir: %w", err))
+			}
+			if !filepath.IsAbs(value) {
+				if absPath, err := filepath.Abs(value); err == nil {
+					value = absPath
+				}
+			}
+			context.BoothDir = value
+			i += 2
+
 		case "--verbose":
 			context.Config.Verbose = nillable.NewNillableBool(true)
 			i++
@@ -988,15 +1011,23 @@ func fileExists(path string) bool {
 
 // resolvePassword populates config.Password when --public is set.
 // Priority: .booth/.booth.password file → interactive stdin prompt → error.
-func resolvePassword(config *appctx.AppConfig) {
+func resolvePassword(config *appctx.AppConfig, boothDir string) {
 	if !config.Public {
 		return
 	}
 
-	// Priority 1: .booth/.booth.password file
+	// Priority 1: .booth/.booth.password file.
+	// An explicit booth dir is the only place express looks, so a password
+	// file in the project .booth is not picked up.
 	codeDir := config.Code.ValueOr("")
-	if codeDir != "" {
-		passwordFile := filepath.Join(codeDir, ".booth", ".booth.password")
+	passwordFile := ""
+	if boothDir != "" {
+		passwordFile = filepath.Join(boothDir, ".booth.password")
+		codeDir = ""
+	} else if codeDir != "" {
+		passwordFile = filepath.Join(codeDir, ".booth", ".booth.password")
+	}
+	if passwordFile != "" {
 		if fileExists(passwordFile) {
 			if err := validatePasswordFile(passwordFile, codeDir); err != nil {
 				panic(err)

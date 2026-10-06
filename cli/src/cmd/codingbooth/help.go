@@ -64,6 +64,7 @@ OTHER COMMANDS:
   MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md
   EXPOSE    | Inspect a booth's ports          | expose list                                                             | docs/BOOTH_EXPOSE.md
   PROJECT   | Set up and scaffold new projects | example, config, template, showcase                                     | docs/BOOTH_EXAMPLE.md
+  EXPRESS   | Run from arguments, ignoring the project's .booth | express                                                      | docs/BOOTH_RUN.md
 
 Run '%s --help <command>'   for command-specific help.
 Run '%s --help --detail'    for the full reference.
@@ -82,6 +83,7 @@ USAGE:
   %s version                                   (print the CodingBooth version)
   %s help                                      (show this help and exit)
   %s run [options] [--] [command ...]          (run the booth)
+  %s express [options] [-- command ...]        (run from arguments; ignore the project's .booth)
   %s [options] [--] [command ...]              (default action: run)
   %s list [--running|--stopped] [--name-only]  (list booth-managed containers)
   %s start [--name <n>|--code <path>] [-d]     (start a stopped keep-alive booth)
@@ -277,10 +279,107 @@ EXAMPLES:
   %s --env-file none --variant notebook
 `,
 		s, version,
-		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
+		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
+}
+
+func showHelpExpress() {
+	s := scriptName()
+	fmt.Printf(`%s express — run a booth from arguments, without the project's .booth.
+
+USAGE:
+  %s express [options] [-- command ...]
+
+%s express mounts --code (default: the current directory) at /home/coder/code
+and does not read or write that tree's .booth. Profiles, BOOTH_PROFILES, and
+.booth/.env are ignored. --select is compiled the same way '%s config --no-tui'
+compiles it, into a directory express owns, and that directory is mounted at
+/home/coder/code/.booth. A foreground run uses a temporary directory, removed
+when the process exits. --daemon and --keep-alive (and CB_DAEMON / CB_KEEP_ALIVE)
+keep it under the user cache, because a later start re-reads the mounted spec.
+
+With no --select, express starts the prebuilt variant from the arguments and
+from CB_* variables. It does not write an empty Boothfile. --image, then
+--dockerfile, then --boothfile, then --select, then the prebuilt variant.
+--select cannot be combined with --image, --dockerfile, or --boothfile.
+
+Launch flags override the generated file. CB_* variables still apply and lose
+to flags. --version is the image tag. --apt-snapshot and --templates-path
+require --select. Arguments after -- replace --cmd.
+
+Refused: --config, --profile, --booth-dir, the --add-* / --remove-* config
+edits, --overwrite, --beside, the config-only flags (--no-tui, --web, --start,
+--full, --detail, --debug), and --writable-booth, --console-spec,
+--leave-tmp-on-exit, --keep-tmp-on-start. --set of cache-files, cache-dirs,
+shared-files, shared-dirs, and of keys run never reads from a file (public,
+tls-cert, and the same family) is refused. Unknown tokens are forwarded to
+docker run, as with %s run.
+
+SPEC (compiled, not forwarded):
+  --select <dsl>         Repeatable. Templates, :params, +extensions. '/' separates.
+  --cmd <words>          Command argv. Repeatable. Shell-split. '--' replaces it.
+  --expose <port>        Publish a port. Repeatable.
+  --env <KEY=VALUE>      Environment entry. Repeatable.
+  --mount <host:path>    Extra mount. Repeatable.
+  --set <key[=value]>    A config.toml key run already reads from a file.
+  --templates-path <dir> Local template catalog. Requires --select.
+  --apt-snapshot <id>    id, today, or none. Requires --select.
+                         Omitted with --select freezes apt to today.
+
+IMAGE (first match wins; --select is refused alongside the first three):
+  --image <ref>          Use this image. Skip the build.
+  --dockerfile <path>    Build this Dockerfile.
+  --boothfile <path>     Compile this Boothfile and build it.
+  --variant <name>       Prebuilt variant when nothing above is set.
+  --version <tag>        Image tag (default: this CLI's version). Not a catalog pin.
+  --strict               Strict Boothfile parse.
+  --build-arg <K=V>      Docker build-arg. Repeatable.
+  --pull                 Pull the prebuilt image even when it exists.
+  --silence-build        Do not print build output.
+
+WHERE:
+  --code <path>          Host directory mounted at /home/coder/code. Not read as a spec.
+  --name <name>          Container name. {port}, {project}, and {variant} expand.
+  --port <n|NEXT|RANDOM> Host port. NEXT and RANDOM accept :base.
+  --offset-base <n>      Base for +OFFSET port mappings.
+  --browser-port <n>     Port opened in the browser, when it is not the booth port.
+  --engine <name>        docker, podman, or apple.
+  --sudo <true|false>    sudo in the booth (default: true). --no-sudo is --sudo false.
+  --hide-welcome         Do not print the welcome banner.
+  --persist-home         Experimental home volume cb-home-<name>.
+
+THIS LAUNCH:
+  --daemon               Background. Refuses a command. Keeps the spec in the cache.
+  --keep-alive           Leave the container after exit. Keeps the spec in the cache.
+  --browser / --no-browser
+  --quiet, -q            Quiet. Implies --silence-build and --no-browser.
+  --dryrun               Print the docker command and exit.
+  --verbose              Debug output.
+  --log-time             Timestamp log lines.
+  --idle-time <s>[,t]    Idle prompt, then shutdown.
+  --idle-exit-code <n>   Exit code after an idle shutdown.
+  --show-run-time [epoch]
+  --show-count-down <epoch>
+  --count-down-exit-code <n>
+  --startup <path>       Run this startup file. Only the one given.
+  --env-file <path|none> Extra env file, or none to skip it.
+  --                     Command words. Joined and run with bash -lc.
+
+HOST REACH:
+  --dind / --dind-allowed / --privileged-allowed / --rootless / --egress
+  --public / --ok-public / --tls-cert <file> / --tls-key <file>
+  --vm-memory / --vm-cpus / --vm-shm-size / --apple-low-ports
+                         Apple container only.
+
+EXAMPLES:
+  %s express --select 'go+vscode-ext' --variant codeserver --port 12000 --expose 8080 --env FOO=1
+  %s express --variant base -- make test
+  %s express --dryrun
+
+See docs/BOOTH_RUN.md.
+`, s, s, s, s, s, s, s, s)
 }
 
 // ---------------------------------------------------------------------------
@@ -764,6 +863,8 @@ func dispatchHelp(args []string, version string) {
 		switch a {
 		case "run":
 			showHelpRun(version)
+		case "express":
+			showHelpExpress()
 		case "list":
 			showHelpList()
 		case "start":

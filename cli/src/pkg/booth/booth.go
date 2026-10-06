@@ -709,6 +709,9 @@ func PrepareCommonArgs(ctx appctx.AppContext) appctx.AppContext {
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.project="+ctx.ProjectName()))
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.variant="+ctx.Variant()))
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.code-path="+codePath))
+	if ctx.ExplicitBoothDir() != "" {
+		builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.booth-dir="+ctx.ExplicitBoothDir()))
+	}
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.created-at="+createdAt))
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", "cb.version="+ctx.CbVersion()))
 	builder.CommonArgs.Append(ilist.NewList[string]("--label", fmt.Sprintf("cb.keep-alive=%t", ctx.KeepAlive())))
@@ -970,10 +973,15 @@ func appleWrapperCopy(codePath, wrapperPath string) (string, error) {
 }
 
 func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
-	if codePath == "" {
+	hostPath := ""
+	if builder.BoothDir != "" {
+		hostPath = builder.BoothDir
+	} else if codePath != "" {
+		hostPath = filepath.Join(codePath, ".booth")
+	}
+	if hostPath == "" {
 		return
 	}
-	hostPath := filepath.Join(codePath, ".booth")
 	info, err := os.Stat(hostPath)
 	if err != nil || !info.IsDir() {
 		return
@@ -987,14 +995,18 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 	}
 
 	// Ensure cache files/dirs declared in config.toml exist in .booth/cache/.
-	ensureCacheFromConfig(filepath.Join(codePath, ".booth"))
+	ensureCacheFromConfig(hostPath)
 
 	// Mount .booth/cache/ contents into the container based on directory structure.
 	cachePath := filepath.Join(hostPath, "cache")
 	if info, err := os.Stat(cachePath); err == nil && info.IsDir() {
-		if err := validateCacheGitignore(codePath, cachePath); err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-			os.Exit(1)
+		// An explicit booth dir is outside the project, so the project's gitignore
+		// does not apply to it.
+		if builder.BoothDir == "" {
+			if err := validateCacheGitignore(codePath, cachePath); err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
 		}
 		mounts, protected := collectCacheMounts(cachePath)
 		if len(protected) > 0 {
@@ -1007,7 +1019,7 @@ func addReadOnlyBoothDir(builder *appctx.AppContextBuilder, codePath string) {
 	}
 
 	// Ensure shared files/dirs declared in config.toml exist in .booth/shared/.
-	ensureSharedFromConfig(filepath.Join(codePath, ".booth"))
+	ensureSharedFromConfig(hostPath)
 
 	// Mount .booth/shared/ contents (git-friendly team state). Same layout rules
 	// as cache, but intentionally NOT gitignored — live edits land in the repo.
@@ -1242,11 +1254,11 @@ func (e *IdleShutdownError) Error() string {
 
 // idleShutdownMarkerPath returns the host path of the idle shutdown marker file.
 func idleShutdownMarkerPath(ctx appctx.AppContext) string {
-	codePath := ctx.Code()
-	if codePath == "" {
+	boothDir := hostBoothDir(ctx)
+	if boothDir == "" {
 		return ""
 	}
-	return filepath.Join(codePath, ".booth", ".tmp", ".idle-shutdown")
+	return filepath.Join(boothDir, ".tmp", ".idle-shutdown")
 }
 
 // checkAndCleanIdleShutdownMarker checks if the booth was shut down due to idle timeout.
@@ -1265,11 +1277,11 @@ func checkAndCleanIdleShutdownMarker(ctx appctx.AppContext) bool {
 
 // restartMarkerPath returns the host path of the restart marker file.
 func restartMarkerPath(ctx appctx.AppContext) string {
-	codePath := ctx.Code()
-	if codePath == "" {
+	boothDir := hostBoothDir(ctx)
+	if boothDir == "" {
 		return ""
 	}
-	return filepath.Join(codePath, ".booth", ".tmp", ".restart-requested")
+	return filepath.Join(boothDir, ".tmp", ".restart-requested")
 }
 
 // checkAndCleanRestartMarker checks if a restart was requested from inside the container.

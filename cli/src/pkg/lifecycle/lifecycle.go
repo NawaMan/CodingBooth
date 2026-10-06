@@ -42,11 +42,14 @@ func resolveLifecycleEngines(codeDir string) []string {
 var appleServiceRunning = docker.AppleServiceRunning
 
 type managedContainer struct {
-	Name      string
-	Engine    string // engine that owns the container ("docker", "podman" or "apple")
-	State     string
-	Variant   string
-	CodePath  string
+	Name     string
+	Engine   string // engine that owns the container ("docker", "podman" or "apple")
+	State    string
+	Variant  string
+	CodePath string
+	// BoothDir is cb.booth-dir: the .booth directory an express booth mounts.
+	// Empty means <CodePath>/.booth.
+	BoothDir  string
 	CreatedAt string
 	KeepAlive bool
 	Daemon    bool
@@ -288,7 +291,7 @@ func Stop(args []string, stderr io.Writer) error {
 		return commandExit(1, err.Error())
 	}
 	engine := target.Engine
-	lifecyclelog.Append(target.CodePath, target.Name, "stop-requested", "by=host-cli", "force="+strconv.FormatBool(*force))
+	lifecyclelog.AppendAt(target.hostBoothDir(), target.Name, "stop-requested", "by=host-cli", "force="+strconv.FormatBool(*force))
 
 	if *force {
 		if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "kill", ilist.NewList(ilist.NewList(target.Name))); err != nil {
@@ -362,7 +365,7 @@ func Restart(args []string, stderr io.Writer) error {
 		return commandExit(1, err.Error())
 	}
 	engine := target.Engine
-	lifecyclelog.Append(target.CodePath, target.Name, "restart-requested", "by=host-cli")
+	lifecyclelog.AppendAt(target.hostBoothDir(), target.Name, "restart-requested", "by=host-cli")
 
 	if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "restart", ilist.NewList(
 		ilist.NewList(restartTimeoutFlag(engine), strconv.Itoa(*timeout)),
@@ -407,7 +410,7 @@ func Remove(args []string, stderr io.Writer) error {
 			return commandExit(1, fmt.Sprintf("Error: booth %q is running. Stop it first or use --force.", targetName))
 		}
 
-		lifecyclelog.Append(container.CodePath, targetName, "remove-requested", "by=host-cli", "state="+container.State)
+		lifecyclelog.AppendAt(container.hostBoothDir(), targetName, "remove-requested", "by=host-cli", "state="+container.State)
 
 		// Stop any sidecar containers (DinD, egress) belonging to this booth
 		stopSidecars(targetName, docker.DockerFlags{Silent: true, Engine: engine})
@@ -628,6 +631,7 @@ func inspectManagedContainer(name string, flags docker.DockerFlags) (managedCont
 		State:     data.State.Status,
 		Variant:   labels["cb.variant"],
 		CodePath:  labels["cb.code-path"],
+		BoothDir:  labels["cb.booth-dir"],
 		CreatedAt: createdAt,
 		KeepAlive: strings.EqualFold(labels["cb.keep-alive"], "true"),
 		Daemon:    strings.EqualFold(labels["cb.daemon"], "true"),
@@ -637,6 +641,19 @@ func inspectManagedContainer(name string, flags docker.DockerFlags) (managedCont
 		ImageID:       data.Image,
 		ImageRef:      data.Config.Image,
 	}, nil
+}
+
+// hostBoothDir is the .booth directory this container reads. Express records
+// it as cb.booth-dir so later stop, restart, message, and expose calls do not
+// write the project tree. Every other booth uses <code>/.booth.
+func (container managedContainer) hostBoothDir() string {
+	if container.BoothDir != "" {
+		return container.BoothDir
+	}
+	if container.CodePath == "" {
+		return ""
+	}
+	return filepath.Join(container.CodePath, ".booth")
 }
 
 // hostPortFromInspect returns the host port mapped to the booth UI container

@@ -118,12 +118,12 @@ func WritePortManifest(ctx appctx.AppContext) appctx.AppContext {
 		return ctx
 	}
 
-	codePath := ctx.Code()
-	if codePath == "" {
+	boothDir := hostBoothDir(ctx)
+	if boothDir == "" {
 		return ctx
 	}
 
-	tmpDir := filepath.Join(codePath, ".booth", ".tmp")
+	tmpDir := filepath.Join(boothDir, ".tmp")
 	if info, err := os.Stat(tmpDir); err != nil || !info.IsDir() {
 		// PrepareBoothTmp did not create .tmp/ (no .booth/ dir): nothing to write.
 		return ctx

@@ -97,10 +97,11 @@ func NormalizeDockerFile(ctx appctx.AppContext) string {
 		return compileBoothfile(ctx, ctx.Boothfile())
 	}
 
-	// Auto-detect: check code path for Boothfile first, then Dockerfile
-	if ctx.Code() != "" && isDir(ctx.Code()) {
+	// Auto-detect: Boothfile first, then Dockerfile, inside the booth dir.
+	// --booth-dir points this at express's spec, not the project .booth.
+	if boothDir := hostBoothDir(ctx); boothDir != "" && isDir(boothDir) {
 		// Check for Boothfile first (higher precedence)
-		boothfilePath := filepath.Join(ctx.Code(), ".booth", "Boothfile")
+		boothfilePath := filepath.Join(boothDir, "Boothfile")
 		if isFile(boothfilePath) {
 			if ctx.Dockerfile() != "" {
 				// Both exist and --dockerfile wasn't explicit - warn
@@ -110,7 +111,7 @@ func NormalizeDockerFile(ctx appctx.AppContext) string {
 		}
 
 		// Fall back to Dockerfile
-		dockerfile := filepath.Join(ctx.Code(), ".booth", "Dockerfile")
+		dockerfile := filepath.Join(boothDir, "Dockerfile")
 		if isFile(dockerfile) {
 			return dockerfile
 		}
@@ -157,7 +158,7 @@ func compileBoothfile(ctx appctx.AppContext, boothfilePath string) string {
 	}
 
 	// Compile with custom setups directory if it exists
-	customSetupsDir := filepath.Join(ctx.Code(), ".booth", "setups")
+	customSetupsDir := filepath.Join(hostBoothDir(ctx), "setups")
 	hasCustomSetups := isDir(customSetupsDir)
 
 	// Scan for custom scripts
@@ -428,4 +429,3 @@ func isDir(path string) bool {
 	}
 	return info.IsDir()
 }
-

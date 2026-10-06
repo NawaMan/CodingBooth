@@ -63,7 +63,11 @@ func (ctx AppContext) Dryrun() bool       { return ctx.dryrun }
 func (ctx AppContext) Verbose() bool      { return ctx.verbose }
 func (ctx AppContext) ConfigFile() string { return ctx.configFile }
 func (ctx AppContext) Code() string       { return ctx.code }
-func (ctx AppContext) Version() string    { return ctx.version }
+
+// ExplicitBoothDir is the .booth directory set with --booth-dir.
+// Empty means callers use <code>/.booth.
+func (ctx AppContext) ExplicitBoothDir() string { return ctx.values.BoothDir }
+func (ctx AppContext) Version() string          { return ctx.version }
 
 // taken from the script runtime
 func (ctx AppContext) ScriptName() string { return ctx.values.ScriptName }

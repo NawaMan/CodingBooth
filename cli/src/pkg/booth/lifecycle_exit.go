@@ -35,6 +35,10 @@ func logContainerExit(ctx appctx.AppContext, runErr error, restartRequested bool
 	if name == "" {
 		name = ctx.ProjectName()
 	}
+	if dir := ctx.ExplicitBoothDir(); dir != "" {
+		lifecyclelog.AppendAt(dir, name, "exited", containerExitDetails(runErr, restartRequested, idleShutdown)...)
+		return
+	}
 	lifecyclelog.Append(ctx.Code(), name, "exited", containerExitDetails(runErr, restartRequested, idleShutdown)...)
 }
 

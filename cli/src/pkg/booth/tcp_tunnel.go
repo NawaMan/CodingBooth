@@ -52,12 +52,12 @@ func tunnelBindAddr(public bool) string {
 // every print below needs it: without it, one of this goroutine's lines can land wherever
 // the container's own concurrent output left the cursor, not at the left margin.
 func StartTcpTunnelWatcher(ctx context.Context, appCtx appctx.AppContext, containerName string, foreground bool) {
-	codePath := appCtx.Code()
-	if codePath == "" {
+	boothDir := hostBoothDir(appCtx)
+	if boothDir == "" {
 		return
 	}
 
-	tunnelDir := filepath.Join(codePath, ".booth", ".tmp", "tcp-tunnels")
+	tunnelDir := filepath.Join(boothDir, ".tmp", "tcp-tunnels")
 	verbose := appCtx.Verbose()
 	engine := appCtx.Engine()
 

@@ -37,6 +37,11 @@ func Path(codePath string) string {
 	return filepath.Join(codePath, ".booth", ".tmp", FileName)
 }
 
+// PathAt is the log file inside an explicit .booth directory.
+func PathAt(boothDir string) string {
+	return filepath.Join(boothDir, ".tmp", FileName)
+}
+
 // Keep reports whether an entry of .booth/.tmp/ survives the start/exit wipe.
 func Keep(entryName string) bool {
 	return entryName == FileName
@@ -57,14 +62,23 @@ func Append(codePath string, boothName string, event string, details ...string) 
 	if codePath == "" {
 		return
 	}
-	boothDir := filepath.Join(codePath, ".booth")
+	AppendAt(filepath.Join(codePath, ".booth"), boothName, event, details...)
+}
+
+// AppendAt adds one line to the log inside boothDir. It never creates boothDir:
+// a missing directory means this run has no .booth mount, and making one would
+// change what the next run mounts.
+func AppendAt(boothDir string, boothName string, event string, details ...string) {
+	if boothDir == "" {
+		return
+	}
 	if info, err := os.Stat(boothDir); err != nil || !info.IsDir() {
 		return
 	}
 	if err := os.MkdirAll(filepath.Join(boothDir, ".tmp"), 0755); err != nil {
 		return
 	}
-	file, err := os.OpenFile(Path(codePath), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(PathAt(boothDir), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		return
 	}
@@ -76,7 +90,15 @@ func Append(codePath string, boothName string, event string, details ...string) 
 // line boundary so the first kept line is whole. Run at booth start, before the
 // booth's own lines arrive.
 func Trim(codePath string) {
-	path := Path(codePath)
+	if codePath == "" {
+		return
+	}
+	TrimAt(filepath.Join(codePath, ".booth"))
+}
+
+// TrimAt is Trim for an explicit .booth directory.
+func TrimAt(boothDir string) {
+	path := PathAt(boothDir)
 	info, err := os.Stat(path)
 	if err != nil || info.Size() <= maxSize {
 		return

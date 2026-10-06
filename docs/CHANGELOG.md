@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth express` runs from arguments and leaves the project's `.booth` unread.**
+  `--select` is compiled the same way `booth config` compiles it, into a directory express
+  owns (a temp dir, or the user cache with `--daemon` or `--keep-alive`), and that directory
+  is mounted at `/home/coder/code/.booth`. Profiles, `BOOTH_PROFILES`, and `.booth/.env` in
+  the project are ignored. See [Express](BOOTH_RUN.md#express).
 - **The Popular list is bigger, and everything on it is settled.** 50 more templates are marked
   popular (`primary`), so `booth config` and `booth template list` show them without `--full`:
   the desktops and browsers the variants ship (`xfce`, `kde`, `lxqt`, `wayland`, `firefox`,

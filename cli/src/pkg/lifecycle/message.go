@@ -14,11 +14,20 @@ import (
 	"regexp"
 	"strings"
 	"time"
-
 )
 
 // User-supplied --id values become filenames; restrict to a safe set.
 var safeMessageIDPattern = regexp.MustCompile(`^[A-Za-z0-9._-]+$`)
+
+// messageDir is <boothDir>/.tmp/messages. Express booths keep that directory
+// in the spec they mount, not in the project tree.
+func messageDir(target managedContainer) string {
+	boothDir := target.hostBoothDir()
+	if boothDir == "" {
+		return ""
+	}
+	return filepath.Join(boothDir, ".tmp", "messages")
+}
 
 // boothMessage represents a message sent to a booth user.
 type boothMessage struct {
@@ -26,7 +35,7 @@ type boothMessage struct {
 	Title   string   `json:"title"`
 	Body    string   `json:"body"`
 	Type    string   `json:"type"`              // "yes-no", "text", "ok", "choice", "password", "toast", "banner"
-	Options []string `json:"options,omitempty"`  // for "choice" type
+	Options []string `json:"options,omitempty"` // for "choice" type
 	Created string   `json:"created"`
 	Expires string   `json:"expires,omitempty"`
 }
@@ -121,10 +130,10 @@ func MessageSend(args []string, stdout io.Writer, stderr io.Writer) error {
 	}
 
 	// Write message file to .booth/.tmp/messages/
-	if target.CodePath == "" {
+	msgDir := messageDir(target)
+	if msgDir == "" {
 		return commandExit(1, "Error: booth has no code path; cannot write message file")
 	}
-	msgDir := filepath.Join(target.CodePath, ".booth", ".tmp", "messages")
 	if err := os.MkdirAll(msgDir, 0755); err != nil {
 		return commandExit(1, fmt.Sprintf("Error: failed to create message directory: %v", err))
 	}
@@ -189,7 +198,7 @@ func displayMessage(target managedContainer, msg boothMessage) (string, error) {
 
 // waitForResponse waits for a .response.json file to appear (written by the in-container extension).
 func waitForResponse(target managedContainer, msg boothMessage) (string, error) {
-	msgDir := filepath.Join(target.CodePath, ".booth", ".tmp", "messages")
+	msgDir := messageDir(target)
 	respFile := filepath.Join(msgDir, msg.ID+".response.json")
 
 	// Determine timeout
@@ -243,11 +252,10 @@ func MessageList(args []string, stdout io.Writer, stderr io.Writer) error {
 		return err
 	}
 
-	if target.CodePath == "" {
+	msgDir := messageDir(target)
+	if msgDir == "" {
 		return commandExit(1, "Error: booth has no code path")
 	}
-
-	msgDir := filepath.Join(target.CodePath, ".booth", ".tmp", "messages")
 	entries, err := os.ReadDir(msgDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -317,11 +325,11 @@ func MessageResponse(args []string, stdout io.Writer, stderr io.Writer) error {
 		return err
 	}
 
-	if target.CodePath == "" {
+	if messageDir(target) == "" {
 		return commandExit(1, "Error: booth has no code path")
 	}
 
-	respFile := filepath.Join(target.CodePath, ".booth", ".tmp", "messages", msgID+".response.json")
+	respFile := filepath.Join(messageDir(target), msgID+".response.json")
 	data, err := os.ReadFile(respFile)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -376,11 +384,10 @@ func MessageAdjust(args []string, stdout io.Writer, stderr io.Writer) error {
 	if err != nil {
 		return err
 	}
-	if target.CodePath == "" {
+	msgDir := messageDir(target)
+	if msgDir == "" {
 		return commandExit(1, "Error: booth has no code path")
 	}
-
-	msgDir := filepath.Join(target.CodePath, ".booth", ".tmp", "messages")
 	msgFile := filepath.Join(msgDir, msgID+".msg.json")
 
 	data, err := os.ReadFile(msgFile)
