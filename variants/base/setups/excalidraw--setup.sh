@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -34,7 +34,7 @@ HOME=/root
 
 # ---- defaults / args ----
 EXCALIDRAW_PORT="${1:-20400}"
-EXCALIDRAW_VERSION="v0.18.0"
+EXCALIDRAW_VERSION="v0.18.1"
 EXCALIDRAW_DIR="/opt/excalidraw"
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
@@ -86,6 +86,12 @@ for attempt in 1 2 3; do
 done
 
 cd "$BUILD_DIR"
+
+# The 0.18.x releases declare "node": "18.0.0 - 22.x.x" and yarn refuses any
+# other Node, but they build fine on 24 (the nodejs template's default) and
+# upstream master already says ">=18". A .yarnrc line, not --ignore-engines:
+# build:app:docker runs a nested `yarn --cwd`, which does not inherit the flag.
+echo "ignore-engines true" >> .yarnrc
 
 echo "• Installing dependencies ..."
 yarn --network-timeout 600000 --frozen-lockfile || yarn --network-timeout 600000
