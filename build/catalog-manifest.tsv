@@ -198,7 +198,7 @@ setup	mongodb	1.0.0	1be4a85e44d930d72d5f025e91525741b0d61f060395e5c169b40db86e13
 setup	mongodb-start	0.1.0	5b49cf16ade27cdceb45f8ef1206e8c977a997a1af65c344be6bc006d839b657	variants/base/setups/mongodb-start--setup.sh
 setup	mvn	1.0.0	54c7e0c871c9316d5990597d737e695d65e6e1f24002d6c5cd2e5bbbbe424dec	variants/base/setups/mvn--setup.sh
 setup	mysql	1.0.0	60e0564af91ddf71101cf8022bb22c1c7979d1bf9dc60078aeaccd697ae04b92	variants/base/setups/mysql--setup.sh
-setup	n8n	0.1.0	8ccc98726d33176822d8db7e9085996980b597f39af91f5875d59cda6c4ca6fc	variants/base/setups/n8n--setup.sh
+setup	n8n	0.1.0	684e56498bd13f222ac267cf818d013f9eea765fefa8364cf836add6e7ae740c	variants/base/setups/n8n--setup.sh
 setup	nbgrader	1.0.0	07ab891bc09aae91e162808951150e06564731497b8f8affc3c018f1581ad218	variants/base/setups/nbgrader--setup.sh
 setup	neovim	1.0.0	bf81805049e5766eff3c6e6a2f2dde4658fa127d2257d1d0d383892fe74cc1b9	variants/base/setups/neovim--setup.sh
 setup	network-whitelist	1.0.0	3d02b83cba6adfce82951ef427f109d42eed6c3979f577c210f7c02ae32a1742	variants/base/setups/network-whitelist--setup.sh

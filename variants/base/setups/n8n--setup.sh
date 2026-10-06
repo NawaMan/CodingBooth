@@ -325,7 +325,7 @@ EOF
 echo "Starting the n8n sandbox service ${VERSION} on http://127.0.0.1:${PORT} ..."
 docker compose -f "$DIR/compose.yml" up -d
 for _ in $(seq 120); do
-  if curl -fsS "http://127.0.0.1:${PORT}/healthz" >/dev/null 2>&1; then
+  if curl -fsS --retry 0 "http://127.0.0.1:${PORT}/healthz" >/dev/null 2>&1; then
     echo "n8n sandbox service is ready."
     exit 0
   fi
@@ -390,7 +390,7 @@ EOF
 echo "Starting SearXNG ${VERSION} on http://127.0.0.1:${PORT} ..."
 docker compose -f "$DIR/compose.yml" up -d
 for _ in $(seq 90); do
-  if curl -fsS "http://127.0.0.1:${PORT}/healthz" >/dev/null 2>&1; then
+  if curl -fsS --retry 0 "http://127.0.0.1:${PORT}/healthz" >/dev/null 2>&1; then
     echo "SearXNG is ready."
     exit 0
   fi
