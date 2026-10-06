@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "PhpStorm"
 display-disc = "JetBrains PhpStorm IDE for PHP development"
 display-detail = """Installs JetBrains PhpStorm IDE for PHP development with framework support. Requires \

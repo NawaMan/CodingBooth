@@ -2,6 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
+# cb-version: 0.1.0
 
 # gruppled-cursors--setup.sh — Gruppled Cursors by Craig Laparo (https://www.xfce-look.org/p/999974),
 # prebuilt White and Black variants installed system-wide. It does not change the

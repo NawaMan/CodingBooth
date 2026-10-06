@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Conda (Miniforge)"
 display-disc = "Conda package manager with Miniforge"
 display-detail = "Installs Miniforge-based Conda for managing Python environments, data science packages, and cross-platform dependencies."

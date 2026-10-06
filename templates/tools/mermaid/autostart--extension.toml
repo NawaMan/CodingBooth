@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Mermaid Auto-Start"
 display-disc = "Auto-start Mermaid Live Editor on container boot"
 display-order = 2

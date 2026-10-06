@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Android Emulator"
 display-disc = "Emulator binary plus an AOSP system image, so an APK can be run and not merely built"
 display-detail = """Adds the Android emulator and a system image, turning a build-only booth into one that can \

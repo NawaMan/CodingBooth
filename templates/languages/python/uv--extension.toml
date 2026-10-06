@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "uv"
 display-disc = "UV fast Python package manager"
 display-detail = """Installs the packages listed in your project's .booth/requirements.txt with `uv pip install`, \

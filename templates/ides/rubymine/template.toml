@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "RubyMine"
 display-disc = "JetBrains RubyMine IDE for Ruby development"
 display-detail = """Installs JetBrains RubyMine IDE for Ruby and Rails development. Requires a desktop \

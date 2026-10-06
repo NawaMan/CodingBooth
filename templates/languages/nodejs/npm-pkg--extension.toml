@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "npm Packages"
 display-disc = "Install global npm packages"
 display-detail = """Installs global npm packages (`npm install -g`); their binaries land on PATH. Scoped packages keep \

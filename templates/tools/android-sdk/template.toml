@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Android SDK"
 display-disc = "Android command-line SDK: sdkmanager, adb, platform and build tools"
 display-detail = """Installs the Android SDK command-line tools under /opt/android-sdk and, through them, \

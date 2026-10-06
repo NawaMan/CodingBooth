@@ -1,4 +1,5 @@
 // Booth keyboard capture — shared "Full screen" control for browser UIs.
+// cb-version: 0.1.0
 //
 // A booth's browser UI runs in an ordinary tab, so shortcuts the browser
 // reserves for itself (Ctrl+W, Ctrl+T, Ctrl+Tab, Ctrl+N, ...) never reach the

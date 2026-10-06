@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Elm VS Code Extension"
 display-disc = "Elm language support extension for VS Code (Elm LS)"
 display-order = 1

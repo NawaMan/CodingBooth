@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Go protoc plugins"
 display-disc = "protoc-gen-go and protoc-gen-go-grpc"
 display-order = 10

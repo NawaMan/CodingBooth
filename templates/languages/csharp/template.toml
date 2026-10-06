@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "C#"
 display-disc = "C# programming language with .NET SDK"
 display-detail = "Installs the .NET SDK (dotnet) using the official installer with configurable channel version. Includes the dotnet CLI, C# compiler, and NuGet package manager. Telemetry is disabled by default in the container environment."

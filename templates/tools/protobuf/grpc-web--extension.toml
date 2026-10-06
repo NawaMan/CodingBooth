@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "gRPC-Web protoc plugin"
 display-disc = "protoc-gen-grpc-web for browser gRPC client codegen"
 display-detail = """Installs protoc-gen-grpc-web as a standalone protoc plugin on PATH, downloaded as a \

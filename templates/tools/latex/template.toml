@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "LaTeX"
 display-disc = "TeX Live LaTeX toolchain with latexmk"
 display-detail = """Installs TeX Live from Ubuntu's packages (TeX Live 2025 on 26.04) plus latexmk, so \

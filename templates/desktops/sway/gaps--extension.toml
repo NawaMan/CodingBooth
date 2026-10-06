@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name   = "Window Gaps"
 display-disc   = "A small gap between sway windows so the wallpaper shows at their edges"
 display-detail = """\

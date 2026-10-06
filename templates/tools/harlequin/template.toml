@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Harlequin"
 display-disc = "The SQL IDE for your terminal"
 display-detail = "Installs Harlequin, a terminal-based SQL IDE with autocomplete, a results viewer, and multiple tabs. Ships with SQLite and DuckDB support; Postgres and MySQL need an extra adapter package, noted in the install summary."

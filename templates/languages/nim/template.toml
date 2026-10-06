@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Nim"
 display-disc = "Statically-typed compiled systems language"
 display-detail = "Installs the Nim compiler (nim, nimble, nimsuggest) under /opt/nim-stable. Tarball release from nim-lang.org."

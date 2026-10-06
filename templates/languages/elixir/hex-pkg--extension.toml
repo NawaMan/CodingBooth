@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "hex Packages"
 display-disc = "Install Elixir/Erlang packages globally via mix"
 display-detail = """Installs Mix archives from hex.pm with `mix archive.install`, giving you global mix tasks. Only \

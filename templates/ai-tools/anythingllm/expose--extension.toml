@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Expose AnythingLLM Port"
 display-disc = "Expose the AnythingLLM web UI port to the host network"
 display-order = 1

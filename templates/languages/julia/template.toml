@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Julia"
 display-disc = "Julia for high-performance scientific and numerical computing"
 display-detail = "Sets up a Julia development environment with configurable version. Ideal for scientific computing, data science, and numerical analysis."

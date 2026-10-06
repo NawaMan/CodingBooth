@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Java Notebook Kernel"
 display-disc = "Java Jupyter notebook kernel (IJava)"
 display-order = 5

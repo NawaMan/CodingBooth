@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Terraform"
 display-disc = "HashiCorp Terraform CLI for infrastructure as code"
 display-detail = "Installs Terraform CLI for defining, provisioning, and managing cloud infrastructure across providers."

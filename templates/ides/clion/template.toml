@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "CLion"
 display-disc = "JetBrains CLion IDE for C and C++ development"
 display-detail = """Installs JetBrains CLion IDE for C and C++ development with CMake integration. \

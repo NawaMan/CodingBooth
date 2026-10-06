@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Google Chrome"
 display-disc = "Google Chrome browser for web testing (DEB repo)"
 display-detail = "Installs Google Chrome browser from the official DEB repository. Useful for web development testing in desktop variants."

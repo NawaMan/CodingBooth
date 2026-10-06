@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "IntelliJ JDK Registration"
 display-disc = "Register the image's JDKs as SDKs in IntelliJ"
 display-detail = """Writes a jdk.table.xml naming every JDK in the image. A JetBrains IDE \

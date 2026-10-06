@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Redis"
 display-disc = "Redis in-memory store with persistent volume"
 display-detail = "Installs Redis in-memory data store with a persistent Docker volume for data storage across container restarts."

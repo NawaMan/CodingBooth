@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "sqluv"
 display-disc = "Terminal UI for MySQL/PostgreSQL/SQLite3/SQL Server and CSV/TSV/LTSV"
 display-detail = "Installs sqluv, a simple terminal UI for querying RDBMS (MySQL, PostgreSQL, SQLite3, SQL Server) as well as local, HTTPS, or S3 CSV/TSV/LTSV files with SQL. Connections are entered interactively and saved for later launches."

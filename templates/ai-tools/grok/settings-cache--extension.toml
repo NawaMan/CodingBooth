@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Settings Cache"
 display-disc = "Persist Grok Build settings and sessions across booth restarts"
 display-order = 91

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Bun"
 display-disc = "Bun fast JavaScript runtime and bundler"
 display-detail = "Installs Bun, a fast all-in-one JavaScript runtime with built-in bundler, transpiler, and package manager."

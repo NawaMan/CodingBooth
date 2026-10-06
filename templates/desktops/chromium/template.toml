@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Chromium"
 display-disc = "Chromium browser for web testing (no snap)"
 display-detail = "Installs the Chromium browser without snap packaging. Useful for web development testing in desktop variants."

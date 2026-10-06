@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Pulumi"
 display-disc = "Pulumi CLI for infrastructure as code"
 display-detail = "Installs Pulumi CLI for defining, deploying, and managing cloud infrastructure using general-purpose programming languages."

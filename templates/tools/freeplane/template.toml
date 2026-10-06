@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Freeplane"
 display-disc = "Freeplane mind mapping tool (requires desktop variant)"
 display-detail = "Installs Freeplane mind mapping and knowledge management tool. Requires a desktop variant and Java (installed automatically)."

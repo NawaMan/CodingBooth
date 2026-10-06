@@ -1,4 +1,5 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+cb-version = "1.0.0"
 display-name = "Haskell Notebook Kernel"
 display-disc = "Haskell Jupyter notebook kernel (IHaskell)"
 display-order = 5

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Oh My Pi Plugins"
 display-disc = "Mount host Oh My Pi plugins"
 display-detail = "Seeds host-installed Oh My Pi plugins (`~/.omp/plugins`, including package manifest and lockfile when present). Deliberately does **not** seed sessions, logs, natives, or the full `~/.omp` tree. Opt-in: plugin trees with node_modules can be large and are not credentials."

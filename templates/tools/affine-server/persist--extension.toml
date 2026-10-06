@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "AFFiNE Persist Data"
 display-disc = "Keep AFFiNE data across booth runs via .booth/cache"
 display-detail = """Bind-mounts `~/.affine` from `.booth/cache/` (CodingBooth cache-dirs, gitignored, this machine only). start-affine-server restores the Postgres dump from that tree; stop-affine-server (and SIGTERM) dumps it back so the next booth sees your docs and admin user. Select this extension — setting AFFINE_SERVER_DATA=persist alone does not create the cache bind."""

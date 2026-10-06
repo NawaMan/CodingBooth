@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "mix deps.get"
 display-disc = "Pre-download Elixir/Mix dependencies into the image"
 display-detail = """Installs your project's dependencies from mix.exs with `mix deps.get` into the image's cache \

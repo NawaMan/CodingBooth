@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Accept Edits"
 display-disc = "Auto-accept all Claude Code operations (safe inside a booth)"
 display-order = 10

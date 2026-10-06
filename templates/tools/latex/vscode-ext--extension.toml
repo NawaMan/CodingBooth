@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "LaTeX VS Code Extension"
 display-disc = "LaTeX Workshop: build on save, PDF preview, SyncTeX"
 display-order = 1

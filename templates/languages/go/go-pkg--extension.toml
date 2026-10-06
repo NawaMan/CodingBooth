@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "go Packages"
 display-disc = "Install Go packages globally via go install"
 display-detail = """Installs Go command-line tools with `go install` into coder's GOPATH bin, which the Go profile \

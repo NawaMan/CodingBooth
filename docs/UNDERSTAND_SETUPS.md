@@ -199,3 +199,4 @@ setups — a copy shadows the real script and drifts from it.
 | look up a template key | [AGENT_TEMPLATE.md](AGENT_TEMPLATE.md) |
 | write a recipe | [AGENT_RECIPE.md](AGENT_RECIPE.md) |
 | customise one project | [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md) |
+| version a catalog item (`cb-version`, manifest, release check) | [CATALOG_VERSIONING.md](CATALOG_VERSIONING.md) *(design)* |

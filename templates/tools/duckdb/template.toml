@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "DuckDB"
 display-disc = "In-process analytical SQL database"
 display-detail = "Installs the DuckDB CLI, an embeddable column-oriented analytical database. Pairs well with python, r, and notebook for data exploration."

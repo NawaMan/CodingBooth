@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "CLI History"
 display-disc = "Persist SQLite CLI history across sessions"
 display-order = 20

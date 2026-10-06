@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Kotlin Notebook Kernel"
 display-disc = "Kotlin Jupyter notebook kernel"
 display-order = 5

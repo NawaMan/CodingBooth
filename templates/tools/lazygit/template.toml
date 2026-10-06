@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Lazygit"
 primary = true
 display-disc = "Simple terminal UI for git commands"

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Posting"
 display-disc = "HTTP client for your terminal"
 display-detail = "Installs Posting, a keyboard-centric terminal HTTP client (a TUI alternative to Postman/Insomnia) with collections saved as YAML in your project, environments and variables, autocompletion, and OpenAPI import."

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "AnythingLLM"
 display-disc = "Self-hosted RAG chat UI for local and cloud LLMs"
 display-detail = """Installs AnythingLLM by copying the official \

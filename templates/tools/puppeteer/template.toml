@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Puppeteer"
 display-disc = "Headless Chrome automation for Node.js"
 display-detail = "Installs the Puppeteer npm package and pre-downloads Chrome for Testing into a shared cache at /opt/puppeteer (PUPPETEER_CACHE_DIR). Installs Chromium system libraries for headless runs. Requires Node.js. Prefer Playwright when you need multi-browser or multi-language support."

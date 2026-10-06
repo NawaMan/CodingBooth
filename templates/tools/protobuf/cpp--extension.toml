@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "C++ gRPC protoc plugin"
 display-disc = "grpc_cpp_plugin for gRPC service codegen"
 display-detail = """Installs grpc_cpp_plugin via apt (protobuf-compiler-grpc). Plain C++ message codegen \

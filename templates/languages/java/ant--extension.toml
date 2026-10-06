@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Ant"
 display-disc = "Apache Ant build tool for Java projects"
 display-detail = """Installs Ant itself, since the Java template ships no default build tool -- pick this, \

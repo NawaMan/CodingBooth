@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Apache HTTP Server"
 display-disc = "Battle-tested web server (apache2)"
 display-detail = "Installs the Apache HTTP Server (apache2). The daemon auto-starts on container boot. Add the php extension (`apache+php`) to enable mod_php so .php files are served from /var/www/html."

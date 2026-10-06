@@ -1,4 +1,5 @@
 # NOTE: This template has not been tested -- no time (sorry). Please report success or failure. :-p
+cb-version = "1.0.0"
 display-name = "Zsh Default"
 display-disc = "Set Zsh as the default login shell"
 auto-select = false

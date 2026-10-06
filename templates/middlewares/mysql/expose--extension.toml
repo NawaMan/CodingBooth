@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Expose MySQL Port"
 display-disc = "Publish MySQL (container port 3306) to the host"
 display-detail = "MySQL already auto-starts on container boot, but it only listens inside the booth. This publishes it so you can point the mysql client, a GUI, or an app on the host at it. mysql--setup.sh takes no port argument, so the server always listens on 3306 inside the container — MYSQL_PORT is the HOST port mapped to it. Change it if the host already runs a MySQL on 3306."

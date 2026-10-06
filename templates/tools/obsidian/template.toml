@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Obsidian"
 display-disc = "Obsidian knowledge base and note-taking (requires desktop variant)"
 display-detail = """Installs Obsidian, a powerful knowledge base and note-taking app built on local Markdown files. \

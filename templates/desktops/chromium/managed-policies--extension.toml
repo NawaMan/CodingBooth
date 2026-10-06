@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Managed Policies"
 display-disc = "Team Chromium enterprise policies at build time (not cache / not shared)"
 display-detail = """Runs setup chrome-managed-policies (same script as Google Chrome; writes Chromium managed path when chromium is installed). Not .booth/cache and not live shared."""

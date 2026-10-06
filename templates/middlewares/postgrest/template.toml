@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "PostgREST [experimental]"
 display-disc = "Experimental — REST API over a PostgreSQL database"
 display-detail = """EXPERIMENTAL — new, not yet battle-tested; expect rough edges. \

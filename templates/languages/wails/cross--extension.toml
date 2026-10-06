@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Wails Cross-Compilation"
 display-disc = "Docker-in-Docker so `wails3 build GOOS=darwin` (and other-arch Linux) works"
 display-detail = """Wails v3 can target every desktop OS from Linux, but not all of those targets are \

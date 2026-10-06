@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "jbang Warm Cache"
 display-disc = "Pre-warm the jbang dependency cache at build time"
 display-detail = "jbang ships with the JDK setup, but resolves its dependencies on first use. Running a throwaway script at build time moves that download into the image, so the first real jbang run (or Java notebook cell) does not stall on the network."

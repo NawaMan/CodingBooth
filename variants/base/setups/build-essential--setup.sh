@@ -2,6 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
+# cb-version: 1.0.0
 #
 # Installs Ubuntu's build-essential meta-package (gcc, g++, make, libc-dev,
 # dpkg-dev) plus pkg-config. This is the minimal toolchain that lets pip / npm /

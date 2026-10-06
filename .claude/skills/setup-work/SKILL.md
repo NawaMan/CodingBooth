@@ -82,6 +82,12 @@ user's pin silently does nothing:
 2. `[params.<NAME>_VERSION] default` in `template.toml`,
 3. the `suggests` list — put the new version first, drop the oldest.
 
+**Every changed file also bumps its own `cb-version`** — the item's semver, not the tool's. A new
+default tool version is a **minor** bump; a removed or renamed flag or param (or reordered params)
+is **major**; a fix is **patch**. Each extension is versioned on its own. Then run
+`build/gen-catalog-manifest.sh`. The release refuses a file that changed without a bump; see
+`docs/CATALOG_VERSIONING.md`. `build/check-catalog-versions.sh --report` lists what is pending.
+
 A catalog-wide sweep of these pins is **`release-push` step 0b** — that skill is when to offer a
 bump; this section is how to apply one.
 
@@ -280,8 +286,8 @@ for "not applicable". Full helper reference — `skip-setup`, `cb-has-*`, `code-
 
 ### Script non-negotiables
 
-- Apache license header (copy verbatim from a sibling), then `set -Eeuo pipefail` and
-  `trap 'echo "❌ Error on line $LINENO"; exit 1' ERR`.
+- Apache license header (copy verbatim from a sibling), then `# cb-version: 0.1.0` on the next line,
+  then `set -Eeuo pipefail` and `trap 'echo "❌ Error on line $LINENO"; exit 1' ERR`.
 - Root check: `[[ $EUID -eq 0 ]] || { echo "❌ Run as root (sudo)"; exit 1; }`, then `HOME=/root`
   when anything writes to `$HOME` — build-time root is not the runtime user.
 - `usage()` with real examples when the script takes flags. Two arg styles exist and both are fine
@@ -314,6 +320,7 @@ Nothing registers the script: `variants/base/Dockerfile` copies the whole direct
 
 ```toml
 # templates/<category>/<name>/template.toml
+cb-version     = "0.1.0"
 display-name   = "Lazygit"
 display-disc   = "Simple terminal UI for git commands"
 display-detail = "Longer paragraph shown in the TUI detail pane."
@@ -426,6 +433,7 @@ tests/config/catalog/test86-all-setups-exist.sh              # every `setup <nam
 tests/config/catalog/test88-all-params-are-wired.sh          # every declared param is referenced
 tests/config/catalog/test90-web-servers-have-desktop-icon.sh # web servers register an icon
 tests/config/catalog/test92-arch-unsupported-is-declared.sh  # unsupported-arch carries a note
+tests/config/catalog/test94-catalog-manifest-is-current.sh   # every item has a cb-version; manifest current
 ```
 
 ### Run only what you touched
@@ -459,7 +467,8 @@ it alone unless the tool is genuinely a headline one.
 
 ## Done means
 
-The change, its tests passing, the guards passing, the CHANGELOG entry — **and a folder the user
+The change, its tests passing, the guards passing, `cb-version` bumped and the manifest regenerated,
+the CHANGELOG entry — **and a folder the user
 can open to see it work.** Report what you ran and what you skipped; "the complex test needs Docker
 and I did not run it" is a fine outcome to state, and not one to paper over.
 

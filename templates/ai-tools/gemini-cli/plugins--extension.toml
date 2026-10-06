@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Gemini CLI Extensions"
 display-disc = "Mount host Gemini CLI extensions"
 display-detail = "Seeds host-installed Gemini CLI extensions from `~/.gemini/extensions` when present. Opt-in — not credentials."

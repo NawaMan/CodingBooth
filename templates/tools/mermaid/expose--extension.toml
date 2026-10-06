@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Expose Mermaid Port"
 display-disc = "Expose Mermaid Live Editor port to host network"
 display-order = 1

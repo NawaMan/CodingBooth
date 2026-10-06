@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Node.js/TypeScript protoc plugin"
 display-disc = "protoc-gen-ts_proto for TypeScript message and gRPC codegen"
 display-detail = """Installs ts-proto globally, which registers protoc-gen-ts_proto on PATH, so plain \

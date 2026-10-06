@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "conda Packages"
 display-disc = "Install packages via conda"
 display-detail = """Installs packages with conda into the booth's Python environment. Reach for it when you need \

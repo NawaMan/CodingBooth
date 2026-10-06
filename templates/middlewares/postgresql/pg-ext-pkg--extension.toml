@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "PostgreSQL Extensions [experimental]"
 display-disc = "Experimental — enable PostgreSQL extensions (postgis, pgvector, pg_trgm, ...)"
 display-detail = """EXPERIMENTAL — new, not yet battle-tested; expect rough edges. \

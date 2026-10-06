@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Maven Local Repository"
 display-disc = "Mount host Maven repository cache (.m2)"
 display-detail = """Bind-mounts your host's ~/.m2 directory into the booth, so Maven and Gradle both reuse \

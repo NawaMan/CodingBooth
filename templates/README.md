@@ -485,6 +485,7 @@ come after the parent's order-50 line and before the IDEs at 60.
 | `languages/clojure`        | Clojure |
 | `languages/elixir`         | Elixir |
 | `languages/elm`            | Elm |
+| `languages/gleam`          | Gleam |
 | `languages/kotlin`         | Kotlin |
 | `languages/mojo`           | Mojo |
 | `languages/rescript`       | ReScript |
@@ -543,6 +544,7 @@ amd64 from arm64, which is a different question from "does this machine have KVM
 | `fpc/vscode-ext--extension`       | Free Pascal VS Code Extension |
 | `fsharp/vscode-ext--extension`    | F# VS Code Extension (Ionide) |
 | `gcc/vscode-ext--extension`       | GCC VS Code Extension         |
+| `gleam/vscode-ext--extension`     | Gleam VS Code Extension       |
 | `go/vscode-ext--extension`        | Go VS Code Extension          |
 | `haskell/vscode-ext--extension`   | Haskell VS Code Extension     |
 | `java/vscode-ext--extension`      | Java VS Code Extension        |
