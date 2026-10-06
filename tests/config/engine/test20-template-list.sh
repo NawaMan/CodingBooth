@@ -91,7 +91,11 @@ assert-contains "$tmpfile" "^  lazygit "             "list: lazygit is popular"
 assert-contains "$tmpfile" "^  neovim "              "list: neovim is popular"
 assert-contains "$tmpfile" "^Middlewares"            "list: Middlewares category (has sqlite)"
 assert-not-contains "$tmpfile" "^Browsers"           "list: Browsers is not a category"
-assert-not-contains "$tmpfile" "^Desktop"            "list: Desktop has no popular templates"
+assert-contains "$tmpfile" "^Desktop"                "list: Desktop has popular templates"
+assert-contains "$tmpfile" "^  xfce "                "list: xfce is popular"
+assert-contains "$tmpfile" "^  postgresql "          "list: postgresql is popular"
+assert-contains "$tmpfile" "^  zig "                 "list: zig is popular"
+assert-contains "$tmpfile" "^  make "                "list: make is popular"
 
 # Test 9: --full shows non-primary templates
 booth template list --full > "$tmpfile" 2>&1

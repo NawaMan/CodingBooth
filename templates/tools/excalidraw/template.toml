@@ -1,5 +1,6 @@
 cb-version = "1.0.0"
 display-name = "Excalidraw"
+primary = true
 display-disc = "Excalidraw collaborative whiteboard tool"
 display-detail = "Installs Excalidraw, a collaborative whiteboard tool for sketching diagrams and wireframes."
 display-order = 26

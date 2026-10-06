@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "1.0.0"
 display-name = "VM Shared Memory"
 display-disc = "Size of /dev/shm in the booth's VM — macOS / Apple container only"
 display-detail = """Sets the size of /dev/shm (`vm-shm-size` in config.toml, `--vm-shm-size` on the \

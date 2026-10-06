@@ -1,5 +1,6 @@
-cb-version = "0.1.0"
+cb-version = "1.0.0"
 display-name   = "Material Cursors"
+primary = true
 display-disc   = "Material cursor theme (light, dark or default) — opt-in, not the default"
 display-detail = """\
 Builds the Material cursor theme (github.com/varlesh/material-cursors, pinned \

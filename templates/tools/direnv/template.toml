@@ -1,5 +1,6 @@
 cb-version = "1.0.0"
 display-name = "direnv"
+primary = true
 display-disc = "Per-directory environment variables via .envrc"
 display-detail = "Installs direnv, which loads/unloads environment variables based on the current directory. Pairs well with polyglot toolchains and project-scoped secrets."
 display-order = 36

@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "1.0.0"
 display-name   = "Window Gaps"
 display-disc   = "A small gap between Krohnkite's windows so the wallpaper shows at their edges"
 display-detail = """\

@@ -1,5 +1,6 @@
-cb-version = "0.1.0"
+cb-version = "1.0.0"
 display-name = "Tiling for KDE (Krohnkite)"
+primary = true
 display-label = "Krohnkite (Tiling)"
 display-disc = "Krohnkite auto-tiling for the KDE Plasma desktop, with start-krohnkite / stop-krohnkite"
 display-detail = """\

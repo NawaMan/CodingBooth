@@ -1,5 +1,6 @@
 cb-version = "1.0.0"
 display-name = "Gradle"
+primary = true
 display-disc = "Gradle build tool for JVM projects"
 display-detail = "Installs Gradle build automation tool for Java, Kotlin, Groovy, and other JVM languages."
 display-order = 64

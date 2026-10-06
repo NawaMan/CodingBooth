@@ -1,5 +1,6 @@
 cb-version = "1.0.0"
 display-name = "nginx"
+primary = true
 display-disc = "High-performance reverse proxy and web server"
 display-detail = "Installs nginx. The daemon auto-starts on container boot. Add the php-fpm extension (`nginx+php-fpm`) to install php-fpm and route .php files through it on the default site."
 display-order = 39

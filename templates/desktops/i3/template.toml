@@ -1,5 +1,6 @@
-cb-version = "0.1.0"
+cb-version = "1.0.0"
 display-name = "Tiling Window Manager (i3)"
+primary = true
 display-label = "i3 (Tiling)"
 display-disc = "i3 tiling window manager for the XFCE or LXQt desktop, with start-i3 / stop-i3"
 display-detail = """\

@@ -1,5 +1,6 @@
 cb-version = "1.0.0"
 display-name = "Zig"
+primary = true
 display-disc = "Zig systems programming language"
 display-detail = "Installs the Zig programming language for systems programming with a focus on safety and performance."
 display-order = 80

@@ -1,5 +1,6 @@
 cb-version = "1.0.0"
 display-name = "Swift"
+primary = true
 display-disc = "Swift programming language toolchain"
 display-detail = "Installs the Swift toolchain (swift, swiftc, swift-package, swift-build, swift-test) under /opt/swift-stable. Server/CLI use only on Linux."
 display-order = 70

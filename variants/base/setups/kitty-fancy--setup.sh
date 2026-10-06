@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 1.0.0
 
 # kitty-fancy--setup.sh — a styled Kitty look: JetBrains Mono Nerd Font, roomy
 # padding, a steady block cursor, a slanted powerline tab bar, a Tokyo Night
