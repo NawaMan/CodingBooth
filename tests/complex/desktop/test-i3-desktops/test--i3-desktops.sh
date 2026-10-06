@@ -73,6 +73,11 @@ REPORT='
     [ -f /usr/share/icons/hicolor/scalable/apps/cb-i3.svg ] && echo "icon=yes"
     ls /usr/local/share/booth-message-wrapper/plugins/ 2>/dev/null | sed "s/^/plugin=/"
     i3-gaps--setup.sh wide >/dev/null 2>&1 || echo "bad-gap=rejected"
+    # cb-web-open app windows tile: the rule that un-floats them must come after
+    # the pop-up rule that floats them, since the later for_window wins.
+    P=$(grep -nxF "for_window [window_role=\"pop-up\"]     floating enable" /etc/xdg/i3/config | cut -d: -f1)
+    T=$(grep -nF "window_role=\"pop-up\" instance=\"^(localhost|" /etc/xdg/i3/config | grep -F "floating disable" | cut -d: -f1)
+    [ -n "$P" ] && [ -n "$T" ] && [ "$T" -gt "$P" ] && echo "app-windows=tile"
 '
 
 # ---- XFCE ----
@@ -120,6 +125,8 @@ has "$OUT" "xfce-clashes=0" \
     && check "true" "XFCE: Ctrl+Alt+l / Ctrl+Alt+f shortcuts dropped" || check "false" "XFCE: Ctrl+Alt+l / Ctrl+Alt+f shortcuts dropped" "$OUT"
 has "$OUT" "terminal=exo-open" \
     && check "true" "XFCE: mod+Enter opens the preferred terminal" || check "false" "XFCE: mod+Enter opens the preferred terminal" "$OUT"
+has "$OUT" "app-windows=tile" \
+    && check "true" "XFCE: browser app windows (cb-web-open) tile instead of floating" || check "false" "XFCE: browser app windows (cb-web-open) tile instead of floating" "$OUT"
 
 # ---- LXQt ----
 OUT=$(in_image "$LXQT_IMAGE" "$REPORT"'
@@ -136,6 +143,8 @@ done
 has "$OUT" "config=valid" && has "$OUT" "etc-config=valid" && has "$OUT" "etc-config=includes-ours" && ! has "$OUT" "etc-config=wizard" \
     && check "true" "LXQt: /etc/i3/config (found first: XDG_CONFIG_DIRS=/etc:/etc/xdg) includes ours" \
     || check "false" "LXQt: /etc/i3/config (found first: XDG_CONFIG_DIRS=/etc:/etc/xdg) includes ours" "$OUT"
+has "$OUT" "app-windows=tile" \
+    && check "true" "LXQt: browser app windows (cb-web-open) tile instead of floating" || check "false" "LXQt: browser app windows (cb-web-open) tile instead of floating" "$OUT"
 MODS=$(sed -n 's/^mod-bindings=//p' <<< "$OUT"); TWINS=$(sed -n 's/^twins=//p' <<< "$OUT")
 [[ -n "$MODS" && "$MODS" -gt 40 && "$MODS" == "$TWINS" ]] \
     && check "true" "LXQt: a Ctrl+Alt twin for every mod binding ($TWINS)" || check "false" "LXQt: a Ctrl+Alt twin for every mod binding" "mod=$MODS twins=$TWINS"

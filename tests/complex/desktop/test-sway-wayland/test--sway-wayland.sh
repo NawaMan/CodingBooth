@@ -113,6 +113,10 @@ OUT=$(in_image "$SESSION"'
     sway-gaps--setup.sh wide >/dev/null 2>&1 || echo "bad-gap=rejected"
     grep -q "^output \* bg /usr/share/backgrounds/codingbooth/wallpaper.jpg fill$" /etc/sway/config && echo "wallpaper=yes"
     grep -q "swaybar_command waybar" /etc/sway/config && echo "bar=waybar"
+    # cb-web-open app windows tile (XWayland Chrome): the later for_window wins.
+    P=$(grep -nxF "for_window [window_role=\"pop-up\"]     floating enable" /etc/sway/config | cut -d: -f1)
+    T=$(grep -nF "window_role=\"pop-up\" instance=\"^(localhost|" /etc/sway/config | grep -F "floating disable" | cut -d: -f1)
+    [ -n "$P" ] && [ -n "$T" ] && [ "$T" -gt "$P" ] && echo "app-windows=tile"
     ls /usr/local/share/booth-message-wrapper/plugins/ 2>/dev/null | sed "s/^/plugin=/"
 
     session with-sway
@@ -135,6 +139,8 @@ has "$OUT" "gaps=8" && has "$OUT" "bad-gap=rejected" \
     && check "true" "8px gaps; a non-numeric gap is rejected" || check "false" "8px gaps; a non-numeric gap is rejected" "$OUT"
 has "$OUT" "wallpaper=yes" && has "$OUT" "bar=waybar" \
     && check "true" "The wallpaper and the waybar panel carry over" || check "false" "The wallpaper and the waybar panel carry over" "$OUT"
+has "$OUT" "app-windows=tile" \
+    && check "true" "Browser app windows (cb-web-open) tile instead of floating" || check "false" "Browser app windows (cb-web-open) tile instead of floating" "$OUT"
 has "$OUT" "plugin=sway-00-ctrl-alt.js" && has "$OUT" "plugin=sway-help.js" \
     && check "true" "Help plugins, Ctrl+Alt flag first" || check "false" "Help plugins, Ctrl+Alt flag first" "$OUT"
 has "$OUT" "with-sway=sway" && has "$OUT" "with-sway-wayvnc=yes" && has "$OUT" "with-sway-waybar=yes" && has "$OUT" "with-sway-workspaces=yes" \

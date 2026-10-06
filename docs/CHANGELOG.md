@@ -4,6 +4,18 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A booth web app opens in one clean window.** Three things got in the way when you clicked a
+  web app's desktop icon (Markdown Viewer, Excalidraw, n8n, …). On the first click, the Markdown
+  Viewer opened **two** windows: `start-viewmd` let viewmd open a browser of its own, beside the
+  window the icon opens. It now passes `--server-only`. None of the other web-app starters did
+  this. Under **i3** and **sway**, every web app's window floated over the tiles and covered the
+  dock. Chrome gives an `--app` window the pop-up role, which these desktops float; such a window
+  now tiles like any other app. And every Chrome window showed "You are using an unsupported
+  command-line flag: --no-sandbox". A booth needs that flag, so a managed Chrome policy
+  (`CommandLineFlagSecurityWarningsEnabled: false`) now hides the bar, for Google Chrome and for
+  Chromium. Its only other effect is that Chrome's menu says the browser is managed. All three
+  need a desktop image built from this version.
+
 - **`--select excalidraw` builds again, and is now Excalidraw v0.18.1.** It had failed since the
   `nodejs` template's default moved to Node 24: Excalidraw declares `"node": "18.0.0 - 22.x.x"`
   and yarn refused to install. The setup now skips yarn's engine check (the app builds fine on

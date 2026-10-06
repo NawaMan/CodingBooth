@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.1.1
 
 # sway--setup.sh — the sway tiling compositor for the Wayland desktop.
 #
@@ -106,6 +106,10 @@ exec \$term
 # Pieces that must float rather than tile.
 for_window [app_id="wofi"]            floating enable, border none
 for_window [window_role="pop-up"]     floating enable
+# A browser opened in app mode (cb-web-open's --app window for a booth web
+# service) is a real app window, but Chrome gives it the pop-up role, so the rule
+# above would float it over the tiles. Its instance is the host it shows.
+for_window [class="^(Google-chrome|Chromium)\$" window_role="pop-up" instance="^(localhost|127\\.0\\.0\\.1)\$"] floating disable
 for_window [window_type="dialog"]     floating enable
 for_window [window_type="splash"]     floating enable
 
