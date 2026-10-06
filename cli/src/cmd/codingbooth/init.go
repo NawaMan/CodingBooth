@@ -58,6 +58,8 @@ type initFlags struct {
 	port          string
 	templatesPath string
 	version       string
+	aptSnapshot    string // --apt-snapshot, resolved: an id, or "" for no freeze
+	aptSnapshotSet bool   // --apt-snapshot was given (aptSnapshot "" then means "none")
 	debug         bool
 	start         bool
 	full          bool
@@ -132,6 +134,19 @@ func parseInitFlags(args []string) initFlags {
 				os.Exit(1)
 			}
 			flags.variant = args[i+1]
+			i++
+		case "--apt-snapshot":
+			if i+1 >= len(args) {
+				fmt.Fprintln(os.Stderr, "Error: --apt-snapshot requires a value (an id, today, or none)")
+				os.Exit(1)
+			}
+			id, err := parseAptSnapshotFlag(args[i+1])
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+				os.Exit(1)
+			}
+			flags.aptSnapshot = id
+			flags.aptSnapshotSet = true
 			i++
 		case "--port":
 			if i+1 >= len(args) {

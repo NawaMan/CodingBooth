@@ -35,15 +35,15 @@ IMAGE_NAME="nawaman/codingbooth"
 PLATFORMS="linux/amd64,linux/arm64"
 VERSION_FILE="version.txt"
 
-# Reproducibility: same id format and same CB_APT_SNAPSHOT override as
-# aptSnapshotID() in cli/src/cmd/codingbooth/config.go, which stamps this into
-# every `booth config`-generated Boothfile. Building the image itself against
-# the *same* default (today, UTC, day granularity) keeps a freshly configured
-# Boothfile's apt pin in sync with what the base/desktop images it builds on
-# already have installed — without it, a Boothfile pinned days ago can demand
-# an exact package version (e.g. libc6-dev's dependency on libc6) that no
-# longer matches whatever the image's own unpinned apt-get last installed.
-APT_SNAPSHOT="${CB_APT_SNAPSHOT:-$(date -u +%Y%m%d)T000000Z}"
+# Reproducibility: every image's own apt-get is pinned to one Ubuntu archive
+# snapshot — CB_APT_SNAPSHOT, else the release's pin in apt-snapshot.txt, else
+# today. The order, and the checks on the value, are in apt-snapshot--source.sh.
+# A Boothfile built on these images must not pin an older snapshot than this:
+# apt will not downgrade a package the image already has to satisfy an older
+# -dev package's exact-version dependency (e.g. libc6-dev on libc6).
+# Resolved in Main, after the arguments: --help needs no snapshot.
+source build/apt-snapshot--source.sh
+APT_SNAPSHOT=""
 
 # All known variants
 ALL_VARIANTS=(
@@ -81,6 +81,9 @@ Main() {
   ParseArgs "$@"
   ValidateVariants
   ValidateArch
+  # Before any login or build: a bad snapshot should cost nothing.
+  resolve_apt_snapshot || exit 1
+  Log "apt snapshot: ${APT_SNAPSHOT} (from ${APT_SNAPSHOT_FROM})"
   SetupPushEnvironment
   echo
 
@@ -341,7 +344,7 @@ BuildVariant() {
   # apt-get of its own this build still inherited a base pinned to this day.
   # This is what lets anything ask an image what it was actually built
   # against (`docker inspect`/`docker buildx imagetools inspect`) instead of
-  # re-deriving or assuming a snapshot date. See tests/check-apt-snapshot--source.sh.
+  # re-deriving or assuming a snapshot date.
   #
   # cb.managed=true is the same convention every container the booth CLI
   # creates already carries (see addLifecycleLabels in cli/src/pkg/booth/
@@ -670,6 +673,8 @@ Environment:
   COSIGN_KEY        Cosign private key content (PEM) stored directly in env; used if set
   COSIGN_KEY_FILE   Path to cosign private key file (default: ${COSIGN_KEY_FILE_DEFAULT})
   COSIGN_PASSWORD   Password for the private key (if the key is encrypted)
+  CB_APT_SNAPSHOT   Ubuntu archive snapshot for every apt-get: an id (20260601T000000Z) or today
+                    (default: apt-snapshot.txt, the last release's pin; else today)
 
 Examples:
   ./build/docker-build.sh                   # local build of all variants

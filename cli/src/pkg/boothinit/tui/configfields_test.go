@@ -160,7 +160,7 @@ func TestRenderedConfigKeysRoles(t *testing.T) {
 	}
 
 	// TUI-only fields are not config keys and must never be written as --set.
-	for _, key := range []string{"booth-version", "templates-version", "debug", "env", "expose", "mount"} {
+	for _, key := range []string{"booth-version", "templates-version", "apt-snapshot", "debug", "env", "expose", "mount"} {
 		if _, ok := roles[key]; ok {
 			t.Errorf("%q is TUI-only but is reported as a rendered config key", key)
 		}

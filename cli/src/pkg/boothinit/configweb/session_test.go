@@ -117,6 +117,16 @@ func TestSession_PreSelectionIsBaselineNotDirty(t *testing.T) {
 	}
 }
 
+// The save path reads an empty apt-snapshot as "turn the freeze off", so a web
+// save that never touched the field must hand back the preloaded id unchanged.
+func TestSession_UntouchedAptSnapshotSurvivesSave(t *testing.T) {
+	pre := &tui.PreSelection{StringFields: map[string]string{"apt-snapshot": "20250101T000000Z"}}
+	session := NewSession(sessionRegistry(), pre, "", nil)
+	if got := session.Result(false).StringFields["apt-snapshot"]; got != "20250101T000000Z" {
+		t.Fatalf("apt-snapshot = %q, want the preloaded 20250101T000000Z", got)
+	}
+}
+
 func TestSession_UnknownToggleErrors(t *testing.T) {
 	session := NewSession(sessionRegistry(), nil, "", nil)
 	if err := session.Toggle("nope"); err == nil {

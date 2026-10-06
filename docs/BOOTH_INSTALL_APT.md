@@ -92,8 +92,44 @@ install `RUN` lines, so the script sees it. Verified end-to-end: generated Docke
 - **Idempotent / re-config behavior.** Re-running `booth config` keeps the snapshot:
   `applyBoothAptSnapshot` reads the existing Boothfile's `env APT_SNAPSHOT=` line and
   reuses it, so a reconfigure does not silently move apt to that day's archive. A new
-  booth gets today; `CB_APT_SNAPSHOT` overrides both, and is how the date is moved on
-  purpose. (Before this, every reconfigure re-stamped today's date.)
+  booth gets today; `CB_APT_SNAPSHOT` overrides both. (Before this, every reconfigure
+  re-stamped today's date.)
+- **Changing it on purpose: `--apt-snapshot` and the TUI field.** `booth config
+  --apt-snapshot <id|today|none>`, or the Config tab's *Apt Snapshot* field (preloaded
+  with the booth's current id; `TODAY` moves it, empty removes it). Precedence in
+  `resolveBoothAptSnapshot`: the flag/field, then `CB_APT_SNAPSHOT`, then the existing
+  line, then today.
+- **A typed id is checked before anything is written** (`pkg/boothinit/aptsnapshot`,
+  shared by the flag and the field): the `YYYYMMDDTHHMMSSZ` shape, a real date, not
+  before `20230301T000000Z` (the service's first snapshot), and not in the future. Each
+  gets its own message naming the value. In the TUI, Enter on a refused value keeps the
+  edit open with the reason in the detail panel; Esc (or clicking away) puts the
+  previous value back; Ctrl+S jumps to the field instead of saving.
+- **`CB_APT_SNAPSHOT` is checked the same way**, when `booth config` starts, and takes the
+  same values (`today`, `none`). A bad one stops the run with the reason and "Unset it, or
+  set it to …" — it used to be written into the Boothfile as given and fail only at the
+  next image build.
+- **Older than the image fails with the fix.** The base Dockerfile records its own snapshot as
+  `ENV CB_IMAGE_APT_SNAPSHOT` (a different name from `APT_SNAPSHOT`, which as an ENV would freeze
+  every booth). When a pinned `APT_SNAPSHOT` sorts before it, `apt--install.sh` warns up front and,
+  if `apt-get install` fails, prints the cause and `booth config --apt-snapshot <image's id>` /
+  `--apt-snapshot today`. No claim is made when there is no pin (empty, or arm64) or the image
+  predates the variable. Covered by `tests/setups/test--apt-install-older-snapshot.sh`.
+- **`booth config` warns before the build** (`cmd/codingbooth/config_image_snapshot.go`). It
+  names the image the booth will build FROM by the run's own rule — `<CB_PREBUILD_REPO or
+  nawaman/codingbooth>:<variant>-<version>`, with the variant's aliases resolved
+  (`booth.CanonicalVariant`, kept in step with `ValidateVariant` by a test), the version from
+  config.toml or else the booth's pinned binary, and config.toml values falling back to their
+  `CB_*` variables — then reads its `com.codingbooth.apt-snapshot` label through the booth's
+  engine. Older → a warning with the fix (CLI), or a warning in the Apt Snapshot field's panel
+  (TUI). Silent when the image is not local, carries no label, or cannot be named (an `image`
+  override). Never blocks a save.
+- **"No freeze" is an empty line, not a missing one.** `none` writes `env APT_SNAPSHOT=`.
+  `apt--install.sh` treats empty as unset, and `readExistingAptSnapshot` reports the line
+  as present, so the next reconfigure keeps the freeze off instead of stamping today.
+- **Never recorded in the `# Configured by:` header.** The header is replayed on
+  reconfigure; a recorded `today` would move the freeze on every run. The Boothfile
+  line itself is the record.
 - **Why a bare `=version` pin isn't enough.** The live archive pool keeps only the
   current version, so old pins rot; the snapshot is what makes them resolvable. Stated
   honestly in the Tier 1 notes.

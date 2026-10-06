@@ -344,8 +344,10 @@ still fails on the first call rather than after the full backoff.
 (`install apt jq htop=3.0.5-7`). For reproducibility it honors an `APT_SNAPSHOT`
 environment variable: `booth config` stamps the configuration date into the generated
 Boothfile (`env APT_SNAPSHOT=<date>`) so every apt resolution — including transitive
-dependencies — is frozen to that day's archive. A hand-written Boothfile with no
-`APT_SNAPSHOT` resolves against the live archive. See
+dependencies — is frozen to that day's archive. Later runs keep that date; change it
+with `booth config --apt-snapshot <id|today|none>` or the TUI's Apt Snapshot field.
+A hand-written Boothfile with no `APT_SNAPSHOT`, or an empty one (`none`), resolves
+against the live archive. See
 [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
 
 ### Installing Packages via Templates

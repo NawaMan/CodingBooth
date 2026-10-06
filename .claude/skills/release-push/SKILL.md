@@ -143,7 +143,8 @@ Do not mix catalog files into the version.txt commit.
 
 Not a catalog version pin (the "skip example Boothfiles" line above is about tool versions, not
 this). `build/docker-build.sh` pins every image's own `apt-get` to a snapshot (`APT_SNAPSHOT`
-build-arg, `CB_APT_SNAPSHOT` env override — see `apt--install.sh` for why: the live archive drifts,
+build-arg; `CB_APT_SNAPSHOT` env, else the last release's `apt-snapshot.txt`, else today — see
+`build/apt-snapshot--source.sh`, and `apt--install.sh` for why: the live archive drifts,
 and an exact-version dependency like `libc6-dev` → `libc6` can break a build months later for no
 code reason at all). `publish-docker-images.yaml` computes the id **once**, in `guard-no-rc`, and
 threads it through both `build-base` and `build-variants` as `CB_APT_SNAPSHOT` — they are separate
@@ -181,18 +182,20 @@ docker buildx imagetools inspect nawaman/codingbooth:base-<version> --format '{{
 
 Re-run this whole check after **any** base rebuild, not only at release.
 
-**Which examples it can actually break.** Only `apt--install.sh` reads `APT_SNAPSHOT` — that is,
-only a Boothfile's `install apt ...` line. Setups' own `apt-get` calls do not pass `--snapshot`;
-they install from the live archive, which is never older than the base. So most examples carry an
-`env APT_SNAPSHOT=` stamp that nothing consumes, and a stale date there is harmless. The ones that
-matter, as of 2026-09-18:
+**Which examples it can actually break.** Only `apt--install.sh` reads `APT_SNAPSHOT` — a
+Boothfile's `install apt ...` line, and the setups that install through it (latex, texstudio, i3,
+sway, wayland, xfce, erlang, plank, the theme/icon/cursor setups). A setup's own raw `apt-get`
+does not pass `--snapshot`. When a stale pin does break a build, `apt--install.sh` now says so —
+it compares against the image's `CB_IMAGE_APT_SNAPSHOT` and prints the `booth config
+--apt-snapshot` fix — so a failure is no longer a mystery; this sweep just keeps it from
+happening in a release. The `install apt` examples, as of 2026-09-18:
 
 | Example | Pinned | `install apt` packages | Risk |
 | --- | --- | --- | --- |
 | `systemlib-example` | `20260918` | `ca-certificates`, `libcurl4-openssl-dev`, `libsqlite3-dev`, `sqlite3` | **high** — `-dev` packages pin exact library versions; broke at `20260914` on the `20260918` base |
 | `clang-example` | `20260918` | `nlohmann-json3-dev` | medium — header-only, few exact-version deps |
 | `turtle-example` | `20260918` | `tk`, `xvfb` | medium — `xvfb` pulls X libs the base may carry newer |
-| `apt-example` | `20260918` | `jq`, `ripgrep`, `tree` | low — leaf packages; its test also asserts the exact snapshot, so bump that too (`inBooth-test004-apt-snapshot--in-booth.sh`) |
+| `apt-example` | `20260918` | `jq`, `ripgrep`, `tree` | low — leaf packages (its test004 reads the expected date from the Boothfile, so a bump needs no test edit) |
 
 The table drifts as examples are added. Regenerate it rather than trusting it:
 
@@ -206,8 +209,9 @@ done
 
 Report each one whose date is before the base's, and offer to bump it to the base's snapshot
 (same `booth config` stamp format: `YYYYMMDDT000000Z`) — same shape as the version sweep above:
-report, wait, apply only what's picked. Leave the unconsumed stamps on the other examples alone;
-bumping them is churn that fixes nothing.
+report, wait, apply only what's picked. Examples whose setups install through `apt--install.sh`
+(e.g. `latex-example`, `tiling-example`) consume their stamp too, though the grep above does not
+list them; a stamp on an example with neither is unconsumed, and bumping it is churn.
 
 **Bump it through `booth config`, never with `sed`.** Editing the `env APT_SNAPSHOT=` line by hand
 breaks the example's `.booth/.generated` fingerprint, and the example then opens as edited.
@@ -216,8 +220,8 @@ directory, against the repo's own templates:
 
 ```bash
 export CB_TEMPLATES_PATH="$PWD/templates"
-(cd examples/workspaces/<example> && CB_APT_SNAPSHOT=<base-snapshot> \
-    ../../../codingbooth config --no-tui --overwrite)
+(cd examples/workspaces/<example> && \
+    ../../../codingbooth config --no-tui --overwrite --apt-snapshot <base-snapshot>)
 rm -f examples/workspaces/<example>/.booth/*.bak
 ```
 

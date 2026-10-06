@@ -223,8 +223,8 @@ func compileForAdopt(flags initFlags, targetPath string) (*output.BoothOutput, e
 		return nil, err
 	}
 
-	id := readExistingAptSnapshot(targetPath)
-	if id == "" {
+	id, ok := readExistingAptSnapshot(targetPath)
+	if !ok {
 		id = aptSnapshotID()
 	}
 	applyAptSnapshotID(out, id)

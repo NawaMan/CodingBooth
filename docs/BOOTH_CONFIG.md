@@ -951,7 +951,7 @@ These translate to `install <manager> <packages>` in the Boothfile, which runs t
 > bakes any plugin from plugins.jetbrains.com into the image. See
 > [JetBrains IDE Plugins](#jetbrains-ide-plugins) below.
 
-> **System packages (apt):** `apt-pkg` installs Debian/Ubuntu packages with apt. It supports apt's native `pkg=version` pinning (`apt-pkg:htop,jq=1.6-2.1`) and honors the `APT_SNAPSHOT` archive freeze that `booth config` stamps for reproducible builds. You can also add `install apt <pkgs>` directly to the Boothfile by hand. See [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md#using-built-in-installs) and [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
+> **System packages (apt):** `apt-pkg` installs Debian/Ubuntu packages with apt. It supports apt's native `pkg=version` pinning (`apt-pkg:htop,jq=1.6-2.1`) and honors the `APT_SNAPSHOT` archive freeze that `booth config` stamps for reproducible builds — today's date on a new booth, kept as-is after that; change it with `--apt-snapshot <id|today|none>` or the Config tab's Apt Snapshot field. You can also add `install apt <pkgs>` directly to the Boothfile by hand. See [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md#using-built-in-installs) and [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
 
 > **Upgrading the bundled npm (`nodejs+npm-upgrade`):** distinct from the `-pkg` extensions, this opt-in extension upgrades the *global npm itself* to a newer version than the selected Node.js bundles — `run npm install -g npm@NPM_VERSION` at build time. Use `--select nodejs+npm-upgrade` for the latest, or `nodejs+npm-upgrade:11.18.0` to pin a version. It's off by default so the npm that ships with Node.js stays the reproducible baseline.
 

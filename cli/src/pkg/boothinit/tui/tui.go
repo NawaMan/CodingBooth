@@ -72,6 +72,12 @@ type PreSelection struct {
 	BoolFields        map[string]bool            // pre-set bool values (dind, keep-alive, etc.)
 	ListFields        map[string][]string        // pre-set list values (expose, env, mount)
 	ParamValues       map[string]string          // "tmplName:PARAM" or "tmplName/extName:PARAM" → value
+
+	// ImageAptSnapshot names the image a booth with these settings builds FROM
+	// and the apt snapshot it was built at ("" when unknown — not on this
+	// machine, or not a catalog image). settings are the Config tab's values,
+	// so the answer follows a variant change. Nil: the panel shows nothing.
+	ImageAptSnapshot func(settings map[string]string) (ref, snapshot string)
 }
 
 // RunConfig launches the interactive TUI and returns the user's configuration choices.

@@ -71,12 +71,14 @@ export DEBIAN_FRONTEND=noninteractive
 # "E: Unable to locate package". Drop the pin there and warn, so the build still works
 # against the live archive instead of breaking.
 SNAPSHOT_ARGS=()
+PINNED=""
 if [ -n "${APT_SNAPSHOT:-}" ]; then
     ARCH="$(dpkg --print-architecture)"
     case "$ARCH" in
         amd64|i386)
             echo "🧊 Pinning apt to snapshot ${APT_SNAPSHOT}"
             SNAPSHOT_ARGS=(--snapshot "${APT_SNAPSHOT}")
+            PINNED=1
             ;;
         *)
             echo "⚠️  APT_SNAPSHOT=${APT_SNAPSHOT} ignored on ${ARCH}: Ubuntu's snapshot"
@@ -85,6 +87,21 @@ if [ -n "${APT_SNAPSHOT:-}" ]; then
             echo "    live archive — this build is not frozen in time."
             ;;
     esac
+fi
+
+# A pin older than the image's own snapshot (CB_IMAGE_APT_SNAPSHOT, set by the base
+# image's build) can make an install impossible: the image already has newer
+# builds of some packages, apt will not downgrade them, and an older -dev package
+# needing an exact version of one of them cannot be satisfied. apt's own message
+# reads like a broken archive ("Depends: libsqlite3-0 (= …7) but …8 is to be
+# installed"), so say what it really is — up front, and with the fix if it fails.
+OLDER_THAN_IMAGE=""
+if [ -n "$PINNED" ] && [ -n "${CB_IMAGE_APT_SNAPSHOT:-}" ] \
+        && [[ "$APT_SNAPSHOT" < "$CB_IMAGE_APT_SNAPSHOT" ]]; then
+    OLDER_THAN_IMAGE=1
+    echo "⚠️  APT_SNAPSHOT=${APT_SNAPSHOT} is older than this image's snapshot (${CB_IMAGE_APT_SNAPSHOT})."
+    echo "    A package that needs an exact version of one the image already has newer"
+    echo "    will not install."
 fi
 
 # apt-get update exits 0 even when snapshot.ubuntu.com 502/503s
@@ -110,5 +127,16 @@ apt_get_update() {
 # macOS ships, and what the host-side tests run this with — calls an empty
 # "${arr[@]}" unbound under `set -u`; this form expands to nothing instead.
 cb_retry apt_get_update ${SNAPSHOT_ARGS[@]+"${SNAPSHOT_ARGS[@]}"}
-cb_retry apt-get install -y --no-install-recommends ${SNAPSHOT_ARGS[@]+"${SNAPSHOT_ARGS[@]}"} "$@"
+if ! cb_retry apt-get install -y --no-install-recommends ${SNAPSHOT_ARGS[@]+"${SNAPSHOT_ARGS[@]}"} "$@"; then
+    if [ -n "$OLDER_THAN_IMAGE" ]; then
+        echo "" >&2
+        echo "❌ apt could not install from snapshot ${APT_SNAPSHOT}: it is older than this" >&2
+        echo "   image's snapshot (${CB_IMAGE_APT_SNAPSHOT}), and apt cannot downgrade packages" >&2
+        echo "   the image already has." >&2
+        echo "   Fix: booth config --apt-snapshot ${CB_IMAGE_APT_SNAPSHOT}   (this image's snapshot)" >&2
+        echo "    or: booth config --apt-snapshot today" >&2
+        echo "   then build the booth again." >&2
+    fi
+    exit 1
+fi
 rm -rf /var/lib/apt/lists/*
