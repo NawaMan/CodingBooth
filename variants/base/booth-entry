@@ -654,6 +654,15 @@ if [ "${BOOTH_IDLE_TIME:-0}" -gt 0 ] 2>/dev/null; then
 fi
 
 
+section "Lifecycle log"
+
+# As coder: the log sits in the host-mounted .booth/.tmp, and a root-owned file
+# there would shut out both coder's later lines and the host CLI's.
+booth--as-coder -- booth--lifecycle-log started \
+  "version=${BOOTH_VERSION:-?}" "variant=${BOOTH_VARIANT_TAG:-?}" \
+  "mode=${BOOTH_RUNMODE:-?}" "port=${BOOTH_HOST_PORT:-?}" || true
+
+
 section "Execute the requested command"
 
 info "16) Executing the requested command as coder (default to login shell if none provided)"

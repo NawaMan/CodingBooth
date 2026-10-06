@@ -65,7 +65,7 @@ while true; do
             echo "$BOOTH_COUNT_DOWN_EXIT_CODE" > /tmp/.booth-exit-code
         fi
         sleep 2
-        exec booth--shutdown --yes
+        exec booth--shutdown --yes --reason=timer
     fi
 
     [[ "$expired" == true ]] && break

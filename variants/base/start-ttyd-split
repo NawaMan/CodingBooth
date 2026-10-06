@@ -90,7 +90,18 @@ for i in "${!SESSION_NAMES[@]}"; do
     # server down with it. `new-session -A` creates the session once and
     # reattaches to it on every later connection instead, so the shell (and
     # whatever is running in it) survives a reload.
-    ttyd "${ttyd_args[@]}" tmux new-session -A -s "$session_name" &
+    #
+    # Nothing restarts a ttyd that dies, and nginx only answers 502 for its pane
+    # after that — so record the death, or a console whose panes all went dead
+    # leaves no trace of when or how. A death during booth--shutdown/restart is
+    # expected and not logged.
+    (
+        status=0
+        ttyd "${ttyd_args[@]}" tmux new-session -A -s "$session_name" || status=$?
+        if [[ ! -e /tmp/.booth-shutting-down && ! -e /tmp/.booth-restarting ]]; then
+            booth--lifecycle-log console-pane-exited "pane=$session_name" "port=$session_port" "status=$status" || true
+        fi
+    ) &
 done
 
 # Optional project-checked-in starting layout/tabs for this console, read

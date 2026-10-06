@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/lifecyclelog"
 )
 
 // PrepareBoothTmp creates and initializes .booth/.tmp/ with session metadata.
@@ -39,14 +40,19 @@ func PrepareBoothTmp(ctx appctx.AppContext) appctx.AppContext {
 
 	tmpDir := filepath.Join(boothDir, ".tmp")
 
-	// Empty contents unless --keep-tmp-on-start is set
+	// Empty contents unless --keep-tmp-on-start is set. The lifecycle log is
+	// kept: it is how a booth that stopped or restarted can be traced afterwards.
 	if !ctx.KeepTmpOnStart() {
 		if entries, err := os.ReadDir(tmpDir); err == nil {
 			for _, entry := range entries {
+				if lifecyclelog.Keep(entry.Name()) {
+					continue
+				}
 				os.RemoveAll(filepath.Join(tmpDir, entry.Name()))
 			}
 		}
 	}
+	lifecyclelog.Trim(codePath)
 
 	// Create .tmp/ directory if it doesn't exist
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
@@ -72,6 +78,7 @@ func PrepareBoothTmp(ctx appctx.AppContext) appctx.AppContext {
 }
 
 // cleanupBoothTmp empties .booth/.tmp/ on exit unless --leave-tmp-on-exit is set.
+// The lifecycle log stays, so the booth's end can still be read after it.
 func cleanupBoothTmp(ctx appctx.AppContext) {
 	if ctx.Dryrun() || ctx.LeaveTmpOnExit() {
 		return
@@ -86,6 +93,9 @@ func cleanupBoothTmp(ctx appctx.AppContext) {
 		return
 	}
 	for _, entry := range entries {
+		if lifecyclelog.Keep(entry.Name()) {
+			continue
+		}
 		os.RemoveAll(filepath.Join(tmpDir, entry.Name()))
 	}
 }

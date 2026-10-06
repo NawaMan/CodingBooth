@@ -629,6 +629,7 @@ USAGE:  %s logs [options]                 (the booth's container output)
         %s logs [options] <service> ...   (service log files in the booth's /tmp)
         %s logs --startup [options]       (the startup-hook log)
         %s logs --list                    (list the service log files)
+        %s logs lifecycle [options]       (what happened to the booth, from the host)
 
 OPTIONS:
   --name <n>           Booth name (default: the current folder's booth)
@@ -653,6 +654,13 @@ A stopped (kept) booth works too: its output and its log files are read from
 the stopped container (not on engine apple for log files). --follow then
 prints what is there and returns.
 
+The service "lifecycle" is what happened to the booth: started, told to stop
+or restart (and by whom), idle prompts and timeouts, the session timer running
+out, a console pane's terminal gone, and how the container exited. It is
+.booth/.tmp/lifecycle.log in the code folder, on the host, kept across runs, so
+it is there after the booth is gone: with no --name it reads the current
+folder's, and --code <path> reads a removed booth's.
+
 EXAMPLES:
   %s logs -f
   %s logs --name myproject --tail 100
@@ -660,7 +668,8 @@ EXAMPLES:
   %s logs --list
   %s logs excalidraw -f
   %s logs penpot
-`, s, s, s, s, s, s, s, s, s, s, s)
+  %s logs lifecycle -n 20
+`, s, s, s, s, s, s, s, s, s, s, s, s, s)
 }
 
 func showHelpExpose() {
