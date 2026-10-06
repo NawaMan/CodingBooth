@@ -13,7 +13,7 @@ begin
 
 # Launch is on the Languages tab; apt-pkg lives under Tools (Right ×2).
 run-tui save \
-    'Right' 'Sleep 300ms' 'Right' 'Sleep 500ms' \
+    'Right' 'Sleep 300ms' 'Right' 'Sleep 300ms' 'Right' 'Sleep 500ms' \
     'Tab' 'Type "apt-pkg"' 'Sleep 700ms' 'Tab' 'Sleep 300ms' \
     'Space' 'Sleep 500ms' \
     'Enter' 'Sleep 500ms' \

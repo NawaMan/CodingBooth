@@ -19,7 +19,7 @@ fi
 
 # Just check the USAGE section - the full help is ~98 lines
 ACTUAL=$(run_coding_booth help)
-ACTUAL=$(printf '%s\n' "$ACTUAL" | head -43)
+ACTUAL=$(printf '%s\n' "$ACTUAL" | head -44)
 
 HERE="$PWD"
 VERSION="$(get_booth_version)"
@@ -66,6 +66,7 @@ OTHER COMMANDS:
   MESSAGE   | Send messages into a booth       | message                                                                 | docs/BOOTH_MESSAGE.md
   EXPOSE    | Inspect a booth's ports          | expose list                                                             | docs/BOOTH_EXPOSE.md
   PROJECT   | Set up and scaffold new projects | example, config, template, showcase                                     | docs/BOOTH_EXAMPLE.md
+  EXPRESS   | Run from arguments, ignoring the project's .booth | express                                                      | docs/BOOTH_RUN.md
 
 Run 'codingbooth --help <command>'   for command-specific help."
 
