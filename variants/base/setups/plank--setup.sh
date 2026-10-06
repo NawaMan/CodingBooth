@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 # plank--setup.sh — Plank Reloaded dock for the XFCE desktop, Matte theme.
 #
@@ -13,9 +13,11 @@
 #
 # What it sets up:
 #   - plank-reloaded from the zquestz repo (optionally a pinned version)
-#   - /usr/local/bin/cb-plank-start, launched from XFCE autostart, which on the
-#     first session per home sets the Matte theme and seeds the dock launchers,
-#     then execs plank. Later changes made from Plank's Preferences are kept.
+#   - /usr/local/bin/cb-plank-start (from cb-plank-start beside this script),
+#     launched from XFCE autostart, which on the first session per home sets the
+#     Matte theme and seeds the default launchers, then execs plank. Every app
+#     with a desktop icon is also put on the dock once — including apps a later
+#     image rebuild adds. Later changes made from Plank's Preferences are kept.
 #   - hide-mode 'none' as the default (always visible, reserves its space).
 #   - XFCE's stock bottom panel (panel-2, a launcher bar) is dropped from the
 #     panel's system default, since the dock sits in the same place. The top
@@ -85,79 +87,17 @@ chmod 0644 "$SCHEMA_DIR/90-cb-plank.gschema.override"
 glib-compile-schemas "$SCHEMA_DIR"
 
 # ---- per-session starter ----
-cat > /usr/local/bin/cb-plank-start <<EOF
-#!/usr/bin/env bash
-# cb-plank-start — start the Plank dock for this XFCE session. Installed by
-# plank--setup.sh; launched from /etc/xdg/autostart/cb-plank.desktop.
-#
-# The first session per home seeds the theme and the launchers (marker file),
-# so anything changed later from Plank's Preferences survives a restart.
-set -u
-PLANK_THEME="${PLANK_THEME}"
-EOF
-cat >> /usr/local/bin/cb-plank-start <<'EOF'
-DOCK_DIR="$HOME/.config/plank/dock1"
-MARKER="$DOCK_DIR/.cb-seeded"
-SETTINGS="net.launchpad.plank.dock.settings:/net/launchpad/plank/docks/dock1/"
-
-# The app's .desktop file, or nothing if it is not installed. Case-insensitive,
-# since terminals register as e.g. Alacritty.desktop but are named alacritty.
-app_desktop() {
-  local name="$1"
-  ls /usr/share/applications 2>/dev/null | grep -ix "${name}.desktop" | head -1
-}
-
-# The terminal the desktop's "open a terminal" action runs, so the dock agrees
-# with default-terminal--setup.sh (per-user helpers.rc, then the system one).
-terminal_desktop() {
-  local term="" rc f
-  for rc in "$HOME/.config/xfce4/helpers.rc" /etc/xdg/xfce4/helpers.rc; do
-    term="$(sed -n 's/^TerminalEmulator=//p' "$rc" 2>/dev/null | tail -1)"
-    [[ -n "$term" ]] && break
-  done
-  f="$([[ -n "$term" ]] && app_desktop "$term")"
-  [[ -n "$f" ]] && { echo "$f"; return; }
-  app_desktop xfce4-terminal
-}
-
-if [[ ! -f "$MARKER" ]]; then
-  mkdir -p "$DOCK_DIR/launchers"
-  items=()
-  for f in \
-      "$(terminal_desktop)"              \
-      "$(app_desktop thunar)"            \
-      "$(app_desktop google-chrome)"     \
-      "$(app_desktop com.google.Chrome)" \
-      "$(app_desktop firefox)"           \
-      "$(app_desktop chromium)"          \
-      "$(app_desktop com.microsoft.VSCode)" \
-      "$(app_desktop code)"; do
-    [[ -n "$f" ]] || continue
-    item="${f%.desktop}.dockitem"
-    # google-chrome.desktop and com.google.Chrome.desktop are the same browser.
-    [[ "$f" == com.google.Chrome.desktop && " ${items[*]} " == *" google-chrome.dockitem "* ]] && continue
-    [[ " ${items[*]} " == *" ${item} "* ]] && continue
-    printf '[PlankDockItemPreferences]\nLauncher=file:///usr/share/applications/%s\n' "$f" \
-      > "$DOCK_DIR/launchers/$item"
-    items+=("$item")
-  done
-
-  list="$(printf "'%s', " "${items[@]}")"
-  gsettings set "$SETTINGS" dock-items "[${list%, }]" 2>/dev/null || true
-  gsettings set "$SETTINGS" theme "$PLANK_THEME"      2>/dev/null || true
-  touch "$MARKER"
-fi
-
-exec plank
-EOF
-chmod 0755 /usr/local/bin/cb-plank-start
+# cb-plank-start seeds the theme and the default launchers on the first session,
+# and puts every app with a desktop icon (/etc/skel/Desktop) on the dock once.
+# The theme is passed through the autostart entry's Exec.
+install -m 0755 "$SCRIPT_DIR/cb-plank-start" /usr/local/bin/cb-plank-start
 
 mkdir -p /etc/xdg/autostart
-cat > /etc/xdg/autostart/cb-plank.desktop <<'EOF'
+cat > /etc/xdg/autostart/cb-plank.desktop <<EOF
 [Desktop Entry]
 Type=Application
 Name=Plank dock
-Exec=/usr/local/bin/cb-plank-start
+Exec=env PLANK_THEME=${PLANK_THEME} /usr/local/bin/cb-plank-start
 OnlyShowIn=XFCE;
 NoDisplay=true
 EOF

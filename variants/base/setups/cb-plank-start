@@ -1,0 +1,142 @@
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# cb-version: 0.1.0
+#
+# cb-plank-start — start the Plank dock for this XFCE session. Installed by
+# plank--setup.sh as /usr/local/bin/cb-plank-start and launched from
+# /etc/xdg/autostart/cb-plank.desktop.
+#
+# The dock gets two kinds of launchers:
+#   • the defaults — terminal, file manager, browsers, VS Code — seeded on the
+#     first session per home only (marker file), so anything changed later from
+#     Plank's Preferences survives a restart.
+#   • every app with a desktop icon — /etc/skel/Desktop, the registry that
+#     cb-desktop-icon.sh fills at build time. Each one is offered to the dock
+#     once: on the first session, or on the first session after an image
+#     rebuild added it. The offered set is recorded, so an app the user takes
+#     off the dock stays off.
+#
+# Overridable for tests: APPS_DIR, SKEL_DESKTOP, PLANK_THEME, PLANK_BIN.
+set -u
+
+PLANK_THEME="${PLANK_THEME:-Matte}"
+APPS_DIR="${APPS_DIR:-/usr/share/applications}"
+SKEL_DESKTOP="${SKEL_DESKTOP:-/etc/skel/Desktop}"
+PLANK_BIN="${PLANK_BIN:-plank}"
+
+DOCK_DIR="$HOME/.config/plank/dock1"
+MARKER="$DOCK_DIR/.cb-seeded"
+OFFERED="$DOCK_DIR/.cb-offered"
+SETTINGS="net.launchpad.plank.dock.settings:/net/launchpad/plank/docks/dock1/"
+
+# The app's .desktop file, or nothing if it is not installed. Case-insensitive,
+# since terminals register as e.g. Alacritty.desktop but are named alacritty.
+app_desktop() {
+  local name="$1"
+  ls "$APPS_DIR" 2>/dev/null | grep -ix "${name}.desktop" | head -1
+}
+
+# The terminal the desktop's "open a terminal" action runs, so the dock agrees
+# with default-terminal--setup.sh (per-user helpers.rc, then the system one).
+terminal_desktop() {
+  local term="" rc f
+  for rc in "$HOME/.config/xfce4/helpers.rc" /etc/xdg/xfce4/helpers.rc; do
+    term="$(sed -n 's/^TerminalEmulator=//p' "$rc" 2>/dev/null | tail -1)"
+    [[ -n "$term" ]] && break
+  done
+  f="$([[ -n "$term" ]] && app_desktop "$term")"
+  [[ -n "$f" ]] && { echo "$f"; return; }
+  app_desktop xfce4-terminal
+}
+
+# The default launchers, as .desktop basenames under $APPS_DIR.
+default_desktops() {
+  local f
+  for f in \
+      "$(terminal_desktop)"              \
+      "$(app_desktop thunar)"            \
+      "$(app_desktop google-chrome)"     \
+      "$(app_desktop com.google.Chrome)" \
+      "$(app_desktop firefox)"           \
+      "$(app_desktop chromium)"          \
+      "$(app_desktop com.microsoft.VSCode)" \
+      "$(app_desktop code)"; do
+    [[ -n "$f" ]] && echo "$f"
+  done
+}
+
+# The desktop-icon registry, as .desktop basenames.
+registry_desktops() {
+  local f
+  for f in "$SKEL_DESKTOP"/*.desktop; do
+    [[ -f "$f" ]] && basename "$f"
+  done
+}
+
+# Prefer the app's launcher in $APPS_DIR (what menus and Plank's window matching
+# use); fall back to the registry copy for a launcher that lives nowhere else.
+launcher_uri() {
+  local b="$1" path
+  path="$APPS_DIR/$b"
+  [[ -f "$path" ]] || path="$SKEL_DESKTOP/$b"
+  echo "file://${path// /%20}"
+}
+
+# The dock's current item list, one per line ("@as []" and quotes stripped).
+current_items() {
+  gsettings get "$SETTINGS" dock-items 2>/dev/null \
+    | sed "s/^@as //; s/[][']//g" | tr ',' '\n' | sed 's/^ *//; s/ *$//' | grep -v '^$'
+}
+
+items=()
+has_item() { [[ " ${items[*]-} " == *" $1 "* ]]; }
+
+# Write a dockitem for launcher basename $1 and add it to $items, unless the
+# dock already has an item of that name.
+add_item() {
+  local b="$1" item="${1%.desktop}.dockitem"
+  has_item "$item" && return
+  printf '[PlankDockItemPreferences]\nLauncher=%s\n' "$(launcher_uri "$b")" \
+    > "$DOCK_DIR/launchers/$item"
+  items+=("$item")
+}
+
+save_items() {
+  local list="" i
+  for i in "${items[@]}"; do list+="'$i', "; done
+  gsettings set "$SETTINGS" dock-items "[${list%, }]" 2>/dev/null || true
+}
+
+mkdir -p "$DOCK_DIR/launchers"
+mapfile -t defaults < <(default_desktops)
+touch "$OFFERED"
+
+if [[ ! -f "$MARKER" ]]; then
+  for b in "${defaults[@]}"; do
+    # google-chrome.desktop and com.google.Chrome.desktop are the same browser.
+    [[ "$b" == com.google.Chrome.desktop ]] && has_item google-chrome.dockitem && continue
+    add_item "$b"
+  done
+  save_items
+  gsettings set "$SETTINGS" theme "$PLANK_THEME" 2>/dev/null || true
+  touch "$MARKER"
+fi
+
+# Offer each registry app not offered before. A default launcher counts as
+# offered already: the first-session seed above is its one offer.
+mapfile -t items < <(current_items)
+changed=false
+while IFS= read -r b; do
+  grep -qxF "$b" "$OFFERED" && continue
+  if ! printf '%s\n' "${defaults[@]}" | grep -qxF "$b"; then
+    n=${#items[@]}
+    add_item "$b"
+    (( ${#items[@]} > n )) && changed=true
+  fi
+  echo "$b" >> "$OFFERED"
+done < <(registry_desktops)
+[[ "$changed" == true ]] && save_items
+
+exec "$PLANK_BIN"

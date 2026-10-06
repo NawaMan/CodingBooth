@@ -229,7 +229,7 @@ setup	penpot	0.1.0	177037ae094cb6f08cde209c43b381d07e2f57fe7ec740174bea6551ca166
 setup	penpot-exporter	0.1.0	966f1f4b8e5c4ef54b8cf0783df10e138367ebc89427cf46d604900ce980cacf	variants/base/setups/penpot-exporter--setup.sh
 setup	php	1.0.0	397c63cb432fd45e81a827200be0a0bde3f1ac4bc6da62595944a4e51a3b0a93	variants/base/setups/php--setup.sh
 setup	php-code-extension	1.0.0	938a5949e6a3723c576a0b6f7c4bf04f346db5fb165b976774730f8974d74dbf	variants/base/setups/php-code-extension--setup.sh
-setup	plank	0.1.0	5c1a7dad7309147447ba907d3a718c3487b864634a88f5e5d125160c43f612f8	variants/base/setups/plank--setup.sh
+setup	plank	0.2.0	84f64081452e95aca08eb0d4a76e2172713dd3e3ce548b8c57cd1d110df7af20	variants/base/setups/plank--setup.sh
 setup	plantuml	1.0.0	d929a039b50ee7b0087b7fca824005a28e8fb8429e104a04b3357cab9bc9fcbe	variants/base/setups/plantuml--setup.sh
 setup	plantuml-code-extension	0.1.0	cbc444d18c725e8c48e6e0beb9a1a71c2b71a80bc72cc4a62ee1f0ab32ee1cd3	variants/base/setups/plantuml-code-extension--setup.sh
 setup	playwright	1.0.0	b1c66d74796b338a6bf5cfdab1ef6638b54b40b3ee81e0e025185030ef5c7892	variants/base/setups/playwright--setup.sh
@@ -350,6 +350,7 @@ helper	cb-has-desktop.sh	1.0.0	d3b87fb9197b251a344a13d70d8dd92cff5c23754ba766eff
 helper	cb-has-jetbrains.sh	0.1.0	3f62347858721ebaef58d680424a16e9a263b86098c43750dce5b7e887608830	variants/base/setups/cb-has-jetbrains.sh
 helper	cb-has-vscode.sh	1.0.0	80c7d5894f3ec35a908491fa127627d6ba567d92616c7b0d0d1cdd11628d8695	variants/base/setups/cb-has-vscode.sh
 helper	cb-install-chromium.sh	0.1.0	f0b72ae88c8928df048f8595bc9e8007aa67d766cd16d5288f304d57ff77f646	variants/base/setups/cb-install-chromium.sh
+helper	cb-plank-start	0.1.0	6fb36bb1627ef3670771ec483b6db5c60ff9141f31f4c21a717b4bd587bf9d12	variants/base/setups/cb-plank-start
 helper	cb-web-icon.sh	1.0.0	8f46a7da4ac9280faeb077c495dd92c7dedc9cc020382507bc8dac80fbbc1adb	variants/base/setups/cb-web-icon.sh
 helper	cb-web-open	1.0.0	329cc1aefad5d86c2515a5b543599a5b956ea9e7719ea554ecad6438b4781111	variants/base/setups/cb-web-open
 helper	template-seup.sh	1.0.0	c9c0ad54732fdd56d2bb5ac692ebec0c6bd237af9a92fa7719922d4d7941d2f4	variants/base/setups/template-seup.sh
@@ -866,7 +867,7 @@ extension	xfce+desktop-icons-cache	0.1.0	b3f3c59113e2e61436a2b60c9c65bb078ad34a8
 extension	xfce+desktop-icons-shared	0.1.0	b1bfcfbb9f6364a5ebd5801031c25e380bc2899c7e593e275c893f6bb841cdd0	templates/desktops/xfce/desktop-icons-shared--extension.toml
 extension	xfce+keyboard-shortcuts-shared	1.0.0	06150193d1174c91a807d3909f9f4c362c5d0afb2d355fe1b5783492be07013c	templates/desktops/xfce/keyboard-shortcuts-shared--extension.toml
 extension	xfce+modern-theme	0.1.0	32fec0a50fb2b1558b81f4891fe2a95a51384a2e1e340924600c1d36a210fd40	templates/desktops/xfce/modern-theme--extension.toml
-extension	xfce+plank	0.1.0	0114b0f57a1a2d191999d104f67d82f89f852843476e67a8fa1494a997ea4b98	templates/desktops/xfce/plank--extension.toml
+extension	xfce+plank	0.2.0	1cc8cd0207c4890dc3c0015a496ed4ddc23bb58a2d33516592fcefca2f044d37	templates/desktops/xfce/plank--extension.toml
 extension	xonsh+default	0.1.0	1000b342fc95b29f5ab64dd60561597d32bccb89f7fb5030963d42791308f3a2	templates/tools/xonsh/default--extension.toml
 extension	zig+vscode-ext	1.0.0	2ba2daee9a40beaa92949a9461dd8601bda9b1387d27af03b69b1857df5d1c32	templates/languages/zig/vscode-ext--extension.toml
 extension	zsh+default	1.0.0	5751839401147e787e799c31836221420e18887c250de59013c0c00030396c8b	templates/tools/zsh/default--extension.toml
