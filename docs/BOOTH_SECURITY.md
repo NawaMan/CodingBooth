@@ -192,10 +192,17 @@ code you trust the answer is simply yes. Not every kind leads to root: a writabl
   exception is a `booth--restart` of a booth you already approved in the same session: it does not
   ask again unless something new turned up.
 - **`--dryrun`** starts nothing, so it does not ask.
-- **Rootless Podman does not ask.** There the container's root is your own account, so a breakout
-  lands as you, not as host root. (Rootful Podman — `sudo podman` — asks like Docker does.) An engine
-  socket mount still asks even under rootless Podman, because the socket may belong to a rootful
-  daemon.
+- **What booth asks about, and how it words it, depends on the engine** — see
+  **[Container engines → Where a way out lands](BOOTH_ENGINES.md#where-a-way-out-lands)**:
+  - **Rootless Podman** does not ask about `--dind` or `--privileged`-like run-args: the container's
+    root is your own account, so they land as you, not as host root. It still asks about writable
+    mounts (your home and dotfiles are code as you), `--network=host`, and engine sockets (a socket
+    may belong to a rootful daemon). Rootful Podman — `sudo podman` — asks like Docker does.
+  - **VM-based engines** (Docker Desktop on macOS, Windows, or Linux; Podman machine) ask about
+    everything, but say "root in the engine's VM" rather than "root on the host": that VM shares
+    your folders, and on Windows it is the WSL 2 VM that also runs your other WSL distros.
+  - **Apple container** does not ask about flags it rejects anyway (`--privileged`, `--device`, …)
+    or capabilities that stay in the booth's own VM; mounts and sockets still ask.
 
 Answering yes does not make the booth safe; it only makes sure nobody gets host-root trust without
 knowingly granting it. The rule stands: **don't say yes for untrusted code.**
@@ -328,7 +335,8 @@ If untrusted code may have read a mounted credential:
 
 - **[README — Security Considerations](../README.md#security-considerations)** — summary table.
 - **[Egress](implementations/EGRESS.md)** — egress filtering with Envoy + iptables.
-- **[Podman support](PODMAN_SUPPORT.md)** — why rootless Podman does not ask.
+- **[Container engines](BOOTH_ENGINES.md)** — where a way out lands on each engine.
+- **[Podman support](PODMAN_SUPPORT.md)** — rootful and rootless Podman.
 - **[Docker-in-Docker](implementations/DIND.md)** — how `--dind` works internally.
 - **[booth home](BOOTH_HOME.md)** / **[booth cache](BOOTH_LOCALCACHE.md)** — where in-booth
   credentials and state persist.

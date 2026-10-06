@@ -147,6 +147,12 @@ This file contains a list of changes for each released version.
   (`cb.security-warning` label); `booth start`, `booth restart`, and `booth shell --run` /
   `booth exec --run` on a stopped booth print the warning without asking. Attaching to a running
   booth prints nothing, and `exec` keeps it on stderr.
+- **The warning knows the engine.** Rootless Podman now also asks about writable mounts (home and
+  dotfiles are code as you) and `--network=host`, but still not about `--dind` or
+  `--privileged`-like run-args, which only reach your own account. VM-based engines (Docker Desktop
+  on macOS, Windows, and Linux; Podman machine) say "root in the engine's VM", which shares your
+  folders — and on Windows is the WSL 2 VM that also runs your other WSL distros. Apple container no
+  longer asks about flags it rejects. New overview: `docs/BOOTH_ENGINES.md`.
 - **New `booth print-security-warning [options]`.** Takes the same options and config as a run and
   prints the warning that run would show, without building, starting, or asking: exit `1` with the
   warning, or exit `0` with `No security warning.`

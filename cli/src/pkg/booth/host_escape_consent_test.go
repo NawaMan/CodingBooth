@@ -57,9 +57,11 @@ func testConsentEnv(answer string, noTTY bool) (consentEnv, *bytes.Buffer, *int)
 	warnings := &bytes.Buffer{}
 	opened := 0
 	env := consentEnv{
-		euid:   0,
-		home:   "/home/me",
-		exists: func(string) bool { return true },
+		euid:          0,
+		home:          "/home/me",
+		goos:          "linux",
+		dockerDesktop: func() bool { return false },
+		exists:        func(string) bool { return true },
 		openTTY: func() (io.ReadWriteCloser, error) {
 			opened++
 			if noTTY {
@@ -128,7 +130,7 @@ func TestConsent_Dind_FlagSkipsPromptButStillWarns(t *testing.T) {
 	got := warnings.String()
 	for _, want := range []string{
 		"--dind (privileged Docker-in-Docker sidecar)",
-		hostescape.Impact(hostescape.KindDind),
+		hostescape.Impact(hostescape.KindDind, hostescape.WhereHost),
 		hostescape.Link(hostescape.KindDind),
 		"This only matters if the booth runs code you do not trust.",
 		"Allowed by --dind-allowed — starting without asking.",
@@ -172,13 +174,13 @@ func TestConsent_PartlyCovered_WarnsAllAsksForRest(t *testing.T) {
 
 func TestConsent_NoRootClaimForNonRootKinds(t *testing.T) {
 	for _, kind := range []hostescape.Kind{hostescape.KindHostMounts, hostescape.KindHomeMounts, hostescape.KindHostNetwork} {
-		if strings.Contains(hostescape.Impact(kind), "root") {
-			t.Errorf("%s: impact must not claim root: %q", kind, hostescape.Impact(kind))
+		if impact := hostescape.Impact(kind, hostescape.WhereHost); strings.Contains(impact, "root") {
+			t.Errorf("%s: impact must not claim root: %q", kind, impact)
 		}
 	}
 	for _, kind := range []hostescape.Kind{hostescape.KindDind, hostescape.KindEngineSocket, hostescape.KindKernelAccess} {
-		if !strings.Contains(hostescape.Impact(kind), "root") {
-			t.Errorf("%s: impact should say it can lead to root: %q", kind, hostescape.Impact(kind))
+		if impact := hostescape.Impact(kind, hostescape.WhereHost); !strings.Contains(impact, "on the host") {
+			t.Errorf("%s: impact should say it can lead to root on the host: %q", kind, impact)
 		}
 	}
 }
@@ -210,16 +212,92 @@ func TestConsent_Dryrun_DoesNotAsk(t *testing.T) {
 	}
 }
 
-func TestConsent_RootlessPodman_DoesNotAsk(t *testing.T) {
+func TestConsent_RootlessPodman_DoesNotAskForPrivilege(t *testing.T) {
 	resetApprovals(t)
-	env, _, opened := testConsentEnv("", true)
+	env, warnings, opened := testConsentEnv("", true)
 	env.euid = 1000
-	ctx := newConsentCtx(consentCase{dind: true, engine: "podman", runArgs: []string{"--privileged", "--pid=host", "-v", "/etc:/x"}})
+	ctx := newConsentCtx(consentCase{dind: true, engine: "podman", runArgs: []string{"--privileged", "--pid=host", "--cap-add", "SYS_ADMIN"}})
 	if err := ensureHostEscapeConsent(ctx, env); err != nil {
-		t.Fatalf("rootless Podman must not ask: %v", err)
+		t.Fatalf("rootless Podman privilege lands as the user's own account; must not ask: %v", err)
 	}
-	if *opened != 0 {
-		t.Fatal("rootless Podman must not ask")
+	if *opened != 0 || warnings.Len() != 0 {
+		t.Fatalf("rootless Podman must not warn or ask for privilege alone; warnings=%q", warnings.String())
+	}
+}
+
+func TestConsent_RootlessPodman_StillAsksForMountsAndNetwork(t *testing.T) {
+	for name, args := range map[string][]string{
+		"home dotfile": {"-v", "/home/me/.bashrc:/x"},
+		"system path":  {"-v", "/run/media/me/disk:/x"},
+		"host network": {"--network=host"},
+	} {
+		resetApprovals(t)
+		env, warnings, _ := testConsentEnv("", true)
+		env.euid = 1000
+		if ensureHostEscapeConsent(newConsentCtx(consentCase{engine: "podman", runArgs: args}), env) == nil {
+			t.Errorf("%s: rootless Podman must still ask: code as the user is still a way out", name)
+		}
+		if strings.Contains(warnings.String(), "as root") {
+			t.Errorf("%s: rootless Podman must not claim root, got:\n%s", name, warnings.String())
+		}
+	}
+	env, _, _ := testConsentEnv("", true)
+	env.euid = 1000
+	reasons := hostEscapeReasons(newConsentCtx(consentCase{engine: "podman", runArgs: []string{"-v", "/etc:/x"}}), env)
+	if len(reasons) != 1 || !strings.Contains(hostescape.Impact(reasons[0].Kind, reasons[0].Where), "your account can write") {
+		t.Fatalf("rootless system-path mount should say only what the account can write, got %v", reasons)
+	}
+}
+
+func TestConsent_Apple_DropsWhatTheEngineRejects(t *testing.T) {
+	env, _, _ := testConsentEnv("", true)
+	env.euid = 1000
+	ctx := newConsentCtx(consentCase{engine: "apple", runArgs: []string{"--privileged", "--device", "/dev/sda", "--cap-add", "ALL", "-v", "/home/me/.ssh:/x"}})
+	reasons := hostEscapeReasons(ctx, env)
+	if len(reasons) != 1 || reasons[0].Kind != hostescape.KindHomeMounts || reasons[0].Where != hostescape.WhereApple {
+		t.Fatalf("Apple: only the home mount should remain, got %v", reasons)
+	}
+}
+
+func TestEscapeTarget(t *testing.T) {
+	type tc struct {
+		engine, goos string
+		euid         int
+		wsl, desktop bool
+		want         hostescape.Where
+	}
+	for name, c := range map[string]tc{
+		"docker engine linux":    {"docker", "linux", 1000, false, false, hostescape.WhereHost},
+		"docker desktop linux":   {"docker", "linux", 1000, false, true, hostescape.WhereVM},
+		"docker desktop in WSL":  {"docker", "linux", 1000, true, true, hostescape.WhereWSL},
+		"docker on mac":          {"docker", "darwin", 501, false, false, hostescape.WhereVM},
+		"docker on windows":      {"docker", "windows", 0, false, false, hostescape.WhereWSL},
+		"podman rootful linux":   {"podman", "linux", 0, false, false, hostescape.WhereHost},
+		"podman rootless linux":  {"podman", "linux", 1000, false, false, hostescape.WhereAccount},
+		"podman machine on mac":  {"podman", "darwin", 501, false, false, hostescape.WhereVM},
+		"apple container":        {"apple", "darwin", 501, false, false, hostescape.WhereApple},
+		"engine unset is docker": {"", "linux", 1000, false, false, hostescape.WhereHost},
+	} {
+		env, _, _ := testConsentEnv("", true)
+		env.goos, env.euid, env.wsl = c.goos, c.euid, c.wsl
+		desktop := c.desktop
+		env.dockerDesktop = func() bool { return desktop }
+		if got := escapeTarget(newConsentCtx(consentCase{engine: c.engine}), env); got != c.want {
+			t.Errorf("%s: got %q, want %q", name, got, c.want)
+		}
+	}
+}
+
+func TestConsent_VM_SaysVMNotHost(t *testing.T) {
+	resetApprovals(t)
+	env, warnings, _ := testConsentEnv("", true)
+	env.goos = "darwin"
+	if ensureHostEscapeConsent(newConsentCtx(consentCase{runArgs: []string{"--privileged"}}), env) == nil {
+		t.Fatal("a VM-based engine must still ask: root in the VM reaches the shared folders")
+	}
+	got := warnings.String()
+	if !strings.Contains(got, "engine's Linux VM") || strings.Contains(got, "on the host as root") {
+		t.Fatalf("VM wording expected, got:\n%s", got)
 	}
 }
 
@@ -315,7 +393,7 @@ func TestDangerousRunArgs(t *testing.T) {
 		"docker data":         {hostFS, []string{"-v", "/var/lib/docker:/x"}},
 	}
 	for name, c := range dangerous {
-		hits := dangerousRunArgs(c.args, env, false)
+		hits := dangerousRunArgs(c.args, env)
 		if len(hits) != 1 {
 			t.Errorf("%s: %v should be reported once, got %v", name, c.args, hits)
 			continue
@@ -345,7 +423,7 @@ func TestDangerousRunArgs(t *testing.T) {
 		"tmp":               {"-v", "/tmp/share:/share"},
 	}
 	for name, args := range safe {
-		if hits := dangerousRunArgs(args, env, false); len(hits) != 0 {
+		if hits := dangerousRunArgs(args, env); len(hits) != 0 {
 			t.Errorf("%s: %v should not be reported, got %v", name, args, hits)
 		}
 	}
