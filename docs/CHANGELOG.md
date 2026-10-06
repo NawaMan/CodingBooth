@@ -4,6 +4,14 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **A project's own setup can make itself selectable in `booth config`.** A `# cb-template:` line
+  in the leading comment block of `.booth/setups/<name>--setup.sh` turns it into a template named
+  `<name>`, listed under **This project** — no `template.toml` or `meta.toml` needed. Optional
+  `cb-disc`, `cb-detail`, `cb-band`, `cb-requires`, `cb-tags` and `cb-param` lines fill in the rest;
+  params reach the script positionally (`--select db-seed:full`). Until now the only way to use a
+  project setup without making the Boothfile hand-written was a three-file local template. A
+  `template.toml` of the same name still wins, with a warning. See
+  [A setup that is its own template](BOOTH_CUSTOMIZATION.md#a-setup-that-is-its-own-template).
 - **Bash is now in the catalog: `setup bash` and a `bash` tool template.** The script builds a GNU release from source and installs it beside the image login shell, as `bash-<major>.<minor>` (`bash-3.2` for the default 3.2.57). `/bin/bash` stays the booth's shell. This is for testing scripts the way macOS does: macOS still ships Bash 3.2 as `/bin/bash`, and that shell treats `"${array[@]}"` on an empty array as an error when `set -u` is on. `--version X.Y` or `X.Y.Z` (suggests also include 4.4.18, 5.2.37, and 5.3). Select `bash` or `bash:5.2.37`. The Boothfile arg is `GNU_BASH_VERSION`, because the image build shell is bash and that shell already owns the name `BASH_VERSION`. `bash+default` sets `USER_SHELL` to `/opt/bash/bash-<version>/bin/bash`, so the console and a bare `booth` session log in with that release. `booth -- <cmd>` still runs with `/bin/bash`. Try `examples/workspaces/bash-example`.
 
 - **Notebook kernels for Deno, Lua and Scala, and six dead setups gone.** The kernels are

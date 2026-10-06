@@ -22,33 +22,105 @@ func ProjectTemplatesDir(projectRoot string) string {
 }
 
 // LoadMergedRegistry loads the stock templates from stockDir, then merges any
-// project-local templates from <projectRoot>/.booth/templates when that directory
-// exists. Project templates with the same name override stock ones; a warning is
-// written to warn (if non-nil) for each override.
+// project-local templates: those under <projectRoot>/.booth/templates, and the
+// setup scripts in <projectRoot>/.booth/setups that carry a `# cb-template:`
+// header (see setupheader.go). Project templates with the same name override
+// stock ones; a warning is written to warn (if non-nil) for each override.
 //
-// If projectRoot is empty, only the stock registry is returned. A missing or empty
-// project templates directory is not an error.
+// If projectRoot is empty, the current directory is the project. A missing or
+// empty project templates or setups directory is not an error.
 func LoadMergedRegistry(stockDir, projectRoot string, warn io.Writer) (*TemplateRegistry, error) {
 	stock, err := LoadRegistry(stockDir)
 	if err != nil {
 		return nil, err
 	}
 
-	projectDir := ProjectTemplatesDir(projectRoot)
-	info, err := os.Stat(projectDir)
-	if err != nil || !info.IsDir() {
-		return stock, nil
-	}
-
-	project, err := LoadRegistry(projectDir)
+	project, err := loadProjectRegistry(projectRoot, warn)
 	if err != nil {
-		return nil, fmt.Errorf("loading project templates from %q: %w", projectDir, err)
+		return nil, err
 	}
 	if len(project.ByName) == 0 {
 		return stock, nil
 	}
 
 	return MergeRegistries(stock, project, warn), nil
+}
+
+// loadProjectRegistry loads a project's own templates: .booth/templates, plus a
+// template for each .booth/setups script with a `# cb-template:` header. When
+// both define a name, the template.toml wins — it is the explicit one — and the
+// header is reported to warn.
+func loadProjectRegistry(projectRoot string, warn io.Writer) (*TemplateRegistry, error) {
+	project := &TemplateRegistry{ByName: make(map[string]*Template)}
+
+	projectDir := ProjectTemplatesDir(projectRoot)
+	if info, err := os.Stat(projectDir); err == nil && info.IsDir() {
+		project, err = LoadRegistry(projectDir)
+		if err != nil {
+			return nil, fmt.Errorf("loading project templates from %q: %w", projectDir, err)
+		}
+	}
+
+	setupsDir := ProjectSetupsDir(projectRoot)
+	headers, err := LoadSetupHeaderTemplates(setupsDir)
+	if err != nil {
+		return nil, fmt.Errorf("loading setup templates from %q: %w", setupsDir, err)
+	}
+	addSetupHeaderTemplates(project, headers, warn)
+	return project, nil
+}
+
+// addSetupHeaderTemplates adds header-derived templates to the project registry,
+// in the project category, after any template.toml already there. A name the
+// registry already has is skipped with a warning.
+func addSetupHeaderTemplates(project *TemplateRegistry, headers []*Template, warn io.Writer) {
+	if len(headers) == 0 {
+		return
+	}
+
+	var cat *Category
+	for _, c := range project.Categories {
+		if c.Name == ProjectCategoryName {
+			cat = c
+			break
+		}
+	}
+
+	added := false
+	for _, h := range headers {
+		if existing, ok := project.ByName[h.Name]; ok {
+			if warn != nil {
+				fmt.Fprintf(warn, "Warning: project template %q (category %q) overrides the cb-template header in .booth/setups/%s--setup.sh\n",
+					h.Name, existing.CategoryName, h.Name)
+			}
+			continue
+		}
+		if cat == nil {
+			cat = &Category{
+				Name:        ProjectCategoryName,
+				DisplayName: ProjectCategoryDisplayName,
+				Order:       ProjectCategoryOrder,
+			}
+			project.Categories = append(project.Categories, cat)
+		}
+		if !added {
+			// Keep header templates after the category's template.toml ones.
+			base := 0
+			for _, t := range cat.Templates {
+				base = max(base, t.DisplayOrder)
+			}
+			for _, t := range headers {
+				t.DisplayOrder += base
+			}
+			added = true
+		}
+		cat.Templates = append(cat.Templates, h)
+		project.ByName[h.Name] = h
+	}
+
+	slices.SortFunc(project.Categories, func(a, b *Category) int {
+		return a.Order - b.Order
+	})
 }
 
 // MergeRegistries returns a new registry with project templates overlaid on stock.
