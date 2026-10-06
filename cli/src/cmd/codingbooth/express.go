@@ -266,8 +266,11 @@ func parseExpressArgs(args []string) (expressPlan, error) {
 	if len(plan.flags.selectDSLs) > 0 && (plan.image || plan.dockerfile || plan.boothfile) {
 		return expressPlan{}, fmt.Errorf("--select cannot be combined with --image, --dockerfile, or --boothfile")
 	}
-	if len(plan.flags.selectDSLs) == 0 && (plan.flags.templatesPath != "" || plan.flags.aptSnapshotSet) {
-		return expressPlan{}, fmt.Errorf("--templates-path and --apt-snapshot require --select")
+	// --templates-path only says where to look, so with nothing selected it is
+	// simply unused. --apt-snapshot asks for a build, and the prebuilt variant
+	// would quietly ignore it.
+	if len(plan.flags.selectDSLs) == 0 && plan.flags.aptSnapshotSet {
+		return expressPlan{}, fmt.Errorf("--apt-snapshot requires --select")
 	}
 	if err := rejectExpressSets(plan.flags.sets); err != nil {
 		return expressPlan{}, err

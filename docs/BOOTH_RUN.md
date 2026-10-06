@@ -46,7 +46,7 @@ A foreground run keeps the spec in a temporary directory and removes it when the
 
 With no `--select`, express starts the prebuilt variant from the arguments and from `CB_*` variables. It does not write an empty Boothfile. `--image`, then `--dockerfile`, then `--boothfile`, then `--select`, then the prebuilt variant. `--select` cannot be combined with `--image`, `--dockerfile`, or `--boothfile`.
 
-Launch flags override the generated file. `CB_*` variables still apply and lose to flags. `--version` is the image tag, not a catalog pin. `--apt-snapshot` and `--templates-path` require `--select`. `--public` prompts for a password; it does not read `<project>/.booth/.booth.password`.
+Launch flags override the generated file. `CB_*` variables still apply and lose to flags. `--version` is the image tag, not a catalog pin. `--apt-snapshot` requires `--select`; without it `--templates-path` is accepted and unused. `--public` prompts for a password; it does not read `<project>/.booth/.booth.password`.
 
 Express refuses profile and config-edit flags (`--config`, `--profile`, `--add-select`, `--overwrite`, and the other configure-only flags). It also refuses `--set` for cache, shared, and for settings that only take effect as start flags. Unknown tokens are forwarded to `docker run`, as with `booth run`.
 
