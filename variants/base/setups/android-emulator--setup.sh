@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -120,6 +120,11 @@ install -d "$BIN_DIR"
 cat >"${BIN_DIR}/emulatorwrap" <<'EOF'
 #!/bin/sh
 : "${ANDROID_SDK_ROOT:=/opt/android-sdk}"
+# avdmanager files AVDs under $XDG_CONFIG_HOME/.android whenever that is set, and a
+# desktop session sets it; the emulator only ever looks in ~/.android. Pin one home
+# for both (and for adb), unless the user has chosen another.
+: "${ANDROID_USER_HOME:=$HOME/.android}"
+export ANDROID_USER_HOME
 tool="$(basename "$0")"
 if [ -x "$ANDROID_SDK_ROOT/emulator/$tool" ]; then
   exec "$ANDROID_SDK_ROOT/emulator/$tool" "$@"
@@ -151,6 +156,12 @@ AVD_DEVICE="${CB_AVD_DEVICE:-pixel_6}"
 
 # Launched from a desktop icon there is no DISPLAY in the environment.
 export DISPLAY="${DISPLAY:-:1}"
+
+# avdmanager files AVDs under $XDG_CONFIG_HOME/.android whenever that is set, and a
+# desktop session sets it; the emulator only ever looks in ~/.android. Without a pin the
+# first click creates the AVD where neither this script nor the emulator looks.
+export ANDROID_USER_HOME="${ANDROID_USER_HOME:-$HOME/.android}"
+AVD_HOME="${ANDROID_AVD_HOME:-$ANDROID_USER_HOME/avd}"
 
 # Keep a failure readable when this runs in its own terminal window, which would
 # otherwise close the instant the emulator exits.
@@ -259,7 +270,7 @@ SYSTEM_IMAGE="system-images;$(basename "$(dirname "$(dirname "$IMAGE_PATH")")");
 # How this AVD was built. Bump whenever the recipe below changes in a way an
 # existing AVD would not pick up — a new device profile, a new config.ini key.
 AVD_RECIPE="2:${AVD_DEVICE}:${SYSTEM_IMAGE}"
-STAMP="$HOME/.android/avd/${AVD_NAME}.avd/.cb-recipe"
+STAMP="$AVD_HOME/${AVD_NAME}.avd/.cb-recipe"
 
 AVD_EXISTS=0
 avdmanager list avd 2>/dev/null | grep -q "Name: ${AVD_NAME}$" && AVD_EXISTS=1
@@ -274,7 +285,7 @@ if [ "$AVD_EXISTS" = 1 ] && [ "$(cat "$STAMP" 2>/dev/null)" != "$AVD_RECIPE" ]; 
   echo "AVD '${AVD_NAME}' was built by an older launcher recipe — recreating it."
   echo "  (device state is lost; that is the cost of picking up the fix)"
   avdmanager delete avd -n "$AVD_NAME" >/dev/null 2>&1 || true
-  rm -rf "$HOME/.android/avd/${AVD_NAME}.avd" "$HOME/.android/avd/${AVD_NAME}.ini"
+  rm -rf "$AVD_HOME/${AVD_NAME}.avd" "$AVD_HOME/${AVD_NAME}.ini"
   AVD_EXISTS=0
 fi
 
@@ -287,7 +298,14 @@ if [ "$AVD_EXISTS" = 0 ]; then
   # defaults to a 320x640 mdpi screen, far smaller than anything Android 14's
   # system UI expects. A real device profile fixes both.
   echo no | avdmanager create avd -n "$AVD_NAME" -k "$SYSTEM_IMAGE" -d "$AVD_DEVICE" >/dev/null
-  CONFIG="$HOME/.android/avd/${AVD_NAME}.avd/config.ini"
+  # avdmanager can report success and still put the AVD somewhere else; say where
+  # it was expected instead of failing later on a path that does not exist.
+  if [ ! -d "$AVD_HOME/${AVD_NAME}.avd" ]; then
+    echo "avdmanager did not create the AVD in $AVD_HOME."
+    echo "  (ANDROID_USER_HOME=${ANDROID_USER_HOME}, ANDROID_AVD_HOME=${ANDROID_AVD_HOME:-<unset>})"
+    false
+  fi
+  CONFIG="$AVD_HOME/${AVD_NAME}.avd/config.ini"
   if [ -f "$CONFIG" ]; then
     # avdmanager has no flag for these, so set them in the config it just wrote.
     # hw.keyboard=no means the host keyboard does not reach the guest — you can
@@ -313,8 +331,8 @@ fi
 # (nothing survives to be stale), and essential with it: every container exit is
 # an unclean exit as far as the emulator is concerned.
 if ! pgrep -f "qemu-system-x86_64.*${AVD_NAME}" >/dev/null 2>&1; then
-  rm -rf "$HOME/.android/avd/running"
-  find "$HOME/.android/avd/${AVD_NAME}.avd" -maxdepth 1 -name "*.lock" -exec rm -rf {} + 2>/dev/null || true
+  rm -rf "$AVD_HOME/running"
+  find "$AVD_HOME/${AVD_NAME}.avd" -maxdepth 1 -name "*.lock" -exec rm -rf {} + 2>/dev/null || true
 fi
 
 ACCEL_ARGS=()
@@ -322,8 +340,8 @@ if [ -r /dev/kvm ] && [ -w /dev/kvm ]; then
   echo "KVM is available — starting hardware-accelerated."
 else
   echo "No usable /dev/kvm — starting in software emulation (much slower to boot)."
-  echo "For hardware acceleration, reconfigure the booth with the +kvm extension"
-  echo "on a Linux host that has /dev/kvm."
+  echo "Either this host has no /dev/kvm (macOS, virtualization off, a VM without"
+  echo "nested virtualization), or the booth was configured with android-sdk~kvm."
   ACCEL_ARGS=(-accel off -gpu swiftshader_indirect)
 fi
 
@@ -420,6 +438,10 @@ cb-desktop-icon.sh cb-android-emulator.desktop || true
 echo "Android emulator installed under ${SDK_ROOT}/emulator."
 # See android-sdk--setup.sh: first non-empty line, both streams folded in.
 echo -n "   emulator: "; "${BIN_DIR}/emulator" -version 2>&1 | grep -m1 . || echo "?"
+# Running the emulator, even for -version, leaves /tmp/android-<user>/ behind. At
+# image build that is root's, named "android-unknown" (no USER), mode 0744, and
+# would otherwise ship in the image.
+rm -rf "/tmp/android-${USER:-unknown}"
 if [[ $WITH_IMAGE -eq 1 ]]; then
   echo "   system image: ${SYSTEM_IMAGE}"
 fi

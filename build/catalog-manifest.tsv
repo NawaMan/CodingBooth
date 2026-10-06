@@ -7,8 +7,8 @@ setup	affine-server	0.1.0	e33e2f76136f9db28ac14de4d2160d536f2c4bf197b221e436c37f
 setup	aider	1.0.0	17f16bc650d114d025d9fcdc6e7e2cade9047ed11a8e5846ed96b95dbd65d989	variants/base/setups/aider--setup.sh
 setup	alacritty	1.0.0	e5c1c229d33b23cf8911742113e818417c479d81ba98c5d8c0b0950a5bbe819b	variants/base/setups/alacritty--setup.sh
 setup	alacritty-fancy	1.0.0	e9be30b45648220767104d66c0198f3cf87351b38432535f71e26992c5e22679	variants/base/setups/alacritty-fancy--setup.sh
-setup	android-emulator	0.1.0	aa84656d66a0396df5549f2a12a266e157319cc6c239455737e47804c2426f53	variants/base/setups/android-emulator--setup.sh
-setup	android-sdk	0.1.0	e3cba1f18fd099442b3479abf23913e1cc85dde7ef4015f8c5d7af84e78a6e3b	variants/base/setups/android-sdk--setup.sh
+setup	android-emulator	0.2.0	a75995b9c485085d86b13f886cf0c6bdf6e33007288a3ae6bec4e06009e7b86c	variants/base/setups/android-emulator--setup.sh
+setup	android-sdk	0.2.0	eeaa386366b72dcea6fdf7756b1564c70b83788eff24f5cc695244fd50c54ecc	variants/base/setups/android-sdk--setup.sh
 setup	angular-code-extension	0.1.0	38ffe669d3909b9fb7e680acdaf2e4b0c0606e3e742ca0cf90fa096aad5aaf9f	variants/base/setups/angular-code-extension--setup.sh
 setup	ansible	1.0.0	4392e8f53e79968d8d81057803213691979ee181a02ba175316af9fdb826b1de	variants/base/setups/ansible--setup.sh
 setup	ansible-code-extension	0.1.0	c5aadbacbe21ea42f0c3965c1e7a1bd54de4925a472757a800f98c461d5f7470	variants/base/setups/ansible-code-extension--setup.sh
@@ -568,8 +568,8 @@ extension	affine-server+seed	0.1.0	1a77b8cc0b19dabf4630ec968c4231896b36d702a8b49
 extension	alacritty+default	1.0.0	fb58c274fc0f0b31accbf87ed1730789566c268b79d941808784ebc33438bd17	templates/desktops/alacritty/default--extension.toml
 extension	alacritty+fancy	1.0.0	d37ce88d3e5f831f3a3830258b0fa7930bf9498beb4d6f5c80600b5475c6c568	templates/desktops/alacritty/fancy--extension.toml
 extension	android-sdk+avd-cache	0.1.0	091ec3514ea17e35a134af5359eec90682a6ce16289ef66417c065af45267c07	templates/tools/android-sdk/avd-cache--extension.toml
-extension	android-sdk+emulator	0.1.0	561dd4cc3cfee95208228c5c3acf163a7cd726a192db200c51cf8b8b9c124b47	templates/tools/android-sdk/emulator--extension.toml
-extension	android-sdk+kvm	0.1.0	a6d237d11f8df292cb9a276c369330901a1b999bc77b797ec91d8254edc3178d	templates/tools/android-sdk/kvm--extension.toml
+extension	android-sdk+emulator	0.1.1	57d72ea45c1781986e47bba8689287d8e6719f0fcd6f2a6d24610e6a8c04b48a	templates/tools/android-sdk/emulator--extension.toml
+extension	android-sdk+kvm	0.2.0	5a292bee50f92ea8d1d090d2050c2a232f3f3bfc8a8bad066792106995ec8c3a	templates/tools/android-sdk/kvm--extension.toml
 extension	ansible+vscode-ext	0.1.0	c447f128b6a692ffed8abfdb1192dcbe2f4dd1301fc5bebfb9520d07064a87c6	templates/tools/ansible/vscode-ext--extension.toml
 extension	antigravity+credential	1.0.0	21339d2f9fa86934ca4763c6850551187a0de5ee58e7fdd5393f277725f589c0	templates/ai-tools/antigravity/credential--extension.toml
 extension	anythingllm+autostart	0.1.0	5eda4b35906a0ec3cfd85a975c57494fbdb3d15d6a92152ad1f090618737c247	templates/ai-tools/anythingllm/autostart--extension.toml
