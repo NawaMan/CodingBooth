@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "sql-studio"
 display-disc = "Browser-based single-binary SQL database explorer"
 display-detail = "Installs sql-studio, a single binary that serves a browser-based SQL explorer for SQLite, libSQL, PostgreSQL, MySQL, DuckDB, ClickHouse, SQL Server, and local Parquet/CSV files. Registers a desktop icon on desktop variants that asks what to open (a file or a connection URL) via a dialog, falling back to a sample database if cancelled. On every variant, start it against a real file or connection with `start-sql-studio` and reach it with `booth--expose`."

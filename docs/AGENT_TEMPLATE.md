@@ -78,6 +78,7 @@ order = 1
 Every template and extension needs a `template.toml`:
 
 ```toml
+cb-version = "1.0.0"
 display-name = "Go"
 display-disc = "Go language toolchain"
 display-order = 10
@@ -119,6 +120,7 @@ install go golang.org/x/tools/gopls@latest
 
 | Field           | Type       | Description                                              |
 |-----------------|------------|----------------------------------------------------------|
+| `cb-version`    | string     | The template's own semver (`1.2.0`) — bump on every change; see [CATALOG_VERSIONING.md](CATALOG_VERSIONING.md) |
 | `display-name`  | string     | Human-readable name                                      |
 | `display-label` | string     | Optional TUI list-row label in place of the template name (e.g. `i3 (Tiling)`); `--select` still takes the name |
 | `display-disc`  | string     | Short description — the list view                        |
@@ -561,7 +563,11 @@ This ensures Node.js (order 30) is installed before my-tool (order 80), regardle
 
 - [ ] Create category directory with `meta.toml` (if new category)
 - [ ] Create template directory with a unique name
-- [ ] Write `template.toml` with display-name, display-disc, display-order, tags
+- [ ] Write `template.toml` with `cb-version = "0.1.0"`, display-name, display-disc, display-order, tags
+- [ ] Changing an existing template or extension? Bump its `cb-version` — **major** for a param
+      removed, renamed or reordered, a `requires` added, or an order-band change; **minor** for a
+      param appended, new `suggests` or files; **patch** for wording. Each extension has its own.
+- [ ] Run `build/gen-catalog-manifest.sh`
 - [ ] Add params with explicit prefixed names (e.g., `TOOL_VERSION`)
 - [ ] Add `[segments]` with Boothfile content using `setup`/`install` commands referencing params
 - [ ] Add `run-args` for credentials or environment variables if needed
@@ -572,7 +578,7 @@ This ensures Node.js (order 30) is installed before my-tool (order 80), regardle
 
 ### Catalog guards
 
-Four tests in `tests/config/` enforce invariants across the whole catalog. They are cheap, need no
+Five tests in `tests/config/catalog/` enforce invariants across the whole catalog. They are cheap, need no
 Docker, and are the fastest way to catch a template that looks fine on its own:
 
 | Guard | Enforces |
@@ -581,6 +587,7 @@ Docker, and are the fastest way to catch a template that looks fine on its own:
 | `test88-all-params-are-wired.sh` | every declared `[params.X]` is referenced as `${X}` in that template's directory |
 | `test90-web-servers-have-desktop-icon.sh` | a template starting a web server registers a desktop icon |
 | `test92-arch-unsupported-is-declared.sh` | `unsupported-arch` carries a note, and setups bail out with exit 0 |
+| `test94-catalog-manifest-is-current.sh` | every item declares a valid `cb-version`, and `build/catalog-manifest.tsv` is current |
 
 A declared-but-unreferenced param is the nastiest of these: `booth config` shows the knob, writes
 `arg X=<value>`, and nothing consumes it — the user's choice is silently dropped.

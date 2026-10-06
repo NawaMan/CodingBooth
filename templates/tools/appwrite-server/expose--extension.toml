@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Expose Appwrite Port"
 display-disc = "Publish the Appwrite console (HTTP) to the host"
 display-detail = "Appwrite listens inside the booth on APPWRITE_PORT (default 8080). This publishes it so a browser or SDK on the host can open the console. Add autostart too, or nothing will be listening. HTTPS stays inside the booth (APPWRITE_HTTPS_PORT); publish it separately with --expose if you need it."

@@ -27,6 +27,7 @@ type metaToml struct {
 }
 
 type specToml struct {
+	CBVersion    string               `toml:"cb-version"`
 	DisplayName  string               `toml:"display-name"`
 	DisplayLabel string               `toml:"display-label"`
 	DisplayDesc   string               `toml:"display-disc"`
@@ -191,6 +192,7 @@ func loadTemplateDir(dir, name, categoryName string, allowExtensions bool) (*Tem
 		AutoSelect:    spec.AutoSelect,
 		UnsupportedArch:     spec.UnsupportedArch,
 		UnsupportedArchNote: spec.UnsupportedArchNote,
+		CBVersion:     spec.CBVersion,
 		Variant:       spec.Variant,
 		Port:          spec.Port,
 		Timezone:      spec.Timezone,
@@ -373,6 +375,7 @@ func loadExtensionFile(filePath, name, categoryName string) (*Template, error) {
 		AutoSelect:    spec.AutoSelect,
 		UnsupportedArch:     spec.UnsupportedArch,
 		UnsupportedArchNote: spec.UnsupportedArchNote,
+		CBVersion:     spec.CBVersion,
 		Variant:       spec.Variant,
 		Port:          spec.Port,
 		Timezone:      spec.Timezone,

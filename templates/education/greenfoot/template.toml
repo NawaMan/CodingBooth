@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Greenfoot"
 display-disc = "Greenfoot Java teaching IDE for 2D games & simulations (requires desktop variant)"
 display-detail = """Installs Greenfoot, a Java IDE from the BlueJ team at King's College London designed for \

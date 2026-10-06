@@ -2,6 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
+# cb-version: 1.0.0
 
 # deno-nb-kernel--setup.sh
 # NOTE: This script has not been tested -- no time (sorry). Please report success or failure. :-p

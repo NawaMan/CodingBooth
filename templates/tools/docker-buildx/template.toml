@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Docker Buildx"
 display-disc = "Docker Buildx plugin for advanced image builds"
 display-detail = "Installs the Docker Buildx plugin for advanced image building with multi-platform support."

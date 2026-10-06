@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "VM CPUs"
 display-disc = "CPUs for the booth's VM — macOS / Apple container only"
 display-detail = """Sets how many CPUs the VM the booth runs in may use (`vm-cpus` in config.toml, \

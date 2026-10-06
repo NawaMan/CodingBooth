@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "GoLand"
 display-disc = "JetBrains GoLand IDE for Go development"
 display-detail = """Installs JetBrains GoLand IDE for Go development with advanced refactoring and debugging. \

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Expose RabbitMQ Ports"
 display-disc = "Publish the AMQP port and the management UI to host network"
 display-detail = "Publishes both RABBIT_PORT (AMQP, for clients on the host) and RABBIT_MGMTPORT (the management web UI, which is the one you actually open in a browser). Pair with the +start extension — that is what launches RabbitMQ on boot and provisions the dev user; without it nothing is listening. Each host port follows the port the broker listens on; RABBIT_HOST_PORT and RABBIT_MGMT_HOST_PORT override the host side alone, in that order — rabbitmq+start+expose:15672,25672."

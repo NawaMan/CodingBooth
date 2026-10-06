@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name   = "Ghostty"
 display-disc   = "Fast, native GTK terminal emulator (alternate terminal for desktop variants)"
 display-detail = """\

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Exercism CLI"
 display-disc = "Exercism.org practice exercises CLI for 70+ languages"
 display-detail = """Installs the Exercism CLI, used to download and submit exercises from \

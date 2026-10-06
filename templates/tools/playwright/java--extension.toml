@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Playwright Java"
 display-disc = "Playwright Java bindings (com.microsoft.playwright)"
 display-order = 12

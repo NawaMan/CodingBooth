@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Python VS Code Extension"
 display-disc = "Python language support extension for VS Code"
 display-order = 1

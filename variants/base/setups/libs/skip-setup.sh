@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# cb-version: 1.0.0
 # skip-setup.sh — Helper for setup scripts to handle N/A conditions
 #
 # When a setup script's prerequisites aren't met (wrong variant, missing dependency),

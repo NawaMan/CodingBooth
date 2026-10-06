@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Playwright Python"
 display-disc = "Playwright Python bindings (playwright for Python)"
 display-order = 10

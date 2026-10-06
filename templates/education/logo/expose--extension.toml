@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Expose Logo Port"
 display-disc = "Expose Logo editor port to host network"
 display-order = 1

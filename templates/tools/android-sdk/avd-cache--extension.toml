@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "AVD Cache"
 display-disc = "Persist the emulator's virtual device across booth restarts"
 display-detail = """Keeps ~/.android in .booth/cache/, so the emulator's virtual device survives container \

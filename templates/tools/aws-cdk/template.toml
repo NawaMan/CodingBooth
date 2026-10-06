@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "AWS CDK"
 display-disc = "AWS Cloud Development Kit for infrastructure as code"
 display-detail = "Installs AWS CDK CLI for defining cloud infrastructure using familiar programming languages (TypeScript, Python, Java, etc.)."

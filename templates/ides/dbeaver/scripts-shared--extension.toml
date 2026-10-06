@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "SQL Scripts Shared"
 display-disc = "Team-share DBeaver project Scripts folder via git (.booth/shared)"
 display-detail = """Live-bind-mounts the default DBeaver project Scripts directory under .booth/shared/ so saved SQL scripts survive restarts and can be committed. Path: workspace6/General/Scripts (DBeaver CE project explorer). Prefer project-repo sql/ for app migrations; use this for DBeaver-native script explorer. Do not put credentials in scripts. Separate from +connections-shared and +drivers-shared. Not cache."""

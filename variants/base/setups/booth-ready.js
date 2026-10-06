@@ -1,4 +1,5 @@
 // Booth readiness gate — shared by every variant's browser UI.
+// cb-version: 0.1.0
 //
 // Every variant is fronted by nginx, and nginx binds the booth's port before
 // the service behind it is listening. A page that points its frames at that

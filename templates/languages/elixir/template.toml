@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Elixir"
 display-disc = "Elixir language with Mix build tool (requires erlang)"
 display-detail = "Installs Elixir with the Mix build tool. Requires the erlang template for the Erlang/OTP runtime."

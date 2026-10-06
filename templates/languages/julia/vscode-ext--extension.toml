@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Julia VS Code Extension"
 display-disc = "Julia language support extension for VS Code"
 display-order = 1

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Mojo Notebook Kernel"
 display-disc = "Mojo Jupyter support (%%mojo magic on a Mojo-named Python kernel)"
 display-detail = """Modular's official notebooks are a Python kernel plus `import mojo.notebook`, \

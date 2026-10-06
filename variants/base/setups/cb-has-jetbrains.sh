@@ -1,4 +1,5 @@
 #!/bin/bash
+# cb-version: 0.1.0
 # Returns 0 if a JetBrains IDE is available, 1 otherwise.
 
 # Every JetBrains IDE unpacks with a product-info.json at its install root, and

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name   = "Tela Icons"
 display-disc   = "Tela icon theme (Tela, Tela-light, Tela-dark) — opt-in, not the default"
 display-detail = """\

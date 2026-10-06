@@ -12,6 +12,7 @@ commit — they ride the same push.
 ```
 0.  git preflight (must be main, clean, --rc)
 0b. catalog version sweep — offer bumps; commit accepted ones (not the version commit)
+0c. catalog item versions — build/check-catalog-versions.sh must pass; bump cb-version where it fails
 1.  version.txt/README.md: X.Y.Z--rcN → X.Y.Z    → commit "X.Y.Z"
 2.                                                → git push origin main
 3.  version.txt/README.md: X.Y.Z → X.(Y+1).0--rc1 → commit "X.(Y+1).0--rc1"  → NO push
@@ -229,6 +230,32 @@ That regenerates from the example's header, so it also picks up any template cha
 example was last configured. Look at the diff before committing (all three files: `Boothfile`,
 `config.toml`, `.booth/.generated`). If `booth config` says it could not read the example's edits
 back, the example holds hand-written content — ask before overwriting it.
+
+## 0c. Catalog item versions — blocking
+
+Every catalog item carries a hand-written `cb-version` and a generated sha256
+(`docs/CATALOG_VERSIONING.md`). This step proves the two agree with what shipped last time. It runs
+**after** 0b on purpose: a pin bump changes a setup or template, and that change needs its bump.
+
+```bash
+build/gen-catalog-manifest.sh          # refresh build/catalog-manifest.tsv
+build/check-catalog-versions.sh        # baseline = manifest at the previous release tag
+```
+
+The baseline is the highest `X.Y.Z` tag below `version.txt`. A warning that it is not an ancestor
+of HEAD means main was never rebased onto that release — stop and find out why.
+
+| Result | Do |
+| --- | --- |
+| `changed … bump cb-version` | Bump it per the table in `docs/CATALOG_VERSIONING.md` — patch for a fix, minor for something added, major (or a new minor below 1.0.0) for a break. Ask the user when the kind is not obvious from the diff (`git diff <baseline> -- <path>`). |
+| `params removed or reordered` | Breaking for `--select` users — a major bump, or restore the order. Ask. |
+| `version went down` | A mistake — restore at least the baseline version. |
+| `manifest is stale` | Run `build/gen-catalog-manifest.sh` and include the file. |
+| `WARN bumped with no change` | Harmless; mention it. |
+
+Commit the bumps plus the regenerated manifest as one commit (`Bump catalog item versions for
+X.Y.Z`), separate from the version commit, then re-run the check until it reports `0 fail`. CI runs
+the same check on release and refuses to publish when it fails.
 
 ### Go-ahead to drop the rc
 

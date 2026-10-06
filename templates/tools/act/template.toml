@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "act"
 display-disc = "Run GitHub Actions workflows locally"
 display-detail = "Installs act, which executes GitHub Actions workflows locally inside Docker containers. Requires Docker (dind) at runtime."

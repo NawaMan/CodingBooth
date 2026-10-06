@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Tiling for Wayland (sway)"
 display-label = "sway (Tiling)"
 display-disc = "sway tiling compositor for the Wayland desktop, in place of labwc"

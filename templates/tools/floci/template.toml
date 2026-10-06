@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Floci"
 display-disc = "Local AWS emulator (S3, DynamoDB, SQS, Lambda, … on :4566)"
 display-detail = """Installs the official Floci CLI. `floci start` launches a LocalStack-compatible AWS emulator on port 4566 — no cloud account, no auth token. Point the AWS CLI or SDK at it (`eval $(floci env)`) and keep using the same commands. `floci start` needs Docker: add the autostart extension (which pulls in dind) to have the emulator running on boot, and expose to reach it from the host. Select aws-cli alongside it if you want the AWS CLI in the booth too."""

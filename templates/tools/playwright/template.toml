@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Playwright"
 display-disc = "Playwright browser automation and end-to-end testing framework"
 display-detail = "Installs Playwright with Chromium for headless browser testing. Supports Chromium, Firefox, and WebKit browsers. Use extensions to add extra browsers or language bindings for Python, .NET, or Java."

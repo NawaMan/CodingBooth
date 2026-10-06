@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name   = "Kitty"
 display-disc   = "GPU-accelerated terminal emulator (alternate terminal for desktop variants)"
 display-detail = """\

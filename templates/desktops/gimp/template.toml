@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "GIMP"
 display-disc = "GIMP image editor (requires desktop variant)"
 display-detail = "Installs GIMP, the GNU Image Manipulation Program for image editing. Requires a desktop variant to be selected."

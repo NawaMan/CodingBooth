@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name   = "VS Code Copilot"
 display-disc   = "Keep GitHub Copilot in desktop VS Code (stripped by default)"
 display-detail = """\

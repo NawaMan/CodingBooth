@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Python Notebook Kernel"
 display-disc = "Python Jupyter notebook kernel"
 display-order = 5

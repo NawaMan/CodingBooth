@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "mod_php"
 display-disc = "Serve .php files from Apache (libapache2-mod-php)"
 display-detail = """Enables Apache mod_php after Apache is already installed. This is the `--with-php` flag as a \

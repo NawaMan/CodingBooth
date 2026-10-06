@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "AnythingLLM Project Files"
 display-disc = "Bind-mount /home/coder/code into AnythingLLM's file-system agent jail"
 display-detail = """Bind-mounts the booth project into `~/.anythingllm/anythingllm-fs/code` and turns on AnythingLLM's filesystem-agent skill (it is off by default; without that, `@agent list files` only searches workspace RAG and reports empty). A symlink is not enough: the agent realpath()s and rejects targets outside the jail. In chat: `@agent list files in code`. This is not +persist and not workspace RAG."""

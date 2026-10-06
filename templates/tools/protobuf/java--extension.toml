@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Java protoc plugin"
 display-disc = "protoc-gen-grpc-java for Java gRPC service codegen"
 display-detail = """Installs protoc-gen-grpc-java as a standalone protoc plugin on PATH, downloaded as a \

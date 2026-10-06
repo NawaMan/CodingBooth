@@ -2,6 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
+# cb-version: 0.1.0
 
 # Answers the JetBrains IDE prompts that otherwise block a fresh booth's first launch,
 # by seeding the files the IDE writes when you answer them by hand.

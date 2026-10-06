@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Keyboard Shortcuts Shared"
 display-disc = "Team-share XFCE keyboard shortcuts via git (.booth/shared)"
 display-detail = """Live-bind-mounts the XFCE keyboard-shortcuts xfconf XML only. Safe team keybindings for the lab desktop. Does not share full xfce4 config, sessions, or anything with credentials."""

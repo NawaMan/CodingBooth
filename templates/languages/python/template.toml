@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Python"
 primary = true
 display-disc = "Python with pip package manager and venv support"

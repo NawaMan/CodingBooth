@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "yarn Packages"
 display-disc = "Install global yarn packages"
 display-detail = """Installs global packages with `yarn global add` — Yarn 1 classic, bootstrapped through npm during \

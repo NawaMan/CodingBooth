@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Notebook Auto-Start"
 display-disc = "Auto-start JupyterLab on container boot"
 display-detail = "Runs 'start-notebook' in the background when the container boots, so JupyterLab is serving on NOTEBOOK_PORT alongside whatever UI the variant provides — a notebook next to code-server, or on a desktop. On the notebook variant this is a no-op: JupyterLab is already the primary service there and it occupies the same port, so starting a second one would collide. Pair with the expose extension to reach it from the host. If PASSWORD is set, it becomes the JupyterLab token."

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Ruby Notebook Kernel"
 display-disc = "Ruby Jupyter notebook kernel (iruby)"
 display-order = 5

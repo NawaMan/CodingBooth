@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Node.js Notebook Kernel"
 display-disc = "Node.js Jupyter notebook kernel (tslab)"
 display-order = 5

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "jenv"
 display-disc = "jEnv Java version manager"
 display-order = 20

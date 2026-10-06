@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Bookmarks Shared"
 display-disc = "Team-share Firefox profile tree via git (.booth/shared)"
 display-detail = """Live-bind-mounts ~/.mozilla/firefox/ under .booth/shared/. Firefox creates profiles.ini and a profile on first run inside that mount, so bookmarks (places.sqlite) survive restarts and can be committed. Prefer sharing the whole firefox/ dir rather than a single places.sqlite — SQLite and profile names break file-level mounts. places.sqlite also holds history; do not commit secrets/logins. Full local profiles: +profile-cache or --persist-home."""

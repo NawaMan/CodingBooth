@@ -29,6 +29,7 @@ type Template struct {
 	DisplayDesc   string // from template.toml display-disc (short description for list view)
 	DisplayDetail string // from template.toml display-detail (long description for show view)
 	DisplayOrder  int    // from template.toml display-order
+	CBVersion     string // from template.toml cb-version: the item's own semver (docs/CATALOG_VERSIONING.md)
 	Tags          []string
 	Primary       bool  // shown by default in list/search; non-primary only shown with --full
 	Local         bool  // set at merge time for templates from .booth/templates/
