@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # chromium-browser--setup.sh — Install Chromium (DEB, no snap) on Ubuntu via Debian Bookworm, then clean up
 set -Eeuo pipefail
@@ -46,6 +46,16 @@ exec "$CHROMIUM_BIN" \
   "\$@"
 EOF
 chmod 0755 /usr/local/bin/google-chrome
+
+# --no-sandbox is required in a container, and Chrome answers it with a yellow
+# "unsupported command-line flag" bar on every window — the booth's web apps
+# included. This managed policy turns that warning off. Its only other effect
+# is that Chrome's menu says the browser is "managed by your organization".
+install -d -m 0755 /etc/chromium/policies/managed
+cat >/etc/chromium/policies/managed/codingbooth.json <<'EOF'
+{ "CommandLineFlagSecurityWarningsEnabled": false }
+EOF
+
 ln -sf "$CHROMIUM_BIN" /usr/local/bin/chromium-browser || true
 
 # --- Optional: retarget .desktop to wrapper ---
