@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Bash Default"
+display-disc = "Set the built Bash as the default login shell"
+display-detail = "Sets USER_SHELL to /opt/bash/bash-<version>/bin/bash, using the release selected on the bash template. On container start, booth-entry uses that path as the coder user's login shell, so the console and a bare booth session start that build. booth -- <cmd> still runs under /bin/bash. Without this extension the login shell stays /bin/bash."
+display-order = 2
+auto-select = false
+tags = [
+    "bash",
+    "shell",
+    "default",
+    "macos"
+]
+
+run-args = [
+    "-e", "USER_SHELL=/opt/bash/bash-${GNU_BASH_VERSION}/bin/bash",
+]

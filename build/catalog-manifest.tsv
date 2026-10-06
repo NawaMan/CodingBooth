@@ -23,6 +23,7 @@ setup	aws-cli	1.0.0	86f33b090048a34908a279d640b232f8f3b4d70d17347fbf7116a24181f2
 setup	aws-sam-cli	1.0.0	f9ea029f35792cdc088f459e6192efb3e140ae9c72e2b5ecf659b4f0e6d73c2a	variants/base/setups/aws-sam-cli--setup.sh
 setup	azure-cli	1.0.0	98a239af8dceb156d984e50bca3cebcbddf28f78611837c695a77dc0e50a5b20	variants/base/setups/azure-cli--setup.sh
 setup	base-code-extension	1.0.0	8442e7a6aa51c3423207d8172d170208a5696abad356505cd95bb49983393db3	variants/base/setups/base-code-extension--setup.sh
+setup	bash	0.1.0	7dd1808ddcf064fadd1ea94d4281d5a649c898373051ea63cac9d42f77f7ee2f	variants/base/setups/bash--setup.sh
 setup	bash-code-extension	1.0.0	739b732e27d197027422df407be931c49db8b64c2ba1cbb5b33378ba0fda4635	variants/base/setups/bash-code-extension--setup.sh
 setup	bash-nb-kernel	1.0.0	7b99d4bb4f5c20b73ade9ec071e6b7051c7372bbc23f7f8d80ecf4aab51b70cb	variants/base/setups/bash-nb-kernel--setup.sh
 setup	bluej	1.0.0	1afcb7ad9ff53a0a2c0f10cd24894cd901e7ac05a9a9f727ea98efb6fcd37dcc	variants/base/setups/bluej--setup.sh
@@ -377,6 +378,7 @@ template	aws-cdk	1.0.0	37b101a82ead64c22205a9866ef0c10bc219fa023818f829c8bbe8d1b
 template	aws-cli	1.0.0	72d55e433a599603f8c754be248a5e7339a795dfb8a57e78b9a65cca2621df80	templates/tools/aws-cli/template.toml
 template	aws-sam-cli	1.0.0	68eb10612ae4e4fe9845df3497a4324d44664d10dfcc08619a92d4c9d510cbd0	templates/tools/aws-sam-cli/template.toml
 template	azure-cli	1.0.0	769f7a261ff9687db05e14f43615d1a9d389961d8dcd907bf6a9cd5c470d76ff	templates/tools/azure-cli/template.toml
+template	bash	0.1.1	0745e8f0ccdc7dee5b03887769e7922553de764aace080fc6d525e248db0cf1a	templates/tools/bash/template.toml
 template	bash-nb-kernel	1.0.0	dbb76597b7fdce528c63c7e45ae18d7a287b460f23efed73409de544545ebf9c	templates/tools/bash-nb-kernel/template.toml
 template	bluej	1.0.0	adecc119a92051c07fc3b50cec3cfcb4ff8440ea5c0ad81dd767e009346a8712	templates/education/bluej/template.toml
 template	brew-pkg	1.0.0	2af46f813c76f44e49fdc2c42d6520989ac389632145f642636614d22f85ee4c	templates/tools/brew-pkg/template.toml
@@ -585,6 +587,7 @@ extension	aws-cli+credential	1.0.0	d68c144521e4088c05e9adbd0a1a166bbd294c213eefb
 extension	aws-sam-cli+credential	1.0.0	242311d8b4dfe1b7a9d6692c1579416df38ed7586f7821f9fdc134a335e73e9b	templates/tools/aws-sam-cli/credential--extension.toml
 extension	aws-sam-cli+dind	1.0.0	32f4c5ec651b369cf8d88210be62e8023a2f4180c4a414ce0d8713e40070c0cc	templates/tools/aws-sam-cli/dind--extension.toml
 extension	azure-cli+credential	1.0.0	9c3609cdab8d13947ea33ef6308f90409c10d06079feaad05304d8e60be0801f	templates/tools/azure-cli/credential--extension.toml
+extension	bash+default	0.1.0	daf61a3fc1280484dc42f8b16592d33c7eaa96c3ee23675ccdf90cb5e4f7a4e6	templates/tools/bash/default--extension.toml
 extension	buf+vscode-ext	0.1.0	0cc2e6d2127841d28f0441cd2c7042b25002a8cdd923e0a463998ebe330ccc6a	templates/tools/buf/vscode-ext--extension.toml
 extension	bun+bun-install	1.0.0	552c4ed2bf82d9d9ec3e36f8710c4403441ad3d8729367f2936fd81fb46dfe5e	templates/languages/bun/bun-install--extension.toml
 extension	bun+bun-pkg	1.0.0	aeba02e40900e7ea4621a982a0a0b831bc136203cb8ff0da8688c6b097305ef1	templates/languages/bun/bun-pkg--extension.toml

@@ -1,0 +1,20 @@
+# Wrapped commands auto-run inside the booth when called from the host
+# (empty once already inside one, where BOOTH_CONTAINER_NAME is set).
+# This checkout's CLI. A `booth` on PATH is the installed release, which does not have this session's scripts yet.
+run := if env("BOOTH_CONTAINER_NAME", "") == "" { "../../../codingbooth exec --run --" } else { "" }
+
+[private]
+default:
+    @just --list
+
+# Print the installed bash-3.2 version (macOS still ships 3.2 as /bin/bash)
+version:
+    {{run}} bash-3.2 --version
+
+# Count zero arguments. The empty array must not abort under set -u.
+count:
+    {{run}} ./scripts/count-args.sh
+
+# Count two arguments
+count-two:
+    {{run}} ./scripts/count-args.sh one two
