@@ -241,7 +241,13 @@ with any of these. The warning groups them by what untrusted code could do, and 
 
 Read-only mounts (`:ro`), like the credential seeds templates add, do not ask — they leak what they
 contain (§3) but do not let the booth run anything on the host. A `--device` the host does not have
-does not ask either: booth drops it before the run.
+does not ask either: booth drops it before the run. Nor do the four devices the table excepts —
+`/dev/kvm`, `/dev/dri/…`, `/dev/net/tun` and `/dev/fuse` — because none is a way out: each lets the
+booth use one kernel feature (run a VM, render on the GPU, make a network interface, mount a FUSE
+file system), and does not reach the host's files, processes, or other devices. They do widen
+what a kernel bug in that feature could be used for, the same exposure your own account already has
+— a desktop login can usually open `/dev/kvm` and `/dev/dri` itself — so asking every Android or
+GPU booth to say "yes" would only teach people to say it without reading.
 
 > ⚠️ **This is a list of known ways out, not a proof of safety.** `run-args` is a raw passthrough, and
 > there are other ways to hurt yourself with it. Treat `run-args` as a trusted, advanced surface —

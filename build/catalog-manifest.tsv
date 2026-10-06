@@ -7,8 +7,8 @@ setup	affine-server	0.1.0	e33e2f76136f9db28ac14de4d2160d536f2c4bf197b221e436c37f
 setup	aider	1.0.0	17f16bc650d114d025d9fcdc6e7e2cade9047ed11a8e5846ed96b95dbd65d989	variants/base/setups/aider--setup.sh
 setup	alacritty	1.0.0	e5c1c229d33b23cf8911742113e818417c479d81ba98c5d8c0b0950a5bbe819b	variants/base/setups/alacritty--setup.sh
 setup	alacritty-fancy	1.0.0	e9be30b45648220767104d66c0198f3cf87351b38432535f71e26992c5e22679	variants/base/setups/alacritty-fancy--setup.sh
-setup	android-emulator	0.2.0	a75995b9c485085d86b13f886cf0c6bdf6e33007288a3ae6bec4e06009e7b86c	variants/base/setups/android-emulator--setup.sh
-setup	android-sdk	0.2.0	eeaa386366b72dcea6fdf7756b1564c70b83788eff24f5cc695244fd50c54ecc	variants/base/setups/android-sdk--setup.sh
+setup	android-emulator	0.2.1	fc25b1d1e785f25c3528312b5575be21f6940627d8d9cacfdbe9c38c1b81eda3	variants/base/setups/android-emulator--setup.sh
+setup	android-sdk	0.2.1	398c627d295bb1487d62aa013bb1438259b307f41a5cbde8218549ddd78f1e00	variants/base/setups/android-sdk--setup.sh
 setup	angular-code-extension	0.1.0	38ffe669d3909b9fb7e680acdaf2e4b0c0606e3e742ca0cf90fa096aad5aaf9f	variants/base/setups/angular-code-extension--setup.sh
 setup	ansible	1.0.0	4392e8f53e79968d8d81057803213691979ee181a02ba175316af9fdb826b1de	variants/base/setups/ansible--setup.sh
 setup	ansible-code-extension	0.1.0	c5aadbacbe21ea42f0c3965c1e7a1bd54de4925a472757a800f98c461d5f7470	variants/base/setups/ansible-code-extension--setup.sh

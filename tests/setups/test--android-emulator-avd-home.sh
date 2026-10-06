@@ -112,7 +112,8 @@ run_launcher "$H" XDG_CONFIG_HOME="$H/.config"
     && check "true"  "nothing is created under \$XDG_CONFIG_HOME/.android" \
     || check "false" "nothing is created under \$XDG_CONFIG_HOME/.android"
 grep -qx 'hw.keyboard=yes' "$H/.android/avd/booth.avd/config.ini" 2>/dev/null \
-    && grep -qx 'hw.gpu.mode=swiftshader_indirect' "$H/.android/avd/booth.avd/config.ini" \
+    && grep -qx 'hw.gpu.enabled=yes' "$H/.android/avd/booth.avd/config.ini" \
+    && ! grep -q 'swiftshader_indirect' "$H/.android/avd/booth.avd/config.ini" \
     && check "true"  "the launcher's config.ini edits reached the AVD" \
     || check "false" "the launcher's config.ini edits reached the AVD" "$(cat "$H/.android/avd/booth.avd/config.ini" 2>&1)"
 grep -q -- '-avd booth' "$EMU_LOG" \
