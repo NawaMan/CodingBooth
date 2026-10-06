@@ -9,7 +9,7 @@
 #
 # start-webconsole only picks and checks the port, then hands it to start-ttyd,
 # which is stubbed here to record what it was given. The console layout it
-# drives (panes on +1..+4, message API on +7) is checked on the nginx template
+# drives (panes on +1..+6, message API on +7) is checked on the nginx template
 # and start-ttyd-split directly.
 # -----------------------------------------------------------------------------
 
@@ -99,13 +99,15 @@ TEMPLATE="$BASE/web-ttyd-split/nginx.conf.template"
 check "console nginx template has no fixed helper ports left" \
     "$(! grep -qE '127\.0\.0\.1:1000[1-7]' "$TEMPLATE" && echo true || echo false)" \
     "$(grep -nE '127\.0\.0\.1:1000[1-7]' "$TEMPLATE" || true)"
-check "start-ttyd-split puts the panes on +1..+4 and the API on +7" \
-    "$(grep -qF 'SESSION_PORTS=($((PORT + 1)) $((PORT + 2)) $((PORT + 3)) $((PORT + 4)))' "$BASE/start-ttyd-split" \
+check "start-ttyd-split puts the panes on +1..+6 and the API on +7" \
+    "$(grep -qF 'SESSION_PORTS=($((PORT + 1)) $((PORT + 2)) $((PORT + 3)) $((PORT + 4)) $((PORT + 5)) $((PORT + 6)))' "$BASE/start-ttyd-split" \
         && grep -qF 'API_PORT=$((PORT + 7))' "$BASE/start-ttyd-split" && echo true || echo false)"
 check "start-ttyd-split starts the once-per-booth helpers only when absent" \
     "$(grep -qF 'pgrep -f booth-lifecycle-watcher >/dev/null || booth-lifecycle-watcher &' "$BASE/start-ttyd-split" \
         && grep -qF 'pgrep -f booth-timer-notifier >/dev/null || booth-timer-notifier &' "$BASE/start-ttyd-split" \
         && echo true || echo false)"
+check "start-ttyd-split escapes < in console.json before embedding it in the page" \
+    "$(grep -qF 'BOOTH_CONSOLE_CONFIG_JSON="${parsed//</\\u003c}"' "$BASE/start-ttyd-split" && echo true || echo false)"
 check "base image installs start-webconsole" \
     "$(grep -qF 'COPY --chmod=0755 start-webconsole /usr/local/bin/start-webconsole' "$BASE/Dockerfile" && echo true || echo false)"
 

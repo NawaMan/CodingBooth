@@ -3,31 +3,28 @@
 // and how a shortcut changes that, and tests/setups/test--console-tiling.sh
 // runs the same file under Node.
 //
-// A layout is a tree of splits over the four fixed panes (1-4), like an i3
-// workspace capped at four windows:
+// A layout is a tree of splits over the six fixed panes (1-6), like an i3
+// workspace capped at six windows:
 //
 //   leaf  = { pane: 1 }
 //   split = { dir: "h" | "v", children: [...], sizes: [fractions summing to 1] }
 //
 // "h" puts children side by side, "v" stacks them — i3's splith / splitv.
 // Every arrangement of up to four rectangles is reachable this way (the first
-// one that is not needs five), so there are 31 shapes and no preset list to
-// keep complete.
+// one that is not needs five), so there are 31 shapes of up to four panes;
+// five and six panes reach many more.
 //
 // Written as text, a tree is `h(1,v(2,3))`, with an optional `@percent` per
-// child when the sizes are not equal: `h(1@60,v(2,3))`. That string is what
-// the console stores as its layout — in the URL hash, localStorage and
-// .booth/console.json — beside the six preset names it already had.
+// child when the sizes are not equal: `h(1@60,v(2,3))`. A tree that has the
+// shape of one of the toolbar presets is stored by the preset's name; any
+// other is stored as this text — in the URL hash, localStorage and
+// .booth/console.json.
 (function (root) {
   "use strict";
 
-  var MAX_PANES = 4;
+  var MAX_PANES = 6;
   // Smallest share a child may be given of its split, by keyboard or drag.
   var MIN_SIZE = 0.1;
-  // The six toolbar presets clamp their dividers to this range; a tree with a
-  // divider outside it keeps showing as a tree rather than a preset.
-  var PRESET_MIN = 0.2;
-  var PRESET_MAX = 0.8;
   var EPS = 1e-6;
 
   function leaf(pane) {
@@ -148,53 +145,61 @@
     return isLeaf(node) ? String(node.pane) : node.dir + "(" + node.children.map(shape).join(",") + ")";
   }
 
-  // ---- the six toolbar presets ------------------------------------------------
+  // ---- the toolbar presets --------------------------------------------------
+  //
+  // Every way to divide a 2x2 grid, plus the 3x2 grid. Columns come first:
+  // the full-height dividers split the area into columns, and each column
+  // then has its own top/bottom divider. top-main and bottom-main are the
+  // exception by nature, their wide pane spanning every column.
 
-  function split(dir, children, first) {
-    return { dir: dir, children: children, sizes: [first, 1 - first] };
+  var PRESETS = [
+    ["single", "1"],
+    ["hsplit", "h(1,2)"],
+    ["left-main", "h(1,v(2,3))"],
+    ["right-main", "h(v(2,3),1)"],
+    ["vsplit", "v(1,2)"],
+    ["top-main", "v(1,h(2,3))"],
+    ["bottom-main", "v(h(2,3),1)"],
+    ["quad", "h(v(1,3),v(2,4))"],
+    ["grid6", "h(v(1,4),v(2,5),v(3,6))"]
+  ];
+  var PRESET_NAMES = PRESETS.map(function (p) { return p[0]; });
+
+  function presetShape(name) {
+    for (var i = 0; i < PRESETS.length; i++) {
+      if (PRESETS[i][0] === name) return PRESETS[i][1];
+    }
+    return null;
   }
 
-  // A preset as a tree, using the console's two shared divider positions.
+  // A preset as a tree. `x` and `y`, when given, are the first share of every
+  // two-way side-by-side and stacked split — the two divider positions the
+  // console kept before presets were trees, so an old saved position carries
+  // over.
   function presetTree(name, x, y) {
-    x = typeof x === "number" ? x : 0.5;
-    y = typeof y === "number" ? y : 0.5;
-    switch (name) {
-      case "hsplit":    return split("h", [leaf(1), leaf(2)], x);
-      case "vsplit":    return split("v", [leaf(1), leaf(2)], y);
-      case "left-main": return split("h", [leaf(1), split("v", [leaf(2), leaf(3)], y)], x);
-      case "top-main":  return split("v", [leaf(1), split("h", [leaf(2), leaf(3)], x)], y);
-      case "quad":      return split("v", [split("h", [leaf(1), leaf(2)], x), split("h", [leaf(3), leaf(4)], x)], y);
-      default:          return leaf(1);
-    }
+    var tree = parse(presetShape(name) || "1");
+    (function walk(node) {
+      if (isLeaf(node)) return;
+      var first = node.dir === "h" ? x : y;
+      if (node.children.length === 2 && typeof first === "number" && first > 0 && first < 1) {
+        node.sizes = [first, 1 - first];
+      }
+      node.children.forEach(walk);
+    })(tree);
+    return tree;
   }
 
-  function inPresetRange(value) {
-    return value >= PRESET_MIN - EPS && value <= PRESET_MAX + EPS;
-  }
-
-  // The preset a tree is exactly, with its divider positions, or null. The
-  // console shows a matching tree as that preset, so a shortcut that lands on
-  // one lights up its toolbar button and keeps the preset's name in the URL.
+  // The preset a tree is, by shape alone — dividers can sit anywhere — or
+  // null. The console shows a matching tree as that preset, so a shortcut
+  // that lands on one lights up its toolbar button and keeps the preset's
+  // name in the URL.
   function matchPreset(tree) {
-    var found = null;
-    switch (shape(tree)) {
-      case "1":                found = { name: "single" }; break;
-      case "h(1,2)":           found = { name: "hsplit", x: tree.sizes[0] }; break;
-      case "v(1,2)":           found = { name: "vsplit", y: tree.sizes[0] }; break;
-      case "h(1,v(2,3))":      found = { name: "left-main", x: tree.sizes[0], y: tree.children[1].sizes[0] }; break;
-      case "v(1,h(2,3))":      found = { name: "top-main", y: tree.sizes[0], x: tree.children[1].sizes[0] }; break;
-      case "v(h(1,2),h(3,4))":
-        // The quad preset has one shared vertical divider; a tree whose two
-        // rows are split in different places is not it.
-        if (Math.abs(tree.children[0].sizes[0] - tree.children[1].sizes[0]) > 0.005) return null;
-        found = { name: "quad", y: tree.sizes[0], x: tree.children[0].sizes[0] };
-        break;
-      default:
-        return null;
+    if (!tree) return null;
+    var s = shape(tree);
+    for (var i = 0; i < PRESETS.length; i++) {
+      if (PRESETS[i][1] === s) return { name: PRESETS[i][0] };
     }
-    if (found.x !== undefined && !inPresetRange(found.x)) return null;
-    if (found.y !== undefined && !inPresetRange(found.y)) return null;
-    return found;
+    return null;
   }
 
   // ---- geometry ---------------------------------------------------------------
@@ -407,6 +412,18 @@
     return normalize(t);
   }
 
+  // Every split shares its space equally — Vim's Ctrl-W =, tmux's even
+  // layouts. Same shape, so a preset stays that preset.
+  function equalize(tree) {
+    var t = clone(tree);
+    (function walk(node) {
+      if (isLeaf(node)) return;
+      node.sizes = node.children.map(function () { return 1 / node.children.length; });
+      node.children.forEach(walk);
+    })(t);
+    return t;
+  }
+
   // i3's resize mode: grow (delta > 0) or shrink the pane along an axis ("h"
   // for width, "v" for height), taking from or giving to the neighbour after
   // it — or before it, for the last one.
@@ -430,6 +447,7 @@
 
   var api = {
     MAX_PANES: MAX_PANES,
+    PRESET_NAMES: PRESET_NAMES,
     parse: parse,
     serialize: serialize,
     shape: shape,
@@ -443,6 +461,7 @@
     insert: insert,
     remove: remove,
     toggleSplit: toggleSplit,
+    equalize: equalize,
     resize: resize
   };
 

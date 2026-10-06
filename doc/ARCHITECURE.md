@@ -523,7 +523,7 @@ language-extensions → dev-tools → tool-extensions) sequences startup/profile
 scripts; the **Boothfile segment** numbers (40/50/60/65/70/90) sequence template
 merges (§7).
 
-**Internal ports:** `10000` nginx front door, `10001–10004` proxy targets,
+**Internal ports:** `10000` nginx front door, `10001–10006` console panes,
 `10007` message API, `12222` JupyterLab, `13333` code-server, `14444`–`17777` noVNC (xfce, kde, lxqt, wayland).
 
 **Markers:** `_booth_inner=1` (URL param that breaks the `/` → `/booth` redirect

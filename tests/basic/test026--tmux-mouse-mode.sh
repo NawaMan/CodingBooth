@@ -88,12 +88,12 @@ fi
 
 # -------------------------------------------------------
 # Tests 3–5: a real tmux session the 'coder' user starts (the same user and
-# server start-ttyd-split's `tmux new-session -A -s s1..s4` uses) picks up
+# server start-ttyd-split's `tmux new-session -A -s s1..s6` uses) picks up
 # the config live — not just present in an unread file. This is the real
 # regression check: it's exactly what would silently stop being true if the
 # config were ever dropped or shadowed by a later per-user ~/.tmux.conf.
 #
-# Not asserting on s1..s4 directly: ttyd only spawns its child (tmux
+# Not asserting on s1..s6 directly: ttyd only spawns its child (tmux
 # new-session) on an actual websocket connection from a browser, which this
 # test never makes, so those sessions would not exist yet.
 # -------------------------------------------------------

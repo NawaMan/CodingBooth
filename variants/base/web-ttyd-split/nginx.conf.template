@@ -39,7 +39,7 @@ http {
     }
     map $uri $cb_proxy_skip {
         default 0;
-        "~*^/(s[1-4]|login)(/|$)" 1;
+        "~*^/(s[1-6]|login)(/|$)" 1;
         "~*^/(booth|booth-messages|__booth|proxy)(/|$)" 1;
     }
 
@@ -279,6 +279,60 @@ http {
             }
 
             proxy_pass http://127.0.0.1:${S4_PORT};
+            proxy_http_version 1.1;
+            ${TTYD_AUTH_HEADER}
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $connection_upgrade;
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_read_timeout 24h;
+            proxy_buffering off;
+
+            # ttyd's page is a single self-contained HTML document (no
+            # external assets), so this only has to fire once per pane load,
+            # not on every websocket frame. See /booth-assets/fonts/ above.
+            # sub_filter cannot rewrite a compressed body, and a real browser
+            # (unlike curl) sends Accept-Encoding: gzip by default — without
+            # this, ttyd answers compressed and the filter below silently
+            # never matches. Same fix the /proxy/ location already needed.
+            proxy_set_header Accept-Encoding "";
+            sub_filter_once on;
+            sub_filter '<head>' '<head><link rel="preload" as="font" type="font/woff2" href="../booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="../booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(../booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(../booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");}</style><script>document.fonts.ready.then(function(){var checks=0;function check(){checks++;var t=window.term,s=t&&t._core&&t._core._charSizeService;if(s){try{var c=document.createElement("canvas").getContext("2d");c.font=(t.options.fontSize||15)+"px "+t.options.fontFamily;var want=c.measureText("W").width;if(Math.abs(s.width-want)>2){window.dispatchEvent(new Event("resize"));}}catch(e){}}if(checks<30){setTimeout(check,500);}}check();});</script><script>(function(){function cbForceTermSelect(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService,cms=c&&c.coreMouseService;if(!ss||!cms)return false;if(ss.__cbForce)return true;ss.__cbForce=1;ss.shouldForceSelection=function(){return true};var orig=cms.triggerMouseEvent.bind(cms);cms.triggerMouseEvent=function(ev){if(ev&&ev.button===0)return false;return orig(ev)};return true}var n=0;function wait(){n++;if(cbForceTermSelect())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>';
+        }
+
+        location /s5/ {
+            if ($booth_auth_ok = 0) {
+                return 302 /login;
+            }
+
+            proxy_pass http://127.0.0.1:${S5_PORT};
+            proxy_http_version 1.1;
+            ${TTYD_AUTH_HEADER}
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection $connection_upgrade;
+            proxy_set_header Host $host;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_read_timeout 24h;
+            proxy_buffering off;
+
+            # ttyd's page is a single self-contained HTML document (no
+            # external assets), so this only has to fire once per pane load,
+            # not on every websocket frame. See /booth-assets/fonts/ above.
+            # sub_filter cannot rewrite a compressed body, and a real browser
+            # (unlike curl) sends Accept-Encoding: gzip by default — without
+            # this, ttyd answers compressed and the filter below silently
+            # never matches. Same fix the /proxy/ location already needed.
+            proxy_set_header Accept-Encoding "";
+            sub_filter_once on;
+            sub_filter '<head>' '<head><link rel="preload" as="font" type="font/woff2" href="../booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2" crossorigin><link rel="preload" as="font" type="font/woff2" href="../booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2" crossorigin><style>@font-face{font-family:FiraCode Nerd Font Mono;font-weight:400;font-style:normal;font-display:swap;src:url(../booth-assets/fonts/FiraCodeNerdFontMono-Regular.woff2) format("woff2");}@font-face{font-family:FiraCode Nerd Font Mono;font-weight:700;font-style:normal;font-display:swap;src:url(../booth-assets/fonts/FiraCodeNerdFontMono-Bold.woff2) format("woff2");}</style><script>document.fonts.ready.then(function(){var checks=0;function check(){checks++;var t=window.term,s=t&&t._core&&t._core._charSizeService;if(s){try{var c=document.createElement("canvas").getContext("2d");c.font=(t.options.fontSize||15)+"px "+t.options.fontFamily;var want=c.measureText("W").width;if(Math.abs(s.width-want)>2){window.dispatchEvent(new Event("resize"));}}catch(e){}}if(checks<30){setTimeout(check,500);}}check();});</script><script>(function(){function cbForceTermSelect(){var t=window.term,c=t&&t._core,ss=c&&c._selectionService,cms=c&&c.coreMouseService;if(!ss||!cms)return false;if(ss.__cbForce)return true;ss.__cbForce=1;ss.shouldForceSelection=function(){return true};var orig=cms.triggerMouseEvent.bind(cms);cms.triggerMouseEvent=function(ev){if(ev&&ev.button===0)return false;return orig(ev)};return true}var n=0;function wait(){n++;if(cbForceTermSelect())return;if(n<50)setTimeout(wait,100)}if(document.readyState==="complete")wait();else window.addEventListener("load",wait)})();</script>';
+        }
+
+        location /s6/ {
+            if ($booth_auth_ok = 0) {
+                return 302 /login;
+            }
+
+            proxy_pass http://127.0.0.1:${S6_PORT};
             proxy_http_version 1.1;
             ${TTYD_AUTH_HEADER}
             proxy_set_header Upgrade $http_upgrade;

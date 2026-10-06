@@ -99,7 +99,7 @@ Names that carry semantics. Several layers of code agree on these, so they quali
 Conventions that nginx, the message API, and per-variant launchers all agree on.
 
 - **10000** — nginx front door (web variants).
-- **10001 – 10004** — internal proxy targets (verified via `proxy_pass` in nginx configs).
+- **10001 – 10006** — the console's six ttyd panes (verified via `proxy_pass` in nginx configs).
 - **10007** — `booth-message-api-server` (bash + socat HTTP).
 - **12222** — JupyterLab inner service.
 - **13333** — code-server inner service.
@@ -208,9 +208,9 @@ Only active when `PASSWORD` is set (the CLI injects it for `--public`). With no 
 
 - **`booth_auth` cookie** — the session credential. Value is 32 random bytes, hex-encoded, minted once per container start by `start-ttyd-split`. `HttpOnly`, `SameSite=Strict`, plus `Secure` when `BOOTH_TLS=true`. Restarting a booth invalidates outstanding sessions.
 - **`$booth_auth_ok`** — nginx map over `$cookie_booth_auth`. `default 0` plus the one live token when a password is set; the whole map is replaced by `default 1` when there is none. Requires `map_hash_bucket_size 128`, declared *before* any `map` block — nginx rejects a later one as a duplicate, and a 64-character token does not fit the default bucket.
-- **Gate placement** — `/`, `/s1..s4/` and `/proxy/{port}/` redirect to `/login`; `/booth-messages/api/` returns 401 instead, because the overlay reaches it with `fetch` and a redirect would hand it the login page as "JSON". `/login` and `/booth-messages/api/login` are the two ungated paths.
+- **Gate placement** — `/`, `/s1..s6/` and `/proxy/{port}/` redirect to `/login`; `/booth-messages/api/` returns 401 instead, because the overlay reaches it with `fetch` and a redirect would hand it the login page as "JSON". `/login` and `/booth-messages/api/login` are the two ungated paths.
 - **`absolute_redirect off`** — mandatory. nginx would otherwise build the gate's `Location` from the port it listens on (10000, or 10443 behind Caddy) rather than the published host port, sending the browser to a port that is not there.
-- **Upstream credential** — nginx injects `Authorization: Basic base64(coder:$PASSWORD)` toward each ttyd. ttyd keeps its own `-c` credential, so the panes are still protected on 10001–10004, but the browser never receives ttyd's 401 and therefore never opens the native Basic-auth dialog — which is the point: that dialog's username box cannot be prefilled by a server.
+- **Upstream credential** — nginx injects `Authorization: Basic base64(coder:$PASSWORD)` toward each ttyd. ttyd keeps its own `-c` credential, so the panes are still protected on 10001–10006, but the browser never receives ttyd's 401 and therefore never opens the native Basic-auth dialog — which is the point: that dialog's username box cannot be prefilled by a server.
 - **`POST /booth-messages/api/login`** — handled by `booth-message-api-server`. Fields arrive base64-encoded so quoting in a password cannot break the bash JSON parsing. Compares against `$PASSWORD`, sleeps 1s on a miss, replies `Set-Cookie` on a match.
 ---
 

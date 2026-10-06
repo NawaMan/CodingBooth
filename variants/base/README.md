@@ -29,7 +29,10 @@ booth --variant base -e BOOTH_WEB_SPLIT=false
 # http://localhost:10000/#mode=vsplit
 # http://localhost:10000/#mode=quad
 # http://localhost:10000/#mode=left-main
+# http://localhost:10000/#mode=right-main
 # http://localhost:10000/#mode=top-main
+# http://localhost:10000/#mode=bottom-main
+# http://localhost:10000/#mode=grid6        (3 columns x 2 rows)
 # http://localhost:10000/#mode=h(1,v(2,3,4))   (any tiling layout)
 ```
 

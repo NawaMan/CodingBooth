@@ -41,7 +41,7 @@ check() {
 
 # A path of the console's own, opening a string, attribute or url(): "/s1/",
 # '/login', url(/booth-assets/...), "/booth". Comments are skipped.
-ABSOLUTE="[\"'\`(]/(s[1-4]/|booth-messages|booth-assets|proxy/|__booth|login|booth[\"'\`])"
+ABSOLUTE="[\"'\`(]/(s[1-6]/|booth-messages|booth-assets|proxy/|__booth|login|booth[\"'\`])"
 
 for f in web-ttyd-split/index.html web-ttyd-split/login.html \
          setups/booth-message-overlay.html setups/booth-ready.js; do
@@ -50,7 +50,7 @@ for f in web-ttyd-split/index.html web-ttyd-split/login.html \
         "$([[ -z "$hits" ]] && echo true || echo false)" "$hits"
 done
 
-# The pane pages live one level down (s1/..s4/), so the fonts nginx injects into
+# The pane pages live one level down (s1/..s6/), so the fonts nginx injects into
 # them point one level up.
 TEMPLATE="$BASE/web-ttyd-split/nginx.conf.template"
 check "pane font links point one level up, not to the root" \

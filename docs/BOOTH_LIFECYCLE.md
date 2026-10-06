@@ -222,6 +222,7 @@ the booth's name, and who or what caused it.
 | `shutdown`, `restart` | `booth--shutdown` / `booth--restart` runs: `reason=` `idle`, `timer` or `requested` (a button), and `by=` the process that called it |
 | `idle-monitor-started`, `idle-prompted`, `idle-answered`, `idle-paused`, `idle-disabled`, `idle-timeout` | the [idle monitor](BOOTH_IDLE.md) decides |
 | `console-pane-exited` | a console pane's terminal server (`ttyd`) exits outside a shutdown: that pane then shows 502 until the booth restarts |
+| `console-session-reset` | a console pane's session is reset from the Console UI (`session=s1` … `s6`): its shell and what ran in it were ended |
 | `exited` | a booth the CLI ran in the foreground ends: its `status`, the `signal` behind it (`SIGINT` = Ctrl+C, `SIGTERM` = `docker stop`, `SIGKILL` = `docker kill`), and whether a restart or idle shutdown asked for it |
 
 The file is `.booth/.tmp/lifecycle.log` in the booth's code folder, on the host. The booth writes
