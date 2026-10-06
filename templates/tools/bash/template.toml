@@ -1,0 +1,21 @@
+cb-version = "0.1.1"
+display-name = "Bash"
+display-disc = "GNU Bash built from source, beside the system shell"
+display-detail = """Builds a GNU Bash release from source and installs it as bash-<major>.<minor> (the default 3.2.57 is the command bash-3.2). The booth login shell stays /bin/bash unless you also select bash+default, which logs the coder user into that build. This can be useful for testing scripts against the Bash 3.2 that macOS ships as /bin/bash: that shell treats an empty array expansion as an error when set -u is on. Pin another release with bash:5.2.37 or bash:5.3."""
+display-order = 31
+tags = [
+    "bash",
+    "shell",
+    "macos"
+]
+
+# Not BASH_VERSION. The image SHELL is bash, and bash sets that name itself
+# before a RUN line expands, so the pin would become the distro shell.
+[params.GNU_BASH_VERSION]
+default = "3.2.57"
+suggests = ["3.2.57", "4.4.18", "5.2.37", "5.3"]
+
+[segments]
+Boothfile = """
+setup bash --version ${GNU_BASH_VERSION}
+"""

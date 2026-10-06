@@ -366,6 +366,7 @@ language.
 | `tools/aws-cli`            | AWS CLI |
 | `tools/aws-sam-cli`        | AWS SAM CLI |
 | `tools/azure-cli`          | Azure CLI |
+| `tools/bash`               | Bash |
 | `tools/build-essential`    | Build Essentials |
 | `tools/cloudbeaver`        | CloudBeaver |
 | `tools/cmake`              | CMake |

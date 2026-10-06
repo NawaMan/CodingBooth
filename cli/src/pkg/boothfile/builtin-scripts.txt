@@ -24,6 +24,7 @@ setup aws-cli
 setup aws-sam-cli
 setup azure-cli
 setup base-code-extension
+setup bash
 setup bash-code-extension
 setup bash-nb-kernel
 setup bluej
