@@ -4,6 +4,11 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`booth express --templates-path` no longer needs `--select`.** `express --variant xfce
+  --templates-path templates` failed with "--templates-path and --apt-snapshot require --select".
+  The path only says where to look for templates, so with nothing selected it is now simply unused,
+  as `CB_TEMPLATES_PATH` already was. `--apt-snapshot` still requires `--select`: it asks for a
+  build, and the prebuilt variant would quietly ignore it.
 - **Apps with an XFCE desktop icon are on the Plank dock too.** Until now the dock held only the
   terminal, the file manager, the browsers and VS Code, so TeXstudio, GIMP, DBeaver, JupyterLab and
   every other app with a desktop icon were missing from it. The dock now takes every launcher in
