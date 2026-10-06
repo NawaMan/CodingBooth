@@ -11,6 +11,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/aptsnapshot"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -246,28 +247,127 @@ func TestApplyBoothAptSnapshot_KeepsExistingSnapshot(t *testing.T) {
 		[]byte("env APT_SNAPSHOT=20250101T000000Z\n\nsetup go\n"), 0o644))
 
 	out := &output.BoothOutput{Boothfile: &output.BoothfileContent{Content: "setup go\n"}}
-	applyBoothAptSnapshot(out, dir)
+	applyBoothAptSnapshot(out, dir, initFlags{})
 	assert.True(t, strings.HasPrefix(out.Boothfile.Content, "env APT_SNAPSHOT=20250101T000000Z\n"),
 		"a reconfigure must not move the freeze date: %q", out.Boothfile.Content)
 }
 
 func TestApplyBoothAptSnapshot_EnvOverrideMovesIt(t *testing.T) {
-	t.Setenv("CB_APT_SNAPSHOT", "20270101T000000Z")
+	t.Setenv("CB_APT_SNAPSHOT", "20260201T000000Z")
 	dir := t.TempDir()
 	require.NoError(t, os.MkdirAll(filepath.Join(dir, ".booth"), 0o755))
 	require.NoError(t, os.WriteFile(filepath.Join(dir, ".booth", "Boothfile"),
 		[]byte("env APT_SNAPSHOT=20250101T000000Z\n\nsetup go\n"), 0o644))
 
 	out := &output.BoothOutput{Boothfile: &output.BoothfileContent{Content: "setup go\n"}}
-	applyBoothAptSnapshot(out, dir)
-	assert.True(t, strings.HasPrefix(out.Boothfile.Content, "env APT_SNAPSHOT=20270101T000000Z\n"))
+	applyBoothAptSnapshot(out, dir, initFlags{})
+	assert.True(t, strings.HasPrefix(out.Boothfile.Content, "env APT_SNAPSHOT=20260201T000000Z\n"))
 }
 
 func TestApplyBoothAptSnapshot_NewBoothGetsToday(t *testing.T) {
 	t.Setenv("CB_APT_SNAPSHOT", "")
 	out := &output.BoothOutput{Boothfile: &output.BoothfileContent{Content: "setup go\n"}}
-	applyBoothAptSnapshot(out, t.TempDir())
+	applyBoothAptSnapshot(out, t.TempDir(), initFlags{})
 	assert.True(t, strings.HasPrefix(out.Boothfile.Content, "env APT_SNAPSHOT="+aptSnapshotID()+"\n"))
+}
+
+func TestApplyBoothAptSnapshot_EmptyLineMeansNoFreezeAndIsKept(t *testing.T) {
+	t.Setenv("CB_APT_SNAPSHOT", "")
+	dir := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, ".booth"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".booth", "Boothfile"),
+		[]byte("env APT_SNAPSHOT=\n\nsetup go\n"), 0o644))
+
+	out := &output.BoothOutput{Boothfile: &output.BoothfileContent{Content: "setup go\n"}}
+	applyBoothAptSnapshot(out, dir, initFlags{})
+	assert.Equal(t, "env APT_SNAPSHOT=\n\nsetup go\n", out.Boothfile.Content,
+		"a removed freeze must not be re-stamped by the next reconfigure")
+}
+
+func TestApplyBoothAptSnapshot_FlagBeatsExistingAndEnv(t *testing.T) {
+	t.Setenv("CB_APT_SNAPSHOT", "20260201T000000Z")
+	dir := t.TempDir()
+	require.NoError(t, os.MkdirAll(filepath.Join(dir, ".booth"), 0o755))
+	require.NoError(t, os.WriteFile(filepath.Join(dir, ".booth", "Boothfile"),
+		[]byte("env APT_SNAPSHOT=20250101T000000Z\n\nsetup go\n"), 0o644))
+
+	for _, tc := range []struct {
+		choice, want string
+	}{
+		{"20260601T000000Z", "env APT_SNAPSHOT=20260601T000000Z\n"},
+		{"today", "env APT_SNAPSHOT=" + aptsnapshot.Today() + "\n"},
+		{"none", "env APT_SNAPSHOT=\n"},
+	} {
+		id, err := parseAptSnapshotFlag(tc.choice)
+		require.NoError(t, err)
+		out := &output.BoothOutput{Boothfile: &output.BoothfileContent{Content: "setup go\n"}}
+		applyBoothAptSnapshot(out, dir, initFlags{aptSnapshot: id, aptSnapshotSet: true})
+		assert.True(t, strings.HasPrefix(out.Boothfile.Content, tc.want), "%s: %q", tc.choice, out.Boothfile.Content)
+	}
+}
+
+// The accepted values live in package aptsnapshot; this pins the CLI's wording —
+// what was wrong, then what the flag takes.
+func TestParseAptSnapshotFlag_ErrorSaysWhatAndHow(t *testing.T) {
+	_, err := parseAptSnapshotFlag("2026-01-01")
+	require.Error(t, err)
+	assert.Equal(t, "--apt-snapshot: \"2026-01-01\" is not a snapshot id — the format is YYYYMMDDTHHMMSSZ in UTC, e.g. 20260601T000000Z\n"+
+		"Use a snapshot id (e.g. 20260601T000000Z), today, or none.", err.Error())
+}
+
+func TestCheckAptSnapshotEnv(t *testing.T) {
+	for _, ok := range []string{"", "  ", "20250101T000000Z", "today", "none"} {
+		t.Setenv("CB_APT_SNAPSHOT", ok)
+		assert.NoError(t, checkAptSnapshotEnv(), ok)
+	}
+
+	t.Setenv("CB_APT_SNAPSHOT", "2026-01-01")
+	err := checkAptSnapshotEnv()
+	require.Error(t, err)
+	assert.Equal(t, "CB_APT_SNAPSHOT: \"2026-01-01\" is not a snapshot id — the format is YYYYMMDDTHHMMSSZ in UTC, e.g. 20260601T000000Z\n"+
+		"Unset it, or set it to a snapshot id (e.g. 20260601T000000Z), today, or none.", err.Error())
+}
+
+// CB_APT_SNAPSHOT takes the flag's words: today and none mean the same there.
+func TestAptSnapshotEnv_TakesTheFlagsValues(t *testing.T) {
+	t.Setenv("CB_APT_SNAPSHOT", "today")
+	id, set := aptSnapshotEnv()
+	assert.True(t, set)
+	assert.Equal(t, aptsnapshot.Today(), id)
+
+	t.Setenv("CB_APT_SNAPSHOT", "none")
+	out := &output.BoothOutput{Boothfile: &output.BoothfileContent{Content: "setup go\n"}}
+	applyBoothAptSnapshot(out, t.TempDir(), initFlags{})
+	assert.Equal(t, "env APT_SNAPSHOT=\n\nsetup go\n", out.Boothfile.Content)
+}
+
+func TestMergeFlags_AptSnapshotComesOnlyFromTheCLI(t *testing.T) {
+	merged := mergeFlags(initFlags{aptSnapshot: "x", aptSnapshotSet: true}, initFlags{}, t.TempDir())
+	assert.False(t, merged.aptSnapshotSet, "the baseline never carries a snapshot choice")
+
+	merged = mergeFlags(initFlags{}, initFlags{aptSnapshotSet: true}, t.TempDir())
+	assert.True(t, merged.aptSnapshotSet)
+	assert.Equal(t, "", merged.aptSnapshot)
+}
+
+func TestBuildConfigCommand_NeverRecordsAptSnapshot(t *testing.T) {
+	// The header is replayed on reconfigure; a recorded "today" would move the
+	// freeze every time.
+	cmd := buildConfigCommand(t.TempDir(), initFlags{selectDSLs: []string{"go"}, selectDSL: "go",
+		aptSnapshot: aptsnapshot.Today(), aptSnapshotSet: true})
+	assert.NotContains(t, cmd, "apt-snapshot")
+}
+
+func TestAdopt_NoFreezeLineDoesNotCountAsAnEdit(t *testing.T) {
+	catalog := adoptCatalog(t)
+	dir := adoptWorkspace(t, catalog, initFlags{selectDSLs: []string{"tool"}})
+	editBoothFile(t, dir, "Boothfile", func(s string) string {
+		return strings.Replace(s, "env APT_SNAPSHOT=20260101T000000Z", "env APT_SNAPSHOT=", 1)
+	})
+	editBoothFile(t, dir, "config.toml", func(s string) string { return s + "timezone = \"UTC\"\n" })
+
+	baseline := readBaseline(t, catalog, dir)
+	require.True(t, baseline.adopt.adopted, "reasons: %v", baseline.adopt.reasons)
 }
 
 func TestTemplatesVersionFor(t *testing.T) {

@@ -56,6 +56,13 @@ Builds Docker images for all CodingBooth variants.
 - `--no-cache` - Build without using Docker cache
 - `-h, --help` - Show help message
 
+**Apt snapshot:** every image's own `apt-get` is pinned to one Ubuntu archive snapshot,
+taken from `CB_APT_SNAPSHOT` (an id like `20260601T000000Z`, or `today`), else from
+`apt-snapshot.txt` — the pin the release workflow commits for each release — else today.
+A rebuild of a release commit therefore gets the archive that release was built against.
+A malformed, impossible, pre-2023-03-01 or future value stops the build before anything
+runs, saying which source it came from. The logic is in `build/apt-snapshot--source.sh`.
+
 **Variants:**
 - `base` - Base image with core tools
 - `ide-notebook` - Jupyter notebook variant

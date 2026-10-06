@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/aptsnapshot"
 	tmpl "github.com/nawaman/codingbooth/src/pkg/boothinit/template"
 )
 
@@ -23,6 +24,7 @@ var (
 	detailTitle      = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("214"))
 	detailLabel      = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
 	notifyStyle      = lipgloss.NewStyle().Foreground(lipgloss.Color("220"))
+	fieldErrStyle    = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("203"))
 	focusLabelStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("39"))
 	normalLabelStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("245"))
 	focusValueStyle  = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("255")).Background(lipgloss.Color("24"))
@@ -424,6 +426,71 @@ type configDetail struct {
 	optionAt map[int]int // screen line within the panel → index into field.Options
 }
 
+// renderImageSnapshot shows the snapshot this booth's image was built at, and
+// warns when the field holds an older one: apt cannot install a package needing
+// an exact version of one the image already has newer. Only a warning — the
+// image on this machine may not be the one the booth is built on. Nothing at all
+// when the image's snapshot is not known.
+func (m model) renderImageSnapshot(width int) []string {
+	if m.imageAptSnapshot == nil {
+		return nil
+	}
+	settings := make(map[string]string, len(m.stringFields)+2)
+	for key, value := range m.stringFields {
+		settings[key] = value
+	}
+	for _, key := range []string{"dind", "egress"} {
+		if m.boolFields[key] {
+			settings[key] = "true"
+		}
+	}
+	ref, imageSnap := m.imageAptSnapshot(settings)
+	if imageSnap == "" {
+		return nil
+	}
+	// The image name has no spaces to wrap at, so it gets a line of its own.
+	lines := []string{detailLabel.Render("This booth's image:"), "  " + ref}
+	lines = append(lines, detailLabel.Render("was built at ")+imageSnap+".")
+	chosen, err := aptsnapshot.Parse(m.stringFields["apt-snapshot"])
+	if err == nil && chosen != "" && chosen < imageSnap {
+		lines = append(lines, "")
+		for _, paragraph := range []string{
+			"⚠ " + chosen + " is older than the image.",
+			"`install apt` can fail on a package that needs an exact version of one the image already has newer.",
+			"Use " + imageSnap + ", or TODAY.",
+		} {
+			for _, line := range wrapText(paragraph, width) {
+				lines = append(lines, notifyStyle.Render(line))
+			}
+		}
+	}
+	return lines
+}
+
+// renderFieldError explains a refused value: what is wrong with it, what the field
+// takes, and the two ways out — fix it, or Esc back to what was there.
+func (m model) renderFieldError(f configFieldDef, width int) []string {
+	var lines []string
+	for i, line := range wrapText("✗ "+m.editErr, width) {
+		if i > 0 {
+			line = "  " + line
+		}
+		lines = append(lines, fieldErrStyle.Render(line))
+	}
+	if f.ValidHint != "" {
+		for _, paragraph := range strings.Split(f.ValidHint, "\n") {
+			lines = append(lines, wrapText(paragraph, width)...)
+		}
+	}
+	prev := m.editPrev
+	if prev == "" {
+		prev = "(empty)"
+	}
+	lines = append(lines, "")
+	lines = append(lines, detailLabel.Render("Enter to try again · Esc puts back "+prev))
+	return lines
+}
+
 // renderConfigDetail renders the right panel for the Config tab.
 func (m model) renderConfigDetail(rightWidth, contentH int) configDetail {
 	var lines []string
@@ -433,6 +500,19 @@ func (m model) renderConfigDetail(rightWidth, contentH int) configDetail {
 	if f != nil {
 		lines = append(lines, detailTitle.Render(f.Label))
 		lines = append(lines, "")
+
+		// A refused value leads the panel: it is why the edit is still open.
+		if m.editing && m.editErr != "" {
+			lines = append(lines, m.renderFieldError(*f, rightWidth)...)
+			lines = append(lines, "")
+		}
+		// So does the image's snapshot, and a warning against it, above the help.
+		if f.Key == "apt-snapshot" {
+			if image := m.renderImageSnapshot(rightWidth); len(image) > 0 {
+				lines = append(lines, image...)
+				lines = append(lines, "")
+			}
+		}
 
 		// Render detail text, splitting on newlines
 		for _, paragraph := range strings.Split(f.Detail, "\n") {
@@ -490,7 +570,9 @@ func (m model) renderConfigDetail(rightWidth, contentH int) configDetail {
 				lines = append(lines, detailLabel.Render("Current: (empty)"))
 			}
 			lines = append(lines, "")
-			if m.editing {
+			if m.editing && m.editErr != "" {
+				lines = append(lines, detailLabel.Render("Editing... fix the value and press Enter"))
+			} else if m.editing {
 				lines = append(lines, detailLabel.Render("Editing... Enter/Esc to finish"))
 			} else {
 				lines = append(lines, detailLabel.Render("Space/Enter to edit"))

@@ -223,3 +223,26 @@ func TestValidateVariant(t *testing.T) {
 		})
 	}
 }
+
+// CanonicalVariant must name the same image tag ValidateVariant settles on, for
+// every name ValidateVariant accepts — `booth config` uses it to find the image
+// a booth will build FROM, without running a booth.
+func TestCanonicalVariantAgreesWithValidateVariant(t *testing.T) {
+	for _, name := range []string{
+		"base", "notebook", "codeserver", "desktop-xfce", "desktop-kde", "desktop-lxqt", "desktop-wayland",
+		"default", "console", "terminal", "ide", "desktop", "xfce", "kde", "lxqt", "wayland",
+	} {
+		builder := &appctx.AppContextBuilder{
+			Config: appctx.AppConfig{Variant: name},
+			Cmds:   ilist.NewAppendableList[ilist.List[string]](),
+		}
+		want := ValidateVariant(builder.Build()).Variant()
+		got, ok := CanonicalVariant(name)
+		if !ok || got != want {
+			t.Errorf("CanonicalVariant(%q) = %q, %v; ValidateVariant says %q", name, got, ok, want)
+		}
+	}
+	if _, ok := CanonicalVariant("bogus"); ok {
+		t.Error("CanonicalVariant should refuse a name ValidateVariant refuses")
+	}
+}

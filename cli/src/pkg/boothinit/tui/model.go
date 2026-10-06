@@ -141,10 +141,14 @@ type model struct {
 	listFields   map[string][]string // values for list fields (e.g., expose, env, mount)
 	editing      bool                // true when editing a string field
 	editCursor   int                 // cursor position within the edited string
+	editPrev     string              // string field value when the edit opened (Esc puts it back if invalid)
+	editErr      string              // why the edited value was refused; shown until the value changes
 	listEditing  bool                // true when editing a list item
 	listEditIdx  int                 // index within the list being edited (-1 = none)
 	cycleEditing bool                // true when editing a cycle field (Variant, Sudo)
 	cyclePrevIdx int                 // previous cycle index (for ESC cancel)
+
+	imageAptSnapshot func(settings map[string]string) (ref, snapshot string) // see PreSelection.ImageAptSnapshot
 
 	// Template/extension parameter values
 	// Key format: "templateName:PARAM_NAME" or "templateName/extName:PARAM_NAME"
@@ -237,6 +241,7 @@ func newModel(registry *tmpl.TemplateRegistry, pre *PreSelection) model {
 
 	// Apply pre-selections
 	if pre != nil {
+		m.imageAptSnapshot = pre.ImageAptSnapshot
 		for k, v := range pre.StringFields {
 			if v != "" {
 				m.stringFields[k] = v
@@ -816,6 +821,8 @@ func (m *model) activateConfigRow(row configRow) {
 		case fieldKindString, fieldKindInt:
 			m.editing = true
 			m.editCursor = len(m.stringFields[f.Key])
+			m.editPrev = m.stringFields[f.Key]
+			m.editErr = ""
 		}
 	case configRowListItem:
 		f := allConfigFields[row.fieldIdx]
@@ -913,6 +920,19 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	switch keyName(msg) {
 
 	case "enter", "esc":
+		if !m.listEditing && f.Validate != nil {
+			if err := f.Validate(val); err != nil {
+				if keyName(msg) == "enter" {
+					// Stay in the edit: the value is still there to fix, and the
+					// detail panel says what is wrong with it.
+					m.editErr = err.Error()
+					return m, nil
+				}
+				// Esc backs out of a value that cannot be kept.
+				m.stringFields[f.Key] = m.editPrev
+			}
+			m.editErr = ""
+		}
 		m.editing = false
 		if m.listEditing {
 			// Remove empty entries on cancel/finish
@@ -940,9 +960,43 @@ func (m model) handleStringEdit(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	if m.listEditing {
 		m.listFields[f.Key][m.listEditIdx] = val
 	} else {
+		if val != m.stringFields[f.Key] {
+			m.editErr = "" // it named the old value
+		}
 		m.stringFields[f.Key] = val
 	}
 	return m, nil
+}
+
+// refuseInvalidField finds the first string field whose value its Validate
+// refuses, and opens it for editing with the error showing. It reports whether it
+// found one — a save must not go ahead when it did.
+func (m *model) refuseInvalidField() bool {
+	for fieldIdx, f := range allConfigFields {
+		if f.Validate == nil || (f.Kind != fieldKindString && f.Kind != fieldKindInt) {
+			continue
+		}
+		err := f.Validate(m.stringFields[f.Key])
+		if err == nil {
+			continue
+		}
+		m.activeTab = 0
+		for rowIdx, row := range m.buildConfigRows() {
+			if row.kind == configRowField && row.fieldIdx == fieldIdx {
+				m.setCursor(rowIdx)
+				m.adjustConfigScroll()
+				break
+			}
+		}
+		if !m.editing {
+			m.editPrev = m.stringFields[f.Key]
+		}
+		m.editing = true
+		m.editCursor = len(m.stringFields[f.Key])
+		m.editErr = err.Error()
+		return true
+	}
+	return false
 }
 
 // acceptsEditChar reports whether a typed character belongs in this field.
@@ -1584,6 +1638,9 @@ func (m model) requestCancel() (tea.Model, tea.Cmd) {
 // from scratch, so when any of them hold hand-written content it routes through
 // the typed confirmation instead of quitting straight into the write.
 func (m model) requestSave() (tea.Model, tea.Cmd) {
+	if m.refuseInvalidField() {
+		return m, nil
+	}
 	if len(m.drifted) > 0 {
 		m.overwriteDialog = true
 		m.overwriteChoice = overwriteBeside

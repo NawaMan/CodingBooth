@@ -75,16 +75,6 @@ else
     example_image_variant() { echo "base"; }
 fi
 
-# Reports (does not fix or block -- see the header comment there) any example
-# whose env APT_SNAPSHOT= pin sits before the base image's own, so a build
-# that's about to fail on an apt dependency conflict is explained up front
-# instead of looking like a flaky example. Same guard as above.
-if [[ -f "$SCRIPT_DIR/../../tests/check-apt-snapshot--source.sh" ]]; then
-    source "$SCRIPT_DIR/../../tests/check-apt-snapshot--source.sh"
-else
-    report_apt_snapshot_drift() { :; }
-fi
-
 # Default settings
 MAX_PARALLEL=1
 
@@ -147,9 +137,6 @@ while [[ $# -gt 0 ]]; do
             echo "Before starting, each needed variant image is rebuilt (cheap when nothing"
             echo "changed) so tests run against the current source tree. CB_NO_IMAGE_REFRESH=1"
             echo "skips this."
-            echo ""
-            echo "Also reports (does not fix) any example whose env APT_SNAPSHOT= pin sits before"
-            echo "the base image's own. CB_NO_APT_SNAPSHOT_CHECK=1 skips this."
             echo ""
             echo "Examples:"
             echo "  $0                              # Run all tests"
@@ -377,7 +364,6 @@ if [ ${#needed_variants[@]} -gt 0 ]; then
     fi
     echo ""
 fi
-report_apt_snapshot_drift
 
 # Record overall start time
 OVERALL_START=$(date +%s)

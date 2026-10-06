@@ -13,6 +13,12 @@ ARG LOCALE=en_US.UTF-8
 # is copied in, so the snapshot pin is inlined for these two base install steps.
 ARG APT_SNAPSHOT=
 
+# The snapshot this image's packages come from, kept for apt--install.sh: a
+# Boothfile pinning an older one cannot always install on top of these packages,
+# and the script says so, with the fix. A different name from APT_SNAPSHOT on
+# purpose — that one, as an ENV, would freeze every booth's apt installs.
+ENV CB_IMAGE_APT_SNAPSHOT=${APT_SNAPSHOT}
+
 # Safer default shell
 SHELL ["/bin/bash","-o","pipefail","-lc"]
 

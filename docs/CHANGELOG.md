@@ -4,6 +4,33 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Change or remove a booth's apt freeze from `booth config`.** A new booth is still frozen to
+  today's Ubuntu archive snapshot, and later runs still keep that date. Now
+  `--apt-snapshot <id>` sets a specific snapshot, `--apt-snapshot today` moves it to today, and
+  `--apt-snapshot none` turns the freeze off. The TUI has the same choices in a new *Apt Snapshot*
+  field on the Config tab. Turning the freeze off writes an empty `env APT_SNAPSHOT=` line, so a
+  later `booth config` does not stamp it back. A typed id is checked first — format, a real date,
+  and within the range Ubuntu has snapshots for — and a bad one is refused with the reason; the
+  TUI keeps the field open to fix it rather than saving. `CB_APT_SNAPSHOT` is now checked the
+  same way, by both `booth config` and `build/docker-build.sh`.
+
+- **An apt snapshot older than the booth's image now fails with the fix.** apt cannot install a
+  package that needs an exact version of one the image already has newer, and its error
+  (`Depends: libc6 (= …3) but …4 is to be installed`) never said the date was the cause.
+  `install apt` (and every setup that installs through it) now warns when the Boothfile's snapshot
+  is older than the image's, and if the install fails, names the cause and prints
+  `booth config --apt-snapshot <the image's snapshot>` (or `today`). Images record their snapshot
+  as `CB_IMAGE_APT_SNAPSHOT`; ones built before this skip the check. `booth config` warns earlier,
+  when the booth's image is already on this machine: the CLI prints the same fix, and the TUI's
+  Apt Snapshot field shows the image and the snapshot it was built at, with a warning when the
+  field's is older. It is a warning only — saving still goes ahead.
+
+- **A local image build reuses the release's apt snapshot.** `build/docker-build.sh` now defaults
+  to the snapshot the release workflow pinned in `apt-snapshot.txt`, rather than today, so
+  rebuilding a release commit reproduces the archive that release was built against.
+  `CB_APT_SNAPSHOT=<id|today>` still overrides it. See
+  [REPRODUCIBILITY.md](REPRODUCIBILITY.md#apt--pin-the-snapshot-not-the-package).
+
 - **`booth logs lifecycle`: what happened to a booth, kept after it is gone.** Starts, stop /
   restart / remove requests (from the host CLI or the overlay's buttons), `booth--shutdown` and
   `booth--restart` with their reason and caller, the idle monitor's prompts and timeout, the session

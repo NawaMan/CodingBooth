@@ -146,6 +146,15 @@ func NewMux(session *Session, token string, done chan<- Outcome) http.Handler {
 		var payload savePayload
 		_ = readJSON(request, &payload)
 		state := session.CurrentState()
+		// A value the field refuses is never saved; the page shows the message and
+		// stays open to fix it. This comes first: every choice below would save.
+		if message := tui.InvalidFieldMessage(state.StringFields); message != "" {
+			writer.Header().Set("Content-Type", "application/json")
+			writer.Header().Set("Cache-Control", "no-store")
+			writer.WriteHeader(http.StatusConflict)
+			_ = json.NewEncoder(writer).Encode(map[string]any{"error": "invalid", "message": message})
+			return
+		}
 		if len(state.Drifted) > 0 {
 			switch payload.Mode {
 			case "apply":

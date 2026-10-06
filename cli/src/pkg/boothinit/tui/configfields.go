@@ -6,8 +6,10 @@ package tui
 
 import (
 	"sort"
+	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/aptsnapshot"
 )
 
 // fieldKind identifies the type of a config field.
@@ -38,6 +40,12 @@ type configFieldDef struct {
 	// TUIOnly marks a field that is not a config.toml key. Saving must route it
 	// somewhere other than a `--set`, and it is exempt from the schema join.
 	TUIOnly bool
+
+	// Validate, when set, refuses a string value: Enter keeps the edit open and
+	// shows the error, and Ctrl+S will not save. The error says what is wrong;
+	// ValidHint, shown under it, says what the field does take.
+	Validate  func(string) error
+	ValidHint string
 }
 
 // fieldDisplay is the hand-written half of a field: how it looks and reads. The
@@ -58,6 +66,9 @@ type fieldDisplay struct {
 
 	TUIOnly bool
 	Kind    fieldKind // TUI-only fields only: nothing in the schema to resolve against
+
+	Validate  func(string) error // see configFieldDef.Validate
+	ValidHint string
 }
 
 // fieldDisplays lists every rendered field in display order. Groups must stay
@@ -89,6 +100,13 @@ var fieldDisplays = []fieldDisplay{
 	// entirely and one this field has never written.
 	{Key: "templates-version", Label: "Templates Version", Group: "General", TUIOnly: true, Kind: fieldKindString,
 		Detail: "Compile from a specific CodingBooth release's templates.\n\nAffects this configure run only — it is recorded in the\n'Configured by' header, not as a config.toml setting.\nLeave empty to use the running binary's templates.\n\nExample: 0.53.0"},
+
+	// Like templates-version, this is not a config.toml key: it is written to the
+	// Boothfile as `env APT_SNAPSHOT=<id>`, and read back from there.
+	{Key: "apt-snapshot", Label: "Apt Snapshot", Group: "General", TUIOnly: true, Kind: fieldKindString,
+		Detail:    "Freeze apt installs to an Ubuntu archive\nsnapshot, so a rebuild gets the same package\nversions.\n\nShows the snapshot this booth already uses, or\ntoday's for a new booth. It only moves when you\nchange it here.\n\n<id>: that snapshot, e.g. 20260601T000000Z\nTODAY: move it to today\nempty: no freeze, apt uses the live archive\n\nCovers `install apt` lines and setups that\ninstall through apt. amd64 only: other\narchitectures have no Ubuntu snapshots and\nuse the live archive.",
+		Validate:  validateAptSnapshot,
+		ValidHint: "Use a snapshot id (e.g. 20260601T000000Z),\nTODAY, or leave it empty for no freeze."},
 
 	// --- Container ---
 	{Key: "dind", Label: "Docker-in-Docker", Group: "Container",
@@ -295,9 +313,39 @@ func buildConfigFields(schema map[string]appctx.KeySpec) []configFieldDef {
 			Options: d.Options,
 			Detail:  d.Detail,
 			TUIOnly: d.TUIOnly,
+
+			Validate:  d.Validate,
+			ValidHint: d.ValidHint,
 		})
 	}
 	return fields
+}
+
+// validateAptSnapshot accepts what `booth config --apt-snapshot` accepts, with the
+// field's own way of saying "no freeze" — leaving it empty — rather than `none`.
+func validateAptSnapshot(value string) error {
+	_, err := aptsnapshot.Parse(value)
+	return err
+}
+
+// InvalidFieldMessage checks every field that has a Validate against these values
+// and describes the first one refused — the field, what is wrong, and what it
+// takes — or returns "" when all pass. It is the web UI's save check; the TUI
+// refuses the value in the field itself.
+func InvalidFieldMessage(stringFields map[string]string) string {
+	for _, f := range allConfigFields {
+		if f.Validate == nil {
+			continue
+		}
+		if err := f.Validate(stringFields[f.Key]); err != nil {
+			message := f.Label + ": " + err.Error() + "."
+			if f.ValidHint != "" {
+				message += " " + strings.ReplaceAll(f.ValidHint, "\n", " ")
+			}
+			return message
+		}
+	}
+	return ""
 }
 
 // kindOfSpec resolves the widget for a key from its TOML shape.

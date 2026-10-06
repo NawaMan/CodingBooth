@@ -25,10 +25,9 @@
 # and a version bump the local image hadn't picked up.
 #
 # What this does NOT cover: an example's own `env APT_SNAPSHOT=` pin going
-# stale relative to a freshly-rebuilt base image's archive snapshot (a
-# different staleness — see docs/BOOTH_APT_SNAPSHOT in release-push's skill,
-# "Apt snapshot pin" section) — that is a per-example config value, not
-# something rebuilding the image touches.
+# stale relative to a freshly-rebuilt base image's archive snapshot — a
+# per-example config value, bumped at release (release-push skill, "Apt snapshot
+# pin"). If it does fail, apt--install.sh names the cause and the fix.
 #
 # CB_NO_IMAGE_REFRESH=1 skips this — e.g. deliberately testing against an
 # older pinned image, or no Docker/network access at all.

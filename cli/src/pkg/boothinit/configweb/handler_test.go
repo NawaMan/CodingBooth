@@ -226,3 +226,47 @@ func TestMux_AdoptedAnswer(t *testing.T) {
 		t.Fatalf("cancel should end the session for review: %+v", outcome.Result)
 	}
 }
+
+// A value its field refuses is not saved from the web UI either: the save answers
+// with the field, the reason and what it takes, and the page stays open to fix it.
+// It comes before the hand-written choices, since every one of them would save.
+func TestMux_InvalidFieldValueRefusesSave(t *testing.T) {
+	session := NewSession(sessionRegistry(), nil, "", []string{"Boothfile"})
+	done := make(chan Outcome, 1)
+	handler := NewMux(session, testToken, done)
+
+	recorder := httptest.NewRecorder()
+	handler.ServeHTTP(recorder, testRequest(http.MethodPost, "/api/field", testToken,
+		map[string]string{"key": "apt-snapshot", "value": "2026-01-01"}))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("field status = %d", recorder.Code)
+	}
+
+	recorder = httptest.NewRecorder()
+	handler.ServeHTTP(recorder, testRequest(http.MethodPost, "/api/save", testToken, map[string]string{"mode": "apply"}))
+	if recorder.Code != http.StatusConflict {
+		t.Fatalf("status = %d, want 409", recorder.Code)
+	}
+	var body map[string]string
+	_ = json.Unmarshal(recorder.Body.Bytes(), &body)
+	want := `Apt Snapshot: "2026-01-01" is not a snapshot id — the format is YYYYMMDDTHHMMSSZ in UTC, e.g. 20260601T000000Z. ` +
+		`Use a snapshot id (e.g. 20260601T000000Z), TODAY, or leave it empty for no freeze.`
+	if body["error"] != "invalid" || body["message"] != want {
+		t.Fatalf("body = %v\nwant message %q", body, want)
+	}
+	select {
+	case <-done:
+		t.Fatal("an invalid value must not complete the save")
+	default:
+	}
+
+	// Fixed, the same save goes through.
+	handler.ServeHTTP(httptest.NewRecorder(), testRequest(http.MethodPost, "/api/field", testToken,
+		map[string]string{"key": "apt-snapshot", "value": "today"}))
+	recorder = httptest.NewRecorder()
+	handler.ServeHTTP(recorder, testRequest(http.MethodPost, "/api/save", testToken, map[string]string{"mode": "apply"}))
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("status after fixing = %d, want 200", recorder.Code)
+	}
+	<-done
+}

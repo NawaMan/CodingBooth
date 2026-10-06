@@ -68,3 +68,23 @@ func ValidateVariant(ctx appctx.AppContext) appctx.AppContext {
 
 	return builder.Build()
 }
+
+// CanonicalVariant is the variant name a value resolves to — the image-tag half
+// of ValidateVariant, without its side effects (no exit, no context). ok is false
+// for a name ValidateVariant would refuse. Kept in step with it by
+// TestCanonicalVariantAgreesWithValidateVariant.
+func CanonicalVariant(variant string) (canonical string, ok bool) {
+	switch variant {
+	case "base", "notebook", "codeserver", "desktop-xfce", "desktop-kde", "desktop-lxqt", "desktop-wayland":
+		return variant, true
+	case "", "default", "console", "terminal":
+		return "base", true
+	case "ide":
+		return "codeserver", true
+	case "desktop":
+		return "desktop-xfce", true
+	case "xfce", "kde", "lxqt", "wayland":
+		return "desktop-" + variant, true
+	}
+	return "", false
+}

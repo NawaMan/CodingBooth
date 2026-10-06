@@ -136,7 +136,17 @@ env APT_SNAPSHOT=20260601T000000Z
 install apt qrencode imagemagick
 ```
 
-The base image is Ubuntu 26.04, where `--snapshot` is auto-supported (no apt config needed). The date is captured once at config time and baked in literally — it is **not** recomputed on each build, so rebuilds stay frozen. Re-running `booth config` on an existing booth keeps the snapshot its Boothfile already holds — reconfiguring (adding a template, an env var) does not move apt forward to that day. To move it, or to pin a specific snapshot instead of "today" on a new booth, set `CB_APT_SNAPSHOT=<id>` when running `booth config`.
+The base image is Ubuntu 26.04, where `--snapshot` is auto-supported (no apt config needed). The date is captured once at config time and baked in literally — it is **not** recomputed on each build, so rebuilds stay frozen. Re-running `booth config` on an existing booth keeps the snapshot its Boothfile already holds — reconfiguring (adding a template, an env var) does not move apt forward to that day. The date moves only when you ask:
+
+| You want | CLI | TUI (Config tab → Apt Snapshot) |
+| --- | --- | --- |
+| A specific snapshot | `booth config --apt-snapshot 20260601T000000Z` | type the id |
+| Move it to today | `booth config --apt-snapshot today` | type `TODAY` |
+| No freeze at all | `booth config --apt-snapshot none` | clear the field |
+
+**Not older than the image.** The base image is itself built at a snapshot, recorded in it as `CB_IMAGE_APT_SNAPSHOT`. A booth pinned to an *older* one can fail to install packages that need an exact version of one the image already has newer — apt will not downgrade it. `install apt` warns when that is the case, and if the install fails, prints the fix: `booth config --apt-snapshot <the image's snapshot>` (or `today`). `booth config` warns too, before any build, when the booth's image is already on this machine — the TUI's Apt Snapshot field shows which image and what it was built at.
+
+"No freeze" is kept as an empty `env APT_SNAPSHOT=` line rather than no line, so the next `booth config` sees a booth that chose not to freeze instead of a new one to stamp. Apt then resolves against the live archive, as it does for a hand-written Boothfile.
 
 - **Pin the date, not each package.** With a frozen index, `install apt qrencode imagemagick` (no version pins) is already deterministic. Explicit `pkg=version` pins then act only as documentation and as a tripwire that fails loudly if a snapshot bump changes the version.
 - **Trade-off:** a frozen snapshot stops receiving security updates until you bump the date — which is the correct behaviour, since updates become a deliberate, reviewable change rather than silent drift.

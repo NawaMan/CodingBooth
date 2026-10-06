@@ -67,7 +67,7 @@ jobs:
       # Pinned into apt-snapshot.txt and committed, not just kept in this job's
       # output: a value that only ever lived in-memory for one CI run could not
       # be reproduced later. This way, checking out `main` at or after this
-      # commit and rebuilding locally (no CB_APT_SNAPSHOT override needed, once
+      # commit and rebuilding locally (no CB_APT_SNAPSHOT override needed:
       # docker-build.sh reads this file as its default) gets the exact archive
       # this release was actually built against, not "whatever today is."
       # Every release moves this pin exactly once; nothing else writes to it,

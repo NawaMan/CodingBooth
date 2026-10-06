@@ -12,10 +12,10 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/BurntSushi/toml"
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/boothinit/aptsnapshot"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/configweb"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/output"
 	"github.com/nawaman/codingbooth/src/pkg/boothinit/selection"
@@ -58,6 +58,10 @@ func runConfig(version, buildDate string) {
 		fmt.Fprintf(os.Stderr, "Error parsing --set: %v\n", err)
 		os.Exit(1)
 	}
+	if err := checkAptSnapshotEnv(); err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+		os.Exit(1)
+	}
 
 	if flags.noTUI && flags.web {
 		fmt.Fprintln(os.Stderr, "Error: --web and --no-tui cannot be used together")
@@ -88,10 +92,52 @@ func shouldUseWebUI() bool {
 // that apt resolves against a frozen archive on every rebuild. CB_APT_SNAPSHOT
 // overrides the computed value (used by tests and for pinning a specific snapshot).
 func aptSnapshotID() string {
-	if v := os.Getenv("CB_APT_SNAPSHOT"); v != "" {
-		return v
+	if id, set := aptSnapshotEnv(); set {
+		return id
 	}
-	return time.Now().UTC().Format("20060102") + "T000000Z"
+	return aptsnapshot.Today()
+}
+
+// aptSnapshotHint is how the CLI says what --apt-snapshot does take.
+const aptSnapshotHint = "Use a snapshot id (e.g. 20260601T000000Z), today, or none."
+
+// aptSnapshotEnv reads CB_APT_SNAPSHOT, which takes the same values as
+// --apt-snapshot. set is false when it is unset or empty. A value it refuses is
+// caught by checkAptSnapshotEnv before configuring starts; here it counts as unset.
+func aptSnapshotEnv() (id string, set bool) {
+	raw := os.Getenv("CB_APT_SNAPSHOT")
+	if strings.TrimSpace(raw) == "" {
+		return "", false
+	}
+	id, err := aptsnapshot.Parse(raw)
+	if err != nil {
+		return "", false
+	}
+	return id, true
+}
+
+// checkAptSnapshotEnv refuses a CB_APT_SNAPSHOT apt cannot use. Unchecked, it
+// was written into the Boothfile as given, and only failed at the next image
+// build — far from the variable that caused it.
+func checkAptSnapshotEnv() error {
+	raw := os.Getenv("CB_APT_SNAPSHOT")
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	if _, err := aptsnapshot.Parse(raw); err != nil {
+		return fmt.Errorf("CB_APT_SNAPSHOT: %v\nUnset it, or set it to a snapshot id (e.g. 20260601T000000Z), today, or none.", err)
+	}
+	return nil
+}
+
+// parseAptSnapshotFlag reads --apt-snapshot. The error is the whole message: what
+// was wrong with the value, then what the flag takes.
+func parseAptSnapshotFlag(value string) (string, error) {
+	id, err := aptsnapshot.Parse(value)
+	if err != nil {
+		return "", fmt.Errorf("--apt-snapshot: %v\n%s", err, aptSnapshotHint)
+	}
+	return id, nil
 }
 
 // applyAptSnapshot freezes apt installs to the configuration date by prepending an
@@ -104,21 +150,40 @@ func applyAptSnapshot(out *output.BoothOutput) {
 	applyAptSnapshotID(out, aptSnapshotID())
 }
 
-// applyBoothAptSnapshot is applyAptSnapshot for a reconfigure: it keeps the
-// snapshot the booth's Boothfile already freezes apt to, rather than moving it to
-// today. Re-stamping on every reconfigure meant that adding an env var also
-// silently moved every apt package to whatever the archive held that day — the
-// opposite of freezing. The freeze date moves only when asked, via CB_APT_SNAPSHOT.
-func applyBoothAptSnapshot(out *output.BoothOutput, targetPath string) {
-	id := aptSnapshotID()
-	if os.Getenv("CB_APT_SNAPSHOT") == "" {
-		if existing := readExistingAptSnapshot(targetPath); existing != "" {
-			id = existing
-		}
-	}
-	applyAptSnapshotID(out, id)
+// applyBoothAptSnapshot is applyAptSnapshot for a booth that may already exist: see
+// resolveBoothAptSnapshot for which snapshot it writes.
+func applyBoothAptSnapshot(out *output.BoothOutput, targetPath string, flags initFlags) {
+	applyAptSnapshotID(out, resolveBoothAptSnapshot(flags, targetPath))
 }
 
+// resolveBoothAptSnapshot picks the snapshot a configure run writes, first match wins:
+//
+//  1. --apt-snapshot (or the TUI field) — the user changed it on purpose.
+//  2. CB_APT_SNAPSHOT — tests and the release flow move it this way.
+//  3. The booth's own `env APT_SNAPSHOT=` line, kept as it is. Re-stamping on every
+//     reconfigure meant that adding an env var also silently moved every apt
+//     package to whatever the archive held that day — the opposite of freezing.
+//     An empty line counts: it is how a booth records "no freeze", and treating it
+//     as missing would re-stamp the freeze the user removed.
+//  4. Today — the first configure of a booth that has no line yet.
+//
+// "" means no freeze.
+func resolveBoothAptSnapshot(flags initFlags, targetPath string) string {
+	if flags.aptSnapshotSet {
+		return flags.aptSnapshot
+	}
+	if id, set := aptSnapshotEnv(); set {
+		return id
+	}
+	if existing, ok := readExistingAptSnapshot(targetPath); ok {
+		return existing
+	}
+	return aptsnapshot.Today()
+}
+
+// applyAptSnapshotID prepends `env APT_SNAPSHOT=<id>`. An empty id still writes the
+// line — empty — so the "no freeze" choice survives the next reconfigure;
+// apt--install.sh treats an empty APT_SNAPSHOT exactly like an unset one.
 func applyAptSnapshotID(out *output.BoothOutput, id string) {
 	if out == nil || out.Boothfile == nil || out.Boothfile.Content == "" {
 		return
@@ -130,18 +195,19 @@ func applyAptSnapshotID(out *output.BoothOutput, id string) {
 }
 
 // readExistingAptSnapshot returns the snapshot id an existing Boothfile's
-// `env APT_SNAPSHOT=<id>` line freezes apt to, or "" when there is none.
-func readExistingAptSnapshot(targetPath string) string {
+// `env APT_SNAPSHOT=<id>` line freezes apt to. ok is false when there is no such
+// line; an empty line returns ("", true) — the booth's recorded "no freeze".
+func readExistingAptSnapshot(targetPath string) (id string, ok bool) {
 	data, err := os.ReadFile(filepath.Join(targetPath, ".booth", "Boothfile"))
 	if err != nil {
-		return ""
+		return "", false
 	}
 	for _, line := range strings.Split(string(data), "\n") {
-		if rest, ok := strings.CutPrefix(strings.TrimSpace(line), "env APT_SNAPSHOT="); ok {
-			return strings.TrimSpace(rest)
+		if rest, found := strings.CutPrefix(strings.TrimSpace(line), "env APT_SNAPSHOT="); found {
+			return strings.TrimSpace(rest), true
 		}
 	}
-	return ""
+	return "", false
 }
 
 // runConfigCLI handles non-interactive mode (--no-tui).
@@ -178,7 +244,8 @@ func runConfigCLI(version string, targetPath string, flags initFlags) {
 	out.Command = buildConfigCommand(targetPath, flags)
 	out.AdjustCommand = buildConfigAdjustCommand(flags)
 	out.TemplatesVersion = templatesVersion
-	applyBoothAptSnapshot(out, targetPath)
+	applyBoothAptSnapshot(out, targetPath, flags)
+	warnAptSnapshotOlderThanImage(os.Stderr, out, targetPath, version)
 
 	if flags.debug {
 		printDebug(resolved, out)
@@ -384,6 +451,8 @@ func prepareInteractiveConfig(version, targetPath string, flags initFlags) inter
 	mergedFlags := mergeFlags(baseline.flags, flags, targetPath)
 	pre := buildPreSelection(registry, mergedFlags, readExistingArgs(targetPath))
 	pre.StringFields["booth-version"] = readLockFileVersion(targetPath, version)
+	pre.StringFields["apt-snapshot"] = resolveBoothAptSnapshot(mergedFlags, targetPath)
+	pre.ImageAptSnapshot = imageSnapshotLookup(readLockFileVersion(targetPath, version))
 	drifted := baseline.drifted
 	warning := joinWarnings(checkBoothWritable(targetPath), handWrittenNotice(drifted), adoptReasonsText(baseline))
 
@@ -543,6 +612,18 @@ func applyInteractiveResult(version, targetPath string, setup interactiveSetup, 
 	// separate field and rides along with the --set keys below.
 	flags.version = result.StringFields["templates-version"]
 
+	// The field was preloaded with the snapshot this booth already freezes apt to
+	// (or today's, on a first configure), so whatever comes back is the user's
+	// answer — including empty, which turns the freeze off.
+	// The TUI refuses to save an invalid value, so this only guards the web UI and
+	// anything else that hands back a ConfigResult.
+	aptSnapshot, err := parseAptSnapshotFlag(result.StringFields["apt-snapshot"])
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error: %v\nNothing was written.\n", err)
+		os.Exit(1)
+	}
+	flags.aptSnapshot, flags.aptSnapshotSet = aptSnapshot, true
+
 	// The TUI's Debug box steers this run, like --debug does; it is not a booth
 	// setting and has no config.toml key. It used to be written out as one, which
 	// produced a `debug = true` line nothing has ever read.
@@ -591,7 +672,8 @@ func applyInteractiveResult(version, targetPath string, setup interactiveSetup, 
 	out.Command = buildConfigCommand(targetPath, flags)
 	out.AdjustCommand = buildConfigAdjustCommand(flags)
 	out.TemplatesVersion = setup.templatesVersion
-	applyBoothAptSnapshot(out, targetPath)
+	applyBoothAptSnapshot(out, targetPath, flags)
+	warnAptSnapshotOlderThanImage(os.Stderr, out, targetPath, version)
 
 	if flags.debug {
 		printDebug(resolved, out)
@@ -976,6 +1058,10 @@ func mergeFlags(existing, cli initFlags, projectRoot string) initFlags {
 	if cli.version != "" {
 		merged.version = cli.version
 	}
+	// Never part of the baseline: the snapshot lives on the Boothfile's own
+	// `env APT_SNAPSHOT=` line, not in the header the baseline is read from.
+	merged.aptSnapshot = cli.aptSnapshot
+	merged.aptSnapshotSet = cli.aptSnapshotSet
 
 	return merged
 }
@@ -1458,6 +1544,10 @@ Flags:
   --port <port>            Set port (e.g., 10000, NEXT, RANDOM)
   --templates-path <dir>   Use local templates directory
   --version <ver>          Use templates from a specific release version
+  --apt-snapshot <id>      Freeze apt to an Ubuntu archive snapshot. An id
+                           (20260601T000000Z), today (move it to now), or none
+                           (no freeze). Without it, an existing booth keeps the
+                           snapshot it has and a new booth is frozen to today.
   --overwrite              Overwrite existing files without prompting, including
                            hand-written ones (--no-tui only)
   --beside                 Keep hand-written files; write the generated content

@@ -565,6 +565,14 @@ func (m *model) commitActiveEdit() {
 	}
 	if m.editing {
 		m.editing = false
+		// A value its field refuses cannot be accepted the way Enter would accept
+		// it; clicking away backs out of it instead, like Esc.
+		if f := m.currentConfigField(); f != nil && !m.listEditing && f.Validate != nil {
+			if f.Validate(m.stringFields[f.Key]) != nil {
+				m.stringFields[f.Key] = m.editPrev
+			}
+			m.editErr = ""
+		}
 		if m.listEditing {
 			// An entry left empty is dropped, the same as finishing it with Enter.
 			if f := m.currentConfigField(); f != nil {
