@@ -88,7 +88,7 @@ setup	elm	1.0.0	462267a54b2007cf1c081a12ef078ccd908ef93c3907925659dfdfbe7caa76fa
 setup	elm-code-extension	1.0.0	6e0caa93413bd80117a033e9a2f94c537a9867e775427f778347a4f8e312aedc	variants/base/setups/elm-code-extension--setup.sh
 setup	erlang	1.0.0	24ad8e50ad69aef9725262acd39b14885d8007f85bacd31e360b75a39d6175ab	variants/base/setups/erlang--setup.sh
 setup	erlang-code-extension	1.0.0	6e5b09d75439bec5b67b899d850b0a99cb07c3fe72052e8061458843f60aff70	variants/base/setups/erlang-code-extension--setup.sh
-setup	excalidraw	1.0.0	0105afd88e8754233f103e3fb6397531c585427a94c35b6f0cf1f17e2fd5982e	variants/base/setups/excalidraw--setup.sh
+setup	excalidraw	1.0.1	59cc6f1fc07318765cb3ec8ef771f64c6814ed21b83f7202446a96f1a50f6841	variants/base/setups/excalidraw--setup.sh
 setup	exercism	1.0.0	036c8ef57fcfabde43a3d47d55affc68a5127451a61586d2bc990bed6155ebc7	variants/base/setups/exercism--setup.sh
 setup	fira-code-nerd-font	0.1.0	376ef1dfb459f4ad16ab0b76812fd6920fe7569371c80e61c2057a2820fd5509	variants/base/setups/fira-code-nerd-font--setup.sh
 setup	firebase	1.0.0	cb173cd4ef650d421702b797c175e1104e2974be965d684f6ecee5fe00af2f26	variants/base/setups/firebase--setup.sh
