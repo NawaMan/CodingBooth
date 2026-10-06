@@ -4,18 +4,15 @@
 # you may not use this file except in compliance with the License.
 
 # -----------------------------------------------------------------------------
-# Test: setup tty-owner gives the booth user its own terminal in `booth run`'s
-# foreground shell.
+# Test: booth-entry gives the booth user the foreground pty of `booth run`.
 #
-# `docker run -it` allocates that pty while the container is still root, and
-# booth-entry's `runuser` keeps it — so the coder shell sits on /dev/pts/0
-# owned root:tty, mode 0620, and cannot open it by name. gpg's pinentry opens
-# $GPG_TTY by name, so `pass show` and `gpg --quick-generate-key` fail.
+# `docker run -t` allocates that pty while the container is still root.
+# booth-entry chowns the /dev/pts slave to coder before any user process, and
+# leaves the mode at 0620, so gpg pinentry can open $GPG_TTY. A start with no
+# terminal has nothing to chown and must still boot.
 #
-# Case 1 locks in the bug itself (without the setup, the pty is root's), so this
-# test notices if booth-entry ever starts handing the pty over on its own and
-# the setup becomes dead weight. Cases 2-3: after the setup runs (as root, as a
-# Boothfile `setup` line would), a new login shell owns and can read the pty.
+# The script under test is bind-mounted over the image's /usr/local/bin/booth-entry,
+# so this checks the tree rather than whichever entry the image was built with.
 #
 # `script` gives the foreground booth a real terminal; without one docker run
 # gets no -t and there is no pty to check.
@@ -27,66 +24,86 @@ source ../common--source.sh
 
 FAILED=0
 
-NAME="tty-owner-$RANDOM"
+NAME="entry-pty-$RANDOM"
 PORT="$(pick_free_port)"
+NAME2="entry-pty-notty-$RANDOM"
+PORT2="$(pick_free_port_other_than "$PORT")"
 LOG="$0.log"
+LOG2="$0.notty.log"
+
+REPO="$(cd "$(dirname "$0")/../.." && pwd)"
+ENTRY="$REPO/variants/base/booth-entry"
+WORK="$(mktemp -d)"
 
 cleanup() {
-  docker rm -f "$NAME" >/dev/null 2>&1 || true
+  docker rm -f "$NAME" "$NAME2" >/dev/null 2>&1 || true
+  rm -rf "$WORK"
 }
 trap cleanup EXIT
 
-# The in-booth probe: report the pty owner before the setup, run the built-in
-# setup as root, then report again from a new login shell (which sources the
-# profile script the setup installed).
-PROBE='echo "BEFORE_OWNER=$(stat -c %U "$(tty)")"
-sudo tty-owner--setup.sh >/dev/null
-bash -lc '"'"'echo "AFTER_OWNER=$(stat -c %U "$(tty)")"; if [ -r "$(tty)" ]; then echo AFTER_READ=yes; else echo AFTER_READ=no; fi'"'"''
+mkdir -p "$WORK/.booth"
+printf 'variant = "base"\nrun-args = ["-v", "%s:/usr/local/bin/booth-entry:ro"]\n' \
+  "$ENTRY" > "$WORK/.booth/config.toml"
+
+PROBE='echo "OWNER=$(stat -c %U "$(tty)")"; echo "MODE=$(stat -c %a "$(tty)")"; if [ -r "$(tty)" ]; then echo READ=yes; else echo READ=no; fi'
 
 # Inner mode: run under `script`'s terminal, start the foreground booth.
 if [[ "${1:-}" == "--inner" ]]; then
-  # One string: booth run joins its command words into a `bash -lc` line, so
-  # an inner `bash -c '...'` would lose its quoting.
-  run_coding_booth --variant terminal --name "$2" --port "$3" -- "$PROBE"
+  run_coding_booth --code "$2" --variant base --hide-welcome --name "$3" --port "$4" -- "$PROBE"
   exit $?
 fi
 
-SHELL=/bin/bash timeout 300 script -qec "bash $(printf '%q' "$0") --inner $NAME $PORT" /dev/null \
+SHELL=/bin/bash timeout 300 script -qec "bash $(printf '%q' "$0") --inner $(printf '%q' "$WORK") $NAME $PORT" /dev/null \
   > "$LOG" 2>&1 < /dev/null
 
 OUT="$(tr -d '\r' < "$LOG")"
-BEFORE="$(sed -n 's/^.*BEFORE_OWNER=//p' <<<"$OUT" | tail -1)"
-AFTER="$(sed -n 's/^.*AFTER_OWNER=//p'   <<<"$OUT" | tail -1)"
-READ="$(sed -n 's/^.*AFTER_READ=//p'     <<<"$OUT" | tail -1)"
+OWNER="$(sed -n 's/^.*OWNER=//p' <<<"$OUT" | tail -1)"
+MODE="$(sed -n 's/^.*MODE=//p'   <<<"$OUT" | tail -1)"
+READ="$(sed -n 's/^.*READ=//p'   <<<"$OUT" | tail -1)"
 
 # -------------------------------------------------------
-# Test 1: without the setup, the foreground shell's pty belongs to root.
+# Test 1: the foreground shell's pty belongs to coder.
 # -------------------------------------------------------
-if [[ "$BEFORE" == "root" ]]; then
-  print_test_result "true"  "$0" "1" "booth run's foreground shell starts on a root-owned pty (the bug tty-owner fixes)"
+if [[ "$OWNER" == "coder" ]]; then
+  print_test_result "true"  "$0" "1" "booth run's foreground shell starts on a pty owned by coder"
 else
-  print_test_result "false" "$0" "1" "booth run's foreground shell should start on a root-owned pty, got owner '$BEFORE'"
-  tail -20 "$LOG" >&2
+  print_test_result "false" "$0" "1" "booth run's foreground shell should start on a pty owned by coder, got owner '$OWNER'"
+  tail -30 "$LOG" >&2
   FAILED=$((FAILED + 1))
 fi
 
 # -------------------------------------------------------
-# Test 2: after the setup, a login shell makes coder the pty's owner.
+# Test 2: the mode stays 0620. Group tty can still write; owner can read.
 # -------------------------------------------------------
-if [[ "$AFTER" == "coder" ]]; then
-  print_test_result "true"  "$0" "2" "With tty-owner, a login shell chowns its pty to coder"
+if [[ "$MODE" == "620" ]]; then
+  print_test_result "true"  "$0" "2" "The foreground pty stays mode 0620"
 else
-  print_test_result "false" "$0" "2" "With tty-owner, a login shell should chown its pty to coder, got owner '$AFTER'"
+  print_test_result "false" "$0" "2" "The foreground pty should stay mode 0620, got '$MODE'"
   FAILED=$((FAILED + 1))
 fi
 
 # -------------------------------------------------------
-# Test 3: and coder can open it for reading — what pinentry needs.
+# Test 3: coder can open it for reading — what pinentry needs.
 # -------------------------------------------------------
 if [[ "$READ" == "yes" ]]; then
-  print_test_result "true"  "$0" "3" "With tty-owner, coder can read its own pty (gpg pinentry can open \$GPG_TTY)"
+  print_test_result "true"  "$0" "3" "coder can read its foreground pty (gpg pinentry can open \$GPG_TTY)"
 else
-  print_test_result "false" "$0" "3" "With tty-owner, coder should be able to read its own pty, got '$READ'"
+  print_test_result "false" "$0" "3" "coder should be able to read its foreground pty, got '$READ'"
+  FAILED=$((FAILED + 1))
+fi
+
+# -------------------------------------------------------
+# Test 4: a start with no terminal still runs the command.
+# -------------------------------------------------------
+NOTTY_RC=0
+run_coding_booth --code "$WORK" --variant base --hide-welcome --name "$NAME2" --port "$PORT2" -- 'echo NO_TTY_OK' \
+  < /dev/null > "$LOG2" 2>&1 || NOTTY_RC=$?
+NOTTY_OUT="$(tr -d '\r' < "$LOG2")"
+if [[ "$NOTTY_RC" -eq 0 && "$NOTTY_OUT" == *"NO_TTY_OK"* ]]; then
+  print_test_result "true"  "$0" "4" "A booth run with no terminal still runs its command"
+else
+  print_test_result "false" "$0" "4" "A booth run with no terminal should run its command, got rc=$NOTTY_RC"
+  tail -30 "$LOG2" >&2
   FAILED=$((FAILED + 1))
 fi
 

@@ -191,6 +191,8 @@ else
 fi
 ```
 
+Before that drop, when this process has a controlling terminal under `/dev/pts/`, the entry script `chown`s that device to the booth user and leaves the mode unchanged. A start with no terminal skips the `chown`. A failed `chown` does not stop the container.
+
 ---
 
 ## Design Decisions

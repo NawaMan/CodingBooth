@@ -19,6 +19,7 @@
 # - Ensure user/group alignment
 # - Setup user profile/environment
 # - Prepare the user's home directory
+# - Give coder the controlling pty, when this process has one
 # - Run one-time CodingBooth startup hooks
 # - Execute the requested command
 #
@@ -559,6 +560,24 @@ fi
 
 # Fix ownership for root-owned files/dirs that were copied in from seed or override
 find "$HOME_DIR" -xdev -user root -exec chown "$HOST_UID:$HOST_GID" {} + 2>/dev/null || true
+
+
+section "Pty ownership"
+
+# `docker run -t` allocates this pty while we are still root. The drop to coder
+# keeps the slave, so it stays root:tty mode 0620 and gpg pinentry cannot open
+# $GPG_TTY by name. Hand that one device to coder before any user process.
+# A daemon start or a pipe has no tty: skip. A failed chown must not fail the
+# boot. Leave the mode alone, and never touch anything but a /dev/pts slave
+# (a shared host /dev would make /dev/console a host device).
+info "13c) Giving $USER_NAME ownership of the controlling pty, when there is one..."
+_cb_tty=$(tty 2>/dev/null) || _cb_tty=""
+case $_cb_tty in
+  /dev/pts/*)
+    chown "$USER_NAME" "$_cb_tty" 2>/dev/null || true
+    ;;
+esac
+unset _cb_tty
 
 
 section "Run one-time CodingBooth startup hooks"

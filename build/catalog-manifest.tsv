@@ -278,7 +278,6 @@ setup	terraform	1.0.0	9b237381085ab277b124dccf125ded925371d6b8c579c776d4e60ed907
 setup	texstudio	0.1.0	470bc74505458309fe2cce3d15c2022606cc460c0136f293a1fadf7a6a70767b	variants/base/setups/texstudio--setup.sh
 setup	thonny	1.0.0	a14c0b5793457d929adfcb899ee169b3dd57ea2efa6eb3a6a400ff7a9f7168d7	variants/base/setups/thonny--setup.sh
 setup	tls	1.0.0	719a92dd7d6975d798ad20ebd76a45d0e35af17ee6a440ce44cc437e3aa48b94	variants/base/setups/tls--setup.sh
-setup	tty-owner	0.1.0	56a243caf237583304241bd4a2773542bf97e60b337f48b3a4df23c32d66ddd3	variants/base/setups/tty-owner--setup.sh
 setup	ttyd-nerd-font-index	0.1.0	ffb88a4f1e9d294779db629a9368974b2401e2657593a69b6af1613e84117996	variants/base/setups/ttyd-nerd-font-index--setup.sh
 setup	vhs	1.0.0	a5ed3a8d5ae5e152d8907f9f6bb2c398e40d52c3e2b3b4eda5a8b9429416b9dd	variants/base/setups/vhs--setup.sh
 setup	viewmd	1.0.0	d86fb47a1ec9db20bf39a717ee94ea9e03c4418894db2da8fcd7abfd77cb5dfd	variants/base/setups/viewmd--setup.sh
@@ -528,7 +527,6 @@ template	swift	1.0.0	e53acbfb5ad7a4cbec96486005508cea6f0d6757057c9b96e16d9408f4f
 template	tela-icons	0.1.0	bc9fb120c9a2a35da5e4078832bc039a940fdefacc925f99eb66e6c3d55450f7	templates/desktops/tela-icons/template.toml
 template	terraform	1.0.0	151cdf8d4ddba87cd10e5b51a11c17d61e35a29be195131aec1ff425781da76c	templates/tools/terraform/template.toml
 template	thonny	1.0.0	64571e52b43139716e35c9bd72304a5642bd69c155b599bfdeba438e67388d0e	templates/education/thonny/template.toml
-template	tty-owner	0.1.0	af13541a538f450994ac69ca3aaef02531630c03878000ea53a89e3e71bb13b7	templates/tools/tty-owner/template.toml
 template	vhs	1.0.0	f2f8d6aca4c461eea09eb9922032616049a00be4f6994ab510538cda9cf29a07	templates/tools/vhs/template.toml
 template	vm-cpus	0.1.0	04f69716e3a679c0a3db0566fea903637f7da8f41f046976a54d374afc3f38eb	templates/booth-vm/vm-cpus/template.toml
 template	vm-memory	0.1.0	64ed5bfe19ebe93a61c12a5a397cbc05338eda1afa346617d59f21cb5f1393e7	templates/booth-vm/vm-memory/template.toml
