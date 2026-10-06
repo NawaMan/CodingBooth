@@ -78,8 +78,8 @@ The shell launched is the default shell configured for the `coder` user inside t
 | `--keep-alive`               | With `--run`, leave the booth running after you disconnect                  |
 | `--port <n\|NEXT\|RANDOM>`   | Host port when **creating** a missing booth; asserted against existing ones |
 | `--accept-existing`          | Connect even if create flags (e.g. `--port`) do not match the booth         |
-| `--dind-allowed`             | With `--run`: start a `--dind` booth without asking ([why](BOOTH_SECURITY.md)) |
-| `--privileged-allowed`       | With `--run`: allow `--privileged`-like run-args without asking              |
+| `--dind-allowed`             | With `--run`: start a `--dind` booth without asking; the warning still prints ([why](BOOTH_SECURITY.md)) |
+| `--privileged-allowed`       | With `--run`: allow `--privileged`-like run-args without asking; the warning still prints |
 | `--silence-build`, `--quiet`, `-q` | Hide `--run` bring-up and teardown                                     |
 | `-e <VAR=value>`             | Set environment variable for the session                                    |
 | `--envfile <path>`           | Load environment variables from a file                                      |
@@ -131,8 +131,8 @@ Everything after `--` is executed inside the container. The exit code is forward
 | `--keep-alive`               | With `--run`, leave the booth running after the command finishes            |
 | `--port <n\|NEXT\|RANDOM>`   | Host port when **creating** a missing booth; asserted against existing ones |
 | `--accept-existing`          | Connect even if create flags (e.g. `--port`) do not match the booth         |
-| `--dind-allowed`             | With `--run`: start a `--dind` booth without asking ([why](BOOTH_SECURITY.md)) |
-| `--privileged-allowed`       | With `--run`: allow `--privileged`-like run-args without asking              |
+| `--dind-allowed`             | With `--run`: start a `--dind` booth without asking; the warning still prints ([why](BOOTH_SECURITY.md)) |
+| `--privileged-allowed`       | With `--run`: allow `--privileged`-like run-args without asking; the warning still prints |
 | `--silence-build`, `--quiet`, `-q` | Hide `--run` bring-up and teardown; command output only               |
 | `-e <VAR=value>`             | Set environment variable for the command                                    |
 | `--envfile <path>`           | Load environment variables from a file                                      |
@@ -263,6 +263,8 @@ A short note is printed to **stderr**, and the new booth's startup output also g
 ```bash
 ./booth exec --silence-build --run -- ./build.sh
 ```
+
+**Security warning.** Whenever `--run` creates or starts the booth, the same security warning as `booth run` is printed on stderr if the booth has settings that let code inside it reach the host (`--dind`, `--privileged`-like run-args, writable host mounts — see [Security](BOOTH_SECURITY.md#booth-asks-before-it-starts-one-of-these)). Creating one asks first, or needs `--dind-allowed` / `--privileged-allowed`; starting a stopped one only prints it (`This booth was created with these settings.`). `--quiet` does not hide it. Attaching to a booth that is already running prints nothing.
 
 A long first image build still draws one in-place progress line (the same as `booth --silence-build`); a failed build still prints the log. `shell`/`exec` then wait for the booth's `coder` user alignment to finish before connecting, so the first command never races container startup.
 

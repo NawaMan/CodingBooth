@@ -105,6 +105,7 @@ USAGE:
   %s home-volume-export <name> <file>          (export home volume to tar.gz)
   %s home-volume-import <name> <file>          (import tar.gz into home volume)
   %s print-default-allowlist.txt               (print built-in egress allowlist)
+  %s print-security-warning [options]          (print the run's security warning; exit 1 if any)
 
 BOOTSTRAP OPTIONS (CLI or defaults; evaluated before env and config file):
   --code <path>          Host code path to mount at /home/coder/code
@@ -279,7 +280,7 @@ EXAMPLES:
   %s --env-file none --variant notebook
 `,
 		s, version,
-		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
+		s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s, s,
 		s,
 		s, s, s, s, s,
 	)
@@ -807,6 +808,28 @@ Use --strict to treat warnings as errors.
 `, s, s)
 }
 
+func showHelpPrintSecurityWarning() {
+	s := scriptName()
+	fmt.Printf(`%s print-security-warning — print the security warning a run would show
+
+USAGE:  %s print-security-warning [options]
+
+Takes the same options as '%s run' (including run-args such as -v or --network)
+and reads the same .booth/config.toml, profiles, and templates, then prints the
+settings that would let code in the booth reach the host — what each could lead
+to, with a link to docs/BOOTH_SECURITY.md. Nothing is built or started and nothing
+is asked.
+
+--dind-allowed / --privileged-allowed do not change the result: it reports what the
+booth would get, not whether you agreed to it.
+
+EXIT STATUS:
+  0  Prints "No security warning."
+  1  Prints the warning (stdout)
+  An options or config error is reported on stderr, as for a run.
+`, s, s, s)
+}
+
 func showHelpListHomeVolume() {
 	s := scriptName()
 	fmt.Printf(`%s home-volume-list — list persisted home volumes
@@ -895,6 +918,8 @@ func dispatchHelp(args []string, version string) {
 			showHelpExpose()
 		case "emit-dockerfile":
 			showHelpEmitDockerfile()
+		case "print-security-warning":
+			showHelpPrintSecurityWarning()
 		case "home-volume-list":
 			showHelpListHomeVolume()
 		case "home-volume-export":

@@ -20,6 +20,7 @@ import (
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
 	"github.com/nawaman/codingbooth/src/pkg/docker"
+	"github.com/nawaman/codingbooth/src/pkg/hostescape"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/lifecyclelog"
 )
@@ -63,6 +64,20 @@ type managedContainer struct {
 	// it was created by. See staleImageWarning.
 	ImageID  string
 	ImageRef string
+
+	// SecurityWarning: the settings that let code in the booth reach the host, as recorded when
+	// it was created (hostescape.LabelKey). Printed again whenever the booth is started.
+	SecurityWarning []hostescape.Reason
+}
+
+// securityWarning is the warning to print before a booth is started again, or "" when it was
+// created without any setting that reaches the host. It does not ask: consent was given when the
+// booth was created.
+func securityWarning(target managedContainer) string {
+	if len(target.SecurityWarning) == 0 {
+		return ""
+	}
+	return hostescape.Format(target.SecurityWarning) + hostescape.StartNote
 }
 
 // staleImageWarning is a line for a booth about to be started again whose
@@ -255,6 +270,7 @@ func Start(args []string, stderr io.Writer) error {
 	if warning := staleImageWarning(target); warning != "" {
 		_, _ = fmt.Fprintln(stderr, warning)
 	}
+	_, _ = fmt.Fprint(stderr, securityWarning(target))
 
 	dockerArgs := ilist.NewList(ilist.NewList(target.Name))
 	if !*daemon {
@@ -366,6 +382,7 @@ func Restart(args []string, stderr io.Writer) error {
 	}
 	engine := target.Engine
 	lifecyclelog.AppendAt(target.hostBoothDir(), target.Name, "restart-requested", "by=host-cli")
+	_, _ = fmt.Fprint(stderr, securityWarning(target))
 
 	if err := docker.Docker(docker.DockerFlags{Silent: false, Engine: engine}, "restart", ilist.NewList(
 		ilist.NewList(restartTimeoutFlag(engine), strconv.Itoa(*timeout)),
@@ -640,6 +657,8 @@ func inspectManagedContainer(name string, flags docker.DockerFlags) (managedCont
 		AppleLowPorts: strings.EqualFold(labels["cb.apple-low-ports"], "true"),
 		ImageID:       data.Image,
 		ImageRef:      data.Config.Image,
+
+		SecurityWarning: hostescape.DecodeLabel(labels[hostescape.LabelKey]),
 	}, nil
 }
 
