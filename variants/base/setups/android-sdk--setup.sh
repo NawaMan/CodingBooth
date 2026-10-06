@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.1.0
+# cb-version: 0.2.0
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -130,6 +130,10 @@ if [ -n "\$CB_ANDROID_BT" ]; then
   export PATH="\$CB_ANDROID_BT:\$PATH"
 fi
 unset CB_ANDROID_BT
+# avdmanager files AVDs under $XDG_CONFIG_HOME/.android whenever that is set, and a
+# desktop session sets it; the emulator only ever looks in ~/.android. Pin one home
+# for both (and for adb), unless the user has chosen another.
+export ANDROID_USER_HOME="\${ANDROID_USER_HOME:-\$HOME/.android}"
 EOF
 chmod 0644 /etc/profile.d/63-cb-android-sdk--profile.sh
 
@@ -140,6 +144,11 @@ install -d "$BIN_DIR"
 cat >"${BIN_DIR}/androidwrap" <<'EOF'
 #!/bin/sh
 : "${ANDROID_SDK_ROOT:=/opt/android-sdk}"
+# avdmanager files AVDs under $XDG_CONFIG_HOME/.android whenever that is set, and a
+# desktop session sets it; the emulator only ever looks in ~/.android. Pin one home
+# for both (and for adb), unless the user has chosen another.
+: "${ANDROID_USER_HOME:=$HOME/.android}"
+export ANDROID_USER_HOME
 tool="$(basename "$0")"
 for d in \
   "$ANDROID_SDK_ROOT/cmdline-tools/latest/bin" \

@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.1.1"
 display-name = "Android Emulator"
 display-disc = "Emulator binary plus an AOSP system image, so an APK can be run and not merely built"
 display-detail = """Adds the Android emulator and a system image, turning a build-only booth into one that can \
@@ -11,9 +11,10 @@ On a desktop variant it installs an "Android Emulator" desktop icon and Developm
 the acceleration mode for you, so the launcher works rather than exiting with an error nobody \
 sees.
 
-Hardware acceleration is a separate, runtime concern — see the `kvm` extension. Without /dev/kvm \
-the emulator does not fall back on its own, it refuses to start; pass `-accel off` to run in \
-software emulation instead, which works but is slow enough to hurt."""
+Hardware acceleration comes from the `kvm` extension, which `android-sdk` selects by default. \
+Without /dev/kvm the emulator does not fall back on its own, it refuses to start; the launcher \
+then passes `-accel off` to run in software emulation instead, which works but is slow enough to \
+hurt."""
 display-order = 1
 auto-select = false
 tags = [
