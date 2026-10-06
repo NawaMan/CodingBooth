@@ -171,10 +171,15 @@ End users have only the `codingbooth` binary, not this directory, so the Boothfi
 `cli/src/pkg/boothfile/builtin-scripts.txt`. Adding, renaming or removing a `*--setup.sh` or
 `*--install.sh` changes it. `./build/cli-build.sh` regenerates it on every build (or run
 `build/gen-builtin-scripts.sh`); **commit the regenerated file** in the same change as the script.
-`build/gen-builtin-scripts.sh --check` fails when it is stale. A stale list hides from you: inside
-a CodingBooth checkout the compiler also scans `variants/base/setups/` (`KnownBuiltinScripts`), so
-only end users see it — their binary warns `Unknown setup script '<name>'` for a script the image
-does ship. The build still runs; the warning just lies.
+Left uncommitted, the next build leaves it modified in someone else's tree, where it slips into an
+unrelated commit.
+
+A stale committed copy does not reach users: the release workflow builds through `cli-build.sh`,
+which regenerates the list first. Nor does it show while you develop — inside a CodingBooth checkout
+the compiler also scans `variants/base/setups/` (`KnownBuiltinScripts`). Only a binary built with
+plain `go build` (skipping `cli-build.sh`) and run outside a checkout is affected: it warns
+`Unknown setup script '<name>'` for a script the image does ship. `build/gen-builtin-scripts.sh --check` reports whether the committed copy is
+current.
 
 ---
 
