@@ -134,7 +134,7 @@ the generated files and the runtime state.
 | Group | Entries | Notes |
 | --- | --- | --- |
 | **Generated** | `Boothfile`, `config.toml`, `.generated` | written by `booth config`; `.generated` is the fingerprint that guards hand edits — commit all three |
-| **Local catalog** — hand-written; `booth config` copies these, never regenerates them | `setups/` | local setup *and* install scripts; first on `PATH`, so they **shadow built-ins** |
+| **Local catalog** — hand-written; `booth config` copies these, never regenerates them | `setups/` | local setup *and* install scripts; first on `PATH`, so they **shadow built-ins**; a setup with a `# cb-template:` header is also a template ([how](BOOTH_CUSTOMIZATION.md#a-setup-that-is-its-own-template)) |
 | | `templates/<cat>/<name>/` | local templates; they override a stock one of the same name |
 | | `recipes/` | `@name` recipes |
 | | `startups/`, `startup.sh` | project startup hooks |
@@ -149,7 +149,8 @@ The pattern that keeps a project's own logic local **and** the Boothfile generat
 template that emits a local setup. `lamp-example` does it:
 `.booth/templates/project/lamp-init/template.toml` emits `setup lamp-init`, which runs
 `.booth/setups/lamp-init--setup.sh`. `lemp-example`, `wordpress-example` and `data-example` follow
-the same shape.
+the same shape. When the template would be nothing but that one `setup` line, a `# cb-template:`
+header in the setup itself does the same job in one file.
 
 → Reference: [BOOTH_CUSTOMIZATION.md](BOOTH_CUSTOMIZATION.md),
 [BOOTH_CONFIG.md → Hand-Written Files](BOOTH_CONFIG.md#hand-written-files),

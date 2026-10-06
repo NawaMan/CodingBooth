@@ -22,6 +22,8 @@ This guide covers how to customize a CodingBooth environment — from built-in s
 - [Templates](#templates)
   - [What is a Template?](#what-is-a-template)
   - [Template Structure](#template-structure)
+  - [Project-local templates and extensions](#project-local-templates-and-extensions)
+  - [A setup that is its own template](#a-setup-that-is-its-own-template)
   - [Writing a Template](#writing-a-template)
   - [Parameters](#parameters)
   - [Segments and Ordering](#segments-and-ordering)
@@ -214,6 +216,10 @@ setup myapp           # Runs .booth/setups/myapp--setup.sh
 ```
 
 The Boothfile compiler automatically adds a `COPY` directive to bring your script into the image before it's executed.
+
+A `setup` line typed into a generated Boothfile makes it hand-written to `booth config`. To keep the
+Boothfile generated, give the script a `# cb-template:` header and select it instead — see
+[A setup that is its own template](#a-setup-that-is-its-own-template).
 
 **Template for custom setups:**
 
@@ -483,6 +489,53 @@ overlay in this release.
 
 **Missing names:** selecting a template or extension that is neither stock nor
 project-local is a hard error (`unknown template` / `unknown extension`).
+
+### A setup that is its own template
+
+When a project setup needs nothing but its own `setup` line, it can skip the
+`template.toml`: a **`# cb-template:`** line in the script's leading comment
+block makes `.booth/setups/<name>--setup.sh` a template named `<name>`, listed
+under **This project** in the TUI and selectable with `--select`.
+
+```bash
+#!/bin/bash
+# cb-template: DB seed                          ← required: the marker + display name
+# cb-disc:     Load fixture data into Postgres
+# cb-detail:   Longer text for the TUI detail pane.
+# cb-band:     90                               ← Boothfile order (default 50)
+# cb-requires: postgresql
+# cb-tags:     db, fixtures
+# cb-param:    SEED_SET default=small suggests=small,full
+set -Eeuo pipefail
+SEED_SET="${1:-small}"
+...
+```
+
+```bash
+booth config --no-tui . --select db-seed:full
+# Boothfile:  arg SEED_SET=full
+#             setup db-seed ${SEED_SET}
+```
+
+- **Only the leading comment block is read** — from the top (after the shebang)
+  to the first line of code. A script without `cb-template` is not a template,
+  so helpers and `*--install.sh` scripts stay out of the list.
+- **Params reach the script positionally**, in the order of their `cb-param`
+  lines (`$1`, `$2`, …). Each takes `default=` and `suggests=` (comma list).
+- **`cb-band`** is the Boothfile order band — `90` to run after language
+  setups, `65` after the editor; see the bands under *Segments and Ordering*.
+- **A typo is an error** once `cb-template` is present: an unknown `cb-` key,
+  a bad band or a malformed param stops `booth config` and names the line.
+- **Need more** — `run-args`, extensions, a startup segment, files? Write a
+  `template.toml` under `.booth/templates/` instead. When both exist for one
+  name, the `template.toml` wins and `booth config` warns:
+
+  ```text
+  Warning: project template "db-seed" (category "project") overrides the cb-template header in .booth/setups/db-seed--setup.sh
+  ```
+
+A header template overrides a stock template of the same name exactly as a
+`.booth/templates/` one does — full replace, with the same warning.
 
 ### Writing a Template
 
