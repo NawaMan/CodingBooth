@@ -74,13 +74,13 @@ handle_request() {
                     handle_respond "$msg_id" "$body"
                     ;;
                 /booth-messages/api/shutdown)
-                    handle_lifecycle_signal ".shutdown-requested"
+                    handle_lifecycle_signal ".shutdown-requested" web-ui
                     ;;
                 /booth-messages/api/countdown-shutdown)
                     handle_countdown_shutdown
                     ;;
                 /booth-messages/api/restart)
-                    handle_lifecycle_signal ".restart-requested"
+                    handle_lifecycle_signal ".restart-requested" web-ui
                     ;;
                 /booth-messages/api/activity)
                     handle_activity
@@ -206,13 +206,17 @@ handle_countdown_shutdown() {
     if [ -n "${BOOTH_COUNT_DOWN_EXIT_CODE:-}" ]; then
         echo "$BOOTH_COUNT_DOWN_EXIT_CODE" > /tmp/.booth-exit-code
     fi
-    handle_lifecycle_signal ".shutdown-requested"
+    handle_lifecycle_signal ".shutdown-requested" countdown
 }
 
 handle_lifecycle_signal() {
     local marker="$1"
+    local origin="$2"
     local tmp_dir="/home/coder/code/.booth/.tmp"
     mkdir -p "$tmp_dir"
+    # .shutdown-requested -> shutdown-requested; booth-lifecycle-watcher acts on
+    # the marker and logs the shutdown/restart itself.
+    booth--lifecycle-log "${marker#.}" "by=$origin" || true
     touch "$tmp_dir/$marker"
     send_response 200 '{"ok":true}'
 }
