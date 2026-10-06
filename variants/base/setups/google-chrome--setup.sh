@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.1.0
 
 # chrome--setup.sh — Install Google Chrome (DEB, no snap) with no-sandbox wrapper
 set -Eeuo pipefail
@@ -111,6 +111,15 @@ exec /usr/bin/google-chrome-stable \
   "$@"
 EOF
 chmod 755 /usr/local/bin/google-chrome
+
+# --no-sandbox is required in a container, and Chrome answers it with a yellow
+# "unsupported command-line flag" bar on every window — the booth's web apps
+# included. This managed policy turns that warning off. Its only other effect
+# is that Chrome's menu says the browser is "managed by your organization".
+install -d -m 0755 /etc/opt/chrome/policies/managed
+cat >/etc/opt/chrome/policies/managed/codingbooth.json <<'EOF'
+{ "CommandLineFlagSecurityWarningsEnabled": false }
+EOF
 
 # point desktop launcher (if present) to wrapper
 if [[ -f /usr/share/applications/google-chrome.desktop ]]; then

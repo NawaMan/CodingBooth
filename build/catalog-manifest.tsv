@@ -42,7 +42,7 @@ setup	build-essential	1.0.0	eb750169b91459caa5f62a3a59efed4bab6a1a20a144e2f753f5
 setup	bun	1.0.0	b5e82ae237e4b8056b489bbe1a9477827ec3e46d9f20f101b4160ae597a19134	variants/base/setups/bun--setup.sh
 setup	bun-code-extension	1.0.0	e00901212b24b71ec5de264aa30b8575012267199abe7a7541bd0adbb9ab9a75	variants/base/setups/bun-code-extension--setup.sh
 setup	chrome-managed-policies	1.0.0	6df6f5ed90a5201e885d33b76617fa33e33553404cbda13c3b706b98cec89970	variants/base/setups/chrome-managed-policies--setup.sh
-setup	chromium-browser	1.0.0	7f09929e25c784b816b4a49c0dae1393a2710e89eab00a2080be5442c92fccfd	variants/base/setups/chromium-browser--setup.sh
+setup	chromium-browser	1.1.0	ce17b8bc2b2b4808af628a488f54fb91c24f529f93292f382ca0feae416fe2d2	variants/base/setups/chromium-browser--setup.sh
 setup	clang	1.0.0	d2ec5f9bf1997f8a6037704a63bc07ae7d9fb8e81cb2f81abb09bfa915c498b3	variants/base/setups/clang--setup.sh
 setup	clang-code-extension	1.0.0	45965425fa1c115ea8697de95f152aeb07ebdc73ffaa949a7e9afa6ea3c18c15	variants/base/setups/clang-code-extension--setup.sh
 setup	claude-code	1.0.0	e50187decbde051d68e9b9139b94bed0da175e72bac0c694df916c20f7583cc6	variants/base/setups/claude-code--setup.sh
@@ -119,7 +119,7 @@ setup	gleam-code-extension	0.1.0	3c69d444f944b4a29febf2da07ef1da671db38f78af0677
 setup	go	1.0.0	f4e6fe0495b7eb1c1883dd7dcc4216c7dbb067ddd6883fd9fcf20eda08c05a78	variants/base/setups/go--setup.sh
 setup	go-code-extension	1.0.0	14b5c05adef0b6e5f5eb1593ef84feca1320bdf1ad6150cf845e96b39c822371	variants/base/setups/go-code-extension--setup.sh
 setup	go-nb-kernel	1.0.0	641f7383ccc93feedc8e7c68f474e713806f756c22ed215f5d6305ede6e5d2ba	variants/base/setups/go-nb-kernel--setup.sh
-setup	google-chrome	1.0.0	01e5af596c3c4b765dd95f2580ecd9f411dc9d5cbc056c0da94d73091fa35b80	variants/base/setups/google-chrome--setup.sh
+setup	google-chrome	1.1.0	4747c061f49b7eea76796abc4425f0e563611222452911f064464f8531b1a21b	variants/base/setups/google-chrome--setup.sh
 setup	goose	1.0.0	138c554d9ab722ea3b71731ecad135583e355b03a5072c0e20ad3cfdf3ff0971	variants/base/setups/goose--setup.sh
 setup	gradle	1.0.0	b792a8ef7c2ada1b7c089c9787f5a197efcb56ddbc5cc02128e27a8691db356b	variants/base/setups/gradle--setup.sh
 setup	graphviz-code-extension	0.1.0	a24c26b65c1078dac9728a7c7659999b2f6d615aa12c55deefbb784268f2d7f4	variants/base/setups/graphviz-code-extension--setup.sh
@@ -136,7 +136,7 @@ setup	helm	1.0.0	7afeaf721ee89c9362432d1691902f3b61dbde5ee9f8a755da0d256a7aa701d
 setup	herdr	1.0.0	f84266e5badb254f8faaf6e5c4ee1d09123d0ac9fe2902bc6b5c236f43e80f31	variants/base/setups/herdr--setup.sh
 setup	homebrew	1.0.0	db8d46c975532cce8ad13cdc31e4b76770621a8ae6e590c9c0d27ee21cebae84	variants/base/setups/homebrew--setup.sh
 setup	hoppscotch	0.1.0	08109dde5ef1e4c1043ce0376217c0b71a3461a7f9b71a25b7f34764ce1685e7	variants/base/setups/hoppscotch--setup.sh
-setup	i3	1.0.0	aa27e38451ed149a8cbb2432552b9f6bbeb58c74557e5aafebfe232c943800a8	variants/base/setups/i3--setup.sh
+setup	i3	1.0.1	bcca0cdb191c67604054bce6d9382da0f91b6626450d7009a7849fb7d0ce4d55	variants/base/setups/i3--setup.sh
 setup	i3-ctrl-alt	1.0.0	2b1946eff53514fefe4d0943cffbf80f988833350a36f0b537dc9473a5ae48e4	variants/base/setups/i3-ctrl-alt--setup.sh
 setup	i3-default	1.0.0	9d1e51d1d23899ee8753b204850a4a4cb45c5637b44e2ad3c6c2c735071811a1	variants/base/setups/i3-default--setup.sh
 setup	i3-gaps	1.0.0	8208dea4d1bc6888fac64c764457889541f852a6abde98ad4690f7e2a2f10aad	variants/base/setups/i3-gaps--setup.sh
@@ -277,7 +277,7 @@ setup	sqlite	1.0.0	893824be9b031bffd397f44550a3a9fcf3a5747c69f7bdf4b110a5d285226
 setup	sqluv	1.0.0	2df7cbc86aad89c1a6478dd3e38e24fc7e32cf7dcb8d0bcc4616c7449a87eddd	variants/base/setups/sqluv--setup.sh
 setup	stern	1.0.0	34ea4d09b559d24efa60cde0b1f79536d24bce1a33904c40f08648f1fc095fd7	variants/base/setups/stern--setup.sh
 setup	svelte-code-extension	1.0.0	72a89f4990116bf86fe62a09ae0269fbd5f6e1aa73519b10b2d1beb5a47c7999	variants/base/setups/svelte-code-extension--setup.sh
-setup	sway	0.1.0	2766cb0200226e3270c3d2e31f4b4e58fc00ffa44310e0edbda4b46d832ceee4	variants/base/setups/sway--setup.sh
+setup	sway	0.1.1	a84990c34c0f35888fe43de5bd99a5311033b2a39253e27ce8aa1a76f1f81113	variants/base/setups/sway--setup.sh
 setup	sway-ctrl-alt	0.1.0	1b80287d9197d0d069db5d6cde174e867424365c7bd9e2679c45d8c0e31770b5	variants/base/setups/sway-ctrl-alt--setup.sh
 setup	sway-gaps	0.1.0	aa90a76b4a70f9101732cbe73e53ec787a234aa5ce5e302e8976ed3735b4b28e	variants/base/setups/sway-gaps--setup.sh
 setup	swift	1.0.0	150c74d312e00bf96d45f04c66d58d01fbd59be3d3b0e81443db915a42c40cd6	variants/base/setups/swift--setup.sh
@@ -292,7 +292,7 @@ setup	tls	1.0.0	719a92dd7d6975d798ad20ebd76a45d0e35af17ee6a440ce44cc437e3aa48b94
 setup	ttyd-nerd-font-index	0.1.0	ffb88a4f1e9d294779db629a9368974b2401e2657593a69b6af1613e84117996	variants/base/setups/ttyd-nerd-font-index--setup.sh
 setup	vhs	1.0.0	a5ed3a8d5ae5e152d8907f9f6bb2c398e40d52c3e2b3b4eda5a8b9429416b9dd	variants/base/setups/vhs--setup.sh
 setup	viewmd	1.0.0	d86fb47a1ec9db20bf39a717ee94ea9e03c4418894db2da8fcd7abfd77cb5dfd	variants/base/setups/viewmd--setup.sh
-setup	viewmd-desktop-icon	1.0.0	b25d1ed2847c317a829d70a0238cd2abc698891d066f397228c3a8efdb109bb6	variants/base/setups/viewmd-desktop-icon--setup.sh
+setup	viewmd-desktop-icon	1.0.1	2e3381d469cd79bad5cb3f24203fdc55107c2d0f94d7fa0365db66c370852be4	variants/base/setups/viewmd-desktop-icon--setup.sh
 setup	vscode	1.0.0	41130a71e8da3f8bd0a755dc1e4a7d9563d2abde5fbd44be3b9634dcb885f4e8	variants/base/setups/vscode--setup.sh
 setup	vscode-copilot	0.1.0	09554289ba4bd3093d39132bf13aaca986614ef7c84fab9927d3dae4b16f530e	variants/base/setups/vscode-copilot--setup.sh
 setup	vue-code-extension	0.1.0	e75b46cd8553f1ee3b70b23d5b98f8ddc7215c1204f43180a418d303f30965ab	variants/base/setups/vue-code-extension--setup.sh

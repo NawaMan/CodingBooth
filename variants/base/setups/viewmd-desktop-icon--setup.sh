@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 1.0.0
+# cb-version: 1.0.1
 #
 # viewmd-desktop-icon--setup.sh — give viewmd a desktop launcher.
 #
@@ -29,6 +29,8 @@ command -v viewmd >/dev/null 2>&1 || {
 # A starter with the folder and port baked in, so the launcher (and anyone at a
 # shell) has one obvious way to serve the project's Markdown. Foreground, not
 # --daemon: cb-web-open backgrounds it itself and then waits for the port.
+# --server-only, because viewmd opens a browser by default and cb-web-open opens
+# its own window: without it the first click of the icon opens two.
 STARTER_FILE="/usr/local/bin/start-viewmd"
 cat > "$STARTER_FILE" <<STARTER
 #!/usr/bin/env bash
@@ -42,7 +44,7 @@ FOLDER=\${2:-${VIEWMD_FOLDER}}
 [ -d "\$FOLDER" ] || FOLDER="\$HOME"
 
 echo "Starting viewmd on http://localhost:\$PORT (folder: \$FOLDER) ..."
-exec viewmd --folder "\$FOLDER" --port "\$PORT"
+exec viewmd --folder "\$FOLDER" --port "\$PORT" --server-only
 STARTER
 chmod 755 "$STARTER_FILE"
 
