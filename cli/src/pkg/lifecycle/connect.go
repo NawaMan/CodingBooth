@@ -271,6 +271,8 @@ func resolveConnectTarget(name string, positional []string, codePath string, run
 		if warning := staleImageWarning(target); warning != "" {
 			fmt.Fprintln(stderr, warning)
 		}
+		// Not silenced by --quiet: it is a security warning, and it goes to stderr only.
+		fmt.Fprint(stderr, securityWarning(target))
 		// Silent so docker's container-name echo does not pollute exec's stdout
 		// (which is forwarded verbatim for scripting). Failures surface via err.
 		if err := docker.Docker(docker.DockerFlags{Silent: true, Engine: engine}, "start", ilist.NewList(ilist.NewList(target.Name))); err != nil {

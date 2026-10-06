@@ -42,6 +42,8 @@ func (runner *BoothRunner) Run() error {
 	if err := EnsureHostEscapeConsent(ctx); err != nil {
 		return err
 	}
+	// Record those settings on the container, so starting it again later shows the same warning.
+	ctx = LabelHostEscape(ctx)
 	ctx = ValidateVariant(ctx)
 	ctx = EnsureDockerImage(ctx)
 	ctx = PortDetermination(ctx)

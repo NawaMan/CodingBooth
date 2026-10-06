@@ -86,13 +86,44 @@ if [[ $STATUS -ne 0 ]] && grep -q -- "--dind-allowed" <<<"$OUTPUT" \
    && ! grep -q CB_BOOTH_STARTED <<<"$OUTPUT" && no_container; then ok=true; fi
 check "$ok" "config.toml cannot grant consent to itself" "$OUTPUT"
 
-# 4. The command-line flag does allow it: the booth starts and runs the command.
+# 4. The command-line flag does allow it: the booth starts and runs the command, and the warning
+#    is still printed (the flag skips the question, not the warning).
 cat > "$TEST_DIR/.booth/config.toml" <<'TOML'
 run-args = ["--privileged"]
 TOML
 OUTPUT=$(no_tty_booth --silence-build --privileged-allowed -- echo CB_BOOTH_STARTED) || true
 ok=false
-grep -q CB_BOOTH_STARTED <<<"$OUTPUT" && ok=true
-check "$ok" "--privileged-allowed starts the booth without asking" "$OUTPUT"
+if grep -q CB_BOOTH_STARTED <<<"$OUTPUT" && grep -q "BOOTH_SECURITY.md#kernel-access" <<<"$OUTPUT" \
+   && grep -q "Allowed by --privileged-allowed" <<<"$OUTPUT"; then ok=true; fi
+check "$ok" "--privileged-allowed starts the booth without asking, and still warns" "$OUTPUT"
+
+# 5-7. Starting the booth again (exec --run on a stopped booth, booth start) prints the same warning from
+#      the container's cb.security-warning label, without asking. Attaching to a running booth does
+#      not. The warning goes to stderr, so exec's stdout stays clean.
+docker rm -f "$NAME" >/dev/null 2>&1 || true
+no_tty_booth --silence-build --daemon --keep-alive --privileged-allowed >/dev/null || true
+
+ERR="$TEST_DIR/stderr"
+booth_cmd() { # booth_cmd ARGS... : a lifecycle command with no terminal; stderr to $ERR
+    (cd "$TEST_DIR" && no_tty_run "$BOOTH" "$@" </dev/null 2>"$ERR")
+}
+
+OUTPUT=$(booth_cmd exec --name "$NAME" -- echo CB_EXEC_OK) || true
+ok=false
+if [[ "$OUTPUT" == "CB_EXEC_OK" ]] && ! grep -q "reach the host" "$ERR"; then ok=true; fi
+check "$ok" "exec on a running booth does not repeat the warning" "$OUTPUT / $(cat "$ERR")"
+
+docker stop -t 2 "$NAME" >/dev/null 2>&1 || true
+OUTPUT=$(booth_cmd exec --run --name "$NAME" -- echo CB_EXEC_OK) || true
+ok=false
+if [[ "$OUTPUT" == "CB_EXEC_OK" ]] && grep -q "  - --privileged" "$ERR" \
+   && grep -q "This booth was created with these settings." "$ERR"; then ok=true; fi
+check "$ok" "exec that starts a stopped booth warns on stderr, stdout stays clean" "$OUTPUT / $(cat "$ERR")"
+
+docker stop -t 2 "$NAME" >/dev/null 2>&1 || true
+booth_cmd start --name "$NAME" -d >/dev/null || true
+ok=false
+if grep -q "  - --privileged" "$ERR" && grep -q "This booth was created with these settings." "$ERR"; then ok=true; fi
+check "$ok" "booth start warns again" "$(cat "$ERR")"
 
 exit $FAILED
