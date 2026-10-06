@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = ".NET"
 display-disc = ".NET SDK with C# and F# support"
 display-detail = "Sets up a .NET development environment with the SDK, NuGet package manager, and configurable channel version."

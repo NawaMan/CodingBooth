@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Starship Shared"
 display-disc = "Team-share starship.toml via git (.booth/shared)"
 display-detail = """Live-bind-mounts ~/.config/starship.toml for a shared prompt config. Safe for teams; do not put API keys or private tokens in the TOML. Requires starship installed separately (e.g. brew/cargo) — this only shares the config file."""

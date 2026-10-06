@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Xonsh"
 display-disc = "Python-powered shell (xonsh)"
 display-detail = """Installs xonsh[full] (prompt toolkit and pygments) into its own venv at /opt/xonsh and links /usr/local/bin/xonsh. Python >= 3.11 is required and selected automatically (catalog Python 3.13). The shell's interpreter stays in that venv, so later pip installs into the project do not replace it. Select +default to make it the login shell. Pin a release with xonsh:0.24.2; the default is latest."""

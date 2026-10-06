@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "gem Packages"
 display-disc = "Install Ruby gems globally"
 display-detail = """Installs Ruby gems globally with `gem install --no-document`. Each entry becomes its own `gem \

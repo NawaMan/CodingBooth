@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "OpenSSH Server"
 display-disc = "SSH server for inbound remote access into the booth"
 display-order = 2

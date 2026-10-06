@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Gleam"
 display-disc = "Gleam, a friendly type-safe language for the BEAM (requires erlang)"
 display-detail = "Installs the Gleam compiler, build tool, formatter and language server (one binary). Gleam compiles to Erlang, so it requires the erlang template for the Erlang/OTP runtime; the JavaScript target also needs the nodejs template. Supports version pinning via the GLEAM_VERSION parameter."

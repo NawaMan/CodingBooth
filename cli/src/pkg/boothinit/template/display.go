@@ -58,6 +58,11 @@ func FormatTemplateDetail(w io.Writer, t *Template, registry *TemplateRegistry, 
 	// Category
 	fmt.Fprintf(w, "Category:    %s\n", t.CategoryName)
 
+	// The template's own version (cb-version), not the tool version it installs.
+	if t.CBVersion != "" {
+		fmt.Fprintf(w, "Version:     %s\n", t.CBVersion)
+	}
+
 	// Auto-select (for extensions)
 	if t.AutoSelect != nil {
 		if *t.AutoSelect {

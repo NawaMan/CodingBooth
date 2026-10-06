@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "pip requirements"
 display-disc = "pip requirements.txt package installation"
 display-detail = """Installs the packages listed in your project's .booth/requirements.txt with pip, baking them \

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name   = "Plank Dock"
 display-disc   = "Plank Reloaded dock (Matte theme) in place of XFCE's bottom panel"
 display-detail = """\

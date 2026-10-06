@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Gradle"
 display-disc = "Gradle build tool for Java and JVM projects"
 display-detail = """Installs Gradle itself, since the Java template ships no default build tool -- pick this or Maven. \

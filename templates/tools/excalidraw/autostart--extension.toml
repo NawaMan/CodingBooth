@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Excalidraw Auto-Start"
 display-disc = "Auto-start Excalidraw server on container boot"
 display-order = 2

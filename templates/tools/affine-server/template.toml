@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "AFFiNE Server"
 display-disc = "Self-hosted AFFiNE web app (docs + whiteboard)"
 display-detail = """Installs the official self-hosted AFFiNE server by copying \

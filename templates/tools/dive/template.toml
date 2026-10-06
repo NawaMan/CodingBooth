@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "dive"
 display-disc = "Explore Docker image layers and contents"
 display-detail = "Installs dive, a TUI for exploring layers in a Docker image to discover space-saving opportunities. Pairs with docker-buildx and lazydocker."

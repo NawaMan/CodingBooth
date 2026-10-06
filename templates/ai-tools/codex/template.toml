@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Codex"
 display-disc = "OpenAI Codex CLI for AI-assisted coding"
 display-detail = "Installs OpenAI Codex CLI for AI-assisted coding from the terminal. Requires Node.js which is auto-installed."

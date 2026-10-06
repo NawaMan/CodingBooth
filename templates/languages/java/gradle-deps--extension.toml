@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "gradle dependencies"
 display-disc = "Pre-download Gradle dependencies into the image"
 display-detail = """Pre-downloads your project's Gradle dependencies from build.gradle(.kts) into the image's \

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Expose Kafka Port"
 display-disc = "Publish the Kafka broker port to host network"
 display-detail = "Publishes KAFKA_PORT so a producer/consumer on the host can reach the broker. Pair with the +start extension — that is what actually launches the broker on boot; without it nothing is listening. Only the broker port is published; the KRaft controller port (9093) stays internal, as nothing outside the container should talk to it. The host port follows KAFKA_PORT; KAFKA_HOST_PORT overrides the host side alone."

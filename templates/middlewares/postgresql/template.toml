@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "PostgreSQL"
 display-disc = "PostgreSQL database with persistent volume"
 display-detail = "Installs PostgreSQL relational database with a persistent Docker volume for data storage across container restarts."

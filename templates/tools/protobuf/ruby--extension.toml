@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Ruby protoc plugin"
 display-disc = "grpc-tools for Ruby message and gRPC codegen"
 display-detail = """Installs the grpc-tools gem, which -- like the Python plugin, and unlike Go/Rust/Node's -- bundles \

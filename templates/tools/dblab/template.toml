@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "dblab"
 display-disc = "Terminal UI database client with real connection flags"
 display-detail = "Installs dblab, a terminal UI for PostgreSQL, MySQL, SQLite3, Oracle, and SQL Server. Unlike most TUI DB clients, it takes real --host/--port/--user/--driver flags instead of only prompting interactively, and can save a connection for reuse with --save-as."

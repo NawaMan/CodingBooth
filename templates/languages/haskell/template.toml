@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Haskell"
 display-disc = "Haskell with GHC compiler and Cabal build system"
 display-detail = "Installs the Haskell GHC compiler and Cabal build system for functional programming development."

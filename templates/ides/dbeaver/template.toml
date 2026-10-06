@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "DBeaver"
 display-disc = "DBeaver Community Edition database GUI"
 display-detail = "Installs DBeaver Community Edition, a free universal database tool supporting PostgreSQL, MySQL, SQLite, MariaDB, Oracle, SQL Server, and many more. Requires a desktop variant."

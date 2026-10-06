@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Python protoc plugin"
 display-disc = "grpcio-tools for Python message and gRPC codegen"
 display-detail = """Installs grpcio-tools, a self-contained compiler distinct from the other language plugins \

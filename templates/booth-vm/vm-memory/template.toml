@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "VM Memory"
 display-disc = "Memory for the booth's VM — macOS / Apple container only"
 display-detail = """Sets how much memory the VM the booth runs in may use (`vm-memory` in config.toml, \

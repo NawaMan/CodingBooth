@@ -1,4 +1,5 @@
 #!/bin/bash
+# cb-version: 1.0.0
 # Returns 0 if VS Code / code-server is available, 1 otherwise.
 
 command -v code-server &>/dev/null && exit 0

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "pnpm install"
 display-disc = "Pre-install pnpm dependencies from package.json into the image"
 display-detail = """Installs pnpm itself, then your project's dependencies from package.json with `pnpm install` into \

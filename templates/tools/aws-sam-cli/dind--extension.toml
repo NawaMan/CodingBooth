@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Docker-in-Docker (for sam local)"
 display-disc = "Enable DinD for sam local invoke/start-api"
 display-detail = """Enables Docker-in-Docker (DinD) so `sam local invoke`/`start-api` can launch the Lambda \

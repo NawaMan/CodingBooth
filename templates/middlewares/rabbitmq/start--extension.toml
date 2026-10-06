@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "RabbitMQ Auto-Start"
 display-disc = "Start RabbitMQ automatically on container boot, with a dev user/vhost"
 display-detail = "Installs a startup hook that launches RabbitMQ (detached) and provisions a dev user and vhost when the container boots."

@@ -21,6 +21,10 @@ jobs:
       # ---------------------------------------------------------
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          # Full history and tags: the catalog version check compares against the
+          # manifest at the previous release tag.
+          fetch-depth: 0
 
       - name: Set up Go
         run: |
@@ -142,9 +146,16 @@ jobs:
       # ---------------------------------------------------------
       # Build template artifacts
       # ---------------------------------------------------------
+      # Every catalog item that changed since the previous release must have
+      # bumped its cb-version (docs/CATALOG_VERSIONING.md). Refuse to publish otherwise.
+      - name: Check catalog item versions
+        run: ./build/check-catalog-versions.sh
+
       - name: Package templates
         run: |
           zip -r dist/templates.zip templates/
+          # Published beside the templates: what each catalog item was in this release.
+          cp build/catalog-manifest.tsv dist/catalog-manifest.tsv
 
       # ---------------------------------------------------------
       # Publish versioned release (binary + examples)

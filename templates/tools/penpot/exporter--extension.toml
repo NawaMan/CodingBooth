@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Penpot Exporter"
 display-disc = "PNG/PDF export via Playwright/Chromium (~650MB)"
 display-detail = """Copies the official penpotapp/exporter image into the booth \

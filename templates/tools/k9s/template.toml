@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "k9s"
 display-disc = "Terminal UI for managing Kubernetes clusters"
 display-detail = "Installs k9s, a TUI that lets you observe and manipulate live Kubernetes resources."

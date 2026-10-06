@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Go VS Code Extension"
 display-disc = "Go language support extension for VS Code"
 display-order = 2

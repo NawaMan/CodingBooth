@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "GitHub Copilot CLI"
 display-disc = "GitHub Copilot CLI extension for gh"
 display-order = 1

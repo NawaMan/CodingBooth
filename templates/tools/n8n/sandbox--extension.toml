@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "n8n Assistant Sandbox"
 display-disc = "Code sandbox for the n8n Assistant and Agents (needs Docker)"
 display-detail = """Runs n8n's own sandbox service (an API plus a privileged Docker-in-Docker runner) at boot and points n8n at it, so the Assistant's "Code sandbox" is set up instead of asking for a URL and key. This is where the Assistant and Agents run code and work with files. Code nodes do not need it. Pulls in Docker-in-Docker and Docker Compose, because the service only runs on Docker. booth asks before starting a DinD booth (--dind-allowed skips the question). First boot pulls three sandbox images. The keys are generated once under ~/.n8n/sandbox; add +persist to keep them."""

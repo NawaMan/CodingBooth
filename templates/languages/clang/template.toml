@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Clang (C/C++)"
 display-disc = "LLVM/Clang toolchain for C and C++"
 display-detail = "Installs LLVM/Clang (clang, clang++, clangd, clang-tidy, clang-format, lld, libc++, libomp). Sets clang as the default C/C++ compiler via update-alternatives. Coexists with GCC."

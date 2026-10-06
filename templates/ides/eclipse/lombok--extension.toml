@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Lombok for Eclipse"
 display-disc = "Lombok plugin for Eclipse"
 display-detail = """Installs Lombok into Eclipse by pointing eclipse.ini at lombok.jar via \

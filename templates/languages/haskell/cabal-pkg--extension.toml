@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "cabal Packages"
 display-disc = "Install Haskell packages globally via cabal install"
 display-detail = """Installs Haskell executables with `cabal install` after a `cabal update`, copied into \

@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Scratch Auto-Start"
 display-disc = "Auto-start Scratch editor on container boot"
 display-order = 2

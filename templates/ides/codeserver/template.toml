@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "code-server"
 display-disc = "Browser-based VS Code IDE via code-server"
 display-detail = "Installs code-server, providing a full VS Code experience in the browser with terminal, Git integration, and extension support. Installs a 'start-codeserver' launcher; add the auto-start extension to run it on container boot, and the expose extension to reach it from the host."

@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "AFFiNE Desktop"
 display-disc = "AFFiNE docs and whiteboard (requires desktop variant)"
 display-detail = """Installs the AFFiNE desktop app — an open-source, local-first knowledge base \

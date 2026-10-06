@@ -145,6 +145,25 @@ stays literal and is just as fatal, so loop over the matches and `-f` each one.
 A profile the script genuinely *requires* is a different case — source it unguarded and let the
 failure be loud (`java-nb-kernel--setup.sh` does this with the JDK profile).
 
+### Versioning — `cb-version`
+
+Every script in `variants/base/setups/` (setups, installs, helpers, `libs/`) declares its own
+version on the line after the license header:
+
+```bash
+#!/usr/bin/env bash
+# Copyright 2025-2026 : Nawa Manusitthipol
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# cb-version: 1.2.0
+```
+
+A new script starts at `0.1.0`. When you change one, bump it — **major** when a flag is removed or
+renamed, the installed command or path moves, or a default behaves differently (or a helper's
+contract changes); **minor** for a new flag or a new default tool version; **patch** for a fix.
+Then run `build/gen-catalog-manifest.sh`. The release refuses to ship a script that changed since
+the last release without a bump. Full rules: [CATALOG_VERSIONING.md](CATALOG_VERSIONING.md).
+
 ---
 
 ## Shared helpers

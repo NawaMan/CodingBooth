@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Flutter Android Target"
 display-disc = "Wires Flutter to the Android SDK so `flutter build apk` works"
 display-detail = """Points Flutter at the Android SDK and precaches the Android engine artifacts, turning a \

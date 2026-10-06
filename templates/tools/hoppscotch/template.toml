@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Hoppscotch"
 display-disc = "Open-source API development UI (Postman-class)"
 display-detail = """Installs the Hoppscotch web app by copying the official \

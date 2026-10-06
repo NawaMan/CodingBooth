@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name   = "Tiling at Login"
 display-disc   = "The desktop logs in on i3 instead of its own window manager"
 display-detail = """\

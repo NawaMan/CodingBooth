@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Conan Packages"
 display-disc = "Preload Conan packages into the build cache (conan download)"
 display-detail = """Prefetches C/C++ recipes into the Conan cache with `conan download` from conancenter, so a later \

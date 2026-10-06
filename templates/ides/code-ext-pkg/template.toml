@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "VS Code Extensions"
 display-disc = "Install any VS Code / code-server extension by marketplace id"
 display-detail = """Bakes arbitrary editor extensions into the image by Open VSX id (publisher.name). \

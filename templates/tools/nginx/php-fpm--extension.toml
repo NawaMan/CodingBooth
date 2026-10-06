@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "php-fpm"
 display-disc = "Route .php through php-fpm on the default nginx site"
 display-detail = """Installs php-fpm and points the default nginx site at its unix socket, after nginx is already \

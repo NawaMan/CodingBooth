@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "AFFiNE Seed Data"
 display-disc = "Start from a home-seed snapshot; writes do not survive the booth"
 display-detail = """Copies `.booth/home-seed/.affine/` into `~/.affine` at start (CodingBooth seed, no-clobber). start-affine-server restores a Postgres dump from that tree if present (`dumps/affine.dump`) and does not copy back on stop, so the snapshot is the same every run. Drop a persist dump (config/, storage/, dumps/) into the seed dir, or leave the placeholder for a fresh install that still will not persist. Not for secrets you would not commit."""

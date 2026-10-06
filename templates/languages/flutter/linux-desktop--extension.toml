@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Flutter Linux Desktop Target"
 display-disc = "Native toolchain and GTK headers so `flutter build linux` works"
 display-detail = """Adds what Flutter's Linux desktop target compiles against — clang, cmake, ninja, pkg-config, \

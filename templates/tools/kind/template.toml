@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "kind"
 display-disc = "Kubernetes in Docker for local cluster testing"
 display-detail = "Installs KinD (Kubernetes in Docker) for running local Kubernetes clusters inside Docker containers."

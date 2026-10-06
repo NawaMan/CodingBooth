@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Kafka"
 display-disc = "Apache Kafka single-node KRaft broker"
 display-detail = "Installs Apache Kafka in single-node KRaft mode (broker + controller). Includes openjdk-17-jre. Data dir: /opt/kafkadata; install: /opt/kafka."

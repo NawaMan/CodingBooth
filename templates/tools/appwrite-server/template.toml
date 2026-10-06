@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Appwrite Server"
 display-disc = "Self-hosted Appwrite BaaS (Docker Compose via DinD)"
 display-detail = """Installs start/stop wrappers for a self-hosted Appwrite instance. Appwrite has no native install — it is an official Docker Compose stack (Traefik, database, Redis, workers, Open Runtimes). The stack is not started by this template; add +autostart (pulls dind + docker-compose) to bring it up on boot, and +expose to reach the console from the host. Default HTTP is 8080 (the official installer CLI rejects ports longer than 4 digits, so 20080 cannot be passed through). APPWRITE_DATA=clean (default) is a fresh stack every booth; +seed copies a snapshot from home-seed (writes do not stick); +persist is .booth/cache (writes survive on this machine). First start pulls many images and wants about 4GB RAM. Requires the Appwrite CLI."""

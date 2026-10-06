@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Ollama Auto-Start"
 display-disc = "Auto-start the Ollama server on container boot"
 display-detail = "Runs 'ollama serve' in the background when the container boots, so 'ollama pull' and 'ollama run' work immediately instead of failing until you start the server by hand. Binds to 0.0.0.0 so the expose extension can reach it — add that too if you want to call the API from the host."

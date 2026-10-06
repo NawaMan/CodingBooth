@@ -4,6 +4,15 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Every catalog item now has its own version.** All 833 setups, installs, helpers, libs, asset
+  directories, templates and extensions carry a hand-written semver `cb-version` (`# cb-version:`
+  in scripts, `cb-version = "…"` in templates). It says what kind of change happened; a generated
+  sha256 in the new `build/catalog-manifest.tsv` proves that something did. The release now refuses
+  to ship an item that changed since the previous release without a bump, or a template whose
+  params were removed or reordered without a breaking one (`build/check-catalog-versions.sh`, in
+  `release-push` and CI). `booth template show` prints the version, and each GitHub release
+  publishes `catalog-manifest.tsv`. Items older than two months start at 1.0.0; newer or
+  experimental ones at 0.1.0. See [CATALOG_VERSIONING.md](CATALOG_VERSIONING.md).
 - **The Console UI has six panes, every 2×2 layout, and + / − buttons.** Two more sessions
   (`/s5/`, `/s6/` on `10005`–`10006`; `11116`–`11117` for a `start-webconsole` console) and a
   `grid6` layout of three columns by two rows. The toolbar now covers every way to divide a 2×2

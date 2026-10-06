@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "WASM Tools"
 display-disc = ".NET WebAssembly tools workload (Blazor WASM)"
 display-order = 3

@@ -1,4 +1,5 @@
 #!/bin/bash
+# cb-version: 1.0.0
 # Returns 0 if desktop environment is available, 1 otherwise.
 # Update this script as display technology evolves.
 

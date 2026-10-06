@@ -1,3 +1,4 @@
+cb-version = "0.1.0"
 display-name = "Hoppscotch Auto-Start"
 display-disc = "Auto-start Hoppscotch server on container boot"
 display-order = 2

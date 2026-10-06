@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Expose CloudBeaver Port"
 display-disc = "Expose CloudBeaver port to host network"
 display-order = 1

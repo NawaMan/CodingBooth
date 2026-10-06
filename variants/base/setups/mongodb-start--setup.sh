@@ -2,6 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
+# cb-version: 0.1.0
 
 # Startup hook that forks mongod on container boot. Pairs with mongodb--setup.sh,
 # which only prepares ~/.mongodb — it does not start the server.

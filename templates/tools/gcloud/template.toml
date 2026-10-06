@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Google Cloud SDK"
 display-disc = "Google Cloud SDK for GCP service management"
 display-detail = "Installs the Google Cloud SDK (gcloud) for managing Google Cloud Platform resources and services."

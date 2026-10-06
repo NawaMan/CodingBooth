@@ -1,3 +1,4 @@
+cb-version = "1.0.0"
 display-name = "Ansible"
 display-disc = "Ansible automation and configuration management tool"
 display-detail = "Installs Ansible for IT automation, configuration management, and application deployment via playbooks."
