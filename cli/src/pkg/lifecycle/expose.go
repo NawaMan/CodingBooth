@@ -111,8 +111,8 @@ func exposeList(args []string, stdout io.Writer, stderr io.Writer) error {
 		return commandExit(1, err.Error())
 	}
 
-	manifest := readPortManifest(target.CodePath)
-	tunnels := readTunnels(target.CodePath)
+	manifest := readPortManifest(target.hostBoothDir())
+	tunnels := readTunnels(target.hostBoothDir())
 	live := readLivePorts(target.Engine, target.Name)
 
 	rows := buildExposeRows(manifest, tunnels, live)
@@ -120,14 +120,15 @@ func exposeList(args []string, stdout io.Writer, stderr io.Writer) error {
 	return nil
 }
 
-// readPortManifest loads .booth/.tmp/ports.json, returning nil when it is absent
+// readPortManifest loads <boothDir>/.tmp/ports.json, returning nil when it is absent
 // or unreadable (an older booth, or one brought up by `docker start`). Callers
-// fall back to the live `docker port` view in that case.
-func readPortManifest(codePath string) *portManifest {
-	if codePath == "" {
+// fall back to the live `docker port` view in that case. boothDir is the .booth
+// directory itself (see managedContainer.hostBoothDir), not the code folder.
+func readPortManifest(boothDir string) *portManifest {
+	if boothDir == "" {
 		return nil
 	}
-	path := filepath.Join(codePath, ".booth", ".tmp", "ports.json")
+	path := filepath.Join(boothDir, ".tmp", "ports.json")
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return nil
@@ -141,12 +142,12 @@ func readPortManifest(codePath string) *portManifest {
 
 // readTunnels reads the runtime tunnel control files: filename is the container
 // port, contents the external (host) port. Mirrors booth--expose / tcp_tunnel.go.
-func readTunnels(codePath string) map[int]int {
+func readTunnels(boothDir string) map[int]int {
 	tunnels := make(map[int]int)
-	if codePath == "" {
+	if boothDir == "" {
 		return tunnels
 	}
-	dir := filepath.Join(codePath, ".booth", ".tmp", "tcp-tunnels")
+	dir := filepath.Join(boothDir, ".tmp", "tcp-tunnels")
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		return tunnels

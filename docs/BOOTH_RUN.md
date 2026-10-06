@@ -16,6 +16,7 @@ Back to [README](../README.md)
 
 ## Table of Contents
 
+- [Express](#express)
 - [Image Selection](#image-selection)
 - [Container Name](#container-name)
 - [Config Files](#config-files)
@@ -32,6 +33,29 @@ Back to [README](../README.md)
 - [Public Access (`--public`)](#public-access---public)
 - [TLS Support](#tls-support)
 - [Help](#help)
+
+---
+
+## Express
+
+`booth express` starts a booth from arguments and does not read the project's `.booth`.
+
+The code directory (`--code`, default the current directory) is mounted at `/home/coder/code`. Profiles, `BOOTH_PROFILES`, `.booth/.env`, and an auto-detected Boothfile or Dockerfile in that tree are ignored. Express compiles `--select` the same way `booth config --no-tui` does, writes the generated spec (Boothfile, config.toml, startups, setups, home) into a directory it owns, and mounts that directory at `/home/coder/code/.booth`.
+
+A foreground run keeps the spec in a temporary directory and removes it when the process exits. `--daemon` and `--keep-alive`, including `CB_DAEMON` and `CB_KEEP_ALIVE`, keep it under the user cache (`codingbooth/express/`), because a later start of that container re-reads the mounted spec.
+
+With no `--select`, express starts the prebuilt variant from the arguments and from `CB_*` variables. It does not write an empty Boothfile. `--image`, then `--dockerfile`, then `--boothfile`, then `--select`, then the prebuilt variant. `--select` cannot be combined with `--image`, `--dockerfile`, or `--boothfile`.
+
+Launch flags override the generated file. `CB_*` variables still apply and lose to flags. `--version` is the image tag, not a catalog pin. `--apt-snapshot` and `--templates-path` require `--select`. `--public` prompts for a password; it does not read `<project>/.booth/.booth.password`.
+
+Express refuses profile and config-edit flags (`--config`, `--profile`, `--add-select`, `--overwrite`, and the other configure-only flags). It also refuses `--set` for cache, shared, and for settings that only take effect as start flags. Unknown tokens are forwarded to `docker run`, as with `booth run`.
+
+```bash
+booth express --select 'go+vscode-ext' --variant codeserver --port 12000 --expose 8080 --env FOO=1
+booth express --variant base -- make test
+```
+
+`booth express --help` lists the flags.
 
 ---
 

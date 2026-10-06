@@ -175,7 +175,7 @@ func Logs(args []string, stdout io.Writer, stderr io.Writer) error {
 		return err
 	}
 	if opts.list {
-		if entry, found := lifecycleLogEntry(target.CodePath); found {
+		if entry, found := lifecycleLogEntry(target.hostBoothDir()); found {
 			files = append(files, entry)
 		}
 		printLogList(stdout, target.Name, files)

@@ -29,6 +29,9 @@ func main() {
 			trimmedArgs := append([]string{os.Args[0]}, os.Args[2:]...)
 			runBooth(version, trimmedArgs)
 			return
+		case "express":
+			runExpress(version)
+			return
 		case "list":
 			listBooths(version)
 			return

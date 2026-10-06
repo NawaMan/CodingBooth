@@ -35,6 +35,10 @@ type AppContextBuilder struct {
 	// Empty when no profile is selected.
 	Profiles []ProfileEntry
 
+	// BoothDir, when set, is the .booth directory this run reads and mounts.
+	// Empty means <code>/.booth. Express sets it so the project .booth stays unread.
+	BoothDir string
+
 	// derived from variant
 	HasNotebook bool
 	HasVscode   bool

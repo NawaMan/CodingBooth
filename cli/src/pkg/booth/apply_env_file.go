@@ -34,16 +34,20 @@ import (
 func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 	builder := ctx.ToBuilder()
 	codeDir := ctx.Code()
+	boothDir := hostBoothDir(ctx)
 
-	// Step 1: Apply .booth/.env if it exists (always included, independent of env-file setting)
-	if codeDir != "" {
-		boothEnvFile := filepath.Join(codeDir, ".booth", ".env")
+	// Step 1: Apply .booth/.env if it exists (always included, independent of env-file setting).
+	// hostBoothDir follows --booth-dir, so express does not load the project .env.
+	if boothDir != "" {
+		boothEnvFile := filepath.Join(boothDir, ".env")
 		if fileExists(boothEnvFile) {
-			if err := checkBoothEnvGitignored(boothEnvFile, codeDir); err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
-				os.Exit(1)
+			if ctx.ExplicitBoothDir() == "" {
+				if err := checkBoothEnvGitignored(boothEnvFile, codeDir); err != nil {
+					fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+					os.Exit(1)
+				}
 			}
-			finalPath := mustPrepareExpandedEnvFile(ctx, boothEnvFile, codeDir, "booth")
+			finalPath := mustPrepareExpandedEnvFile(ctx, boothEnvFile, "booth")
 			builder.CommonArgs.Append(ilist.NewList[string]("--env-file", finalPath))
 			if ctx.Verbose() {
 				if finalPath == boothEnvFile {
@@ -76,7 +80,7 @@ func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 			}
 		}
 		label := "profile-" + p.Name
-		finalPath := mustPrepareExpandedEnvFile(ctx, p.EnvPath, codeDir, label)
+		finalPath := mustPrepareExpandedEnvFile(ctx, p.EnvPath, label)
 		builder.CommonArgs.Append(ilist.NewList[string]("--env-file", finalPath))
 		if ctx.Verbose() {
 			if finalPath == p.EnvPath {
@@ -105,7 +109,7 @@ func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 			os.Exit(1)
 		}
 
-		finalPath := mustPrepareExpandedEnvFile(ctx, containerEnvFile, codeDir, "user")
+		finalPath := mustPrepareExpandedEnvFile(ctx, containerEnvFile, "user")
 		builder.CommonArgs.Append(ilist.NewList[string]("--env-file", finalPath))
 		if ctx.Verbose() {
 			if finalPath == containerEnvFile {
@@ -128,7 +132,7 @@ func ApplyEnvFile(ctx appctx.AppContext) appctx.AppContext {
 // In dryrun mode the original src path is returned unchanged (booth still
 // parses and validates so that errors surface), and no temp file is
 // written.
-func mustPrepareExpandedEnvFile(ctx appctx.AppContext, src, codeDir, label string) string {
+func mustPrepareExpandedEnvFile(ctx appctx.AppContext, src, label string) string {
 	entries, err := shellexpand.ParseEnvFile(src)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error: %v\n", err)
@@ -146,12 +150,13 @@ func mustPrepareExpandedEnvFile(ctx appctx.AppContext, src, codeDir, label strin
 		return src
 	}
 
-	// Without a codeDir we have no .booth/.tmp/ to write into.
-	if codeDir == "" {
+	// Without a .booth directory we have no .tmp/ to write into.
+	boothDir := hostBoothDir(ctx)
+	if boothDir == "" {
 		return src
 	}
 
-	tmpDir := filepath.Join(codeDir, ".booth", ".tmp")
+	tmpDir := filepath.Join(boothDir, ".tmp")
 	if err := os.MkdirAll(tmpDir, 0755); err != nil {
 		fmt.Fprintf(os.Stderr, "Error: failed to create %s: %v\n", tmpDir, err)
 		os.Exit(1)

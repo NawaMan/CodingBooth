@@ -132,6 +132,32 @@ func TestApplyEnvFile_BoothEnv_Only(t *testing.T) {
 	}
 }
 
+func TestApplyEnvFile_ExplicitBoothDirSkipsProjectEnv(t *testing.T) {
+	project := t.TempDir()
+	boothDir := filepath.Join(project, ".booth")
+	if err := os.MkdirAll(boothDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(boothDir, ".env"), []byte("SECRET=project"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	spec := t.TempDir()
+
+	builder := &appctx.AppContextBuilder{
+		CommonArgs: ilist.NewAppendableList[ilist.List[string]](),
+		BoothDir:   spec,
+	}
+	builder.Config.Code = nillable.NewNillableString(project)
+
+	ctx := ApplyEnvFile(builder.Build())
+	args := flattenArgs(ctx.CommonArgs())
+	for _, arg := range args {
+		if arg == "--env-file" || strings.Contains(arg, "SECRET") {
+			t.Fatalf("project .env was loaded: %v", args)
+		}
+	}
+}
+
 func TestApplyEnvFile_BoothEnv_WithDotEnvPresent(t *testing.T) {
 	// Both .booth/.env and project .env exist → only .booth/.env is included (project .env is ignored)
 	tmpDir := t.TempDir()

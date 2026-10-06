@@ -265,6 +265,7 @@ The `booth` script is a **wrapper** that manages the underlying `codingbooth` bi
 ### Additional Commands
 
 - **Install & uninstall:** `booth install`, `booth update`, `booth uninstall`, `booth tools-cache` — see **[booth install](docs/BOOTH_INSTALL.md)**
+- **Run without a project `.booth`:** `booth express` — see **[Express](docs/BOOTH_RUN.md#express)**
 - **Templates & scaffolding:** `booth template list`, `booth config` — see **[booth config](docs/BOOTH_CONFIG.md)**
 - **Build & publish:** `booth build`, `booth build --push` — see **[booth build](docs/BOOTH_BUILD.md)**
 - **Container lifecycle:** `booth start`, `booth stop`, `booth list`, `booth prune` — see **[booth lifecycle](docs/BOOTH_LIFECYCLE.md)**
@@ -427,7 +428,7 @@ User-facing guides:
 
 - **[Examples](EXAMPLES.md)** — Install, run your first example, the full catalog, and which setups support version pinning
 - **[booth install](docs/BOOTH_INSTALL.md)** — Install and uninstall every layer: shell function, wrapper, binary, `.booth/`, lock file, shared cache
-- **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS
+- **[booth run](docs/BOOTH_RUN.md)** — Running containers: image selection, config files, run modes, ports, DinD, TLS. [Express](docs/BOOTH_RUN.md#express) runs from arguments and leaves the project's `.booth` unread.
 - **[Security](docs/BOOTH_SECURITY.md)** — What the booth isolates, what it does not, and when booth asks before starting
 - **[booth profiles](docs/BOOTH_PROFILES.md)** — Named `config.toml` / `.env` overlays (`--profile dev`): layout, selection, merge rules
 - **[booth config](docs/BOOTH_CONFIG.md)** — Template-driven project scaffolding

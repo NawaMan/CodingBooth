@@ -228,7 +228,9 @@ the booth's name, and who or what caused it.
 The file is `.booth/.tmp/lifecycle.log` in the booth's code folder, on the host. The booth writes
 to it through the `.booth/.tmp/` mount and the CLI appends to it directly, so it outlives the
 container — `booth logs lifecycle` reads it with no booth running, and `--code <path>` reads one
-whose booth is long removed. Unlike the rest of `.booth/.tmp/`, it is kept across runs (trimmed to
+whose booth is long removed. `booth express` keeps the same file in the spec directory it mounts
+at `/home/coder/code/.booth`, and `booth logs --name <booth> lifecycle` reads that directory.
+Unlike the rest of `.booth/.tmp/`, it is kept across runs (trimmed to
 its newest half once it passes 256 KB), and like the rest of it, it is gitignored. A booth run
 without a `.booth/` folder has no `.booth/.tmp/` mount, and so no lifecycle log.
 

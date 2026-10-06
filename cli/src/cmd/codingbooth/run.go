@@ -43,6 +43,17 @@ func runBooth(version string, args []string) {
 			fmt.Printf("%+v\n", context)
 		}
 
+		// runBooth exits the process, so a defer in express cannot remove the
+		// foreground spec. Only a directory express just created under the
+		// temp dir is removed — never a cache spec, and never an arbitrary
+		// --booth-dir parent.
+		exitRun := func(code int) {
+			if !context.KeepAlive() && !context.Daemon() {
+				removeExpressTempSpec(context.ExplicitBoothDir())
+			}
+			os.Exit(code)
+		}
+
 		runner := booth.NewBoothRunner(context)
 		err := runner.Run()
 
@@ -61,7 +72,7 @@ func runBooth(version string, args []string) {
 		// Check for idle shutdown
 		if idleErr, ok := err.(*booth.IdleShutdownError); ok {
 			fmt.Fprintf(os.Stderr, "Info: Booth shut down due to idle timeout.\n")
-			os.Exit(idleErr.ExitCode)
+			exitRun(idleErr.ExitCode)
 			return
 		}
 
@@ -73,10 +84,10 @@ func runBooth(version string, args []string) {
 					fmt.Fprintf(os.Stderr, "[debug] silent exit: code=%d\n", silentErr.ExitCode)
 				}
 				if silentErr.ExitCode == 129 {
-					os.Exit(0)
+					exitRun(0)
 					return
 				}
-				os.Exit(silentErr.ExitCode)
+				exitRun(silentErr.ExitCode)
 				return
 			}
 			// Signal-based exits (SIGHUP=129, SIGTERM=143, etc.) are normal shutdowns
@@ -86,7 +97,7 @@ func runBooth(version string, args []string) {
 					fmt.Fprintf(os.Stderr, "[debug] docker exit: code=%d\n", dockerErr.ExitCode)
 				}
 				if dockerErr.ExitCode == 129 {
-					os.Exit(0)
+					exitRun(0)
 					return
 				}
 			}
@@ -96,17 +107,17 @@ func runBooth(version string, args []string) {
 			var hostErr *docker.HostCheckError
 			if errors.As(err, &hostErr) {
 				fmt.Fprintln(os.Stderr, hostErr.Message)
-				os.Exit(1)
+				exitRun(1)
 				return
 			}
 			fmt.Println("❌ CodingBooth failed with error:", err)
-			os.Exit(1)
+			exitRun(1)
 			return
 		}
 		if context.Verbose() {
 			fmt.Fprintf(os.Stderr, "[debug] clean exit\n")
 		}
-		os.Exit(0)
+		exitRun(0)
 	}
 }
 

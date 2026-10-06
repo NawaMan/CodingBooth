@@ -84,6 +84,12 @@ func showLifecycleLog(opts logsOptions, stdout io.Writer, stderr io.Writer) erro
 	}
 
 	path := lifecyclelog.Path(codePath)
+	// A named express booth logs under cb.booth-dir, not <code>/.booth.
+	if opts.code == "" && opts.name != "" {
+		if container, found := findByName(containers, opts.name); found && container.BoothDir != "" {
+			path = lifecyclelog.PathAt(container.BoothDir)
+		}
+	}
 	content, err := os.ReadFile(path)
 	if errors.Is(err, os.ErrNotExist) && !opts.follow {
 		return commandExit(1, fmt.Sprintf("No lifecycle log at %s yet: nothing has been recorded for the booth of %s.", path, codePath))
@@ -143,11 +149,12 @@ func copyAppended(path string, offset int64, stdout io.Writer) int64 {
 }
 
 // lifecycleLogEntry is the --list row for a booth's lifecycle log, if it has one.
-func lifecycleLogEntry(codePath string) (logFile, bool) {
-	if codePath == "" {
+// boothDir is the .booth directory (see managedContainer.hostBoothDir).
+func lifecycleLogEntry(boothDir string) (logFile, bool) {
+	if boothDir == "" {
 		return logFile{}, false
 	}
-	path := lifecyclelog.Path(codePath)
+	path := lifecyclelog.PathAt(boothDir)
 	info, err := os.Stat(path)
 	if err != nil || info.IsDir() {
 		return logFile{}, false
