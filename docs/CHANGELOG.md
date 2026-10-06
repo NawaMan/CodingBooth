@@ -4,6 +4,17 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The Popular list is bigger, and everything on it is settled.** 50 more templates are marked
+  popular (`primary`), so `booth config` and `booth template list` show them without `--full`:
+  the desktops and browsers the variants ship (`xfce`, `kde`, `lxqt`, `wayland`, `firefox`,
+  `google-chrome`), the terminals and tiling (`alacritty`, `ghostty`, `kitty`, `i3`,
+  `krohnkite`), the everyday languages (`gcc`, `clang`, `zig`, `php`, `ruby`, `swift`), the
+  common tools (`make`, `build-essential`, `gh`, `fzf`, `direnv`, `zsh`, `ssh`, `nginx`,
+  `apache`, `playwright`, `mkcert`, …), `postgresql`, `codex` and `cursor`. A popular template
+  lists all of its extensions. The 13 popular items that were still experimental (0.x) —
+  `alacritty`, `ghostty`, `i3`, `kitty`, `krohnkite`, `material-cursors`, `wayland`, `helix`,
+  `posting`, `sql-studio` and the three `vm-*` settings — are now `cb-version`
+  1.0.0, along with their extensions and the setups they emit.
 - **Every catalog item now has its own version.** All 833 setups, installs, helpers, libs, asset
   directories, templates and extensions carry a hand-written semver `cb-version` (`# cb-version:`
   in scripts, `cb-version = "…"` in templates). It says what kind of change happened; a generated

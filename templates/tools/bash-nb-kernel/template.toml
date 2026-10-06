@@ -1,5 +1,6 @@
 cb-version = "1.0.0"
 display-name = "Bash Notebook Kernel"
+primary = true
 display-disc = "Bash Jupyter notebook kernel (requires notebook)"
 display-detail = """Adds a Bash kernel to JupyterLab so notebook cells can run shell \
 commands directly. Useful for running ad-hoc scripts, exploring system tools, or teaching \

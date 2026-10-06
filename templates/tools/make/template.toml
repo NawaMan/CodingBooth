@@ -1,5 +1,6 @@
 cb-version = "1.0.0"
 display-name = "GNU Make"
+primary = true
 display-disc = "GNU Make build automation tool"
 display-detail = "Installs GNU Make and provides a 'gmake' alias for BSD compatibility. MAKE_VERSION=apt (the default) takes the distro package, which is fast; naming a version instead builds that release from source, which is exact but slow."
 display-order = 65

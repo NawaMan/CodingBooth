@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "1.0.0"
 display-name   = "Make Default"
 display-disc   = "Make Alacritty the desktop's default terminal"
 display-detail = """\

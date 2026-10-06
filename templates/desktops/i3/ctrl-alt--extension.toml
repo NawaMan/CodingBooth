@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "1.0.0"
 display-name   = "Ctrl+Alt Shortcuts"
 display-disc   = "Every i3 shortcut also works with Ctrl+Alt, which every browser passes on"
 display-detail = """\

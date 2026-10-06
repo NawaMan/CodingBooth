@@ -1,5 +1,6 @@
 cb-version = "1.0.0"
 display-name = "LXQt"
+primary = true
 display-disc = "LXQt lightweight desktop with VNC/noVNC access"
 display-detail = "Provides a lightweight LXQt desktop environment accessible via VNC and noVNC in the browser."
 display-order = 12

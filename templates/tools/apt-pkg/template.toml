@@ -1,5 +1,6 @@
 cb-version = "1.0.0"
 display-name = "apt Packages"
+primary = true
 display-disc = "Install Debian/Ubuntu system packages via apt"
 display-detail = """Installs system packages with apt-get during the image build, and honors the APT_SNAPSHOT archive \
 freeze that `booth config` stamps into the Boothfile — that snapshot, not a per-package pin, is \

@@ -1,5 +1,6 @@
 cb-version = "1.0.0"
 display-name = "Mermaid"
+primary = true
 display-disc = "Mermaid diagram CLI and live editor"
 display-detail = "Installs Mermaid CLI (mmdc) for converting .mmd files to images, and a browser-based live editor for interactive diagram creation. Requires Node.js (installed automatically)."
 display-order = 72

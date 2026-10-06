@@ -1,5 +1,6 @@
 cb-version = "1.0.0"
 display-name = "mkcert"
+primary = true
 display-disc = "Generate locally-trusted development TLS certificates"
 display-detail = "Installs mkcert, which provisions a local CA and issues TLS certs for development. Pairs with the existing tls setup for HTTPS workflows."
 display-order = 37

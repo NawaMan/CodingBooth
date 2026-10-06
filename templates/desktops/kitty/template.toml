@@ -1,5 +1,6 @@
-cb-version = "0.1.0"
+cb-version = "1.0.0"
 display-name   = "Kitty"
+primary = true
 display-disc   = "GPU-accelerated terminal emulator (alternate terminal for desktop variants)"
 display-detail = """\
 Installs Kitty as an additional terminal alongside a desktop variant's own \
