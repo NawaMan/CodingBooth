@@ -323,9 +323,9 @@ Three near-misses worth knowing:
   version, so there is no URL to construct from `3.13.25` alone. `CURSOR_TRACK` picks the release
   track (`stable` or `latest`) instead, and `setup cursor --deb-url <url>` installs one exact build
   if you resolve it yourself.
-- Three notebook kernels pin via environment variable rather than argument: `java-ijava` /
-  `java-nb-kernel` (`IJAVA_VERSION`), `java-jjava` (`JJAVA_VERSION`), and `scala-nb-kernel`
-  (`ALMOND_VERSION`, `SCALA_VERSION`).
+- Three notebook kernels pin via environment variable rather than argument: `java-nb-kernel`
+  (`IJAVA_VERSION`), `java-jjava` (`JJAVA_VERSION`), and `scala-nb-kernel`
+  (`ALMOND_VERSION`, `ALMOND_SCALA_VERSION`).
 
 ### Package installs — all pin
 

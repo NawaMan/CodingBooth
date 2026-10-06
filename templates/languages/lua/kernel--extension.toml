@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Lua Notebook Kernel"
+display-disc = "ILua Jupyter notebook kernel for Lua"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "lua",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--70" = """
+setup lua-nb-kernel
+"""

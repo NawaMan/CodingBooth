@@ -5,7 +5,6 @@
 # cb-version: 1.0.0
 
 # scala-nb-kernel--setup.sh
-# NOTE: This script has not been tested -- no time (sorry). Please report success or failure. :-p
 #
 # Installs the Almond Jupyter kernel for Scala.
 # Almond uses Coursier to fetch the kernel launcher.
@@ -33,8 +32,11 @@ HOME=/root
 
 # ---------------- Defaults / Tunables ----------------
 JUPYTER_KERNEL_PREFIX="${JUPYTER_KERNEL_PREFIX:-/usr/local}"
-ALMOND_VERSION="${ALMOND_VERSION:-0.14.0-RC15}"
-SCALA_VERSION="${SCALA_VERSION:-3.3.4}"
+ALMOND_VERSION="${ALMOND_VERSION:-0.14.5}"
+# The kernel's own Scala, which Almond must publish a build for (sh.almond:scala-kernel_<it>).
+# Deliberately not SCALA_VERSION: the scala template's Boothfile arg of that name is in the
+# environment here, and Almond lags Scala releases (no 3.9 kernel exists).
+SCALA_VERSION="${ALMOND_SCALA_VERSION:-3.3.7}"
 KERNEL_NAME="${KERNEL_NAME:-scala}"
 KERNEL_DISPLAY_NAME="${KERNEL_DISPLAY_NAME:-Scala ${SCALA_VERSION}}"
 
@@ -71,13 +73,21 @@ fi
 echo "📦 Installing Almond ${ALMOND_VERSION} for Scala ${SCALA_VERSION}..."
 ALMOND_LAUNCHER="$(mktemp)"
 
-cs bootstrap \
-  "sh.almond:scala-kernel_${SCALA_VERSION}:${ALMOND_VERSION}" \
-  --default=true \
-  -o "${ALMOND_LAUNCHER}" \
-  --standalone
-
-chmod +x "${ALMOND_LAUNCHER}"
+# Not a coursier launcher. A --standalone one nests every jar inside itself, and the
+# Scala 3 compiler Almond runs cannot read its classpath from that (each cell fails with
+# "zipFile is null"); a plain bootstrap one re-resolves at every kernel start and needs
+# the network. So: fetch the jars at build time into a shared, world-readable cache, and
+# start java on exactly those paths.
+ALMOND_CACHE="/opt/coursier/cache"
+mkdir -p "${ALMOND_CACHE}"
+ALMOND_CP="$(COURSIER_CACHE="${ALMOND_CACHE}" cs fetch --classpath -r jitpack \
+  "sh.almond:scala-kernel_${SCALA_VERSION}:${ALMOND_VERSION}")"
+chmod -R a+rX /opt/coursier
+cat > "${ALMOND_LAUNCHER}" <<EOF
+#!/bin/sh
+exec java -cp "${ALMOND_CP}" almond.ScalaKernel "\$@"
+EOF
+chmod 755 "${ALMOND_LAUNCHER}"   # mktemp makes it 0600; the booth user must read it
 
 # Move to a stable location
 ALMOND_BIN="/usr/local/bin/almond"
@@ -86,7 +96,8 @@ mv "${ALMOND_LAUNCHER}" "${ALMOND_BIN}"
 # ---------------- Register kernelspec ----------------
 echo "🧩 Registering Scala kernel under ${JUPYTER_KERNEL_PREFIX} (system-wide)..."
 "${ALMOND_BIN}" --install \
-  --jupyter-path "${JUPYTER_KERNEL_PREFIX}/share/jupyter" \
+  --command "${ALMOND_BIN}" \
+  --jupyter-path "${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels" \
   --id "${KERNEL_NAME}" \
   --display-name "${KERNEL_DISPLAY_NAME}" \
   --force

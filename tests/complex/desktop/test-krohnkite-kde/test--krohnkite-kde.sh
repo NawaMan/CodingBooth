@@ -13,8 +13,7 @@
 #
 # The headline check is that Plasma's own package loader (kpackagetool6, the
 # same KPackage code KWin uses to find scripts) recognises the unpacked
-# Krohnkite as a KWin script. The deprecated bismuth setups are checked to
-# install Krohnkite in their place.
+# Krohnkite as a KWin script.
 #
 # Image: CB_KDE_IMAGE (default: the desktop-kde image of this checkout's
 # version.txt — -latest may still be a Plasma 5 release, where Krohnkite skips).
@@ -46,7 +45,7 @@ check() {
 }
 
 MOUNTS=()
-for s in krohnkite krohnkite-default krohnkite-gaps bismuth bismuth-default bismuth-gaps; do
+for s in krohnkite krohnkite-default krohnkite-gaps; do
     MOUNTS+=(-v "$SETUPS/$s--setup.sh:/opt/codingbooth/setups/$s--setup.sh:ro")
 done
 
@@ -140,20 +139,6 @@ has "$OUT" "krohnkite=ok" && has "$OUT" "hook=none" && has "$OUT" "help-keys=Met
     || check "false" "krohnkite:meta keeps Krohnkite's Meta keys (no startup hook)" "$OUT"
 has "$OUT" "enabled=unset" \
     && check "true" "Without +default, KWin's default leaves Krohnkite off" || check "false" "Without +default, KWin's default leaves Krohnkite off" "$OUT"
-
-# ---- an old Boothfile's `setup bismuth*` lines install Krohnkite instead ----
-OUT=$(in_image '
-    bismuth--setup.sh ctrl-alt >/tmp/b.log 2>&1 && echo "bismuth=ok" || tail -5 /tmp/b.log
-    grep -q "bismuth--setup.sh is deprecated" /tmp/b.log && echo "notice=yes"
-    bismuth-default--setup.sh >/dev/null 2>&1 && bismuth-gaps--setup.sh 4 >/dev/null 2>&1 && echo "extensions=ok"
-    [ -x /usr/local/bin/start-krohnkite ] && echo "cmd=start-krohnkite"
-    echo "enabled=$(kreadconfig6 --file /etc/xdg/kwinrc --group Plugins --key krohnkiteEnabled)"
-    echo "gap=$(kreadconfig6 --file /etc/xdg/kwinrc --group Script-krohnkite --key screenGapBetween)"
-')
-has "$OUT" "bismuth=ok" && has "$OUT" "notice=yes" && has "$OUT" "extensions=ok" && has "$OUT" "cmd=start-krohnkite" \
-    && has "$OUT" "enabled=true" && has "$OUT" "gap=4" \
-    && check "true" "The deprecated bismuth setups install and configure Krohnkite, with a notice" \
-    || check "false" "The deprecated bismuth setups install and configure Krohnkite, with a notice" "$OUT"
 
 echo
 if [[ "$FAILED" -eq 0 ]]; then

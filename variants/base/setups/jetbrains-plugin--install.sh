@@ -7,9 +7,8 @@
 # This script installs arbitrary JetBrains IDE plugins by marketplace id, at build
 # time, into every JetBrains IDE the image has.
 #
-# It is the escape hatch beside `setup jetbrains-plugin`, which names one IDE and one
-# plugin and re-runs the install at every container start. This one takes whatever you
-# name, bakes it into the image, and needs no network once the image is built.
+# It takes whatever you name, bakes it into the image, and needs no network once the
+# image is built.
 #
 # Usage: jetbrains-plugin--install.sh <id>[@<version>] [more...]
 # Example: jetbrains-plugin--install.sh IdeaVIM

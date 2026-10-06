@@ -47,7 +47,7 @@ menu) to stop; the choice is remembered. The shortcuts use **Ctrl+Alt** and are 
 **Krohnkite Shortcuts (Tiling)**; change them in System Settings → Keyboard → Shortcuts → KWin
 (search "Krohnkite"), and layouts and gaps in System Settings → Window Management → KWin Scripts →
 Krohnkite. Krohnkite replaced Bismuth, which does not run on Plasma 6; an old `setup bismuth` line
-still works and installs Krohnkite.
+must be changed to `setup krohnkite`.
 
 ---
 

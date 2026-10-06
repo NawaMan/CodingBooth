@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Deno Notebook Kernel"
+display-disc = "Deno's built-in Jupyter notebook kernel (TypeScript/JavaScript)"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "deno",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--70" = """
+setup deno-nb-kernel
+"""

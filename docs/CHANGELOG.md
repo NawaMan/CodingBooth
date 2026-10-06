@@ -4,6 +4,19 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Notebook kernels for Deno, Lua and Scala, and six dead setups gone.** The kernels are
+  `deno+kernel`, `lua+kernel` and `scala+kernel` (they bring in
+  `notebook`, which the notebook variant already has, so nothing is installed twice there). The Lua
+  and Scala kernels had never worked and now run cells offline: Lua started ILua's console instead
+  of its kernel and died on a home with no Jupyter runtime dir; Scala took the project's
+  `SCALA_VERSION` (Almond has no 3.9 kernel; it now uses `ALMOND_SCALA_VERSION`, default 3.3.7
+  with Almond 0.14.5), registered where Jupyter does not look, and could not compile a cell.
+  **Removed:** `setup bismuth`, `bismuth-default` and `bismuth-gaps`
+  (shims since Krohnkite replaced Bismuth; use `setup krohnkite*`), `setup jetbrains-plugin` (use
+  the `jetbrains-plugin-pkg` template, which bakes plugins into the image), `java-ijava-nb-kernel`
+  (an exact copy of `java-nb-kernel`; use `java+kernel`), and `booth-message-code-extension`
+  (replaced by the booth-message overlay in April). A Boothfile that still names one fails to
+  build with "unknown setup".
 - **`booth express` runs from arguments and leaves the project's `.booth` unread.**
   `--select` is compiled the same way `booth config` compiles it, into a directory express
   owns (a temp dir, or the user cache with `--daemon` or `--keep-alive`), and that directory

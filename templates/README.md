@@ -282,8 +282,8 @@ ${KROHNKITE_MOD}` at **41**, skipping when KWin is absent, and its auto-selected
 `+default` (`setup krohnkite-default`, tiling from login) and `+gaps` (`setup krohnkite-gaps
 ${KROHNKITE_GAPS}`). No `+ctrl-alt` extension: Krohnkite's shortcuts are one set, so the modifier is
 the `KROHNKITE_MOD` param (`ctrl-alt` by default, or `meta`). It replaced the former Bismuth template when the
-base moved to Ubuntu 26.04 (Plasma 6 has no Bismuth); `setup bismuth`, `bismuth-default` and
-`bismuth-gaps` remain as shims that run the Krohnkite setups.
+base moved to Ubuntu 26.04 (Plasma 6 has no Bismuth); the `setup bismuth*` shims that ran
+the Krohnkite setups have since been removed.
 
 `desktops/sway` (Tiling for Wayland) is at **41** too (`setup sway ${SWAY_MOD}`), skipping when the
 Wayland desktop (`start-wayland`) is absent, with `+ctrl-alt` (`setup sway-ctrl-alt`) and `+gaps`
@@ -674,18 +674,21 @@ come after both.
 | Extension                    | Display Name           |
 |------------------------------|------------------------|
 | `clang/kernel--extension`    | C++ Notebook Kernel (xeus-cling, experimental) |
+| `deno/kernel--extension`     | Deno Notebook Kernel   |
 | `education/nbgrader`         | nbgrader               |
 | `go/kernel--extension`       | Go Notebook Kernel     |
 | `haskell/kernel--extension`  | Haskell Notebook Kernel |
 | `java/kernel--extension`     | Java Notebook Kernel (IJava) |
 | `java/kernel-jjava--extension` | Java Notebook Kernel (JJava, Java 11+) — pick this *or* `java/kernel`, not both |
 | `kotlin/kernel--extension`   | Kotlin Notebook Kernel |
+| `lua/kernel--extension`      | Lua Notebook Kernel (ILua) |
 | `mojo/kernel--extension`     | Mojo Notebook Kernel   |
 | `nodejs/kernel--extension`   | Node.js Notebook Kernel |
 | `python/kernel--extension`   | Python Notebook Kernel |
 | `r/kernel--extension`        | R Notebook Kernel      |
 | `ruby/kernel--extension`     | Ruby Notebook Kernel   |
 | `rust/kernel--extension`     | Rust Notebook Kernel   |
+| `scala/kernel--extension`    | Scala Notebook Kernel (Almond) |
 
 Two top-level templates also live at 70:
 

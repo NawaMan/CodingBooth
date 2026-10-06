@@ -5,7 +5,6 @@
 # cb-version: 1.0.0
 
 # lua-nb-kernel--setup.sh
-# NOTE: This script has not been tested -- no time (sorry). Please report success or failure. :-p
 #
 # Installs the ILua Jupyter kernel for Lua.
 # ILua is a pip-based Lua kernel that delegates to the lua interpreter.
@@ -74,14 +73,26 @@ if [ ! -x "${ILUA_BIN}" ]; then
   exit 1
 fi
 
+# The kernel is `python -m ilua.app` (the `ilua` command is ILua's console, which has no -c).
+# ILua creates Jupyter's runtime dir with os.mkdir, not makedirs, so on a fresh home (no
+# ~/.local/share/jupyter yet) the kernel dies before it answers. Make the dir, then exec it.
+ILUA_KERNEL="/usr/local/bin/ilua-kernel"
+cat > "${ILUA_KERNEL}" <<EOF
+#!/bin/sh
+"$(dirname "${ILUA_BIN}")/python" -c 'import os; from jupyter_core.paths import jupyter_runtime_dir as d; os.makedirs(d(), exist_ok=True)'
+exec "$(dirname "${ILUA_BIN}")/python" -m ilua.app "\$@"
+EOF
+chmod 755 "${ILUA_KERNEL}"
+
 TMPKDIR="$(mktemp -d)/lua"
 mkdir -p "${TMPKDIR}"
 
 cat > "${TMPKDIR}/kernel.json" <<KJSON
 {
-  "argv": ["${ILUA_BIN}", "-c", "{connection_file}"],
+  "argv": ["${ILUA_KERNEL}", "-c", "{connection_file}"],
   "display_name": "${KERNEL_DISPLAY_NAME}",
   "language": "lua",
+  "interrupt_mode": "message",
   "metadata": {
     "kernel_info": {
       "description": "Lua (ILua) Jupyter kernel"
@@ -98,6 +109,9 @@ python -m jupyter kernelspec install "${TMPKDIR}" \
   --name="${KERNEL_NAME}"
 
 KDIR="${JUPYTER_KERNEL_PREFIX}/share/jupyter/kernels/${KERNEL_NAME}"
+# The ilua wheel ships its own "lua" kernelspec into the venv, which Jupyter finds first; it
+# starts ilua directly and so skips the runtime-dir fix above. Ours is the one to use.
+rm -rf "${CB_VENV_DIR}/share/jupyter/kernels/lua"
 chmod -R a+rX "${KDIR}" 2>/dev/null || true
 
 # ---------------- Verification ----------------

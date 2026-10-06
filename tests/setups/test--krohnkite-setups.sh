@@ -9,8 +9,7 @@
 #     extension setups skip too, since Krohnkite was never set up;
 #   - an unknown mod key fails the build instead of guessing, and it does so
 #     before anything is downloaded or installed;
-#   - a --version other than the pinned one needs its --sha256;
-#   - the deprecated bismuth setups run their Krohnkite equivalents, saying so.
+#   - a --version other than the pinned one needs its --sha256.
 # What the scripts write into a real KDE image is tests/complex/desktop/test-krohnkite-kde.
 
 set -euo pipefail
@@ -105,23 +104,6 @@ if [[ "$RC" -ne 0 ]] && grep -q -- "--version 0.9.9.1 needs --sha256" <<< "$OUT"
     check "true"  "--version without --sha256 fails before downloading"
 else
     check "false" "--version without --sha256 fails before downloading" "rc=$RC out=$OUT calls: $(cat "$LOG")"
-fi
-
-# ---- deprecated bismuth setups: run the Krohnkite ones, with a notice ----
-for pair in bismuth:krohnkite bismuth-default:krohnkite-default bismuth-gaps:krohnkite-gaps; do
-    old="${pair%%:*}--setup.sh" new="${pair##*:}--setup.sh"
-    run "$STUB/bin" "$old"
-    if [[ "$RC" -eq 0 ]] && grep -q "$old is deprecated" <<< "$OUT" && grep -q "^SKIP: $new" <<< "$OUT"; then
-        check "true"  "$old is a shim for $new"
-    else
-        check "false" "$old is a shim for $new" "rc=$RC out=$OUT"
-    fi
-done
-run "$STUB/kde:$STUB/bin" bismuth--setup.sh hyper
-if [[ "$RC" -ne 0 ]] && grep -q "Unknown mod key 'hyper'" <<< "$OUT"; then
-    check "true"  "bismuth--setup.sh passes its arguments through"
-else
-    check "false" "bismuth--setup.sh passes its arguments through" "rc=$RC out=$OUT"
 fi
 
 [[ "$FAILED" -eq 0 ]] || exit 1

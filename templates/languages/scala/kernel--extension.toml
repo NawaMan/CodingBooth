@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Scala Notebook Kernel"
+display-disc = "Almond Jupyter notebook kernel for Scala"
+display-order = 5
+auto-select = false
+requires = ["notebook"]
+tags = [
+    "scala",
+    "kernel",
+    "notebook"
+]
+
+[segments]
+"Boothfile--70" = """
+setup scala-nb-kernel
+"""
