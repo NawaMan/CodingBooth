@@ -13,4 +13,5 @@ arg APPWRITE_VERSION=1.9.6
 setup appwrite-cli --version ${APPWRITE_CLI_VERSION}
 setup appwrite-server --version ${APPWRITE_VERSION} --http-port ${APPWRITE_PORT} --https-port ${APPWRITE_HTTPS_PORT} --data ${APPWRITE_DATA}
 setup dind
+setup docker-code-extension
 setup docker-compose

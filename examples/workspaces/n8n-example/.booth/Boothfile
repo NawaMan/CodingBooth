@@ -13,6 +13,7 @@ arg N8N_VERSION=2.41.5
 arg NODE_VERSION=24
 
 setup dind
+setup docker-code-extension
 setup docker-compose
 setup nodejs ${NODE_VERSION}
 setup nodejs-code-extension

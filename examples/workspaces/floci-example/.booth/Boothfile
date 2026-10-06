@@ -11,3 +11,4 @@ arg FLOCI_VERSION=latest
 setup aws-cli --version ${AWS_CLI_VERSION}
 setup dind
 setup floci --version ${FLOCI_VERSION}
+setup docker-code-extension

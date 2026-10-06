@@ -6,3 +6,4 @@ env APT_SNAPSHOT=20260906T000000Z
 arg DOTNET_CHANNEL=9.0
 
 setup dotnet ${DOTNET_CHANNEL}
+setup dotnet-code-extension

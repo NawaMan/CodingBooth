@@ -8,6 +8,7 @@ arg NODE_VERSION=22
 arg WAILS_VERSION=v3.0.0-beta.16
 
 setup dind
+setup docker-code-extension
 setup docker-buildx
 setup go ${GO_VERSION}                                # GO tool chain
 install go golang.org/x/tools/gopls@latest            # GO language server
