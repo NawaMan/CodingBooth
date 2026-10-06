@@ -49,20 +49,29 @@ else
 fi
 
 # Test 3: .booth/.tmp/ is cleaned on exit (default)
+# lifecycle.log is exempt from the wipe by design — it outlives the container.
 if [ -d ".booth/.tmp" ]; then
   # Directory may exist but should be empty
-  FILE_COUNT=$(find .booth/.tmp -mindepth 1 2>/dev/null | wc -l)
+  FILE_COUNT=$(find .booth/.tmp -mindepth 1 ! -name lifecycle.log 2>/dev/null | wc -l)
   if [ "$FILE_COUNT" -eq 0 ]; then
     print_test_result "true" "$0" "3" ".booth/.tmp/ is empty after exit"
   else
     print_test_result "false" "$0" "3" ".booth/.tmp/ should be empty after exit"
     echo "  Files found: $FILE_COUNT"
-    find .booth/.tmp -mindepth 1
+    find .booth/.tmp -mindepth 1 ! -name lifecycle.log
     FAILED=$((FAILED + 1))
   fi
 else
   # Directory doesn't exist — also acceptable (cleaned)
   print_test_result "true" "$0" "3" ".booth/.tmp/ is cleaned after exit"
+fi
+
+# Test 3b: the lifecycle log survives the exit wipe
+if [ -s ".booth/.tmp/lifecycle.log" ]; then
+  print_test_result "true" "$0" "3b" ".booth/.tmp/lifecycle.log survives the exit wipe"
+else
+  print_test_result "false" "$0" "3b" ".booth/.tmp/lifecycle.log should survive the exit wipe"
+  FAILED=$((FAILED + 1))
 fi
 
 # Test 4: --leave-tmp-on-exit preserves .booth/.tmp/
@@ -86,7 +95,7 @@ ACTUAL=$(run_coding_booth -- cat .booth/.tmp/booth-startup.txt 2>/dev/null) || t
 
 # After this run exits, .booth/.tmp/ should be cleaned again (no --leave-tmp-on-exit)
 if [ -d ".booth/.tmp" ]; then
-  FILE_COUNT=$(find .booth/.tmp -mindepth 1 2>/dev/null | wc -l)
+  FILE_COUNT=$(find .booth/.tmp -mindepth 1 ! -name lifecycle.log 2>/dev/null | wc -l)
   if [ "$FILE_COUNT" -eq 0 ]; then
     print_test_result "true" "$0" "5" "Next start cleans leftover .booth/.tmp/"
   else

@@ -58,17 +58,17 @@ trap cleanup EXIT
 run_coding_booth --variant base --code "$WORK" --name "$NAME" --port "$PORT" \
   --daemon --keep-alive --no-browser > "$0.log" 2>&1
 
-# --- Wait for the four console panes ---
+# --- Wait for the six console panes ---
 PANES=0
 for i in {1..60}; do
   PANES=$(docker exec "$NAME" pgrep -c ttyd 2>/dev/null || true)
-  if [[ "$PANES" == "4" ]]; then
+  if [[ "$PANES" == "6" ]]; then
     break
   fi
   sleep 1
 done
-if [[ "$PANES" != "4" ]]; then
-  print_test_result "false" "$0" "0" "Booth '$NAME' should run 4 console panes, got '$PANES'"
+if [[ "$PANES" != "6" ]]; then
+  print_test_result "false" "$0" "0" "Booth '$NAME' should run 6 console panes, got '$PANES'"
   exit 1
 fi
 
