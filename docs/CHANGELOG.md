@@ -4,6 +4,10 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **`--select excalidraw` builds again, and is now Excalidraw v0.18.1.** It had failed since the
+  `nodejs` template's default moved to Node 24: Excalidraw declares `"node": "18.0.0 - 22.x.x"`
+  and yarn refused to install. The setup now skips yarn's engine check (the app builds fine on
+  Node 24) and builds v0.18.1, the patch release for the Mermaid XSS CVE-2025-54881.
 - **`booth express --templates-path` no longer needs `--select`.** `express --variant xfce
   --templates-path templates` failed with "--templates-path and --apt-snapshot require --select".
   The path only says where to look for templates, so with nothing selected it is now simply unused,
