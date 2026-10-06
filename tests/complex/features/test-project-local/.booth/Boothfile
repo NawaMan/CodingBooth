@@ -1,0 +1,10 @@
+# syntax=codingbooth/boothfile:1
+# Configured by: booth config --no-tui --overwrite --select localgadget+widget
+
+env APT_SNAPSHOT=20261005T000000Z
+
+# CB_DETECT_TEMPLATE_v1
+setup localgadget
+setup local-hand
+# CB_DETECT_EXTENSION_v1
+setup localgadget-widget

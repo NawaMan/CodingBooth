@@ -57,14 +57,15 @@ else
 fi
 
 # Test 3: After exit, .booth/.tmp/ should be cleaned (control files gone)
+# lifecycle.log is exempt from the wipe by design — it outlives the container.
 if [ -d ".booth/.tmp" ]; then
-  FILE_COUNT=$(find .booth/.tmp -mindepth 1 2>/dev/null | wc -l)
+  FILE_COUNT=$(find .booth/.tmp -mindepth 1 ! -name lifecycle.log 2>/dev/null | wc -l)
   if [ "$FILE_COUNT" -eq 0 ]; then
     print_test_result "true" "$0" "3" "Control files cleaned after booth exit"
   else
     print_test_result "false" "$0" "3" "Control files should be cleaned after exit"
     echo "  Files remaining: $FILE_COUNT"
-    find .booth/.tmp -mindepth 1
+    find .booth/.tmp -mindepth 1 ! -name lifecycle.log
     FAILED=$((FAILED + 1))
   fi
 else
