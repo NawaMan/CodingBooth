@@ -13,23 +13,20 @@ import (
 	"strings"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/hostescape"
+	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
 
 // A booth is only as isolated as the container it runs in. Some settings hand code in the booth a
-// way out onto the host as root: the --dind sidecar (privileged, with an unauthenticated daemon the
-// booth can drive), and run-args such as --privileged, --pid=host, or a docker.sock mount. Any of
-// them can come from a cloned repo's .booth/config.toml, so booth stops and asks before starting
-// one. See docs/BOOTH_SECURITY.md.
+// way out onto the host — several of them as root: the --dind sidecar (privileged, with an
+// unauthenticated daemon the booth can drive), and run-args such as --privileged, --pid=host, or a
+// docker.sock mount. Any of them can come from a cloned repo's .booth/config.toml, so booth warns,
+// with what each setting could lead to (hostescape.Impact), and asks before starting one. See
+// docs/BOOTH_SECURITY.md.
 //
 // Consent is per run. The only non-interactive override is a command-line flag (--dind-allowed,
 // --privileged-allowed); neither has a config.toml key or an environment variable, so a repo can
-// never grant it to itself.
-
-// hostEscapeReason is one setting that needs consent, and which override flag covers it.
-type hostEscapeReason struct {
-	What string // shown to the user, e.g. "--dind (privileged Docker-in-Docker sidecar)"
-	Dind bool   // true: covered by --dind-allowed; false: covered by --privileged-allowed
-}
+// never grant it to itself. The flag skips the question, not the warning.
 
 // consentEnv is what the consent check reads from the host, so tests can fake it.
 type consentEnv struct {
@@ -64,7 +61,8 @@ var approvedReasons = map[string]bool{}
 
 // EnsureHostEscapeConsent stops before anything is built or started when the booth would get a way
 // out onto the host, and asks the user to confirm. It returns an error (and starts nothing) when
-// the user declines or there is no terminal to ask on.
+// the user declines or there is no terminal to ask on. The warning is printed even when an
+// --*-allowed flag covers every reason: the flag skips the question, not the warning.
 func EnsureHostEscapeConsent(ctx appctx.AppContext) error {
 	return ensureHostEscapeConsent(ctx, defaultConsentEnv())
 }
@@ -74,18 +72,32 @@ func ensureHostEscapeConsent(ctx appctx.AppContext, env consentEnv) error {
 		return nil
 	}
 
-	var pending []hostEscapeReason
-	for _, reason := range hostEscapeReasons(ctx, env) {
-		covered := (reason.Dind && ctx.DindAllowed()) || (!reason.Dind && ctx.PrivilegedAllowed())
-		if !covered && !approvedReasons[reason.What] {
-			pending = append(pending, reason)
-		}
-	}
-	if len(pending) == 0 {
+	reasons := hostEscapeReasons(ctx, env)
+	if len(reasons) == 0 {
 		return nil
 	}
 
-	fmt.Fprint(env.warnings, hostEscapeWarning(pending))
+	var pending []hostescape.Reason
+	var flags []string
+	earlier := false
+	for _, reason := range reasons {
+		switch {
+		case reason.Kind == hostescape.KindDind && ctx.DindAllowed():
+			flags = appendOnce(flags, "--dind-allowed")
+		case reason.Kind != hostescape.KindDind && ctx.PrivilegedAllowed():
+			flags = appendOnce(flags, "--privileged-allowed")
+		case approvedReasons[reason.What]:
+			earlier = true
+		default:
+			pending = append(pending, reason)
+		}
+	}
+
+	fmt.Fprint(env.warnings, hostescape.Format(reasons))
+	if len(pending) == 0 {
+		fmt.Fprint(env.warnings, allowedNote(flags, earlier))
+		return nil
+	}
 
 	tty, err := env.openTTY()
 	if err != nil {
@@ -94,7 +106,7 @@ func ensureHostEscapeConsent(ctx appctx.AppContext, env consentEnv) error {
 	}
 	defer tty.Close()
 
-	fmt.Fprint(tty, "\nStart this booth anyway? [y/N]: ")
+	fmt.Fprint(tty, "\nStart this booth? [y/N]: ")
 	line, _ := bufio.NewReader(tty).ReadString('\n')
 	switch strings.ToLower(strings.TrimSpace(line)) {
 	case "y", "yes":
@@ -107,23 +119,39 @@ func ensureHostEscapeConsent(ctx appctx.AppContext, env consentEnv) error {
 	}
 }
 
-func hostEscapeWarning(reasons []hostEscapeReason) string {
-	var str strings.Builder
-	str.WriteString("\n⚠️  This booth can break out of its container onto the host:\n")
-	for _, reason := range reasons {
-		fmt.Fprintf(&str, "      - %s\n", reason.What)
+// allowedNote is the closing line when nothing is left to ask: which flag, or an earlier "yes" in
+// this process (a booth--restart), covered the reasons.
+func allowedNote(flags []string, earlier bool) string {
+	var why []string
+	if len(flags) > 0 {
+		why = append(why, "allowed by "+strings.Join(flags, " and "))
 	}
-	str.WriteString("" +
-		"    Any code running in the booth could then read and write the host filesystem and run\n" +
-		"    commands on the host as root. Only continue if you trust everything this booth runs.\n" +
-		"    See docs/BOOTH_SECURITY.md.\n")
-	return str.String()
+	if earlier {
+		why = append(why, "approved earlier in this session")
+	}
+	return "  " + capitalize(strings.Join(why, "; ")) + " — starting without asking.\n"
 }
 
-func overrideFlags(reasons []hostEscapeReason) string {
+func capitalize(text string) string {
+	if text == "" {
+		return text
+	}
+	return strings.ToUpper(text[:1]) + text[1:]
+}
+
+func appendOnce(list []string, item string) []string {
+	for _, existing := range list {
+		if existing == item {
+			return list
+		}
+	}
+	return append(list, item)
+}
+
+func overrideFlags(reasons []hostescape.Reason) string {
 	var dind, privileged bool
 	for _, reason := range reasons {
-		if reason.Dind {
+		if reason.Kind == hostescape.KindDind {
 			dind = true
 		} else {
 			privileged = true
@@ -139,6 +167,27 @@ func overrideFlags(reasons []hostEscapeReason) string {
 	}
 }
 
+// SecurityWarning is the warning for this booth's settings, without a prompt or closing line, and
+// whether there is anything to warn about. It ignores --dind-allowed / --privileged-allowed: it
+// reports what the booth would get, not whether the user agreed to it.
+func SecurityWarning(ctx appctx.AppContext) (string, bool) {
+	reasons := hostEscapeReasons(ctx, defaultConsentEnv())
+	return hostescape.Format(reasons), len(reasons) > 0
+}
+
+// LabelHostEscape records the booth's reasons on its container (hostescape.LabelKey), so a later
+// `booth start`, `booth shell`, or `booth exec` that starts it again can print the same warning.
+// Run it right after EnsureHostEscapeConsent, before booth adds its own run arguments.
+func LabelHostEscape(ctx appctx.AppContext) appctx.AppContext {
+	value := hostescape.EncodeLabel(hostEscapeReasons(ctx, defaultConsentEnv()))
+	if value == "" {
+		return ctx
+	}
+	builder := ctx.ToBuilder()
+	builder.CommonArgs.Append(ilist.NewList[string]("--label", hostescape.LabelKey+"="+value))
+	return builder.Build()
+}
+
 // rootlessPodman is the one engine where "privileged" stays inside the user's own account: the
 // container's root is the host user, so a breakout lands as that user, not as host root.
 func rootlessPodman(ctx appctx.AppContext, env consentEnv) bool {
@@ -146,17 +195,14 @@ func rootlessPodman(ctx appctx.AppContext, env consentEnv) bool {
 }
 
 // hostEscapeReasons lists the settings of this booth that give it a way onto the host.
-func hostEscapeReasons(ctx appctx.AppContext, env consentEnv) []hostEscapeReason {
-	var reasons []hostEscapeReason
+func hostEscapeReasons(ctx appctx.AppContext, env consentEnv) []hostescape.Reason {
+	var reasons []hostescape.Reason
 	rootless := rootlessPodman(ctx, env)
 
 	if ctx.Dind() && !rootless {
-		reasons = append(reasons, hostEscapeReason{What: "--dind (privileged Docker-in-Docker sidecar)", Dind: true})
+		reasons = append(reasons, hostescape.Reason{Kind: hostescape.KindDind, What: "--dind (privileged Docker-in-Docker sidecar)"})
 	}
-	for _, what := range dangerousRunArgs(flattenUserArgs(ctx), env, rootless) {
-		reasons = append(reasons, hostEscapeReason{What: what})
-	}
-	return reasons
+	return append(reasons, dangerousRunArgs(flattenUserArgs(ctx), env, rootless)...)
 }
 
 // flattenUserArgs collects the user's run-args and common-args. It runs before booth adds its own
@@ -189,13 +235,18 @@ var sensitiveHostPaths = []string{
 //
 // Under rootless Podman only an engine-socket mount is reported: every other way out lands as the
 // user's own account.
-func dangerousRunArgs(args []string, env consentEnv, rootless bool) []string {
-	var hits []string
+func dangerousRunArgs(args []string, env consentEnv, rootless bool) []hostescape.Reason {
+	var hits []hostescape.Reason
 	seen := map[string]bool{}
-	add := func(what string) {
+	add := func(kind hostescape.Kind, what string) {
 		if !seen[what] {
 			seen[what] = true
-			hits = append(hits, what)
+			hits = append(hits, hostescape.Reason{Kind: kind, What: what})
+		}
+	}
+	addMount := func(hit hostescape.Reason) {
+		if hit.What != "" {
+			add(hit.Kind, hit.What)
 		}
 	}
 
@@ -220,14 +271,10 @@ func dangerousRunArgs(args []string, env consentEnv, rootless bool) []string {
 			if hasValue {
 				spec = value
 			}
-			if what := dangerousMount(source, isReadOnlyVolume(spec), env, rootless); what != "" {
-				add(what)
-			}
+			addMount(dangerousMount(source, isReadOnlyVolume(spec), env, rootless))
 		case "--mount":
 			source, readOnly := parseMountSpec(next())
-			if what := dangerousMount(source, readOnly, env, rootless); what != "" {
-				add(what)
-			}
+			addMount(dangerousMount(source, readOnly, env, rootless))
 		}
 		if rootless {
 			continue
@@ -236,34 +283,34 @@ func dangerousRunArgs(args []string, env consentEnv, rootless bool) []string {
 		switch flag {
 		case "--privileged":
 			if !hasValue || strings.EqualFold(value, "true") {
-				add("--privileged")
+				add(hostescape.KindKernelAccess, "--privileged")
 			}
 		case "--cap-add":
 			for _, capability := range strings.Split(next(), ",") {
 				if isDangerousCapability(capability) {
-					add("--cap-add " + capability)
+					add(hostescape.KindKernelAccess, "--cap-add "+capability)
 				}
 			}
 		case "--device-cgroup-rule":
-			add("--device-cgroup-rule " + next())
+			add(hostescape.KindKernelAccess, "--device-cgroup-rule "+next())
 		case "--device":
 			path, _, _ := strings.Cut(next(), ":")
 			// A device the host does not have is dropped before the run (FilterMissingDevices).
 			if !isSafeDevice(path) && env.exists(path) {
-				add("--device " + path)
+				add(hostescape.KindKernelAccess, "--device "+path)
 			}
 		case "--pid", "--ipc", "--userns":
 			if v := next(); v == "host" {
-				add(flag + "=host")
+				add(hostescape.KindKernelAccess, flag+"=host")
 			}
 		case "--network", "--net":
 			if v := next(); v == "host" {
-				add(flag + "=host (reaches every service listening on the host)")
+				add(hostescape.KindHostNetwork, flag+"=host")
 			}
 		case "--security-opt":
 			if v := next(); strings.Contains(v, "unconfined") || strings.HasPrefix(v, "label=disable") ||
 				strings.HasPrefix(v, "label:disable") {
-				add("--security-opt " + v)
+				add(hostescape.KindKernelAccess, "--security-opt "+v)
 			}
 		}
 	}
@@ -327,33 +374,40 @@ func parseMountSpec(spec string) (source string, readOnly bool) {
 	return source, readOnly
 }
 
-// dangerousMount describes a bind mount that gives the booth a way onto the host, or "" if it
-// does not. A container-engine socket is dangerous even read-only (read-only does not stop anyone
-// talking to the daemon behind it); other paths only when writable.
-func dangerousMount(source string, readOnly bool, env consentEnv, rootless bool) string {
+// dangerousMount describes a bind mount that gives the booth a way onto the host, or a Reason with
+// an empty What if it does not. A container-engine socket is dangerous even read-only (read-only
+// does not stop anyone talking to the daemon behind it); other paths only when writable.
+func dangerousMount(source string, readOnly bool, env consentEnv, rootless bool) hostescape.Reason {
+	none := hostescape.Reason{}
+	hostMount := func(what string) hostescape.Reason {
+		return hostescape.Reason{Kind: hostescape.KindHostMounts, What: what}
+	}
+	homeMount := func(what string) hostescape.Reason {
+		return hostescape.Reason{Kind: hostescape.KindHomeMounts, What: what}
+	}
 	if strings.HasPrefix(source, "~") && env.home != "" {
 		source = env.home + source[1:]
 	}
 	if !strings.HasPrefix(source, "/") {
-		return "" // a named volume, not a host path
+		return none // a named volume, not a host path
 	}
 	source = filepath.Clean(source)
 
 	base := filepath.Base(source)
 	if strings.HasSuffix(base, ".sock") &&
 		(strings.Contains(base, "docker") || strings.Contains(base, "podman") || strings.Contains(base, "containerd")) {
-		return "container engine socket mount (" + source + ")"
+		return hostescape.Reason{Kind: hostescape.KindEngineSocket, What: "container engine socket mount (" + source + ")"}
 	}
 	if readOnly || rootless {
-		return ""
+		return none
 	}
 
 	if source == "/" {
-		return "writable mount of the host root filesystem (/)"
+		return hostMount("writable mount of the host root filesystem (/)")
 	}
 	for _, sensitive := range sensitiveHostPaths {
 		if source == sensitive || strings.HasPrefix(source, sensitive+"/") {
-			return "writable mount of host " + source
+			return hostMount("writable mount of host " + source)
 		}
 	}
 	// Writing the home directory or its dotfiles (~/.bashrc, ~/.ssh, ~/.config/...) runs code as
@@ -361,11 +415,11 @@ func dangerousMount(source string, readOnly bool, env consentEnv, rootless bool)
 	if env.home != "" {
 		home := filepath.Clean(env.home)
 		if source == home || source == filepath.Dir(home) {
-			return "writable mount of host " + source
+			return homeMount("writable mount of host " + source)
 		}
 		if rel, err := filepath.Rel(home, source); err == nil && strings.HasPrefix(rel, ".") && !strings.HasPrefix(rel, "..") {
-			return "writable mount of host " + source
+			return homeMount("writable mount of host " + source)
 		}
 	}
-	return ""
+	return none
 }

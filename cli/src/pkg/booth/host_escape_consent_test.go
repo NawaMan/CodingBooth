@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/hostescape"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 	"github.com/nawaman/codingbooth/src/pkg/nillable"
 )
@@ -115,14 +116,70 @@ func TestConsent_Dind_Answers(t *testing.T) {
 	}
 }
 
-func TestConsent_Dind_FlagSkipsPrompt(t *testing.T) {
+func TestConsent_Dind_FlagSkipsPromptButStillWarns(t *testing.T) {
 	resetApprovals(t)
 	env, warnings, opened := testConsentEnv("", true)
 	if err := ensureHostEscapeConsent(newConsentCtx(consentCase{dind: true, dindAllowed: true}), env); err != nil {
 		t.Fatalf("--dind-allowed must pass: %v", err)
 	}
-	if *opened != 0 || warnings.Len() != 0 {
-		t.Fatal("--dind-allowed must not warn or ask")
+	if *opened != 0 {
+		t.Fatal("--dind-allowed must not ask")
+	}
+	got := warnings.String()
+	for _, want := range []string{
+		"--dind (privileged Docker-in-Docker sidecar)",
+		hostescape.Impact(hostescape.KindDind),
+		hostescape.Link(hostescape.KindDind),
+		"This only matters if the booth runs code you do not trust.",
+		"Allowed by --dind-allowed — starting without asking.",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("warning should contain %q, got:\n%s", want, got)
+		}
+	}
+}
+
+func TestConsent_BothFlags_NamedInNote(t *testing.T) {
+	resetApprovals(t)
+	env, warnings, _ := testConsentEnv("", true)
+	ctx := newConsentCtx(consentCase{dind: true, dindAllowed: true, privilegedAllowed: true, runArgs: []string{"--privileged"}})
+	if err := ensureHostEscapeConsent(ctx, env); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(warnings.String(), "Allowed by --dind-allowed and --privileged-allowed — starting without asking.") {
+		t.Fatalf("note should name both flags, got:\n%s", warnings.String())
+	}
+}
+
+func TestConsent_PartlyCovered_WarnsAllAsksForRest(t *testing.T) {
+	resetApprovals(t)
+	env, warnings, opened := testConsentEnv("y\n", false)
+	ctx := newConsentCtx(consentCase{dind: true, dindAllowed: true, runArgs: []string{"--network=host"}})
+	if err := ensureHostEscapeConsent(ctx, env); err != nil {
+		t.Fatal(err)
+	}
+	if *opened != 1 {
+		t.Fatalf("the uncovered --network=host must still ask; opened=%d", *opened)
+	}
+	got := warnings.String()
+	if !strings.Contains(got, "--dind (") || !strings.Contains(got, "--network=host") {
+		t.Fatalf("both reasons should be listed, got:\n%s", got)
+	}
+	if strings.Contains(got, "starting without asking") {
+		t.Fatalf("must not claim it starts without asking when it asks, got:\n%s", got)
+	}
+}
+
+func TestConsent_NoRootClaimForNonRootKinds(t *testing.T) {
+	for _, kind := range []hostescape.Kind{hostescape.KindHostMounts, hostescape.KindHomeMounts, hostescape.KindHostNetwork} {
+		if strings.Contains(hostescape.Impact(kind), "root") {
+			t.Errorf("%s: impact must not claim root: %q", kind, hostescape.Impact(kind))
+		}
+	}
+	for _, kind := range []hostescape.Kind{hostescape.KindDind, hostescape.KindEngineSocket, hostescape.KindKernelAccess} {
+		if !strings.Contains(hostescape.Impact(kind), "root") {
+			t.Errorf("%s: impact should say it can lead to root: %q", kind, hostescape.Impact(kind))
+		}
 	}
 }
 
@@ -198,6 +255,14 @@ func TestConsent_ApprovalRemembered_ForRestart(t *testing.T) {
 	if *opened != 1 {
 		t.Fatalf("a restart of an approved booth should not ask again; asked %d times", *opened)
 	}
+	// The second run still prints the warning, and says why it did not ask.
+	env3, warnings3, opened3 := testConsentEnv("", true)
+	if err := ensureHostEscapeConsent(ctx, env3); err != nil {
+		t.Fatal(err)
+	}
+	if *opened3 != 0 || !strings.Contains(warnings3.String(), "Approved earlier in this session — starting without asking.") {
+		t.Fatalf("restart should warn without asking; opened=%d warnings=%q", *opened3, warnings3.String())
+	}
 	// Something new since the approval still asks.
 	env2, _, _ := testConsentEnv("", true)
 	if ensureHostEscapeConsent(newConsentCtx(consentCase{dind: true, runArgs: []string{"--privileged"}}), env2) == nil {
@@ -209,42 +274,54 @@ func TestDangerousRunArgs(t *testing.T) {
 	env, _, _ := testConsentEnv("", true)
 	env.exists = func(path string) bool { return path != "/dev/nope" }
 
-	dangerous := map[string][]string{
-		"privileged":          {"--privileged"},
-		"privileged=true":     {"--privileged=true"},
-		"cap SYS_ADMIN":       {"--cap-add", "SYS_ADMIN"},
-		"cap=all":             {"--cap-add=all"},
-		"cap CAP_ prefix":     {"--cap-add", "CAP_SYS_MODULE"},
-		"device disk":         {"--device", "/dev/sda"},
-		"device=disk":         {"--device=/dev/sda:/dev/xvda"},
-		"device cgroup rule":  {"--device-cgroup-rule", "a *:* rwm"},
-		"pid host":            {"--pid", "host"},
-		"pid=host":            {"--pid=host"},
-		"ipc=host":            {"--ipc=host"},
-		"userns=host":         {"--userns=host"},
-		"network host":        {"--network", "host"},
-		"net=host":            {"--net=host"},
-		"seccomp unconfined":  {"--security-opt", "seccomp=unconfined"},
-		"apparmor unconfined": {"--security-opt=apparmor:unconfined"},
-		"selinux off":         {"--security-opt", "label=disable"},
-		"docker.sock":         {"-v", "/var/run/docker.sock:/var/run/docker.sock"},
-		"docker.sock ro":      {"-v", "/var/run/docker.sock:/var/run/docker.sock:ro"},
-		"podman.sock":         {"--volume=/run/podman/podman.sock:/s"},
-		"mount socket":        {"--mount", "type=bind,source=/run/containerd/containerd.sock,target=/c"},
-		"root fs":             {"-v", "/:/host"},
-		"etc":                 {"-v", "/etc:/host-etc"},
-		"etc file":            {"-v", "/etc/sudoers:/x"},
-		"mount etc":           {"--mount", "type=bind,src=/etc,dst=/x"},
-		"home":                {"-v", "/home/me:/h"},
-		"home tilde":          {"-v", "~:/h"},
-		"home dotfile":        {"-v", "~/.bashrc:/x"},
-		"home dotdir":         {"-v", "/home/me/.ssh:/x"},
-		"all homes":           {"-v", "/home:/x"},
-		"docker data":         {"-v", "/var/lib/docker:/x"},
+	kernel, socket, hostFS, homeFS, network := hostescape.KindKernelAccess, hostescape.KindEngineSocket,
+		hostescape.KindHostMounts, hostescape.KindHomeMounts, hostescape.KindHostNetwork
+	dangerous := map[string]struct {
+		kind hostescape.Kind
+		args []string
+	}{
+		"privileged":          {kernel, []string{"--privileged"}},
+		"privileged=true":     {kernel, []string{"--privileged=true"}},
+		"cap SYS_ADMIN":       {kernel, []string{"--cap-add", "SYS_ADMIN"}},
+		"cap=all":             {kernel, []string{"--cap-add=all"}},
+		"cap CAP_ prefix":     {kernel, []string{"--cap-add", "CAP_SYS_MODULE"}},
+		"device disk":         {kernel, []string{"--device", "/dev/sda"}},
+		"device=disk":         {kernel, []string{"--device=/dev/sda:/dev/xvda"}},
+		"device cgroup rule":  {kernel, []string{"--device-cgroup-rule", "a *:* rwm"}},
+		"pid host":            {kernel, []string{"--pid", "host"}},
+		"pid=host":            {kernel, []string{"--pid=host"}},
+		"ipc=host":            {kernel, []string{"--ipc=host"}},
+		"userns=host":         {kernel, []string{"--userns=host"}},
+		"network host":        {network, []string{"--network", "host"}},
+		"net=host":            {network, []string{"--net=host"}},
+		"seccomp unconfined":  {kernel, []string{"--security-opt", "seccomp=unconfined"}},
+		"apparmor unconfined": {kernel, []string{"--security-opt=apparmor:unconfined"}},
+		"selinux off":         {kernel, []string{"--security-opt", "label=disable"}},
+		"docker.sock":         {socket, []string{"-v", "/var/run/docker.sock:/var/run/docker.sock"}},
+		"docker.sock ro":      {socket, []string{"-v", "/var/run/docker.sock:/var/run/docker.sock:ro"}},
+		"podman.sock":         {socket, []string{"--volume=/run/podman/podman.sock:/s"}},
+		"mount socket":        {socket, []string{"--mount", "type=bind,source=/run/containerd/containerd.sock,target=/c"}},
+		"root fs":             {hostFS, []string{"-v", "/:/host"}},
+		"etc":                 {hostFS, []string{"-v", "/etc:/host-etc"}},
+		"etc file":            {hostFS, []string{"-v", "/etc/sudoers:/x"}},
+		"mount etc":           {hostFS, []string{"--mount", "type=bind,src=/etc,dst=/x"}},
+		"run media":           {hostFS, []string{"-v", "/run/media/me/disk/data:/x"}},
+		"home":                {homeFS, []string{"-v", "/home/me:/h"}},
+		"home tilde":          {homeFS, []string{"-v", "~:/h"}},
+		"home dotfile":        {homeFS, []string{"-v", "~/.bashrc:/x"}},
+		"home dotdir":         {homeFS, []string{"-v", "/home/me/.ssh:/x"}},
+		"home cache":          {homeFS, []string{"-v", "/home/me/.m2:/home/coder/.m2"}},
+		"all homes":           {homeFS, []string{"-v", "/home:/x"}},
+		"docker data":         {hostFS, []string{"-v", "/var/lib/docker:/x"}},
 	}
-	for name, args := range dangerous {
-		if hits := dangerousRunArgs(args, env, false); len(hits) == 0 {
-			t.Errorf("%s: %v should be reported", name, args)
+	for name, c := range dangerous {
+		hits := dangerousRunArgs(c.args, env, false)
+		if len(hits) != 1 {
+			t.Errorf("%s: %v should be reported once, got %v", name, c.args, hits)
+			continue
+		}
+		if hits[0].Kind != c.kind {
+			t.Errorf("%s: %v kind = %s, want %s", name, c.args, hits[0].Kind, c.kind)
 		}
 	}
 
@@ -271,5 +348,46 @@ func TestDangerousRunArgs(t *testing.T) {
 		if hits := dangerousRunArgs(args, env, false); len(hits) != 0 {
 			t.Errorf("%s: %v should not be reported, got %v", name, args, hits)
 		}
+	}
+}
+
+func TestLabelHostEscape_RecordsReasons(t *testing.T) {
+	ctx := LabelHostEscape(newConsentCtx(consentCase{dind: true, runArgs: []string{"--privileged"}}))
+	var label string
+	for _, group := range ctx.CommonArgs().Slice() {
+		args := group.Slice()
+		for i := 0; i+1 < len(args); i++ {
+			if args[i] == "--label" && strings.HasPrefix(args[i+1], hostescape.LabelKey+"=") {
+				label = strings.TrimPrefix(args[i+1], hostescape.LabelKey+"=")
+			}
+		}
+	}
+	reasons := hostescape.DecodeLabel(label)
+	if len(reasons) != 2 || reasons[0].Kind != hostescape.KindDind || reasons[1].What != "--privileged" {
+		t.Fatalf("label should record both reasons, got %q -> %v", label, reasons)
+	}
+}
+
+func TestLabelHostEscape_NothingDangerous_NoLabel(t *testing.T) {
+	ctx := LabelHostEscape(newConsentCtx(consentCase{runArgs: []string{"-p", "8080:8080"}}))
+	for _, group := range ctx.CommonArgs().Slice() {
+		for _, arg := range group.Slice() {
+			if strings.HasPrefix(arg, hostescape.LabelKey) {
+				t.Fatalf("no reasons must add no label, got %q", arg)
+			}
+		}
+	}
+}
+
+func TestSecurityWarning_IgnoresAllowedFlags(t *testing.T) {
+	text, found := SecurityWarning(newConsentCtx(consentCase{dind: true, dindAllowed: true}))
+	if !found || !strings.Contains(text, "--dind (") {
+		t.Fatalf("--dind-allowed must not hide the warning: found=%v text=%q", found, text)
+	}
+	if strings.Contains(text, "starting without asking") || strings.Contains(text, "[y/N]") {
+		t.Fatalf("print-security-warning text has no closing line, got %q", text)
+	}
+	if text, found := SecurityWarning(newConsentCtx(consentCase{})); found || text != "" {
+		t.Fatalf("no reasons: found=%v text=%q", found, text)
 	}
 }
