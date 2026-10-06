@@ -63,15 +63,16 @@ begin
 # --------------------------------------------------------------------------
 # 1) No host path in any committed .booth/ file.
 # --------------------------------------------------------------------------
-# Matches an absolute home path on any platform, minus /home/coder/ — that one
-# is the container's own home and appears legitimately in mounts, setup scripts
-# and startup hooks throughout .booth/.
+# Matches an absolute home path on any platform, minus the two that are paths
+# inside the image, not on the host: /home/coder/ is the container's own home
+# (mounts, setup scripts, startup hooks), and /home/linuxbrew/ is Homebrew's
+# fixed install prefix (the homebrew template puts its bin dirs on PATH).
 leaks="$(git ls-files -- '*/.booth/*' '.booth/*' 2>/dev/null \
          | grep -vE '/\.booth/cache/' \
          | while read -r f; do
              [[ -f "$f" ]] || continue
              if grep -oE '(/home/[A-Za-z0-9_.-]+/|/Users/[A-Za-z0-9_.-]+/)' "$f" 2>/dev/null \
-                | grep -qv '^/home/coder/'; then
+                | grep -qvE '^/home/(coder|linuxbrew)/'; then
                  echo "$f"
              fi
            done)"
