@@ -1,0 +1,15 @@
+cb-version = "0.1.0"
+display-name = "Docker VS Code Extension"
+display-disc = "Docker extension: Dockerfile and Compose editing, container explorer"
+display-order = 2
+auto-select = true
+tags = [
+    "docker",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup docker-code-extension
+"""

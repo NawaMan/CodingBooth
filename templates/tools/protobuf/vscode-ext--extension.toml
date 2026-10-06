@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Protobuf VS Code Extension"
+display-disc = "Protocol Buffers (proto3) syntax, completion and formatting"
+display-order = 2
+auto-select = true
+tags = [
+    "protobuf",
+    "grpc",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup protobuf-code-extension
+"""

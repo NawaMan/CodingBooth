@@ -9,6 +9,19 @@ This file contains a list of changes for each released version.
   owns (a temp dir, or the user cache with `--daemon` or `--keep-alive`), and that directory
   is mounted at `/home/coder/code/.booth`. Profiles, `BOOTH_PROFILES`, and `.booth/.env` in
   the project are ignored. See [Express](BOOTH_RUN.md#express).
+
+- **A Frameworks category, and VS Code extensions for tools.** `react`, `vue`, `angular`,
+  `svelte`, `tailwind`, `spring-boot` and `django` are new top-level templates under
+  **Frameworks** — editor support only for now, and none of them `require` a runtime, so React
+  works beside `nodejs`, `bun` or `deno` alike, and Spring Boot beside `java` or `kotlin`. Tools
+  gain a `vscode-ext` extension that auto-selects with them like the languages' do: `terraform`,
+  `ansible`, `kubectl` and `helm` (Kubernetes), `dind` (Docker — `docker-compose` gets it through
+  `dind`), `cmake`, `protobuf`, `buf`, `just`, `mermaid`, `plantuml`, `graphviz`, `mongodb` and
+  `codex`. `dotnet` gets one too, the last language without it (desktop VS Code only, as
+  `csharp`'s already was — the C# extension is not on Open VSX). Each installs from a new
+  `<name>-code-extension` setup, which skips cleanly when the image has no editor, so it needs a
+  base image built from this version. In `booth config`, Frameworks sits right after Languages.
+
 - **The Popular list is bigger, and everything on it is settled.** 50 more templates are marked
   popular (`primary`), so `booth config` and `booth template list` show them without `--full`:
   the desktops and browsers the variants ship (`xfce`, `kde`, `lxqt`, `wayland`, `firefox`,

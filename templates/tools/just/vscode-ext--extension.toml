@@ -1,0 +1,15 @@
+cb-version = "0.1.0"
+display-name = "Just VS Code Extension"
+display-disc = "Justfile syntax highlighting"
+display-order = 2
+auto-select = true
+tags = [
+    "just",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup just-code-extension
+"""

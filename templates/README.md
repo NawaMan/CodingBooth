@@ -529,15 +529,21 @@ and let it be dropped, rather than trying to detect the host at config time — 
 no host-OS guard in the template system, and `unsupported-arch` only distinguishes
 amd64 from arm64, which is a different question from "does this machine have KVM".
 
-### Order 65 — Language VS Code extensions (need codeserver/vscode)
+### Order 65 — VS Code extensions (need codeserver/vscode)
 
 | Extension                         | Display Name                  |
-|-----------------------------------|-------------------------------|
+|-----------------------------------|------------------------------- |
+| `ansible/vscode-ext--extension`   | Ansible VS Code Extension     |
+| `buf/vscode-ext--extension`       | Buf VS Code Extension         |
 | `bun/vscode-ext--extension`       | Bun VS Code Extension         |
 | `clang/vscode-ext--extension`     | Clang VS Code Extension       |
 | `clojure/vscode-ext--extension`   | Clojure VS Code Extension     |
+| `cmake/vscode-ext--extension`     | CMake VS Code Extension       |
+| `codex/vscode-ext--extension`     | Codex VS Code Extension       |
 | `crystal/vscode-ext--extension`   | Crystal VS Code Extension     |
 | `deno/vscode-ext--extension`      | Deno VS Code Extension        |
+| `dind/vscode-ext--extension`      | Docker VS Code Extension      |
+| `dotnet/vscode-ext--extension`    | .NET VS Code Extension *(desktop VS Code only)* |
 | `elixir/vscode-ext--extension`    | Elixir VS Code Extension      |
 | `elm/vscode-ext--extension`       | Elm VS Code Extension         |
 | `erlang/vscode-ext--extension`    | Erlang VS Code Extension      |
@@ -546,15 +552,23 @@ amd64 from arm64, which is a different question from "does this machine have KVM
 | `gcc/vscode-ext--extension`       | GCC VS Code Extension         |
 | `gleam/vscode-ext--extension`     | Gleam VS Code Extension       |
 | `go/vscode-ext--extension`        | Go VS Code Extension          |
+| `graphviz/vscode-ext--extension`  | Graphviz VS Code Extension    |
 | `haskell/vscode-ext--extension`   | Haskell VS Code Extension     |
+| `helm/vscode-ext--extension`      | Kubernetes VS Code Extension  |
 | `java/vscode-ext--extension`      | Java VS Code Extension        |
 | `julia/vscode-ext--extension`     | Julia VS Code Extension       |
+| `just/vscode-ext--extension`      | Just VS Code Extension        |
 | `kotlin/vscode-ext--extension`    | Kotlin VS Code Extension      |
+| `kubectl/vscode-ext--extension`   | Kubernetes VS Code Extension  |
 | `lua/vscode-ext--extension`       | Lua VS Code Extension         |
+| `mermaid/vscode-ext--extension`   | Mermaid VS Code Extension     |
 | `mojo/vscode-ext--extension`      | Mojo VS Code Extension        |
+| `mongodb/vscode-ext--extension`   | MongoDB VS Code Extension     |
 | `nim/vscode-ext--extension`       | Nim VS Code Extension         |
 | `nodejs/vscode-ext--extension`    | Node.js VS Code Extension     |
 | `php/vscode-ext--extension`       | PHP VS Code Extension         |
+| `plantuml/vscode-ext--extension`  | PlantUML VS Code Extension    |
+| `protobuf/vscode-ext--extension`  | Protobuf VS Code Extension    |
 | `python/vscode-ext--extension`    | Python VS Code Extension      |
 | `r/vscode-ext--extension`         | R VS Code Extension           |
 | `rescript/vscode-ext--extension`  | ReScript VS Code Extension    |
@@ -563,7 +577,15 @@ amd64 from arm64, which is a different question from "does this machine have KVM
 | `rust/vscode-ext--extension`      | Rust VS Code Extension        |
 | `scala/vscode-ext--extension`     | Scala VS Code Extension       |
 | `swift/vscode-ext--extension`     | Swift VS Code Extension       |
+| `terraform/vscode-ext--extension` | Terraform VS Code Extension   |
 | `zig/vscode-ext--extension`       | Zig VS Code Extension         |
+| `frameworks/angular`              | Angular *(editor support only)* |
+| `frameworks/django`               | Django *(editor support only)* |
+| `frameworks/react`                | React *(editor support only)* |
+| `frameworks/spring-boot`          | Spring Boot *(editor support only)* |
+| `frameworks/svelte`               | Svelte *(editor support only)* |
+| `frameworks/tailwind`             | Tailwind CSS *(editor support only)* |
+| `frameworks/vue`                  | Vue *(editor support only)*   |
 | `ides/code-ext-pkg`               | VS Code Extensions *(any id — top-level template, not a `+ext`)* |
 
 Each `<lang>/vscode-ext--extension` pins one known-good extension id for its
@@ -571,7 +593,16 @@ language and compiles to `setup <lang>-code-extension`. `ides/code-ext-pkg` is t
 escape hatch beside them: a variadic list of arbitrary Open VSX ids compiling to
 `install code-extension <ids>`. Add a curated extension when a language has an
 obvious one — a user shouldn't have to know an id to get a working editor — and
-leave `code-ext-pkg` for the long tail.
+leave `code-ext-pkg` for the long tail. Tools get the same treatment
+(`terraform/vscode-ext`, `kubectl/vscode-ext`, ...); one setup may serve two parents
+(`kubernetes-code-extension` behind both `kubectl` and `helm`).
+
+`frameworks/*` are **top-level templates, not `+ext`s of a language**, because a
+framework does not pin its runtime: React runs on nodejs, bun or deno, and Spring Boot
+on java or kotlin. Hanging `react` off `nodejs` would lock out the bun user. They add
+no runtime and do not `require` one — the user picks it beside them. For now each is
+editor support only (one `setup <framework>-code-extension`); scaffolding or a dev
+server would be a later addition to the same template.
 
 `code-ext-pkg` is a **top-level template, not an extension of `codeserver`**, and
 deliberately so: an editor is not always supplied by that template. `code-server`

@@ -10,7 +10,9 @@ setup alacritty
 setup alacritty-fancy
 setup android-emulator
 setup android-sdk
+setup angular-code-extension
 setup ansible
+setup ansible-code-extension
 setup ant
 setup antigravity
 setup anythingllm
@@ -39,6 +41,7 @@ setup booth-shutdown-code-extension
 setup booth-web-preview-code-extension
 setup booth-web-preview-notebook
 setup buf
+setup buf-code-extension
 setup build-essential
 setup bun
 setup bun-code-extension
@@ -52,6 +55,7 @@ setup clojure
 setup clojure-code-extension
 setup cloudbeaver
 setup cmake
+setup cmake-code-extension
 setup codeserver
 setup codex
 setup codex-code-extension
@@ -72,7 +76,9 @@ setup deno-nb-kernel
 setup dind
 setup direnv
 setup dive
+setup django-code-extension
 setup docker-buildx
+setup docker-code-extension
 setup docker-compose
 setup dotnet
 setup dotnet-code-extension
@@ -120,6 +126,7 @@ setup go-nb-kernel
 setup google-chrome
 setup goose
 setup gradle
+setup graphviz-code-extension
 setup greenfoot
 setup grok
 setup gruppled-cursors
@@ -156,6 +163,7 @@ setup julia
 setup julia-code-extension
 setup jupyter-code-extension
 setup just
+setup just-code-extension
 setup k3d
 setup k9s
 setup kafka
@@ -173,6 +181,7 @@ setup krohnkite-default
 setup krohnkite-gaps
 setup kubectl
 setup kubectx
+setup kubernetes-code-extension
 setup kustomize
 setup latex
 setup latex-code-extension
@@ -191,11 +200,13 @@ setup lxqt-wallpaper
 setup make
 setup material-cursors
 setup mermaid
+setup mermaid-code-extension
 setup mkcert
 setup mojo
 setup mojo-code-extension
 setup mojo-nb-kernel
 setup mongodb
+setup mongodb-code-extension
 setup mongodb-start
 setup mvn
 setup mysql
@@ -226,11 +237,13 @@ setup php
 setup php-code-extension
 setup plank
 setup plantuml
+setup plantuml-code-extension
 setup playwright
 setup playwright-code-extension
 setup postgresql
 setup postgrest
 setup posting
+setup protobuf-code-extension
 setup protoc-gen-grpc-java
 setup protoc-gen-grpc-web
 setup pulumi
@@ -264,6 +277,7 @@ setup scala-code-extension
 setup scala-nb-kernel
 setup scratch
 setup selenium
+setup spring-boot-code-extension
 setup sql-studio
 setup sqlite
 setup sqluv
@@ -274,8 +288,10 @@ setup sway-ctrl-alt
 setup sway-gaps
 setup swift
 setup swift-code-extension
+setup tailwind-code-extension
 setup tela-icons
 setup terraform
+setup terraform-code-extension
 setup texstudio
 setup thonny
 setup tls
@@ -285,6 +301,7 @@ setup viewmd
 setup viewmd-desktop-icon
 setup vscode
 setup vscode-copilot
+setup vue-code-extension
 setup wails
 setup wails-android
 setup warp

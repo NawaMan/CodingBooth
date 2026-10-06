@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Buf VS Code Extension"
+display-disc = "Buf extension: proto language server, lint and format via the buf CLI"
+display-order = 2
+auto-select = true
+tags = [
+    "buf",
+    "protobuf",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup buf-code-extension
+"""

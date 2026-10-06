@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Codex VS Code Extension"
+display-disc = "OpenAI Codex extension for VS Code"
+display-order = 2
+auto-select = true
+tags = [
+    "ai",
+    "openai",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup codex-code-extension
+"""

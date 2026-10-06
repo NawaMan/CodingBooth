@@ -1,0 +1,15 @@
+cb-version = "0.1.0"
+display-name = "Ansible VS Code Extension"
+display-disc = "Red Hat Ansible extension: playbook completion, linting, docs"
+display-order = 2
+auto-select = true
+tags = [
+    "ansible",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup ansible-code-extension
+"""

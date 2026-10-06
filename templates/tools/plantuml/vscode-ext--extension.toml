@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "PlantUML VS Code Extension"
+display-disc = "PlantUML preview and export"
+display-order = 2
+auto-select = true
+tags = [
+    "plantuml",
+    "diagram",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup plantuml-code-extension
+"""

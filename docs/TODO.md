@@ -403,7 +403,12 @@ isn't a priority. Audited 2026-07-25. Everything *not* listed here was checked a
       branch, until that is settled. Note it sits beside the shipped `dind_setup.go` / `egress_setup.go`,
       so any revisit should say how the three isolation surfaces compose rather than adding a fourth.
 
-- [?] **A `templates/frameworks/` tier (django, spring)** — `stash@{0}`, from the since-deleted
+- [x] **A `templates/frameworks/` tier (django, spring)** — **Settled 2026-10-05:** a top-level
+      `frameworks/` category, not extensions on a language, because a framework does not pin its
+      runtime (React on nodejs / bun / deno; Spring Boot on java / kotlin). Shipped editor-only:
+      react, vue, angular, svelte, tailwind, spring-boot, django. Scaffolding / dev-server autostart
+      is the open follow-up. The stash notes below are kept for history.
+      `stash@{0}`, from the since-deleted
       `feature/BoothDesign` worktree (Feb 2026).
       Most of the stash is dead: it is written in the old `spec.toml` format, and `main` has **zero**
       `spec.toml` files (the format is now `template.toml` + `*--extension.toml`). Its go, java, python, and

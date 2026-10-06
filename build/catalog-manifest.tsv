@@ -9,7 +9,9 @@ setup	alacritty	1.0.0	e5c1c229d33b23cf8911742113e818417c479d81ba98c5d8c0b0950a5b
 setup	alacritty-fancy	1.0.0	e9be30b45648220767104d66c0198f3cf87351b38432535f71e26992c5e22679	variants/base/setups/alacritty-fancy--setup.sh
 setup	android-emulator	0.1.0	aa84656d66a0396df5549f2a12a266e157319cc6c239455737e47804c2426f53	variants/base/setups/android-emulator--setup.sh
 setup	android-sdk	0.1.0	e3cba1f18fd099442b3479abf23913e1cc85dde7ef4015f8c5d7af84e78a6e3b	variants/base/setups/android-sdk--setup.sh
+setup	angular-code-extension	0.1.0	38ffe669d3909b9fb7e680acdaf2e4b0c0606e3e742ca0cf90fa096aad5aaf9f	variants/base/setups/angular-code-extension--setup.sh
 setup	ansible	1.0.0	4392e8f53e79968d8d81057803213691979ee181a02ba175316af9fdb826b1de	variants/base/setups/ansible--setup.sh
+setup	ansible-code-extension	0.1.0	c5aadbacbe21ea42f0c3965c1e7a1bd54de4925a472757a800f98c461d5f7470	variants/base/setups/ansible-code-extension--setup.sh
 setup	ant	0.1.0	898ab4155e66d5fc0b788c20e52e525384ff0eddfe5f1ff1c482117dd4a6195d	variants/base/setups/ant--setup.sh
 setup	antigravity	1.0.0	4f2f3247caa24356b52052dcf53ad93587d45cdd8f4724012f338ff4c5a373f0	variants/base/setups/antigravity--setup.sh
 setup	anythingllm	0.1.0	af41e4c5feeab4eb21c699fde6f1cc4b78b362ad39f0233813dcd05d07d90f97	variants/base/setups/anythingllm--setup.sh
@@ -38,6 +40,7 @@ setup	booth-shutdown-code-extension	1.0.0	5b6f200990ef0ad2f80181dc489808eddc15a5
 setup	booth-web-preview-code-extension	0.1.0	62d0ee4f84454ef4efa09185c79b74f9a6ee98650de82ff8fa8ceb65fc4f3b87	variants/base/setups/booth-web-preview-code-extension--setup.sh
 setup	booth-web-preview-notebook	0.1.0	137259c6c971c91d3b360f91793672f0dc1f8d184d8a1d82b96bef7dc7393fd9	variants/base/setups/booth-web-preview-notebook--setup.sh
 setup	buf	1.0.0	a713746385a205831ceef2c7e5dd20fce05ab78278a5ea4e4486057d4240efd6	variants/base/setups/buf--setup.sh
+setup	buf-code-extension	0.1.0	80adc91ce78dcb830912fb1518c53916fae7fbb1685599f7a6f5bbe3be359350	variants/base/setups/buf-code-extension--setup.sh
 setup	build-essential	1.0.0	eb750169b91459caa5f62a3a59efed4bab6a1a20a144e2f753f51960dd9faf2a	variants/base/setups/build-essential--setup.sh
 setup	bun	1.0.0	b5e82ae237e4b8056b489bbe1a9477827ec3e46d9f20f101b4160ae597a19134	variants/base/setups/bun--setup.sh
 setup	bun-code-extension	1.0.0	e00901212b24b71ec5de264aa30b8575012267199abe7a7541bd0adbb9ab9a75	variants/base/setups/bun-code-extension--setup.sh
@@ -51,6 +54,7 @@ setup	clojure	1.0.0	4a10bbe9e06906881cdeb1628046c87aede4bc7dba01a66248ec82e9b05b
 setup	clojure-code-extension	1.0.0	701ebfa9133409194342e7219aaad39716bf1ca824a1e62ea603aac2a9dda947	variants/base/setups/clojure-code-extension--setup.sh
 setup	cloudbeaver	1.0.0	0fc166fe6e7c21963e73f5aef0374fbb404faffcaf38096c8d6e961e0d60f463	variants/base/setups/cloudbeaver--setup.sh
 setup	cmake	1.0.0	6c78f883af7e7367c66c10fc35f0cd73695221dc1114a549d45d827c9488b14b	variants/base/setups/cmake--setup.sh
+setup	cmake-code-extension	0.1.0	d5358d9ef2d2c44609ff9aa96529a4f4cb5ae2310424ade736b28ea12c920185	variants/base/setups/cmake-code-extension--setup.sh
 setup	codeserver	1.0.0	072830c79653c1d7e3667e0ecb9d66682252d2df7670c6d6c9ff2415d8f052ff	variants/base/setups/codeserver--setup.sh
 setup	codex	1.0.0	a0f76155dd0b93e901a5b994393d68d545214b3b568d1de237febc9a36d0962c	variants/base/setups/codex--setup.sh
 setup	codex-code-extension	1.0.0	076be4c351d968b8775495057013581f1190d7f0f3557742beec8e8324a04ea1	variants/base/setups/codex-code-extension--setup.sh
@@ -71,7 +75,9 @@ setup	deno-nb-kernel	1.0.0	94949ed69ca956361155423238b19d8c8c44718fee3a3cdc3ee73
 setup	dind	1.0.0	d85ab9cfab4957178be3483ccb5c5eb2bf3308c565096472c2f3340d1d3c9b56	variants/base/setups/dind--setup.sh
 setup	direnv	1.0.0	84be601ab8b9f198683270ccb3b71e291ac65f11056519f3d5fa8db9ca87e384	variants/base/setups/direnv--setup.sh
 setup	dive	1.0.0	1d7f52b7e366674f3af13dc6b3bd72034b438893754aa004efeb209e6b0cc6ea	variants/base/setups/dive--setup.sh
+setup	django-code-extension	0.1.0	282dd6e5d98341b2393802afc5f75d5e4648224530ef949ec8195feed0f5ad3f	variants/base/setups/django-code-extension--setup.sh
 setup	docker-buildx	1.0.0	df4aed8a77934bfd834dcec6ca454eee64495b51717157a18d258f23d3f03a84	variants/base/setups/docker-buildx--setup.sh
+setup	docker-code-extension	0.1.0	50de1113c6d8edfc2eceb1039aa19bf9577dcd0444cebd1eda4a4b91b346f348	variants/base/setups/docker-code-extension--setup.sh
 setup	docker-compose	1.0.0	125dae9b2cefa5e20e80fbc439e88bb544af7781d6fa6fdb978b32aa905823af	variants/base/setups/docker-compose--setup.sh
 setup	dotnet	1.0.0	85d124d8c90108205b8d199514c15454e6fa3912374e41bb276bade337bf976e	variants/base/setups/dotnet--setup.sh
 setup	dotnet-code-extension	1.0.0	18a0047da55a995e188f945305421d057340762c068182b37c1c112639132d55	variants/base/setups/dotnet-code-extension--setup.sh
@@ -119,6 +125,7 @@ setup	go-nb-kernel	1.0.0	641f7383ccc93feedc8e7c68f474e713806f756c22ed215f5d6305e
 setup	google-chrome	1.0.0	01e5af596c3c4b765dd95f2580ecd9f411dc9d5cbc056c0da94d73091fa35b80	variants/base/setups/google-chrome--setup.sh
 setup	goose	1.0.0	138c554d9ab722ea3b71731ecad135583e355b03a5072c0e20ad3cfdf3ff0971	variants/base/setups/goose--setup.sh
 setup	gradle	1.0.0	b792a8ef7c2ada1b7c089c9787f5a197efcb56ddbc5cc02128e27a8691db356b	variants/base/setups/gradle--setup.sh
+setup	graphviz-code-extension	0.1.0	a24c26b65c1078dac9728a7c7659999b2f6d615aa12c55deefbb784268f2d7f4	variants/base/setups/graphviz-code-extension--setup.sh
 setup	greenfoot	1.0.0	4dc357d5d473883f22cc9fc7af4dd079efd17710652feee778aa9294ca78455e	variants/base/setups/greenfoot--setup.sh
 setup	grok	1.0.0	4921ea18cabe3f4c781d5241ccfc5e854237246e1d06814a30d6b2712ea4962e	variants/base/setups/grok--setup.sh
 setup	gruppled-cursors	0.1.0	da95887cb60605cff5683031237481db262e2817fa30ef60867e0fad70d380f4	variants/base/setups/gruppled-cursors--setup.sh
@@ -155,6 +162,7 @@ setup	julia	1.0.0	e1d75cc16a53c4c7b400eeab3672021b3a402cf60935f648f18ab74fd8692f
 setup	julia-code-extension	1.0.0	1bb7295322f30356e85152ca1d1a4ded5d469c29fb853544e7f53b31503574a2	variants/base/setups/julia-code-extension--setup.sh
 setup	jupyter-code-extension	1.0.0	d7cee1611fdb7f1d96c5ba1a2df6753c8270decbf6c93221e14641dec6d04f97	variants/base/setups/jupyter-code-extension--setup.sh
 setup	just	1.0.0	423e6bcf1c3f9ad903038dd470b79449d4f9faaf324b2a4ed918e507c70033ec	variants/base/setups/just--setup.sh
+setup	just-code-extension	0.1.0	e267c5b9b485cb4d4697ecfe1430ad04cbe589e2d8fe8c8781c87c9d455fb922	variants/base/setups/just-code-extension--setup.sh
 setup	k3d	1.0.0	da59d469b235f8fb42bb44c4a46dfae4215928e19ea37e4bbbe44c963bb9e479	variants/base/setups/k3d--setup.sh
 setup	k9s	1.0.0	305fb6442fbf68f42d741d0fa1245e0191ad21e20cba7e7818da67497a6d5b1b	variants/base/setups/k9s--setup.sh
 setup	kafka	1.0.0	6f7f25704171b9f03a2ba7183432a5c72b2e3d3fc4fee21da51b32b37d9359df	variants/base/setups/kafka--setup.sh
@@ -172,6 +180,7 @@ setup	krohnkite-default	1.0.0	4e7e67d4522ef901ba48c9bd39d2fae88981a0d103a61ee081
 setup	krohnkite-gaps	1.0.0	775d36f66b14290647fbf6304d5f562b32011158448eaf9156a0953f31a72d52	variants/base/setups/krohnkite-gaps--setup.sh
 setup	kubectl	1.0.0	eb9bde879b0c6c66ef7a9905e64fbb129df5331539f2299f0e4c6a260f9a52fe	variants/base/setups/kubectl--setup.sh
 setup	kubectx	1.0.0	485f0a94dfba86a2b37e3c1c6429633ac79c40f7547bfc55f5bd41b2fe111e05	variants/base/setups/kubectx--setup.sh
+setup	kubernetes-code-extension	0.1.0	3439d0cfd28cbd1d4d4a37e1714725a83103a0719a915b4cfbca89d1f7f7e06c	variants/base/setups/kubernetes-code-extension--setup.sh
 setup	kustomize	1.0.0	27b4b3f3833eaf9fc1f80266202550c80b3246c8ae3e8327999e75c220923a20	variants/base/setups/kustomize--setup.sh
 setup	latex	0.1.0	004b7d6dadbc9e8c3b424b90b3affa45e56aeeca192be313e6a9a1e07dbd1a2e	variants/base/setups/latex--setup.sh
 setup	latex-code-extension	1.0.0	49fc431ec3a4d5e6a7136a9eb2660d2bab37046524f370b4539ca1ef57d71d73	variants/base/setups/latex-code-extension--setup.sh
@@ -190,11 +199,13 @@ setup	lxqt-wallpaper	1.0.0	3a642a29c4b1a945808776d90e2a40827631cd40ab35648220510
 setup	make	1.0.0	c8052cadd2fcac1b611d348e1f99b9009999ad16ad61d93aa97907e560993f81	variants/base/setups/make--setup.sh
 setup	material-cursors	1.0.0	8be1bb69e1da659faa6e7dc9b93b4b6b413466931764094f294661614f044021	variants/base/setups/material-cursors--setup.sh
 setup	mermaid	1.0.0	7d06620e83ea4827c94bed254ab3599b16a3af1db218726bd55571e204ca07d9	variants/base/setups/mermaid--setup.sh
+setup	mermaid-code-extension	0.1.0	b5ef19dba87af781749c4c3807897aab97566be4815ead5eebcbe71465684e0e	variants/base/setups/mermaid-code-extension--setup.sh
 setup	mkcert	1.0.0	5891d6a97efc33fbf2c826e39a2a0fde4bc36827b8c63a3ca7fa813d4a6b1d23	variants/base/setups/mkcert--setup.sh
 setup	mojo	0.1.0	96e0a03c9a939f019d7606267146e50cf00d55ac22febb72966797c65db17644	variants/base/setups/mojo--setup.sh
 setup	mojo-code-extension	1.0.0	ee7e919812f99618df574f8902c6ce73431c27b5af742a5d38ac7622ca0a30d6	variants/base/setups/mojo-code-extension--setup.sh
 setup	mojo-nb-kernel	0.1.0	d495996f064cb6731d0893bc516a1208b3b61117bd1f12bc8aba2aba29a91060	variants/base/setups/mojo-nb-kernel--setup.sh
 setup	mongodb	1.0.0	1be4a85e44d930d72d5f025e91525741b0d61f060395e5c169b40db86e138c35	variants/base/setups/mongodb--setup.sh
+setup	mongodb-code-extension	0.1.0	4a521a5b9662e8955c15cc2e1b607aa5f2204e17efa5ce1dae664dd3fba44ae3	variants/base/setups/mongodb-code-extension--setup.sh
 setup	mongodb-start	0.1.0	5b49cf16ade27cdceb45f8ef1206e8c977a997a1af65c344be6bc006d839b657	variants/base/setups/mongodb-start--setup.sh
 setup	mvn	1.0.0	54c7e0c871c9316d5990597d737e695d65e6e1f24002d6c5cd2e5bbbbe424dec	variants/base/setups/mvn--setup.sh
 setup	mysql	1.0.0	60e0564af91ddf71101cf8022bb22c1c7979d1bf9dc60078aeaccd697ae04b92	variants/base/setups/mysql--setup.sh
@@ -225,11 +236,13 @@ setup	php	1.0.0	397c63cb432fd45e81a827200be0a0bde3f1ac4bc6da62595944a4e51a3b0a93
 setup	php-code-extension	1.0.0	938a5949e6a3723c576a0b6f7c4bf04f346db5fb165b976774730f8974d74dbf	variants/base/setups/php-code-extension--setup.sh
 setup	plank	0.1.0	5c1a7dad7309147447ba907d3a718c3487b864634a88f5e5d125160c43f612f8	variants/base/setups/plank--setup.sh
 setup	plantuml	1.0.0	d929a039b50ee7b0087b7fca824005a28e8fb8429e104a04b3357cab9bc9fcbe	variants/base/setups/plantuml--setup.sh
+setup	plantuml-code-extension	0.1.0	cbc444d18c725e8c48e6e0beb9a1a71c2b71a80bc72cc4a62ee1f0ab32ee1cd3	variants/base/setups/plantuml-code-extension--setup.sh
 setup	playwright	1.0.0	b1c66d74796b338a6bf5cfdab1ef6638b54b40b3ee81e0e025185030ef5c7892	variants/base/setups/playwright--setup.sh
 setup	playwright-code-extension	1.0.0	19ce485ba67bda927701ee3143a1e254743214cf58fcf5b0e963a7715d95a2e5	variants/base/setups/playwright-code-extension--setup.sh
 setup	postgresql	1.0.0	709def882e35693113c8d4bd28c1a998891b47ba39ad44434796a444bb7ebdde	variants/base/setups/postgresql--setup.sh
 setup	postgrest	0.1.0	948c17d3e0be2f9fd8a7a65624720474b4b387aa1f75766fdeb7937419fa4069	variants/base/setups/postgrest--setup.sh
 setup	posting	1.0.0	b88d852b924aacf6d4452bb9e09768637614fa2640103b9c43e362b50d018bfb	variants/base/setups/posting--setup.sh
+setup	protobuf-code-extension	0.1.0	1d6fa2c8084c0f4f1033469dd521ad95c6ab33f1ff5313d9df498d263f890e6d	variants/base/setups/protobuf-code-extension--setup.sh
 setup	protoc-gen-grpc-java	0.1.0	f0c3ab55be0b7dee4da41bd2798c2835f64b089b6f383a0d8020aed0aa74c0c2	variants/base/setups/protoc-gen-grpc-java--setup.sh
 setup	protoc-gen-grpc-web	0.1.0	8bfbd439133b6c5475c83a25119409c654982384fb69482cfe5345d32a98ba4c	variants/base/setups/protoc-gen-grpc-web--setup.sh
 setup	pulumi	1.0.0	bf6cf9071ea8fb0616f90e1ad611d8fdde40c30b14d02cedd842bc4c89daa1da	variants/base/setups/pulumi--setup.sh
@@ -263,6 +276,7 @@ setup	scala-code-extension	1.0.0	f626327232a0c3dbf7660e08717170d0f545a9453256d26
 setup	scala-nb-kernel	1.0.0	d2b08251e0368049a30273e06488a0d6448282c19a8c6727db092ddfb0c37bc1	variants/base/setups/scala-nb-kernel--setup.sh
 setup	scratch	1.0.0	96e25f80c6d0c3a05a58192352d09eec065d62f41e95ff59d2ef58695a973d9d	variants/base/setups/scratch--setup.sh
 setup	selenium	1.0.0	ad338354b6932063d168eae2085ddd53ecdc1f265933d1baf7ef965cb0ca5cf3	variants/base/setups/selenium--setup.sh
+setup	spring-boot-code-extension	0.1.0	b71ef395a19b1959a071eaae1aacb9587828b2d365f11afbdfea1de4491e0489	variants/base/setups/spring-boot-code-extension--setup.sh
 setup	sql-studio	1.0.0	37c2fd6242fcc3e7925b3a037f868e7e6aa2c3620478e360c49a3a058653dd1c	variants/base/setups/sql-studio--setup.sh
 setup	sqlite	1.0.0	893824be9b031bffd397f44550a3a9fcf3a5747c69f7bdf4b110a5d285226b72	variants/base/setups/sqlite--setup.sh
 setup	sqluv	1.0.0	2df7cbc86aad89c1a6478dd3e38e24fc7e32cf7dcb8d0bcc4616c7449a87eddd	variants/base/setups/sqluv--setup.sh
@@ -273,8 +287,10 @@ setup	sway-ctrl-alt	0.1.0	1b80287d9197d0d069db5d6cde174e867424365c7bd9e2679c45d8
 setup	sway-gaps	0.1.0	aa90a76b4a70f9101732cbe73e53ec787a234aa5ce5e302e8976ed3735b4b28e	variants/base/setups/sway-gaps--setup.sh
 setup	swift	1.0.0	150c74d312e00bf96d45f04c66d58d01fbd59be3d3b0e81443db915a42c40cd6	variants/base/setups/swift--setup.sh
 setup	swift-code-extension	1.0.0	dda9e07c68f3915a8990c89b681de5911f93e2776783a5d9748e443b7203ee4b	variants/base/setups/swift-code-extension--setup.sh
+setup	tailwind-code-extension	0.1.0	6be1805f868ec0ca1d201294545e8bdfd32590ffdb3f3079291eb6ffe743d480	variants/base/setups/tailwind-code-extension--setup.sh
 setup	tela-icons	0.1.0	c03be2a9ee42cdb1dea6bf9e5c6a3f94ca0d2c10862ab477365d71b9c46b7d76	variants/base/setups/tela-icons--setup.sh
 setup	terraform	1.0.0	9b237381085ab277b124dccf125ded925371d6b8c579c776d4e60ed907de8341	variants/base/setups/terraform--setup.sh
+setup	terraform-code-extension	0.1.0	6b5ba52674ba1a5ae08cd54502c01f7ab11526ed973e985382b617ff95b1bf79	variants/base/setups/terraform-code-extension--setup.sh
 setup	texstudio	0.1.0	470bc74505458309fe2cce3d15c2022606cc460c0136f293a1fadf7a6a70767b	variants/base/setups/texstudio--setup.sh
 setup	thonny	1.0.0	a14c0b5793457d929adfcb899ee169b3dd57ea2efa6eb3a6a400ff7a9f7168d7	variants/base/setups/thonny--setup.sh
 setup	tls	1.0.0	719a92dd7d6975d798ad20ebd76a45d0e35af17ee6a440ce44cc437e3aa48b94	variants/base/setups/tls--setup.sh
@@ -284,6 +300,7 @@ setup	viewmd	1.0.0	d86fb47a1ec9db20bf39a717ee94ea9e03c4418894db2da8fcd7abfd77cb5
 setup	viewmd-desktop-icon	1.0.0	b25d1ed2847c317a829d70a0238cd2abc698891d066f397228c3a8efdb109bb6	variants/base/setups/viewmd-desktop-icon--setup.sh
 setup	vscode	1.0.0	41130a71e8da3f8bd0a755dc1e4a7d9563d2abde5fbd44be3b9634dcb885f4e8	variants/base/setups/vscode--setup.sh
 setup	vscode-copilot	0.1.0	09554289ba4bd3093d39132bf13aaca986614ef7c84fab9927d3dae4b16f530e	variants/base/setups/vscode-copilot--setup.sh
+setup	vue-code-extension	0.1.0	e75b46cd8553f1ee3b70b23d5b98f8ddc7215c1204f43180a418d303f30965ab	variants/base/setups/vue-code-extension--setup.sh
 setup	wails	0.1.0	acf83e169ca69ff0de411e541b0e5f80e6182168024b692d4bf1f06a84856361	variants/base/setups/wails--setup.sh
 setup	wails-android	0.1.0	4f4373e30df218c77731d7c37a8b7a260aae56831b6e0b5eb8f2875bb340e001	variants/base/setups/wails-android--setup.sh
 setup	warp	1.0.0	a7b2ea3c833b92cee4b52150e3d0be5bb7a7e290f045c40e2042ecc92441abbd	variants/base/setups/warp--setup.sh
@@ -354,6 +371,7 @@ template	affine-server	0.1.0	9670f13978d3a64da30ac3327fb3bee279c7cdf7d72dba70243
 template	aider	1.0.0	07ec35d83e2435528f7a84617d28dafebf3d12e3e202d30620c33e788db15c39	templates/ai-tools/aider/template.toml
 template	alacritty	1.0.0	dd6d86e867b51a6dfe0fb79c8190880c5e0030d01b4c03d343dec25d3aa0adaa	templates/desktops/alacritty/template.toml
 template	android-sdk	0.1.0	f194b7dcd13e80241455c5cebeaad4ad8009e9df9eec778cdbcb84be97a2a532	templates/tools/android-sdk/template.toml
+template	angular	0.1.0	f6a0762d4aa4d9e570d5356758e401436176c76d342ac5b0afb4e65d7adcbc98	templates/frameworks/angular/template.toml
 template	ansible	1.0.0	94215bf0dc214351b6474bd893406eabd2356adb7d9b310a9c9b2b54613de695	templates/tools/ansible/template.toml
 template	antigravity	1.0.0	28f8aaa3db7f6b2233e1b0104209a97ac32e8cf5a73761ae79c265cd9eea278f	templates/ai-tools/antigravity/template.toml
 template	anythingllm	0.1.0	bd0f0672370811a9450657271dfab4dcab21fcbd6e3fb5dedd8f41749c2ff8fd	templates/ai-tools/anythingllm/template.toml
@@ -395,6 +413,7 @@ template	deno	1.0.0	96532ce475e662b5f79b0f2bb30f0d1b02fc39bf4ff97a365064946db784
 template	dind	1.0.0	161056c65c1dc9aa8061d30bf40302952a00ee6fa029449d5c51ea291454525d	templates/tools/dind/template.toml
 template	direnv	1.0.0	37ee50a7cf5e643d444eb8bf6be17ac10b0c490cd5e85bb396266584a9ec25fe	templates/tools/direnv/template.toml
 template	dive	1.0.0	a1b366ad07d23aaa671bfb1c8d910e92620300202955adbaf20adcb9246968f6	templates/tools/dive/template.toml
+template	django	0.1.0	004c4fa533496c61891206bc45d4d1de8e2ec0797944daffb21be651a68b9718	templates/frameworks/django/template.toml
 template	docker-buildx	1.0.0	230c3afab803c9ee38d51e3de234b129f8a258c717b9e63de333f581504b10a3	templates/tools/docker-buildx/template.toml
 template	docker-compose	1.0.0	e2074c6838f4a77c0596fc2045265b71137f8a5249784b33ba194d68a94c2b7e	templates/tools/docker-compose/template.toml
 template	dotnet	1.0.0	e59a82e660c341f8d141dde5c029bc68a25ea893fe61ba920c39b7204a9109b5	templates/languages/dotnet/template.toml
@@ -504,6 +523,7 @@ template	pycharm	1.0.0	fce6bf6b03601f0e8618b6f519961351f97547b57320d1f248d13aba3
 template	python	1.0.0	0dc2730bbc6614dcf2639a09b87447b061c4b9ab9f740fc22d6c06f197b40cf2	templates/languages/python/template.toml
 template	r	1.0.0	2eb580f5013744ee35ea4718fe25cb8be3ec55aae1b40fb34e4572b6b01ab78f	templates/languages/r/template.toml
 template	rabbitmq	1.0.0	c7ada88ed8db0175f8c80aac0718cc8440b22cd0bede4086375fc3ca914bbc33	templates/middlewares/rabbitmq/template.toml
+template	react	0.1.0	062f933af29662bb49fa653d33ee6ee96517a246f15ff0726dfd86be04f73ece	templates/frameworks/react/template.toml
 template	redis	1.0.0	378321d58792f800500207cac87c5fb8035183f650ac6a4c687060d15b184613	templates/middlewares/redis/template.toml
 template	remotion	1.0.0	f08e3a873a8f8bbe3253a7c07c480dcce7fdcea9b4fe9206a6eb7d7b9aba0830	templates/tools/remotion/template.toml
 template	rescript	1.0.0	93b0370db615e69dd2eafb249f593a7230888a17062690ae36b329e3d37abeb7	templates/languages/rescript/template.toml
@@ -517,13 +537,16 @@ template	scala	1.0.0	d916f41afbd0950ce3636b3a3eb6058a0b0ac6239e077a9b2a02b687ed3
 template	scratch	1.0.0	25969a6f9678973d0c56db08fc423408f8c0e55fcab7c66b8c1002a0151d3275	templates/education/scratch/template.toml
 template	selenium	1.0.0	1afe345f471b3446328e17fa206c7f9aeeee945d287929ba45477f598f890c42	templates/tools/selenium/template.toml
 template	shell-history	1.0.0	2ad7b8cc5193673ae32cc06413c9e9e1eb739de7d024a0912817627175b10a56	templates/tools/shell-history/template.toml
+template	spring-boot	0.1.0	d58b168720b14746fa46766fb6fcc1da16a3502d17b42774bf26cc50ea1cf956	templates/frameworks/spring-boot/template.toml
 template	sql-studio	1.0.0	27f2d3dcb343971621e6e4cad9f9a909720eab664d3d6bf6f70acf6cfb635c09	templates/tools/sql-studio/template.toml
 template	sqlite	1.0.0	acb431a561235cd8e3a1aa4440602eae54201f1058767e97e2273c62c524bb37	templates/middlewares/sqlite/template.toml
 template	sqluv	0.1.0	2ca235a1be79ace871a862f26ba71382222a6b7d24a51de0de3909b9c89294be	templates/tools/sqluv/template.toml
 template	ssh	1.0.0	799d6d517963cfca52189f35818190cbbc8ac088ab4068a71f581810ccd845a8	templates/tools/ssh/template.toml
 template	stern	1.0.0	f9651b9141a4d7c4870e46426794ad0f5b6dd5c0c31d0bf82a42a7f99be0eeda	templates/tools/stern/template.toml
+template	svelte	0.1.0	2ef837e43415e3798d32fbe342d88e9073abab5be2ee0261c6e0ce3e4734b862	templates/frameworks/svelte/template.toml
 template	sway	0.1.0	1ff0f546300d29db49a70ed935145e13f1731f4eca72fffbc39843fd98de1f0f	templates/desktops/sway/template.toml
 template	swift	1.0.0	d0a4704c99d83b46d452be8d2a2ac6d2899f990c3306ab5d36557bc1db66216d	templates/languages/swift/template.toml
+template	tailwind	0.1.0	bb0ef9fede7cf622fa9e8f2980823836ce159361d22a3d4a634e5c8c2a445d36	templates/frameworks/tailwind/template.toml
 template	tela-icons	0.1.0	bc9fb120c9a2a35da5e4078832bc039a940fdefacc925f99eb66e6c3d55450f7	templates/desktops/tela-icons/template.toml
 template	terraform	1.0.0	151cdf8d4ddba87cd10e5b51a11c17d61e35a29be195131aec1ff425781da76c	templates/tools/terraform/template.toml
 template	thonny	1.0.0	64571e52b43139716e35c9bd72304a5642bd69c155b599bfdeba438e67388d0e	templates/education/thonny/template.toml
@@ -532,6 +555,7 @@ template	vm-cpus	1.0.0	c843ec808161827deac4fc590e588a5e89bf63e0b6c3c70daf7519b14
 template	vm-memory	1.0.0	adc63eaf0d364e048e73443de713f63bc0f60d6d1cce6118aa8952081c5f97ee	templates/booth-vm/vm-memory/template.toml
 template	vm-shm-size	1.0.0	816aaf6fcea4b14778854e5e295e29278d08cb11854b556f0e5482f925a1b86c	templates/booth-vm/vm-shm-size/template.toml
 template	vscode-copilot	0.1.0	05f04772159040d86d856246ac7eb714481868c16ec63e07acee15c29700ed18	templates/ai-tools/vscode-copilot/template.toml
+template	vue	0.1.0	67f7f8a611eebb9bd245711a75e89cd7c59d79bd98a699d13bc167c0142cbc5d	templates/frameworks/vue/template.toml
 template	wails	0.1.0	cfd2969ccf0632fca909f49ac420b74f5fa31f19e8e796316706ddede6af0a0a	templates/languages/wails/template.toml
 template	warp	1.0.0	2646c44b4c414fd58f281ef2a4be5c20448c69dda38367029adc4a1803c3707b	templates/ai-tools/warp/template.toml
 template	wayland	1.0.0	974e2301a7067a3dba501af4422cc0756c967e899cba17bc4092d93de4a6ae09	templates/desktops/wayland/template.toml
@@ -549,6 +573,7 @@ extension	alacritty+fancy	1.0.0	d37ce88d3e5f831f3a3830258b0fa7930bf9498beb4d6f5c
 extension	android-sdk+avd-cache	0.1.0	091ec3514ea17e35a134af5359eec90682a6ce16289ef66417c065af45267c07	templates/tools/android-sdk/avd-cache--extension.toml
 extension	android-sdk+emulator	0.1.0	561dd4cc3cfee95208228c5c3acf163a7cd726a192db200c51cf8b8b9c124b47	templates/tools/android-sdk/emulator--extension.toml
 extension	android-sdk+kvm	0.1.0	a6d237d11f8df292cb9a276c369330901a1b999bc77b797ec91d8254edc3178d	templates/tools/android-sdk/kvm--extension.toml
+extension	ansible+vscode-ext	0.1.0	c447f128b6a692ffed8abfdb1192dcbe2f4dd1301fc5bebfb9520d07064a87c6	templates/tools/ansible/vscode-ext--extension.toml
 extension	antigravity+credential	1.0.0	21339d2f9fa86934ca4763c6850551187a0de5ee58e7fdd5393f277725f589c0	templates/ai-tools/antigravity/credential--extension.toml
 extension	anythingllm+autostart	0.1.0	5eda4b35906a0ec3cfd85a975c57494fbdb3d15d6a92152ad1f090618737c247	templates/ai-tools/anythingllm/autostart--extension.toml
 extension	anythingllm+expose	1.0.0	1910f2daa84ade32c01cd33eea15aea7829a106fe889b9f09822dd124d0c7a39	templates/ai-tools/anythingllm/expose--extension.toml
@@ -566,6 +591,7 @@ extension	aws-cli+credential	1.0.0	d68c144521e4088c05e9adbd0a1a166bbd294c213eefb
 extension	aws-sam-cli+credential	1.0.0	242311d8b4dfe1b7a9d6692c1579416df38ed7586f7821f9fdc134a335e73e9b	templates/tools/aws-sam-cli/credential--extension.toml
 extension	aws-sam-cli+dind	1.0.0	32f4c5ec651b369cf8d88210be62e8023a2f4180c4a414ce0d8713e40070c0cc	templates/tools/aws-sam-cli/dind--extension.toml
 extension	azure-cli+credential	1.0.0	9c3609cdab8d13947ea33ef6308f90409c10d06079feaad05304d8e60be0801f	templates/tools/azure-cli/credential--extension.toml
+extension	buf+vscode-ext	0.1.0	0cc2e6d2127841d28f0441cd2c7042b25002a8cdd923e0a463998ebe330ccc6a	templates/tools/buf/vscode-ext--extension.toml
 extension	bun+bun-install	1.0.0	552c4ed2bf82d9d9ec3e36f8710c4403441ad3d8729367f2936fd81fb46dfe5e	templates/languages/bun/bun-install--extension.toml
 extension	bun+bun-pkg	1.0.0	aeba02e40900e7ea4621a982a0a0b831bc136203cb8ff0da8688c6b097305ef1	templates/languages/bun/bun-pkg--extension.toml
 extension	bun+vscode-ext	1.0.0	6bc577661e01671f22a6177c38aa43d3ce7e93afd1e52f914304349c42c2de31	templates/languages/bun/vscode-ext--extension.toml
@@ -585,6 +611,7 @@ extension	clion+skip-first-run	0.1.0	33831599f0972a2d490dbd2d68877efe30cb9e8946d
 extension	clojure+vscode-ext	1.0.0	cab7e3e6dc5d46121dcd39958b1600ef98b3a8a80515fdc98e1cae507d4b59b5	templates/languages/clojure/vscode-ext--extension.toml
 extension	cloudbeaver+autostart	1.0.0	25542b5fa8f7bd3685b406f040d5a82d2065978404740b407048a7e386634d9d	templates/tools/cloudbeaver/autostart--extension.toml
 extension	cloudbeaver+expose	1.0.0	9c3c332814992c9a05ad7375140cee87e136aa3344e7d1b78e69aac36f231f5b	templates/tools/cloudbeaver/expose--extension.toml
+extension	cmake+vscode-ext	0.1.0	c792246628e9ccda4cdd1bdd480236550ea98033020ca7588e38ebf515fd2201	templates/tools/cmake/vscode-ext--extension.toml
 extension	codeserver+autostart	1.0.0	f43ebba8394766189f510e7718976ac80270af10c37298bccfa08486e507d87b	templates/ides/codeserver/autostart--extension.toml
 extension	codeserver+expose	1.0.0	b7d32ebd02c403173d2dc59c2d3dee7b6c46fbbaf9234cdc23bba359a20d42ba	templates/ides/codeserver/expose--extension.toml
 extension	codeserver+keybindings-shared	1.0.0	0ae96d7ddfb10f8e4afde0bff45197b036361026088db50e6a11cffcf715c633	templates/ides/codeserver/keybindings-shared--extension.toml
@@ -592,6 +619,7 @@ extension	codeserver+settings-cache	1.0.0	824e83e951ce7e908ba08e3a7e5978e6743454
 extension	codeserver+settings-shared	1.0.0	bc51dcc6b960d5027d5c554ad98c0590fa878bf8ee5667ccdeee3aaf59df9b74	templates/ides/codeserver/settings-shared--extension.toml
 extension	codeserver+snippets-shared	1.0.0	961fd8e86b77376b71e68c69aa893209dc7cea8db2e375469145243c97c218bf	templates/ides/codeserver/snippets-shared--extension.toml
 extension	codex+credential	1.0.0	b3e624050f846270226545bfcc00769c0cbd7ef7ae3cddca2947aad2f485cc78	templates/ai-tools/codex/credential--extension.toml
+extension	codex+vscode-ext	0.1.0	356c24d5b0a26535ab02aa704fc7cd25d5b2658817ce81c72ab33fa20c1def32	templates/ai-tools/codex/vscode-ext--extension.toml
 extension	conan+conan-pkg	1.0.0	7b64f5600b6cf909139ff201695cec7dbb1f68badfc40b8afc3014b80f7dea35	templates/tools/conan/conan-pkg--extension.toml
 extension	crystal+vscode-ext	1.0.0	9d1ca111ccfcfdc1a73f2a7c620e1ebb1ec71ae7a776f9307364ed18380f60fd	templates/languages/crystal/vscode-ext--extension.toml
 extension	csharp+dotnet-pkg	1.0.0	ab1d4a997224368660f89a26f0b28293dd1517572d44798fa97e5135a06aa699	templates/languages/csharp/dotnet-pkg--extension.toml
@@ -605,7 +633,9 @@ extension	deno+pkg	1.0.0	bc98fcffdc39afef07a01707d717fe866e6025d65b7db7d2ae5a89a
 extension	deno+tool	1.0.0	9e737dbf6bf07c4624845f1ead09659638863163950afcd6e7ba3e2beae9d9c3	templates/languages/deno/tool--extension.toml
 extension	deno+vscode-ext	1.0.0	fc1360450c9c278a4a193233c79206348498065a529e22477ae04589d299efdd	templates/languages/deno/vscode-ext--extension.toml
 extension	dind+docker-config	1.0.0	8b24d3247c3d783f3b385d32fce3682ba9751f70b5bd623a43887b6b4a65030c	templates/tools/dind/docker-config--extension.toml
+extension	dind+vscode-ext	0.1.0	51bcffed1587dfba73f076884452aa031b4e0215947ca84ea4e134e3a44444d0	templates/tools/dind/vscode-ext--extension.toml
 extension	dotnet+dotnet-pkg	1.0.0	b0b9b42250738481a0a2ca98fc73cf0fca94389c9ca682b530eaa3da1f8d3a1e	templates/languages/dotnet/dotnet-pkg--extension.toml
+extension	dotnet+vscode-ext	0.1.0	63d64c32f5bbb41d6910575e0bc11feff8fc96d0c9b5813fec2066cea5b3957e	templates/languages/dotnet/vscode-ext--extension.toml
 extension	eclipse+import-project	0.1.0	fb71e4ca79ec74ce309127a52dcf474eb3a08c216a83cdcfb15bce076ce0a4f9	templates/ides/eclipse/import-project--extension.toml
 extension	eclipse+lombok	0.1.0	6d0cceed907b3aa506e8cf3ae1ad130b26acd99e5f50ee2f4a0b3d6f8c3ff031	templates/ides/eclipse/lombok--extension.toml
 extension	elixir+hex-pkg	1.0.0	2bcc07cf24834881490c702af9b6a680c3deee7ce1218821f8ffec9715c8589d	templates/languages/elixir/hex-pkg--extension.toml
@@ -653,6 +683,7 @@ extension	google-chrome+settings-shared	1.0.0	0d36e53f11693eac1ef2f5ff94390c3e51
 extension	goose+credential	1.0.0	80ab0f7cb3f1cbfa5c162ba2f04ca34c2fbd9733eb7cc990ef2cd805a532ad93	templates/ai-tools/goose/credential--extension.toml
 extension	goose+plugins	1.0.0	999d370981ff383444b5e2c8524a7573b0269fb9c136e8d57f435b1b6b1a56cd	templates/ai-tools/goose/plugins--extension.toml
 extension	goose+settings-cache	1.0.0	4221413f03bd35ec8ce9254c89f3a221513c3ed14353a91e8288c844c00b7b9a	templates/ai-tools/goose/settings-cache--extension.toml
+extension	graphviz+vscode-ext	0.1.0	6a9b747eb199055750e0ec50f7e204aaf308d1cb61e10c89d089ee19c6d4deeb	templates/tools/graphviz/vscode-ext--extension.toml
 extension	grok+credential	1.0.0	cf8f96f30855b86a9f7f9362414d98f9d6ab06434e7d67c39ba6ccbbf3f39549	templates/ai-tools/grok/credential--extension.toml
 extension	grok+plugins	1.0.0	ff59007f8d987158a8834922729aa734ade42ec33094125bc92000ae463747de	templates/ai-tools/grok/plugins--extension.toml
 extension	grok+settings-cache	1.0.0	2583191eb2cbe317b1e3c5e96aa5f7aee78ebb0f03c2507b0c088b730d98cd05	templates/ai-tools/grok/settings-cache--extension.toml
@@ -661,6 +692,7 @@ extension	haskell+cabal-pkg	1.0.0	63e52f989b5cfcd43bb0f4ae4f9005a1fe0b7dade3f4cd
 extension	haskell+kernel	1.0.0	72931bf5da2785e47664e1e4d4b6a3a13364310f91eba8d1a7dcd0465c365a23	templates/languages/haskell/kernel--extension.toml
 extension	haskell+vscode-ext	1.0.0	d2665dcab2cc5f5a8f358d40f4879cb954ff967a8c765acc94fa80fbb0f81aaa	templates/languages/haskell/vscode-ext--extension.toml
 extension	helix+config-shared	1.0.0	9ad544f907b107c753b78473533b226b84719ae43c68ec8166c55b4176d6cf5c	templates/tools/helix/config-shared--extension.toml
+extension	helm+vscode-ext	0.1.0	234b37f513a542241199e495b1bddfa925ef0f79e9234323b065a57330a95fef	templates/tools/helm/vscode-ext--extension.toml
 extension	herdr+autostart	0.1.0	9903e944367fe8ec0f870c105fc8d549c0735cd39738c743a51d9e581ccaaf71	templates/ai-tools/herdr/autostart--extension.toml
 extension	hoppscotch+autostart	0.1.0	324d97b3c81575f5805560d5446033563e3b805dfd2181e27259f3178aa09745	templates/tools/hoppscotch/autostart--extension.toml
 extension	hoppscotch+expose	1.0.0	214626527e482a4fa11bc243924724a6bae5d08b634f7a3ba29e365354976e73	templates/tools/hoppscotch/expose--extension.toml
@@ -683,6 +715,7 @@ extension	java+maven	1.0.0	24b439b119c54b4d1b497ff9c698a731c9730056146b4e249a67f
 extension	java+mvn-install	1.0.0	6c2b0748394859c582a1588a53c04ddeaab015db0c212c230f3d156ab4b3f4f8	templates/languages/java/mvn-install--extension.toml
 extension	java+vscode-ext	1.0.0	244c70cd4511d7b3242d62e72619dc4a62682131cd0eacf40bf95439959960a3	templates/languages/java/vscode-ext--extension.toml
 extension	julia+vscode-ext	1.0.0	478d9046662ce50d86a7ccc30b36e1bef3dd2da3d83a89c1697c58c7ec405e08	templates/languages/julia/vscode-ext--extension.toml
+extension	just+vscode-ext	0.1.0	b110a4a61ff0746356089ef2eeeca57b3e81af2a998033003a1505307bee3d4b	templates/tools/just/vscode-ext--extension.toml
 extension	kafka+expose	1.0.0	ef6e3f18f4e76d8c1c58648f3fffd674a75379990366d2a46fe97cec2129d1c5	templates/middlewares/kafka/expose--extension.toml
 extension	kafka+start	1.0.0	2fc7cdf1d9c0128a80f5ca35ad90a92a82298f93bcbf12b1b6698d977c07bd44	templates/middlewares/kafka/start--extension.toml
 extension	kitty+default	1.0.0	2cfb588b769038894978236d21c93814936ba4bd7b247d44b72f4ca6350a8b37	templates/desktops/kitty/default--extension.toml
@@ -692,6 +725,7 @@ extension	kotlin+vscode-ext	1.0.0	a17f34de6cd89c18e921b2af192e10ae1e1053a8067865
 extension	krohnkite+default	1.0.0	689dbefc82ba3c3a9ad3e83074f1d272bee8ba2c33af804c3225c0ee4ab522d3	templates/desktops/krohnkite/default--extension.toml
 extension	krohnkite+gaps	1.0.0	a9e6ac49c9037bed6329b25a55b3926abccef094bccf528dea9336ab3e88c71f	templates/desktops/krohnkite/gaps--extension.toml
 extension	kubectl+credential	1.0.0	cfe5dfe318edf1a5bfd1e3c8b2aada1aaf69d098e7edab5a480d332ff657f79f	templates/tools/kubectl/credential--extension.toml
+extension	kubectl+vscode-ext	0.1.0	58eb9fda83ce456b5859c7812651cd5d31a9a88bc1f753f31b33f645bde9121b	templates/tools/kubectl/vscode-ext--extension.toml
 extension	latex+texstudio	0.1.0	b250edd359daa8f2cfbb8e66b024d4a2a201402fce28e86e987f74d7b38957e1	templates/tools/latex/texstudio--extension.toml
 extension	latex+vscode-ext	0.1.0	f70711697eab14c7fcb68378155697ee04f038471610b8ad8a6634a2bcb3c6fa	templates/tools/latex/vscode-ext--extension.toml
 extension	logo+autostart	0.1.0	290bfb03d1021250d843a6776607eae4c85d2f353c4e8705c9a4ab7c6a71af56	templates/education/logo/autostart--extension.toml
@@ -702,11 +736,13 @@ extension	lxqt+desktop-icons-cache	0.1.0	4fe546bab6e0c225851a5d2406db8579bf5a00a
 extension	lxqt+desktop-icons-shared	0.1.0	1a317f98769d34d4c2d1a97636de0d53bfb1ccabdd5caa235082cd8495def426	templates/desktops/lxqt/desktop-icons-shared--extension.toml
 extension	mermaid+autostart	1.0.0	ca0204ecf423b7b4d95da87fe5d936a83dbcabce6e858c1072a8bc976753b7bd	templates/tools/mermaid/autostart--extension.toml
 extension	mermaid+expose	1.0.0	c4fd6f581f4053bdb972fc750a212b7958332ca0939ded870fb1078a44094f9b	templates/tools/mermaid/expose--extension.toml
+extension	mermaid+vscode-ext	0.1.0	72edd427afc58dad3fa86ef3ebf927285abf40ce7548e0ef4ecaae7f03d60840	templates/tools/mermaid/vscode-ext--extension.toml
 extension	mojo+kernel	0.1.0	a62c7ed020bdeeb25a7c1bb8054346be6fcd0f5528ea5752d9a06ba677859c67	templates/languages/mojo/kernel--extension.toml
 extension	mojo+vscode-ext	0.1.0	ac387dee2696152533cc9cded51a5ac4bf4a7a1bf6b075dd57fddd052fe67c84	templates/languages/mojo/vscode-ext--extension.toml
 extension	mongodb+cli-history	1.0.0	53c0c3667a6c047563b9515ee23ff4616a9136f2446782df694d708a985ac5c0	templates/middlewares/mongodb/cli-history--extension.toml
 extension	mongodb+expose	1.0.0	2ce6bef00aad8764b5b32190d3c7463e0ee77bafd67040e86e672d67fe2c8c0b	templates/middlewares/mongodb/expose--extension.toml
 extension	mongodb+start	0.1.0	1b122d0ef6ec3a4aec9d9dc9e4e4bb518557c9d91aea8a81f804dded4c1fbcc1	templates/middlewares/mongodb/start--extension.toml
+extension	mongodb+vscode-ext	0.1.0	df45f043b4224006ce244742101e96e23f70ddf9f6d66bddf9202a9f49dd6a82	templates/middlewares/mongodb/vscode-ext--extension.toml
 extension	mysql+cli-history	1.0.0	a9d1a1a96c9f0d7dad3c9516db94511c8eef16246a1b1b06e0f347e2c1ba5be6	templates/middlewares/mysql/cli-history--extension.toml
 extension	mysql+expose	1.0.0	43b8a76e984d5fe67914d964fdc1f89fdc5f6ce1b7d0ed022f65264036afc146	templates/middlewares/mysql/expose--extension.toml
 extension	n8n+autostart	0.1.0	9dd34dd4c2b1cb1dce87dd28b150550c2b345b93f5f315336fe4455025a264e2	templates/tools/n8n/autostart--extension.toml
@@ -758,6 +794,7 @@ extension	phpstorm+import-project	0.1.0	49cda73baa961592858a848d4c812bc7f6c8a46f
 extension	phpstorm+skip-first-run	0.1.0	14f4b83321584903644c465e6bedd9e6ab7b43b0ba57bbe130aedc4bd633c846	templates/ides/phpstorm/skip-first-run--extension.toml
 extension	plantuml+autostart	1.0.0	c6d4734cd1f12e259c4b4f9e90c4022052185e73e96486c1d47e7ab55da64ccf	templates/tools/plantuml/autostart--extension.toml
 extension	plantuml+expose	1.0.0	70554ea6f4296784086084b510c1a6081c633cce5a9a7c973da451bcd8c8b24b	templates/tools/plantuml/expose--extension.toml
+extension	plantuml+vscode-ext	0.1.0	8d8c47d23ac3a22dd11dc219c2ebe91633b751d3ca7b250c113faa57943edf08	templates/tools/plantuml/vscode-ext--extension.toml
 extension	playwright+dotnet	1.0.0	f96ecac63d559ba83a8091d915ef800e30cedcd734b70ada89a2efb19f79e372	templates/tools/playwright/dotnet--extension.toml
 extension	playwright+java	1.0.0	6b0a1e983a6ddde8087aced5a70c13688734b1c704f49c08731f31200ab900d0	templates/tools/playwright/java--extension.toml
 extension	playwright+python	1.0.0	524267891e987e2de5714ae7b2fe2c85208dce3f1cddaefe93292e8a666aef95	templates/tools/playwright/python--extension.toml
@@ -775,6 +812,7 @@ extension	protobuf+nodejs	0.1.0	142c4a818883486156a699823299e41a6442bb239f0e918c
 extension	protobuf+python	0.1.0	57a947c3a9657ec28e79dc6f1593c11be18abdf31a69ac6368faa45b05d7a522	templates/tools/protobuf/python--extension.toml
 extension	protobuf+ruby	0.1.0	07cd5717d4803ecb9953af5ca8c25b45397a611643d0052b4248579edfdaa280	templates/tools/protobuf/ruby--extension.toml
 extension	protobuf+rust	0.1.0	6efab9adb18de6d172dfbbccd96e5c846d3ff9f8cfdd4474297c2fcaa581bbfb	templates/tools/protobuf/rust--extension.toml
+extension	protobuf+vscode-ext	0.1.0	1308518a569b16ceb6e6c91017fdb11e598a236fa2be176c388b347aca1c1dce	templates/tools/protobuf/vscode-ext--extension.toml
 extension	pycharm+import-project	0.1.0	2c5a62a9c99701e1567643c9ee34c1ec11af48ef7d9260b4864cb58d4c6fb86a	templates/ides/pycharm/import-project--extension.toml
 extension	pycharm+skip-first-run	0.1.0	9a3b803b7bcc3725d8bf1c2533e40f88e8a27b53cdf4fb945fa622e208f5f7d9	templates/ides/pycharm/skip-first-run--extension.toml
 extension	python+conda	1.0.0	acf07d4ae39ac333f95ded1bec90126f0d41ade81916920e76d96808f76b22ae	templates/languages/python/conda--extension.toml
@@ -818,6 +856,7 @@ extension	sqlite+cli-history	1.0.0	8cf7c3f85aeab4d515c9e9f1dd0f10744d946434aaa42
 extension	sway+ctrl-alt	0.1.0	cc789939fc6e24738068644041470b81a7d065364da363a09bb8797654f8fc8c	templates/desktops/sway/ctrl-alt--extension.toml
 extension	sway+gaps	0.1.0	e6d6c6625e887830c53b7997271b6363973d3dc0ac6455a04c3cc5cf41a348ec	templates/desktops/sway/gaps--extension.toml
 extension	swift+vscode-ext	1.0.0	6cc024ba78d2963fe83b4e3d1c7171daa911be52ecd01d47b09baed3df3fd119	templates/languages/swift/vscode-ext--extension.toml
+extension	terraform+vscode-ext	0.1.0	8694236fe71c28f470b9de9c0d1004a5de0e6484f9d820f3b934523c3673bd8c	templates/tools/terraform/vscode-ext--extension.toml
 extension	wails+android	0.1.0	9969ceb831f5dc53121d16794e2c3811fb630db50e2654ff1f3dec9a389bffcc	templates/languages/wails/android--extension.toml
 extension	wails+cross	0.1.0	25aa26c799d144a1ceadba10207544d514f145ec49f853e4b25d6c1893c0dbc4	templates/languages/wails/cross--extension.toml
 extension	warp+credential	1.0.0	dc35501a634880687f8a723760af347f22a6b9ba5e8855ae377774ff6302bed5	templates/ai-tools/warp/credential--extension.toml

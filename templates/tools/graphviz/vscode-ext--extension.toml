@@ -1,0 +1,17 @@
+cb-version = "0.1.0"
+display-name = "Graphviz VS Code Extension"
+display-disc = "Interactive preview for Graphviz .dot files"
+display-order = 2
+auto-select = true
+tags = [
+    "graphviz",
+    "dot",
+    "diagram",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup graphviz-code-extension
+"""

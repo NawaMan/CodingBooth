@@ -1,0 +1,20 @@
+cb-version = "0.1.0"
+display-name = "Angular"
+display-disc = "Angular Language Service for VS Code"
+display-detail = """Editor support only for now: it adds no runtime, so pick the runtime yourself \
+(nodejs, bun or deno). Installs the Angular Language Service: completion, diagnostics and \
+go-to-definition inside Angular templates. \
+Needs an editor in the image (the codeserver or desktop variant, or the codeserver / vscode \
+template); without one the setup skips and nothing is installed."""
+display-order = 30
+tags = [
+    "angular",
+    "typescript",
+    "frontend",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup angular-code-extension
+"""

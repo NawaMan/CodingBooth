@@ -1,0 +1,20 @@
+cb-version = "0.1.0"
+display-name = "Django"
+display-disc = "Django template support for VS Code"
+display-detail = """Editor support only for now: it adds no runtime, so pick the runtime yourself \
+(python). Installs the Django extension: template syntax highlighting, tag and filter \
+snippets, and go-to-template. Pair it with python+vscode-ext for Python language support. \
+Needs an editor in the image (the codeserver or desktop variant, or the codeserver / vscode \
+template); without one the setup skips and nothing is installed."""
+display-order = 70
+tags = [
+    "django",
+    "python",
+    "backend",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup django-code-extension
+"""
