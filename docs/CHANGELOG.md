@@ -4,6 +4,20 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **The Android emulator starts from its desktop icon, and with KVM by default.** The first click
+  failed with `cb-android-emulator: line 163: …/.android/avd/booth.avd/.cb-recipe: No such file or
+  directory`. A desktop session sets `XDG_CONFIG_HOME`, and `avdmanager` then put the AVD under
+  `~/.config/.android`, where the launcher's own edits never landed and the emulator never looks.
+  The launcher, the SDK's command wrappers and its login profile now pin `ANDROID_USER_HOME` to
+  `~/.android` (one you set yourself still wins). That is also the directory the `avd-cache`
+  extension keeps, so a device built from the icon is cached again. If `avdmanager` still puts
+  the AVD somewhere else, the launcher now says where it expected it. The `kvm` extension is
+  selected along with `android-sdk`: without `/dev/kvm` the emulator only runs in slow software
+  emulation. It costs nothing elsewhere. `/dev/kvm` needs no security consent, and a host without
+  it drops the device at start, so the booth still runs. Leave it out with `android-sdk~kvm`. The
+  image build also no longer leaves a root-owned `/tmp/android-unknown` behind. Needs an image
+  built from this version.
+
 - **A booth web app opens in one clean window.** Three things got in the way when you clicked a
   web app's desktop icon (Markdown Viewer, Excalidraw, n8n, …). On the first click, the Markdown
   Viewer opened **two** windows: `start-viewmd` let viewmd open a browser of its own, beside the

@@ -1,4 +1,4 @@
-cb-version = "0.1.0"
+cb-version = "0.2.0"
 display-name = "KVM Acceleration"
 display-disc = "Pass /dev/kvm into the booth so the emulator runs at hardware speed"
 display-detail = """Hands the host's KVM device to the booth, which is what makes the Android emulator usable: \
@@ -11,14 +11,16 @@ starts: the device is dropped with a warning at start rather than failing `docke
 Windows, Docker Desktop's WSL2 backend often does have /dev/kvm (Windows 11 enables nested \
 virtualization by default), so this may simply work there; `ls /dev/kvm` inside WSL is the check.
 
-It is off by default only because it is useless without the emulator, not because it is risky.
+On by default, because the emulator is barely usable without it and it costs nothing: /dev/kvm is \
+not one of the devices booth asks consent for, and a host without it simply drops it. A booth that \
+never runs the emulator can leave it out with `android-sdk~kvm`.
 
 Nothing host-specific is needed beyond the device itself. The device node keeps the host's \
 root:kvm 0660 ownership inside the container, which the booth user cannot open, so a startup hook \
 relaxes the mode. That is safe: /dev in a container is a private tmpfs, so the change applies to \
 the container's own node and never touches the host's."""
 display-order = 2
-auto-select = false
+auto-select = true
 tags = [
     "android",
     "emulator",
