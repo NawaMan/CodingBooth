@@ -9,10 +9,14 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/nawaman/codingbooth/src/pkg/appctx"
+	"github.com/nawaman/codingbooth/src/pkg/docker"
 	"github.com/nawaman/codingbooth/src/pkg/hostescape"
 	"github.com/nawaman/codingbooth/src/pkg/ilist"
 )
@@ -30,17 +34,23 @@ import (
 
 // consentEnv is what the consent check reads from the host, so tests can fake it.
 type consentEnv struct {
-	euid     int
-	home     string
-	exists   func(path string) bool
-	openTTY  func() (io.ReadWriteCloser, error)
-	warnings io.Writer
+	euid          int
+	home          string
+	goos          string      // runtime.GOOS: Docker on macOS or Windows always runs in a VM
+	wsl           bool        // running inside WSL, where Docker Desktop's VM is the WSL 2 VM
+	dockerDesktop func() bool // the docker engine is Docker Desktop (a VM) rather than Docker Engine
+	exists        func(path string) bool
+	openTTY       func() (io.ReadWriteCloser, error)
+	warnings      io.Writer
 }
 
 func defaultConsentEnv() consentEnv {
 	return consentEnv{
-		euid: os.Geteuid(),
-		home: os.Getenv("HOME"),
+		euid:          os.Geteuid(),
+		home:          os.Getenv("HOME"),
+		goos:          runtime.GOOS,
+		wsl:           runningInWSL(),
+		dockerDesktop: engineIsDockerDesktop,
 		exists: func(path string) bool {
 			_, err := os.Stat(path)
 			return err == nil
@@ -188,21 +198,64 @@ func LabelHostEscape(ctx appctx.AppContext) appctx.AppContext {
 	return builder.Build()
 }
 
-// rootlessPodman is the one engine where "privileged" stays inside the user's own account: the
-// container's root is the host user, so a breakout lands as that user, not as host root.
-func rootlessPodman(ctx appctx.AppContext, env consentEnv) bool {
-	return ctx.Engine() == "podman" && env.euid != 0
+// escapeTarget is where a way out of the container lands on this booth's engine. Every setting is
+// still reported on a VM-based engine (root in that VM reaches the folders it shares from this
+// machine, as the user), only its impact line changes. docker info is asked only when there is
+// something to report, to tell Docker Desktop for Linux (a VM) from Docker Engine.
+func escapeTarget(ctx appctx.AppContext, env consentEnv) hostescape.Where {
+	engine := ctx.Engine()
+	switch {
+	case engine == docker.EngineApple:
+		return hostescape.WhereApple
+	case env.goos == "windows":
+		return hostescape.WhereWSL
+	case env.goos == "darwin":
+		return hostescape.WhereVM
+	case engine == "podman" && env.euid != 0:
+		return hostescape.WhereAccount
+	case engine == "podman":
+		return hostescape.WhereHost
+	case env.dockerDesktop():
+		if env.wsl {
+			return hostescape.WhereWSL
+		}
+		return hostescape.WhereVM
+	}
+	return hostescape.WhereHost
 }
 
-// hostEscapeReasons lists the settings of this booth that give it a way onto the host.
+// hostEscapeReasons lists the settings of this booth that give it a way onto the host, each with
+// where it lands on this engine.
+//
+// Under rootless Podman (the container's root is the user's own account) and Apple container
+// (each container is its own VM, and the engine rejects most of these flags anyway), --dind and the
+// kernel-access settings do not reach this machine by themselves and are left out. Mounts, engine
+// sockets, and host networking still do.
 func hostEscapeReasons(ctx appctx.AppContext, env consentEnv) []hostescape.Reason {
-	var reasons []hostescape.Reason
-	rootless := rootlessPodman(ctx, env)
-
-	if ctx.Dind() && !rootless {
-		reasons = append(reasons, hostescape.Reason{Kind: hostescape.KindDind, What: "--dind (privileged Docker-in-Docker sidecar)"})
+	var found []hostescape.Reason
+	if ctx.Dind() {
+		found = append(found, hostescape.Reason{Kind: hostescape.KindDind, What: "--dind (privileged Docker-in-Docker sidecar)"})
 	}
-	return append(reasons, dangerousRunArgs(flattenUserArgs(ctx), env, rootless)...)
+	found = append(found, dangerousRunArgs(flattenUserArgs(ctx), env)...)
+	if len(found) == 0 {
+		return nil
+	}
+
+	where := escapeTarget(ctx, env)
+	var reasons []hostescape.Reason
+	for _, reason := range found {
+		ownVMOrAccount := where == hostescape.WhereAccount || where == hostescape.WhereApple
+		if ownVMOrAccount && (reason.Kind == hostescape.KindDind || reason.Kind == hostescape.KindKernelAccess) {
+			continue
+		}
+		reason.Where = where
+		// A socket mounted into a rootless booth may belong to a rootful daemon on the host.
+		if where == hostescape.WhereAccount && reason.Kind == hostescape.KindEngineSocket {
+			reason.Where = hostescape.WhereHost
+		}
+		reasons = append(reasons, reason)
+	}
+	return reasons
 }
 
 // flattenUserArgs collects the user's run-args and common-args. It runs before booth adds its own
@@ -230,12 +283,10 @@ var sensitiveHostPaths = []string{
 }
 
 // dangerousRunArgs returns a description of each run-arg that gives the booth a way onto the
-// host. It is a list of known ways, not a proof of safety: run-args is a raw passthrough to the
-// engine, so docs/BOOTH_SECURITY.md still tells users to read what they pass.
-//
-// Under rootless Podman only an engine-socket mount is reported: every other way out lands as the
-// user's own account.
-func dangerousRunArgs(args []string, env consentEnv, rootless bool) []hostescape.Reason {
+// host, as on rootful Docker on Linux; hostEscapeReasons adjusts for the engine. It is a list of
+// known ways, not a proof of safety: run-args is a raw passthrough to the engine, so
+// docs/BOOTH_SECURITY.md still tells users to read what they pass.
+func dangerousRunArgs(args []string, env consentEnv) []hostescape.Reason {
 	var hits []hostescape.Reason
 	seen := map[string]bool{}
 	add := func(kind hostescape.Kind, what string) {
@@ -271,13 +322,10 @@ func dangerousRunArgs(args []string, env consentEnv, rootless bool) []hostescape
 			if hasValue {
 				spec = value
 			}
-			addMount(dangerousMount(source, isReadOnlyVolume(spec), env, rootless))
+			addMount(dangerousMount(source, isReadOnlyVolume(spec), env))
 		case "--mount":
 			source, readOnly := parseMountSpec(next())
-			addMount(dangerousMount(source, readOnly, env, rootless))
-		}
-		if rootless {
-			continue
+			addMount(dangerousMount(source, readOnly, env))
 		}
 
 		switch flag {
@@ -377,7 +425,7 @@ func parseMountSpec(spec string) (source string, readOnly bool) {
 // dangerousMount describes a bind mount that gives the booth a way onto the host, or a Reason with
 // an empty What if it does not. A container-engine socket is dangerous even read-only (read-only
 // does not stop anyone talking to the daemon behind it); other paths only when writable.
-func dangerousMount(source string, readOnly bool, env consentEnv, rootless bool) hostescape.Reason {
+func dangerousMount(source string, readOnly bool, env consentEnv) hostescape.Reason {
 	none := hostescape.Reason{}
 	hostMount := func(what string) hostescape.Reason {
 		return hostescape.Reason{Kind: hostescape.KindHostMounts, What: what}
@@ -398,7 +446,7 @@ func dangerousMount(source string, readOnly bool, env consentEnv, rootless bool)
 		(strings.Contains(base, "docker") || strings.Contains(base, "podman") || strings.Contains(base, "containerd")) {
 		return hostescape.Reason{Kind: hostescape.KindEngineSocket, What: "container engine socket mount (" + source + ")"}
 	}
-	if readOnly || rootless {
+	if readOnly {
 		return none
 	}
 
@@ -422,4 +470,18 @@ func dangerousMount(source string, readOnly bool, env consentEnv, rootless bool)
 		}
 	}
 	return none
+}
+
+// engineIsDockerDesktop asks the docker engine (once per process) whether it is Docker Desktop, which
+// runs containers in a VM even on Linux. Any failure counts as no: the warning then says "host",
+// the stronger claim.
+var engineIsDockerDesktop = sync.OnceValue(func() bool {
+	out, err := exec.Command("docker", "info", "--format", "{{.OperatingSystem}}").Output()
+	return err == nil && strings.Contains(string(out), "Docker Desktop")
+})
+
+// runningInWSL reports whether booth runs inside WSL, where /proc/version names Microsoft.
+func runningInWSL() bool {
+	data, err := os.ReadFile("/proc/version")
+	return err == nil && strings.Contains(strings.ToLower(string(data)), "microsoft")
 }

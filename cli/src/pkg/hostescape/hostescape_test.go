@@ -22,8 +22,8 @@ func TestFormat_EachReasonHasImpactAndLink(t *testing.T) {
 	})
 	for _, want := range []string{
 		"This booth has settings that let code inside it reach the host:",
-		"  - writable mount of host /run/media/me/disk\n      " + Impact(KindHostMounts) + "\n      " + DocURL + "#host-mounts\n",
-		"  - --network=host\n      " + Impact(KindHostNetwork) + "\n      " + DocURL + "#host-network\n",
+		"  - writable mount of host /run/media/me/disk\n      " + Impact(KindHostMounts, WhereHost) + "\n      " + DocURL + "#host-mounts\n",
+		"  - --network=host\n      " + Impact(KindHostNetwork, WhereHost) + "\n      " + DocURL + "#host-network\n",
 		"This only matters if the booth runs code you do not trust.",
 		"If you trust what it runs, go ahead.",
 	} {
@@ -39,7 +39,7 @@ func TestFormat_EachReasonHasImpactAndLink(t *testing.T) {
 func TestEveryKindHasItsOwnImpact(t *testing.T) {
 	seen := map[string]Kind{}
 	for _, kind := range []Kind{KindDind, KindEngineSocket, KindKernelAccess, KindHostMounts, KindHomeMounts, KindHostNetwork} {
-		impact := Impact(kind)
+		impact := Impact(kind, WhereHost)
 		if other, dup := seen[impact]; dup {
 			t.Errorf("%s and %s share an impact line", kind, other)
 		}
@@ -63,5 +63,32 @@ func TestLabel_RoundTrip(t *testing.T) {
 		if DecodeLabel(bad) != nil {
 			t.Errorf("%q should decode to no reasons", bad)
 		}
+	}
+}
+
+func TestImpact_DependsOnWhere(t *testing.T) {
+	for _, kind := range []Kind{KindDind, KindEngineSocket, KindKernelAccess} {
+		if !strings.Contains(Impact(kind, WhereVM), "engine's Linux VM (not this machine itself)") {
+			t.Errorf("%s on a VM engine should say VM: %q", kind, Impact(kind, WhereVM))
+		}
+		if !strings.Contains(Impact(kind, WhereWSL), "other WSL distros") {
+			t.Errorf("%s on WSL should mention the other WSL distros: %q", kind, Impact(kind, WhereWSL))
+		}
+		if strings.Contains(Impact(kind, WhereAccount), "as root") {
+			t.Errorf("%s rootless must not claim root: %q", kind, Impact(kind, WhereAccount))
+		}
+	}
+	if Impact(KindHomeMounts, WhereVM) != Impact(KindHomeMounts, WhereHost) {
+		t.Error("a home mount is code as you on every engine")
+	}
+}
+
+func TestLabel_KeepsWhere(t *testing.T) {
+	got := DecodeLabel(EncodeLabel([]Reason{{Kind: KindKernelAccess, What: "--privileged", Where: WhereWSL}}))
+	if len(got) != 1 || got[0].Where != WhereWSL {
+		t.Fatalf("where lost: %v", got)
+	}
+	if got := DecodeLabel(`[{"kind":"dind","what":"x"}]`); len(got) != 1 || got[0].Where != WhereHost {
+		t.Fatalf("a label without where (older booth) reads as the host: %v", got)
 	}
 }
