@@ -2,7 +2,7 @@
 # Copyright 2025-2026 : Nawa Manusitthipol
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
-# cb-version: 0.2.0
+# cb-version: 0.2.1
 
 set -Eeuo pipefail
 trap 'echo "❌ Error on line $LINENO"; exit 1' ERR
@@ -312,10 +312,10 @@ if [ "$AVD_EXISTS" = 0 ]; then
     # tap but not type, which is its own kind of stuck.
     sed -i 's/^hw\.keyboard=.*/hw.keyboard=yes/' "$CONFIG"
     grep -q '^hw\.keyboard=' "$CONFIG" || echo 'hw.keyboard=yes' >> "$CONFIG"
-    # There is no GPU in a booth; naming the software rasterizer here is more
-    # predictable than letting "auto" probe and fall back.
+    # There is no GPU in a booth. Keep GPU emulation on and leave the mode to the
+    # emulator's "auto", which picks a software renderer; emulator 37 no longer
+    # accepts the swiftshader_indirect this used to name.
     sed -i 's/^hw\.gpu\.enabled=.*/hw.gpu.enabled=yes/' "$CONFIG"
-    sed -i 's/^hw\.gpu\.mode=.*/hw.gpu.mode=swiftshader_indirect/' "$CONFIG"
   fi
   # Written last, so an interrupted creation leaves no stamp and is retried
   # rather than mistaken for a current AVD.
@@ -342,7 +342,7 @@ else
   echo "No usable /dev/kvm — starting in software emulation (much slower to boot)."
   echo "Either this host has no /dev/kvm (macOS, virtualization off, a VM without"
   echo "nested virtualization), or the booth was configured with android-sdk~kvm."
-  ACCEL_ARGS=(-accel off -gpu swiftshader_indirect)
+  ACCEL_ARGS=(-accel off)
 fi
 
 echo "Starting the emulator. The window may take a minute to appear."
@@ -454,5 +454,5 @@ Ready to use:
 - Or fully manual:
     avdmanager create avd -n dev -k "system-images;android-34;default;x86_64"
     emulator -avd dev -no-window                            # with /dev/kvm
-    emulator -avd dev -no-window -accel off -gpu swiftshader_indirect   # without
+    emulator -avd dev -no-window -accel off                 # without
 EON
