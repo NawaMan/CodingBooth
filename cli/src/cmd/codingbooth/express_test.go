@@ -103,7 +103,6 @@ func TestParseExpressArgsRefuses(t *testing.T) {
 		{"--booth-dir is refused", []string{"--booth-dir"}, "--booth-dir"},
 		{"--select cannot be combined with --image", []string{"--select", "go", "--image", "demo:latest"}, "--select"},
 		{"--apt-snapshot requires --select", []string{"--apt-snapshot", "none"}, "--select"},
-		{"--templates-path requires --select", []string{"--templates-path", "/tmp/templates"}, "--select"},
 		{"--set public is not a file key", []string{"--set", "public=true"}, "public"},
 		{"--set cache-files is not available", []string{"--set", "cache-files=a"}, "cache-files"},
 		{"--set of an unknown key is refused", []string{"--set", "not-a-real-key=1"}, "not-a-real-key"},
@@ -118,6 +117,13 @@ func TestParseExpressArgsRefuses(t *testing.T) {
 			assert.Contains(t, err.Error(), tt.want)
 		})
 	}
+}
+
+func TestParseExpressArgsAllowsTemplatesPathWithoutSelect(t *testing.T) {
+	plan, err := parseExpressArgs([]string{"--variant", "xfce", "--templates-path", "/tmp/templates"})
+	require.NoError(t, err)
+	assert.Empty(t, plan.flags.selectDSLs)
+	assert.NotContains(t, plan.launch, "--templates-path")
 }
 
 func TestParseExpressArgsKeepsAFileKey(t *testing.T) {

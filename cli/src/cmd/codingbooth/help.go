@@ -307,8 +307,8 @@ from CB_* variables. It does not write an empty Boothfile. --image, then
 --select cannot be combined with --image, --dockerfile, or --boothfile.
 
 Launch flags override the generated file. CB_* variables still apply and lose
-to flags. --version is the image tag. --apt-snapshot and --templates-path
-require --select. Arguments after -- replace --cmd.
+to flags. --version is the image tag. --apt-snapshot requires --select;
+--templates-path without it is unused. Arguments after -- replace --cmd.
 
 Refused: --config, --profile, --booth-dir, the --add-* / --remove-* config
 edits, --overwrite, --beside, the config-only flags (--no-tui, --web, --start,
