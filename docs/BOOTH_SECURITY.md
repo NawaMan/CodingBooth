@@ -110,6 +110,8 @@ so edit it on the host.)
 
 ---
 
+<a id="dind"></a>
+
 ## 4. Docker-in-Docker (`--dind`): a host-escape path by design
 
 `--dind` is powerful and legitimate — but it is a **privileged capability, not a security
@@ -156,17 +158,25 @@ filter, `mount` denied) is **handed back** the moment a privileged daemon is rea
 
 Because a `--dind` booth is host-root-equivalent, booth does **not** start one silently. The same
 goes for `run-args` that give the booth a way out on their own (below). Before anything is built or
-started, booth lists what it found and asks:
+started, booth lists what it found — each setting with what untrusted code could do with it, and a
+link to its section here — and asks:
 
 ```
-⚠️  This booth can break out of its container onto the host:
-      - --dind (privileged Docker-in-Docker sidecar)
-    Any code running in the booth could then read and write the host filesystem and run
-    commands on the host as root. Only continue if you trust everything this booth runs.
-    See docs/BOOTH_SECURITY.md.
+⚠️  This booth has settings that let code inside it reach the host:
 
-Start this booth anyway? [y/N]:
+  - --dind (privileged Docker-in-Docker sidecar)
+      Untrusted code in the booth could drive the privileged Docker daemon and run commands on the host as root.
+      https://github.com/NawaMan/CodingBooth/blob/main/docs/BOOTH_SECURITY.md#dind
+
+  This only matters if the booth runs code you do not trust.
+  If you trust what it runs, go ahead.
+
+Start this booth? [y/N]:
 ```
+
+The warning is about **untrusted** code. Every one of these settings has legitimate uses, and for
+code you trust the answer is simply yes. Not every kind leads to root: a writable data mount or
+`--network=host` is reported for what it is (see the table below), not as host root.
 
 - **The default is no.** Anything but `y` / `yes` aborts, and nothing has been started.
 - **It asks on the terminal itself** (`/dev/tty`), not on stdin, so a `booth shell --run` still
@@ -174,37 +184,60 @@ Start this booth anyway? [y/N]:
 - **No terminal** (CI, scripts, agents): booth **refuses and exits non-zero** unless the command line
   carries **`--dind-allowed`** (for `--dind`) or **`--privileged-allowed`** (for the run-args below).
   `booth shell --run` and `booth exec --run` accept both and pass them on to the booth they start.
+- **The flags skip the question, not the warning.** With them, booth still prints the warning, ends
+  it with `Allowed by --privileged-allowed — starting without asking.`, and starts. That is the way
+  to run unattended (a hosted launcher, CI) and still leave the warning in the log.
 - **Per run, never remembered.** There is no `config.toml` key and no environment variable for
   either flag, so a cloned repo, its config, or an env file can never pre-approve itself. The one
   exception is a `booth--restart` of a booth you already approved in the same session: it does not
   ask again unless something new turned up.
 - **`--dryrun`** starts nothing, so it does not ask.
-- **Rootless Podman does not ask.** There the container's root is your own account, so a breakout
-  lands as you, not as host root. (Rootful Podman — `sudo podman` — asks like Docker does.) An engine
-  socket mount still asks even under rootless Podman, because the socket may belong to a rootful
-  daemon.
+- **What booth asks about, and how it words it, depends on the engine** — see
+  **[Container engines → Where a way out lands](BOOTH_ENGINES.md#where-a-way-out-lands)**:
+  - **Rootless Podman** does not ask about `--dind` or `--privileged`-like run-args: the container's
+    root is your own account, so they land as you, not as host root. It still asks about writable
+    mounts (your home and dotfiles are code as you), `--network=host`, and engine sockets (a socket
+    may belong to a rootful daemon). Rootful Podman — `sudo podman` — asks like Docker does.
+  - **VM-based engines** (Docker Desktop on macOS, Windows, or Linux; Podman machine) ask about
+    everything, but say "root in the engine's VM" rather than "root on the host": that VM shares
+    your folders, and on Windows it is the WSL 2 VM that also runs your other WSL distros.
+  - **Apple container** does not ask about flags it rejects anyway (`--privileged`, `--device`, …)
+    or capabilities that stay in the booth's own VM; mounts and sockets still ask.
 
 Answering yes does not make the booth safe; it only makes sure nobody gets host-root trust without
 knowingly granting it. The rule stands: **don't say yes for untrusted code.**
 
+**Starting the booth again warns again.** The settings are recorded on the container (the
+`cb.security-warning` label). `booth start`, `booth restart`, and `booth shell --run` /
+`booth exec --run` on a stopped booth print the same warning, ending with `This booth was created with
+these settings.` — they do not ask, because consent was given when the booth was created. Attaching
+`booth shell` / `booth exec` to a booth that is already running prints nothing. `exec` prints the
+warning on stderr only, so its stdout stays clean for scripts.
+
+**Check before you run: `booth print-security-warning`.** It takes the same options as a run, reads
+the same `config.toml`, profiles, and templates, and prints the warning a run would show — nothing is
+built, started, or asked. Exit `1` with the warning on stdout, or exit `0` with `No security
+warning.` The `--*-allowed` flags do not change the result: it reports what the booth would get.
+
+```bash
+booth print-security-warning --dind      # exit 1 and the --dind warning
+booth print-security-warning             # what this project's .booth/config.toml asks for
+```
+
 ### What else booth asks about
 
 `--dind` is not the only way to hand the booth host-level privilege. `run-args` and `common-args` (in
-`config.toml`, from a template, or after `--`) are passed straight to the container engine, and some
-of them are a way out on their own. Booth asks before starting a booth with any of:
+`config.toml`, from a template, or as extra options on the command line) are passed straight to the
+container engine, and some of them are a way out on their own. Booth asks before starting a booth
+with any of these. The warning groups them by what untrusted code could do, and links to the row:
 
-| run-arg | Why it is a way out |
-|---------|---------------------|
-| `--privileged` | every capability, and the host's devices |
-| `--cap-add` `SYS_ADMIN`, `SYS_MODULE`, `SYS_RAWIO`, `DAC_READ_SEARCH`, `BPF`, `PERFMON`, `SYS_BOOT`, `MAC_ADMIN`, `MAC_OVERRIDE`, `ALL` | mount, load kernel modules, raw I/O, read any file |
-| `--device <path>` (except `/dev/kvm`, `/dev/dri/…`, `/dev/net/tun`, `/dev/fuse`) | raw access to a host device, e.g. a disk |
-| `--device-cgroup-rule` | lets the container open devices it creates |
-| `--pid=host`, `--ipc=host`, `--userns=host` | shares the host's processes, IPC, or user mapping |
-| `--network=host` | reaches every service listening on the host |
-| `--security-opt` `seccomp=unconfined`, `apparmor=unconfined`, `label=disable` | removes the kernel-level filters |
-| a mount of `docker.sock`, `podman.sock`, or `containerd.sock` (even `:ro`) | controls the host's container engine |
-| a **writable** mount of `/`, `/etc`, `/root`, `/boot`, `/dev`, `/proc`, `/sys`, `/run`, `/usr`, `/bin`, `/lib`, `/var/lib/docker`, `/var/lib/containers`, … | rewrite the host's system files |
-| a **writable** mount of your home directory, `/home`, or a dotfile/dot-dir in it (`~/.bashrc`, `~/.ssh`, `~/.config`) | runs code as you the next time you log in |
+| Kind | run-args | What untrusted code in the booth could do |
+|------|----------|-------------------------------------------|
+| <a id="kernel-access"></a>**kernel access** | `--privileged`; `--cap-add` `SYS_ADMIN`, `SYS_MODULE`, `SYS_RAWIO`, `DAC_READ_SEARCH`, `BPF`, `PERFMON`, `SYS_BOOT`, `MAC_ADMIN`, `MAC_OVERRIDE`, `ALL`; `--device <path>` (except `/dev/kvm`, `/dev/dri/…`, `/dev/net/tun`, `/dev/fuse`); `--device-cgroup-rule`; `--pid=host`, `--ipc=host`, `--userns=host`; `--security-opt` `seccomp=unconfined`, `apparmor=unconfined`, `label=disable` | reach the host's kernel, devices, or processes (mount, load modules, raw disk I/O, read any file) and from there get **root on the host** |
+| <a id="engine-socket"></a>**engine socket** | a mount of `docker.sock`, `podman.sock`, or `containerd.sock` (even `:ro`) | tell the host's container engine to start a container that runs commands on the host **as root** |
+| <a id="host-mounts"></a>**host mounts** | a **writable** mount of `/`, `/etc`, `/root`, `/boot`, `/dev`, `/proc`, `/sys`, `/run` (including `/run/media/…` drives), `/usr`, `/bin`, `/lib`, `/var/lib/docker`, `/var/lib/containers`, … | change the host files there, which the host system may rely on (for a data directory, the risk is mostly the data itself) |
+| <a id="home-mounts"></a>**home mounts** | a **writable** mount of your home directory, `/home`, or a dotfile/dot-dir in it (`~/.bashrc`, `~/.ssh`, `~/.config`, `~/.m2`, …) | change files your account runs or loads — code **as you**, not root, e.g. the next time you log in or build |
+| <a id="host-network"></a>**host network** | `--network=host` | reach every service listening on the host, including ones bound only to localhost |
 
 Read-only mounts (`:ro`), like the credential seeds templates add, do not ask — they leak what they
 contain (§3) but do not let the booth run anything on the host. A `--device` the host does not have
@@ -287,7 +320,8 @@ If untrusted code may have read a mounted credential:
 - [ ] What's in `run-args`? Every `-v ~/...` mount is a host secret/path exposed inside. Privileged
       flags (`--privileged`, `--cap-add SYS_ADMIN`, `--device`, `--pid=host`, engine-socket mounts)
       are host-root-equivalent; booth asks before starting them (or needs `--privileged-allowed`
-      with no terminal) — only say yes for trusted code.
+      with no terminal) — only say yes for trusted code. `booth print-security-warning` lists them
+      without starting anything.
 - [ ] Using a throwaway account for untrusted work? (in-booth login persists to `.booth/cache`)
 - [ ] `--dind` only if the code here is trusted? (DinD = privileged = host-escape path; never with
       untrusted code). Booth asks every run — or needs `--dind-allowed` with no terminal.
@@ -301,7 +335,8 @@ If untrusted code may have read a mounted credential:
 
 - **[README — Security Considerations](../README.md#security-considerations)** — summary table.
 - **[Egress](implementations/EGRESS.md)** — egress filtering with Envoy + iptables.
-- **[Podman support](PODMAN_SUPPORT.md)** — why rootless Podman does not ask.
+- **[Container engines](BOOTH_ENGINES.md)** — where a way out lands on each engine.
+- **[Podman support](PODMAN_SUPPORT.md)** — rootful and rootless Podman.
 - **[Docker-in-Docker](implementations/DIND.md)** — how `--dind` works internally.
 - **[booth home](BOOTH_HOME.md)** / **[booth cache](BOOTH_LOCALCACHE.md)** — where in-booth
   credentials and state persist.

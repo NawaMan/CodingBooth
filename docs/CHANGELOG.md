@@ -132,6 +132,30 @@ This file contains a list of changes for each released version.
   `/dev/pts` device to the booth user after the uid remap and before any user
   process. The mode stays `0620`. A start with no terminal skips the `chown`, and
   a failed `chown` does not stop the container. (`booth shell` was never affected.)
+- **The host-escape warning now says what each setting could do, and that it only matters for
+  untrusted code.** It used to print the same "run commands on the host as root" paragraph for every
+  reason, which overstated a writable data mount (`/run/media/...`), a `~/.m2` cache, or
+  `--network=host`. Each reason now has its own line — root on the host for `--dind`, engine
+  sockets, and `--privileged`-like run-args; host files for writable system paths; code as you for
+  the home directory and its dotfiles; local services for `--network=host` — plus a link to its row
+  in `docs/BOOTH_SECURITY.md`, and the warning ends "This only matters if the booth runs code you do
+  not trust. If you trust what it runs, go ahead." What is detected has not changed.
+- **`--dind-allowed` / `--privileged-allowed` still print the warning.** They skip the question
+  (still command line only — no config key or env var), but the warning is printed with
+  `Allowed by … — starting without asking.`, so an unattended launcher's log shows it.
+- **Starting a booth again warns again.** A booth records these settings on its container
+  (`cb.security-warning` label); `booth start`, `booth restart`, and `booth shell --run` /
+  `booth exec --run` on a stopped booth print the warning without asking. Attaching to a running
+  booth prints nothing, and `exec` keeps it on stderr.
+- **The warning knows the engine.** Rootless Podman now also asks about writable mounts (home and
+  dotfiles are code as you) and `--network=host`, but still not about `--dind` or
+  `--privileged`-like run-args, which only reach your own account. VM-based engines (Docker Desktop
+  on macOS, Windows, and Linux; Podman machine) say "root in the engine's VM", which shares your
+  folders — and on Windows is the WSL 2 VM that also runs your other WSL distros. Apple container no
+  longer asks about flags it rejects. New overview: `docs/BOOTH_ENGINES.md`.
+- **New `booth print-security-warning [options]`.** Takes the same options and config as a run and
+  prints the warning that run would show, without building, starting, or asking: exit `1` with the
+  warning, or exit `0` with `No security warning.`
 
 - **Swift suggests only 6.4.0, the one release built for Ubuntu 26.04.** swift.org publishes no
   26.04 tarball for older releases, so `setup swift --version 6.0.1` 404s on the new base. The

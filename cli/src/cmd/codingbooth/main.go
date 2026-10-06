@@ -95,6 +95,9 @@ func main() {
 		case "emit-dockerfile":
 			emitDockerfile()
 			return
+		case "print-security-warning":
+			printSecurityWarning(version)
+			return
 		case "print-default-allowlist.txt":
 			printDefaultAllowlist()
 			return
