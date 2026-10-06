@@ -1,0 +1,24 @@
+cb-version = "0.1.0"
+display-name = "Spring Boot"
+display-disc = "Spring Boot Extension Pack for VS Code"
+display-detail = """Editor support only for now: it adds no runtime, so pick the runtime yourself \
+— Spring Boot runs on the JVM from either java or kotlin, so this does not `require` one. \
+Installs the Spring Boot Extension Pack: Spring Boot Tools (application.properties / .yml \
+support, live beans), Spring Initializr (new projects from the command palette) and the \
+Spring Boot Dashboard. Pair it with java+vscode-ext for Java language support. \
+Needs an editor in the image (the codeserver or desktop variant, or the codeserver / vscode \
+template); without one the setup skips and nothing is installed."""
+display-order = 60
+tags = [
+    "spring",
+    "spring-boot",
+    "java",
+    "kotlin",
+    "backend",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup spring-boot-code-extension
+"""

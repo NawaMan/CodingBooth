@@ -1,0 +1,15 @@
+cb-version = "0.1.0"
+display-name = "Terraform VS Code Extension"
+display-disc = "HashiCorp Terraform extension: HCL syntax, validation, completion"
+display-order = 2
+auto-select = true
+tags = [
+    "terraform",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup terraform-code-extension
+"""

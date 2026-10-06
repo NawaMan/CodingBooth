@@ -1,0 +1,21 @@
+cb-version = "0.1.0"
+display-name = "Vue"
+display-disc = "Vue language support for VS Code (Vue - Official)"
+display-detail = """Editor support only for now: it adds no runtime, so pick the runtime yourself \
+(nodejs, bun or deno). Installs Vue - Official (Volar): .vue single-file components, \
+template type-checking, and the Vue language server. \
+Needs an editor in the image (the codeserver or desktop variant, or the codeserver / vscode \
+template); without one the setup skips and nothing is installed."""
+display-order = 20
+tags = [
+    "vue",
+    "javascript",
+    "typescript",
+    "frontend",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup vue-code-extension
+"""

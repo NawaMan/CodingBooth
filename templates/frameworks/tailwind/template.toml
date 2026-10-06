@@ -1,0 +1,20 @@
+cb-version = "0.1.0"
+display-name = "Tailwind CSS"
+display-disc = "Tailwind CSS IntelliSense for VS Code"
+display-detail = """Editor support only for now: it adds no runtime, so pick the runtime yourself \
+(nodejs, bun or deno) — it pairs with any of the frontend frameworks here. Installs Tailwind \
+CSS IntelliSense: class completion, hover previews, and linting. \
+Needs an editor in the image (the codeserver or desktop variant, or the codeserver / vscode \
+template); without one the setup skips and nothing is installed."""
+display-order = 50
+tags = [
+    "tailwind",
+    "css",
+    "frontend",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup tailwind-code-extension
+"""

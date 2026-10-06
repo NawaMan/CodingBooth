@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Kubernetes VS Code Extension"
+display-disc = "Kubernetes extension: manifest editing, cluster explorer, Helm"
+display-order = 2
+auto-select = true
+tags = [
+    "kubernetes",
+    "k8s",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup kubernetes-code-extension
+"""

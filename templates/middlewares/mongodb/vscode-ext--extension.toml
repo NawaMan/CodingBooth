@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "MongoDB VS Code Extension"
+display-disc = "MongoDB for VS Code: connect, browse data, run playgrounds"
+display-order = 2
+auto-select = true
+tags = [
+    "mongodb",
+    "database",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup mongodb-code-extension
+"""

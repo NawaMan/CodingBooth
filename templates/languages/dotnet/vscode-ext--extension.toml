@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = ".NET VS Code Extension"
+display-disc = "C# language support extension for VS Code (desktop VS Code only)"
+display-order = 2
+auto-select = true
+tags = [
+    "dotnet",
+    "csharp",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup dotnet-code-extension
+"""

@@ -1,0 +1,22 @@
+cb-version = "0.1.0"
+display-name = "Svelte"
+display-disc = "Svelte language support for VS Code"
+display-detail = """Editor support only for now: it adds no runtime, so pick the runtime yourself \
+(nodejs, bun or deno). Installs Svelte for VS Code: .svelte components, SvelteKit, and the \
+Svelte language server. \
+Needs an editor in the image (the codeserver or desktop variant, or the codeserver / vscode \
+template); without one the setup skips and nothing is installed."""
+display-order = 40
+tags = [
+    "svelte",
+    "sveltekit",
+    "javascript",
+    "typescript",
+    "frontend",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup svelte-code-extension
+"""

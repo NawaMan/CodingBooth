@@ -1,0 +1,16 @@
+cb-version = "0.1.0"
+display-name = "Mermaid VS Code Extension"
+display-disc = "Mermaid diagrams in the Markdown preview"
+display-order = 2
+auto-select = true
+tags = [
+    "mermaid",
+    "diagram",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup mermaid-code-extension
+"""

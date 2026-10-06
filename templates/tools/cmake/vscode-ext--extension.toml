@@ -1,0 +1,15 @@
+cb-version = "0.1.0"
+display-name = "CMake VS Code Extension"
+display-disc = "CMake Tools: configure, build and debug CMake projects"
+display-order = 2
+auto-select = true
+tags = [
+    "cmake",
+    "ide",
+    "vscode",
+]
+
+[segments]
+"Boothfile--65" = """
+setup cmake-code-extension
+"""
