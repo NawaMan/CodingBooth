@@ -250,8 +250,8 @@ plugin installed into `$HOME` at build time is gone before anyone opens the IDE.
 ### Desktop icons — `cb-desktop-icon.sh` and `cb-web-icon.sh`
 
 `/etc/skel/Desktop` is the single registry of "apps to surface on the desktop": `booth-entry` seeds
-it into each user's `~/Desktop` on XFCE/KDE/LXQt, and the Wayland variant turns each entry into a
-waybar panel button. Do not write into it directly — go through a helper, and both behaviours come
+it into each user's `~/Desktop` on XFCE/KDE/LXQt, the XFCE Plank dock (`cb-plank-start`) offers
+each entry to the dock once, and the Wayland variant turns each entry into a waybar panel button. Do not write into it directly — go through a helper, and both behaviours come
 for free. Both no-op off-desktop.
 
 **A GUI app** that already ships a `.desktop` launcher. Each argument may be a path to a `.desktop`

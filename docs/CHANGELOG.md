@@ -4,6 +4,13 @@ This file contains a list of changes for each released version.
 
 ## Unreleased
 
+- **Apps with an XFCE desktop icon are on the Plank dock too.** Until now the dock held only the
+  terminal, the file manager, the browsers and VS Code, so TeXstudio, GIMP, DBeaver, JupyterLab and
+  every other app with a desktop icon were missing from it. The dock now takes every launcher in
+  `/etc/skel/Desktop` — the list `cb-desktop-icon.sh` fills — after its defaults. Each app is
+  offered once and the offered set is kept in `~/.config/plank/dock1/.cb-offered`, so an app added
+  by a later rebuild joins an existing dock (persisted homes included) and one you removed stays
+  off. The starter is now its own script, `variants/base/setups/cb-plank-start`.
 - **A project's own setup can make itself selectable in `booth config`.** A `# cb-template:` line
   in the leading comment block of `.booth/setups/<name>--setup.sh` turns it into a template named
   `<name>`, listed under **This project** — no `template.toml` or `meta.toml` needed. Optional
