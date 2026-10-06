@@ -8,7 +8,7 @@
 #
 # Runs each curated extension setup with neither `code` nor `code-server` on
 # PATH, and asserts:
-#   1. it exits 0
+#   1. it exits 0 (stdin is /dev/null: skip_setup returns 42 on a TTY, 0 in a build)
 #   2. it says it skipped (SKIP from skip_setup, or a "skipping" warning)
 #
 # Why this shape. These setups are auto-selected with their parent template
@@ -63,7 +63,7 @@ for script in "$SETUPS_DIR"/*-code-extension--setup.sh; do
           VSCODE_EXTENSION_DIR="$STUB/ext-code" \
           CODESERVER_EXTENSION_DIR="$STUB/ext-code-server" \
           CB_WEB_PREVIEW_DIR="$STUB/web-preview" \
-              ${ROOT_RUN[@]+"${ROOT_RUN[@]}"} bash "$script" 2>&1) && rc=0 || rc=$?
+              ${ROOT_RUN[@]+"${ROOT_RUN[@]}"} bash "$script" 2>&1 </dev/null) && rc=0 || rc=$?
 
     TEST_NUM=$((TEST_NUM + 1))
     if [[ $rc -eq 0 ]] && grep -qi "skip" <<< "$out"; then
