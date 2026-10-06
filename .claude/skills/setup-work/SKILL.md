@@ -317,9 +317,9 @@ The image needs no registration: `variants/base/Dockerfile` copies the whole dir
 `/opt/codingbooth/setups/`, which is on `PATH`. **The CLI does** — adding, renaming or removing a
 `*--setup.sh` / `*--install.sh` changes `cli/src/pkg/boothfile/builtin-scripts.txt`, the name list
 embedded in the binary. `./build/cli-build.sh` regenerates it (or run `build/gen-builtin-scripts.sh`
-directly); **commit the regenerated file** with the script. You will not notice a stale one
-yourself — inside a checkout the compiler also scans `variants/base/setups/` — but every end user's
-binary warns `Unknown setup script '<name>'` on a Boothfile that uses the new script.
+directly); **commit the regenerated file** with the script — otherwise the next build leaves it
+modified in someone else's tree, where it slips into an unrelated commit. (Releases are safe either
+way: the release workflow builds through `cli-build.sh`, which regenerates it first.)
 
 ### Making it selectable — the template
 
@@ -434,7 +434,6 @@ tests/config/catalog/test88-all-params-are-wired.sh          # every declared pa
 tests/config/catalog/test90-web-servers-have-desktop-icon.sh # web servers register an icon
 tests/config/catalog/test92-arch-unsupported-is-declared.sh  # unsupported-arch carries a note
 tests/config/catalog/test94-catalog-manifest-is-current.sh   # every item has a cb-version; manifest current
-build/gen-builtin-scripts.sh --check                         # embedded setup/install name list is current
 ```
 
 ### Run only what you touched
