@@ -164,6 +164,18 @@ contract changes); **minor** for a new flag or a new default tool version; **pat
 Then run `build/gen-catalog-manifest.sh`. The release refuses to ship a script that changed since
 the last release without a bump. Full rules: [CATALOG_VERSIONING.md](CATALOG_VERSIONING.md).
 
+### Adding or removing a script — the embedded name list
+
+End users have only the `codingbooth` binary, not this directory, so the Boothfile compiler checks
+`setup <name>` / `install <mgr>` against a list embedded at build time:
+`cli/src/pkg/boothfile/builtin-scripts.txt`. Adding, renaming or removing a `*--setup.sh` or
+`*--install.sh` changes it. `./build/cli-build.sh` regenerates it on every build (or run
+`build/gen-builtin-scripts.sh`); **commit the regenerated file** in the same change as the script.
+`build/gen-builtin-scripts.sh --check` fails when it is stale. A stale list hides from you: inside
+a CodingBooth checkout the compiler also scans `variants/base/setups/` (`KnownBuiltinScripts`), so
+only end users see it — their binary warns `Unknown setup script '<name>'` for a script the image
+does ship. The build still runs; the warning just lies.
+
 ---
 
 ## Shared helpers

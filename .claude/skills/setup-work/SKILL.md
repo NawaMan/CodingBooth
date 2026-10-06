@@ -313,8 +313,13 @@ profile code must be cheap and PATH-guarded. Values are stamped in with `envsubs
 quoted `<<'EOF'` heredoc — quoted so the *runtime* `$HOME`/`$PATH` survive, `envsubst` so
 build-time versions are baked.
 
-Nothing registers the script: `variants/base/Dockerfile` copies the whole directory to
-`/opt/codingbooth/setups/`, which is on `PATH`.
+The image needs no registration: `variants/base/Dockerfile` copies the whole directory to
+`/opt/codingbooth/setups/`, which is on `PATH`. **The CLI does** — adding, renaming or removing a
+`*--setup.sh` / `*--install.sh` changes `cli/src/pkg/boothfile/builtin-scripts.txt`, the name list
+embedded in the binary. `./build/cli-build.sh` regenerates it (or run `build/gen-builtin-scripts.sh`
+directly); **commit the regenerated file** with the script. You will not notice a stale one
+yourself — inside a checkout the compiler also scans `variants/base/setups/` — but every end user's
+binary warns `Unknown setup script '<name>'` on a Boothfile that uses the new script.
 
 ### Making it selectable — the template
 
@@ -429,6 +434,7 @@ tests/config/catalog/test88-all-params-are-wired.sh          # every declared pa
 tests/config/catalog/test90-web-servers-have-desktop-icon.sh # web servers register an icon
 tests/config/catalog/test92-arch-unsupported-is-declared.sh  # unsupported-arch carries a note
 tests/config/catalog/test94-catalog-manifest-is-current.sh   # every item has a cb-version; manifest current
+build/gen-builtin-scripts.sh --check                         # embedded setup/install name list is current
 ```
 
 ### Run only what you touched
@@ -460,8 +466,8 @@ it alone unless the tool is genuinely a headline one.
 ## Done means
 
 The change, its tests passing, the guards passing, `cb-version` bumped and the manifest regenerated,
-the CHANGELOG entry — **and a folder the user
-can open to see it work.** Report what you ran and what you skipped; "the complex test needs Docker
+`builtin-scripts.txt` regenerated when a script was added or removed, the CHANGELOG entry — **and a
+folder the user can open to see it work.** Report what you ran and what you skipped; "the complex test needs Docker
 and I did not run it" is a fine outcome to state, and not one to paper over.
 
 Close with the try-it line:
