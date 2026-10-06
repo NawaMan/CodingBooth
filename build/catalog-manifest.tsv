@@ -25,12 +25,8 @@ setup	azure-cli	1.0.0	98a239af8dceb156d984e50bca3cebcbddf28f78611837c695a77dc0e5
 setup	base-code-extension	1.0.0	8442e7a6aa51c3423207d8172d170208a5696abad356505cd95bb49983393db3	variants/base/setups/base-code-extension--setup.sh
 setup	bash-code-extension	1.0.0	739b732e27d197027422df407be931c49db8b64c2ba1cbb5b33378ba0fda4635	variants/base/setups/bash-code-extension--setup.sh
 setup	bash-nb-kernel	1.0.0	7b99d4bb4f5c20b73ade9ec071e6b7051c7372bbc23f7f8d80ecf4aab51b70cb	variants/base/setups/bash-nb-kernel--setup.sh
-setup	bismuth	0.1.0	d863be9472d668962fa3bf54bf3cd8a8a28a79aec903257367ad3d28cc6e85a5	variants/base/setups/bismuth--setup.sh
-setup	bismuth-default	0.1.0	2a1a88c869db3f9b342035eb40f8e91b541eaaa5ec403c2ef108c8ae623dd154	variants/base/setups/bismuth-default--setup.sh
-setup	bismuth-gaps	0.1.0	b2058b9e0970886c56db4cc6a53978ecbc8b8913b5411c9984386c645c9db0bf	variants/base/setups/bismuth-gaps--setup.sh
 setup	bluej	1.0.0	1afcb7ad9ff53a0a2c0f10cd24894cd901e7ac05a9a9f727ea98efb6fcd37dcc	variants/base/setups/bluej--setup.sh
 setup	booth-desktop-actions	1.0.0	b50ecaf9bd210ffc3205b61af3cac6388fc816a3a8d266a0251cf589cc2f326b	variants/base/setups/booth-desktop-actions--setup.sh
-setup	booth-message-code-extension	1.0.0	9ed75627b26f6de61621ed3639213a3e40a75e53e1071438eb9d5be447308590	variants/base/setups/booth-message-code-extension--setup.sh
 setup	booth-message-codeserver-wrapped	1.0.0	c78340cbb22a400686bf4ccc5f99e42ea831576499dee5fd8dd0d669ea59adac	variants/base/setups/booth-message-codeserver-wrapped--setup.sh
 setup	booth-message-desktop-wrapped	1.0.0	048d24bf27662dc407ee1b268e2e8f668829f1621b4f880f23bdc2189719819b	variants/base/setups/booth-message-desktop-wrapped--setup.sh
 setup	booth-message-notebook-wrapped	1.0.0	717106d8ed0bcdef0c3f5e8cb7bbd5dffde918a601124c18163a30378be408c5	variants/base/setups/booth-message-notebook-wrapped--setup.sh
@@ -71,7 +67,7 @@ setup	dblab	0.1.0	4c85d42697e81961082bed7d0148da6b739edf97829883ace2534600aaa6ec
 setup	default-terminal	1.0.0	b5ba2b0dcc90ea2355fb529902f0daccd3c53ab8046a832bea26dab69640adcd	variants/base/setups/default-terminal--setup.sh
 setup	deno	1.0.0	b5cb7026bd75202319f66faa56b51cf4bc47c2004050115d750b01d0c1a09197	variants/base/setups/deno--setup.sh
 setup	deno-code-extension	1.0.0	65526a1bc8f4c471226a070ef2b3833331588c22dac536055e9619a96822b93c	variants/base/setups/deno-code-extension--setup.sh
-setup	deno-nb-kernel	1.0.0	94949ed69ca956361155423238b19d8c8c44718fee3a3cdc3ee73e380a843a39	variants/base/setups/deno-nb-kernel--setup.sh
+setup	deno-nb-kernel	1.0.0	6a466544a75e1fa234a194ef3140c686c8e69615f9aaddbdcfdcd5eb553cda25	variants/base/setups/deno-nb-kernel--setup.sh
 setup	dind	1.0.0	d85ab9cfab4957178be3483ccb5c5eb2bf3308c565096472c2f3340d1d3c9b56	variants/base/setups/dind--setup.sh
 setup	direnv	1.0.0	84be601ab8b9f198683270ccb3b71e291ac65f11056519f3d5fa8db9ca87e384	variants/base/setups/direnv--setup.sh
 setup	dive	1.0.0	1d7f52b7e366674f3af13dc6b3bd72034b438893754aa004efeb209e6b0cc6ea	variants/base/setups/dive--setup.sh
@@ -147,7 +143,6 @@ setup	idea	1.0.0	0343e418cc4d1351876942b9c64682efd880d5795bcb018cf75145e489b7957
 setup	idea-import-project	0.1.0	11c81558e5772651d36b1eb278c6ea4bdbb51e2992a562d3806c4b76c9dc9a9b	variants/base/setups/idea-import-project--setup.sh
 setup	inkscape	1.0.0	fa8885b0c921ffbc224a4577265504628ff7d8ba81dea6012895037b1be4bc71	variants/base/setups/inkscape--setup.sh
 setup	java-code-extension	1.0.0	0f3666aca2b43b5fe2ea5a21b2d4d0d558fe876dfc455b79f39520b9a003b6f0	variants/base/setups/java-code-extension--setup.sh
-setup	java-ijava-nb-kernel	1.0.0	584d6a4bb50cfe82d9c6047129437810e1127e1f12a36acd7022da755bdcbdfd	variants/base/setups/java-ijava-nb-kernel--setup.sh
 setup	java-jjava-nb-kernel	1.0.0	1b7ea82b4a3013f266411ab503581065d3936b53b99ea56011aff01275763d5c	variants/base/setups/java-jjava-nb-kernel--setup.sh
 setup	java-nb-kernel	1.0.0	df0f3253ca33f610d280bb659ae045f1a24f59d54d8944398530bb05b511c9ca	variants/base/setups/java-nb-kernel--setup.sh
 setup	jdk	1.0.0	ea8788f58b0a44f347a8717f1b1a4a199351d76ce80ccd5a8c374656924b9e53	variants/base/setups/jdk--setup.sh
@@ -157,7 +152,6 @@ setup	jetbrains-first-run	0.1.0	10de26bb2a94e257f55c97087dcbdb549dc59c4d05cf311b
 setup	jetbrains-import-project	0.1.0	9928c407aa4ba054a568a20a1091fdcf833b9ead47157c3a3863e796abfe4dbe	variants/base/setups/jetbrains-import-project--setup.sh
 setup	jetbrains-jdk	0.1.0	21e7e0cd7608d6dfa391e5e4f88f48e48ef2feb63ed162bd0b2761aaef4f18f0	variants/base/setups/jetbrains-jdk--setup.sh
 setup	jetbrains-mono-nerd-font	0.1.0	8bf75fc95d7b2d76d2434c2dcc86bb8ce462302e0bbe92895a1fd2d24210aaee	variants/base/setups/jetbrains-mono-nerd-font--setup.sh
-setup	jetbrains-plugin	1.0.0	30450daf76675f84877b84dcc240b64c59789e12c8670ce23312263bb448346c	variants/base/setups/jetbrains-plugin--setup.sh
 setup	julia	1.0.0	e1d75cc16a53c4c7b400eeab3672021b3a402cf60935f648f18ab74fd8692f66	variants/base/setups/julia--setup.sh
 setup	julia-code-extension	1.0.0	1bb7295322f30356e85152ca1d1a4ded5d469c29fb853544e7f53b31503574a2	variants/base/setups/julia-code-extension--setup.sh
 setup	jupyter-code-extension	1.0.0	d7cee1611fdb7f1d96c5ba1a2df6753c8270decbf6c93221e14641dec6d04f97	variants/base/setups/jupyter-code-extension--setup.sh
@@ -193,7 +187,7 @@ setup	lombok-eclipse	1.0.0	4a8e7542bba4ffcdb70b0e17867c16f5646f394bc1c9d15ce7f2d
 setup	lombok-idea	0.1.0	32ea8debd47df5ecd96f954a1bcc4721e53cfbd292528de1dc7ba5a2922757b1	variants/base/setups/lombok-idea--setup.sh
 setup	lua	1.0.0	4d56b33de1f7e499b032ce34b3d65cb58cbfe3f04df322505aacab8f314771e9	variants/base/setups/lua--setup.sh
 setup	lua-code-extension	1.0.0	c9947d26ad809b5a768ffa27604ed277460d2e0ba548c9452cadb79e08be3337	variants/base/setups/lua-code-extension--setup.sh
-setup	lua-nb-kernel	1.0.0	e2fd2fa57aacfdc137c481635d5d158fd4db69866a31cd55956a19f5257b55fa	variants/base/setups/lua-nb-kernel--setup.sh
+setup	lua-nb-kernel	1.0.0	001fd2f052a142a81f9fe60c5b88c71f53e73c3b2ed90b543458f685a5c95da3	variants/base/setups/lua-nb-kernel--setup.sh
 setup	lxqt	1.0.0	1796f036a89cfc480654f657def0fed432a9d6acb7577cc2c8c272c9cd0526a5	variants/base/setups/lxqt--setup.sh
 setup	lxqt-wallpaper	1.0.0	3a642a29c4b1a945808776d90e2a40827631cd40ab35648220510cb289e606f5	variants/base/setups/lxqt-wallpaper--setup.sh
 setup	make	1.0.0	c8052cadd2fcac1b611d348e1f99b9009999ad16ad61d93aa97907e560993f81	variants/base/setups/make--setup.sh
@@ -273,7 +267,7 @@ setup	rust-nb-kernel	1.0.0	68e0ff75f57c016e4f6d1d9f2a61376a5fbd673751ff5a8f46b3b
 setup	sbt	1.0.0	a6361fbb0c96162b8730a1f6351edcaee867ff91a53f03d7d41c0b391653b227	variants/base/setups/sbt--setup.sh
 setup	scala	1.0.0	18b43d545d675e2971aedfb65413cb6ba6c57efd22201e8a84a5fcf789afa172	variants/base/setups/scala--setup.sh
 setup	scala-code-extension	1.0.0	f626327232a0c3dbf7660e08717170d0f545a9453256d26cc111d1e6f04d7ec1	variants/base/setups/scala-code-extension--setup.sh
-setup	scala-nb-kernel	1.0.0	d2b08251e0368049a30273e06488a0d6448282c19a8c6727db092ddfb0c37bc1	variants/base/setups/scala-nb-kernel--setup.sh
+setup	scala-nb-kernel	1.0.0	cbccc4bcc4b9128b18f5eefde1fff288c8e4eb0fd43e6f7dd7e7c3d8e6db6b29	variants/base/setups/scala-nb-kernel--setup.sh
 setup	scratch	1.0.0	96e25f80c6d0c3a05a58192352d09eec065d62f41e95ff59d2ef58695a973d9d	variants/base/setups/scratch--setup.sh
 setup	selenium	1.0.0	ad338354b6932063d168eae2085ddd53ecdc1f265933d1baf7ef965cb0ca5cf3	variants/base/setups/selenium--setup.sh
 setup	spring-boot-code-extension	0.1.0	b71ef395a19b1959a071eaae1aacb9587828b2d365f11afbdfea1de4491e0489	variants/base/setups/spring-boot-code-extension--setup.sh
@@ -325,7 +319,7 @@ install	dotnet	1.0.0	cac8bd0c1df6b46c94d31bca0dbca27e87b61163247b9d3587302054a9b
 install	gem	1.0.0	30283143a735660a27f127ddcbbe98347cc053fc0a3cb686f3aee9ff4a99c623	variants/base/setups/gem--install.sh
 install	go	1.0.0	ed62acb57ffe3face3251e179fe55647e466b4ec8d10e4ce09b3e74351de7930	variants/base/setups/go--install.sh
 install	hex	1.0.0	5a5be06dabc640025bc5462f5c635c7f3a6c9db38eb06d4094791d2c24db088f	variants/base/setups/hex--install.sh
-install	jetbrains-plugin	0.1.0	4f140c4c1d496140bafb10a8b673122b2963a0a4253c02255c37de54eb5a171a	variants/base/setups/jetbrains-plugin--install.sh
+install	jetbrains-plugin	0.1.0	f3a0db39c95e8e5da538e772999657b98246abf6e30582825335433d1c90e3fb	variants/base/setups/jetbrains-plugin--install.sh
 install	luarocks	1.0.0	038f6604928bdd69f3b8b919a0cd7c8afa780b3485c7e9ddbc315ae5cb4949ab	variants/base/setups/luarocks--install.sh
 install	npm	1.0.0	60dd3186f1fa122ab66f0ae61ffa07b6e272a2d05100b08ba4e5b051ca8dcdc0	variants/base/setups/npm--install.sh
 install	pecl	1.0.0	10f8728a1a8c4fd3eda484340ec53e938de18659504d14de5230037194ca3d69	variants/base/setups/pecl--install.sh
@@ -464,7 +458,7 @@ template	i3	1.0.0	d9d60e4b99c318909b39a744fd37adb0c242abb5b3fcbd913266230c24ab0d
 template	idea	1.0.0	881e489d9b240ec1be6d52754fa9219070aad4023a77b6aee50dda118566696a	templates/ides/idea/template.toml
 template	inkscape	1.0.0	b7d51ef89c00cb734281a52a4cf9629c1971152ee6520998a5afe863049481b1	templates/desktops/inkscape/template.toml
 template	java	1.0.0	7186cbc9fdfe719c9390027d3fe719923124fcb98faa48403a5a8c1bd1685e18	templates/languages/java/template.toml
-template	jetbrains-plugin-pkg	0.1.0	e050e29fdb970f0349d1441494f32454c67d4d250e7d3f93bf39fd50e4b9ea76	templates/ides/jetbrains-plugin-pkg/template.toml
+template	jetbrains-plugin-pkg	0.1.0	af572e55dd41814c76a8ae24462c6c1c3408a5075c648259226f627a9e3bf965	templates/ides/jetbrains-plugin-pkg/template.toml
 template	julia	1.0.0	6848f363b2573b14b73ae17b6500d2b16dd3f1d5bbae5584961dac2fedd6e7fc	templates/languages/julia/template.toml
 template	just	1.0.0	9c8992b0eeb6463f626a6af1d7d5eff30c64ad90bf151f656563409d98d36b0f	templates/tools/just/template.toml
 template	k3d	1.0.0	71932187da528c0251e8ba067e6930cd4c9c889d8448b7cb055b6ffba2a1103d	templates/tools/k3d/template.toml
@@ -629,6 +623,7 @@ extension	cursor+credential	1.0.0	87f7fa7ae835cb83ddd47fb4a86eec5cf23d6688a8fb87
 extension	dbeaver+connections-shared	1.0.0	f3eee083b26d51769c4c00259169e434a8bd14aa690d06d941bc3127d78a4840	templates/ides/dbeaver/connections-shared--extension.toml
 extension	dbeaver+drivers-shared	1.0.0	de03b67fcd753ce95195be93136580b03b5ea037677739f315983df555051e22	templates/ides/dbeaver/drivers-shared--extension.toml
 extension	dbeaver+scripts-shared	1.0.0	398b24a8990b664dfbaf627a83de77d2e226415d63c1b7772a10dee71550d222	templates/ides/dbeaver/scripts-shared--extension.toml
+extension	deno+kernel	0.1.0	27efa837b83631359305052bb2b38c8025398b7d1fd8e920a0a51d92abb95b5c	templates/languages/deno/kernel--extension.toml
 extension	deno+pkg	1.0.0	bc98fcffdc39afef07a01707d717fe866e6025d65b7db7d2ae5a89a311550ca0	templates/languages/deno/pkg--extension.toml
 extension	deno+tool	1.0.0	9e737dbf6bf07c4624845f1ead09659638863163950afcd6e7ba3e2beae9d9c3	templates/languages/deno/tool--extension.toml
 extension	deno+vscode-ext	1.0.0	fc1360450c9c278a4a193233c79206348498065a529e22477ae04589d299efdd	templates/languages/deno/vscode-ext--extension.toml
@@ -730,6 +725,7 @@ extension	latex+texstudio	0.1.0	b250edd359daa8f2cfbb8e66b024d4a2a201402fce28e86e
 extension	latex+vscode-ext	0.1.0	f70711697eab14c7fcb68378155697ee04f038471610b8ad8a6634a2bcb3c6fa	templates/tools/latex/vscode-ext--extension.toml
 extension	logo+autostart	0.1.0	290bfb03d1021250d843a6776607eae4c85d2f353c4e8705c9a4ab7c6a71af56	templates/education/logo/autostart--extension.toml
 extension	logo+expose	1.0.0	1dd58d0cb8a6262950c2193c3a5c7d8562ea2573b007729462c2937c9d047639	templates/education/logo/expose--extension.toml
+extension	lua+kernel	0.1.0	c3921b8258cfe24c83d94db89ee1f58b0db4e6a8ebec2e7e863d04998e4788d2	templates/languages/lua/kernel--extension.toml
 extension	lua+luarocks-pkg	1.0.0	c7ff429d95f030c4141e712207d359717271c4ed5294e85055cc52b1b5c942b8	templates/languages/lua/luarocks-pkg--extension.toml
 extension	lua+vscode-ext	1.0.0	7c1abebefd16981a1bb67279252d9e22183cf55cfe227755a64e90b0617ec48d	templates/languages/lua/vscode-ext--extension.toml
 extension	lxqt+desktop-icons-cache	0.1.0	4fe546bab6e0c225851a5d2406db8579bf5a00a16031326a66a95de0e198f11f	templates/desktops/lxqt/desktop-icons-cache--extension.toml
@@ -849,6 +845,7 @@ extension	rust+cargo-pkg	1.0.0	09b37c1d8d60f8b9aabaa862b1a9ac70fb4ecdb2047781e54
 extension	rust+credential	1.0.0	3fd1ceb95f631d2dff6341e0ac6496c6273c5e95e3f539c8fc76297327315247	templates/languages/rust/credential--extension.toml
 extension	rust+kernel	1.0.0	cf155d9cdb50820b319d46a2e1b893691f3c7a21452c5b90e635a0fcc9d06b2f	templates/languages/rust/kernel--extension.toml
 extension	rust+vscode-ext	1.0.0	15d640d5ea6ba0de8dd9da2d254ef79144971819e7c6a79047c366b435df51a8	templates/languages/rust/vscode-ext--extension.toml
+extension	scala+kernel	0.1.0	0ddce958ad84105021bc925e95492a8a371b11c3bdea13820424a36ade21203f	templates/languages/scala/kernel--extension.toml
 extension	scala+vscode-ext	1.0.0	4b86a8868bc35a5e5e562f263853e9b9aa387130b71b3f5a863360828cc4286b	templates/languages/scala/vscode-ext--extension.toml
 extension	scratch+autostart	1.0.0	5cff76db94dc49f44b0b34c37881bc4934832ca599145f5d3b0aaa070e3be23e	templates/education/scratch/autostart--extension.toml
 extension	scratch+expose	1.0.0	454b614da91c15ad57397208ca98a2aff6f93d7b2b6c187b68226ddbdb71e503	templates/education/scratch/expose--extension.toml

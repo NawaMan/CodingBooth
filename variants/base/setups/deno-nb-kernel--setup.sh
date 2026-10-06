@@ -5,7 +5,6 @@
 # cb-version: 1.0.0
 
 # deno-nb-kernel--setup.sh
-# NOTE: This script has not been tested -- no time (sorry). Please report success or failure. :-p
 #
 # Installs the built-in Deno Jupyter kernel.
 # Deno has native Jupyter support via `deno jupyter --install`.

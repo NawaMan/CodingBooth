@@ -2,9 +2,8 @@ cb-version = "0.1.0"
 display-name = "JetBrains Plugins"
 display-disc = "Install any JetBrains IDE plugin by marketplace id"
 display-detail = """Bakes plugins into the image for every JetBrains IDE it contains (IntelliJ IDEA, \
-PyCharm, GoLand, ...), by id from plugins.jetbrains.com. This is the build-time counterpart to \
-`setup jetbrains-plugin`, which names one IDE and one plugin and reinstalls it at every container \
-start; here the plugins are already in the image and no network is needed to open the IDE. Ids come \
+PyCharm, GoLand, ...), by id from plugins.jetbrains.com. The plugins are already in the image, \
+so no network is needed to open the IDE. Ids come \
 in two forms and both work: the xmlId from the plugin page ("IdeaVIM", \
 "izhangzhihao.rainbow.brackets") and the number in its URL (6317) — prefer the number when the \
 xmlId contains a space, since ids are split on whitespace and Lombok's really is "Lombook Plugin". \

@@ -1136,10 +1136,8 @@ to `setup jetbrains-first-run` if your project lives elsewhere.
 
 Everything is seeded no-clobber, so changing any of it in the IDE sticks.
 
-> There is also an older `setup jetbrains-plugin <ide> "<plugin>"`, which installs one
-> plugin into one IDE at *container start* instead of at build time. It still works,
-> but it re-downloads on every start and needs network at runtime;
-> `jetbrains-plugin-pkg` is the one to reach for.
+> The older `setup jetbrains-plugin <ide> "<plugin>"`, which installed one plugin into one
+> IDE at *container start*, has been removed; `jetbrains-plugin-pkg` replaces it.
 
 ### Project Dependency Pre-Installation
 

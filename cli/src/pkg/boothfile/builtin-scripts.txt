@@ -26,12 +26,8 @@ setup azure-cli
 setup base-code-extension
 setup bash-code-extension
 setup bash-nb-kernel
-setup bismuth
-setup bismuth-default
-setup bismuth-gaps
 setup bluej
 setup booth-desktop-actions
-setup booth-message-code-extension
 setup booth-message-codeserver-wrapped
 setup booth-message-desktop-wrapped
 setup booth-message-notebook-wrapped
@@ -148,7 +144,6 @@ setup idea
 setup idea-import-project
 setup inkscape
 setup java-code-extension
-setup java-ijava-nb-kernel
 setup java-jjava-nb-kernel
 setup java-nb-kernel
 setup jdk
@@ -158,7 +153,6 @@ setup jetbrains-first-run
 setup jetbrains-import-project
 setup jetbrains-jdk
 setup jetbrains-mono-nerd-font
-setup jetbrains-plugin
 setup julia
 setup julia-code-extension
 setup jupyter-code-extension

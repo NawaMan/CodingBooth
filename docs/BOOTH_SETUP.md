@@ -69,7 +69,7 @@ The levels in use today, and what sits at each:
 | **60–64** | JVM and other runtimes, cloud CLIs, build tools, datastores    | `jdk`, `kotlin`, `julia`, `gcloud`, `aws-cli`, `gradle`, `cmake`, `gcc`, `redis` |
 | **65–67** | Built on a lower-level setup                                   | `jenv`, `kafka`, `make`, `wails`, `flutter-android`                        |
 | **70–73** | Dev tools — IDEs, notebook, AI CLIs, web tools — and follow-ups | `vscode`, `notebook`, `jetbrains`, `claude-code`, `cloudbeaver`, `idea-import-project` |
-| **75**    | Plugins inside a 70 tool                                       | `jetbrains-plugin`, `mojo-nb-kernel`                                       |
+| **75**    | Plugins inside a 70 tool                                       | `mojo-nb-kernel`                                                           |
 | **99**    | Must run last                                                  | `kde`, `notebook` (late hooks); the base image's own `99z-cb--*`           |
 
 > 💡 **For a new script:** languages and platforms at **60–64**, their extensions at **65–69**,

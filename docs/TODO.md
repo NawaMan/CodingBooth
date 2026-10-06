@@ -231,7 +231,7 @@ A `[?]` item is parked on purpose: don't merge it, don't delete it, and don't re
       -- Tiling on KDE done another way: the `bismuth` template (a KWin script, so KWin and
       plasmashell stay untouched) with `start-bismuth` / `stop-bismuth`. i3-as-KDEWM not pursued.
       -- On Ubuntu 26.04 (Plasma 6, no kwin-bismuth) this became the `krohnkite` template
-      (`start-krohnkite` / `stop-krohnkite`); `setup bismuth*` are shims to it.
+      (`start-krohnkite` / `stop-krohnkite`); the `setup bismuth*` shims to it were later removed.
 - [x] **A sway (Wayland tiling) option.** i3 is X11-only; sway reads nearly the same config and is
       what wayvnc was built for. It would replace labwc rather than live inside a desktop, so it is
       closer to a variant (or a `wayland` alternative) than an `i3` extension. The i3 Help tab and

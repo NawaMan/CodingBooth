@@ -1,6 +1,6 @@
 #!/bin/bash
 # jetbrains-plugin-pkg: arbitrary JetBrains IDE plugins by marketplace id, baked into
-# the image, alongside the runtime-install `setup jetbrains-plugin`.
+# the image.
 source "$(dirname "$0")/../test-helpers--source.sh"
 
 begin
